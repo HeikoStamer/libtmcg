@@ -67,7 +67,7 @@ int main
 	tmcg->TMCG_MixStack(Mischstapel_Alice, Mischstapel_Bob,
 		Mischgeheimnis, vtmf);                             // Maskieren
 	std::cout << Mischstapel_Bob << std::endl;             // Stapel an Alice senden
-	tmcg->TMCG_ProofStackEquality(Mischstapel_Alice, Mischstapel_Bob,
+	tmcg->TMCG_ProveStackEquality(Mischstapel_Alice, Mischstapel_Bob,
 		Mischgeheimnis, false, vtmf, std::cin, std::cout); // Korrektheit beweisen
 	
 	// Stapel teilen: Alice erhält die Karten 1 bis 13 und Bob den Rest.
@@ -93,7 +93,7 @@ int main
 		// ... Alice
 		for (size_t i = 0; i < Kartenstapel_Alice.size(); i++)
 		{
-			tmcg->TMCG_ProofCardSecret(Kartenstapel_Alice[i], vtmf,
+			tmcg->TMCG_ProveCardSecret(Kartenstapel_Alice[i], vtmf,
 				std::cin, std::cout);
 		}
 		
@@ -145,7 +145,7 @@ int main
 			for (size_t i = 0; i < Paarstapel.size(); i++)
 			{
 				std::cout << Paarstapel[i].second << std::endl;
-				tmcg->TMCG_ProofCardSecret(Paarstapel[i].second, vtmf,
+				tmcg->TMCG_ProveCardSecret(Paarstapel[i].second, vtmf,
 					std::cin, std::cout);
 				Kartenstapel_Bob.remove(Paarstapel[i].second);
 				Handkarten.remove(Paarstapel[i].first);
@@ -269,7 +269,7 @@ int main
 				tmcg->TMCG_MixStack(Kartenstapel_Bob, Mischstapel_Bob,
 					Mischgeheimnis, vtmf);                             // Maskieren, ...
 				std::cout << Mischstapel_Bob << std::endl;           // senden, ...
-				tmcg->TMCG_ProofStackEquality(Kartenstapel_Bob, Mischstapel_Bob,
+				tmcg->TMCG_ProveStackEquality(Kartenstapel_Bob, Mischstapel_Bob,
 					Mischgeheimnis, false, vtmf, std::cin, std::cout); // beweisen.
 				Kartenstapel_Bob = Mischstapel_Bob;
 			}
@@ -285,7 +285,7 @@ int main
 				}
 				c = Kartenstapel_Bob[WelchePosition];        // Karte holen, ...
 				Kartenstapel_Bob.remove(c);                  // entfernen, ...
-				tmcg->TMCG_ProofCardSecret(c, vtmf, std::cin, std::cout); // aufdecken,
+				tmcg->TMCG_ProveCardSecret(c, vtmf, std::cin, std::cout); // aufdecken,
 				Kartenstapel_Alice.push(c); // ... und auf Alices Stapel legen.
 				// ... und mischt neu.
 				char *tmp = new char[TMCG_MAX_STACK_CHARS];

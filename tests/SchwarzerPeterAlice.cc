@@ -55,7 +55,7 @@ int main
 	tmcg->TMCG_MixStack(Mischstapel, Mischstapel_Alice,
 		Mischgeheimnis, vtmf);                             // Maskieren
 	std::cout << Mischstapel_Alice << std::endl;           // Stapel an Bob senden
-	tmcg->TMCG_ProofStackEquality(Mischstapel, Mischstapel_Alice,
+	tmcg->TMCG_ProveStackEquality(Mischstapel, Mischstapel_Alice,
 		Mischgeheimnis, false, vtmf, std::cin, std::cout); // Korrektheit beweisen
 	
 	// ... Bob
@@ -114,7 +114,7 @@ int main
 		// ... Bob
 		for (size_t i = 0; i < Kartenstapel_Bob.size(); i++)
 		{
-			tmcg->TMCG_ProofCardSecret(Kartenstapel_Bob[i], vtmf,
+			tmcg->TMCG_ProveCardSecret(Kartenstapel_Bob[i], vtmf,
 				std::cin, std::cout);
 		}
 		
@@ -205,7 +205,7 @@ int main
 			for (size_t i = 0; i < Paarstapel.size(); i++)
 			{
 				std::cout << Paarstapel[i].second << std::endl;
-				tmcg->TMCG_ProofCardSecret(Paarstapel[i].second, vtmf,
+				tmcg->TMCG_ProveCardSecret(Paarstapel[i].second, vtmf,
 					std::cin, std::cout);
 				Kartenstapel_Alice.remove(Paarstapel[i].second);
 				Handkarten.remove(Paarstapel[i].first);
@@ -272,7 +272,7 @@ int main
 				tmcg->TMCG_MixStack(Kartenstapel_Alice, Mischstapel_Alice,
 					Mischgeheimnis, vtmf);                             // Maskieren, ...
 				std::cout << Mischstapel_Alice << std::endl;         // senden, ...
-				tmcg->TMCG_ProofStackEquality(Kartenstapel_Alice, Mischstapel_Alice,
+				tmcg->TMCG_ProveStackEquality(Kartenstapel_Alice, Mischstapel_Alice,
 				Mischgeheimnis, false, vtmf, std::cin, std::cout); // beweisen.
 				Kartenstapel_Alice = Mischstapel_Alice;
 			}
@@ -288,7 +288,7 @@ int main
 				}
 				c = Kartenstapel_Alice[WelchePosition]; // Karte holen,
 				Kartenstapel_Alice.remove(c);           // entfernen,
-				tmcg->TMCG_ProofCardSecret(c, vtmf, std::cin, std::cout); // aufdecken,
+				tmcg->TMCG_ProveCardSecret(c, vtmf, std::cin, std::cout); // aufdecken,
 				Kartenstapel_Bob.push(c);               // ... und auf Bobs Stapel legen.
 				// ... und mischt neu.
 				char *tmp = new char[TMCG_MAX_STACK_CHARS];

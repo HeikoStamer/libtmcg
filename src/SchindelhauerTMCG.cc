@@ -55,7 +55,7 @@ SchindelhauerTMCG::SchindelhauerTMCG
 	}
 }
 
-void SchindelhauerTMCG::TMCG_ProofQuadraticResidue
+void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 	(const TMCG_SecretKey &key, mpz_srcptr t,
 		std::istream &in, std::ostream &out)
 {
@@ -193,7 +193,7 @@ bool SchindelhauerTMCG::TMCG_VerifyQuadraticResidue
 	}
 }
 
-void SchindelhauerTMCG::TMCG_ProofNonQuadraticResidue
+void SchindelhauerTMCG::TMCG_ProveNonQuadraticResidue
 	(const TMCG_SecretKey &key, mpz_srcptr t, std::istream &in, std::ostream &out)
 {
 	mpz_t bar;
@@ -206,7 +206,7 @@ void SchindelhauerTMCG::TMCG_ProofNonQuadraticResidue
 	out << bar << std::endl;
 	
 	// QR-proof
-	TMCG_ProofQuadraticResidue(key, bar, in, out);
+	TMCG_ProveQuadraticResidue(key, bar, in, out);
 	
 	mpz_clear(bar);
 	return;
@@ -268,7 +268,7 @@ void SchindelhauerTMCG::TMCG_MaskValue
 	mpz_clear(tim);
 }
 
-void SchindelhauerTMCG::TMCG_ProofMaskValue
+void SchindelhauerTMCG::TMCG_ProveMaskValue
 	(const TMCG_PublicKey &key, mpz_srcptr z, mpz_srcptr zz,
 		mpz_srcptr r, mpz_srcptr b, std::istream &in, std::ostream &out)
 {
@@ -418,7 +418,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskValue
 	}
 }
 
-void SchindelhauerTMCG::TMCG_ProofMaskOne
+void SchindelhauerTMCG::TMCG_ProveMaskOne
 	(const TMCG_PublicKey &key, mpz_srcptr r, mpz_srcptr b,
 		std::istream &in, std::ostream &out)
 {
@@ -621,7 +621,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskOne
 	}
 }
 
-void SchindelhauerTMCG::TMCG_ProofNonQuadraticResidue_PerfectZeroKnowledge
+void SchindelhauerTMCG::TMCG_ProveNonQuadraticResidue_PerfectZeroKnowledge
 	(const TMCG_SecretKey &key, std::istream &in, std::ostream &out)
 {
 	TMCG_PublicKey key2(key);
@@ -704,7 +704,7 @@ bool SchindelhauerTMCG::TMCG_VerifyNonQuadraticResidue_PerfectZeroKnowledge
 			out << foo << std::endl;
 			
 			// proof of mask knowledge 1->foo
-			TMCG_ProofMaskOne(key, r, b, in, out);
+			TMCG_ProveMaskOne(key, r, b, in, out);
 			
 			// receive proof
 			in >> bar;
@@ -864,7 +864,7 @@ void SchindelhauerTMCG::TMCG_MaskCard
 	vtmf->VerifiableRemaskingProtocol_Remask(c.c_1, c.c_2, cc.c_1, cc.c_2, cs.r);
 }
 
-void SchindelhauerTMCG::TMCG_ProofMaskCard
+void SchindelhauerTMCG::TMCG_ProveMaskCard
 	(const TMCG_Card &c, const TMCG_Card &cc, const TMCG_CardSecret &cs,
 		const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out)
 {
@@ -873,11 +873,11 @@ void SchindelhauerTMCG::TMCG_ProofMaskCard
 	
 	for (size_t k = 0; k < c.z.size(); k++)
 		for (size_t w = 0; w < c.z[k].size(); w++)
-			TMCG_ProofMaskValue(ring.key[k], &c.z[k][w], &cc.z[k][w],
+			TMCG_ProveMaskValue(ring.key[k], &c.z[k][w], &cc.z[k][w],
 				&cs.r[k][w], &cs.b[k][w], in, out);
 }
 
-void SchindelhauerTMCG::TMCG_ProofMaskCard
+void SchindelhauerTMCG::TMCG_ProveMaskCard
 	(const VTMF_Card &c, const VTMF_Card &cc, const VTMF_CardSecret &cs,
 		BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out)
 {
@@ -908,13 +908,13 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskCard
 	return true;
 }
 
-void SchindelhauerTMCG::TMCG_ProofPrivateCard
+void SchindelhauerTMCG::TMCG_ProvePrivateCard
 	(const TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
 		std::istream &in, std::ostream &out)
 {
 	for (size_t k = 0; k < cs.r.size(); k++)
 		for (size_t w = 0; w < cs.r[k].size(); w++)
-			TMCG_ProofMaskOne(ring.key[k], &cs.r[k][w], &cs.b[k][w], in, out);
+			TMCG_ProveMaskOne(ring.key[k], &cs.r[k][w], &cs.b[k][w], in, out);
 }
 
 bool SchindelhauerTMCG::TMCG_VerifyPrivateCard
@@ -928,7 +928,7 @@ bool SchindelhauerTMCG::TMCG_VerifyPrivateCard
 	return true;
 }
 
-void SchindelhauerTMCG::TMCG_ProofCardSecret
+void SchindelhauerTMCG::TMCG_ProveCardSecret
 	(const TMCG_Card &c, const TMCG_SecretKey &key, size_t index,
 		std::istream &in, std::ostream &out)
 {
@@ -939,17 +939,17 @@ void SchindelhauerTMCG::TMCG_ProofCardSecret
 		if (mpz_qrmn_p(&c.z[index][w], key.p, key.q, key.m))
 		{
 			out << "0" << std::endl;
-			TMCG_ProofQuadraticResidue(key, &c.z[index][w], in, out);
+			TMCG_ProveQuadraticResidue(key, &c.z[index][w], in, out);
 		}
 		else
 		{
 			out << "1" << std::endl;
-			TMCG_ProofNonQuadraticResidue(key, &c.z[index][w], in, out);
+			TMCG_ProveNonQuadraticResidue(key, &c.z[index][w], in, out);
 		}
 	}
 }
 
-void SchindelhauerTMCG::TMCG_ProofCardSecret
+void SchindelhauerTMCG::TMCG_ProveCardSecret
 	(const VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf,
 		std::istream &in, std::ostream &out)
 {
@@ -1279,7 +1279,7 @@ void SchindelhauerTMCG::TMCG_GlueStackSecret
 		pi.push(ss3[i].first, ss3[i].second);
 }
 
-void SchindelhauerTMCG::TMCG_ProofStackEquality
+void SchindelhauerTMCG::TMCG_ProveStackEquality
 	(const TMCG_Stack<TMCG_Card> &s, const TMCG_Stack<TMCG_Card> &s2,
 	const TMCG_StackSecret<TMCG_CardSecret> &ss, bool cyclic,
 	const TMCG_PublicKeyRing &ring, size_t index,
@@ -1323,7 +1323,7 @@ void SchindelhauerTMCG::TMCG_ProofStackEquality
 	mpz_clear(foo);
 }
 
-void SchindelhauerTMCG::TMCG_ProofStackEquality
+void SchindelhauerTMCG::TMCG_ProveStackEquality
 	(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
 	const TMCG_StackSecret<VTMF_CardSecret> &ss, bool cyclic,
 	BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out)
