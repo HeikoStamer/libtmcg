@@ -34,10 +34,8 @@
 #include "BarnettSmartVTMF_dlog.hh"
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
-	(unsigned long int groupsize, unsigned long int exponentsize)
+	(unsigned long int groupsize)
 {
-	assert(groupsize >= exponentsize);
-	
 	// initalize libgcrypt
 	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
 	{
@@ -62,19 +60,12 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	mpz_init(p), mpz_init(q), mpz_init_set_ui(g, 2L);
 	mpz_sprime2g(p, q, groupsize - 1L);
 	
-	// Under the additional DLSE assumption we can reduce
-	// the size of exponents in ElGamal operations. [KK04]
-	// Later we will shift the exponents to obtain "small
-	// exponents". Thus we first shift the generator of G.
-// FIXME
-//mpz_pow_ui(g, g, (groupsize - exponentsize) + 1L);
-	
 	// initalize the key
 	mpz_init(x_i), mpz_init(h_i), mpz_init(h), mpz_init(d);
 }
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
-	(std::istream &in, unsigned long int exponentsize)
+	(std::istream &in)
 {
 	// initalize libgcrypt
 	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
@@ -93,10 +84,9 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 		exit(-1);
 	}
 	
-	// initalize the finite abelian group G and set the generator
-	mpz_init(q);
+	// initalize the finite abelian group G
+	mpz_init(q), mpz_init(p), mpz_init_set_ui(g, 2L);
 	in >> q;
-	mpz_init(p), mpz_init_set_ui(g, 2L);
 	mpz_mul_2exp(p, q, 1L), mpz_add_ui(p, p, 1L);
 	
 	// initalize the key
@@ -104,7 +94,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 }
 
 bool BarnettSmartVTMF_dlog::CheckGroup
-	(unsigned long int groupsize, unsigned long int exponentsize)
+	(unsigned long int groupsize)
 {
 	mpz_t foo;
 	
@@ -112,8 +102,8 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 	
 	try
 	{
-		// check whether q has appropriate length
-		if ((mpz_sizeinbase(p, 2L) < (groupsize - 8L)) ||
+		// check whether q has appropriate size
+		if ((mpz_sizeinbase(p, 2L) < groupsize) ||
 			(mpz_sizeinbase(p, 2L) > (groupsize + 4096L)))
 				throw false;
 		
@@ -125,7 +115,7 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 		if (!mpz_congruent_ui_p(p, 7L, 8L))
 			throw false;
 		
-		// check whether g = 2 is a generator of the group G
+		// check whether g is a generator of the group G
 		// It is sufficient to assert that g is a quadratic residue
 		// modulo p, i.e. we check g^{(p-1)/2} \equiv 1 \pmod{p}.
 		mpz_powm(foo, g, q, p);
@@ -319,10 +309,22 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 }
 
 void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
-	(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r)
+	(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r,
+	unsigned long int exponentsize)
 {
-	// generate the random masking value r \in Z_q
-	mpz_srandomm(r, q);
+	// choose the masking value r \in Z_q randomly and uniformly
+	if (mpz_sizeinbase(p, 2L) <= exponentsize)
+	{
+		mpz_srandomm(r, q);
+	}
+	else
+	{
+		// Under the additional DLSE assumption we can reduce
+		// the size of the exponent and shift r to the left. [KK04]
+		mpz_srandomb(r, exponentsize);
+		mpz_mul_2exp(r, r, mpz_sizeinbase(p, 2L) - exponentsize);
+		mpz_mod(r, r, q);
+	}
 	
 	// compute c_1 = g^r \bmod p
 	mpz_sspowm(c_1, g, r, p);
@@ -376,10 +378,22 @@ bool BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Verify
 }
 
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
-	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_ptr r)
+	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_ptr r,
+	unsigned long int exponentsize)
 {
-	// generate the random masking value r \in Z_q
-	mpz_srandomm(r, q);
+	// choose the masking value r \in Z_q randomly and uniformly
+	if (mpz_sizeinbase(p, 2L) <= exponentsize)
+	{
+		mpz_srandomm(r, q);
+	}
+	else
+	{
+		// Under the additional DLSE assumption we can reduce
+		// the size of the exponent and shift r to the left. [KK04]
+		mpz_srandomb(r, exponentsize);
+		mpz_mul_2exp(r, r, mpz_sizeinbase(p, 2L) - exponentsize);
+		mpz_mod(r, r, q);
+	}
 	
 	// compute c'_1 = c_1 \cdot g^r \bmod p
 	mpz_sspowm(c__1, g, r, p);
@@ -393,10 +407,21 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 }
 
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_RemaskValue
-	(mpz_ptr r)
+	(mpz_ptr r, unsigned long int exponentsize)
 {
-	// generate random masking value r \in Z_q
-	mpz_srandomm(r, q);
+	// choose the masking value r \in Z_q randomly and uniformly
+	if (mpz_sizeinbase(p, 2L) <= exponentsize)
+	{
+		mpz_srandomm(r, q);
+	}
+	else
+	{
+		// Under the additional DLSE assumption we can reduce
+		// the size of the exponent and shift r to the left. [KK04]
+		mpz_srandomb(r, exponentsize);
+		mpz_mul_2exp(r, r, mpz_sizeinbase(p, 2L) - exponentsize);
+		mpz_mod(r, r, q);
+	}
 }
 
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask

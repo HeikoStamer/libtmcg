@@ -66,7 +66,7 @@ struct TMCG_SecretKey
 	
 	TMCG_SecretKey
 		(const std::string &n, const std::string &e,
-		unsigned long int keysize = TMCG_KEY_SIZE);
+		unsigned long int keysize = TMCG_QRA_SIZE);
 	
 	TMCG_SecretKey
 		(const std::string& s);

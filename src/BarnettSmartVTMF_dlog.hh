@@ -66,14 +66,11 @@ class BarnettSmartVTMF_dlog
 		mpz_t								x_i, h_i, h, d;
 		
 		BarnettSmartVTMF_dlog
-			(unsigned long int groupsize = TMCG_DDH_P_SIZE,
-			unsigned long int exponentsize = TMCG_DLSE_SIZE);
+			(unsigned long int groupsize = TMCG_DDH_SIZE);
 		BarnettSmartVTMF_dlog
-			(std::istream &in,
-			unsigned long int exponentsize = TMCG_DLSE_SIZE);
+			(std::istream &in);
 		bool CheckGroup
-			(unsigned long int groupsize = TMCG_DDH_P_SIZE,
-			unsigned long int exponentsize = TMCG_DLSE_SIZE);
+			(unsigned long int groupsize = TMCG_DDH_SIZE);
 		void PublishGroup
 			(std::ostream &out);
 		void RandomElement
@@ -93,16 +90,18 @@ class BarnettSmartVTMF_dlog
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
 			std::istream &in);
 		void VerifiableMaskingProtocol_Mask
-			(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r);
+			(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r,
+			unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		void VerifiableMaskingProtocol_Prove
 			(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr r,
 			std::ostream &out);
 		bool VerifiableMaskingProtocol_Verify
 			(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, std::istream &in);
 		void VerifiableRemaskingProtocol_Mask
-			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_ptr r);
+			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_ptr r,
+			unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		void VerifiableRemaskingProtocol_RemaskValue
-			(mpz_ptr r);
+			(mpz_ptr r, unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		void VerifiableRemaskingProtocol_Remask
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_srcptr r);
 		void VerifiableRemaskingProtocol_Prove

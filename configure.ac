@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.4 $)
+AC_REVISION($Revision: 1.5 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -60,11 +60,11 @@ AC_DEFINE(TMCG_MPZ_IO_BASE, 36,
 	[Define input/ouput base encoding of the iostream operators])
 AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_RMD160,
 	[Define message digest algorithm for signatures and FS-heuristic; Underlying assumptions: Random Oracle Model])
-AC_DEFINE(TMCG_DDH_P_SIZE, 1024L,
+AC_DEFINE(TMCG_DDH_SIZE, 1024L,
 	[Define security parameter of the DDH-hard group G; Underlying assumptions: DDH, CDH, DLOG])
 AC_DEFINE(TMCG_DLSE_SIZE, 160L,
-	[Define security parameter of the used exponents; Underlying assumptions: DLSE (related to DDH)])
-AC_DEFINE(TMCG_KEY_SIZE, 1024L,
+	[Define security parameter of the used exponents; Underlying assumptions: DLSE (related to DDH), DLOG])
+AC_DEFINE(TMCG_QRA_SIZE, 1024L,
 	[Define security parameter of the TMCG public key; Underlying assumptions: QRA, FAKTOR])
 AC_DEFINE(TMCG_KEYID_SIZE, 5,
 	[Define size of the unique TMCG key ID (in characters)])

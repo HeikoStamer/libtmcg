@@ -40,25 +40,25 @@
 		#define TMCG_GCRY_MD_ALGO GCRY_MD_RMD160
 	#endif
 	
-	#ifndef TMCG_DDH_P_SIZE
+	#ifndef TMCG_DDH_SIZE
 		/* Define security parameter of the DDH-hard group G
 		 * Underlying assumptions: DDH, CDH, DLOG
 		 */
-		#define TMCG_DDH_P_SIZE 1024L
+		#define TMCG_DDH_SIZE 1024L
 	#endif
 	
 	#ifndef TMCG_DLSE_SIZE
 		/* Define security parameter of the used exponents
-		 * Underlying assumptions: DLSE (related to DDH)
+		 * Underlying assumptions: DLSE (related to DDH), DLOG
 		 */
 		#define TMCG_DLSE_SIZE 160L
 	#endif
 	
-	#ifndef TMCG_KEY_SIZE
-		/* security parameter of the TMCG public key
+	#ifndef TMCG_QRA_SIZE
+		/* Define security parameter of the TMCG public key
 		 * Underlying assumptions: QRA, FAKTOR
 		 */
-		#define TMCG_KEY_SIZE 1024L
+		#define TMCG_QRA_SIZE 1024L
 	#endif
 	
 	#ifndef TMCG_KEYID_SIZE

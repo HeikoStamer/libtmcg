@@ -121,7 +121,9 @@ void mpz_sprime
 	mpz_init(mr_y), mpz_init(mr_nm1), mpz_init(mr_q), mpz_init_set_ui(mr_g, 2L);
 	
 	/* choose an odd random number of appropriate size */
-	mpz_srandomb(q, qsize);
+	do
+		mpz_srandomb(q, qsize);
+	while (mpz_sizeinbase(q, 2L) < qsize);
 	if (mpz_even_p(q))
 			mpz_add_ui(q, q, 1L);
 	
@@ -200,6 +202,9 @@ void mpz_sprime2g
 	
 	/* choose an odd random number of appropriate size */
 	mpz_srandomb(q, qsize);
+	do
+		mpz_srandomb(q, qsize);
+	while (mpz_sizeinbase(q, 2L) < qsize);
 	if (mpz_even_p(q))
 			mpz_add_ui(q, q, 1L);
 	
