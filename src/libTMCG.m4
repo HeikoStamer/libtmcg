@@ -82,7 +82,7 @@ AC_DEFUN(AM_PATH_LIBTMCG,
   if test $ok = yes; then
      # If we have a recent libTMCG, we should also check that the
      # API is compatible
-     if test "$req_libTMCG_api" -gt 0 ; then
+     if test "$req_libtmcg_api" -gt 0 ; then
         tmp=`$LIBTMCG_CONFIG --api-version 2>/dev/null || echo 0`
         if test "$tmp" -gt 0 ; then
            AC_MSG_CHECKING([libTMCG API version])
