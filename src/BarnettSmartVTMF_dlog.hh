@@ -45,7 +45,9 @@
 	#include <cassert>
 	#include <string>
 	#include <iostream>
+	#include <sstream>
 	#include <vector>
+	#include <map>
 
 	// GNU crypto library
 	#include <gcrypt.h>
@@ -63,7 +65,8 @@ class BarnettSmartVTMF_dlog
 {
 	public:
 		mpz_t								p, q, g;
-		mpz_t								x_i, h_i, h, d;
+		mpz_t								x_i, h_i, h, d, h_i_fp;
+		std::map<std::string, mpz_ptr>		h_j;
 		
 		BarnettSmartVTMF_dlog
 			(unsigned long int groupsize = TMCG_DDH_SIZE,

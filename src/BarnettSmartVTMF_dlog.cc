@@ -62,6 +62,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	
 	// initalize the key
 	mpz_init(x_i), mpz_init(h_i), mpz_init(h), mpz_init(d);
+	mpz_init(h_i_fp);
 	
 	// We shift the generator (according to [KK04]) for the
 	// following usage of shortened exponents.
@@ -97,9 +98,12 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	
 	// initalize the key
 	mpz_init(x_i), mpz_init(h_i), mpz_init(h), mpz_init(d);
+	mpz_init(h_i_fp);
 	
-	// We shift the generator (according to [KK04]) for the
-	// following usage of shortened exponents.
+	// Now shift the generator (according to [KK04]) for the
+	// later following usage of shortened exponents. (masking protocols)
+	// We will use the (Short, Full)-ElGamal variant [KK04] here,
+	// i.e. the secret key should be still of full size.
 	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
 	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
 	mpz_powm(g, g, h, p);
@@ -194,7 +198,10 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
 	// compute h_i = g^{x_i} \bmod p (with blinding techniques)
 	mpz_spowm(h_i, g, x_i, p);
 	
-	// set public key h
+	// compute the fingerprint
+	mpz_shash(h_i_fp, 1, h_i);
+	
+	// set the global key h
 	mpz_set(h, h_i);
 }
 
@@ -244,9 +251,17 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 		if (mpz_cmp(c, r))
 			throw false;
 		
-		// update public key h
+		// update the global key h
 		mpz_mul(h, h, foo);
 		mpz_mod(h, h, p);
+		
+		// store the public key
+		mpz_ptr tmp = new mpz_t();
+		std::ostringstream fp;
+		mpz_init_set(tmp, foo);
+		mpz_shash(t, 1, foo);
+		fp << t;
+		h_j[fp.str()] = tmp;
 		
 		// finish
 		throw true;
@@ -401,7 +416,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 	else
 	{
 		// Under the additional DLSE assumption we can reduce
-		// the size of the exponent . [KK04]
+		// the size of the exponent. [KK04]
 		mpz_srandomb(r, exponentsize);
 	}
 	
@@ -507,7 +522,7 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Prove
 	
 	// compute d_i = {c_1}^{x_i} \bmod p
 	mpz_spowm(d_i, c_1, x_i, p);
-	out << d_i << std::endl << h_i << std::endl;
+	out << d_i << std::endl << h_i_fp << std::endl;
 	
 	// CP(d_i, h_i, c_1, g; x_i)
 	CP_Prove(d_i, h_i, c_1, g, x_i, out);
@@ -534,15 +549,21 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Initalize
 bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 	(mpz_srcptr c_1, std::istream &in)
 {
-	mpz_t d_j, h_j;
+	mpz_t d_j, h_j_fp;
+	std::ostringstream fp;
 	
-	mpz_init(d_j), mpz_init(h_j);
-	in >> d_j >> h_j;
+	mpz_init(d_j), mpz_init(h_j_fp);
+	in >> d_j >> h_j_fp;
 	
 	try
 	{
-		//  verify CP(d_j, h_j, c_1, g; x_j)
-		if (!CP_Verify(d_j, h_j, c_1, g, in))
+		// public key stored?
+		fp << h_j_fp;
+		if (h_j.find(fp.str()) == h_j.end())
+			throw false;
+		
+		// verify CP(d_j, h_j, c_1, g; x_j)
+		if (!CP_Verify(d_j, h_j[fp.str()], c_1, g, in))
 			throw false;
 		
 		// update the value of d
@@ -554,7 +575,7 @@ bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 	}
 	catch (bool return_value)
 	{
-		mpz_clear(d_j), mpz_clear(h_j);
+		mpz_clear(d_j), mpz_clear(h_j_fp);
 		return return_value;
 	}
 }
@@ -573,4 +594,8 @@ BarnettSmartVTMF_dlog::~BarnettSmartVTMF_dlog
 {
 	mpz_clear(p), mpz_clear(q), mpz_clear(g);
 	mpz_clear(x_i), mpz_clear(h_i), mpz_clear(h), mpz_clear(d);
+	for (std::map<std::string, mpz_ptr>::const_iterator
+		j = h_j.begin(); j != h_j.end(); ++j)
+			mpz_clear(j->second);
+	h_j.clear();
 }
