@@ -1,0 +1,2 @@
+- use local namespaces TMCG and VMTF to prevent pollution
+- documentation: doxygen? and examples
