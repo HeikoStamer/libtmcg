@@ -4,6 +4,9 @@
 int main
 	()
 {
+	if (!init_libTMCG())
+		exit(-1);
+
 	// Initalisieren der "Toolbox for Mental Card Games"
 	// -------------------------------------------------
 	size_t t = 16, k = 2, w = 4; // p_Betrug <= 2^{-16}, 2 Spieler, 13 Typen

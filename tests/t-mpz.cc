@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2005 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,35 +21,9 @@
 #include <sstream>
 #include <cassert>
 
-#include <mpz_helper.hh>
-#include <mpz_srandom.h>
-#include <mpz_sprime.h>
-#include <mpz_spowm.h>
-#include <mpz_shash.hh>
-#include <mpz_sqrtm.h>
+#include <libTMCG.hh>
 
 #undef NDEBUG
-
-void init_libgcrypt
-	()
-{
-	// initalize libgcrypt
-	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
-	{
-		std::cerr << "libgcrypt: need library version >= " <<
-			TMCG_LIBGCRYPT_VERSION << std::endl;
-		exit(-1);
-	}
-	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
-	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-	if (gcry_md_test_algo(TMCG_GCRY_MD_ALGO))
-	{
-		std::cerr << "libgcrypt: algorithm " << TMCG_GCRY_MD_ALGO <<
-			" [" << gcry_md_algo_name(TMCG_GCRY_MD_ALGO) <<
-			"] not available" << std::endl;
-		exit(-1);
-	}
-}
 
 int main
 	(int argc, char **argv)
@@ -60,6 +34,7 @@ int main
 	unsigned long int tmp_ui = 0L;
 	std::stringstream lej;
 	std::string s;
+	assert(init_libTMCG());
 	
 	mpz_init(foo), mpz_init(bar), mpz_init(foo2), mpz_init(bar2), mpz_init(root);
 	std::cout << "TMCG_MPZ_IO_BASE = " << TMCG_MPZ_IO_BASE << std::endl;
@@ -72,52 +47,65 @@ int main
 		TMCG_LIBGCRYPT_VERSION << std::endl;
 	std::cout << "TMCG_GCRY_MD_ALGO = " << TMCG_GCRY_MD_ALGO <<
 		" [" << gcry_md_algo_name(TMCG_GCRY_MD_ALGO) << "]" << std::endl;
-	init_libgcrypt();
 	
 	// mpz_srandom_ui, mpz_srandomb, mpz_ssrandomb, mpz_srandomm, mpz_ssrandomm
-	for (size_t i = 0; i < 5; i++)
+	std::cout << "mpz_srandom_ui(), mpz_ssrandom_ui()" << std::endl;
+	for (size_t i = 0; i < 50; i++)
 	{
 		tmp_ui = mpz_srandom_ui();
 		mpz_set_ui(foo, tmp_ui);
 		assert(mpz_get_ui(foo) == tmp_ui);
-		
+		assert(tmp_ui != mpz_srandom_ui());
+	}
+	for (size_t i = 0; i < 3; i++)
+	{
 		tmp_ui = mpz_ssrandom_ui();
 		mpz_set_ui(foo, tmp_ui);
 		assert(mpz_get_ui(foo) == tmp_ui);
+		assert(tmp_ui != mpz_srandom_ui());
 	}
-	
+	std::cout << "mpz_srandomb()" << std::endl;
 	for (size_t i = 0; i < 50; i++)
 	{
+		mpz_set(foo2, foo);
 		mpz_srandomb(foo, 1024L), mpz_set_ui(bar, 0L);
 		assert((mpz_sizeinbase(foo, 2L) >= 1008L) &&
 			(mpz_sizeinbase(foo, 2L) <= 1024L));
 		lej << foo << std::endl, lej >> bar;
 		assert(!mpz_cmp(foo, bar));
+		assert(mpz_cmp(foo, foo2));
 	}
-	
-	for (size_t i = 0; i < 5; i++)
+	std::cout << "mpz_ssrandomb()" << std::endl;
+	for (size_t i = 0; i < 3; i++)
 	{
+		mpz_set(foo2, foo);
 		mpz_ssrandomb(foo, 1024L), mpz_set_ui(bar, 0L);
 		assert((mpz_sizeinbase(foo, 2L) >= 1008L) &&
 			(mpz_sizeinbase(foo, 2L) <= 1024L));
 		lej << foo << std::endl, lej >> bar;
 		assert(!mpz_cmp(foo, bar));
+		assert(mpz_cmp(foo, foo2));
 	}
-	
+	std::cout << "mpz_srandomm()" << std::endl;
 	for (size_t i = 0; i < 50; i++)
 	{
+		mpz_set(foo2, foo);
 		mpz_srandomm(foo, bar);
 		assert(mpz_cmp(foo, bar) < 0);
+		assert(mpz_cmp(foo, foo2));
 	}
-	
-	for (size_t i = 0; i < 5; i++)
+	std::cout << "mpz_ssrandomm()" << std::endl;
+	for (size_t i = 0; i < 3; i++)
 	{
+		mpz_set(foo2, foo);
 		mpz_ssrandomm(foo, bar);
 		assert(mpz_cmp(foo, bar) < 0);
+		assert(mpz_cmp(foo, foo2));
 	}
 	
 	// mpz_sprime, mpz_sprime2g
-	for (size_t i = 0; i < 3; i++)
+	std::cout << "mpz_sprime(), mpz_sprime2g(), mpz_sprime3mod4()" << std::endl;
+	for (size_t i = 0; i < 2; i++)
 	{
 		mpz_sprime(foo, bar, 1024);
 		assert(mpz_probab_prime_p(foo, 25) && mpz_probab_prime_p(bar, 25));
@@ -125,9 +113,13 @@ int main
 		mpz_sprime2g(foo, bar, 1024);
 		assert(mpz_probab_prime_p(foo, 25) && mpz_probab_prime_p(bar, 25) &&
 			mpz_congruent_ui_p(foo, 7L, 8L));
+		
+		mpz_sprime3mod4(foo, 1024);
+		assert(mpz_probab_prime_p(foo, 25) && mpz_congruent_ui_p(foo, 3L, 4L));
 	}
 	
-	// mpz_sspowm, mpz_spowm_init, mpz_spowm, mpz_spowm_clear
+	// mpz_spowm, mpz_spowm_init, mpz_spowm_calc, mpz_spowm_clear
+	std::cout << "mpz_spowm()" << std::endl;
 	for (size_t i = 0; i < 5; i++)
 	{
 		mpz_srandomm(bar, foo), mpz_srandomm(bar2, foo);
@@ -135,7 +127,8 @@ int main
 		mpz_powm(bar, bar, bar2, foo);
 		assert(!mpz_cmp(foo2, bar));
 	}
-	
+	std::cout << "mpz_spowm_init(), mpz_spowm_calc(), mpz_spowm_done()" <<
+		std::endl;
 	for (size_t i = 0; i < 5; i++)
 	{
 		mpz_srandomm(bar2, foo);
@@ -151,6 +144,7 @@ int main
 	}
 	
 	// h, g, mpz_shash
+	std::cout << "h()" << std::endl;
 	dig1 = new char[gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)];
 	dig2 = new char[gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)];
 	for (size_t i = 0; i < 5; i++)
@@ -165,7 +159,7 @@ int main
 		assert(!memcmp(dig1, dig2, gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)));
 	}
 	delete [] dig1, delete [] dig2;
-	
+	std::cout << "g()" << std::endl;
 	dig1 = new char[1024], dig2 = new char[1024];
 	for (size_t i = 0; i < 5; i++)
 	{
@@ -179,20 +173,19 @@ int main
 		assert(!memcmp(dig1, dig2, gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)));
 	}
 	delete [] dig1, delete [] dig2;
-	
+	std::cout << "mpz_shash()" << std::endl;
 	mpz_set_str(bar, "d2uipbaz3k3o4irzhyhfj5pfzjl7nvs", 36);
 	mpz_set_ui(foo2, 23L), mpz_set_ui(bar2, 42L);
 	mpz_shash(foo, 2, foo2, bar2);
 	assert(!mpz_cmp(foo, bar));
-	
 	mpz_set_str(bar, "e0mlbyryzvl4ho7glw6166ow8faqegj", 36);
 	s = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	mpz_shash(foo, s);
 	assert(!mpz_cmp(foo, bar));
 	
 	// mpz_qrmn_p, mpz_sqrtmn_r
-	mpz_sprime(foo, bar, 512);
-	mpz_sprime(foo2, bar2, 512);
+	std::cout << "mpz_qrmn_p(), mpz_sqrtmn_r()" << std::endl;
+	mpz_sprime(foo, bar, 512), mpz_sprime(foo2, bar2, 512);
 	mpz_mul(bar, foo, foo2);
 	for (size_t i = 0; i < 5; i++)
 	{

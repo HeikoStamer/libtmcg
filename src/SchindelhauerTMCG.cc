@@ -24,7 +24,6 @@
 *******************************************************************************/
 
 #include "SchindelhauerTMCG.hh"
-#include "libTMCG.def"
 
 SchindelhauerTMCG::SchindelhauerTMCG
 	(unsigned long int security, size_t n, size_t m):

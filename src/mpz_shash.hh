@@ -1,12 +1,12 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004, 2005 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
-     [BR95] Mihir Bellare, Phillip Rogaway. Random Oracles are Practical:
-            A Paradigm for Designing Efficient Protocols.
+     [BR95] Mihir Bellare, Phillip Rogaway: 'Random Oracles are Practical:
+             A Paradigm for Designing Efficient Protocols',
             Proceedings First Annual Conference on Computer and
-            Communications Security, ACM, 1993.
+             Communications Security, ACM, 1993.
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

@@ -5,12 +5,12 @@
      Cryptography and Coding 2003, LNCS 2898, pp. 370--383, 2003
 
      [CaS97] Jan Camenisch, Markus Stadler: 'Proof Systems for General
-             Statements about Discrete Logarithms', Technical Report, 1997
+              Statements about Discrete Logarithms', Technical Report, 1997
 
      [KK04] Takeshi Koshiba, Kaoru Kurosawa: 'Short Exponent Diffie-Hellman
-            Problems', In Public Key Cryptography - PKC 2004: Proceedings
+             Problems', In Public Key Cryptography - PKC 2004: Proceedings
             7th International Workshop on Theory and Practice in Public Key
-            Cryptography, LNCS 2947, pp. 173--186, 2004
+             Cryptography, LNCS 2947, pp. 173--186, 2004
 
    This file is part of libTMCG.
 
@@ -36,9 +36,9 @@
 
 	// config.h
 	#if HAVE_CONFIG_H
-		#include "config.h"
+	    #include "config.h"
 	#endif
-
+	
 	// C and STL header
 	#include <cstdio>
 	#include <cstdlib>

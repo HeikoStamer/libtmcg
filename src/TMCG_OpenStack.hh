@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -114,6 +114,12 @@ template <typename CardType> struct TMCG_OpenStack
 		(const TMCG_OpenStack& s)
 	{
 		std::copy(s.stack.begin(), s.stack.end(), std::back_inserter(stack));
+	}
+	
+	bool empty
+		()
+	{
+		return stack.empty();
 	}
 	
 	size_t pop

@@ -1,6 +1,6 @@
-dnl Autoconf macros for libTMCG (borrowed from libgcrypt)
-dnl       Copyright (C) 2002, 2004 Free Software Foundation, Inc.
-dnl                     2005 Heiko Stamer, <stamer@gaos.org>
+dnl Autoconf macros for libTMCG (source adapted from libgcrypt.m4)
+dnl       Copyright (C) 2002, 2004  Free Software Foundation, Inc.
+dnl                     2005  Heiko Stamer <stamer@gaos.org>
 dnl
 dnl This file is free software; as a special exception the author gives
 dnl unlimited permission to copy and/or distribute it, with or without

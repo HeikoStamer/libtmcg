@@ -10,7 +10,7 @@
 
      Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
 
- Copyright (C) 2004 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

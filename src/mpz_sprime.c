@@ -2,14 +2,14 @@
    This file is part of libTMCG.
 
      [CS00]  Ronald Cramer, Victor Shoup: 'Signature schemes based on the
-             strong RSA assumption', ACM Transactions on Information and
+              strong RSA assumption', ACM Transactions on Information and
              System Security, Vol.3(3), pp. 161--185, 2000
 
      [RS00]  Jean-Francois Raymond, Anton Stiglic: 'Security Issues in the
-             Diffie-Hellman Key Agreement Protocol', ZKS technical report
+              Diffie-Hellman Key Agreement Protocol', ZKS technical report
              http://citeseer.ist.psu.edu/455251.html
 
- Copyright (C) 2004, 2005 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -111,7 +111,7 @@ unsigned long int primes[] = {
 };
 
 int notest
-	()
+	(mpz_ptr p, mpz_ptr q)
 {
 	return 1;
 }
@@ -120,6 +120,12 @@ int test2g
 	(mpz_ptr p, mpz_ptr q)
 {
 	return mpz_congruent_ui_p(p, 7L, 8L);
+}
+
+int test3mod4
+	(mpz_ptr p, mpz_ptr q)
+{
+	return mpz_congruent_ui_p(p, 3L, 4L);
 }
 
 /* This fast generation of safe primes is due to [CS00] and
@@ -229,4 +235,14 @@ void mpz_sprime2g
 	   of G. If p is congruent 7 modulo 8, then 2 is a quadratic residue
 	   and hence it will generate the cyclic subgroup of order q. [RS00] */
 	mpz_sprime_test(p, q, qsize, test2g);
+}
+
+void mpz_sprime3mod4
+	(mpz_ptr p, unsigned long int psize)
+{
+	mpz_t q;
+
+	mpz_init(q);
+	mpz_sprime_test(p, q, psize - 1L, test3mod4);
+	mpz_clear(q);
 }

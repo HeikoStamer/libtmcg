@@ -2,14 +2,14 @@
    This file is part of libTMCG.
 
      [CS00]  Ronald Cramer, Victor Shoup: 'Signature schemes based on the
-             strong RSA assumption', ACM Transactions on Information and
+              strong RSA assumption', ACM Transactions on Information and
              System Security, Vol.3(3), pp. 161--185, 2000
 
      [RS00]  Jean-Francois Raymond, Anton Stiglic: 'Security Issues in the
-             Diffie-Hellman Key Agreement Protocol', ZKS technical report
+              Diffie-Hellman Key Agreement Protocol', ZKS technical report
              http://citeseer.ist.psu.edu/455251.html
 
- Copyright (C) 2004, 2005 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -45,6 +45,8 @@
 				(mpz_ptr p, mpz_ptr q, unsigned long int qsize);
 			void mpz_sprime2g
 				(mpz_ptr p, mpz_ptr q, unsigned long int qsize);
+			void mpz_sprime3mod4
+				(mpz_ptr p, unsigned long int psize);
 	#if defined(__cplusplus)
 		}
 	#endif

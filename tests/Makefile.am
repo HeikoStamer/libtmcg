@@ -1,4 +1,4 @@
-# Copyright (C) 2005 Heiko Stamer <stamer@gaos.org>
+# Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
 #
 # This file is part of libTMCG.
 #
@@ -19,7 +19,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-TESTS = t-mpz
+TESTS = t-mpz t-key
 
 INCLUDES = -I$(top_srcdir)/src
 LDADD = @LIBGCRYPT_LIBS@ ../src/libTMCG.la
@@ -32,3 +32,4 @@ SchwarzerPeterAlice_SOURCES = SchwarzerPeterAlice.cc
 SchwarzerPeterBob_SOURCES = SchwarzerPeterBob.cc
 
 t_mpz_SOURCES = t-mpz.cc
+t_key_SOURCES = t-key.cc

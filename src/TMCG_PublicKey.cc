@@ -10,7 +10,7 @@
 
      Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
 
- Copyright (C) 2004 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,18 +28,6 @@
 *******************************************************************************/
 
 #include "TMCG_PublicKey.hh"
-
-// SAEP octets
-#define rabin_k0 20
-#define rabin_s0 20
-
-// soundness error of the NIZK
-// d^{-nizk_stage1}
-#define nizk_stage1 16
-// 2^{-nizk_stage2}
-#define nizk_stage2 128
-// 2^{-nizk_stage3}
-#define nizk_stage3 128
 
 TMCG_PublicKey::TMCG_PublicKey
 	()
@@ -135,7 +123,7 @@ bool TMCG_PublicKey::check
 				if (!mpz_cmp_ui(m, 5L))
 					throw false;
 				
-				// check, whether 5^2^(k/2) \equiv -1 (mod m) [Pepin's prime test]
+				// check, whether 5^{2^(k/2)} \equiv -1 (mod m) [Pepin's prime test]
 				mpz_set_ui(foo, 2L);
 				mpz_powm_ui(foo, foo, (k / 2), m);
 				mpz_set_ui(bar, 5L);
@@ -162,7 +150,7 @@ bool TMCG_PublicKey::check
 			throw false;
 		
 		// check security constraint of STAGE1
-		if (stage1_size < nizk_stage1)
+		if (stage1_size < TMCG_KEY_NIZK_STAGE1)
 			throw false;
 		
 		// STAGE1: m is Square Free
@@ -200,7 +188,7 @@ bool TMCG_PublicKey::check
 			throw false;
 		
 		// check security constraint of STAGE2
-		if (stage2_size < nizk_stage2)
+		if (stage2_size < TMCG_KEY_NIZK_STAGE2)
 			throw false;
 		
 		// STAGE2: m is Prime Power Product
@@ -251,7 +239,7 @@ bool TMCG_PublicKey::check
 			throw false;
 		
 		// check security constraint of STAGE3
-		if (stage3_size < nizk_stage3)
+		if (stage3_size < TMCG_KEY_NIZK_STAGE3)
 			throw false;
 		
 		// STAGE3: y \in NQR^\circ_m
@@ -395,19 +383,19 @@ std::string TMCG_PublicKey::encrypt
 	(const char *value) const
 {
 	mpz_t vdata;
-	size_t rabin_s2 = 2 * rabin_s0;
+	size_t rabin_s2 = 2 * TMCG_SAEP_S0;
 	size_t rabin_s1 = (mpz_sizeinbase(m, 2L) / 8) - rabin_s2;
 	
 	assert(rabin_s2 < (mpz_sizeinbase(m, 2L) / 16));
 	assert(rabin_s2 < rabin_s1);
-	assert(rabin_s0 < (mpz_sizeinbase(m, 2L) / 32));
+	assert(TMCG_SAEP_S0 < (mpz_sizeinbase(m, 2L) / 32));
 	
 	char *r = new char[rabin_s1];
 	gcry_randomize((unsigned char*)r, rabin_s1, GCRY_STRONG_RANDOM);
 	
 	char *Mt = new char[rabin_s2], *g12 = new char[rabin_s2];
-	std::memcpy(Mt, value, rabin_s0);
-	std::memset(Mt + rabin_s0, 0, rabin_s0);
+	std::memcpy(Mt, value, TMCG_SAEP_S0);
+	std::memset(Mt + TMCG_SAEP_S0, 0, TMCG_SAEP_S0);
 	g(g12, rabin_s2, r, rabin_s1);
 	
 	for (size_t i = 0; i < rabin_s2; i++)
@@ -456,35 +444,35 @@ bool TMCG_PublicKey::verify
 		size_t mnsize = mpz_sizeinbase(m, 2L) / 8;
 		
 		assert(mpz_sizeinbase(m, 2L) > (mnsize * 8));
-		assert(mnsize > (mdsize + rabin_k0));
+		assert(mnsize > (mdsize + TMCG_PRAB_K0));
 		
 		mpz_mul(foo, foo, foo);
 		mpz_mod(foo, foo, m);
 		
-		char *w = new char[mdsize], *r = new char[rabin_k0];
-		char *gamma = new char[mnsize - mdsize - rabin_k0];
+		char *w = new char[mdsize], *r = new char[TMCG_PRAB_K0];
+		char *gamma = new char[mnsize - mdsize - TMCG_PRAB_K0];
 		char *yy = new char[mnsize + 1024];
 		size_t cnt = 1;
 		mpz_export(yy, &cnt, -1, mnsize, 1, 0, foo);
 		memcpy(w, yy, mdsize);
-		memcpy(r, yy + mdsize, rabin_k0);
-		memcpy(gamma, yy + mdsize + rabin_k0, mnsize - mdsize - rabin_k0);
+		memcpy(r, yy + mdsize, TMCG_PRAB_K0);
+		memcpy(gamma, yy + mdsize + TMCG_PRAB_K0, mnsize - mdsize - TMCG_PRAB_K0);
 		
 		char *g12 = new char[mnsize];
 		g(g12, mnsize - mdsize, w, mdsize);
 		
-		for (size_t i = 0; i < rabin_k0; i++)
+		for (size_t i = 0; i < TMCG_PRAB_K0; i++)
 			r[i] ^= g12[i];
 		
-		char *Mr = new char[data.length() + rabin_k0];
+		char *Mr = new char[data.length() + TMCG_PRAB_K0];
 		memcpy(Mr, data.c_str(), data.length());
-		memcpy(Mr + data.length(), r, rabin_k0);
+		memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
 		
 		char *w2 = new char[mdsize];
-		h(w2, Mr, data.length() + rabin_k0);
+		h(w2, Mr, data.length() + TMCG_PRAB_K0);
 		
 		bool ok = (memcmp(w, w2, mdsize) == 0) && 
-			(memcmp(gamma, g12 + rabin_k0, mnsize - mdsize - rabin_k0) == 0);
+			(memcmp(gamma, g12 + TMCG_PRAB_K0, mnsize - mdsize - TMCG_PRAB_K0) == 0);
 		delete [] yy, delete [] w, delete [] r, delete [] gamma, 
 			delete [] g12, delete [] Mr, delete [] w2;
 		

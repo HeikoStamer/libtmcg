@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -107,6 +107,12 @@ template <typename CardType> struct TMCG_Stack
 		for (typename std::vector<std::pair<size_t, CardType> >::const_iterator
 			si = s.stack.begin(); si != s.stack.end(); si++)
 				stack.push_back(si->second);
+	}
+	
+	bool empty
+		()
+	{
+		return stack.empty();
 	}
 	
 	bool pop

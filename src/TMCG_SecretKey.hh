@@ -3,14 +3,15 @@
 
      Rosario Gennaro, Daniele Micciancio, Tal Rabin: 
      'An Efficient Non-Interactive Statistical Zero-Knowledge 
-     Proof System for Quasi-Safe Prime Products', 1997
+      Proof System for Quasi-Safe Prime Products'
+     5th ACM Conference on Computer and Communication Security, 1998
 
      Mihir Bellare, Phillip Rogaway: 'The Exact Security of Digital
-     Signatures -- How to Sign with RSA and Rabin', 1996
+      Signatures -- How to Sign with RSA and Rabin', 1996
 
      Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
 
- Copyright (C) 2004 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -47,6 +48,7 @@
 	#include <gmp.h>
 	
 	#include "mpz_srandom.h"
+	#include "mpz_sprime.h"
 	#include "mpz_sqrtm.h"
 	#include "mpz_helper.hh"
 	#include "parse_helper.hh"
@@ -54,12 +56,11 @@
 
 struct TMCG_SecretKey
 {
-	std::string				name, email, type, nizk, sig;
-	mpz_t							m, y, p, q;
+	std::string		name, email, type, nizk, sig;
+	mpz_t		m, y, p, q;
 	// below this line are non-persistent values (pre-computation)
-	mpz_t							y1, m1pq, gcdext_up, gcdext_vq, pa1d4, qa1d4;
-	int								ret;
-	char							encval[4096];
+	mpz_t		y1, m1pq, gcdext_up, gcdext_vq, pa1d4, qa1d4;
+	int			ret;
 	
 	TMCG_SecretKey
 		();
@@ -96,10 +97,10 @@ struct TMCG_SecretKey
 		() const;
 	
 	std::string sigid
-		(std::string s) const;
+		(const std::string &s) const;
 	
-	const char* decrypt
-		(std::string value) const;
+	bool decrypt
+		(char* &value, std::string s) const;
 	
 	std::string sign
 		(const std::string &data) const;
@@ -108,7 +109,7 @@ struct TMCG_SecretKey
 		(const char *value) const;
 	
 	bool verify
-		(const std::string &data, std::string s) const;
+		(const std::string &data, const std::string &s) const;
 	
 	~TMCG_SecretKey
 		();

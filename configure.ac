@@ -1,4 +1,4 @@
-# Copyright (C) 2005 Heiko Stamer <stamer@gaos.org>
+# Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
 #
 # This file is part of libTMCG.
 #
@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.10 $)
+AC_REVISION($Revision: 1.11 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -37,39 +37,82 @@ LIBTMCG_CONFIG_API_VERSION=1
 AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION)
 AC_LANG(C++)
 AC_CONFIG_SRCDIR([src/libTMCG.hh])
-AM_CONFIG_HEADER(config.h)
+AM_CONFIG_HEADER([config.h])
 AM_MAINTAINER_MODE
 
-AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE_NAME", [Name of this package])
-AC_DEFINE_UNQUOTED(VERSION, "$PACKAGE_VERSION", [Version of this package])
 AC_SUBST(LIBTMCG_LT_CURRENT)
 AC_SUBST(LIBTMCG_LT_AGE)
 AC_SUBST(LIBTMCG_LT_REVISION)
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
+AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE_NAME", [Name of this package])
+AC_DEFINE_UNQUOTED(VERSION, "$PACKAGE_VERSION", [Version of this package])
 
-# Compiler/linker switches used by the libTMCG-config script
+# Compiler and linker switches used by the libTMCG-config script
 LIBTMCG_CONFIG_LIBS="-lTMCG"
 LIBTMCG_CONFIG_CFLAGS=""
 
 # Check commandline switches.
 
+# Defines some security parameters and macros
 AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.2.0",
-	[Define necessary version number of the gcrypt library])
+	[Define the necessary version number of the gcrypt library])
 AC_DEFINE(TMCG_MPZ_IO_BASE, 36,
-	[Define input/ouput base encoding of the iostream operators])
+	[Define the input/ouput base encoding of the iostream operators])
 AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_RMD160,
-	[Define message digest algorithm for signatures and FS-heuristic; Underlying assumptions: Random Oracle Model])
+	[Define the message digest algorithm for signatures and FS-heuristic;
+	Underlying assumption: Random Oracle Model])
 AC_DEFINE(TMCG_DDH_SIZE, 1024L,
-	[Define security parameter of the DDH-hard group G; Underlying assumptions: DDH, CDH, DLOG])
+	[Define the security parameter of the DDH-hard group G;
+	Underlying assumptions: DDH, CDH, DLOG])
 AC_DEFINE(TMCG_DLSE_SIZE, 160L,
-	[Define security parameter of the used exponents; Underlying assumptions: DLSE (related to DDH), DLOG])
+	[Define the security parameter of the used exponents;
+	Underlying assumptions: DLSE (related to DDH), DLOG])
 AC_DEFINE(TMCG_QRA_SIZE, 1024L,
-	[Define security parameter of the TMCG public key; Underlying assumptions: QRA, FAKTOR])
+	[Define the security parameter of the TMCG public key;
+	Underlying assumptions: QRA, FAKTOR])
 AC_DEFINE(TMCG_KEYID_SIZE, 5,
-	[Define size of the unique TMCG key ID (in characters)])
+	[Define the size of the unique TMCG key ID (in characters)])
 AC_DEFINE(TMCG_STACK_EQUALITY_HASH, 1,
-	[Define usage of short stack commitments (hash function)])
+	[Define whether short stack commitments (hash function) should be used;
+	Underlying assumption: Random Oracle Model])
+AC_DEFINE(TMCG_SAEP_S0, 20,
+	[Define the security parameter for the encryption with Rabin/SAEP])
+AC_DEFINE(TMCG_PRAB_K0, 20,
+	[Define the security parameter for the signature generation with Rabin/PRab])
+AC_DEFINE(TMCG_KEY_NIZK_STAGE1, 16,
+	[Define the maximum soundness error probability of the TMCG public key;
+	NIZK proof (Gennaro, Micciancio, Rabin), Stage 1: m is square free;
+	d^{-TMCG_KEY_NIZK_STAGE1} with d = ...])
+AC_DEFINE(TMCG_KEY_NIZK_STAGE2, 128,
+	[Define the maximum soundness error probability of the TMCG public key;
+	NIZK proof (Gennaro, Micciancio, Rabin), Stage 2: m is prime power product;
+	2^{-TMCG_KEY_NIZK_STAGE2}])
+AC_DEFINE(TMCG_KEY_NIZK_STAGE3, 128,
+	[Define the maximum soundness error probability for the TMCG public key;
+	NIZK proof (Goldwasser, Micali); Stage 3: y \in NQR^\circ_m;
+	2^{-TMCG_KEY_NIZK_STAGE3}])
+	
+AC_DEFINE(TMCG_MAX_PLAYERS, 32L,
+	[Define the maximum number of players])
+AC_DEFINE(TMCG_MAX_CARDS,	64L,
+	[Define the maximum number of stackable cards])
+AC_DEFINE(TMCG_MAX_TYPEBITS, 8L,
+	[Define the number of bits which represents the maximum number of
+	different card types])
+	
+AC_DEFINE(TMCG_MAX_KEYBITS,
+	[((TMCG_DDH_SIZE > TMCG_QRA_SIZE)?TMCG_DDH_SIZE:TMCG_QRA_SIZE)],
+	[Define a helping macro])
+AC_DEFINE(TMCG_MAX_VALUE_CHARS,
+	[(TMCG_MAX_KEYBITS / 2L)],
+	[Define a helping macro])
+AC_DEFINE(TMCG_MAX_CARD_CHARS,
+	[(TMCG_MAX_PLAYERS * TMCG_MAX_TYPEBITS * TMCG_MAX_VALUE_CHARS)],
+	[Define a helping macro])
+AC_DEFINE(TMCG_MAX_STACK_CHARS,
+	[(TMCG_MAX_CARDS * TMCG_MAX_CARD_CHARS)],
+	[Define a helping macro])
 
 
 # Checks for programs.
@@ -83,7 +126,8 @@ AC_PROG_LN_S
 # Checks for libraries.
 AC_CHECK_LIB(gmp, __gmpz_import, , AC_MSG_ERROR([libgmp >= 4.1 is needed]))
 AC_CHECK_LIB(gmp, __gmpz_export, , AC_MSG_ERROR([libgmp >= 4.1 is needed]))
-##AC_CHECK_LIB(gmpxx, __gmpz_set_str, , AC_MSG_ERROR([libgmpxx (C++ support) >= 4.1 is needed]))
+##AC_CHECK_LIB(gmpxx, __gmpz_set_str, ,
+##	AC_MSG_ERROR([libgmpxx (C++ support) >= 4.1 is needed]))
 LIBGMP_LIBS="-lgmp"
 
 AM_PATH_LIBGCRYPT("1.2.0")
@@ -106,24 +150,27 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
-AC_CHECK_FUNCS([bzero memcpy memset strchr strncasecmp strrchr strstr strtol strtoul])
+AC_CHECK_FUNCS([bzero memcpy memcmp memset strchr strncasecmp strrchr strstr strtol strtoul])
 
 CXXFLAGS="-O2 -Wall -g3 -pedantic"
-##CXXFLAGS="$CXXFLAGS -O2 -Wall -D NODEBUG"
+##CXXFLAGS="$CXXFLAGS -O2 -Wall -D NDEBUG"
 
 # Initalize the libTMCG-config script
 AC_SUBST(LIBTMCG_CONFIG_API_VERSION)
 AC_SUBST(LIBTMCG_CONFIG_LIBS)
 AC_SUBST(LIBTMCG_CONFIG_CFLAGS)
 
-AC_CONFIG_COMMANDS([libTMCG-conf],[[
+AC_CONFIG_COMMANDS([libTMCG-config],[[
 chmod +x src/libTMCG-config
 ]],[[
 prefix=$prefix
 exec_prefix=$exec_prefix
 libdir=$libdir
 datadir=$datadir
-DATADIRNAME=$DATADIRNAME
+]])
+
+AC_CONFIG_COMMANDS([libTMCG_config.h], [[
+cp config.h src/libTMCG_config.h
 ]])
 
 AC_CONFIG_FILES([Makefile src/Makefile src/libTMCG-config tests/Makefile])
