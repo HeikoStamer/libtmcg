@@ -56,33 +56,15 @@ void g
 	delete [] out;
 }
 
-/* Hashing of the public inputs (aka Fiat-Shamir heuristic) with h() to
-   make the proofs of knowledge non-interactive. */
 void mpz_shash
-	(mpz_ptr r, size_t n, ...)
+	(mpz_ptr r, std::string input)
 {
-	va_list ap;
-	mpz_srcptr a;
-	std::string c_tmp;
-	char *vtmp = NULL, *digest = NULL, *hex_digest = NULL;
 	unsigned int hash_size = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
-	digest = new char[hash_size];
-	hex_digest = new char[2 * hash_size + 1];
+	char *digest = new char[hash_size];
+	char *hex_digest = new char[(2 * hash_size) + 1];
 	
-	/* concatenate all the arguments */
-	va_start(ap, n);
-	for (size_t i = 0; i < n; i++)
-	{
-		a = (mpz_srcptr) va_arg(ap, mpz_srcptr);
-		vtmp = new char[2 * mpz_sizeinbase(a, 16) + 1];
-		c_tmp += mpz_get_str(vtmp, 16, a);
-		c_tmp += "|";
-		delete [] vtmp;
-	}
-	va_end(ap);
-	
-	/* hash arguments */
-	h(digest, c_tmp.c_str(), c_tmp.length());
+	/* hash the input */
+	h(digest, input.c_str(), input.length());
 	
 	/* convert the digest to a hexadecimal encoded string */
 	for (unsigned int i = 0; i < hash_size; i++)
@@ -92,4 +74,29 @@ void mpz_shash
 	mpz_set_str(r, hex_digest, 16);
 	
 	delete [] digest, delete [] hex_digest;
+}
+
+/* Hashing of the public inputs (aka Fiat-Shamir heuristic) with h() to
+   make the proofs of knowledge non-interactive. */
+void mpz_shash
+	(mpz_ptr r, size_t n, ...)
+{
+	va_list ap;
+	mpz_srcptr a;
+	std::string acc;
+	
+	/* concatenate all the arguments */
+	va_start(ap, n);
+	for (size_t i = 0; i < n; i++)
+	{
+		a = (mpz_srcptr) va_arg(ap, mpz_srcptr);
+		char *vtmp = new char[(2 * mpz_sizeinbase(a, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, a);
+		acc += "|";
+		delete [] vtmp;
+	}
+	va_end(ap);
+	
+	/* hash arguments */
+	mpz_shash(r, acc);
 }

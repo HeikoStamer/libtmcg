@@ -4,18 +4,9 @@
      Christian Schindelhauer: 'A Toolbox for Mental Card Games',
      Technical Report A-98-14, University of L{\"u}beck, 1998.
 
-     Rosario Gennaro, Daniele Micciancio, Tal Rabin: 
-     'An Efficient Non-Interactive Statistical Zero-Knowledge
-     Proof System for Quasi-Safe Prime Products', 1997
-
-     Mihir Bellare, Phillip Rogaway: 'The Exact Security of Digital
-     Signatures -- How to Sign with RSA and Rabin', 1996
-
-     Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
-
    This file is part of libTMCG.
 
- Copyright (C) 2002, 2003, 2004 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2002, 2003, 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1273,8 +1264,11 @@ void SchindelhauerTMCG::TMCG_ProofStackEquality
 		TMCG_CreateStackSecret(ss2, cyclic, ring, index, s.size());
 		TMCG_MixStack(s2, s3, ss2, ring);
 		
-		// send stack
-		out << s3 << std::endl;
+		// send commitment (instead of the whole stack)
+		std::ostringstream ost;
+		ost << s3 << std::endl;
+		mpz_shash(foo, ost.str());
+		out << foo << std::endl;
 		
 		// receive question
 		in >> foo;
@@ -1308,8 +1302,11 @@ void SchindelhauerTMCG::TMCG_ProofStackEquality
 		TMCG_CreateStackSecret(ss2, cyclic, s.size(), vtmf);
 		TMCG_MixStack(s2, s3, ss2, vtmf);
 		
-		// send stack
-		out << s3 << std::endl;
+		// send commitment (instead of the whole stack)
+		std::ostringstream ost;
+		ost << s3 << std::endl;
+		mpz_shash(foo, ost.str());
+		out << foo << std::endl;
 		
 		// receive question
 		in >> foo;
@@ -1326,7 +1323,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 	(const TMCG_Stack<TMCG_Card> &s, const TMCG_Stack<TMCG_Card> &s2, bool cyclic,
 	const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out)
 {
-	mpz_t foo;
+	mpz_t foo, bar;
 	
 	out << TMCG_SecurityLevel << std::endl;
 	
@@ -1334,7 +1331,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 		return false;
 	
 	char *tmp = new char[TMCG_MAX_STACK_CHARS];
-	mpz_init(foo);
+	mpz_init(foo), mpz_init(bar);
 	try
 	{
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
@@ -1343,15 +1340,13 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			TMCG_StackSecret<TMCG_CardSecret> ss;
 			mpz_srandomb(foo, 1L);
 			
-			// receive stack
-			in.getline(tmp, TMCG_MAX_STACK_CHARS);
-			if (!s3.import(tmp))
-				throw false;
+			// receive commitment
+			in >> bar;
 			
-			// send R/S-question to prover
+			// send challenge to prover
 			out << foo << std::endl;
 			
-			// receive proof
+			// receive equality proof
 			in.getline(tmp, TMCG_MAX_STACK_CHARS);
 			if (!ss.import(tmp))
 				throw false;
@@ -1361,7 +1356,10 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 				TMCG_MixStack(s2, s4, ss, ring);
 			else
 				TMCG_MixStack(s, s4, ss, ring);
-			if (s3 != s4)
+			std::ostringstream ost;
+			ost << s4 << std::endl;
+			mpz_shash(foo, ost.str());
+			if (mpz_cmp(foo, bar))
 				throw false;
 			
 			// verify cyclic shift
@@ -1379,7 +1377,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 	}
 	catch (bool return_value)
 	{
-		mpz_clear(foo);
+		mpz_clear(foo), mpz_clear(bar);
 		delete [] tmp;
 		return return_value;
 	}
@@ -1389,7 +1387,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 	(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2, bool cyclic,
 	BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out)
 {
-	mpz_t foo;
+	mpz_t foo, bar;
 	
 	out << TMCG_SecurityLevel << std::endl;
 	
@@ -1397,7 +1395,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 		return false;
 	
 	char *tmp = new char[TMCG_MAX_STACK_CHARS];
-	mpz_init(foo);
+	mpz_init(foo), mpz_init(bar);
 	try
 	{
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
@@ -1406,15 +1404,13 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			TMCG_StackSecret<VTMF_CardSecret> ss;
 			mpz_srandomb(foo, 1L);
 			
-			// receive stack (commitment)
-			in.getline(tmp, TMCG_MAX_STACK_CHARS);
-			if (!s3.import(tmp))
-				throw false;
+			// receive commitment
+			in >> bar;
 			
 			// send R/S-question to prover (challenge)
 			out << foo << std::endl;
 			
-			// receive proof (response)
+			// receive equality proof (response)
 			in.getline(tmp, TMCG_MAX_STACK_CHARS);
 			if (!ss.import(tmp))
 				throw false;
@@ -1424,7 +1420,10 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 				TMCG_MixStack(s2, s4, ss, vtmf);
 			else
 				TMCG_MixStack(s, s4, ss, vtmf);
-			if (s3 != s4)
+			std::ostringstream ost;
+			ost << s4 << std::endl;
+			mpz_shash(foo, ost.str());
+			if (mpz_cmp(foo, bar))
 				throw false;
 			
 			// verify cyclic shift
@@ -1442,7 +1441,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 	}
 	catch (bool return_value)
 	{
-		mpz_clear(foo);
+		mpz_clear(foo), mpz_clear(bar);
 		delete [] tmp;
 		return return_value;
 	}

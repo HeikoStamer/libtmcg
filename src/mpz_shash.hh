@@ -50,7 +50,10 @@
 	
 	void g
 		(char *output, size_t osize, const char *input, size_t isize);
-	
+		
+	void mpz_shash
+		(mpz_ptr r, std::string input);
+		
 	void mpz_shash
 		(mpz_ptr r, size_t n, ...);
 #endif
