@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.12 $)
+AC_REVISION($Revision: 1.13 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -74,7 +74,7 @@ AC_DEFINE(TMCG_QRA_SIZE, 1024L,
 	Underlying assumptions: QRA, FAKTOR])
 AC_DEFINE(TMCG_KEYID_SIZE, 5,
 	[Define the size of the unique TMCG key ID (in characters)])
-AC_DEFINE(TMCG_STACK_EQUALITY_HASH, 1,
+AC_DEFINE(TMCG_STACK_EQUALITY_HASH, true,
 	[Define whether short stack commitments (hash function) should be used;
 	Underlying assumption: Random Oracle Model])
 AC_DEFINE(TMCG_SAEP_S0, 20,

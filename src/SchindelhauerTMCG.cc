@@ -1283,16 +1283,19 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 		TMCG_CreateStackSecret(ss2, cyclic, ring, index, s.size());
 		TMCG_MixStack(s2, s3, ss2, ring);
 		
-#ifdef TMCG_STACK_EQUALITY_HASH
-		// send commitment (instead of the whole stack)
-		std::ostringstream ost;
-		ost << s3 << std::endl;
-		mpz_shash(foo, ost.str());
-		out << foo << std::endl;
-#else
-		// send the whole stack (commitment)
-		out << s3 << std::endl;
-#endif
+		if (TMCG_STACK_EQUALITY_HASH)
+		{
+			// send commitment (instead of the whole stack)
+			std::ostringstream ost;
+			ost << s3 << std::endl;
+			mpz_shash(foo, ost.str());
+			out << foo << std::endl;
+		}
+		else
+		{
+			// send the whole stack (commitment)
+			out << s3 << std::endl;
+		}
 		
 		// receive question
 		in >> foo;
@@ -1326,16 +1329,19 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 		TMCG_CreateStackSecret(ss2, cyclic, s.size(), vtmf);
 		TMCG_MixStack(s2, s3, ss2, vtmf);
 		
-#ifdef TMCG_STACK_EQUALITY_HASH
-		// send commitment (instead of the whole stack)
-		std::ostringstream ost;
-		ost << s3 << std::endl;
-		mpz_shash(foo, ost.str());
-		out << foo << std::endl;
-#else
-		// send the whole stack (commitment)
-		out << s3 << std::endl;
-#endif
+		if (TMCG_STACK_EQUALITY_HASH)
+		{
+			// send commitment (instead of the whole stack)
+			std::ostringstream ost;
+			ost << s3 << std::endl;
+			mpz_shash(foo, ost.str());
+			out << foo << std::endl;
+		}
+		else
+		{
+			// send the whole stack (commitment)
+			out << s3 << std::endl;
+		}
 		
 		// receive question
 		in >> foo;
@@ -1369,15 +1375,18 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			TMCG_StackSecret<TMCG_CardSecret> ss;
 			mpz_srandomb(foo, 1L);
 			
-#ifdef TMCG_STACK_EQUALITY_HASH
-			// receive commitment
-			in >> bar;
-#else
-			// receive stack
-			in.getline(tmp, TMCG_MAX_STACK_CHARS);
-			if (!s3.import(tmp))
-				throw false;
-#endif
+			if (TMCG_STACK_EQUALITY_HASH)
+			{
+				// receive commitment
+				in >> bar;
+			}
+			else
+			{
+				// receive stack
+				in.getline(tmp, TMCG_MAX_STACK_CHARS);
+				if (!s3.import(tmp))
+					throw false;
+			}
 			
 			// send challenge to prover
 			out << foo << std::endl;
@@ -1392,16 +1401,19 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 				TMCG_MixStack(s2, s4, ss, ring);
 			else
 				TMCG_MixStack(s, s4, ss, ring);
-#ifdef TMCG_STACK_EQUALITY_HASH
-			std::ostringstream ost;
-			ost << s4 << std::endl;
-			mpz_shash(foo, ost.str());
-			if (mpz_cmp(foo, bar))
-				throw false;
-#else
-			if (s3 != s4)
-				throw false;
-#endif
+			if (TMCG_STACK_EQUALITY_HASH)
+			{
+				std::ostringstream ost;
+				ost << s4 << std::endl;
+				mpz_shash(foo, ost.str());
+				if (mpz_cmp(foo, bar))
+					throw false;
+			}
+			else
+			{
+				if (s3 != s4)
+					throw false;
+			}
 			
 			// verify cyclic shift
 			if (cyclic)
@@ -1445,15 +1457,18 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			TMCG_StackSecret<VTMF_CardSecret> ss;
 			mpz_srandomb(foo, 1L);
 			
-#ifdef TMCG_STACK_EQUALITY_HASH
-			// receive commitment
-			in >> bar;
-#else
-			// receive stack
-			in.getline(tmp, TMCG_MAX_STACK_CHARS); 
-			if (!s3.import(tmp))
-				throw false;
-#endif
+			if (TMCG_STACK_EQUALITY_HASH)
+			{
+				// receive commitment
+				in >> bar;
+			}
+			else
+			{
+				// receive stack
+				in.getline(tmp, TMCG_MAX_STACK_CHARS); 
+				if (!s3.import(tmp))
+					throw false;
+			}
 			
 			// send R/S-question to prover (challenge)
 			out << foo << std::endl;
@@ -1468,16 +1483,19 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 				TMCG_MixStack(s2, s4, ss, vtmf);
 			else
 				TMCG_MixStack(s, s4, ss, vtmf);
-#ifdef TMCG_STACK_EQUALITY_HASH
-			std::ostringstream ost;
-			ost << s4 << std::endl;
-			mpz_shash(foo, ost.str());
-			if (mpz_cmp(foo, bar))
-				throw false;
-#else
-			if (s3 != s4)
-				throw false;
-#endif
+			if (TMCG_STACK_EQUALITY_HASH)
+			{
+				std::ostringstream ost;
+				ost << s4 << std::endl;
+				mpz_shash(foo, ost.str());
+				if (mpz_cmp(foo, bar))
+					throw false;
+			}
+			else
+			{
+				if (s3 != s4)
+					throw false;
+			}
 			
 			// verify cyclic shift
 			if (cyclic)

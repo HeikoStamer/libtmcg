@@ -1,5 +1,5 @@
 /*******************************************************************************
-   libTMCG.hh, general header of the library
+   libTMCG.hh, general header file of the library
 
    This file is part of libTMCG.
 
@@ -133,7 +133,7 @@
 	#ifndef TMCG_STACK_EQUALITY_HASH
 		/* Define whether short stack commitments (hash function) should be used;
 		   Underlying assumption: Random Oracle Model */
-		#define TMCG_STACK_EQUALITY_HASH 1
+		#define TMCG_STACK_EQUALITY_HASH true
 	#endif
 
 	#include <TMCG_SecretKey.hh>
