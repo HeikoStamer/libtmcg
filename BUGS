@@ -1,0 +1,2 @@
+* Zaurus/zgcc: ld SIGSEGV during linking (configure --disable-shared)
+* srandomb() and ssrandomb() don't return a value of exact length
