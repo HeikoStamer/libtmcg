@@ -14,7 +14,7 @@
 
    This file is part of libTMCG.
 
- Copyright (C) 2004 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004, 2005 Heiko Stamer, <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -211,9 +211,9 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
 		mpz_sspowm(t, g, v, p);
 		// challenge
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
-		// this part of the PK non-interactive, i.e. we turn it
-		// into a statistically zero-knowledge (signature scheme style)
-		// proof of knowledge (SPK) in the random oracle model.
+		// the PK non-interactive, i.e. we turn it into a statistically
+		// zero-knowledge (Schnorr signature scheme style) proof of
+		// knowledge (SPK) in the random oracle model.
 		mpz_shash(c, g, h_i, t);
 		// response
 		mpz_mul(r, c, x_i);
@@ -274,9 +274,9 @@ void BarnettSmartVTMF_dlog::CP_Prove
 		
 		// challenge
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
-		// this part of the PK non-interactive, i.e. we turn it
-		// into a statistically zero-knowledge (signature scheme style)
-		// proof of knowledge (SPK) in the random oracle model.
+		// the PK non-interactive, i.e. we turn it into a statistically
+		// zero-knowledge (Schnorr signature scheme style) proof of
+		// knowledge (SPK) in the random oracle model.
 		mpz_shash(c, a, b, x, y, gg, hh);
 		
 		// response
@@ -285,33 +285,31 @@ void BarnettSmartVTMF_dlog::CP_Prove
 		mpz_add(r, r, omega);
 		mpz_mod(r, r, q);
 		
-	out << a << std::endl << b << std::endl << c << std::endl << r << std::endl;
+	out << c << std::endl << r << std::endl;
 	mpz_clear(c), mpz_clear(r), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
 }
 
 bool BarnettSmartVTMF_dlog::CP_Verify
 	(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh, std::istream &in)
 {
-	mpz_t foo, bar, a, b, c, r;
+	mpz_t a, b, c, r;
 	
-	mpz_init(foo), mpz_init(bar);
 	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(r);
-	in >> a >> b >> c >> r;
+	in >> c >> r;
 	
 	try
 	{
 		// verify proof of knowledge (equality of discrete logarithms) [CaS97]
-		mpz_powm(foo, x, c, p);
-		mpz_powm(bar, gg, r, p);
-		mpz_mul(foo, foo, bar);
-		mpz_mod(foo, foo, p);
-		if (mpz_cmp(foo, a))
-			throw false;
-		mpz_powm(foo, y, c, p);
-		mpz_powm(bar, hh, r, p);
-		mpz_mul(foo, foo, bar);
-		mpz_mod(foo, foo, p);
-		if (mpz_cmp(foo, b))
+		mpz_powm(a, gg, r, p);
+		mpz_powm(b, x, c, p);
+		mpz_mul(a, a, b);
+		mpz_mod(a, a, p);
+		mpz_powm(b, hh, r, p);
+		mpz_powm(r, y, c, p);
+		mpz_mul(b, b, r);
+		mpz_mod(b, b, p);
+		mpz_shash(r, a, b, x, y, gg, hh);
+		if (mpz_cmp(r, c))
 			throw false;
 		
 		// finish
@@ -319,7 +317,6 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 	}
 	catch (bool return_value)
 	{
-		mpz_clear(foo), mpz_clear(bar);
 		mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(r);
 		return return_value;
 	}

@@ -5,7 +5,7 @@
      Cryptography and Coding 2003, LNCS 2898, pp. 370--383, 2003
 
      [CaS97] Jan Camenisch, Markus Stadler: 'Proof Systems for General
-             Statements about Discrete Logarithms', technical report, 1997
+             Statements about Discrete Logarithms', Technical Report, 1997
 
      [KK04] Takeshi Koshiba, Kaoru Kurosawa: 'Short Exponent Diffie-Hellman
             Problems', In Public Key Cryptography - PKC 2004: Proceedings
@@ -14,7 +14,7 @@
 
    This file is part of libTMCG.
 
- Copyright (C) 2004 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004, 2005 Heiko Stamer, <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
