@@ -19,7 +19,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-TESTS = mpz
+TESTS = t-mpz
 
 INCLUDES = -I$(top_srcdir)/src
 LDADD = @LIBGCRYPT_LIBS@ ../src/libTMCG.la
@@ -31,4 +31,4 @@ SchwarzerPeterAlice_SOURCES = SchwarzerPeterAlice.cc
 
 SchwarzerPeterBob_SOURCES = SchwarzerPeterBob.cc
 
-mpz_SOURCES = mpz.cc
+t_mpz_SOURCES = t-mpz.cc
