@@ -24,7 +24,7 @@
 	#define INCLUDED_libTMCG_HH
 
 	#ifndef TMCG_LIBGCRYPT_VERSION
-		/* Define appropriate version number of the necessary libgcrypt */
+		/* Define appropriate version number of the necessary gcrypt library */
 		#define TMCG_LIBGCRYPT_VERSION "1.2.0"
 	#endif
 
@@ -45,6 +45,13 @@
 		 * Underlying assumptions: DDH, CDH, DLOG
 		 */
 		#define TMCG_DDH_P_SIZE 1024L
+	#endif
+	
+	#ifndef TMCG_DLSE_SIZE
+		/* Define security parameter of the used exponents
+		 * Underlying assumptions: DLSE (related to DDH)
+		 */
+		#define TMCG_DLSE_SIZE 160L
 	#endif
 	
 	#ifndef TMCG_KEY_SIZE

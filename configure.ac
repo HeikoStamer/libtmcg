@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.3 $)
+AC_REVISION($Revision: 1.4 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -55,13 +55,15 @@ LIBTMCG_CONFIG_CFLAGS=""
 # Check commandline switches.
 
 AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.2.0",
-	[Define appropriate version number of the necessary libgcrypt])
+	[Define appropriate version number of the necessary gcrypt library])
 AC_DEFINE(TMCG_MPZ_IO_BASE, 36,
 	[Define input/ouput base encoding of the iostream operators])
 AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_RMD160,
 	[Define message digest algorithm for signatures and FS-heuristic; Underlying assumptions: Random Oracle Model])
 AC_DEFINE(TMCG_DDH_P_SIZE, 1024L,
 	[Define security parameter of the DDH-hard group G; Underlying assumptions: DDH, CDH, DLOG])
+AC_DEFINE(TMCG_DLSE_SIZE, 160L,
+	[Define security parameter of the used exponents; Underlying assumptions: DLSE (related to DDH)])
 AC_DEFINE(TMCG_KEY_SIZE, 1024L,
 	[Define security parameter of the TMCG public key; Underlying assumptions: QRA, FAKTOR])
 AC_DEFINE(TMCG_KEYID_SIZE, 5,

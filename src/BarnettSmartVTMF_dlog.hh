@@ -7,6 +7,11 @@
      [CaS97] Jan Camenisch, Markus Stadler: 'Proof Systems for General
              Statements about Discrete Logarithms', technical report, 1997
 
+     [KK04] Takeshi Koshiba, Kaoru Kurosawa: 'Short Exponent Diffie-Hellman
+            Problems', In Public Key Cryptography - PKC 2004: Proceedings
+            7th International Workshop on Theory and Practice in Public Key
+            Cryptography, LNCS 2947, pp. 173--186, 2004
+
    This file is part of libTMCG.
 
  Copyright (C) 2004 Heiko Stamer, <stamer@gaos.org>
@@ -61,11 +66,14 @@ class BarnettSmartVTMF_dlog
 		mpz_t								x_i, h_i, h, d;
 		
 		BarnettSmartVTMF_dlog
-			(unsigned long int groupsize = TMCG_DDH_P_SIZE);
+			(unsigned long int groupsize = TMCG_DDH_P_SIZE,
+			unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		BarnettSmartVTMF_dlog
-			(std::istream &in);
+			(std::istream &in,
+			unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
-			(unsigned long int groupsize = TMCG_DDH_P_SIZE);
+			(unsigned long int groupsize = TMCG_DDH_P_SIZE,
+			unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		void PublishGroup
 			(std::ostream &out);
 		void RandomElement

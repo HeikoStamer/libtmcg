@@ -7,6 +7,11 @@
      [CaS97] Jan Camenisch, Markus Stadler: 'Proof Systems for General
              Statements about Discrete Logarithms', Technical Report, 1997
 
+     [KK04] Takeshi Koshiba, Kaoru Kurosawa: 'Short Exponent Diffie-Hellman
+            Problems', In Public Key Cryptography - PKC 2004: Proceedings
+            7th International Workshop on Theory and Practice in Public Key
+            Cryptography, LNCS 2947, pp. 173--186, 2004
+
    This file is part of libTMCG.
 
  Copyright (C) 2004 Heiko Stamer, <stamer@gaos.org>
@@ -29,8 +34,10 @@
 #include "BarnettSmartVTMF_dlog.hh"
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
-	(unsigned long int groupsize)
+	(unsigned long int groupsize, unsigned long int exponentsize)
 {
+	assert(groupsize >= exponentsize);
+	
 	// initalize libgcrypt
 	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
 	{
@@ -51,15 +58,23 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	// Create a finite abelian group G where DDH is hard:
 	// We use the subgroup of quadratic residues modulo p,
 	// such that p = 2q + 1 and p, q are both prime.
+	// Two is a generator of QR_p since p \equiv 7 \pmod{8}.
 	mpz_init(p), mpz_init(q), mpz_init_set_ui(g, 2L);
 	mpz_sprime2g(p, q, groupsize - 1L);
+	
+	// Under the additional DLSE assumption we can reduce
+	// the size of exponents in ElGamal operations. [KK04]
+	// Later we will shift the exponents to obtain "small
+	// exponents". Thus we first shift the generator of G.
+// FIXME
+//mpz_pow_ui(g, g, (groupsize - exponentsize) + 1L);
 	
 	// initalize the key
 	mpz_init(x_i), mpz_init(h_i), mpz_init(h), mpz_init(d);
 }
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
-	(std::istream &in)
+	(std::istream &in, unsigned long int exponentsize)
 {
 	// initalize libgcrypt
 	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
@@ -78,7 +93,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 		exit(-1);
 	}
 	
-	// initalize the finite abelian group G and set the generator to 2
+	// initalize the finite abelian group G and set the generator
 	mpz_init(q);
 	in >> q;
 	mpz_init(p), mpz_init_set_ui(g, 2L);
@@ -89,7 +104,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 }
 
 bool BarnettSmartVTMF_dlog::CheckGroup
-	(unsigned long int groupsize)
+	(unsigned long int groupsize, unsigned long int exponentsize)
 {
 	mpz_t foo;
 	
