@@ -114,12 +114,15 @@ int main
 	}
 	
 	// mpz_sprime, mpz_sprime2g
-	mpz_sprime(foo, bar, 1024);
-	assert(mpz_probab_prime_p(foo, 25) && mpz_probab_prime_p(bar, 25));
-	
-	mpz_sprime2g(foo, bar, 1024);
-	assert(mpz_probab_prime_p(foo, 25) && mpz_probab_prime_p(bar, 25) &&
-		mpz_congruent_ui_p(foo, 7L, 8L));
+	for (size_t i = 0; i < 5; i++)
+	{
+		mpz_sprime(foo, bar, 1024);
+		assert(mpz_probab_prime_p(foo, 25) && mpz_probab_prime_p(bar, 25));
+		
+		mpz_sprime2g(foo, bar, 1024);
+		assert(mpz_probab_prime_p(foo, 25) && mpz_probab_prime_p(bar, 25) &&
+			mpz_congruent_ui_p(foo, 7L, 8L));
+	}
 	
 	// mpz_sspowm, mpz_spowm_init, mpz_spowm, mpz_spowm_clear
 	for (size_t i = 0; i < 5; i++)
