@@ -1,4 +1,4 @@
-Copyright (C)  2005  Heiko Stamer, <stamer@gaos.org>
+Copyright (C)  2005  Heiko Stamer <stamer@gaos.org>
   Permission is granted to copy, distribute and/or modify this document
   under the terms of the GNU Free Documentation License, Version 1.2
   or any later version published by the Free Software Foundation;
@@ -9,22 +9,24 @@ Copyright (C)  2005  Heiko Stamer, <stamer@gaos.org>
 Introduction
 ------------
 
-  LibTMCG is a general purpose C++ library for building secure card games
-  without a trusted third party. The current work is mainly based on two
-  academic research papers:
+  LibTMCG is a general purpose library for creating secure card games
+  without a TTP (trusted third party). The used protocols minimize the
+  effect of coalitions and achieve the confidentiality of the players'
+  strategy, i.e. hidden cards does not have to be opened at the end of
+  each game. The implementation is based on two academic research papers:
 
-    Christian Schindelhauer: A Toolbox for Mental Card Games,
+    Christian Schindelhauer: A Toolbox for Mental Card Games.
     Technical Report A-98-14, University of Lübeck, 1998.
     http://citeseer.ist.psu.edu/schindelhauer98toolbox.html
 
-    Adam Barnett, Nigel P. Smart: Mental Poker Revisited,
+    Adam Barnett, Nigel P. Smart: Mental Poker Revisited.
     Cryptography and Coding 2003, Lecture Notes in Computer
     Science 2898, pp. 370--383, 2003.
 
-  The included protocols are considered in the 'honest-but-curious' (or
-  semi-honest) adversary model, thus we do not care about robustness
-  or availability. The fairness is guaranteed by zero-knowledge proofs,
-  in which the success of cheating players can be bound by a security
+  The card and stack operations are considered in the "honest-but-curious"
+  (i.e. semi-honest) adversary model, thus we do not care about robustness
+  or availability concerns. The fairness is guaranteed by zero-knowledge
+  proofs in which the success of cheating players can be bound by a security
   parameter t, such that this probability is less or equal than 2^{-t}.
 
   The library provides two encoding schemes for cards: Roughly speaking,
@@ -35,23 +37,27 @@ Introduction
   linearly in the number of players and logarithmically in the number
   of different cards. Recently a better solution has been implemented,
   which works in a cyclic group of prime order and requires the
-  Decisional Diffie-Hellman Assumption (DDH) to hold.
+  Decisional Diffie-Hellman Assumption (DDH) to hold. More precisely,
+  the correctness of the endocing is shown by non-interactive honest-
+  verifier zero-knowledge proofs of knowledge.
 
 Requirements
 ------------
 
   You need the following libraries and appropriate header files to
-  compile (gcc version 3.4.x is recommended) libTMCG successfully:
+  compile (GNU gcc version 3.4.x is recommended) libTMCG successfully:
 
   * GNU MP Library (libgmp), version >= 4.1, http://www.swox.com/gmp/
-    (compilied WITHOUT C++ support: ./configure --enable-cxx=no)
+    (built WITHOUT C++ support: ./configure --enable-cxx=no)
   * GNU Crypto Library (libgcrypt), version >= 1.2.0, ftp://ftp.gnupg.org/
 
-  LibTMCG was tested (+ successful, - with errors) on this platforms:
+  The library was tested (+ successful, - erroneous) on the following
+  platforms:
 
   + GNU/Linux (Debian 3.0)      i686      gcc 2.95.4
-  + GNU/Linux (Debian unstable) i686      gcc 3.4.x
+  + GNU/Linux (Debian unstable) i686      gcc 3.3.5
   + SunOS 5.8, Solaris 2.7      sparc     gcc 3.3.2
+  - GNU/Linux (Sharp Zaurus)    arm       zgcc 2.95.2     (--disable-shared)
 
 Build & Install
 ---------------
@@ -68,14 +74,14 @@ Bugs, Contribution, CVS
   This is a (maybe instable) BETA version. If you want to contribute,
   please send detailed bug reports to Heiko Stamer <stamer@gaos.org>.
 
-  You can get the latest sources from our CVS repository:
+  You can get the latest sources from the CVS repository:
 
   cvs -z3 -d:ext:anoncvs@savannah.nongnu.org:/cvsroot/libtmcg co libtmcg
 
 Copyright and License of this software
 --------------------------------------
 
-  (C) 2005  Heiko Stamer, <stamer@gaos.org>
+  (C) 2005  Heiko Stamer <stamer@gaos.org>
       GNU General Public License version 2
 
   Please have a look at file 'COPYING' and http://www.fsf.org/.
@@ -83,8 +89,8 @@ Copyright and License of this software
 GNU Free Documentation License
 ------------------------------
 
-		GNU Free Documentation License
-		  Version 1.2, November 2002
+    GNU Free Documentation License
+      Version 1.2, November 2002
 
 
  Copyright (C) 2000,2001,2002  Free Software Foundation, Inc.
