@@ -65,6 +65,11 @@
 		/* Define size of the unique TMCG key ID (in characters) */
 		#define TMCG_KEYID_SIZE 5
 	#endif
+	
+	#ifndef TMCG_STACK_EQUALITY_HASH
+		/* Define usage of short stack commitments (hash function) */
+		#define TMCG_STACK_EQUALITY_HASH 1
+	#endif
 
 	#include <libTMCG.def>
 

@@ -37,6 +37,7 @@ SchindelhauerTMCG::SchindelhauerTMCG
 	for (unsigned long int i = 0; i < TMCG_TypeBits; i++)
 		TMCG_MaxCardType *= 2;
 	
+	// initalize libgcrypt
 	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
 	{
 		std::cerr << "libgcrypt: need library version >= " <<
@@ -55,53 +56,51 @@ SchindelhauerTMCG::SchindelhauerTMCG
 }
 
 void SchindelhauerTMCG::TMCG_ProofQuadraticResidue
-	(const TMCG_SecretKey &key, mpz_srcptr t, std::istream &in, std::ostream &out)
+	(const TMCG_SecretKey &key, mpz_srcptr t,
+		std::istream &in, std::ostream &out)
 {
 	std::vector<mpz_ptr> rr, ss;
 	mpz_t foo, bar, lej, t_sqrt;
 	unsigned long int security_desire = 0;
 	in >> security_desire, in.ignore(1, '\n');
 	
-	mpz_init (foo), mpz_init (bar), mpz_init (lej);
-	mpz_init (t_sqrt);
+	mpz_init(foo), mpz_init(bar), mpz_init(lej), mpz_init(t_sqrt);
 	
-	// compute mpz_sqrtmn of t
-	assert (mpz_qrmn_p (t, key.p, key.q, key.m));
-	mpz_sqrtmn_fast (t_sqrt, t, key.p, key.q, key.m,
+	// compute mpz_sqrtmn (modular square root) of t
+	assert(mpz_qrmn_p(t, key.p, key.q, key.m));
+	mpz_sqrtmn_fast(t_sqrt, t, key.p, key.q, key.m,
 		key.gcdext_up, key.gcdext_vq, key.pa1d4, key.qa1d4);
 	
 	// phase (P2)
 	for (unsigned long int i = 0; i < security_desire; i++)
 	{
 		mpz_ptr r = new mpz_t(), s = new mpz_t();
-		mpz_init (r),	mpz_init (s);
+		mpz_init(r), mpz_init(s);
 		
-		// choose random number r \in Z*m
+		// randomly choose a number $r \in Z^*_m$
 		do
 		{
 			mpz_srandomm(r, key.m);
 			mpz_gcd(lej, r, key.m);
 		}
-		while (mpz_cmp_ui (lej, 1L) || !mpz_cmp_ui (r, 1L));
+		while (mpz_cmp_ui(lej, 1L) || !mpz_cmp_ui(r, 1L));
 		
-		// compute s = t_sqrt * r_i^{-1} (mod m)
-		ret = mpz_invert (s, r, key.m);
+		// compute $s := t_sqrt \cdot r_i^{-1} \bmod m$
+		ret = mpz_invert(s, r, key.m);
 		assert(ret);
-		mpz_mul (s, s, t_sqrt);
-		mpz_mod (s, s, key.m);
-		assert(mpz_cmp_ui (s, 1L));
+		mpz_mul(s, s, t_sqrt);
+		mpz_mod(s, s, key.m);
+		assert(mpz_cmp_ui(s, 1L));
 		
-		// compute R_i = r_i^2 (mod m), S_i = s_i^2 (mod m)
-		mpz_mul (foo, r, r);
-		mpz_mod (foo, foo, key.m);
-		mpz_mul (bar, s, s);
-		mpz_mod (bar, bar, key.m);
+		// compute $R_i = r_i^2 \bmod m,\; S_i = s_i^2 \bmod m$
+		mpz_powm_ui(foo, r, 2L, key.m);
+		mpz_powm_ui(bar, s, 2L, key.m);
 		
 		// check congruence R_i * S_i \cong t (mod m)
 		#ifndef NDEBUG
-			mpz_mul (lej, foo, bar);
-			mpz_mod (lej, lej, key.m);
-			assert(mpz_congruent_p (t, lej, key.m));
+			mpz_mul(lej, foo, bar);
+			mpz_mod(lej, lej, key.m);
+			assert(mpz_congruent_p(t, lej, key.m));
 		#endif
 		
 		// store r_i, s_i and send R_i, S_i to prover
@@ -116,14 +115,13 @@ void SchindelhauerTMCG::TMCG_ProofQuadraticResidue
 		in >> foo;
 		
 		// send proof to verifier
-		if (mpz_get_ui (foo) & 1L)
+		if (mpz_get_ui(foo) & 1L)
 			out << rr[i] << std::endl;
 		else
 			out << ss[i] << std::endl;
 	}
 	
-	mpz_clear (foo), mpz_clear (bar), mpz_clear (lej);
-	mpz_clear (t_sqrt);
+	mpz_clear(foo), mpz_clear(bar), mpz_clear(lej), mpz_clear(t_sqrt);
 	for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ri++)
 		mpz_clear(*ri), delete *ri;
 	for (std::vector<mpz_ptr>::iterator si = ss.begin(); si != ss.end(); si++)
@@ -137,27 +135,27 @@ bool SchindelhauerTMCG::TMCG_VerifyQuadraticResidue
 	mpz_t foo, bar, lej;
 	out << TMCG_SecurityLevel << std::endl;
 	
-	// check for positive jacobi symbol	(t \in Z?)
-	if (mpz_jacobi (t, key.m) != 1)
+	// check whether $t \in Z^\circ_m$
+	if (mpz_jacobi(t, key.m) != 1)
 		return false;
 	
-	mpz_init (foo),	mpz_init (bar),	mpz_init (lej);
+	mpz_init(foo), mpz_init(bar), mpz_init(lej);
 	try
 	{
 		// phase (V3)
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
 		{
 			mpz_ptr R = new mpz_t(), S = new mpz_t();
-			mpz_init (R), mpz_init (S);
+			mpz_init(R), mpz_init(S);
 			
 			// receive R_i, S_i from prover and store values
 			in >> R, in >> S;
 			RR.push_back(R), SS.push_back(S);
 			
 			// check congruence R_i * S_i \cong t (mod m)
-			mpz_mul (foo, S, R);
-			mpz_mod (foo, foo, key.m);
-			if (!mpz_congruent_p (t, foo, key.m))
+			mpz_mul(foo, S, R);
+			mpz_mod(foo, foo, key.m);
+			if (!mpz_congruent_p(t, foo, key.m))
 				throw false;
 		}
 		
@@ -165,19 +163,19 @@ bool SchindelhauerTMCG::TMCG_VerifyQuadraticResidue
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
 		{
 			// send R/S-question to prover
-			mpz_srandomb (foo, 1L);
+			mpz_srandomb(foo, 1L);
 			out << foo << std::endl;
 			
 			// receive proof
 			in >> bar;
 			
 			// verify proof R_i = r_i^2 (mod m)  or  S_i = s_i^2 (mod m)
-			mpz_mul (lej, bar, bar);
-			mpz_mod (lej, lej, key.m);
-			if (((mpz_get_ui (foo) & 1L) && 
-				(mpz_cmp (lej, RR[i]) || !mpz_cmp_ui (bar, 1L))) ||
-				(!(mpz_get_ui (foo) & 1L) && 
-				(mpz_cmp (lej, SS[i]) || !mpz_cmp_ui (bar, 1L))))
+			mpz_powm_ui(lej, bar, 2L, key.m);
+			
+			if (((mpz_get_ui(foo) & 1L) && 
+				(mpz_cmp(lej, RR[i]) || !mpz_cmp_ui(bar, 1L))) ||
+				(!(mpz_get_ui(foo) & 1L) && 
+				(mpz_cmp(lej, SS[i]) || !mpz_cmp_ui(bar, 1L))))
 					throw false;
 		}
 		
@@ -186,9 +184,7 @@ bool SchindelhauerTMCG::TMCG_VerifyQuadraticResidue
 	}
 	catch (bool return_value)
 	{
-		mpz_clear (foo);
-		mpz_clear (bar);
-		mpz_clear (lej);
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
 		for (std::vector<mpz_ptr>::iterator ri = RR.begin(); ri != RR.end(); ri++)
 			mpz_clear(*ri), delete *ri;
 		for (std::vector<mpz_ptr>::iterator si = SS.begin(); si != SS.end(); si++)
@@ -201,18 +197,18 @@ void SchindelhauerTMCG::TMCG_ProofNonQuadraticResidue
 	(const TMCG_SecretKey &key, mpz_srcptr t, std::istream &in, std::ostream &out)
 {
 	mpz_t bar;
-	mpz_init (bar);
+	mpz_init(bar);
 	
 	// compute bar = t * y^{-1} (mod m) and send it to verifier
-	mpz_set (bar, t);
-	mpz_mul (bar, bar, key.y1);
-	mpz_mod (bar, bar, key.m);
+	mpz_set(bar, t);
+	mpz_mul(bar, bar, key.y1);
+	mpz_mod(bar, bar, key.m);
 	out << bar << std::endl;
 	
 	// QR-proof
 	TMCG_ProofQuadraticResidue(key, bar, in, out);
 	
-	mpz_clear (bar);
+	mpz_clear(bar);
 	return;
 }
 
@@ -221,17 +217,16 @@ bool SchindelhauerTMCG::TMCG_VerifyNonQuadraticResidue
 {
 	mpz_t foo, bar;
 	
-	mpz_init (foo);
-	mpz_init (bar);
+	mpz_init(foo), mpz_init(bar);
 	try
 	{
 		// receive bar from prover
 		in >> bar;
 		
 		// check congruence bar * y \cong t (mod m)
-		mpz_mul (foo, bar, key.y);
-		mpz_mod (foo, foo, key.m); 
-		if (!mpz_congruent_p (t, foo, key.m))
+		mpz_mul(foo, bar, key.y);
+		mpz_mod(foo, foo, key.m); 
+		if (!mpz_congruent_p(t, foo, key.m))
 			throw false;
 		
 		// verify QR-proof
@@ -243,66 +238,79 @@ bool SchindelhauerTMCG::TMCG_VerifyNonQuadraticResidue
 	}
 	catch (bool return_value)
 	{
-		mpz_clear (foo);
-		mpz_clear (bar);
+		mpz_clear(foo), mpz_clear(bar);
 		return return_value;
 	}
 }
 
 void SchindelhauerTMCG::TMCG_MaskValue
-	(const TMCG_PublicKey &key, mpz_srcptr z, mpz_ptr zz, 
-	mpz_srcptr r, mpz_srcptr b)
+	(const TMCG_PublicKey &key, mpz_srcptr z, mpz_ptr zz,
+		mpz_srcptr r, mpz_srcptr b)
 {
+	mpz_t foo;
+	
 	// compute zz = z * r^2 * y^b (mod m)
-	mpz_mul (zz, r, r);
-	mpz_mod (zz, zz, key.m);
-	mpz_mul (zz, zz, z);
-	mpz_mod (zz, zz, key.m);
-	if (mpz_get_ui (b) & 1L)
+	mpz_powm_ui(zz, r, 2L, key.m);
+	mpz_mul(zz, zz, z);
+	mpz_mod(zz, zz, key.m);
+	mpz_init_set(foo, zz);
+	if (mpz_get_ui(b) & 1L)
 	{
-		mpz_mul (zz, zz, key.y);
-		mpz_mod (zz, zz, key.m);
+		mpz_mul(zz, zz, key.y);
+		mpz_mod(zz, zz, key.m);
 	}
-	return;
+	else
+	{
+		// compute dummy value to prevent timing attacks
+		mpz_mul(foo, foo, key.y);
+		mpz_mod(foo, foo, key.m);
+	}
+	mpz_clear(foo);
 }
 
 void SchindelhauerTMCG::TMCG_ProofMaskValue
-	(const TMCG_PublicKey &key, mpz_srcptr z, mpz_srcptr zz, 
-	mpz_srcptr r, mpz_srcptr b, std::istream &in, std::ostream &out)
+	(const TMCG_PublicKey &key, mpz_srcptr z, mpz_srcptr zz,
+		mpz_srcptr r, mpz_srcptr b, std::istream &in, std::ostream &out)
 {
 	std::vector<mpz_ptr> rr, bb;
 	mpz_t foo, bar;
 	unsigned long int security_desire = 0;
 	in >> security_desire, in.ignore(1, '\n');
 	
-	mpz_init (foo), mpz_init (bar);
+	mpz_init(foo), mpz_init(bar);
 	try
 	{
 		// phase (P2)
 		for (unsigned long int i = 0; i < security_desire; i++)
 		{
 			mpz_ptr r2 = new mpz_t(), b2 = new mpz_t();
-			mpz_init (r2), mpz_init (b2);
+			mpz_init(r2), mpz_init(b2);
 			
 			// choose random number r_i \in Z*m and b_i \in {0,1}
+			mpz_srandomb(b2, 1L);
 			do
 			{
-				mpz_srandomm (r2, key.m);
-				mpz_srandomb (b2, 1L);
-				mpz_gcd (bar, r2, key.m);
+				mpz_srandomm(r2, key.m);
+				mpz_gcd(bar, r2, key.m);
 			}
-			while (mpz_cmp_ui (bar, 1L) || !mpz_cmp_ui(r2, 1L));
-			rr.push_back(r2),	bb.push_back(b2);
+			while (mpz_cmp_ui(bar, 1L) || !mpz_cmp_ui(r2, 1L));
+			rr.push_back(r2), bb.push_back(b2);
 			
 			// compute foo = zz * r2^2 * y^b2 (mod m)
-			mpz_mul (foo, r2, r2);
-			mpz_mod (foo, foo, key.m);
-			mpz_mul (foo, foo, zz);
-			mpz_mod (foo, foo, key.m);
-			if (mpz_get_ui (b2) & 1L)
+			mpz_powm_ui(foo, r2, 2L, key.m);
+			mpz_mul(foo, foo, zz);
+			mpz_mod(foo, foo, key.m);
+			mpz_set(bar, foo);
+			if (mpz_get_ui(b2) & 1L)
 			{
-				mpz_mul (foo, foo, key.y);
-				mpz_mod (foo, foo, key.m);
+				mpz_mul(foo, foo, key.y);
+				mpz_mod(foo, foo, key.m);
+			}
+			else
+			{
+				// compute dummy value to prevent timing attacks
+				mpz_mul(bar, bar, key.y);
+				mpz_mod(bar, bar, key.m);
 			}
 			
 			// send foo to verifier
@@ -316,22 +324,28 @@ void SchindelhauerTMCG::TMCG_ProofMaskValue
 			in >> foo;
 			
 			// send proof to verifier
-			if (mpz_get_ui (foo) & 1L)
+			if (mpz_get_ui(foo) & 1L)
 			{
 				out << rr[i] << std::endl, out << bb[i] << std::endl;
 			}
 			else
 			{
-				mpz_mul (foo, r, rr[i]);
-				mpz_mod (foo, foo, key.m);
-				if ((mpz_get_ui (b) & 1L) && (mpz_get_ui (bb[i]) & 1L))
+				mpz_mul(foo, r, rr[i]);
+				mpz_mod(foo, foo, key.m);
+				if ((mpz_get_ui(b) & 1L) && (mpz_get_ui(bb[i]) & 1L))
 				{
-					mpz_mul (foo, foo, key.y);
-					mpz_mod (foo, foo, key.m);
+					mpz_mul(foo, foo, key.y);
+					mpz_mod(foo, foo, key.m);
 				}
-				mpz_add (bar, b, bb[i]);
-				if (!(mpz_get_ui (bar) & 1L))
-					mpz_set_ui (bar, 0L);
+				else
+				{
+					// compute dummy value to prevent timing attacks
+					mpz_mul(bar, bar, key.y);
+					mpz_mod(bar, bar, key.m);
+				}
+				mpz_add(bar, b, bb[i]);
+				if (!(mpz_get_ui(bar) & 1L))
+					mpz_set_ui(bar, 0L);
 				out << foo << std::endl, out << bar << std::endl;
 			}
 		}
@@ -341,7 +355,7 @@ void SchindelhauerTMCG::TMCG_ProofMaskValue
 	}
 	catch (bool excpetion)
 	{
-		mpz_clear (foo), mpz_clear (bar);
+		mpz_clear(foo), mpz_clear(bar);
 		for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ri++)
 			mpz_clear(*ri), delete *ri;
 		for (std::vector<mpz_ptr>::iterator bi = bb.begin(); bi != bb.end(); bi++)
@@ -352,7 +366,7 @@ void SchindelhauerTMCG::TMCG_ProofMaskValue
 
 bool SchindelhauerTMCG::TMCG_VerifyMaskValue
 	(const TMCG_PublicKey &key, mpz_srcptr z, mpz_srcptr zz,
-	std::istream &in, std::ostream &out)
+		std::istream &in, std::ostream &out)
 {
 	std::vector<mpz_ptr> T;
 	mpz_t foo, bar, lej;
@@ -360,14 +374,14 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskValue
 	// send security parameter
 	out << TMCG_SecurityLevel << std::endl;
 	
-	mpz_init (foo), mpz_init (bar), mpz_init (lej);
+	mpz_init(foo), mpz_init(bar), mpz_init(lej);
 	try
 	{
 		// phase (V3)
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
 		{
 			mpz_ptr t = new mpz_t();
-			mpz_init (t);
+			mpz_init(t);
 			
 			// receive t_i from prover and store value
 			in >> t;
@@ -385,11 +399,11 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskValue
 			in >> bar, in >> lej;
 			
 			// verify proof, store result of TMCG_MaskValue() in foo
-			if (mpz_get_ui (foo) & 1L)
+			if (mpz_get_ui(foo) & 1L)
 				TMCG_MaskValue(key, zz, foo, bar, lej);
 			else
 				TMCG_MaskValue(key, z, foo, bar, lej);
-			if (mpz_cmp (foo, T[i]) || !mpz_cmp_ui (bar, 1L))
+			if (mpz_cmp(foo, T[i]) || !mpz_cmp_ui(bar, 1L))
 				throw false;
 		}
 		
@@ -398,7 +412,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskValue
 	}
 	catch (bool return_value)
 	{
-		mpz_clear (foo), mpz_clear (bar), mpz_clear (lej);
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
 		for (std::vector<mpz_ptr>::iterator ti = T.begin(); ti != T.end(); ti++)
 			mpz_clear(*ti), delete *ti;
 		return return_value;
@@ -407,95 +421,110 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskValue
 
 void SchindelhauerTMCG::TMCG_ProofMaskOne
 	(const TMCG_PublicKey &key, mpz_srcptr r, mpz_srcptr b,
-	std::istream &in, std::ostream &out)
+		std::istream &in, std::ostream &out)
 {
 	std::vector<mpz_ptr> rr, ss, bb, cc;
-	mpz_t y1m, foo, bar;
+	mpz_t y1m, foo, bar, tim;
 	unsigned long int security_desire = 0;
 	in >> security_desire, in.ignore(1, '\n');
 	
 	// compute y1m = y^{-1} mod m
-	mpz_init (y1m);
-	ret = mpz_invert (y1m, key.y, key.m);
-	assert (ret);
+	mpz_init(y1m);
+	ret = mpz_invert(y1m, key.y, key.m);
+	assert(ret);
 	
-	mpz_init (foo), mpz_init (bar);
+	mpz_init(foo), mpz_init(bar), mpz_init(tim);
 	
 	// phase (P2)
 	for (unsigned long int i = 0; i < security_desire; i++)
 	{
-		mpz_ptr r3 = new mpz_t(), s = new mpz_t(), 
+		mpz_ptr r3 = new mpz_t(), s = new mpz_t(),
 			b3 = new mpz_t(), c = new mpz_t();
-		mpz_init (r3),	mpz_init (s),	mpz_init (b3),	mpz_init (c);
+		mpz_init(r3), mpz_init(s), mpz_init(b3), mpz_init(c);
 		
 		// choose random number r_i \in Z*m and b \in {0,1}
+		mpz_srandomb(b3, 1L);
 		do
 		{
 			mpz_srandomm(r3, key.m);
-			mpz_srandomb(b3, 1L);
-			mpz_gcd (foo, r3, key.m);
+			mpz_gcd(foo, r3, key.m);
 		}
-		while (mpz_cmp_ui (foo, 1L) || !mpz_cmp_ui (r3, 1L));
+		while (mpz_cmp_ui(foo, 1L) || !mpz_cmp_ui(r3, 1L));
 		rr.push_back(r3), bb.push_back(b3);
 		
 		// compute c_i
-		if (mpz_cmp (b, b3) == 0)
-			mpz_set_ui (c, 0L);
+		if (mpz_cmp(b, b3) == 0)
+			mpz_set_ui(c, 0L);
 		else
-			mpz_set_ui (c, 1L);
+			mpz_set_ui(c, 1L);
 		
 		// compute s_i
-		if ((mpz_cmp_ui (b, 0L) == 0) && (mpz_cmp_ui (b3, 1L) == 0))
+		ret = mpz_invert(s, r3, key.m);
+		assert(ret);
+		mpz_mul(s, s, r);
+		mpz_mod(s, s, key.m);
+		if ((mpz_cmp_ui(b, 0L) == 0) && (mpz_cmp_ui(b3, 1L) == 0))
 		{
-			ret = mpz_invert (s, r3, key.m);
-			assert (ret);
-			mpz_mul (s, s, y1m);
-			mpz_mod (s, s, key.m);
-			mpz_mul (s, s, r);
-			mpz_mod (s, s, key.m);
+			mpz_mul(s, s, y1m);
+			mpz_mod(s, s, key.m);
 		}
 		else
 		{
-			ret = mpz_invert (s, r3, key.m);
-			assert (ret);
-			mpz_mul (s, s, r);
-			mpz_mod (s, s, key.m);
+			// compute dummy value to prevent timing attacks
+			mpz_mul(tim, s, y1m);
+			mpz_mod(tim, tim, key.m);
 		}
 		
 		// store s_i, c_i
 		ss.push_back(s), cc.push_back(c);
 		
 		// compute R_i = {r_i}^2 * y^b (mod m), S_i = {s_i}^2 * y^{c_i} (mod m)
-		mpz_mul (foo, r3, r3);
-		mpz_mod (foo, foo, key.m);
-		if (mpz_get_ui (b3) & 1L)
+		mpz_powm_ui(foo, r3, 2L, key.m);
+		if (mpz_get_ui(b3) & 1L)
 		{
-			mpz_mul (foo, foo, key.y);
-			mpz_mod (foo, foo, key.m);
+			mpz_mul(foo, foo, key.y);
+			mpz_mod(foo, foo, key.m);
 		}
-		mpz_mul (bar, s, s);
-		mpz_mod (bar, bar, key.m);
-		if (mpz_get_ui (c) & 1L)
+		else
 		{
-			mpz_mul (bar, bar, key.y);
-			mpz_mod (bar, bar, key.m);
+			// compute dummy value to prevent timing attacks
+			mpz_mul(tim, foo, key.y);
+			mpz_mod(tim, tim, key.m);
+		}
+		mpz_powm_ui(bar, s, 2L, key.m);
+		if (mpz_get_ui(c) & 1L)
+		{
+			mpz_mul(bar, bar, key.y);
+			mpz_mod(bar, bar, key.m);
+		}
+		else
+		{
+			// compute dummy value to prevent timing attacks
+			mpz_mul(tim, bar, key.y);
+			mpz_mod(tim, tim, key.m);
 		}
 		
 		// check congruence R_i * S_i \cong t (mod m)
 		#ifndef NDEBUG
 			mpz_t lej, t;
-			mpz_init (lej), mpz_init (t);
-			mpz_mul (t, r, r);
-			mpz_mod (t, t, key.m);
-			if (mpz_get_ui (b) & 1L)
+			mpz_init(lej), mpz_init(t);
+			mpz_mul(t, r, r);
+			mpz_mod(t, t, key.m);
+			if (mpz_get_ui(b) & 1L)
 			{
-				mpz_mul (t, t, key.y);
-				mpz_mod (t, t, key.m);
+				mpz_mul(t, t, key.y);
+				mpz_mod(t, t, key.m);
 			}
-			mpz_mul (lej, foo, bar);
-			mpz_mod (lej, lej, key.m);
-			assert (mpz_congruent_p (t, lej, key.m));
-			mpz_clear (lej), mpz_clear (t);
+			else
+			{
+				// compute dummy value to prevent timing attacks
+				mpz_mul(tim, t, key.y);
+				mpz_mod(tim, tim, key.m);
+			}
+			mpz_mul(lej, foo, bar);
+			mpz_mod(lej, lej, key.m);
+			assert (mpz_congruent_p(t, lej, key.m));
+			mpz_clear(lej), mpz_clear(t);
 		#endif
 		
 		// send R_i, S_i to verifier
@@ -509,13 +538,13 @@ void SchindelhauerTMCG::TMCG_ProofMaskOne
 		in >> foo;
 		
 		// send proof to verifier
-		if (mpz_get_ui (foo) & 1L)
+		if (mpz_get_ui(foo) & 1L)
 			out << rr[i] << std::endl, out << bb[i] << std::endl;
 		else
-			out << ss[i] << std::endl, out << cc[i] << std::endl;	
+			out << ss[i] << std::endl, out << cc[i] << std::endl;
 	}
 	
-	mpz_clear (y1m), mpz_clear (foo), mpz_clear (bar);
+	mpz_clear(y1m), mpz_clear(foo), mpz_clear(bar), mpz_clear(tim);
 	for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ri++)
 		mpz_clear(*ri), delete *ri;
 	for (std::vector<mpz_ptr>::iterator bi = bb.begin(); bi != bb.end(); bi++)
@@ -535,23 +564,23 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskOne
 	// send security parameter
 	out << TMCG_SecurityLevel << std::endl;
 	
-	mpz_init (foo), mpz_init (bar), mpz_init (lej);
+	mpz_init(foo), mpz_init(bar), mpz_init(lej);
 	try
 	{
 		// phase (V3)
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
 		{
 			mpz_ptr R = new mpz_t(), S = new mpz_t();
-			mpz_init (R), mpz_init (S);
+			mpz_init(R), mpz_init(S);
 			
 			// receive R_i, S_i from prover and store values
 			in >> R, in >> S;
 			RR.push_back(R), SS.push_back(S);
 			
 			// check congruence R_i * S_i \cong t (mod m)
-			mpz_mul (foo, R, S);
-			mpz_mod (foo, foo, key.m);
-			if (!mpz_congruent_p (t, foo, key.m))
+			mpz_mul(foo, R, S);
+			mpz_mod(foo, foo, key.m);
+			if (!mpz_congruent_p(t, foo, key.m))
 				throw false;
 		}
 		
@@ -566,17 +595,16 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskOne
 			in >> bar, in >> lej;
 			
 			// verify proof
-			mpz_mul (lej, bar, bar);
-			mpz_mod (lej, lej, key.m);
-			if (mpz_get_ui (lej) & 1L)
+			mpz_powm_ui(lej, bar, 2L, key.m);
+			if (mpz_get_ui(lej) & 1L)
 			{
-				mpz_mul (lej, lej, key.y);
-				mpz_mod (lej, lej, key.m);
+				mpz_mul(lej, lej, key.y);
+				mpz_mod(lej, lej, key.m);
 			}
-			if (((mpz_get_ui (foo) & 1L) && 
-				(mpz_cmp (lej, RR[i]) || !mpz_cmp_ui (bar, 1L))) ||
-				(!(mpz_get_ui (foo) & 1L) && 
-				(mpz_cmp (lej, SS[i]) || !mpz_cmp_ui (bar, 1L))))
+			if (((mpz_get_ui(foo) & 1L) && 
+				(mpz_cmp(lej, RR[i]) || !mpz_cmp_ui(bar, 1L))) ||
+				(!(mpz_get_ui(foo) & 1L) && 
+				(mpz_cmp(lej, SS[i]) || !mpz_cmp_ui(bar, 1L))))
 					throw false;
 		}
 		
@@ -585,7 +613,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskOne
 	}
 	catch (bool return_value)
 	{	
-		mpz_clear (foo), mpz_clear (bar), mpz_clear (lej);
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
 		for (std::vector<mpz_ptr>::iterator ri = RR.begin(); ri != RR.end(); ri++)
 			mpz_clear(*ri), delete *ri;
 		for (std::vector<mpz_ptr>::iterator si = SS.begin(); si != SS.end(); si++)
@@ -602,7 +630,7 @@ void SchindelhauerTMCG::TMCG_ProofNonQuadraticResidue_PerfectZeroKnowledge
 	unsigned long int security_desire = 0;
 	in >> security_desire, in.ignore(1, '\n');
 	
-	mpz_init (foo), mpz_init (bar);
+	mpz_init(foo), mpz_init(bar);
 	try
 	{
 		// phase (P2) and (P3)
@@ -614,10 +642,10 @@ void SchindelhauerTMCG::TMCG_ProofNonQuadraticResidue_PerfectZeroKnowledge
 			// verify proof of mask knowledge 1->foo
 			if (TMCG_VerifyMaskOne(key2, foo, in, out))
 			{
-				if (mpz_qrmn_p (foo, key.p, key.q, key.m))
-					mpz_set_ui (bar, 1L);
+				if (mpz_qrmn_p(foo, key.p, key.q, key.m))
+					mpz_set_ui(bar, 1L);
 				else
-					mpz_set_ui (bar, 0L);
+					mpz_set_ui(bar, 0L);
 				
 				// send proof
 				out << bar << std::endl;
@@ -644,28 +672,33 @@ bool SchindelhauerTMCG::TMCG_VerifyNonQuadraticResidue_PerfectZeroKnowledge
 	// send security parameter
 	out << TMCG_SecurityLevel << std::endl;
 	
-	mpz_init (foo), mpz_init (bar), mpz_init (r), mpz_init (b);
+	mpz_init(foo), mpz_init(bar), mpz_init(r), mpz_init(b);
 	try
 	{
 		// phase (V2) and (V3)
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
 		{
 			// choose random number r \in Z*m and b \in {0,1}
+			mpz_srandomb(b, 1L);
 			do
 			{
 				mpz_srandomm(r, key.m);
-				mpz_srandomb(b, 1L);
-				mpz_gcd (foo, r, key.m);
+				mpz_gcd(foo, r, key.m);
 			}
-			while (mpz_cmp_ui (foo, 1L));
+			while (mpz_cmp_ui(foo, 1L));
 			
 			// compute foo = r^2 * y^b (mod m)
-			mpz_mul (foo, r, r);
-			mpz_mod (foo, foo, key.m);
-			if (mpz_get_ui (b) & 1L)
+			mpz_powm_ui(foo, r, 2L, key.m);
+			if (mpz_get_ui(b) & 1L)
 			{
-				mpz_mul (foo, foo, key.y);
-				mpz_mod (foo, foo, key.m);
+				mpz_mul(foo, foo, key.y);
+				mpz_mod(foo, foo, key.m);
+			}
+			else
+			{
+				// compute dummy value to prevent timing attacks
+				mpz_mul(bar, foo, key.y);
+				mpz_mod(bar, bar, key.m);
 			}
 			
 			// send question to prover
@@ -678,8 +711,8 @@ bool SchindelhauerTMCG::TMCG_VerifyNonQuadraticResidue_PerfectZeroKnowledge
 			in >> bar;
 			
 			// verify proof
-			if (((mpz_get_ui (b) & 1L) && (mpz_get_ui (bar) & 1L)) ||
-				(!(mpz_get_ui (b) & 1L) && !(mpz_get_ui (bar) & 1L)))
+			if (((mpz_get_ui(b) & 1L) && (mpz_get_ui(bar) & 1L)) ||
+				(!(mpz_get_ui(b) & 1L) && !(mpz_get_ui(bar) & 1L)))
 					throw false;
 		}
 		
@@ -688,7 +721,7 @@ bool SchindelhauerTMCG::TMCG_VerifyNonQuadraticResidue_PerfectZeroKnowledge
 	}
 	catch (bool return_value)
 	{
-		mpz_clear (foo), mpz_clear (bar),	mpz_clear (r), mpz_clear (b);
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(r), mpz_clear(b);
 		return return_value;
 	}
 }
@@ -726,7 +759,7 @@ void SchindelhauerTMCG::TMCG_CreateOpenCard
 
 void SchindelhauerTMCG::TMCG_CreatePrivateCard
 	(TMCG_Card &c, TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
-	size_t index, size_t type)
+		size_t index, size_t type)
 {
 	TMCG_Card oc(TMCG_Players, TMCG_TypeBits);
 	TMCG_CreateOpenCard(oc, ring, type);
@@ -736,7 +769,7 @@ void SchindelhauerTMCG::TMCG_CreatePrivateCard
 
 void SchindelhauerTMCG::TMCG_CreatePrivateCard
 	(VTMF_Card &c, VTMF_CardSecret &cs, BarnettSmartVTMF_dlog *vtmf,
-	size_t type)
+		size_t type)
 {
 	mpz_t m;
 	
@@ -758,7 +791,7 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 	{
 		for (size_t w = 0; w < cs.r[k].size(); w++)
 		{
-			// choose random number r \in Z^*_m
+			// randomly choose a number r \in Z^*_m
 			do
 			{
 				mpz_srandomm(&cs.r[k][w], ring.key[k].m);
@@ -766,7 +799,7 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 			}
 			while (mpz_cmp_ui(foo, 1L));
 			
-			// choose random bit b \in {0, 1} or set it initially to zero
+			// randomly choose a bit b \in {0, 1} or set it initially to zero
 			if (k != index)
 				mpz_srandomb(&cs.b[k][w], 1L);
 			else
@@ -814,7 +847,7 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 
 void SchindelhauerTMCG::TMCG_MaskCard
 	(const TMCG_Card &c, TMCG_Card &cc, const TMCG_CardSecret &cs,
-	const TMCG_PublicKeyRing &ring)
+		const TMCG_PublicKeyRing &ring)
 {
 	assert((c.z.size() == cc.z.size()) && (c.z[0].size() == cc.z[0].size()));
 	assert((c.z.size() == cs.r.size()) && (c.z[0].size() == cs.r[0].size()));
@@ -827,15 +860,14 @@ void SchindelhauerTMCG::TMCG_MaskCard
 
 void SchindelhauerTMCG::TMCG_MaskCard
 	(const VTMF_Card &c, VTMF_Card &cc, const VTMF_CardSecret &cs,
-	BarnettSmartVTMF_dlog *vtmf)
+		BarnettSmartVTMF_dlog *vtmf)
 {
 	vtmf->VerifiableRemaskingProtocol_Remask(c.c_1, c.c_2, cc.c_1, cc.c_2, cs.r);
 }
 
 void SchindelhauerTMCG::TMCG_ProofMaskCard
 	(const TMCG_Card &c, const TMCG_Card &cc, const TMCG_CardSecret &cs,
-	const TMCG_PublicKeyRing &ring,
-	std::istream &in, std::ostream &out)
+		const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out)
 {
 	assert((c.z.size() == cc.z.size()) && (c.z[0].size() == cc.z[0].size()));
 	assert((c.z.size() == cs.r.size()) && (c.z[0].size() == cs.r[0].size()));
@@ -848,7 +880,7 @@ void SchindelhauerTMCG::TMCG_ProofMaskCard
 
 void SchindelhauerTMCG::TMCG_ProofMaskCard
 	(const VTMF_Card &c, const VTMF_Card &cc, const VTMF_CardSecret &cs,
-	BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out)
+		BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out)
 {
 	vtmf->VerifiableRemaskingProtocol_Prove(c.c_1, c.c_2, cc.c_1, cc.c_2,
 		cs.r, out);
@@ -856,7 +888,7 @@ void SchindelhauerTMCG::TMCG_ProofMaskCard
 
 bool SchindelhauerTMCG::TMCG_VerifyMaskCard
 	(const TMCG_Card &c, const TMCG_Card &cc, const TMCG_PublicKeyRing &ring,
-	std::istream &in, std::ostream &out)
+		std::istream &in, std::ostream &out)
 {
 	assert((c.z.size() == cc.z.size()) && (c.z[0].size() == cc.z[0].size()));
 	
@@ -869,7 +901,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskCard
 
 bool SchindelhauerTMCG::TMCG_VerifyMaskCard
 	(const VTMF_Card &c, const VTMF_Card &cc, BarnettSmartVTMF_dlog *vtmf,
-	std::istream &in, std::ostream &out)
+		std::istream &in, std::ostream &out)
 {
 	if (!vtmf->VerifiableRemaskingProtocol_Verify(c.c_1, c.c_2, cc.c_1,
 		cc.c_2, in))
@@ -879,17 +911,16 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskCard
 
 void SchindelhauerTMCG::TMCG_ProofPrivateCard
 	(const TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
-	std::istream &in, std::ostream &out)
+		std::istream &in, std::ostream &out)
 {
 	for (size_t k = 0; k < cs.r.size(); k++)
 		for (size_t w = 0; w < cs.r[k].size(); w++)
 			TMCG_ProofMaskOne(ring.key[k], &cs.r[k][w], &cs.b[k][w], in, out);
-	return;
 }
 
 bool SchindelhauerTMCG::TMCG_VerifyPrivateCard
 	(const TMCG_Card &c, const TMCG_PublicKeyRing &ring,
-	std::istream &in, std::ostream &out)
+		std::istream &in, std::ostream &out)
 {
 	for (size_t k = 0; k < c.z.size(); k++)
 		for (size_t w = 0; w < c.z[k].size(); w++)
@@ -900,7 +931,7 @@ bool SchindelhauerTMCG::TMCG_VerifyPrivateCard
 
 void SchindelhauerTMCG::TMCG_ProofCardSecret
 	(const TMCG_Card &c, const TMCG_SecretKey &key, size_t index,
-	std::istream &in, std::ostream &out)
+		std::istream &in, std::ostream &out)
 {
 	assert(c.z.size() > index);
 	
@@ -921,7 +952,7 @@ void SchindelhauerTMCG::TMCG_ProofCardSecret
 
 void SchindelhauerTMCG::TMCG_ProofCardSecret
 	(const VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf,
-	std::istream &in, std::ostream &out)
+		std::istream &in, std::ostream &out)
 {
 	vtmf->VerifiableDecryptionProtocol_Prove(c.c_1, out);
 }
@@ -962,7 +993,7 @@ bool SchindelhauerTMCG::TMCG_VerifyCardSecret
 
 bool SchindelhauerTMCG::TMCG_VerifyCardSecret
 	(const VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf,
-	std::istream &in, std::ostream &out)
+		std::istream &in, std::ostream &out)
 {
 	if (!vtmf->VerifiableDecryptionProtocol_Verify_Update(c.c_1, in))
 		return false;
@@ -971,7 +1002,7 @@ bool SchindelhauerTMCG::TMCG_VerifyCardSecret
 
 void SchindelhauerTMCG::TMCG_SelfCardSecret
 	(const TMCG_Card &c, TMCG_CardSecret &cs, const TMCG_SecretKey &key,
-	size_t index)
+		size_t index)
 {
 	assert((c.z.size() == cs.r.size()) && (c.z[0].size() == cs.r[0].size()));
 	assert(c.z.size() > index);
@@ -996,6 +1027,7 @@ size_t SchindelhauerTMCG::TMCG_TypeOfCard
 	(const TMCG_CardSecret &cs)
 {
 	size_t type = 0, p2 = 1;
+	
 	for (size_t w = 0; w < cs.r[0].size(); w++)
 	{
 		bool bit = false;
@@ -1037,15 +1069,14 @@ size_t SchindelhauerTMCG::TMCG_TypeOfCard
 
 size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 	(TMCG_StackSecret<TMCG_CardSecret> &ss, bool cyclic,
-	const TMCG_PublicKeyRing &ring, size_t index, size_t size)
+		const TMCG_PublicKeyRing &ring, size_t index, size_t size)
 {
 	size_t cyc = 0;
-	mpz_t foo, bar;
-	mpz_init(foo);
-	mpz_init_set_ui(bar, size);
+	mpz_t foo, bar, cy;
+	
+	mpz_init(foo), mpz_init_set_ui(bar, size);
 	if (cyclic)
 	{
-		mpz_t cy;
 		mpz_init(cy);
 		mpz_srandomm(cy, bar);
 		cyc = (size_t)mpz_get_ui(cy);
@@ -1057,14 +1088,14 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 		TMCG_CardSecret cs(TMCG_Players, TMCG_TypeBits);
 		TMCG_CreateCardSecret(cs, ring, index);
 		
-		// only cyclic shift
+		// do only a cyclic shift
 		if (cyclic)
 		{
 			mpz_set_ui(foo, i);
 			mpz_add_ui(foo, foo, (unsigned long int)cyc);
 			mpz_mod(foo, foo, bar);
 		}
-		// full permutation
+		// make a full permutation
 		else
 		{
 			bool pi_ok;
@@ -1079,8 +1110,7 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 		}
 		ss.push((size_t)mpz_get_ui(foo), cs);
 	}
-	mpz_clear(foo);
-	mpz_clear(bar);
+	mpz_clear(foo), mpz_clear(bar);
 	return cyc;
 }
 
@@ -1089,12 +1119,11 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 	BarnettSmartVTMF_dlog *vtmf)
 {
 	size_t cyc = 0;
-	mpz_t foo, bar;
-	mpz_init(foo);
-	mpz_init_set_ui(bar, size);
+	mpz_t foo, bar, cy;
+	
+	mpz_init(foo), mpz_init_set_ui(bar, size);
 	if (cyclic)
 	{
-		mpz_t cy;
 		mpz_init(cy);
 		mpz_srandomm(cy, bar);
 		cyc = (size_t)mpz_get_ui(cy);
@@ -1128,8 +1157,7 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 		}
 		ss.push((size_t)mpz_get_ui(foo), cs);
 	}
-	mpz_clear(foo);
-	mpz_clear(bar);
+	mpz_clear(foo), mpz_clear(bar);
 	return cyc;
 }
 
@@ -1169,7 +1197,10 @@ void SchindelhauerTMCG::TMCG_GlueStackSecret
 	(const TMCG_StackSecret<TMCG_CardSecret> &sigma,
 	TMCG_StackSecret<TMCG_CardSecret> &pi, const TMCG_PublicKeyRing &ring)
 {
+	mpz_t tim;
+	
 	assert(sigma.size() == pi.size());
+	mpz_init(tim);
 	
 	TMCG_StackSecret<TMCG_CardSecret> ss3;
 	for (size_t i = 0; i < sigma.size(); i++)
@@ -1194,6 +1225,12 @@ void SchindelhauerTMCG::TMCG_GlueStackSecret
 					mpz_mul(&cs.r[k][w], &cs.r[k][w], ring.key[k].y);
 					mpz_mod(&cs.r[k][w], &cs.r[k][w], ring.key[k].m);
 				}
+				else
+				{
+					// compute dummy value to prevent timing attacks
+					mpz_mul(tim, &cs.r[k][w], ring.key[k].y);
+					mpz_mod(tim, tim, ring.key[k].m);
+				}
 				
 				// XOR
 				if (mpz_get_ui(&(sigma[sigma_idx].second).b[k][w]) & 1L)
@@ -1217,6 +1254,7 @@ void SchindelhauerTMCG::TMCG_GlueStackSecret
 	pi.clear();
 	for (size_t i = 0; i < ss3.size(); i++)
 		pi.push(ss3[i].first, ss3[i].second);
+	mpz_clear(tim);
 }
 
 void SchindelhauerTMCG::TMCG_GlueStackSecret
@@ -1264,11 +1302,16 @@ void SchindelhauerTMCG::TMCG_ProofStackEquality
 		TMCG_CreateStackSecret(ss2, cyclic, ring, index, s.size());
 		TMCG_MixStack(s2, s3, ss2, ring);
 		
+#ifdef TMCG_STACK_EQUALITY_HASH
 		// send commitment (instead of the whole stack)
 		std::ostringstream ost;
 		ost << s3 << std::endl;
 		mpz_shash(foo, ost.str());
 		out << foo << std::endl;
+#else
+		// send the whole stack (commitment)
+		out << s3 << std::endl;
+#endif
 		
 		// receive question
 		in >> foo;
@@ -1302,11 +1345,16 @@ void SchindelhauerTMCG::TMCG_ProofStackEquality
 		TMCG_CreateStackSecret(ss2, cyclic, s.size(), vtmf);
 		TMCG_MixStack(s2, s3, ss2, vtmf);
 		
+#ifdef TMCG_STACK_EQUALITY_HASH
 		// send commitment (instead of the whole stack)
 		std::ostringstream ost;
 		ost << s3 << std::endl;
 		mpz_shash(foo, ost.str());
 		out << foo << std::endl;
+#else
+		// send the whole stack (commitment)
+		out << s3 << std::endl;
+#endif
 		
 		// receive question
 		in >> foo;
@@ -1340,8 +1388,15 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			TMCG_StackSecret<TMCG_CardSecret> ss;
 			mpz_srandomb(foo, 1L);
 			
+#ifdef TMCG_STACK_EQUALITY_HASH
 			// receive commitment
 			in >> bar;
+#else
+			// receive stack
+			in.getline(tmp, TMCG_MAX_STACK_CHARS);
+			if (!s3.import(tmp))
+				throw false;
+#endif
 			
 			// send challenge to prover
 			out << foo << std::endl;
@@ -1356,11 +1411,16 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 				TMCG_MixStack(s2, s4, ss, ring);
 			else
 				TMCG_MixStack(s, s4, ss, ring);
+#ifdef TMCG_STACK_EQUALITY_HASH
 			std::ostringstream ost;
 			ost << s4 << std::endl;
 			mpz_shash(foo, ost.str());
 			if (mpz_cmp(foo, bar))
 				throw false;
+#else
+			if (s3 != s4)
+				throw false;
+#endif
 			
 			// verify cyclic shift
 			if (cyclic)
@@ -1404,8 +1464,15 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			TMCG_StackSecret<VTMF_CardSecret> ss;
 			mpz_srandomb(foo, 1L);
 			
+#ifdef TMCG_STACK_EQUALITY_HASH
 			// receive commitment
 			in >> bar;
+#else
+			// receive stack
+			in.getline(tmp, TMCG_MAX_STACK_CHARS); 
+			if (!s3.import(tmp))
+				throw false;
+#endif
 			
 			// send R/S-question to prover (challenge)
 			out << foo << std::endl;
@@ -1420,11 +1487,16 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 				TMCG_MixStack(s2, s4, ss, vtmf);
 			else
 				TMCG_MixStack(s, s4, ss, vtmf);
+#ifdef TMCG_STACK_EQUALITY_HASH
 			std::ostringstream ost;
 			ost << s4 << std::endl;
 			mpz_shash(foo, ost.str());
 			if (mpz_cmp(foo, bar))
 				throw false;
+#else
+			if (s3 != s4)
+				throw false;
+#endif
 			
 			// verify cyclic shift
 			if (cyclic)

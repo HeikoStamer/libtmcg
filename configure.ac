@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.9 $)
+AC_REVISION($Revision: 1.10 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -48,7 +48,7 @@ AC_SUBST(LIBTMCG_LT_REVISION)
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 
-# Used by libTMCG-config
+# Compiler/linker switches used by the libTMCG-config script
 LIBTMCG_CONFIG_LIBS="-lTMCG"
 LIBTMCG_CONFIG_CFLAGS=""
 
@@ -68,6 +68,9 @@ AC_DEFINE(TMCG_QRA_SIZE, 1024L,
 	[Define security parameter of the TMCG public key; Underlying assumptions: QRA, FAKTOR])
 AC_DEFINE(TMCG_KEYID_SIZE, 5,
 	[Define size of the unique TMCG key ID (in characters)])
+AC_DEFINE(TMCG_STACK_EQUALITY_HASH, 1,
+	[Define usage of short stack commitments (hash function)])
+
 
 # Checks for programs.
 AC_PROG_CC
@@ -108,6 +111,7 @@ AC_CHECK_FUNCS([bzero memcpy memset strchr strncasecmp strrchr strstr strtol str
 CXXFLAGS="-O2 -Wall -g3 -pedantic"
 ##CXXFLAGS="$CXXFLAGS -O2 -Wall -D NODEBUG"
 
+# Initalize the libTMCG-config script
 AC_SUBST(LIBTMCG_CONFIG_API_VERSION)
 AC_SUBST(LIBTMCG_CONFIG_LIBS)
 AC_SUBST(LIBTMCG_CONFIG_CFLAGS)
