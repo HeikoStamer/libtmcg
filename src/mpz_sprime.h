@@ -9,7 +9,7 @@
              Diffie-Hellman Key Agreement Protocol', ZKS technical report
              http://citeseer.ist.psu.edu/455251.html
 
- Copyright (C) 2004 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004, 2005 Heiko Stamer, <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

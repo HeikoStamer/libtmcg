@@ -23,6 +23,7 @@
 
 #include <mpz_helper.hh>
 #include <mpz_srandom.h>
+#include <mpz_sprime.h>
 
 void init_libgcrypt
 	()
@@ -106,6 +107,16 @@ int main
 		std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
 		assert(mpz_cmp(foo, bar) < 0);
 	}
+	
+	mpz_sprime(foo, bar, 1023);
+	std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
+	assert(mpz_probab_prime_p(foo, 25) && mpz_probab_prime_p(bar, 25));
+	
+	mpz_sprime2g(foo, bar, 1023);
+	std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
+	assert(mpz_probab_prime_p(foo, 25) && mpz_probab_prime_p(bar, 25) &&
+		mpz_congruent_ui_p(foo, 7L, 8L));
+	
 	
 	mpz_clear(foo), mpz_clear(bar);
 	
