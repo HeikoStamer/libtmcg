@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.11 $)
+AC_REVISION($Revision: 1.12 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -55,8 +55,9 @@ LIBTMCG_CONFIG_CFLAGS=""
 # Check commandline switches.
 
 # Defines some security parameters and macros
+# (Please update libTMCG.hh, if changed!)
 AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.2.0",
-	[Define the necessary version number of the gcrypt library])
+	[Define the necessary version number of the GNU gcrypt library])
 AC_DEFINE(TMCG_MPZ_IO_BASE, 36,
 	[Define the input/ouput base encoding of the iostream operators])
 AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_RMD160,
@@ -94,12 +95,12 @@ AC_DEFINE(TMCG_KEY_NIZK_STAGE3, 128,
 	2^{-TMCG_KEY_NIZK_STAGE3}])
 	
 AC_DEFINE(TMCG_MAX_PLAYERS, 32L,
-	[Define the maximum number of players])
-AC_DEFINE(TMCG_MAX_CARDS,	64L,
+	[Define the maximum number of players in the scheme of Schindelhauer])
+AC_DEFINE(TMCG_MAX_CARDS,	128L,
 	[Define the maximum number of stackable cards])
 AC_DEFINE(TMCG_MAX_TYPEBITS, 8L,
 	[Define the number of bits which represents the maximum number of
-	different card types])
+	different card types in the scheme of Schindelhauer])
 	
 AC_DEFINE(TMCG_MAX_KEYBITS,
 	[((TMCG_DDH_SIZE > TMCG_QRA_SIZE)?TMCG_DDH_SIZE:TMCG_QRA_SIZE)],
@@ -167,10 +168,6 @@ prefix=$prefix
 exec_prefix=$exec_prefix
 libdir=$libdir
 datadir=$datadir
-]])
-
-AC_CONFIG_COMMANDS([libTMCG_config.h], [[
-cp config.h src/libTMCG_config.h
 ]])
 
 AC_CONFIG_FILES([Makefile src/Makefile src/libTMCG-config tests/Makefile])

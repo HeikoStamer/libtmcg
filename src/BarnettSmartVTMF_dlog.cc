@@ -36,23 +36,6 @@
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	(unsigned long int groupsize, unsigned long int exponentsize)
 {
-	// initalize libgcrypt
-	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
-	{
-		std::cerr << "libgcrypt: need library version >= " <<
-			TMCG_LIBGCRYPT_VERSION << std::endl;
-		exit(-1);
-	}
-	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
-	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-	if (gcry_md_test_algo(TMCG_GCRY_MD_ALGO))
-	{
-		std::cerr << "libgcrypt: algorithm " << TMCG_GCRY_MD_ALGO <<
-			" [" << gcry_md_algo_name(TMCG_GCRY_MD_ALGO) <<
-			"] not available" << std::endl;
-		exit(-1);
-	}
-	
 	// Create a finite abelian group G where DDH is hard:
 	// We use the subgroup of quadratic residues modulo p,
 	// such that p = 2q + 1 and p, q are both prime.
@@ -74,23 +57,6 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	(std::istream &in, unsigned long int exponentsize)
 {
-	// initalize libgcrypt
-	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
-	{
-		std::cerr << "libgcrypt: need library version >= " <<
-			TMCG_LIBGCRYPT_VERSION << std::endl;
-		exit(-1);
-	}
-	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
-	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-	if (gcry_md_test_algo(TMCG_GCRY_MD_ALGO))
-	{
-		std::cerr << "libgcrypt: algorithm " << TMCG_GCRY_MD_ALGO <<
-			" [" << gcry_md_algo_name(TMCG_GCRY_MD_ALGO) <<
-			"] not available" << std::endl;
-		exit(-1);
-	}
-	
 	// initalize the finite abelian group G
 	mpz_init(q), mpz_init(p), mpz_init_set_ui(g, 2L);
 	in >> q;
@@ -124,7 +90,8 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 				throw false;
 		
 		// check whether p, q are both (probable) prime
-		if (!(mpz_probab_prime_p(p, 25L) && mpz_probab_prime_p(q, 25L)))
+		// soundness error probability: 4^{-64}
+		if (!(mpz_probab_prime_p(p, 64L) && mpz_probab_prime_p(q, 64L)))
 			throw false;
 		
 		// check whether p is congruent 7 modulo 8

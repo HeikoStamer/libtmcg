@@ -108,14 +108,14 @@ int main
 	for (size_t i = 0; i < 2; i++)
 	{
 		mpz_sprime(foo, bar, 1024);
-		assert(mpz_probab_prime_p(foo, 25) && mpz_probab_prime_p(bar, 25));
+		assert(mpz_probab_prime_p(foo, 64) && mpz_probab_prime_p(bar, 64));
 		
 		mpz_sprime2g(foo, bar, 1024);
-		assert(mpz_probab_prime_p(foo, 25) && mpz_probab_prime_p(bar, 25) &&
+		assert(mpz_probab_prime_p(foo, 64) && mpz_probab_prime_p(bar, 64) &&
 			mpz_congruent_ui_p(foo, 7L, 8L));
 		
 		mpz_sprime3mod4(foo, 1024);
-		assert(mpz_probab_prime_p(foo, 25) && mpz_congruent_ui_p(foo, 3L, 4L));
+		assert(mpz_probab_prime_p(foo, 64) && mpz_congruent_ui_p(foo, 3L, 4L));
 	}
 	
 	// mpz_spowm, mpz_spowm_init, mpz_spowm_calc, mpz_spowm_clear

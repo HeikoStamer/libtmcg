@@ -5,7 +5,10 @@ int main
 	()
 {
 	if (!init_libTMCG())
-		exit(-1);
+	{
+		std::cerr << _("Initalization of libTMCG failed!") << std::endl;
+		return -1;
+	}
 	
 	// Initalisieren der "Toolbox for Mental Card Games"
 	// -------------------------------------------------

@@ -211,15 +211,15 @@ void mpz_sprime_test
 		fprintf(stderr, "!");
 		
 		/* Step 5. [CS00]: Apply the Miller-Rabin test to q some number
-		   of times using randomly selected bases. */
-		if (mpz_probab_prime_p(q, 25))
+		   of times (error probability 4^{-64}) using randomly selected bases. */
+		if (mpz_probab_prime_p(q, 64))
 			break;
 	}
 	mpz_clear(mr_y), mpz_clear(mr_nm1), mpz_clear(mr_q), mpz_clear(mr_g);
 	fprintf(stderr, "\n");
 	
-	assert(mpz_probab_prime_p(p, 25));
-	assert(mpz_probab_prime_p(q, 25));
+	assert(mpz_probab_prime_p(p, 64));
+	assert(mpz_probab_prime_p(q, 64));
 }
 
 void mpz_sprime
@@ -242,6 +242,8 @@ void mpz_sprime3mod4
 {
 	mpz_t q;
 
+	/* The additional test is necessary because we want to get a Blum
+	   integer as the product of two different safe primes. */
 	mpz_init(q);
 	mpz_sprime_test(p, q, psize - 1L, test3mod4);
 	mpz_clear(q);
