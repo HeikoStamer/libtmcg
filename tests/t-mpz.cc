@@ -28,6 +28,8 @@
 #include <mpz_shash.hh>
 #include <mpz_sqrtm.h>
 
+#undef NDEBUG
+
 void init_libgcrypt
 	()
 {
