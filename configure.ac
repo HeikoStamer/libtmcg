@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.7 $)
+AC_REVISION($Revision: 1.8 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -48,14 +48,14 @@ AC_SUBST(LIBTMCG_LT_REVISION)
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 
-# Used by libgcrypt-config
+# Used by libTMCG-config
 LIBTMCG_CONFIG_LIBS="-lTMCG"
 LIBTMCG_CONFIG_CFLAGS=""
 
 # Check commandline switches.
 
 AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.2.0",
-	[Define appropriate version number of the necessary gcrypt library])
+	[Define necessary version number of the gcrypt library])
 AC_DEFINE(TMCG_MPZ_IO_BASE, 36,
 	[Define input/ouput base encoding of the iostream operators])
 AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_RMD160,
@@ -81,7 +81,7 @@ AC_PROG_LN_S
 AC_CHECK_LIB(gmp, __gmpz_import, , AC_MSG_ERROR([libgmp >= 4.1 is needed]))
 AC_CHECK_LIB(gmp, __gmpz_export, , AC_MSG_ERROR([libgmp >= 4.1 is needed]))
 ##AC_CHECK_LIB(gmpxx, __gmpz_set_str, , AC_MSG_ERROR([libgmpxx (C++ support) >= 4.1 is needed]))
-LIBGMP_LIBS = -lgmp
+LIBGMP_LIBS="-lgmp"
 
 AM_PATH_LIBGCRYPT("1.2.0")
 if test "x$LIBGCRYPT_LIBS" = "x"; then
