@@ -192,7 +192,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
 	mpz_srandomm(x_i, q);
 	
 	// compute h_i = g^{x_i} \bmod p (with blinding techniques)
-	mpz_sspowm(h_i, g, x_i, p);
+	mpz_spowm(h_i, g, x_i, p);
 	
 	// set public key h
 	mpz_set(h, h_i);
@@ -208,7 +208,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
 		
 		// commitment
 		mpz_srandomm(v, q);
-		mpz_sspowm(t, g, v, p);
+		mpz_spowm(t, g, v, p);
 		// challenge
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
 		// the PK non-interactive, i.e. we turn it into a statistically
@@ -269,8 +269,8 @@ void BarnettSmartVTMF_dlog::CP_Prove
 		
 		// commitment
 		mpz_srandomm(omega, q);
-		mpz_sspowm(a, gg, omega, p);
-		mpz_sspowm(b, hh, omega, p);
+		mpz_spowm(a, gg, omega, p);
+		mpz_spowm(b, hh, omega, p);
 		
 		// challenge
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
@@ -339,10 +339,10 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
 	}
 	
 	// compute c_1 = g^r \bmod p
-	mpz_sspowm(c_1, g, r, p);
+	mpz_spowm(c_1, g, r, p);
 	
 	// compute c_2 = m \cdot h^r \bmod p
-	mpz_sspowm(c_2, h, r, p);
+	mpz_spowm(c_2, h, r, p);
 	mpz_mul(c_2, c_2, m);
 	mpz_mod(c_2, c_2, p);
 }
@@ -406,12 +406,12 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 	}
 	
 	// compute c'_1 = c_1 \cdot g^r \bmod p
-	mpz_sspowm(c__1, g, r, p);
+	mpz_spowm(c__1, g, r, p);
 	mpz_mul(c__1, c__1, c_1);
 	mpz_mod(c__1, c__1, p);
 	
 	// compute c'_2 = c_2 \cdot h^r \bmod p
-	mpz_sspowm(c__2, h, r, p);
+	mpz_spowm(c__2, h, r, p);
 	mpz_mul(c__2, c__2, c_2);
 	mpz_mod(c__2, c__2, p);
 }
@@ -436,12 +436,12 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_srcptr r)
 {
 	// compute c'_1 = c_1 \cdot g^r \bmod p
-	mpz_sspowm(c__1, g, r, p);
+	mpz_spowm(c__1, g, r, p);
 	mpz_mul(c__1, c__1, c_1);
 	mpz_mod(c__1, c__1, p);
 	
 	// compute c'_2 = c_2 \cdot h^r \bmod p
-	mpz_sspowm(c__2, h, r, p);
+	mpz_spowm(c__2, h, r, p);
 	mpz_mul(c__2, c__2, c_2);
 	mpz_mod(c__2, c__2, p);
 }
@@ -506,7 +506,7 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Prove
 	mpz_init(d_i);
 	
 	// compute d_i = {c_1}^{x_i} \bmod p
-	mpz_sspowm(d_i, c_1, x_i, p);
+	mpz_spowm(d_i, c_1, x_i, p);
 	out << d_i << std::endl << h_i << std::endl;
 	
 	// CP(d_i, h_i, c_1, g; x_i)
@@ -523,7 +523,7 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Initalize
 	mpz_init(d_i);
 	
 	// compute d_i = {c_1}^{x_i} \bmod p
-	mpz_sspowm(d_i, c_1, x_i, p);
+	mpz_spowm(d_i, c_1, x_i, p);
 	
 	// set the value of d to the above result
 	mpz_set(d, d_i);

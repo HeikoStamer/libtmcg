@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004, 2005 Heiko Stamer, <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,14 +34,14 @@
 			void mpz_spowm_init
 				(mpz_srcptr x, mpz_srcptr p);
 			
-			void mpz_spowm
+			void mpz_spowm_calc
 				(mpz_ptr res, mpz_srcptr m);
 			
-			void mpz_spowm_done
+			void mpz_spowm_clear
 				();
 			
 			/* Chaum's blinding technique for modular exponentiation */
-			void mpz_sspowm
+			void mpz_spowm
 				(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p);
 			
 	#if defined(__cplusplus)

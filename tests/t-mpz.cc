@@ -24,6 +24,7 @@
 #include <mpz_helper.hh>
 #include <mpz_srandom.h>
 #include <mpz_sprime.h>
+#include <mpz_spowm.h>
 
 void init_libgcrypt
 	()
@@ -50,10 +51,11 @@ int main
 	(int argc, char **argv)
 {
 	size_t step = 1;
-	mpz_t foo, bar;
+	mpz_t foo, bar, foo2, bar2;
+	unsigned long int tmp_ui = 0L;
 	std::stringstream lej;
 	
-	mpz_init(foo), mpz_init(bar);
+	mpz_init(foo), mpz_init(bar), mpz_init(foo2), mpz_init(bar2);
 	std::cout << "TMCG_MPZ_IO_BASE = " << TMCG_MPZ_IO_BASE << std::endl;
 	std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
 	mpz_set_ui(foo, 42L), mpz_set_ui(bar, 0L);
@@ -68,57 +70,84 @@ int main
 	std::cout << "TMCG_GCRY_MD_ALGO = " << TMCG_GCRY_MD_ALGO <<
 		" [" << gcry_md_algo_name(TMCG_GCRY_MD_ALGO) << "]" << std::endl;
 	init_libgcrypt();
+	
+	// mpz_srandom_ui, mpz_srandomb, mpz_ssrandomb, mpz_srandomm, mpz_ssrandomm
 	for (size_t i = 0; i < 5; i++)
 	{
-		mpz_set_ui(foo, mpz_srandom_ui()), mpz_set_ui(bar, mpz_ssrandom_ui());
-		std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
+		tmp_ui = mpz_srandom_ui();
+		mpz_set_ui(foo, tmp_ui);
+		assert(mpz_get_ui(foo) == tmp_ui);
+		
+		tmp_ui = mpz_ssrandom_ui();
+		mpz_set_ui(foo, tmp_ui);
+		assert(mpz_get_ui(foo) == tmp_ui);
 	}
+	
 	for (size_t i = 0; i < 100; i++)
 	{
 		mpz_srandomb(foo, 1024L), mpz_set_ui(bar, 0L);
-		std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
-		std::cout << "log_2(foo) = " << mpz_sizeinbase(foo, 2L) << std::endl;
 		assert((mpz_sizeinbase(foo, 2L) >= 1008L) &&
 			(mpz_sizeinbase(foo, 2L) <= 1024L));
 		lej << foo << std::endl, lej >> bar;
-		std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
 		assert(!mpz_cmp(foo, bar));
 	}
+	
 	for (size_t i = 0; i < 5; i++)
 	{
 		mpz_ssrandomb(foo, 1024L), mpz_set_ui(bar, 0L);
-		std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
-		std::cout << "log_2(foo) = " << mpz_sizeinbase(foo, 2L) << std::endl;
 		assert((mpz_sizeinbase(foo, 2L) >= 1008L) &&
 			(mpz_sizeinbase(foo, 2L) <= 1024L));
 		lej << foo << std::endl, lej >> bar;
-		std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
 		assert(!mpz_cmp(foo, bar));
 	}
+	
 	for (size_t i = 0; i < 100; i++)
 	{
 		mpz_srandomm(foo, bar);
-		std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
 		assert(mpz_cmp(foo, bar) < 0);
 	}
+	
 	for (size_t i = 0; i < 5; i++)
 	{
 		mpz_ssrandomm(foo, bar);
-		std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
 		assert(mpz_cmp(foo, bar) < 0);
 	}
 	
-	mpz_sprime(foo, bar, 1023);
-	std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
+	// mpz_sprime, mpz_sprime2g
+	mpz_sprime(foo, bar, 1024);
 	assert(mpz_probab_prime_p(foo, 25) && mpz_probab_prime_p(bar, 25));
 	
-	mpz_sprime2g(foo, bar, 1023);
-	std::cout << step++ << ". foo = " << foo << ", bar = " << bar << std::endl;
+	mpz_sprime2g(foo, bar, 1024);
 	assert(mpz_probab_prime_p(foo, 25) && mpz_probab_prime_p(bar, 25) &&
 		mpz_congruent_ui_p(foo, 7L, 8L));
 	
+	// mpz_sspowm, mpz_spowm_init, mpz_spowm, mpz_spowm_clear
+	for (size_t i = 0; i < 5; i++)
+	{
+		mpz_srandomm(bar, foo), mpz_srandomm(bar2, foo);
+		mpz_spowm(foo2, bar, bar2, foo);
+		mpz_powm(bar, bar, bar2, foo);
+		assert(!mpz_cmp(foo2, bar));
+	}
 	
-	mpz_clear(foo), mpz_clear(bar);
+	for (size_t i = 0; i < 5; i++)
+	{
+		mpz_srandomm(bar2, foo);
+		mpz_spowm_init(bar2, foo);
+		for (size_t j = 0; j < 5; j++)
+		{
+			mpz_srandomm(bar, foo);
+			mpz_spowm_calc(foo2, bar);
+			mpz_powm(bar, bar, bar2, foo);
+			assert(!mpz_cmp(foo2, bar));
+		}
+		mpz_spowm_clear();
+	}
+	
+	
+	
+	
+	mpz_clear(foo), mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2);
 	
 	return 0;
 }
