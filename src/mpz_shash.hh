@@ -1,7 +1,12 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2004, 2005 Heiko Stamer, <stamer@gaos.org>
+
+     [BR95] Mihir Bellare, Phillip Rogaway. Random Oracles are Practical:
+            A Paradigm for Designing Efficient Protocols.
+            Proceedings First Annual Conference on Computer and
+            Communications Security, ACM, 1993.
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,24 +35,22 @@
 	#include <string>
 	#include <vector>
 	
+	// variable argument lists
+	#include <cstdarg>
+	
 	// GNU crypto library
 	#include <gcrypt.h> 
 	
 	// GNU multiple precision library
 	#include <gmp.h>
 	
-	/* hash functions h() and g() [Random Oracles are practical] */
+	/* hash functions h, g, and mpz_shash */
 	void h
 		(char *output, const char *input, size_t size);
 	
 	void g
 		(char *output, size_t osize, const char *input, size_t isize);
 	
-	/* Fiat-Shamir heuristic for non-interactive proofs of knowledge */
 	void mpz_shash
-		(mpz_ptr r, mpz_srcptr a1, mpz_srcptr a2, mpz_srcptr a3);
-	
-	void mpz_shash
-		(mpz_ptr r, mpz_srcptr a1, mpz_srcptr a2, mpz_srcptr a3,
-		mpz_srcptr a4, mpz_srcptr a5, mpz_srcptr a6);
+		(mpz_ptr r, size_t n, ...);
 #endif

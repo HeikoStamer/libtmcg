@@ -214,7 +214,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
 		// the PK non-interactive, i.e. we turn it into a statistically
 		// zero-knowledge (Schnorr signature scheme style) proof of
 		// knowledge (SPK) in the random oracle model.
-		mpz_shash(c, g, h_i, t);
+		mpz_shash(c, 3, g, h_i, t);
 		// response
 		mpz_mul(r, c, x_i);
 		mpz_neg(r, r);
@@ -240,7 +240,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 		mpz_powm(r, foo, c, p);
 		mpz_mul(t, t, r);
 		mpz_mod(t, t, p);
-		mpz_shash(r, g, foo, t);
+		mpz_shash(r, 3, g, foo, t);
 		if (mpz_cmp(c, r))
 			throw false;
 		
@@ -277,7 +277,7 @@ void BarnettSmartVTMF_dlog::CP_Prove
 		// the PK non-interactive, i.e. we turn it into a statistically
 		// zero-knowledge (Schnorr signature scheme style) proof of
 		// knowledge (SPK) in the random oracle model.
-		mpz_shash(c, a, b, x, y, gg, hh);
+		mpz_shash(c, 6, a, b, x, y, gg, hh);
 		
 		// response
 		mpz_mul(r, c, alpha);
@@ -308,7 +308,7 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 		mpz_powm(r, y, c, p);
 		mpz_mul(b, b, r);
 		mpz_mod(b, b, p);
-		mpz_shash(r, a, b, x, y, gg, hh);
+		mpz_shash(r, 6, a, b, x, y, gg, hh);
 		if (mpz_cmp(r, c))
 			throw false;
 		
