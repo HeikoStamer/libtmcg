@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.1 $)
+AC_REVISION($Revision: 1.2 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -106,6 +106,20 @@ AC_CHECK_FUNCS([bzero memcpy memset strchr strncasecmp strrchr strstr strtol str
 
 CXXFLAGS="-Wall -g3 -pedantic -O $LIBGCRYPT_CFLAGS"
 ##CXXFLAGS="$CXXFLAGS -O2 -Wall -D NODEBUG $LIBGCRYPT_CFLAGS"
+
+AC_SUBST(LIBTMCG_CONFIG_API_VERSION)
+AC_SUBST(LIBTMCG_CONFIG_LIBS)
+AC_SUBST(LIBTMCG_CONFIG_CFLAGS)
+
+AC_CONFIG_COMMANDS([libTMCG-conf],[[
+chmod +x src/libTMCG-config
+]],[[
+prefix=$prefix
+exec_prefix=$exec_prefix
+libdir=$libdir
+datadir=$datadir
+DATADIRNAME=$DATADIRNAME
+]])
 
 AC_CONFIG_FILES([Makefile src/Makefile src/libTMCG-config])
 AC_OUTPUT
