@@ -66,9 +66,11 @@ class BarnettSmartVTMF_dlog
 		mpz_t								x_i, h_i, h, d;
 		
 		BarnettSmartVTMF_dlog
-			(unsigned long int groupsize = TMCG_DDH_SIZE);
+			(unsigned long int groupsize = TMCG_DDH_SIZE,
+			unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		BarnettSmartVTMF_dlog
-			(std::istream &in);
+			(std::istream &in,
+			unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
 			(unsigned long int groupsize = TMCG_DDH_SIZE);
 		void PublishGroup

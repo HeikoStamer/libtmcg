@@ -34,7 +34,7 @@
 #include "BarnettSmartVTMF_dlog.hh"
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
-	(unsigned long int groupsize)
+	(unsigned long int groupsize, unsigned long int exponentsize)
 {
 	// initalize libgcrypt
 	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
@@ -62,10 +62,16 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	
 	// initalize the key
 	mpz_init(x_i), mpz_init(h_i), mpz_init(h), mpz_init(d);
+	
+	// We shift the generator (according to [KK04]) for the
+	// following usage of shortened exponents.
+	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
+	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
+	mpz_powm(g, g, h, p);
 }
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
-	(std::istream &in)
+	(std::istream &in, unsigned long int exponentsize)
 {
 	// initalize libgcrypt
 	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
@@ -91,6 +97,12 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	
 	// initalize the key
 	mpz_init(x_i), mpz_init(h_i), mpz_init(h), mpz_init(d);
+	
+	// We shift the generator (according to [KK04]) for the
+	// following usage of shortened exponents.
+	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
+	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
+	mpz_powm(g, g, h, p);
 }
 
 bool BarnettSmartVTMF_dlog::CheckGroup
@@ -154,8 +166,8 @@ void BarnettSmartVTMF_dlog::IndexElement
 	(mpz_ptr a, std::size_t index)
 {
 	// choose the index-th element of G (quadratic residue)
-	// Notice that a call to IndexElement(a, 0) returns the identity
-	// of G, because 1 is the smallest quadratic residue mod p.
+	// Notice that a call to IndexElement(a, 0) returns the identity,
+	// because 1 is the smallest quadratic residue mod p.
 	mpz_set_ui(a, 0L);
 	do
 	{
@@ -320,10 +332,8 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
 	else
 	{
 		// Under the additional DLSE assumption we can reduce
-		// the size of the exponent and shift r to the left. [KK04]
+		// the size of the exponent. [KK04]
 		mpz_srandomb(r, exponentsize);
-		mpz_mul_2exp(r, r, mpz_sizeinbase(p, 2L) - exponentsize);
-		mpz_mod(r, r, q);
 	}
 	
 	// compute c_1 = g^r \bmod p
@@ -389,10 +399,8 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 	else
 	{
 		// Under the additional DLSE assumption we can reduce
-		// the size of the exponent and shift r to the left. [KK04]
+		// the size of the exponent . [KK04]
 		mpz_srandomb(r, exponentsize);
-		mpz_mul_2exp(r, r, mpz_sizeinbase(p, 2L) - exponentsize);
-		mpz_mod(r, r, q);
 	}
 	
 	// compute c'_1 = c_1 \cdot g^r \bmod p
@@ -417,10 +425,8 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_RemaskValue
 	else
 	{
 		// Under the additional DLSE assumption we can reduce
-		// the size of the exponent and shift r to the left. [KK04]
+		// the size of the exponent. [KK04]
 		mpz_srandomb(r, exponentsize);
-		mpz_mul_2exp(r, r, mpz_sizeinbase(p, 2L) - exponentsize);
-		mpz_mod(r, r, q);
 	}
 }
 
