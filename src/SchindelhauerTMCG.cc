@@ -1028,9 +1028,10 @@ size_t SchindelhauerTMCG::TMCG_TypeOfCard
 	
 	mpz_init_set_ui(m, 0L), mpz_init(a);
 	vtmf->VerifiableDecryptionProtocol_Verify_Finalize(c.c_2, m);
-	for (size_t t = 0; t < TMCG_MaxCardType; t++)
+	
+	vtmf->IndexElement(a, 0);
+	for (size_t t = 0; t < TMCG_MaxCardType; t++, vtmf->NextElement(a))
 	{
-		vtmf->IndexElement(a, t);
 		if (!mpz_cmp(a, m))
 		{
 			type = t;

@@ -77,6 +77,8 @@ class BarnettSmartVTMF_dlog
 			(std::ostream &out);
 		void RandomElement
 			(mpz_ptr a);
+		void NextElement
+			(mpz_ptr a);
 		void IndexElement
 			(mpz_ptr a, std::size_t index);
 		void KeyGenerationProtocol_GenerateKey
