@@ -26,7 +26,8 @@ std::ostream& operator<<
 	(std::ostream &out, mpz_srcptr value)
 {
 	char *tmp = new char[4096];
-	out << mpz_get_str(tmp, TMCG_MPZ_IO_BASE, value);
+	if (mpz_sizeinbase(value, TMCG_MPZ_IO_BASE) < 4096)
+		out << mpz_get_str(tmp, TMCG_MPZ_IO_BASE, value);
 	delete [] tmp;
 	return out;
 }
