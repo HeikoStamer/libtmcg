@@ -12,8 +12,9 @@ Introduction
   LibTMCG is a general purpose library for creating secure card games
   without a TTP (trusted third party). The used protocols minimize the
   effect of coalitions and achieve the confidentiality of the players'
-  strategy, i.e. hidden cards does not have to be opened at the end of
-  each game. The implementation is based on two academic research papers:
+  strategy, i.e. the players are not required to reveal their cards at
+  the end of the game to show that they didn't cheat. The implementation
+  is based primarily on two academic research papers:
 
     Christian Schindelhauer: A Toolbox for Mental Card Games.
     Technical Report A-98-14, University of Lübeck, 1998.
