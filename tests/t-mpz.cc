@@ -179,7 +179,6 @@ int main
 	mpz_set_str(bar, "d2uipbaz3k3o4irzhyhfj5pfzjl7nvs", 36);
 	mpz_set_ui(foo2, 23L), mpz_set_ui(bar2, 42L);
 	mpz_shash(foo, 2, foo2, bar2);
-	std::cout << foo << std::endl;
 	assert(!mpz_cmp(foo, bar));
 	
 	mpz_clear(foo), mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2);
