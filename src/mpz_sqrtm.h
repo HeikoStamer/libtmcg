@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2002, 2004 Heiko Stamer, <stamer@gaos.org>
+ Copyright (C) 2002, 2004  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,14 +37,14 @@
 			
 			void mpz_sqrtmp_fast
 				(mpz_ptr root, mpz_srcptr a, mpz_srcptr p, mpz_srcptr nqr,
-				mpz_srcptr pa1d4, mpz_srcptr ps1d4, mpz_srcptr pa3d8, 
+				mpz_srcptr pa1d4, mpz_srcptr ps1d4, mpz_srcptr pa3d8,
 				mpz_srcptr nqr_ps1d4);
 			
-			void mpz_sqrtmn_2 
+			void mpz_sqrtmn_2
 				(mpz_ptr root2, mpz_srcptr root, mpz_srcptr n);
 			
 			void mpz_sqrtmn_r
-				(mpz_ptr root, mpz_srcptr a, 
+				(mpz_ptr root, mpz_srcptr a,
 				mpz_srcptr p, mpz_srcptr q, mpz_srcptr n);
 			
 			void mpz_sqrtmn_r_all

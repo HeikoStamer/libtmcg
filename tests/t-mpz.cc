@@ -26,6 +26,7 @@
 #include <mpz_sprime.h>
 #include <mpz_spowm.h>
 #include <mpz_shash.hh>
+#include <mpz_sqrtm.h>
 
 void init_libgcrypt
 	()
@@ -51,14 +52,14 @@ void init_libgcrypt
 int main
 	(int argc, char **argv)
 {
-	mpz_t foo, bar, foo2, bar2;
+	mpz_t foo, bar, foo2, bar2, root;
 	char tmp_ar1[1024], tmp_ar2[1024];
 	char *dig1, *dig2;
 	unsigned long int tmp_ui = 0L;
 	std::stringstream lej;
 	std::string s;
 	
-	mpz_init(foo), mpz_init(bar), mpz_init(foo2), mpz_init(bar2);
+	mpz_init(foo), mpz_init(bar), mpz_init(foo2), mpz_init(bar2), mpz_init(root);
 	std::cout << "TMCG_MPZ_IO_BASE = " << TMCG_MPZ_IO_BASE << std::endl;
 	mpz_set_ui(foo, 42L), mpz_set_ui(bar, 0L);
 	assert(!mpz_cmp_ui(foo, 42L) && !mpz_cmp_ui(bar, 0L));
@@ -187,7 +188,22 @@ int main
 	mpz_shash(foo, s);
 	assert(!mpz_cmp(foo, bar));
 	
-	mpz_clear(foo), mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2);
+	// mpz_qrmn_p, mpz_sqrtmn_r
+	mpz_sprime(foo, bar, 512);
+	mpz_sprime(foo2, bar2, 512);
+	mpz_mul(bar, foo, foo2);
+	for (size_t i = 0; i < 5; i++)
+	{
+		do
+			mpz_srandomm(bar2, bar);
+		while (!mpz_qrmn_p(bar2, foo, foo2, bar));
+		mpz_sqrtmn_r(root, bar2, foo, foo2, bar);
+		mpz_powm_ui(root, root, 2L, bar);
+		assert(!mpz_cmp(root, bar2));
+	}
+	
+	mpz_clear(foo), mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2),
+		mpz_clear(root);
 	
 	return 0;
 }
