@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.2 $)
+AC_REVISION($Revision: 1.3 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -104,8 +104,8 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_CHECK_FUNCS([bzero memcpy memset strchr strncasecmp strrchr strstr strtol strtoul])
 
-CXXFLAGS="-Wall -g3 -pedantic -O $LIBGCRYPT_CFLAGS"
-##CXXFLAGS="$CXXFLAGS -O2 -Wall -D NODEBUG $LIBGCRYPT_CFLAGS"
+CXXFLAGS="-O2 -Wall -g3 -pedantic"
+##CXXFLAGS="$CXXFLAGS -O2 -Wall -D NODEBUG"
 
 AC_SUBST(LIBTMCG_CONFIG_API_VERSION)
 AC_SUBST(LIBTMCG_CONFIG_LIBS)
