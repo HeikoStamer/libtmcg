@@ -21,7 +21,7 @@ dnl version of libTMCG is at least 1.2.5 *and* the API number is 1. Using
 dnl this features allows to prevent build against newer versions of libTMCG
 dnl with a changed API.
 dnl
-AC_DEFUN(AM_PATH_LIBTMCG,
+AC_DEFUN([AM_PATH_LIBTMCG],
 [ AC_ARG_WITH(libTMCG-prefix,
             AC_HELP_STRING([--with-libTMCG-prefix=PFX],
                            [prefix where libTMCG is installed (optional)]),
