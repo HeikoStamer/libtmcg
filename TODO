@@ -1,3 +1,4 @@
+- implement more card and stack operations of the toolbox
 - generalize the use of the VTMF primitive (base class)
 - use local namespaces TMCG and VMTF to prevent pollution
 - documentation: doxygen? and examples
