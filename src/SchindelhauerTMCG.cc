@@ -247,13 +247,13 @@ void SchindelhauerTMCG::TMCG_MaskValue
 	(const TMCG_PublicKey &key, mpz_srcptr z, mpz_ptr zz,
 		mpz_srcptr r, mpz_srcptr b)
 {
-	mpz_t foo;
+	mpz_t tim;
 	
+	mpz_init(tim);
 	// compute zz = z * r^2 * y^b (mod m)
 	mpz_powm_ui(zz, r, 2L, key.m);
 	mpz_mul(zz, zz, z);
 	mpz_mod(zz, zz, key.m);
-	mpz_init_set(foo, zz);
 	if (mpz_get_ui(b) & 1L)
 	{
 		mpz_mul(zz, zz, key.y);
@@ -262,10 +262,10 @@ void SchindelhauerTMCG::TMCG_MaskValue
 	else
 	{
 		// compute dummy value to prevent timing attacks
-		mpz_mul(foo, foo, key.y);
-		mpz_mod(foo, foo, key.m);
+		mpz_mul(tim, zz, key.y);
+		mpz_mod(tim, tim, key.m);
 	}
-	mpz_clear(foo);
+	mpz_clear(tim);
 }
 
 void SchindelhauerTMCG::TMCG_ProofMaskValue
@@ -286,7 +286,7 @@ void SchindelhauerTMCG::TMCG_ProofMaskValue
 			mpz_ptr r2 = new mpz_t(), b2 = new mpz_t();
 			mpz_init(r2), mpz_init(b2);
 			
-			// choose random number r_i \in Z*m and b_i \in {0,1}
+			// randomly choose a number r_i \in Z^*_m and b_i \in {0,1}
 			mpz_srandomb(b2, 1L);
 			do
 			{
@@ -300,7 +300,6 @@ void SchindelhauerTMCG::TMCG_ProofMaskValue
 			mpz_powm_ui(foo, r2, 2L, key.m);
 			mpz_mul(foo, foo, zz);
 			mpz_mod(foo, foo, key.m);
-			mpz_set(bar, foo);
 			if (mpz_get_ui(b2) & 1L)
 			{
 				mpz_mul(foo, foo, key.y);
@@ -309,7 +308,7 @@ void SchindelhauerTMCG::TMCG_ProofMaskValue
 			else
 			{
 				// compute dummy value to prevent timing attacks
-				mpz_mul(bar, bar, key.y);
+				mpz_mul(bar, foo, key.y);
 				mpz_mod(bar, bar, key.m);
 			}
 			
