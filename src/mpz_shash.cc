@@ -114,7 +114,7 @@ void g
 	for (size_t i = 0; i < times; i++)
 	{
 		char *data = new char[6 + isize];
-		snprintf(data, 6 + isize, "TMCG%02x", (unsigned int)i);
+		snprintf(data, 6, "TMCG%02x", (unsigned int)i);
 		memcpy(data + 6, input, isize);
 		h(out + (i * mdsize), data, 6 + isize);
 		delete [] data;
