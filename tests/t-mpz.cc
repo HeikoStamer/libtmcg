@@ -56,6 +56,7 @@ int main
 	char *dig1, *dig2;
 	unsigned long int tmp_ui = 0L;
 	std::stringstream lej;
+	std::string s;
 	
 	mpz_init(foo), mpz_init(bar), mpz_init(foo2), mpz_init(bar2);
 	std::cout << "TMCG_MPZ_IO_BASE = " << TMCG_MPZ_IO_BASE << std::endl;
@@ -179,6 +180,11 @@ int main
 	mpz_set_str(bar, "d2uipbaz3k3o4irzhyhfj5pfzjl7nvs", 36);
 	mpz_set_ui(foo2, 23L), mpz_set_ui(bar2, 42L);
 	mpz_shash(foo, 2, foo2, bar2);
+	assert(!mpz_cmp(foo, bar));
+	
+	mpz_set_str(bar, "e0mlbyryzvl4ho7glw6166ow8faqegj", 36);
+	s = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	mpz_shash(foo, s);
 	assert(!mpz_cmp(foo, bar));
 	
 	mpz_clear(foo), mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2);
