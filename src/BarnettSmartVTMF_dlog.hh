@@ -110,7 +110,8 @@ class BarnettSmartVTMF_dlog
 		void VerifiableRemaskingProtocol_RemaskValue
 			(mpz_ptr r, unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		void VerifiableRemaskingProtocol_Remask
-			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_srcptr r);
+			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2,
+			mpz_srcptr r, bool TimingAttackProtection = true);
 		void VerifiableRemaskingProtocol_Prove
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr c__1, mpz_srcptr c__2,
 			mpz_srcptr r, std::ostream &out);

@@ -227,7 +227,7 @@ bool SchindelhauerTMCG::TMCG_VerifyNonQuadraticResidue
 
 void SchindelhauerTMCG::TMCG_MaskValue
 	(const TMCG_PublicKey &key, mpz_srcptr z, mpz_ptr zz,
-		mpz_srcptr r, mpz_srcptr b)
+		mpz_srcptr r, mpz_srcptr b, bool TimingAttackProtection)
 {
 	mpz_t tim;
 	
@@ -243,9 +243,12 @@ void SchindelhauerTMCG::TMCG_MaskValue
 	}
 	else
 	{
-		// compute dummy value to prevent timing attacks
-		mpz_mul(tim, zz, key.y);
-		mpz_mod(tim, tim, key.m);
+		if (TimingAttackProtection)
+		{
+			// compute dummy value to prevent timing attacks
+			mpz_mul(tim, zz, key.y);
+			mpz_mod(tim, tim, key.m);
+		}
 	}
 	mpz_clear(tim);
 }
@@ -828,7 +831,7 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 
 void SchindelhauerTMCG::TMCG_MaskCard
 	(const TMCG_Card &c, TMCG_Card &cc, const TMCG_CardSecret &cs,
-		const TMCG_PublicKeyRing &ring)
+		const TMCG_PublicKeyRing &ring, bool TimingAttackProtection)
 {
 	assert((c.z.size() == cc.z.size()) && (c.z[0].size() == cc.z[0].size()));
 	assert((c.z.size() == cs.r.size()) && (c.z[0].size() == cs.r[0].size()));
@@ -836,14 +839,15 @@ void SchindelhauerTMCG::TMCG_MaskCard
 	for (size_t k = 0; k < c.z.size(); k++)
 		for (size_t w = 0; w < c.z[k].size(); w++)
 			TMCG_MaskValue(ring.key[k], &c.z[k][w], &cc.z[k][w],
-				&cs.r[k][w], &cs.b[k][w]);
+				&cs.r[k][w], &cs.b[k][w], TimingAttackProtection);
 }
 
 void SchindelhauerTMCG::TMCG_MaskCard
 	(const VTMF_Card &c, VTMF_Card &cc, const VTMF_CardSecret &cs,
-		BarnettSmartVTMF_dlog *vtmf)
+		BarnettSmartVTMF_dlog *vtmf, bool TimingAttackProtection)
 {
-	vtmf->VerifiableRemaskingProtocol_Remask(c.c_1, c.c_2, cc.c_1, cc.c_2, cs.r);
+	vtmf->VerifiableRemaskingProtocol_Remask(c.c_1, c.c_2, cc.c_1, cc.c_2,
+		cs.r, TimingAttackProtection);
 }
 
 void SchindelhauerTMCG::TMCG_ProveMaskCard
@@ -1144,7 +1148,8 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 
 void SchindelhauerTMCG::TMCG_MixStack
 	(const TMCG_Stack<TMCG_Card> &s, TMCG_Stack<TMCG_Card> &s2,
-	const TMCG_StackSecret<TMCG_CardSecret> &ss, const TMCG_PublicKeyRing &ring)
+	const TMCG_StackSecret<TMCG_CardSecret> &ss,
+	const TMCG_PublicKeyRing &ring, bool TimingAttackProtection)
 {
 	assert((s.size() != 0) && (s.size() == ss.size()));
 	
@@ -1153,14 +1158,16 @@ void SchindelhauerTMCG::TMCG_MixStack
 	for (size_t i = 0; i < s.size(); i++)
 	{
 		TMCG_Card c(TMCG_Players, TMCG_TypeBits);
-		TMCG_MaskCard(s[ss[i].first], c, ss[ss[i].first].second, ring);
+		TMCG_MaskCard(s[ss[i].first], c, ss[ss[i].first].second, ring,
+			TimingAttackProtection);
 		s2.push(c);
 	}
 }
 
 void SchindelhauerTMCG::TMCG_MixStack
 	(const TMCG_Stack<VTMF_Card> &s, TMCG_Stack<VTMF_Card> &s2,
-	const TMCG_StackSecret<VTMF_CardSecret> &ss, BarnettSmartVTMF_dlog *vtmf)
+	const TMCG_StackSecret<VTMF_CardSecret> &ss, BarnettSmartVTMF_dlog *vtmf,
+	bool TimingAttackProtection)
 {
 	assert((s.size() != 0) && (s.size() == ss.size()));
 	
@@ -1169,7 +1176,8 @@ void SchindelhauerTMCG::TMCG_MixStack
 	for (size_t i = 0; i < s.size(); i++)
 	{
 		VTMF_Card c;
-		TMCG_MaskCard(s[ss[i].first], c, ss[ss[i].first].second, vtmf);
+		TMCG_MaskCard(s[ss[i].first], c, ss[ss[i].first].second, vtmf,
+			TimingAttackProtection);
 		s2.push(c);
 	}
 }
@@ -1398,9 +1406,9 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			
 			// verify equality proof
 			if (mpz_get_ui(foo) & 1L)
-				TMCG_MixStack(s2, s4, ss, ring);
+				TMCG_MixStack(s2, s4, ss, ring, false);
 			else
-				TMCG_MixStack(s, s4, ss, ring);
+				TMCG_MixStack(s, s4, ss, ring, false);
 			if (TMCG_STACK_EQUALITY_HASH)
 			{
 				std::ostringstream ost;
@@ -1480,9 +1488,9 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			
 			// verify equality proof
 			if (mpz_get_ui(foo) & 1L)
-				TMCG_MixStack(s2, s4, ss, vtmf);
+				TMCG_MixStack(s2, s4, ss, vtmf, false);
 			else
-				TMCG_MixStack(s, s4, ss, vtmf);
+				TMCG_MixStack(s, s4, ss, vtmf, false);
 			if (TMCG_STACK_EQUALITY_HASH)
 			{
 				std::ostringstream ost;

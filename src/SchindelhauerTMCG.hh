@@ -106,7 +106,7 @@ class SchindelhauerTMCG
 		// operations on values
 		void TMCG_MaskValue
 			(const TMCG_PublicKey &key, mpz_srcptr z, mpz_ptr zz,
-			mpz_srcptr r, mpz_srcptr b);
+			mpz_srcptr r, mpz_srcptr b, bool TimingAttackProtection = true);
 		
 		// operations and proofs on cards
 		void TMCG_CreateOpenCard
@@ -127,10 +127,10 @@ class SchindelhauerTMCG
 			(TMCG_CardSecret &cs, mpz_srcptr r, unsigned long int b);
 		void TMCG_MaskCard
 			(const TMCG_Card &c, TMCG_Card &cc, const TMCG_CardSecret &cs,
-			const TMCG_PublicKeyRing &ring);
+			const TMCG_PublicKeyRing &ring, bool TimingAttackProtection = true);
 		void TMCG_MaskCard
 			(const VTMF_Card &c, VTMF_Card &cc, const VTMF_CardSecret &cs,
-			BarnettSmartVTMF_dlog *vtmf);
+			BarnettSmartVTMF_dlog *vtmf, bool TimingAttackProtection = true);
 		void TMCG_ProveMaskCard
 			(const TMCG_Card &c, const TMCG_Card &cc, const TMCG_CardSecret &cs,
 			const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out);
@@ -180,10 +180,12 @@ class SchindelhauerTMCG
 			BarnettSmartVTMF_dlog *vtmf);
 		void TMCG_MixStack
 			(const TMCG_Stack<TMCG_Card> &s, TMCG_Stack<TMCG_Card> &s2,
-			const TMCG_StackSecret<TMCG_CardSecret> &ss, const TMCG_PublicKeyRing &ring);
+			const TMCG_StackSecret<TMCG_CardSecret> &ss,
+			const TMCG_PublicKeyRing &ring, bool TimingAttackProtection = true);
 		void TMCG_MixStack
 			(const TMCG_Stack<VTMF_Card> &s, TMCG_Stack<VTMF_Card> &s2,
-			const TMCG_StackSecret<VTMF_CardSecret> &ss, BarnettSmartVTMF_dlog *vtmf);
+			const TMCG_StackSecret<VTMF_CardSecret> &ss,
+			BarnettSmartVTMF_dlog *vtmf, bool TimingAttackProtection = true);
 		void TMCG_GlueStackSecret
 			(const TMCG_StackSecret<TMCG_CardSecret> &sigma,
 			TMCG_StackSecret<TMCG_CardSecret> &pi, const TMCG_PublicKeyRing &ring);

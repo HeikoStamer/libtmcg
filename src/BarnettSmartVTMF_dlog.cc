@@ -415,15 +415,22 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_RemaskValue
 }
 
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
-	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_srcptr r)
+	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2,
+	mpz_srcptr r, bool TimingAttackProtection)
 {
 	// compute c'_1 = c_1 \cdot g^r \bmod p
-	mpz_spowm(c__1, g, r, p);
+	if (TimingAttackProtection)
+		mpz_spowm(c__1, g, r, p);
+	else
+		mpz_powm(c__1, g, r, p);
 	mpz_mul(c__1, c__1, c_1);
 	mpz_mod(c__1, c__1, p);
 	
 	// compute c'_2 = c_2 \cdot h^r \bmod p
-	mpz_spowm(c__2, h, r, p);
+	if (TimingAttackProtection)
+		mpz_spowm(c__2, h, r, p);
+	else
+		mpz_powm(c__2, h, r, p);
 	mpz_mul(c__2, c__2, c_2);
 	mpz_mod(c__2, c__2, p);
 }
