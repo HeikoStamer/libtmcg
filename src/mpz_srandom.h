@@ -31,7 +31,9 @@
 		extern "C"
 		{
 	#endif
-			size_t mpz_srandom
+			unsigned long int mpz_ssrandom_ui
+				();
+			unsigned long int mpz_srandom_ui
 				();
 			void mpz_ssrandomb
 				(mpz_ptr r, unsigned long int size);

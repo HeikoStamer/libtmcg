@@ -20,10 +20,18 @@
 
 #include "mpz_srandom.h"
 
-size_t mpz_srandom
+unsigned long int mpz_ssrandom_ui
 	()
 {
-	size_t tmp;
+	unsigned long int tmp;
+	gcry_randomize((unsigned char *)&tmp, sizeof(tmp), GCRY_VERY_STRONG_RANDOM);
+	return tmp;
+}
+
+unsigned long int mpz_srandom_ui
+	()
+{
+	unsigned long int tmp;
 	gcry_randomize((unsigned char *)&tmp, sizeof(tmp), GCRY_STRONG_RANDOM);
 	return tmp;
 }
