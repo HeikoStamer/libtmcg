@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.8 $)
+AC_REVISION($Revision: 1.9 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -94,7 +94,6 @@ if test "x$GPG_ERROR_LIBS" = "x"; then
 fi
 
 # Checks for header files.
-AC_PATH_X
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h stdarg.h string.h strings.h unistd.h])
 
