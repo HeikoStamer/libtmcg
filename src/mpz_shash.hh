@@ -36,18 +36,18 @@
 	// GNU multiple precision library
 	#include <gmp.h>
 	
-	/* Fiat-Shamir heuristic */
-	void mpz_shash
-		(mpz_ptr r, mpz_srcptr a1, mpz_srcptr a2, mpz_srcptr a3);
-	
-	void mpz_shash
-		(mpz_ptr r, mpz_srcptr a1, mpz_srcptr a2, mpz_srcptr a3,
-		mpz_srcptr a4, mpz_srcptr a5, mpz_srcptr a6);
-	
 	/* hash functions h() and g() [Random Oracles are practical] */
 	void h
 		(char *output, const char *input, size_t size);
 	
 	void g
 		(char *output, size_t osize, const char *input, size_t isize);
+	
+	/* Fiat-Shamir heuristic for non-interactive proofs of knowledge */
+	void mpz_shash
+		(mpz_ptr r, mpz_srcptr a1, mpz_srcptr a2, mpz_srcptr a3);
+	
+	void mpz_shash
+		(mpz_ptr r, mpz_srcptr a1, mpz_srcptr a2, mpz_srcptr a3,
+		mpz_srcptr a4, mpz_srcptr a5, mpz_srcptr a6);
 #endif
