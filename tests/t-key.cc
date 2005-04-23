@@ -43,7 +43,7 @@ int main
 	assert(pub.check());
 
 	// sign and verify
-	std::cout << "TMCG_SecretKey.sign(), *.verify()" <<	std::endl;
+	std::cout << "TMCG_SecretKey.sign(), *.verify()" << std::endl;
 	sig = sec.sign(v);
 	assert(sec.verify(v, sig));
 	assert(pub.verify(v, sig));
@@ -51,7 +51,7 @@ int main
 	assert(!pub.verify(vf, sig));
 	
 	// encrypt and decrypt
-	std::cout << "*.encrypt(), TMCG_SecretKey.decrypt()" <<	std::endl;
+	std::cout << "*.encrypt(), TMCG_SecretKey.decrypt()" << std::endl;
 	char tmp[TMCG_SAEP_S0], *dec = NULL, *dec2 = NULL;
 	gcry_randomize((unsigned char *)tmp, sizeof(tmp), GCRY_STRONG_RANDOM);
 	enc = pub.encrypt(tmp), enc2 = sec.encrypt(tmp);
@@ -62,7 +62,7 @@ int main
 	delete [] dec, delete [] dec2;
 	
 	// import and verify
-	std::cout << "*import(), *.verify()" <<	std::endl;
+	std::cout << "*.import(), *.verify()" << std::endl;
 	assert(sec2.import(ks));
 	assert(pub2.import(kp));
 	assert(sec2.verify(v, vsig));

@@ -20,8 +20,7 @@
 
 #include "mpz_helper.hh"
 
-// friendly iostream operators 
-// FIXME: currently << and >> are insufficent defined by <gmpxx.h>
+// iostream operators for mpz_t
 std::ostream& operator<< 
 	(std::ostream &out, mpz_srcptr value)
 {

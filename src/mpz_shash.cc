@@ -44,15 +44,15 @@ void g
 	{
 		/* construct the expanded input y = x || TMCG<i> || x */
 		char *data = new char[9 + (2 * isize)];
-		memcpy(data, input, isize);
-		snprintf(data + isize, 9, "libTMCG%02x", (unsigned int)i);
-		memcpy(data + isize + 9, input, isize);
+		std::memcpy(data, input, isize);
+		std::snprintf(data + isize, 9, "libTMCG%02x", (unsigned int)i);
+		std::memcpy(data + isize + 9, input, isize);
 		
 		/* using h(y) "in some nonstandard way" with "output truncated" [BR95] */
 		h(out + (i * usesize), data, 9 + (2 * isize));
 		delete [] data;
 	}
-	memcpy(output, out, osize);
+	std::memcpy(output, out, osize);
 	delete [] out;
 }
 
@@ -68,7 +68,7 @@ void mpz_shash
 	
 	/* convert the digest to a hexadecimal encoded string */
 	for (unsigned int i = 0; i < hash_size; i++)
-		snprintf(hex_digest + (2 * i), 3, "%02x", (unsigned char)digest[i]);
+		std::snprintf(hex_digest + (2 * i), 3, "%02x", (unsigned char)digest[i]);
 	
 	/* convert the hexadecimal encoded string to an mpz-integer */
 	mpz_set_str(r, hex_digest, 16);
@@ -76,8 +76,8 @@ void mpz_shash
 	delete [] digest, delete [] hex_digest;
 }
 
-/* Hashing of the public inputs (aka Fiat-Shamir heuristic) with h() to
-   make the proofs of knowledge non-interactive. */
+/* Hashing of the public inputs (aka Fiat-Shamir heuristic) with h(),
+   e.g. to make some proofs of knowledge non-interactive. */
 void mpz_shash
 	(mpz_ptr r, size_t n, ...)
 {

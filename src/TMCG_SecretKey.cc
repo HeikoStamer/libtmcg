@@ -4,8 +4,8 @@
      Rosario Gennaro, Daniele Micciancio, Tal Rabin: 
      'An Efficient Non-Interactive Statistical Zero-Knowledge 
       Proof System for Quasi-Safe Prime Products'
-		 5th ACM Conference on Computer and Communication Security, 1998
-		
+     5th ACM Conference on Computer and Communication Security, 1998
+
      Mihir Bellare, Phillip Rogaway: 'The Exact Security of Digital
       Signatures -- How to Sign with RSA and Rabin', 1996
 
@@ -421,17 +421,19 @@ bool TMCG_SecretKey::decrypt
 			{
 				size_t cnt = 1;
 				mpz_export(yy, &cnt, -1, rabin_s2 + rabin_s1, 1, 0, vroot[k]);
-				memcpy(Mt, yy, rabin_s2), memcpy(r, yy + rabin_s2, rabin_s1);
+				std::memcpy(Mt, yy, rabin_s2);
+				std::memcpy(r, yy + rabin_s2, rabin_s1);
 				g(g12, rabin_s2, r, rabin_s1);
 				
 				for (size_t i = 0; i < rabin_s2; i++)
 					Mt[i] ^= g12[i];
 				
-				memset(g12, 0, TMCG_SAEP_S0);
-				if (memcmp(Mt + TMCG_SAEP_S0, g12, TMCG_SAEP_S0) == 0)
+				std::memset(g12, 0, TMCG_SAEP_S0);
+				if (std::memcmp(Mt + TMCG_SAEP_S0, g12, TMCG_SAEP_S0) == 0)
 				{
+					// allocated memory has to be released by the caller
 					value = new char[TMCG_SAEP_S0];
-					memcpy(value, Mt, TMCG_SAEP_S0);
+					std::memcpy(value, Mt, TMCG_SAEP_S0);
 					throw true;
 				}
 			}
@@ -467,8 +469,8 @@ std::string TMCG_SecretKey::sign
 		gcry_randomize((unsigned char*)r, TMCG_PRAB_K0, GCRY_STRONG_RANDOM);
 		
 		char *Mr = new char[data.length() + TMCG_PRAB_K0];
-		memcpy(Mr, data.c_str(), data.length());
-		memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
+		std::memcpy(Mr, data.c_str(), data.length());
+		std::memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
 		
 		char *w = new char[mdsize];
 		h(w, Mr, data.length() + TMCG_PRAB_K0);
@@ -480,9 +482,9 @@ std::string TMCG_SecretKey::sign
 			r[i] ^= g12[i];
 		
 		char *yy = new char[mnsize];
-		memcpy(yy, w, mdsize);
-		memcpy(yy + mdsize, r, TMCG_PRAB_K0);
-		memcpy(yy + mdsize + TMCG_PRAB_K0, g12 + TMCG_PRAB_K0,
+		std::memcpy(yy, w, mdsize);
+		std::memcpy(yy + mdsize, r, TMCG_PRAB_K0);
+		std::memcpy(yy + mdsize + TMCG_PRAB_K0, g12 + TMCG_PRAB_K0,
 			mnsize - mdsize - TMCG_PRAB_K0);
 		mpz_import(foo, 1, -1, mnsize, 1, 0, yy);
 		
@@ -492,7 +494,7 @@ std::string TMCG_SecretKey::sign
 	mpz_sqrtmn_fast_all(foo_sqrt[0], foo_sqrt[1], foo_sqrt[2], foo_sqrt[3], foo,
 		p, q, m, gcdext_up, gcdext_vq, pa1d4, qa1d4);
 	
-	// choose square root randomly (one of four)
+	// choose square root randomly (one out-of four)
 	mpz_srandomb(foo, 2L);
 	
 	std::ostringstream ost;
@@ -523,7 +525,7 @@ TMCG_SecretKey::~TMCG_SecretKey
 	mpz_clear(m), mpz_clear(y), mpz_clear(p), mpz_clear(q);
 	// release non-persistent values
 	mpz_clear(y1), mpz_clear(m1pq), mpz_clear(gcdext_up),
-	mpz_clear(gcdext_vq), mpz_clear(pa1d4), mpz_clear(qa1d4);
+		mpz_clear(gcdext_vq), mpz_clear(pa1d4), mpz_clear(qa1d4);
 }
 
 std::ostream& operator<< 

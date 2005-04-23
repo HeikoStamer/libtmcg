@@ -31,7 +31,7 @@
 	// GNU multiple precision library
 	#include <gmp.h>
 	
-	// friendly iostream operators
+	// iostream operators for mpz_t
 	std::ostream& operator<<
 		(std::ostream &out, mpz_srcptr value);
 	std::istream& operator>> 
