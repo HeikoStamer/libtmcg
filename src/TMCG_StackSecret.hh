@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -97,13 +97,19 @@ template <typename CardSecretType> struct TMCG_StackSecret
 		stack.clear();
 	}
 	
-	bool find
-		(size_t index)
+	size_t find_position
+		(size_t index) const
 	{
-		return (std::find_if(stack.begin(), stack.end(),
-			std::bind2nd(eq_first_component(),
-				std::pair<size_t, CardSecretType>(index, CardSecretType())))
-					!= stack.end());
+		return distance(stack.begin(),
+			std::find_if(stack.begin(), stack.end(),
+				std::bind2nd(eq_first_component(),
+					std::pair<size_t, CardSecretType>(index, CardSecretType()))));
+	}
+	
+	bool find
+		(size_t index) const
+	{
+		return (find_position(index) == stack.size() ? false : true);
 	}
 	
 	bool import
@@ -146,6 +152,13 @@ template <typename CardSecretType> struct TMCG_StackSecret
 				
 				// store pair
 				stack.push_back(lej);
+			}
+			
+			// check whether the index component is a correct permutation
+			for (size_t i = 0; i < size; i++)
+			{
+				if (find_position(i) >= size)
+					throw false;
 			}
 			
 			throw true;

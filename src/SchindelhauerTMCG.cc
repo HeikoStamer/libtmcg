@@ -1196,10 +1196,10 @@ void SchindelhauerTMCG::TMCG_GlueStackSecret
 	{
 		TMCG_CardSecret cs(TMCG_Players, TMCG_TypeBits);
 		TMCG_CreateCardSecret(cs, ring, 0);
-		size_t sigma_idx = i, pi_idx = 0;
-		for (size_t j = 0; j < pi.size(); j++)
-			if (sigma[j].first == i)
-				pi_idx = j;
+		size_t sigma_idx = i, pi_idx = sigma.find_position(i);
+		
+		assert(pi_idx < sigma.size());
+		
 		for (size_t k = 0; k < TMCG_Players; k++)
 		{
 			for (size_t w = 0; w < TMCG_TypeBits; w++)
@@ -1256,10 +1256,10 @@ void SchindelhauerTMCG::TMCG_GlueStackSecret
 	for (size_t i = 0; i < sigma.size(); i++)
 	{
 		VTMF_CardSecret cs;
-		size_t sigma_idx = i, pi_idx = 0;
-		for (size_t j = 0; j < pi.size(); j++)
-			if (sigma[j].first == i)
-				pi_idx = j;
+		size_t sigma_idx = i, pi_idx = sigma.find_position(i);
+		
+		assert(pi_idx < sigma.size());
+		
 		mpz_add(cs.r, (sigma[sigma_idx].second).r, (pi[pi_idx].second).r);
 		mpz_mod(cs.r, cs.r, vtmf->q);
 		ss3.push(sigma[pi[i].first].first, cs);
@@ -1291,7 +1291,7 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 		TMCG_CreateStackSecret(ss2, cyclic, ring, index, s.size());
 		TMCG_MixStack(s2, s3, ss2, ring);
 		
-		if (TMCG_STACK_EQUALITY_HASH)
+		if (TMCG_HASH_COMMITMENT)
 		{
 			// send commitment (instead of the whole stack)
 			std::ostringstream ost;
@@ -1337,7 +1337,7 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 		TMCG_CreateStackSecret(ss2, cyclic, s.size(), vtmf);
 		TMCG_MixStack(s2, s3, ss2, vtmf);
 		
-		if (TMCG_STACK_EQUALITY_HASH)
+		if (TMCG_HASH_COMMITMENT)
 		{
 			// send commitment (instead of the whole stack)
 			std::ostringstream ost;
@@ -1383,7 +1383,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			TMCG_StackSecret<TMCG_CardSecret> ss;
 			mpz_srandomb(foo, 1L);
 			
-			if (TMCG_STACK_EQUALITY_HASH)
+			if (TMCG_HASH_COMMITMENT)
 			{
 				// receive commitment
 				in >> bar;
@@ -1409,7 +1409,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 				TMCG_MixStack(s2, s4, ss, ring, false);
 			else
 				TMCG_MixStack(s, s4, ss, ring, false);
-			if (TMCG_STACK_EQUALITY_HASH)
+			if (TMCG_HASH_COMMITMENT)
 			{
 				std::ostringstream ost;
 				ost << s4 << std::endl;
@@ -1465,7 +1465,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			TMCG_StackSecret<VTMF_CardSecret> ss;
 			mpz_srandomb(foo, 1L);
 			
-			if (TMCG_STACK_EQUALITY_HASH)
+			if (TMCG_HASH_COMMITMENT)
 			{
 				// receive commitment
 				in >> bar;
@@ -1491,7 +1491,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 				TMCG_MixStack(s2, s4, ss, vtmf, false);
 			else
 				TMCG_MixStack(s, s4, ss, vtmf, false);
-			if (TMCG_STACK_EQUALITY_HASH)
+			if (TMCG_HASH_COMMITMENT)
 			{
 				std::ostringstream ost;
 				ost << s4 << std::endl;
@@ -1532,7 +1532,7 @@ void SchindelhauerTMCG::TMCG_MixOpenStack
 {
 	assert((os.size() != 0) && (os.size() == ss.size()));
 	
-	// mask all cards, mix and build new open stack
+	// mask all cards, mix, and build new open stack
 	os2.clear();
 	for (size_t i = 0; i < os.size(); i++)
 	{
@@ -1548,7 +1548,7 @@ void SchindelhauerTMCG::TMCG_MixOpenStack
 {
 	assert((os.size() != 0) && (os.size() == ss.size()));
 	
-	// mask all cards, mix and build new open stack
+	// mask all cards, mix, and build new open stack
 	os2.clear();
 	for (size_t i = 0; i < os.size(); i++)
 	{

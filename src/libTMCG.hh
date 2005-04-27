@@ -130,10 +130,10 @@
 		#define TMCG_SAEP_S0 20
 	#endif
 
-	#ifndef TMCG_STACK_EQUALITY_HASH
-		/* Define whether short stack commitments (hash function) should be used;
+	#ifndef TMCG_HASH_COMMITMENT
+		/* Define whether hashed commitments (short values) should be used;
 		   Underlying assumption: Random Oracle Model */
-		#define TMCG_STACK_EQUALITY_HASH true
+		#define TMCG_HASH_COMMITMENT true
 	#endif
 
 	#include <TMCG_SecretKey.hh>
