@@ -1073,14 +1073,14 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 		TMCG_CardSecret cs(TMCG_Players, TMCG_TypeBits);
 		TMCG_CreateCardSecret(cs, ring, index);
 		
-		// do only a cyclic shift
+		// create only a cyclic shift
 		if (cyclic)
 		{
 			mpz_set_ui(foo, i);
 			mpz_add_ui(foo, foo, (unsigned long int)cyc);
 			mpz_mod(foo, foo, bar);
 		}
-		// make a full permutation
+		// create a full permutation
 		else
 		{
 			bool pi_ok;
@@ -1120,14 +1120,14 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 		VTMF_CardSecret cs;
 		TMCG_CreateCardSecret(cs, vtmf);
 		
-		// only cyclic shift
+		// create only a cyclic shift
 		if (cyclic)
 		{
 			mpz_set_ui(foo, i);
 			mpz_add_ui(foo, foo, (unsigned long int)cyc);
 			mpz_mod(foo, foo, bar);
 		}
-		// full permutation
+		// create a full permutation
 		else
 		{
 			bool pi_ok;
@@ -1153,7 +1153,7 @@ void SchindelhauerTMCG::TMCG_MixStack
 {
 	assert((s.size() != 0) && (s.size() == ss.size()));
 	
-	// mask all cards, mix and build new stack
+	// mask all cards, mix, and build new stack
 	s2.clear();
 	for (size_t i = 0; i < s.size(); i++)
 	{
@@ -1171,7 +1171,7 @@ void SchindelhauerTMCG::TMCG_MixStack
 {
 	assert((s.size() != 0) && (s.size() == ss.size()));
 	
-	// mask all cards, mix and build new stack
+	// mask all cards, mix, and build new stack
 	s2.clear();
 	for (size_t i = 0; i < s.size(); i++)
 	{
