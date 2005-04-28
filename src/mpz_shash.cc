@@ -45,7 +45,7 @@ void g
 		/* construct the expanded input y = x || TMCG<i> || x */
 		char *data = new char[9 + (2 * isize)];
 		std::memcpy(data, input, isize);
-		std::snprintf(data + isize, 9, "libTMCG%02x", (unsigned int)i);
+		snprintf(data + isize, 9, "libTMCG%02x", (unsigned int)i);
 		std::memcpy(data + isize + 9, input, isize);
 		
 		/* using h(y) "in some nonstandard way" with "output truncated" [BR95] */
@@ -68,7 +68,7 @@ void mpz_shash
 	
 	/* convert the digest to a hexadecimal encoded string */
 	for (unsigned int i = 0; i < hash_size; i++)
-		std::snprintf(hex_digest + (2 * i), 3, "%02x", (unsigned char)digest[i]);
+		snprintf(hex_digest + (2 * i), 3, "%02x", (unsigned char)digest[i]);
 	
 	/* convert the hexadecimal encoded string to an mpz-integer */
 	mpz_set_str(r, hex_digest, 16);
