@@ -44,7 +44,6 @@ int main
 	// publish the instance
 	std::cout << "vtmf.PublishGroup(lej)" << std::endl;
 	vtmf->PublishGroup(lej);
-	std::cout << lej.str();
 	
 	// create a cloned instance
 	std::cout << "BarnettSmartVTMF_dlog(lej)" << std::endl;
@@ -53,27 +52,34 @@ int main
 	// publish the cloned instance
 	std::cout << "vtmf2.PublishGroup(lej2)" << std::endl;
 	vtmf2->PublishGroup(lej2);
-	std::cout << lej2.str();
 	assert(lej.str() == lej2.str());
 	
 	// RandomElement(), NextElement(), IndexElement()
 	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(d), mpz_init(e);
 		std::cout << "vtmf.RandomElement(a)" << std::endl;
 		vtmf->RandomElement(a);
-		std::cout << a << std::endl;
 		assert(mpz_cmp(a, vtmf->p) < 0);
 		assert(mpz_jacobi(a, vtmf->p) == 1L);
 		mpz_powm(b, a, vtmf->q, vtmf->p);
 		assert(!mpz_cmp_ui(b, 1L));
 		std::cout << "vtmf.RandomElement(b)" << std::endl;
 		vtmf->RandomElement(b);
-		std::cout << b << std::endl;
 		assert(mpz_cmp(a, b));
 	mpz_set(b, a);
 		std::cout << "vtmf.NextElement(a)" << std::endl;
 		vtmf->NextElement(a);
-		std::cout << a << std::endl;
-	
+		assert(mpz_cmp(b, a) < 0);
+	mpz_set_ui(b, 0L);
+		std::cout << "vtmf.IndexElement(a, 0...63)" << std::endl;
+		for (size_t i = 0; i < 64; i++)
+		{
+			vtmf->IndexElement(a, i);
+			std::cout << a << " ";
+			assert(mpz_cmp(b, a) < 0);
+			mpz_set(b, a);
+		}
+	std::cout << std::endl;
+		
 	mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(d), mpz_clear(e);
 	
 	// release the instances
