@@ -124,7 +124,7 @@ void BarnettSmartVTMF_dlog::PublishGroup
 void BarnettSmartVTMF_dlog::RandomElement
 	(mpz_ptr a)
 {
-	// choose a random element of G (it has to be a quadratic residue)
+	// choose a random element of G (it MUST be a quadratic residue)
 	do
 		mpz_srandomm(a, p);
 	while (mpz_cmp_ui(a, 0L) == 0L);
