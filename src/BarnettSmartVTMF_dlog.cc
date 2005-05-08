@@ -159,7 +159,7 @@ void BarnettSmartVTMF_dlog::IndexElement
 void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
 	()
 {
-	// generate the random private key x_i \in Z_q
+	// generate the private key x_i \in Z_q randomly
 	mpz_srandomm(x_i, q);
 	
 	// compute h_i = g^{x_i} \bmod p (with blinding techniques)

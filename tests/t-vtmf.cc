@@ -28,12 +28,13 @@
 int main
 	(int argc, char **argv)
 {
-	std::stringstream lej, lej2;
+	std::stringstream lej, lej2, foo, foo2;
 	std::string v;
 	mpz_t a, b, c, d, e;
 	assert(init_libTMCG());
 	
 	BarnettSmartVTMF_dlog *vtmf, *vtmf2;
+	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(d), mpz_init(e);
 	
 	// create and check the instance
 	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
@@ -55,35 +56,44 @@ int main
 	assert(lej.str() == lej2.str());
 	
 	// RandomElement(), NextElement(), IndexElement()
-	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(d), mpz_init(e);
-		std::cout << "vtmf.RandomElement(a)" << std::endl;
-		vtmf->RandomElement(a);
-		assert(mpz_cmp(a, vtmf->p) < 0);
-		assert(mpz_jacobi(a, vtmf->p) == 1L);
-		mpz_powm(b, a, vtmf->q, vtmf->p);
-		assert(!mpz_cmp_ui(b, 1L));
-		std::cout << "vtmf.RandomElement(b)" << std::endl;
-		vtmf->RandomElement(b);
-		assert(mpz_cmp(a, b));
+	std::cout << "vtmf.RandomElement(a)" << std::endl;
+	vtmf->RandomElement(a);
+	assert(mpz_cmp(a, vtmf->p) < 0);
+	assert(mpz_jacobi(a, vtmf->p) == 1L);
+	mpz_powm(b, a, vtmf->q, vtmf->p);
+	assert(!mpz_cmp_ui(b, 1L));
+	std::cout << "vtmf.RandomElement(b)" << std::endl;
+	vtmf->RandomElement(b);
+	assert(mpz_cmp(a, b));
 	mpz_set(b, a);
-		std::cout << "vtmf.NextElement(a)" << std::endl;
-		vtmf->NextElement(a);
-		assert(mpz_cmp(b, a) < 0);
+	std::cout << "vtmf.NextElement(a)" << std::endl;
+	vtmf->NextElement(a);
+	assert(mpz_cmp(b, a) < 0);
 	mpz_set_ui(b, 0L);
-		std::cout << "vtmf.IndexElement(a, 0...63)" << std::endl;
-		for (size_t i = 0; i < 64; i++)
-		{
-			vtmf->IndexElement(a, i);
-			std::cout << a << " ";
-			assert(mpz_cmp(b, a) < 0);
-			mpz_set(b, a);
-		}
+	std::cout << "vtmf.IndexElement(a, 0...63)" << std::endl;
+	for (size_t i = 0; i < 64; i++)
+	{
+		vtmf->IndexElement(a, i);
+		std::cout << a << " ";
+		assert(mpz_cmp(b, a) < 0);
+		mpz_set(b, a);
+	}
 	std::cout << std::endl;
-		
-	mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(d), mpz_clear(e);
+
+	// key generation protocol
+	std::cout << "*.KeyGenerationProtocol_GenerateKey()" << std::endl;
+	vtmf->KeyGenerationProtocol_GenerateKey();
+	vtmf2->KeyGenerationProtocol_GenerateKey();
+	vtmf->KeyGenerationProtocol_PublishKey(foo);
+	vtmf2->KeyGenerationProtocol_PublishKey(foo2);
+	assert(vtmf->KeyGenerationProtocol_UpdateKey(foo2));
+	assert(vtmf2->KeyGenerationProtocol_UpdateKey(foo));
+	
+	
 	
 	// release the instances
 	delete vtmf, delete vtmf2;
-	
+
+	mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(d), mpz_clear(e);
 	return 0;
 }
