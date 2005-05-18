@@ -89,7 +89,51 @@ int main
 	assert(vtmf->KeyGenerationProtocol_UpdateKey(foo2));
 	assert(vtmf2->KeyGenerationProtocol_UpdateKey(foo));
 	
+	// TMCG/VTMF
+	std::cout << "TMCG/VTMF Encryption and decryption of cards" << std::endl;
+	SchindelhauerTMCG *tmcg = new SchindelhauerTMCG(16, 2, 8);
 	
+	TMCG_OpenStack<VTMF_Card> os, os2;
+	TMCG_Stack<VTMF_Card> sA, sAB, sB;
+	TMCG_StackSecret<VTMF_CardSecret> ssA, ssB;
+	for (size_t i = 0; i < 256; i++)
+	{
+		VTMF_Card c;
+		tmcg->TMCG_CreateOpenCard(c, vtmf, i);
+		os.push(i, c);
+	}
+	sA.push(os);
+	for (size_t i = 0; i < sA.size(); i++)
+	{
+		assert(sA[i] == os[i].second);
+	}
+	tmcg->TMCG_CreateStackSecret(ssA, false, sA.size(), vtmf);
+	tmcg->TMCG_MixStack(sA, sAB, ssA, vtmf);
+	tmcg->TMCG_CreateStackSecret(ssB, false, sAB.size(), vtmf2);
+	tmcg->TMCG_MixStack(sAB, sB, ssB, vtmf2);
+	for (size_t i = 0; i < sB.size(); i++)
+	{
+		std::stringstream proofA, proofB;
+		size_t typeA = 256, typeB = 256;
+		
+		tmcg->TMCG_SelfCardSecret(sB[i], vtmf);
+		tmcg->TMCG_ProveCardSecret(sB[i], vtmf2, proofB, proofB);
+		assert(tmcg->TMCG_VerifyCardSecret(sB[i], vtmf, proofB, proofB));
+		typeA = tmcg->TMCG_TypeOfCard(sB[i], vtmf);
+		
+		tmcg->TMCG_SelfCardSecret(sB[i], vtmf2);
+		tmcg->TMCG_ProveCardSecret(sB[i], vtmf, proofA, proofA);
+		assert(tmcg->TMCG_VerifyCardSecret(sB[i], vtmf2, proofA, proofA));
+		typeB = tmcg->TMCG_TypeOfCard(sB[i], vtmf2);
+		
+		std::cout << typeA << " ";
+		
+		assert(typeA == typeB);
+		assert((typeA >= 0) && (typeA < 256));
+	}
+	std::cout << std::endl;
+	
+	delete tmcg;
 	
 	// release the instances
 	delete vtmf, delete vtmf2;
