@@ -767,6 +767,7 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 	(TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring, size_t index)
 {
 	assert(index < cs.b.size());
+	assert(index < ring.key.size());
 	
 	mpz_t foo;
 	
