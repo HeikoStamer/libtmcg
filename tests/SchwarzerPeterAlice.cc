@@ -1,4 +1,4 @@
-// libTMCG
+// include the libTMCG header file
 #include <libTMCG.hh>
 
 int main
@@ -6,45 +6,46 @@ int main
 {
 	if (!init_libTMCG())
 	{
-		std::cerr << _("Initalization of libTMCG failed!") << std::endl;
+		std::cerr << _("Initalization of the libTMCG failed!") << std::endl;
 		return -1;
 	}
 	
-	// Initalisieren der "Toolbox for Mental Card Games"
-	// -------------------------------------------------
-	size_t t = 16, k = 2, w = 4; // p_Betrug <= 2^{-16}, 2 Spieler, 13 Typen
+	// create a instance of the "Toolbox for Mental Card Games"
+	// --------------------------------------------------------
+	// p_cheating <= 2^{-16}, k = 2 players, w = 4 bits (2^4 >= 13 different cards)
+	size_t t = 16, k = 2, w = 4;
 	SchindelhauerTMCG *tmcg = new SchindelhauerTMCG(t, k, w);
 		
-	// Initalisieren, Erzeugen ...
+	// create a instance of the VTMF implementation (create the group G)
 	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog();
-	// ... und Überprüfen der Gruppe G
+	// check whether the group G was correctly generated
 	if (!vtmf->CheckGroup())
 	{
-		std::cerr << ">< Gruppe G fehlerhaft erzeugt" << std::endl;
+		std::cerr << _("Group G was not correctly generated!") << std::endl;
 		return -1;
 	}
-	// Senden der Gruppenparameter an Bob
+	// send the parameters of the group to Bob (second party)
 	vtmf->PublishGroup(std::cout);
-	// Erzeugen und Senden des (öffentlichen) Schlüssels
+	// create and send the (public) key
 	vtmf->KeyGenerationProtocol_GenerateKey();
 	vtmf->KeyGenerationProtocol_PublishKey(std::cout);
-	// Einfügen von Bob's öffentlichen Schlüssel
+	// receive Bob's public key and update the VTMF implementation
 	if (!vtmf->KeyGenerationProtocol_UpdateKey(std::cin))
 	{
-		std::cerr << ">< Schlüsselbeweis falsch" << std::endl;
+		std::cerr << _("Bob's public key was not correctly generated!") << std::endl;
 		return -1;
 	}
 	
-	// Blatt mit 25 Karten erstellen (12 Paare und ein "Schwarzer Peter")
-	// ------------------------------------------------------------------
+	// create a deck of 25 cards (12 pairs and one "Schwarzer Peter")
+	// --------------------------------------------------------------
 	TMCG_OpenStack<VTMF_Card> Anfangsstapel;
 	for (size_t i = 0; i < 13; i++)
 	{
 		for (size_t j = 0; j < 2; (i != 0) ? j++ : j = 2)
 		{
 			VTMF_Card c;
-			tmcg->TMCG_CreateOpenCard(c, vtmf, i); // Karte mit Typ i erzeugen,
-			Anfangsstapel.push(i, c);      // und auf den offenen Stapel legen.
+			tmcg->TMCG_CreateOpenCard(c, vtmf, i); // create a card of type i
+			Anfangsstapel.push(i, c);      // push this card to the open stack
 		}
 	}
 	
