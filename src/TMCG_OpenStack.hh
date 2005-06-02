@@ -34,9 +34,6 @@
 	#include <vector>
 	#include <algorithm>
 	#include <functional>
-	
-	#include "mpz_srandom.h"
-	#include "parse_helper.hh"
 
 template <typename CardType> struct TMCG_OpenStack
 {
