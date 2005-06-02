@@ -51,9 +51,11 @@ Requirements
   You need the following libraries and appropriate header files to build
   (GNU gcc/g++ version 3.3.x is recommended) libTMCG successfully:
 
-  * GNU MP Library (libgmp), version >= 4.1, http://www.swox.com/gmp/
+  * GNU Multiple Precision Arithmetic Library (libgmp), version >= 4.1,
+    http://www.swox.com/gmp/
     (built WITHOUT C++ support: ./configure --enable-cxx=no)
-  * GNU Crypto Library (libgcrypt), version >= 1.2.0, ftp://ftp.gnupg.org/
+  * GNU Crypto Library (libgcrypt), version >= 1.2.0,
+    ftp://ftp.gnupg.org/
 
   The library was tested (+ successful, - erroneous) on the following
   platforms:
