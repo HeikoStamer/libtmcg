@@ -149,7 +149,7 @@ void mpz_sprime_test
 		size_t i = 0;
 		unsigned long int mr_k;
 		
-		/* increase $q$ by $2$ (incremental prime number generator) */
+		/* increase $q$ by 2 (incremental prime number generator) */
 		mpz_add_ui(q, q, 2L);
 		/* compute p = 2q + 1 */
 		mpz_mul_2exp(p, q, 1L);
@@ -173,7 +173,7 @@ void mpz_sprime_test
 		if (primes[i])
 			continue;
 		
-		/* Step 3. [CS00]: Test whether $2$ is a Miller-Rabin witness to the
+		/* Step 3. [CS00]: Test whether 2 is a Miller-Rabin witness to the
 		   compositeness of $q$. */
 		mpz_sub_ui(mr_nm1, q, 1L);
 		mr_k = mpz_scan1(mr_nm1, 0L);
@@ -229,8 +229,8 @@ void mpz_sprime2g
 	(mpz_ptr p, mpz_ptr q, unsigned long int qsize)
 {
 	/* The additional test is necessary because we want 2 as generator
-	   of G. If p is congruent 7 modulo 8, then 2 is a quadratic residue
-	   and hence it will generate the cyclic subgroup of order q. [RS00] */
+	   of $G$. If $p$ is congruent 7 modulo 8, then 2 is a quadratic residue
+	   and hence it will generate the cyclic subgroup of order $q$. [RS00] */
 	mpz_sprime_test(p, q, qsize, test2g);
 }
 
@@ -239,8 +239,8 @@ void mpz_sprime3mod4
 {
 	mpz_t q;
 
-	/* The additional test is necessary because we want to get a Blum
-	   integer as the product of two different safe primes. */
+	/* An additional test is necessary, if we want to generate a Blum integer,
+	   i.e. $p, q \equiv 3 \pmod{4}$ in the product of two safe primes. */
 	mpz_init(q);
 	mpz_sprime_test(p, q, psize - 1L, test3mod4);
 	mpz_clear(q);
