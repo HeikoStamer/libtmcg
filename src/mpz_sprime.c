@@ -139,20 +139,17 @@ void mpz_sprime_test
 	
 	mpz_init(mr_y), mpz_init(mr_nm1), mpz_init(mr_q), mpz_init_set_ui(mr_g, 2L);
 	
-	/* Step 1. [CS00]: choose a random number of appropriate size */
+	/* Step 1. [CS00]: choose a random odd number of appropriate size */
 	do
 		mpz_srandomb(q, qsize);
-	while (mpz_sizeinbase(q, 2L) < qsize);
-	/* make it odd */
-	if (mpz_even_p(q))
-		mpz_add_ui(q, q, 1L);
+	while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
 	
 	while (1)
 	{
 		size_t i = 0;
 		unsigned long int mr_k;
 		
-		/* increase q by 2 */
+		/* increase q by 2 (incremental prime number generator) */
 		mpz_add_ui(q, q, 2L);
 		/* compute p = 2q + 1 */
 		mpz_mul_2exp(p, q, 1L);
