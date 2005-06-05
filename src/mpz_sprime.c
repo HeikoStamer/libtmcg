@@ -139,7 +139,7 @@ void mpz_sprime_test
 	
 	mpz_init(mr_y), mpz_init(mr_nm1), mpz_init(mr_q), mpz_init_set_ui(mr_g, 2L);
 	
-	/* Step 1. [CS00]: choose a random odd number of appropriate size */
+	/* Step 1. [CS00]: choose a random odd number $q$ of appropriate size */
 	do
 		mpz_srandomb(q, qsize);
 	while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
@@ -149,7 +149,7 @@ void mpz_sprime_test
 		size_t i = 0;
 		unsigned long int mr_k;
 		
-		/* increase q by 2 (incremental prime number generator) */
+		/* increase $q$ by $2$ (incremental prime number generator) */
 		mpz_add_ui(q, q, 2L);
 		/* compute p = 2q + 1 */
 		mpz_mul_2exp(p, q, 1L);
@@ -160,8 +160,8 @@ void mpz_sprime_test
 			continue;
 		
 		/* Step 2. [CS00]: M.J. Wiener's "Combined Sieve"
-		   Test if either q or p are divisable by any primes up to
-		   some bound B. (We use the bound B = 5000 here.) */
+		   Test whether either $q$ or $p$ are divisable by any primes up to
+		   some bound $B$. (We use the bound $B = 5000$ here.) */
 		for (i = 0; primes[i]; i++)
 		{
 			if (mpz_congruent_ui_p(q, (primes[i] - 1L) / 2L, primes[i]) ||
@@ -173,8 +173,8 @@ void mpz_sprime_test
 		if (primes[i])
 			continue;
 		
-		/* Step 3. [CS00]: Test if 2 is a Miller-Rabin witness to the
-		   compositeness of q. */
+		/* Step 3. [CS00]: Test whether $2$ is a Miller-Rabin witness to the
+		   compositeness of $q$. */
 		mpz_sub_ui(mr_nm1, q, 1L);
 		mr_k = mpz_scan1(mr_nm1, 0L);
 		mpz_tdiv_q_2exp(mr_q, mr_nm1, mr_k);
@@ -183,8 +183,8 @@ void mpz_sprime_test
 		if (!((mpz_cmp_ui(mr_y, 1L) == 0) || (mpz_cmp(mr_y, mr_nm1) == 0)))
 		{
 			size_t mr_w = 0;
-			unsigned long int i;
-			for (i = 1; i < mr_k; i++)
+			unsigned long int j;
+			for (j = 1; j < mr_k; j++)
 			{
 				mpz_powm_ui(mr_y, mr_y, 2L, q);
 				if (mpz_cmp(mr_y, mr_nm1) == 0)
@@ -207,8 +207,8 @@ void mpz_sprime_test
 			continue;
 		fprintf(stderr, "!");
 		
-		/* Step 5. [CS00]: Apply the Miller-Rabin test to q some number
-		   of times (error probability 4^{-64}) using randomly selected bases. */
+		/* Step 5. [CS00]: Apply the Miller-Rabin test to $q$ a defined number
+		   of times (error probability $4^{-64}$) using randomly selected bases. */
 		if (mpz_probab_prime_p(q, 64))
 			break;
 	}
