@@ -48,7 +48,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	mpz_init(h_i_fp);
 	
 	// We shift the generator (according to [KK04]) for the
-	// following usage of shortened exponents.
+	// later following usage of shortened exponents.
 	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
 	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
 	mpz_powm(g, g, h, p);
@@ -68,7 +68,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	
 	// Now shift the generator (according to [KK04]) for the
 	// later following usage of shortened exponents. (masking protocols)
-	// We will use the (Short, Full)-ElGamal variant [KK04] here,
+	// We use the (Short, Full)-ElGamal variant [KK04] here,
 	// i.e. the secret key should be still of full size.
 	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
 	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
@@ -99,10 +99,10 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 			throw false;
 		
 		// check whether g is a generator of the group G
-		// It is sufficient to assert that g is a quadratic residue
-		// modulo p, i.e. we check g^{(p-1)/2} \equiv 1 \pmod{p}.
-		mpz_powm(foo, g, q, p);
-		if (mpz_cmp_ui(foo, 1L))
+		// It is sufficient to assert that g is a quadratic residue modulo p,
+		// i.e. instead of checking g^{(p-1)/2} \equiv 1 \pmod{p} we can
+		// simply do so by computing the Legendre-Jacobi symbol.
+		if (mpz_jacobi(g, p) != 1L)
 			throw false;
 		
 		// finish
@@ -124,10 +124,11 @@ void BarnettSmartVTMF_dlog::PublishGroup
 void BarnettSmartVTMF_dlog::RandomElement
 	(mpz_ptr a)
 {
-	// choose a random element of G (it MUST be a quadratic residue)
+	// choose a random element of $\mathbb{Z}_p$
 	do
 		mpz_srandomm(a, p);
 	while (mpz_cmp_ui(a, 0L) == 0L);
+	// square $a$ to obtain $a^2 \in\mathbb{QR}_p$ (quadratic residue)
 	mpz_powm_ui(a, a, 2L, p);
 	
 	assert(mpz_jacobi(a, p) == 1L);
@@ -136,24 +137,24 @@ void BarnettSmartVTMF_dlog::RandomElement
 void BarnettSmartVTMF_dlog::NextElement
 	(mpz_ptr a)
 {
-	// choose the next element of G (quadratic residue)
+	// choose the next element of G (iterate over the quadratic residues)
 	do
 		mpz_add_ui(a, a, 1L);
-	while (mpz_jacobi(a, p) != 1);
+	while (mpz_jacobi(a, p) != 1L);
 }
 
 void BarnettSmartVTMF_dlog::IndexElement
 	(mpz_ptr a, std::size_t index)
 {
 	// choose the index-th element of G (quadratic residue)
-	// Notice that a call to IndexElement(a, 0) returns the identity,
+	// Notice: a call to IndexElement(a, 0) returns the identity,
 	// because 1 is the smallest quadratic residue mod p.
 	mpz_set_ui(a, 0L);
 	do
 		NextElement(a);
 	while (index--);
 	
-	assert(mpz_jacobi(a, p) == 1);
+	assert(mpz_jacobi(a, p) == 1L);
 }
 
 void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
@@ -209,6 +210,10 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 	
 	try
 	{
+		// verify in-group property
+		if (mpz_jacobi(foo, p) != 1L)
+			throw false;
+		
 		// verify proof of knowledge [CaS97]
 		mpz_powm(t, g, r, p);
 		mpz_powm(r, foo, c, p);
@@ -308,7 +313,7 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
 	(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r,
 	unsigned long int exponentsize)
 {
-	// choose the masking value r \in Z_q randomly and uniformly
+	// choose the masking value $r \in Z_q$ randomly and uniformly
 	if (mpz_sizeinbase(p, 2L) <= exponentsize)
 	{
 		mpz_srandomm(r, q);
@@ -316,14 +321,14 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
 	else
 	{
 		// Under the additional DLSE assumption we can reduce
-		// the size of the exponent. [KK04]
+		// the size of the random exponent. [KK04]
 		mpz_srandomb(r, exponentsize);
 	}
 	
-	// compute c_1 = g^r \bmod p
+	// compute $c_1 = g^r \bmod p$
 	mpz_spowm(c_1, g, r, p);
 	
-	// compute c_2 = m \cdot h^r \bmod p
+	// compute $c_2 = m \cdot h^r \bmod p$
 	mpz_spowm(c_2, h, r, p);
 	mpz_mul(c_2, c_2, m);
 	mpz_mod(c_2, c_2, p);
@@ -353,6 +358,10 @@ bool BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Verify
 	
 	try
 	{
+		// verify in-group properties
+		if ((mpz_jacobi(c_1, p) != 1L) || (mpz_jacobi(c_2, p) != 1L))
+			throw false;
+		
 		// CP(c_1, c_2/m, g, h; r)
 		assert(mpz_invert(foo, m, p));
 		mpz_invert(foo, m, p);
@@ -375,7 +384,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_ptr r,
 	unsigned long int exponentsize)
 {
-	// choose the masking value r \in Z_q randomly and uniformly
+	// choose the masking value $r \in Z_q$ randomly and uniformly
 	if (mpz_sizeinbase(p, 2L) <= exponentsize)
 	{
 		mpz_srandomm(r, q);
@@ -383,16 +392,16 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 	else
 	{
 		// Under the additional DLSE assumption we can reduce
-		// the size of the exponent. [KK04]
+		// the size of the random exponent. [KK04]
 		mpz_srandomb(r, exponentsize);
 	}
 	
-	// compute c'_1 = c_1 \cdot g^r \bmod p
+	// compute $c'_1 = c_1 \cdot g^r \bmod p$
 	mpz_spowm(c__1, g, r, p);
 	mpz_mul(c__1, c__1, c_1);
 	mpz_mod(c__1, c__1, p);
 	
-	// compute c'_2 = c_2 \cdot h^r \bmod p
+	// compute $c'_2 = c_2 \cdot h^r \bmod p$
 	mpz_spowm(c__2, h, r, p);
 	mpz_mul(c__2, c__2, c_2);
 	mpz_mod(c__2, c__2, p);
@@ -401,7 +410,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_RemaskValue
 	(mpz_ptr r, unsigned long int exponentsize)
 {
-	// choose the masking value r \in Z_q randomly and uniformly
+	// choose the masking value $r \in Z_q$ randomly and uniformly
 	if (mpz_sizeinbase(p, 2L) <= exponentsize)
 	{
 		mpz_srandomm(r, q);
@@ -409,7 +418,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_RemaskValue
 	else
 	{
 		// Under the additional DLSE assumption we can reduce
-		// the size of the exponent. [KK04]
+		// the size of the random exponent. [KK04]
 		mpz_srandomb(r, exponentsize);
 	}
 }
@@ -418,7 +427,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2,
 	mpz_srcptr r, bool TimingAttackProtection)
 {
-	// compute c'_1 = c_1 \cdot g^r \bmod p
+	// compute $c'_1 = c_1 \cdot g^r \bmod p$
 	if (TimingAttackProtection)
 		mpz_spowm(c__1, g, r, p);
 	else
@@ -426,7 +435,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 	mpz_mul(c__1, c__1, c_1);
 	mpz_mod(c__1, c__1, p);
 	
-	// compute c'_2 = c_2 \cdot h^r \bmod p
+	// compute $c'_2 = c_2 \cdot h^r \bmod p$
 	if (TimingAttackProtection)
 		mpz_spowm(c__2, h, r, p);
 	else
@@ -465,6 +474,10 @@ bool BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Verify
 	
 	try
 	{
+		// verify in-group properties
+		if ((mpz_jacobi(c__1, p) != 1L) || (mpz_jacobi(c__2, p) != 1L))
+			throw false;
+		
 		// CP(c'_1/c_1, c'_2/c_2, g, h; r)
 		assert(mpz_invert(foo, c_1, p));
 		mpz_invert(foo, c_1, p);
@@ -507,17 +520,8 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Prove
 void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Initalize
 	(mpz_srcptr c_1)
 {
-	mpz_t d_i;
-	
-	mpz_init(d_i);
-	
-	// compute d_i = {c_1}^{x_i} \bmod p
-	mpz_spowm(d_i, c_1, x_i, p);
-	
-	// set the value of d to the above result
-	mpz_set(d, d_i);
-	
-	mpz_clear(d_i);
+	// compute $d = d_i = {c_1}^{x_i} \bmod p$
+	mpz_spowm(d, c_1, x_i, p);
 }
 
 bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
@@ -536,11 +540,15 @@ bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 		if (h_j.find(fp.str()) == h_j.end())
 			throw false;
 		
+		// verify in-group property
+		if (mpz_jacobi(d_j, p) != 1L)
+			throw false;
+		
 		// verify CP(d_j, h_j, c_1, g; x_j)
 		if (!CP_Verify(d_j, h_j[fp.str()], c_1, g, in))
 			throw false;
 		
-		// update the value of d
+		// update the value of $d$
 		mpz_mul(d, d, d_j);
 		mpz_mod(d, d, p);
 		
@@ -558,9 +566,13 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Finalize
 	(mpz_srcptr c_2, mpz_ptr m)
 {
 	assert(mpz_invert(m, d, p));
+	
+	// finalize the decryption
 	mpz_invert(m, d, p);
 	mpz_mul(m, m, c_2);
 	mpz_mod(m, m, p);
+	
+	assert(mpz_jacobi(m, p) == 1L);
 }
 
 BarnettSmartVTMF_dlog::~BarnettSmartVTMF_dlog
@@ -570,6 +582,9 @@ BarnettSmartVTMF_dlog::~BarnettSmartVTMF_dlog
 	mpz_clear(x_i), mpz_clear(h_i), mpz_clear(h), mpz_clear(d);
 	for (std::map<std::string, mpz_ptr>::const_iterator
 		j = h_j.begin(); j != h_j.end(); ++j)
+	{
 			mpz_clear(j->second);
+			delete j->second;
+	}
 	h_j.clear();
 }

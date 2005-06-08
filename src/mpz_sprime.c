@@ -128,6 +128,11 @@ int test3mod4
 	return mpz_congruent_ui_p(p, 3L, 4L);
 }
 
+int mpz_mr_base
+	(mpz_srcptr base)
+{
+}
+
 /* This fast generation of safe primes is due to [CS00] and
    M.J. Wiener's "Safe Prime Generation with a Combined Sieve". */
 
