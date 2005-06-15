@@ -79,7 +79,16 @@ int main
 		mpz_set(b, a);
 	}
 	std::cout << std::endl;
-
+	std::cout << "vtmf.IndexElement_Fast(a, 0...63)" << std::endl;
+	for (size_t i = 0; i < 64; i++)
+	{
+		vtmf->IndexElement_Fast(a, i);
+		std::cout << a << " ";
+		assert(mpz_cmp(b, a) != 0);
+		mpz_set(b, a);
+	}
+	std::cout << std::endl;
+	
 	// key generation protocol
 	std::cout << "*.KeyGenerationProtocol_GenerateKey()" << std::endl;
 	vtmf->KeyGenerationProtocol_GenerateKey();

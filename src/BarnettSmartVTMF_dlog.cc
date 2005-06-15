@@ -157,6 +157,15 @@ void BarnettSmartVTMF_dlog::IndexElement
 	assert(mpz_jacobi(a, p) == 1L);
 }
 
+void BarnettSmartVTMF_dlog::IndexElement_Fast
+	(mpz_ptr a, std::size_t index)
+{
+	// simply compute $g^i mod p$
+	mpz_powm_ui(a, g, index, p);
+	
+	assert(mpz_jacobi(a, p) == 1L);
+}
+
 void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
 	()
 {

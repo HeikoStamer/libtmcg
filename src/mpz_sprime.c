@@ -9,6 +9,9 @@
               Diffie-Hellman Key Agreement Protocol', ZKS technical report
              http://citeseer.ist.psu.edu/455251.html
 
+      [HAC]  Alfred J. Menezes, Paul C. van Oorschot, and Scott A. Vanstone:
+              'Handbook of Applied Cryptography', CRC Press, 1996.
+
  Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
@@ -128,21 +131,63 @@ int test3mod4
 	return mpz_congruent_ui_p(p, 3L, 4L);
 }
 
+/** Miller-Rabin probabilistic primality test [HAC]
+    
+*/
 int mpz_mr_base
-	(mpz_srcptr base)
+	(mpz_srcptr n, mpz_srcptr base)
 {
+	size_t result = 0;
+	mpz_t y, r, nm1;
+	unsigned long int s;
+	
+	mpz_init(y), mpz_init(nm1), mpz_init(r);
+	
+	/* 1. Write $\mathtt{n} - 1 = 2^s r$ such that $r$ is odd. */
+	mpz_sub_ui(nm1, n, 1L);
+	s = mpz_scan1(nm1, 0L);
+	mpz_tdiv_q_2exp(r, nm1, s);
+	if (mpz_odd_p(r))
+	{
+		/* 2.2 Compute $y = \mathtt{base}^r \bmod \mathtt{n}$. */
+		mpz_powm(y, base, r, n);
+		result = 1;
+		
+		/* 2.3 If $y \neq 1$ and $y \neq \mathtt{n} - 1$ then do the following: */
+		if ((mpz_cmp_ui(y, 1L) != 0) && (mpz_cmp(y, nm1) != 0))
+		{
+			unsigned long int j;
+			for (j = 1; j < s; j++)
+			{
+				if (mpz_cmp(y, nm1) == 0)
+				{
+					result = 0;
+					break;
+				}
+				mpz_powm_ui(y, y, 2L, n);
+				if (mpz_cmp_ui(y, 1L) == 0)
+				{
+					result = 0;
+					break;
+				}
+			}
+		}
+	}
+	
+	mpz_clear(y), mpz_clear(nm1), mpz_clear(r);
+	return result;
 }
 
-/* This fast generation of safe primes is due to [CS00] and
-   M.J. Wiener's "Safe Prime Generation with a Combined Sieve". */
+/* The fast generation of safe primes is implemented according to [CS00]
+   and M.J. Wiener's "Safe Prime Generation with a Combined Sieve". */
 
 void mpz_sprime_test
 	(mpz_ptr p, mpz_ptr q, unsigned long int qsize,
 	int (*test)(mpz_ptr, mpz_ptr))
 {
-	mpz_t mr_y, mr_q, mr_g, mr_nm1;
+	mpz_t mr_y, mr_pm1, mr_a;
 	
-	mpz_init(mr_y), mpz_init(mr_nm1), mpz_init(mr_q), mpz_init_set_ui(mr_g, 2L);
+	mpz_init(mr_y), mpz_init(mr_pm1), mpz_init_set_ui(mr_a, 2L);
 	
 	/* Step 1. [CS00]: choose a random odd number $q$ of appropriate size */
 	do
@@ -152,11 +197,10 @@ void mpz_sprime_test
 	while (1)
 	{
 		size_t i = 0;
-		unsigned long int mr_k;
 		
 		/* increase $q$ by 2 (incremental prime number generator) */
 		mpz_add_ui(q, q, 2L);
-		/* compute p = 2q + 1 */
+		/* compute $p = 2q + 1$ */
 		mpz_mul_2exp(p, q, 1L);
 		mpz_add_ui(p, p, 1L);
 		
@@ -165,7 +209,7 @@ void mpz_sprime_test
 			continue;
 		
 		/* Step 2. [CS00]: M.J. Wiener's "Combined Sieve"
-		   Test whether either $q$ or $p$ are divisable by any primes up to
+		   Test whether either $q$ or $p$ are not divisable by any primes up to
 		   some bound $B$. (We use the bound $B = 5000$ here.) */
 		for (i = 0; primes[i]; i++)
 		{
@@ -178,46 +222,24 @@ void mpz_sprime_test
 		if (primes[i])
 			continue;
 		
-		/* Step 3. [CS00]: Test whether 2 is a Miller-Rabin witness to the
+		/* Step 3. [CS00]: Test whether 2 is not a Miller-Rabin witness to the
 		   compositeness of $q$. */
-		mpz_sub_ui(mr_nm1, q, 1L);
-		mr_k = mpz_scan1(mr_nm1, 0L);
-		mpz_tdiv_q_2exp(mr_q, mr_nm1, mr_k);
-		mpz_powm(mr_y, mr_g, mr_q, q);
-		
-		if (!((mpz_cmp_ui(mr_y, 1L) == 0) || (mpz_cmp(mr_y, mr_nm1) == 0)))
-		{
-			size_t mr_w = 0;
-			unsigned long int j;
-			for (j = 1; j < mr_k; j++)
-			{
-				mpz_powm_ui(mr_y, mr_y, 2L, q);
-				if (mpz_cmp(mr_y, mr_nm1) == 0)
-				{
-					mr_w = 1;
-					break;
-				}
-				if (mpz_cmp_ui(mr_y, 1L) == 0)
-					break;
-			}
-			if (!mr_w)
-				continue;
-		}
-		fprintf(stderr, ".");
-		
-		/* Step 4. [CS00]: Test if $2^q \equiv \pm 1 \pmod{p}$. */
-		mpz_powm(mr_y, mr_g, q, p);
-		mpz_sub_ui(mr_nm1, p, 1L);
-		if (!((mpz_cmp_ui(mr_y, 1L) == 0) || (mpz_cmp(mr_y, mr_nm1) == 0)))
+		if (!mpz_mr_base(q, mr_a))
 			continue;
-		fprintf(stderr, "!");
+		
+		/* Step 4. [CS00]: Test whether $2^q \equiv \pm 1 \pmod{p}$. */
+		mpz_powm(mr_y, mr_a, q, p);
+		mpz_sub_ui(mr_pm1, p, 1L);
+		if (!((mpz_cmp_ui(mr_y, 1L) == 0) || (mpz_cmp(mr_y, mr_pm1) == 0)))
+			continue;
+		fprintf(stderr, ".");
 		
 		/* Step 5. [CS00]: Apply the Miller-Rabin test to $q$ a defined number
 		   of times (error probability $4^{-64}$) using randomly selected bases. */
 		if (mpz_probab_prime_p(q, 64))
 			break;
 	}
-	mpz_clear(mr_y), mpz_clear(mr_nm1), mpz_clear(mr_q), mpz_clear(mr_g);
+	mpz_clear(mr_y), mpz_clear(mr_pm1), mpz_clear(mr_a);
 	fprintf(stderr, "\n");
 	
 	assert(mpz_probab_prime_p(p, 64));
@@ -233,9 +255,10 @@ void mpz_sprime
 void mpz_sprime2g
 	(mpz_ptr p, mpz_ptr q, unsigned long int qsize)
 {
-	/* The additional test is necessary because we want 2 as generator
-	   of $G$. If $p$ is congruent 7 modulo 8, then 2 is a quadratic residue
-	   and hence it will generate the cyclic subgroup of order $q$. [RS00] */
+	/* The additional test is e.g. necessary, if we want 2 as generator
+	   of $\mathbb{QR}_p$. If $p$ is congruent 7 modulo 8, then 2 is a
+	   quadratic residue and hence it will generate the cyclic subgroup 
+	   of prime order $q = (p-1)/2$. [RS00] */
 	mpz_sprime_test(p, q, qsize, test2g);
 }
 
@@ -245,7 +268,7 @@ void mpz_sprime3mod4
 	mpz_t q;
 
 	/* An additional test is necessary, if we want to generate a Blum integer,
-	   i.e. $p, q \equiv 3 \pmod{4}$ in the product of two safe primes. */
+	   i.e. $p, q \equiv 3 \pmod{4}$ for the product of two safe primes. */
 	mpz_init(q);
 	mpz_sprime_test(p, q, psize - 1L, test3mod4);
 	mpz_clear(q);
