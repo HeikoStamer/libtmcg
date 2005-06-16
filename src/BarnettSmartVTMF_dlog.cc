@@ -318,6 +318,121 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 	}
 }
 
+void BarnettSmartVTMF_dlog::OR_ProveFirst
+	(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
+		mpz_srcptr alpha, std::ostream &out)
+{
+	mpz_t v_1, v_2, w, t_1, t_2, c_1, c_2, r_1, r_2, c, tmp;
+	
+	// proof of knowledge ($y_1 = g_1^\alpha \vee y_2 = g_2^\beta$) [CaS97]
+	mpz_init(v_1), mpz_init(v_2), mpz_init(w), mpz_init(t_1), mpz_init(t_2);
+	mpz_init(c_1), mpz_init(c_2), mpz_init(r_1), mpz_init(r_2);
+	mpz_init(c), mpz_init(tmp);
+	
+		// 1. choose $v_1, v_2$ and $w\in_R\mathbb{Z}_q$ and compute
+		//    $t_2 = y_2^w g_2^{v_2}$ and $t_1 = g_1^{v_1}$ 
+		mpz_srandomm(v_1, q),	mpz_srandomm(v_2, q),	mpz_srandomm(w, q);
+		mpz_spowm(t_2, y_2, w, p);
+		mpz_spowm(tmp, g_2, v_2, p);
+		mpz_mul(t_2, t_2, tmp), mpz_mod(t_2, t_2, p);
+		mpz_spowm(t_1, g_1, v_1, p);
+		
+		// 2. compute $c = \mathcal{H}(g_1, y_1, g_2, y_2, t_1, t_2)\pmod{q}$
+		mpz_shash(c, 6, g_1, y_1, g_2, y_2, t_1, t_2), mpz_mod(c, c, q);
+		
+		// 3. split challenge $c_2 = w$ and $c_1 = c - c_2\pmod{q}$
+		mpz_set(c_2, w);
+		mpz_sub(c_1, c, c_2), mpz_mod(c_1, c_1, q);
+		
+		// 4. forge $r_2 = v_2\pmod{q}$ and $r_1 = v_1 - c_1\alpha\pmod{q}$
+		mpz_set(r_2, v_2), mpz_mod(r_2, r_2, q);
+		mpz_mul(tmp, c_1, alpha), mpz_mod(tmp, tmp, q);
+		mpz_sub(r_1, v_1, tmp), mpz_mod(r_1, r_1, q);
+		
+	out << c_1 << std::endl << c_2 << std::endl <<
+		r_1 << std::endl << r_2 << std::endl;
+	mpz_clear(v_1), mpz_clear(v_2), mpz_clear(w), mpz_clear(t_1), mpz_clear(t_2);
+	mpz_clear(c_1), mpz_clear(c_2), mpz_clear(r_1), mpz_clear(r_2);
+	mpz_clear(c), mpz_clear(tmp);
+}
+
+void BarnettSmartVTMF_dlog::OR_ProveSecond
+	(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
+		mpz_srcptr alpha, std::ostream &out)
+{
+	mpz_t v_1, v_2, w, t_1, t_2, c_1, c_2, r_1, r_2, c, tmp;
+	
+	// proof of knowledge ($y_1 = g_1^\beta \vee y_2 = g_2^\alpha$) [CaS97]
+	mpz_init(v_1), mpz_init(v_2), mpz_init(w), mpz_init(t_1), mpz_init(t_2);
+	mpz_init(c_1), mpz_init(c_2), mpz_init(r_1), mpz_init(r_2);
+	mpz_init(c), mpz_init(tmp);
+	
+		// 1. choose $v_1, v_2$ and $w\in_R\mathbb{Z}_q$ and compute
+		//    $t_1 = y_1^w g_1^{v_1}$ and $t_2 = g_2^{v_2}$
+		mpz_srandomm(v_1, q),	mpz_srandomm(v_2, q),	mpz_srandomm(w, q);
+		mpz_spowm(t_1, y_1, w, p);
+		mpz_spowm(tmp, g_1, v_1, p);
+		mpz_mul(t_1, t_1, tmp), mpz_mod(t_1, t_1, p);
+		mpz_spowm(t_2, g_2, v_2, p);
+		
+		// 2. compute $c = \mathcal{H}(g_1, y_1, g_2, y_2, t_1, t_2)\pmod{q}$
+		mpz_shash(c, 6, g_1, y_1, g_2, y_2, t_1, t_2), mpz_mod(c, c, q);
+		
+		// 3. split challenge $c_1 = w$ and $c_2 = c - c_1\pmod{q}$
+		mpz_set(c_1, w);
+		mpz_sub(c_2, c, c_1), mpz_mod(c_2, c_2, q);
+		
+		// 4. forge $r_1 = v_1\pmod{q}$ and $r_2 = v_2 - c_2\alpha\pmod{q}$
+		mpz_set(r_1, v_1), mpz_mod(r_1, r_1, q);
+		mpz_mul(tmp, c_2, alpha), mpz_mod(tmp, tmp, q);
+		mpz_sub(r_2, v_2, tmp), mpz_mod(r_2, r_2, q);
+		
+	out << c_1 << std::endl << c_2 << std::endl <<
+		r_1 << std::endl << r_2 << std::endl;
+	mpz_clear(v_1), mpz_clear(v_2), mpz_clear(w), mpz_clear(t_1), mpz_clear(t_2);
+	mpz_clear(c_1), mpz_clear(c_2), mpz_clear(r_1), mpz_clear(r_2);
+	mpz_clear(c), mpz_clear(tmp);
+}
+
+bool BarnettSmartVTMF_dlog::OR_Verify
+	(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
+		std::istream &in)
+{
+	mpz_t c_1, c_2, r_1, r_2, t_1, t_2, c, tmp;
+	
+	mpz_init(c_1), mpz_init(c_2), mpz_init(r_1), mpz_init(r_2);
+	mpz_init(t_1), mpz_init(t_2), mpz_init(c), mpz_init(tmp);
+	in >> c_1 >> c_2 >> r_1 >> r_2;
+	
+	try
+	{
+		// verify PK ($y_1 = g_1^\alpha \vee y_2 = g_2^\beta$) [CaS97]
+		mpz_powm(t_1, y_1, c_1, p);
+		mpz_powm(tmp, g_1, r_1, p);
+		mpz_mul(t_1, t_1, tmp), mpz_mod(t_1, t_1, p);
+		
+		mpz_powm(t_2, y_2, c_2, p);
+		mpz_powm(tmp, g_2, r_2, p);
+		mpz_mul(t_2, t_2, tmp), mpz_mod(t_2, t_2, p);
+		
+		// checking the equation
+		// $c_1 + c_2 \stackrel{?}{=} \mathcal{H}(g_1, y_1, g_2, y_2, t_1, t_2)\pmod{q})$
+		mpz_add(tmp, c_1, c_2), mpz_mod(c, c, q);
+		mpz_shash(c, 6, g_1, y_1, g_2, y_2, t_1, t_2), mpz_mod(c, c, q);
+		if (mpz_cmp(tmp, c))
+			throw false;
+		
+		// finish
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(c_1), mpz_clear(c_2), mpz_clear(r_1), mpz_clear(r_2);
+		mpz_clear(t_1), mpz_clear(t_2), mpz_clear(c), mpz_clear(tmp);
+		return return_value;
+	}
+}
+
 void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
 	(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r,
 	unsigned long int exponentsize)

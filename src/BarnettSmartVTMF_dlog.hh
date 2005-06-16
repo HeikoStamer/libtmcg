@@ -98,6 +98,15 @@ class BarnettSmartVTMF_dlog
 		bool CP_Verify
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
 			std::istream &in);
+		void OR_ProveFirst
+			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
+			mpz_srcptr alpha, std::ostream &out);
+		void OR_ProveSecond
+			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
+			mpz_srcptr alpha, std::ostream &out);
+		bool OR_Verify
+			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
+			std::istream &in);
 		void VerifiableMaskingProtocol_Mask
 			(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r,
 			unsigned long int exponentsize = TMCG_DLSE_SIZE);
