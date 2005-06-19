@@ -34,4 +34,4 @@ SchwarzerPeterBob_SOURCES = SchwarzerPeterBob.cc
 t_mpz_SOURCES = t-mpz.cc
 t_key_SOURCES = t-key.cc
 t_vtmf_SOURCES = t-vtmf.cc
-t_mpc_SOURCES = StiglicMPC.cc t-mpc.cc
+t_mpc_SOURCES = StiglicMPC.cc StiglicMPC.hh t-mpc.cc
