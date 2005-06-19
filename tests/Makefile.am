@@ -19,7 +19,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-TESTS = t-mpz t-key t-vtmf
+TESTS = t-mpz t-key t-vtmf t-mpc
 
 INCLUDES = -I$(top_srcdir)/src
 LDADD = @LIBGCRYPT_LIBS@ ../src/libTMCG.la
@@ -34,3 +34,4 @@ SchwarzerPeterBob_SOURCES = SchwarzerPeterBob.cc
 t_mpz_SOURCES = t-mpz.cc
 t_key_SOURCES = t-key.cc
 t_vtmf_SOURCES = t-vtmf.cc
+t_mpc_SOURCES = StiglicMPC.cc t-mpc.cc

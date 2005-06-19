@@ -2,3 +2,5 @@
 - generalize the use of the VTMF primitive (base class)
 - use local namespaces TMCG and VMTF to prevent pollution
 - documentation: doxygen? and examples
+- The library should provide a protocol for reliable broadcast
+  to ensure that rogue tracing can be performed.
