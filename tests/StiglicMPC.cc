@@ -133,8 +133,57 @@ bool StiglicMPC::MPC_OpenBitCommitment
 	return true;
 }
 
+bool StiglicMPC::MPC_CyclicShift
+	(TMCG_Stack<VTMF_Card> &result, TMCG_Stack<VTMF_Card> stack)
+{
+	assert(stack.size() > 0);
+	
+	TMCG_Stack<VTMF_Card> s1;
+	TMCG_StackSecret<VTMF_CardSecret> cs1;
+	
+	char *tmp = new char[TMCG_MAX_STACK_CHARS];
+	try
+	{
+		for (size_t i = 0; i < participants.size(); i++)
+		{
+			if (i == index)
+			{
+				tmcg->TMCG_CreateStackSecret(cs1, true, stack.size(), vtmf);
+				tmcg->TMCG_MixStack(stack, s1, cs1, vtmf);
+				
+				for (size_t j = 0; j < participants.size(); j++)
+				{
+					if (j != index)
+					{
+						*participants[j]->out << s1 << std::endl << std::flush;
+						tmcg->TMCG_ProveStackEquality(stack, s1, cs1, true, vtmf,
+							*participants[j]->in, *participants[j]->out);
+					}
+				}
+			}
+			else
+			{
+				(*participants[i]->in).getline(tmp, TMCG_MAX_STACK_CHARS);
+				if (!s1.import(tmp))
+					throw false;
+				if (!tmcg->TMCG_VerifyStackEquality(stack, s1, true, vtmf,
+					*participants[i]->in, *participants[i]->out))
+						throw false;
+			}
+			stack = s1;
+		}
+		result = stack;
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		delete [] tmp;
+		return return_value;
+	}
+}
+
 void StiglicMPC::MPC_ComputeNEG
-	(MPC_Bit &result, const MPC_Bit &bit)
+	(MPC_Bit &result, const MPC_Bit bit)
 {
 	assert(bit.size() == 2);
 	
@@ -142,61 +191,34 @@ void StiglicMPC::MPC_ComputeNEG
 }
 
 bool StiglicMPC::MPC_ComputeAND
-	(MPC_Bit &result, const MPC_Bit &bitA, const MPC_Bit &bitB)
+	(MPC_Bit &result, const MPC_Bit bitA, const MPC_Bit bitB)
 {
 	assert((bitA.size() == 2) && (bitB.size() == 2));
 	
-	TMCG_Stack<VTMF_Card> las_vegas1, las_vegas2;
-	TMCG_StackSecret<VTMF_CardSecret> bs;
-	bool cb[2];
+	TMCG_Stack<VTMF_Card> las_vegas;
+	bool cb[3];
 	
 	char *tmp = new char[TMCG_MAX_STACK_CHARS];
 	try
 	{
 		// step 1. -- place the public and secret cards
-		las_vegas1.push(bitA), las_vegas1.push(negbase);
-		las_vegas1.push(bitB), las_vegas1.push(base);
+		las_vegas.push(bitA), las_vegas.push(negbase);
+		las_vegas.push(bitB), las_vegas.push(base);
 		
 		while (1)
 		{
-			// step 2. and 3. -- apply a cyclic shuffling
-			for (size_t i = 0; i < participants.size(); i++)
-			{
-				if (i == index)
-				{
-					tmcg->TMCG_CreateStackSecret(bs, true, las_vegas1.size(), vtmf);
-					tmcg->TMCG_MixStack(las_vegas1, las_vegas2, bs, vtmf);
-						
-					for (size_t j = 0; j < participants.size(); j++)
-					{
-						if (j != index)
-						{
-							*participants[j]->out << las_vegas2 << std::endl << std::flush;
-							tmcg->TMCG_ProveStackEquality(las_vegas1, las_vegas2, bs,
-								true,	vtmf, *participants[j]->in, *participants[j]->out);
-						}
-					}
-				}
-				else
-				{
-					(*participants[i]->in).getline(tmp, TMCG_MAX_STACK_CHARS);
-					if (!las_vegas2.import(tmp))
-						throw false;
-					if (!tmcg->TMCG_VerifyStackEquality(las_vegas1, las_vegas2,
-						true, vtmf,	*participants[i]->in, *participants[i]->out))
-							throw false;
-				}
-				las_vegas1 = las_vegas2;
-			}
-			
-			// step 4. -- turn over cards
-			if (!MPC_OpenCardCommitment(las_vegas1[0], cb[0]))
+			// step 2. and 3. -- apply a cyclic shift
+			if (!MPC_CyclicShift(las_vegas, las_vegas))
 				throw false;
-			if (!MPC_OpenCardCommitment(las_vegas1[1], cb[1]))
+			
+			// step 4. -- turn over the cards
+			if (!MPC_OpenCardCommitment(las_vegas[0], cb[0]))
+				throw false;
+			if (!MPC_OpenCardCommitment(las_vegas[1], cb[1]))
 				throw false;
 			if ((!cb[0] && cb[1]) || (cb[0] && !cb[1]))
 			{
-				if (!MPC_OpenCardCommitment(las_vegas1[2], cb[2]))
+				if (!MPC_OpenCardCommitment(las_vegas[2], cb[2]))
 					throw false;
 				if ((!cb[0] && cb[1] && cb[2]) || (cb[0] && !cb[1] && !cb[2]))
 					break;
@@ -208,19 +230,19 @@ bool StiglicMPC::MPC_ComputeAND
 		// step 5. -- choose result
 		if (cb[0] && cb[1])
 		{
-			result.clear(), result.push(las_vegas1[5]), result.push(las_vegas1[6]);
+			result.clear(), result.push(las_vegas[5]), result.push(las_vegas[6]);
 		}
 		else if (!cb[0] && cb[1] && cb[2])
 		{
-			result.clear(), result.push(las_vegas1[6]), result.push(las_vegas1[7]);
+			result.clear(), result.push(las_vegas[6]), result.push(las_vegas[7]);
 		}
 		else if (!cb[0] && !cb[1])
 		{
-			result.clear(), result.push(las_vegas1[3]), result.push(las_vegas1[4]);
+			result.clear(), result.push(las_vegas[3]), result.push(las_vegas[4]);
 		}
 		else if (cb[0] && !cb[1] && !cb[2])
 		{
-			result.clear(), result.push(las_vegas1[4]), result.push(las_vegas1[5]);
+			result.clear(), result.push(las_vegas[4]), result.push(las_vegas[5]);
 		}
 		else
 			throw false;
@@ -231,7 +253,7 @@ bool StiglicMPC::MPC_ComputeAND
 	{
 		delete [] tmp;
 		return return_value;
-	}	
+	}
 }
 
 bool StiglicMPC::MPC_ComputeOR
@@ -266,6 +288,62 @@ bool StiglicMPC::MPC_ComputeXOR
 			throw false;
 		if (!MPC_ComputeOR(result, nAB, AnB))
 			throw false;
+		
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		return return_value;
+	}
+}
+
+bool StiglicMPC::MPC_CopyBitCommitment
+	(MPC_Bit &copy1, MPC_Bit &copy2, const MPC_Bit &bit)
+{
+	assert(bit.size() == 2);
+	
+	TMCG_Stack<VTMF_Card> copyshop, left;
+	bool cb[4];
+	
+	try
+	{
+		// step 1. -- create a stack with three MPC_Bit (set to true)
+		copyshop.push(negbase), copyshop.push(negbase), copyshop.push(negbase);
+		
+		// step 2a. -- apply a cyclic shift to the six rightmost cards
+		if (!MPC_CyclicShift(copyshop, copyshop))
+			throw false;
+		
+		// step 2b. -- create the necessary configuration
+		left.push(bit), left.push(copyshop[0]), left.push(copyshop[1]);
+		copyshop.stack.erase(copyshop.stack.begin(), copyshop.stack.begin() + 2);
+		assert(copyshop.size() == 4);
+		
+		// step 3. -- apply a cyclic shift to the four topmost cards
+		if (!MPC_CyclicShift(left, left))
+			throw false;
+		
+		// step 4. -- open the four topmost cards
+		if (!MPC_OpenCardCommitment(left[0], cb[0]))
+			throw false;
+		if (!MPC_OpenCardCommitment(left[1], cb[1]))
+			throw false;
+		if (!MPC_OpenCardCommitment(left[2], cb[2]))
+			throw false;
+		if (!MPC_OpenCardCommitment(left[3], cb[3]))
+			throw false;
+		if ((cb[0] && !cb[1] && cb[2] && !cb[3]) || 
+			(!cb[0] && cb[1] && !cb[2] && cb[3]))
+		{
+			copy1.clear(), copy1.push(copyshop[0]), copy1.push(copyshop[1]);
+			copy2.clear(), copy2.push(copyshop[2]), copy2.push(copyshop[3]);
+		}
+		else
+		{
+			copy1.clear(), copy1.push(copyshop[0]), copy1.push(copyshop[1]);
+			copy2.clear(), copy2.push(copyshop[2]), copy2.push(copyshop[3]);
+			MPC_ComputeNEG(copy1, copy1), MPC_ComputeNEG(copy2, copy2);
+		}
 		
 		throw true;
 	}

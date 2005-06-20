@@ -53,6 +53,16 @@ int main
 	std::cout << x << std::endl << y << std::endl << z << std::endl;
 	assert((x == true) && (y == false) && (z == true));
 	
+	std::cout << "CopyBitCommitment" << std::endl;
+	assert(mpc->MPC_CopyBitCommitment(result, c, a));
+	assert(mpc->MPC_OpenBitCommitment(result, x));
+	assert(mpc->MPC_OpenBitCommitment(c, y));
+	assert((x == y) && (y == true));
+	assert(mpc->MPC_CopyBitCommitment(result, c, b));
+	assert(mpc->MPC_OpenBitCommitment(result, x));
+	assert(mpc->MPC_OpenBitCommitment(c, y));
+	assert((x == y) && (y == false));
+	
 	std::cout << "ComputeNEG" << std::endl;
 	mpc->MPC_ComputeNEG(result, a);
 	assert(mpc->MPC_OpenBitCommitment(result, x));

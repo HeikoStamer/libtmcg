@@ -125,17 +125,23 @@ class StiglicMPC
 		bool MPC_OpenBitCommitment
 			(const MPC_Bit &bit, bool &b);
 		
+		bool MPC_CyclicShift
+			(TMCG_Stack<VTMF_Card> &result, TMCG_Stack<VTMF_Card> stack);
+		
 		void MPC_ComputeNEG
-			(MPC_Bit &result, const MPC_Bit &bit);
+			(MPC_Bit &result, const MPC_Bit bit);
 		
 		bool MPC_ComputeAND
-			(MPC_Bit &result, const MPC_Bit &bitA, const MPC_Bit &bitB);
+			(MPC_Bit &result, const MPC_Bit bitA, const MPC_Bit bitB);
 		
 		bool MPC_ComputeOR
 			(MPC_Bit &result, const MPC_Bit &bitA, const MPC_Bit &bitB);
 		
 		bool MPC_ComputeXOR
 			(MPC_Bit &result, const MPC_Bit &bitA, const MPC_Bit &bitB);
+		
+		bool MPC_CopyBitCommitment
+			(MPC_Bit &copy1, MPC_Bit &copy2, const MPC_Bit &bit);
 		
 		~StiglicMPC
 			()
