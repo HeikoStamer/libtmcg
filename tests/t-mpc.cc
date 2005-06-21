@@ -40,6 +40,7 @@ int main
 	
 	MPC_Bit a, b, c, result;
 	bool x, y, z;
+	size_t i = 0;
 	
 	std::cout << "BitCommitment" << std::endl;
 	mpc->MPC_ProveBitCommitment(a, true);
@@ -64,9 +65,23 @@ int main
 	assert((x == y) && (y == false));
 	
 	std::cout << "RandomBitCommitment" << std::endl;
-	assert(mpc->MPC_RandomBitCommitment(result));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	std::cout << x << std::endl;
+	do
+	{
+		assert(mpc->MPC_RandomBitCommitment(result));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		std::cout << x << std::endl;
+	}
+	while (x && (++i < 80));
+	assert(i < 80);
+	i = 0;
+	do
+	{
+		assert(mpc->MPC_RandomBitCommitment(result));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		std::cout << x << std::endl;
+	}
+	while (!x && (++i < 80));
+	assert(i < 80);
 	
 	std::cout << "ComputeNEG" << std::endl;
 	mpc->MPC_ComputeNEG(result, a);
