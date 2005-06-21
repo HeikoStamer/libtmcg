@@ -352,3 +352,12 @@ bool StiglicMPC::MPC_CopyBitCommitment
 		return return_value;
 	}
 }
+
+bool StiglicMPC::MPC_RandomBitCommitment
+	(MPC_Bit &result)
+{
+	result.clear(), result.push(base);
+	if (!MPC_CyclicShift(result, result))
+		return false;
+	return true;
+}

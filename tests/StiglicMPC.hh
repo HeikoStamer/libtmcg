@@ -143,6 +143,9 @@ class StiglicMPC
 		bool MPC_CopyBitCommitment
 			(MPC_Bit &copy1, MPC_Bit &copy2, const MPC_Bit &bit);
 		
+		bool MPC_RandomBitCommitment
+			(MPC_Bit &result);
+		
 		~StiglicMPC
 			()
 		{

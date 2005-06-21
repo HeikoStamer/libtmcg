@@ -63,6 +63,11 @@ int main
 	assert(mpc->MPC_OpenBitCommitment(c, y));
 	assert((x == y) && (y == false));
 	
+	std::cout << "RandomBitCommitment" << std::endl;
+	assert(mpc->MPC_RandomBitCommitment(result));
+	assert(mpc->MPC_OpenBitCommitment(result, x));
+	std::cout << x << std::endl;
+	
 	std::cout << "ComputeNEG" << std::endl;
 	mpc->MPC_ComputeNEG(result, a);
 	assert(mpc->MPC_OpenBitCommitment(result, x));
