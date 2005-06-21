@@ -61,7 +61,7 @@ Requirements
   platforms:
 
   + GNU/Linux (Debian 3.0)      i686      gcc 2.95.4
-  + GNU/Linux (Debian unstable) i686      gcc 3.3.5
+  + GNU/Linux (Debian 3.1)      i686      gcc 3.3.5
   + SunOS 5.8, Solaris 2.7      sparc     gcc 3.3.2
   - GNU/Linux (Sharp Zaurus)    arm       zgcc 2.95.2     (--disable-shared)
 
