@@ -72,44 +72,38 @@ bool StiglicMPC::MPC_VerifyBitCommitment
 bool StiglicMPC::MPC_OpenCardCommitment
 	(const VTMF_Card &card, bool &b)
 {
-	try
+	VTMF_CardSecret cs;
+	tmcg->TMCG_SelfCardSecret(card, vtmf);
+
+	for (size_t i = 0; i < participants.size(); i++)
 	{
-		VTMF_CardSecret cs;
-		tmcg->TMCG_SelfCardSecret(card, vtmf);
-		for (size_t i = 0; i < participants.size(); i++)
+		if (i == index)
 		{
-			if (i == index)
+			for (size_t j = 0; j < participants.size(); j++)
 			{
-				for (size_t j = 0; j < participants.size(); j++)
+				if (j != index)
 				{
-					if (j != index)
-					{
-						tmcg->TMCG_ProveCardSecret(card, vtmf,
-							*participants[j]->in, *participants[j]->out);
-					}
+					tmcg->TMCG_ProveCardSecret(card, vtmf,
+						*participants[j]->in, *participants[j]->out);
 				}
 			}
-			else
-			{
-				if (!tmcg->TMCG_VerifyCardSecret(card, vtmf,
-					*participants[i]->in, *participants[i]->out))
-						throw false;
-			}
 		}
-		
-		if (tmcg->TMCG_TypeOfCard(card, vtmf) == 0)
-			b = false;
-		else if (tmcg->TMCG_TypeOfCard(card, vtmf) == 1)
-			b = true;
 		else
-			throw false;
+		{
+			if (!tmcg->TMCG_VerifyCardSecret(card, vtmf,
+				*participants[i]->in, *participants[i]->out))
+					return false;
+		}
+	}
+	
+	if (tmcg->TMCG_TypeOfCard(card, vtmf) == 0)
+		b = false;
+	else if (tmcg->TMCG_TypeOfCard(card, vtmf) == 1)
+		b = true;
+	else
+		return false;
 		
-		throw true;
-	}
-	catch (bool return_value)
-	{
-		return return_value;
-	}
+	return true;
 }
 
 bool StiglicMPC::MPC_OpenBitCommitment
@@ -260,41 +254,29 @@ bool StiglicMPC::MPC_ComputeOR
 	(MPC_Bit &result, const MPC_Bit &bitA, const MPC_Bit &bitB)
 {
 	MPC_Bit nA, nB, nAB;
-	try
-	{
-		MPC_ComputeNEG(nA, bitA), MPC_ComputeNEG(nB, bitB);
-		if (!MPC_ComputeAND(nAB, nA, nB))
-			throw false;
-		MPC_ComputeNEG(result, nAB);
+	
+	MPC_ComputeNEG(nA, bitA), MPC_ComputeNEG(nB, bitB);
+	if (!MPC_ComputeAND(nAB, nA, nB))
+		return false;
+	MPC_ComputeNEG(result, nAB);
 		
-		throw true;
-	}
-	catch (bool return_value)
-	{
-		return return_value;
-	}
+	return true;
 }
 
 bool StiglicMPC::MPC_ComputeXOR
 	(MPC_Bit &result, const MPC_Bit &bitA, const MPC_Bit &bitB)
 {
 	MPC_Bit nA, nB, nAB, AnB;
-	try
-	{
-		MPC_ComputeNEG(nA, bitA), MPC_ComputeNEG(nB, bitB);
-		if (!MPC_ComputeAND(nAB, nA, bitB))
-			throw false;
-		if (!MPC_ComputeAND(AnB, bitA, nB))
-			throw false;
-		if (!MPC_ComputeOR(result, nAB, AnB))
-			throw false;
+	
+	MPC_ComputeNEG(nA, bitA), MPC_ComputeNEG(nB, bitB);
+	if (!MPC_ComputeAND(nAB, nA, bitB))
+		return false;
+	if (!MPC_ComputeAND(AnB, bitA, nB))
+		return false;
+	if (!MPC_ComputeOR(result, nAB, AnB))
+		return false;
 		
-		throw true;
-	}
-	catch (bool return_value)
-	{
-		return return_value;
-	}
+	return true;
 }
 
 bool StiglicMPC::MPC_CopyBitCommitment
@@ -305,52 +287,45 @@ bool StiglicMPC::MPC_CopyBitCommitment
 	TMCG_Stack<VTMF_Card> copyshop, left;
 	bool cb[4];
 	
-	try
+	// step 1. -- create a stack with three MPC_Bit (set to true)
+	copyshop.push(negbase), copyshop.push(negbase), copyshop.push(negbase);
+	
+	// step 2a. -- apply a cyclic shift to the six rightmost cards
+	if (!MPC_CyclicShift(copyshop, copyshop))
+		return false;
+		
+	// step 2b. -- create the necessary configuration
+	left.push(bit), left.push(copyshop[0]), left.push(copyshop[1]);
+	copyshop.stack.erase(copyshop.stack.begin(), copyshop.stack.begin() + 2);
+	assert(copyshop.size() == 4);
+		
+	// step 3. -- apply a cyclic shift to the four topmost cards
+	if (!MPC_CyclicShift(left, left))
+		return false;
+		
+	// step 4. -- open the four topmost cards
+	if (!MPC_OpenCardCommitment(left[0], cb[0]))
+		return false;
+	if (!MPC_OpenCardCommitment(left[1], cb[1]))
+		return false;
+	if (!MPC_OpenCardCommitment(left[2], cb[2]))
+		return false;
+	if (!MPC_OpenCardCommitment(left[3], cb[3]))
+		return false;
+	if ((cb[0] && !cb[1] && cb[2] && !cb[3]) || 
+		(!cb[0] && cb[1] && !cb[2] && cb[3]))
 	{
-		// step 1. -- create a stack with three MPC_Bit (set to true)
-		copyshop.push(negbase), copyshop.push(negbase), copyshop.push(negbase);
-		
-		// step 2a. -- apply a cyclic shift to the six rightmost cards
-		if (!MPC_CyclicShift(copyshop, copyshop))
-			throw false;
-		
-		// step 2b. -- create the necessary configuration
-		left.push(bit), left.push(copyshop[0]), left.push(copyshop[1]);
-		copyshop.stack.erase(copyshop.stack.begin(), copyshop.stack.begin() + 2);
-		assert(copyshop.size() == 4);
-		
-		// step 3. -- apply a cyclic shift to the four topmost cards
-		if (!MPC_CyclicShift(left, left))
-			throw false;
-		
-		// step 4. -- open the four topmost cards
-		if (!MPC_OpenCardCommitment(left[0], cb[0]))
-			throw false;
-		if (!MPC_OpenCardCommitment(left[1], cb[1]))
-			throw false;
-		if (!MPC_OpenCardCommitment(left[2], cb[2]))
-			throw false;
-		if (!MPC_OpenCardCommitment(left[3], cb[3]))
-			throw false;
-		if ((cb[0] && !cb[1] && cb[2] && !cb[3]) || 
-			(!cb[0] && cb[1] && !cb[2] && cb[3]))
-		{
-			copy1.clear(), copy1.push(copyshop[0]), copy1.push(copyshop[1]);
-			copy2.clear(), copy2.push(copyshop[2]), copy2.push(copyshop[3]);
-		}
-		else
-		{
-			copy1.clear(), copy1.push(copyshop[0]), copy1.push(copyshop[1]);
-			copy2.clear(), copy2.push(copyshop[2]), copy2.push(copyshop[3]);
-			MPC_ComputeNEG(copy1, copy1), MPC_ComputeNEG(copy2, copy2);
-		}
-		
-		throw true;
+		copy1.clear(), copy1.push(copyshop[0]), copy1.push(copyshop[1]);
+		copy2.clear(), copy2.push(copyshop[2]), copy2.push(copyshop[3]);
 	}
-	catch (bool return_value)
+	else
 	{
-		return return_value;
+		copy1.clear(), copy1.push(copyshop[0]), copy1.push(copyshop[1]);
+		copy2.clear(), copy2.push(copyshop[2]), copy2.push(copyshop[3]);
+		MPC_ComputeNEG(copy1, copy1), MPC_ComputeNEG(copy2, copy2);
 	}
+		
+	return true;
 }
 
 bool StiglicMPC::MPC_RandomBitCommitment
