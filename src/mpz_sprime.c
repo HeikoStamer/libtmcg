@@ -246,10 +246,70 @@ void mpz_sprime_test
 	assert(mpz_probab_prime_p(q, 64));
 }
 
+/* A naive generator for safe primes. (slow!) */
+
+void mpz_sprime_test_naive
+	(mpz_ptr p, mpz_ptr q, unsigned long int qsize,
+	int (*test)(mpz_ptr, mpz_ptr))
+{
+	/* Choose a random odd number $q$ of appropriate size. */
+	do
+		mpz_srandomb(q, qsize);
+	while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
+	
+	while (1)
+	{
+		size_t i = 0;
+		
+		/* Increase $q$ by 2 (incremental prime number generator). */
+		mpz_add_ui(q, q, 2L);
+		/* Compute $p = 2q + 1$. */
+		mpz_mul_2exp(p, q, 1L);
+		mpz_add_ui(p, p, 1L);
+		
+		/* Additional tests? */
+		if (!test(p, q))
+			continue;
+		
+		/* Check whether either $q$ or $p$ are not divisable by any primes up to
+		   some bound $B$. (We use the bound $B = 5000$ here.) */
+		for (i = 0; primes[i]; i++)
+		{
+			if (mpz_congruent_ui_p(q, (primes[i] - 1L) / 2L, primes[i]) ||
+				mpz_congruent_ui_p(p, (primes[i] - 1L) / 2L, primes[i]) ||
+				mpz_congruent_ui_p(q, 0L, primes[i]) ||
+				mpz_congruent_ui_p(p, 0L, primes[i]))
+					break;
+		}
+		if (primes[i])
+			continue;
+		
+		if (!mpz_probab_prime_p(p, 1))
+			continue;
+		fprintf(stderr, ".");
+		
+		if (!mpz_probab_prime_p(q, 64))
+			continue;
+		
+		if (mpz_probab_prime_p(p, 63))
+			break;
+	}
+	fprintf(stderr, "\n");
+	
+	assert(mpz_probab_prime_p(p, 64));
+	assert(mpz_probab_prime_p(q, 64));
+}
+
 void mpz_sprime
 	(mpz_ptr p, mpz_ptr q, unsigned long int qsize)
 {
 	mpz_sprime_test(p, q, qsize, notest);
+}
+
+void mpz_sprime_naive
+	(mpz_ptr p, mpz_ptr q, unsigned long int qsize)
+{
+	mpz_sprime_test_naive(p, q, qsize, notest);
 }
 
 void mpz_sprime2g

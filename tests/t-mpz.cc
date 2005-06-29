@@ -18,12 +18,37 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 *******************************************************************************/
 
+#include <string>
 #include <sstream>
 #include <cassert>
+#include <time.h>
 
 #include <libTMCG.hh>
 
 #undef NDEBUG
+
+static clock_t start, stop;
+
+static void start_clock
+	(void)
+{
+	start = stop = clock();
+}
+
+static void stop_clock
+	(void)
+{
+	stop = clock();
+}
+
+static std::string elapsed_time
+	(void)
+{
+	static char buf[50];
+	
+	sprintf(buf, "%5.0fms", (((double) (stop - start)) / CLOCKS_PER_SEC) * 1000);
+	return std::string(buf);
+}
 
 int main
 	(int argc, char **argv)
@@ -103,7 +128,7 @@ int main
 		assert(mpz_cmp(foo, foo2));
 	}
 	
-	// mpz_sprime, mpz_sprime2g
+	// mpz_sprime, mpz_sprime2g, mpz_sprime3mod4
 	std::cout << "mpz_sprime(), mpz_sprime2g(), mpz_sprime3mod4()" << std::endl;
 	for (size_t i = 0; i < 2; i++)
 	{
@@ -117,6 +142,20 @@ int main
 		mpz_sprime3mod4(foo, 1024);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_congruent_ui_p(foo, 3L, 4L));
 	}
+	
+	// mpz_sprime vs. mpz_sprime_naive benchmark
+	std::cout << "mpz_sprime() benchmark" << std::endl;
+	start_clock();
+	for (size_t i = 0; i < 100; i++)
+		mpz_sprime(foo, bar, 512);
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
+	std::cout << "mpz_sprime_naive() benchmark" << std::endl;
+	start_clock();
+	for (size_t i = 0; i < 100; i++)
+		mpz_sprime_naive(foo, bar, 512);
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
 	
 	// mpz_spowm, mpz_spowm_init, mpz_spowm_calc, mpz_spowm_clear
 	std::cout << "mpz_spowm()" << std::endl;

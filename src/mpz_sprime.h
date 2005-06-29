@@ -43,6 +43,8 @@
 	#endif
 			void mpz_sprime
 				(mpz_ptr p, mpz_ptr q, unsigned long int qsize);
+			void mpz_sprime_naive
+				(mpz_ptr p, mpz_ptr q, unsigned long int qsize);
 			void mpz_sprime2g
 				(mpz_ptr p, mpz_ptr q, unsigned long int qsize);
 			void mpz_sprime3mod4
