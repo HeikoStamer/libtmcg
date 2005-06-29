@@ -131,9 +131,8 @@ int test3mod4
 	return mpz_congruent_ui_p(p, 3L, 4L);
 }
 
-/** Miller-Rabin probabilistic primality test [HAC]
-    
-*/
+/** Miller-Rabin probabilistic primality test, algorithm 4.24 [HAC] */
+
 int mpz_mr_base
 	(mpz_srcptr n, mpz_srcptr base)
 {
@@ -159,17 +158,14 @@ int mpz_mr_base
 			unsigned long int j;
 			for (j = 1; j < s; j++)
 			{
-				if (mpz_cmp(y, nm1) == 0)
-				{
-					result = 0;
-					break;
-				}
 				mpz_powm_ui(y, y, 2L, n);
 				if (mpz_cmp_ui(y, 1L) == 0)
 				{
 					result = 0;
 					break;
 				}
+				if (mpz_cmp(y, nm1) == 0)
+					break;
 			}
 		}
 	}
@@ -200,9 +196,10 @@ void mpz_sprime_test
 		
 		/* increase $q$ by 2 (incremental prime number generator) */
 		mpz_add_ui(q, q, 2L);
+		
 		/* compute $p = 2q + 1$ */
-		mpz_mul_2exp(p, q, 1L);
-		mpz_add_ui(p, p, 1L);
+		mpz_mul_2exp(mr_pm1, q, 1L);
+		mpz_add_ui(p, mr_pm1, 1L);
 		
 		/* additional tests? */
 		if (!test(p, q))
@@ -222,6 +219,11 @@ void mpz_sprime_test
 		if (primes[i])
 			continue;
 		
+		/* Optimization: single test for $q$ */
+		if (!mpz_probab_prime_p(q, 1))
+			continue;
+		fprintf(stderr, ".");
+		
 		/* Step 3. [CS00]: Test whether 2 is not a Miller-Rabin witness to the
 		   compositeness of $q$. */
 		if (!mpz_mr_base(q, mr_a))
@@ -229,14 +231,12 @@ void mpz_sprime_test
 		
 		/* Step 4. [CS00]: Test whether $2^q \equiv \pm 1 \pmod{p}$. */
 		mpz_powm(mr_y, mr_a, q, p);
-		mpz_sub_ui(mr_pm1, p, 1L);
 		if (!((mpz_cmp_ui(mr_y, 1L) == 0) || (mpz_cmp(mr_y, mr_pm1) == 0)))
 			continue;
-		fprintf(stderr, ".");
 		
 		/* Step 5. [CS00]: Apply the Miller-Rabin test to $q$ a defined number
 		   of times (error probability $4^{-64}$) using randomly selected bases. */
-		if (mpz_probab_prime_p(q, 64))
+		if (mpz_probab_prime_p(q, 63))
 			break;
 	}
 	mpz_clear(mr_y), mpz_clear(mr_pm1), mpz_clear(mr_a);
@@ -246,7 +246,7 @@ void mpz_sprime_test
 	assert(mpz_probab_prime_p(q, 64));
 }
 
-/* A naive generator for safe primes. (slow!) */
+/* A naive generator for safe primes. (for $\log_2 p \ge 1024$ slow!) */
 
 void mpz_sprime_test_naive
 	(mpz_ptr p, mpz_ptr q, unsigned long int qsize,
