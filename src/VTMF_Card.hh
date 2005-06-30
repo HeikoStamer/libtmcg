@@ -70,7 +70,7 @@ struct VTMF_Card
 	bool operator !=
 		(const VTMF_Card& that) const;
 	
-	/** This function imports a card.
+	/** This function imports the card.
 	    @param s is correctly formated input string.
 	    @returns True, if the import was successful. */
 	bool import

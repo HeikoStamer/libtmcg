@@ -18,10 +18,12 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.17 $)
+AC_REVISION($Revision: 1.18 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
+
+# The next two paragraphs are copies of libgcrypt behaviour.
 
 # LT Version numbers, remember to change them just *before* a release.
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
@@ -67,7 +69,7 @@ AC_DEFINE(TMCG_DDH_SIZE, 1024L,
 	[Define the security parameter of the DDH-hard group G;
 	Underlying assumptions: DDH, CDH, DLOG])
 AC_DEFINE(TMCG_DLSE_SIZE, 160L,
-	[Define the security parameter of the used exponents;
+	[Define the security parameter of the shortened exponents;
 	Underlying assumptions: DLSE (related to DDH), DLOG])
 AC_DEFINE(TMCG_QRA_SIZE, 1024L,
 	[Define the security parameter of the TMCG public key;
@@ -144,7 +146,7 @@ fi
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h stdarg.h string.h strings.h unistd.h])
+AC_CHECK_HEADERS([stdlib.h stdarg.h string.h strings.h unistd.h time.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -152,7 +154,7 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
-AC_CHECK_FUNCS([memcpy memcmp memset strchr strncasecmp strrchr strstr strtol strtoul])
+AC_CHECK_FUNCS([memcpy memcmp memset strchr strncasecmp strrchr strstr strtol strtoul clock])
 
 CXXFLAGS="$CXXFLAGS -O2 -Wall -g3 -pedantic"
 ##CXXFLAGS="$CXXFLAGS -O2 -Wall -D NDEBUG"
