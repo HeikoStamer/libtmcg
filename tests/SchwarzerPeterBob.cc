@@ -6,35 +6,36 @@ int main
 {
 	if (!init_libTMCG())
 	{
-		std::cerr << _("Initalization of libTMCG failed!") << std::endl;
+		std::cerr << "Initalization of libTMCG failed!" << std::endl;
 		return -1;
 	}
-
-	// Initalisieren der "Toolbox for Mental Card Games"
-	// -------------------------------------------------
-	size_t t = 16, k = 2, w = 4; // p_Betrug <= 2^{-16}, 2 Spieler, 13 Typen
+	
+	// create an instance of the "Toolbox for Mental Card Games"
+	// --------------------------------------------------------
+	// p_cheating <= 2^{-16}, k = 2 players, w = 4 bits (2^4 >= 13 card types)
+	size_t t = 16, k = 2, w = 4;
 	SchindelhauerTMCG *tmcg = new SchindelhauerTMCG(t, k, w);
 	
-	// Initalisieren und Überprüfen der Gruppe G (von Alice erzeugt)
+	// create an instance of the VTMF implementation (receive the group G)
 	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(std::cin);
+	// check whether the group G was correctly generated
 	if (!vtmf->CheckGroup())
 	{
-		std::cerr << ">< Gruppe G fehlerhaft erzeugt" << std::endl;
+		std::cerr << "Group G was not correctly generated!" << std::endl;
 		return -1;
 	}
-	
-	// Erzeugen und Senden des eigenen VTMF-Schlüssels
+	// create and send the (public) key
 	vtmf->KeyGenerationProtocol_GenerateKey();
 	vtmf->KeyGenerationProtocol_PublishKey(std::cout);
-	// Einfügen von Alice's Schlüssel
+	// receive Alice's public key and update the VTMF implementation
 	if (!vtmf->KeyGenerationProtocol_UpdateKey(std::cin))
 	{
-		std::cerr << ">< Schlüsselbeweis falsch" << std::endl;
+		std::cerr << "Alice's public key was not correctly generated!" << std::endl;
 		return -1;
 	}
 	
-	// Blatt mit 25 Karten erstellen (12 Paare und ein "Schwarzer Peter")
-	// ------------------------------------------------------------------
+	// create a deck of 25 cards (12 pairs and the "Schwarzer Peter")
+	// --------------------------------------------------------------
 	TMCG_OpenStack<VTMF_Card> Anfangsstapel;
 	for (size_t i = 0; i < 13; i++)
 	{

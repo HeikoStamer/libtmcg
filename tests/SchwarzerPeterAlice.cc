@@ -6,25 +6,25 @@ int main
 {
 	if (!init_libTMCG())
 	{
-		std::cerr << _("Initalization of the libTMCG failed!") << std::endl;
+		std::cerr << "Initalization of the libTMCG failed!" << std::endl;
 		return -1;
 	}
 	
-	// create a instance of the "Toolbox for Mental Card Games"
+	// create an instance of the "Toolbox for Mental Card Games"
 	// --------------------------------------------------------
-	// p_cheating <= 2^{-16}, k = 2 players, w = 4 bits (2^4 >= 13 different cards)
+	// p_cheating <= 2^{-16}, k = 2 players, w = 4 bits (2^4 >= 13 card types)
 	size_t t = 16, k = 2, w = 4;
 	SchindelhauerTMCG *tmcg = new SchindelhauerTMCG(t, k, w);
-		
-	// create a instance of the VTMF implementation (create the group G)
+	
+	// create an instance of the VTMF implementation (create the group G)
 	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog();
 	// check whether the group G was correctly generated
 	if (!vtmf->CheckGroup())
 	{
-		std::cerr << _("Group G was not correctly generated!") << std::endl;
+		std::cerr << "Group G was not correctly generated!" << std::endl;
 		return -1;
 	}
-	// send the parameters of the group to Bob (second party)
+	// send the parameters of the group to Bob (the second party)
 	vtmf->PublishGroup(std::cout);
 	// create and send the (public) key
 	vtmf->KeyGenerationProtocol_GenerateKey();
@@ -32,11 +32,11 @@ int main
 	// receive Bob's public key and update the VTMF implementation
 	if (!vtmf->KeyGenerationProtocol_UpdateKey(std::cin))
 	{
-		std::cerr << _("Bob's public key was not correctly generated!") << std::endl;
+		std::cerr << "Bob's public key was not correctly generated!" << std::endl;
 		return -1;
 	}
 	
-	// create a deck of 25 cards (12 pairs and one "Schwarzer Peter")
+	// create a deck of 25 cards (12 pairs and the "Schwarzer Peter")
 	// --------------------------------------------------------------
 	TMCG_OpenStack<VTMF_Card> Anfangsstapel;
 	for (size_t i = 0; i < 13; i++)
