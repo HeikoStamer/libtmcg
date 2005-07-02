@@ -36,14 +36,15 @@ int main
 	
 	// create a deck of 25 cards (12 pairs and the "Schwarzer Peter")
 	// --------------------------------------------------------------
-	TMCG_OpenStack<VTMF_Card> Anfangsstapel;
+	std::cerr << "Create the deck ..." << std::endl;
+	TMCG_OpenStack<VTMF_Card> deck;
 	for (size_t i = 0; i < 13; i++)
 	{
 		for (size_t j = 0; j < 2; (i != 0) ? j++ : j = 2)
 		{
 			VTMF_Card c;
-			tmcg->TMCG_CreateOpenCard(c, vtmf, i); // Karte mit Typ i erzeugen,
-			Anfangsstapel.push(i, c);      // und auf den offenen Stapel legen.
+			tmcg->TMCG_CreateOpenCard(c, vtmf, i); // create a card of type i
+			deck.push(i, c);      // push this card to the open stack deck
 		}
 	}
 	

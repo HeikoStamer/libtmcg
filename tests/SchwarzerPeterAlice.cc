@@ -38,107 +38,103 @@ int main
 	
 	// create a deck of 25 cards (12 pairs and the "Schwarzer Peter")
 	// --------------------------------------------------------------
-	TMCG_OpenStack<VTMF_Card> Anfangsstapel;
+	std::cerr << "Create the deck ..." << std::endl;
+	TMCG_OpenStack<VTMF_Card> deck;
 	for (size_t i = 0; i < 13; i++)
 	{
 		for (size_t j = 0; j < 2; (i != 0) ? j++ : j = 2)
 		{
 			VTMF_Card c;
 			tmcg->TMCG_CreateOpenCard(c, vtmf, i); // create a card of type i
-			Anfangsstapel.push(i, c);      // push this card to the open stack
+			deck.push(i, c);      // push this card to the open stack deck
 		}
 	}
 	
-	// Anfangsstapel mischen: Alice zuerst, dann Bob.
-	// ----------------------------------------------
-	std::cerr << "Anfangsstapel mischen ..." << std::endl;
-	TMCG_Stack<VTMF_Card> Mischstapel, Mischstapel_Alice, Mischstapel_Bob;
-	TMCG_StackSecret<VTMF_CardSecret> Mischgeheimnis;
-	Mischstapel.push(Anfangsstapel); // offenen in allgemeinen Stapel umwandeln
-	tmcg->TMCG_CreateStackSecret(Mischgeheimnis, false, // volle Permutation
-		Mischstapel.size(), vtmf);
+	// shuffle the deck: Alice first, after it Bob.
+	// --------------------------------------------
+	std::cerr << "Shuffle the deck ..." << std::endl;
+	TMCG_Stack<VTMF_Card> stack, stack_Alice, stack_Bob;
+	TMCG_StackSecret<VTMF_CardSecret> secret;
+	stack.push(deck); // push the whole deck to the working stack
+	// create the secret for a full shuffle (permutation) of the stack
+	tmcg->TMCG_CreateStackSecret(secret, false, stack.size(), vtmf);
 	
 	// ... Alice
-	tmcg->TMCG_MixStack(Mischstapel, Mischstapel_Alice,
-		Mischgeheimnis, vtmf);                             // Maskieren
-	std::cout << Mischstapel_Alice << std::endl;           // Stapel an Bob senden
-	tmcg->TMCG_ProveStackEquality(Mischstapel, Mischstapel_Alice,
-		Mischgeheimnis, false, vtmf, std::cin, std::cout); // Korrektheit beweisen
+	tmcg->TMCG_MixStack(stack, stack_Alice, secret, vtmf); // shuffle operation
+	std::cout << stack_Alice << std::endl; // send the result to Bob
+	tmcg->TMCG_ProveStackEquality(stack, stack_Alice, secret, false, vtmf,
+		std::cin, std::cout); // prove the correctness of the operation
 	
 	// ... Bob
 	char *tmp = new char[TMCG_MAX_STACK_CHARS];
 	std::cin.getline(tmp, TMCG_MAX_STACK_CHARS);
-	if (!Mischstapel_Bob.import(tmp))
+	if (!stack_Bob.import(tmp))
 	{
-		std::cerr << ">< Stapelformat falsch (Trollversuch?)" << std::endl;
+		std::cerr << "Stack corrupted!" << std::endl;
 		return -1;
 	}
-	if (!tmcg->TMCG_VerifyStackEquality(Mischstapel_Alice,
-		Mischstapel_Bob, false, vtmf, std::cin, std::cout)) // Beweis verifizieren
+	if (!tmcg->TMCG_VerifyStackEquality(stack_Alice, stack_Bob, false, vtmf,
+		std::cin, std::cout)) // verify the proof of correctness
 	{
-		std::cerr << ">< Stapelbeweis falsch (Betrugsversuch?)" << std::endl;
+		std::cerr << "Proof of correctness wrong!" << std::endl;
 		return -1;
 	}
 	
-	// Stapel teilen: Alice erhält die Karten 1 bis 13 und Bob den Rest.
-	// -----------------------------------------------------------------
-	std::cerr << "Stapel teilen ..." << std::endl;
-	TMCG_Stack<VTMF_Card> Kartenstapel_Alice, Kartenstapel_Bob;
+	// dealing: Alice gets the 1st to 13th and Bob the remaining cards.
+	// ----------------------------------------------------------------
+	std::cerr << "Deal the cards ..." << std::endl;
+	TMCG_Stack<VTMF_Card> hand_Alice, hand_Bob;
 	for (size_t i = 0; i < 13 ; i++)
-		Kartenstapel_Alice.push(Mischstapel_Bob[i]);
+		hand_Alice.push(stack_Bob[i]);
 	for (size_t i = 13; i < 25 ; i++)
-		Kartenstapel_Bob.push(Mischstapel_Bob[i]);
+		hand_Bob.push(stack_Bob[i]);
 	
-	// Das eigentliche Spiel läuft in einer (Endlos-)Schleife.
-	// -------------------------------------------------------
+	// The real game proceeds like an endless loop.
+	// --------------------------------------------
 	while (1)
 	{
 		// Handkarten privat aufdecken: Alice zuerst, dann Bob.
 		// ----------------------------------------------------
 		// Die drei Operationen SelfCardSecret, VerifyCardSecret und
 		// TypeOfCard müssen in *genau* dieser Reihenfolge aufgerufen werden!
-		TMCG_OpenStack<VTMF_Card> Handkarten;
-		size_t Typ = 0;
+		TMCG_OpenStack<VTMF_Card> hand;
+		size_t type = 0;
 		
 		// ... Alice
 		std::cerr << "Meine Karten: ";
-		for (size_t i = 0; i < Kartenstapel_Alice.size(); i++)
+		for (size_t i = 0; i < hand_Alice.size(); i++)
 		{
-			tmcg->TMCG_SelfCardSecret(Kartenstapel_Alice[i], vtmf);
-			if (!tmcg->TMCG_VerifyCardSecret(Kartenstapel_Alice[i], vtmf,
+			tmcg->TMCG_SelfCardSecret(hand_Alice[i], vtmf);
+			if (!tmcg->TMCG_VerifyCardSecret(hand_Alice[i], vtmf,
 				std::cin, std::cout))
 			{
 				std::cerr << ">< Öffnungsbeweis falsch (Betrugsversuch?)" <<
 					std::endl;
 				return -1;
 			}
-			Typ = tmcg->TMCG_TypeOfCard(Kartenstapel_Alice[i], vtmf);
-			Handkarten.push(Typ, Kartenstapel_Alice[i]);
-			std::cerr << Typ << " ";
+			type = tmcg->TMCG_TypeOfCard(hand_Alice[i], vtmf);
+			hand.push(type, hand_Alice[i]);
+			std::cerr << type << " ";
 		}
 		std::cerr << std::endl;
 		
 		// ... Bob
-		for (size_t i = 0; i < Kartenstapel_Bob.size(); i++)
-		{
-			tmcg->TMCG_ProveCardSecret(Kartenstapel_Bob[i], vtmf,
-				std::cin, std::cout);
-		}
+		for (size_t i = 0; i < hand_Bob.size(); i++)
+			tmcg->TMCG_ProveCardSecret(hand_Bob[i], vtmf, std::cin, std::cout);
 		
 		// Ein Paar offen ablegen (sofern möglich): Bob zuerst, dann Alice.
 		// ----------------------------------------------------------------
-		TMCG_OpenStack<VTMF_Card> Paarstapel;
-		size_t Paare = 0, LetzterTyp = 0;
+		size_t pairs = 0, lasttype = 0;
 		
 		// ... Bob
-		std::cin >> Paare;
-		std::cin.ignore(1, '\n'); // Newline verwerfen
-		if (Paare > 1)
+		std::cin >> pairs;
+		std::cin.ignore(1, '\n'); // reject the newline
+		if (pairs > 1)
 		{
 			std::cerr << ">< Unerlaubte Paaranzahl (Trollversuch?)" << std::endl;
 			return -1;
 		}
-		if (Paare)
+		if (pairs)
 		{
 			std::cerr << "Gegner legt ab: ";
 			for (size_t i = 0; i < 2; i++)
@@ -153,7 +149,7 @@ int main
 					return -1;
 				}
 				// Prüfen, ob Karte im Stapel ist
-				if (!Kartenstapel_Bob.find(c))
+				if (!hand_Bob.find(c))
 				{
 					std::cerr << ">< Karte nicht vorhanden (Betrugsversuch?)" <<
 						std::endl;
@@ -167,97 +163,94 @@ int main
 						std::endl;
 					return -1;
 				}
-				Typ = tmcg->TMCG_TypeOfCard(c, vtmf);
+				type = tmcg->TMCG_TypeOfCard(c, vtmf);
 				// Prüfen, ob wirklich ein Paar vorliegt
 				if (i % 2)
 				{
-					if (LetzterTyp != Typ)
+					if (lasttype != type)
 					{
 						std::cerr << ">< Kein Paar (Trollversuch?)" << std::endl;
 						return -1;
 					}
 					else
-						std::cerr << Typ << " ";
+						std::cerr << type << " ";
 				}
 				else
-					LetzterTyp = Typ;
-				// Karte entfernen
-				Kartenstapel_Bob.remove(c);
+					lasttype = type;
+				hand_Bob.remove(c); // remove the card from Bob's hand
 			}
 			std::cerr << std::endl;
 		}
 		
 		// .. Alice
-		// Paare suchen
-		for (size_t i = 0; i < Handkarten.size(); i++)
+		TMCG_OpenStack<VTMF_Card> pairstack;
+		// search for pairs
+		for (size_t i = 0; i < hand.size(); i++)
 		{
-			for (size_t j = 0; j < Handkarten.size(); j++)
+			for (size_t j = 0; j < hand.size(); j++)
 			{
-				// Paar gefunden?
-				if ((i < j) &&
-					(Handkarten[i].first == Handkarten[j].first))
+				// pair found?
+				if ((i < j) && (hand[i].first == hand[j].first))
 				{
-					Paarstapel.push(Handkarten[i]);
-					Paarstapel.push(Handkarten[j]);
-					i = Handkarten.size();          // keine weiteren Paare suchen
+					pairstack.push(hand[i]), pairstack.push(hand[j]);
+					i = hand.size(); // break the search
 					break;
 				}
 			}
 		}
 		// Anzahl senden, Paare aufdecken und entfernen
-		std::cout << (Paarstapel.size() / 2) << std::endl;
-		if (Paarstapel.size())
+		std::cout << (pairstack.size() / 2) << std::endl;
+		if (pairstack.size() > 0)
 		{
 			std::cerr << "Ich lege ab: ";
-			for (size_t i = 0; i < Paarstapel.size(); i++)
+			for (size_t i = 0; i < pairstack.size(); i++)
 			{
-				std::cout << Paarstapel[i].second << std::endl;
-				tmcg->TMCG_ProveCardSecret(Paarstapel[i].second, vtmf,
+				std::cout << pairstack[i].second << std::endl;
+				tmcg->TMCG_ProveCardSecret(pairstack[i].second, vtmf,
 					std::cin, std::cout);
-				Kartenstapel_Alice.remove(Paarstapel[i].second);
-				Handkarten.remove(Paarstapel[i].first);
+				hand_Alice.remove(pairstack[i].second);
+				hand.remove(pairstack[i].first);
 				if (i % 2)
-					std::cerr << Paarstapel[i].first << " ";
+					std::cerr << pairstack[i].first << " ";
 			}
 			std::cerr << std::endl;
 		}
 		
 		// Aufräumen und Abbruchkriterium prüfen
 		// -------------------------------------
-		Paarstapel.clear();
-		Mischstapel_Alice.clear(), Mischstapel_Bob.clear();
-		if (Kartenstapel_Alice.size() == 0)
+		pairstack.clear(), stack_Alice.clear(), stack_Bob.clear();
+		if (hand_Alice.size() == 0)
 		{
-			std::cerr << ">< Glück gehabt!" << std::endl;
+			std::cerr << "You win the game!" << std::endl;
 			break;
 		}
-		if (Kartenstapel_Bob.size() == 0)
+		if (hand_Bob.size() == 0)
 		{
-			std::cerr << ">< Zonk! ('Schwarzer Peter')" << std::endl;
+			std::cerr << ">< You loose. Zonk! ('Schwarzer Peter')" << std::endl;
 			break;
 		}
 		
 		// Eine Karte beim Gegner ziehen: Der mit weniger Karten zieht.
 		// Nach dem Ziehen wird neu gemischt und die Korrektheit gezeigt.
 		// --------------------------------------------------------------
-		size_t WelchePosition;
-		std::vector<bool> Ablauf;
+		size_t position;
+		std::vector<bool> who;
 		VTMF_Card c;
 		
-		if (Kartenstapel_Alice.size() > Kartenstapel_Bob.size())
-			Ablauf.push_back(false);
+		if (hand_Alice.size() > hand_Bob.size())
+			who.push_back(false);
 		else
-			Ablauf.push_back(true);
+			who.push_back(true);
 		
-		for (size_t i = 0; i < Ablauf.size(); i++)
+		for (size_t i = 0; i < who.size(); i++)
 		{
-			if (Ablauf[i])
+			if (who[i])
 			{
 				// Alice zieht ...
-				WelchePosition = mpz_srandom_ui() % Kartenstapel_Bob.size();
-				std::cout << WelchePosition << std::endl;
-				c = Kartenstapel_Bob[WelchePosition]; // Karte holen, ...
-				Kartenstapel_Bob.remove(c);           // entfernen, ...
+				position = mpz_srandom_ui() % hand_Bob.size();
+				std::cout << position << std::endl;
+				c = hand_Bob[position]; // Karte holen, ...
+				hand_Bob.remove(c);           // entfernen, ...
 				tmcg->TMCG_SelfCardSecret(c, vtmf);   // aufdecken, ...
 				if (!tmcg->TMCG_VerifyCardSecret(c, vtmf, std::cin, std::cout))
 				{
@@ -265,57 +258,55 @@ int main
 						std::endl;
 					return -1;
 				}
-				Typ = tmcg->TMCG_TypeOfCard(c, vtmf);
-				std::cerr << "Ich ziehe die Karte (von Position " <<
-				WelchePosition << "): " << Typ;
-				if (Typ)
+				type = tmcg->TMCG_TypeOfCard(c, vtmf);
+				std::cerr << "Ich ziehe die Karte (von Position " << position <<
+					"): " << type;
+				if (type)
 					std::cerr << std::endl;
 				else
 					std::cerr << " (Zonk!)" << std::endl;
-				Kartenstapel_Alice.push(c); // ... und auf Alices Stapel legen.
+				hand_Alice.push(c); // ... und auf Alices Stapel legen.
 				// ... und mischt neu.
-				tmcg->TMCG_CreateStackSecret(Mischgeheimnis, false,
-					Kartenstapel_Alice.size(), vtmf);
-				tmcg->TMCG_MixStack(Kartenstapel_Alice, Mischstapel_Alice,
-					Mischgeheimnis, vtmf);                             // Maskieren, ...
-				std::cout << Mischstapel_Alice << std::endl;         // senden, ...
-				tmcg->TMCG_ProveStackEquality(Kartenstapel_Alice, Mischstapel_Alice,
-				Mischgeheimnis, false, vtmf, std::cin, std::cout); // beweisen.
-				Kartenstapel_Alice = Mischstapel_Alice;
+				tmcg->TMCG_CreateStackSecret(secret, false, hand_Alice.size(), vtmf);
+				tmcg->TMCG_MixStack(hand_Alice, stack_Alice, secret, vtmf);
+				std::cout << stack_Alice << std::endl; // send the result to Bob
+				tmcg->TMCG_ProveStackEquality(hand_Alice, stack_Alice, secret, false,
+					vtmf, std::cin, std::cout);
+				hand_Alice = stack_Alice;
 			}
 			else
 			{
 				// Bob zieht ...
-				std::cin >> WelchePosition;
-				std::cin.ignore(1, '\n'); // Newline verwerfen
-				if (WelchePosition >= Kartenstapel_Alice.size())
+				std::cin >> position;
+				std::cin.ignore(1, '\n'); // reject the newline
+				if (position >= hand_Alice.size())
 				{
 					std::cerr << ">< Falscher Index (Trollversuch?)" << std::endl;
 					return -1;
 				}
-				c = Kartenstapel_Alice[WelchePosition]; // Karte holen,
-				Kartenstapel_Alice.remove(c);           // entfernen,
+				c = hand_Alice[position]; // Karte holen,
+				hand_Alice.remove(c); // entfernen,
 				tmcg->TMCG_ProveCardSecret(c, vtmf, std::cin, std::cout); // aufdecken,
-				Kartenstapel_Bob.push(c);               // ... und auf Bobs Stapel legen.
+				hand_Bob.push(c);               // ... und auf Bobs Stapel legen.
 				// ... und mischt neu.
 				char *tmp = new char[TMCG_MAX_STACK_CHARS];
 				std::cin.getline(tmp, TMCG_MAX_STACK_CHARS);
-				if (!Mischstapel_Bob.import(tmp))
+				if (!stack_Bob.import(tmp))
 				{
 					std::cerr << ">< Stapelformat falsch (Trollversuch?)" << std::endl;
 					return -1;
 				}
-				if (!tmcg->TMCG_VerifyStackEquality(Kartenstapel_Bob,
-					Mischstapel_Bob, false, vtmf, std::cin, std::cout)) // verifizieren
+				if (!tmcg->TMCG_VerifyStackEquality(hand_Bob, stack_Bob, false, vtmf,
+					std::cin, std::cout)) // verify the proof of correctness
 				{
 					std::cerr << ">< Stapelbeweis falsch (Betrugsversuch?)" << std::endl;
 					return -1;
 				}
-				Kartenstapel_Bob = Mischstapel_Bob;
+				hand_Bob = stack_Bob;
 			}
 		}
 	}
 	
-	// Aufräumen
+	// cleanup
 	delete vtmf, delete tmcg;
 }
