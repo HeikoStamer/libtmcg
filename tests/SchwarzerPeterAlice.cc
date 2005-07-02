@@ -76,7 +76,7 @@ int main
 	if (!tmcg->TMCG_VerifyStackEquality(stack_Alice, stack_Bob, false, vtmf,
 		std::cin, std::cout)) // verify the proof of correctness
 	{
-		std::cerr << "Proof of correctness wrong!" << std::endl;
+		std::cerr << "StackEquality: proof of correctness failed!" << std::endl;
 		return -1;
 	}
 	
@@ -93,23 +93,22 @@ int main
 	// --------------------------------------------
 	while (1)
 	{
-		// Handkarten privat aufdecken: Alice zuerst, dann Bob.
-		// ----------------------------------------------------
-		// Die drei Operationen SelfCardSecret, VerifyCardSecret und
-		// TypeOfCard müssen in *genau* dieser Reihenfolge aufgerufen werden!
+		// reveal the card type to the owner: Alice first, after it Bob.
+		// -------------------------------------------------------------
+		// The three operations SelfCardSecret(), VerifyCardSecret() and
+		// TypeOfCard() MUST be called exactly in this order!
 		TMCG_OpenStack<VTMF_Card> hand;
 		size_t type = 0;
 		
 		// ... Alice
-		std::cerr << "Meine Karten: ";
+		std::cerr << "My cards are: ";
 		for (size_t i = 0; i < hand_Alice.size(); i++)
 		{
 			tmcg->TMCG_SelfCardSecret(hand_Alice[i], vtmf);
 			if (!tmcg->TMCG_VerifyCardSecret(hand_Alice[i], vtmf,
 				std::cin, std::cout))
 			{
-				std::cerr << ">< Öffnungsbeweis falsch (Betrugsversuch?)" <<
-					std::endl;
+				std::cerr << "CardSecret: proof of correctness failed!" << std::endl;
 				return -1;
 			}
 			type = tmcg->TMCG_TypeOfCard(hand_Alice[i], vtmf);
@@ -122,7 +121,7 @@ int main
 		for (size_t i = 0; i < hand_Bob.size(); i++)
 			tmcg->TMCG_ProveCardSecret(hand_Bob[i], vtmf, std::cin, std::cout);
 		
-		// Ein Paar offen ablegen (sofern möglich): Bob zuerst, dann Alice.
+		// publish and draw a pair, if possible: Bob first, after it Alice.
 		// ----------------------------------------------------------------
 		size_t pairs = 0, lasttype = 0;
 		
@@ -131,12 +130,12 @@ int main
 		std::cin.ignore(1, '\n'); // reject the newline
 		if (pairs > 1)
 		{
-			std::cerr << ">< Unerlaubte Paaranzahl (Trollversuch?)" << std::endl;
+			std::cerr << "Bob wants to reveal more than one pair!" << std::endl;
 			return -1;
 		}
 		if (pairs)
 		{
-			std::cerr << "Gegner legt ab: ";
+			std::cerr << "Bob reveals: ";
 			for (size_t i = 0; i < 2; i++)
 			{
 				VTMF_Card c;
@@ -144,32 +143,29 @@ int main
 				std::cin.getline(tmp, TMCG_MAX_CARD_CHARS);
 				if (!c.import(tmp))
 				{
-					std::cerr << ">< Kartenformat falsch (Trollversuch?)" <<
-						std::endl;
+					std::cerr << "Card corrupted!" << std::endl;
 					return -1;
 				}
-				// Prüfen, ob Karte im Stapel ist
+				// Check whether the card is in the stack.
 				if (!hand_Bob.find(c))
 				{
-					std::cerr << ">< Karte nicht vorhanden (Betrugsversuch?)" <<
-						std::endl;
+					std::cerr << "Bob does not own this card!" << std::endl;
 					return -1;
 				}
-				// Karte aufdecken und Korrektheit prüfen
+				// Reveal the card and verify the proof of correctness.
 				tmcg->TMCG_SelfCardSecret(c, vtmf);
 				if (!tmcg->TMCG_VerifyCardSecret(c, vtmf, std::cin, std::cout))
 				{
-					std::cerr << ">< Öffnungsbeweis falsch (Betrugsversuch?)" <<
-						std::endl;
+					std::cerr << "CardSecret: proof of correctness failed!" << std::endl;
 					return -1;
 				}
 				type = tmcg->TMCG_TypeOfCard(c, vtmf);
-				// Prüfen, ob wirklich ein Paar vorliegt
+				// Check whether it is really a pair.
 				if (i % 2)
 				{
 					if (lasttype != type)
 					{
-						std::cerr << ">< Kein Paar (Trollversuch?)" << std::endl;
+						std::cerr << "Bob reveals no pair!" << std::endl;
 						return -1;
 					}
 					else
@@ -198,11 +194,12 @@ int main
 				}
 			}
 		}
-		// Anzahl senden, Paare aufdecken und entfernen
+		// Send the number of pairs to Bob.
 		std::cout << (pairstack.size() / 2) << std::endl;
+		// Reveal the pairs, prove the correctness and remove them from our hand.
 		if (pairstack.size() > 0)
 		{
-			std::cerr << "Ich lege ab: ";
+			std::cerr << "My pairs to reveal: ";
 			for (size_t i = 0; i < pairstack.size(); i++)
 			{
 				std::cout << pairstack[i].second << std::endl;
@@ -216,8 +213,8 @@ int main
 			std::cerr << std::endl;
 		}
 		
-		// Aufräumen und Abbruchkriterium prüfen
-		// -------------------------------------
+		// Cleanup and check the game outcome.
+		// -----------------------------------
 		pairstack.clear(), stack_Alice.clear(), stack_Bob.clear();
 		if (hand_Alice.size() == 0)
 		{
@@ -230,9 +227,9 @@ int main
 			break;
 		}
 		
-		// Eine Karte beim Gegner ziehen: Der mit weniger Karten zieht.
-		// Nach dem Ziehen wird neu gemischt und die Korrektheit gezeigt.
-		// --------------------------------------------------------------
+		// Draw a private card from the opponent: Only the player who have
+		// fewer cards will draw. After the draw the hand is shuffled again.
+		// -----------------------------------------------------------------
 		size_t position;
 		std::vector<bool> who;
 		VTMF_Card c;
@@ -246,27 +243,26 @@ int main
 		{
 			if (who[i])
 			{
-				// Alice zieht ...
+				// ... Alice
 				position = mpz_srandom_ui() % hand_Bob.size();
 				std::cout << position << std::endl;
-				c = hand_Bob[position]; // Karte holen, ...
-				hand_Bob.remove(c);           // entfernen, ...
-				tmcg->TMCG_SelfCardSecret(c, vtmf);   // aufdecken, ...
+				c = hand_Bob[position]; // draw a card
+				hand_Bob.remove(c); // remove it
+				tmcg->TMCG_SelfCardSecret(c, vtmf); // reveal it privatly
 				if (!tmcg->TMCG_VerifyCardSecret(c, vtmf, std::cin, std::cout))
 				{
-					std::cerr << ">< Öffnungsbeweis falsch (Betrugsversuch?)" <<
-						std::endl;
+					std::cerr << "CardSecret: proof of correctness failed!" << std::endl;
 					return -1;
 				}
 				type = tmcg->TMCG_TypeOfCard(c, vtmf);
-				std::cerr << "Ich ziehe die Karte (von Position " << position <<
+				std::cerr << "Alice draws the card (from position " << position <<
 					"): " << type;
 				if (type)
 					std::cerr << std::endl;
 				else
 					std::cerr << " (Zonk!)" << std::endl;
-				hand_Alice.push(c); // ... und auf Alices Stapel legen.
-				// ... und mischt neu.
+				hand_Alice.push(c); // push it to Alice's hand
+				// shuffle, because Bob must not know the position of the drawed card
 				tmcg->TMCG_CreateStackSecret(secret, false, hand_Alice.size(), vtmf);
 				tmcg->TMCG_MixStack(hand_Alice, stack_Alice, secret, vtmf);
 				std::cout << stack_Alice << std::endl; // send the result to Bob
@@ -276,30 +272,30 @@ int main
 			}
 			else
 			{
-				// Bob zieht ...
+				// ... Bob
 				std::cin >> position;
 				std::cin.ignore(1, '\n'); // reject the newline
 				if (position >= hand_Alice.size())
 				{
-					std::cerr << ">< Falscher Index (Trollversuch?)" << std::endl;
+					std::cerr << "Bob wants to draw from a wrong position!" << std::endl;
 					return -1;
 				}
-				c = hand_Alice[position]; // Karte holen,
-				hand_Alice.remove(c); // entfernen,
-				tmcg->TMCG_ProveCardSecret(c, vtmf, std::cin, std::cout); // aufdecken,
-				hand_Bob.push(c);               // ... und auf Bobs Stapel legen.
-				// ... und mischt neu.
+				c = hand_Alice[position]; // draw a card
+				hand_Alice.remove(c); // remove it
+				tmcg->TMCG_ProveCardSecret(c, vtmf, std::cin, std::cout); // revealing
+				hand_Bob.push(c); // push it to Bob's hand
+				// shuffle, because Alice must not know the position of the drawed card
 				char *tmp = new char[TMCG_MAX_STACK_CHARS];
 				std::cin.getline(tmp, TMCG_MAX_STACK_CHARS);
 				if (!stack_Bob.import(tmp))
 				{
-					std::cerr << ">< Stapelformat falsch (Trollversuch?)" << std::endl;
+					std::cerr << "Stack corrupted!" << std::endl;
 					return -1;
 				}
 				if (!tmcg->TMCG_VerifyStackEquality(hand_Bob, stack_Bob, false, vtmf,
 					std::cin, std::cout)) // verify the proof of correctness
 				{
-					std::cerr << ">< Stapelbeweis falsch (Betrugsversuch?)" << std::endl;
+					std::cerr << "StackEquality: proof of correctness failed!" << std::endl;
 					return -1;
 				}
 				hand_Bob = stack_Bob;
@@ -307,6 +303,6 @@ int main
 		}
 	}
 	
-	// cleanup
+	// final cleanup
 	delete vtmf, delete tmcg;
 }
