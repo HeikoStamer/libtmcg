@@ -133,5 +133,5 @@ int main
 	assert(mpc->MPC_OpenBitCommitment(result, x));
 	assert(x == false);
 	
-	delete mpc;
+	delete A, delete mpc;
 }
