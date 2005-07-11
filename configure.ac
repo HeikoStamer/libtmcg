@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.19 $)
+AC_REVISION($Revision: 1.20 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -63,7 +63,7 @@ AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.2.0",
 AC_DEFINE(TMCG_MAX_FPOWM_N, 2,
 	[Define the maximum number of precomputation tables for the
 	fast exponentiation; at least two tables are necessary])
-AC_DEFINE(TMCG_MAX_FPOWM_T, 4096,
+AC_DEFINE(TMCG_MAX_FPOWM_T, 2048,
 	[Define the maximum size of the exponent for fast exponentiation])
 AC_DEFINE(TMCG_MPZ_IO_BASE, 36,
 	[Define the input/ouput base encoding of the iostream operators])
