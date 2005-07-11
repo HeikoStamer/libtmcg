@@ -52,6 +52,9 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
 	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
 	mpz_powm(g, g, h, p);
+	
+	mpz_fpowm_init();
+	mpz_fpowm_precompute_table(g, p, 0, mpz_sizeinbase(p, 2L));
 }
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
@@ -73,6 +76,9 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
 	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
 	mpz_powm(g, g, h, p);
+	
+	mpz_fpowm_init();
+	mpz_fpowm_precompute_table(g, p, 0, mpz_sizeinbase(p, 2L));
 }
 
 bool BarnettSmartVTMF_dlog::CheckGroup
@@ -223,8 +229,12 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 		if (mpz_jacobi(foo, p) != 1L)
 			throw false;
 		
+		// verify the size of r
+		if (mpz_cmp(r, q) >= 0L)
+			throw false;
+		
 		// verify proof of knowledge [CaS97]
-		mpz_powm(t, g, r, p);
+		mpz_fpowm(t, g, r, p, 0);
 		mpz_powm(r, foo, c, p);
 		mpz_mul(t, t, r);
 		mpz_mod(t, t, p);
@@ -252,6 +262,12 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 		mpz_clear(foo), mpz_clear(t), mpz_clear(c), mpz_clear(r);
 		return return_value;
 	}
+}
+
+void BarnettSmartVTMF_dlog::KeyGenerationProtocol_Finalize
+	()
+{
+	mpz_fpowm_precompute_table(h, p, 1, mpz_sizeinbase(p, 2L));
 }
 
 void BarnettSmartVTMF_dlog::CP_Prove
@@ -295,12 +311,16 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 	
 	try
 	{
+		// verify the size of r
+		if (mpz_cmp(r, q) >= 0L)
+			throw false;
+		
 		// verify proof of knowledge (equality of discrete logarithms) [CaS97]
-		mpz_powm(a, gg, r, p);
+		mpz_fpowm(a, gg, r, p, 0);
 		mpz_powm(b, x, c, p);
 		mpz_mul(a, a, b);
 		mpz_mod(a, a, p);
-		mpz_powm(b, hh, r, p);
+		mpz_fpowm(b, hh, r, p, 1);
 		mpz_powm(r, y, c, p);
 		mpz_mul(b, b, r);
 		mpz_mod(b, b, p);
@@ -331,7 +351,7 @@ void BarnettSmartVTMF_dlog::OR_ProveFirst
 	
 		// 1. choose $v_1, v_2$ and $w\in_R\mathbb{Z}_q$ and compute
 		//    $t_2 = y_2^w g_2^{v_2}$ and $t_1 = g_1^{v_1}$ 
-		mpz_srandomm(v_1, q),	mpz_srandomm(v_2, q),	mpz_srandomm(w, q);
+		mpz_srandomm(v_1, q), mpz_srandomm(v_2, q), mpz_srandomm(w, q);
 		mpz_spowm(t_2, y_2, w, p);
 		mpz_spowm(tmp, g_2, v_2, p);
 		mpz_mul(t_2, t_2, tmp), mpz_mod(t_2, t_2, p);
@@ -369,7 +389,7 @@ void BarnettSmartVTMF_dlog::OR_ProveSecond
 	
 		// 1. choose $v_1, v_2$ and $w\in_R\mathbb{Z}_q$ and compute
 		//    $t_1 = y_1^w g_1^{v_1}$ and $t_2 = g_2^{v_2}$
-		mpz_srandomm(v_1, q),	mpz_srandomm(v_2, q),	mpz_srandomm(w, q);
+		mpz_srandomm(v_1, q), mpz_srandomm(v_2, q), mpz_srandomm(w, q);
 		mpz_spowm(t_1, y_1, w, p);
 		mpz_spowm(tmp, g_1, v_1, p);
 		mpz_mul(t_1, t_1, tmp), mpz_mod(t_1, t_1, p);
@@ -406,6 +426,10 @@ bool BarnettSmartVTMF_dlog::OR_Verify
 	
 	try
 	{
+		// verify the size of $r_1$ and $r_2$
+		if ((mpz_cmp(r_1, q) >= 0L) || (mpz_cmp(r_2, q) >= 0L))
+			throw false;
+		
 		// verify PK ($y_1 = g_1^\alpha \vee y_2 = g_2^\beta$) [CaS97]
 		mpz_powm(t_1, y_1, c_1, p);
 		mpz_powm(tmp, g_1, r_1, p);
@@ -555,7 +579,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 	if (TimingAttackProtection)
 		mpz_spowm(c__1, g, r, p);
 	else
-		mpz_powm(c__1, g, r, p);
+		mpz_fpowm(c__1, g, r, p, 0);
 	mpz_mul(c__1, c__1, c_1);
 	mpz_mod(c__1, c__1, p);
 	
@@ -563,7 +587,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 	if (TimingAttackProtection)
 		mpz_spowm(c__2, h, r, p);
 	else
-		mpz_powm(c__2, h, r, p);
+		mpz_fpowm(c__2, h, r, p, 0);
 	mpz_mul(c__2, c__2, c_2);
 	mpz_mod(c__2, c__2, p);
 }
@@ -664,6 +688,10 @@ bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 		if (h_j.find(fp.str()) == h_j.end())
 			throw false;
 		
+		// verify the size of $d_j$
+		if (mpz_cmp(d_j, p) >= 0L)
+			throw false;
+		
 		// verify in-group property
 		if (mpz_jacobi(d_j, p) != 1L)
 			throw false;
@@ -711,4 +739,6 @@ BarnettSmartVTMF_dlog::~BarnettSmartVTMF_dlog
 			delete j->second;
 	}
 	h_j.clear();
+	
+	mpz_fpowm_done();
 }

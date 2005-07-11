@@ -21,6 +21,13 @@
 #ifndef INCLUDED_mpz_spowm_H
 	#define INCLUDED_mpz_spowm_H
 	
+	// config.h
+	#if HAVE_CONFIG_H
+		#include "config.h"
+	#endif
+	
+	#include <assert.h>
+	
 	// GNU multiple precision library
 	#include <gmp.h>
 	
@@ -43,6 +50,20 @@
 			/* Chaum's blinding technique for modular exponentiation */
 			void mpz_spowm
 				(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p);
+			
+			/* Fast modular exponentiation using precomputed tables */
+			void mpz_fpowm_init
+				();
+			
+			void mpz_fpowm_precompute_table
+				(mpz_srcptr m, mpz_srcptr p, size_t n, size_t t);
+			
+			void mpz_fpowm
+				(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p,
+				size_t n);
+			
+			void mpz_fpowm_done
+				();
 			
 	#if defined(__cplusplus)
 		}

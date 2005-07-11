@@ -36,7 +36,7 @@
 
 	// config.h
 	#if HAVE_CONFIG_H
-	    #include "config.h"
+		#include "config.h"
 	#endif
 	
 	// C and STL header
@@ -92,6 +92,8 @@ class BarnettSmartVTMF_dlog
 			(std::ostream &out);
 		bool KeyGenerationProtocol_UpdateKey
 			(std::istream &in);
+		void KeyGenerationProtocol_Finalize
+			();
 		void CP_Prove
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
 			mpz_srcptr alpha, std::ostream &out);

@@ -97,6 +97,8 @@ int main
 	vtmf2->KeyGenerationProtocol_PublishKey(foo2);
 	assert(vtmf->KeyGenerationProtocol_UpdateKey(foo2));
 	assert(vtmf2->KeyGenerationProtocol_UpdateKey(foo));
+	vtmf->KeyGenerationProtocol_Finalize();
+	vtmf2->KeyGenerationProtocol_Finalize();
 	
 	// TMCG/VTMF
 	std::cout << "TMCG/VTMF Encryption and decryption of cards" << std::endl;

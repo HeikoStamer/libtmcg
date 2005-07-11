@@ -105,6 +105,9 @@ class StiglicMPC
 						std::cerr << "Key of " << i << " was not sound" << std::endl;
 						exit(-1);
 					}
+			// finish the key generation
+			vtmf->KeyGenerationProtocol_Finalize();
+			
 			// initalize the base stacks with open cards
 			VTMF_Card c[2];
 			tmcg->TMCG_CreateOpenCard(c[0], vtmf, 0);

@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.18 $)
+AC_REVISION($Revision: 1.19 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -60,6 +60,11 @@ LIBTMCG_CONFIG_CFLAGS=""
 # (Please update libTMCG.hh, if changed!)
 AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.2.0",
 	[Define the necessary version number of the GNU gcrypt library])
+AC_DEFINE(TMCG_MAX_FPOWM_N, 2,
+	[Define the maximum number of precomputation tables for the
+	fast exponentiation; at least two tables are necessary])
+AC_DEFINE(TMCG_MAX_FPOWM_T, 4096,
+	[Define the maximum size of the exponent for fast exponentiation])
 AC_DEFINE(TMCG_MPZ_IO_BASE, 36,
 	[Define the input/ouput base encoding of the iostream operators])
 AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_RMD160,
@@ -98,7 +103,7 @@ AC_DEFINE(TMCG_KEY_NIZK_STAGE3, 128,
 	
 AC_DEFINE(TMCG_MAX_PLAYERS, 32L,
 	[Define the maximum number of players in the scheme of Schindelhauer])
-AC_DEFINE(TMCG_MAX_CARDS,	128L,
+AC_DEFINE(TMCG_MAX_CARDS, 128L,
 	[Define the maximum number of stackable cards])
 AC_DEFINE(TMCG_MAX_TYPEBITS, 8L,
 	[Define the number of bits which represents the maximum number of

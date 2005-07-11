@@ -33,6 +33,8 @@ int main
 		std::cerr << "Alice's public key was not correctly generated!" << std::endl;
 		return -1;
 	}
+	// finish the key generation
+	vtmf->KeyGenerationProtocol_Finalize();
 	
 	// create a deck of 25 cards (12 pairs and the "Schwarzer Peter")
 	// --------------------------------------------------------------
