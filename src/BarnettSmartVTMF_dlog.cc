@@ -53,8 +53,8 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
 	mpz_powm(g, g, h, p);
 	
-	mpz_fpowm_init();
-	mpz_fpowm_precompute_table(g, p, 0, mpz_sizeinbase(p, 2L));
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(p, 2L));
 }
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
@@ -77,8 +77,8 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
 	mpz_powm(g, g, h, p);
 	
-	mpz_fpowm_init();
-	mpz_fpowm_precompute_table(g, p, 0, mpz_sizeinbase(p, 2L));
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(p, 2L));
 }
 
 bool BarnettSmartVTMF_dlog::CheckGroup
@@ -234,7 +234,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 			throw false;
 		
 		// verify proof of knowledge [CaS97]
-		mpz_fpowm(t, g, r, p, 0);
+		mpz_fpowm(fpowm_table_g, t, g, r, p);
 		mpz_powm(r, foo, c, p);
 		mpz_mul(t, t, r);
 		mpz_mod(t, t, p);
@@ -267,7 +267,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 void BarnettSmartVTMF_dlog::KeyGenerationProtocol_Finalize
 	()
 {
-	mpz_fpowm_precompute_table(h, p, 1, mpz_sizeinbase(p, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(p, 2L));
 }
 
 void BarnettSmartVTMF_dlog::CP_Prove
@@ -302,7 +302,8 @@ void BarnettSmartVTMF_dlog::CP_Prove
 }
 
 bool BarnettSmartVTMF_dlog::CP_Verify
-	(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh, std::istream &in)
+	(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
+	std::istream &in, bool fpowm)
 {
 	mpz_t a, b, c, r;
 	
@@ -316,11 +317,17 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 			throw false;
 		
 		// verify proof of knowledge (equality of discrete logarithms) [CaS97]
-		mpz_fpowm(a, gg, r, p, 0);
+		if (fpowm)
+			mpz_fpowm(fpowm_table_g, a, gg, r, p);
+		else
+			mpz_powm(a, gg, r, p);
 		mpz_powm(b, x, c, p);
 		mpz_mul(a, a, b);
 		mpz_mod(a, a, p);
-		mpz_fpowm(b, hh, r, p, 1);
+		if (fpowm)
+			mpz_fpowm(fpowm_table_h, b, hh, r, p);
+		else
+			mpz_powm(b, hh, r, p);
 		mpz_powm(r, y, c, p);
 		mpz_mul(b, b, r);
 		mpz_mod(b, b, p);
@@ -483,7 +490,8 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
 }
 
 void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Prove
-	(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr r, std::ostream &out)
+	(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr r,
+	std::ostream &out)
 {
 	mpz_t foo;
 	
@@ -515,7 +523,7 @@ bool BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Verify
 		mpz_invert(foo, m, p);
 		mpz_mul(foo, foo, c_2);
 		mpz_mod(foo, foo, p);
-		if (!CP_Verify(c_1, foo, g, h, in))
+		if (!CP_Verify(c_1, foo, g, h, in, true))
 			throw false;
 		
 		// finish
@@ -579,7 +587,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 	if (TimingAttackProtection)
 		mpz_spowm(c__1, g, r, p);
 	else
-		mpz_fpowm(c__1, g, r, p, 0);
+		mpz_fpowm(fpowm_table_g, c__1, g, r, p);
 	mpz_mul(c__1, c__1, c_1);
 	mpz_mod(c__1, c__1, p);
 	
@@ -587,7 +595,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 	if (TimingAttackProtection)
 		mpz_spowm(c__2, h, r, p);
 	else
-		mpz_fpowm(c__2, h, r, p, 0);
+		mpz_fpowm(fpowm_table_h, c__2, h, r, p);
 	mpz_mul(c__2, c__2, c_2);
 	mpz_mod(c__2, c__2, p);
 }
@@ -635,7 +643,7 @@ bool BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Verify
 		mpz_invert(bar, c_2, p);
 		mpz_mul(bar, bar, c__2);
 		mpz_mod(bar, bar, p);
-		if (!CP_Verify(foo, bar, g, h, in))
+		if (!CP_Verify(foo, bar, g, h, in, true))
 			throw false;
 		
 		// finish
@@ -697,7 +705,7 @@ bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 			throw false;
 		
 		// verify CP(d_j, h_j, c_1, g; x_j)
-		if (!CP_Verify(d_j, h_j[fp.str()], c_1, g, in))
+		if (!CP_Verify(d_j, h_j[fp.str()], c_1, g, in, false))
 			throw false;
 		
 		// update the value of $d$
@@ -740,5 +748,5 @@ BarnettSmartVTMF_dlog::~BarnettSmartVTMF_dlog
 	}
 	h_j.clear();
 	
-	mpz_fpowm_done();
+	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
 }

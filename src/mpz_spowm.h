@@ -53,17 +53,18 @@
 			
 			/* Fast modular exponentiation using precomputed tables */
 			void mpz_fpowm_init
-				();
+				(mpz_t fpowm_table[TMCG_MAX_FPOWM_T]);
 			
-			void mpz_fpowm_precompute_table
-				(mpz_srcptr m, mpz_srcptr p, size_t n, size_t t);
+			void mpz_fpowm_precompute
+				(mpz_t fpowm_table[TMCG_MAX_FPOWM_T],
+				mpz_srcptr m, mpz_srcptr p, size_t t);
 			
 			void mpz_fpowm
-				(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p,
-				size_t n);
+				(mpz_t fpowm_table[TMCG_MAX_FPOWM_T],
+				mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p);
 			
 			void mpz_fpowm_done
-				();
+				(mpz_t fpowm_table[TMCG_MAX_FPOWM_T]);
 			
 	#if defined(__cplusplus)
 		}

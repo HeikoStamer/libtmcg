@@ -136,12 +136,6 @@
 		#define TMCG_HASH_COMMITMENT true
 	#endif
 	
-	#ifndef TMCG_MAX_FPOWM_N
-		/* Define the maximum number of precomputation tables for the
-		   fast exponentiation; at least two tables are necessary */
-		#define TMCG_MAX_FPOWM_N 2
-	#endif
-	
 	#ifndef TMCG_MAX_FPOWM_T
 		/* Define the maximum size of the exponent for fast exponentiation */
 		#define TMCG_MAX_FPOWM_T 2048

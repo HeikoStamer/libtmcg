@@ -63,6 +63,9 @@
 
 class BarnettSmartVTMF_dlog
 {
+	private:
+		mpz_t								fpowm_table_g[TMCG_MAX_FPOWM_T];
+		mpz_t								fpowm_table_h[TMCG_MAX_FPOWM_T];
 	public:
 		mpz_t								p, q, g;
 		mpz_t								x_i, h_i, h, d, h_i_fp;
@@ -99,7 +102,7 @@ class BarnettSmartVTMF_dlog
 			mpz_srcptr alpha, std::ostream &out);
 		bool CP_Verify
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
-			std::istream &in);
+			std::istream &in, bool fpowm = false);
 		void OR_ProveFirst
 			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
 			mpz_srcptr alpha, std::ostream &out);

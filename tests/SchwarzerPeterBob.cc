@@ -55,7 +55,7 @@ int main
 	std::cerr << "Anfangsstapel mischen ..." << std::endl;
 	TMCG_Stack<VTMF_Card> Mischstapel, Mischstapel_Alice, Mischstapel_Bob;
 	TMCG_StackSecret<VTMF_CardSecret> Mischgeheimnis;
-	Mischstapel.push(Anfangsstapel); // offenen in allgemeinen Stapel umwandeln
+	Mischstapel.push(deck); // offenen in allgemeinen Stapel umwandeln
 	tmcg->TMCG_CreateStackSecret(Mischgeheimnis, false, // volle Permutation
 		Mischstapel.size(), vtmf);
 	

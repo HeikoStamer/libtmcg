@@ -46,7 +46,7 @@ static std::string elapsed_time
 {
 	static char buf[50];
 	
-	sprintf(buf, "%5.0fms", (((double) (stop - start)) / CLOCKS_PER_SEC) * 1000);
+	sprintf(buf, "%8.0fms", (((double) (stop - start)) / CLOCKS_PER_SEC) * 1000);
 	return std::string(buf);
 }
 
@@ -54,6 +54,7 @@ int main
 	(int argc, char **argv)
 {
 	mpz_t foo, bar, foo2, bar2, root, t1, t2;
+	mpz_t fpowm_table_1[TMCG_MAX_FPOWM_T], fpowm_table_2[TMCG_MAX_FPOWM_T];
 	char tmp_ar1[1024], tmp_ar2[1024];
 	char *dig1, *dig2;
 	unsigned long int tmp_ui = 0L;
@@ -184,27 +185,27 @@ int main
 		mpz_spowm_clear();
 	}
 	
-	// mpz_fpowm_init, mpz_fpowm_precompute_table, mpz_fpowm, mpz_fpowm_done
+	// mpz_fpowm_init, mpz_fpowm_precompute, mpz_fpowm, mpz_fpowm_done
 	std::cout << "mpz_fpowm_init()" << std::endl;
-	mpz_fpowm_init();
-	std::cout << "mpz_fpowm_precompute_table()" << std::endl;
+	mpz_fpowm_init(fpowm_table_1), mpz_fpowm_init(fpowm_table_2);
+	std::cout << "mpz_fpowm_precompute()" << std::endl;
 	mpz_set_ui(bar, 2L);
-	mpz_fpowm_precompute_table(bar, foo, 0, 1024);
+	mpz_fpowm_precompute(fpowm_table_1, bar, foo, 1024);
 	mpz_srandomb(bar2, 1024);
-	mpz_fpowm_precompute_table(bar2, foo, 1, 1024);
+	mpz_fpowm_precompute(fpowm_table_2, bar2, foo, 1024);
 	std::cout << "mpz_fpowm()" << std::endl;
 	for (size_t i = 0; i < 15; i++)
 	{
 		mpz_srandomb(foo2, 1024);
 		mpz_powm(t1, bar, foo2, foo);
-		mpz_fpowm(t2, bar, foo2, foo, 0);
+		mpz_fpowm(fpowm_table_1, t2, bar, foo2, foo);
 		assert(!mpz_cmp(t1, t2));
 		mpz_powm(t1, bar2, foo2, foo);
-		mpz_fpowm(t2, bar2, foo2, foo, 1);
+		mpz_fpowm(fpowm_table_2, t2, bar2, foo2, foo);
 		assert(!mpz_cmp(t1, t2));
 	}
 	std::cout << "mpz_fpowm_done()" << std::endl;
-	mpz_fpowm_done();
+	mpz_fpowm_done(fpowm_table_1), mpz_fpowm_done(fpowm_table_2);
 	
 	// mpz_powm vs. mpz_fpowm benchmark
 	std::cout << "mpz_powm() benchmark" << std::endl;
@@ -217,16 +218,16 @@ int main
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	std::cout << "mpz_fpowm() benchmark" << std::endl;
-	mpz_fpowm_init();
-	mpz_fpowm_precompute_table(bar, foo, 0, 160);
+	mpz_fpowm_init(fpowm_table_1);
+	mpz_fpowm_precompute(fpowm_table_1, bar, foo, 160);
 	start_clock();
 	for (size_t i = 0; i < 1000; i++)
 	{
 		mpz_srandomb(foo2, 160);
-		mpz_fpowm(t2, bar, foo2, foo, 0);
+		mpz_fpowm(fpowm_table_1, t2, bar, foo2, foo);
 	}
 	stop_clock();
-	mpz_fpowm_done();
+	mpz_fpowm_done(fpowm_table_1);
 	std::cout << elapsed_time() << std::endl;
 	
 	// h, g, mpz_shash
