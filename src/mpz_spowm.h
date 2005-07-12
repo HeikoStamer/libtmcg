@@ -63,6 +63,10 @@
 				(mpz_t fpowm_table[TMCG_MAX_FPOWM_T],
 				mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p);
 			
+			void mpz_fspowm
+				(mpz_t fpowm_table[TMCG_MAX_FPOWM_T],
+				mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p);
+			
 			void mpz_fpowm_done
 				(mpz_t fpowm_table[TMCG_MAX_FPOWM_T]);
 			

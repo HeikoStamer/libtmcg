@@ -72,6 +72,11 @@
 		#define TMCG_LIBGCRYPT_VERSION "1.2.0"
 	#endif
 
+	#ifndef TMCG_LIBGMP_VERSION
+		/* Define the necessary version number of the GNU gmp library */
+		#define TMCG_LIBGMP_VERSION "4.1.0"
+	#endif
+
 	#ifndef TMCG_MAX_CARDS
 		/* Define the maximum number of stackable cards */
 		#define TMCG_MAX_CARDS 128L

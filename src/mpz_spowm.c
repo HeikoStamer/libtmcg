@@ -141,6 +141,33 @@ void mpz_fpowm
 	}
 }
 
+void mpz_fspowm
+	(mpz_t fpowm_table[TMCG_MAX_FPOWM_T],
+	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
+{
+	size_t i;
+	mpz_t tmp;
+	
+	assert(mpz_sizeinbase(x, 2L) <= TMCG_MAX_FPOWM_T);
+	mpz_init(tmp);
+	mpz_set_ui(res, 1L);
+	for (i = 0; i < mpz_sizeinbase(x, 2L); i++)
+	{
+		if (mpz_tstbit(x, i))
+		{
+			mpz_mul(res, res, fpowm_table[i]);
+			mpz_mod(res, res, p);
+		}
+		else
+		{
+			/* Timing attack protection */
+			mpz_mul(tmp, res, fpowm_table[i]);
+			mpz_mod(tmp, tmp, p);
+		}
+	}
+	mpz_clear(tmp);
+}
+
 void mpz_fpowm_done
 	(mpz_t fpowm_table[TMCG_MAX_FPOWM_T])
 {

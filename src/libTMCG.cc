@@ -25,6 +25,8 @@
 bool init_libTMCG
 	()
 {
+	// TODO: check libgmp version
+	
 	// initalize libgcrypt
 	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
 	{

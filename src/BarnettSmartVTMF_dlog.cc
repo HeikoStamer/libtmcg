@@ -198,7 +198,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
 		
 		// commitment
 		mpz_srandomm(v, q);
-		mpz_spowm(t, g, v, p);
+		mpz_fspowm(fpowm_table_g, t, g, v, p);
 		// challenge
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
 		// the PK non-interactive, i.e. we turn it into a statistically
@@ -272,7 +272,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_Finalize
 
 void BarnettSmartVTMF_dlog::CP_Prove
 	(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh, mpz_srcptr alpha,
-	std::ostream &out)
+	std::ostream &out, bool fpowm)
 {
 	mpz_t a, b, omega, c, r;
 	
@@ -281,8 +281,16 @@ void BarnettSmartVTMF_dlog::CP_Prove
 		
 		// commitment
 		mpz_srandomm(omega, q);
-		mpz_spowm(a, gg, omega, p);
-		mpz_spowm(b, hh, omega, p);
+		if (fpowm)
+		{
+			mpz_fspowm(fpowm_table_g, a, gg, omega, p);
+			mpz_fspowm(fpowm_table_h, b, hh, omega, p);
+		}
+		else
+		{
+			mpz_spowm(a, gg, omega, p);
+			mpz_spowm(b, hh, omega, p);
+		}
 		
 		// challenge
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
@@ -481,10 +489,10 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
 	}
 	
 	// compute $c_1 = g^r \bmod p$
-	mpz_spowm(c_1, g, r, p);
+	mpz_fspowm(fpowm_table_g, c_1, g, r, p);
 	
 	// compute $c_2 = m \cdot h^r \bmod p$
-	mpz_spowm(c_2, h, r, p);
+	mpz_fspowm(fpowm_table_h, c_2, h, r, p);
 	mpz_mul(c_2, c_2, m);
 	mpz_mod(c_2, c_2, p);
 }
@@ -501,7 +509,7 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Prove
 	mpz_invert(foo, m, p);
 	mpz_mul(foo, foo, c_2);
 	mpz_mod(foo, foo, p);
-	CP_Prove(c_1, foo, g, h, r, out);
+	CP_Prove(c_1, foo, g, h, r, out, true);
 	mpz_clear(foo);
 }
 
@@ -553,12 +561,12 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 	}
 	
 	// compute $c'_1 = c_1 \cdot g^r \bmod p$
-	mpz_spowm(c__1, g, r, p);
+	mpz_fspowm(fpowm_table_g, c__1, g, r, p);
 	mpz_mul(c__1, c__1, c_1);
 	mpz_mod(c__1, c__1, p);
 	
 	// compute $c'_2 = c_2 \cdot h^r \bmod p$
-	mpz_spowm(c__2, h, r, p);
+	mpz_fspowm(fpowm_table_h, c__2, h, r, p);
 	mpz_mul(c__2, c__2, c_2);
 	mpz_mod(c__2, c__2, p);
 }
@@ -585,7 +593,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 {
 	// compute $c'_1 = c_1 \cdot g^r \bmod p$
 	if (TimingAttackProtection)
-		mpz_spowm(c__1, g, r, p);
+		mpz_fspowm(fpowm_table_g, c__1, g, r, p);
 	else
 		mpz_fpowm(fpowm_table_g, c__1, g, r, p);
 	mpz_mul(c__1, c__1, c_1);
@@ -593,7 +601,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 	
 	// compute $c'_2 = c_2 \cdot h^r \bmod p$
 	if (TimingAttackProtection)
-		mpz_spowm(c__2, h, r, p);
+		mpz_fspowm(fpowm_table_h, c__2, h, r, p);
 	else
 		mpz_fpowm(fpowm_table_h, c__2, h, r, p);
 	mpz_mul(c__2, c__2, c_2);
@@ -616,7 +624,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Prove
 	mpz_invert(bar, c_2, p);
 	mpz_mul(bar, bar, c__2);
 	mpz_mod(bar, bar, p);
-	CP_Prove(foo, bar, g, h, r, out);
+	CP_Prove(foo, bar, g, h, r, out, true);
 	mpz_clear(foo), mpz_clear(bar);
 }
 
@@ -668,7 +676,7 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Prove
 	out << d_i << std::endl << h_i_fp << std::endl;
 	
 	// CP(d_i, h_i, c_1, g; x_i)
-	CP_Prove(d_i, h_i, c_1, g, x_i, out);
+	CP_Prove(d_i, h_i, c_1, g, x_i, out, false);
 	
 	mpz_clear(d_i);
 }

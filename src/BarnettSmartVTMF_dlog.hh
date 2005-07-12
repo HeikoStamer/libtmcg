@@ -99,7 +99,7 @@ class BarnettSmartVTMF_dlog
 			();
 		void CP_Prove
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
-			mpz_srcptr alpha, std::ostream &out);
+			mpz_srcptr alpha, std::ostream &out, bool fpowm = false);
 		bool CP_Verify
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
 			std::istream &in, bool fpowm = false);
