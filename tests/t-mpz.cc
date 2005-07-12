@@ -233,6 +233,15 @@ int main
 	}
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
+	std::cout << "mpz_spowm() benchmark" << std::endl;
+	start_clock();
+	for (size_t i = 0; i < 1000; i++)
+	{
+		mpz_srandomb(foo2, 160);
+		mpz_spowm(t1, bar, foo2, foo);
+	}
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
 	std::cout << "mpz_fspowm() benchmark" << std::endl;
 	start_clock();
 	for (size_t i = 0; i < 1000; i++)
