@@ -171,6 +171,7 @@ void mpz_fpowm_done
 	(mpz_t fpowm_table[])
 {
 	size_t i;
+	
 	for (i = 0; i < TMCG_MAX_FPOWM_T; i++)
 		mpz_clear(fpowm_table[i]);
 }

@@ -36,23 +36,28 @@
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	(unsigned long int groupsize, unsigned long int exponentsize)
 {
-	// Create a finite abelian group G where DDH is hard:
-	// We use the subgroup of quadratic residues modulo p,
-	// such that p = 2q + 1 and p, q are both prime.
-	// Two is a generator of QR_p since p \equiv 7 \pmod{8}.
+	// Create a finite abelian group $G$ where DDH is hard:
+	// We use the subgroup of quadratic residues modulo $p$,
+	// such that $p = 2q + 1$ and $p$, $q$ are both prime.
+	// The number 2 is a generator of $\mathbb{QR}_p$ since
+	// $p \equiv 7 \pmod{8}$.
 	mpz_init(p), mpz_init(q), mpz_init_set_ui(g, 2L);
 	mpz_sprime2g(p, q, groupsize - 1L);
 	
-	// initalize the key
+	// Initialize all members of the key.
 	mpz_init(x_i), mpz_init(h_i), mpz_init(h), mpz_init(d);
 	mpz_init(h_i_fp);
 	
-	// We shift the generator (according to [KK04]) for the
-	// later following usage of shortened exponents.
+	// We shift the generator (according to [KK04]) for the later
+	// following usage of shortened exponents.(masking protocols)
+	// We use the (Short, Full)-ElGamal variant [KK04] here,
+	// i.e. the secret key should be still of full size $\ell_q$.
+	
 	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
 	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
 	mpz_powm(g, g, h, p);
 	
+	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
@@ -62,23 +67,24 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	(std::istream &in, unsigned long int exponentsize)
 {
-	// initalize the finite abelian group G
+	// Initialize all members for the finite abelian group $G$.
 	mpz_init(q), mpz_init(p), mpz_init_set_ui(g, 2L);
 	in >> q;
 	mpz_mul_2exp(p, q, 1L), mpz_add_ui(p, p, 1L);
 	
-	// initalize the key
+	// Initialize all members for the key.
 	mpz_init(x_i), mpz_init(h_i), mpz_init(h), mpz_init(d);
 	mpz_init(h_i_fp);
 	
-	// Now shift the generator (according to [KK04]) for the
-	// later following usage of shortened exponents. (masking protocols)
+	// Now shift the generator (according to [KK04]) for the later
+	// following usage of shortened exponents. (masking protocols)
 	// We use the (Short, Full)-ElGamal variant [KK04] here,
-	// i.e. the secret key should be still of full size.
+	// i.e. the secret key should be still of full size $\ell_q$.
 	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
 	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
 	mpz_powm(g, g, h, p);
 	
+	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
@@ -111,7 +117,7 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 		// check whether g is a generator of the group G
 		// It is sufficient to assert that g is a quadratic residue modulo p,
 		// i.e. instead of checking g^{(p-1)/2} \equiv 1 \pmod{p} we can
-		// simply do so by computing the Legendre-Jacobi symbol.
+		// simply do this check by computing the Legendre-Jacobi symbol.
 		if (mpz_jacobi(g, p) != 1L)
 			throw false;
 		
@@ -179,16 +185,16 @@ void BarnettSmartVTMF_dlog::IndexElement_Fast
 void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
 	()
 {
-	// generate the private key x_i \in Z_q randomly
+	// generate the private key $x_i \in \mathbb{Z}_q$ randomly
 	mpz_srandomm(x_i, q);
 	
-	// compute h_i = g^{x_i} \bmod p (with blinding techniques)
+	// compute $h_i = g^{x_i} \bmod p$ (with blinding techniques)
 	mpz_spowm(h_i, g, x_i, p);
 	
-	// compute the fingerprint
+	// compute the fingerprint of the public key
 	mpz_shash(h_i_fp, 1, h_i);
 	
-	// set the global key h
+	// set the initial value of the global key $h$
 	mpz_set(h, h_i);
 }
 
@@ -271,6 +277,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 void BarnettSmartVTMF_dlog::KeyGenerationProtocol_Finalize
 	()
 {
+	// Do some precomputations for the fast exponentiation.
 	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(p, 2L));
 }
 
@@ -507,7 +514,7 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Prove
 {
 	mpz_t foo;
 	
-	// CP(c_1, c_2/m, g, h; r)
+	// invoke CP(c_1, c_2/m, g, h; r) as prover
 	mpz_init(foo);
 	assert(mpz_invert(foo, m, p));
 	mpz_invert(foo, m, p);
@@ -530,7 +537,7 @@ bool BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Verify
 		if ((mpz_jacobi(c_1, p) != 1L) || (mpz_jacobi(c_2, p) != 1L))
 			throw false;
 		
-		// CP(c_1, c_2/m, g, h; r)
+		// invoke CP(c_1, c_2/m, g, h; r) as verifier
 		assert(mpz_invert(foo, m, p));
 		mpz_invert(foo, m, p);
 		mpz_mul(foo, foo, c_2);
@@ -618,7 +625,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Prove
 {
 	mpz_t foo, bar;
 	
-	// CP(c'_1/c_1, c'_2/c_2, g, h; r)
+	// invoke CP(c'_1/c_1, c'_2/c_2, g, h; r) as prover
 	mpz_init(foo), mpz_init(bar);
 	assert(mpz_invert(foo, c_1, p));
 	mpz_invert(foo, c_1, p);
@@ -646,7 +653,7 @@ bool BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Verify
 		if ((mpz_jacobi(c__1, p) != 1L) || (mpz_jacobi(c__2, p) != 1L))
 			throw false;
 		
-		// CP(c'_1/c_1, c'_2/c_2, g, h; r)
+		// invoke CP(c'_1/c_1, c'_2/c_2, g, h; r) as verifier
 		assert(mpz_invert(foo, c_1, p));
 		mpz_invert(foo, c_1, p);
 		mpz_mul(foo, foo, c__1);
@@ -679,7 +686,7 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Prove
 	mpz_spowm(d_i, c_1, x_i, p);
 	out << d_i << std::endl << h_i_fp << std::endl;
 	
-	// CP(d_i, h_i, c_1, g; x_i)
+	// invoke CP(d_i, h_i, c_1, g; x_i) as prover
 	CP_Prove(d_i, h_i, c_1, g, x_i, out, false);
 	
 	mpz_clear(d_i);
@@ -716,7 +723,7 @@ bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 		if (mpz_jacobi(d_j, p) != 1L)
 			throw false;
 		
-		// verify CP(d_j, h_j, c_1, g; x_j)
+		// invoke CP(d_j, h_j, c_1, g; x_j) as verifier
 		if (!CP_Verify(d_j, h_j[fp.str()], c_1, g, in, false))
 			throw false;
 		
