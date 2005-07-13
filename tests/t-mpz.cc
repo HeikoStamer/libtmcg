@@ -132,7 +132,7 @@ int main
 		assert(mpz_cmp(foo, bar) < 0);
 		assert(mpz_cmp(foo, foo2));
 	}
-	
+/*	
 	// mpz_sprime, mpz_sprime2g, mpz_sprime3mod4
 	std::cout << "mpz_sprime(), mpz_sprime2g(), mpz_sprime3mod4()" << std::endl;
 	for (size_t i = 0; i < 2; i++)
@@ -187,7 +187,7 @@ int main
 		}
 		mpz_spowm_clear();
 	}
-	
+*/	
 	// mpz_fpowm_init, mpz_fpowm_precompute, mpz_f(s)powm, mpz_fpowm_done
 	std::cout << "mpz_fpowm_init()" << std::endl;
 	mpz_fpowm_init(fpowm_table_1), mpz_fpowm_init(fpowm_table_2);

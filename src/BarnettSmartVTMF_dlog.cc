@@ -53,6 +53,8 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
 	mpz_powm(g, g, h, p);
 	
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
 	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(p, 2L));
 }
@@ -77,6 +79,8 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	mpz_ui_pow_ui(h, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
 	mpz_powm(g, g, h, p);
 	
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
 	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(p, 2L));
 }
@@ -757,4 +761,5 @@ BarnettSmartVTMF_dlog::~BarnettSmartVTMF_dlog
 	h_j.clear();
 	
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }

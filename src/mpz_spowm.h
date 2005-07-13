@@ -26,6 +26,7 @@
 		#include "config.h"
 	#endif
 	
+	#include <stdio.h>
 	#include <assert.h>
 	
 	// GNU multiple precision library
@@ -53,22 +54,22 @@
 			
 			/* Fast modular exponentiation using precomputed tables */
 			void mpz_fpowm_init
-				(mpz_t fpowm_table[TMCG_MAX_FPOWM_T]);
+				(mpz_t fpowm_table[]);
 			
 			void mpz_fpowm_precompute
-				(mpz_t fpowm_table[TMCG_MAX_FPOWM_T],
+				(mpz_t fpowm_table[],
 				mpz_srcptr m, mpz_srcptr p, size_t t);
 			
 			void mpz_fpowm
-				(mpz_t fpowm_table[TMCG_MAX_FPOWM_T],
+				(mpz_t fpowm_table[],
 				mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p);
 			
 			void mpz_fspowm
-				(mpz_t fpowm_table[TMCG_MAX_FPOWM_T],
+				(mpz_t fpowm_table[],
 				mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p);
 			
 			void mpz_fpowm_done
-				(mpz_t fpowm_table[TMCG_MAX_FPOWM_T]);
+				(mpz_t fpowm_table[]);
 			
 	#if defined(__cplusplus)
 		}

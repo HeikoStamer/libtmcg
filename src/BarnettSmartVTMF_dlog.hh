@@ -64,8 +64,9 @@
 class BarnettSmartVTMF_dlog
 {
 	private:
-		mpz_t								fpowm_table_g[TMCG_MAX_FPOWM_T];
-		mpz_t								fpowm_table_h[TMCG_MAX_FPOWM_T];
+		// QUESTION: Why can one not use big arrays of mpz_t in constructors?
+		mpz_t								*fpowm_table_g, *fpowm_table_h;
+		
 	public:
 		mpz_t								p, q, g;
 		mpz_t								x_i, h_i, h, d, h_i_fp;

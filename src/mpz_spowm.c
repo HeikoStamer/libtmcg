@@ -99,32 +99,31 @@ void mpz_spowm
 /* Fast modular exponentiation using precomputed tables */
 
 void mpz_fpowm_init
-	(mpz_t fpowm_table[TMCG_MAX_FPOWM_T])
+	(mpz_t fpowm_table[])
 {
 	size_t i;
+	
 	for (i = 0; i < TMCG_MAX_FPOWM_T; i++)
 		mpz_init(fpowm_table[i]);
 }
 
 void mpz_fpowm_precompute
-	(mpz_t fpowm_table[TMCG_MAX_FPOWM_T],
+	(mpz_t fpowm_table[],
 	mpz_srcptr m, mpz_srcptr p, size_t t)
 {
 	size_t i;
-	mpz_t e;
 	
 	assert(t <= TMCG_MAX_FPOWM_T);
-	mpz_init_set_ui(e, 1L);
-	for (i = 0; i < t; i++)
+	mpz_set(fpowm_table[0], m);
+	for (i = 1; i < t; i++)
 	{
-		mpz_powm(fpowm_table[i], m, e, p);
-		mpz_mul_ui(e, e, 2L);
+		mpz_mul(fpowm_table[i], fpowm_table[i-1], fpowm_table[i-1]);
+		mpz_mod(fpowm_table[i], fpowm_table[i], p);
 	}
-	mpz_clear(e);
 }
 
 void mpz_fpowm
-	(mpz_t fpowm_table[TMCG_MAX_FPOWM_T],
+	(mpz_t fpowm_table[],
 	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 	size_t i;
@@ -142,7 +141,7 @@ void mpz_fpowm
 }
 
 void mpz_fspowm
-	(mpz_t fpowm_table[TMCG_MAX_FPOWM_T],
+	(mpz_t fpowm_table[],
 	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 	size_t i;
@@ -169,7 +168,7 @@ void mpz_fspowm
 }
 
 void mpz_fpowm_done
-	(mpz_t fpowm_table[TMCG_MAX_FPOWM_T])
+	(mpz_t fpowm_table[])
 {
 	size_t i;
 	for (i = 0; i < TMCG_MAX_FPOWM_T; i++)
