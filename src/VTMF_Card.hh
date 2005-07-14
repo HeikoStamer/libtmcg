@@ -39,13 +39,13 @@
 /** @brief A data structure for cards.
     
     This struct represents a card in the discrete logarithm instantiation
-    of the general cryptographic primitive "Verifiable-l-out-of-l Threshold
+    of the general cryptographic primitive "Verifiable-n-out-of-n Threshold
     Masking Function" by Barnett and Smart [BS03]. */
 struct VTMF_Card
 {
 	/** @f$c_1, c_2\in G@f$ encode the type of the card. They should always
-	    be elements of the finite abelian group @f$G@f$ in which the DDH problem
-	    is believed to be hard. */
+	    be elements of the finite abelian group @f$G@f$ in which the DDH
+	    problem is believed to be hard. */
 	mpz_t c_1, c_2;
 	
 	/** This constructor initalizes all necessary resources. */
@@ -62,11 +62,11 @@ struct VTMF_Card
 	VTMF_Card& operator =
 		(const VTMF_Card& that);
 	
-	/** This operator tests two cards for equality. */
+	/** This operator tests two card representations for equality. */
 	bool operator ==
 		(const VTMF_Card& that) const;
 	
-	/** This operator tests two cards for inequality. */
+	/** This operator tests two card representations for inequality. */
 	bool operator !=
 		(const VTMF_Card& that) const;
 	

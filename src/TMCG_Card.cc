@@ -113,12 +113,12 @@ bool TMCG_Card::import
 		if (gs(s, '|').length() == 0)
 			throw false;
 		size_t n = strtoul(gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (n < 1) || (!nx(s, '|')))
+		if ((*ec != '\0') || (n < 1) || (n > TMCG_MAX_PLAYERS) || (!nx(s, '|')))
 			throw false;
 		if (gs(s, '|').length() == 0)
 			throw false;
 		size_t m = strtoul(gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (m < 1) || (!nx(s, '|')))
+		if ((*ec != '\0') || (m < 1) || (m > TMCG_MAX_TYPEBITS) || (!nx(s, '|')))
 			throw false;
 		
 		// resize this

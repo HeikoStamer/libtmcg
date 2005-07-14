@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -101,12 +101,12 @@ bool TMCG_CardSecret::import
 		if (gs(s, '|').length() == 0)
 			throw false;
 		size_t n = strtoul(gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (n < 1) || (!nx(s, '|')))
+		if ((*ec != '\0') || (n < 1) || (n > TMCG_MAX_PLAYERS) || (!nx(s, '|')))
 			throw false;
 		if (gs(s, '|').length() == 0)
 			throw false;
 		size_t m = strtoul(gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (m < 1) || (!nx(s, '|')))
+		if ((*ec != '\0') || (m < 1) || (m > TMCG_MAX_TYPEBITS) || (!nx(s, '|')))
 			throw false;
 		
 		// resize this

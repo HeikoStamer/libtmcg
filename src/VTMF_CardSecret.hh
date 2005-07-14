@@ -36,9 +36,10 @@
 	
 	#include "parse_helper.hh"
 
-/** @brief A data structure for the secret of the card masking operation.
+/** @brief A data structure for the secrets involved in the card masking
+    operation.
     
-    This struct represents a secret of the masking operation in the
+    This struct represents the secrets of the masking operation in the
     discrete logarithm instantiation of the general cryptographic
     primitive "Verifiable-l-out-of-l Threshold Masking Function" by
     Barnett and Smart [BS03]. */
