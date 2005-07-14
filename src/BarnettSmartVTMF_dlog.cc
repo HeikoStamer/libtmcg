@@ -106,7 +106,7 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 				throw false;
 		
 		// check whether p, q are both (probable) prime
-		// soundness error probability: 4^{-64}
+		// soundness error probability $p \le 4^{-64}$
 		if (!(mpz_probab_prime_p(p, 64L) && mpz_probab_prime_p(q, 64L)))
 			throw false;
 		
@@ -163,8 +163,8 @@ void BarnettSmartVTMF_dlog::IndexElement
 	(mpz_ptr a, std::size_t index)
 {
 	// choose the index-th element of G (quadratic residue)
-	// Notice: a call to IndexElement(a, 0) returns the identity,
-	// because 1 is the smallest quadratic residue mod p.
+	// Notice: a call to IndexElement(a, 0) returns the identity of G,
+	// because 1 is always the smallest quadratic residue mod p.
 	mpz_set_ui(a, 0L);
 	do
 		NextElement(a);
@@ -235,11 +235,15 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 	
 	try
 	{
+		// verify the size of $foo$
+		if (mpz_cmp(foo, p) >= 0L)
+			throw false;
+		
 		// verify in-group property
 		if (mpz_jacobi(foo, p) != 1L)
 			throw false;
 		
-		// verify the size of r
+		// verify the size of $r$
 		if (mpz_cmp(r, q) >= 0L)
 			throw false;
 		
@@ -331,7 +335,7 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 	
 	try
 	{
-		// verify the size of r
+		// verify the size of $r$
 		if (mpz_cmp(r, q) >= 0L)
 			throw false;
 		
