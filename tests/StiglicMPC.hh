@@ -23,7 +23,7 @@
 
 #ifndef INCLUDED_StiglicMPC_HH
 	#define INCLUDED_StiglicMPC_HH
-
+	
 	// C++/STL header
 	#include <cstdio>
 	#include <cstdlib>
@@ -73,7 +73,7 @@ class StiglicMPC
 		{
 			tmcg = new SchindelhauerTMCG(security, participants.size(), 1);
 			
-			// create a instance of the VTMF implementation (create the group G)
+			// create an instance of the VTMF implementation (create the group G)
 			if (index)
 			{
 				vtmf = new BarnettSmartVTMF_dlog(*participants[index]->in);
@@ -83,28 +83,36 @@ class StiglicMPC
 				vtmf = new BarnettSmartVTMF_dlog();
 				// broadcast the parameters of the group
 				for (size_t i = 0; i < participants.size(); i++)
+				{
 					if (i != index)
 						vtmf->PublishGroup(*participants[i]->out);
+				}
 			}
 			// check whether the group G was correctly generated
 			if (!vtmf->CheckGroup())
 			{
-				std::cerr << "Group G was not sound" << std::endl;
+				std::cerr << "Check of Group G failed" << std::endl;
 				exit(-1);
 			}
 			// create and broadcast the (public) key
 			vtmf->KeyGenerationProtocol_GenerateKey();
 			for (size_t i = 0; i < participants.size(); i++)
+			{
 				if (i != index)
 					vtmf->KeyGenerationProtocol_PublishKey(*participants[i]->out);
+			}
 			// receive the public keys and update the instance
 			for (size_t i = 0; i < participants.size(); i++)
+			{
 				if (i != index)
+				{
 					if (!vtmf->KeyGenerationProtocol_UpdateKey(*participants[i]->in))
 					{
-						std::cerr << "Key of " << i << " was not sound" << std::endl;
+						std::cerr << "Proof of key from " << i << " failed" << std::endl;
 						exit(-1);
 					}
+				}
+			}
 			// finish the key generation
 			vtmf->KeyGenerationProtocol_Finalize();
 			

@@ -20,12 +20,12 @@
 
 #ifndef INCLUDED_TMCG_CardSecret_HH
 	#define INCLUDED_TMCG_CardSecret_HH
-
+	
 	// config.h
-	#if HAVE_CONFIG_H
+	#ifdef HAVE_CONFIG_H
 		#include "config.h"
 	#endif
-
+	
 	// C++/STL header
 	#include <cstdlib>
 	#include <cassert>

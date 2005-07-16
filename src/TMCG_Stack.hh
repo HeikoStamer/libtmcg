@@ -20,12 +20,12 @@
 
 #ifndef INCLUDED_TMCG_Stack_HH
 	#define INCLUDED_TMCG_Stack_HH
-
+	
 	// config.h
-	#if HAVE_CONFIG_H
+	#ifdef HAVE_CONFIG_H
 		#include "config.h"
 	#endif
-
+	
 	// C++/STL header
 	#include <cstdlib>
 	#include <cassert>
@@ -177,8 +177,9 @@ template <typename CardType> struct TMCG_Stack
 			if (gs(s, '^').length() == 0)
 				throw false;
 			size = strtoul(gs(s, '^').c_str(), &ec, 10);
-			if ((*ec != '\0') || (size <= 0) || (!nx(s, '^')))
-				throw false;
+			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) || 
+				(!nx(s, '^')))
+					throw false;
 			
 			// cards on stack
 			for (size_t i = 0; i < size; i++)

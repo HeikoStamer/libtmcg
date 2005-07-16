@@ -20,12 +20,12 @@
 
 #ifndef INCLUDED_TMCG_OpenStack_HH
 	#define INCLUDED_TMCG_OpenStack_HH
-
+	
 	// config.h
-	#if HAVE_CONFIG_H
+	#ifdef HAVE_CONFIG_H
 		#include "config.h"
 	#endif
-
+	
 	// C++/STL header
 	#include <cstdlib>
 	#include <cassert>
@@ -124,6 +124,7 @@ template <typename CardType> struct TMCG_OpenStack
 	{
 		size_t type = 100000000L;		// set 'error code' to 100000000L
 		
+		assert(!stack.empty());
 		if (stack.empty())
 			return type;
 		

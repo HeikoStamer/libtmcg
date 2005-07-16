@@ -20,14 +20,9 @@
 
 #ifndef INCLUDED_parse_helper_HH
 	#define INCLUDED_parse_helper_HH
-
-	// config.h
-	#if HAVE_CONFIG_H
-		#include "config.h"
-	#endif
-
+	
 	#include <string>
-
+	
 	// simple methods for parsing
 	bool cm
 		(std::string &s, const std::string &c, char p);

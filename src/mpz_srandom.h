@@ -22,7 +22,7 @@
 	#define INCLUDED_mpz_srandom_H
 	
 	// GNU crypto library
-	#include <gcrypt.h> 
+	#include <gcrypt.h>
 	
 	// GNU multiple precision library
 	#include <gmp.h>

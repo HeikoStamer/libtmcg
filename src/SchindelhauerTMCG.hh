@@ -25,12 +25,12 @@
 
 #ifndef INCLUDED_SchindelhauerTMCG_HH
 	#define INCLUDED_SchindelhauerTMCG_HH
-
+	
 	// config.h
-	#if HAVE_CONFIG_H
+	#ifdef HAVE_CONFIG_H
 		#include "config.h"
 	#endif
-
+	
 	// C++/STL header
 	#include <cstdio>
 	#include <cstdlib>
@@ -41,7 +41,7 @@
 	#include <vector>
 	
 	// GNU crypto library
-	#include <gcrypt.h> 
+	#include <gcrypt.h>
 	
 	// GNU multiple precision library
 	#include <gmp.h>
