@@ -1,5 +1,5 @@
 /*******************************************************************************
-  A data structure for cards. This file is part of libTMCG.
+  Data structure for cards. This file is part of libTMCG.
 
  Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
@@ -36,7 +36,7 @@
 	
 	#include "parse_helper.hh"
 
-/** @brief A data structure for cards.
+/** @brief Data structure for cards.
     
     This struct represents a card in the discrete logarithm instantiation
     of the general cryptographic primitive "Verifiable-n-out-of-n Threshold

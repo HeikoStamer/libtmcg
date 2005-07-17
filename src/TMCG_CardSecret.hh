@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
    You should have received a copy of the GNU General Public License
    along with libTMCG; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
 #ifndef INCLUDED_TMCG_CardSecret_HH
@@ -39,32 +39,67 @@
 	#include "mpz_srandom.h"
 	#include "parse_helper.hh"
 
+/** @brief Data structure for secrets of the masking operation.
+    
+    This struct represents the secrets of the masking operation in the
+    original encoding scheme of Schindelhauer [Sch98]. */
 struct TMCG_CardSecret
 {
+	/** These @f$n\times m@f$-matrices encode the secrets involved in the
+	    masking operation. For each of the @f$n@f$ players there is a
+	    separate row and for each of the @f$m@f$ bits in the binary
+	    representation of the card type there is a column. The elements
+	    of the matrix @a r are numbers from @f$\mathbb{Z}^{\circ}_{m_i}@f$
+	    where @f$m_i@f$ is the public modul of the @f$i@f$th player.
+	    The elements of the matrix @a b are bits from @f$\{0, 1\}@f$. */
 	std::vector< std::vector<MP_INT> >			r, b;
 	
+	/** This constructor initalizes the secrets with a @f$1\times 1@f$-matrix.
+	    Later the function TMCG_CardSecret::resize can be used to enlarge the
+	    representation of the secret. */
 	TMCG_CardSecret
 		();
 	
+	/** This constructor initalizes the secrets with a @f$n\times m@f$-matrix.
+	    @param n is the number of players.
+	    @param m is the number of bits used in the binary representation
+	           of the card type. */
 	TMCG_CardSecret
 		(size_t n, size_t m);
 	
+	/** A simple copy-constructor.
+	    @param that is the secret to be copied. */
 	TMCG_CardSecret
 		(const TMCG_CardSecret& that);
 	
+	/** A simple assignment-operator.
+	    @param that is the secret to be assigned. */
 	TMCG_CardSecret& operator =
 		(const TMCG_CardSecret& that);
 	
+	/** This function resizes the representation of the secrets. The current
+	    content will be released and new @f$n\times m@f$-matrices created.
+	    @param n is the number of players.
+	    @param m is the number of bits used in the binary representation
+	           of the card type. */
 	void resize
 		(size_t n, size_t m);
 	
+	/** This function imports the secret.
+	    @param s is correctly formated input string.
+	    @returns True, if the import was successful. */
 	bool import
 		(std::string s);
 	
+	/** This destructor releases all occupied resources. */
 	~TMCG_CardSecret
 		();
 };
 
+/** @relates TMCG_CardSecret
+    This operator prints a secret to an output stream.
+    @param out is the output stream.
+    @param cardsecret is the secret to be printed. */
 std::ostream& operator<< 
 	(std::ostream &out, const TMCG_CardSecret &cardsecret);
 

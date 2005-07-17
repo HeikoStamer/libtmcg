@@ -1,5 +1,5 @@
 /*******************************************************************************
-  A data structure for cards. This file is part of libTMCG.
+  Data structure for cards. This file is part of libTMCG.
 
  Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
@@ -15,7 +15,7 @@
 
    You should have received a copy of the GNU General Public License
    along with libTMCG; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
 #ifndef INCLUDED_TMCG_Card_HH
@@ -39,7 +39,7 @@
 	#include "mpz_srandom.h"
 	#include "parse_helper.hh"
 	
-/** @brief A data structure for cards.
+/** @brief Data structure for cards.
     
     This struct represents a card in the original encoding scheme of
     Schindelhauer [Sch98]. The type of the card is shared among the
@@ -48,7 +48,7 @@
     Assumption (QRA). */
 struct TMCG_Card
 {
-	/** The @f$n\times m@f$-matrix @f$Z@f$ encodes the type of the card
+	/** This @f$n\times m@f$-matrix encodes the type of the card
 	    in a shared manner. For each of the @f$n@f$ players there is a
 	    separate row and for each of the @f$m@f$ bits in the binary
 	    representation of the card type there is a column. The elements

@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
    You should have received a copy of the GNU General Public License
    along with libTMCG; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
 #ifndef INCLUDED_VTMF_CardSecret_HH
@@ -36,8 +36,7 @@
 	
 	#include "parse_helper.hh"
 
-/** @brief A data structure for the secrets involved in the card masking
-    operation.
+/** @brief Data structure for secrets of the masking operation.
     
     This struct represents the secrets of the masking operation in the
     discrete logarithm instantiation of the general cryptographic
