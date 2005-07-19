@@ -48,9 +48,9 @@
     Assumption (QRA). */
 struct TMCG_Card
 {
-	/** This @f$n\times m@f$-matrix encodes the type of the card
-	    in a shared manner. For each of the @f$n@f$ players there is a
-	    separate row and for each of the @f$m@f$ bits in the binary
+	/** This @f$k\times w@f$-matrix encodes the type of the card
+	    in a shared manner. For each of the @f$k@f$ players there is a
+	    separate row and for each of the @f$w@f$ bits in the binary
 	    representation of the card type there is a column. The elements
 	    of the matrix are numbers from @f$\mathbb{Z}^{\circ}_{m_i}@f$
 	    where @f$m_i@f$ is the public modul of the @f$i@f$th player. */
@@ -62,7 +62,7 @@ struct TMCG_Card
 	TMCG_Card
 		();
 	
-	/** This constructor initalizes a card with a @f$n\times m@f$-matrix.
+	/** This constructor initalizes a card with a @f$k\times w@f$-matrix.
 	    @param k is the number of players.
 	    @param w is the number of bits used in the binary representation
 	           of the card type. */
@@ -88,7 +88,7 @@ struct TMCG_Card
 		(const TMCG_Card& that) const;
 	
 	/** This function resizes the representation of the card. The current
-	    content will be released and a new @f$n\times m@f$-matrix created.
+	    content will be released and a new @f$k\times w@f$-matrix created.
 	    @param k is the number of players.
 	    @param w is the number of bits used in the binary representation
 	           of the card type. */

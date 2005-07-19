@@ -45,9 +45,9 @@
     original encoding scheme of Schindelhauer [Sch98]. */
 struct TMCG_CardSecret
 {
-	/** These @f$n\times m@f$-matrices encode the secrets involved in the
-	    masking operation. For each of the @f$n@f$ players there is a
-	    separate row and for each of the @f$m@f$ bits in the binary
+	/** These @f$k\times w@f$-matrices encode the secrets involved in the
+	    masking operation. For each of the @f$k@f$ players there is a
+	    separate row and for each of the @f$w@f$ bits in the binary
 	    representation of the card type there is a column. The elements
 	    of the matrix @a r are numbers from @f$\mathbb{Z}^{\circ}_{m_i}@f$
 	    where @f$m_i@f$ is the public modul of the @f$i@f$th player.
@@ -60,9 +60,9 @@ struct TMCG_CardSecret
 	TMCG_CardSecret
 		();
 	
-	/** This constructor initalizes the secrets with a @f$n\times m@f$-matrix.
-	    @param n is the number of players.
-	    @param m is the number of bits used in the binary representation
+	/** This constructor initalizes the secrets with a @f$k\times w@f$-matrix.
+	    @param k is the number of players.
+	    @param w is the number of bits used in the binary representation
 	           of the card type. */
 	TMCG_CardSecret
 		(size_t k, size_t w);
@@ -78,9 +78,9 @@ struct TMCG_CardSecret
 		(const TMCG_CardSecret& that);
 	
 	/** This function resizes the representation of the secrets. The current
-	    content will be released and new @f$n\times m@f$-matrices created.
-	    @param n is the number of players.
-	    @param m is the number of bits used in the binary representation
+	    content will be released and new @f$k\times w@f$-matrices created.
+	    @param k is the number of players.
+	    @param w is the number of bits used in the binary representation
 	           of the card type. */
 	void resize
 		(size_t k, size_t w);

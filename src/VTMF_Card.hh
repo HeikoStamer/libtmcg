@@ -39,7 +39,7 @@
 /** @brief Data structure for cards.
     
     This struct represents a card in the discrete logarithm instantiation
-    of the general cryptographic primitive "Verifiable-n-out-of-n Threshold
+    of the general cryptographic primitive "Verifiable-k-out-of-k Threshold
     Masking Function" by Barnett and Smart [BS03]. */
 struct VTMF_Card
 {

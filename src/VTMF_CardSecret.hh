@@ -40,7 +40,7 @@
     
     This struct represents the secrets of the masking operation in the
     discrete logarithm instantiation of the general cryptographic
-    primitive "Verifiable-l-out-of-l Threshold Masking Function" by
+    primitive "Verifiable-k-out-of-k Threshold Masking Function" by
     Barnett and Smart [BS03]. */
 struct VTMF_CardSecret
 {
