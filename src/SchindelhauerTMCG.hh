@@ -72,7 +72,7 @@ class SchindelhauerTMCG
 		
 		// constructors and destructors
 		SchindelhauerTMCG
-			(unsigned long int security, size_t n, size_t m);
+			(unsigned long int security, size_t k, size_t w);
 		~SchindelhauerTMCG
 			();
 		

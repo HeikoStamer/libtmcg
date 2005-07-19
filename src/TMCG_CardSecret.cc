@@ -28,16 +28,16 @@ TMCG_CardSecret::TMCG_CardSecret
 }
 
 TMCG_CardSecret::TMCG_CardSecret
-	(size_t n, size_t m)
+	(size_t k, size_t w)
 {
-	assert((n > 0) && (m > 0));
+	assert((k > 0) && (w > 0));
 	
-	for (size_t k = 0; k < n; k++)
-		r.push_back(std::vector<MP_INT>(m)), b.push_back(std::vector<MP_INT>(m));
-	for (size_t k = 0; k < r.size(); k++)
-		for (size_t w = 0; w < r[k].size(); w++)
-			mpz_init(&r[k][w]),
-			mpz_init(&b[k][w]);
+	for (size_t i = 0; i < k; i++)
+		r.push_back(std::vector<MP_INT>(w)), b.push_back(std::vector<MP_INT>(w));
+	for (size_t i = 0; i < r.size(); i++)
+		for (size_t j = 0; j < r[i].size(); j++)
+			mpz_init(&r[i][j]),
+			mpz_init(&b[i][j]);
 }
 
 TMCG_CardSecret::TMCG_CardSecret
@@ -64,26 +64,26 @@ TMCG_CardSecret& TMCG_CardSecret::operator =
 }
 
 void TMCG_CardSecret::resize
-	(size_t n, size_t m)
+	(size_t k, size_t w)
 {
-	assert((n > 0) && (m > 0));
+	assert((k > 0) && (w > 0));
 	
 	// FIXME: should be done more efficiently
-	for (size_t k = 0; k < r.size(); k++)
+	for (size_t i = 0; i < r.size(); i++)
 	{
-		for (size_t w = 0; w < r[k].size(); w++)
-			mpz_clear(&r[k][w]),
-			mpz_clear(&b[k][w]);
-		r[k].clear(), b[k].clear();
+		for (size_t j = 0; j < r[i].size(); j++)
+			mpz_clear(&r[i][j]),
+			mpz_clear(&b[i][j]);
+		r[i].clear(), b[i].clear();
 	}
 	r.clear(), b.clear();
 	
-	for (size_t k = 0; k < n; k++)
-		r.push_back(std::vector<MP_INT>(m)), b.push_back(std::vector<MP_INT>(m));
-	for (size_t k = 0; k < r.size(); k++)
-		for (size_t w = 0; w < r[k].size(); w++)
-			mpz_init(&r[k][w]),
-			mpz_init(&b[k][w]);
+	for (size_t i = 0; i < k; i++)
+		r.push_back(std::vector<MP_INT>(w)), b.push_back(std::vector<MP_INT>(w));
+	for (size_t i = 0; i < r.size(); i++)
+		for (size_t j = 0; j < r[i].size(); j++)
+			mpz_init(&r[i][j]),
+			mpz_init(&b[i][j]);
 }
 
 bool TMCG_CardSecret::import
@@ -100,31 +100,31 @@ bool TMCG_CardSecret::import
 		// public card data
 		if (gs(s, '|').length() == 0)
 			throw false;
-		size_t n = strtoul(gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (n < 1) || (n > TMCG_MAX_PLAYERS) || (!nx(s, '|')))
+		size_t k = strtoul(gs(s, '|').c_str(), &ec, 10);
+		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) || (!nx(s, '|')))
 			throw false;
 		if (gs(s, '|').length() == 0)
 			throw false;
-		size_t m = strtoul(gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (m < 1) || (m > TMCG_MAX_TYPEBITS) || (!nx(s, '|')))
+		size_t w = strtoul(gs(s, '|').c_str(), &ec, 10);
+		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) || (!nx(s, '|')))
 			throw false;
 		
 		// resize this
-		resize(n, m);
+		resize(k, w);
 		
 		// secret card data
-		for (size_t k = 0; k < r.size(); k++)
+		for (size_t i = 0; i < r.size(); i++)
 		{
-			for (size_t w = 0; w < r[k].size(); w++)
+			for (size_t j = 0; j < r[i].size(); j++)
 			{
 				// r_ij
-				if ((mpz_set_str(&r[k][w], gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-					(!nx(s, '|')))
+				if ((mpz_set_str(&r[i][j], gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0)
+					|| (!nx(s, '|')))
 						throw false;
 						
 				// b_ij
-				if ((mpz_set_str(&b[k][w], gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-					(!nx(s, '|')))
+				if ((mpz_set_str(&b[i][j], gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0)
+					|| (!nx(s, '|')))
 						throw false;
 			}
 		}

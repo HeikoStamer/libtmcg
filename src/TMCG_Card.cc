@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,15 +28,15 @@ TMCG_Card::TMCG_Card
 }
 
 TMCG_Card::TMCG_Card
-	(size_t n, size_t m)
+	(size_t k, size_t w)
 {
-	assert((n > 0) && (m > 0));
+	assert((k > 0) && (w > 0));
 	
-	for (size_t k = 0; k < n; k++)
-		z.push_back(std::vector<MP_INT>(m));
-	for (size_t k = 0; k < z.size(); k++)
-		for (size_t w = 0; w < z[k].size(); w++)
-			mpz_init(&z[k][w]);
+	for (size_t i = 0; i < k; i++)
+		z.push_back(std::vector<MP_INT>(w));
+	for (size_t i = 0; i < z.size(); i++)
+		for (size_t j = 0; j < z[i].size(); j++)
+			mpz_init(&z[i][j]);
 }
 
 TMCG_Card::TMCG_Card
@@ -78,24 +78,24 @@ bool TMCG_Card::operator !=
 }
 
 void TMCG_Card::resize
-	(size_t n, size_t m)
+	(size_t k, size_t w)
 {
-	assert((n > 0) && (m > 0));
+	assert((k > 0) && (w > 0));
 	
 	// FIXME: should be done more efficiently
-	for (size_t k = 0; k < z.size(); k++)
+	for (size_t i = 0; i < z.size(); i++)
 	{
-		for (size_t w = 0; w < z[k].size(); w++)
-			mpz_clear(&z[k][w]);
-		z[k].clear();
+		for (size_t j = 0; j < z[i].size(); j++)
+			mpz_clear(&z[i][j]);
+		z[i].clear();
 	}
 	z.clear();
 	
-	for (size_t k = 0; k < n; k++)
-		z.push_back(std::vector<MP_INT>(m));
-	for (size_t k = 0; k < z.size(); k++)
-		for (size_t w = 0; w < z[k].size(); w++)
-			mpz_init(&z[k][w]);
+	for (size_t i = 0; i < k; i++)
+		z.push_back(std::vector<MP_INT>(w));
+	for (size_t i = 0; i < z.size(); i++)
+		for (size_t j = 0; j < z[i].size(); j++)
+			mpz_init(&z[i][j]);
 }
 
 bool TMCG_Card::import
@@ -112,26 +112,26 @@ bool TMCG_Card::import
 		// card description
 		if (gs(s, '|').length() == 0)
 			throw false;
-		size_t n = strtoul(gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (n < 1) || (n > TMCG_MAX_PLAYERS) || (!nx(s, '|')))
+		size_t k = strtoul(gs(s, '|').c_str(), &ec, 10);
+		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) || (!nx(s, '|')))
 			throw false;
 		if (gs(s, '|').length() == 0)
 			throw false;
-		size_t m = strtoul(gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (m < 1) || (m > TMCG_MAX_TYPEBITS) || (!nx(s, '|')))
+		size_t w = strtoul(gs(s, '|').c_str(), &ec, 10);
+		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) || (!nx(s, '|')))
 			throw false;
 		
 		// resize this
-		resize(n, m);
+		resize(k, w);
 		
 		// card data
-		for (size_t k = 0; k < z.size(); k++)
+		for (size_t i = 0; i < z.size(); i++)
 		{
-			for (size_t w = 0; w < z[k].size(); w++)
+			for (size_t j = 0; j < z[i].size(); j++)
 			{
 				// z_ij
-				if ((mpz_set_str(&z[k][w], gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-					(!nx(s, '|')))
+				if ((mpz_set_str(&z[i][j], gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0)
+					|| (!nx(s, '|')))
 						throw false;
 			}
 		}

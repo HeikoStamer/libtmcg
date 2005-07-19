@@ -63,11 +63,11 @@ struct TMCG_Card
 		();
 	
 	/** This constructor initalizes a card with a @f$n\times m@f$-matrix.
-	    @param n is the number of players.
-	    @param m is the number of bits used in the binary representation
+	    @param k is the number of players.
+	    @param w is the number of bits used in the binary representation
 	           of the card type. */
 	TMCG_Card
-		(size_t n, size_t m);
+		(size_t k, size_t w);
 	
 	/** A simple copy-constructor.
 	    @param that is the card to be copied. */
@@ -89,11 +89,11 @@ struct TMCG_Card
 	
 	/** This function resizes the representation of the card. The current
 	    content will be released and a new @f$n\times m@f$-matrix created.
-	    @param n is the number of players.
-	    @param m is the number of bits used in the binary representation
+	    @param k is the number of players.
+	    @param w is the number of bits used in the binary representation
 	           of the card type. */
 	void resize
-		(size_t n, size_t m);
+		(size_t k, size_t w);
 	
 	/** This function imports the card.
 	    @param s is correctly formated input string.

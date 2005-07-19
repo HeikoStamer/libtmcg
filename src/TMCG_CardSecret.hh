@@ -65,7 +65,7 @@ struct TMCG_CardSecret
 	    @param m is the number of bits used in the binary representation
 	           of the card type. */
 	TMCG_CardSecret
-		(size_t n, size_t m);
+		(size_t k, size_t w);
 	
 	/** A simple copy-constructor.
 	    @param that is the secret to be copied. */
@@ -83,7 +83,7 @@ struct TMCG_CardSecret
 	    @param m is the number of bits used in the binary representation
 	           of the card type. */
 	void resize
-		(size_t n, size_t m);
+		(size_t k, size_t w);
 	
 	/** This function imports the secret.
 	    @param s is correctly formated input string.

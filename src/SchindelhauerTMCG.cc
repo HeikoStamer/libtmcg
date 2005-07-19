@@ -26,8 +26,8 @@
 #include "SchindelhauerTMCG.hh"
 
 SchindelhauerTMCG::SchindelhauerTMCG
-	(unsigned long int security, size_t n, size_t m):
-		TMCG_SecurityLevel(security), TMCG_Players(n), TMCG_TypeBits(m)
+	(unsigned long int security, size_t k, size_t w):
+		TMCG_SecurityLevel(security), TMCG_Players(k), TMCG_TypeBits(w)
 {
 	assert(TMCG_Players <= TMCG_MAX_PLAYERS);
 	assert(TMCG_TypeBits <= TMCG_MAX_TYPEBITS);
