@@ -150,34 +150,11 @@ void BarnettSmartVTMF_dlog::RandomElement
 	assert(mpz_jacobi(a, p) == 1L);
 }
 
-void BarnettSmartVTMF_dlog::NextElement
-	(mpz_ptr a)
-{
-	// choose the next element of G (iterate over the quadratic residues)
-	do
-		mpz_add_ui(a, a, 1L);
-	while (mpz_jacobi(a, p) != 1L);
-}
-
 void BarnettSmartVTMF_dlog::IndexElement
 	(mpz_ptr a, std::size_t index)
 {
-	// choose the index-th element of G (quadratic residue)
-	// Notice: a call to IndexElement(a, 0) returns the identity of G,
-	// because 1 is always the smallest quadratic residue mod p.
-	mpz_set_ui(a, 0L);
-	do
-		NextElement(a);
-	while (index--);
-	
-	assert(mpz_jacobi(a, p) == 1L);
-}
-
-void BarnettSmartVTMF_dlog::IndexElement_Fast
-	(mpz_ptr a, std::size_t index)
-{
 	// simply compute $g^i mod p$
-	mpz_powm_ui(a, g, index, p);
+	mpz_fpowm_ui(fpowm_table_g, a, g, index, p);
 	
 	assert(mpz_jacobi(a, p) == 1L);
 }

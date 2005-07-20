@@ -64,6 +64,10 @@
 				(mpz_t fpowm_table[],
 				mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p);
 			
+			void mpz_fpowm_ui
+				(mpz_t fpowm_table[],
+				mpz_ptr res, mpz_srcptr m, unsigned long int x_ui, mpz_srcptr p);
+			
 			void mpz_fspowm
 				(mpz_t fpowm_table[],
 				mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p);

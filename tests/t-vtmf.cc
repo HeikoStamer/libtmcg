@@ -31,6 +31,7 @@ int main
 	std::stringstream lej, lej2, foo, foo2;
 	std::string v;
 	mpz_t a, b, c, d, e;
+	mpz_t *array;
 	assert(init_libTMCG());
 	
 	BarnettSmartVTMF_dlog *vtmf, *vtmf2;
@@ -55,7 +56,7 @@ int main
 	vtmf2->PublishGroup(lej2);
 	assert(lej.str() == lej2.str());
 	
-	// RandomElement(), NextElement(), IndexElement()
+	// RandomElement(), IndexElement()
 	std::cout << "vtmf.RandomElement(a)" << std::endl;
 	vtmf->RandomElement(a);
 	assert(mpz_cmp(a, vtmf->p) < 0);
@@ -64,29 +65,22 @@ int main
 	assert(!mpz_cmp_ui(b, 1L));
 	std::cout << "vtmf.RandomElement(b)" << std::endl;
 	vtmf->RandomElement(b);
-	assert(mpz_cmp(a, b));
-	mpz_set(b, a);
-	std::cout << "vtmf.NextElement(a)" << std::endl;
-	vtmf->NextElement(a);
-	assert(mpz_cmp(b, a) < 0);
+	assert(mpz_cmp(b, a));
+	assert(mpz_jacobi(b, vtmf->p) == 1L);
 	mpz_set_ui(b, 0L);
-	std::cout << "vtmf.IndexElement(a, 0...63)" << std::endl;
-	for (size_t i = 0; i < 64; i++)
+	std::cout << "vtmf.IndexElement(a, [0, 127])" << std::endl;
+	array = new mpz_t[128]();
+	for (size_t i = 0; i < 128; i++)
 	{
 		vtmf->IndexElement(a, i);
+		mpz_init_set(array[i], a);
 		std::cout << a << " ";
-		assert(mpz_cmp(b, a) < 0);
-		mpz_set(b, a);
+		for (size_t j = 0; j < i; j++)
+			assert(mpz_cmp(array[i], array[j]));
 	}
-	std::cout << std::endl;
-	std::cout << "vtmf.IndexElement_Fast(a, 0...63)" << std::endl;
-	for (size_t i = 0; i < 64; i++)
-	{
-		vtmf->IndexElement_Fast(a, i);
-		std::cout << a << " ";
-		assert(mpz_cmp(b, a) != 0);
-		mpz_set(b, a);
-	}
+	for (size_t i = 0; i < 128; i++)
+		mpz_clear(array[i]);
+	delete [] array;
 	std::cout << std::endl;
 	
 	// key generation protocol

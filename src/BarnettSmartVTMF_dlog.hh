@@ -64,7 +64,6 @@
 class BarnettSmartVTMF_dlog
 {
 	private:
-		// QUESTION: Why can one not use big arrays of mpz_t in constructors?
 		mpz_t								*fpowm_table_g, *fpowm_table_h;
 		
 	public:
@@ -84,11 +83,7 @@ class BarnettSmartVTMF_dlog
 			(std::ostream &out);
 		void RandomElement
 			(mpz_ptr a);
-		void NextElement
-			(mpz_ptr a);
 		void IndexElement
-			(mpz_ptr a, std::size_t index);
-		void IndexElement_Fast
 			(mpz_ptr a, std::size_t index);
 		void KeyGenerationProtocol_GenerateKey
 			();

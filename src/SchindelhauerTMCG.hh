@@ -65,6 +65,7 @@ class SchindelhauerTMCG
 {
 	private:
 		int									ret;
+		mpz_t								*message_space;
 	
 	public:
 		unsigned long int		TMCG_SecurityLevel;			// iterations

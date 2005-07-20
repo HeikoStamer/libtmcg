@@ -33,8 +33,13 @@ SchindelhauerTMCG::SchindelhauerTMCG
 	assert(TMCG_TypeBits <= TMCG_MAX_TYPEBITS);
 	
 	TMCG_MaxCardType = 1;
-	for (unsigned long int i = 0; i < TMCG_TypeBits; i++)
+	for (size_t i = 0; i < TMCG_TypeBits; i++)
 		TMCG_MaxCardType *= 2;
+	
+	// initalize the message space for the VTMF scheme
+	message_space = new mpz_t[TMCG_MaxCardType]();
+	for (size_t i = 0; i < TMCG_MaxCardType; i++)
+		mpz_init_set_ui(message_space[i], 0L);
 }
 
 void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
@@ -737,8 +742,12 @@ void SchindelhauerTMCG::TMCG_CreateOpenCard
 void SchindelhauerTMCG::TMCG_CreateOpenCard
 (VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf, size_t type)
 {
+	assert(type < TMCG_MaxCardType);
+	
 	mpz_set_ui(c.c_1, 1L);
-	vtmf->IndexElement(c.c_2, type);
+	if (!mpz_cmp_ui(message_space[type], 0L))
+		vtmf->IndexElement(message_space[type], type);
+	mpz_set(c.c_2, message_space[type]);
 }
 
 void SchindelhauerTMCG::TMCG_CreatePrivateCard
@@ -755,12 +764,12 @@ void SchindelhauerTMCG::TMCG_CreatePrivateCard
 	(VTMF_Card &c, VTMF_CardSecret &cs, BarnettSmartVTMF_dlog *vtmf,
 		size_t type)
 {
-	mpz_t m;
+	assert(type < TMCG_MaxCardType);
 	
-	mpz_init(m);
-	vtmf->IndexElement(m, type);
-	vtmf->VerifiableMaskingProtocol_Mask(m, c.c_1, c.c_2, cs.r);
-	mpz_clear(m);
+	if (!mpz_cmp_ui(message_space[type], 0L))
+		vtmf->IndexElement(message_space[type], type);
+	vtmf->VerifiableMaskingProtocol_Mask(message_space[type],
+		c.c_1, c.c_2, cs.r);
 }
 
 void SchindelhauerTMCG::TMCG_CreateCardSecret
@@ -1033,21 +1042,22 @@ size_t SchindelhauerTMCG::TMCG_TypeOfCard
 	(const VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf)
 {
 	size_t type = TMCG_MaxCardType;
-	mpz_t m, a;
+	mpz_t m;
 	
-	mpz_init_set_ui(m, 0L), mpz_init(a);
+	mpz_init_set_ui(m, 0L);
 	vtmf->VerifiableDecryptionProtocol_Verify_Finalize(c.c_2, m);
 	
-	vtmf->IndexElement(a, 0);
-	for (size_t t = 0; t < TMCG_MaxCardType; t++, vtmf->NextElement(a))
+	for (size_t t = 0; t < TMCG_MaxCardType; t++)
 	{
-		if (!mpz_cmp(a, m))
+		if (!mpz_cmp_ui(message_space[t], 0L))
+			vtmf->IndexElement(message_space[type], t);
+		if (!mpz_cmp(m, message_space[t]))
 		{
 			type = t;
 			break;
 		}
 	}
-	mpz_clear(m), mpz_clear(a);
+	mpz_clear(m);
 	return type;
 }
 
@@ -1562,4 +1572,7 @@ void SchindelhauerTMCG::TMCG_MixOpenStack
 SchindelhauerTMCG::~SchindelhauerTMCG 
 	()
 {
+	for (size_t i = 0; i < TMCG_MaxCardType; i++)
+		mpz_clear(message_space[i]);
+	delete [] message_space;
 }
