@@ -79,13 +79,14 @@ bool StiglicMPC::MPC_OpenCardCommitment
 	{
 		if (i == index)
 		{
+			// use the non-interactiveness of the proof (only VTMF!)
+			std::stringstream proof;
+			tmcg->TMCG_ProveCardSecret(card, vtmf, proof, proof);
+			
 			for (size_t j = 0; j < participants.size(); j++)
 			{
 				if (j != index)
-				{
-					tmcg->TMCG_ProveCardSecret(card, vtmf,
-						*participants[j]->in, *participants[j]->out);
-				}
+					*participants[j]->out << proof.str() << std::flush;
 			}
 		}
 		else
