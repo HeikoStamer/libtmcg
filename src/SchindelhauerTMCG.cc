@@ -80,8 +80,10 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 		assert(mpz_cmp_ui(s, 1L));
 		
 		// compute $R_i = r_i^2 \bmod m,\; S_i = s_i^2 \bmod m$
-		mpz_powm_ui(foo, r, 2L, key.m);
-		mpz_powm_ui(bar, s, 2L, key.m);
+		mpz_mul(foo, r, r);
+		mpz_mod(foo, foo, key.m);
+		mpz_mul(bar, s, s);
+		mpz_mod(bar, bar, key.m);
 		
 		// check congruence R_i * S_i \cong t (mod m)
 		#ifndef NDEBUG
@@ -157,7 +159,8 @@ bool SchindelhauerTMCG::TMCG_VerifyQuadraticResidue
 			in >> bar;
 			
 			// verify proof R_i = r_i^2 (mod m)  or  S_i = s_i^2 (mod m)
-			mpz_powm_ui(lej, bar, 2L, key.m);
+			mpz_mul(lej, bar, bar);
+			mpz_mod(lej, lej, key.m);
 			
 			if (((mpz_get_ui(foo) & 1L) && 
 				(mpz_cmp(lej, RR[i]) || !mpz_cmp_ui(bar, 1L))) ||
@@ -234,28 +237,42 @@ void SchindelhauerTMCG::TMCG_MaskValue
 	(const TMCG_PublicKey &key, mpz_srcptr z, mpz_ptr zz,
 		mpz_srcptr r, mpz_srcptr b, bool TimingAttackProtection)
 {
-	mpz_t tim;
-	
-	mpz_init(tim);
-	// compute zz = z * r^2 * y^b (mod m)
-	mpz_powm_ui(zz, r, 2L, key.m);
-	mpz_mul(zz, zz, z);
-	mpz_mod(zz, zz, key.m);
-	if (mpz_get_ui(b) & 1L)
+	if (TimingAttackProtection)
 	{
-		mpz_mul(zz, zz, key.y);
+		mpz_t tim;
+		
+		mpz_init(tim);
+		// compute zz = z * r^2 * y^b (mod m)
+		mpz_mul(zz, r, r);
 		mpz_mod(zz, zz, key.m);
-	}
-	else
-	{
-		if (TimingAttackProtection)
+		mpz_mul(zz, zz, z);
+		mpz_mod(zz, zz, key.m);
+		if (mpz_get_ui(b) & 1L)
+		{
+			mpz_mul(zz, zz, key.y);
+			mpz_mod(zz, zz, key.m);
+		}
+		else
 		{
 			// compute dummy value to prevent timing attacks
 			mpz_mul(tim, zz, key.y);
 			mpz_mod(tim, tim, key.m);
 		}
+		mpz_clear(tim);
 	}
-	mpz_clear(tim);
+	else
+	{
+		// compute zz = z * r^2 * y^b (mod m)
+		mpz_mul(zz, r, r);
+		mpz_mod(zz, zz, key.m);
+		mpz_mul(zz, zz, z);
+		mpz_mod(zz, zz, key.m);
+		if (mpz_get_ui(b) & 1L)
+		{
+			mpz_mul(zz, zz, key.y);
+			mpz_mod(zz, zz, key.m);
+		}
+	}
 }
 
 void SchindelhauerTMCG::TMCG_ProveMaskValue
@@ -287,7 +304,8 @@ void SchindelhauerTMCG::TMCG_ProveMaskValue
 			rr.push_back(r2), bb.push_back(b2);
 			
 			// compute foo = zz * r2^2 * y^b2 (mod m)
-			mpz_powm_ui(foo, r2, 2L, key.m);
+			mpz_mul(foo, r2, r2);
+			mpz_mod(foo, foo, key.m);
 			mpz_mul(foo, foo, zz);
 			mpz_mod(foo, foo, key.m);
 			if (mpz_get_ui(b2) & 1L)
@@ -468,7 +486,8 @@ void SchindelhauerTMCG::TMCG_ProveMaskOne
 		ss.push_back(s), cc.push_back(c);
 		
 		// compute R_i = {r_i}^2 * y^b (mod m), S_i = {s_i}^2 * y^{c_i} (mod m)
-		mpz_powm_ui(foo, r3, 2L, key.m);
+		mpz_mul(foo, r3, r3);
+		mpz_mod(foo, foo, key.m);
 		if (mpz_get_ui(b3) & 1L)
 		{
 			mpz_mul(foo, foo, key.y);
@@ -480,7 +499,8 @@ void SchindelhauerTMCG::TMCG_ProveMaskOne
 			mpz_mul(tim, foo, key.y);
 			mpz_mod(tim, tim, key.m);
 		}
-		mpz_powm_ui(bar, s, 2L, key.m);
+		mpz_mul(bar, s, s);
+		mpz_mod(bar, bar, key.m);
 		if (mpz_get_ui(c) & 1L)
 		{
 			mpz_mul(bar, bar, key.y);
@@ -584,7 +604,8 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskOne
 			in >> bar, in >> lej;
 			
 			// verify proof
-			mpz_powm_ui(lej, bar, 2L, key.m);
+			mpz_mul(lej, bar, bar);
+			mpz_mod(lej, lej, key.m);
 			if (mpz_get_ui(lej) & 1L)
 			{
 				mpz_mul(lej, lej, key.y);
@@ -677,7 +698,8 @@ bool SchindelhauerTMCG::TMCG_VerifyNonQuadraticResidue_PerfectZeroKnowledge
 			while (mpz_cmp_ui(foo, 1L));
 			
 			// compute foo = r^2 * y^b (mod m)
-			mpz_powm_ui(foo, r, 2L, key.m);
+			mpz_mul(foo, r, r);
+			mpz_mod(foo, foo, key.m);
 			if (mpz_get_ui(b) & 1L)
 			{
 				mpz_mul(foo, foo, key.y);
