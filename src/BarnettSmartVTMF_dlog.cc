@@ -116,9 +116,8 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 		
 		// check whether g is a generator of the group G
 		// It is sufficient to assert that g is a quadratic residue modulo p,
-		// i.e. instead of checking g^{(p-1)/2} \equiv 1 \pmod{p} we can
-		// simply do this check by computing the Legendre-Jacobi symbol.
-		if (mpz_jacobi(g, p) != 1L)
+		// we can simply do this by computing the Legendre-Jacobi symbol.
+		if ((mpz_cmp_ui(g, 1L) == 0L) || (mpz_jacobi(g, p) != 1L))
 			throw false;
 		
 		// finish

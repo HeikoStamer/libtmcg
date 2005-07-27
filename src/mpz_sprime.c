@@ -32,7 +32,7 @@
 #include "mpz_sprime.h"
 
 #define PRIMES_SIZE 668
-#define SIEVE_SIZE 5
+#define SIEVE_SIZE 10
 unsigned long int primes[] = {
 	3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43,
 	47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101,
@@ -204,12 +204,17 @@ int test3mod4
 	return mpz_congruent_ui_p(p, 3L, 4L);
 }
 
-/** Miller-Rabin probabilistic primality test, algorithm 4.24 [HAC] */
+/** Miller-Rabin witness test, basically algorithm 4.24 [HAC], for a
+    given base.
 
-int mpz_mr_base
+    @returns 1, if the @a base is a Miller-Rabin witness to the
+                compositness of @a n.
+    @returns 0, otherwise. */
+
+int mpz_mr_witness
 	(mpz_srcptr n, mpz_srcptr base)
 {
-	size_t result = 0;
+	size_t result = 1;
 	mpz_t y, r, nm1;
 	unsigned long int s;
 	
@@ -223,7 +228,7 @@ int mpz_mr_base
 	{
 		/* 2.2 Compute $y = \mathtt{base}^r \bmod \mathtt{n}$. */
 		mpz_powm(y, base, r, n);
-		result = 1;
+		result = 0;
 		
 		/* 2.3 If $y \neq 1$ and $y \neq \mathtt{n} - 1$ then do the following: */
 		if ((mpz_cmp_ui(y, 1L) != 0) && (mpz_cmp(y, nm1) != 0))
@@ -231,15 +236,19 @@ int mpz_mr_base
 			unsigned long int j;
 			for (j = 1; j < s; j++)
 			{
-				mpz_powm_ui(y, y, 2L, n);
+				mpz_mul(y, y, y);
+				mpz_mod(y, y, n);
 				if (mpz_cmp_ui(y, 1L) == 0)
 				{
-					result = 0;
+					result = 1;
 					break;
 				}
 				if (mpz_cmp(y, nm1) == 0)
 					break;
 			}
+			/* strong witness? */
+			if (mpz_cmp(y, nm1) != 0)
+				result = 1;
 		}
 	}
 	
@@ -256,26 +265,28 @@ void mpz_sprime_test
 {
 	unsigned long int R_q[SIEVE_SIZE], R_p[SIEVE_SIZE];
 	size_t i = 0, fail = 0;
-	mpz_t mr_y, mr_pm1, mr_a;
+	mpz_t tmp, y, pm1, a;
 	
-	mpz_init(mr_y), mpz_init(mr_pm1), mpz_init_set_ui(mr_a, 2L);
+	mpz_init(tmp), mpz_init(y), mpz_init(pm1), mpz_init_set_ui(a, 2L);
 	
 	/* Step 1. [CS00]: choose a random odd number $q$ of appropriate size */
 	do
 		mpz_srandomb(q, qsize);
 	while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
 	
+	/* Compute $p = 2q + 1$. */
+	mpz_mul_2exp(pm1, q, 1L),	mpz_add_ui(p, pm1, 1L);
+	
 	/* Initalize the sieves for testing divisability by small primes. */
 	for (i = 0; i < SIEVE_SIZE; i++)
 	{
-		mpz_set_ui(mr_pm1, primes[i]);
+		mpz_set_ui(tmp, primes[i]);
 		/* R_q[i] = q mod primes[i] */
-		mpz_mod(mr_y, q, mr_pm1);
-		R_q[i] = mpz_get_ui(mr_y);
+		mpz_mod(y, q, tmp);
+		R_q[i] = mpz_get_ui(y);
 		/* R_p[i] = (2q+1) mod primes[i] */
-		mpz_mul_2exp(p, q, 1L),	mpz_add_ui(p, p, 1L);
-		mpz_mod(mr_y, p, mr_pm1);
-		R_p[i] = mpz_get_ui(mr_y);
+		mpz_mod(y, p, tmp);
+		R_p[i] = mpz_get_ui(y);
 	}
 	
 	while (1)
@@ -283,21 +294,21 @@ void mpz_sprime_test
 		/* Increase $q$ by 2 (incremental prime number generator). */
 		mpz_add_ui(q, q, 2L);
 		
+		/* Increase $p$ by 4 (compute actually $p = 2q + 1$). */
+		mpz_add_ui(p, p, 4L), mpz_add_ui(pm1, pm1, 4L);
+		
 		/* Use the sieve optimization of Note 4.51(ii) [HAC]. */
 		for (i = 0, fail = 0; i < SIEVE_SIZE; i++)
 		{
 			/* Update the sieves. */
 			R_q[i] += 2, R_q[i] %= primes[i], R_p[i] += 4, R_p[i] %= primes[i];
-			/* Check whether R_q[i] or R_p[i] is zero. */
+			/* Check whether R_q[i] or R_p[i] is zero. We cannot break this loop,
+			   because we have to update our sieves completely for the next try. */
 			if (!(R_q[i] && R_p[i]))
 				fail = 1;
 		}
 		if (fail)
 			continue;
-		
-		/* Compute $p = 2q + 1$. */
-		mpz_mul_2exp(mr_pm1, q, 1L);
-		mpz_add_ui(p, mr_pm1, 1L);
 		
 		/* Additional tests? */
 		if (!test(p, q))
@@ -333,12 +344,12 @@ void mpz_sprime_test
 		
 		/* Step 3. [CS00]: Test whether 2 is not a Miller-Rabin witness to the
 		   compositeness of $q$. */
-		if (!mpz_mr_base(q, mr_a))
+		if (mpz_mr_witness(q, a))
 			continue;
 		
 		/* Step 4. [CS00]: Test whether $2^q \equiv \pm 1 \pmod{p}$. */
-		mpz_powm(mr_y, mr_a, q, p);
-		if (!((mpz_cmp_ui(mr_y, 1L) == 0) || (mpz_cmp(mr_y, mr_pm1) == 0)))
+		mpz_powm(y, a, q, p);
+		if ((mpz_cmp_ui(y, 1L) != 0) && (mpz_cmp(y, pm1) != 0))
 			continue;
 		
 		/* Step 5. [CS00]: Apply the Miller-Rabin test to $q$ a defined number
@@ -346,14 +357,14 @@ void mpz_sprime_test
 		if (mpz_probab_prime_p(q, 63))
 			break;
 	}
-	mpz_clear(mr_y), mpz_clear(mr_pm1), mpz_clear(mr_a);
+	mpz_clear(tmp), mpz_clear(y), mpz_clear(pm1), mpz_clear(a);
 	fprintf(stderr, "\n");
 	
 	assert(mpz_probab_prime_p(p, 64));
 	assert(mpz_probab_prime_p(q, 64));
 }
 
-/** A naive generator for safe primes. (slow for $\log_2 p \ge 1024$) */
+/** A naive generator for safe primes (slow for $\log_2 p \ge 1024$). */
 
 void mpz_sprime_test_naive
 	(mpz_ptr p, mpz_ptr q, unsigned long int qsize,
@@ -424,7 +435,7 @@ void mpz_sprime2g
 {
 	/* The additional test is e.g. necessary, if we want 2 as generator
 	   of $\mathbb{QR}_p$. If $p$ is congruent 7 modulo 8, then 2 is a
-	   quadratic residue and hence it will generate the cyclic subgroup 
+	   quadratic residue and hence it will generate the cyclic subgroup
 	   of prime order $q = (p-1)/2$. [RS00] */
 	mpz_sprime_test(p, q, qsize, test2g);
 }
@@ -434,8 +445,8 @@ void mpz_sprime3mod4
 {
 	mpz_t q;
 
-	/* An additional test is necessary, if we want to generate a Blum integer,
-	   i.e. $p, q \equiv 3 \pmod{4}$ for the product of two safe primes. */
+	/* This test is necessary, if we want to construct a Blum integer $n$,
+	   i.e. a number where both factors are primes congruent 3 modulo 4. */
 	mpz_init(q);
 	mpz_sprime_test(p, q, psize - 1L, test3mod4);
 	mpz_clear(q);
