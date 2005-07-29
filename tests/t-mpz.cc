@@ -151,13 +151,13 @@ int main
 	// mpz_sprime vs. mpz_sprime_naive benchmark
 	std::cout << "mpz_sprime() benchmark" << std::endl;
 	start_clock();
-	for (size_t i = 0; i < 10; i++)
+	for (size_t i = 0; i < 50; i++)
 		mpz_sprime(foo, bar, 512);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	std::cout << "mpz_sprime_naive() benchmark" << std::endl;
 	start_clock();
-	for (size_t i = 0; i < 10; i++)
+	for (size_t i = 0; i < 50; i++)
 		mpz_sprime_naive(foo, bar, 512);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
