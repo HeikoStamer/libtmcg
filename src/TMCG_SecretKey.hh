@@ -1,6 +1,9 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
+     Christian Schindelhauer: 'A Toolbox for Mental Card Games',
+     Technical Report A-98-14, University of L{\"u}beck, 1998.
+
      Rosario Gennaro, Daniele Micciancio, Tal Rabin: 
      'An Efficient Non-Interactive Statistical Zero-Knowledge 
       Proof System for Quasi-Safe Prime Products'

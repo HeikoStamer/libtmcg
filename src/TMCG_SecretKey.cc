@@ -1,6 +1,9 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
+     Christian Schindelhauer: 'A Toolbox for Mental Card Games',
+     Technical Report A-98-14, University of L{\"u}beck, 1998.
+
      Rosario Gennaro, Daniele Micciancio, Tal Rabin: 
      'An Efficient Non-Interactive Statistical Zero-Knowledge 
       Proof System for Quasi-Safe Prime Products'
@@ -130,10 +133,11 @@ void TMCG_SecretKey::generate
 	}
 	while ((mpz_sizeinbase(m, 2L) < (keysize + 1L)) || (mpz_cmp(m, bar) >= 0));
 	
-	// choose random y \in NQR^\circ_m for TMCG
+	// choose randomly a small $y \in NQR^\circ_m$ for TMCG
+	mpz_set_ui(y, 1L);
 	do
 	{
-		mpz_srandomm(y, m);
+		mpz_add_ui(y, y, 1L);
 	}
 	while ((mpz_jacobi(y, m) != 1) || mpz_qrmn_p(y, p, q, m));
 	
