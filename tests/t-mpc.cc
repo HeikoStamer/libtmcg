@@ -39,7 +39,7 @@ int main
 	mpc = new StiglicMPC(16, list, 0);
 	
 	MPC_Bit a, b, c, result;
-	bool x, y, z;
+	bool x = false, y = false, z = false;
 	size_t i = 0;
 	
 	std::cout << "BitCommitment" << std::endl;
