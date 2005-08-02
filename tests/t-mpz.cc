@@ -21,13 +21,14 @@
 #include <string>
 #include <sstream>
 #include <cassert>
-#include <time.h>
+#include <ctime>
 
 #include <libTMCG.hh>
 
 #undef NDEBUG
 
 static clock_t start, stop;
+static char buf[50];
 
 static void start_clock
 	(void)
@@ -41,13 +42,12 @@ static void stop_clock
 	stop = clock();
 }
 
-static std::string elapsed_time
+static char *elapsed_time
 	(void)
 {
-	static char buf[50];
-	
-	sprintf(buf, "%8.0fms", (((double) (stop - start)) / CLOCKS_PER_SEC) * 1000);
-	return std::string(buf);
+	snprintf(buf, sizeof(buf), "%8.0fms",
+		(((double) (stop - start)) / CLOCKS_PER_SEC) * 1000);
+	return buf;
 }
 
 int main
