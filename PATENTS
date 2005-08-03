@@ -1,6 +1,7 @@
 Here we list known patents which are related to used techniques or provided
 functionalities of this software. We stress that in some countries the usage
-of LibTMCG may violate claims of these patents and thus is prohibited by law.
+of LibTMCG may be violate the claims of these patents and thus is prohibited
+by law.
 
 * EP0384475 (1990-08-29, SCHNORR CLAUS PETER)
   Method for subscriber identification and for the generation and verification
@@ -13,6 +14,9 @@ of LibTMCG may violate claims of these patents and thus is prohibited by law.
 * JP3001629 (1991-01-08, KURAUSU PEETAA SHIYUNORU)
   METHOD FOR GENERATING AND CONFIRMING MUTUAL IDENTIFICATION AND SIGNATURE
   OF SUBSCRIBER IN DATA EXCHANGE SYSTEM
+
+* US6077161 (2000-06-20, WISLER JAMES M)
+  Multiplayer card games having card plays to foundations
 
 * WO0173694 (2001-10-04, NEFF C ANDREW, VOTEHERE INC)
   VERIFIABLE, SECRET SHUFFLES OF ENCRYPTED DATA, SUCH AS ELGAMAL ENCRYPTED
@@ -28,5 +32,25 @@ of LibTMCG may violate claims of these patents and thus is prohibited by law.
 * US2002078358 (2002-06-20, NEFF C ANDREW et al.)
   Electronic voting system
 
+* EP1259024 (2002-11-20, FURUKAWA JUN, NIPPON ELECTRIC CO)
+  Certified shuffle-decrypting system, certified shuffle-decrypting method
+  and certified shuffle-decryption verifying method
+
+* JP2002344445 (2002-11-29, FURUKAWA JUN, NIPPON ELECTRIC CO)
+  SHUFFLE-DECODING SYSTEM WITH CERTIFICATION AND METHOD THEREFOR, AND
+  SHUFFLE DECODING VERIFICATION METHOD
+
+* US2002181702 (2002-12-05, FURUKAWA JUN, NIPPON ELECTRIC CO)
+  Certified shuffle-decrypting system, certified shuffle-decrypting method
+  and certified shuffle-decryption verifying method
+
+* BE1014397 (2003-10-07, LAUREYSSENS DIRK)
+  Online card game, played using physical or virtual cards via e.g.
+  computer, hand held device or television
+
 * US2005028009 (2005-02-03, NEFF C ANDREW, VOTEHERE INC)
   Verifiable secret shuffles and their application to electronic voting
+
+
+? Secret Electronic Voting in general:
+  http://v3.espacenet.com/results?sf=a&FIRST=1&CY=ep&LG=en&DB=EPODOC&TI=&AB=secret+voting&PN=&AP=&PR=&PD=&PA=&IN=&EC=&IC=&=&=&=&=&=
