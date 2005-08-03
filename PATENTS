@@ -1,0 +1,26 @@
+Here we list known patents which are related to used techniques or provided
+functionalities of this software. We stress that in some countries the usage
+of LibTMCG may violate claims of these patents and thus is prohibited by law.
+
+* EP0384475 (1990-08-29, SCHNORR CLAUS PETER)
+  Method for subscriber identification and for the generation and verification
+  of electronic signatures in a data exchange system
+
+* US4995082 (1991-02-19, SCHNORR CLAUS P)
+  Method for subscriber identification and for the generation and verification
+  of electronic signatures in a data exchange system
+
+* JP3001629 (1991-01-08, KURAUSU PEETAA SHIYUNORU)
+  METHOD FOR GENERATING AND CONFIRMING MUTUAL IDENTIFICATION AND SIGNATURE
+  OF SUBSCRIBER IN DATA EXCHANGE SYSTEM
+
+* WO0173694 (2001-10-04, NEFF C ANDREW, VOTEHERE INC)
+  VERIFIABLE, SECRET SHUFFLES OF ENCRYPTED DATA, SUCH AS ELGAMAL ENCRYPTED
+  DATA FOR SECURE MULTI-AUTHORITY ELECTIONS
+
+* US2002007457 (2002-01-17, NEFF C ANDREW)
+  Verifiable, secret shuffles of encrypted data, such as elgamal encrypted
+  data for secure multi-authority elections
+
+* US2005028009 (2005-02-03, NEFF C ANDREW, VOTEHERE INC)
+  Verifiable secret shuffles and their application to electronic voting
