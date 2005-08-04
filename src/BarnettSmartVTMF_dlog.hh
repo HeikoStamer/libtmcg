@@ -91,6 +91,8 @@ class BarnettSmartVTMF_dlog
 			(std::ostream &out);
 		bool KeyGenerationProtocol_UpdateKey
 			(std::istream &in);
+		bool KeyGenerationProtocol_RemoveKey
+			(std::istream &in);
 		void KeyGenerationProtocol_Finalize
 			();
 		void CP_Prove

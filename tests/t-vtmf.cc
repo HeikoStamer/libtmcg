@@ -28,7 +28,7 @@
 int main
 	(int argc, char **argv)
 {
-	std::stringstream lej, lej2, foo, foo2;
+	std::stringstream lej, lej2, foo, foo2, bar;
 	std::string v;
 	mpz_t a, b, c, d, e;
 	mpz_t *array;
@@ -89,8 +89,10 @@ int main
 	vtmf2->KeyGenerationProtocol_GenerateKey();
 	vtmf->KeyGenerationProtocol_PublishKey(foo);
 	vtmf2->KeyGenerationProtocol_PublishKey(foo2);
+	std::cout << "*.KeyGenerationProtocol_UpdateKey()" << std::endl;
 	assert(vtmf->KeyGenerationProtocol_UpdateKey(foo2));
 	assert(vtmf2->KeyGenerationProtocol_UpdateKey(foo));
+	std::cout << "*.KeyGenerationProtocol_Finalize()" << std::endl;
 	vtmf->KeyGenerationProtocol_Finalize();
 	vtmf2->KeyGenerationProtocol_Finalize();
 	
@@ -101,6 +103,7 @@ int main
 	TMCG_OpenStack<VTMF_Card> os, os2;
 	TMCG_Stack<VTMF_Card> sA, sAB, sB;
 	TMCG_StackSecret<VTMF_CardSecret> ssA, ssB;
+	std::cout << " CreateOpenCard()" << std::endl;
 	for (size_t i = 0; i < 256; i++)
 	{
 		VTMF_Card c;
@@ -112,10 +115,13 @@ int main
 	{
 		assert(sA[i] == os[i].second);
 	}
+	std::cout << " MixStack()" << std::endl;
 	tmcg->TMCG_CreateStackSecret(ssA, false, sA.size(), vtmf);
 	tmcg->TMCG_MixStack(sA, sAB, ssA, vtmf);
+	std::cout << " MixStack()" << std::endl;
 	tmcg->TMCG_CreateStackSecret(ssB, false, sAB.size(), vtmf2);
 	tmcg->TMCG_MixStack(sAB, sB, ssB, vtmf2);
+	std::cout << " TypeOfCard() = " << std::flush;
 	for (size_t i = 0; i < sB.size(); i++)
 	{
 		std::stringstream proofA, proofB;
@@ -139,6 +145,11 @@ int main
 	std::cout << std::endl;
 	
 	delete tmcg;
+	
+	std::cout << "*.KeyGenerationProtocol_RemoveKey()" << std::endl;
+	vtmf2->KeyGenerationProtocol_PublishKey(bar);
+	assert(vtmf->KeyGenerationProtocol_RemoveKey(bar));
+	assert(!mpz_cmp(vtmf->h, vtmf->h_i));
 	
 	// release the instances
 	delete vtmf, delete vtmf2;

@@ -254,6 +254,48 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 	}
 }
 
+bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_RemoveKey
+	(std::istream &in)
+{
+	mpz_t foo, t;
+	
+	mpz_init(foo), mpz_init(t);
+	in >> foo >> t >> t;
+	
+	try
+	{
+		std::ostringstream fp;
+		
+		// compute the fingerprint
+		mpz_shash(t, 1, foo);
+		fp << t;
+		
+		// public key with this fingerprint stored?
+		if (h_j.find(fp.str()) != h_j.end())
+		{
+			// update the global key
+			assert(mpz_invert(foo, h_j[fp.str()], p));
+			mpz_invert(foo, h_j[fp.str()], p);
+			mpz_mul(h, h, foo);
+			mpz_mod(h, h, p);
+			
+			// release the public key
+			mpz_clear(h_j[fp.str()]);
+			h_j.erase(fp.str());
+			
+			// finish
+			throw true;
+		}
+		else
+			throw false;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo), mpz_clear(t);
+		return return_value;
+	}
+}
+
 void BarnettSmartVTMF_dlog::KeyGenerationProtocol_Finalize
 	()
 {
