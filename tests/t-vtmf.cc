@@ -137,7 +137,7 @@ int main
 		assert(tmcg->TMCG_VerifyCardSecret(sB[i], vtmf2, proofA, proofA));
 		typeB = tmcg->TMCG_TypeOfCard(sB[i], vtmf2);
 		
-		std::cout << typeA << " ";
+		std::cout << typeA << " " << std::flush;
 		
 		assert(typeA == typeB);
 		assert((typeA >= 0) && (typeA < 256));
