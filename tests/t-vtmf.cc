@@ -28,7 +28,7 @@
 int main
 	(int argc, char **argv)
 {
-	std::stringstream lej, lej2, foo, foo2, bar;
+	std::stringstream oak, lej, lej2, foo, foo2, bar;
 	std::string v;
 	mpz_t a, b, c, d, e;
 	mpz_t *array;
@@ -36,6 +36,16 @@ int main
 	
 	BarnettSmartVTMF_dlog *vtmf, *vtmf2;
 	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(d), mpz_init(e);
+	
+	// create and check the instance
+	oak << "n0p2ftq59aofqlrjexdmhww37nsdo5636jq09opxoq8amvlodjflhsspl\
+5jzlgnlg0brgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9\
+623r7y6j0m4yj3304o731yt2xooyxw5npftk5yn9fj3m26mjjku1mbn3405h45cz8etbz";
+	std::cout << "BarnettSmartVTMF_dlog(<Oakley Group 2>)" << std::endl;
+	vtmf = new BarnettSmartVTMF_dlog(oak);
+	std::cout << "vtmf.CheckGroup()" << std::endl;
+	assert(vtmf->CheckGroup());
+	delete vtmf;
 	
 	// create and check the instance
 	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;

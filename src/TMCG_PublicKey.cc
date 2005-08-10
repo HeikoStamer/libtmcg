@@ -145,6 +145,7 @@ bool TMCG_PublicKey::check
 		// get security parameter of STAGE1
 		if (gs(s, '^').length() == 0)
 			throw false;
+		
 		stage1_size = strtoul(gs(s, '^').c_str(), &ec, 10);
 		if ((*ec != '\0') || (stage1_size <= 0) || (!nx(s, '^')))
 			throw false;
