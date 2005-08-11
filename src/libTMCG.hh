@@ -1,5 +1,5 @@
 /*******************************************************************************
-   libTMCG.hh, general header file of the library
+   libTMCG.hh, the general header file of the library
 
    This file is part of libTMCG.
 
