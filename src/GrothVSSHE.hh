@@ -53,6 +53,26 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
+class nWay_PedersenCommitmentScheme
+{
+	private:
+		mpz_t										*fpowm_table_h;
+		std::vector<mpz_t*>			fpowm_table_g;
+		
+	public:
+		mpz_t										p, q, h, pm1dq;
+		std::vector<mpz_ptr>		g;
+
+	nWay_PedersenCommitmentScheme
+		(size_t n,
+		unsigned long int fieldsize = TMCG_DDH_SIZE,
+		unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+	
+	
+	~nWay_PedersenCommitmentScheme
+		();
+};
+
 class GrothVSSHE
 {
 	private:

@@ -32,7 +32,7 @@
 #include "mpz_sprime.h"
 
 #define PRIMES_SIZE 668
-#define SIEVE_SIZE 10
+#define SIEVE_SIZE 8
 unsigned long int primes[] = {
 	3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43,
 	47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101,
@@ -205,9 +205,9 @@ int test3mod4
 }
 
 /** Miller-Rabin witness test, basically algorithm 4.24 [HAC], for a
-    given base.
+    fixed base.
 
-    @returns 1, if the @a base is a Miller-Rabin witness to the
+    @returns 1, if the number @a base is a Miller-Rabin witness to the
                 compositness of @a n.
     @returns 0, otherwise. */
 
@@ -269,7 +269,7 @@ void mpz_sprime_test
 	
 	mpz_init(tmp), mpz_init(y), mpz_init(pm1), mpz_init_set_ui(a, 2L);
 	
-	/* Step 1. [CS00]: choose a random odd number $q$ of appropriate size */
+	/* Step 1. [CS00]: choose randomly an odd number $q$ of appropriate size */
 	do
 		mpz_srandomb(q, qsize);
 	while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
@@ -294,10 +294,10 @@ void mpz_sprime_test
 		/* Increase $q$ by 2 (incremental prime number generator). */
 		mpz_add_ui(q, q, 2L);
 		
-		/* Increase $p$ by 4 (compute actually $p = 2q + 1$). */
+		/* Increase $p$ by 4 (actually compute $p = 2q + 1$). */
 		mpz_add_ui(p, p, 4L), mpz_add_ui(pm1, pm1, 4L);
 		
-		/* Use the sieve optimization of Note 4.51(ii) [HAC]. */
+		/* Use the sieve optimization procedure of Note 4.51(ii) [HAC]. */
 		for (i = 0, fail = 0; i < SIEVE_SIZE; i++)
 		{
 			/* Update the sieves. */
@@ -337,7 +337,7 @@ void mpz_sprime_test
 		if (i < PRIMES_SIZE)
 			continue;
 		
-		/* Optimization: first a single test for $q$ */
+		/* Optimization: do a single test for $q$ first */
 		if (!mpz_probab_prime_p(q, 1))
 			continue;
 		fprintf(stderr, ".");
@@ -372,7 +372,7 @@ void mpz_sprime_test_naive
 {
 	size_t i = 0;
 	
-	/* Choose a random odd number $q$ of appropriate size. */
+	/* Choose randomly an odd number $q$ of appropriate size. */
 	do
 		mpz_srandomb(q, qsize);
 	while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
@@ -450,4 +450,31 @@ void mpz_sprime3mod4
 	mpz_init(q);
 	mpz_sprime_test(p, q, psize - 1L, test3mod4);
 	mpz_clear(q);
+}
+
+void mpz_lprime
+	(mpz_ptr p, mpz_ptr q, mpz_ptr pm1dq,
+	unsigned long int psize, unsigned long int qsize)
+{
+	assert(psize > qsize);
+	
+	/* Choose randomly a prime number $q$ of appropriate size. */
+	do
+		mpz_srandomb(q, qsize);
+	while ((mpz_sizeinbase(q, 2L) < qsize) || !mpz_probab_prime_p(q, 64));
+	
+	do
+	{
+		/* Choose randomly a number $k$ and compute $p:= qk + 1$. */
+		mpz_srandomb(pm1dq, psize - qsize);
+		mpz_mul(p, q, pm1dq);
+		mpz_add_ui(p, p, 1L);
+		
+		fprintf(stderr, ".");
+	}
+	while (!mpz_probab_prime_p(p, 64));
+	fprintf(stderr, "\n");
+	
+	assert(mpz_probab_prime_p(p, 64));
+	assert(mpz_probab_prime_p(q, 64));
 }

@@ -158,13 +158,30 @@ int main
 	{
 		mpz_sprime(foo, bar, 1024);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_probab_prime_p(bar, 64));
+		mpz_mul_2exp(foo2, bar, 1L);
+		mpz_add_ui(foo2, foo2, 1L);
+		assert(!mpz_cmp(foo, foo2));
 		
 		mpz_sprime2g(foo, bar, 1024);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_probab_prime_p(bar, 64) &&
 			mpz_congruent_ui_p(foo, 7L, 8L));
+		mpz_mul_2exp(foo2, bar, 1L);
+		mpz_add_ui(foo2, foo2, 1L);
+		assert(!mpz_cmp(foo, foo2));
 		
 		mpz_sprime3mod4(foo, 1024);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_congruent_ui_p(foo, 3L, 4L));
+	}
+	
+	// mpz_lprime
+	std::cout << "mpz_lprime()" << std::endl;
+	for (size_t i = 0; i < 5; i++)
+	{
+		mpz_lprime(foo, bar, bar2, 1024, 160);
+		assert(mpz_probab_prime_p(foo, 64) && mpz_probab_prime_p(bar, 64));
+		mpz_mul(foo2, bar, bar2);
+		mpz_add_ui(foo2, foo2, 1L);
+		assert(!mpz_cmp(foo, foo2));
 	}
 	
 	// mpz_sprime vs. mpz_sprime_naive benchmark
