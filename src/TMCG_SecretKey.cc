@@ -133,7 +133,7 @@ void TMCG_SecretKey::generate
 	}
 	while ((mpz_sizeinbase(m, 2L) < (keysize + 1L)) || (mpz_cmp(m, bar) >= 0));
 	
-	// choose randomly a small $y \in NQR^\circ_m$ for TMCG
+	// choose a small $y \in NQR^\circ_m$ for fast TMCG encoding
 	mpz_set_ui(y, 1L);
 	do
 	{
