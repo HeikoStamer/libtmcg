@@ -31,8 +31,8 @@ nWay_PedersenCommitmentScheme::nWay_PedersenCommitmentScheme
 	assert(n >= 1);
 	
 	// Initalize and choose the parameters of the commitment scheme.
-	mpz_init(p), mpz_init(q), mpz_init_set_ui(h, 1L), mpz_init(pm1dq);
-	mpz_lprime(p, q, pm1dq, fieldsize, subgroupsize);
+	mpz_init(p), mpz_init(q), mpz_init_set_ui(h, 1L), mpz_init(k);
+	mpz_lprime(p, q, k, fieldsize, subgroupsize);
 	for (size_t i = 0; i <= n; i++)
 	{
 		mpz_ptr tmp = new mpz_t();
@@ -41,7 +41,7 @@ nWay_PedersenCommitmentScheme::nWay_PedersenCommitmentScheme
 		do
 		{
 			mpz_srandomm(tmp, p);
-			mpz_powm(tmp, tmp, pm1dq, p);
+			mpz_powm(tmp, tmp, k, p);
 		}
 		while (mpz_congruent_p(tmp, h, p));
 		
@@ -60,22 +60,66 @@ nWay_PedersenCommitmentScheme::nWay_PedersenCommitmentScheme
 	}
 	
 	// Do the precomputation for the fast exponentiation.
-	for (size_t i = 0; i < n; i++)
+	for (size_t i = 0; i < g.size(); i++)
 	{
 		mpz_t *tmp = new mpz_t[TMCG_MAX_FPOWM_T]();
 		mpz_fpowm_init(tmp);
-		mpz_fpowm_precompute(tmp, g[i], p, mpz_sizeinbase(p, 2L));
+		mpz_fpowm_precompute(tmp, g[i], p, mpz_sizeinbase(q, 2L));
 		fpowm_table_g.push_back(tmp);
 	}
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
 	mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(p, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+nWay_PedersenCommitmentScheme::nWay_PedersenCommitmentScheme
+	(size_t n, std::istream &in)
+{
+	assert(n >= 1);
+	
+	// Initalize the parameters of the commitment scheme.
+	mpz_init(p), mpz_init(q), mpz_init(h), mpz_init(k);
+	in >> q >> k >> h;
+	mpz_mul(p, q, k), mpz_add_ui(p, p, 1L); // compute p := qk + 1
+	for (size_t i = 0; i < n; i++)
+	{
+		mpz_ptr tmp = new mpz_t();
+		mpz_init(tmp);
+		in >> tmp;
+		g.push_back(tmp);
+	}
+	
+	// Do the precomputation for the fast exponentiation.
+	for (size_t i = 0; i < g.size(); i++)
+	{
+		mpz_t *tmp = new mpz_t[TMCG_MAX_FPOWM_T]();
+		mpz_fpowm_init(tmp);
+		mpz_fpowm_precompute(tmp, g[i], p, mpz_sizeinbase(q, 2L));
+		fpowm_table_g.push_back(tmp);
+	}
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+bool nWay_PedersenCommitmentScheme::CheckGroup
+	(unsigned long int fieldsize, unsigned long int subgroupsize)
+{
+
+}
+
+void nWay_PedersenCommitmentScheme::PublishGroup
+	(std::ostream &out)
+{
+	out << q << std::endl << k << std::endl << h << std::endl;
+	for (size_t i = 0; i < g.size(); i++)
+		out << g[i] << std::endl;
 }
 
 nWay_PedersenCommitmentScheme::~nWay_PedersenCommitmentScheme
 	()
 {
-	mpz_clear(p), mpz_clear(q), mpz_clear(h), mpz_clear(pm1dq);
+	mpz_clear(p), mpz_clear(q), mpz_clear(h), mpz_clear(k);
 	for (size_t i = 0; i < g.size(); i++)
 	{
 			mpz_clear(g[i]);

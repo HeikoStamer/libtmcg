@@ -50,7 +50,7 @@
 			void mpz_sprime3mod4
 				(mpz_ptr p, unsigned long int psize);
 			void mpz_lprime
-				(mpz_ptr p, mpz_ptr q, mpz_ptr pm1dq,
+				(mpz_ptr p, mpz_ptr q, mpz_ptr k,
 				unsigned long int psize, unsigned long int qsize);
 	#if defined(__cplusplus)
 		}

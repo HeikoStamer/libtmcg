@@ -56,18 +56,24 @@
 class nWay_PedersenCommitmentScheme
 {
 	private:
-		mpz_t										*fpowm_table_h;
+		mpz_t						*fpowm_table_h;
 		std::vector<mpz_t*>			fpowm_table_g;
 		
 	public:
-		mpz_t										p, q, h, pm1dq;
+		mpz_t						p, q, h, k;
 		std::vector<mpz_ptr>		g;
 
 	nWay_PedersenCommitmentScheme
 		(size_t n,
 		unsigned long int fieldsize = TMCG_DDH_SIZE,
 		unsigned long int subgroupsize = TMCG_DLSE_SIZE);
-	
+	nWay_PedersenCommitmentScheme
+		(size_t n, std::istream &in);
+	bool CheckGroup
+		(unsigned long int fieldsize = TMCG_DDH_SIZE,
+		unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+	void PublishGroup
+		(std::ostream &out);
 	
 	~nWay_PedersenCommitmentScheme
 		();

@@ -182,6 +182,8 @@ int main
 		mpz_mul(foo2, bar, bar2);
 		mpz_add_ui(foo2, foo2, 1L);
 		assert(!mpz_cmp(foo, foo2));
+		mpz_gcd(foo2, bar, bar2);
+		assert(!mpz_cmp_ui(foo2, 1L));
 	}
 	
 	// mpz_sprime vs. mpz_sprime_naive benchmark

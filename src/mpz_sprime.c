@@ -453,9 +453,11 @@ void mpz_sprime3mod4
 }
 
 void mpz_lprime
-	(mpz_ptr p, mpz_ptr q, mpz_ptr pm1dq,
+	(mpz_ptr p, mpz_ptr q, mpz_ptr k,
 	unsigned long int psize, unsigned long int qsize)
 {
+	mpz_t foo;
+	
 	assert(psize > qsize);
 	
 	/* Choose randomly a prime number $q$ of appropriate size. */
@@ -463,16 +465,19 @@ void mpz_lprime
 		mpz_srandomb(q, qsize);
 	while ((mpz_sizeinbase(q, 2L) < qsize) || !mpz_probab_prime_p(q, 64));
 	
+	mpz_init(foo);
 	do
 	{
 		/* Choose randomly a number $k$ and compute $p:= qk + 1$. */
-		mpz_srandomb(pm1dq, psize - qsize);
-		mpz_mul(p, q, pm1dq);
+		mpz_srandomb(k, psize - qsize);
+		mpz_mul(p, q, k);
 		mpz_add_ui(p, p, 1L);
-		
+		/* Check wether $k$ and $q$ are coprime, i.e. $gcd(k, q) = 1$. */
+		mpz_gcd(foo, k, q);
 		fprintf(stderr, ".");
 	}
-	while (!mpz_probab_prime_p(p, 64));
+	while (mpz_cmp_ui(foo, 1L) || !mpz_probab_prime_p(p, 64));
+	mpz_clear(foo);
 	fprintf(stderr, "\n");
 	
 	assert(mpz_probab_prime_p(p, 64));
