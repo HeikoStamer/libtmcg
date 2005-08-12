@@ -57,7 +57,7 @@ rgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9623r7y6j0m4yj33\
 	std::cout << "vtmf.PublishGroup(lej)" << std::endl;
 	vtmf->PublishGroup(lej);
 	
-	// create a cloned instance
+	// create a clone of the instance
 	std::cout << "BarnettSmartVTMF_dlog(lej)" << std::endl;
 	vtmf2 = new BarnettSmartVTMF_dlog(lej);
 	

@@ -105,7 +105,39 @@ nWay_PedersenCommitmentScheme::nWay_PedersenCommitmentScheme
 bool nWay_PedersenCommitmentScheme::CheckGroup
 	(unsigned long int fieldsize, unsigned long int subgroupsize)
 {
-
+	mpz_t foo;
+	
+	mpz_init(foo);
+	try
+	{
+		// Check whether $p$ and $q$ are prime
+		if (!mpz_probab_prime_p(p, 64) || !mpz_probab_prime_p(q, 64))
+			throw false;
+		
+		// Check whether $q$ is not a divisor of $k$
+		mpz_gcd(foo, q, k);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		
+		// Check whether the elements $h, g_1, \ldots, g_n$ are of order $q$
+		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		for (size_t i = 0; i < g.size(); i++)
+		{
+			mpz_fpowm(fpowm_table_g[i], foo, g[i], q, p);
+			if (mpz_cmp_ui(foo, 1L))
+				throw false;
+		}
+		
+		// anything is sound
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo);
+		return return_value;
+	}
 }
 
 void nWay_PedersenCommitmentScheme::PublishGroup

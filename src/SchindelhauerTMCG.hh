@@ -58,6 +58,7 @@
 	#include "TMCG_StackSecret.hh"
 	
 	#include "BarnettSmartVTMF_dlog.hh"
+	#include "GrothVSSHE.hh"
 	#include "mpz_srandom.h"
 	#include "mpz_sqrtm.h"
 
