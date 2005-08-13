@@ -468,8 +468,10 @@ void mpz_lprime
 	mpz_init(foo);
 	do
 	{
-		/* Choose randomly a number $k$ and compute $p:= qk + 1$. */
+		/* Choose randomly an even number $k$ and compute $p:= qk + 1$. */
 		mpz_srandomb(k, psize - qsize);
+		if (mpz_odd_p(k))
+			mpz_add_ui(k, k, 1L);
 		mpz_mul(p, q, k);
 		mpz_add_ui(p, p, 1L);
 		/* Check wether $k$ and $q$ are coprime, i.e. $gcd(k, q) = 1$. */

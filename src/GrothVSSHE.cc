@@ -110,16 +110,16 @@ bool nWay_PedersenCommitmentScheme::CheckGroup
 	mpz_init(foo);
 	try
 	{
-		// Check whether $p$ and $q$ are prime
+		// Check whether $p$ and $q$ are prime.
 		if (!mpz_probab_prime_p(p, 64) || !mpz_probab_prime_p(q, 64))
 			throw false;
 		
-		// Check whether $q$ is not a divisor of $k$
+		// Check whether $q$ is not a divisor of $k$, i.e. $q$ and $k$ are coprime.
 		mpz_gcd(foo, q, k);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 		
-		// Check whether the elements $h, g_1, \ldots, g_n$ are of order $q$
+		// Check whether the elements $h, g_1, \ldots, g_n$ are of order $q$.
 		mpz_fpowm(fpowm_table_h, foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
@@ -128,6 +128,20 @@ bool nWay_PedersenCommitmentScheme::CheckGroup
 			mpz_fpowm(fpowm_table_g[i], foo, g[i], q, p);
 			if (mpz_cmp_ui(foo, 1L))
 				throw false;
+		}
+		
+		// Check whether the elements $h, g_1, \ldots, g_n$ are different and non-trivial.
+		if (!mpz_cmp_ui(h, 1L))
+			throw false;
+		for (size_t i = 0; i < g.size(); i++)
+		{
+			if (!mpz_cmp_ui(g[i], 1L) || !mpz_cmp(g[i], h))
+				throw false;
+			for (size_t j = (i + 1); j < g.size(); j++)
+			{
+				if (!mpz_cmp(g[i], g[j]))
+					throw false;
+			}	
 		}
 		
 		// anything is sound
@@ -146,6 +160,58 @@ void nWay_PedersenCommitmentScheme::PublishGroup
 	out << q << std::endl << k << std::endl << h << std::endl;
 	for (size_t i = 0; i < g.size(); i++)
 		out << g[i] << std::endl;
+}
+
+void nWay_PedersenCommitmentScheme::Commit
+	(mpz_ptr c, mpz_ptr r, std::vector<mpz_ptr> m)
+{
+	assert(m.size() == g.size());
+	
+	// Choose a randomizer from $\mathbb{Z}_q$
+	mpz_srandomm(r, q);
+	
+	// Compute the commitment $c := g_1^{m_1} \cdots g_n^{m_n} h^r \bmod p$
+	mpz_t tmp;
+	mpz_init(tmp);
+	mpz_fspowm(fpowm_table_h, c, h, r, p);
+	for (size_t i = 0; i < g.size(); i++)
+	{
+		mpz_fspowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+		mpz_mul(c, c, tmp);
+		mpz_mod(c, c, p);
+	}
+	mpz_clear(tmp);
+}
+
+bool nWay_PedersenCommitmentScheme::Verify
+	(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m)
+{
+	assert(m.size() == g.size());
+	
+	mpz_t tmp, c2;
+	mpz_init(tmp), mpz_init(c2);
+	try
+	{
+		// Compute the commitment $c' := g_1^{m_1} \cdots g_n^{m_n} h^r \bmod p$
+		mpz_fpowm(fpowm_table_h, c2, h, r, p);
+		for (size_t i = 0; i < g.size(); i++)
+		{
+			mpz_fpowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+			mpz_mul(c2, c2, tmp);
+			mpz_mod(c2, c2, p);
+		}
+		
+		// Verify the commitment: 1. $c\in\mathbb{Z}_p$ and 2. $c = c'$
+		if ((mpz_cmp(c, p) >= 1) || mpz_cmp(c, c2))
+			throw false;
+		
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(tmp), mpz_clear(c2);
+		return return_value;
+	}
 }
 
 nWay_PedersenCommitmentScheme::~nWay_PedersenCommitmentScheme

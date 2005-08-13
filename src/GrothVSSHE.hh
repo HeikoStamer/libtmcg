@@ -74,7 +74,10 @@ class nWay_PedersenCommitmentScheme
 		unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 	void PublishGroup
 		(std::ostream &out);
-	
+	void Commit
+		(mpz_ptr c, mpz_ptr r, std::vector<mpz_ptr> m);
+	bool Verify
+		(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m);
 	~nWay_PedersenCommitmentScheme
 		();
 };
