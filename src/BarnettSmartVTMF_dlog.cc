@@ -61,7 +61,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(p, 2L));
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
@@ -88,7 +88,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(p, 2L));
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
 bool BarnettSmartVTMF_dlog::CheckGroup
@@ -300,7 +300,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_Finalize
 	()
 {
 	// Do some precomputations for the fast exponentiation.
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(p, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 void BarnettSmartVTMF_dlog::CP_Prove
