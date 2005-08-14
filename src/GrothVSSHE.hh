@@ -97,6 +97,10 @@ class GrothSKC
 			(size_t n, size_t ell_e,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		GrothSKC
+			(size_t n, size_t ell_e, std::istream &in);
+		bool CheckGroup
+			();
 		void Prove_interactive
 			(const std::vector<size_t> &pi, mpz_srcptr r, mpz_srcptr c,
 			const std::vector<mpz_ptr> &m,
@@ -125,6 +129,10 @@ class GrothVSSHE
 			mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		GrothVSSHE
+			(size_t n, size_t ell_e,
+			mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC,
+			std::istream &in);
 		void Prove_interactive
 			(const std::vector<size_t> &pi, const std::vector<mpz_ptr> &R,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,

@@ -272,18 +272,267 @@ GrothSKC::GrothSKC
 	
 }
 
+GrothSKC::GrothSKC
+	(size_t n, size_t ell_e, std::istream &in):
+		l_e(ell_e)
+{
+	com = new nWay_PedersenCommitmentScheme(n, in);
+	
+}
+
+bool GrothSKC::CheckGroup
+	()
+{
+	return com->CheckGroup();
+}
+
 void GrothSKC::Prove_interactive
 	(const std::vector<size_t> &pi, mpz_srcptr r, mpz_srcptr c,
 	const std::vector<mpz_ptr> &m,
 	std::istream &in, std::ostream &out)
 {
+	assert(com->g.size() == pi.size());
+	assert(pi.size() == m.size());
+	
+	mpz_t x, r_d, r_Delta, r_a, c_d, c_Delta, c_a, e, z, z_Delta, foo, bar;
+	std::vector<mpz_ptr> d, Delta, a, f, f_Delta, lej;
+	
+	// initalize
+	mpz_init(x), mpz_init(r_d), mpz_init(r_Delta), mpz_init(r_a), mpz_init(c_d),
+		mpz_init(c_Delta), mpz_init(c_a), mpz_init(e), mpz_init(z),
+		mpz_init(z_Delta), mpz_init(foo), mpz_init(bar);
+	for (size_t i = 0; i < com->g.size(); i++)
+	{
+		mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(),
+			tmp4 = new mpz_t(), tmp5 = new mpz_t(), tmp6 = new mpz_t();
+		mpz_init(tmp), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4),
+			mpz_init(tmp5), mpz_init(tmp6);
+		d.push_back(tmp), Delta.push_back(tmp2), a.push_back(tmp3),
+			f.push_back(tmp4), f_Delta.push_back(tmp5), lej.push_back(tmp6);
+	}
+	
+	// prover: first move
+	in >> x;
+// TODO: check whether $x$ is from $\{0, 1\}^{\ell_e}$
+	
+	// prover: second move
+	mpz_srandomm(r_d, com->q);
+	mpz_srandomm(r_Delta, com->q);
+	for (size_t i = 0; i < d.size(); i++)
+		mpz_srandomm(d[i], com->q);
+	mpz_set(Delta[0], d[0]);
+	for (size_t i = 1; i < (Delta.size() - 1); i++)
+		mpz_srandomm(Delta[i], com->q);
+	mpz_set_ui(Delta[Delta.size() - 1], 0L);
+	for (size_t i = 0; i < a.size(); i++)
+	{
+		mpz_set_ui(a[i], 1L);
+		for (size_t j = 0; j < i; j++)
+		{
+			mpz_sub(foo, m[pi[j]], x);
+			mpz_mul(a[i], a[i], foo);
+			mpz_mod(a[i], a[i], com->q);
+		}
+	}
+	mpz_srandomm(r_a, com->q);
+	com->CommitBy(c_d, r_d, d);
+	for (size_t i = 0; i < lej.size(); i++)
+	{
+		if (i < (lej.size() - 1))
+		{
+			mpz_set(foo, Delta[i]);
+			mpz_neg(foo, foo);
+			mpz_mul(lej[i], foo, d[i + 1]);
+			mpz_mod(lej[i], lej[i], com->q);
+		}
+		else
+			mpz_set_ui(lej[i], 0L);
+	}
+	com->CommitBy(c_Delta, r_Delta, lej);
+	for (size_t i = 0; i < lej.size(); i++)
+	{
+		if (i < (lej.size() - 1))
+		{
+			mpz_set(foo, Delta[i + 1]);
+			mpz_sub(bar, m[pi[i + 1]], x);
+			mpz_mod(bar, bar, com->q);
+			mpz_mul(bar, bar, Delta[i]);
+			mpz_mod(bar, bar, com->q);
+			mpz_sub(foo, foo, bar);
+			mpz_mod(foo, foo, com->q);
+			mpz_mul(bar, a[i], d[i + 1]);
+			mpz_mod(bar, bar, com->q);
+			mpz_sub(foo, foo, bar);
+			mpz_mod(foo, foo, com->q);
+			mpz_set(lej[i], foo);
+		}
+		else
+			mpz_set_ui(lej[i], 0L);
+	}
+	com->CommitBy(c_a, r_a, lej);
+	out << c_d << std::endl << c_Delta << std::endl << c_a << std::endl;
+	
+	// prover: third move
+	in >> e;
+// TODO: check whether $x$ is from $\{0, 1\}^{\ell_e}$
+	
+	// prover: fourth move
+	for (size_t i = 0; i < f.size(); i++)
+	{
+		mpz_mul(f[i], e, m[pi[i]]);
+		mpz_mod(f[i], f[i], com->q);
+		mpz_add(f[i], f[i], d[i]);
+		mpz_mod(f[i], f[i], com->q);
+	}
+	mpz_mul(z, e, r);
+	mpz_mod(z, z, com->q);
+	mpz_add(z, z, r_d);
+	mpz_mod(z, z, com->q);
+	for (size_t i = 0; i < (f_Delta.size() - 1); i++)
+	{
+		mpz_set(foo, Delta[i + 1]);
+		mpz_sub(bar, m[pi[i + 1]], x);
+		mpz_mod(bar, bar, com->q);
+		mpz_mul(bar, bar, Delta[i]);
+		mpz_mod(bar, bar, com->q);
+		mpz_sub(foo, foo, bar);
+		mpz_mod(foo, foo, com->q);
+		mpz_mul(bar, a[i], d[i + 1]);
+		mpz_mod(bar, bar, com->q);
+		mpz_sub(foo, foo, bar);
+		mpz_mod(foo, foo, com->q);
+		mpz_mul(foo, foo, e);
+		mpz_mod(foo, foo, com->q);
+		mpz_mul(bar, Delta[i], d[i + 1]);
+		mpz_mod(bar, bar, com->q);
+		mpz_sub(foo, foo, bar);
+		mpz_mod(foo, foo, com->q);
+		mpz_set(f_Delta[i], foo);
+	}
+	mpz_mul(z_Delta, e, r_a);
+	mpz_mod(z_Delta, z_Delta, com->q);
+	mpz_add(z_Delta, z_Delta, r_Delta);
+	mpz_mod(z_Delta, z_Delta, com->q);
+	for (size_t i = 0; i < f.size(); i++)
+		out << f[i] << std::endl;
+	out << z << std::endl;
+	for (size_t i = 0; i < (f_Delta.size() - 1); i++)
+		out << f_Delta[i] << std::endl;
+	out << z_Delta << std::endl;
+	
+	// release
+	mpz_clear(x), mpz_clear(r_d), mpz_clear(r_Delta), mpz_clear(r_a),
+		mpz_clear(c_d), mpz_clear(c_Delta), mpz_clear(c_a), mpz_clear(e),
+		mpz_clear(z), mpz_clear(z_Delta), mpz_clear(foo), mpz_clear(bar);
+	for (size_t i = 0; i < d.size(); i++)
+	{
+		mpz_clear(d[i]);
+		delete d[i];
+	}
+	d.clear();
+	for (size_t i = 0; i < f.size(); i++)
+	{
+		mpz_clear(Delta[i]);
+		delete Delta[i];
+	}
+	Delta.clear();
+	for (size_t i = 0; i < a.size(); i++)
+	{
+		mpz_clear(a[i]);
+		delete a[i];
+	}
+	a.clear();
+	for (size_t i = 0; i < f.size(); i++)
+	{
+		mpz_clear(f[i]);
+		delete f[i];
+	}
+	f.clear();
+	for (size_t i = 0; i < f_Delta.size(); i++)
+	{
+		mpz_clear(f_Delta[i]);
+		delete f_Delta[i];
+	}
+	f_Delta.clear();
+	for (size_t i = 0; i < lej.size(); i++)
+	{
+		mpz_clear(lej[i]);
+		delete lej[i];
+	}
+	lej.clear();
 }
 
 bool GrothSKC::Verify_interactive
 	(mpz_srcptr c, const std::vector<mpz_ptr> &m,
 	std::istream &in, std::ostream &out)
 {
-	return true;
+	assert(com->g.size() == m.size());
+	
+	// initalize
+	mpz_t x, c_d, c_Delta, c_a, e, z, z_Delta, foo, bar;
+	std::vector<mpz_ptr> f, f_Delta, lej;
+	mpz_init(x), mpz_init(c_d), mpz_init(c_Delta), mpz_init(c_a), mpz_init(e),
+		mpz_init(z), mpz_init(z_Delta), mpz_init(foo), mpz_init(bar);
+	for (size_t i = 0; i < com->g.size(); i++)
+	{
+		mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
+		mpz_init(tmp), mpz_init(tmp2), mpz_init(tmp3);
+		f.push_back(tmp), f_Delta.push_back(tmp2), lej.push_back(tmp3);
+	}
+	
+	try
+	{
+		// verifier: first move
+		mpz_srandomb(x, l_e);
+		out << x << std::endl;
+		
+		// verifier: second move
+		in >> c_d >> c_Delta >> c_a;
+		
+		// verifier: third move
+		mpz_srandomb(e, l_e);
+		out << e << std::endl;
+		
+		// verifier: fourth move
+		for (size_t i = 0; i < f.size(); i++)
+			in >> f[i];
+		in >> z;
+		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
+			in >> f_Delta[i];
+		in >> z_Delta;
+
+// TODO
+		
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(x), mpz_clear(c_d), mpz_clear(c_Delta), mpz_clear(c_a),
+			mpz_clear(e), mpz_clear(z), mpz_clear(z_Delta), mpz_clear(foo),
+			mpz_clear(bar);
+		for (size_t i = 0; i < f.size(); i++)
+		{
+			mpz_clear(f[i]);
+			delete f[i];
+		}
+		f.clear();
+		for (size_t i = 0; i < f_Delta.size(); i++)
+		{
+			mpz_clear(f_Delta[i]);
+			delete f_Delta[i];
+		}
+		f_Delta.clear();
+		for (size_t i = 0; i < lej.size(); i++)
+		{
+			mpz_clear(lej[i]);
+			delete lej[i];
+		}
+		lej.clear();
+		
+		// return
+		return return_value;
+	}
 }
 
 GrothSKC::~GrothSKC
@@ -300,10 +549,32 @@ GrothVSSHE::GrothVSSHE
 	unsigned long int fieldsize, unsigned long int subgroupsize):
 		l_e(ell_e)
 {
+	std::stringstream lej;
+	
 	com = new nWay_PedersenCommitmentScheme(n, fieldsize, subgroupsize);
+	com->PublishGroup(lej);
 	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), mpz_init_set(g, g_ENC),
 		mpz_init_set(h, h_ENC);
-	skc = new GrothSKC(n, l_e, fieldsize, subgroupsize);
+	skc = new GrothSKC(n, ell_e, lej);
+	
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+GrothVSSHE::GrothVSSHE
+	(size_t n, size_t ell_e,
+	mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC,
+	std::istream &in):
+		l_e(ell_e)
+{
+	com = new nWay_PedersenCommitmentScheme(n, in);
+	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), mpz_init_set(g, g_ENC),
+		mpz_init_set(h, h_ENC);
+	skc = new GrothSKC(n, ell_e, in);
 	
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -344,7 +615,7 @@ void GrothVSSHE::Prove_interactive
 	mpz_srandomm(r, com->q);
 	mpz_srandomm(R_d, q);
 	for (size_t i = 0; i < d.size(); i++)
-		mpz_srandomm(d[i], com->q), mpz_neg(d[i], d[i]);
+		mpz_srandomm(d[i], com->q);
 	mpz_srandomm(r_d, com->q);
 	for (size_t i = 0; i < m.size(); i++)
 		mpz_set_ui(m[i], pi[i] + 1L);
@@ -353,6 +624,7 @@ void GrothVSSHE::Prove_interactive
 	for (size_t i = 0; i < d.size(); i++)
 	{
 		// Compute and multiply $E_i^{-d_i}$
+		mpz_neg(d[i], d[i]);
 		mpz_spowm(foo, E[i].first, d[i], p);
 		mpz_spowm(bar, E[i].second, d[i], p);
 		mpz_mul(E_d.first, E_d.first, foo);
@@ -522,8 +794,9 @@ bool GrothVSSHE::Verify_interactive
 		if (!skc->Verify_interactive(foo, m, in, out));
 			throw false;
 		// check whether $c, c_d \in\mathcal{C}_{\mathrm{com}}$
-		if (!(mpz_cmp(c, com->q) < 0) || !(mpz_cmp(c_d, com->q)))
-			throw false;
+		if (!(mpz_cmp(c, com->p) < 0) || !(mpz_cmp(c_d, com->p)) ||
+			!mpz_cmp_ui(c, 0L) || !mpz_cmp_ui(c_d, 0L))
+				throw false;
 		// check whether $E_d\in\mathcal{C}$
 		mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
 		mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
