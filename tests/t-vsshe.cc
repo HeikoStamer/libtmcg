@@ -21,35 +21,38 @@
 #include <sstream>
 #include <vector>
 #include <cassert>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #include <libTMCG.hh>
+#include "pipestream.hh"
 
 #undef NDEBUG
 
 int main
 	(int argc, char **argv)
 {
-	mpz_t a, b, c, d, e;
+	mpz_t a, b, aa, bb;
 	assert(init_libTMCG());
 	
-	nWay_PedersenCommitmentScheme *com, *com2;
-	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(d), mpz_init(e);
-	
+	mpz_init(a), mpz_init(b), mpz_init(aa), mpz_init(bb);
+/*	
 	for (size_t n = 1; n <= 32; n++)
 	{
+		PedersenCommitmentScheme *com, *com2;
 		std::stringstream foo;
 		std::vector<mpz_ptr> m;
 		
-		std::cout << "nWay_PedersenCommitmentScheme(" << n << ")" << std::endl;
-		com = new nWay_PedersenCommitmentScheme(n);
+		std::cout << "PedersenCommitmentScheme(" << n << ")" << std::endl;
+		com = new PedersenCommitmentScheme(n);
 		std::cout << "*.CheckGroup()" << std::endl;
 		assert(com->CheckGroup());
 		
 		// create a clone instance
 		std::cout << "*.PublishGroup(foo)" << std::endl;
 		com->PublishGroup(foo);
-		std::cout << "nWay_PedersenCommitmentScheme(" << n << ", foo)" << std::endl;
-		com2 = new nWay_PedersenCommitmentScheme(n, foo);
+		std::cout << "PedersenCommitmentScheme(" << n << ", foo)" << std::endl;
+		com2 = new PedersenCommitmentScheme(n, foo);
 		std::cout << "*.CheckGroup()" << std::endl;
 		assert(com2->CheckGroup());
 		
@@ -64,6 +67,9 @@ int main
 		// commit
 		std::cout << "*.Commit(...)" << std::endl;
 		com->Commit(a, b, m);
+		std::cout << "*.CommitBy(...)" << std::endl;
+		com->CommitBy(aa, b, m);
+		assert(!mpz_cmp(a, aa));
 		
 		// verify
 		std::cout << "*.Verify(...)" << std::endl;
@@ -82,7 +88,127 @@ int main
 		m.clear();
 		delete com, delete com2;
 	}
+*/
+	size_t n = 32;
 	
-	mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(d), mpz_clear(e);
+	pid_t pid = 0;
+	int pipefd[2];
+	if (pipe(pipefd) < 0)
+		perror("t-vsshe (pipe)");
+	else if ((pid = fork()) < 0)
+		perror("t-vsshe (fork)");
+	else
+	{
+		if (pid == 0)
+		{
+			/* BEGIN child code: Prover */
+			iopipestream *pipe = new iopipestream(pipefd[1]);
+			
+			PedersenCommitmentScheme *com = 
+				new PedersenCommitmentScheme(n);
+			mpz_t c, r;
+			std::vector<mpz_ptr> m, m_pi;
+			std::vector<size_t> pi;
+			std::stringstream lej;
+			
+			mpz_init(c), mpz_init(r);
+			com->PublishGroup(*pipe), com->PublishGroup(lej);
+			GrothSKC *skc = new GrothSKC(n, lej);
+			// create the public messages
+			for (size_t i = 0; i < n; i++)
+			{
+				mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t();
+				mpz_init_set_ui(tmp, i), mpz_init_set_ui(tmp2, i);
+				m.push_back(tmp), m_pi.push_back(tmp2);
+			}
+			// create the secret permutation
+			for (size_t i = 0; i < n; i++)
+			{
+				pi.push_back(0);
+				bool ok;
+				do
+				{
+					ok = true;
+					pi[i] = mpz_srandom_ui() % n;
+					for (size_t j = 0; j < i; j++)
+					{
+						if (pi[i] == pi[j])
+						{
+							ok = false;
+							break;
+						}
+					}
+				}
+				while (!ok);
+			}
+			// commit
+			std::cout << "P: m_pi = " << std::flush;
+			for (size_t i = 0; i < n; i++)
+			{
+				mpz_set(m_pi[i], m[pi[i]]);
+				std::cout << m_pi[i] << " " << std::flush;
+			}
+			std::cout << std::endl << "P: com.Commit(...)" << std::endl;
+			com->Commit(c, r, m_pi);
+			*pipe << c << std::endl;
+			// prove
+			std::cout << "P: skc.Prove_interactive(...)" << std::endl;
+			skc->Prove_interactive(pi, r, c, m, *pipe, *pipe);
+			
+			// release
+			for (size_t i = 0; i < n; i++)
+			{
+				mpz_clear(m[i]), mpz_clear(m_pi[i]);
+				delete m[i], delete m_pi[i];
+			}
+			m.clear(), m_pi.clear();
+			mpz_clear(c), mpz_clear(r);
+			delete skc, delete com;
+			
+			delete pipe;
+			exit(0);
+			/* END child code: Prover */
+		}
+		else
+		{
+			/* Verifier */
+			iopipestream *pipe = new iopipestream(pipefd[0]);
+			PedersenCommitmentScheme *com = 
+				new PedersenCommitmentScheme(n, *pipe);
+			std::vector<mpz_ptr> m;
+			std::stringstream lej;
+			
+			// create the public messages
+			for (size_t i = 0; i < n; i++)
+			{
+				mpz_ptr tmp = new mpz_t();
+				mpz_init_set_ui(tmp, i);
+				m.push_back(tmp);
+			}
+			// check the commitment scheme and initalize SKC
+			assert(com->CheckGroup());
+			com->PublishGroup(lej);
+			GrothSKC *skc = new GrothSKC(n, lej);
+			// receive the commitment
+			*pipe >> a;
+			std::cout << "V: c = " << a << std::endl;
+			// verify
+			std::cout << "V: skc.Verify_interactive(...)" << std::endl;
+			assert(skc->Verify_interactive(a, m, *pipe, *pipe));
+			// release
+			for (size_t i = 0; i < n; i++)
+			{
+				mpz_clear(m[i]);
+				delete m[i];
+			}
+			m.clear();
+			delete skc, delete com;
+			
+			delete pipe;
+		}
+		waitpid(pid, NULL, 0);
+	}
+
+	mpz_clear(a), mpz_clear(b), mpz_clear(aa), mpz_clear(bb);
 	return 0;
 }

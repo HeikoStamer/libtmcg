@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.25 $)
+AC_REVISION($Revision: 1.26 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -69,6 +69,9 @@ AC_DEFINE(TMCG_MPZ_IO_BASE, 36,
 AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_RMD160,
 	[Define the message digest algorithm for signatures and FS-heuristic;
 	Underlying assumption: Random Oracle Model])
+AC_DEFINE(TMCG_GROTH_L_E, 80L,
+	[Define the security parameter for the soundness of the
+	interactive argument for VSSHE and SKC.])
 AC_DEFINE(TMCG_DDH_SIZE, 1024L,
 	[Define the security parameter of the DDH-hard group G;
 	Underlying assumptions: DDH, CDH, DLOG])

@@ -23,6 +23,12 @@
 #ifndef INCLUDED_libTMCG_HH
 	#define INCLUDED_libTMCG_HH
 	
+	#ifndef TMCG_GROTH_L_E
+		/* Define the security parameter for the soundness of the
+		   interactive argument for VSSHE and SKC. */
+		#define TMCG_GROTH_L_E 80L
+	#endif
+	
 	#ifndef TMCG_DDH_SIZE
 		/* Define the security parameter of the DDH-hard group G;
 		   Underlying assumptions: DDH, CDH, DLOG */

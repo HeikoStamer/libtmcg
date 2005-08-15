@@ -25,7 +25,7 @@
 
 #include "GrothVSSHE.hh"
 
-nWay_PedersenCommitmentScheme::nWay_PedersenCommitmentScheme
+PedersenCommitmentScheme::PedersenCommitmentScheme
 	(size_t n, unsigned long int fieldsize, unsigned long int subgroupsize)
 {
 	assert(n >= 1);
@@ -72,7 +72,7 @@ nWay_PedersenCommitmentScheme::nWay_PedersenCommitmentScheme
 	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
-nWay_PedersenCommitmentScheme::nWay_PedersenCommitmentScheme
+PedersenCommitmentScheme::PedersenCommitmentScheme
 	(size_t n, std::istream &in)
 {
 	assert(n >= 1);
@@ -102,7 +102,7 @@ nWay_PedersenCommitmentScheme::nWay_PedersenCommitmentScheme
 	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
-bool nWay_PedersenCommitmentScheme::CheckGroup
+bool PedersenCommitmentScheme::CheckGroup
 	(unsigned long int fieldsize, unsigned long int subgroupsize)
 {
 	mpz_t foo;
@@ -154,7 +154,7 @@ bool nWay_PedersenCommitmentScheme::CheckGroup
 	}
 }
 
-void nWay_PedersenCommitmentScheme::PublishGroup
+void PedersenCommitmentScheme::PublishGroup
 	(std::ostream &out)
 {
 	out << q << std::endl << k << std::endl << h << std::endl;
@@ -162,7 +162,7 @@ void nWay_PedersenCommitmentScheme::PublishGroup
 		out << g[i] << std::endl;
 }
 
-void nWay_PedersenCommitmentScheme::Commit
+void PedersenCommitmentScheme::Commit
 	(mpz_ptr c, mpz_ptr r, std::vector<mpz_ptr> m)
 {
 	assert(m.size() == g.size());
@@ -183,7 +183,7 @@ void nWay_PedersenCommitmentScheme::Commit
 	mpz_clear(tmp);
 }
 
-void nWay_PedersenCommitmentScheme::CommitBy
+void PedersenCommitmentScheme::CommitBy
 	(mpz_ptr c, mpz_srcptr r, std::vector<mpz_ptr> m,
 	bool TimingAttackProtection)
 {
@@ -209,7 +209,7 @@ void nWay_PedersenCommitmentScheme::CommitBy
 	mpz_clear(tmp);
 }
 
-bool nWay_PedersenCommitmentScheme::Verify
+bool PedersenCommitmentScheme::Verify
 	(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m)
 {
 	assert(m.size() == g.size());
@@ -240,7 +240,7 @@ bool nWay_PedersenCommitmentScheme::Verify
 	}
 }
 
-nWay_PedersenCommitmentScheme::~nWay_PedersenCommitmentScheme
+PedersenCommitmentScheme::~PedersenCommitmentScheme
 	()
 {
 	mpz_clear(p), mpz_clear(q), mpz_clear(h), mpz_clear(k);
@@ -264,20 +264,28 @@ nWay_PedersenCommitmentScheme::~nWay_PedersenCommitmentScheme
 // =============================================================================
 
 GrothSKC::GrothSKC
-	(size_t n, size_t ell_e,
-	unsigned long int fieldsize, unsigned long int subgroupsize):
+	(size_t n,
+	unsigned long int ell_e, unsigned long int fieldsize,
+	unsigned long int subgroupsize):
 		l_e(ell_e)
 {
-	com = new nWay_PedersenCommitmentScheme(n, fieldsize, subgroupsize);
+	com = new PedersenCommitmentScheme(n, fieldsize, subgroupsize);
 	
+	// Compute $2^{\ell_e}$ for the input reduction.
+	mpz_init(exp2l_e);
+	mpz_ui_pow_ui(exp2l_e, 2L, ell_e);
 }
 
 GrothSKC::GrothSKC
-	(size_t n, size_t ell_e, std::istream &in):
+	(size_t n, std::istream &in,
+	unsigned long int ell_e):
 		l_e(ell_e)
 {
-	com = new nWay_PedersenCommitmentScheme(n, in);
+	com = new PedersenCommitmentScheme(n, in);
 	
+	// Compute $2^{\ell_e}$ for the input reduction.
+	mpz_init(exp2l_e);
+	mpz_ui_pow_ui(exp2l_e, 2L, ell_e);
 }
 
 bool GrothSKC::CheckGroup
@@ -313,7 +321,9 @@ void GrothSKC::Prove_interactive
 	
 	// prover: first move
 	in >> x;
-// TODO: check whether $x$ is from $\{0, 1\}^{\ell_e}$
+	// check whether $x$ is from $\{0, 1\}^{\ell_e}$, otherwise reduce
+	if (mpz_sizeinbase(x, 2L) > l_e)
+		mpz_mod(x, x, exp2l_e);
 	
 	// prover: second move
 	mpz_srandomm(r_d, com->q);
@@ -374,7 +384,9 @@ void GrothSKC::Prove_interactive
 	
 	// prover: third move
 	in >> e;
-// TODO: check whether $x$ is from $\{0, 1\}^{\ell_e}$
+	// check whether $x$ is from $\{0, 1\}^{\ell_e}$, otherwise reduce
+	if (mpz_sizeinbase(e, 2L) > l_e)
+		mpz_mod(e, e, exp2l_e);
 	
 	// prover: fourth move
 	for (size_t i = 0; i < f.size(); i++)
@@ -469,10 +481,11 @@ bool GrothSKC::Verify_interactive
 	assert(com->g.size() == m.size());
 	
 	// initalize
-	mpz_t x, c_d, c_Delta, c_a, e, z, z_Delta, foo, bar;
+	mpz_t x, c_d, c_Delta, c_a, e, z, z_Delta, foo, bar, foo2, bar2;
 	std::vector<mpz_ptr> f, f_Delta, lej;
 	mpz_init(x), mpz_init(c_d), mpz_init(c_Delta), mpz_init(c_a), mpz_init(e),
-		mpz_init(z), mpz_init(z_Delta), mpz_init(foo), mpz_init(bar);
+		mpz_init(z), mpz_init(z_Delta), mpz_init(foo), mpz_init(bar),
+		mpz_init(foo2), mpz_init(bar2);
 	for (size_t i = 0; i < com->g.size(); i++)
 	{
 		mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
@@ -500,8 +513,93 @@ bool GrothSKC::Verify_interactive
 		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
 			in >> f_Delta[i];
 		in >> z_Delta;
-
-// TODO
+		
+		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}$
+		if (!(mpz_cmp(c_d, com->p) < 0) || !(mpz_cmp(c_a, com->p) < 0) ||
+			!(mpz_cmp(c_Delta, com->p) < 0) || !mpz_cmp_ui(c_d, 0L) ||
+			!mpz_cmp_ui(c_a, 0L) || !mpz_cmp_ui(c_Delta, 0L))
+				throw false;
+std::cerr << "," << std::endl;
+		// check whether $f_1, \ldots, f_n, z \in\mathbb{Z}_q$
+		if (!(mpz_cmp(z, com->q) < 0))
+			throw false;
+std::cerr << "," << std::endl;
+		for (size_t i = 0; i < f.size(); i++)
+		{
+			if (!(mpz_cmp(f[i], com->q) < 0))
+				throw false;
+		}
+std::cerr << "," << std::endl;
+		// check whether $f_{\Delta_1}, \ldots, f_{\Delta_{n-1}}$ and $z$
+		// are from $\mathbb{Z}_q$
+		if (!(mpz_cmp(z_Delta, com->q) < 0))
+			throw false;
+std::cerr << "," << std::endl;
+		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
+		{
+			if (!(mpz_cmp(f_Delta[i], com->q) < 0))
+				throw false;
+		}
+std::cerr << "," << std::endl;
+		// check whether $c^e c_d = \mathrm{com}(f_1, \ldots, f_n; z)$
+		mpz_powm(foo, c, e, com->p);
+		mpz_mul(foo, foo, c_d);
+		mpz_mod(foo, foo, com->p);
+		com->CommitBy(bar, z, f);
+std::cerr << foo << std::endl;
+std::cerr << bar << std::endl;
+		if (mpz_cmp(foo, bar))
+			throw false;
+std::cerr << "," << std::endl;
+		// check whether $c_a^e c_{\Delta} = \mathrm{com}(f_{\Delta_1},
+		// \ldots, f_{\Delta_{n-1}}; z_{Delta})$
+		mpz_powm(foo, c_a, e, com->p);
+		mpz_mul(foo, foo, c_Delta);
+		mpz_mod(foo, foo, com->p);
+		com->CommitBy(bar, z_Delta, f_Delta);
+std::cerr << foo << std::endl;
+std::cerr << bar << std::endl;
+		if (mpz_cmp(foo, bar))
+			throw false;
+std::cerr << "x" << std::endl;
+		// check $F_n  = e \prod_{i=1}^n (m_i - x)$
+		mpz_mul(foo, e, x);
+		mpz_mod(foo, foo, com->q);
+		assert(mpz_invert(bar, e, com->q));
+		mpz_invert(bar, e, com->q);
+		mpz_set_ui(foo2, 1L);
+		for (size_t i = 0; i < f.size(); i++)
+		{
+			mpz_sub(bar2, f[i], foo);
+			mpz_mod(bar2, bar2, com->q);
+			
+			mpz_mul(bar2, bar2, foo2);
+			mpz_mod(bar2, bar2, com->q);
+			if (i > 0)
+			{
+				mpz_add(bar2, bar2, f_Delta[i - 1]);
+				mpz_mod(bar2, bar2, com->q);
+				
+				mpz_mul(bar2, bar2, bar);
+				mpz_mod(bar2, bar2, com->q);
+			}
+			mpz_set(foo2, bar2);
+		}
+		mpz_set_ui(foo2, 1L);
+		for (size_t i = 0; i < m.size(); i++)
+		{
+			mpz_sub(foo, m[i], x);
+			mpz_mod(foo, foo, com->q);
+			mpz_mul(foo2, foo2, foo);
+			mpz_mod(foo2, foo2, com->q);
+		}
+		mpz_mul(foo2, foo2, e);
+		mpz_mod(foo2, foo2, com->q);
+std::cerr << foo2 << std::endl;
+std::cerr << bar2 << std::endl;
+		if (mpz_cmp(foo2, bar2))
+			throw false;
+std::cerr << ";" << std::endl;
 		
 		throw true;
 	}
@@ -510,7 +608,7 @@ bool GrothSKC::Verify_interactive
 		// release
 		mpz_clear(x), mpz_clear(c_d), mpz_clear(c_Delta), mpz_clear(c_a),
 			mpz_clear(e), mpz_clear(z), mpz_clear(z_Delta), mpz_clear(foo),
-			mpz_clear(bar);
+			mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2);
 		for (size_t i = 0; i < f.size(); i++)
 		{
 			mpz_clear(f[i]);
@@ -544,18 +642,23 @@ GrothSKC::~GrothSKC
 // =============================================================================
 
 GrothVSSHE::GrothVSSHE
-	(size_t n, size_t ell_e,
+	(size_t n,
 	mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC,
-	unsigned long int fieldsize, unsigned long int subgroupsize):
+	unsigned long int ell_e, unsigned long int fieldsize,
+	unsigned long int subgroupsize):
 		l_e(ell_e)
 {
 	std::stringstream lej;
 	
-	com = new nWay_PedersenCommitmentScheme(n, fieldsize, subgroupsize);
+	com = new PedersenCommitmentScheme(n, fieldsize, subgroupsize);
 	com->PublishGroup(lej);
 	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), mpz_init_set(g, g_ENC),
 		mpz_init_set(h, h_ENC);
-	skc = new GrothSKC(n, ell_e, lej);
+	skc = new GrothSKC(n, lej, ell_e);
+	
+	// Compute $2^{\ell_e}$ for the input reduction.
+	mpz_init(exp2l_e);
+	mpz_ui_pow_ui(exp2l_e, 2L, ell_e);
 	
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -566,15 +669,21 @@ GrothVSSHE::GrothVSSHE
 }
 
 GrothVSSHE::GrothVSSHE
-	(size_t n, size_t ell_e,
-	mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC,
-	std::istream &in):
+	(size_t n, std::istream &in,
+	unsigned long int ell_e):
 		l_e(ell_e)
 {
-	com = new nWay_PedersenCommitmentScheme(n, in);
-	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), mpz_init_set(g, g_ENC),
-		mpz_init_set(h, h_ENC);
-	skc = new GrothSKC(n, ell_e, in);
+	std::stringstream lej;
+	
+	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(h);
+	in >> p >> q >> g >> h;
+	com = new PedersenCommitmentScheme(n, in);
+	com->PublishGroup(lej);
+	skc = new GrothSKC(n, lej, ell_e);
+	
+	// Compute $2^{\ell_e}$ for the input reduction.
+	mpz_init(exp2l_e);
+	mpz_ui_pow_ui(exp2l_e, 2L, ell_e);
 	
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -582,6 +691,12 @@ GrothVSSHE::GrothVSSHE
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
 	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+bool GrothVSSHE::CheckGroup
+	()
+{
+	return (com->CheckGroup() && skc->CheckGroup());
 }
 
 void GrothVSSHE::Prove_interactive
@@ -646,7 +761,9 @@ void GrothVSSHE::Prove_interactive
 	for (size_t i = 0; i < f.size(); i++)
 	{
 		in >> t[i];
-// TODO: check whether the $t_i$'s are from $\{0, 1\}^{\ell_e}$
+		// check whether the $t_i$'s are from $\{0, 1\}^{\ell_e}$
+		if (mpz_sizeinbase(t[i], 2L) > l_e)
+			mpz_mod(t[i], t[i], exp2l_e);
 	}
 	
 	// prover: third move
@@ -671,8 +788,10 @@ void GrothVSSHE::Prove_interactive
 	
 	// prover: fourth move
 	in >> lambda;
-// TODO: check whether $\lambda$ is from $\{0, 1\}^{\ell_e}$
-
+	// check whether $\lambda$ is from $\{0, 1\}^{\ell_e}$, otherwise reduce
+	if (mpz_sizeinbase(lambda, 2L) > l_e)
+		mpz_mod(lambda, lambda, exp2l_e);
+	
 	// prover: fifth to seventh move (Shuffle of Known Content)
 		// $\rho := \lambda r + r_d \bmod q$
 		mpz_mul(rho, lambda, r);
@@ -740,7 +859,7 @@ bool GrothVSSHE::Verify_interactive
 	mpz_t c, c_d, Z, lambda, foo, bar, foo2, bar2, foo3, bar3;
 	std::pair<mpz_t, mpz_t> E_d;
 	std::vector<mpz_ptr> f, m, t;
-	mpz_init(c), mpz_init(c_d),	mpz_init_set_ui(Z, 0L), mpz_init(lambda),
+	mpz_init(c), mpz_init(c_d), mpz_init_set_ui(Z, 0L), mpz_init(lambda),
 		mpz_init(foo), mpz_init(bar), mpz_init(foo2), mpz_init(bar2),
 		mpz_init(foo3), mpz_init(bar3);
 	mpz_init_set_ui(E_d.first, 1L), mpz_init_set_ui(E_d.second, 1L);
@@ -794,7 +913,7 @@ bool GrothVSSHE::Verify_interactive
 		if (!skc->Verify_interactive(foo, m, in, out));
 			throw false;
 		// check whether $c, c_d \in\mathcal{C}_{\mathrm{com}}$
-		if (!(mpz_cmp(c, com->p) < 0) || !(mpz_cmp(c_d, com->p)) ||
+		if (!(mpz_cmp(c, com->p) < 0) || !(mpz_cmp(c_d, com->p) < 0) ||
 			!mpz_cmp_ui(c, 0L) || !mpz_cmp_ui(c_d, 0L))
 				throw false;
 		// check whether $E_d\in\mathcal{C}$

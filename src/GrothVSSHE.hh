@@ -52,7 +52,7 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
-class nWay_PedersenCommitmentScheme
+class PedersenCommitmentScheme
 {
 	private:
 		mpz_t										*fpowm_table_h;
@@ -62,11 +62,11 @@ class nWay_PedersenCommitmentScheme
 		mpz_t										p, q, h, k;
 		std::vector<mpz_ptr>		g;
 		
-		nWay_PedersenCommitmentScheme
+		PedersenCommitmentScheme
 			(size_t n,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
-		nWay_PedersenCommitmentScheme
+		PedersenCommitmentScheme
 			(size_t n, std::istream &in);
 		bool CheckGroup
 			(unsigned long int fieldsize = TMCG_DDH_SIZE,
@@ -80,7 +80,7 @@ class nWay_PedersenCommitmentScheme
 			bool TimingAttackProtection = true);
 		bool Verify
 			(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m);
-		~nWay_PedersenCommitmentScheme
+		~PedersenCommitmentScheme
 			();
 };
 
@@ -89,16 +89,19 @@ class nWay_PedersenCommitmentScheme
 class GrothSKC
 {
 	private:
-		size_t													l_e;
-		nWay_PedersenCommitmentScheme		*com;
+		unsigned long int				l_e;
+		PedersenCommitmentScheme		*com;
+		mpz_t							exp2l_e;
 	
 	public:
 		GrothSKC
-			(size_t n, size_t ell_e,
+			(size_t n,
+			unsigned long int ell_e = TMCG_GROTH_L_E,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		GrothSKC
-			(size_t n, size_t ell_e, std::istream &in);
+			(size_t n, std::istream &in,
+			unsigned long int ell_e = TMCG_GROTH_L_E);
 		bool CheckGroup
 			();
 		void Prove_interactive
@@ -117,22 +120,25 @@ class GrothSKC
 class GrothVSSHE
 {
 	private:
-		size_t													l_e;
-		mpz_t														p, q, g, h;
-		nWay_PedersenCommitmentScheme		*com;
-		GrothSKC												*skc;
-		mpz_t														*fpowm_table_g, *fpowm_table_h;
+		unsigned long int				l_e;
+		mpz_t							p, q, g, h;
+		PedersenCommitmentScheme		*com;
+		GrothSKC						*skc;
+		mpz_t							*fpowm_table_g, *fpowm_table_h, exp2l_e;
 	
 	public:
 		GrothVSSHE
-			(size_t n, size_t ell_e,
-			mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC,
+			(size_t n,
+			mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC,
+			mpz_srcptr h_ENC,
+			unsigned long int ell_e = TMCG_GROTH_L_E,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		GrothVSSHE
-			(size_t n, size_t ell_e,
-			mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC,
-			std::istream &in);
+			(size_t n, std::istream &in,
+			unsigned long int ell_e = TMCG_GROTH_L_E);
+		bool CheckGroup
+			();
 		void Prove_interactive
 			(const std::vector<size_t> &pi, const std::vector<mpz_ptr> &R,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
