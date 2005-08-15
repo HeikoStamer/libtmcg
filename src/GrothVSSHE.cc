@@ -301,6 +301,7 @@ void GrothSKC::Prove_interactive
 {
 	assert(com->g.size() == pi.size());
 	assert(pi.size() == m.size());
+	assert(m.size() >= 2);
 	
 	mpz_t x, r_d, r_Delta, r_a, c_d, c_Delta, c_a, e, z, z_Delta, foo, bar;
 	std::vector<mpz_ptr> d, Delta, a, f, f_Delta, lej;
@@ -321,6 +322,7 @@ void GrothSKC::Prove_interactive
 	
 	// prover: first move
 	in >> x;
+//std::cerr << "x = " << x << std::endl;
 	// check whether $x$ is from $\{0, 1\}^{\ell_e}$, otherwise reduce
 	if (mpz_sizeinbase(x, 2L) > l_e)
 		mpz_mod(x, x, exp2l_e);
@@ -337,9 +339,10 @@ void GrothSKC::Prove_interactive
 	for (size_t i = 0; i < a.size(); i++)
 	{
 		mpz_set_ui(a[i], 1L);
-		for (size_t j = 0; j < i; j++)
+		for (size_t j = 0; j <= i; j++)
 		{
 			mpz_sub(foo, m[pi[j]], x);
+			mpz_mod(foo, foo, com->q);
 			mpz_mul(a[i], a[i], foo);
 			mpz_mod(a[i], a[i], com->q);
 		}
@@ -384,6 +387,7 @@ void GrothSKC::Prove_interactive
 	
 	// prover: third move
 	in >> e;
+//std::cerr << "e = " << e << std::endl;
 	// check whether $x$ is from $\{0, 1\}^{\ell_e}$, otherwise reduce
 	if (mpz_sizeinbase(e, 2L) > l_e)
 		mpz_mod(e, e, exp2l_e);
@@ -479,6 +483,7 @@ bool GrothSKC::Verify_interactive
 	std::istream &in, std::ostream &out)
 {
 	assert(com->g.size() == m.size());
+	assert(m.size() >= 2);
 	
 	// initalize
 	mpz_t x, c_d, c_Delta, c_a, e, z, z_Delta, foo, bar, foo2, bar2;
@@ -501,6 +506,9 @@ bool GrothSKC::Verify_interactive
 		
 		// verifier: second move
 		in >> c_d >> c_Delta >> c_a;
+//std::cerr << "c_d = " << c_d << std::endl;
+//std::cerr << "c_a = " << c_a << std::endl;
+//std::cerr << "c_Delta = " << c_Delta << std::endl;
 		
 		// verifier: third move
 		mpz_srandomb(e, l_e);
@@ -513,55 +521,44 @@ bool GrothSKC::Verify_interactive
 		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
 			in >> f_Delta[i];
 		in >> z_Delta;
+//std::cerr << "z = " << z << std::endl;
+//std::cerr << "z_Delta = " << z_Delta << std::endl;
 		
 		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}$
 		if (!(mpz_cmp(c_d, com->p) < 0) || !(mpz_cmp(c_a, com->p) < 0) ||
 			!(mpz_cmp(c_Delta, com->p) < 0) || !mpz_cmp_ui(c_d, 0L) ||
 			!mpz_cmp_ui(c_a, 0L) || !mpz_cmp_ui(c_Delta, 0L))
 				throw false;
-std::cerr << "," << std::endl;
 		// check whether $f_1, \ldots, f_n, z \in\mathbb{Z}_q$
 		if (!(mpz_cmp(z, com->q) < 0))
 			throw false;
-std::cerr << "," << std::endl;
 		for (size_t i = 0; i < f.size(); i++)
 		{
 			if (!(mpz_cmp(f[i], com->q) < 0))
 				throw false;
 		}
-std::cerr << "," << std::endl;
 		// check whether $f_{\Delta_1}, \ldots, f_{\Delta_{n-1}}$ and $z$
 		// are from $\mathbb{Z}_q$
 		if (!(mpz_cmp(z_Delta, com->q) < 0))
 			throw false;
-std::cerr << "," << std::endl;
 		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
 		{
 			if (!(mpz_cmp(f_Delta[i], com->q) < 0))
 				throw false;
 		}
-std::cerr << "," << std::endl;
 		// check whether $c^e c_d = \mathrm{com}(f_1, \ldots, f_n; z)$
 		mpz_powm(foo, c, e, com->p);
 		mpz_mul(foo, foo, c_d);
 		mpz_mod(foo, foo, com->p);
-		com->CommitBy(bar, z, f);
-std::cerr << foo << std::endl;
-std::cerr << bar << std::endl;
-		if (mpz_cmp(foo, bar))
+		if (!com->Verify(foo, z, f))
 			throw false;
-std::cerr << "," << std::endl;
 		// check whether $c_a^e c_{\Delta} = \mathrm{com}(f_{\Delta_1},
 		// \ldots, f_{\Delta_{n-1}}; z_{Delta})$
 		mpz_powm(foo, c_a, e, com->p);
 		mpz_mul(foo, foo, c_Delta);
 		mpz_mod(foo, foo, com->p);
-		com->CommitBy(bar, z_Delta, f_Delta);
-std::cerr << foo << std::endl;
-std::cerr << bar << std::endl;
-		if (mpz_cmp(foo, bar))
+		if (!com->Verify(foo, z_Delta, f_Delta))
 			throw false;
-std::cerr << "x" << std::endl;
 		// check $F_n  = e \prod_{i=1}^n (m_i - x)$
 		mpz_mul(foo, e, x);
 		mpz_mod(foo, foo, com->q);
@@ -595,11 +592,8 @@ std::cerr << "x" << std::endl;
 		}
 		mpz_mul(foo2, foo2, e);
 		mpz_mod(foo2, foo2, com->q);
-std::cerr << foo2 << std::endl;
-std::cerr << bar2 << std::endl;
 		if (mpz_cmp(foo2, bar2))
 			throw false;
-std::cerr << ";" << std::endl;
 		
 		throw true;
 	}
@@ -709,6 +703,7 @@ void GrothVSSHE::Prove_interactive
 	assert(pi.size() == R.size());
 	assert(R.size() == e.size());
 	assert(e.size() == E.size());
+	assert(E.size() >= 2);
 	
 	// initalize
 	mpz_t r, R_d, r_d, c, c_d, Z, lambda, rho, foo, bar;
@@ -854,6 +849,7 @@ bool GrothVSSHE::Verify_interactive
 {
 	assert(com->g.size() == e.size());
 	assert(e.size() == E.size());
+	assert(E.size() >= 2);
 	
 	// initalize
 	mpz_t c, c_d, Z, lambda, foo, bar, foo2, bar2, foo3, bar3;

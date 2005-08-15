@@ -92,8 +92,8 @@ int main
 	size_t n = 32;
 	
 	pid_t pid = 0;
-	int pipefd[2];
-	if (pipe(pipefd) < 0)
+	int pipe1fd[2], pipe2fd[2];
+	if ((pipe(pipe1fd) < 0) || (pipe(pipe2fd) < 0))
 		perror("t-vsshe (pipe)");
 	else if ((pid = fork()) < 0)
 		perror("t-vsshe (fork)");
@@ -102,7 +102,8 @@ int main
 		if (pid == 0)
 		{
 			/* BEGIN child code: Prover */
-			iopipestream *pipe = new iopipestream(pipefd[1]);
+			ipipestream *pipe_in = new ipipestream(pipe1fd[0]);
+			opipestream *pipe_out = new opipestream(pipe2fd[1]);
 			
 			PedersenCommitmentScheme *com = 
 				new PedersenCommitmentScheme(n);
@@ -112,7 +113,7 @@ int main
 			std::stringstream lej;
 			
 			mpz_init(c), mpz_init(r);
-			com->PublishGroup(*pipe), com->PublishGroup(lej);
+			com->PublishGroup(*pipe_out), com->PublishGroup(lej);
 			GrothSKC *skc = new GrothSKC(n, lej);
 			// create the public messages
 			for (size_t i = 0; i < n; i++)
@@ -150,10 +151,10 @@ int main
 			}
 			std::cout << std::endl << "P: com.Commit(...)" << std::endl;
 			com->Commit(c, r, m_pi);
-			*pipe << c << std::endl;
+			*pipe_out << c << std::endl;
 			// prove
 			std::cout << "P: skc.Prove_interactive(...)" << std::endl;
-			skc->Prove_interactive(pi, r, c, m, *pipe, *pipe);
+			skc->Prove_interactive(pi, r, c, m, *pipe_in, *pipe_out);
 			
 			// release
 			for (size_t i = 0; i < n; i++)
@@ -165,16 +166,17 @@ int main
 			mpz_clear(c), mpz_clear(r);
 			delete skc, delete com;
 			
-			delete pipe;
+			delete pipe_in, delete pipe_out;
 			exit(0);
 			/* END child code: Prover */
 		}
 		else
 		{
 			/* Verifier */
-			iopipestream *pipe = new iopipestream(pipefd[0]);
+			ipipestream *pipe_in = new ipipestream(pipe2fd[0]);
+			opipestream *pipe_out = new opipestream(pipe1fd[1]);
 			PedersenCommitmentScheme *com = 
-				new PedersenCommitmentScheme(n, *pipe);
+				new PedersenCommitmentScheme(n, *pipe_in);
 			std::vector<mpz_ptr> m;
 			std::stringstream lej;
 			
@@ -190,11 +192,11 @@ int main
 			com->PublishGroup(lej);
 			GrothSKC *skc = new GrothSKC(n, lej);
 			// receive the commitment
-			*pipe >> a;
+			*pipe_in >> a;
 			std::cout << "V: c = " << a << std::endl;
 			// verify
 			std::cout << "V: skc.Verify_interactive(...)" << std::endl;
-			assert(skc->Verify_interactive(a, m, *pipe, *pipe));
+			assert(skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
 			// release
 			for (size_t i = 0; i < n; i++)
 			{
@@ -204,7 +206,7 @@ int main
 			m.clear();
 			delete skc, delete com;
 			
-			delete pipe;
+			delete pipe_in, delete pipe_out;
 		}
 		waitpid(pid, NULL, 0);
 	}
