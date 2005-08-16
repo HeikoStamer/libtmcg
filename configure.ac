@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.26 $)
+AC_REVISION($Revision: 1.27 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -153,7 +153,7 @@ fi
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h stdarg.h string.h strings.h unistd.h time.h])
+AC_CHECK_HEADERS([stdlib.h stdarg.h string.h strings.h unistd.h time.h sys/wait.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

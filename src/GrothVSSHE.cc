@@ -729,8 +729,8 @@ void GrothVSSHE::Prove_interactive
 	mpz_srandomm(r_d, com->q);
 	for (size_t i = 0; i < m.size(); i++)
 		mpz_set_ui(m[i], pi[i] + 1L);
-	com->Commit(c, r, m);
-	com->Commit(c_d, r_d, d);
+	com->CommitBy(c, r, m);
+	com->CommitBy(c_d, r_d, d);
 	for (size_t i = 0; i < d.size(); i++)
 	{
 		// Compute and multiply $E_i^{-d_i}$
@@ -793,24 +793,37 @@ void GrothVSSHE::Prove_interactive
 		mpz_mod(rho, rho, com->q);
 		mpz_add(rho, rho, r_d);
 		mpz_mod(rho, rho, com->q);
-		// SKC commitment $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod q$
+		// SKC commitment $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod p$
 		mpz_set_ui(bar, 0L);
 		com->CommitBy(foo, bar, f, false);
 		mpz_mul(foo, foo, c_d);
-		mpz_mod(foo, foo, com->q);
-		mpz_spowm(bar, c, lambda, com->q);
+		mpz_mod(foo, foo, com->p);
+		mpz_spowm(bar, c, lambda, com->p);
 		mpz_mul(foo, foo, bar);
-		mpz_mod(foo, foo, com->q);
-		// SKC messages
+		mpz_mod(foo, foo, com->p);
+std::cerr << "p:foo = " << foo << std::endl;
+		// SKC messages $m_i := i \lambda + t_i \bmod q$ for all $i = 1,\ldots, n$
 		for (size_t i = 0; i < m.size(); i++)
 		{
+			mpz_set_ui(m[i], i + 1L);
 			mpz_mul(m[i], m[i], lambda);
 			mpz_mod(m[i], m[i], com->q);
-			mpz_add(m[i], m[i], t[pi[i]]);
+			mpz_add(m[i], m[i], t[i]);
 			mpz_mod(m[i], m[i], com->q);
 		}
 	skc->Prove_interactive(pi, rho, foo, m, in, out);
-	
+
+for (size_t i = 0; i < m.size(); i++)
+{
+	mpz_set_ui(m[i], pi[i] + 1L);
+	mpz_mul(m[i], m[i], lambda);
+	mpz_mod(m[i], m[i], com->q);
+	mpz_add(m[i], m[i], t[pi[i]]);
+	mpz_mod(m[i], m[i], com->q);
+}
+com->CommitBy(foo, rho, m);
+std::cerr << "aber muss sein p:foo = " << foo << std::endl;
+
 	// release
 	mpz_clear(r), mpz_clear(R_d), mpz_clear(r_d), mpz_clear(c), mpz_clear(c_d),
 		mpz_clear(Z), mpz_clear(lambda), mpz_clear(rho), mpz_clear(foo),
@@ -888,15 +901,15 @@ bool GrothVSSHE::Verify_interactive
 		out << lambda << std::endl;
 		
 		// verifier: fifth to seventh move (Shuffle of Known Content)
-			// SKC commitment $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod q$
+			// SKC commitment $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod p$
 			mpz_set_ui(bar, 0L);
 			com->CommitBy(foo, bar, f, false);
 			mpz_mul(foo, foo, c_d);
-			mpz_mod(foo, foo, com->q);
-			mpz_spowm(bar, c, lambda, com->q);
+			mpz_mod(foo, foo, com->p);
+			mpz_powm(bar, c, lambda, com->p);
 			mpz_mul(foo, foo, bar);
-			mpz_mod(foo, foo, com->q);
-			// SKC messages $m_i := i + \lambda t_i \bmod q$ for all $i = 1,\ldots, n$
+			mpz_mod(foo, foo, com->p);
+			// SKC messages $m_i := i \lambda + t_i \bmod q$ for all $i = 1,\ldots, n$
 			for (size_t i = 0; i < m.size(); i++)
 			{
 				mpz_set_ui(m[i], i + 1L);
@@ -905,27 +918,34 @@ bool GrothVSSHE::Verify_interactive
 				mpz_add(m[i], m[i], t[i]);
 				mpz_mod(m[i], m[i], com->q);
 			}
+std::cerr << "b" << std::endl;
 		// perform and verify SKC
+std::cerr << " foo = " << foo << std::endl;
 		if (!skc->Verify_interactive(foo, m, in, out));
 			throw false;
+std::cerr << "1" << std::endl;
 		// check whether $c, c_d \in\mathcal{C}_{\mathrm{com}}$
 		if (!(mpz_cmp(c, com->p) < 0) || !(mpz_cmp(c_d, com->p) < 0) ||
 			!mpz_cmp_ui(c, 0L) || !mpz_cmp_ui(c_d, 0L))
 				throw false;
+std::cerr << "2" << std::endl;
 		// check whether $E_d\in\mathcal{C}$
 		mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
 		mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
 		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
 			throw false;
+std::cerr << "3" << std::endl;
 		// check whether $2^{\ell_e} \le f_1,\ldots,f_n < q$
 		for (size_t i = 0; i < f.size(); i++)
 		{
 			if ((mpz_sizeinbase(f[i], 2L) < l_e) || (mpz_cmp(f[i], com->q) >= 0))
 				throw false;
 		}
+std::cerr << "4" << std::endl;
 		// check whether $Z\in\mathcal{R}$
 		if (mpz_cmp(Z, q) >= 0)
 			throw false;
+std::cerr << "5" << std::endl;
 		// check $\prod_{i=1}^n e_i^{-t_i} \prod_{i=1}^n E_i^{f_i} E_d = E(1;Z)$
 		mpz_set_ui(foo2, 1L), mpz_set_ui(bar2, 1L);
 		for (size_t i = 0; i < e.size(); i++)
@@ -960,7 +980,8 @@ bool GrothVSSHE::Verify_interactive
 		mpz_fpowm(fpowm_table_h, bar, h, Z, p);
 		if (mpz_cmp(foo3, foo) || mpz_cmp(bar3, bar))
 			throw false;
-		
+std::cerr << "e" << std::endl;
+
 		throw true;
 	}
 	catch (bool return_value)
