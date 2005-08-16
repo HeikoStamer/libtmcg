@@ -29,6 +29,43 @@
 
 #undef NDEBUG
 
+// create a random permutation
+void random_permutation
+	(size_t n, std::vector<size_t> &pi)
+{
+	pi.clear();
+	for (size_t i = 0; i < n; i++)
+	{
+		pi.push_back(0);
+		bool ok;
+		do
+		{
+			ok = true;
+			pi[i] = mpz_srandom_ui() % n;
+			for (size_t j = 0; j < i; j++)
+			{
+				if (pi[i] == pi[j])
+				{
+					ok = false;
+					break;
+				}
+			}
+		}
+		while (!ok);
+	}
+}
+
+bool equal_permutations
+	(const std::vector<size_t> &pi, const std::vector<size_t> &xi)
+{
+	if (pi.size() != xi.size())
+		return false;
+	for (size_t i = 0; i < pi.size(); i++)
+		if (pi[i] != xi[i])
+			return false;
+	return true;
+}
+
 int main
 	(int argc, char **argv)
 {
@@ -109,7 +146,7 @@ int main
 				new PedersenCommitmentScheme(n);
 			mpz_t c, r;
 			std::vector<mpz_ptr> m, m_pi;
-			std::vector<size_t> pi;
+			std::vector<size_t> pi, xi;
 			std::stringstream lej;
 			
 			mpz_init(c), mpz_init(r);
@@ -123,25 +160,7 @@ int main
 				m.push_back(tmp), m_pi.push_back(tmp2);
 			}
 			// create the secret permutation
-			for (size_t i = 0; i < n; i++)
-			{
-				pi.push_back(0);
-				bool ok;
-				do
-				{
-					ok = true;
-					pi[i] = mpz_srandom_ui() % n;
-					for (size_t j = 0; j < i; j++)
-					{
-						if (pi[i] == pi[j])
-						{
-							ok = false;
-							break;
-						}
-					}
-				}
-				while (!ok);
-			}
+			random_permutation(n, pi);
 			// commit
 			std::cout << "P: m_pi = " << std::flush;
 			for (size_t i = 0; i < n; i++)
@@ -155,6 +174,13 @@ int main
 			// prove
 			std::cout << "P: skc.Prove_interactive(...)" << std::endl;
 			skc->Prove_interactive(pi, r, c, m, *pipe_in, *pipe_out);
+			// create a different permutation
+			do
+				random_permutation(n, xi);
+			while (equal_permutations(pi, xi));
+			// prove wrong
+			std::cout << "P: !skc.Prove_interactive(...)" << std::endl;
+			skc->Prove_interactive(xi, r, c, m, *pipe_in, *pipe_out);
 			
 			// release
 			for (size_t i = 0; i < n; i++)
@@ -197,6 +223,9 @@ int main
 			// verify
 			std::cout << "V: skc.Verify_interactive(...)" << std::endl;
 			assert(skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
+			// verify wrong
+			std::cout << "V: !skc.Verify_interactive(...)" << std::endl;
+			assert(!skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
 			// release
 			for (size_t i = 0; i < n; i++)
 			{
