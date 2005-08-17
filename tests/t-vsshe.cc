@@ -202,16 +202,18 @@ int main
 			{
 				// create e[i]
 				mpz_set_ui(e[i].first, 1L);
-				mpz_powm_ui(e[i].second, com->g[0], i, com->p);
+				mpz_powm_ui(e[i].second, com->h, i, com->p);
 			}
 			for (size_t i = 0; i < n; i++)
 			{
 				// create E[i]
 				mpz_srandomm(R[i], com->q);
-				mpz_powm(E[pi[i]].first, com->g[0], R[i], com->p);
-				mpz_powm(E[pi[i]].second, com->h, R[i], com->p);
-				mpz_mul(E[pi[i]].second, E[pi[i]].second, e[i].second);
-				mpz_mod(E[pi[i]].second, E[pi[i]].second, com->p);
+				mpz_powm(E[i].first, com->g[0], R[i], com->p);
+				mpz_mul(E[i].first, E[i].first, e[pi[i]].first);
+				mpz_mod(E[i].first, E[i].first, com->p);
+				mpz_powm(E[i].second, com->h, R[i], com->p);
+				mpz_mul(E[i].second, E[i].second, e[pi[i]].second);
+				mpz_mod(E[i].second, E[i].second, com->p);
 			}
 			// send the messages to the verifier
 			for (size_t i = 0; i < n; i++)
@@ -222,6 +224,9 @@ int main
 			// prove VSSHE
 			std::cout << "P: vsshe.Prove_interactive(...)" << std::endl;
 			vsshe->Prove_interactive(pi, R, e, E, *pipe_in, *pipe_out);
+			// prove VSSHE wrong
+			std::cout << "P: !vsshe.Prove_interactive(...)" << std::endl;
+			vsshe->Prove_interactive(xi, R, e, E, *pipe_in, *pipe_out);
 			
 			// release
 			for (size_t i = 0; i < n; i++)
@@ -288,10 +293,14 @@ int main
 			GrothVSSHE *vsshe = new GrothVSSHE(n, lej2);
 			// receive the messages from the prover
 			for (size_t i = 0; i < n; i++)
-				*pipe_in >> e[i].first >> e[i].second >> E[i].first >> E[i].second;
+				*pipe_in >> e[i].first >> e[i].second >> E[i].first >> 
+					E[i].second;
 			// prove VSSHE
 			std::cout << "V: vsshe.Verify_interactive(...)" << std::endl;
 			assert(vsshe->Verify_interactive(e, E, *pipe_in, *pipe_out));
+			// prove VSSHE wrong
+			std::cout << "V: !vsshe.Verify_interactive(...)" << std::endl;
+			assert(!vsshe->Verify_interactive(e, E, *pipe_in, *pipe_out));
 			
 			// release
 			for (size_t i = 0; i < n; i++)

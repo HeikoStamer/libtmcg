@@ -529,35 +529,35 @@ bool GrothSKC::Verify_interactive
 			!(mpz_cmp(c_Delta, com->p) < 0) || !mpz_cmp_ui(c_d, 0L) ||
 			!mpz_cmp_ui(c_a, 0L) || !mpz_cmp_ui(c_Delta, 0L))
 				throw false;
-std::cerr << "SKC1" << std::endl;
+//std::cerr << "SKC1" << std::endl;
 		// check whether $f_1, \ldots, f_n, z \in\mathbb{Z}_q$
 		if (!(mpz_cmp(z, com->q) < 0))
 			throw false;
-std::cerr << "SKC2" << std::endl;
+//std::cerr << "SKC2" << std::endl;
 		for (size_t i = 0; i < f.size(); i++)
 		{
 			if (!(mpz_cmp(f[i], com->q) < 0))
 				throw false;
 		}
-std::cerr << "SKC3" << std::endl;
+//std::cerr << "SKC3" << std::endl;
 		// check whether $f_{\Delta_1}, \ldots, f_{\Delta_{n-1}}$ and $z$
 		// are from $\mathbb{Z}_q$
 		if (!(mpz_cmp(z_Delta, com->q) < 0))
 			throw false;
-std::cerr << "SKC4" << std::endl;
+//std::cerr << "SKC4" << std::endl;
 		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
 		{
 			if (!(mpz_cmp(f_Delta[i], com->q) < 0))
 				throw false;
 		}
-std::cerr << "SKC5" << std::endl;
+//std::cerr << "SKC5" << std::endl;
 		// check whether $c^e c_d = \mathrm{com}(f_1, \ldots, f_n; z)$
 		mpz_powm(foo, c, e, com->p);
 		mpz_mul(foo, foo, c_d);
 		mpz_mod(foo, foo, com->p);
 		if (!com->Verify(foo, z, f))
 			throw false;
-std::cerr << "SKC6" << std::endl;
+//std::cerr << "SKC6" << std::endl;
 		// check whether $c_a^e c_{\Delta} = \mathrm{com}(f_{\Delta_1},
 		// \ldots, f_{\Delta_{n-1}}; z_{Delta})$
 		mpz_powm(foo, c_a, e, com->p);
@@ -565,7 +565,7 @@ std::cerr << "SKC6" << std::endl;
 		mpz_mod(foo, foo, com->p);
 		if (!com->Verify(foo, z_Delta, f_Delta))
 			throw false;
-std::cerr << "SKC7" << std::endl;
+//std::cerr << "SKC7" << std::endl;
 		// check $F_n  = e \prod_{i=1}^n (m_i - x)$
 		mpz_mul(foo, e, x);
 		mpz_mod(foo, foo, com->q);
@@ -601,8 +601,8 @@ std::cerr << "SKC7" << std::endl;
 		mpz_mod(foo2, foo2, com->q);
 		if (mpz_cmp(foo2, bar2))
 			throw false;
-std::cerr << "SKC8" << std::endl;
-
+//std::cerr << "SKC8" << std::endl;
+		
 		throw true;
 	}
 	catch (bool return_value)
@@ -718,9 +718,8 @@ void GrothVSSHE::Prove_interactive
 	std::pair<mpz_t, mpz_t> E_d;
 	std::vector<mpz_ptr> d, f, m, t;
 	mpz_init(r), mpz_init(R_d), mpz_init(r_d), mpz_init(c), mpz_init(c_d),
-		mpz_init_set_ui(Z, 0L), mpz_init(lambda), mpz_init(rho), mpz_init(foo),
-		mpz_init(bar);
-	mpz_init_set_ui(E_d.first, 1L), mpz_init_set_ui(E_d.second, 1L);
+		mpz_init(Z), mpz_init(lambda), mpz_init(rho), mpz_init(foo),
+		mpz_init(bar), mpz_init(E_d.first), mpz_init(E_d.second);
 	for (size_t i = 0; i < com->g.size(); i++)
 	{
 		mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(),
@@ -743,23 +742,25 @@ void GrothVSSHE::Prove_interactive
 		mpz_set_ui(m[i], pi[i] + 1L);
 	com->CommitBy(c, r, m);
 	com->CommitBy(c_d, r_d, d);
+	mpz_set_ui(E_d.first, 1L), mpz_set_ui(E_d.second, 1L);
 	for (size_t i = 0; i < d.size(); i++)
 	{
 		// Compute and multiply $E_i^{-d_i}$
 		mpz_spowm(foo, E[i].first, d[i], p);
+		mpz_mul(E_d.first, E_d.first, foo);
+		mpz_mod(E_d.first, E_d.first, p);
 		mpz_spowm(bar, E[i].second, d[i], p);
-		mpz_mul(E_d.first, E_d.first, foo);
-		mpz_mod(E_d.first, E_d.first, p);
-		mpz_mul(E_d.first, E_d.first, bar);
-		mpz_mod(E_d.first, E_d.first, p);
-		// Compute and multiply $E(1;R_d)$
-		mpz_fspowm(fpowm_table_g, foo, g, R_d, p);
-		mpz_fspowm(fpowm_table_h, bar, h, R_d, p);
-		mpz_mul(E_d.first, E_d.first, foo);
-		mpz_mod(E_d.first, E_d.first, p);
-		mpz_mul(E_d.first, E_d.first, bar);
-		mpz_mod(E_d.first, E_d.first, p);
+		mpz_mul(E_d.second, E_d.second, bar);
+		mpz_mod(E_d.second, E_d.second, p);
 	}
+	// Compute and multiply $E(1;R_d)$
+	mpz_fspowm(fpowm_table_g, foo, g, R_d, p);
+	mpz_mul(E_d.first, E_d.first, foo);
+	mpz_mod(E_d.first, E_d.first, p);
+	mpz_fspowm(fpowm_table_h, bar, h, R_d, p);
+	mpz_mul(E_d.second, E_d.second, bar);
+	mpz_mod(E_d.second, E_d.second, p);
+	
 	out << c << std::endl << c_d << std::endl << E_d.first << std::endl << 
 		E_d.second << std::endl;
 	
@@ -779,15 +780,17 @@ void GrothVSSHE::Prove_interactive
 		mpz_add(f[i], f[i], t[pi[i]]);
 		mpz_mod(f[i], f[i], com->q);
 	}
+	mpz_set_ui(Z, 0L);
 	for (size_t i = 0; i < t.size(); i++)
 	{
-		mpz_add(foo, t[pi[i]], R[i]);
-		mpz_mod(foo, foo, q);
-		mpz_add(foo, foo, R_d);
+		mpz_mul(foo, t[pi[i]], R[i]);
 		mpz_mod(foo, foo, q);
 		mpz_add(Z, Z, foo);
 		mpz_mod(Z, Z, q);
 	}
+	mpz_add(Z, Z, R_d);
+	mpz_mod(Z, Z, q);
+	
 	for (size_t i = 0; i < f.size(); i++)
 		out << f[i] << std::endl;
 	out << Z << std::endl;
@@ -804,7 +807,7 @@ void GrothVSSHE::Prove_interactive
 		mpz_mod(rho, rho, com->q);
 		mpz_add(rho, rho, r_d);
 		mpz_mod(rho, rho, com->q);
-std::cerr << "p:rho = " << rho << std::endl;
+//std::cerr << "p:rho = " << rho << std::endl;
 		// SKC commitment $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod p$
 		mpz_set_ui(bar, 0L);
 		com->CommitBy(foo, bar, f, false);
@@ -813,7 +816,7 @@ std::cerr << "p:rho = " << rho << std::endl;
 		mpz_powm(bar, c, lambda, com->p);
 		mpz_mul(foo, foo, bar);
 		mpz_mod(foo, foo, com->p);
-std::cerr << "p:foo = " << foo << std::endl;
+//std::cerr << "p:foo = " << foo << std::endl;
 		// SKC messages $m_i := i \lambda + t_i \bmod q$ for all $i = 1,\ldots, n$
 		for (size_t i = 0; i < m.size(); i++)
 		{
@@ -921,43 +924,45 @@ bool GrothVSSHE::Verify_interactive
 				mpz_add(m[i], m[i], t[i]);
 				mpz_mod(m[i], m[i], com->q);
 			}
-std::cerr << "B" << std::endl;
+//std::cerr << "B" << std::endl;
 		// perform and verify SKC
 		if (!skc->Verify_interactive(foo, m, in, out))
 			throw false;
 	
-std::cerr << "1" << std::endl;
+//std::cerr << "1" << std::endl;
 		// check whether $c, c_d \in\mathcal{C}_{\mathrm{com}}$
-		if (!(mpz_cmp(c, com->p) < 0) || !(mpz_cmp(c_d, com->p) < 0) ||
+		if (!(mpz_cmp(c, com->p) < 0) || !(mpz_cmp(c_d, com->p) < 0) || 
 			!mpz_cmp_ui(c, 0L) || !mpz_cmp_ui(c_d, 0L))
 				throw false;
-std::cerr << "2" << std::endl;
+//std::cerr << "2" << std::endl;
 		// check whether $E_d\in\mathcal{C}$
 		mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
 		mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
 		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
 			throw false;
-std::cerr << "3" << std::endl;
+//std::cerr << "3" << std::endl;
 		// check whether $2^{\ell_e} \le f_1,\ldots,f_n < q$
 		for (size_t i = 0; i < f.size(); i++)
 		{
-			if ((mpz_sizeinbase(f[i], 2L) < l_e) || (mpz_cmp(f[i], com->q) >= 0))
-				throw false;
+			if ((mpz_sizeinbase(f[i], 2L) < l_e) || 
+				(mpz_cmp(f[i], com->q) >= 0))
+					throw false;
 		}
-std::cerr << "4" << std::endl;
+//std::cerr << "4" << std::endl;
 		// check whether $Z\in\mathcal{R}$
 		if (mpz_cmp(Z, q) >= 0)
 			throw false;
-std::cerr << "5" << std::endl;
-		// check $\prod_{i=1}^n e_i^{-t_i} \prod_{i=1}^n E_i^{f_i} E_d = E(1;Z)$
+//std::cerr << "5" << std::endl;
+		// check whether
+		// $\prod_{i=1}^n e_i^{-t_i} \prod_{i=1}^n E_i^{f_i} E_d = E(1;Z)$
 		mpz_set_ui(foo2, 1L), mpz_set_ui(bar2, 1L);
 		for (size_t i = 0; i < e.size(); i++)
 		{
 			mpz_neg(t[i], t[i]);
 			mpz_powm(foo, e[i].first, t[i], p);
-			mpz_powm(bar, e[i].second, t[i], p);
 			mpz_mul(foo2, foo2, foo);
 			mpz_mod(foo2, foo2, p);
+			mpz_powm(bar, e[i].second, t[i], p);
 			mpz_mul(bar2, bar2, bar);
 			mpz_mod(bar2, bar2, p);
 		}
@@ -965,29 +970,29 @@ std::cerr << "5" << std::endl;
 		for (size_t i = 0; i < E.size(); i++)
 		{
 			mpz_powm(foo, E[i].first, f[i], p);
-			mpz_powm(bar, E[i].second, f[i], p);
 			mpz_mul(foo3, foo3, foo);
 			mpz_mod(foo3, foo3, p);
-			mpz_mul(foo3, foo3, E_d.first);
-			mpz_mod(foo3, foo3, p);
+			mpz_powm(bar, E[i].second, f[i], p);
 			mpz_mul(bar3, bar3, bar);
 			mpz_mod(bar3, bar3, p);
-			mpz_mul(bar3, bar3, E_d.second);
-			mpz_mod(bar3, bar3, p);
 		}
+		mpz_mul(foo3, foo3, E_d.first);
+		mpz_mod(foo3, foo3, p);
+		mpz_mul(bar3, bar3, E_d.second);
+		mpz_mod(bar3, bar3, p);
 		mpz_mul(foo3, foo3, foo2);
 		mpz_mod(foo3, foo3, p);
 		mpz_mul(bar3, bar3, bar2);
 		mpz_mod(bar3, bar3, p);
 		mpz_fpowm(fpowm_table_g, foo, g, Z, p);
 		mpz_fpowm(fpowm_table_h, bar, h, Z, p);
-std::cerr << "foo = " << foo << std::endl;
-std::cerr << "foo3 = " << foo3 << std::endl;
-std::cerr << "bar = " << bar << std::endl;
-std::cerr << "bar3 = " << bar3 << std::endl;
+//std::cerr << "foo = " << foo << std::endl;
+//std::cerr << "foo3 = " << foo3 << std::endl;
+//std::cerr << "bar = " << bar << std::endl;
+//std::cerr << "bar3 = " << bar3 << std::endl;
 		if (mpz_cmp(foo3, foo) || mpz_cmp(bar3, bar))
 			throw false;
-std::cerr << "E" << std::endl;
+//std::cerr << "E" << std::endl;
 
 		throw true;
 	}
@@ -1000,22 +1005,10 @@ std::cerr << "E" << std::endl;
 		mpz_clear(E_d.first), mpz_clear(E_d.second);
 		for (size_t i = 0; i < f.size(); i++)
 		{
-			mpz_clear(f[i]);
-			delete f[i];
+			mpz_clear(f[i]), mpz_clear(m[i]), mpz_clear(t[i]);
+			delete f[i], delete m[i], delete t[i];
 		}
-		f.clear();
-		for (size_t i = 0; i < m.size(); i++)
-		{
-			mpz_clear(m[i]);
-			delete m[i];
-		}
-		m.clear();
-		for (size_t i = 0; i < t.size(); i++)
-		{
-			mpz_clear(t[i]);
-			delete t[i];
-		}
-		t.clear();
+		f.clear(), m.clear(), t.clear();
 		// return
 		return return_value;
 	}
