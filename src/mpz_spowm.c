@@ -127,17 +127,29 @@ void mpz_fpowm
 	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 	size_t i;
+	mpz_t xx;
 	
-	assert(mpz_sizeinbase(x, 2L) <= TMCG_MAX_FPOWM_T);
+	mpz_init_set(xx, x);
+	if (mpz_sgn(x) == -1)
+		mpz_neg(xx, x);
+	
+	assert(mpz_sizeinbase(xx, 2L) <= TMCG_MAX_FPOWM_T);
 	mpz_set_ui(res, 1L);
-	for (i = 0; i < mpz_sizeinbase(x, 2L); i++)
+	for (i = 0; i < mpz_sizeinbase(xx, 2L); i++)
 	{
-		if (mpz_tstbit(x, i))
+		if (mpz_tstbit(xx, i))
 		{
 			mpz_mul(res, res, fpowm_table[i]);
 			mpz_mod(res, res, p);
 		}
 	}
+	/* invert the result, if x was negative */
+	if (mpz_sgn(x) == -1)
+	{
+		if (!mpz_invert(res, res, p))
+			mpz_set_ui(res, 0L);
+	}
+	mpz_clear(xx);
 }
 
 void mpz_fpowm_ui
@@ -165,15 +177,20 @@ void mpz_fspowm
 	(mpz_t fpowm_table[],
 	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
-	size_t i;
-	mpz_t tmp;
+	size_t i, sgn;
+	mpz_t tmp, xx;
 	
-	assert(mpz_sizeinbase(x, 2L) <= TMCG_MAX_FPOWM_T);
-	mpz_init(tmp);
+	mpz_init(tmp), mpz_init_set(xx, x);
+	if (mpz_sgn(x) == -1)
+		mpz_neg(xx, x);
+	else
+		mpz_neg(tmp, x);
+	
+	assert(mpz_sizeinbase(xx, 2L) <= TMCG_MAX_FPOWM_T);
 	mpz_set_ui(res, 1L);
-	for (i = 0; i < mpz_sizeinbase(x, 2L); i++)
+	for (i = 0; i < mpz_sizeinbase(xx, 2L); i++)
 	{
-		if (mpz_tstbit(x, i))
+		if (mpz_tstbit(xx, i))
 		{
 			mpz_mul(res, res, fpowm_table[i]);
 			mpz_mod(res, res, p);
@@ -185,7 +202,19 @@ void mpz_fspowm
 			mpz_mod(tmp, tmp, p);
 		}
 	}
-	mpz_clear(tmp);
+	/* invert the input, if x was negative */
+	if (mpz_sgn(x) == -1)
+	{
+		if (!mpz_invert(res, res, p))
+			mpz_set_ui(res, 0L);
+	}
+	else
+	{
+		/* Timing attack protection */
+		if (!mpz_invert(tmp, res, p))
+			mpz_set_ui(tmp, 0L);
+	}
+	mpz_clear(tmp), mpz_clear(xx);
 }
 
 void mpz_fpowm_done

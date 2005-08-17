@@ -188,6 +188,9 @@ int main
 			// prove SKC wrong
 			std::cout << "P: !skc.Prove_interactive(...)" << std::endl;
 			skc->Prove_interactive(xi, r, c, m, *pipe_in, *pipe_out);
+			// prove SKC
+			std::cout << "P: skc.Prove_interactive(...)" << std::endl;
+			skc->Prove_interactive(pi, r, c, m, *pipe_in, *pipe_out);
 			
 			// initalize VSSHE
 			lej2 << com->p << std::endl << com->q << std::endl << com->g[0] << 
@@ -274,6 +277,9 @@ int main
 			// verify SKC wrong
 			std::cout << "V: !skc.Verify_interactive(...)" << std::endl;
 			assert(!skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
+			// verify SKC
+			std::cout << "V: skc.Verify_interactive(...)" << std::endl;
+			assert(skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
 			
 			// initalize VSSHE
 			lej2 << com->p << std::endl << com->q << std::endl << com->g[0] << 
@@ -302,7 +308,8 @@ int main
 			
 			delete pipe_in, delete pipe_out;
 		}
-		waitpid(pid, NULL, 0);
+		if (waitpid(pid, NULL, 0) != pid)
+			perror("t-vsshe (waitpid)");
 	}
 
 	mpz_clear(a), mpz_clear(b), mpz_clear(aa), mpz_clear(bb);

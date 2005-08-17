@@ -171,8 +171,8 @@ void PedersenCommitmentScheme::Commit
 	mpz_srandomm(r, q);
 	
 	// Compute the commitment $c := g_1^{m_1} \cdots g_n^{m_n} h^r \bmod p$
-	mpz_t tmp;
-	mpz_init(tmp);
+	mpz_t tmp, tmp2;
+	mpz_init(tmp), mpz_init(tmp2);
 	mpz_fspowm(fpowm_table_h, c, h, r, p);
 	for (size_t i = 0; i < g.size(); i++)
 	{
@@ -180,7 +180,7 @@ void PedersenCommitmentScheme::Commit
 		mpz_mul(c, c, tmp);
 		mpz_mod(c, c, p);
 	}
-	mpz_clear(tmp);
+	mpz_clear(tmp), mpz_clear(tmp2);
 }
 
 void PedersenCommitmentScheme::CommitBy
@@ -529,29 +529,35 @@ bool GrothSKC::Verify_interactive
 			!(mpz_cmp(c_Delta, com->p) < 0) || !mpz_cmp_ui(c_d, 0L) ||
 			!mpz_cmp_ui(c_a, 0L) || !mpz_cmp_ui(c_Delta, 0L))
 				throw false;
+std::cerr << "SKC1" << std::endl;
 		// check whether $f_1, \ldots, f_n, z \in\mathbb{Z}_q$
 		if (!(mpz_cmp(z, com->q) < 0))
 			throw false;
+std::cerr << "SKC2" << std::endl;
 		for (size_t i = 0; i < f.size(); i++)
 		{
 			if (!(mpz_cmp(f[i], com->q) < 0))
 				throw false;
 		}
+std::cerr << "SKC3" << std::endl;
 		// check whether $f_{\Delta_1}, \ldots, f_{\Delta_{n-1}}$ and $z$
 		// are from $\mathbb{Z}_q$
 		if (!(mpz_cmp(z_Delta, com->q) < 0))
 			throw false;
+std::cerr << "SKC4" << std::endl;
 		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
 		{
 			if (!(mpz_cmp(f_Delta[i], com->q) < 0))
 				throw false;
 		}
+std::cerr << "SKC5" << std::endl;
 		// check whether $c^e c_d = \mathrm{com}(f_1, \ldots, f_n; z)$
 		mpz_powm(foo, c, e, com->p);
 		mpz_mul(foo, foo, c_d);
 		mpz_mod(foo, foo, com->p);
 		if (!com->Verify(foo, z, f))
 			throw false;
+std::cerr << "SKC6" << std::endl;
 		// check whether $c_a^e c_{\Delta} = \mathrm{com}(f_{\Delta_1},
 		// \ldots, f_{\Delta_{n-1}}; z_{Delta})$
 		mpz_powm(foo, c_a, e, com->p);
@@ -559,6 +565,7 @@ bool GrothSKC::Verify_interactive
 		mpz_mod(foo, foo, com->p);
 		if (!com->Verify(foo, z_Delta, f_Delta))
 			throw false;
+std::cerr << "SKC7" << std::endl;
 		// check $F_n  = e \prod_{i=1}^n (m_i - x)$
 		mpz_mul(foo, e, x);
 		mpz_mod(foo, foo, com->q);
@@ -594,7 +601,8 @@ bool GrothSKC::Verify_interactive
 		mpz_mod(foo2, foo2, com->q);
 		if (mpz_cmp(foo2, bar2))
 			throw false;
-		
+std::cerr << "SKC8" << std::endl;
+
 		throw true;
 	}
 	catch (bool return_value)
@@ -718,14 +726,18 @@ void GrothVSSHE::Prove_interactive
 		mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(),
 			tmp4 = new mpz_t();
 		mpz_init(tmp), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4);
-		d.push_back(tmp), f.push_back(tmp2), m.push_back(tmp3), t.push_back(tmp4);
+		d.push_back(tmp), f.push_back(tmp2), m.push_back(tmp3),
+			t.push_back(tmp4);
 	}
 	
 	// prover: first move
 	mpz_srandomm(r, com->q);
 	mpz_srandomm(R_d, q);
 	for (size_t i = 0; i < d.size(); i++)
+	{
 		mpz_srandomm(d[i], com->q);
+		mpz_neg(d[i], d[i]);
+	}
 	mpz_srandomm(r_d, com->q);
 	for (size_t i = 0; i < m.size(); i++)
 		mpz_set_ui(m[i], pi[i] + 1L);
@@ -734,7 +746,6 @@ void GrothVSSHE::Prove_interactive
 	for (size_t i = 0; i < d.size(); i++)
 	{
 		// Compute and multiply $E_i^{-d_i}$
-		mpz_neg(d[i], d[i]);
 		mpz_spowm(foo, E[i].first, d[i], p);
 		mpz_spowm(bar, E[i].second, d[i], p);
 		mpz_mul(E_d.first, E_d.first, foo);
@@ -793,12 +804,13 @@ void GrothVSSHE::Prove_interactive
 		mpz_mod(rho, rho, com->q);
 		mpz_add(rho, rho, r_d);
 		mpz_mod(rho, rho, com->q);
+std::cerr << "p:rho = " << rho << std::endl;
 		// SKC commitment $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod p$
 		mpz_set_ui(bar, 0L);
 		com->CommitBy(foo, bar, f, false);
 		mpz_mul(foo, foo, c_d);
 		mpz_mod(foo, foo, com->p);
-		mpz_spowm(bar, c, lambda, com->p);
+		mpz_powm(bar, c, lambda, com->p);
 		mpz_mul(foo, foo, bar);
 		mpz_mod(foo, foo, com->p);
 std::cerr << "p:foo = " << foo << std::endl;
@@ -812,18 +824,7 @@ std::cerr << "p:foo = " << foo << std::endl;
 			mpz_mod(m[i], m[i], com->q);
 		}
 	skc->Prove_interactive(pi, rho, foo, m, in, out);
-
-for (size_t i = 0; i < m.size(); i++)
-{
-	mpz_set_ui(m[i], pi[i] + 1L);
-	mpz_mul(m[i], m[i], lambda);
-	mpz_mod(m[i], m[i], com->q);
-	mpz_add(m[i], m[i], t[pi[i]]);
-	mpz_mod(m[i], m[i], com->q);
-}
-com->CommitBy(foo, rho, m);
-std::cerr << "aber muss sein p:foo = " << foo << std::endl;
-
+	
 	// release
 	mpz_clear(r), mpz_clear(R_d), mpz_clear(r_d), mpz_clear(c), mpz_clear(c_d),
 		mpz_clear(Z), mpz_clear(lambda), mpz_clear(rho), mpz_clear(foo),
@@ -901,7 +902,8 @@ bool GrothVSSHE::Verify_interactive
 		out << lambda << std::endl;
 		
 		// verifier: fifth to seventh move (Shuffle of Known Content)
-			// SKC commitment $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod p$
+			// SKC commitment
+			// $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod p$
 			mpz_set_ui(bar, 0L);
 			com->CommitBy(foo, bar, f, false);
 			mpz_mul(foo, foo, c_d);
@@ -909,7 +911,8 @@ bool GrothVSSHE::Verify_interactive
 			mpz_powm(bar, c, lambda, com->p);
 			mpz_mul(foo, foo, bar);
 			mpz_mod(foo, foo, com->p);
-			// SKC messages $m_i := i \lambda + t_i \bmod q$ for all $i = 1,\ldots, n$
+			// SKC messages
+			// $m_i := i \lambda + t_i \bmod q$ for all $i = 1,\ldots, n$
 			for (size_t i = 0; i < m.size(); i++)
 			{
 				mpz_set_ui(m[i], i + 1L);
@@ -918,11 +921,11 @@ bool GrothVSSHE::Verify_interactive
 				mpz_add(m[i], m[i], t[i]);
 				mpz_mod(m[i], m[i], com->q);
 			}
-std::cerr << "b" << std::endl;
+std::cerr << "B" << std::endl;
 		// perform and verify SKC
-std::cerr << " foo = " << foo << std::endl;
-		if (!skc->Verify_interactive(foo, m, in, out));
+		if (!skc->Verify_interactive(foo, m, in, out))
 			throw false;
+	
 std::cerr << "1" << std::endl;
 		// check whether $c, c_d \in\mathcal{C}_{\mathrm{com}}$
 		if (!(mpz_cmp(c, com->p) < 0) || !(mpz_cmp(c_d, com->p) < 0) ||
@@ -978,9 +981,13 @@ std::cerr << "5" << std::endl;
 		mpz_mod(bar3, bar3, p);
 		mpz_fpowm(fpowm_table_g, foo, g, Z, p);
 		mpz_fpowm(fpowm_table_h, bar, h, Z, p);
+std::cerr << "foo = " << foo << std::endl;
+std::cerr << "foo3 = " << foo3 << std::endl;
+std::cerr << "bar = " << bar << std::endl;
+std::cerr << "bar3 = " << bar3 << std::endl;
 		if (mpz_cmp(foo3, foo) || mpz_cmp(bar3, bar))
 			throw false;
-std::cerr << "e" << std::endl;
+std::cerr << "E" << std::endl;
 
 		throw true;
 	}

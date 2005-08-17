@@ -201,11 +201,20 @@ int main
 	std::cout << elapsed_time() << std::endl;
 	
 	// mpz_spowm, mpz_spowm_init, mpz_spowm_calc, mpz_spowm_clear
-	mpz_sprime(foo, bar, 1024);
 	std::cout << "mpz_spowm()" << std::endl;
+	mpz_sprime(foo, bar, 1024);
 	for (size_t i = 0; i < 5; i++)
 	{
 		mpz_srandomm(bar, foo), mpz_srandomm(bar2, foo);
+		mpz_spowm(foo2, bar, bar2, foo);
+		mpz_powm(bar, bar, bar2, foo);
+		assert(!mpz_cmp(foo2, bar));
+	}
+	for (size_t i = 0; i < 5; i++)
+	{
+		// test negative exponents
+		mpz_srandomm(bar, foo), mpz_srandomm(bar2, foo);
+		mpz_neg(bar2, bar2);
 		mpz_spowm(foo2, bar, bar2, foo);
 		mpz_powm(bar, bar, bar2, foo);
 		assert(!mpz_cmp(foo2, bar));
@@ -238,6 +247,20 @@ int main
 	for (size_t i = 0; i < 15; i++)
 	{
 		mpz_srandomb(foo2, 1024);
+		mpz_powm(t1, bar, foo2, foo);
+		mpz_fpowm(fpowm_table_1, t2, bar, foo2, foo);
+		mpz_fspowm(fpowm_table_1, root, bar, foo2, foo);
+		assert(!mpz_cmp(t1, t2) && !mpz_cmp(t1, root));
+		mpz_powm(t1, bar2, foo2, foo);
+		mpz_fpowm(fpowm_table_2, t2, bar2, foo2, foo);
+		mpz_fspowm(fpowm_table_2, root, bar2, foo2, foo);
+		assert(!mpz_cmp(t1, t2) && !mpz_cmp(t1, root));
+	}
+	for (size_t i = 0; i < 15; i++)
+	{
+		// test negative exponents
+		mpz_srandomb(foo2, 1024);
+		mpz_neg(foo2, foo2);
 		mpz_powm(t1, bar, foo2, foo);
 		mpz_fpowm(fpowm_table_1, t2, bar, foo2, foo);
 		mpz_fspowm(fpowm_table_1, root, bar, foo2, foo);
