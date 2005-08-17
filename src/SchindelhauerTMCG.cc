@@ -1395,6 +1395,16 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 	mpz_clear(foo);
 }
 
+void SchindelhauerTMCG::TMCG_ProveStackEquality_Groth
+	(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+	const TMCG_StackSecret<VTMF_CardSecret> &ss,
+	BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
+	std::istream &in, std::ostream &out)
+{
+	assert((s.size() == s2.size()) && (s.size() == ss.size()));
+	
+}
+
 bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 	(const TMCG_Stack<TMCG_Card> &s, const TMCG_Stack<TMCG_Card> &s2, bool cyclic,
 	const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out)
@@ -1557,6 +1567,17 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 		delete [] tmp;
 		return return_value;
 	}
+}
+
+bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Groth
+	(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+	BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
+	std::istream &in, std::ostream &out)
+{
+	if (s.size() != s2.size())
+		return false;
+	
+	
 }
 
 void SchindelhauerTMCG::TMCG_MixOpenStack

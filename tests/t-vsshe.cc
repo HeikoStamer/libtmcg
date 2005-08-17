@@ -74,60 +74,56 @@ int main
 	assert(init_libTMCG());
 	
 	mpz_init(a), mpz_init(b), mpz_init(aa), mpz_init(bb);
-/*	
-	for (size_t n = 1; n <= 32; n++)
-	{
-		PedersenCommitmentScheme *com, *com2;
-		std::stringstream foo;
-		std::vector<mpz_ptr> m;
-		
-		std::cout << "PedersenCommitmentScheme(" << n << ")" << std::endl;
-		com = new PedersenCommitmentScheme(n);
-		std::cout << "*.CheckGroup()" << std::endl;
-		assert(com->CheckGroup());
-		
-		// create a clone instance
-		std::cout << "*.PublishGroup(foo)" << std::endl;
-		com->PublishGroup(foo);
-		std::cout << "PedersenCommitmentScheme(" << n << ", foo)" << std::endl;
-		com2 = new PedersenCommitmentScheme(n, foo);
-		std::cout << "*.CheckGroup()" << std::endl;
-		assert(com2->CheckGroup());
-		
-		// create messages
-		for (size_t i = 0; i < n; i++)
-		{
-			mpz_ptr tmp = new mpz_t();
-			mpz_init_set_ui(tmp, i);
-			m.push_back(tmp);
-		}
-		
-		// commit
-		std::cout << "*.Commit(...)" << std::endl;
-		com->Commit(a, b, m);
-		std::cout << "*.CommitBy(...)" << std::endl;
-		com->CommitBy(aa, b, m);
-		assert(!mpz_cmp(a, aa));
-		
-		// verify
-		std::cout << "*.Verify(...)" << std::endl;
-		assert(com->Verify(a, b, m));
-		assert(com2->Verify(a, b, m));
-		mpz_add_ui(m[0], m[0], 1L);
-		assert(!com->Verify(a, b, m));
-		assert(!com2->Verify(a, b, m));
-		
-		// release
-		for (size_t i = 0; i < n; i++)
-		{
-			mpz_clear(m[i]);
-			delete m[i];
-		}
-		m.clear();
-		delete com, delete com2;
-	}
-*/
 	size_t n = 32;
+	
+	PedersenCommitmentScheme *com, *com2;
+	std::stringstream foo;
+	std::vector<mpz_ptr> mp;
+	
+	std::cout << "PedersenCommitmentScheme(" << n << ")" << std::endl;
+	com = new PedersenCommitmentScheme(n);
+	std::cout << "*.CheckGroup()" << std::endl;
+	assert(com->CheckGroup());
+	
+	// create a clone instance
+	std::cout << "*.PublishGroup(foo)" << std::endl;
+	com->PublishGroup(foo);
+	std::cout << "PedersenCommitmentScheme(" << n << ", foo)" << std::endl;
+	com2 = new PedersenCommitmentScheme(n, foo);
+	std::cout << "*.CheckGroup()" << std::endl;
+	assert(com2->CheckGroup());
+	
+	// create messages
+	for (size_t i = 0; i < n; i++)
+	{
+		mpz_ptr tmp = new mpz_t();
+		mpz_init_set_ui(tmp, i);
+		mp.push_back(tmp);
+	}
+	
+	// commit
+	std::cout << "*.Commit(...)" << std::endl;
+	com->Commit(a, b, mp);
+	std::cout << "*.CommitBy(...)" << std::endl;
+	com->CommitBy(aa, b, mp);
+	assert(!mpz_cmp(a, aa));
+	
+	// verify
+	std::cout << "*.Verify(...)" << std::endl;
+	assert(com->Verify(a, b, mp));
+	assert(com2->Verify(a, b, mp));
+	mpz_add_ui(mp[0], mp[0], 1L);
+	assert(!com->Verify(a, b, mp));
+	assert(!com2->Verify(a, b, mp));
+	
+	// release
+	for (size_t i = 0; i < n; i++)
+	{
+		mpz_clear(mp[i]);
+		delete mp[i];
+	}
+	mp.clear();
+	delete com, delete com2;
 	
 	pid_t pid = 0;
 	int pipe1fd[2], pipe2fd[2];

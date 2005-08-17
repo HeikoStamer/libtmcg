@@ -202,12 +202,21 @@ class SchindelhauerTMCG
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
 			const TMCG_StackSecret<VTMF_CardSecret> &ss, bool cyclic,
 			BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out);
+		void TMCG_ProveStackEquality_Groth
+			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+			const TMCG_StackSecret<VTMF_CardSecret> &ss,
+			BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
+			std::istream &in, std::ostream &out);
 		bool TMCG_VerifyStackEquality
 			(const TMCG_Stack<TMCG_Card> &s, const TMCG_Stack<TMCG_Card> &s2, bool cyclic,
 			const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out);
 		bool TMCG_VerifyStackEquality
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2, bool cyclic,
 			BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out);
+		bool TMCG_VerifyStackEquality_Groth
+			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+			BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
+			std::istream &in, std::ostream &out);
 		void TMCG_MixOpenStack
 			(const TMCG_OpenStack<TMCG_Card> &os, TMCG_OpenStack<TMCG_Card> &os2,
 			const TMCG_StackSecret<TMCG_CardSecret> &ss, const TMCG_PublicKeyRing &ring);
