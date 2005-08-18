@@ -25,46 +25,14 @@
 
 #undef NDEBUG
 
-int main
-	(int argc, char **argv)
+void check
+	(BarnettSmartVTMF_dlog *vtmf, BarnettSmartVTMF_dlog *vtmf2)
 {
-	std::stringstream oak, lej, lej2, foo, foo2, bar;
-	std::string v;
+	std::stringstream foo, foo2, bar;
 	mpz_t a, b, c, d, e;
 	mpz_t *array;
-	assert(init_libTMCG());
 	
-	BarnettSmartVTMF_dlog *vtmf, *vtmf2;
 	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(d), mpz_init(e);
-	
-	// create and check the instance
-	oak << "n0p2ftq59aofqlrjexdmhww37nsdo5636jq09opxoq8amvlodjflhsspl5jzlgnlg0b\
-rgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9623r7y6j0m4yj33\
-04o731yt2xooyxw5npftk5yn9fj3m26mjjku1mbn3405h45cz8etbz" << std::endl;
-	std::cout << "BarnettSmartVTMF_dlog(<Oakley Group 2>)" << std::endl;
-	vtmf = new BarnettSmartVTMF_dlog(oak);
-	std::cout << "vtmf.CheckGroup()" << std::endl;
-	assert(vtmf->CheckGroup());
-	delete vtmf;
-	
-	// create and check the instance
-	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
-	vtmf = new BarnettSmartVTMF_dlog();
-	std::cout << "vtmf.CheckGroup()" << std::endl;
-	assert(vtmf->CheckGroup());
-	
-	// publish the instance
-	std::cout << "vtmf.PublishGroup(lej)" << std::endl;
-	vtmf->PublishGroup(lej);
-	
-	// create a clone of the instance
-	std::cout << "BarnettSmartVTMF_dlog(lej)" << std::endl;
-	vtmf2 = new BarnettSmartVTMF_dlog(lej);
-	
-	// publish the cloned instance
-	std::cout << "vtmf2.PublishGroup(lej2)" << std::endl;
-	vtmf2->PublishGroup(lej2);
-	assert(lej.str() == lej2.str());
 	
 	// RandomElement(), IndexElement()
 	std::cout << "vtmf.RandomElement(a)" << std::endl;
@@ -161,9 +129,90 @@ rgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9623r7y6j0m4yj33\
 	assert(vtmf->KeyGenerationProtocol_RemoveKey(bar));
 	assert(!mpz_cmp(vtmf->h, vtmf->h_i));
 	
+	mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(d), mpz_clear(e);
+}
+
+int main
+	(int argc, char **argv)
+{
+	std::stringstream oak, lej, lej2, foo, foo2, bar;
+	std::string v;
+	
+	assert(init_libTMCG());
+	
+	BarnettSmartVTMF_dlog *vtmf, *vtmf2;
+	BarnettSmartVTMF_dlog_GroupQR *vtmf_qr, *vtmf2_qr;
+	
+	// create and check the common instance
+	oak << "1a1e4vngailcvh7j2tur8zts6fbkrcac6d3g0jdfvdggl9r7cr2v6zllf6b3z6xb6w0\
+nix8jsjlecgt8lwx1huihghkvqnbbgviiz0vg6ntckohpeac84n0co9czkw174ic47ifwd2189x26\
+609ce63xm5vddxvsbbevn4bxaiv2784d9335o38na680ay8apygtmnz" << std::endl;
+	oak << "n0p2ftq59aofqlrjexdmhww37nsdo5636jq09opxoq8amvlodjflhsspl5jzlgnlg0b\
+rgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9623r7y6j0m4yj33\
+04o731yt2xooyxw5npftk5yn9fj3m26mjjku1mbn3405h45cz8etbz" << std::endl;
+	oak << "2" << std::endl << "2" << std::endl;
+	std::cout << "BarnettSmartVTMF_dlog_GroupQR(<Oakley Group 2>)" << std::endl;
+	vtmf_qr = new BarnettSmartVTMF_dlog_GroupQR(oak);
+	std::cout << "vtmf.CheckGroup()" << std::endl;
+	assert(vtmf_qr->CheckGroup());
+	delete vtmf_qr;
+	
+	// create and check the instance
+	std::cout << "BarnettSmartVTMF_dlog_GroupQR()" << std::endl;
+	vtmf_qr = new BarnettSmartVTMF_dlog_GroupQR();
+	std::cout << "vtmf_qr.CheckGroup()" << std::endl;
+	assert(vtmf_qr->CheckGroup());
+	
+	// publish the instance
+	std::cout << "vtmf_qr.PublishGroup(foo)" << std::endl;
+	vtmf_qr->PublishGroup(foo);
+	
+	// create a clone of the instance
+	std::cout << "BarnettSmartVTMF_dlog_GroupQR(foo)" << std::endl;
+	vtmf2_qr = new BarnettSmartVTMF_dlog_GroupQR(foo);
+	
+	// publish the cloned instance
+	std::cout << "vtmf2_qr.PublishGroup(foo2)" << std::endl;
+	vtmf2_qr->PublishGroup(foo2);
+	std::cout << foo.str() << std::endl;
+	std::cout << "versus" << std::endl;
+	std::cout << foo2.str() << std::endl;
+	assert(foo.str() == foo2.str());
+	
+	// check the instances
+	check(vtmf_qr, vtmf2_qr);
+	
+	// release the instances
+	delete vtmf_qr, delete vtmf2_qr;
+	
+	// create and check the instance
+	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
+	vtmf = new BarnettSmartVTMF_dlog();
+	std::cout << "vtmf.CheckGroup()" << std::endl;
+	assert(vtmf->CheckGroup());
+	
+	// publish the instance
+	std::cout << "vtmf.PublishGroup(lej)" << std::endl;
+	vtmf->PublishGroup(lej);
+	
+	// create a clone of the instance
+	std::cout << "BarnettSmartVTMF_dlog(lej)" << std::endl;
+	vtmf2 = new BarnettSmartVTMF_dlog(lej);
+	
+	// publish the cloned instance
+	std::cout << "vtmf2.PublishGroup(lej2)" << std::endl;
+	vtmf2->PublishGroup(lej2);
+	std::cout << lej.str() << std::endl;
+	std::cout << "versus" << std::endl;
+	std::cout << lej2.str() << std::endl;
+	assert(lej.str() == lej2.str());
+	
+	// check the instances
+	check(vtmf, vtmf2);
+	
 	// release the instances
 	delete vtmf, delete vtmf2;
 
-	mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(d), mpz_clear(e);
+	
 	return 0;
 }

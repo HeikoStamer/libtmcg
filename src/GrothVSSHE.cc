@@ -80,7 +80,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	// Initalize the parameters of the commitment scheme.
 	mpz_init(p), mpz_init(q), mpz_init(h), mpz_init(k);
 	in >> q >> k >> h;
-	mpz_mul(p, q, k), mpz_add_ui(p, p, 1L); // compute p := qk + 1
+	mpz_mul(p, q, k), mpz_add_ui(p, p, 1L); // compute $p := qk + 1$
 	for (size_t i = 0; i < n; i++)
 	{
 		mpz_ptr tmp = new mpz_t();
@@ -110,11 +110,12 @@ bool PedersenCommitmentScheme::CheckGroup
 	mpz_init(foo);
 	try
 	{
-		// Check whether $p$ and $q$ are prime.
-		if (!mpz_probab_prime_p(p, 64) || !mpz_probab_prime_p(q, 64))
+		// Check whether $p$ and $q$ are both (probable) prime with
+		// soundness error probability ${} \le 4^{-64}$.
+		if (!mpz_probab_prime_p(p, 64L) || !mpz_probab_prime_p(q, 64L))
 			throw false;
 		
-		// Check whether $q$ is not a divisor of $k$, i.e. $q$ and $k$ are coprime.
+		// Check whether $k$ is not divisible by $k$, i.e. $q, k$ are coprime.
 		mpz_gcd(foo, q, k);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
@@ -130,7 +131,8 @@ bool PedersenCommitmentScheme::CheckGroup
 				throw false;
 		}
 		
-		// Check whether the elements $h, g_1, \ldots, g_n$ are different and non-trivial.
+		// Check whether the elements $h, g_1, \ldots, g_n$ are different
+		// and non-trivial, i.e. not equal to one.
 		if (!mpz_cmp_ui(h, 1L))
 			throw false;
 		for (size_t i = 0; i < g.size(); i++)

@@ -457,6 +457,7 @@ void mpz_lprime
 	unsigned long int psize, unsigned long int qsize)
 {
 	mpz_t foo;
+	unsigned long int cnt = 0;
 	
 	assert(psize > qsize);
 	
@@ -469,16 +470,20 @@ void mpz_lprime
 	do
 	{
 		/* Choose randomly an even number $k$ and compute $p:= qk + 1$. */
-		mpz_srandomb(k, psize - qsize);
+		do
+			mpz_srandomb(k, psize - qsize);
+		while (mpz_sizeinbase(k, 2L) < (psize - qsize));
 		if (mpz_odd_p(k))
 			mpz_add_ui(k, k, 1L);
 		mpz_mul(p, q, k);
 		mpz_add_ui(p, p, 1L);
 		/* Check wether $k$ and $q$ are coprime, i.e. $gcd(k, q) = 1$. */
 		mpz_gcd(foo, k, q);
-		fprintf(stderr, ".");
+		if ((cnt++ % 100) == 0)
+			fprintf(stderr, ".");
 	}
-	while (mpz_cmp_ui(foo, 1L) || !mpz_probab_prime_p(p, 64));
+	while (mpz_cmp_ui(foo, 1L) || (mpz_sizeinbase(p, 2L) < psize) || 
+		!mpz_probab_prime_p(p, 64));
 	mpz_clear(foo);
 	fprintf(stderr, "\n");
 	

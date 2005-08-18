@@ -1395,6 +1395,73 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 	mpz_clear(foo);
 }
 
+void SchindelhauerTMCG::TMCG_InitializeStackEquality_Groth
+	(std::vector<size_t> &pi, std::vector<mpz_ptr> &R,
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
+	const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+	const TMCG_StackSecret<VTMF_CardSecret> &ss)
+{
+	for (size_t i = 0; i < s.size(); i++)
+	{
+		pi.push_back(ss[i].first);
+		mpz_ptr tmp = new mpz_t(), tmp4 = new mpz_t(), tmp5 = new mpz_t(),
+			tmp6 = new mpz_t(), tmp7 = new mpz_t();
+		mpz_init_set(tmp, ss[i].second.r),
+			mpz_init_set(tmp4, s[i].c_1), mpz_init_set(tmp5, s[i].c_2),
+			mpz_init_set(tmp6, s2[i].c_1), mpz_init_set(tmp7, s2[i].c_2);
+		R.push_back(tmp),
+			e.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp4, tmp5)),
+			E.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp6, tmp7));
+	}
+}
+
+void SchindelhauerTMCG::TMCG_InitializeStackEquality_Groth
+	(std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
+	const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2)
+{
+	for (size_t i = 0; i < s.size(); i++)
+	{
+		mpz_ptr tmp4 = new mpz_t(), tmp5 = new mpz_t(),
+			tmp6 = new mpz_t(), tmp7 = new mpz_t();
+		mpz_init_set(tmp4, s[i].c_1), mpz_init_set(tmp5, s[i].c_2),
+			mpz_init_set(tmp6, s2[i].c_1), mpz_init_set(tmp7, s2[i].c_2);
+		e.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp4, tmp5)),
+			E.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp6, tmp7));
+	}
+}
+
+void SchindelhauerTMCG::TMCG_ReleaseStackEquality_Groth
+	(std::vector<size_t> &pi, std::vector<mpz_ptr> &R,
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > &E)
+{
+	for (size_t i = 0; i < pi.size(); i++)
+	{
+		mpz_clear(R[i]), delete R[i];
+		mpz_clear(e[i].first), mpz_clear(e[i].second);
+		delete e[i].first, delete e[i].second;
+		mpz_clear(E[i].first), mpz_clear(E[i].second);
+		delete E[i].first, delete E[i].second;
+	}
+	pi.clear(), R.clear(), e.clear(), E.clear();
+}
+
+void SchindelhauerTMCG::TMCG_ReleaseStackEquality_Groth
+	(std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > &E)
+{
+	for (size_t i = 0; i < e.size(); i++)
+	{
+		mpz_clear(e[i].first), mpz_clear(e[i].second);
+		delete e[i].first, delete e[i].second;
+		mpz_clear(E[i].first), mpz_clear(E[i].second);
+		delete E[i].first, delete E[i].second;
+	}
+	e.clear(), E.clear();
+}
+
 void SchindelhauerTMCG::TMCG_ProveStackEquality_Groth
 	(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
 	const TMCG_StackSecret<VTMF_CardSecret> &ss,
@@ -1402,7 +1469,16 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality_Groth
 	std::istream &in, std::ostream &out)
 {
 	assert((s.size() == s2.size()) && (s.size() == ss.size()));
+	assert(!mpz_cmp(vtmf->q, vsshe->com->q));
+	assert((s.size() == vsshe->com->g.size()));
 	
+	std::vector<mpz_ptr> R;
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
+	std::vector<size_t> pi;
+	
+	TMCG_InitializeStackEquality_Groth(pi, R, e, E, s, s2, ss);
+	vsshe->Prove_interactive(pi, R, e, E, in, out);
+	TMCG_ReleaseStackEquality_Groth(pi, R, e, E);
 }
 
 bool SchindelhauerTMCG::TMCG_VerifyStackEquality
@@ -1574,10 +1650,21 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Groth
 	BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
 	std::istream &in, std::ostream &out)
 {
+	assert((s.size() == vsshe->com->g.size()));
+	assert(!mpz_cmp(vtmf->q, vsshe->com->q));
+	
 	if (s.size() != s2.size())
 		return false;
 	
+	std::vector<mpz_ptr> R;
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
+	std::vector<size_t> pi;
 	
+	TMCG_InitializeStackEquality_Groth(e, E, s, s2);
+	bool return_value = vsshe->Verify_interactive(e, E, in, out);
+	TMCG_ReleaseStackEquality_Groth(e, E);
+	
+	return return_value;
 }
 
 void SchindelhauerTMCG::TMCG_MixOpenStack

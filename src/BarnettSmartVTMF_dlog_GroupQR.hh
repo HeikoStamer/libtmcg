@@ -1,11 +1,16 @@
 /*******************************************************************************
-   BarnettSmartVTMF_dlog.hh, Verifiable l-out-of-l Threshold Masking Function
+   BarnettSmartVTMF_dlog_GroupQR.hh, VTMF instance where $G := \mathbb{QR}_p$
 
      Adam Barnett, Nigel P. Smart: 'Mental Poker Revisited',
      Cryptography and Coding 2003, LNCS 2898, pp. 370--383, 2003
 
      [CaS97] Jan Camenisch, Markus Stadler: 'Proof Systems for General
               Statements about Discrete Logarithms', Technical Report, 1997
+
+     [KK04] Takeshi Koshiba, Kaoru Kurosawa: 'Short Exponent Diffie-Hellman
+             Problems', In Public Key Cryptography - PKC 2004: Proceedings
+            7th International Workshop on Theory and Practice in Public Key
+             Cryptography, LNCS 2947, pp. 173--186, 2004
 
    This file is part of libTMCG.
 
@@ -26,8 +31,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 *******************************************************************************/
 
-#ifndef INCLUDED_BarnettSmartVTMF_dlog_HH
-	#define INCLUDED_BarnettSmartVTMF_dlog_HH
+#ifndef INCLUDED_BarnettSmartVTMF_dlog_GroupQR_HH
+	#define INCLUDED_BarnettSmartVTMF_dlog_GroupQR_HH
 
 	// config.h
 	#ifdef HAVE_CONFIG_H
@@ -55,87 +60,45 @@
 	#include "mpz_sprime.h"
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
+	
+	#include "BarnettSmartVTMF_dlog.hh"
 
-class BarnettSmartVTMF_dlog
+class BarnettSmartVTMF_dlog_GroupQR : public BarnettSmartVTMF_dlog
 {
-	protected:
-		mpz_t								*fpowm_table_g, *fpowm_table_h;
-		
 	public:
-		unsigned long int		F_size, G_size;
-		mpz_t								p, q, g, k;
-		mpz_t								x_i, h_i, h, d, h_i_fp;
-		std::map<std::string, mpz_ptr>		h_j;
+		unsigned long int		E_size;
 		
-		BarnettSmartVTMF_dlog
+		BarnettSmartVTMF_dlog_GroupQR
 			(unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
-		BarnettSmartVTMF_dlog
+			unsigned long int exponentsize = TMCG_DLSE_SIZE);
+		BarnettSmartVTMF_dlog_GroupQR
 			(std::istream &in,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
 			();
-		void PublishGroup
-			(std::ostream &out);
 		void RandomElement
 			(mpz_ptr a);
 		void IndexElement
 			(mpz_ptr a, std::size_t index);
-		void KeyGenerationProtocol_GenerateKey
-			();
-		void KeyGenerationProtocol_PublishKey
-			(std::ostream &out);
 		bool KeyGenerationProtocol_UpdateKey
 			(std::istream &in);
-		bool KeyGenerationProtocol_RemoveKey
-			(std::istream &in);
-		void KeyGenerationProtocol_Finalize
-			();
-		void CP_Prove
-			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
-			mpz_srcptr alpha, std::ostream &out, bool fpowm = false);
-		bool CP_Verify
-			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
-			std::istream &in, bool fpowm = false);
-		void OR_ProveFirst
-			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
-			mpz_srcptr alpha, std::ostream &out);
-		void OR_ProveSecond
-			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
-			mpz_srcptr alpha, std::ostream &out);
-		bool OR_Verify
-			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
-			std::istream &in);
 		void VerifiableMaskingProtocol_Mask
 			(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r);
-		void VerifiableMaskingProtocol_Prove
-			(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr r,
-			std::ostream &out);
 		bool VerifiableMaskingProtocol_Verify
 			(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, std::istream &in);
 		void VerifiableRemaskingProtocol_Mask
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_ptr r);
 		void VerifiableRemaskingProtocol_RemaskValue
 			(mpz_ptr r);
-		void VerifiableRemaskingProtocol_Remask
-			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2,
-			mpz_srcptr r, bool TimingAttackProtection = true);
-		void VerifiableRemaskingProtocol_Prove
-			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr c__1, mpz_srcptr c__2,
-			mpz_srcptr r, std::ostream &out);
 		bool VerifiableRemaskingProtocol_Verify
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr c__1, mpz_srcptr c__2,
 			std::istream &in);
-		void VerifiableDecryptionProtocol_Prove
-			(mpz_srcptr c_1, std::ostream &out);
-		void VerifiableDecryptionProtocol_Verify_Initalize
-			(mpz_srcptr c_1);
 		bool VerifiableDecryptionProtocol_Verify_Update
 			(mpz_srcptr c_1, std::istream &in);
 		void VerifiableDecryptionProtocol_Verify_Finalize
 			(mpz_srcptr c_2, mpz_ptr m);
-		~BarnettSmartVTMF_dlog
+		~BarnettSmartVTMF_dlog_GroupQR
 			();
 };
 

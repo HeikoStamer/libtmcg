@@ -90,10 +90,11 @@ class GrothSKC
 {
 	private:
 		unsigned long int						l_e;
-		PedersenCommitmentScheme		*com;
 		mpz_t												exp2l_e;
 	
 	public:
+		PedersenCommitmentScheme		*com;
+		
 		GrothSKC
 			(size_t n,
 			unsigned long int ell_e = TMCG_GROTH_L_E,
@@ -121,12 +122,13 @@ class GrothVSSHE
 {
 	private:
 		unsigned long int						l_e;
-		mpz_t												p, q, g, h;
-		PedersenCommitmentScheme		*com;
-		GrothSKC										*skc;
 		mpz_t												*fpowm_table_g, *fpowm_table_h, exp2l_e;
 	
 	public:
+		mpz_t												p, q, g, h;
+		PedersenCommitmentScheme		*com;
+		GrothSKC										*skc;
+		
 		GrothVSSHE
 			(size_t n,
 			mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC,

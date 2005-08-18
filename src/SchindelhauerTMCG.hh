@@ -58,6 +58,7 @@
 	#include "TMCG_StackSecret.hh"
 	
 	#include "BarnettSmartVTMF_dlog.hh"
+	#include "BarnettSmartVTMF_dlog_GroupQR.hh"
 	#include "GrothVSSHE.hh"
 	#include "mpz_srandom.h"
 	#include "mpz_sqrtm.h"
@@ -67,6 +68,24 @@ class SchindelhauerTMCG
 	private:
 		int									ret;
 		mpz_t								*message_space;
+		
+		void TMCG_InitializeStackEquality_Groth
+			(std::vector<size_t> &pi, std::vector<mpz_ptr> &R,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
+			const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+			const TMCG_StackSecret<VTMF_CardSecret> &ss);
+		void TMCG_InitializeStackEquality_Groth
+			(std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
+			const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2);
+		void TMCG_ReleaseStackEquality_Groth
+			(std::vector<size_t> &pi, std::vector<mpz_ptr> &R,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E);
+		void TMCG_ReleaseStackEquality_Groth
+			(std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E);
 	
 	public:
 		unsigned long int		TMCG_SecurityLevel;			// iterations
