@@ -26,7 +26,8 @@
 #include "GrothVSSHE.hh"
 
 PedersenCommitmentScheme::PedersenCommitmentScheme
-	(size_t n, unsigned long int fieldsize, unsigned long int subgroupsize)
+	(size_t n, unsigned long int fieldsize, unsigned long int subgroupsize):
+		F_size(fieldsize), G_size(subgroupsize)
 {
 	assert(n >= 1);
 	
@@ -73,14 +74,64 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 }
 
 PedersenCommitmentScheme::PedersenCommitmentScheme
-	(size_t n, std::istream &in)
+	(size_t n, mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr k_ENC,
+	unsigned long int fieldsize, unsigned long int subgroupsize):
+		F_size(fieldsize), G_size(subgroupsize)
+{
+	assert(n >= 1);
+	
+	// Initalize and choose the parameters of the commitment scheme.
+	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), mpz_init_set_ui(h, 1L),
+		mpz_init_set(k, k_ENC);
+	for (size_t i = 0; i <= n; i++)
+	{
+		mpz_ptr tmp = new mpz_t();
+		mpz_init(tmp);
+		// choose randomly elements of order $q$
+		do
+		{
+			mpz_srandomm(tmp, p);
+			mpz_powm(tmp, tmp, k, p);
+		}
+		while (mpz_congruent_p(tmp, h, p));
+		
+		if (i < n)
+		{
+			// store the elements $g_1, \ldots, g_n$
+			g.push_back(tmp);
+		}
+		else
+		{
+			// the last element is $h$
+			mpz_set(h, tmp);
+			mpz_clear(tmp);
+			delete tmp;
+		}
+	}
+	
+	// Do the precomputation for the fast exponentiation.
+	for (size_t i = 0; i < g.size(); i++)
+	{
+		mpz_t *tmp = new mpz_t[TMCG_MAX_FPOWM_T]();
+		mpz_fpowm_init(tmp);
+		mpz_fpowm_precompute(tmp, g[i], p, mpz_sizeinbase(q, 2L));
+		fpowm_table_g.push_back(tmp);
+	}
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+PedersenCommitmentScheme::PedersenCommitmentScheme
+	(size_t n, std::istream &in,
+	unsigned long int fieldsize, unsigned long int subgroupsize):
+		F_size(fieldsize), G_size(subgroupsize)
 {
 	assert(n >= 1);
 	
 	// Initalize the parameters of the commitment scheme.
 	mpz_init(p), mpz_init(q), mpz_init(h), mpz_init(k);
-	in >> q >> k >> h;
-	mpz_mul(p, q, k), mpz_add_ui(p, p, 1L); // compute $p := qk + 1$
+	in >> p >> q >> h >> k;
 	for (size_t i = 0; i < n; i++)
 	{
 		mpz_ptr tmp = new mpz_t();
@@ -103,19 +154,29 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 }
 
 bool PedersenCommitmentScheme::CheckGroup
-	(unsigned long int fieldsize, unsigned long int subgroupsize)
+	()
 {
 	mpz_t foo;
 	
 	mpz_init(foo);
 	try
 	{
+		// Check whether $p$ and $q$ have appropriate sizes.
+		if ((mpz_sizeinbase(p, 2L) < F_size) || (mpz_sizeinbase(q, 2L) < G_size))
+			throw false;
+		
+		// Check whether $p$ has the correct form, i.e. $p = qk + 1$.
+		mpz_mul(foo, q, k);
+		mpz_add_ui(foo, foo, 1L);
+		if (mpz_cmp(foo, p))
+			throw false;
+		
 		// Check whether $p$ and $q$ are both (probable) prime with
 		// soundness error probability ${} \le 4^{-64}$.
 		if (!mpz_probab_prime_p(p, 64L) || !mpz_probab_prime_p(q, 64L))
 			throw false;
 		
-		// Check whether $k$ is not divisible by $k$, i.e. $q, k$ are coprime.
+		// Check whether $k$ is not a divisible by $q$, i.e. $q, k$ are coprime.
 		mpz_gcd(foo, q, k);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
@@ -159,7 +220,7 @@ bool PedersenCommitmentScheme::CheckGroup
 void PedersenCommitmentScheme::PublishGroup
 	(std::ostream &out)
 {
-	out << q << std::endl << k << std::endl << h << std::endl;
+	out << p << std::endl << q << std::endl << h << std::endl << k << std::endl;
 	for (size_t i = 0; i < g.size(); i++)
 		out << g[i] << std::endl;
 }

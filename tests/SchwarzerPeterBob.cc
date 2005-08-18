@@ -1,6 +1,8 @@
 // libTMCG
 #include <libTMCG.hh>
 
+#define GROTH
+
 int main
 	()
 {
@@ -36,6 +38,27 @@ int main
 	// finish the key generation
 	vtmf->KeyGenerationProtocol_Finalize();
 	
+#ifdef GROTH
+	std::vector<PedersenCommitmentScheme*> com;
+	std::vector<GrothVSSHE*> vsshe;
+	for (size_t i = 2; i <= 25; i++)
+	{
+		std::stringstream lej;
+		PedersenCommitmentScheme *c = new PedersenCommitmentScheme(i, std::cin);
+		
+		if (!c->CheckGroup())
+		{
+			std::cerr << "Check of the commitment scheme failed!" << std::endl;
+			return -1;
+		}
+		com.push_back(c);
+		lej << vtmf->p << std::endl << vtmf->q << std::endl << vtmf->g << 
+				std::endl << vtmf->h << std::endl;
+		c->PublishGroup(lej);
+		vsshe.push_back(new GrothVSSHE(i, lej));
+	}
+#endif
+	
 	// create a deck of 25 cards (12 pairs and the "Schwarzer Peter")
 	// --------------------------------------------------------------
 	std::cerr << "Create the deck ..." << std::endl;
@@ -67,18 +90,32 @@ int main
 		std::cerr << ">< Stapelformat falsch (Trollversuch?)" << std::endl;
 		return -1;
 	}
+#ifdef GROTH
+	if (!tmcg->TMCG_VerifyStackEquality_Groth(Mischstapel, Mischstapel_Alice,
+		vtmf, vsshe[25 - 2], std::cin, std::cout))
+	{
+		std::cerr << ">< Stapelbeweis falsch (Betrugsversuch?)" << std::endl;
+		return -1;
+	}
+#else
 	if (!tmcg->TMCG_VerifyStackEquality(Mischstapel, Mischstapel_Alice,
 		false, vtmf, std::cin, std::cout))
 	{
 		std::cerr << ">< Stapelbeweis falsch (Betrugsversuch?)" << std::endl;
 		return -1;
 	}
+#endif
 	// ... Bob
 	tmcg->TMCG_MixStack(Mischstapel_Alice, Mischstapel_Bob,
-		Mischgeheimnis, vtmf);                             // Maskieren
-	std::cout << Mischstapel_Bob << std::endl;             // Stapel an Alice senden
+		Mischgeheimnis, vtmf); // Maskieren
+	std::cout << Mischstapel_Bob << std::endl; // Stapel an Alice senden
+#ifdef GROTH
+	tmcg->TMCG_ProveStackEquality_Groth(Mischstapel_Alice, Mischstapel_Bob,
+		Mischgeheimnis, vtmf, vsshe[25 - 2], std::cin, std::cout);
+#else
 	tmcg->TMCG_ProveStackEquality(Mischstapel_Alice, Mischstapel_Bob,
 		Mischgeheimnis, false, vtmf, std::cin, std::cout); // Korrektheit beweisen
+#endif
 	
 	// Stapel teilen: Alice erhält die Karten 1 bis 13 und Bob den Rest.
 	// -----------------------------------------------------------------

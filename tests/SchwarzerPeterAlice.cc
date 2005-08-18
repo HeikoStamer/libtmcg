@@ -1,6 +1,8 @@
 // include the libTMCG header file
 #include <libTMCG.hh>
 
+#define GROTH
+
 int main
 	()
 {
@@ -18,6 +20,7 @@ int main
 	
 	// create an instance of the VTMF implementation (create the group G)
 	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog();
+	
 	// check whether the group G was correctly generated
 	if (!vtmf->CheckGroup())
 	{
@@ -37,6 +40,25 @@ int main
 	}
 	// finish the key generation
 	vtmf->KeyGenerationProtocol_Finalize();
+	
+#ifdef GROTH
+	std::vector<PedersenCommitmentScheme*> com;
+	std::vector<GrothVSSHE*> vsshe;
+	for (size_t i = 2; i <= 25; i++)
+	{
+		std::stringstream lej;
+		PedersenCommitmentScheme *c =
+			new PedersenCommitmentScheme(i, vtmf->p, vtmf->q, vtmf->k);
+		
+		com.push_back(c);
+		c->PublishGroup(std::cout);
+		lej << vtmf->p << std::endl << vtmf->q << std::endl << vtmf->g << 
+				std::endl << vtmf->h << std::endl;
+		c->PublishGroup(lej);
+		vsshe.push_back(new GrothVSSHE(i, lej));
+		
+	}
+#endif
 	
 	// create a deck of 25 cards (12 pairs and the "Schwarzer Peter")
 	// --------------------------------------------------------------
@@ -64,8 +86,13 @@ int main
 	// ... Alice
 	tmcg->TMCG_MixStack(stack, stack_Alice, secret, vtmf); // shuffle operation
 	std::cout << stack_Alice << std::endl; // send the result to Bob
+#ifdef GROTH
+	tmcg->TMCG_ProveStackEquality_Groth(stack, stack_Alice, secret, vtmf,
+		vsshe[25 - 2], std::cin, std::cout); // Groth's efficient shuffle proof
+#else
 	tmcg->TMCG_ProveStackEquality(stack, stack_Alice, secret, false, vtmf,
 		std::cin, std::cout); // prove the correctness of the operation
+#endif
 	
 	// ... Bob
 	char *tmp = new char[TMCG_MAX_STACK_CHARS];
@@ -75,12 +102,21 @@ int main
 		std::cerr << "Stack corrupted!" << std::endl;
 		return -1;
 	}
+#ifdef GROTH
+	if (!tmcg->TMCG_VerifyStackEquality_Groth(stack_Alice, stack_Bob, vtmf,
+		vsshe[25 - 2], std::cin, std::cout)) // Groth's efficient shuffle proof
+	{
+		std::cerr << "StackEquality: proof of correctness failed!" << std::endl;
+		return -1;
+	}
+#else
 	if (!tmcg->TMCG_VerifyStackEquality(stack_Alice, stack_Bob, false, vtmf,
 		std::cin, std::cout)) // verify the proof of correctness
 	{
 		std::cerr << "StackEquality: proof of correctness failed!" << std::endl;
 		return -1;
 	}
+#endif
 	
 	// dealing: Alice gets the 1st to 13th and Bob the remaining cards.
 	// ----------------------------------------------------------------
