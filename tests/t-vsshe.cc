@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <sys/wait.h>
 
+#include "test_helper.h"
 #include <libTMCG.hh>
 #include "pipestream.hh"
 
@@ -274,14 +275,23 @@ int main
 			*pipe_in >> a;
 			std::cout << "V: c = " << a << std::endl;
 			// verify SKC
+			start_clock();
 			std::cout << "V: skc.Verify_interactive(...)" << std::endl;
 			assert(skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << elapsed_time() << std::endl;
 			// verify SKC wrong
+			start_clock();
 			std::cout << "V: !skc.Verify_interactive(...)" << std::endl;
 			assert(!skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << elapsed_time() << std::endl;
 			// verify SKC
+			start_clock();
 			std::cout << "V: skc.Verify_interactive(...)" << std::endl;
 			assert(skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << elapsed_time() << std::endl;
 			
 			// initalize VSSHE
 			lej2 << com->p << std::endl << com->q << std::endl << com->g[0] << 
@@ -293,11 +303,17 @@ int main
 				*pipe_in >> e[i].first >> e[i].second >> E[i].first >> 
 					E[i].second;
 			// prove VSSHE
+			start_clock();
 			std::cout << "V: vsshe.Verify_interactive(...)" << std::endl;
 			assert(vsshe->Verify_interactive(e, E, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << elapsed_time() << std::endl;
 			// prove VSSHE wrong
+			start_clock();
 			std::cout << "V: !vsshe.Verify_interactive(...)" << std::endl;
 			assert(!vsshe->Verify_interactive(e, E, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << elapsed_time() << std::endl;
 			
 			// release
 			for (size_t i = 0; i < n; i++)
@@ -316,6 +332,7 @@ int main
 		}
 		if (waitpid(pid, NULL, 0) != pid)
 			perror("t-vsshe (waitpid)");
+		close(pipe1fd[0]), close(pipe1fd[1]), close(pipe2fd[0]), close(pipe2fd[1]);
 	}
 
 	mpz_clear(a), mpz_clear(b), mpz_clear(aa), mpz_clear(bb);

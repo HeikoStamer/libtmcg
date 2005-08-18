@@ -21,34 +21,11 @@
 #include <string>
 #include <sstream>
 #include <cassert>
-#include <ctime>
 
+#include "test_helper.h"
 #include <libTMCG.hh>
 
 #undef NDEBUG
-
-static clock_t start, stop;
-static char buf[50];
-
-static void start_clock
-	(void)
-{
-	start = stop = clock();
-}
-
-static void stop_clock
-	(void)
-{
-	stop = clock();
-}
-
-static char *elapsed_time
-	(void)
-{
-	snprintf(buf, sizeof(buf), "%8.0fms",
-		(((double) (stop - start)) / CLOCKS_PER_SEC) * 1000);
-	return buf;
-}
 
 int main
 	(int argc, char **argv)

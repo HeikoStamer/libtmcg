@@ -31,8 +31,8 @@ SchwarzerPeterAlice_SOURCES = SchwarzerPeterAlice.cc
 
 SchwarzerPeterBob_SOURCES = SchwarzerPeterBob.cc
 
-t_mpz_SOURCES = t-mpz.cc
+t_mpz_SOURCES = test_helper.c test_helper.h t-mpz.cc
 t_vtmf_SOURCES = t-vtmf.cc
-t_vsshe_SOURCES = t-vsshe.cc pipestream.hh
+t_vsshe_SOURCES = pipestream.hh test_helper.c test_helper.h t-vsshe.cc
 t_mpc_SOURCES = StiglicMPC.cc StiglicMPC.hh t-mpc.cc
 t_key_SOURCES = t-key.cc
