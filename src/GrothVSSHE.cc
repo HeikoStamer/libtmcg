@@ -4,6 +4,11 @@
      Jens Groth: 'A Verifiable Secret Shuffle of Homomorphic Encryptions',
      Cryptology ePrint Archive, Report 2005/246, 2005.
 
+TODO:
+	1. membership test of the E[i]'s (GrothVSSHE::Verify_interactive)
+	2. optimizations (randomization technique) from section 6 of the paper
+	3. non-interactive version of the shuffle proof
+
    This file is part of libTMCG.
 
  Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>

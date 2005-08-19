@@ -173,22 +173,34 @@ int main
 				mpz_set(m_pi[i], m[pi[i]]);
 				std::cout << m_pi[i] << " " << std::flush;
 			}
+			start_clock();
 			std::cout << std::endl << "P: com.Commit(...)" << std::endl;
 			com->Commit(c, r, m_pi);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
 			*pipe_out << c << std::endl;
 			// prove SKC
+			start_clock();
 			std::cout << "P: skc.Prove_interactive(...)" << std::endl;
 			skc->Prove_interactive(pi, r, c, m, *pipe_in, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
 			// create a different permutation
 			do
 				random_permutation(n, xi);
 			while (equal_permutations(pi, xi));
 			// prove SKC wrong
+			start_clock();
 			std::cout << "P: !skc.Prove_interactive(...)" << std::endl;
 			skc->Prove_interactive(xi, r, c, m, *pipe_in, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
 			// prove SKC
+			start_clock();
 			std::cout << "P: skc.Prove_interactive(...)" << std::endl;
 			skc->Prove_interactive(pi, r, c, m, *pipe_in, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
 			
 			// initalize VSSHE
 			lej2 << com->p << std::endl << com->q << std::endl << com->g[0] << 
@@ -220,11 +232,17 @@ int main
 					E[i].first << std::endl << E[i].second << std::endl;
 			}
 			// prove VSSHE
+			start_clock();
 			std::cout << "P: vsshe.Prove_interactive(...)" << std::endl;
 			vsshe->Prove_interactive(pi, R, e, E, *pipe_in, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
 			// prove VSSHE wrong
+			start_clock();
 			std::cout << "P: !vsshe.Prove_interactive(...)" << std::endl;
 			vsshe->Prove_interactive(xi, R, e, E, *pipe_in, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
 			
 			// release
 			for (size_t i = 0; i < n; i++)
@@ -279,19 +297,19 @@ int main
 			std::cout << "V: skc.Verify_interactive(...)" << std::endl;
 			assert(skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
 			stop_clock();
-			std::cout << elapsed_time() << std::endl;
+			std::cout << "V: " << elapsed_time() << std::endl;
 			// verify SKC wrong
 			start_clock();
 			std::cout << "V: !skc.Verify_interactive(...)" << std::endl;
 			assert(!skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
 			stop_clock();
-			std::cout << elapsed_time() << std::endl;
+			std::cout << "V: " << elapsed_time() << std::endl;
 			// verify SKC
 			start_clock();
 			std::cout << "V: skc.Verify_interactive(...)" << std::endl;
 			assert(skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
 			stop_clock();
-			std::cout << elapsed_time() << std::endl;
+			std::cout << "V: " << elapsed_time() << std::endl;
 			
 			// initalize VSSHE
 			lej2 << com->p << std::endl << com->q << std::endl << com->g[0] << 
@@ -307,13 +325,13 @@ int main
 			std::cout << "V: vsshe.Verify_interactive(...)" << std::endl;
 			assert(vsshe->Verify_interactive(e, E, *pipe_in, *pipe_out));
 			stop_clock();
-			std::cout << elapsed_time() << std::endl;
+			std::cout << "V: " << elapsed_time() << std::endl;
 			// prove VSSHE wrong
 			start_clock();
 			std::cout << "V: !vsshe.Verify_interactive(...)" << std::endl;
 			assert(!vsshe->Verify_interactive(e, E, *pipe_in, *pipe_out));
 			stop_clock();
-			std::cout << elapsed_time() << std::endl;
+			std::cout << "V: " << elapsed_time() << std::endl;
 			
 			// release
 			for (size_t i = 0; i < n; i++)

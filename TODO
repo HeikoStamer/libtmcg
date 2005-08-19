@@ -1,5 +1,9 @@
+1. see TODO header of GrothVSSHE.cc
+2. improve the membership test operation in BarnettSmartVTMF_dlog.cc
+   (precompute a exponentiation table for the fixed value of $q$)
+
 - implement more card and stack operations of the toolbox
-- generalize the use of the VTMF primitive (base class)
+- generalize the usage of the VTMF primitive (more general base class)
 - use local namespaces TMCG and VMTF to prevent pollution
 - documentation: doxygen? and examples
 - The library should provide a protocol for reliable broadcast
