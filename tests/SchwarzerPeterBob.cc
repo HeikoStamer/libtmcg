@@ -316,8 +316,14 @@ int main
 				tmcg->TMCG_MixStack(Kartenstapel_Bob, Mischstapel_Bob,
 					Mischgeheimnis, vtmf);                             // Maskieren, ...
 				std::cout << Mischstapel_Bob << std::endl;           // senden, ...
+#ifdef GROTH
+				tmcg->TMCG_ProveStackEquality_Groth(Kartenstapel_Bob, Mischstapel_Bob,
+					Mischgeheimnis, vtmf, vsshe[Kartenstapel_Bob.size() - 2],
+					std::cin, std::cout);
+#else
 				tmcg->TMCG_ProveStackEquality(Kartenstapel_Bob, Mischstapel_Bob,
 					Mischgeheimnis, false, vtmf, std::cin, std::cout); // beweisen.
+#endif
 				Kartenstapel_Bob = Mischstapel_Bob;
 			}
 			else
@@ -342,12 +348,22 @@ int main
 					std::cerr << ">< Stapelformat falsch (Trollversuch?)" << std::endl;
 					return -1;
 				}
+#ifdef GROTH
+				if (!tmcg->TMCG_VerifyStackEquality_Groth(Kartenstapel_Alice,
+					Mischstapel_Alice, vtmf, vsshe[Kartenstapel_Alice.size() - 2],
+					std::cin, std::cout))
+				{
+					std::cerr << ">< Stapelbeweis falsch (Betrugsversuch?)" << std::endl;
+					return -1;
+				}
+#else
 				if (!tmcg->TMCG_VerifyStackEquality(Kartenstapel_Alice,
 					Mischstapel_Alice, false, vtmf, std::cin, std::cout)) // verifizieren
 				{
 					std::cerr << ">< Stapelbeweis falsch (Betrugsversuch?)" << std::endl;
 					return -1;
 				}
+#endif
 				Kartenstapel_Alice = Mischstapel_Alice;
 			}
 		}

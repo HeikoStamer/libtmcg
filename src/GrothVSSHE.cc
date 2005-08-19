@@ -955,7 +955,6 @@ bool GrothVSSHE::Verify_interactive
 		for (size_t i = 0; i < t.size(); i++)
 		{
 			mpz_srandomb(t[i], l_e);
-mpz_set_ui(t[i], 1L);
 			out << t[i] << std::endl;
 		}
 		
@@ -988,23 +987,23 @@ mpz_set_ui(t[i], 1L);
 				mpz_add(m[i], m[i], t[i]);
 				mpz_mod(m[i], m[i], com->q);
 			}
-std::cerr << "B" << std::endl;
+//std::cerr << "B" << std::endl;
 		// perform and verify SKC
 		if (!skc->Verify_interactive(foo, m, in, out))
 			throw false;
 	
-std::cerr << "1" << std::endl;
+//std::cerr << "1" << std::endl;
 		// check whether $c, c_d \in\mathcal{C}_{\mathrm{com}}$
 		if (!(mpz_cmp(c, com->p) < 0) || !(mpz_cmp(c_d, com->p) < 0) || 
 			!mpz_cmp_ui(c, 0L) || !mpz_cmp_ui(c_d, 0L))
 				throw false;
-std::cerr << "2" << std::endl;
+//std::cerr << "2" << std::endl;
 		// check whether $E_d\in\mathcal{C}$
 		mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
 		mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
 		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
 			throw false;
-std::cerr << "3" << std::endl;
+//std::cerr << "3" << std::endl;
 		// check whether $2^{\ell_e} \le f_1,\ldots,f_n < q$
 		for (size_t i = 0; i < f.size(); i++)
 		{
@@ -1012,11 +1011,11 @@ std::cerr << "3" << std::endl;
 				(mpz_cmp(f[i], com->q) >= 0))
 					throw false;
 		}
-std::cerr << "4" << std::endl;
+//std::cerr << "4" << std::endl;
 		// check whether $Z\in\mathcal{R}$
 		if (mpz_cmp(Z, q) >= 0)
 			throw false;
-std::cerr << "5" << std::endl;
+//std::cerr << "5" << std::endl;
 		// check whether
 		// $\prod_{i=1}^n e_i^{-t_i} \prod_{i=1}^n E_i^{f_i} E_d = E(1;Z)$
 		mpz_set_ui(foo2, 1L), mpz_set_ui(bar2, 1L);
@@ -1050,14 +1049,14 @@ std::cerr << "5" << std::endl;
 		mpz_mod(bar3, bar3, p);
 		mpz_fpowm(fpowm_table_g, foo, g, Z, p);
 		mpz_fpowm(fpowm_table_h, bar, h, Z, p);
-std::cerr << "foo = " << foo << std::endl;
-std::cerr << "foo3 = " << foo3 << std::endl;
-std::cerr << "bar = " << bar << std::endl;
-std::cerr << "bar3 = " << bar3 << std::endl;
+//std::cerr << "foo = " << foo << std::endl;
+//std::cerr << "foo3 = " << foo3 << std::endl;
+//std::cerr << "bar = " << bar << std::endl;
+//std::cerr << "bar3 = " << bar3 << std::endl;
 		if (mpz_cmp(foo3, foo) || mpz_cmp(bar3, bar))
 			throw false;
-std::cerr << "E" << std::endl;
-
+//std::cerr << "E" << std::endl;
+		
 		throw true;
 	}
 	catch (bool return_value)

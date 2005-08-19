@@ -56,7 +56,6 @@ int main
 				std::endl << vtmf->h << std::endl;
 		c->PublishGroup(lej);
 		vsshe.push_back(new GrothVSSHE(i, lej));
-		
 	}
 #endif
 	
@@ -304,8 +303,13 @@ int main
 				tmcg->TMCG_CreateStackSecret(secret, false, hand_Alice.size(), vtmf);
 				tmcg->TMCG_MixStack(hand_Alice, stack_Alice, secret, vtmf);
 				std::cout << stack_Alice << std::endl; // send the result to Bob
+#ifdef GROTH
+				tmcg->TMCG_ProveStackEquality_Groth(hand_Alice, stack_Alice, secret,
+					vtmf, vsshe[hand_Alice.size() - 2], std::cin, std::cout);
+#else
 				tmcg->TMCG_ProveStackEquality(hand_Alice, stack_Alice, secret, false,
 					vtmf, std::cin, std::cout);
+#endif
 				hand_Alice = stack_Alice;
 			}
 			else
@@ -330,12 +334,21 @@ int main
 					std::cerr << "Stack corrupted!" << std::endl;
 					return -1;
 				}
+#ifdef GROTH
+				if (!tmcg->TMCG_VerifyStackEquality_Groth(hand_Bob, stack_Bob, vtmf,
+					vsshe[hand_Bob.size() - 2], std::cin, std::cout))
+				{
+					std::cerr << "StackEquality: proof of correctness failed!" << std::endl;
+					return -1;
+				}
+#else
 				if (!tmcg->TMCG_VerifyStackEquality(hand_Bob, stack_Bob, false, vtmf,
 					std::cin, std::cout)) // verify the proof of correctness
 				{
 					std::cerr << "StackEquality: proof of correctness failed!" << std::endl;
 					return -1;
 				}
+#endif
 				hand_Bob = stack_Bob;
 			}
 		}

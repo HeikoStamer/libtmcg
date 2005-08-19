@@ -1407,18 +1407,12 @@ void SchindelhauerTMCG::TMCG_InitializeStackEquality_Groth
 		pi.push_back(ss[i].first);
 		mpz_ptr tmp = new mpz_t(), tmp4 = new mpz_t(), tmp5 = new mpz_t(),
 			tmp6 = new mpz_t(), tmp7 = new mpz_t();
-		mpz_init_set(tmp, ss[i].second.r),
+		mpz_init_set(tmp, ss[ss[i].first].second.r),
 			mpz_init_set(tmp4, s[i].c_1), mpz_init_set(tmp5, s[i].c_2),
 			mpz_init_set(tmp6, s2[i].c_1), mpz_init_set(tmp7, s2[i].c_2);
 		R.push_back(tmp),
 			e.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp4, tmp5)),
 			E.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp6, tmp7));
-	}
-// TODO: permutation for Groth's shuffle
-	for (size_t i = 0; i < s.size(); i++)
-	{
-		pi[ss[i].first] = i;
-		mpz_set(R[ss[i].first], ss[i].second.r);
 	}
 }
 
