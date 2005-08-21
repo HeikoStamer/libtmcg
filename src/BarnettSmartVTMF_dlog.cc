@@ -337,7 +337,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_Finalize
 
 void BarnettSmartVTMF_dlog::CP_Prove
 	(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh, mpz_srcptr alpha,
-	std::ostream &out, bool fpowm)
+	std::ostream &out, bool fpowm_usage)
 {
 	mpz_t a, b, omega, c, r;
 	
@@ -346,7 +346,7 @@ void BarnettSmartVTMF_dlog::CP_Prove
 		
 		// commitment
 		mpz_srandomm(omega, q);
-		if (fpowm)
+		if (fpowm_usage)
 		{
 			assert(!mpz_cmp(g, gg) && !mpz_cmp(h, hh));
 			mpz_fspowm(fpowm_table_g, a, gg, omega, p);
@@ -377,7 +377,7 @@ void BarnettSmartVTMF_dlog::CP_Prove
 
 bool BarnettSmartVTMF_dlog::CP_Verify
 	(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
-	std::istream &in, bool fpowm)
+	std::istream &in, bool fpowm_usage)
 {
 	mpz_t a, b, c, r;
 	
@@ -391,7 +391,7 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 			throw false;
 		
 		// verify proof of knowledge (equality of discrete logarithms) [CaS97]
-		if (fpowm)
+		if (fpowm_usage)
 		{
 			assert(!mpz_cmp(g, gg));
 			mpz_fpowm(fpowm_table_g, a, gg, r, p);
@@ -401,7 +401,7 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 		mpz_powm(b, x, c, p);
 		mpz_mul(a, a, b);
 		mpz_mod(a, a, p);
-		if (fpowm)
+		if (fpowm_usage)
 		{
 			assert(!mpz_cmp(h, hh));
 			mpz_fpowm(fpowm_table_h, b, hh, r, p);

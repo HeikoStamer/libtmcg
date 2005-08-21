@@ -96,10 +96,10 @@ class BarnettSmartVTMF_dlog
 			();
 		void CP_Prove
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
-			mpz_srcptr alpha, std::ostream &out, bool fpowm = false);
+			mpz_srcptr alpha, std::ostream &out, bool fpowm_usage = false);
 		bool CP_Verify
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
-			std::istream &in, bool fpowm = false);
+			std::istream &in, bool fpowm_usage = false);
 		void OR_ProveFirst
 			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
 			mpz_srcptr alpha, std::ostream &out);

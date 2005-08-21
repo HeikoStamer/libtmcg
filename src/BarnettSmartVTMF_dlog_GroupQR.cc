@@ -127,7 +127,7 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckElement
 	
 	// Check whether $a$ is not equal to zero.
 	if (!mpz_cmp_ui(a, 0L))
-		throw false;
+		return false;
 	
 	// Check whether $a$ is a quadratic residue.
 	return (mpz_jacobi(a, p) == 1L);
