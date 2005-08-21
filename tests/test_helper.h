@@ -34,6 +34,8 @@
 		();
 	char *elapsed_time
 		();
+	char *current_time
+		();
 	
 	#if defined(__cplusplus)
 		}

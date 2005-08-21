@@ -42,3 +42,11 @@ char *elapsed_time
 		(((double) (stop - start)) / CLOCKS_PER_SEC) * 1000);
 	return buf;
 }
+
+char *current_time
+	()
+{
+	snprintf(buf, sizeof(buf), "%8.0fms",
+		(((double) (clock() - start)) / CLOCKS_PER_SEC) * 1000);
+	return buf;
+}

@@ -35,19 +35,23 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	// Create a finite abelian group $G$ where the DDH problem is hard:
 	// We use the unique subgroup of prime order $q$ where $p = kq + 1$.
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(k);
-	mpz_lprime(p, q, k, fieldsize, subgroupsize);
+	if (subgroupsize)
+		mpz_lprime(p, q, k, fieldsize, subgroupsize);
 	
 	// Initialize all members of the key.
 	mpz_init(x_i), mpz_init(h_i), mpz_init_set_ui(h, 1L), mpz_init(d);
 	mpz_init(h_i_fp);
 	
 	// Choose randomly a generator $g$ of the unique subgroup of order $q$.
-	do
+	if (subgroupsize)
 	{
-		mpz_wrandomm(d, p);
-		mpz_powm(g, d, k, p);
+		do
+		{
+			mpz_wrandomm(d, p);
+			mpz_powm(g, d, k, p);
+		}
+		while (!mpz_cmp_ui(g, 1L));
 	}
-	while (!mpz_cmp_ui(g, 1L));
 	
 	// Initalize the tables for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -55,7 +59,8 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
 	
 	// Precompute the values $g^{2^i} \bmod p$ for all $0 \le i \le |q|$.
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	if (subgroupsize)
+		mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
@@ -77,7 +82,8 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
 	
 	// Precompute the values $g^{2^i} \bmod p$ for all $0 \le i \le |q|$.
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	if (subgroupsize)
+		mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
 bool BarnettSmartVTMF_dlog::CheckGroup
@@ -107,8 +113,6 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 		mpz_gcd(foo, q, k);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		
-		// Check whether $g$
 		
 		// Check whether $g$ is a generator for the subgroup $G$ of order $q$.
 		// Here we have to assert that $g^q \equiv 1 \pmod{p}$.
@@ -189,8 +193,6 @@ void BarnettSmartVTMF_dlog::IndexElement
 	
 	assert(CheckElement(a));
 }
-
-
 
 void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
 	()
@@ -710,7 +712,7 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Prove
 	
 	mpz_init(d_i);
 	
-	// compute d_i = {c_1}^{x_i} \bmod p
+	// compute $d_i = {c_1}^{x_i} \bmod p$
 	mpz_spowm(d_i, c_1, x_i, p);
 	out << d_i << std::endl << h_i_fp << std::endl;
 	
@@ -784,10 +786,10 @@ BarnettSmartVTMF_dlog::~BarnettSmartVTMF_dlog
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(k);
 	mpz_clear(x_i), mpz_clear(h_i), mpz_clear(h), mpz_clear(d);
 	for (std::map<std::string, mpz_ptr>::const_iterator
-		j = h_j.begin(); j != h_j.end(); ++j)
+		j = h_j.begin(); j != h_j.end(); j++)
 	{
-			mpz_clear(j->second);
-			delete j->second;
+		mpz_clear(j->second);
+		delete j->second;
 	}
 	h_j.clear();
 	

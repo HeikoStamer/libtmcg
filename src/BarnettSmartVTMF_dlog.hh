@@ -74,13 +74,13 @@ class BarnettSmartVTMF_dlog
 			(std::istream &in,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
-		bool CheckGroup
+		virtual bool CheckGroup
 			();
 		void PublishGroup
 			(std::ostream &out);
-		bool CheckElement
+		virtual bool CheckElement
 			(mpz_srcptr a);
-		void RandomElement
+		virtual void RandomElement
 			(mpz_ptr a);
 		void IndexElement
 			(mpz_ptr a, std::size_t index);
@@ -109,7 +109,7 @@ class BarnettSmartVTMF_dlog
 		bool OR_Verify
 			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
 			std::istream &in);
-		void MaskingValue
+		virtual void MaskingValue
 			(mpz_ptr r);
 		void VerifiableMaskingProtocol_Mask
 			(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r);
@@ -137,7 +137,7 @@ class BarnettSmartVTMF_dlog
 			(mpz_srcptr c_1, std::istream &in);
 		void VerifiableDecryptionProtocol_Verify_Finalize
 			(mpz_srcptr c_2, mpz_ptr m);
-		~BarnettSmartVTMF_dlog
+		virtual ~BarnettSmartVTMF_dlog
 			();
 };
 

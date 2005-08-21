@@ -99,12 +99,14 @@ void check
 	{
 		assert(sA[i] == os[i].second);
 	}
+	
 	std::cout << " MixStack()" << std::endl;
 	tmcg->TMCG_CreateStackSecret(ssA, false, sA.size(), vtmf);
 	tmcg->TMCG_MixStack(sA, sAB, ssA, vtmf);
 	std::cout << " MixStack()" << std::endl;
 	tmcg->TMCG_CreateStackSecret(ssB, false, sAB.size(), vtmf2);
 	tmcg->TMCG_MixStack(sAB, sB, ssB, vtmf2);
+	
 	std::cout << " TypeOfCard() = " << std::flush;
 	for (size_t i = 0; i < sB.size(); i++)
 	{
@@ -130,6 +132,7 @@ void check
 	
 	delete tmcg;
 	
+	// key generation protocol
 	std::cout << "*.KeyGenerationProtocol_RemoveKey()" << std::endl;
 	vtmf2->KeyGenerationProtocol_PublishKey(bar);
 	assert(vtmf->KeyGenerationProtocol_RemoveKey(bar));

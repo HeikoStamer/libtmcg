@@ -32,7 +32,7 @@
 
 BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	(unsigned long int fieldsize, unsigned long int exponentsize):
-		BarnettSmartVTMF_dlog(fieldsize, exponentsize), E_size(exponentsize)
+		BarnettSmartVTMF_dlog(fieldsize, 0L), E_size(exponentsize)
 {
 	// Create a finite abelian group $G$ where DDH is hard:
 	// We use the subgroup of quadratic residues modulo $p$,
@@ -57,7 +57,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	(std::istream &in,
 	unsigned long int fieldsize, unsigned long int exponentsize):
-		BarnettSmartVTMF_dlog(in, fieldsize, exponentsize), E_size(exponentsize)
+		BarnettSmartVTMF_dlog(in, fieldsize, 0L), E_size(exponentsize)
 {
 	mpz_set_ui(g, 2L), mpz_set_ui(k, 2L);
 	G_size = fieldsize - 1L;

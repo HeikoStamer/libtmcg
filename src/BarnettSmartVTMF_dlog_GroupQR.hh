@@ -72,15 +72,15 @@ class BarnettSmartVTMF_dlog_GroupQR : public BarnettSmartVTMF_dlog
 			(std::istream &in,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int exponentsize = TMCG_DLSE_SIZE);
-		bool CheckGroup
+		virtual bool CheckGroup
 			();
-		bool CheckElement
+		virtual bool CheckElement
 			(mpz_srcptr a);
-		void RandomElement
+		virtual void RandomElement
 			(mpz_ptr a);
-		void MaskingValue
+		virtual void MaskingValue
 			(mpz_ptr r);
-		~BarnettSmartVTMF_dlog_GroupQR
+		virtual ~BarnettSmartVTMF_dlog_GroupQR
 			();
 };
 
