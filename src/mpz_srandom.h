@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2002, 2004  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2002, 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -35,13 +35,19 @@
 				();
 			unsigned long int mpz_srandom_ui
 				();
+			unsigned long int mpz_wrandom_ui
+				();
 			void mpz_ssrandomb
 				(mpz_ptr r, unsigned long int size);
 			void mpz_srandomb
 				(mpz_ptr r, unsigned long int size);
+			void mpz_wrandomb
+				(mpz_ptr r, unsigned long int size);
 			void mpz_ssrandomm
 				(mpz_ptr r, mpz_srcptr m);
 			void mpz_srandomm
+				(mpz_ptr r, mpz_srcptr m);
+			void mpz_wrandomm
 				(mpz_ptr r, mpz_srcptr m);
 	#if defined(__cplusplus)
 		}

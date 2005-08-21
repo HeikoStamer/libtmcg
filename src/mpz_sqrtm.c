@@ -89,7 +89,7 @@ void mpz_sqrtmp_r
 				else
 				{
 					do
-						mpz_srandomm(b, p);
+						mpz_wrandomm(b, p);
 					while (mpz_jacobi(b, p) != -1);
 					mpz_powm(b, b, s, p);
 					mpz_mul(root, root, b);
@@ -126,7 +126,7 @@ void mpz_sqrtmp_r
 				/* ! a^s = -1 (mod p) */
 				mpz_init(b);
 				do
-					mpz_srandomm(b, p);
+					mpz_wrandomm(b, p);
 				while (mpz_jacobi(b, p) != -1);
 				mpz_init_set(t, p);
 				mpz_sub_ui(t, t, 1L);

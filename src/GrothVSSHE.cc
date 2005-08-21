@@ -5,9 +5,8 @@
      Cryptology ePrint Archive, Report 2005/246, 2005.
 
 TODO:
-	1. membership test of the E[i]'s (GrothVSSHE::Verify_interactive)
-	2. optimizations (randomization technique) from section 6 of the paper
-	3. non-interactive version of the shuffle proof
+	1. optimizations (randomization technique) from section 6 of the paper
+	2. non-interactive version of the shuffle proof
 
    This file is part of libTMCG.
 
@@ -46,7 +45,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 		// choose randomly elements of order $q$
 		do
 		{
-			mpz_srandomm(tmp, p);
+			mpz_wrandomm(tmp, p);
 			mpz_powm(tmp, tmp, k, p);
 		}
 		while (mpz_congruent_p(tmp, h, p));
@@ -95,7 +94,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 		// choose randomly elements of order $q$
 		do
 		{
-			mpz_srandomm(tmp, p);
+			mpz_wrandomm(tmp, p);
 			mpz_powm(tmp, tmp, k, p);
 		}
 		while (mpz_congruent_p(tmp, h, p));
@@ -170,14 +169,14 @@ bool PedersenCommitmentScheme::CheckGroup
 		if ((mpz_sizeinbase(p, 2L) < F_size) || (mpz_sizeinbase(q, 2L) < G_size))
 			throw false;
 		
-		// Check whether $p$ has the correct form, i.e. $p = qk + 1$.
+		// Check whether $p$ has the correct form, i.e. $p = kq + 1$.
 		mpz_mul(foo, q, k);
 		mpz_add_ui(foo, foo, 1L);
 		if (mpz_cmp(foo, p))
 			throw false;
 		
 		// Check whether $p$ and $q$ are both (probable) prime with
-		// soundness error probability ${} \le 4^{-64}$.
+		// a soundness error probability ${} \le 4^{-64}$.
 		if (!mpz_probab_prime_p(p, 64L) || !mpz_probab_prime_p(q, 64L))
 			throw false;
 		
@@ -198,12 +197,12 @@ bool PedersenCommitmentScheme::CheckGroup
 		}
 		
 		// Check whether the elements $h, g_1, \ldots, g_n$ are different
-		// and non-trivial, i.e. not equal to one.
-		if (!mpz_cmp_ui(h, 1L))
+		// and non-trivial, i.e. not equal to zero or one.
+		if (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L))
 			throw false;
 		for (size_t i = 0; i < g.size(); i++)
 		{
-			if (!mpz_cmp_ui(g[i], 1L) || !mpz_cmp(g[i], h))
+			if (!mpz_cmp_ui(g[i], 0L) || !mpz_cmp_ui(g[i], 1L) || !mpz_cmp(g[i], h))
 				throw false;
 			for (size_t j = (i + 1); j < g.size(); j++)
 			{

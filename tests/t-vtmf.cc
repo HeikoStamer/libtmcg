@@ -19,9 +19,15 @@
 *******************************************************************************/
 
 #include <sstream>
+#include <vector>
 #include <cassert>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/wait.h>
 
+#include "test_helper.h"
 #include <libTMCG.hh>
+#include "pipestream.hh"
 
 #undef NDEBUG
 
@@ -34,17 +40,17 @@ void check
 	
 	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(d), mpz_init(e);
 	
-	// RandomElement(), IndexElement()
+	// RandomElement(), IndexElement(), CheckElement()
 	std::cout << "vtmf.RandomElement(a)" << std::endl;
 	vtmf->RandomElement(a);
 	assert(mpz_cmp(a, vtmf->p) < 0);
-	assert(mpz_jacobi(a, vtmf->p) == 1L);
+	assert(vtmf->CheckElement(a));
 	mpz_powm(b, a, vtmf->q, vtmf->p);
 	assert(!mpz_cmp_ui(b, 1L));
 	std::cout << "vtmf.RandomElement(b)" << std::endl;
 	vtmf->RandomElement(b);
 	assert(mpz_cmp(b, a));
-	assert(mpz_jacobi(b, vtmf->p) == 1L);
+	assert(vtmf->CheckElement(b));
 	mpz_set_ui(b, 0L);
 	std::cout << "vtmf.IndexElement(a, [0, 127])" << std::endl;
 	array = new mpz_t[128]();
@@ -180,7 +186,10 @@ rgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9623r7y6j0m4yj33\
 	assert(foo.str() == foo2.str());
 	
 	// check the instances
+	start_clock();
 	check(vtmf_qr, vtmf2_qr);
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
 	
 	// release the instances
 	delete vtmf_qr, delete vtmf2_qr;
@@ -208,11 +217,13 @@ rgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9623r7y6j0m4yj33\
 	assert(lej.str() == lej2.str());
 	
 	// check the instances
+	start_clock();
 	check(vtmf, vtmf2);
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
 	
 	// release the instances
 	delete vtmf, delete vtmf2;
-
 	
 	return 0;
 }

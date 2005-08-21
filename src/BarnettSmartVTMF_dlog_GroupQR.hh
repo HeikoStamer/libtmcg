@@ -4,9 +4,6 @@
      Adam Barnett, Nigel P. Smart: 'Mental Poker Revisited',
      Cryptography and Coding 2003, LNCS 2898, pp. 370--383, 2003
 
-     [CaS97] Jan Camenisch, Markus Stadler: 'Proof Systems for General
-              Statements about Discrete Logarithms', Technical Report, 1997
-
      [KK04] Takeshi Koshiba, Kaoru Kurosawa: 'Short Exponent Diffie-Hellman
              Problems', In Public Key Cryptography - PKC 2004: Proceedings
             7th International Workshop on Theory and Practice in Public Key
@@ -77,27 +74,12 @@ class BarnettSmartVTMF_dlog_GroupQR : public BarnettSmartVTMF_dlog
 			unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
 			();
+		bool CheckElement
+			(mpz_srcptr a);
 		void RandomElement
 			(mpz_ptr a);
-		void IndexElement
-			(mpz_ptr a, std::size_t index);
-		bool KeyGenerationProtocol_UpdateKey
-			(std::istream &in);
-		void VerifiableMaskingProtocol_Mask
-			(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r);
-		bool VerifiableMaskingProtocol_Verify
-			(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, std::istream &in);
-		void VerifiableRemaskingProtocol_Mask
-			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_ptr r);
-		void VerifiableRemaskingProtocol_RemaskValue
+		void MaskingValue
 			(mpz_ptr r);
-		bool VerifiableRemaskingProtocol_Verify
-			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr c__1, mpz_srcptr c__2,
-			std::istream &in);
-		bool VerifiableDecryptionProtocol_Verify_Update
-			(mpz_srcptr c_1, std::istream &in);
-		void VerifiableDecryptionProtocol_Verify_Finalize
-			(mpz_srcptr c_2, mpz_ptr m);
 		~BarnettSmartVTMF_dlog_GroupQR
 			();
 };

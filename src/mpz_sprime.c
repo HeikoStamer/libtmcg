@@ -463,7 +463,7 @@ void mpz_lprime
 	
 	/* Choose randomly a prime number $q$ of appropriate size. */
 	do
-		mpz_srandomb(q, qsize);
+		mpz_wrandomb(q, qsize);
 	while ((mpz_sizeinbase(q, 2L) < qsize) || !mpz_probab_prime_p(q, 64));
 	
 	mpz_init(foo);
@@ -471,7 +471,7 @@ void mpz_lprime
 	{
 		/* Choose randomly an even number $k$ and compute $p:= qk + 1$. */
 		do
-			mpz_srandomb(k, psize - qsize);
+			mpz_wrandomb(k, psize - qsize);
 		while (mpz_sizeinbase(k, 2L) < (psize - qsize));
 		if (mpz_odd_p(k))
 			mpz_add_ui(k, k, 1L);

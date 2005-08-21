@@ -74,21 +74,41 @@ int main
 	mpz_fdiv_q_2exp(foo, foo, 1L);
 	assert(!mpz_cmp(foo, bar));
 	
-	// mpz_srandom_ui, mpz_srandomb, mpz_ssrandomb, mpz_srandomm, mpz_ssrandomm
-	std::cout << "mpz_srandom_ui(), mpz_ssrandom_ui()" << std::endl;
+	// mpz_*random_ui, mpz_*randomb, mpz_*randomm
+	std::cout << "mpz_wrandom_ui()" << std::endl;
+	for (size_t i = 0; i < 50; i++)
+	{
+		tmp_ui = mpz_wrandom_ui();
+		mpz_set_ui(foo, tmp_ui);
+		assert(mpz_get_ui(foo) == tmp_ui);
+		assert(tmp_ui != mpz_wrandom_ui());
+	}
+	std::cout << "mpz_srandom_ui()" << std::endl;
 	for (size_t i = 0; i < 50; i++)
 	{
 		tmp_ui = mpz_srandom_ui();
 		mpz_set_ui(foo, tmp_ui);
 		assert(mpz_get_ui(foo) == tmp_ui);
-		assert(tmp_ui != mpz_srandom_ui());
+		assert(tmp_ui != mpz_wrandom_ui());
 	}
+	std::cout << "mpz_ssrandom_ui()" << std::endl;
 	for (size_t i = 0; i < 3; i++)
 	{
 		tmp_ui = mpz_ssrandom_ui();
 		mpz_set_ui(foo, tmp_ui);
 		assert(mpz_get_ui(foo) == tmp_ui);
-		assert(tmp_ui != mpz_srandom_ui());
+		assert(tmp_ui != mpz_wrandom_ui());
+	}
+	std::cout << "mpz_wrandomb()" << std::endl;
+	for (size_t i = 0; i < 50; i++)
+	{
+		mpz_set(foo2, foo);
+		mpz_wrandomb(foo, 1024L), mpz_set_ui(bar, 0L);
+		assert((mpz_sizeinbase(foo, 2L) >= 1008L) &&
+			(mpz_sizeinbase(foo, 2L) <= 1024L));
+		lej << foo << std::endl, lej >> bar;
+		assert(!mpz_cmp(foo, bar));
+		assert(mpz_cmp(foo, foo2));
 	}
 	std::cout << "mpz_srandomb()" << std::endl;
 	for (size_t i = 0; i < 50; i++)
@@ -110,6 +130,15 @@ int main
 			(mpz_sizeinbase(foo, 2L) <= 1024L));
 		lej << foo << std::endl, lej >> bar;
 		assert(!mpz_cmp(foo, bar));
+		assert(mpz_cmp(foo, foo2));
+	}
+	std::cout << "bar = " << bar << std::endl;
+	std::cout << "mpz_wrandomm()" << std::endl;
+	for (size_t i = 0; i < 50; i++)
+	{
+		mpz_set(foo2, foo);
+		mpz_wrandomm(foo, bar);
+		assert(mpz_cmp(foo, bar) < 0);
 		assert(mpz_cmp(foo, foo2));
 	}
 	std::cout << "mpz_srandomm()" << std::endl;

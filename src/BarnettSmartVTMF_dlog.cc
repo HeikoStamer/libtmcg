@@ -44,10 +44,10 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	// Choose randomly a generator $g$ of the unique subgroup of order $q$.
 	do
 	{
-		mpz_srandomm(d, p);
+		mpz_wrandomm(d, p);
 		mpz_powm(g, d, k, p);
 	}
-	while (mpz_congruent_p(g, h, p));
+	while (!mpz_cmp_ui(g, 1L));
 	
 	// Initalize the tables for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -99,18 +99,22 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 			throw false;
 		
 		// Check whether $p$ and $q$ are both (probable) prime with
-		// soundness error probability ${} \le 4^{-64}$.
+		// a soundness error probability ${} \le 4^{-64}$.
 		if (!mpz_probab_prime_p(p, 64L) || !mpz_probab_prime_p(q, 64L))
 			throw false;
 		
-		// Check whether $k$ is not a divisible by $q$, i.e. $q, k$ are coprime.
+		// Check whether $k$ is not divisible by $q$, i.e. $q$ and $k$ are coprime.
 		mpz_gcd(foo, q, k);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 		
+		// Check whether $g$
+		
 		// Check whether $g$ is a generator for the subgroup $G$ of order $q$.
+		// Here we have to assert that $g^q \equiv 1 \pmod{p}$.
+		// Further, we have to ensure that $g$ is not equal to zero or one.
 		mpz_fpowm(fpowm_table_g, foo, g, q, p);
-		if (!mpz_congruent_p(foo, bar, p))
+		if (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || mpz_cmp_ui(foo, 1L))
 			throw false;
 		
 		// finish
@@ -129,26 +133,64 @@ void BarnettSmartVTMF_dlog::PublishGroup
 	out << p << std::endl << q << std::endl << g << std::endl << k << std::endl;
 }
 
-void BarnettSmartVTMF_dlog::RandomElement
-	(mpz_ptr a)
+bool BarnettSmartVTMF_dlog::CheckElement
+	(mpz_srcptr a)
 {
 	mpz_t foo;
 	
-	// Choose an element from $G$ in a random and uniform manner.
 	mpz_init(foo);
+	try
+	{
+		// Check the size of $a$.
+		if (mpz_cmp(a, p) >= 0L)
+			throw false;
+		
+		// Check whether $a$ is not equal to zero.
+		if (!mpz_cmp_ui(a, 0L))
+			throw false;
+		
+		// Check whether $a^q \equiv 1 \pmod{p}$.
+		mpz_powm(foo, a, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo);
+		return return_value;
+	}
+}
+
+void BarnettSmartVTMF_dlog::RandomElement
+	(mpz_ptr a)
+{
+	mpz_t b;
+	
+	// Choose randomly and uniformly an element $b$ from $\mathbb{Z}_q$.
+	mpz_init(b);
 	do
-		mpz_srandomm(foo, q);
-	while (!mpz_cmp_ui(foo, 0L));
-	mpz_fspowm(fpowm_table_g, a, g, foo, p);
-	mpz_clear(foo);
+		mpz_srandomm(b, q);
+	while (!mpz_cmp_ui(b, 0L));
+	
+	// Compute $a := g^b \bmod p$.
+	mpz_fspowm(fpowm_table_g, a, g, b, p);
+	mpz_clear(b);
+	
+	assert(CheckElement(a));
 }
 
 void BarnettSmartVTMF_dlog::IndexElement
 	(mpz_ptr a, std::size_t index)
 {
-	// Simply compute $g^i mod p$.
+	// Simply compute $a := g^i \bmod p$.
 	mpz_fpowm_ui(fpowm_table_g, a, g, index, p);
+	
+	assert(CheckElement(a));
 }
+
+
 
 void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
 	()
@@ -196,21 +238,15 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
 bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 	(std::istream &in)
 {
-	mpz_t foo, t, c, r, bar;
+	mpz_t foo, t, c, r;
 	
-	mpz_init(foo), mpz_init(t), mpz_init(c), mpz_init(r),
-		mpz_init_set_ui(bar, 1L);
+	mpz_init(foo), mpz_init(t), mpz_init(c), mpz_init(r);
 	in >> foo >> c >> r;
 	
 	try
 	{
-		// check the size of foo
-		if (mpz_cmp(foo, p) >= 0L)
-			throw false;
-		
-		// verify in-group property of foo
-		mpz_powm(t, foo, q, p);
-		if (!mpz_congruent_p(t, bar, p))
+		// verify the in-group property
+		if (!CheckElement(foo))
 			throw false;
 		
 		// check the size of $r$
@@ -243,7 +279,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 	}
 	catch (bool return_value)
 	{
-		mpz_clear(foo), mpz_clear(t), mpz_clear(c), mpz_clear(r), mpz_clear(bar);
+		mpz_clear(foo), mpz_clear(t), mpz_clear(c), mpz_clear(r);
 		return return_value;
 	}
 }
@@ -506,11 +542,19 @@ bool BarnettSmartVTMF_dlog::OR_Verify
 	}
 }
 
+void BarnettSmartVTMF_dlog::MaskingValue
+	(mpz_ptr r)
+{
+	// Choose randomly and uniformly an element from $\mathbb{Z}_q$.
+	do
+		mpz_srandomm(r, q);
+	while (!mpz_cmp_ui(r, 0L));
+}
+
 void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
 	(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r)
 {
-	// choose the masking value $r \in Z_q$ randomly and uniformly
-	mpz_srandomm(r, q);
+	MaskingValue(r);
 	
 	// compute $c_1 = g^r \bmod p$
 	mpz_fspowm(fpowm_table_g, c_1, g, r, p);
@@ -546,11 +590,7 @@ bool BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Verify
 	try
 	{
 		// verify the in-group properties
-		mpz_powm(foo, c_1, q, p);
-		if (!mpz_congruent_p(foo, bar, p))
-			throw false;
-		mpz_powm(foo, c_2, q, p);
-		if (!mpz_congruent_p(foo, bar, p))
+		if (!CheckElement(c_1) || !CheckElement(c_2))
 			throw false;
 		
 		// invoke CP(c_1, c_2/m, g, h; r) as verifier
@@ -574,8 +614,7 @@ bool BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Verify
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_ptr r)
 {
-	// choose the masking value $r \in Z_q$ randomly and uniformly
-	mpz_srandomm(r, q);
+	MaskingValue(r);
 	
 	// compute $c'_1 = c_1 \cdot g^r \bmod p$
 	mpz_fspowm(fpowm_table_g, c__1, g, r, p);
@@ -586,13 +625,6 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 	mpz_fspowm(fpowm_table_h, c__2, h, r, p);
 	mpz_mul(c__2, c__2, c_2);
 	mpz_mod(c__2, c__2, p);
-}
-
-void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_RemaskValue
-	(mpz_ptr r)
-{
-	// choose the masking value $r \in Z_q$ randomly and uniformly
-	mpz_srandomm(r, q);
 }
 
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
@@ -646,11 +678,7 @@ bool BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Verify
 	try
 	{
 		// verify the in-group properties
-		mpz_powm(foo, c__1, q, p);
-		if (!mpz_congruent_p(foo, bar, p))
-			throw false;
-		mpz_powm(foo, c__2, q, p);
-		if (!mpz_congruent_p(foo, bar, p))
+		if (!CheckElement(c__1) || !CheckElement(c__2))
 			throw false;
 		
 		// invoke CP(c'_1/c_1, c'_2/c_2, g, h; r) as verifier
@@ -715,13 +743,8 @@ bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 		if (h_j.find(fp.str()) == h_j.end())
 			throw false;
 		
-		// check the size of $d_j$
-		if (mpz_cmp(d_j, p) >= 0L)
-			throw false;
-		
 		// verify the in-group property
-		mpz_powm(foo, d_j, q, p);
-		if (!mpz_congruent_p(foo, bar, p))
+		if (!CheckElement(d_j))
 			throw false;
 		
 		// invoke CP(d_j, h_j, c_1, g; x_j) as verifier
@@ -751,6 +774,8 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Finalize
 	mpz_invert(m, d, p);
 	mpz_mul(m, m, c_2);
 	mpz_mod(m, m, p);
+	
+	assert(CheckElement(m));
 }
 
 BarnettSmartVTMF_dlog::~BarnettSmartVTMF_dlog

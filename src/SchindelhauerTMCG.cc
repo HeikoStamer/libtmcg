@@ -850,7 +850,7 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 void SchindelhauerTMCG::TMCG_CreateCardSecret
 	(VTMF_CardSecret &cs, BarnettSmartVTMF_dlog *vtmf)
 {
-	vtmf->VerifiableRemaskingProtocol_RemaskValue(cs.r);
+	vtmf->MaskingValue(cs.r);
 }
 
 void SchindelhauerTMCG::TMCG_CreateCardSecret
@@ -1578,6 +1578,13 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 	mpz_init(foo), mpz_init(bar);
 	try
 	{
+		// check whether the elements of the shuffled stack belong to the group
+		for (size_t i = 0; i < s2.size(); i++)
+		{
+			if (!vtmf->CheckElement(s2[i].c_1) || !vtmf->CheckElement(s2[i].c_2))
+				throw false;
+		}
+		
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
 		{
 			TMCG_Stack<VTMF_Card> s3, s4;
@@ -1655,6 +1662,13 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Groth
 	
 	if (s.size() != s2.size())
 		return false;
+	
+	// check whether the elements of the shuffled stack belong to the group
+	for (size_t i = 0; i < s2.size(); i++)
+	{
+		if (!vtmf->CheckElement(s2[i].c_1) || !vtmf->CheckElement(s2[i].c_2))
+			return false;
+	}
 	
 	std::vector<mpz_ptr> R;
 	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;

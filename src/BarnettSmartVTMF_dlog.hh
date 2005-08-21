@@ -78,6 +78,8 @@ class BarnettSmartVTMF_dlog
 			();
 		void PublishGroup
 			(std::ostream &out);
+		bool CheckElement
+			(mpz_srcptr a);
 		void RandomElement
 			(mpz_ptr a);
 		void IndexElement
@@ -107,6 +109,8 @@ class BarnettSmartVTMF_dlog
 		bool OR_Verify
 			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
 			std::istream &in);
+		void MaskingValue
+			(mpz_ptr r);
 		void VerifiableMaskingProtocol_Mask
 			(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r);
 		void VerifiableMaskingProtocol_Prove
@@ -116,8 +120,6 @@ class BarnettSmartVTMF_dlog
 			(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, std::istream &in);
 		void VerifiableRemaskingProtocol_Mask
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_ptr r);
-		void VerifiableRemaskingProtocol_RemaskValue
-			(mpz_ptr r);
 		void VerifiableRemaskingProtocol_Remask
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2,
 			mpz_srcptr r, bool TimingAttackProtection = true);
