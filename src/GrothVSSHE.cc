@@ -768,6 +768,13 @@ bool GrothVSSHE::CheckGroup
 	return (com->CheckGroup() && skc->CheckGroup());
 }
 
+void GrothVSSHE::PublishGroup
+	(std::ostream &out)
+{
+	out << p << std::endl << q << std::endl << g << std::endl << h << std::endl;
+	com->PublishGroup(out);
+}
+
 void GrothVSSHE::Prove_interactive
 	(const std::vector<size_t> &pi, const std::vector<mpz_ptr> &R,
 	const std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,

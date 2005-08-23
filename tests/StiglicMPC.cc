@@ -48,25 +48,17 @@ void StiglicMPC::MPC_ProveBitCommitment
 bool StiglicMPC::MPC_VerifyBitCommitment
 	(MPC_Bit &bit, size_t from)
 {
-	char *tmp = new char[TMCG_MAX_STACK_CHARS];
-	try
-	{
-		(*participants[from]->in).getline(tmp, TMCG_MAX_STACK_CHARS);
-		if (!bit.import(tmp))
-			throw false;
-		if (bit.size() != 2)
-			throw false;
-		if (!tmcg->TMCG_VerifyStackEquality(base, bit, true, vtmf,
-			*participants[from]->in, *participants[from]->out))
-				throw false;
-		
-		throw true;
-	}
-	catch (bool return_value)
-	{
-		delete [] tmp;
-		return return_value;
-	}
+	*participants[from]->in >> bit;
+	
+	if (!participants[from]->in->good())
+		return false;
+	if (bit.size() != 2)
+		return false;
+	if (!tmcg->TMCG_VerifyStackEquality(base, bit, true, vtmf,
+		*participants[from]->in, *participants[from]->out))
+			return false;
+	
+	return true;
 }
 
 bool StiglicMPC::MPC_OpenCardCommitment
@@ -74,7 +66,7 @@ bool StiglicMPC::MPC_OpenCardCommitment
 {
 	VTMF_CardSecret cs;
 	tmcg->TMCG_SelfCardSecret(card, vtmf);
-
+	
 	for (size_t i = 0; i < participants.size(); i++)
 	{
 		if (i == index)
@@ -103,7 +95,7 @@ bool StiglicMPC::MPC_OpenCardCommitment
 		b = true;
 	else
 		return false;
-		
+	
 	return true;
 }
 
@@ -136,45 +128,37 @@ bool StiglicMPC::MPC_CyclicShift
 	TMCG_Stack<VTMF_Card> s1;
 	TMCG_StackSecret<VTMF_CardSecret> cs1;
 	
-	char *tmp = new char[TMCG_MAX_STACK_CHARS];
-	try
+	for (size_t i = 0; i < participants.size(); i++)
 	{
-		for (size_t i = 0; i < participants.size(); i++)
+		if (i == index)
 		{
-			if (i == index)
+			tmcg->TMCG_CreateStackSecret(cs1, true, stack.size(), vtmf);
+			tmcg->TMCG_MixStack(stack, s1, cs1, vtmf);
+			
+			for (size_t j = 0; j < participants.size(); j++)
 			{
-				tmcg->TMCG_CreateStackSecret(cs1, true, stack.size(), vtmf);
-				tmcg->TMCG_MixStack(stack, s1, cs1, vtmf);
-				
-				for (size_t j = 0; j < participants.size(); j++)
+				if (j != index)
 				{
-					if (j != index)
-					{
-						*participants[j]->out << s1 << std::endl << std::flush;
-						tmcg->TMCG_ProveStackEquality(stack, s1, cs1, true, vtmf,
-							*participants[j]->in, *participants[j]->out);
-					}
+					*participants[j]->out << s1 << std::endl << std::flush;
+					tmcg->TMCG_ProveStackEquality(stack, s1, cs1, true, vtmf,
+						*participants[j]->in, *participants[j]->out);
 				}
 			}
-			else
-			{
-				(*participants[i]->in).getline(tmp, TMCG_MAX_STACK_CHARS);
-				if (!s1.import(tmp))
-					throw false;
-				if (!tmcg->TMCG_VerifyStackEquality(stack, s1, true, vtmf,
-					*participants[i]->in, *participants[i]->out))
-						throw false;
-			}
-			stack = s1;
 		}
-		result = stack;
-		throw true;
+		else
+		{
+			*participants[i]->in >> s1;
+			if (!participants[i]->in->good())
+				return false;
+			if (!tmcg->TMCG_VerifyStackEquality(stack, s1, true, vtmf,
+				*participants[i]->in, *participants[i]->out))
+					return false;
+		}
+		stack = s1;
 	}
-	catch (bool return_value)
-	{
-		delete [] tmp;
-		return return_value;
-	}
+	result = stack;
+	
+	return true;
 }
 
 void StiglicMPC::MPC_ComputeNEG
@@ -193,62 +177,53 @@ bool StiglicMPC::MPC_ComputeAND
 	TMCG_Stack<VTMF_Card> las_vegas;
 	bool cb[3];
 	
-	char *tmp = new char[TMCG_MAX_STACK_CHARS];
-	try
+	// step 1. -- place the public and secret cards
+	las_vegas.push(bitA), las_vegas.push(negbase);
+	las_vegas.push(bitB), las_vegas.push(base);
+	
+	while (1)
 	{
-		// step 1. -- place the public and secret cards
-		las_vegas.push(bitA), las_vegas.push(negbase);
-		las_vegas.push(bitB), las_vegas.push(base);
+		// step 2. and 3. -- apply a cyclic shift
+		if (!MPC_CyclicShift(las_vegas, las_vegas))
+			return false;
 		
-		while (1)
+		// step 4. -- turn over the cards
+		if (!MPC_OpenCardCommitment(las_vegas[0], cb[0]))
+			return false;
+		if (!MPC_OpenCardCommitment(las_vegas[1], cb[1]))
+			return false;
+		if ((!cb[0] && cb[1]) || (cb[0] && !cb[1]))
 		{
-			// step 2. and 3. -- apply a cyclic shift
-			if (!MPC_CyclicShift(las_vegas, las_vegas))
-				throw false;
-			
-			// step 4. -- turn over the cards
-			if (!MPC_OpenCardCommitment(las_vegas[0], cb[0]))
-				throw false;
-			if (!MPC_OpenCardCommitment(las_vegas[1], cb[1]))
-				throw false;
-			if ((!cb[0] && cb[1]) || (cb[0] && !cb[1]))
-			{
-				if (!MPC_OpenCardCommitment(las_vegas[2], cb[2]))
-					throw false;
-				if ((!cb[0] && cb[1] && cb[2]) || (cb[0] && !cb[1] && !cb[2]))
-					break;
-			}
-			else
+			if (!MPC_OpenCardCommitment(las_vegas[2], cb[2]))
+				return false;
+			if ((!cb[0] && cb[1] && cb[2]) || (cb[0] && !cb[1] && !cb[2]))
 				break;
-		};
-		
-		// step 5. -- choose result
-		if (cb[0] && cb[1])
-		{
-			result.clear(), result.push(las_vegas[5]), result.push(las_vegas[6]);
-		}
-		else if (!cb[0] && cb[1] && cb[2])
-		{
-			result.clear(), result.push(las_vegas[6]), result.push(las_vegas[7]);
-		}
-		else if (!cb[0] && !cb[1])
-		{
-			result.clear(), result.push(las_vegas[3]), result.push(las_vegas[4]);
-		}
-		else if (cb[0] && !cb[1] && !cb[2])
-		{
-			result.clear(), result.push(las_vegas[4]), result.push(las_vegas[5]);
 		}
 		else
-			throw false;
-		
-		throw true;
-	}
-	catch (bool return_value)
+			break;
+	};
+	
+	// step 5. -- choose result
+	if (cb[0] && cb[1])
 	{
-		delete [] tmp;
-		return return_value;
+		result.clear(), result.push(las_vegas[5]), result.push(las_vegas[6]);
 	}
+	else if (!cb[0] && cb[1] && cb[2])
+	{
+		result.clear(), result.push(las_vegas[6]), result.push(las_vegas[7]);
+	}
+	else if (!cb[0] && !cb[1])
+	{
+		result.clear(), result.push(las_vegas[3]), result.push(las_vegas[4]);
+	}
+	else if (cb[0] && !cb[1] && !cb[2])
+	{
+		result.clear(), result.push(las_vegas[4]), result.push(las_vegas[5]);
+	}
+	else
+		return false;
+	
+	return true;
 }
 
 bool StiglicMPC::MPC_ComputeOR
@@ -260,7 +235,7 @@ bool StiglicMPC::MPC_ComputeOR
 	if (!MPC_ComputeAND(nAB, nA, nB))
 		return false;
 	MPC_ComputeNEG(result, nAB);
-		
+	
 	return true;
 }
 
@@ -325,7 +300,7 @@ bool StiglicMPC::MPC_CopyBitCommitment
 		copy2.clear(), copy2.push(copyshop[2]), copy2.push(copyshop[3]);
 		MPC_ComputeNEG(copy1, copy1), MPC_ComputeNEG(copy2, copy2);
 	}
-		
+	
 	return true;
 }
 
