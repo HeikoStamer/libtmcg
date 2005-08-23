@@ -1,20 +1,20 @@
 /*******************************************************************************
-   This file is part of libTMCG.
+   This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
-   libTMCG is free software; you can redistribute it and/or modify
+   LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
    (at your option) any later version.
 
-   libTMCG is distributed in the hope that it will be useful,
+   LibTMCG is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with libTMCG; if not, write to the Free Software
+   along with LibTMCG; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
@@ -146,7 +146,7 @@ TMCG_CardSecret::~TMCG_CardSecret
 			mpz_clear(&b[k][w]);
 }
 
-std::ostream& operator<< 
+std::ostream& operator <<
 	(std::ostream &out, const TMCG_CardSecret &cardsecret)
 {
 	out << "crs|" << cardsecret.r.size() << "|" << cardsecret.r[0].size() << "|";
@@ -154,4 +154,15 @@ std::ostream& operator<<
 		for (size_t w = 0; w < cardsecret.r[k].size(); w++)
 			out << &cardsecret.r[k][w] << "|" << &cardsecret.b[k][w] << "|";
 	return out;
+}
+
+std::istream& operator >>
+	(std::istream &in, TMCG_CardSecret &cardsecret)
+{
+	char *tmp = new char[TMCG_MAX_CARD_CHARS];
+	in.getline(tmp, TMCG_MAX_CARD_CHARS);
+	if (!cardsecret.import(std::string(tmp)))
+		in.setstate(std::istream::iostate(std::istream::failbit));
+	delete [] tmp;
+	return in;
 }

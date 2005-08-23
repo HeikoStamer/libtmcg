@@ -1,4 +1,24 @@
-// libTMCG
+/*******************************************************************************
+   This file is part of LibTMCG.
+
+ Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+
+   LibTMCG is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   LibTMCG is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with LibTMCG; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+*******************************************************************************/
+
+// include the libTMCG header file
 #include <libTMCG.hh>
 
 #define GROTH
@@ -56,7 +76,9 @@ int main
 				std::endl << vtmf->h << std::endl;
 		c->PublishGroup(lej);
 		vsshe.push_back(new GrothVSSHE(i, lej));
+		std::cerr << ",";
 	}
+	std::cerr << std::endl;
 #endif
 	
 	// create a deck of 25 cards (12 pairs and the "Schwarzer Peter")
@@ -83,9 +105,8 @@ int main
 		Mischstapel.size(), vtmf);
 	
 	// ... Alice
-	char *tmp = new char[TMCG_MAX_STACK_CHARS];
-	std::cin.getline(tmp, TMCG_MAX_STACK_CHARS);
-	if (!Mischstapel_Alice.import(tmp))
+	std::cin >> Mischstapel_Alice;
+	if (!std::cin.good())
 	{
 		std::cerr << ">< Stapelformat falsch (Trollversuch?)" << std::endl;
 		return -1;
@@ -216,9 +237,9 @@ int main
 			for (size_t i = 0; i < 2; i++)
 			{
 				VTMF_Card c;
-				char *tmp = new char[TMCG_MAX_CARD_CHARS];
-				std::cin.getline(tmp, TMCG_MAX_CARD_CHARS);
-				if (!c.import(tmp))
+				
+				std::cin >> c;
+				if (!std::cin.good())
 				{
 					std::cerr << ">< Kartenformat falsch (Trollversuch?)" <<
 						std::endl;
@@ -341,9 +362,8 @@ int main
 				tmcg->TMCG_ProveCardSecret(c, vtmf, std::cin, std::cout); // aufdecken,
 				Kartenstapel_Alice.push(c); // ... und auf Alices Stapel legen.
 				// ... und mischt neu.
-				char *tmp = new char[TMCG_MAX_STACK_CHARS];
-				std::cin.getline(tmp, TMCG_MAX_STACK_CHARS);
-				if (!Mischstapel_Alice.import(tmp))
+				std::cin >> Mischstapel_Alice;
+				if (!std::cin.good())
 				{
 					std::cerr << ">< Stapelformat falsch (Trollversuch?)" << std::endl;
 					return -1;

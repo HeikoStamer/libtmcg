@@ -4,7 +4,7 @@
      Jens Groth: 'A Verifiable Secret Shuffle of Homomorphic Encryptions',
      Cryptology ePrint Archive, Report 2005/246, 2005.
 
-   This file is part of libTMCG.
+   This file is part of LibTMCG.
 
  Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
 

@@ -8,7 +8,7 @@ TODO:
 	1. optimizations (randomization technique) from section 6 of the paper
 	2. non-interactive version of the shuffle proof
 
-   This file is part of libTMCG.
+   This file is part of LibTMCG.
 
  Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
 

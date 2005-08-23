@@ -1,21 +1,21 @@
 /*******************************************************************************
-   This file is part of libTMCG.
+   Data structure for the secrets of a stack. This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
-   libTMCG is free software; you can redistribute it and/or modify
+   LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
    (at your option) any later version.
 
-   libTMCG is distributed in the hope that it will be useful,
+   LibTMCG is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with libTMCG; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+   along with LibTMCG; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
 #ifndef INCLUDED_TMCG_StackSecret_HH
@@ -177,13 +177,24 @@ template <typename CardSecretType> struct TMCG_StackSecret
 	}
 };
 
-template<typename CardSecretType> std::ostream& operator<<
-	(std::ostream &out, const TMCG_StackSecret<CardSecretType> &ss)
+template<typename CardSecretType> std::ostream& operator <<
+	(std::ostream &out, const TMCG_StackSecret<CardSecretType> &stacksecret)
 {
-	out << "sts^" << ss.size() << "^";
-	for (size_t i = 0; i < ss.size(); i++)
-		out << ss[i].first << "^" << ss[i].second << "^";
+	out << "sts^" << stacksecret.size() << "^";
+	for (size_t i = 0; i < stacksecret.size(); i++)
+		out << stacksecret[i].first << "^" << stacksecret[i].second << "^";
 	return out;
+}
+
+template<typename CardSecretType> std::istream& operator >>
+	(std::istream &in, TMCG_StackSecret<CardSecretType> &stacksecret)
+{
+	char *tmp = new char[TMCG_MAX_STACK_CHARS];
+	in.getline(tmp, TMCG_MAX_STACK_CHARS);
+	if (!stacksecret.import(std::string(tmp)))
+		in.setstate(std::istream::iostate(std::istream::failbit));
+	delete [] tmp;
+	return in;
 }
 
 #endif

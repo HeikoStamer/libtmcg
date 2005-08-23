@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
    You should have received a copy of the GNU General Public License
    along with libTMCG; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
 #ifndef INCLUDED_mpz_helper_HH
@@ -32,8 +32,8 @@
 	#include <gmp.h>
 	
 	// iostream operators for mpz_t
-	std::ostream& operator<<
+	std::ostream& operator <<
 		(std::ostream &out, mpz_srcptr value);
-	std::istream& operator>> 
+	std::istream& operator >>
 		(std::istream &in, mpz_ptr value);
 #endif

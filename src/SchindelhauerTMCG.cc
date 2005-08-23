@@ -4,23 +4,23 @@
      Christian Schindelhauer: 'A Toolbox for Mental Card Games',
      Technical Report A-98-14, University of L{\"u}beck, 1998.
 
-   This file is part of libTMCG.
+   This file is part of LibTMCG.
 
  Copyright (C) 2002, 2003, 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
-   libTMCG is free software; you can redistribute it and/or modify
+   LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
    (at your option) any later version.
 
-   libTMCG is distributed in the hope that it will be useful,
+   LibTMCG is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with libTMCG; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+   along with LibTMCG; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
 #include "SchindelhauerTMCG.hh"
@@ -85,14 +85,14 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 		mpz_mul(bar, s, s);
 		mpz_mod(bar, bar, key.m);
 		
-		// check congruence R_i * S_i \cong t (mod m)
+		// check the congruence $R_i \cdot S_i \equiv t \pmod{m}$
 		#ifndef NDEBUG
 			mpz_mul(lej, foo, bar);
 			mpz_mod(lej, lej, key.m);
 			assert(mpz_congruent_p(t, lej, key.m));
 		#endif
 		
-		// store r_i, s_i and send R_i, S_i to prover
+		// store $r_i$, $s_i$ and send $R_i$, $S_i$ to the verifier
 		rr.push_back(r), ss.push_back(s);
 		out << foo << std::endl, out << bar << std::endl;
 	}
@@ -100,10 +100,10 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 	// phase (P4)
 	for (unsigned long int i = 0; i < security_desire; i++)
 	{
-		// receive R/S-question from verifier
+		// receive R/S-question from the verifier
 		in >> foo;
 		
-		// send proof to verifier
+		// send proof to the verifier
 		if (mpz_get_ui(foo) & 1L)
 			out << rr[i] << std::endl;
 		else
@@ -137,11 +137,11 @@ bool SchindelhauerTMCG::TMCG_VerifyQuadraticResidue
 			mpz_ptr R = new mpz_t(), S = new mpz_t();
 			mpz_init(R), mpz_init(S);
 			
-			// receive R_i, S_i from prover and store values
+			// receive $R_i$, $S_i$ from the prover and store these values
 			in >> R, in >> S;
 			RR.push_back(R), SS.push_back(S);
 			
-			// check congruence R_i * S_i \cong t (mod m)
+			// check the congruence $R_i \cdot S_i \equiv t \pmod{m}$
 			mpz_mul(foo, S, R);
 			mpz_mod(foo, foo, key.m);
 			if (!mpz_congruent_p(t, foo, key.m))
@@ -151,14 +151,14 @@ bool SchindelhauerTMCG::TMCG_VerifyQuadraticResidue
 		// phase (V4)
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
 		{
-			// send R/S-question to prover
+			// send R/S-question to the prover
 			mpz_srandomb(foo, 1L);
 			out << foo << std::endl;
 			
-			// receive proof
+			// receive the proof
 			in >> bar;
 			
-			// verify proof R_i = r_i^2 (mod m)  or  S_i = s_i^2 (mod m)
+			// verify either $R_i\equiv r_i^2\pmod{m}$ or $S_i\equiv s_i^2\pmod{m}$
 			mpz_mul(lej, bar, bar);
 			mpz_mod(lej, lej, key.m);
 			
@@ -532,7 +532,7 @@ void SchindelhauerTMCG::TMCG_ProveMaskOne
 			}
 			mpz_mul(lej, foo, bar);
 			mpz_mod(lej, lej, key.m);
-			assert (mpz_congruent_p(t, lej, key.m));
+			assert(mpz_congruent_p(t, lej, key.m));
 			mpz_clear(lej), mpz_clear(t);
 		#endif
 		
@@ -1492,7 +1492,6 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 	if (s.size() != s2.size())
 		return false;
 	
-	char *tmp = new char[TMCG_MAX_STACK_CHARS];
 	mpz_init(foo), mpz_init(bar);
 	try
 	{
@@ -1510,8 +1509,8 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			else
 			{
 				// receive stack
-				in.getline(tmp, TMCG_MAX_STACK_CHARS);
-				if (!s3.import(tmp))
+				in >> s3;
+				if (!in.good())
 					throw false;
 			}
 			
@@ -1519,8 +1518,8 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			out << foo << std::endl;
 			
 			// receive equality proof
-			in.getline(tmp, TMCG_MAX_STACK_CHARS);
-			if (!ss.import(tmp))
+			in >> ss;
+			if (!in.good())
 				throw false;
 			
 			// verify equality proof
@@ -1558,7 +1557,6 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 	catch (bool return_value)
 	{
 		mpz_clear(foo), mpz_clear(bar);
-		delete [] tmp;
 		return return_value;
 	}
 }
@@ -1574,7 +1572,6 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 	if (s.size() != s2.size())
 		return false;
 	
-	char *tmp = new char[TMCG_MAX_STACK_CHARS];
 	mpz_init(foo), mpz_init(bar);
 	try
 	{
@@ -1599,8 +1596,8 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			else
 			{
 				// receive stack
-				in.getline(tmp, TMCG_MAX_STACK_CHARS); 
-				if (!s3.import(tmp))
+				in >> s3;
+				if (!in.good())
 					throw false;
 			}
 			
@@ -1608,8 +1605,8 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			out << foo << std::endl;
 			
 			// receive equality proof (response)
-			in.getline(tmp, TMCG_MAX_STACK_CHARS);
-			if (!ss.import(tmp))
+			in >> ss;
+			if (!in.good())
 				throw false;
 			
 			// verify equality proof
@@ -1647,7 +1644,6 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 	catch (bool return_value)
 	{
 		mpz_clear(foo), mpz_clear(bar);
-		delete [] tmp;
 		return return_value;
 	}
 }

@@ -1,21 +1,21 @@
 /*******************************************************************************
-   This file is part of libTMCG.
+   Data structure for a stack of cards. This file is part of LibTMCG.
 
- Copyright (C) 2004  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
-   libTMCG is free software; you can redistribute it and/or modify
+   LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
    (at your option) any later version.
 
-   libTMCG is distributed in the hope that it will be useful,
+   LibTMCG is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with libTMCG; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+   along with LibTMCG; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
 #ifndef INCLUDED_TMCG_Stack_HH
@@ -38,7 +38,7 @@
 	#include "mpz_srandom.h"
 	#include "parse_helper.hh"
 
-template <typename CardType> struct TMCG_OpenStack;			// forward
+template <typename CardType> struct TMCG_OpenStack;		// forward declaration
 
 template <typename CardType> struct TMCG_Stack
 {
@@ -208,13 +208,24 @@ template <typename CardType> struct TMCG_Stack
 	}
 };
 
-template<typename CardType> std::ostream& operator<<
-	(std::ostream &out, const TMCG_Stack<CardType> &s)
+template<typename CardType> std::ostream& operator <<
+	(std::ostream &out, const TMCG_Stack<CardType> &stack)
 {
-	out << "stk^" << s.size() << "^";
-	for (size_t i = 0; i < s.size(); i++)
-		out << s[i] << "^";
+	out << "stk^" << stack.size() << "^";
+	for (size_t i = 0; i < stack.size(); i++)
+		out << stack[i] << "^";
 	return out;
+}
+
+template<typename CardType> std::istream& operator >>
+	(std::istream &in, TMCG_Stack<CardType> &stack)
+{
+	char *tmp = new char[TMCG_MAX_STACK_CHARS];
+	in.getline(tmp, TMCG_MAX_STACK_CHARS);
+	if (!stack.import(std::string(tmp)))
+		in.setstate(std::istream::iostate(std::istream::failbit));
+	delete [] tmp;
+	return in;
 }
 
 #endif
