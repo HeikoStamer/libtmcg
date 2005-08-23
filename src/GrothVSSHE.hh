@@ -111,6 +111,8 @@ class GrothSKC
 			unsigned long int ell_e = TMCG_GROTH_L_E);
 		bool CheckGroup
 			();
+		void PublishGroup
+			(std::ostream &out);
 		void Prove_interactive
 			(const std::vector<size_t> &pi, mpz_srcptr r, mpz_srcptr c,
 			const std::vector<mpz_ptr> &m,

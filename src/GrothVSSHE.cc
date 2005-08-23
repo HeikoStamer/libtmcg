@@ -361,6 +361,12 @@ bool GrothSKC::CheckGroup
 	return com->CheckGroup();
 }
 
+void GrothSKC::PublishGroup
+	(std::ostream &out)
+{
+	com->PublishGroup(out);
+}
+
 void GrothSKC::Prove_interactive
 	(const std::vector<size_t> &pi, mpz_srcptr r, mpz_srcptr c,
 	const std::vector<mpz_ptr> &m,
@@ -765,7 +771,7 @@ GrothVSSHE::GrothVSSHE
 bool GrothVSSHE::CheckGroup
 	()
 {
-	return (com->CheckGroup() && skc->CheckGroup());
+	return skc->CheckGroup();
 }
 
 void GrothVSSHE::PublishGroup
