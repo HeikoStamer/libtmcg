@@ -20,6 +20,7 @@
 
 #include <sstream>
 #include <vector>
+#include <algorithm>
 #include <cassert>
 #include <unistd.h>
 #include <errno.h>
@@ -196,7 +197,7 @@ void check
 				std::cout << typeA << " " << std::flush;
 				assert((typeA >= 0) && (typeA < TMCG_MAX_CARDS));
 				
-				assert(typesA.find(typeA) == typesA.end());
+				assert(std::find(typesA.begin(), typesA.end(), typeA) == typesA.end());
 				typesA.push_back(typeA);
 			}
 			std::cout << std::endl;
