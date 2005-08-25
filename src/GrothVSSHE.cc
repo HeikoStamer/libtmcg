@@ -5,8 +5,7 @@
      Cryptology ePrint Archive, Report 2005/246, 2005.
 
 TODO:
-	1. optimizations (randomization technique) from section 6 of the paper
-	2. non-interactive version of the shuffle proof
+	1. non-interactive version of the shuffle proof (Random Oracle Model)
 
    This file is part of LibTMCG.
 
@@ -553,7 +552,7 @@ void GrothSKC::Prove_interactive
 
 bool GrothSKC::Verify_interactive
 	(mpz_srcptr c, const std::vector<mpz_ptr> &m,
-	std::istream &in, std::ostream &out)
+	std::istream &in, std::ostream &out, bool optimizations)
 {
 	assert(com->g.size() == m.size());
 	assert(m.size() >= 2);
@@ -570,6 +569,7 @@ bool GrothSKC::Verify_interactive
 		mpz_init(tmp), mpz_init(tmp2), mpz_init(tmp3);
 		f.push_back(tmp), f_Delta.push_back(tmp2), lej.push_back(tmp3);
 	}
+	mpz_set_ui(f_Delta[f_Delta.size() - 1], 0L);
 	
 	try
 	{
@@ -623,21 +623,61 @@ bool GrothSKC::Verify_interactive
 			if (!(mpz_cmp(f_Delta[i], com->q) < 0))
 				throw false;
 		}
+		if (optimizations)
+		{
+//std::cerr << "SKC5-opt" << std::endl;
+			// randomization technique from section 6, paragraph 'Batch verification'
+			mpz_t alpha;
+			mpz_init(alpha);
+			// pick $\alpha\in_R\{0, 1\}^{\ell_e}$ at random
+			mpz_srandomb(alpha, l_e);
+			// compute $(c^e c_d)^{\alpha}$
+			mpz_powm(foo, c, e, com->p);
+			mpz_mul(foo, foo, c_d);
+			mpz_mod(foo, foo, com->p);
+			mpz_powm(foo, foo, alpha, com->p);
+			// compute $c_a^e c_{\Delta}$
+			mpz_powm(bar, c_a, e, com->p);
+			mpz_mul(bar, bar, c_Delta);
+			mpz_mod(bar, bar, com->p);
+			// compute the product
+			mpz_mul(foo, foo, bar);
+			mpz_mod(foo, foo, com->p);
+			// compute the messages for the commitment
+			for (size_t i = 0; i < f.size(); i++)
+			{
+				mpz_mul(lej[i], alpha, f[i]);
+				mpz_mod(lej[i], lej[i], com->q);
+				mpz_add(lej[i], lej[i], f_Delta[i]);
+				mpz_mod(lej[i], lej[i], com->q);
+			}
+			mpz_mul(bar, alpha, z);
+			mpz_mod(bar, bar, com->q);
+			mpz_add(bar, bar, z_Delta);
+			mpz_mod(bar, bar, com->q);
+			mpz_clear(alpha);
+			// check the randomized commitments
+			if (!com->Verify(foo, bar, lej))
+				throw false;
+		}
+		else
+		{
 //std::cerr << "SKC5" << std::endl;
-		// check whether $c^e c_d = \mathrm{com}(f_1, \ldots, f_n; z)$
-		mpz_powm(foo, c, e, com->p);
-		mpz_mul(foo, foo, c_d);
-		mpz_mod(foo, foo, com->p);
-		if (!com->Verify(foo, z, f))
-			throw false;
+			// check whether $c^e c_d = \mathrm{com}(f_1, \ldots, f_n; z)$
+			mpz_powm(foo, c, e, com->p);
+			mpz_mul(foo, foo, c_d);
+			mpz_mod(foo, foo, com->p);
+			if (!com->Verify(foo, z, f))
+				throw false;
 //std::cerr << "SKC6" << std::endl;
-		// check whether $c_a^e c_{\Delta} = \mathrm{com}(f_{\Delta_1},
-		// \ldots, f_{\Delta_{n-1}}; z_{Delta})$
-		mpz_powm(foo, c_a, e, com->p);
-		mpz_mul(foo, foo, c_Delta);
-		mpz_mod(foo, foo, com->p);
-		if (!com->Verify(foo, z_Delta, f_Delta))
-			throw false;
+			// check whether $c_a^e c_{\Delta} = \mathrm{com}(f_{\Delta_1},
+			// \ldots, f_{\Delta_{n-1}}; z_{Delta})$
+			mpz_powm(foo, c_a, e, com->p);
+			mpz_mul(foo, foo, c_Delta);
+			mpz_mod(foo, foo, com->p);
+			if (!com->Verify(foo, z_Delta, f_Delta))
+				throw false;
+		}
 //std::cerr << "SKC7" << std::endl;
 		// check $F_n  = e \prod_{i=1}^n (m_i - x)$
 		mpz_mul(foo, e, x);
