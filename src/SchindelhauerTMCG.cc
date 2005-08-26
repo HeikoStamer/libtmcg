@@ -1072,7 +1072,7 @@ size_t SchindelhauerTMCG::TMCG_TypeOfCard
 	for (size_t t = 0; t < TMCG_MaxCardType; t++)
 	{
 		if (!mpz_cmp_ui(message_space[t], 0L))
-			vtmf->IndexElement(message_space[type], t);
+			vtmf->IndexElement(message_space[t], t);
 		if (!mpz_cmp(m, message_space[t]))
 		{
 			type = t;
