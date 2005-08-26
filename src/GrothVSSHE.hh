@@ -76,16 +76,16 @@ class PedersenCommitmentScheme
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
-			();
+			() const;
 		void PublishGroup
-			(std::ostream &out);
+			(std::ostream &out) const;
 		void Commit
-			(mpz_ptr c, mpz_ptr r, std::vector<mpz_ptr> m);
+			(mpz_ptr c, mpz_ptr r, std::vector<mpz_ptr> m) const;
 		void CommitBy
 			(mpz_ptr c, mpz_srcptr r, std::vector<mpz_ptr> m,
-			bool TimingAttackProtection = true);
+			bool TimingAttackProtection = true) const;
 		bool Verify
-			(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m);
+			(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m) const;
 		~PedersenCommitmentScheme
 			();
 };
@@ -110,16 +110,16 @@ class GrothSKC
 			(size_t n, std::istream &in,
 			unsigned long int ell_e = TMCG_GROTH_L_E);
 		bool CheckGroup
-			();
+			() const;
 		void PublishGroup
-			(std::ostream &out);
+			(std::ostream &out) const;
 		void Prove_interactive
 			(const std::vector<size_t> &pi, mpz_srcptr r, mpz_srcptr c,
 			const std::vector<mpz_ptr> &m,
-			std::istream &in, std::ostream &out);
+			std::istream &in, std::ostream &out) const;
 		bool Verify_interactive
 			(mpz_srcptr c, const std::vector<mpz_ptr> &m,
-			std::istream &in, std::ostream &out, bool optimizations = true);
+			std::istream &in, std::ostream &out, bool optimizations = true) const;
 		~GrothSKC
 			();
 };
@@ -148,18 +148,18 @@ class GrothVSSHE
 			(size_t n, std::istream &in,
 			unsigned long int ell_e = TMCG_GROTH_L_E);
 		bool CheckGroup
-			();
+			() const;
 		void PublishGroup
-			(std::ostream &out);
+			(std::ostream &out) const;
 		void Prove_interactive
 			(const std::vector<size_t> &pi, const std::vector<mpz_ptr> &R,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
-			std::istream &in, std::ostream &out);
+			std::istream &in, std::ostream &out) const;
 		bool Verify_interactive
 			(const std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
-			std::istream &in, std::ostream &out);
+			std::istream &in, std::ostream &out) const;
 		~GrothVSSHE
 			();
 };

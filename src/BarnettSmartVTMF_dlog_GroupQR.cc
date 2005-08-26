@@ -75,7 +75,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 }
 
 bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
-	()
+	() const
 {
 	mpz_t foo;
 	
@@ -119,7 +119,7 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
 }
 
 bool BarnettSmartVTMF_dlog_GroupQR::CheckElement
-	(mpz_srcptr a)
+	(mpz_srcptr a) const
 {
 	// Check the size of $a$.
 	if (mpz_cmp(a, p) >= 0L)
@@ -134,7 +134,7 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckElement
 }
 
 void BarnettSmartVTMF_dlog_GroupQR::RandomElement
-	(mpz_ptr a)
+	(mpz_ptr a) const
 {
 	// Choose randomly and uniformly an element from $\mathbb{Z}_p$.
 	do
@@ -149,7 +149,7 @@ void BarnettSmartVTMF_dlog_GroupQR::RandomElement
 }
 
 void BarnettSmartVTMF_dlog_GroupQR::MaskingValue
-	(mpz_ptr r)
+	(mpz_ptr r) const
 {
 	if (mpz_sizeinbase(p, 2L) <= E_size)
 	{

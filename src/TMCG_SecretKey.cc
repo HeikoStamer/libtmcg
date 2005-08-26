@@ -4,10 +4,10 @@
      Christian Schindelhauer: 'A Toolbox for Mental Card Games',
      Technical Report A-98-14, University of L{\"u}beck, 1998.
 
-     Rosario Gennaro, Daniele Micciancio, Tal Rabin: 
-     'An Efficient Non-Interactive Statistical Zero-Knowledge 
-      Proof System for Quasi-Safe Prime Products'
-     5th ACM Conference on Computer and Communication Security, 1998
+     Rosario Gennaro, Daniele Micciancio, Tal Rabin:
+     'An Efficient Non-Interactive Statistical Zero-Knowledge
+      Proof System for Quasi-Safe Prime Products',
+     5th ACM Conference on Computer and Communication Security, 1998.
 
      Mihir Bellare, Phillip Rogaway: 'The Exact Security of Digital
       Signatures -- How to Sign with RSA and Rabin', 1996
@@ -28,7 +28,7 @@
 
    You should have received a copy of the GNU General Public License
    along with libTMCG; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
 #include "TMCG_SecretKey.hh"
@@ -532,10 +532,21 @@ TMCG_SecretKey::~TMCG_SecretKey
 		mpz_clear(gcdext_vq), mpz_clear(pa1d4), mpz_clear(qa1d4);
 }
 
-std::ostream& operator<< 
+std::ostream& operator <<
 	(std::ostream &out, const TMCG_SecretKey &key)
 {
 	return out << "sec|" << key.name << "|" << key.email << "|" << key.type <<
 		"|" << key.m << "|" << key.y << "|" << key.p << "|" << key.q << "|" <<
 		key.nizk << "|" << key.sig;
+}
+
+std::istream& operator >>
+	(std::istream &in, TMCG_SecretKey &key)
+{
+	char *tmp = new char[TMCG_MAX_KEY_CHARS];
+	in.getline(tmp, TMCG_MAX_KEY_CHARS);
+	if (!key.import(std::string(tmp)))
+		in.setstate(std::istream::iostate(std::istream::failbit));
+	delete [] tmp;
+	return in;
 }

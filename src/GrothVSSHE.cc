@@ -157,7 +157,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 }
 
 bool PedersenCommitmentScheme::CheckGroup
-	()
+	() const
 {
 	mpz_t foo;
 	
@@ -221,7 +221,7 @@ bool PedersenCommitmentScheme::CheckGroup
 }
 
 void PedersenCommitmentScheme::PublishGroup
-	(std::ostream &out)
+	(std::ostream &out) const
 {
 	out << p << std::endl << q << std::endl << h << std::endl << k << std::endl;
 	for (size_t i = 0; i < g.size(); i++)
@@ -229,7 +229,7 @@ void PedersenCommitmentScheme::PublishGroup
 }
 
 void PedersenCommitmentScheme::Commit
-	(mpz_ptr c, mpz_ptr r, std::vector<mpz_ptr> m)
+	(mpz_ptr c, mpz_ptr r, std::vector<mpz_ptr> m) const
 {
 	assert(m.size() == g.size());
 	
@@ -251,7 +251,7 @@ void PedersenCommitmentScheme::Commit
 
 void PedersenCommitmentScheme::CommitBy
 	(mpz_ptr c, mpz_srcptr r, std::vector<mpz_ptr> m,
-	bool TimingAttackProtection)
+	bool TimingAttackProtection) const
 {
 	assert(m.size() == g.size());
 	assert(mpz_cmp(r, q) < 0);
@@ -276,7 +276,7 @@ void PedersenCommitmentScheme::CommitBy
 }
 
 bool PedersenCommitmentScheme::Verify
-	(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m)
+	(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m) const
 {
 	assert(m.size() == g.size());
 	
@@ -355,13 +355,13 @@ GrothSKC::GrothSKC
 }
 
 bool GrothSKC::CheckGroup
-	()
+	() const
 {
 	return com->CheckGroup();
 }
 
 void GrothSKC::PublishGroup
-	(std::ostream &out)
+	(std::ostream &out) const
 {
 	com->PublishGroup(out);
 }
@@ -369,7 +369,7 @@ void GrothSKC::PublishGroup
 void GrothSKC::Prove_interactive
 	(const std::vector<size_t> &pi, mpz_srcptr r, mpz_srcptr c,
 	const std::vector<mpz_ptr> &m,
-	std::istream &in, std::ostream &out)
+	std::istream &in, std::ostream &out) const
 {
 	assert(com->g.size() == pi.size());
 	assert(pi.size() == m.size());
@@ -552,7 +552,7 @@ void GrothSKC::Prove_interactive
 
 bool GrothSKC::Verify_interactive
 	(mpz_srcptr c, const std::vector<mpz_ptr> &m,
-	std::istream &in, std::ostream &out, bool optimizations)
+	std::istream &in, std::ostream &out, bool optimizations) const
 {
 	assert(com->g.size() == m.size());
 	assert(m.size() >= 2);
@@ -809,13 +809,13 @@ GrothVSSHE::GrothVSSHE
 }
 
 bool GrothVSSHE::CheckGroup
-	()
+	() const
 {
 	return skc->CheckGroup();
 }
 
 void GrothVSSHE::PublishGroup
-	(std::ostream &out)
+	(std::ostream &out) const
 {
 	out << p << std::endl << q << std::endl << g << std::endl << h << std::endl;
 	com->PublishGroup(out);
@@ -825,7 +825,7 @@ void GrothVSSHE::Prove_interactive
 	(const std::vector<size_t> &pi, const std::vector<mpz_ptr> &R,
 	const std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
 	const std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
-	std::istream &in, std::ostream &out)
+	std::istream &in, std::ostream &out) const
 {
 	assert(com->g.size() == pi.size());
 	assert(pi.size() == R.size());
@@ -982,7 +982,7 @@ void GrothVSSHE::Prove_interactive
 bool GrothVSSHE::Verify_interactive
 	(const std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
 	const std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
-	std::istream &in, std::ostream &out)
+	std::istream &in, std::ostream &out) const
 {
 	assert(com->g.size() == e.size());
 	assert(e.size() == E.size());

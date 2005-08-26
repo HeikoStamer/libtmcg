@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.29 $)
+AC_REVISION($Revision: 1.30 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -57,7 +57,7 @@ LIBTMCG_CONFIG_CFLAGS=""
 # Check commandline switches.
 
 # Defines some security parameters and macros
-# (Please update libTMCG.hh, if changed!)
+# (Please update also libTMCG.hh, if changed!)
 AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.2.0",
 	[Define the necessary version number of the GNU gcrypt library])
 AC_DEFINE(TMCG_LIBGMP_VERSION, "4.1.0",
@@ -123,7 +123,9 @@ AC_DEFINE(TMCG_MAX_CARD_CHARS,
 AC_DEFINE(TMCG_MAX_STACK_CHARS,
 	[(TMCG_MAX_CARDS * TMCG_MAX_CARD_CHARS)],
 	[Define a helping macro])
-
+AC_DEFINE(TMCG_MAX_KEY_CHARS,
+	[(TMCG_MAX_KEYBITS * 1024L)],
+	[Define a helping macro])
 
 # Checks for programs.
 AC_PROG_CC

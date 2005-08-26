@@ -119,6 +119,11 @@
 		#define TMCG_MAX_VALUE_CHARS (TMCG_MAX_KEYBITS / 2L)
 	#endif
 	
+	#ifndef TMCG_MAX_KEY_CHARS
+		/* Define a helping macro */
+		#define TMCG_MAX_KEY_CHARS (TMCG_MAX_KEYBITS * 1024L)
+	#endif
+	
 	#ifndef TMCG_MPZ_IO_BASE
 		/* Define the input/ouput base encoding of the iostream operators */
 		#define TMCG_MPZ_IO_BASE 36

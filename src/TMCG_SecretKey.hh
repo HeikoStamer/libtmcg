@@ -4,10 +4,10 @@
      Christian Schindelhauer: 'A Toolbox for Mental Card Games',
      Technical Report A-98-14, University of L{\"u}beck, 1998.
 
-     Rosario Gennaro, Daniele Micciancio, Tal Rabin: 
-     'An Efficient Non-Interactive Statistical Zero-Knowledge 
-      Proof System for Quasi-Safe Prime Products'
-     5th ACM Conference on Computer and Communication Security, 1998
+     Rosario Gennaro, Daniele Micciancio, Tal Rabin:
+     'An Efficient Non-Interactive Statistical Zero-Knowledge
+      Proof System for Quasi-Safe Prime Products',
+     5th ACM Conference on Computer and Communication Security, 1998.
 
      Mihir Bellare, Phillip Rogaway: 'The Exact Security of Digital
       Signatures -- How to Sign with RSA and Rabin', 1996
@@ -28,7 +28,7 @@
 
    You should have received a copy of the GNU General Public License
    along with libTMCG; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
 #ifndef INCLUDED_TMCG_SecretKey_HH
@@ -118,7 +118,10 @@ struct TMCG_SecretKey
 		();
 };
 
-std::ostream& operator<< 
+std::ostream& operator <<
 	(std::ostream &out, const TMCG_SecretKey &key);
+
+std::istream& operator >>
+	(std::istream &in, TMCG_SecretKey &key);
 
 #endif
