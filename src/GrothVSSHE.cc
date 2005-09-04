@@ -835,8 +835,9 @@ void GrothVSSHE::Prove_interactive
 	
 	// initalize
 	mpz_t r, R_d, r_d, c, c_d, Z, lambda, rho, foo, bar;
-	std::pair<mpz_t, mpz_t> E_d;
+	std::pair<mpz_ptr, mpz_ptr> E_d;
 	std::vector<mpz_ptr> d, f, m, t;
+	E_d.first = new mpz_t(), E_d.second = new mpz_t();
 	mpz_init(r), mpz_init(R_d), mpz_init(r_d), mpz_init(c), mpz_init(c_d),
 		mpz_init(Z), mpz_init(lambda), mpz_init(rho), mpz_init(foo),
 		mpz_init(bar), mpz_init(E_d.first), mpz_init(E_d.second);
@@ -953,6 +954,7 @@ void GrothVSSHE::Prove_interactive
 		mpz_clear(Z), mpz_clear(lambda), mpz_clear(rho), mpz_clear(foo),
 		mpz_clear(bar);
 	mpz_clear(E_d.first), mpz_clear(E_d.second);
+	delete E_d.first, delete E_d.second;
 	for (size_t i = 0; i < d.size(); i++)
 	{
 		mpz_clear(d[i]);
@@ -990,8 +992,9 @@ bool GrothVSSHE::Verify_interactive
 	
 	// initalize
 	mpz_t c, c_d, Z, lambda, foo, bar, foo2, bar2, foo3, bar3;
-	std::pair<mpz_t, mpz_t> E_d;
+	std::pair<mpz_ptr, mpz_ptr> E_d;
 	std::vector<mpz_ptr> f, m, t;
+	E_d.first = new mpz_t(), E_d.second = new mpz_t();
 	mpz_init(c), mpz_init(c_d), mpz_init_set_ui(Z, 0L), mpz_init(lambda),
 		mpz_init(foo), mpz_init(bar), mpz_init(foo2), mpz_init(bar2),
 		mpz_init(foo3), mpz_init(bar3);
@@ -1123,6 +1126,7 @@ bool GrothVSSHE::Verify_interactive
 			mpz_clear(foo), mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2),
 			mpz_clear(foo3), mpz_clear(bar3);
 		mpz_clear(E_d.first), mpz_clear(E_d.second);
+		delete E_d.first, delete E_d.second;
 		for (size_t i = 0; i < f.size(); i++)
 		{
 			mpz_clear(f[i]), mpz_clear(m[i]), mpz_clear(t[i]);
