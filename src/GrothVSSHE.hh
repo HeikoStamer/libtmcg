@@ -120,6 +120,10 @@ class GrothSKC
 		bool Verify_interactive
 			(mpz_srcptr c, const std::vector<mpz_ptr> &m,
 			std::istream &in, std::ostream &out, bool optimizations = true) const;
+		bool Verify_interactive
+			(mpz_srcptr c, const std::vector<mpz_ptr> &f_prime,
+			const std::vector<mpz_ptr> &m,
+			std::istream &in, std::ostream &out, bool optimizations = true) const;
 		~GrothSKC
 			();
 };

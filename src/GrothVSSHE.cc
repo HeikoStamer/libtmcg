@@ -748,6 +748,226 @@ bool GrothSKC::Verify_interactive
 	}
 }
 
+bool GrothSKC::Verify_interactive
+	(mpz_srcptr c, const std::vector<mpz_ptr> &f_prime,
+	const std::vector<mpz_ptr> &m,
+	std::istream &in, std::ostream &out, bool optimizations) const
+{
+	assert(com->g.size() == m.size());
+	assert(m.size() == f_prime.size());
+	assert(m.size() >= 2);
+	
+	// initalize
+	mpz_t x, c_d, c_Delta, c_a, e, z, z_Delta, foo, bar, foo2, bar2;
+	std::vector<mpz_ptr> f, f_Delta, lej;
+	mpz_init(x), mpz_init(c_d), mpz_init(c_Delta), mpz_init(c_a), mpz_init(e),
+		mpz_init(z), mpz_init(z_Delta), mpz_init(foo), mpz_init(bar),
+		mpz_init(foo2), mpz_init(bar2);
+	for (size_t i = 0; i < com->g.size(); i++)
+	{
+		mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
+		mpz_init(tmp), mpz_init(tmp2), mpz_init(tmp3);
+		f.push_back(tmp), f_Delta.push_back(tmp2), lej.push_back(tmp3);
+	}
+	mpz_set_ui(f_Delta[f_Delta.size() - 1], 0L);
+	
+	try
+	{
+		// verifier: first move
+		mpz_srandomb(x, l_e);
+		out << x << std::endl;
+		
+		// verifier: second move
+		in >> c_d >> c_Delta >> c_a;
+//std::cerr << "c_d = " << c_d << std::endl;
+//std::cerr << "c_a = " << c_a << std::endl;
+//std::cerr << "c_Delta = " << c_Delta << std::endl;
+		
+		// verifier: third move
+		mpz_srandomb(e, l_e);
+		out << e << std::endl;
+		
+		// verifier: fourth move
+		for (size_t i = 0; i < f.size(); i++)
+			in >> f[i];
+		in >> z;
+		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
+			in >> f_Delta[i];
+		in >> z_Delta;
+//std::cerr << "z = " << z << std::endl;
+//std::cerr << "z_Delta = " << z_Delta << std::endl;
+		
+		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}$
+		if (!(mpz_cmp(c_d, com->p) < 0) || !(mpz_cmp(c_a, com->p) < 0) ||
+			!(mpz_cmp(c_Delta, com->p) < 0) || !mpz_cmp_ui(c_d, 0L) ||
+			!mpz_cmp_ui(c_a, 0L) || !mpz_cmp_ui(c_Delta, 0L))
+				throw false;
+//std::cerr << "SKC1" << std::endl;
+		// check whether $f_1, \ldots, f_n, z \in\mathbb{Z}_q$
+		if (!(mpz_cmp(z, com->q) < 0))
+			throw false;
+//std::cerr << "SKC2" << std::endl;
+		for (size_t i = 0; i < f.size(); i++)
+		{
+			if (!(mpz_cmp(f[i], com->q) < 0))
+				throw false;
+		}
+//std::cerr << "SKC3" << std::endl;
+		// check whether $f_{\Delta_1}, \ldots, f_{\Delta_{n-1}}$ and $z$
+		// are from $\mathbb{Z}_q$
+		if (!(mpz_cmp(z_Delta, com->q) < 0))
+			throw false;
+//std::cerr << "SKC4" << std::endl;
+		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
+		{
+			if (!(mpz_cmp(f_Delta[i], com->q) < 0))
+				throw false;
+		}
+		if (optimizations)
+		{
+//std::cerr << "SKC5-opt" << std::endl;
+			// randomization technique from section 6,
+			// paragraph 'Batch verification'
+			mpz_t alpha;
+			mpz_init(alpha);
+			// pick $\alpha\in_R\{0, 1\}^{\ell_e}$ at random
+			mpz_srandomb(alpha, l_e);
+			// compute $(c^e c_d)^{\alpha}$
+			mpz_powm(foo, c, e, com->p);
+			mpz_mul(foo, foo, c_d);
+			mpz_mod(foo, foo, com->p);
+			mpz_powm(foo, foo, alpha, com->p);
+			// compute $c_a^e c_{\Delta}$
+			mpz_powm(bar, c_a, e, com->p);
+			mpz_mul(bar, bar, c_Delta);
+			mpz_mod(bar, bar, com->p);
+			// compute the product
+			mpz_mul(foo, foo, bar);
+			mpz_mod(foo, foo, com->p);
+			// compute the messages for the commitment
+			for (size_t i = 0; i < f.size(); i++)
+			{
+				mpz_mul(lej[i], alpha, f[i]);
+				mpz_mod(lej[i], lej[i], com->q);
+				mpz_add(lej[i], lej[i], f_Delta[i]);
+				mpz_mod(lej[i], lej[i], com->q);
+				
+				// compute $f'_i e \alpha$ (optimized commitment)
+				mpz_mul(bar, alpha, f_prime[i]);
+				mpz_mod(bar, bar, com->q);
+				mpz_mul(bar, bar, e);
+				mpz_mod(bar, bar, com->q);
+				mpz_neg(bar, bar);
+				
+				mpz_add(lej[i], lej[i], bar);
+				mpz_mod(lej[i], lej[i], com->q);
+			}
+			mpz_mul(bar, alpha, z);
+			mpz_mod(bar, bar, com->q);
+			mpz_add(bar, bar, z_Delta);
+			mpz_mod(bar, bar, com->q);
+			mpz_clear(alpha);
+			// check the randomized commitments
+			if (!com->Verify(foo, bar, lej))
+				throw false;
+		}
+		else
+		{
+//std::cerr << "SKC5" << std::endl;
+			// check whether $c^e c_d = \mathrm{com}(f''_1, \ldots, f''_n; z)$
+			mpz_powm(foo, c, e, com->p);
+			mpz_mul(foo, foo, c_d);
+			mpz_mod(foo, foo, com->p);
+				// compute $f''_i = f_i - f'_i e$
+				for (size_t i = 0; i < f.size(); i++)
+				{
+					mpz_mul(lej[i], f_prime[i], e);
+					mpz_mod(lej[i], lej[i], com->q);
+					mpz_neg(lej[i], lej[i]);
+					mpz_add(lej[i], lej[i], f[i]);
+					mpz_mod(lej[i], lej[i], com->q);
+				}
+			if (!com->Verify(foo, z, lej))
+				throw false;
+//std::cerr << "SKC6" << std::endl;
+			// check whether $c_a^e c_{\Delta} = \mathrm{com}(f_{\Delta_1},
+			// \ldots, f_{\Delta_{n-1}}; z_{Delta})$
+			mpz_powm(foo, c_a, e, com->p);
+			mpz_mul(foo, foo, c_Delta);
+			mpz_mod(foo, foo, com->p);
+			if (!com->Verify(foo, z_Delta, f_Delta))
+				throw false;
+		}
+//std::cerr << "SKC7" << std::endl;
+		// check $F_n  = e \prod_{i=1}^n (m_i - x)$
+		mpz_mul(foo, e, x);
+		mpz_mod(foo, foo, com->q);
+		assert(mpz_invert(bar, e, com->q));
+		mpz_invert(bar, e, com->q);
+		mpz_set_ui(foo2, 1L);
+		for (size_t i = 0; i < f.size(); i++)
+		{
+			mpz_sub(bar2, f[i], foo);
+			mpz_mod(bar2, bar2, com->q);
+			
+			mpz_mul(bar2, bar2, foo2);
+			mpz_mod(bar2, bar2, com->q);
+			if (i > 0)
+			{
+				mpz_add(bar2, bar2, f_Delta[i - 1]);
+				mpz_mod(bar2, bar2, com->q);
+				
+				mpz_mul(bar2, bar2, bar);
+				mpz_mod(bar2, bar2, com->q);
+			}
+			mpz_set(foo2, bar2);
+		}
+		mpz_set_ui(foo2, 1L);
+		for (size_t i = 0; i < m.size(); i++)
+		{
+			mpz_sub(foo, m[i], x);
+			mpz_mod(foo, foo, com->q);
+			mpz_mul(foo2, foo2, foo);
+			mpz_mod(foo2, foo2, com->q);
+		}
+		mpz_mul(foo2, foo2, e);
+		mpz_mod(foo2, foo2, com->q);
+		if (mpz_cmp(foo2, bar2))
+			throw false;
+//std::cerr << "SKC8" << std::endl;
+		
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(x), mpz_clear(c_d), mpz_clear(c_Delta), mpz_clear(c_a),
+			mpz_clear(e), mpz_clear(z), mpz_clear(z_Delta), mpz_clear(foo),
+			mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2);
+		for (size_t i = 0; i < f.size(); i++)
+		{
+			mpz_clear(f[i]);
+			delete f[i];
+		}
+		f.clear();
+		for (size_t i = 0; i < f_Delta.size(); i++)
+		{
+			mpz_clear(f_Delta[i]);
+			delete f_Delta[i];
+		}
+		f_Delta.clear();
+		for (size_t i = 0; i < lej.size(); i++)
+		{
+			mpz_clear(lej[i]);
+			delete lej[i];
+		}
+		lej.clear();
+		
+		// return
+		return return_value;
+	}
+}
+
 GrothSKC::~GrothSKC
 	()
 {
@@ -930,13 +1150,14 @@ void GrothVSSHE::Prove_interactive
 		mpz_mod(rho, rho, com->q);
 //std::cerr << "p:rho = " << rho << std::endl;
 		// SKC commitment $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod p$
-		mpz_set_ui(bar, 0L);
-		com->CommitBy(foo, bar, f, false);
-		mpz_mul(foo, foo, c_d);
-		mpz_mod(foo, foo, com->p);
-		mpz_powm(bar, c, lambda, com->p);
-		mpz_mul(foo, foo, bar);
-		mpz_mod(foo, foo, com->p);
+// not necessary: see personal communication with Jens Groth
+//		mpz_set_ui(bar, 0L);
+//		com->CommitBy(foo, bar, f, false);
+//		mpz_mul(foo, foo, c_d);
+//		mpz_mod(foo, foo, com->p);
+//		mpz_powm(bar, c, lambda, com->p);
+//		mpz_mul(foo, foo, bar);
+//		mpz_mod(foo, foo, com->p);
 //std::cerr << "p:foo = " << foo << std::endl;
 		// SKC messages $m_i := i \lambda + t_i \bmod q$ for all $i = 1,\ldots, n$
 		for (size_t i = 0; i < m.size(); i++)
@@ -1028,6 +1249,7 @@ bool GrothVSSHE::Verify_interactive
 		out << lambda << std::endl;
 		
 		// verifier: fifth to seventh move (Shuffle of Known Content)
+/* not necessary: see personal communication with Jens Groth
 			// SKC commitment
 			// $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod p$
 			mpz_set_ui(bar, 0L);
@@ -1036,6 +1258,12 @@ bool GrothVSSHE::Verify_interactive
 			mpz_mod(foo, foo, com->p);
 			mpz_powm(bar, c, lambda, com->p);
 			mpz_mul(foo, foo, bar);
+			mpz_mod(foo, foo, com->p);
+*/
+			// SKC (optimized homomorphic) commitment
+			// $c^{\lambda} c_d
+			mpz_powm(foo, c, lambda, com->p);
+			mpz_mul(foo, foo, c_d);
 			mpz_mod(foo, foo, com->p);
 			// SKC messages
 			// $m_i := i \lambda + t_i \bmod q$ for all $i = 1,\ldots, n$
@@ -1047,9 +1275,10 @@ bool GrothVSSHE::Verify_interactive
 				mpz_add(m[i], m[i], t[i]);
 				mpz_mod(m[i], m[i], com->q);
 			}
+		
 //std::cerr << "B" << std::endl;
 		// perform and verify SKC
-		if (!skc->Verify_interactive(foo, m, in, out))
+		if (!skc->Verify_interactive(foo, f, m, in, out))
 			throw false;
 	
 //std::cerr << "1" << std::endl;
