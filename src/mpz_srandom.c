@@ -24,7 +24,10 @@ unsigned long int mpz_grandom_ui
 	(enum gcry_random_level level)
 {
 	unsigned long int tmp;
-	gcry_randomize((unsigned char *)&tmp, sizeof(tmp), level);
+	if (level == GCRY_WEAK_RANDOM)
+		gcry_create_nonce((unsigned char *)&tmp, sizeof(tmp));
+	else
+		gcry_randomize((unsigned char *)&tmp, sizeof(tmp), level);
 	return tmp;
 }
 
