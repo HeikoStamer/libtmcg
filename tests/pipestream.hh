@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 1999, 2000 Kevin Birch <kbirch@pobox.com>,
-               2002, 2004 Heiko Stamer <stamer@gaos.org>
+               2002, 2004, 2005 Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,44 +24,39 @@
 
 /*!
  * @module pipestream
- * @author Kevin Birch <kbirch@pobox.com>, Heiko Stamer <stamer@gaos.org>
+ * @author Kevin Birch <kbirch@pobox.com>,
+ *         Heiko Stamer <stamer@gaos.org>
  * @version 1.0, 01/15/00
  * This C++ class is designed to allow the use of BSD-style
  * pipe/file descriptors by applications that use iostreams.
  */
 
-/*!
- * @struct pipebuf_traits
- * This structure defines the behavior of the pipestream class.<P>
- * If you wish to modify the behavior of pipestream, you should subclass
- * this struct and change the return values of its methods.
- * @method buffer_output
- * @return true of output is buffered
- * @method o_buffer_sz
- * @return maximum size in bytes of the output buffer
- * @method i_buffer_sz
- * @return maximum size in bytes of the input buffer
- * @method putback_sz
- * @return size in bytes of the putback area of the input buffer, used by
- * unget
- */
+/**
+ * This structure defines the behavior of the pipestream class.
+ * If you wish to modify the behavior of pipestream, you should derive
+ * from this struct and change the return values of its methods. */
 struct pipebuf_traits
 {
+	/** @returns True, if output is buffered. */
 	static inline bool buffer_output
 		()
 	{
 		return false;
 	}
+	/** @returns the maximum size in bytes of the output buffer. */
 	static inline size_t o_buffer_sz
 		()
 	{
 		return 512;
 	}
+	/** @returns the maximum size in bytes of the input buffer. */
 	static inline size_t i_buffer_sz
 		()
 	{
 		return 1024;
 	}
+	/** @returns the size in bytes of the putback area of the
+	    input buffer, used by unget. */
 	static inline size_t putback_sz
 		()
 	{
@@ -69,35 +64,29 @@ struct pipebuf_traits
 	}
 };
 
-/*!
- * @typedef int_type
- * used by basic_pipebuf to comply with streambuf
- */
+/** This is used by basic_pipebuf to comply with streambuf. */
 typedef int int_type;
 
-/*!
- * @class basic_pipebuf
- * This is the class that drives the ability to attach a pipe to an iostream.
- * It handles input and output buffers, and reading from and writing to the
- * network
- */
+/** This is the class that drives the ability to attach a pipe to
+    an iostream. It handles input and output buffers, and reading
+    from and writing to a pipe. */
 template <class traits = pipebuf_traits> class basic_pipebuf :
 	public std::streambuf
 {
 	protected:
-		int mPipe;    /*! @member mPipe The pipe to operate on */
-		char *mRBuffer; /*! @member mRBuffer the read buffer */
-		char *mWBuffer; /*! @member mWBuffer the write buffer */
+		/** The pipe to operate on. */
+		int mPipe;
+		/** The read buffer. */
+		char *mRBuffer;
+		/** The write buffer. */
+		char *mWBuffer;
 	
 	public:
-		typedef traits traits_type; /*! @typedef traits_type a convenience
-			for clients */
+		/** This is a convenience for instatiations. */
+		typedef traits traits_type;
 		
-		/*! @method basic_pipebuf
-		 * The primary constructor, which takes an open pipe as its only
-		 * argument
-		 * @param iPipe an open pipe
-		 */
+		/** The primary constructor, which takes an open pipe as its only argument.
+		    @param iPipe is an open pipe. */
 		basic_pipebuf
 			(int iPipe) : mPipe(iPipe)
 		{
@@ -111,9 +100,7 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 			setg(pos, pos, pos);
 		}
 		
-		/*! @method ~basic_pipebuf()
-		 * The destructor
-		 */
+		/** This destructor releases all occupied resources. */
 		~basic_pipebuf
 			()
 		{
@@ -123,11 +110,9 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 		}
 	
 	protected:
-		/*! @method flushOutput
-		 * flushes the write buffer to the pipe, and resets the write buffer
-		 * head pointer
-		 * @return number of bytes written to the pipe
-		 */
+		/** Flushes the write buffer to the pipe, and resets the write buffers
+		    head pointer.
+		    @returns The number of bytes written to the pipe. */
 		int flushOutput
 			()
 		{
@@ -138,11 +123,9 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 			return num;
 		}
 		
-		/*! @method overflow
-		 * called by std::streambuf when the write buffer is full
-		 * @param c the character that overflowed the write buffer
-		 * @return the character that overflowed the write buffer
-		 */
+		/** This method is called by streambuf when the write buffer is full.
+		    @param c is the character that overflowed the write buffer.
+		    @returns The character that overflowed the write buffer. */
 		virtual int_type overflow
 			(int_type c)
 		{
@@ -166,10 +149,9 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 			}
 		}
 		
-		/*! @method sync
-		 * called by std::streambuf when the endl or flush operators are used
-		 * @return -1 if the write buffer flush failed
-		 */
+		/** This method is called by streambuf when the endl or flush operators
+		    are used.
+		    @returns -1, if the write buffer flush failed. */
 		virtual int sync
 			()
 		{
@@ -178,22 +160,19 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 			return 0;
 		}
 		
-		/*! @method xsputn
-		 * called by std::streambuf to write a buffer to the output device
-		 * @param s the buffer to be written
-		 * @param num the size of s
-		 * @return the number of bytes written
-		 */
+		/** This method is called by streambuf to write a buffer to the output
+		    device, i.e. the pipe.
+		    @param s is the buffer to be written.
+		    @param num is the size of @a s.
+		    @returns The number of bytes written. */
 		virtual std::streamsize xsputn
 			(const char *s, std::streamsize num)
 		{
 			return (write(mPipe, s, num));
 		}
 		
-		/*! @method underflow
-		 * called by std::streambuf when the read buffer is empty
-		 * @return the next character to be read or EOF on failure
-		 */
+		/** This method is called by streambuf when the read buffer is empty.
+		    @returns The next character to be read or EOF on failure. */
 		virtual int_type underflow
 			()
 		{
@@ -233,70 +212,56 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 		}
 };
 
-/*! @typedef pipebuf
- * make the name pipebuf a basic_pipebuf with the default traits
- */
+/** Make the name pipebuf a basic_pipebuf with the default traits. */
 typedef basic_pipebuf<> pipebuf;
 
-/*! @class ipipestream
- * An istream subclass that uses a pipebuf. Create one if you wish to have
- * a read-only pipe attached to an istream.
- */
+/** An istream subclass that uses a pipebuf. Create one if you wish to
+    have a read-only pipe attached to an istream. */
 class ipipestream : public std::istream
 {
 	protected:
-		pipebuf buf; /*! @member buf the pipebuf */
+		/** The corresponding basic_pipebuf. */
+		pipebuf buf;
 	
 	public:
-		/*! @method ipipestream
-		 * The primary constructor, which takes an open pipe as its only
-		 * argument
-		 * @param iPipe an open pipe
-		 */
+		/** The primary constructor, which takes an open pipe as its only argument.
+		    @param iPipe is an open pipe. */
 		ipipestream
 			(int iPipe) : std::istream(&buf), buf(iPipe)
 		{
 		}
 };
 
-/*! @class opipestream
- * An ostream subclass that uses a pipebuf. Create one if you wish to have
- * a write-only pipe attached to an ostream.
- */
+/** An ostream subclass that uses a pipebuf. Create one if you wish to
+    have a write-only pipe attached to an ostream. */
 class opipestream : public std::ostream
 {
 	protected:
-		pipebuf buf; /*! @member buf the pipebuf */
+		/** The corresponding basic_pipebuf. */
+		pipebuf buf;
 	
 	public:
-		/*! @method opipestream
-		 * The primary constructor, which takes an open pipe as its only
-		 * argument
-		 * @param iPipe an open pipe
-		 */
+		/** The primary constructor, which takes an open pipe as its only argument.
+		    @param oPipe is an open pipe. */
 		opipestream
-			(int iPipe) : std::ostream(&buf), buf(iPipe)
+			(int oPipe) : std::ostream(&buf), buf(oPipe)
 		{
 		}
 };
 
-/*! @class iopipestream
- * An iostream subclass that uses a pipebuf. Create one if you wish to have
- * a read and write pipe attached to an iostream.
- */
+/** An iostream subclass that uses a pipebuf. Create one if you wish to
+    have a read and write pipe attached to an iostream. */
 class iopipestream : public std::iostream
 {
 	protected:
-		pipebuf buf; /*! @member buf the pipebuf */
+		/** The corresponding basic_pipebuf. */
+		pipebuf buf;
 	
 	public:
-		/*! @method iopipestream
-		 * The primary constructor, which takes an open pipe as its only
-		 * argument
-		 * @param iPipe an open pipe
-		 */
+		/** The primary constructor, which takes an open pipe as its only argument.
+		    @param ioPipe is an open pipe. */
 		iopipestream
-			(int iPipe) : std::iostream(&buf), buf(iPipe)
+			(int ioPipe) : std::iostream(&buf), buf(ioPipe)
 		{
 		}
 };
