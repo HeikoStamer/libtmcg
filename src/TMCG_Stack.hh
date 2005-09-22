@@ -42,9 +42,9 @@ template <typename CardType> struct TMCG_OpenStack;		// forward declaration
 
 /** @brief Data structure for a stack of cards.
     
-    This struct represents a simple container for cards. The elements
-    can be either of type TMCG_Card or VTMF_Card depending on which kind
-    of encoding scheme is used.
+    This struct is a simple container for cards. The elements can be
+    either of type TMCG_Card or VTMF_Card depending on which kind of
+    encoding scheme is used.
     
     @param CardType is the type of the stored elements. */
 template <typename CardType> struct TMCG_Stack
@@ -143,7 +143,7 @@ template <typename CardType> struct TMCG_Stack
 		return stack.empty();
 	}
 	
-	/** Pop a card from the back of the stack.
+	/** Get and remove a card from the back of the stack.
 	    @param c is the card removed from the stack.
 	    @returns True, if the stack was not empty. */
 	bool pop
@@ -171,7 +171,7 @@ template <typename CardType> struct TMCG_Stack
 		return (std::find(stack.begin(), stack.end(), c) != stack.end());
 	}
 	
-	/** This method removes the first card of the stack which is
+	/** This method removes the first card from the stack which is
 	    equal to @a c.
 	    @param c is the card to be removed.
 	    @returns True, if the card was successful removed. */
@@ -189,7 +189,7 @@ template <typename CardType> struct TMCG_Stack
 		return false;
 	}
 	
-	/** This method removes all occurences of @c in the stack.
+	/** This method removes all occurences of @a c from the stack.
 	    @param c is the card to be removed.
 	    @returns The number of removed cards. */
 	size_t removeAll

@@ -1,5 +1,5 @@
 /*******************************************************************************
-   Data structure for the secrets of a stack. This file is part of LibTMCG.
+  Data structure for the secrets of a stack. This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
@@ -38,14 +38,28 @@
 	#include "mpz_srandom.h"
 	#include "parse_helper.hh"
 
+/** @brief Data structure for the secrets of a stack of cards.
+    
+    This struct is a simple container for the secrets involved in the
+    masking operation of cards. Additionally, the permutation of the
+    corresponding shuffle of the stack is stored.
+    The elements are pairs where the first component is a permutation
+    index and the second component is the card secret. These secrets
+    can be either of type TMCG_CardSecret or VTMF_CardSecret depending
+    on which kind of encoding scheme is used.
+    
+    @param CardSecretType is the type of the stored card secrets. */
 template <typename CardSecretType> struct TMCG_StackSecret
 {
+	/** This member is the underlying container of the stack secret. */
 	std::vector<std::pair<size_t, CardSecretType> > stack;
 	
+	/** This is a simple equality test for the first component of a pair. */
 	struct eq_first_component : public std::binary_function<
 		std::pair<size_t, CardSecretType>,
 		std::pair<size_t, CardSecretType>, bool>
 	{
+		/** This is the comparator for equality. */
 		bool operator() 
 			(const std::pair<size_t, CardSecretType>& p1,
 			 const std::pair<size_t, CardSecretType>& p2) const
@@ -54,11 +68,14 @@ template <typename CardSecretType> struct TMCG_StackSecret
 		}
 	};
 	
+	/** This constructor initalizes an empty stack secret. */
 	TMCG_StackSecret
 		()
 	{
 	}
 	
+	/** A simple assignment-operator.
+	    @param that is the stack secret to be assigned. */
 	TMCG_StackSecret& operator =
 		(const TMCG_StackSecret<CardSecretType>& that)
 	{
@@ -67,36 +84,49 @@ template <typename CardSecretType> struct TMCG_StackSecret
 		return *this;
 	}
 	
+	/** This operator provides random access to the pairs of the stack secret.
+	    @returns The @a n th pair from the top of the stack secret. */
 	const std::pair<size_t, CardSecretType>& operator []
 		(size_t n) const
 	{
 		return stack[n];
 	}
 	
+	/** This operator provides random access to the pairs of the stack secret.
+	    @returns The @a n th pair from the top of the stack secret. */
 	std::pair<size_t, CardSecretType>& operator []
 		(size_t n)
 	{
 		return stack[n];
 	}
 	
+	/** @returns The size of the stack secret. */
 	size_t size
 		() const
 	{
 		return stack.size();
 	}
 	
+	/** This method pushes a pair to the back of the stack secret.
+	    @param index is the permutation index (first component) to be pushed.
+	    @param cs is the card secret (second component) to be pushed. */
 	void push
 		(size_t index, const CardSecretType& cs)
 	{
 		stack.push_back(std::pair<size_t, CardSecretType>(index, cs));
 	}
 	
+	/** Clears the stack secret. */
 	void clear
 		()
 	{
 		stack.clear();
 	}
 	
+	/** This method searches for a permutation index in the stack secret.
+	    @param index is the permutation index to be found.
+	    @returns The position in the stack secret, if @a index was found.
+	    Otherwise, it returns the size of the stack secret. */
 	size_t find_position
 		(size_t index) const
 	{
@@ -106,12 +136,18 @@ template <typename CardSecretType> struct TMCG_StackSecret
 					std::pair<size_t, CardSecretType>(index, CardSecretType()))));
 	}
 	
+	/** This method searches for a permutation index in the stack secret.
+	    @param index is the permutation index to be found.
+	    @returns True, if @a index was found. */
 	bool find
 		(size_t index) const
 	{
 		return (find_position(index) == stack.size() ? false : true);
 	}
 	
+	/** This function imports the stack secret.
+	    @param s is correctly formated input string.
+	    @returns True, if the import was successful. */
 	bool import
 		(std::string s)
 	{
@@ -170,6 +206,7 @@ template <typename CardSecretType> struct TMCG_StackSecret
 		}
 	}
 	
+	/** This destructor releases all occupied resources. */
 	~TMCG_StackSecret
 		()
 	{
@@ -177,6 +214,10 @@ template <typename CardSecretType> struct TMCG_StackSecret
 	}
 };
 
+/** @relates TMCG_StackSecret
+    This operator prints a stack secret to an output stream.
+    @param out is the output stream.
+    @param stacksecret is the stack secret to be printed. */
 template<typename CardSecretType> std::ostream& operator <<
 	(std::ostream &out, const TMCG_StackSecret<CardSecretType> &stacksecret)
 {
@@ -186,6 +227,12 @@ template<typename CardSecretType> std::ostream& operator <<
 	return out;
 }
 
+/** @relates TMCG_StackSecret
+    This operator imports a stack secret from an input stream. It has
+    to be delimited by a newline character.
+    The failbit of the stream is set, if any parse error occured.
+    @param in is the input stream.
+    @param stacksecret is the stack secret to be imported. */
 template<typename CardSecretType> std::istream& operator >>
 	(std::istream &in, TMCG_StackSecret<CardSecretType> &stacksecret)
 {

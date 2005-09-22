@@ -1,5 +1,5 @@
 /*******************************************************************************
-   This file is part of LibTMCG.
+  Data structure for a stack of open cards. This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
 
@@ -35,13 +35,25 @@
 	#include <algorithm>
 	#include <functional>
 
+/** @brief Data structure for a stack of open cards.
+    
+    This struct is a simple container for cards whose type is known.
+    The elements are pairs where the first component is the type and the
+    second component is the corresponding card. The cards can be either
+    of type TMCG_Card or VTMF_Card depending on which kind of encoding
+    scheme is used.
+    
+    @param CardType is the type of the stored cards. */
 template <typename CardType> struct TMCG_OpenStack
 {
+	/** This member is the underlying container of the open stack. */
 	std::vector<std::pair<size_t, CardType> > stack;
 	
+	/** This is a simple equality test for the first component of a pair. */
 	struct eq_first_component : public std::binary_function<
 		std::pair<size_t, CardType>, std::pair<size_t, CardType>, bool>
 	{
+		/** This is the comparator for equality. */
 		bool operator() 
 			(const std::pair<size_t, CardType>& p1, 
 			const std::pair<size_t, CardType>& p2) const
@@ -50,11 +62,14 @@ template <typename CardType> struct TMCG_OpenStack
 		}
 	};
 	
+	/** This constructor initalizes an empty open stack. */
 	TMCG_OpenStack
 		()
 	{
 	}
 	
+	/** A simple assignment-operator.
+	    @param that is the open stack to be assigned. */
 	TMCG_OpenStack& operator =
 		(const TMCG_OpenStack& that)
 	{
@@ -63,6 +78,8 @@ template <typename CardType> struct TMCG_OpenStack
 		return *this;
 	}
 	
+	/** This operator tests two open stacks for equality of their types,
+	    cards and sizes. */
 	bool operator ==
 		(const TMCG_OpenStack& that)
 	{
@@ -71,54 +88,73 @@ template <typename CardType> struct TMCG_OpenStack
 		return std::equal(stack.begin(), stack.end(), that.stack.begin());
 	}
 	
+	/** This operator tests two open stacks for inequality of their types,
+	    cards or sizes. */
 	bool operator !=
 		(const TMCG_OpenStack& that)
 	{
 		return !(*this == that);
 	}
 	
+	/** This operator provides random access to the pairs of the open stack.
+	    @returns The @a n th pair from the top of the open stack. */
 	const std::pair<size_t, CardType>& operator []
 		(size_t n) const
 	{
 		return stack[n];
 	}
 	
+	/** This operator provides random access to the pairs of the open stack.
+	    @returns The @a n th pair from the top of the open stack. */
 	std::pair<size_t, CardType>& operator []
 		(size_t n)
 	{
 		return stack[n];
 	}
 	
+	/** @returns The size of the open stack. */
 	size_t size
 		() const
 	{
 		return stack.size();
 	}
 	
+	/** This method pushes a pair to the back of the open stack.
+	    @param p is the pair to be pushed. */
 	void push
 		(const std::pair<size_t, CardType> &p)
 	{
 		stack.push_back(p);
 	}
 	
+	/** This method pushes a pair to the back of the open stack.
+	    @param type is the type of the card (first component) to be pushed.
+	    @param c is the card (second component) to be pushed. */
 	void push
 		(size_t type, const CardType& c)
 	{
 		stack.push_back(std::pair<size_t, CardType>(type, c));
 	}
 	
+	/** This method pushes another open stack to the open stack.
+	    @param s is pushed to the back of the open stack. */
 	void push
 		(const TMCG_OpenStack& s)
 	{
 		std::copy(s.stack.begin(), s.stack.end(), std::back_inserter(stack));
 	}
 	
+	/** @returns True, if the stack is empty. */
 	bool empty
 		()
 	{
 		return stack.empty();
 	}
 	
+	/** Get and remove a pair from the back of the open stack.
+	    @param c is the card removed from the open stack.
+	    @returns The card type, if the stack was not empty.
+	    Otherwise, the value 100000000L will be returned. */
 	size_t pop
 		(CardType& c)
 	{
@@ -134,12 +170,14 @@ template <typename CardType> struct TMCG_OpenStack
 		return type;
 	}
 	
+	/** Clears the open stack. */
 	void clear
 		()
 	{
 		stack.clear();
 	}
 	
+	/** @returns True, if the @a type was found in the open stack. */
 	bool find
 		(size_t type) const
 	{
@@ -148,6 +186,10 @@ template <typename CardType> struct TMCG_OpenStack
 				(type, CardType()))) != stack.end());
 	}
 	
+	/** This method removes the first pair from the open stack whose type
+	    is equal to @a type.
+	    @param type will be removed.
+	    @returns True, if the pair was successful removed. */
 	bool remove
 		(size_t type)
 	{
@@ -164,6 +206,9 @@ template <typename CardType> struct TMCG_OpenStack
 		return false;
 	}
 	
+	/** This method removes all pairs of the given @a type from the open stack.
+	    @param type will be removed.
+	    @returns The number of removed pairs. */
 	size_t removeAll
 		(size_t type)
 	{
@@ -173,6 +218,11 @@ template <typename CardType> struct TMCG_OpenStack
 		return counter;
 	}
 	
+	/** This method moves the first card with the given @a type from the
+	    open stack to regular stack.
+	    @param type will be moved.
+	    @param s is the stack where the card is moved to.
+	    @returns True, if a card was moved. */
 	bool move
 		(size_t type, TMCG_Stack<CardType>& s)
 	{
@@ -190,6 +240,7 @@ template <typename CardType> struct TMCG_OpenStack
 		return false;
 	}
 	
+	/** This destructor releases all occupied resources. */
 	~TMCG_OpenStack
 		()
 	{
