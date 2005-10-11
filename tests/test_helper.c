@@ -26,7 +26,7 @@ char buf[50];
 void start_clock
 	()
 {
-	start = stop = clock();
+	start = clock(), stop = start;
 }
 
 void stop_clock
