@@ -51,7 +51,7 @@ Requirements
   You need the following libraries and appropriate header files to build
   (GNU gcc/g++ version 3.3.x is recommended) libTMCG successfully:
 
-  * GNU Multiple Precision Arithmetic Library (libgmp), version >= 4.1,
+  * GNU Multiple Precision Arithmetic Library (libgmp), version >= 4.1.0,
     http://www.swox.com/gmp/
     (built WITHOUT C++ support: ./configure --enable-cxx=no)
   * GNU Crypto Library (libgcrypt), version >= 1.2.0,
@@ -84,7 +84,7 @@ Bugs, Contribution, CVS
 
   cvs -z3 -d:ext:anoncvs@savannah.nongnu.org:/cvsroot/libtmcg co libtmcg
   
-  Additionally you will need the following GNU software:
+  Additionally you will need the following free software:
   
   * GNU Autoconf, version >= 2.57, http://www.gnu.org/software/autoconf/
   * GNU Automake, version >= 1.9, http://www.gnu.org/software/automake/
