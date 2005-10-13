@@ -21,8 +21,8 @@
 
 TESTS = t-mpz t-vtmf t-vsshe t-mpc t-key
 
-INCLUDES = -I$(top_srcdir)/src
-LDADD = @LIBGCRYPT_LIBS@ ../src/libTMCG.la
+INCLUDES = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@
+LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ ../src/libTMCG.la
 
 EXTRA_PROGRAMS = SchwarzerPeterAlice SchwarzerPeterBob
 noinst_PROGRAMS = $(TESTS)
