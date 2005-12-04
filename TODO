@@ -3,6 +3,6 @@
 - implement more card and stack operations of the toolbox
 - generalize the usage of the VTMF primitive by a abstract base class
 - use local namespaces TMCG and VMTF to prevent pollution
-- documentation: doxygen? and examples
+- documentation: doxygen and examples
 - The library should provide a protocol for reliable broadcast
   to ensure that rogue tracing can be performed.
