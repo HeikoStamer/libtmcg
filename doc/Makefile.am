@@ -17,11 +17,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-SUBDIRS = src doc tests
+info_TEXINFOS = libTMCG.texi
 
-DIST_SUBDIRS = src doc tests
-
-EXTRA_DIST = aclocal.m4 config.guess config.h.in config.status\
-	config.sub configure configure.ac install-sh missing mkinstalldirs\
-	Makefile.am AUTHORS BUGS COPYING FDL INSTALL NEWS README TODO THANKS\
-	ChangeLog Doxyfile PATENTS
+libTMCG_TEXINFOS = gpl.texi

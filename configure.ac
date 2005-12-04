@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.30 $)
+AC_REVISION($Revision: 1.31 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -183,7 +183,7 @@ libdir=$libdir
 datadir=$datadir
 ]])
 
-AC_CONFIG_FILES([Makefile src/Makefile src/libTMCG-config tests/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/libTMCG-config doc/Makefile tests/Makefile])
 AC_OUTPUT
 
 echo "Now type 'make && make install' to build and to install libTMCG."
