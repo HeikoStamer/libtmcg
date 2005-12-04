@@ -19,4 +19,4 @@
 
 info_TEXINFOS = libTMCG.texi
 
-libTMCG_TEXINFOS = gpl.texi
+libTMCG_TEXINFOS = gpl.texi fdl.texi

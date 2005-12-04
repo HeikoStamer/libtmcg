@@ -1,20 +1,24 @@
 \input texinfo
 @c %**start of header
-@setfilename libTMCG
+@setfilename libTMCG.info
+@include version.texi
 @settitle The LibTMCG Reference Manual
 @c %**end of header
 
 @copying
-This is the reference manual of LibTMCG, revision $Id: libTMCG.texi,v 1.1 2005/12/04 13:24:14 stamer Exp $.
+This is the reference manual of LibTMCG.
+
+Revision $Id: libTMCG.texi,v 1.2 2005/12/04 16:40:02 stamer Exp $.
 
 Copyright @copyright{} 2005 Heiko Stamer <@email{stamer@@gaos.org}>.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
-under the terms of the GNU General Public License as published by the
-Free Software Foundation; either version 2 of the License, or (at your
-option) any later version. The text of the license can be found in the
-section entitled ``Copying''.
+under the terms of the GNU Free Documentation License, Version 1.2
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts. A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.
 @end quotation
 @end copying
 
@@ -31,5 +35,27 @@ section entitled ``Copying''.
 
 @contents
 
+@ifnottex
+@node Top
+@top LibTMCG Reference Manual
+
+@insertcopying
+@end ifnottex
+
+@c **********************************************************
+@c *******************  Introduction  ***********************
+@c **********************************************************
+@chapter Introduction
+`@acronym{LibTMCG}' is a 
+
+@c **********************************************************
+@c *******************  Appendices  *************************
+@c **********************************************************
+@include gpl.texi
+@include fdl.texi
+
+@unnumbered Index
+
+@printindex cp
 
 @bye

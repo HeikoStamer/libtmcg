@@ -1,6 +1,4 @@
-
-@node GNU Free Documentation License
-@appendixsec GNU Free Documentation License
+@appendix GNU Free Documentation License
 
 @cindex FDL, GNU Free Documentation License
 @center Version 1.2, November 2002
@@ -408,7 +406,7 @@ as a draft) by the Free Software Foundation.
 @end enumerate
 
 @page
-@appendixsubsec ADDENDUM: How to use this License for your documents
+@unnumberedsec ADDENDUM: How to use this License for your documents
 
 To use this License in a document you have written, include a copy of
 the License in the document and put the following copyright and
@@ -445,8 +443,3 @@ If your document contains nontrivial examples of program code, we
 recommend releasing these examples in parallel under your choice of
 free software license, such as the GNU General Public License,
 to permit their use in free software.
-
-@c Local Variables:
-@c ispell-local-pdict: "ispell-dict"
-@c End:
-

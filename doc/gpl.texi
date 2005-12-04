@@ -1,8 +1,7 @@
-@node Copying
-@unnumbered GNU GENERAL PUBLIC LICENSE
-@center Version 2, June 1991
+@appendix GNU General Public License
 
-@c This file is intended to be included in another file.
+@cindex GPL, GNU General Public License
+@center Version 2, June 1991
 
 @display
 Copyright @copyright{} 1989, 1991 Free Software Foundation, Inc.
