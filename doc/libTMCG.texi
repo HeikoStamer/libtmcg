@@ -8,7 +8,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.3 2006/01/22 13:23:41 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.4 2006/01/22 15:21:37 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -47,7 +47,7 @@ Free Documentation License''.
 @c **********************************************************
 @chapter Introduction
 `@acronym{LibTMCG}' is a free general purpose C++ library for
-creating `secure' electronic card games.
+creating secure electronic card games.
 
 @c **********************************************************
 @c *******************  Appendices  *************************
