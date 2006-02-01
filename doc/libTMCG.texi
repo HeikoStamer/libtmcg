@@ -8,7 +8,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.5 2006/01/26 20:39:45 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.6 2006/02/01 21:07:30 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -48,9 +48,9 @@ Free Documentation License''.
 @chapter Introduction
 `@acronym{LibTMCG}' is a free general purpose C++ library for
 creating secure electronic card games. The most remarkable
-feature is the absence of a trusted third party (TTP), e.g.
-a central game server or similar facilities. To emphasize
-this again: In general there is no need for an independent
+feature is the absence of a trusted third party (TTP), i.e.
+neither a central game server nor similar facilities. To emphasize
+this again: With LibTMCG there is no need for an independent
 referee, because the applied protocols provide a basic level
 of confidentiality and fairness by itself. Of course, we
 cannot avoid that malicious players share information about
@@ -60,7 +60,7 @@ at least one player is honest) and thus the cards will be
 distributed uniformly among the players. Further, no coalition
 can learn the private cards of a player agains his
 will (except for trivial conclusions). The corresponding
-problem in cryptography, actually called ''Mental Poker'',
+cryptographic problem, actually called ''Mental Poker'',
 has been studied since 1979 (Shamir, Rivest, and Adleman)
 by many authors. Reference is made at this point to 
 @cite{TODO} for a brief introduction.
@@ -72,6 +72,13 @@ the effect of coalitions and preserve the confidentiality
 of the players' strategy, i.e. the players are not required
 to reveal their cards at the end of the game to show that
 they did not cheat.
+
+@section Getting Started
+
+This manual documents the library application programming
+interface (API) of LibTMCG. All important classes and security
+parameters are explained. The reader should have an advanced
+knowledge in applied cryptography and C++ programming.
 
 @chapter Example
 
