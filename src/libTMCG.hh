@@ -1,5 +1,5 @@
 /*******************************************************************************
-   libTMCG.hh, the general header file of the library
+   libTMCG.hh, general header file of the library
 
    This file is part of LibTMCG.
 
@@ -25,7 +25,7 @@
 	
 	#ifndef TMCG_GROTH_L_E
 		/* Define the security parameter for the soundness of the
-		   interactive argument for VSSHE and SKC. */
+		   interactive argument for Groth's VSSHE and SKC. */
 		#define TMCG_GROTH_L_E 80L
 	#endif
 	

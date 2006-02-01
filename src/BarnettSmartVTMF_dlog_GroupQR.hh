@@ -2,12 +2,7 @@
    BarnettSmartVTMF_dlog_GroupQR.hh, VTMF instance where $G := \mathbb{QR}_p$
 
      Adam Barnett, Nigel P. Smart: 'Mental Poker Revisited',
-     Cryptography and Coding 2003, LNCS 2898, pp. 370--383, 2003
-
-     [KK04] Takeshi Koshiba, Kaoru Kurosawa: 'Short Exponent Diffie-Hellman
-             Problems', In Public Key Cryptography - PKC 2004: Proceedings
-            7th International Workshop on Theory and Practice in Public Key
-             Cryptography, LNCS 2947, pp. 173--186, 2004
+     Cryptography and Coding 2003, LNCS 2898, pp. 370--383, 2003.
 
    This file is part of LibTMCG.
 

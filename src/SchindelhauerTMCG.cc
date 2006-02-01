@@ -64,7 +64,7 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 		mpz_ptr r = new mpz_t(), s = new mpz_t();
 		mpz_init(r), mpz_init(s);
 		
-		// randomly choose a number $r \in Z^*_m$
+		// choose uniformly at random a number $r \in Z^*_m$
 		do
 		{
 			mpz_srandomm(r, key.m);
@@ -293,7 +293,7 @@ void SchindelhauerTMCG::TMCG_ProveMaskValue
 			mpz_ptr r2 = new mpz_t(), b2 = new mpz_t();
 			mpz_init(r2), mpz_init(b2);
 			
-			// randomly choose a number r_i \in Z^*_m and b_i \in {0,1}
+			// choose uniformly at random a number r_i \in Z^*_m and b_i \in {0,1}
 			mpz_srandomb(b2, 1L);
 			do
 			{
@@ -449,7 +449,7 @@ void SchindelhauerTMCG::TMCG_ProveMaskOne
 			b3 = new mpz_t(), c = new mpz_t();
 		mpz_init(r3), mpz_init(s), mpz_init(b3), mpz_init(c);
 		
-		// choose random number r_i \in Z*m and b \in {0,1}
+		// choose uniformly at random a number r_i \in Z*m and b \in {0,1}
 		mpz_srandomb(b3, 1L);
 		do
 		{
@@ -688,7 +688,7 @@ bool SchindelhauerTMCG::TMCG_VerifyNonQuadraticResidue_PerfectZeroKnowledge
 		// phase (V2) and (V3)
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
 		{
-			// choose random number r \in Z*m and b \in {0,1}
+			// choose uniformly at random a number r \in Z*m and b \in {0,1}
 			mpz_srandomb(b, 1L);
 			do
 			{
@@ -807,7 +807,7 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 	{
 		for (size_t w = 0; w < cs.r[k].size(); w++)
 		{
-			// randomly choose a number r \in Z^*_m
+			// choose uniformly at random a number r \in Z^*_m
 			do
 			{
 				mpz_srandomm(&cs.r[k][w], ring.key[k].m);
@@ -815,7 +815,7 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 			}
 			while (mpz_cmp_ui(foo, 1L));
 			
-			// randomly choose a bit b \in {0, 1} or set it initially to zero
+			// choose uniformly at random a bit b \in {0, 1} or set it initially to zero
 			if (k != index)
 				mpz_srandomb(&cs.b[k][w], 1L);
 			else
@@ -1326,7 +1326,7 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 		
 		if (TMCG_HASH_COMMITMENT)
 		{
-			// send commitment (instead of the whole stack)
+			// send hash value (instead of the whole stack)
 			std::ostringstream ost;
 			ost << s3 << std::endl;
 			mpz_shash(foo, ost.str());
@@ -1372,7 +1372,7 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 		
 		if (TMCG_HASH_COMMITMENT)
 		{
-			// send commitment (instead of the whole stack)
+			// send hash value (instead of the whole stack)
 			std::ostringstream ost;
 			ost << s3 << std::endl;
 			mpz_shash(foo, ost.str());

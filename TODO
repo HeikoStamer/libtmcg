@@ -2,7 +2,7 @@
 
 - implement more card and stack operations of the toolbox
 - generalize the usage of the VTMF primitive by a abstract base class
-- use local namespaces TMCG and VMTF to prevent pollution
-- documentation: doxygen and examples
-- The library should provide a protocol for reliable broadcast
-  to ensure that rogue tracing can be performed.
+- use local namespaces TMCG and VMTF to prevent global namespace pollution
+- documentation: reference manual (texinfo), doxygen, and examples
+- The library should provide a basic protocol for reliable broadcast
+  to ensure that rogue tracing/tagging can be performed.

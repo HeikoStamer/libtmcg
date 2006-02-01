@@ -2,10 +2,7 @@
    BarnettSmartVTMF_dlog.hh, Verifiable l-out-of-l Threshold Masking Function
 
      Adam Barnett, Nigel P. Smart: 'Mental Poker Revisited',
-     Cryptography and Coding 2003, LNCS 2898, pp. 370--383, 2003
-
-     [CaS97] Jan Camenisch, Markus Stadler: 'Proof Systems for General
-              Statements about Discrete Logarithms', Technical Report, 1997
+     Cryptography and Coding 2003, LNCS 2898, pp. 370--383, 2003.
 
    This file is part of LibTMCG.
 

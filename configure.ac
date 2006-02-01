@@ -1,4 +1,4 @@
-# Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+# Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
 #
 # This file is part of LibTMCG.
 #
@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.31 $)
+AC_REVISION($Revision: 1.32 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -71,7 +71,7 @@ AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_RMD160,
 	Underlying assumption: Random Oracle Model])
 AC_DEFINE(TMCG_GROTH_L_E, 80L,
 	[Define the security parameter for the soundness of the
-	interactive argument for VSSHE and SKC.])
+	interactive argument for Groth's VSSHE and SKC.])
 AC_DEFINE(TMCG_DDH_SIZE, 1024L,
 	[Define the security parameter of the DDH-hard group G;
 	Underlying assumptions: DDH, CDH, DLOG])
@@ -165,9 +165,10 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_CHECK_FUNCS([memcpy memcmp memset strchr strncasecmp strrchr strstr strtol strtoul clock])
 
-CXXFLAGS="$CXXFLAGS -O2 -Wall -g3 -pedantic"
+##CXXFLAGS="$CXXFLAGS -O2 -Wall -g3 -pedantic"
 #CFLAGS="$CFLAGS -O2 -Wall -D NDEBUG"
-#CXXFLAGS="$CXXFLAGS -O2 -Wall -D NDEBUG"
+## Note that the tests will not run with -D NDEBUG!
+CXXFLAGS="$CXXFLAGS -Wall"
 
 # Initalize the libTMCG-config script
 AC_SUBST(LIBTMCG_CONFIG_API_VERSION)
