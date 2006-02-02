@@ -83,8 +83,8 @@ Bugs, Contribution, CVS
 
   You can get the latest sources from the CVS repository:
 
-  cvs -z3 -d:ext:anoncvs@savannah.nongnu.org:/cvsroot/libtmcg co libtmcg
-  
+  cvs -z3 -d:pserver:anonymous@cvs.savannah.nongnu.org:/sources/libtmcg co libtmcg
+
   Additionally you will need the following free software:
   
   * GNU Autoconf, version >= 2.57, http://www.gnu.org/software/autoconf/
