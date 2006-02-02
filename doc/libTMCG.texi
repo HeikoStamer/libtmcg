@@ -8,7 +8,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.6 2006/02/01 21:07:30 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.7 2006/02/02 20:13:13 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -46,32 +46,36 @@ Free Documentation License''.
 @c *******************  Introduction  ***********************
 @c **********************************************************
 @chapter Introduction
-`@acronym{LibTMCG}' is a free general purpose C++ library for
+`@acronym{LibTMCG}' is a general purpose C++ library for
 creating secure electronic card games. The most remarkable
 feature is the absence of a trusted third party (TTP), i.e.
-neither a central game server nor similar facilities. To emphasize
-this again: With LibTMCG there is no need for an independent
-referee, because the applied protocols provide a basic level
-of confidentiality and fairness by itself. Of course, we
-cannot avoid that malicious players share information about
-their private cards, but the protocols ensure that the
-shuffle of the deck is performed randomly (provided that
-at least one player is honest) and thus the cards will be
-distributed uniformly among the players. Further, no coalition
-can learn the private cards of a player agains his
-will (except for trivial conclusions). The corresponding
-cryptographic problem, actually called ''Mental Poker'',
-has been studied since 1979 (Shamir, Rivest, and Adleman)
-by many authors. Reference is made at this point to 
-@cite{TODO} for a brief introduction.
+neither a central game server nor similar facilities are
+necessary. To emphasize this point again: With the present
+LibTMCG there is
+no need for an independent referee, because the applied
+protocols provide a basic level of confidentiality and
+fairness by itself. Of course, we cannot avoid that
+malicious players share information about their private
+cards, but the protocols ensure that the shuffle of the
+deck is performed randomly (provided that at least one
+player is honest) and thus the cards will be distributed
+uniformly among the players. Further, no coalition can
+learn the private cards of a player agains his will (except
+for trivial conclusions). The corresponding cryptographic
+problem, actually called ''Mental Poker'', has been studied
+since 1979 (Shamir, Rivest, and Adleman) by many authors.
 
 Our implementation relies on advanced cryptographic
 techniques---the so-called zero-knowledge proofs. Using
-these building blocks the high-level protocols minimize
+these `building blocks' the high-level protocols minimize
 the effect of coalitions and preserve the confidentiality
 of the players' strategy, i.e. the players are not required
 to reveal their cards at the end of the game to show that
 they did not cheat.
+
+LibTMCG is @emph{Free Software} according to the definition
+of the @uref{http://www.fsf.org/licensing/essays/free-sw.html,,
+Free Software Foundation}.
 
 @section Getting Started
 
@@ -79,6 +83,25 @@ This manual documents the library application programming
 interface (API) of LibTMCG. All important classes and security
 parameters are explained. The reader should have an advanced
 knowledge in applied cryptography and C++ programming.
+Reference is made at this point to the famous @cite{Handbook
+of Applied Cryptography} for a brief introduction.
+
+This document follows, in style and sometimes in content,
+the @cite{Reference Manual of the GNU Crypto Library}.
+
+@section Preparation
+LibTMCG depends on the two other basic libraries. Additionally,
+you need the corresponding development files to build
+your application:
+
+@itemize @bullet
+	@item GNU Multiple Precision Arithmetic Library (libgmp),
+		Version @math{\ge} 4.1.0
+	@item GNU Crypto Library (libgcrypt),
+		Version @math{\ge} 1.2.0
+@end itemize
+
+@chapter Application Programming Interface
 
 @chapter Example
 
