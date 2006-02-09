@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,9 +20,14 @@
 
 #include <sstream>
 #include <cassert>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/wait.h>
 
+#include "test_helper.h"
 #include <libTMCG.hh>
 #include "StiglicMPC.hh"
+#include "pipestream.hh"
 
 #undef NDEBUG
 
@@ -31,107 +36,206 @@ int main
 {
 	assert(init_libTMCG());
 	
+	pid_t pid = 0;
+	int pipe1fd[2], pipe2fd[2];
+	if ((pipe(pipe1fd) < 0) || (pipe(pipe2fd) < 0))
+	{
+		perror("t-mpc (pipe)");
+		return -1;
+	}
+	
+	ipipestream *pipe_in_A = new ipipestream(pipe1fd[0]);
+	opipestream *pipe_out_A = new opipestream(pipe2fd[1]);
+	ipipestream *pipe_in_B = new ipipestream(pipe2fd[0]);
+	opipestream *pipe_out_B = new opipestream(pipe1fd[1]);
+	
 	StiglicMPC *mpc;
 	MPC_ParticipantList list;
-	MPC_Participant *A = new MPC_Participant(&std::cin, &std::cout);
-	list.push_back(A);
+	MPC_Participant *A = new MPC_Participant(pipe_in_A, pipe_out_A);
+	MPC_Participant *B = new MPC_Participant(pipe_in_B, pipe_out_B);
+	list.push_back(A), list.push_back(B);
 	
-	mpc = new StiglicMPC(16, list, 0);
-	
-	MPC_Bit a, b, c, result;
-	bool x = false, y = false, z = false;
-	size_t i = 0;
-	
-	std::cout << "BitCommitment" << std::endl;
-	mpc->MPC_ProveBitCommitment(a, true);
-	mpc->MPC_ProveBitCommitment(b, false);
-	mpc->MPC_ProveBitCommitment(c, true);
-	std::cout << a << std::endl << b << std::endl << c << std::endl;
-	assert((a != b) && (b != c) && (a != c));
-	assert(mpc->MPC_OpenBitCommitment(a, x));
-	assert(mpc->MPC_OpenBitCommitment(b, y));
-	assert(mpc->MPC_OpenBitCommitment(c, z));
-	std::cout << x << std::endl << y << std::endl << z << std::endl;
-	assert((x == true) && (y == false) && (z == true));
-	
-	std::cout << "CopyBitCommitment" << std::endl;
-	assert(mpc->MPC_CopyBitCommitment(result, c, a));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(mpc->MPC_OpenBitCommitment(c, y));
-	assert((x == y) && (y == true));
-	assert(mpc->MPC_CopyBitCommitment(result, c, b));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(mpc->MPC_OpenBitCommitment(c, y));
-	assert((x == y) && (y == false));
-	
-	std::cout << "RandomBitCommitment" << std::endl;
-	do
+	if ((pid = fork()) < 0)
 	{
-		assert(mpc->MPC_RandomBitCommitment(result));
-		assert(mpc->MPC_OpenBitCommitment(result, x));
-		std::cout << x << std::endl;
+		perror("t-mpc (fork)");
+		return -1;
 	}
-	while (x && (++i < 80));
-	assert(i < 80);
-	i = 0;
-	do
+	
+	if (pid == 0)
 	{
-		assert(mpc->MPC_RandomBitCommitment(result));
-		assert(mpc->MPC_OpenBitCommitment(result, x));
-		std::cout << x << std::endl;
+		/* BEGIN child code: participant B */
+		mpc = new StiglicMPC(16, list, 1);
+		
+		MPC_Bit a, b, c, result;
+		bool x = false, y = false, z = false;
+		mpc->MPC_ProveBitCommitment(a, true);
+		mpc->MPC_ProveBitCommitment(b, false);
+		mpc->MPC_ProveBitCommitment(c, true);
+		mpc->MPC_OpenBitCommitment(a, x);
+		mpc->MPC_OpenBitCommitment(b, y);
+		mpc->MPC_OpenBitCommitment(c, z);
+		mpc->MPC_CopyBitCommitment(result, c, a);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_OpenBitCommitment(c, y);
+		mpc->MPC_CopyBitCommitment(result, c, b);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_OpenBitCommitment(c, y);
+		do
+		{
+			mpc->MPC_RandomBitCommitment(result);
+			mpc->MPC_OpenBitCommitment(result, x);
+		}
+		while (x);
+		do
+		{
+			mpc->MPC_RandomBitCommitment(result);
+			mpc->MPC_OpenBitCommitment(result, x);
+		}
+		while (!x);
+		mpc->MPC_ComputeNEG(result, a);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeNEG(result, b);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeAND(result, a, a);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeAND(result, a, b);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeAND(result, b, a);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeAND(result, b, b);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeOR(result, a, a);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeOR(result, a, b);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeOR(result, b, a);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeOR(result, b, b);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeXOR(result, a, a);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeXOR(result, a, b);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeXOR(result, b, a);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeXOR(result, b, b);
+		mpc->MPC_OpenBitCommitment(result, x);
+		
+		delete mpc;
+		exit(0);
+		/* END child code: participant B */
 	}
-	while (!x && (++i < 80));
-	assert(i < 80);
+	else
+	{
+		std::cout << "fork() = " << pid << std::endl;
+		/* Participant A */
+		mpc = new StiglicMPC(16, list, 0);
+		
+		MPC_Bit a, b, c, result;
+		bool x = false, y = false, z = false;
+		size_t i = 0;
+		
+		std::cout << "BitCommitment" << std::endl;
+		assert(mpc->MPC_VerifyBitCommitment(a, 1));
+		assert(mpc->MPC_VerifyBitCommitment(b, 1));
+		assert(mpc->MPC_VerifyBitCommitment(c, 1));
+		std::cout << a << std::endl << b << std::endl << c << std::endl;
+		assert((a != b) && (b != c) && (a != c));
+		assert(mpc->MPC_OpenBitCommitment(a, x));
+		assert(mpc->MPC_OpenBitCommitment(b, y));
+		assert(mpc->MPC_OpenBitCommitment(c, z));
+		std::cout << x << std::endl << y << std::endl << z << std::endl;
+		assert((x == true) && (y == false) && (z == true));
+		
+		std::cout << "CopyBitCommitment" << std::endl;
+		assert(mpc->MPC_CopyBitCommitment(result, c, a));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(mpc->MPC_OpenBitCommitment(c, y));
+		assert((x == y) && (y == true));
+		assert(mpc->MPC_CopyBitCommitment(result, c, b));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(mpc->MPC_OpenBitCommitment(c, y));
+		assert((x == y) && (y == false));
+		
+		std::cout << "RandomBitCommitment" << std::endl;
+		do
+		{
+			assert(mpc->MPC_RandomBitCommitment(result));
+			assert(mpc->MPC_OpenBitCommitment(result, x));
+			std::cout << x << std::endl;
+		}
+		while (x && (++i < 80));
+		assert(i < 80);
+		i = 0;
+		do
+		{
+			assert(mpc->MPC_RandomBitCommitment(result));
+			assert(mpc->MPC_OpenBitCommitment(result, x));
+			std::cout << x << std::endl;
+		}
+		while (!x && (++i < 80));
+		assert(i < 80);
+		
+		std::cout << "ComputeNEG" << std::endl;
+		mpc->MPC_ComputeNEG(result, a);
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == false);
+		mpc->MPC_ComputeNEG(result, b);
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == true);
+		
+		std::cout << "ComputeAND" << std::endl;
+		assert(mpc->MPC_ComputeAND(result, a, a));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == true);
+		assert(mpc->MPC_ComputeAND(result, a, b));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == false);
+		assert(mpc->MPC_ComputeAND(result, b, a));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == false);
+		assert(mpc->MPC_ComputeAND(result, b, b));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == false);
+		
+		std::cout << "ComputeOR" << std::endl;
+		assert(mpc->MPC_ComputeOR(result, a, a));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == true);
+		assert(mpc->MPC_ComputeOR(result, a, b));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == true);
+		assert(mpc->MPC_ComputeOR(result, b, a));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == true);
+		assert(mpc->MPC_ComputeOR(result, b, b));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == false);
+		
+		std::cout << "ComputeXOR" << std::endl;
+		assert(mpc->MPC_ComputeXOR(result, a, a));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == false);
+		assert(mpc->MPC_ComputeXOR(result, a, b));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == true);
+		assert(mpc->MPC_ComputeXOR(result, b, a));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == true);
+		assert(mpc->MPC_ComputeXOR(result, b, b));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == false);
+		
+		delete mpc;
+	}
 	
-	std::cout << "ComputeNEG" << std::endl;
-	mpc->MPC_ComputeNEG(result, a);
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == false);
-	mpc->MPC_ComputeNEG(result, b);
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == true);
+	// finialize
+	if (waitpid(pid, NULL, 0) != pid)
+		perror("t-mpc (waitpid)");
 	
-	std::cout << "ComputeAND" << std::endl;
-	assert(mpc->MPC_ComputeAND(result, a, a));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == true);
-	assert(mpc->MPC_ComputeAND(result, a, b));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == false);
-	assert(mpc->MPC_ComputeAND(result, b, a));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == false);
-	assert(mpc->MPC_ComputeAND(result, b, b));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == false);
+	list.clear();
+	delete A, delete B;
 	
-	std::cout << "ComputeOR" << std::endl;
-	assert(mpc->MPC_ComputeOR(result, a, a));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == true);
-	assert(mpc->MPC_ComputeOR(result, a, b));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == true);
-	assert(mpc->MPC_ComputeOR(result, b, a));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == true);
-	assert(mpc->MPC_ComputeOR(result, b, b));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == false);
-	
-	std::cout << "ComputeXOR" << std::endl;
-	assert(mpc->MPC_ComputeXOR(result, a, a));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == false);
-	assert(mpc->MPC_ComputeXOR(result, a, b));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == true);
-	assert(mpc->MPC_ComputeXOR(result, b, a));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == true);
-	assert(mpc->MPC_ComputeXOR(result, b, b));
-	assert(mpc->MPC_OpenBitCommitment(result, x));
-	assert(x == false);
-	
-	delete A, delete mpc;
+	delete pipe_in_A, delete pipe_out_A, delete pipe_in_B, delete pipe_out_B;
+	close(pipe1fd[0]), close(pipe1fd[1]), close(pipe2fd[0]), close(pipe2fd[1]);
 }

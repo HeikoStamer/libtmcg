@@ -1,4 +1,3 @@
-+ more participants in tests/t-mpc.cc (fork/child code)
 + see TODO header of GrothVSSHE.cc
 
 - implement more card and stack operations of the toolbox

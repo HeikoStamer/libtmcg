@@ -76,7 +76,7 @@ class StiglicMPC
 			// create an instance of the VTMF implementation (create the group G)
 			if (index)
 			{
-				vtmf = new BarnettSmartVTMF_dlog(*participants[index]->in);
+				vtmf = new BarnettSmartVTMF_dlog(*participants[0]->in);
 			}
 			else
 			{

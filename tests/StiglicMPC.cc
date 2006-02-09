@@ -125,11 +125,11 @@ bool StiglicMPC::MPC_CyclicShift
 {
 	assert(stack.size() > 0);
 	
-	TMCG_Stack<VTMF_Card> s1;
-	TMCG_StackSecret<VTMF_CardSecret> cs1;
-	
 	for (size_t i = 0; i < participants.size(); i++)
 	{
+		TMCG_Stack<VTMF_Card> s1;
+		TMCG_StackSecret<VTMF_CardSecret> cs1;
+		
 		if (i == index)
 		{
 			tmcg->TMCG_CreateStackSecret(cs1, true, stack.size(), vtmf);
@@ -269,16 +269,16 @@ bool StiglicMPC::MPC_CopyBitCommitment
 	// step 2a. -- apply a cyclic shift to the six rightmost cards
 	if (!MPC_CyclicShift(copyshop, copyshop))
 		return false;
-		
+	
 	// step 2b. -- create the necessary configuration
 	left.push(bit), left.push(copyshop[0]), left.push(copyshop[1]);
 	copyshop.stack.erase(copyshop.stack.begin(), copyshop.stack.begin() + 2);
 	assert(copyshop.size() == 4);
-		
+	
 	// step 3. -- apply a cyclic shift to the four topmost cards
 	if (!MPC_CyclicShift(left, left))
 		return false;
-		
+	
 	// step 4. -- open the four topmost cards
 	if (!MPC_OpenCardCommitment(left[0], cb[0]))
 		return false;
