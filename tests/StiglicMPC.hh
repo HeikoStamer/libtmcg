@@ -71,6 +71,11 @@ class StiglicMPC
 			(size_t security, MPC_ParticipantList plist, size_t pindex):
 				participants(plist), index(pindex)
 		{
+			if (participants.size() < 1)
+			{
+				std::cerr << "At least one participant necessary" << std::endl;
+				exit(-1);
+			}
 			tmcg = new SchindelhauerTMCG(security, participants.size(), 1);
 			
 			// create an instance of the VTMF implementation (create the group G)
