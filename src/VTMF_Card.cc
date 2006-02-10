@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -59,15 +59,15 @@ bool VTMF_Card::import
 	try
 	{
 		// check magic
-		if (!cm(s, "crd", '|'))
+		if (!TMCG_ParseHelper::cm(s, "crd", '|'))
 			throw false;
 		
 		// card data
-		if ((mpz_set_str(c_1, gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-			(!nx(s, '|')))
+		if ((mpz_set_str(c_1, TMCG_ParseHelper::gs(s, '|').c_str(), 
+			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
-		if ((mpz_set_str(c_2, gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-			(!nx(s, '|')))
+		if ((mpz_set_str(c_2, TMCG_ParseHelper::gs(s, '|').c_str(), 
+			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		
 		throw true;

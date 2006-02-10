@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -45,12 +45,12 @@ bool VTMF_CardSecret::import
 	try
 	{
 		// check magic
-		if (!cm(s, "crs", '|'))
+		if (!TMCG_ParseHelper::cm(s, "crs", '|'))
 			throw false;
 		
 		// secret card data
-		if ((mpz_set_str(r, gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-			(!nx(s, '|')))
+		if ((mpz_set_str(r, TMCG_ParseHelper::gs(s, '|').c_str(), 
+			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		
 		throw true;

@@ -14,7 +14,7 @@
 
      Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -139,7 +139,7 @@ bool TMCG_PublicKey::check
 		}
 		
 		// check magic of NIZK
-		if (!cm(s, "nzk", '^'))
+		if (!TMCG_ParseHelper::cm(s, "nzk", '^'))
 			throw false;
 		
 		// initalize NIZK proof input
@@ -147,11 +147,11 @@ bool TMCG_PublicKey::check
 		input << m << "^" << y;
 		
 		// get security parameter of STAGE1
-		if (gs(s, '^').length() == 0)
+		if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 			throw false;
 		
-		stage1_size = strtoul(gs(s, '^').c_str(), &ec, 10);
-		if ((*ec != '\0') || (stage1_size <= 0) || (!nx(s, '^')))
+		stage1_size = strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
+		if ((*ec != '\0') || (stage1_size <= 0) || (!TMCG_ParseHelper::nx(s, '^')))
 			throw false;
 		
 		// check security constraint of STAGE1
@@ -173,10 +173,10 @@ bool TMCG_PublicKey::check
 			while (mpz_cmp_ui(bar, 1L));
 			
 			// read NIZK proof
-			if (gs(s, '^').length() == 0)
+			if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 				throw false;
-			if ((mpz_set_str(bar, gs(s, '^').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-				(!nx(s, '^')))
+			if ((mpz_set_str(bar, TMCG_ParseHelper::gs(s, '^').c_str(), 
+				TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '^')))
 					throw false;
 			
 			// check, whether bar^m mod m is equal to foo
@@ -186,10 +186,10 @@ bool TMCG_PublicKey::check
 		}
 		
 		// get security parameter of STAGE2
-		if (gs(s, '^').length() == 0)
+		if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 			throw false;
-		stage2_size = strtoul(gs(s, '^').c_str(), &ec, 10);
-		if ((*ec != '\0') || (stage2_size <= 0) || (!nx(s, '^')))
+		stage2_size = strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
+		if ((*ec != '\0') || (stage2_size <= 0) || (!TMCG_ParseHelper::nx(s, '^')))
 			throw false;
 		
 		// check security constraint of STAGE2
@@ -211,10 +211,10 @@ bool TMCG_PublicKey::check
 			while (mpz_cmp_ui(bar, 1L));
 			
 			// read NIZK proof
-			if (gs(s, '^').length() == 0)
+			if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 				throw false;
-			if ((mpz_set_str(bar, gs(s, '^').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-				(!nx(s, '^')))
+			if ((mpz_set_str(bar, TMCG_ParseHelper::gs(s, '^').c_str(), 
+				TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '^')))
 					throw false;
 			
 			// check, whether bar^2 \equiv +-foo or \equiv +-2foo (mod m)
@@ -237,10 +237,10 @@ bool TMCG_PublicKey::check
 		}
 		
 		// get security parameter of STAGE3
-		if (gs(s, '^').length() == 0)
+		if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 			throw false;
-		stage3_size = strtoul(gs(s, '^').c_str(), &ec, 10);
-		if ((*ec != '\0') || (stage3_size <= 0) || (!nx(s, '^')))
+		stage3_size = strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
+		if ((*ec != '\0') || (stage3_size <= 0) || (!TMCG_ParseHelper::nx(s, '^')))
 			throw false;
 		
 		// check security constraint of STAGE3
@@ -261,10 +261,10 @@ bool TMCG_PublicKey::check
 			while (mpz_jacobi(foo, m) != 1);
 			
 			// read NIZK proof
-			if (gs(s, '^').length() == 0)
+			if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 				throw false;
-			if ((mpz_set_str(bar, gs(s, '^').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-				(!nx(s, '^')))
+			if ((mpz_set_str(bar, TMCG_ParseHelper::gs(s, '^').c_str(), 
+				TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '^')))
 					throw false;
 			
 			// check congruence [Goldwasser-Micali NIZK proof for NQR]
@@ -300,15 +300,15 @@ std::string TMCG_PublicKey::selfid
 		return std::string("SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG");
 	
 	// check magic
-	if (!cm(s, "sig", '|'))
+	if (!TMCG_ParseHelper::cm(s, "sig", '|'))
 		return std::string("ERROR");
 	
 	// skip the keyID
-	if (!nx(s, '|'))
+	if (!TMCG_ParseHelper::nx(s, '|'))
 		return std::string("ERROR");
 	
 	// get the sigID
-	return std::string(gs(s, '|'));
+	return std::string(TMCG_ParseHelper::gs(s, '|'));
 }
 
 std::string TMCG_PublicKey::keyid
@@ -327,11 +327,11 @@ std::string TMCG_PublicKey::sigid
 	(std::string s) const
 {
 	// check magic
-	if (!cm(s, "sig", '|'))
+	if (!TMCG_ParseHelper::cm(s, "sig", '|'))
 		return std::string("ERROR");
 	
 	// get the keyID
-	return std::string(gs(s, '|'));
+	return std::string(TMCG_ParseHelper::gs(s, '|'));
 }
 
 bool TMCG_PublicKey::import
@@ -340,38 +340,42 @@ bool TMCG_PublicKey::import
 	try
 	{
 		// check magic
-		if (!cm(s, "pub", '|'))
+		if (!TMCG_ParseHelper::cm(s, "pub", '|'))
 			throw false;
 		
 		// name
-		name = gs(s, '|');
-		if ((gs(s, '|').length() == 0) || (!nx(s, '|')))
-			throw false;
+		name = TMCG_ParseHelper::gs(s, '|');
+		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
+			(!TMCG_ParseHelper::nx(s, '|')))
+				throw false;
 		
 		// email
-		email = gs(s, '|');
-		if ((gs(s, '|').length() == 0) || (!nx(s, '|')))
-			throw false;
+		email = TMCG_ParseHelper::gs(s, '|');
+		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
+			(!TMCG_ParseHelper::nx(s, '|')))
+				throw false;
 		
 		// type
-		type = gs(s, '|');
-		if ((gs(s, '|').length() == 0) || (!nx(s, '|')))
-			throw false;
+		type = TMCG_ParseHelper::gs(s, '|');
+		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
+			(!TMCG_ParseHelper::nx(s, '|')))
+				throw false;
 		
 		// m
-		if ((mpz_set_str(m, gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-			(!nx(s, '|')))
+		if ((mpz_set_str(m, TMCG_ParseHelper::gs(s, '|').c_str(), 
+			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		
 		// y
-		if ((mpz_set_str(y, gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-			(!nx(s, '|')))
+		if ((mpz_set_str(y, TMCG_ParseHelper::gs(s, '|').c_str(), 
+			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		
 		// NIZK
-		nizk = gs(s, '|');
-		if ((gs(s, '|').length() == 0) || (!nx(s, '|')))
-			throw false;
+		nizk = TMCG_ParseHelper::gs(s, '|');
+		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
+			(!TMCG_ParseHelper::nx(s, '|')))
+				throw false;
 		
 		// sig
 		sig = s;
@@ -433,16 +437,16 @@ bool TMCG_PublicKey::verify
 	try
 	{
 		// check magic
-		if (!cm(s, "sig", '|'))
+		if (!TMCG_ParseHelper::cm(s, "sig", '|'))
 			throw false;
 		
 		// check keyID
-		if (!cm(s, keyid().c_str(), '|'))
+		if (!TMCG_ParseHelper::cm(s, keyid().c_str(), '|'))
 			throw false;
 		
 		// value
-		if ((mpz_set_str(foo, gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-			(!nx(s, '|')))
+		if ((mpz_set_str(foo, TMCG_ParseHelper::gs(s, '|').c_str(), 
+			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		
 		// verify signature

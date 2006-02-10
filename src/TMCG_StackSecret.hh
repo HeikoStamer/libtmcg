@@ -1,7 +1,7 @@
 /*******************************************************************************
   Data structure for the secrets of a stack. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -157,15 +157,15 @@ template <typename CardSecretType> struct TMCG_StackSecret
 		try
 		{
 			// check magic
-			if (!cm(s, "sts", '^'))
+			if (!TMCG_ParseHelper::cm(s, "sts", '^'))
 				throw false;
 			
 			// size of stack
-			if (gs(s, '^').length() == 0)
+			if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 				throw false;
-			size = strtoul(gs(s, '^').c_str(), &ec, 10);
+			size = strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
 			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) || 
-				(!nx(s, '^')))
+				(!TMCG_ParseHelper::nx(s, '^')))
 					throw false;
 			
 			// cards on stack
@@ -174,18 +174,20 @@ template <typename CardSecretType> struct TMCG_StackSecret
 				std::pair<size_t, CardSecretType> lej;
 				
 				// permutation index
-				if (gs(s, '^').length() == 0)
+				if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 					throw false;
-				lej.first = (size_t)strtoul(gs(s, '^').c_str(), &ec, 10);
+				lej.first = (size_t)strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), 
+					&ec, 10);
 				if ((*ec != '\0') || (lej.first < 0) || (lej.first >= size) ||
-					(!nx(s, '^')))
+					(!TMCG_ParseHelper::nx(s, '^')))
 						throw false;
 				
 				// card secret
-				if (gs(s, '^').length() == 0)
+				if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 					throw false;
-				if ((!lej.second.import(gs(s, '^'))) || (!nx(s, '^')))
-					throw false;
+				if ((!lej.second.import(TMCG_ParseHelper::gs(s, '^'))) || 
+					(!TMCG_ParseHelper::nx(s, '^')))
+						throw false;
 				
 				// store pair
 				stack.push_back(lej);

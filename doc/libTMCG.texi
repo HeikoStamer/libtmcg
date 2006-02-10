@@ -5,10 +5,15 @@
 @settitle The LibTMCG Reference Manual
 @c %**end of header
 
+@c A simple macro for optional variables. (copied from gcrypt manual)
+@macro ovar{varname}
+@r{[}@var{\varname\}@r{]}
+@end macro
+
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.7 2006/02/02 20:13:13 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.8 2006/02/10 21:51:22 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -51,13 +56,12 @@ creating secure electronic card games. The most remarkable
 feature is the absence of a trusted third party (TTP), i.e.
 neither a central game server nor similar facilities are
 necessary. To emphasize this point again: With the present
-LibTMCG there is
-no need for an independent referee, because the applied
-protocols provide a basic level of confidentiality and
-fairness by itself. Of course, we cannot avoid that
+library there is no need for an independent referee, because
+the applied protocols provide a basic level of confidentiality
+and fairness by itself. Of course, we cannot avoid that
 malicious players share information about their private
 cards, but the protocols ensure that the shuffle of the
-deck is performed randomly (provided that at least one
+deck is performed randomly (presumed that at least one
 player is honest) and thus the cards will be distributed
 uniformly among the players. Further, no coalition can
 learn the private cards of a player agains his will (except
@@ -77,29 +81,154 @@ LibTMCG is @emph{Free Software} according to the definition
 of the @uref{http://www.fsf.org/licensing/essays/free-sw.html,,
 Free Software Foundation}.
 
-@section Getting Started
-
-This manual documents the library application programming
-interface (API) of LibTMCG. All important classes and security
+@c **********************************************************
+@section Getting started
+This manual describes the application programming interface
+(API) of LibTMCG. All important classes and security
 parameters are explained. The reader should have an advanced
 knowledge in applied cryptography and C++ programming.
 Reference is made at this point to the famous @cite{Handbook
 of Applied Cryptography} for a brief introduction.
 
-This document follows, in style and sometimes in content,
+This document follows, in style and rarely in phrasing,
 the @cite{Reference Manual of the GNU Crypto Library}.
+Thus don't be surprised, if you recognize some obvious
+analogies.
 
+@c **********************************************************
 @section Preparation
-LibTMCG depends on the two other basic libraries. Additionally,
-you need the corresponding development files to build
-your application:
-
+LibTMCG depends on the two other basic libraries. Hence
+you will need mandatory their corresponding development
+files to build your application:
 @itemize @bullet
-	@item GNU Multiple Precision Arithmetic Library (libgmp),
+	@item GNU Multiple Precision Arithmetic Library (@file{libgmp}),
 		Version @math{\ge} 4.1.0
-	@item GNU Crypto Library (libgcrypt),
+		
+		This library provides a powerful framework for performing
+		arbitrary precision arithmetic on integers. Further reasons
+		for chosing this dependency are the license compatibility,
+		portability, vital maintainance, and, of course, the
+		reasonable performance.
+		
+	@item GNU Crypto Library (@file{libgcrypt}),
 		Version @math{\ge} 1.2.0
+		
+		This library provides some basic cryptographic algorithms
+		(e.g. RIPEMD-160) and a sufficient interface to obtain
+		cryptographically strong pseudo random numbers.
+		
 @end itemize
+We suppose that the reader is familiar with these libraries
+because their correct installation and configuration is
+crucial for the security of the entire application.
+
+@c **********************************************************
+@section Headers and namespaces
+The interface definitions of the classes and the constant security
+parameters@footnote{These parameters are fixed at compile time.
+Please don't change anything except you know exactly what you are
+doing! Beside the apparent security concerns you will probably break
+the compatibility with other applications.} are provided by the
+central header file @file{libTMCG.hh}. You have to include this file
+in all of your sources, either directly or through some other method.
+
+@example
+#include <libTMCG.hh>
+@end example
+
+There are no uniform C++ namespaces for the most parts of the
+library. Some classes have the common prefix @code{TMCG_*} or
+@code{VTMF_*} while others are composed of the author names
+of the related research paper. Further there are internally
+used C functions which might produce conflicting names. These
+function names are prepended by @code{mpz_*} because they are
+extensions for the integer support of th GNU Multiple Precision
+Arithmetic Library.
+
+@c **********************************************************
+@section Building sources
+If you want to compile a source file including the @file{libTMCG.hh}
+header file, you must make sure that the compiler can find it in the
+directory hierarchy. This is accomplished by adding the path of the
+corresponding directory to the compilers include file search path
+(via the @option{-I} option).
+
+However, the path to the include file is determined at the time the
+source is configured. To solve this problem, LibTMCG ships with a small
+helper program @command{libTMCG-config} that knows the path to the
+include file and other configuration options. The options that need
+to be added to the compiler invocation at compile time are output by
+the @option{--cflags} option to @command{libTMCG-config}. The following
+example shows how it can be used at the command line:
+
+@example
+g++ -c foo.cc `libTMCG-config --cflags`
+@end example
+
+Adding the output of @samp{libTMCG-config --cflags} to the compilers
+command line will ensure that the compiler can find the library header
+file.
+
+A similar problem occurs when linking the program with the library.
+Again, the compiler has to find the library files. For this to work,
+the path to the library files has to be added to the library search
+path (via the @option{-L} option). For this, the option @option{--libs}
+to @command{libTMCG-config} can be used. For convenience, this option
+also outputs all other options that are required to link the program
+with the library (in particular, the @samp{-lTMCG} option). The example
+shows how to link @file{foo.o} with LibTMCG to a program @command{foo}.
+
+@example
+g++ -o foo foo.o `libTMCG-config --libs`
+@end example
+
+Of course you can also combine both examples to a single command by
+specifying both options to @command{libTMCG-config}:
+
+@example
+g++ -o foo foo.c `libTMCG-config --cflags --libs`
+@end example
+
+@c **********************************************************
+@section Building sources using GNU Automake
+It is much easier if you use GNU Automake instead of writing your own
+Makefiles. If you do that you do not have to worry about finding and
+invoking the @command{libTMCG-config} script at all.
+LibTMCG provides an extension to Automake that does all
+the work for you.
+
+@defmac AM_PATH_LIBTMCG (@ovar{minimum-version}, @ovar{action-if-found}, @ovar{action-if-not-found})
+Check whether LibTMCG (at least version @var{minimum-version}, if given)
+exists on the host system. If it is found, execute @var{action-if-found},
+otherwise do @var{action-if-not-found}, if given.
+
+Additionally, the function defines @code{LIBTMCG_CFLAGS} to the
+flags needed for compilation of the program to find the @file{libTMCG.hh}
+header file, and @code{LIBTMCG_LIBS} to the linker flags needed to link
+the program with LibTMCG.
+@end defmac
+
+Thus you can use the defined Autoconf variables like this in your
+@file{Makefile.am}:
+
+@example
+AM_CPPFLAGS = $(LIBTMCG_CFLAGS)
+LDADD = $(LIBTMCG_LIBS)
+@end example
+
+@c **********************************************************
+@section Initializing the library
+The first step you have to perform is to initalize LibTMCG.
+The following function must be invoked early in your program,
+i.e. before you make use of any other capability.
+
+@deftypefun bool init_libTMCG ()
+The function checks whether the installed third-party libraries
+match their required versions. Further it initalize them
+and returns @code{true}, if everything was sound. Otherwise
+@code{false} is returned and an appropriate error message
+is sent to @code{stderr}.
+@end deftypefun
 
 @chapter Application Programming Interface
 
@@ -115,5 +244,9 @@ your application:
 @unnumbered Index
 
 @printindex cp
+
+@unnumbered Function and Data Index
+
+@printindex fn
 
 @bye

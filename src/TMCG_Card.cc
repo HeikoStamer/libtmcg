@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -106,20 +106,22 @@ bool TMCG_Card::import
 	try
 	{
 		// check magic
-		if (!cm(s, "crd", '|'))
+		if (!TMCG_ParseHelper::cm(s, "crd", '|'))
 			throw false;
 		
 		// card description
-		if (gs(s, '|').length() == 0)
+		if (TMCG_ParseHelper::gs(s, '|').length() == 0)
 			throw false;
-		size_t k = strtoul(gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) || (!nx(s, '|')))
+		size_t k = strtoul(TMCG_ParseHelper::gs(s, '|').c_str(), &ec, 10);
+		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) || 
+			(!TMCG_ParseHelper::nx(s, '|')))
+				throw false;
+		if (TMCG_ParseHelper::gs(s, '|').length() == 0)
 			throw false;
-		if (gs(s, '|').length() == 0)
-			throw false;
-		size_t w = strtoul(gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) || (!nx(s, '|')))
-			throw false;
+		size_t w = strtoul(TMCG_ParseHelper::gs(s, '|').c_str(), &ec, 10);
+		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) || 
+			(!TMCG_ParseHelper::nx(s, '|')))
+				throw false;
 		
 		// resize this
 		resize(k, w);
@@ -130,8 +132,8 @@ bool TMCG_Card::import
 			for (size_t j = 0; j < z[i].size(); j++)
 			{
 				// z_ij
-				if ((mpz_set_str(&z[i][j], gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0)
-					|| (!nx(s, '|')))
+				if ((mpz_set_str(&z[i][j], TMCG_ParseHelper::gs(s, '|').c_str(), 
+					TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 						throw false;
 			}
 		}

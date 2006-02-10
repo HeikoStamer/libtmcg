@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,11 +23,14 @@
 	
 	#include <string>
 	
-	// simple methods for parsing
-	bool cm
-		(std::string &s, const std::string &c, char p);
-	bool nx
-		(std::string &s, char p);
-	std::string gs
-		(const std::string &s, char p);
+	namespace TMCG_ParseHelper
+	{
+		// simple methods for parsing
+		bool cm
+			(std::string &s, const std::string &c, char p);
+		bool nx
+			(std::string &s, char p);
+		std::string gs
+			(const std::string &s, char p);
+	}
 #endif

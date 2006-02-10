@@ -14,7 +14,7 @@
 
      Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -297,48 +297,52 @@ bool TMCG_SecretKey::import
 	try
 	{
 		// check magic
-		if (!cm(s, "sec", '|'))
+		if (!TMCG_ParseHelper::cm(s, "sec", '|'))
 			throw false;
 		
 		// name
-		name = gs(s, '|');
-		if ((gs(s, '|').length() == 0) || (!nx(s, '|')))
-			throw false;
+		name = TMCG_ParseHelper::gs(s, '|');
+		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
+			(!TMCG_ParseHelper::nx(s, '|')))
+				throw false;
 		
 		// email
-		email = gs(s, '|');
-		if ((gs(s, '|').length() == 0) || (!nx(s, '|')))
-			throw false;
+		email = TMCG_ParseHelper::gs(s, '|');
+		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
+			(!TMCG_ParseHelper::nx(s, '|')))
+				throw false;
 		
 		// type
-		type = gs(s, '|');
-		if ((gs(s, '|').length() == 0) || (!nx(s, '|')))
-			throw false;
+		type = TMCG_ParseHelper::gs(s, '|');
+		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
+			(!TMCG_ParseHelper::nx(s, '|')))
+				throw false;
 		
 		// m
-		if ((mpz_set_str(m, gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-			(!nx(s, '|')))
+		if ((mpz_set_str(m, TMCG_ParseHelper::gs(s, '|').c_str(), 
+			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		
 		// y
-		if ((mpz_set_str(y, gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-			(!nx(s, '|')))
+		if ((mpz_set_str(y, TMCG_ParseHelper::gs(s, '|').c_str(), 
+			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		
 		// p
-		if ((mpz_set_str(p, gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-			(!nx(s, '|')))
+		if ((mpz_set_str(p, TMCG_ParseHelper::gs(s, '|').c_str(), 
+			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		
 		// q
-		if ((mpz_set_str(q, gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-			(!nx(s, '|')))
+		if ((mpz_set_str(q, TMCG_ParseHelper::gs(s, '|').c_str(), 
+			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		
 		// NIZK
-		nizk = gs(s, '|');
-		if ((gs(s, '|').length() == 0) || (!nx(s, '|')))
-			throw false;
+		nizk = TMCG_ParseHelper::gs(s, '|');
+		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
+			(!TMCG_ParseHelper::nx(s, '|')))
+				throw false;
 		
 		// sig
 		sig = s;
@@ -402,16 +406,16 @@ bool TMCG_SecretKey::decrypt
 	try
 	{
 		// check magic
-		if (!cm(s, "enc", '|'))
+		if (!TMCG_ParseHelper::cm(s, "enc", '|'))
 			throw false;
 		
 		// check keyID
-		if (!cm(s, keyid(), '|'))
+		if (!TMCG_ParseHelper::cm(s, keyid(), '|'))
 			throw false;
 		
 		// vdata
-		if ((mpz_set_str(vdata, gs(s, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-			(!nx(s, '|')))
+		if ((mpz_set_str(vdata, TMCG_ParseHelper::gs(s, '|').c_str(), 
+			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		
 		// decrypt value, compute modular square roots
