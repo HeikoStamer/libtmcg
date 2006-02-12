@@ -1,5 +1,6 @@
 \input texinfo
 @c %**start of header
+@documentencoding ISO-8859-1
 @setfilename libTMCG.info
 @include version.texi
 @settitle The LibTMCG Reference Manual
@@ -13,7 +14,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.8 2006/02/10 21:51:22 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.9 2006/02/12 16:12:41 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -82,13 +83,44 @@ of the @uref{http://www.fsf.org/licensing/essays/free-sw.html,,
 Free Software Foundation}.
 
 @c **********************************************************
+@section Further reading
+The cryptographic background and a detailed discussion of
+the implementation issues is beyond the scope of this manual.
+The interested reader is refered to the following papers:
+@quotation [Sch98]
+	Christian Schindelhauer.
+	@emph{Toolbox for Mental Card Games.}@*
+	Technical Report A-98-14, University of L@"ubeck, 1998.
+@end quotation
+@quotation [BS03]
+	Adam Barnett and Nigel P. Smart.
+	@emph{Mental Poker Revisited.}@*
+	In K.G. Paterson (Ed.): Cryptography and Coding 2003,
+	Lecture Notes in Computer Science 2898, pp. 370--383, 2003.
+@end quotation
+@quotation [St04]
+	Heiko Stamer.
+	@emph{Kryptographische Skatrunde.} (in German)@*
+	Offene Systeme (ISSN 1619-0114), 4:10--30, 2004.@*
+	@uref{http://www.gaos.org/~stamer/OS-4-2004-openskat_rev2005.pdf}
+@end quotation
+@quotation [St05]
+	Heiko Stamer.
+	@emph{Efficient Electronic Gambling: An Extended Implementation
+	of the Toolbox for Mental Card Games.}@*
+	Proceedings of the Western European Workshop on Research in
+	Cryptology (WEWoRC 2005), Lecture Notes in Informatics P-74,
+	pp. 1--12, 2005.
+@end quotation
+
+@c **********************************************************
 @section Getting started
 This manual describes the application programming interface
-(API) of LibTMCG. All important classes and security
-parameters are explained. The reader should have an advanced
-knowledge in applied cryptography and C++ programming.
-Reference is made at this point to the famous @cite{Handbook
-of Applied Cryptography} for a brief introduction.
+(API) of LibTMCG. All public classes and security parameters
+are explained. The reader should have an advanced knowledge
+in applied cryptography and C++ programming. Reference is
+made at this point to the famous @cite{Handbook of Applied
+Cryptography} for a brief introduction.
 
 This document follows, in style and rarely in phrasing,
 the @cite{Reference Manual of the GNU Crypto Library}.
@@ -97,9 +129,9 @@ analogies.
 
 @c **********************************************************
 @section Preparation
-LibTMCG depends on the two other basic libraries. Hence
+LibTMCG depends on the two other basic libraries. Therefore
 you will need mandatory their corresponding development
-files to build your application:
+files to build your application properly:
 @itemize @bullet
 	@item GNU Multiple Precision Arithmetic Library (@file{libgmp}),
 		Version @math{\ge} 4.1.0
@@ -114,23 +146,24 @@ files to build your application:
 		Version @math{\ge} 1.2.0
 		
 		This library provides some basic cryptographic algorithms
-		(e.g. RIPEMD-160) and a sufficient interface to obtain
+		(e.g. RIPEMD-160) and an easily usable interface to obtain
 		cryptographically strong pseudo random numbers.
 		
 @end itemize
 We suppose that the reader is familiar with these libraries
 because their correct installation and configuration is
-crucial for the security of the entire application.
+crucial to the security of the entire application.
 
 @c **********************************************************
 @section Headers and namespaces
 The interface definitions of the classes and the constant security
 parameters@footnote{These parameters are fixed at compile time.
-Please don't change anything except you know exactly what you are
-doing! Beside the apparent security concerns you will probably break
-the compatibility with other applications.} are provided by the
-central header file @file{libTMCG.hh}. You have to include this file
-in all of your sources, either directly or through some other method.
+Please don't change anything unless you know exactly what you are
+doing, and what the dangers are! Beside the apparent security
+concerns you will probably break the compatibility with other
+applications.} are provided by the central header file
+@file{libTMCG.hh}. You have to include this file in all of your
+sources, either directly or through some other method.
 
 @example
 #include <libTMCG.hh>
@@ -218,9 +251,9 @@ LDADD = $(LIBTMCG_LIBS)
 
 @c **********************************************************
 @section Initializing the library
-The first step you have to perform is to initalize LibTMCG.
+The first step you have to accomplish is to initalize LibTMCG.
 The following function must be invoked early in your program,
-i.e. before you make use of any other capability.
+that means, before you make use of any other capability.
 
 @deftypefun bool init_libTMCG ()
 The function checks whether the installed third-party libraries
@@ -241,12 +274,13 @@ is sent to @code{stderr}.
 @include gpl.texi
 @include fdl.texi
 
-@unnumbered Index
-
+@unnumbered General Index
 @printindex cp
 
-@unnumbered Function and Data Index
-
+@unnumbered API Index
 @printindex fn
+
+
+
 
 @bye
