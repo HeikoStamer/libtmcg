@@ -14,7 +14,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.9 2006/02/12 16:12:41 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.10 2006/02/16 08:06:23 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -224,16 +224,15 @@ g++ -o foo foo.c `libTMCG-config --cflags --libs`
 
 @c **********************************************************
 @section Building sources using GNU Automake
-It is much easier if you use GNU Automake instead of writing your own
+You can use GNU Automake to obtain automatically generated
 Makefiles. If you do that you do not have to worry about finding and
 invoking the @command{libTMCG-config} script at all.
-LibTMCG provides an extension to Automake that does all
-the work for you.
+LibTMCG provides an extension that does all the work for you.
 
 @defmac AM_PATH_LIBTMCG (@ovar{minimum-version}, @ovar{action-if-found}, @ovar{action-if-not-found})
 Check whether LibTMCG (at least version @var{minimum-version}, if given)
 exists on the host system. If it is found, execute @var{action-if-found},
-otherwise do @var{action-if-not-found}, if given.
+otherwise do @var{action-if-not-found}.
 
 Additionally, the function defines @code{LIBTMCG_CFLAGS} to the
 flags needed for compilation of the program to find the @file{libTMCG.hh}
@@ -241,8 +240,7 @@ header file, and @code{LIBTMCG_LIBS} to the linker flags needed to link
 the program with LibTMCG.
 @end defmac
 
-Thus you can use the defined Autoconf variables like this in your
-@file{Makefile.am}:
+You can use the defined variables in @file{Makefile.am} like below:
 
 @example
 AM_CPPFLAGS = $(LIBTMCG_CFLAGS)
@@ -251,9 +249,10 @@ LDADD = $(LIBTMCG_LIBS)
 
 @c **********************************************************
 @section Initializing the library
-The first step you have to accomplish is to initalize LibTMCG.
-The following function must be invoked early in your program,
-that means, before you make use of any other capability.
+The first step you have to do is the initalization of
+LibTMCG. The following function must be invoked early in
+your program, i.e. before you make use of any capability of
+the library.
 
 @deftypefun bool init_libTMCG ()
 The function checks whether the installed third-party libraries
@@ -263,9 +262,85 @@ and returns @code{true}, if everything was sound. Otherwise
 is sent to @code{stderr}.
 @end deftypefun
 
+@c **********************************************************
+@c *************************  API  **************************
+@c **********************************************************
 @chapter Application Programming Interface
 
-@chapter Example
+@c **********************************************************
+@section Security parameters
+Please note that the following macros are fixed at compile
+time of LibTMCG and cannot be changed by your application.
+They are only provided for informational purposes.
+
+@defvr {Macro} TMCG_GROTH_L_E
+Defines the security parameter for the soundness of Groth's
+interactive shuffle argument (VSSHE and SKC). The default
+value is set to @code{80L} which implies a soundness error
+probability of @math{2^{-80}}.
+@end defvr
+
+@defvr {Macro} TMCG_DDH_SIZE
+@end defvr
+
+@defvr {Macro} TMCG_DLSE_SIZE
+@end defvr
+
+@defvr {Macro} TMCG_GCRY_MD_ALGO
+@end defvr
+
+@defvr {Macro} TMCG_KEYID_SIZE
+@end defvr
+
+@defvr {Macro} TMCG_KEY_NIZK_STAGE1
+@end defvr
+
+@defvr {Macro} TMCG_KEY_NIZK_STAGE2
+@end defvr
+
+@defvr {Macro} TMCG_KEY_NIZK_STAGE3
+@end defvr
+
+@defvr {Macro} TMCG_LIBGCRYPT_VERSION
+@end defvr
+
+@defvr {Macro} TMCG_LIBGMP_VERSION
+@end defvr
+
+@defvr {Macro} TMCG_MAX_CARDS
+@end defvr
+
+@defvr {Macro} TMCG_MAX_PLAYERS
+@end defvr
+
+@defvr {Macro} TMCG_MAX_TYPEBITS
+@end defvr
+
+@defvr {Macro} TMCG_MPZ_IO_BASE
+@end defvr
+
+@defvr {Macro} TMCG_PRAB_K0
+@end defvr
+
+@defvr {Macro} TMCG_QRA_SIZE
+@end defvr
+
+@defvr {Macro} TMCG_SAEP_S0
+@end defvr
+
+@defvr {Macro} TMCG_HASH_COMMITMENT
+@end defvr
+
+@defvr {Macro} TMCG_MAX_FPOWM_T
+@end defvr
+
+@c **********************************************************
+@section Public classes
+
+@chapter Examples
+You should have a look at the several examples in the directory
+@file{tests/} and the corresponding source comments. A detailed
+description will later be included here.
 
 
 @c **********************************************************
