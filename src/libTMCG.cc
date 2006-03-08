@@ -28,24 +28,25 @@ bool init_libTMCG
 	// initalize libgmp
 	if (strcmp(gmp_version, TMCG_LIBGMP_VERSION) < 0)
 	{
-		std::cerr << "libgmp: need library version >= " <<
-			TMCG_LIBGMP_VERSION << std::endl;
+		std::cerr << "init_libTMCG(): libgmp version >= " <<
+			TMCG_LIBGMP_VERSION << " needed" << std::endl;
 		return false;
 	}
 	
 	// initalize libgcrypt
 	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
 	{
-		std::cerr << "libgcrypt: need library version >= " <<
-			TMCG_LIBGCRYPT_VERSION << std::endl;
+		std::cerr << "init_libTMCG(): libgcrypt version >= " <<
+			TMCG_LIBGCRYPT_VERSION << " needed" << std::endl;
 		return false;
 	}
 	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
 	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 	if (gcry_md_test_algo(TMCG_GCRY_MD_ALGO))
 	{
-		std::cerr << "libgcrypt: algorithm " << TMCG_GCRY_MD_ALGO <<
-			" [" << gcry_md_algo_name(TMCG_GCRY_MD_ALGO) <<
+		std::cerr << "init_libTMCG(): libgcrypt algorithm " <<
+			TMCG_GCRY_MD_ALGO << " [" <<
+			gcry_md_algo_name(TMCG_GCRY_MD_ALGO) <<
 			"] not available" << std::endl;
 		return false;
 	}
