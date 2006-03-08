@@ -154,7 +154,7 @@ TMCG_Card::~TMCG_Card
 }
 
 std::ostream& operator <<
-	(std::ostream &out, const TMCG_Card &card)
+	(std::ostream& out, const TMCG_Card& card)
 {
 	out << "crd|" << card.z.size() << "|" << card.z[0].size() << "|";
 	for (size_t k = 0; k < card.z.size(); k++)
@@ -164,7 +164,7 @@ std::ostream& operator <<
 }
 
 std::istream& operator >>
-	(std::istream &in, TMCG_Card &card)
+	(std::istream& in, TMCG_Card& card)
 {
 	char *tmp = new char[TMCG_MAX_CARD_CHARS];
 	in.getline(tmp, TMCG_MAX_CARD_CHARS);

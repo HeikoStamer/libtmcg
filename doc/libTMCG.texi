@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.15 2006/03/08 13:45:29 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.16 2006/03/08 15:58:01 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -163,7 +163,9 @@ because their correct installation and configuration is
 crucial to the security of the entire application.
 
 @c **********************************************************
-@section Headers and Namespaces
+@section Header Files and Namespaces
+@cindex Header Files
+@cindex Namespaces
 The interface definitions of the classes and the constant security
 parameters@footnote{These parameters are fixed at compile time.
 Please don't change anything unless you know exactly what you are
@@ -276,6 +278,7 @@ is sent to @code{stderr}.
 
 @c **********************************************************
 @section Preprocessor Defined Global Symbols
+@cindex Security Parameters
 Please note that the following macros are fixed at compile
 time of LibTMCG and cannot be changed in your application.
 They are only provided here for informational purposes.
@@ -406,7 +409,7 @@ for the card encoding scheme of Schindelhauer@tie{}[Sc98].
 @defmac TMCG_SAEP_S0
 Defines the security parameter @math{s_0} (in characters) for the Rabin-SAEP
 encryption scheme of Boneh. The default value @code{20} implies a security
-around @math{2^{80}} against CCA.
+around @math{2^{80}} against @acronym{CCA, Chosen Ciphertext Attacks}@.
 @end defmac
 
 @defmac TMCG_HASH_COMMITMENT
@@ -427,25 +430,27 @@ The default value is @code{2048}.
 @section Public Data Types and Classes
 
 @subsection Data Types
+@cindex Data Types
 
 @subsubsection Cryptographic Encoding Schemes for Cards
+@cindex Card Encoding Schemes
 There are two different encoding schemes that can be used
 for the digital representation of playing cards. In the
 scheme of Schindelhauer@tie{}[Sc98] the type of a card is
 shared among the players through bitwise representation
 by quadratic (non-)residues. Thus the security relies on
-the well-known Quadratic Residuosity Assumption (QRA).
+the well-known @acronym{QRA, Quadratic Residuosity Assumption}@.
 Unfortunately, the size of a card grows linearly in the
 number of players and logarithmically in the number of
-different card types. Recently the much more efficient
+different card types. Recently a much more efficient
 solution of Barnett and Smart@tie{}[BS03] has been
-implemented. This encoding works in a cyclic group of
-prime order and requires that the Decisional
-Diffie-Hellman Assumption (DDH) holds.
+implemented. This encoding works on a cyclic group of
+prime order and requires that the @acronym{DDH, Decisional
+Diffie-Hellman Assumption} holds there.
 
 Because of the reduced computational and communication
 complexity (cf.@tie{}[St05]) the usage of the second card
-encoding scheme (@code{VTMF_Card}) is highly recommended.
+encoding scheme, i.e. @code{VTMF_Card}, is highly recommended.
 
 @deftp {Data type} TMCG_Card
 This @code{struct} represents a card in the encoding scheme
@@ -454,9 +459,9 @@ among the players by quadratic residues and non-residues,
 respectively. The security relies on the Quadratic Residuosity
 Assumption.
 
-	@deftypecv {Member} TMCG_Card @code{std::vector< std::vector<MP_INT> >} z
+	@deftypecv {Member} TMCG_Card {std::vector< std::vector<MP_INT> >} z
 	This @math{k\times w}-matrix encodes the type of the
-	corresponding card in a shared manner. For each of the
+	corresponding card in a shared way. For each of the
 	@math{k} players there is a separate row and for each of
 	the @math{w} bits in the binary representation of the
 	type there is a column. The elements are numbers from
@@ -465,22 +470,71 @@ Assumption.
 	@end deftypecv
 	
 	@defop {Constructor} TMCG_Card TMCG_Card ()
-	This default constructor initalizes the card with a
+	This default constructor initalizes the card with an empty
 	@math{1\times 1}-matrix. Later the method
 	@code{TMCG_Card::resize} can be used to enlarge the
 	card representation.
 	@end defop
 	
 	@defop {Constructor} TMCG_Card TMCG_Card (@code{size_t} k, @code{size_t} w)
-	This constructor initalizes the card with a @math{k\times w}-matrix.
-	The parameter @var{k} is the number of players and @var{w} is the
-	number of bits used in the binary representation of the card type.
+	This constructor initalizes the card with an empty
+	@math{k\times w}-matrix. The parameter @var{k} is the
+	number of players and @var{w} is the maximum number
+	of bits used by the binary representation of the card
+	type.
 	@end defop
 	
-	@defop {Constructor} TMCG_Card TMCG_Card (@code{const TMCG_Card} &that)
-	@end defop
+	@deftypeop {Constructor} TMCG_Card {} TMCG_Card (@code{const TMCG_Card&} that)
+	This is a simple copy-constructor and @var{that} is the card to be
+	copied.
+	@end deftypeop
 	
+	@deftypeop {Operator} TMCG_Card TMCG_Card& = (@code{const TMCG_Card&} that)
+	This is a simple assignment-operator and @var{that} is the card to
+	be assigned.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_Card bool == (@code{const TMCG_Card&} that)
+	This operator tests two card representations for equality.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_Card bool != (@code{const TMCG_Card&} that)
+	This operator tests two card representations for inequality.
+	@end deftypeop
+	
+	@deftypemethod TMCG_Card void resize (@code{size_t} k, @code{size_t} w)
+	This method resizes the representation of the card.
+	The current content of the member @code{z} will be
+	released and a new @math{k\times w}-matrix is created.
+	The parameter @var{k} is the number of players and
+	@var{w} is the maximum number of bits used by the binary
+	representation of the card type.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_Card bool import (@code{std::string} s)
+	This method imports the content of the member @code{z} from
+	the correctly formated input string @var{s}. It returns
+	@code{true}, if the import was successful.
+	@end deftypemethod
+	
+	@defop {Destructor} TMCG_Card ~TMCG_Card ()
+	This destructor releases all occupied resources.
+	@end defop
 @end deftp
+
+@deftypeop {Operator} TMCG_Card std::ostream& << (@code{std::ostream&} out, @code{const TMCG_Card&} card)
+	This operator exports the content of the member @code{z}
+	(of the given @code{TMCG_Card} @var{card}) to the output
+	stream @var{out}.
+@end deftypeop
+
+@deftypeop {Operator} TMCG_Card std::istream& >> (@code{std::istream&} in, @code{TMCG_Card&} card)
+	This operator imports the content of the member @code{z}
+	(of the given @code{TMCG_Card} @var{card}) from the input
+	stream @var{in}. The data has to be delimited by a newline
+	character. The failbit of the stream is set, if any parse
+	error occured.
+@end deftypeop
 
 @deftp {Data type} VTMF_Card
 xyz
@@ -495,14 +549,17 @@ hij
 @end deftp
 
 @subsubsection Cryptographic Keys
+@cindex Keys
 
 
 @subsection Classes
+@cindex Classes
 
 @chapter Examples
-You should have a look at the several examples in the directory
-@file{tests} and read the commented source code. A detailed
-exposition will later be included here.
+@cindex Examples
+Please have a look at the several examples in the directory
+@file{tests} and the commented source code. A detailed
+exposition with some code fragments will later be included here.
 
 
 @c **********************************************************

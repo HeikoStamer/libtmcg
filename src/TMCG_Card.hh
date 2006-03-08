@@ -111,7 +111,7 @@ struct TMCG_Card
     @param out is the output stream.
     @param card is the card to be printed. */
 std::ostream& operator <<
-	(std::ostream &out, const TMCG_Card &card);
+	(std::ostream& out, const TMCG_Card& card);
 
 /** @relates TMCG_Card
     This operator imports a card from an input stream. It has to
@@ -120,6 +120,6 @@ std::ostream& operator <<
     @param in is the input stream.
     @param card is the card to be imported. */
 std::istream& operator >>
-	(std::istream &in, TMCG_Card &card);
+	(std::istream& in, TMCG_Card& card);
 
 #endif
