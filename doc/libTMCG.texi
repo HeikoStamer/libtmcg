@@ -6,6 +6,9 @@
 @settitle The LibTMCG Reference Manual
 @c %**end of header
 
+@c Include data type index into function index
+@syncodeindex tp fn
+
 @c A simple macro for optional variables. (copied from gcrypt manual)
 @macro ovar{varname}
 @r{[}@var{\varname\}@r{]}
@@ -14,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.13 2006/03/08 08:22:42 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.14 2006/03/08 08:37:30 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -441,7 +444,7 @@ Because of the reduced computational and communication
 complexity (cf.@tie{}[St05]) the usage of the second card
 encoding scheme (@code{VTMF_Card}) is highly recommended.
 
-@deffn {Data type} TMCG_Card
+@deftp {Data type} TMCG_Card
 This @code{struct} represents a card in the encoding scheme
 of Schindelhauer@tie{}[Sc98]. The type of the card is shared
 among the players by quadratic residues and non-residues,
@@ -474,15 +477,18 @@ Assumption.
 	@defop {Constructor} TMCG_Card TMCG_Card (@code{const TMCG_Card} &that)
 	@end defop
 	
-@end deffn
+@end deftp
 
 @deftp {Data type} VTMF_Card
+xyz
 @end deftp
 
 @deftp {Data type} TMCG_CardSecret
+uvw
 @end deftp
 
 @deftp {Data type} VTMF_CardSecret
+hij
 @end deftp
 
 @subsubsection Cryptographic Keys
@@ -507,6 +513,5 @@ exposition will later be included here.
 
 @unnumbered API Index
 @printindex fn
-
 
 @bye
