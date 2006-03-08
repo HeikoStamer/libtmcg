@@ -14,7 +14,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.12 2006/02/28 21:17:36 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.13 2006/03/08 08:22:42 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -180,7 +180,7 @@ library. Some classes have the common prefix @code{TMCG_*} or
 of the related research paper. Further there are internally
 used C functions which might produce conflicting names. These
 function names are prepended by @code{mpz_*} because they are
-extensions for the integer support of th GNU Multiple Precision
+extensions for the integer support of the GNU Multiple Precision
 Arithmetic Library.
 
 @c **********************************************************
@@ -420,6 +420,74 @@ The default value is @code{2048}.
 @c **********************************************************
 @section Public Data Types and Classes
 
+@subsection Data Types
+
+@subsubsection Cryptographic Encoding Schemes for Cards
+There are two different encoding schemes that can be used
+for the digital representation of playing cards. In the
+scheme of Schindelhauer@tie{}[Sc98] the type of a card is
+shared among the players through bitwise representation
+by quadratic (non-)residues. Thus the security relies on
+the well-known Quadratic Residuosity Assumption (QRA).
+Unfortunately, the size of a card grows linearly in the
+number of players and logarithmically in the number of
+different card types. Recently the much more efficient
+solution of Barnett and Smart@tie{}[BS03] has been
+implemented. This encoding works in a cyclic group of
+prime order and requires that the Decisional
+Diffie-Hellman Assumption (DDH) holds.
+
+Because of the reduced computational and communication
+complexity (cf.@tie{}[St05]) the usage of the second card
+encoding scheme (@code{VTMF_Card}) is highly recommended.
+
+@deffn {Data type} TMCG_Card
+This @code{struct} represents a card in the encoding scheme
+of Schindelhauer@tie{}[Sc98]. The type of the card is shared
+among the players by quadratic residues and non-residues,
+respectively. The security relies on the Quadratic Residuosity
+Assumption.
+
+	@deftypecv {Member} TMCG_Card @code{std::vector< std::vector<MP_INT> >} z
+	This @math{k\times w}-matrix encodes the type of the
+	corresponding card in a shared manner. For each of the
+	@math{k} players there is a separate row and for each of
+	the @math{w} bits in the binary representation of the
+	type there is a column. The elements are numbers from
+	the group @math{{\bf Z}^{\circ}_{m_i}} where @math{m_i}
+	is the public modul of the @math{i}th player.
+	@end deftypecv
+	
+	@defop {Constructor} TMCG_Card TMCG_Card ()
+	This default constructor initalizes the card with a
+	@math{1\times 1}-matrix. Later the method
+	@code{TMCG_Card::resize} can be used to enlarge the
+	card representation.
+	@end defop
+	
+	@defop {Constructor} TMCG_Card TMCG_Card (@code{size_t} k, @code{size_t} w)
+	This constructor initalizes the card with a @math{k\times w}-matrix.
+	The parameter @var{k} is the number of players and @var{w} is the
+	number of bits used in the binary representation of the card type.
+	@end defop
+	
+	@defop {Constructor} TMCG_Card TMCG_Card (@code{const TMCG_Card} &that)
+	@end defop
+	
+@end deffn
+
+@deftp {Data type} VTMF_Card
+@end deftp
+
+@deftp {Data type} TMCG_CardSecret
+@end deftp
+
+@deftp {Data type} VTMF_CardSecret
+@end deftp
+
+@subsubsection Cryptographic Keys
+
+
 @subsection Classes
 
 @chapter Examples
@@ -439,8 +507,6 @@ exposition will later be included here.
 
 @unnumbered API Index
 @printindex fn
-
-
 
 
 @bye
