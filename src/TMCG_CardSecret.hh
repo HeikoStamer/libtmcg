@@ -101,7 +101,7 @@ struct TMCG_CardSecret
     @param out is the output stream.
     @param cardsecret is the secret to be printed. */
 std::ostream& operator <<
-	(std::ostream &out, const TMCG_CardSecret &cardsecret);
+	(std::ostream& out, const TMCG_CardSecret& cardsecret);
 
 /** @relates TMCG_CardSecret
     This operator imports a secret from an input stream. It has to
@@ -110,6 +110,6 @@ std::ostream& operator <<
     @param in is the input stream.
     @param cardsecret is the secret to be imported. */
 std::istream& operator >>
-	(std::istream &in, TMCG_CardSecret &cardsecret);
+	(std::istream& in, TMCG_CardSecret& cardsecret);
 
 #endif

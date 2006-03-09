@@ -149,7 +149,7 @@ TMCG_CardSecret::~TMCG_CardSecret
 }
 
 std::ostream& operator <<
-	(std::ostream &out, const TMCG_CardSecret &cardsecret)
+	(std::ostream& out, const TMCG_CardSecret& cardsecret)
 {
 	out << "crs|" << cardsecret.r.size() << "|" << cardsecret.r[0].size() << "|";
 	for (size_t k = 0; k < cardsecret.r.size(); k++)
@@ -159,7 +159,7 @@ std::ostream& operator <<
 }
 
 std::istream& operator >>
-	(std::istream &in, TMCG_CardSecret &cardsecret)
+	(std::istream& in, TMCG_CardSecret& cardsecret)
 {
 	char *tmp = new char[TMCG_MAX_CARD_CHARS];
 	in.getline(tmp, TMCG_MAX_CARD_CHARS);
