@@ -1,7 +1,7 @@
 /*******************************************************************************
   Data structure for a card. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
 /** @brief Data structure for cards.
     
     This struct represents a card in the discrete logarithm instantiation
-    of the general cryptographic primitive "Verifiable-k-out-of-k Threshold
+    of the general cryptographic primitive "Verifiable k-out-of-k Threshold
     Masking Function" by Barnett and Smart [BS03]. */
 struct VTMF_Card
 {
@@ -85,7 +85,7 @@ struct VTMF_Card
     @param out is the output stream.
     @param card is the card to be printed. */
 std::ostream& operator <<
-	(std::ostream &out, const VTMF_Card &card);
+	(std::ostream& out, const VTMF_Card& card);
 
 /** @relates VTMF_Card
     This operator imports a card from an input stream. It has to
@@ -94,5 +94,5 @@ std::ostream& operator <<
     @param in is the input stream.
     @param card is the card to be imported. */
 std::istream& operator >>
-	(std::istream &in, VTMF_Card &card);
+	(std::istream& in, VTMF_Card& card);
 #endif

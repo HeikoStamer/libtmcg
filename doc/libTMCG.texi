@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.18 2006/03/09 08:31:34 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.19 2006/03/09 21:50:10 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -91,29 +91,29 @@ The cryptographic background and a detailed discussion of
 the implementation issues is beyond the scope of this manual.
 The interested reader is refered to the following papers:
 @quotation [Sch98]
-	@sc{Christian Schindelhauer}@.
+	@sc{Christian Schindelhauer}.
 	@emph{Toolbox for Mental Card Games.}@*
 	Technical Report A-98-14, University of L@"ubeck, 1998.
 @end quotation
 @quotation [BS03]
-	@sc{Adam Barnett} and @sc{Nigel P. Smart}@.
+	@sc{Adam Barnett} and @sc{Nigel P. Smart}.
 	@emph{Mental Poker Revisited.}@*
 	In K.G. Paterson (Ed.): Cryptography and Coding 2003,
 	Lecture Notes in Computer Science 2898, pp. 370--383, 2003.
 @end quotation
 @quotation [Gr05]
-	@sc{Jens Groth}@.
+	@sc{Jens Groth}.
 	@emph{A Verifiable Secret Shuffle of Homomorphic Encryptions.}@*
 	Cryptology ePrint Archive, Report 2005/246, 2005.
 @end quotation
 @quotation [St04]
-	@sc{Heiko Stamer}@.
+	@sc{Heiko Stamer}.
 	@emph{Kryptographische Skatrunde.} (in German)@*
 	Offene Systeme (ISSN 1619-0114), 4:10--30, 2004.@*
 	@uref{http://www.gaos.org/~stamer/OS-4-2004-openskat_rev2005.pdf}
 @end quotation
 @quotation [St05]
-	@sc{Heiko Stamer}@.
+	@sc{Heiko Stamer}.
 	@emph{Efficient Electronic Gambling: An Extended Implementation
 	of the Toolbox for Mental Card Games.}@*
 	Proceedings of the Western European Workshop on Research in
@@ -411,7 +411,7 @@ for the card encoding scheme of Schindelhauer@tie{}[Sc98].
 @defmac TMCG_SAEP_S0
 Defines the security parameter @math{s_0} (in characters) for the Rabin-SAEP
 encryption scheme of Boneh. The default value @code{20} implies a security
-around @math{2^{80}} against @acronym{CCA, Chosen Ciphertext Attacks}@.
+around @math{2^{80}} against @acronym{CCA, Chosen Ciphertext Attacks}.
 @end defmac
 
 @defmac TMCG_HASH_COMMITMENT
@@ -441,7 +441,7 @@ as digital representation of playing cards. In the
 scheme of Schindelhauer@tie{}[Sc98] the type of a card is
 shared among the players through bitwise representation
 by quadratic (non-)residues. Thus the security relies on
-the well-known @acronym{QRA, Quadratic Residuosity Assumption}@.
+the well-known @acronym{QRA, Quadratic Residuosity Assumption}.
 Unfortunately, the size of a card grows linearly in the
 number of players and logarithmically in the number of
 different card types. Recently the much more efficient
@@ -560,7 +560,7 @@ operation in the original encoding scheme of Schindelhauer@tie{}[Sc98].
 	secret. For each of the @math{k} players there is a separate
 	row and for each of the @math{w} bits in the binary representation
 	of the corresponding card type there is a column. The elements are
-	simply numbers from @math{\{0, 1\}}@.
+	simply numbers from @math{\{0, 1\}}.
 	@end deftypecv
 	
 	@defop {Constructor} TMCG_CardSecret TMCG_CardSecret ()
@@ -624,12 +624,127 @@ operation in the original encoding scheme of Schindelhauer@tie{}[Sc98].
 @end deftypeop
 
 @deftp {Data type} VTMF_Card
-xyz
+This @code{struct} represents a card in the encoding scheme
+of Barnett and Smart@tie{}[BS03]. We use the discrete logarithm
+based instantiation of their general cryptographic primitive
+@acronym{VTMF, Verifiable @var{k}-out-of-@var{k} Threshold Masking
+Function}. The security relies on the DDH assumption in the
+underlying group @math{G}.
+	@deftypecv {Member} VTMF_Card {mpz_t} c_1
+	This is the first part of the encrypted card type.
+	It is a number from the underlying group @math{G}.
+	@end deftypecv
+	
+	@deftypecv {Member} VTMF_Card {mpz_t} c_2
+	This is the second part of the encrypted card type.
+	It is a number from the underlying group @math{G}.
+	@end deftypecv
+	
+	@defop {Constructor} VTMF_Card VTMF_Card ()
+	This default constructor initalizes the card with empty
+	members @code{c_1} and @code{c_2}.
+	@end defop
+	
+	@deftypeop {Constructor} VTMF_Card {} VTMF_Card (@code{const VTMF_Card&} that)
+	This is a simple copy-constructor and @var{that} is the
+	card to be copied.
+	@end deftypeop
+	
+	@deftypeop {Operator} VTMF_Card VTMF_Card& = (@code{const VTMF_Card&} that)
+	This is a simple assignment-operator and @var{that} is
+	the card to be assigned.
+	@end deftypeop
+	
+	@deftypeop {Operator} VTMF_Card bool == (@code{const VTMF_Card&} that)
+	This operator tests two card representations for equality.
+	@end deftypeop
+	
+	@deftypeop {Operator} VTMF_Card bool != (@code{const VTMF_Card&} that)
+	This operator tests two card representations for inequality.
+	@end deftypeop
+	
+	@deftypemethod VTMF_Card bool import (@code{std::string} s)
+	This method imports the content of the members @code{c_1}
+	and @code{c_2} from the correctly formated input string
+	@var{s}. It returns @code{true}, if the import was successful.
+	@end deftypemethod
+	
+	@defop {Destructor} VTMF_Card ~VTMF_Card ()
+	This destructor releases all occupied resources.
+	@end defop
 @end deftp
 
+@deftypeop {Operator} VTMF_Card std::ostream& << (@code{std::ostream&} out, @code{const VTMF_Card&} card)
+	This operator exports the content of the members @code{c_1}
+	and @code{c_2} (of the given @code{VTMF_Card} @var{card})
+	to the output stream @var{out}.
+@end deftypeop
+
+@deftypeop {Operator} VTMF_Card std::istream& >> (@code{std::istream&} in, @code{VTMF_Card&} card)
+	This operator imports the content of the members @code{c_1}
+	and @code{c_2} (of the given @code{VTMF_Card} @var{card})
+	from the input stream @var{in}. The data has to be delimited
+	by a newline character. The @code{failbit} of the stream is
+	set, if any parse error occured.
+@end deftypeop
+
 @deftp {Data type} VTMF_CardSecret
-hij
+This @code{struct} represents the secret used for the card masking
+operation in the encoding scheme of Barnett and Smart@tie{}[BS03].
+	@deftypecv {Member} VTMF_CardSecret {mpz_t} r
+	This member is the exponent (randomizer) used in the masking operation.
+	It should be chosen uniformly and randomly from @math{{\bf Z}_q}
+	where @math{q} is the order of the finite abelian group @math{G}
+	for which the DDH assumption should hold.
+	
+	According to the results of Koshiba and Kurosawa (see PKC@tie{}2004,
+	LNCS@tie{}2947) the length of this exponent can be shorten to a reasonable
+	value (e.g. 160@tie{}bit), if the corresponding generator is adjusted
+	as well. Under the additional @acronym{DLSE, Discret Logarithm with Short
+	Exponents} assumption the corresponding DDH problem in @math{G} seems
+	to be still hard enough. By such an optimization trick we gain a great
+	performance advantage for almost all modular exponentiations.
+	@end deftypecv
+	
+	@defop {Constructor} VTMF_CardSecret VTMF_CardSecret ()
+	This default constructor initalizes the secret with an
+	empty member @code{r}.
+	@end defop
+	
+	@deftypeop {Constructor} VTMF_CardSecret {} VTMF_CardSecret (@code{const VTMF_CardSecret&} that)
+	This is a simple copy-constructor and @var{that} is the secret to be
+	copied.
+	@end deftypeop
+	
+	@deftypeop {Operator} VTMF_CardSecret VTMF_CardSecret& = (@code{const VTMF_CardSecret&} that)
+	This is a simple assignment-operator and @var{that} is the secret to
+	be assigned.
+	@end deftypeop
+	
+	@deftypemethod VTMF_CardSecret bool import (@code{std::string} s)
+	This method imports the content of the member @code{r}
+	from the correctly formated input string @var{s}.
+	It returns @code{true}, if the import was successful.
+	@end deftypemethod
+	
+	@defop {Destructor} VTMF_CardSecret ~VTMF_CardSecret ()
+	This destructor releases all occupied resources.
+	@end defop
 @end deftp
+
+@deftypeop {Operator} VTMF_CardSecret std::ostream& << (@code{std::ostream&} out, @code{const VTMF_CardSecret&} cardsecret)
+	This operator exports the content of the member @code{r}
+	(of the given @code{VTMF_CardSecret} @var{cardsecret})
+	to the output stream @var{out}.
+@end deftypeop
+
+@deftypeop {Operator} VTMF_CardSecret std::istream& >> (@code{std::istream&} in, @code{VTMF_CardSecret&} cardsecret)
+	This operator imports the content of the member @code{r}
+	(of the given @code{VTMF_CardSecret} @var{cardsecret})
+	from the input stream @var{in}. The data has to be
+	delimited by a newline character. The @code{failbit} of
+	the stream is set, if any parse error occured.
+@end deftypeop
 
 @subsubsection Cryptographic Keys
 @cindex Keys

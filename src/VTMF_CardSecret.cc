@@ -68,13 +68,13 @@ VTMF_CardSecret::~VTMF_CardSecret
 }
 
 std::ostream& operator <<
-	(std::ostream &out, const VTMF_CardSecret &cardsecret)
+	(std::ostream& out, const VTMF_CardSecret& cardsecret)
 {
 	return out << "crs|" << cardsecret.r << "|";
 }
 
 std::istream& operator >>
-	(std::istream &in, VTMF_CardSecret &cardsecret)
+	(std::istream& in, VTMF_CardSecret& cardsecret)
 {
 	char *tmp = new char[TMCG_MAX_CARD_CHARS];
 	in.getline(tmp, TMCG_MAX_CARD_CHARS);

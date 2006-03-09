@@ -84,14 +84,14 @@ VTMF_Card::~VTMF_Card()
 }
 
 std::ostream& operator <<
-	(std::ostream &out, const VTMF_Card &card)
+	(std::ostream& out, const VTMF_Card& card)
 {
 	out << "crd|" << card.c_1 << "|" << card.c_2 << "|";
 	return out;
 }
 
 std::istream& operator >>
-	(std::istream &in, VTMF_Card &card)
+	(std::istream& in, VTMF_Card& card)
 {
 	char *tmp = new char[TMCG_MAX_CARD_CHARS];
 	in.getline(tmp, TMCG_MAX_CARD_CHARS);

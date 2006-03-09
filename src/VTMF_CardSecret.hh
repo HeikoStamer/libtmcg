@@ -1,7 +1,7 @@
 /*******************************************************************************
    Data structure for the secrets of a card. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ struct VTMF_CardSecret
     @param out is the output stream.
     @param cardsecret is the secret to be printed. */
 std::ostream& operator <<
-	(std::ostream &out, const VTMF_CardSecret &cardsecret);
+	(std::ostream& out, const VTMF_CardSecret& cardsecret);
 
 /** @relates VTMF_CardSecret
     This operator imports a secret from an input stream. It has to
@@ -95,5 +95,5 @@ std::ostream& operator <<
     @param in is the input stream.
     @param cardsecret is the secret to be imported. */
 std::istream& operator >>
-	(std::istream &in, VTMF_CardSecret &cardsecret);
+	(std::istream& in, VTMF_CardSecret& cardsecret);
 #endif
