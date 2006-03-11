@@ -43,7 +43,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	G_size = fieldsize - 1L;
 	
 	// We shift the generator (according to [KK04]) for the later
-	// following usage of shortened exponents.(masking protocols)
+	// following usage of shortened exponents. (cf. masking protocols)
 	// We use the (Short, Full)-ElGamal variant [KK04] here,
 	// i.e. the secret key should be still of full size $\ell_q$.
 	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
@@ -63,7 +63,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	G_size = fieldsize - 1L;
 	
 	// Now shift the generator (according to [KK04]) for the later
-	// following usage of shortened exponents. (masking protocols)
+	// following usage of shortened exponents. (cf. masking protocols)
 	// We use the (Short, Full)-ElGamal variant [KK04] here,
 	// i.e. the secret key should be still of full size $\ell_q$.
 	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
