@@ -9,7 +9,7 @@ TODO:
 
    This file is part of LibTMCG.
 
- Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	
 	// Initalize and choose the parameters of the commitment scheme.
 	mpz_init(p), mpz_init(q), mpz_init_set_ui(h, 1L), mpz_init(k);
-	mpz_lprime(p, q, k, fieldsize, subgroupsize);
+	mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
 	for (size_t i = 0; i <= n; i++)
 	{
 		mpz_ptr tmp = new mpz_t();
@@ -175,9 +175,10 @@ bool PedersenCommitmentScheme::CheckGroup
 			throw false;
 		
 		// Check whether $p$ and $q$ are both (probable) prime with
-		// a soundness error probability ${} \le 4^{-64}$.
-		if (!mpz_probab_prime_p(p, 64L) || !mpz_probab_prime_p(q, 64L))
-			throw false;
+		// a soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
+		if (!mpz_probab_prime_p(p, TMCG_MR_ITERATIONS) || 
+			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
+				throw false;
 		
 		// Check whether $k$ is not a divisible by $q$, i.e. $q, k$ are coprime.
 		mpz_gcd(foo, q, k);
@@ -367,7 +368,7 @@ void GrothSKC::PublishGroup
 }
 
 void GrothSKC::Prove_interactive
-	(const std::vector<size_t> &pi, mpz_srcptr r, mpz_srcptr c,
+	(const std::vector<size_t> &pi, mpz_srcptr r,
 	const std::vector<mpz_ptr> &m,
 	std::istream &in, std::ostream &out) const
 {
@@ -1143,7 +1144,7 @@ void GrothVSSHE::Prove_interactive
 			mpz_add(m[i], m[i], t[i]);
 			mpz_mod(m[i], m[i], com->q);
 		}
-	skc->Prove_interactive(pi, rho, foo, m, in, out);
+	skc->Prove_interactive(pi, rho, m, in, out);
 	
 	// release
 	mpz_clear(r), mpz_clear(R_d), mpz_clear(r_d), mpz_clear(c), mpz_clear(c_d),

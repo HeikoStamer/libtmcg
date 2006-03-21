@@ -96,7 +96,7 @@ bool TMCG_PublicKey::check
 			throw false;
 		
 		// sanity check, whether m \not\in P (prime)
-		// (here is a very small probability of false-negativ behaviour,
+		// (here is a very small probability of false-negative behaviour,
 		// FIXME: give a short witness in public key)
 		if (mpz_probab_prime_p(m, 500))
 			throw false;
@@ -312,15 +312,34 @@ std::string TMCG_PublicKey::selfid
 }
 
 std::string TMCG_PublicKey::keyid
-	() const
+	(size_t size) const
 {
 	std::ostringstream data;
 	std::string tmp = selfid();
 	
-	data << "ID" << TMCG_KEYID_SIZE << "^" << tmp.substr(tmp.length() -
-		((TMCG_KEYID_SIZE < tmp.length()) ? TMCG_KEYID_SIZE : tmp.length()),
-		(TMCG_KEYID_SIZE < tmp.length()) ? TMCG_KEYID_SIZE : tmp.length());
+	if (tmp == "ERROR")
+		return std::string("ERROR");
+	
+	data << "ID" << size << "^" << tmp.substr(tmp.length() -
+		((size < tmp.length()) ? size : tmp.length()),
+		(size < tmp.length()) ? size : tmp.length());
 	return data.str();
+}
+
+size_t TMCG_PublicKey::keyid_size
+		(const std::string &s) const
+{
+	// check the format
+	if ((s.length() < 4) || (s.substr(0, 2) != "ID") || (s.find("^") == s.npos))
+			return 0;
+	
+	// extract the size
+	char *ec;
+	size_t size = strtoul(s.substr(2, s.find("^") - 2).c_str(), &ec, 10);
+	if ((*ec != '\0') || (size != (s.length() - s.find("^") - 1)))
+		return 0;
+	
+	return size;
 }
 
 std::string TMCG_PublicKey::sigid
@@ -441,7 +460,8 @@ bool TMCG_PublicKey::verify
 			throw false;
 		
 		// check keyID
-		if (!TMCG_ParseHelper::cm(s, keyid().c_str(), '|'))
+		std::string kid = TMCG_ParseHelper::gs(s, '|');
+		if ((kid != keyid(keyid_size(kid))) || (!TMCG_ParseHelper::nx(s, '|')))
 			throw false;
 		
 		// value
@@ -503,14 +523,14 @@ TMCG_PublicKey::~TMCG_PublicKey
 }
 
 std::ostream& operator <<
-	(std::ostream &out, const TMCG_PublicKey &key)
+	(std::ostream& out, const TMCG_PublicKey& key)
 {
 	return out << "pub|" << key.name << "|" << key.email << "|" << key.type <<
 		"|" << key.m << "|" << key.y << "|" << key.nizk << "|" << key.sig;
 }
 
 std::istream& operator >>
-	(std::istream &in, TMCG_PublicKey &key)
+	(std::istream& in, TMCG_PublicKey& key)
 {
 	char *tmp = new char[TMCG_MAX_KEY_CHARS];
 	in.getline(tmp, TMCG_MAX_KEY_CHARS);

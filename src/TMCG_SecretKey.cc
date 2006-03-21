@@ -108,7 +108,7 @@ void TMCG_SecretKey::generate
 	do
 	{
 		// choose a random safe prime p, but with fixed size (n/2 + 1) bit
-		mpz_sprime3mod4(p, (keysize / 2L) + 1L);
+		mpz_sprime3mod4(p, (keysize / 2L) + 1L, TMCG_MR_ITERATIONS);
 		assert(!mpz_congruent_ui_p(p, 1L, 8L));
 		
 		// choose a random safe prime q, but with fixed size (n/2 + 1) bit
@@ -116,7 +116,7 @@ void TMCG_SecretKey::generate
 		mpz_set_ui(foo, 8L);
 		do
 		{
-			mpz_sprime3mod4(q, (keysize / 2L) + 1L);
+			mpz_sprime3mod4(q, (keysize / 2L) + 1L, TMCG_MR_ITERATIONS);
 		}
 		while (mpz_congruent_p(p, q, foo));
 		assert(!mpz_congruent_ui_p(q, 1L, 8L));
@@ -373,10 +373,17 @@ std::string TMCG_SecretKey::selfid
 }
 
 std::string TMCG_SecretKey::keyid
-	() const
+	(size_t size) const
 {
 	TMCG_PublicKey pub(*this);
-	return pub.keyid();
+	return pub.keyid(size);
+}
+
+size_t TMCG_SecretKey::keyid_size
+		(const std::string &s) const
+{
+	TMCG_PublicKey pub(*this);
+	return pub.keyid_size(s);
 }
 
 std::string TMCG_SecretKey::sigid
@@ -410,7 +417,8 @@ bool TMCG_SecretKey::decrypt
 			throw false;
 		
 		// check keyID
-		if (!TMCG_ParseHelper::cm(s, keyid(), '|'))
+		std::string kid = TMCG_ParseHelper::gs(s, '|');
+		if ((kid != keyid(keyid_size(kid))) || (!TMCG_ParseHelper::nx(s, '|')))
 			throw false;
 		
 		// vdata
@@ -537,7 +545,7 @@ TMCG_SecretKey::~TMCG_SecretKey
 }
 
 std::ostream& operator <<
-	(std::ostream &out, const TMCG_SecretKey &key)
+	(std::ostream& out, const TMCG_SecretKey& key)
 {
 	return out << "sec|" << key.name << "|" << key.email << "|" << key.type <<
 		"|" << key.m << "|" << key.y << "|" << key.p << "|" << key.q << "|" <<
@@ -545,7 +553,7 @@ std::ostream& operator <<
 }
 
 std::istream& operator >>
-	(std::istream &in, TMCG_SecretKey &key)
+	(std::istream& in, TMCG_SecretKey& key)
 {
 	char *tmp = new char[TMCG_MAX_KEY_CHARS];
 	in.getline(tmp, TMCG_MAX_KEY_CHARS);

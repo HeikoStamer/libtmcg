@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -182,7 +182,7 @@ int main
 			// prove SKC
 			start_clock();
 			std::cout << "P: skc.Prove_interactive(...)" << std::endl;
-			skc->Prove_interactive(pi, r, c, m, *pipe_in, *pipe_out);
+			skc->Prove_interactive(pi, r, m, *pipe_in, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
 			// create a different permutation
@@ -192,13 +192,13 @@ int main
 			// prove SKC wrong
 			start_clock();
 			std::cout << "P: !skc.Prove_interactive(...)" << std::endl;
-			skc->Prove_interactive(xi, r, c, m, *pipe_in, *pipe_out);
+			skc->Prove_interactive(xi, r, m, *pipe_in, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
 			// prove SKC
 			start_clock();
 			std::cout << "P: skc.Prove_interactive(...)" << std::endl;
-			skc->Prove_interactive(pi, r, c, m, *pipe_in, *pipe_out);
+			skc->Prove_interactive(pi, r, m, *pipe_in, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
 			

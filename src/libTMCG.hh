@@ -3,7 +3,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,6 +22,12 @@
 
 #ifndef INCLUDED_libTMCG_HH
 	#define INCLUDED_libTMCG_HH
+	
+	#ifndef TMCG_MR_ITERATIONS
+		/* Define the number of iterations for the Miller-Rabin primality test.
+		   (maximum soundness error probability 4^{-TMCG_MR_ITERATIONS}) */
+		#define TMCG_MR_ITERATIONS 64L
+	#endif
 	
 	#ifndef TMCG_GROTH_L_E
 		/* Define the security parameter for the soundness of the
@@ -49,7 +55,7 @@
 	
 	#ifndef TMCG_KEYID_SIZE
 		/* Define the size of the unique TMCG key ID (in characters) */
-		#define TMCG_KEYID_SIZE 5
+		#define TMCG_KEYID_SIZE 8
 	#endif
 	
 	#ifndef TMCG_KEY_NIZK_STAGE1
@@ -110,7 +116,8 @@
 	
 	#ifndef TMCG_MAX_TYPEBITS
 		/* Define the number of bits which represents the maximum number of
-		   different card types in the scheme of Schindelhauer */
+		   different card types in the scheme of Schindelhauer and the maximum
+		   size of the message space in the scheme of Barnett and Smart */
 		#define TMCG_MAX_TYPEBITS 8L
 	#endif
 	
@@ -137,7 +144,7 @@
 	
 	#ifndef TMCG_QRA_SIZE
 		/* Define the security parameter of the TMCG public key;
-		   Underlying assumptions: QRA, FAKTOR */
+		   Underlying assumptions: QRA, FACTOR */
 		#define TMCG_QRA_SIZE 1024L
 	#endif
 	

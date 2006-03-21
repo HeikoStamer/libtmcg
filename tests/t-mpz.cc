@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -163,20 +163,20 @@ int main
 	std::cout << "mpz_sprime(), mpz_sprime2g(), mpz_sprime3mod4()" << std::endl;
 	for (size_t i = 0; i < 2; i++)
 	{
-		mpz_sprime(foo, bar, 1024);
+		mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_probab_prime_p(bar, 64));
 		mpz_mul_2exp(foo2, bar, 1L);
 		mpz_add_ui(foo2, foo2, 1L);
 		assert(!mpz_cmp(foo, foo2));
 		
-		mpz_sprime2g(foo, bar, 1024);
+		mpz_sprime2g(foo, bar, 1024, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_probab_prime_p(bar, 64) &&
 			mpz_congruent_ui_p(foo, 7L, 8L));
 		mpz_mul_2exp(foo2, bar, 1L);
 		mpz_add_ui(foo2, foo2, 1L);
 		assert(!mpz_cmp(foo, foo2));
 		
-		mpz_sprime3mod4(foo, 1024);
+		mpz_sprime3mod4(foo, 1024, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_congruent_ui_p(foo, 3L, 4L));
 	}
 	
@@ -184,7 +184,7 @@ int main
 	std::cout << "mpz_lprime()" << std::endl;
 	for (size_t i = 0; i < 5; i++)
 	{
-		mpz_lprime(foo, bar, bar2, 1024, 160);
+		mpz_lprime(foo, bar, bar2, 1024, 160, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_probab_prime_p(bar, 64));
 		mpz_mul(foo2, bar, bar2);
 		mpz_add_ui(foo2, foo2, 1L);
@@ -197,19 +197,19 @@ int main
 	std::cout << "mpz_sprime() benchmark" << std::endl;
 	start_clock();
 	for (size_t i = 0; i < 50; i++)
-		mpz_sprime(foo, bar, 512);
+		mpz_sprime(foo, bar, 512, TMCG_MR_ITERATIONS);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	std::cout << "mpz_sprime_naive() benchmark" << std::endl;
 	start_clock();
 	for (size_t i = 0; i < 50; i++)
-		mpz_sprime_naive(foo, bar, 512);
+		mpz_sprime_naive(foo, bar, 512, TMCG_MR_ITERATIONS);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	
 	// mpz_spowm, mpz_spowm_init, mpz_spowm_calc, mpz_spowm_clear
 	std::cout << "mpz_spowm()" << std::endl;
-	mpz_sprime(foo, bar, 1024);
+	mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	for (size_t i = 0; i < 5; i++)
 	{
 		mpz_srandomm(bar, foo), mpz_srandomm(bar2, foo);
@@ -363,7 +363,8 @@ int main
 	
 	// mpz_qrmn_p, mpz_sqrtmn_r
 	std::cout << "mpz_qrmn_p(), mpz_sqrtmn_r()" << std::endl;
-	mpz_sprime(foo, bar, 512), mpz_sprime(foo2, bar2, 512);
+	mpz_sprime(foo, bar, 512, TMCG_MR_ITERATIONS);
+	mpz_sprime(foo2, bar2, 512, TMCG_MR_ITERATIONS);
 	mpz_mul(bar, foo, foo2);
 	for (size_t i = 0; i < 5; i++)
 	{

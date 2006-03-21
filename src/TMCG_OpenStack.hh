@@ -1,7 +1,7 @@
 /*******************************************************************************
   Data structure for a stack of open cards. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,11 +37,11 @@
 
 /** @brief Data structure for a stack of open cards.
     
-    This struct is a simple container for cards whose type is known.
+    This struct is a simple container for cards whose types are known.
     The elements are pairs where the first component is the type and the
-    second component is the corresponding card. The cards can be either
-    of type TMCG_Card or VTMF_Card depending on which kind of encoding
-    scheme is used.
+    second component is the corresponding card. The card type is represented
+    by a size_t integer.The cards can be either of type TMCG_Card or
+    VTMF_Card depending on which kind of encoding scheme is used.
     
     @param CardType is the type of the stored cards. */
 template <typename CardType> struct TMCG_OpenStack
@@ -71,7 +71,7 @@ template <typename CardType> struct TMCG_OpenStack
 	/** A simple assignment-operator.
 	    @param that is the open stack to be assigned. */
 	TMCG_OpenStack& operator =
-		(const TMCG_OpenStack& that)
+		(const TMCG_OpenStack<CardType>& that)
 	{
 		clear();
 		stack = that.stack;
@@ -81,7 +81,7 @@ template <typename CardType> struct TMCG_OpenStack
 	/** This operator tests two open stacks for equality of their types,
 	    cards and sizes. */
 	bool operator ==
-		(const TMCG_OpenStack& that)
+		(const TMCG_OpenStack<CardType>& that)
 	{
 		if (stack.size() != that.stack.size())
 			return false;
@@ -91,7 +91,7 @@ template <typename CardType> struct TMCG_OpenStack
 	/** This operator tests two open stacks for inequality of their types,
 	    cards or sizes. */
 	bool operator !=
-		(const TMCG_OpenStack& that)
+		(const TMCG_OpenStack<CardType>& that)
 	{
 		return !(*this == that);
 	}
@@ -119,10 +119,10 @@ template <typename CardType> struct TMCG_OpenStack
 		return stack.size();
 	}
 	
-	/** This method pushes a pair to the back of the open stack.
+	/** This method pushes a pair (type and card) to the back of the open stack.
 	    @param p is the pair to be pushed. */
 	void push
-		(const std::pair<size_t, CardType> &p)
+		(const std::pair<size_t, CardType>& p)
 	{
 		stack.push_back(p);
 	}
@@ -139,7 +139,7 @@ template <typename CardType> struct TMCG_OpenStack
 	/** This method pushes another open stack to the open stack.
 	    @param s is pushed to the back of the open stack. */
 	void push
-		(const TMCG_OpenStack& s)
+		(const TMCG_OpenStack<CardType>& s)
 	{
 		std::copy(s.stack.begin(), s.stack.end(), std::back_inserter(stack));
 	}
@@ -152,22 +152,19 @@ template <typename CardType> struct TMCG_OpenStack
 	}
 	
 	/** Get and remove a pair from the back of the open stack.
+	    @param type is the card type of the removed card.
 	    @param c is the card removed from the open stack.
-	    @returns The card type, if the stack was not empty.
-	    Otherwise, the value 100000000L will be returned. */
-	size_t pop
-		(CardType& c)
+	    @returns True, if the stack was not empty. */
+	bool pop
+		(size_t& type, CardType& c)
 	{
-		size_t type = 100000000L;		// set 'error code' to 100000000L
-		
-		assert(!stack.empty());
 		if (stack.empty())
-			return type;
+			return false;
 		
 		type = (stack.back())->first;
 		c = (stack.back())->second;
 		stack.pop_back();
-		return type;
+		return true;
 	}
 	
 	/** Clears the open stack. */

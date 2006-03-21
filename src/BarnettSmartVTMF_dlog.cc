@@ -36,7 +36,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	// We use the unique subgroup of prime order $q$ where $p = kq + 1$.
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(k);
 	if (subgroupsize)
-		mpz_lprime(p, q, k, fieldsize, subgroupsize);
+		mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
 	
 	// Initialize all members of the key.
 	mpz_init(x_i), mpz_init(h_i), mpz_init_set_ui(h, 1L), mpz_init(d);
@@ -105,9 +105,10 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 			throw false;
 		
 		// Check whether $p$ and $q$ are both (probable) prime with
-		// a soundness error probability ${} \le 4^{-64}$.
-		if (!mpz_probab_prime_p(p, 64L) || !mpz_probab_prime_p(q, 64L))
-			throw false;
+		// a soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
+		if (!mpz_probab_prime_p(p, TMCG_MR_ITERATIONS) || 
+			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
+				throw false;
 		
 		// Check whether $k$ is not divisible by $q$, i.e. $q$ and $k$ are coprime.
 		mpz_gcd(foo, q, k);

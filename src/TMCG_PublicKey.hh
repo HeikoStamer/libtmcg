@@ -14,7 +14,7 @@
 
      Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -85,7 +85,10 @@ struct TMCG_PublicKey
 		() const;
 	
 	std::string keyid
-		() const;
+		(size_t size = TMCG_KEYID_SIZE) const;
+	
+	size_t keyid_size
+		(const std::string &s) const;
 	
 	std::string sigid
 		(std::string s) const;
@@ -104,9 +107,9 @@ struct TMCG_PublicKey
 };
 
 std::ostream& operator <<
-	(std::ostream &out, const TMCG_PublicKey &key);
+	(std::ostream& out, const TMCG_PublicKey& key);
 
 std::istream& operator >>
-	(std::istream &in, TMCG_PublicKey &key);
+	(std::istream& in, TMCG_PublicKey& key);
 
 #endif

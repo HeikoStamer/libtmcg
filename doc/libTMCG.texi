@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.19 2006/03/09 21:50:10 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.20 2006/03/21 16:42:26 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -58,8 +58,8 @@ Free Documentation License''.
 `@acronym{LibTMCG}' is a general purpose C++ library for
 creating secure electronic card games. The most remarkable
 feature is the absence of a trusted third party (TTP), i.e.
-neither a central game server nor similar facilities are
-necessary. To emphasize this point again: With the present
+neither a central game server nor trusted hardware components
+are necessary. To emphasize this point again: With the present
 library there is no need for an independent referee, because
 the applied protocols provide a basic level of confidentiality
 and fairness by itself. Of course, we cannot avoid that
@@ -68,7 +68,7 @@ cards, but the protocols ensure that the shuffle of the
 deck is performed randomly (presumed that at least one
 player is honest) and thus the cards will be distributed
 uniformly among the players. Further, no coalition can
-learn the private cards of a player agains his will (except
+learn the private cards of a player against his will (except
 for trivial conclusions). The corresponding cryptographic
 problem, actually called ''Mental Poker'', has been studied
 since 1979 (Shamir, Rivest, and Adleman) by many authors.
@@ -89,7 +89,7 @@ Free Software Foundation}.
 @section Further Reading
 The cryptographic background and a detailed discussion of
 the implementation issues is beyond the scope of this manual.
-The interested reader is refered to the following papers:
+The interested reader is referred to the following papers:
 @quotation [Sch98]
 	@sc{Christian Schindelhauer}.
 	@emph{Toolbox for Mental Card Games.}@*
@@ -138,17 +138,17 @@ analogies.
 
 @c **********************************************************
 @section Preparation
-LibTMCG depends on the two other basic libraries. Therefore
-you will absolutely need the corresponding development
-files to build LibTMCG and your application properly:
+LibTMCG depends on the three other basic libraries. Therefore
+you need the corresponding development files to build LibTMCG
+and your application properly:
 @itemize @bullet
 	@item GNU Multiple Precision Arithmetic Library (@file{libgmp}),
 		Version @math{\ge} 4.1.0
 		
 		This library provides a powerful framework for performing
 		arbitrary precision arithmetic on integers. Further reasons
-		for chosing this dependency are the license compatibility,
-		portability, vital maintainance, and, of course, the
+		for choosing this dependency are the license compatibility,
+		portability, vital maintenance, and, of course, the
 		reasonable performance.
 		
 	@item GNU Crypto Library (@file{libgcrypt}),
@@ -157,37 +157,43 @@ files to build LibTMCG and your application properly:
 		This library provides some basic cryptographic algorithms
 		(e.g. RIPEMD-160) and an easily usable interface to obtain
 		cryptographically strong pseudo random numbers.
+	
+	@item GNU Privacy Guard Error Code Library (@file{libgpg-error}),
+		Version @math{\ge} 0.5
 		
+		This library defines common error values, e.g., returned by the
+		GNU Crypto Library.
 @end itemize
 We suppose that the reader is familiar with these libraries
 because their correct installation and configuration is
 crucial to the security of the entire application.
 
 @c **********************************************************
-@section Header Files and Namespaces
+@section Header Files and Name Spaces
 @cindex Header Files
-@cindex Namespaces
-The interface definitions of the classes and the constant security
+@cindex Name Spaces
+The interface definitions of the classes and the security
 parameters@footnote{These parameters are fixed at compile time.
 Please don't change anything unless you know exactly what you are
 doing, and what the dangers are! Beside the apparent security
 concerns you will probably break the compatibility with other
-applications.} are provided by the central header file
+LibTMCG applications.} are provided by the central header file
 @file{libTMCG.hh}. You have to include this file in all of your
-sources, either directly or through some other method.
+sources, either directly or through some other file.
 
 @example
 #include <libTMCG.hh>
 @end example
 
-There are no uniform C++ namespaces for the most parts of the
+There are no uniform C++ name spaces for the most parts of the
 library. Some classes have the common prefix @code{TMCG_*} or
 @code{VTMF_*} while others are composed of the author names
-of the related research paper. Further there are internally
+and the title abbreviation of the related research paper.
+Further there are internally
 used C functions which might produce conflicting names. These
 function names are prepended by @code{mpz_*} because they are
-extensions for the integer support of the GNU Multiple Precision
-Arithmetic Library.
+extensions for the large integer support of the GNU Multiple
+Precision Arithmetic Library.
 
 @c **********************************************************
 @section Building Sources
@@ -261,13 +267,13 @@ LDADD = $(LIBTMCG_LIBS)
 
 @c **********************************************************
 @section Initializing the Library
-The first step is the initalization of LibTMCG. The following
+The first step is the initialization of LibTMCG. The following
 function must be invoked early in your program, i.e. before
-you make use of any other capability.
+you make use of any other capability of LibTMCG.
 
 @deftypefun bool init_libTMCG ()
 The function checks whether the installed third-party libraries
-match their required versions. Further it initalize them
+match their required versions. Further it initialize them
 and returns @code{true}, if everything was sound. Otherwise
 @code{false} is returned and an appropriate error message
 is sent to @code{stderr}.
@@ -279,18 +285,28 @@ is sent to @code{stderr}.
 @chapter Application Programming Interface
 
 @c **********************************************************
+@section Preliminaries
+The most card games are played with a regular card deck, i.e.
+
+@c **********************************************************
 @section Preprocessor Defined Global Symbols
 @cindex Security Parameters
 Please note that the following macros are fixed at compile
-time of LibTMCG and cannot be changed in your application.
+time of LibTMCG and cannot be changed by your application.
 They are only provided here for informational purposes.
 
+@defmac TMCG_MR_ITERATIONS
+	Defines the number of iterations for the Miller-Rabin primality test.
+	The default value is @code{64L} which implies a soundness error
+	probability @math{{} \le 4^{-64}}.
+@end defmac
+
 @defmac TMCG_GROTH_L_E
-Defines the security parameter @math{\ell_e} of Groth's interactive
-shuffle argument@tie{}[Gr05]. The default value is @code{80L} which
-implies a soundness error probability @math{{} \le 2^{-80}}. For the
-intended purpose of this library the chosen bound seems to be
-reasonable small enough.
+	Defines the security parameter @math{\ell_e} of Groth's interactive
+	shuffle argument@tie{}[Gr05]. The default value is @code{80L} which
+	implies a soundness error probability @math{{} \le 2^{-80}}. For the
+	intended purpose of this library the chosen bound seems to be
+	reasonable small enough.
 @end defmac
 
 @defmac TMCG_DDH_SIZE
@@ -303,33 +319,36 @@ The default value is @code{1024L}.
 @defmac TMCG_DLSE_SIZE
 Defines the security parameter (subgroup size in bit) of the group
 @math{G} which is used by the card encoding scheme of Barnett and
-Smart@tie{}[BS03]. The underlying assumptions are DLSE (related to DDH),
+Smart@tie{}[BS03]. The underlying assumptions are DLSE (related to DDH)
 and DLOG. The default value is @code{160L}.
 @end defmac
 
 @defmac TMCG_GCRY_MD_ALGO
 Defines the message digest algorithm for digital signatures and
-the Fiat-Shamir heuristic. The security proofs of the most non-interactive
-zero-knowledge proofs (NIZK) are established in the so-called random
+the Fiat-Shamir heuristic. The security of the most non-interactive
+zero-knowledge proofs (NIZK) is proved in the so-called random
 oracle model, i.e. one supposes that the used hash function behaves
 like an ideal random function (which cannot exist in a real world scenario).
-However, this assumption seems to be reasonable, if carefully implemented.
-The default value is @code{GCRY_MD_RMD160}. This constant represents
-the hash algorithm RIPEMD-160 which has an output length of 160 bit.
-Thus it leads to a security level of approximately @math{2^{80}}, assuming
-that a birthday-attack is the best known attack agains this algorithm.
+However, this assumption seems to be reasonable, if the hash function
+is carefully implemented.
+The default value is @code{GCRY_MD_RMD160}. This constant (from the
+GNU Crypto Library) represents the hash algorithm RIPEMD-160 which has
+an output length of 160 bit. Thus it leads to a security level of
+approximately @math{2^{80}}, assuming that a birthday-attack is the
+best known attack against this algorithm.
 @end defmac
 
 @defmac TMCG_KEYID_SIZE
 Defines the length (in characters w.r.t. @code{TMCG_MPZ_IO_BASE})
 of the distinctive suffix for the unique key identifier. The default
-value is @code{5} which spans a reasonable name space for at least
-4096 different keys.
+value is @code{8} which spans a reasonable name space for at least
+@math{2^{20}} different keys.
 
 Each key identifier starts with the string @code{ID} followed by
 the decimal coded value @code{TMCG_KEYID_SIZE} and an appended
 carret symbol @code{^}. The final suffix consists of number
-@code{TMCG_KEYID_SIZE} characters of the self signature.
+@code{TMCG_KEYID_SIZE} characters of the self signature. This suffix
+has hopefully enough entropy to be used as unique key identifier.
 @end defmac
 
 @defmac TMCG_KEY_NIZK_STAGE1
@@ -361,7 +380,7 @@ Schindelhauer@tie{}[Sc98].
 
 @defmac TMCG_LIBGCRYPT_VERSION
 Defines the necessary minimum version of the GNU Crypto Library.
-The default value is @code{"1.2.0"}. During the initalization of
+The default value is @code{"1.2.0"}. During the initialization of
 LibTMCG it is checked whether the version number of the currently
 available shared object is greater or equal.
 @end defmac
@@ -369,7 +388,7 @@ available shared object is greater or equal.
 @defmac TMCG_LIBGMP_VERSION
 Defines the necessary minimum version of the GNU Multiple Precision
 Arithmetic Library. The default value is @code{"4.1.0"}. During the
-initalization of LibTMCG it is checked whether the version number of
+initialization of LibTMCG it is checked whether the version number of
 the header file used at compile time is greater or equal.
 @end defmac
 
@@ -384,13 +403,15 @@ Schindelhauer@tie{}[Sc98]. The default value is @code{32L}.
 @end defmac
 
 @defmac TMCG_MAX_TYPEBITS
-Defines the number of bits to represent the card type in the scheme of
-Schindelhauer@tie{}[Sc98]. The default value @code{8L} implies that 256
-different cards are possible.
+Defines the maximum number of bits to represent the card type in the
+scheme of Schindelhauer@tie{}[Sc98]. Further, this value determines
+the maximum size of the message space for the scheme of Barnett and
+Smart@tie{}[BS03]. The default value @code{8L} implies that 256
+different card types are possible.
 @end defmac
 
 @defmac TMCG_MPZ_IO_BASE
-Defines the input/ouput encoding base of the @code{iostream} operators
+Defines the input/output encoding base of the @code{iostream} operators
 for arbitrary precision integers. The default value @code{36L} is currently
 the largest base supported by the GNU Multiple Precision Arithmetic Library.
 @end defmac
@@ -403,8 +424,8 @@ digital signature scheme of Bellare and Rogaway. The default value is
 
 @defmac TMCG_QRA_SIZE
 Defines the security parameter (size of the modulus @math{m = p \cdot q}
-in bit) of the TMCG key. The underlying assumptions are QRA and FAKTOR.
-The default value is @code{1024L}. This parameter is mostly relevant
+in bit) of the TMCG key. The underlying assumptions are QRA and FACTOR.
+The default value is @code{1024L}. This parameter is only relevant
 for the card encoding scheme of Schindelhauer@tie{}[Sc98].
 @end defmac
 
@@ -424,7 +445,7 @@ in the random oracle model.
 
 @defmac TMCG_MAX_FPOWM_T
 Defines the maximum size of a possible exponent (in bit) used with the
-fast exponentiation procedures based on precomputated tables.
+fast exponentiation procedures based on precomputed tables.
 The default value is @code{2048}.
 @end defmac
 
@@ -433,13 +454,15 @@ The default value is @code{2048}.
 
 @subsection Data Types
 @cindex Data Types
+LibTMCG provides several data types for playing cards, stacks, and
+cryptographic keys.
 
 @subsubsection Encoding Schemes for Cards
 @cindex Card Encoding Schemes
 There are two different encoding schemes that can be used
-as digital representation of playing cards. In the
+for the digital representation of playing cards. In the
 scheme of Schindelhauer@tie{}[Sc98] the type of a card is
-shared among the players through bitwise representation
+shared among the players through bit-wise representation
 by quadratic (non-)residues. Thus the security relies on
 the well-known @acronym{QRA, Quadratic Residuosity Assumption}.
 Unfortunately, the size of a card grows linearly in the
@@ -451,9 +474,9 @@ prime order and requires that the @acronym{DDH, Decisional
 Diffie-Hellman Assumption} holds there.
 
 For both schemes there is a data type with the suffix
-@code{Card} which represents an open or masked card.
-Further, there is corresponding type with the suffix
-@code{CardSecret} that represents the secret involved
+@code{Card} which represents an open or even a masked card.
+Further, there is corresponding data type with the suffix
+@code{CardSecret} that represents the secret values involved
 in a card masking operation.
 
 Because of the reduced computational and communication
@@ -461,71 +484,72 @@ complexity (cf.@tie{}[St05]) the usage of the second card
 encoding scheme, i.e. @code{VTMF_Card}, is highly recommended.
 
 @deftp {Data type} TMCG_Card
-This @code{struct} represents a card in the encoding scheme
-of Schindelhauer@tie{}[Sc98]. The type of the card is shared
-among the players by quadratic residues and non-residues,
-respectively. The security relies on the Quadratic Residuosity
-Assumption.
+	This @code{struct} represents a card in the encoding scheme
+	of Schindelhauer@tie{}[Sc98]. The type of the card is shared
+	among the players by quadratic residues and non-residues,
+	respectively. Thus the security relies on the Quadratic
+	Residuosity Assumption.
+	
 	@deftypecv {Member} TMCG_Card {std::vector< std::vector<MP_INT> >} z
-	This @math{k\times w}-matrix encodes the type of the
-	corresponding card in a shared way. For each of the
-	@math{k} players there is a separate row and for each of
-	the @math{w} bits in the binary representation of the
-	type there is a column. The elements are numbers from
-	the group @math{{\bf Z}^{\circ}_{m_i}} where @math{m_i}
-	is the public modulus of the @math{i}th player.
+		This @math{k\times w}-matrix encodes the type of the
+		corresponding card in a shared way. For each of the
+		@math{k} players there is a separate row and for each of
+		the @math{w} bits in the binary representation of the
+		type there is a column. The elements are numbers from
+		the group @math{{\bf Z}^{\circ}_{m_i}} where @math{m_i}
+		is the public modulus of the @math{i}th player.
 	@end deftypecv
 	
 	@defop {Constructor} TMCG_Card TMCG_Card ()
-	This default constructor initalizes the card with an empty
-	@math{1\times 1}-matrix. Later the method
-	@code{TMCG_Card::resize} can be used to enlarge the
-	card representation.
+		This default constructor initializes the card with an empty
+		@math{1\times 1}-matrix. Later the method
+		@code{TMCG_Card::resize} can be used to enlarge the
+		card representation.
 	@end defop
 	
 	@defop {Constructor} TMCG_Card TMCG_Card (@code{size_t} k, @code{size_t} w)
-	This constructor initalizes the card with an empty
-	@math{k\times w}-matrix. The parameter @var{k} is the
-	number of players and @var{w} is the maximum number
-	of bits used by the binary representation of the card
-	type.
+		This constructor initializes the card with an empty
+		@math{k\times w}-matrix. The parameter @var{k} is the
+		number of players and @var{w} is the maximum number
+		of bits used by the binary representation of the card
+		type.
 	@end defop
 	
 	@deftypeop {Constructor} TMCG_Card {} TMCG_Card (@code{const TMCG_Card&} that)
-	This is a simple copy-constructor and @var{that} is the card to be
-	copied.
+		This is a simple copy-constructor and @var{that} is the card to be
+		copied.
 	@end deftypeop
 	
 	@deftypeop {Operator} TMCG_Card TMCG_Card& = (@code{const TMCG_Card&} that)
-	This is a simple assignment-operator and @var{that} is the card to
-	be assigned.
+		This is a simple assignment-operator and @var{that} is the card to
+		be assigned.
 	@end deftypeop
 	
 	@deftypeop {Operator} TMCG_Card bool == (@code{const TMCG_Card&} that)
-	This operator tests two card representations for equality.
+		This operator tests two card representations for equality.
 	@end deftypeop
 	
 	@deftypeop {Operator} TMCG_Card bool != (@code{const TMCG_Card&} that)
-	This operator tests two card representations for inequality.
+		This operator tests two card representations for inequality.
 	@end deftypeop
 	
 	@deftypemethod TMCG_Card void resize (@code{size_t} k, @code{size_t} w)
-	This method resizes the representation of the card.
-	The current content of the member @code{z} will be
-	released and a new @math{k\times w}-matrix is created.
-	The parameter @var{k} is the number of players and
-	@var{w} is the maximum number of bits used by the binary
-	representation of the card type.
+		This method resizes the representation of the card.
+		The current content of the member @code{z} will be
+		released and a new @math{k\times w}-matrix is created.
+		The parameter @var{k} is the number of players and
+		@var{w} is the maximum number of bits used by the binary
+		representation of the card type.
 	@end deftypemethod
 	
 	@deftypemethod TMCG_Card bool import (@code{std::string} s)
-	This method imports the content of the member @code{z} from
-	the correctly formated input string @var{s}. It returns
-	@code{true}, if the import was successful.
+		This method imports the content of the member @code{z} from
+		the correctly formated input string @var{s}. It returns
+		@code{true}, if the import was successful.
 	@end deftypemethod
 	
 	@defop {Destructor} TMCG_Card ~TMCG_Card ()
-	This destructor releases all occupied resources.
+		This destructor releases all occupied resources.
 	@end defop
 @end deftp
 
@@ -540,71 +564,72 @@ Assumption.
 	(of the given @code{TMCG_Card} @var{card}) from the input
 	stream @var{in}. The data has to be delimited by a newline
 	character. The @code{failbit} of the stream is set, if any
-	parse error occured.
+	parse error occurred.
 @end deftypeop
 
 @deftp {Data type} TMCG_CardSecret
-This @code{struct} represents the secret used for a card masking
-operation in the original encoding scheme of Schindelhauer@tie{}[Sc98].
+	This @code{struct} represents the secret used for a card masking
+	operation in the original encoding scheme of Schindelhauer@tie{}[Sc98].
+	
 	@deftypecv {Member} TMCG_CardSecret {std::vector< std::vector<MP_INT> >} r
-	This @math{k\times w}-matrix encodes the first part of the
-	secret. For each of the @math{k} players there is a separate
-	row and for each of the @math{w} bits in the binary representation
-	of the corresponding card type there is a column. The elements are
-	numbers from the group @math{{\bf Z}^{\circ}_{m_i}} where @math{m_i}
-	is the public modulus of the @math{i}th player.
+		This @math{k\times w}-matrix encodes the first part of the
+		secret. For each of the @math{k} players there is a separate
+		row and for each of the @math{w} bits in the binary representation
+		of the corresponding card type there is a column. The elements are
+		numbers from the group @math{{\bf Z}^{\circ}_{m_i}} where @math{m_i}
+		is the public modulus of the @math{i}th player.
 	@end deftypecv
 	
 	@deftypecv {Member} TMCG_CardSecret {std::vector< std::vector<MP_INT> >} b
-	This @math{k\times w}-matrix encodes the second part of the
-	secret. For each of the @math{k} players there is a separate
-	row and for each of the @math{w} bits in the binary representation
-	of the corresponding card type there is a column. The elements are
-	simply numbers from @math{\{0, 1\}}.
+		This @math{k\times w}-matrix encodes the second part of the
+		secret. For each of the @math{k} players there is a separate
+		row and for each of the @math{w} bits in the binary representation
+		of the corresponding card type there is a column. The elements are
+		simply numbers from @math{\{0, 1\}}.
 	@end deftypecv
 	
 	@defop {Constructor} TMCG_CardSecret TMCG_CardSecret ()
-	This default constructor initalizes both members with an empty
-	@math{1\times 1}-matrix. Later the method
-	@code{TMCG_CardSecret::resize} can be used to enlarge the
-	card representation.
+		This default constructor initializes both members with an empty
+		@math{1\times 1}-matrix. Later the method
+		@code{TMCG_CardSecret::resize} can be used to enlarge the
+		card representation.
 	@end defop
 	
 	@defop {Constructor} TMCG_CardSecret TMCG_CardSecret (@code{size_t} k, @code{size_t} w)
-	This constructor initalizes both members with an empty
-	@math{k\times w}-matrix. The parameter @var{k} is the
-	number of players and @var{w} is the maximum number
-	of bits used by the binary representation of the
-	corresponding card type.
+		This constructor initializes both members with an empty
+		@math{k\times w}-matrix. The parameter @var{k} is the
+		number of players and @var{w} is the maximum number
+		of bits used by the binary representation of the
+		corresponding card type.
 	@end defop
 	
 	@deftypeop {Constructor} TMCG_CardSecret {} TMCG_CardSecret (@code{const TMCG_CardSecret&} that)
-	This is a simple copy-constructor and @var{that} is the secret to be
-	copied.
+		This is a simple copy-constructor and @var{that} is the secret to be
+		copied.
 	@end deftypeop
 	
 	@deftypeop {Operator} TMCG_CardSecret TMCG_CardSecret& = (@code{const TMCG_CardSecret&} that)
-	This is a simple assignment-operator and @var{that} is the secret to
-	be assigned.
+		This is a simple assignment-operator and @var{that} is the secret to
+		be assigned.
 	@end deftypeop
 	
 	@deftypemethod TMCG_CardSecret void resize (@code{size_t} k, @code{size_t} w)
-	This method resizes the representation of the secret.
-	The current content of the members @code{r} and @code{b}
-	will be released and new @math{k\times w}-matrices are
-	created. The parameter @var{k} is the number of players and
-	@var{w} is the maximum number of bits used by the binary
-	representation of the corresponding card type.
+		This method resizes the representation of the secret.
+		The current content of the members @code{r} and @code{b}
+		will be released and new @math{k\times w}-matrices are
+		created. The parameter @var{k} is the number of players and
+		@var{w} is the maximum number of bits used by the binary
+		representation of the corresponding card type.
 	@end deftypemethod
 	
 	@deftypemethod TMCG_CardSecret bool import (@code{std::string} s)
-	This method imports the content of the members @code{r} and
-	@code{b} from the correctly formated input string @var{s}.
-	It returns @code{true}, if the import was successful.
+		This method imports the content of the members @code{r} and
+		@code{b} from the correctly formated input string @var{s}.
+		It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
 	@defop {Destructor} TMCG_CardSecret ~TMCG_CardSecret ()
-	This destructor releases all occupied resources.
+		This destructor releases all occupied resources.
 	@end defop
 @end deftp
 
@@ -620,57 +645,58 @@ operation in the original encoding scheme of Schindelhauer@tie{}[Sc98].
 	@var{cardsecret}) from the input stream @var{in}.
 	The data has to be delimited by a newline character.
 	The @code{failbit} of the stream is set, if any parse error
-	occured.
+	occurred.
 @end deftypeop
 
 @deftp {Data type} VTMF_Card
-This @code{struct} represents a card in the encoding scheme
-of Barnett and Smart@tie{}[BS03]. We use the discrete logarithm
-based instantiation of their general cryptographic primitive
-@acronym{VTMF, Verifiable @var{k}-out-of-@var{k} Threshold Masking
-Function}. The security relies on the DDH assumption in the
-underlying group @math{G}.
+	This @code{struct} represents a card in the encoding scheme
+	of Barnett and Smart@tie{}[BS03]. Here we use the discrete logarithm
+	based instantiation of their general cryptographic primitive
+	@acronym{VTMF, Verifiable @var{k}-out-of-@var{k} Threshold Masking
+	Function}. The security relies on the DDH assumption in the
+	underlying abelian group @math{G}.
+	
 	@deftypecv {Member} VTMF_Card {mpz_t} c_1
-	This is the first part of the encrypted card type.
-	It is a number from the underlying group @math{G}.
+		This is the first part of the encrypted card type.
+		It is an element from the underlying group @math{G}.
 	@end deftypecv
 	
 	@deftypecv {Member} VTMF_Card {mpz_t} c_2
-	This is the second part of the encrypted card type.
-	It is a number from the underlying group @math{G}.
+		This is the second part of the encrypted card type.
+		It is also an element from the underlying group @math{G}.
 	@end deftypecv
 	
 	@defop {Constructor} VTMF_Card VTMF_Card ()
-	This default constructor initalizes the card with empty
-	members @code{c_1} and @code{c_2}.
+		This default constructor initializes an empty card where
+		the members @code{c_1} and @code{c_2} are set to zero.
 	@end defop
 	
 	@deftypeop {Constructor} VTMF_Card {} VTMF_Card (@code{const VTMF_Card&} that)
-	This is a simple copy-constructor and @var{that} is the
-	card to be copied.
+		This is a simple copy-constructor and @var{that} is the
+		card to be copied.
 	@end deftypeop
 	
 	@deftypeop {Operator} VTMF_Card VTMF_Card& = (@code{const VTMF_Card&} that)
-	This is a simple assignment-operator and @var{that} is
-	the card to be assigned.
+		This is a simple assignment-operator and @var{that} is
+		the card to be assigned.
 	@end deftypeop
 	
 	@deftypeop {Operator} VTMF_Card bool == (@code{const VTMF_Card&} that)
-	This operator tests two card representations for equality.
+		This operator tests two card representations for equality.
 	@end deftypeop
 	
 	@deftypeop {Operator} VTMF_Card bool != (@code{const VTMF_Card&} that)
-	This operator tests two card representations for inequality.
+		This operator tests two card representations for inequality.
 	@end deftypeop
 	
 	@deftypemethod VTMF_Card bool import (@code{std::string} s)
-	This method imports the content of the members @code{c_1}
-	and @code{c_2} from the correctly formated input string
-	@var{s}. It returns @code{true}, if the import was successful.
+		This method imports the content of the members @code{c_1}
+		and @code{c_2} from a correctly formated input string
+		@var{s}. It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
 	@defop {Destructor} VTMF_Card ~VTMF_Card ()
-	This destructor releases all occupied resources.
+		This destructor releases all occupied resources.
 	@end defop
 @end deftp
 
@@ -685,50 +711,51 @@ underlying group @math{G}.
 	and @code{c_2} (of the given @code{VTMF_Card} @var{card})
 	from the input stream @var{in}. The data has to be delimited
 	by a newline character. The @code{failbit} of the stream is
-	set, if any parse error occured.
+	set, if any parse error occurred.
 @end deftypeop
 
 @deftp {Data type} VTMF_CardSecret
-This @code{struct} represents the secret used for the card masking
-operation in the encoding scheme of Barnett and Smart@tie{}[BS03].
-	@deftypecv {Member} VTMF_CardSecret {mpz_t} r
-	This member is the exponent (randomizer) used in the masking operation.
-	It should be chosen uniformly and randomly from @math{{\bf Z}_q}
-	where @math{q} is the order of the finite abelian group @math{G}
-	for which the DDH assumption should hold.
+	This @code{struct} represents the secrets used in the card masking
+	operation by the encoding scheme of Barnett and Smart@tie{}[BS03].
 	
-	According to the results of Koshiba and Kurosawa (see PKC@tie{}2004,
-	LNCS@tie{}2947) the length of this exponent can be shorten to a reasonable
-	value (e.g. 160@tie{}bit), if the corresponding generator is adjusted
-	as well. Under the additional @acronym{DLSE, Discret Logarithm with Short
-	Exponents} assumption the corresponding DDH problem in @math{G} seems
-	to be still hard enough. By such an optimization trick we gain a great
-	performance advantage for almost all modular exponentiations.
+	@deftypecv {Member} VTMF_CardSecret {mpz_t} r
+		This member is the exponent (randomizer) used in the masking operation.
+		It should be chosen uniformly and randomly from @math{{\bf Z}_q}
+		where @math{q} is the order of the finite abelian group @math{G}
+		for which the DDH assumption should hold.
+		
+		According to the results of Koshiba and Kurosawa (see PKC@tie{}2004,
+		LNCS@tie{}2947) the length of this exponent can be shorten to a reasonable
+		value (e.g. 160@tie{}bit), if the corresponding generator @math{g} is
+		adjusted as well. Under the additional @acronym{DLSE, Discrete Logarithm
+		with Short Exponents} assumption the actually used DDH problem in @math{G}
+		seems to be still hard enough. By such an optimization trick we gain a
+		great performance advantage for almost all modular exponentiations.
 	@end deftypecv
 	
 	@defop {Constructor} VTMF_CardSecret VTMF_CardSecret ()
-	This default constructor initalizes the secret with an
-	empty member @code{r}.
+		This default constructor initializes the secret with an
+		empty member @code{r}.
 	@end defop
 	
 	@deftypeop {Constructor} VTMF_CardSecret {} VTMF_CardSecret (@code{const VTMF_CardSecret&} that)
-	This is a simple copy-constructor and @var{that} is the secret to be
-	copied.
+		This is a simple copy-constructor and @var{that} is the secret to be
+		copied.
 	@end deftypeop
 	
 	@deftypeop {Operator} VTMF_CardSecret VTMF_CardSecret& = (@code{const VTMF_CardSecret&} that)
-	This is a simple assignment-operator and @var{that} is the secret to
-	be assigned.
+		This is a simple assignment-operator and @var{that} is the secret to
+		be assigned.
 	@end deftypeop
 	
 	@deftypemethod VTMF_CardSecret bool import (@code{std::string} s)
-	This method imports the content of the member @code{r}
-	from the correctly formated input string @var{s}.
-	It returns @code{true}, if the import was successful.
+		This method imports the content of the member @code{r}
+		from the correctly formated input string @var{s}.
+		It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
 	@defop {Destructor} VTMF_CardSecret ~VTMF_CardSecret ()
-	This destructor releases all occupied resources.
+		This destructor releases all occupied resources.
 	@end defop
 @end deftp
 
@@ -743,11 +770,347 @@ operation in the encoding scheme of Barnett and Smart@tie{}[BS03].
 	(of the given @code{VTMF_CardSecret} @var{cardsecret})
 	from the input stream @var{in}. The data has to be
 	delimited by a newline character. The @code{failbit} of
-	the stream is set, if any parse error occured.
+	the stream is set, if any parse error occurred.
+@end deftypeop
+
+@subsubsection Stacks
+@cindex Stacks
+All of the following data types are generic containers that can be
+instantiated as C++ templates with the former explained @code{*_Card}
+and @code{*_CardSecret} data types, respectively.
+
+@deftp {Data type} TMCG_Stack<@var{CardType}>
+	This @code{struct} is a simple container for cards of the specified
+	@code{@var{CardType}}. Currently, the elements can be either of type
+	@code{TMCG_Card} or @code{VTMF_Card} depending on which kind of encoding
+	scheme is used. The @code{TMCG_Stack} structure is mainly used to represent
+	a stack of hidden cards, i.e. playing cards that are stacked in a face-down
+	manner. It can be either a public stack where all participants have access to
+	or a private stack also known as the players' hand. However, if the
+	corresponding card secrets are known it can also serve as an open stack.
+	
+	@deftypecv {Member} TMCG_Stack {std::vector<@var{CardType}>} stack
+		This is the container that is used internally for storing the cards.
+	@end deftypecv
+	
+	@defop {Constructor} TMCG_Stack TMCG_Stack ()
+		This default constructor initializes an empty stack.
+	@end defop
+	
+	@deftypeop {Operator} TMCG_Stack TMCG_Stack& = (@code{const TMCG_Stack<@var{CardType}>&} that)
+		This is a simple assignment-operator and @var{that} is the stack to
+		be assigned.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_Stack bool == (@code{const TMCG_Stack<@var{CardType}>&} that)
+		This operator tests two stacks for equality. It checks whether the
+		sizes of the stacks and the contained cards are equal with respect to
+		the implied order.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_Stack bool != (@code{const TMCG_Stack<@var{CardType}>&} that)
+		This operator tests two stacks for inequality. It returns @code{true}, if
+		either the sizes does not match or at least two corresponding cards are
+		not equal.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_Stack {const @var{CardType}&} [] (@code{size_t} n)
+		This operator provides read-only random access to the contained cards.
+		It returns a const-reference to the @var{n}th card from the top of the stack.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_Stack {@var{CardType}&} [] (@code{size_t} n)
+		This operator provides random access to the contained cards.
+		It returns a reference to the @var{n}th card from the top of the stack.
+	@end deftypeop
+	
+	@deftypemethod TMCG_Stack size_t size ()
+		This method returns the size of the stack.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_Stack void push (@code{const @var{CardType}&} c)
+		This method pushes the card @var{c} to the back of the stack.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_Stack void push (@code{const TMCG_Stack<@var{CardType}>&} s)
+		This method pushes the stack @var{s} to the back of the stack.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_Stack void push (@code{const TMCG_OpenStack<@var{CardType}>&} s)
+		This method pushes the cards of the open stack @var{s} to the back
+		of the stack.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_Stack bool empty ()
+		This method returns @code{true}, if the stack is empty.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_Stack bool pop (@code{@var{CardType}&} c)
+		This method removes a card from the back and stores the data in @var{c}.
+		It returns @code{true}, if the stack was not empty and thus @var{c}
+		contains useful data.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_Stack void clear ()
+		This method clears the stack, i.e., it removes all cards.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_Stack bool find (@code{const @var{CardType}&} c)
+		This method returns @code{true}, if the card @var{c} was found in the
+		stack.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_Stack bool remove (@code{const @var{CardType}&} c)
+		This method removes the top-most card from the stack which is equal to
+		@var{c}. It returns @code{true}, if the card was found and successfully
+		removed.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_Stack size_t removeAll (@code{const @var{CardType}&} c)
+		This method removes every card from the stack which is equal to @var{c}.
+		It returns the number of removed cards.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_Stack bool import (@code{std::string} s)
+		This method imports the stack from the correctly formated input string
+		@var{s}. It returns @code{true}, if the import was successful.
+	@end deftypemethod
+	
+	@defop {Destructor} TMCG_Stack ~TMCG_Stack ()
+		This destructor releases all occupied resources.
+	@end defop
+@end deftp
+
+@deftypeop {Operator} TMCG_Stack std::ostream& << (@code{std::ostream&} out, @code{const TMCG_Stack<@var{CardType}>&} stack)
+	This operator exports the given @var{stack} to the output stream @var{out}.
+@end deftypeop
+
+@deftypeop {Operator} TMCG_Stack std::istream& >> (@code{std::istream&} in, @code{TMCG_Stack<@var{CardType}>&} stack)
+	This operator imports the given @var{stack} from the input stream @var{in}.
+	The data has to be delimited by a newline character. The @code{failbit} of
+	the stream is set, if any parse error occurred.
+@end deftypeop
+
+@deftp {Data type} TMCG_OpenStack<@var{CardType}>
+	This @code{struct} is a simple container for cards of the specified
+	@code{@var{CardType}} whose types are known. The elements are pairs where
+	the first component is the type and the second component is the corresponding
+	card. The card type is represented by a @code{size_t} integer. Currently, the
+	cards can be either of type @code{TMCG_Card} or @code{VTMF_Card} depending on
+	which kind of encoding scheme is used.
+	
+	@deftypecv {Member} TMCG_OpenStack {std::vector<std::pair<size_t, @var{CardType}> >} stack
+		This is the container that is used internally for storing the pairs.
+	@end deftypecv
+	
+	@defop {Constructor} TMCG_OpenStack TMCG_OpenStack ()
+		This default constructor initializes an empty stack.
+	@end defop
+	
+	@deftypeop {Operator} TMCG_OpenStack TMCG_OpenStack& = (@code{const TMCG_OpenStack<@var{CardType}>&} that)
+		This is a simple assignment-operator and @var{that} is the stack to
+		be assigned.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_OpenStack bool == (@code{const TMCG_OpenStack<@var{CardType}>&} that)
+		This operator tests two stacks for equality. It checks whether the types,
+		the sizes, and the contained cards are equal with respect to the stack order.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_OpenStack bool != (@code{const TMCG_OpenStack<@var{CardType}>&} that)
+		This operator tests two stacks for inequality. It returns @code{true}, if
+		either the sizes resp. types does not match or at least two corresponding cards
+		are not equal.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_OpenStack {const std::pair<size_t, @var{CardType}>&} [] (@code{size_t} n)
+		This operator provides read-only random access to the contained pairs.
+		It returns a const-reference to the @var{n}th pair from the top of the stack.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_OpenStack {std::pair<size_t, @var{CardType}>&} [] (@code{size_t} n)
+		This operator provides random access to the contained pairs.
+		It returns a reference to the @var{n}th pair from the top of the stack.
+	@end deftypeop
+	
+	@deftypemethod TMCG_OpenStack size_t size ()
+		This method returns the size of the stack.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_OpenStack void push (@code{const std::pair<size_t, @var{CardType}>&} p)
+		This method pushes the pair @var{p} to the back of the stack. The first
+		component is the type and the second component is the corresponding card
+		representation.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_OpenStack void push (@code{size_t} type, @code{const @var{CardType}&} c)
+		This method pushes a pair to the back of the stack. The parameter @var{type}
+		is the card type and @var{c} is the corresponding card representation.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_OpenStack void push (@code{const TMCG_OpenStack<@var{CardType}>&} s)
+		This method pushes the pairs of the stack @var{s} to the back
+		of this stack.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_OpenStack bool empty ()
+		This method returns @code{true}, if the stack is empty.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_OpenStack bool pop (@code{size_t&} type, @code{@var{CardType}&} c)
+		This method removes a pair from the back of the stack. It stores the card type
+		in @var{type} and the	representation in @var{c}. It returns @code{true}, if the stack
+		was not empty and thus @var{type} and @var{c} contain useful data.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_OpenStack void clear ()
+		This method clears the stack, i.e., it removes all pairs.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_OpenStack bool find (@code{size_t} type)
+		This method returns @code{true}, if a pair with the first component @var{type} was
+		found in the stack.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_OpenStack bool remove (@code{size_t} type)
+		This method removes the top-most pair with the first component @var{type} from the
+		stack. It returns @code{true}, if such a pair was found and successfully removed.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_OpenStack size_t removeAll (@code{size_t} type)
+		This method removes every pair from the stack whose first component is equal to
+		@var{type}. Further it returns the number of removed pairs.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_OpenStack bool move (@code{size_t} type, @code{TMCG_Stack<@var{CardType}>&} s)
+	This method moves the top-most card representation of the given @var{type} to another
+	stack @var{s}. It returns @code{true}, if such a pair was found and successfully moved.
+	@end deftypemethod
+	
+	@defop {Destructor} TMCG_OpenStack ~TMCG_OpenStack ()
+		This destructor releases all occupied resources.
+	@end defop
+@end deftp
+
+@deftp {Data type} TMCG_StackSecret<@var{CardSecretType}>
+	This @code{struct} is a simple container for the secrets involved
+	in the masking operation of cards. Additionally, the permutation
+	of a corresponding shuffle of the stack is stored.
+	The elements are pairs where the first component is a permutation
+	index of type @code{size_t} and the second component is a card
+	secret of the specified @code{@var{CardSecretType}}. Currently,
+	such secrets can be either of type @code{TMCG_CardSecret} or
+	@code{VTMF_CardSecret} depending on which kind of encoding scheme
+	is used.
+	
+	@deftypecv {Member} TMCG_StackSecret {std::vector<std::pair<size_t, @var{CardSecretType}> >} stack
+		This is the container that is used internally for storing the pairs.
+	@end deftypecv
+	
+	@defop {Constructor} TMCG_StackSecret TMCG_StackSecret ()
+		This default constructor initializes an empty stack secret.
+	@end defop
+	
+	@deftypeop {Operator} TMCG_StackSecret TMCG_StackSecret& = (@code{const TMCG_StackSecret<@var{CardSecretType}>&} that)
+		This is a simple assignment-operator and @var{that} is the
+		stack secret to be assigned.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_StackSecret {const std::pair<size_t, @var{CardSecretType}>&} [] (@code{size_t} n)
+		This operator provides read-only random access to the contained pairs.
+		It returns a const-reference to the @var{n}th pair from the top of the stack secret.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_StackSecret {std::pair<size_t, @var{CardSecretType}>&} [] (@code{size_t} n)
+		This operator provides random access to the contained pairs.
+		It returns a reference to the @var{n}th pair from the top of the stack secret.
+	@end deftypeop
+	
+	@deftypemethod TMCG_StackSecret size_t size ()
+		This method returns the size of the stack secret.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_StackSecret void push (@code{size_t} index, @code{const @var{CardSecretType}&} cs)
+		This method pushes a pair to the back of the stack secret. The parameter @var{index}
+		is the permutation index and @var{cs} is the corresponding card secret.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_StackSecret void clear ()
+		This method clears the stack secret, i.e., it removes all pairs.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_StackSecret size_t find_position (@code{size_t} index)
+		This method searches for a given permutation index in the stack secret.
+		It returns the corresponding position@footnote{According to the behaviour
+		of the @code{[]}-operator, the zero denotes always the top-most position.} in
+		the stack secret, if the @var{index} was found. Otherwise, the size of
+		the stack secret is returned. Please note that in this case the returned
+		value is not a valid position for an access to the stack secret.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_StackSecret bool find (@code{size_t} index)
+		This method searches for a given permutation index in the stack secret.
+		It returns @code{true}, if such an @var{index} was found.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_StackSecret bool import (@code{std::string} s)
+		This method imports the stack secret from a correctly formated input string
+		@var{s}. It returns @code{true}, if the import was successful.
+	@end deftypemethod
+	
+	@defop {Destructor} TMCG_StackSecret ~TMCG_StackSecret ()
+		This destructor releases all occupied resources.
+	@end defop
+@end deftp
+
+@deftypeop {Operator} TMCG_StackSecret std::ostream& << (@code{std::ostream&} out, @code{const TMCG_StackSecret<@var{CardSecretType}>&} stacksecret)
+	This operator exports the given @var{stacksecret} to the output stream @var{out}.
+@end deftypeop
+
+@deftypeop {Operator} TMCG_StackSecret std::istream& >> (@code{std::istream&} in, @code{TMCG_StackSecret<@var{CardSecretType}>&} stacksecret)
+	This operator imports the given @var{stacksecret} from the input stream @var{in}.
+	The data has to be delimited by a newline character. The @code{failbit} of
+	the stream is set, if any parse error occurred.
 @end deftypeop
 
 @subsubsection Cryptographic Keys
 @cindex Keys
+LibTMCG only provides the key structures for the enconding scheme of Schindelhauer,
+because it is inefficient to perform the underlying kind of key generation for
+every new established game session. Furthermore, the keys can be also used to ensure
+the confidentiality and integrity of text messages, even if the scheme of Barnett and
+Smart has been applied for the card encoding. Therefore these data types may be
+of independent interest. However, like for every public key cryptosystem a trusted
+@acronym{PKI, Public Key Infrastructure} is neccessary.
+
+@deftp {Data type} TMCG_SecretKey
+@end deftp
+
+@deftp {Data type} TMCG_PublicKey
+@end deftp
+
+@deftp {Data type} TMCG_PublicKeyRing
+	This @code{struct} is a simple container for TMCG public keys. There are no
+	particular methods provided by LibTMCG. You have to use the regular interface
+	of @code{std::vector} to access the keys on the ring.
+	
+	@deftypecv {Member} TMCG_PublicKeyRing {std::vector<TMCG_PublicKey>} key
+		This is the real container that is used to store the keys.
+	@end deftypecv
+	
+	@defop {Constructor} TMCG_PublicKeyRing TMCG_PublicKeyRing ()
+		This default constructor initializes an empty public key ring.
+	@end defop
+	
+	@defop {Constructor} TMCG_PublicKeyRing TMCG_PublicKeyRing (@code{size_t} n)
+		This constructor initializes the container for storing exactly
+		@var{n} keys.
+	@end defop
+	
+	@defop {Destructor} TMCG_PublicKeyRing ~TMCG_PublicKeyRing ()
+		This destructor releases all occupied resources.
+	@end defop
+@end deftp
 
 
 @subsection Classes
@@ -755,9 +1118,10 @@ operation in the encoding scheme of Barnett and Smart@tie{}[BS03].
 
 @chapter Examples
 @cindex Examples
-Please have a look at the several examples in the directory
-@file{tests} and the commented source code. A detailed
-exposition with some code fragments will later be included here.
+Please have a look at the well-documented examples and test programs in the
+directory @file{tests/}, e.g. @file{SchwarzerPeterAlice.cc} and
+@file{SchwarzerPeterBob.cc}, respectively.
+A detailed exposition with source code fragments will later be included here.
 
 
 @c **********************************************************

@@ -14,7 +14,7 @@ Introduction
   effect of coalitions and achieve the confidentiality of the players'
   strategy, i.e. the players are not required to reveal their cards at
   the end of the game to show that they didn't cheat. The implementation
-  is based primarily on two academic research papers:
+  is based primarily on three academic research papers:
 
     Christian Schindelhauer: A Toolbox for Mental Card Games.
     Technical Report A-98-14, University of Lübeck, 1998.
@@ -23,6 +23,9 @@ Introduction
     Adam Barnett, Nigel P. Smart: Mental Poker Revisited.
     Cryptography and Coding 2003, Lecture Notes in Computer
     Science 2898, pp. 370--383, 2003.
+
+    Jens Groth: A Verifiable Secret Shuffle of Homomorphic Encryptions.
+    Cryptology ePrint Archive, Report 2005/246, 2005.
 
   The card and stack operations are considered in the "honest-but-curious"
   (i.e. semi-honest) adversary model, thus we do not care about robustness
@@ -56,6 +59,8 @@ Requirements
     (built WITHOUT C++ support: ./configure --enable-cxx=no)
   * GNU Crypto Library (libgcrypt), version >= 1.2.0,
     ftp://ftp.gnupg.org/
+  * GNU Privacy Guard Error Code Library (libgpg-error), version >= 0.5,
+    ftp://ftp.gnupg.org/
 
   The library was tested (+ successful, - erroneous) on the following
   platforms:
@@ -64,7 +69,7 @@ Requirements
   + GNU/Linux (Debian 3.1)      i686      gcc 3.3.5
   + SunOS 5.8, Solaris 2.7      sparc     gcc 3.3.2
   + SunOS 5.10, Solaris 10      sparc     gcc 3.4.3
-  - GNU/Linux (Sharp Zaurus)    arm       zgcc 2.95.2     (--disable-shared)
+  + GNU/Linux (Sharp Zaurus)    arm       zgcc 2.95.2
 
 Build & Install
 ---------------

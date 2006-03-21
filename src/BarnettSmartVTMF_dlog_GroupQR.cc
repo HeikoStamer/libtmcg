@@ -11,7 +11,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -39,7 +39,8 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	// such that $p = 2q + 1$ and $p$, $q$ are both prime.
 	// The number 2 is a generator of $\mathbb{QR}_p$ since
 	// $p \equiv 7 \pmod{8}$.
-	mpz_sprime2g(p, q, fieldsize - 1L), mpz_set_ui(g, 2L), mpz_set_ui(k, 2L);
+	mpz_sprime2g(p, q, fieldsize - 1L, TMCG_MR_ITERATIONS);
+	mpz_set_ui(g, 2L), mpz_set_ui(k, 2L);
 	G_size = fieldsize - 1L;
 	
 	// We shift the generator (according to [KK04]) for the later
@@ -93,9 +94,10 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
 			throw false;
 		
 		// Check whether $p$ and $q$ are both (probable) prime with
-		// a soundness error probability ${} \le 4^{-64}$.
-		if (!mpz_probab_prime_p(p, 64L) || !mpz_probab_prime_p(q, 64L))
-			throw false;
+		// a soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
+		if (!mpz_probab_prime_p(p, TMCG_MR_ITERATIONS) || 
+			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
+				throw false;
 		
 		// Check whether $p$ is congruent 7 modulo 8.
 		if (!mpz_congruent_ui_p(p, 7L, 8L))

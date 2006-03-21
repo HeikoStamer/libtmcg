@@ -61,7 +61,7 @@ template <typename CardType> struct TMCG_Stack
 	/** A simple assignment-operator.
 	    @param that is the stack to be assigned. */
 	TMCG_Stack& operator =
-		(const TMCG_Stack& that)
+		(const TMCG_Stack<CardType>& that)
 	{
 		clear();
 		stack = that.stack;
@@ -71,7 +71,7 @@ template <typename CardType> struct TMCG_Stack
 	/** This operator tests two stacks for equality of their cards
 	    and sizes. */
 	bool operator ==
-		(const TMCG_Stack& that)
+		(const TMCG_Stack<CardType>& that)
 	{
 		if (stack.size() != that.stack.size())
 			return false;
@@ -81,7 +81,7 @@ template <typename CardType> struct TMCG_Stack
 	/** This operator tests two stacks for inequality of their cards
 	    or sizes. */
 	bool operator !=
-		(const TMCG_Stack& that)
+		(const TMCG_Stack<CardType>& that)
 	{
 		return !(*this == that);
 	}
@@ -120,7 +120,7 @@ template <typename CardType> struct TMCG_Stack
 	/** This method pushes another stack to the stack.
 	    @param s is pushed to the back of the stack. */
 	void push
-		(const TMCG_Stack& s)
+		(const TMCG_Stack<CardType>& s)
 	{
 		std::copy(s.stack.begin(), s.stack.end(), back_inserter(stack));
 	}
@@ -258,7 +258,7 @@ template <typename CardType> struct TMCG_Stack
     @param out is the output stream.
     @param stack is the stack to be printed. */
 template<typename CardType> std::ostream& operator <<
-	(std::ostream &out, const TMCG_Stack<CardType> &stack)
+	(std::ostream& out, const TMCG_Stack<CardType>& stack)
 {
 	out << "stk^" << stack.size() << "^";
 	for (size_t i = 0; i < stack.size(); i++)
@@ -273,7 +273,7 @@ template<typename CardType> std::ostream& operator <<
     @param in is the input stream.
     @param stack is the stack to be imported. */
 template<typename CardType> std::istream& operator >>
-	(std::istream &in, TMCG_Stack<CardType> &stack)
+	(std::istream& in, TMCG_Stack<CardType>& stack)
 {
 	char *tmp = new char[TMCG_MAX_STACK_CHARS];
 	in.getline(tmp, TMCG_MAX_STACK_CHARS);

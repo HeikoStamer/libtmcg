@@ -1709,7 +1709,7 @@ void SchindelhauerTMCG::TMCG_MixOpenStack
 	}
 }
 
-SchindelhauerTMCG::~SchindelhauerTMCG 
+SchindelhauerTMCG::~SchindelhauerTMCG
 	()
 {
 	for (size_t i = 0; i < TMCG_MaxCardType; i++)

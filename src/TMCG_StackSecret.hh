@@ -178,7 +178,7 @@ template <typename CardSecretType> struct TMCG_StackSecret
 					throw false;
 				lej.first = (size_t)strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), 
 					&ec, 10);
-				if ((*ec != '\0') || (lej.first < 0) || (lej.first >= size) ||
+				if ((*ec != '\0') || (lej.first < 0) || (lej.first >= size) || 
 					(!TMCG_ParseHelper::nx(s, '^')))
 						throw false;
 				
@@ -221,7 +221,7 @@ template <typename CardSecretType> struct TMCG_StackSecret
     @param out is the output stream.
     @param stacksecret is the stack secret to be printed. */
 template<typename CardSecretType> std::ostream& operator <<
-	(std::ostream &out, const TMCG_StackSecret<CardSecretType> &stacksecret)
+	(std::ostream& out, const TMCG_StackSecret<CardSecretType>& stacksecret)
 {
 	out << "sts^" << stacksecret.size() << "^";
 	for (size_t i = 0; i < stacksecret.size(); i++)
@@ -236,7 +236,7 @@ template<typename CardSecretType> std::ostream& operator <<
     @param in is the input stream.
     @param stacksecret is the stack secret to be imported. */
 template<typename CardSecretType> std::istream& operator >>
-	(std::istream &in, TMCG_StackSecret<CardSecretType> &stacksecret)
+	(std::istream& in, TMCG_StackSecret<CardSecretType>& stacksecret)
 {
 	char *tmp = new char[TMCG_MAX_STACK_CHARS];
 	in.getline(tmp, TMCG_MAX_STACK_CHARS);

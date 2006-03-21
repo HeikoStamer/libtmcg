@@ -12,7 +12,7 @@
       [HAC]  Alfred J. Menezes, Paul C. van Oorschot, and Scott A. Vanstone:
               'Handbook of Applied Cryptography', CRC Press, 1996.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -261,7 +261,7 @@ int mpz_mr_witness
 
 void mpz_sprime_test
 	(mpz_ptr p, mpz_ptr q, unsigned long int qsize,
-	int (*test)(mpz_ptr, mpz_ptr))
+	int (*test)(mpz_ptr, mpz_ptr), unsigned long int mr_iterations)
 {
 	unsigned long int R_q[SIEVE_SIZE], R_p[SIEVE_SIZE];
 	size_t i = 0, fail = 0;
@@ -353,22 +353,23 @@ void mpz_sprime_test
 			continue;
 		
 		/* Step 5. [CS00]: Apply the Miller-Rabin test to $q$ a defined number
-		   of times (error probability $4^{-64}$) using randomly selected bases. */
-		if (mpz_probab_prime_p(q, 63))
+		   of times (maximum error probability $4^{-mr_iterations}$) using
+		   randomly selected bases. */
+		if (mpz_probab_prime_p(q, mr_iterations - 1))
 			break;
 	}
 	mpz_clear(tmp), mpz_clear(y), mpz_clear(pm1), mpz_clear(a);
 	fprintf(stderr, "\n");
 	
-	assert(mpz_probab_prime_p(p, 64));
-	assert(mpz_probab_prime_p(q, 64));
+	assert(mpz_probab_prime_p(p, mr_iterations));
+	assert(mpz_probab_prime_p(q, mr_iterations));
 }
 
 /** A naive generator for safe primes (slow for $\log_2 p \ge 1024$). */
 
 void mpz_sprime_test_naive
 	(mpz_ptr p, mpz_ptr q, unsigned long int qsize,
-	int (*test)(mpz_ptr, mpz_ptr))
+	int (*test)(mpz_ptr, mpz_ptr), unsigned long int mr_iterations)
 {
 	size_t i = 0;
 	
@@ -406,55 +407,59 @@ void mpz_sprime_test_naive
 			continue;
 		fprintf(stderr, ".");
 		
-		if (!mpz_probab_prime_p(q, 64))
+		if (!mpz_probab_prime_p(q, mr_iterations))
 			continue;
 		
-		if (mpz_probab_prime_p(p, 63))
+		if (mpz_probab_prime_p(p, mr_iterations - 1))
 			break;
 	}
 	fprintf(stderr, "\n");
 	
-	assert(mpz_probab_prime_p(p, 64));
-	assert(mpz_probab_prime_p(q, 64));
+	assert(mpz_probab_prime_p(p, mr_iterations));
+	assert(mpz_probab_prime_p(q, mr_iterations));
 }
 
 void mpz_sprime
-	(mpz_ptr p, mpz_ptr q, unsigned long int qsize)
+	(mpz_ptr p, mpz_ptr q, unsigned long int qsize, 
+	 unsigned long int mr_iterations)
 {
-	mpz_sprime_test(p, q, qsize, notest);
+	mpz_sprime_test(p, q, qsize, notest, mr_iterations);
 }
 
 void mpz_sprime_naive
-	(mpz_ptr p, mpz_ptr q, unsigned long int qsize)
+	(mpz_ptr p, mpz_ptr q, unsigned long int qsize, 
+	 unsigned long int mr_iterations)
 {
-	mpz_sprime_test_naive(p, q, qsize, notest);
+	mpz_sprime_test_naive(p, q, qsize, notest, mr_iterations);
 }
 
 void mpz_sprime2g
-	(mpz_ptr p, mpz_ptr q, unsigned long int qsize)
+	(mpz_ptr p, mpz_ptr q, unsigned long int qsize, 
+	 unsigned long int mr_iterations)
 {
 	/* The additional test is e.g. necessary, if we want 2 as generator
 	   of $\mathbb{QR}_p$. If $p$ is congruent 7 modulo 8, then 2 is a
 	   quadratic residue and hence it will generate the cyclic subgroup
 	   of prime order $q = (p-1)/2$. [RS00] */
-	mpz_sprime_test(p, q, qsize, test2g);
+	mpz_sprime_test(p, q, qsize, test2g, mr_iterations);
 }
 
 void mpz_sprime3mod4
-	(mpz_ptr p, unsigned long int psize)
+	(mpz_ptr p, unsigned long int psize, unsigned long int mr_iterations)
 {
 	mpz_t q;
 
 	/* This test is necessary, if we want to construct a Blum integer $n$,
 	   i.e. a number where both factors are primes congruent 3 modulo 4. */
 	mpz_init(q);
-	mpz_sprime_test(p, q, psize - 1L, test3mod4);
+	mpz_sprime_test(p, q, psize - 1L, test3mod4, mr_iterations);
 	mpz_clear(q);
 }
 
 void mpz_lprime
-	(mpz_ptr p, mpz_ptr q, mpz_ptr k,
-	unsigned long int psize, unsigned long int qsize)
+	(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
+	 unsigned long int psize, unsigned long int qsize, 
+	 unsigned long int mr_iterations)
 {
 	mpz_t foo;
 	unsigned long int cnt = 0;
@@ -464,7 +469,8 @@ void mpz_lprime
 	/* Choose randomly a prime number $q$ of appropriate size. */
 	do
 		mpz_wrandomb(q, qsize);
-	while ((mpz_sizeinbase(q, 2L) < qsize) || !mpz_probab_prime_p(q, 64));
+	while ((mpz_sizeinbase(q, 2L) < qsize) || 
+		!mpz_probab_prime_p(q, mr_iterations));
 	
 	mpz_init(foo);
 	do
@@ -483,10 +489,10 @@ void mpz_lprime
 			fprintf(stderr, ".");
 	}
 	while (mpz_cmp_ui(foo, 1L) || (mpz_sizeinbase(p, 2L) < psize) || 
-		!mpz_probab_prime_p(p, 64));
+		!mpz_probab_prime_p(p, mr_iterations));
 	mpz_clear(foo);
 	fprintf(stderr, "\n");
 	
-	assert(mpz_probab_prime_p(p, 64));
-	assert(mpz_probab_prime_p(q, 64));
+	assert(mpz_probab_prime_p(p, mr_iterations));
+	assert(mpz_probab_prime_p(q, mr_iterations));
 }

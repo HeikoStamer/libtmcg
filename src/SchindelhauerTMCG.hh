@@ -6,7 +6,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2003, 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2002, 2003, 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -69,34 +69,6 @@ class SchindelhauerTMCG
 		int									ret;
 		mpz_t								*message_space;
 		
-		void TMCG_InitializeStackEquality_Groth
-			(std::vector<size_t> &pi, std::vector<mpz_ptr> &R,
-			std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
-			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
-			const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
-			const TMCG_StackSecret<VTMF_CardSecret> &ss);
-		void TMCG_InitializeStackEquality_Groth
-			(std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
-			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
-			const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2);
-		void TMCG_ReleaseStackEquality_Groth
-			(std::vector<size_t> &pi, std::vector<mpz_ptr> &R,
-			std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
-			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E);
-		void TMCG_ReleaseStackEquality_Groth
-			(std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
-			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E);
-	
-	public:
-		unsigned long int		TMCG_SecurityLevel;			// iterations
-		size_t							TMCG_Players, TMCG_TypeBits, TMCG_MaxCardType;
-		
-		// constructors and destructors
-		SchindelhauerTMCG
-			(unsigned long int security, size_t k, size_t w);
-		~SchindelhauerTMCG
-			();
-		
 		// zero-knowledge proofs on values
 		void TMCG_ProveQuadraticResidue
 			(const TMCG_SecretKey &key, mpz_srcptr t,
@@ -128,6 +100,35 @@ class SchindelhauerTMCG
 		void TMCG_MaskValue
 			(const TMCG_PublicKey &key, mpz_srcptr z, mpz_ptr zz,
 			mpz_srcptr r, mpz_srcptr b, bool TimingAttackProtection = true);
+		
+		// helper methods for Groth's shuffle proof
+		void TMCG_InitializeStackEquality_Groth
+			(std::vector<size_t> &pi, std::vector<mpz_ptr> &R,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
+			const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+			const TMCG_StackSecret<VTMF_CardSecret> &ss);
+		void TMCG_InitializeStackEquality_Groth
+			(std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
+			const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2);
+		void TMCG_ReleaseStackEquality_Groth
+			(std::vector<size_t> &pi, std::vector<mpz_ptr> &R,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E);
+		void TMCG_ReleaseStackEquality_Groth
+			(std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E);
+	
+	public:
+		unsigned long int		TMCG_SecurityLevel;			// iterations
+		size_t							TMCG_Players, TMCG_TypeBits, TMCG_MaxCardType;
+		
+		// constructors and destructors
+		SchindelhauerTMCG
+			(unsigned long int security, size_t k, size_t w);
+		~SchindelhauerTMCG
+			();
 		
 		// operations and proofs on cards
 		void TMCG_CreateOpenCard

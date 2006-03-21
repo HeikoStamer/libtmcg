@@ -6,7 +6,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -114,7 +114,7 @@ class GrothSKC
 		void PublishGroup
 			(std::ostream &out) const;
 		void Prove_interactive
-			(const std::vector<size_t> &pi, mpz_srcptr r, mpz_srcptr c,
+			(const std::vector<size_t> &pi, mpz_srcptr r,
 			const std::vector<mpz_ptr> &m,
 			std::istream &in, std::ostream &out) const;
 		bool Verify_interactive

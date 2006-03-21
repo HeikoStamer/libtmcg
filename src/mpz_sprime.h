@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,16 +34,21 @@
 		{
 	#endif
 			void mpz_sprime
-				(mpz_ptr p, mpz_ptr q, unsigned long int qsize);
+				(mpz_ptr p, mpz_ptr q, unsigned long int qsize, 
+				 unsigned long int mr_iterations);
 			void mpz_sprime_naive
-				(mpz_ptr p, mpz_ptr q, unsigned long int qsize);
+				(mpz_ptr p, mpz_ptr q, unsigned long int qsize, 
+				 unsigned long int mr_iterations);
 			void mpz_sprime2g
-				(mpz_ptr p, mpz_ptr q, unsigned long int qsize);
+				(mpz_ptr p, mpz_ptr q, unsigned long int qsize, 
+				 unsigned long int mr_iterations);
 			void mpz_sprime3mod4
-				(mpz_ptr p, unsigned long int psize);
+				(mpz_ptr p, unsigned long int psize, 
+				 unsigned long int mr_iterations);
 			void mpz_lprime
-				(mpz_ptr p, mpz_ptr q, mpz_ptr k,
-				unsigned long int psize, unsigned long int qsize);
+				(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
+				 unsigned long int psize, unsigned long int qsize, 
+				 unsigned long int mr_iterations);
 	#if defined(__cplusplus)
 		}
 	#endif

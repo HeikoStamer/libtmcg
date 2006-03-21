@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -177,7 +177,7 @@ void mpz_fspowm
 	(mpz_t fpowm_table[],
 	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
-	size_t i, sgn;
+	size_t i;
 	mpz_t tmp, xx;
 	
 	mpz_init(tmp), mpz_init_set(xx, x);

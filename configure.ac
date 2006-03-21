@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.32 $)
+AC_REVISION($Revision: 1.33 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.0, stamer@gaos.org)
@@ -69,6 +69,10 @@ AC_DEFINE(TMCG_MPZ_IO_BASE, 36,
 AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_RMD160,
 	[Define the message digest algorithm for signatures and FS-heuristic;
 	Underlying assumption: Random Oracle Model])
+
+AC_DEFINE(TMCG_MR_ITERATIONS, 64L,
+	[Define the number of iterations for the Miller-Rabin primality test.
+	(maximum soundness error probability 4^{-TMCG_MR_ITERATIONS})])
 AC_DEFINE(TMCG_GROTH_L_E, 80L,
 	[Define the security parameter for the soundness of the
 	interactive argument for Groth's VSSHE and SKC.])
@@ -80,8 +84,8 @@ AC_DEFINE(TMCG_DLSE_SIZE, 160L,
 	Underlying assumptions: DLSE (related to DDH), DLOG])
 AC_DEFINE(TMCG_QRA_SIZE, 1024L,
 	[Define the security parameter of the TMCG public key;
-	Underlying assumptions: QRA, FAKTOR])
-AC_DEFINE(TMCG_KEYID_SIZE, 5,
+	Underlying assumptions: QRA, FACTOR])
+AC_DEFINE(TMCG_KEYID_SIZE, 8,
 	[Define the size of the unique TMCG key ID (in characters)])
 AC_DEFINE(TMCG_HASH_COMMITMENT, true,
 	[Define whether hashed commitments (short values) should be used;
@@ -109,7 +113,8 @@ AC_DEFINE(TMCG_MAX_CARDS, 128L,
 	[Define the maximum number of stackable cards])
 AC_DEFINE(TMCG_MAX_TYPEBITS, 8L,
 	[Define the number of bits which represents the maximum number of
-	different card types in the scheme of Schindelhauer])
+	different card types in the scheme of Schindelhauer and the maximum
+	size of the message space in the scheme of Barnett and Smart])
 	
 AC_DEFINE(TMCG_MAX_KEYBITS,
 	[((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? TMCG_DDH_SIZE : TMCG_QRA_SIZE)],
@@ -168,6 +173,7 @@ AC_CHECK_FUNCS([memcpy memcmp memset strchr strncasecmp strrchr strstr strtol st
 ##CXXFLAGS="$CXXFLAGS -O2 -Wall -g3 -pedantic"
 #CFLAGS="$CFLAGS -O2 -Wall -D NDEBUG"
 ## Note that the tests will not run with -D NDEBUG!
+CFLAGS="$CFLAGS -Wall"
 CXXFLAGS="$CXXFLAGS -Wall"
 
 # Initalize the libTMCG-config script
