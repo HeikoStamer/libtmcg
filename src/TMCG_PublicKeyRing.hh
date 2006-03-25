@@ -32,11 +32,11 @@
 
 struct TMCG_PublicKeyRing
 {
-	std::vector<TMCG_PublicKey>			key;
+	std::vector<TMCG_PublicKey>			keys;
 	
 	TMCG_PublicKeyRing
 		(size_t n):
-			key(n)
+			keys(n)
 	{
 		assert(n > 0);
 	}
@@ -44,7 +44,7 @@ struct TMCG_PublicKeyRing
 	~TMCG_PublicKeyRing
 		()
 	{
-		key.clear();
+		keys.clear();
 	}
 };
 

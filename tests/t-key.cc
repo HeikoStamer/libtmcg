@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
    You should have received a copy of the GNU General Public License
    along with libTMCG; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
 #include <sstream>
@@ -36,12 +36,17 @@ int main
 	assert(init_libTMCG());
 	
 	// generate and check
-	std::cout << "TMCG_SecretKey(), TMCG_PublicKey(), *.check()" <<	std::endl;
+	std::cout << "TMCG_SecretKey(), TMCG_PublicKey(), *.check()" << std::endl;
 	TMCG_SecretKey sec("Alice", "alice@gaos.org", 1024L), sec2;
 	TMCG_PublicKey pub(sec), pub2;
 	assert(sec.check());
 	assert(pub.check());
-
+	
+	// fingerprint
+	std::cout << sec.fingerprint() << std::endl;
+	std::cout << pub.fingerprint() << std::endl;
+	assert(sec.fingerprint() == pub.fingerprint());
+	
 	// sign and verify
 	std::cout << "TMCG_SecretKey.sign(), *.verify()" << std::endl;
 	sig = sec.sign(v);
@@ -52,14 +57,14 @@ int main
 	
 	// encrypt and decrypt
 	std::cout << "*.encrypt(), TMCG_SecretKey.decrypt()" << std::endl;
-	char tmp[TMCG_SAEP_S0], *dec = NULL, *dec2 = NULL;
+	char tmp[TMCG_SAEP_S0], dec[TMCG_SAEP_S0], dec2[TMCG_SAEP_S0];
 	gcry_randomize((unsigned char *)tmp, sizeof(tmp), GCRY_STRONG_RANDOM);
-	enc = pub.encrypt(tmp), enc2 = sec.encrypt(tmp);
+	enc = pub.encrypt(tmp);
+	enc2 = sec.encrypt(tmp);
 	assert(sec.decrypt(dec, enc));
 	assert(!memcmp(tmp, dec, TMCG_SAEP_S0));
 	assert(sec.decrypt(dec2, enc2));
 	assert(!memcmp(tmp, dec2, TMCG_SAEP_S0));
-	delete [] dec, delete [] dec2;
 	
 	// import and verify
 	std::cout << "*.import(), *.verify()" << std::endl;

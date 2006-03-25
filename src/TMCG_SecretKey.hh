@@ -61,7 +61,8 @@ struct TMCG_SecretKey
 {
 	std::string		name, email, type, nizk, sig;
 	mpz_t		m, y, p, q;
-	// below this line are non-persistent values (pre-computation)
+	// The following two lines contain non-persistent members (precomputation).
+	// These members are only for internal usage and may change in the future.
 	mpz_t		y1, m1pq, gcdext_up, gcdext_vq, pa1d4, qa1d4;
 	int			ret;
 	
@@ -69,7 +70,7 @@ struct TMCG_SecretKey
 		();
 	
 	TMCG_SecretKey
-		(const std::string &n, const std::string &e,
+		(const std::string& n, const std::string& e,
 		unsigned long int keysize = TMCG_QRA_SIZE);
 	
 	TMCG_SecretKey
@@ -87,10 +88,10 @@ struct TMCG_SecretKey
 	void precompute
 		();
 	
-	bool import
-		(std::string s);
-	
 	bool check
+		() const;
+	
+	std::string fingerprint
 		() const;
 	
 	std::string selfid
@@ -100,22 +101,25 @@ struct TMCG_SecretKey
 		(size_t size = TMCG_KEYID_SIZE) const;
 	
 	size_t keyid_size
-		(const std::string &s) const;
+		(const std::string& s) const;
 	
 	std::string sigid
-		(const std::string &s) const;
+		(const std::string& s) const;
+	
+	bool import
+		(std::string s);
 	
 	bool decrypt
-		(char* &value, std::string s) const;
+		(char* value, std::string s) const;
 	
 	std::string sign
-		(const std::string &data) const;
+		(const std::string& data) const;
 	
 	std::string encrypt
-		(const char *value) const;
+		(const char* value) const;
 	
 	bool verify
-		(const std::string &data, const std::string &s) const;
+		(const std::string& data, const std::string& s) const;
 	
 	~TMCG_SecretKey
 		();

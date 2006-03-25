@@ -43,7 +43,7 @@ TMCG_SecretKey::TMCG_SecretKey
 }
 
 TMCG_SecretKey::TMCG_SecretKey
-	(const std::string &n, const std::string &e,
+	(const std::string& n, const std::string& e,
 	unsigned long int keysize):
 		name(n), email(e)
 {
@@ -291,6 +291,48 @@ void TMCG_SecretKey::precompute
 	mpz_clear(foo);
 }
 
+bool TMCG_SecretKey::check
+	() const
+{
+	TMCG_PublicKey pub(*this);
+	return pub.check();
+}
+
+std::string TMCG_SecretKey::fingerprint
+	() const
+{
+	TMCG_PublicKey pub(*this);
+	return pub.fingerprint();
+}
+
+std::string TMCG_SecretKey::selfid
+	() const
+{
+	TMCG_PublicKey pub(*this);
+	return pub.selfid();
+}
+
+std::string TMCG_SecretKey::keyid
+	(size_t size) const
+{
+	TMCG_PublicKey pub(*this);
+	return pub.keyid(size);
+}
+
+size_t TMCG_SecretKey::keyid_size
+		(const std::string &s) const
+{
+	TMCG_PublicKey pub(*this);
+	return pub.keyid_size(s);
+}
+
+std::string TMCG_SecretKey::sigid
+	(const std::string &s) const
+{
+	TMCG_PublicKey pub(*this);
+	return pub.sigid(s);
+}
+
 bool TMCG_SecretKey::import
 	(std::string s)
 {
@@ -358,43 +400,8 @@ bool TMCG_SecretKey::import
 	}
 }
 
-bool TMCG_SecretKey::check
-	() const
-{
-	TMCG_PublicKey pub(*this);
-	return pub.check();
-}
-
-std::string TMCG_SecretKey::selfid
-	() const
-{
-	TMCG_PublicKey pub(*this);
-	return pub.selfid();
-}
-
-std::string TMCG_SecretKey::keyid
-	(size_t size) const
-{
-	TMCG_PublicKey pub(*this);
-	return pub.keyid(size);
-}
-
-size_t TMCG_SecretKey::keyid_size
-		(const std::string &s) const
-{
-	TMCG_PublicKey pub(*this);
-	return pub.keyid_size(s);
-}
-
-std::string TMCG_SecretKey::sigid
-	(const std::string &s) const
-{
-	TMCG_PublicKey pub(*this);
-	return pub.sigid(s);
-}
-
 bool TMCG_SecretKey::decrypt
-	(char* &value, std::string s) const
+	(char* value, std::string s) const
 {
 	mpz_t vdata, vroot[4];
 	size_t rabin_s2 = 2 * TMCG_SAEP_S0;
@@ -426,11 +433,12 @@ bool TMCG_SecretKey::decrypt
 			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		
-		// decrypt value, compute modular square roots
+		// decrypt value, i.e., compute the modular square roots
 		if (!mpz_qrmn_p(vdata, p, q, m))
 			throw false;
 		mpz_sqrtmn_fast_all(vroot[0], vroot[1], vroot[2], vroot[3], vdata,
 			p, q, m, gcdext_up, gcdext_vq, pa1d4, qa1d4);
+		// check all four square roots
 		for (size_t k = 0; k < 4; k++)
 		{
 			if ((mpz_sizeinbase(vroot[k], 2L) / 8) <= (rabin_s1 + rabin_s2))
@@ -447,8 +455,6 @@ bool TMCG_SecretKey::decrypt
 				std::memset(g12, 0, TMCG_SAEP_S0);
 				if (std::memcmp(Mt + TMCG_SAEP_S0, g12, TMCG_SAEP_S0) == 0)
 				{
-					// allocated memory has to be released by the caller
-					value = new char[TMCG_SAEP_S0];
 					std::memcpy(value, Mt, TMCG_SAEP_S0);
 					throw true;
 				}
@@ -466,7 +472,7 @@ bool TMCG_SecretKey::decrypt
 }
 
 std::string TMCG_SecretKey::sign
-	(const std::string &data) const
+	(const std::string& data) const
 {
 	size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
 	size_t mnsize = mpz_sizeinbase(m, 2L) / 8;
@@ -477,8 +483,10 @@ std::string TMCG_SecretKey::sign
 	assert(mpz_sizeinbase(m, 2L) > (mnsize * 8));
 	assert(mnsize > (mdsize + TMCG_PRAB_K0));
 	
-	// WARNING: This is only a probabilistic algorithm (Rabin's signature scheme)
+	// WARNING: This is only a probabilistic algorithm (Rabin's signature scheme),
+	// however, it should work with only a few iterations. Additionally the scheme
 	// PRab from [Bellare, Rogaway: The Exact Security of Digital Signatures]
+	// was implemented to increase the security.
 	do
 	{
 		char *r = new char[TMCG_PRAB_K0];
@@ -510,7 +518,7 @@ std::string TMCG_SecretKey::sign
 	mpz_sqrtmn_fast_all(foo_sqrt[0], foo_sqrt[1], foo_sqrt[2], foo_sqrt[3], foo,
 		p, q, m, gcdext_up, gcdext_vq, pa1d4, qa1d4);
 	
-	// choose square root randomly (one out-of four)
+	// choose a square root randomly (one out-of four)
 	mpz_srandomb(foo, 2L);
 	
 	std::ostringstream ost;
@@ -522,14 +530,14 @@ std::string TMCG_SecretKey::sign
 }
 
 std::string TMCG_SecretKey::encrypt
-	(const char *value) const
+	(const char* value) const
 {
 	TMCG_PublicKey pub(*this);
 	return pub.encrypt(value);
 }
 
 bool TMCG_SecretKey::verify
-	(const std::string &data, const std::string &s) const
+	(const std::string& data, const std::string& s) const
 {
 	TMCG_PublicKey pub(*this);
 	return pub.verify(data, s);

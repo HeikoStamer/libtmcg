@@ -746,7 +746,7 @@ void SchindelhauerTMCG::TMCG_CreateOpenCard
 	{
 		if (type & 1)
 		{
-			mpz_set(&c.z[0][w], ring.key[0].y);
+			mpz_set(&c.z[0][w], ring.keys[0].y);
 			--type, type /= 2;
 		}
 		else
@@ -798,7 +798,7 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 	(TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring, size_t index)
 {
 	assert(index < cs.b.size());
-	assert(index < ring.key.size());
+	assert(index < ring.keys.size());
 	
 	mpz_t foo;
 	
@@ -810,8 +810,8 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 			// choose uniformly at random a number r \in Z^*_m
 			do
 			{
-				mpz_srandomm(&cs.r[k][w], ring.key[k].m);
-				mpz_gcd(foo, &cs.r[k][w], ring.key[k].m);
+				mpz_srandomm(&cs.r[k][w], ring.keys[k].m);
+				mpz_gcd(foo, &cs.r[k][w], ring.keys[k].m);
 			}
 			while (mpz_cmp_ui(foo, 1L));
 			
@@ -870,7 +870,7 @@ void SchindelhauerTMCG::TMCG_MaskCard
 	
 	for (size_t k = 0; k < c.z.size(); k++)
 		for (size_t w = 0; w < c.z[k].size(); w++)
-			TMCG_MaskValue(ring.key[k], &c.z[k][w], &cc.z[k][w],
+			TMCG_MaskValue(ring.keys[k], &c.z[k][w], &cc.z[k][w],
 				&cs.r[k][w], &cs.b[k][w], TimingAttackProtection);
 }
 
@@ -891,7 +891,7 @@ void SchindelhauerTMCG::TMCG_ProveMaskCard
 	
 	for (size_t k = 0; k < c.z.size(); k++)
 		for (size_t w = 0; w < c.z[k].size(); w++)
-			TMCG_ProveMaskValue(ring.key[k], &c.z[k][w], &cc.z[k][w],
+			TMCG_ProveMaskValue(ring.keys[k], &c.z[k][w], &cc.z[k][w],
 				&cs.r[k][w], &cs.b[k][w], in, out);
 }
 
@@ -911,7 +911,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskCard
 	
 	for (size_t k = 0; k < c.z.size(); k++)
 		for (size_t w = 0; w < c.z[k].size(); w++)
-			if (!TMCG_VerifyMaskValue(ring.key[k], &c.z[k][w], &cc.z[k][w], in, out))
+			if (!TMCG_VerifyMaskValue(ring.keys[k], &c.z[k][w], &cc.z[k][w], in, out))
 				return false;
 	return true;
 }
@@ -932,7 +932,7 @@ void SchindelhauerTMCG::TMCG_ProvePrivateCard
 {
 	for (size_t k = 0; k < cs.r.size(); k++)
 		for (size_t w = 0; w < cs.r[k].size(); w++)
-			TMCG_ProveMaskOne(ring.key[k], &cs.r[k][w], &cs.b[k][w], in, out);
+			TMCG_ProveMaskOne(ring.keys[k], &cs.r[k][w], &cs.b[k][w], in, out);
 }
 
 bool SchindelhauerTMCG::TMCG_VerifyPrivateCard
@@ -941,7 +941,7 @@ bool SchindelhauerTMCG::TMCG_VerifyPrivateCard
 {
 	for (size_t k = 0; k < c.z.size(); k++)
 		for (size_t w = 0; w < c.z[k].size(); w++)
-			if (!TMCG_VerifyMaskOne(ring.key[k], &c.z[k][w], in, out))
+			if (!TMCG_VerifyMaskOne(ring.keys[k], &c.z[k][w], in, out))
 				return false;
 	return true;
 }
@@ -1240,18 +1240,18 @@ void SchindelhauerTMCG::TMCG_GlueStackSecret
 				// compute r
 				mpz_mul(&cs.r[k][w], &(sigma[sigma_idx].second).r[k][w],
 					&(pi[pi_idx].second).r[k][w]);
-				mpz_mod(&cs.r[k][w], &cs.r[k][w], ring.key[k].m);
+				mpz_mod(&cs.r[k][w], &cs.r[k][w], ring.keys[k].m);
 				if ((mpz_get_ui(&(sigma[sigma_idx].second).b[k][w]) & 1L) &&
 					(mpz_get_ui(&(pi[pi_idx].second).b[k][w]) & 1L))
 				{
-					mpz_mul(&cs.r[k][w], &cs.r[k][w], ring.key[k].y);
-					mpz_mod(&cs.r[k][w], &cs.r[k][w], ring.key[k].m);
+					mpz_mul(&cs.r[k][w], &cs.r[k][w], ring.keys[k].y);
+					mpz_mod(&cs.r[k][w], &cs.r[k][w], ring.keys[k].m);
 				}
 				else
 				{
 					// compute dummy value to prevent timing attacks
-					mpz_mul(tim, &cs.r[k][w], ring.key[k].y);
-					mpz_mod(tim, tim, ring.key[k].m);
+					mpz_mul(tim, &cs.r[k][w], ring.keys[k].y);
+					mpz_mod(tim, tim, ring.keys[k].m);
 				}
 				
 				// XOR

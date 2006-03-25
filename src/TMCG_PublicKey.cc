@@ -40,7 +40,7 @@ TMCG_PublicKey::TMCG_PublicKey
 }
 
 TMCG_PublicKey::TMCG_PublicKey
-	(const TMCG_SecretKey &skey):
+	(const TMCG_SecretKey& skey):
 		name(skey.name), email(skey.email), type(skey.type),
 		nizk(skey.nizk), sig(skey.sig)
 {
@@ -49,7 +49,7 @@ TMCG_PublicKey::TMCG_PublicKey
 }
 
 TMCG_PublicKey::TMCG_PublicKey
-	(const TMCG_PublicKey &pkey):
+	(const TMCG_PublicKey& pkey):
 		name(pkey.name), email(pkey.email), type(pkey.type),
 		nizk(pkey.nizk), sig(pkey.sig)
 {
@@ -290,6 +290,29 @@ bool TMCG_PublicKey::check
 	}
 }
 
+std::string TMCG_PublicKey::fingerprint
+	() const
+{
+	unsigned int hash_size = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
+	char *digest = new char[hash_size];
+	char *hex_digest = new char[(3 * hash_size) + 1];
+	std::ostringstream data;
+	
+	// compute the digest
+	data << "pub|" << name << "|" << email << "|" << type << 
+		"|" << m << "|" << y << "|" << nizk << "|" << sig;
+	h(digest, data.str().c_str(), data.str().length());
+	// convert the digest to a hexadecimal encoded string
+	for (unsigned int i = 0; i < (hash_size / 2); i++)
+		snprintf(hex_digest + (5 * i), 6, "%02X%02X ", 
+			(unsigned char)digest[2 * i], (unsigned char)digest[(2 * i) + 1]);
+	std::string fp_str = hex_digest;
+	// release resources
+	delete [] digest, delete [] hex_digest;
+	
+	return std::string(fp_str);
+}
+
 std::string TMCG_PublicKey::selfid
 	() const
 {
@@ -320,14 +343,14 @@ std::string TMCG_PublicKey::keyid
 	if (tmp == "ERROR")
 		return std::string("ERROR");
 	
-	data << "ID" << size << "^" << tmp.substr(tmp.length() -
+	data << "ID" << size << "^" << tmp.substr(tmp.length() - 
 		((size < tmp.length()) ? size : tmp.length()),
 		(size < tmp.length()) ? size : tmp.length());
 	return data.str();
 }
 
 size_t TMCG_PublicKey::keyid_size
-		(const std::string &s) const
+	(const std::string& s) const
 {
 	// check the format
 	if ((s.length() < 4) || (s.substr(0, 2) != "ID") || (s.find("^") == s.npos))
@@ -408,7 +431,7 @@ bool TMCG_PublicKey::import
 }
 
 std::string TMCG_PublicKey::encrypt
-	(const char *value) const
+	(const char* value) const
 {
 	mpz_t vdata;
 	size_t rabin_s2 = 2 * TMCG_SAEP_S0;
@@ -448,7 +471,7 @@ std::string TMCG_PublicKey::encrypt
 }
 
 bool TMCG_PublicKey::verify
-	(const std::string &data, std::string s) const
+	(const std::string& data, std::string s) const
 {
 	mpz_t foo;
 	

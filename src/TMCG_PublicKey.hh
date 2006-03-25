@@ -67,10 +67,10 @@ struct TMCG_PublicKey
 		();
 	
 	TMCG_PublicKey
-		(const TMCG_SecretKey &skey);
+		(const TMCG_SecretKey& skey);
 	
 	TMCG_PublicKey
-		(const TMCG_PublicKey &pkey);
+		(const TMCG_PublicKey& pkey);
 	
 	TMCG_PublicKey
 		(const std::string& s);
@@ -81,6 +81,9 @@ struct TMCG_PublicKey
 	bool check
 		() const;
 	
+	std::string fingerprint
+		() const;
+	
 	std::string selfid
 		() const;
 	
@@ -88,7 +91,7 @@ struct TMCG_PublicKey
 		(size_t size = TMCG_KEYID_SIZE) const;
 	
 	size_t keyid_size
-		(const std::string &s) const;
+		(const std::string& s) const;
 	
 	std::string sigid
 		(std::string s) const;
@@ -97,10 +100,10 @@ struct TMCG_PublicKey
 		(std::string s);
 	
 	std::string encrypt
-		(const char *value) const;
+		(const char* value) const;
 	
 	bool verify
-		(const std::string &data, std::string s) const;
+		(const std::string& data, std::string s) const;
 	
 	~TMCG_PublicKey
 		();

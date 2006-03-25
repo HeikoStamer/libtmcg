@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.20 2006/03/21 16:42:26 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.21 2006/03/25 19:57:17 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -83,7 +83,8 @@ they did not cheat.
 
 LibTMCG is @emph{Free Software} according to the definition
 of the @uref{http://www.fsf.org/licensing/essays/free-sw.html,,
-Free Software Foundation}.
+Free Software Foundation}. The source code is released under
+the GNU @emph{General Public License} Version 2.
 
 @c **********************************************************
 @section Further Reading
@@ -286,7 +287,10 @@ is sent to @code{stderr}.
 
 @c **********************************************************
 @section Preliminaries
-The most card games are played with a regular card deck, i.e.
+The most card games are played with a regular card deck, i.e.,
+cards where the pattern on the picture sides determine the card
+type (e.g. the King of Spades) and the reverse sides of all cards
+in the deck are indistinguishable.
 
 @c **********************************************************
 @section Preprocessor Defined Global Symbols
@@ -305,8 +309,8 @@ They are only provided here for informational purposes.
 	Defines the security parameter @math{\ell_e} of Groth's interactive
 	shuffle argument@tie{}[Gr05]. The default value is @code{80L} which
 	implies a soundness error probability @math{{} \le 2^{-80}}. For the
-	intended purpose of this library the chosen bound seems to be
-	reasonable small enough.
+	intended purpose of LibTMCG this bound seems to be reasonable small
+	enough.
 @end defmac
 
 @defmac TMCG_DDH_SIZE
@@ -347,8 +351,9 @@ value is @code{8} which spans a reasonable name space for at least
 Each key identifier starts with the string @code{ID} followed by
 the decimal coded value @code{TMCG_KEYID_SIZE} and an appended
 carret symbol @code{^}. The final suffix consists of number
-@code{TMCG_KEYID_SIZE} characters of the self signature. This suffix
-has hopefully enough entropy to be used as unique key identifier.
+@code{TMCG_KEYID_SIZE} alphanumerical characters of the self signature.
+This suffix has enough entropy included to be used as unique key
+identifier.
 @end defmac
 
 @defmac TMCG_KEY_NIZK_STAGE1
@@ -451,6 +456,9 @@ The default value is @code{2048}.
 
 @c **********************************************************
 @section Public Data Types and Classes
+This section describes the important data types and classes
+that are necessary to create a secure card game. Private methods
+and internally used members are not explained.
 
 @subsection Data Types
 @cindex Data Types
@@ -776,18 +784,19 @@ encoding scheme, i.e. @code{VTMF_Card}, is highly recommended.
 @subsubsection Stacks
 @cindex Stacks
 All of the following data types are generic containers that can be
-instantiated as C++ templates with the former explained @code{*_Card}
-and @code{*_CardSecret} data types, respectively.
+instantiated as C++ templates with the former explained @code{Card}
+and @code{CardSecret} data types, respectively.
 
 @deftp {Data type} TMCG_Stack<@var{CardType}>
 	This @code{struct} is a simple container for cards of the specified
 	@code{@var{CardType}}. Currently, the elements can be either of type
 	@code{TMCG_Card} or @code{VTMF_Card} depending on which kind of encoding
 	scheme is used. The @code{TMCG_Stack} structure is mainly used to represent
-	a stack of hidden cards, i.e. playing cards that are stacked in a face-down
+	a stack of masked cards, i.e. playing cards that are stacked in a face-down
 	manner. It can be either a public stack where all participants have access to
-	or a private stack also known as the players' hand. However, if the
-	corresponding card secrets are known it can also serve as an open stack.
+	or even a private stack, e.g., the players' hand. If the corresponding
+	card types are known it can also serve as an ``open stack'', although
+	@code{TMCG_OpenStack} is more suitable in that case.
 	
 	@deftypecv {Member} TMCG_Stack {std::vector<@var{CardType}>} stack
 		This is the container that is used internally for storing the cards.
@@ -1075,26 +1084,317 @@ and @code{*_CardSecret} data types, respectively.
 
 @subsubsection Cryptographic Keys
 @cindex Keys
-LibTMCG only provides the key structures for the enconding scheme of Schindelhauer,
-because it is inefficient to perform the underlying kind of key generation for
-every new established game session. Furthermore, the keys can be also used to ensure
-the confidentiality and integrity of text messages, even if the scheme of Barnett and
-Smart has been applied for the card encoding. Therefore these data types may be
-of independent interest. However, like for every public key cryptosystem a trusted
-@acronym{PKI, Public Key Infrastructure} is neccessary.
+LibTMCG only provides the key data types for the encoding scheme of Schindelhauer@tie{}[Sc98],
+because it is very inefficient to perform the corresponding key generation in every new game
+session. Furthermore, the keys can be used to ensure the confidentiality and integrity of short
+messages, even if the scheme of Barnett and Smart@tie{}[BS03] has been applied for the card
+encoding. Therefore these structures may be of independent interest. However, like in every
+public key cryptosystem a trusted @acronym{PKI, Public Key Infrastructure} is needed. This
+may not be a serious concern, if the players compare their key fingerprints over a secure
+channel or if the service provider exhibits public key certificates.
 
 @deftp {Data type} TMCG_SecretKey
+	This @code{struct} represents the secret part of the TMCG key. The underlying public key
+	cryptosystem is due to Rabin with minor modifications for encryption padding (SAEP scheme
+	of Boneh) and digital signatures (PRab scheme of Bellare and Rogaway).
+	
+	@deftypecv {Member} TMCG_SecretKey {std::string} name
+		This string contains the name or a pseudonym of the key owner.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_SecretKey {std::string} email
+		This string contains the email address of the key owner.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_SecretKey {std::string} type
+		This string contains information about the key type. The common
+		prefix is @code{TMCG/RABIN}. It is followed by the decimal encoded
+		bit size of the modulus @math{m}. The suffix @code{NIZK} signals
+		that the correctness of the key is shown by an appended non-interactive
+		zero-knowledge proof. The single parts are separated by underscore
+		characters @code{_}, e.g., @code{TMCG/RABIN_1024_NIZK} has the correct
+		form.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_SecretKey {std::string} nizk
+		This string contains two stages of non-interactive zero-knowledge
+		proof of Gennaro, Micciancio and Rabin (ACM CCS, 1998). They show
+		that the modulus @math{m} was correctly generated. Further there is another
+		non-interactive zero-knowledge proof appended which shows that the condition
+		@math{y\in{\bf NQR}^\circ_m} holds.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_SecretKey {std::string} sig
+		This string contains the self signature of the public key.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_SecretKey {mpz_t} m
+		This is the public modulus @math{m = p \cdot q} which is the product
+		of two secret primes @math{p} and @math{q}. The size of @math{m}
+		is determined by the security parameter @code{TMCG_QRA_SIZE}.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_SecretKey {mpz_t} y
+		This is the public quadratic non-residue @math{y\in {\bf NQR}^\circ_m}
+		which is used by several zero-knowledge proofs of the toolbox.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_SecretKey {mpz_t} p
+		This is the secret prime number @math{p} which is a factor of the
+		modulus @math{m}.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_SecretKey {mpz_t} q
+		This is the secret prime number @math{q} which is a factor of the
+		modulus @math{m}.
+	@end deftypecv
+	
+	@defop {Constructor} TMCG_SecretKey TMCG_SecretKey ()
+		This default constructor initializes an empty secret key.
+	@end defop
+	
+	@deftypeop {Constructor} TMCG_SecretKey {} TMCG_SecretKey (@code{const std::string&} n, @code{const std::string&} e, @code{unsigned long int} keysize @code{=TMCG_QRA_SIZE})
+		This constructor generates a new secret key where @var{n} is the name or a
+		pseudonym of the owner, @var{e} is a corresponding email address, and
+		@var{keysize} is the desired bit length of the modulus @math{m}. The
+		default value of the last argument is set to @code{TMCG_QRA_SIZE},
+		if @var{keysize} is omitted in the call.
+	@end deftypeop
+	
+	@deftypeop {Constructor} TMCG_SecretKey {} TMCG_SecretKey (@code{const std::string&} s)
+		This constructor initializes the key from a correctly formated
+		input string @var{s}.
+	@end deftypeop
+	
+	@deftypeop {Constructor} TMCG_SecretKey {} TMCG_SecretKey (@code{const TMCG_SecretKey&} that)
+		This is a simple copy-constructor and @var{that} is the key to be copied.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_SecretKey TMCG_SecretKey& = (@code{const TMCG_SecretKey&} that)
+		This is a simple assignment-operator and @var{that} is the key to be assigned.
+	@end deftypeop
+	
+	@deftypemethod TMCG_SecretKey bool check ()
+		This method tests whether the self signature is valid and whether the
+		non-interactive zero-knowledge proofs are sound. It returns @code{true},
+		if all checks have been successfully passed. Due to the computational
+		complexity of the verification procedure these checks are extremely
+		time-consuming.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_SecretKey {std::string} fingerprint ()
+		This method returns the fingerprint of the key. The fingerprint is the
+		hexadecimal notation of the hash value (algorithm @code{TMCG_GCRY_MD_ALGO})
+		on the members @code{name}, @code{email}, @code{type}, @code{m}, @code{y},
+		@code{nizk}, and @code{sig}.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_SecretKey {std::string} selfid ()
+		This method returns the real value of the self signature. The string
+		@code{ERROR} is returned, if any parse error occurred. The string
+		@code{SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG} is returned,
+		if the self signature @code{sig} was empty.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_SecretKey {std::string} keyid (@code{size_t} size @code{=TMCG_KEYID_SIZE})
+		This method returns the unique key identifier of length @var{size}.
+		The default value of the first argument is set to @code{TMCG_KEYID_SIZE},
+		if @var{size} is omitted in the call.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_SecretKey {size_t} keyid_size (@code{const std::string&} s)
+		This method returns the length of the unique key identifier @var{s}.
+		Zero is returned, if any parse error occurred.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_SecretKey {std::string} sigid (@code{std::string} s)
+		This method returns the unique key identifier which is included in the
+		signature @var{s}. The string @code{ERROR} is returned, if any parse
+		error occurred.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_SecretKey bool import (@code{std::string} s)
+		This method imports the key from a correctly formated input string
+		@var{s}. It returns @code{true}, if the import was successful.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_SecretKey	bool decrypt (@code{char*} value, @code{std::string} s)
+		This method decrypts the given encryption packet @var{s} and stores
+		the content in @var{value} which is a pointer to a character array
+		of size @code{TMCG_SAEP_S0}. The method returns @code{true}, if the
+		decryption was successful.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_SecretKey {std::string} sign (@code{const std::string&} data)
+		This method returns a digital signature on @var{data}.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_SecretKey {std::string} encrypt (@code{const char*} value)
+		This method encrypts the content of @var{value} which is a pointer to a
+		character array of size @code{TMCG_SAEP_S0}. The method returns a
+		corresponding encryption packet that can be decrypted by the owner of the
+		secret key.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_SecretKey bool verify (@code{const std::string&} data, @code{std::string} s)
+		This method verifies whether the signature @var{s} on @var{data} is valid
+		or not. It returns @code{true}, if everything was sound.
+	@end deftypemethod
+	
+	@defop {Destructor} TMCG_SecretKey ~TMCG_SecretKey ()
+		This destructor releases all occupied resources.
+	@end defop
 @end deftp
+
+@deftypeop {Operator} TMCG_SecretKey std::ostream& << (@code{std::ostream&} out, @code{const TMCG_SecretKey&} key)
+	This operator exports the given @var{key} to the output stream @var{out}.
+@end deftypeop
+
+@deftypeop {Operator} TMCG_SecretKey std::istream& >> (@code{std::istream&} in, @code{TMCG_SecretKey&} key)
+	This operator imports the given @var{key} from the input stream @var{in}.
+	The data has to be delimited by a newline character. The @code{failbit}
+	is set, if any parse error occurred.
+@end deftypeop
 
 @deftp {Data type} TMCG_PublicKey
+	This @code{struct} represents the public part of the TMCG key.
+	
+	@deftypecv {Member} TMCG_PublicKey {std::string} name
+		This string contains the name or a pseudonym of the key owner.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_PublicKey {std::string} email
+		This string contains the email address of the key owner.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_PublicKey {std::string} type
+		This string contains information about the key type. The common
+		prefix is @code{TMCG/RABIN}. It is followed by the decimal encoded
+		bit size of the modulus @math{m}. The suffix @code{NIZK} signals
+		that the correctness of the key is shown by an appended non-interactive
+		zero-knowledge proof. The single parts are separated by underscore
+		characters @code{_}, e.g., @code{TMCG/RABIN_1024_NIZK} has the correct
+		form.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_PublicKey {std::string} nizk
+		This string contains two stages of non-interactive zero-knowledge
+		proof of Gennaro, Micciancio and Rabin (ACM CCS, 1998). They show
+		that the modulus @math{m} was correctly generated. Further there is another
+		non-interactive zero-knowledge proof appended which shows that the condition
+		@math{y\in{\bf NQR}^\circ_m} holds.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_PublicKey {std::string} sig
+		This string contains the self signature of the public key.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_PublicKey {mpz_t} m
+		This is the public modulus @math{m = p \cdot q} which is the product
+		of two secret primes @math{p} and @math{q}. The size of @math{m}
+		is determined by the security parameter @code{TMCG_QRA_SIZE}.
+	@end deftypecv
+	
+	@deftypecv {Member} TMCG_PublicKey {mpz_t} y
+		This is the public quadratic non-residue @math{y\in {\bf NQR}^\circ_m}
+		which is used by several zero-knowledge proofs of the toolbox.
+	@end deftypecv
+	
+	@defop {Constructor} TMCG_PublicKey TMCG_PublicKey ()
+		This default constructor initializes an empty public key.
+	@end defop
+	
+	@deftypeop {Constructor} TMCG_PublicKey {} TMCG_PublicKey (@code{const TMCG_SecretKey&} skey)
+		This constructor initializes the key using public values
+		of the secret key @var{skey}.
+	@end deftypeop
+	
+	@deftypeop {Constructor} TMCG_PublicKey {} TMCG_PublicKey (@code{const TMCG_PublicKey&} pkey)
+		This is a simple copy-constructor and @var{pkey} is the key to be copied.
+	@end deftypeop
+	
+	@deftypeop {Operator} TMCG_PublicKey TMCG_PublicKey& = (@code{const TMCG_PublicKey&} that)
+		This is a simple assignment-operator and @var{that} is the key to be assigned.
+	@end deftypeop
+	
+	@deftypemethod TMCG_PublicKey bool check ()
+		This method tests whether the self signature is valid and whether the
+		non-interactive zero-knowledge proofs are sound. It returns @code{true},
+		if all checks have been successfully passed. Due to the computational
+		complexity of the verification procedure these checks are extremely
+		time-consuming.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_PublicKey {std::string} fingerprint ()
+		This method returns the fingerprint of the key. The fingerprint is the
+		hexadecimal notation of the hash value (algorithm @code{TMCG_GCRY_MD_ALGO})
+		on the members @code{name}, @code{email}, @code{type}, @code{m}, @code{y},
+		@code{nizk}, and @code{sig}.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_PublicKey {std::string} selfid ()
+		This method returns the real value of the self signature. The string
+		@code{ERROR} is returned, if any parse error occurred. The string
+		@code{SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG} is returned,
+		if the self signature @code{sig} was empty.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_PublicKey {std::string} keyid (@code{size_t} size @code{=TMCG_KEYID_SIZE})
+		This method returns the unique key identifier of length @var{size}.
+		The default value of the first argument is set to @code{TMCG_KEYID_SIZE},
+		if @var{size} is omitted in the call.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_PublicKey {size_t} keyid_size (@code{const std::string&} s)
+		This method returns the length of the unique key identifier @var{s}.
+		Zero is returned, if any parse error occurred.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_PublicKey {std::string} sigid (@code{std::string} s)
+		This method returns the unique key identifier which is included in the
+		signature @var{s}. The string @code{ERROR} is returned, if any parse
+		error occurred.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_PublicKey bool import (@code{std::string} s)
+		This method imports the key from a correctly formated input string
+		@var{s}. It returns @code{true}, if the import was successful.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_PublicKey {std::string} encrypt (@code{const char*} value)
+		This method encrypts the content of @var{value} which is a pointer to a
+		character array of size @code{TMCG_SAEP_S0}. The method returns a
+		corresponding encryption packet that can be decrypted by the owner of the
+		secret key.
+	@end deftypemethod
+	
+	@deftypemethod TMCG_PublicKey bool verify (@code{const std::string&} data, @code{std::string} s)
+		This method verifies whether the signature @var{s} on @var{data} is valid
+		or not. It returns @code{true}, if everything was sound.
+	@end deftypemethod
+	
+	@defop {Destructor} TMCG_PublicKey ~TMCG_PublicKey ()
+		This destructor releases all occupied resources.
+	@end defop
 @end deftp
 
+@deftypeop {Operator} TMCG_PublicKey std::ostream& << (@code{std::ostream&} out, @code{const TMCG_PublicKey&} key)
+	This operator exports the given @var{key} to the output stream @var{out}.
+@end deftypeop
+
+@deftypeop {Operator} TMCG_PublicKey std::istream& >> (@code{std::istream&} in, @code{TMCG_PublicKey&} key)
+	This operator imports the given @var{key} from the input stream @var{in}.
+	The data has to be delimited by a newline character. The @code{failbit}
+	is set, if any parse error occurred.
+@end deftypeop
+
 @deftp {Data type} TMCG_PublicKeyRing
-	This @code{struct} is a simple container for TMCG public keys. There are no
-	particular methods provided by LibTMCG. You have to use the regular interface
-	of @code{std::vector} to access the keys on the ring.
+	This @code{struct} is just a simple container for TMCG public keys. There are
+	no particular methods provided by @code{TMCG_PublicKeyRing}. You must use
+	the regular interface of the STL container @code{std::vector} to have access
+	to the single keys in the ring.
 	
-	@deftypecv {Member} TMCG_PublicKeyRing {std::vector<TMCG_PublicKey>} key
+	@deftypecv {Member} TMCG_PublicKeyRing {std::vector<TMCG_PublicKey>} keys
 		This is the real container that is used to store the keys.
 	@end deftypecv
 	
