@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.22 2006/03/29 09:02:12 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.23 2006/03/29 22:25:48 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -91,7 +91,7 @@ the GNU @emph{General Public License} Version 2.
 The cryptographic background and a detailed discussion of
 the implementation issues is beyond the scope of this manual.
 The interested reader is referred to the following papers:
-@quotation [Sch98]
+@quotation [Sc98]
 	@sc{Christian Schindelhauer}.
 	@emph{Toolbox for Mental Card Games.}@*
 	Technical Report A-98-14, University of L@"ubeck, 1998.
@@ -458,11 +458,11 @@ The default value is @code{2048}.
 @section Public Data Types and Classes
 This section describes the important data types and classes
 that are necessary to create a secure card game. Private methods
-and internally used members are not explained.
+and only internally used members are not explained.
 
 @subsection Data Types
 @cindex Data Types
-LibTMCG provides several data types for playing cards, stacks, and
+LibTMCG provides data types for playing cards, for stacks, and for
 cryptographic keys.
 
 @subsubsection Encoding Schemes for Cards
@@ -730,15 +730,20 @@ encoding scheme, i.e. @code{VTMF_Card}, is highly recommended.
 		This member is the exponent (randomizer) used in the masking operation.
 		It should be chosen uniformly and randomly from @math{{\bf Z}_q}
 		where @math{q} is the order of the finite abelian group @math{G}
-		for which the DDH assumption should hold.
+		for which the DDH assumption holds.
 		
-		According to the results of Koshiba and Kurosawa (see PKC@tie{}2004,
-		LNCS@tie{}2947) the length of this exponent can be shorten to a reasonable
-		value (e.g. 160@tie{}bit), if the corresponding generator @math{g} is
-		adjusted as well. Under the additional @acronym{DLSE, Discrete Logarithm
-		with Short Exponents} assumption the actually used DDH problem in @math{G}
-		seems to be still hard enough. By such an optimization trick we gain a
-		great performance advantage for almost all modular exponentiations.
+		According to the results of Koshiba and Kurosawa (see @emph{Short Exponent
+		Diffie-Hellman Problems}, PKC@tie{}2004, LNCS@tie{}2947) the length of
+		this exponent can be shorten to a more efficient size (e.g. 160@tie{}bit),
+		if the corresponding generator of @math{G} is adjusted as well. Under the
+		additional @acronym{DLSE, Discrete Logarithm with Short Exponents}
+		assumption the DDH problem in @math{G} seems to be still hard.
+		By such an optimization trick we gain a great performance advantage for
+		almost all modular exponentiations that are computed during the masking
+		operation, if the VTMF primitive was instatiated by the later explained
+		class @code{BarnettSmartVTMF_dlog_GroupQR}. Furthermore, the size of the
+		card secret is substantially reduced which results in an improved
+		communication complexity.
 	@end deftypecv
 	
 	@defop {Constructor} VTMF_CardSecret VTMF_CardSecret ()
@@ -1084,18 +1089,22 @@ and @code{CardSecret} data types, respectively.
 
 @subsubsection Cryptographic Keys
 @cindex Keys
-LibTMCG only provides the key data types for the encoding scheme of Schindelhauer@tie{}[Sc98],
-because it is very inefficient to perform the corresponding key generation in every new game
-session. Furthermore, the keys can be used to ensure the confidentiality and integrity of short
-messages, even if the scheme of Barnett and Smart@tie{}[BS03] has been applied for the card
-encoding. Therefore these structures may be of independent interest. However, like in every
-public key cryptosystem a trusted @acronym{PKI, Public Key Infrastructure} is needed. This
-may not be a serious concern, if the players compare their key fingerprints over a secure
-channel or if the service provider exhibits public key certificates.
+LibTMCG provides the key data types only for the encoding scheme of
+Schindelhauer@tie{}[Sc98], because it is very inefficient to perform the
+corresponding key generation for every new game session. Furthermore,
+the keys can be used to ensure the confidentiality and integrity of
+short messages, even if the scheme of Barnett and Smart@tie{}[BS03]
+has been applied for the card encoding. Therefore these structures may
+be of independent interest. However, like in every public key cryptosystem
+a trusted @acronym{PKI, Public Key Infrastructure} is needed. This might
+not be a serious concern in a distributed game environment, if the players
+compare their key fingerprints over a secure channel or if a service
+provider exhibits certificates.
 
 @deftp {Data type} TMCG_SecretKey
-	This @code{struct} represents the secret part of the TMCG key. The underlying public key
-	cryptosystem is due to Rabin with minor modifications for encryption padding (SAEP scheme
+	This @code{struct} represents the secret part of the TMCG key. The
+	underlying public key cryptosystem is due to Rabin with minor
+	modifications for encryption padding (SAEP scheme
 	of Boneh) and digital signatures (PRab scheme of Bellare and Rogaway).
 	
 	@deftypecv {Member} TMCG_SecretKey {std::string} name
@@ -1117,11 +1126,13 @@ channel or if the service provider exhibits public key certificates.
 	@end deftypecv
 	
 	@deftypecv {Member} TMCG_SecretKey {std::string} nizk
-		This string contains two stages of non-interactive zero-knowledge
-		proof of Gennaro, Micciancio and Rabin (ACM CCS, 1998). They show
-		that the modulus @math{m} was correctly generated. Further there is another
-		non-interactive zero-knowledge proof appended which shows that the condition
-		@math{y\in{\bf NQR}^\circ_m} holds.
+		This string contains two stages of the non-interactive zero-knowledge
+		proof of Gennaro, Micciancio, and Rabin (@emph{An Efficient Non-Interactive
+		Statistical Zero-Knowledge Proof System for Quasi-Safe Prime Products},
+		ACM@tie{}CCS@tie{}1998). The proof shows that @math{m} was correctly
+		generated as product of two primes both congruent to 3 (modulo 4).
+		Further there is another non-interactive zero-knowledge proof appended
+		which shows that the condition @math{y\in{\bf NQR}^\circ_m} holds.
 	@end deftypecv
 	
 	@deftypecv {Member} TMCG_SecretKey {std::string} sig
@@ -1136,7 +1147,8 @@ channel or if the service provider exhibits public key certificates.
 	
 	@deftypecv {Member} TMCG_SecretKey {mpz_t} y
 		This is the public quadratic non-residue @math{y\in {\bf NQR}^\circ_m}
-		which is used by several zero-knowledge proofs of the toolbox.
+		which is used in several zero-knowledge proofs of Schindelhauer's
+		encoding scheme@tie{}[Sc98].
 	@end deftypecv
 	
 	@deftypecv {Member} TMCG_SecretKey {mpz_t} p
@@ -1415,11 +1427,56 @@ channel or if the service provider exhibits public key certificates.
 
 @subsection Classes
 @cindex Classes
+LibTMCG provides several C++ classes whose interfaces are necessary
+to perform basic operations in secure card games, e.g., the creation
+of open cards, the masking of cards, the opening of masked cards, the
+verifiable secret shuffle of a stack, and more general tasks like
+distributed key generation and player management. Each class implements
+the main functionality of the corresponding research
+paper@tie{}[Sc98,BS03,Gr05]. The authors of the paper are the prefix of
+the class name and the suffix is an abbreviation of the title.
 
 @subsubsection Verifiable @var{k}-out-of-@var{k} Threshold Masking Function
+The following two classes are concrete instantiations of Barnett and Smart's
+VTMF primitive@tie{}[BS03]. They implement low-level operations on an
+appropriately chosen algebraic group. There are just a few methods and members
+that might be of interest for an application programmer. The other stuff is
+only used internally by high-level operations from @code{SchindelhauerTMCG}
+such that the manual omits the description of these functions here.
 
 @deftp {Class} BarnettSmartVTMF_dlog
-	This class
+	The class implements the discrete logarithm instantiation of the VTMF
+	primitive in the field @math{{\bf Z}/p{\bf Z}}, where @math{p} is a large
+	prime number. The mathematical computations are done in the finite cyclic
+	subgroup @math{G} of prime order @math{q} such that @math{p = kq + 1} holds
+	for some @math{k\in {\bf Z}}. The security relies on the DDH assumption in
+	@math{G}, i.e., the distribution @math{\{g^a, g^b, g^{ab}\}} is computationally
+	indistinguishable from @math{\{g^a, g^b, g^c\}}, where @math{g} is a
+	generator of @math{G} and @math{a, b, c} are chosen at random from
+	@math{{\bf Z}_q}. This assumption is currently believed to hold, if
+	@code{BarnettSmartVTMF_dlog} is instantiated with the predefined
+	security parameters of LibTMCG.
+	
+	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} p
+		This is the public prime number @math{p} which defines the
+		underlying field @math{{\bf Z}/p{\bf Z}}.
+	@end deftypecv
+	
+	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} q
+		This is the public prime number @math{q} which defines the
+		unerlying cyclic group @math{G}. @math{G} is the unique
+		subgroup of @math{{\bf Z}/p{\bf Z}} which has exactly the
+		order @math{q}.
+	@end deftypecv
+	
+	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} g
+		This is the fixed public generator @math{g} of the underlying
+		group @math{G}.
+	@end deftypecv
+	
+	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} k
+		This is an integer @math{k} such that @math{p = kq + 1} holds.
+	@end deftypecv
 	
 	@deftypeop {Constructor} BarnettSmartVTMF_dlog {} BarnettSmartVTMF_dlog (@code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
 	@end deftypeop
@@ -1449,6 +1506,72 @@ channel or if the service provider exhibits public key certificates.
 	@end deftypemethod
 	
 	@defop {Destructor} BarnettSmartVTMF_dlog ~BarnettSmartVTMF_dlog ()
+		This destructor releases all occupied resources.
+	@end defop
+@end deftp
+
+@deftp {Subclass of @code{BarnettSmartVTMF_dlog}} BarnettSmartVTMF_dlog_GroupQR
+	The class implements the discrete logarithm instantiation of the VTMF
+	primitive in the field @math{{\bf Z}/p{\bf Z}}, where @math{p} is a large
+	prime number. The mathematical computations are done in the finite cyclic
+	subgroup @math{G} (quadratic residues modulo @math{p}) of prime order
+	@math{q}, where @math{p = 2q + 1} holds. The security relies on the DDH
+	assumption in @math{G}, i.e., the distribution @math{\{g^a, g^b, g^{ab}\}}
+	is computationally indistinguishable from @math{\{g^a, g^b, g^c\}}, where
+	@math{g} is a generator of @math{G} and @math{a, b, c} are chosen at random
+	from @math{{\bf Z}_q}. This assumption is currently believed to hold, if
+	@code{BarnettSmartVTMF_dlog_GroupQR} is instantiated with the predefined
+	security parameters of LibTMCG.
+	
+	@deftypecv {Member} BarnettSmartVTMF_dlog_GroupQR {mpz_t} p
+		This is the public prime number @math{p} which defines the
+		underlying field @math{{\bf Z}/p{\bf Z}}.
+	@end deftypecv
+	
+	@deftypecv {Member} BarnettSmartVTMF_dlog_GroupQR {mpz_t} q
+		This is the public prime number @math{q} which defines the
+		unerlying cyclic group @math{G}. @math{G} is the unique
+		subgroup of quadratic residues modulo @math{p}. It has
+		exactly the order @math{q}, if @math{p = 2q + 1} holds.
+	@end deftypecv
+	
+	@deftypecv {Member} BarnettSmartVTMF_dlog_GroupQR {mpz_t} g
+		This is the fixed public generator @math{g} of the underlying
+		group @math{G}.
+	@end deftypecv
+	
+	@deftypecv {Member} BarnettSmartVTMF_dlog_GroupQR {mpz_t} k
+		This is an integer @math{k} such that @math{p = kq + 1} holds.
+	@end deftypecv
+	
+	@deftypeop {Constructor} BarnettSmartVTMF_dlog_GroupQR {} BarnettSmartVTMF_dlog_GroupQR (@code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} exponentsize @code{=TMCG_DLSE_SIZE})
+	@end deftypeop
+	
+	@deftypeop {Constructor} BarnettSmartVTMF_dlog_GroupQR {} BarnettSmartVTMF_dlog_GroupQR (@code{std::istream&} in, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} exponentsize @code{=TMCG_DLSE_SIZE})
+	@end deftypeop
+	
+	@deftypemethod BarnettSmartVTMF_dlog_GroupQR bool CheckGroup ()
+	@end deftypemethod
+	
+	@deftypemethod BarnettSmartVTMF_dlog_GroupQR void PublishGroup (@code{std::ostream&} out)
+	@end deftypemethod
+	
+	@deftypemethod BarnettSmartVTMF_dlog_GroupQR void KeyGenerationProtocol_GenerateKey ()
+	@end deftypemethod
+	
+	@deftypemethod BarnettSmartVTMF_dlog_GroupQR void KeyGenerationProtocol_PublishKey (@code{std::ostream&} out)
+	@end deftypemethod
+	
+	@deftypemethod BarnettSmartVTMF_dlog_GroupQR bool KeyGenerationProtocol_UpdateKey (@code{std::istream&} in)
+	@end deftypemethod
+	
+	@deftypemethod BarnettSmartVTMF_dlog_GroupQR bool KeyGenerationProtocol_RemoveKey (@code{std::istream&} in)
+	@end deftypemethod
+	
+	@deftypemethod BarnettSmartVTMF_dlog_GroupQR void KeyGenerationProtocol_Finalize ()
+	@end deftypemethod
+	
+	@defop {Destructor} BarnettSmartVTMF_dlog_GroupQR ~BarnettSmartVTMF_dlog_GroupQR ()
 		This destructor releases all occupied resources.
 	@end defop
 @end deftp

@@ -1,5 +1,5 @@
 /*******************************************************************************
-   BarnettSmartVTMF_dlog.cc, Verifiable l-out-of-l Threshold Masking Function
+   BarnettSmartVTMF_dlog.cc, Verifiable k-out-of-k Threshold Masking Function
 
      Adam Barnett, Nigel P. Smart: 'Mental Poker Revisited',
      Cryptography and Coding 2003, LNCS 2898, pp. 370--383, 2003.
@@ -9,7 +9,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
