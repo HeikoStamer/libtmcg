@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.21 2006/03/25 19:57:17 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.22 2006/03/29 09:02:12 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -1415,6 +1415,47 @@ channel or if the service provider exhibits public key certificates.
 
 @subsection Classes
 @cindex Classes
+
+@subsubsection Verifiable @var{k}-out-of-@var{k} Threshold Masking Function
+
+@deftp {Class} BarnettSmartVTMF_dlog
+	This class
+	
+	@deftypeop {Constructor} BarnettSmartVTMF_dlog {} BarnettSmartVTMF_dlog (@code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
+	@end deftypeop
+	
+	@deftypeop {Constructor} BarnettSmartVTMF_dlog {} BarnettSmartVTMF_dlog (@code{std::istream&} in, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
+	@end deftypeop
+	
+	@deftypemethod BarnettSmartVTMF_dlog bool CheckGroup ()
+	@end deftypemethod
+	
+	@deftypemethod BarnettSmartVTMF_dlog void PublishGroup (@code{std::ostream&} out)
+	@end deftypemethod
+	
+	@deftypemethod BarnettSmartVTMF_dlog void KeyGenerationProtocol_GenerateKey ()
+	@end deftypemethod
+	
+	@deftypemethod BarnettSmartVTMF_dlog void KeyGenerationProtocol_PublishKey (@code{std::ostream&} out)
+	@end deftypemethod
+	
+	@deftypemethod BarnettSmartVTMF_dlog bool KeyGenerationProtocol_UpdateKey (@code{std::istream&} in)
+	@end deftypemethod
+	
+	@deftypemethod BarnettSmartVTMF_dlog bool KeyGenerationProtocol_RemoveKey (@code{std::istream&} in)
+	@end deftypemethod
+	
+	@deftypemethod BarnettSmartVTMF_dlog void KeyGenerationProtocol_Finalize ()
+	@end deftypemethod
+	
+	@defop {Destructor} BarnettSmartVTMF_dlog ~BarnettSmartVTMF_dlog ()
+		This destructor releases all occupied resources.
+	@end defop
+@end deftp
+
+
+@subsubsection Verifiable Secret Shuffle of Homomorphic Encryptions
+@subsubsection Toolbox for Mental Card Games
 
 @chapter Examples
 @cindex Examples

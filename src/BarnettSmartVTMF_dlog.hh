@@ -59,7 +59,7 @@ class BarnettSmartVTMF_dlog
 		mpz_t								*fpowm_table_g, *fpowm_table_h;
 		
 	public:
-		unsigned long int		F_size, G_size;
+		unsigned long int					F_size, G_size;
 		mpz_t								p, q, g, k;
 		mpz_t								x_i, h_i, h, d, h_i_fp;
 		std::map<std::string, mpz_ptr>		h_j;
@@ -68,13 +68,13 @@ class BarnettSmartVTMF_dlog
 			(unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		BarnettSmartVTMF_dlog
-			(std::istream &in,
+			(std::istream& in,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		virtual bool CheckGroup
 			() const;
 		void PublishGroup
-			(std::ostream &out) const;
+			(std::ostream& out) const;
 		virtual bool CheckElement
 			(mpz_srcptr a) const;
 		virtual void RandomElement
@@ -84,37 +84,37 @@ class BarnettSmartVTMF_dlog
 		void KeyGenerationProtocol_GenerateKey
 			();
 		void KeyGenerationProtocol_PublishKey
-			(std::ostream &out) const;
+			(std::ostream& out) const;
 		bool KeyGenerationProtocol_UpdateKey
-			(std::istream &in);
+			(std::istream& in);
 		bool KeyGenerationProtocol_RemoveKey
-			(std::istream &in);
+			(std::istream& in);
 		void KeyGenerationProtocol_Finalize
 			();
 		void CP_Prove
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
-			mpz_srcptr alpha, std::ostream &out, bool fpowm_usage = false) const;
+			mpz_srcptr alpha, std::ostream& out, bool fpowm_usage = false) const;
 		bool CP_Verify
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
-			std::istream &in, bool fpowm_usage = false) const;
+			std::istream& in, bool fpowm_usage = false) const;
 		void OR_ProveFirst
 			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
-			mpz_srcptr alpha, std::ostream &out) const;
+			mpz_srcptr alpha, std::ostream& out) const;
 		void OR_ProveSecond
 			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
-			mpz_srcptr alpha, std::ostream &out) const;
+			mpz_srcptr alpha, std::ostream& out) const;
 		bool OR_Verify
 			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
-			std::istream &in) const;
+			std::istream& in) const;
 		virtual void MaskingValue
 			(mpz_ptr r) const;
 		void VerifiableMaskingProtocol_Mask
 			(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r) const;
 		void VerifiableMaskingProtocol_Prove
 			(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr r,
-			std::ostream &out) const;
+			std::ostream& out) const;
 		bool VerifiableMaskingProtocol_Verify
-			(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, std::istream &in) const;
+			(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, std::istream& in) const;
 		void VerifiableRemaskingProtocol_Mask
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2,
 			mpz_ptr r) const;
@@ -123,16 +123,16 @@ class BarnettSmartVTMF_dlog
 			mpz_srcptr r, bool TimingAttackProtection = true) const;
 		void VerifiableRemaskingProtocol_Prove
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr c__1, mpz_srcptr c__2,
-			mpz_srcptr r, std::ostream &out) const;
+			mpz_srcptr r, std::ostream& out) const;
 		bool VerifiableRemaskingProtocol_Verify
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr c__1, mpz_srcptr c__2,
-			std::istream &in) const;
+			std::istream& in) const;
 		void VerifiableDecryptionProtocol_Prove
-			(mpz_srcptr c_1, std::ostream &out) const;
+			(mpz_srcptr c_1, std::ostream& out) const;
 		void VerifiableDecryptionProtocol_Verify_Initalize
 			(mpz_srcptr c_1);
 		bool VerifiableDecryptionProtocol_Verify_Update
-			(mpz_srcptr c_1, std::istream &in);
+			(mpz_srcptr c_1, std::istream& in);
 		void VerifiableDecryptionProtocol_Verify_Finalize
 			(mpz_srcptr c_2, mpz_ptr m) const;
 		virtual ~BarnettSmartVTMF_dlog
