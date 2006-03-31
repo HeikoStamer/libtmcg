@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.23 2006/03/29 22:25:48 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.24 2006/03/31 19:14:08 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -89,7 +89,7 @@ the GNU @emph{General Public License} Version 2.
 @c **********************************************************
 @section Further Reading
 The cryptographic background and a detailed discussion of
-the implementation issues is beyond the scope of this manual.
+the implementation issues are beyond the scope of this manual.
 The interested reader is referred to the following papers:
 @quotation [Sc98]
 	@sc{Christian Schindelhauer}.
@@ -111,7 +111,7 @@ The interested reader is referred to the following papers:
 	@sc{Heiko Stamer}.
 	@emph{Kryptographische Skatrunde.} (in German)@*
 	Offene Systeme (ISSN 1619-0114), 4:10--30, 2004.@*
-	@uref{http://www.gaos.org/~stamer/OS-4-2004-openskat_rev2005.pdf}
+	@uref{http://www.gaos.org/@/~stamer/@/OS-4-2004-openskat_rev2005.pdf}
 @end quotation
 @quotation [St05]
 	@sc{Heiko Stamer}.
@@ -288,9 +288,11 @@ is sent to @code{stderr}.
 @c **********************************************************
 @section Preliminaries
 The most card games are played with a regular card deck, i.e.,
-cards where the pattern on the picture sides determine the card
-type (e.g. the King of Spades) and the reverse sides of all cards
-in the deck are indistinguishable.
+cards where the pattern on the picture side determines the card
+type (e.g. the King of Spades) and where the reverse sides of
+all cards are indistinguishable.
+
+An @emph{open card} is TODO
 
 @c **********************************************************
 @section Preprocessor Defined Global Symbols
@@ -1170,7 +1172,9 @@ provider exhibits certificates.
 		pseudonym of the owner, @var{e} is a corresponding email address, and
 		@var{keysize} is the desired bit length of the modulus @math{m}. The
 		default value of the last argument is set to @code{TMCG_QRA_SIZE},
-		if @var{keysize} is omitted in the call.
+		if @var{keysize} is omitted in the call. Depending on @var{keysize}
+		the generation is an highly time-consuming task and dots are sent to
+		@code{std::cerr} as a progress indicator.
 	@end deftypeop
 	
 	@deftypeop {Constructor} TMCG_SecretKey {} TMCG_SecretKey (@code{const std::string&} s)
@@ -1402,9 +1406,9 @@ provider exhibits certificates.
 
 @deftp {Data type} TMCG_PublicKeyRing
 	This @code{struct} is just a simple container for TMCG public keys. There are
-	no particular methods provided by @code{TMCG_PublicKeyRing}. You must use
-	the regular interface of the STL container @code{std::vector} to have access
-	to the single keys in the ring.
+	no particular methods provided by @code{TMCG_PublicKeyRing}. You have to use
+	the regular interface of the STL container @code{std::vector} to access the
+	single keys of the ring.
 	
 	@deftypecv {Member} TMCG_PublicKeyRing {std::vector<TMCG_PublicKey>} keys
 		This is the real container that is used to store the keys.
@@ -1433,8 +1437,8 @@ of open cards, the masking of cards, the opening of masked cards, the
 verifiable secret shuffle of a stack, and more general tasks like
 distributed key generation and player management. Each class implements
 the main functionality of the corresponding research
-paper@tie{}[Sc98,BS03,Gr05]. The authors of the paper are the prefix of
-the class name and the suffix is an abbreviation of the title.
+paper@tie{}[Sc98,BS03,Gr05]. The author names are a prefix of the class
+name and the following part is an abbreviation of the title.
 
 @subsubsection Verifiable @var{k}-out-of-@var{k} Threshold Masking Function
 The following two classes are concrete instantiations of Barnett and Smart's
@@ -1447,15 +1451,15 @@ such that the manual omits the description of these functions here.
 @deftp {Class} BarnettSmartVTMF_dlog
 	The class implements the discrete logarithm instantiation of the VTMF
 	primitive in the field @math{{\bf Z}/p{\bf Z}}, where @math{p} is a large
-	prime number. The mathematical computations are done in the finite cyclic
+	prime number. The mathematical computations are performed in the finite cyclic
 	subgroup @math{G} of prime order @math{q} such that @math{p = kq + 1} holds
 	for some @math{k\in {\bf Z}}. The security relies on the DDH assumption in
 	@math{G}, i.e., the distribution @math{\{g^a, g^b, g^{ab}\}} is computationally
 	indistinguishable from @math{\{g^a, g^b, g^c\}}, where @math{g} is a
 	generator of @math{G} and @math{a, b, c} are chosen at random from
-	@math{{\bf Z}_q}. This assumption is currently believed to hold, if
-	@code{BarnettSmartVTMF_dlog} is instantiated with the predefined
-	security parameters of LibTMCG.
+	@math{{\bf Z}_q}. Currently, this well-established assumption is believed to
+	hold, if @math{p} and @math{q} are chosen according to the predefined security
+	parameters of LibTMCG.
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} p
 		This is the public prime number @math{p} which defines the
@@ -1464,9 +1468,8 @@ such that the manual omits the description of these functions here.
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} q
 		This is the public prime number @math{q} which defines the
-		unerlying cyclic group @math{G}. @math{G} is the unique
-		subgroup of @math{{\bf Z}/p{\bf Z}} which has exactly the
-		order @math{q}.
+		unerlying cyclic group @math{G}. @math{G} is a subgroup of
+		@math{{\bf Z}/p{\bf Z}} and is exactly of order @math{q}.
 	@end deftypecv
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} g
@@ -1475,34 +1478,83 @@ such that the manual omits the description of these functions here.
 	@end deftypecv
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} k
-		This is an integer @math{k} such that @math{p = kq + 1} holds.
+		This is a public integer @math{k} such that @math{p = kq + 1} holds.
 	@end deftypecv
 	
 	@deftypeop {Constructor} BarnettSmartVTMF_dlog {} BarnettSmartVTMF_dlog (@code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
+		This constructor creates an new VTMF instance. That means, the primes
+		@math{p} and @math{q} are randomly and uniformly chosen such that
+		they have length @var{fieldsize} bit and @var{subgroupsize} bit, respectively.
+		Further, a generator @math{g} for the unique subgroup of order @math{q} is
+		chosen at random. If the arguments are omitted, then @var{fieldsize} and
+		@var{subgroupsize} are set to their default values @code{TMCG_DDH_SIZE} and
+		@code{TMCG_DLSE_SIZE}, respectively.
+		Depending on @var{fieldsize} and @var{subgroupsize} the group generation
+		is an highly time-consuming task and some dots are sent to @code{std::cerr} as
+		a progress indicator.
 	@end deftypeop
 	
 	@deftypeop {Constructor} BarnettSmartVTMF_dlog {} BarnettSmartVTMF_dlog (@code{std::istream&} in, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
+		This constructor initializes the VTMF instance from a correctly formated
+		input stream @var{in}. For example, such a stream can be generated by calling
+		the method @code{PublishGroup} of an already created instance. The arguments
+		@var{fieldsize} and @var{subgroupsize} are stored for later following usage,
+		e.g., by the method @code{CheckGroup} as explained below.
+		If these arguments are omitted, then they are set to the default values
+		@code{TMCG_DDH_SIZE} and @code{TMCG_DLSE_SIZE}, respectively.
 	@end deftypeop
 	
 	@deftypemethod BarnettSmartVTMF_dlog bool CheckGroup ()
+		This method checks whether @math{p} and @math{q} have appropriate sizes
+		with respect to the bit lengths given during the initialization of the
+		corresponding instance. Further, it checks whether @math{p} has the correct
+		form (i.e. @math{p = kq +1}), whether @math{p} and @math{q} are probable
+		prime, and whether @math{g} is a generator of the subgroup @math{G}. It
+		returns @code{true}, if all of these checks have been passed successfully.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog void PublishGroup (@code{std::ostream&} out)
+		This method exports all necessary group parameters of @math{G} to
+		the given output stream @var{out}, so other VTMF instances of @math{G}
+		can be initalized, e.g., with the second constructor of
+		@code{BarnettSmartVTMF_dlog}.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog void KeyGenerationProtocol_GenerateKey ()
+		This method generates a VTMF key pair and stores the pair internally for
+		a later following usage. It must be called before any other part
+		of the key generation protocol is executed. Otherwise, the produced results
+		are wrong.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog void KeyGenerationProtocol_PublishKey (@code{std::ostream&} out)
+		This method exports the public part of the generated VTMF key pair to the
+		given output stream @var{out}. Further, it appends a non-interactive
+		zero-knowledge proof of knowledge which shows that the instance knows the
+		secret part.
+		Due to the non-interactive nature of this proof the method has to be called
+		only once while the computed output can be reused multiple times if necessary.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog bool KeyGenerationProtocol_UpdateKey (@code{std::istream&} in)
+		This method reads the public part of a VTMF key and the proof of knowledege
+		from the input stream @var{in}. It appends the key to the common public key
+		and returns @code{true}, if the given proof was sound. Otherwise, @code{false}
+		is returned.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog bool KeyGenerationProtocol_RemoveKey (@code{std::istream&} in)
+		This method reads the public part of a VTMF key and the corresponding proof
+		of knowledege from the input stream @var{in}. It removes the key from the
+		common public key and returns @code{true}, if the key was previously appended
+		by @code{KeyGenerationProtocol_UpdateKey} as explained above.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog void KeyGenerationProtocol_Finalize ()
+		This method must be called after any update
+		(@code{KeyGenerationProtocol_UpdateKey}) or removal
+		(@code{KeyGenerationProtocol_RemoveKey}) has been performed
+		on the common public key.
 	@end deftypemethod
 	
 	@defop {Destructor} BarnettSmartVTMF_dlog ~BarnettSmartVTMF_dlog ()
@@ -1513,14 +1565,14 @@ such that the manual omits the description of these functions here.
 @deftp {Subclass of @code{BarnettSmartVTMF_dlog}} BarnettSmartVTMF_dlog_GroupQR
 	The class implements the discrete logarithm instantiation of the VTMF
 	primitive in the field @math{{\bf Z}/p{\bf Z}}, where @math{p} is a large
-	prime number. The mathematical computations are done in the finite cyclic
-	subgroup @math{G} (quadratic residues modulo @math{p}) of prime order
+	prime number. The mathematical computations are performed in the finite
+	cyclic subgroup @math{G} (quadratic residues modulo @math{p}) of prime order
 	@math{q}, where @math{p = 2q + 1} holds. The security relies on the DDH
 	assumption in @math{G}, i.e., the distribution @math{\{g^a, g^b, g^{ab}\}}
 	is computationally indistinguishable from @math{\{g^a, g^b, g^c\}}, where
 	@math{g} is a generator of @math{G} and @math{a, b, c} are chosen at random
-	from @math{{\bf Z}_q}. This assumption is currently believed to hold, if
-	@code{BarnettSmartVTMF_dlog_GroupQR} is instantiated with the predefined
+	from @math{{\bf Z}_q}. Currently, this well-established assumption is believed
+	to hold, if @math{p} and @math{q} are chosen according to the predefined
 	security parameters of LibTMCG.
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog_GroupQR {mpz_t} p
@@ -1530,9 +1582,9 @@ such that the manual omits the description of these functions here.
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog_GroupQR {mpz_t} q
 		This is the public prime number @math{q} which defines the
-		unerlying cyclic group @math{G}. @math{G} is the unique
-		subgroup of quadratic residues modulo @math{p}. It has
-		exactly the order @math{q}, if @math{p = 2q + 1} holds.
+		underlying cyclic group @math{G}. @math{G} denotes the unique
+		subgroup of quadratic residues modulo @math{p} which is
+		exactly of order @math{q}, if @math{p = 2q + 1} holds.
 	@end deftypecv
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog_GroupQR {mpz_t} g
@@ -1541,37 +1593,89 @@ such that the manual omits the description of these functions here.
 	@end deftypecv
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog_GroupQR {mpz_t} k
-		This is an integer @math{k} such that @math{p = kq + 1} holds.
+		This integer is fixed by @math{k = 2}.
 	@end deftypecv
 	
-	@deftypeop {Constructor} BarnettSmartVTMF_dlog_GroupQR {} BarnettSmartVTMF_dlog_GroupQR (@code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} exponentsize @code{=TMCG_DLSE_SIZE})
+	@deftypeop {Constructor} BarnettSmartVTMF_dlog_GroupQR {} @*BarnettSmartVTMF_dlog_GroupQR (@code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} exponentsize @code{=TMCG_DLSE_SIZE})
+		This constructor creates an new VTMF instance. That means, the safe prime
+		@math{p} is randomly and uniformly chosen such that it has a length of
+		@var{fieldsize} bit.
+		Further, the generator @math{g} is initially setup with @math{2} and then
+		shifted by @math{@var{fieldsize} - @var{exponentsize}} bit positions,
+		according to the procedure described by Koshiba and Kurosawa (see
+		@emph{Short Exponent Diffie-Hellman Problems}, PKC@tie{}2004, LNCS@tie{}2947).
+		If the arguments are omitted, then @var{fieldsize} and @var{exponentsize}
+		are set to their default values @code{TMCG_DDH_SIZE} and @code{TMCG_DLSE_SIZE},
+		respectively.
+		Depending on @var{fieldsize} and @var{exponentsize} the group generation
+		is an highly time-consuming task and some dots are sent to @code{std::cerr} as
+		a progress indicator.
 	@end deftypeop
 	
-	@deftypeop {Constructor} BarnettSmartVTMF_dlog_GroupQR {} BarnettSmartVTMF_dlog_GroupQR (@code{std::istream&} in, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} exponentsize @code{=TMCG_DLSE_SIZE})
+	@deftypeop {Constructor} BarnettSmartVTMF_dlog_GroupQR {} @*BarnettSmartVTMF_dlog_GroupQR (@code{std::istream&} in, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} exponentsize @code{=TMCG_DLSE_SIZE})
+		This constructor initializes the VTMF instance from a correctly formated
+		input stream @var{in}. For example, such a stream can be generated by calling
+		the method @code{PublishGroup} of an already created instance. The arguments
+		@var{fieldsize} and @var{exponentsize} are stored for later following usage,
+		e.g., by the method @code{CheckGroup} as explained below.
+		If these arguments are omitted, then they are set to the default values
+		@code{TMCG_DDH_SIZE} and @code{TMCG_DLSE_SIZE}, respectively.
 	@end deftypeop
 	
 	@deftypemethod BarnettSmartVTMF_dlog_GroupQR bool CheckGroup ()
+		This method checks whether @math{p} and @math{q} have appropriate sizes
+		with respect to the bit lengths given during the initialization of the
+		corresponding instance. Further, it checks whether @math{p} has the correct
+		form (i.e. @math{p = 2q +1}), whether @math{p} and @math{q} are probable
+		prime, and whether @math{g} is a generator of the subgroup @math{G}. It
+		returns @code{true}, if all of these checks have been passed successfully.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog_GroupQR void PublishGroup (@code{std::ostream&} out)
+		This method exports all necessary group parameters of @math{G} to
+		the given output stream @var{out}, so other VTMF instances of @math{G}
+		can be initalized, e.g., with the second constructor of
+		@code{BarnettSmartVTMF_dlog_GroupQR}.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog_GroupQR void KeyGenerationProtocol_GenerateKey ()
+		This method generates a VTMF key pair and stores the pair internally for
+		a later following usage. It must be called before any other part
+		of the key generation protocol is executed. Otherwise, the produced results
+		are wrong.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog_GroupQR void KeyGenerationProtocol_PublishKey (@code{std::ostream&} out)
+		This method exports the public part of the generated VTMF key pair to the
+		given output stream @var{out}. Further, it appends a non-interactive
+		zero-knowledge proof of knowledge which shows that the instance knows the
+		secret part.
+		Due to the non-interactive nature of this proof the method has to be called
+		only once while the computed output can be reused multiple times if necessary.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog_GroupQR bool KeyGenerationProtocol_UpdateKey (@code{std::istream&} in)
+		This method reads the public part of a VTMF key and the proof of knowledege
+		from the input stream @var{in}. It appends the key to the common public key
+		and returns @code{true}, if the given proof was sound. Otherwise, @code{false}
+		is returned.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog_GroupQR bool KeyGenerationProtocol_RemoveKey (@code{std::istream&} in)
+		This method reads the public part of a VTMF key and the corresponding proof
+		of knowledege from the input stream @var{in}. It removes the key from the
+		common public key and returns @code{true}, if the key was previously appended
+		by @code{KeyGenerationProtocol_UpdateKey} as explained above.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog_GroupQR void KeyGenerationProtocol_Finalize ()
+		This method must be called after any update
+		(@code{KeyGenerationProtocol_UpdateKey}) or removal
+		(@code{KeyGenerationProtocol_RemoveKey}) has been performed
+		on the common public key.
 	@end deftypemethod
 	
-	@defop {Destructor} BarnettSmartVTMF_dlog_GroupQR ~BarnettSmartVTMF_dlog_GroupQR ()
+	@defop {Destructor} BarnettSmartVTMF_dlog_GroupQR @*~BarnettSmartVTMF_dlog_GroupQR ()
 		This destructor releases all occupied resources.
 	@end defop
 @end deftp

@@ -466,7 +466,9 @@ void mpz_lprime
 	
 	assert(psize > qsize);
 	
-	/* Choose randomly a prime number $q$ of appropriate size. */
+	/* Choose randomly a prime number $q$ of appropriate size.
+	   Primes of this type are only for public usage, because
+	   we use weak random numbers here! */
 	do
 		mpz_wrandomb(q, qsize);
 	while ((mpz_sizeinbase(q, 2L) < qsize) || 

@@ -64,7 +64,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 }
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
-	(std::istream &in, unsigned long int fieldsize,
+	(std::istream& in, unsigned long int fieldsize,
 	unsigned long int subgroupsize):
 		F_size(fieldsize), G_size(subgroupsize)
 {
@@ -133,7 +133,7 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 }
 
 void BarnettSmartVTMF_dlog::PublishGroup
-	(std::ostream &out) const
+	(std::ostream& out) const
 {
 	out << p << std::endl << q << std::endl << g << std::endl << k << std::endl;
 }
@@ -212,7 +212,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
 }
 
 void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
-	(std::ostream &out) const
+	(std::ostream& out) const
 {
 	mpz_t v, t, c, r;
 	
@@ -239,7 +239,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
 }
 
 bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
-	(std::istream &in)
+	(std::istream& in)
 {
 	mpz_t foo, t, c, r;
 	
@@ -288,7 +288,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 }
 
 bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_RemoveKey
-	(std::istream &in)
+	(std::istream& in)
 {
 	mpz_t foo, bar;
 	
@@ -338,7 +338,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_Finalize
 
 void BarnettSmartVTMF_dlog::CP_Prove
 	(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh, mpz_srcptr alpha,
-	std::ostream &out, bool fpowm_usage) const
+	std::ostream& out, bool fpowm_usage) const
 {
 	mpz_t a, b, omega, c, r;
 	
@@ -378,7 +378,7 @@ void BarnettSmartVTMF_dlog::CP_Prove
 
 bool BarnettSmartVTMF_dlog::CP_Verify
 	(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
-	std::istream &in, bool fpowm_usage) const
+	std::istream& in, bool fpowm_usage) const
 {
 	mpz_t a, b, c, r;
 	
@@ -428,7 +428,7 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 
 void BarnettSmartVTMF_dlog::OR_ProveFirst
 	(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
-		mpz_srcptr alpha, std::ostream &out) const
+		mpz_srcptr alpha, std::ostream& out) const
 {
 	mpz_t v_1, v_2, w, t_1, t_2, c_1, c_2, r_1, r_2, c, tmp;
 	
@@ -466,7 +466,7 @@ void BarnettSmartVTMF_dlog::OR_ProveFirst
 
 void BarnettSmartVTMF_dlog::OR_ProveSecond
 	(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
-		mpz_srcptr alpha, std::ostream &out) const
+		mpz_srcptr alpha, std::ostream& out) const
 {
 	mpz_t v_1, v_2, w, t_1, t_2, c_1, c_2, r_1, r_2, c, tmp;
 	
@@ -504,7 +504,7 @@ void BarnettSmartVTMF_dlog::OR_ProveSecond
 
 bool BarnettSmartVTMF_dlog::OR_Verify
 	(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
-		std::istream &in) const
+		std::istream& in) const
 {
 	mpz_t c_1, c_2, r_1, r_2, t_1, t_2, c, tmp;
 	
@@ -570,7 +570,7 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
 
 void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Prove
 	(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr r,
-	std::ostream &out) const
+	std::ostream& out) const
 {
 	mpz_t foo;
 	
@@ -585,7 +585,7 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Prove
 }
 
 bool BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Verify
-	(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, std::istream &in) const
+	(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, std::istream& in) const
 {
 	mpz_t foo, bar;
 	
@@ -653,7 +653,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Prove
 	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr c__1, mpz_srcptr c__2,
-	mpz_srcptr r, std::ostream &out) const
+	mpz_srcptr r, std::ostream& out) const
 {
 	mpz_t foo, bar;
 	
@@ -673,7 +673,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Prove
 
 bool BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Verify
 	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr c__1, mpz_srcptr c__2,
-	std::istream &in) const
+	std::istream& in) const
 {
 	mpz_t foo, bar;
 	
@@ -707,7 +707,7 @@ bool BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Verify
 }
 
 void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Prove
-	(mpz_srcptr c_1, std::ostream &out) const
+	(mpz_srcptr c_1, std::ostream& out) const
 {
 	mpz_t d_i;
 	
@@ -731,7 +731,7 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Initalize
 }
 
 bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
-	(mpz_srcptr c_1, std::istream &in)
+	(mpz_srcptr c_1, std::istream& in)
 {
 	mpz_t d_j, h_j_fp, foo, bar;
 	std::ostringstream fp;

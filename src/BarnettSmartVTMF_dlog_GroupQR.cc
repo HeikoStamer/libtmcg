@@ -56,7 +56,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 }
 
 BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
-	(std::istream &in,
+	(std::istream& in,
 	unsigned long int fieldsize, unsigned long int exponentsize):
 		BarnettSmartVTMF_dlog(in, fieldsize, 0L), E_size(exponentsize)
 {
