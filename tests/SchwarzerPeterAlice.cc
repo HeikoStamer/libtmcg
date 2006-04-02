@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 // include the libTMCG header file
 #include <libTMCG.hh>
 
+// use Groth's efficient shuffle argument
 #define GROTH
 
 int main
@@ -62,23 +63,26 @@ int main
 	vtmf->KeyGenerationProtocol_Finalize();
 	
 #ifdef GROTH
-	std::vector<PedersenCommitmentScheme*> com;
-	std::vector<GrothVSSHE*> vsshe;
-	for (size_t i = 2; i <= 25; i++)
+	// create an instance of Groth's shuffle argument for <= 25 cards
+	GrothVSSHE *vsshe = new GrothVSSHE(25, vtmf->p, vtmf->q, vtmf->k, 
+		vtmf->g, vtmf->h);
+	vsshe->PublishGroup(std::cout);
+	if (!vsshe->CheckGroup())
 	{
-		std::stringstream lej;
-		PedersenCommitmentScheme *c =
-			new PedersenCommitmentScheme(i, vtmf->p, vtmf->q, vtmf->k);
-		
-		com.push_back(c);
-		c->PublishGroup(std::cout);
-		lej << vtmf->p << std::endl << vtmf->q << std::endl << vtmf->g << 
-				std::endl << vtmf->h << std::endl;
-		c->PublishGroup(lej);
-		vsshe.push_back(new GrothVSSHE(i, lej));
-		std::cerr << ",";
+		std::cerr << "Groth's shuffle argument was not sound!" << std::endl;
+		return -1;
 	}
-	std::cerr << std::endl;
+	if (mpz_cmp(vtmf->q, vsshe->com->q))
+	{
+		std::cerr << "VSSHE: Subgroup order does not match!" << std::endl;
+		return -1;
+	}
+	if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) || 
+		mpz_cmp(vtmf->g, vsshe->g) || mpz_cmp(vtmf->h, vsshe->h))
+	{
+		std::cerr << "VSSHE: Encryption scheme does not match!" << std::endl;
+		return -1;
+	}
 #endif
 	
 	// create a deck of 25 cards (12 pairs and the "Schwarzer Peter")
@@ -109,7 +113,7 @@ int main
 	std::cout << stack_Alice << std::endl; // send the result to Bob
 #ifdef GROTH
 	tmcg->TMCG_ProveStackEquality_Groth(stack, stack_Alice, secret, vtmf,
-		vsshe[25 - 2], std::cin, std::cout); // Groth's efficient shuffle proof
+		vsshe, std::cin, std::cout); // Groth's efficient shuffle argument
 #else
 	tmcg->TMCG_ProveStackEquality(stack, stack_Alice, secret, false, vtmf,
 		std::cin, std::cout); // prove the correctness of the operation
@@ -124,7 +128,7 @@ int main
 	}
 #ifdef GROTH
 	if (!tmcg->TMCG_VerifyStackEquality_Groth(stack_Alice, stack_Bob, vtmf,
-		vsshe[25 - 2], std::cin, std::cout)) // Groth's efficient shuffle proof
+		vsshe, std::cin, std::cout)) // Groth's efficient shuffle argument
 	{
 		std::cerr << "StackEquality: proof of correctness failed!" << std::endl;
 		return -1;
@@ -326,7 +330,7 @@ int main
 				std::cout << stack_Alice << std::endl; // send the result to Bob
 #ifdef GROTH
 				tmcg->TMCG_ProveStackEquality_Groth(hand_Alice, stack_Alice, secret,
-					vtmf, vsshe[hand_Alice.size() - 2], std::cin, std::cout);
+					vtmf, vsshe, std::cin, std::cout);
 #else
 				tmcg->TMCG_ProveStackEquality(hand_Alice, stack_Alice, secret, false,
 					vtmf, std::cin, std::cout);
@@ -356,7 +360,7 @@ int main
 				}
 #ifdef GROTH
 				if (!tmcg->TMCG_VerifyStackEquality_Groth(hand_Bob, stack_Bob, vtmf,
-					vsshe[hand_Bob.size() - 2], std::cin, std::cout))
+					vsshe, std::cin, std::cout)) // verify Groth's shuffle argument
 				{
 					std::cerr << "StackEquality: proof of correctness failed!" << std::endl;
 					return -1;

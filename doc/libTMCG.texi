@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.24 2006/03/31 19:14:08 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.25 2006/04/02 19:51:34 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -57,7 +57,7 @@ Free Documentation License''.
 @chapter Introduction
 `@acronym{LibTMCG}' is a general purpose C++ library for
 creating secure electronic card games. The most remarkable
-feature is the absence of a trusted third party (TTP), i.e.
+feature is the absence of a trusted third party (TTP), i.e.,
 neither a central game server nor trusted hardware components
 are necessary. To emphasize this point again: With the present
 library there is no need for an independent referee, because
@@ -77,7 +77,7 @@ Our implementation relies on advanced cryptographic
 techniques---the so-called zero-knowledge proofs. Using
 these `building blocks' the high-level protocols minimize
 the effect of coalitions and preserve the confidentiality
-of the players' strategy, i.e. the players are not required
+of the players' strategy, i.e., the players are not required
 to reveal their cards at the end of the game to show that
 they did not cheat.
 
@@ -269,7 +269,7 @@ LDADD = $(LIBTMCG_LIBS)
 @c **********************************************************
 @section Initializing the Library
 The first step is the initialization of LibTMCG. The following
-function must be invoked early in your program, i.e. before
+function must be invoked early in your program, i.e., before
 you make use of any other capability of LibTMCG.
 
 @deftypefun bool init_libTMCG ()
@@ -333,7 +333,7 @@ and DLOG. The default value is @code{160L}.
 Defines the message digest algorithm for digital signatures and
 the Fiat-Shamir heuristic. The security of the most non-interactive
 zero-knowledge proofs (NIZK) is proved in the so-called random
-oracle model, i.e. one supposes that the used hash function behaves
+oracle model, i.e., one supposes that the used hash function behaves
 like an ideal random function (which cannot exist in a real world scenario).
 However, this assumption seems to be reasonable, if the hash function
 is carefully implemented.
@@ -460,7 +460,7 @@ The default value is @code{2048}.
 @section Public Data Types and Classes
 This section describes the important data types and classes
 that are necessary to create a secure card game. Private methods
-and only internally used members are not explained.
+and internally used members are not explained.
 
 @subsection Data Types
 @cindex Data Types
@@ -799,9 +799,9 @@ and @code{CardSecret} data types, respectively.
 	@code{@var{CardType}}. Currently, the elements can be either of type
 	@code{TMCG_Card} or @code{VTMF_Card} depending on which kind of encoding
 	scheme is used. The @code{TMCG_Stack} structure is mainly used to represent
-	a stack of masked cards, i.e. playing cards that are stacked in a face-down
+	a stack of masked cards, i.e., playing cards that are stacked in a face-down
 	manner. It can be either a public stack where all participants have access to
-	or even a private stack, e.g., the players' hand. If the corresponding
+	or even a private stack, e.g. the players' hand. If the corresponding
 	card types are known it can also serve as an ``open stack'', although
 	@code{TMCG_OpenStack} is more suitable in that case.
 	
@@ -1099,8 +1099,8 @@ short messages, even if the scheme of Barnett and Smart@tie{}[BS03]
 has been applied for the card encoding. Therefore these structures may
 be of independent interest. However, like in every public key cryptosystem
 a trusted @acronym{PKI, Public Key Infrastructure} is needed. This might
-not be a serious concern in a distributed game environment, if the players
-compare their key fingerprints over a secure channel or if a service
+not be a serious concern for a distributed game environment, if the players
+compare their key fingerprints on a secure channel or if the service
 provider exhibits certificates.
 
 @deftp {Data type} TMCG_SecretKey
@@ -1431,25 +1431,38 @@ provider exhibits certificates.
 
 @subsection Classes
 @cindex Classes
-LibTMCG provides several C++ classes whose interfaces are necessary
-to perform basic operations in secure card games, e.g., the creation
-of open cards, the masking of cards, the opening of masked cards, the
-verifiable secret shuffle of a stack, and more general tasks like
-distributed key generation and player management. Each class implements
-the main functionality of the corresponding research
+LibTMCG consists of several C++ classes. Some of them are only extensions
+or optimizations, but other provide necessary interfaces to perform the basic
+operations in secure card games, e.g., the creation of open cards, the masking
+of cards, the opening of masked cards, the verifiable secret shuffle of a stack,
+and more general tasks like distributed key generation procedures. Each class
+implements the main functionality of the corresponding research
 paper@tie{}[Sc98,BS03,Gr05]. The author names are a prefix of the class
-name and the following part is an abbreviation of the title.
+name and the then following part is an abbreviation of the title.
 
 @subsubsection Verifiable @var{k}-out-of-@var{k} Threshold Masking Function
-The following two classes are concrete instantiations of Barnett and Smart's
-VTMF primitive@tie{}[BS03]. They implement low-level operations on an
-appropriately chosen algebraic group. There are just a few methods and members
-that might be of interest for an application programmer. The other stuff is
-only used internally by high-level operations from @code{SchindelhauerTMCG}
-such that the manual omits the description of these functions here.
+The two classes of this subsection are concrete instantiations of Barnett
+and Smart's VTMF primitive@tie{}[BS03]. More formally, the authors specify
+four different protocols:
+@itemize @bullet
+	@item Key Generation Protocol
+	@item Verifiable Masking Protocol
+	@item Verifiable Re-masking Protocol
+	@item Verifiable Decryption Protocol
+@end itemize
+Each protocol uses low-level operations on an appropriately chosen algebraic
+group @math{G}. The choice of this group is crucial to the security of the
+card encoding scheme and thus to the high-level operations on cards resp.
+stacks.
+
+There are just a few methods and members of these classes that might be of
+interest for an application programmer, e.g. the methods of the key generation
+protocol. The other stuff is only used internally by high-level operations
+of @code{SchindelhauerTMCG}. Therefore this manual omits the description of
+such internal functions and members.
 
 @deftp {Class} BarnettSmartVTMF_dlog
-	The class implements the discrete logarithm instantiation of the VTMF
+	This class implements the discrete logarithm instantiation of the VTMF
 	primitive in the field @math{{\bf Z}/p{\bf Z}}, where @math{p} is a large
 	prime number. The mathematical computations are performed in the finite cyclic
 	subgroup @math{G} of prime order @math{q} such that @math{p = kq + 1} holds
@@ -1481,8 +1494,12 @@ such that the manual omits the description of these functions here.
 		This is a public integer @math{k} such that @math{p = kq + 1} holds.
 	@end deftypecv
 	
+	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} h
+		This is the common public key @math{h}.
+	@end deftypecv
+	
 	@deftypeop {Constructor} BarnettSmartVTMF_dlog {} BarnettSmartVTMF_dlog (@code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
-		This constructor creates an new VTMF instance. That means, the primes
+		This constructor creates a new VTMF instance. That means, the primes
 		@math{p} and @math{q} are randomly and uniformly chosen such that
 		they have length @var{fieldsize} bit and @var{subgroupsize} bit, respectively.
 		Further, a generator @math{g} for the unique subgroup of order @math{q} is
@@ -1490,7 +1507,7 @@ such that the manual omits the description of these functions here.
 		@var{subgroupsize} are set to their default values @code{TMCG_DDH_SIZE} and
 		@code{TMCG_DLSE_SIZE}, respectively.
 		Depending on @var{fieldsize} and @var{subgroupsize} the group generation
-		is an highly time-consuming task and some dots are sent to @code{std::cerr} as
+		is a very time-consuming task and some dots are sent to @code{std::cerr} as
 		a progress indicator.
 	@end deftypeop
 	
@@ -1499,7 +1516,7 @@ such that the manual omits the description of these functions here.
 		input stream @var{in}. For example, such a stream can be generated by calling
 		the method @code{PublishGroup} of an already created instance. The arguments
 		@var{fieldsize} and @var{subgroupsize} are stored for later following usage,
-		e.g., by the method @code{CheckGroup} as explained below.
+		e.g. by the method @code{CheckGroup} as explained below.
 		If these arguments are omitted, then they are set to the default values
 		@code{TMCG_DDH_SIZE} and @code{TMCG_DLSE_SIZE}, respectively.
 	@end deftypeop
@@ -1516,7 +1533,7 @@ such that the manual omits the description of these functions here.
 	@deftypemethod BarnettSmartVTMF_dlog void PublishGroup (@code{std::ostream&} out)
 		This method exports all necessary group parameters of @math{G} to
 		the given output stream @var{out}, so other VTMF instances of @math{G}
-		can be initalized, e.g., with the second constructor of
+		can be initalized, e.g. with the second constructor of
 		@code{BarnettSmartVTMF_dlog}.
 	@end deftypemethod
 	
@@ -1563,7 +1580,7 @@ such that the manual omits the description of these functions here.
 @end deftp
 
 @deftp {Subclass of @code{BarnettSmartVTMF_dlog}} BarnettSmartVTMF_dlog_GroupQR
-	The class implements the discrete logarithm instantiation of the VTMF
+	This subclass implements the discrete logarithm instantiation of the VTMF
 	primitive in the field @math{{\bf Z}/p{\bf Z}}, where @math{p} is a large
 	prime number. The mathematical computations are performed in the finite
 	cyclic subgroup @math{G} (quadratic residues modulo @math{p}) of prime order
@@ -1596,19 +1613,23 @@ such that the manual omits the description of these functions here.
 		This integer is fixed by @math{k = 2}.
 	@end deftypecv
 	
+	@deftypecv {Member} BarnettSmartVTMF_dlog_GroupQR {mpz_t} h
+		This is the common public key @math{h}.
+	@end deftypecv
+	
 	@deftypeop {Constructor} BarnettSmartVTMF_dlog_GroupQR {} @*BarnettSmartVTMF_dlog_GroupQR (@code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} exponentsize @code{=TMCG_DLSE_SIZE})
-		This constructor creates an new VTMF instance. That means, the safe prime
+		This constructor creates a new VTMF instance. That means, the safe prime
 		@math{p} is randomly and uniformly chosen such that it has a length of
 		@var{fieldsize} bit.
-		Further, the generator @math{g} is initially setup with @math{2} and then
+		Further, the generator @math{g} is initially set up by @math{2} and then
 		shifted by @math{@var{fieldsize} - @var{exponentsize}} bit positions,
 		according to the procedure described by Koshiba and Kurosawa (see
 		@emph{Short Exponent Diffie-Hellman Problems}, PKC@tie{}2004, LNCS@tie{}2947).
-		If the arguments are omitted, then @var{fieldsize} and @var{exponentsize}
-		are set to their default values @code{TMCG_DDH_SIZE} and @code{TMCG_DLSE_SIZE},
-		respectively.
+		If the arguments of the constructor are omitted, then @var{fieldsize} and
+		@var{exponentsize} are set to their default values @code{TMCG_DDH_SIZE} and
+		@code{TMCG_DLSE_SIZE}, respectively.
 		Depending on @var{fieldsize} and @var{exponentsize} the group generation
-		is an highly time-consuming task and some dots are sent to @code{std::cerr} as
+		is a very time-consuming task and some dots are sent to @code{std::cerr} as
 		a progress indicator.
 	@end deftypeop
 	
@@ -1617,7 +1638,7 @@ such that the manual omits the description of these functions here.
 		input stream @var{in}. For example, such a stream can be generated by calling
 		the method @code{PublishGroup} of an already created instance. The arguments
 		@var{fieldsize} and @var{exponentsize} are stored for later following usage,
-		e.g., by the method @code{CheckGroup} as explained below.
+		e.g. by the method @code{CheckGroup} as explained below.
 		If these arguments are omitted, then they are set to the default values
 		@code{TMCG_DDH_SIZE} and @code{TMCG_DLSE_SIZE}, respectively.
 	@end deftypeop
@@ -1634,7 +1655,7 @@ such that the manual omits the description of these functions here.
 	@deftypemethod BarnettSmartVTMF_dlog_GroupQR void PublishGroup (@code{std::ostream&} out)
 		This method exports all necessary group parameters of @math{G} to
 		the given output stream @var{out}, so other VTMF instances of @math{G}
-		can be initalized, e.g., with the second constructor of
+		can be initalized, e.g. with the second constructor of
 		@code{BarnettSmartVTMF_dlog_GroupQR}.
 	@end deftypemethod
 	
@@ -1680,16 +1701,104 @@ such that the manual omits the description of these functions here.
 	@end defop
 @end deftp
 
-
 @subsubsection Verifiable Secret Shuffle of Homomorphic Encryptions
+Recently, Groth@tie{}[Gr05] has proposed a very efficient solution to perform
+a verifiable shuffle of homomorphically encrypted values. He describes an
+honest verifier zero-knowledge argument which shows the correctness of a
+shuffle. Beside other applications (e.g. verifiable mix networks, electronic
+voting) his protocol can be used to show with overwhelming probablity that
+the secret shuffle of a deck of cards was performed correctly. The
+computational complexity and the produced communication traffic are superior
+to previously deployed techniques (e.g. Schindelhauer's cut-and-choose method).
+LibTMCG provides the first known implementation of Groth's famous protocol.
+However, it can only be used along with the VTMF card encoding scheme of
+Barnett and Smart.
+
+Our implementation uses the unconditionally hiding homomorphic commitment
+scheme due to Pedersen. This choice seems to be reasonable for the intention
+of our library.
+
+Further, to the best of our knowledge it is still unknown whether or not
+Groth's protocol retains the zero-knowledge property, if it is executed in
+a concurrent setting. Hence one should be careful and avoid parallel protocol
+executions of the same instance.
+
+@deftp {Class} GrothVSSHE
+	This class provides the low-level interface for Groth's protocol.
+	There are just a few methods that might be of general interest.
+	All other components are only used internally by high-level operations
+	and thus their description is omitted here.
+	
+	@deftypeop {Constructor} GrothVSSHE {} GrothVSSH (@code{size_t} n, @code{mpz_srcptr} p_ENC, @code{mpz_srcptr} q_ENC, @code{mpz_srcptr} k_ENC, @code{mpz_srcptr} g_ENC, @code{mpz_srcptr} h_ENC, @code{unsigned long int} ell_e @code{=TMCG_GROTH_L_E})
+		This constructor creates a new instance. Its low-level operations
+		are later used to show the correctness of a shuffle of at most
+		@var{n} cards. The protocol and some parameters of the commitment
+		scheme are initialized by the members of the corresponding VTMF
+		instance. Consequently, @var{p_ENC} is the prime number @math{p}
+		which determines the field @math{{\bf Z}/p{\bf Z}}, @var{q_ENC}
+		is the order of the underlying subgroup @math{G}, i.e. the prime
+		number @math{q}, and @var{k_ENC} is the integer such that
+		@math{p = qk + 1} holds. Further, @var{g_ENC} is the generator of
+		@math{G}, i.e. the fixed number @math{g}, and finally @var{h_ENC}
+		is the common public key @math{h}. The positive integer @var{ell_e}
+		is the security parameter which controls the soundness error of
+		the protocol. The default value is defined by @code{TMCG_GROTH_L_E}.
+		
+		Note that the generators of the commitment scheme are randomly
+		and uniformly chosen from @math{{\bf Z}_q}. Therefore this
+		constructor should be only used by the session leader.
+		Further it is important that the VTMF key generation protocol
+		has been finished before the value of @math{h} is passed to the
+		constructor.
+	@end deftypeop
+	
+	@deftypeop {Constructor} GrothVSSHE {} GrothVSSH (@code{size_t} n, @code{std::istream&} in, @code{unsigned long int} ell_e @code{=TMCG_GROTH_L_E})
+		This constructor initializes the instance from a correctly formated
+		input stream @var{in}. For example, such a stream can be generated by
+		calling the method @code{PublishGroup} of an already created instance.
+		Later the instance can be used to show the correctness of a shuffle of
+		at most @var{n} cards.
+		The positive integer @var{ell_e} controls the soundness error of
+		the protocol. The default value is defined by @code{TMCG_GROTH_L_E},
+		if this argument is omitted.
+	@end deftypeop
+	
+	@deftypemethod GrothVSSHE bool CheckGroup ()
+		This method checks whether the initialized commitment scheme is sound.
+		It returns @code{true}, if all tests have been passed successfully.
+	@end deftypemethod
+	
+	@deftypemethod GrothVSSHE void PublishGroup (@code{std::ostream&} out)
+		This method exports all necessary parameters of the instance to
+		the given output stream @var{out}, so other instances can be
+		initalized, e.g. with the second constructor of @code{GrothVSSHE}.
+	@end deftypemethod
+
+	@defop {Destructor} GrothVSSHE ~GrothVSSHE ()
+		This destructor releases all occupied resources.
+	@end defop
+@end deftp
+
 @subsubsection Toolbox for Mental Card Games
 
 @chapter Examples
 @cindex Examples
-Please have a look at the well-documented examples and test programs in the
-directory @file{tests/}, e.g. @file{SchwarzerPeterAlice.cc} and
+First, please have a look at the well-documented examples and test programs in
+the directory @file{tests/}, e.g. @file{SchwarzerPeterAlice.cc} and
 @file{SchwarzerPeterBob.cc}, respectively.
-A detailed exposition with source code fragments will later be included here.
+A detailed exposition including source code fragments will be given in this
+chapter.
+
+@section Key Generation and Game Setup
+@section Operations on Cards
+@subsection Creating an Open Card
+@subsection Masking and Remasking of a Card
+@subsection Opening a Masked Card
+
+@section Operations on Stacks
+@subsection Creating an Open Stack
+@subsection Shuffle a Stack
+@subsection Drawing a Card
 
 
 @c **********************************************************

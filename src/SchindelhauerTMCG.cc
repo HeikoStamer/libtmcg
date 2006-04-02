@@ -1470,7 +1470,7 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality_Groth
 {
 	assert((s.size() == s2.size()) && (s.size() == ss.size()));
 	assert(!mpz_cmp(vtmf->q, vsshe->com->q));
-	assert((s.size() == vsshe->com->g.size()));
+	assert((s.size() <= vsshe->com->g.size()));
 	
 	std::vector<mpz_ptr> R;
 	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
@@ -1653,7 +1653,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Groth
 	BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
 	std::istream &in, std::ostream &out)
 {
-	assert((s.size() == vsshe->com->g.size()));
+	assert((s.size() <= vsshe->com->g.size()));
 	assert(!mpz_cmp(vtmf->q, vsshe->com->q));
 	
 	if (s.size() != s2.size())

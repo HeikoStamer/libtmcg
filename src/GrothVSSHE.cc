@@ -232,7 +232,7 @@ void PedersenCommitmentScheme::PublishGroup
 void PedersenCommitmentScheme::Commit
 	(mpz_ptr c, mpz_ptr r, std::vector<mpz_ptr> m) const
 {
-	assert(m.size() == g.size());
+	assert(m.size() <= g.size());
 	
 	// Choose a randomizer from $\mathbb{Z}_q$
 	mpz_srandomm(r, q);
@@ -241,7 +241,7 @@ void PedersenCommitmentScheme::Commit
 	mpz_t tmp, tmp2;
 	mpz_init(tmp), mpz_init(tmp2);
 	mpz_fspowm(fpowm_table_h, c, h, r, p);
-	for (size_t i = 0; i < g.size(); i++)
+	for (size_t i = 0; i < m.size(); i++)
 	{
 		mpz_fspowm(fpowm_table_g[i], tmp, g[i], m[i], p);
 		mpz_mul(c, c, tmp);
@@ -254,7 +254,7 @@ void PedersenCommitmentScheme::CommitBy
 	(mpz_ptr c, mpz_srcptr r, std::vector<mpz_ptr> m,
 	bool TimingAttackProtection) const
 {
-	assert(m.size() == g.size());
+	assert(m.size() <= g.size());
 	assert(mpz_cmp(r, q) < 0);
 	
 	// Compute the commitment $c := g_1^{m_1} \cdots g_n^{m_n} h^r \bmod p$
@@ -264,7 +264,7 @@ void PedersenCommitmentScheme::CommitBy
 		mpz_fspowm(fpowm_table_h, c, h, r, p);
 	else
 		mpz_fpowm(fpowm_table_h, c, h, r, p);
-	for (size_t i = 0; i < g.size(); i++)
+	for (size_t i = 0; i < m.size(); i++)
 	{
 		if (TimingAttackProtection)
 			mpz_fspowm(fpowm_table_g[i], tmp, g[i], m[i], p);
@@ -279,7 +279,7 @@ void PedersenCommitmentScheme::CommitBy
 bool PedersenCommitmentScheme::Verify
 	(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m) const
 {
-	assert(m.size() == g.size());
+	assert(m.size() <= g.size());
 	
 	mpz_t tmp, c2;
 	mpz_init(tmp), mpz_init(c2);
@@ -287,7 +287,7 @@ bool PedersenCommitmentScheme::Verify
 	{
 		// Compute the commitment $c' := g_1^{m_1} \cdots g_n^{m_n} h^r \bmod p$
 		mpz_fpowm(fpowm_table_h, c2, h, r, p);
-		for (size_t i = 0; i < g.size(); i++)
+		for (size_t i = 0; i < m.size(); i++)
 		{
 			mpz_fpowm(fpowm_table_g[i], tmp, g[i], m[i], p);
 			mpz_mul(c2, c2, tmp);
@@ -372,7 +372,7 @@ void GrothSKC::Prove_interactive
 	const std::vector<mpz_ptr> &m,
 	std::istream &in, std::ostream &out) const
 {
-	assert(com->g.size() == pi.size());
+	assert(com->g.size() >= pi.size());
 	assert(pi.size() == m.size());
 	assert(m.size() >= 2);
 	
@@ -383,7 +383,7 @@ void GrothSKC::Prove_interactive
 	mpz_init(x), mpz_init(r_d), mpz_init(r_Delta), mpz_init(r_a), mpz_init(c_d),
 		mpz_init(c_Delta), mpz_init(c_a), mpz_init(e), mpz_init(z),
 		mpz_init(z_Delta), mpz_init(foo), mpz_init(bar);
-	for (size_t i = 0; i < com->g.size(); i++)
+	for (size_t i = 0; i < m.size(); i++)
 	{
 		mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(),
 			tmp4 = new mpz_t(), tmp5 = new mpz_t(), tmp6 = new mpz_t();
@@ -511,49 +511,21 @@ void GrothSKC::Prove_interactive
 	mpz_clear(x), mpz_clear(r_d), mpz_clear(r_Delta), mpz_clear(r_a),
 		mpz_clear(c_d), mpz_clear(c_Delta), mpz_clear(c_a), mpz_clear(e),
 		mpz_clear(z), mpz_clear(z_Delta), mpz_clear(foo), mpz_clear(bar);
-	for (size_t i = 0; i < d.size(); i++)
+	for (size_t i = 0; i < m.size(); i++)
 	{
-		mpz_clear(d[i]);
-		delete d[i];
+		mpz_clear(d[i]), mpz_clear(Delta[i]), mpz_clear(a[i]), mpz_clear(f[i]), 
+			mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
+		delete d[i], delete Delta[i], delete a[i], delete f[i], delete f_Delta[i], 
+			delete lej[i];
 	}
-	d.clear();
-	for (size_t i = 0; i < f.size(); i++)
-	{
-		mpz_clear(Delta[i]);
-		delete Delta[i];
-	}
-	Delta.clear();
-	for (size_t i = 0; i < a.size(); i++)
-	{
-		mpz_clear(a[i]);
-		delete a[i];
-	}
-	a.clear();
-	for (size_t i = 0; i < f.size(); i++)
-	{
-		mpz_clear(f[i]);
-		delete f[i];
-	}
-	f.clear();
-	for (size_t i = 0; i < f_Delta.size(); i++)
-	{
-		mpz_clear(f_Delta[i]);
-		delete f_Delta[i];
-	}
-	f_Delta.clear();
-	for (size_t i = 0; i < lej.size(); i++)
-	{
-		mpz_clear(lej[i]);
-		delete lej[i];
-	}
-	lej.clear();
+	d.clear(), Delta.clear(), a.clear(), f.clear(), f_Delta.clear(), lej.clear();
 }
 
 bool GrothSKC::Verify_interactive
 	(mpz_srcptr c, const std::vector<mpz_ptr> &m,
 	std::istream &in, std::ostream &out, bool optimizations) const
 {
-	assert(com->g.size() == m.size());
+	assert(com->g.size() >= m.size());
 	assert(m.size() >= 2);
 	
 	// initalize
@@ -562,7 +534,7 @@ bool GrothSKC::Verify_interactive
 	mpz_init(x), mpz_init(c_d), mpz_init(c_Delta), mpz_init(c_a), mpz_init(e),
 		mpz_init(z), mpz_init(z_Delta), mpz_init(foo), mpz_init(bar),
 		mpz_init(foo2), mpz_init(bar2);
-	for (size_t i = 0; i < com->g.size(); i++)
+	for (size_t i = 0; i < m.size(); i++)
 	{
 		mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
 		mpz_init(tmp), mpz_init(tmp2), mpz_init(tmp3);
@@ -712,24 +684,12 @@ bool GrothSKC::Verify_interactive
 		mpz_clear(x), mpz_clear(c_d), mpz_clear(c_Delta), mpz_clear(c_a),
 			mpz_clear(e), mpz_clear(z), mpz_clear(z_Delta), mpz_clear(foo),
 			mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2);
-		for (size_t i = 0; i < f.size(); i++)
+		for (size_t i = 0; i < m.size(); i++)
 		{
-			mpz_clear(f[i]);
-			delete f[i];
+			mpz_clear(f[i]), mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
+			delete f[i], delete f_Delta[i], delete lej[i];
 		}
-		f.clear();
-		for (size_t i = 0; i < f_Delta.size(); i++)
-		{
-			mpz_clear(f_Delta[i]);
-			delete f_Delta[i];
-		}
-		f_Delta.clear();
-		for (size_t i = 0; i < lej.size(); i++)
-		{
-			mpz_clear(lej[i]);
-			delete lej[i];
-		}
-		lej.clear();
+		f.clear(), f_Delta.clear(), lej.clear();
 		
 		// return
 		return return_value;
@@ -741,7 +701,7 @@ bool GrothSKC::Verify_interactive
 	const std::vector<mpz_ptr> &m,
 	std::istream &in, std::ostream &out, bool optimizations) const
 {
-	assert(com->g.size() == m.size());
+	assert(com->g.size() >= m.size());
 	assert(m.size() == f_prime.size());
 	assert(m.size() >= 2);
 	
@@ -751,7 +711,7 @@ bool GrothSKC::Verify_interactive
 	mpz_init(x), mpz_init(c_d), mpz_init(c_Delta), mpz_init(c_a), mpz_init(e),
 		mpz_init(z), mpz_init(z_Delta), mpz_init(foo), mpz_init(bar),
 		mpz_init(foo2), mpz_init(bar2);
-	for (size_t i = 0; i < com->g.size(); i++)
+	for (size_t i = 0; i < m.size(); i++)
 	{
 		mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
 		mpz_init(tmp), mpz_init(tmp2), mpz_init(tmp3);
@@ -921,24 +881,12 @@ bool GrothSKC::Verify_interactive
 		mpz_clear(x), mpz_clear(c_d), mpz_clear(c_Delta), mpz_clear(c_a),
 			mpz_clear(e), mpz_clear(z), mpz_clear(z_Delta), mpz_clear(foo),
 			mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2);
-		for (size_t i = 0; i < f.size(); i++)
+		for (size_t i = 0; i < m.size(); i++)
 		{
-			mpz_clear(f[i]);
-			delete f[i];
+			mpz_clear(f[i]), mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
+			delete f[i], delete f_Delta[i], delete lej[i];
 		}
-		f.clear();
-		for (size_t i = 0; i < f_Delta.size(); i++)
-		{
-			mpz_clear(f_Delta[i]);
-			delete f_Delta[i];
-		}
-		f_Delta.clear();
-		for (size_t i = 0; i < lej.size(); i++)
-		{
-			mpz_clear(lej[i]);
-			delete lej[i];
-		}
-		lej.clear();
+		f.clear(), f_Delta.clear(), lej.clear();
 		
 		// return
 		return return_value;
@@ -962,10 +910,12 @@ GrothVSSHE::GrothVSSHE
 {
 	std::stringstream lej;
 	
-	com = new PedersenCommitmentScheme(n, fieldsize, subgroupsize);
-	com->PublishGroup(lej);
 	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), mpz_init_set(g, g_ENC),
 		mpz_init_set(h, h_ENC);
+	
+	// Initialize the commitment scheme and Groth's SKC argument
+	com = new PedersenCommitmentScheme(n, fieldsize, subgroupsize);
+	com->PublishGroup(lej);
 	skc = new GrothSKC(n, lej, ell_e);
 	
 	// Compute $2^{\ell_e}$ for the input reduction.
@@ -981,7 +931,36 @@ GrothVSSHE::GrothVSSHE
 }
 
 GrothVSSHE::GrothVSSHE
-	(size_t n, std::istream &in,
+	(size_t n,
+	mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr k_ENC,
+	mpz_srcptr g_ENC, mpz_srcptr h_ENC,
+	unsigned long int ell_e):
+		l_e(ell_e)
+{
+	std::stringstream lej;
+	
+	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), mpz_init_set(g, g_ENC),
+		mpz_init_set(h, h_ENC);
+	
+	// Initialize the commitment scheme and Groth's SKC argument
+	com = new PedersenCommitmentScheme(n, p_ENC, q_ENC, k_ENC);
+	com->PublishGroup(lej);
+	skc = new GrothSKC(n, lej, ell_e);
+	
+	// Compute $2^{\ell_e}$ for the input reduction.
+	mpz_init(exp2l_e);
+	mpz_ui_pow_ui(exp2l_e, 2L, ell_e);
+	
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+GrothVSSHE::GrothVSSHE
+	(size_t n, std::istream& in,
 	unsigned long int ell_e):
 		l_e(ell_e)
 {
@@ -989,6 +968,8 @@ GrothVSSHE::GrothVSSHE
 	
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(h);
 	in >> p >> q >> g >> h;
+	
+	// Initialize the commitment scheme and Groth's SKC argument
 	com = new PedersenCommitmentScheme(n, in);
 	com->PublishGroup(lej);
 	skc = new GrothSKC(n, lej, ell_e);
@@ -1008,23 +989,24 @@ GrothVSSHE::GrothVSSHE
 bool GrothVSSHE::CheckGroup
 	() const
 {
+	// the commitment scheme is checked by the SKC class
 	return skc->CheckGroup();
 }
 
 void GrothVSSHE::PublishGroup
-	(std::ostream &out) const
+	(std::ostream& out) const
 {
 	out << p << std::endl << q << std::endl << g << std::endl << h << std::endl;
 	com->PublishGroup(out);
 }
 
 void GrothVSSHE::Prove_interactive
-	(const std::vector<size_t> &pi, const std::vector<mpz_ptr> &R,
-	const std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
-	const std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
-	std::istream &in, std::ostream &out) const
+	(const std::vector<size_t>& pi, const std::vector<mpz_ptr>& R,
+	const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
+	const std::vector<std::pair<mpz_ptr, mpz_ptr> >& E,
+	std::istream& in, std::ostream& out) const
 {
-	assert(com->g.size() == pi.size());
+	assert(com->g.size() >= pi.size());
 	assert(pi.size() == R.size());
 	assert(R.size() == e.size());
 	assert(e.size() == E.size());
@@ -1038,7 +1020,7 @@ void GrothVSSHE::Prove_interactive
 	mpz_init(r), mpz_init(R_d), mpz_init(r_d), mpz_init(c), mpz_init(c_d),
 		mpz_init(Z), mpz_init(lambda), mpz_init(rho), mpz_init(foo),
 		mpz_init(bar), mpz_init(E_d.first), mpz_init(E_d.second);
-	for (size_t i = 0; i < com->g.size(); i++)
+	for (size_t i = 0; i < e.size(); i++)
 	{
 		mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(),
 			tmp4 = new mpz_t();
@@ -1152,38 +1134,20 @@ void GrothVSSHE::Prove_interactive
 		mpz_clear(bar);
 	mpz_clear(E_d.first), mpz_clear(E_d.second);
 	delete E_d.first, delete E_d.second;
-	for (size_t i = 0; i < d.size(); i++)
+	for (size_t i = 0; i < e.size(); i++)
 	{
-		mpz_clear(d[i]);
-		delete d[i];
+		mpz_clear(d[i]), mpz_clear(f[i]), mpz_clear(m[i]), mpz_clear(t[i]);
+		delete d[i], delete f[i], delete m[i], delete t[i];
 	}
-	d.clear();
-	for (size_t i = 0; i < f.size(); i++)
-	{
-		mpz_clear(f[i]);
-		delete f[i];
-	}
-	f.clear();
-	for (size_t i = 0; i < m.size(); i++)
-	{
-		mpz_clear(m[i]);
-		delete m[i];
-	}
-	m.clear();
-	for (size_t i = 0; i < t.size(); i++)
-	{
-		mpz_clear(t[i]);
-		delete t[i];
-	}
-	t.clear();
+	d.clear(), f.clear(), m.clear(), t.clear();
 }
 
 bool GrothVSSHE::Verify_interactive
-	(const std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
-	const std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
-	std::istream &in, std::ostream &out) const
+	(const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
+	const std::vector<std::pair<mpz_ptr, mpz_ptr> >& E,
+	std::istream& in, std::ostream& out) const
 {
-	assert(com->g.size() == e.size());
+	assert(com->g.size() >= e.size());
 	assert(e.size() == E.size());
 	assert(E.size() >= 2);
 	
@@ -1196,7 +1160,7 @@ bool GrothVSSHE::Verify_interactive
 		mpz_init(foo), mpz_init(bar), mpz_init(foo2), mpz_init(bar2),
 		mpz_init(foo3), mpz_init(bar3);
 	mpz_init_set_ui(E_d.first, 1L), mpz_init_set_ui(E_d.second, 1L);
-	for (size_t i = 0; i < com->g.size(); i++)
+	for (size_t i = 0; i < e.size(); i++)
 	{
 		mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
 		mpz_init(tmp), mpz_init(tmp2), mpz_init(tmp3);
@@ -1323,7 +1287,7 @@ bool GrothVSSHE::Verify_interactive
 			mpz_clear(foo3), mpz_clear(bar3);
 		mpz_clear(E_d.first), mpz_clear(E_d.second);
 		delete E_d.first, delete E_d.second;
-		for (size_t i = 0; i < f.size(); i++)
+		for (size_t i = 0; i < e.size(); i++)
 		{
 			mpz_clear(f[i]), mpz_clear(m[i]), mpz_clear(t[i]);
 			delete f[i], delete m[i], delete t[i];
@@ -1337,8 +1301,8 @@ bool GrothVSSHE::Verify_interactive
 GrothVSSHE::~GrothVSSHE
 	()
 {
-	delete com;
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
+	delete com;
 	delete skc;
 	
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);

@@ -149,21 +149,26 @@ class GrothVSSHE
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		GrothVSSHE
-			(size_t n, std::istream &in,
+			(size_t n,
+			mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr k_ENC,
+			mpz_srcptr g_ENC, mpz_srcptr h_ENC,
+			unsigned long int ell_e = TMCG_GROTH_L_E);
+		GrothVSSHE
+			(size_t n, std::istream& in,
 			unsigned long int ell_e = TMCG_GROTH_L_E);
 		bool CheckGroup
 			() const;
 		void PublishGroup
-			(std::ostream &out) const;
+			(std::ostream& out) const;
 		void Prove_interactive
-			(const std::vector<size_t> &pi, const std::vector<mpz_ptr> &R,
-			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
-			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
-			std::istream &in, std::ostream &out) const;
+			(const std::vector<size_t>& pi, const std::vector<mpz_ptr>& R,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& E,
+			std::istream& in, std::ostream& out) const;
 		bool Verify_interactive
-			(const std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
-			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
-			std::istream &in, std::ostream &out) const;
+			(const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& E,
+			std::istream& in, std::ostream& out) const;
 		~GrothVSSHE
 			();
 };
