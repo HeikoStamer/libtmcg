@@ -146,8 +146,6 @@ void BarnettSmartVTMF_dlog_GroupQR::RandomElement
 	// Square $a$ to obtain a quadratic residue from $\mathbb{QR}_p$.
 	mpz_mul(a, a, a);
 	mpz_mod(a, a, p);
-	
-	assert(CheckElement(a));
 }
 
 void BarnettSmartVTMF_dlog_GroupQR::MaskingValue

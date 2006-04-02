@@ -182,8 +182,6 @@ void BarnettSmartVTMF_dlog::RandomElement
 	// Compute $a := g^b \bmod p$.
 	mpz_fspowm(fpowm_table_g, a, g, b, p);
 	mpz_clear(b);
-	
-	assert(CheckElement(a));
 }
 
 void BarnettSmartVTMF_dlog::IndexElement
@@ -191,8 +189,6 @@ void BarnettSmartVTMF_dlog::IndexElement
 {
 	// Simply compute $a := g^i \bmod p$.
 	mpz_fpowm_ui(fpowm_table_g, a, g, index, p);
-	
-	assert(CheckElement(a));
 }
 
 void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
@@ -777,8 +773,6 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Finalize
 	mpz_invert(m, d, p);
 	mpz_mul(m, m, c_2);
 	mpz_mod(m, m, p);
-	
-	assert(CheckElement(m));
 }
 
 BarnettSmartVTMF_dlog::~BarnettSmartVTMF_dlog
