@@ -345,10 +345,11 @@ GrothSKC::GrothSKC
 
 GrothSKC::GrothSKC
 	(size_t n, std::istream &in,
-	unsigned long int ell_e):
+	unsigned long int ell_e, unsigned long int fieldsize,
+	unsigned long int subgroupsize):
 		l_e(ell_e)
 {
-	com = new PedersenCommitmentScheme(n, in);
+	com = new PedersenCommitmentScheme(n, in, fieldsize, subgroupsize);
 	
 	// Compute $2^{\ell_e}$ for the input reduction.
 	mpz_init(exp2l_e);
@@ -934,7 +935,8 @@ GrothVSSHE::GrothVSSHE
 	(size_t n,
 	mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr k_ENC,
 	mpz_srcptr g_ENC, mpz_srcptr h_ENC,
-	unsigned long int ell_e):
+	unsigned long int ell_e, unsigned long int fieldsize,
+	unsigned long int subgroupsize):
 		l_e(ell_e)
 {
 	std::stringstream lej;
@@ -943,9 +945,10 @@ GrothVSSHE::GrothVSSHE
 		mpz_init_set(h, h_ENC);
 	
 	// Initialize the commitment scheme and Groth's SKC argument
-	com = new PedersenCommitmentScheme(n, p_ENC, q_ENC, k_ENC);
+	com = new PedersenCommitmentScheme(n, p_ENC, q_ENC, k_ENC, 
+		fieldsize, subgroupsize);
 	com->PublishGroup(lej);
-	skc = new GrothSKC(n, lej, ell_e);
+	skc = new GrothSKC(n, lej, ell_e, fieldsize, subgroupsize);
 	
 	// Compute $2^{\ell_e}$ for the input reduction.
 	mpz_init(exp2l_e);
@@ -961,7 +964,8 @@ GrothVSSHE::GrothVSSHE
 
 GrothVSSHE::GrothVSSHE
 	(size_t n, std::istream& in,
-	unsigned long int ell_e):
+	unsigned long int ell_e, unsigned long int fieldsize,
+	unsigned long int subgroupsize):
 		l_e(ell_e)
 {
 	std::stringstream lej;
@@ -970,9 +974,9 @@ GrothVSSHE::GrothVSSHE
 	in >> p >> q >> g >> h;
 	
 	// Initialize the commitment scheme and Groth's SKC argument
-	com = new PedersenCommitmentScheme(n, in);
+	com = new PedersenCommitmentScheme(n, in, fieldsize, subgroupsize);
 	com->PublishGroup(lej);
-	skc = new GrothSKC(n, lej, ell_e);
+	skc = new GrothSKC(n, lej, ell_e, fieldsize, subgroupsize);
 	
 	// Compute $2^{\ell_e}$ for the input reduction.
 	mpz_init(exp2l_e);

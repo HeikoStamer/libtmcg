@@ -108,7 +108,9 @@ class GrothSKC
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		GrothSKC
 			(size_t n, std::istream &in,
-			unsigned long int ell_e = TMCG_GROTH_L_E);
+			unsigned long int ell_e = TMCG_GROTH_L_E,
+			unsigned long int fieldsize = TMCG_DDH_SIZE,
+			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
 			() const;
 		void PublishGroup
@@ -152,10 +154,14 @@ class GrothVSSHE
 			(size_t n,
 			mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr k_ENC,
 			mpz_srcptr g_ENC, mpz_srcptr h_ENC,
-			unsigned long int ell_e = TMCG_GROTH_L_E);
+			unsigned long int ell_e = TMCG_GROTH_L_E,
+			unsigned long int fieldsize = TMCG_DDH_SIZE,
+			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		GrothVSSHE
 			(size_t n, std::istream& in,
-			unsigned long int ell_e = TMCG_GROTH_L_E);
+			unsigned long int ell_e = TMCG_GROTH_L_E,
+			unsigned long int fieldsize = TMCG_DDH_SIZE,
+			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
 			() const;
 		void PublishGroup

@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.25 2006/04/02 19:51:34 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.26 2006/04/04 21:36:24 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -62,7 +62,9 @@ neither a central game server nor trusted hardware components
 are necessary. To emphasize this point again: With the present
 library there is no need for an independent referee, because
 the applied protocols provide a basic level of confidentiality
-and fairness by itself. Of course, we cannot avoid that
+and fairness by itself. Consequently, our library is well-suited
+for peer-to-peer (P2P) environments where no TTP is available.
+Of course, we cannot avoid that
 malicious players share information about their private
 cards, but the protocols ensure that the shuffle of the
 deck is performed randomly (presumed that at least one
@@ -1495,7 +1497,9 @@ such internal functions and members.
 	@end deftypecv
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} h
-		This is the common public key @math{h}.
+		This is the common public key @math{h = \prod_{i=1}^k h_i} which contains
+		the public keys @math{h_i} of each player @math{P_i}. Note that in the
+		above formula @math{k} denotes the number of players.
 	@end deftypecv
 	
 	@deftypeop {Constructor} BarnettSmartVTMF_dlog {} BarnettSmartVTMF_dlog (@code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
@@ -1610,11 +1614,13 @@ such internal functions and members.
 	@end deftypecv
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog_GroupQR {mpz_t} k
-		This integer is fixed by @math{k = 2}.
+		This integer is fixed here by @math{k = 2}.
 	@end deftypecv
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog_GroupQR {mpz_t} h
-		This is the common public key @math{h}.
+		This is the common public key @math{h = \prod_{i=1}^k h_i} which contains
+		the public keys @math{h_i} of each player @math{P_i}. Note that in the
+		above formula @math{k} denotes the number of players.
 	@end deftypecv
 	
 	@deftypeop {Constructor} BarnettSmartVTMF_dlog_GroupQR {} @*BarnettSmartVTMF_dlog_GroupQR (@code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} exponentsize @code{=TMCG_DLSE_SIZE})
@@ -1712,16 +1718,19 @@ computational complexity and the produced communication traffic are superior
 to previously deployed techniques (e.g. Schindelhauer's cut-and-choose method).
 LibTMCG provides the first known implementation of Groth's famous protocol.
 However, it can only be used along with the VTMF card encoding scheme of
-Barnett and Smart.
+Barnett and Smart@tie{}[BS03].
 
-Our implementation uses the unconditionally hiding homomorphic commitment
-scheme due to Pedersen. This choice seems to be reasonable for the intention
-of our library.
+Our implementation uses the unconditionally hiding and statistically binding
+homomorphic commitment scheme due to Pedersen (see @emph{Non-interactive
+and Information-theoretic Secure Verifiable Secret Sharing}, CRYPTO@tie{}'91,
+LNCS@tie{}576). This choice seems to be reasonable for the intention of
+our library. The security parameters of the commitment scheme are determined
+by the corresponding VTMF instance.
 
-Further, to the best of our knowledge it is still unknown whether or not
-Groth's protocol retains the zero-knowledge property, if it is executed in
-a concurrent setting. Hence one should be careful and avoid parallel protocol
-executions of the same instance.
+Further, to the best of our knowledge it is still unknown, whether or not
+Groth's protocol retains the zero-knowledge property, when it is executed in
+a concurrent setting. Hence the application programmer should be careful and
+avoid parallel executions of the same instance.
 
 @deftp {Class} GrothVSSHE
 	This class provides the low-level interface for Groth's protocol.
@@ -1729,8 +1738,8 @@ executions of the same instance.
 	All other components are only used internally by high-level operations
 	and thus their description is omitted here.
 	
-	@deftypeop {Constructor} GrothVSSHE {} GrothVSSH (@code{size_t} n, @code{mpz_srcptr} p_ENC, @code{mpz_srcptr} q_ENC, @code{mpz_srcptr} k_ENC, @code{mpz_srcptr} g_ENC, @code{mpz_srcptr} h_ENC, @code{unsigned long int} ell_e @code{=TMCG_GROTH_L_E})
-		This constructor creates a new instance. Its low-level operations
+	@deftypeop {Constructor} GrothVSSHE {} GrothVSSH (@code{size_t} n, @code{mpz_srcptr} p_ENC, @code{mpz_srcptr} q_ENC, @code{mpz_srcptr} k_ENC, @code{mpz_srcptr} g_ENC, @code{mpz_srcptr} h_ENC, @code{unsigned long int} ell_e @code{=TMCG_GROTH_L_E}, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
+		This constructor creates a new instance. The low-level operations
 		are later used to show the correctness of a shuffle of at most
 		@var{n} cards. The protocol and some parameters of the commitment
 		scheme are initialized by the members of the corresponding VTMF
@@ -1738,28 +1747,35 @@ executions of the same instance.
 		which determines the field @math{{\bf Z}/p{\bf Z}}, @var{q_ENC}
 		is the order of the underlying subgroup @math{G}, i.e. the prime
 		number @math{q}, and @var{k_ENC} is the integer such that
-		@math{p = qk + 1} holds. Further, @var{g_ENC} is the generator of
-		@math{G}, i.e. the fixed number @math{g}, and finally @var{h_ENC}
-		is the common public key @math{h}. The positive integer @var{ell_e}
-		is the security parameter which controls the soundness error of
-		the protocol. The default value is defined by @code{TMCG_GROTH_L_E}.
+		@math{p = qk + 1} holds. Further, @var{g_ENC} is the generator
+		@math{g}, and finally @var{h_ENC} is the common public key @math{h}.
+		The positive integer @var{ell_e} is the security parameter which
+		controls the soundness error probability (@math{2^{-\ell_e}}) of
+		the protocol. The default value is defined by
+		@code{TMCG_GROTH_L_E}, if this argument is omitted. The @var{fieldsize}
+		and the @var{subgroupsize} are supplied to internal classes
+		and are only of interest, if @var{p_ENC} or @var{q_ENC} have
+		lengths different from the default. If these arguments are
+		omitted, they are set to @code{TMCG_DDH_SIZE} and @code{TMCG_DLSE_SIZE},
+		respectively.
 		
-		Note that the generators of the commitment scheme are randomly
-		and uniformly chosen from @math{{\bf Z}_q}. Therefore this
-		constructor should be only used by the session leader.
-		Further it is important that the VTMF key generation protocol
+		Note that the generators @math{h', g'_1, \ldots, g'_n} of the Pedersen
+		commitment scheme are randomly and uniformly chosen from @math{{\bf Z}_q}.
+		Therefore this constructor should be instatiated only once by the session
+		leader. All other instances can be obtained by the second constructor.
+		Further, it is very important that the VTMF key generation protocol
 		has been finished before the value of @math{h} is passed to the
-		constructor.
+		constructor. Otherwise, the correctness proofs will probably fail.
 	@end deftypeop
 	
-	@deftypeop {Constructor} GrothVSSHE {} GrothVSSH (@code{size_t} n, @code{std::istream&} in, @code{unsigned long int} ell_e @code{=TMCG_GROTH_L_E})
+	@deftypeop {Constructor} GrothVSSHE {} GrothVSSH (@code{size_t} n, @code{std::istream&} in, @code{unsigned long int} ell_e @code{=TMCG_GROTH_L_E}, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
 		This constructor initializes the instance from a correctly formated
 		input stream @var{in}. For example, such a stream can be generated by
 		calling the method @code{PublishGroup} of an already created instance.
 		Later the instance can be used to show the correctness of a shuffle of
 		at most @var{n} cards.
-		The positive integer @var{ell_e} controls the soundness error of
-		the protocol. The default value is defined by @code{TMCG_GROTH_L_E},
+		The positive integer @var{ell_e} controls the soundness error probability
+		of the protocol. The default value is defined by @code{TMCG_GROTH_L_E},
 		if this argument is omitted.
 	@end deftypeop
 	
@@ -1769,9 +1785,9 @@ executions of the same instance.
 	@end deftypemethod
 	
 	@deftypemethod GrothVSSHE void PublishGroup (@code{std::ostream&} out)
-		This method exports all necessary parameters of the instance to
-		the given output stream @var{out}, so other instances can be
-		initalized, e.g. with the second constructor of @code{GrothVSSHE}.
+		This method exports the instance configuration to the output stream
+		@var{out} such that other instances can be initalized, e.g. with the
+		second constructor.
 	@end deftypemethod
 
 	@defop {Destructor} GrothVSSHE ~GrothVSSHE ()
@@ -1780,6 +1796,41 @@ executions of the same instance.
 @end deftp
 
 @subsubsection Toolbox for Mental Card Games
+This section explains the main class of LibTMCG which provides all
+``high-level operations'' on cards and stacks. Even if the more
+efficient card encoding scheme of Barnett and Smart@tie{}[BS03]
+is deployed, at least one instance of the following class must be
+created.
+
+@deftp {Class} SchindelhauerTMCG
+	This class implements the main core of Schindelhauer's toolbox@tie{}[Sc98],
+	i.e. the important functions like masking, shuffling, and opening, of
+	cards and stacks, respectively. Some exotic operations are still missing,
+	e.g., the possibility to insert a masked card secretly into a stack.
+	All these functions are available for the original encoding scheme
+	of Schindelhauer (see @code{TMCG_Card}) as well as for the more efficient
+	encoding scheme of Barnett and Smart (see @code{VTMF_Card} and
+	@code{BarnettSmartVTMF_dlog}).
+	
+	@deftypecv {Member} SchindelhauerTMCG {unsigned long int} TMCG_SecurityLevel
+	@end deftypecv
+	
+	@deftypecv {Member} SchindelhauerTMCG {size_t} TMCG_Players
+	@end deftypecv
+	
+	@deftypecv {Member} SchindelhauerTMCG {size_t} TMCG_TypeBits
+	@end deftypecv
+	
+	@deftypecv {Member} SchindelhauerTMCG {size_t} TMCG_MaxCardType
+	@end deftypecv
+	
+	@deftypeop {Constructor} SchindelhauerTMCG {} SchindelhauerTMCG (@code{unsigned long int} security, @code{size_t} k, @code{size_t} w)
+	@end deftypeop
+
+	@defop {Destructor} SchindelhauerTMCG ~SchindelhauerTMCG ()
+		This destructor releases all occupied resources.
+	@end defop
+@end deftp
 
 @chapter Examples
 @cindex Examples
@@ -1789,7 +1840,76 @@ the directory @file{tests/}, e.g. @file{SchwarzerPeterAlice.cc} and
 A detailed exposition including source code fragments will be given in this
 chapter.
 
-@section Key Generation and Game Setup
+@section Session Initialization and Key Setup
+
+@example
+SchindelhauerTMCG *tmcg = new SchindelhauerTMCG(64, 5, 6);
+@end example
+
+@example
+BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog();
+@end example
+
+@example
+vtmf->PublishGroup(output_stream[i]);
+@end example
+
+@example
+BarnettSmartVTMF_dlog *vtmf = 
+  new BarnettSmartVTMF_dlog(input_stream[j]);
+if (!vtmf->CheckGroup())
+@{
+  std::cerr << "Group G was not correctly generated!" << std::endl;
+  return -1;
+@}
+@end example
+
+@example
+vtmf->KeyGenerationProtocol_GenerateKey();
+@end example
+
+@example
+vtmf->KeyGenerationProtocol_PublishKey(output_stream[i]);
+@end example
+
+@example
+if (!vtmf->KeyGenerationProtocol_UpdateKey(input_stream[i]))
+@{
+  std::cerr << "Public key was not correctly generated!" << std::endl;
+  return -1;
+@}
+@end example
+
+@example
+vtmf->KeyGenerationProtocol_Finalize();
+@end example
+
+If you want to use the more efficient shuffle proof of Groth
+@example
+GrothVSSHE *vsshe = new GrothVSSHE(52, vtmf->p, vtmf->q, vtmf->k, 
+  vtmf->g, vtmf->h);
+vsshe->PublishGroup(std::cout);
+@end example
+
+@example
+if (!vsshe->CheckGroup())
+@{
+  std::cerr << "Groth's shuffle argument was not sound!" << std::endl;
+  return -1;
+@}
+if (mpz_cmp(vtmf->q, vsshe->com->q))
+@{
+  std::cerr << "VSSHE: Subgroup order does not match!" << std::endl;
+  return -1;
+@}
+if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) || 
+  mpz_cmp(vtmf->g, vsshe->g) || mpz_cmp(vtmf->h, vsshe->h))
+@{
+  std::cerr << "VSSHE: Encryption scheme does not match!" << std::endl;
+  return -1;
+@}
+@end example
+
 @section Operations on Cards
 @subsection Creating an Open Card
 @subsection Masking and Remasking of a Card
@@ -1800,6 +1920,7 @@ chapter.
 @subsection Shuffle a Stack
 @subsection Drawing a Card
 
+@section Quit a Session
 
 @c **********************************************************
 @c *******************  Appendices  *************************
