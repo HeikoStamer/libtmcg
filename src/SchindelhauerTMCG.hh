@@ -66,6 +66,7 @@
 class SchindelhauerTMCG
 {
 	private:
+		size_t							TMCG_MaxCardType;
 		int									ret;
 		mpz_t								*message_space;
 		
@@ -77,12 +78,14 @@ class SchindelhauerTMCG
 			(const TMCG_PublicKey &key, mpz_srcptr t,
 			std::istream &in, std::ostream &out);
 		void TMCG_ProveNonQuadraticResidue
-			(const TMCG_SecretKey &key, mpz_srcptr t, std::istream &in, std::ostream &out);
+			(const TMCG_SecretKey &key, mpz_srcptr t, 
+			std::istream &in, std::ostream &out);
 		bool TMCG_VerifyNonQuadraticResidue
-			(const TMCG_PublicKey &key, mpz_srcptr t, std::istream &in, std::ostream &out);
+			(const TMCG_PublicKey &key, mpz_srcptr t, 
+			std::istream &in, std::ostream &out);
 		void TMCG_ProveMaskValue
-			(const TMCG_PublicKey &key, mpz_srcptr z, mpz_srcptr zz, mpz_srcptr r,
-			mpz_srcptr b, std::istream &in, std::ostream &out);
+			(const TMCG_PublicKey &key, mpz_srcptr z, mpz_srcptr zz, 
+			mpz_srcptr r, mpz_srcptr b, std::istream &in, std::ostream &out);
 		bool TMCG_VerifyMaskValue
 			(const TMCG_PublicKey &key, mpz_srcptr z, mpz_srcptr zz,
 			std::istream &in, std::ostream &out);
@@ -90,16 +93,31 @@ class SchindelhauerTMCG
 			(const TMCG_PublicKey &key, mpz_srcptr r, mpz_srcptr b,
 			std::istream &in, std::ostream &out);
 		bool TMCG_VerifyMaskOne
-			(const TMCG_PublicKey &key, mpz_srcptr t, std::istream &in, std::ostream &out);
+			(const TMCG_PublicKey &key, mpz_srcptr t, 
+			std::istream &in, std::ostream &out);
 		void TMCG_ProveNonQuadraticResidue_PerfectZeroKnowledge
 			(const TMCG_SecretKey &key, std::istream &in, std::ostream &out);
 		bool TMCG_VerifyNonQuadraticResidue_PerfectZeroKnowledge
 			(const TMCG_PublicKey &key, std::istream &in, std::ostream &out);
 		
-		// operations on values
+		// private operations on values, cards, and stacks
 		void TMCG_MaskValue
 			(const TMCG_PublicKey &key, mpz_srcptr z, mpz_ptr zz,
 			mpz_srcptr r, mpz_srcptr b, bool TimingAttackProtection = true);
+		void TMCG_CreateCardSecret
+			(TMCG_CardSecret &cs, mpz_srcptr r, unsigned long int b);
+		void TMCG_ProvePrivateCard
+			(const TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
+			std::istream &in, std::ostream &out);
+		bool TMCG_VerifyPrivateCard
+			(const TMCG_Card &c, const TMCG_PublicKeyRing &ring,
+			std::istream &in, std::ostream &out);
+		void TMCG_GlueStackSecret
+			(const TMCG_StackSecret<TMCG_CardSecret> &sigma,
+			TMCG_StackSecret<TMCG_CardSecret> &pi, const TMCG_PublicKeyRing &ring);
+		void TMCG_GlueStackSecret
+			(const TMCG_StackSecret<VTMF_CardSecret> &sigma,
+			TMCG_StackSecret<VTMF_CardSecret> &pi, BarnettSmartVTMF_dlog *vtmf);
 		
 		// helper methods for Groth's shuffle proof
 		void TMCG_InitializeStackEquality_Groth
@@ -121,8 +139,8 @@ class SchindelhauerTMCG
 			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E);
 	
 	public:
-		unsigned long int		TMCG_SecurityLevel;			// iterations
-		size_t							TMCG_Players, TMCG_TypeBits, TMCG_MaxCardType;
+		const unsigned long int		TMCG_SecurityLevel;						// # of iterations
+		const size_t							TMCG_Players, TMCG_TypeBits;	// k and w
 		
 		// constructors and destructors
 		SchindelhauerTMCG
@@ -145,8 +163,6 @@ class SchindelhauerTMCG
 			(TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring, size_t index);
 		void TMCG_CreateCardSecret
 			(VTMF_CardSecret &cs, BarnettSmartVTMF_dlog *vtmf);
-		void TMCG_CreateCardSecret
-			(TMCG_CardSecret &cs, mpz_srcptr r, unsigned long int b);
 		void TMCG_MaskCard
 			(const TMCG_Card &c, TMCG_Card &cc, const TMCG_CardSecret &cs,
 			const TMCG_PublicKeyRing &ring, bool TimingAttackProtection = true);
@@ -164,12 +180,6 @@ class SchindelhauerTMCG
 			std::istream &in, std::ostream &out);
 		bool TMCG_VerifyMaskCard
 			(const VTMF_Card &c, const VTMF_Card &cc, BarnettSmartVTMF_dlog *vtmf,
-			std::istream &in, std::ostream &out);
-		void TMCG_ProvePrivateCard
-			(const TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
-			std::istream &in, std::ostream &out);
-		bool TMCG_VerifyPrivateCard
-			(const TMCG_Card &c, const TMCG_PublicKeyRing &ring,
 			std::istream &in, std::ostream &out);
 		void TMCG_ProveCardSecret
 			(const TMCG_Card &c, const TMCG_SecretKey &key, size_t index,
@@ -208,16 +218,11 @@ class SchindelhauerTMCG
 			(const TMCG_Stack<VTMF_Card> &s, TMCG_Stack<VTMF_Card> &s2,
 			const TMCG_StackSecret<VTMF_CardSecret> &ss,
 			BarnettSmartVTMF_dlog *vtmf, bool TimingAttackProtection = true);
-		void TMCG_GlueStackSecret
-			(const TMCG_StackSecret<TMCG_CardSecret> &sigma,
-			TMCG_StackSecret<TMCG_CardSecret> &pi, const TMCG_PublicKeyRing &ring);
-		void TMCG_GlueStackSecret
-			(const TMCG_StackSecret<VTMF_CardSecret> &sigma,
-			TMCG_StackSecret<VTMF_CardSecret> &pi, BarnettSmartVTMF_dlog *vtmf);
 		void TMCG_ProveStackEquality
 			(const TMCG_Stack<TMCG_Card> &s, const TMCG_Stack<TMCG_Card> &s2,
 			const TMCG_StackSecret<TMCG_CardSecret> &ss, bool cyclic,
-			const TMCG_PublicKeyRing &ring, size_t index, std::istream &in, std::ostream &out);
+			const TMCG_PublicKeyRing &ring, size_t index, 
+			std::istream &in, std::ostream &out);
 		void TMCG_ProveStackEquality
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
 			const TMCG_StackSecret<VTMF_CardSecret> &ss, bool cyclic,
@@ -228,21 +233,25 @@ class SchindelhauerTMCG
 			BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
 			std::istream &in, std::ostream &out);
 		bool TMCG_VerifyStackEquality
-			(const TMCG_Stack<TMCG_Card> &s, const TMCG_Stack<TMCG_Card> &s2, bool cyclic,
-			const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out);
+			(const TMCG_Stack<TMCG_Card> &s, const TMCG_Stack<TMCG_Card> &s2, 
+			bool cyclic, const TMCG_PublicKeyRing &ring, 
+			std::istream &in, std::ostream &out);
 		bool TMCG_VerifyStackEquality
-			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2, bool cyclic,
-			BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out);
+			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2, 
+			bool cyclic, BarnettSmartVTMF_dlog *vtmf, 
+			std::istream &in, std::ostream &out);
 		bool TMCG_VerifyStackEquality_Groth
-			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2, 
 			BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
 			std::istream &in, std::ostream &out);
 		void TMCG_MixOpenStack
-			(const TMCG_OpenStack<TMCG_Card> &os, TMCG_OpenStack<TMCG_Card> &os2,
-			const TMCG_StackSecret<TMCG_CardSecret> &ss, const TMCG_PublicKeyRing &ring);
+			(const TMCG_OpenStack<TMCG_Card> &os, TMCG_OpenStack<TMCG_Card> &os2, 
+			const TMCG_StackSecret<TMCG_CardSecret> &ss, 
+			const TMCG_PublicKeyRing &ring);
 		void TMCG_MixOpenStack
-			(const TMCG_OpenStack<VTMF_Card> &os, TMCG_OpenStack<VTMF_Card> &os2,
-			const TMCG_StackSecret<VTMF_CardSecret> &ss, BarnettSmartVTMF_dlog *vtmf);
+			(const TMCG_OpenStack<VTMF_Card> &os, TMCG_OpenStack<VTMF_Card> &os2, 
+			const TMCG_StackSecret<VTMF_CardSecret> &ss, 
+			BarnettSmartVTMF_dlog *vtmf);
 };
 
 #endif

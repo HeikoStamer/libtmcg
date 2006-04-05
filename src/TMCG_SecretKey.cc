@@ -122,7 +122,7 @@ void TMCG_SecretKey::generate
 		assert(!mpz_congruent_ui_p(q, 1L, 8L));
 		assert(!mpz_congruent_p(p, q, foo));
 		
-		// compute modulus: m = pq
+		// compute modulus: m = p \cdot q
 		mpz_mul(m, p, q);
 		
 		// compute upper bound for SAEP, i.e. 2^{n+1} + 2^n

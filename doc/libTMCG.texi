@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.26 2006/04/04 21:36:24 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.27 2006/04/05 20:42:48 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -276,7 +276,7 @@ you make use of any other capability of LibTMCG.
 
 @deftypefun bool init_libTMCG ()
 The function checks whether the installed third-party libraries
-match their required versions. Further it initialize them
+match their required versions. Further it initializes them
 and returns @code{true}, if everything was sound. Otherwise
 @code{false} is returned and an appropriate error message
 is sent to @code{stderr}.
@@ -1813,19 +1813,144 @@ created.
 	@code{BarnettSmartVTMF_dlog}).
 	
 	@deftypecv {Member} SchindelhauerTMCG {unsigned long int} TMCG_SecurityLevel
+		This read-only nonnegative integer represents the security parameter @math{t}
+		which was given by the first argument to the constructor of this class.
+		It defines the number of protocol iterations and thus the soundness error
+		probability (@math{2^{-t}}) of the zero-knowledge proofs in the encoding
+		scheme of Schindelhauer.
 	@end deftypecv
 	
 	@deftypecv {Member} SchindelhauerTMCG {size_t} TMCG_Players
+		This read-only nonnegative integer represents the number of players as
+		given to the constructor of this class.
 	@end deftypecv
 	
 	@deftypecv {Member} SchindelhauerTMCG {size_t} TMCG_TypeBits
-	@end deftypecv
-	
-	@deftypecv {Member} SchindelhauerTMCG {size_t} TMCG_MaxCardType
+		This read-only nonnegative integer contains the number of bits that are
+		necessary to encode the card types in the binary representation. It was
+		given as an argument to the constructor of this class.
 	@end deftypecv
 	
 	@deftypeop {Constructor} SchindelhauerTMCG {} SchindelhauerTMCG (@code{unsigned long int} security, @code{size_t} k, @code{size_t} w)
+		This constructor creates an instance, where @var{security} is a nonnegative
+		integer that represents the security parameter @math{t}, @var{k} is the
+		number of players, and @var{w} is the number of bits which are necessary to
+		represent all possible card types.
+		
+		The value of @math{t} controls the soundness error probability (@math{2^{-t}})
+		of the zero-knowledge proofs in the encoding scheme of Schindelhauer.
+		Specifically, @var{security} defines the number of sequential iterations of
+		the involved protocols and thus has a major impact on the computational
+		and communication complexity. If the encoding scheme of Barnett and
+		Smart@tie{}[BS03] is used in combination with the efficient shuffle proof of
+		Groth@tie{}[Gr05], then @var{security} should be set to zero since it is
+		dispensable in that case.
+		
+		Unfortunately, in the encoding scheme of Schindelhauer the parameters @var{k}
+		and @var{w} also have a major impact on the complexity. Therefore you
+		should always use reasonable values. For example, to create a deck with
+		@math{M} different card types simply set @var{w} to @math{\lceil\log_2 M\rceil}.
+		Furthermore, set @var{k} to the number of players which are really
+		participating and not to a possible maximum value. Note that @var{k} and @var{w}
+		are limited by @code{TMCG_MAX_PLAYERS} and @code{TMCG_MAX_TYPEBITS},
+		respectively.
 	@end deftypeop
+	
+	@deftypemethod SchindelhauerTMCG void TMCG_CreateOpenCard (@code{TMCG_Card&} c, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} type)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_CreateOpenCard (@code{VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf, @code{size_t} type)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_CreatePrivateCard (@code{TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{size_t} type)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_CreatePrivateCard (@code{VTMF_Card&} c, @code{VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{size_t} type)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_CreateCardSecret (@code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_CreateCardSecret (@code{VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_MaskCard (@code{const TMCG_Card&} c, @code{TMCG_Card&} cc, @code{const TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{bool} TimingAttackProtection @code{=true})
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_MaskCard (@code{const VTMF_Card&} c, @code{VTMF_Card&} cc, @code{const VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{bool} TimingAttackProtection @code{=true})
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveMaskCard (@code{const TMCG_Card&} c, @code{const TMCG_Card&} cc, @code{const TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveMaskCard (@code{const VTMF_Card&} c, @code{const VTMF_Card&} cc, @code{const VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyMaskCard (@code{const TMCG_Card&} c, @code{const TMCG_Card&} cc, @code{const TMCG_PublicKeyRing&} ring, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyMaskCard (@code{const VTMF_Card&} c, @code{const VTMF_Card&} cc, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveCardSecret (@code{const TMCG_Card&} c, @code{const TMCG_SecretKey&} key, @code{size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveCardSecret (@code{const VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyCardSecret (@code{const TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKey&} key, @code{size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyCardSecret (@code{const VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_SelfCardSecret (@code{const TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_SecretKey&} key, @code{size_t} index)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_SelfCardSecret (@code{const VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG size_t TMCG_TypeOfCard (@code{const TMCG_CardSecret&} cs)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG size_t TMCG_TypeOfCard (@code{const VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG size_t TMCG_CreateStackSecret (@code{TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{size_t} size)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG size_t TMCG_CreateStackSecret (@code{TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{bool} cyclic, @code{size_t} size, @code{BarnettSmartVTMF_dlog*} vtmf)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_MixStack (@code{const TMCG_Stack<TMCG_Card>&} s, @code{TMCG_Stack<TMCG_Card>&} s2, @code{const TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{const TMCG_PublicKeyRing&} ring, @code{bool} TimingAttackProtection @code{=true})
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_MixStack (@code{const TMCG_Stack<VTMF_Card>&} s, @code{TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf, @code{bool} TimingAttackProtection @code{=true})
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality (@code{const TMCG_Stack<TMCG_Card>&} s, @code{const TMCG_Stack<TMCG_Card>&} s2, @code{const TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{bool} cyclic, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality_Groth (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf, @code{GrothVSSHE*} vsshe, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality (@code{const TMCG_Stack<TMCG_Card>&} s, @code{const TMCG_Stack<TMCG_Card>&} s2, @code{bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{bool} cyclic, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality_Groth (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{BarnettSmartVTMF_dlog*} vtmf, @code{GrothVSSHE*} vsshe, @code{std::istream&} in, @code{std::ostream&} out)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_MixOpenStack (@code{const TMCG_OpenStack<TMCG_Card>&} os, @code{TMCG_OpenStack<TMCG_Card>&} os2, @code{const TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{const TMCG_PublicKeyRing&} ring)
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_MixOpenStack (@code{const TMCG_OpenStack<VTMF_Card>&} os, @code{TMCG_OpenStack<VTMF_Card>&} os2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf)
+	@end deftypemethod
 
 	@defop {Destructor} SchindelhauerTMCG ~SchindelhauerTMCG ()
 		This destructor releases all occupied resources.
@@ -1843,7 +1968,7 @@ chapter.
 @section Session Initialization and Key Setup
 
 @example
-SchindelhauerTMCG *tmcg = new SchindelhauerTMCG(64, 5, 6);
+SchindelhauerTMCG *tmcg = new SchindelhauerTMCG(0, 5, 6);
 @end example
 
 @example
