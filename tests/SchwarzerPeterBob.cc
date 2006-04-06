@@ -29,7 +29,7 @@ int main
 {
 	if (!init_libTMCG())
 	{
-		std::cerr << "Initalization of libTMCG failed!" << std::endl;
+		std::cerr << "Initialization of LibTMCG failed!" << std::endl;
 		return -1;
 	}
 	

@@ -21,7 +21,7 @@
 // include the libTMCG header file
 #include <libTMCG.hh>
 
-// use Groth's efficient shuffle argument
+// use Groth's efficient shuffle argument: p_cheating <= 2^{-TMCG_GROTH_L_E}
 #define GROTH
 
 int main
@@ -29,7 +29,7 @@ int main
 {
 	if (!init_libTMCG())
 	{
-		std::cerr << "Initalization of the libTMCG failed!" << std::endl;
+		std::cerr << "Initialization of LibTMCG failed!" << std::endl;
 		return -1;
 	}
 	

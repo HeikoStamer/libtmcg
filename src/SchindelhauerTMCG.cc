@@ -771,39 +771,20 @@ void SchindelhauerTMCG::TMCG_CreateOpenCard
 {
 	assert(type < TMCG_MaxCardType);
 	
-	mpz_set_ui(c.c_1, 1L);
-	if (!mpz_cmp_ui(message_space[type], 0L))
-		vtmf->IndexElement(message_space[type], type);
-	mpz_set(c.c_2, message_space[type]);
-}
-
-void SchindelhauerTMCG::TMCG_CreatePrivateCard
-	(TMCG_Card &c, TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
-		size_t index, size_t type)
-{
-	TMCG_Card oc(TMCG_Players, TMCG_TypeBits);
-	TMCG_CreateOpenCard(oc, ring, type);
-	TMCG_CreateCardSecret(cs, ring, index);
-	TMCG_MaskCard(oc, c, cs, ring);
-}
-
-void SchindelhauerTMCG::TMCG_CreatePrivateCard
-	(VTMF_Card &c, VTMF_CardSecret &cs, BarnettSmartVTMF_dlog *vtmf,
-		size_t type)
-{
-	assert(type < TMCG_MaxCardType);
-	
-	if (!mpz_cmp_ui(message_space[type], 0L))
-		vtmf->IndexElement(message_space[type], type);
-	vtmf->VerifiableMaskingProtocol_Mask(message_space[type],
-		c.c_1, c.c_2, cs.r);
+	if (type < TMCG_MaxCardType)
+	{
+		mpz_set_ui(c.c_1, 1L);
+		if (!mpz_cmp_ui(message_space[type], 0L))
+			vtmf->IndexElement(message_space[type], type);
+		mpz_set(c.c_2, message_space[type]);
+	}
 }
 
 void SchindelhauerTMCG::TMCG_CreateCardSecret
 	(TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring, size_t index)
 {
-	assert(index < cs.b.size());
-	assert(index < ring.keys.size());
+	assert(cs.r.size() == ring.keys.size());
+	assert(index < cs.r.size());
 	
 	mpz_t foo;
 	
@@ -820,7 +801,8 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 			}
 			while (mpz_cmp_ui(foo, 1L));
 			
-			// choose uniformly at random a bit b \in {0, 1} or set it initially to zero
+			// choose uniformly at random a bit b \in {0, 1}
+			// or set it initially to zero in the index-th row
 			if (k != index)
 				mpz_srandomb(&cs.b[k][w], 1L);
 			else
@@ -858,18 +840,44 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 	vtmf->MaskingValue(cs.r);
 }
 
-void SchindelhauerTMCG::TMCG_CreateCardSecret
-	(TMCG_CardSecret &cs, mpz_srcptr r, unsigned long int b)
+void SchindelhauerTMCG::TMCG_CreatePrivateCard
+	(TMCG_Card &c, TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
+		size_t index, size_t type)
 {
-	for (size_t k = 0; k < cs.r.size(); k++)
-		for (size_t w = 0; w < cs.r[k].size(); w++)
-			mpz_set(&cs.r[k][w], r), mpz_set_ui(&cs.b[k][w], b);
+	assert(type < TMCG_MaxCardType);
+	assert(c.z.size() == TMCG_Players);
+	assert(c.z[0].size() == TMCG_TypeBits);
+	assert(ring.keys.size() == TMCG_Players);
+	assert(c.z.size() == cs.r.size());
+	assert(c.z[0].size() == cs.r[0].size());
+	assert(cs.r.size() == ring.keys.size());
+	assert(index < cs.r.size());
+	
+	TMCG_Card oc(TMCG_Players, TMCG_TypeBits);
+	TMCG_CreateOpenCard(oc, ring, type);
+	TMCG_CreateCardSecret(cs, ring, index);
+	TMCG_MaskCard(oc, c, cs, ring);
+}
+
+void SchindelhauerTMCG::TMCG_CreatePrivateCard
+	(VTMF_Card &c, VTMF_CardSecret &cs, BarnettSmartVTMF_dlog *vtmf,
+		size_t type)
+{
+	assert(type < TMCG_MaxCardType);
+	
+	if (!mpz_cmp_ui(message_space[type], 0L))
+		vtmf->IndexElement(message_space[type], type);
+	vtmf->VerifiableMaskingProtocol_Mask(message_space[type],
+		c.c_1, c.c_2, cs.r);
 }
 
 void SchindelhauerTMCG::TMCG_MaskCard
 	(const TMCG_Card &c, TMCG_Card &cc, const TMCG_CardSecret &cs,
 		const TMCG_PublicKeyRing &ring, bool TimingAttackProtection)
 {
+	assert(c.z.size() == TMCG_Players);
+	assert(c.z[0].size() == TMCG_TypeBits);
+	assert(ring.keys.size() == TMCG_Players);
 	assert((c.z.size() == cc.z.size()) && (c.z[0].size() == cc.z[0].size()));
 	assert((c.z.size() == cs.r.size()) && (c.z[0].size() == cs.r[0].size()));
 	

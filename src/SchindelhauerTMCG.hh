@@ -104,8 +104,6 @@ class SchindelhauerTMCG
 		void TMCG_MaskValue
 			(const TMCG_PublicKey &key, mpz_srcptr z, mpz_ptr zz,
 			mpz_srcptr r, mpz_srcptr b, bool TimingAttackProtection = true);
-		void TMCG_CreateCardSecret
-			(TMCG_CardSecret &cs, mpz_srcptr r, unsigned long int b);
 		void TMCG_ProvePrivateCard
 			(const TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
 			std::istream &in, std::ostream &out);

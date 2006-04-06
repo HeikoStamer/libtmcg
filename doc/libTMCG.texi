@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.29 2006/04/06 08:46:29 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.30 2006/04/06 19:58:11 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -302,20 +302,28 @@ in the manual.
 
 @quotation Card
 @cindex Card
-	The term @emph{card} means here always the electronic
-	representation of a playing card.
+	The term @emph{card} means the electronic representation of a playing card.
 @end quotation
 
 @quotation Card Type
 @cindex Card Type
 	The @emph{card type} is a nonnegative integer which corresponds
-	to the pattern on the picture side of a real playing card.
+	to the pattern on the picture side of a real playing card. We
+	assume here that such a natural encoding always exists.
 @end quotation
 
 @quotation Open Card
 @cindex Open Card
 	An @emph{open card} is a card whose type can be easily
-	determined by all players.
+	determined by all players and usually by observers, too.
+@end quotation
+
+@quotation Masked Card
+@cindex Masked Card
+	A @emph{masked card} is a card whose type is hidden to a single
+	player or even to a coalition. The type can only be determined,
+	if all players who performed a masking operation reveal their
+	corresponding card secrets.
 @end quotation
 
 @c **********************************************************
@@ -578,7 +586,7 @@ encoding scheme, i.e. @code{VTMF_Card}, is highly recommended.
 	
 	@deftypemethod TMCG_Card bool import (@code{std::string} s)
 		This method imports the content of the member @code{z} from
-		the correctly formated input string @var{s}. It returns
+		the correctly formatted input string @var{s}. It returns
 		@code{true}, if the import was successful.
 	@end deftypemethod
 	
@@ -658,7 +666,7 @@ encoding scheme, i.e. @code{VTMF_Card}, is highly recommended.
 	
 	@deftypemethod TMCG_CardSecret bool import (@code{std::string} s)
 		This method imports the content of the members @code{r} and
-		@code{b} from the correctly formated input string @var{s}.
+		@code{b} from the correctly formatted input string @var{s}.
 		It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
@@ -725,7 +733,7 @@ encoding scheme, i.e. @code{VTMF_Card}, is highly recommended.
 	
 	@deftypemethod VTMF_Card bool import (@code{std::string} s)
 		This method imports the content of the members @code{c_1}
-		and @code{c_2} from a correctly formated input string
+		and @code{c_2} from a correctly formatted input string
 		@var{s}. It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
@@ -766,7 +774,7 @@ encoding scheme, i.e. @code{VTMF_Card}, is highly recommended.
 		assumption the DDH problem in @math{G} seems to be still hard.
 		By such an optimization trick we gain a great performance advantage for
 		almost all modular exponentiations that are computed during the masking
-		operation, if the VTMF primitive was instatiated by the later explained
+		operation, if the VTMF primitive was instantiated by the later explained
 		class @code{BarnettSmartVTMF_dlog_GroupQR}. Furthermore, the size of the
 		card secret is substantially reduced which results in an improved
 		communication complexity.
@@ -789,7 +797,7 @@ encoding scheme, i.e. @code{VTMF_Card}, is highly recommended.
 	
 	@deftypemethod VTMF_CardSecret bool import (@code{std::string} s)
 		This method imports the content of the member @code{r}
-		from the correctly formated input string @var{s}.
+		from the correctly formatted input string @var{s}.
 		It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
@@ -912,7 +920,7 @@ and @code{CardSecret} data types, respectively.
 	@end deftypemethod
 	
 	@deftypemethod TMCG_Stack bool import (@code{std::string} s)
-		This method imports the stack from the correctly formated input string
+		This method imports the stack from the correctly formatted input string
 		@var{s}. It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
@@ -1081,7 +1089,7 @@ and @code{CardSecret} data types, respectively.
 	
 	@deftypemethod TMCG_StackSecret size_t find_position (@code{size_t} index)
 		This method searches for a given permutation index in the stack secret.
-		It returns the corresponding position@footnote{According to the behaviour
+		It returns the corresponding position@footnote{According to the behavior
 		of the @code{[]}-operator, the zero denotes always the top-most position.} in
 		the stack secret, if the @var{index} was found. Otherwise, the size of
 		the stack secret is returned. Please note that in this case the returned
@@ -1094,7 +1102,7 @@ and @code{CardSecret} data types, respectively.
 	@end deftypemethod
 	
 	@deftypemethod TMCG_StackSecret bool import (@code{std::string} s)
-		This method imports the stack secret from a correctly formated input string
+		This method imports the stack secret from a correctly formatted input string
 		@var{s}. It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
@@ -1202,7 +1210,7 @@ provider exhibits certificates.
 	@end deftypeop
 	
 	@deftypeop {Constructor} TMCG_SecretKey {} TMCG_SecretKey (@code{const std::string&} s)
-		This constructor initializes the key from a correctly formated
+		This constructor initializes the key from a correctly formatted
 		input string @var{s}.
 	@end deftypeop
 	
@@ -1254,7 +1262,7 @@ provider exhibits certificates.
 	@end deftypemethod
 	
 	@deftypemethod TMCG_SecretKey bool import (@code{std::string} s)
-		This method imports the key from a correctly formated input string
+		This method imports the key from a correctly formatted input string
 		@var{s}. It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
@@ -1397,7 +1405,7 @@ provider exhibits certificates.
 	@end deftypemethod
 	
 	@deftypemethod TMCG_PublicKey bool import (@code{std::string} s)
-		This method imports the key from a correctly formated input string
+		This method imports the key from a correctly formatted input string
 		@var{s}. It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
@@ -1505,7 +1513,7 @@ such internal functions and members.
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} q
 		This is the public prime number @math{q} which defines the
-		unerlying cyclic group @math{G}. @math{G} is a subgroup of
+		underlying cyclic group @math{G}. @math{G} is a subgroup of
 		@math{{\bf Z}/p{\bf Z}} and is exactly of order @math{q}.
 	@end deftypecv
 	
@@ -1538,7 +1546,7 @@ such internal functions and members.
 	@end deftypeop
 	
 	@deftypeop {Constructor} BarnettSmartVTMF_dlog {} BarnettSmartVTMF_dlog (@code{std::istream&} in, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
-		This constructor initializes the VTMF instance from a correctly formated
+		This constructor initializes the VTMF instance from a correctly formatted
 		input stream @var{in}. For example, such a stream can be generated by calling
 		the method @code{PublishGroup} of an already created instance. The arguments
 		@var{fieldsize} and @var{subgroupsize} are stored for later following usage,
@@ -1559,7 +1567,7 @@ such internal functions and members.
 	@deftypemethod BarnettSmartVTMF_dlog void PublishGroup (@code{std::ostream&} out)
 		This method exports all necessary group parameters of @math{G} to
 		the given output stream @var{out}, so other VTMF instances of @math{G}
-		can be initalized, e.g. with the second constructor of
+		can be initialized, e.g. with the second constructor of
 		@code{BarnettSmartVTMF_dlog}.
 	@end deftypemethod
 	
@@ -1580,7 +1588,7 @@ such internal functions and members.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog bool KeyGenerationProtocol_UpdateKey (@code{std::istream&} in)
-		This method reads the public part of a VTMF key and the proof of knowledege
+		This method reads the public part of a VTMF key and the proof of knowledge
 		from the input stream @var{in}. It appends the key to the common public key
 		and returns @code{true}, if the given proof was sound. Otherwise, @code{false}
 		is returned.
@@ -1588,7 +1596,7 @@ such internal functions and members.
 	
 	@deftypemethod BarnettSmartVTMF_dlog bool KeyGenerationProtocol_RemoveKey (@code{std::istream&} in)
 		This method reads the public part of a VTMF key and the corresponding proof
-		of knowledege from the input stream @var{in}. It removes the key from the
+		of knowledge from the input stream @var{in}. It removes the key from the
 		common public key and returns @code{true}, if the key was previously appended
 		by @code{KeyGenerationProtocol_UpdateKey} as explained above.
 	@end deftypemethod
@@ -1662,7 +1670,7 @@ such internal functions and members.
 	@end deftypeop
 	
 	@deftypeop {} BarnettSmartVTMF_dlog_GroupQR {} BarnettSmartVTMF_dlog_GroupQR (@code{std::istream&} in, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} exponentsize @code{=TMCG_DLSE_SIZE})
-		This constructor initializes the VTMF instance from a correctly formated
+		This constructor initializes the VTMF instance from a correctly formatted
 		input stream @var{in}. For example, such a stream can be generated by calling
 		the method @code{PublishGroup} of an already created instance. The arguments
 		@var{fieldsize} and @var{exponentsize} are stored for later following usage,
@@ -1683,7 +1691,7 @@ such internal functions and members.
 	@deftypemethod BarnettSmartVTMF_dlog_GroupQR void PublishGroup (@code{std::ostream&} out)
 		This method exports all necessary group parameters of @math{G} to
 		the given output stream @var{out}, so other VTMF instances of @math{G}
-		can be initalized, e.g. with the second constructor of
+		can be initialized, e.g. with the second constructor of
 		@code{BarnettSmartVTMF_dlog_GroupQR}.
 	@end deftypemethod
 	
@@ -1704,7 +1712,7 @@ such internal functions and members.
 	@end deftypemethod
 	
 	@deftypemethod BarnettSmartVTMF_dlog_GroupQR bool KeyGenerationProtocol_UpdateKey (@code{std::istream&} in)
-		This method reads the public part of a VTMF key and the proof of knowledege
+		This method reads the public part of a VTMF key and the proof of knowledge
 		from the input stream @var{in}. It appends the key to the common public key
 		and returns @code{true}, if the given proof was sound. Otherwise, @code{false}
 		is returned.
@@ -1712,7 +1720,7 @@ such internal functions and members.
 	
 	@deftypemethod BarnettSmartVTMF_dlog_GroupQR bool KeyGenerationProtocol_RemoveKey (@code{std::istream&} in)
 		This method reads the public part of a VTMF key and the corresponding proof
-		of knowledege from the input stream @var{in}. It removes the key from the
+		of knowledge from the input stream @var{in}. It removes the key from the
 		common public key and returns @code{true}, if the key was previously appended
 		by @code{KeyGenerationProtocol_UpdateKey} as explained above.
 	@end deftypemethod
@@ -1734,7 +1742,7 @@ Recently, Groth@tie{}[Gr05] has proposed a very efficient solution to perform
 a verifiable shuffle of homomorphically encrypted values. He describes an
 honest verifier zero-knowledge argument which shows the correctness of a
 shuffle. Beside other applications (e.g. verifiable mix networks, electronic
-voting) his protocol can be used to show with overwhelming probablity that
+voting) his protocol can be used to show with overwhelming probability that
 the secret shuffle of a deck of cards was performed correctly. The
 computational complexity and the produced communication traffic are superior
 to previously deployed techniques (e.g. Schindelhauer's cut-and-choose method).
@@ -1760,7 +1768,7 @@ avoid parallel executions of the same instance.
 	All other components are only used internally by high-level operations
 	and thus their description is omitted here.
 	
-	@deftypeop {Constructor} GrothVSSHE {} GrothVSSH (@code{size_t} n, @code{mpz_srcptr} p_ENC, @code{mpz_srcptr} q_ENC, @code{mpz_srcptr} k_ENC, @code{mpz_srcptr} g_ENC, @code{mpz_srcptr} h_ENC, @code{unsigned long int} ell_e @code{=TMCG_GROTH_L_E}, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
+	@deftypeop {Constructor} GrothVSSHE {} GrothVSSHE (@code{size_t} n, @code{mpz_srcptr} p_ENC, @code{mpz_srcptr} q_ENC, @code{mpz_srcptr} k_ENC, @code{mpz_srcptr} g_ENC, @code{mpz_srcptr} h_ENC, @code{unsigned long int} ell_e @code{=TMCG_GROTH_L_E}, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
 		This constructor creates a new instance. The low-level operations
 		are later used to show the correctness of a shuffle of at most
 		@var{n} cards. The protocol and some parameters of the commitment
@@ -1783,15 +1791,15 @@ avoid parallel executions of the same instance.
 		
 		Note that the generators @math{h', g'_1, \ldots, g'_n} of the Pedersen
 		commitment scheme are randomly and uniformly chosen from @math{{\bf Z}_q}.
-		Therefore this constructor should be instatiated only once by the session
+		Therefore this constructor should be instantiated only once by the session
 		leader. All other instances can be obtained by the second constructor.
 		Further, it is very important that the VTMF key generation protocol
 		has been finished before the value of @math{h} is passed to the
 		constructor. Otherwise, the correctness proofs will probably fail.
 	@end deftypeop
 	
-	@deftypeop {Constructor} GrothVSSHE {} GrothVSSH (@code{size_t} n, @code{std::istream&} in, @code{unsigned long int} ell_e @code{=TMCG_GROTH_L_E}, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
-		This constructor initializes the instance from a correctly formated
+	@deftypeop {Constructor} GrothVSSHE {} GrothVSSHE (@code{size_t} n, @code{std::istream&} in, @code{unsigned long int} ell_e @code{=TMCG_GROTH_L_E}, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
+		This constructor initializes the instance from a correctly formatted
 		input stream @var{in}. For example, such a stream can be generated by
 		calling the method @code{PublishGroup} of an already created instance.
 		Later the instance can be used to show the correctness of a shuffle of
@@ -1808,7 +1816,7 @@ avoid parallel executions of the same instance.
 	
 	@deftypemethod GrothVSSHE void PublishGroup (@code{std::ostream&} out)
 		This method exports the instance configuration to the output stream
-		@var{out} such that other instances can be initalized, e.g. with the
+		@var{out} such that other instances can be initialized, e.g. with the
 		second constructor.
 	@end deftypemethod
 
@@ -1879,42 +1887,102 @@ created.
 	@end deftypeop
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_CreateOpenCard (@code{TMCG_Card&} c, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} type)
-		This method creates an open card @var{c} of the given @var{type} for the
-		encoding scheme of Schindelhauer. The card @var{type} MUST be an integer
-		from the interval @math{[0, 2^{w} - 1]}, where @math{w} is the number
-		given to the constructor of this class. The @math{w} MUST be the same
-		number as used at creation of @var{c} (see @code{TMCG_Card}). The
+		This method initializes the open card @var{c} with the given @var{type}
+		using the encoding scheme of Schindelhauer. The @var{type} MUST be an
+		integer from the interval @math{[0, 2^{w} - 1]}, where @math{w} is the
+		number given to the constructor of this class. The @math{w} MUST be the
+		same number as used at creation of @var{c} (see @code{TMCG_Card}). The
 		parameter @var{ring} is a container with exactly @math{k} public keys,
 		where @math{k} is the number given to the constructor of this class.
 		The @math{k} MUST be the same number as used at the creation of @var{c}.
 	@end deftypemethod
-
+	
 	@deftypemethod SchindelhauerTMCG void TMCG_CreateOpenCard (@code{VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf, @code{size_t} type)
-		This method creates an open card @var{c} of the given @var{type} for the
-		encoding scheme of Barnett and Smart. The card @var{type} MUST be an integer
-		from the interval @math{[0, 2^{w} - 1]}, where @math{w} is the number
-		given to the constructor of this class. The parameter @var{vtmf} is a pointer
-		to an already initialized (i.e. the key generation protocol was finished)
-		VTMF instance (see @code{BarnettSmartVTMF_dlog} and
-		@code{BarnettSmartVTMF_dlog_GroupQR}, respectively).
+		This method initializes the open card @var{c} with the given @var{type}
+		using the encoding scheme of Barnett and Smart. The @var{type} MUST be an
+		integer from the interval @math{[0, 2^{w} - 1]}, where @math{w} is the
+		number given to the constructor of this class. The parameter @var{vtmf}
+		is a pointer to an already initialized VTMF instance, i.e. the key
+		generation protocol was successfully finished (see @code{BarnettSmartVTMF_dlog}
+		and @code{BarnettSmartVTMF_dlog_GroupQR}, respectively).
 	@end deftypemethod
-
-	@deftypemethod SchindelhauerTMCG void TMCG_CreatePrivateCard (@code{TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{size_t} type)
-	@end deftypemethod
-
-	@deftypemethod SchindelhauerTMCG void TMCG_CreatePrivateCard (@code{VTMF_Card&} c, @code{VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{size_t} type)
-	@end deftypemethod
-
+	
 	@deftypemethod SchindelhauerTMCG void TMCG_CreateCardSecret (@code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index)
+		This method initializes the card secret @var{cs} with random values
+		which is necessary to perform later a masking operation on a card.
+		The parameter @var{ring} is a container with exactly @math{k} public
+		keys, where @math{k} is the number given to the constructor of this
+		class. It MUST be the same number as used at the creation of @var{cs}
+		(see @code{TMCG_CardSecret}). The parameter @var{index} is from the
+		interval @math{[0, k - 1]} and determines the position of the players
+		public key in the container @var{ring}.
 	@end deftypemethod
-
+	
 	@deftypemethod SchindelhauerTMCG void TMCG_CreateCardSecret (@code{VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf)
+		This method initializes the card secret @var{cs} with a random value
+		which is necessary to perform later a masking operation on a card.
+		The parameter @var{vtmf} is a pointer to an already initialized VTMF
+		instance, i.e. the key generation protocol was successfully finished
+		(see @code{BarnettSmartVTMF_dlog} and @code{BarnettSmartVTMF_dlog_GroupQR},
+		respectively).
 	@end deftypemethod
-
+	
+	@deftypemethod SchindelhauerTMCG void TMCG_CreatePrivateCard (@code{TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{size_t} type)
+		This method initializes a masked card @var{c} with the given @var{type} and
+		a corresponding card secret @var{cs} using the encoding scheme of
+		Schindelhauer.
+		The @var{type} MUST be an integer from the interval @math{[0, 2^{w} - 1]},
+		where @math{w} is the number given to the constructor of this class. The
+		@math{w} MUST be the same number as used at creation of @var{c} (see
+		@code{TMCG_Card}) and @var{cs} (see @code{TMCG_CardSecreT}). The parameter
+		@var{ring} is a container with exactly @math{k} public keys, where @math{k}
+		is the number given to the constructor of this class. The @math{k} MUST be
+		the same number as used at the creation of @var{c} and @var{cs}. The parameter
+		@var{index} is from the interval @math{[0, k - 1]} and determines the
+		position of the players public key in the container @var{ring}.
+		Internally, @code{TMCG_CreatePrivateCard} calls
+		@enumerate
+			@item @code{TMCG_CreateOpenCard} to initialize @var{c} with @var{type},
+			@item @code{TMCG_CreateCardSecret} to initialize @var{cs} with random
+				values, and
+			@item @code{TMCG_MaskCard} to mask @var{c} with the secret @var{cs}.
+		@end enumerate
+	@end deftypemethod
+	
+	@deftypemethod SchindelhauerTMCG void TMCG_CreatePrivateCard (@code{VTMF_Card&} c, @code{VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{size_t} type)
+		This method initializes a masked card @var{c} with the given @var{type} and
+		a corresponding card secret @var{cs} using the encoding scheme of Barnett and
+		Smart. The @var{type} MUST be an integer from the interval
+		@math{[0, 2^{w} - 1]}, where @math{w} is the number given to the constructor
+		of this class. The parameter @var{vtmf} is a pointer to an already initialized
+		VTMF instance, i.e. the key generation protocol was successfully finished
+		(see @code{BarnettSmartVTMF_dlog} and @code{BarnettSmartVTMF_dlog_GroupQR},
+		respectively). Specifically, @code{TMCG_CreatePrivateCard} directly executes
+		the masking operation of the verifiable masking protocol.
+	@end deftypemethod
+	
 	@deftypemethod SchindelhauerTMCG void TMCG_MaskCard (@code{const TMCG_Card&} c, @code{TMCG_Card&} cc, @code{const TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{bool} TimingAttackProtection @code{=true})
+		This method performs a masking operation on the open or already masked card
+		@var{c} using the encoding scheme of Schindelhauer. Finally it returns the
+		result in @var{cc}.
+		The parameter @var{cs} MUST be an initialized card secret which has NEVER
+		been involved in a masking operation before. The parameters @var{c}, @var{cc},
+		and @var{cs} MUST have been created such that their @math{k} and @math{w}
+		corresponds to the numbers given to the constructor of this class,
+		respectively. The protection against timing attacks is turned on, if
+		@var{TimingAttackProtection} is set to @code{true}.
 	@end deftypemethod
-
+	
 	@deftypemethod SchindelhauerTMCG void TMCG_MaskCard (@code{const VTMF_Card&} c, @code{VTMF_Card&} cc, @code{const VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{bool} TimingAttackProtection @code{=true})
+		This method performs a masking operation on the open or already masked card
+		@var{c} using the encoding scheme of Barnett and Smart. Finally it returns the
+		result in @var{cc}. Specifically, @code{TMCG_MaskCard} directly executes
+		the masking operation of the verifiable re-masking protocol.
+		The parameter @var{vtmf} is a pointer to an already initialized
+		VTMF instance, i.e. the key generation protocol was successfully finished
+		(see @code{BarnettSmartVTMF_dlog} and @code{BarnettSmartVTMF_dlog_GroupQR},
+		respectively). The protection against timing attacks is turned on, if
+		@var{TimingAttackProtection} is set to @code{true}.
 	@end deftypemethod
 
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveMaskCard (@code{const TMCG_Card&} c, @code{const TMCG_Card&} cc, @code{const TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{std::istream&} in, @code{std::ostream&} out)
@@ -2002,22 +2070,47 @@ the directory @file{tests/}, e.g. @file{SchwarzerPeterAlice.cc} and
 A detailed exposition including source code fragments will be given in this
 chapter.
 
+The following examples explain the most steps that are necessary to create
+a secure card game application with LibTMCG. We consider a game with five
+permanent players and a regular deck of 52@tie{}different cards. For
+convenience the more efficient card encoding scheme of Barnett and
+Smart@tie{}[BS03] is used. Additionally, we provide code fragments which
+show the usage of the fast shuffle verification due to Groth@tie{}[Gr05].
+
+@section Library Initialization
+The first step is the initialization of LibTMCG. This can be simply done by
+calling the function @code{init_libTMCG} and evaluating the return code.
+@cartouche
+@example
+if (!init_libTMCG())
+@{
+  std::cerr << "Initialization of LibTMCG failed!" << std::endl;
+  return -1;
+@}
+@end example
+@end cartouche
+
 @section Session Initialization and Key Setup
 
 @cartouche
 @example
-SchindelhauerTMCG *tmcg = new SchindelhauerTMCG(0, 5, 6);
+SchindelhauerTMCG *tmcg = new SchindelhauerTMCG(64, 5, 6);
 @end example
 @end cartouche
 
+@cartouche
 @example
 BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog();
 @end example
+@end cartouche
 
+@cartouche
 @example
 vtmf->PublishGroup(output_stream[i]);
 @end example
+@end cartouche
 
+@cartouche
 @example
 BarnettSmartVTMF_dlog *vtmf = 
   new BarnettSmartVTMF_dlog(input_stream[j]);
@@ -2027,15 +2120,21 @@ if (!vtmf->CheckGroup())
   return -1;
 @}
 @end example
+@end cartouche
 
+@cartouche
 @example
 vtmf->KeyGenerationProtocol_GenerateKey();
 @end example
+@end cartouche
 
+@cartouche
 @example
 vtmf->KeyGenerationProtocol_PublishKey(output_stream[i]);
 @end example
+@end cartouche
 
+@cartouche
 @example
 if (!vtmf->KeyGenerationProtocol_UpdateKey(input_stream[i]))
 @{
@@ -2043,18 +2142,24 @@ if (!vtmf->KeyGenerationProtocol_UpdateKey(input_stream[i]))
   return -1;
 @}
 @end example
+@end cartouche
 
+@cartouche
 @example
 vtmf->KeyGenerationProtocol_Finalize();
 @end example
+@end cartouche
 
 If you want to use the more efficient shuffle proof of Groth
+@cartouche
 @example
 GrothVSSHE *vsshe = new GrothVSSHE(52, vtmf->p, vtmf->q, vtmf->k, 
   vtmf->g, vtmf->h);
 vsshe->PublishGroup(std::cout);
 @end example
+@end cartouche
 
+@cartouche
 @example
 if (!vsshe->CheckGroup())
 @{
@@ -2073,6 +2178,7 @@ if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) ||
   return -1;
 @}
 @end example
+@end cartouche
 
 @section Operations on Cards
 @subsection Creating an Open Card
