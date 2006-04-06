@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.28 2006/04/06 07:12:39 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.29 2006/04/06 08:46:29 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -292,9 +292,31 @@ is sent to @code{stderr}.
 The most card games are played with a regular card deck, i.e.,
 cards where the pattern on the picture side determines the card
 type (e.g. the King of Spades) and where the reverse sides of
-all cards are indistinguishable.
+all cards are indistinguishable. Only such card decks are
+supported by LibTMCG.
 
-An @emph{open card} is TODO
+@subsection Terminology
+@cindex Terminology
+This section defines some terms that are subsequently used
+in the manual.
+
+@quotation Card
+@cindex Card
+	The term @emph{card} means here always the electronic
+	representation of a playing card.
+@end quotation
+
+@quotation Card Type
+@cindex Card Type
+	The @emph{card type} is a nonnegative integer which corresponds
+	to the pattern on the picture side of a real playing card.
+@end quotation
+
+@quotation Open Card
+@cindex Open Card
+	An @emph{open card} is a card whose type can be easily
+	determined by all players.
+@end quotation
 
 @c **********************************************************
 @section Preprocessor Defined Global Symbols
@@ -1858,16 +1880,23 @@ created.
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_CreateOpenCard (@code{TMCG_Card&} c, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} type)
 		This method creates an open card @var{c} of the given @var{type} for the
-		encoding scheme of Schindelhauer. The card @var{type} must be an integer
-		from the interval @math{[0, 2^{w} - 1]}, where @math{w} is the value
-		given to the constructor of this class. The @math{w} should be the same
-		number as used at the creation of @var{c} (see @code{TMCG_Card}). The
-		parameter @var{ring} is a container of @math{k} public keys, where @math{k}
-		is the value given to the constructor of this class. The @math{k} should
-		be the same number as used at the creation of @var{c} (see @code{TMCG_Card}).
+		encoding scheme of Schindelhauer. The card @var{type} MUST be an integer
+		from the interval @math{[0, 2^{w} - 1]}, where @math{w} is the number
+		given to the constructor of this class. The @math{w} MUST be the same
+		number as used at creation of @var{c} (see @code{TMCG_Card}). The
+		parameter @var{ring} is a container with exactly @math{k} public keys,
+		where @math{k} is the number given to the constructor of this class.
+		The @math{k} MUST be the same number as used at the creation of @var{c}.
 	@end deftypemethod
 
 	@deftypemethod SchindelhauerTMCG void TMCG_CreateOpenCard (@code{VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf, @code{size_t} type)
+		This method creates an open card @var{c} of the given @var{type} for the
+		encoding scheme of Barnett and Smart. The card @var{type} MUST be an integer
+		from the interval @math{[0, 2^{w} - 1]}, where @math{w} is the number
+		given to the constructor of this class. The parameter @var{vtmf} is a pointer
+		to an already initialized (i.e. the key generation protocol was finished)
+		VTMF instance (see @code{BarnettSmartVTMF_dlog} and
+		@code{BarnettSmartVTMF_dlog_GroupQR}, respectively).
 	@end deftypemethod
 
 	@deftypemethod SchindelhauerTMCG void TMCG_CreatePrivateCard (@code{TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{size_t} type)

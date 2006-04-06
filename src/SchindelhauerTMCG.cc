@@ -742,6 +742,11 @@ bool SchindelhauerTMCG::TMCG_VerifyNonQuadraticResidue_PerfectZeroKnowledge
 void SchindelhauerTMCG::TMCG_CreateOpenCard
 	(TMCG_Card &c, const TMCG_PublicKeyRing &ring, size_t type)
 {
+	assert(type < TMCG_MaxCardType);
+	assert(c.z.size() == TMCG_Players);
+	assert(c.z[0].size() == TMCG_TypeBits);
+	assert(ring.keys.size() == TMCG_Players);
+	
 	for (size_t w = 0; w < c.z[0].size(); w++)
 	{
 		if (type & 1)
