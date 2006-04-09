@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.30 2006/04/06 19:58:11 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.31 2006/04/09 18:29:32 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -64,13 +64,12 @@ library there is no need for an independent referee, because
 the applied protocols provide a basic level of confidentiality
 and fairness by itself. Consequently, our library is well-suited
 for peer-to-peer (P2P) environments where no TTP is available.
-Of course, we cannot avoid that
-malicious players share information about their private
-cards, but the protocols ensure that the shuffle of the
-deck is performed randomly (presumed that at least one
-player is honest) and thus the cards will be distributed
-uniformly among the players. Further, no coalition can
-learn the private cards of a player against his will (except
+Of course, we cannot avoid that malicious players share
+information about their private cards, but the protocols ensure
+that the shuffle of the deck is performed randomly (presumed
+that at least one player is honest) and thus the cards will be
+distributed uniformly among the players. Further, no coalition
+can learn the private cards of a player against his will (except
 for trivial conclusions). The corresponding cryptographic
 problem, actually called ''Mental Poker'', has been studied
 since 1979 (Shamir, Rivest, and Adleman) by many authors.
@@ -168,31 +167,32 @@ and your application properly:
 		GNU Crypto Library.
 @end itemize
 We suppose that the reader is familiar with these libraries
-because their correct installation and configuration is
-crucial to the security of the entire application.
+because their correct installation, configuration, and usage
+is crucial to the security of the entire application.
 
 @c **********************************************************
 @section Header Files and Name Spaces
 @cindex Header Files
 @cindex Name Spaces
-The interface definitions of the classes and the security
-parameters@footnote{These parameters are fixed at compile time.
-Please don't change anything unless you know exactly what you are
-doing, and what the dangers are! Beside the apparent security
-concerns you will probably break the compatibility with other
-LibTMCG applications.} are provided by the central header file
+The interface definitions of classes, data types, and security
+parameters@footnote{The security parameters are fixed at compile
+time of LibTMCG. Please don't change anything unless you know
+exactly what you are doing! Beside the apparent security concerns
+you will probably break the compatibility with other LibTMCG
+applications.} are provided by the central header file
 @file{libTMCG.hh}. You have to include this file in all of your
-sources, either directly or through some other file.
+sources, either directly or through some other included file.
+Thus often you will simply write:
 
 @example
 #include <libTMCG.hh>
 @end example
 
 There are no uniform C++ name spaces for the most parts of the
-library. Some classes have the common prefix @code{TMCG_*} or
-@code{VTMF_*} while others are composed of the author names
-and the title abbreviation of the related research paper.
-Further there are internally
+library. Some classes respectively data types have the common prefix
+@code{TMCG_*} or @code{VTMF_*} while others are composed of
+the author names and the abbreviation of the title from the related
+research paper. Further there are internally
 used C functions which might produce conflicting names. These
 function names are prepended by @code{mpz_*} because they are
 extensions for the large integer support of the GNU Multiple
@@ -203,8 +203,7 @@ Precision Arithmetic Library.
 If you want to compile a source file including the @file{libTMCG.hh}
 header file, you must make sure that the compiler can find it in the
 directory hierarchy. This is accomplished by adding the path of the
-corresponding directory to the compilers include file search path
-(via the @option{-I} option).
+corresponding directory to the compilers include file search path.
 
 However, the path to the include file is determined at the time the
 source is configured. To solve this problem, LibTMCG ships with a small
@@ -222,22 +221,23 @@ Adding the output of @samp{libTMCG-config --cflags} to the compilers
 command line will ensure that the compiler can find the library header
 file.
 
-A similar problem occurs when linking the program with the library.
-Again, the compiler has to find the library files. For this to work,
-the path to the library files has to be added to the library search
-path (via the @option{-L} option). For this, the option @option{--libs}
-of @command{libTMCG-config} can be used. For convenience, this option
-also outputs all other options that are required to link the program
-with the library (in particular, the @samp{-lTMCG} option). The example
-shows how to link @file{foo.o} with LibTMCG to a program called
-@command{foo}.
+A similar problem occurs when linking your program with the library.
+Again, the compiler has to find the library files. Therefore the path
+to the library files has to be added to the library search path. To
+achieve this, the option @option{--libs} of @command{libTMCG-config}
+can be used. For convenience, this option also outputs all other options
+that are required to link your program with the library (in particular,
+the @samp{-lTMCG} option). 
+
+The example shows how to link @file{foo.o} with LibTMCG to a program
+called @command{foo}:
 
 @example
 g++ -o foo foo.o `libTMCG-config --libs`
 @end example
 
 Of course you can also combine both examples to a single command by
-specifying both options to @command{libTMCG-config}:
+calling the shell script @command{libTMCG-config} with both options:
 
 @example
 g++ -o foo foo.c `libTMCG-config --cflags --libs`
@@ -246,9 +246,10 @@ g++ -o foo foo.c `libTMCG-config --cflags --libs`
 @c **********************************************************
 @section Building Sources Using GNU Automake
 You can use GNU Automake to obtain automatically generated
-Makefiles. If you do that you do not have to worry about finding and
+Makefiles. If you do so then you do not have to care about finding and
 invoking the @command{libTMCG-config} script at all.
-LibTMCG provides an Automake extension that does all the work for you.
+LibTMCG provides an Automake extension that does all the stupid work
+for you.
 
 @defmac AM_PATH_LIBTMCG (@ovar{minimum-version}, @ovar{action-if-found}, @ovar{action-if-not-found})
 Check whether LibTMCG (at least version @var{minimum-version}, if given)
@@ -279,7 +280,7 @@ The function checks whether the installed third-party libraries
 match their required versions. Further it initializes them
 and returns @code{true}, if everything was sound. Otherwise
 @code{false} is returned and an appropriate error message
-is sent to @code{stderr}.
+is sent to @code{std:cerr}.
 @end deftypefun
 
 @c **********************************************************
@@ -291,9 +292,9 @@ is sent to @code{stderr}.
 @section Preliminaries
 The most card games are played with a regular card deck, i.e.,
 cards where the pattern on the picture side determines the card
-type (e.g. the King of Spades) and where the reverse sides of
-all cards are indistinguishable. Only such card decks are
-supported by LibTMCG.
+type (e.g. the King of Spades, the Seven of Hearts, the Ace of Club,
+or the Nine of Diamonds) and where the reverse sides of all cards are
+indistinguishable. Only such card decks are supported by LibTMCG.
 
 @subsection Terminology
 @cindex Terminology
@@ -302,7 +303,8 @@ in the manual.
 
 @quotation Card
 @cindex Card
-	The term @emph{card} means the electronic representation of a playing card.
+	The term @emph{card} means the electronic representation of a playing
+	card.
 @end quotation
 
 @quotation Card Type
@@ -320,11 +322,71 @@ in the manual.
 
 @quotation Masked Card
 @cindex Masked Card
-	A @emph{masked card} is a card whose type is hidden to a single
-	player or even to a coalition. The type can only be determined,
-	if all players who performed a masking operation reveal their
-	corresponding card secrets.
+	A @emph{masked card} is a card whose type is unknown to a not
+	necessarily proper subset of the players. The type can only be
+	computed, if all players who performed a masking operation on
+	that card supply their corresponding card secrets.
 @end quotation
+
+@quotation Private Card
+@cindex Private Card
+
+@end quotation
+
+@quotation Stack
+@cindex Stack
+	A @emph{stack} is a not necessarily disjoint subset of the card deck.
+	
+	
+	simple container where cards can be pushed and
+	popped to and from the top, respectively.
+	
+	is perserved until a shuffle takes place.
+@end quotation
+
+@quotation Prover and Verifier
+@cindex Prover
+@cindex Verifier
+	The @emph{prover} is the player who want to show some property
+	to another party called @emph{verifier}, for example, that he
+	performed a shuffle of a stack correctly.
+@end quotation
+
+@subsection Security
+@cindex Security
+`'Mental Poker'' protocols cannot prevent that malicious players
+exchange private information, for example by telephone. The protocols
+can only minimize the effect of such colluding parties and protect
+the private cards of honest players. But even this protection relies
+on number-theoretical assumptions which are only believed be true, e.g.
+the hardness of factoring or the hardness of computing dicrete logarithms.
+In the sense of complexity theory a strict proof of hardness is not known
+for these problems, and probably such a proof will never be found.
+However, almost all public key cryptography relies on such assumptions
+and therefore your should not worry about this issue, if reasonable
+security parameters are chosen.
+
+The card and stack operations are considered in the ``honest-but-curious''
+(aka semi-honest) adversary model. That means, the players follow the
+protocol instructions properly but the may gather information and share
+them within a coalition to obtain an advantage in the game. Thus we are
+not concerned with robustness and availibility issues which are hard to
+solve in an asynchronous environment like the Internet. However, all
+operations are verifiable such that cheating players can be identified.
+In the used zero-knowledge proofs the success of cheating can be bound
+by a security parameter @math{t}, such that this probability is less or
+equal than @math{2^{-t}}.
+
+Note that in general it is unknown, whether the used protocols retain their
+zero-knowledge property, when they are composed and executed in a concurrent
+setting. Thus the application programmer should be careful and avoid parallel
+protocol sessions with the same instances.
+
+
+there is no security proof in UC-framework of Canetti
+et al. Thus the application programmer should be careful
+and avoid parallel protocol sessions with the same instances.
+
 
 @c **********************************************************
 @section Preprocessor Defined Global Symbols
@@ -1827,27 +1889,29 @@ avoid parallel executions of the same instance.
 
 @subsubsection Toolbox for Mental Card Games
 This section explains the main class of LibTMCG which provides all
-``high-level operations'' on cards and stacks. Even if the more
-efficient card encoding scheme of Barnett and Smart@tie{}[BS03]
-is deployed, at least one instance of the following class must be
-created.
+``high-level operations'' from Schindelhauer's toolbox@tie{}[Sc98].
+Even if the more efficient card encoding scheme of Barnett and
+Smart@tie{}[BS03] is deployed, at least one instance of the following
+class must be created to perform card and stack operations.
 
 @deftp {Class} SchindelhauerTMCG
-	This class implements the main core of Schindelhauer's toolbox@tie{}[Sc98],
-	i.e. the important functions like masking, shuffling, and opening, of
+	This class implements the main core of Schindelhauer's toolbox,
+	i.e. important functions like masking, shuffling, and opening, of
 	cards and stacks, respectively. Some exotic operations are still missing,
 	e.g., the possibility to insert a masked card secretly into a stack.
-	All these functions are available for the original encoding scheme
-	of Schindelhauer (see @code{TMCG_Card}) as well as for the more efficient
+	All operations are available for the original encoding scheme of
+	Schindelhauer (see @code{TMCG_Card}) and for the more efficient
 	encoding scheme of Barnett and Smart (see @code{VTMF_Card} and
-	@code{BarnettSmartVTMF_dlog}).
+	@code{BarnettSmartVTMF_dlog}) as well.
 	
 	@deftypecv {Member} SchindelhauerTMCG {unsigned long int} TMCG_SecurityLevel
 		This read-only nonnegative integer represents the security parameter @math{t}
-		which was given by the first argument to the constructor of this class.
-		It defines the number of protocol iterations and thus the soundness error
-		probability (@math{2^{-t}}) of the zero-knowledge proofs in the encoding
-		scheme of Schindelhauer.
+		which was given to the constructor of this class. It defines the number of
+		protocol iterations and hence the soundness error probability (@math{2^{-t}})
+		of the zero-knowledge proofs in the encoding scheme of Schindelhauer.
+		Further it defines the soundness error probability (also @math{2^{-t}})
+		of the shuffle argument in the encoding scheme of Barnett and Smart, if
+		the efficient protocol of Groth@tie{}[Gr05] is not used.
 	@end deftypecv
 	
 	@deftypecv {Member} SchindelhauerTMCG {size_t} TMCG_Players
@@ -1872,9 +1936,12 @@ created.
 		Specifically, @var{security} defines the number of sequential iterations of
 		the involved protocols and thus has a major impact on the computational
 		and communication complexity. If the encoding scheme of Barnett and
-		Smart@tie{}[BS03] is used in combination with the efficient shuffle proof of
-		Groth@tie{}[Gr05], then @var{security} should be set to zero since it is
-		dispensable in that case.
+		Smart@tie{}[BS03] is used, then it only defines the soundness error
+		probability (also @math{2^{-t}}) of the shuffle proof. However, if
+		the efficient shuffle protocol of Groth@tie{}[Gr05] is used, then the
+		parameter @var{security} is dispensable, because the number given during
+		the instantiation of @code{GrothVSSHE} (e.g. the default security parameter
+		@code{TMCG_GROTH_L_E}) determines this soundness error probability.
 		
 		Unfortunately, in the encoding scheme of Schindelhauer the parameters @var{k}
 		and @var{w} also have a major impact on the complexity. Therefore you
@@ -1967,7 +2034,7 @@ created.
 		result in @var{cc}.
 		The parameter @var{cs} MUST be an initialized card secret which has NEVER
 		been involved in a masking operation before. The parameters @var{c}, @var{cc},
-		and @var{cs} MUST have been created such that their @math{k} and @math{w}
+		and @var{cs} MUST be created such that their @math{k} and @math{w}
 		corresponds to the numbers given to the constructor of this class,
 		respectively. The protection against timing attacks is turned on, if
 		@var{TimingAttackProtection} is set to @code{true}.

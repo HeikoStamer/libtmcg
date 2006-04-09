@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -207,7 +207,6 @@ void check
 			// key generation protocol
 			std::cout << "*.KeyGenerationProtocol_RemoveKey()" << std::endl;
 			assert(vtmf->KeyGenerationProtocol_RemoveKey(*pipe_in));
-			assert(!mpz_cmp(vtmf->h, vtmf->h_i));
 			
 			delete pipe_in, delete pipe_out;
 		}

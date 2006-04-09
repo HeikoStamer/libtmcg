@@ -57,9 +57,10 @@
 
 class BarnettSmartVTMF_dlog_GroupQR : public BarnettSmartVTMF_dlog
 {
-	public:
+	protected:
 		unsigned long int		E_size;
-		
+	
+	public:
 		BarnettSmartVTMF_dlog_GroupQR
 			(unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int exponentsize = TMCG_DLSE_SIZE);

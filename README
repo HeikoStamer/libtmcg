@@ -28,7 +28,7 @@ Introduction
     Cryptology ePrint Archive, Report 2005/246, 2005.
 
   The card and stack operations are considered in the "honest-but-curious"
-  (i.e. semi-honest) adversary model, thus we do not care about robustness
+  (aka semi-honest) adversary model, thus we do not care about robustness
   or availability concerns. The fairness is guaranteed by zero-knowledge
   proofs in which the success of cheating players can be bound by a security
   parameter t, such that this probability is less or equal than 2^{-t}.

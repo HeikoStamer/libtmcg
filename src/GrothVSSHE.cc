@@ -897,6 +897,7 @@ bool GrothSKC::Verify_interactive
 GrothSKC::~GrothSKC
 	()
 {
+	mpz_clear(exp2l_e);
 	delete com;
 }
 

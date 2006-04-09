@@ -55,14 +55,16 @@
 
 class BarnettSmartVTMF_dlog
 {
-	protected:
-		mpz_t								*fpowm_table_g, *fpowm_table_h;
-		
-	public:
-		unsigned long int									F_size, G_size;
-		mpz_t															p, q, g, k;
-		mpz_t															x_i, h_i, h, d, h_i_fp;
+	private:
+		mpz_t															x_i, h_i, d, h_i_fp;
 		std::map<std::string, mpz_ptr>		h_j;
+	
+	protected:
+		mpz_t															*fpowm_table_g, *fpowm_table_h;
+		unsigned long int									F_size, G_size;
+	
+	public:
+		mpz_t															p, q, g, k, h;
 		
 		BarnettSmartVTMF_dlog
 			(unsigned long int fieldsize = TMCG_DDH_SIZE,

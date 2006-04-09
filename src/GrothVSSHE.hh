@@ -55,11 +55,11 @@
 class PedersenCommitmentScheme
 {
 	private:
-		mpz_t										*fpowm_table_h;
-		std::vector<mpz_t*>			fpowm_table_g;
-		
+		mpz_t											*fpowm_table_h;
+		std::vector<mpz_t*>				fpowm_table_g;
+		const unsigned long int		F_size, G_size;
+	
 	public:
-		unsigned long int				F_size, G_size;
 		mpz_t										p, q, h, k;
 		std::vector<mpz_ptr>		g;
 		
@@ -95,12 +95,11 @@ class PedersenCommitmentScheme
 class GrothSKC
 {
 	private:
-		unsigned long int						l_e;
+		const unsigned long int			l_e;
 		mpz_t												exp2l_e;
+		PedersenCommitmentScheme		*com;
 	
 	public:
-		PedersenCommitmentScheme		*com;
-		
 		GrothSKC
 			(size_t n,
 			unsigned long int ell_e = TMCG_GROTH_L_E,
@@ -135,13 +134,13 @@ class GrothSKC
 class GrothVSSHE
 {
 	private:
-		unsigned long int						l_e;
+		const unsigned long int			l_e;
 		mpz_t												*fpowm_table_g, *fpowm_table_h, exp2l_e;
+		GrothSKC										*skc;
 	
 	public:
 		mpz_t												p, q, g, h;
 		PedersenCommitmentScheme		*com;
-		GrothSKC										*skc;
 		
 		GrothVSSHE
 			(size_t n,
