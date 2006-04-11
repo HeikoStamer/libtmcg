@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.32 2006/04/11 13:41:29 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.33 2006/04/11 21:39:59 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -157,7 +157,7 @@ type (e.g. the King of Spades@tie{}@math{\spadesuit}, the Seven of
 Hearts@tie{}@math{\heartsuit}, the Ace of Club@tie{}@math{\clubsuit},
 or the Jack of Diamonds@tie{}@math{\diamondsuit}) and where the
 reverse sides of all cards are indistinguishable. Only such
-card decks are supported by LibTMCG.
+regular card decks are supported by LibTMCG.
 
 @subsection Terminology
 @cindex Terminology
@@ -166,7 +166,7 @@ in the manual.
 
 @quotation Player
 @cindex Player
-	A @emph{player} is an active participant in the electronic card
+	A @emph{player} is an active participant in an electronic card
 	game.
 @end quotation
 
@@ -206,10 +206,10 @@ in the manual.
 
 @quotation Masked Card
 @cindex Masked Card
-	A @emph{masked card} is a card whose type is not known to a subset
-	of players. The type can only be computed, if each player who
-	performed a masking operation on that card supplies his corresponding
-	card secret.
+	A @emph{masked card} (also known as face-down card) is a card whose
+	type is not known to a subset of players. The type can only be
+	computed, if each player who performed a masking operation on that
+	card supplies his corresponding card secret.
 @end quotation
 
 @quotation Private Card
@@ -238,15 +238,15 @@ in the manual.
 @subsection Security
 @cindex Security
 `'Mental Poker'' protocols cannot prevent that malicious players
-exchange private information, for example by telephone. The protocols
-can only minimize the effect of such colluding parties and protect
-the private cards of honest players. But even this protection relies
-on number-theoretical assumptions which are only believed be true and
-not really proven, e.g. problems like factoring large prime products
-or computing dicrete logarithms. That means, a strict proof@footnote{
-in the sense of complexity theory} of the hardness of these problems
-is not known, and probably such a proof will never be found. However,
-almost all public key cryptography relies on such assumptions and
+exchange private information, for example by telephone or Internet
+relay chat. The protocols can only minimize the effect of such colluding
+parties and protect the private cards of honest players. But even this
+protection relies on number-theoretical assumptions which are only
+believed be true and are not really proven, e.g. problems like factoring
+large prime products or computing dicrete logarithms. That means, strict
+proofs@footnote{in the sense of complexity theory} for the hardness of
+these problems are not known, and probably such proofs will never be found.
+However, almost all public key cryptography relies on such assumptions and
 therefore you should not worry about this issue, as long as reasonable
 security parameters are chosen.
 
@@ -256,13 +256,20 @@ protocol instructions properly but the may gather information and share
 them within a coalition to obtain an advantage in the game. Thus we are
 not concerned with robustness and availibility issues which are hard to
 solve in an asynchronous environment (e.g. Internet). However, all
-operations are verifiable such that cheating players can be identified.
-To obtain such a verifiability the protocols deploy so-called zero-knowledge
-proofs whose soundness error is controlled by a security parameter @math{t}.
-Depending on your application scenario this parameter should be chosen such
-that there is a reasonable tradeoff between the cheating probability, which
-is less or equal than @math{2^{-t}}, and the produced computational resp.
+operations are verifiable such that cheating can be detected. To obtain
+verifiability the protocols deploy so-called zero-knowledge proofs whose
+soundness error is controlled by a security parameter @math{t}. Depending
+on your application scenario this parameter should be chosen such that
+there is a reasonable tradeoff between the cheating probability (which
+is less or equal than @math{2^{-t}}) and the produced computational resp.
 communication complexity.
+
+In practice there is a substantial problem with the detection of cheaters.
+It requires an authenticated broadcast channel where every player
+has read/write access. LibTMCG does not yet contain the needed protocols
+(cf. reliable broadcast) for creating such a channel. Thus you should take
+into account that not necessarily the prover is the source of evil, if the
+verification fails. This is also the reason for the restricted adversary model.
 
 Note that in general it is not known, whether the used protocols retain their
 zero-knowledge property, when they are composed and executed in a concurrent
@@ -286,9 +293,9 @@ exactly where it is not necessary.
 @cindex Security Advice
 We have implemented all cryptographic primitives according to the cited
 research papers and to the best of our knowledge. However, we can not eliminate
-any possibility of flaws and insecurity, because the implementation of such
+any possibility of flaws or insecurity, because the implementation of such
 complex protocols is always an error-prone process. Thus we encourage
-readers with advanced cryptographic knowledge to review the source code of
+readers with advanced cryptographic background to review the source code of
 LibTMCG. Please report any complaint to Heiko Stamer <@email{stamer@@gaos.org}>.
 @end quotation
 
@@ -2089,11 +2096,13 @@ class must be created to perform card and stack operations.
 		This method performs a masking operation on the open or already masked card
 		@var{c} using the encoding scheme of Schindelhauer. Finally it returns the
 		result in @var{cc}.
-		The parameter @var{cs} MUST be an initialized card secret which has NEVER
+		The parameter @var{cs} MUST be an initialized fresh card secret which has NEVER
 		been involved in a masking operation before. The parameters @var{c}, @var{cc},
 		and @var{cs} MUST be created such that their @math{k} and @math{w}
 		corresponds to the numbers given to the constructor of this class,
-		respectively. The protection against timing attacks is turned on, if
+		respectively. The parameter @var{ring} is a container with exactly
+		@math{k} public keys.
+		The protection against timing attacks is turned on, if
 		@var{TimingAttackProtection} is set to @code{true}.
 	@end deftypemethod
 	
@@ -2102,6 +2111,8 @@ class must be created to perform card and stack operations.
 		@var{c} using the encoding scheme of Barnett and Smart. Finally it returns the
 		result in @var{cc}. Specifically, @code{TMCG_MaskCard} directly executes
 		the masking operation of the verifiable re-masking protocol.
+		The parameter @var{cs} MUST be an initialized fresh card secret which has
+		NEVER been involved in a masking operation before.
 		The parameter @var{vtmf} is a pointer to an already initialized
 		VTMF instance, i.e. the key generation protocol was successfully finished
 		(see @code{BarnettSmartVTMF_dlog} and @code{BarnettSmartVTMF_dlog_GroupQR},
@@ -2110,30 +2121,78 @@ class must be created to perform card and stack operations.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveMaskCard (@code{const TMCG_Card&} c, @code{const TMCG_Card&} cc, @code{const TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{std::istream&} in, @code{std::ostream&} out)
-		This method is called by the prover to show that he performed the
-		masking operation (see @code{TMCG_MaskCard}) correctly. The parameters
-		@var{c}, @var{cc}, and @var{cs} are the input, the result, and the
-		used card secret, respectively. They MUST be created such that their
-		@math{k} resp. @math{w} corresponds to the numbers given to the
-		constructor of this class. The parameter @var{ring} is a container with
-		exactly @math{k} public keys.
-		The input resp. output data from resp. to the verifier is read resp. sent to
-		the streams @var{in} resp. @var{out}.
+		This method should be called by the prover after @code{TMCG_MaskCard} to show
+		that he performed the masking operation correctly. The parameters @var{c},
+		@var{cc}, and @var{cs} are the input, the result, and the used card secret
+		of @code{TMCG_MaskCard}, respectively.
+		They MUST be created such that their @math{k} resp. @math{w}
+		corresponds to the numbers given to the constructor of this class. The
+		parameter @var{ring} is a container with exactly @math{k} public keys.
+		The input/output protocol messages from and to the verifier are
+		transfered on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
-
+	
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveMaskCard (@code{const VTMF_Card&} c, @code{const VTMF_Card&} cc, @code{const VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
+		This method should be executed by the prover after calling @code{TMCG_MaskCard}
+		to show that he performed the masking operation correctly. Specifically,
+		@code{TMCG_ProveMaskCard} directly calls the prove operation of the
+		verifiable re-masking protocol.
+		The parameters @var{c}, @var{cc}, and @var{cs} are the input, the result, and
+		the used card secret of @code{TMCG_MaskCard}, respectively.
+		The parameter @var{vtmf} is a pointer to an already initialized VTMF instance,
+		i.e. the key generation protocol was successfully finished.
+		The input/output protocol messages from and to the verifier are
+		transfered on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
-
+	
 	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyMaskCard (@code{const TMCG_Card&} c, @code{const TMCG_Card&} cc, @code{const TMCG_PublicKeyRing&} ring, @code{std::istream&} in, @code{std::ostream&} out)
+		This method should be executed by the verifier to check whether or not a
+		masking operation was performed correctly. The parameters @var{c} and
+		@var{cc} are the input and the result of @code{TMCG_MaskCard}, respectively.
+		They MUST be created such that their @math{k} resp. @math{w} corresponds to
+		the numbers given to the constructor of this class.
+		The parameter @var{ring} is a container with exactly @math{k} public keys.
+		The input/output protocol messages from and to the prover are
+		transfered on the streams @var{in} and @var{out}, respectively.
+		The method returns @code{true}, if everything was sound.
 	@end deftypemethod
-
+	
 	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyMaskCard (@code{const VTMF_Card&} c, @code{const VTMF_Card&} cc, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
+		This method should be executed by the verifier to check whether or not a
+		masking operation was performed correctly. Specifically,
+		@code{TMCG_VerifyMaskCard} directly calls the verify operation of the
+		verifiable re-masking protocol. The parameters @var{c} and
+		@var{cc} are the input and the result of @code{TMCG_MaskCard}, respectively.
+		The parameter @var{vtmf} is a pointer to an already initialized VTMF instance,
+		i.e. the key generation protocol was successfully finished.
+		The input/output protocol messages from and to the prover are
+		transfered on the streams @var{in} and @var{out}, respectively.
+		The method returns @code{true}, if everything was sound.
 	@end deftypemethod
-
+	
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveCardSecret (@code{const TMCG_Card&} c, @code{const TMCG_SecretKey&} key, @code{size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
+		This method is used to reveal the card type of @var{c} to a verifier.
+		Every player who performed a masking operation on that card must execute
+		this method as prover.
+		The card @var{c} MUST be created such that their @math{k} resp. @math{w}
+		corresponds to the numbers given to the constructor of this class.
+		The parameter @var{key} is the corresponding secret key (see
+		@code{TMCG_SecretKey}) of the prover. The parameter @var{index} is from the
+		interval @math{[0, k - 1]} and determines the position of the provers
+		public key in the container @var{ring} (see @code{TMCG_CreateCardSecret}).
+		The input/output protocol messages from and to the verifier are
+		transfered on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
-
+	
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveCardSecret (@code{const VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
+		This method is used to reveal the card type of @var{c} to a verifier.
+		Every player who performed a masking operation on that card must execute
+		this method as prover. Specifically, @code{TMCG_ProveCardSecret} directly
+		calls the prove operation of the verifiable decryption protocol.
+		The parameter @var{vtmf} is a pointer to an already initialized VTMF instance,
+		i.e. the key generation protocol was successfully finished.
+		The input/output protocol messages from and to the verifier are
+		transfered on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
 
 	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyCardSecret (@code{const TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKey&} key, @code{size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
@@ -2184,12 +2243,6 @@ class must be created to perform card and stack operations.
 	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality_Groth (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{BarnettSmartVTMF_dlog*} vtmf, @code{GrothVSSHE*} vsshe, @code{std::istream&} in, @code{std::ostream&} out)
 	@end deftypemethod
 
-	@deftypemethod SchindelhauerTMCG void TMCG_MixOpenStack (@code{const TMCG_OpenStack<TMCG_Card>&} os, @code{TMCG_OpenStack<TMCG_Card>&} os2, @code{const TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{const TMCG_PublicKeyRing&} ring)
-	@end deftypemethod
-
-	@deftypemethod SchindelhauerTMCG void TMCG_MixOpenStack (@code{const TMCG_OpenStack<VTMF_Card>&} os, @code{TMCG_OpenStack<VTMF_Card>&} os2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf)
-	@end deftypemethod
-
 	@defop {Destructor} SchindelhauerTMCG ~SchindelhauerTMCG ()
 		This destructor releases all occupied resources.
 	@end defop
@@ -2203,16 +2256,17 @@ the directory @file{tests/}, e.g. @file{SchwarzerPeterAlice.cc} and
 A detailed exposition including source code fragments will be given in this
 chapter.
 
-The following examples explain the most steps that are necessary to create
-a secure card game application with LibTMCG. We consider a game with five
+The following examples explain most of the steps that are necessary to create
+a secure card game with LibTMCG. We consider an application with five
 permanent players and a regular deck of 52@tie{}different cards. For
-convenience the more efficient card encoding scheme of Barnett and
+convenience only the more efficient card encoding scheme of Barnett and
 Smart@tie{}[BS03] is used. Additionally, we provide code fragments which
-show the usage of the fast shuffle verification due to Groth@tie{}[Gr05].
+show the usage of the fast shuffle verification protocol due to Groth@tie{}[Gr05].
 
 @section Library Initialization
-The first step is the initialization of LibTMCG. This can be simply done by
-calling the function @code{init_libTMCG} and evaluating the return code.
+The first step that should be performed is the initialization of LibTMCG.
+That can be done very simply by calling the function @code{init_libTMCG} and
+evaluating the return code.
 @cartouche
 @example
 if (!init_libTMCG())
@@ -2224,7 +2278,19 @@ if (!init_libTMCG())
 @end cartouche
 
 @section Session Initialization and Key Setup
-
+The next step is the creation of an instance of the class
+@code{SchindelhauerTMCG}. The first parameter determines
+the number of protocol iterations @math{t} which upper-bounds
+the cheating probability by @math{2^{-t}}. In our example the
+value @code{64} defines a maximum cheating probability of
+@math{5.421010862\cdot 10^{-20}} which is reasonable small
+enough. The second parameter passes the number of players
+to the instance which is simply @code{5} in our case. The
+last parameter is the number of bits that are necessary to
+encode all card types in the binary representation. The
+value @code{6} allows the encoding of @math{2^6 = 64} different
+card types at maximum. This is enough to create our 52@tie{}card
+deck.
 @cartouche
 @example
 SchindelhauerTMCG *tmcg = new SchindelhauerTMCG(64, 5, 6);
@@ -2315,13 +2381,13 @@ if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) ||
 
 @section Operations on Cards
 @subsection Creating an Open Card
-@subsection Masking and Remasking of a Card
+@subsection Masking and Re-masking of a Card
 @subsection Opening a Masked Card
 
 @section Operations on Stacks
 @subsection Creating an Open Stack
-@subsection Shuffle a Stack
-@subsection Drawing a Card
+@subsection Mask and Shuffle a Stack
+@subsection Drawing a Card from a Stack
 
 @section Quit a Session
 
@@ -2332,9 +2398,10 @@ if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) ||
 @include gpl.texi
 @include fdl.texi
 
-@appendix Index
+@appendix General and API Index
 @heading General Index
 @printindex cp
+@page
 @heading API Index
 @printindex fn
 

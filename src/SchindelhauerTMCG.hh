@@ -70,7 +70,7 @@ class SchindelhauerTMCG
 		int									ret;
 		mpz_t								*message_space;
 		
-		// zero-knowledge proofs on values
+		// private zero-knowledge proofs on values
 		void TMCG_ProveQuadraticResidue
 			(const TMCG_SecretKey &key, mpz_srcptr t,
 			std::istream &in, std::ostream &out);
@@ -100,7 +100,7 @@ class SchindelhauerTMCG
 		bool TMCG_VerifyNonQuadraticResidue_PerfectZeroKnowledge
 			(const TMCG_PublicKey &key, std::istream &in, std::ostream &out);
 		
-		// private operations on values, cards, and stacks
+		// private and obsolete operations on values, cards, and stacks
 		void TMCG_MaskValue
 			(const TMCG_PublicKey &key, mpz_srcptr z, mpz_ptr zz,
 			mpz_srcptr r, mpz_srcptr b, bool TimingAttackProtection = true);
@@ -116,6 +116,14 @@ class SchindelhauerTMCG
 		void TMCG_GlueStackSecret
 			(const TMCG_StackSecret<VTMF_CardSecret> &sigma,
 			TMCG_StackSecret<VTMF_CardSecret> &pi, BarnettSmartVTMF_dlog *vtmf);
+		void TMCG_MixOpenStack
+			(const TMCG_OpenStack<TMCG_Card> &os, TMCG_OpenStack<TMCG_Card> &os2, 
+			const TMCG_StackSecret<TMCG_CardSecret> &ss, 
+			const TMCG_PublicKeyRing &ring);
+		void TMCG_MixOpenStack
+			(const TMCG_OpenStack<VTMF_Card> &os, TMCG_OpenStack<VTMF_Card> &os2, 
+			const TMCG_StackSecret<VTMF_CardSecret> &ss, 
+			BarnettSmartVTMF_dlog *vtmf);
 		
 		// helper methods for Groth's shuffle proof
 		void TMCG_InitializeStackEquality_Groth
@@ -242,14 +250,6 @@ class SchindelhauerTMCG
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2, 
 			BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
 			std::istream &in, std::ostream &out);
-		void TMCG_MixOpenStack
-			(const TMCG_OpenStack<TMCG_Card> &os, TMCG_OpenStack<TMCG_Card> &os2, 
-			const TMCG_StackSecret<TMCG_CardSecret> &ss, 
-			const TMCG_PublicKeyRing &ring);
-		void TMCG_MixOpenStack
-			(const TMCG_OpenStack<VTMF_Card> &os, TMCG_OpenStack<VTMF_Card> &os2, 
-			const TMCG_StackSecret<VTMF_CardSecret> &ss, 
-			BarnettSmartVTMF_dlog *vtmf);
 };
 
 #endif

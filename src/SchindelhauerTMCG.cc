@@ -923,6 +923,9 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskCard
 	(const TMCG_Card &c, const TMCG_Card &cc, const TMCG_PublicKeyRing &ring,
 		std::istream &in, std::ostream &out)
 {
+	assert(c.z.size() == TMCG_Players);
+	assert(c.z[0].size() == TMCG_TypeBits);
+	assert(ring.keys.size() == TMCG_Players);
 	assert((c.z.size() == cc.z.size()) && (c.z[0].size() == cc.z[0].size()));
 	
 	for (size_t k = 0; k < c.z.size(); k++)
@@ -946,6 +949,10 @@ void SchindelhauerTMCG::TMCG_ProvePrivateCard
 	(const TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
 		std::istream &in, std::ostream &out)
 {
+	assert(cs.r.size() == TMCG_Players);
+	assert(cs.r[0].size() == TMCG_TypeBits);
+	assert(ring.keys.size() == TMCG_Players);
+	
 	for (size_t k = 0; k < cs.r.size(); k++)
 		for (size_t w = 0; w < cs.r[k].size(); w++)
 			TMCG_ProveMaskOne(ring.keys[k], &cs.r[k][w], &cs.b[k][w], in, out);
@@ -955,6 +962,10 @@ bool SchindelhauerTMCG::TMCG_VerifyPrivateCard
 	(const TMCG_Card &c, const TMCG_PublicKeyRing &ring,
 		std::istream &in, std::ostream &out)
 {
+	assert(c.z.size() == TMCG_Players);
+	assert(c.z[0].size() == TMCG_TypeBits);
+	assert(ring.keys.size() == TMCG_Players);
+	
 	for (size_t k = 0; k < c.z.size(); k++)
 		for (size_t w = 0; w < c.z[k].size(); w++)
 			if (!TMCG_VerifyMaskOne(ring.keys[k], &c.z[k][w], in, out))
@@ -966,6 +977,8 @@ void SchindelhauerTMCG::TMCG_ProveCardSecret
 	(const TMCG_Card &c, const TMCG_SecretKey &key, size_t index,
 		std::istream &in, std::ostream &out)
 {
+	assert(c.z.size() == TMCG_Players);
+	assert(c.z[0].size() == TMCG_TypeBits);
 	assert(c.z.size() > index);
 	
 	for (size_t w = 0; w < c.z[0].size(); w++)
