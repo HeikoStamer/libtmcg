@@ -37,7 +37,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	// Create a finite abelian group $G$ where DDH is hard:
 	// We use the subgroup of quadratic residues modulo $p$,
 	// such that $p = 2q + 1$ and $p$, $q$ are both prime.
-	// The number 2 is a generator of $\mathbb{QR}_p$ since
+	// The integer 2 is a generator of $\mathbb{QR}_p$ since
 	// $p \equiv 7 \pmod{8}$.
 	mpz_sprime2g(p, q, fieldsize - 1L, TMCG_MR_ITERATIONS);
 	mpz_set_ui(g, 2L), mpz_set_ui(k, 2L);
@@ -84,8 +84,9 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
 	try
 	{
 		// Check whether $p$ and $q$ have appropriate sizes.
-		if ((mpz_sizeinbase(p, 2L) < F_size) || (mpz_sizeinbase(q, 2L) < G_size))
-			throw false;
+		if ((mpz_sizeinbase(p, 2L) < F_size) || 
+			(mpz_sizeinbase(q, 2L) < G_size))
+				throw false;
 		
 		// Check whether $p$ has the correct form, i.e. $p = 2q + 1$.
 		mpz_mul_2exp(foo, q, 1L);
@@ -104,11 +105,12 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
 			throw false;
 		
 		// Check whether $g$ is a generator for the subgroup $G$ of order $q$.
-		// It is sufficient to assert that $g$ is a quadratic residue modulo $p$,
+		// It is sufficient to assert that $g$ is a quadratic residue mod $p$,
 		// i.e. we can simply do this by computing the Legendre-Jacobi symbol.
 		// Further, we have to ensure that $g$ is not equal to zero or one.
-		if (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || (mpz_jacobi(g, p) != 1L))
-			throw false;
+		if (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
+			(mpz_jacobi(g, p) != 1L))
+				throw false;
 		
 		// finish
 		throw true;
@@ -156,13 +158,15 @@ void BarnettSmartVTMF_dlog_GroupQR::MaskingValue
 		// Choose randomly and uniformly an element from $\mathbb{Z}_q$.
 		do
 			mpz_srandomm(r, q);
-		while (!mpz_cmp_ui(r, 0L));
+		while (!mpz_cmp_ui(r, 0L) || !mpz_cmp_ui(r, 1L));
 	}
 	else
 	{
 		// Under the additional DLSE assumption we can reduce the size of
 		// the exponent. Note that the generator must be shifted [KK04].
-		mpz_srandomb(r, E_size);
+		do
+			mpz_srandomb(r, E_size);
+		while (!mpz_cmp_ui(r, 0L) || !mpz_cmp_ui(r, 1L));
 	}
 }
 

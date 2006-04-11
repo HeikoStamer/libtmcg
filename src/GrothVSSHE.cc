@@ -96,7 +96,8 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 			mpz_wrandomm(tmp, p);
 			mpz_powm(tmp, tmp, k, p);
 		}
-		while (mpz_congruent_p(tmp, h, p));
+		while (mpz_congruent_p(tmp, h, p) || 
+			!mpz_cmp_ui(tmp, 0L) || !mpz_cmp_ui(tmp, 1L));
 		
 		if (i < n)
 		{
@@ -165,8 +166,9 @@ bool PedersenCommitmentScheme::CheckGroup
 	try
 	{
 		// Check whether $p$ and $q$ have appropriate sizes.
-		if ((mpz_sizeinbase(p, 2L) < F_size) || (mpz_sizeinbase(q, 2L) < G_size))
-			throw false;
+		if ((mpz_sizeinbase(p, 2L) < F_size) || 
+			(mpz_sizeinbase(q, 2L) < G_size))
+				throw false;
 		
 		// Check whether $p$ has the correct form, i.e. $p = kq + 1$.
 		mpz_mul(foo, q, k);
@@ -202,13 +204,14 @@ bool PedersenCommitmentScheme::CheckGroup
 			throw false;
 		for (size_t i = 0; i < g.size(); i++)
 		{
-			if (!mpz_cmp_ui(g[i], 0L) || !mpz_cmp_ui(g[i], 1L) || !mpz_cmp(g[i], h))
-				throw false;
+			if (!mpz_cmp_ui(g[i], 0L) || !mpz_cmp_ui(g[i], 1L) || 
+				!mpz_cmp(g[i], h))
+					throw false;
 			for (size_t j = (i + 1); j < g.size(); j++)
 			{
 				if (!mpz_cmp(g[i], g[j]))
 					throw false;
-			}	
+			}
 		}
 		
 		// anything is sound

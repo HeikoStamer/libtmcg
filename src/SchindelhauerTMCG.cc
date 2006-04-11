@@ -899,6 +899,9 @@ void SchindelhauerTMCG::TMCG_ProveMaskCard
 	(const TMCG_Card &c, const TMCG_Card &cc, const TMCG_CardSecret &cs,
 		const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out)
 {
+	assert(c.z.size() == TMCG_Players);
+	assert(c.z[0].size() == TMCG_TypeBits);
+	assert(ring.keys.size() == TMCG_Players);
 	assert((c.z.size() == cc.z.size()) && (c.z[0].size() == cc.z[0].size()));
 	assert((c.z.size() == cs.r.size()) && (c.z[0].size() == cs.r[0].size()));
 	

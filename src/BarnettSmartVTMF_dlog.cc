@@ -50,7 +50,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 			mpz_wrandomm(d, p);
 			mpz_powm(g, d, k, p);
 		}
-		while (!mpz_cmp_ui(g, 1L));
+		while (!mpz_cmp_ui(g, 0L) || !(mpz_cmp_ui(g, 1L)));
 	}
 	
 	// Initalize the tables for the fast exponentiation.
@@ -95,8 +95,9 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 	try
 	{
 		// Check whether $p$ and $q$ have appropriate sizes.
-		if ((mpz_sizeinbase(p, 2L) < F_size) || (mpz_sizeinbase(q, 2L) < G_size))
-			throw false;
+		if ((mpz_sizeinbase(p, 2L) < F_size) || 
+			(mpz_sizeinbase(q, 2L) < G_size))
+				throw false;
 		
 		// Check whether $p$ has the correct form, i.e. $p = qk + 1$.
 		mpz_mul(foo, q, k);
@@ -110,7 +111,8 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
 				throw false;
 		
-		// Check whether $k$ is not divisible by $q$, i.e. $q$ and $k$ are coprime.
+		// Check whether $k$ is not divisible by $q$, i.e. $q$ and $k$ are
+		// coprime.
 		mpz_gcd(foo, q, k);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
@@ -547,7 +549,7 @@ void BarnettSmartVTMF_dlog::MaskingValue
 	// Choose randomly and uniformly an element from $\mathbb{Z}_q$.
 	do
 		mpz_srandomm(r, q);
-	while (!mpz_cmp_ui(r, 0L));
+	while (!mpz_cmp_ui(r, 0L) || !mpz_cmp_ui(r, 1L));
 }
 
 void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
@@ -593,8 +595,8 @@ bool BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Verify
 			throw false;
 		
 		// invoke CP(c_1, c_2/m, g, h; r) as verifier
-		assert(mpz_invert(foo, m, p));
-		mpz_invert(foo, m, p);
+		if (!mpz_invert(foo, m, p))
+			throw false;
 		mpz_mul(foo, foo, c_2);
 		mpz_mod(foo, foo, p);
 		if (!CP_Verify(c_1, foo, g, h, in, true))
@@ -681,12 +683,12 @@ bool BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Verify
 			throw false;
 		
 		// invoke CP(c'_1/c_1, c'_2/c_2, g, h; r) as verifier
-		assert(mpz_invert(foo, c_1, p));
-		mpz_invert(foo, c_1, p);
+		if (!mpz_invert(foo, c_1, p))
+			throw false;
 		mpz_mul(foo, foo, c__1);
 		mpz_mod(foo, foo, p);
-		assert(mpz_invert(bar, c_2, p));
-		mpz_invert(bar, c_2, p);
+		if (!mpz_invert(bar, c_2, p))
+			throw false;
 		mpz_mul(bar, bar, c__2);
 		mpz_mod(bar, bar, p);
 		if (!CP_Verify(foo, bar, g, h, in, true))

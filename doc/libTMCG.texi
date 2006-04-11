@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.31 2006/04/09 18:29:32 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.32 2006/04/11 13:41:29 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -35,6 +35,14 @@ Free Documentation License''.
 @title The LibTMCG Reference Manual
 @subtitle Version @value{VERSION}
 @subtitle @value{UPDATED}
+@sp 9
+@center @titlefont{@math{@clubsuit@qquad@quad@spadesuit@qquad@quad@heartsuit@qquad@quad@diamondsuit}}
+@sp 2
+@center @titlefont{Implementation of the}
+@center @titlefont{Toolbox for Mental Card Games}
+@sp 2
+@center @titlefont{@math{@clubsuit@qquad@quad@spadesuit@qquad@quad@heartsuit@qquad@quad@diamondsuit}}
+
 @author Heiko Stamer <@email{stamer@@gaos.org}>
 
 @page
@@ -95,7 +103,8 @@ The interested reader is referred to the following papers:
 @quotation [Sc98]
 	@sc{Christian Schindelhauer}.
 	@emph{Toolbox for Mental Card Games.}@*
-	Technical Report A-98-14, University of L@"ubeck, 1998.
+	Technical Report A-98-14, University of L@"ubeck, 1998.@*
+	@uref{http://citeseer.ist.psu.edu/@/schindelhauer98toolbox.html}
 @end quotation
 @quotation [BS03]
 	@sc{Adam Barnett} and @sc{Nigel P. Smart}.
@@ -106,7 +115,8 @@ The interested reader is referred to the following papers:
 @quotation [Gr05]
 	@sc{Jens Groth}.
 	@emph{A Verifiable Secret Shuffle of Homomorphic Encryptions.}@*
-	Cryptology ePrint Archive, Report 2005/246, 2005.
+	Cryptology ePrint Archive, Report 2005/246, 2005.@*
+	@uref{http://eprint.iacr.org/@/2005/@/246}
 @end quotation
 @quotation [St04]
 	@sc{Heiko Stamer}.
@@ -120,7 +130,8 @@ The interested reader is referred to the following papers:
 	of the Toolbox for Mental Card Games.}@*
 	Proceedings of the Western European Workshop on Research in
 	Cryptology (WEWoRC 2005), Lecture Notes in Informatics P-74,
-	pp. 1--12, 2005.
+	pp. 1--12, 2005.@*
+	@uref{http://www.gaos.org/@/~stamer/@/WEWoRC2005_proc.pdf}
 @end quotation
 
 @c **********************************************************
@@ -139,10 +150,155 @@ Thus don't be surprised, if you recognize some obvious
 analogies.
 
 @c **********************************************************
+@section Preliminaries
+The most card games are played with a regular card deck, i.e.,
+cards where the pattern on the picture side determines the card
+type (e.g. the King of Spades@tie{}@math{\spadesuit}, the Seven of
+Hearts@tie{}@math{\heartsuit}, the Ace of Club@tie{}@math{\clubsuit},
+or the Jack of Diamonds@tie{}@math{\diamondsuit}) and where the
+reverse sides of all cards are indistinguishable. Only such
+card decks are supported by LibTMCG.
+
+@subsection Terminology
+@cindex Terminology
+The following list defines some terms that are subsequently used
+in the manual.
+
+@quotation Player
+@cindex Player
+	A @emph{player} is an active participant in the electronic card
+	game.
+@end quotation
+
+@quotation Card
+@cindex Card
+	The term @emph{card} means the electronic representation of a playing
+	card. LibTMCG provides two different encoding schemes for cards.
+@end quotation
+
+@quotation Card Type
+@cindex Card Type
+	The @emph{card type} is a nonnegative integer which corresponds
+	to the pattern on the picture side of a real playing card. We
+	assume here that such a natural encoding always exists.
+@end quotation
+
+@quotation Masking
+@cindex Masking
+	@emph{Masking} is the process to hide a card representation and
+	thus the corresponding card type. Roughly speaking, masking is the
+	random encryption of a card representation such that the card type
+	is preserved.
+@end quotation
+
+@quotation Card Secret
+@cindex Card Secret
+	The @emph{card secret} is a data type which contains the secret
+	random values used in a masking operation. These values must be
+	kept secret until the card type should be revealed.
+@end quotation
+
+@quotation Open Card
+@cindex Open Card
+	An @emph{open card} is a card whose type can be easily
+	determined by all players and usually by observers, too.
+@end quotation
+
+@quotation Masked Card
+@cindex Masked Card
+	A @emph{masked card} is a card whose type is not known to a subset
+	of players. The type can only be computed, if each player who
+	performed a masking operation on that card supplies his corresponding
+	card secret.
+@end quotation
+
+@quotation Private Card
+@cindex Private Card
+	A @emph{private card} is a card whose type is only known to its
+	owner, because all players have performed a masking operation on
+	that card. As long as the owner does not reveal the corresponding
+	secret the type stays hidden to all other players.
+@end quotation
+
+@quotation Stack
+@cindex Stack
+	A @emph{stack} is a not necessarily disjoint subset of the whole
+	card deck.
+@end quotation
+
+@quotation Prover and Verifier
+@cindex Prover
+@cindex Verifier
+	The @emph{prover} is the player who want to show some property
+	to another party called @emph{verifier}, for example, that he
+	performed a masking operation correctly, i.e., the type of the
+	card is preserved.
+@end quotation
+
+@subsection Security
+@cindex Security
+`'Mental Poker'' protocols cannot prevent that malicious players
+exchange private information, for example by telephone. The protocols
+can only minimize the effect of such colluding parties and protect
+the private cards of honest players. But even this protection relies
+on number-theoretical assumptions which are only believed be true and
+not really proven, e.g. problems like factoring large prime products
+or computing dicrete logarithms. That means, a strict proof@footnote{
+in the sense of complexity theory} of the hardness of these problems
+is not known, and probably such a proof will never be found. However,
+almost all public key cryptography relies on such assumptions and
+therefore you should not worry about this issue, as long as reasonable
+security parameters are chosen.
+
+The card and stack operations are considered in the ``honest-but-curious''
+(aka semi-honest) adversary model. That means, the players follow the
+protocol instructions properly but the may gather information and share
+them within a coalition to obtain an advantage in the game. Thus we are
+not concerned with robustness and availibility issues which are hard to
+solve in an asynchronous environment (e.g. Internet). However, all
+operations are verifiable such that cheating players can be identified.
+To obtain such a verifiability the protocols deploy so-called zero-knowledge
+proofs whose soundness error is controlled by a security parameter @math{t}.
+Depending on your application scenario this parameter should be chosen such
+that there is a reasonable tradeoff between the cheating probability, which
+is less or equal than @math{2^{-t}}, and the produced computational resp.
+communication complexity.
+
+Note that in general it is not known, whether the used protocols retain their
+zero-knowledge property, when they are composed and executed in a concurrent
+setting. Thus the application programmer should be careful and avoid parallel
+protocol sessions with the same instances. It is an open research project
+to create a protocol suite whose security can be proven in the UC-framework
+of Canetti (see @emph{Universally Composable Security: A New Paradigm for
+Cryptographic Protocols}, Cryptology ePrint Archive: Report 2000/067).
+Furthermore, the protocols should employ concurrent zero-knowledge
+proofs (see Dwork, Naor, Sahai: @emph{Concurrent Zero-Knowledge}, Journal
+of the ACM 51(6):851--898, 2004).
+
+LibTMCG was carefully implemented with respect to timing attacks (see Kocher:
+@emph{Cryptanalysis of Diffie-Hellman, RSA, DSS, and other cryptosystems using
+timing attacks}, CRYPTO@tie{}'95, LNCS@tie{}963, 1995). Therefore we loose
+some efficiency, e.g., during modular exponentiations. However, it is strongly
+recommended to leave the timing attack protection turned on unless you know
+exactly where it is not necessary.
+
+@quotation Security Advice
+@cindex Security Advice
+We have implemented all cryptographic primitives according to the cited
+research papers and to the best of our knowledge. However, we can not eliminate
+any possibility of flaws and insecurity, because the implementation of such
+complex protocols is always an error-prone process. Thus we encourage
+readers with advanced cryptographic knowledge to review the source code of
+LibTMCG. Please report any complaint to Heiko Stamer <@email{stamer@@gaos.org}>.
+@end quotation
+
+@c **********************************************************
 @section Preparation
 LibTMCG depends on the three other basic libraries. Therefore
 you need the corresponding development files to build LibTMCG
-and your application properly:
+and your application properly. The following list gives a short
+description of the used features and specifies the required version
+of these libraries:
 @itemize @bullet
 	@item GNU Multiple Precision Arithmetic Library (@file{libgmp}),
 		Version @math{\ge} 4.1.0
@@ -244,7 +400,7 @@ g++ -o foo foo.c `libTMCG-config --cflags --libs`
 @end example
 
 @c **********************************************************
-@section Building Sources Using GNU Automake
+@subsection Building Sources Using GNU Automake
 You can use GNU Automake to obtain automatically generated
 Makefiles. If you do so then you do not have to care about finding and
 invoking the @command{libTMCG-config} script at all.
@@ -287,106 +443,6 @@ is sent to @code{std:cerr}.
 @c *************************  API  **************************
 @c **********************************************************
 @chapter Application Programming Interface
-
-@c **********************************************************
-@section Preliminaries
-The most card games are played with a regular card deck, i.e.,
-cards where the pattern on the picture side determines the card
-type (e.g. the King of Spades, the Seven of Hearts, the Ace of Club,
-or the Nine of Diamonds) and where the reverse sides of all cards are
-indistinguishable. Only such card decks are supported by LibTMCG.
-
-@subsection Terminology
-@cindex Terminology
-This section defines some terms that are subsequently used
-in the manual.
-
-@quotation Card
-@cindex Card
-	The term @emph{card} means the electronic representation of a playing
-	card.
-@end quotation
-
-@quotation Card Type
-@cindex Card Type
-	The @emph{card type} is a nonnegative integer which corresponds
-	to the pattern on the picture side of a real playing card. We
-	assume here that such a natural encoding always exists.
-@end quotation
-
-@quotation Open Card
-@cindex Open Card
-	An @emph{open card} is a card whose type can be easily
-	determined by all players and usually by observers, too.
-@end quotation
-
-@quotation Masked Card
-@cindex Masked Card
-	A @emph{masked card} is a card whose type is unknown to a not
-	necessarily proper subset of the players. The type can only be
-	computed, if all players who performed a masking operation on
-	that card supply their corresponding card secrets.
-@end quotation
-
-@quotation Private Card
-@cindex Private Card
-
-@end quotation
-
-@quotation Stack
-@cindex Stack
-	A @emph{stack} is a not necessarily disjoint subset of the card deck.
-	
-	
-	simple container where cards can be pushed and
-	popped to and from the top, respectively.
-	
-	is perserved until a shuffle takes place.
-@end quotation
-
-@quotation Prover and Verifier
-@cindex Prover
-@cindex Verifier
-	The @emph{prover} is the player who want to show some property
-	to another party called @emph{verifier}, for example, that he
-	performed a shuffle of a stack correctly.
-@end quotation
-
-@subsection Security
-@cindex Security
-`'Mental Poker'' protocols cannot prevent that malicious players
-exchange private information, for example by telephone. The protocols
-can only minimize the effect of such colluding parties and protect
-the private cards of honest players. But even this protection relies
-on number-theoretical assumptions which are only believed be true, e.g.
-the hardness of factoring or the hardness of computing dicrete logarithms.
-In the sense of complexity theory a strict proof of hardness is not known
-for these problems, and probably such a proof will never be found.
-However, almost all public key cryptography relies on such assumptions
-and therefore your should not worry about this issue, if reasonable
-security parameters are chosen.
-
-The card and stack operations are considered in the ``honest-but-curious''
-(aka semi-honest) adversary model. That means, the players follow the
-protocol instructions properly but the may gather information and share
-them within a coalition to obtain an advantage in the game. Thus we are
-not concerned with robustness and availibility issues which are hard to
-solve in an asynchronous environment like the Internet. However, all
-operations are verifiable such that cheating players can be identified.
-In the used zero-knowledge proofs the success of cheating can be bound
-by a security parameter @math{t}, such that this probability is less or
-equal than @math{2^{-t}}.
-
-Note that in general it is unknown, whether the used protocols retain their
-zero-knowledge property, when they are composed and executed in a concurrent
-setting. Thus the application programmer should be careful and avoid parallel
-protocol sessions with the same instances.
-
-
-there is no security proof in UC-framework of Canetti
-et al. Thus the application programmer should be careful
-and avoid parallel protocol sessions with the same instances.
-
 
 @c **********************************************************
 @section Preprocessor Defined Global Symbols
@@ -577,13 +633,13 @@ implemented. This encoding works on a cyclic group of
 prime order and requires that the @acronym{DDH, Decisional
 Diffie-Hellman Assumption} holds there.
 
-For both schemes there is a data type with the suffix
+In both schemes there is a data type with the suffix
 @code{Card} which represents an open or even a masked card.
-Further, there is corresponding data type with the suffix
+Further, there is a corresponding data type with the suffix
 @code{CardSecret} that represents the secret values involved
 in a card masking operation.
 
-Because of the reduced computational and communication
+For the reason of the reduced computational and communication
 complexity (cf.@tie{}[St05]) the usage of the second card
 encoding scheme, i.e. @code{VTMF_Card}, is highly recommended.
 
@@ -1185,17 +1241,18 @@ and @code{CardSecret} data types, respectively.
 
 @subsubsection Cryptographic Keys
 @cindex Keys
-LibTMCG provides the key data types only for the encoding scheme of
-Schindelhauer@tie{}[Sc98], because it is very inefficient to perform the
-corresponding key generation for every new game session. Furthermore,
-the keys can be used to ensure the confidentiality and integrity of
-short messages, even if the scheme of Barnett and Smart@tie{}[BS03]
-has been applied for the card encoding. Therefore these structures may
-be of independent interest. However, like in every public key cryptosystem
-a trusted @acronym{PKI, Public Key Infrastructure} is needed. This might
-not be a serious concern for a distributed game environment, if the players
-compare their key fingerprints on a secure channel or if the service
-provider exhibits certificates.
+LibTMCG only provides data types for keys used in the encoding scheme of
+Schindelhauer@tie{}[Sc98], because it is not efficient to perform the
+corresponding key generation in every new game session. Furthermore,
+the keys admit to ensure the confidentiality and integrity of messages,
+even if the scheme of Barnett and Smart@tie{}[BS03] has been applied for
+the card encoding. Therefore these structures may be of independent interest,
+for example to establish the required authenticated communication channels
+between players. However, like in every public key cryptosystem a trusted
+@acronym{PKI, Public Key Infrastructure} is needed. This is not a serious
+concern in a distributed game environment, if the players compare their
+key fingerprints by telephone or if a central service provider exhibits
+public key certificates.
 
 @deftp {Data type} TMCG_SecretKey
 	This @code{struct} represents the secret part of the TMCG key. The
@@ -1550,10 +1607,10 @@ card encoding scheme and thus to the high-level operations on cards resp.
 stacks.
 
 There are just a few methods and members of these classes that might be of
-interest for an application programmer, e.g. the methods of the key generation
-protocol. The other stuff is only used internally by high-level operations
-of @code{SchindelhauerTMCG}. Therefore this manual omits the description of
-such internal functions and members.
+general interest for an application programmer, e.g. the methods of the key
+generation protocol. The other stuff is only used internally by high-level
+operations of @code{SchindelhauerTMCG}. Therefore this manual omits the
+description of such internal functions and members.
 
 @deftp {Class} BarnettSmartVTMF_dlog
 	This class implements the discrete logarithm instantiation of the VTMF
@@ -1804,7 +1861,7 @@ Recently, Groth@tie{}[Gr05] has proposed a very efficient solution to perform
 a verifiable shuffle of homomorphically encrypted values. He describes an
 honest verifier zero-knowledge argument which shows the correctness of a
 shuffle. Beside other applications (e.g. verifiable mix networks, electronic
-voting) his protocol can be used to show with overwhelming probability that
+voting) his protocol can be used to show (with overwhelming probability) that
 the secret shuffle of a deck of cards was performed correctly. The
 computational complexity and the produced communication traffic are superior
 to previously deployed techniques (e.g. Schindelhauer's cut-and-choose method).
@@ -1816,11 +1873,11 @@ Our implementation uses the unconditionally hiding and statistically binding
 homomorphic commitment scheme due to Pedersen (see @emph{Non-interactive
 and Information-theoretic Secure Verifiable Secret Sharing}, CRYPTO@tie{}'91,
 LNCS@tie{}576). This choice seems to be reasonable for the intention of
-our library. The security parameters of the commitment scheme are determined
+LibTMCG. The security parameters of the commitment scheme are determined
 by the corresponding VTMF instance.
 
 Further, to the best of our knowledge it is still unknown, whether or not
-Groth's protocol retains the zero-knowledge property, when it is executed in
+Groth's protocol retains the zero-knowledge property when it is executed in
 a concurrent setting. Hence the application programmer should be careful and
 avoid parallel executions of the same instance.
 
@@ -2001,7 +2058,7 @@ class must be created to perform card and stack operations.
 		The @var{type} MUST be an integer from the interval @math{[0, 2^{w} - 1]},
 		where @math{w} is the number given to the constructor of this class. The
 		@math{w} MUST be the same number as used at creation of @var{c} (see
-		@code{TMCG_Card}) and @var{cs} (see @code{TMCG_CardSecreT}). The parameter
+		@code{TMCG_Card}) and @var{cs} (see @code{TMCG_CardSecret}). The parameter
 		@var{ring} is a container with exactly @math{k} public keys, where @math{k}
 		is the number given to the constructor of this class. The @math{k} MUST be
 		the same number as used at the creation of @var{c} and @var{cs}. The parameter
@@ -2051,8 +2108,17 @@ class must be created to perform card and stack operations.
 		respectively). The protection against timing attacks is turned on, if
 		@var{TimingAttackProtection} is set to @code{true}.
 	@end deftypemethod
-
+	
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveMaskCard (@code{const TMCG_Card&} c, @code{const TMCG_Card&} cc, @code{const TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{std::istream&} in, @code{std::ostream&} out)
+		This method is called by the prover to show that he performed the
+		masking operation (see @code{TMCG_MaskCard}) correctly. The parameters
+		@var{c}, @var{cc}, and @var{cs} are the input, the result, and the
+		used card secret, respectively. They MUST be created such that their
+		@math{k} resp. @math{w} corresponds to the numbers given to the
+		constructor of this class. The parameter @var{ring} is a container with
+		exactly @math{k} public keys.
+		The input resp. output data from resp. to the verifier is read resp. sent to
+		the streams @var{in} resp. @var{out}.
 	@end deftypemethod
 
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveMaskCard (@code{const VTMF_Card&} c, @code{const VTMF_Card&} cc, @code{const VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
@@ -2262,13 +2328,14 @@ if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) ||
 @c **********************************************************
 @c *******************  Appendices  *************************
 @c **********************************************************
+@appendix Licenses
 @include gpl.texi
 @include fdl.texi
 
-@unnumbered General Index
+@appendix Index
+@heading General Index
 @printindex cp
-
-@unnumbered API Index
+@heading API Index
 @printindex fn
 
 @bye
