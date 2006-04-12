@@ -767,7 +767,7 @@ void SchindelhauerTMCG::TMCG_CreateOpenCard
 }
 
 void SchindelhauerTMCG::TMCG_CreateOpenCard
-(VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf, size_t type)
+	(VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf, size_t type)
 {
 	assert(type < TMCG_MaxCardType);
 	
@@ -842,7 +842,7 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 
 void SchindelhauerTMCG::TMCG_CreatePrivateCard
 	(TMCG_Card &c, TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
-		size_t index, size_t type)
+	size_t index, size_t type)
 {
 	assert(type < TMCG_MaxCardType);
 	assert(c.z.size() == TMCG_Players);
@@ -861,7 +861,7 @@ void SchindelhauerTMCG::TMCG_CreatePrivateCard
 
 void SchindelhauerTMCG::TMCG_CreatePrivateCard
 	(VTMF_Card &c, VTMF_CardSecret &cs, BarnettSmartVTMF_dlog *vtmf,
-		size_t type)
+	size_t type)
 {
 	assert(type < TMCG_MaxCardType);
 	
@@ -873,7 +873,7 @@ void SchindelhauerTMCG::TMCG_CreatePrivateCard
 
 void SchindelhauerTMCG::TMCG_MaskCard
 	(const TMCG_Card &c, TMCG_Card &cc, const TMCG_CardSecret &cs,
-		const TMCG_PublicKeyRing &ring, bool TimingAttackProtection)
+	const TMCG_PublicKeyRing &ring, bool TimingAttackProtection)
 {
 	assert(c.z.size() == TMCG_Players);
 	assert(c.z[0].size() == TMCG_TypeBits);
@@ -889,7 +889,7 @@ void SchindelhauerTMCG::TMCG_MaskCard
 
 void SchindelhauerTMCG::TMCG_MaskCard
 	(const VTMF_Card &c, VTMF_Card &cc, const VTMF_CardSecret &cs,
-		BarnettSmartVTMF_dlog *vtmf, bool TimingAttackProtection)
+	BarnettSmartVTMF_dlog *vtmf, bool TimingAttackProtection)
 {
 	vtmf->VerifiableRemaskingProtocol_Remask(c.c_1, c.c_2, cc.c_1, cc.c_2,
 		cs.r, TimingAttackProtection);
@@ -897,7 +897,7 @@ void SchindelhauerTMCG::TMCG_MaskCard
 
 void SchindelhauerTMCG::TMCG_ProveMaskCard
 	(const TMCG_Card &c, const TMCG_Card &cc, const TMCG_CardSecret &cs,
-		const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out)
+	const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out)
 {
 	assert(c.z.size() == TMCG_Players);
 	assert(c.z[0].size() == TMCG_TypeBits);
@@ -913,7 +913,7 @@ void SchindelhauerTMCG::TMCG_ProveMaskCard
 
 void SchindelhauerTMCG::TMCG_ProveMaskCard
 	(const VTMF_Card &c, const VTMF_Card &cc, const VTMF_CardSecret &cs,
-		BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out)
+	BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out)
 {
 	vtmf->VerifiableRemaskingProtocol_Prove(c.c_1, c.c_2, cc.c_1, cc.c_2,
 		cs.r, out);
@@ -937,7 +937,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskCard
 
 bool SchindelhauerTMCG::TMCG_VerifyMaskCard
 	(const VTMF_Card &c, const VTMF_Card &cc, BarnettSmartVTMF_dlog *vtmf,
-		std::istream &in, std::ostream &out)
+	std::istream &in, std::ostream &out)
 {
 	if (!vtmf->VerifiableRemaskingProtocol_Verify(c.c_1, c.c_2, cc.c_1,
 		cc.c_2, in))
@@ -947,7 +947,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskCard
 
 void SchindelhauerTMCG::TMCG_ProvePrivateCard
 	(const TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
-		std::istream &in, std::ostream &out)
+	std::istream &in, std::ostream &out)
 {
 	assert(cs.r.size() == TMCG_Players);
 	assert(cs.r[0].size() == TMCG_TypeBits);
@@ -960,7 +960,7 @@ void SchindelhauerTMCG::TMCG_ProvePrivateCard
 
 bool SchindelhauerTMCG::TMCG_VerifyPrivateCard
 	(const TMCG_Card &c, const TMCG_PublicKeyRing &ring,
-		std::istream &in, std::ostream &out)
+	std::istream &in, std::ostream &out)
 {
 	assert(c.z.size() == TMCG_Players);
 	assert(c.z[0].size() == TMCG_TypeBits);
@@ -998,7 +998,7 @@ void SchindelhauerTMCG::TMCG_ProveCardSecret
 
 void SchindelhauerTMCG::TMCG_ProveCardSecret
 	(const VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf,
-		std::istream &in, std::ostream &out)
+	std::istream &in, std::ostream &out)
 {
 	vtmf->VerifiableDecryptionProtocol_Prove(c.c_1, out);
 }
@@ -1007,6 +1007,8 @@ bool SchindelhauerTMCG::TMCG_VerifyCardSecret
 	(const TMCG_Card &c, TMCG_CardSecret &cs, const TMCG_PublicKey &key,
 	size_t index, std::istream &in, std::ostream &out)
 {
+	assert(c.z.size() == TMCG_Players);
+	assert(c.z[0].size() == TMCG_TypeBits);
 	assert((c.z.size() == cs.r.size()) && (c.z[0].size() == cs.r[0].size()));
 	assert(c.z.size() > index);
 	
@@ -1050,6 +1052,8 @@ void SchindelhauerTMCG::TMCG_SelfCardSecret
 	(const TMCG_Card &c, TMCG_CardSecret &cs, const TMCG_SecretKey &key,
 		size_t index)
 {
+	assert(c.z.size() == TMCG_Players);
+	assert(c.z[0].size() == TMCG_TypeBits);
 	assert((c.z.size() == cs.r.size()) && (c.z[0].size() == cs.r[0].size()));
 	assert(c.z.size() > index);
 	
@@ -1072,6 +1076,9 @@ void SchindelhauerTMCG::TMCG_SelfCardSecret
 size_t SchindelhauerTMCG::TMCG_TypeOfCard
 	(const TMCG_CardSecret &cs)
 {
+	assert(cs.r.size() == TMCG_Players);
+	assert(cs.r[0].size() == TMCG_TypeBits);
+	
 	size_t type = 0, p2 = 1;
 	
 	for (size_t w = 0; w < cs.r[0].size(); w++)
@@ -1118,46 +1125,30 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 	(TMCG_StackSecret<TMCG_CardSecret> &ss, bool cyclic,
 		const TMCG_PublicKeyRing &ring, size_t index, size_t size)
 {
-	size_t cyc = 0;
-	mpz_t foo, bar, cy;
+	assert(ring.keys.size() == TMCG_Players);
+	assert(ring.keys.size() > index);
+	assert(size <= TMCG_MAX_CARDS);
 	
-	mpz_init(foo), mpz_init_set_ui(bar, size);
-	if (cyclic)
-	{
-		mpz_init(cy);
-		mpz_srandomm(cy, bar);
-		cyc = (size_t)mpz_get_ui(cy);
-		mpz_clear(cy);
-	}
+	size_t cyc = 0, foo = 0;
 	ss.clear();
+	if (cyclic)
+		cyc = (size_t)mpz_srandom_ui();
 	for (size_t i = 0; i < size; i++)
 	{
 		TMCG_CardSecret cs(TMCG_Players, TMCG_TypeBits);
 		TMCG_CreateCardSecret(cs, ring, index);
 		
-		// create only a cyclic shift
 		if (cyclic)
-		{
-			mpz_set_ui(foo, i);
-			mpz_add_ui(foo, foo, (unsigned long int)cyc);
-			mpz_mod(foo, foo, bar);
-		}
-		// create a full permutation
+			foo = (cyc + i) % size; // create only a cyclic shift
 		else
 		{
-			bool pi_ok;
+			// create a full permutation
 			do
-			{
-				pi_ok = true;
-				mpz_srandomm(foo, bar);
-				if (ss.find((size_t)mpz_get_ui(foo)))
-					pi_ok = false;
-			}
-			while (!pi_ok);
+				foo = (size_t)mpz_srandom_ui() % size;
+			while (ss.find(foo));
 		}
-		ss.push((size_t)mpz_get_ui(foo), cs);
+		ss.push(foo, cs);
 	}
-	mpz_clear(foo), mpz_clear(bar);
 	return cyc;
 }
 
@@ -1165,46 +1156,27 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 	(TMCG_StackSecret<VTMF_CardSecret> &ss, bool cyclic, size_t size,
 	BarnettSmartVTMF_dlog *vtmf)
 {
-	size_t cyc = 0;
-	mpz_t foo, bar, cy;
+	assert(size <= TMCG_MAX_CARDS);
 	
-	mpz_init(foo), mpz_init_set_ui(bar, size);
-	if (cyclic)
-	{
-		mpz_init(cy);
-		mpz_srandomm(cy, bar);
-		cyc = (size_t)mpz_get_ui(cy);
-		mpz_clear(cy);
-	}
+	size_t cyc = 0, foo = 0;
 	ss.clear();
+	if (cyclic)
+		cyc = (size_t)mpz_srandom_ui();
 	for (size_t i = 0; i < size; i++)
 	{
 		VTMF_CardSecret cs;
 		TMCG_CreateCardSecret(cs, vtmf);
-		
-		// create only a cyclic shift
 		if (cyclic)
-		{
-			mpz_set_ui(foo, i);
-			mpz_add_ui(foo, foo, (unsigned long int)cyc);
-			mpz_mod(foo, foo, bar);
-		}
-		// create a full permutation
+			foo = (cyc + i) % size; // create only a cyclic shift
 		else
 		{
-			bool pi_ok;
+			// create a full permutation
 			do
-			{
-				pi_ok = true;
-				mpz_srandomm(foo, bar);
-				if (ss.find((size_t)mpz_get_ui(foo)))
-					pi_ok = false;
-			}
-			while (!pi_ok);
+				foo = (size_t)mpz_srandom_ui() % size;
+			while (ss.find(foo));
 		}
-		ss.push((size_t)mpz_get_ui(foo), cs);
+		ss.push(foo, cs);
 	}
-	mpz_clear(foo), mpz_clear(bar);
 	return cyc;
 }
 
@@ -1213,9 +1185,10 @@ void SchindelhauerTMCG::TMCG_MixStack
 	const TMCG_StackSecret<TMCG_CardSecret> &ss,
 	const TMCG_PublicKeyRing &ring, bool TimingAttackProtection)
 {
-	assert((s.size() != 0) && (s.size() == ss.size()));
+	assert(ring.keys.size() == TMCG_Players);
+	assert(s.size() == ss.size());
 	
-	// mask all cards, mix, and build new stack
+	// mask all cards, permutate, and build a new stack
 	s2.clear();
 	for (size_t i = 0; i < s.size(); i++)
 	{
@@ -1231,9 +1204,9 @@ void SchindelhauerTMCG::TMCG_MixStack
 	const TMCG_StackSecret<VTMF_CardSecret> &ss, BarnettSmartVTMF_dlog *vtmf,
 	bool TimingAttackProtection)
 {
-	assert((s.size() != 0) && (s.size() == ss.size()));
+	assert(s.size() == ss.size());
 	
-	// mask all cards, mix, and build new stack
+	// mask all cards, permutate, and build a new stack
 	s2.clear();
 	for (size_t i = 0; i < s.size(); i++)
 	{
@@ -1248,12 +1221,12 @@ void SchindelhauerTMCG::TMCG_GlueStackSecret
 	(const TMCG_StackSecret<TMCG_CardSecret> &sigma,
 	TMCG_StackSecret<TMCG_CardSecret> &pi, const TMCG_PublicKeyRing &ring)
 {
-	mpz_t tim;
-	
 	assert(sigma.size() == pi.size());
-	mpz_init(tim);
 	
+	mpz_t tim;
 	TMCG_StackSecret<TMCG_CardSecret> ss3;
+	
+	mpz_init(tim);
 	for (size_t i = 0; i < sigma.size(); i++)
 	{
 		TMCG_CardSecret cs(TMCG_Players, TMCG_TypeBits);
@@ -1337,6 +1310,7 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 	const TMCG_PublicKeyRing &ring, size_t index,
 	std::istream &in, std::ostream &out)
 {
+	assert(ring.keys.size() == TMCG_Players);
 	assert((s.size() == s2.size()) && (s.size() == ss.size()));
 	
 	mpz_t foo;
@@ -1349,13 +1323,13 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 		TMCG_Stack<TMCG_Card> s3;
 		TMCG_StackSecret<TMCG_CardSecret> ss2;
 		
-		// create and mix stack
+		// create and mix the stack
 		TMCG_CreateStackSecret(ss2, cyclic, ring, index, s.size());
 		TMCG_MixStack(s2, s3, ss2, ring);
 		
 		if (TMCG_HASH_COMMITMENT)
 		{
-			// send hash value (instead of the whole stack)
+			// send only the hash value (instead of the whole stack)
 			std::ostringstream ost;
 			ost << s3 << std::endl;
 			mpz_shash(foo, ost.str());
@@ -1498,7 +1472,12 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality_Groth
 	std::istream &in, std::ostream &out)
 {
 	assert((s.size() == s2.size()) && (s.size() == ss.size()));
+	assert(!mpz_cmp(vtmf->h, vsshe->com->h));
 	assert(!mpz_cmp(vtmf->q, vsshe->com->q));
+	assert(!mpz_cmp(vtmf->p, vsshe->p));
+	assert(!mpz_cmp(vtmf->q, vsshe->q));
+	assert(!mpz_cmp(vtmf->g, vsshe->g));
+	assert(!mpz_cmp(vtmf->h, vsshe->h));
 	assert((s.size() <= vsshe->com->g.size()));
 	
 	std::vector<mpz_ptr> R;
@@ -1682,8 +1661,12 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Groth
 	BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
 	std::istream &in, std::ostream &out)
 {
-	assert((s.size() <= vsshe->com->g.size()));
-	assert(!mpz_cmp(vtmf->q, vsshe->com->q));
+	// check whether the parameters of VSSHE and VTMF match
+	if (mpz_cmp(vtmf->h, vsshe->com->h) || mpz_cmp(vtmf->q, vsshe->com->q) || 
+		mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) || 
+		mpz_cmp(vtmf->g, vsshe->g) || mpz_cmp(vtmf->h, vsshe->h) || 
+		(s.size() > vsshe->com->g.size()))
+			return false;
 	
 	if (s.size() != s2.size())
 		return false;

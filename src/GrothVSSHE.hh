@@ -55,12 +55,12 @@
 class PedersenCommitmentScheme
 {
 	private:
-		mpz_t											*fpowm_table_h;
-		std::vector<mpz_t*>				fpowm_table_g;
+		mpz_t						*fpowm_table_h;
+		std::vector<mpz_t*>			fpowm_table_g;
 		const unsigned long int		F_size, G_size;
 	
 	public:
-		mpz_t										p, q, h, k;
+		mpz_t						p, q, k, h;
 		std::vector<mpz_ptr>		g;
 		
 		PedersenCommitmentScheme
@@ -68,7 +68,8 @@ class PedersenCommitmentScheme
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		PedersenCommitmentScheme
-			(size_t n, mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr k_ENC,
+			(size_t n, mpz_srcptr p_ENC, mpz_srcptr q_ENC,
+			mpz_srcptr k_ENC, mpz_srcptr h_ENC,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		PedersenCommitmentScheme

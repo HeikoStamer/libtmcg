@@ -113,7 +113,8 @@ template <typename CardSecretType> struct TMCG_StackSecret
 	void push
 		(size_t index, const CardSecretType& cs)
 	{
-		stack.push_back(std::pair<size_t, CardSecretType>(index, cs));
+		if (stack.size() < TMCG_MAX_CARDS)
+			stack.push_back(std::pair<size_t, CardSecretType>(index, cs));
 	}
 	
 	/** Clears the stack secret. */

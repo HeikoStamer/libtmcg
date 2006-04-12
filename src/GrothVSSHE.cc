@@ -34,8 +34,8 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 {
 	assert(n >= 1);
 	
-	// Initalize and choose the parameters of the commitment scheme.
-	mpz_init(p), mpz_init(q), mpz_init_set_ui(h, 1L), mpz_init(k);
+	// Initialize and choose the parameters of the commitment scheme.
+	mpz_init(p), mpz_init(q), mpz_init(k), mpz_init_set_ui(h, 1L);
 	mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
 	for (size_t i = 0; i <= n; i++)
 	{
@@ -77,16 +77,17 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 }
 
 PedersenCommitmentScheme::PedersenCommitmentScheme
-	(size_t n, mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr k_ENC,
+	(size_t n, mpz_srcptr p_ENC, mpz_srcptr q_ENC, 
+	mpz_srcptr k_ENC, mpz_srcptr h_ENC, 
 	unsigned long int fieldsize, unsigned long int subgroupsize):
 		F_size(fieldsize), G_size(subgroupsize)
 {
 	assert(n >= 1);
 	
-	// Initalize and choose the parameters of the commitment scheme.
-	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), mpz_init_set_ui(h, 1L),
-		mpz_init_set(k, k_ENC);
-	for (size_t i = 0; i <= n; i++)
+	// Initialize and choose the parameters of the commitment scheme.
+	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), 
+		mpz_init_set(k, k_ENC), mpz_init_set(h, h_ENC);
+	for (size_t i = 0; i < n; i++)
 	{
 		mpz_ptr tmp = new mpz_t();
 		mpz_init(tmp);
@@ -99,18 +100,8 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 		while (mpz_congruent_p(tmp, h, p) || 
 			!mpz_cmp_ui(tmp, 0L) || !mpz_cmp_ui(tmp, 1L));
 		
-		if (i < n)
-		{
-			// store the elements $g_1, \ldots, g_n$
-			g.push_back(tmp);
-		}
-		else
-		{
-			// the last element is called $h$
-			mpz_set(h, tmp);
-			mpz_clear(tmp);
-			delete tmp;
-		}
+		// store the elements $g_1, \ldots, g_n$
+		g.push_back(tmp);
 	}
 	
 	// Do the precomputation for the fast exponentiation.
@@ -133,9 +124,9 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 {
 	assert(n >= 1);
 	
-	// Initalize the parameters of the commitment scheme.
-	mpz_init(p), mpz_init(q), mpz_init(h), mpz_init(k);
-	in >> p >> q >> h >> k;
+	// Initialize the parameters of the commitment scheme.
+	mpz_init(p), mpz_init(q),mpz_init(k), mpz_init(h);
+	in >> p >> q >> k >> h;
 	for (size_t i = 0; i < n; i++)
 	{
 		mpz_ptr tmp = new mpz_t();
@@ -227,7 +218,7 @@ bool PedersenCommitmentScheme::CheckGroup
 void PedersenCommitmentScheme::PublishGroup
 	(std::ostream &out) const
 {
-	out << p << std::endl << q << std::endl << h << std::endl << k << std::endl;
+	out << p << std::endl << q << std::endl << k << std::endl << h << std::endl;
 	for (size_t i = 0; i < g.size(); i++)
 		out << g[i] << std::endl;
 }
@@ -313,7 +304,7 @@ bool PedersenCommitmentScheme::Verify
 PedersenCommitmentScheme::~PedersenCommitmentScheme
 	()
 {
-	mpz_clear(p), mpz_clear(q), mpz_clear(h), mpz_clear(k);
+	mpz_clear(p), mpz_clear(q), mpz_clear(k), mpz_clear(h);
 	for (size_t i = 0; i < g.size(); i++)
 	{
 			mpz_clear(g[i]);
@@ -949,7 +940,7 @@ GrothVSSHE::GrothVSSHE
 		mpz_init_set(h, h_ENC);
 	
 	// Initialize the commitment scheme and Groth's SKC argument
-	com = new PedersenCommitmentScheme(n, p_ENC, q_ENC, k_ENC, 
+	com = new PedersenCommitmentScheme(n, p_ENC, q_ENC, k_ENC, h_ENC, 
 		fieldsize, subgroupsize);
 	com->PublishGroup(lej);
 	skc = new GrothSKC(n, lej, ell_e, fieldsize, subgroupsize);

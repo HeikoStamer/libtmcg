@@ -124,7 +124,8 @@ template <typename CardType> struct TMCG_OpenStack
 	void push
 		(const std::pair<size_t, CardType>& p)
 	{
-		stack.push_back(p);
+		if (stack.size() < TMCG_MAX_CARDS)
+			stack.push_back(p);
 	}
 	
 	/** This method pushes a pair to the back of the open stack.
@@ -133,7 +134,8 @@ template <typename CardType> struct TMCG_OpenStack
 	void push
 		(size_t type, const CardType& c)
 	{
-		stack.push_back(std::pair<size_t, CardType>(type, c));
+		if (stack.size() < TMCG_MAX_CARDS)
+			stack.push_back(std::pair<size_t, CardType>(type, c));
 	}
 	
 	/** This method pushes another open stack to the open stack.
@@ -141,7 +143,8 @@ template <typename CardType> struct TMCG_OpenStack
 	void push
 		(const TMCG_OpenStack<CardType>& s)
 	{
-		std::copy(s.stack.begin(), s.stack.end(), std::back_inserter(stack));
+		if ((stack.size() + s.stack.size()) <= TMCG_MAX_CARDS)
+			std::copy(s.stack.begin(), s.stack.end(), std::back_inserter(stack));
 	}
 	
 	/** @returns True, if the stack is empty. */

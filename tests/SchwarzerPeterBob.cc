@@ -68,6 +68,11 @@ int main
 		std::cerr << "Groth's shuffle argument was not sound!" << std::endl;
 		return -1;
 	}
+	if (mpz_cmp(vtmf->h, vsshe->com->h))
+	{
+		std::cerr << "VSSHE: Common public key does not match!" << std::endl;
+		return -1;
+	}
 	if (mpz_cmp(vtmf->q, vsshe->com->q))
 	{
 		std::cerr << "VSSHE: Subgroup order does not match!" << std::endl;
