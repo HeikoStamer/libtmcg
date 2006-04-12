@@ -1132,7 +1132,7 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 	size_t cyc = 0, foo = 0;
 	ss.clear();
 	if (cyclic)
-		cyc = (size_t)mpz_srandom_ui();
+		cyc = (size_t)mpz_srandom_ui() % size;
 	for (size_t i = 0; i < size; i++)
 	{
 		TMCG_CardSecret cs(TMCG_Players, TMCG_TypeBits);
@@ -1161,7 +1161,7 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 	size_t cyc = 0, foo = 0;
 	ss.clear();
 	if (cyclic)
-		cyc = (size_t)mpz_srandom_ui();
+		cyc = (size_t)mpz_srandom_ui() % size;
 	for (size_t i = 0; i < size; i++)
 	{
 		VTMF_CardSecret cs;

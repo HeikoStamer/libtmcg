@@ -384,5 +384,8 @@ int main
 	}
 	
 	// final cleanup
+#ifdef GROTH
+	delete vsshe;
+#endif
 	delete vtmf, delete tmcg;
 }

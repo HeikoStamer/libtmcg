@@ -392,6 +392,9 @@ int main
 		}
 	}
 	
-	// Aufräumen
+	// release all occupied resources
+#ifdef GROTH
+	delete vsshe;
+#endif
 	delete vtmf, delete tmcg;
 }

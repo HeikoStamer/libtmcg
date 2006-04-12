@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.34 2006/04/12 16:16:43 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.35 2006/04/12 22:48:43 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -243,7 +243,7 @@ relay chat. The protocols can only minimize the effect of such colluding
 parties and protect the private cards of honest players. But even this
 protection relies on number-theoretical assumptions which are only
 believed be true and are not really proven, e.g. problems like factoring
-large prime products or computing dicrete logarithms. That means, strict
+large prime products or computing discrete logarithms. That means, strict
 proofs@footnote{in the sense of complexity theory} for the hardness of
 these problems are not known, and probably such proofs will never be found.
 However, almost all public key cryptography relies on such assumptions and
@@ -254,7 +254,7 @@ The card and stack operations are considered in the ``honest-but-curious''
 (aka semi-honest) adversary model. That means, the players follow the
 protocol instructions properly but the may gather information and share
 them within a coalition to obtain an advantage in the game. Thus we are
-not concerned with robustness and availibility issues which are hard to
+not concerned with robustness and availability issues which are hard to
 solve in an asynchronous environment (e.g. Internet). However, all
 operations are verifiable such that cheating can be detected. To obtain
 verifiability the protocols deploy so-called zero-knowledge proofs whose
@@ -2207,7 +2207,7 @@ class must be created to perform any card or stack operations.
 	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyCardSecret (@code{const TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKey&} key, @code{size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
 		This method is used to verify and accumulate card type information regarding
 		@var{c} that are supplied by a prover. It is the opposite method of 
-		@code{TMCG_ProveCardSecret} and must be extecuted by the player who wants to
+		@code{TMCG_ProveCardSecret} and must be executed by the player who wants to
 		know the type. The secrets provided by the single provers are accumulated in
 		the parameter @var{cs}.
 		Thus @var{c} and @var{cs} MUST be created such that their @math{k} resp. @math{w}
@@ -2223,7 +2223,7 @@ class must be created to perform any card or stack operations.
 	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyCardSecret (@code{const VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
 		This method is used to verify and accumulate card type information regarding
 		@var{c} that are supplied by a prover. It is the opposite method of
-		@code{TMCG_ProveCardSecret} and must be extecuted by the player who wants
+		@code{TMCG_ProveCardSecret} and must be executed by the player who wants
 		to know the type. The secrets provided by the single provers are accumulated
 		internally, thus this method cannot be interleaved with the opening of other
 		cards.
@@ -2237,7 +2237,7 @@ class must be created to perform any card or stack operations.
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_SelfCardSecret (@code{const TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_SecretKey&} key, @code{size_t} index)
 		This method is used to compute and accumulate card type information regarding
-		@var{c}. Analogously to @code{TMCG_VerifyCardSecret} it must be extecuted by the
+		@var{c}. Analogously to @code{TMCG_VerifyCardSecret} it must be executed by the
 		player who wants to know the type of @var{c}. The information is accumulated in
 		the parameter @var{cs}.
 		Thus @var{c} and @var{cs} MUST be created such that their @math{k} resp. @math{w}
@@ -2439,8 +2439,8 @@ the corresponding @code{std::istream} resp. @code{std::ostream} for communicatin
 with the @code{i}-th player.@footnote{We assume that the players are ordered in a
 natural way such that every application instance can use the same nomenclature.}
 
-
 @section Library Initialization
+@cindex Initialization
 The first step that should be performed is the initialization of LibTMCG.
 That can be done very simply by calling the function @code{init_libTMCG} and
 evaluating the return code.
@@ -2455,7 +2455,9 @@ if (!init_libTMCG())
 @end cartouche
 @exdent
 
-@section Session Initialization and Key Setup
+@section Session Initialization and Key Generation
+@cindex Initialization
+@cindex Key Generation
 The next step is the creation of an instance of the class
 @code{SchindelhauerTMCG}. The first parameter determines
 the number of protocol iterations @math{t} which upper-bounds
@@ -2479,16 +2481,17 @@ We would like to use the more efficient encoding scheme of Barnett and
 Smart, thus we should create an instance of @code{BarnettSmartVTMF_dlog}.
 However, a particular player has to act as @emph{leader} who performs the
 generation of the group @math{G}. In our case the player with index @code{0}
-will act as leader. First, he will execute the time-consuming constructor:
+will act as session leader. First, he executes the constructor of
+@code{BarnettSmartVTMF_dlog}.
 @cartouche
 @example
 BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog();
 @end example
 @end cartouche
 @exdent
-Afterwards he checks the generated group @math{G} and sends the public parameters
-to the other players (corresponding indices @code{1}, @code{2}, @code{3}, and @code{4}),
-if everything was sound:
+Afterwards the leader checks the generated group @math{G}. He sends the public
+parameters to all other players (corresponding stream indices @code{1}, @code{2},
+@code{3}, and @code{4}), if everything was sound.
 @cartouche
 @example
 if (!vtmf->CheckGroup())
@@ -2501,11 +2504,14 @@ for (size_t i = 1; i < 5; i++)
 @end example
 @end cartouche
 @exdent
-
+All other players receive the group parameters from the leader and use them
+to initialize their corresponding instances of @code{BarnettSmartVTMF_dlog}.
+It is very important that they also check, whether the group @math{G} was
+correctly generated by the leader.
 @cartouche
 @example
 BarnettSmartVTMF_dlog *vtmf = 
-  new BarnettSmartVTMF_dlog(input_stream[j]);
+  new BarnettSmartVTMF_dlog(input_stream[0]);
 if (!vtmf->CheckGroup())
 @{
   std::cerr << "Group G was not correctly generated!" << std::endl;
@@ -2514,87 +2520,356 @@ if (!vtmf->CheckGroup())
 @end example
 @end cartouche
 @exdent
-
+Afterwards the key generation protocol should be carried out. First, every
+player generates his own VTMF key. The secret key material is stored internally
+and will never be exposed.
 @cartouche
 @example
 vtmf->KeyGenerationProtocol_GenerateKey();
 @end example
 @end cartouche
 @exdent
-
+Then every player with index @code{j} sends the public part of his VTMF key
+along with a non-interactive zero-knowledge proof of knowledge to each other
+player. The appended proof of knowledge shows that he indeed knows the
+corresponding secret key. However, due to the non-interactive nature of the
+proof one have to be careful, if same group @math{G} is used again.
 @cartouche
 @example
-vtmf->KeyGenerationProtocol_PublishKey(output_stream[i]);
-@end example
-@end cartouche
-@exdent
-
-@cartouche
-@example
-if (!vtmf->KeyGenerationProtocol_UpdateKey(input_stream[i]))
+for (size_t i = 0; i < 5; i++)
 @{
-  std::cerr << "Public key was not correctly generated!" << std::endl;
-  return -1;
+  if (i != j)
+    vtmf->KeyGenerationProtocol_PublishKey(output_stream[i]);
 @}
 @end example
 @end cartouche
 @exdent
-
+Further, every player receives the public keys. He checks, whether they are
+correctly generated, i.e. the proof of knowledge is sound, and updates the
+common public key.
+@cartouche
+@example
+for (size_t i = 0; i < 5; i++)
+@{
+  if (i != j)
+  @{
+    if (!vtmf->KeyGenerationProtocol_UpdateKey(input_stream[i]))
+    @{
+      std::cerr << "Public key was not correctly generated!" << std::endl;
+      exit(-1);
+    @}
+  @}
+@}
+@end example
+@end cartouche
+@exdent
+Finally, every player must finalize the key generation protocol.
 @cartouche
 @example
 vtmf->KeyGenerationProtocol_Finalize();
 @end example
 @end cartouche
 @exdent
-
-If you want to use the more efficient shuffle proof of Groth
+If you want to use the more efficient shuffle verification protocol of Groth,
+then the leader must create an instance of @code{GrothVSSHE} analogously.
+The first parameter determines the maximum size of a stack for which the
+correctness of a shuffle shall be proven.
+The other parameters stem from the former created VTMF instance. It is
+important that the key generation protocol has been finished before the
+common public key @code{vtmf->h} is passed.
 @cartouche
 @example
 GrothVSSHE *vsshe = new GrothVSSHE(52, vtmf->p, vtmf->q, vtmf->k, 
   vtmf->g, vtmf->h);
-vsshe->PublishGroup(std::cout);
 @end example
 @end cartouche
 @exdent
-
+Again, he must send the public parameters of the VSSHE instance to
+all other players.
 @cartouche
 @example
+for (size_t i = 1; i < 5; i++)
+  vsshe->PublishGroup(output_stream[i]);
+@end example
+@end cartouche
+@exdent
+All other players receive the parameters from the leader and use them
+to initialize their corresponding instances of @code{GrothVSSHE}.
+It is very important that they also check, whether the parameters were
+correctly chosen by the leader.
+@cartouche
+@example
+GrothVSSHE *vsshe = new GrothVSSHE(52, input_stream[0]);
 if (!vsshe->CheckGroup())
 @{
-  std::cerr << "Groth's shuffle argument was not sound!" << std::endl;
-  return -1;
+  std::cerr << "VSSHE was not correctly generated!" << std::endl;
+  exit(-1);
 @}
 if (mpz_cmp(vtmf->h, vsshe->com->h))
 @{
   std::cerr << "VSSHE: Common public key does not match!" << std::endl;
-  return -1;
+  exit(-1);
 @}
 if (mpz_cmp(vtmf->q, vsshe->com->q))
 @{
   std::cerr << "VSSHE: Subgroup order does not match!" << std::endl;
-  return -1;
+  exit(-1);
 @}
 if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) || 
   mpz_cmp(vtmf->g, vsshe->g) || mpz_cmp(vtmf->h, vsshe->h))
 @{
   std::cerr << "VSSHE: Encryption scheme does not match!" << std::endl;
-  return -1;
+  exit(-1);
+@}
+@end example
+@end cartouche
+
+@section Operations on Cards
+Now we're ready to perform operations on cards and stacks. We start
+with some basic operations on cards which might be of interest in
+particular situations. However, often it is more convenient to work
+directly with stacks.
+
+@subsection Creating an Open Card
+The creation of an open card is very simple. The following code
+creates a card of type @code{7}.
+@cartouche
+@example
+VTMF_Card c;
+tmcg->TMCG_CreateOpenCard(c, vtmf, 7);
+@end example
+@end cartouche
+
+@subsection Masking and Re-masking of a Card
+Now the previously created card @code{c} will be masked to hide its type.
+Afterwards the masked card @code{cc} is sent to another player whose
+index is @code{1}.
+@cartouche
+@example
+VTMF_Card cc;
+VTMF_CardSecret cs;
+tmcg->TMCG_CreateCardSecret(cs, vtmf);
+tmcg->TMCG_MaskCard(c, cc, cs, vtmf);
+out_stream[1] << cc << std::endl;
+@end example
+@end cartouche
+@exdent
+The other player receives the card, re-mask the card, and send the
+result back to the player with index @code{0}. Then he proves him
+that he did the masking operation correctly.
+@cartouche
+@example
+VTMF_Card cc, ccc;
+VTMF_CardSecret ccs;
+in_stream[0] >> cc;
+tmcg->TMCG_CreateCardSecret(ccs, vtmf);
+tmcg->TMCG_MaskCard(cc, ccc, ccs, vtmf);
+out_stream[0] << ccc << std::endl;
+tmcg->TMCG_ProveMaskCard(cc, ccc, ccs, vtmf, in_stream[0], out_stream[0]);
+@end example
+@end cartouche
+@exdent
+This creator receives the card, verifies the proof, and send
+the card to all other players.
+@cartouche
+@example
+VTMF_Card ccc;
+in_stream[1] >> ccc;
+if (!tmcg->TMCG_VerifyMaskCard(cc, ccc, vtmf, in_stream[1], out_stream[1]))
+@{
+  std::cerr << "Verification failed!" << std::endl;
+  exit(-1);
+@}
+for (size_t i = 1; i < 5; i++)
+@{
+  out_stream[i] << ccc << std::endl;
 @}
 @end example
 @end cartouche
 @exdent
+The other players receive the masked card and store them as @code{ccc}.
 
-@section Operations on Cards
-@subsection Creating an Open Card
-@subsection Masking and Re-masking of a Card
 @subsection Opening a Masked Card
+Now the player with index @code{1} want to know the type of the masked card
+@code{ccc}. (Of course, the creator knows the card type, too.) Anyway, all five
+players must work together to reveal the type. Every player (except the player
+with index @code{1}) will execute the following code.
+@cartouche
+@example
+tmcg->TMCG_ProveCardSecret(ccc, vtmf, in_stream[1], out_stream[1]);
+@end example
+@end cartouche
+@exdent
+The player with index @code{1} must perform the following commands exactly
+in the given order. Finally, he computes the type and stores the result
+in the variable @code{type}.
+@cartouche
+@example
+tmcg->TMCG_SelfCardSecret(ccc, vtmf);
+for (size_t i = 0; i < 5; i++)
+@{
+  if (i == 1)
+    continue;
+  if (!tmcg->TMCG_VerifyCardSecret(ccc, vtmf, in_stream[i], out_stream[i]))
+  @{
+    std::cerr << "Verification failed!" << std::endl;
+    exit(-1);
+  @}
+@}
+type = tmcg->TMCG_TypeOfCard(ccc, vtmf);
+@end example
+@end cartouche
 
 @section Operations on Stacks
-@subsection Creating an Open Stack
-@subsection Mask and Shuffle a Stack
-@subsection Drawing a Card from a Stack
+@subsection Creating the Deck
+A quite common operation is the creation of a card deck. Every deck should
+initially be represented by an open stack called @code{deck}.
+@cartouche
+@example
+TMCG_OpenStack<VTMF_Card> deck;
+@end example
+@end cartouche
+@exdent
+Every player creates his own deck which consists of the 52@tie{}different open
+cards.
+@cartouche
+@example
+for (size_t type = 0; type < 52; type++)
+@{
+  VTMF_Card c;
+  tmcg->TMCG_CreateOpenCard(c, vtmf, type);
+  deck.push(type, c);
+@}
+@end example
+@end cartouche
+
+@subsection Shuffling the Deck
+Every player must perform a shuffle of the deck, because only such a procedure
+guarantees that no coalition has influence on the outcome. Thus we build a
+shuffle chain such that every player shuffles the deck.
+Consider the following code for the player with index @code{idx}.
+@cartouche
+@example
+TMCG_Stack<VTMF_Card> s;
+s.push(deck);
+
+for (size_t i = 0; i < 5; i++)
+@{
+  TMCG_Stack<VTMF_Card> s2;
+  if (i == idx)
+  @{
+    TMCG_StackSecret<VTMF_CardSecret> ss;
+    tmcg->TMCG_CreateStackSecret(ss, false, s.size(), vtmf);
+    tmcg->TMCG_MixStack(s, s2, ss, vtmf);
+    for (size_t j = 0; j < 5; j++)
+    @{
+      if (j != idx)
+      @{
+        out_stream[j] << s2 << std::endl;
+        tmcg->TMCG_ProveStackEquality(s, s2, ss, false, vtmf,
+          in_stream[j], out_stream[j]);
+      @}
+    @}
+  @}
+  else
+  @{
+    in_stream[i] >> s2;
+    if (!in_stream[i].good())
+    @{
+      std::cerr << "Read or parse error!" << std::endl;
+      exit(-1);
+    @}
+    if (!tmcg->TMCG_VerifyStackEquality(s, s2, false, vtmf,
+      in_stream[i], out_stream[i]))
+    @{
+      std::cerr << "Verification failed!" << std::endl;
+      exit(-1);
+    @}
+  @}
+  s = s2;
+@}
+@end example
+@end cartouche
+First, the regular stack @code{s} is initialized by the open cards from
+@code{deck}. Then each player shuffles the stack, proves the correctness,
+and verifies the proves from other players. Finally, @code{s} contains the
+shuffled result.
+
+If you want to use the more efficient shuffle verification protocol of Groth,
+then you must simply replace the @code{TMCG_ProveStackEquality} and
+@code{TMCG_VerifyStackEquality} by @code{TMCG_ProveStackEquality_Groth} and
+@code{TMCG_VerifyStackEquality_Groth}, respectively.
+
+@subsection Drawing a Card from the Deck
+Now every player has the shuffled deck @code{s} and nobody knows in which
+order the 52@tie{}cards are stacked. Therefore you can simply use any
+drawing strategy to obtain the players hands. For example, look at the
+following code that draws two cards for each player.
+@cartouche
+@example
+TMCG_Stack<VTMF_Card> hand[5];
+for (size_t i = 0; i < 5; i++)
+@{
+  VTMF_Card c1, c2;
+  s.pop(c1), s.pop(c2);
+  hand[i].push(c1), hand[i].push(c2);
+@}
+@end example
+@end cartouche
+@exdent
+Further, you probably want to disclose the card types to the corresponding
+player. Therefore consider the following code for the player with index
+@code{idx}. Every player receives the necessary information from the other
+players to compute the card types of his hand @code{hand[idx]}. Finally,
+these types are stored together with the masked cards in the open stack
+@code{private_hand}. The following code fragment can be also used in a
+straightforward way to publicly open a card from a players hand or from
+the remaining deck @code{s}.
+
+@cartouche
+@example
+TMCG_OpenStack<VTMF_Card> private_hand;
+for (size_t i = 0; i < 5; i++)
+@{
+  if (i == idx)
+  @{
+    for (size_t k = 0; k < hand[i].size(); k++)
+    @{
+      tmcg->TMCG_SelfCardSecret(hand[i][k], vtmf);
+      for (size_t j = 0; j < 5; j++)
+      @{
+        if (j == idx)
+          continue;
+        if (!tmcg->TMCG_VerifyCardSecret(hand[i][k], vtmf,
+          in_stream[j], out_stream[j]))
+        @{
+          std::cerr << "Verification failed!" << std::endl;
+          exit(-1);
+        @}
+      @}
+      private_hand.push(tmcg->TMCG_TypeOfCard(hand[i][k], vtmf),
+        hand[i][k]);
+    @}
+  @}
+  else
+  @{
+    for (size_t k = 0; k < hand[i].size(); k++)
+    @{
+      tmcg->TMCG_ProveCardSecret(hand[i][k], vtmf,
+        in_stream[i], out_stream[i]);
+    @}
+  @}
+@}
+@end example
+@end cartouche
 
 @section Quit a Session
+The last step should release all occupied resources.
+@cartouche
+@example
+delete vsshe, delete vtmf, delete tmcg;
+@end example
+@end cartouche
 
 @c **********************************************************
 @c *******************  Appendices  *************************
