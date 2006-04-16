@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.34 $)
+AC_REVISION($Revision: 1.35 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.1, stamer@gaos.org)
@@ -56,7 +56,7 @@ LIBTMCG_CONFIG_CFLAGS=""
 
 # Check commandline switches.
 
-# Defines some security parameters and macros
+# Defines some security parameters and helping macros
 # (Please update also libTMCG.hh, if changed!)
 AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.2.0",
 	[Define the necessary version number of the GNU gcrypt library])
@@ -70,19 +70,19 @@ AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_RMD160,
 	[Define the message digest algorithm for signatures and FS-heuristic;
 	Underlying assumption: Random Oracle Model])
 
-AC_DEFINE(TMCG_MR_ITERATIONS, 64L,
+AC_DEFINE(TMCG_MR_ITERATIONS, 64,
 	[Define the number of iterations for the Miller-Rabin primality test.
 	(maximum soundness error probability 4^{-TMCG_MR_ITERATIONS})])
-AC_DEFINE(TMCG_GROTH_L_E, 80L,
+AC_DEFINE(TMCG_GROTH_L_E, 80,
 	[Define the security parameter for the soundness of the
 	interactive argument for Groth's VSSHE and SKC.])
-AC_DEFINE(TMCG_DDH_SIZE, 1024L,
+AC_DEFINE(TMCG_DDH_SIZE, 1024,
 	[Define the security parameter of the DDH-hard group G;
 	Underlying assumptions: DDH, CDH, DLOG])
-AC_DEFINE(TMCG_DLSE_SIZE, 160L,
+AC_DEFINE(TMCG_DLSE_SIZE, 160,
 	[Define the security parameter of the shortened exponents;
 	Underlying assumptions: DLSE (related to DDH), DLOG])
-AC_DEFINE(TMCG_QRA_SIZE, 1024L,
+AC_DEFINE(TMCG_QRA_SIZE, 1024,
 	[Define the security parameter of the TMCG public key;
 	Underlying assumptions: QRA, FACTOR])
 AC_DEFINE(TMCG_KEYID_SIZE, 8,
@@ -107,11 +107,11 @@ AC_DEFINE(TMCG_KEY_NIZK_STAGE3, 128,
 	NIZK proof (Goldwasser, Micali); Stage 3: y \in NQR^\circ_m;
 	2^{-TMCG_KEY_NIZK_STAGE3}])
 	
-AC_DEFINE(TMCG_MAX_PLAYERS, 32L,
+AC_DEFINE(TMCG_MAX_PLAYERS, 32,
 	[Define the maximum number of players in the scheme of Schindelhauer])
-AC_DEFINE(TMCG_MAX_CARDS, 128L,
+AC_DEFINE(TMCG_MAX_CARDS, 128,
 	[Define the maximum number of stackable cards])
-AC_DEFINE(TMCG_MAX_TYPEBITS, 8L,
+AC_DEFINE(TMCG_MAX_TYPEBITS, 8,
 	[Define the number of bits which represents the maximum number of
 	different card types in the scheme of Schindelhauer and the maximum
 	size of the message space in the scheme of Barnett and Smart])

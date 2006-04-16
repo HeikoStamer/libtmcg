@@ -26,25 +26,25 @@
 	#ifndef TMCG_MR_ITERATIONS
 		/* Define the number of iterations for the Miller-Rabin primality test.
 		   (maximum soundness error probability 4^{-TMCG_MR_ITERATIONS}) */
-		#define TMCG_MR_ITERATIONS 64L
+		#define TMCG_MR_ITERATIONS 64
 	#endif
 	
 	#ifndef TMCG_GROTH_L_E
 		/* Define the security parameter for the soundness of the
 		   interactive argument for Groth's VSSHE and SKC. */
-		#define TMCG_GROTH_L_E 80L
+		#define TMCG_GROTH_L_E 80
 	#endif
 	
 	#ifndef TMCG_DDH_SIZE
 		/* Define the security parameter of the DDH-hard group G;
 		   Underlying assumptions: DDH, CDH, DLOG */
-		#define TMCG_DDH_SIZE 1024L
+		#define TMCG_DDH_SIZE 1024
 	#endif
 	
 	#ifndef TMCG_DLSE_SIZE
 		/* Define the security parameter of the used exponents;
 		   Underlying assumptions: DLSE (related to DDH), DLOG */
-		#define TMCG_DLSE_SIZE 160L
+		#define TMCG_DLSE_SIZE 160
 	#endif
 	
 	#ifndef TMCG_GCRY_MD_ALGO
@@ -91,7 +91,7 @@
 	
 	#ifndef TMCG_MAX_CARDS
 		/* Define the maximum number of stackable cards */
-		#define TMCG_MAX_CARDS 128L
+		#define TMCG_MAX_CARDS 128
 	#endif
 	
 	#ifndef TMCG_MAX_CARD_CHARS
@@ -106,7 +106,7 @@
 	
 	#ifndef TMCG_MAX_PLAYERS
 		/* Define the maximum number of players in the scheme of Schindelhauer */
-		#define TMCG_MAX_PLAYERS 32L
+		#define TMCG_MAX_PLAYERS 32
 	#endif
 	
 	#ifndef TMCG_MAX_STACK_CHARS
@@ -118,7 +118,7 @@
 		/* Define the number of bits which represents the maximum number of
 		   different card types in the scheme of Schindelhauer and the maximum
 		   size of the message space in the scheme of Barnett and Smart */
-		#define TMCG_MAX_TYPEBITS 8L
+		#define TMCG_MAX_TYPEBITS 8
 	#endif
 	
 	#ifndef TMCG_MAX_VALUE_CHARS
@@ -145,7 +145,7 @@
 	#ifndef TMCG_QRA_SIZE
 		/* Define the security parameter of the TMCG public key;
 		   Underlying assumptions: QRA, FACTOR */
-		#define TMCG_QRA_SIZE 1024L
+		#define TMCG_QRA_SIZE 1024
 	#endif
 	
 	#ifndef TMCG_SAEP_S0

@@ -1,3 +1,4 @@
++ set TMCG_MPZ_IO_BASE to 62, which is supported by libgmp >= 4.2
 + see TODO header of GrothVSSHE.cc
 
 - implement the exotic card and stack operations of the toolbox

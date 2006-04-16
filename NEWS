@@ -1,2 +1,2 @@
-1. Groth's HVZK protocol provides a major improvement in terms of reduced
-   communication and computational complexity
+1.0.0 Groth's HVZK shuffle argument provides a major improvement in terms of
+      reduced communication and computational complexity.

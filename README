@@ -9,44 +9,94 @@ Copyright (C)  2005, 2006  Heiko Stamer <stamer@gaos.org>
 Introduction
 ------------
 
-  LibTMCG is a general purpose library for creating secure card games
-  without a TTP (trusted third party). The used protocols minimize the
-  effect of coalitions and achieve the confidentiality of the players'
-  strategy, i.e. the players are not required to reveal their cards at
-  the end of the game to show that they didn't cheat. The implementation
-  is based primarily on three academic research papers:
+  LibTMCG is a free C++ library for creating secure electronic
+  card games. The most remarkable feature is the absence of a trusted
+  third party (TTP), i.e., neither a central game server nor trusted
+  hardware components are necessary.
+  With the present library there is no need for an independent referee,
+  because the applied protocols provide a basic level of confidentiality
+  and fairness by itself. Consequently, the library is well-suited for
+  peer-to-peer (P2P) environments where no TTP is available.
+  Of course, we cannot avoid that malicious players share information
+  about their private cards, but the protocols ensure that the shuffle
+  of the deck is performed randomly (presumed that at least one player
+  is honest) and thus the cards will be distributed uniformly among the
+  players. Further, no coalition can learn the private cards of a player
+  against his will (except for trivial conclusions). The corresponding
+  cryptographic problem, actually called ``Mental Poker'', has been
+  studied since 1979 (Shamir, Rivest, and Adleman) by many authors.
+  LibTMCG provides the first practical implementation of such protocols.
 
-    Christian Schindelhauer: A Toolbox for Mental Card Games.
-    Technical Report A-98-14, University of Lübeck, 1998.
-    http://citeseer.ist.psu.edu/schindelhauer98toolbox.html
+  The implementation relies on advanced cryptographic techniques---the
+  so-called zero-knowledge proofs. Using these `building blocks' the
+  high-level protocols minimize the effect of coalitions and preserve
+  the confidentiality of the players' strategy, i.e., the players are
+  not required to reveal their cards at the end of the game to show that
+  they did not cheat.
 
-    Adam Barnett, Nigel P. Smart: Mental Poker Revisited.
-    Cryptography and Coding 2003, Lecture Notes in Computer
-    Science 2898, pp. 370--383, 2003.
+  LibTMCG is Free Software according to the definition of the Free
+  Software Foundation. The source code is released under the GNU General
+  Public License.
 
-    Jens Groth: A Verifiable Secret Shuffle of Homomorphic Encryptions.
-    Cryptology ePrint Archive, Report 2005/246, 2005.
+Security
+--------
 
-  The card and stack operations are considered in the "honest-but-curious"
-  (aka semi-honest) adversary model, thus we do not care about robustness
-  or availability concerns. The fairness is guaranteed by zero-knowledge
-  proofs in which the success of cheating players can be bound by a security
-  parameter t, such that this probability is less or equal than 2^{-t}.
+  ``Mental Poker'' solutions cannot prevent that malicious players
+  exchange private information, for example, by telephone or IRC.
+  Cryptographic protocols can only minimize the effect of such colluding
+  parties and should try to protect the confidentiality for honest
+  players. But even this protection often relies on number-theoretical
+  assumptions which are only believed to be true, e.g. problems like
+  factoring products of large prime numbers or computing discrete
+  logarithms. That means, strict mathematical proofs for the hardness
+  of these problems are not known, and it is very likely that such
+  proofs will never be found. However, almost all public key cryptosystems
+  rely on similar assumptions and therefore you should not worry about
+  this issue, as long as reasonable security parameters are chosen.
 
-  The library provides two encoding schemes for cards: Roughly speaking,
-  in the original work of Schindelhauer the type of a card is shared
-  among the players through bitwise representation by quadratic
-  (non-)residues. Thus the security relies on the well known Quadratic
-  Residuosity Assumption (QRA). Unfortunately, the size of a card grows
-  linearly in the number of players and logarithmically in the number
-  of different cards. Recently a better solution has been implemented,
-  which works in a cyclic group of prime order and requires the
-  Decisional Diffie-Hellman Assumption (DDH) to hold. More precisely,
-  the correctness of the operations is now shown by honest-verifier
-  zero-knowledge proofs of knowledge. To apply these proofs in a
-  non-interactive way we require an additional assumption, namely that
-  the used cryptographic hash function (RIPEMD-160) behaves like a
-  random oracle (ROM).
+  LibTMCG was designed to provide security in the ``honest-but-curious''
+  (aka semi-honest) adversary model. That means, all participants follow
+  the protocol instructions properly but they may gather information and
+  share them within a coalition to obtain a game advantage. Thus we are
+  not concerned with robustness and availability issues which are hard to
+  solve in asynchronous environments like the Internet. However, the most
+  operations are verifiable such that cheating can be detected. To obtain
+  this verifiability, the protocols deploy so-called zero-knowledge proofs
+  which yield no further knowledge but the validity of a statement. The
+  soundness error of these proofs is bounded by a security parameter @math{t}.
+  Depending on your application scenario this parameter should be chosen such
+  that there is a reasonable tradeoff between the cheating probability (which
+  is less or equal than @math{2^{-t}}) and the produced computational and
+  communication complexity.
+
+  Unfortunately, in practice there is a substantial problem with the detection
+  of cheaters. Reliable cheater detection requires that an authenticated
+  broadcast channel has been established, where all players have read/write
+  access. LibTMCG does not yet contain the necessary protocols (reliable
+  broadcast) for creating such a channel. Thus you should take into account
+  that not necessarily the prover is the source of evil, if a verification
+  procedure fails. This level of uncertainty is also a reason for our
+  restricted adversary model.
+
+  Note that it is not known, whether the used protocols retain their
+  zero-knowledge property, when they are composed and executed in a concurrent
+  setting. Thus the application programmer should be careful and avoid parallel
+  protocol sessions. It is an open research project to create a protocol suite
+  whose security can be proven in the UC-framework of Canetti. Furthermore, the
+  protocols should employ concurrent zero-knowledge proofs.
+
+  LibTMCG was carefully implemented with respect to timing attacks. Therefore
+  we loose some efficiency, e.g., during modular exponentiations. However, it
+  is strongly recommended to leave the timing attack protection turned on
+  unless you know exactly where it is not needed.
+
+  SECURITY ADVICE: We have implemented all cryptographic primitives according
+  to the cited research papers and to the best of our knowledge. However, we
+  can not eliminate any possibility of flaws or insecurity, because the
+  implementation of such complex protocols is always an error-prone process.
+  Thus we encourage readers with advanced cryptographic background to review
+  the source code of LibTMCG.
+  Please report any complaint or correction proposal.
 
 Requirements
 ------------

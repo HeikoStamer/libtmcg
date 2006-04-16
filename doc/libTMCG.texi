@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.35 2006/04/12 22:48:43 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.36 2006/04/16 15:00:36 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -41,7 +41,7 @@ Free Documentation License''.
 @center @titlefont{Implementation of the}
 @center @titlefont{Toolbox for Mental Card Games}
 @sp 2
-@center @titlefont{@math{@clubsuit@qquad@quad@spadesuit@qquad@quad@heartsuit@qquad@quad@diamondsuit}}
+@center @titlefont{@math{@diamondsuit@qquad@quad@heartsuit@qquad@quad@spadesuit@qquad@quad@clubsuit}}
 
 @author Heiko Stamer <@email{stamer@@gaos.org}>
 
@@ -63,26 +63,25 @@ Free Documentation License''.
 @c *******************  Introduction  ***********************
 @c **********************************************************
 @chapter Introduction
-`@acronym{LibTMCG}' is a general purpose C++ library for
-creating secure electronic card games. The most remarkable
-feature is the absence of a trusted third party (TTP), i.e.,
-neither a central game server nor trusted hardware components
-are necessary. To emphasize this point again: With the present
-library there is no need for an independent referee, because
-the applied protocols provide a basic level of confidentiality
-and fairness by itself. Consequently, our library is well-suited
-for peer-to-peer (P2P) environments where no TTP is available.
-Of course, we cannot avoid that malicious players share
-information about their private cards, but the protocols ensure
-that the shuffle of the deck is performed randomly (presumed
-that at least one player is honest) and thus the cards will be
-distributed uniformly among the players. Further, no coalition
-can learn the private cards of a player against his will (except
-for trivial conclusions). The corresponding cryptographic
-problem, actually called ''Mental Poker'', has been studied
-since 1979 (Shamir, Rivest, and Adleman) by many authors.
+`@acronym{LibTMCG}' is a C++ library for creating secure electronic
+card games. The most remarkable feature is the absence of a trusted
+third party (TTP), i.e., neither a central game server nor trusted
+hardware components are necessary. To emphasize this point again:
+With the present library there is no need for an independent referee,
+because the applied protocols provide a basic level of confidentiality
+and fairness by itself. Consequently, the library is well-suited for
+peer-to-peer (P2P) environments where no TTP is available. Of course,
+we cannot avoid that malicious players share information about their
+private cards, but the protocols ensure that the shuffle of the deck
+is performed randomly (presumed that at least one player is honest)
+and thus the cards will be distributed uniformly among the players.
+Further, no coalition can learn the private cards of a player against
+his will (except for trivial conclusions). The corresponding
+cryptographic problem, actually called ``Mental Poker'', has been
+studied since 1979 (Shamir, Rivest, and Adleman) by many authors.
+LibTMCG provides the first practical implementation of such protocols.
 
-Our implementation relies on advanced cryptographic
+The implementation relies on advanced cryptographic
 techniques---the so-called zero-knowledge proofs. Using
 these `building blocks' the high-level protocols minimize
 the effect of coalitions and preserve the confidentiality
@@ -170,10 +169,15 @@ in the manual.
 	game.
 @end quotation
 
+@quotation Observer
+@cindex Observer
+	An @emph{observer} is an passive party who watches the	game.
+@end quotation
+
 @quotation Card
 @cindex Card
 	The term @emph{card} means the electronic representation of a playing
-	card. LibTMCG provides two different encoding schemes for cards.
+	card.
 @end quotation
 
 @quotation Card Type
@@ -185,39 +189,40 @@ in the manual.
 
 @quotation Masking
 @cindex Masking
-	@emph{Masking} is the process to hide a card representation and
-	thus the corresponding card type. Roughly speaking, masking is the
-	random encryption of a card representation such that the card type
-	is preserved.
+	@emph{Masking} is a process which aim is to transform the card
+	representation such that the input card and the result cannot
+	be linked (except for trivial conclusions). Roughly speaking, masking
+	is the encryption of a card representation such that the contained
+	card type is preserved.
 @end quotation
 
 @quotation Card Secret
 @cindex Card Secret
-	The @emph{card secret} is a data type which contains the secret
-	random values used in a masking operation. These values must be
-	kept secret until the card type should be revealed.
+	The @emph{card secret} contains all random values used in a masking
+	operation. These values must be kept secret until the card is
+	publicly revealed. Otherwise the corresponding output of the masking
+	transformation is linkable and other players may learn the card type.
 @end quotation
 
 @quotation Open Card
 @cindex Open Card
 	An @emph{open card} is a card whose type can be easily
-	determined by all players and usually by observers, too.
+	determined by all players and usually by observers as well.
 @end quotation
 
 @quotation Masked Card
 @cindex Masked Card
 	A @emph{masked card} (also known as face-down card) is a card whose
-	type is not known to a subset of players. The type can only be
-	computed, if each player who performed a masking operation on that
-	card supplies his corresponding card secret.
+	type is unknown to a subset of players. It can be only revealed, if
+	all players cooperate in a type computation.
 @end quotation
 
 @quotation Private Card
 @cindex Private Card
 	A @emph{private card} is a card whose type is only known to its
-	owner, because all players have performed a masking operation on
-	that card. As long as the owner does not reveal the corresponding
-	secret the type stays hidden to all other players.
+	owner. As long as the owner does not corporate the type of the
+	private card stays hidden to all other players (except for trivial
+	conclusions).
 @end quotation
 
 @quotation Stack
@@ -229,65 +234,68 @@ in the manual.
 @quotation Prover and Verifier
 @cindex Prover
 @cindex Verifier
-	The @emph{prover} is the player who want to show some property
-	to another party called @emph{verifier}, for example, that he
-	performed a masking operation correctly, i.e., the type of the
-	card is preserved.
+	The @emph{prover} is a player who shows some property to another
+	party called @emph{verifier}. For example, he wants to show that
+	a masking operation was performed correctly, i.e., the card type
+	is preserved by the transformation.
 @end quotation
 
 @subsection Security
 @cindex Security
-`'Mental Poker'' protocols cannot prevent that malicious players
-exchange private information, for example by telephone or Internet
-relay chat. The protocols can only minimize the effect of such colluding
-parties and protect the private cards of honest players. But even this
-protection relies on number-theoretical assumptions which are only
-believed be true and are not really proven, e.g. problems like factoring
-large prime products or computing discrete logarithms. That means, strict
-proofs@footnote{in the sense of complexity theory} for the hardness of
-these problems are not known, and probably such proofs will never be found.
-However, almost all public key cryptography relies on such assumptions and
-therefore you should not worry about this issue, as long as reasonable
-security parameters are chosen.
+``Mental Poker'' solutions cannot prevent that malicious players
+exchange private information, for example, by telephone or Internet
+chat. Cryptographic protocols can only minimize the effect of such
+colluding parties and should try to protect the confidentiality
+for honest players. But even this protection often relies on
+number-theoretical assumptions which are only believed to be true,
+e.g. problems like factoring products of large primes or computing
+discrete logarithms. That means, strict mathematical proofs@footnote{For
+instance, a reduction to a known hard problem in the sense of complexity
+theory.} for the hardness of these problems are not known, and it is
+very likely that such proofs will never be found. However, almost all
+public key cryptosystems rely on similar assumptions and therefore you
+should not worry about this issue, as long as reasonable security
+parameters are chosen.
 
-The card and stack operations are considered in the ``honest-but-curious''
-(aka semi-honest) adversary model. That means, the players follow the
-protocol instructions properly but the may gather information and share
-them within a coalition to obtain an advantage in the game. Thus we are
+LibTMCG was designed to provide security in the ``honest-but-curious''
+(aka semi-honest) adversary model. That means, all participants follow
+the protocol instructions properly but they may gather information and
+share them within a coalition to obtain a game advantage. Thus we are
 not concerned with robustness and availability issues which are hard to
-solve in an asynchronous environment (e.g. Internet). However, all
+solve in asynchronous environments like the Internet. However, the most
 operations are verifiable such that cheating can be detected. To obtain
-verifiability the protocols deploy so-called zero-knowledge proofs whose
-soundness error is controlled by a security parameter @math{t}. Depending
-on your application scenario this parameter should be chosen such that
-there is a reasonable tradeoff between the cheating probability (which
-is less or equal than @math{2^{-t}}) and the produced computational resp.
+this verifiability, the protocols deploy so-called zero-knowledge proofs
+which yield no further knowledge but the validity of a statement. The
+soundness error of these proofs is bounded by a security parameter @math{t}.
+Depending on your application scenario this parameter should be chosen such
+that there is a reasonable tradeoff between the cheating probability (which
+is less or equal than @math{2^{-t}}) and the produced computational and
 communication complexity.
 
-In practice there is a substantial problem with the detection of cheaters.
-It requires an authenticated broadcast channel where every player
-has read/write access. LibTMCG does not yet contain the needed protocols
-(cf. reliable broadcast) for creating such a channel. Thus you should take
-into account that not necessarily the prover is the source of evil, if the
-verification fails. This is also the reason for the restricted adversary model.
+Unfortunately, in practice there is a substantial problem with the detection
+of cheaters. Reliable cheater detection requires that an authenticated broadcast
+channel has been established, where all players have read/write access.
+LibTMCG does not yet contain the necessary protocols (reliable broadcast) for
+creating such a channel. Thus you should take into account that not necessarily
+the prover is the source of evil, if a verification procedure fails. This level
+of uncertainty is also a reason for our restricted adversary model.
 
-Note that in general it is not known, whether the used protocols retain their
+Note that it is not known, whether the used protocols retain their
 zero-knowledge property, when they are composed and executed in a concurrent
 setting. Thus the application programmer should be careful and avoid parallel
-protocol sessions with the same instances. It is an open research project
-to create a protocol suite whose security can be proven in the UC-framework
-of Canetti (see @emph{Universally Composable Security: A New Paradigm for
-Cryptographic Protocols}, Cryptology ePrint Archive: Report 2000/067).
-Furthermore, the protocols should employ concurrent zero-knowledge
-proofs (see Dwork, Naor, Sahai: @emph{Concurrent Zero-Knowledge}, Journal
-of the ACM 51(6):851--898, 2004).
+protocol sessions. It is an open research project to create a protocol suite
+whose security can be proven in the UC-framework of Canetti (see @emph{Universally
+Composable Security: A New Paradigm for Cryptographic Protocols}, Cryptology
+ePrint Archive: Report 2000/067). Furthermore, the protocols should employ
+concurrent zero-knowledge proofs (see Dwork, Naor, Sahai: @emph{Concurrent
+Zero-Knowledge}, Journal of the ACM 51(6):851--898, 2004).
 
 LibTMCG was carefully implemented with respect to timing attacks (see Kocher:
 @emph{Cryptanalysis of Diffie-Hellman, RSA, DSS, and other cryptosystems using
 timing attacks}, CRYPTO@tie{}'95, LNCS@tie{}963, 1995). Therefore we loose
 some efficiency, e.g., during modular exponentiations. However, it is strongly
 recommended to leave the timing attack protection turned on unless you know
-exactly where it is not necessary.
+exactly where it is not needed.
 
 @quotation Security Advice
 @cindex Security Advice
@@ -296,7 +304,7 @@ research papers and to the best of our knowledge. However, we can not eliminate
 any possibility of flaws or insecurity, because the implementation of such
 complex protocols is always an error-prone process. Thus we encourage
 readers with advanced cryptographic background to review the source code of
-LibTMCG. Please report any complaint to Heiko Stamer <@email{stamer@@gaos.org}>.
+LibTMCG. Please report any complaint or correction proposal.
 @end quotation
 
 @c **********************************************************
@@ -304,23 +312,22 @@ LibTMCG. Please report any complaint to Heiko Stamer <@email{stamer@@gaos.org}>.
 LibTMCG depends on the three other basic libraries. Therefore
 you need the corresponding development files to build LibTMCG
 and your application properly. The following list gives a short
-description of the used features and specifies the required version
-of these libraries:
+exposition of the used features and specifies the required versions:
 @itemize @bullet
 	@item GNU Multiple Precision Arithmetic Library (@file{libgmp}),
 		Version @math{\ge} 4.1.0
 		
-		This library provides a powerful framework for performing
+		The library provides a powerful framework for performing
 		arbitrary precision arithmetic on integers. Further reasons
 		for choosing this dependency are the license compatibility,
-		portability, vital maintenance, and, of course, the
+		the portability, the vital maintenance, and of course, the
 		reasonable performance.
 		
 	@item GNU Crypto Library (@file{libgcrypt}),
 		Version @math{\ge} 1.2.0
 		
-		This library provides some basic cryptographic algorithms
-		(e.g. RIPEMD-160) and an easily usable interface to obtain
+		The library provides some basic cryptographic algorithms
+		(e.g. RIPEMD-160) and an easily accessible interface for
 		cryptographically strong pseudo random numbers.
 	
 	@item GNU Privacy Guard Error Code Library (@file{libgpg-error}),
@@ -352,9 +359,9 @@ Thus often you will simply write:
 @end example
 
 There are no uniform C++ name spaces for the most parts of the
-library. Some classes respectively data types have the common prefix
-@code{TMCG_*} or @code{VTMF_*} while others are composed of
-the author names and the abbreviation of the title from the related
+library. Some classes and data types have the common prefix
+@code{TMCG_*} resp. @code{VTMF_*} while others are composed of
+the author names and an abbreviation of the title from the related
 research paper. Further there are internally
 used C functions which might produce conflicting names. These
 function names are prepended by @code{mpz_*} because they are
@@ -364,13 +371,13 @@ Precision Arithmetic Library.
 @c **********************************************************
 @section Building Sources
 If you want to compile a source file including the @file{libTMCG.hh}
-header file, you must make sure that the compiler can find it in the
-directory hierarchy. This is accomplished by adding the path of the
+header, you must make sure that the compiler can find it in the
+directory hierarchy. This is achieved by adding the path of the
 corresponding directory to the compilers include file search path.
 
-However, the path to the include file is determined at the time the
-source is configured. To solve this problem, LibTMCG ships with a small
-helper program @command{libTMCG-config} that knows the path to the
+However, the path to the include file has been determined at the time
+the source is configured. To solve this problem, LibTMCG ships with a
+small helper program @command{libTMCG-config} that knows the path to the
 include file and a few other configuration options. The options that
 need to be added to the compiler invocation are output by the
 @option{--cflags} option to @command{libTMCG-config}. The following
@@ -381,25 +388,25 @@ g++ -c foo.cc `libTMCG-config --cflags`
 @end example
 
 Adding the output of @samp{libTMCG-config --cflags} to the compilers
-command line will ensure that the compiler can find the library header
+command line will ensure that the compiler can find the LibTMCG header
 file.
 
-A similar problem occurs when linking your program with the library.
-Again, the compiler has to find the library files. Therefore the path
-to the library files has to be added to the library search path. To
-achieve this, the option @option{--libs} of @command{libTMCG-config}
-can be used. For convenience, this option also outputs all other options
-that are required to link your program with the library (in particular,
+A similar problem occurs when linking your program with LibTMCG.
+Again, the compiler has to find the library files. Therefore the
+correct installation path has to be added to the library search path.
+To achieve this, the option @option{--libs} of @command{libTMCG-config}
+can be used. For convenience, this option also outputs all other stuff
+that is required to link your program with LibTMCG (in particular,
 the @samp{-lTMCG} option). 
 
 The example shows how to link @file{foo.o} with LibTMCG to a program
-called @command{foo}:
+called @file{foo}:
 
 @example
 g++ -o foo foo.o `libTMCG-config --libs`
 @end example
 
-Of course you can also combine both examples to a single command by
+Of course, you can also combine both examples to a single command by
 calling the shell script @command{libTMCG-config} with both options:
 
 @example
@@ -419,13 +426,12 @@ Check whether LibTMCG (at least version @var{minimum-version}, if given)
 exists on the host system. If it is found, execute @var{action-if-found},
 otherwise do @var{action-if-not-found}.
 
-Additionally, the function defines @code{LIBTMCG_CFLAGS} to the
-flags needed for compilation of the program to find the necessary header
-files, and @code{LIBTMCG_LIBS} to the linker flags needed to link the
-program with the library.
+Additionally, the macro defines @code{LIBTMCG_CFLAGS} to the flags
+needed for compilation in order to find the necessary header
+files, and @code{LIBTMCG_LIBS} to the corresponding linker flags.
 @end defmac
 
-You can use the defined variables in @file{Makefile.am} like below:
+You can use the defined variables in your @file{Makefile.am} as follows:
 
 @example
 AM_CPPFLAGS = $(LIBTMCG_CFLAGS)
@@ -434,6 +440,7 @@ LDADD = $(LIBTMCG_LIBS)
 
 @c **********************************************************
 @section Initializing the Library
+@cindex Initialization
 The first step is the initialization of LibTMCG. The following
 function must be invoked early in your program, i.e., before
 you make use of any other capability of LibTMCG.
@@ -443,7 +450,7 @@ The function checks whether the installed third-party libraries
 match their required versions. Further it initializes them
 and returns @code{true}, if everything was sound. Otherwise
 @code{false} is returned and an appropriate error message
-is sent to @code{std:cerr}.
+is sent to @code{std::cerr}.
 @end deftypefun
 
 @c **********************************************************
@@ -460,173 +467,181 @@ They are only provided here for informational purposes.
 
 @defmac TMCG_MR_ITERATIONS
 	Defines the number of iterations for the Miller-Rabin primality test.
-	The default value is @code{64L} which implies a soundness error
+	The default value is @code{64} which implies a soundness error
 	probability @math{{} \le 4^{-64}}.
 @end defmac
 
 @defmac TMCG_GROTH_L_E
 	Defines the security parameter @math{\ell_e} of Groth's interactive
-	shuffle argument@tie{}[Gr05]. The default value is @code{80L} which
+	shuffle argument@tie{}[Gr05]. The default value is @code{80} which
 	implies a soundness error probability @math{{} \le 2^{-80}}. For the
-	intended purpose of LibTMCG this bound seems to be reasonable small
-	enough.
+	intended purposes of LibTMCG this bound seems to be reasonable.
 @end defmac
 
 @defmac TMCG_DDH_SIZE
-Defines the security parameter (field size in bit) of the DDH-hard
-group @math{G} which is used by the card encoding scheme of Barnett
-and Smart@tie{}[BS03]. The underlying assumptions are DDH, CDH, and DLOG.
-The default value is @code{1024L}.
+Defines the security parameter (field size in bit) of the group
+@math{G} which is used by the card encoding scheme of Barnett and
+Smart@tie{}[BS03]. The underlying assumptions are DDH, CDH, and DLOG.
+The default value is @code{1024}.
 @end defmac
 
 @defmac TMCG_DLSE_SIZE
 Defines the security parameter (subgroup size in bit) of the group
 @math{G} which is used by the card encoding scheme of Barnett and
 Smart@tie{}[BS03]. The underlying assumptions are DLSE (related to DDH)
-and DLOG. The default value is @code{160L}.
+and DLOG. The default value is @code{160}.
 @end defmac
 
 @defmac TMCG_GCRY_MD_ALGO
 Defines the message digest algorithm for digital signatures and
-the Fiat-Shamir heuristic. The security of the most non-interactive
-zero-knowledge proofs (NIZK) is proved in the so-called random
-oracle model, i.e., one supposes that the used hash function behaves
-like an ideal random function (which cannot exist in a real world scenario).
-However, this assumption seems to be reasonable, if the hash function
-is carefully implemented.
-The default value is @code{GCRY_MD_RMD160}. This constant (from the
-GNU Crypto Library) represents the hash algorithm RIPEMD-160 which has
-an output length of 160 bit. Thus it leads to a security level of
-approximately @math{2^{80}}, assuming that a birthday-attack is the
-best known attack against this algorithm.
+the Fiat-Shamir heuristic (see TODO). The security of the most
+non-interactive zero-knowledge proofs (NIZK) is related to the
+so-called random oracle model, i.e., we suppose that the
+instantiated hash function behaves like an ideal random function
+(which cannot hold in a real world scenario). However, this assumption
+seems to be reasonable, if the hash function is collision-resistant
+and carefully implemented. The default value @code{GCRY_MD_RMD160}
+@footnote{This is a constant defined by the GNU Crypto Library.}
+chooses the hash algorithm RIPEMD-160 (see TODO) which has an output
+length of 160 bit. Thus we gain a security level of approximately
+@math{2^{80}}, assuming that a birthday-attack is the best known
+attack against this hash function.
 @end defmac
 
 @defmac TMCG_KEYID_SIZE
 Defines the length (in characters w.r.t. @code{TMCG_MPZ_IO_BASE})
-of the distinctive suffix for the unique key identifier. The default
-value is @code{8} which spans a reasonable name space for at least
-@math{2^{20}} different keys.
+for the distinctive suffix of the unique TMCG key identifier. The
+default value is @code{8} which spans a reasonable name space for
+at least @math{2^{20}} different TMCG keys (see @code{TMCG_PublicKey}).
 
-Each key identifier starts with the string @code{ID} followed by
-the decimal coded value @code{TMCG_KEYID_SIZE} and an appended
-carret symbol @code{^}. The final suffix consists of number
-@code{TMCG_KEYID_SIZE} alphanumerical characters of the self signature.
-This suffix has enough entropy included to be used as unique key
-identifier.
+Each key identifier starts with the string @code{"ID"} followed by
+the decimal encoded value of @code{TMCG_KEYID_SIZE} and the appended
+carret symbol @code{"^"}. The final suffix contains
+@code{TMCG_KEYID_SIZE} alphanumerical characters from the self
+signature of TMCG key. The signature has enough entropy included
+to be used as unique key identifier.
 @end defmac
 
 @defmac TMCG_KEY_NIZK_STAGE1
 Defines the security parameter (number of iterations) of the NIZK
-proof (stage 1) to convince all verifiers that the TMCG key was
+proof (stage 1) which convince all verifiers that the TMCG key was
 correctly generated. The default value is @code{16} which implies
 a soundness error probability @math{{} \le d^{-16}}, where
 @math{d = {\rm gcd}(m, \phi(m))}. This parameter is only relevant for the
-card encoding scheme of Schindelhauer@tie{}[Sc98].
+card encoding scheme of Schindelhauer.
 @end defmac
 
 @defmac TMCG_KEY_NIZK_STAGE2
 Defines the security parameter (number of iterations) of the NIZK
-proof (stage 2) to convince all verifiers that the TMCG key was
+proof (stage 2) which convince all verifiers that the TMCG key was
 correctly generated. The default value is @code{128} which implies
 a soundness error probability @math{{} \le 2^{-128}}.
 This parameter is only relevant for the card encoding scheme of
-Schindelhauer@tie{}[Sc98].
+Schindelhauer.
 @end defmac
 
 @defmac TMCG_KEY_NIZK_STAGE3
 Defines the security parameter (number of iterations) of the NIZK
-proof (stage 3) to convince all verifiers that the TMCG key was
+proof (stage 3) which convince all verifiers that the TMCG key was
 correctly generated. The default value is @code{128} which implies
 a soundness error probability @math{{} \le 2^{-128}}.
 This parameter is only relevant for the card encoding scheme of
-Schindelhauer@tie{}[Sc98].
+Schindelhauer.
 @end defmac
 
 @defmac TMCG_LIBGCRYPT_VERSION
-Defines the necessary minimum version of the GNU Crypto Library.
+Defines the required minimum version number of the GNU Crypto Library.
 The default value is @code{"1.2.0"}. During the initialization of
-LibTMCG it is checked whether the version number of the currently
-available shared object is greater or equal.
+LibTMCG (see @code{init_libTMCG}) it is checked, whether the
+version number of the linked shared object fulfil this condition.
 @end defmac
 
 @defmac TMCG_LIBGMP_VERSION
-Defines the necessary minimum version of the GNU Multiple Precision
+Defines the required minimum version number of the GNU Multiple Precision
 Arithmetic Library. The default value is @code{"4.1.0"}. During the
-initialization of LibTMCG it is checked whether the version number of
-the header file used at compile time is greater or equal.
+initialization of LibTMCG (see @code{init_libTMCG}) it is checked,
+whether the version number provided by the header file @file{gmp.h}
+and used at compile time of LibTMCG fulfil this condition.
 @end defmac
 
 @defmac TMCG_MAX_CARDS
 Defines the maximum number of stackable cards.
-The default value is @code{128L}.
+The default value is @code{128}.
 @end defmac
 
 @defmac TMCG_MAX_PLAYERS
-Defines the maximum number of participating players in the scheme of
-Schindelhauer@tie{}[Sc98]. The default value is @code{32L}.
+Defines the maximum number of players.
+The default value is @code{32}.
+This parameter is only relevant for the card encoding scheme of
+Schindelhauer.
 @end defmac
 
 @defmac TMCG_MAX_TYPEBITS
 Defines the maximum number of bits to represent the card type in the
-scheme of Schindelhauer@tie{}[Sc98]. Further, this value determines
-the maximum size of the message space for the scheme of Barnett and
-Smart@tie{}[BS03]. The default value @code{8L} implies that 256
-different card types are possible.
+scheme of Schindelhauer. On the other hand, this value determines
+the maximum size of the message space in the scheme of Barnett and
+Smart. The default value is @code{8} which implies that 256 different
+card types are possible.
 @end defmac
 
 @defmac TMCG_MPZ_IO_BASE
-Defines the input/output encoding base of the @code{iostream} operators
-for arbitrary precision integers. The default value @code{36L} is currently
+Defines the input and output base of the @code{std::iostream} operators
+@code{<<} and @code{>>} which are used to encode large integers
+(@code{mpz_t}). The default value is @code{36} which is currently
 the largest base supported by the GNU Multiple Precision Arithmetic Library.
 @end defmac
 
 @defmac TMCG_PRAB_K0
-Defines the security parameter @math{k_0} (in characters) for the PRab
-digital signature scheme of Bellare and Rogaway. The default value is
-@code{20} which leads to a security level of approximately @math{2^{80}}.
+Defines the security parameter @math{k_0} (in characters) of the PRab
+scheme (see Bellare, Rogaway: @emph{The Exact Security of Digital Signatures
+-- How to Sign with RSA and Rabin}, 1996). The default value is @code{20}
+which implies a security level around @math{2^{80}}.
 @end defmac
 
 @defmac TMCG_QRA_SIZE
 Defines the security parameter (size of the modulus @math{m = p \cdot q}
 in bit) of the TMCG key. The underlying assumptions are QRA and FACTOR.
-The default value is @code{1024L}. This parameter is only relevant
-for the card encoding scheme of Schindelhauer@tie{}[Sc98].
+The default value is @code{1024}. This parameter is only relevant
+for TMCG keys and Schindelhauer's encoding scheme.
 @end defmac
 
 @defmac TMCG_SAEP_S0
-Defines the security parameter @math{s_0} (in characters) for the Rabin-SAEP
-encryption scheme of Boneh. The default value @code{20} implies a security
-around @math{2^{80}} against @acronym{CCA, Chosen Ciphertext Attacks}.
+Defines the security parameter @math{s_0} (in characters) of the Rabin-SAEP
+scheme (see Boneh: @emph{Simplified OAEP for the RSA and Rabin Functions},
+2002). The default value is @code{20} which implies a security around @math{2^{80}}
+against @acronym{CCA, Chosen Ciphertext Attacks}.
 @end defmac
 
 @defmac TMCG_HASH_COMMITMENT
-Defines whether or not shortened commitments are used by the shuffle
-proof of Schindelhauer@tie{}[Sc98]. The default value is @code{true},
-because it decreases the communication complexity enormously. However,
-as a consequence the soundness property of the proof only remains valid
-in the random oracle model.
+Defines whether shortened commitments are used in the shuffle verification
+procedure of Schindelhauer. The default value is @code{true}, because it
+will decrease the communication complexity significantly. However, as an
+immediate consequence the soundness property is violated, if the used
+hash function @code{TMCG_GCRY_MD_ALGO} is broken.
 @end defmac
 
 @defmac TMCG_MAX_FPOWM_T
-Defines the maximum size of a possible exponent (in bit) used with the
-fast exponentiation procedures based on precomputed tables.
-The default value is @code{2048}.
+Defines the maximum size of admissible exponents (in bit) used by fast
+exponentiation procedures. The default value is @code{2048}. Note that
+this parameter has a strong influence on the amount of memory allocated
+by LibTMCG since it determines the size of the precomputed tables.
+However, it should be at least greater than @code{TMCG_DDH_SIZE} and
+@code{TMCG_QRA_SIZE}.
 @end defmac
 
 @c **********************************************************
-@section Public Data Types and Classes
-This section describes the important data types and classes
-that are necessary to create a secure card game. Private methods
-and internally used members are not explained.
+@section Data Types and Classes
+This section describes all public data types and classes that are
+necessary to create a secure card game. Private methods and only
+internally used members are not explained.
 
 @subsection Data Types
 @cindex Data Types
-LibTMCG provides data types for playing cards, for stacks, and for
-cryptographic keys.
+LibTMCG provides several data structures for cards, stacks, and cryptographic keys.
 
 @subsubsection Encoding Schemes for Cards
 @cindex Card Encoding Schemes
-There are two different encoding schemes that can be used
+There exist two different encoding schemes that can be used
 for the digital representation of playing cards. In the
 scheme of Schindelhauer@tie{}[Sc98] the type of a card is
 shared among the players through bit-wise representation
@@ -634,21 +649,22 @@ by quadratic (non-)residues. Thus the security relies on
 the well-known @acronym{QRA, Quadratic Residuosity Assumption}.
 Unfortunately, the size of a card grows linearly in the
 number of players and logarithmically in the number of
-different card types. Recently the much more efficient
+card types. Recently the much more efficient
 solution of Barnett and Smart@tie{}[BS03] has been
 implemented. This encoding works on a cyclic group of
 prime order and requires that the @acronym{DDH, Decisional
 Diffie-Hellman Assumption} holds there.
 
-In both schemes there is a data type with the suffix
-@code{Card} which represents an open or even a masked card.
-Further, there is a corresponding data type with the suffix
-@code{CardSecret} that represents the secret values involved
-in a card masking operation.
+For both schemes LibTMCG provides a structure whose name contains the
+suffix @code{Card}. This data type is used to represent an open
+or even a masked card. Further, there is a corresponding structure whose
+name contains the suffix @code{CardSecret}. This data type is
+used to represent the secret values involved in a card masking operation.
 
-For the reason of the reduced computational and communication
-complexity (cf.@tie{}[St05]) the usage of the second card
-encoding scheme, i.e. @code{VTMF_Card}, is highly recommended.
+Because of the reduced computational and communication complexity
+(see@tie{}[St05] for details) the usage of the second card
+encoding scheme, i.e. @code{VTMF_Card} and @code{VTMF_CardSecret}, is
+highly recommended.
 
 @deftp {Data type} TMCG_Card
 	This @code{struct} represents a card in the encoding scheme
@@ -2138,7 +2154,7 @@ class must be created to perform any card or stack operations.
 		corresponds to the numbers given to the constructor of this class. The
 		parameter @var{ring} is a container with exactly @math{k} public keys.
 		The input/output protocol messages from and to the verifier are
-		transfered on the streams @var{in} and @var{out}, respectively.
+		transmitted on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveMaskCard (@code{const VTMF_Card&} c, @code{const VTMF_Card&} cc, @code{const VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
@@ -2151,7 +2167,7 @@ class must be created to perform any card or stack operations.
 		The parameter @var{vtmf} is a pointer to an already initialized VTMF instance,
 		i.e. the key generation protocol MUST be successfully finished.
 		The input/output protocol messages from and to the verifier are
-		transfered on the streams @var{in} and @var{out}, respectively.
+		transmitted on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyMaskCard (@code{const TMCG_Card&} c, @code{const TMCG_Card&} cc, @code{const TMCG_PublicKeyRing&} ring, @code{std::istream&} in, @code{std::ostream&} out)
@@ -2162,7 +2178,7 @@ class must be created to perform any card or stack operations.
 		the numbers given to the constructor of this class.
 		The parameter @var{ring} is a container with exactly @math{k} public keys.
 		The input/output protocol messages from and to the prover are
-		transfered on the streams @var{in} and @var{out}, respectively.
+		transmitted on the streams @var{in} and @var{out}, respectively.
 		The method returns @code{true}, if everything was sound.
 	@end deftypemethod
 	
@@ -2175,14 +2191,13 @@ class must be created to perform any card or stack operations.
 		The parameter @var{vtmf} is a pointer to an already initialized VTMF instance,
 		i.e. the key generation protocol MUST be successfully finished.
 		The input/output protocol messages from and to the prover are
-		transfered on the streams @var{in} and @var{out}, respectively.
+		transmitted on the streams @var{in} and @var{out}, respectively.
 		The method returns @code{true}, if everything was sound.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveCardSecret (@code{const TMCG_Card&} c, @code{const TMCG_SecretKey&} key, @code{size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
 		This method is used to reveal the card type of @var{c} to a verifier.
-		Every player who performed a masking operation on that card must execute
-		this method as prover.
+		Every player must execute this method as prover.
 		The card @var{c} MUST be created such that its @math{k} resp. @math{w}
 		corresponds to the numbers given to the constructor of this class.
 		The parameter @var{key} is the corresponding secret key (see
@@ -2190,18 +2205,18 @@ class must be created to perform any card or stack operations.
 		interval @math{[0, k - 1]} and contains the position of the provers
 		public key in the container @var{ring} (same as in @code{TMCG_CreateCardSecret}).
 		The input/output protocol messages from and to the verifier are
-		transfered on the streams @var{in} and @var{out}, respectively.
+		transmitted on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveCardSecret (@code{const VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
 		This method is used to reveal the card type of @var{c} to a verifier.
-		Every player who performed a masking operation on that card must execute
-		this method as prover. Specifically, @code{TMCG_ProveCardSecret} directly
-		calls the prove operation of the verifiable decryption protocol.
+		Every player must execute this method as prover.
+		Specifically, @code{TMCG_ProveCardSecret} directly calls the prove operation of the
+		verifiable decryption protocol.
 		The parameter @var{vtmf} is a pointer to an already initialized VTMF instance,
 		i.e. the key generation protocol MUST be successfully finished.
 		The input/output protocol messages from and to the verifier are
-		transfered on the streams @var{in} and @var{out}, respectively.
+		transmitted on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyCardSecret (@code{const TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKey&} key, @code{size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
@@ -2217,7 +2232,7 @@ class must be created to perform any card or stack operations.
 		and contains the position of the provers public key in the container @var{ring}
 		(same as in @code{TMCG_CreateCardSecret}).
 		The input/output protocol messages from and to the prover are
-		transfered on the streams @var{in} and @var{out}, respectively.
+		transmitted on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyCardSecret (@code{const VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
@@ -2232,7 +2247,7 @@ class must be created to perform any card or stack operations.
 		The parameter @var{vtmf} is a pointer to an already initialized VTMF instance,
 		i.e. the key generation protocol MUST be successfully finished.
 		The input/output protocol messages from and to the verifier are
-		transfered on the streams @var{in} and @var{out}, respectively.
+		transmitted on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_SelfCardSecret (@code{const TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_SecretKey&} key, @code{size_t} index)
@@ -2353,7 +2368,7 @@ class must be created to perform any card or stack operations.
 		The parameter @var{index} is from the interval @math{[0, k - 1]} and contains the
 		position of the provers public key in the container @var{ring}.
 		The input/output protocol messages from and to the verifier are
-		transfered on the streams @var{in} and @var{out}, respectively.
+		transmitted on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{bool} cyclic, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
@@ -2367,7 +2382,7 @@ class must be created to perform any card or stack operations.
 		The parameter @var{vtmf} is a pointer to an already initialized VTMF instance,
 		i.e. the key generation protocol MUST be successfully finished.
 		The input/output protocol messages from and to the verifier are
-		transfered on the streams @var{in} and @var{out}, respectively.
+		transmitted on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality_Groth (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf, @code{GrothVSSHE*} vsshe, @code{std::istream&} in, @code{std::ostream&} out)
@@ -2387,7 +2402,7 @@ class must be created to perform any card or stack operations.
 		The parameter @var{ring} is a container with exactly @math{k} public keys, where
 		@math{k} is the number given to the constructor of this class.
 		The input/output protocol messages from and to the prover are
-		transfered on the streams @var{in} and @var{out}, respectively.
+		transmitted on the streams @var{in} and @var{out}, respectively.
 		This method returns @code{true}, if the shuffle operation was successfully verified.
 	@end deftypemethod
 	
@@ -2401,7 +2416,7 @@ class must be created to perform any card or stack operations.
 		The parameter @var{vtmf} is a pointer to an already initialized VTMF instance,
 		i.e. the key generation protocol MUST be successfully finished.
 		The input/output protocol messages from and to the verifier are
-		transfered on the streams @var{in} and @var{out}, respectively.
+		transmitted on the streams @var{in} and @var{out}, respectively.
 		This method returns @code{true}, if the shuffle operation was successfully verified.
 	@end deftypemethod
 	
@@ -2419,25 +2434,21 @@ class must be created to perform any card or stack operations.
 
 @chapter Examples
 @cindex Examples
-First, please have a look at the well-documented examples and test programs in
-the directory @file{tests/}, e.g. @file{SchwarzerPeterAlice.cc} and
-@file{SchwarzerPeterBob.cc}, respectively.
-A detailed exposition including source code fragments will be given in this
-chapter.
-
 The following examples explain most of the steps that are necessary to create
 a secure card game with LibTMCG. We consider an application with five
-permanent players and a regular deck of 52@tie{}different cards. For
-convenience only the more efficient card encoding scheme of Barnett and
-Smart@tie{}[BS03] is used. Additionally, we provide code fragments which
-show the usage of the fast shuffle verification protocol due to Groth@tie{}[Gr05].
+permanent players (denoted by @math{P_0}, @math{P_1}, @math{P_2}, @math{P_3},
+and @math{P_4}) and a regular deck of
+52@tie{}different cards. For convenience only the more efficient card
+encoding scheme of Barnett and Smart@tie{}[BS03] is described. Additionally,
+we complete our exposition with code fragments which show the usage of the
+fast shuffle verification protocol due to Groth@tie{}[Gr05].
 
 Throughout the remaining pages we suppose that all players are pairwise connected by
-authenticated communication channels. These channels are represented as input resp.
-output streams, where @code{input_stream[i]} resp. @code{output_stream[i]} denotes
-the corresponding @code{std::istream} resp. @code{std::ostream} for communicating
-with the @code{i}-th player.@footnote{We assume that the players are ordered in a
-natural way such that every application instance can use the same nomenclature.}
+authenticated communication channels. These channels are organized in input resp.
+output streams, where @code{input_stream[i]} resp. @code{output_stream[i]} denote
+the corresponding @code{std::istream} resp. @code{std::ostream} instance for the
+communication with player @math{P_i}.@footnote{We assume that the players
+are ordered in a natural way such that we can use the same nomenclature.}
 
 @section Library Initialization
 @cindex Initialization
@@ -2447,64 +2458,51 @@ evaluating the return code.
 @cartouche
 @example
 if (!init_libTMCG())
-@{
   std::cerr << "Initialization of LibTMCG failed!" << std::endl;
-  return -1;
-@}
 @end example
 @end cartouche
-@exdent
 
 @section Session Initialization and Key Generation
 @cindex Initialization
 @cindex Key Generation
-The next step is the creation of an instance of the class
-@code{SchindelhauerTMCG}. The first parameter determines
-the number of protocol iterations @math{t} which upper-bounds
-the cheating probability by @math{2^{-t}}. In our example the
-value @code{64} defines a maximum cheating probability of
+In the next step we create an instance of the class @code{SchindelhauerTMCG}.
+The first parameter determines the number of protocol iterations @math{t}
+which upper-bounds the cheating probability by @math{2^{-t}}. In our example
+the used value @code{64} defines a maximum cheating probability of
 @math{5.421010862\cdot 10^{-20}} which is reasonable small
 for our purposes. The second parameter passes the number of players
-to the instance which is simply five in our case. The
-last parameter defines the number of bits that are necessary to
-encode all card types in a binary representation. The given
-value @code{6} allows the encoding of @math{2^6 = 64} different
-card types at maximum. This is enough to create our deck with
-52@tie{}cards.
+to the instance which is simply @code{5} in our case. The last argument
+defines the number of bits that are necessary to encode all card types in
+a binary representation. The given value @code{6} allows the encoding of
+@math{2^6 = 64} different card types at maximum. This is enough to form
+our deck of 52@tie{}cards.
 @cartouche
 @example
 SchindelhauerTMCG *tmcg = new SchindelhauerTMCG(64, 5, 6);
 @end example
 @end cartouche
-@exdent
 We would like to use the more efficient encoding scheme of Barnett and
-Smart, thus we should create an instance of @code{BarnettSmartVTMF_dlog}.
-However, a particular player has to act as @emph{leader} who performs the
-generation of the group @math{G}. In our case the player with index @code{0}
-will act as session leader. First, he executes the constructor of
-@code{BarnettSmartVTMF_dlog}.
+Smart, thus we create an instance of @code{BarnettSmartVTMF_dlog}. However,
+a particular player has to act as a @emph{leader} who performs the
+generation of the group @math{G}. In our case @math{P_0} will be the
+session leader. First, he executes the constructor of @code{BarnettSmartVTMF_dlog}.
 @cartouche
 @example
 BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog();
 @end example
 @end cartouche
-@exdent
-Afterwards the leader checks the generated group @math{G}. He sends the public
-parameters to all other players (corresponding stream indices @code{1}, @code{2},
-@code{3}, and @code{4}), if everything was sound.
+Afterwards he checks the generated group @math{G} and sends the public
+parameters to all other players (corresponding stream indices are @code{1}, @code{2},
+@code{3}, and @code{4}, respectively).
 @cartouche
 @example
 if (!vtmf->CheckGroup())
-@{
   std::cerr << "Group G was not correctly generated!" << std::endl;
-  exit(-1);
-@}
 for (size_t i = 1; i < 5; i++)
   vtmf->PublishGroup(output_stream[i]);
 @end example
 @end cartouche
-@exdent
-All other players receive the group parameters from the leader and use them
+The other players receive the group parameters from @math{P_0} and use them
 to initialize their corresponding instances of @code{BarnettSmartVTMF_dlog}.
 It is very important that they also check, whether the group @math{G} was
 correctly generated by the leader.
@@ -2513,27 +2511,22 @@ correctly generated by the leader.
 BarnettSmartVTMF_dlog *vtmf = 
   new BarnettSmartVTMF_dlog(input_stream[0]);
 if (!vtmf->CheckGroup())
-@{
   std::cerr << "Group G was not correctly generated!" << std::endl;
-  exit(-1);
-@}
 @end example
 @end cartouche
-@exdent
-Afterwards the key generation protocol should be carried out. First, every
-player generates his own VTMF key. The secret key material is stored internally
+Afterwards the key generation protocol is carried out. First, every player
+generates his own VTMF key. The secret key material is stored internally
 and will never be exposed.
 @cartouche
 @example
 vtmf->KeyGenerationProtocol_GenerateKey();
 @end example
 @end cartouche
-@exdent
-Then every player with index @code{j} sends the public part of his VTMF key
-along with a non-interactive zero-knowledge proof of knowledge to each other
-player. The appended proof of knowledge shows that he indeed knows the
-corresponding secret key. However, due to the non-interactive nature of the
-proof one have to be careful, if same group @math{G} is used again.
+Then every player @math{P_j} sends the public part of his VTMF key along with a
+non-interactive zero-knowledge proof of knowledge to each other player.
+The appended proof shows that he indeed knows the corresponding secret key.
+However, due to the non-interactive nature of this proof we have to be
+careful, if same group @math{G} is used again.
 @cartouche
 @example
 for (size_t i = 0; i < 5; i++)
@@ -2543,10 +2536,8 @@ for (size_t i = 0; i < 5; i++)
 @}
 @end example
 @end cartouche
-@exdent
-Further, every player receives the public keys. He checks, whether they are
-correctly generated, i.e. the proof of knowledge is sound, and updates the
-common public key.
+After sending @math{P_j} receives the public keys. Simultaneously he checks, whether
+the keys are correctly generated, and updates the common public key @math{h}.
 @cartouche
 @example
 for (size_t i = 0; i < 5; i++)
@@ -2554,37 +2545,31 @@ for (size_t i = 0; i < 5; i++)
   if (i != j)
   @{
     if (!vtmf->KeyGenerationProtocol_UpdateKey(input_stream[i]))
-    @{
       std::cerr << "Public key was not correctly generated!" << std::endl;
-      exit(-1);
-    @}
   @}
 @}
 @end example
 @end cartouche
-@exdent
 Finally, every player must finalize the key generation protocol.
 @cartouche
 @example
 vtmf->KeyGenerationProtocol_Finalize();
 @end example
 @end cartouche
-@exdent
-If you want to use the more efficient shuffle verification protocol of Groth,
-then the leader must create an instance of @code{GrothVSSHE} analogously.
-The first parameter determines the maximum size of a stack for which the
-correctness of a shuffle shall be proven.
-The other parameters stem from the former created VTMF instance. It is
-important that the key generation protocol has been finished before the
-common public key @code{vtmf->h} is passed.
+If we want to use the more efficient shuffle verification protocol of Groth,
+then @math{P_0} must also create an instance of @code{GrothVSSHE}.
+The first argument determines the maximum stack size of which the correctness
+of a shuffle will be proven. The other parameters are obtained from the former
+created VTMF instance @code{vtmf}. It is important that the key generation
+protocol has been finalized before the common public key @math{h}
+(i.e. @code{vtmf->h}) is passed.
 @cartouche
 @example
 GrothVSSHE *vsshe = new GrothVSSHE(52, vtmf->p, vtmf->q, vtmf->k, 
   vtmf->g, vtmf->h);
 @end example
 @end cartouche
-@exdent
-Again, he must send the public parameters of the VSSHE instance to
+Again, @math{P_0} will send the public parameters of the VSSHE instance to
 all other players.
 @cartouche
 @example
@@ -2592,43 +2577,30 @@ for (size_t i = 1; i < 5; i++)
   vsshe->PublishGroup(output_stream[i]);
 @end example
 @end cartouche
-@exdent
-All other players receive the parameters from the leader and use them
+The other players receive these parameters from the leader and use them
 to initialize their corresponding instances of @code{GrothVSSHE}.
-It is very important that they also check, whether the parameters were
-correctly chosen by the leader.
+Again, it is important to check, whether the parameters were correctly
+chosen by the leader.
 @cartouche
 @example
 GrothVSSHE *vsshe = new GrothVSSHE(52, input_stream[0]);
 if (!vsshe->CheckGroup())
-@{
   std::cerr << "VSSHE was not correctly generated!" << std::endl;
-  exit(-1);
-@}
 if (mpz_cmp(vtmf->h, vsshe->com->h))
-@{
   std::cerr << "VSSHE: Common public key does not match!" << std::endl;
-  exit(-1);
-@}
 if (mpz_cmp(vtmf->q, vsshe->com->q))
-@{
   std::cerr << "VSSHE: Subgroup order does not match!" << std::endl;
-  exit(-1);
-@}
 if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) || 
   mpz_cmp(vtmf->g, vsshe->g) || mpz_cmp(vtmf->h, vsshe->h))
-@{
-  std::cerr << "VSSHE: Encryption scheme does not match!" << std::endl;
-  exit(-1);
-@}
+    std::cerr << "VSSHE: Encryption scheme does not match!" << std::endl;
 @end example
 @end cartouche
 
 @section Operations on Cards
-Now we're ready to perform operations on cards and stacks. We start
-with some basic operations on cards which might be of interest in
-particular situations. However, often it is more convenient to work
-directly with stacks.
+Now we are ready to perform several operations on cards.
+We start with some basic stuff which might be of interest in
+particular situations. However, it is often more convenient to work
+directly with stacks, as explained later.
 
 @subsection Creating an Open Card
 The creation of an open card is very simple. The following code
@@ -2642,8 +2614,7 @@ tmcg->TMCG_CreateOpenCard(c, vtmf, 7);
 
 @subsection Masking and Re-masking of a Card
 Now the previously created card @code{c} will be masked to hide its type.
-Afterwards the masked card @code{cc} is sent to another player whose
-index is @code{1}.
+Then @code{cc} is sent to @math{P_1}.
 @cartouche
 @example
 VTMF_Card cc;
@@ -2653,56 +2624,48 @@ tmcg->TMCG_MaskCard(c, cc, cs, vtmf);
 out_stream[1] << cc << std::endl;
 @end example
 @end cartouche
-@exdent
-The other player receives the card, re-mask the card, and send the
-result back to the player with index @code{0}. Then he proves him
-that he did the masking operation correctly.
+@math{P_1} receives the card @code{cc}, re-masks them, and sends the result @code{ccc}
+back to the player @math{P_0}. Further he proves that the masking operation
+was performed correctly.
 @cartouche
 @example
 VTMF_Card cc, ccc;
 VTMF_CardSecret ccs;
 in_stream[0] >> cc;
+if (!in_stream[0].good())
+  std::cerr << "Read or parse error!" << std::endl;
 tmcg->TMCG_CreateCardSecret(ccs, vtmf);
 tmcg->TMCG_MaskCard(cc, ccc, ccs, vtmf);
 out_stream[0] << ccc << std::endl;
 tmcg->TMCG_ProveMaskCard(cc, ccc, ccs, vtmf, in_stream[0], out_stream[0]);
 @end example
 @end cartouche
-@exdent
-This creator receives the card, verifies the proof, and send
-the card to all other players.
+@math{P_0} receives the card, verifies the proof, and sends the card to all other
+players.
 @cartouche
 @example
 VTMF_Card ccc;
 in_stream[1] >> ccc;
 if (!tmcg->TMCG_VerifyMaskCard(cc, ccc, vtmf, in_stream[1], out_stream[1]))
-@{
   std::cerr << "Verification failed!" << std::endl;
-  exit(-1);
-@}
 for (size_t i = 1; i < 5; i++)
-@{
   out_stream[i] << ccc << std::endl;
-@}
 @end example
 @end cartouche
-@exdent
-The other players receive the masked card and store them as @code{ccc}.
+Finally, all other players receive and store the masked card @code{ccc}.
 
 @subsection Opening a Masked Card
-Now the player with index @code{1} want to know the type of the masked card
-@code{ccc}. (Of course, the creator knows the card type, too.) Anyway, all five
-players must work together to reveal the type. Every player (except the player
-with index @code{1}) will execute the following code.
+Suppose that @math{P_1} would like to know the type of the masked card @code{ccc}.
+Of course, @math{P_0} could simply reveal it, but that isn't verifiable. Anyway,
+if all players cooperate, then @math{P_1} can compute the type in a verifiable
+way. First, every player (except @math{P_1}) will execute the following code.
 @cartouche
 @example
 tmcg->TMCG_ProveCardSecret(ccc, vtmf, in_stream[1], out_stream[1]);
 @end example
 @end cartouche
-@exdent
-The player with index @code{1} must perform the following commands exactly
-in the given order. Finally, he computes the type and stores the result
-in the variable @code{type}.
+On the other hand, @math{P_1} will execute the following commands exactly
+in the given order. Finally, he obtain the card type in the variable @code{type}.
 @cartouche
 @example
 tmcg->TMCG_SelfCardSecret(ccc, vtmf);
@@ -2711,29 +2674,26 @@ for (size_t i = 0; i < 5; i++)
   if (i == 1)
     continue;
   if (!tmcg->TMCG_VerifyCardSecret(ccc, vtmf, in_stream[i], out_stream[i]))
-  @{
     std::cerr << "Verification failed!" << std::endl;
-    exit(-1);
-  @}
 @}
 type = tmcg->TMCG_TypeOfCard(ccc, vtmf);
 @end example
 @end cartouche
 
 @section Operations on Stacks
+There exist a lot of basic operations on stacks, e.g. pushing a card to a stack
+or importing a stack. These functions are to simple for explaining them here, but
+they are used implicitly. However, a short description can be found in the
+API part of the manual (see @code{TMCG_Stack} and @code{TMCG_OpenStack}).
+
 @subsection Creating the Deck
-A quite common operation is the creation of a card deck. Every deck should
-initially be represented by an open stack called @code{deck}.
+A quite common operation is the creation of a card deck. The deck will
+initially be represented by an open stack (see @code{TMCG_OpenStack}) called
+@code{deck}. Every player creates his own deck which consists of 52@tie{}different
+open cards in our example.
 @cartouche
 @example
 TMCG_OpenStack<VTMF_Card> deck;
-@end example
-@end cartouche
-@exdent
-Every player creates his own deck which consists of the 52@tie{}different open
-cards.
-@cartouche
-@example
 for (size_t type = 0; type < 52; type++)
 @{
   VTMF_Card c;
@@ -2744,10 +2704,16 @@ for (size_t type = 0; type < 52; type++)
 @end cartouche
 
 @subsection Shuffling the Deck
-Every player must perform a shuffle of the deck, because only such a procedure
+Each player must perform a shuffle of the deck, because only such a procedure
 guarantees that no coalition has influence on the outcome. Thus we build a
 shuffle chain such that every player shuffles the deck.
-Consider the following code for the player with index @code{idx}.
+Consider the code fragment for the player @math{P_j}.
+
+The regular stack @code{s} is initialized with open cards from @code{deck}.
+Then each player shuffles the stack (see @code{TMCG_MixStack}) and proves the
+correctness of this operation (see @code{TMCG_ProveStackEquality}). Consequently,
+every player should verify these proofs (see @code{TMCG_VerifyStackEquality}).
+Finally, the stack @code{s} contains the shuffled result.
 @cartouche
 @example
 TMCG_Stack<VTMF_Card> s;
@@ -2756,55 +2722,44 @@ s.push(deck);
 for (size_t i = 0; i < 5; i++)
 @{
   TMCG_Stack<VTMF_Card> s2;
-  if (i == idx)
+  if (i == j)
   @{
     TMCG_StackSecret<VTMF_CardSecret> ss;
     tmcg->TMCG_CreateStackSecret(ss, false, s.size(), vtmf);
     tmcg->TMCG_MixStack(s, s2, ss, vtmf);
-    for (size_t j = 0; j < 5; j++)
+    for (size_t i2 = 0; i2 < 5; i2++)
     @{
-      if (j != idx)
-      @{
-        out_stream[j] << s2 << std::endl;
-        tmcg->TMCG_ProveStackEquality(s, s2, ss, false, vtmf,
-          in_stream[j], out_stream[j]);
-      @}
+      if (i2 == j)
+        continue;
+      out_stream[i2] << s2 << std::endl;
+      tmcg->TMCG_ProveStackEquality(s, s2, ss, false, vtmf,
+        in_stream[i2], out_stream[i2]);
     @}
   @}
   else
   @{
     in_stream[i] >> s2;
     if (!in_stream[i].good())
-    @{
       std::cerr << "Read or parse error!" << std::endl;
-      exit(-1);
-    @}
     if (!tmcg->TMCG_VerifyStackEquality(s, s2, false, vtmf,
       in_stream[i], out_stream[i]))
-    @{
-      std::cerr << "Verification failed!" << std::endl;
-      exit(-1);
-    @}
+        std::cerr << "Verification failed!" << std::endl;
   @}
   s = s2;
 @}
 @end example
 @end cartouche
-First, the regular stack @code{s} is initialized by the open cards from
-@code{deck}. Then each player shuffles the stack, proves the correctness,
-and verifies the proves from other players. Finally, @code{s} contains the
-shuffled result.
 
 If you want to use the more efficient shuffle verification protocol of Groth,
-then you must simply replace the @code{TMCG_ProveStackEquality} and
+then you must simply replace @code{TMCG_ProveStackEquality} and
 @code{TMCG_VerifyStackEquality} by @code{TMCG_ProveStackEquality_Groth} and
 @code{TMCG_VerifyStackEquality_Groth}, respectively.
 
 @subsection Drawing a Card from the Deck
-Now every player has the shuffled deck @code{s} and nobody knows in which
-order the 52@tie{}cards are stacked. Therefore you can simply use any
-drawing strategy to obtain the players hands. For example, look at the
-following code that draws two cards for each player.
+Now every player has the same shuffled deck @code{s} and nobody knows in which
+order the 52@tie{}cards are stacked. Therefore you can simply use any drawing
+strategy to obtain a players hand. For example, look at the following code that
+draws two cards from @code{s} for each player.
 @cartouche
 @example
 TMCG_Stack<VTMF_Card> hand[5];
@@ -2816,39 +2771,33 @@ for (size_t i = 0; i < 5; i++)
 @}
 @end example
 @end cartouche
-@exdent
-Further, you probably want to disclose the card types to the corresponding
-player. Therefore consider the following code for the player with index
-@code{idx}. Every player receives the necessary information from the other
-players to compute the card types of his hand @code{hand[idx]}. Finally,
-these types are stored together with the masked cards in the open stack
-@code{private_hand}. The following code fragment can be also used in a
-straightforward way to publicly open a card from a players hand or from
-the remaining deck @code{s}.
-
+Further, probably you want disclose the card types to the corresponding
+player. Consider the code fragment for the player @math{P_j}: Every player
+receives the necessary information from the other players and computes the
+card types of his hand @code{hand[j]}. Finally, these types are stored
+together with the masked cards in the open stack @code{private_hand}. The
+example can be modified in a straightforward way to publicly disclose a
+card from a players hand or from the remaining stack @code{s}.
 @cartouche
 @example
 TMCG_OpenStack<VTMF_Card> private_hand;
 for (size_t i = 0; i < 5; i++)
 @{
-  if (i == idx)
+  if (i == j)
   @{
-    for (size_t k = 0; k < hand[i].size(); k++)
+    for (size_t k = 0; k < hand[j].size(); k++)
     @{
-      tmcg->TMCG_SelfCardSecret(hand[i][k], vtmf);
-      for (size_t j = 0; j < 5; j++)
+      tmcg->TMCG_SelfCardSecret(hand[j][k], vtmf);
+      for (size_t i2 = 0; i2 < 5; i2++)
       @{
-        if (j == idx)
+        if (i2 == j)
           continue;
-        if (!tmcg->TMCG_VerifyCardSecret(hand[i][k], vtmf,
+        if (!tmcg->TMCG_VerifyCardSecret(hand[j][k], vtmf,
           in_stream[j], out_stream[j]))
-        @{
-          std::cerr << "Verification failed!" << std::endl;
-          exit(-1);
-        @}
+            std::cerr << "Verification failed!" << std::endl;
       @}
-      private_hand.push(tmcg->TMCG_TypeOfCard(hand[i][k], vtmf),
-        hand[i][k]);
+      private_hand.push(tmcg->TMCG_TypeOfCard(hand[j][k], vtmf),
+        hand[j][k]);
     @}
   @}
   else
