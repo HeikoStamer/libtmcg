@@ -32,6 +32,7 @@
 #undef NDEBUG
 
 // create a random permutation
+// (I know there is a linear time algorithm. Anyway, keep it simple!)
 void random_permutation
 	(size_t n, std::vector<size_t> &pi)
 {
@@ -57,6 +58,22 @@ void random_permutation
 	}
 }
 
+// create a random permutation (with a linear number of queries)
+void random_permutation_fast
+	(size_t n, std::vector<size_t> &pi)
+{
+	pi.clear();
+	for (size_t i = 0; i < n; i++)
+		pi.push_back(i);
+	
+	for (size_t i = 0; i < (n - 1); i++)
+	{
+		size_t tmp = pi[i], rnd = i + (mpz_srandom_ui() % (n - i));
+		pi[i] = pi[rnd];
+		pi[rnd] = tmp;
+	}
+}
+
 bool equal_permutations
 	(const std::vector<size_t> &pi, const std::vector<size_t> &xi)
 {
@@ -73,6 +90,38 @@ int main
 {
 	mpz_t a, b, aa, bb;
 	assert(init_libTMCG());
+	
+	size_t pi_check_factor = 256;
+	size_t pi_check_n = 3, pi_check_size = 6 * pi_check_factor, cnt = 0;
+	std::vector<size_t> delta, alpha[pi_check_size], beta[pi_check_size];
+	for (size_t i = 0; i < pi_check_n; i++)
+		delta.push_back(i);
+	
+	std::cout << "random_permutation(" << pi_check_n << ", pi)" << std::endl;
+	start_clock();
+	for (size_t i = 0; i < pi_check_size; i++)
+		random_permutation(pi_check_n, alpha[i]);
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
+	cnt = 0;
+	for (size_t i = 0; i < pi_check_size; i++)
+		if (equal_permutations(delta, alpha[i]))
+			cnt++;
+	std::cout << cnt << " out of " << pi_check_size << 
+		" are trivial (should be around " << pi_check_factor << ")" << std::endl;
+	
+	std::cout << "random_permutation_fast(" << pi_check_n << ", pi)" << std::endl;
+	start_clock();
+	for (size_t i = 0; i < pi_check_size; i++)
+		random_permutation_fast(pi_check_n, beta[i]);
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
+	cnt = 0;
+	for (size_t i = 0; i < pi_check_size; i++)
+		if (equal_permutations(delta, beta[i]))
+			cnt++;
+	std::cout << cnt << " out of " << pi_check_size << 
+		" are trivial (should be around " << pi_check_factor << ")" << std::endl;
 	
 	mpz_init(a), mpz_init(b), mpz_init(aa), mpz_init(bb);
 	size_t n = 32;
