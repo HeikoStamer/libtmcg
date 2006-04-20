@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.36 2006/04/16 15:00:36 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.37 2006/04/20 19:51:29 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -55,10 +55,16 @@ Free Documentation License''.
 @ifnottex
 @node Top
 @top LibTMCG Reference Manual
+@menu
+* Introduction::
+* Application Programming Interface::
+* Examples::
+@end menu
 
 @insertcopying
 @end ifnottex
 
+@node Introduction
 @c **********************************************************
 @c *******************  Introduction  ***********************
 @c **********************************************************
@@ -94,7 +100,18 @@ of the @uref{http://www.fsf.org/licensing/essays/free-sw.html,,
 Free Software Foundation}. The source code is released under
 the GNU @emph{General Public License} Version 2.
 
+@menu
+* Further Reading::
+* Getting Started::
+* Preliminaries::
+* Preparation::
+* Header Files and Name Spaces::
+* Building Sources::
+* Initializing the Library::
+@end menu
+
 @c **********************************************************
+@node Further Reading
 @section Further Reading
 The cryptographic background and a detailed discussion of
 the implementation issues are beyond the scope of this manual.
@@ -134,6 +151,7 @@ The interested reader is referred to the following papers:
 @end quotation
 
 @c **********************************************************
+@node Getting Started
 @section Getting Started
 This manual describes the application programming interface
 of LibTMCG. All relevant data types, public classes and
@@ -149,6 +167,7 @@ Thus don't be surprised, if you recognize some obvious
 analogies.
 
 @c **********************************************************
+@node Preliminaries
 @section Preliminaries
 The most card games are played with a regular card deck, i.e.,
 cards where the pattern on the picture side determines the card
@@ -158,6 +177,12 @@ or the Jack of Diamonds@tie{}@math{\diamondsuit}) and where the
 reverse sides of all cards are indistinguishable. Only such
 regular card decks are supported by LibTMCG.
 
+@menu
+* Terminology::
+* Security::
+@end menu
+
+@node Terminology
 @subsection Terminology
 @cindex Terminology
 The following list defines some terms that are subsequently used
@@ -240,6 +265,7 @@ in the manual.
 	is preserved by the transformation.
 @end quotation
 
+@node Security
 @subsection Security
 @cindex Security
 ``Mental Poker'' solutions cannot prevent that malicious players
@@ -308,6 +334,7 @@ LibTMCG. Please report any complaint or correction proposal.
 @end quotation
 
 @c **********************************************************
+@node Preparation
 @section Preparation
 LibTMCG depends on the three other basic libraries. Therefore
 you need the corresponding development files to build LibTMCG
@@ -341,6 +368,7 @@ because their correct installation, configuration, and usage
 is crucial to the security of the entire application.
 
 @c **********************************************************
+@node Header Files and Name Spaces
 @section Header Files and Name Spaces
 @cindex Header Files
 @cindex Name Spaces
@@ -369,6 +397,7 @@ extensions for the large integer support of the GNU Multiple
 Precision Arithmetic Library.
 
 @c **********************************************************
+@node Building Sources
 @section Building Sources
 If you want to compile a source file including the @file{libTMCG.hh}
 header, you must make sure that the compiler can find it in the
@@ -439,6 +468,7 @@ LDADD = $(LIBTMCG_LIBS)
 @end example
 
 @c **********************************************************
+@node Initializing the Library
 @section Initializing the Library
 @cindex Initialization
 The first step is the initialization of LibTMCG. The following
@@ -453,12 +483,19 @@ and returns @code{true}, if everything was sound. Otherwise
 is sent to @code{std::cerr}.
 @end deftypefun
 
+@node Application Programming Interface
 @c **********************************************************
 @c *************************  API  **************************
 @c **********************************************************
 @chapter Application Programming Interface
 
+@menu
+* Preprocessor Defined Global Symbols::
+* Data Types and Classes::
+@end menu
+
 @c **********************************************************
+@node Preprocessor Defined Global Symbols
 @section Preprocessor Defined Global Symbols
 @cindex Security Parameters
 Please note that the following macros are fixed at compile
@@ -630,11 +667,18 @@ However, it should be at least greater than @code{TMCG_DDH_SIZE} and
 @end defmac
 
 @c **********************************************************
+@node Data Types and Classes
 @section Data Types and Classes
 This section describes all public data types and classes that are
 necessary to create a secure card game. Private methods and only
 internally used members are not explained.
 
+@menu
+* Data Types::
+* Classes::
+@end menu
+
+@node Data Types
 @subsection Data Types
 @cindex Data Types
 LibTMCG provides several data structures for cards, stacks, and cryptographic keys.
@@ -1603,7 +1647,7 @@ by telephone or if a central service provider exhibits public key certificates.
 	@end defop
 @end deftp
 
-
+@node Classes
 @subsection Classes
 @cindex Classes
 LibTMCG consists of several C++ classes. Some of them are only extensions
@@ -2432,6 +2476,10 @@ class must be created to perform any card or stack operations.
 	@end defop
 @end deftp
 
+@node Examples
+@c **********************************************************
+@c **********************  Examples  ************************
+@c **********************************************************
 @chapter Examples
 @cindex Examples
 The following examples explain most of the steps that are necessary to create
@@ -2450,6 +2498,15 @@ the corresponding @code{std::istream} resp. @code{std::ostream} instance for the
 communication with player @math{P_i}.@footnote{We assume that the players
 are ordered in a natural way such that we can use the same nomenclature.}
 
+@menu
+* Library Initialization::
+* Session Initialization and Key Generation::
+* Operations on Cards::
+* Operations on Stacks::
+* Quit a Session::
+@end menu
+
+@node Library Initialization
 @section Library Initialization
 @cindex Initialization
 The first step that should be performed is the initialization of LibTMCG.
@@ -2462,6 +2519,7 @@ if (!init_libTMCG())
 @end example
 @end cartouche
 
+@node Session Initialization and Key Generation
 @section Session Initialization and Key Generation
 @cindex Initialization
 @cindex Key Generation
@@ -2596,12 +2654,20 @@ if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) ||
 @end example
 @end cartouche
 
+@node Operations on Cards
 @section Operations on Cards
 Now we are ready to perform several operations on cards.
 We start with some basic stuff which might be of interest in
 particular situations. However, it is often more convenient to work
 directly with stacks, as explained later.
 
+@menu
+* Creating an Open Card::
+* Masking and Re-masking of a Card::
+* Opening a Masked Card::
+@end menu
+
+@node Creating an Open Card
 @subsection Creating an Open Card
 The creation of an open card is very simple. The following code
 creates a card of type @code{7}.
@@ -2612,6 +2678,7 @@ tmcg->TMCG_CreateOpenCard(c, vtmf, 7);
 @end example
 @end cartouche
 
+@node Masking and Re-masking of a Card
 @subsection Masking and Re-masking of a Card
 Now the previously created card @code{c} will be masked to hide its type.
 Then @code{cc} is sent to @math{P_1}.
@@ -2654,6 +2721,7 @@ for (size_t i = 1; i < 5; i++)
 @end cartouche
 Finally, all other players receive and store the masked card @code{ccc}.
 
+@node Opening a Masked Card
 @subsection Opening a Masked Card
 Suppose that @math{P_1} would like to know the type of the masked card @code{ccc}.
 Of course, @math{P_0} could simply reveal it, but that isn't verifiable. Anyway,
@@ -2680,12 +2748,20 @@ type = tmcg->TMCG_TypeOfCard(ccc, vtmf);
 @end example
 @end cartouche
 
+@node Operations on Stacks
 @section Operations on Stacks
 There exist a lot of basic operations on stacks, e.g. pushing a card to a stack
 or importing a stack. These functions are to simple for explaining them here, but
 they are used implicitly. However, a short description can be found in the
 API part of the manual (see @code{TMCG_Stack} and @code{TMCG_OpenStack}).
 
+@menu
+* Creating the Deck::
+* Shuffling the Deck::
+* Drawing a Card from the Deck::
+@end menu
+
+@node Creating the Deck
 @subsection Creating the Deck
 A quite common operation is the creation of a card deck. The deck will
 initially be represented by an open stack (see @code{TMCG_OpenStack}) called
@@ -2703,6 +2779,7 @@ for (size_t type = 0; type < 52; type++)
 @end example
 @end cartouche
 
+@node Shuffling the Deck
 @subsection Shuffling the Deck
 Each player must perform a shuffle of the deck, because only such a procedure
 guarantees that no coalition has influence on the outcome. Thus we build a
@@ -2755,6 +2832,7 @@ then you must simply replace @code{TMCG_ProveStackEquality} and
 @code{TMCG_VerifyStackEquality} by @code{TMCG_ProveStackEquality_Groth} and
 @code{TMCG_VerifyStackEquality_Groth}, respectively.
 
+@node Drawing a Card from the Deck
 @subsection Drawing a Card from the Deck
 Now every player has the same shuffled deck @code{s} and nobody knows in which
 order the 52@tie{}cards are stacked. Therefore you can simply use any drawing
@@ -2812,6 +2890,7 @@ for (size_t i = 0; i < 5; i++)
 @end example
 @end cartouche
 
+@node Quit a Session
 @section Quit a Session
 The last step should release all occupied resources.
 @cartouche
