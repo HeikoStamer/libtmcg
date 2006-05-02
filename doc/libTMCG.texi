@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.37 2006/04/20 19:51:29 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.38 2006/05/02 19:17:35 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -171,11 +171,33 @@ analogies.
 @section Preliminaries
 The most card games are played with a regular card deck, i.e.,
 cards where the pattern on the picture side determines the card
-type (e.g. the King of Spades@tie{}@math{\spadesuit}, the Seven of
-Hearts@tie{}@math{\heartsuit}, the Ace of Club@tie{}@math{\clubsuit},
-or the Jack of Diamonds@tie{}@math{\diamondsuit}) and where the
-reverse sides of all cards are indistinguishable. Only such
-regular card decks are supported by LibTMCG.
+type (e.g.
+@iftex
+the King of Spades@tie{}@math{\spadesuit},
+@end iftex
+@ifnottex
+the King of Spades,
+@end ifnottex
+@iftex
+the Seven of Hearts@tie{}@math{\heartsuit},
+@end iftex
+@ifnottex
+the Seven of Hearts,
+@end ifnottex
+@iftex
+the Ace of Club@tie{}@math{\clubsuit},
+@end iftex
+@ifnottex
+the Ace of Club,
+@end ifnottex
+@iftex
+or the Jack of Diamonds@tie{}@math{\diamondsuit})
+@end iftex
+@ifnottex
+or the Jack of Diamonds)
+@end ifnottex
+and where the reverse sides of all cards are indistinguishable.
+Only such regular card decks are supported by LibTMCG.
 
 @menu
 * Terminology::
@@ -342,7 +364,7 @@ and your application properly. The following list gives a short
 exposition of the used features and specifies the required versions:
 @itemize @bullet
 	@item GNU Multiple Precision Arithmetic Library (@file{libgmp}),
-		Version @math{\ge} 4.1.0
+		Version@tie{}@math{\ge}@tie{}4.1.0
 		
 		The library provides a powerful framework for performing
 		arbitrary precision arithmetic on integers. Further reasons
@@ -351,14 +373,14 @@ exposition of the used features and specifies the required versions:
 		reasonable performance.
 		
 	@item GNU Crypto Library (@file{libgcrypt}),
-		Version @math{\ge} 1.2.0
+		Version@tie{}@math{\ge}@tie{}1.2.0
 		
 		The library provides some basic cryptographic algorithms
 		(e.g. RIPEMD-160) and an easily accessible interface for
 		cryptographically strong pseudo random numbers.
 	
 	@item GNU Privacy Guard Error Code Library (@file{libgpg-error}),
-		Version @math{\ge} 0.5
+		Version@tie{}@math{\ge}@tie{}0.5
 		
 		This library defines common error values, e.g., returned by the
 		GNU Crypto Library.
