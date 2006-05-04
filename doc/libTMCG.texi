@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.38 2006/05/02 19:17:35 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.39 2006/05/04 09:57:29 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -1342,7 +1342,7 @@ for example to establish authenticated communication channels between players.
 However, like in every public key cryptosystem a trusted @acronym{PKI, Public
 Key Infrastructure} is needed. This might not be a serious concern in
 distributed game environments, if the players compare their key fingerprints
-by telephone or if a central service provider exhibits public key certificates.
+by telephone or if a central service provider issues public key certificates.
 
 @deftp {Data type} TMCG_SecretKey
 	This @code{struct} represents the secret part of the TMCG key. The
