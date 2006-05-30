@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.40 2006/05/30 21:17:35 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.41 2006/05/30 21:42:29 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -59,6 +59,8 @@ Free Documentation License''.
 * Introduction::
 * Application Programming Interface::
 * Examples::
+* Licenses::
+* General and API Index::
 @end menu
 
 @insertcopying
@@ -2925,10 +2927,12 @@ delete vsshe, delete vtmf, delete tmcg;
 @c **********************************************************
 @c *******************  Appendices  *************************
 @c **********************************************************
+@node Licenses
 @appendix Licenses
 @include gpl.texi
 @include fdl.texi
 
+@node General and API Index
 @appendix General and API Index
 @heading General Index
 @printindex cp
