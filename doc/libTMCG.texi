@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.39 2006/05/04 09:57:29 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.40 2006/05/30 21:17:35 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -294,16 +294,17 @@ in the manual.
 exchange private information, for example, by telephone or Internet
 chat. Cryptographic protocols can only minimize the effect of such
 colluding parties and should try to protect the confidentiality
-for honest players. But even this protection often relies on
+for honest players. But even this small protection often relies on
 number-theoretical assumptions which are only believed to be true,
-e.g. problems like factoring products of large primes or computing
-discrete logarithms. That means, strict mathematical proofs@footnote{For
-instance, a reduction to a known hard problem in the sense of complexity
-theory.} for the hardness of these problems are not known, and it is
-very likely that such proofs will never be found. However, almost all
-public key cryptosystems rely on similar assumptions and therefore you
-should not worry about this issue, as long as reasonable security
-parameters are chosen.
+i.e. problems like factoring products of large primes or computing
+discrete logarithms are only believed to be hard. That means, strict
+mathematical proofs@footnote{For instance, a ``tight reduction'' to
+a known hard problem in the sense of complexity theory.} for the
+hardness of these problems are not known, and it is not very likely
+that such proofs will ever be found. However, almost all public key
+cryptosystems rely on such assumptions and therefore you should not
+worry about this issue, as long as reasonable security parameters are
+chosen.
 
 LibTMCG was designed to provide security in the ``honest-but-curious''
 (aka semi-honest) adversary model. That means, all participants follow
@@ -325,8 +326,8 @@ of cheaters. Reliable cheater detection requires that an authenticated broadcast
 channel has been established, where all players have read/write access.
 LibTMCG does not yet contain the necessary protocols (reliable broadcast) for
 creating such a channel. Thus you should take into account that not necessarily
-the prover is the source of evil, if a verification procedure fails. This level
-of uncertainty is also a reason for our restricted adversary model.
+the prover is the source of all evil, if a verification procedure fails. This
+level of uncertainty is also a reason for our restricted adversary model.
 
 Note that it is not known, whether the used protocols retain their
 zero-knowledge property, when they are composed and executed in a concurrent
@@ -342,15 +343,15 @@ LibTMCG was carefully implemented with respect to timing attacks (see Kocher:
 @emph{Cryptanalysis of Diffie-Hellman, RSA, DSS, and other cryptosystems using
 timing attacks}, CRYPTO@tie{}'95, LNCS@tie{}963, 1995). Therefore we loose
 some efficiency, e.g., during modular exponentiations. However, it is strongly
-recommended to leave the timing attack protection turned on unless you know
-exactly where it is not needed.
+recommended to leave the timing attack protection turned on, unless you know
+exactly where it is really not needed.
 
 @quotation Security Advice
 @cindex Security Advice
 We have implemented all cryptographic primitives according to the cited
 research papers and to the best of our knowledge. However, we can not eliminate
-any possibility of flaws or insecurity, because the implementation of such
-complex protocols is always an error-prone process. Thus we encourage
+any possibility of contained flaws or insecurity, because the implementation of
+such complex protocols is always an error-prone process. Thus we encourage
 readers with advanced cryptographic background to review the source code of
 LibTMCG. Please report any complaint or correction proposal.
 @end quotation
