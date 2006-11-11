@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.41 2006/05/30 21:42:29 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.42 2006/11/11 20:02:50 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -361,10 +361,10 @@ LibTMCG. Please report any complaint or correction proposal.
 @c **********************************************************
 @node Preparation
 @section Preparation
-LibTMCG depends on the three other basic libraries. Therefore
-you need the corresponding development files to build LibTMCG
-and your application properly. The following list gives a short
-exposition of the used features and specifies the required versions:
+LibTMCG depends on three other basic libraries. Therefore you will
+need the corresponding development files to build LibTMCG and your
+application properly. The following list gives a short exposition
+of the used features and specifies the required versions:
 @itemize @bullet
 	@item GNU Multiple Precision Arithmetic Library (@file{libgmp}),
 		Version@tie{}@math{\ge}@tie{}4.1.0
