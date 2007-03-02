@@ -17,9 +17,9 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.42 2006/11/11 20:02:50 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.43 2007/03/02 12:46:23 stamer Exp $.
 
-Copyright @copyright{} 2005, 2006 Heiko Stamer <@email{stamer@@gaos.org}>.
+Copyright @copyright{} 2005, 2006, 2007 Heiko Stamer <@email{stamer@@gaos.org}>.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -38,7 +38,8 @@ Free Documentation License''.
 @sp 9
 @center @titlefont{@math{@clubsuit@qquad@quad@spadesuit@qquad@quad@heartsuit@qquad@quad@diamondsuit}}
 @sp 2
-@center @titlefont{Implementation of the}
+@center @titlefont{An Implementation of the}
+@vskip 10pt
 @center @titlefont{Toolbox for Mental Card Games}
 @sp 2
 @center @titlefont{@math{@diamondsuit@qquad@quad@heartsuit@qquad@quad@spadesuit@qquad@quad@clubsuit}}
@@ -71,31 +72,33 @@ Free Documentation License''.
 @c *******************  Introduction  ***********************
 @c **********************************************************
 @chapter Introduction
-`@acronym{LibTMCG}' is a C++ library for creating secure electronic
-card games. The most remarkable feature is the absence of a trusted
-third party (TTP), i.e., neither a central game server nor trusted
-hardware components are necessary. To emphasize this point again:
-With the present library there is no need for an independent referee,
-because the applied protocols provide a basic level of confidentiality
-and fairness by itself. Consequently, the library is well-suited for
-peer-to-peer (P2P) environments where no TTP is available. Of course,
-we cannot avoid that malicious players share information about their
-private cards, but the protocols ensure that the shuffle of the deck
+`@acronym{LibTMCG}' is a C++ library for creating electronic card games.
+The library contains a sort of useful classes, algorithms, and high-level
+protocols to support an application programmer in writing a card playing
+software.
+The most remarkable feature is the absence of a trusted third party (TTP),
+i.e., neither a central game server nor trusted hardware components are
+necessary. Thus, with the present library there is no need for an
+independent referee, because the applied protocols provide a basic level
+of confidentiality and fairness by itself. Consequently, the library is
+well-suited for peer-to-peer (P2P) environments where no TTP is available.
+Of course, we cannot avoid that malicious players share information about
+their private cards, but the protocols ensure that the shuffle of the deck
 is performed randomly (presumed that at least one player is honest)
 and thus the cards will be distributed uniformly among the players.
 Further, no coalition can learn the private cards of a player against
-his will (except for trivial conclusions). The corresponding
-cryptographic problem, actually called ``Mental Poker'', has been
-studied since 1979 (Shamir, Rivest, and Adleman) by many authors.
+his will (except for trivial conclusions). The corresponding cryptographic
+problem, actually called ``Mental Poker'', has been studied since 1979
+(Shamir, Rivest, and Adleman) by many authors.
 LibTMCG provides the first practical implementation of such protocols.
 
-The implementation relies on advanced cryptographic
-techniques---the so-called zero-knowledge proofs. Using
-these `building blocks' the high-level protocols minimize
-the effect of coalitions and preserve the confidentiality
-of the players' strategy, i.e., the players are not required
-to reveal their cards at the end of the game to show that
-they did not cheat.
+The security and the fairness rely on advanced cryptographic techniques---the
+so-called zero-knowledge proofs. Using these `building blocks' the high-level
+protocols minimize the effect of coalitions and preserve the confidentiality
+of the players' strategy, i.e., the players are not required to reveal their
+cards at the end of the game to show that they did not cheat. This important
+property is often required in card games like Poker.
+
 
 LibTMCG is @emph{Free Software} according to the definition
 of the @uref{http://www.fsf.org/licensing/essays/free-sw.html,,
@@ -172,7 +175,7 @@ analogies.
 @node Preliminaries
 @section Preliminaries
 The most card games are played with a regular card deck, i.e.,
-cards where the pattern on the picture side determines the card
+cards where the pattern on the front side (face) determines the card
 type (e.g.
 @iftex
 the King of Spades@tie{}@math{\spadesuit},
@@ -198,8 +201,8 @@ or the Jack of Diamonds@tie{}@math{\diamondsuit})
 @ifnottex
 or the Jack of Diamonds)
 @end ifnottex
-and where the reverse sides of all cards are indistinguishable.
-Only such regular card decks are supported by LibTMCG.
+and where the back sides of all cards are indistinguishable.
+Only such `regular' card decks are supported by LibTMCG.
 
 @menu
 * Terminology::
@@ -209,7 +212,7 @@ Only such regular card decks are supported by LibTMCG.
 @node Terminology
 @subsection Terminology
 @cindex Terminology
-The following list defines some terms that are subsequently used
+The following list defines some common terms that are subsequently used
 in the manual.
 
 @quotation Player
@@ -241,8 +244,8 @@ in the manual.
 	@emph{Masking} is a process which aim is to transform the card
 	representation such that the input card and the result cannot
 	be linked (except for trivial conclusions). Roughly speaking, masking
-	is the encryption of a card representation such that the contained
-	card type is preserved.
+	is the (re-)encryption of a card representation such that the
+	original card type is preserved.
 @end quotation
 
 @quotation Card Secret
@@ -263,7 +266,7 @@ in the manual.
 @cindex Masked Card
 	A @emph{masked card} (also known as face-down card) is a card whose
 	type is unknown to a subset of players. It can be only revealed, if
-	all players cooperate in a type computation.
+	all players cooperate in a common computation of the type.
 @end quotation
 
 @quotation Private Card
