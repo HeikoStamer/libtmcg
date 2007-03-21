@@ -498,3 +498,23 @@ void mpz_lprime
 	assert(mpz_probab_prime_p(p, mr_iterations));
 	assert(mpz_probab_prime_p(q, mr_iterations));
 }
+
+void mpz_oprime
+	(mpz_ptr p, unsigned long int psize, unsigned long int mr_iterations)
+{
+	unsigned long int cnt = 0;
+	
+	/* Choose randomly an odd number $p$ of appropriate size. */
+	do
+		mpz_srandomb(p, psize);
+	while ((mpz_sizeinbase(p, 2L) < psize) || (mpz_even_p(p)));
+	
+	/* Add two as long as $p$ is not probable prime. */
+	while (!mpz_probab_prime_p(p, mr_iterations))
+	{
+		mpz_add_ui(p, p, 2L);
+		if ((cnt++ % 100) == 0)
+			fprintf(stderr, ".");
+	}
+	fprintf(stderr, "\n");
+}

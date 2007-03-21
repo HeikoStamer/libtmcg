@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -311,7 +311,7 @@ int main
 			if (who[i])
 			{
 				// ... Alice
-				position = mpz_srandom_ui() % hand_Bob.size();
+				position = mpz_srandom_mod(hand_Bob.size());
 				std::cout << position << std::endl;
 				c = hand_Bob[position]; // draw a card
 				hand_Bob.remove(c); // remove it

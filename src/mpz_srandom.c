@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2002, 2004, 2005, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,12 +23,31 @@
 unsigned long int mpz_grandom_ui
 	(enum gcry_random_level level)
 {
-	unsigned long int tmp;
+	unsigned long int tmp = 0;
 	if (level == GCRY_WEAK_RANDOM)
 		gcry_create_nonce((unsigned char *)&tmp, sizeof(tmp));
 	else
 		gcry_randomize((unsigned char *)&tmp, sizeof(tmp), level);
 	return tmp;
+}
+
+unsigned long int mpz_grandom_ui_nomodbias
+	(enum gcry_random_level level, unsigned long int divider)
+{
+	unsigned long int max = (ULONG_MAX - divider), rnd = 0;
+	
+	assert(divider >= 2);
+	assert(ULONG_MAX >= 2);
+	assert((ULONG_MAX - divider) >= divider);
+	
+	/* Remove ``modulo bias'' by limiting the return value */
+	while ((max + 1) % divider)
+		max--;
+	do
+		rnd = mpz_grandom_ui(level);
+	while (rnd > max);
+	
+	return rnd;
 }
 
 unsigned long int mpz_ssrandom_ui
@@ -47,6 +66,24 @@ unsigned long int mpz_wrandom_ui
 	()
 {
 	return mpz_grandom_ui(GCRY_WEAK_RANDOM);
+}
+
+unsigned long int mpz_ssrandom_mod
+	(unsigned long int modulo)
+{
+	return mpz_grandom_ui_nomodbias(GCRY_VERY_STRONG_RANDOM, modulo) % modulo;
+}
+
+unsigned long int mpz_srandom_mod
+	(unsigned long int modulo)
+{
+	return mpz_grandom_ui_nomodbias(GCRY_STRONG_RANDOM, modulo) % modulo;
+}
+
+unsigned long int mpz_wrandom_mod
+	(unsigned long int modulo)
+{
+	return mpz_grandom_ui_nomodbias(GCRY_WEAK_RANDOM, modulo) % modulo;
 }
 
 void mpz_grandomb

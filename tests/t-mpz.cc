@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@
 
 #undef NDEBUG
 
+#define MOD_BIAS_WIDTH 3
+
 int main
 	(int argc, char **argv)
 {
@@ -34,7 +36,7 @@ int main
 	mpz_t fpowm_table_1[TMCG_MAX_FPOWM_T], fpowm_table_2[TMCG_MAX_FPOWM_T];
 	char tmp_ar1[1024], tmp_ar2[1024];
 	char *dig1, *dig2;
-	unsigned long int tmp_ui = 0L;
+	unsigned long int tmp_ui = 0L, cnt[MOD_BIAS_WIDTH];
 	std::stringstream lej;
 	std::string s;
 	assert(init_libTMCG());
@@ -75,9 +77,33 @@ int main
 	mpz_fdiv_q_2exp(foo, foo, 1L);
 	assert(!mpz_cmp(foo, bar));
 	
+	// mpz_wrandom_ui vs. mpz_wrandom_mod
+	std::cout << "mpz_wrandom_ui() uniformity check / modulo bias" << std::endl;
+	for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
+		cnt[i] = 0;
+	start_clock();
+	for (size_t i = 0; i < (100000 * MOD_BIAS_WIDTH); i++)
+		cnt[mpz_wrandom_ui() % MOD_BIAS_WIDTH]++;
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
+	for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
+		std::cout << cnt[i] << " ";
+	std::cout << std::endl;
+	std::cout << "mpz_wrandom_mod() uniformity check / modulo bias" << std::endl;
+	for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
+		cnt[i] = 0;
+	start_clock();
+	for (size_t i = 0; i < (100000 * MOD_BIAS_WIDTH); i++)
+		cnt[mpz_wrandom_mod(MOD_BIAS_WIDTH)]++;
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
+	for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
+		std::cout << cnt[i] << " ";
+	std::cout << std::endl;
+	
 	// mpz_*random_ui, mpz_*randomb, mpz_*randomm
 	std::cout << "mpz_wrandom_ui()" << std::endl;
-	for (size_t i = 0; i < 50; i++)
+	for (size_t i = 0; i < 25; i++)
 	{
 		tmp_ui = mpz_wrandom_ui();
 		mpz_set_ui(foo, tmp_ui);
@@ -85,13 +111,14 @@ int main
 		assert(tmp_ui != mpz_wrandom_ui());
 	}
 	std::cout << "mpz_srandom_ui()" << std::endl;
-	for (size_t i = 0; i < 50; i++)
+	for (size_t i = 0; i < 25; i++)
 	{
 		tmp_ui = mpz_srandom_ui();
 		mpz_set_ui(foo, tmp_ui);
 		assert(mpz_get_ui(foo) == tmp_ui);
 		assert(tmp_ui != mpz_wrandom_ui());
 	}
+#ifdef TEST_SSRANDOM
 	std::cout << "mpz_ssrandom_ui()" << std::endl;
 	for (size_t i = 0; i < 3; i++)
 	{
@@ -100,8 +127,9 @@ int main
 		assert(mpz_get_ui(foo) == tmp_ui);
 		assert(tmp_ui != mpz_wrandom_ui());
 	}
+#endif
 	std::cout << "mpz_wrandomb()" << std::endl;
-	for (size_t i = 0; i < 50; i++)
+	for (size_t i = 0; i < 25; i++)
 	{
 		mpz_set(foo2, foo);
 		mpz_wrandomb(foo, 1024L), mpz_set_ui(bar, 0L);
@@ -112,7 +140,7 @@ int main
 		assert(mpz_cmp(foo, foo2));
 	}
 	std::cout << "mpz_srandomb()" << std::endl;
-	for (size_t i = 0; i < 50; i++)
+	for (size_t i = 0; i < 25; i++)
 	{
 		mpz_set(foo2, foo);
 		mpz_srandomb(foo, 1024L), mpz_set_ui(bar, 0L);
@@ -122,6 +150,7 @@ int main
 		assert(!mpz_cmp(foo, bar));
 		assert(mpz_cmp(foo, foo2));
 	}
+#ifdef TEST_SSRANDOM
 	std::cout << "mpz_ssrandomb()" << std::endl;
 	for (size_t i = 0; i < 3; i++)
 	{
@@ -133,9 +162,10 @@ int main
 		assert(!mpz_cmp(foo, bar));
 		assert(mpz_cmp(foo, foo2));
 	}
+#endif
 	std::cout << "bar = " << bar << std::endl;
 	std::cout << "mpz_wrandomm()" << std::endl;
-	for (size_t i = 0; i < 50; i++)
+	for (size_t i = 0; i < 25; i++)
 	{
 		mpz_set(foo2, foo);
 		mpz_wrandomm(foo, bar);
@@ -143,13 +173,14 @@ int main
 		assert(mpz_cmp(foo, foo2));
 	}
 	std::cout << "mpz_srandomm()" << std::endl;
-	for (size_t i = 0; i < 50; i++)
+	for (size_t i = 0; i < 25; i++)
 	{
 		mpz_set(foo2, foo);
 		mpz_srandomm(foo, bar);
 		assert(mpz_cmp(foo, bar) < 0);
 		assert(mpz_cmp(foo, foo2));
 	}
+#ifdef TEST_SSRANDOM
 	std::cout << "mpz_ssrandomm()" << std::endl;
 	for (size_t i = 0; i < 3; i++)
 	{
@@ -158,6 +189,7 @@ int main
 		assert(mpz_cmp(foo, bar) < 0);
 		assert(mpz_cmp(foo, foo2));
 	}
+#endif
 	
 	// mpz_sprime, mpz_sprime2g, mpz_sprime3mod4
 	std::cout << "mpz_sprime(), mpz_sprime2g(), mpz_sprime3mod4()" << std::endl;
@@ -193,6 +225,14 @@ int main
 		assert(!mpz_cmp_ui(foo2, 1L));
 	}
 	
+	// mpz_oprime
+	std::cout << "mpz_oprime()" << std::endl;
+	for (size_t i = 0; i < 5; i++)
+	{
+		mpz_oprime(foo, 1024, TMCG_MR_ITERATIONS);
+		assert(mpz_probab_prime_p(foo, 64));
+	}
+	
 	// mpz_sprime vs. mpz_sprime_naive benchmark
 	std::cout << "mpz_sprime() benchmark" << std::endl;
 	start_clock();
@@ -204,6 +244,35 @@ int main
 	start_clock();
 	for (size_t i = 0; i < 50; i++)
 		mpz_sprime_naive(foo, bar, 512, TMCG_MR_ITERATIONS);
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
+	
+	// mpz_sqrtmp_r vs. mpz_sqrtmp benchmark
+	do
+		mpz_oprime(foo, 512, TMCG_MR_ITERATIONS);
+	while (!mpz_congruent_ui_p(foo, 1L, 8L));
+	mpz_wrandomb(bar, 512);
+	mpz_mod(bar, bar, foo);
+	std::cout << "mpz_sqrtmp_r() benchmark" << std::endl;
+	start_clock();
+	mpz_set(bar2, bar);
+	for (size_t i = 0; i < 1000; i++)
+	{
+		if (mpz_jacobi(bar2, foo) == 1)
+			mpz_sqrtmp_r(foo2, bar2, foo);
+		mpz_add_ui(bar2, bar2, 1L);
+	}
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
+	std::cout << "mpz_sqrtmp() benchmark" << std::endl;
+	start_clock();
+	mpz_set(bar2, bar);
+	for (size_t i = 0; i < 1000; i++)
+	{
+		if (mpz_jacobi(bar2, foo) == 1)
+			mpz_sqrtmp(foo2, bar2, foo);
+		mpz_add_ui(bar2, bar2, 1L);
+	}
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	
@@ -361,8 +430,8 @@ int main
 	mpz_shash(foo, s);
 	assert(!mpz_cmp(foo, bar));
 	
-	// mpz_qrmn_p, mpz_sqrtmn_r
-	std::cout << "mpz_qrmn_p(), mpz_sqrtmn_r()" << std::endl;
+	// mpz_qrmn_p, mpz_sqrtmn_r, mpz_sqrtmn
+	std::cout << "mpz_qrmn_p(), mpz_sqrtmn_r(), mpz_sqrtmn()" << std::endl;
 	mpz_sprime(foo, bar, 512, TMCG_MR_ITERATIONS);
 	mpz_sprime(foo2, bar2, 512, TMCG_MR_ITERATIONS);
 	mpz_mul(bar, foo, foo2);
@@ -372,6 +441,9 @@ int main
 			mpz_srandomm(bar2, bar);
 		while (!mpz_qrmn_p(bar2, foo, foo2, bar));
 		mpz_sqrtmn_r(root, bar2, foo, foo2, bar);
+		mpz_powm_ui(root, root, 2L, bar);
+		assert(!mpz_cmp(root, bar2));
+		mpz_sqrtmn(root, bar2, foo, foo2, bar);
 		mpz_powm_ui(root, root, 2L, bar);
 		assert(!mpz_cmp(root, bar2));
 	}

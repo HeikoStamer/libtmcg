@@ -31,8 +31,7 @@
 
 #undef NDEBUG
 
-// create a random permutation
-// (I know there is a linear time algorithm. Anyway, keep it simple!)
+// create a random permutation (naive algorithm)
 void random_permutation
 	(size_t n, std::vector<size_t> &pi)
 {
@@ -44,7 +43,7 @@ void random_permutation
 		do
 		{
 			ok = true;
-			pi[i] = mpz_srandom_ui() % n;
+			pi[i] = mpz_srandom_mod(n);
 			for (size_t j = 0; j < i; j++)
 			{
 				if (pi[i] == pi[j])
@@ -58,7 +57,7 @@ void random_permutation
 	}
 }
 
-// create a random permutation (with a linear number of queries)
+// create a random permutation (Knuth or Fisher-Yates algorithm)
 void random_permutation_fast
 	(size_t n, std::vector<size_t> &pi)
 {
@@ -68,7 +67,7 @@ void random_permutation_fast
 	
 	for (size_t i = 0; i < (n - 1); i++)
 	{
-		size_t tmp = pi[i], rnd = i + (mpz_srandom_ui() % (n - i));
+		size_t tmp = pi[i], rnd = i + mpz_srandom_mod(n - i);
 		pi[i] = pi[rnd];
 		pi[rnd] = tmp;
 	}

@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2002, 2004, 2005, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,6 +21,10 @@
 #ifndef INCLUDED_mpz_srandom_H
 	#define INCLUDED_mpz_srandom_H
 	
+	#include <stdio.h>
+	#include <assert.h>
+/*	#include <limits.h> */
+	
 	// GNU crypto library
 	#include <gcrypt.h>
 	
@@ -37,6 +41,13 @@
 				();
 			unsigned long int mpz_wrandom_ui
 				();
+			unsigned long int mpz_ssrandom_mod
+				(unsigned long int modulo);
+			unsigned long int mpz_srandom_mod
+				(unsigned long int modulo);
+			unsigned long int mpz_wrandom_mod
+				(unsigned long int modulo);
+			
 			void mpz_ssrandomb
 				(mpz_ptr r, unsigned long int size);
 			void mpz_srandomb

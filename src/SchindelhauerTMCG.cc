@@ -6,7 +6,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2003, 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 
+               Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1132,7 +1133,7 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 	size_t cyc = 0, foo = 0;
 	ss.clear();
 	if (cyclic)
-		cyc = (size_t)mpz_srandom_ui() % size;
+		cyc = (size_t)mpz_srandom_mod(size);
 	for (size_t i = 0; i < size; i++)
 	{
 		TMCG_CardSecret cs(TMCG_Players, TMCG_TypeBits);
@@ -1142,9 +1143,9 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 			foo = (cyc + i) % size; // create only a cyclic shift
 		else
 		{
-			// create a full permutation
+			// create a full permutation (naive algorithm)
 			do
-				foo = (size_t)mpz_srandom_ui() % size;
+				foo = (size_t)mpz_srandom_mod(size);
 			while (ss.find(foo));
 		}
 		ss.push(foo, cs);
@@ -1161,7 +1162,7 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 	size_t cyc = 0, foo = 0;
 	ss.clear();
 	if (cyclic)
-		cyc = (size_t)mpz_srandom_ui() % size;
+		cyc = (size_t)mpz_srandom_mod(size);
 	for (size_t i = 0; i < size; i++)
 	{
 		VTMF_CardSecret cs;
@@ -1170,9 +1171,9 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 			foo = (cyc + i) % size; // create only a cyclic shift
 		else
 		{
-			// create a full permutation
+			// create a full permutation (naive algorithm)
 			do
-				foo = (size_t)mpz_srandom_ui() % size;
+				foo = (size_t)mpz_srandom_mod(size);
 			while (ss.find(foo));
 		}
 		ss.push(foo, cs);

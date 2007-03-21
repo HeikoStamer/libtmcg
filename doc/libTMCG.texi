@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.44 2007/03/20 09:59:24 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.45 2007/03/21 00:14:17 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006, 2007 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -2368,9 +2368,9 @@ class must be created to perform any card or stack operations.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG size_t TMCG_CreateStackSecret (@code{TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{size_t} size)
-		This method initializes the stack secret @var{ss} with a randomly
-		chosen permutation and fresh card secrets. Later this stack secret
-		can be used to perform a secret shuffle operation on a stack.
+		This method initializes the stack secret @var{ss} with a randomly and
+		uniformly chosen permutation and fresh card secrets. Later this stack
+		secret can be used to perform a secret shuffle operation on a stack.
 		If the parameter @var{cyclic} is set to @code{true}, then the permutation
 		is only a cyclic shift which might be of interest for particular
 		operations, e.g. cutting the deck.
@@ -2386,9 +2386,9 @@ class must be created to perform any card or stack operations.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG size_t TMCG_CreateStackSecret (@code{TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{bool} cyclic, @code{size_t} size, @code{BarnettSmartVTMF_dlog*} vtmf)
-		This method initializes the stack secret @var{ss} with a randomly
-		chosen permutation and fresh card secrets. Later this stack secret
-		can be used to perform a secret shuffle operation on a stack.
+		This method initializes the stack secret @var{ss} with a randomly and
+		uniformly chosen permutation and fresh card secrets. Later this stack
+		secret can be used to perform a secret shuffle operation on a stack.
 		If the parameter @var{cyclic} is set to @code{true}, then the permutation
 		is only a cyclic shift which might be of interest for particular
 		operations, e.g. cutting the deck.
