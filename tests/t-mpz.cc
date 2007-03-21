@@ -41,6 +41,7 @@ int main
 	std::string s;
 	assert(init_libTMCG());
 	
+	std::cout << "version_libTMCG() = " << version_libTMCG() << std::endl;
 	std::cout << "gmp_version = " << gmp_version << ", " << 
 		"gcry_check_version() = " << gcry_check_version("0.0.0") << std::endl;
 	

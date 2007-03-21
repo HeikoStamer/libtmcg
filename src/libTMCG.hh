@@ -3,7 +3,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -190,8 +190,17 @@
 		#undef TMCG_CONFIG_H
 	#endif
 	
+	// config.h
+	#ifdef HAVE_CONFIG_H
+		#include "config.h"
+	#endif
+	
 	#include <cstring>
+	#include <string>
 	
 	bool init_libTMCG
+		();
+	
+	std::string version_libTMCG
 		();
 #endif

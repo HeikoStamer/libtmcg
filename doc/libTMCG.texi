@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.45 2007/03/21 00:14:17 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.46 2007/03/21 16:46:44 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006, 2007 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -509,6 +509,16 @@ match their required versions. Further it initializes them
 and returns @code{true}, if everything was sound. Otherwise
 @code{false} is returned and an appropriate error message
 is sent to @code{std::cerr}.
+@end deftypefun
+
+Additionally, the function @code{version_libTMCG} returns a string
+containing the version number of the library in a common format. It
+is strongly recommended to check, whether the installed version
+matches your requirements.
+
+@deftypefun std::string version_libTMCG ()
+This function returns the version of the library in the
+format @emph{major.minor.revision}.
 @end deftypefun
 
 @node Application Programming Interface
