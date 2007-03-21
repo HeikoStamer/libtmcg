@@ -23,7 +23,7 @@
 	
 	#include <stdio.h>
 	#include <assert.h>
-/*	#include <limits.h> */
+	#include <limits.h>
 	
 	// GNU crypto library
 	#include <gcrypt.h>
