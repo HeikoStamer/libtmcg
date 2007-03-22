@@ -1,2 +1,6 @@
+1.0.1 A weakness in TMCG_CreateStackSecret() was corrected which may lead
+      to a biased shuffle in some circumstances. Note that SecureSkat is
+      not affected by this issue. Furthermore, the documentation has been
+      improved and the function version_libTMCG() was added.
 1.0.0 Groth's HVZK shuffle argument provides a major improvement in terms of
       reduced communication and computational complexity.

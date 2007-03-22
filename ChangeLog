@@ -1,3 +1,4 @@
+* [2007-03-22] release 1.0.1 of LibTMCG
 * [2007-03-21] function version_libTMCG() added
 * [2007-03-20] security fix (avoid modulo bias in TMCG_CreateStackSecret())
 * [2006-04-13] initial release 1.0.0 of LibTMCG
