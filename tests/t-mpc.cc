@@ -229,7 +229,7 @@ int main
 		delete mpc;
 	}
 	
-	// finialize
+	// finalize
 	if (waitpid(pid, NULL, 0) != pid)
 		perror("t-mpc (waitpid)");
 	
