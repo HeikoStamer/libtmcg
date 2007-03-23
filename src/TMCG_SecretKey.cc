@@ -1,5 +1,5 @@
 /*******************************************************************************
-   This file is part of libTMCG.
+   This file is part of LibTMCG.
 
      Christian Schindelhauer: 'A Toolbox for Mental Card Games',
      Technical Report A-98-14, University of L{\"u}beck, 1998.
@@ -14,20 +14,20 @@
 
      Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
 
- Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
-   libTMCG is free software; you can redistribute it and/or modify
+   LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
    (at your option) any later version.
 
-   libTMCG is distributed in the hope that it will be useful,
+   LibTMCG is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with libTMCG; if not, write to the Free Software
+   along with LibTMCG; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
@@ -519,10 +519,8 @@ std::string TMCG_SecretKey::sign
 		p, q, m, gcdext_up, gcdext_vq, pa1d4, qa1d4);
 	
 	// choose a square root randomly (one out-of four)
-	mpz_srandomb(foo, 2L);
-	
 	std::ostringstream ost;
-	ost << "sig|" << keyid() << "|" << foo_sqrt[mpz_get_ui(foo) % 4] << "|";
+	ost << "sig|" << keyid() << "|" << foo_sqrt[mpz_srandom_mod(4)] << "|";
 	mpz_clear(foo), mpz_clear(foo_sqrt[0]), mpz_clear(foo_sqrt[1]),
 		mpz_clear(foo_sqrt[2]), mpz_clear(foo_sqrt[3]);
 	
