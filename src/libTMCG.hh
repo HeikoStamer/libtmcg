@@ -55,7 +55,7 @@
 	
 	#ifndef TMCG_KEYID_SIZE
 		/* Define the size of the unique TMCG key ID (in characters) */
-		#define TMCG_KEYID_SIZE 8
+		#define TMCG_KEYID_SIZE 8 
 	#endif
 	
 	#ifndef TMCG_KEY_NIZK_STAGE1

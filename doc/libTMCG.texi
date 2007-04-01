@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.46 2007/03/21 16:46:44 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.47 2007/04/01 19:19:30 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006, 2007 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -588,6 +588,7 @@ Defines the length (in characters w.r.t. @code{TMCG_MPZ_IO_BASE})
 for the distinctive suffix of the unique TMCG key identifier. The
 default value is @code{8} which spans a reasonable name space for
 at least @math{2^{20}} different TMCG keys (see @code{TMCG_PublicKey}).
+However, sometimes it is required to use even smaller sizes.
 
 Each key identifier starts with the string @code{"ID"} followed by
 the decimal encoded value of @code{TMCG_KEYID_SIZE} and the appended
