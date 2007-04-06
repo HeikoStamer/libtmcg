@@ -9,8 +9,10 @@ Copyright (C)  2005, 2006  Heiko Stamer <stamer@gaos.org>
 Introduction
 ------------
 
-  LibTMCG is a free C++ library for creating secure electronic
-  card games. The most remarkable feature is the absence of a trusted
+  LibTMCG is a free C++ library for creating secure and fair online
+  card games. The library contains a sort of useful classes, algorithms,
+  and high-level protocols to support an application programmer in writing
+  such software. The most remarkable feature is the absence of a trusted
   third party (TTP), i.e., neither a central game server nor trusted
   hardware components are necessary.
   With the present library there is no need for an independent referee,
@@ -46,8 +48,8 @@ Security
   Cryptographic protocols can only minimize the effect of such colluding
   parties and should try to protect the confidentiality for honest
   players. But even this protection often relies on number-theoretical
-  assumptions which are only believed to be true, e.g. problems like
-  factoring products of large prime numbers or computing discrete
+  hardness assumptions which are only believed to be true, e.g. problems
+  like factoring products of large prime numbers or computing discrete
   logarithms. That means, strict mathematical proofs for the hardness
   of these problems are not known, and it is very likely that such
   proofs will never be found. However, almost all public key cryptosystems
@@ -73,11 +75,11 @@ Security
   of cheaters. Reliable cheater detection requires that an authenticated
   broadcast channel has been established, where all players have read/write
   access. LibTMCG does not yet contain the necessary protocols (reliable
-  broadcast) for creating such a channel. Thus you should take into account
-  that not necessarily the prover is the source of evil, if a verification
-  procedure fails. This level of uncertainty is also a reason for our
-  restricted adversary model.
-
+  or even atomic broadcast) for creating such a channel. Thus you should take
+  into account that not necessarily the player acting as prover is the source
+  of evil, if a verification procedure fails. This level of uncertainty is
+  also a reason for our restricted adversary model.
+  
   Note that it is not known, whether the used protocols retain their
   zero-knowledge property, when they are composed and executed in a concurrent
   setting. Thus the application programmer should be careful and avoid parallel
