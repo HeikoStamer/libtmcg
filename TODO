@@ -1,5 +1,6 @@
 + set TMCG_MPZ_IO_BASE to 62, which is supported by libgmp >= 4.2
+  (However, this breaks all backward compatibility.)
 + see TODO header of GrothVSSHE.cc
 
 - implement the exotic card and stack operations of the toolbox
-- cheater detection: provide a basic protocol for reliable broadcast
+- cheater detection: provide a basic protocol for reliable/atomic broadcast
