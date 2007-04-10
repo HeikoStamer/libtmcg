@@ -14,7 +14,7 @@
 
      Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
 
- Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -143,7 +143,7 @@ bool TMCG_PublicKey::check
 		if (!TMCG_ParseHelper::cm(s, "nzk", '^'))
 			throw false;
 		
-		// initalize NIZK proof input
+		// initialize NIZK proof input
 		std::ostringstream input;
 		input << m << "^" << y;
 		

@@ -1,7 +1,7 @@
 /*******************************************************************************
   Data structure for a card. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ struct VTMF_Card
 	    problem is believed to be hard. */
 	mpz_t c_1, c_2;
 	
-	/** This constructor initalizes all necessary resources. */
+	/** This constructor initializes all necessary resources. */
 	VTMF_Card
 		();
 	

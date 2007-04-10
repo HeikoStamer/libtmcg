@@ -1,7 +1,7 @@
 /*******************************************************************************
    Data structure for the secrets of a card. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -54,13 +54,13 @@ struct TMCG_CardSecret
 	    The elements of the matrix @a b are bits from @f$\{0, 1\}@f$. */
 	std::vector< std::vector<MP_INT> >			r, b;
 	
-	/** This constructor initalizes the secrets with a @f$1\times 1@f$-matrix.
+	/** This constructor initializes the secrets with a @f$1\times 1@f$-matrix.
 	    Later the function TMCG_CardSecret::resize can be used to enlarge the
 	    representation of the secret. */
 	TMCG_CardSecret
 		();
 	
-	/** This constructor initalizes the secrets with a @f$k\times w@f$-matrix.
+	/** This constructor initializes the secrets with a @f$k\times w@f$-matrix.
 	    @param k is the number of players.
 	    @param w is the number of bits used in the binary representation
 	           of the card type. */

@@ -4,7 +4,7 @@
      Anton Stiglic: 'Computations with a deck of cards', 
      Theoretical Computer Science, 259 (1-2) (2001) pp. 671-678
 
- Copyright (C) 2002, 2003, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2002, 2003, 2005, 2007  Heiko Stamer <stamer@gaos.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -121,7 +121,7 @@ class StiglicMPC
 			// finish the key generation
 			vtmf->KeyGenerationProtocol_Finalize();
 			
-			// initalize the base stacks with open cards
+			// initialize the base stacks with open cards
 			VTMF_Card c[2];
 			tmcg->TMCG_CreateOpenCard(c[0], vtmf, 0);
 			tmcg->TMCG_CreateOpenCard(c[1], vtmf, 1);

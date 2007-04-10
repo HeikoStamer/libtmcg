@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -250,7 +250,7 @@ int main
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
 			
-			// initalize VSSHE
+			// initialize VSSHE
 			lej2 << com->p << std::endl << com->q << std::endl << com->g[0] << 
 				std::endl << com->h << std::endl;
 			com->PublishGroup(lej2);
@@ -333,7 +333,7 @@ int main
 				e.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp2, tmp3)),
 				E.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp4, tmp5));
 			}
-			// check the commitment scheme and initalize SKC
+			// check the commitment scheme and initialize SKC
 			assert(com->CheckGroup());
 			com->PublishGroup(lej);
 			GrothSKC *skc = new GrothSKC(n, lej);
@@ -359,7 +359,7 @@ int main
 			stop_clock();
 			std::cout << "V: " << elapsed_time() << std::endl;
 			
-			// initalize VSSHE
+			// initialize VSSHE
 			lej2 << com->p << std::endl << com->q << std::endl << com->g[0] << 
 				std::endl << com->h << std::endl;
 			com->PublishGroup(lej2);

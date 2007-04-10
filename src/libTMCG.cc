@@ -25,7 +25,7 @@
 bool init_libTMCG
 	()
 {
-	// initalize libgmp
+	// initialize libgmp
 	if (strcmp(gmp_version, TMCG_LIBGMP_VERSION) < 0)
 	{
 		std::cerr << "init_libTMCG(): libgmp version >= " <<
@@ -33,16 +33,16 @@ bool init_libTMCG
 		return false;
 	}
 	
-	// initalize libgcrypt
+	// initialize libgcrypt
 	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
 	{
 		std::cerr << "init_libTMCG(): libgcrypt version >= " <<
 			TMCG_LIBGCRYPT_VERSION << " needed" << std::endl;
 		return false;
 	}
-	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
+	gcry_control(GCRYCTL_DISABLE_SECMEM, 0); // disable secure memory
 	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-	if (gcry_md_test_algo(TMCG_GCRY_MD_ALGO))
+	if (gcry_md_test_algo(TMCG_GCRY_MD_ALGO)) // check for digest algorithm
 	{
 		std::cerr << "init_libTMCG(): libgcrypt algorithm " <<
 			TMCG_GCRY_MD_ALGO << " [" <<

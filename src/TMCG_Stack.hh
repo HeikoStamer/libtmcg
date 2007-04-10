@@ -1,7 +1,7 @@
 /*******************************************************************************
   Data structure for a stack of cards. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ template <typename CardType> struct TMCG_Stack
 	/** This member is the underlying container of the stack. */
 	std::vector<CardType>	stack;
 	
-	/** This constructor initalizes an empty stack. */
+	/** This constructor initializes an empty stack. */
 	TMCG_Stack
 		()
 	{

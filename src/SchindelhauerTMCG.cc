@@ -37,7 +37,7 @@ SchindelhauerTMCG::SchindelhauerTMCG
 	for (size_t i = 0; i < TMCG_TypeBits; i++)
 		TMCG_MaxCardType *= 2;
 	
-	// initalize the message space for the VTMF scheme
+	// initialize the message space for the VTMF scheme
 	message_space = new mpz_t[TMCG_MaxCardType]();
 	for (size_t i = 0; i < TMCG_MaxCardType; i++)
 		mpz_init_set_ui(message_space[i], 0L);
@@ -1071,7 +1071,7 @@ void SchindelhauerTMCG::TMCG_SelfCardSecret
 void SchindelhauerTMCG::TMCG_SelfCardSecret
 	(const VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf)
 {
-	vtmf->VerifiableDecryptionProtocol_Verify_Initalize(c.c_1);
+	vtmf->VerifiableDecryptionProtocol_Verify_Initialize(c.c_1);
 }
 
 size_t SchindelhauerTMCG::TMCG_TypeOfCard

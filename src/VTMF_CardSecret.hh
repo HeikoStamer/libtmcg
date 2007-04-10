@@ -1,7 +1,7 @@
 /*******************************************************************************
    Data structure for the secrets of a card. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ struct VTMF_CardSecret
 	    performance advantage by using such short exponents. */
 	mpz_t r;
 	
-	/** This constructor initalizes all necessary resources. */
+	/** This constructor initializes all necessary resources. */
 	VTMF_CardSecret
 		();
 	

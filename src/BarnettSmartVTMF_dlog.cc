@@ -9,7 +9,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 		while (!mpz_cmp_ui(g, 0L) || !(mpz_cmp_ui(g, 1L)));
 	}
 	
-	// Initalize the tables for the fast exponentiation.
+	// Initialize the tables for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
@@ -76,7 +76,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	mpz_init(x_i), mpz_init(h_i), mpz_init_set_ui(h, 1L), mpz_init(d);
 	mpz_init(h_i_fp);
 	
-	// Initalize the tables for the fast exponentiation.
+	// Initialize the tables for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
@@ -721,7 +721,7 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Prove
 	mpz_clear(d_i);
 }
 
-void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Initalize
+void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Initialize
 	(mpz_srcptr c_1)
 {
 	// compute $d = d_i = {c_1}^{x_i} \bmod p$

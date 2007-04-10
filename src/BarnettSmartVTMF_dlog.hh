@@ -6,7 +6,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -131,7 +131,7 @@ class BarnettSmartVTMF_dlog
 			std::istream& in) const;
 		void VerifiableDecryptionProtocol_Prove
 			(mpz_srcptr c_1, std::ostream& out) const;
-		void VerifiableDecryptionProtocol_Verify_Initalize
+		void VerifiableDecryptionProtocol_Verify_Initialize
 			(mpz_srcptr c_1);
 		bool VerifiableDecryptionProtocol_Verify_Update
 			(mpz_srcptr c_1, std::istream& in);

@@ -1,7 +1,7 @@
 /*******************************************************************************
   Data structure for a stack of open cards. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ template <typename CardType> struct TMCG_OpenStack
 		}
 	};
 	
-	/** This constructor initalizes an empty open stack. */
+	/** This constructor initializes an empty open stack. */
 	TMCG_OpenStack
 		()
 	{

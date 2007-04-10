@@ -9,7 +9,7 @@ TODO:
 
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -374,7 +374,7 @@ void GrothSKC::Prove_interactive
 	mpz_t x, r_d, r_Delta, r_a, c_d, c_Delta, c_a, e, z, z_Delta, foo, bar;
 	std::vector<mpz_ptr> d, Delta, a, f, f_Delta, lej;
 	
-	// initalize
+	// initialize
 	mpz_init(x), mpz_init(r_d), mpz_init(r_Delta), mpz_init(r_a), mpz_init(c_d),
 		mpz_init(c_Delta), mpz_init(c_a), mpz_init(e), mpz_init(z),
 		mpz_init(z_Delta), mpz_init(foo), mpz_init(bar);
@@ -523,7 +523,7 @@ bool GrothSKC::Verify_interactive
 	assert(com->g.size() >= m.size());
 	assert(m.size() >= 2);
 	
-	// initalize
+	// initialize
 	mpz_t x, c_d, c_Delta, c_a, e, z, z_Delta, foo, bar, foo2, bar2;
 	std::vector<mpz_ptr> f, f_Delta, lej;
 	mpz_init(x), mpz_init(c_d), mpz_init(c_Delta), mpz_init(c_a), mpz_init(e),
@@ -700,7 +700,7 @@ bool GrothSKC::Verify_interactive
 	assert(m.size() == f_prime.size());
 	assert(m.size() >= 2);
 	
-	// initalize
+	// initialize
 	mpz_t x, c_d, c_Delta, c_a, e, z, z_Delta, foo, bar, foo2, bar2;
 	std::vector<mpz_ptr> f, f_Delta, lej;
 	mpz_init(x), mpz_init(c_d), mpz_init(c_Delta), mpz_init(c_a), mpz_init(e),
@@ -1011,7 +1011,7 @@ void GrothVSSHE::Prove_interactive
 	assert(e.size() == E.size());
 	assert(E.size() >= 2);
 	
-	// initalize
+	// initialize
 	mpz_t r, R_d, r_d, c, c_d, Z, lambda, rho, foo, bar;
 	std::pair<mpz_ptr, mpz_ptr> E_d;
 	std::vector<mpz_ptr> d, f, m, t;
@@ -1150,7 +1150,7 @@ bool GrothVSSHE::Verify_interactive
 	assert(e.size() == E.size());
 	assert(E.size() >= 2);
 	
-	// initalize
+	// initialize
 	mpz_t c, c_d, Z, lambda, foo, bar, foo2, bar2, foo3, bar3;
 	std::pair<mpz_ptr, mpz_ptr> E_d;
 	std::vector<mpz_ptr> f, m, t;
