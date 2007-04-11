@@ -224,7 +224,8 @@ template <typename CardType> struct TMCG_Stack
 			// size of stack
 			if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 				throw false;
-			size = strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
+			size = 
+			    std::strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
 			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) || 
 				(!TMCG_ParseHelper::nx(s, '^')))
 					throw false;

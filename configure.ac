@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.37 $)
+AC_REVISION($Revision: 1.38 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.2, stamer@gaos.org)
@@ -160,7 +160,9 @@ fi
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h stdarg.h string.h strings.h unistd.h time.h errno.h limits.h sys/wait.h])
+AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
+ errno.h functional gcrypt.h gmp.h iostream limits.h map sstream stdio.h\
+ string sys/wait.h unistd.h vector], , AC_MSG_ERROR([headers are missing]))
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -168,7 +170,11 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
-AC_CHECK_FUNCS([memcpy memcmp memset strchr strncasecmp strrchr strstr strtol strtoul clock])
+AC_FUNC_FORK
+AC_FUNC_MALLOC
+AC_FUNC_MEMCMP
+AC_CHECK_FUNCS([clock fork fprintf memcmp memcpy memset pipe snprintf strtoul\
+ waitpid], , AC_MSG_ERROR([functions are missing]))
 
 ##CXXFLAGS="$CXXFLAGS -O2 -Wall -g3 -pedantic"
 #CFLAGS="$CFLAGS -O2 -Wall -D NDEBUG"

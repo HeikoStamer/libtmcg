@@ -32,17 +32,16 @@ unsigned long int mpz_grandom_ui
 }
 
 unsigned long int mpz_grandom_ui_nomodbias
-	(enum gcry_random_level level, unsigned long int divider)
+	(enum gcry_random_level level, unsigned long int modulo)
 {
-	unsigned long int max = (ULONG_MAX - divider), rnd = 0;
+	unsigned long int div, max, rnd = 0;
 	
-	assert(divider >= 2);
-	assert(ULONG_MAX >= 2);
-	assert((ULONG_MAX - divider) >= divider);
+	if ((modulo == 0) || (modulo == 1))
+	    return 0;
 	
-	/* Remove ``modulo bias'' by limiting the return value */
-	while ((max + 1) % divider)
-		max--;
+	/* Remove ``modulo bias'' by limiting the return values */
+	div = (ULONG_MAX - modulo + 1) / modulo;
+	max = ((div + 1) * modulo) - 1;
 	do
 		rnd = mpz_grandom_ui(level);
 	while (rnd > max);
@@ -90,12 +89,15 @@ void mpz_grandomb
 	(mpz_ptr r, unsigned long int size, enum gcry_random_level level)
 {
 	unsigned char *rtmp;
-	gcry_mpi_t rr = gcry_mpi_new((unsigned int)size);
+	gcry_mpi_t rr;
 	
+	assert(size <= UINT_MAX);
+	
+	rr = gcry_mpi_new((unsigned int)size);
 	gcry_mpi_randomize(rr, (unsigned int)size, level);
 	gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, NULL, rr);
 	mpz_set_str(r, (char*)rtmp, 16);
-	mpz_tdiv_r_2exp(r, r, size);
+	mpz_tdiv_r_2exp(r, r, size); // r mod 2^size, i.e. shift right
 	gcry_mpi_release(rr);
 	gcry_free(rtmp);
 }
@@ -121,13 +123,17 @@ void mpz_wrandomb
 void mpz_grandomm
 	(mpz_ptr r, mpz_srcptr m, enum gcry_random_level level)
 {
+	unsigned long int size = mpz_sizeinbase(m, 2);
 	unsigned char *rtmp;
-	gcry_mpi_t rr = gcry_mpi_new((unsigned int)mpz_sizeinbase(m, 2));
+	gcry_mpi_t rr;
 	
-	gcry_mpi_randomize(rr, (unsigned int)mpz_sizeinbase(m, 2), level);
+	assert(size <= UINT_MAX);
+	
+	rr = gcry_mpi_new((unsigned int)size);
+	gcry_mpi_randomize(rr, (unsigned int)size, level);
 	gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, NULL, rr);
 	mpz_set_str(r, (char*)rtmp, 16);
-	mpz_mod(r, r, m);
+	mpz_mod(r, r, m); // modulo bias is negligible here
 	gcry_mpi_release(rr);
 	gcry_free(rtmp);
 }

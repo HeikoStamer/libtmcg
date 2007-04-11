@@ -81,26 +81,32 @@ int main
 	// mpz_wrandom_ui vs. mpz_wrandom_mod
 	std::cout << "mpz_wrandom_ui() uniformity check / modulo bias" << std::endl;
 	for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
-		cnt[i] = 0;
+	    cnt[i] = 0;
 	start_clock();
-	for (size_t i = 0; i < (100000 * MOD_BIAS_WIDTH); i++)
+	for (size_t j = 0; j < 10; j++)
+	{
+	    for (size_t i = 0; i < (1000000 * MOD_BIAS_WIDTH); i++)
 		cnt[mpz_wrandom_ui() % MOD_BIAS_WIDTH]++;
+	    for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
+		std::cout << cnt[i] << " ";
+	    std::cout << std::endl;
+	}
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
-	for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
-		std::cout << cnt[i] << " ";
-	std::cout << std::endl;
 	std::cout << "mpz_wrandom_mod() uniformity check / modulo bias" << std::endl;
 	for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
-		cnt[i] = 0;
+	    cnt[i] = 0;
 	start_clock();
-	for (size_t i = 0; i < (100000 * MOD_BIAS_WIDTH); i++)
+	for (size_t j = 0; j < 10; j++)
+	{
+	    for (size_t i = 0; i < (1000000 * MOD_BIAS_WIDTH); i++)
 		cnt[mpz_wrandom_mod(MOD_BIAS_WIDTH)]++;
+	    for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
+		std::cout << cnt[i] << " ";
+	    std::cout << std::endl;
+	}
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
-	for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
-		std::cout << cnt[i] << " ";
-	std::cout << std::endl;
 	
 	// mpz_*random_ui, mpz_*randomb, mpz_*randomm
 	std::cout << "mpz_wrandom_ui()" << std::endl;

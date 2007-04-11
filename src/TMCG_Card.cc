@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -112,13 +112,15 @@ bool TMCG_Card::import
 		// card description
 		if (TMCG_ParseHelper::gs(s, '|').length() == 0)
 			throw false;
-		size_t k = strtoul(TMCG_ParseHelper::gs(s, '|').c_str(), &ec, 10);
+		size_t k = 
+		    std::strtoul(TMCG_ParseHelper::gs(s, '|').c_str(), &ec, 10);
 		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) || 
 			(!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		if (TMCG_ParseHelper::gs(s, '|').length() == 0)
 			throw false;
-		size_t w = strtoul(TMCG_ParseHelper::gs(s, '|').c_str(), &ec, 10);
+		size_t w = 
+		    std::strtoul(TMCG_ParseHelper::gs(s, '|').c_str(), &ec, 10);
 		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) || 
 			(!TMCG_ParseHelper::nx(s, '|')))
 				throw false;

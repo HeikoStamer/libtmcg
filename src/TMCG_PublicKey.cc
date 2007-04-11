@@ -151,7 +151,8 @@ bool TMCG_PublicKey::check
 		if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 			throw false;
 		
-		stage1_size = strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
+		stage1_size = 
+		    std::strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
 		if ((*ec != '\0') || (stage1_size <= 0) || (!TMCG_ParseHelper::nx(s, '^')))
 			throw false;
 		
@@ -189,7 +190,8 @@ bool TMCG_PublicKey::check
 		// get security parameter of STAGE2
 		if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 			throw false;
-		stage2_size = strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
+		stage2_size = 
+		    std::strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
 		if ((*ec != '\0') || (stage2_size <= 0) || (!TMCG_ParseHelper::nx(s, '^')))
 			throw false;
 		
@@ -240,7 +242,8 @@ bool TMCG_PublicKey::check
 		// get security parameter of STAGE3
 		if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 			throw false;
-		stage3_size = strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
+		stage3_size = 
+		    std::strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
 		if ((*ec != '\0') || (stage3_size <= 0) || (!TMCG_ParseHelper::nx(s, '^')))
 			throw false;
 		
@@ -359,7 +362,8 @@ size_t TMCG_PublicKey::keyid_size
 	
 	// extract the size
 	char *ec;
-	size_t size = strtoul(s.substr(2, s.find("^") - 2).c_str(), &ec, 10);
+	size_t size = 
+	    std::strtoul(s.substr(2, s.find("^") - 2).c_str(), &ec, 10);
 	if ((*ec != '\0') || (size != (s.length() - s.find("^") - 1)))
 		return 0;
 	

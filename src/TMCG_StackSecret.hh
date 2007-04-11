@@ -164,7 +164,8 @@ template <typename CardSecretType> struct TMCG_StackSecret
 			// size of stack
 			if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 				throw false;
-			size = strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
+			size = 
+			    std::strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
 			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) || 
 				(!TMCG_ParseHelper::nx(s, '^')))
 					throw false;
@@ -177,7 +178,7 @@ template <typename CardSecretType> struct TMCG_StackSecret
 				// permutation index
 				if (TMCG_ParseHelper::gs(s, '^').length() == 0)
 					throw false;
-				lej.first = (size_t)strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), 
+				lej.first = std::strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), 
 					&ec, 10);
 				if ((*ec != '\0') || (lej.first < 0) || (lej.first >= size) || 
 					(!TMCG_ParseHelper::nx(s, '^')))

@@ -198,9 +198,11 @@
 	#include <cstring>
 	#include <string>
 	
+	// Initialization of LibTMCG
 	bool init_libTMCG
 		();
 	
+	// Returns the version of LibTMCG
 	std::string version_libTMCG
 		();
 #endif
