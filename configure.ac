@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.38 $)
+AC_REVISION($Revision: 1.39 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.0.2, stamer@gaos.org)
@@ -33,7 +33,7 @@ LIBTMCG_LT_CURRENT=1
 LIBTMCG_LT_AGE=0
 LIBTMCG_LT_REVISION=2
 
-# If the API is changed in an incompatible way: increment the next counter.
+# If API is changed in an incompatible way: increment the next counter.
 LIBTMCG_CONFIG_API_VERSION=1
 
 AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION)
@@ -50,14 +50,14 @@ AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE_NAME", [Name of this package])
 AC_DEFINE_UNQUOTED(VERSION, "$PACKAGE_VERSION", [Version of this package])
 
-# Compiler and linker switches used by the libTMCG-config script
+# Compiler and linker switches used by libTMCG-config script
 LIBTMCG_CONFIG_LIBS="-lTMCG"
 LIBTMCG_CONFIG_CFLAGS=""
 
-# Check commandline switches.
+# Check commandline switches
 
-# Defines some security parameters and helping macros
-# (Please update also libTMCG.hh, if changed!)
+# Define some security parameters and helping macros
+# (NOTE: Please update also libTMCG.hh, if changed!)
 AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.2.0",
 	[Define the necessary version number of the GNU gcrypt library])
 AC_DEFINE(TMCG_LIBGMP_VERSION, "4.1.0",
@@ -132,7 +132,7 @@ AC_DEFINE(TMCG_MAX_KEY_CHARS,
 	[(TMCG_MAX_KEYBITS * 1024L)],
 	[Define a helping macro])
 
-# Checks for programs.
+# Checks for programs
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_MAKE_SET
@@ -140,7 +140,7 @@ AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_LN_S
 
-# Checks for libraries.
+# Checks for libraries
 AC_CHECK_LIB(gmp, __gmpz_import, , AC_MSG_ERROR([libgmp >= 4.1 is needed]))
 AC_CHECK_LIB(gmp, __gmpz_export, , AC_MSG_ERROR([libgmp >= 4.1 is needed]))
 ##AC_CHECK_LIB(gmpxx, __gmpz_set_str, ,
@@ -158,31 +158,32 @@ if test "x$GPG_ERROR_LIBS" = "x"; then
 	AC_MSG_ERROR([libgpg-error >= 0.5 is needed])
 fi
 
-# Checks for header files.
+# Checks for header files
 AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
  errno.h functional gcrypt.h gmp.h iostream limits.h map sstream stdio.h\
- string sys/wait.h unistd.h vector], , AC_MSG_ERROR([headers are missing]))
+ string sys/wait.h time.h unistd.h vector], , AC_MSG_ERROR([headers are missing]))
 
-# Checks for typedefs, structures, and compiler characteristics.
+# Checks for typedefs, structures, and compiler characteristics
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
+AC_TYPE_PID_T
 
-# Checks for library functions.
+# Checks for library functions
 AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
-AC_CHECK_FUNCS([clock fork fprintf memcmp memcpy memset pipe snprintf strtoul\
- waitpid], , AC_MSG_ERROR([functions are missing]))
+AC_CHECK_FUNCS([clock close fork fprintf memcmp memcpy memset pipe snprintf\
+ strtoul waitpid], , AC_MSG_ERROR([functions are missing]))
 
-##CXXFLAGS="$CXXFLAGS -O2 -Wall -g3 -pedantic"
-#CFLAGS="$CFLAGS -O2 -Wall -D NDEBUG"
-## Note that the tests will not run with -D NDEBUG!
+# Enable all compiler warnings
 CFLAGS="$CFLAGS -Wall"
 CXXFLAGS="$CXXFLAGS -Wall"
 
-# Initalize the libTMCG-config script
+# Initialize libTMCG-config script
 AC_SUBST(LIBTMCG_CONFIG_API_VERSION)
 AC_SUBST(LIBTMCG_CONFIG_LIBS)
 AC_SUBST(LIBTMCG_CONFIG_CFLAGS)
@@ -196,7 +197,8 @@ libdir=$libdir
 datadir=$datadir
 ]])
 
+# Define output
 AC_CONFIG_FILES([Makefile src/Makefile src/libTMCG-config doc/Makefile tests/Makefile])
 AC_OUTPUT
 
-echo "Now type 'make && make install' to build and to install libTMCG."
+echo "Now type 'make && make install' to build and install LibTMCG."
