@@ -1122,6 +1122,22 @@ size_t SchindelhauerTMCG::TMCG_TypeOfCard
 
 // ============================================================================
 
+// create a random permutation (Knuth or Fisher-Yates algorithm)
+void random_permutation_fast
+	(size_t n, std::vector<size_t> &pi)
+{
+	pi.clear();
+	for (size_t i = 0; i < n; i++)
+		pi.push_back(i);
+	
+	for (size_t i = 0; i < (n - 1); i++)
+	{
+		size_t tmp = pi[i], rnd = i + mpz_srandom_mod(n - i);
+		pi[i] = pi[rnd];
+		pi[rnd] = tmp;
+	}
+}
+
 size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 	(TMCG_StackSecret<TMCG_CardSecret> &ss, bool cyclic,
 		const TMCG_PublicKeyRing &ring, size_t index, size_t size)
@@ -1130,25 +1146,21 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 	assert(ring.keys.size() > index);
 	assert(size <= TMCG_MAX_CARDS);
 	
-	size_t cyc = 0, foo = 0;
+	size_t cyc = 0;
+	std::vector<size_t> pi;
+	
 	ss.clear();
 	if (cyclic)
 		cyc = (size_t)mpz_srandom_mod(size);
+	else
+		random_permutation_fast(size, pi); // Knuth's algorithm
+
 	for (size_t i = 0; i < size; i++)
 	{
 		TMCG_CardSecret cs(TMCG_Players, TMCG_TypeBits);
 		TMCG_CreateCardSecret(cs, ring, index);
 		
-		if (cyclic)
-			foo = (cyc + i) % size; // create only a cyclic shift
-		else
-		{
-			// create a full permutation (naive algorithm)
-			do
-				foo = (size_t)mpz_srandom_mod(size);
-			while (ss.find(foo));
-		}
-		ss.push(foo, cs);
+		ss.push(((cyclic) ? (cyc + i) % size : pi[i]), cs);
 	}
 	return cyc;
 }
@@ -1159,24 +1171,21 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 {
 	assert(size <= TMCG_MAX_CARDS);
 	
-	size_t cyc = 0, foo = 0;
+	size_t cyc = 0;
+	std::vector<size_t> pi;
+	
 	ss.clear();
 	if (cyclic)
 		cyc = (size_t)mpz_srandom_mod(size);
+	else
+		random_permutation_fast(size, pi); // Knuth's algorithm
+	
 	for (size_t i = 0; i < size; i++)
 	{
 		VTMF_CardSecret cs;
 		TMCG_CreateCardSecret(cs, vtmf);
-		if (cyclic)
-			foo = (cyc + i) % size; // create only a cyclic shift
-		else
-		{
-			// create a full permutation (naive algorithm)
-			do
-				foo = (size_t)mpz_srandom_mod(size);
-			while (ss.find(foo));
-		}
-		ss.push(foo, cs);
+		
+		ss.push(((cyclic) ? (cyc + i) % size : pi[i]), cs);
 	}
 	return cyc;
 }
