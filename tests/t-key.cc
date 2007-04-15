@@ -1,14 +1,14 @@
 /*******************************************************************************
-   This file is part of libTMCG.
+   This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
-   libTMCG is free software; you can redistribute it and/or modify
+   LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
    (at your option) any later version.
 
-   libTMCG is distributed in the hope that it will be useful,
+   LibTMCG is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
    GNU General Public License for more details.
@@ -38,9 +38,11 @@ int main
 	// generate and check
 	std::cout << "TMCG_SecretKey(), TMCG_PublicKey(), *.check()" << std::endl;
 	TMCG_SecretKey sec("Alice", "alice@gaos.org", 1024L), sec2;
+	TMCG_SecretKey sec3("Carol", "carol@gaos.org", 1024L, false); // non-NIZK key 
 	TMCG_PublicKey pub(sec), pub2;
 	assert(sec.check());
 	assert(pub.check());
+	assert(sec3.check());
 	
 	// fingerprint
 	std::cout << sec.fingerprint() << std::endl;
