@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.48 2007/04/06 08:15:59 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.49 2007/04/15 11:58:44 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006, 2007 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -2381,7 +2381,7 @@ class must be created to perform any card or stack operations.
 	
 	@deftypemethod SchindelhauerTMCG size_t TMCG_CreateStackSecret (@code{TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{size_t} size)
 		This method initializes the stack secret @var{ss} with a randomly and
-		uniformly chosen permutation and fresh card secrets. Later this stack
+		uniformly chosen permutation (using the algorithm of Knuth) and fresh card secrets. Later this stack
 		secret can be used to perform a secret shuffle operation on a stack.
 		If the parameter @var{cyclic} is set to @code{true}, then the permutation
 		is only a cyclic shift which might be of interest for particular
@@ -2399,7 +2399,7 @@ class must be created to perform any card or stack operations.
 	
 	@deftypemethod SchindelhauerTMCG size_t TMCG_CreateStackSecret (@code{TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{bool} cyclic, @code{size_t} size, @code{BarnettSmartVTMF_dlog*} vtmf)
 		This method initializes the stack secret @var{ss} with a randomly and
-		uniformly chosen permutation and fresh card secrets. Later this stack
+		uniformly chosen permutation (using the algorithm of Knuth) and fresh card secrets. Later this stack
 		secret can be used to perform a secret shuffle operation on a stack.
 		If the parameter @var{cyclic} is set to @code{true}, then the permutation
 		is only a cyclic shift which might be of interest for particular
