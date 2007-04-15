@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.49 2007/04/15 11:58:44 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.50 2007/04/15 17:33:31 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006, 2007 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -1350,17 +1350,19 @@ There is no error reported, if this limit is exceeded.
 
 @subsubsection Cryptographic Keys
 @cindex Keys
-LibTMCG only provides data types for keys used in the encoding scheme of
+LibTMCG only provides correponding data types for keys used by the encoding
+scheme of
 Schindelhauer@tie{}[Sc98], because it is not efficient to perform the
-corresponding key generation in every new game session. Furthermore,
-the keys admit to ensure the confidentiality and integrity of messages,
+key generation in every new game session. Furthermore, in general you
+can encrypt and sign messages to ensure confidentiality and integrity,
 even if the scheme of Barnett and Smart@tie{}[BS03] has been applied for
 the card encoding. Therefore these structures may be of independent interest,
 for example to establish authenticated communication channels between players.
-However, like in every public key cryptosystem a trusted @acronym{PKI, Public
-Key Infrastructure} is needed. This might not be a serious concern in
-distributed game environments, if the players compare their key fingerprints
-by telephone or if a central service provider issues public key certificates.
+However, like for all public key cryptosystems a trusted @acronym{PKI, Public
+Key Infrastructure} is needed. This might not be a serious requirement in
+distributed game environments, because the players can compare their key
+fingerprints
+by telephone or a service provider can issue public key certificates.
 
 @deftp {Data type} TMCG_SecretKey
 	This @code{struct} represents the secret part of the TMCG key. The
@@ -1383,7 +1385,8 @@ by telephone or if a central service provider issues public key certificates.
 		that the correctness of the key is shown by an appended non-interactive
 		zero-knowledge proof. The single parts are separated by underscore
 		characters @code{_}, e.g., @code{TMCG/RABIN_1024_NIZK} has the correct
-		form.
+		form. However, the suffix can be left empty, if the key is
+		only used for encryption and signing (non-NIZK key).
 	@end deftypecv
 	
 	@deftypecv {Member} TMCG_SecretKey {std::string} nizk
@@ -1426,13 +1429,13 @@ by telephone or if a central service provider issues public key certificates.
 		This default constructor initializes an empty secret key.
 	@end defop
 	
-	@deftypeop {Constructor} TMCG_SecretKey {} TMCG_SecretKey (@code{const std::string&} n, @code{const std::string&} e, @code{unsigned long int} keysize @code{=TMCG_QRA_SIZE})
+	@deftypeop {Constructor} TMCG_SecretKey {} TMCG_SecretKey (@code{const std::string&} n, @code{const std::string&} e, @code{unsigned long int} keysize @code{=TMCG_QRA_SIZE}, @code{bool} nizk_key @code{=true})
 		This constructor generates a new secret key where @var{n} is the name or a
-		pseudonym of the owner, @var{e} is a corresponding email address, and
-		@var{keysize} is the desired bit length of the modulus @math{m}. The
-		default value of the last argument is set to @code{TMCG_QRA_SIZE},
-		if @var{keysize} is omitted in the call. Depending on @var{keysize}
-		the generation is an highly time-consuming task and dots are sent to
+		pseudonym of the owner, @var{e} is a corresponding email address, 
+		@var{keysize} is the desired bit length of the modulus @math{m}, and @var{nizk_key} indicates whether or not a NIZK proof will be appended. The
+		default value of the third argument is set to @code{TMCG_QRA_SIZE},
+		if @var{keysize} is omitted in the call. The default value of the fourth argument is set to @code{true}, whenever it is omitted in the call. Depending on @var{keysize} and @var{nizk_key}
+		the generation is a very time-consuming task and dots are sent to
 		@code{std::cerr} as a progress indicator.
 	@end deftypeop
 	
@@ -1549,7 +1552,8 @@ by telephone or if a central service provider issues public key certificates.
 		that the correctness of the key is shown by an appended non-interactive
 		zero-knowledge proof. The single parts are separated by underscore
 		characters @code{_}, e.g., @code{TMCG/RABIN_1024_NIZK} has the correct
-		form.
+		form. However, the suffix can be left empty, if the key is
+		only used for encryption and signing.
 	@end deftypecv
 	
 	@deftypecv {Member} TMCG_PublicKey {std::string} nizk

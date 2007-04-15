@@ -18,10 +18,10 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.39 $)
+AC_REVISION($Revision: 1.40 $)
 AC_PREREQ(2.57)
 
-AC_INIT(libTMCG, 1.0.2, stamer@gaos.org)
+AC_INIT(libTMCG, 1.1.0, stamer@gaos.org)
 
 # The next two paragraphs are copies of libgcrypt behaviour.
 
@@ -29,12 +29,12 @@ AC_INIT(libTMCG, 1.0.2, stamer@gaos.org)
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
 #   (Interfaces added:      CURRENT++, AGE++, REVISION=0)
 #   (No interfaces changed:                   REVISION++)
-LIBTMCG_LT_CURRENT=1
-LIBTMCG_LT_AGE=0
-LIBTMCG_LT_REVISION=2
+LIBTMCG_LT_CURRENT=2
+LIBTMCG_LT_AGE=1
+LIBTMCG_LT_REVISION=0
 
 # If API is changed in an incompatible way: increment the next counter.
-LIBTMCG_CONFIG_API_VERSION=1
+LIBTMCG_CONFIG_API_VERSION=2
 
 AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION)
 AC_LANG(C++)

@@ -44,14 +44,14 @@ TMCG_SecretKey::TMCG_SecretKey
 
 TMCG_SecretKey::TMCG_SecretKey
 	(const std::string& n, const std::string& e,
-	unsigned long int keysize):
+	unsigned long int keysize, bool nizk_key):
 		name(n), email(e)
 {
 	mpz_init(m), mpz_init(y), mpz_init(p), mpz_init(q);
 	mpz_init(y1), mpz_init(m1pq), mpz_init(gcdext_up), mpz_init(gcdext_vq),
 		mpz_init(pa1d4), mpz_init(qa1d4);
 	
-	generate(keysize);
+	generate(keysize, nizk_key);
 }
 
 TMCG_SecretKey::TMCG_SecretKey
@@ -92,7 +92,7 @@ TMCG_SecretKey& TMCG_SecretKey::operator =
 }
 
 void TMCG_SecretKey::generate
-	(unsigned long int keysize)
+	(unsigned long int keysize, bool nizk_key)
 {
 	mpz_t foo, bar;
 	
@@ -101,7 +101,10 @@ void TMCG_SecretKey::generate
 	
 	// set type of key
 	std::ostringstream t;
-	t << "TMCG/RABIN_" << keysize << "_NIZK";
+	if (nizk_key)
+		t << "TMCG/RABIN_" << keysize << "_NIZK";
+	else
+		t << "TMCG/RABIN_" << keysize;
 	type = t.str();
 	
 	// generate appropriate primes for RABIN encryption with SAEP
@@ -143,7 +146,7 @@ void TMCG_SecretKey::generate
 	
 	// pre-compute non-persistent values
 	precompute();
-	
+
 	// Rosario Gennaro, Daniele Micciancio, Tal Rabin:
 	// 'An Efficient Non-Interactive Statistical Zero-Knowledge
 	// Proof System for Quasi-Safe Prime Products',
@@ -159,7 +162,7 @@ void TMCG_SecretKey::generate
 	// STAGE1: m Square Free
 	// soundness error probability \le d^{-TMCG_KEY_NIZK_STAGE1}
 	nizk2 << TMCG_KEY_NIZK_STAGE1 << "^";
-	for (size_t stage1 = 0; stage1 < TMCG_KEY_NIZK_STAGE1; stage1++)
+	for (size_t stage1 = 0; (stage1 < TMCG_KEY_NIZK_STAGE1) && nizk_key; stage1++)
 	{
 		// common random number foo \in Z^*_m (build from hash function g)
 		do
@@ -182,7 +185,7 @@ void TMCG_SecretKey::generate
 	// STAGE2: m Prime Power Product
 	// soundness error probability \le 2^{-TMCG_KEY_NIZK_STAGE2}
 	nizk2 << TMCG_KEY_NIZK_STAGE2 << "^";
-	for (size_t stage2 = 0; stage2 < TMCG_KEY_NIZK_STAGE2; stage2++)
+	for (size_t stage2 = 0; (stage2 < TMCG_KEY_NIZK_STAGE2) && nizk_key; stage2++)
 	{
 		// common random number foo \in Z^*_m (build from hash function g)
 		do
@@ -226,7 +229,7 @@ void TMCG_SecretKey::generate
 	// STAGE3: y \in NQR^\circ_m
 	// soundness error probability \le 2^{-TMCG_KEY_NIZK_STAGE3}
 	nizk2 << TMCG_KEY_NIZK_STAGE3 << "^";
-	for (size_t stage3 = 0; stage3 < TMCG_KEY_NIZK_STAGE3; stage3++)
+	for (size_t stage3 = 0; (stage3 < TMCG_KEY_NIZK_STAGE3) && nizk_key; stage3++)
 	{
 		// common random number foo \in Z^\circ_m (build from hash function g)
 		do

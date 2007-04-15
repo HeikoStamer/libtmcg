@@ -71,7 +71,8 @@ struct TMCG_SecretKey
 	
 	TMCG_SecretKey
 		(const std::string& n, const std::string& e,
-		unsigned long int keysize = TMCG_QRA_SIZE);
+		unsigned long int keysize = TMCG_QRA_SIZE, 
+		bool nizk_key = true);
 	
 	TMCG_SecretKey
 		(const std::string& s);
@@ -83,7 +84,7 @@ struct TMCG_SecretKey
 		(const TMCG_SecretKey& that);
 	
 	void generate
-		(unsigned long int keysize);
+		(unsigned long int keysize, bool nizk_key);
 	
 	void precompute
 		();

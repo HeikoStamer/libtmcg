@@ -138,6 +138,10 @@ bool TMCG_PublicKey::check
 					throw false;
 			}
 		}
+
+		// abort, if non-NIZK key
+		if (type.find("NIZK", 0) == type.npos)
+			throw true;
 		
 		// check magic of NIZK
 		if (!TMCG_ParseHelper::cm(s, "nzk", '^'))

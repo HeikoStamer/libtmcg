@@ -1,3 +1,4 @@
+* [2007-04-15] changed interface of TMCG_SecretKey to allow non-NIZK keys
 * [2007-04-13] use faster shuffle algorithm in TMCG_CreateStackSecret(...)
 * [2007-03-22] release 1.0.1 of LibTMCG
 * [2007-03-21] function version_libTMCG() added
