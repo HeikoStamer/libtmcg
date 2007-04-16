@@ -1,6 +1,10 @@
+1.1.0 Some interfaces were changed to allow the creation of keys without
+      included non-interactive zero-knowledge proof of validity. In
+      particular, this is more convenient whenever the new VTMF encoding
+      scheme is used. Further some optimizations have been applied.
 1.0.1 A weakness in TMCG_CreateStackSecret() was corrected which may lead
       to a biased shuffle in some circumstances. Note that SecureSkat is
       not affected by this issue. Furthermore, the documentation has been
       improved and the function version_libTMCG() was added.
-1.0.0 Groth's HVZK shuffle argument provides a major improvement in terms of
-      reduced communication and computational complexity.
+1.0.0 Groth's HVZK shuffle argument provides a major improvement in terms
+      of reduced communication and computational complexity.
