@@ -1,4 +1,4 @@
-Copyright (C)  2005, 2006  Heiko Stamer <stamer@gaos.org>
+Copyright (C)  2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
   Permission is granted to copy, distribute and/or modify this document
   under the terms of the GNU Free Documentation License, Version 1.2
   or any later version published by the Free Software Foundation;
@@ -33,12 +33,12 @@ Introduction
   so-called zero-knowledge proofs. Using these `building blocks' the
   high-level protocols minimize the effect of coalitions and preserve
   the confidentiality of the players' strategy, i.e., the players are
-  not required to reveal their cards at the end of the game to show that
-  they did not cheat.
+  not required to reveal their cards at the end of the game to show
+  that they did not cheat.
 
   LibTMCG is Free Software according to the definition of the Free
-  Software Foundation. The source code is released under the GNU General
-  Public License.
+  Software Foundation. The source code is released under the GNU
+  General Public License.
 
 Security
 --------
@@ -51,9 +51,9 @@ Security
   hardness assumptions which are only believed to be true, e.g. problems
   like factoring products of large prime numbers or computing discrete
   logarithms. That means, strict mathematical proofs for the hardness
-  of these problems are not known, and it is very likely that such
-  proofs will never be found. However, almost all public key cryptosystems
-  rely on similar assumptions and therefore you should not worry about
+  of these problems are not known, and it is not very likely that such
+  proofs will ever be found. However, almost all public key cryptosystems
+  rely on such assumptions and therefore you should not worry about
   this issue, as long as reasonable security parameters are chosen.
 
   LibTMCG was designed to provide security in the ``honest-but-curious''
@@ -65,36 +65,37 @@ Security
   operations are verifiable such that cheating can be detected. To obtain
   this verifiability, the protocols deploy so-called zero-knowledge proofs
   which yield no further knowledge but the validity of a statement. The
-  soundness error of these proofs is bounded by a security parameter @math{t}.
-  Depending on your application scenario this parameter should be chosen such
-  that there is a reasonable tradeoff between the cheating probability (which
-  is less or equal than @math{2^{-t}}) and the produced computational and
-  communication complexity.
+  soundness error of these proofs is bounded by a security parameter
+  @math{t}. Depending on your application scenario this parameter should
+  be chosen such that there is a reasonable tradeoff between the cheating
+  probability (which is less or equal than @math{2^{-t}}) and the produced
+  computational and communication complexity.
 
-  Unfortunately, in practice there is a substantial problem with the detection
-  of cheaters. Reliable cheater detection requires that an authenticated
-  broadcast channel has been established, where all players have read/write
-  access. LibTMCG does not yet contain the necessary protocols (reliable
-  or even atomic broadcast) for creating such a channel. Thus you should take
-  into account that not necessarily the player acting as prover is the source
-  of evil, if a verification procedure fails. This level of uncertainty is
-  also a reason for our restricted adversary model.
+  Unfortunately, in practice there is a substantial problem with the
+  detection of cheaters. Reliable cheater detection requires that an
+  authenticated broadcast channel has been established, where all players
+  have read/write access. LibTMCG does not yet contain the necessary 
+  protocols (reliable or even atomic broadcast) for creating such a channel.
+  Thus you should take into account that not necessarily the player acting
+  as prover is the source of evil, if a verification procedure fails. This
+  level of uncertainty is also a reason for our restricted adversary model.
   
   Note that it is not known, whether the used protocols retain their
-  zero-knowledge property, when they are composed and executed in a concurrent
-  setting. Thus the application programmer should be careful and avoid parallel
-  protocol sessions. It is an open research project to create a protocol suite
-  whose security can be proven in the UC-framework of Canetti. Furthermore, the
-  protocols should employ concurrent zero-knowledge proofs.
+  zero-knowledge property, when they are composed and executed in a
+  concurrent setting. Thus the application programmer should be careful and
+  avoid parallel protocol sessions. It is a challenging research project to
+  create a protocol suite whose security can be proven in the UC-framework
+  of Canetti. Furthermore, the protocols should employ so-called concurrent
+  zero-knowledge proofs.
 
-  LibTMCG was carefully implemented with respect to timing attacks. Therefore
-  we loose some efficiency, e.g., during modular exponentiations. However, it
-  is strongly recommended to leave the timing attack protection turned on
-  unless you know exactly where it is not needed.
+  LibTMCG was carefully implemented with respect to timing attacks.
+  Therefore we loose some efficiency, e.g., during modular exponentiations.
+  However, it is strongly recommended to leave the timing attack protection
+  turned on unless you know exactly where it is not needed.
 
   SECURITY ADVICE: We have implemented all cryptographic primitives according
   to the cited research papers and to the best of our knowledge. However, we
-  can not eliminate any possibility of flaws or insecurity, because the
+  can not eliminate any possibility of bugs or insecurity, because the
   implementation of such complex protocols is always an error-prone process.
   Thus we encourage readers with advanced cryptographic background to review
   the source code of LibTMCG.
@@ -138,7 +139,7 @@ Bugs, Contribution, CVS
   This is a (maybe instable) BETA version. If you want to contribute,
   please send detailed bug reports to Heiko Stamer <stamer@gaos.org>.
 
-  You can get the latest sources from the CVS repository:
+  You can get the latest sources from the CVS repository by using
 
   cvs -z3 -d:pserver:anonymous@cvs.savannah.nongnu.org:/sources/libtmcg co libtmcg
 
@@ -151,7 +152,7 @@ Bugs, Contribution, CVS
 Copyright and License of this software
 --------------------------------------
 
-  (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
+  (C) 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
       GNU General Public License version 2
 
   Please have a look at file 'COPYING' and http://www.fsf.org/.
