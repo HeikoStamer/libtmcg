@@ -1,3 +1,5 @@
+1.1.1
+
 1.1.0 Some interfaces were changed to allow the creation of keys without
       included non-interactive zero-knowledge proof of validity. In
       particular, this is more convenient whenever the new VTMF encoding
