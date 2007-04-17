@@ -35,12 +35,12 @@ SchindelhauerTMCG::SchindelhauerTMCG
 	
 	TMCG_MaxCardType = 1;
 	for (size_t i = 0; i < TMCG_TypeBits; i++)
-		TMCG_MaxCardType *= 2;
+		TMCG_MaxCardType *= 2; // TMCG_MaxCardType = 2^{TMCG_TypeBits}
 	
 	// initialize the message space for the VTMF scheme
 	message_space = new mpz_t[TMCG_MaxCardType]();
 	for (size_t i = 0; i < TMCG_MaxCardType; i++)
-		mpz_init_set_ui(message_space[i], 0L);
+		mpz_init_set_ui(message_space[i], 0L); // values are set later
 }
 
 void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
@@ -775,6 +775,7 @@ void SchindelhauerTMCG::TMCG_CreateOpenCard
 	if (type < TMCG_MaxCardType)
 	{
 		mpz_set_ui(c.c_1, 1L);
+		// set the message space to an element from group G
 		if (!mpz_cmp_ui(message_space[type], 0L))
 			vtmf->IndexElement(message_space[type], type);
 		mpz_set(c.c_2, message_space[type]);
@@ -866,6 +867,7 @@ void SchindelhauerTMCG::TMCG_CreatePrivateCard
 {
 	assert(type < TMCG_MaxCardType);
 	
+	// set message space to an element from group G
 	if (!mpz_cmp_ui(message_space[type], 0L))
 		vtmf->IndexElement(message_space[type], type);
 	vtmf->VerifiableMaskingProtocol_Mask(message_space[type],
@@ -1108,6 +1110,7 @@ size_t SchindelhauerTMCG::TMCG_TypeOfCard
 	
 	for (size_t t = 0; t < TMCG_MaxCardType; t++)
 	{
+		// set message space to an element from group G
 		if (!mpz_cmp_ui(message_space[t], 0L))
 			vtmf->IndexElement(message_space[t], t);
 		if (!mpz_cmp(m, message_space[t]))
