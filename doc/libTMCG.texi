@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.50 2007/04/15 17:33:31 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.51 2007/04/17 16:52:39 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006, 2007 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -570,18 +570,20 @@ and DLOG. The default value is @code{160}.
 
 @defmac TMCG_GCRY_MD_ALGO
 Defines the message digest algorithm for digital signatures and
-the Fiat-Shamir heuristic (see TODO). The security of the most
-non-interactive zero-knowledge proofs (NIZK) is related to the
-so-called random oracle model, i.e., we suppose that the
+the Fiat-Shamir heuristic (see Fiat, Shamir: @emph{How to prove yourself:
+Practical Solutions to Identification and Signature Problems}, 1986).
+The security of the most non-interactive zero-knowledge proofs (NIZK)
+is related to the so-called random oracle model, i.e., we suppose that the
 instantiated hash function behaves like an ideal random function
 (which cannot hold in a real world scenario). However, this assumption
 seems to be reasonable, if the hash function is collision-resistant
 and carefully implemented. The default value @code{GCRY_MD_RMD160}
 @footnote{This is a constant defined by the GNU Crypto Library.}
-chooses the hash algorithm RIPEMD-160 (see TODO) which has an output
-length of 160 bit. Thus we gain a security level of approximately
-@math{2^{80}}, assuming that a birthday-attack is the best known
-attack against this hash function.
+chooses the hash algorithm RIPEMD-160 (see Dobbertin, Bosselaers,
+Preneel: @emph{RIPEMD-160, a strengthened version of RIPEMD}, 1996)
+which has an output length of 160 bit. Thus we gain a security level
+of approximately @math{2^{80}}, assuming that a birthday-attack is 
+the best known attack against this hash function.
 @end defmac
 
 @defmac TMCG_KEYID_SIZE
@@ -630,7 +632,7 @@ Schindelhauer.
 Defines the required minimum version number of the GNU Crypto Library.
 The default value is @code{"1.2.0"}. During the initialization of
 LibTMCG (see @code{init_libTMCG}) it is checked, whether the
-version number of the linked shared object fulfil this condition.
+version number of the linked shared object fulfills this condition.
 @end defmac
 
 @defmac TMCG_LIBGMP_VERSION
@@ -638,7 +640,7 @@ Defines the required minimum version number of the GNU Multiple Precision
 Arithmetic Library. The default value is @code{"4.1.0"}. During the
 initialization of LibTMCG (see @code{init_libTMCG}) it is checked,
 whether the version number provided by the header file @file{gmp.h}
-and used at compile time of LibTMCG fulfil this condition.
+and used at compile time of LibTMCG fulfills this condition.
 @end defmac
 
 @defmac TMCG_MAX_CARDS
@@ -1350,7 +1352,7 @@ There is no error reported, if this limit is exceeded.
 
 @subsubsection Cryptographic Keys
 @cindex Keys
-LibTMCG only provides correponding data types for keys used by the encoding
+LibTMCG only provides corresponding data types for keys used by the encoding
 scheme of
 Schindelhauer@tie{}[Sc98], because it is not efficient to perform the
 key generation in every new game session. Furthermore, in general you
