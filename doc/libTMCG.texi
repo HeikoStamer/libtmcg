@@ -1,4 +1,4 @@
-\input texinfo
+input texinfo
 @c %**start of header
 @documentencoding ISO-8859-1
 @setfilename libTMCG.info
@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.52 2007/04/18 06:47:39 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.53 2007/04/18 07:05:39 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006, 2007 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -2826,13 +2826,15 @@ for (size_t type = 0; type < 52; type++)
 @}
 @end example
 @end cartouche
+Note that this card deck must be consistent for all players, that means,
+the order of the open cards must be exactly the same for all players.
 
 @node Shuffling the Deck
 @subsection Shuffling the Deck
 Each player must perform a shuffle of the deck, because only such a procedure
 guarantees that no coalition has influence on the outcome. Thus we build a
 shuffle chain such that every player shuffles the deck.
-Consider the code fragment for the player @math{P_j}.
+Consider the following code fragment for the player @math{P_j}.
 
 The regular stack @code{s} is initialized with open cards from @code{deck}.
 Then each player shuffles the stack (see @code{TMCG_MixStack}) and proves the
