@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.51 2007/04/17 16:52:39 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.52 2007/04/18 06:47:39 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006, 2007 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -2556,7 +2556,7 @@ are ordered in a natural way such that we can use the same nomenclature.}
 @section Library Initialization
 @cindex Initialization
 The very first step that should be performed is the initialization of LibTMCG.
-That can be done simply by calling the function @code{init_libTMCG} and
+That can simply be done by calling the function @code{init_libTMCG} and
 evaluating the return code.
 @cartouche
 @example
@@ -2564,6 +2564,8 @@ if (!init_libTMCG())
   std::cerr << "Initialization of LibTMCG failed!" << std::endl;
 @end example
 @end cartouche
+Additionally, in the most cases it is useful to check the installed
+library version by using the function @code{version_libTMCG}.
 
 @node Session Initialization and Key Generation
 @section Session Initialization and Key Generation
