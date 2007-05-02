@@ -50,7 +50,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 			mpz_wrandomm(d, p);
 			mpz_powm(g, d, k, p);
 		}
-		while (!mpz_cmp_ui(g, 0L) || !(mpz_cmp_ui(g, 1L)));
+		while ((!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L)));
 	}
 	
 	// Initialize the tables for the fast exponentiation.
@@ -119,10 +119,13 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 		
 		// Check whether $g$ is a generator for the subgroup $G$ of order $q$.
 		// Here we have to assert that $g^q \equiv 1 \pmod{p}$.
-		// Further, we have to ensure that $g$ is not equal to zero or one.
+		// Further, we have to ensure that $g$ is not trivial, i.e.,
+		// not equal to zero, one, or $p - 1$.
+		mpz_sub_ui(bar, p, 1L);
 		mpz_fpowm(fpowm_table_g, foo, g, q, p);
-		if (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || mpz_cmp_ui(foo, 1L))
-			throw false;
+		if (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || !mpz_cmp(g, bar) ||
+			mpz_cmp_ui(foo, 1L))
+				throw false;
 		
 		// finish
 		throw true;

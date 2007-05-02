@@ -107,8 +107,10 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
 		// Check whether $g$ is a generator for the subgroup $G$ of order $q$.
 		// It is sufficient to assert that $g$ is a quadratic residue mod $p$,
 		// i.e. we can simply do this by computing the Legendre-Jacobi symbol.
-		// Further, we have to ensure that $g$ is not equal to zero or one.
-		if (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
+		// Further, we have to ensure that $g$ is not trivial, i.e.,
+		// not equal to zero, one, or $p - 1$.
+		mpz_sub_ui(foo, p, 1L);
+		if (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || !mpz_cmp(g, foo) ||
 			(mpz_jacobi(g, p) != 1L))
 				throw false;
 		
