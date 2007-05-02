@@ -47,7 +47,8 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 			mpz_wrandomm(tmp, p);
 			mpz_powm(tmp, tmp, k, p);
 		}
-		while (mpz_congruent_p(tmp, h, p));
+		while (mpz_congruent_p(tmp, h, p) || 
+			!mpz_cmp_ui(tmp, 0L) || !mpz_cmp_ui(tmp, 1L));
 		
 		if (i < n)
 		{
@@ -190,13 +191,14 @@ bool PedersenCommitmentScheme::CheckGroup
 		}
 		
 		// Check whether the elements $h, g_1, \ldots, g_n$ are different
-		// and non-trivial, i.e. not equal to zero or one.
-		if (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L))
+		// and non-trivial, i.e. not equal to zero, one, or $p - 1$.
+		mpz_sub_ui(foo, p, 1L);
+		if (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L) || !mpz_cmp(h, foo))
 			throw false;
 		for (size_t i = 0; i < g.size(); i++)
 		{
 			if (!mpz_cmp_ui(g[i], 0L) || !mpz_cmp_ui(g[i], 1L) || 
-				!mpz_cmp(g[i], h))
+				!mpz_cmp(g[i], foo) || !mpz_cmp(g[i], h))
 					throw false;
 			for (size_t j = (i + 1); j < g.size(); j++)
 			{
