@@ -32,6 +32,8 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	(unsigned long int fieldsize, unsigned long int subgroupsize):
 		F_size(fieldsize), G_size(subgroupsize)
 {
+	mpz_t foo;
+	
 	// Create a finite abelian group $G$ where the DDH problem is hard:
 	// We use the unique subgroup of prime order $q$ where $p = kq + 1$.
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(k);
@@ -45,12 +47,16 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	// Choose randomly a generator $g$ of the unique subgroup of order $q$.
 	if (subgroupsize)
 	{
+		mpz_init(foo);
+		mpz_sub_ui(foo, p, 1L); // compute $p-1$
 		do
 		{
 			mpz_wrandomm(d, p);
-			mpz_powm(g, d, k, p);
+			mpz_powm(g, d, k, p); // compute $g := d^k \bmod p$
 		}
-		while ((!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L)));
+		while ((!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
+			!mpz_cmp(g, foo))); // check, whether $1 < g < p-1$
+		mpz_clear(foo);
 	}
 	
 	// Initialize the tables for the fast exponentiation.
@@ -117,13 +123,13 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 		
-		// Check whether $g$ is a generator for the subgroup $G$ of order $q$.
-		// Here we have to assert that $g^q \equiv 1 \pmod{p}$.
-		// Further, we have to ensure that $g$ is not trivial, i.e.,
-		// not equal to zero, one, or $p - 1$.
+		// Check whether $g$ is a generator for the subgroup $G$ of prime
+		// order $q$. We have to assert that $g^q \equiv 1 \pmod{p}$,
+		// which means that the order of $g$ is $q$. Of course, we must
+		// ensure that $g$ is not trivial, i.e., $1 < g < p-1$.
 		mpz_sub_ui(bar, p, 1L);
 		mpz_fpowm(fpowm_table_g, foo, g, q, p);
-		if (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || !mpz_cmp(g, bar) ||
+		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, bar) >= 0) || 
 			mpz_cmp_ui(foo, 1L))
 				throw false;
 		
@@ -151,8 +157,8 @@ bool BarnettSmartVTMF_dlog::CheckElement
 	mpz_init(foo);
 	try
 	{
-		// Check the size of $a$.
-		if (mpz_cmp(a, p) >= 0L)
+		// Check whether $a < p$.
+		if (mpz_cmp(a, p) >= 0)
 			throw false;
 		
 		// Check whether $a$ is not equal to zero.
@@ -254,7 +260,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 			throw false;
 		
 		// check the size of $r$
-		if (mpz_cmp(r, q) >= 0L)
+		if (mpz_cmp(r, q) >= 0)
 			throw false;
 		
 		// verify the proof of knowledge [CaS97]
@@ -389,7 +395,7 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 	try
 	{
 		// check the size of $r$
-		if (mpz_cmp(r, q) >= 0L)
+		if (mpz_cmp(r, q) >= 0)
 			throw false;
 		
 		// verify proof of knowledge (equality of discrete logarithms) [CaS97]

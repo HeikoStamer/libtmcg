@@ -11,7 +11,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -107,10 +107,9 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
 		// Check whether $g$ is a generator for the subgroup $G$ of order $q$.
 		// It is sufficient to assert that $g$ is a quadratic residue mod $p$,
 		// i.e. we can simply do this by computing the Legendre-Jacobi symbol.
-		// Further, we have to ensure that $g$ is not trivial, i.e.,
-		// not equal to zero, one, or $p - 1$.
+		// Of course, we must ensure that $g$ is not trivial, i.e., $1 < g < p-1$.
 		mpz_sub_ui(foo, p, 1L);
-		if (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || !mpz_cmp(g, foo) ||
+		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, foo) >= 0) || 
 			(mpz_jacobi(g, p) != 1L))
 				throw false;
 		
@@ -127,8 +126,8 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
 bool BarnettSmartVTMF_dlog_GroupQR::CheckElement
 	(mpz_srcptr a) const
 {
-	// Check the size of $a$.
-	if (mpz_cmp(a, p) >= 0L)
+	// Check whether $a < p$.
+	if (mpz_cmp(a, p) >= 0)
 		return false;
 	
 	// Check whether $a$ is not equal to zero.

@@ -105,7 +105,7 @@ Requirements
 ------------
 
   You need the following libraries and appropriate header files to build
-  (GNU gcc/g++ version 3.3.x is recommended) libTMCG successfully:
+  (GNU gcc/g++ version 3.3.x or higher is recommended) libTMCG successfully:
 
   * GNU Multiple Precision Arithmetic Library (libgmp), version >= 4.1.0,
     http://www.swox.com/gmp/
@@ -120,6 +120,7 @@ Requirements
 
   + GNU/Linux (Debian 3.0)      i686      gcc 2.95.4
   + GNU/Linux (Debian 3.1)      i686      gcc 3.3.5
+  + GNU/Linux (Debian 4.0)      i686      gcc 4.1.2
   + SunOS 5.8, Solaris 2.7      sparc     gcc 3.3.2
   + SunOS 5.10, Solaris 10      sparc     gcc 3.4.3
   + GNU/Linux (Sharp Zaurus)    arm       zgcc 2.95.2

@@ -32,23 +32,28 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	(size_t n, unsigned long int fieldsize, unsigned long int subgroupsize):
 		F_size(fieldsize), G_size(subgroupsize)
 {
+	mpz_t foo;
 	assert(n >= 1);
 	
 	// Initialize and choose the parameters of the commitment scheme.
 	mpz_init(p), mpz_init(q), mpz_init(k), mpz_init_set_ui(h, 1L);
 	mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
+	
+	mpz_init(foo);
+	mpz_sub_ui(foo, p, 1L); // compute $p-1$
 	for (size_t i = 0; i <= n; i++)
 	{
 		mpz_ptr tmp = new mpz_t();
 		mpz_init(tmp);
+		
 		// choose uniformly at random an element of order $q$
 		do
 		{
 			mpz_wrandomm(tmp, p);
 			mpz_powm(tmp, tmp, k, p);
 		}
-		while (mpz_congruent_p(tmp, h, p) || 
-			!mpz_cmp_ui(tmp, 0L) || !mpz_cmp_ui(tmp, 1L));
+		while (!mpz_cmp_ui(tmp, 0L) || !mpz_cmp_ui(tmp, 1L) || 
+			!mpz_cmp(tmp, foo)); // check, whether $1 < tmp < p-1$
 		
 		if (i < n)
 		{
@@ -63,6 +68,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 			delete tmp;
 		}
 	}
+	mpz_clear(foo);
 	
 	// Do the precomputation for the fast exponentiation.
 	for (size_t i = 0; i < g.size(); i++)
@@ -83,27 +89,33 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	unsigned long int fieldsize, unsigned long int subgroupsize):
 		F_size(fieldsize), G_size(subgroupsize)
 {
+	mpz_t foo;
 	assert(n >= 1);
 	
 	// Initialize and choose the parameters of the commitment scheme.
 	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), 
 		mpz_init_set(k, k_ENC), mpz_init_set(h, h_ENC);
+	
+	mpz_init(foo);
+	mpz_sub_ui(foo, p, 1L); // compute $p-1$
 	for (size_t i = 0; i < n; i++)
 	{
 		mpz_ptr tmp = new mpz_t();
 		mpz_init(tmp);
+		
 		// choose uniformly at random an element of order $q$
 		do
 		{
 			mpz_wrandomm(tmp, p);
 			mpz_powm(tmp, tmp, k, p);
 		}
-		while (mpz_congruent_p(tmp, h, p) || 
-			!mpz_cmp_ui(tmp, 0L) || !mpz_cmp_ui(tmp, 1L));
+		while (!mpz_cmp_ui(tmp, 0L) || !mpz_cmp_ui(tmp, 1L) || 
+			!mpz_cmp(tmp, foo)); // check, whether $1 < tmp < p-1$
 		
 		// store the elements $g_1, \ldots, g_n$
 		g.push_back(tmp);
 	}
+	mpz_clear(foo);
 	
 	// Do the precomputation for the fast exponentiation.
 	for (size_t i = 0; i < g.size(); i++)
@@ -191,14 +203,14 @@ bool PedersenCommitmentScheme::CheckGroup
 		}
 		
 		// Check whether the elements $h, g_1, \ldots, g_n$ are different
-		// and non-trivial, i.e. not equal to zero, one, or $p - 1$.
-		mpz_sub_ui(foo, p, 1L);
-		if (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L) || !mpz_cmp(h, foo))
+		// and non-trivial, i.e., $1 < h, g_1, \ldots, g_n < p-1$.
+		mpz_sub_ui(foo, p, 1L); // compute $p-1$
+		if ((mpz_cmp_ui(h, 1L) <= 0) || (mpz_cmp(h, foo) >= 0))
 			throw false;
 		for (size_t i = 0; i < g.size(); i++)
 		{
-			if (!mpz_cmp_ui(g[i], 0L) || !mpz_cmp_ui(g[i], 1L) || 
-				!mpz_cmp(g[i], foo) || !mpz_cmp(g[i], h))
+			if ((mpz_cmp_ui(g[i], 1L) <= 0) || (mpz_cmp(g[i], foo) >= 0) ||
+				!mpz_cmp(g[i], h))
 					throw false;
 			for (size_t j = (i + 1); j < g.size(); j++)
 			{

@@ -1,5 +1,7 @@
-1.1.1
-
+1.1.1 A major security bug (missing range check) was fixed, which allows an
+      adversary to choose trivial group generators. This flaw has a crucial
+      impact on the confidentiality of private cards. Thus, we strongly
+      recommend all users to update LibTMCG as soon as possible.
 1.1.0 Some interfaces were changed to allow the creation of keys without
       included non-interactive zero-knowledge proof of validity. In
       particular, this is more convenient whenever the new VTMF encoding

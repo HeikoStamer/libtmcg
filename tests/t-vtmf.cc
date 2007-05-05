@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -222,6 +222,7 @@ int main
 {
 	std::stringstream oak, lej, lej2, foo, foo2, bar;
 	std::string v;
+	mpz_t fooo;
 	
 	assert(init_libTMCG());
 	
@@ -278,6 +279,17 @@ rgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9623r7y6j0m4yj33\
 	vtmf = new BarnettSmartVTMF_dlog();
 	std::cout << "vtmf.CheckGroup()" << std::endl;
 	assert(vtmf->CheckGroup());
+	
+	// trivial generator attack
+	mpz_init(fooo);
+	mpz_set(fooo, vtmf->g);
+	mpz_set_ui(vtmf->g, 1L);
+	assert(!vtmf->CheckGroup());
+	mpz_set(vtmf->g, vtmf->p);
+	mpz_add_ui(vtmf->g, vtmf->g, 1L);
+	assert(!vtmf->CheckGroup());
+	mpz_set(vtmf->g, fooo);
+	mpz_clear(fooo);
 	
 	// publish the instance
 	std::cout << "vtmf.PublishGroup(lej)" << std::endl;
