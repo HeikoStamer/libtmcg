@@ -1,3 +1,5 @@
+1.1.2
+
 1.1.1 A major security bug (missing range check) was fixed, which allows an
       adversary to choose trivial group generators. This flaw has a crucial
       impact on the confidentiality of private cards. Thus, we strongly

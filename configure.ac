@@ -18,10 +18,10 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.41 $)
+AC_REVISION($Revision: 1.42 $)
 AC_PREREQ(2.57)
 
-AC_INIT(libTMCG, 1.1.1, stamer@gaos.org)
+AC_INIT(libTMCG, 1.1.2, stamer@gaos.org)
 
 # The next two paragraphs are copies of libgcrypt behaviour.
 
