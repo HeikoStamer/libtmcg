@@ -1,4 +1,4 @@
-# Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+# Copyright (C) 2005, 2007  Heiko Stamer <stamer@gaos.org>
 #
 # This file is part of LibTMCG.
 #
@@ -19,7 +19,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-TESTS = t-mpz t-vtmf t-vsshe t-mpc t-key
+TESTS = t-mpz t-vtmf t-vsshe t-mpc t-key t-poker
 
 INCLUDES = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@
 LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ ../src/libTMCG.la
@@ -36,3 +36,4 @@ t_vtmf_SOURCES = pipestream.hh test_helper.c test_helper.h t-vtmf.cc
 t_vsshe_SOURCES = pipestream.hh test_helper.c test_helper.h t-vsshe.cc
 t_mpc_SOURCES = StiglicMPC.cc StiglicMPC.hh t-mpc.cc
 t_key_SOURCES = t-key.cc
+t_poker_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker.cc
