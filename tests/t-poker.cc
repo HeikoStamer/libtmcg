@@ -31,7 +31,9 @@
 #include "pipestream.hh"
 
 #undef NDEBUG
-#define PLAYERS 3
+#define PLAYERS 8
+#define DECKSIZE 52
+#define FLOPSIZE 5
 
 std::stringstream vtmf_str;
 int pipefd[PLAYERS][PLAYERS][2];
@@ -100,7 +102,8 @@ void start_instance
 			{
 				// create and publish VSSGE instance as leader
 				start_clock();
-				vsshe = new GrothVSSHE(52, vtmf->p, vtmf->q, vtmf->k, vtmf->g, vtmf->h);
+				vsshe = new GrothVSSHE(DECKSIZE, 
+					vtmf->p, vtmf->q, vtmf->k, vtmf->g, vtmf->h);
 				if (!vsshe->CheckGroup())
 				{
 					std::cout << "P_" << player << ": " <<
@@ -114,7 +117,7 @@ void start_instance
 			} else {
 				// receive and create VSSHE instance as non-leader
 				start_clock();
-				vsshe = new GrothVSSHE(52, *P_in[0]);
+				vsshe = new GrothVSSHE(DECKSIZE, *P_in[0]);
 				if (!vsshe->CheckGroup())
 				{
 					std::cout << "P_" << player << ": " <<
@@ -144,7 +147,7 @@ void start_instance
 			// create and shuffle the deck
 			start_clock();
 			TMCG_OpenStack<VTMF_Card> deck;
-			for (size_t type = 0; type < 52; type++)
+			for (size_t type = 0; type < DECKSIZE; type++)
 			{
 				VTMF_Card c;
 				tmcg->TMCG_CreateOpenCard(c, vtmf, type);
@@ -201,22 +204,22 @@ void start_instance
 			{
 				if (i == player)
 				{
-					for (size_t k = 0; k < hand[player].size(); k++)
+					for (size_t k = 0; k < hand[i].size(); k++)
 					{
-						tmcg->TMCG_SelfCardSecret(hand[player][k], vtmf);
+						tmcg->TMCG_SelfCardSecret(hand[i][k], vtmf);
 						for (size_t i2 = 0; i2 < PLAYERS; i2++)
 						{
 							if (i2 == player)
 								continue;
-							if (!tmcg->TMCG_VerifyCardSecret(hand[player][k], vtmf,
-								*P_in[player], *P_out[player]))
+							if (!tmcg->TMCG_VerifyCardSecret(hand[i][k], vtmf,
+								*P_in[i2], *P_out[i2]))
 							{
 								std::cout << "Card verification failed!" << std::endl;
 								exit(-1);
 							}
-							private_hand.push(tmcg->TMCG_TypeOfCard(hand[player][k], vtmf),
-								hand[player][k]);
 						}
+						size_t type = tmcg->TMCG_TypeOfCard(hand[i][k], vtmf);
+						private_hand.push(type, hand[i][k]);
 					}
 				}
 				else
@@ -233,6 +236,54 @@ void start_instance
 			std::cout << "P_" << player << ": my cards are " <<
 				private_hand[0].first << " and " <<
 				private_hand[1].first << std::endl;
+			
+			// drawing the flop
+			start_clock();
+			TMCG_Stack<VTMF_Card> flop;
+			VTMF_Card c;
+			for (size_t i = 0; i < FLOPSIZE; i++)
+			{
+				s.pop(c), flop.push(c);
+			}
+			TMCG_OpenStack<VTMF_Card> open_flop;
+			for (size_t i = 0; i < PLAYERS; i++)
+			{
+				if (i == player)
+				{
+					for (size_t k = 0; k < flop.size(); k++)
+					{
+						tmcg->TMCG_SelfCardSecret(flop[k], vtmf);
+						for (size_t i2 = 0; i2 < PLAYERS; i2++)
+						{
+							if (i2 == player)
+								continue;
+							if (!tmcg->TMCG_VerifyCardSecret(flop[k], vtmf,
+								*P_in[i2], *P_out[i2]))
+							{
+								std::cout << "Card verification failed!" << std::endl;
+								exit(-1);
+							}
+						}
+						size_t type = tmcg->TMCG_TypeOfCard(flop[k], vtmf);
+						open_flop.push(type, flop[k]);
+					}
+				}
+				else
+				{
+					for (size_t k = 0; k < flop.size(); k++)
+					{
+						tmcg->TMCG_ProveCardSecret(flop[k], vtmf,
+							*P_in[i], *P_out[i]);
+					}
+				}
+			}
+			stop_clock();
+			std::cout << "P_" << player << ": " << elapsed_time() << std::endl;
+			std::cout << "P_" << player << ": flop cards are ";
+			for (size_t i = 0; i < FLOPSIZE; i++)
+				std::cout << open_flop[i].first << " ";
+			std::cout << std::endl;
+			
 			
 			
 			// release TMCG, VTMF, and VSSHE instances

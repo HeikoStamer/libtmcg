@@ -17,7 +17,7 @@ input texinfo
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.53 2007/04/18 07:05:39 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.54 2007/05/07 16:42:36 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006, 2007 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -2921,7 +2921,7 @@ for (size_t i = 0; i < 5; i++)
         if (i2 == j)
           continue;
         if (!tmcg->TMCG_VerifyCardSecret(hand[j][k], vtmf,
-          in_stream[j], out_stream[j]))
+          in_stream[i2], out_stream[i2]))
             std::cerr << "Verification failed!" << std::endl;
       @}
       private_hand.push(tmcg->TMCG_TypeOfCard(hand[j][k], vtmf),
