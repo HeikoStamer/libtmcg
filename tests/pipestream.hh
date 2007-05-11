@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 1999, 2000 Kevin Birch <kbirch@pobox.com>,
-               2002, 2004, 2005 Heiko Stamer <stamer@gaos.org>
+               2002, 2004, 2005, 2007 Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -80,6 +80,8 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 		char *mRBuffer;
 		/** The write buffer. */
 		char *mWBuffer;
+		
+		size_t numWrite, numRead;
 	
 	public:
 		/** This is a convenience for instatiations. */
@@ -98,6 +100,7 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 			}
 			char *pos = mRBuffer+traits_type::putback_sz();
 			setg(pos, pos, pos);
+			numWrite = 0, numRead = 0;
 		}
 		
 		/** This destructor releases all occupied resources. */
@@ -120,6 +123,7 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 			if (write(mPipe, mWBuffer, num) != num)
 				return EOF;
 			pbump(-num);
+			numWrite += num;
 			return num;
 		}
 		
@@ -144,6 +148,7 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 					char z = c;
 					if (write(mPipe, &z, 1) != 1)
 						return EOF;
+					numWrite += 1;
 				}
 				return c;
 			}
@@ -168,6 +173,7 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 		virtual std::streamsize xsputn
 			(const char *s, std::streamsize num)
 		{
+			numWrite += num;
 			return (write(mPipe, s, num));
 		}
 		
@@ -192,6 +198,7 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 			{
 				count = read(mPipe, mRBuffer+traits_type::putback_sz(),
 					bufsiz);
+				numRead += count;
 				if (count == 0)
 					return EOF;
 				else if (count == -1)
@@ -209,6 +216,18 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 				mRBuffer+traits_type::putback_sz()+count);
 			
 			return *gptr();
+		}
+		
+	public:
+		size_t get_numRead
+			()
+		{
+			return numRead;
+		}
+		size_t get_numWrite
+			()
+		{
+			return numWrite;
 		}
 };
 
@@ -230,6 +249,17 @@ class ipipestream : public std::istream
 			(int iPipe) : std::istream(&buf), buf(iPipe)
 		{
 		}
+		
+		size_t get_numRead
+			()
+		{
+			return buf.get_numRead();
+		}
+		size_t get_numWrite
+			()
+		{
+			return buf.get_numWrite();
+		}
 };
 
 /** An ostream subclass that uses a pipebuf. Create one if you wish to
@@ -247,6 +277,17 @@ class opipestream : public std::ostream
 			(int oPipe) : std::ostream(&buf), buf(oPipe)
 		{
 		}
+		
+		size_t get_numRead
+			()
+		{
+			return buf.get_numRead();
+		}
+		size_t get_numWrite
+			()
+		{
+			return buf.get_numWrite();
+		}
 };
 
 /** An iostream subclass that uses a pipebuf. Create one if you wish to
@@ -263,6 +304,17 @@ class iopipestream : public std::iostream
 		iopipestream
 			(int ioPipe) : std::iostream(&buf), buf(ioPipe)
 		{
+		}
+		
+		size_t get_numRead
+			()
+		{
+			return buf.get_numRead();
+		}
+		size_t get_numWrite
+			()
+		{
+			return buf.get_numWrite();
 		}
 };
 

@@ -285,13 +285,19 @@ void start_instance
 			std::cout << std::endl;
 			
 			
-			
 			// release TMCG, VTMF, and VSSHE instances
 			delete tmcg, delete vtmf, delete vsshe;
 			
 			// release pipe streams
+			size_t numRead = 0, numWrite = 0;
 			for (size_t i = 0; i < PLAYERS; i++)
+			{
+				numRead += P_in[i]->get_numRead() + P_out[i]->get_numRead();
+				numWrite += P_in[i]->get_numWrite() + P_out[i]->get_numWrite();
 				delete P_in[i], delete P_out[i];
+			}
+			std::cout << "P_" << player << ": numRead = " << numRead <<
+				" numWrite = " << numWrite << std::endl;
 			
 			std::cout << "P_" << player << ": exit(0)" << std::endl;
 			exit(0);
