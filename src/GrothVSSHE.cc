@@ -403,23 +403,25 @@ void GrothSKC::Prove_interactive
 	}
 	
 	// prover: first move
-	in >> x;
+	in >> x; // get $x$ from the verifier
 	// check whether $x$ is from $\{0, 1\}^{\ell_e}$, otherwise reduce
 	if (mpz_sizeinbase(x, 2L) > l_e)
 		mpz_mod(x, x, exp2l_e);
 	
 	// prover: second move
-	mpz_srandomm(r_d, com->q);
-	mpz_srandomm(r_Delta, com->q);
+	mpz_srandomm(r_d, com->q); // $r_d \gets \mathbb{Z}_q$
+	mpz_srandomm(r_Delta, com->q); // $r_{\Delta} \gets \mathbb{Z}_q$
 	for (size_t i = 0; i < d.size(); i++)
-		mpz_srandomm(d[i], com->q);
-	mpz_set(Delta[0], d[0]);
+		mpz_srandomm(d[i], com->q); // $d_1,\ldots,d_n \gets \mathbb{Z}_q$
+	mpz_set(Delta[0], d[0]); // $\Delta_1 := d_1$
 	for (size_t i = 1; i < (Delta.size() - 1); i++)
-		mpz_srandomm(Delta[i], com->q);
-	mpz_set_ui(Delta[Delta.size() - 1], 0L);
+		mpz_srandomm(Delta[i], com->q);	// $\Delta_2,\ldots,\Delta_{n-1}
+										//           \gets \mathbb{Z}_q$
+	mpz_set_ui(Delta[Delta.size() - 1], 0L); // $\Delta_n := 0$
 	for (size_t i = 0; i < a.size(); i++)
 	{
 		mpz_set_ui(a[i], 1L);
+		// compute a_i = \prod_{j=1}^i (m_{\pi(j)} - x)
 		for (size_t j = 0; j <= i; j++)
 		{
 			mpz_sub(foo, m[pi[j]], x);
@@ -428,8 +430,8 @@ void GrothSKC::Prove_interactive
 			mpz_mod(a[i], a[i], com->q);
 		}
 	}
-	mpz_srandomm(r_a, com->q);
-	com->CommitBy(c_d, r_d, d);
+	mpz_srandomm(r_a, com->q); // $r_a \gets \mathbb{Z}_q$
+	com->CommitBy(c_d, r_d, d); // $c_d = \mathrm{com}_{ck}(d_1,\ldots,d_n;r_d)$
 	for (size_t i = 0; i < lej.size(); i++)
 	{
 		if (i < (lej.size() - 1))
@@ -467,7 +469,7 @@ void GrothSKC::Prove_interactive
 	out << c_d << std::endl << c_Delta << std::endl << c_a << std::endl;
 	
 	// prover: third move
-	in >> e;
+	in >> e; // get $e$ from the verifier
 	// check whether $x$ is from $\{0, 1\}^{\ell_e}$, otherwise reduce
 	if (mpz_sizeinbase(e, 2L) > l_e)
 		mpz_mod(e, e, exp2l_e);
