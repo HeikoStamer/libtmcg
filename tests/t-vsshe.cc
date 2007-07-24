@@ -157,6 +157,12 @@ int main
 	com->CommitBy(aa, b, mp);
 	assert(!mpz_cmp(a, aa));
 	
+	// TestMembership
+	std::cout << "*.TestMembership(...)" << std::endl;
+	assert(com->TestMembership(a));
+	assert(com->TestMembership(aa));
+	assert(!com->TestMembership(com->p));
+	
 	// verify
 	std::cout << "*.Verify(...)" << std::endl;
 	assert(com->Verify(a, b, mp));

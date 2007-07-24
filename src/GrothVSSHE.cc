@@ -284,6 +284,15 @@ void PedersenCommitmentScheme::CommitBy
 	mpz_clear(tmp);
 }
 
+bool PedersenCommitmentScheme::TestMembership
+	(mpz_srcptr c) const
+{
+	if ((mpz_cmp_ui(c, 0L) > 0) && (mpz_cmp(c, p) < 0))
+		return true;
+	else
+		return false;
+}
+
 bool PedersenCommitmentScheme::Verify
 	(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m) const
 {
@@ -524,12 +533,12 @@ void GrothSKC::Prove_interactive
 	mpz_add(z_Delta, z_Delta, r_Delta);
 	mpz_mod(z_Delta, z_Delta, com->q);
 	for (size_t i = 0; i < f.size(); i++)
-		out << f[i] << std::endl; // send $f_1,\ldots,f_n$ to verifier
-	out << z << std::endl; // send $z$ to verifier
+		out << f[i] << std::endl; // send $f_1,\ldots,f_n$ to the verifier
+	out << z << std::endl; // send $z$ to the verifier
 	for (size_t i = 0; i < (f_Delta.size() - 1); i++)
-		out << f_Delta[i] << std::endl; //send $f_{\Delta_1},\ldots,
+		out << f_Delta[i] << std::endl; // send $f_{\Delta_1},\ldots,
 		                                //      f_{\Delta_{n-1}}$ to verifier
-	out << z_Delta << std::endl; // send $z_{\Delta}$ to verifier
+	out << z_Delta << std::endl; // send $z_{\Delta}$ to the verifier
 	
 	// release
 	mpz_clear(x), mpz_clear(r_d), mpz_clear(r_Delta), mpz_clear(r_a),
@@ -537,12 +546,13 @@ void GrothSKC::Prove_interactive
 		mpz_clear(z), mpz_clear(z_Delta), mpz_clear(foo), mpz_clear(bar);
 	for (size_t i = 0; i < m.size(); i++)
 	{
-		mpz_clear(d[i]), mpz_clear(Delta[i]), mpz_clear(a[i]), mpz_clear(f[i]), 
-			mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
-		delete d[i], delete Delta[i], delete a[i], delete f[i], delete f_Delta[i], 
-			delete lej[i];
+		mpz_clear(d[i]), mpz_clear(Delta[i]), mpz_clear(a[i]), 
+			mpz_clear(f[i]), mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
+		delete d[i], delete Delta[i], delete a[i], delete f[i], 
+			delete f_Delta[i], delete lej[i];
 	}
-	d.clear(), Delta.clear(), a.clear(), f.clear(), f_Delta.clear(), lej.clear();
+	d.clear(), Delta.clear(), a.clear(), f.clear(), f_Delta.clear(), 
+		lej.clear();
 }
 
 bool GrothSKC::Verify_interactive
@@ -570,27 +580,28 @@ bool GrothSKC::Verify_interactive
 	{
 		// verifier: first move
 		mpz_srandomb(x, l_e);
-		out << x << std::endl;
+		out << x << std::endl; // send $x\in\{0,1\}^{\ell_e}$ to the prover
 		
 		// verifier: second move
-		in >> c_d >> c_Delta >> c_a;
+		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$
+		                             // from the prover
 		
 		// verifier: third move
 		mpz_srandomb(e, l_e);
-		out << e << std::endl;
+		out << e << std::endl; // send $e\in\{0,1\}^{\ell_e}$ to prover
 		
 		// verifier: fourth move
 		for (size_t i = 0; i < f.size(); i++)
-			in >> f[i];
-		in >> z;
+			in >> f[i]; // get $f_1,\ldots,f_n$ from the prover
+		in >> z; // get $z$ from the prover
 		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
-			in >> f_Delta[i];
-		in >> z_Delta;
+			in >> f_Delta[i]; // get $f_{\Delta_1},\ldots,f_{\Delta_{n-1}}$
+			                  // from the prover
+		in >> z_Delta; // get $z_{\Delta}$ from the prover
 		
-		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}$
-		if (!(mpz_cmp(c_d, com->p) < 0) || !(mpz_cmp(c_a, com->p) < 0) ||
-			!(mpz_cmp(c_Delta, com->p) < 0) || !mpz_cmp_ui(c_d, 0L) ||
-			!mpz_cmp_ui(c_a, 0L) || !mpz_cmp_ui(c_Delta, 0L))
+		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}_{ck}$
+		if (!(com->TestMembership(c_d) && com->TestMembership(c_a) &&
+			com->TestMembership(c_Delta)))
 				throw false;
 		
 		// check whether $f_1, \ldots, f_n, z \in\mathbb{Z}_q$

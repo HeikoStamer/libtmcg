@@ -85,6 +85,8 @@ class PedersenCommitmentScheme
 		void CommitBy
 			(mpz_ptr c, mpz_srcptr r, std::vector<mpz_ptr> m,
 			bool TimingAttackProtection = true) const;
+		bool TestMembership
+			(mpz_srcptr c) const;
 		bool Verify
 			(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m) const;
 		~PedersenCommitmentScheme
