@@ -431,7 +431,8 @@ void GrothSKC::Prove_interactive
 		}
 	}
 	mpz_srandomm(r_a, com->q); // $r_a \gets \mathbb{Z}_q$
-	com->CommitBy(c_d, r_d, d); // $c_d = \mathrm{com}_{ck}(d_1,\ldots,d_n;r_d)$
+	// $c_d = \mathrm{com}_{ck}(d_1,\ldots,d_n;r_d)$
+	com->CommitBy(c_d, r_d, d);
 	for (size_t i = 0; i < lej.size(); i++)
 	{
 		if (i < (lej.size() - 1))
@@ -444,6 +445,8 @@ void GrothSKC::Prove_interactive
 		else
 			mpz_set_ui(lej[i], 0L);
 	}
+	// $c_{\Delta} = \mathrm{com}_{ck}(-\Delta_1 d_2,\ldots,
+	//                                 -\Delta_{n-1} d_n;r_{\Delta})$
 	com->CommitBy(c_Delta, r_Delta, lej);
 	for (size_t i = 0; i < lej.size(); i++)
 	{
@@ -465,7 +468,11 @@ void GrothSKC::Prove_interactive
 		else
 			mpz_set_ui(lej[i], 0L);
 	}
+	// $c_a = \mathrm{com}_{ck}(\Delta_2 - (m_{\pi(2)} - x)\Delta_1 - a_1 d_2,
+	//                          \ldots,\Delta_n - (m_{\pi(n)} - x)\Delta_{n-1}
+	//                                  - a_{n-1} d_n;r_a)$
 	com->CommitBy(c_a, r_a, lej);
+	// send $c_d$, $c_\Delta$, and $c_a$ to the verifier
 	out << c_d << std::endl << c_Delta << std::endl << c_a << std::endl;
 	
 	// prover: third move
@@ -475,6 +482,7 @@ void GrothSKC::Prove_interactive
 		mpz_mod(e, e, exp2l_e);
 	
 	// prover: fourth move
+	// compute $f_i = e m_{\pi(i)} + d_i$
 	for (size_t i = 0; i < f.size(); i++)
 	{
 		mpz_mul(f[i], e, m[pi[i]]);
@@ -482,10 +490,13 @@ void GrothSKC::Prove_interactive
 		mpz_add(f[i], f[i], d[i]);
 		mpz_mod(f[i], f[i], com->q);
 	}
+	// compute $z = e r + r_d$
 	mpz_mul(z, e, r);
 	mpz_mod(z, z, com->q);
 	mpz_add(z, z, r_d);
 	mpz_mod(z, z, com->q);
+	// compute $f_{\Delta_i} = e (\Delta_{i+1} - (m_{\pi(i+1)} - x)\Delta_i
+	//                            - a_i d_{i+1}) - \Delta_i d_{i+1}$
 	for (size_t i = 0; i < (f_Delta.size() - 1); i++)
 	{
 		mpz_set(foo, Delta[i + 1]);
@@ -507,16 +518,18 @@ void GrothSKC::Prove_interactive
 		mpz_mod(foo, foo, com->q);
 		mpz_set(f_Delta[i], foo);
 	}
+	// compute $z_{\Delta} = e r_a + r_{\Delta}$
 	mpz_mul(z_Delta, e, r_a);
 	mpz_mod(z_Delta, z_Delta, com->q);
 	mpz_add(z_Delta, z_Delta, r_Delta);
 	mpz_mod(z_Delta, z_Delta, com->q);
 	for (size_t i = 0; i < f.size(); i++)
-		out << f[i] << std::endl;
-	out << z << std::endl;
+		out << f[i] << std::endl; // send $f_1,\ldots,f_n$ to verifier
+	out << z << std::endl; // send $z$ to verifier
 	for (size_t i = 0; i < (f_Delta.size() - 1); i++)
-		out << f_Delta[i] << std::endl;
-	out << z_Delta << std::endl;
+		out << f_Delta[i] << std::endl; //send $f_{\Delta_1},\ldots,
+		                                //      f_{\Delta_{n-1}}$ to verifier
+	out << z_Delta << std::endl; // send $z_{\Delta}$ to verifier
 	
 	// release
 	mpz_clear(x), mpz_clear(r_d), mpz_clear(r_Delta), mpz_clear(r_a),
