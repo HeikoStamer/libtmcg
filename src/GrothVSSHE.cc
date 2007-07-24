@@ -186,7 +186,7 @@ bool PedersenCommitmentScheme::CheckGroup
 			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
 				throw false;
 		
-		// Check whether $k$ is not a divisible by $q$, i.e. $q, k$ are coprime.
+		// Check whether $k$ is not divisible by $q$, i.e. $q, k$ are coprime.
 		mpz_gcd(foo, q, k);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
@@ -613,8 +613,8 @@ bool GrothSKC::Verify_interactive
 				throw false;
 		}
 		
-		// check whether $f_{\Delta_1}, \ldots, f_{\Delta_{n-1}}$ and $z$
-		// are from $\mathbb{Z}_q$
+		// check whether $f_{\Delta_1}, \ldots, f_{\Delta_{n-1}}$
+		// and $z_{\Delta}$ are from $\mathbb{Z}_q$
 		if (!(mpz_cmp(z_Delta, com->q) < 0))
 			throw false;
 		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
@@ -625,7 +625,8 @@ bool GrothSKC::Verify_interactive
 		
 		if (optimizations)
 		{
-			// randomization technique from section 6, paragraph 'Batch verification'
+			// randomization technique from section 6,
+			// paragraph 'Batch verification' [Gr05]
 			mpz_t alpha;
 			mpz_init(alpha);
 			// pick $\alpha\in_R\{0, 1\}^{\ell_e}$ at random
@@ -661,14 +662,14 @@ bool GrothSKC::Verify_interactive
 		}
 		else
 		{
-			// check whether $c^e c_d = \mathrm{com}(f_1, \ldots, f_n; z)$
+			// check whether $c^e c_d = \mathrm{com}_{ck}(f_1,\ldots,f_n; z)$
 			mpz_powm(foo, c, e, com->p);
 			mpz_mul(foo, foo, c_d);
 			mpz_mod(foo, foo, com->p);
 			if (!com->Verify(foo, z, f))
 				throw false;
-			// check whether $c_a^e c_{\Delta} = \mathrm{com}(f_{\Delta_1},
-			// \ldots, f_{\Delta_{n-1}}; z_{Delta})$
+			// check whether $c_a^e c_{\Delta} = \mathrm{com}_{ck}
+			//            (f_{\Delta_1},\ldots,f_{\Delta_{n-1}}; z_{\Delta})$
 			mpz_powm(foo, c_a, e, com->p);
 			mpz_mul(foo, foo, c_Delta);
 			mpz_mod(foo, foo, com->p);
@@ -775,10 +776,9 @@ bool GrothSKC::Verify_interactive
 			in >> f_Delta[i];
 		in >> z_Delta;
 		
-		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}$
-		if (!(mpz_cmp(c_d, com->p) < 0) || !(mpz_cmp(c_a, com->p) < 0) ||
-			!(mpz_cmp(c_Delta, com->p) < 0) || !mpz_cmp_ui(c_d, 0L) ||
-			!mpz_cmp_ui(c_a, 0L) || !mpz_cmp_ui(c_Delta, 0L))
+		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}_{ck}$
+		if (!(com->TestMembership(c_d) && com->TestMembership(c_a) &&
+			com->TestMembership(c_Delta)))
 				throw false;
 		
 		// check whether $f_1, \ldots, f_n, z \in\mathbb{Z}_q$
@@ -790,8 +790,8 @@ bool GrothSKC::Verify_interactive
 				throw false;
 		}
 		
-		// check whether $f_{\Delta_1}, \ldots, f_{\Delta_{n-1}}$ and $z$
-		// are from $\mathbb{Z}_q$
+		// check whether $f_{\Delta_1}, \ldots, f_{\Delta_{n-1}}$
+		// and $z_{\Delta}$ are from $\mathbb{Z}_q$
 		if (!(mpz_cmp(z_Delta, com->q) < 0))
 			throw false;
 		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
@@ -802,7 +802,8 @@ bool GrothSKC::Verify_interactive
 		
 		if (optimizations)
 		{
-			// randomization technique from section 6, paragraph 'Batch verification'
+			// randomization technique from section 6,
+			// paragraph 'Batch verification'
 			mpz_t alpha;
 			mpz_init(alpha);
 			// pick $\alpha\in_R\{0, 1\}^{\ell_e}$ at random
@@ -864,7 +865,7 @@ bool GrothSKC::Verify_interactive
 			if (!com->Verify(foo, z, lej))
 				throw false;
 			// check whether $c_a^e c_{\Delta} = \mathrm{com}(f_{\Delta_1},
-			// \ldots, f_{\Delta_{n-1}}; z_{Delta})$
+			// \ldots, f_{\Delta_{n-1}}; z_{\Delta})$
 			mpz_powm(foo, c_a, e, com->p);
 			mpz_mul(foo, foo, c_Delta);
 			mpz_mod(foo, foo, com->p);
@@ -1257,12 +1258,11 @@ bool GrothVSSHE::Verify_interactive
 		if (!skc->Verify_interactive(foo, f, m, in, out))
 			throw false;
 		
-		// check whether $c, c_d \in\mathcal{C}_{\mathrm{com}}$
-		if (!(mpz_cmp(c, com->p) < 0) || !(mpz_cmp(c_d, com->p) < 0) || 
-			!mpz_cmp_ui(c, 0L) || !mpz_cmp_ui(c_d, 0L))
-				throw false;
+		// check whether $c, c_d \in\mathcal{C}_{ck}$
+		if (!(com->TestMembership(c) && com->TestMembership(c_d)))
+			throw false;
 		
-		// check whether $E_d\in\mathcal{C}$
+		// check whether $E_d\in\mathcal{C}_{pk}$
 		mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
 		mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
 		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
@@ -1276,8 +1276,8 @@ bool GrothVSSHE::Verify_interactive
 					throw false;
 		}
 		
-		// check whether $Z\in\mathcal{R}$
-		if (mpz_cmp(Z, q) >= 0)
+		// check whether $Z\in\mathcal{R}_{pk}$
+		if ((mpz_cmp_ui(Z, 0L) <= 0) || (mpz_cmp(Z, q) >= 0))
 			throw false;
 		
 		// check whether
