@@ -126,12 +126,8 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
 bool BarnettSmartVTMF_dlog_GroupQR::CheckElement
 	(mpz_srcptr a) const
 {
-	// Check whether $a < p$.
-	if (mpz_cmp(a, p) >= 0)
-		return false;
-	
-	// Check whether $a$ is not equal to zero.
-	if (!mpz_cmp_ui(a, 0L))
+	// Check whether $0 < a < p$.
+	if ((mpz_cmp_ui(a, 0L) <= 0) || (mpz_cmp(a, p) >= 0))
 		return false;
 	
 	// Check whether $a$ is a quadratic residue.

@@ -113,9 +113,8 @@ void mpz_fpowm_precompute
 {
 	size_t i;
 	
-	assert(t <= TMCG_MAX_FPOWM_T);
 	mpz_set(fpowm_table[0], m);
-	for (i = 1; i < t; i++)
+	for (i = 1; ((i < t) && (i < TMCG_MAX_FPOWM_T)); i++)
 	{
 		mpz_mul(fpowm_table[i], fpowm_table[i-1], fpowm_table[i-1]);
 		mpz_mod(fpowm_table[i], fpowm_table[i], p);
@@ -133,22 +132,26 @@ void mpz_fpowm
 	if (mpz_sgn(x) == -1)
 		mpz_neg(xx, x);
 	
-	assert(mpz_sizeinbase(xx, 2L) <= TMCG_MAX_FPOWM_T);
-	mpz_set_ui(res, 1L);
-	for (i = 0; i < mpz_sizeinbase(xx, 2L); i++)
+	if (mpz_sizeinbase(xx, 2L) <= TMCG_MAX_FPOWM_T)
 	{
-		if (mpz_tstbit(xx, i))
+		mpz_set_ui(res, 1L);
+		for (i = 0; i < mpz_sizeinbase(xx, 2L); i++)
 		{
-			mpz_mul(res, res, fpowm_table[i]);
-			mpz_mod(res, res, p);
+			if (mpz_tstbit(xx, i))
+			{
+				mpz_mul(res, res, fpowm_table[i]);
+				mpz_mod(res, res, p);
+			}
+		}
+		/* invert the result, if x was negative */
+		if (mpz_sgn(x) == -1)
+		{
+			if (!mpz_invert(res, res, p))
+				mpz_set_ui(res, 0L);
 		}
 	}
-	/* invert the result, if x was negative */
-	if (mpz_sgn(x) == -1)
-	{
-		if (!mpz_invert(res, res, p))
-			mpz_set_ui(res, 0L);
-	}
+	else
+		mpz_set_ui(res, 0L);
 	mpz_clear(xx);
 }
 
@@ -160,16 +163,20 @@ void mpz_fpowm_ui
 	mpz_t x;
 	
 	mpz_init_set_ui(x, x_ui);
-	assert(mpz_sizeinbase(x, 2L) <= TMCG_MAX_FPOWM_T);
-	mpz_set_ui(res, 1L);
-	for (i = 0; i < mpz_sizeinbase(x, 2L); i++)
+	if (mpz_sizeinbase(x, 2L) <= TMCG_MAX_FPOWM_T)
 	{
-		if (mpz_tstbit(x, i))
+		mpz_set_ui(res, 1L);
+		for (i = 0; i < mpz_sizeinbase(x, 2L); i++)
 		{
-			mpz_mul(res, res, fpowm_table[i]);
-			mpz_mod(res, res, p);
+			if (mpz_tstbit(x, i))
+			{
+				mpz_mul(res, res, fpowm_table[i]);
+				mpz_mod(res, res, p);
+			}
 		}
 	}
+	else
+		mpz_set_ui(res, 0L);
 	mpz_clear(x);
 }
 
@@ -186,34 +193,38 @@ void mpz_fspowm
 	else
 		mpz_neg(tmp, x);
 	
-	assert(mpz_sizeinbase(xx, 2L) <= TMCG_MAX_FPOWM_T);
-	mpz_set_ui(res, 1L);
-	for (i = 0; i < mpz_sizeinbase(xx, 2L); i++)
+	if (mpz_sizeinbase(xx, 2L) <= TMCG_MAX_FPOWM_T)
 	{
-		if (mpz_tstbit(xx, i))
+		mpz_set_ui(res, 1L);
+		for (i = 0; i < mpz_sizeinbase(xx, 2L); i++)
 		{
-			mpz_mul(res, res, fpowm_table[i]);
-			mpz_mod(res, res, p);
+			if (mpz_tstbit(xx, i))
+			{
+				mpz_mul(res, res, fpowm_table[i]);
+				mpz_mod(res, res, p);
+			}
+			else
+			{
+				/* Timing attack protection */
+				mpz_mul(tmp, res, fpowm_table[i]);
+				mpz_mod(tmp, tmp, p);
+			}
+		}
+		/* invert the input, if x was negative */
+		if (mpz_sgn(x) == -1)
+		{
+			if (!mpz_invert(res, res, p))
+				mpz_set_ui(res, 0L);
 		}
 		else
 		{
 			/* Timing attack protection */
-			mpz_mul(tmp, res, fpowm_table[i]);
-			mpz_mod(tmp, tmp, p);
+			if (!mpz_invert(tmp, res, p))
+				mpz_set_ui(tmp, 0L);
 		}
 	}
-	/* invert the input, if x was negative */
-	if (mpz_sgn(x) == -1)
-	{
-		if (!mpz_invert(res, res, p))
-			mpz_set_ui(res, 0L);
-	}
 	else
-	{
-		/* Timing attack protection */
-		if (!mpz_invert(tmp, res, p))
-			mpz_set_ui(tmp, 0L);
-	}
+		mpz_set_ui(res, 0L);
 	mpz_clear(tmp), mpz_clear(xx);
 }
 

@@ -157,12 +157,8 @@ bool BarnettSmartVTMF_dlog::CheckElement
 	mpz_init(foo);
 	try
 	{
-		// Check whether $a < p$.
-		if (mpz_cmp(a, p) >= 0)
-			throw false;
-		
-		// Check whether $a$ is not equal to zero.
-		if (!mpz_cmp_ui(a, 0L))
+		// Check whether $0 < a < p$.
+		if ((mpz_cmp_ui(a, 0L) <= 0) || (mpz_cmp(a, p) >= 0))
 			throw false;
 		
 		// Check whether $a^q \equiv 1 \pmod{p}$.
@@ -260,7 +256,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 			throw false;
 		
 		// check the size of $r$
-		if (mpz_cmp(r, q) >= 0)
+		if (mpz_cmpabs(r, q) >= 0)
 			throw false;
 		
 		// verify the proof of knowledge [CaS97]
@@ -314,7 +310,8 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_RemoveKey
 		if (h_j.find(fp.str()) != h_j.end())
 		{
 			// update the global key
-			assert(mpz_invert(foo, h_j[fp.str()], p));
+			if (!mpz_invert(foo, h_j[fp.str()], p))
+				throw false;
 			mpz_invert(foo, h_j[fp.str()], p);
 			mpz_mul(h, h, foo);
 			mpz_mod(h, h, p);
@@ -395,13 +392,14 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 	try
 	{
 		// check the size of $r$
-		if (mpz_cmp(r, q) >= 0)
+		if (mpz_cmpabs(r, q) >= 0)
 			throw false;
 		
 		// verify proof of knowledge (equality of discrete logarithms) [CaS97]
 		if (fpowm_usage)
 		{
-			assert(!mpz_cmp(g, gg));
+			if (!mpz_cmp(g, gg))
+				throw false;
 			mpz_fpowm(fpowm_table_g, a, gg, r, p);
 		}
 		else
@@ -411,7 +409,8 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 		mpz_mod(a, a, p);
 		if (fpowm_usage)
 		{
-			assert(!mpz_cmp(h, hh));
+			if (!mpz_cmp(h, hh))
+				throw false;
 			mpz_fpowm(fpowm_table_h, b, hh, r, p);
 		}
 		else
@@ -522,7 +521,7 @@ bool BarnettSmartVTMF_dlog::OR_Verify
 	try
 	{
 		// check the size of $r_1$ and $r_2$
-		if ((mpz_cmp(r_1, q) >= 0L) || (mpz_cmp(r_2, q) >= 0L))
+		if ((mpz_cmpabs(r_1, q) >= 0L) || (mpz_cmpabs(r_2, q) >= 0L))
 			throw false;
 		
 		// verify (S)PK ($y_1 = g_1^\alpha \vee y_2 = g_2^\beta$) [CaS97]
