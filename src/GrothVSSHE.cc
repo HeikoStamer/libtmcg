@@ -312,7 +312,7 @@ bool PedersenCommitmentScheme::Verify
 		}
 		
 		// Verify the commitment: 1. $c\in\mathbb{Z}_p$ and 2. $c = c'$
-		if ((mpz_cmp(c, p) >= 1) || mpz_cmp(c, c2))
+		if ((mpz_cmp_ui(c, 0L) < 0) || (mpz_cmp(c, p) >= 0) || mpz_cmp(c, c2))
 			throw false;
 		
 		throw true;
