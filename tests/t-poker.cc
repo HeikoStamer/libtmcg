@@ -100,7 +100,7 @@ void start_instance
 			GrothVSSHE *vsshe;
 			if (player == 0)
 			{
-				// create and publish VSSGE instance as leader
+				// create and publish VSSHE instance as leader
 				start_clock();
 				vsshe = new GrothVSSHE(DECKSIZE, 
 					vtmf->p, vtmf->q, vtmf->k, vtmf->g, vtmf->h);
