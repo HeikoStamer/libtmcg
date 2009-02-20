@@ -44,15 +44,15 @@ void g
 	{
 		/* construct the expanded input y = x || TMCG<i> || x */
 		char *data = new char[9 + (2 * isize)];
-		std::memcpy(data, input, isize);
+		memcpy(data, input, isize);
 		snprintf(data + isize, 9, "libTMCG%02x", (unsigned int)i);
-		std::memcpy(data + isize + 9, input, isize);
+		memcpy(data + isize + 9, input, isize);
 		
 		/* using h(y) "in some nonstandard way" with "output truncated" [BR95] */
 		h(out + (i * usesize), data, 9 + (2 * isize));
 		delete [] data;
 	}
-	std::memcpy(output, out, osize);
+	memcpy(output, out, osize);
 	delete [] out;
 }
 

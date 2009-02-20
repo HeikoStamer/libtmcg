@@ -454,16 +454,16 @@ std::string TMCG_PublicKey::encrypt
 	gcry_randomize((unsigned char*)r, rabin_s1, GCRY_STRONG_RANDOM);
 	
 	char *Mt = new char[rabin_s2], *g12 = new char[rabin_s2];
-	std::memcpy(Mt, value, TMCG_SAEP_S0);
-	std::memset(Mt + TMCG_SAEP_S0, 0, TMCG_SAEP_S0);
+	memcpy(Mt, value, TMCG_SAEP_S0);
+	memset(Mt + TMCG_SAEP_S0, 0, TMCG_SAEP_S0);
 	g(g12, rabin_s2, r, rabin_s1);
 	
 	for (size_t i = 0; i < rabin_s2; i++)
 		Mt[i] ^= g12[i];
 	
 	char *yy = new char[rabin_s2 + rabin_s1];
-	std::memcpy(yy, Mt, rabin_s2);
-	std::memcpy(yy + rabin_s2, r, rabin_s1);
+	memcpy(yy, Mt, rabin_s2);
+	memcpy(yy + rabin_s2, r, rabin_s1);
 	mpz_init(vdata);
 	mpz_import(vdata, 1, -1, rabin_s2 + rabin_s1, 1, 0, yy);
 	delete [] yy, delete [] g12, delete [] Mt, delete [] r;
@@ -516,9 +516,9 @@ bool TMCG_PublicKey::verify
 		char *yy = new char[mnsize + 1024];
 		size_t cnt = 1;
 		mpz_export(yy, &cnt, -1, mnsize, 1, 0, foo);
-		std::memcpy(w, yy, mdsize);
-		std::memcpy(r, yy + mdsize, TMCG_PRAB_K0);
-		std::memcpy(gamma, yy + mdsize + TMCG_PRAB_K0,
+		memcpy(w, yy, mdsize);
+		memcpy(r, yy + mdsize, TMCG_PRAB_K0);
+		memcpy(gamma, yy + mdsize + TMCG_PRAB_K0,
 			mnsize - mdsize - TMCG_PRAB_K0);
 		
 		char *g12 = new char[mnsize];
@@ -528,13 +528,13 @@ bool TMCG_PublicKey::verify
 			r[i] ^= g12[i];
 		
 		char *Mr = new char[data.length() + TMCG_PRAB_K0];
-		std::memcpy(Mr, data.c_str(), data.length());
-		std::memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
+		memcpy(Mr, data.c_str(), data.length());
+		memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
 		
 		char *w2 = new char[mdsize];
 		h(w2, Mr, data.length() + TMCG_PRAB_K0);
 		
-		bool ok = (std::memcmp(w, w2, mdsize) == 0) && (std::memcmp(gamma,
+		bool ok = (memcmp(w, w2, mdsize) == 0) && (memcmp(gamma,
 			g12 + TMCG_PRAB_K0, mnsize - mdsize - TMCG_PRAB_K0) == 0);
 		delete [] yy, delete [] w, delete [] r, delete [] gamma, 
 			delete [] g12, delete [] Mr, delete [] w2;

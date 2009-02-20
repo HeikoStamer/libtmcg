@@ -23,7 +23,7 @@
 #include "libTMCG.hh"
 
 // LibTMCG identifier
-volatile std::string LibTMCG_ID = 
+std::string LibTMCG_ID = 
     "LibTMCG "VERSION"  (C) Heiko Stamer, License: GNU GPL version 2";
 
 // LibTMCG general functions

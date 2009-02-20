@@ -448,17 +448,17 @@ bool TMCG_SecretKey::decrypt
 			{
 				size_t cnt = 1;
 				mpz_export(yy, &cnt, -1, rabin_s2 + rabin_s1, 1, 0, vroot[k]);
-				std::memcpy(Mt, yy, rabin_s2);
-				std::memcpy(r, yy + rabin_s2, rabin_s1);
+				memcpy(Mt, yy, rabin_s2);
+				memcpy(r, yy + rabin_s2, rabin_s1);
 				g(g12, rabin_s2, r, rabin_s1);
 				
 				for (size_t i = 0; i < rabin_s2; i++)
 					Mt[i] ^= g12[i];
 				
-				std::memset(g12, 0, TMCG_SAEP_S0);
-				if (std::memcmp(Mt + TMCG_SAEP_S0, g12, TMCG_SAEP_S0) == 0)
+				memset(g12, 0, TMCG_SAEP_S0);
+				if (memcmp(Mt + TMCG_SAEP_S0, g12, TMCG_SAEP_S0) == 0)
 				{
-					std::memcpy(value, Mt, TMCG_SAEP_S0);
+					memcpy(value, Mt, TMCG_SAEP_S0);
 					throw true;
 				}
 			}
@@ -496,8 +496,8 @@ std::string TMCG_SecretKey::sign
 		gcry_randomize((unsigned char*)r, TMCG_PRAB_K0, GCRY_STRONG_RANDOM);
 		
 		char *Mr = new char[data.length() + TMCG_PRAB_K0];
-		std::memcpy(Mr, data.c_str(), data.length());
-		std::memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
+		memcpy(Mr, data.c_str(), data.length());
+		memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
 		
 		char *w = new char[mdsize];
 		h(w, Mr, data.length() + TMCG_PRAB_K0);
@@ -509,9 +509,9 @@ std::string TMCG_SecretKey::sign
 			r[i] ^= g12[i];
 		
 		char *yy = new char[mnsize];
-		std::memcpy(yy, w, mdsize);
-		std::memcpy(yy + mdsize, r, TMCG_PRAB_K0);
-		std::memcpy(yy + mdsize + TMCG_PRAB_K0, g12 + TMCG_PRAB_K0,
+		memcpy(yy, w, mdsize);
+		memcpy(yy + mdsize, r, TMCG_PRAB_K0);
+		memcpy(yy + mdsize + TMCG_PRAB_K0, g12 + TMCG_PRAB_K0,
 			mnsize - mdsize - TMCG_PRAB_K0);
 		mpz_import(foo, 1, -1, mnsize, 1, 0, yy);
 		
