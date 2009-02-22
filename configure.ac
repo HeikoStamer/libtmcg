@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.42 $)
+AC_REVISION($Revision: 1.43 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.1.2, stamer@gaos.org)
@@ -39,6 +39,7 @@ LIBTMCG_CONFIG_API_VERSION=2
 AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION)
 AC_LANG(C++)
 AC_CONFIG_SRCDIR(src/libTMCG.hh)
+#AC_CONFIG_MACRO_DIR([m4])
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
