@@ -9,7 +9,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007, 2009  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -180,7 +180,8 @@ void BarnettSmartVTMF_dlog::RandomElement
 {
 	mpz_t b;
 	
-	// Choose randomly and uniformly an element $b$ from $\mathbb{Z}_q$.
+	// Choose randomly and uniformly an element $b$ from
+	// $\mathbb{Z}_q \setminus \{ 0 \}$.
 	mpz_init(b);
 	do
 		mpz_srandomm(b, q);
@@ -554,7 +555,8 @@ bool BarnettSmartVTMF_dlog::OR_Verify
 void BarnettSmartVTMF_dlog::MaskingValue
 	(mpz_ptr r) const
 {
-	// Choose randomly and uniformly an element from $\mathbb{Z}_q$.
+	// Choose randomly and uniformly an element from
+	// $\mathbb{Z}_q \setminus \{0, 1\}$.
 	do
 		mpz_srandomm(r, q);
 	while (!mpz_cmp_ui(r, 0L) || !mpz_cmp_ui(r, 1L));
