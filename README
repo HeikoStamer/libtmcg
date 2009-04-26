@@ -113,7 +113,7 @@ Requirements
     ftp://ftp.gnupg.org/
 
   The library was tested (++ successful, -- erroneous) on the following
-  platforms:
+  platforms with the given compilers, respectively:
 
   ++ GNU/Linux (Debian 3.0)      i686      gcc 2.95.4
   ++ GNU/Linux (Debian 3.1)      i686      gcc 3.3.5
@@ -122,10 +122,11 @@ Requirements
   ++ SunOS 5.8, Solaris 2.7      sparc     gcc 3.3.2
   ++ SunOS 5.10, Solaris 10      sparc     gcc 3.4.3
   ++ GNU/Linux (Sharp Zaurus)    arm       zgcc 2.95.2
+  ++ GNU/Linux (Gentoo Linux)    i686      gcc 4.2.4 (Gentoo 4.2.4-r1 p1.1)
 
 Build & Install
 ---------------
-  You should proceed by the following steps:
+  You should proceed by executing the following magic commands:
 
     1. ./configure
     2. make
