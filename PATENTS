@@ -1,7 +1,7 @@
-Here we list known patents which are related to used techniques or provided
-functionalities of this software. We stress that in some countries the usage
-of LibTMCG may violate the claims of these patents and thus is prohibited
-by law. However, I am not a lawyer ...
+This file contains a list of known patents which are related to used techniques
+and provided functionalities of the software. We stress that in some countries
+the free use of LibTMCG (in the spirit of the GNU GPL) may violate some claims
+of these patents and thus is prohibited by law. However, I am not a lawyer ...
 
 * EP0384475 (1990-08-29, SCHNORR CLAUS PETER)
   Method for subscriber identification and for the generation and verification
@@ -60,7 +60,7 @@ by law. However, I am not a lawyer ...
 ? Electronic Card Games in general:
   http://v3.espacenet.com/results?sf=a&FIRST=1&CY=ep&LG=en&DB=EPODOC&TI=electronic+and+card+and+games&AB=&PN=&AP=&PR=&PD=&PA=&IN=&EC=&IC=&=&=&=&=&=
 
-? Secret Electronic Voting in general:
-  http://v3.espacenet.com/results?sf=a&FIRST=1&CY=ep&LG=en&DB=EPODOC&TI=&AB=secret+voting&PN=&AP=&PR=&PD=&PA=&IN=&EC=&IC=&=&=&=&=&=
+? Electronic Voting in general:
+  http://v3.espacenet.com/results?sf=a&FIRST=1&CY=ep&LG=en&DB=EPODOC&TI=&AB=electronic+voting&PN=&AP=&PR=&PD=&PA=&IN=&EC=&IC=&=&=&=&=&=
 
 Finally, I want to say I am disappointed but I have not lost either hope.
