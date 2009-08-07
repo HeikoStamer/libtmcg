@@ -1,5 +1,6 @@
-1.1.2
+1.1.3
 
+1.1.2 Small bugfixes have been applied in order to compile with gcc 4.3.x.
 1.1.1 A major security bug (missing range check) was fixed, which allows an
       adversary to choose trivial group generators. This flaw has a crucial
       impact on the confidentiality of private cards. Thus, we strongly
