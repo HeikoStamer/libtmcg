@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
+# Copyright (C) 2005, 2006, 2007, 2009  Heiko Stamer <stamer@gaos.org>
 #
 # This file is part of LibTMCG.
 #
@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.43 $)
+AC_REVISION($Revision: 1.44 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.1.2, stamer@gaos.org)

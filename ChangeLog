@@ -1,4 +1,5 @@
-*
+* [2009-08-07] release 1.1.2 of LibTMCG
+* small bugfixes for GCC 4.3.x
 * [2007-05-05] release 1.1.1 of LibTMCG
 * [2007-05-05] security fix (trivial group generator attack)
 * [2007-04-16] release 1.1.0 of LibTMCG
