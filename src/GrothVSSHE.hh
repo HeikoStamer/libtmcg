@@ -6,7 +6,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006, 2007, 2009  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -52,48 +52,8 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
-class PedersenCommitmentScheme
-{
-	private:
-		mpz_t						*fpowm_table_h;
-		std::vector<mpz_t*>			fpowm_table_g;
-		const unsigned long int		F_size, G_size;
-	
-	public:
-		mpz_t						p, q, k, h;
-		std::vector<mpz_ptr>		g;
-		
-		PedersenCommitmentScheme
-			(size_t n,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
-		PedersenCommitmentScheme
-			(size_t n, mpz_srcptr p_ENC, mpz_srcptr q_ENC,
-			mpz_srcptr k_ENC, mpz_srcptr h_ENC,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
-		PedersenCommitmentScheme
-			(size_t n, std::istream &in,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
-		bool CheckGroup
-			() const;
-		void PublishGroup
-			(std::ostream &out) const;
-		void Commit
-			(mpz_ptr c, mpz_ptr r, std::vector<mpz_ptr> m) const;
-		void CommitBy
-			(mpz_ptr c, mpz_srcptr r, std::vector<mpz_ptr> m,
-			bool TimingAttackProtection = true) const;
-		bool TestMembership
-			(mpz_srcptr c) const;
-		bool Verify
-			(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m) const;
-		~PedersenCommitmentScheme
-			();
-};
-
-// =============================================================================
+  // Pedersen Commitment Scheme
+  #include "PedersenCOM.hh"
 
 class GrothSKC
 {
