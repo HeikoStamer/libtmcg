@@ -1,0 +1,541 @@
+/*******************************************************************************
+  HooghSchoenmakersSkoricVillegasVRHE.cc,
+                         |V|erifiable |R|otation of |H|omomorphic |E|ncryptions
+
+     Sebastiaan de Hoogh, Berry Schoenmakers, Boris Skoric, and Jose Villegas:
+       'Verifiable Rotation of Homomorphic Encryptions',
+     Public Key Cryptography 2009, LNCS 5443, pp. 393--410, Springer 2009.
+
+   This file is part of LibTMCG.
+
+ Copyright (C) 2009  Heiko Stamer <stamer@gaos.org>
+
+   LibTMCG is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   LibTMCG is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with LibTMCG; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+*******************************************************************************/
+
+#include "HooghSchoenmakersSkoricVillegasVRHE.hh"
+
+HooghSchoenmakersSkoricVillegasPUBROTZK::HooghSchoenmakersSkoricVillegasPUBROTZK
+	(mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC)
+{
+	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), mpz_init_set(g, g_ENC),
+		mpz_init_set(h, h_ENC);
+	
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive
+	(size_t r, const std::vector<mpz_ptr> &s, 
+	const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
+	std::istream &in, std::ostream &out) const
+{
+//TODO
+}
+
+bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
+	(const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
+	std::istream &in, std::ostream &out) const
+{
+//TODO
+}
+
+HooghSchoenmakersSkoricVillegasPUBROTZK::~HooghSchoenmakersSkoricVillegasPUBROTZK
+	()
+{
+	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
+	
+	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	delete [] fpowm_table_g, delete [] fpowm_table_h;
+}
+
+// =============================================================================
+
+HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
+	(unsigned long int fieldsize, unsigned long int subgroupsize):
+			F_size(fieldsize), G_size(subgroupsize)
+{
+//TODO
+}
+
+HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
+	(mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC,
+	unsigned long int fieldsize, unsigned long int subgroupsize):
+			F_size(fieldsize), G_size(subgroupsize)
+{
+	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), mpz_init_set(g, g_ENC),
+		mpz_init_set(h, h_ENC);
+	
+	// Initialize the PUB-ROT-ZK argument
+	pub_rot_zk = new HooghSchoenmakersSkoricVillegasPUBROTZK(p, q, g, h);
+	
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
+	(std::istream &in,
+	unsigned long int fieldsize, unsigned long int subgroupsize):
+			F_size(fieldsize), G_size(subgroupsize)
+{
+	std::stringstream lej;
+	
+	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(h);
+	in >> p >> q >> g >> h;
+	
+	// Initialize the PUB-ROT-ZK argument
+	pub_rot_zk = new HooghSchoenmakersSkoricVillegasPUBROTZK(p, q, g, h);
+	
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+bool HooghSchoenmakersSkoricVillegasVRHE::CheckGroup
+	() const
+{
+	mpz_t foo, k;
+	
+	mpz_init(foo), mpz_init(k);
+	try
+	{
+		// Compute $k := (p - 1) / q$
+		mpz_set(k, p);
+		mpz_sub_ui(k, k, 1L);
+		mpz_div(k, k, q);
+		
+		// Check whether $p$ and $q$ have appropriate sizes.
+		if ((mpz_sizeinbase(p, 2L) < F_size) || 
+			(mpz_sizeinbase(q, 2L) < G_size))
+				throw false;
+		
+		// Check whether $p$ has the correct form, i.e. $p = kq + 1$.
+		mpz_mul(foo, q, k);
+		mpz_add_ui(foo, foo, 1L);
+		if (mpz_cmp(foo, p))
+			throw false;
+		
+		// Check whether $p$ and $q$ are both (probable) prime with
+		// a soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
+		if (!mpz_probab_prime_p(p, TMCG_MR_ITERATIONS) || 
+			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
+				throw false;
+		
+		// Check whether $k$ is not divisible by $q$, i.e. $q, k$ are coprime.
+		mpz_gcd(foo, q, k);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		
+		// Check whether the elements $h$ and $g$ are of order $q$.
+		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		
+		// Check whether the elements $h$ and $g$ are different and non-trivial,
+		// i.e., $1 < h, g < p-1$.
+		mpz_sub_ui(foo, p, 1L); // compute $p-1$
+		if ((mpz_cmp_ui(h, 1L) <= 0) || (mpz_cmp(h, foo) >= 0))
+			throw false;
+		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, foo) >= 0))
+			throw false;
+		if (!mpz_cmp(g, h))
+			throw false;
+		
+		// everything is sound
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo), mpz_clear(k);
+		return return_value;
+	}
+}
+
+void HooghSchoenmakersSkoricVillegasVRHE::PublishGroup
+	(std::ostream& out) const
+{
+	out << p << std::endl << q << std::endl << g << std::endl << h << std::endl;
+}
+
+void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive
+	(size_t r, const std::vector<mpz_ptr> &s,
+	const std::vector<std::pair<mpz_ptr, mpz_ptr> > &X,
+	const std::vector<std::pair<mpz_ptr, mpz_ptr> > &Y,
+	std::istream &in, std::ostream &out) const
+{
+	assert(s.size() >= 2);
+	assert(r < s.size());
+	assert(s.size() == X.size());
+	assert(X.size() == Y.size());
+	
+	// initialize
+	mpz_t v, lambda, foo, bar, lhs, rhs;
+	std::pair<mpz_ptr, mpz_ptr> LHS, RHS;
+	std::vector<mpz_ptr> alpha, uk, tk, hk, ok, pk, mk, fk, tau, rho, mu;
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > Ak, Fk;
+	
+	mpz_init(v), mpz_init(lambda), mpz_init(foo), mpz_init(bar),
+		mpz_init(lhs), mpz_init(rhs);
+	LHS.first = new mpz_t(), LHS.second = new mpz_t(),
+		RHS.first = new mpz_t(), RHS.second = new mpz_t();
+	mpz_init(LHS.first), mpz_init(LHS.second),
+		mpz_init(RHS.first), mpz_init(RHS.second);
+	for (size_t i = 0; i < s.size(); i++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(),
+			tmp4 = new mpz_t(), tmp5 = new mpz_t(), tmp6 = new mpz_t(),
+			tmpA = new mpz_t(), tmpB = new mpz_t(), tmpC = new mpz_t(),
+			tmpD = new mpz_t(), tmpE = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4),
+			mpz_init(tmp5), mpz_init(tmp6), mpz_init(tmpA), mpz_init(tmpB),
+			mpz_init(tmpC), mpz_init(tmpD), mpz_init(tmpE);
+		alpha.push_back(tmp1), hk.push_back(tmp2), fk.push_back(tmp3),
+			tau.push_back(tmp4), rho.push_back(tmp5), mu.push_back(tmp6),
+			uk.push_back(tmpA), tk.push_back(tmpB), ok.push_back(tmpC),
+			pk.push_back(tmpD), mk.push_back(tmpE);
+		mpz_ptr tmp7 = new mpz_t(), tmp8 = new mpz_t(),
+			tmp9 = new mpz_t(), tmp0 = new mpz_t();
+		mpz_init(tmp7), mpz_init(tmp8), mpz_init(tmp9), mpz_init(tmp0);
+		Ak.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp7, tmp8)),
+			Fk.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp9, tmp0));
+	}
+	
+	// prover: first move
+	for (size_t i = 0; i < alpha.size(); i++)
+		in >> alpha[i];
+	
+	// prover: second move
+	// Note that we throughout assume that $h = \tilde{h}$ holds.
+	// Note that we have $Y_k = (d_k, e_k)$, for all $0 \le k \le n-1$.
+	mpz_set_ui(v, 0L); // v acts like an additive accumulator
+	for (size_t i = 0; i < hk.size(); i++)
+	{
+		size_t kr = (i >= r) ? i-r : s.size() - (r-i) ; // compute $k - r (mod n)$
+std::cerr << "kr = " << kr << std::endl;
+		
+		// $u_k, t_k \in_R \mathbb{Z}_q$
+		mpz_srandomm(uk[i], q), mpz_srandomm(tk[i], q);
+		// compute $h_k = g^{\alpha_{k-r}} h^{u_k}$
+		mpz_fspowm(fpowm_table_g, foo, g, alpha[kr], p);
+		mpz_fspowm(fpowm_table_h, bar, h, uk[i], p);
+		mpz_mul(hk[i], foo, bar);
+		mpz_mod(hk[i], hk[i], p);
+		// compute $A_k = (d_k^{\alpha_{k-r}}, e_k^{\alpha_{k-r}})
+		//                (g^{t_k},h^{t_k})$
+		mpz_spowm(foo, Y[i].first, alpha[kr], p);
+		mpz_fspowm(fpowm_table_g, bar, g, tk[i], p);
+		mpz_mul(Ak[i].first, foo, bar);
+		mpz_mod(Ak[i].first, Ak[i].first, p);
+		mpz_spowm(foo, Y[i].second, alpha[kr], p);
+		mpz_fspowm(fpowm_table_h, bar, h, tk[i], p);
+		mpz_mul(Ak[i].second, foo, bar);
+		mpz_mod(Ak[i].second, Ak[i].second, p);
+		// compute $v = \sum_{k=0}^{n-1} (\alpha_{k-r} s_k + t_k)$
+		mpz_mul(foo, alpha[kr], s[i]);
+		mpz_mod(foo, foo, p);
+		mpz_add(foo, foo, tk[i]);
+		mpz_mod(foo, foo, p);
+		mpz_add(v, v, foo);
+		mpz_mod(v, v, p);
+	}
+	for (size_t i = 0; i < hk.size(); i++)
+			out << hk[i] << std::endl;
+	for (size_t i = 0; i < Ak.size(); i++)
+			out << Ak[i].first << std::endl << Ak[i].second << std::endl;
+	out << v << std::endl;
+	
+	// prover: second move (first move of EXP-ZK)
+	for (size_t i = 0; i < fk.size(); i++)
+	{
+		size_t kr = (i >= r) ? i-r : s.size() - (r-i) ; // compute $k - r (mod n)$
+std::cerr << "kr = " << kr << std::endl;
+		
+		// $o_k, p_k, m_k \in_R \mathbb{Z}_q$
+		mpz_srandomm(ok[i], q), mpz_srandomm(pk[i], q), mpz_srandomm(mk[i], q);
+		// compute $f_k = g^{o_k} h^{p_k}$
+		mpz_fspowm(fpowm_table_g, foo, g, ok[i], p);
+		mpz_fspowm(fpowm_table_h, bar, h, pk[i], p);
+		mpz_mul(fk[i], foo, bar);
+		mpz_mod(fk[i], fk[i], p);
+		// compute $F_k = (d_k^{o_k}, e_k^{o_k})(g^{m_k}, h^{m_k})$
+		mpz_spowm(foo, Y[i].first, ok[i], p);
+		mpz_fspowm(fpowm_table_g, bar, g, mk[i], p);
+		mpz_mul(Fk[i].first, foo, bar);
+		mpz_mod(Fk[i].first, Fk[i].first, p);
+		mpz_spowm(foo, Y[i].second, ok[i], p);
+		mpz_fspowm(fpowm_table_h, bar, h, mk[i], p);
+		mpz_mul(Fk[i].second, foo, bar);
+		mpz_mod(Fk[i].second, Fk[i].second, p);
+	}
+	for (size_t i = 0; i < fk.size(); i++)
+		out << fk[i] << std::endl;
+	for (size_t i = 0; i < Fk.size(); i++)
+		out << Fk[i].first << std::endl << Fk[i].second;
+		
+	// prover: third move (second move of EXP-ZK)
+	in >> lambda;
+	
+	// prover: fourth move (third move of EXP-ZK)
+	for (size_t i = 0; i < tau.size(); i++)
+	{
+		size_t kr = (i >= r) ? i-r : s.size() - (r-i) ; // compute $k - r (mod n)$
+std::cerr << "kr = " << kr << std::endl;
+		// compute $\tau_k = o_k + \lambda \alpha_{k-r}$
+		mpz_mul(tau[i], lambda, alpha[kr]);
+		mpz_mod(tau[i], tau[i], p);
+		mpz_add(tau[i], tau[i], ok[i]);
+		mpz_mod(tau[i], tau[i], p);
+		// compute $\rho_k = p_k + \lambda u_k$
+		mpz_mul(rho[i], lambda, uk[i]);
+		mpz_mod(rho[i], rho[i], p);
+		mpz_add(rho[i], rho[i], pk[i]);
+		mpz_mod(rho[i], rho[i], p);
+		// compute $\mu_k = m_k + \lambda t_k$
+		mpz_mul(mu[i], lambda, tk[i]);
+		mpz_mod(mu[i], mu[i], p);
+		mpz_add(mu[i], mu[i], mk[i]);
+		mpz_mod(mu[i], mu[i], p);
+	}
+	for (size_t i = 0; i < tau.size(); i++)
+		out << tau[i] << std::endl;
+	for (size_t i = 0; i < rho.size(); i++)
+		out << rho[i] << std::endl;
+	for (size_t i = 0; i < mu.size(); i++)
+		out << mu[i] << std::endl;
+		
+	// perform and prove PUB-ROT-ZK
+	pub_rot_zk->Prove_interactive(r, s, alpha, hk, in, out);
+	
+	// release
+	mpz_clear(v), mpz_clear(lambda), mpz_clear(foo), mpz_clear(bar),
+		mpz_clear(lhs), mpz_clear(rhs);
+	mpz_clear(LHS.first), mpz_clear(LHS.second),
+		mpz_clear(RHS.first), mpz_clear(RHS.second);
+	delete LHS.first, delete LHS.second, delete RHS.first, delete RHS.second;
+	for (size_t i = 0; i < s.size(); i++)
+	{
+		mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
+			mpz_clear(tau[i]), mpz_clear(rho[i]), mpz_clear(mu[i]),
+			mpz_clear(uk[i]), mpz_clear(tk[i]), mpz_clear(ok[i]),
+			mpz_clear(pk[i]), mpz_clear(mk[i]);
+		delete alpha[i], delete hk[i], delete fk[i],
+			delete tau[i], delete rho[i], delete mu[i],
+			delete uk[i], delete tk[i], delete ok[i], delete pk[i], delete mk[i];
+		mpz_clear(Ak[i].first), mpz_clear(Ak[i].second),
+			mpz_clear(Fk[i].first), mpz_clear(Fk[i].second);
+		delete Ak[i].first, delete Ak[i].second,
+			delete Fk[i].first, delete Fk[i].second;
+	}
+	alpha.clear(), hk.clear(), fk.clear(), tau.clear(), rho.clear(),
+		mu.clear(), Ak.clear(), Fk.clear(), uk.clear(), tk.clear(),
+		ok.clear(), pk.clear(), mk.clear();
+}
+
+bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
+	(const std::vector<std::pair<mpz_ptr, mpz_ptr> > &X,
+	const std::vector<std::pair<mpz_ptr, mpz_ptr> > &Y,
+	std::istream &in, std::ostream &out) const
+{
+	assert(X.size() >= 2);
+	assert(X.size() == Y.size());
+	
+	// initialize
+	mpz_t v, lambda, foo, bar, lhs, rhs;
+	std::pair<mpz_ptr, mpz_ptr> LHS, RHS;
+	std::vector<mpz_ptr> alpha, hk, fk, tau, rho, mu;
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > Ak, Fk;
+	
+	mpz_init(v), mpz_init(lambda), mpz_init(foo), mpz_init(bar),
+		mpz_init(lhs), mpz_init(rhs);
+	LHS.first = new mpz_t(), LHS.second = new mpz_t(),
+		RHS.first = new mpz_t(), RHS.second = new mpz_t();
+	mpz_init(LHS.first), mpz_init(LHS.second),
+		mpz_init(RHS.first), mpz_init(RHS.second);
+	for (size_t i = 0; i < X.size(); i++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(),
+			tmp4 = new mpz_t(), tmp5 = new mpz_t(), tmp6 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4),
+			mpz_init(tmp5), mpz_init(tmp6);
+		alpha.push_back(tmp1), hk.push_back(tmp2), fk.push_back(tmp3),
+			tau.push_back(tmp4), rho.push_back(tmp5), mu.push_back(tmp6);
+		mpz_ptr tmp7 = new mpz_t(), tmp8 = new mpz_t(),
+			tmp9 = new mpz_t(), tmp0 = new mpz_t();
+		mpz_init(tmp7), mpz_init(tmp8), mpz_init(tmp9), mpz_init(tmp0);
+		Ak.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp7, tmp8)),
+			Fk.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp9, tmp0));
+	}
+	
+	try
+	{
+		// verifier: first move
+		for (size_t i = 0; i < alpha.size(); i++)
+		{
+			mpz_srandomm(alpha[i], q);
+			out << alpha[i] << std::endl;
+		}
+		
+		// verifier: second move
+		for (size_t i = 0; i < hk.size(); i++)
+			in >> hk[i];
+		for (size_t i = 0; i < Ak.size(); i++)
+			in >> Ak[i].first >> Ak[i].second;
+		in >> v;
+		
+		// verifier: second move (first move of EXP-ZK)
+		for (size_t i = 0; i < fk.size(); i++)
+			in >> fk[i];
+		for (size_t i = 0; i < Fk.size(); i++)
+			in >> Fk[i].first >> Fk[i].second;
+		
+		// verifier: third move (second move of EXP-ZK)
+		mpz_srandomm(lambda, q);
+		out << lambda << std::endl;
+		
+		// verifier: fourth move (third move of EXP-ZK)
+		for (size_t i = 0; i < tau.size(); i++)
+			in >> tau[i];
+		for (size_t i = 0; i < rho.size(); i++)
+			in >> rho[i];
+		for (size_t i = 0; i < mu.size(); i++)
+			in >> mu[i];
+		
+			// check whether $g^{\tau_k} h^{\rho_k} = f_k h_k^{\lambda}$
+			// Note that we throughout assume that $h = \tilde{h}$ holds.
+			for (size_t i = 0; i < tau.size(); i++)
+			{
+				// LHS i.e. $g^{\tau_k} h^{\rho_k}$
+				mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
+				mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
+				mpz_mul(lhs, foo, bar);
+				mpz_mod(lhs, lhs, p);
+				// RHS i.e. $f_k h_k^{\lambda}$
+				mpz_powm(rhs, hk[i], lambda, p);
+				mpz_mul(rhs, rhs, fk[i]);
+				mpz_mod(rhs, rhs, p);
+				// compare LHS and RHS
+				if (mpz_cmp(lhs, rhs))
+					throw false;
+			}
+			
+			// check whether $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k}) =
+			//                F_k A_k^{\lambda}$
+			// Note that we have $Y_k = (d_k, e_k)$, for all $0 \le k \le n-1$.
+			for (size_t i = 0; i < tau.size(); i++)
+			{
+				// LHS i.e. $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k})$
+				mpz_powm(foo, Y[i].first, tau[i], p);
+				mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
+				mpz_mul(LHS.first, foo, bar);
+				mpz_mod(LHS.first, LHS.first, p);
+				mpz_powm(foo, Y[i].second, tau[i], p);
+				mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
+				mpz_mul(LHS.second, foo, bar);
+				mpz_mod(LHS.second, LHS.second, p);
+				// RHS i.e. $F_k A_k^{\lambda}$
+				mpz_powm(RHS.first, Ak[i].first, lambda, p);
+				mpz_mul(RHS.first, RHS.first, Fk[i].first);
+				mpz_mod(RHS.first, RHS.first, p);
+				mpz_powm(RHS.second, Ak[i].second, lambda, p);
+				mpz_mul(RHS.second, RHS.second, Fk[i].second);
+				mpz_mod(RHS.second, RHS.second, p);
+				// compare LHS and RHS (both components)
+				if (mpz_cmp(LHS.first, RHS.first))
+					throw false;
+				if (mpz_cmp(LHS.second, RHS.second))
+					throw false;
+			}
+			
+		// perform and verify PUB-ROT-ZK
+		if (!pub_rot_zk->Verify_interactive(alpha, hk, in, out))
+			throw false;
+		
+		// check whether $\prod_{j=0}^{n-1} A_j X_j^{-\alpha_j} = (g^v, h^v)$
+			// LHS i.e. $\prod_{j=0}^{n-1} A_j X_j^{-\alpha_j}$
+			mpz_set_ui(LHS.first, 1L), mpz_set_ui(LHS.second, 1L); // mul. accumulator
+			for (size_t j = 0; j < alpha.size(); j++)
+			{
+				mpz_neg(foo, alpha[j]);
+				mpz_powm(bar, X[j].first, foo, p);
+				mpz_mul(bar, bar, Ak[j].first);
+				mpz_mod(bar, bar, p);
+				mpz_mul(LHS.first, LHS.first, bar);
+				mpz_mod(LHS.first, LHS.first, p);
+				mpz_powm(bar, X[j].second, foo, p);
+				mpz_mul(bar, bar, Ak[j].second);
+				mpz_mod(bar, bar, p);
+				mpz_mul(LHS.second, LHS.second, bar);
+				mpz_mod(LHS.second, LHS.second, p);
+			}
+			// RHS i.e. $(g^v, h^v)$
+			mpz_fpowm(fpowm_table_g, RHS.first, g, v, p);
+			mpz_fpowm(fpowm_table_h, RHS.second, h, v, p);
+			// compare LHS and RHS (both components)
+			if (mpz_cmp(LHS.first, RHS.first))
+				throw false;
+			if (mpz_cmp(LHS.second, RHS.second))
+				throw false;
+		
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(v), mpz_clear(lambda), mpz_clear(foo), mpz_clear(bar),
+			mpz_clear(lhs), mpz_clear(rhs);
+		mpz_clear(LHS.first), mpz_clear(LHS.second),
+			mpz_clear(RHS.first), mpz_clear(RHS.second);
+		delete LHS.first, delete LHS.second, delete RHS.first, delete RHS.second;
+		for (size_t i = 0; i < X.size(); i++)
+		{
+			mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
+				mpz_clear(tau[i]), mpz_clear(rho[i]), mpz_clear(mu[i]);
+			delete alpha[i], delete hk[i], delete fk[i],
+				delete tau[i], delete rho[i], delete mu[i];
+			mpz_clear(Ak[i].first), mpz_clear(Ak[i].second),
+				mpz_clear(Fk[i].first), mpz_clear(Fk[i].second);
+			delete Ak[i].first, delete Ak[i].second,
+				delete Fk[i].first, delete Fk[i].second;
+		}
+		alpha.clear(), hk.clear(), fk.clear(), tau.clear(), rho.clear(),
+			mu.clear(), Ak.clear(), Fk.clear();
+		// return
+		return return_value;
+	}
+}
+
+HooghSchoenmakersSkoricVillegasVRHE::~HooghSchoenmakersSkoricVillegasVRHE
+	()
+{
+	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
+	delete pub_rot_zk;
+	
+	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	delete [] fpowm_table_g, delete [] fpowm_table_h;
+}

@@ -217,7 +217,7 @@ bool PedersenCommitmentScheme::CheckGroup
 			}
 		}
 		
-		// anything is sound
+		// everything is sound
 		throw true;
 	}
 	catch (bool return_value)

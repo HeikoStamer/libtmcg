@@ -24,7 +24,8 @@ bin_SCRIPTS = libTMCG-config
 include_HEADERS = mpz_srandom.h mpz_sqrtm.h mpz_spowm.h mpz_sprime.h\
 	mpz_shash.hh parse_helper.hh mpz_helper.hh\
 	BarnettSmartVTMF_dlog.hh BarnettSmartVTMF_dlog_GroupQR.hh\
-	PedersenCOM.hh GrothVSSHE.hh SchindelhauerTMCG.hh\
+	PedersenCOM.hh GrothVSSHE.hh HooghSchoenmakersSkoricVillegasVRHE.hh\
+	SchindelhauerTMCG.hh\
 	VTMF_Card.hh VTMF_CardSecret.hh\
 	TMCG_Card.hh TMCG_CardSecret.hh\
 	TMCG_Stack.hh TMCG_OpenStack.hh TMCG_StackSecret.hh\
@@ -47,6 +48,7 @@ libTMCG_la_SOURCES = mpz_srandom.c mpz_srandom.h\
 	BarnettSmartVTMF_dlog_GroupQR.cc BarnettSmartVTMF_dlog_GroupQR.hh\
 	PedersenCOM.cc PedersenCOM.hh\
 	GrothVSSHE.cc GrothVSSHE.hh\
+	HooghSchoenmakersSkoricVillegasVRHE.cc HooghSchoenmakersSkoricVillegasVRHE.hh\
 	SchindelhauerTMCG.cc SchindelhauerTMCG.hh\
 	VTMF_Card.cc VTMF_Card.hh\
 	VTMF_CardSecret.cc VTMF_CardSecret.hh\
