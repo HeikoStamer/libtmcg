@@ -17,9 +17,9 @@ input texinfo
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.54 2007/05/07 16:42:36 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.55 2009/11/19 05:43:44 stamer Exp $.
 
-Copyright @copyright{} 2005, 2006, 2007 Heiko Stamer <@email{stamer@@gaos.org}>.
+Copyright @copyright{} 2005, 2006, 2007, 2009 Heiko Stamer <@email{stamer@@gaos.org}>.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
