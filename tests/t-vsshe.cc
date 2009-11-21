@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006, 2007, 2009  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,6 +18,10 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
+#include <libTMCG.hh>
+
+#ifdef FORKING
+
 #include <sstream>
 #include <vector>
 #include <cassert>
@@ -26,7 +30,6 @@
 #include <sys/wait.h>
 
 #include "test_helper.h"
-#include <libTMCG.hh>
 #include "pipestream.hh"
 
 #undef NDEBUG
@@ -410,3 +413,13 @@ int main
 	mpz_clear(a), mpz_clear(b), mpz_clear(aa), mpz_clear(bb);
 	return 0;
 }
+
+#else
+
+int main
+	(int argc, char **argv)
+{
+	return 0;
+}
+
+#endif

@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.46 $)
+AC_REVISION($Revision: 1.47 $)
 AC_PREREQ(2.57)
 
 AC_INIT(libTMCG, 1.1.3, stamer@gaos.org)
@@ -39,7 +39,7 @@ LIBTMCG_CONFIG_API_VERSION=2
 AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION)
 AC_LANG(C++)
 AC_CONFIG_SRCDIR(src/libTMCG.hh)
-#AC_CONFIG_MACRO_DIR([m4])
+##AC_CONFIG_MACRO_DIR([m4])
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -165,20 +165,31 @@ AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
  errno.h functional gcrypt.h gmp.h iostream limits.h map sstream stdio.h\
- string sys/wait.h time.h unistd.h vector], , AC_MSG_ERROR([headers are missing]))
+ string time.h unistd.h vector], , AC_MSG_ERROR([headers are missing]))
 
 # Checks for typedefs, structures, and compiler characteristics
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
-AC_TYPE_PID_T
 
 # Checks for library functions
-AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
-AC_CHECK_FUNCS([clock close fork fprintf memcmp memcpy memset pipe snprintf\
- strtoul waitpid], , AC_MSG_ERROR([functions are missing]))
+AC_CHECK_FUNCS([clock close fprintf memcmp memcpy memset snprintf strtoul], ,
+	AC_MSG_ERROR([functions are missing]))
+
+# forking tests feature
+AC_MSG_CHECKING([whether forking tests are enabled])
+AC_ARG_ENABLE(forking, [  --disable-forking       disable forking tests],
+        use_forking=$enableval, use_forking=yes)
+AC_MSG_RESULT($use_forking)
+if test "$use_forking" = yes ; then
+	AC_TYPE_PID_T
+	AC_FUNC_FORK
+	AC_CHECK_HEADERS([sys/wait.h], , AC_MSG_ERROR([headers are missing]))
+	AC_CHECK_FUNCS([fork pipe waitpid], , AC_MSG_ERROR([functions are missing]))
+	AC_DEFINE(FORKING, , [Define to enable the forking tests])
+fi
 
 # Enable all compiler warnings
 CFLAGS="$CFLAGS -Wall"

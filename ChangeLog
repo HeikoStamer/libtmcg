@@ -1,3 +1,5 @@
+* [2009-11-21] feature "--disable-forking" for ./configure added
+* [2009-11-21] syntax error in libTMCG.texi fixed
 * [2009-08-07] release 1.1.2 of LibTMCG
 * small bugfixes for GCC 4.3.x
 * [2007-05-05] release 1.1.1 of LibTMCG

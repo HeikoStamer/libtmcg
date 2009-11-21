@@ -1,4 +1,4 @@
-input texinfo
+\input texinfo
 @c %**start of header
 @documentencoding ISO-8859-1
 @setfilename libTMCG.info
@@ -17,7 +17,7 @@ input texinfo
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.55 2009/11/19 05:43:44 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.56 2009/11/21 10:22:26 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006, 2007, 2009 Heiko Stamer <@email{stamer@@gaos.org}>.
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2007  Heiko Stamer <stamer@gaos.org>
+# Copyright (C) 2005, 2007, 2009  Heiko Stamer <stamer@gaos.org>
 #
 # This file is part of LibTMCG.
 #

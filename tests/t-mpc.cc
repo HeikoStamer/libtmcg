@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006, 2009  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,6 +18,10 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
+#include <libTMCG.hh>
+
+#ifdef FORKING
+
 #include <sstream>
 #include <cassert>
 #include <unistd.h>
@@ -25,7 +29,6 @@
 #include <sys/wait.h>
 
 #include "test_helper.h"
-#include <libTMCG.hh>
 #include "StiglicMPC.hh"
 #include "pipestream.hh"
 
@@ -239,3 +242,13 @@ int main
 	delete pipe_in_A, delete pipe_out_A, delete pipe_in_B, delete pipe_out_B;
 	close(pipe1fd[0]), close(pipe1fd[1]), close(pipe2fd[0]), close(pipe2fd[1]);
 }
+
+#else
+
+int main
+	(int argc, char **argv)
+{
+	return 0;
+}
+
+#endif
