@@ -53,7 +53,82 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 	(const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
 	std::istream &in, std::ostream &out) const
 {
+	assert(alpha.size() >= 2);
+	assert(alpha.size() == c.size());
+	
+	// initialize
+	mpz_t G, lambda, foo, bar, lhs, rhs;
+	std::vector<mpz_ptr> beta, f, lambdak, tk;
+	
+	mpz_init(G), mpz_init(lambda), mpz_init(foo), mpz_init(bar),
+		mpz_init(lhs), mpz_init(rhs);
+	for (size_t i = 0; i < alpha.size(); i++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(),
+			tmp4 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4);
+		beta.push_back(tmp1), f.push_back(tmp2), tk.push_back(tmp3),
+			lambdak.push_back(tmp4);
+	}
+	
+	try
+	{
+		// verifier: first move
+		for (size_t i = 0; i < beta.size(); i++)
+		{
+			mpz_srandomm(beta[i], q);
+			out << beta[i] << std::endl;
+		}
+		
+		// verifier: second move
+		for (size_t i = 0; i < f.size(); i++)
+			in >> f[i];
+		mpz_srandomm(lambda, q);
+		out << lambda << std::endl;
+		
+		// verifier: third move
+		for (size_t i = 0; i < lambdak.size(); i++)
+			in >> lambdak[i];
+		for (size_t i = 0; i < tk.size(); i++)
+			in >> tk[i];
+		
+		// check whether $\lambda = \sum_j \lambda_j$
+		mpz_set_ui(rhs, 0L);
+		for (size_t j = 0; j < lambdak.size(); j++)
+			mpz_add(rhs, rhs, lambdak[j]);
+		if (mpz_cmp(lambda, rhs))
+			throw false;
+
+		// check whether $\tilde{h}^{t_k} = 
+		// 	a_k(G/g^{\lambda_k})^{\lambda_k}$
+			// compute $G$
+			mpz_set_ui(G, 1L);
+			for (size_t j = 0; j < c.size(); j++) {
+				mpz_powm(foo, c[j], beta[j], p);
+				mpz_mul(G, G, foo);
+				mpz_mod(G, G, p);
+			}
+
+
 //TODO
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(G), mpz_clear(lambda), mpz_clear(foo), mpz_clear(bar),
+			mpz_clear(lhs), mpz_clear(rhs);
+		for (size_t i = 0; i < alpha.size(); i++)
+		{
+			mpz_clear(beta[i]), mpz_clear(f[i]), mpz_clear(tk[i]),
+				mpz_clear(lambdak[i]);
+			delete beta[i], delete f[i], delete tk[i],
+				delete lambdak[i];
+		}
+		beta.clear(), f.clear(), tk.clear(), lambdak.clear();
+		// return
+		return return_value;
+	}
 }
 
 HooghSchoenmakersSkoricVillegasPUBROTZK::~HooghSchoenmakersSkoricVillegasPUBROTZK
