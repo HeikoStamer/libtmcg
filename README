@@ -1,4 +1,4 @@
-Copyright (C)  2005, 2006, 2007, 2009  Heiko Stamer <stamer@gaos.org>
+Copyright (C)  2005, 2006, 2007, 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
   Permission is granted to copy, distribute and/or modify this document
   under the terms of the GNU Free Documentation License, Version 1.2
   or any later version published by the Free Software Foundation;
@@ -102,7 +102,7 @@ Security
 Requirements
 ------------
   You need the following libraries and appropriate header files to build
-  (GNU gcc/g++ version 3.3.x or higher is recommended) LibTMCG successfully:
+  (GNU gcc/g++ version 4.x.y or higher is recommended) LibTMCG successfully:
 
   * GNU Multiple Precision Arithmetic Library (libgmp), version >= 4.1.0,
     http://www.swox.com/gmp/
@@ -123,6 +123,7 @@ Requirements
   ++ SunOS 5.10, Solaris 10      sparc     gcc 3.4.3
   ++ GNU/Linux (Sharp Zaurus)    arm       zgcc 2.95.2
   ++ GNU/Linux (Gentoo Linux)    i686      gcc 4.2.4 (Gentoo 4.2.4-r1 p1.1)
+  ++ GNU/Linux (Gentoo Linux)    x86_64    gcc 4.9.3 (details omitted)
 
 Build & Install
 ---------------
@@ -132,13 +133,13 @@ Build & Install
     2. make
     3. make install
 
-Bugs, Contribution, CVS
+Bugs, Contribution, GIT
 -----------------------
   Please send detailed bug reports to Heiko Stamer <stamer@gaos.org>.
-  You can get the latest sources from the CVS repository by using the
+  You can get the latest sources from the GIT repository by using the
   command
 
-  cvs -z3 -d:pserver:anonymous@cvs.savannah.nongnu.org:/sources/libtmcg co libtmcg
+  git clone git://git.savannah.nongnu.org/libtmcg.git
 
   Additionally you will need the following free software packages:
   
@@ -148,7 +149,7 @@ Bugs, Contribution, CVS
 
 Copyright and License of this software
 --------------------------------------
-  (C) 2005, 2006, 2007, 2009  Heiko Stamer <stamer@gaos.org>
+  (C) 2005, 2006, 2007, 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
       GNU General Public License version 2
 
   Please have a look at file 'COPYING' and http://www.fsf.org/.
