@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.56 2009/11/21 10:22:26 stamer Exp $.
+Revision $Id: libTMCG.texi,v 1.57 2015/07/21 21:03:14 stamer Exp $.
 
 Copyright @copyright{} 2005, 2006, 2007, 2009 Heiko Stamer <@email{stamer@@gaos.org}>.
 
@@ -36,13 +36,13 @@ Free Documentation License''.
 @subtitle Version @value{VERSION}
 @subtitle @value{UPDATED}
 @sp 9
-@center @titlefont{@math{@clubsuit@qquad@quad@spadesuit@qquad@quad@heartsuit@qquad@quad@diamondsuit}}
+@c @center @titlefont{@math{@clubsuit@qquad@quad@spadesuit@qquad@quad@heartsuit@qquad@quad@diamondsuit}}
 @sp 2
 @center @titlefont{An Implementation of the}
 @vskip 10pt
 @center @titlefont{Toolbox for Mental Card Games}
 @sp 2
-@center @titlefont{@math{@diamondsuit@qquad@quad@heartsuit@qquad@quad@spadesuit@qquad@quad@clubsuit}}
+@c @center @titlefont{@math{@diamondsuit@qquad@quad@heartsuit@qquad@quad@spadesuit@qquad@quad@clubsuit}}
 
 @author Heiko Stamer <@email{stamer@@gaos.org}>
 

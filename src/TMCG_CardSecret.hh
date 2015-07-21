@@ -1,7 +1,7 @@
 /*******************************************************************************
    Data structure for the secrets of a card. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2007  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2007, 2010  Heiko Stamer <stamer@gaos.org>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 	#include <gmp.h>
 	
 	#include "mpz_srandom.h"
+	#include "mpz_helper.hh"
 	#include "parse_helper.hh"
 
 /** @brief Data structure for secrets of the masking operation.
