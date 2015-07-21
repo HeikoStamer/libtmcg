@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2006, 2007, 2009  Heiko Stamer <stamer@gaos.org>
+# Copyright (C) 2005, 2006, 2007, 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -21,7 +21,7 @@
 AC_REVISION($Revision: 1.47 $)
 AC_PREREQ(2.57)
 
-AC_INIT(libTMCG, 1.1.3, stamer@gaos.org)
+AC_INIT([libTMCG], [1.1.3])
 
 # The next two paragraphs are copies of libgcrypt behaviour.
 
@@ -36,9 +36,9 @@ LIBTMCG_LT_REVISION=3
 # If API is changed in an incompatible way: increment the next counter.
 LIBTMCG_CONFIG_API_VERSION=2
 
-AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION)
 AC_LANG(C++)
-AC_CONFIG_SRCDIR(src/libTMCG.hh)
+AC_CONFIG_SRCDIR([src/libTMCG.hh])
+AM_INIT_AUTOMAKE
 ##AC_CONFIG_MACRO_DIR([m4])
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
