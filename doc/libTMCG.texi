@@ -19,7 +19,7 @@ This is the reference manual of LibTMCG.
 
 Revision $Id: libTMCG.texi,v 1.57 2015/07/21 21:03:14 stamer Exp $.
 
-Copyright @copyright{} 2005, 2006, 2007, 2009 Heiko Stamer <@email{stamer@@gaos.org}>.
+Copyright @copyright{} 2005, 2006, 2007, 2009, 2015 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -44,7 +44,7 @@ Free Documentation License''.
 @sp 2
 @c @center @titlefont{@math{@diamondsuit@qquad@quad@heartsuit@qquad@quad@spadesuit@qquad@quad@clubsuit}}
 
-@author Heiko Stamer <@email{stamer@@gaos.org}>
+@author Heiko Stamer <@email{HeikoStamer@@gmx.net}>
 
 @page
 @vskip 0pt plus 1filll
@@ -142,7 +142,7 @@ The interested reader is referred to the following papers:
 	@sc{Heiko Stamer}.
 	@emph{Kryptographische Skatrunde.} (in German)@*
 	Offene Systeme (ISSN 1619-0114), 4:10--30, 2004.@*
-	@uref{http://www.gaos.org/@/~stamer/@/OS-4-2004-openskat_rev2005.pdf}
+	@uref{http://libtmcg.nongnu.org/@/OS-4-2004-openskat_rev2005.pdf}
 @end quotation
 @quotation [St05]
 	@sc{Heiko Stamer}.
@@ -151,7 +151,7 @@ The interested reader is referred to the following papers:
 	Proceedings of the Western European Workshop on Research in
 	Cryptology (WEWoRC 2005), Lecture Notes in Informatics P-74,
 	pp. 1--12, 2005.@*
-	@uref{http://www.gaos.org/@/~stamer/@/WEWoRC2005_proc.pdf}
+	@uref{http://libtmcg.nongnu.org/@/WEWoRC2005_proc.pdf}
 @end quotation
 
 @c **********************************************************
@@ -163,7 +163,7 @@ security parameters are explained. The reader should have
 an advanced knowledge in applied cryptography and C++
 programming. Reference is made at this point to the famous
 @cite{Handbook of Applied Cryptography} for a brief
-introduction.
+introduction of the former topic.
 
 This document follows, in style and rarely in phrasing,
 the @cite{Reference Manual of the GNU Crypto Library}.
@@ -331,16 +331,14 @@ broadcast channel has been established, where all players have read/write
 access. LibTMCG does not yet contain the necessary protocols (reliable
 broadcast or even atomic broadcast) for creating such a channel. Thus you
 should take into account that not necessarily the player acting as prover
-is the source of
-evil, if a verification procedure fails. This level of uncertainty is
-also a reason for our restricted adversary model.
+is the source of evil, if a verification procedure fails. This level of
+uncertainty is also a reason for our restricted adversary model.
 
 Note that it is not known, whether the used protocols retain their
 zero-knowledge property, if they are composed and executed in a concurrent
 setting. Thus the application programmer should be careful and avoid parallel
 protocol sessions. It is an open research project to create a protocol suite
-whose security can be proven in the UC-framework of Canetti (see @emph{Universally
-Composable Security: A New Paradigm for Cryptographic Protocols}, Cryptology
+whose security can be proven in the UC-framework of Canetti (see @emph{Universally Composable Security: A New Paradigm for Cryptographic Protocols}, Cryptology
 ePrint Archive: Report 2000/067). Furthermore, the protocols should employ
 concurrent zero-knowledge proofs (see Dwork, Naor, Sahai: @emph{Concurrent
 Zero-Knowledge}, Journal of the ACM 51(6):851--898, 2004).
