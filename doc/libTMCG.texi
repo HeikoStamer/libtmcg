@@ -142,7 +142,7 @@ The interested reader is referred to the following papers:
 	@sc{Heiko Stamer}.
 	@emph{Kryptographische Skatrunde.} (in German)@*
 	Offene Systeme (ISSN 1619-0114), 4:10--30, 2004.@*
-	@uref{http://libtmcg.nongnu.org/@/OS-4-2004-openskat_rev2005.pdf}
+	@uref{http://www.nongnu.org/@/libtmcg/@/OS-4-2004-openskat_rev2005.pdf}
 @end quotation
 @quotation [St05]
 	@sc{Heiko Stamer}.
@@ -151,7 +151,7 @@ The interested reader is referred to the following papers:
 	Proceedings of the Western European Workshop on Research in
 	Cryptology (WEWoRC 2005), Lecture Notes in Informatics P-74,
 	pp. 1--12, 2005.@*
-	@uref{http://libtmcg.nongnu.org/@/WEWoRC2005_proc.pdf}
+	@uref{http://www.nongnu.org/@/libtmcg/@/WEWoRC2005_proc.pdf}
 @end quotation
 
 @c **********************************************************
@@ -163,7 +163,7 @@ security parameters are explained. The reader should have
 an advanced knowledge in applied cryptography and C++
 programming. Reference is made at this point to the famous
 @cite{Handbook of Applied Cryptography} for a brief
-introduction of the former topic.
+introduction of this topic.
 
 This document follows, in style and rarely in phrasing,
 the @cite{Reference Manual of the GNU Crypto Library}.
