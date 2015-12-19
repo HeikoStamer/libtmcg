@@ -8,7 +8,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2009  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -46,7 +46,117 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive
 	const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
 	std::istream &in, std::ostream &out) const
 {
-//TODO
+	assert(alpha.size() >= 2);
+	assert(alpha.size() == c.size());
+	assert(r < alpha.size());
+	assert(s.size() == alpha.size());
+	
+	// initialize
+	mpz_t u, G, lambda, foo, bar, lhs, rhs;
+	std::vector<mpz_ptr> beta, f, lambdak, tk;
+	
+	mpz_init(u), mpz_init(G), mpz_init(lambda), mpz_init(foo),
+		mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+	for (size_t i = 0; i < alpha.size(); i++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(),
+			tmp4 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4);
+		beta.push_back(tmp1), f.push_back(tmp2), tk.push_back(tmp3),
+			lambdak.push_back(tmp4);
+	}
+
+	// prover: first move
+	for (size_t i = 0; i < beta.size(); i++)
+		in >> beta[i];
+
+	// prover: second move
+	// Note that we throughout assume that $h = \tilde{h}$ holds.
+	mpz_srandomm(u, q);
+	// compute $G$
+	mpz_set_ui(G, 1L);
+	for (size_t j = 0; j < c.size(); j++) {
+		mpz_powm(foo, c[j], beta[j], p);
+		mpz_mul(G, G, foo);
+		mpz_mod(G, G, p);
+	}
+	for (size_t j = 0; j < alpha.size(); j++)
+	{
+		if (j != r)
+		{
+			mpz_srandomm(lambdak[j], q);
+			mpz_srandomm(tk[j], q);
+
+			// compute $\gamma_j = \sum_i \alpha_{i-j}\beta_i
+			mpz_set_ui(bar, 0L);
+			for (size_t i = 0; i < alpha.size(); i++)
+			{
+				size_t ij = (i >= j) ? i-j : alpha.size() - (j-i) ; // compute $i - j (mod n)$
+std::cerr << "ij = " << ij << std::endl;
+				mpz_mul(foo, alpha[ij], beta[i]);
+				mpz_mod(foo, foo, p);
+				mpz_add(bar, bar, foo);
+				mpz_mod(bar, bar, p);
+			}
+			// compute $f_j = g^{\lambda_j \gamma_j} \tilde{h}^{t_j} G^{-\lambda_j}$
+			mpz_mul(foo, lambdak[j], bar);
+			mpz_mod(foo, foo, p);
+			mpz_fspowm(fpowm_table_g, f[j], g, foo, p);
+			mpz_fspowm(fpowm_table_h, bar, h, tk[j], p);
+			mpz_mul(f[j], f[j], bar);
+			mpz_mod(f[j], f[j], p);
+			mpz_spowm(foo, G, lambdak[j], p);
+			mpz_invert(bar, foo, p);
+			mpz_mul(f[j], f[j], bar);
+			mpz_mod(f[j], f[j], p);
+		}
+	}
+	mpz_spowm(f[r], h, u, p);
+	for (size_t i = 0; i < f.size(); i++)
+		out << f[i] << std::endl;
+
+	// prover: third move
+	in >> lambda;
+	// compute $\lambda_r = \lambda - \sum_{j \neq r} \lambda_j$
+	mpz_set_ui(foo, 0L);
+	for (size_t j = 0; j < lambdak.size(); j++)
+	{
+		if (j != r)
+		{
+			mpz_add(foo, foo, lambdak[j]);
+		}
+	}
+	mpz_sub(lambdak[r], lambda, foo);
+	mpz_add(lambdak[r], lambdak[r], q); // add q to stay in the group
+	mpz_mod(lambdak[r], lambdak[r], q);
+	// compute $t_r = u + \lambda_r \sum_j s_j \beta_j$
+	mpz_set_ui(foo, 0L);
+	for (size_t j = 0; j < s.size(); j++)
+	{
+		mpz_mul(bar, s[j], beta[j]);
+		mpz_add(foo, foo, bar);
+	}
+	mpz_mod(foo, foo, q);
+	mpz_mul(foo, foo, lambdak[r]);
+	mpz_mod(foo, foo, q);
+	mpz_add(tk[r], u, foo);
+	mpz_mod(tk[r], tk[r], q);
+	for (size_t i = 0; i < lambdak.size(); i++)
+		out << lambdak[i] << std::endl;
+	for (size_t i = 0; i < tk.size(); i++)
+		out << tk[i] << std::endl;
+	
+	// release
+	mpz_clear(u), mpz_clear(G), mpz_clear(lambda), mpz_clear(foo),
+		mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
+	for (size_t i = 0; i < alpha.size(); i++)
+	{
+		mpz_clear(beta[i]), mpz_clear(f[i]), mpz_clear(tk[i]),
+			mpz_clear(lambdak[i]);
+		delete beta[i], delete f[i], delete tk[i],
+			delete lambdak[i];
+	}
+	beta.clear(), f.clear(), tk.clear(), lambdak.clear();
 }
 
 bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
@@ -99,18 +209,47 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 		if (mpz_cmp(lambda, rhs))
 			throw false;
 
+		// compute $G$
+		mpz_set_ui(G, 1L);
+		for (size_t j = 0; j < c.size(); j++) {
+			mpz_powm(foo, c[j], beta[j], p);
+			mpz_mul(G, G, foo);
+			mpz_mod(G, G, p);
+		}
 		// check whether $\tilde{h}^{t_k} = 
-		// 	a_k(G/g^{\lambda_k})^{\lambda_k}$
-			// compute $G$
-			mpz_set_ui(G, 1L);
-			for (size_t j = 0; j < c.size(); j++) {
-				mpz_powm(foo, c[j], beta[j], p);
-				mpz_mul(G, G, foo);
-				mpz_mod(G, G, p);
+		// 	a_k(G/g^{\gamma_k})^{\lambda_k}$
+		for (size_t k = 0; k < alpha.size(); k++)
+		{
+			// compute $\gamma_k = \sum_j \alpha_{j-k}\beta_j
+			mpz_set_ui(bar, 0L);
+			for (size_t j = 0; j < alpha.size(); j++)
+			{
+				size_t jk = (j >= k) ? j-k : alpha.size() - (k-j) ; // compute $j - k (mod n)$
+std::cerr << "jk = " << jk << std::endl;
+				mpz_mul(foo, alpha[jk], beta[j]);
+				mpz_mod(foo, foo, p);
+				mpz_add(bar, bar, foo);
+				mpz_mod(bar, bar, p);
 			}
 
+			// compute the left hand side $\tilde{h}^{t_k}$
+			mpz_powm(lhs, h, tk[k], p);
 
-//TODO
+			// compute the right hand side $a_k(G/g^{\gamma_k})^{\lambda_k}$
+			mpz_powm(foo, g, bar, p);
+			if (!mpz_invert(foo, foo, p))
+				throw false;
+			mpz_mul(foo, foo, G);
+			mpz_mod(foo, foo, p);
+			mpz_powm(rhs, foo, lambdak[k], p);
+			mpz_mul(rhs, rhs, f[k]); // CHECK: $f_k$ is in the paper mistakenly written as $a_k$
+			mpz_mod(rhs, rhs, p);
+
+			// compare
+			if (mpz_cmp(lhs, rhs))
+				throw false;
+		}
+
 		throw true;
 	}
 	catch (bool return_value)

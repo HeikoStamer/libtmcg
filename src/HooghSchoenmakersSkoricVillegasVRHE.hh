@@ -8,7 +8,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2009  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
