@@ -285,7 +285,42 @@ HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
 	(unsigned long int fieldsize, unsigned long int subgroupsize):
 			F_size(fieldsize), G_size(subgroupsize)
 {
-//TODO
+	mpz_t k, foo;
+
+	// Initialize and choose the parameters of the scheme.
+	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(h);
+	mpz_init(k);
+	mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
+	mpz_init(foo);
+	mpz_sub_ui(foo, p, 1L); // compute $p-1$
+	// choose uniformly at random the element $g$ of order $q$
+	do
+	{
+		mpz_wrandomm(g, p);
+		mpz_powm(g, g, k, p);
+	}
+	while (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
+		!mpz_cmp(g, foo)); // check, whether $1 < g < p-1$		
+	// choose uniformly at random the element $h$ of order $q$
+	do
+	{
+		mpz_wrandomm(h, p);
+		mpz_powm(h, h, k, p);
+	}
+	while (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L) || 
+		!mpz_cmp(h, foo)); // check, whether $1 < h < p-1$
+	mpz_clear(foo);
+	mpz_clear(k);
+
+	// Initialize the PUB-ROT-ZK argument
+	pub_rot_zk = new HooghSchoenmakersSkoricVillegasPUBROTZK(p, q, g, h);
+	
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
