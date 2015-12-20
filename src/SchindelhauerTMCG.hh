@@ -6,7 +6,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2003, 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2002, 2003, 2004, 2005, 2006, 2015
+ 					Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -60,6 +61,7 @@
 	#include "BarnettSmartVTMF_dlog.hh"
 	#include "BarnettSmartVTMF_dlog_GroupQR.hh"
 	#include "GrothVSSHE.hh"
+	#include "HooghSchoenmakersSkoricVillegasVRHE.hh"
 	#include "mpz_srandom.h"
 	#include "mpz_sqrtm.h"
 

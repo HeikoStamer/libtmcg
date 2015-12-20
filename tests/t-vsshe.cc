@@ -377,13 +377,13 @@ int main
 			for (size_t i = 0; i < n; i++)
 				*pipe_in >> e[i].first >> e[i].second >> E[i].first >> 
 					E[i].second;
-			// prove VSSHE
+			// verify VSSHE
 			start_clock();
 			std::cout << "V: vsshe.Verify_interactive(...)" << std::endl;
 			assert(vsshe->Verify_interactive(e, E, *pipe_in, *pipe_out));
 			stop_clock();
 			std::cout << "V: " << elapsed_time() << std::endl;
-			// prove VSSHE wrong
+			// verify VSSHE wrong
 			start_clock();
 			std::cout << "V: !vsshe.Verify_interactive(...)" << std::endl;
 			assert(!vsshe->Verify_interactive(e, E, *pipe_in, *pipe_out));

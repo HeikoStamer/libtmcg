@@ -80,6 +80,7 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive
 		mpz_mul(G, G, foo);
 		mpz_mod(G, G, p);
 	}
+std::cerr << "r = " << r << std::endl;
 	for (size_t j = 0; j < alpha.size(); j++)
 	{
 		if (j != r)
@@ -94,13 +95,13 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive
 				size_t ij = (i >= j) ? i-j : alpha.size() - (j-i) ; // compute $i - j (mod n)$
 std::cerr << "ij = " << ij << std::endl;
 				mpz_mul(foo, alpha[ij], beta[i]);
-				mpz_mod(foo, foo, p);
+				mpz_mod(foo, foo, q);
 				mpz_add(bar, bar, foo);
-				mpz_mod(bar, bar, p);
+				mpz_mod(bar, bar, q);
 			}
 			// compute $f_j = g^{\lambda_j \gamma_j} \tilde{h}^{t_j} G^{-\lambda_j}$
 			mpz_mul(foo, lambdak[j], bar);
-			mpz_mod(foo, foo, p);
+			mpz_mod(foo, foo, q);
 			mpz_fspowm(fpowm_table_g, f[j], g, foo, p);
 			mpz_fspowm(fpowm_table_h, bar, h, tk[j], p);
 			mpz_mul(f[j], f[j], bar);
@@ -111,7 +112,7 @@ std::cerr << "ij = " << ij << std::endl;
 			mpz_mod(f[j], f[j], p);
 		}
 	}
-	mpz_spowm(f[r], h, u, p);
+	mpz_fspowm(fpowm_table_h, f[r], h, u, p);
 	for (size_t i = 0; i < f.size(); i++)
 		out << f[i] << std::endl;
 
@@ -124,19 +125,22 @@ std::cerr << "ij = " << ij << std::endl;
 		if (j != r)
 		{
 			mpz_add(foo, foo, lambdak[j]);
+			mpz_mod(foo, foo, q);
 		}
 	}
 	mpz_sub(lambdak[r], lambda, foo);
 	mpz_add(lambdak[r], lambdak[r], q); // add q to stay in the group
 	mpz_mod(lambdak[r], lambdak[r], q);
+std::cerr << "lambdak[r] = " << lambdak[r] << std::endl;
 	// compute $t_r = u + \lambda_r \sum_j s_j \beta_j$
 	mpz_set_ui(foo, 0L);
 	for (size_t j = 0; j < s.size(); j++)
 	{
 		mpz_mul(bar, s[j], beta[j]);
+		mpz_mod(bar, bar, q);
 		mpz_add(foo, foo, bar);
+		mpz_mod(foo, foo, q);
 	}
-	mpz_mod(foo, foo, q);
 	mpz_mul(foo, foo, lambdak[r]);
 	mpz_mod(foo, foo, q);
 	mpz_add(tk[r], u, foo);
@@ -205,7 +209,11 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 		// check whether $\lambda = \sum_j \lambda_j$
 		mpz_set_ui(rhs, 0L);
 		for (size_t j = 0; j < lambdak.size(); j++)
+		{
 			mpz_add(rhs, rhs, lambdak[j]);
+			mpz_mod(rhs, rhs, q);
+		}
+std::cerr << "lambda = " << lambda << " rhs = " << rhs << std::endl;
 		if (mpz_cmp(lambda, rhs))
 			throw false;
 
@@ -227,16 +235,17 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 				size_t jk = (j >= k) ? j-k : alpha.size() - (k-j) ; // compute $j - k (mod n)$
 std::cerr << "jk = " << jk << std::endl;
 				mpz_mul(foo, alpha[jk], beta[j]);
-				mpz_mod(foo, foo, p);
+				mpz_mod(foo, foo, q);
 				mpz_add(bar, bar, foo);
-				mpz_mod(bar, bar, p);
+				mpz_mod(bar, bar, q);
 			}
 
 			// compute the left hand side $\tilde{h}^{t_k}$
-			mpz_powm(lhs, h, tk[k], p);
+			mpz_fpowm(fpowm_table_h, lhs, h, tk[k], p);
 
 			// compute the right hand side $a_k(G/g^{\gamma_k})^{\lambda_k}$
-			mpz_powm(foo, g, bar, p);
+			mpz_fpowm(fpowm_table_g, foo, g, bar, p);
+std::cerr << "before invert, k = " << k << std::endl;
 			if (!mpz_invert(foo, foo, p))
 				throw false;
 			mpz_mul(foo, foo, G);
@@ -244,7 +253,7 @@ std::cerr << "jk = " << jk << std::endl;
 			mpz_powm(rhs, foo, lambdak[k], p);
 			mpz_mul(rhs, rhs, f[k]); // CHECK: $f_k$ is in the paper mistakenly written as $a_k$
 			mpz_mod(rhs, rhs, p);
-
+std::cerr << "lhs = " << lhs << " rhs = " << rhs << std::endl;
 			// compare
 			if (mpz_cmp(lhs, rhs))
 				throw false;
@@ -351,7 +360,7 @@ HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
 	
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(h);
 	in >> p >> q >> g >> h;
-	
+std::cerr << " p = " << p << " q = " << q << " g = " << g << " h = " << h << std::endl;	
 	// Initialize the PUB-ROT-ZK argument
 	pub_rot_zk = new HooghSchoenmakersSkoricVillegasPUBROTZK(p, q, g, h);
 	
@@ -486,7 +495,6 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive
 	for (size_t i = 0; i < hk.size(); i++)
 	{
 		size_t kr = (i >= r) ? i-r : s.size() - (r-i) ; // compute $k - r (mod n)$
-std::cerr << "kr = " << kr << std::endl;
 		
 		// $u_k, t_k \in_R \mathbb{Z}_q$
 		mpz_srandomm(uk[i], q), mpz_srandomm(tk[i], q);
@@ -507,11 +515,11 @@ std::cerr << "kr = " << kr << std::endl;
 		mpz_mod(Ak[i].second, Ak[i].second, p);
 		// compute $v = \sum_{k=0}^{n-1} (\alpha_{k-r} s_k + t_k)$
 		mpz_mul(foo, alpha[kr], s[i]);
-		mpz_mod(foo, foo, p);
+		mpz_mod(foo, foo, q);
 		mpz_add(foo, foo, tk[i]);
-		mpz_mod(foo, foo, p);
+		mpz_mod(foo, foo, q);
 		mpz_add(v, v, foo);
-		mpz_mod(v, v, p);
+		mpz_mod(v, v, q);
 	}
 	for (size_t i = 0; i < hk.size(); i++)
 			out << hk[i] << std::endl;
@@ -521,10 +529,7 @@ std::cerr << "kr = " << kr << std::endl;
 	
 	// prover: second move (first move of EXP-ZK)
 	for (size_t i = 0; i < fk.size(); i++)
-	{
-		size_t kr = (i >= r) ? i-r : s.size() - (r-i) ; // compute $k - r (mod n)$
-std::cerr << "kr = " << kr << std::endl;
-		
+	{	
 		// $o_k, p_k, m_k \in_R \mathbb{Z}_q$
 		mpz_srandomm(ok[i], q), mpz_srandomm(pk[i], q), mpz_srandomm(mk[i], q);
 		// compute $f_k = g^{o_k} h^{p_k}$
@@ -545,31 +550,31 @@ std::cerr << "kr = " << kr << std::endl;
 	for (size_t i = 0; i < fk.size(); i++)
 		out << fk[i] << std::endl;
 	for (size_t i = 0; i < Fk.size(); i++)
-		out << Fk[i].first << std::endl << Fk[i].second;
-		
+		out << Fk[i].first << std::endl << Fk[i].second << std::endl;
+
 	// prover: third move (second move of EXP-ZK)
 	in >> lambda;
-	
+
 	// prover: fourth move (third move of EXP-ZK)
 	for (size_t i = 0; i < tau.size(); i++)
 	{
 		size_t kr = (i >= r) ? i-r : s.size() - (r-i) ; // compute $k - r (mod n)$
-std::cerr << "kr = " << kr << std::endl;
+
 		// compute $\tau_k = o_k + \lambda \alpha_{k-r}$
 		mpz_mul(tau[i], lambda, alpha[kr]);
-		mpz_mod(tau[i], tau[i], p);
+		mpz_mod(tau[i], tau[i], q);
 		mpz_add(tau[i], tau[i], ok[i]);
-		mpz_mod(tau[i], tau[i], p);
+		mpz_mod(tau[i], tau[i], q);
 		// compute $\rho_k = p_k + \lambda u_k$
 		mpz_mul(rho[i], lambda, uk[i]);
-		mpz_mod(rho[i], rho[i], p);
+		mpz_mod(rho[i], rho[i], q);
 		mpz_add(rho[i], rho[i], pk[i]);
-		mpz_mod(rho[i], rho[i], p);
+		mpz_mod(rho[i], rho[i], q);
 		// compute $\mu_k = m_k + \lambda t_k$
 		mpz_mul(mu[i], lambda, tk[i]);
-		mpz_mod(mu[i], mu[i], p);
+		mpz_mod(mu[i], mu[i], q);
 		mpz_add(mu[i], mu[i], mk[i]);
-		mpz_mod(mu[i], mu[i], p);
+		mpz_mod(mu[i], mu[i], q);
 	}
 	for (size_t i = 0; i < tau.size(); i++)
 		out << tau[i] << std::endl;
@@ -649,24 +654,24 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 			mpz_srandomm(alpha[i], q);
 			out << alpha[i] << std::endl;
 		}
-		
+
 		// verifier: second move
 		for (size_t i = 0; i < hk.size(); i++)
 			in >> hk[i];
 		for (size_t i = 0; i < Ak.size(); i++)
 			in >> Ak[i].first >> Ak[i].second;
 		in >> v;
-		
+
 		// verifier: second move (first move of EXP-ZK)
 		for (size_t i = 0; i < fk.size(); i++)
 			in >> fk[i];
 		for (size_t i = 0; i < Fk.size(); i++)
 			in >> Fk[i].first >> Fk[i].second;
-		
+
 		// verifier: third move (second move of EXP-ZK)
 		mpz_srandomm(lambda, q);
 		out << lambda << std::endl;
-		
+
 		// verifier: fourth move (third move of EXP-ZK)
 		for (size_t i = 0; i < tau.size(); i++)
 			in >> tau[i];
@@ -692,7 +697,6 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 				if (mpz_cmp(lhs, rhs))
 					throw false;
 			}
-			
 			// check whether $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k}) =
 			//                F_k A_k^{\lambda}$
 			// Note that we have $Y_k = (d_k, e_k)$, for all $0 \le k \le n-1$.
@@ -720,17 +724,17 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 				if (mpz_cmp(LHS.second, RHS.second))
 					throw false;
 			}
-			
+std::cerr << " before PUB-ROT-ZK " << std::endl;			
 		// perform and verify PUB-ROT-ZK
 		if (!pub_rot_zk->Verify_interactive(alpha, hk, in, out))
 			throw false;
-		
+std::cerr << " after PUB-ROT-ZK " << std::endl;					
 		// check whether $\prod_{j=0}^{n-1} A_j X_j^{-\alpha_j} = (g^v, h^v)$
 			// LHS i.e. $\prod_{j=0}^{n-1} A_j X_j^{-\alpha_j}$
 			mpz_set_ui(LHS.first, 1L), mpz_set_ui(LHS.second, 1L); // mul. accumulator
 			for (size_t j = 0; j < alpha.size(); j++)
 			{
-				mpz_neg(foo, alpha[j]);
+				mpz_neg(foo, alpha[j]); // FIXME: check whether inverse exists
 				mpz_powm(bar, X[j].first, foo, p);
 				mpz_mul(bar, bar, Ak[j].first);
 				mpz_mod(bar, bar, p);
@@ -745,9 +749,11 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 			// RHS i.e. $(g^v, h^v)$
 			mpz_fpowm(fpowm_table_g, RHS.first, g, v, p);
 			mpz_fpowm(fpowm_table_h, RHS.second, h, v, p);
+std::cerr << "LHS.first = " << LHS.first << " RHS.first = " << RHS.first << std::endl;
 			// compare LHS and RHS (both components)
 			if (mpz_cmp(LHS.first, RHS.first))
 				throw false;
+std::cerr << "LHS.second = " << LHS.second << " RHS.second = " << RHS.second << std::endl;
 			if (mpz_cmp(LHS.second, RHS.second))
 				throw false;
 		

@@ -45,7 +45,7 @@ unsigned long int mpz_grandom_ui_nomodbias
 	do
 		rnd = mpz_grandom_ui(level);
 	while (rnd > max);
-	
+
 	return rnd;
 }
 
