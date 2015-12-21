@@ -129,10 +129,17 @@ int main
 			}
 			// create the secret rotation
 			random_rotation(n, pi);
+			for (size_t i = 0; i < n; i++)
+				std::cout << pi[i] << " ";
+			std::cout << std::endl;
+			size_t r = (n - pi[0]) % n;
+			std::cout << "r = " << r << std::endl;
 			// create a different rotation
 			do
 				random_rotation(n, xi);
 			while (equal_rotations(pi, xi));
+			size_t r_wrong = (n - xi[0]) % n;
+			std::cout << "r_wrong = " << r_wrong << std::endl;
 			
 			// initialize VRHE
 			HooghSchoenmakersSkoricVillegasVRHE *vrhe = new HooghSchoenmakersSkoricVillegasVRHE();
@@ -165,13 +172,13 @@ int main
 			// prove VRHE
 			start_clock();
 			std::cout << "P: vrhe.Prove_interactive(...)" << std::endl;
-			vrhe->Prove_interactive(pi[0], R, e, E, *pipe_in, *pipe_out);
+			vrhe->Prove_interactive(r, R, e, E, *pipe_in, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
 			// prove VRHE wrong
 			start_clock();
 			std::cout << "P: !vrhe.Prove_interactive(...)" << std::endl;
-//			vrhe->Prove_interactive(xi[0], R, e, E, *pipe_in, *pipe_out);
+			vrhe->Prove_interactive(r_wrong, R, e, E, *pipe_in, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
 			
@@ -223,7 +230,6 @@ int main
 			{
 				*pipe_in >> e[i].first >> e[i].second >> E[i].first >> 
 					E[i].second;
-std::cout << i << " -> e(" << e[i].first << "," << e[i].second << ") E(" << E[i].first << "," << E[i].second << ")" << std::endl;
 			}
 			// verify VRHE
 			start_clock();
@@ -234,7 +240,7 @@ std::cout << i << " -> e(" << e[i].first << "," << e[i].second << ") E(" << E[i]
 			// verify VRHE wrong
 			start_clock();
 			std::cout << "V: !vrhe.Verify_interactive(...)" << std::endl;
-//			assert(!vrhe->Verify_interactive(e, E, *pipe_in, *pipe_out));
+			assert(!vrhe->Verify_interactive(e, E, *pipe_in, *pipe_out));
 			stop_clock();
 			std::cout << "V: " << elapsed_time() << std::endl;
 			

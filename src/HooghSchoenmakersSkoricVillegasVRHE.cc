@@ -80,7 +80,6 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive
 		mpz_mul(G, G, foo);
 		mpz_mod(G, G, p);
 	}
-std::cerr << "r = " << r << std::endl;
 	for (size_t j = 0; j < alpha.size(); j++)
 	{
 		if (j != r)
@@ -93,7 +92,6 @@ std::cerr << "r = " << r << std::endl;
 			for (size_t i = 0; i < alpha.size(); i++)
 			{
 				size_t ij = (i >= j) ? i-j : alpha.size() - (j-i) ; // compute $i - j (mod n)$
-std::cerr << "ij = " << ij << std::endl;
 				mpz_mul(foo, alpha[ij], beta[i]);
 				mpz_mod(foo, foo, q);
 				mpz_add(bar, bar, foo);
@@ -131,7 +129,6 @@ std::cerr << "ij = " << ij << std::endl;
 	mpz_sub(lambdak[r], lambda, foo);
 	mpz_add(lambdak[r], lambdak[r], q); // add q to stay in the group
 	mpz_mod(lambdak[r], lambdak[r], q);
-std::cerr << "lambdak[r] = " << lambdak[r] << std::endl;
 	// compute $t_r = u + \lambda_r \sum_j s_j \beta_j$
 	mpz_set_ui(foo, 0L);
 	for (size_t j = 0; j < s.size(); j++)
@@ -213,7 +210,6 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 			mpz_add(rhs, rhs, lambdak[j]);
 			mpz_mod(rhs, rhs, q);
 		}
-std::cerr << "lambda = " << lambda << " rhs = " << rhs << std::endl;
 		if (mpz_cmp(lambda, rhs))
 			throw false;
 
@@ -233,7 +229,6 @@ std::cerr << "lambda = " << lambda << " rhs = " << rhs << std::endl;
 			for (size_t j = 0; j < alpha.size(); j++)
 			{
 				size_t jk = (j >= k) ? j-k : alpha.size() - (k-j) ; // compute $j - k (mod n)$
-std::cerr << "jk = " << jk << std::endl;
 				mpz_mul(foo, alpha[jk], beta[j]);
 				mpz_mod(foo, foo, q);
 				mpz_add(bar, bar, foo);
@@ -245,7 +240,6 @@ std::cerr << "jk = " << jk << std::endl;
 
 			// compute the right hand side $a_k(G/g^{\gamma_k})^{\lambda_k}$
 			mpz_fpowm(fpowm_table_g, foo, g, bar, p);
-std::cerr << "before invert, k = " << k << std::endl;
 			if (!mpz_invert(foo, foo, p))
 				throw false;
 			mpz_mul(foo, foo, G);
@@ -253,7 +247,6 @@ std::cerr << "before invert, k = " << k << std::endl;
 			mpz_powm(rhs, foo, lambdak[k], p);
 			mpz_mul(rhs, rhs, f[k]); // CHECK: $f_k$ is in the paper mistakenly written as $a_k$
 			mpz_mod(rhs, rhs, p);
-std::cerr << "lhs = " << lhs << " rhs = " << rhs << std::endl;
 			// compare
 			if (mpz_cmp(lhs, rhs))
 				throw false;
@@ -360,7 +353,7 @@ HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
 	
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(h);
 	in >> p >> q >> g >> h;
-std::cerr << " p = " << p << " q = " << q << " g = " << g << " h = " << h << std::endl;	
+
 	// Initialize the PUB-ROT-ZK argument
 	pub_rot_zk = new HooghSchoenmakersSkoricVillegasPUBROTZK(p, q, g, h);
 	
@@ -584,7 +577,7 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive
 		out << mu[i] << std::endl;
 		
 	// perform and prove PUB-ROT-ZK
-	pub_rot_zk->Prove_interactive(r, s, alpha, hk, in, out);
+	pub_rot_zk->Prove_interactive(r, uk, alpha, hk, in, out);
 	
 	// release
 	mpz_clear(v), mpz_clear(lambda), mpz_clear(foo), mpz_clear(bar),
@@ -724,11 +717,11 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 				if (mpz_cmp(LHS.second, RHS.second))
 					throw false;
 			}
-std::cerr << " before PUB-ROT-ZK " << std::endl;			
+
 		// perform and verify PUB-ROT-ZK
 		if (!pub_rot_zk->Verify_interactive(alpha, hk, in, out))
 			throw false;
-std::cerr << " after PUB-ROT-ZK " << std::endl;					
+
 		// check whether $\prod_{j=0}^{n-1} A_j X_j^{-\alpha_j} = (g^v, h^v)$
 			// LHS i.e. $\prod_{j=0}^{n-1} A_j X_j^{-\alpha_j}$
 			mpz_set_ui(LHS.first, 1L), mpz_set_ui(LHS.second, 1L); // mul. accumulator
@@ -749,12 +742,8 @@ std::cerr << " after PUB-ROT-ZK " << std::endl;
 			// RHS i.e. $(g^v, h^v)$
 			mpz_fpowm(fpowm_table_g, RHS.first, g, v, p);
 			mpz_fpowm(fpowm_table_h, RHS.second, h, v, p);
-std::cerr << "LHS.first = " << LHS.first << " RHS.first = " << RHS.first << std::endl;
 			// compare LHS and RHS (both components)
-			if (mpz_cmp(LHS.first, RHS.first))
-				throw false;
-std::cerr << "LHS.second = " << LHS.second << " RHS.second = " << RHS.second << std::endl;
-			if (mpz_cmp(LHS.second, RHS.second))
+			if (mpz_cmp(LHS.first, RHS.first) || mpz_cmp(LHS.second, RHS.second))
 				throw false;
 		
 		throw true;
