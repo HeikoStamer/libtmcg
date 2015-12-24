@@ -19,7 +19,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-TESTS = t-mpz t-vtmf t-vsshe t-vrhe t-mpc t-key t-poker
+TESTS = t-mpz t-vtmf t-vsshe t-vrhe t-mpc t-key t-poker t-poker-rot
 
 AM_CPPFLAGS = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@
 LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ ../src/libTMCG.la
@@ -38,3 +38,4 @@ t_vrhe_SOURCES = pipestream.hh test_helper.c test_helper.h t-vrhe.cc
 t_mpc_SOURCES = StiglicMPC.cc StiglicMPC.hh t-mpc.cc
 t_key_SOURCES = t-key.cc
 t_poker_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker.cc
+t_poker_rot_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker-rot.cc

@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision $Id: libTMCG.texi,v 1.57 2015/07/21 21:03:14 stamer Exp $.
+Revision 20151224.
 
 Copyright @copyright{} 2005, 2006, 2007, 2009, 2015 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
@@ -34,7 +34,7 @@ Free Documentation License''.
 @titlepage
 @title The LibTMCG Reference Manual
 @subtitle Version @value{VERSION}
-@subtitle @value{UPDATED}
+@subtitle @today{}
 @sp 9
 @c @center @titlefont{@math{@clubsuit@qquad@quad@spadesuit@qquad@quad@heartsuit@qquad@quad@diamondsuit}}
 @sp 2
@@ -137,6 +137,18 @@ The interested reader is referred to the following papers:
 	@emph{A Verifiable Secret Shuffle of Homomorphic Encryptions.}@*
 	Cryptology ePrint Archive, Report 2005/246, 2005.@*
 	@uref{http://eprint.iacr.org/@/2005/@/246}
+@end quotation
+@quotation [Gr10]
+	@sc{Jens Groth}.
+	@emph{A Verifiable Secret Shuffle of Homomorphic Encryptions.}@*
+	Journal of Cryptology, Volume 23 Issue 4, pp. 546--579, 2010.@*
+	@uref{http://dx.doi.org/10.1007/s00145-010-9067-9}
+@end quotation
+@quotation [HSSV09]
+	@sc{Sebastiaan de Hoogh}, @sc{Berry Schoenmakers}, @sc{Boris Skoric}, and @sc{Jose Villegas}.
+	@emph{Verifiable Rotation of Homomorphic Encryptions}@*
+	Public Key Cryptography 2009, Lecture Notes in Computer Science 5443, pp. 393--410, 2009.@*
+	@uref{http://dx.doi.org/10.1007/978-3-642-00468-1_22}
 @end quotation
 @quotation [St04]
 	@sc{Heiko Stamer}.
@@ -1700,7 +1712,7 @@ operations in secure card games, e.g., the creation of open cards, the masking
 of cards, the opening of masked cards, the verifiable secret shuffle of a stack,
 and more general tasks like distributed key generation procedures. Each class
 implements the main functionality of the corresponding research
-paper@tie{}[Sc98,BS03,Gr05]. The author names are a prefix of the class
+paper@tie{}[Sc98,BS03,Gr05,HSSV09]. The author names are a prefix of the class
 name and the then following part is an abbreviation of the title.
 
 @subsubsection Verifiable @var{k}-out-of-@var{k} Threshold Masking Function
@@ -2062,6 +2074,71 @@ of the same instance.
 	@end defop
 @end deftp
 
+@subsubsection Verifiable Rotation of Homomorphic Encryptions
+Hoogh, Schoenmakers, Skoric, and Villegas@tie{}[HSSV09] has proposed
+an efficient solution to perform a verifiable rotation (also known as cyclic shift) of
+homomorphically encrypted values. Other solutions (e.g. Reiter and Wang, @emph{Fragile Mixing}, ACM CCS, 2004)
+does not provide that level of efficency. LibTMCG provides the first known implementation
+of their protocol. It can only be used with the VTMF card encoding scheme of
+Barnett and Smart@tie{}[BS03].
+
+Further, to the best of our knowledge it is not known, whether their protocol
+retains the zero-knowledge property when it is executed in a concurrent setting.
+Thus the application programmer should be careful and avoid parallel invocations
+of the same instance.
+
+@deftp {Class} HooghSchoenmakersSkoricVillegasVRHE
+	This class provides the low-level interface for their protocol.
+	There are just a few methods that might be of general interest.
+	All other components are only used internally by high-level operations
+	and thus their description is omitted here.
+	
+	@deftypeop {Constructor} HooghSchoenmakersSkoricVillegasVRHE {} HooghSchoenmakersSkoricVillegasVRHE (@code{mpz_srcptr} p_ENC, @code{mpz_srcptr} q_ENC, @code{mpz_srcptr} k_ENC, @code{mpz_srcptr} g_ENC, @code{mpz_srcptr} h_ENC, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
+		This constructor creates a new instance. The low-level operations
+		are later used to show the correctness of a rotation of the cards.
+		The protocol and some of its parameters are initialized by the
+		members of the corresponding VTMF instance. Consequently, @var{p_ENC}
+		is the prime number @math{p} which determines the field
+		@math{{\bf Z}/p{\bf Z}}, @var{q_ENC} is the order of the underlying
+		subgroup @math{G}, i.e. the prime number @math{q}, and @var{k_ENC} is
+		the integer such that @math{p = qk + 1} holds. Further, @var{g_ENC} is
+		the generator @math{g}, and finally @var{h_ENC} is the common public
+		key @math{h}.
+		The @var{fieldsize} and the @var{subgroupsize} are supplied to internal
+		classes and are only of interest, if @var{p_ENC} or @var{q_ENC} have
+		lengths different from the default. If these arguments are omitted,
+		they are set to @code{TMCG_DDH_SIZE} and @code{TMCG_DLSE_SIZE}, respectively.
+		
+		This constructor should be instantiated only once by the session
+		leader. All other instances must be created by the second constructor.
+		Further, it is very important that the VTMF key generation protocol
+		has been finished before the value of @math{h} is passed to the
+		constructor. Otherwise, the correctness verification will definitely fail.
+	@end deftypeop
+	
+	@deftypeop {Constructor} HooghSchoenmakersSkoricVillegasVRHE {} HooghSchoenmakersSkoricVillegasVRHE (@code{std::istream&} in, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
+		This constructor initializes the instance from a correctly formatted
+		input stream @var{in}. For example, such a stream can be generated by
+		calling the method @code{PublishGroup} of an already created instance.
+		Later the instance can be used to show the correctness of a rotation.
+	@end deftypeop
+	
+	@deftypemethod HooghSchoenmakersSkoricVillegasVRHE bool CheckGroup ()
+		This method checks whether the initialized commitment scheme is sound.
+		It returns @code{true}, if all tests have been passed successfully.
+	@end deftypemethod
+	
+	@deftypemethod HooghSchoenmakersSkoricVillegasVRHE void PublishGroup (@code{std::ostream&} out)
+		This method exports the instance configuration to the output stream
+		@var{out} such that other instances can be initialized, e.g. with the
+		second constructor.
+	@end deftypemethod
+	
+	@defop {Destructor} HooghSchoenmakersSkoricVillegasVRHE ~HooghSchoenmakersSkoricVillegasVRHE ()
+		This destructor releases all occupied resources.
+	@end defop
+@end deftp
+
 @subsubsection Toolbox for Mental Card Games
 This section explains the main class of LibTMCG which provides all
 ``high-level operations'' from Schindelhauer's toolbox@tie{}[Sc98].
@@ -2403,7 +2480,8 @@ class must be created to perform any card or stack operations.
 	
 	@deftypemethod SchindelhauerTMCG size_t TMCG_CreateStackSecret (@code{TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{bool} cyclic, @code{size_t} size, @code{BarnettSmartVTMF_dlog*} vtmf)
 		This method initializes the stack secret @var{ss} with a randomly and
-		uniformly chosen permutation (using the algorithm of Knuth) and fresh card secrets. Later this stack
+		uniformly chosen permutation (using the algorithm of Knuth) and fresh
+		card secrets. Later this stack
 		secret can be used to perform a secret shuffle operation on a stack.
 		If the parameter @var{cyclic} is set to @code{true}, then the permutation
 		is only a cyclic shift which might be of interest for particular
@@ -2479,6 +2557,13 @@ class must be created to perform any card or stack operations.
 		is a pointer to an initialized instance of @code{GrothVSSHE}.
 		The rest of the arguments are the same.
 	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality_Hoogh (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf, @code{HooghSchoenmakersSkoricVillegasVRHE*} vrhe, @code{std::istream&} in, @code{std::ostream&} out)
+		This is a method like above. The only difference is that the more
+		efficient rotation verification protocol@tie{}[HSSV09] is used. Thus @var{vrhe}
+		is a pointer to an initialized instance of @code{HooghSchoenmakersSkoricVillegasVRHE}.
+		The rest of the arguments are the same.
+	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality (@code{const TMCG_Stack<TMCG_Card>&} s, @code{const TMCG_Stack<TMCG_Card>&} s2, @code{bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{std::istream&} in, @code{std::ostream&} out)
 		This method should be executed by the verifier to check whether or not a
@@ -2512,6 +2597,13 @@ class must be created to perform any card or stack operations.
 		This is a method like above. The only difference is that the more
 		efficient shuffle verification protocol of Groth is used. Thus @var{vsshe}
 		is a pointer to an initialized instance of @code{GrothVSSHE}.
+		The rest of the arguments and the returned values are the same.
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality_Hoogh (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{BarnettSmartVTMF_dlog*} vtmf, @code{HooghSchoenmakersSkoricVillegasVRHE*} vrhe, @code{std::istream&} in, @code{std::ostream&} out)
+		This is a method like above. The only difference is that the more
+		efficient rotation verification protocol@tie{}[HSSV09] is used. Thus @var{vrhe}
+		is a pointer to an initialized instance of @code{HooghSchoenmakersSkoricVillegasVRHE}.
 		The rest of the arguments and the returned values are the same.
 	@end deftypemethod
 	

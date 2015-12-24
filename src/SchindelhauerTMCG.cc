@@ -1564,7 +1564,6 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality_Hoogh
 	std::vector<mpz_ptr> R;
 	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
 	size_t r = (ss.size() - ss[0].first) % ss.size();
-std::cerr << "r = " << r << std::endl;
 	
 	TMCG_InitializeStackEquality_Hoogh(R, e, E, s, s2, ss);
 	vrhe->Prove_interactive(r, R, e, E, in, out);
