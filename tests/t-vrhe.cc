@@ -35,14 +35,14 @@
 #undef NDEBUG
 
 // create a random rotation (naive algorithm)
-void random_rotation
+size_t random_rotation
 	(size_t n, std::vector<size_t> &pi)
 {
 	size_t r = mpz_srandom_mod(n);
-//std::cout << r << " ";
 	pi.clear();
 	for (size_t i = 0; i < n; i++)
 		pi.push_back((r + i) % n);
+	return ((n - r) % n);
 }
 
 bool equal_rotations
@@ -128,17 +128,16 @@ int main
 					E.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp6, tmp7));
 			}
 			// create the secret rotation
-			random_rotation(n, pi);
+			size_t r = random_rotation(n, pi);
 			for (size_t i = 0; i < n; i++)
 				std::cout << pi[i] << " ";
 			std::cout << std::endl;
-			size_t r = (n - pi[0]) % n;
 			std::cout << "r = " << r << std::endl;
 			// create a different rotation
+			size_t r_wrong = 0;
 			do
-				random_rotation(n, xi);
+				r_wrong = random_rotation(n, xi);
 			while (equal_rotations(pi, xi));
-			size_t r_wrong = (n - xi[0]) % n;
 			std::cout << "r_wrong = " << r_wrong << std::endl;
 			
 			// initialize VRHE

@@ -145,6 +145,18 @@ class SchindelhauerTMCG
 		void TMCG_ReleaseStackEquality_Groth
 			(std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
 			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E);
+
+		// helper methods for rotation proof
+		void TMCG_InitializeStackEquality_Hoogh
+			(std::vector<mpz_ptr> &R,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
+			const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+			const TMCG_StackSecret<VTMF_CardSecret> &ss);
+		void TMCG_ReleaseStackEquality_Hoogh
+			(std::vector<mpz_ptr> &R,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E);
 	
 	public:
 		const unsigned long int		TMCG_SecurityLevel;						// # of iterations
@@ -240,6 +252,11 @@ class SchindelhauerTMCG
 			const TMCG_StackSecret<VTMF_CardSecret> &ss,
 			BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
 			std::istream &in, std::ostream &out);
+		void TMCG_ProveStackEquality_Hoogh
+			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+			const TMCG_StackSecret<VTMF_CardSecret> &ss,
+			BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
+			std::istream &in, std::ostream &out);
 		bool TMCG_VerifyStackEquality
 			(const TMCG_Stack<TMCG_Card> &s, const TMCG_Stack<TMCG_Card> &s2, 
 			bool cyclic, const TMCG_PublicKeyRing &ring, 
@@ -251,6 +268,10 @@ class SchindelhauerTMCG
 		bool TMCG_VerifyStackEquality_Groth
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2, 
 			BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
+			std::istream &in, std::ostream &out);
+		bool TMCG_VerifyStackEquality_Hoogh
+			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+			BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
 			std::istream &in, std::ostream &out);
 };
 

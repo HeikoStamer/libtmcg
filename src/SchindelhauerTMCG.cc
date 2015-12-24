@@ -6,8 +6,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 
-               Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2015 
+               Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1135,10 +1135,21 @@ void random_permutation_fast
 	
 	for (size_t i = 0; i < (n - 1); i++)
 	{
-		size_t tmp = pi[i], rnd = i + mpz_srandom_mod(n - i);
+		size_t tmp = pi[i], rnd = i + (size_t)mpz_srandom_mod(n - i);
 		pi[i] = pi[rnd];
 		pi[rnd] = tmp;
 	}
+}
+
+// create a random rotation (naive algorithm)
+size_t random_rotation
+	(size_t n, std::vector<size_t> &pi)
+{
+	size_t r = (size_t)mpz_srandom_mod(n);
+	pi.clear();
+	for (size_t i = 0; i < n; i++)
+		pi.push_back((r + i) % n);
+	return ((n - r) % n);
 }
 
 size_t SchindelhauerTMCG::TMCG_CreateStackSecret
@@ -1149,12 +1160,12 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 	assert(ring.keys.size() > index);
 	assert(size <= TMCG_MAX_CARDS);
 	
-	size_t cyc = 0;
+	size_t r = 0;
 	std::vector<size_t> pi;
 	
 	ss.clear();
 	if (cyclic)
-		cyc = (size_t)mpz_srandom_mod(size);
+		r = random_rotation(size, pi); // naive alorithm
 	else
 		random_permutation_fast(size, pi); // Knuth's algorithm
 
@@ -1163,9 +1174,9 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 		TMCG_CardSecret cs(TMCG_Players, TMCG_TypeBits);
 		TMCG_CreateCardSecret(cs, ring, index);
 		
-		ss.push(((cyclic) ? (cyc + i) % size : pi[i]), cs);
+		ss.push(pi[i], cs);
 	}
-	return cyc;
+	return r;
 }
 
 size_t SchindelhauerTMCG::TMCG_CreateStackSecret
@@ -1174,12 +1185,12 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 {
 	assert(size <= TMCG_MAX_CARDS);
 	
-	size_t cyc = 0;
+	size_t r = 0;
 	std::vector<size_t> pi;
 	
 	ss.clear();
 	if (cyclic)
-		cyc = (size_t)mpz_srandom_mod(size);
+		r = random_rotation(size, pi); // naive alorithm
 	else
 		random_permutation_fast(size, pi); // Knuth's algorithm
 	
@@ -1188,9 +1199,9 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 		VTMF_CardSecret cs;
 		TMCG_CreateCardSecret(cs, vtmf);
 		
-		ss.push(((cyclic) ? (cyc + i) % size : pi[i]), cs);
+		ss.push(pi[i], cs);
 	}
-	return cyc;
+	return r;
 }
 
 void SchindelhauerTMCG::TMCG_MixStack
@@ -1448,6 +1459,26 @@ void SchindelhauerTMCG::TMCG_InitializeStackEquality_Groth
 	}
 }
 
+void SchindelhauerTMCG::TMCG_InitializeStackEquality_Hoogh
+	(std::vector<mpz_ptr> &R,
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > &E,
+	const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+	const TMCG_StackSecret<VTMF_CardSecret> &ss)
+{
+	for (size_t i = 0; i < s.size(); i++)
+	{
+		mpz_ptr tmp = new mpz_t(), tmp4 = new mpz_t(), tmp5 = new mpz_t(),
+			tmp6 = new mpz_t(), tmp7 = new mpz_t();
+		mpz_init_set(tmp, ss[ss[i].first].second.r),
+			mpz_init_set(tmp4, s[i].c_1), mpz_init_set(tmp5, s[i].c_2),
+			mpz_init_set(tmp6, s2[i].c_1), mpz_init_set(tmp7, s2[i].c_2);
+		R.push_back(tmp),
+			e.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp4, tmp5)),
+			E.push_back(std::pair<mpz_ptr, mpz_ptr>(tmp6, tmp7));
+	}
+}
+
 void SchindelhauerTMCG::TMCG_ReleaseStackEquality_Groth
 	(std::vector<size_t> &pi, std::vector<mpz_ptr> &R,
 	std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
@@ -1462,6 +1493,22 @@ void SchindelhauerTMCG::TMCG_ReleaseStackEquality_Groth
 		delete E[i].first, delete E[i].second;
 	}
 	pi.clear(), R.clear(), e.clear(), E.clear();
+}
+
+void SchindelhauerTMCG::TMCG_ReleaseStackEquality_Hoogh
+	(std::vector<mpz_ptr> &R,
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > &e,
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > &E)
+{
+	for (size_t i = 0; i < R.size(); i++)
+	{
+		mpz_clear(R[i]), delete R[i];
+		mpz_clear(e[i].first), mpz_clear(e[i].second);
+		delete e[i].first, delete e[i].second;
+		mpz_clear(E[i].first), mpz_clear(E[i].second);
+		delete E[i].first, delete E[i].second;
+	}
+	R.clear(), e.clear(), E.clear();
 }
 
 void SchindelhauerTMCG::TMCG_ReleaseStackEquality_Groth
@@ -1500,6 +1547,28 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality_Groth
 	TMCG_InitializeStackEquality_Groth(pi, R, e, E, s, s2, ss);
 	vsshe->Prove_interactive(pi, R, e, E, in, out);
 	TMCG_ReleaseStackEquality_Groth(pi, R, e, E);
+}
+
+void SchindelhauerTMCG::TMCG_ProveStackEquality_Hoogh
+	(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+	const TMCG_StackSecret<VTMF_CardSecret> &ss,
+	BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
+	std::istream &in, std::ostream &out)
+{
+	assert((s.size() == s2.size()) && (s.size() == ss.size()));
+	assert(!mpz_cmp(vtmf->p, vrhe->p));
+	assert(!mpz_cmp(vtmf->q, vrhe->q));
+	assert(!mpz_cmp(vtmf->g, vrhe->g));
+	assert(!mpz_cmp(vtmf->h, vrhe->h));
+	
+	std::vector<mpz_ptr> R;
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
+	size_t r = (ss.size() - ss[0].first) % ss.size();
+std::cerr << "r = " << r << std::endl;
+	
+	TMCG_InitializeStackEquality_Hoogh(R, e, E, s, s2, ss);
+	vrhe->Prove_interactive(r, R, e, E, in, out);
+	TMCG_ReleaseStackEquality_Hoogh(R, e, E);
 }
 
 bool SchindelhauerTMCG::TMCG_VerifyStackEquality
@@ -1565,9 +1634,9 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			// verify cyclic shift
 			if (cyclic)
 			{
-				size_t cy = ss[0].first;
+				size_t cyc = ss[0].first;
 				for (size_t j = 1; j < ss.size(); j++)
-					if (((++cy) % ss.size()) != ss[j].first)
+					if (((++cyc) % ss.size()) != ss[j].first)
 						throw false;
 			}
 		}
@@ -1693,11 +1762,40 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Groth
 	
 	std::vector<mpz_ptr> R;
 	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
-	std::vector<size_t> pi;
 	
 	TMCG_InitializeStackEquality_Groth(e, E, s, s2);
 	bool return_value = vsshe->Verify_interactive(e, E, in, out);
 	TMCG_ReleaseStackEquality_Groth(e, E);
+	
+	return return_value;
+}
+
+bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Hoogh
+	(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+	BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
+	std::istream &in, std::ostream &out)
+{
+	// check whether the parameters of VRHE and VTMF match
+	if (mpz_cmp(vtmf->p, vrhe->p) || mpz_cmp(vtmf->q, vrhe->q) || 
+		mpz_cmp(vtmf->g, vrhe->g) || mpz_cmp(vtmf->h, vrhe->h))
+			return false;
+	
+	if (s.size() != s2.size())
+		return false;
+	
+	// check whether the elements of the shuffled stack belong to the group
+	for (size_t i = 0; i < s2.size(); i++)
+	{
+		if (!vtmf->CheckElement(s2[i].c_1) || !vtmf->CheckElement(s2[i].c_2))
+			return false;
+	}
+	
+	std::vector<mpz_ptr> R;
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
+	
+	TMCG_InitializeStackEquality_Groth(e, E, s, s2); // we can use the helper
+	bool return_value = vrhe->Verify_interactive(e, E, in, out);
+	TMCG_ReleaseStackEquality_Groth(e, E); // we can use this helper also here
 	
 	return return_value;
 }
