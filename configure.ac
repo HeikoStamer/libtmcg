@@ -21,7 +21,7 @@
 AC_REVISION($Revision: 1.47 $)
 AC_PREREQ(2.57)
 
-AC_INIT([libTMCG], [1.1.3])
+AC_INIT([libTMCG], [1.1.4])
 
 # The next two paragraphs are copies of libgcrypt behaviour.
 
