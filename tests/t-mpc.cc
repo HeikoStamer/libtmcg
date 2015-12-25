@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006, 2009  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006, 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -99,6 +99,14 @@ int main
 		mpc->MPC_OpenBitCommitment(result, x);
 		mpc->MPC_ComputeNEG(result, b);
 		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeAND(result, a, a, false);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeAND(result, a, b, false);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeAND(result, b, a, false);
+		mpc->MPC_OpenBitCommitment(result, x);
+		mpc->MPC_ComputeAND(result, b, b, false);
+		mpc->MPC_OpenBitCommitment(result, x);
 		mpc->MPC_ComputeAND(result, a, a);
 		mpc->MPC_OpenBitCommitment(result, x);
 		mpc->MPC_ComputeAND(result, a, b);
@@ -187,7 +195,25 @@ int main
 		assert(mpc->MPC_OpenBitCommitment(result, x));
 		assert(x == true);
 		
+		std::cout << "ComputeAND (without VRHE)" << std::endl;
+		start_clock();
+		assert(mpc->MPC_ComputeAND(result, a, a, false));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == true);
+		assert(mpc->MPC_ComputeAND(result, a, b, false));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == false);
+		assert(mpc->MPC_ComputeAND(result, b, a, false));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == false);
+		assert(mpc->MPC_ComputeAND(result, b, b, false));
+		assert(mpc->MPC_OpenBitCommitment(result, x));
+		assert(x == false);
+		stop_clock();
+		std::cout << elapsed_time() << std::endl;
+
 		std::cout << "ComputeAND" << std::endl;
+		start_clock();
 		assert(mpc->MPC_ComputeAND(result, a, a));
 		assert(mpc->MPC_OpenBitCommitment(result, x));
 		assert(x == true);
@@ -200,6 +226,8 @@ int main
 		assert(mpc->MPC_ComputeAND(result, b, b));
 		assert(mpc->MPC_OpenBitCommitment(result, x));
 		assert(x == false);
+		stop_clock();
+		std::cout << elapsed_time() << std::endl;
 		
 		std::cout << "ComputeOR" << std::endl;
 		assert(mpc->MPC_ComputeOR(result, a, a));

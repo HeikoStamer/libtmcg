@@ -4,7 +4,7 @@
      Anton Stiglic: 'Computations with a deck of cards', 
      Theoretical Computer Science, 259 (1-2) (2001) pp. 671-678
 
- Copyright (C) 2002, 2003, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2002, 2003, 2005, 2015  Heiko Stamer <HeikoStamer@gmx.net>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -45,6 +45,30 @@ void StiglicMPC::MPC_ProveBitCommitment
 	}
 }
 
+void StiglicMPC::MPC_ProveBitCommitment_Hoogh
+	(MPC_Bit &bit, bool b)
+{
+	MPC_BitSecret bs;
+	size_t cyc = 0;
+	do
+		cyc = tmcg->TMCG_CreateStackSecret(bs, true, base.size(), vtmf);
+	while ((b && (cyc == 0)) || (!b && (cyc == 1)));
+	bit.clear();
+	tmcg->TMCG_MixStack(base, bit, bs, vtmf);
+	
+	for (size_t i = 0; i < participants.size(); i++)
+	{
+		if (i != index)
+		{
+			*participants[i]->out << bit << std::endl << std::flush;
+			tmcg->TMCG_ProveStackEquality_Hoogh(base, bit, bs, vtmf, vrhe,
+				*participants[i]->in, *participants[i]->out);
+		}
+	}
+}
+
+
+
 bool StiglicMPC::MPC_VerifyBitCommitment
 	(MPC_Bit &bit, size_t from)
 {
@@ -55,6 +79,22 @@ bool StiglicMPC::MPC_VerifyBitCommitment
 	if (bit.size() != 2)
 		return false;
 	if (!tmcg->TMCG_VerifyStackEquality(base, bit, true, vtmf,
+		*participants[from]->in, *participants[from]->out))
+			return false;
+	
+	return true;
+}
+
+bool StiglicMPC::MPC_VerifyBitCommitment_Hoogh
+	(MPC_Bit &bit, size_t from)
+{
+	*participants[from]->in >> bit;
+	
+	if (!participants[from]->in->good())
+		return false;
+	if (bit.size() != 2)
+		return false;
+	if (!tmcg->TMCG_VerifyStackEquality_Hoogh(base, bit, vtmf, vrhe,
 		*participants[from]->in, *participants[from]->out))
 			return false;
 	
@@ -161,6 +201,47 @@ bool StiglicMPC::MPC_CyclicShift
 	return true;
 }
 
+bool StiglicMPC::MPC_CyclicShift_Hoogh
+	(TMCG_Stack<VTMF_Card> &result, TMCG_Stack<VTMF_Card> stack)
+{
+	assert(stack.size() > 0);
+	
+	for (size_t i = 0; i < participants.size(); i++)
+	{
+		TMCG_Stack<VTMF_Card> s1;
+		TMCG_StackSecret<VTMF_CardSecret> cs1;
+		
+		if (i == index)
+		{
+			tmcg->TMCG_CreateStackSecret(cs1, true, stack.size(), vtmf);
+			tmcg->TMCG_MixStack(stack, s1, cs1, vtmf);
+			
+			for (size_t j = 0; j < participants.size(); j++)
+			{
+				if (j != index)
+				{
+					*participants[j]->out << s1 << std::endl << std::flush;
+					tmcg->TMCG_ProveStackEquality_Hoogh(stack, s1, cs1, vtmf, vrhe,
+						*participants[j]->in, *participants[j]->out);
+				}
+			}
+		}
+		else
+		{
+			*participants[i]->in >> s1;
+			if (!participants[i]->in->good())
+				return false;
+			if (!tmcg->TMCG_VerifyStackEquality_Hoogh(stack, s1, vtmf, vrhe,
+				*participants[i]->in, *participants[i]->out))
+					return false;
+		}
+		stack = s1;
+	}
+	result = stack;
+	
+	return true;
+}
+
 void StiglicMPC::MPC_ComputeNEG
 	(MPC_Bit &result, const MPC_Bit bit)
 {
@@ -170,7 +251,7 @@ void StiglicMPC::MPC_ComputeNEG
 }
 
 bool StiglicMPC::MPC_ComputeAND
-	(MPC_Bit &result, const MPC_Bit bitA, const MPC_Bit bitB)
+	(MPC_Bit &result, const MPC_Bit bitA, const MPC_Bit bitB, bool use_vrhe)
 {
 	assert((bitA.size() == 2) && (bitB.size() == 2));
 	
@@ -184,8 +265,16 @@ bool StiglicMPC::MPC_ComputeAND
 	while (1)
 	{
 		// step 2. and 3. -- apply a cyclic shift
-		if (!MPC_CyclicShift(las_vegas, las_vegas))
-			return false;
+		if (use_vrhe)
+		{
+			if (!MPC_CyclicShift_Hoogh(las_vegas, las_vegas))
+				return false;
+		}
+		else
+		{
+			if (!MPC_CyclicShift(las_vegas, las_vegas))
+				return false;
+		}
 		
 		// step 4. -- turn over the cards
 		if (!MPC_OpenCardCommitment(las_vegas[0], cb[0]))
@@ -256,7 +345,7 @@ bool StiglicMPC::MPC_ComputeXOR
 }
 
 bool StiglicMPC::MPC_CopyBitCommitment
-	(MPC_Bit &copy1, MPC_Bit &copy2, const MPC_Bit &bit)
+	(MPC_Bit &copy1, MPC_Bit &copy2, const MPC_Bit &bit, bool use_vrhe)
 {
 	assert(bit.size() == 2);
 	
@@ -267,8 +356,16 @@ bool StiglicMPC::MPC_CopyBitCommitment
 	copyshop.push(negbase), copyshop.push(negbase), copyshop.push(negbase);
 	
 	// step 2a. -- apply a cyclic shift to the six rightmost cards
-	if (!MPC_CyclicShift(copyshop, copyshop))
-		return false;
+	if (use_vrhe)
+	{
+		if (!MPC_CyclicShift_Hoogh(copyshop, copyshop))
+			return false;
+	}
+	else
+	{	
+		if (!MPC_CyclicShift(copyshop, copyshop))
+			return false;
+	}
 	
 	// step 2b. -- create the necessary configuration
 	left.push(bit), left.push(copyshop[0]), left.push(copyshop[1]);
@@ -276,8 +373,16 @@ bool StiglicMPC::MPC_CopyBitCommitment
 	assert(copyshop.size() == 4);
 	
 	// step 3. -- apply a cyclic shift to the four topmost cards
-	if (!MPC_CyclicShift(left, left))
-		return false;
+	if (use_vrhe)
+	{
+		if (!MPC_CyclicShift_Hoogh(left, left))
+			return false;
+	}
+	else
+	{
+		if (!MPC_CyclicShift(left, left))
+			return false;
+	}
 	
 	// step 4. -- open the four topmost cards
 	if (!MPC_OpenCardCommitment(left[0], cb[0]))
@@ -305,10 +410,18 @@ bool StiglicMPC::MPC_CopyBitCommitment
 }
 
 bool StiglicMPC::MPC_RandomBitCommitment
-	(MPC_Bit &result)
+	(MPC_Bit &result, bool use_vrhe)
 {
 	result.clear(), result.push(base);
-	if (!MPC_CyclicShift(result, result))
-		return false;
+	if (use_vrhe)
+	{
+		if (!MPC_CyclicShift_Hoogh(result, result))
+			return false;
+	}
+	else
+	{
+		if (!MPC_CyclicShift(result, result))
+			return false;
+	}
 	return true;
 }

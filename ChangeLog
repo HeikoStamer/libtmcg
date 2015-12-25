@@ -1,3 +1,4 @@
+* [2015-12-25] release 1.1.3 of LibTMCG
 * [2015-07] several files changed to reflect the new situation
 * [2009-11-21] feature "--disable-forking" for ./configure added
 * [2009-11-21] syntax error in libTMCG.texi fixed

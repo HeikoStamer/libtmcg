@@ -4,7 +4,8 @@
      Anton Stiglic: 'Computations with a deck of cards', 
      Theoretical Computer Science, 259 (1-2) (2001) pp. 671-678
 
- Copyright (C) 2002, 2003, 2005, 2007  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2002, 2003, 2005, 2007, 2015  
+					Heiko Stamer <HeikoStamer@gmx.net>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -53,17 +54,18 @@ struct MPC_Participant
 };
 
 typedef std::vector<MPC_Participant*>				MPC_ParticipantList;
-typedef TMCG_Stack<VTMF_Card>								MPC_Bit;
-typedef TMCG_StackSecret<VTMF_CardSecret>		MPC_BitSecret;
+typedef TMCG_Stack<VTMF_Card>					MPC_Bit;
+typedef TMCG_StackSecret<VTMF_CardSecret>			MPC_BitSecret;
 
 class StiglicMPC
 {
 	private:
 		SchindelhauerTMCG				*tmcg;
-		BarnettSmartVTMF_dlog		*vtmf;
-		MPC_ParticipantList			participants;
-		size_t									index;
-		MPC_Bit									base, negbase;
+		BarnettSmartVTMF_dlog				*vtmf;
+		HooghSchoenmakersSkoricVillegasVRHE		*vrhe;
+		MPC_ParticipantList				participants;
+		size_t						index;
+		MPC_Bit						base, negbase;
 	
 	public:
 	
@@ -78,7 +80,7 @@ class StiglicMPC
 			}
 			tmcg = new SchindelhauerTMCG(security, participants.size(), 1);
 			
-			// create an instance of the VTMF implementation (create the group G)
+			// create an instance of the VTMF scheme (create the group G)
 			if (index)
 			{
 				vtmf = new BarnettSmartVTMF_dlog(*participants[0]->in);
@@ -86,7 +88,7 @@ class StiglicMPC
 			else
 			{
 				vtmf = new BarnettSmartVTMF_dlog();
-				// broadcast the parameters of the group
+				// broadcast the parameters of the scheme
 				for (size_t i = 0; i < participants.size(); i++)
 				{
 					if (i != index)
@@ -120,21 +122,55 @@ class StiglicMPC
 			}
 			// finish the key generation
 			vtmf->KeyGenerationProtocol_Finalize();
+
+			// initialize and check the VRHE scheme
+			if (index)
+			{
+				vrhe = new HooghSchoenmakersSkoricVillegasVRHE(*participants[0]->in);
+			}
+			else
+			{
+				vrhe = new HooghSchoenmakersSkoricVillegasVRHE( 
+					vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+				// broadcast the parameters of the scheme
+				for (size_t i = 0; i < participants.size(); i++)
+				{
+					if (i != index)
+						vrhe->PublishGroup(*participants[i]->out);
+				}
+			}
+			if (!vrhe->CheckGroup())
+			{
+				std::cerr << "VRHE: Instance was not correctly generated!" << std::endl;
+				exit(-1);
+			}
+			if (mpz_cmp(vtmf->p, vrhe->p) || mpz_cmp(vtmf->q, vrhe->q) || 
+				mpz_cmp(vtmf->g, vrhe->g) || mpz_cmp(vtmf->h, vrhe->h))
+			{
+				std::cerr << "VRHE: Encryption scheme does not match!" << std::endl;
+				exit(-1);
+			}
 			
-			// initialize the base stacks with open cards
+			// initialize the base stacks (bit encodings) with open cards
 			VTMF_Card c[2];
 			tmcg->TMCG_CreateOpenCard(c[0], vtmf, 0);
 			tmcg->TMCG_CreateOpenCard(c[1], vtmf, 1);
-			base.push(c[0]), base.push(c[1]);
-			negbase.push(c[1]), negbase.push(c[0]);
+			base.push(c[0]), base.push(c[1]); // "base" means the bit 0
+			negbase.push(c[1]), negbase.push(c[0]); // "negbase" means the inverse, i.e. bit 1
 		}
 		
 		void MPC_ProveBitCommitment
 			(MPC_Bit &bit, bool b);
 		
+		void MPC_ProveBitCommitment_Hoogh
+			(MPC_Bit &bit, bool b);
+
 		bool MPC_VerifyBitCommitment
 			(MPC_Bit &bit, size_t from);
 		
+		bool MPC_VerifyBitCommitment_Hoogh
+			(MPC_Bit &bit, size_t from);
+
 		bool MPC_OpenCardCommitment
 			(const VTMF_Card &card, bool &b);
 		
@@ -143,12 +179,15 @@ class StiglicMPC
 		
 		bool MPC_CyclicShift
 			(TMCG_Stack<VTMF_Card> &result, TMCG_Stack<VTMF_Card> stack);
+
+		bool MPC_CyclicShift_Hoogh
+			(TMCG_Stack<VTMF_Card> &result, TMCG_Stack<VTMF_Card> stack);
 		
 		void MPC_ComputeNEG
 			(MPC_Bit &result, const MPC_Bit bit);
 		
 		bool MPC_ComputeAND
-			(MPC_Bit &result, const MPC_Bit bitA, const MPC_Bit bitB);
+			(MPC_Bit &result, const MPC_Bit bitA, const MPC_Bit bitB, bool use_vrhe = true);
 		
 		bool MPC_ComputeOR
 			(MPC_Bit &result, const MPC_Bit &bitA, const MPC_Bit &bitB);
@@ -157,15 +196,15 @@ class StiglicMPC
 			(MPC_Bit &result, const MPC_Bit &bitA, const MPC_Bit &bitB);
 		
 		bool MPC_CopyBitCommitment
-			(MPC_Bit &copy1, MPC_Bit &copy2, const MPC_Bit &bit);
+			(MPC_Bit &copy1, MPC_Bit &copy2, const MPC_Bit &bit, bool use_vrhe = true);
 		
 		bool MPC_RandomBitCommitment
-			(MPC_Bit &result);
+			(MPC_Bit &result, bool use_vrhe = true);
 		
 		~StiglicMPC
 			()
 		{
-			delete tmcg, delete vtmf;
+			delete tmcg, delete vtmf, delete vrhe;
 		}
 };
 
