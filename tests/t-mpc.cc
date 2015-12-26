@@ -67,7 +67,7 @@ int main
 	if (pid == 0)
 	{
 		/* BEGIN child code: participant B */
-		mpc = new StiglicMPC(16, list, 1);
+		mpc = new StiglicMPC(64, list, 1);
 		
 		MPC_Bit a, b, c, result;
 		bool x = false, y = false, z = false;
@@ -140,7 +140,7 @@ int main
 	{
 		std::cout << "fork() = " << pid << std::endl;
 		/* Participant A */
-		mpc = new StiglicMPC(16, list, 0);
+		mpc = new StiglicMPC(64, list, 0);
 		
 		MPC_Bit a, b, c, result;
 		bool x = false, y = false, z = false;

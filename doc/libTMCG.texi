@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20151224.
+Revision 20151226.
 
 Copyright @copyright{} 2005, 2006, 2007, 2009, 2015 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
@@ -2075,7 +2075,7 @@ of the same instance.
 @end deftp
 
 @subsubsection Verifiable Rotation of Homomorphic Encryptions
-Hoogh, Schoenmakers, Skoric, and Villegas@tie{}[HSSV09] has proposed
+De Hoogh, Schoenmakers, Skoric, and Villegas@tie{}[HSSV09] has proposed
 an efficient solution to perform a verifiable rotation (also known as cyclic shift) of
 homomorphically encrypted values. Other solutions (e.g. Reiter and Wang, @emph{Fragile Mixing}, ACM CCS, 2004)
 does not provide that level of efficency. LibTMCG provides the first known implementation
@@ -2164,7 +2164,7 @@ class must be created to perform any card or stack operations.
 		of the zero-knowledge proofs in the encoding scheme of Schindelhauer.
 		Further it defines the soundness error probability (also @math{2^{-t}})
 		of the shuffle argument in the encoding scheme of Barnett and Smart, if
-		the efficient protocol of Groth@tie{}[Gr05] is not used.
+		the efficient protocols of Groth@tie{}[Gr05] and [HSSV09] are not used.
 	@end deftypecv
 	
 	@deftypecv {Member} SchindelhauerTMCG {size_t} TMCG_Players
@@ -2190,12 +2190,14 @@ class must be created to perform any card or stack operations.
 		the involved protocols and thus has a major impact on the computational
 		and communication complexity. If the encoding scheme of Barnett and
 		Smart@tie{}[BS03] is used, then it only defines the soundness error
-		probability (also @math{2^{-t}}) of the shuffle proof. However, if only
-		the efficient shuffle verification protocol of Groth@tie{}[Gr05] is used,
-		then the parameter @var{security} is dispensable, because the parameter @var{ell_e}
-		given during instantiation of @code{GrothVSSHE} (e.g. the LibTMCG default security
-		parameter @code{TMCG_GROTH_L_E}) determines this soundness error probability
-		(@math{2^{-\ell_e}}).
+		probability (also @math{2^{-t}}) of the corresponding shuffle proof.
+		However, if the efficient shuffle verification protocol of Groth@tie{}[Gr05] is used,
+		then the parameter @var{security} is dispensable, because the parameter
+		@var{ell_e} given during instantiation of @code{GrothVSSHE} (e.g. the LibTMCG
+		default security parameter @code{TMCG_GROTH_L_E}) determines this soundness
+		error probability (@math{2^{-\ell_e}}).
+		The similar holds for the verifiable rotation protocol@tie{}[HSSV09], however,
+		in this case there is no security parameter for the soundness error.
 		
 		Unfortunately, the parameters @var{k} and @var{w} have a major impact on the
 		complexity in the encoding scheme of Schindelhauer, too. Therefore you should always use
