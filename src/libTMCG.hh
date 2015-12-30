@@ -38,7 +38,7 @@
 	#ifndef TMCG_DDH_SIZE
 		/* Define the security parameter of the DDH-hard group G;
 		   Underlying assumptions: DDH, CDH, DLOG */
-		#define TMCG_DDH_SIZE 1024
+		#define TMCG_DDH_SIZE 2048
 	#endif
 	
 	#ifndef TMCG_DLSE_SIZE
@@ -50,7 +50,7 @@
 	#ifndef TMCG_GCRY_MD_ALGO
 		/* Define the message digest algorithm for signatures and FS-heuristic;
 		   Underlying assumption: Random Oracle Model */
-		#define TMCG_GCRY_MD_ALGO GCRY_MD_RMD160
+		#define TMCG_GCRY_MD_ALGO GCRY_MD_SHA256
 	#endif
 	
 	#ifndef TMCG_KEYID_SIZE
@@ -145,7 +145,7 @@
 	#ifndef TMCG_QRA_SIZE
 		/* Define the security parameter of the TMCG public key;
 		   Underlying assumptions: QRA, FACTOR */
-		#define TMCG_QRA_SIZE 1024
+		#define TMCG_QRA_SIZE 2048
 	#endif
 	
 	#ifndef TMCG_SAEP_S0

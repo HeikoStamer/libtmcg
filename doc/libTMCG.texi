@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20151226.
+Revision 20151230.
 
 Copyright @copyright{} 2005, 2006, 2007, 2009, 2015 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
@@ -568,7 +568,7 @@ They are only provided here for informational purposes.
 Defines the security parameter (field size in bit) of the group
 @math{G} which is used by the card encoding scheme of Barnett and
 Smart@tie{}[BS03]. The underlying assumptions are DDH, CDH, and DLOG.
-The default value is @code{1024}.
+The default value is @code{2048}.
 @end defmac
 
 @defmac TMCG_DLSE_SIZE
@@ -587,13 +587,16 @@ is related to the so-called random oracle model, i.e., we suppose that the
 instantiated hash function behaves like an ideal random function
 (which cannot hold in a real world scenario). However, this assumption
 seems to be reasonable, if the hash function is collision-resistant
-and carefully implemented. The default value @code{GCRY_MD_RMD160}
-@footnote{This is a constant defined by the GNU Crypto Library.}
-chooses the hash algorithm RIPEMD-160 (see Dobbertin, Bosselaers,
-Preneel: @emph{RIPEMD-160, a strengthened version of RIPEMD}, 1996)
-which has an output length of 160 bit. Thus we gain a security level
-of approximately @math{2^{80}}, assuming that a birthday-attack is 
-the best known attack against this hash function.
+and carefully implemented.
+In former versions the default value @code{GCRY_MD_RMD160}
+@footnote{This is a constant defined by the GNU Crypto Library.},
+i.e. the hash algorithm RIPEMD-160 (see Dobbertin, Bosselaers,
+Preneel: @emph{RIPEMD-160, a strengthened version of RIPEMD}, 1996),
+was used, which has an output length of 160 bit. Recently we moved
+to the hash function SHA-256 (@code{GCRY_MD_SHA256}@footnote{This is a constant defined by the GNU Crypto Library.})
+for improved security. Thus we gain a security level of approximately
+@math{2^{128}}, assuming that a birthday-attack is the best known
+attack against this hash function.
 @end defmac
 
 @defmac TMCG_KEYID_SIZE
@@ -690,7 +693,7 @@ which implies a security level around @math{2^{80}}.
 @defmac TMCG_QRA_SIZE
 Defines the security parameter (size of the modulus @math{m = p \cdot q}
 in bit) of the TMCG key. The underlying assumptions are QRA and FACTOR.
-The default value is @code{1024}. This parameter is only relevant
+The default value is @code{2048}. This parameter is only relevant
 for TMCG keys and Schindelhauer's encoding scheme.
 @end defmac
 
@@ -714,8 +717,8 @@ Defines the maximum size of admissible exponents (in bit) used by fast
 exponentiation procedures. The default value is @code{2048}. Note that
 this parameter has a strong influence on the amount of memory allocated
 by LibTMCG since it determines the size of the precomputed tables.
-However, it should be at least greater than @code{TMCG_DDH_SIZE} and
-@code{TMCG_QRA_SIZE}.
+However, it should be at least greater or equal than @code{TMCG_DDH_SIZE}
+and @code{TMCG_QRA_SIZE}.
 @end defmac
 
 @c **********************************************************

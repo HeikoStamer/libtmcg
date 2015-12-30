@@ -21,7 +21,7 @@
 AC_REVISION($Revision: 1.47 $)
 AC_PREREQ(2.57)
 
-AC_INIT([libTMCG], [1.1.4])
+AC_INIT([libTMCG], [1.2.0])
 
 # The next two paragraphs are copies of libgcrypt behaviour.
 
@@ -29,8 +29,8 @@ AC_INIT([libTMCG], [1.1.4])
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
 #   (Interfaces added:      CURRENT++, AGE++, REVISION=0)
 #   (No interfaces changed:                   REVISION++)
-LIBTMCG_LT_CURRENT=3
-LIBTMCG_LT_AGE=3
+LIBTMCG_LT_CURRENT=4
+LIBTMCG_LT_AGE=0
 LIBTMCG_LT_REVISION=0
 
 # If API is changed in an incompatible way: increment the next counter.
@@ -67,7 +67,7 @@ AC_DEFINE(TMCG_MAX_FPOWM_T, 2048,
 	[Define the maximum size of the exponent for fast exponentiation])
 AC_DEFINE(TMCG_MPZ_IO_BASE, 36,
 	[Define the input/ouput base encoding of the iostream operators])
-AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_RMD160,
+AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_SHA256,
 	[Define the message digest algorithm for signatures and FS-heuristic;
 	Underlying assumption: Random Oracle Model])
 
@@ -77,13 +77,13 @@ AC_DEFINE(TMCG_MR_ITERATIONS, 64,
 AC_DEFINE(TMCG_GROTH_L_E, 80,
 	[Define the security parameter for the soundness of the
 	interactive argument for Groth's VSSHE and SKC.])
-AC_DEFINE(TMCG_DDH_SIZE, 1024,
+AC_DEFINE(TMCG_DDH_SIZE, 2048,
 	[Define the security parameter of the DDH-hard group G;
 	Underlying assumptions: DDH, CDH, DLOG])
 AC_DEFINE(TMCG_DLSE_SIZE, 160,
 	[Define the security parameter of the shortened exponents;
 	Underlying assumptions: DLSE (related to DDH), DLOG])
-AC_DEFINE(TMCG_QRA_SIZE, 1024,
+AC_DEFINE(TMCG_QRA_SIZE, 2048,
 	[Define the security parameter of the TMCG public key;
 	Underlying assumptions: QRA, FACTOR])
 AC_DEFINE(TMCG_KEYID_SIZE, 8,

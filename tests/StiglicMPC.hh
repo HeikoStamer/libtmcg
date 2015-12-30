@@ -155,7 +155,7 @@ class StiglicMPC
 			VTMF_Card c[2];
 			tmcg->TMCG_CreateOpenCard(c[0], vtmf, 0);
 			tmcg->TMCG_CreateOpenCard(c[1], vtmf, 1);
-			base.push(c[0]), base.push(c[1]); // "base" means the bit 0
+			base.push(c[0]), base.push(c[1]); // "base" means the bit 0 i.e. (0,1)
 			negbase.push(c[1]), negbase.push(c[0]); // "negbase" means the inverse, i.e. bit 1
 		}
 		
