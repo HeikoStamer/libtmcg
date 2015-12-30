@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006, 2007, 2009  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006, 2007, 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -225,26 +225,37 @@ int main
 {
 	std::stringstream oak, lej, lej2, foo, foo2, bar;
 	std::string v;
-	mpz_t fooo;
+	mpz_t fooo, barr;
 	
 	assert(init_libTMCG());
 	
 	BarnettSmartVTMF_dlog *vtmf, *vtmf2;
 	BarnettSmartVTMF_dlog_GroupQR *vtmf_qr, *vtmf2_qr;
 	
-	// create and check the common instance
-	oak << "1a1e4vngailcvh7j2tur8zts6fbkrcac6d3g0jdfvdggl9r7cr2v6zllf6b3z6xb6w0\
-nix8jsjlecgt8lwx1huihghkvqnbbgviiz0vg6ntckohpeac84n0co9czkw174ic47ifwd2189x26\
-609ce63xm5vddxvsbbevn4bxaiv2784d9335o38na680ay8apygtmnz" << std::endl;
-	oak << "n0p2ftq59aofqlrjexdmhww37nsdo5636jq09opxoq8amvlodjflhsspl5jzlgnlg0b\
-rgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9623r7y6j0m4yj33\
-04o731yt2xooyxw5npftk5yn9fj3m26mjjku1mbn3405h45cz8etbz" << std::endl;
+	// create and check the common instance <2048-bit MODP Group [RFC3526]>
+	mpz_init(barr);
+	mpz_set_str(barr, "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1\
+29024E088A67CC74020BBEA63B139B22514A08798E3404DD\
+EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245\
+E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED\
+EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3D\
+C2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F\
+83655D23DCA3AD961C62F356208552BB9ED529077096966D\
+670C354E4ABC9804F1746C08CA18217C32905E462E36CE3B\
+E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9\
+DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
+15728E5A8AACAA68FFFFFFFFFFFFFFFF", 16);
+	oak << barr << std::endl;
+	mpz_sub_ui(barr, barr, 1L);
+	mpz_fdiv_q_2exp(barr, barr, 1L);
+	oak << barr << std::endl;
 	oak << "2" << std::endl << "2" << std::endl;
-	std::cout << "BarnettSmartVTMF_dlog_GroupQR(<Oakley Group 2>)" << std::endl;
+	std::cout << "BarnettSmartVTMF_dlog_GroupQR(<2048-bit MODP Group [RFC3526]>)" << std::endl;
 	vtmf_qr = new BarnettSmartVTMF_dlog_GroupQR(oak);
 	std::cout << "vtmf_qr.CheckGroup()" << std::endl;
 	assert(vtmf_qr->CheckGroup());
 	delete vtmf_qr;
+	mpz_clear(barr);
 	
 	// create and check the instance
 	std::cout << "BarnettSmartVTMF_dlog_GroupQR()" << std::endl;
