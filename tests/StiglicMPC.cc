@@ -352,6 +352,7 @@ bool StiglicMPC::MPC_CopyBitCommitment
 	TMCG_Stack<VTMF_Card> copyshop, left;
 	bool cb[4];
 	
+	// protocol by Crepeau and Kilian (proceedings of Crypto '93)
 	// step 1. -- create a stack with three MPC_Bit (set to true)
 	copyshop.push(negbase), copyshop.push(negbase), copyshop.push(negbase);
 	
