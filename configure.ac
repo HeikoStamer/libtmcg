@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2006, 2007, 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2005, 2006, 2007, 2009, 2015, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION($Revision: 1.47 $)
+AC_REVISION(20160116)
 AC_PREREQ(2.57)
 
 AC_INIT([libTMCG], [1.2.0])
@@ -142,12 +142,20 @@ AC_PROG_LIBTOOL
 AC_PROG_LN_S
 
 # Checks for libraries
+AC_ARG_WITH(gmp, [AS_HELP_STRING([--with-gmp=<path>], [prefix of libgmp installation. e.g. /usr/local or /usr])], [GMP_PREFIX="$with_gmp"],\
+ [AC_CHECK_LIB(gmp, __gmpz_init, , AC_MSG_ERROR([libgmp is needed; maybe you want to call configure with the --with-gmp=<path> option]))])
 AC_CHECK_LIB(gmp, __gmpz_import, , AC_MSG_ERROR([libgmp >= 4.1 is needed]))
 AC_CHECK_LIB(gmp, __gmpz_export, , AC_MSG_ERROR([libgmp >= 4.1 is needed]))
-##AC_CHECK_LIB(gmpxx, __gmpz_set_str, ,
-##	AC_MSG_ERROR([libgmpxx (C++ support) >= 4.1 is needed]))
-LIBGMP_LIBS="-lgmp"
+if test "x$GMP_PREFIX" != x ; then
+	LIBGMP_LIBS=" -L${GMP_PREFIX}/lib"
+	LIBGMP_CFLAGS=" -I${GMP_PREFIX}/include"
+else
+	LIBGMP_LIBS=""
+	LIBGMP_CFLAGS=""
+fi
+LIBGMP_LIBS="${GMP_LIBS} -lgmp"
 AC_SUBST(LIBGMP_LIBS)
+AC_SUBST(LIBGMP_CFLAGS)
 
 AM_PATH_LIBGCRYPT("1.2.0")
 if test "x$LIBGCRYPT_LIBS" = "x"; then
@@ -165,7 +173,7 @@ AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
  errno.h functional gcrypt.h gmp.h iostream limits.h map sstream stdio.h\
- string time.h unistd.h vector], , AC_MSG_ERROR([headers are missing]))
+ string time.h unistd.h vector], , AC_MSG_ERROR([some headers are missing]))
 
 # Checks for typedefs, structures, and compiler characteristics
 AC_C_CONST
@@ -176,7 +184,7 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([clock close fprintf memcmp memcpy memset snprintf strtoul], ,
-	AC_MSG_ERROR([functions are missing]))
+	AC_MSG_ERROR([some functions are missing]))
 
 # forking tests feature
 AC_MSG_CHECKING([whether forking tests are enabled])

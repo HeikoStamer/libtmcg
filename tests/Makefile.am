@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2007, 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2005, 2007, 2009, 2015, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -21,8 +21,8 @@
 
 TESTS = t-mpz t-vtmf t-vsshe t-vrhe t-mpc t-key t-poker t-poker-rot
 
-AM_CPPFLAGS = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@
-LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ ../src/libTMCG.la
+AM_CPPFLAGS = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@ @LIBGMP_CFLAGS@
+LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ @LIBGMP_LIBS@ ../src/libTMCG.la
 
 EXTRA_PROGRAMS = SchwarzerPeterAlice SchwarzerPeterBob
 noinst_PROGRAMS = $(TESTS)

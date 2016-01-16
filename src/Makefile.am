@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2009  Heiko Stamer <stamer@gaos.org>
+# Copyright (C) 2005, 2009, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -62,9 +62,9 @@ libTMCG_la_SOURCES = mpz_srandom.c mpz_srandom.h\
 	TMCG_PublicKeyRing.hh\
 	libTMCG.cc libTMCG.hh
 
-libTMCG_la_CFLAGS = @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@
+libTMCG_la_CFLAGS = @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@ @LIBGMP_CFLAGS@
 
-libTMCG_la_CXXFLAGS = @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@
+libTMCG_la_CXXFLAGS = @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@ @LIBGMP_CFLAGS@
 
 libTMCG_la_LDFLAGS = -version-info\
 	@LIBTMCG_LT_CURRENT@:@LIBTMCG_LT_REVISION@:@LIBTMCG_LT_AGE@
