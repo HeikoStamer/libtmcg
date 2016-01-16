@@ -1,4 +1,4 @@
-Copyright (C)  2005, 2006, 2007, 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
+Copyright (C)  2005, 2006, 2007, 2009, 2015, 2016  Heiko Stamer <HeikoStamer@gmx.net>
   Permission is granted to copy, distribute and/or modify this document
   under the terms of the GNU Free Documentation License, Version 1.2
   or any later version published by the Free Software Foundation;
@@ -135,8 +135,8 @@ Build & Install
 
 Bugs, Contribution, GIT
 -----------------------
-  Please send detailed bug reports to Heiko Stamer <stamer@gaos.org>.
-  You can get the latest sources from the GIT repository by using the
+  Please send detailed bug reports to Heiko Stamer <HeikoStamer@gmx.net>.
+  You can get the latest sources from the source repository by using the
   command
 
   git clone git://git.savannah.nongnu.org/libtmcg.git
@@ -149,7 +149,7 @@ Bugs, Contribution, GIT
 
 Copyright and License of this software
 --------------------------------------
-  (C) 2005, 2006, 2007, 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
+  (C) 2005, 2006, 2007, 2009, 2015, 2016  Heiko Stamer <HeikoStamer@gmx.net>
       GNU General Public License version 2
 
   Please have a look at file 'COPYING' and http://www.fsf.org/.
