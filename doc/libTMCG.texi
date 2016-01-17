@@ -89,7 +89,8 @@ Further, no coalition can learn the private cards of a player against
 his will (except for trivial conclusions). The corresponding cryptographic
 problem, actually called ``Mental Poker'', has been studied since 1979
 (Shamir, Rivest, and Adleman) by many authors.
-LibTMCG provides the first practical implementation of such protocols.
+LibTMCG provides the first practical implementation of such sophisticated
+protocols.
 
 The security and the fairness rely on advanced cryptographic techniques---the
 so-called zero-knowledge proofs. Using these `building blocks' the high-level
@@ -212,8 +213,9 @@ or the Jack of Diamonds@tie{}@math{\diamondsuit})
 @ifnottex
 or the Jack of Diamonds)
 @end ifnottex
-and where the back sides of all cards are indistinguishable.
-Only such `regular' card decks are supported by LibTMCG.
+and where the back sides (face down) of all cards are indistinguishable.
+Only such `regular' card decks are supported by LibTMCG and the provided
+card encoding schemes.
 
 @menu
 * Terminology::
@@ -350,7 +352,8 @@ Note that it is not known, whether the used protocols retain their
 zero-knowledge property, if they are composed and executed in a concurrent
 setting. Thus the application programmer should be careful and avoid parallel
 protocol sessions. It is an open research project to create a protocol suite
-whose security can be proven in the UC-framework of Canetti (see @emph{Universally Composable Security: A New Paradigm for Cryptographic Protocols}, Cryptology
+whose security can be proven in the UC-framework of Canetti (see @emph{Universally
+Composable Security: A New Paradigm for Cryptographic Protocols}, Cryptology
 ePrint Archive: Report 2000/067). Furthermore, the protocols should employ
 concurrent zero-knowledge proofs (see Dwork, Naor, Sahai: @emph{Concurrent
 Zero-Knowledge}, Journal of the ACM 51(6):851--898, 2004).
@@ -393,7 +396,7 @@ of the used features and specifies the required versions:
 		Version@tie{}@math{\ge}@tie{}1.2.0
 		
 		The library provides some basic cryptographic algorithms
-		(e.g. RIPEMD-160) and an easily accessible interface for
+		(e.g. SHA-256, RIPEMD-160) and an easily accessible interface for
 		cryptographically strong pseudo random numbers.
 	
 	@item GNU Privacy Guard Error Code Library (@file{libgpg-error}),
@@ -678,8 +681,8 @@ card types are possible.
 
 @defmac TMCG_MPZ_IO_BASE
 Defines the input and output base of the @code{std::iostream} operators
-@code{<<} and @code{>>} which are used to encode large integers
-(@code{mpz_t}). The default value is @code{36} which is currently
+@code{<<} and @code{>>} which is used to encode large integers
+(@code{mpz_t}). The default value is @code{36} which was some years ago
 the largest base supported by the GNU Multiple Precision Arithmetic Library.
 @end defmac
 
@@ -718,7 +721,8 @@ exponentiation procedures. The default value is @code{2048}. Note that
 this parameter has a strong influence on the amount of memory allocated
 by LibTMCG since it determines the size of the precomputed tables.
 However, it should be at least greater or equal than @code{TMCG_DDH_SIZE}
-and @code{TMCG_QRA_SIZE}.
+and @code{TMCG_QRA_SIZE} in order to support exponents of common field
+sizes.
 @end defmac
 
 @c **********************************************************
