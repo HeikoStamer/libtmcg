@@ -420,7 +420,7 @@ int main
 	(int argc, char **argv)
 {
 	std::cout << "test skipped" << std::endl;
-	return 0;
+	return 77;
 }
 
 #endif
