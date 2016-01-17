@@ -338,6 +338,7 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 int main
 	(int argc, char **argv)
 {
+	std::cout << "test skipped" << std::endl;
 	return 0;
 }
 
