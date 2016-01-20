@@ -92,7 +92,7 @@ problem, actually called ``Mental Poker'', has been studied since 1979
 LibTMCG provides the first practical implementation of such sophisticated
 protocols.
 
-The security and the fairness rely on advanced cryptographic techniques---the
+The security and the verifiability rely on advanced cryptographic techniques---the
 so-called zero-knowledge proofs. Using these `building blocks' the high-level
 protocols minimize the effect of coalitions and preserve the confidentiality
 of the players' strategy, i.e., the players are not required to reveal their
