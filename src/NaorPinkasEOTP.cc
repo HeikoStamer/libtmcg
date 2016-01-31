@@ -202,7 +202,7 @@ bool NaorPinkasEOTP::Send_interactive
 		for (size_t i = 0; i < z.size(); i++)
 			in >> z[i];
 		// additionally to [NP01] check, whether the received
-		// values are elements of the used $q$-order subgroup
+		// values are elements of the used order-$q$ subgroup
 		if (!CheckElement(x) || !CheckElement(y))
 			throw false;
 		for (size_t i = 0; i < z.size(); i++)
