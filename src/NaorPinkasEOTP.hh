@@ -78,6 +78,8 @@ class NaorPinkasEOTP
 			() const;
 		void PublishGroup
 			(std::ostream &out) const;
+		bool CheckElement
+			(mpz_srcptr a) const;
 		bool Send_interactive
 			(const std::vector<mpz_ptr> &M,
 			std::istream &in, std::ostream &out) const;

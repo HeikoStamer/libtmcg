@@ -145,6 +145,32 @@ void NaorPinkasEOTP::PublishGroup
 	out << p << std::endl << q << std::endl << g << std::endl;
 }
 
+bool NaorPinkasEOTP::CheckElement
+	(mpz_srcptr a) const
+{
+	mpz_t foo;
+	
+	mpz_init(foo);
+	try
+	{
+		// Check whether $0 < a < p$.
+		if ((mpz_cmp_ui(a, 0L) <= 0) || (mpz_cmp(a, p) >= 0))
+			throw false;
+		
+		// Check whether $a^q \equiv 1 \pmod{p}$.
+		mpz_powm(foo, a, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo);
+		return return_value;
+	}
+}
+
 /* Sender; see Protocol 4.1 of [NP01] */
 bool NaorPinkasEOTP::Send_interactive
 	(const std::vector<mpz_ptr> &M,
@@ -175,6 +201,13 @@ bool NaorPinkasEOTP::Send_interactive
 		in >> x >> y;
 		for (size_t i = 0; i < z.size(); i++)
 			in >> z[i];
+		// additionally to [NP01] check, whether the received
+		// values are elements of the used $q$-order subgroup
+		if (!CheckElement(x) || !CheckElement(y))
+			throw false;
+		for (size_t i = 0; i < z.size(); i++)
+			if (!CheckElement(z[i]))
+				throw false;
 	
 		// sender: second move
 		for (size_t i = 0; i < z.size(); i++)
@@ -267,6 +300,9 @@ bool NaorPinkasEOTP::Choose_interactive
 		// receiver: second move
 		for (size_t i = 0; i < M_size; i++)
 			in >> w[i] >> ENC[i];
+		for (size_t i = 0; i < M_size; i++)
+			if (!CheckElement(w[i]))
+				throw false;	// check in-subgroup property
 		mpz_powm(foo, w[sigma], b, p);
 		if (!mpz_invert(bar, foo, p))
 			throw false;
