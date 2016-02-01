@@ -245,7 +245,7 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 			mpz_mul(foo, foo, G);
 			mpz_mod(foo, foo, p);
 			mpz_powm(rhs, foo, lambdak[k], p);
-			mpz_mul(rhs, rhs, f[k]); // CHECK: $f_k$ is in the paper mistakenly written as $a_k$
+			mpz_mul(rhs, rhs, f[k]); // Note: $f_k$ is in the paper mistakenly written as $a_k$
 			mpz_mod(rhs, rhs, p);
 			// compare
 			if (mpz_cmp(lhs, rhs))
