@@ -172,7 +172,147 @@ bool NaorPinkasEOTP::CheckElement
 }
 
 /* Sender; see Protocol 4.1 of [NP01] */
-bool NaorPinkasEOTP::Send_interactive
+bool NaorPinkasEOTP::Send_interactive_OneOutOfTwo
+	(mpz_srcptr M0, mpz_srcptr M1,
+	std::istream &in, std::ostream &out) const
+{
+	// initialize
+	mpz_t x, y, foo, bar, z0, z1, s0, s1, r0, r1, w0, w1;
+	
+	mpz_init(x), mpz_init(y), mpz_init(foo), mpz_init(bar), mpz_init(z0),
+	mpz_init(z1), mpz_init(s0), mpz_init(s1), mpz_init(r0), mpz_init(r1),
+	mpz_init(w0), mpz_init(w1);
+
+	try
+	{	
+		// sender: first move
+		in >> x >> y >> z0 >> z1;
+		// additionally to [NP01] check, whether the received
+		// values are elements of the used order-$q$ subgroup
+		if (!CheckElement(x) || !CheckElement(y))
+			throw false;
+		if (!CheckElement(z0) || !CheckElement(z1))
+			throw false;
+	
+		// sender: second move
+		if (!mpz_cmp(z0, z1))
+			throw false;
+		// generate random $(r_0, s_0)$ and $(r_1, s_1)$
+		mpz_srandomm(r0, q), mpz_srandomm(s0, q);
+		mpz_srandomm(r1, q), mpz_srandomm(s1, q);
+		// (a) compute $w_0 = x^{s_0} \cdot g^{r_0}$
+		mpz_spowm(foo, x, s0, p);
+		mpz_fspowm(fpowm_table_g, bar, g, r0, p);
+		mpz_mul(w0, foo, bar);
+		mpz_mod(w0, w0, p);
+		// (a) encrypt $M_0$ using key $z_0^{s_0} \cdot y^{r_0}$
+		mpz_spowm(foo, z0, s0, p);
+		mpz_spowm(bar, y, r0, p);
+		mpz_mul(foo, foo, bar);
+		mpz_mod(foo, foo, p);
+		mpz_mul(foo, foo, M0);
+		mpz_mod(foo, foo, p);		
+		out << w0 << std::endl << foo << std::endl;
+		// (b) compute $w_1 = x^{s_1} \cdot g^{r_1}$
+		mpz_spowm(foo, x, s1, p);
+		mpz_fspowm(fpowm_table_g, bar, g, r1, p);
+		mpz_mul(w1, foo, bar);
+		mpz_mod(w1, w1, p);
+		// (b) encrypt $M_1$ using key $z_1^{s_1} \cdot y^{r_1}$
+		mpz_spowm(foo, z1, s1, p);
+		mpz_spowm(bar, y, r1, p);
+		mpz_mul(foo, foo, bar);
+		mpz_mod(foo, foo, p);
+		mpz_mul(foo, foo, M1);
+		mpz_mod(foo, foo, p);		
+		out << w1 << std::endl << foo << std::endl;
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(x), mpz_clear(y), mpz_clear(foo), mpz_clear(bar),
+		mpz_clear(z0), mpz_clear(z1), mpz_clear(s0), mpz_clear(s1),
+		mpz_clear(r0), mpz_clear(r1), mpz_clear(w0), mpz_clear(w1);
+		// return
+		return return_value;
+	}
+}
+
+/* Receiver; see Protocol 4.1 of [NP01] */
+bool NaorPinkasEOTP::Choose_interactive_OneOutOfTwo
+	(size_t sigma, mpz_ptr M,
+	std::istream &in, std::ostream &out) const
+{
+	assert(sigma < 2);
+	
+	// initialize
+	mpz_t a, b, c0, c1, x, y, foo, bar, z0, z1, w0, w1;
+	
+	mpz_init(a), mpz_init(b), mpz_init(c0), mpz_init(c1);
+	mpz_init(x), mpz_init(y), mpz_init(foo), mpz_init(bar);
+	mpz_init(z0), mpz_init(z1), mpz_init(w0), mpz_init(w1);
+
+	try
+	{	
+		// receiver: first move
+		mpz_srandomm(a, q);
+		mpz_fspowm(fpowm_table_g, x, g, a, p);
+		mpz_srandomm(b, q);
+		mpz_fspowm(fpowm_table_g, y, g, b, p);
+		if (sigma == 0)
+		{
+			mpz_srandomm(c1, q);
+			mpz_mul(c0, a, b);
+			mpz_mod(c0, c0, q);
+		}
+		else if (sigma == 1) {
+			mpz_srandomm(c0, q);
+			mpz_mul(c1, a, b);
+			mpz_mod(c1, c1, q);
+		}
+		mpz_fspowm(fpowm_table_g, z0, g, c0, p);
+		mpz_fspowm(fpowm_table_g, z1, g, c1, p);
+		out << x << std::endl << y << std::endl;
+		out << z0 << std::endl << z1 << std::endl;
+	
+		// receiver: second move
+		in >> w0 >> c0 >> w1 >> c1;
+		if (!CheckElement(w0) || !CheckElement(w1))
+			throw false;	// check in-subgroup property
+		if (sigma == 0)
+		{		
+			mpz_powm(foo, w0, b, p);
+			if (!mpz_invert(bar, foo, p))
+				throw false;
+			mpz_mul(M, c0, bar);
+			mpz_mod(M, M, p);
+		}
+		else if (sigma == 1)
+		{
+			mpz_powm(foo, w1, b, p);
+			if (!mpz_invert(bar, foo, p))
+				throw false;
+			mpz_mul(M, c1, bar);
+			mpz_mod(M, M, p);
+		}
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(a), mpz_clear(b), mpz_clear(c0), mpz_clear(c1);
+		mpz_clear(x), mpz_clear(y), mpz_clear(foo), mpz_clear(bar);
+		mpz_clear(z0), mpz_clear(z1), mpz_clear(w0), mpz_clear(w1);
+		// return
+		return return_value;
+	}
+}
+
+/* Sender; see Protocol 4.1 of [NP01] with remarks in section 4.1 */
+bool NaorPinkasEOTP::Send_interactive_OneOutOfN
 	(const std::vector<mpz_ptr> &M,
 	std::istream &in, std::ostream &out) const
 {
@@ -254,13 +394,13 @@ bool NaorPinkasEOTP::Send_interactive
 	}
 }
 
-/* Receiver; see Protocol 4.1 of [NP01] */
-bool NaorPinkasEOTP::Choose_interactive
-	(size_t sigma, size_t M_size, mpz_ptr m,
+/* Receiver; see Protocol 4.1 of [NP01] with remarks in section 4.1 */
+bool NaorPinkasEOTP::Choose_interactive_OneOutOfN
+	(size_t sigma, size_t N, mpz_ptr M,
 	std::istream &in, std::ostream &out) const
 {
-	assert(M_size >= 2);
-	assert(sigma < M_size);
+	assert(N >= 2);
+	assert(sigma < N);
 	
 	// initialize
 	mpz_t a, b, c, x, y, foo, bar;
@@ -268,7 +408,7 @@ bool NaorPinkasEOTP::Choose_interactive
 	
 	mpz_init(a), mpz_init(b), mpz_init(c);
 	mpz_init(x), mpz_init(y), mpz_init(foo), mpz_init(bar);
-	for (size_t i = 0; i < M_size; i++)
+	for (size_t i = 0; i < N; i++)
 	{
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(),
 			tmp3 = new mpz_t();
@@ -298,16 +438,16 @@ bool NaorPinkasEOTP::Choose_interactive
 			out << z[i] << std::endl;
 	
 		// receiver: second move
-		for (size_t i = 0; i < M_size; i++)
+		for (size_t i = 0; i < N; i++)
 			in >> w[i] >> ENC[i];
-		for (size_t i = 0; i < M_size; i++)
+		for (size_t i = 0; i < N; i++)
 			if (!CheckElement(w[i]))
 				throw false;	// check in-subgroup property
 		mpz_powm(foo, w[sigma], b, p);
 		if (!mpz_invert(bar, foo, p))
 			throw false;
-		mpz_mul(m, ENC[sigma], bar);
-		mpz_mod(m, m, p);
+		mpz_mul(M, ENC[sigma], bar);
+		mpz_mod(M, M, p);
 
 		throw true;
 	}
@@ -316,7 +456,7 @@ bool NaorPinkasEOTP::Choose_interactive
 		// release
 		mpz_clear(a), mpz_clear(b), mpz_clear(c);
 		mpz_clear(x), mpz_clear(y), mpz_clear(foo), mpz_clear(bar);
-		for (size_t i = 0; i < M_size; i++)
+		for (size_t i = 0; i < N; i++)
 		{
 			mpz_clear(z[i]), mpz_clear(w[i]);
 			delete z[i], delete w[i];
@@ -324,6 +464,155 @@ bool NaorPinkasEOTP::Choose_interactive
 			delete ENC[i];
 		}
 		z.clear(), w.clear(), ENC.clear();
+		// return
+		return return_value;
+	}
+}
+
+/* Sender; see Protocol 4.1 of [NP01] with remarks in section 4.1 */
+bool NaorPinkasEOTP::Send_interactive_OneOutOfN_optimized
+	(const std::vector<mpz_ptr> &M,
+	std::istream &in, std::ostream &out) const
+{
+	assert(M.size() >= 2);
+	
+	// initialize
+	mpz_t x, y, foo, bar, z0;
+	std::vector<mpz_ptr> s, r, w, ENC;
+	
+	mpz_init(x), mpz_init(y), mpz_init(foo), mpz_init(bar), mpz_init(z0);
+	for (size_t i = 0; i < M.size(); i++)
+	{
+		mpz_ptr tmp2 = new mpz_t(), tmp3 = new mpz_t(),
+			tmp4 = new mpz_t();
+		mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4);
+		s.push_back(tmp2), r.push_back(tmp3), w.push_back(tmp4);
+		mpz_ptr tmp7 = new mpz_t();
+		mpz_init(tmp7);
+		ENC.push_back(tmp7);
+	}
+
+	try
+	{	
+		// sender: first move
+		in >> x >> y >> z0;
+		// additionally to [NP01] check, whether the received
+		// values are elements of the used order-$q$ subgroup
+		if (!CheckElement(x) || !CheckElement(y) || !CheckElement (z0))
+			throw false;
+	
+		// sender: second move
+		for (size_t i = 0; i < M.size(); i++)
+		{
+			// choose random $(r_i, s_i)$
+			mpz_srandomm(s[i], q);
+			mpz_srandomm(r[i], q);
+			// compute $w_i = x^{s_i} \cdot g^{r_i}$
+			mpz_spowm(foo, x, s[i], p);
+			mpz_fspowm(fpowm_table_g, bar, g, r[i], p);
+			mpz_mul(w[i], foo, bar);
+			mpz_mod(w[i], w[i], p);
+			// encrypt $M_i$ using key $z_i^{s_i} \cdot y^{r_i}$
+			if (i > 0)
+			{
+				mpz_mul(z0, z0, g); // $z_i = z_0 \cdot g^i$
+				mpz_mod(z0, z0, p);
+			}			
+			mpz_spowm(foo, z0, s[i], p);
+			mpz_spowm(bar, y, r[i], p);
+			mpz_mul(ENC[i], foo, bar);
+			mpz_mod(ENC[i], ENC[i], p);
+			mpz_mul(ENC[i], ENC[i], M[i]);
+			mpz_mod(ENC[i], ENC[i], p);		
+		}
+		for (size_t i = 0; i < M.size(); i++)
+			out << w[i] << std::endl << ENC[i] << std::endl;
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(x), mpz_clear(y), mpz_clear(foo), mpz_clear(bar),
+		mpz_clear(z0);
+		for (size_t i = 0; i < M.size(); i++)
+		{
+			mpz_clear(s[i]), mpz_clear(r[i]), mpz_clear(w[i]);
+			delete s[i], delete r[i], delete w[i];
+			mpz_clear(ENC[i]);
+			delete ENC[i];
+		}
+		s.clear(), r.clear(), w.clear(), ENC.clear();
+		// return
+		return return_value;
+	}
+}
+
+/* Receiver; see Protocol 4.1 of [NP01] with remarks in section 4.1 */
+bool NaorPinkasEOTP::Choose_interactive_OneOutOfN_optimized
+	(size_t sigma, size_t N, mpz_ptr M,
+	std::istream &in, std::ostream &out) const
+{
+	assert(N >= 2);
+	assert(sigma < N);
+	
+	// initialize
+	mpz_t a, b, c, x, y, foo, bar, z0;
+	std::vector<mpz_ptr> w, ENC;
+	
+	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(z0);
+	mpz_init(x), mpz_init(y), mpz_init(foo), mpz_init(bar);
+	for (size_t i = 0; i < N; i++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2);
+		w.push_back(tmp1), ENC.push_back(tmp2);
+	}
+
+	try
+	{	
+		// receiver: first move
+		mpz_srandomm(a, q);
+		mpz_fspowm(fpowm_table_g, x, g, a, p);
+		mpz_srandomm(b, q);
+		mpz_fspowm(fpowm_table_g, y, g, b, p);
+		mpz_mul(c, a, b);
+		mpz_mod(c, c, q);
+		mpz_fspowm(fpowm_table_g, z0, g, c, p);
+		mpz_set_ui(foo, sigma);
+		mpz_fspowm(fpowm_table_g, bar, g, foo, p);
+		assert(mpz_invert(foo, bar, p));
+		mpz_mul(z0, z0, foo); // $z_0 = g^c / g^i$
+		mpz_mod(z0, z0, p);
+		out << x << std::endl << y << std::endl << z0 << std::endl;
+	
+		// receiver: second move
+		for (size_t i = 0; i < N; i++)
+			in >> w[i] >> ENC[i];
+		for (size_t i = 0; i < N; i++)
+			if (!CheckElement(w[i]))
+				throw false;	// check in-subgroup property
+		mpz_powm(foo, w[sigma], b, p);
+		if (!mpz_invert(bar, foo, p))
+			throw false;
+		mpz_mul(M, ENC[sigma], bar);
+		mpz_mod(M, M, p);
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(z0);
+		mpz_clear(x), mpz_clear(y), mpz_clear(foo), mpz_clear(bar);
+		for (size_t i = 0; i < N; i++)
+		{
+			mpz_clear(w[i]);
+			delete w[i];
+			mpz_clear(ENC[i]);
+			delete ENC[i];
+		}
+		w.clear(), ENC.clear();
 		// return
 		return return_value;
 	}

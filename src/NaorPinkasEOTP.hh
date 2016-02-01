@@ -80,11 +80,23 @@ class NaorPinkasEOTP
 			(std::ostream &out) const;
 		bool CheckElement
 			(mpz_srcptr a) const;
-		bool Send_interactive
+		bool Send_interactive_OneOutOfTwo
+			(mpz_srcptr M0, mpz_srcptr M1,
+			std::istream &in, std::ostream &out) const;
+		bool Choose_interactive_OneOutOfTwo
+			(size_t sigma, mpz_ptr M,
+			std::istream &in, std::ostream &out) const;
+		bool Send_interactive_OneOutOfN
 			(const std::vector<mpz_ptr> &M,
 			std::istream &in, std::ostream &out) const;
-		bool Choose_interactive
-			(size_t sigma, size_t M_size, mpz_ptr m,
+		bool Choose_interactive_OneOutOfN
+			(size_t sigma, size_t N, mpz_ptr M,
+			std::istream &in, std::ostream &out) const;
+		bool Send_interactive_OneOutOfN_optimized
+			(const std::vector<mpz_ptr> &M,
+			std::istream &in, std::ostream &out) const;
+		bool Choose_interactive_OneOutOfN_optimized
+			(size_t sigma, size_t N, mpz_ptr M,
 			std::istream &in, std::ostream &out) const;
 		~NaorPinkasEOTP
 			();
