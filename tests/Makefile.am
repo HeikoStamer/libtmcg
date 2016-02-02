@@ -19,7 +19,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-TESTS = t-mpz t-vtmf t-vsshe t-vrhe t-eotp t-mpc t-key t-poker t-poker-rot
+TESTS = t-mpz t-vtmf t-vsshe t-vrhe t-eotp t-mpc t-key t-poker t-poker-rot t-votc
 
 AM_CPPFLAGS = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@ @LIBGMP_CFLAGS@
 LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ @LIBGMP_LIBS@ ../src/libTMCG.la
@@ -28,7 +28,6 @@ EXTRA_PROGRAMS = SchwarzerPeterAlice SchwarzerPeterBob
 noinst_PROGRAMS = $(TESTS)
 
 SchwarzerPeterAlice_SOURCES = SchwarzerPeterAlice.cc
-
 SchwarzerPeterBob_SOURCES = SchwarzerPeterBob.cc
 
 t_mpz_SOURCES = test_helper.c test_helper.h t-mpz.cc
@@ -40,3 +39,6 @@ t_mpc_SOURCES = StiglicMPC.cc StiglicMPC.hh test_helper.c test_helper.h t-mpc.cc
 t_key_SOURCES = t-key.cc
 t_poker_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker.cc
 t_poker_rot_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker-rot.cc
+t_votc_SOURCES = pipestream.hh test_helper.c test_helper.h t-votc.cc
+
+

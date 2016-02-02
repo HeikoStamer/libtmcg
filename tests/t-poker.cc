@@ -38,12 +38,11 @@
 #define DECKSIZE 52
 #define FLOPSIZE 5
 
-std::stringstream vtmf_str;
 int pipefd[PLAYERS][PLAYERS][2];
 pid_t pid[PLAYERS];
 
 void start_instance
-	(BarnettSmartVTMF_dlog *vtmf, size_t player)
+	(std::istream& vtmf_str, size_t player)
 {
 	if ((pid[player] = fork()) < 0)
 		perror("t-poker (fork)");
@@ -304,7 +303,7 @@ void start_instance
 			
 			std::cout << "P_" << player << ": exit(0)" << std::endl;
 			exit(0);
-			/* END child code: participant B */
+			/* END child code: participant P_i */
 		}
 		else
 			std::cout << "fork() = " << pid[player] << std::endl;
@@ -316,7 +315,8 @@ int main
 {
 	assert(init_libTMCG());
 	
-	BarnettSmartVTMF_dlog *vtmf;
+	BarnettSmartVTMF_dlog 	*vtmf;
+	std::stringstream 	vtmf_str;
 
 	// create and check VTMF instance
 	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
@@ -339,7 +339,7 @@ int main
 	
 	// start poker childs
 	for (size_t i = 0; i < PLAYERS; i++)
-		start_instance(vtmf, i);
+		start_instance(vtmf_str, i);
 	
 	// wait for poker childs and close pipes
 	for (size_t i = 0; i < PLAYERS; i++)
