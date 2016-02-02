@@ -2503,6 +2503,30 @@ class must be created to perform any card or stack operations.
 		The method returns the offset of the cyclic shift, if @var{cyclic} was set
 		to @code{true}. Otherwise, the value @code{0} is returned.
 	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_CreateStackSecret (@code{TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{const std::vector<size_t>&} pi, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{size_t} size)
+		This method initializes the stack secret @var{ss} with a given
+		permutation @var{pi} and fresh card secrets. Later this stack
+		secret can be used to perform a secret shuffle operation on a stack.
+		The parameter @var{ring} is a container with exactly @math{k} public
+		keys, where @math{k} is the number given to the constructor of this
+		class. The parameter @var{index} is from the interval @math{[0, k - 1]}
+		and contains the position of the players public key in the container
+		@var{ring}. The parameter @var{size} determines the size of the created
+		stack secret, i.e. the number of cards in the corresponding stack. The
+		@var{size} is upper-bounded by @code{TMCG_MAX_CARDS}.
+	@end deftypemethod
+	
+	@deftypemethod SchindelhauerTMCG void TMCG_CreateStackSecret (@code{TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{const std::vector<size_t>&} pi, @code{size_t} size, @code{BarnettSmartVTMF_dlog*} vtmf)
+		This method initializes the stack secret @var{ss} with a given
+		permutation @var{pi} and fresh card secrets. Later this stack
+		secret can be used to perform a secret shuffle operation on a stack.
+		The parameter @var{size} determines the size of the created
+		stack secret, i.e. the number of cards in the corresponding stack. The
+		@var{size} is upper-bounded by @code{TMCG_MAX_CARDS}.
+		The parameter @var{vtmf} is a pointer to an already initialized VTMF instance,
+		i.e. the key generation protocol MUST be successfully finished.
+	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_MixStack (@code{const TMCG_Stack<TMCG_Card>&} s, @code{TMCG_Stack<TMCG_Card>&} s2, @code{const TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{const TMCG_PublicKeyRing&} ring, @code{bool} TimingAttackProtection @code{=true})
 		This method shuffles a given stack @var{s} according to the previously

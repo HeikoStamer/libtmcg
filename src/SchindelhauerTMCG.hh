@@ -69,8 +69,8 @@ class SchindelhauerTMCG
 {
 	private:
 		size_t							TMCG_MaxCardType;
-		int									ret;
-		mpz_t								*message_space;
+		int							ret;
+		mpz_t							*message_space;
 		
 		// private zero-knowledge proofs on values
 		void TMCG_ProveQuadraticResidue
@@ -230,6 +230,12 @@ class SchindelhauerTMCG
 		size_t TMCG_CreateStackSecret
 			(TMCG_StackSecret<VTMF_CardSecret> &ss, bool cyclic, size_t size,
 			BarnettSmartVTMF_dlog *vtmf);
+		void TMCG_CreateStackSecret
+			(TMCG_StackSecret<TMCG_CardSecret> &ss, const std::vector<size_t> &pi,
+			const TMCG_PublicKeyRing &ring, size_t index, size_t size);
+		void TMCG_CreateStackSecret
+			(TMCG_StackSecret<VTMF_CardSecret> &ss, const std::vector<size_t> &pi,
+			size_t size, BarnettSmartVTMF_dlog *vtmf);
 		void TMCG_MixStack
 			(const TMCG_Stack<TMCG_Card> &s, TMCG_Stack<TMCG_Card> &s2,
 			const TMCG_StackSecret<TMCG_CardSecret> &ss,

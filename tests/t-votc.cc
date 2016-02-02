@@ -1,5 +1,5 @@
 /*******************************************************************************
-   (K-out-of-N) |V|erifiable |O|blivious |T|ransfer with |C|ards
+   adaptive (K-out-of-N) |V|erifiable |O|blivious |T|ransfer with |C|ards
 
    This file is part of LibTMCG.
 
@@ -37,10 +37,26 @@
 
 #undef NDEBUG
 #define N 32
-#define K 2
+#define K 5
 
 int pipefd_sr[2], pipefd_rs[2];
 pid_t pid_s, pid_r;
+
+// create a random permutation (Knuth or Fisher-Yates algorithm)
+void random_permutation_fast
+	(size_t n, std::vector<size_t> &pi)
+{
+	pi.clear();
+	for (size_t i = 0; i < n; i++)
+		pi.push_back(i);
+	
+	for (size_t i = 0; i < (n - 1); i++)
+	{
+		size_t tmp = pi[i], rnd = i + (size_t)mpz_srandom_mod(n - i);
+		pi[i] = pi[rnd];
+		pi[rnd] = tmp;
+	}
+}
 
 /* sender */
 void start_instance_sender
@@ -110,22 +126,21 @@ void start_instance_sender
 			stop_clock();
 			std::cout << "S: " << elapsed_time() << std::endl;
 
-			// this is the transfer phase
+			// this is the initialization phase
 			start_clock();			
-			// (1) create a stack that contains the messages for transfer
+			// (1) create a stack that contains the messages for transfer;
+			//     the messages are hidden for the receiver by masking and
+			//     the resulting stack is send to the receiver
 			TMCG_Stack<VTMF_Card> s;
-			TMCG_StackSecret<VTMF_CardSecret> ss;
 			for (size_t type = 0; type < N; type++)
 			{
 				VTMF_Card c;
 				VTMF_CardSecret cs;
 				tmcg->TMCG_CreatePrivateCard(c, cs, vtmf, type);
 				s.push(c);
-				ss.push(type, cs);
 			}
-			// (2) send the stack to the receiver
 			*P_out << s << std::endl;
-			// (TODO?) prove the knowledge of the messages to receiver
+			// (TODO) prove the knowledge of the messages to receiver
 			// (3) receiver shuffles and sends the resulting stack back
 			TMCG_Stack<VTMF_Card> s2;
 			*P_in >> s2;
@@ -140,9 +155,24 @@ void start_instance_sender
 				std::cout << "S: shuffle verification failed" << std::endl;
 				exit(-1);
 			}
-			// (5) open the topmost K cards for the receiver
+
+			// this is the transfer phase
+			// (5) let the receiver adaptively open K cards from the shuffled stack
 			for (size_t k = 0; k < K; k++)
-				tmcg->TMCG_ProveCardSecret(s2[k], vtmf, *P_in, *P_out);
+			{
+				size_t i;
+				*P_in >> i;
+				if (i < N)
+				{
+					std::cout << "S: receiver requests to open i = " << i << std::endl;
+					tmcg->TMCG_ProveCardSecret(s2[i], vtmf, *P_in, *P_out);
+				}
+				else
+				{
+					std::cout << "S: index out of range" << std::endl;
+					exit(-1);
+				}
+			}
 			stop_clock();
 			std::cout << "S: " << elapsed_time() << std::endl;
 			
@@ -167,7 +197,7 @@ void start_instance_sender
 
 /* receiver */
 void start_instance_receiver
-	(std::istream& vtmf_str)
+	(std::istream& vtmf_str, const std::vector<size_t>& sigma)
 {
 	if ((pid_r = fork()) < 0)
 		perror("t-votc (fork)");
@@ -218,9 +248,9 @@ void start_instance_receiver
 			stop_clock();
 			std::cout << "R: " << elapsed_time() << std::endl;
 			
-			// this is the transfer phase
+			// this is the initialization phase
 			start_clock();
-			// (1) receive the original stack from the sender
+			// (1) receive the masked stack from the sender
 			TMCG_Stack<VTMF_Card> s;
 			*P_in >> s;
 			if (!P_in->good())
@@ -228,26 +258,38 @@ void start_instance_receiver
 				std::cout << "R: read error or bad parse" << std::endl;
 				exit(-1);
 			}
-			// (2) shuffle the stack in order to hide and determine the choice
+			// (TODO) verify that the sender knows the messages
+			// (3) shuffle the stack in order to hide and determine the choice;
+			//     messages are choosen by constructing an appropriate permutation
+			std::vector<size_t> pi;
+			random_permutation_fast(N, pi);
 			TMCG_Stack<VTMF_Card> s2;
 			TMCG_StackSecret<VTMF_CardSecret> ss;
-			tmcg->TMCG_CreateStackSecret(ss, false, s.size(), vtmf);
+			tmcg->TMCG_CreateStackSecret(ss, pi, s.size(), vtmf);
 			tmcg->TMCG_MixStack(s, s2, ss, vtmf);
-			// (3) send the result back to the sender
 			*P_out << s2 << std::endl;
+			std::cout << "R: permutation pi = ";
+			for (size_t i = 0; i < N; i++)
+				std::cout << pi[i] << " ";
+			std::cout << std::endl;
 			// (4) prove the correctness of the shuffle
 			tmcg->TMCG_ProveStackEquality_Groth(s, s2, ss, vtmf, vsshe, *P_in, *P_out);
-			// (5) open the topmost K cards		
+
+			// this is the transfer phase
+			// (5) request the opening of K cards based on the permutation		
 			for (size_t k = 0; k < K; k++)
 			{
-				tmcg->TMCG_SelfCardSecret(s2[k], vtmf);
-				if (!tmcg->TMCG_VerifyCardSecret(s2[k], vtmf, *P_in, *P_out))
+				size_t i = std::distance(pi.begin(), std::find(pi.begin(), pi.end(), sigma[k]));
+				*P_out << i << std::endl;
+				tmcg->TMCG_SelfCardSecret(s2[i], vtmf);
+				if (!tmcg->TMCG_VerifyCardSecret(s2[i], vtmf, *P_in, *P_out))
 				{
 					std::cout << "R: card verification failed" << std::endl;
 					exit(-1);
 				}
-				size_t type = tmcg->TMCG_TypeOfCard(s2[k], vtmf);
-				std::cout << "R: message received = " << type << std::endl;
+				size_t type = tmcg->TMCG_TypeOfCard(s2[i], vtmf);
+				std::cout << "R: message " << k << " received = " << type << std::endl;
+				assert(sigma[k] == type);
 			}
 			stop_clock();
 			std::cout << "R: " << elapsed_time() << std::endl;			
@@ -278,6 +320,7 @@ int main
 	
 	BarnettSmartVTMF_dlog	*vtmf;
 	std::stringstream	vtmf_str;
+	std::vector<size_t>	sigma;
 
 	// create and check the common VTMF instance
 	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
@@ -295,10 +338,25 @@ int main
 	// open pipes
 	if ((pipe(pipefd_sr) < 0) || (pipe(pipefd_rs) < 0)) 
 		perror("t-votc (pipe)");
+
+	// randomize the choices of the receiver
+	std::cout << "sigma = ";
+	for (size_t i = 0; i < K; i++)
+	{
+		size_t c = 0;
+		do
+		{
+			c = mpz_srandom_mod(N);
+		}
+		while (std::find(sigma.begin(), sigma.end(), c) != sigma.end());
+		sigma.push_back(c);
+		std::cout << c << " ";
+	}
+	std::cout << std::endl;
 	
 	// start transfer childs
 	start_instance_sender(vtmf_str);
-	start_instance_receiver(vtmf_str);
+	start_instance_receiver(vtmf_str, sigma);
 	
 	// wait for transfer childs and close pipes
 	std::cerr << "waitpid(" << pid_s << ")" << std::endl;

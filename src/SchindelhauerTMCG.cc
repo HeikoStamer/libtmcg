@@ -1204,6 +1204,38 @@ size_t SchindelhauerTMCG::TMCG_CreateStackSecret
 	return r;
 }
 
+void SchindelhauerTMCG::TMCG_CreateStackSecret
+	(TMCG_StackSecret<TMCG_CardSecret> &ss, const std::vector<size_t> &pi,
+		const TMCG_PublicKeyRing &ring, size_t index, size_t size)
+{
+	assert(ring.keys.size() == TMCG_Players);
+	assert(ring.keys.size() > index);
+	assert(size <= TMCG_MAX_CARDS);
+	
+	for (size_t i = 0; i < size; i++)
+	{
+		TMCG_CardSecret cs(TMCG_Players, TMCG_TypeBits);
+		TMCG_CreateCardSecret(cs, ring, index);
+		
+		ss.push(pi[i], cs);
+	}
+}
+
+void SchindelhauerTMCG::TMCG_CreateStackSecret
+	(TMCG_StackSecret<VTMF_CardSecret> &ss, const std::vector<size_t> &pi,
+	size_t size, BarnettSmartVTMF_dlog *vtmf)
+{
+	assert(size <= TMCG_MAX_CARDS);
+		
+	for (size_t i = 0; i < size; i++)
+	{
+		VTMF_CardSecret cs;
+		TMCG_CreateCardSecret(cs, vtmf);
+		
+		ss.push(pi[i], cs);
+	}
+}
+
 void SchindelhauerTMCG::TMCG_MixStack
 	(const TMCG_Stack<TMCG_Card> &s, TMCG_Stack<TMCG_Card> &s2,
 	const TMCG_StackSecret<TMCG_CardSecret> &ss,
