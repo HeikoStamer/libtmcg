@@ -17,7 +17,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20151230.
+Revision 20160202.
 
 Copyright @copyright{} 2005, 2006, 2007, 2009, 2015 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
@@ -578,7 +578,7 @@ The default value is @code{2048}.
 Defines the security parameter (subgroup size in bit) of the group
 @math{G} which is used by the card encoding scheme of Barnett and
 Smart@tie{}[BS03]. The underlying assumptions are DLSE (related to DDH)
-and DLOG. The default value is @code{160}.
+and DLOG. The default value is @code{256}.
 @end defmac
 
 @defmac TMCG_GCRY_MD_ALGO
@@ -661,7 +661,7 @@ and used at compile time of LibTMCG fulfills this condition.
 
 @defmac TMCG_MAX_CARDS
 Defines the maximum number of stackable cards.
-The default value is @code{128}.
+The default value is @code{1024}.
 @end defmac
 
 @defmac TMCG_MAX_PLAYERS
@@ -675,8 +675,9 @@ Schindelhauer.
 Defines the maximum number of bits to represent the card type in the
 scheme of Schindelhauer. On the other hand, this value determines
 the maximum size of the message space in the scheme of Barnett and
-Smart. The default value is @code{8} which implies that 256 different
-card types are possible.
+Smart. The default value is @code{10} which implies that 1024 different
+card types are possible. For each type some memory will be allocated,
+thus this value should modified very carefully. 
 @end defmac
 
 @defmac TMCG_MPZ_IO_BASE

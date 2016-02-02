@@ -80,7 +80,7 @@ AC_DEFINE(TMCG_GROTH_L_E, 80,
 AC_DEFINE(TMCG_DDH_SIZE, 2048,
 	[Define the security parameter of the DDH-hard group G;
 	Underlying assumptions: DDH, CDH, DLOG])
-AC_DEFINE(TMCG_DLSE_SIZE, 160,
+AC_DEFINE(TMCG_DLSE_SIZE, 256,
 	[Define the security parameter of the shortened exponents;
 	Underlying assumptions: DLSE (related to DDH), DLOG])
 AC_DEFINE(TMCG_QRA_SIZE, 2048,
@@ -110,9 +110,9 @@ AC_DEFINE(TMCG_KEY_NIZK_STAGE3, 128,
 	
 AC_DEFINE(TMCG_MAX_PLAYERS, 32,
 	[Define the maximum number of players in the scheme of Schindelhauer])
-AC_DEFINE(TMCG_MAX_CARDS, 128,
+AC_DEFINE(TMCG_MAX_CARDS, 1024,
 	[Define the maximum number of stackable cards])
-AC_DEFINE(TMCG_MAX_TYPEBITS, 8,
+AC_DEFINE(TMCG_MAX_TYPEBITS, 10,
 	[Define the number of bits which represents the maximum number of
 	different card types in the scheme of Schindelhauer and the maximum
 	size of the message space in the scheme of Barnett and Smart])

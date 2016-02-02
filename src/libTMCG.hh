@@ -45,7 +45,7 @@
 	#ifndef TMCG_DLSE_SIZE
 		/* Define the security parameter of the used exponents;
 		   Underlying assumptions: DLSE (related to DDH), DLOG */
-		#define TMCG_DLSE_SIZE 160
+		#define TMCG_DLSE_SIZE 256
 	#endif
 	
 	#ifndef TMCG_GCRY_MD_ALGO
@@ -92,7 +92,7 @@
 	
 	#ifndef TMCG_MAX_CARDS
 		/* Define the maximum number of stackable cards */
-		#define TMCG_MAX_CARDS 128
+		#define TMCG_MAX_CARDS 1024
 	#endif
 	
 	#ifndef TMCG_MAX_CARD_CHARS
@@ -119,7 +119,7 @@
 		/* Define the number of bits which represents the maximum number of
 		   different card types in the scheme of Schindelhauer and the maximum
 		   size of the message space in the scheme of Barnett and Smart */
-		#define TMCG_MAX_TYPEBITS 8
+		#define TMCG_MAX_TYPEBITS 10
 	#endif
 	
 	#ifndef TMCG_MAX_VALUE_CHARS
