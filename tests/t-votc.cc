@@ -1,6 +1,13 @@
 /*******************************************************************************
    adaptive (K-out-of-N) |V|erifiable |O|blivious |T|ransfer with |C|ards
 
+   The implementation follows the idea presented in the following paper:
+
+     Kaoru Kurosawa, Ryo Nojima, and Le Trieu Phong:
+	'Generic Fully Simulatable Adaptive Oblivious Transfer',
+     Applied Cryptography and Network Security (ACNS) 2011,
+     LNCS 6715, pp. 274--291, Springer 2011.
+
    This file is part of LibTMCG.
 
  Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
@@ -132,15 +139,41 @@ void start_instance_sender
 			//     the messages are hidden for the receiver by masking and
 			//     the resulting stack is send to the receiver
 			TMCG_Stack<VTMF_Card> s;
+			TMCG_StackSecret<VTMF_CardSecret> ss;
 			for (size_t type = 0; type < N; type++)
 			{
 				VTMF_Card c;
 				VTMF_CardSecret cs;
 				tmcg->TMCG_CreatePrivateCard(c, cs, vtmf, type);
 				s.push(c);
+				ss.push(type, cs);
 			}
 			*P_out << s << std::endl;
-			// (TODO) prove the knowledge of the messages to receiver
+			// (2) prove the knowledge of randomizers $\hat{r}$ to the receiver
+			for (size_t i = 0; i < ss.size(); i++)
+			{
+				mpz_t v, t, c, r;
+				
+				// proof of knowledge [CaS97] for a discrete logarithm
+				mpz_init(v), mpz_init(t), mpz_init(c), mpz_init(r);	
+				// commitment
+				mpz_srandomm(v, vtmf->q);
+				mpz_spowm(t, vtmf->g, v, vtmf->p);
+				// challenge
+				// Here we use the well-known "Fiat-Shamir heuristic" to make
+				// the PoK non-interactive, i.e. we turn it into a statistically
+				// zero-knowledge (Schnorr signature scheme style) proof of
+				// knowledge (SPK) in the random oracle model.
+				mpz_shash(c, 3, vtmf->g, s[i].c_1, t);	// $c_1 = g^{\hat{r}}$
+				// response
+				mpz_mul(r, c, ss[i].second.r); // multiply with secret value
+				mpz_neg(r, r);
+				mpz_add(r, r, v);
+				mpz_mod(r, r, vtmf->q);
+				
+				*P_out << c << std::endl << r << std::endl;
+				mpz_clear(v), mpz_clear(t), mpz_clear(c), mpz_clear(r);
+			}
 			// (3) receiver shuffles and sends the resulting stack back
 			TMCG_Stack<VTMF_Card> s2;
 			*P_in >> s2;
@@ -258,7 +291,35 @@ void start_instance_receiver
 				std::cout << "R: read error or bad parse" << std::endl;
 				exit(-1);
 			}
-			// (TODO) verify that the sender knows the messages
+			// (2) verify the knowledge of randomizers $\hat{r}$ from the sender
+			for (size_t i = 0; i < s.size(); i++)
+			{
+				mpz_t t, c, r;
+	
+				mpz_init(t), mpz_init(c), mpz_init(r);
+				*P_in >> c >> r;
+
+				// check the size of $\hat{r}$
+				if (mpz_cmpabs(r, vtmf->q) >= 0)
+				{
+					std::cout << "R: wrong size of $\\hat{r}$" << std::endl;
+					exit(-1);
+				}
+		
+				// verify the proof of knowledge [CaS97]
+				mpz_powm(t, vtmf->g, r, vtmf->p);
+				mpz_powm(r, s[i].c_1, c, vtmf->p);
+				mpz_mul(t, t, r);
+				mpz_mod(t, t, vtmf->p);
+				mpz_shash(r, 3, vtmf->g, s[i].c_1, t);
+				if (mpz_cmp(c, r))
+				{
+					std::cout << "R: SPK for $\\hat{r}$ failed" << std::endl;
+					exit(-1);
+				}
+
+				mpz_clear(t), mpz_clear(c), mpz_clear(r);
+			}
 			// (3) shuffle the stack in order to hide and determine the choice;
 			//     messages are choosen by constructing an appropriate permutation
 			std::vector<size_t> pi;
@@ -268,7 +329,7 @@ void start_instance_receiver
 			tmcg->TMCG_CreateStackSecret(ss, pi, s.size(), vtmf);
 			tmcg->TMCG_MixStack(s, s2, ss, vtmf);
 			*P_out << s2 << std::endl;
-			std::cout << "R: permutation pi = ";
+			std::cout << "R: secret permutation pi = ";
 			for (size_t i = 0; i < N; i++)
 				std::cout << pi[i] << " ";
 			std::cout << std::endl;

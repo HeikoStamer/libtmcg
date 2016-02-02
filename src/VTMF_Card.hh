@@ -1,7 +1,8 @@
 /*******************************************************************************
   Data structure for a card. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2010  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007, 2010, 2016  
+                                             Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -39,7 +40,7 @@
 
 /** @brief Data structure for cards.
     
-    This struct represents a card in the discrete logarithm instantiation
+    This struct represents a card in the discrete logarithm based instantiation
     of the general cryptographic primitive "Verifiable k-out-of-k Threshold
     Masking Function" by Barnett and Smart [BS03]. */
 struct VTMF_Card
