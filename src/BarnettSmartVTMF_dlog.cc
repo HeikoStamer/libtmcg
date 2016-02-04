@@ -623,7 +623,7 @@ bool BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Verify
 	}
 }
 
-// again this is basically an ElGamal encryption using the shared public key $h$
+// again this is basically an ElGamal encryption of 1 using the shared public key $h$
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_ptr r) const
 {

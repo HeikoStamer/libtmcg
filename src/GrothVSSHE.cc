@@ -106,12 +106,12 @@ void GrothSKC::Prove_interactive
 	mpz_set(Delta[0], d[0]); // $\Delta_1 := d_1$
 	for (size_t i = 1; i < (Delta.size() - 1); i++)
 		mpz_srandomm(Delta[i], com->q);	// $\Delta_2,\ldots,\Delta_{n-1}
-										//           \gets \mathbb{Z}_q$
+						//           \gets \mathbb{Z}_q$
 	mpz_set_ui(Delta[Delta.size() - 1], 0L); // $\Delta_n := 0$
 	for (size_t i = 0; i < a.size(); i++)
 	{
 		mpz_set_ui(a[i], 1L);
-		// compute a_i = \prod_{j=1}^i (m_{\pi(j)} - x)
+		// compute $a_i = \prod_{j=1}^i (m_{\pi(j)} - x)$
 		for (size_t j = 0; j <= i; j++)
 		{
 			mpz_sub(foo, m[pi[j]], x);
@@ -268,7 +268,11 @@ bool GrothSKC::Verify_interactive
 		                             // from the prover
 		
 		// verifier: third move
-		mpz_srandomb(e, l_e);
+		do
+		{
+			mpz_srandomb(e, l_e);
+		}
+		while (!mpz_cmp_ui(e, 0L)); // ensure that $e$ is invertable mod $q$
 		out << e << std::endl; // send $e\in\{0,1\}^{\ell_e}$ to prover
 		
 		// verifier: fourth move
@@ -362,16 +366,16 @@ bool GrothSKC::Verify_interactive
 		mpz_mod(foo, foo, com->q);
 		assert(mpz_invert(bar, e, com->q));
 		mpz_invert(bar, e, com->q);
-		mpz_set_ui(foo2, 1L);
+		mpz_set_ui(foo2, 1L); // foo2 stores $F_{n-1}$
 		for (size_t i = 0; i < f.size(); i++)
-		{
+		{ // compute left-hand side $F_n$, for $i = 1, \ldots, n$
 			mpz_sub(bar2, f[i], foo);
 			mpz_mod(bar2, bar2, com->q);
 			
 			mpz_mul(bar2, bar2, foo2);
 			mpz_mod(bar2, bar2, com->q);
 			if (i > 0)
-			{
+			{ // add $f_{\Delta_j}$, for $j = 1, \ldots, n-1$
 				mpz_add(bar2, bar2, f_Delta[i - 1]);
 				mpz_mod(bar2, bar2, com->q);
 				
@@ -380,7 +384,7 @@ bool GrothSKC::Verify_interactive
 			}
 			mpz_set(foo2, bar2);
 		}
-		mpz_set_ui(foo2, 1L);
+		mpz_set_ui(foo2, 1L); // foo2 is right-hand side here
 		for (size_t i = 0; i < m.size(); i++)
 		{
 			mpz_sub(foo, m[i], x);
@@ -446,7 +450,11 @@ bool GrothSKC::Verify_interactive
 		in >> c_d >> c_Delta >> c_a;
 		
 		// verifier: third move
-		mpz_srandomb(e, l_e);
+		do
+		{
+			mpz_srandomb(e, l_e);
+		}
+		while (!mpz_cmp_ui(e, 0L)); // ensure that $e$ is invertable mod $q$
 		out << e << std::endl;
 		
 		// verifier: fourth move
@@ -484,7 +492,7 @@ bool GrothSKC::Verify_interactive
 		if (optimizations)
 		{
 			// randomization technique from section 6,
-			// paragraph 'Batch verification'
+			// paragraph 'Batch verification' [Gr05]
 			mpz_t alpha;
 			mpz_init(alpha);
 			// pick $\alpha\in_R\{0, 1\}^{\ell_e}$ at random
@@ -751,16 +759,18 @@ void GrothVSSHE::Prove_interactive
 	}
 	
 	// prover: first move
-	mpz_srandomm(r, com->q);
-	mpz_srandomm(R_d, q);
+	mpz_srandomm(r, com->q);	// $r \gets \mathbb{Z}_q$
+	mpz_srandomm(R_d, q);		// $R_d \gets \mathcal{R}_{pk}
 	for (size_t i = 0; i < d.size(); i++)
 	{
+		// see note in [Gr05] for omitting $\ell_s$ here
 		mpz_srandomm(d[i], com->q);
+		// store $d_i$ as negative value for convenience
 		mpz_neg(d[i], d[i]);
 	}
-	mpz_srandomm(r_d, com->q);
+	mpz_srandomm(r_d, com->q);	// $r_d \gets \mathbb{Z}_q$
 	for (size_t i = 0; i < m.size(); i++)
-		mpz_set_ui(m[i], pi[i] + 1L);
+		mpz_set_ui(m[i], pi[i] + 1L); // adjust shifted index
 	com->CommitBy(c, r, m);
 	com->CommitBy(c_d, r_d, d);
 	mpz_set_ui(E_d.first, 1L), mpz_set_ui(E_d.second, 1L);
@@ -796,20 +806,20 @@ void GrothVSSHE::Prove_interactive
 	
 	// prover: third move
 	for (size_t i = 0; i < f.size(); i++)
-	{
-		mpz_neg(f[i], d[i]);
+	{ // compute $f_i = t_{\pi(i)} + d_i$
+		mpz_neg(f[i], d[i]);	// turn $d_i$ into positive values 
 		mpz_add(f[i], f[i], t[pi[i]]);
 		mpz_mod(f[i], f[i], com->q);
 	}
 	mpz_set_ui(Z, 0L);
 	for (size_t i = 0; i < t.size(); i++)
-	{
+	{ // compute $Z = \sum_{i=1}^n t_{\pi(i)} R_i
 		mpz_mul(foo, t[pi[i]], R[i]);
 		mpz_mod(foo, foo, q);
 		mpz_add(Z, Z, foo);
 		mpz_mod(Z, Z, q);
 	}
-	mpz_add(Z, Z, R_d);
+	mpz_add(Z, Z, R_d); // and add $R_d$
 	mpz_mod(Z, Z, q);
 	
 	for (size_t i = 0; i < f.size(); i++)
@@ -828,7 +838,8 @@ void GrothVSSHE::Prove_interactive
 		mpz_mod(rho, rho, com->q);
 		mpz_add(rho, rho, r_d);
 		mpz_mod(rho, rho, com->q);
-/* This part is not necessary: see personal communication with Jens Groth
+/* This part is not necessary: see personal communication with Jens Groth or the journal version of the paper, because
+   $c^{\lambda} c_d \mathrm{com}_{ck}(f_1,\ldots,f_n;0) = \mathrm{com}_{ck}(\lambda\pi(1)+t_i,\ldots,\lambda\pi(n)+t_{\pi(n)})$
 		// SKC commitment $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod p$
 		mpz_set_ui(bar, 0L);
 		com->CommitBy(foo, bar, f, false);
@@ -838,10 +849,10 @@ void GrothVSSHE::Prove_interactive
 		mpz_mul(foo, foo, bar);
 		mpz_mod(foo, foo, com->p);
 */
-		// SKC messages $m_i := i \lambda + t_i \bmod q$ for all $i = 1,\ldots, n$
+		// SKC messages $m_i := i \lambda + t_i \bmod q$, for all $i = 1,\ldots, n$
 		for (size_t i = 0; i < m.size(); i++)
 		{
-			mpz_set_ui(m[i], i + 1L);
+			mpz_set_ui(m[i], i + 1L); // adjust shifted index
 			mpz_mul(m[i], m[i], lambda);
 			mpz_mod(m[i], m[i], com->q);
 			mpz_add(m[i], m[i], t[i]);
@@ -910,7 +921,29 @@ bool GrothVSSHE::Verify_interactive
 		out << lambda << std::endl;
 		
 		// verifier: fifth to seventh move (Shuffle of Known Content)
-/* This part is not necessary: see personal communication with Jens Groth
+		// check whether $c, c_d \in\mathcal{C}_{ck}$
+		if (!(com->TestMembership(c) && com->TestMembership(c_d)))
+			throw false;
+	
+		// check whether $E_d\in\mathcal{C}_{pk}$
+		mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
+		mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
+		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
+			throw false;
+	
+		// check whether $2^{\ell_e} \le f_1,\ldots,f_n < q$
+		for (size_t i = 0; i < f.size(); i++)
+		{
+			if ((mpz_sizeinbase(f[i], 2L) < l_e) || 
+				(mpz_cmp(f[i], com->q) >= 0))
+					throw false;
+		}
+	
+		// check whether $Z\in\mathcal{R}_{pk}$
+		if ((mpz_cmp_ui(Z, 0L) <= 0) || (mpz_cmp(Z, q) >= 0))
+			throw false;
+
+/* This part is not necessary: see personal communication with Jens Groth and the notes above
 			// SKC commitment $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod p$
 			mpz_set_ui(bar, 0L);
 			com->CommitBy(foo, bar, f, false);
@@ -925,10 +958,10 @@ bool GrothVSSHE::Verify_interactive
 			mpz_mul(foo, foo, c_d);
 			mpz_mod(foo, foo, com->p);
 			// SKC messages
-			// $m_i := i \lambda + t_i \bmod q$ for all $i = 1,\ldots, n$
+			// $m_i := i \lambda + t_i \bmod q$, for all $i = 1,\ldots, n$
 			for (size_t i = 0; i < m.size(); i++)
 			{
-				mpz_set_ui(m[i], i + 1L);
+				mpz_set_ui(m[i], i + 1L); // adjust shifted index
 				mpz_mul(m[i], m[i], lambda);
 				mpz_mod(m[i], m[i], com->q);
 				mpz_add(m[i], m[i], t[i]);
@@ -937,28 +970,6 @@ bool GrothVSSHE::Verify_interactive
 		
 		// perform and verify SKC
 		if (!skc->Verify_interactive(foo, f, m, in, out))
-			throw false;
-		
-		// check whether $c, c_d \in\mathcal{C}_{ck}$
-		if (!(com->TestMembership(c) && com->TestMembership(c_d)))
-			throw false;
-		
-		// check whether $E_d\in\mathcal{C}_{pk}$
-		mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
-		mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
-		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
-			throw false;
-		
-		// check whether $2^{\ell_e} \le f_1,\ldots,f_n < q$
-		for (size_t i = 0; i < f.size(); i++)
-		{
-			if ((mpz_sizeinbase(f[i], 2L) < l_e) || 
-				(mpz_cmp(f[i], com->q) >= 0))
-					throw false;
-		}
-		
-		// check whether $Z\in\mathcal{R}_{pk}$
-		if ((mpz_cmp_ui(Z, 0L) <= 0) || (mpz_cmp(Z, q) >= 0))
 			throw false;
 		
 		// check whether
@@ -988,12 +999,12 @@ bool GrothVSSHE::Verify_interactive
 		mpz_mod(foo3, foo3, p);
 		mpz_mul(bar3, bar3, E_d.second);
 		mpz_mod(bar3, bar3, p);
-		mpz_mul(foo3, foo3, foo2);
+		mpz_mul(foo3, foo3, foo2); // LHS, first component
 		mpz_mod(foo3, foo3, p);
-		mpz_mul(bar3, bar3, bar2);
+		mpz_mul(bar3, bar3, bar2); // LHS, second component
 		mpz_mod(bar3, bar3, p);
-		mpz_fpowm(fpowm_table_g, foo, g, Z, p);
-		mpz_fpowm(fpowm_table_h, bar, h, Z, p);
+		mpz_fpowm(fpowm_table_g, foo, g, Z, p); // RHS, first component
+		mpz_fpowm(fpowm_table_h, bar, h, Z, p); // RHS, second component
 		if (mpz_cmp(foo3, foo) || mpz_cmp(bar3, bar))
 			throw false;
 		
