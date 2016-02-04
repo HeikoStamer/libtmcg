@@ -39,7 +39,7 @@ int main
 {
 	assert(init_libTMCG());
 	
-	size_t n = 32;	
+	size_t N = 32;	
 	pid_t pid = 0;
 	int pipe1fd[2], pipe2fd[2];
 	if ((pipe(pipe1fd) < 0) || (pipe(pipe2fd) < 0))
@@ -56,7 +56,7 @@ int main
 			std::vector<mpz_ptr> M;
 			
 			// create the public messages
-			for (size_t i = 0; i < n; i++)
+			for (size_t i = 0; i < N; i++)
 			{
 				mpz_ptr tmp = new mpz_t();
 				mpz_init_set_ui(tmp, i);
@@ -74,14 +74,14 @@ int main
 			stop_clock();
 			std::cout << "S: " << elapsed_time() << std::endl;
 
-			// start (1-out-of-n) oblivious transfer protocol
+			// start (1-out-of-N) oblivious transfer protocol
 			start_clock();
 			std::cout << "S: eotp.Send_interactive_OneOutOfN(...)" << std::endl;
 			assert(eotp->Send_interactive_OneOutOfN(M, *pipe_in, *pipe_out));
 			stop_clock();
 			std::cout << "S: " << elapsed_time() << std::endl;
 
-			// start optimized (1-out-of-n) oblivious transfer protocol
+			// start optimized (1-out-of-N) oblivious transfer protocol
 			start_clock();
 			std::cout << "S: eotp.Send_interactive_OneOutOfN_optimized(...)" << std::endl;
 			assert(eotp->Send_interactive_OneOutOfN_optimized(M, *pipe_in, *pipe_out));
@@ -89,7 +89,7 @@ int main
 			std::cout << "S: " << elapsed_time() << std::endl;
 			
 			// release
-			for (size_t i = 0; i < n; i++)
+			for (size_t i = 0; i < N; i++)
 			{
 				mpz_clear(M[i]);
 				delete M[i];
@@ -107,8 +107,8 @@ int main
 			// Receiver
 			ipipestream *pipe_in = new ipipestream(pipe2fd[0]);
 			opipestream *pipe_out = new opipestream(pipe1fd[1]);
-			mpz_t m;
-			mpz_init_set_ui(m, 0L);
+			mpz_t M;
+			mpz_init_set_ui(M, 0L);
 			
 			// initialize EOTP
 			NaorPinkasEOTP *eotp = new NaorPinkasEOTP();
@@ -119,33 +119,33 @@ int main
 			std::cout << "sigma = " << sigma << std::endl;
 			start_clock();
 			std::cout << "R: eotp.Choose_interactive_OneOutOfTwo(...)" << std::endl;
-			assert(eotp->Choose_interactive_OneOutOfTwo(sigma, m, *pipe_in, *pipe_out));
+			assert(eotp->Choose_interactive_OneOutOfTwo(sigma, M, *pipe_in, *pipe_out));
 			stop_clock();
 			std::cout << "R: " << elapsed_time() << std::endl;
-			std::cout << "m = " << m << std::endl;
-			assert(!mpz_cmp_ui(m, sigma));
+			std::cout << "M = " << M << std::endl;
+			assert(!mpz_cmp_ui(M, sigma));
 
-			// start (1-out-of-n) oblivious transfer protocol
-			sigma = mpz_srandom_mod(n);
+			// start (1-out-of-N) oblivious transfer protocol
+			sigma = mpz_srandom_mod(N);
 			std::cout << "sigma = " << sigma << std::endl;
 			start_clock();
 			std::cout << "R: eotp.Choose_interactive_OneOutOfN(...)" << std::endl;
-			assert(eotp->Choose_interactive_OneOutOfN(sigma, n, m, *pipe_in, *pipe_out));
+			assert(eotp->Choose_interactive_OneOutOfN(sigma, N, M, *pipe_in, *pipe_out));
 			stop_clock();
 			std::cout << "R: " << elapsed_time() << std::endl;
-			std::cout << "m = " << m << std::endl;
-			assert(!mpz_cmp_ui(m, sigma));
+			std::cout << "M = " << M << std::endl;
+			assert(!mpz_cmp_ui(M, sigma));
 
-			// start optimized (1-out-of-n) oblivious transfer protocol
-			sigma = mpz_srandom_mod(n);
+			// start optimized (1-out-of-N) oblivious transfer protocol
+			sigma = mpz_srandom_mod(N);
 			std::cout << "sigma = " << sigma << std::endl;
 			start_clock();
 			std::cout << "R: eotp.Choose_interactive_OneOutOfN_optimized(...)" << std::endl;
-			assert(eotp->Choose_interactive_OneOutOfN_optimized(sigma, n, m, *pipe_in, *pipe_out));
+			assert(eotp->Choose_interactive_OneOutOfN_optimized(sigma, N, M, *pipe_in, *pipe_out));
 			stop_clock();
 			std::cout << "R: " << elapsed_time() << std::endl;
-			std::cout << "m = " << m << std::endl;
-			assert(!mpz_cmp_ui(m, sigma));
+			std::cout << "M = " << M << std::endl;
+			assert(!mpz_cmp_ui(M, sigma));
 
 			// release
 			delete eotp;
