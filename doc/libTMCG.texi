@@ -2001,7 +2001,7 @@ LibTMCG provides the first known implementation of Groth's famous protocol.
 However, it can only be used along with the VTMF card encoding scheme of
 Barnett and Smart@tie{}[BS03].
 
-Our implementation uses the statistically hiding and computationally binding
+Our implementation uses the generalized statistically hiding and computationally binding
 homomorphic commitment scheme due to Pedersen (see @emph{Non-interactive
 and Information-theoretic Secure Verifiable Secret Sharing}, CRYPTO@tie{}'91,
 LNCS@tie{}576). The binding property relies on the hardness of computing

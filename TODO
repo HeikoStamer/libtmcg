@@ -1,6 +1,10 @@
 + set TMCG_MPZ_IO_BASE to 62, which is supported by libgmp >= 4.2
   (However, this breaks all backward compatibility and we gain not much.)
-+ see TODO header of GrothVSSHE.cc
++ see TODO header of GrothVSSHE.cc; however, there are some theoretical
+  results that show the insecurity of Fiat-Shamir heuristic w.r.t. soundness,
+  because with public hash functions the random oracle model does not hold and
+  a malicious prover can cheat by manipulating the pseudo-random challenges
 
-- implement the exotic card and stack operations of the toolbox
+- implement the exotic card and stack operations of the toolbox; there are
+  some obstacles, e.g. that the prover does not know all used randomizers
 - cheater detection: provide a basic protocol for reliable/atomic broadcast

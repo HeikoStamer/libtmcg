@@ -6,7 +6,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006, 2007, 2009  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2006, 2007, 2009, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -58,8 +58,7 @@
 class GrothSKC
 {
 	private:
-		const unsigned long int			l_e;
-		mpz_t												exp2l_e;
+		const unsigned long int			l_e, l_e_nizk;
 		PedersenCommitmentScheme		*com;
 	
 	public:
@@ -81,13 +80,23 @@ class GrothSKC
 			(const std::vector<size_t> &pi, mpz_srcptr r,
 			const std::vector<mpz_ptr> &m,
 			std::istream &in, std::ostream &out) const;
+		void Prove_noninteractive
+			(const std::vector<size_t> &pi, mpz_srcptr r,
+			const std::vector<mpz_ptr> &m, std::ostream &out) const;
 		bool Verify_interactive
 			(mpz_srcptr c, const std::vector<mpz_ptr> &m,
 			std::istream &in, std::ostream &out, bool optimizations = true) const;
+		bool Verify_noninteractive
+			(mpz_srcptr c, const std::vector<mpz_ptr> &m,
+			std::istream &in, bool optimizations = true) const;
 		bool Verify_interactive
 			(mpz_srcptr c, const std::vector<mpz_ptr> &f_prime,
 			const std::vector<mpz_ptr> &m,
 			std::istream &in, std::ostream &out, bool optimizations = true) const;
+		bool Verify_noninteractive
+			(mpz_srcptr c, const std::vector<mpz_ptr> &f_prime,
+			const std::vector<mpz_ptr> &m,
+			std::istream &in, bool optimizations = true) const;
 		~GrothSKC
 			();
 };
@@ -97,12 +106,12 @@ class GrothSKC
 class GrothVSSHE
 {
 	private:
-		const unsigned long int			l_e;
-		mpz_t												*fpowm_table_g, *fpowm_table_h, exp2l_e;
-		GrothSKC										*skc;
+		const unsigned long int			l_e, l_e_nizk;
+		mpz_t					*fpowm_table_g, *fpowm_table_h;
+		GrothSKC				*skc;
 	
 	public:
-		mpz_t												p, q, g, h;
+		mpz_t					p, q, g, h;
 		PedersenCommitmentScheme		*com;
 		
 		GrothVSSHE
@@ -133,10 +142,19 @@ class GrothVSSHE
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& E,
 			std::istream& in, std::ostream& out) const;
+		void Prove_noninteractive
+			(const std::vector<size_t>& pi, const std::vector<mpz_ptr>& R,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& E,
+			std::ostream& out) const;
 		bool Verify_interactive
 			(const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& E,
 			std::istream& in, std::ostream& out) const;
+		bool Verify_noninteractive
+			(const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& E,
+			std::istream& in) const;
 		~GrothVSSHE
 			();
 };

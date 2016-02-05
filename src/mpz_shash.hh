@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -51,4 +51,13 @@
 		
 	void mpz_shash
 		(mpz_ptr r, size_t n, ...);
+
+	void mpz_shash_1vec
+		(mpz_ptr r, const std::vector<mpz_ptr>& v, size_t n, ...);
+	void mpz_shash_2vec
+		(mpz_ptr r, const std::vector<mpz_ptr>& v,
+		const std::vector<mpz_ptr>& w, size_t n, ...);
+	void mpz_shash_2pairvec
+		(mpz_ptr r, const std::vector<std::pair<mpz_ptr, mpz_ptr> >& v,
+		const std::vector<std::pair<mpz_ptr, mpz_ptr> >& w, size_t n, ...);
 #endif

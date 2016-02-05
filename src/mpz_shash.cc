@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
      [BR95] Mihir Bellare, Phillip Rogaway: 'Random Oracles are Practical:
              A Paradigm for Designing Efficient Protocols',
@@ -77,7 +77,7 @@ void mpz_shash
 }
 
 /* Hashing of the public inputs (aka Fiat-Shamir heuristic) with h(),
-   e.g. to make some proofs of knowledge non-interactive. */
+   e.g. to make some proofs of knowledge (PoK) non-interactive. */
 void mpz_shash
 	(mpz_ptr r, size_t n, ...)
 {
@@ -100,3 +100,125 @@ void mpz_shash
 	/* hash arguments */
 	mpz_shash(r, acc);
 }
+
+void mpz_shash_1vec
+	(mpz_ptr r, const std::vector<mpz_ptr>& v, size_t n, ...)
+{
+	va_list ap;
+	mpz_srcptr a;
+	std::string acc;
+
+	/* concatenate the elements of the vector */
+	for (size_t i = 0; i < v.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(v[i], 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, v[i]);
+		acc += "|";
+		delete [] vtmp;
+	}
+	
+	/* concatenate all the remaining arguments */
+	va_start(ap, n);
+	for (size_t i = 0; i < n; i++)
+	{
+		a = (mpz_srcptr) va_arg(ap, mpz_srcptr);
+		char *vtmp = new char[(2 * mpz_sizeinbase(a, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, a);
+		acc += "|";
+		delete [] vtmp;
+	}
+	va_end(ap);
+	
+	/* hash arguments */
+	mpz_shash(r, acc);
+}
+
+void mpz_shash_2vec
+	(mpz_ptr r, const std::vector<mpz_ptr>& v,
+	const std::vector<mpz_ptr>& w, size_t n, ...)
+{
+	va_list ap;
+	mpz_srcptr a;
+	std::string acc;
+
+	/* concatenate the elements of the vectors */
+	for (size_t i = 0; i < v.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(v[i], 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, v[i]);
+		acc += "|";
+		delete [] vtmp;
+	}
+	for (size_t i = 0; i < w.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(w[i], 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, w[i]);
+		acc += "|";
+		delete [] vtmp;
+	}
+	
+	/* concatenate all the remaining arguments */
+	va_start(ap, n);
+	for (size_t i = 0; i < n; i++)
+	{
+		a = (mpz_srcptr) va_arg(ap, mpz_srcptr);
+		char *vtmp = new char[(2 * mpz_sizeinbase(a, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, a);
+		acc += "|";
+		delete [] vtmp;
+	}
+	va_end(ap);
+	
+	/* hash arguments */
+	mpz_shash(r, acc);
+}
+
+void mpz_shash_2pairvec
+	(mpz_ptr r, const std::vector<std::pair<mpz_ptr, mpz_ptr> >& v,
+	const std::vector<std::pair<mpz_ptr, mpz_ptr> >& w, size_t n, ...)
+{
+	va_list ap;
+	mpz_srcptr a;
+	std::string acc;
+
+	/* concatenate the elements of the vectors */
+	for (size_t i = 0; i < v.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(v[i].first, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, v[i].first);
+		acc += "|";
+		delete [] vtmp;
+		vtmp = new char[(2 * mpz_sizeinbase(v[i].second, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, v[i].second);
+		acc += "|";
+		delete [] vtmp;
+
+	}
+	for (size_t i = 0; i < w.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(w[i].first, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, w[i].first);
+		acc += "|";
+		delete [] vtmp;
+		vtmp = new char[(2 * mpz_sizeinbase(w[i].second, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, w[i].second);
+		acc += "|";
+		delete [] vtmp;
+	}
+	
+	/* concatenate all the remaining arguments */
+	va_start(ap, n);
+	for (size_t i = 0; i < n; i++)
+	{
+		a = (mpz_srcptr) va_arg(ap, mpz_srcptr);
+		char *vtmp = new char[(2 * mpz_sizeinbase(a, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, a);
+		acc += "|";
+		delete [] vtmp;
+	}
+	va_end(ap);
+	
+	/* hash arguments */
+	mpz_shash(r, acc);
+}
+

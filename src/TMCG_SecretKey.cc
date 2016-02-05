@@ -152,7 +152,7 @@ void TMCG_SecretKey::generate
 	// Proof System for Quasi-Safe Prime Products',
 	// 5th ACM Conference on Computer and Communication Security, CCS 1998
 	
-	// STAGE1/2: m = p^i * q^j, p and q prime
+	// STAGE1/2: m = p^i * q^j, p and q prime, i > 0, j > 0
 	// STAGE3: y \in NQR^\circ_m
 	std::ostringstream nizk2, input;
 	input << m << "^" << y, nizk2 << "nzk^";

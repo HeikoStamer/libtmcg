@@ -228,7 +228,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
 		mpz_fspowm(fpowm_table_g, t, g, v, p);
 		// challenge
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
-		// the PK non-interactive, i.e. we turn it into a statistically
+		// the PoK non-interactive, i.e. we turn it into a statistically
 		// zero-knowledge (Schnorr signature scheme style) proof of
 		// knowledge (SPK) in the random oracle model.
 		mpz_shash(c, 3, g, h_i, t);
@@ -366,7 +366,7 @@ void BarnettSmartVTMF_dlog::CP_Prove
 		
 		// challenge
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
-		// the PK non-interactive, i.e. we turn it into a statistically
+		// the PoK non-interactive, i.e. we turn it into a statistically
 		// zero-knowledge (Schnorr signature scheme style) proof of
 		// knowledge (SPK) in the random oracle model.
 		mpz_shash(c, 6, a, b, x, y, gg, hh);

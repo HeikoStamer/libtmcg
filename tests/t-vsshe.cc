@@ -258,6 +258,40 @@ int main
 			skc->Prove_interactive(pi, r, m, *pipe_in, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove SKC wrong
+			start_clock();
+			std::cout << "P: !skc.Prove_interactive(...)" << std::endl;
+			mpz_add_ui(r, r, 1L);
+			skc->Prove_interactive(pi, r, m, *pipe_in, *pipe_out);
+			mpz_sub_ui(r, r, 1L);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove SKC
+			start_clock();
+			std::cout << "P: skc.Prove_noninteractive(...)" << std::endl;
+			skc->Prove_noninteractive(pi, r, m, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove SKC wrong
+			start_clock();
+			std::cout << "P: !skc.Prove_noninteractive(...)" << std::endl;
+			skc->Prove_noninteractive(xi, r, m, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove SKC
+			start_clock();
+			std::cout << "P: skc.Prove_noninteractive(...)" << std::endl;
+			skc->Prove_noninteractive(pi, r, m, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove SKC wrong
+			start_clock();
+			std::cout << "P: !skc.Prove_noninteractive(...)" << std::endl;
+			mpz_add_ui(r, r, 1L);
+			skc->Prove_noninteractive(pi, r, m, *pipe_out);
+			mpz_sub_ui(r, r, 1L);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
 			
 			// initialize VSSHE
 			lej2 << com->p << std::endl << com->q << std::endl << com->g[0] << 
@@ -298,6 +332,18 @@ int main
 			start_clock();
 			std::cout << "P: !vsshe.Prove_interactive(...)" << std::endl;
 			vsshe->Prove_interactive(xi, R, e, E, *pipe_in, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove VSSHE
+			start_clock();
+			std::cout << "P: vsshe.Prove_noninteractive(...)" << std::endl;
+			vsshe->Prove_noninteractive(pi, R, e, E, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove VSSHE wrong
+			start_clock();
+			std::cout << "P: !vsshe.Prove_noninteractive(...)" << std::endl;
+			vsshe->Prove_noninteractive(xi, R, e, E, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
 			
@@ -351,8 +397,8 @@ int main
 			std::cout << "V: c = " << a << std::endl;
 			// verify SKC
 			start_clock();
-			std::cout << "V: skc.Verify_interactive(...)" << std::endl;
-			assert(skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
+			std::cout << "V: skc.Verify_interactive(..., false)" << std::endl;
+			assert(skc->Verify_interactive(a, m, *pipe_in, *pipe_out, false));
 			stop_clock();
 			std::cout << "V: " << elapsed_time() << std::endl;
 			// verify SKC wrong
@@ -365,6 +411,36 @@ int main
 			start_clock();
 			std::cout << "V: skc.Verify_interactive(...)" << std::endl;
 			assert(skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify SKC wrong
+			start_clock();
+			std::cout << "V: !skc.Verify_interactive(...)" << std::endl;
+			assert(!skc->Verify_interactive(a, m, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify SKC
+			start_clock();
+			std::cout << "V: skc.Verify_noninteractive(..., false)" << std::endl;
+			assert(skc->Verify_noninteractive(a, m, *pipe_in, false));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify SKC wrong
+			start_clock();
+			std::cout << "V: !skc.Verify_noninteractive(...)" << std::endl;
+			assert(!skc->Verify_noninteractive(a, m, *pipe_in));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify SKC
+			start_clock();
+			std::cout << "V: skc.Verify_noninteractive(...)" << std::endl;
+			assert(skc->Verify_noninteractive(a, m, *pipe_in));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify SKC wrong
+			start_clock();
+			std::cout << "V: !skc.Verify_noninteractive(...)" << std::endl;
+			assert(!skc->Verify_noninteractive(a, m, *pipe_in));
 			stop_clock();
 			std::cout << "V: " << elapsed_time() << std::endl;
 			
@@ -387,6 +463,18 @@ int main
 			start_clock();
 			std::cout << "V: !vsshe.Verify_interactive(...)" << std::endl;
 			assert(!vsshe->Verify_interactive(e, E, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify VSSHE
+			start_clock();
+			std::cout << "V: vsshe.Verify_noninteractive(...)" << std::endl;
+			assert(vsshe->Verify_noninteractive(e, E, *pipe_in));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify VSSHE wrong
+			start_clock();
+			std::cout << "V: !vsshe.Verify_noninteractive(...)" << std::endl;
+			assert(!vsshe->Verify_noninteractive(e, E, *pipe_in));
 			stop_clock();
 			std::cout << "V: " << elapsed_time() << std::endl;
 			
