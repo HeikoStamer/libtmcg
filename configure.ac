@@ -65,6 +65,8 @@ AC_DEFINE(TMCG_LIBGMP_VERSION, "4.1.0",
 	[Define the necessary version number of the GNU gmp library])
 AC_DEFINE(TMCG_MAX_FPOWM_T, 2048,
 	[Define the maximum size of the exponent for fast exponentiation])
+AC_DEFINE(TMCG_MAX_FPOWM_N, 256,
+	[Define the maximum number of bases for doing the precomputation])
 AC_DEFINE(TMCG_MPZ_IO_BASE, 36,
 	[Define the input/ouput base encoding of the iostream operators])
 AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_SHA256,

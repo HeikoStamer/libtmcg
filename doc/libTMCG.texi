@@ -745,6 +745,12 @@ and @code{TMCG_QRA_SIZE} in order to support exponents of common field
 sizes.
 @end defmac
 
+@defmac TMCG_MAX_FPOWM_N
+Define the maximum number of bases for doing the precomputation. This
+value is a trade-off between fast exponentiation and memory allocation.
+The default value is @code{256}.
+@end defmac
+
 @c **********************************************************
 @node Data Types and Classes
 @section Data Types and Classes

@@ -7,7 +7,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2009  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2009, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -69,7 +69,9 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	mpz_clear(foo);
 	
 	// Do the precomputation for the fast exponentiation.
-	for (size_t i = 0; i < g.size(); i++)
+	// For $g_1, \ldots, g_n$ this computation is only done up to a bound
+	// TMCG_MAX_FPOWM_N, in order to keep the memory allocation low.
+	for (size_t i = 0; i < g.size() && i < TMCG_MAX_FPOWM_N; i++)
 	{
 		mpz_t *tmp = new mpz_t[TMCG_MAX_FPOWM_T]();
 		mpz_fpowm_init(tmp);
@@ -116,7 +118,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	mpz_clear(foo);
 	
 	// Do the precomputation for the fast exponentiation.
-	for (size_t i = 0; i < g.size(); i++)
+	for (size_t i = 0; i < g.size() && i < TMCG_MAX_FPOWM_N; i++)
 	{
 		mpz_t *tmp = new mpz_t[TMCG_MAX_FPOWM_T]();
 		mpz_fpowm_init(tmp);
@@ -147,7 +149,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	}
 	
 	// Do the precomputation for the fast exponentiation.
-	for (size_t i = 0; i < g.size(); i++)
+	for (size_t i = 0; i < g.size() && i < TMCG_MAX_FPOWM_N; i++)
 	{
 		mpz_t *tmp = new mpz_t[TMCG_MAX_FPOWM_T]();
 		mpz_fpowm_init(tmp);
@@ -195,7 +197,14 @@ bool PedersenCommitmentScheme::CheckGroup
 			throw false;
 		for (size_t i = 0; i < g.size(); i++)
 		{
-			mpz_fpowm(fpowm_table_g[i], foo, g[i], q, p);
+			if (i < TMCG_MAX_FPOWM_N)
+			{
+				mpz_fpowm(fpowm_table_g[i], foo, g[i], q, p);
+			}
+			else
+			{
+				mpz_powm(foo, g[i], q, p);
+			}
 			if (mpz_cmp_ui(foo, 1L))
 				throw false;
 		}
@@ -249,7 +258,14 @@ void PedersenCommitmentScheme::Commit
 	mpz_fspowm(fpowm_table_h, c, h, r, p);
 	for (size_t i = 0; i < m.size(); i++)
 	{
-		mpz_fspowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+		if (i < TMCG_MAX_FPOWM_N)
+		{
+			mpz_fspowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+		}
+		else
+		{
+			mpz_spowm(tmp, g[i], m[i], p);
+		}
 		mpz_mul(c, c, tmp);
 		mpz_mod(c, c, p);
 	}
@@ -272,10 +288,20 @@ void PedersenCommitmentScheme::CommitBy
 		mpz_fpowm(fpowm_table_h, c, h, r, p);
 	for (size_t i = 0; i < m.size(); i++)
 	{
-		if (TimingAttackProtection)
-			mpz_fspowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+		if (i < TMCG_MAX_FPOWM_N)
+		{
+			if (TimingAttackProtection)
+				mpz_fspowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+			else
+				mpz_fpowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+		}
 		else
-			mpz_fpowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+		{
+			if (TimingAttackProtection)
+				mpz_spowm(tmp, g[i], m[i], p);
+			else
+				mpz_powm(tmp, g[i], m[i], p);
+		}
 		mpz_mul(c, c, tmp);
 		mpz_mod(c, c, p);
 	}
@@ -304,7 +330,14 @@ bool PedersenCommitmentScheme::Verify
 		mpz_fpowm(fpowm_table_h, c2, h, r, p);
 		for (size_t i = 0; i < m.size(); i++)
 		{
-			mpz_fpowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+			if (i < TMCG_MAX_FPOWM_N)
+			{
+				mpz_fpowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+			}
+			else
+			{
+				mpz_powm(tmp, g[i], m[i], p);
+			}
 			mpz_mul(c2, c2, tmp);
 			mpz_mod(c2, c2, p);
 		}

@@ -164,6 +164,11 @@
 		/* Define the maximum size of the exponent for fast exponentiation */
 		#define TMCG_MAX_FPOWM_T 2048
 	#endif
+
+	#ifndef TMCG_MAX_FPOWM_N
+		/* Define the maximum number of bases for doing the precomputation */
+		#define TMCG_MAX_FPOWM_N 256
+	#endif
 	
 	// disable usage of config.h
 	#ifdef HAVE_CONFIG_H

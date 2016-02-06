@@ -7,7 +7,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2009  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2009, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -56,13 +56,13 @@
 class PedersenCommitmentScheme
 {
 	private:
-		mpz_t						*fpowm_table_h;
+		mpz_t					*fpowm_table_h;
 		std::vector<mpz_t*>			fpowm_table_g;
-		const unsigned long int		F_size, G_size;
+		const unsigned long int			F_size, G_size;
 	
 	public:
-		mpz_t						p, q, k, h;
-		std::vector<mpz_ptr>		g;
+		mpz_t					p, q, k, h;
+		std::vector<mpz_ptr>			g;
 		
 		PedersenCommitmentScheme
 			(size_t n,
