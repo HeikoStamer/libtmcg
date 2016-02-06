@@ -203,7 +203,7 @@ int main
 			std::vector<mpz_ptr> m, m_pi, R;
 			std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
 			std::vector<size_t> pi, xi;
-			std::stringstream lej, lej2;
+			std::stringstream lej, lej2, lej3;
 			
 			mpz_init(c), mpz_init(r);
 			com->PublishGroup(*pipe_out), com->PublishGroup(lej);
@@ -346,6 +346,12 @@ int main
 			vsshe->Prove_noninteractive(xi, R, e, E, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
+
+			// NSHVZKA
+			vsshe->Prove_noninteractive(pi, R, e, E, lej3);
+			std::string NSHVZKA = lej3.str();
+			std::cout << "NSHVZKA(" << NSHVZKA.size() << " bytes)" << std::endl;
+			assert(vsshe->Verify_noninteractive(e, E, lej3));
 			
 			// release
 			for (size_t i = 0; i < n; i++)
