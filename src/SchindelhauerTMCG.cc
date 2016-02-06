@@ -1581,6 +1581,30 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality_Groth
 	TMCG_ReleaseStackEquality_Groth(pi, R, e, E);
 }
 
+void SchindelhauerTMCG::TMCG_ProveStackEquality_Groth_noninteractive
+	(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+	const TMCG_StackSecret<VTMF_CardSecret> &ss,
+	BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
+	std::ostream &out)
+{
+	assert((s.size() == s2.size()) && (s.size() == ss.size()));
+	assert(!mpz_cmp(vtmf->h, vsshe->com->h));
+	assert(!mpz_cmp(vtmf->q, vsshe->com->q));
+	assert(!mpz_cmp(vtmf->p, vsshe->p));
+	assert(!mpz_cmp(vtmf->q, vsshe->q));
+	assert(!mpz_cmp(vtmf->g, vsshe->g));
+	assert(!mpz_cmp(vtmf->h, vsshe->h));
+	assert((s.size() <= vsshe->com->g.size()));
+	
+	std::vector<mpz_ptr> R;
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
+	std::vector<size_t> pi;
+	
+	TMCG_InitializeStackEquality_Groth(pi, R, e, E, s, s2, ss);
+	vsshe->Prove_noninteractive(pi, R, e, E, out);
+	TMCG_ReleaseStackEquality_Groth(pi, R, e, E);
+}
+
 void SchindelhauerTMCG::TMCG_ProveStackEquality_Hoogh
 	(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
 	const TMCG_StackSecret<VTMF_CardSecret> &ss,
@@ -1796,6 +1820,38 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Groth
 	
 	TMCG_InitializeStackEquality_Groth(e, E, s, s2);
 	bool return_value = vsshe->Verify_interactive(e, E, in, out);
+	TMCG_ReleaseStackEquality_Groth(e, E);
+	
+	return return_value;
+}
+
+bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Groth_noninteractive
+	(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+	BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
+	std::istream &in)
+{
+	// check whether the parameters of VSSHE and VTMF match
+	if (mpz_cmp(vtmf->h, vsshe->com->h) || mpz_cmp(vtmf->q, vsshe->com->q) || 
+		mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) || 
+		mpz_cmp(vtmf->g, vsshe->g) || mpz_cmp(vtmf->h, vsshe->h) || 
+		(s.size() > vsshe->com->g.size()))
+			return false;
+	
+	if (s.size() != s2.size())
+		return false;
+	
+	// check whether the elements of the shuffled stack belong to the group
+	for (size_t i = 0; i < s2.size(); i++)
+	{
+		if (!vtmf->CheckElement(s2[i].c_1) || !vtmf->CheckElement(s2[i].c_2))
+			return false;
+	}
+	
+	std::vector<mpz_ptr> R;
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
+	
+	TMCG_InitializeStackEquality_Groth(e, E, s, s2);
+	bool return_value = vsshe->Verify_noninteractive(e, E, in);
 	TMCG_ReleaseStackEquality_Groth(e, E);
 	
 	return return_value;

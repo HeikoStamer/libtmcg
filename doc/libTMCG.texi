@@ -166,6 +166,12 @@ The interested reader is referred to the following papers:
 	pp. 1--12, 2005.@*
 	@uref{http://www.nongnu.org/@/libtmcg/@/WEWoRC2005_proc.pdf}
 @end quotation
+@quotation [FS87]
+	@sc{Amos Fiat} and @sc{Adi Shamir}.
+	@emph{How To Prove Yourself: Practical Solutions to Identification and Signature Problems.}@*
+	Advances in Cryptology -- CRYPTO' 86. Lecture Notes in Computer Science 263, pp. 186--194, 1987.@*
+	@uref{http://dx.doi.org/10.1007/3-540-47721-7_12}
+@end quotation
 
 @c **********************************************************
 @node Getting Started
@@ -357,6 +363,19 @@ Composable Security: A New Paradigm for Cryptographic Protocols}, Cryptology
 ePrint Archive: Report 2000/067). Furthermore, the protocols should employ
 concurrent zero-knowledge proofs (see Dwork, Naor, Sahai: @emph{Concurrent
 Zero-Knowledge}, Journal of the ACM 51(6):851--898, 2004).
+
+Please note, that in some protocols the Fiat-Shamir heuristic@tie{}[FS87]
+is used to turn interactive special honest verifier zero-knowledge arguments
+or proofs into an non-interactive version. However, there are some theoretical
+(see Nir Bitansky, Dana Dachman-Soled, Sanjam Garg, Abhishek Jain, Yael Tauman
+Kalai, Adriana Lopez-Alt, and Daniel Wichs: @emph{Why 'Fiat-Shamir for Proofs'
+Lacks a Proof}, TCC@tie{}2013, LNCS@tie{}7785, 2013) and pratical (see David
+Bernhard, Olivier Pereira, Bogdan Warinschi: @emph{How Not to Prove Yourself:
+Pitfalls of the Fiat-Shamir Heuristic and Applications to Helios}, ASIACRYPT@tie{}2012,
+LNCS@tie{}7658, 2012) results that show the insecurity of Fiat-Shamir heuristic
+w.r.t. soundness, because when using public hash functions the random oracle
+model obviously does not hold and thus a malicious prover can manipulate the
+challenges in order to violate soundness.
 
 LibTMCG was carefully implemented with respect to timing attacks (see Kocher:
 @emph{Cryptanalysis of Diffie-Hellman, RSA, DSS, and other cryptosystems using
@@ -2587,9 +2606,18 @@ class must be created to perform any card or stack operations.
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality_Groth (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf, @code{GrothVSSHE*} vsshe, @code{std::istream&} in, @code{std::ostream&} out)
 		This is a method like above. The only difference is that the more
-		efficient shuffle verification protocol of Groth is used. Thus @var{vsshe}
-		is a pointer to an initialized instance of @code{GrothVSSHE}.
-		The rest of the arguments are the same.
+		efficient interactive shuffle verification protocol of Groth@tie{}[Gr05]
+		is used. Thus @var{vsshe} is a pointer to a proper initialized instance
+		of @code{GrothVSSHE}. The rest of the arguments are the same.
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality_Groth_noninteractive (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf, @code{GrothVSSHE*} vsshe, @code{std::ostream&} out)
+		This is a method like above. The difference is that the non-interactive
+		version of the shuffle verification protocol is used. Thus only an
+		output stream @var{out} is given, for example @code{std::stringstream}
+		can be appropriate here. Again @var{vsshe} is a pointer to a proper
+		initialized instance of @code{GrothVSSHE}. The rest of the arguments
+		are the same.
 	@end deftypemethod
 
 	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality_Hoogh (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf, @code{HooghSchoenmakersSkoricVillegasVRHE*} vrhe, @code{std::istream&} in, @code{std::ostream&} out)
@@ -2632,6 +2660,15 @@ class must be created to perform any card or stack operations.
 		efficient shuffle verification protocol of Groth is used. Thus @var{vsshe}
 		is a pointer to an initialized instance of @code{GrothVSSHE}.
 		The rest of the arguments and the returned values are the same.
+	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality_Groth_noninteractive (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{BarnettSmartVTMF_dlog*} vtmf, @code{GrothVSSHE*} vsshe, @code{std::istream&} in)
+		This is a method like above. The difference is that the non-interactive
+		version of the shuffle verification protocol is used. Thus only an
+		input stream @var{in} is given, for example @code{std::stringstream}
+		can be appropriate here. Again @var{vsshe} is a pointer to an initialized
+		instance of @code{GrothVSSHE}. The rest of the arguments and the returned
+		values are the same.
 	@end deftypemethod
 
 	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality_Hoogh (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{BarnettSmartVTMF_dlog*} vtmf, @code{HooghSchoenmakersSkoricVillegasVRHE*} vrhe, @code{std::istream&} in, @code{std::ostream&} out)

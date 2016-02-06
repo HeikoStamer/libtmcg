@@ -2,8 +2,9 @@
   (However, this breaks all backward compatibility and we gain not much.)
 + see TODO header of GrothVSSHE.cc; however, there are some theoretical
   results that show the insecurity of Fiat-Shamir heuristic w.r.t. soundness,
-  because with public hash functions the random oracle model does not hold and
-  a malicious prover can cheat by manipulating the pseudo-random challenges
+  because with public hash functions the random oracle model obviously does
+  not hold and thus a malicious prover can manipulate the verifyer-challenges
++ provide interactive versions for the non-interactive protocols
 
 - implement the exotic card and stack operations of the toolbox; there are
   some obstacles, e.g. that the prover does not know all used randomizers
