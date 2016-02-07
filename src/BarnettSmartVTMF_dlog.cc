@@ -252,7 +252,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 	
 	try
 	{
-		// verify the in-group property
+		// verify the in-group property 
 		if (!CheckElement(foo))
 			throw false;
 		
@@ -297,7 +297,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_RemoveKey
 	mpz_t foo, bar;
 	
 	mpz_init(foo), mpz_init(bar);
-	in >> foo >> bar >> bar;
+	in >> foo >> bar >> bar; // we need only the public key $h_i$
 	
 	try
 	{
