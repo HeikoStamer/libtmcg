@@ -2633,6 +2633,15 @@ class must be created to perform any card or stack operations.
 		is a pointer to an initialized instance of @code{HooghSchoenmakersSkoricVillegasVRHE}.
 		The rest of the arguments are the same.
 	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality_Hoogh_noninteractive (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf, @code{HooghSchoenmakersSkoricVillegasVRHE*} vrhe, @code{std::ostream&} out)
+		This is a method like above. The difference is that the non-interactive
+		version of the rotation verification protocol is used. Thus only an
+		output stream @var{out} is given, for example @code{std::stringstream}
+		can be appropriate here. Again @var{vrhe} is a pointer to an initialized
+		instance of @code{HooghSchoenmakersSkoricVillegasVRHE}.
+		The rest of the arguments are the same.
+	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality (@code{const TMCG_Stack<TMCG_Card>&} s, @code{const TMCG_Stack<TMCG_Card>&} s2, @code{bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{std::istream&} in, @code{std::ostream&} out)
 		This method should be executed by the verifier to check whether or not a
@@ -2684,6 +2693,15 @@ class must be created to perform any card or stack operations.
 		is a pointer to an initialized instance of @code{HooghSchoenmakersSkoricVillegasVRHE}.
 		The rest of the arguments and the returned values are the same.
 	@end deftypemethod
+
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality_Hoogh_noninteractive (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{BarnettSmartVTMF_dlog*} vtmf, @code{HooghSchoenmakersSkoricVillegasVRHE*} vrhe, @code{std::istream&} in)
+		This is a method like above. The difference is that the non-interactive
+		version of the rotation verification protocol is used. Thus only an
+		input stream @var{in} is given, for example @code{std::stringstream}
+		can be appropriate here. Again @var{vrhe} is a pointer to an initialized
+		instance of @code{HooghSchoenmakersSkoricVillegasVRHE}.
+		The rest of the arguments and the returned values are the same.
+	@end deftypemethod
 	
 	@defop {Destructor} SchindelhauerTMCG ~SchindelhauerTMCG ()
 		This destructor releases all occupied resources.
@@ -2703,7 +2721,8 @@ and @math{P_4}) and a regular deck of
 52@tie{}different cards. For convenience only the more efficient card
 encoding scheme of Barnett and Smart@tie{}[BS03] is described. Additionally,
 we complete our exposition with code fragments which show the usage of the
-fast shuffle verification protocol due to Groth@tie{}[Gr05].
+fast shuffle verification protocol due to Groth@tie{}[Gr05] with an interactive
+instantiation.
 
 Throughout the remaining pages we suppose that all players are pairwise connected by
 authenticated communication channels. These channels are organized in input resp.

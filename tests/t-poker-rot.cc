@@ -173,7 +173,7 @@ void start_instance
 					if (!tmcg->TMCG_VerifyStackEquality_Hoogh(s, s2, vtmf, vrhe, 
 						*P_in[i], *P_out[i]))
 					{
-						std::cout << "Shuffle verification failed!" << std::endl;
+						std::cout << "Rotation verification failed!" << std::endl;
 						exit(-1);
 					}
 				}

@@ -173,6 +173,61 @@ void mpz_shash_2vec
 	mpz_shash(r, acc);
 }
 
+void mpz_shash_4vec
+	(mpz_ptr r, const std::vector<mpz_ptr>& v,
+	const std::vector<mpz_ptr>& w, const std::vector<mpz_ptr>& x,
+	const std::vector<mpz_ptr>& y, size_t n, ...)
+{
+	va_list ap;
+	mpz_srcptr a;
+	std::string acc;
+
+	/* concatenate the elements of the vectors */
+	for (size_t i = 0; i < v.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(v[i], 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, v[i]);
+		acc += "|";
+		delete [] vtmp;
+	}
+	for (size_t i = 0; i < w.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(w[i], 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, w[i]);
+		acc += "|";
+		delete [] vtmp;
+	}
+	for (size_t i = 0; i < x.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(x[i], 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, x[i]);
+		acc += "|";
+		delete [] vtmp;
+	}
+	for (size_t i = 0; i < y.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(y[i], 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, y[i]);
+		acc += "|";
+		delete [] vtmp;
+	}
+	
+	/* concatenate all the remaining arguments */
+	va_start(ap, n);
+	for (size_t i = 0; i < n; i++)
+	{
+		a = (mpz_srcptr) va_arg(ap, mpz_srcptr);
+		char *vtmp = new char[(2 * mpz_sizeinbase(a, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, a);
+		acc += "|";
+		delete [] vtmp;
+	}
+	va_end(ap);
+	
+	/* hash arguments */
+	mpz_shash(r, acc);
+}
+
 void mpz_shash_2pairvec
 	(mpz_ptr r, const std::vector<std::pair<mpz_ptr, mpz_ptr> >& vp,
 	const std::vector<std::pair<mpz_ptr, mpz_ptr> >& wp, size_t n, ...)
@@ -253,6 +308,98 @@ void mpz_shash_2pairvec2vec
 		delete [] vtmp;
 		vtmp = new char[(2 * mpz_sizeinbase(wp[i].second, 16)) + 1];
 		acc += mpz_get_str(vtmp, 16, wp[i].second);
+		acc += "|";
+		delete [] vtmp;
+	}
+
+	/* concatenate the elements of the vectors */
+	for (size_t i = 0; i < v.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(v[i], 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, v[i]);
+		acc += "|";
+		delete [] vtmp;
+	}
+	for (size_t i = 0; i < w.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(w[i], 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, w[i]);
+		acc += "|";
+		delete [] vtmp;
+	}
+	
+	/* concatenate all the remaining arguments */
+	va_start(ap, n);
+	for (size_t i = 0; i < n; i++)
+	{
+		a = (mpz_srcptr) va_arg(ap, mpz_srcptr);
+		char *vtmp = new char[(2 * mpz_sizeinbase(a, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, a);
+		acc += "|";
+		delete [] vtmp;
+	}
+	va_end(ap);
+	
+	/* hash arguments */
+	mpz_shash(r, acc);
+}
+
+void mpz_shash_4pairvec2vec
+	(mpz_ptr r, const std::vector<std::pair<mpz_ptr, mpz_ptr> >& vp,
+	const std::vector<std::pair<mpz_ptr, mpz_ptr> >& wp,
+	const std::vector<std::pair<mpz_ptr, mpz_ptr> >& xp,
+	const std::vector<std::pair<mpz_ptr, mpz_ptr> >& yp,
+	const std::vector<mpz_ptr>& v, const std::vector<mpz_ptr>& w,
+	size_t n, ...)
+{
+	va_list ap;
+	mpz_srcptr a;
+	std::string acc;
+
+	/* concatenate the elements of the pair vectors */
+	for (size_t i = 0; i < vp.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(vp[i].first, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, vp[i].first);
+		acc += "|";
+		delete [] vtmp;
+		vtmp = new char[(2 * mpz_sizeinbase(vp[i].second, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, vp[i].second);
+		acc += "|";
+		delete [] vtmp;
+
+	}
+	for (size_t i = 0; i < wp.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(wp[i].first, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, wp[i].first);
+		acc += "|";
+		delete [] vtmp;
+		vtmp = new char[(2 * mpz_sizeinbase(wp[i].second, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, wp[i].second);
+		acc += "|";
+		delete [] vtmp;
+	}
+	for (size_t i = 0; i < xp.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(xp[i].first, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, xp[i].first);
+		acc += "|";
+		delete [] vtmp;
+		vtmp = new char[(2 * mpz_sizeinbase(xp[i].second, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, xp[i].second);
+		acc += "|";
+		delete [] vtmp;
+
+	}
+	for (size_t i = 0; i < yp.size(); i++)
+	{
+		char *vtmp = new char[(2 * mpz_sizeinbase(yp[i].first, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, yp[i].first);
+		acc += "|";
+		delete [] vtmp;
+		vtmp = new char[(2 * mpz_sizeinbase(yp[i].second, 16)) + 1];
+		acc += mpz_get_str(vtmp, 16, yp[i].second);
 		acc += "|";
 		delete [] vtmp;
 	}

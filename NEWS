@@ -1,7 +1,10 @@
 1.2.0 The default security parameters has been updated to current state of
       the art values. This may break some with older versions compiled 
       applications. The configure switch --with-gmp has been added in order
-      to find the required libgmp on a non-standard path.
+      to find the required libgmp on a non-standard path. Non-interactive
+      versions of the verifiable shuffle resp. rotation protocol provide
+      more efficient instantiations with soundness based on the well-known
+      Fiat-Shamir heuristic.
 1.1.3 The VRHE scheme provides an efficient HVZK argument for cyclic shuffle.
 1.1.2 Small bugfixes have been applied in order to compile with gcc 4.3.x.
 1.1.1 A major security bug (missing range check) was fixed, which allows an

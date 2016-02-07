@@ -112,7 +112,7 @@ int main
 			std::vector<mpz_ptr> m, m_pi, R;
 			std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
 			std::vector<size_t> pi, xi;
-			std::stringstream lej, lej2;
+			std::stringstream lej, lej2, lej3;
 			
 			// create the public messages
 			for (size_t i = 0; i < n; i++)
@@ -180,6 +180,24 @@ int main
 			vrhe->Prove_interactive(r_wrong, R, e, E, *pipe_in, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove VRHE
+			start_clock();
+			std::cout << "P: vrhe.Prove_noninteractive(...)" << std::endl;
+			vrhe->Prove_noninteractive(r, R, e, E, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove VRHE wrong
+			start_clock();
+			std::cout << "P: !vrhe.Prove_noninteractive(...)" << std::endl;
+			vrhe->Prove_noninteractive(r_wrong, R, e, E, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
+
+			// NSHVZKP
+			vrhe->Prove_noninteractive(r, R, e, E, lej3);
+			std::string NSHVZKP = lej3.str();
+			std::cout << "NSHVZKP(" << NSHVZKP.size() << " bytes)" << std::endl;
+			assert(vrhe->Verify_noninteractive(e, E, lej3));
 			
 			// release
 			for (size_t i = 0; i < n; i++)
@@ -240,6 +258,18 @@ int main
 			start_clock();
 			std::cout << "V: !vrhe.Verify_interactive(...)" << std::endl;
 			assert(!vrhe->Verify_interactive(e, E, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify VRHE
+			start_clock();
+			std::cout << "V: vrhe.Verify_noninteractive(...)" << std::endl;
+			assert(vrhe->Verify_noninteractive(e, E, *pipe_in));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify VRHE wrong
+			start_clock();
+			std::cout << "V: !vrhe.Verify_noninteractive(...)" << std::endl;
+			assert(!vrhe->Verify_noninteractive(e, E, *pipe_in));
 			stop_clock();
 			std::cout << "V: " << elapsed_time() << std::endl;
 			

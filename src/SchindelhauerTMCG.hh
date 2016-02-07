@@ -268,6 +268,11 @@ class SchindelhauerTMCG
 			const TMCG_StackSecret<VTMF_CardSecret> &ss,
 			BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
 			std::istream &in, std::ostream &out);
+		void TMCG_ProveStackEquality_Hoogh_noninteractive
+			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+			const TMCG_StackSecret<VTMF_CardSecret> &ss,
+			BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
+			std::ostream &out);
 		bool TMCG_VerifyStackEquality
 			(const TMCG_Stack<TMCG_Card> &s, const TMCG_Stack<TMCG_Card> &s2, 
 			bool cyclic, const TMCG_PublicKeyRing &ring, 
@@ -288,6 +293,10 @@ class SchindelhauerTMCG
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
 			BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
 			std::istream &in, std::ostream &out);
+		bool TMCG_VerifyStackEquality_Hoogh_noninteractive
+			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+			BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
+			std::istream &in);
 };
 
 #endif

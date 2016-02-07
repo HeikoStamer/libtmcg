@@ -8,7 +8,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2009, 2015, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -57,10 +57,10 @@
 class HooghSchoenmakersSkoricVillegasPUBROTZK
 {
 	private:
-		mpz_t																*fpowm_table_g, *fpowm_table_h;
+		mpz_t						*fpowm_table_g, *fpowm_table_h;
 	
 	public:
-		mpz_t																p, q, g, h;
+		mpz_t						p, q, g, h;
 		
 		HooghSchoenmakersSkoricVillegasPUBROTZK
 			(mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC);
@@ -68,9 +68,16 @@ class HooghSchoenmakersSkoricVillegasPUBROTZK
 			(size_t r, const std::vector<mpz_ptr> &s,
 			const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
 			std::istream &in, std::ostream &out) const;
+		void Prove_noninteractive
+			(size_t r, const std::vector<mpz_ptr> &s,
+			const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
+			std::ostream &out) const;
 		bool Verify_interactive
 			(const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
 			std::istream &in, std::ostream &out) const;
+		bool Verify_noninteractive
+			(const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
+			std::istream &in) const;
 		~HooghSchoenmakersSkoricVillegasPUBROTZK
 			();
 };
@@ -80,12 +87,12 @@ class HooghSchoenmakersSkoricVillegasPUBROTZK
 class HooghSchoenmakersSkoricVillegasVRHE
 {
 	private:
-		mpz_t																				*fpowm_table_g, *fpowm_table_h;
-		HooghSchoenmakersSkoricVillegasPUBROTZK			*pub_rot_zk;
-		const unsigned long int											F_size, G_size;
+		mpz_t						*fpowm_table_g, *fpowm_table_h;
+		HooghSchoenmakersSkoricVillegasPUBROTZK		*pub_rot_zk;
+		const unsigned long int				F_size, G_size;
 	
 	public:
-		mpz_t																				p, q, g, h;
+		mpz_t						p, q, g, h;
 		
 		HooghSchoenmakersSkoricVillegasVRHE
 			(unsigned long int fieldsize = TMCG_DDH_SIZE,
@@ -107,10 +114,19 @@ class HooghSchoenmakersSkoricVillegasVRHE
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &X,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &Y,
 			std::istream &in, std::ostream &out) const;
+		void Prove_noninteractive
+			(size_t r, const std::vector<mpz_ptr> &s,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &X,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &Y,
+			std::ostream &out) const;
 		bool Verify_interactive
 			(const std::vector<std::pair<mpz_ptr, mpz_ptr> > &X,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &Y,
 			std::istream &in, std::ostream &out) const;
+		bool Verify_noninteractive
+			(const std::vector<std::pair<mpz_ptr, mpz_ptr> > &X,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &Y,
+			std::istream &in) const;
 		~HooghSchoenmakersSkoricVillegasVRHE
 			();
 };

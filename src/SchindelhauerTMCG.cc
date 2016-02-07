@@ -1626,6 +1626,27 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality_Hoogh
 	TMCG_ReleaseStackEquality_Hoogh(R, e, E);
 }
 
+void SchindelhauerTMCG::TMCG_ProveStackEquality_Hoogh_noninteractive
+	(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+	const TMCG_StackSecret<VTMF_CardSecret> &ss,
+	BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
+	std::ostream &out)
+{
+	assert((s.size() == s2.size()) && (s.size() == ss.size()));
+	assert(!mpz_cmp(vtmf->p, vrhe->p));
+	assert(!mpz_cmp(vtmf->q, vrhe->q));
+	assert(!mpz_cmp(vtmf->g, vrhe->g));
+	assert(!mpz_cmp(vtmf->h, vrhe->h));
+	
+	std::vector<mpz_ptr> R;
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
+	size_t r = (ss.size() - ss[0].first) % ss.size();
+	
+	TMCG_InitializeStackEquality_Hoogh(R, e, E, s, s2, ss);
+	vrhe->Prove_noninteractive(r, R, e, E, out);
+	TMCG_ReleaseStackEquality_Hoogh(R, e, E);
+}
+
 bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 	(const TMCG_Stack<TMCG_Card> &s, const TMCG_Stack<TMCG_Card> &s2, bool cyclic,
 	const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out)
@@ -1882,6 +1903,36 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Hoogh
 	
 	TMCG_InitializeStackEquality_Groth(e, E, s, s2); // we can use the helper
 	bool return_value = vrhe->Verify_interactive(e, E, in, out);
+	TMCG_ReleaseStackEquality_Groth(e, E); // we can use this helper also here
+	
+	return return_value;
+}
+
+bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Hoogh_noninteractive
+	(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
+	BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
+	std::istream &in)
+{
+	// check whether the parameters of VRHE and VTMF match
+	if (mpz_cmp(vtmf->p, vrhe->p) || mpz_cmp(vtmf->q, vrhe->q) || 
+		mpz_cmp(vtmf->g, vrhe->g) || mpz_cmp(vtmf->h, vrhe->h))
+			return false;
+	
+	if (s.size() != s2.size())
+		return false;
+	
+	// check whether the elements of the shuffled stack belong to the group
+	for (size_t i = 0; i < s2.size(); i++)
+	{
+		if (!vtmf->CheckElement(s2[i].c_1) || !vtmf->CheckElement(s2[i].c_2))
+			return false;
+	}
+	
+	std::vector<mpz_ptr> R;
+	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
+	
+	TMCG_InitializeStackEquality_Groth(e, E, s, s2); // we can use the helper
+	bool return_value = vrhe->Verify_noninteractive(e, E, in);
 	TMCG_ReleaseStackEquality_Groth(e, E); // we can use this helper also here
 	
 	return return_value;
