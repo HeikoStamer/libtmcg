@@ -58,6 +58,11 @@
 		(mpz_ptr r, const std::vector<mpz_ptr>& v,
 		const std::vector<mpz_ptr>& w, size_t n, ...);
 	void mpz_shash_2pairvec
-		(mpz_ptr r, const std::vector<std::pair<mpz_ptr, mpz_ptr> >& v,
-		const std::vector<std::pair<mpz_ptr, mpz_ptr> >& w, size_t n, ...);
+		(mpz_ptr r, const std::vector<std::pair<mpz_ptr, mpz_ptr> >& vp,
+		const std::vector<std::pair<mpz_ptr, mpz_ptr> >& wp, size_t n, ...);
+	void mpz_shash_2pairvec2vec
+		(mpz_ptr r, const std::vector<std::pair<mpz_ptr, mpz_ptr> >& vp,
+		const std::vector<std::pair<mpz_ptr, mpz_ptr> >& wp,
+		const std::vector<mpz_ptr>& v, const std::vector<mpz_ptr>& w,
+		size_t n, ...);
 #endif

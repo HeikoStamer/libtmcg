@@ -325,7 +325,7 @@ void GrothSKC::Prove_noninteractive
 	
 	// prover: third move
 		// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		mpz_shash(e, 4, x, c_d, c_Delta, c_a);
+		mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
 		// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
 		// note that we follow the advice of section 2.5 [Gr05] by increasing the
 		// value of $\ell_e$ for the non-interactive protocol version
@@ -614,7 +614,7 @@ bool GrothSKC::Verify_noninteractive
 		
 		// verifier: third move
 			// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			mpz_shash(e, 4, x, c_d, c_Delta, c_a);
+			mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
 			// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
 			// note that we follow the advice of section 2.5 [Gr05] by increasing the
 			// value of $\ell_e$ for the non-interactive protocol version
@@ -1003,7 +1003,7 @@ bool GrothSKC::Verify_noninteractive
 		
 		// verifier: third move
 			// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			mpz_shash(e, 4, x, c_d, c_Delta, c_a);
+			mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
 			// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
 			// note that we follow the advice of section 2.5 [Gr05] by increasing the
 			// value of $\ell_e$ for the non-interactive protocol version
@@ -1486,7 +1486,7 @@ void GrothVSSHE::Prove_noninteractive
 		mpz_set_ui(bar, i);
 		mpz_set_ui(foo, l_e_nizk);
 		if (i > 0)
-			mpz_set(foo, t[i-1]);
+			mpz_set(foo, t[i-1]); // make a link to previous element
 		// get $t_i$ from the 'random oracle', i.e. Fiat-Shamir heuristic
 		mpz_shash_2pairvec(t[i], e, E, 14, p, q, g, h, com->p, com->q,
 			com->g[i], com->h, c, c_d, E_d.first, E_d.second, foo, bar);
@@ -1520,7 +1520,7 @@ void GrothVSSHE::Prove_noninteractive
 	
 	// prover: fourth move
 		// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		mpz_shash_2vec(lambda, t, f, 1, Z);
+		mpz_shash_2pairvec2vec(lambda, e, E, t, f, 5, g, h, com->q, q, Z);
 		// reduce such that $\lambda$ is from $\{0, 1\}^{\ell_e}$
 		// note that we follow the advice of section 2.5 [Gr05] by increasing the
 		// value of $\ell_e$ for the non-interactive protocol version
@@ -1777,7 +1777,7 @@ bool GrothVSSHE::Verify_noninteractive
 		
 		// verifier: fourth move
 			// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			mpz_shash_2vec(lambda, t, f, 1, Z);
+			mpz_shash_2pairvec2vec(lambda, e, E, t, f, 5, g, h, com->q, q, Z);
 			// reduce such that $\lambda$ is from $\{0, 1\}^{\ell_e}$
 			// note that we follow the advice of section 2.5 [Gr05] by increasing the
 			// value of $\ell_e$ for the non-interactive protocol version
