@@ -1,3 +1,5 @@
+* [2016-02-07] provides non-interactive versions of the shuffle protocol
+* [2016-02-06] new global symbol TMCG_MAX_FPOWM_N for restricting memory usage
 * [2016-02-02] increase some security and bounding parameters
 * [2016-01-31] implements an 1-out-of-n oblivious transfer protocol
 * [2016-01-16] added configure option --with-gmp=<path>
