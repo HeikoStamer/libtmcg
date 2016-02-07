@@ -367,7 +367,7 @@ Zero-Knowledge}, Journal of the ACM 51(6):851--898, 2004).
 Please note, that in some protocols the Fiat-Shamir heuristic@tie{}[FS87]
 is used to turn interactive special honest verifier zero-knowledge arguments
 or proofs into an non-interactive version. However, there are some theoretical
-(see Nir Bitansky, Dana Dachman-Soled, Sanjam Garg, Abhishek Jain, Yael Tauman
+(see e.g. Nir Bitansky, Dana Dachman-Soled, Sanjam Garg, Abhishek Jain, Yael Tauman
 Kalai, Adriana Lopez-Alt, and Daniel Wichs: @emph{Why 'Fiat-Shamir for Proofs'
 Lacks a Proof}, TCC@tie{}2013, LNCS@tie{}7785, 2013) and pratical (see David
 Bernhard, Olivier Pereira, Bogdan Warinschi: @emph{How Not to Prove Yourself:
@@ -375,7 +375,7 @@ Pitfalls of the Fiat-Shamir Heuristic and Applications to Helios}, ASIACRYPT@tie
 LNCS@tie{}7658, 2012) results that show the insecurity of Fiat-Shamir heuristic
 w.r.t. soundness, because when using public hash functions the random oracle
 model obviously does not hold and thus a malicious prover can manipulate the
-challenges in order to violate soundness.
+challenges in order to hide his cheating.
 
 LibTMCG was carefully implemented with respect to timing attacks (see Kocher:
 @emph{Cryptanalysis of Diffie-Hellman, RSA, DSS, and other cryptosystems using
@@ -735,18 +735,20 @@ hash function @code{TMCG_GCRY_MD_ALGO} is broken.
 @end defmac
 
 @defmac TMCG_MAX_FPOWM_T
-Defines the maximum size of admissible exponents (in bit) used by fast
+Defines the maximum size of admissible exponents (in bit) used by our fast
 exponentiation procedures. The default value is @code{2048}. Note that
 this parameter has a strong influence on the amount of memory allocated
 by LibTMCG since it determines the size of the precomputed tables.
 However, it should be at least greater or equal than @code{TMCG_DDH_SIZE}
-and @code{TMCG_QRA_SIZE} in order to support exponents of common field
-sizes.
+and @code{TMCG_QRA_SIZE} in order to support the possible exponents of
+common field sizes.
 @end defmac
 
 @defmac TMCG_MAX_FPOWM_N
-Define the maximum number of bases for doing the precomputation. This
-value is a trade-off between fast exponentiation and memory allocation.
+Define the maximum number of different bases for doing the above precomputation.
+This value is a trade-off between fast exponentiation for all possible bases
+and memory allocation. Currently it is only relevant for the generators in
+Pedersen commitment scheme (see section on @code{GrothVSSHE}).
 The default value is @code{256}.
 @end defmac
 
