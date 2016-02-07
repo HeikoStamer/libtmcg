@@ -602,11 +602,10 @@ and DLOG. The default value is @code{256}.
 
 @defmac TMCG_GCRY_MD_ALGO
 Defines the message digest algorithm for digital signatures and
-the Fiat-Shamir heuristic (see Fiat, Shamir: @emph{How to prove yourself:
-Practical Solutions to Identification and Signature Problems}, 1986).
+the Fiat-Shamir heuristic@tie{}[FS87].
 The security of the most non-interactive zero-knowledge proofs (NIZK)
-is related to the so-called random oracle model, i.e., we suppose that the
-instantiated hash function behaves like an ideal random function
+is related to the so-called random oracle model, i.e., we suppose that
+the instantiated hash function behaves like an ideal random function
 (which cannot hold in a real world scenario). However, this assumption
 seems to be reasonable, if the hash function is collision-resistant
 and carefully implemented.
@@ -615,10 +614,10 @@ In former versions the default value @code{GCRY_MD_RMD160}
 i.e. the hash algorithm RIPEMD-160 (see Dobbertin, Bosselaers,
 Preneel: @emph{RIPEMD-160, a strengthened version of RIPEMD}, 1996),
 was used, which has an output length of 160 bit. Recently we moved
-to the hash function SHA-256 (@code{GCRY_MD_SHA256}@footnote{This is a constant defined by the GNU Crypto Library.})
-for improved security. Thus we gain a security level of approximately
-@math{2^{128}}, assuming that a birthday-attack is the best known
-attack against this hash function.
+to the hash function SHA-256 (@code{GCRY_MD_SHA256}@footnote{This is a
+constant defined by the GNU Crypto Library.}) for improved security.
+Thus we gain a security level of approximately @math{2^{128}}, assuming
+that a birthday-attack is the best known attack against this hash function.
 @end defmac
 
 @defmac TMCG_KEYID_SIZE
