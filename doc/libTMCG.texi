@@ -2726,12 +2726,13 @@ class must be created to perform any card or stack operations.
 The following examples explain most of the steps that are necessary to create
 a secure and fair card game with LibTMCG. We consider an application with five
 permanent players (denoted by @math{P_0}, @math{P_1}, @math{P_2}, @math{P_3},
-and @math{P_4}) and a regular deck of
-52@tie{}different cards. For convenience only the more efficient card
-encoding scheme of Barnett and Smart@tie{}[BS03] is described. Additionally,
-we complete our exposition with code fragments which show the usage of the
-fast shuffle verification protocol due to Groth@tie{}[Gr05] with an interactive
-instantiation.
+and @math{P_4}) and a regular deck of 52@tie{}different cards. For convenience
+only the more efficient card encoding scheme of Barnett and Smart@tie{}[BS03]
+is described. Additionally, we complete our exposition with code fragments which
+show the application of the fast shuffle verification protocol due to
+Groth@tie{}[Gr05] with an interactive instantiation. On modern computer hardware
+this implementation strategie achieves good real world performance and simultaneously
+keeps the cheating probability negligible.
 
 Throughout the remaining pages we suppose that all players are pairwise connected by
 authenticated communication channels. These channels are organized in input resp.
@@ -2751,17 +2752,18 @@ are ordered in a natural way such that we can use the same nomenclature.}
 @node Library Initialization
 @section Library Initialization
 @cindex Initialization
-The very first step that should be performed is the initialization of LibTMCG.
-That can simply be done by calling the function @code{init_libTMCG} and
-evaluating the return code.
+The very first step that should be done is the initialization of LibTMCG.
+You can simply perform this task by calling the function @code{init_libTMCG}
+and evaluating the return code.
 @cartouche
 @example
 if (!init_libTMCG())
   std::cerr << "Initialization of LibTMCG failed!" << std::endl;
 @end example
 @end cartouche
-Additionally, in the most cases it is useful to check the installed
-library version by using the function @code{version_libTMCG}.
+Additionally, in most cases it is useful to check the installed version of
+the library by comparing the desired value with the returned string of the
+function @code{version_libTMCG}.
 
 @node Session Initialization and Key Generation
 @section Session Initialization and Key Generation
@@ -2787,15 +2789,16 @@ We would like to use the more efficient encoding scheme of Barnett and
 Smart, thus we create an instance of @code{BarnettSmartVTMF_dlog}. However,
 a particular player has to act as a @emph{leader} who performs the
 generation of the group @math{G}. In our case @math{P_0} will be the
-session leader. First, he executes the constructor of @code{BarnettSmartVTMF_dlog}.
+session leader. First, he executes the constructor of the class
+@code{BarnettSmartVTMF_dlog}.
 @cartouche
 @example
 BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog();
 @end example
 @end cartouche
 Afterwards he checks the generated group @math{G} and sends the public
-parameters to all other players (corresponding stream indices are @code{1}, @code{2},
-@code{3}, and @code{4}, respectively).
+parameters to all other players (their corresponding stream indices are
+@code{1}, @code{2}, @code{3}, and @code{4}, respectively).
 @cartouche
 @example
 if (!vtmf->CheckGroup())
@@ -2828,7 +2831,7 @@ Then every player @math{P_j} sends the public part of his VTMF key along with a
 non-interactive zero-knowledge proof of knowledge to each other player.
 The appended proof shows that he indeed knows the corresponding secret key.
 However, due to the non-interactive nature of this proof we have to be
-careful, if same group @math{G} is used again.
+careful, if the same group @math{G} is eventually used again.
 @cartouche
 @example
 for (size_t i = 0; i < 5; i++)
@@ -2838,8 +2841,9 @@ for (size_t i = 0; i < 5; i++)
 @}
 @end example
 @end cartouche
-After sending @math{P_j} receives the public keys. Simultaneously he checks, whether
-the keys are correctly generated, and updates the common public key @math{h}.
+After sending @math{P_j} receives the public keys of the other players.
+Of course he checks, whether these keys are correctly generated, and
+he updates the common public key @math{h}.
 @cartouche
 @example
 for (size_t i = 0; i < 5; i++)
@@ -2978,6 +2982,8 @@ tmcg->TMCG_ProveCardSecret(ccc, vtmf, in_stream[1], out_stream[1]);
 @end cartouche
 On the other hand, @math{P_1} will execute the following commands exactly
 in the given order. Finally, he obtain the card type in the variable @code{type}.
+Note that the corresponding function @code{TMCG_VerifyCardSecret} is not
+called for his own index @code{1}.
 @cartouche
 @example
 tmcg->TMCG_SelfCardSecret(ccc, vtmf);
@@ -3009,8 +3015,8 @@ API part of the manual (see @code{TMCG_Stack} and @code{TMCG_OpenStack}).
 @subsection Creating the Deck
 A quite common operation is the creation of a card deck. The deck will
 initially be represented by an open stack (see @code{TMCG_OpenStack}) called
-@code{deck}. Every player creates his own deck which consists of 52@tie{}different
-open cards in our example.
+@code{deck}. Every player creates his own deck which consists of 52@tie{}open
+cards of different type in our example.
 @cartouche
 @example
 TMCG_OpenStack<VTMF_Card> deck;
@@ -3023,7 +3029,8 @@ for (size_t type = 0; type < 52; type++)
 @end example
 @end cartouche
 Note that this card deck must be consistent for all players, that means,
-the order of the open cards must be exactly the same for all players.
+the order of the open cards and their types must be exactly the same for
+all players.
 
 @node Shuffling the Deck
 @subsection Shuffling the Deck
@@ -3032,10 +3039,11 @@ guarantees that no coalition has influence on the outcome. Thus we build a
 shuffle chain such that every player shuffles the deck.
 Consider the following code fragment for the player @math{P_j}.
 
-The regular stack @code{s} is initialized with open cards from @code{deck}.
+First the regular stack @code{s} is initialized with open cards from @code{deck}.
 Then each player shuffles the stack (see @code{TMCG_MixStack}) and proves the
 correctness of this operation (see @code{TMCG_ProveStackEquality}). Consequently,
-every player should verify these proofs (see @code{TMCG_VerifyStackEquality}).
+every player should verify these proofs (see @code{TMCG_VerifyStackEquality}) and
+complain deviations immediately.
 Finally, the stack @code{s} contains the shuffled result.
 @cartouche
 @example
@@ -3076,7 +3084,11 @@ for (size_t i = 0; i < 5; i++)
 If you want to use the more efficient shuffle verification protocol of Groth,
 then you must simply replace @code{TMCG_ProveStackEquality} and
 @code{TMCG_VerifyStackEquality} by @code{TMCG_ProveStackEquality_Groth} and
-@code{TMCG_VerifyStackEquality_Groth}, respectively.
+@code{TMCG_VerifyStackEquality_Groth}, respectively.@footnote{The non-interactive
+version of this protocol provides an even more efficient implementation,
+because the prover has to compute the argument of correctness only once. This
+also reduces the communication complexity. Please have a look at the included
+program code of @code{tests/t-poker-noninteractive.cc} to get a clue.}
 
 @node Drawing a Card from the Deck
 @subsection Drawing a Card from the Deck
@@ -3099,9 +3111,7 @@ Further, probably you want disclose the card types to the corresponding
 player. Consider the code fragment for the player @math{P_j}: Every player
 receives the necessary information from the other players and computes the
 card types of his hand @code{hand[j]}. Finally, these types are stored
-together with the masked cards in the open stack @code{private_hand}. The
-example can be modified in a straightforward way to publicly disclose a
-card from a players hand or from the remaining stack @code{s}.
+together with the masked cards in the open stack @code{private_hand}. 
 @cartouche
 @example
 TMCG_OpenStack<VTMF_Card> private_hand;
@@ -3135,10 +3145,13 @@ for (size_t i = 0; i < 5; i++)
 @}
 @end example
 @end cartouche
+The example can be modified in a straightforward way to publicly disclose a
+card from a players hand or from the remaining stack @code{s}, i.e. to lay
+down the card on the table.
 
 @node Quit a Session
 @section Quit a Session
-The last step should release all occupied resources.
+In the last step you should release all occupied resources.
 @cartouche
 @example
 delete vsshe, delete vtmf, delete tmcg;
