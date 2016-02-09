@@ -1756,7 +1756,7 @@ of cards, the opening of masked cards, the verifiable secret shuffle of a stack,
 and more general tasks like distributed key generation procedures. Each class
 implements the main functionality of the corresponding research
 paper@tie{}[Sc98,BS03,Gr05,HSSV09]. The author names are a prefix of the class
-name and the then following part is an abbreviation of the title.
+name and the then following part is an abbreviation of (a part of) the title.
 
 @subsubsection Verifiable @var{k}-out-of-@var{k} Threshold Masking Function
 The two classes of this subsection are concrete instantiations of Barnett
