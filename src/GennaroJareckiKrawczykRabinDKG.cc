@@ -115,6 +115,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	std::ostream &err, bool simulate_wrong_behaviour)
 {
 	assert(n >= t);
+	assert(n >= ((2 * t) + 1)); // synchronous assumption
 	assert(i < n);
 	assert(n == in.size());
 	assert(in.size() == out.size());
@@ -483,15 +484,15 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 // FIXME: we need a dedicated broadcast channel, i.e. a reliable broadcast protocol
 			}
 		}
-		// (b) Each party $P_j$ verifies the values boradcast by the
+		// (b) Each party $P_j$ verifies the values broadcast by the
 		//     other parties in $QUAL$, namely for each $i \in QUAL$,
 		//     $P_j$ checks if $g^{s_{ij}} = \prod_{k=0}^t (A_{ik})^{j^k} \bmod p$.
 		// Note that in this section the indicies $i$ and $j$ are exchanged for convenience.
 		complaints.clear();
 		for (size_t j = 0; j < n; j++)
 		{
-			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j)
-				!= QUAL.end()))
+			if ((j != i) &&
+				(std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
 			{
 				for (size_t k = 0; k < t; k++)
 				{
@@ -540,8 +541,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				{
 					mpz_set_ui(rhs, *it);
 					*out[j] << rhs << std::endl;
-					*out[j] << s_ij[*it][i] << std::endl;
-					*out[j] << sprime_ij[*it][i] << std::endl;
+					*out[j] << s_ij[i][*it] << std::endl;
+					*out[j] << sprime_ij[i][*it] << std::endl;
 				}
 				mpz_set_ui(rhs, n);
 				*out[j] << rhs << std::endl; // send end marker
@@ -586,7 +587,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						break;
 					if (!in[j]->good())
 					{
-						err << "P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
+						err << "P_" << i << ": receiving s_ij failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
@@ -594,7 +595,37 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					{
 						*in[j] >> foo;
 					}
-					// verify complaint
+					if (!in[j]->good())
+					{
+						err << "P_" << i << ": receiving sprime_ij failed; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+						break;
+					}
+					else
+					{
+						*in[j] >> bar;
+					}
+					// verify complaint, i.e. (4) holds (5) not.
+					// compute LHS for the check
+					mpz_fspowm(fpowm_table_g, lhs, g, foo, p);
+					mpz_fspowm(fpowm_table_h, bar, h, bar, p);
+					mpz_mul(lhs, lhs, bar);
+					mpz_mod(lhs, lhs, p);
+					// compute RHS for the check
+					mpz_set_ui(rhs, 1L);
+					for (size_t k = 0; k < t; k++)
+					{
+						mpz_ui_pow_ui(foo, who + 1, k); // adjust index $i$
+						mpz_powm(bar, C_ik[j][k], foo , p);
+						mpz_mul(rhs, rhs, bar);
+						mpz_mod(rhs, rhs, p);
+					}
+					// check equation (4)
+					if (mpz_cmp(lhs, rhs))
+					{
+						err << "P_" << i << ": checking 4(c)(4) failed; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+					}
 					// compute LHS for the check
 					mpz_fspowm(fpowm_table_g, lhs, g, foo, p);
 					// compute RHS for the check
@@ -609,12 +640,12 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					// check equation (5)
 					if (mpz_cmp(lhs, rhs))
 					{
-						err << "P_" << i << ": checking 4(c) failed; complaint against P_" << who << std::endl;
+						err << "P_" << i << ": checking 4(c)(5) failed; complaint against P_" << who << std::endl;
 						complaints.push_back(who);
 					}
 					else
 					{
-						err << "P_" << i << ": checking 4(c) not failed; complaint against P_" << j << std::endl;
+						err << "P_" << i << ": checking 4(c)(5) not failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);	
 					}
 				}
@@ -636,58 +667,64 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			// broadcast shares for reconstruction of $z_i$
 			for (size_t j = 0; j < n; j++)
 			{
-				if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j)
-					!= QUAL.end()))
+				if ((j != i) &&
+					(std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
 				{
-					*out[j] << s_ij[*it][i] << std::endl;
+					*out[j] << s_ij[i][*it] << std::endl;
 				}
 			}
 			// collect shares $s_{ij}$ from other parties
 			for (size_t j = 0; j < n; j++)
 			{
-				if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j)
-					!= QUAL.end()) && (std::find(complaints.begin(),
-					complaints.end(), j) == complaints.end()))
+				if ((j != i) && (j != *it) &&
+					(std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
 				{
 					*in[j] >> s_ij[*it][j];
 				}
 			}
-			// compute $z_i$ using Lagrange interpolation
+			// compute $z_i$ using Lagrange interpolation (without faulty party)
+			mpz_set_ui(foo, 0L);
 			for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
 			{
-				mpz_set_ui(rhs, 1L);
-				for (std::vector<size_t>::iterator lt = QUAL.begin(); lt != QUAL.end(); ++lt)
+				if (*jt != *it)
 				{
-					if (*lt != *jt)
+					mpz_set_ui(rhs, 1L); // compute Lagrange constant
+					for (std::vector<size_t>::iterator lt = QUAL.begin(); lt != QUAL.end(); ++lt)
 					{
-						mpz_set_ui(bar, *lt);
-						mpz_sub_ui(bar, bar, *jt);
-						mpz_invert(bar, bar, q);
-						mpz_mul_ui(bar, bar, *lt);
-						mpz_mod(bar, bar, q);
-						mpz_mul(rhs, rhs, bar);
-						mpz_mod(rhs, rhs, q); 
+						if (*lt != *jt)
+							mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index
 					}
+					mpz_set_ui(lhs, 1L);
+					for (std::vector<size_t>::iterator lt = QUAL.begin(); lt != QUAL.end(); ++lt)
+					{
+						if (*lt != *jt)
+						{
+							mpz_set_ui(bar, (*lt + 1)); // adjust index
+							mpz_sub_ui(bar, bar, (*jt + 1)); // adjust index
+							mpz_mul(lhs, lhs, bar);
+						}
+					}
+					mpz_invert(lhs, lhs, q);
+					mpz_mul(rhs, lhs, q);
+					mpz_mod(rhs, rhs, q);
+					mpz_mul(bar, s_ij[*it][*jt], rhs);
+					mpz_mod(bar, bar, q);
+					mpz_add(foo, foo, bar);
+					mpz_mod(foo, foo, q);
 				}
-				mpz_mul(bar, s_ij[*it][*jt], rhs);
-				mpz_mod(bar, bar, q);
-				mpz_add(foo, foo, bar);
-				mpz_mod(foo, foo, q);	
 			}
 			// compute $A_{i0} = g^{z_i} \bmod p$
 			mpz_fspowm(fpowm_table_g, A_ik[*it][0], g, foo, p);
 		}
 		// For all parties in $QUAL$, set $y_i = A_{i0} = g^{z_i} \bmod p$.
 		mpz_set(y_i, A_ik[i][0]);
-		err << "P_" << i << ": y_i = " << y_i << ", ";
+		err << "P_" << i << ": y_i = " << y_i << std::endl;
 		// Compute $y = \prod_{i \in QUAL} y_i \bmod p$.
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 		{
-			err << "A_ik[" << *it << "][0] = " << A_ik[*it][0] << " ";
 			mpz_mul(y, y, A_ik[*it][0]);
 			mpz_mod(y, y, p);
 		}
-		err << std::endl;
 		err << "P_" << i << ": y = " << y << std::endl;
 
 		throw true;

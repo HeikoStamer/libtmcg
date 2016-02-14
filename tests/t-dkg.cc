@@ -117,9 +117,9 @@ void start_instance
 			start_clock();
 			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
 			if (wrong)
-				assert(!dkg->Generate(whoami, C_in, C_out, err_log, true));
+				dkg->Generate(whoami, C_in, C_out, err_log, true);
 			else
-				assert(dkg->Generate(whoami, C_in, C_out, err_log));
+				dkg->Generate(whoami, C_in, C_out, err_log);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			sleep(3 * whoami + (mpz_wrandom_ui() % N));
