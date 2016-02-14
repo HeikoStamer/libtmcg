@@ -190,6 +190,7 @@
 	
 	#include <SchindelhauerTMCG.hh>
 	#include "NaorPinkasEOTP.hh"
+	#include "GennaroJareckiKrawczykRabinDKG.hh"
 	
 	// enable usage of config.h
 	#ifdef TMCG_CONFIG_H
