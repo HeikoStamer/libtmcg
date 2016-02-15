@@ -122,8 +122,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
-	std::vector<mpz_ptr> a_i, b_i;
-	std::vector< std::vector<mpz_ptr> > C_ik, A_ik, s_ij, sprime_ij;
+	std::vector<mpz_ptr> a_i, b_i, g__a_i;
+	std::vector< std::vector<mpz_ptr> > C_ik, A_ik, s_ij, sprime_ij, g__s_ij;
 	std::vector<size_t> complaints, complaints_counter;
 	
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
@@ -132,29 +132,37 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
 		mpz_init(tmp1), mpz_init(tmp2);
 		a_i.push_back(tmp1), b_i.push_back(tmp2);
+		mpz_ptr tmp3 = new mpz_t();
+		mpz_init(tmp3);
+		g__a_i.push_back(tmp3);
 	}
 	for (size_t j = 0; j < n; j++)
 	{
 		std::vector<mpz_ptr> *vtmp = new std::vector<mpz_ptr>;
-		std::vector<mpz_ptr> *vtmp4 = new std::vector<mpz_ptr>;
+		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
 		for (size_t k = 0; k < t; k++)
 		{
 			mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
 			mpz_init(tmp1), mpz_init(tmp2);
  			vtmp->push_back(tmp1);
-			vtmp4->push_back(tmp2);
+			vtmp1->push_back(tmp2);
 		}
-		C_ik.push_back(*vtmp), A_ik.push_back(*vtmp4);
+		C_ik.push_back(*vtmp), A_ik.push_back(*vtmp1);
 		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
 		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
+		std::vector<mpz_ptr> *vtmp4 = new std::vector<mpz_ptr>;
 		for (size_t i2 = 0; i2 < n; i2++)
 		{
 			mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
 			mpz_init(tmp1), mpz_init(tmp2);
 			vtmp2->push_back(tmp1);
 			vtmp3->push_back(tmp2);
+			mpz_ptr tmp3 = new mpz_t();
+			mpz_init(tmp3);
+			vtmp4->push_back(tmp3);
 		}
 		s_ij.push_back(*vtmp2), sprime_ij.push_back(*vtmp3);
+		g__s_ij.push_back(*vtmp4);
 	}
 	size_t simulate_wrong_randomizer = mpz_wrandom_ui() % 2L;
 
@@ -175,9 +183,9 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		// for $k = 0, \ldots, t$.
 		for (size_t k = 0; k < t; k++)
 		{
-			mpz_fspowm(fpowm_table_g, foo, g, a_i[k], p);
+			mpz_fspowm(fpowm_table_g, g__a_i[k], g, a_i[k], p);
 			mpz_fspowm(fpowm_table_h, bar, h, b_i[k], p);
-			mpz_mul(C_ik[i][k], foo, bar);
+			mpz_mul(C_ik[i][k], g__a_i[k], bar);
 			mpz_mod(C_ik[i][k], C_ik[i][k], p);
 			for (size_t j = 0; j < n; j++)
 			{
@@ -261,9 +269,9 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		for (size_t j = 0; j < n; j++)
 		{
 			// compute LHS for the check
-			mpz_fspowm(fpowm_table_g, foo, g, s_ij[j][i], p);
+			mpz_fspowm(fpowm_table_g, g__s_ij[j][i], g, s_ij[j][i], p);
 			mpz_fspowm(fpowm_table_h, bar, h, sprime_ij[j][i], p);
-			mpz_mul(lhs, foo, bar);
+			mpz_mul(lhs, g__s_ij[j][i], bar);
 			mpz_mod(lhs, lhs, p);
 			// compute RHS for the check
 			mpz_set_ui(rhs, 1L);
@@ -470,7 +478,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
                 //     g^{a_{ik}} \bmod p$ for $k = 0, \ldots, t$.
 		for (size_t k = 0; k < t; k++)
 		{
-			mpz_fspowm(fpowm_table_g, A_ik[i][k], g, a_i[k], p);
+			// OPTIMIZED: mpz_fspowm(fpowm_table_g, A_ik[i][k], g, a_i[k], p);
+			mpz_set(A_ik[i][k], g__a_i[k]);
 			for (size_t j = 0; j < n; j++)
 			{
 				if (j != i)
@@ -508,7 +517,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					}
 				}
 				// compute LHS for the check
-				mpz_fspowm(fpowm_table_g, lhs, g, s_ij[j][i], p);
+				// OPTIMIZED: mpz_fspowm(fpowm_table_g, lhs, g, s_ij[j][i], p);
+				mpz_set(lhs, g__s_ij[j][i]);
 				// compute RHS for the check
 				mpz_set_ui(rhs, 1L);
 				for (size_t k = 0; k < t; k++)
@@ -737,8 +747,10 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		{
 			mpz_clear(a_i[k]), mpz_clear(b_i[k]);
 			delete a_i[k], delete b_i[k];
+			mpz_clear(g__a_i[k]);
+			delete g__a_i[k];
 		}
-		a_i.clear(), b_i.clear();
+		a_i.clear(), b_i.clear(), g__a_i.clear();
 		for (size_t j = 0; j < n; j++)
 		{
 			for (size_t k = 0; k < t; k++)
@@ -754,12 +766,16 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				mpz_clear(sprime_ij[j][i2]);
 				delete s_ij[j][i2];
 				delete sprime_ij[j][i2];
+				mpz_clear(g__s_ij[j][i2]);
+				delete g__s_ij[j][i2];
 			}
 			C_ik[j].clear(), A_ik[j].clear();
 			s_ij[j].clear(), sprime_ij[j].clear();
+			g__s_ij[j].clear();
 		}
 		C_ik.clear(), A_ik.clear();
 		s_ij.clear(), sprime_ij.clear();
+		g__s_ij.clear();
 		// return
 		return return_value;
 	}
