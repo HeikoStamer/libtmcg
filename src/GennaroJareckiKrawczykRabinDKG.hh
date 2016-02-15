@@ -76,7 +76,7 @@ class GennaroJareckiKrawczykRabinDKG
 			() const;
 		bool Generate
 			(size_t i, std::vector<std::istream*> &in, std::vector<std::ostream*> &out,
-			std::ostream &err, bool simulate_wrong_behaviour = false);
+			std::ostream &err, bool simulate_faulty_behaviour = false);
 		~GennaroJareckiKrawczykRabinDKG
 			();
 };

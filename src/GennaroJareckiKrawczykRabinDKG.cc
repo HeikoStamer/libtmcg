@@ -112,7 +112,7 @@ bool GennaroJareckiKrawczykRabinDKG::CheckGroup
 
 bool GennaroJareckiKrawczykRabinDKG::Generate
 	(size_t i, std::vector<std::istream*> &in, std::vector<std::ostream*> &out,
-	std::ostream &err, bool simulate_wrong_behaviour)
+	std::ostream &err, bool simulate_faulty_behaviour)
 {
 	assert(n >= t);
 	assert(n >= ((2 * t) + 1)); // synchronous assumption
@@ -164,7 +164,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		s_ij.push_back(*vtmp2), sprime_ij.push_back(*vtmp3);
 		g__s_ij.push_back(*vtmp4);
 	}
-	size_t simulate_wrong_randomizer = mpz_wrandom_ui() % 2L;
+	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
 
 	try
 	{
@@ -215,7 +215,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			}
 			if (j != i)
 			{
-				if (simulate_wrong_behaviour && simulate_wrong_randomizer)
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer)
 				{
 					mpz_add_ui(s_ij[i][j], s_ij[i][j], 1L);
 				}
@@ -469,7 +469,11 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		err << "P_" << i << ": x_i = " << x_i << std::endl;
 		err << "P_" << i << ": xprime_i = " << xprime_i << std::endl;
 		
+		if (std::find(QUAL.begin(), QUAL.end(), i) == QUAL.end())
+			throw false;
 		if (QUAL.size() <= t)
+			throw false;
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer)
 			throw false;
 
 		// 4. Each party $i \in QUAL$ exposes $y_i = g^{z_i} \bmod p$
@@ -484,7 +488,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			{
 				if (j != i)
 				{
-					if (simulate_wrong_behaviour)
+					if (simulate_faulty_behaviour)
 					{
 						mpz_add_ui(A_ik[i][k], A_ik[i][k], 1L);
 					}
@@ -566,11 +570,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		// Note that in this section the indicies $i$ and $j$ are exchanged for convenience.
 		complaints.clear();
 		for (size_t j = 0; j < n; j++)
-			complaints_counter.push_back(0); // initialize counter
-		for (size_t j = 0; j < n; j++)
 		{
-			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j)
-				!= QUAL.end()))
+			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j)	!= QUAL.end()))
 			{
 				size_t who;
 				do
@@ -589,9 +590,6 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					if (who < n)
 					{
 						err << "P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
-						complaints_counter[who]++;
-						if (who == i)
-							complaints.push_back(j);
 					}
 					else
 						break;
@@ -686,7 +684,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			// collect shares $s_{ij}$ from other parties
 			for (size_t j = 0; j < n; j++)
 			{
-				if ((j != i) && (j != *it) &&
+				if ((j != i) && (std::find(complaints.begin(), complaints.end(), j) == complaints.end()) &&
 					(std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
 				{
 					*in[j] >> s_ij[*it][j];
@@ -696,7 +694,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			mpz_set_ui(foo, 0L);
 			for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
 			{
-				if (*jt != *it)
+				if (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end())
 				{
 					mpz_set_ui(rhs, 1L); // compute Lagrange constant
 					for (std::vector<size_t>::iterator lt = QUAL.begin(); lt != QUAL.end(); ++lt)

@@ -41,7 +41,7 @@ int pipefd[N][N][2];
 pid_t pid[N];
 
 void start_instance
-	(std::istream& crs_in, size_t whoami, bool wrong)
+	(std::istream& crs_in, size_t whoami, bool faulty)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("t-dkg (fork)");
@@ -116,14 +116,14 @@ void start_instance
 			std::stringstream err_log;
 			start_clock();
 			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
-			if (wrong)
-				dkg->Generate(whoami, C_in, C_out, err_log, true);
+			if (faulty)
+				assert(!dkg->Generate(whoami, C_in, C_out, err_log, true));
 			else
-				dkg->Generate(whoami, C_in, C_out, err_log);
+				assert(dkg->Generate(whoami, C_in, C_out, err_log));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			sleep(3 * whoami + (mpz_wrandom_ui() % N));
-			std::cout << "P_" << whoami << ": error log follows " << std::endl << err_log.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 			
 			// release DKG and VTMF instances
 			delete dkg, delete vtmf;
@@ -175,7 +175,7 @@ int main
 			if (pipe(pipefd[i][j]) < 0)
 				perror("t-dkg (pipe)");
 	
-	// start childs
+	// start childs (all correct)
 	for (size_t i = 0; i < N; i++)
 		start_instance(crs, i, false);
 	
@@ -196,11 +196,11 @@ int main
 			if (pipe(pipefd[i][j]) < 0)
 				perror("t-dkg (pipe)");
 	
-	// start childs
+	// start childs (two faulty parties)
 	for (size_t i = 0; i < N; i++)
 	{
-		if (i == (N - 1))
-			start_instance(crs, i, true); // wrong instance
+		if ((i == (N - 1)) || (i == (N - 2)))
+			start_instance(crs, i, true); // faulty
 		else
 			start_instance(crs, i, false);
 	}
