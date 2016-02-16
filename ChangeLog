@@ -1,3 +1,4 @@
+* [2016-02-15] provides a distributed key generation protocol
 * [2016-02-07] provides a non-interactive version of the rotation protocol
 * [2016-02-07] provides a non-interactive version of the shuffle protocol
 * [2016-02-06] new global symbol TMCG_MAX_FPOWM_N for restricting memory usage

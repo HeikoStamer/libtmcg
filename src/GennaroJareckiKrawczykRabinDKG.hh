@@ -55,6 +55,8 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
+	#include "iobroadcast.hh"
+
 class GennaroJareckiKrawczykRabinDKG
 {
 	private:
@@ -76,7 +78,7 @@ class GennaroJareckiKrawczykRabinDKG
 			() const;
 		bool Generate
 			(size_t i, std::vector<std::istream*> &in, std::vector<std::ostream*> &out,
-			std::ostream &err, bool simulate_faulty_behaviour = false);
+			iobroadcast *iob, std::ostream &err, bool simulate_faulty_behaviour = false);
 		~GennaroJareckiKrawczykRabinDKG
 			();
 };
