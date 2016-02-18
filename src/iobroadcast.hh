@@ -97,9 +97,6 @@ class iobroadcast
 				buf_flag.push_back(false);
 				out.push_back(out_in[i]);
 			}
-			// initialize timeout for select (2)
-			tv.tv_sec = 10L;		// seconds
-			tv.tv_usec = 0L;		// microseconds
 
 			// initialize sequence counter
 			mpz_init_set_ui(s, 0L);
@@ -196,6 +193,9 @@ class iobroadcast
 				FD_ZERO(&fds_in);
 				for (size_t i = 0; i < n; i++)
 					MFD_IN_SET(in[i], &fds_in);
+				// initialize timeout for select (2)
+				tv.tv_sec = 10L; // seconds
+				tv.tv_usec = 0L; // microseconds
 				// select(2) -- do everything with asynchronous I/O
 				int ret = select(mfds_in + 1, &fds_in, NULL, NULL, &tv);
 		                // error occured
