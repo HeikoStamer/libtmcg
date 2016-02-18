@@ -27,7 +27,6 @@
 #include <algorithm>
 #include <cassert>
 #include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <sys/wait.h>
 
@@ -52,15 +51,16 @@ void start_instance
 		{
 			/* BEGIN child code: participant P_i */
 			
-			// create pipe streams between all players
-			std::vector<ipipestream*> P_in, bP_in;
-			std::vector<opipestream*> P_out, bP_out;
+			// create pipe streams and handles between all players
+			std::vector<ipipestream*> P_in;
+			std::vector<opipestream*> P_out;
+			std::vector<int> bP_in, bP_out;
 			for (size_t i = 0; i < N; i++)
 			{
 				P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
 				P_out.push_back(new opipestream(pipefd[whoami][i][1]));
-				bP_in.push_back(new ipipestream(broadcast_pipefd[i][whoami][0]));
-				bP_out.push_back(new opipestream(broadcast_pipefd[whoami][i][1]));
+				bP_in.push_back(broadcast_pipefd[i][whoami][0]);
+				bP_out.push_back(broadcast_pipefd[whoami][i][1]);
 			}
 			
 			// create TMCG and VTMF instances
@@ -107,18 +107,16 @@ void start_instance
 			assert(dkg->CheckGroup());
 
 			// convert pipestreams to input/output streams
-			std::vector<std::istream*> C_in, B_in;
-			std::vector<std::ostream*> C_out, B_out;
+			std::vector<std::istream*> C_in;
+			std::vector<std::ostream*> C_out;
 			for (size_t i = 0; i < N; i++)
 			{
 				C_in.push_back(P_in[i]);
-				B_in.push_back(bP_in[i]);
 				C_out.push_back(P_out[i]);
-				B_out.push_back(bP_out[i]);
 			}
 
 			// create a simple broadcast protocol
-			iobroadcast *iob = new iobroadcast(N, T, whoami, B_in, B_out);
+			iobroadcast *iob = new iobroadcast(N, T, whoami, bP_in, bP_out);
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
 			std::stringstream err_log;
@@ -150,16 +148,8 @@ void start_instance
 			std::cout << "P_" << whoami << ": numRead = " << numRead <<
 				" numWrite = " << numWrite << std::endl;
 
-			// release pipe streams (broadcast channel)
-			numRead = 0, numWrite = 0;
-			for (size_t i = 0; i < N; i++)
-			{
-				numRead += bP_in[i]->get_numRead() + bP_out[i]->get_numRead();
-				numWrite += bP_in[i]->get_numWrite() + bP_out[i]->get_numWrite();
-				delete bP_in[i], delete bP_out[i];
-			}
-			std::cout << "P_" << whoami << ": broadcast_numRead = " << numRead <<
-				" broadcast_numWrite = " << numWrite << std::endl;
+			// release handles (broadcast channel)
+			bP_in.clear(), bP_out.clear();
 			
 			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
@@ -194,7 +184,7 @@ int main
 	// open pipes
 	for (size_t i = 0; i < N; i++)
 		for (size_t j = 0; j < N; j++)
-			if ((pipe2(pipefd[i][j], O_NONBLOCK) < 0) || (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0))
+			if ((pipe(pipefd[i][j]) < 0) || (pipe(broadcast_pipefd[i][j]) < 0))
 				perror("t-dkg (pipe)");
 	
 	// start childs (all correct)
@@ -219,7 +209,7 @@ int main
 	// open pipes
 	for (size_t i = 0; i < N; i++)
 		for (size_t j = 0; j < N; j++)
-			if ((pipe2(pipefd[i][j], O_NONBLOCK) < 0) || (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0))
+			if ((pipe(pipefd[i][j]) < 0) || (pipe(broadcast_pipefd[i][j]) < 0))
 				perror("t-dkg (pipe)");
 	
 	// start childs (two faulty parties)
