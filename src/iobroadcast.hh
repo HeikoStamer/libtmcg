@@ -115,15 +115,38 @@ class iobroadcast
 		bool DeliverFrom
 			(mpz_ptr m, size_t i_in)
 		{
-			if (i_in != j)
+			std::streambuf *buf = in[i_in]->rdbuf();
+			bool newline_received = false;
+			char mbuf[4096];
+			size_t mptr = 0;
+
+			while (1)
 			{
 				if (!in[i_in]->good())
 				{
 					return false;
 				}
-				else
+				std::streamsize size = buf->in_avail();
+				if (size > 0)
 				{
-					*in[i_in] >> m;
+std::cerr << "size = " << size << std::endl;
+					char c = buf->sgetc();
+					if (c == '\n')
+					{
+						c = 0;
+						newline_received = true;
+					}
+					mbuf[mptr++] = c;
+					if (mptr == sizeof(mbuf))
+						return false;
+				}
+				if (newline_received)
+				{
+					if (mpz_set_str(m, mbuf, TMCG_MPZ_IO_BASE) < 0)
+					{
+						mpz_set_ui(m, 0L);
+						return false;
+					}
 					return true;
 				}
 			}

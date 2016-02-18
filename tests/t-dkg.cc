@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <cassert>
 #include <unistd.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <sys/wait.h>
 
@@ -193,7 +194,7 @@ int main
 	// open pipes
 	for (size_t i = 0; i < N; i++)
 		for (size_t j = 0; j < N; j++)
-			if ((pipe(pipefd[i][j]) < 0) || (pipe(broadcast_pipefd[i][j]) < 0))
+			if ((pipe2(pipefd[i][j], O_NONBLOCK) < 0) || (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0))
 				perror("t-dkg (pipe)");
 	
 	// start childs (all correct)
@@ -218,7 +219,7 @@ int main
 	// open pipes
 	for (size_t i = 0; i < N; i++)
 		for (size_t j = 0; j < N; j++)
-			if ((pipe(pipefd[i][j]) < 0) || (pipe(broadcast_pipefd[i][j]) < 0))
+			if ((pipe2(pipefd[i][j], O_NONBLOCK) < 0) || (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0))
 				perror("t-dkg (pipe)");
 	
 	// start childs (two faulty parties)
