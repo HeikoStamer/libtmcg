@@ -109,11 +109,11 @@ void start_instance
 				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 			assert(dkg->CheckGroup());
 
-			// create asynchronous unicast with timeout 10 seconds
-			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, 10);
+			// create asynchronous unicast with timeout 3 rounds
+			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, 3);
 
-			// create asynchronous broadcast with timeout 10 seconds
-			aiobroadcast *aiob = new aiobroadcast(N, T, whoami, bP_in, bP_out, 10);
+			// create asynchronous broadcast with timeout 6 rounds
+			aiobroadcast *aiob = new aiobroadcast(N, T, whoami, bP_in, bP_out, 6);
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
 			std::stringstream err_log;

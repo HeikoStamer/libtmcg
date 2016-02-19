@@ -191,12 +191,12 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			mpz_fspowm(fpowm_table_h, bar, h, b_i[k], p);
 			mpz_mul(C_ik[i][k], g__a_i[k], bar);
 			mpz_mod(C_ik[i][k], C_ik[i][k], p);
-// FIXME:  we need at least a reliable broadcast protocol
+// FIXME: we need at least a reliable broadcast protocol
 			aiob->Broadcast(C_ik[i][k]);
 		}
 		// $P_i$ computes the shares $s_{ij} = f_i(j) \bmod q$,
-		// $s\prime_{ij} = f\prime_i(j) \bmod q$ and sends $s_{ij}$,
-		// $s\prime_{ij}$ to party $P_j$.
+		// $s\prime_{ij} = f\prime_i(j) \bmod q$ and
+		// sends $s_{ij}$, $s\prime_{ij}$ to party $P_j$.
 		for (size_t j = 0; j < n; j++)
 		{
 			mpz_set_ui(s_ij[i][j], 0L);
@@ -593,14 +593,22 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			// broadcast shares for reconstruction of $z_i$
 			aiob->Broadcast(s_ij[i][*it]);
 			// collect shares $s_{ij}$ from other parties
+			size_t number_of_shares = 0;
 			for (size_t j = 0; j < n; j++)
 			{
 				if ((j != i) && (std::find(complaints.begin(), complaints.end(), j) == complaints.end()) &&
 					(std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
 				{
-					if (!aiob->DeliverFrom(s_ij[*it][j], j))
-						throw false;
+					if (aiob->DeliverFrom(s_ij[*it][j], j))
+						number_of_shares++;
+					else
+						err << "P_" << i << ": no share from " << j << std::endl;					
 				}
+			}
+			if (number_of_shares < t)
+			{
+				err << "P_" << i << ": not enough shares collected" << std::endl;
+				throw false;
 			}
 			// compute $z_i$ using Lagrange interpolation (without faulty party)
 			mpz_set_ui(foo, 0L);
