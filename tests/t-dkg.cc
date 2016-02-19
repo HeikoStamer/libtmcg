@@ -28,6 +28,7 @@
 #include <cassert>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 
 #include "test_helper.h"
@@ -54,11 +55,13 @@ void start_instance
 			// create pipe streams and handles between all players
 			std::vector<ipipestream*> P_in;
 			std::vector<opipestream*> P_out;
-			std::vector<int> bP_in, bP_out;
+			std::vector<int> uP_in, uP_out, bP_in, bP_out;
 			for (size_t i = 0; i < N; i++)
 			{
 				P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
 				P_out.push_back(new opipestream(pipefd[whoami][i][1]));
+				uP_in.push_back(pipefd[i][whoami][0]);
+				uP_out.push_back(pipefd[whoami][i][1]);
 				bP_in.push_back(broadcast_pipefd[i][whoami][0]);
 				bP_out.push_back(broadcast_pipefd[whoami][i][1]);
 			}
@@ -106,34 +109,25 @@ void start_instance
 				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 			assert(dkg->CheckGroup());
 
-			// convert pipestreams to input/output streams
-			std::vector<std::istream*> C_in;
-			std::vector<std::ostream*> C_out;
-			for (size_t i = 0; i < N; i++)
-			{
-				C_in.push_back(P_in[i]);
-				C_out.push_back(P_out[i]);
-			}
+			// create asynchronous unicast with timeout 10 seconds
+			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, 10);
 
-			// create a simple broadcast protocol
-			iobroadcast *iob = new iobroadcast(N, T, whoami, bP_in, bP_out);
+			// create asynchronous broadcast with timeout 10 seconds
+			aiobroadcast *aiob = new aiobroadcast(N, T, whoami, bP_in, bP_out, 10);
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
 			std::stringstream err_log;
 			start_clock();
 			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
 			if (faulty)
-				dkg->Generate(whoami, C_in, C_out, iob, err_log, true);
+				dkg->Generate(whoami, aiou, aiob, err_log, true);
 			else
-				assert(dkg->Generate(whoami, C_in, C_out, iob, err_log));
+				assert(dkg->Generate(whoami, aiou, aiob, err_log));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			sleep(3 * whoami + (mpz_wrandom_ui() % N));
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 			
-			// release broadcast
-			delete iob;
-
 			// release DKG and VTMF instances
 			delete dkg, delete vtmf;
 			
@@ -148,8 +142,18 @@ void start_instance
 			std::cout << "P_" << whoami << ": numRead = " << numRead <<
 				" numWrite = " << numWrite << std::endl;
 
+			// release handles (unicast channel)
+			uP_in.clear(), uP_out.clear();
+			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
+				" aiou.numWrite = " << aiou->numWrite << std::endl;
+
 			// release handles (broadcast channel)
 			bP_in.clear(), bP_out.clear();
+			std::cout << "P_" << whoami << ": aiob.numRead = " << aiob->numRead <<
+				" aiob.numWrite = " << aiob->numWrite << std::endl;
+
+			// release asynchronous unicast and broadcast
+			delete aiou, delete aiob;
 			
 			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
@@ -184,7 +188,7 @@ int main
 	// open pipes
 	for (size_t i = 0; i < N; i++)
 		for (size_t j = 0; j < N; j++)
-			if ((pipe(pipefd[i][j]) < 0) || (pipe(broadcast_pipefd[i][j]) < 0))
+			if ((pipe(pipefd[i][j]) < 0) || (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0))
 				perror("t-dkg (pipe)");
 	
 	// start childs (all correct)
@@ -209,7 +213,7 @@ int main
 	// open pipes
 	for (size_t i = 0; i < N; i++)
 		for (size_t j = 0; j < N; j++)
-			if ((pipe(pipefd[i][j]) < 0) || (pipe(broadcast_pipefd[i][j]) < 0))
+			if ((pipe(pipefd[i][j]) < 0) || (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0))
 				perror("t-dkg (pipe)");
 	
 	// start childs (two faulty parties)

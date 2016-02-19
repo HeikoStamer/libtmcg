@@ -111,14 +111,18 @@ bool GennaroJareckiKrawczykRabinDKG::CheckGroup
 }
 
 bool GennaroJareckiKrawczykRabinDKG::Generate
-	(size_t i, std::vector<std::istream*> &in, std::vector<std::ostream*> &out,
-	iobroadcast *iob, std::ostream &err, bool simulate_faulty_behaviour)
+	(size_t i, aiounicast *aiou, aiobroadcast *aiob, std::ostream &err,
+	bool simulate_faulty_behaviour)
 {
 	assert(n >= t);
-	assert(n >= ((2 * t) + 1)); // synchronous assumption
+	assert(n >= ((2 * t) + 1)); // synchronous failure assumption
 	assert(i < n);
-	assert(n == in.size());
-	assert(in.size() == out.size());
+	assert(n == aiou->n);
+	assert(n == aiob->n);
+	assert(t == aiou->t);
+	assert(t == aiob->t);
+	assert(i == aiou->j);
+	assert(i == aiob->j);
 	
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
@@ -187,8 +191,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			mpz_fspowm(fpowm_table_h, bar, h, b_i[k], p);
 			mpz_mul(C_ik[i][k], g__a_i[k], bar);
 			mpz_mod(C_ik[i][k], C_ik[i][k], p);
-// FIXME: we need at least a reliable broadcast protocol
-			iob->Broadcast(C_ik[i][k]);
+// FIXME:  we need at least a reliable broadcast protocol
+			aiob->Broadcast(C_ik[i][k]);
 		}
 		// $P_i$ computes the shares $s_{ij} = f_i(j) \bmod q$,
 		// $s\prime_{ij} = f\prime_i(j) \bmod q$ and sends $s_{ij}$,
@@ -215,8 +219,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				{
 					mpz_add_ui(s_ij[i][j], s_ij[i][j], 1L);
 				}
-				*out[j] << s_ij[i][j] << std::endl;
-				*out[j] << sprime_ij[i][j] << std::endl;
+				aiou->Send(s_ij[i][j], j);
+				aiou->Send(sprime_ij[i][j], j);
 			}
 		}
 		// (b) Each party $P_j$ verifies the shares he received from
@@ -229,33 +233,25 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			{
 				for (size_t k = 0; k < t; k++)
 				{
-					if (!iob->DeliverFrom(C_ik[j][k], j))
+					if (!aiob->DeliverFrom(C_ik[j][k], j))
 					{
 						err << "P_" << i << ": receiving C_ik failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
 				}
-				if (!in[j]->good())
+				if (!aiou->Receive(s_ij[j][i], j))
 				{
 					err << "P_" << i << ": receiving s_ij failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-				else
-				{
-					*in[j] >> s_ij[j][i];
-				}
-				if (!in[j]->good())
+				if (!aiou->Receive(sprime_ij[j][i], j))
 				{
 					err << "P_" << i << ": receiving sprime_ij failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-				else
-				{
-					*in[j] >> sprime_ij[j][i];
-				}			
 			}
 		}
 		for (size_t j = 0; j < n; j++)
@@ -290,10 +286,10 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			mpz_set_ui(rhs, *it);
-			iob->Broadcast(rhs);
+			aiob->Broadcast(rhs);
 		}
 		mpz_set_ui(rhs, n); // send end marker
-		iob->Broadcast(rhs);
+		aiob->Broadcast(rhs);
 		// (c) Each party $P_i$ who, as a dealer, received a complaint
 		//     from party $P_j$ broadcasts the values $s_{ij}$,
 		//     $s\prime_{ij}$ that satisfy (4).
@@ -307,7 +303,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				size_t who;
 				do
 				{
-					if (!iob->DeliverFrom(rhs, j))
+					if (!aiob->DeliverFrom(rhs, j))
 					{
 						err << "P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
@@ -336,13 +332,13 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				it != complaints.end(); ++it)
 			{
 				mpz_set_ui(lhs, *it); // who?
-				iob->Broadcast(lhs);
-				iob->Broadcast(s_ij[i][*it]);
-				iob->Broadcast(sprime_ij[i][*it]);
+				aiob->Broadcast(lhs);
+				aiob->Broadcast(s_ij[i][*it]);
+				aiob->Broadcast(sprime_ij[i][*it]);
 			}
 		}
 		mpz_set_ui(lhs, n); // send end marker
-		iob->Broadcast(lhs);
+		aiob->Broadcast(lhs);
 		// (d) Each party marks disqualified any party either
 		//      * received more than $t$ complaints in Step 1(b), or
 		//      * answered a complaint in Step 1(c) with values that 
@@ -357,7 +353,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					complaints.push_back(j);
 				do
 				{
-					if (!iob->DeliverFrom(lhs, j))
+					if (!aiob->DeliverFrom(lhs, j))
 					{
 						err << "P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
@@ -366,13 +362,13 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					who = mpz_get_ui(lhs);
 					if (who >= n)
 						break; // end marker received
-					if (!iob->DeliverFrom(foo, j))
+					if (!aiob->DeliverFrom(foo, j))
 					{
 						err << "P_" << i << ": receiving foo failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
-					if (!iob->DeliverFrom(bar, j))
+					if (!aiob->DeliverFrom(bar, j))
 					{
 						err << "P_" << i << ": receiving bar failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
@@ -440,7 +436,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			mpz_set(A_ik[i][k], g__a_i[k]);
 			if (simulate_faulty_behaviour)
 				mpz_add_ui(A_ik[i][k], A_ik[i][k], 1L);
-			iob->Broadcast(A_ik[i][k]);
+			aiob->Broadcast(A_ik[i][k]);
 		}
 		// (b) Each party $P_j$ verifies the values broadcast by the
 		//     other parties in $QUAL$, namely for each $i \in QUAL$,
@@ -454,7 +450,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			{
 				for (size_t k = 0; k < t; k++)
 				{
-					if (!iob->DeliverFrom(A_ik[j][k], j))
+					if (!aiob->DeliverFrom(A_ik[j][k], j))
 					{
 						err << "P_" << i << ": receiving A_ik failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
@@ -490,12 +486,12 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			mpz_set_ui(rhs, *it);
-			iob->Broadcast(rhs);
-			iob->Broadcast(s_ij[i][*it]);
-			iob->Broadcast(sprime_ij[i][*it]);
+			aiob->Broadcast(rhs);
+			aiob->Broadcast(s_ij[i][*it]);
+			aiob->Broadcast(sprime_ij[i][*it]);
 		}
 		mpz_set_ui(rhs, n); // send end marker
-		iob->Broadcast(rhs);
+		aiob->Broadcast(rhs);
 		// (c) For parties $P_i$ who receive at least one valid complaint,
 		//     i.e., values which satisfy (4) and not (5), the other
 		//     parties run the reconstruction phase of Pedersen-VSS to
@@ -510,7 +506,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				size_t who;
 				do
 				{
-					if (!iob->DeliverFrom(rhs, j))
+					if (!aiob->DeliverFrom(rhs, j))
 					{
 						err << "P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
@@ -523,13 +519,13 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					}
 					else
 						break;
-					if (!iob->DeliverFrom(foo, j))
+					if (!aiob->DeliverFrom(foo, j))
 					{
 						err << "P_" << i << ": receiving s_ij failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
-					if (!iob->DeliverFrom(bar, j))
+					if (!aiob->DeliverFrom(bar, j))
 					{
 						err << "P_" << i << ": receiving sprime_ij failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
@@ -595,14 +591,14 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			// broadcast shares for reconstruction of $z_i$
-			iob->Broadcast(s_ij[i][*it]);
+			aiob->Broadcast(s_ij[i][*it]);
 			// collect shares $s_{ij}$ from other parties
 			for (size_t j = 0; j < n; j++)
 			{
 				if ((j != i) && (std::find(complaints.begin(), complaints.end(), j) == complaints.end()) &&
 					(std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
 				{
-					if (!iob->DeliverFrom(s_ij[*it][j], j))
+					if (!aiob->DeliverFrom(s_ij[*it][j], j))
 						throw false;
 				}
 			}

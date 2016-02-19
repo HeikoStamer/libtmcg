@@ -55,7 +55,8 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
-	#include "iobroadcast.hh"
+	#include "aiounicast.hh"
+	#include "aiobroadcast.hh"
 
 class GennaroJareckiKrawczykRabinDKG
 {
@@ -77,8 +78,8 @@ class GennaroJareckiKrawczykRabinDKG
 		bool CheckGroup
 			() const;
 		bool Generate
-			(size_t i, std::vector<std::istream*> &in, std::vector<std::ostream*> &out,
-			iobroadcast *iob, std::ostream &err, bool simulate_faulty_behaviour = false);
+			(size_t i, aiounicast *aiou, aiobroadcast *aiob, std::ostream &err,
+			bool simulate_faulty_behaviour = false);
 		~GennaroJareckiKrawczykRabinDKG
 			();
 };
