@@ -37,8 +37,8 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 		mpz_init_set(h, h_CRS);
 
 	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L),
-		mpz_init_set_ui(y_i, 1L), mpz_init_set_ui(y, 1L); 
-	
+		mpz_init_set_ui(y_i, 1L), mpz_init_set_ui(y, 1L);
+
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -51,7 +51,7 @@ bool GennaroJareckiKrawczykRabinDKG::CheckGroup
 	() const
 {
 	mpz_t foo, k;
-	
+
 	mpz_init(foo), mpz_init(k);
 	try
 	{
@@ -59,29 +59,29 @@ bool GennaroJareckiKrawczykRabinDKG::CheckGroup
 		mpz_set(k, p);
 		mpz_sub_ui(k, k, 1L);
 		mpz_div(k, k, q);
-		
+
 		// Check whether $p$ and $q$ have appropriate sizes.
-		if ((mpz_sizeinbase(p, 2L) < F_size) || 
+		if ((mpz_sizeinbase(p, 2L) < F_size) ||
 			(mpz_sizeinbase(q, 2L) < G_size))
 				throw false;
-		
+
 		// Check whether $p$ has the correct form, i.e. $p = kq + 1$.
 		mpz_mul(foo, q, k);
 		mpz_add_ui(foo, foo, 1L);
 		if (mpz_cmp(foo, p))
 			throw false;
-		
+
 		// Check whether $p$ and $q$ are both (probable) prime with
 		// a soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
 		if (!mpz_probab_prime_p(p, TMCG_MR_ITERATIONS) || 
 			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
 				throw false;
-		
+
 		// Check whether $k$ is not divisible by $q$, i.e. $q, k$ are coprime.
 		mpz_gcd(foo, q, k);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		
+
 		// Check whether the elements $h$ and $g$ are of order $q$.
 		mpz_fpowm(fpowm_table_h, foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
@@ -89,7 +89,7 @@ bool GennaroJareckiKrawczykRabinDKG::CheckGroup
 		mpz_fpowm(fpowm_table_g, foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		
+
 		// Check whether the elements $h$ and $g$ are different and non-trivial,
 		// i.e., $1 < h, g < p-1$.
 		mpz_sub_ui(foo, p, 1L); // compute $p-1$
@@ -99,7 +99,7 @@ bool GennaroJareckiKrawczykRabinDKG::CheckGroup
 			throw false;
 		if (!mpz_cmp(g, h))
 			throw false;
-		
+
 		// everything is sound
 		throw true;
 	}
@@ -123,13 +123,13 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	assert(t == aiob->t);
 	assert(i == aiou->j);
 	assert(i == aiob->j);
-	
+
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	std::vector<mpz_ptr> a_i, b_i, g__a_i;
 	std::vector< std::vector<mpz_ptr> > C_ik, A_ik, s_ij, sprime_ij, g__s_ij;
 	std::vector<size_t> complaints, complaints_counter;
-	
+
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	for (size_t k = 0; k < t; k++)
 	{
@@ -395,7 +395,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						complaints.push_back(j);
 					}
 				}
-				while (1);				
+				while (1);
 			}
 		}
 		// 2. Each party the builds the set of non-disqualified parties $QUAL$.
@@ -429,7 +429,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		// 4. Each party $i \in QUAL$ exposes $y_i = g^{z_i} \bmod p$
 		//    via Feldman-VSS:
 		// (a) Each party $P_i$, $i \in QUAL$, broadcasts $A_{ik} = 
-                //     g^{a_{ik}} \bmod p$ for $k = 0, \ldots, t$.
+		//     g^{a_{ik}} \bmod p$ for $k = 0, \ldots, t$.
 		for (size_t k = 0; k < t; k++)
 		{
 			// OPTIMIZED: mpz_fspowm(fpowm_table_g, A_ik[i][k], g, a_i[k], p);
@@ -572,7 +572,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					else
 					{
 						err << "P_" << i << ": checking 4(c)(5) not failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);	
+						complaints.push_back(j);
 					}
 				}
 				while (who < n); // no end marker received
@@ -674,7 +674,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			for (size_t k = 0; k < t; k++)
 			{
 				mpz_clear(C_ik[j][k]);
-				mpz_clear(A_ik[j][k]);			
+				mpz_clear(A_ik[j][k]);
 				delete C_ik[j][k];
 				delete A_ik[j][k];
 			}
@@ -705,7 +705,7 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
 	QUAL.clear();
 	mpz_clear(x_i), mpz_clear(xprime_i), mpz_clear(y_i), mpz_clear(y);
-	
+
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
