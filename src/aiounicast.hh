@@ -33,35 +33,20 @@
 	#include <cstdlib>
 	#include <cassert>
 	#include <string>
-	#include <iostream>
-	#include <sstream>
 	#include <vector>
 
-	// C header for asynchronous I/O (TODO: add configure-checks)
-	#include <sys/select.h>
-	#include <sys/time.h>
-	#include <sys/types.h>
+	// C header for asynchronous I/O
 	#include <unistd.h>
 	#include <errno.h>
 	#include <string.h>
-
-	// GNU crypto library
-	#include <gcrypt.h>
 	
 	// GNU multiple precision library
 	#include <gmp.h>
 	
-	#include "mpz_srandom.h"
-	#include "mpz_spowm.h"
-	#include "mpz_sprime.h"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
-
 class aiounicast
 {
 	private:
 		mpz_t			s;
-		std::vector<int>	in, out;
 		size_t			buf_in_size;
 		std::vector<char*>	buf_in;
 		std::vector<size_t>	buf_ptr;
@@ -69,6 +54,7 @@ class aiounicast
 	
 	public:
 		size_t			n, t, j;
+		std::vector<int>	in, out;
 		size_t			numWrite, numRead;
 		size_t			timeout;
 
@@ -204,14 +190,8 @@ class aiounicast
 					numRead += num;
 					buf_ptr[i_in] += num;
 					buf_flag[i_in] = true;
-//std::cerr << "ready(" << j << ") i = " << i_in << " num = " << num << std::endl;
-				}
-				else
-				{
-std::cerr << "max(" << j << ")" << std::endl;
 				}
 			}
-std::cerr << "timeout(" << j << ")" << std::endl;
 			return false;
 		}
 

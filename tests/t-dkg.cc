@@ -113,7 +113,8 @@ void start_instance
 			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, 3);
 
 			// create asynchronous broadcast with timeout 6 rounds
-			aiobroadcast *aiob = new aiobroadcast(N, T, whoami, bP_in, bP_out, 6);
+			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, 6);
+			aiobroadcast *aiob = new aiobroadcast(N, T, whoami, aiou2, 6);
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
 			std::stringstream err_log;
@@ -149,11 +150,11 @@ void start_instance
 
 			// release handles (broadcast channel)
 			bP_in.clear(), bP_out.clear();
-			std::cout << "P_" << whoami << ": aiob.numRead = " << aiob->numRead <<
-				" aiob.numWrite = " << aiob->numWrite << std::endl;
+			std::cout << "P_" << whoami << ": aiob.numRead = " << (aiob->aiou)->numRead <<
+				" aiob.numWrite = " << (aiob->aiou)->numWrite << std::endl;
 
 			// release asynchronous unicast and broadcast
-			delete aiou, delete aiob;
+			delete aiob, delete aiou2, delete aiou;
 			
 			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);

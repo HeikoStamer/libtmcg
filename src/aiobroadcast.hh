@@ -33,66 +33,36 @@
 	#include <cstdlib>
 	#include <cassert>
 	#include <string>
-	#include <iostream>
-	#include <sstream>
 	#include <vector>
-
-	// C header for asynchronous I/O (TODO: add configure-checks)
-	#include <sys/select.h>
-	#include <sys/time.h>
-	#include <sys/types.h>
-	#include <unistd.h>
-	#include <errno.h>
-	#include <string.h>
-
-	// GNU crypto library
-	#include <gcrypt.h>
 	
 	// GNU multiple precision library
 	#include <gmp.h>
-	
-	#include "mpz_srandom.h"
-	#include "mpz_spowm.h"
-	#include "mpz_sprime.h"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
+
+	#include "aiounicast.hh"
 
 class aiobroadcast
 {
 	private:
 		mpz_t			s;
-		std::vector<int>	in, out;
-		size_t			buf_in_size;
-		std::vector<char*>	buf_in;
-		std::vector<size_t>	buf_ptr;
-		std::vector<bool>	buf_flag;
 	
 	public:
 		size_t			n, t, j;
 		size_t			numWrite, numRead;
 		size_t			timeout;
+		aiounicast		*aiou;
 
 		aiobroadcast
-			(size_t n_in, size_t t_in, size_t j_in,
-			std::vector<int> &in_in, std::vector<int> &out_in,
+			(size_t n_in, size_t t_in, size_t j_in, aiounicast *aiou_in,
 			size_t timeout_in):
 				n(n_in), t(t_in), j(j_in), timeout(timeout_in)
 		{
 			assert(t_in <= n_in);
 			assert(j_in < n_in);
-			assert(n_in == in_in.size());
-			assert(in_in.size() == out_in.size());
+			assert(n_in == aiou_in->in.size());
+			assert(aiou_in->in.size() == aiou_in->out.size());
 
-			// initialize buffers for read(2)
-			buf_in_size = TMCG_MAX_VALUE_CHARS;
-			for (size_t i = 0; i < n_in; i++)
-			{
-				in.push_back(in_in[i]);
-				char *buf = new char[buf_in_size];
-				buf_in.push_back(buf), buf_ptr.push_back(0);
-				buf_flag.push_back(false);
-				out.push_back(out_in[i]);
-			}
+			// initialize asynchonous unicast
+			aiou = aiou_in;
 
 			// initialize sequence counter
 			mpz_init_set_ui(s, 0L);
@@ -106,35 +76,12 @@ class aiobroadcast
 		{
 			mpz_add_ui(s, s, 1L); // increase sequence counter
 
-			// prepare write buffer
-			char *buf = new char[TMCG_MAX_VALUE_CHARS];
-			memset(buf, 0, TMCG_MAX_VALUE_CHARS);
-			size_t size = mpz_sizeinbase(m, TMCG_MPZ_IO_BASE);
-			if (size < TMCG_MAX_VALUE_CHARS)
-			{
-                		mpz_get_str(buf, TMCG_MPZ_IO_BASE, m);
-			}
-			else
-			{
-				buf[0] = '\001'; // faulty value
-				buf[1] = '\000'; // set string terminator
-			}
-			// determine the real size of the string, because
-			// mpz_sizeinbase(m, TMCG_MPZ_IO_BASE) does not
-			// work in all cases correctly
-			size = strlen(buf);
-			buf[size] = '\n'; // set delimiter
 			// broadcast
 			for (size_t i = 0; i < n; i++)
 			{
 				if (i != j)
-				{
-                        		size_t num = write(out[i], buf, size + 1);
-					numWrite += num;
-//std::cerr << "out(" << j << ") i = " << i << " num = " << num << " m = " << m << std::endl;
-				}
+					aiou->Send(m, i);
 			}
-			delete [] buf;
 		}
 
 		bool Deliver
@@ -147,79 +94,14 @@ class aiobroadcast
 					if (i == j)
 						continue;
 
-					// anything buffered from previous rounds?
-					if (buf_flag[i])
+					i_out = i;
+					if (aiou->Receive(m, i))
 					{
-						// search for delimiter
-						bool newline_found = false;
-						size_t newline_ptr = 0;
-						for (size_t ptr = 0; ptr < buf_ptr[i]; ptr++)
-						{
-							if (buf_in[i][ptr] == '\n')
-							{
-								newline_found = true;
-								newline_ptr = ptr;
-								break;
-							}
-						}
-						// extract value of m and adjust buffer
-						if (newline_found)
-						{
-							i_out = i; // input from party i
-							char *tmp = new char[newline_ptr + 1];
-							memset(tmp, 0, newline_ptr + 1);
-							memcpy(tmp, buf_in[i], newline_ptr);
-							char *wptr = buf_in[i] + newline_ptr + 1;
-							size_t wnum = buf_ptr[i] - newline_ptr - 1;
-							if (wnum > 0)
-								memmove(buf_in[i], wptr, wnum);
-							else
-								buf_flag[i] = false;
-							buf_ptr[i] = wnum;
-							if (mpz_set_str(m, tmp, TMCG_MPZ_IO_BASE) < 0)
-							{
-								delete [] tmp;
-								return false;
-							}
-							delete [] tmp;
 std::cerr << "deliver(" << j << ") from " << i << " = " << m << std::endl;
-							return true;
-						}
-						// no delimiter found; invalidate buffer flag
-						buf_flag[i] = false;
-					}
-					// read(2) -- do everything with asynchronous I/O
-					size_t max = buf_in_size - buf_ptr[i];
-					if (max > 0)
-					{
-						char *rptr = buf_in[i] + buf_ptr[i];
-//std::cerr << "read(" << j << ") i = " << i << " max = " << max << std::endl;
-						ssize_t num = read(in[i], rptr, max);
-						if (num < 0)
-						{
-							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || 
-								(errno == EINTR))
-							{
-								continue;
-							}
-							else
-							{
-								i_out = i; // error from party i
-								perror("aiobroadcast (read)");
-								return false;
-							}
-						}
-						if (num == 0)
-							continue;
-						numRead += num;
-						buf_ptr[i] += num;
-						buf_flag[i] = true;
-//std::cerr << "ready(" << j << ") i = " << i << " num = " << num << std::endl;
+						return true;
 					}
 					else
-					{
-std::cerr << "max(" << j << ")" << std::endl;
-					}
+						return false;
 				}
 				sleep(1);
 			}
@@ -230,81 +112,16 @@ std::cerr << "max(" << j << ")" << std::endl;
 		bool DeliverFrom
 			(mpz_ptr m, size_t i_in)
 		{
-//std::cerr << "select(" << j << ") for i = " << i_in << " ptr = " << buf_ptr[i_in] << std::endl;
 			for (size_t round = 0; round < timeout; round++)
 			{
-				// anything buffered from previous rounds?
-				if (buf_flag[i_in])
+				if (aiou->Receive(m, i_in))
 				{
-					// search for delimiter
-					bool newline_found = false;
-					size_t newline_ptr = 0;
-					for (size_t ptr = 0; ptr < buf_ptr[i_in]; ptr++)
-					{
-						if (buf_in[i_in][ptr] == '\n')
-						{
-							newline_found = true;
-							newline_ptr = ptr;
-							break;
-						}
-					}
-					// extract value of m and adjust buffer
-					if (newline_found)
-					{
-						char *tmp = new char[newline_ptr + 1];
-						memset(tmp, 0, newline_ptr + 1);
-						memcpy(tmp, buf_in[i_in], newline_ptr);
-						char *wptr = buf_in[i_in] + newline_ptr + 1;
-						size_t wnum = buf_ptr[i_in] - newline_ptr - 1;
-						if (wnum > 0)
-							memmove(buf_in[i_in], wptr, wnum);
-						else
-							buf_flag[i_in] = false;
-						buf_ptr[i_in] = wnum;
-						if (mpz_set_str(m, tmp, TMCG_MPZ_IO_BASE) < 0)
-						{
-							delete [] tmp;
-							return false;
-						}
-						delete [] tmp;
-//std::cerr << "deliver(" << j << ") from " << i_in << " = " << m << std::endl;
-						return true;
-					}
-					// no delimiter found; invalidate buffer flag
-					buf_flag[i_in] = false;
-				}
-				// read(2) -- do everything with asynchronous I/O
-				size_t max = buf_in_size - buf_ptr[i_in];
-				if (max > 0)
-				{
-					char *rptr = buf_in[i_in] + buf_ptr[i_in];
-//std::cerr << "read(" << j << ") i = " << i_in << " max = " << max << std::endl;
-					ssize_t num = read(in[i_in], rptr, max);
-					if (num < 0)
-					{
-						if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || 
-							(errno == EINTR))
-						{
-							sleep(1);
-							continue;
-						}
-						else
-						{
-							perror("iobroadcast (read)");
-							return false;
-						}
-					}
-					if (num == 0)
-						continue;
-					numRead += num;
-					buf_ptr[i_in] += num;
-					buf_flag[i_in] = true;
-//std::cerr << "ready(" << j << ") i = " << i_in << " num = " << num << std::endl;
+std::cerr << "deliver(" << j << ") from " << i_in << " = " << m << std::endl;
+					return true;
 				}
 				else
-				{
-std::cerr << "max(" << j << ")" << std::endl;
-				}
+					return false;
+				sleep(1);
 			}
 std::cerr << "timeout(" << j << ")" << std::endl;
 			return false;
@@ -314,12 +131,6 @@ std::cerr << "timeout(" << j << ")" << std::endl;
 			()
 		{
 			mpz_clear(s);
-			in.clear(), out.clear();
-			for (size_t i = 0; i < n; i++)
-			{
-				delete [] buf_in[i];
-			}
-			buf_in.clear(), buf_ptr.clear(), buf_flag.clear();
 		}
 };
 
