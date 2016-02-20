@@ -97,7 +97,6 @@ class aiobroadcast
 					i_out = i;
 					if (aiou->Receive(m, i))
 					{
-std::cerr << "deliver(" << j << ") from " << i << " = " << m << std::endl;
 						return true;
 					}
 					else
@@ -116,14 +115,12 @@ std::cerr << "deliver(" << j << ") from " << i << " = " << m << std::endl;
 			{
 				if (aiou->Receive(m, i_in))
 				{
-std::cerr << "deliver(" << j << ") from " << i_in << " = " << m << std::endl;
 					return true;
 				}
 				else
 					return false;
 				sleep(1);
 			}
-std::cerr << "timeout(" << j << ")" << std::endl;
 			return false;
 		}
 
