@@ -46,7 +46,6 @@
 class aiounicast
 {
 	private:
-		mpz_t			s;
 		size_t			buf_in_size;
 		std::vector<char*>	buf_in;
 		std::vector<size_t>	buf_ptr;
@@ -80,9 +79,6 @@ class aiounicast
 				out.push_back(out_in[i]);
 			}
 
-			// initialize sequence counter
-			mpz_init_set_ui(s, 0L);
-
 			// initialize character counters
 			numWrite = 0, numRead = 0;
 		}
@@ -90,8 +86,6 @@ class aiounicast
 		void Send
 			(mpz_srcptr m, size_t i_in)
 		{
-			mpz_add_ui(s, s, 1L); // increase sequence counter
-
 			// prepare write buffer
 			char *buf = new char[TMCG_MAX_VALUE_CHARS];
 			memset(buf, 0, TMCG_MAX_VALUE_CHARS);
@@ -300,7 +294,6 @@ class aiounicast
 		~aiounicast
 			()
 		{
-			mpz_clear(s);
 			in.clear(), out.clear();
 			for (size_t i = 0; i < n; i++)
 			{

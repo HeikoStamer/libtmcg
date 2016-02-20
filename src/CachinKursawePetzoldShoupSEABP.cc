@@ -31,7 +31,7 @@
 CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	(size_t n_in, size_t t_in, size_t j_in,
 	aiounicast *aiou_in, size_t timeout_in,
-	std::string ID_in)
+	std::string ID_in): aiobroadcast(n_in, t_in, j_in, aiou_in, timeout_in)
 {
 	assert(t_in <= n_in);
 	assert(j_in < n_in);
@@ -56,7 +56,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	// initialize character counters
 	numWrite = 0, numRead = 0;
 
-	// initialize actions
+	// initialize action tags
 	mpz_init_set_ui(r_send, 1L);
 	mpz_init_set_ui(r_echo, 2L);
 	mpz_init_set_ui(r_ready, 3L);

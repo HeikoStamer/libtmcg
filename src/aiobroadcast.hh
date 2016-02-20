@@ -42,24 +42,11 @@
 
 class aiobroadcast
 {
-	private:
-		mpz_t			s;
-	
 	public:
 		size_t			n, t, j;
 		size_t			numWrite, numRead;
 		size_t			timeout;
 		aiounicast		*aiou;
-
-		aiobroadcast
-			()
-		{
-			// initialize sequence counter
-			mpz_init_set_ui(s, 0L);
-
-			// initialize character counters
-			numWrite = 0, numRead = 0;			
-		}
 
 		aiobroadcast
 			(size_t n_in, size_t t_in, size_t j_in, aiounicast *aiou_in,
@@ -74,9 +61,6 @@ class aiobroadcast
 			// initialize asynchonous unicast
 			aiou = aiou_in;
 
-			// initialize sequence counter
-			mpz_init_set_ui(s, 0L);
-
 			// initialize character counters
 			numWrite = 0, numRead = 0;
 		}
@@ -84,8 +68,6 @@ class aiobroadcast
 		virtual void Broadcast
 			(mpz_srcptr m)
 		{
-			mpz_add_ui(s, s, 1L); // increase sequence counter
-
 			// broadcast
 			for (size_t i = 0; i < n; i++)
 			{
@@ -94,7 +76,7 @@ class aiobroadcast
 			}
 		}
 
-		void Broadcast
+		virtual void Broadcast
 			(const std::vector<mpz_srcptr> &m)
 		{
 			for (size_t mm = 0; mm < m.size(); mm++)
@@ -133,7 +115,7 @@ class aiobroadcast
 				return false; // error or timeout
 		}
 
-		bool DeliverFrom
+		virtual bool DeliverFrom
 			(std::vector<mpz_ptr> &m, size_t i_in)
 		{
 			for (size_t mm = 0; mm < m.size(); mm++)
@@ -147,7 +129,6 @@ class aiobroadcast
 		virtual ~aiobroadcast
 			()
 		{
-			mpz_clear(s);
 		}
 };
 
