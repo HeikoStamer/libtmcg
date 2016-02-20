@@ -189,8 +189,11 @@
 	#include <TMCG_StackSecret.hh>
 	
 	#include <SchindelhauerTMCG.hh>
+	
+	// protocols not related to mental poker	
 	#include "NaorPinkasEOTP.hh"
 	#include "GennaroJareckiKrawczykRabinDKG.hh"
+	#include "CachinKursawePetzoldShoupSEABP.hh"
 	
 	// enable usage of config.h
 	#ifdef TMCG_CONFIG_H

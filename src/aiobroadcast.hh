@@ -52,6 +52,16 @@ class aiobroadcast
 		aiounicast		*aiou;
 
 		aiobroadcast
+			()
+		{
+			// initialize sequence counter
+			mpz_init_set_ui(s, 0L);
+
+			// initialize character counters
+			numWrite = 0, numRead = 0;			
+		}
+
+		aiobroadcast
 			(size_t n_in, size_t t_in, size_t j_in, aiounicast *aiou_in,
 			size_t timeout_in):
 				n(n_in), t(t_in), j(j_in), timeout(timeout_in)
@@ -71,7 +81,7 @@ class aiobroadcast
 			numWrite = 0, numRead = 0;
 		}
 
-		void Broadcast
+		virtual void Broadcast
 			(mpz_srcptr m)
 		{
 			mpz_add_ui(s, s, 1L); // increase sequence counter
@@ -84,22 +94,26 @@ class aiobroadcast
 			}
 		}
 
-		bool Deliver
+		void Broadcast
+			(const std::vector<mpz_srcptr> &m)
+		{
+			for (size_t mm = 0; mm < m.size(); mm++)
+				Broadcast(m[mm]);
+		}
+
+		virtual bool Deliver
 			(mpz_ptr m, size_t &i_out)
 		{
 			for (size_t round = 0; round < timeout; round++)
 			{
-				for (size_t i = 0; i < n; i++)
+				if (aiou->Receive(m, i_out))
 				{
-					if (i == j)
-						continue;
-
-					i_out = i;
-					if (aiou->Receive(m, i))
-					{
-						return true;
-					}
-					else
+					return true;
+				}
+				else
+				{
+					// error reported for some party?
+					if (i_out < n)
 						return false;
 				}
 				sleep(1);
@@ -108,23 +122,29 @@ class aiobroadcast
 			return false;
 		}
 
-		bool DeliverFrom
+		virtual bool DeliverFrom
 			(mpz_ptr m, size_t i_in)
 		{
-			for (size_t round = 0; round < timeout; round++)
+			if (aiou->ReceiveFrom(m, i_in))
 			{
-				if (aiou->Receive(m, i_in))
-				{
-					return true;
-				}
-				else
-					return false;
-				sleep(1);
+				return true;
 			}
-			return false;
+			else
+				return false; // error or timeout
 		}
 
-		~aiobroadcast
+		bool DeliverFrom
+			(std::vector<mpz_ptr> &m, size_t i_in)
+		{
+			for (size_t mm = 0; mm < m.size(); mm++)
+			{
+				if (!DeliverFrom(m[mm], i_in))
+					return false;
+			}
+			return true;
+		}
+
+		virtual ~aiobroadcast
 			()
 		{
 			mpz_clear(s);

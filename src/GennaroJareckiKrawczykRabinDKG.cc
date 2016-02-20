@@ -240,13 +240,13 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						break;
 					}
 				}
-				if (!aiou->Receive(s_ij[j][i], j))
+				if (!aiou->ReceiveFrom(s_ij[j][i], j))
 				{
 					err << "P_" << i << ": receiving s_ij failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-				if (!aiou->Receive(sprime_ij[j][i], j))
+				if (!aiou->ReceiveFrom(sprime_ij[j][i], j))
 				{
 					err << "P_" << i << ": receiving sprime_ij failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);

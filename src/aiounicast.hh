@@ -118,10 +118,101 @@ class aiounicast
 			delete [] buf;
 		}
 
+		void Send
+			(const std::vector<mpz_ptr> &m, size_t i_in)
+		{
+			for (size_t mm = 0; mm < m.size(); mm++)
+				Send(m[mm], i_in);
+		}
+
 		bool Receive
+			(mpz_ptr m, size_t &i_out)
+		{
+//std::cerr << "receive(" << j << ")" << std::endl;
+			for (size_t round = 0; round < timeout; round++)
+			{
+				for (size_t i_out = 0; i_out < n; i_out++)
+				{
+					if (i_out == j)
+						continue;
+
+					// anything buffered from previous rounds?
+					if (buf_flag[i_out])
+					{
+						// search for delimiter
+						bool newline_found = false;
+						size_t newline_ptr = 0;
+						for (size_t ptr = 0; ptr < buf_ptr[i_out]; ptr++)
+						{
+							if (buf_in[i_out][ptr] == '\n')
+							{
+								newline_found = true;
+								newline_ptr = ptr;
+								break;
+							}
+						}
+						// extract value of m and adjust buffer
+						if (newline_found)
+						{
+							char *tmp = new char[newline_ptr + 1];
+							memset(tmp, 0, newline_ptr + 1);
+							memcpy(tmp, buf_in[i_out], newline_ptr);
+							char *wptr = buf_in[i_out] + newline_ptr + 1;
+							size_t wnum = buf_ptr[i_out] - newline_ptr - 1;
+							if (wnum > 0)
+								memmove(buf_in[i_out], wptr, wnum);
+							else
+								buf_flag[i_out] = false;
+							buf_ptr[i_out] = wnum;
+							if (mpz_set_str(m, tmp, TMCG_MPZ_IO_BASE) < 0)
+							{
+								delete [] tmp;
+								return false;
+							}
+							delete [] tmp;
+//std::cerr << "receive(" << j << ") from " << i_out << " = " << m << std::endl;
+							return true;
+						}
+						// no delimiter found; invalidate buffer flag
+						buf_flag[i_out] = false;
+					}
+					// read(2) -- do everything with asynchronous I/O
+					size_t max = buf_in_size - buf_ptr[i_out];
+					if (max > 0)
+					{
+						char *rptr = buf_in[i_out] + buf_ptr[i_out];
+//std::cerr << "read(" << j << ") i = " << i_out << " max = " << max << std::endl;
+						ssize_t num = read(in[i_out], rptr, max);
+						if (num < 0)
+						{
+							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || 
+								(errno == EINTR))
+							{
+								sleep(1);
+								continue;
+							}
+							else
+							{
+								perror("aiounicast (read)");
+								return false;
+							}
+						}
+						if (num == 0)
+							continue;
+						numRead += num;
+						buf_ptr[i_out] += num;
+						buf_flag[i_out] = true;
+					}
+				}
+			}
+			i_out = n; // timeout for all parties
+			return false;
+		}
+
+		bool ReceiveFrom
 			(mpz_ptr m, size_t i_in)
 		{
-//std::cerr << "receive(" << j << ") for i = " << i_in << " ptr = " << buf_ptr[i_in] << std::endl;
+//std::cerr << "receivefrom(" << j << ") for i = " << i_in << " ptr = " << buf_ptr[i_in] << std::endl;
 			for (size_t round = 0; round < timeout; round++)
 			{
 				// anything buffered from previous rounds?
@@ -193,6 +284,17 @@ class aiounicast
 				}
 			}
 			return false;
+		}
+
+		bool ReceiveFrom
+			(std::vector<mpz_ptr> &m, size_t i_in)
+		{
+			for (size_t mm = 0; mm < m.size(); mm++)
+			{
+				if (!ReceiveFrom(m[mm], i_in))
+					return false;
+			}
+			return true;
 		}
 
 		~aiounicast
