@@ -46,16 +46,17 @@
 class aiounicast
 {
 	private:
-		size_t			buf_in_size;
-		std::vector<char*>	buf_in;
-		std::vector<size_t>	buf_ptr;
-		std::vector<bool>	buf_flag;
+		size_t					buf_in_size;
+		std::vector<char*>			buf_in;
+		std::vector<size_t>			buf_ptr;
+		std::vector<bool>			buf_flag;
+		std::vector< std::vector<mpz_ptr> > 	buf_mpz;
 	
 	public:
-		size_t			n, t, j;
-		std::vector<int>	in, out;
-		size_t			numWrite, numRead;
-		size_t			timeout;
+		size_t					n, t, j;
+		std::vector<int>			in, out;
+		size_t					numWrite, numRead;
+		size_t					timeout;
 
 		aiounicast
 			(size_t n_in, size_t t_in, size_t j_in,
@@ -77,6 +78,13 @@ class aiounicast
 				buf_in.push_back(buf), buf_ptr.push_back(0);
 				buf_flag.push_back(false);
 				out.push_back(out_in[i]);
+			}
+
+			// initialize buffer for receiving multi-mpz
+			for (size_t i = 0; i < n_in; i++)
+			{
+				std::vector<mpz_ptr> *vtmp = new std::vector<mpz_ptr>;
+				buf_mpz.push_back(*vtmp);
 			}
 
 			// initialize character counters
@@ -113,7 +121,7 @@ class aiounicast
 		}
 
 		void Send
-			(const std::vector<mpz_ptr> &m, size_t i_in)
+			(const std::vector<mpz_srcptr> &m, size_t i_in)
 		{
 			for (size_t mm = 0; mm < m.size(); mm++)
 				Send(m[mm], i_in);
@@ -125,11 +133,8 @@ class aiounicast
 //std::cerr << "receive(" << j << ")" << std::endl;
 			for (size_t round = 0; round < timeout; round++)
 			{
-				for (size_t i_out = 0; i_out < n; i_out++)
+				for (i_out = 0; i_out < n; i_out++)
 				{
-					if (i_out == j)
-						continue;
-
 					// anything buffered from previous rounds?
 					if (buf_flag[i_out])
 					{
@@ -182,7 +187,6 @@ class aiounicast
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || 
 								(errno == EINTR))
 							{
-								sleep(1);
 								continue;
 							}
 							else
@@ -198,9 +202,56 @@ class aiounicast
 						buf_flag[i_out] = true;
 					}
 				}
+				sleep(1);
 			}
 			i_out = n; // timeout for all parties
 			return false;
+		}
+
+		bool Receive
+			(std::vector<mpz_ptr> &m, size_t &i_out)
+		{
+//std::cerr << "receive_mm(" << j << ") m.size = " << m.size() << " n = " << n << std::endl;
+			for (size_t round = 0; round < ((m.size() * n) + 1); round++)
+			{
+				// return, if enough messages are received from i
+				for (size_t i = 0; i < n; i++)
+				{
+					if (buf_mpz[i].size() == m.size())
+					{
+						// copy results and release buffer
+						for (size_t mm = 0; mm < m.size(); mm++)
+						{
+							mpz_set(m[mm], buf_mpz[i][mm]);
+							mpz_clear(buf_mpz[i][mm]);
+							delete buf_mpz[i][mm];
+						}
+						buf_mpz[i].clear();
+						i_out = i;
+						return true;
+					}
+				}
+				// receive a message
+				size_t i = n;
+				mpz_ptr tmp = new mpz_t();
+				mpz_init(tmp);
+				if (Receive(tmp, i))
+				{
+//std::cerr << "receive_mm(" << j << ") received for " << i << std::endl;
+					buf_mpz[i].push_back(tmp);
+				}
+				else
+				{
+//std::cerr << "receive_mm(" << j << ") timed out for " << i << std::endl;
+					i_out = i;
+					mpz_clear(tmp);
+					delete tmp;
+					return false;
+				}
+			}
+//std::cerr << "receive_mm(" << j << ") timed out for all" << std::endl;
+			i_out = n; // timeout for all parties
+			return false;			
 		}
 
 		bool ReceiveFrom
@@ -298,8 +349,15 @@ class aiounicast
 			for (size_t i = 0; i < n; i++)
 			{
 				delete [] buf_in[i];
+				for (size_t mm = 0; mm < buf_mpz[i].size(); mm++)
+				{
+					mpz_clear(buf_mpz[i][mm]);
+					delete buf_mpz[i][mm];
+				}
+				buf_mpz[i].clear();
 			}
 			buf_in.clear(), buf_ptr.clear(), buf_flag.clear();
+			buf_mpz.clear();
 		}
 };
 

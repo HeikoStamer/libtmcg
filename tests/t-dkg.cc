@@ -114,23 +114,26 @@ void start_instance
 
 			// create asynchronous broadcast with timeout 6 rounds
 			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, 6);
-			aiobroadcast *aiob = new aiobroadcast(N, T, whoami, aiou2, 6);
+			
+			// create an instance of a reliable broadcast protocol (RBC)
+			std::string myID = "t-dkg";
+			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2, myID);
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
 			std::stringstream err_log;
 			start_clock();
 			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
 			if (faulty)
-				dkg->Generate(whoami, aiou, aiob, err_log, true);
+				dkg->Generate(whoami, aiou, rbc, err_log, true);
 			else
-				assert(dkg->Generate(whoami, aiou, aiob, err_log));
+				assert(dkg->Generate(whoami, aiou, rbc, err_log));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			sleep(3 * whoami + (mpz_wrandom_ui() % N));
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 			
-			// release DKG and VTMF instances
-			delete dkg, delete vtmf;
+			// release DKG, RBC, and VTMF instances
+			delete dkg, delete rbc, delete vtmf;
 			
 			// release pipe streams (private channels)
 			size_t numRead = 0, numWrite = 0;
@@ -150,11 +153,11 @@ void start_instance
 
 			// release handles (broadcast channel)
 			bP_in.clear(), bP_out.clear();
-			std::cout << "P_" << whoami << ": aiob.numRead = " << (aiob->aiou)->numRead <<
-				" aiob.numWrite = " << (aiob->aiou)->numWrite << std::endl;
+			std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
+				" aiou2.numWrite = " << aiou2->numWrite << std::endl;
 
 			// release asynchronous unicast and broadcast
-			delete aiob, delete aiou2, delete aiou;
+			delete aiou, delete aiou2;
 			
 			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);

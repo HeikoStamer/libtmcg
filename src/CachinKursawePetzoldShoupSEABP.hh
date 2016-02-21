@@ -42,6 +42,8 @@
 	#include <iostream>
 	#include <sstream>
 	#include <vector>
+	#include <map>
+	#include <list>
 	#include <algorithm>
 
 	// GNU crypto library
@@ -57,26 +59,32 @@
 	#include "mpz_shash.hh"
 
 	#include "aiounicast.hh"
-	#include "aiobroadcast.hh"
 
-class CachinKursawePetzoldShoupRBC : public aiobroadcast
+class CachinKursawePetzoldShoupRBC
 {
 	private:
-		mpz_t		ID, whoami, s;
-		mpz_t		r_send, r_echo, r_ready, r_request, r_answer;
+		mpz_t							ID, whoami, s;
+		mpz_t							r_send, r_echo, r_ready, r_request, r_answer;
+		std::vector< std::map<std::string, bool> >		send, echo, ready, request, answer;
+		std::map<std::string, mpz_ptr>				mbar, dbar;
+		std::map<std::string, std::map<std::string, size_t> >	e_d, r_d;
+
+		std::vector< std::list<mpz_ptr> >			buf_mpz;
 	
 	public:
+		size_t							n, t, j;
+		aiounicast						*aiou;
+
 		CachinKursawePetzoldShoupRBC
 			(size_t n_in, size_t t_in, size_t j_in,
-			aiounicast *aiou_in, size_t timeout_in,
-			std::string ID_in);
-		virtual void Broadcast
+			aiounicast *aiou_in, std::string ID_in);
+		void Broadcast
 			(mpz_srcptr m);
-		virtual bool Deliver
+		bool Deliver
 			(mpz_ptr m, size_t &i_out);
-		virtual bool DeliverFrom
+		bool DeliverFrom
 			(mpz_ptr m, size_t i_in);
-		virtual ~CachinKursawePetzoldShoupRBC
+		~CachinKursawePetzoldShoupRBC
 			();
 };
 

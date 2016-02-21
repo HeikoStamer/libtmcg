@@ -65,25 +65,22 @@ class aiobroadcast
 			numWrite = 0, numRead = 0;
 		}
 
-		virtual void Broadcast
+		void Broadcast
 			(mpz_srcptr m)
 		{
 			// broadcast
 			for (size_t i = 0; i < n; i++)
-			{
-				if (i != j)
-					aiou->Send(m, i);
-			}
+				aiou->Send(m, i);
 		}
 
-		virtual void Broadcast
+		void Broadcast
 			(const std::vector<mpz_srcptr> &m)
 		{
 			for (size_t mm = 0; mm < m.size(); mm++)
 				Broadcast(m[mm]);
 		}
 
-		virtual bool Deliver
+		bool Deliver
 			(mpz_ptr m, size_t &i_out)
 		{
 			for (size_t round = 0; round < timeout; round++)
@@ -104,18 +101,40 @@ class aiobroadcast
 			return false;
 		}
 
-		virtual bool DeliverFrom
-			(mpz_ptr m, size_t i_in)
+		bool Deliver
+			(std::vector<mpz_ptr> &m, size_t &i_out)
 		{
-			if (aiou->ReceiveFrom(m, i_in))
+			for (size_t round = 0; round < timeout; round++)
 			{
-				return true;
+				if (aiou->Receive(m, i_out))
+				{
+					return true;
+				}
+				else
+				{
+					// error reported for some party?
+					if (i_out < n)
+						return false;
+				}
+				sleep(1);
 			}
-			else
-				return false; // error or timeout
+			i_out = n; // timeout for all parties
+			return false;				
 		}
 
-		virtual bool DeliverFrom
+		bool DeliverFrom
+			(mpz_ptr m, size_t i_in)
+		{
+			for (size_t round = 0; round < timeout; round++)
+			{
+				if (aiou->ReceiveFrom(m, i_in))
+					return true;
+				sleep(1);
+			}
+			return false; // error or timeout
+		}
+
+		bool DeliverFrom
 			(std::vector<mpz_ptr> &m, size_t i_in)
 		{
 			for (size_t mm = 0; mm < m.size(); mm++)
@@ -126,7 +145,7 @@ class aiobroadcast
 			return true;
 		}
 
-		virtual ~aiobroadcast
+		~aiobroadcast
 			()
 		{
 		}
