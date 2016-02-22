@@ -35,7 +35,7 @@
 #include "pipestream.hh"
 
 #undef NDEBUG
-#define N 9
+#define N 7
 #define T 2
 
 int pipefd[N][N][2], broadcast_pipefd[N][N][2];

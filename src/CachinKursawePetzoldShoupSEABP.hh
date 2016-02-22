@@ -60,6 +60,9 @@
 
 	#include "aiounicast.hh"
 
+/* The following class implements an optimized version of Bracha's protocol described in [CKPS01].
+   Original paper cited: G. Bracha: 'An asynchronous [(n − 1)/3]-resilient consensus protocol',
+   Proc. 3rd ACM Symposium on Principles of Distributed Computing (PODC), pp. 154–162, 1984. */
 class CachinKursawePetzoldShoupRBC
 {
 	private:
@@ -68,8 +71,8 @@ class CachinKursawePetzoldShoupRBC
 		std::vector< std::map<std::string, bool> >		send, echo, ready, request, answer;
 		std::map<std::string, mpz_ptr>				mbar, dbar;
 		std::map<std::string, std::map<std::string, size_t> >	e_d, r_d;
-
-		std::vector< std::list<mpz_ptr> >			buf_mpz;
+		std::vector< std::list<mpz_ptr> >			buf_mpz, buf_msg;
+		std::vector<bool>					deliver_error;
 	
 	public:
 		size_t							n, t, j;
