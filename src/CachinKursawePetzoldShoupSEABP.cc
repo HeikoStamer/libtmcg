@@ -33,6 +33,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	aiounicast *aiou_in, std::string ID_in)
 {
 	assert(t_in <= n_in);
+	assert(t_in < (n_in / 3));
 	assert(j_in < n_in);
 	assert(n_in == aiou_in->in.size());
 	assert(aiou_in->in.size() == aiou_in->out.size());
@@ -44,7 +45,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	aiou = aiou_in;
 
 	// initialize ID
-	std::string myID = "CachinKursawePetzoldShoupRBC" + ID_in;
+	std::string myID = "CachinKursawePetzoldShoupRBC." + ID_in;
 	mpz_shash(ID, myID);
 
 	// initialize whoami (called $j$ in the paper)
@@ -220,8 +221,6 @@ std::cerr << "RPC: r-echo from " << l << " with d = " << message[4] << std::endl
 					}
 					continue;
 				}
-else
-	std::cerr << "RPC: double echo from " << l << std::endl;
 				// upon receiving message $(ID.j.s, r-ready, d)$ from $P_l$
 				if (!mpz_cmp(message[3], r_ready) && !ready[l].count(tag_string))
 				{
@@ -316,18 +315,33 @@ std::cerr << "RPC: answer needed" << std::endl;
 std::cerr << "RPC: r-answer from " << l2 << " with m = " << message3[4] << std::endl;
 										answer[l2].insert(std::pair<std::string, bool>(tag_string, true));
 										mpz_shash(foo, 1, message3[4]);
-										mpz_set(mbar[tag_string], message3[4]);
+										mpz_set(mbar[tag_string], message3[4]); // $\bar{m} \gets m$
+									}
+									// release
+									for (size_t mm = 0; mm < 5; mm++)
+									{
+										mpz_clear(message3[mm]);
+										delete message3[mm];
+									}
+									message3.clear();
+								}
+								else
+								{
+									// release
+									for (size_t mm = 0; mm < 5; mm++)
+									{
+										mpz_clear(message3[mm]);
+										delete message3[mm];
+									}
+									message3.clear();
+									if (l2 < n)
+									{
+										i_out = l2;
+										throw false;
 									}
 								}
-								// release
-								for (size_t mm = 0; mm < 5; mm++)
-								{
-									mpz_clear(message3[mm]);
-									delete message3[mm];
-								}
-								message3.clear();								
 							}
-							while (mpz_cmp(foo, message[4]));
+							while (mpz_cmp(foo, message[4])); // $H(m) = \bar{d}$
 						}
 						mpz_clear(foo);
 std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
@@ -338,8 +352,6 @@ std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[t
 					}
 					continue;
 				}
-else
-	std::cerr << "RPC: double ready" << std::endl;
 				// upon receiving message $(ID.j.s, r-request) from $P_l$ for the first time
 				if (!mpz_cmp(message[3], r_request) && !request[l].count(tag_string))
 				{
@@ -361,7 +373,14 @@ std::cerr << "RPC: r-request from " << l << std::endl;
 				}
 			}
 			else
-				std::cerr << "RBC: timeout in party " << j << std::endl; 
+			{
+				std::cerr << "RBC: timeout in party " << j << " for " << l << std::endl;
+				if (l < n)
+				{
+					i_out = l;
+					throw false;
+				}
+			} 
 		}
 		i_out = n; // timeout for all parties
 		throw false;
