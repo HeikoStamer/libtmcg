@@ -122,10 +122,10 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		mpz_init(tmp);
 		message.push_back(tmp);
 	}
-	// process messages according to the RBC protocol
+	// process messages according to the RBC protocol of [CKPS01]
 	try
 	{
-		for (size_t rounds = 0; rounds < (n * n * n); rounds++) // FIXME: determine correct upper bound
+		for (size_t rounds = 0; rounds < (5 * n); rounds++)
 		{
 			size_t l = n;
 			// anything buffered from previous calls/rounds?
@@ -147,14 +147,9 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			if (l == n) // nothing buffered
 			{
 				// receive a message from an arbitrary party $P_l$
-				if (!aiou->Receive(message, l))
+				if (!aiou->ReceiveRandom(message, l))
 				{
 					std::cerr << "RBC: timeout of party " << j << " from " << l << std::endl;
-					if (l < n)
-					{
-						i_out = l;
-						throw false;
-					}
 					continue; // next round
 				} 
 std::cerr << "RBC: received message from " << l << " with tag " << message[0] << "." << message[1] << "." << message[2] << std::endl; 
@@ -327,7 +322,7 @@ std::cerr << "RPC: more ready" << std::endl;
 							}
 							// receive
 							size_t l2;
-							if (aiou->Receive(message3, l2))
+							if (aiou->ReceiveRandom(message3, l2))
 							{
 								// compute hash of identifying tag $ID.j.s$
 								mpz_shash(tag, 3, message3[0], message3[1], message3[2]);
@@ -365,11 +360,6 @@ std::cerr << "RPC: r-answer from " << l2 << " with m = " << message3[4] << std::
 									delete message3[mm];
 								}
 								message3.clear();
-								if (l2 < n)
-								{
-									i_out = l2;
-									throw false;
-								}
 							}
 						}
 						while (mpz_cmp(foo, message[4])); // $H(m) = \bar{d}$
@@ -438,9 +428,6 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 		}
 		else
 		{
-			// check whether privious errors have been occured
-			if (deliver_error[i_in])
-				return false;
 			// deliver a message and store them in buffer
 			size_t l;
 			mpz_ptr tmp = new mpz_t();
@@ -453,12 +440,9 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 			{
 				mpz_clear(tmp);
 				delete tmp;
-				if (l == i_in)
-					return false;
-				else if (l < n)
-					deliver_error[l] = true;
 			}
 		}
+std::cerr << "======" << j << "==============================================================================" << std::endl;
 	}
 	return false;
 }
