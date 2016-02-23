@@ -146,13 +146,13 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			}
 			if (l == n) // nothing buffered
 			{
-				// receive a message from an arbitrary party $P_l$
-				if (!aiou->ReceiveRandom(message, l))
+				// receive a message from an arbitrary party $P_l$ (round-robin)
+				if (!aiou->Receive(message, l, aiou->aio_scheduler_random))
 				{
-					std::cerr << "RBC: timeout of party " << j << " from " << l << std::endl;
+//std::cerr << "RBC: timeout of party " << j << " from " << l << std::endl;
 					continue; // next round
 				} 
-std::cerr << "RBC: received message from " << l << " with tag " << message[0] << "." << message[1] << "." << message[2] << std::endl; 
+//std::cerr << "RBC: received message from " << l << " with tag " << message[0] << "." << message[1] << "." << message[2] << std::endl; 
 			}
 			// compute hash of identifying tag $ID.j.s$
 			mpz_shash(tag, 3, message[0], message[1], message[2]);
@@ -185,7 +185,7 @@ std::cerr << "RBC: received message from " << l << " with tag " << message[0] <<
 			// upon receiving message $(ID.j.s, r-send, m)$ from $P_l$
 			if (!mpz_cmp(message[3], r_send) && !send[l].count(tag_string))
 			{
-std::cerr << "RPC: r-send from " << l << " with m = " << message[4] << std::endl;
+//std::cerr << "RPC: r-send from " << l << " with m = " << message[4] << std::endl;
 				send[l].insert(std::pair<std::string, bool>(tag_string, true));
 				if (!mpz_cmp_ui(message[1], l) && (mbar.find(tag_string) == mbar.end()))
 				{
@@ -209,7 +209,7 @@ std::cerr << "RPC: r-send from " << l << " with m = " << message[4] << std::endl
 			// upon receiving message $(ID.j.s, r-echo, d)$ from $P_l$
 			if (!mpz_cmp(message[3], r_echo) && !echo[l].count(tag_string))
 			{
-std::cerr << "RPC: r-echo from " << l << " with d = " << message[4] << std::endl;
+//std::cerr << "RPC: r-echo from " << l << " with d = " << message[4] << std::endl;
 				echo[l].insert(std::pair<std::string, bool>(tag_string, true));
 				std::stringstream d_ss;
 				d_ss << message[4];
@@ -250,7 +250,7 @@ std::cerr << "RPC: r-echo from " << l << " with d = " << message[4] << std::endl
 			// upon receiving message $(ID.j.s, r-ready, d)$ from $P_l$
 			if (!mpz_cmp(message[3], r_ready) && !ready[l].count(tag_string))
 			{
-std::cerr << "RPC: r-ready from " << l << " with d = " << message[4] << std::endl;
+//std::cerr << "RPC: r-ready from " << l << " with d = " << message[4] << std::endl;
 				ready[l].insert(std::pair<std::string, bool>(tag_string, true));
 				std::stringstream d_ss;
 				d_ss << message[4];
@@ -273,10 +273,9 @@ std::cerr << "RPC: r-ready from " << l << " with d = " << message[4] << std::end
 				std::map<std::string, size_t>::iterator eit = e_d[tag_string].find(d_string);
 				if (eit == e_d[tag_string].end())
 					eit = (e_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
-std::cerr << "RPC: r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
+//std::cerr << "RPC: r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
 				if (((*rit).second == (t + 1)) && ((*eit).second < (n - t)))
 				{
-std::cerr << "RPC: more ready" << std::endl;
 					// prepare message $(ID.j.s, r-ready, d)$
 					std::vector<mpz_srcptr> message2;
 					message2.push_back(message[0]);
@@ -322,7 +321,7 @@ std::cerr << "RPC: more ready" << std::endl;
 							}
 							// receive
 							size_t l2;
-							if (aiou->ReceiveRandom(message3, l2))
+							if (aiou->Receive(message3, l2))
 							{
 								// compute hash of identifying tag $ID.j.s$
 								mpz_shash(tag, 3, message3[0], message3[1], message3[2]);
@@ -338,7 +337,7 @@ std::cerr << "RPC: more ready" << std::endl;
 								}
 								else if (!answer[l2].count(tag_string)) // for the first time?
 								{
-std::cerr << "RPC: r-answer from " << l2 << " with m = " << message3[4] << std::endl;
+//std::cerr << "RPC: r-answer from " << l2 << " with m = " << message3[4] << std::endl;
 									answer[l2].insert(std::pair<std::string, bool>(tag_string, true));
 									mpz_shash(foo, 1, message3[4]); // compute $H(m)$
 									mpz_set(mbar[tag_string], message3[4]); // $\bar{m} \gets m$
@@ -364,7 +363,7 @@ std::cerr << "RPC: r-answer from " << l2 << " with m = " << message3[4] << std::
 						}
 						while (mpz_cmp(foo, message[4])); // $H(m) = \bar{d}$
 					}
-std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
+//std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
 // TODO: check sequence counter before delivering
 					mpz_set(m, mbar[tag_string]);
 					i_out = mpz_get_ui(message[1]);
@@ -375,7 +374,7 @@ std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[t
 			// upon receiving message $(ID.j.s, r-request) from $P_l$ for the first time
 			if (!mpz_cmp(message[3], r_request) && !request[l].count(tag_string))
 			{
-std::cerr << "RPC: r-request from " << l << std::endl;
+//std::cerr << "RPC: r-request from " << l << std::endl;
 				request[l].insert(std::pair<std::string, bool>(tag_string, true));
 				if (mbar.find(tag_string) != mbar.end())
 				{
@@ -442,7 +441,6 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 				delete tmp;
 			}
 		}
-std::cerr << "======" << j << "==============================================================================" << std::endl;
 	}
 	return false;
 }
