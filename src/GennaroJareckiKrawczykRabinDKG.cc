@@ -36,12 +36,21 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
 		mpz_init_set(h, h_CRS);
 
-	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L), mpz_init_set_ui(y, 1L);
+	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L),
+		mpz_init_set_ui(y, 1L);
 	for (size_t j = 0; j < n_in; j++)
 	{
-		mpz_ptr tmp1 = new mpz_t();
-		mpz_init(tmp1);
-		y_i.push_back(tmp1);
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp1);
+		y_i.push_back(tmp1), z_i.push_back(tmp2);
+		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
+		for (size_t i = 0; i < n_in; i++)
+		{
+			mpz_ptr tmp3 = new mpz_t();
+			mpz_init(tmp3);
+			vtmp1->push_back(tmp3);
+		}
+		s_ij.push_back(*vtmp1);
 	}
 
 	// Do the precomputation for the fast exponentiation.
@@ -120,7 +129,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	std::ostream &err, bool simulate_faulty_behaviour)
 {
 	assert(t <= n);
-	assert((2 * t) <= n); // maximum synchronous t-resilience
+	assert((2 * t) < n); // maximum synchronous t-resilience
 	assert(i < n);
 	assert(n == aiou->n);
 	assert(n == rbc->n);
@@ -132,11 +141,11 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	std::vector<mpz_ptr> a_i, b_i, g__a_i;
-	std::vector< std::vector<mpz_ptr> > C_ik, A_ik, s_ij, sprime_ij, g__s_ij;
+	std::vector< std::vector<mpz_ptr> > C_ik, A_ik, sprime_ij, g__s_ij;
 	std::vector<size_t> complaints, complaints_counter;
 
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
-	for (size_t k = 0; k < t; k++)
+	for (size_t k = 0; k <= t; k++)
 	{
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
 		mpz_init(tmp1), mpz_init(tmp2);
@@ -149,7 +158,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	{
 		std::vector<mpz_ptr> *vtmp = new std::vector<mpz_ptr>;
 		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
-		for (size_t k = 0; k < t; k++)
+		for (size_t k = 0; k <= t; k++)
 		{
 			mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
 			mpz_init(tmp1), mpz_init(tmp2);
@@ -157,20 +166,18 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			vtmp1->push_back(tmp2);
 		}
 		C_ik.push_back(*vtmp), A_ik.push_back(*vtmp1);
-		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
 		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
 		std::vector<mpz_ptr> *vtmp4 = new std::vector<mpz_ptr>;
 		for (size_t i2 = 0; i2 < n; i2++)
 		{
-			mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
-			mpz_init(tmp1), mpz_init(tmp2);
-			vtmp2->push_back(tmp1);
+			mpz_ptr tmp2 = new mpz_t();
+			mpz_init(tmp2);
 			vtmp3->push_back(tmp2);
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
 			vtmp4->push_back(tmp3);
 		}
-		s_ij.push_back(*vtmp2), sprime_ij.push_back(*vtmp3);
+		sprime_ij.push_back(*vtmp3);
 		g__s_ij.push_back(*vtmp4);
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
@@ -183,14 +190,16 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		//     $f\prime_i(z)$ over $\mathbb{Z}_q$ of degree $t$ where
 		//     $f_i(z) = a_{i0} + a_{i1}z + \ldots + a_{it}z^t$ and
 		//     $f\prime_i(z) = b_{i0} + b_{i1}z + \ldots + b_{it}z^t$
-		for (size_t k = 0; k < t; k++)
+		for (size_t k = 0; k <= t; k++)
 		{
 			mpz_srandomm(a_i[k], q);
 			mpz_srandomm(b_i[k], q);
 		}
+		// Let $z_i = a_{i0} = f_i(0)$.
+		mpz_set(z_i[i], a_i[0]);
 		// $P_i$ broadcasts $C_{ik} = g^{a_{ik}} h^{b_{ik}} \bmod p$
 		// for $k = 0, \ldots, t$.
-		for (size_t k = 0; k < t; k++)
+		for (size_t k = 0; k <= t; k++)
 		{
 			mpz_fspowm(fpowm_table_g, g__a_i[k], g, a_i[k], p);
 			mpz_fspowm(fpowm_table_h, bar, h, b_i[k], p);
@@ -205,9 +214,9 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		{
 			mpz_set_ui(s_ij[i][j], 0L);
 			mpz_set_ui(sprime_ij[i][j], 0L);
-			for (size_t k = 0; k < t; k++)
+			for (size_t k = 0; k <= t; k++)
 			{
-				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$
+				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
 				mpz_mul(bar, foo, b_i[k]);
 				mpz_mod(bar, bar, q);
 				mpz_mul(foo, foo, a_i[k]);
@@ -235,7 +244,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		{
 			if (j != i)
 			{
-				for (size_t k = 0; k < t; k++)
+				for (size_t k = 0; k <= t; k++)
 				{
 					if (!rbc->DeliverFrom(C_ik[j][k], j))
 					{
@@ -267,9 +276,9 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			mpz_mod(lhs, lhs, p);
 			// compute RHS for the check
 			mpz_set_ui(rhs, 1L);
-			for (size_t k = 0; k < t; k++)
+			for (size_t k = 0; k <= t; k++)
 			{
-				mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$
+				mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
 				mpz_powm(bar, C_ik[j][k], foo , p);
 				mpz_mul(rhs, rhs, bar);
 				mpz_mod(rhs, rhs, p);
@@ -324,7 +333,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					}
 					cnt++;
 				}
-				while ((who < n) && (cnt < n)); // until end marker received
+				while ((who < n) && (cnt <= n)); // until end marker received
 			}
 		}
 		if (complaints_counter[i])
@@ -388,9 +397,9 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					mpz_mod(lhs, lhs, p);
 					// compute RHS for the check
 					mpz_set_ui(rhs, 1L);
-					for (size_t k = 0; k < t; k++)
+					for (size_t k = 0; k <= t; k++)
 					{
-						mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$
+						mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
 						mpz_powm(bar, C_ik[who][k], foo , p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
@@ -403,7 +412,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					}
 					cnt++;
 				}
-				while (cnt < n);
+				while (cnt <= n);
 			}
 		}
 		// 2. Each party the builds the set of non-disqualified parties $QUAL$.
@@ -417,6 +426,9 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		// 3. Each party $P_i$ sets his share of the secret as
 		//    $x_i = \sum_{j \in QUAL} s_{ji} \bmod q$ and the value
 		//    $x\prime_i = \sum_{j \in QUAL} s\prime_{ji} \bmod q$.
+		// Note that in this section the indicies $i$ and $j$ are exchanged
+		// again, because the reversed convention is used in section 1(b).
+		mpz_set_ui(x_i, 0L), mpz_set_ui(xprime_i, 0L);
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 		{
 			mpz_add(x_i, x_i, s_ij[*it][i]);
@@ -438,7 +450,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		//    via Feldman-VSS:
 		// (a) Each party $P_i$, $i \in QUAL$, broadcasts $A_{ik} = 
 		//     g^{a_{ik}} \bmod p$ for $k = 0, \ldots, t$.
-		for (size_t k = 0; k < t; k++)
+		for (size_t k = 0; k <= t; k++)
 		{
 			// OPTIMIZED: mpz_fspowm(fpowm_table_g, A_ik[i][k], g, a_i[k], p);
 			mpz_set(A_ik[i][k], g__a_i[k]);
@@ -456,7 +468,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			if ((j != i) &&
 				(std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
 			{
-				for (size_t k = 0; k < t; k++)
+				for (size_t k = 0; k <= t; k++)
 				{
 					if (!rbc->DeliverFrom(A_ik[j][k], j))
 					{
@@ -470,9 +482,9 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				mpz_set(lhs, g__s_ij[j][i]);
 				// compute RHS for the check
 				mpz_set_ui(rhs, 1L);
-				for (size_t k = 0; k < t; k++)
+				for (size_t k = 0; k <= t; k++)
 				{
-					mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$
+					mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
 					mpz_powm(bar, A_ik[j][k], foo , p);
 					mpz_mul(rhs, rhs, bar);
 					mpz_mod(rhs, rhs, p);
@@ -527,7 +539,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						err << "P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
 					}
 					else
-						break;
+						break; // end marker received 
 					if (!rbc->DeliverFrom(foo, j))
 					{
 						err << "P_" << i << ": receiving s_ij failed; complaint against P_" << j << std::endl;
@@ -548,9 +560,9 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					mpz_mod(lhs, lhs, p);
 					// compute RHS for the check
 					mpz_set_ui(rhs, 1L);
-					for (size_t k = 0; k < t; k++)
+					for (size_t k = 0; k <= t; k++)
 					{
-						mpz_ui_pow_ui(foo, who + 1, k); // adjust index $i$
+						mpz_ui_pow_ui(foo, who + 1, k); // adjust index $i$ in computation
 						mpz_powm(bar, C_ik[j][k], foo , p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
@@ -562,12 +574,12 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						complaints.push_back(j);
 					}
 					// compute LHS for the check
-					mpz_fspowm(fpowm_table_g, lhs, g, foo, p);
+					mpz_fpowm(fpowm_table_g, lhs, g, foo, p);
 					// compute RHS for the check
 					mpz_set_ui(rhs, 1L);
-					for (size_t k = 0; k < t; k++)
+					for (size_t k = 0; k <= t; k++)
 					{
-						mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$
+						mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
 						mpz_powm(bar, A_ik[j][k], foo , p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
@@ -585,7 +597,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					}
 					cnt++;
 				}
-				while ((who < n) && (cnt < n)); // no end marker received
+				while ((who < n) && (cnt <= n)); // no end marker received
 			}
 		}
 		std::sort(complaints.begin(), complaints.end());
@@ -596,11 +608,110 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			err << "P_" << *it << " ";
 		err << std::endl;
 		// run reconstruction phase of Pedersen-VSS
+		if (!Reconstruct(i, complaints, z_i, rbc, err))
+		{
+			err << "P_" << i << ": reconstruction failed" << std::endl;
+			throw false;
+		}
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+		{
+			// compute $A_{i0} = g^{z_i} \bmod p$
+			mpz_fpowm(fpowm_table_g, A_ik[*it][0], g, z_i[*it], p);
+		}
+		// For all parties in $QUAL$, set $y_i = A_{i0} = g^{z_i} \bmod p$.
+		for (size_t j = 0; j < n; j++)
+			mpz_set(y_i[j], A_ik[j][0]);
+		err << "P_" << i << ": y_i = " << y_i[i] << std::endl;
+		// Compute $y = \prod_{i \in QUAL} y_i \bmod p$.
+		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
+		{
+			mpz_mul(y, y, y_i[*it]);
+			mpz_mod(y, y, p);
+		}
+		err << "P_" << i << ": y = " << y << std::endl;
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
+		for (size_t k = 0; k <= t; k++)
+		{
+			mpz_clear(a_i[k]), mpz_clear(b_i[k]);
+			delete a_i[k], delete b_i[k];
+			mpz_clear(g__a_i[k]);
+			delete g__a_i[k];
+		}
+		a_i.clear(), b_i.clear(), g__a_i.clear();
+		for (size_t j = 0; j < n; j++)
+		{
+			for (size_t k = 0; k <= t; k++)
+			{
+				mpz_clear(C_ik[j][k]);
+				mpz_clear(A_ik[j][k]);
+				delete C_ik[j][k];
+				delete A_ik[j][k];
+			}
+			for (size_t i2 = 0; i2 < n; i2++)
+			{
+				mpz_clear(sprime_ij[j][i2]);
+				delete sprime_ij[j][i2];
+				mpz_clear(g__s_ij[j][i2]);
+				delete g__s_ij[j][i2];
+			}
+			C_ik[j].clear(), A_ik[j].clear();
+			sprime_ij[j].clear();
+			g__s_ij[j].clear();
+		}
+		C_ik.clear(), A_ik.clear();
+		sprime_ij.clear();
+		g__s_ij.clear();
+		// return
+		return return_value;
+	}
+}
+
+bool GennaroJareckiKrawczykRabinDKG::CheckKey
+	(size_t i) const
+{
+	// initialize
+	mpz_t foo;
+	mpz_init(foo);
+
+	try
+	{
+		mpz_fspowm(fpowm_table_g, foo, g, z_i[i], p);
+		if (mpz_cmp(y_i[i], foo))
+			throw false;
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(foo);
+		// return
+		return return_value;
+	}
+}
+
+bool GennaroJareckiKrawczykRabinDKG::Reconstruct
+	(size_t i, std::vector<size_t> &complaints,
+	std::vector<mpz_ptr> &z_i_in,
+	CachinKursawePetzoldShoupRBC *rbc, std::ostream &err)
+{
+	// initialize
+	mpz_t foo, bar, lhs, rhs;
+	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+
+	try
+	{
+		// run reconstruction phase of Pedersen-VSS
 		if (complaints.size() > t)
 			throw false;
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			// broadcast shares for reconstruction of $z_i$
+			// broadcast shares for reconstruction of $z_i$ (where $i = *it$) 
 			rbc->Broadcast(s_ij[i][*it]);
 			// collect shares $s_{ij}$ from other parties
 			size_t number_of_shares = 0;
@@ -651,20 +762,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					mpz_mod(foo, foo, q);
 				}
 			}
-			// compute $A_{i0} = g^{z_i} \bmod p$
-			mpz_fspowm(fpowm_table_g, A_ik[*it][0], g, foo, p);
+			mpz_set(z_i_in[*it], foo);
 		}
-		// For all parties in $QUAL$, set $y_i = A_{i0} = g^{z_i} \bmod p$.
-		for (size_t j = 0; j < n; j++)
-			mpz_set(y_i[j], A_ik[j][0]);
-		err << "P_" << i << ": y_i = " << y_i[i] << std::endl;
-		// Compute $y = \prod_{i \in QUAL} y_i \bmod p$.
-		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
-		{
-			mpz_mul(y, y, A_ik[*it][0]);
-			mpz_mod(y, y, p);
-		}
-		err << "P_" << i << ": y = " << y << std::endl;
 
 		throw true;
 	}
@@ -672,39 +771,6 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	{
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
-		for (size_t k = 0; k < t; k++)
-		{
-			mpz_clear(a_i[k]), mpz_clear(b_i[k]);
-			delete a_i[k], delete b_i[k];
-			mpz_clear(g__a_i[k]);
-			delete g__a_i[k];
-		}
-		a_i.clear(), b_i.clear(), g__a_i.clear();
-		for (size_t j = 0; j < n; j++)
-		{
-			for (size_t k = 0; k < t; k++)
-			{
-				mpz_clear(C_ik[j][k]);
-				mpz_clear(A_ik[j][k]);
-				delete C_ik[j][k];
-				delete A_ik[j][k];
-			}
-			for (size_t i2 = 0; i2 < n; i2++)
-			{
-				mpz_clear(s_ij[j][i2]);
-				mpz_clear(sprime_ij[j][i2]);
-				delete s_ij[j][i2];
-				delete sprime_ij[j][i2];
-				mpz_clear(g__s_ij[j][i2]);
-				delete g__s_ij[j][i2];
-			}
-			C_ik[j].clear(), A_ik[j].clear();
-			s_ij[j].clear(), sprime_ij[j].clear();
-			g__s_ij[j].clear();
-		}
-		C_ik.clear(), A_ik.clear();
-		s_ij.clear(), sprime_ij.clear();
-		g__s_ij.clear();
 		// return
 		return return_value;
 	}
@@ -722,6 +788,22 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 		delete y_i[j];
 	}
 	y_i.clear();
+	for (size_t j = 0; j < z_i.size(); j++)
+	{
+		mpz_clear(z_i[j]);
+		delete z_i[j];
+	}
+	z_i.clear();
+	for (size_t j = 0; j < s_ij.size(); j++)
+	{
+		for (size_t i = 0; i < s_ij[j].size(); i++)
+		{
+			mpz_clear(s_ij[j][i]);
+			delete s_ij[j][i];
+		}
+		s_ij[j].clear();
+	}
+	s_ij.clear();
 
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
@@ -745,6 +827,8 @@ GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
 		mpz_init_set_ui(tmp1, 0L);
 		y_i.push_back(tmp1);
 	}
+	
+	dkg = new GennaroJareckiKrawczykRabinDKG(n, t, p, q, g, h);
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -821,9 +905,6 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 	(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, bool simulate_faulty_behaviour)
 {
-	// initialize
-	GennaroJareckiKrawczykRabinDKG *dkg = new GennaroJareckiKrawczykRabinDKG(n, t, p, q, g, h);
-	
 	try
 	{
 		// check whether the group from CRS is sound
@@ -835,7 +916,7 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 		if (!dkg->Generate(i, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		// set the public class variables
-		mpz_set(z_i, dkg->x_i);
+		mpz_set(z_i, dkg->z_i[i]);
 		for (size_t j = 0; j < y_i.size(); j++)
 			mpz_set(y_i[j], dkg->y_i[j]);
 		mpz_set(y, dkg->y);
@@ -846,8 +927,6 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 	}
 	catch (bool return_value)
 	{
-		// release
-		delete dkg;
 		// return
 		return return_value;
 	}
@@ -859,7 +938,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	std::ostream &err, bool simulate_faulty_behaviour)
 {
 	assert(n >= t);
-	assert(n >= ((2 * t) + 1)); // synchronous failure assumption
+	assert((2 * t) < n); // synchronous failure assumption
 	assert(i < n);
 	assert(n == aiou->n);
 	assert(n == rbc->n);
@@ -873,7 +952,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	mpz_t u_i, r;
 	std::vector<size_t> QUALprime;
 	std::vector<mpz_ptr> s_i, r_i;
-	GennaroJareckiKrawczykRabinDKG *dkg = new GennaroJareckiKrawczykRabinDKG(n, t, p, q, g, h);
+	GennaroJareckiKrawczykRabinDKG *dkg2 = new GennaroJareckiKrawczykRabinDKG(n, t, p, q, g, h);
 	std::vector<size_t> complaints, complaints_counter;
 
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
@@ -887,6 +966,9 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 
 	try
 	{
+		// check whether key share generation was successful
+		if (QUAL.size() == 0)
+			throw false;
 		// 1. Parties perform an instance of New-DKG protocol. Denote
 		//    the outputs of this run of New-DKG as follows. Each party
 		//    $P_i \in QUAL\prime$ holds an additive share $u_i$ of the
@@ -894,14 +976,14 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		//    is itself secret-sahred with Feldman-VSS. We denote the
 		//    generated public values $r = g^k$ and $r_i = g^{u_i}$
 		//    for each $P_i$.
-		if (!dkg->Generate(i, aiou, rbc, err, simulate_faulty_behaviour))
+		if (!dkg2->Generate(i, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
-		mpz_set(u_i, dkg->x_i);
+mpz_set(u_i, dkg2->z_i[i]);
 		for (size_t j = 0; j < n; j++)
-			mpz_set(r_i[j], dkg->y_i[j]);
-		mpz_set(r, dkg->y);
-		for (size_t j = 0; j < dkg->QUAL.size(); j++)
-			QUALprime.push_back(dkg->QUAL[j]);
+			mpz_set(r_i[j], dkg2->y_i[j]);
+mpz_set(r, y);
+		for (size_t j = 0; j < dkg2->QUAL.size(); j++)
+			QUALprime.push_back(dkg2->QUAL[j]);
 		// 2. Each party locally computes the challenge $c = H(m, r)$.
 		mpz_shash(c, 2, m, r);
 		// 3. Parties perform the reconstruction phase of Feldman's
@@ -911,16 +993,11 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		if ((std::find(QUAL.begin(), QUAL.end(), i) != QUAL.end()) &&
 			(std::find(QUALprime.begin(), QUALprime.end(), i) != QUALprime.end()))
 		{
-			mpz_mul(foo, c, z_i);
-if (i == 0)
-std::cerr << "z_i = " << z_i << std::endl;
-			mpz_mod(foo, foo, q);
-			mpz_add(s_i[i], u_i, foo);
+			mpz_mul(s_i[i], c, z_i);
+			mpz_add(s_i[i], s_i[i], u_i);
 			mpz_mod(s_i[i], s_i[i], q);
 			if (simulate_faulty_behaviour)
 				mpz_add_ui(s_i[i], s_i[i], 1L);
-if (i == 0)
-std::cerr << "s_i = " << s_i[i] << std::endl;
 			rbc->Broadcast(s_i[i]);
 		}
 		// Each share is verified by checking if $g^{s_i} = r_i {y_i}^c$.
@@ -935,13 +1012,9 @@ std::cerr << "s_i = " << s_i[i] << std::endl;
 					complaints.push_back(j);
 					break;
 				}
-if (i == 0)
-std::cerr << "s_i(" << j << ") = " << s_i[j] << std::endl;
 				// compute LHS for the check
 				mpz_fpowm(fpowm_table_g, lhs, g, s_i[j], p);
 				// compute RHS for the check
-if (i == 0)
-std::cerr << "y_i(" << j << ") = " << y_i[j] << std::endl;
 				mpz_powm(rhs, y_i[j], c, p);
 				mpz_mul(rhs, rhs, r_i[j]);
 				mpz_mod(rhs, rhs, p);
@@ -961,9 +1034,10 @@ std::cerr << "y_i(" << j << ") = " << y_i[j] << std::endl;
 // TODO
 		// The protocol outputs signature $(c, s)$ where
 		// $s = \sum_{i\in QUAL} s_i$.
+		mpz_set_ui(s, 0L);
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 		{
-			mpz_mul(s, s, s_i[*it]);
+			mpz_add(s, s, s_i[*it]);
 			mpz_mod(s, s, q);
 		}
 		err << "P_" << i << ": (c, s) = (" << c << ", " << s << ")" << std::endl;
@@ -981,7 +1055,7 @@ std::cerr << "y_i(" << j << ") = " << y_i[j] << std::endl;
 			delete s_i[j], delete r_i[j];
 		}
 		s_i.clear(), r_i.clear();
-		delete dkg;
+		delete dkg2;
 		// return
 		return return_value;
 	}
@@ -1022,6 +1096,8 @@ bool GennaroJareckiKrawczykRabinNTS::Verify
 GennaroJareckiKrawczykRabinNTS::~GennaroJareckiKrawczykRabinNTS
 	()
 {
+	delete dkg;
+
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
 	QUAL.clear();
 	mpz_clear(z_i), mpz_clear(y);

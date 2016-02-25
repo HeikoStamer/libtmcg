@@ -132,6 +132,16 @@ void start_instance
 			sleep(3 * whoami + (mpz_wrandom_ui() % N));
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 
+			// check the generated key share
+			start_clock();
+			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
+			if (faulty)
+				dkg->CheckKey(whoami);
+			else
+				assert(dkg->CheckKey(whoami));
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;			
+exit(1);
 			// create an instance of threshold signature protocol new-TSch (NTS)
 			GennaroJareckiKrawczykRabinNTS *nts;
 			std::cout << "GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", ...)" << std::endl;
@@ -158,9 +168,9 @@ void start_instance
 			mpz_init_set_ui(m, 1L), mpz_init_set_ui(c, 0L), mpz_init_set_ui(s, 0L);
 			start_clock();
 			std::cout << "P_" << whoami << ": nts.Sign()" << std::endl;
-			if (faulty)
-				nts->Sign(m, c, s, whoami, aiou, rbc, err_log3, true);
-			else
+//			if (faulty)
+//				nts->Sign(m, c, s, whoami, aiou, rbc, err_log3, true);
+//			else
 				assert(nts->Sign(m, c, s, whoami, aiou, rbc, err_log3));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;

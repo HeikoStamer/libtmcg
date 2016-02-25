@@ -70,7 +70,8 @@ class GennaroJareckiKrawczykRabinDKG
 		size_t						n, t;
 		std::vector<size_t>				QUAL;
 		mpz_t						x_i, xprime_i, y;
-		std::vector<mpz_ptr>				y_i;
+		std::vector<mpz_ptr>				y_i, z_i;
+		std::vector< std::vector<mpz_ptr> >		s_ij;
 		
 		GennaroJareckiKrawczykRabinDKG
 			(size_t n_in, size_t t_in,
@@ -82,6 +83,12 @@ class GennaroJareckiKrawczykRabinDKG
 		bool Generate
 			(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err, bool simulate_faulty_behaviour = false);
+		bool CheckKey
+			(size_t i) const;
+		bool Reconstruct
+			(size_t i, std::vector<size_t> &complaints,
+			std::vector<mpz_ptr> &z_i,
+			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
 		~GennaroJareckiKrawczykRabinDKG
 			();
 };
@@ -94,6 +101,7 @@ class GennaroJareckiKrawczykRabinNTS
 	private:
 		mpz_t						*fpowm_table_g, *fpowm_table_h;
 		const unsigned long int				F_size, G_size;
+		GennaroJareckiKrawczykRabinDKG 			*dkg;
 	
 	public:
 		mpz_t						p, q, g, h;

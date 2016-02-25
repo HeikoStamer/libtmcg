@@ -147,7 +147,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			if (l == n) // nothing buffered
 			{
 				// receive a message from an arbitrary party $P_l$ (round-robin)
-				if (!aiou->Receive(message, l, aiou->aio_scheduler_random))
+				if (!aiou->Receive(message, l))
 				{
 //std::cerr << "RBC: timeout of party " << j << " from " << l << std::endl;
 					continue; // next round
