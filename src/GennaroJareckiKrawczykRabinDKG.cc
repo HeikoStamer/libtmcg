@@ -36,8 +36,13 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
 		mpz_init_set(h, h_CRS);
 
-	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L),
-		mpz_init_set_ui(y_i, 1L), mpz_init_set_ui(y, 1L);
+	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L), mpz_init_set_ui(y, 1L);
+	for (size_t j = 0; j < n_in; j++)
+	{
+		mpz_ptr tmp1 = new mpz_t();
+		mpz_init(tmp1);
+		y_i.push_back(tmp1);
+	}
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -114,8 +119,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, bool simulate_faulty_behaviour)
 {
-	assert(n >= t);
-	assert(n >= ((2 * t) + 1)); // synchronous failure assumption
+	assert(t <= n);
+	assert((2 * t) <= n); // maximum synchronous t-resilience
 	assert(i < n);
 	assert(n == aiou->n);
 	assert(n == rbc->n);
@@ -256,8 +261,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		for (size_t j = 0; j < n; j++)
 		{
 			// compute LHS for the check
-			mpz_fspowm(fpowm_table_g, g__s_ij[j][i], g, s_ij[j][i], p);
-			mpz_fspowm(fpowm_table_h, bar, h, sprime_ij[j][i], p);
+			mpz_fpowm(fpowm_table_g, g__s_ij[j][i], g, s_ij[j][i], p);
+			mpz_fpowm(fpowm_table_h, bar, h, sprime_ij[j][i], p);
 			mpz_mul(lhs, g__s_ij[j][i], bar);
 			mpz_mod(lhs, lhs, p);
 			// compute RHS for the check
@@ -377,8 +382,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						break;
 					}
 					// compute LHS for the check
-					mpz_fspowm(fpowm_table_g, foo, g, foo, p);
-					mpz_fspowm(fpowm_table_h, bar, h, bar, p);
+					mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+					mpz_fpowm(fpowm_table_h, bar, h, bar, p);
 					mpz_mul(lhs, foo, bar);
 					mpz_mod(lhs, lhs, p);
 					// compute RHS for the check
@@ -537,8 +542,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					}
 					// verify complaint, i.e. (4) holds (5) not.
 					// compute LHS for the check
-					mpz_fspowm(fpowm_table_g, lhs, g, foo, p);
-					mpz_fspowm(fpowm_table_h, bar, h, bar, p);
+					mpz_fpowm(fpowm_table_g, lhs, g, foo, p);
+					mpz_fpowm(fpowm_table_h, bar, h, bar, p);
 					mpz_mul(lhs, lhs, bar);
 					mpz_mod(lhs, lhs, p);
 					// compute RHS for the check
@@ -650,8 +655,9 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			mpz_fspowm(fpowm_table_g, A_ik[*it][0], g, foo, p);
 		}
 		// For all parties in $QUAL$, set $y_i = A_{i0} = g^{z_i} \bmod p$.
-		mpz_set(y_i, A_ik[i][0]);
-		err << "P_" << i << ": y_i = " << y_i << std::endl;
+		for (size_t j = 0; j < n; j++)
+			mpz_set(y_i[j], A_ik[j][0]);
+		err << "P_" << i << ": y_i = " << y_i[i] << std::endl;
 		// Compute $y = \prod_{i \in QUAL} y_i \bmod p$.
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 		{
@@ -709,7 +715,322 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 {
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
 	QUAL.clear();
-	mpz_clear(x_i), mpz_clear(xprime_i), mpz_clear(y_i), mpz_clear(y);
+	mpz_clear(x_i), mpz_clear(xprime_i), mpz_clear(y);
+	for (size_t j = 0; j < y_i.size(); j++)
+	{
+		mpz_clear(y_i[j]);
+		delete y_i[j];
+	}
+	y_i.clear();
+
+	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	delete [] fpowm_table_g, delete [] fpowm_table_h;
+}
+
+// ===================================================================================================================================
+
+GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
+	(size_t n_in, size_t t_in,
+	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
+	unsigned long int fieldsize, unsigned long int subgroupsize):
+			F_size(fieldsize), G_size(subgroupsize), n(n_in), t(t_in)
+{
+	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
+		mpz_init_set(h, h_CRS);
+
+	mpz_init_set_ui(z_i, 0L), mpz_init_set_ui(y, 0L);
+	for (size_t j = 0; j < n_in; j++)
+	{
+		mpz_ptr tmp1 = new mpz_t();
+		mpz_init_set_ui(tmp1, 0L);
+		y_i.push_back(tmp1);
+	}
+
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+bool GennaroJareckiKrawczykRabinNTS::CheckGroup
+	() const
+{
+	mpz_t foo, k;
+
+	mpz_init(foo), mpz_init(k);
+	try
+	{
+		// Compute $k := (p - 1) / q$
+		mpz_set(k, p);
+		mpz_sub_ui(k, k, 1L);
+		mpz_div(k, k, q);
+
+		// Check whether $p$ and $q$ have appropriate sizes.
+		if ((mpz_sizeinbase(p, 2L) < F_size) ||
+			(mpz_sizeinbase(q, 2L) < G_size))
+				throw false;
+
+		// Check whether $p$ has the correct form, i.e. $p = kq + 1$.
+		mpz_mul(foo, q, k);
+		mpz_add_ui(foo, foo, 1L);
+		if (mpz_cmp(foo, p))
+			throw false;
+
+		// Check whether $p$ and $q$ are both (probable) prime with
+		// a soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
+		if (!mpz_probab_prime_p(p, TMCG_MR_ITERATIONS) || 
+			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
+				throw false;
+
+		// Check whether $k$ is not divisible by $q$, i.e. $q, k$ are coprime.
+		mpz_gcd(foo, q, k);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+
+		// Check whether the elements $h$ and $g$ are of order $q$.
+		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+
+		// Check whether the elements $h$ and $g$ are different and non-trivial,
+		// i.e., $1 < h, g < p-1$.
+		mpz_sub_ui(foo, p, 1L); // compute $p-1$
+		if ((mpz_cmp_ui(h, 1L) <= 0) || (mpz_cmp(h, foo) >= 0))
+			throw false;
+		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, foo) >= 0))
+			throw false;
+		if (!mpz_cmp(g, h))
+			throw false;
+
+		// everything is sound
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo), mpz_clear(k);
+		return return_value;
+	}
+}
+
+bool GennaroJareckiKrawczykRabinNTS::Generate
+	(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, bool simulate_faulty_behaviour)
+{
+	// initialize
+	GennaroJareckiKrawczykRabinDKG *dkg = new GennaroJareckiKrawczykRabinDKG(n, t, p, q, g, h);
+	
+	try
+	{
+		// check whether the group from CRS is sound
+		if (!dkg->CheckGroup())
+			throw false;
+		// initial call of the protocol New-DKG for generating an additive
+		// share $z_i$ of a common secret $x$ and the public parameters
+		// $y = g^x$ and $y_i = g^{z_i}$ for every $P_i$
+		if (!dkg->Generate(i, aiou, rbc, err, simulate_faulty_behaviour))
+			throw false;
+		// set the public class variables
+		mpz_set(z_i, dkg->x_i);
+		for (size_t j = 0; j < y_i.size(); j++)
+			mpz_set(y_i[j], dkg->y_i[j]);
+		mpz_set(y, dkg->y);
+		for (size_t j = 0; j < dkg->QUAL.size(); j++)
+			QUAL.push_back(dkg->QUAL[j]);
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		delete dkg;
+		// return
+		return return_value;
+	}
+}
+
+bool GennaroJareckiKrawczykRabinNTS::Sign
+	(mpz_srcptr m, mpz_ptr c, mpz_ptr s, 
+	size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, bool simulate_faulty_behaviour)
+{
+	assert(n >= t);
+	assert(n >= ((2 * t) + 1)); // synchronous failure assumption
+	assert(i < n);
+	assert(n == aiou->n);
+	assert(n == rbc->n);
+	assert(t == aiou->t);
+	assert(t == rbc->t);
+	assert(i == aiou->j);
+	assert(i == rbc->j);
+
+	// initialize
+	mpz_t foo, bar, lhs, rhs;
+	mpz_t u_i, r;
+	std::vector<size_t> QUALprime;
+	std::vector<mpz_ptr> s_i, r_i;
+	GennaroJareckiKrawczykRabinDKG *dkg = new GennaroJareckiKrawczykRabinDKG(n, t, p, q, g, h);
+	std::vector<size_t> complaints, complaints_counter;
+
+	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+	mpz_init(u_i), mpz_init(r);
+	for (size_t j = 0; j < n; j++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2);
+		s_i.push_back(tmp1), r_i.push_back(tmp2);
+	}
+
+	try
+	{
+		// 1. Parties perform an instance of New-DKG protocol. Denote
+		//    the outputs of this run of New-DKG as follows. Each party
+		//    $P_i \in QUAL\prime$ holds an additive share $u_i$ of the
+		//    secret-shared secret $k$. Each of these additive shares
+		//    is itself secret-sahred with Feldman-VSS. We denote the
+		//    generated public values $r = g^k$ and $r_i = g^{u_i}$
+		//    for each $P_i$.
+		if (!dkg->Generate(i, aiou, rbc, err, simulate_faulty_behaviour))
+			throw false;
+		mpz_set(u_i, dkg->x_i);
+		for (size_t j = 0; j < n; j++)
+			mpz_set(r_i[j], dkg->y_i[j]);
+		mpz_set(r, dkg->y);
+		for (size_t j = 0; j < dkg->QUAL.size(); j++)
+			QUALprime.push_back(dkg->QUAL[j]);
+		// 2. Each party locally computes the challenge $c = H(m, r)$.
+		mpz_shash(c, 2, m, r);
+		// 3. Parties perform the reconstruction phase of Feldman's
+		//    secret-sharing of value $s = k + cx$ as follows.
+		//    Each party $P_i \in QUAL \cap QUAL\prime$ broadcasts
+		//    its additive share $s_i = u_i + cz_i$.
+		if ((std::find(QUAL.begin(), QUAL.end(), i) != QUAL.end()) &&
+			(std::find(QUALprime.begin(), QUALprime.end(), i) != QUALprime.end()))
+		{
+			mpz_mul(foo, c, z_i);
+if (i == 0)
+std::cerr << "z_i = " << z_i << std::endl;
+			mpz_mod(foo, foo, q);
+			mpz_add(s_i[i], u_i, foo);
+			mpz_mod(s_i[i], s_i[i], q);
+			if (simulate_faulty_behaviour)
+				mpz_add_ui(s_i[i], s_i[i], 1L);
+if (i == 0)
+std::cerr << "s_i = " << s_i[i] << std::endl;
+			rbc->Broadcast(s_i[i]);
+		}
+		// Each share is verified by checking if $g^{s_i} = r_i {y_i}^c$.
+		for (size_t j = 0; j < n; j++)
+		{
+			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()) &&
+				(std::find(QUALprime.begin(), QUALprime.end(), j) != QUALprime.end()))
+			{
+				if (!rbc->DeliverFrom(s_i[j], j))
+				{
+					err << "P_" << i << ": receiving s_i failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					break;
+				}
+if (i == 0)
+std::cerr << "s_i(" << j << ") = " << s_i[j] << std::endl;
+				// compute LHS for the check
+				mpz_fpowm(fpowm_table_g, lhs, g, s_i[j], p);
+				// compute RHS for the check
+if (i == 0)
+std::cerr << "y_i(" << j << ") = " << y_i[j] << std::endl;
+				mpz_powm(rhs, y_i[j], c, p);
+				mpz_mul(rhs, rhs, r_i[j]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i << ": checking s_i failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+				}
+			}
+		}
+		// Otherwise $x_i$ and $z_i$ are reconstructed and $s_i$ is
+		// computed publicly.
+// TODO
+		// Values $z_i$ for each party in $QUAL\setminus QUAL\prime$
+		// are publicly resonstructed and for those parties $s_i$ is
+		// set to $cz_i$.
+// TODO
+		// The protocol outputs signature $(c, s)$ where
+		// $s = \sum_{i\in QUAL} s_i$.
+		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
+		{
+			mpz_mul(s, s, s_i[*it]);
+			mpz_mod(s, s, q);
+		}
+		err << "P_" << i << ": (c, s) = (" << c << ", " << s << ")" << std::endl;
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
+		mpz_clear(u_i), mpz_clear(r);
+		for (size_t j = 0; j < n; j++)
+		{
+			mpz_clear(s_i[j]), mpz_clear(r_i[j]);
+			delete s_i[j], delete r_i[j];
+		}
+		s_i.clear(), r_i.clear();
+		delete dkg;
+		// return
+		return return_value;
+	}
+}
+
+bool GennaroJareckiKrawczykRabinNTS::Verify
+	(mpz_srcptr m, mpz_ptr c, mpz_ptr s)
+{
+	// initialize
+	mpz_t foo, bar, r;
+	mpz_init(foo), mpz_init(bar), mpz_init(r);
+
+	try
+	{
+		// 1. Compute $r = g^s y^{-c} \bmod p$
+		mpz_fpowm(fpowm_table_g, r, g, s, p);
+		if (!mpz_invert(bar, c, q))
+			throw false;		
+		mpz_powm(foo, y, bar, p);
+		mpz_mul(r, r, foo);
+		mpz_mod(r, r, p);
+		// 2. Checking if $c = H(m, r)$.
+		mpz_shash(foo, 2, m, r);
+		if (mpz_cmp(c, foo))
+			throw false;
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(r);
+		// return
+		return return_value;
+	}
+}
+
+GennaroJareckiKrawczykRabinNTS::~GennaroJareckiKrawczykRabinNTS
+	()
+{
+	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
+	QUAL.clear();
+	mpz_clear(z_i), mpz_clear(y);
+	for (size_t j = 0; j < y_i.size(); j++)
+	{
+		mpz_clear(y_i[j]);
+		delete y_i[j];
+	}
+	y_i.clear();
 
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;

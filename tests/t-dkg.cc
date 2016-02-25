@@ -131,6 +131,48 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			sleep(3 * whoami + (mpz_wrandom_ui() % N));
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+
+			// create an instance of threshold signature protocol new-TSch (NTS)
+			GennaroJareckiKrawczykRabinNTS *nts;
+			std::cout << "GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", ...)" << std::endl;
+			nts = new GennaroJareckiKrawczykRabinNTS(N, T,
+				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+			assert(nts->CheckGroup());
+
+			// generate distributed key shares
+			std::stringstream err_log2;
+			start_clock();
+			std::cout << "P_" << whoami << ": nts.Generate()" << std::endl;
+			if (faulty)
+				nts->Generate(whoami, aiou, rbc, err_log2, true);
+			else
+				assert(nts->Generate(whoami, aiou, rbc, err_log2));
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+//			sleep(3 * whoami + (mpz_wrandom_ui() % N));
+//			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
+
+			// sign a message (create a signature share)
+			std::stringstream err_log3;
+			mpz_t m, c, s;
+			mpz_init_set_ui(m, 1L), mpz_init_set_ui(c, 0L), mpz_init_set_ui(s, 0L);
+			start_clock();
+			std::cout << "P_" << whoami << ": nts.Sign()" << std::endl;
+			if (faulty)
+				nts->Sign(m, c, s, whoami, aiou, rbc, err_log3, true);
+			else
+				assert(nts->Sign(m, c, s, whoami, aiou, rbc, err_log3));
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			sleep(3 * whoami + (mpz_wrandom_ui() % N));
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
+
+			// verify signature
+			assert(nts->Verify(m, c, s));
+			mpz_clear(m), mpz_clear(c), mpz_clear(s);
+			
+			// release NTS
+			delete nts;
 			
 			// release DKG, RBC, and VTMF instances
 			delete dkg, delete rbc, delete vtmf;

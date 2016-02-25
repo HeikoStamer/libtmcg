@@ -58,6 +58,7 @@
 	#include "aiounicast.hh"
 	#include "CachinKursawePetzoldShoupSEABP.hh"
 
+/* This protocol for dlog-based distributed key generation is called New-DKG in [GJKR07]. */
 class GennaroJareckiKrawczykRabinDKG
 {
 	private:
@@ -68,7 +69,8 @@ class GennaroJareckiKrawczykRabinDKG
 		mpz_t						p, q, g, h;
 		size_t						n, t;
 		std::vector<size_t>				QUAL;
-		mpz_t						x_i, xprime_i, y_i, y;
+		mpz_t						x_i, xprime_i, y;
+		std::vector<mpz_ptr>				y_i;
 		
 		GennaroJareckiKrawczykRabinDKG
 			(size_t n_in, size_t t_in,
@@ -81,6 +83,42 @@ class GennaroJareckiKrawczykRabinDKG
 			(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err, bool simulate_faulty_behaviour = false);
 		~GennaroJareckiKrawczykRabinDKG
+			();
+};
+
+/* This protocol is a threshold version of Schnorr's signature scheme. However,
+   instead of JF-DKG the above New-DKG is used. This version of the signature
+   scheme is called "new-TSch" in [GJKR07]. */
+class GennaroJareckiKrawczykRabinNTS
+{
+	private:
+		mpz_t						*fpowm_table_g, *fpowm_table_h;
+		const unsigned long int				F_size, G_size;
+	
+	public:
+		mpz_t						p, q, g, h;
+		size_t						n, t;
+		std::vector<size_t>				QUAL;
+		mpz_t						z_i, y;
+		std::vector<mpz_ptr>				y_i;
+		
+		GennaroJareckiKrawczykRabinNTS
+			(size_t n_in, size_t t_in,
+			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
+			unsigned long int fieldsize = TMCG_DDH_SIZE,
+			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		bool CheckGroup
+			() const;
+		bool Generate
+			(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err, bool simulate_faulty_behaviour = false);
+		bool Sign
+			(mpz_srcptr m, mpz_ptr c, mpz_ptr s,
+			size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err, bool simulate_faulty_behaviour = false);
+		bool Verify
+			(mpz_srcptr m, mpz_ptr c, mpz_ptr s);
+		~GennaroJareckiKrawczykRabinNTS
 			();
 };
 
