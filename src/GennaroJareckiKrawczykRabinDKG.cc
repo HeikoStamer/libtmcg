@@ -270,8 +270,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		for (size_t j = 0; j < n; j++)
 		{
 			// compute LHS for the check
-			mpz_fpowm(fpowm_table_g, g__s_ij[j][i], g, s_ij[j][i], p);
-			mpz_fpowm(fpowm_table_h, bar, h, sprime_ij[j][i], p);
+			mpz_fspowm(fpowm_table_g, g__s_ij[j][i], g, s_ij[j][i], p);
+			mpz_fspowm(fpowm_table_h, bar, h, sprime_ij[j][i], p);
 			mpz_mul(lhs, g__s_ij[j][i], bar);
 			mpz_mod(lhs, lhs, p);
 			// compute RHS for the check
@@ -949,20 +949,21 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
-	mpz_t u_i, r;
+	mpz_t r;
 	std::vector<size_t> QUALprime;
-	std::vector<mpz_ptr> s_i, r_i;
+	std::vector<mpz_ptr> s_i, r_i, u_i;
 	GennaroJareckiKrawczykRabinDKG *dkg2 = new GennaroJareckiKrawczykRabinDKG(n, t, p, q, g, h);
-	std::vector<size_t> complaints, complaints_counter;
+	std::vector<size_t> complaints;
 
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
-	mpz_init(u_i), mpz_init(r);
+	mpz_init(r);
 	for (size_t j = 0; j < n; j++)
 	{
-		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
-		mpz_init(tmp1), mpz_init(tmp2);
-		s_i.push_back(tmp1), r_i.push_back(tmp2);
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3);
+		s_i.push_back(tmp1), r_i.push_back(tmp2), u_i.push_back(tmp3);
 	}
+	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
 
 	try
 	{
@@ -976,12 +977,12 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		//    is itself secret-sahred with Feldman-VSS. We denote the
 		//    generated public values $r = g^k$ and $r_i = g^{u_i}$
 		//    for each $P_i$.
-		if (!dkg2->Generate(i, aiou, rbc, err, simulate_faulty_behaviour))
+		if (!dkg2->Generate(i, aiou, rbc, err, simulate_faulty_behaviour && simulate_faulty_randomizer))
 			throw false;
-mpz_set(u_i, dkg2->z_i[i]);
+		mpz_set(u_i[i], dkg2->z_i[i]);
 		for (size_t j = 0; j < n; j++)
 			mpz_set(r_i[j], dkg2->y_i[j]);
-mpz_set(r, y);
+		mpz_set(r, dkg2->y);
 		for (size_t j = 0; j < dkg2->QUAL.size(); j++)
 			QUALprime.push_back(dkg2->QUAL[j]);
 		// 2. Each party locally computes the challenge $c = H(m, r)$.
@@ -994,7 +995,8 @@ mpz_set(r, y);
 			(std::find(QUALprime.begin(), QUALprime.end(), i) != QUALprime.end()))
 		{
 			mpz_mul(s_i[i], c, z_i);
-			mpz_add(s_i[i], s_i[i], u_i);
+			mpz_mod(s_i[i], s_i[i], q);
+			mpz_add(s_i[i], s_i[i], u_i[i]);
 			mpz_mod(s_i[i], s_i[i], q);
 			if (simulate_faulty_behaviour)
 				mpz_add_ui(s_i[i], s_i[i], 1L);
@@ -1010,7 +1012,7 @@ mpz_set(r, y);
 				{
 					err << "P_" << i << ": receiving s_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
-					break;
+					continue;
 				}
 				// compute LHS for the check
 				mpz_fpowm(fpowm_table_g, lhs, g, s_i[j], p);
@@ -1025,13 +1027,56 @@ mpz_set(r, y);
 				}
 			}
 		}
-		// Otherwise $x_i$ and $z_i$ are reconstructed and $s_i$ is
-		// computed publicly.
-// TODO
+		// Otherwise $x_i$ [guess this means $u_i$] and $z_i$ are
+		// reconstructed and $s_i$ is computed publicly.
+		std::sort(complaints.begin(), complaints.end());
+		std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
+		complaints.resize(std::distance(complaints.begin(), it));
+		err << "P_" << i << ": there are reconstruction complaints against ";
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+			err << "P_" << *it << " ";
+		err << std::endl;
+		// run reconstruction phases
+		if (!dkg2->Reconstruct(i, complaints, u_i, rbc, err))
+		{
+			err << "P_" << i << ": reconstruction failed" << std::endl;
+			throw false;
+		}
+		if (!dkg->Reconstruct(i, complaints, dkg->z_i, rbc, err))
+		{
+			err << "P_" << i << ": reconstruction failed" << std::endl;
+			throw false;
+		}
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+		{
+			// compute $s_i = u_i + cz_i$
+			mpz_mul(s_i[*it], c, dkg->z_i[*it]);
+			mpz_mod(s_i[*it], s_i[*it], q);
+			mpz_add(s_i[*it], s_i[*it], u_i[*it]);
+			mpz_mod(s_i[*it], s_i[*it], q);
+		}
 		// Values $z_i$ for each party in $QUAL\setminus QUAL\prime$
 		// are publicly resonstructed and for those parties $s_i$ is
 		// set to $cz_i$.
-// TODO
+		complaints.clear();
+		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
+			if (std::find(QUALprime.begin(), QUALprime.end(), *it) == QUALprime.end())
+				complaints.push_back(*it);
+		err << "P_" << i << ": there are reconstruction complaints against ";
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+			err << "P_" << *it << " ";
+		err << std::endl;
+		if (!dkg->Reconstruct(i, complaints, dkg->z_i, rbc, err))
+		{
+			err << "P_" << i << ": reconstruction failed" << std::endl;
+			throw false;
+		}
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+		{
+			// compute $s_i = cz_i$
+			mpz_mul(s_i[*it], c, dkg->z_i[*it]);
+			mpz_mod(s_i[*it], s_i[*it], q);
+		}
 		// The protocol outputs signature $(c, s)$ where
 		// $s = \sum_{i\in QUAL} s_i$.
 		mpz_set_ui(s, 0L);
@@ -1040,7 +1085,7 @@ mpz_set(r, y);
 			mpz_add(s, s, s_i[*it]);
 			mpz_mod(s, s, q);
 		}
-		err << "P_" << i << ": (c, s) = (" << c << ", " << s << ")" << std::endl;
+		err << "P_" << i << ": signature (c, s) = (" << c << ", " << s << ")" << std::endl;
 
 		throw true;
 	}
@@ -1048,13 +1093,13 @@ mpz_set(r, y);
 	{
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
-		mpz_clear(u_i), mpz_clear(r);
+		mpz_clear(r);
 		for (size_t j = 0; j < n; j++)
 		{
-			mpz_clear(s_i[j]), mpz_clear(r_i[j]);
-			delete s_i[j], delete r_i[j];
+			mpz_clear(s_i[j]), mpz_clear(r_i[j]), mpz_clear(u_i[j]);
+			delete s_i[j], delete r_i[j], delete u_i[j];
 		}
-		s_i.clear(), r_i.clear();
+		s_i.clear(), r_i.clear(), u_i.clear();
 		delete dkg2;
 		// return
 		return return_value;
@@ -1072,10 +1117,10 @@ bool GennaroJareckiKrawczykRabinNTS::Verify
 	{
 		// 1. Compute $r = g^s y^{-c} \bmod p$
 		mpz_fpowm(fpowm_table_g, r, g, s, p);
-		if (!mpz_invert(bar, c, q))
+		mpz_powm(foo, y, c, p);
+		if (!mpz_invert(bar, foo, p))
 			throw false;		
-		mpz_powm(foo, y, bar, p);
-		mpz_mul(r, r, foo);
+		mpz_mul(r, r, bar);
 		mpz_mod(r, r, p);
 		// 2. Checking if $c = H(m, r)$.
 		mpz_shash(foo, 2, m, r);

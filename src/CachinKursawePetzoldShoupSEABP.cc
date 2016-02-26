@@ -125,7 +125,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 	// process messages according to the RBC protocol of [CKPS01]
 	try
 	{
-		for (size_t rounds = 0; rounds < (5 * n); rounds++)
+		for (size_t rounds = 0; rounds < (8 * n); rounds++)
 		{
 			size_t l = n;
 			// anything buffered from previous calls/rounds?
@@ -149,10 +149,9 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				// receive a message from an arbitrary party $P_l$ (round-robin)
 				if (!aiou->Receive(message, l))
 				{
-//std::cerr << "RBC: timeout of party " << j << " from " << l << std::endl;
+//std::cerr << "RBC: timeout of party " << j << " from " << l << " in Deliver()" << std::endl;
 					continue; // next round
 				} 
-//std::cerr << "RBC: received message from " << l << " with tag " << message[0] << "." << message[1] << "." << message[2] << std::endl; 
 			}
 			// compute hash of identifying tag $ID.j.s$
 			mpz_shash(tag, 3, message[0], message[1], message[2]);
@@ -414,6 +413,9 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 bool CachinKursawePetzoldShoupRBC::DeliverFrom
 	(mpz_ptr m, size_t i_in)
 {
+	std::vector<size_t> sleep_counter;
+	for (size_t i = 0; i <= n; i++)
+		sleep_counter.push_back(0);
 	for (size_t rounds = 0; rounds < (n * n * n); rounds++) // FIXME: determine correct upper bound
 	{
 		// anything buffered?
@@ -427,21 +429,29 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 		}
 		else
 		{
-			// deliver a message and store them in buffer
+			// deliver a message and store them in the corresponding buffer
 			size_t l;
 			mpz_ptr tmp = new mpz_t();
 			mpz_init(tmp);
 			if (Deliver(tmp, l))
 			{
 				buf_mpz[l].push_back(tmp);
+				sleep_counter[l] = 0;
+				sleep_counter[n] = 0;
 			}
 			else
 			{
 				mpz_clear(tmp);
 				delete tmp;
+				if (sleep_counter[l] < aiou->timeout)
+				{
+					sleep(1);
+					sleep_counter[l] = sleep_counter[l] + 1;
+				}
 			}
 		}
 	}
+	std::cerr << "RBC: timeout of party " << j << " from " << i_in << " in DeliverFrom()" << std::endl;
 	return false;
 }
 

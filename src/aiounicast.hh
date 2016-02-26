@@ -295,6 +295,8 @@ class aiounicast
 				}
 				// receive a message according to given scheduler
 				size_t i = n;
+				if (scheduler == aio_scheduler_direct)
+					i = i_out;
 				mpz_ptr tmp = new mpz_t();
 				mpz_init(tmp);
 				if (Receive(tmp, i, scheduler))

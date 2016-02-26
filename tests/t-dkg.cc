@@ -129,7 +129,7 @@ void start_instance
 				assert(dkg->Generate(whoami, aiou, rbc, err_log));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			sleep(3 * whoami + (mpz_wrandom_ui() % N));
+//			sleep(3 * whoami + (mpz_wrandom_ui() % N));
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 
 			// check the generated key share
@@ -140,8 +140,8 @@ void start_instance
 			else
 				assert(dkg->CheckKey(whoami));
 			stop_clock();
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;			
-exit(1);
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;		
+
 			// create an instance of threshold signature protocol new-TSch (NTS)
 			GennaroJareckiKrawczykRabinNTS *nts;
 			std::cout << "GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", ...)" << std::endl;
@@ -156,11 +156,11 @@ exit(1);
 			if (faulty)
 				nts->Generate(whoami, aiou, rbc, err_log2, true);
 			else
-				assert(nts->Generate(whoami, aiou, rbc, err_log2));
+nts->Generate(whoami, aiou, rbc, err_log2);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 //			sleep(3 * whoami + (mpz_wrandom_ui() % N));
-//			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
 
 			// sign a message (create a signature share)
 			std::stringstream err_log3;
@@ -168,24 +168,30 @@ exit(1);
 			mpz_init_set_ui(m, 1L), mpz_init_set_ui(c, 0L), mpz_init_set_ui(s, 0L);
 			start_clock();
 			std::cout << "P_" << whoami << ": nts.Sign()" << std::endl;
-//			if (faulty)
-//				nts->Sign(m, c, s, whoami, aiou, rbc, err_log3, true);
-//			else
-				assert(nts->Sign(m, c, s, whoami, aiou, rbc, err_log3));
+			if (faulty)
+				nts->Sign(m, c, s, whoami, aiou, rbc, err_log3, true);
+			else
+nts->Sign(m, c, s, whoami, aiou, rbc, err_log3);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			sleep(3 * whoami + (mpz_wrandom_ui() % N));
+//			sleep(3 * whoami + (mpz_wrandom_ui() % N));
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
 
 			// verify signature
-			assert(nts->Verify(m, c, s));
+			if (faulty)
+				nts->Verify(m, c, s);
+			else
+				assert(nts->Verify(m, c, s));
 			mpz_clear(m), mpz_clear(c), mpz_clear(s);
 			
 			// release NTS
 			delete nts;
 			
-			// release DKG, RBC, and VTMF instances
-			delete dkg, delete rbc, delete vtmf;
+			// release DKG and RBC
+			delete dkg, delete rbc;
+
+			// release VTMF instances
+			delete vtmf;
 			
 			// release pipe streams (private channels)
 			size_t numRead = 0, numWrite = 0;
