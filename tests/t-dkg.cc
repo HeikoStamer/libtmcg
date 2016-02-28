@@ -103,11 +103,11 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 
 			// create an instance of DKG
-//			GennaroJareckiKrawczykRabinDKG *dkg;
-//			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", ...)" << std::endl;
-//			dkg = new GennaroJareckiKrawczykRabinDKG(N, T,
-//				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
-//			assert(dkg->CheckGroup());
+			GennaroJareckiKrawczykRabinDKG *dkg;
+			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", ...)" << std::endl;
+			dkg = new GennaroJareckiKrawczykRabinDKG(N, T,
+				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+			assert(dkg->CheckGroup());
 
 			// create asynchronous unicast with timeout 3 rounds
 			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, 3);
@@ -120,27 +120,26 @@ void start_instance
 			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2, myID);
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
-//			std::stringstream err_log;
-//			start_clock();
-//			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
-//			if (corrupted)
-//				dkg->Generate(whoami, aiou, rbc, err_log, true);
-//			else
-//				assert(dkg->Generate(whoami, aiou, rbc, err_log));
-//			stop_clock();
-//			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-//			sleep(mpz_wrandom_ui() % 3);
-//			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+			std::stringstream err_log;
+			start_clock();
+			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
+			if (corrupted)
+				dkg->Generate(whoami, aiou, rbc, err_log, true);
+			else
+				assert(dkg->Generate(whoami, aiou, rbc, err_log));
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 
 			// check the generated key share
-//			start_clock();
-//			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
-//			if (corrupted)
-//				dkg->CheckKey(whoami);
-//			else
-//				assert(dkg->CheckKey(whoami));
-//			stop_clock();
-//			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;		
+			start_clock();
+			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
+			if (corrupted)
+				dkg->CheckKey(whoami);
+			else
+				assert(dkg->CheckKey(whoami));
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;		
 
 			// create an instance of threshold signature protocol new-TSch (NTS)
 			GennaroJareckiKrawczykRabinNTS *nts;
@@ -186,7 +185,7 @@ void start_instance
 			delete nts;
 			
 			// release DKG
-//			delete dkg
+			delete dkg;
 
 			// release RBC			
 			delete rbc;

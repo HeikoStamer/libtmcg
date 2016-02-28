@@ -302,10 +302,22 @@ std::cerr << "GENERATE(4)" << std::endl;
 		}
 		// If the check fails for an index $i$,
 		// $P_j$ broadcasts a complaint against $P_i$.
+err << "P_" << i << ": complaints before sort = ";
+for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+	err << "P_" << *it << " ";
+err << std::endl;
 		std::sort(complaints.begin(), complaints.end());
+err << "P_" << i << ": complaints before unique = ";
+for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+	err << "P_" << *it << " ";
+err << std::endl;
 		std::vector<size_t>::iterator it =
 			std::unique(complaints.begin(), complaints.end());
 		complaints.resize(std::distance(complaints.begin(), it));
+err << "P_" << i << ": complaints after resize = ";
+for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+	err << "P_" << *it << " ";
+err << std::endl;
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			mpz_set_ui(rhs, *it);
@@ -381,7 +393,10 @@ std::cerr << "GENERATE(7)" << std::endl;
 			{
 				size_t who;
 				if (complaints_counter[j] > t)
+				{
 					complaints.push_back(j);
+					continue;
+				}
 				size_t cnt = 0;
 				do
 				{
@@ -415,8 +430,8 @@ std::cerr << "GENERATE(7)" << std::endl;
 					mpz_set_ui(rhs, 1L);
 					for (size_t k = 0; k <= t; k++)
 					{
-						mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
-						mpz_powm(bar, C_ik[who][k], foo , p);
+						mpz_ui_pow_ui(foo, who + 1, k); // adjust index $j$ in computation
+						mpz_powm(bar, C_ik[j][k], foo , p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
 					}
