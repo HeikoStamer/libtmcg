@@ -42,7 +42,7 @@ int pipefd[N][N][2], broadcast_pipefd[N][N][2];
 pid_t pid[N];
 
 void start_instance
-	(std::istream& crs_in, size_t whoami, bool faulty)
+	(std::istream& crs_in, size_t whoami, bool corrupted)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("t-dkg (fork)");
@@ -103,11 +103,11 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 
 			// create an instance of DKG
-			GennaroJareckiKrawczykRabinDKG *dkg;
-			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", ...)" << std::endl;
-			dkg = new GennaroJareckiKrawczykRabinDKG(N, T,
-				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
-			assert(dkg->CheckGroup());
+//			GennaroJareckiKrawczykRabinDKG *dkg;
+//			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", ...)" << std::endl;
+//			dkg = new GennaroJareckiKrawczykRabinDKG(N, T,
+//				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+//			assert(dkg->CheckGroup());
 
 			// create asynchronous unicast with timeout 3 rounds
 			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, 3);
@@ -120,27 +120,27 @@ void start_instance
 			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2, myID);
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
-			std::stringstream err_log;
-			start_clock();
-			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
-			if (faulty)
-				dkg->Generate(whoami, aiou, rbc, err_log, true);
-			else
-				assert(dkg->Generate(whoami, aiou, rbc, err_log));
-			stop_clock();
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-//			sleep(3 * whoami + (mpz_wrandom_ui() % N));
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+//			std::stringstream err_log;
+//			start_clock();
+//			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
+//			if (corrupted)
+//				dkg->Generate(whoami, aiou, rbc, err_log, true);
+//			else
+//				assert(dkg->Generate(whoami, aiou, rbc, err_log));
+//			stop_clock();
+//			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+//			sleep(mpz_wrandom_ui() % 3);
+//			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 
 			// check the generated key share
-			start_clock();
-			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
-			if (faulty)
-				dkg->CheckKey(whoami);
-			else
-				assert(dkg->CheckKey(whoami));
-			stop_clock();
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;		
+//			start_clock();
+//			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
+//			if (corrupted)
+//				dkg->CheckKey(whoami);
+//			else
+//				assert(dkg->CheckKey(whoami));
+//			stop_clock();
+//			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;		
 
 			// create an instance of threshold signature protocol new-TSch (NTS)
 			GennaroJareckiKrawczykRabinNTS *nts;
@@ -153,13 +153,12 @@ void start_instance
 			std::stringstream err_log2;
 			start_clock();
 			std::cout << "P_" << whoami << ": nts.Generate()" << std::endl;
-			if (faulty)
+			if (corrupted)
 				nts->Generate(whoami, aiou, rbc, err_log2, true);
 			else
-nts->Generate(whoami, aiou, rbc, err_log2);
+				assert(nts->Generate(whoami, aiou, rbc, err_log2));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-//			sleep(3 * whoami + (mpz_wrandom_ui() % N));
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
 
 			// sign a message (create a signature share)
@@ -168,17 +167,16 @@ nts->Generate(whoami, aiou, rbc, err_log2);
 			mpz_init_set_ui(m, 1L), mpz_init_set_ui(c, 0L), mpz_init_set_ui(s, 0L);
 			start_clock();
 			std::cout << "P_" << whoami << ": nts.Sign()" << std::endl;
-			if (faulty)
+			if (corrupted)
 				nts->Sign(m, c, s, whoami, aiou, rbc, err_log3, true);
 			else
-nts->Sign(m, c, s, whoami, aiou, rbc, err_log3);
+				assert(nts->Sign(m, c, s, whoami, aiou, rbc, err_log3));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-//			sleep(3 * whoami + (mpz_wrandom_ui() % N));
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
 
 			// verify signature
-			if (faulty)
+			if (corrupted)
 				nts->Verify(m, c, s);
 			else
 				assert(nts->Verify(m, c, s));
@@ -187,8 +185,11 @@ nts->Sign(m, c, s, whoami, aiou, rbc, err_log3);
 			// release NTS
 			delete nts;
 			
-			// release DKG and RBC
-			delete dkg, delete rbc;
+			// release DKG
+//			delete dkg
+
+			// release RBC			
+			delete rbc;
 
 			// release VTMF instances
 			delete vtmf;
@@ -249,9 +250,15 @@ int main
 	
 	// open pipes
 	for (size_t i = 0; i < N; i++)
+	{
 		for (size_t j = 0; j < N; j++)
-			if ((pipe(pipefd[i][j]) < 0) || (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0))
+		{
+			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
 				perror("t-dkg (pipe)");
+			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
+				perror("t-dkg (pipe)");
+		}
+	}
 	
 	// start childs (all correct)
 	for (size_t i = 0; i < N; i++)
@@ -274,15 +281,21 @@ int main
 
 	// open pipes
 	for (size_t i = 0; i < N; i++)
+	{
 		for (size_t j = 0; j < N; j++)
-			if ((pipe(pipefd[i][j]) < 0) || (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0))
+		{
+			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
 				perror("t-dkg (pipe)");
+			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
+				perror("t-dkg (pipe)");
+		}
+	}
 	
-	// start childs (two faulty parties)
+	// start childs (two corrupted parties)
 	for (size_t i = 0; i < N; i++)
 	{
 		if ((i == (N - 1)) || (i == (N - 2)))
-			start_instance(crs, i, true); // faulty
+			start_instance(crs, i, true); // corrupted
 		else
 			start_instance(crs, i, false);
 	}

@@ -125,7 +125,12 @@ class aiounicast
 			buf[size] = '\n'; // set delimiter
 
 			// send to party i
-			size_t num = write(out[i_in], buf, size + 1);
+			ssize_t num = write(out[i_in], buf, size + 1);
+			if (num < 0)
+			{
+				perror("aiounicast (write)");
+				return;
+			}
 			numWrite += num;
 //std::cerr << "send(" << j << ") i = " << i << " num = " << num << " m = " << m << std::endl;
 			delete [] buf;
@@ -209,8 +214,11 @@ class aiounicast
 				if (max > 0)
 				{
 					char *rptr = buf_in[i_out] + buf_ptr[i_out];
+//if (scheduler == aio_scheduler_direct)
 //std::cerr << "read(" << j << ") i = " << i_out << " max = " << max << std::endl;
 					ssize_t num = read(in[i_out], rptr, max);
+//if (scheduler == aio_scheduler_direct)
+//std::cerr << "afterread(" << j << ") i = " << i_out << " max = " << max << std::endl;
 					if (num < 0)
 					{
 						if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || 

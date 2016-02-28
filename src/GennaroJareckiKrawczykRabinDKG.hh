@@ -94,8 +94,8 @@ class GennaroJareckiKrawczykRabinDKG
 };
 
 /* This protocol is a threshold version of Schnorr's signature scheme. However,
-   instead of JF-DKG the above New-DKG is used. This version of the signature
-   scheme is called "new-TSch" in [GJKR07]. */
+   instead of JF-DKG the above New-DKG is used for the distributed key generation.
+   This version of the signature scheme is called "new-TSch" in [GJKR07]. */
 class GennaroJareckiKrawczykRabinNTS
 {
 	private:

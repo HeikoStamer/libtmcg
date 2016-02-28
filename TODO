@@ -4,4 +4,3 @@
 
 - implement the exotic card and stack operations of the toolbox; there are
   some obstacles, e.g. that the prover does not know all used randomizers
-- cheater detection: provide a basic protocol for reliable/atomic broadcast
