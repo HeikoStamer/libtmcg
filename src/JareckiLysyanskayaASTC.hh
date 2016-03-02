@@ -69,8 +69,9 @@ class JareckiLysyanskayaRVSS
 		mpz_t						p, q, g, h;
 		size_t						n, t;
 		std::vector<size_t>				Qual;
+		mpz_t						a_i, hata_i;
 		mpz_t						alpha_i, hatalpha_i;
-		std::vector< std::vector<mpz_ptr> >		alpha_ij, hatalpha_ij;
+		std::vector< std::vector<mpz_ptr> >		alpha_ij, hatalpha_ij, C_ik;
 		
 		JareckiLysyanskayaRVSS
 			(size_t n_in, size_t t_in,
@@ -89,5 +90,33 @@ class JareckiLysyanskayaRVSS
 		~JareckiLysyanskayaRVSS
 			();
 };
+
+/* This protocol is the erasure-free distributed coinflip protocol of [JL01]. */
+class JareckiLysyanskayaEDCF
+{
+	private:
+		mpz_t						*fpowm_table_g, *fpowm_table_h;
+		const unsigned long int				F_size, G_size;
+		JareckiLysyanskayaRVSS				*rvss;
+	
+	public:
+		mpz_t						p, q, g, h;
+		size_t						n, t;
+		
+		JareckiLysyanskayaEDCF
+			(size_t n_in, size_t t_in,
+			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
+			unsigned long int fieldsize = TMCG_DDH_SIZE,
+			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		bool CheckGroup
+			() const;
+		bool Flip
+			(size_t i, mpz_ptr a,
+			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err, bool simulate_faulty_behaviour = false);
+		~JareckiLysyanskayaEDCF
+			();
+};
+
 
 #endif

@@ -36,28 +36,34 @@ JareckiLysyanskayaRVSS::JareckiLysyanskayaRVSS
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
 		mpz_init_set(h, h_CRS);
 
+	mpz_init_set_ui(a_i, 0L), mpz_init_set_ui(hata_i, 0L);
 	mpz_init_set_ui(alpha_i, 0L), mpz_init_set_ui(hatalpha_i, 0L);
 	for (size_t j = 0; j < n_in; j++)
 	{
-//		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
-//		mpz_init(tmp1), mpz_init(tmp1);
-//		y_i.push_back(tmp1), z_i.push_back(tmp2);
 		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
 		for (size_t i = 0; i < n_in; i++)
 		{
-			mpz_ptr tmp3 = new mpz_t();
-			mpz_init(tmp3);
-			vtmp1->push_back(tmp3);
+			mpz_ptr tmp1 = new mpz_t();
+			mpz_init(tmp1);
+			vtmp1->push_back(tmp1);
 		}
 		alpha_ij.push_back(*vtmp1);
 		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
 		for (size_t i = 0; i < n_in; i++)
 		{
-			mpz_ptr tmp4 = new mpz_t();
-			mpz_init(tmp4);
-			vtmp2->push_back(tmp4);
+			mpz_ptr tmp2 = new mpz_t();
+			mpz_init(tmp2);
+			vtmp2->push_back(tmp2);
 		}
 		hatalpha_ij.push_back(*vtmp2);
+		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
+		for (size_t k = 0; k <= t_in; k++)
+		{
+			mpz_ptr tmp3 = new mpz_t();
+			mpz_init(tmp3);
+ 			vtmp3->push_back(tmp3);
+		}
+		C_ik.push_back(*vtmp3);
 	}
 
 	// Do the precomputation for the fast exponentiation.
@@ -148,7 +154,6 @@ bool JareckiLysyanskayaRVSS::Generate
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	std::vector<mpz_ptr> c_ik, hatc_ik;
-	std::vector< std::vector<mpz_ptr> > C_ik;
 	std::vector<size_t> complaints, complaints_counter;
 
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
@@ -157,17 +162,6 @@ bool JareckiLysyanskayaRVSS::Generate
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
 		mpz_init(tmp1), mpz_init(tmp2);
 		c_ik.push_back(tmp1), hatc_ik.push_back(tmp2);
-	}
-	for (size_t j = 0; j < n; j++)
-	{
-		std::vector<mpz_ptr> *vtmp = new std::vector<mpz_ptr>;
-		for (size_t k = 0; k <= t; k++)
-		{
-			mpz_ptr tmp1 = new mpz_t();
-			mpz_init(tmp1);
- 			vtmp->push_back(tmp1);
-		}
-		C_ik.push_back(*vtmp);
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
 
@@ -186,6 +180,7 @@ std::cerr << "GENERATE(1)" << std::endl;
 			mpz_srandomm(hatc_ik[k], q);
 		}
 		// Let $a_i = f_{a_i}(0)$ and $\hat{a_i} = f_{\hat{a_i}}(0)$.
+		mpz_set(a_i, c_ik[0]), mpz_set(hata_i, hatc_ik[0]);
 		// $P_i$ broadcasts $C_{ik} = g^{c_{ik}} h^{\hat{c}_{ik}}$
 		// for $k = 0..t$. 
 		for (size_t k = 0; k <= t; k++)
@@ -465,16 +460,6 @@ std::cerr << "GENERATE(8)" << std::endl;
 			delete c_ik[k], delete hatc_ik[k];
 		}
 		c_ik.clear(), hatc_ik.clear();
-		for (size_t j = 0; j < n; j++)
-		{
-			for (size_t k = 0; k <= t; k++)
-			{
-				mpz_clear(C_ik[j][k]);
-				delete C_ik[j][k];
-			}
-			C_ik[j].clear();
-		}
-		C_ik.clear();
 		// return
 		return return_value;
 	}
@@ -572,19 +557,8 @@ JareckiLysyanskayaRVSS::~JareckiLysyanskayaRVSS
 {
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
 	Qual.clear();
+	mpz_clear(a_i), mpz_clear(hata_i);
 	mpz_clear(alpha_i), mpz_clear(hatalpha_i);
-//	for (size_t j = 0; j < y_i.size(); j++)
-//	{
-//		mpz_clear(y_i[j]);
-//		delete y_i[j];
-//	}
-//	y_i.clear();
-//	for (size_t j = 0; j < z_i.size(); j++)
-//	{
-//		mpz_clear(z_i[j]);
-//		delete z_i[j];
-//	}
-//	z_i.clear();
 	for (size_t j = 0; j < alpha_ij.size(); j++)
 	{
 		for (size_t i = 0; i < alpha_ij[j].size(); i++)
@@ -605,6 +579,16 @@ JareckiLysyanskayaRVSS::~JareckiLysyanskayaRVSS
 		hatalpha_ij[j].clear();
 	}
 	hatalpha_ij.clear();
+	for (size_t j = 0; j < C_ik.size(); j++)
+	{
+		for (size_t k = 0; k <= t; k++)
+		{
+			mpz_clear(C_ik[j][k]);
+			delete C_ik[j][k];
+		}
+		C_ik[j].clear();
+	}
+	C_ik.clear();
 
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
@@ -612,4 +596,255 @@ JareckiLysyanskayaRVSS::~JareckiLysyanskayaRVSS
 
 // ===================================================================================================================================
 
+JareckiLysyanskayaEDCF::JareckiLysyanskayaEDCF
+	(size_t n_in, size_t t_in,
+	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
+	unsigned long int fieldsize, unsigned long int subgroupsize):
+			F_size(fieldsize), G_size(subgroupsize), n(n_in), t(t_in)
+{
+	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
+		mpz_init_set(h, h_CRS);
+
+	// initialize RVSS
+	rvss = new JareckiLysyanskayaRVSS(n_in, t_in,
+		p_CRS, q_CRS, g_CRS, h_CRS, fieldsize, subgroupsize);	
+
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+bool JareckiLysyanskayaEDCF::CheckGroup
+	() const
+{
+	mpz_t foo, k;
+
+	mpz_init(foo), mpz_init(k);
+	try
+	{
+		// Compute $k := (p - 1) / q$
+		mpz_set(k, p);
+		mpz_sub_ui(k, k, 1L);
+		mpz_div(k, k, q);
+
+		// Check whether $p$ and $q$ have appropriate sizes.
+		if ((mpz_sizeinbase(p, 2L) < F_size) ||
+			(mpz_sizeinbase(q, 2L) < G_size))
+				throw false;
+
+		// Check whether $p$ has the correct form, i.e. $p = kq + 1$.
+		mpz_mul(foo, q, k);
+		mpz_add_ui(foo, foo, 1L);
+		if (mpz_cmp(foo, p))
+			throw false;
+
+		// Check whether $p$ and $q$ are both (probable) prime with
+		// a soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
+		if (!mpz_probab_prime_p(p, TMCG_MR_ITERATIONS) || 
+			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
+				throw false;
+
+		// Check whether $k$ is not divisible by $q$, i.e. $q, k$ are coprime.
+		mpz_gcd(foo, q, k);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+
+		// Check whether the elements $h$ and $g$ are of order $q$.
+		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+
+		// Check whether the elements $h$ and $g$ are different and non-trivial,
+		// i.e., $1 < h, g < p-1$.
+		mpz_sub_ui(foo, p, 1L); // compute $p-1$
+		if ((mpz_cmp_ui(h, 1L) <= 0) || (mpz_cmp(h, foo) >= 0))
+			throw false;
+		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, foo) >= 0))
+			throw false;
+		if (!mpz_cmp(g, h))
+			throw false;
+
+		// everything is sound
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo), mpz_clear(k);
+		return return_value;
+	}
+}
+
+bool JareckiLysyanskayaEDCF::Flip
+	(size_t i, mpz_ptr a,
+	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, bool simulate_faulty_behaviour)
+{
+	assert(t <= n);
+	assert((2 * t) < n); // maximum synchronous t-resilience
+	assert(i < n);
+	assert(n == aiou->n);
+	assert(n == rbc->n);
+	assert(t == aiou->t);
+	assert(t == rbc->t);
+	assert(i == aiou->j);
+	assert(i == rbc->j);
+
+	// initialize
+	mpz_t foo, bar, lhs, rhs;
+	std::vector<mpz_ptr> a_i, hata_i;
+	std::vector<size_t> complaints, complaints_counter;
+
+	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+	for (size_t j = 0; j < n; j++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2);
+		a_i.push_back(tmp1), hata_i.push_back(tmp2);
+	}
+	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+
+	try
+	{
+if (i == 0)
+std::cerr << "FLIP(1)" << std::endl;
+		// 1. Players generate RVSS-data[a] (i.e. perform Joint-RVSS)
+		if (!rvss->Generate(i, aiou, rbc, err, simulate_faulty_behaviour))
+			throw false;
+		mpz_set(a_i[i], rvss->a_i), mpz_set(hata_i[i], rvss->hata_i);
+if (i == 0)
+std::cerr << "FLIP(2)" << std::endl;
+
+		// 2. Each $P_i \in Qual$ broadcasts his additive shares $a_i$,
+		//    $\hat{a}_i$.
+		if (std::find(rvss->Qual.begin(), rvss->Qual.end(), i) != rvss->Qual.end())
+		{
+			if (simulate_faulty_behaviour)
+			{
+				mpz_add_ui(a_i[i], a_i[i], 1L);
+			}
+			rbc->Broadcast(a_i[i]);
+			if (simulate_faulty_behaviour && simulate_faulty_randomizer)
+			{
+				mpz_add_ui(hata_i[i], hata_i[i], 1L);
+			}
+			rbc->Broadcast(hata_i[i]);
+		}
+		for (size_t j = 0; j < n; j++)
+		{
+			if ((j != i) && (std::find(rvss->Qual.begin(), rvss->Qual.end(), j) != rvss->Qual.end()))
+			{
+				if (!rbc->DeliverFrom(a_i[j], j))
+				{
+					err << "P_" << i << ": receiving a_i failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
+if (i == 0)
+std::cerr << "FLIP(3)" << std::endl;
+				if (!rbc->DeliverFrom(hata_i[j], j))
+				{
+					err << "P_" << i << ": receiving hata_i failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
+if (i == 0)
+std::cerr << "FLIP(3a)" << std::endl;
+			}
+		}
+if (i == 0)
+std::cerr << "FLIP(4)" << std::endl;
+		for (size_t j = 0; j < n; j++)
+		{
+			if ((j != i) && (std::find(rvss->Qual.begin(), rvss->Qual.end(), j) != rvss->Qual.end()))
+			{
+				// compute LHS for the check
+				mpz_fspowm(fpowm_table_g, foo, g, a_i[j], p);
+				mpz_fspowm(fpowm_table_h, bar, h, hata_i[j], p);
+				mpz_mul(lhs, foo, bar);
+				mpz_mod(lhs, lhs, p);
+				// compute RHS for the check
+				mpz_set_ui(rhs, 1L);
+				for (size_t k = 0; k <= t; k++)
+				{
+					mpz_mul(rhs, rhs, rvss->C_ik[j][k]);
+					mpz_mod(rhs, rhs, p);
+				}
+				// check $g^{a_i} h^{\hat{a}_i} = F_{a_i}(0)$
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i << ": checking a_i resp. hata_i failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+				}
+			}
+		}
+		// 3. For $P_i \in Qual$ s.t. $g^{a_i} h^{\hat{a}_i} \neq F_{a_i}(0)$
+		//    the players reconstruct $P_i$'s additive share $a_i$
+		//    by broadcasting their shares $\alpha_{ij}$, $\hat{\alpha}_{ij}$
+		//    and verifying them with $F_{a_i}$.
+if (i == 0)
+std::cerr << "FLIP(5)" << std::endl;
+		std::sort(complaints.begin(), complaints.end());
+		std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
+		complaints.resize(std::distance(complaints.begin(), it));
+		err << "P_" << i << ": there are complaints against ";
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+			err << "P_" << *it << " ";
+		err << std::endl;
+		// run reconstruction
+		if (!rvss->Reconstruct(i, complaints, a_i, rbc, err))
+		{
+if (i == 0)
+std::cerr << "FLIP-ERROR(5a)" << std::endl;
+			err << "P_" << i << ": reconstruction failed" << std::endl;
+			throw false;
+		}
+
+
+if (i == 0)
+std::cerr << "FLIP(6)" << std::endl;
+		// 4. A public random value $a$ is reconstructed
+		//    as $a = \sum_{P_i \in Qual} a_i$
+		mpz_set_ui(a, 0L);
+		for (std::vector<size_t>::iterator it = rvss->Qual.begin(); it != rvss->Qual.end(); ++it)
+		{
+			mpz_add(a, a, a_i[*it]);
+			mpz_mod(a, a, q);
+		}
+		err << "P_" << i << ": a = " << a << std::endl;
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
+		for (size_t j = 0; j < n; j++)
+		{
+			mpz_clear(a_i[j]), mpz_clear(hata_i[j]);
+			delete a_i[j], delete hata_i[j];
+		}
+		a_i.clear(), hata_i.clear();
+		// return
+		return return_value;
+	}
+}
+
+JareckiLysyanskayaEDCF::~JareckiLysyanskayaEDCF
+	()
+{
+	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
+
+	delete rvss;
+
+	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	delete [] fpowm_table_g, delete [] fpowm_table_h;
+}
+
+// ===================================================================================================================================
 
