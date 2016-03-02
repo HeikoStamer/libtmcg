@@ -45,7 +45,7 @@ void start_instance
 	(std::istream& crs_in, size_t whoami, bool corrupted)
 {
 	if ((pid[whoami] = fork()) < 0)
-		perror("t-dkg (fork)");
+		perror("t-astc (fork)");
 	else
 	{
 		if (pid[whoami] == 0)
@@ -102,12 +102,12 @@ void start_instance
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 
-			// create an instance of DKG
-			GennaroJareckiKrawczykRabinDKG *dkg;
-			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", ...)" << std::endl;
-			dkg = new GennaroJareckiKrawczykRabinDKG(N, T,
+			// create an instance of EDCF
+			JareckiLysyanskayaEDCF *edcf;
+			std::cout << "JareckiLysyanskayaEDCF(" << N << ", " << T << ", ...)" << std::endl;
+			edcf = new JareckiLysyanskayaEDCF(N, T,
 				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
-			assert(dkg->CheckGroup());
+			assert(edcf->CheckGroup());
 
 			// create asynchronous unicast with timeout 3 rounds
 			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, 3);
@@ -116,76 +116,26 @@ void start_instance
 			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, 6);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
-			std::string myID = "t-dkg";
+			std::string myID = "t-astc";
 			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2, myID);
 			
-			// generating $x$ and extracting $y = g^x \bmod p$
+			// generating public random value $a \in \mathbb{Z}_q$
+			mpz_t a;
 			std::stringstream err_log;
+			mpz_init_set_ui(a, 0L);
 			start_clock();
-			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
+			std::cout << "P_" << whoami << ": edcf.Flip()" << std::endl;
 			if (corrupted)
-				dkg->Generate(whoami, aiou, rbc, err_log, true);
+				edcf->Flip(whoami, a, aiou, rbc, err_log, true);
 			else
-				assert(dkg->Generate(whoami, aiou, rbc, err_log));
+edcf->Flip(whoami, a, aiou, rbc, err_log);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
-
-			// check the generated key share
-			start_clock();
-			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
-			if (corrupted)
-				dkg->CheckKey(whoami);
-			else
-				assert(dkg->CheckKey(whoami));
-			stop_clock();
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;		
-
-			// create an instance of threshold signature protocol new-TSch (NTS)
-			GennaroJareckiKrawczykRabinNTS *nts;
-			std::cout << "GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", ...)" << std::endl;
-			nts = new GennaroJareckiKrawczykRabinNTS(N, T,
-				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
-			assert(nts->CheckGroup());
-
-			// generate distributed key shares
-			std::stringstream err_log2;
-			start_clock();
-			std::cout << "P_" << whoami << ": nts.Generate()" << std::endl;
-			if (corrupted)
-				nts->Generate(whoami, aiou, rbc, err_log2, true);
-			else
-				assert(nts->Generate(whoami, aiou, rbc, err_log2));
-			stop_clock();
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
-
-			// sign a message (create a signature share)
-			std::stringstream err_log3;
-			mpz_t m, c, s;
-			mpz_init_set_ui(m, 1L), mpz_init_set_ui(c, 0L), mpz_init_set_ui(s, 0L);
-			start_clock();
-			std::cout << "P_" << whoami << ": nts.Sign()" << std::endl;
-			if (corrupted)
-				nts->Sign(m, c, s, whoami, aiou, rbc, err_log3, true);
-			else
-				assert(nts->Sign(m, c, s, whoami, aiou, rbc, err_log3));
-			stop_clock();
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
-
-			// verify signature
-			if (corrupted)
-				nts->Verify(m, c, s);
-			else
-				assert(nts->Verify(m, c, s));
-			mpz_clear(m), mpz_clear(c), mpz_clear(s);
+			mpz_clear(a);
 			
-			// release NTS
-			delete nts;
-			
-			// release DKG
-			delete dkg;
+			// release EDCF
+			delete edcf;
 
 			// release RBC			
 			delete rbc;
@@ -253,9 +203,9 @@ int main
 		for (size_t j = 0; j < N; j++)
 		{
 			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
-				perror("t-dkg (pipe)");
+				perror("t-astc (pipe)");
 			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
-				perror("t-dkg (pipe)");
+				perror("t-astc (pipe)");
 		}
 	}
 	
@@ -268,13 +218,13 @@ int main
 	{
 		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
 		if (waitpid(pid[i], NULL, 0) != pid[i])
-			perror("t-dkg (waitpid)");
+			perror("t-astc (waitpid)");
 		for (size_t j = 0; j < N; j++)
 		{
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("t-dkg (close)");
+				perror("t-astc (close)");
 			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
-				perror("t-dkg (close)");
+				perror("t-astc (close)");
 		}
 	}
 
@@ -284,9 +234,9 @@ int main
 		for (size_t j = 0; j < N; j++)
 		{
 			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
-				perror("t-dkg (pipe)");
+				perror("t-astc (pipe)");
 			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
-				perror("t-dkg (pipe)");
+				perror("t-astc (pipe)");
 		}
 	}
 	
@@ -308,9 +258,9 @@ int main
 		for (size_t j = 0; j < N; j++)
 		{
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("t-dkg (close)");
+				perror("t-astc (close)");
 			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
-				perror("t-dkg (close)");
+				perror("t-astc (close)");
 		}
 	}
 	

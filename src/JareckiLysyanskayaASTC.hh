@@ -4,7 +4,8 @@
 
      Stanislaw Jarecki and Anna Lysyanskaya:
        'Adaptively Secure Threshold Cryptography: Introducing Concurrency,
-        Removing Erasures', TODO.
+        Removing Erasures',
+     Advances in Cryptology - EUROCRYPT 2000, LNCS 1807, pp. 221--242, Springer.
 
    This file is part of LibTMCG.
 

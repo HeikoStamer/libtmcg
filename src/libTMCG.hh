@@ -193,6 +193,7 @@
 	// protocols not related to mental poker	
 	#include "NaorPinkasEOTP.hh"
 	#include "GennaroJareckiKrawczykRabinDKG.hh"
+	#include "JareckiLysyanskayaASTC.hh"
 	#include "CachinKursawePetzoldShoupSEABP.hh"
 	
 	// enable usage of config.h

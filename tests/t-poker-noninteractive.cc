@@ -34,7 +34,7 @@
 #include "pipestream.hh"
 
 #undef NDEBUG
-#define PLAYERS 8
+#define PLAYERS 9
 #define DECKSIZE 52
 #define FLOPSIZE 5
 

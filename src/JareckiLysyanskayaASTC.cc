@@ -4,7 +4,8 @@
 
      Stanislaw Jarecki and Anna Lysyanskaya:
        'Adaptively Secure Threshold Cryptography: Introducing Concurrency,
-        Removing Erasures', TODO.
+        Removing Erasures',
+     Advances in Cryptology - EUROCRYPT 2000, LNCS 1807, pp. 221--242, Springer.
 
    This file is part of LibTMCG.
 
@@ -770,11 +771,8 @@ std::cerr << "FLIP(4)" << std::endl;
 				mpz_mod(lhs, lhs, p);
 				// compute RHS for the check
 				mpz_set_ui(rhs, 1L);
-				for (size_t k = 0; k <= t; k++)
-				{
-					mpz_mul(rhs, rhs, rvss->C_ik[j][k]);
-					mpz_mod(rhs, rhs, p);
-				}
+				mpz_mul(rhs, rhs, rvss->C_ik[j][0]);
+				mpz_mod(rhs, rhs, p);
 				// check $g^{a_i} h^{\hat{a}_i} = F_{a_i}(0)$
 				if (mpz_cmp(lhs, rhs))
 				{
