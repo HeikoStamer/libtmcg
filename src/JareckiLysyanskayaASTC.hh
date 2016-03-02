@@ -59,7 +59,7 @@
 	#include "aiounicast.hh"
 	#include "CachinKursawePetzoldShoupSEABP.hh"
 
-/* This protocol is based upon [GJKR07] and is called Joint-RVSS [JL01]. */
+/* This protocol is based upon [GJKR07] and is called Joint-RVSS [JL00]. */
 class JareckiLysyanskayaRVSS
 {
 	private:
@@ -92,7 +92,7 @@ class JareckiLysyanskayaRVSS
 			();
 };
 
-/* This protocol is the erasure-free distributed coinflip protocol of [JL01]. */
+/* This protocol is the erasure-free distributed coinflip protocol of [JL00]. */
 class JareckiLysyanskayaEDCF
 {
 	private:
