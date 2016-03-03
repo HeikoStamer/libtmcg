@@ -128,7 +128,7 @@ void start_instance
 			if (corrupted)
 				edcf->Flip(whoami, a, aiou, rbc, err_log, true);
 			else
-edcf->Flip(whoami, a, aiou, rbc, err_log);
+				assert(edcf->Flip(whoami, a, aiou, rbc, err_log));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();

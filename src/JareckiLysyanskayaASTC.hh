@@ -4,8 +4,8 @@
 
      Stanislaw Jarecki and Anna Lysyanskaya:
        'Adaptively Secure Threshold Cryptography: Introducing Concurrency,
-        Removing Erasures',
-     Advances in Cryptology - EUROCRYPT 2000, LNCS 1807, pp. 221--242, Springer.
+        Removing Erasures', Advances in Cryptology - EUROCRYPT 2000,
+     LNCS 1807, pp. 221--242, Springer, 2000.
 
    This file is part of LibTMCG.
 
@@ -81,7 +81,7 @@ class JareckiLysyanskayaRVSS
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
 			() const;
-		bool Generate
+		bool Share
 			(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err, bool simulate_faulty_behaviour = false);
 		bool Reconstruct

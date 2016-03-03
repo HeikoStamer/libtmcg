@@ -4,8 +4,8 @@
 
      Stanislaw Jarecki and Anna Lysyanskaya:
        'Adaptively Secure Threshold Cryptography: Introducing Concurrency,
-        Removing Erasures',
-     Advances in Cryptology - EUROCRYPT 2000, LNCS 1807, pp. 221--242, Springer.
+        Removing Erasures', Advances in Cryptology - EUROCRYPT 2000,
+     LNCS 1807, pp. 221--242, Springer, 2000.
 
    This file is part of LibTMCG.
 
@@ -138,7 +138,7 @@ bool JareckiLysyanskayaRVSS::CheckGroup
 	}
 }
 
-bool JareckiLysyanskayaRVSS::Generate
+bool JareckiLysyanskayaRVSS::Share
 	(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, bool simulate_faulty_behaviour)
 {
@@ -168,8 +168,6 @@ bool JareckiLysyanskayaRVSS::Generate
 
 	try
 	{
-if (i == 0)
-std::cerr << "GENERATE(1)" << std::endl;
 		// 1. Each player $P_i$ performs a Pedersen-VSS of a random
 		//    value $a_i$:
 		// (a) $P_i$ picks $t$-deg. polynomials
@@ -225,8 +223,6 @@ std::cerr << "GENERATE(1)" << std::endl;
 				aiou->Send(hatalpha_ij[i][j], j);
 			}
 		}
-if (i == 0)
-std::cerr << "GENERATE(2)" << std::endl;
 		// (b) Each $P_j$ verifies if
 		//     $g^{\alpha_{ij}} h^{\hat{\alpha}_{ij}} = F_{a_i}(j)$
 		//     for $i = 1..n$. If the check fails for any $i$, $P_j$
@@ -246,8 +242,6 @@ std::cerr << "GENERATE(2)" << std::endl;
 						break;
 					}
 				}
-if (i == 0)
-std::cerr << "GENERATE(3)" << std::endl;
 				if (!aiou->Receive(alpha_ij[j][i], j, aiou->aio_scheduler_direct))
 				{
 					err << "P_" << i << ": receiving alpha_ij failed; complaint against P_" << j << std::endl;
@@ -260,12 +254,8 @@ std::cerr << "GENERATE(3)" << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-if (i == 0)
-std::cerr << "GENERATE(3a)" << std::endl;
 			}
 		}
-if (i == 0)
-std::cerr << "GENERATE(4)" << std::endl;
 		for (size_t j = 0; j < n; j++)
 		{
 			// compute LHS for the check
@@ -300,8 +290,6 @@ std::cerr << "GENERATE(4)" << std::endl;
 		}
 		mpz_set_ui(rhs, n); // send end marker
 		rbc->Broadcast(rhs);
-if (i == 0)
-std::cerr << "GENERATE(5)" << std::endl;
 		// (c) If $P_j$ complained against $P_i$, $P_i$ broadcasts
 		//     $\alpha_{ij}$, $\hat{\alpha}_{ij}$; everyone verifies
 		//     it. If $P_i$ fails this test or receives more than $t$
@@ -336,8 +324,6 @@ std::cerr << "GENERATE(5)" << std::endl;
 				while ((who < n) && (cnt <= n)); // until end marker received
 			}
 		}
-if (i == 0)
-std::cerr << "GENERATE(6)" << std::endl;
 		if (complaints_counter[i])
 		{
 			std::sort(complaints.begin(), complaints.end());
@@ -356,8 +342,6 @@ std::cerr << "GENERATE(6)" << std::endl;
 		}
 		mpz_set_ui(lhs, n); // send end marker
 		rbc->Broadcast(lhs);
-if (i == 0)
-std::cerr << "GENERATE(7)" << std::endl;
 		complaints.clear();
 		for (size_t j = 0; j < n; j++)
 		{
@@ -418,8 +402,6 @@ std::cerr << "GENERATE(7)" << std::endl;
 				while (cnt <= n);
 			}
 		}
-if (i == 0)
-std::cerr << "GENERATE(8)" << std::endl;
 		for (size_t j = 0; j < n; j++)
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				Qual.push_back(j);
@@ -432,7 +414,7 @@ std::cerr << "GENERATE(8)" << std::endl;
 		//    associated randomness as
 		//    $\hat{\alpha}_i = \sum_{P_j \in Qual} \hat{\alpha}_{ji}$.
 		// Note that in this section the indicies $i$ and $j$ are exchanged
-		// again, because the reversed convention is used in section 1(b).
+		// again, because the reverse convention is used in section 1(b).
 		mpz_set_ui(alpha_i, 0L), mpz_set_ui(hatalpha_i, 0L);
 		for (std::vector<size_t>::iterator it = Qual.begin(); it != Qual.end(); ++it)
 		{
@@ -712,15 +694,10 @@ bool JareckiLysyanskayaEDCF::Flip
 
 	try
 	{
-if (i == 0)
-std::cerr << "FLIP(1)" << std::endl;
 		// 1. Players generate RVSS-data[a] (i.e. perform Joint-RVSS)
-		if (!rvss->Generate(i, aiou, rbc, err, simulate_faulty_behaviour))
+		if (!rvss->Share(i, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		mpz_set(a_i[i], rvss->a_i), mpz_set(hata_i[i], rvss->hata_i);
-if (i == 0)
-std::cerr << "FLIP(2)" << std::endl;
-
 		// 2. Each $P_i \in Qual$ broadcasts his additive shares $a_i$,
 		//    $\hat{a}_i$.
 		if (std::find(rvss->Qual.begin(), rvss->Qual.end(), i) != rvss->Qual.end())
@@ -746,20 +723,14 @@ std::cerr << "FLIP(2)" << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-if (i == 0)
-std::cerr << "FLIP(3)" << std::endl;
 				if (!rbc->DeliverFrom(hata_i[j], j))
 				{
 					err << "P_" << i << ": receiving hata_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-if (i == 0)
-std::cerr << "FLIP(3a)" << std::endl;
 			}
 		}
-if (i == 0)
-std::cerr << "FLIP(4)" << std::endl;
 		for (size_t j = 0; j < n; j++)
 		{
 			if ((j != i) && (std::find(rvss->Qual.begin(), rvss->Qual.end(), j) != rvss->Qual.end()))
@@ -785,8 +756,6 @@ std::cerr << "FLIP(4)" << std::endl;
 		//    the players reconstruct $P_i$'s additive share $a_i$
 		//    by broadcasting their shares $\alpha_{ij}$, $\hat{\alpha}_{ij}$
 		//    and verifying them with $F_{a_i}$.
-if (i == 0)
-std::cerr << "FLIP(5)" << std::endl;
 		std::sort(complaints.begin(), complaints.end());
 		std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
 		complaints.resize(std::distance(complaints.begin(), it));
@@ -797,15 +766,9 @@ std::cerr << "FLIP(5)" << std::endl;
 		// run reconstruction
 		if (!rvss->Reconstruct(i, complaints, a_i, rbc, err))
 		{
-if (i == 0)
-std::cerr << "FLIP-ERROR(5a)" << std::endl;
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
 		}
-
-
-if (i == 0)
-std::cerr << "FLIP(6)" << std::endl;
 		// 4. A public random value $a$ is reconstructed
 		//    as $a = \sum_{P_i \in Qual} a_i$
 		mpz_set_ui(a, 0L);
