@@ -184,8 +184,6 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 
 	try
 	{
-if (i == 0)
-std::cerr << "GENERATE(1)" << std::endl;
 		// 1. Each party $P_i$ performs a Pedersen-VSS of a random
 		//    value $z_i$ as a dealer:
 		// (a) $P_i$ chooses two random polynomials $f_i(z)$ and
@@ -238,8 +236,6 @@ std::cerr << "GENERATE(1)" << std::endl;
 				aiou->Send(sprime_ij[i][j], j);
 			}
 		}
-if (i == 0)
-std::cerr << "GENERATE(2)" << std::endl;
 		// (b) Each party $P_j$ verifies the shares he received from
 		//     the other parties. For each $i = 1, \ldots, n$, $P_j$
 		//     checks if $g^{s_{ij}} h^{s\prime_{ij}} = \prod_{k=0}^t (C_{ik})^{j^k} \bmod p$.
@@ -257,8 +253,6 @@ std::cerr << "GENERATE(2)" << std::endl;
 						break;
 					}
 				}
-if (i == 0)
-std::cerr << "GENERATE(3)" << std::endl;
 				if (!aiou->Receive(s_ij[j][i], j, aiou->aio_scheduler_direct))
 				{
 					err << "P_" << i << ": receiving s_ij failed; complaint against P_" << j << std::endl;
@@ -271,12 +265,8 @@ std::cerr << "GENERATE(3)" << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-if (i == 0)
-std::cerr << "GENERATE(3a)" << std::endl;
 			}
 		}
-if (i == 0)
-std::cerr << "GENERATE(4)" << std::endl;
 		for (size_t j = 0; j < n; j++)
 		{
 			// compute LHS for the check
@@ -302,22 +292,10 @@ std::cerr << "GENERATE(4)" << std::endl;
 		}
 		// If the check fails for an index $i$,
 		// $P_j$ broadcasts a complaint against $P_i$.
-err << "P_" << i << ": complaints before sort = ";
-for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
-	err << "P_" << *it << " ";
-err << std::endl;
 		std::sort(complaints.begin(), complaints.end());
-err << "P_" << i << ": complaints before unique = ";
-for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
-	err << "P_" << *it << " ";
-err << std::endl;
 		std::vector<size_t>::iterator it =
 			std::unique(complaints.begin(), complaints.end());
 		complaints.resize(std::distance(complaints.begin(), it));
-err << "P_" << i << ": complaints after resize = ";
-for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
-	err << "P_" << *it << " ";
-err << std::endl;
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			mpz_set_ui(rhs, *it);
@@ -325,8 +303,6 @@ err << std::endl;
 		}
 		mpz_set_ui(rhs, n); // send end marker
 		rbc->Broadcast(rhs);
-if (i == 0)
-std::cerr << "GENERATE(5)" << std::endl;
 		// (c) Each party $P_i$ who, as a dealer, received a complaint
 		//     from party $P_j$ broadcasts the values $s_{ij}$,
 		//     $s\prime_{ij}$ that satisfy (4).
@@ -360,8 +336,6 @@ std::cerr << "GENERATE(5)" << std::endl;
 				while ((who < n) && (cnt <= n)); // until end marker received
 			}
 		}
-if (i == 0)
-std::cerr << "GENERATE(6)" << std::endl;
 		if (complaints_counter[i])
 		{
 			std::sort(complaints.begin(), complaints.end());
@@ -380,8 +354,6 @@ std::cerr << "GENERATE(6)" << std::endl;
 		}
 		mpz_set_ui(lhs, n); // send end marker
 		rbc->Broadcast(lhs);
-if (i == 0)
-std::cerr << "GENERATE(7)" << std::endl;
 		// (d) Each party marks disqualified any party either
 		//      * received more than $t$ complaints in Step 1(b), or
 		//      * answered a complaint in Step 1(c) with values that 
@@ -446,8 +418,6 @@ std::cerr << "GENERATE(7)" << std::endl;
 				while (cnt <= n);
 			}
 		}
-if (i == 0)
-std::cerr << "GENERATE(8)" << std::endl;
 		// 2. Each party the builds the set of non-disqualified parties $QUAL$.
 		for (size_t j = 0; j < n; j++)
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
@@ -491,8 +461,6 @@ std::cerr << "GENERATE(8)" << std::endl;
 				mpz_add_ui(A_ik[i][k], A_ik[i][k], 1L);
 			rbc->Broadcast(A_ik[i][k]);
 		}
-if (i == 0)
-std::cerr << "GENERATE(9)" << std::endl;
 		// (b) Each party $P_j$ verifies the values broadcast by the
 		//     other parties in $QUAL$, namely for each $i \in QUAL$,
 		//     $P_j$ checks if $g^{s_{ij}} = \prod_{k=0}^t (A_{ik})^{j^k} \bmod p$.
@@ -532,8 +500,6 @@ std::cerr << "GENERATE(9)" << std::endl;
 				}
 			}
 		}
-if (i == 0)
-std::cerr << "GENERATE(10)" << std::endl;
 		// If the check fails for an index $i$, $P_j$ complains against
 		// $P_i$ by broadcasting the values $s_{ij}$, $s\prime_{ij}$
 		// that satisfy (4) but do not satisfy (5).
@@ -549,8 +515,6 @@ std::cerr << "GENERATE(10)" << std::endl;
 		}
 		mpz_set_ui(rhs, n); // send end marker
 		rbc->Broadcast(rhs);
-if (i == 0)
-std::cerr << "GENERATE(11)" << std::endl;
 		// (c) For parties $P_i$ who receive at least one valid complaint,
 		//     i.e., values which satisfy (4) and not (5), the other
 		//     parties run the reconstruction phase of Pedersen-VSS to
@@ -591,8 +555,6 @@ std::cerr << "GENERATE(11)" << std::endl;
 						complaints.push_back(j);
 						break;
 					}
-if (i == 0)
-std::cerr << "GENERATE(11a)" << std::endl;
 					// verify complaint, i.e. (4) holds (5) not.
 					// compute LHS for the check
 					mpz_fpowm(fpowm_table_g, lhs, g, foo, p);
@@ -641,8 +603,6 @@ std::cerr << "GENERATE(11a)" << std::endl;
 				while ((who < n) && (cnt <= n)); // no end marker received
 			}
 		}
-if (i == 0)
-std::cerr << "GENERATE(12)" << std::endl;
 		std::sort(complaints.begin(), complaints.end());
 		it = std::unique(complaints.begin(), complaints.end());
 		complaints.resize(std::distance(complaints.begin(), it));
@@ -653,13 +613,9 @@ std::cerr << "GENERATE(12)" << std::endl;
 		// run reconstruction phase of Pedersen-VSS
 		if (!Reconstruct(i, complaints, z_i, rbc, err))
 		{
-if (i == 0)
-std::cerr << "GENERATE-ERROR(12a)" << std::endl;
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
 		}
-if (i == 0)
-std::cerr << "GENERATE(13)" << std::endl;
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			// compute $A_{i0} = g^{z_i} \bmod p$
@@ -676,8 +632,6 @@ std::cerr << "GENERATE(13)" << std::endl;
 			mpz_mod(y, y, p);
 		}
 		err << "P_" << i << ": y = " << y << std::endl;
-if (i == 0)
-std::cerr << "GENERATE(14)" << std::endl;
 
 		throw true;
 	}
@@ -993,7 +947,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	std::ostream &err, bool simulate_faulty_behaviour)
 {
 	assert(n >= t);
-	assert((2 * t) < n); // synchronous failure assumption
+	assert((2 * t) < n); // maximum synchronous t-resilience
 	assert(i < n);
 	assert(n == aiou->n);
 	assert(n == rbc->n);
@@ -1022,11 +976,9 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 
 	try
 	{
-		// check whether key share generation was successful
+		// check whether the key share generation was successful
 		if (QUAL.size() == 0)
 			throw false;
-if (i == 0)
-std::cerr << "SIGN(1)" << std::endl;
 		// 1. Parties perform an instance of New-DKG protocol. Denote
 		//    the outputs of this run of New-DKG as follows. Each party
 		//    $P_i \in QUAL\prime$ holds an additive share $u_i$ of the
@@ -1036,8 +988,6 @@ std::cerr << "SIGN(1)" << std::endl;
 		//    for each $P_i$.
 		if (!dkg2->Generate(i, aiou, rbc, err, simulate_faulty_behaviour && simulate_faulty_randomizer))
 			throw false;
-if (i == 0)
-std::cerr << "SIGN(2)" << std::endl;
 		mpz_set(u_i[i], dkg2->z_i[i]);
 		for (size_t j = 0; j < n; j++)
 			mpz_set(r_i[j], dkg2->y_i[j]);
@@ -1063,8 +1013,6 @@ std::cerr << "SIGN(2)" << std::endl;
 				mpz_add_ui(s_i[i], s_i[i], 1L);
 			rbc->Broadcast(s_i[i]);
 		}
-if (i == 0)
-std::cerr << "SIGN(3)" << std::endl;
 		// Each share is verified by checking if $g^{s_i} = r_i {y_i}^c$.
 		for (size_t j = 0; j < n; j++)
 		{
@@ -1090,8 +1038,6 @@ std::cerr << "SIGN(3)" << std::endl;
 				}
 			}
 		}
-if (i == 0)
-std::cerr << "SIGN(4)" << std::endl;
 		// Otherwise $x_i$ [I guess this means $u_i$] and $z_i$ are
 		// reconstructed and $s_i$ is computed publicly.
 		std::sort(complaints.begin(), complaints.end());
@@ -1107,15 +1053,11 @@ std::cerr << "SIGN(4)" << std::endl;
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
 		}
-if (i == 0)
-std::cerr << "SIGN(5)" << std::endl;
 		if (!dkg->Reconstruct(i, complaints, dkg->z_i, rbc, err))
 		{
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
 		}
-if (i == 0)
-std::cerr << "SIGN(6)" << std::endl;
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			// compute $s_i = u_i + cz_i$
@@ -1135,15 +1077,11 @@ std::cerr << "SIGN(6)" << std::endl;
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
-if (i == 0)
-std::cerr << "SIGN(7)" << std::endl;
 		if (!dkg->Reconstruct(i, complaints, dkg->z_i, rbc, err))
 		{
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
 		}
-if (i == 0)
-std::cerr << "SIGN(8)" << std::endl;
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			// compute $s_i = cz_i$

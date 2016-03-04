@@ -1,5 +1,5 @@
 /*******************************************************************************
-  aiounicast.hh, basic class for asynchronous unicast protocols
+  aiounicast.hh, basic class for asynchronous unicast
 
    This file is part of LibTMCG.
 
@@ -91,7 +91,7 @@ class aiounicast
 				out.push_back(out_in[i]);
 			}
 
-			// initialize buffer for receiving multi-mpz
+			// initialize ordered buffer for receiving
 			for (size_t i = 0; i < n_in; i++)
 			{
 				std::list<mpz_ptr> *ltmp = new std::list<mpz_ptr>;
@@ -122,9 +122,9 @@ class aiounicast
 			// mpz_sizeinbase(m, TMCG_MPZ_IO_BASE) does not
 			// work in all cases correctly
 			size = strlen(buf);
-			buf[size] = '\n'; // set delimiter
+			buf[size] = '\n'; // set newline as delimiter
 
-			// send to party i
+			// send m to party i_in
 			ssize_t num = write(out[i_in], buf, size + 1);
 			if (num < 0)
 			{
@@ -132,7 +132,6 @@ class aiounicast
 				return;
 			}
 			numWrite += num;
-//std::cerr << "send(" << j << ") i = " << i << " num = " << num << " m = " << m << std::endl;
 			delete [] buf;
 		}
 
@@ -203,7 +202,6 @@ class aiounicast
 							return false;
 						}
 						delete [] tmp;
-//std::cerr << "receive(" << j << ") from " << i_out << " = " << m << std::endl;
 						return true;
 					}
 					// no delimiter found; invalidate buffer flag
@@ -214,11 +212,7 @@ class aiounicast
 				if (max > 0)
 				{
 					char *rptr = buf_in[i_out] + buf_ptr[i_out];
-//if (scheduler == aio_scheduler_direct)
-//std::cerr << "read(" << j << ") i = " << i_out << " max = " << max << std::endl;
 					ssize_t num = read(in[i_out], rptr, max);
-//if (scheduler == aio_scheduler_direct)
-//std::cerr << "afterread(" << j << ") i = " << i_out << " max = " << max << std::endl;
 					if (num < 0)
 					{
 						if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || 
@@ -249,11 +243,12 @@ class aiounicast
 		bool Receive
 			(std::vector<mpz_ptr> &m, size_t &i_out, size_t scheduler = aio_scheduler_roundrobin)
 		{
-			// determine maximum number of rounds based on used scheduler
+			// determine maximum number of rounds based on scheduler
 			size_t max_rounds = 0; 
 			switch (scheduler)
 			{
 				case aio_scheduler_none:
+					max_rounds = 0;
 					break;
 				case aio_scheduler_roundrobin:
 					max_rounds = (m.size() * n);
@@ -301,7 +296,7 @@ class aiounicast
 					}
 					return true;
 				}
-				// receive a message according to given scheduler
+				// receive a message according to the given scheduler
 				size_t i = n;
 				if (scheduler == aio_scheduler_direct)
 					i = i_out;
@@ -309,12 +304,10 @@ class aiounicast
 				mpz_init(tmp);
 				if (Receive(tmp, i, scheduler))
 				{
-//std::cerr << "receive_mm(" << j << ") received for " << i << std::endl;
 					buf_mpz[i].push_back(tmp);
 				}
 				else
 				{
-//std::cerr << "receive_mm(" << j << ") timed out/error for " << i << std::endl;
 					if (i < n)
 					{
 						i_out = i;
@@ -324,7 +317,6 @@ class aiounicast
 					}
 				}
 			}
-//std::cerr << "receive_mm(" << j << ") timed out for all" << std::endl;
 			i_out = n; // timeout for all parties
 			return false;			
 		}

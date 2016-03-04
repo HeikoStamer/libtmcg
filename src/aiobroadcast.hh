@@ -1,5 +1,5 @@
 /*******************************************************************************
-  aiobrodcast.hh, basic class for asynchronous broadcast protocols
+  aiobrodcast.hh, basic class for asynchronous broadcast
 
    This file is part of LibTMCG.
 
