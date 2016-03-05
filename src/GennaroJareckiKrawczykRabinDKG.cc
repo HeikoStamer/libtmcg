@@ -143,7 +143,6 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	std::vector<mpz_ptr> a_i, b_i, g__a_i;
 	std::vector< std::vector<mpz_ptr> > C_ik, A_ik, sprime_ij, g__s_ij;
 	std::vector<size_t> complaints, complaints_counter;
-
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	for (size_t k = 0; k <= t; k++)
 	{
@@ -181,6 +180,11 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		g__s_ij.push_back(*vtmp4);
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "GennaroJareckiKrawczykRabinDKG::Generate()" << p << q << g << h << n << t;
+	rbc->setID(myID.str());
 
 	try
 	{
@@ -637,6 +641,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	}
 	catch (bool return_value)
 	{
+		// unset ID for RBC
+		rbc->unsetID();
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
 		for (size_t k = 0; k <= t; k++)
@@ -706,6 +712,11 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "GennaroJareckiKrawczykRabinDKG::Reconstruct()" << p << q << g << h << n << t;
+	rbc->setID(myID.str());
 
 	try
 	{
@@ -778,6 +789,8 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 	}
 	catch (bool return_value)
 	{
+		// unset ID for RBC
+		rbc->unsetID();
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
 		// return
@@ -914,6 +927,11 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 	(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, bool simulate_faulty_behaviour)
 {
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "GennaroJareckiKrawczykRabinNTS::Generate()" << p << q << g << h << n << t;
+	rbc->setID(myID.str());
+
 	try
 	{
 		// check whether the group from CRS is sound
@@ -936,6 +954,8 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 	}
 	catch (bool return_value)
 	{
+		// unset ID for RBC
+		rbc->unsetID();
 		// return
 		return return_value;
 	}
@@ -963,7 +983,6 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	std::vector<mpz_ptr> s_i, r_i, u_i;
 	GennaroJareckiKrawczykRabinDKG *dkg2 = new GennaroJareckiKrawczykRabinDKG(n, t, p, q, g, h);
 	std::vector<size_t> complaints;
-
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	mpz_init(r);
 	for (size_t j = 0; j < n; j++)
@@ -973,6 +992,11 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		s_i.push_back(tmp1), r_i.push_back(tmp2), u_i.push_back(tmp3);
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "GennaroJareckiKrawczykRabinNTS::Sign()" << p << q << g << h << n << t;
+	rbc->setID(myID.str());
 
 	try
 	{
@@ -1102,6 +1126,8 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	}
 	catch (bool return_value)
 	{
+		// unset ID for RBC
+		rbc->unsetID();
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
 		mpz_clear(r);

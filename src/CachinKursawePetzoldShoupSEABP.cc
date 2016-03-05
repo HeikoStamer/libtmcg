@@ -44,6 +44,9 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	// initialize asynchonous unicast
 	aiou = aiou_in;
 
+	// initialize ID
+	mpz_init_set_ui(ID, 0L);
+
 	// initialize whoami (this variable is called $j$ in the paper)
 	mpz_init_set_ui(whoami, j);
 
@@ -86,9 +89,31 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 void CachinKursawePetzoldShoupRBC::setID
 	(std::string ID_in)
 {
-	// set ID
-	std::string myID = "CachinKursawePetzoldShoupRBC." + ID_in;
-	mpz_shash(ID, myID);
+	// save the last ID
+	mpz_ptr tmp = new mpz_t();
+	mpz_init_set(tmp, ID);
+	last_IDs.push_back(tmp);
+
+	// set new ID
+	std::stringstream myID;
+	myID << "CachinKursawePetzoldShoupRBC called from [" << ID_in << "] with last ID " << ID;
+	mpz_shash(ID, myID.str());
+}
+
+void CachinKursawePetzoldShoupRBC::unsetID
+	()
+{
+	// set last ID
+	if (last_IDs.size() > 0)
+	{
+		mpz_ptr tmp = last_IDs.back();
+		mpz_set(ID, tmp);
+		mpz_clear(tmp);
+		delete tmp;
+		last_IDs.pop_back();
+	}
+	else
+		mpz_set_ui(ID, 0L);
 }
 
 void CachinKursawePetzoldShoupRBC::Broadcast
@@ -164,17 +189,12 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			std::string tag_string = tag_ss.str();
 
 			// discard misformed messages
-			if (mpz_cmp(message[0], ID))
-			{
-				std::cerr << "RBC: wrong ID in tag from " << l << std::endl;
-				continue;
-			}
 			if ((mpz_cmp_ui(message[1], (n - 1)) > 0) || (mpz_cmp_ui(message[1], 0) < 0))
 			{
 				std::cerr << "RBC: wrong j in tag from " << l << std::endl;
 				continue;
 			}
-			if (mpz_cmp_ui(message[2], 1) < 0) // TODO: check against global message counter
+			if (mpz_cmp_ui(message[2], 1) < 0)
 			{
 				std::cerr << "RBC: wrong s in tag from " << l << std::endl;
 				continue;
@@ -367,7 +387,8 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						while (mpz_cmp(foo, message[4])); // $H(m) = \bar{d}$
 					}
 //std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
-// TODO: check sequence counter before delivering
+// TODO: check tag and sequence counter before delivering
+//FIXME: check ID == message[0] and deliver_counter[message[1]] == message[2]; otherwise buffer  
 					mpz_set(m, mbar[tag_string]);
 					i_out = mpz_get_ui(message[1]);
 					throw true;
@@ -463,6 +484,12 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 	()
 {
 	mpz_clear(ID), mpz_clear(whoami), mpz_clear(s);
+	for (std::list<mpz_ptr>::iterator lit = last_IDs.begin(); lit != last_IDs.end(); ++lit)
+	{
+		mpz_clear(*lit);
+		delete *lit;
+	}
+	last_IDs.clear();
 	mpz_clear(r_send);
 	mpz_clear(r_echo);
 	mpz_clear(r_ready);

@@ -67,6 +67,7 @@ class CachinKursawePetzoldShoupRBC
 {
 	private:
 		mpz_t							ID, whoami, s;
+		std::list<mpz_ptr>					last_IDs;
 		mpz_t							r_send, r_echo, r_ready, r_request, r_answer;
 		std::vector< std::map<std::string, bool> >		send, echo, ready, request, answer;
 		std::map<std::string, mpz_ptr>				mbar, dbar;
@@ -83,6 +84,8 @@ class CachinKursawePetzoldShoupRBC
 			aiounicast *aiou_in);
 		void setID
 			(std::string ID_in);
+		void unsetID
+			();
 		void Broadcast
 			(mpz_srcptr m);
 		bool Deliver

@@ -116,7 +116,7 @@ void start_instance
 			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, 6);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
-			std::string myID = "t-dkg"; // FIXME: set unique ID in DKG/NTS instance methods
+			std::string myID = "t-dkg";
 			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
 			rbc->setID(myID);
 			

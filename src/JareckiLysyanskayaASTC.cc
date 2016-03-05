@@ -156,7 +156,6 @@ bool JareckiLysyanskayaRVSS::Share
 	mpz_t foo, bar, lhs, rhs;
 	std::vector<mpz_ptr> c_ik, hatc_ik;
 	std::vector<size_t> complaints, complaints_counter;
-
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	for (size_t k = 0; k <= t; k++)
 	{
@@ -165,6 +164,11 @@ bool JareckiLysyanskayaRVSS::Share
 		c_ik.push_back(tmp1), hatc_ik.push_back(tmp2);
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "JareckiLysyanskayaRVSS::Share()" << p << q << g << h << n << t;
+	rbc->setID(myID.str());
 
 	try
 	{
@@ -435,6 +439,8 @@ bool JareckiLysyanskayaRVSS::Share
 	}
 	catch (bool return_value)
 	{
+		// unset ID for RBC
+		rbc->unsetID();
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
 		for (size_t k = 0; k <= t; k++)
@@ -456,6 +462,11 @@ bool JareckiLysyanskayaRVSS::Reconstruct
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "JareckiLysyanskayaRVSS::Reconstruct()" << p << q << g << h << n << t;
+	rbc->setID(myID.str());
 
 	try
 	{
@@ -528,6 +539,8 @@ bool JareckiLysyanskayaRVSS::Reconstruct
 	}
 	catch (bool return_value)
 	{
+		// unset ID for RBC
+		rbc->unsetID();
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
 		// return
@@ -682,7 +695,6 @@ bool JareckiLysyanskayaEDCF::Flip
 	mpz_t foo, bar, lhs, rhs;
 	std::vector<mpz_ptr> a_i, hata_i;
 	std::vector<size_t> complaints, complaints_counter;
-
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	for (size_t j = 0; j < n; j++)
 	{
@@ -691,6 +703,11 @@ bool JareckiLysyanskayaEDCF::Flip
 		a_i.push_back(tmp1), hata_i.push_back(tmp2);
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "JareckiLysyanskayaEDCF::Flip()" << p << q << g << h << n << t;
+	rbc->setID(myID.str());
 
 	try
 	{
@@ -783,6 +800,8 @@ bool JareckiLysyanskayaEDCF::Flip
 	}
 	catch (bool return_value)
 	{
+		// unset ID for RBC
+		rbc->unsetID();
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
 		for (size_t j = 0; j < n; j++)
