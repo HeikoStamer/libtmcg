@@ -30,7 +30,7 @@
 
 CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	(size_t n_in, size_t t_in, size_t j_in,
-	aiounicast *aiou_in, std::string ID_in)
+	aiounicast *aiou_in)
 {
 	assert(t_in <= n_in);
 	assert((3 * t_in) < n_in);
@@ -44,11 +44,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	// initialize asynchonous unicast
 	aiou = aiou_in;
 
-	// initialize ID
-	std::string myID = "CachinKursawePetzoldShoupRBC." + ID_in;
-	mpz_shash(ID, myID);
-
-	// initialize whoami (called $j$ in the paper)
+	// initialize whoami (this variable is called $j$ in the paper)
 	mpz_init_set_ui(whoami, j);
 
 	// initialize sequence counter
@@ -85,6 +81,14 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 		buf_msg.push_back(*ltmp2);
 		deliver_error.push_back(false);
 	}
+}
+
+void CachinKursawePetzoldShoupRBC::setID
+	(std::string ID_in)
+{
+	// set ID
+	std::string myID = "CachinKursawePetzoldShoupRBC." + ID_in;
+	mpz_shash(ID, myID);
 }
 
 void CachinKursawePetzoldShoupRBC::Broadcast

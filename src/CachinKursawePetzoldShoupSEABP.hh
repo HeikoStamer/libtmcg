@@ -80,7 +80,9 @@ class CachinKursawePetzoldShoupRBC
 
 		CachinKursawePetzoldShoupRBC
 			(size_t n_in, size_t t_in, size_t j_in,
-			aiounicast *aiou_in, std::string ID_in);
+			aiounicast *aiou_in);
+		void setID
+			(std::string ID_in);
 		void Broadcast
 			(mpz_srcptr m);
 		bool Deliver
