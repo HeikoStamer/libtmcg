@@ -96,7 +96,7 @@ void CachinKursawePetzoldShoupRBC::setID
 
 	// set new ID
 	std::stringstream myID;
-	myID << "CachinKursawePetzoldShoupRBC called from [" << ID_in << "] with last ID " << ID;
+	myID << "CachinKursawePetzoldShoupRBC called from [" << ID_in << "] with last ID = " << ID;
 	mpz_shash(ID, myID.str());
 }
 
@@ -156,6 +156,25 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 	{
 		for (size_t rounds = 0; rounds < (8 * n); rounds++)
 		{
+			// process the delivery buffer
+			std::stringstream myID;
+			myID << ID;
+			for (std::list< std::pair<std::string, std::pair<std::string, size_t> > >::iterator lit = deliver_buf.begin();
+				lit != deliver_buf.end(); ++lit)
+			{
+// TODO: sequence counter before delivering
+				if (lit->first == myID.str())
+				{
+std::cerr << "RPC: restore deliver from " << (lit->second).second << " m = " << mbar[(lit->second).first] << std::endl;
+					mpz_set(m, mbar[(lit->second).first]);
+					i_out = (lit->second).second;
+					deliver_buf.erase(lit);
+					throw true;
+				}
+//				else
+//std::cerr << "RPC: lit = " << lit->first << std::endl;
+			}
+
 			size_t l = n;
 			// anything buffered from previous calls/rounds?
 			for (size_t i = 0; i < n; i++)
@@ -388,10 +407,24 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					}
 //std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
 // TODO: check tag and sequence counter before delivering
-//FIXME: check ID == message[0] and deliver_counter[message[1]] == message[2]; otherwise buffer  
-					mpz_set(m, mbar[tag_string]);
-					i_out = mpz_get_ui(message[1]);
-					throw true;
+//FIXME: check ID == message[0] and deliver_counter[message[1]] == message[2]; otherwise buffer the message
+					if (!mpz_cmp(message[0], ID))
+					{
+						mpz_set(m, mbar[tag_string]);
+						i_out = mpz_get_ui(message[1]);
+						throw true;
+					}
+					else
+					{
+						std::pair<std::string, size_t> deliver_content =
+							std::pair<std::string, size_t>(tag_string, mpz_get_ui(message[1]));
+						std::stringstream thisID;
+						thisID << message[0];
+						deliver_buf.push_back(
+							std::pair<std::string, std::pair<std::string, size_t> >(thisID.str(), deliver_content));
+std::cerr << "RPC: P_" << j << " buffers deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
+						continue;
+					}
 				}
 				continue;
 			}
@@ -539,6 +572,7 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		}
 		buf_msg[i].clear();
 	}
-	buf_mpz.clear(), buf_msg.clear(), deliver_error.clear();
+	buf_mpz.clear(), buf_msg.clear();
+	deliver_error.clear(), deliver_buf.clear();
 }
 

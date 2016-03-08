@@ -66,18 +66,19 @@
 class CachinKursawePetzoldShoupRBC
 {
 	private:
-		mpz_t							ID, whoami, s;
-		std::list<mpz_ptr>					last_IDs;
-		mpz_t							r_send, r_echo, r_ready, r_request, r_answer;
-		std::vector< std::map<std::string, bool> >		send, echo, ready, request, answer;
-		std::map<std::string, mpz_ptr>				mbar, dbar;
-		std::map<std::string, std::map<std::string, size_t> >	e_d, r_d;
-		std::vector< std::list<mpz_ptr> >			buf_mpz, buf_msg;
-		std::vector<bool>					deliver_error;
+		mpz_t										ID, whoami, s;
+		std::list<mpz_ptr>								last_IDs;
+		mpz_t										r_send, r_echo, r_ready, r_request, r_answer;
+		std::vector< std::map<std::string, bool> >					send, echo, ready, request, answer;
+		std::map<std::string, mpz_ptr>							mbar, dbar;
+		std::map<std::string, std::map<std::string, size_t> >				e_d, r_d;
+		std::vector< std::list<mpz_ptr> >						buf_mpz, buf_msg;
+		std::vector<bool>								deliver_error;
+		std::list< std::pair<std::string, std::pair<std::string, size_t> > >		deliver_buf;
 	
 	public:
-		size_t							n, t, j;
-		aiounicast						*aiou;
+		size_t										n, t, j;
+		aiounicast									*aiou;
 
 		CachinKursawePetzoldShoupRBC
 			(size_t n_in, size_t t_in, size_t j_in,
