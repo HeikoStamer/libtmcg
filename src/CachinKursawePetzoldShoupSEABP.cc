@@ -83,6 +83,9 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 		std::list<mpz_ptr> *ltmp2 = new std::list<mpz_ptr>;
 		buf_msg.push_back(*ltmp2);
 		deliver_error.push_back(false);
+		mpz_ptr tmp = new mpz_t();
+		mpz_init_set_ui(tmp, 1L);
+		deliver_s.push_back(tmp);
 	}
 }
 
@@ -156,27 +159,35 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 	{
 		for (size_t rounds = 0; rounds < (8 * n); rounds++)
 		{
-			// process the delivery buffer
-			std::stringstream myID;
-			myID << ID;
-			for (std::list< std::pair<std::string, std::pair<std::string, size_t> > >::iterator lit = deliver_buf.begin();
-				lit != deliver_buf.end(); ++lit)
+			// first, process the delivery buffer
+			for (std::list< std::vector<mpz_ptr> >::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
 			{
-// TODO: sequence counter before delivering
-				if (lit->first == myID.str())
+				// compute hash of identifying tag $ID.j.s$
+				mpz_shash(tag, 3, (*lit)[0], (*lit)[1], (*lit)[2]);
+				std::stringstream tag_ss;
+				tag_ss << tag;
+				std::string tag_string = tag_ss.str();
+				size_t who = mpz_get_ui((*lit)[1]);
+				// check for matching tag and sequence counter before delivering
+				if (!mpz_cmp((*lit)[0], ID) && !mpz_cmp((*lit)[2], deliver_s[who]))
 				{
-std::cerr << "RPC: restore deliver from " << (lit->second).second << " m = " << mbar[(lit->second).first] << std::endl;
-					mpz_set(m, mbar[(lit->second).first]);
-					i_out = (lit->second).second;
+					mpz_set(m, mbar[tag_string]);
+//std::cerr << "RPC: restores deliver from " << who << " m = " << m << std::endl;
+					mpz_add_ui(deliver_s[who], deliver_s[who], 1L);
+					i_out = who;
+					for (size_t mm = 0; mm < lit->size(); mm++)
+					{
+						mpz_clear((*lit)[mm]);
+						delete (*lit)[mm];
+					}
+					lit->clear();
 					deliver_buf.erase(lit);
 					throw true;
 				}
-//				else
-//std::cerr << "RPC: lit = " << lit->first << std::endl;
 			}
 
 			size_t l = n;
-			// anything buffered from previous calls/rounds?
+			// second, anything buffered from previous calls/rounds?
 			for (size_t i = 0; i < n; i++)
 			{
 				if (buf_msg[i].size() >= message.size())
@@ -192,7 +203,8 @@ std::cerr << "RPC: restore deliver from " << (lit->second).second << " m = " << 
 					break;
 				}
 			}
-			if (l == n) // nothing buffered
+			// third, nothing buffered
+			if (l == n)
 			{
 				// receive a message from an arbitrary party $P_l$ (round-robin)
 				if (!aiou->Receive(message, l))
@@ -406,23 +418,27 @@ std::cerr << "RPC: restore deliver from " << (lit->second).second << " m = " << 
 						while (mpz_cmp(foo, message[4])); // $H(m) = \bar{d}$
 					}
 //std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
-// TODO: check tag and sequence counter before delivering
-//FIXME: check ID == message[0] and deliver_counter[message[1]] == message[2]; otherwise buffer the message
-					if (!mpz_cmp(message[0], ID))
+					size_t who = mpz_get_ui(message[1]);
+					// check for matching tag and sequence counter before delivering
+					if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
 					{
 						mpz_set(m, mbar[tag_string]);
-						i_out = mpz_get_ui(message[1]);
+						mpz_add_ui(deliver_s[who], deliver_s[who], 1L);
+						i_out = who;
 						throw true;
 					}
 					else
 					{
-						std::pair<std::string, size_t> deliver_content =
-							std::pair<std::string, size_t>(tag_string, mpz_get_ui(message[1]));
-						std::stringstream thisID;
-						thisID << message[0];
-						deliver_buf.push_back(
-							std::pair<std::string, std::pair<std::string, size_t> >(thisID.str(), deliver_content));
-std::cerr << "RPC: P_" << j << " buffers deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
+						// buffer the message for later delivery
+						std::vector<mpz_ptr> *vtmp = new std::vector<mpz_ptr>;
+						for (size_t mm = 0; mm < 5; mm++)
+						{
+							mpz_ptr tmp = new mpz_t();
+							mpz_init_set(tmp, message[mm]);
+							vtmp->push_back(tmp);
+						}
+						deliver_buf.push_back(*vtmp);
+//std::cerr << "RPC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
 						continue;
 					}
 				}
@@ -571,8 +587,19 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 			delete *lit;
 		}
 		buf_msg[i].clear();
+		mpz_clear(deliver_s[i]);
+		delete deliver_s[i];
 	}
 	buf_mpz.clear(), buf_msg.clear();
-	deliver_error.clear(), deliver_buf.clear();
+	for (std::list< std::vector<mpz_ptr> >::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
+	{
+		for (std::vector<mpz_ptr>::iterator vit = lit->begin(); vit != lit->end(); ++vit)
+		{
+			mpz_clear(*vit);
+			delete *vit;
+		}
+		lit->clear();
+	}	
+	deliver_error.clear(), deliver_buf.clear(), deliver_s.clear();
 }
 
