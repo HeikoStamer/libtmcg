@@ -133,6 +133,9 @@ void start_instance
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+
+			// at the end: deliver one more round for waiting parties
+			assert(!rbc->DeliverFrom(a, whoami));
 			mpz_clear(a);
 			
 			// release EDCF

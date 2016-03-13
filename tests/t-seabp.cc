@@ -94,6 +94,9 @@ void start_instance
 			}
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+
+			// at the end: deliver one more round for waiting parties
+			assert(!rbc->DeliverFrom(a, whoami));
 			mpz_clear(a);
 			
 			// release RBC			

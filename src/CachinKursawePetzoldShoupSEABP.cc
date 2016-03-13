@@ -135,10 +135,10 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 	// send message to all parties
 	for (size_t i = 0; i < n; i++)
 	{
-		size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+		size_t simulate_faulty_randomizer = mpz_wrandom_ui() % n;
 		if (simulate_faulty_behaviour)
 			mpz_add_ui((mpz_ptr)message[4], (mpz_ptr)message[4], 1L);
-		if (simulate_faulty_behaviour && simulate_faulty_randomizer)
+		if (simulate_faulty_behaviour && !simulate_faulty_randomizer)
 			aiou->Send(message, mpz_wrandom_ui() % n);
 		else
 			aiou->Send(message, i);
@@ -162,7 +162,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		mpz_init(tmp);
 		message.push_back(tmp);
 	}
-	// process messages according to the RBC protocol of [CKPS01]
+	// process messages according to the RBC protocol of [CKPS01] extended with a FIFO-ordered delivery
 	try
 	{
 		for (size_t rounds = 0; rounds < (8 * n); rounds++)
@@ -498,7 +498,7 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 	std::vector<size_t> sleep_counter;
 	for (size_t i = 0; i <= n; i++)
 		sleep_counter.push_back(0);
-	for (size_t rounds = 0; rounds < (n * n * n); rounds++) // FIXME: determine correct upper bound
+	for (size_t rounds = 0; rounds < ((2 * n * n) + n); rounds++)
 	{
 		// anything buffered?
 		if (buf_mpz[i_in].size() > 0)
