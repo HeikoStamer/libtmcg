@@ -190,7 +190,7 @@
 	
 	#include <SchindelhauerTMCG.hh>
 	
-	// protocols not related to mental poker	
+	// protocols not directly related to mental poker	
 	#include "NaorPinkasEOTP.hh"
 	#include "GennaroJareckiKrawczykRabinDKG.hh"
 	#include "JareckiLysyanskayaASTC.hh"

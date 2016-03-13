@@ -32,7 +32,6 @@
 #include <sys/wait.h>
 
 #include "test_helper.h"
-#include "pipestream.hh"
 
 #undef NDEBUG
 #define N 7

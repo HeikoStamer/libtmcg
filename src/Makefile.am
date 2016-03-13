@@ -28,7 +28,8 @@ include_HEADERS = mpz_srandom.h mpz_sqrtm.h mpz_spowm.h mpz_sprime.h\
 	GrothVSSHE.hh\
 	HooghSchoenmakersSkoricVillegasVRHE.hh\
 	NaorPinkasEOTP.hh\
-	GennaroJareckiKrawczykRabinDKG.hh
+	GennaroJareckiKrawczykRabinDKG.hh\
+	JareckiLysyanskayaASTC.hh\
 	CachinKursawePetzoldShoupSEABP.hh\
 	SchindelhauerTMCG.hh\
 	VTMF_Card.hh VTMF_CardSecret.hh\

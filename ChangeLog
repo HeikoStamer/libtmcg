@@ -1,5 +1,6 @@
+* [2016-03-13] provides a test program for RBC protocol
 * [2016-02-27] provides a distributed signature scheme
-* [2016-02-24] provides a reliable broadcast protocol
+* [2016-02-24] provides a reliable broadcast (RBC) protocol
 * [2016-02-15] provides a distributed key generation protocol
 * [2016-02-07] provides a non-interactive version of the rotation protocol
 * [2016-02-07] provides a non-interactive version of the shuffle protocol
