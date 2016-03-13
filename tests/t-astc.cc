@@ -255,7 +255,7 @@ int main
 	{
 		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
 		if (waitpid(pid[i], NULL, 0) != pid[i])
-			perror("t-dkg (waitpid)");
+			perror("t-astc (waitpid)");
 		for (size_t j = 0; j < N; j++)
 		{
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))

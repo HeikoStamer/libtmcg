@@ -120,7 +120,7 @@ void CachinKursawePetzoldShoupRBC::unsetID
 }
 
 void CachinKursawePetzoldShoupRBC::Broadcast
-	(mpz_srcptr m)
+	(mpz_srcptr m, bool simulate_faulty_behaviour)
 {
 	mpz_add_ui(s, s, 1L); // increase sequence counter
 
@@ -134,7 +134,15 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 
 	// send message to all parties
 	for (size_t i = 0; i < n; i++)
-		aiou->Send(message, i);
+	{
+		size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+		if (simulate_faulty_behaviour)
+			mpz_add_ui((mpz_ptr)message[4], (mpz_ptr)message[4], 1L);
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer)
+			aiou->Send(message, mpz_wrandom_ui() % n);
+		else
+			aiou->Send(message, i);
+	}
 
 	// release message
 	message.clear();
@@ -225,7 +233,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				std::cerr << "RBC: wrong j in tag from " << l << std::endl;
 				continue;
 			}
-			if (mpz_cmp_ui(message[2], 1) < 0)
+			if (mpz_cmp_ui(message[2], 1L) < 0)
 			{
 				std::cerr << "RBC: wrong s in tag from " << l << std::endl;
 				continue;

@@ -90,7 +90,7 @@ class CachinKursawePetzoldShoupRBC
 		void unsetID
 			();
 		void Broadcast
-			(mpz_srcptr m);
+			(mpz_srcptr m, bool simulate_faulty_behaviour = false);
 		bool Deliver
 			(mpz_ptr m, size_t &i_out);
 		bool DeliverFrom
