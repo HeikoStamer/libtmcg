@@ -367,9 +367,12 @@ setting. Thus the application programmer should be careful and avoid parallel
 protocol sessions. It is an open research project to create a protocol suite
 whose security can be proven in the UC-framework of Canetti (see @emph{Universally
 Composable Security: A New Paradigm for Cryptographic Protocols}, Cryptology
-ePrint Archive: Report 2000/067). Furthermore, the protocols should employ
-concurrent zero-knowledge proofs (see Dwork, Naor, Sahai: @emph{Concurrent
-Zero-Knowledge}, Journal of the ACM 51(6):851--898, 2004).
+ePrint Archive: Report 2000/067) or even more elaborated UC-frameworks (see e.g.
+Dennis Hofheinz and Victor Shoup: @emph{GNUC: A New Universal Composability
+Framework}, Cryptology ePrint Archive: Report 2011/303). Furthermore, the
+protocols should employ concurrent zero-knowledge proofs (see Cynthia Dwork,
+Moni Naor, and Amit Sahai: @emph{Concurrent Zero-Knowledge}, Journal of the
+ACM 51(6):851--898, 2004).
 
 Please note, that in some protocols the Fiat-Shamir heuristic@tie{}[FS87]
 is used to turn interactive special honest verifier zero-knowledge arguments
@@ -386,7 +389,7 @@ obviously does not hold and thus a malicious prover can manipulate the challenge
 in order to cheat. On the other hand, the Fiat-Shamir heuristic, and in general the
 non-interactivness of the transformed protocols, helps against a malicious verifier. 
 
-LibTMCG was carefully implemented with respect to timing attacks (see Kocher:
+LibTMCG was carefully implemented with respect to timing attacks (see Paul C. Kocher:
 @emph{Cryptanalysis of Diffie-Hellman, RSA, DSS, and other cryptosystems using
 timing attacks}, CRYPTO@tie{}'95, LNCS@tie{}963, 1995). Therefore we loose
 some efficiency, e.g., during modular exponentiations. However, it is strongly
