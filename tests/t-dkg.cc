@@ -182,7 +182,7 @@ void start_instance
 				assert(nts->Verify(m, c, s));
 
 			// at the end: deliver one more round for waiting parties
-			assert(!rbc->DeliverFrom(m, whoami));
+			rbc->DeliverFrom(m, whoami);
 			mpz_clear(m), mpz_clear(c), mpz_clear(s);
 			
 			// release NTS
