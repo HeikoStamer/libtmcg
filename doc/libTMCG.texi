@@ -350,7 +350,9 @@ soundness error of these proofs is bounded by a security parameter @math{t}.
 Depending on your application scenario this parameter should be chosen such
 that there is a reasonable tradeoff between the cheating probability (which
 is less or equal than @math{2^{-t}}) and the produced computational and
-communication complexity.
+communication complexity. Finally, some of the protocols (e.g. the efficient
+shuffle argument by Groth) are only zero-knowledge with respect to an
+so called ``honest verifier'' who follows the protocol instructions faithfully.
 
 Unfortunately, in practice there is a substantial problem with the detection
 of cheaters. Reliable cheater detection requires that an authenticated
@@ -359,7 +361,7 @@ access. LibTMCG does not yet contain the necessary protocols (reliable
 broadcast or even atomic broadcast) for creating such a channel. Thus you
 should take into account that not necessarily the player acting as prover
 is the source of evil, if a verification procedure fails. This level of
-uncertainty is also a reason for our restricted adversary model.
+uncertainty is another reason for our restricted adversary model.
 
 Note that it is not known, whether the used protocols retain their
 zero-knowledge property, if they are composed and executed in a concurrent
@@ -374,7 +376,7 @@ protocols should employ concurrent zero-knowledge proofs (see Cynthia Dwork,
 Moni Naor, and Amit Sahai: @emph{Concurrent Zero-Knowledge}, Journal of the
 ACM 51(6):851--898, 2004).
 
-Please note, that in some protocols the Fiat-Shamir heuristic@tie{}[FS87]
+Please also note, that in some protocols the Fiat-Shamir heuristic@tie{}[FS87]
 is used to turn interactive special honest verifier zero-knowledge arguments
 resp. proofs into an non-interactive version. However, there are some theoretical
 (see e.g. Nir Bitansky, Dana Dachman-Soled, Sanjam Garg, Abhishek Jain, Yael Tauman
