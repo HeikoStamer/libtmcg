@@ -1663,15 +1663,15 @@ fingerprints by telephone or a service provider can issue public key certificate
 		This method tests whether the self signature is valid and whether the
 		non-interactive zero-knowledge proofs are sound. It returns @code{true},
 		if all checks have been successfully passed. Due to the computational
-		complexity of the verification procedure these checks are extremely
-		time-consuming.
+		complexity of the verification procedure these checks are an extremely
+		time-consuming task.
 	@end deftypemethod
 	
 	@deftypemethod TMCG_PublicKey {std::string} fingerprint ()
 		This method returns the fingerprint of the key. The fingerprint is the
-		hexadecimal notation of the hash value (algorithm @code{TMCG_GCRY_MD_ALGO})
-		on the members @code{name}, @code{email}, @code{type}, @code{m}, @code{y},
-		@code{nizk}, and @code{sig}.
+		hexadecimal notation of the hash value (using algorithm @code{TMCG_GCRY_MD_ALGO})
+		on the concatenated members @code{name}, @code{email}, @code{type},
+		@code{m}, @code{y}, @code{nizk}, and @code{sig}.
 	@end deftypemethod
 	
 	@deftypemethod TMCG_PublicKey {std::string} selfid ()

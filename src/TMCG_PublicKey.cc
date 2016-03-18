@@ -14,7 +14,7 @@
 
      Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
 
- Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -111,17 +111,14 @@ bool TMCG_PublicKey::check
 		// check, whether m \not\in FP (fermat primes: m = 2^k + 1)
 		mpz_set(foo, m);
 		mpz_sub_ui(foo, foo, 1L);
-// FIXME: is m correct here? (not foo) 
 		unsigned long int k = mpz_sizeinbase(m, 2L);
-		mpz_set_ui(bar, 2L);
-		mpz_pow_ui(bar, bar, k);
+		mpz_ui_pow_ui(bar, 2L, k);
 		if (!mpz_cmp(foo, bar))
 		{
 			// check, whether k is power of two
 			mpz_set_ui(foo, k);
 			unsigned long int l = mpz_sizeinbase(foo, 2L);
-			mpz_set_ui(bar, 2L);
-			mpz_pow_ui(bar, bar, l);
+			mpz_ui_pow_ui(bar, 2L, l);
 			if (!mpz_cmp(foo, bar))
 			{
 				// check, whether m is not equal to 5L
@@ -129,8 +126,7 @@ bool TMCG_PublicKey::check
 					throw false;
 				
 				// check, whether 5^{2^(k/2)} \equiv -1 (mod m) [Pepin's prime test]
-				mpz_set_ui(foo, 2L);
-				mpz_powm_ui(foo, foo, (k / 2), m);
+				mpz_ui_pow_ui(foo, 2L, (k / 2));
 				mpz_set_ui(bar, 5L);
 				mpz_powm(foo, bar, foo, m);
 				mpz_set_si(bar, -1L);
