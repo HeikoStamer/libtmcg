@@ -378,18 +378,20 @@ ACM 51(6):851--898, 2004).
 
 Please also note, that in some protocols the Fiat-Shamir heuristic@tie{}[FS87]
 is used to turn interactive special honest verifier zero-knowledge arguments
-resp. proofs into an non-interactive version. However, there are some theoretical
+resp. proofs into non-interactive versions. However, there are some theoretical
 (see e.g. Nir Bitansky, Dana Dachman-Soled, Sanjam Garg, Abhishek Jain, Yael Tauman
 Kalai, Adriana Lopez-Alt, and Daniel Wichs: @emph{Why 'Fiat-Shamir for Proofs'
 Lacks a Proof}, TCC@tie{}2013, LNCS@tie{}7785, 2013) and pratical (see David
 Bernhard, Olivier Pereira, Bogdan Warinschi: @emph{How Not to Prove Yourself:
 Pitfalls of the Fiat-Shamir Heuristic and Applications to Helios}, ASIACRYPT@tie{}2012,
-LNCS@tie{}7658, 2012) results that show the insecurity of Fiat-Shamir heuristic
+LNCS@tie{}7658, 2012) concerns that show the insecurity of Fiat-Shamir heuristic
 w.r.t. the soundness of the argument resp. proof. That means, if deterministic
 hash functions are used as public coin@tie{}[BR93], then the random oracle model
 obviously does not hold and thus a malicious prover can manipulate the challenges
-in order to cheat. On the other hand, the Fiat-Shamir heuristic, and in general the
-non-interactivness of the transformed protocols, helps against a malicious verifier. 
+in order to cheat and violate soundness. On the other hand, the Fiat-Shamir heuristic,
+and in general the non-interactivness of the transformed protocols, protects against
+a malicious verifier. Thus it is an important measure to deal with the limitation
+of honest verifier zero-knowledge protocols without loosing their efficiency.
 
 LibTMCG was carefully implemented with respect to timing attacks (see Paul C. Kocher:
 @emph{Cryptanalysis of Diffie-Hellman, RSA, DSS, and other cryptosystems using
@@ -615,21 +617,21 @@ and DLOG. The default value is @code{256}.
 @end defmac
 
 @defmac TMCG_GCRY_MD_ALGO
-Defines the message digest algorithm for digital signatures and
-the Fiat-Shamir heuristic@tie{}[FS87].
-The security of the most non-interactive zero-knowledge proofs (NIZK)
-is related to the so-called random oracle model, i.e., we suppose that
+Defines the message digest algorithm (hash function) for digital signatures
+and the Fiat-Shamir heuristic@tie{}[FS87].
+The security of the most non-interactive zero-knowledge proofs resp. arguments (NIZK)
+was only proved in the so-called random oracle model, i.e., we suppose that
 the instantiated hash function behaves like an ideal random function
-(which cannot hold in a real world scenario). However, this assumption
-seems to be reasonable, if the hash function is collision-resistant
-and carefully implemented.
-In former versions the default value @code{GCRY_MD_RMD160}
+(which obviously cannot hold in a real world scenario). However, this
+assumption seems to be reasonable, if the hash function is collision-resistant
+and if it is carefully implemented with respect to other instantiations.
+In former versions of LibTMCG the default value was @code{GCRY_MD_RMD160}
 @footnote{This is a constant defined by the GNU Crypto Library.},
 i.e. the hash algorithm RIPEMD-160 (see Dobbertin, Bosselaers,
 Preneel: @emph{RIPEMD-160, a strengthened version of RIPEMD}, 1996),
-was used, which has an output length of 160 bit. Recently we moved
-to the hash function SHA-256 (@code{GCRY_MD_SHA256}@footnote{This is a
-constant defined by the GNU Crypto Library.}) for improved security.
+which is function that has an output length of 160 bit. Recently we moved
+to the hash function SHA-256 (@code{GCRY_MD_SHA256}@footnote{This is also a
+constant defined by the GNU Crypto Library.}) for improved collision resistance.
 Thus we gain a security level of approximately @math{2^{128}}, assuming
 that a birthday-attack is the best known attack against this hash function.
 @end defmac
@@ -655,7 +657,8 @@ proof (stage 1) which convince all verifiers that the TMCG key was
 correctly generated. The default value is @code{16} which implies
 a soundness error probability @math{{} \le d^{-16}}, where
 @math{d = {\rm gcd}(m, \phi(m))}. This parameter is only relevant for the
-card encoding scheme of Schindelhauer.
+card encoding scheme of Schindelhauer, where the key has to be of a
+special format.
 @end defmac
 
 @defmac TMCG_KEY_NIZK_STAGE2
