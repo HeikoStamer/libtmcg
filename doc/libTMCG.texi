@@ -658,7 +658,7 @@ correctly generated. The default value is @code{16} which implies
 a soundness error probability @math{{} \le d^{-16}}, where
 @math{d = {\rm gcd}(m, \phi(m))}. This parameter is only relevant for the
 card encoding scheme of Schindelhauer, where the key has to be of a
-special format.
+very special format.
 @end defmac
 
 @defmac TMCG_KEY_NIZK_STAGE2
@@ -1413,17 +1413,18 @@ There is no error reported, if this limit is exceeded.
 
 @subsubsection Cryptographic Keys
 @cindex Keys
-LibTMCG only provides corresponding data types for keys used by the encoding
-scheme of Schindelhauer@tie{}[Sc98], because for this scheme it is not efficient
-to perform the key generation in every new game session. Furthermore, in general
-you can use these keys to encrypt and sign messages for confidentiality and integrity,
-even if the scheme of Barnett and Smart@tie{}[BS03] has been applied for card encoding.
-Therefore these structures may be of independent interest, for example to establish
-authenticated communication channels between players.
-However, like for all public key cryptosystems a trusted @acronym{PKI, Public
-Key Infrastructure} is needed. This might not be a serious requirement in
-distributed game environments, because the players can compare their key
-fingerprints by telephone or a service provider can issue public key certificates.
+@cindex TMCG keys
+LibTMCG provides corresponding data types for keys used by the encoding scheme of
+Schindelhauer@tie{}[Sc98], because in this scheme it is not efficient to perform the
+process of key generation for every new game session. These keys are called TMCG keys.
+However, they also can be utilized to encrypt and sign messages for the more general
+reasons of confidentiality and integrity, even if the card encoding scheme of
+Schindelhauer is not used. Therefore these structures may be of independent interest,
+for example to establish authenticated communication channels between players.
+However, like for all public key cryptosystems a trusted @acronym{PKI, Public Key
+Infrastructure} is needed. This might not be a serious problem in distributed
+game environments, because the players can include key fingerprints in their 
+individual profile or a service provider can issue public key certificates.
 
 @deftp {Data type} TMCG_SecretKey
 	This @code{struct} represents the secret part of the key. The
@@ -1613,7 +1614,7 @@ fingerprints by telephone or a service provider can issue public key certificate
 		prefix is @code{TMCG/RABIN}. It is followed by the decimal encoded
 		bit size of the modulus @math{m}. The suffix @code{NIZK} signals
 		that the correctness of the key is shown by an appended non-interactive
-		zero-knowledge proof. The single parts are separated by underscore
+		zero-knowledge proof. The single parts of the string are separated by underscore
 		characters @code{_}, e.g., @code{TMCG/RABIN_1024_NIZK} has the correct
 		form. However, the suffix can be left empty, if the key is
 		only used for encryption and signing.
@@ -1621,8 +1622,8 @@ fingerprints by telephone or a service provider can issue public key certificate
 	
 	@deftypecv {Member} TMCG_PublicKey {std::string} nizk
 		This string contains two stages of non-interactive zero-knowledge
-		proof of Gennaro, Micciancio and Rabin (ACM CCS, 1998). They show
-		that the modulus @math{m} was correctly generated. Further there is another
+		proof of Gennaro, Micciancio and Rabin. They give strong evidence that
+		the modulus @math{m} was generated correctly. Further there is another
 		non-interactive zero-knowledge proof appended which shows that the condition
 		@math{y\in{\bf NQR}^\circ_m} holds.
 	@end deftypecv
@@ -1764,7 +1765,7 @@ of cards, the opening of masked cards, the verifiable secret shuffle of a stack,
 and more general tasks like distributed key generation procedures. Each class
 implements the main functionality of the corresponding research
 paper@tie{}[Sc98,BS03,Gr05,HSSV09]. The author names are a prefix of the class
-name and the then following part is an abbreviation of (a part of) the title.
+name and the following part is an abbreviation of (a part of) the title.
 
 @subsubsection Verifiable @var{k}-out-of-@var{k} Threshold Masking Function
 The two classes of this subsection are concrete instantiations of Barnett
