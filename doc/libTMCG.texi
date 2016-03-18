@@ -1414,24 +1414,22 @@ There is no error reported, if this limit is exceeded.
 @subsubsection Cryptographic Keys
 @cindex Keys
 LibTMCG only provides corresponding data types for keys used by the encoding
-scheme of
-Schindelhauer@tie{}[Sc98], because it is not efficient to perform the
-key generation in every new game session. Furthermore, in general you
-can encrypt and sign messages to ensure confidentiality and integrity,
-even if the scheme of Barnett and Smart@tie{}[BS03] has been applied for
-the card encoding. Therefore these structures may be of independent interest,
-for example to establish authenticated communication channels between players.
+scheme of Schindelhauer@tie{}[Sc98], because for this scheme it is not efficient
+to perform the key generation in every new game session. Furthermore, in general
+you can use these keys to encrypt and sign messages for confidentiality and integrity,
+even if the scheme of Barnett and Smart@tie{}[BS03] has been applied for card encoding.
+Therefore these structures may be of independent interest, for example to establish
+authenticated communication channels between players.
 However, like for all public key cryptosystems a trusted @acronym{PKI, Public
 Key Infrastructure} is needed. This might not be a serious requirement in
 distributed game environments, because the players can compare their key
-fingerprints
-by telephone or a service provider can issue public key certificates.
+fingerprints by telephone or a service provider can issue public key certificates.
 
 @deftp {Data type} TMCG_SecretKey
-	This @code{struct} represents the secret part of the TMCG key. The
+	This @code{struct} represents the secret part of the key. The
 	underlying public key cryptosystem is due to Rabin with minor
-	modifications for encryption padding (SAEP scheme
-	of Boneh) and digital signatures (PRab scheme of Bellare and Rogaway).
+	modifications for encryption padding (SAEP scheme of Boneh) and
+	digital signatures (PRab scheme of Bellare and Rogaway).
 	
 	@deftypecv {Member} TMCG_SecretKey {std::string} name
 		This string contains the name or a pseudonym of the key owner.
@@ -1446,10 +1444,10 @@ by telephone or a service provider can issue public key certificates.
 		prefix is @code{TMCG/RABIN}. It is followed by the decimal encoded
 		bit size of the modulus @math{m}. The suffix @code{NIZK} signals
 		that the correctness of the key is shown by an appended non-interactive
-		zero-knowledge proof. The single parts are separated by underscore
-		characters @code{_}, e.g., @code{TMCG/RABIN_1024_NIZK} has the correct
-		form. However, the suffix can be left empty, if the key is
-		only used for encryption and signing (non-NIZK key).
+		zero-knowledge proof. The single parts of the description are separated	
+		by underscore characters @code{_}, e.g., @code{TMCG/RABIN_1024_NIZK} has
+		the correct form. The suffix can be left empty, if the key is only used
+		for encryption and signing (so-called non-NIZK key) without card encoding.
 	@end deftypecv
 	
 	@deftypecv {Member} TMCG_SecretKey {std::string} nizk
@@ -1463,7 +1461,7 @@ by telephone or a service provider can issue public key certificates.
 	@end deftypecv
 	
 	@deftypecv {Member} TMCG_SecretKey {std::string} sig
-		This string contains the self signature of the public key.
+		This string contains a self signature of the public key.
 	@end deftypecv
 	
 	@deftypecv {Member} TMCG_SecretKey {mpz_t} m
@@ -1493,13 +1491,15 @@ by telephone or a service provider can issue public key certificates.
 	@end defop
 	
 	@deftypeop {Constructor} TMCG_SecretKey {} TMCG_SecretKey (@code{const std::string&} n, @code{const std::string&} e, @code{unsigned long int} keysize @code{=TMCG_QRA_SIZE}, @code{bool} nizk_key @code{=true})
-		This constructor generates a new secret key where @var{n} is the name or a
-		pseudonym of the owner, @var{e} is a corresponding email address, 
-		@var{keysize} is the desired bit length of the modulus @math{m}, and @var{nizk_key} indicates whether or not a NIZK proof will be appended. The
+		This constructor generates a new secret key, where @var{n} is the name or
+		a pseudonym of the owner, @var{e} is a corresponding email address, 
+		@var{keysize} is the desired bit length of the modulus @math{m}, and
+		@var{nizk_key} indicates whether or not a NIZK proof will be appended. The
 		default value of the third argument is set to @code{TMCG_QRA_SIZE},
-		if @var{keysize} is omitted in the call. The default value of the fourth argument is set to @code{true}, whenever it is omitted in the call. Depending on @var{keysize} and @var{nizk_key}
-		the generation is a very time-consuming task and dots are sent to
-		@code{std::cerr} as a progress indicator.
+		if @var{keysize} is omitted in the call. The default value of the fourth
+		argument is set to @code{true}, whenever it is omitted in the call.
+		Depending on @var{keysize} and @var{nizk_key} the generation is a very
+		time-consuming task and dots are sent to @code{std::cerr} as progress indicator.
 	@end deftypeop
 	
 	@deftypeop {Constructor} TMCG_SecretKey {} TMCG_SecretKey (@code{const std::string&} s)
@@ -1519,15 +1519,15 @@ by telephone or a service provider can issue public key certificates.
 		This method tests whether the self signature is valid and whether the
 		non-interactive zero-knowledge proofs are sound. It returns @code{true},
 		if all checks have been successfully passed. Due to the computational
-		complexity of the verification procedure these checks are extremely
-		time-consuming.
+		complexity of the verification procedure these checks are a very
+		time-consuming task.
 	@end deftypemethod
 	
 	@deftypemethod TMCG_SecretKey {std::string} fingerprint ()
 		This method returns the fingerprint of the key. The fingerprint is the
-		hexadecimal notation of the hash value (algorithm @code{TMCG_GCRY_MD_ALGO})
-		on the members @code{name}, @code{email}, @code{type}, @code{m}, @code{y},
-		@code{nizk}, and @code{sig}.
+		hexadecimal notation of the hash value (using algorithm @code{TMCG_GCRY_MD_ALGO})
+		on the concatenated members @code{name}, @code{email}, @code{type},
+		@code{m}, @code{y}, @code{nizk}, and @code{sig}.
 	@end deftypemethod
 	
 	@deftypemethod TMCG_SecretKey {std::string} selfid ()
@@ -2747,7 +2747,7 @@ authenticated communication channels. These channels are organized in input resp
 output streams, where @code{input_stream[i]} resp. @code{output_stream[i]} denote
 the corresponding @code{std::istream} resp. @code{std::ostream} instance for the
 communication with player @math{P_i}.@footnote{We assume that the players
-are ordered in a natural way such that we can use the same nomenclature.}
+are ordered in a natural way such that we can use an uniform nomenclature.}
 
 @menu
 * Library Initialization::
@@ -2876,7 +2876,7 @@ The first argument determines the maximum stack size of which the correctness
 of a shuffle will be proven. The other parameters are obtained from the former
 created VTMF instance @code{vtmf}. It is important that the key generation
 protocol has been finalized before the common public key @math{h}
-(i.e. @code{vtmf->h}) is passed.
+(i.e. @code{vtmf->h}) is passed, because this value is checked within.
 @cartouche
 @example
 GrothVSSHE *vsshe = new GrothVSSHE(52, vtmf->p, vtmf->q, vtmf->k, 
@@ -3044,14 +3044,15 @@ all players.
 @subsection Shuffling the Deck
 Each player must perform a shuffle of the deck, because only such a procedure
 guarantees that no coalition has influence on the outcome. Thus we build a
-shuffle chain such that every player shuffles the deck.
-Consider the following code fragment for the player @math{P_j}.
+shuffle chain (e.g. using the strict total order @math{P_i < P_j} iff @math{i < j})
+such that every player shuffles the deck. Consider the following code fragment
+for the player @math{P_j}.
 
 First the regular stack @code{s} is initialized with open cards from @code{deck}.
-Then each player shuffles the stack (see @code{TMCG_MixStack}) and proves the
-correctness of this operation (see @code{TMCG_ProveStackEquality}). Consequently,
-every player should verify these proofs (see @code{TMCG_VerifyStackEquality}) and
-complain deviations immediately.
+Then each player shuffles the stack (see @code{TMCG_MixStack}) using randomness
+(see @code{TMCG_CreateStackSecret}) and proves the correctness of this operation
+(see @code{TMCG_ProveStackEquality}). Consequently, every player should verify
+these proofs (see @code{TMCG_VerifyStackEquality}) and complain deviations immediately.
 Finally, the stack @code{s} contains the shuffled result.
 @cartouche
 @example
@@ -3093,10 +3094,12 @@ If you want to use the more efficient shuffle verification protocol of Groth,
 then you must simply replace @code{TMCG_ProveStackEquality} and
 @code{TMCG_VerifyStackEquality} by @code{TMCG_ProveStackEquality_Groth} and
 @code{TMCG_VerifyStackEquality_Groth}, respectively.@footnote{The non-interactive
-version of this protocol provides an even more efficient implementation,
-because the prover has to compute the argument of correctness only once. This
-also reduces the communication complexity. Please have a look at the included
-program code of @code{tests/t-poker-noninteractive.cc} to get a clue.}
+version of Groth's protocol (see @code{TMCG_ProveStackEquality_Groth_noninteractive} and
+@code{TMCG_VerifyStackEquality_Groth_noninteractive}) provides an even more efficient
+implementation, because the prover has to compute the argument of correctness only once.
+Additionallly, it protects agains malicious verifiers and reduces the communication
+complexity. Thus using this version is strongly recommended. Please have a look at the
+included program code of @code{tests/t-poker-noninteractive.cc} to get a clue.}
 
 @node Drawing a Card from the Deck
 @subsection Drawing a Card from the Deck
