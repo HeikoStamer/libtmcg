@@ -156,7 +156,7 @@ void GrothSKC::Prove_interactive
 	// prover: third move
 	in >> e; // get $e$ from the verifier
 	// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
-	mpz_tdiv_r_2exp(x, x, l_e);
+	mpz_tdiv_r_2exp(e, e, l_e);
 	
 	// prover: fourth move
 	// compute $f_i = e m_{\pi(i)} + d_i$
