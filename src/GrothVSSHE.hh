@@ -52,8 +52,11 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
-  // Pedersen Commitment Scheme
-  #include "PedersenCOM.hh"
+	// Pedersen Commitment Scheme
+	#include "PedersenCOM.hh"
+
+	// erasure-free distributed coinflip protocol
+	#include "JareckiLysyanskayaASTC.hh"
 
 class GrothSKC
 {
@@ -80,11 +83,20 @@ class GrothSKC
 			(const std::vector<size_t> &pi, mpz_srcptr r,
 			const std::vector<mpz_ptr> &m,
 			std::istream &in, std::ostream &out) const;
+		void Prove_interactive_publiccoin
+			(const std::vector<size_t> &pi, mpz_srcptr r,
+			const std::vector<mpz_ptr> &m,
+			JareckiLysyanskayaEDCF *edcf,
+			std::istream &in, std::ostream &out) const;
 		void Prove_noninteractive
 			(const std::vector<size_t> &pi, mpz_srcptr r,
 			const std::vector<mpz_ptr> &m, std::ostream &out) const;
 		bool Verify_interactive
 			(mpz_srcptr c, const std::vector<mpz_ptr> &m,
+			std::istream &in, std::ostream &out, bool optimizations = true) const;
+		bool Verify_interactive_publiccoin
+			(mpz_srcptr c, const std::vector<mpz_ptr> &m,
+			JareckiLysyanskayaEDCF *edcf,
 			std::istream &in, std::ostream &out, bool optimizations = true) const;
 		bool Verify_noninteractive
 			(mpz_srcptr c, const std::vector<mpz_ptr> &m,
@@ -92,6 +104,11 @@ class GrothSKC
 		bool Verify_interactive
 			(mpz_srcptr c, const std::vector<mpz_ptr> &f_prime,
 			const std::vector<mpz_ptr> &m,
+			std::istream &in, std::ostream &out, bool optimizations = true) const;
+		bool Verify_interactive_publiccoin
+			(mpz_srcptr c, const std::vector<mpz_ptr> &f_prime,
+			const std::vector<mpz_ptr> &m,
+			JareckiLysyanskayaEDCF *edcf,
 			std::istream &in, std::ostream &out, bool optimizations = true) const;
 		bool Verify_noninteractive
 			(mpz_srcptr c, const std::vector<mpz_ptr> &f_prime,
@@ -142,6 +159,12 @@ class GrothVSSHE
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& E,
 			std::istream& in, std::ostream& out) const;
+		void Prove_interactive_publiccoin
+			(const std::vector<size_t>& pi, const std::vector<mpz_ptr>& R,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& E,
+			JareckiLysyanskayaEDCF *edcf,
+			std::istream& in, std::ostream& out) const;
 		void Prove_noninteractive
 			(const std::vector<size_t>& pi, const std::vector<mpz_ptr>& R,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
@@ -150,6 +173,11 @@ class GrothVSSHE
 		bool Verify_interactive
 			(const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& E,
+			std::istream& in, std::ostream& out) const;
+		bool Verify_interactive_publiccoin
+			(const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> >& E,
+			JareckiLysyanskayaEDCF *edcf,
 			std::istream& in, std::ostream& out) const;
 		bool Verify_noninteractive
 			(const std::vector<std::pair<mpz_ptr, mpz_ptr> >& e,
