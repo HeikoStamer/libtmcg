@@ -84,6 +84,9 @@ class JareckiLysyanskayaRVSS
 		bool Share
 			(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err, bool simulate_faulty_behaviour = false);
+		bool Share_twoparty
+			(size_t i, aiounicast *aiou,
+			std::ostream &err, bool simulate_faulty_behaviour = false);
 		bool Reconstruct
 			(size_t i, std::vector<size_t> &complaints,
 			std::vector<mpz_ptr> &a_i_in,
@@ -114,6 +117,9 @@ class JareckiLysyanskayaEDCF
 		bool Flip
 			(size_t i, mpz_ptr a,
 			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err, bool simulate_faulty_behaviour = false);
+		bool Flip_twoparty
+			(size_t i, mpz_ptr a, aiounicast *aiou,
 			std::ostream &err, bool simulate_faulty_behaviour = false);
 		~JareckiLysyanskayaEDCF
 			();

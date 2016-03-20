@@ -143,9 +143,6 @@ void start_instance
 
 			// release RBC			
 			delete rbc;
-
-			// release VTMF instances
-			delete vtmf;
 			
 			// release pipe streams (private channels)
 			size_t numRead = 0, numWrite = 0;
@@ -170,6 +167,53 @@ void start_instance
 
 			// release asynchronous unicast and broadcast
 			delete aiou, delete aiou2;
+
+			// testing the two-party protocol version
+			if (whoami < 2)
+			{
+				for (size_t i = 0; i < 2; i++)
+				{
+					uP_in.push_back(pipefd[i][whoami][0]);
+					uP_out.push_back(pipefd[whoami][i][1]);
+				}
+
+				// create an instance of EDCF
+				std::cout << "JareckiLysyanskayaEDCF(2, 0, ...)" << std::endl;
+				edcf = new JareckiLysyanskayaEDCF(2, 0,
+					vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+
+				// create asynchronous unicast with timeout 3 rounds
+				aiou = new aiounicast(2, 0, whoami, uP_in, uP_out, 3);
+
+				// generating public random value $a \in \mathbb{Z}_q$
+				mpz_t a_twoparty;
+				std::stringstream err_log_twoparty;
+				mpz_init_set_ui(a_twoparty, 0L);
+				start_clock();
+				std::cout << "P_" << whoami << ": edcf.Flip_twoparty()" << std::endl;
+				if (corrupted)
+					edcf->Flip_twoparty(whoami, a_twoparty, aiou, err_log_twoparty, true);
+				else
+					assert(edcf->Flip_twoparty(whoami, a_twoparty, aiou, err_log_twoparty));
+				stop_clock();
+				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_twoparty.str();
+				mpz_clear(a_twoparty);
+
+				// release EDCF
+				delete edcf;
+
+				// release handles (unicast channel)
+				uP_in.clear(), uP_out.clear();
+				std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
+					" aiou.numWrite = " << aiou->numWrite << std::endl;
+
+				// release asynchronous unicast
+				delete aiou;
+			}
+
+			// release VTMF instance
+			delete vtmf;
 			
 			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
