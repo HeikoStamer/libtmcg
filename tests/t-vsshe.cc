@@ -292,7 +292,10 @@ int main
 			mpz_sub_ui(r, r, 1L);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
-			
+
+			// initialize EDCF
+			JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,
+					com->p, com->q, com->g[0], com->h);
 			// initialize VSSHE
 			lej2 << com->p << std::endl << com->q << std::endl << com->g[0] << 
 				std::endl << com->h << std::endl;
@@ -334,13 +337,25 @@ int main
 			vsshe->Prove_interactive(xi, R, e, E, *pipe_in, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
-			// prove VSSHE
+			// prove VSSHE public-coin
+			start_clock();
+			std::cout << "P: vsshe.Prove_interactive_publiccoin(...)" << std::endl;
+			vsshe->Prove_interactive_publiccoin(pi, R, e, E, edcf, *pipe_in, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove VSSHE public-coin wrong
+			start_clock();
+			std::cout << "P: !vsshe.Prove_interactive_publiccoin(...)" << std::endl;
+			vsshe->Prove_interactive_publiccoin(xi, R, e, E, edcf, *pipe_in, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove VSSHE non-interactive
 			start_clock();
 			std::cout << "P: vsshe.Prove_noninteractive(...)" << std::endl;
 			vsshe->Prove_noninteractive(pi, R, e, E, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
-			// prove VSSHE wrong
+			// prove VSSHE non-interactive wrong
 			start_clock();
 			std::cout << "P: !vsshe.Prove_noninteractive(...)" << std::endl;
 			vsshe->Prove_noninteractive(xi, R, e, E, *pipe_out);
@@ -365,7 +380,7 @@ int main
 			}
 			m.clear(), m_pi.clear(), R.clear(), e.clear(), E.clear();
 			mpz_clear(c), mpz_clear(r);
-			delete vsshe, delete skc, delete com;
+			delete vsshe, delete edcf, delete skc, delete com;
 			
 			delete pipe_in, delete pipe_out;
 			exit(0);
@@ -449,7 +464,10 @@ int main
 			assert(!skc->Verify_noninteractive(a, m, *pipe_in));
 			stop_clock();
 			std::cout << "V: " << elapsed_time() << std::endl;
-			
+
+			// initialize EDCF
+			JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,
+					com->p, com->q, com->g[0], com->h);	
 			// initialize VSSHE
 			lej2 << com->p << std::endl << com->q << std::endl << com->g[0] << 
 				std::endl << com->h << std::endl;
@@ -471,13 +489,25 @@ int main
 			assert(!vsshe->Verify_interactive(e, E, *pipe_in, *pipe_out));
 			stop_clock();
 			std::cout << "V: " << elapsed_time() << std::endl;
-			// verify VSSHE
+			// verify VSSHE public-coin
+			start_clock();
+			std::cout << "V: vsshe.Verify_interactive_publiccoin(...)" << std::endl;
+			assert(vsshe->Verify_interactive_publiccoin(e, E, edcf, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify VSSHE public-coin wrong
+			start_clock();
+			std::cout << "V: !vsshe.Verify_interactive_publiccoin(...)" << std::endl;
+			assert(!vsshe->Verify_interactive_publiccoin(e, E, edcf, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify VSSHE non-interactive
 			start_clock();
 			std::cout << "V: vsshe.Verify_noninteractive(...)" << std::endl;
 			assert(vsshe->Verify_noninteractive(e, E, *pipe_in));
 			stop_clock();
 			std::cout << "V: " << elapsed_time() << std::endl;
-			// verify VSSHE wrong
+			// verify VSSHE non-interactive wrong
 			start_clock();
 			std::cout << "V: !vsshe.Verify_noninteractive(...)" << std::endl;
 			assert(!vsshe->Verify_noninteractive(e, E, *pipe_in));
@@ -495,7 +525,7 @@ int main
 				delete E[i].first, delete E[i].second;
 			}
 			m.clear(), e.clear(), E.clear();
-			delete vsshe, delete skc, delete com;
+			delete vsshe, delete edcf, delete skc, delete com;
 			
 			delete pipe_in, delete pipe_out;
 		}
