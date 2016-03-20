@@ -460,7 +460,6 @@ bool JareckiLysyanskayaRVSS::Share_twoparty
 {
 	assert(t == 0);
 	assert(n == 2); // two-party protocol
-	assert((2 * t) < n); // maximum synchronous t-resilience
 	assert(i < n);
 	assert(n == aiou->n);
 	assert(t == aiou->t);
@@ -568,6 +567,162 @@ bool JareckiLysyanskayaRVSS::Share_twoparty
 					err << "P_" << i << ": receiving hatalpha_ij failed" << std::endl;
 					throw false;
 				}
+			}
+		}
+		for (size_t j = 0; j < n; j++)
+		{
+			// compute LHS for the check
+			mpz_fspowm(fpowm_table_g, foo, g, alpha_ij[j][i], p);
+			mpz_fspowm(fpowm_table_h, bar, h, hatalpha_ij[j][i], p);
+			mpz_mul(lhs, foo, bar);
+			mpz_mod(lhs, lhs, p);
+			// compute RHS for the check
+			mpz_set_ui(rhs, 1L);
+			for (size_t k = 0; k <= t; k++)
+			{
+				mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
+				mpz_powm(bar, C_ik[j][k], foo , p);
+				mpz_mul(rhs, rhs, bar);
+				mpz_mod(rhs, rhs, p);
+			}
+			// check equation (4)
+			if (mpz_cmp(lhs, rhs))
+			{
+				err << "P_" << i << ": checking 1(b) failed" << std::endl;
+				throw false;
+			}
+		}
+		// (c) If $P_j$ complained against $P_i$, $P_i$ broadcasts
+		//     $\alpha_{ij}$, $\hat{\alpha}_{ij}$; everyone verifies
+		//     it. If $P_i$ fails this test or receives more than $t$
+		//     complaints, exclude $P_i$ from $Qual$.
+		// (in a two-party protocol there is no such phase)
+		// 2. $P_i$ sets his polynomial share of the generated secret $a$ as
+		//    $\alpha_i = \sum_{P_j \in Qual} \alpha_{ji}$, and their
+		//    associated randomness as
+		//    $\hat{\alpha}_i = \sum_{P_j \in Qual} \hat{\alpha}_{ji}$.
+		// Note that in this section the indicies $i$ and $j$ are exchanged
+		// again, because the reverse convention is used in section 1(b).
+		mpz_set_ui(alpha_i, 0L), mpz_set_ui(hatalpha_i, 0L);
+		for (size_t j = 0; j < n; j++)
+		{
+			mpz_add(alpha_i, alpha_i, alpha_ij[j][i]);
+			mpz_mod(alpha_i, alpha_i, q);
+			mpz_add(hatalpha_i, hatalpha_i, hatalpha_ij[j][i]);
+			mpz_mod(hatalpha_i, hatalpha_i, q);
+		}
+		err << "P_" << i << ": alpha_i = " << alpha_i << std::endl;
+		err << "P_" << i << ": hatalpha_i = " << hatalpha_i << std::endl;
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
+		for (size_t k = 0; k <= t; k++)
+		{
+			mpz_clear(c_ik[k]), mpz_clear(hatc_ik[k]);
+			delete c_ik[k], delete hatc_ik[k];
+		}
+		c_ik.clear(), hatc_ik.clear();
+		// return
+		return return_value;
+	}
+}
+
+bool JareckiLysyanskayaRVSS::Share_twoparty
+	(size_t i, std::istream &in, std::ostream &out,
+	std::ostream &err, bool simulate_faulty_behaviour)
+{
+	assert(t == 0);
+	assert(n == 2); // two-party protocol
+	assert(i < n);
+
+	// initialize
+	mpz_t foo, bar, lhs, rhs;
+	std::vector<mpz_ptr> c_ik, hatc_ik;
+	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+	for (size_t k = 0; k <= t; k++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2);
+		c_ik.push_back(tmp1), hatc_ik.push_back(tmp2);
+	}
+	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+
+	try
+	{
+		// 1. Each player $P_i$ performs a Pedersen-VSS of a random
+		//    value $a_i$:
+		// (a) $P_i$ picks $t$-deg. polynomials
+		//     $f_{a_i}(z) = \sum_{k=0}^t c_{ik} z^k$,
+		//     $f_{\hat{a_i}}(z) = \sum_{k=0}^t \hat{c}_{ik} z^k$
+		for (size_t k = 0; k <= t; k++)
+		{
+			mpz_srandomm(c_ik[k], q);
+			mpz_srandomm(hatc_ik[k], q);
+		}
+		// Let $a_i = f_{a_i}(0)$ and $\hat{a_i} = f_{\hat{a_i}}(0)$.
+		mpz_set(a_i, c_ik[0]), mpz_set(hata_i, hatc_ik[0]);
+		// $P_i$ broadcasts $C_{ik} = g^{c_{ik}} h^{\hat{c}_{ik}}$
+		// for $k = 0..t$.
+		// (in a two-party protocol this reduces simply to sending)
+		for (size_t k = 0; k <= t; k++)
+		{
+			mpz_fspowm(fpowm_table_g, foo, g, c_ik[k], p);
+			mpz_fspowm(fpowm_table_h, bar, h, hatc_ik[k], p);
+			mpz_mul(C_ik[i][k], foo, bar);
+			mpz_mod(C_ik[i][k], C_ik[i][k], p);
+			out << C_ik[i][k] << std::endl;
+		}
+		// Set $F_{a_i}(z) = \prod_{k=0}^t (C_{ik})^{z^k}$.
+		// $P_i$ sends to $P_j$ shares $\alpha_{ij} = f_{a_i}(j)$,
+		// $\hat{\alpha}_{ij} = f_{\hat{a}_i}(j)$ for each $j = 1..n$.
+		for (size_t j = 0; j < n; j++)
+		{
+			mpz_set_ui(alpha_ij[i][j], 0L);
+			mpz_set_ui(hatalpha_ij[i][j], 0L);
+			for (size_t k = 0; k <= t; k++)
+			{
+				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
+				mpz_mul(bar, foo, hatc_ik[k]);
+				mpz_mod(bar, bar, q);
+				mpz_mul(foo, foo, c_ik[k]);
+				mpz_mod(foo, foo, q);
+				mpz_add(alpha_ij[i][j], alpha_ij[i][j], foo);
+				mpz_mod(alpha_ij[i][j], alpha_ij[i][j], q);				
+				mpz_add(hatalpha_ij[i][j], hatalpha_ij[i][j], bar);
+				mpz_mod(hatalpha_ij[i][j], hatalpha_ij[i][j], q);
+			}
+			if (j != i)
+			{
+				if (simulate_faulty_behaviour)
+				{
+					mpz_add_ui(alpha_ij[i][j], alpha_ij[i][j], 1L);
+				}
+				out << alpha_ij[i][j] << std::endl;
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer)
+				{
+					mpz_add_ui(hatalpha_ij[i][j], hatalpha_ij[i][j], 1L);
+				}
+				out << hatalpha_ij[i][j] << std::endl;
+			}
+		}
+		// (b) Each $P_j$ verifies if
+		//     $g^{\alpha_{ij}} h^{\hat{\alpha}_{ij}} = F_{a_i}(j)$
+		//     for $i = 1..n$. If the check fails for any $i$, $P_j$
+		//     broadcasts a complaint against $P_i$.
+		// Note that in this section the indicies $i$ and $j$ are
+		// exchanged for convenience.
+		for (size_t j = 0; j < n; j++)
+		{
+			if (j != i)
+			{
+				for (size_t k = 0; k <= t; k++)
+					in >> C_ik[j][k];
+				in >> alpha_ij[j][i];
+				in >> hatalpha_ij[j][i];
 			}
 		}
 		for (size_t j = 0; j < n; j++)
@@ -999,7 +1154,6 @@ bool JareckiLysyanskayaEDCF::Flip_twoparty
 {
 	assert(t == 0);
 	assert(n == 2); // two-party protocol
-	assert((2 * t) < n); // maximum synchronous t-resilience
 	assert(i < n);
 	assert(n == aiou->n);
 	assert(t == aiou->t);
@@ -1105,6 +1259,99 @@ bool JareckiLysyanskayaEDCF::Flip_twoparty
 	}
 }
 
+bool JareckiLysyanskayaEDCF::Flip_twoparty
+	(size_t i, mpz_ptr a, std::istream &in, std::ostream &out,
+	std::ostream &err, bool simulate_faulty_behaviour)
+{
+	assert(t == 0);
+	assert(n == 2); // two-party protocol
+	assert(i < n);
+
+	// initialize
+	mpz_t foo, bar, lhs, rhs;
+	std::vector<mpz_ptr> a_i, hata_i;
+	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+	for (size_t j = 0; j < n; j++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2);
+		a_i.push_back(tmp1), hata_i.push_back(tmp2);
+	}
+	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+
+	try
+	{
+		// 1. Players generate RVSS-data[a] (i.e. perform Joint-RVSS)
+		if (!rvss->Share_twoparty(i, in, out, err, simulate_faulty_behaviour))
+			throw false;
+		mpz_set(a_i[i], rvss->a_i), mpz_set(hata_i[i], rvss->hata_i);
+		// 2. Each $P_i \in Qual$ broadcasts his additive shares $a_i$,
+		//    $\hat{a}_i$.
+		// (in a two-party protocol this reduces simply to sending)
+		if (simulate_faulty_behaviour)
+		{
+			mpz_add_ui(a_i[i], a_i[i], 1L);
+		}
+		out << a_i[i] << std::endl;
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer)
+		{
+			mpz_add_ui(hata_i[i], hata_i[i], 1L);
+		}
+		out << hata_i[i] << std::endl;
+		for (size_t j = 0; j < n; j++)
+		{
+			if (j != i)
+			{
+				in >> a_i[j];
+				in >> hata_i[j];
+				// compute LHS for the check
+				mpz_fspowm(fpowm_table_g, foo, g, a_i[j], p);
+				mpz_fspowm(fpowm_table_h, bar, h, hata_i[j], p);
+				mpz_mul(lhs, foo, bar);
+				mpz_mod(lhs, lhs, p);
+				// compute RHS for the check
+				mpz_set_ui(rhs, 1L);
+				mpz_mul(rhs, rhs, rvss->C_ik[j][0]);
+				mpz_mod(rhs, rhs, p);
+				// check $g^{a_i} h^{\hat{a}_i} = F_{a_i}(0)$
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i << ": checking a_i resp. hata_i failed" << std::endl;
+					throw false;
+				}
+			}
+		}
+		// 3. For $P_i \in Qual$ s.t. $g^{a_i} h^{\hat{a}_i} \neq F_{a_i}(0)$
+		//    the players reconstruct $P_i$'s additive share $a_i$
+		//    by broadcasting their shares $\alpha_{ij}$, $\hat{\alpha}_{ij}$
+		//    and verifying them with $F_{a_i}$.
+		// (in a two-party protocol there is no reconstruction phase)
+		// 4. A public random value $a$ is reconstructed
+		//    as $a = \sum_{P_i \in Qual} a_i$
+		mpz_set_ui(a, 0L);
+		for (size_t j = 0; j < n; j++)
+		{
+			mpz_add(a, a, a_i[j]);
+			mpz_mod(a, a, q);
+		}
+		err << "P_" << i << ": a = " << a << std::endl;
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
+		for (size_t j = 0; j < n; j++)
+		{
+			mpz_clear(a_i[j]), mpz_clear(hata_i[j]);
+			delete a_i[j], delete hata_i[j];
+		}
+		a_i.clear(), hata_i.clear();
+		// return
+		return return_value;
+	}
+}
 
 JareckiLysyanskayaEDCF::~JareckiLysyanskayaEDCF
 	()
