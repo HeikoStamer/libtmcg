@@ -1575,10 +1575,15 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality_Groth
 	std::vector<mpz_ptr> R;
 	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
 	std::vector<size_t> pi;
+
+	JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,
+		vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 	
 	TMCG_InitializeStackEquality_Groth(pi, R, e, E, s, s2, ss);
-	vsshe->Prove_interactive(pi, R, e, E, in, out);
+	vsshe->Prove_interactive_publiccoin(pi, R, e, E, edcf, in, out);
 	TMCG_ReleaseStackEquality_Groth(pi, R, e, E);
+
+	delete edcf;
 }
 
 void SchindelhauerTMCG::TMCG_ProveStackEquality_Groth_noninteractive
@@ -1838,10 +1843,15 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Groth
 	
 	std::vector<mpz_ptr> R;
 	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
+
+	JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,
+		vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 	
 	TMCG_InitializeStackEquality_Groth(e, E, s, s2);
-	bool return_value = vsshe->Verify_interactive(e, E, in, out);
+	bool return_value = vsshe->Verify_interactive_publiccoin(e, E, edcf, in, out);
 	TMCG_ReleaseStackEquality_Groth(e, E);
+
+	delete edcf;
 	
 	return return_value;
 }
