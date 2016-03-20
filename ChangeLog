@@ -1,4 +1,6 @@
+* [2016-03-20] adds protection against malicious verifiers through EDCF
 * [2016-03-13] provides a test program for RBC protocol
+* [2016-03-02] provides a distributed coin-flipping (EDCF) protocol
 * [2016-02-27] provides a distributed signature scheme
 * [2016-02-24] provides a reliable broadcast (RBC) protocol
 * [2016-02-15] provides a distributed key generation protocol
