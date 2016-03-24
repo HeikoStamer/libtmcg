@@ -91,7 +91,7 @@ class aiounicast
 				out.push_back(out_in[i]);
 			}
 
-			// initialize ordered buffer for receiving
+			// initialize ordered buffer for receiving mpz_t
 			for (size_t i = 0; i < n_in; i++)
 			{
 				std::list<mpz_ptr> *ltmp = new std::list<mpz_ptr>;
@@ -106,33 +106,42 @@ class aiounicast
 			(mpz_srcptr m, size_t i_in)
 		{
 			// prepare write buffer
-			char *buf = new char[TMCG_MAX_VALUE_CHARS];
-			memset(buf, 0, TMCG_MAX_VALUE_CHARS);
+			char *buf = new char[TMCG_MAX_VALUE_CHARS + 2];
+			memset(buf, 0, TMCG_MAX_VALUE_CHARS + 2);
 			size_t size = mpz_sizeinbase(m, TMCG_MPZ_IO_BASE);
-			if (size < TMCG_MAX_VALUE_CHARS)
+			if (size <= TMCG_MAX_VALUE_CHARS)
 			{
                 		mpz_get_str(buf, TMCG_MPZ_IO_BASE, m);
 			}
 			else
 			{
-				buf[0] = '\001'; // faulty value
+				buf[0] = '\001'; // set a faulty value
 				buf[1] = '\000'; // set string terminator
 			}
 			// determine the real size of the string, because
 			// mpz_sizeinbase(m, TMCG_MPZ_IO_BASE) does not
 			// work in all cases correctly
-			size = strlen(buf);
-			buf[size] = '\n'; // set newline as delimiter
+			size = strnlen(buf, TMCG_MAX_VALUE_CHARS + 2);
+			if (size < (TMCG_MAX_VALUE_CHARS + 2))
+			{
+				buf[size] = '\n'; // set newline as delimiter
+			}
+			else
+			{
+				buf[0] = '\001'; // set a faulty value
+				buf[1] = '\n'; // set newline as delimiter
+				size = 1;
+			}
 
 			// send m to party i_in
 			ssize_t num = write(out[i_in], buf, size + 1);
+			delete [] buf;
 			if (num < 0)
 			{
 				perror("aiounicast (write)");
 				return;
 			}
 			numWrite += num;
-			delete [] buf;
 		}
 
 		void Send
@@ -188,7 +197,8 @@ class aiounicast
 					{
 						char *tmp = new char[newline_ptr + 1];
 						memset(tmp, 0, newline_ptr + 1);
-						memcpy(tmp, buf_in[i_out], newline_ptr);
+						if (newline_ptr > 0)
+							memcpy(tmp, buf_in[i_out], newline_ptr);
 						char *wptr = buf_in[i_out] + newline_ptr + 1;
 						size_t wnum = buf_ptr[i_out] - newline_ptr - 1;
 						if (wnum > 0)
