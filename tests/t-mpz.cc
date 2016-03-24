@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006, 2007, 2015  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2005, 2006, 2007, 2015, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -428,11 +428,11 @@ int main
 	}
 	delete [] dig1, delete [] dig2;
 	std::cout << "mpz_shash()" << std::endl;
-	mpz_set_str(bar, "3iyo0cmal9uyn2fpbgpq9o5lgwa2n8ll9543apqx9ap8lzatzh", 36);
+	mpz_set_str(bar, "5r2c2kumf2p9k9nd6cs6z80k54d1rt47gncs20sahlw0ionqk5", 36);
 	mpz_set_ui(foo2, 23L), mpz_set_ui(bar2, 42L);
 	mpz_shash(foo, 2, foo2, bar2);
 	assert(!mpz_cmp(foo, bar));
-	mpz_set_str(bar, "11whbkyheldu8877iyuq07ejh3xda4b9i00etkx9kru3f7dg6r", 36);
+	mpz_set_str(bar, "59lex0ibl8fzvjr829usqtmkbb690rsirjx8xgrg8iqkhkj1ow", 36);
 	s = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	mpz_shash(foo, s);
 	assert(!mpz_cmp(foo, bar));
