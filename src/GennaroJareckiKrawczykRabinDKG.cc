@@ -211,6 +211,21 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			mpz_mod(C_ik[i][k], C_ik[i][k], p);
 			rbc->Broadcast(C_ik[i][k]);
 		}
+		for (size_t j = 0; j < n; j++)
+		{
+			if (j != i)
+			{
+				for (size_t k = 0; k <= t; k++)
+				{
+					if (!rbc->DeliverFrom(C_ik[j][k], j))
+					{
+						err << "P_" << i << ": receiving C_ik failed; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+						break;
+					}
+				}
+			}
+		}
 		// $P_i$ computes the shares $s_{ij} = f_i(j) \bmod q$,
 		// $s\prime_{ij} = f\prime_i(j) \bmod q$ and
 		// sends $s_{ij}$, $s\prime_{ij}$ to party $P_j$.
@@ -248,15 +263,6 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		{
 			if (j != i)
 			{
-				for (size_t k = 0; k <= t; k++)
-				{
-					if (!rbc->DeliverFrom(C_ik[j][k], j))
-					{
-						err << "P_" << i << ": receiving C_ik failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
-						break;
-					}
-				}
 				if (!aiou->Receive(s_ij[j][i], j, aiou->aio_scheduler_direct))
 				{
 					err << "P_" << i << ": receiving s_ij failed; complaint against P_" << j << std::endl;
