@@ -9,7 +9,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2009  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007, 2009,
+                                 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -193,7 +194,7 @@ void BarnettSmartVTMF_dlog::RandomElement
 }
 
 void BarnettSmartVTMF_dlog::IndexElement
-	(mpz_ptr a, std::size_t index) const
+	(mpz_ptr a, size_t index) const
 {
 	// Simply compute $a := g^i \bmod p$.
 	mpz_fpowm_ui(fpowm_table_g, a, g, index, p);
