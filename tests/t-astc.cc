@@ -168,6 +168,7 @@ void start_instance
 			// release asynchronous unicast and broadcast
 			delete aiou, delete aiou2;
 
+/*
 			// testing the two-party protocol version
 			if (whoami < 2)
 			{
@@ -211,7 +212,7 @@ void start_instance
 				// release asynchronous unicast
 				delete aiou;
 			}
-
+*/
 			// release VTMF instance
 			delete vtmf;
 			
