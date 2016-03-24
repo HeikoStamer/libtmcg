@@ -25,7 +25,7 @@
 
 #include "mpz_shash.hh"
 
-/* hash function h() (collision-resistant?) */
+/* hash function h() (assumption: at least collision-resistant) */
 void h
 	(char *output, const char *input, size_t size)
 {
@@ -42,7 +42,7 @@ void g
 	char *out = new char[times * mdsize];
 	for (size_t i = 0; i < times; i++)
 	{
-		/* construct the expanded input y = x || TMCG<i> || x */
+		/* construct the expanded input y = x || libTMCG<i> || x */
 		char *data = new char[9 + (2 * isize)];
 		memcpy(data, input, isize);
 		snprintf(data + isize, 9, "libTMCG%02x", (unsigned int)i);
@@ -59,15 +59,15 @@ void g
 void mpz_shash
 	(mpz_ptr r, std::string input)
 {
-	unsigned int hash_size = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
+	size_t hash_size = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
 	char *digest = new char[hash_size];
 	char *hex_digest = new char[(2 * hash_size) + 1];
 	
 	/* hash the input */
-	h(digest, input.c_str(), input.length());
+	g(digest, hash_size, input.c_str(), input.length());
 	
 	/* convert the digest to a hexadecimal encoded string */
-	for (unsigned int i = 0; i < hash_size; i++)
+	for (size_t i = 0; i < hash_size; i++)
 		snprintf(hex_digest + (2 * i), 3, "%02x", (unsigned char)digest[i]);
 	
 	/* convert the hexadecimal encoded string to an mpz-integer */
@@ -76,7 +76,7 @@ void mpz_shash
 	delete [] digest, delete [] hex_digest;
 }
 
-/* Hashing of the public inputs (aka Fiat-Shamir heuristic) with h(),
+/* Hashing of the public inputs (aka Fiat-Shamir heuristic) with g(),
    e.g. to make some proofs of knowledge (PoK) non-interactive. */
 void mpz_shash
 	(mpz_ptr r, size_t n, ...)
