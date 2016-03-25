@@ -125,7 +125,7 @@ The interested reader is referred to the following papers:
 	@sc{Christian Schindelhauer}.
 	@emph{Toolbox for Mental Card Games.}@*
 	Technical Report A-98-14, University of L@"ubeck, 1998.@*
-	@uref{http://citeseer.ist.psu.edu/@/schindelhauer98toolbox.html}
+	@uref{http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.29.6679}
 @end quotation
 @quotation [BS03]
 	@sc{Adam Barnett} and @sc{Nigel P. Smart}.
