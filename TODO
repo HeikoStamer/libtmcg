@@ -1,7 +1,8 @@
 + set TMCG_MPZ_IO_BASE to 62, which is supported by libgmp >= 4.2
   (However, this breaks all backward compatibility and we gain not much.)
 + provide interactive versions for the non-interactive protocols of VTMF
-+ implement public-coin version of VRHE to get rid of honest verifiers
+  (for applications that cannot rely on the random oracle assumption)
 
 - implement the exotic card and stack operations of the toolbox; there are
-  some obstacles, e.g. that the prover does not know all used randomizers
+  some obstacles, e.g. that the prover does not know all used randomizers,
+  for the subset and superset protocols

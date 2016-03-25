@@ -139,10 +139,13 @@ int main
 				r_wrong = random_rotation(n, xi);
 			while (equal_rotations(pi, xi));
 			std::cout << "r_wrong = " << r_wrong << std::endl;
-			
+
 			// initialize VRHE
 			HooghSchoenmakersSkoricVillegasVRHE *vrhe = new HooghSchoenmakersSkoricVillegasVRHE();
 			vrhe->PublishGroup(*pipe_out);
+			// initialize EDCF
+			JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,
+					vrhe->p, vrhe->q, vrhe->g, vrhe->h);
 
 			// create the encrypted messages for VRHE
 			for (size_t i = 0; i < n; i++)
@@ -180,13 +183,25 @@ int main
 			vrhe->Prove_interactive(r_wrong, R, e, E, *pipe_in, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
-			// prove VRHE
+			// prove VRHE public-coin
+			start_clock();
+			std::cout << "P: vrhe.Prove_interactive_publiccoin(...)" << std::endl;
+			vrhe->Prove_interactive_publiccoin(r, R, e, E, edcf, *pipe_in, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove VRHE public-coin wrong
+			start_clock();
+			std::cout << "P: !vrhe.Prove_interactive_publiccoin(...)" << std::endl;
+			vrhe->Prove_interactive_publiccoin(r_wrong, R, e, E, edcf, *pipe_in, *pipe_out);
+			stop_clock();
+			std::cout << "P: " << elapsed_time() << std::endl;
+			// prove VRHE non-interactive
 			start_clock();
 			std::cout << "P: vrhe.Prove_noninteractive(...)" << std::endl;
 			vrhe->Prove_noninteractive(r, R, e, E, *pipe_out);
 			stop_clock();
 			std::cout << "P: " << elapsed_time() << std::endl;
-			// prove VRHE wrong
+			// prove VRHE non-interactive wrong
 			start_clock();
 			std::cout << "P: !vrhe.Prove_noninteractive(...)" << std::endl;
 			vrhe->Prove_noninteractive(r_wrong, R, e, E, *pipe_out);
@@ -210,7 +225,7 @@ int main
 				delete E[i].first, delete E[i].second;
 			}
 			m.clear(), m_pi.clear(), R.clear(), e.clear(), E.clear();
-			delete vrhe;
+			delete edcf, delete vrhe;
 			
 			delete pipe_in, delete pipe_out;
 			exit(0);
@@ -241,6 +256,10 @@ int main
 			// initialize VRHE
 			HooghSchoenmakersSkoricVillegasVRHE *vrhe = new HooghSchoenmakersSkoricVillegasVRHE(*pipe_in);	
 			assert(vrhe->CheckGroup());
+			// initialize EDCF
+			JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,
+					vrhe->p, vrhe->q, vrhe->g, vrhe->h);
+			assert(edcf->CheckGroup());
 
 			// receive the messages from the prover
 			for (size_t i = 0; i < n; i++)
@@ -260,13 +279,25 @@ int main
 			assert(!vrhe->Verify_interactive(e, E, *pipe_in, *pipe_out));
 			stop_clock();
 			std::cout << "V: " << elapsed_time() << std::endl;
-			// verify VRHE
+			// verify VRHE public-coin
+			start_clock();
+			std::cout << "V: vrhe.Verify_interactive_publiccoin(...)" << std::endl;
+			assert(vrhe->Verify_interactive_publiccoin(e, E, edcf, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify VRHE public-coin wrong
+			start_clock();
+			std::cout << "V: !vrhe.Verify_interactive_publiccoin(...)" << std::endl;
+			assert(!vrhe->Verify_interactive_publiccoin(e, E, edcf, *pipe_in, *pipe_out));
+			stop_clock();
+			std::cout << "V: " << elapsed_time() << std::endl;
+			// verify VRHE non-interactive
 			start_clock();
 			std::cout << "V: vrhe.Verify_noninteractive(...)" << std::endl;
 			assert(vrhe->Verify_noninteractive(e, E, *pipe_in));
 			stop_clock();
 			std::cout << "V: " << elapsed_time() << std::endl;
-			// verify VRHE wrong
+			// verify VRHE non-interactive wrong
 			start_clock();
 			std::cout << "V: !vrhe.Verify_noninteractive(...)" << std::endl;
 			assert(!vrhe->Verify_noninteractive(e, E, *pipe_in));
@@ -284,7 +315,7 @@ int main
 				delete E[i].first, delete E[i].second;
 			}
 			m.clear(), e.clear(), E.clear();
-			delete vrhe;
+			delete edcf, delete vrhe;
 			
 			delete pipe_in, delete pipe_out;
 		}

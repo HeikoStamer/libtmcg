@@ -54,6 +54,9 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
+	// erasure-free distributed coinflip protocol
+	#include "JareckiLysyanskayaASTC.hh"	
+
 class HooghSchoenmakersSkoricVillegasPUBROTZK
 {
 	private:
@@ -68,12 +71,21 @@ class HooghSchoenmakersSkoricVillegasPUBROTZK
 			(size_t r, const std::vector<mpz_ptr> &s,
 			const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
 			std::istream &in, std::ostream &out) const;
+		void Prove_interactive_publiccoin
+			(size_t r, const std::vector<mpz_ptr> &s,
+			const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
+			JareckiLysyanskayaEDCF *edcf,
+			std::istream &in, std::ostream &out) const;
 		void Prove_noninteractive
 			(size_t r, const std::vector<mpz_ptr> &s,
 			const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
 			std::ostream &out) const;
 		bool Verify_interactive
 			(const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
+			std::istream &in, std::ostream &out) const;
+		bool Verify_interactive_publiccoin
+			(const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
+			JareckiLysyanskayaEDCF *edcf,
 			std::istream &in, std::ostream &out) const;
 		bool Verify_noninteractive
 			(const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
@@ -114,6 +126,12 @@ class HooghSchoenmakersSkoricVillegasVRHE
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &X,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &Y,
 			std::istream &in, std::ostream &out) const;
+		void Prove_interactive_publiccoin
+			(size_t r, const std::vector<mpz_ptr> &s,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &X,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &Y,
+			JareckiLysyanskayaEDCF *edcf,
+			std::istream &in, std::ostream &out) const;
 		void Prove_noninteractive
 			(size_t r, const std::vector<mpz_ptr> &s,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &X,
@@ -122,6 +140,11 @@ class HooghSchoenmakersSkoricVillegasVRHE
 		bool Verify_interactive
 			(const std::vector<std::pair<mpz_ptr, mpz_ptr> > &X,
 			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &Y,
+			std::istream &in, std::ostream &out) const;
+		bool Verify_interactive_publiccoin
+			(const std::vector<std::pair<mpz_ptr, mpz_ptr> > &X,
+			const std::vector<std::pair<mpz_ptr, mpz_ptr> > &Y,
+			JareckiLysyanskayaEDCF *edcf,
 			std::istream &in, std::ostream &out) const;
 		bool Verify_noninteractive
 			(const std::vector<std::pair<mpz_ptr, mpz_ptr> > &X,

@@ -1625,10 +1625,15 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality_Hoogh
 	std::vector<mpz_ptr> R;
 	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
 	size_t r = (ss.size() - ss[0].first) % ss.size();
+
+	JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,
+		vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 	
 	TMCG_InitializeStackEquality_Hoogh(R, e, E, s, s2, ss);
-	vrhe->Prove_interactive(r, R, e, E, in, out);
+	vrhe->Prove_interactive_publiccoin(r, R, e, E, edcf, in, out);
 	TMCG_ReleaseStackEquality_Hoogh(R, e, E);
+
+	delete edcf;
 }
 
 void SchindelhauerTMCG::TMCG_ProveStackEquality_Hoogh_noninteractive
@@ -1910,10 +1915,15 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality_Hoogh
 	
 	std::vector<mpz_ptr> R;
 	std::vector<std::pair<mpz_ptr, mpz_ptr> > e, E;
+
+	JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,
+		vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 	
 	TMCG_InitializeStackEquality_Groth(e, E, s, s2); // we can use the helper
-	bool return_value = vrhe->Verify_interactive(e, E, in, out);
+	bool return_value = vrhe->Verify_interactive_publiccoin(e, E, edcf, in, out);
 	TMCG_ReleaseStackEquality_Groth(e, E); // we can use this helper also here
+
+	delete edcf;
 	
 	return return_value;
 }
