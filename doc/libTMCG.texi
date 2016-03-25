@@ -1453,9 +1453,11 @@ individual profile or a service provider can issue public key certificates.
 	This @code{struct} represents the secret part of the key. The
 	underlying public key cryptosystem is due to Rabin (see @emph{Digitalized
 	Signatures and Public-Key Functions as Intractable as Factorization},
-	MIT technical report, 1979) with minor modifications for encryption
-	padding (SAEP scheme of Boneh) and digital signatures (PRab scheme of
-	Bellare and Rogaway).
+	MIT Technical Report 212, 1979) and Williams (see @emph{A modification of the
+	RSA public-key encryption procedure}, IEEE Transactions on Information
+	Theory, 26(6):726--729, 1980) with minor modifications for encryption padding
+	(SAEP scheme of Boneh) and digital signatures (PRab scheme of Bellare and
+	Rogaway).
 	
 	@deftypecv {Member} TMCG_SecretKey {std::string} name
 		This string contains the name or a pseudonym of the key owner.
