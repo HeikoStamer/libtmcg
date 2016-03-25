@@ -496,6 +496,7 @@ std::string TMCG_SecretKey::sign
 	
 	assert(mpz_sizeinbase(m, 2L) > (mnsize * 8));
 	assert(mnsize > (mdsize + TMCG_PRAB_K0));
+	assert((mnsize - mdsize) >= TMCG_PRAB_K0);
 	
 	// WARNING: This is only a probabilistic algorithm (Rabin's signature scheme),
 	// however, it should work with only a few iterations. Additionally the scheme
