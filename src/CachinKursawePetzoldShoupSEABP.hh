@@ -62,7 +62,7 @@
 
 /* The following class implements an optimized version of Bracha's protocol described in [CKPS01].
    Additionally, a FIFO-ordered delivery based on sequence numbers has been implemented. 
-   Original paper cited: G. Bracha: 'An asynchronous [(n − 1)/3]-resilient consensus protocol',
+   Original paper cited: G. Bracha: 'An asynchronous [(n - 1)/3]-resilient consensus protocol',
    Proc. 3rd ACM Symposium on Principles of Distributed Computing (PODC), pp. 154–162, 1984. */
 class CachinKursawePetzoldShoupRBC
 {

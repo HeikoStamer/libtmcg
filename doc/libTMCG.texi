@@ -337,31 +337,47 @@ cryptosystems rely on such assumptions and therefore you should not
 care about this issue, as long as reasonable security parameters are
 chosen.
 
-LibTMCG was designed to provide security in the ``honest-but-curious''
-(aka semi-honest) adversary model. That means, all participants follow
+LibTMCG was originally designed to provide security in the ``honest-but-curious''
+(aka ``semi-honest'') adversary model. That means, all participants follow
 the protocol instructions properly but they may gather information and
-share them within a coalition to obtain a game advantage. Thus we are
+share them within a coalition to obtain an advantage in the game. Thus we are
 not concerned with robustness and availability issues which are hard to
 solve in asynchronous environments like the Internet. However, the most
 operations are verifiable such that cheating can be detected. To obtain
 this verifiability, the protocols deploy so-called zero-knowledge proofs
 which yield no further knowledge but the validity of a statement. The
-soundness error of these proofs is bounded by a security parameter @math{t}.
-Depending on your application scenario this parameter should be chosen such
-that there is a reasonable tradeoff between the cheating probability (which
-is less or equal than @math{2^{-t}}) and the produced computational and
-communication complexity. Finally, some of the protocols (e.g. the efficient
-shuffle argument by Groth) are only zero-knowledge with respect to an
-so called ``honest verifier'' who follows the protocol instructions faithfully.
+soundness error of these proofs is bounded by a fixed security parameter
+@math{\kappa}. Depending on your application scenario this parameter should
+be chosen such that there is a reasonable tradeoff between the cheating
+probability (which is less or equal than @math{2^{-\kappa}}) and the produced
+computational and communication complexity. Finally, some of the protocols
+(e.g. the efficient shuffle argument by Groth) are only zero-knowledge with
+respect to a so-called ``honest verifier'' who follows all protocol
+instructions faithfully. Since version 1.2.0 of LibTMCG we use a two-party
+version of a distributed coin flipping protocol by Jarecki and Lysyanskaya
+(see @emph{Adaptively Secure Threshold Cryptography: Introducing Concurrency,
+Removing Erasures}, EUROCRYPT@tie{}2000, LNCS@tie{}1807, 2000) to protect
+against malicious verifiers.
 
-Unfortunately, in practice there is a substantial problem with the detection
-of cheaters. Reliable cheater detection requires that an authenticated
-broadcast channel has been established, where all players have read/write
-access. LibTMCG does not yet contain the necessary protocols (reliable
-broadcast or even atomic broadcast) for creating such a channel. Thus you
-should take into account that not necessarily the player acting as prover
-is the source of evil, if a verification procedure fails. This level of
-uncertainty is another reason for our restricted adversary model.
+Unfortunately, in practice there is another substantial problem with the
+detection of cheaters. It requires that an authenticated broadcast channel
+has been set up, where all players have read/write access. There exist
+protocols (so-called ``reliable broadcast'' or even ``atomic broadcast'')
+for creating such a channel, however, only under the additional condition
+that the number of parties @math{t} who act faulty or even malicious (i.e.
+so-called ``Byzantine adversary'') is reasonable small. In a full asynchronous
+environment like the Internet resilience is achievable for @math{t < n/3}
+only, where @math{n} denotes the total number of parties in the protocol.
+LibTMCG provides a well-known protocol due to Bracha (see @emph{An asynchronous
+[(n - 1)/3]-resilient consensus protocol}, Proceedings of 3rd ACM Symposium
+on Principles of Distributed Computing, 1984) in a further optimized variant
+by Cachin, Kursawe, Petzold, and Shoup (see @emph{Secure and Efficient
+Asynchronous Broadcast Protocols}, CRYPTO@tie{}2001, LNCS@tie{}2139, 2001).
+Please note that in most cases the application programmer must decide, where
+the use of a broadcast channel is neccesary. Thus for some protocols of
+LibTMCG you should take into account that not necessarily the player acting
+as prover is the source of evil, if a verification procedure fails. This
+level of uncertainty is another reason for our still limited adversary model.
 
 Note that it is not known, whether the used protocols retain their
 zero-knowledge property, if they are composed and executed in a concurrent
@@ -378,20 +394,26 @@ ACM 51(6):851--898, 2004).
 
 Please also note, that in some protocols the Fiat-Shamir heuristic@tie{}[FS87]
 is used to turn interactive special honest verifier zero-knowledge arguments
-resp. proofs into non-interactive versions. However, there are some theoretical
-(see e.g. Nir Bitansky, Dana Dachman-Soled, Sanjam Garg, Abhishek Jain, Yael Tauman
-Kalai, Adriana Lopez-Alt, and Daniel Wichs: @emph{Why 'Fiat-Shamir for Proofs'
-Lacks a Proof}, TCC@tie{}2013, LNCS@tie{}7785, 2013) and pratical (see David
-Bernhard, Olivier Pereira, Bogdan Warinschi: @emph{How Not to Prove Yourself:
-Pitfalls of the Fiat-Shamir Heuristic and Applications to Helios}, ASIACRYPT@tie{}2012,
-LNCS@tie{}7658, 2012) concerns that show the insecurity of Fiat-Shamir heuristic
-w.r.t. the soundness of the argument resp. proof. That means, if deterministic
-hash functions are used as public coin@tie{}[BR93], then the random oracle model
-obviously does not hold and thus a malicious prover can manipulate the challenges
-in order to cheat and violate soundness. On the other hand, the Fiat-Shamir heuristic,
-and in general the non-interactivness of the transformed protocols, protects against
-a malicious verifier. Thus it is an important measure to deal with the limitation
+resp. proofs into non-interactive versions in the random oracle model. However,
+there are some theoretical (see e.g. Nir Bitansky, Dana Dachman-Soled, Sanjam
+Garg, Abhishek Jain, Yael Tauman Kalai, Adriana Lopez-Alt, and Daniel Wichs:
+@emph{Why 'Fiat-Shamir for Proofs' Lacks a Proof}, TCC@tie{}2013,
+LNCS@tie{}7785, 2013) and pratical (see David Bernhard, Olivier Pereira, Bogdan
+Warinschi: @emph{How Not to Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic
+and Applications to Helios}, ASIACRYPT@tie{}2012, LNCS@tie{}7658, 2012) concerns
+that show the insecurity of Fiat-Shamir heuristic w.r.t. the soundness of the
+argument resp. proof. That means, if deterministic hash functions are used as
+public coin@tie{}[BR93], then the random oracle model obviously does not hold
+and therefore a malicious prover can manipulate the challenges in order to cheat
+and thus violates soundness. On the other hand, the Fiat-Shamir heuristic, and
+in general the non-interactivness of the transformed protocols, protects against
+a malicious verifier. Thus it is another important measure to deal with the limitation
 of honest verifier zero-knowledge protocols without loosing their efficiency.
+However, non-interactive protocols are necessarily malleable (when used without
+unique identifiers), and the cheating verifier can generate a convincing proof
+of knowledge by copying one sent by the prover in a previous iteration of the
+protocol. This issue must be adressed by the application programmer, for example,
+by using fresh randomness in each card or stack operation which should be verifiable.
 
 LibTMCG was carefully implemented with respect to timing attacks (see Paul C. Kocher:
 @emph{Cryptanalysis of Diffie-Hellman, RSA, DSS, and other cryptosystems using
