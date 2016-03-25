@@ -14,7 +14,7 @@
 
      Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
 
- Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -59,12 +59,11 @@
 
 struct TMCG_SecretKey
 {
-	std::string		name, email, type, nizk, sig;
+	std::string	name, email, type, nizk, sig;
 	mpz_t		m, y, p, q;
 	// The following two lines contain non-persistent members (precomputation).
 	// These members are only for internal usage and may change in the future.
 	mpz_t		y1, m1pq, gcdext_up, gcdext_vq, pa1d4, qa1d4;
-	int			ret;
 	
 	TMCG_SecretKey
 		();
@@ -86,7 +85,7 @@ struct TMCG_SecretKey
 	void generate
 		(unsigned long int keysize, bool nizk_key);
 	
-	void precompute
+	bool precompute
 		();
 	
 	bool check

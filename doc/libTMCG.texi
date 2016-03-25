@@ -740,8 +740,9 @@ thus this value should modified very carefully.
 @defmac TMCG_MPZ_IO_BASE
 Defines the input and output base of the @code{std::iostream} operators
 @code{<<} and @code{>>} which is used to encode large integers
-(@code{mpz_t}). The default value is @code{36} which was some years ago
+(@code{mpz_t}). The former value was @code{36} which was some years ago
 the largest base supported by the GNU Multiple Precision Arithmetic Library.
+Since version 1.2.0 of LibTMCG the new default value is @code{62}.
 @end defmac
 
 @defmac TMCG_PRAB_K0
@@ -1450,9 +1451,11 @@ individual profile or a service provider can issue public key certificates.
 
 @deftp {Data type} TMCG_SecretKey
 	This @code{struct} represents the secret part of the key. The
-	underlying public key cryptosystem is due to Rabin with minor
-	modifications for encryption padding (SAEP scheme of Boneh) and
-	digital signatures (PRab scheme of Bellare and Rogaway).
+	underlying public key cryptosystem is due to Rabin (see @emph{Digitalized
+	Signatures and Public-Key Functions as Intractable as Factorization},
+	MIT technical report, 1979) with minor modifications for encryption
+	padding (SAEP scheme of Boneh) and digital signatures (PRab scheme of
+	Bellare and Rogaway).
 	
 	@deftypecv {Member} TMCG_SecretKey {std::string} name
 		This string contains the name or a pseudonym of the key owner.
@@ -1582,7 +1585,7 @@ individual profile or a service provider can issue public key certificates.
 		@var{s}. It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_SecretKey	bool decrypt (@code{char*} value, @code{std::string} s)
+	@deftypemethod TMCG_SecretKey bool decrypt (@code{char*} value, @code{std::string} s)
 		This method decrypts the given encryption packet @var{s} and stores
 		the content in @var{value} which is a pointer to a character array
 		of size @code{TMCG_SAEP_S0}. The method returns @code{true}, if the

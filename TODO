@@ -1,5 +1,3 @@
-+ set TMCG_MPZ_IO_BASE to 62, which is supported by libgmp >= 4.2
-  (However, this breaks all backward compatibility and we gain not much.)
 + provide interactive versions for the non-interactive protocols of VTMF
   (for applications that cannot rely on the random oracle assumption)
 

@@ -60,8 +60,8 @@
 
 struct TMCG_PublicKey
 {
-	std::string						name, email, type, nizk, sig;
-	mpz_t									m, y;
+	std::string			name, email, type, nizk, sig;
+	mpz_t				m, y;
 	
 	TMCG_PublicKey
 		();

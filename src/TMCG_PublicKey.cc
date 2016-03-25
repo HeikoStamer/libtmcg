@@ -358,7 +358,7 @@ size_t TMCG_PublicKey::keyid_size
 {
 	// check the format
 	if ((s.length() < 4) || (s.substr(0, 2) != "ID") || (s.find("^") == s.npos))
-			return 0;
+		return 0;
 	
 	// extract the size
 	char *ec;

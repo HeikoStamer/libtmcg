@@ -134,7 +134,7 @@
 	
 	#ifndef TMCG_MPZ_IO_BASE
 		/* Define the input/ouput base encoding of the iostream operators */
-		#define TMCG_MPZ_IO_BASE 36
+		#define TMCG_MPZ_IO_BASE 62
 	#endif
 	
 	#ifndef TMCG_PRAB_K0

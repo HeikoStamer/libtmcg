@@ -14,7 +14,7 @@
 
      Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
 
- Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -145,7 +145,8 @@ void TMCG_SecretKey::generate
 	while ((mpz_jacobi(y, m) != 1) || mpz_qrmn_p(y, p, q, m));
 	
 	// pre-compute non-persistent values
-	precompute();
+	bool ret = precompute();
+	assert(ret);
 
 	// Rosario Gennaro, Daniele Micciancio, Tal Rabin:
 	// 'An Efficient Non-Interactive Statistical Zero-Knowledge
@@ -267,31 +268,40 @@ void TMCG_SecretKey::generate
 		(repl.str()).length() + TMCG_KEYID_SIZE, keyid());
 }
 
-void TMCG_SecretKey::precompute
+bool TMCG_SecretKey::precompute
 	()
 {
 	// pre-compute non-persistent values
 	mpz_t foo;
 	mpz_init(foo);
-	
-	ret = mpz_invert(y1, y, m);
-	assert(ret);
-	mpz_sub(foo, m, p);
-	mpz_sub(foo, foo, q);
-	mpz_add_ui(foo, foo, 1L);
-	ret = mpz_invert(m1pq, m, foo);
-	assert(ret);
-	mpz_gcdext(foo, gcdext_up, gcdext_vq, p, q);
-	assert(mpz_cmp_ui(foo, 1L) == 0);
-	mpz_mul(gcdext_up, gcdext_up, p);
-	mpz_mul(gcdext_vq, gcdext_vq, q);
-	mpz_set(pa1d4, p), mpz_set(qa1d4, q);
-	mpz_add_ui(pa1d4, pa1d4, 1L);
-	mpz_add_ui(qa1d4, qa1d4, 1L);
-	mpz_fdiv_q_2exp(pa1d4, pa1d4, 2L);
-	mpz_fdiv_q_2exp(qa1d4, qa1d4, 2L);
-	
-	mpz_clear(foo);
+
+	try
+	{
+		if (!mpz_invert(y1, y, m))
+			throw false;
+		mpz_sub(foo, m, p);
+		mpz_sub(foo, foo, q);
+		mpz_add_ui(foo, foo, 1L);
+		if (!mpz_invert(m1pq, m, foo))
+			throw false;
+		mpz_gcdext(foo, gcdext_up, gcdext_vq, p, q);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		mpz_mul(gcdext_up, gcdext_up, p);
+		mpz_mul(gcdext_vq, gcdext_vq, q);
+		mpz_set(pa1d4, p), mpz_set(qa1d4, q);
+		mpz_add_ui(pa1d4, pa1d4, 1L);
+		mpz_add_ui(qa1d4, qa1d4, 1L);
+		mpz_fdiv_q_2exp(pa1d4, pa1d4, 2L);
+		mpz_fdiv_q_2exp(qa1d4, qa1d4, 2L);
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo);
+		return return_value;
+	}	
 }
 
 bool TMCG_SecretKey::check
@@ -393,7 +403,8 @@ bool TMCG_SecretKey::import
 		sig = s;
 		
 		// pre-compute non-persistent values
-		precompute();
+		if (!precompute())
+			throw false;
 		
 		throw true;
 	}
@@ -489,7 +500,7 @@ std::string TMCG_SecretKey::sign
 	// WARNING: This is only a probabilistic algorithm (Rabin's signature scheme),
 	// however, it should work with only a few iterations. Additionally the scheme
 	// PRab from [Bellare, Rogaway: The Exact Security of Digital Signatures]
-	// was implemented to increase the security.
+	// was implemented to increase the security of digital signatures.
 	do
 	{
 		char *r = new char[TMCG_PRAB_K0];
