@@ -61,7 +61,7 @@ LIBTMCG_CONFIG_CFLAGS=""
 # (NOTE: Please update also libTMCG.hh, if changed!)
 AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.2.0",
 	[Define the necessary version number of the GNU gcrypt library])
-AC_DEFINE(TMCG_LIBGMP_VERSION, "4.1.0",
+AC_DEFINE(TMCG_LIBGMP_VERSION, "4.2.0",
 	[Define the necessary version number of the GNU gmp library])
 AC_DEFINE(TMCG_MAX_FPOWM_T, 2048,
 	[Define the maximum size of the exponent for fast exponentiation])
@@ -146,8 +146,8 @@ AC_PROG_LN_S
 # Checks for libraries
 AC_ARG_WITH(gmp, [AS_HELP_STRING([--with-gmp=<path>], [prefix of libgmp installation. e.g. /usr/local or /usr])], [GMP_PREFIX="$with_gmp"],\
  [AC_CHECK_LIB(gmp, __gmpz_init, , AC_MSG_ERROR([libgmp is needed; maybe you want to call configure with the --with-gmp=<path> option]))])
-AC_CHECK_LIB(gmp, __gmpz_import, , AC_MSG_ERROR([libgmp >= 4.1 is needed]))
-AC_CHECK_LIB(gmp, __gmpz_export, , AC_MSG_ERROR([libgmp >= 4.1 is needed]))
+AC_CHECK_LIB(gmp, __gmpz_import, , AC_MSG_ERROR([libgmp >= 4.2 is needed]))
+AC_CHECK_LIB(gmp, __gmpz_export, , AC_MSG_ERROR([libgmp >= 4.2 is needed]))
 if test "x$GMP_PREFIX" != x ; then
 	LIBGMP_LIBS=" -L${GMP_PREFIX}/lib"
 	LIBGMP_CFLAGS=" -I${GMP_PREFIX}/include"

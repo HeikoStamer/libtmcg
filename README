@@ -8,7 +8,7 @@ Copyright (C)  2005, 2006, 2007, 2009, 2015, 2016  Heiko Stamer <HeikoStamer@gmx
 
 Introduction
 ------------
-  LibTMCG is a free C++ library for creating secure and fair online
+  LibTMCG is a free C++ library for creating secure and verifiable online
   card games. The library contains a sort of useful classes, algorithms,
   and high-level protocols to support an application programmer in writing
   such software. The most remarkable feature is the absence of a trusted
@@ -64,10 +64,10 @@ Security
   this verifiability, the protocols deploy so-called zero-knowledge proofs
   which yield no further knowledge but the validity of a statement. The
   soundness error of these proofs is bounded by a security parameter
-  @math{t}. Depending on your application scenario this parameter should
+  @math{\kappa}. Depending on your application scenario this parameter should
   be chosen such that there is a reasonable tradeoff between the cheating
-  probability (which is less or equal than @math{2^{-t}}) and the produced
-  computational and communication complexity.
+  probability (which is less or equal than @math{2^{-\kappa}}) and the 
+  produced computational and communication complexity.
 
   Unfortunately, in practice there is a substantial problem with the
   detection of cheaters. Reliable cheater detection requires that an
@@ -104,7 +104,7 @@ Requirements
   You need the following libraries and appropriate header files to build
   (GNU gcc/g++ version 4.x.y or higher is recommended) LibTMCG successfully:
 
-  * GNU Multiple Precision Arithmetic Library (libgmp), version >= 4.1.0,
+  * GNU Multiple Precision Arithmetic Library (libgmp), version >= 4.2.0,
     http://www.swox.com/gmp/
     (built WITHOUT C++ support: ./configure --enable-cxx=no)
   * GNU Crypto Library (libgcrypt), version >= 1.2.0,

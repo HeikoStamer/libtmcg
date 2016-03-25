@@ -72,7 +72,7 @@ Free Documentation License''.
 @c *******************  Introduction  ***********************
 @c **********************************************************
 @chapter Introduction
-`@acronym{LibTMCG}' is a C++ library for creating secure and fair online
+`@acronym{LibTMCG}' is a C++ library for creating secure and verifiable online
 card games. The library contains a sort of useful classes, algorithms, and
 high-level protocols to support an application programmer in writing such
 software. The most remarkable feature is the absence of a trusted third
@@ -441,7 +441,7 @@ application properly. The following list gives a short exposition
 of the used features and specifies the required versions:
 @itemize @bullet
 	@item GNU Multiple Precision Arithmetic Library (@file{libgmp}),
-		Version@tie{}@math{\ge}@tie{}4.1.0
+		Version@tie{}@math{\ge}@tie{}4.2.0
 		
 		The library provides a powerful framework for performing
 		arbitrary precision arithmetic on integers. Further reasons
@@ -710,7 +710,7 @@ version number of the linked shared object fulfills this condition.
 
 @defmac TMCG_LIBGMP_VERSION
 Defines the required minimum version number of the GNU Multiple Precision
-Arithmetic Library. The default value is @code{"4.1.0"}. During the
+Arithmetic Library. The default value is @code{"4.2.0"}. During the
 initialization of LibTMCG (see @code{init_libTMCG}) it is checked,
 whether the version number provided by the header file @file{gmp.h}
 and used at compile time of LibTMCG fulfills this condition.
@@ -2759,7 +2759,7 @@ class must be created to perform any card or stack operations.
 @chapter Examples
 @cindex Examples
 The following examples explain most of the steps that are necessary to create
-a secure and fair card game with LibTMCG. We consider an application with five
+a secure and verifiable card game with LibTMCG. We consider an application with five
 permanent players (denoted by @math{P_0}, @math{P_1}, @math{P_2}, @math{P_3},
 and @math{P_4}) and a regular deck of 52@tie{}different cards. For convenience
 only the more efficient card encoding scheme of Barnett and Smart@tie{}[BS03]

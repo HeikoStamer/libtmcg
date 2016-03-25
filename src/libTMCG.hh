@@ -87,7 +87,7 @@
 	
 	#ifndef TMCG_LIBGMP_VERSION
 		/* Define the necessary version number of the GNU gmp library */
-		#define TMCG_LIBGMP_VERSION "4.1.0"
+		#define TMCG_LIBGMP_VERSION "4.2.0"
 	#endif
 	
 	#ifndef TMCG_MAX_CARDS
