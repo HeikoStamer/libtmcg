@@ -403,7 +403,7 @@ Warinschi: @emph{How Not to Prove Yourself: Pitfalls of the Fiat-Shamir Heuristi
 and Applications to Helios}, ASIACRYPT@tie{}2012, LNCS@tie{}7658, 2012) concerns
 that show the insecurity of Fiat-Shamir heuristic w.r.t. the soundness of the
 argument resp. proof. That means, if deterministic hash functions are used as
-public coin@tie{}[BR93], then the random oracle model obviously does not hold
+public coin@tie{}[BR93], then the random oracle assumption obviously does not hold
 and therefore a malicious prover can manipulate the challenges in order to cheat
 and thus violates soundness. On the other hand, the Fiat-Shamir heuristic, and
 in general the non-interactivness of the transformed protocols, protects against
@@ -1170,7 +1170,7 @@ There is no error reported, if this limit is exceeded.
 	
 	@deftypeop {Operator} TMCG_Stack bool != (@code{const TMCG_Stack<@var{CardType}>&} that)
 		This operator tests two stacks for inequality. It returns @code{true}, if
-		either the sizes does not match or at least two corresponding cards are
+		either the sizes do not match or at least two corresponding cards are
 		not equal.
 	@end deftypeop
 	
@@ -1279,7 +1279,7 @@ There is no error reported, if this limit is exceeded.
 	
 	@deftypeop {Operator} TMCG_OpenStack bool != (@code{const TMCG_OpenStack<@var{CardType}>&} that)
 		This operator tests two stacks for inequality. It returns @code{true}, if
-		either the sizes resp. types does not match or at least two corresponding cards
+		either the sizes resp. types do not match or at least two corresponding cards
 		are not equal.
 	@end deftypeop
 	
@@ -1887,7 +1887,8 @@ description of such internal functions and members.
 		can be initialized, e.g. with the second constructor of
 		@code{BarnettSmartVTMF_dlog}.
 	@end deftypemethod
-	
+
+@cindex VTMF keys	
 	@deftypemethod BarnettSmartVTMF_dlog void KeyGenerationProtocol_GenerateKey ()
 		This method generates a VTMF key pair and stores the pair internally for
 		a later following usage. It must be called before any other part
@@ -2150,11 +2151,12 @@ of the same instance.
 
 @subsubsection Verifiable Rotation of Homomorphic Encryptions
 De Hoogh, Schoenmakers, Skoric, and Villegas@tie{}[HSSV09] has proposed
-an efficient solution to perform a verifiable rotation (also known as cyclic shift) of
-homomorphically encrypted values. Other solutions (e.g. Reiter and Wang, @emph{Fragile Mixing}, ACM CCS, 2004)
-does not provide that level of efficency. LibTMCG provides the first known implementation
-of their protocol. It can only be used with the VTMF card encoding scheme of
-Barnett and Smart@tie{}[BS03].
+an efficient solution to perform a verifiable rotation (also known as
+cyclic shift) of homomorphically encrypted values. Other solutions (e.g.
+Reiter and Wang, @emph{Fragile Mixing}, ACM CCS, 2004) do not provide
+that level of efficency. LibTMCG provides the first known implementation
+of their protocol. It can only be used with the VTMF card encoding scheme
+of Barnett and Smart@tie{}[BS03].
 
 Further, to the best of our knowledge it is not known, whether their protocol
 retains the zero-knowledge property when it is executed in a concurrent setting.
@@ -2232,13 +2234,14 @@ class must be created to perform any card or stack operations.
 	@code{BarnettSmartVTMF_dlog}) as well.
 	
 	@deftypecv {Member} SchindelhauerTMCG {unsigned long int} TMCG_SecurityLevel
-		This read-only nonnegative integer represents the security parameter @math{t}
-		which was given to the constructor of this class. It defines the number of
-		protocol iterations and hence the soundness error probability (@math{2^{-t}})
-		of the zero-knowledge proofs in the encoding scheme of Schindelhauer.
-		Further it defines the soundness error probability (also @math{2^{-t}})
-		of the shuffle argument in the encoding scheme of Barnett and Smart, if
-		the efficient protocols of Groth@tie{}[Gr05] and [HSSV09] are not used.
+		This read-only nonnegative integer represents the security parameter
+		@math{\kappa} which was given to the constructor of this class. It
+		defines the number of sequential protocol iterations and hence the
+		soundness error probability (@math{2^{-\kappa}}) of the zero-knowledge
+		proofs in the encoding scheme of Schindelhauer.	Further it defines the
+		soundness error probability (also @math{2^{-\kappa}}) of the shuffle
+		argument in the encoding scheme of Barnett and Smart, if the efficient
+		protocols of Groth@tie{}[Gr05] and others@tie{}[HSSV09] are not used.
 	@end deftypecv
 	
 	@deftypecv {Member} SchindelhauerTMCG {size_t} TMCG_Players
@@ -2254,31 +2257,32 @@ class must be created to perform any card or stack operations.
 	
 	@deftypeop {Constructor} SchindelhauerTMCG {} SchindelhauerTMCG (@code{unsigned long int} security, @code{size_t} k, @code{size_t} w)
 		This constructor creates an instance, where @var{security} is a nonnegative
-		integer that represents the security parameter @math{t}. The parameter @var{k}
-		is the number of players and @var{w} is the number of bits which are necessary
-		to represent all possible card types in a binary representation.
+		integer that represents the security parameter @math{\kappa}. The parameter
+		@var{k} is the number of players and @var{w} is the number of bits which are
+		necessary to represent all possible card types in a binary representation.
 		
-		The integer @math{t} controls the maximum soundness error probability (@math{2^{-t}})
-		of the zero-knowledge proofs in the encoding scheme of Schindelhauer.
-		Specifically, @var{security} defines the number of sequential iterations of
-		the involved protocols and thus has a major impact on the computational
-		and communication complexity. If the encoding scheme of Barnett and
-		Smart@tie{}[BS03] is used, then it only defines the soundness error
-		probability (also @math{2^{-t}}) of the corresponding shuffle proof.
-		However, if the efficient shuffle verification protocol of Groth@tie{}[Gr05] is used,
-		then the parameter @var{security} is dispensable, because the parameter
+		The integer @math{\kappa} controls the maximum soundness error probability
+		(@math{2^{-\kappa}}) of the zero-knowledge proofs in the encoding scheme of
+		Schindelhauer. Specifically, @var{security} defines the number of sequential
+		iterations of the involved protocols and thus has a major impact on the
+		computational and communication complexity. If the encoding scheme of Barnett
+		and Smart@tie{}[BS03] is used, then it only defines the soundness error
+		probability (also @math{2^{-\kappa}}) of the corresponding shuffle proof.
+		However, if the efficient shuffle verification protocol of Groth@tie{}[Gr05]
+		is used, then the parameter @var{security} is dispensable, because the parameter
 		@var{ell_e} given during instantiation of @code{GrothVSSHE} (e.g. the LibTMCG
 		default security parameter @code{TMCG_GROTH_L_E}) determines this soundness
 		error probability (@math{2^{-\ell_e}}).
 		The similar holds for the verifiable rotation protocol@tie{}[HSSV09], however,
-		in this case there is no security parameter for the soundness error.
+		in this case there is no explicit security parameter for the soundness error.
 		
 		Unfortunately, the parameters @var{k} and @var{w} have a major impact on the
-		complexity in the encoding scheme of Schindelhauer, too. Therefore you should always use
-		reasonable values. For example, to create a deck with @math{M} different card types
-		simply set @var{w} to @math{\lceil\log_2 M\rceil} which is an tight upper-bound for
-		the binary representation. Furthermore, set @var{k} to the
-		number of players which are really involved and not to a possible maximum value.
+		complexity in the encoding scheme of Schindelhauer, too. Therefore you should
+		always use reasonable values here. For example, to create a deck with @math{M}
+		different card types simply set @var{w} to @math{\lceil\log_2 M\rceil} which
+		is an tight upper-bound for the applied binary representation. Furthermore,
+		set @var{k} to the number of players which are really involved and not to a
+		possible maximum value.
 		Note that @var{k} and @var{w} are limited by the global constants
 		@code{TMCG_MAX_PLAYERS} and @code{TMCG_MAX_TYPEBITS}, respectively.
 	@end deftypeop
@@ -2801,27 +2805,26 @@ function @code{version_libTMCG}.
 @cindex Initialization
 @cindex Key Generation
 In the next step we create an instance of the class @code{SchindelhauerTMCG}.
-The first parameter determines the number of protocol iterations @math{t}
-which upper-bounds the cheating probability by @math{2^{-t}}. In our example
-the used value @code{64} defines a maximum cheating probability of
-@math{5.421010862\cdot 10^{-20}} which is reasonable small
-for our purposes. The second parameter passes the number of players
-to the instance which is simply @code{5} in our case. The last argument
-defines the number of bits that are necessary to encode all card types in
-a binary representation. The given value @code{6} allows the encoding of
-@math{2^6 = 64} different card types at maximum. This is enough to form
-our deck of 52@tie{}cards.
+The first parameter determines the number of protocol iterations @math{\kappa}
+which upper-bounds the cheating probability by @math{2^{-\kappa}}. In our
+example the used value @code{64} defines a maximum cheating probability of
+@math{5.421010862\cdot 10^{-20}} which is reasonable small for our purposes.
+The second parameter passes the number of players to the instance which is
+simply @code{5} in our case. The last argument defines the number of bits
+that are necessary to encode all card types in a binary representation.
+The given value @code{6} allows the encoding of @math{2^6 = 64} different
+card types at maximum. This is enough to form our deck of 52@tie{}cards.
 @cartouche
 @example
 SchindelhauerTMCG *tmcg = new SchindelhauerTMCG(64, 5, 6);
 @end example
 @end cartouche
-We would like to use the more efficient encoding scheme of Barnett and
-Smart, thus we create an instance of @code{BarnettSmartVTMF_dlog}. However,
-a particular player has to act as a @emph{leader} who performs the
-generation of the group @math{G}. In our case @math{P_0} will be the
-session leader. First, he executes the constructor of the class
-@code{BarnettSmartVTMF_dlog}.
+In our example we would like to use the more efficient encoding scheme of
+Barnett and Smart, thus we create an instance of @code{BarnettSmartVTMF_dlog}.
+However, a particular player has to act as a @emph{leader} who performs the
+generation of the group @math{G} as a common refrence. In our case
+@math{P_0} will be the session leader. First, he executes the constructor
+of the class @code{BarnettSmartVTMF_dlog} that may take some time.
 @cartouche
 @example
 BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog();
@@ -2862,7 +2865,8 @@ Then every player @math{P_j} sends the public part of his VTMF key along with a
 non-interactive zero-knowledge proof of knowledge to each other player.
 The appended proof shows that he indeed knows the corresponding secret key.
 However, due to the non-interactive nature of this proof we have to be
-careful, if the same group @math{G} is eventually used again.
+careful, if the same group @math{G} is eventually used again. It is even better
+to generate a fresh common reference for each new game session. 
 @cartouche
 @example
 for (size_t i = 0; i < 5; i++)
@@ -3011,6 +3015,7 @@ way. First, every player (except @math{P_1}) will execute the following code.
 tmcg->TMCG_ProveCardSecret(ccc, vtmf, in_stream[1], out_stream[1]);
 @end example
 @end cartouche
+This sends the necessary data to @math{P_1} and proves their correctness.
 On the other hand, @math{P_1} will execute the following commands exactly
 in the given order. Finally, he obtain the card type in the variable @code{type}.
 Note that the corresponding function @code{TMCG_VerifyCardSecret} is not
@@ -3028,6 +3033,8 @@ for (size_t i = 0; i < 5; i++)
 type = tmcg->TMCG_TypeOfCard(ccc, vtmf);
 @end example
 @end cartouche
+Please notice that first @code{TMCG_SelfCardSecret} is called, then
+@code{TMCG_VerifyCardSecret}, and finally @code{TMCG_TypeOfCard}.
 
 @node Operations on Stacks
 @section Operations on Stacks
@@ -3121,8 +3128,9 @@ version of Groth's protocol (see @code{TMCG_ProveStackEquality_Groth_noninteract
 @code{TMCG_VerifyStackEquality_Groth_noninteractive}) provides an even more efficient
 implementation, because the prover has to compute the argument of correctness only once.
 Additionallly, it protects agains malicious verifiers and reduces the communication
-complexity. Thus using this version is strongly recommended. Please have a look at the
-included program code of @code{tests/t-poker-noninteractive.cc} to get a clue.}
+complexity. Thus using this version is strongly recommended. However, the security relies
+on the random oracle assumption. Please have a look at the included program code of
+@code{tests/t-poker-noninteractive.cc} to get a clue.}
 
 @node Drawing a Card from the Deck
 @subsection Drawing a Card from the Deck
