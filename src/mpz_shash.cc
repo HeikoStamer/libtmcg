@@ -37,9 +37,12 @@ void g
 	(char *output, size_t osize, const char *input, size_t isize)
 {
 	size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
-	size_t usesize = mdsize / 4;
+	// hopefully this truncation size does not match the border
+	// of chaining variables in the compression function of h
+	size_t usesize = (mdsize / 4) + 1;
 	size_t times = (osize / usesize) + 1;
 	char *out = new char[times * mdsize];
+	memset(out, 0, times * mdsize);
 	for (size_t i = 0; i < times; i++)
 	{
 		/* construct the expanded input y = x || libTMCG<i> || x */
@@ -49,8 +52,11 @@ void g
 		memcpy(data + isize + 9, input, isize);
 		
 		/* using h(y) "in some nonstandard way" with "output truncated" [BR95] */
-		h(out + (i * usesize), data, 9 + (2 * isize));
+		h(out + (i * (usesize + 2)), data, 9 + (2 * isize));
 		delete [] data;
+
+		/* using h on parts of the whole result again with "output truncated" */
+		h(out + (i * usesize), out, ((i + 1) * (mdsize - 1)));
 	}
 	memcpy(output, out, osize);
 	delete [] out;
