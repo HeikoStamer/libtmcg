@@ -41,8 +41,8 @@ void g
 	// of chaining variables in the compression function of h
 	size_t usesize = (mdsize / 4) + 1;
 	size_t times = (osize / usesize) + 1;
-	char *out = new char[times * mdsize];
-	memset(out, 0, times * mdsize);
+	char *out = new char[(times + 1) * mdsize];
+	memset(out, 0, (times + 1) * mdsize);
 	for (size_t i = 0; i < times; i++)
 	{
 		/* construct the expanded input y = x || libTMCG<i> || x */
