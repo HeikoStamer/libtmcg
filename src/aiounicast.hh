@@ -105,43 +105,50 @@ class aiounicast
 		void Send
 			(mpz_srcptr m, size_t i_in)
 		{
-			// prepare write buffer
-			char *buf = new char[TMCG_MAX_VALUE_CHARS + 2];
-			memset(buf, 0, TMCG_MAX_VALUE_CHARS + 2);
+			// prepare write buffer with m
 			size_t size = mpz_sizeinbase(m, TMCG_MPZ_IO_BASE);
-			if (size <= TMCG_MAX_VALUE_CHARS)
-			{
-                		mpz_get_str(buf, TMCG_MPZ_IO_BASE, m);
-			}
-			else
-			{
-				buf[0] = '\001'; // set a faulty value
-				buf[1] = '\000'; // set string terminator
-			}
+			char *buf = new char[size + 2];
+			memset(buf, 0, size + 2);
+               		mpz_get_str(buf, TMCG_MPZ_IO_BASE, m);
 			// determine the real size of the string, because
 			// mpz_sizeinbase(m, TMCG_MPZ_IO_BASE) does not
 			// work in all cases correctly
-			size = strnlen(buf, TMCG_MAX_VALUE_CHARS + 2);
-			if (size < (TMCG_MAX_VALUE_CHARS + 2))
+			size_t realsize = strnlen(buf, size + 2);
+			if (realsize < (size + 2))
 			{
-				buf[size] = '\n'; // set newline as delimiter
+				buf[realsize] = '\n'; // set newline as delimiter
 			}
 			else
 			{
 				buf[0] = '\001'; // set a faulty value
 				buf[1] = '\n'; // set newline as delimiter
-				size = 1;
+				realsize = 1;
 			}
-
-			// send m to party i_in
-			ssize_t num = write(out[i_in], buf, size + 1);
-			delete [] buf;
-			if (num < 0)
+			// send content of write buffer to party i_in
+			size_t realnum = 0;
+			do
 			{
-				perror("aiounicast (write)");
-				return;
+				ssize_t num = write(out[i_in], buf + realnum, realsize - realnum + 1);
+				if (num < 0)
+				{
+					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || 
+						(errno == EINTR))
+					{
+						sleep(1);
+						continue;
+					}
+					else
+					{
+						delete [] buf;
+						perror("aiounicast (write)");
+						return;
+					}
+				}
+				numWrite += num;
+				realnum += num;
 			}
-			numWrite += num;
+			while (realnum < (realsize + 1));
+			delete [] buf;
 		}
 
 		void Send
