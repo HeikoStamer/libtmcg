@@ -19,7 +19,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-TESTS = t-mpz t-vtmf t-vsshe t-vrhe t-eotp t-mpc t-key t-poker t-poker-rot t-votc t-poker-noninteractive t-poker-rot-noninteractive t-dkg t-astc t-seabp
+TESTS = t-mpz t-vtmf t-vsshe t-vrhe t-eotp t-mpc t-key t-poker t-poker-cutnchoose t-poker-rot t-votc t-poker-noninteractive t-poker-rot-noninteractive t-dkg t-astc t-seabp
 
 AM_CPPFLAGS = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@ @LIBGMP_CFLAGS@
 LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ @LIBGMP_LIBS@ ../src/libTMCG.la
@@ -41,9 +41,9 @@ t_seabp_SOURCES = pipestream.hh test_helper.c test_helper.h t-seabp.cc
 t_mpc_SOURCES = StiglicMPC.cc StiglicMPC.hh test_helper.c test_helper.h t-mpc.cc
 t_key_SOURCES = t-key.cc
 t_poker_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker.cc
+t_poker_cutnchoose_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker-cutnchoose.cc
 t_poker_rot_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker-rot.cc
 t_votc_SOURCES = pipestream.hh test_helper.c test_helper.h t-votc.cc
 t_poker_noninteractive_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker-noninteractive.cc
 t_poker_rot_noninteractive_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker-rot-noninteractive.cc
-
 
