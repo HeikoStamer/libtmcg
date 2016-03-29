@@ -430,11 +430,11 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	}
 	delete [] dig1, delete [] dig2;
 	std::cout << "mpz_shash()" << std::endl;
-	mpz_set_str(bar, "5r2c2kumf2p9k9nd6cs6z80k54d1rt47gncs20sahlw0ionqk5", 36);
+	mpz_set_str(bar, "RccLJ5STdkwhAE0HMcrKlxj9ivWHS5LfU4FmAk4hYBF", TMCG_MPZ_IO_BASE);
 	mpz_set_ui(foo2, 23L), mpz_set_ui(bar2, 42L);
 	mpz_shash(foo, 2, foo2, bar2);
 	assert(!mpz_cmp(foo, bar));
-	mpz_set_str(bar, "59lex0ibl8fzvjr829usqtmkbb690rsirjx8xgrg8iqkhkj1ow", 36);
+	mpz_set_str(bar, "qxjmrvklcnU9I7llRZPj8v8CPv4laINbogTTGfEcYCY", TMCG_MPZ_IO_BASE);
 	s = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	mpz_shash(foo, s);
 	assert(!mpz_cmp(foo, bar));
