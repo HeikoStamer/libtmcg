@@ -56,14 +56,19 @@ void start_instance
 			std::vector<ipipestream*> P_in;
 			std::vector<opipestream*> P_out;
 			std::vector<int> uP_in, uP_out, bP_in, bP_out;
+			std::vector<std::string> uP_key, bP_key;
 			for (size_t i = 0; i < N; i++)
 			{
+				std::stringstream key;
+				key << "t-astc::P_" << (i + whoami);
 				P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
 				P_out.push_back(new opipestream(pipefd[whoami][i][1]));
 				uP_in.push_back(pipefd[i][whoami][0]);
 				uP_out.push_back(pipefd[whoami][i][1]);
+				uP_key.push_back(key.str());
 				bP_in.push_back(broadcast_pipefd[i][whoami][0]);
 				bP_out.push_back(broadcast_pipefd[whoami][i][1]);
+				bP_key.push_back(key.str());
 			}
 			
 			// create VTMF instance
@@ -110,10 +115,10 @@ void start_instance
 			assert(edcf->CheckGroup());
 
 			// create asynchronous unicast with timeout 3 rounds
-			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, 3);
+			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, uP_key, 3);
 
 			// create asynchronous broadcast with timeout 6 rounds
-			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, 6);
+			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, bP_key, 6);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
 			std::string myID = "t-astc";
@@ -156,63 +161,18 @@ void start_instance
 				" numWrite = " << numWrite << std::endl;
 
 			// release handles (unicast channel)
-			uP_in.clear(), uP_out.clear();
+			uP_in.clear(), uP_out.clear(), uP_key.clear();
 			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
 				" aiou.numWrite = " << aiou->numWrite << std::endl;
 
 			// release handles (broadcast channel)
-			bP_in.clear(), bP_out.clear();
+			bP_in.clear(), bP_out.clear(), bP_key.clear();
 			std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
 				" aiou2.numWrite = " << aiou2->numWrite << std::endl;
 
 			// release asynchronous unicast and broadcast
 			delete aiou, delete aiou2;
 
-/*
-			// testing the two-party protocol version
-			if (whoami < 2)
-			{
-				for (size_t i = 0; i < 2; i++)
-				{
-					uP_in.push_back(pipefd[i][whoami][0]);
-					uP_out.push_back(pipefd[whoami][i][1]);
-				}
-
-				// create an instance of EDCF
-				std::cout << "JareckiLysyanskayaEDCF(2, 0, ...)" << std::endl;
-				edcf = new JareckiLysyanskayaEDCF(2, 0,
-					vtmf->p, vtmf->q, vtmf->g, vtmf->h);
-
-				// create asynchronous unicast with timeout 3 rounds
-				aiou = new aiounicast(2, 0, whoami, uP_in, uP_out, 3);
-
-				// generating public random value $a \in \mathbb{Z}_q$
-				mpz_t a_twoparty;
-				std::stringstream err_log_twoparty;
-				mpz_init_set_ui(a_twoparty, 0L);
-				start_clock();
-				std::cout << "P_" << whoami << ": edcf.Flip_twoparty()" << std::endl;
-				if (corrupted)
-					edcf->Flip_twoparty(whoami, a_twoparty, aiou, err_log_twoparty, true);
-				else
-					assert(edcf->Flip_twoparty(whoami, a_twoparty, aiou, err_log_twoparty));
-				stop_clock();
-				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_twoparty.str();
-				mpz_clear(a_twoparty);
-
-				// release EDCF
-				delete edcf;
-
-				// release handles (unicast channel)
-				uP_in.clear(), uP_out.clear();
-				std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
-					" aiou.numWrite = " << aiou->numWrite << std::endl;
-
-				// release asynchronous unicast
-				delete aiou;
-			}
-*/
 			// release VTMF instance
 			delete vtmf;
 			

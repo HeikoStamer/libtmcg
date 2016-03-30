@@ -53,6 +53,11 @@
 		   Underlying assumption: Random Oracle Model */
 		#define TMCG_GCRY_MD_ALGO GCRY_MD_SHA256
 	#endif
+
+	#ifndef TMCG_GCRY_MAC_ALGO
+		/* Define the message authentication algorithm for authenticated channels */
+		#define TMCG_GCRY_MAC_ALGO GCRY_MAC_HMAC_SHA256
+	#endif
 	
 	#ifndef TMCG_KEYID_SIZE
 		/* Define the size of the unique TMCG key ID (in characters) */

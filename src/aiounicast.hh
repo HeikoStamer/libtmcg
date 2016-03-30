@@ -43,6 +43,9 @@
 	
 	// GNU multiple precision library
 	#include <gmp.h>
+
+	// GNU crypto library
+	#include <gcrypt.h>
 	
 class aiounicast
 {
@@ -54,7 +57,8 @@ class aiounicast
 		std::vector<size_t>			buf_ptr;
 		std::vector<bool>			buf_flag;
 		std::vector< std::list<mpz_ptr> > 	buf_mpz;
-	
+		std::vector<gcry_mac_hd_t*>		buf_mac_in, buf_mac_out;
+
 	public:
 		static const size_t			aio_scheduler_none		= 0;
 		static const size_t			aio_scheduler_roundrobin	= 1;
@@ -68,7 +72,7 @@ class aiounicast
 		aiounicast
 			(size_t n_in, size_t t_in, size_t j_in,
 			std::vector<int> &in_in, std::vector<int> &out_in,
-			size_t timeout_in):
+			std::vector<std::string> &key_in, size_t timeout_in):
 				n(n_in), t(t_in), j(j_in), timeout(timeout_in)
 		{
 			assert(t_in <= n_in);
@@ -100,6 +104,38 @@ class aiounicast
 
 			// initialize character counters
 			numWrite = 0, numRead = 0;
+
+			// initialize MACs
+			for (size_t i = 0; i < n_in; i++)
+			{
+				gcry_error_t err;
+				gcry_mac_hd_t *mac_in = new gcry_mac_hd_t(), *mac_out = new gcry_mac_hd_t();
+				buf_mac_in.push_back(mac_in), buf_mac_out.push_back(mac_out);
+				err = gcry_mac_open(buf_mac_in[i], TMCG_GCRY_MAC_ALGO, 0, NULL); 				
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_mac_open() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+				}
+				err = gcry_mac_setkey(*buf_mac_in[i], key_in[i].c_str(), key_in[i].length());
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_mac_setkey() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+				}
+				err = gcry_mac_open(buf_mac_out[i], TMCG_GCRY_MAC_ALGO, 0, NULL); 				
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_mac_open() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+				}
+				err = gcry_mac_setkey(*buf_mac_out[i], key_in[i].c_str(), key_in[i].length());
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_mac_setkey() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+				}
+			}
 		}
 
 		void Send
@@ -124,6 +160,32 @@ class aiounicast
 				buf[1] = '\n'; // set newline as delimiter
 				realsize = 1;
 			}
+			// calculate MAC
+			gcry_error_t err;
+			err = gcry_mac_write(*buf_mac_out[i_in], buf, realsize);
+			if (err)
+			{
+				std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
+				std::cerr << gcry_strerror(err) << std::endl;
+				delete [] buf;
+				return;
+			}
+			size_t maclen = gcry_mac_get_algo_maclen(TMCG_GCRY_MAC_ALGO);
+			if (maclen == 0)
+			{
+				std::cerr << "libgcrypt: gcry_mac_get_algo_maclen() failed" << std::endl;
+				delete [] buf;
+				return;
+			}
+			char *macbuf = new char[maclen];
+			err = gcry_mac_read(*buf_mac_out[i_in], macbuf, &maclen);
+			if (err)
+			{
+				std::cerr << "libgcrypt: gcry_mac_read() failed" << std::endl;
+				std::cerr << gcry_strerror(err) << std::endl;
+				delete [] buf, delete [] macbuf;
+				return;
+			}
 			// send content of write buffer to party i_in
 			size_t realnum = 0;
 			do
@@ -139,7 +201,7 @@ class aiounicast
 					}
 					else
 					{
-						delete [] buf;
+						delete [] buf, delete [] macbuf;
 						perror("aiounicast (write)");
 						return;
 					}
@@ -148,7 +210,31 @@ class aiounicast
 				realnum += num;
 			}
 			while (realnum < (realsize + 1));
-			delete [] buf;
+			// send content of MAC buffer to party i_in
+			realnum = 0;
+			do
+			{
+				ssize_t num = write(out[i_in], macbuf + realnum, maclen - realnum);
+				if (num < 0)
+				{
+					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || 
+						(errno == EINTR))
+					{
+						sleep(1);
+						continue;
+					}
+					else
+					{
+						delete [] buf, delete [] macbuf;
+						perror("aiounicast (write)");
+						return;
+					}
+				}
+				numWrite += num;
+				realnum += num;
+			}
+			while (realnum < maclen);
+			delete [] buf, delete [] macbuf;
 		}
 
 		void Send
@@ -161,6 +247,12 @@ class aiounicast
 		bool Receive
 			(mpz_ptr m, size_t &i_out, size_t scheduler = aio_scheduler_roundrobin)
 		{
+			size_t maclen = gcry_mac_get_algo_maclen(TMCG_GCRY_MAC_ALGO);
+			if (maclen == 0)
+			{
+				std::cerr << "libgcrypt: gcry_mac_get_algo_maclen() failed" << std::endl;
+				return false;
+			}
 			for (size_t round = 0; round < timeout; round++)
 			{
 				// scheduler
@@ -194,31 +286,54 @@ class aiounicast
 					{
 						if (buf_in[i_out][ptr] == '\n')
 						{
-							newline_found = true;
 							newline_ptr = ptr;
+							newline_found = true;
 							break;
 						}
 					}
-					// extract value of m and adjust buffer
-					if (newline_found)
+					// process the buffer
+					if (newline_found && ((buf_ptr[i_out] - newline_ptr - 1) >= maclen))
 					{
 						char *tmp = new char[newline_ptr + 1];
+						char *mac = new char[maclen];
 						memset(tmp, 0, newline_ptr + 1);
+						memset(mac, 0, maclen);
 						if (newline_ptr > 0)
 							memcpy(tmp, buf_in[i_out], newline_ptr);
-						char *wptr = buf_in[i_out] + newline_ptr + 1;
-						size_t wnum = buf_ptr[i_out] - newline_ptr - 1;
+						memcpy(mac, buf_in[i_out] + newline_ptr + 1, maclen);
+						// adjust buffer (copy remaining characters)
+						char *wptr = buf_in[i_out] + newline_ptr + 1 + maclen;
+						size_t wnum = buf_ptr[i_out] - newline_ptr - 1 - maclen;
 						if (wnum > 0)
 							memmove(buf_in[i_out], wptr, wnum);
 						else
 							buf_flag[i_out] = false;
 						buf_ptr[i_out] = wnum;
-						if (mpz_set_str(m, tmp, TMCG_MPZ_IO_BASE) < 0)
+						// calculate and check MAC
+						gcry_error_t err;
+						err = gcry_mac_write(*buf_mac_in[i_out], tmp, newline_ptr);
+						if (err)
 						{
-							delete [] tmp;
+							std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
+							std::cerr << gcry_strerror(err) << std::endl;
+							delete [] tmp, delete [] mac;
 							return false;
 						}
-						delete [] tmp;
+						err = gcry_mac_verify(*buf_mac_in[i_out], mac, maclen);
+						if (err)
+						{
+							std::cerr << "libgcrypt: gcry_mac_verify() failed" << std::endl;
+							std::cerr << gcry_strerror(err) << std::endl;
+							delete [] tmp, delete [] mac;
+							return false;
+						}
+						// extract value of m
+						if (mpz_set_str(m, tmp, TMCG_MPZ_IO_BASE) < 0)
+						{
+							delete [] tmp, delete [] mac;
+							return false;
+						}
+						delete [] tmp, delete [] mac;
 						return true;
 					}
 					// no delimiter found; invalidate buffer flag
@@ -352,9 +467,12 @@ class aiounicast
 					buf_mpz[i].pop_front();
 				}
 				buf_mpz[i].clear();
+				// release MACs
+				gcry_mac_close(*buf_mac_in[i]), gcry_mac_close(*buf_mac_out[i]);
+				delete buf_mac_in[i], delete buf_mac_out[i];
 			}
 			buf_in.clear(), buf_ptr.clear(), buf_flag.clear();
-			buf_mpz.clear();
+			buf_mpz.clear(), buf_mac_in.clear(), buf_mac_out.clear();
 		}
 };
 

@@ -72,6 +72,8 @@ AC_DEFINE(TMCG_MPZ_IO_BASE, 62,
 AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_SHA256,
 	[Define the message digest algorithm for signatures and FS-heuristic;
 	Underlying assumption: Random Oracle Model])
+AC_DEFINE(TMCG_GCRY_MAC_ALGO, GCRY_MAC_HMAC_SHA256,
+	[Define the message authentication algorithm for authenticated channels])
 
 AC_DEFINE(TMCG_MR_ITERATIONS, 64,
 	[Define the number of iterations for the Miller-Rabin primality test.

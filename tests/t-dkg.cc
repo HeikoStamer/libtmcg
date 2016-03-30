@@ -56,14 +56,19 @@ void start_instance
 			std::vector<ipipestream*> P_in;
 			std::vector<opipestream*> P_out;
 			std::vector<int> uP_in, uP_out, bP_in, bP_out;
+			std::vector<std::string> uP_key, bP_key;
 			for (size_t i = 0; i < N; i++)
 			{
+				std::stringstream key;
+				key << "t-dkg::P_" << (i + whoami);
 				P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
 				P_out.push_back(new opipestream(pipefd[whoami][i][1]));
 				uP_in.push_back(pipefd[i][whoami][0]);
 				uP_out.push_back(pipefd[whoami][i][1]);
+				uP_key.push_back(key.str());
 				bP_in.push_back(broadcast_pipefd[i][whoami][0]);
 				bP_out.push_back(broadcast_pipefd[whoami][i][1]);
+				bP_key.push_back(key.str());
 			}
 			
 			// create VTMF instance
@@ -110,10 +115,10 @@ void start_instance
 			assert(dkg->CheckGroup());
 
 			// create asynchronous unicast with timeout 3 rounds
-			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, 3);
+			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, uP_key, 3);
 
 			// create asynchronous broadcast with timeout 6 rounds
-			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, 6);
+			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, bP_key, 6);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
 			std::string myID = "t-dkg";
@@ -209,12 +214,12 @@ void start_instance
 				" numWrite = " << numWrite << std::endl;
 
 			// release handles (unicast channel)
-			uP_in.clear(), uP_out.clear();
+			uP_in.clear(), uP_out.clear(), uP_key.clear();
 			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
 				" aiou.numWrite = " << aiou->numWrite << std::endl;
 
 			// release handles (broadcast channel)
-			bP_in.clear(), bP_out.clear();
+			bP_in.clear(), bP_out.clear(), bP_key.clear();
 			std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
 				" aiou2.numWrite = " << aiou2->numWrite << std::endl;
 

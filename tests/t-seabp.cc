@@ -53,14 +53,18 @@ void start_instance
 			
 			// create pipe streams and handles between all players
 			std::vector<int> bP_in, bP_out;
+			std::vector<std::string> bP_key;
 			for (size_t i = 0; i < N; i++)
 			{
+				std::stringstream key;
+				key << "t-seabp::P_" << (i + whoami);
 				bP_in.push_back(broadcast_pipefd[i][whoami][0]);
 				bP_out.push_back(broadcast_pipefd[whoami][i][1]);
+				bP_key.push_back(key.str());
 			}	
 
 			// create asynchronous broadcast with timeout 6 rounds
-			aiounicast *aiou = new aiounicast(N, T, whoami, bP_in, bP_out, 6);
+			aiounicast *aiou = new aiounicast(N, T, whoami, bP_in, bP_out, bP_key, 6);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
 			std::string myID = "t-seabp";
@@ -102,7 +106,7 @@ void start_instance
 			delete rbc;
 
 			// release handles (broadcast channel)
-			bP_in.clear(), bP_out.clear();
+			bP_in.clear(), bP_out.clear(), bP_key.clear();
 			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
 				" aiou.numWrite = " << aiou->numWrite << std::endl;
 
