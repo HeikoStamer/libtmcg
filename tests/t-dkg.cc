@@ -114,11 +114,11 @@ void start_instance
 				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 			assert(dkg->CheckGroup());
 
-			// create asynchronous unicast with timeout 3 rounds
-			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, uP_key, 3);
+			// create asynchronous authenticated unicast channels
+			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, uP_key);
 
-			// create asynchronous broadcast with timeout 6 rounds
-			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, bP_key, 6);
+			// create asynchronous authenticated unicast channels
+			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, bP_key);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
 			std::string myID = "t-dkg";

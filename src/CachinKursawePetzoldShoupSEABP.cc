@@ -511,7 +511,7 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 		}
 		else
 		{
-			// deliver a message and store them in the corresponding buffer
+			// store message in corresponding buffer
 			size_t l;
 			mpz_ptr tmp = new mpz_t();
 			mpz_init(tmp);
@@ -525,7 +525,7 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 			{
 				mpz_clear(tmp);
 				delete tmp;
-				if (sleep_counter[l] < aiou->timeout)
+				if (sleep_counter[l] < n)
 				{
 					sleep(1);
 					sleep_counter[l] = sleep_counter[l] + 1;
@@ -533,7 +533,7 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 			}
 		}
 	}
-	std::cerr << "RBC: timeout of party " << j << " from " << i_in << " in DeliverFrom()" << std::endl;
+	std::cerr << "RBC: timeout of party " << j << " delivering from " << i_in << std::endl;
 	return false;
 }
 

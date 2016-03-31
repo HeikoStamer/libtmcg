@@ -67,19 +67,17 @@ class aiounicast
 		size_t					n, t, j;
 		std::vector<int>			in, out;
 		size_t					numWrite, numRead;
-		size_t					timeout;
 
 		aiounicast
 			(size_t n_in, size_t t_in, size_t j_in,
 			std::vector<int> &in_in, std::vector<int> &out_in,
-			std::vector<std::string> &key_in, size_t timeout_in):
-				n(n_in), t(t_in), j(j_in), timeout(timeout_in)
+			std::vector<std::string> &key_in):
+				n(n_in), t(t_in), j(j_in)
 		{
 			assert(t_in <= n_in);
 			assert(j_in < n_in);
 			assert(n_in == in_in.size());
 			assert(in_in.size() == out_in.size());
-			assert(timeout_in > 0);
 
 			// initialize scheduler
 			aio_schedule_current = 0, aio_schedule_buffer = 0;
@@ -251,9 +249,10 @@ class aiounicast
 			if (maclen == 0)
 			{
 				std::cerr << "libgcrypt: gcry_mac_get_algo_maclen() failed" << std::endl;
+				i_out = n;
 				return false;
 			}
-			for (size_t round = 0; round < timeout; round++)
+			for (size_t round = 0; round < n; round++)
 			{
 				// scheduler
 				switch (scheduler)
@@ -330,6 +329,7 @@ class aiounicast
 						// extract value of m
 						if (mpz_set_str(m, tmp, TMCG_MPZ_IO_BASE) < 0)
 						{
+							std::cerr << "libgmp: mpz_set_str() failed" << std::endl;
 							delete [] tmp, delete [] mac;
 							return false;
 						}
@@ -394,7 +394,7 @@ class aiounicast
 			}
 			for (size_t round = 0; round < max_rounds; round++)
 			{
-				// scheduler for reading from buffer
+				// scheduler
 				switch (scheduler)
 				{
 					case aio_scheduler_none:

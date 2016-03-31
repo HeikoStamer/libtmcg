@@ -63,8 +63,8 @@ void start_instance
 				bP_key.push_back(key.str());
 			}	
 
-			// create asynchronous broadcast with timeout 6 rounds
-			aiounicast *aiou = new aiounicast(N, T, whoami, bP_in, bP_out, bP_key, 6);
+			// create asynchronous authenticated broadcast channels
+			aiounicast *aiou = new aiounicast(N, T, whoami, bP_in, bP_out, bP_key);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
 			std::string myID = "t-seabp";
