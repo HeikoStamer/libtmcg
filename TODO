@@ -3,4 +3,6 @@
 
 - implement the exotic card and stack operations of the toolbox; there are
   some obstacles, e.g. that the prover does not know all used randomizers,
-  for the subset and superset protocols
+  for the subset and superset protocols; general protocols for private
+  set operations are also not useful, because they do not provide the link
+  from the shuffled deck to individual set operations

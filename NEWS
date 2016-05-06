@@ -8,7 +8,7 @@
       efficient instantiations with soundness based on the well-known 
       Fiat-Shamir heuristic. The interactive versions of the protocols have
       been strengthened against malicious verifiers by coin flipping between
-      prover and verifyer. Finally a protocol for reliable broadcast is now
+      prover and verifier. Finally a protocol for reliable broadcast is now
       included. Last but not least, the documentation has been improved.
 1.1.3 The VRHE scheme provides an efficient HVZK argument for cyclic shuffle.
 1.1.2 Small bugfixes have been applied in order to compile with gcc 4.3.x.
