@@ -125,6 +125,7 @@ Requirements
   ++ GNU/Linux (Gentoo Linux)    i686      gcc 4.2.4 (Gentoo 4.2.4-r1 p1.1)
   ++ GNU/Linux (Gentoo Linux)    x86_64    gcc 4.9.3 (details omitted)
   ++ GNU/Linux (Gentoo Linux)    x86_64    gcc 5.3.0 (details omitted)
+  ++ GNU/Linux (Gentoo Linux)    x86_64    gcc 5.4.0 (details omitted)
 
 Build & Install
 ---------------
