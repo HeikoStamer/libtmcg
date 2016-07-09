@@ -107,9 +107,9 @@ Requirements
   * GNU Multiple Precision Arithmetic Library (libgmp), version >= 4.2.0,
     http://www.swox.com/gmp/
     (built WITHOUT C++ support: ./configure --enable-cxx=no)
-  * GNU Crypto Library (libgcrypt), version >= 1.2.0,
+  * GNU Crypto Library (libgcrypt), version >= 1.6.0,
     ftp://ftp.gnupg.org/
-  * GNU Privacy Guard Error Code Library (libgpg-error), version >= 0.5,
+  * GNU Privacy Guard Error Code Library (libgpg-error), version >= 1.12,
     ftp://ftp.gnupg.org/
 
   The library was tested (++ successful, -- erroneous) on the following
