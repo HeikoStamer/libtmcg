@@ -35,6 +35,7 @@
 	// C and STL header
 	#include <vector>
 	#include <string>
+	#include <iostream>
 	#include <algorithm>
 	#include <ctime>
 	#include <inttypes.h>
@@ -110,7 +111,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void CRC24Encode
 			(const OCTETS &in, std::string &out);
 		static void ArmorEncode
-			(const OCTETS &in, std::string &out);
+			(const BYTE type, const OCTETS &in, std::string &out);
 		static void FingerprintCompute
 			(const OCTETS &in, OCTETS &out); 
 		static void KeyidCompute
@@ -124,23 +125,31 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void PacketTimeEncode
 			(OCTETS &out);
 		static void PacketMPIEncode
+			(gcry_mpi_t in, OCTETS &out, size_t &sum);
+		static void PacketMPIEncode
 			(gcry_mpi_t in, OCTETS &out);
 		static void PacketUidEncode
-			(std::string uid, OCTETS &out);
+			(const std::string uid, OCTETS &out);
 		static void PacketPubEncode
 			(gcry_mpi_t p, gcry_mpi_t q, gcry_mpi_t g, 
 			 gcry_mpi_t y, OCTETS &out);
+		static void PacketSecEncode
+			(gcry_mpi_t p, gcry_mpi_t q, gcry_mpi_t g, 
+			 gcry_mpi_t y, gcry_mpi_t x, OCTETS &out);
 		static void PacketSubEncode
 			(gcry_mpi_t p, gcry_mpi_t g, gcry_mpi_t y,
 			 OCTETS &out);
+		static void PacketSsbEncode
+			(gcry_mpi_t p, gcry_mpi_t g, gcry_mpi_t y,
+			 gcry_mpi_t x, OCTETS &out);
 		static void PacketSigEncode
 			(const OCTETS &hashing, const OCTETS &left,
 			 gcry_mpi_t r, gcry_mpi_t s, OCTETS &out);
 		static void SubpacketEncode
-			(BYTE type, bool critical, const OCTETS &in,
+			(const BYTE type, bool critical, const OCTETS &in,
 			 OCTETS &out);
 		static void PacketSigPrepare
-			(BYTE sigtype, const OCTETS &flags,
+			(const BYTE sigtype, const OCTETS &flags,
 			 const OCTETS &keyid, OCTETS &out);
 		static gcry_error_t CertificationHash
 			(const OCTETS &primary, std::string uid,

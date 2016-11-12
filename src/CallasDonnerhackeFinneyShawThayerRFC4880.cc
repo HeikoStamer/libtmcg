@@ -171,7 +171,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Encode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
-	(const OCTETS &in, std::string &out)
+	(const BYTE type, const OCTETS &in, std::string &out)
 {
 	// Concatenating the following data creates ASCII Armor:
 	//  - An Armor Header Line, appropriate for the type of data
@@ -189,6 +189,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 	// [...]
 	// BEGIN PGP PUBLIC KEY BLOCK
 	//    Used for armoring public keys.
+	// BEGIN PGP PRIVATE KEY BLOCK
+	//    Used for armoring private keys.
 	// [...]
 	// Note that all these Armor Header Lines are to consist of a complete
 	// line. That is to say, there is always a line ending preceding the
@@ -197,7 +199,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 	// MUST NOT have text other than whitespace following them on the same
 	// line. These line endings are considered a part of the Armor Header
 	// Line for the purposes of determining the content they delimit.
-	out += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
+	switch (type)
+	{
+		case 5:
+			out += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
+			break;
+		case 6:
+			out += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
+			break;
+	}
 
 	// The Armor Headers are pairs of strings that can give the user or 
 	// the receiving OpenPGP implementation some information about how to
@@ -226,7 +236,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 	// The Armor Tail Line is composed in the same manner as the Armor
 	// Header Line, except the string "BEGIN" is replaced by the string
 	// "END".
-	out += "-----END PGP PUBLIC KEY BLOCK-----";
+	switch (type)
+	{
+		case 5:
+			out += "-----END PGP PRIVATE KEY BLOCK-----";
+			break;
+		case 6:
+			out += "-----END PGP PUBLIC KEY BLOCK-----";
+			break;
+	}
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
@@ -312,9 +330,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
-	(gcry_mpi_t in, OCTETS &out)
+	(gcry_mpi_t in, OCTETS &out, size_t &sum)
 {
-	int ret;
+	gcry_error_t ret;
 	size_t bitlen = gcry_mpi_get_nbits(in);
 	size_t buflen = ((bitlen + 7) / 8) + 2;
 	BYTE *buffer = new BYTE[buflen];
@@ -329,12 +347,22 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
 	// made into an MPI by prefixing it with the appropriate length.
 	ret = gcry_mpi_print(GCRYMPI_FMT_PGP, buffer, buflen, &buflen, in);
 	for (size_t i = 0; ((!ret) && (i < buflen)); i++)
+	{
 		out.push_back(buffer[i]);
+		sum += buffer[i];
+	}
 	delete [] buffer;
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
+	(gcry_mpi_t in, OCTETS &out)
+{
+	size_t sum = 0;
+	PacketMPIEncode(in, out, sum);
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode
-	(std::string uid, OCTETS &out)
+	(const std::string uid, OCTETS &out)
 {
 	// A User ID packet consists of UTF-8 text that is intended to 
 	// represent the name and email address of the key holder. By
@@ -389,6 +417,61 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	PacketMPIEncode(y, out); // MPI y
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
+	(gcry_mpi_t p, gcry_mpi_t q, gcry_mpi_t g, gcry_mpi_t y, gcry_mpi_t x,
+	 OCTETS &out)
+{
+	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
+	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
+	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
+	size_t ylen = (gcry_mpi_get_nbits(y) + 7) / 8;
+	size_t xlen = (gcry_mpi_get_nbits(x) + 7) / 8;
+
+	// The Secret-Key and Secret-Subkey packets contain all the data of the
+	// Public-Key and Public-Subkey packets, with additional algorithm-
+	// specific secret-key data appended, usually in encrypted form.
+	// The packet contains:
+	//  - A Public-Key or Public-Subkey packet, as described above.
+	//  - One octet indicating string-to-key usage conventions. Zero
+	//    indicates that the secret-key data is not encrypted. 255 or 254
+	//    indicates that a string-to-key specifier is being given. Any
+	//    other value is a symmetric-key encryption algorithm identifier.
+	//  - [Optional] If string-to-key usage octet was 255 or 254, a one-
+	//    octet symmetric encryption algorithm.
+	//  - [Optional] If string-to-key usage octet was 255 or 254, a
+	//    string-to-key specifier. The length of the string-to-key
+	//    specifier is implied by its type, as described above.
+	//  - [Optional] If secret data is encrypted (string-to-key usage octet
+	//    not zero), an Initial Vector (IV) of the same length as the
+	//    cipher’s block size.
+	//  - Plain or encrypted multiprecision integers comprising the secret
+	//    key data. These algorithm-specific fields are as described
+	//    below.
+	//  - If the string-to-key usage octet is zero or 255, then a two-octet
+	//    checksum of the plaintext of the algorithm-specific portion (sum
+	//    of all octets, mod 65536). If the string-to-key usage octet was
+	//    254, then a 20-octet SHA-1 hash of the plaintext of the
+	//    algorithm-specific portion. This checksum or hash is encrypted
+	//    together with the algorithm-specific fields (if string-to-key
+	//    usage octet is not zero). Note that for all other values, a
+	//    two-octet checksum is required.
+	PacketTagEncode(5, out);
+	PacketLengthEncode(1+4+1+2+plen+2+qlen+2+glen+2+ylen+1+2+xlen+2, out);
+	out.push_back(4); // V4 format
+	PacketTimeEncode(out); // current time
+	out.push_back(17); // public-key algorithm: DSA
+	PacketMPIEncode(p, out); // MPI p
+	PacketMPIEncode(q, out); // MPI q
+	PacketMPIEncode(g, out); // MPI g
+	PacketMPIEncode(y, out); // MPI y
+	out.push_back(0); // S2K convention: not encrypted
+	size_t chksum = 0;	
+	PacketMPIEncode(x, out, chksum); // MPI x
+	chksum %= 65536;
+	out.push_back(chksum >> 8); // checksum
+	out.push_back(chksum);
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 	(gcry_mpi_t p, gcry_mpi_t g, gcry_mpi_t y, OCTETS &out)
 {
@@ -411,6 +494,32 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 	PacketMPIEncode(p, out); // MPI p
 	PacketMPIEncode(g, out); // MPI g
 	PacketMPIEncode(y, out); // MPI y
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
+	(gcry_mpi_t p, gcry_mpi_t g, gcry_mpi_t y, gcry_mpi_t x, OCTETS &out)
+{
+	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
+	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
+	size_t ylen = (gcry_mpi_get_nbits(y) + 7) / 8;
+	size_t xlen = (gcry_mpi_get_nbits(x) + 7) / 8;
+
+	// A Secret-Subkey packet (tag 7) is the subkey analog of the Secret
+	// Key packet and has exactly the same format.
+	PacketTagEncode(7, out);
+	PacketLengthEncode(1+4+1+2+plen+2+glen+2+ylen+1+2+xlen+2, out);
+	out.push_back(4); // V4 format
+	PacketTimeEncode(out); // current time
+	out.push_back(16); // public-key algorithm: Elgamal
+	PacketMPIEncode(p, out); // MPI p
+	PacketMPIEncode(g, out); // MPI g
+	PacketMPIEncode(y, out); // MPI y
+	out.push_back(0); // S2K convention: not encrypted
+	size_t chksum = 0;	
+	PacketMPIEncode(x, out, chksum); // MPI x
+	chksum %= 65536;
+	out.push_back(chksum >> 8); // checksum
+	out.push_back(chksum);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
@@ -441,7 +550,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
-	(BYTE type, bool critical, const OCTETS &in, OCTETS &out)
+	(const BYTE type, bool critical, const OCTETS &in, OCTETS &out)
 {
 	// A subpacket data set consists of zero or more Signature subpackets.
 	// In Signature packets, the subpacket data set is preceded by a two-
@@ -465,7 +574,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
-	(BYTE sigtype, const OCTETS &flags, const OCTETS &keyid, OCTETS &out)
+	(const BYTE sigtype, const OCTETS &flags, const OCTETS &keyid, OCTETS &out)
 {
 	size_t subpkts = 6;
 	size_t subpktlen = (subpkts * 6) + 4 + flags.size() + keyid.size() + 3;
