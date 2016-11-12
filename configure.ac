@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION(20160220)
+AC_REVISION(20161112)
 AC_PREREQ(2.57)
 
 AC_INIT([libTMCG], [1.2.0])
@@ -74,6 +74,13 @@ AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_SHA256,
 	Underlying assumption: Random Oracle Model])
 AC_DEFINE(TMCG_GCRY_MAC_ALGO, GCRY_MAC_HMAC_SHA256,
 	[Define the message authentication algorithm for authenticated channels])
+
+AC_DEFINE(TMCG_OPENPGP_CRC24_INIT, 0xB704CE,
+	[Define the initial value for OPENPGP CRC24 algorithm])
+AC_DEFINE(TMCG_OPENPGP_CRC24_POLY, 0x1864CFB,
+	[Define the generator for OPENPGP CRC24 algorithm])
+AC_DEFINE(TMCG_OPENPGP_RADIX64_MC, 64,
+	[Define the maximum number of characters in a single line of Radix-64 encoding])
 
 AC_DEFINE(TMCG_MR_ITERATIONS, 64,
 	[Define the number of iterations for the Miller-Rabin primality test.
@@ -176,8 +183,9 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
- errno.h functional gcrypt.h gmp.h iostream limits.h map sstream stdio.h\
- string string.h time.h unistd.h vector], , AC_MSG_ERROR([some headers are missing]))
+ errno.h functional gcrypt.h gmp.h inttypes.h iostream limits.h map sstream\
+ stdio.h string string.h time.h unistd.h vector], , 
+	AC_MSG_ERROR([some headers are missing]))
 
 # Checks for typedefs, structures, and compiler characteristics
 AC_C_CONST
@@ -188,7 +196,8 @@ AC_TYPE_SSIZE_T
 # Checks for library functions
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
-AC_CHECK_FUNCS([clock close fprintf memcmp memcpy memset perror sleep snprintf strtoul], ,
+AC_CHECK_FUNCS([clock close fprintf memcmp memcpy memset perror sleep snprintf\
+ strtoul], ,
 	AC_MSG_ERROR([some functions are missing]))
 
 # forking tests feature
@@ -200,7 +209,8 @@ if test "$use_forking" = yes ; then
 	AC_TYPE_PID_T
 	AC_FUNC_FORK
 	AC_CHECK_HEADERS([sys/wait.h], , AC_MSG_ERROR([headers are missing]))
-	AC_CHECK_FUNCS([fork pipe waitpid], , AC_MSG_ERROR([functions are missing]))
+	AC_CHECK_FUNCS([fork pipe waitpid], ,
+		AC_MSG_ERROR([functions are missing]))
 	AC_DEFINE(FORKING, , [Define to enable the forking tests])
 fi
 

@@ -17,9 +17,9 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20160202.
+Revision 20161112.
 
-Copyright @copyright{} 2005, 2006, 2007, 2009, 2015 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
+Copyright @copyright{} 2005, 2006, 2007, 2009, 2015, 2016 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -590,6 +590,13 @@ matches your requirements.
 @deftypefun std::string version_libTMCG ()
 This function returns the version of the library in the
 format @emph{major.minor.revision}.
+@end deftypefun
+
+Last but not least, there is a function @code{identifier_libTMCG}
+which returns an identifier of LibTMCG including the version.
+
+@deftypefun std::string identifier_libTMCG ()
+This function returns an identifier of the library.
 @end deftypefun
 
 @node Application Programming Interface

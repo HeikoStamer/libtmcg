@@ -174,7 +174,23 @@
 		/* Define the maximum number of bases for doing the precomputation */
 		#define TMCG_MAX_FPOWM_N 256
 	#endif
-	
+
+	#ifndef TMCG_OPENPGP_CRC24_INIT
+		/* Define the initial value for OPENPGP CRC24 algorithm */
+		#define TMCG_OPENPGP_CRC24_INIT 0xB704CE
+	#endif
+
+	#ifndef TMCG_OPENPGP_CRC24_POLY
+		/* Define the generator for OPENPGP CRC24 algorithm */
+		#define TMCG_OPENPGP_CRC24_POLY 0x1864CFB
+	#endif
+
+	#ifndef TMCG_OPENPGP_RADIX64_MC
+		/* Define the maximum number of characters in a single line of
+		   Radix-64 encoding */
+		#define TMCG_OPENPGP_RADIX64_MC 64
+	#endif
+
 	// disable usage of config.h
 	#ifdef HAVE_CONFIG_H
 		#define TMCG_CONFIG_H
@@ -200,6 +216,7 @@
 	#include "GennaroJareckiKrawczykRabinDKG.hh"
 	#include "JareckiLysyanskayaASTC.hh"
 	#include "CachinKursawePetzoldShoupSEABP.hh"
+	#include "CallasDonnerhackeFinneyShawThayerRFC4880.hh"
 	
 	// enable usage of config.h
 	#ifdef TMCG_CONFIG_H
@@ -221,5 +238,9 @@
 	
 	// Returns the version of LibTMCG
 	std::string version_libTMCG
+		();
+
+	// Returns the identifier of LibTMCG
+	std::string identifier_libTMCG
 		();
 #endif

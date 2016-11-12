@@ -32,6 +32,7 @@ include_HEADERS = mpz_srandom.h mpz_sqrtm.h mpz_spowm.h mpz_sprime.h\
 	CachinKursawePetzoldShoupSEABP.hh\
 	GennaroJareckiKrawczykRabinDKG.hh\
 	JareckiLysyanskayaASTC.hh\
+	CallasDonnerhackeFinneyShawThayerRFC4880.hh\
 	SchindelhauerTMCG.hh\
 	VTMF_Card.hh VTMF_CardSecret.hh\
 	TMCG_Card.hh TMCG_CardSecret.hh\
@@ -61,6 +62,7 @@ libTMCG_la_SOURCES = mpz_srandom.c mpz_srandom.h\
 	CachinKursawePetzoldShoupSEABP.cc CachinKursawePetzoldShoupSEABP.hh\
 	GennaroJareckiKrawczykRabinDKG.cc GennaroJareckiKrawczykRabinDKG.hh\
 	JareckiLysyanskayaASTC.cc JareckiLysyanskayaASTC.hh\
+	CallasDonnerhackeFinneyShawThayerRFC4880.cc CallasDonnerhackeFinneyShawThayerRFC4880.hh\
 	SchindelhauerTMCG.cc SchindelhauerTMCG.hh\
 	VTMF_Card.cc VTMF_Card.hh\
 	VTMF_CardSecret.cc VTMF_CardSecret.hh\
