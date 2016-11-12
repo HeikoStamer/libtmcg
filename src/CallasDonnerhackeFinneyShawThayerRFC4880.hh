@@ -115,7 +115,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const OCTETS &in, OCTETS &out); 
 		static void KeyidCompute
 			(const OCTETS &in, OCTETS &out);
-		static void HashCompute
+		static void SHA256Compute
 			(const OCTETS &in, OCTETS &out); 
 		static void PacketTagEncode
 			(size_t tag, OCTETS &out); 

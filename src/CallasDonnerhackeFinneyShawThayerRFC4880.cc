@@ -264,10 +264,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 		out.push_back(fpr[i]);
 }
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
+void CallasDonnerhackeFinneyShawThayerRFC4880::SHA256Compute
 	(const OCTETS &in, OCTETS &out)
 {
-	size_t dlen = gcry_md_get_algo_dlen(GCRY_MD_SHA256); // FIXME
+	size_t dlen = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
 	BYTE *buffer = new BYTE[in.size()];
 	BYTE *hash = new BYTE[dlen];
 
@@ -546,7 +546,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
-	HashCompute(hash_input, left);
+	SHA256Compute(hash_input, left);
 	for (size_t i = 0; ((i < left.size()) && (i < 1024)); i++)
 		buffer[i] = left[i];
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, left.size(), &nsc);
@@ -598,7 +598,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
-	HashCompute(hash_input, left);
+	SHA256Compute(hash_input, left);
 	for (size_t i = 0; ((i < left.size()) && (i < 1024)); i++)
 		buffer[i] = left[i];
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, left.size(), &nsc);
