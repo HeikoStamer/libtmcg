@@ -739,8 +739,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	 gcry_mpi_t &h, OCTETS &left)
 {
 	OCTETS hash_input;
-	BYTE *buffer = new BYTE[1024];
-	size_t uidlen = uid.length(), nsc;
+	BYTE buffer[1024];
+	size_t uidlen = uid.length(), buflen = 0;
 	gcry_error_t ret;
 
 	// When a signature is made over a key, the hash data starts with the
@@ -783,12 +783,11 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
 	SHA256Compute(hash_input, left);
-	for (size_t i = 0; ((i < left.size()) && (i < 1024)); i++)
+	for (size_t i = 0; ((i < left.size()) && (i < 1024)); i++, buflen++)
 		buffer[i] = left[i];
-	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, left.size(), &nsc);
+	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	while (left.size() > 2)
 		left.pop_back();
-	delete [] buffer;
 
 	return ret;
 }
@@ -798,8 +797,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 	 gcry_mpi_t &h, OCTETS &left)
 {
 	OCTETS hash_input;
-	BYTE *buffer = new BYTE[1024];
-	size_t nsc;
+	BYTE buffer[1024];
+	size_t buflen = 0;
 	gcry_error_t ret;
 
 	// When a signature is made over a key, the hash data starts with the
@@ -835,12 +834,11 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
 	SHA256Compute(hash_input, left);
-	for (size_t i = 0; ((i < left.size()) && (i < 1024)); i++)
+	for (size_t i = 0; ((i < left.size()) && (i < 1024)); i++, buflen++)
 		buffer[i] = left[i];
-	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, left.size(), &nsc);
+	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	while (left.size() > 2)
 		left.pop_back();
-	delete [] buffer;
 
 	return ret;
 }
@@ -936,6 +934,56 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncrypt
 		out.push_back(b);
 	}
 	gcry_cipher_close(hd);
+
+	return ret;
+}
+
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncrypt
+	(const OCTETS &in, const gcry_sexp_t key, gcry_mpi_t &gk, gcry_mpi_t &myk)
+{
+	BYTE buffer[1024];
+	gcry_sexp_t encryption, data;
+	gcry_mpi_t v;
+	gcry_error_t ret;
+	size_t buflen = 0, erroff;
+
+	// TODO: Beschreibung
+	for (size_t i = 0; ((i < in.size()) && (i < 1024)); i++, buflen++)
+		buffer[i] = in[i];
+	v = gcry_mpi_new(2048);
+	ret = gcry_mpi_scan(&v, GCRYMPI_FMT_USG, buffer, buflen, NULL);
+	if (ret)
+	{
+		gcry_mpi_release(v);
+		return ret;
+	}
+	ret = gcry_sexp_build(&data, &erroff,
+		"(data (flags pkcs1) (value %M))", v);
+	if (ret)
+	{
+		gcry_mpi_release(v);
+		return ret;
+	}
+std::cerr << "bef encrypt" << std::endl;
+	ret = gcry_pk_encrypt(&encryption, data, key);
+	if (ret)
+	{
+		gcry_mpi_release(v);
+		gcry_sexp_release(encryption);
+		gcry_sexp_release(data);
+		return ret;
+	}
+	ret = gcry_sexp_extract_param(encryption, NULL, "ab", &gk, &myk, NULL);
+	if (ret)
+	{
+		gcry_mpi_release(v);
+		gcry_sexp_release(encryption);
+		gcry_sexp_release(data);
+		return ret;
+	}
+	gcry_mpi_release(v);
+	gcry_sexp_release(encryption);
+	gcry_sexp_release(data);
 
 	return ret;
 }
