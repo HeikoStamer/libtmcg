@@ -147,110 +147,6 @@ void start_instance
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 
-			// create an Elgamal-based OpenPGP key
-			char buffer[2048];
-			std::string out, crcout, armor, u;
-			OCTETS all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
-			OCTETS pub_hashing, sub_hashing;
-			OCTETS uidsig_hashing, subsig_hashing, uidsig_left, subsig_left;
-			gcry_mpi_t p, q, g, y, x, r, s, h;
-			gcry_sexp_t key, dsaparams, signature, sigdata;
-			gcry_error_t ret;
-			size_t erroff;
-			std::string d = "(genkey (dsa (nbits 4:2048) (qbits 3:256) (flags transient-key)))";
-			ret = gcry_sexp_new(&dsaparams, d.c_str(), d.length(), 1);
-			assert(!ret);
-			ret = gcry_pk_genkey(&key, dsaparams);
-			assert(!ret);
-			gcry_sexp_release(dsaparams);
-			p = gcry_mpi_new(2048);
-			q = gcry_mpi_new(2048);
-			g = gcry_mpi_new(2048);
-			y = gcry_mpi_new(2048);
-			x = gcry_mpi_new(2048);
-			r = gcry_mpi_new(2048);
-			s = gcry_mpi_new(2048);
-			h = gcry_mpi_new(2048);
-			ret = gcry_sexp_extract_param(key, NULL, "pqgyx", &p, &q, &g, &y, &x, NULL);
-			assert(!ret);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(p, q, g, y, pub);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(p, q, g, y, x, sec);
-			for (size_t i = 6; i < pub.size(); i++)
-				pub_hashing.push_back(pub[i]);
-			CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
-			u = "Max Mustermann <max@moritz.de>";
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, uid);
-			dsaflags.push_back(0x01);
-			dsaflags.push_back(0x02);
-			dsaflags.push_back(0x20);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, dsaflags, keyid, uidsig_hashing);
-			ret = CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, h, uidsig_left);
-			assert(!ret);
-			ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags raw) (value %M))", h);
-			assert(!ret);
-			ret = gcry_pk_sign(&signature, sigdata, key);
-			assert(!ret);
-			ret = gcry_sexp_extract_param(signature, NULL, "rs", &r, &s, NULL);
-			assert(!ret);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(uidsig_hashing, uidsig_left, r, s, uidsig);
-			mpz_get_str(buffer, 16, vtmf->p);			
-			ret = gcry_mpi_scan(&p, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-			assert(!ret); 
-			mpz_get_str(buffer, 16, vtmf->g);			
-			ret = gcry_mpi_scan(&g, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-			assert(!ret); 
-			mpz_get_str(buffer, 16, dkg->y);			
-			ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-			assert(!ret);
-			mpz_get_str(buffer, 16, dkg->x_i);			
-			ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-			assert(!ret);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(p, g, y, sub);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(p, g, y, x, ssb);
-			elgflags.push_back(0x04);
-			elgflags.push_back(0x10);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, elgflags, keyid, subsig_hashing);
-			for (size_t i = 6; i < sub.size(); i++)
-				sub_hashing.push_back(sub[i]);
-			ret = CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, subsig_hashing, h, subsig_left);
-			assert(!ret);
-			ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags raw) (value %M))", h);
-			assert(!ret);
-			ret = gcry_pk_sign(&signature, sigdata, key);
-			assert(!ret);
-			ret = gcry_sexp_extract_param(signature, NULL, "rs", &r, &s, NULL);
-			assert(!ret);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(subsig_hashing, subsig_left, r, s, subsig);
-			// export generated public key in OpenPGP armor format
-			armor = "", all.clear();
-			all.insert(all.end(), pub.begin(), pub.end());
-			all.insert(all.end(), uid.begin(), uid.end());
-			all.insert(all.end(), uidsig.begin(), uidsig.end());
-			all.insert(all.end(), sub.begin(), sub.end());
-			all.insert(all.end(), subsig.begin(), subsig.end());
-			CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(6, all, armor);
-			std::cout << armor << std::endl;
-			// export generated private key in OpenPGP armor format
-			armor = "", all.clear();
-			all.insert(all.end(), sec.begin(), sec.end());
-			all.insert(all.end(), uid.begin(), uid.end());
-			all.insert(all.end(), uidsig.begin(), uidsig.end());
-			all.insert(all.end(), ssb.begin(), ssb.end());
-			all.insert(all.end(), subsig.begin(), subsig.end());
-			CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(5, all, armor);
-			std::cout << armor << std::endl;
-			gcry_mpi_release(p);
-			gcry_mpi_release(q);
-			gcry_mpi_release(g);
-			gcry_mpi_release(y);
-			gcry_mpi_release(x);
-			gcry_mpi_release(r);
-			gcry_mpi_release(s);
-			gcry_mpi_release(h);
-			gcry_sexp_release(key);
-			gcry_sexp_release(signature);
-			gcry_sexp_release(sigdata);
-
 			// create an instance of threshold signature protocol new-TSch (NTS)
 			GennaroJareckiKrawczykRabinNTS *nts;
 			std::cout << "GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", ...)" << std::endl;
@@ -272,27 +168,27 @@ void start_instance
 
 			// sign a message (create a signature share)
 			std::stringstream err_log3;
-			mpz_t m, c, s2;
-			mpz_init_set_ui(m, 1L), mpz_init_set_ui(c, 0L), mpz_init_set_ui(s2, 0L);
+			mpz_t m, c, s;
+			mpz_init_set_ui(m, 1L), mpz_init_set_ui(c, 0L), mpz_init_set_ui(s, 0L);
 			start_clock();
 			std::cout << "P_" << whoami << ": nts.Sign()" << std::endl;
 			if (corrupted)
-				nts->Sign(m, c, s2, whoami, aiou, rbc, err_log3, true);
+				nts->Sign(m, c, s, whoami, aiou, rbc, err_log3, true);
 			else
-				assert(nts->Sign(m, c, s2, whoami, aiou, rbc, err_log3));
+				assert(nts->Sign(m, c, s, whoami, aiou, rbc, err_log3));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
 
 			// verify signature
 			if (corrupted)
-				nts->Verify(m, c, s2);
+				nts->Verify(m, c, s);
 			else
-				assert(nts->Verify(m, c, s2));
+				assert(nts->Verify(m, c, s));
 
 			// at the end: deliver one more round for waiting parties
 			rbc->DeliverFrom(m, whoami);
-			mpz_clear(m), mpz_clear(c), mpz_clear(s2);
+			mpz_clear(m), mpz_clear(c), mpz_clear(s);
 			
 			// release NTS
 			delete nts;
