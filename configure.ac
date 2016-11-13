@@ -233,7 +233,7 @@ datadir=$datadir
 ]])
 
 # Define output
-AC_CONFIG_FILES([Makefile src/Makefile src/libTMCG-config doc/Makefile tests/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/libTMCG-config doc/Makefile tests/Makefile tools/Makefile])
 AC_OUTPUT
 
 echo "Now type 'make && make install' to build and install LibTMCG."

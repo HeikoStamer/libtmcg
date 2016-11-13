@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2006, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -17,9 +17,15 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-SUBDIRS = src doc tests tools
+## Process this file with automake to produce Makefile.in
 
-DIST_SUBDIRS = src doc tests tools
+AM_CPPFLAGS = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@ @LIBGMP_CFLAGS@
+LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ @LIBGMP_LIBS@ ../src/libTMCG.la
 
-EXTRA_DIST = AUTHORS BUGS COPYING FDL INSTALL NEWS README TODO THANKS\
-	ChangeLog Doxyfile PATENTS
+bin_PROGRAMS = dkg-generate dkg-encrypt dkg-decrypt
+
+dkg_generate_SOURCES = pipestream.hh dkg-generate.cc
+dkg_encrypt_SOURCES = pipestream.hh dkg-encrypt.cc
+dkg_decrypt_SOURCES = pipestream.hh dkg-decrypt.cc
+
+

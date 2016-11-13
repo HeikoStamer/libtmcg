@@ -201,6 +201,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 	// Line for the purposes of determining the content they delimit.
 	switch (type)
 	{
+		case 1:
+			out += "-----BEGIN PGP MESSAGE-----\r\n";
+			break;
 		case 5:
 			out += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
 			break;
@@ -238,6 +241,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 	// "END".
 	switch (type)
 	{
+		case 1:
+			out += "-----END PGP MESSAGE-----\r\n";
+			break;
 		case 5:
 			out += "-----END PGP PRIVATE KEY BLOCK-----";
 			break;
