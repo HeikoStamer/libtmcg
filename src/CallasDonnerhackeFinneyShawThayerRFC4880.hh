@@ -112,6 +112,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const OCTETS &in, std::string &out);
 		static void ArmorEncode
 			(const BYTE type, const OCTETS &in, std::string &out);
+		static BYTE ArmorDecode
+			(const std::string in, OCTETS &out);
 		static void FingerprintCompute
 			(const OCTETS &in, OCTETS &out); 
 		static void KeyidCompute

@@ -245,12 +245,50 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 			out += "-----END PGP MESSAGE-----\r\n";
 			break;
 		case 5:
-			out += "-----END PGP PRIVATE KEY BLOCK-----";
+			out += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
 			break;
 		case 6:
-			out += "-----END PGP PUBLIC KEY BLOCK-----";
+			out += "-----END PGP PUBLIC KEY BLOCK-----\r\n";
 			break;
 	}
+}
+
+BYTE CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
+	(const std::string in, OCTETS &out)
+{
+	BYTE type = 0;
+	size_t spos = 0, rpos = 0, cpos = 0, epos = 0;
+
+	rpos = in.find("\r\n\r\n", 0);
+	cpos = in.find("\r\n=", 0); // FIXME: does not work in all cases
+	if ((rpos != in.npos) && (cpos != in.npos))
+	{
+		spos = in.find("-----BEGIN PGP MESSAGE-----", 0);
+		epos = in.find("-----END PGP MESSAGE-----", 0);
+		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
+			type = 1;
+		spos = in.find("-----BEGIN PGP PRIVATE KEY BLOCK-----", 0);
+		epos = in.find("-----END PGP PRIVATE KEY BLOCK-----", 0);
+		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
+			type = 5;
+		spos = in.find("-----BEGIN PGP PUBLIC KEY BLOCK-----", 0);
+		epos = in.find("-----END PGP PUBLIC KEY BLOCK-----", 0);
+		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
+			type = 6;
+	}
+	if ((type > 0) && (rpos > spos) && (rpos < epos) && (rpos < cpos))
+	{
+		OCTETS decoded_data;
+		std::string chksum = "";
+		std::string data = in.substr(rpos + 4, cpos - rpos - 4);
+		Radix64Decode(data, decoded_data);
+		CRC24Encode(decoded_data, chksum);
+		if (chksum != in.substr(cpos + 2, 5))
+			return 0; // Checksum error detected
+		out.insert(out.end(), decoded_data.begin(), decoded_data.end());
+	}
+
+	return type;
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
