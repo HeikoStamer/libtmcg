@@ -117,7 +117,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void KeyidCompute
 			(const OCTETS &in, OCTETS &out);
 		static void SHA256Compute
-			(const OCTETS &in, OCTETS &out); 
+			(const OCTETS &in, OCTETS &out);
+
 		static void PacketTagEncode
 			(size_t tag, OCTETS &out); 
 		static void PacketLengthEncode
@@ -128,8 +129,19 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(gcry_mpi_t in, OCTETS &out, size_t &sum);
 		static void PacketMPIEncode
 			(gcry_mpi_t in, OCTETS &out);
-		static void PacketUidEncode
-			(const std::string uid, OCTETS &out);
+
+		static void PacketPkeskEncode
+			(const OCTETS &keyid, gcry_mpi_t gk, gcry_mpi_t myk,
+			 OCTETS &out);
+		static void PacketSigEncode
+			(const OCTETS &hashing, const OCTETS &left,
+			 gcry_mpi_t r, gcry_mpi_t s, OCTETS &out);
+		static void SubpacketEncode
+			(const BYTE type, bool critical, const OCTETS &in,
+			 OCTETS &out);
+		static void PacketSigPrepare
+			(const BYTE sigtype, const OCTETS &flags,
+			 const OCTETS &keyid, OCTETS &out);
 		static void PacketPubEncode
 			(gcry_mpi_t p, gcry_mpi_t q, gcry_mpi_t g, 
 			 gcry_mpi_t y, OCTETS &out);
@@ -142,21 +154,21 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void PacketSsbEncode
 			(gcry_mpi_t p, gcry_mpi_t g, gcry_mpi_t y,
 			 gcry_mpi_t x, OCTETS &out);
-		static void PacketSigEncode
-			(const OCTETS &hashing, const OCTETS &left,
-			 gcry_mpi_t r, gcry_mpi_t s, OCTETS &out);
-		static void SubpacketEncode
-			(const BYTE type, bool critical, const OCTETS &in,
-			 OCTETS &out);
-		static void PacketSigPrepare
-			(const BYTE sigtype, const OCTETS &flags,
-			 const OCTETS &keyid, OCTETS &out);
+		static void PacketSedEncode
+			(const OCTETS &in, OCTETS &out);
+		static void PacketLitEncode
+			(const OCTETS &in, OCTETS &out);
+		static void PacketUidEncode
+			(const std::string uid, OCTETS &out);
+
 		static gcry_error_t CertificationHash
 			(const OCTETS &primary, std::string uid,
 			 const OCTETS &trailer, gcry_mpi_t &h, OCTETS &left);
 		static gcry_error_t SubkeyBindingHash
 			(const OCTETS &primary, const OCTETS &subkey,
 			 const OCTETS &trailer, gcry_mpi_t &h, OCTETS &left);
+		static gcry_error_t SymmetricEncrypt
+			(const OCTETS &in, OCTETS &symkey, OCTETS &out);
 };
 
 #endif

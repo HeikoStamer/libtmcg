@@ -304,6 +304,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SHA256Compute
 	delete [] hash;
 }
 
+// ===========================================================================
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTagEncode
 	(size_t tag, OCTETS &out)
 {
@@ -367,18 +369,150 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
 	PacketMPIEncode(in, out, sum);
 }
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode
-	(const std::string uid, OCTETS &out)
+// ===========================================================================
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode
+	(const OCTETS &keyid, gcry_mpi_t gk, gcry_mpi_t myk, OCTETS &out)
 {
-	// A User ID packet consists of UTF-8 text that is intended to 
-	// represent the name and email address of the key holder. By
-	// convention, it includes an RFC 2822 [RFC2822] mail name-addr,
-	// but there are no restrictions on its content. The packet length
-	// in the header specifies the length of the User ID.
-	PacketTagEncode(13, out);
-	PacketLengthEncode(uid.length(), out);
-	for (size_t i = 0; i < uid.length(); i++)
-		out.push_back(uid[i]);
+	size_t gklen = (gcry_mpi_get_nbits(gk) + 7) / 8;
+	size_t myklen = (gcry_mpi_get_nbits(myk) + 7) / 8;
+
+	// A Public-Key Encrypted Session Key packet holds the session key used
+	// to encrypt a message. Zero or more Public-Key Encrypted Session Key
+	// packets and/or Symmetric-Key Encrypted Session Key packets may
+	// precede a Symmetrically Encrypted Data Packet, which holds an
+	// encrypted message. The message is encrypted with the session key,
+	// and the session key is itself encrypted and stored in the Encrypted
+	// Session Key packet(s). The Symmetrically Encrypted Data Packet is
+	// preceded by one Public-Key Encrypted Session Key packet for each
+	// OpenPGP key to which the message is encrypted. The recipient of the
+	// message finds a session key that is encrypted to their public key,
+	// decrypts the session key, and then uses the session key to decrypt
+	// the message.
+	// The body of this packet consists of:
+	//  - A one-octet number giving the version number of the packet type.
+	//    The currently defined value for packet version is 3.
+	//  - An eight-octet number that gives the Key ID of the public key to
+	//    which the session key is encrypted. If the session key is
+	//    encrypted to a subkey, then the Key ID of this subkey is used
+	//    here instead of the Key ID of the primary key.
+	//  - A one-octet number giving the public-key algorithm used.
+	//  - A string of octets that is the encrypted session key. This
+	//    string takes up the remainder of the packet, and its contents are
+	//    dependent on the public-key algorithm used.
+	// [...]
+	// Algorithm Specific Fields for Elgamal encryption:
+	//  - MPI of Elgamal (Diffie-Hellman) value g**k mod p.
+	//  - MPI of Elgamal (Diffie-Hellman) value m * y**k mod p.
+	// The value "m" in the above formulas is derived from the session key
+	// as follows. First, the session key is prefixed with a one-octet
+	// algorithm identifier that specifies the symmetric encryption
+	// algorithm used to encrypt the following Symmetrically Encrypted Data
+	// Packet. Then a two-octet checksum is appended, which is equal to the
+	// sum of the preceding session key octets, not including the algorithm
+	// identifier, modulo 65536. This value is then encoded as described in
+	// PKCS#1 block encoding EME-PKCS1-v1_5 in Section 7.2.1 of [RFC3447] to
+	// form the "m" value used in the formulas above. See Section 13.1 of
+	// this document for notes on OpenPGP’s use of PKCS#1.
+	// Note that when an implementation forms several PKESKs with one
+	// session key, forming a message that can be decrypted by several keys,
+	// the implementation MUST make a new PKCS#1 encoding for each key.
+	// An implementation MAY accept or use a Key ID of zero as a "wild card"
+	// or "speculative" Key ID. In this case, the receiving implementation
+	// would try all available private keys, checking for a valid decrypted
+	// session key. This format helps reduce traffic analysis of messages.
+	PacketTagEncode(1, out);
+	PacketLengthEncode(1+keyid.size()+1+2+gklen+2+myklen, out);
+	out.push_back(3); // V3 format
+	out.insert(out.end(), keyid.begin(), keyid.end()); // Key ID
+	out.push_back(16); // public-key algorithm: Elgamal
+	PacketMPIEncode(gk, out); // MPI g**k mod p
+	PacketMPIEncode(myk, out); // MPI m * y**k mod p
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
+	(const OCTETS &hashing, const OCTETS &left, gcry_mpi_t r, gcry_mpi_t s,
+	 OCTETS &out)
+{
+	size_t rlen = (gcry_mpi_get_nbits(r) + 7) / 8;
+	size_t slen = (gcry_mpi_get_nbits(s) + 7) / 8;
+
+	// A Signature packet describes a binding between some public key and
+	// some data. The most common signatures are a signature of a file or a
+	// block of text, and a signature that is a certification of a User ID.
+	// Two versions of Signature packets are defined. Version 3 provides
+	// basic signature information, while version 4 provides an expandable
+	// format with subpackets that can specify more information about the
+	// signature.
+	PacketTagEncode(2, out);
+	PacketLengthEncode(hashing.size()+2+0+left.size()+2+rlen+2+slen, out);
+	// hashed area including subpackets
+	out.insert(out.end(), hashing.begin(), hashing.end());
+	// unhashed subpacket area
+	out.push_back(0 >> 8); // length of unhashed subpacket data
+	out.push_back(0);
+	// signature data
+	out.insert(out.end(), left.begin(), left.end()); // 16 bits of hash
+	PacketMPIEncode(r, out); // signature - MPI r
+	PacketMPIEncode(s, out); // signature - MPI s
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
+	(const BYTE type, bool critical, const OCTETS &in, OCTETS &out)
+{
+	// A subpacket data set consists of zero or more Signature subpackets.
+	// In Signature packets, the subpacket data set is preceded by a two-
+	// octet scalar count of the length in octets of all the subpackets.
+	// A pointer incremented by this number will skip over the subpacket
+	// data set.
+	// Each subpacket consists of a subpacket header and a body. The
+	// header consists of:
+	//  - the subpacket length (1, 2, or 5 octets),
+	//  - the subpacket type (1 octet),
+	// and is followed by the subpacket-specific data.
+	// The length includes the type octet but not this length. Its format
+	// is similar to the "new" format packet header lengths, but cannot
+	// have Partial Body Lengths.
+	PacketLengthEncode(in.size() + 1, out);
+	if (critical)
+		out.push_back(type | 0x80);
+	else
+		out.push_back(type);
+	out.insert(out.end(), in.begin(), in.end());
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
+	(const BYTE sigtype, const OCTETS &flags, const OCTETS &keyid, OCTETS &out)
+{
+	size_t subpkts = 6;
+	size_t subpktlen = (subpkts * 6) + 4 + flags.size() + keyid.size() + 3;
+	out.push_back(4); // V4 format
+	out.push_back(sigtype); // type (eg 0x13 UID cert., 0x18 subkey bind.)
+	out.push_back(17); // public-key algorithm: DSA
+	out.push_back(8); // hash algorithm: SHA256
+	// hashed subpacket area
+	out.push_back(subpktlen >> 8); // length of hashed subpacket data
+	out.push_back(subpktlen);
+		// signature creation time
+		OCTETS sigtime;
+		PacketTimeEncode(sigtime);
+		SubpacketEncode(2, false, sigtime, out);
+		// key flags
+		SubpacketEncode(27, false, flags, out);
+		// issuer
+		SubpacketEncode(16, false, keyid, out);
+		// preferred symmetric algorithms
+		OCTETS psa;
+		psa.push_back(9); // AES256
+		SubpacketEncode(11, false, psa, out);
+		// preferred hash algorithms
+		OCTETS pha;
+		pha.push_back(8); // SHA256
+		SubpacketEncode(21, false, pha, out);
+		// preferred compression algorithms
+		OCTETS pca;
+		pca.push_back(0); // uncompressed
+		SubpacketEncode(22, false, pca, out);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
@@ -528,90 +662,77 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	out.push_back(chksum);
 }
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
-	(const OCTETS &hashing, const OCTETS &left, gcry_mpi_t r, gcry_mpi_t s,
-	 OCTETS &out)
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode
+	(const OCTETS &in, OCTETS &out)
 {
-	size_t rlen = (gcry_mpi_get_nbits(r) + 7) / 8;
-	size_t slen = (gcry_mpi_get_nbits(s) + 7) / 8;
-
-	// A Signature packet describes a binding between some public key and
-	// some data. The most common signatures are a signature of a file or a
-	// block of text, and a signature that is a certification of a User ID.
-	// Two versions of Signature packets are defined. Version 3 provides
-	// basic signature information, while version 4 provides an expandable
-	// format with subpackets that can specify more information about the
-	// signature.
-	PacketTagEncode(2, out);
-	PacketLengthEncode(hashing.size()+2+0+left.size()+2+rlen+2+slen, out);
-	// hashed area including subpackets
-	out.insert(out.end(), hashing.begin(), hashing.end());
-	// unhashed subpacket area
-	out.push_back(0 >> 8); // length of unhashed subpacket data
-	out.push_back(0);
-	// signature data
-	out.insert(out.end(), left.begin(), left.end()); // 16 bits of hash
-	PacketMPIEncode(r, out); // signature - MPI r
-	PacketMPIEncode(s, out); // signature - MPI s
-}
-
-void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
-	(const BYTE type, bool critical, const OCTETS &in, OCTETS &out)
-{
-	// A subpacket data set consists of zero or more Signature subpackets.
-	// In Signature packets, the subpacket data set is preceded by a two-
-	// octet scalar count of the length in octets of all the subpackets.
-	// A pointer incremented by this number will skip over the subpacket
-	// data set.
-	// Each subpacket consists of a subpacket header and a body. The
-	// header consists of:
-	//  - the subpacket length (1, 2, or 5 octets),
-	//  - the subpacket type (1 octet),
-	// and is followed by the subpacket-specific data.
-	// The length includes the type octet but not this length. Its format
-	// is similar to the "new" format packet header lengths, but cannot
-	// have Partial Body Lengths.
-	PacketLengthEncode(in.size() + 1, out);
-	if (critical)
-		out.push_back(type | 0x80);
-	else
-		out.push_back(type);
+	// The Symmetrically Encrypted Data packet contains data encrypted with
+	// a symmetric-key algorithm. When it has been decrypted, it contains
+	// other packets (usually a literal data packet or compressed data
+	// packet, but in theory other Symmetrically Encrypted Data packets or
+	// sequences of packets that form whole OpenPGP messages).
+	// The body of this packet consists of:
+	//  - Encrypted data, the output of the selected symmetric-key cipher
+	//    operating in OpenPGP’s variant of Cipher Feedback (CFB) mode.
+	PacketTagEncode(9, out);
+	PacketLengthEncode(in.size(), out);
 	out.insert(out.end(), in.begin(), in.end());
 }
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
-	(const BYTE sigtype, const OCTETS &flags, const OCTETS &keyid, OCTETS &out)
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode
+	(const OCTETS &in, OCTETS &out)
 {
-	size_t subpkts = 6;
-	size_t subpktlen = (subpkts * 6) + 4 + flags.size() + keyid.size() + 3;
-	out.push_back(4); // V4 format
-	out.push_back(sigtype); // type (eg 0x13 UID cert., 0x18 subkey bind.)
-	out.push_back(17); // public-key algorithm: DSA
-	out.push_back(8); // hash algorithm: SHA256
-	// hashed subpacket area
-	out.push_back(subpktlen >> 8); // length of hashed subpacket data
-	out.push_back(subpktlen);
-		// signature creation time
-		OCTETS sigtime;
-		PacketTimeEncode(sigtime);
-		SubpacketEncode(2, false, sigtime, out);
-		// key flags
-		SubpacketEncode(27, false, flags, out);
-		// issuer
-		SubpacketEncode(16, false, keyid, out);
-		// preferred symmetric algorithms
-		OCTETS psa;
-		psa.push_back(9); // AES256
-		SubpacketEncode(11, false, psa, out);
-		// preferred hash algorithms
-		OCTETS pha;
-		pha.push_back(8); // SHA256
-		SubpacketEncode(21, false, pha, out);
-		// preferred compression algorithms
-		OCTETS pca;
-		pca.push_back(0); // uncompressed
-		SubpacketEncode(22, false, pca, out);
+	// A Literal Data packet contains the body of a message; data that is
+	// not to be further interpreted.
+	// The body of this packet consists of:
+	//  - A one-octet field that describes how the data is formatted.
+	// If it is a ’b’ (0x62), then the Literal packet contains binary data.
+	// If it is a ’t’ (0x74), then it contains text data, and thus may need
+	// line ends converted to local form, or other text-mode changes. The
+	// tag ’u’ (0x75) means the same as ’t’, but also indicates that
+	// implementation believes that the literal data contains UTF-8 text.
+	// [...]
+	//  - File name as a string (one-octet length, followed by a file
+	//    name). This may be a zero-length string. Commonly, if the
+	//    source of the encrypted data is a file, this will be the name of
+	//    the encrypted file. An implementation MAY consider the file name
+	//    in the Literal packet to be a more authoritative name than the
+	//    actual file name.
+	// If the special name "_CONSOLE" is used, the message is considered to
+	// be "for your eyes only". This advises that the message data is
+	// unusually sensitive, and the receiving program should process it more
+	// carefully, perhaps avoiding storing the received data to disk, for
+	// example.
+	// - A four-octet number that indicates a date associated with the
+	//   literal data. Commonly, the date might be the modification date
+	//   of a file, or the time the packet was created, or a zero that
+	//   indicates no specific time.
+	// - The remainder of the packet is literal data.
+	//   Text data is stored with <CR><LF> text endings (i.e., network-
+	//   normal line endings). These should be converted to native line
+	//   endings by the receiving software.
+	PacketTagEncode(11, out);
+	PacketLengthEncode(1+1+4+in.size(), out);
+	out.push_back(0x62); // format: binary data
+	out.push_back(0); // no file name
+	PacketTimeEncode(out); // current time
+	out.insert(out.end(), in.begin(), in.end()); // data
 }
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode
+	(const std::string uid, OCTETS &out)
+{
+	// A User ID packet consists of UTF-8 text that is intended to 
+	// represent the name and email address of the key holder. By
+	// convention, it includes an RFC 2822 [RFC2822] mail name-addr,
+	// but there are no restrictions on its content. The packet length
+	// in the header specifies the length of the User ID.
+	PacketTagEncode(13, out);
+	PacketLengthEncode(uid.length(), out);
+	for (size_t i = 0; i < uid.length(); i++)
+		out.push_back(uid[i]);
+}
+
+// ===========================================================================
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	(const OCTETS &primary, std::string uid, const OCTETS &trailer, 
@@ -723,3 +844,99 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 
 	return ret;
 }
+
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncrypt
+	(const OCTETS &in, OCTETS &seskey, OCTETS &out)
+{
+	gcry_cipher_hd_t hd;
+	gcry_error_t ret;
+	size_t chksum = 0;
+	size_t bs = 16; // block size of AES256 is 128 bits
+	BYTE key[32], prefix[bs+2], b;
+
+	// The symmetric cipher used may be specified in a Public-Key or
+	// Symmetric-Key Encrypted Session Key packet that precedes the
+	// Symmetrically Encrypted Data packet. In that case, the cipher
+	// algorithm octet is prefixed to the session key before it is
+	// encrypted.
+	// [...]
+	// Then a two-octet checksum is appended, which is equal to the
+	// sum of the preceding session key octets, not including the
+	// algorithm identifier, modulo 65536.
+	gcry_randomize(key, sizeof(key), GCRY_STRONG_RANDOM);
+	seskey.clear();
+	seskey.push_back(9); // constant for AES256
+	for (size_t i = 0; i < sizeof(key); i++)
+	{
+		seskey.push_back(key[i]);
+		chksum += key[i];
+	}
+	chksum %= 65536;
+	seskey.push_back(chksum >> 8); // checksum
+	seskey.push_back(chksum);
+	// The data is encrypted in CFB mode, with a CFB shift size equal to
+	// the cipher’s block size. The Initial Vector (IV) is specified as
+	// all zeros. Instead of using an IV, OpenPGP prefixes a string of
+	// length equal to the block size of the cipher plus two to the data
+	// before it is encrypted. The first block-size octets (for example,
+	// 8 octets for a 64-bit block length) are random, and the following
+	// two octets are copies of the last two octets of the IV. For example,
+	// in an 8-octet block, octet 9 is a repeat of octet 7, and octet 10
+	// is a repeat of octet 8. In a cipher of length 16, octet 17 is a
+	// repeat of octet 15 and octet 18 is a repeat of octet 16. As a
+	// pedantic clarification, in both these examples, we consider the
+	// first octet to be numbered 1.
+	// After encrypting the first block-size-plus-two octets, the CFB state
+	// is resynchronized. The last block-size octets of ciphertext are
+	// passed through the cipher and the block boundary is reset.
+	ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB,
+		GCRY_CIPHER_ENABLE_SYNC);
+	if (ret)
+	{
+		gcry_cipher_close(hd);
+		return ret;
+	}
+	ret = gcry_cipher_setkey(hd, key, sizeof(key));
+	if (ret)
+	{
+		gcry_cipher_close(hd);
+		return ret;
+	}
+	ret = gcry_cipher_setiv(hd, NULL, 0);
+	if (ret)
+	{
+		gcry_cipher_close(hd);
+		return ret;
+	}
+	gcry_randomize(prefix, bs, GCRY_STRONG_RANDOM);
+	prefix[bs] = prefix[bs-2];
+	prefix[bs+1] = prefix[bs-1];
+	ret = gcry_cipher_encrypt(hd, prefix, sizeof(prefix), NULL, 0);
+	if (ret)
+	{
+		gcry_cipher_close(hd);
+		return ret;
+	}    	
+	ret = gcry_cipher_sync(hd);
+	if (ret)
+	{
+		gcry_cipher_close(hd);
+		return ret;
+	}    	
+	for (size_t i = 0; i < sizeof(prefix); i++)
+		out.push_back(prefix[i]);
+	for (size_t i = 0; i < in.size(); i++)
+	{
+		ret = gcry_cipher_encrypt(hd, &b, 1, &in[i], 1);
+		if (ret)
+		{
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		out.push_back(b);
+	}
+	gcry_cipher_close(hd);
+
+	return ret;
+}
+
