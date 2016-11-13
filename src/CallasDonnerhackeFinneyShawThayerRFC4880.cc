@@ -964,7 +964,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncrypt
 		gcry_mpi_release(v);
 		return ret;
 	}
-std::cerr << "bef encrypt" << std::endl;
+
 	ret = gcry_pk_encrypt(&encryption, data, key);
 	if (ret)
 	{
