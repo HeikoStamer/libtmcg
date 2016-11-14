@@ -1,6 +1,6 @@
 1.2.0 The default security parameters have been updated to current state of
       the art. The complexity of hash function g() was improved. Unfortunately,
-      this breaks applications with instances that have been compiled with
+      this breaks compatibility with instances that have been compiled with
       older versions of LibTMCG. 
       The configure switch --with-gmp has been added in order to find the
       required libgmp on a non-standard path (e.g. on MacOS). Non-interactive

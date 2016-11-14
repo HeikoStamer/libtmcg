@@ -1,10 +1,11 @@
+* [2016-11-14] added a very limited OpenPGP (RFC4880) interface
 * [2016-03-26] improved complexity of hash function g() used as random oracle
 * [2016-03-24] mpz_shash using now hash function g() instead of h()
 * [2016-03-20] protection against malicious verifiers through EDCF for SHVZK
 * [2016-03-02] provides a distributed coin-flipping (EDCF) protocol
-* [2016-02-27] provides a distributed signature scheme
+* [2016-02-27] provides a distributed signature scheme (NTS)
 * [2016-02-24] provides a reliable broadcast (RBC) protocol
-* [2016-02-15] provides a distributed key generation protocol
+* [2016-02-15] provides a distributed key generation (DKG) protocol
 * [2016-02-07] provides a non-interactive version of the rotation protocol
 * [2016-02-07] provides a non-interactive version of the shuffle protocol
 * [2016-02-06] new global symbol TMCG_MAX_FPOWM_N for restricting memory usage
