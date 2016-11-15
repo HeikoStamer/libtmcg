@@ -365,16 +365,21 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode
-	(OCTETS &out)
+	(const time_t in, OCTETS &out)
 {
-	time_t current_time = time(NULL);
-
 	// A time field is an unsigned four-octet number containing the number
 	// of seconds elapsed since midnight, 1 January 1970 UTC.
-	out.push_back(current_time >> 24);
-	out.push_back(current_time >> 16);
-	out.push_back(current_time >> 8);
-	out.push_back(current_time);
+	out.push_back(in >> 24);
+	out.push_back(in >> 16);
+	out.push_back(in >> 8);
+	out.push_back(in);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode
+	(OCTETS &out)
+{
+	time_t current = time(NULL);
+	PacketTimeEncode(current, out);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode

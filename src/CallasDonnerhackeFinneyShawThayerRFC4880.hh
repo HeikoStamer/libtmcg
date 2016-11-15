@@ -126,6 +126,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void PacketLengthEncode
 			(size_t len, OCTETS &out);
 		static void PacketTimeEncode
+			(const time_t in, OCTETS &out);
+		static void PacketTimeEncode
 			(OCTETS &out);
 		static void PacketMPIEncode
 			(gcry_mpi_t in, OCTETS &out, size_t &sum);

@@ -197,7 +197,7 @@ AC_TYPE_SSIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([clock close fprintf memcmp memcpy memset perror sleep snprintf\
- strtoul], ,
+ strtoul time], ,
 	AC_MSG_ERROR([some functions are missing]))
 
 # forking tests feature
