@@ -131,6 +131,10 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(gcry_mpi_t in, OCTETS &out, size_t &sum);
 		static void PacketMPIEncode
 			(gcry_mpi_t in, OCTETS &out);
+		static size_t PacketMPIDecode
+			(const OCTETS &in, gcry_mpi_t &out, size_t &sum);
+		static size_t PacketMPIDecode
+			(const OCTETS &in, gcry_mpi_t &out);
 
 		static void PacketPkeskEncode
 			(const OCTETS &keyid, gcry_mpi_t gk, gcry_mpi_t myk,

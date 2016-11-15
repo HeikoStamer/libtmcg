@@ -275,9 +275,11 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 		epos = in.find("-----END PGP PUBLIC KEY BLOCK-----", 0);
 		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
 			type = 6;
-	}
+	}	
 	if ((type > 0) && (rpos > spos) && (rpos < epos) && (rpos < cpos))
 	{
+		if (in.find("-----", spos + 34) != epos)
+			return 0; // nested armor block detected
 		OCTETS decoded_data;
 		std::string chksum = "";
 		std::string data = in.substr(rpos + 4, cpos - rpos - 4);
@@ -405,6 +407,32 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
 {
 	size_t sum = 0;
 	PacketMPIEncode(in, out, sum);
+}
+
+size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
+	(const OCTETS &in, gcry_mpi_t &out, size_t &sum)
+{
+	gcry_error_t ret;
+	size_t buflen = ((in[0] << 8) + in[1] + 7) / 8;
+	BYTE *buffer = new BYTE[buflen];
+	for (size_t i = 0; i < buflen; i++)
+	{
+		buffer[i] = in[2 + i];
+		sum += buffer[i];
+	}
+	ret = gcry_mpi_scan(&out, GCRYMPI_FMT_USG, buffer, buflen, NULL);
+	delete [] buffer;
+	if (ret)
+		return 0; // error: could not read mpi
+	else
+		return (2 + buflen);
+}
+
+size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
+	(const OCTETS &in, gcry_mpi_t &out)
+{
+	size_t sum = 0;
+	return PacketMPIDecode(in, out, sum);
 }
 
 // ===========================================================================
