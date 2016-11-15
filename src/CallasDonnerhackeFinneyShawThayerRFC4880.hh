@@ -173,9 +173,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static gcry_error_t SubkeyBindingHash
 			(const OCTETS &primary, const OCTETS &subkey,
 			 const OCTETS &trailer, gcry_mpi_t &h, OCTETS &left);
-		static gcry_error_t SymmetricEncrypt
+		static gcry_error_t SymmetricEncryptAES256
 			(const OCTETS &in, OCTETS &seskey, OCTETS &out);
-		static gcry_error_t AsymmetricEncrypt
+		static gcry_error_t AsymmetricEncryptElgamal
 			(const OCTETS &in, const gcry_sexp_t key, 
 			 gcry_mpi_t &gk, gcry_mpi_t &myk);
 };

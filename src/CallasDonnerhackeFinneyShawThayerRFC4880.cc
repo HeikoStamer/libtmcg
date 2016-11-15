@@ -909,7 +909,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 	return ret;
 }
 
-gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncrypt
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	(const OCTETS &in, OCTETS &seskey, OCTETS &out)
 {
 	gcry_cipher_hd_t hd;
@@ -1004,7 +1004,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncrypt
 	return ret;
 }
 
-gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncrypt
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	(const OCTETS &in, const gcry_sexp_t key, gcry_mpi_t &gk, gcry_mpi_t &myk)
 {
 	BYTE buffer[1024];

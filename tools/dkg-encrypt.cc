@@ -210,12 +210,12 @@ void start_instance
 			for (size_t i = 0; i < m.length(); i++)
 				msg.push_back(m[i]);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode(msg, lit);
-			ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncrypt(lit, seskey, enc);
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256(lit, seskey, enc);
 			assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode(enc, sed);
 			ret = gcry_sexp_build(&elgkey, &erroff, "(public-key (elg (p %M) (g %M) (y %M)))", p, g, y);
 			assert(!ret);
-			ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncrypt(seskey, elgkey, gk, myk);
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal(seskey, elgkey, gk, myk);
 			assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode(subkeyid, gk, myk, pkesk);
 			// export generated public key in OpenPGP armor format
