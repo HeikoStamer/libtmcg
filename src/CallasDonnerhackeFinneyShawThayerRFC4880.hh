@@ -118,8 +118,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const OCTETS &in, OCTETS &out); 
 		static void KeyidCompute
 			(const OCTETS &in, OCTETS &out);
-		static void SHA256Compute
-			(const OCTETS &in, OCTETS &out);
+		static void HashCompute
+			(const BYTE algo, const OCTETS &in, OCTETS &out);
 
 		static void PacketTagEncode
 			(size_t tag, OCTETS &out); 
@@ -168,6 +168,10 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const OCTETS &in, OCTETS &out);
 		static void PacketUidEncode
 			(const std::string uid, OCTETS &out);
+		static void PacketSeipdEncode
+			(const OCTETS &in, OCTETS &out);
+		static void PacketMdcEncode
+			(const OCTETS &in, OCTETS &out);
 
 		static gcry_error_t CertificationHash
 			(const OCTETS &primary, std::string uid,
@@ -176,7 +180,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const OCTETS &primary, const OCTETS &subkey,
 			 const OCTETS &trailer, gcry_mpi_t &h, OCTETS &left);
 		static gcry_error_t SymmetricEncryptAES256
-			(const OCTETS &in, OCTETS &seskey, OCTETS &out);
+			(const OCTETS &in, OCTETS &seskey, OCTETS &prefix,
+			bool resync, OCTETS &out);
 		static gcry_error_t AsymmetricEncryptElgamal
 			(const OCTETS &in, const gcry_sexp_t key, 
 			 gcry_mpi_t &gk, gcry_mpi_t &myk);

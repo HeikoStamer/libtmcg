@@ -328,16 +328,42 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 		out.push_back(fpr[i]);
 }
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::SHA256Compute
-	(const OCTETS &in, OCTETS &out)
+void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
+	(const BYTE algo, const OCTETS &in, OCTETS &out)
 {
-	size_t dlen = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
+	int a = 0;
+	switch (algo)
+	{
+		case 1:
+			a = GCRY_MD_MD5;
+			break;
+		case 2:
+			a = GCRY_MD_SHA1;
+			break;
+		case 3:
+			a = GCRY_MD_RMD160;
+			break;
+		case 8:
+			a = GCRY_MD_SHA256;
+			break;
+		case 9:
+			a = GCRY_MD_SHA384;
+			break;
+		case 10:
+			a = GCRY_MD_SHA512;
+			break;
+		case 11:
+			a = GCRY_MD_SHA224;
+			break;
+		default:
+			return;
+	}
+	size_t dlen = gcry_md_get_algo_dlen(a);
 	BYTE *buffer = new BYTE[in.size()];
 	BYTE *hash = new BYTE[dlen];
-
 	for (size_t i = 0; i < in.size(); i++)
 		buffer[i] = in[i];
-	gcry_md_hash_buffer(GCRY_MD_SHA256, hash, buffer, in.size()); 
+	gcry_md_hash_buffer(a, hash, buffer, in.size()); 
 	for (size_t i = 0; i < dlen; i++)
 		out.push_back(hash[i]);
 	delete [] buffer;
@@ -803,6 +829,108 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode
 		out.push_back(uid[i]);
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSeipdEncode
+	(const OCTETS &in, OCTETS &out)
+{
+	// The Symmetrically Encrypted Integrity Protected Data packet is a
+	// variant of the Symmetrically Encrypted Data packet. It is a new
+	// feature created for OpenPGP that addresses the problem of detecting
+	// a modification to encrypted data. It is used in combination with a
+	// Modification Detection Code packet.
+	// There is a corresponding feature in the features Signature subpacket
+	// that denotes that an implementation can properly use this packet
+	// type. An implementation MUST support decrypting these packets and
+	// SHOULD prefer generating them to the older Symmetrically Encrypted
+	// Data packet when possible. Since this data packet protects against
+	// modification attacks, this standard encourages its proliferation.
+	// While blanket adoption of this data packet would create
+	// interoperability problems, rapid adoption is nevertheless important.
+	// An implementation SHOULD specifically denote support for this packet,
+	// but it MAY infer it from other mechanisms.
+	// [...]
+	// This packet contains data encrypted with a symmetric-key algorithm
+	// and protected against modification by the SHA-1 hash algorithm. When
+	// it has been decrypted, it will typically contain other packets
+	// (often a Literal Data packet or Compressed Data packet). The last
+	// decrypted packet in this packet’s payload MUST be a Modification
+	// Detection Code packet.
+	// The body of this packet consists of:
+	//  - A one-octet version number. The only currently defined value
+	//    is 1.
+	//  - Encrypted data, the output of the selected symmetric-key cipher
+	//    operating in Cipher Feedback mode with shift amount equal to the
+	//    block size of the cipher (CFB-n where n is the block size).
+	// The symmetric cipher used MUST be specified in a Public-Key or
+	// Symmetric-Key Encrypted Session Key packet that precedes the
+	// Symmetrically Encrypted Data packet. In either case, the cipher
+	// algorithm octet is prefixed to the session key before it is
+	// encrypted.
+	// The data is encrypted in CFB mode, with a CFB shift size equal to
+	// the cipher's block size. The Initial Vector (IV) is specified as all
+	// zeros. Instead of using an IV, OpenPGP prefixes an octet string to
+	// the data before it is encrypted. The length of the octet string
+	// equals the block size of the cipher in octets, plus two. The first
+	// octets in the group, of length equal to the block size of the cipher,
+	// are random; the last two octets are each copies of their 2nd
+	// preceding octet. For example, with a cipher whose block size is 128
+	// bits or 16 octets, the prefix data will contain 16 random octets,
+	// then two more octets, which are copies of the 15th and 16th octets,
+	// respectively. Unlike the Symmetrically Encrypted Data Packet, no
+	// special CFB resynchronization is done after encrypting this prefix
+	// data. See "OpenPGP CFB Mode" below for more details.
+	// [...]
+	// The plaintext of the data to be encrypted is passed through the
+	// SHA-1 hash function, and the result of the hash is appended to the
+	// plaintext in a Modification Detection Code packet. The input to the
+	// hash function includes the prefix data described above; it includes
+	// all of the plaintext, and then also includes two octets of values
+	// 0xD3, 0x14. These represent the encoding of a Modification Detection
+	// Code packet tag and length field of 20 octets.
+	// The resulting hash value is stored in a Modification Detection Code
+	// (MDC) packet, which MUST use the two octet encoding just given to
+	// represent its tag and length field. The body of the MDC packet is
+	// the 20-octet output of the SHA-1 hash.
+	// The Modification Detection Code packet is appended to the plaintext
+	// and encrypted along with the plaintext using the same CFB context.
+	// During decryption, the plaintext data should be hashed with SHA-1,
+	// including the prefix data as well as the packet tag and length field
+	// of the Modification Detection Code packet. The body of the MDC
+	// packet, upon decryption, is compared with the result of the SHA-1
+	// hash.
+	PacketTagEncode(18, out);
+	PacketLengthEncode(in.size() + 1, out);
+	out.push_back(1); // version
+	out.insert(out.end(), in.begin(), in.end());
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMdcEncode
+	(const OCTETS &in, OCTETS &out)
+{
+	// The Modification Detection Code packet contains a SHA-1 hash of
+	// plaintext data, which is used to detect message modification. It is
+	// only used with a Symmetrically Encrypted Integrity Protected Data
+	// packet. The Modification Detection Code packet MUST be the last
+	// packet in the plaintext data that is encrypted in the Symmetrically
+	// Encrypted Integrity Protected Data packet, and MUST appear in no
+	// other place.
+	// A Modification Detection Code packet MUST have a length of 20
+	// octets.
+	// The body of this packet consists of:
+	//  - A 20-octet SHA-1 hash of the preceding plaintext data of the
+	//    Symmetrically Encrypted Integrity Protected Data packet,
+	//    including prefix data, the tag octet, and length octet of the
+	//    Modification Detection Code packet.
+	// Note that the Modification Detection Code packet MUST always use a
+	// new format encoding of the packet tag, and a one-octet encoding of
+	// the packet length. The reason for this is that the hashing rules for
+	// modification detection include a one-octet tag and one-octet length
+	// in the data hash. While this is a bit restrictive, it reduces
+	// complexity.
+	PacketTagEncode(19, out);
+	out.push_back(20); // one-octet length of SHA-1 hash value
+	out.insert(out.end(), in.begin(), in.end());
+}
+
 // ===========================================================================
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
@@ -853,7 +981,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
-	SHA256Compute(hash_input, left);
+	HashCompute(8, hash_input, left);
 	for (size_t i = 0; ((i < left.size()) && (i < 1024)); i++, buflen++)
 		buffer[i] = left[i];
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
@@ -904,7 +1032,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
-	SHA256Compute(hash_input, left);
+	HashCompute(8, hash_input, left);
 	for (size_t i = 0; ((i < left.size()) && (i < 1024)); i++, buflen++)
 		buffer[i] = left[i];
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
@@ -915,13 +1043,14 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
-	(const OCTETS &in, OCTETS &seskey, OCTETS &out)
+	(const OCTETS &in, OCTETS &seskey, OCTETS &prefix, bool resync,
+	 OCTETS &out)
 {
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t chksum = 0;
 	size_t bs = 16; // block size of AES256 is 128 bits
-	BYTE key[32], prefix[bs+2], b;
+	BYTE key[32], pre[bs+2], b;
 
 	// The symmetric cipher used may be specified in a Public-Key or
 	// Symmetric-Key Encrypted Session Key packet that precedes the
@@ -932,17 +1061,21 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	// Then a two-octet checksum is appended, which is equal to the
 	// sum of the preceding session key octets, not including the
 	// algorithm identifier, modulo 65536.
-	gcry_randomize(key, sizeof(key), GCRY_STRONG_RANDOM);
-	seskey.clear();
-	seskey.push_back(9); // constant for AES256
-	for (size_t i = 0; i < sizeof(key); i++)
+	if (seskey.size() != (sizeof(key) + 3))
 	{
-		seskey.push_back(key[i]);
-		chksum += key[i];
+		// generate a random session key and the OpenPGP checksum
+		gcry_randomize(key, sizeof(key), GCRY_STRONG_RANDOM);
+		seskey.clear();
+		seskey.push_back(9); // constant for AES256
+		for (size_t i = 0; i < sizeof(key); i++)
+		{
+			seskey.push_back(key[i]);
+			chksum += key[i];
+		}
+		chksum %= 65536;
+		seskey.push_back(chksum >> 8); // checksum
+		seskey.push_back(chksum);
 	}
-	chksum %= 65536;
-	seskey.push_back(chksum >> 8); // checksum
-	seskey.push_back(chksum);
 	// The data is encrypted in CFB mode, with a CFB shift size equal to
 	// the cipher’s block size. The Initial Vector (IV) is specified as
 	// all zeros. Instead of using an IV, OpenPGP prefixes a string of
@@ -977,23 +1110,38 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 		gcry_cipher_close(hd);
 		return ret;
 	}
-	gcry_randomize(prefix, bs, GCRY_STRONG_RANDOM);
-	prefix[bs] = prefix[bs-2];
-	prefix[bs+1] = prefix[bs-1];
-	ret = gcry_cipher_encrypt(hd, prefix, sizeof(prefix), NULL, 0);
+	if (prefix.size() != sizeof(pre))
+	{
+		// generate a random prefix and it's checksum
+		gcry_randomize(pre, bs, GCRY_STRONG_RANDOM);
+		pre[bs] = pre[bs-2];
+		pre[bs+1] = pre[bs-1];
+		for (size_t i = 0; i < sizeof(pre); i++)
+			prefix.push_back(pre[i]);
+	}
+	else
+	{
+		// reuse the prefix from input argument
+		for (size_t i = 0; i < sizeof(pre); i++)
+			pre[i] = prefix[i];
+	}
+	ret = gcry_cipher_encrypt(hd, pre, sizeof(pre), NULL, 0);
 	if (ret)
 	{
 		gcry_cipher_close(hd);
 		return ret;
-	}    	
-	ret = gcry_cipher_sync(hd);
-	if (ret)
-	{
-		gcry_cipher_close(hd);
-		return ret;
-	}    	
-	for (size_t i = 0; i < sizeof(prefix); i++)
-		out.push_back(prefix[i]);
+	}
+	if (resync)
+	{  	
+		ret = gcry_cipher_sync(hd);
+		if (ret)
+		{
+			gcry_cipher_close(hd);
+			return ret;
+		}
+	}
+	for (size_t i = 0; i < sizeof(pre); i++)
+		out.push_back(pre[i]); // encrypted prefix
 	for (size_t i = 0; i < in.size(); i++)
 	{
 		ret = gcry_cipher_encrypt(hd, &b, 1, &in[i], 1);

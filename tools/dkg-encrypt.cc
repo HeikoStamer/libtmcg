@@ -132,8 +132,8 @@ void start_instance
 			char buffer[2048];
 			std::string out, crcout, armor, u, m;
 			OCTETS all, pub, sec, uid, uidsig, keyid, sub, ssb, subsig, subkeyid, dsaflags, elgflags;
-			OCTETS pub_hashing, sub_hashing, msg, lit, seskey, enc, sed, pkesk;
-			OCTETS uidsig_hashing, subsig_hashing, uidsig_left, subsig_left;
+			OCTETS pub_hashing, sub_hashing, msg, lit, seskey, enc, sed, enc2, seipd, mdc, pkesk;
+			OCTETS uidsig_hashing, subsig_hashing, uidsig_left, subsig_left, prefix, mdc_hashing, hash;
 			gcry_mpi_t p, q, g, y, x, r, s, h, gk, myk;
 			gcry_sexp_t key, dsaparams, signature, sigdata, elgkey;
 			gcry_error_t ret;
@@ -210,9 +210,21 @@ void start_instance
 			for (size_t i = 0; i < m.length(); i++)
 				msg.push_back(m[i]);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode(msg, lit);
-			ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256(lit, seskey, enc);
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256(lit, seskey, prefix, true, enc);
+			assert(!ret);
+			mdc_hashing.insert(mdc_hashing.end(), prefix.begin(), prefix.end()); // "it includes the prefix data described above" [RFC4880]
+			mdc_hashing.insert(mdc_hashing.end(), lit.begin(), lit.end()); // "it includes all of the plaintext" [RFC4880]
+			mdc_hashing.push_back(0xD3); // "and the also includes two octets of values 0xD3, 0x14" [RFC4880]
+			mdc_hashing.push_back(0x14);
+			CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(2, mdc_hashing, hash); // "passed through the SHA-1 hash function" [RFC4880]
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketMdcEncode(hash, mdc);
+			lit.insert(lit.end(), mdc.begin(), mdc.end());
+			seskey.clear(); // generate a fresh session key
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256(lit, seskey, prefix, false, enc2);
 			assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode(enc, sed);
+			assert(!ret);
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSeipdEncode(enc2, seipd);
 			ret = gcry_sexp_build(&elgkey, &erroff, "(public-key (elg (p %M) (g %M) (y %M)))", p, g, y);
 			assert(!ret);
 			ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal(seskey, elgkey, gk, myk);
@@ -236,10 +248,17 @@ void start_instance
 			all.insert(all.end(), subsig.begin(), subsig.end());
 			CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(5, all, armor);
 			std::cout << armor << std::endl;
-			// export encrypted message in OpenPGP armor format
+			// export encrypted message in OpenPGP armor format (old-style format)
 			armor = "", all.clear();
 			all.insert(all.end(), pkesk.begin(), pkesk.end());
 			all.insert(all.end(), sed.begin(), sed.end());
+			CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(1, all, armor);
+			std::cout << armor << std::endl;
+			// export encrypted message in OpenPGP armor format (new-style format)
+			armor = "", all.clear();
+			all.insert(all.end(), pkesk.begin(), pkesk.end());
+			all.insert(all.end(), seipd.begin(), seipd.end());
+			all.insert(all.end(), mdc.begin(), mdc.end());
 			CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(1, all, armor);
 			std::cout << armor << std::endl;
 			gcry_mpi_release(p);
