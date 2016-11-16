@@ -25,7 +25,7 @@ LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ @LIBGMP_LIBS@ ../src/libTMCG.la
 bin_PROGRAMS = dkg-generate dkg-encrypt dkg-decrypt
 
 dkg_generate_SOURCES = pipestream.hh dkg-generate.cc
-dkg_encrypt_SOURCES = pipestream.hh dkg-encrypt.cc
+dkg_encrypt_SOURCES = dkg-encrypt.cc
 dkg_decrypt_SOURCES = pipestream.hh dkg-decrypt.cc
 
 
