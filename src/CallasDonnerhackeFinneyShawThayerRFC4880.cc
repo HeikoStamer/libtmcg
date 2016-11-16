@@ -1167,8 +1167,10 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	BYTE tag = in[0];
 	if ((tag & 0x80) != 0x80)
 		return 0; // error: leftmost bit of tag octet not set
+std::cerr << "BUG" << std::endl;
 	if ((tag & 0x40) != 0x40)
 		return 0; // error: only new packet format supported
+std::cerr << "BUG" << std::endl;
 	tag -= (0x80 + 0x40);
 	// New format packets have four possible ways of encoding length:
 	// 1. A one-octet Body Length header encodes packet lengths of up to
