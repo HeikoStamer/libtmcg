@@ -86,6 +86,76 @@
 		"abcdefghijklmnopqrstuvwxyz"
 		"0123456789+/";
 
+	typedef struct
+	{
+		BYTE version;
+		BYTE keyid[8];
+		BYTE pkalgo;
+		gcry_mpi_t me;
+		gcry_mpi_t gk;
+		gcry_mpi_t myk;
+		BYTE type;
+		BYTE hashalgo;
+		bool critical;
+		time_t sigcreationtime;
+		BYTE issuer[8]; // key ID
+		time_t keyexpirationtime;
+		BYTE psa[255]; // array of 1-octet flags
+		BYTE pha[255]; // array of 1-octet flags
+		BYTE pca[255]; // array of 1-octet flags
+		time_t sigexpirationtime;
+		bool exportablecertification;
+		bool revocable;
+		BYTE trustlevel;
+		BYTE trustamount;
+		BYTE trustregex[1024]; // string
+		BYTE revocationkey_class;
+		BYTE revocationkey_pkalgo; // id of public-key algorithm
+		BYTE revocationkey_fingerprint[20]; // SHA-1 based fingerprint
+		BYTE keyserverpreferences[255]; // array of 1-octet flags
+		BYTE preferedkeyserver[1024]; // string
+		bool primaryuserid;
+		BYTE policyuri[1024]; // string
+		BYTE keyflags[255]; // array of 1-octet flags
+		BYTE signersuserid[1024]; // string
+		BYTE revocationcode;
+		BYTE revocationreason[1024]; // string
+		BYTE features[255]; // array of 1-octet flags
+		BYTE signaturetarget_pkalgo; // id of public-key algorithm
+		BYTE signaturetarget_hashalgo; // id of hash algorithm
+		BYTE signaturetarget_hash[1024]; // n-octets hash
+		BYTE embeddedsignature[4096]; // signature packet body
+		BYTE left[2];
+		gcry_mpi_t md;
+		gcry_mpi_t r;
+		gcry_mpi_t s;
+		BYTE signingkeyid[8];
+		BYTE nestedsignature;
+		time_t keycreationtime;
+		gcry_mpi_t n;
+		gcry_mpi_t e;
+		gcry_mpi_t d;
+		gcry_mpi_t p;
+		gcry_mpi_t q;
+		gcry_mpi_t u;
+		gcry_mpi_t g;
+		gcry_mpi_t y;
+		gcry_mpi_t x;
+		BYTE compalgo;
+		BYTE *compresseddata; // pointer to an allocated buffer with data
+		size_t compresseddatalen;
+		BYTE *encrypteddata; // pointer to an allocated buffer with data
+		size_t encrypteddatalen;
+		BYTE dataformat;
+		size_t datafilenamelen;
+		BYTE datafilename[255]; // filename of specified length
+		time_t datatime;
+		BYTE *data; // pointer to an allocated buffer with data
+		size_t datalen;
+		BYTE uid[1024]; // string
+		BYTE mdc_hash[20];
+	} TMCG_OPENPGP_CONTEXT;
+
 class CallasDonnerhackeFinneyShawThayerRFC4880
 {
 	private:
@@ -172,6 +242,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const OCTETS &in, OCTETS &out);
 		static void PacketMdcEncode
 			(const OCTETS &in, OCTETS &out);
+
+		static BYTE SubpacketDecode
+			(OCTETS &in, TMCG_OPENPGP_CONTEXT &out);
+		static BYTE PacketDecode
+			(OCTETS &in, TMCG_OPENPGP_CONTEXT &out);
 
 		static gcry_error_t CertificationHash
 			(const OCTETS &primary, std::string uid,

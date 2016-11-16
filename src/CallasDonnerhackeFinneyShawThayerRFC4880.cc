@@ -933,6 +933,666 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMdcEncode
 
 // ===========================================================================
 
+BYTE CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
+	(OCTETS &in, TMCG_OPENPGP_CONTEXT &out)
+{
+	if (in.size() < 2)
+		return 0; // error: incorrect subpacket header
+	// Each subpacket consists of a subpacket header and a body.
+	// The header consists of:
+	//  - the subpacket length (1, 2, or 5 octets),
+	//  - the subpacket type (1 octet),
+	// and is followed by the subpacket-specific data.
+	// The length includes the type octet but not this length. Its format
+	// is similar to the "new" format packet header lengths, but cannot
+	// have Partial Body Lengths.
+	size_t len = 0, headlen = 1;
+	if (in[0] < 192)
+	{
+		// A one-octet Body Length header encodes a length of 0 to
+		// 191 octets. This type of length header is recognized
+		// because the one octet value is less than 192.
+		headlen += 1;
+		len = in[0];
+	}
+	else if (in[0] < 224)
+	{
+		if (in.size() < 3)
+			return 0; // error: too few octets of length encoding
+		// A two-octet Body Length header encodes a length of 192 to
+		// 8383 octets. It is recognized because its first octet is
+		// in the range 192 to 223.
+		headlen += 2;
+		len = ((in[0] - 192) << 8) + in[1] + 192;
+	}
+	else if (in[0] == 255)
+	{
+		if (in.size() < 6)
+			return 0; // error: too few octets of length encoding
+		// A five-octet Body Length header consists of a single octet
+		// holding the value 255, followed by a four-octet scalar.
+		headlen += 5;
+		len = (in[1] << 24) + (in[2] << 16) + (in[3] << 8) + in[4];
+	}
+	else
+		return 0; // error: Partial Body Lengths are not allowed
+	// Bit 7 of the subpacket type is the "critical" bit. If set, it
+	// denotes that the subpacket is one that is critical for the evaluator
+	// of the signature to recognize. If a subpacket is encountered that is
+	// marked critical but is unknown to the evaluating software, the
+	// evaluator SHOULD consider the signature to be in error.
+	// An evaluator may "recognize" a subpacket, but not implement it. The
+	// purpose of the critical bit is to allow the signer to tell an
+	// evaluator that it would prefer a new, unknown feature to generate an
+	// error than be ignored.
+	out.critical = false;
+	BYTE type = in[headlen-1];
+	if ((type & 0x80) == 0x80)
+	{
+		out.critical = true;
+		type -= 0x80;
+std::cerr << "subpkt: critical bit set" << std::endl;
+	}
+std::cerr << "subpkt: len = " << len << " type = " << (int)type << std::endl;
+	len -= 1;
+	OCTETS pkt;
+	pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+len);
+	switch (type)
+	{
+		case 2: // Signature Creation Time 
+			if (pkt.size() != 4)
+				return 0; // error: incorrect subpacket body 
+			out.sigcreationtime = (pkt[0] << 24) +
+				(pkt[1] << 16) + (pkt[2] << 8) + pkt[3];
+			break;
+		case 3: // Signature Expiration Time
+			if (pkt.size() != 4)
+				return 0; // error: incorrect subpacket body 
+			out.sigexpirationtime = (pkt[0] << 24) + 
+				(pkt[1] << 16) + (pkt[2] << 8) + pkt[3];
+			break;
+		case 4: // Exportable Certification
+			if (pkt.size() != 1)
+				return 0; // error: incorrect subpacket body
+			if (pkt[0] == 0x00)
+				out.exportablecertification = false;
+			else if (pkt[0] == 0x01)
+				out.exportablecertification = true;
+			else
+				return 0; // error: bad value
+			break;
+		case 5: // Trust Signature
+			if (pkt.size() != 2)
+				return 0; // error: incorrect subpacket body
+			out.trustlevel = pkt[0];
+			out.trustamount = pkt[1];
+			break;
+		case 6: // Regular Expression
+			if (pkt.size() > sizeof(out.trustregex))
+				return 0; // error: too long subpacket body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.trustregex[i] = pkt[i]; 
+			break;
+		case 7: // Revocable
+			if (pkt.size() != 1)
+				return 0; // error: incorrect subpacket body
+			if (pkt[0] == 0x00)
+				out.revocable = false;
+			else if (pkt[0] == 0x01)
+				out.revocable = true;
+			else
+				return 0; // error: bad value
+			break;
+		case 9: // Key Expiration Time
+			if (pkt.size() != 4)
+				return 0; // error: incorrect subpacket body 
+			out.keyexpirationtime = (pkt[0] << 24) + 
+				(pkt[1] << 16) + (pkt[2] << 8) + pkt[3];
+			break;
+		case 11: // Preferred Symmetric Algorithms
+			if (pkt.size() > sizeof(out.psa))
+				return 0; // error: too long subpacket body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.psa[i] = pkt[i]; 
+			break;
+		case 12: // Revocation Key
+			if (pkt.size() != 22)
+				return 0; // error: incorrect subpacket body
+			out.revocationkey_class = pkt[0];
+			out.revocationkey_pkalgo = pkt[1];
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.revocationkey_fingerprint[i] = pkt[2+i]; 
+			break;
+		case 16: // Issuer
+			if (pkt.size() != 8)
+				return 0; // error: incorrect subpacket body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.issuer[i] = pkt[i]; 
+			break;
+		case 20: // Notation Data
+			if (out.critical)
+				return 0; // error: subpacket can't ignored
+			break;
+		case 21: // Preferred Hash Algorithms
+			if (pkt.size() > sizeof(out.pha))
+				return 0; // error: too long subpacket body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.pha[i] = pkt[i]; 
+			break;
+		case 22: // Preferred Compression Algorithms
+			if (pkt.size() > sizeof(out.pca))
+				return 0; // error: too long subpacket body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.pca[i] = pkt[i]; 
+			break;
+		case 23: // Key Server Preferences
+			if (pkt.size() > sizeof(out.keyserverpreferences))
+				return 0; // error: too long subpacket body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.keyserverpreferences[i] = pkt[i]; 
+			break;
+		case 24: // Preferred Key Server
+			if (pkt.size() > sizeof(out.preferedkeyserver))
+				return 0; // error: too long subpacket body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.preferedkeyserver[i] = pkt[i]; 
+			break;
+		case 25: // Primary User ID
+			if (pkt.size() != 1)
+				return 0; // error: incorrect subpacket body
+			if (pkt[0] == 0x00)
+				out.primaryuserid = false;
+			else if (pkt[0] == 0x01)
+				out.primaryuserid = true;
+			else
+				return 0; // error: bad value
+			break;
+		case 26: // Policy URI
+			if (pkt.size() > sizeof(out.policyuri))
+				return 0; // error: too long subpacket body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.policyuri[i] = pkt[i]; 
+			break;
+		case 27: // Key Flags
+			if (pkt.size() > sizeof(out.keyflags))
+				return 0; // error: too long subpacket body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.keyflags[i] = pkt[i]; 
+			break;
+		case 28: // Signer's User ID
+			if (pkt.size() > sizeof(out.signersuserid))
+				return 0; // error: too long subpacket body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.signersuserid[i] = pkt[i]; 
+			break;
+		case 29: // Reason for Revocation
+			if (pkt.size() > sizeof(out.revocationreason) + 1)
+				return 0; // error: too long subpacket body
+			out.revocationcode = pkt[0];
+			for (size_t i = 0; i < (pkt.size() - 1); i++)
+				out.revocationreason[i] = pkt[1+i]; 
+			break;
+		case 30: // Features
+			if (pkt.size() > sizeof(out.features))
+				return 0; // error: too long subpacket body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.features[i] = pkt[i]; 
+			break;
+		case 31: // Signature Target
+			if (pkt.size() > sizeof(out.signaturetarget_hash) + 2)
+				return 0; // error: too long subpacket body
+			out.signaturetarget_pkalgo = pkt[0];
+			out.signaturetarget_hashalgo = pkt[1];
+			for (size_t i = 0; i < (pkt.size() - 2); i++)
+				out.signaturetarget_hash[i] = pkt[2+i]; 
+			break;
+		case 32: // Embedded Signature
+			if (pkt.size() > sizeof(out.embeddedsignature))
+				return 0; // error: too long subpacket body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.embeddedsignature[i] = pkt[i]; 
+			break;
+		default:
+			return 0; // unknown subpacket type
+	}
+	in.erase(in.begin(), in.begin()+headlen+len); // remove subpacket
+	return type;
+}
+
+BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
+	(OCTETS &in, TMCG_OPENPGP_CONTEXT &out)
+{
+	if (in.size() < 2)
+		return 0; // error: incorrect packet header
+	BYTE tag = in[0];
+	if ((tag & 0x80) != 0x80)
+		return 0; // error: leftmost bit of tag octet not set
+	if ((tag & 0x40) != 0x40)
+		return 0; // error: only new packet format supported
+	tag -= (0x80 + 0x40);
+	// New format packets have four possible ways of encoding length:
+	// 1. A one-octet Body Length header encodes packet lengths of up to
+	//    191 octets.
+	// 2. A two-octet Body Length header encodes packet lengths of 192 to
+	//    8383 octets.
+	// 3. A five-octet Body Length header encodes packet lengths of up to
+	//    4,294,967,295 (0xFFFFFFFF) octets in length. (This actually
+	//    encodes a four-octet scalar number.)
+	// 4. When the length of the packet body is not known in advance by
+	//    the issuer, Partial Body Length headers encode a packet of
+	//    indeterminate length, effectively making it a stream.
+	size_t len = 0, headlen = 1, hspdlen = 0, uspdlen = 0;
+	if (in[1] < 192)
+	{
+		// A one-octet Body Length header encodes a length of 0 to
+		// 191 octets. This type of length header is recognized
+		// because the one octet value is less than 192.
+		headlen += 1;
+		len = in[1];
+	}
+	else if (in[1] < 224)
+	{
+		if (in.size() < 3)
+			return 0; // error: too few octets of length encoding
+		// A two-octet Body Length header encodes a length of 192 to
+		// 8383 octets. It is recognized because its first octet is
+		// in the range 192 to 223.
+		headlen += 2;
+		len = ((in[1] - 192) << 8) + in[2] + 192;
+	}
+	else if (in[1] == 255)
+	{
+		if (in.size() < 6)
+			return 0; // error: too few octets of length encoding
+		// A five-octet Body Length header consists of a single octet
+		// holding the value 255, followed by a four-octet scalar.
+		headlen += 5;
+		len = (in[2] << 24) + (in[3] << 16) + (in[4] << 8) + in[5];
+	}
+	else
+		return 0; // error: Partial Body Lengths are not supported
+std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
+	BYTE sptype = 0xFF;
+	OCTETS pkt, hspd, uspd, mpis;
+	pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+len);
+	memset(&out, 0, sizeof(out)); // clear output context
+	// Exportable Certification: If this packet is not present, the
+	// certification is exportable; it is equivalent to a flag 
+	// containing a 1.
+	out.exportablecertification = true; 
+	// Revocable: If this packet is not present, the signature is
+	// revocable.
+	out.revocable = true;
+	switch (tag)
+	{
+		case 1: // Public-Key Encrypted Session Key Packet
+			if (pkt.size() < 16)
+				return 0; // error: incorrect packet body
+			out.version = pkt[0];
+			if (out.version != 3)
+				return 0; // error: version not supported
+			for (size_t i = 0; i < 8; i++)
+				out.keyid[i] = pkt[1+i];
+			out.pkalgo = pkt[9];
+			mpis.insert(mpis.end(), pkt.begin()+10, pkt.end());
+			if ((out.pkalgo == 1) || (out.pkalgo == 2))
+			{
+				// Algorithm-Specific Fields for RSA 
+				size_t mlen = PacketMPIDecode(mpis, out.me);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			}
+			else if (out.pkalgo == 16)
+			{
+				// Algorithm-Specific Fields for Elgamal
+				size_t mlen = PacketMPIDecode(mpis, out.gk);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				if (mpis.size() <= 2)
+					return 0; // error: too few mpis
+				mlen = PacketMPIDecode(mpis, out.myk);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			}
+			else
+				return 0; // error: unknown public-key algo
+			break;
+		case 2: // Signature Packet
+			if (pkt.size() < 12)
+				return 0; // error: incorrect packet body
+			out.version = pkt[0];
+			if (out.version != 4)
+				return 0; // error: version not supported
+			out.type = pkt[1];
+			out.pkalgo = pkt[2];
+			out.hashalgo = pkt[3];
+			hspdlen = (pkt[4] << 8) + pkt[5];
+			hspd.insert(hspd.end(), 
+				pkt.begin()+6, pkt.begin()+6+hspdlen); 
+			while (hspd.size() && sptype)
+                	{
+				sptype = SubpacketDecode(hspd, out);
+				if (out.critical && (sptype == 0))
+					return 0; // error: critical bit set
+			}
+			uspdlen = (pkt[6+hspdlen] << 8) + pkt[7+hspdlen];
+			uspd.insert(uspd.end(), pkt.begin()+8+hspdlen,
+					 pkt.begin()+8+hspdlen+uspdlen);
+			// If a subpacket is not hashed, then the information
+			// in it cannot be considered definitive because it 
+			// is not part of the signature proper.
+			TMCG_OPENPGP_CONTEXT untrusted;
+			while (uspd.size() && sptype)
+                	{
+				sptype = SubpacketDecode(uspd, untrusted);
+				if (untrusted.critical && (sptype == 0))
+					return 0; // error: critical bit set
+			}
+std::cerr << "BUG" << std::endl;
+			out.left[0] = pkt[8+hspdlen+uspdlen];
+			out.left[1] = pkt[9+hspdlen+uspdlen];
+			mpis.insert(mpis.end(), pkt.begin()+10+hspdlen+uspdlen,
+				pkt.end());
+			if ((out.pkalgo == 1) || (out.pkalgo == 3))
+			{
+				// Algorithm-Specific Fields for RSA 
+				size_t mlen = PacketMPIDecode(mpis, out.md);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			}
+			else if (out.pkalgo == 17)
+			{
+std::cerr << "BUG" << std::endl;
+				// Algorithm-Specific Fields for DSA 
+				size_t mlen = PacketMPIDecode(mpis, out.r);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				if (mpis.size() <= 2)
+					return 0; // error: too few mpis
+std::cerr << "BUG" << std::endl;
+				mlen = PacketMPIDecode(mpis, out.s);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+std::cerr << "END" << std::endl;
+			}
+			else
+				return 0; // error: unknown public-key algo
+			break;
+		case 3: // Symmetric-Key Encrypted Session Key Packet, ignore
+			break;
+		case 4: // One-Pass Signature Packet
+			if (pkt.size() != 13)
+				return 0; // error: incorrect packet body
+			out.version = pkt[0];
+			if (out.version != 3)
+				return 0; // error: version not supported
+			out.type = pkt[1];
+			out.hashalgo = pkt[2];
+			out.pkalgo = pkt[3];
+			for (size_t i = 0; i < 8; i++)
+				out.signingkeyid[i] = pkt[4+i];
+			out.nestedsignature = pkt[12];
+			break;
+		case 5: // Secret-Key Packet
+		case 7: // Secret-Subkey Packet
+			if (pkt.size() < 14)
+				return 0; // error: incorrect packet body
+			out.version = pkt[0];
+			if (out.version != 4)
+				return 0; // error: version not supported
+			out.keycreationtime = (pkt[1] << 24) + (pkt[2] << 16)
+				+ (pkt[3] << 8) + pkt[4];
+			out.pkalgo = pkt[5];
+			mpis.insert(mpis.end(), pkt.begin()+6, pkt.end());
+			if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
+			{
+				// Algorithm-Specific Fields for RSA keys
+				size_t mlen = PacketMPIDecode(mpis, out.n);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.e);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				// secret fields
+				if (mpis[0] != 0)
+					return 0; // error: S2K not supported
+				mpis.erase(mpis.begin(), mpis.begin()+1);
+				mlen = PacketMPIDecode(mpis, out.d);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mpis.erase(mpis.begin(), mpis.begin()+2);
+				if (mpis[0] != 0)
+					return 0; // error: S2K not supported
+				mpis.erase(mpis.begin(), mpis.begin()+1);
+				mlen = PacketMPIDecode(mpis, out.p);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mpis.erase(mpis.begin(), mpis.begin()+2);
+				if (mpis[0] != 0)
+					return 0; // error: S2K not supported
+				mpis.erase(mpis.begin(), mpis.begin()+1);
+				mlen = PacketMPIDecode(mpis, out.q);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mpis.erase(mpis.begin(), mpis.begin()+2);
+				if (mpis[0] != 0)
+					return 0; // error: S2K not supported
+				mpis.erase(mpis.begin(), mpis.begin()+1);
+				mlen = PacketMPIDecode(mpis, out.u);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mpis.erase(mpis.begin(), mpis.begin()+2);
+			}
+			else if (out.pkalgo == 16)
+			{
+				// Algorithm-Specific Fields for Elgamal keys
+				size_t mlen = PacketMPIDecode(mpis, out.p);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.g);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.y);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				// secret fields
+				if (mpis[0] != 0)
+					return 0; // error: S2K not supported
+				mpis.erase(mpis.begin(), mpis.begin()+1);
+				mlen = PacketMPIDecode(mpis, out.x);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mpis.erase(mpis.begin(), mpis.begin()+2);
+			}
+			else if (out.pkalgo == 17)
+			{
+				// Algorithm-Specific Fields for DSA keys
+				size_t mlen = PacketMPIDecode(mpis, out.p);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.q);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.g);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.y);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				// secret fields
+				if (mpis[0] != 0)
+					return 0; // error: S2K not supported
+				mpis.erase(mpis.begin(), mpis.begin()+1);
+				mlen = PacketMPIDecode(mpis, out.x);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mpis.erase(mpis.begin(), mpis.begin()+2);
+			}
+			break;
+		case 6: // Public-Key Packet
+		case 14: // Public-Subkey Packet
+			if (pkt.size() < 14)
+				return 0; // error: incorrect packet body
+			out.version = pkt[0];
+			if (out.version != 4)
+				return 0; // error: version not supported
+			out.keycreationtime = (pkt[1] << 24) + (pkt[2] << 16)
+				+ (pkt[3] << 8) + pkt[4];
+			out.pkalgo = pkt[5];
+			mpis.insert(mpis.end(), pkt.begin()+6, pkt.end());
+std::cerr << "BUG" << std::endl;
+			if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
+			{
+std::cerr << "RSA" << std::endl;
+				// Algorithm-Specific Fields for RSA keys
+				size_t mlen = PacketMPIDecode(mpis, out.n);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.e);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			}
+			else if (out.pkalgo == 16)
+			{
+std::cerr << "Elg" << std::endl;
+				// Algorithm-Specific Fields for Elgamal keys
+				size_t mlen = PacketMPIDecode(mpis, out.p);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.g);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.y);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			}
+			else if (out.pkalgo == 17)
+			{
+std::cerr << "BUG" << std::endl;
+				// Algorithm-Specific Fields for DSA keys
+				size_t mlen = PacketMPIDecode(mpis, out.p);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+std::cerr << "BUG" << std::endl;
+				mlen = PacketMPIDecode(mpis, out.q);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+std::cerr << "BUG" << std::endl;
+				mlen = PacketMPIDecode(mpis, out.g);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+std::cerr << "BUG" << std::endl;
+				mlen = PacketMPIDecode(mpis, out.y);
+				if (!mlen)
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			}
+std::cerr << "END" << std::endl;
+			break;
+		case 8: // Compressed Data Packet
+			if (pkt.size() < 2)
+				return 0; // error: incorrect packet body
+			out.compalgo = pkt[0];
+			if (out.compalgo > 2)
+				return 0; // error: algorithm not supported
+			out.compresseddatalen = pkt.size();
+			out.compresseddata = new BYTE[out.compresseddatalen];
+			for (size_t i = 0; i < out.compresseddatalen; i++)
+				out.compresseddata[i] = pkt[1+i];
+			break;
+		case 9: // Symmetrically Encrypted Data Packet
+			if (pkt.size() == 0)
+				return 0; // error: empty packet body
+			out.encrypteddatalen = pkt.size();
+			out.encrypteddata = new BYTE[out.encrypteddatalen];
+			for (size_t i = 0; i < out.encrypteddatalen; i++)
+				out.encrypteddata[i] = pkt[i];
+			break;
+		case 10: // Marker Packet
+			if (pkt.size() != 3)
+				return 0; // error: incorrect packet body
+			break;
+		case 11: // Literal Data Packet
+			if (pkt.size() < 2)
+				return 0; // error: incorrect packet body
+			out.dataformat = pkt[0];
+			out.datafilenamelen = pkt[1];
+			for (size_t i = 0; i < out.datafilenamelen; i++)
+				out.datafilename[i] = pkt[2+i];
+			out.datatime = (pkt[3+out.datafilenamelen] << 24) +
+				(pkt[4+out.datafilenamelen] << 16) +
+				(pkt[5+out.datafilenamelen] << 8) +
+				 pkt[6+out.datafilenamelen];
+			out.datalen = pkt.size() - out.datafilenamelen - 6;
+			out.data = new BYTE[out.datalen];
+			for (size_t i = 0; i < out.datalen; i++)
+				out.data[i] = pkt[6+out.datafilenamelen+i];
+			break;
+		case 12: // Trust Packet -- not supported, ignore
+			break;
+		case 13: // User ID Packet
+			if (pkt.size() > sizeof(out.uid))
+				return 0; // error: empty packet body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.uid[i] = pkt[i];
+			break;
+		case 17: // User Attribute Packet -- not supported, ignore
+			break;
+		case 18: // Sym. Encrypted and Integrity Protected Data Packet
+			if (pkt.size() < 2)
+				return 0; // error: incorrect packet body
+			out.version = pkt[0];
+			if (out.version != 1)
+				return 0; // error: version not supported
+			out.encrypteddatalen = pkt.size() - 1;
+			out.encrypteddata = new BYTE[out.encrypteddatalen];
+			for (size_t i = 0; i < out.encrypteddatalen; i++)
+				out.encrypteddata[i] = pkt[1+i];
+			break;
+		case 19: // Modification Detection Code Packet
+			if (pkt.size() != 20)
+				return 0; // error: incorrect packet body
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.mdc_hash[i] = pkt[i];
+			break;
+		default:
+			return 0; // error: unknown packet tag
+	}
+	in.erase(in.begin(), in.begin()+headlen+len); // remove packet
+	return tag;
+}
+
+// ===========================================================================
+
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	(const OCTETS &primary, std::string uid, const OCTETS &trailer, 
 	 gcry_mpi_t &h, OCTETS &left)
