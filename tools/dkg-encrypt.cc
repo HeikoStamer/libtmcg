@@ -32,7 +32,7 @@ int main
 
 	std::string line, armored_pubkey, message, armored_message;
 
-	std::cout << "Please provide the recipients DKG public key (in ASCII Armor): " << std::endl;
+	std::cout << "1. Please provide the recipients public key (in ASCII Armor): " << std::endl;
 	while (std::getline(std::cin, line))
 		armored_pubkey += line + "\r\n";
 	std::cin.clear();
@@ -157,7 +157,7 @@ int main
 
 	
 
-	std::cout << "Now type your private message (in ASCII): " << std::endl;
+	std::cout << "2. Now type your private message (in ASCII): " << std::endl;
 	while (std::getline(std::cin, line))
 		message += line + "\r\n";
 	std::cin.clear();
