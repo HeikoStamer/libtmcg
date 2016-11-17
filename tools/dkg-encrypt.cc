@@ -179,7 +179,7 @@ int main
 	CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(2, mdc_hashing, hash); // "passed through the SHA-1 hash function" [RFC4880]
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketMdcEncode(hash, mdc);
 	lit.insert(lit.end(), mdc.begin(), mdc.end());
-	seskey.clear(); // generate a fresh session key
+	seskey.clear(); // generate a fresh session key, but use the previous prefix
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256(lit, seskey, prefix, false, enc);
 	if (ret)
 	{

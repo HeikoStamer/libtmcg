@@ -114,7 +114,7 @@ void start_instance
 			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, bP_key);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
-			std::string myID = "t-dkg";
+			std::string myID = "dkg-generate";
 			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
 			rbc->setID(myID);
 			
@@ -128,7 +128,7 @@ void start_instance
 			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
 			assert(dkg->CheckKey(whoami));
 
-			// create an Elgamal-based OpenPGP key
+			// create an OpenPGP DSA-based primary key and Elgamal-based subkey
 			char buffer[2048];
 			std::string out, crcout, armor, u;
 			OCTETS all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
@@ -136,16 +136,14 @@ void start_instance
 			OCTETS uidsig_hashing, subsig_hashing, uidsig_left, subsig_left;
 			time_t keytime, sigtime;
 			gcry_mpi_t p, q, g, y, x, r, s, h;
-			gcry_sexp_t key, dsaparams, signature, sigdata;
+			gcry_sexp_t key, signature, sigdata;
 			gcry_error_t ret;
 			size_t erroff;
-			std::string d = "(genkey (dsa (nbits 4:2048) (qbits 3:256)))";
-			ret = gcry_sexp_new(&dsaparams, d.c_str(), d.length(), 1);
-			assert(!ret);
+			mpz_t dsa_y, dsa_x;
+			mpz_init(dsa_y), mpz_init(dsa_x);
+			mpz_srandomm(dsa_x, vtmf->q);
+			mpz_spowm(dsa_y, vtmf->g, dsa_x, vtmf->p);
 			keytime = time(NULL); // current time
-			ret = gcry_pk_genkey(&key, dsaparams);
-			assert(!ret);
-			gcry_sexp_release(dsaparams);
 			p = gcry_mpi_new(2048);
 			q = gcry_mpi_new(2048);
 			g = gcry_mpi_new(2048);
@@ -154,14 +152,31 @@ void start_instance
 			r = gcry_mpi_new(2048);
 			s = gcry_mpi_new(2048);
 			h = gcry_mpi_new(2048);
-			ret = gcry_sexp_extract_param(key, NULL, "pqgyx", &p, &q, &g, &y, &x, NULL);
+				mpz_get_str(buffer, 16, vtmf->p);			
+				ret = gcry_mpi_scan(&p, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+				assert(!ret); 
+				mpz_get_str(buffer, 16, vtmf->q);			
+				ret = gcry_mpi_scan(&q, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+				assert(!ret); 
+				mpz_get_str(buffer, 16, vtmf->g);			
+				ret = gcry_mpi_scan(&g, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+				assert(!ret);
+				mpz_get_str(buffer, 16, dsa_y);			
+				ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+				assert(!ret);
+				mpz_get_str(buffer, 16, dsa_x);			
+				ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+				assert(!ret);
+			mpz_clear(dsa_y), mpz_clear(dsa_x);
+			ret = gcry_sexp_build(&key, &erroff, "(key-data (public-key (dsa (p %M) (q %M) (g %M) (y %M)))"
+				" (private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M))))", p, q, g, y, p, q, g, y, x);
 			assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(keytime, p, q, g, y, pub);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(keytime, p, q, g, y, x, sec);
 			for (size_t i = 6; i < pub.size(); i++)
 				pub_hashing.push_back(pub[i]);
 			CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
-			u = "Max Mustermann <max@moritz.de>";
+			u = "LibTMCG dkg-generate"; // TODO: uid should read from cin
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, uid);
 			dsaflags.push_back(0x01);
 			dsaflags.push_back(0x02);
@@ -177,18 +192,12 @@ void start_instance
 			ret = gcry_sexp_extract_param(signature, NULL, "rs", &r, &s, NULL);
 			assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(uidsig_hashing, uidsig_left, r, s, uidsig);
-			mpz_get_str(buffer, 16, vtmf->p);			
-			ret = gcry_mpi_scan(&p, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-			assert(!ret); 
-			mpz_get_str(buffer, 16, vtmf->g);			
-			ret = gcry_mpi_scan(&g, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-			assert(!ret); 
-			mpz_get_str(buffer, 16, dkg->y);			
-			ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-			assert(!ret);
-			mpz_get_str(buffer, 16, dkg->x_i);			
-			ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-			assert(!ret);
+				mpz_get_str(buffer, 16, dkg->y);			
+				ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+				assert(!ret);
+				mpz_get_str(buffer, 16, dkg->x_i);			
+				ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+				assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(keytime, p, g, y, sub);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(keytime, p, g, y, x, ssb);
 			elgflags.push_back(0x04);
