@@ -197,7 +197,7 @@ int main
 
 	std::string line, armored_pubkey, message;
 
-	std::cout << "Please provide recipients DKG public key (in ASCII Armor): " << std::endl;
+	std::cout << "Please provide the recipients DKG public key (in ASCII Armor): " << std::endl;
 	while (std::getline(std::cin, line))
 		armored_pubkey += line + "\r\n";
 	std::cin.clear();

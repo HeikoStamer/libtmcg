@@ -1165,13 +1165,20 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	if (in.size() < 2)
 		return 0; // error: incorrect packet header
 	BYTE tag = in[0];
+	BYTE lentype = 0x00;
 	if ((tag & 0x80) != 0x80)
-		return 0; // error: leftmost bit of tag octet not set
-std::cerr << "BUG" << std::endl;
-	if ((tag & 0x40) != 0x40)
-		return 0; // error: only new packet format supported
-std::cerr << "BUG" << std::endl;
-	tag -= (0x80 + 0x40);
+		return 0; // error: Bit 7 of first octet not set
+	if ((tag & 0x40) == 0x40)
+	{
+		out.newformat = true;
+		tag -= (0x80 + 0x40); // Bits 5-0 -- packet tag
+	}
+	else
+	{
+		out.newformat = false;
+		lentype = tag & 0x03; // Bits 1-0 -- length-type
+		tag = (tag >> 2) & 0x1F; // Bits 5-2 -- packet tag
+	}
 	// New format packets have four possible ways of encoding length:
 	// 1. A one-octet Body Length header encodes packet lengths of up to
 	//    191 octets.
@@ -1184,7 +1191,7 @@ std::cerr << "BUG" << std::endl;
 	//    the issuer, Partial Body Length headers encode a packet of
 	//    indeterminate length, effectively making it a stream.
 	size_t len = 0, headlen = 1, hspdlen = 0, uspdlen = 0;
-	if (in[1] < 192)
+	if (out.newformat && (in[1] < 192))
 	{
 		// A one-octet Body Length header encodes a length of 0 to
 		// 191 octets. This type of length header is recognized
@@ -1192,7 +1199,7 @@ std::cerr << "BUG" << std::endl;
 		headlen += 1;
 		len = in[1];
 	}
-	else if (in[1] < 224)
+	else if (out.newformat && (in[1] < 224))
 	{
 		if (in.size() < 3)
 			return 0; // error: too few octets of length encoding
@@ -1202,7 +1209,7 @@ std::cerr << "BUG" << std::endl;
 		headlen += 2;
 		len = ((in[1] - 192) << 8) + in[2] + 192;
 	}
-	else if (in[1] == 255)
+	else if (out.newformat && (in[1] == 255))
 	{
 		if (in.size() < 6)
 			return 0; // error: too few octets of length encoding
@@ -1211,8 +1218,42 @@ std::cerr << "BUG" << std::endl;
 		headlen += 5;
 		len = (in[2] << 24) + (in[3] << 16) + (in[4] << 8) + in[5];
 	}
-	else
+	else if (out.newformat)
+	{
 		return 0; // error: Partial Body Lengths are not supported
+	}
+	else if (!out.newformat && (lentype == 0x00))
+	{
+		// The packet has a one-octet length.
+		len = in[1];
+		// The header is 2 octets long.
+		headlen += 1;
+	}
+	else if (!out.newformat && (lentype == 0x01))
+	{
+		// The packet has a two-octet length.
+		if (in.size() < 3)
+			return 0; // error: too few octets of length encoding
+		len = (in[1] << 8) + in[2];
+		// The header is 3 octets long.
+		headlen += 2;
+	}
+	else if (!out.newformat && (lentype == 0x02))
+	{
+		// The packet has a four-octet length.
+		if (in.size() < 5)
+			return 0; // error: too few octets of length encoding
+		// A five-octet Body Length header consists of a single octet
+		len = (in[1] << 24) + (in[2] << 16) + (in[3] << 8) + in[4];
+		// The header is 5 octets long.
+		headlen += 4;
+	}
+	else if (!out.newformat && (lentype == 0x03))
+	{
+		return 0; // error: indeterminate length is not supported
+	}
+	else
+		return 0; // unknown error
 std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 	BYTE sptype = 0xFF;
 	OCTETS pkt, hspd, uspd, mpis;

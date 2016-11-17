@@ -88,6 +88,7 @@
 
 	typedef struct
 	{
+		bool newformat;
 		BYTE version;
 		BYTE keyid[8];
 		BYTE pkalgo;
