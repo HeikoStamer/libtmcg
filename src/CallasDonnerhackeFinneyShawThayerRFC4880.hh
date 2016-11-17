@@ -219,20 +219,22 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const BYTE type, bool critical, const OCTETS &in,
 			 OCTETS &out);
 		static void PacketSigPrepare
-			(const BYTE sigtype, const OCTETS &flags,
-			 const OCTETS &keyid, OCTETS &out);
-		static void PacketPubEncode
-			(gcry_mpi_t p, gcry_mpi_t q, gcry_mpi_t g, 
-			 gcry_mpi_t y, OCTETS &out);
-		static void PacketSecEncode
-			(gcry_mpi_t p, gcry_mpi_t q, gcry_mpi_t g, 
-			 gcry_mpi_t y, gcry_mpi_t x, OCTETS &out);
-		static void PacketSubEncode
-			(gcry_mpi_t p, gcry_mpi_t g, gcry_mpi_t y,
+			(const BYTE sigtype, const time_t sigtime,
+			 const OCTETS &flags, const OCTETS &keyid, 
 			 OCTETS &out);
+		static void PacketPubEncode
+			(const time_t keytime, gcry_mpi_t p, gcry_mpi_t q,
+			 gcry_mpi_t g, gcry_mpi_t y, OCTETS &out);
+		static void PacketSecEncode
+			(const time_t keytime, gcry_mpi_t p, gcry_mpi_t q, 
+			 gcry_mpi_t g, gcry_mpi_t y, gcry_mpi_t x,
+			 OCTETS &out);
+		static void PacketSubEncode
+			(const time_t keytime, gcry_mpi_t p, gcry_mpi_t g, 
+			 gcry_mpi_t y, OCTETS &out);
 		static void PacketSsbEncode
-			(gcry_mpi_t p, gcry_mpi_t g, gcry_mpi_t y,
-			 gcry_mpi_t x, OCTETS &out);
+			(const time_t keytime, gcry_mpi_t p, gcry_mpi_t g, 
+			 gcry_mpi_t y, gcry_mpi_t x, OCTETS &out);
 		static void PacketSedEncode
 			(const OCTETS &in, OCTETS &out);
 		static void PacketLitEncode

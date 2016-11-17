@@ -44,7 +44,7 @@ void start_instance
 	(std::istream& crs_in, size_t whoami)
 {
 	if ((pid[whoami] = fork()) < 0)
-		perror("t-dkg (fork)");
+		perror("dkg-generate (fork)");
 	else
 	{
 		if (pid[whoami] == 0)
@@ -59,7 +59,7 @@ void start_instance
 			for (size_t i = 0; i < N; i++)
 			{
 				std::stringstream key;
-				key << "t-dkg::P_" << (i + whoami);
+				key << "dkg-generate::P_" << (i + whoami);
 				P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
 				P_out.push_back(new opipestream(pipefd[whoami][i][1]));
 				uP_in.push_back(pipefd[i][whoami][0]);
@@ -134,13 +134,15 @@ void start_instance
 			OCTETS all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
 			OCTETS pub_hashing, sub_hashing;
 			OCTETS uidsig_hashing, subsig_hashing, uidsig_left, subsig_left;
+			time_t keytime, sigtime;
 			gcry_mpi_t p, q, g, y, x, r, s, h;
 			gcry_sexp_t key, dsaparams, signature, sigdata;
 			gcry_error_t ret;
 			size_t erroff;
-			std::string d = "(genkey (dsa (nbits 4:2048) (qbits 3:256) (flags transient-key)))";
+			std::string d = "(genkey (dsa (nbits 4:2048) (qbits 3:256)))";
 			ret = gcry_sexp_new(&dsaparams, d.c_str(), d.length(), 1);
 			assert(!ret);
+			keytime = time(NULL); // current time
 			ret = gcry_pk_genkey(&key, dsaparams);
 			assert(!ret);
 			gcry_sexp_release(dsaparams);
@@ -154,8 +156,8 @@ void start_instance
 			h = gcry_mpi_new(2048);
 			ret = gcry_sexp_extract_param(key, NULL, "pqgyx", &p, &q, &g, &y, &x, NULL);
 			assert(!ret);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(p, q, g, y, pub);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(p, q, g, y, x, sec);
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(keytime, p, q, g, y, pub);
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(keytime, p, q, g, y, x, sec);
 			for (size_t i = 6; i < pub.size(); i++)
 				pub_hashing.push_back(pub[i]);
 			CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
@@ -164,7 +166,8 @@ void start_instance
 			dsaflags.push_back(0x01);
 			dsaflags.push_back(0x02);
 			dsaflags.push_back(0x20);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, dsaflags, keyid, uidsig_hashing);
+			sigtime = time(NULL); // current time
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, sigtime, dsaflags, keyid, uidsig_hashing);
 			ret = CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, h, uidsig_left);
 			assert(!ret);
 			ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags raw) (value %M))", h);
@@ -186,11 +189,12 @@ void start_instance
 			mpz_get_str(buffer, 16, dkg->x_i);			
 			ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
 			assert(!ret);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(p, g, y, sub);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(p, g, y, x, ssb);
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(keytime, p, g, y, sub);
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(keytime, p, g, y, x, ssb);
 			elgflags.push_back(0x04);
 			elgflags.push_back(0x10);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, elgflags, keyid, subsig_hashing);
+			sigtime = time(NULL); // current time
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, sigtime, elgflags, keyid, subsig_hashing);
 			for (size_t i = 6; i < sub.size(); i++)
 				sub_hashing.push_back(sub[i]);
 			ret = CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, subsig_hashing, h, subsig_left);

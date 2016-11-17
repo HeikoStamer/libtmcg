@@ -579,7 +579,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
-	(const BYTE sigtype, const OCTETS &flags, const OCTETS &keyid, OCTETS &out)
+	(const BYTE sigtype, const time_t sigtime, const OCTETS &flags,
+	 const OCTETS &keyid, OCTETS &out)
 {
 	size_t subpkts = 6;
 	size_t subpktlen = (subpkts * 6) + 4 + flags.size() + keyid.size() + 3;
@@ -591,9 +592,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
 	out.push_back(subpktlen >> 8); // length of hashed subpacket data
 	out.push_back(subpktlen);
 		// signature creation time
-		OCTETS sigtime;
-		PacketTimeEncode(sigtime);
-		SubpacketEncode(2, false, sigtime, out);
+		OCTETS subpkt_sigtime;
+		PacketTimeEncode(sigtime, subpkt_sigtime);
+		SubpacketEncode(2, false, subpkt_sigtime, out);
 		// key flags
 		SubpacketEncode(27, false, flags, out);
 		// issuer
@@ -613,7 +614,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
-	(gcry_mpi_t p, gcry_mpi_t q, gcry_mpi_t g, gcry_mpi_t y, OCTETS &out)
+	(const time_t keytime, gcry_mpi_t p, gcry_mpi_t q, gcry_mpi_t g,
+	 gcry_mpi_t y, OCTETS &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
 	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
@@ -646,7 +648,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	PacketTagEncode(6, out);
 	PacketLengthEncode(1+4+1+2+plen+2+qlen+2+glen+2+ylen, out);
 	out.push_back(4); // V4 format
-	PacketTimeEncode(out); // current time
+	PacketTimeEncode(keytime, out);
 	out.push_back(17); // public-key algorithm: DSA
 	PacketMPIEncode(p, out); // MPI p
 	PacketMPIEncode(q, out); // MPI q
@@ -655,8 +657,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
-	(gcry_mpi_t p, gcry_mpi_t q, gcry_mpi_t g, gcry_mpi_t y, gcry_mpi_t x,
-	 OCTETS &out)
+	(const time_t keytime, gcry_mpi_t p, gcry_mpi_t q, gcry_mpi_t g,
+	 gcry_mpi_t y, gcry_mpi_t x, OCTETS &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
 	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
@@ -695,7 +697,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	PacketTagEncode(5, out);
 	PacketLengthEncode(1+4+1+2+plen+2+qlen+2+glen+2+ylen+1+2+xlen+2, out);
 	out.push_back(4); // V4 format
-	PacketTimeEncode(out); // current time
+	PacketTimeEncode(keytime, out);
 	out.push_back(17); // public-key algorithm: DSA
 	PacketMPIEncode(p, out); // MPI p
 	PacketMPIEncode(q, out); // MPI q
@@ -710,7 +712,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
-	(gcry_mpi_t p, gcry_mpi_t g, gcry_mpi_t y, OCTETS &out)
+	(const time_t keytime, gcry_mpi_t p, gcry_mpi_t g, gcry_mpi_t y,
+	 OCTETS &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
 	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
@@ -726,7 +729,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 	PacketTagEncode(14, out);
 	PacketLengthEncode(1+4+1+2+plen+2+glen+2+ylen, out);
 	out.push_back(4); // V4 format
-	PacketTimeEncode(out); // current time
+	PacketTimeEncode(keytime, out);
 	out.push_back(16); // public-key algorithm: Elgamal
 	PacketMPIEncode(p, out); // MPI p
 	PacketMPIEncode(g, out); // MPI g
@@ -734,7 +737,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
-	(gcry_mpi_t p, gcry_mpi_t g, gcry_mpi_t y, gcry_mpi_t x, OCTETS &out)
+	(const time_t keytime, gcry_mpi_t p, gcry_mpi_t g, gcry_mpi_t y, 
+	 gcry_mpi_t x, OCTETS &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
 	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
@@ -746,7 +750,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	PacketTagEncode(7, out);
 	PacketLengthEncode(1+4+1+2+plen+2+glen+2+ylen+1+2+xlen+2, out);
 	out.push_back(4); // V4 format
-	PacketTimeEncode(out); // current time
+	PacketTimeEncode(keytime, out);
 	out.push_back(16); // public-key algorithm: Elgamal
 	PacketMPIEncode(p, out); // MPI p
 	PacketMPIEncode(g, out); // MPI g
@@ -1334,7 +1338,6 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 				if (untrusted.critical && (sptype == 0))
 					return 0; // error: critical bit set
 			}
-std::cerr << "BUG" << std::endl;
 			out.left[0] = pkt[8+hspdlen+uspdlen];
 			out.left[1] = pkt[9+hspdlen+uspdlen];
 			mpis.insert(mpis.end(), pkt.begin()+10+hspdlen+uspdlen,
@@ -1349,7 +1352,6 @@ std::cerr << "BUG" << std::endl;
 			}
 			else if (out.pkalgo == 17)
 			{
-std::cerr << "BUG" << std::endl;
 				// Algorithm-Specific Fields for DSA 
 				size_t mlen = PacketMPIDecode(mpis, out.r);
 				if (!mlen)
@@ -1357,12 +1359,10 @@ std::cerr << "BUG" << std::endl;
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				if (mpis.size() <= 2)
 					return 0; // error: too few mpis
-std::cerr << "BUG" << std::endl;
 				mlen = PacketMPIDecode(mpis, out.s);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-std::cerr << "END" << std::endl;
 			}
 			else
 				return 0; // error: unknown public-key algo
@@ -1504,10 +1504,8 @@ std::cerr << "END" << std::endl;
 				+ (pkt[3] << 8) + pkt[4];
 			out.pkalgo = pkt[5];
 			mpis.insert(mpis.end(), pkt.begin()+6, pkt.end());
-std::cerr << "BUG" << std::endl;
 			if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
 			{
-std::cerr << "RSA" << std::endl;
 				// Algorithm-Specific Fields for RSA keys
 				size_t mlen = PacketMPIDecode(mpis, out.n);
 				if (!mlen)
@@ -1520,7 +1518,6 @@ std::cerr << "RSA" << std::endl;
 			}
 			else if (out.pkalgo == 16)
 			{
-std::cerr << "Elg" << std::endl;
 				// Algorithm-Specific Fields for Elgamal keys
 				size_t mlen = PacketMPIDecode(mpis, out.p);
 				if (!mlen)
@@ -1537,29 +1534,24 @@ std::cerr << "Elg" << std::endl;
 			}
 			else if (out.pkalgo == 17)
 			{
-std::cerr << "BUG" << std::endl;
 				// Algorithm-Specific Fields for DSA keys
 				size_t mlen = PacketMPIDecode(mpis, out.p);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-std::cerr << "BUG" << std::endl;
 				mlen = PacketMPIDecode(mpis, out.q);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-std::cerr << "BUG" << std::endl;
 				mlen = PacketMPIDecode(mpis, out.g);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-std::cerr << "BUG" << std::endl;
 				mlen = PacketMPIDecode(mpis, out.y);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
-std::cerr << "END" << std::endl;
 			break;
 		case 8: // Compressed Data Packet
 			if (pkt.size() < 2)
@@ -1869,7 +1861,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
 
-	// TODO: Beschreibung
+	// This value is then encoded as described in PKCS#1 block encoding
+	// EME-PKCS1-v1_5 in Section 7.2.1 of [RFC3447] to form the "m" value
+	// used in the formulas above. See Section 13.1 of this document for
+	// notes on OpenPGP's use of PKCS#1.
 	for (size_t i = 0; ((i < in.size()) && (i < 1024)); i++, buflen++)
 		buffer[i] = in[i];
 	v = gcry_mpi_new(2048);
@@ -1886,7 +1881,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 		gcry_mpi_release(v);
 		return ret;
 	}
-
 	ret = gcry_pk_encrypt(&encryption, data, key);
 	if (ret)
 	{
