@@ -370,10 +370,176 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	delete [] hash;
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
+	(const BYTE algo, const size_t cnt, const OCTETS &in, OCTETS &out)
+{
+	int a = 0;
+	switch (algo)
+	{
+		case 1:
+			a = GCRY_MD_MD5;
+			break;
+		case 2:
+			a = GCRY_MD_SHA1;
+			break;
+		case 3:
+			a = GCRY_MD_RMD160;
+			break;
+		case 8:
+			a = GCRY_MD_SHA256;
+			break;
+		case 9:
+			a = GCRY_MD_SHA384;
+			break;
+		case 10:
+			a = GCRY_MD_SHA512;
+			break;
+		case 11:
+			a = GCRY_MD_SHA224;
+			break;
+		default:
+			return;
+	}
+	gcry_error_t ret;
+	gcry_md_hd_t hd;
+	ret = gcry_md_open(&hd, a, 0);
+	if (ret || (hd == NULL))
+		return;
+	for (size_t i = 0; i < in.size(); i++)
+		gcry_md_putc(hd, in[i]);
+	size_t c = in.size();
+	while (c < cnt)
+	{
+		for (size_t i = 0; (i < in.size()) && (c < cnt); i++, c++)
+			gcry_md_putc(hd, in[i]);
+	}
+	BYTE *hash = gcry_md_read(hd, a);
+	if (hash != NULL)
+	{
+		size_t dlen = gcry_md_get_algo_dlen(a);
+		for (size_t i = 0; i < dlen; i++)
+			out.push_back(hash[i]);
+	}
+	gcry_md_close(hd);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
+	(const BYTE algo, const size_t sklen, const std::string in, 
+	 const OCTETS &salt, const bool iterated, const BYTE octcnt, 
+	 OCTETS &out)
+{
+	// The count is coded into a one-octet number using the following
+	// formula:
+	//   #define EXPBIAS 6
+	//     count = ((Int32)16 + (c & 15)) << ((c >> 4) + EXPBIAS);
+	// The above formula is in C, where "Int32" is a type for a 32-bit
+	// integer, and the variable "c" is the coded count, Octet 10.
+	size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6); 
+	size_t hashlen = 0;
+	switch (algo)
+	{
+		case 1:
+			hashlen = 16; // GCRY_MD_MD5
+			break;
+		case 2:
+			hashlen = 20; // GCRY_MD_SHA1
+			break;
+		case 3:
+			hashlen = 20; // GCRY_MD_RMD160
+			break;
+		case 8:
+			hashlen = 32; // GCRY_MD_SHA256
+			break;
+		case 9:
+			hashlen = 48; // GCRY_MD_SHA384
+			break;
+		case 10:
+			hashlen = 64; // GCRY_MD_SHA512
+			break;
+		case 11:
+			hashlen = 28; // GCRY_MD_SHA224
+			break;
+		default:
+			return;
+	}
+	// Simple S2K hashes the passphrase to produce the session key. The
+	// manner in which this is done depends on the size of the session key
+	// (which will depend on the cipher used) and the size of the hash
+	// algorithm's output. If the hash size is greater than the session key
+	// size, the high-order (leftmost) octets of the hash are used as the
+	// key.
+	// If the hash size is less than the key size, multiple instances of
+	// the hash context are created -- enough to produce the required key
+	// data.
+	// These instances are preloaded with 0, 1, 2, ... octets of zeros
+	// (that is to say, the first instance has no preloading, the second
+	// gets preloaded with 1 octet of zero, the third is preloaded with
+	// two octets of zeros, and so forth).
+	// As the data is hashed, it is given independently to each hash
+	// context. Since the contexts have been initialized differently, they
+	// will each produce different hash output. Once the passphrase is
+	// hashed, the output data from the multiple hashes is concatenated,
+	// first hash leftmost, to produce the key data, with any excess octets
+	// on the right discarded.
+	// [...]
+	// Salted S2K is exactly like Simple S2K, except that the input to the
+	// hash function(s) consists of the 8 octets of salt from the S2K
+	// specifier, followed by the passphrase.
+	// [...]
+	// Iterated-Salted S2K hashes the passphrase and salt data multiple
+	// times. The total number of octets to be hashed is specified in the
+	// encoded count in the S2K specifier. Note that the resulting count
+	// value is an octet count of how many octets will be hashed, not an
+	// iteration count.
+	// Initially, one or more hash contexts are set up as with the other
+	// S2K algorithms, depending on how many octets of key data are needed.
+	// Then the salt, followed by the passphrase data, is repeatedly hashed
+	// until the number of octets specified by the octet count has been
+	// hashed. The one exception is that if the octet count is less than
+	// the size of the salt plus passphrase, the full salt plus passphrase
+	// will be hashed even though that is greater than the octet count.
+	// After the hashing is done, the data is unloaded from the hash
+	// context(s) as with the other S2K algorithms.
+	if (hashlen >= sklen)
+	{
+		OCTETS hash_in, hash_out;
+		hash_in.insert(hash_in.end(), salt.begin(), salt.end());
+		for (size_t i = 0; i < in.length(); i++)
+			hash_in.push_back(in[i]);
+		if (iterated)
+			HashCompute(algo, hashcnt, hash_in, hash_out);
+		else
+			HashCompute(algo, hash_in, hash_out);
+		for (size_t i = 0; (i < hash_out.size()) && (i < sklen); i++)
+			out.push_back(hash_out[i]);
+	}
+	else
+	{
+		size_t instances = (sklen / hashlen) + 1;
+		size_t skcnt = 0;
+		for (size_t j = 0; j < instances; j++)
+		{
+			OCTETS hash_in, hash_out;
+			for (size_t i = 0; i < j; i++)
+				hash_in.push_back(0x00); // preload zeros
+			hash_in.insert(hash_in.end(), salt.begin(), salt.end());
+			for (size_t i = 0; i < in.length(); i++)
+				hash_in.push_back(in[i]);
+			if (iterated)
+				HashCompute(algo, hashcnt, hash_in, hash_out);
+			else
+				HashCompute(algo, hash_in, hash_out);
+			for (size_t i = 0; (i < hash_out.size()) && 
+			     (skcnt < sklen); i++, skcnt++)
+				out.push_back(hash_out[i]);
+		}
+	}
+}
+
 // ===========================================================================
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTagEncode
-	(size_t tag, OCTETS &out)
+	(const BYTE tag, OCTETS &out)
 {
 	// use V4 packet format
 	out.push_back(tag | 0x80 | 0x40);

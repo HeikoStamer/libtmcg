@@ -191,9 +191,16 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const OCTETS &in, OCTETS &out);
 		static void HashCompute
 			(const BYTE algo, const OCTETS &in, OCTETS &out);
+		static void HashCompute
+			(const BYTE algo, const size_t cnt, const OCTETS &in,
+			 OCTETS &out);
+		static void S2KCompute
+			(const BYTE algo, const size_t sklen,
+			 const std::string in, const OCTETS &salt, 
+			 const bool iterated, const BYTE octcnt, OCTETS &out);
 
 		static void PacketTagEncode
-			(size_t tag, OCTETS &out); 
+			(const BYTE tag, OCTETS &out); 
 		static void PacketLengthEncode
 			(size_t len, OCTETS &out);
 		static void PacketTimeEncode
