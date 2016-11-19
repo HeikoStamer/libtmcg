@@ -2404,3 +2404,53 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	return 0;
 }
 
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
+	(const OCTETS &in, const gcry_sexp_t key, 
+	 const gcry_mpi_t r, const gcry_mpi_t s)
+{
+	BYTE buffer[1024];
+	gcry_sexp_t sigdata, signature;
+	gcry_mpi_t h;
+	gcry_error_t ret;
+	size_t buflen = 0, erroff;
+
+	for (size_t i = 0; ((i < in.size()) && (i < 1024)); i++, buflen++)
+		buffer[i] = in[i];
+std::cerr << "buflen=" << buflen << std::endl;
+	h = gcry_mpi_new(2048);
+	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
+	if (ret)
+	{
+		gcry_mpi_release(h);
+		return ret;
+	}
+	ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags raw) (value %M))", h);
+	if (ret)
+	{
+		gcry_mpi_release(h);
+		gcry_sexp_release(sigdata);
+		return ret;
+	}
+	ret = gcry_sexp_build(&signature, &erroff, "(sig-val (dsa (r %M) (s %M)))", r, s);
+	if (ret)
+	{
+		gcry_mpi_release(h);
+		gcry_sexp_release(signature);
+		gcry_sexp_release(sigdata);
+		return ret;
+	}
+	ret = gcry_pk_verify(signature, sigdata, key);
+	if (ret)
+	{
+		gcry_mpi_release(h);
+		gcry_sexp_release(signature);
+		gcry_sexp_release(sigdata);
+		return ret;
+	}
+	gcry_mpi_release(h);
+	gcry_sexp_release(signature);
+	gcry_sexp_release(sigdata);
+
+	return 0;
+}
+

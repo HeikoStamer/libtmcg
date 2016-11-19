@@ -117,11 +117,11 @@
 		BYTE preferedkeyserver[1024]; // string
 		bool primaryuserid;
 		BYTE policyuri[1024]; // string
-		BYTE keyflags[255]; // array of 1-octet flags
+		BYTE keyflags[32]; // n-octets of flags
 		BYTE signersuserid[1024]; // string
 		BYTE revocationcode;
 		BYTE revocationreason[1024]; // string
-		BYTE features[255]; // array of 1-octet flags
+		BYTE features[32]; // n-octets of flags
 		BYTE signaturetarget_pkalgo; // id of public-key algorithm
 		BYTE signaturetarget_hashalgo; // id of hash algorithm
 		BYTE signaturetarget_hash[1024]; // n-octets hash
@@ -294,6 +294,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static gcry_error_t AsymmetricSignDSA
 			(const OCTETS &in, const gcry_sexp_t key,
 			 gcry_mpi_t &r, gcry_mpi_t &s);
+		static gcry_error_t AsymmetricVerifyDSA
+			(const OCTETS &in, const gcry_sexp_t key, 
+	 		 const gcry_mpi_t r, const gcry_mpi_t s);
 };
 
 #endif

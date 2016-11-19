@@ -40,12 +40,12 @@ int main
 	bool pubdsa = false, subelg = false;
 	std::string u;
 	BYTE atype = 0, ptag = 0xFF;
-	BYTE dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[255], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[255];
+	BYTE dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
 	BYTE dsa_issuer[8], dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_issuer[8], elg_psa[255], elg_pha[255], elg_pca[255];
 	time_t dsa_sigtime, elg_sigtime;
 	OCTETS pkts, pub, sub, msg, lit, mdc, seipd, pkesk, all;
 	OCTETS seskey, prefix, enc, mdc_hashing, hash, keyid, pub_hashing, subkeyid, sub_hashing;
-	gcry_mpi_t dsa_p, dsa_q, dsa_g, dsa_y, elg_p, elg_g, elg_y, gk, myk;
+	gcry_mpi_t dsa_p, dsa_q, dsa_g, dsa_y, dsa_r, dsa_s, elg_p, elg_g, elg_y, elg_r, elg_s, gk, myk;
 	gcry_sexp_t dsakey, elgkey;
 	gcry_error_t ret;
 	size_t erroff;
@@ -55,9 +55,13 @@ int main
 	dsa_q = gcry_mpi_new(2048);
 	dsa_g = gcry_mpi_new(2048);
 	dsa_y = gcry_mpi_new(2048);
+	dsa_r = gcry_mpi_new(2048);
+	dsa_s = gcry_mpi_new(2048);
 	elg_p = gcry_mpi_new(2048);
 	elg_g = gcry_mpi_new(2048);
 	elg_y = gcry_mpi_new(2048);
+	elg_r = gcry_mpi_new(2048);
+	elg_s = gcry_mpi_new(2048);
 	atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(armored_pubkey, pkts);
 	std::cout << "ArmorDecode() = " << (int)atype << std::endl;
 	if (atype == 6)
@@ -94,16 +98,14 @@ int main
 						for (size_t i = 0; i < sizeof(dsa_issuer); i++)
 							dsa_issuer[i] = ctx.issuer[i];
 						for (size_t i = 0; i < sizeof(dsa_keyflags); i++)
-{
-std::cerr << std::hex << " flag = " << (int)ctx.keyflags[i] << std::endl;
 							dsa_keyflags[i] = ctx.keyflags[i];
-}
 						for (size_t i = 0; i < sizeof(dsa_psa); i++)
 							dsa_psa[i] = ctx.psa[i];
 						for (size_t i = 0; i < sizeof(dsa_pha); i++)
 							dsa_pha[i] = ctx.pha[i];
 						for (size_t i = 0; i < sizeof(dsa_pca); i++)
 							dsa_pca[i] = ctx.pca[i];
+						dsa_r = ctx.r, dsa_s = ctx.s;
 
 					}
 					else if (pubdsa && subelg)
@@ -196,37 +198,35 @@ std::cerr << std::hex << " flag = " << (int)ctx.keyflags[i] << std::endl;
 		return -1;
 	}
 	std::cout << "Key flags: ";
+	size_t flags = 0;
 	for (size_t i = 0; i < sizeof(dsa_keyflags); i++)
 	{
-		switch (dsa_keyflags[i])
-		{
-			case 0x00:
-				break;
-			case 0x01: // The key may be used to certify other keys.
-				std::cout << "C";
-			case 0x02: // The key may be used to sign data.
-				std::cout << "S";
-			case 0x04: // The key may be used encrypt communications.
-				std::cout << "E";
-			case 0x08: // The key may be used encrypt storage.
-				std::cout << "e";
-			case 0x10: // The private component of this key may have been split by a secret-sharing mechanism.
-				std::cout << "D";
-			case 0x20: // The key may be used for authentication.
-				std::cout << "A";
-			case 0x80: // The private component of this key may be in the possession of more than one person.
-				std::cout << "M";
-			default:
-				dsa_flags.push_back(dsa_keyflags[i]);
-				break;
-		}
+		if (dsa_keyflags[i])	
+			flags = (flags << 8) + dsa_keyflags[i];
+		else
+			break;
 	}
+	if ((flags & 0x01) == 0x01)
+		std::cout << "C"; // The key may be used to certify other keys.
+	if ((flags & 0x02) == 0x02)
+		std::cout << "S"; // The key may be used to sign data.
+	if ((flags & 0x04) == 0x04)
+		std::cout << "E"; // The key may be used encrypt communications.
+	if ((flags & 0x08) == 0x08)
+		std::cout << "e"; // The key may be used encrypt storage.
+	if ((flags & 0x10) == 0x10)
+		std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
+	if ((flags & 0x20) == 0x20)
+		std::cout << "A"; // The key may be used for authentication.
+	if ((flags & 0x80) == 0x80)
+		std::cout << "M"; // The private component of this key may be in the possession of more than one person.
 	std::cout << std::endl;
+	dsa_flags.push_back(dsa_keyflags[0]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(dsa_sigtype, dsa_sigtime, dsa_flags, keyid, uidsig_hashing);
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, dsa_hashalgo, hash, uidsig_left);
-
-
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, dsa_r, dsa_s);
+std::cerr << "ret=" << gcry_err_code(ret) << std::endl;
 
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
@@ -294,9 +294,13 @@ std::cerr << std::hex << " flag = " << (int)ctx.keyflags[i] << std::endl;
 	gcry_mpi_release(dsa_q);
 	gcry_mpi_release(dsa_g);
 	gcry_mpi_release(dsa_y);
+	gcry_mpi_release(dsa_r);
+	gcry_mpi_release(dsa_s);
 	gcry_mpi_release(elg_p);
 	gcry_mpi_release(elg_g);
 	gcry_mpi_release(elg_y);
+	gcry_mpi_release(elg_r);
+	gcry_mpi_release(elg_s);
 	gcry_mpi_release(gk);
 	gcry_mpi_release(myk);
 	gcry_sexp_release(dsakey);

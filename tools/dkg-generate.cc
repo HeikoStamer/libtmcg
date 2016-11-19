@@ -177,9 +177,7 @@ void start_instance
 				pub_hashing.push_back(pub[i]);
 			CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, uid);
-			dsaflags.push_back(0x01);
-			dsaflags.push_back(0x02);
-			dsaflags.push_back(0x20);
+			dsaflags.push_back(0x01 | 0x02 | 0x20);
 			sigtime = time(NULL); // current time
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, sigtime, dsaflags, keyid, uidsig_hashing);
 			CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, 8, hash, uidsig_left);
@@ -195,8 +193,7 @@ void start_instance
 				assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(keytime, p, g, y, sub);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(keytime, p, g, y, x, pp, ssb);
-			elgflags.push_back(0x04);
-			elgflags.push_back(0x10);
+			elgflags.push_back(0x04 | 0x10);
 			sigtime = time(NULL); // current time
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, sigtime, elgflags, keyid, subsig_hashing);
 			for (size_t i = 6; i < sub.size(); i++)
