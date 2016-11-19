@@ -202,26 +202,26 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void PacketTagEncode
 			(const BYTE tag, OCTETS &out); 
 		static void PacketLengthEncode
-			(size_t len, OCTETS &out);
+			(const size_t len, OCTETS &out);
 		static void PacketTimeEncode
 			(const time_t in, OCTETS &out);
 		static void PacketTimeEncode
 			(OCTETS &out);
 		static void PacketMPIEncode
-			(gcry_mpi_t in, OCTETS &out, size_t &sum);
+			(const gcry_mpi_t in, OCTETS &out, size_t &sum);
 		static void PacketMPIEncode
-			(gcry_mpi_t in, OCTETS &out);
+			(const gcry_mpi_t in, OCTETS &out);
 		static size_t PacketMPIDecode
 			(const OCTETS &in, gcry_mpi_t &out, size_t &sum);
 		static size_t PacketMPIDecode
 			(const OCTETS &in, gcry_mpi_t &out);
 
 		static void PacketPkeskEncode
-			(const OCTETS &keyid, gcry_mpi_t gk, gcry_mpi_t myk,
-			 OCTETS &out);
+			(const OCTETS &keyid, const gcry_mpi_t gk,
+			 const gcry_mpi_t myk, OCTETS &out);
 		static void PacketSigEncode
 			(const OCTETS &hashing, const OCTETS &left,
-			 gcry_mpi_t r, gcry_mpi_t s, OCTETS &out);
+			 const gcry_mpi_t r, const gcry_mpi_t s, OCTETS &out);
 		static void SubpacketEncode
 			(const BYTE type, bool critical, const OCTETS &in,
 			 OCTETS &out);
@@ -230,18 +230,22 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const OCTETS &flags, const OCTETS &keyid, 
 			 OCTETS &out);
 		static void PacketPubEncode
-			(const time_t keytime, gcry_mpi_t p, gcry_mpi_t q,
-			 gcry_mpi_t g, gcry_mpi_t y, OCTETS &out);
+			(const time_t keytime, const gcry_mpi_t p, 
+			 const gcry_mpi_t q, const gcry_mpi_t g, 
+			 const gcry_mpi_t y, OCTETS &out);
 		static void PacketSecEncode
-			(const time_t keytime, gcry_mpi_t p, gcry_mpi_t q, 
-			 gcry_mpi_t g, gcry_mpi_t y, gcry_mpi_t x,
-			 OCTETS &out);
+			(const time_t keytime, const gcry_mpi_t p, 
+			 const gcry_mpi_t q, const gcry_mpi_t g, 
+			 const gcry_mpi_t y, const gcry_mpi_t x,
+			 const std::string passphrase, OCTETS &out);
 		static void PacketSubEncode
-			(const time_t keytime, gcry_mpi_t p, gcry_mpi_t g, 
-			 gcry_mpi_t y, OCTETS &out);
+			(const time_t keytime, const gcry_mpi_t p, 
+			 const gcry_mpi_t g, const gcry_mpi_t y, OCTETS &out);
 		static void PacketSsbEncode
-			(const time_t keytime, gcry_mpi_t p, gcry_mpi_t g, 
-			 gcry_mpi_t y, gcry_mpi_t x, OCTETS &out);
+			(const time_t keytime, const gcry_mpi_t p, 
+			 const gcry_mpi_t g, const gcry_mpi_t y, 
+			 const gcry_mpi_t x, const std::string passphrase,
+			 OCTETS &out);
 		static void PacketSedEncode
 			(const OCTETS &in, OCTETS &out);
 		static void PacketLitEncode
@@ -259,14 +263,14 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(OCTETS &in, TMCG_OPENPGP_CONTEXT &out);
 
 		static gcry_error_t CertificationHash
-			(const OCTETS &primary, std::string uid,
+			(const OCTETS &primary, const std::string uid,
 			 const OCTETS &trailer, gcry_mpi_t &h, OCTETS &left);
 		static gcry_error_t SubkeyBindingHash
 			(const OCTETS &primary, const OCTETS &subkey,
 			 const OCTETS &trailer, gcry_mpi_t &h, OCTETS &left);
 		static gcry_error_t SymmetricEncryptAES256
 			(const OCTETS &in, OCTETS &seskey, OCTETS &prefix,
-			bool resync, OCTETS &out);
+			const bool resync, OCTETS &out);
 		static gcry_error_t AsymmetricEncryptElgamal
 			(const OCTETS &in, const gcry_sexp_t key, 
 			 gcry_mpi_t &gk, gcry_mpi_t &myk);

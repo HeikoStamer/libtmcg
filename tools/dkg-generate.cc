@@ -41,7 +41,7 @@ int pipefd[N][N][2], broadcast_pipefd[N][N][2];
 pid_t pid[N];
 
 void start_instance
-	(std::istream& crs_in, size_t whoami)
+	(std::istream &crs_in, const size_t whoami, const std::string u, const std::string pp)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-generate (fork)");
@@ -130,7 +130,7 @@ void start_instance
 
 			// create an OpenPGP DSA-based primary key and Elgamal-based subkey
 			char buffer[2048];
-			std::string out, crcout, armor, u;
+			std::string out, crcout, armor;
 			OCTETS all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
 			OCTETS pub_hashing, sub_hashing;
 			OCTETS uidsig_hashing, subsig_hashing, uidsig_left, subsig_left;
@@ -172,11 +172,10 @@ void start_instance
 				" (private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M))))", p, q, g, y, p, q, g, y, x);
 			assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(keytime, p, q, g, y, pub);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(keytime, p, q, g, y, x, sec);
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(keytime, p, q, g, y, x, pp, sec);
 			for (size_t i = 6; i < pub.size(); i++)
 				pub_hashing.push_back(pub[i]);
 			CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
-			u = "LibTMCG dkg-generate"; // TODO: uid should read from cin
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, uid);
 			dsaflags.push_back(0x01);
 			dsaflags.push_back(0x02);
@@ -199,7 +198,7 @@ void start_instance
 				ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
 				assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(keytime, p, g, y, sub);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(keytime, p, g, y, x, ssb);
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(keytime, p, g, y, x, pp, ssb);
 			elgflags.push_back(0x04);
 			elgflags.push_back(0x10);
 			sigtime = time(NULL); // current time
@@ -294,6 +293,12 @@ int main
 
 	BarnettSmartVTMF_dlog 	*vtmf;
 	std::stringstream 	crs;
+	std::string		uid, passphrase;
+
+	std::cout << "1. Please enter an OpenPGP-style user ID: ";
+	std::getline(std::cin, uid);
+	std::cout << "2. Choose a passphrase to protect the private key: ";
+	std::getline(std::cin, passphrase);
 
 	// create and check VTMF instance
 	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
@@ -317,9 +322,9 @@ int main
 		}
 	}
 	
-	// start childs (all correct)
+	// start childs
 	for (size_t i = 0; i < N; i++)
-		start_instance(crs, i);
+		start_instance(crs, i, uid, passphrase);
 	
 	// wait for childs and close pipes
 	for (size_t i = 0; i < N; i++)
