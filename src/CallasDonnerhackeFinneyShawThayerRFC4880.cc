@@ -26,6 +26,111 @@
 
 #include "CallasDonnerhackeFinneyShawThayerRFC4880.hh"
 
+size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength
+	(const BYTE algo)
+{
+	switch (algo)
+	{
+		case 0: // Plaintext or unencrypted data
+			return 0;
+		case 1: // IDEA
+			return 16;
+		case 2: // TripleDES (DES-EDE, 168 bit key derived from 192)
+			return 24;
+		case 3: // CAST5 (128 bit key, as per [RFC2144])
+			return 16;
+		case 4: // Blowfish (128 bit key, 16 rounds)
+			return 16;
+		case 7: // AES with 128-bit key
+			return 16;
+		case 8: // AES with 192-bit key
+			return 24;
+		case 9: // AES with 256-bit key
+			return 32;
+		case 10: // Twofish with 256-bit key
+			return 32;
+		default:
+			return 0;
+	}
+}
+
+size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength
+	(const BYTE algo)
+{
+	// Most ciphers have a block size of 8 octets. The AES and
+	// Twofish have a block size of 16 octets.
+	// [...]
+	// If secret data is encrypted (string-to-key usage octet
+	// not zero), an Initial Vector (IV) of the same length as the
+	// cipher’s block size.
+	switch (algo)
+	{
+		case 0: // Plaintext or unencrypted data
+			return 0;
+		case 1: // IDEA
+		case 2: // TripleDES
+		case 3: // CAST5
+		case 4: // Blowfish
+			return 8;
+		case 7: // AES with 128-bit key
+		case 8: // AES with 192-bit key
+		case 9: // AES with 256-bit key
+		case 10: // Twofish with 256-bit key
+			return 16;
+		default:
+			return 0;
+	}
+}
+
+size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashLength
+	(const BYTE algo)
+{
+	switch (algo)
+	{
+		case 1: // MD5
+			return 16;
+		case 2: // SHA-1
+		case 3: // RIPE-MD/160
+			return 20;
+		case 8: // SHA256
+			return 32;
+		case 9: // SHA384
+			return 48;
+		case 10: // SHA512
+			return 64;
+		case 11: // SHA224
+			return 28;
+		default:
+			return 0;
+	}
+}
+
+int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRY
+	(const BYTE algo)
+{
+	switch (algo)
+	{
+		case 1: // MD5
+			return GCRY_MD_MD5;
+		case 2: // SHA-1
+			return GCRY_MD_SHA1;
+		case 3: // RIPE-MD/160
+			return GCRY_MD_RMD160;
+		case 8: // SHA256
+			return GCRY_MD_SHA256;
+		case 9: // SHA384
+			return GCRY_MD_SHA384;
+		case 10: // SHA512
+			return GCRY_MD_SHA512;
+		case 11: // SHA224
+			return GCRY_MD_SHA224;
+		default:
+			return 0;
+	}
+}
+
+// ===========================================================================
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 	(const OCTETS &in, std::string &out)
 {
@@ -331,33 +436,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	(const BYTE algo, const OCTETS &in, OCTETS &out)
 {
-	int a = 0;
-	switch (algo)
-	{
-		case 1:
-			a = GCRY_MD_MD5;
-			break;
-		case 2:
-			a = GCRY_MD_SHA1;
-			break;
-		case 3:
-			a = GCRY_MD_RMD160;
-			break;
-		case 8:
-			a = GCRY_MD_SHA256;
-			break;
-		case 9:
-			a = GCRY_MD_SHA384;
-			break;
-		case 10:
-			a = GCRY_MD_SHA512;
-			break;
-		case 11:
-			a = GCRY_MD_SHA224;
-			break;
-		default:
-			return;
-	}
+	int a = AlgorithmHashGCRY(algo);
 	size_t dlen = gcry_md_get_algo_dlen(a);
 	BYTE *buffer = new BYTE[in.size()];
 	BYTE *hash = new BYTE[dlen];
@@ -373,33 +452,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	(const BYTE algo, const size_t cnt, const OCTETS &in, OCTETS &out)
 {
-	int a = 0;
-	switch (algo)
-	{
-		case 1:
-			a = GCRY_MD_MD5;
-			break;
-		case 2:
-			a = GCRY_MD_SHA1;
-			break;
-		case 3:
-			a = GCRY_MD_RMD160;
-			break;
-		case 8:
-			a = GCRY_MD_SHA256;
-			break;
-		case 9:
-			a = GCRY_MD_SHA384;
-			break;
-		case 10:
-			a = GCRY_MD_SHA512;
-			break;
-		case 11:
-			a = GCRY_MD_SHA224;
-			break;
-		default:
-			return;
-	}
+	int a = AlgorithmHashGCRY(algo);
 	gcry_error_t ret;
 	gcry_md_hd_t hd;
 	ret = gcry_md_open(&hd, a, 0);
@@ -435,33 +488,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 	// The above formula is in C, where "Int32" is a type for a 32-bit
 	// integer, and the variable "c" is the coded count, Octet 10.
 	size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6); 
-	size_t hashlen = 0;
-	switch (algo)
-	{
-		case 1:
-			hashlen = 16; // GCRY_MD_MD5
-			break;
-		case 2:
-			hashlen = 20; // GCRY_MD_SHA1
-			break;
-		case 3:
-			hashlen = 20; // GCRY_MD_RMD160
-			break;
-		case 8:
-			hashlen = 32; // GCRY_MD_SHA256
-			break;
-		case 9:
-			hashlen = 48; // GCRY_MD_SHA384
-			break;
-		case 10:
-			hashlen = 64; // GCRY_MD_SHA512
-			break;
-		case 11:
-			hashlen = 28; // GCRY_MD_SHA224
-			break;
-		default:
-			return;
-	}
+	size_t hashlen = AlgorithmHashLength(algo);
+
 	// Simple S2K hashes the passphrase to produce the session key. The
 	// manner in which this is done depends on the size of the session key
 	// (which will depend on the cipher used) and the size of the hash
@@ -595,6 +623,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
 	{
 		out.push_back(buffer[i]);
 		sum += buffer[i];
+		sum %= 65536;
 	}
 	delete [] buffer;
 }
@@ -616,6 +645,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 	{
 		buffer[i] = in[2 + i];
 		sum += buffer[i];
+		sum %= 65536;
 	}
 	ret = gcry_mpi_scan(&out, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	delete [] buffer;
@@ -895,7 +925,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	// should rather use the SHA-1 hash denoted with a usage octet of 254.
 	// The reason for this is that there are some attacks that involve
 	// undetectably modifying the secret key.
-	out.push_back(0xFE); // S2K convention: specifier given + SHA-1 hash
+	out.push_back(254); // S2K convention: specifier given + SHA-1 hash
 	out.push_back(9); // AES256
 	out.push_back(0x03); // Iterated and Salted S2K
 	out.push_back(8); // SHA256
@@ -1003,7 +1033,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	PacketMPIEncode(p, out); // MPI p
 	PacketMPIEncode(g, out); // MPI g
 	PacketMPIEncode(y, out); // MPI y
-	out.push_back(0xFE); // S2K convention: specifier given + SHA-1 hash
+	out.push_back(254); // S2K convention: specifier given + SHA-1 hash
 	out.push_back(9); // AES256
 	out.push_back(0x03); // Iterated and Salted S2K
 	out.push_back(8); // SHA256
@@ -1562,7 +1592,8 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	else
 		return 0; // unknown error
 std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
-	BYTE sptype = 0xFF;
+	BYTE sptype = 0xFF, s2kconv = 0;
+	size_t mlen = 0;
 	OCTETS pkt, hspd, uspd, mpis;
 	pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+len);
 	memset(&out, 0, sizeof(out)); // clear output context
@@ -1588,7 +1619,7 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			if ((out.pkalgo == 1) || (out.pkalgo == 2))
 			{
 				// Algorithm-Specific Fields for RSA 
-				size_t mlen = PacketMPIDecode(mpis, out.me);
+				mlen = PacketMPIDecode(mpis, out.me);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -1596,7 +1627,7 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			else if (out.pkalgo == 16)
 			{
 				// Algorithm-Specific Fields for Elgamal
-				size_t mlen = PacketMPIDecode(mpis, out.gk);
+				mlen = PacketMPIDecode(mpis, out.gk);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -1648,7 +1679,7 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			if ((out.pkalgo == 1) || (out.pkalgo == 3))
 			{
 				// Algorithm-Specific Fields for RSA 
-				size_t mlen = PacketMPIDecode(mpis, out.md);
+				mlen = PacketMPIDecode(mpis, out.md);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -1656,7 +1687,7 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			else if (out.pkalgo == 17)
 			{
 				// Algorithm-Specific Fields for DSA 
-				size_t mlen = PacketMPIDecode(mpis, out.r);
+				mlen = PacketMPIDecode(mpis, out.r);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -1699,7 +1730,7 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
 			{
 				// Algorithm-Specific Fields for RSA keys
-				size_t mlen = PacketMPIDecode(mpis, out.n);
+				mlen = PacketMPIDecode(mpis, out.n);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -1716,35 +1747,27 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mpis.erase(mpis.begin(), mpis.begin()+2);
-				if (mpis[0] != 0)
-					return 0; // error: S2K not supported
-				mpis.erase(mpis.begin(), mpis.begin()+1);
 				mlen = PacketMPIDecode(mpis, out.p);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mpis.erase(mpis.begin(), mpis.begin()+2);
-				if (mpis[0] != 0)
-					return 0; // error: S2K not supported
-				mpis.erase(mpis.begin(), mpis.begin()+1);
 				mlen = PacketMPIDecode(mpis, out.q);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mpis.erase(mpis.begin(), mpis.begin()+2);
-				if (mpis[0] != 0)
-					return 0; // error: S2K not supported
-				mpis.erase(mpis.begin(), mpis.begin()+1);
 				mlen = PacketMPIDecode(mpis, out.u);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mpis.erase(mpis.begin(), mpis.begin()+2);
+				break;
 			}
 			else if (out.pkalgo == 16)
 			{
 				// Algorithm-Specific Fields for Elgamal keys
-				size_t mlen = PacketMPIDecode(mpis, out.p);
+				mlen = PacketMPIDecode(mpis, out.p);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -1756,20 +1779,11 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				// secret fields
-				if (mpis[0] != 0)
-					return 0; // error: S2K not supported
-				mpis.erase(mpis.begin(), mpis.begin()+1);
-				mlen = PacketMPIDecode(mpis, out.x);
-				if (!mlen)
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mpis.erase(mpis.begin(), mpis.begin()+2);
 			}
 			else if (out.pkalgo == 17)
 			{
 				// Algorithm-Specific Fields for DSA keys
-				size_t mlen = PacketMPIDecode(mpis, out.p);
+				mlen = PacketMPIDecode(mpis, out.p);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -1785,16 +1799,85 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				// secret fields
-				if (mpis[0] != 0)
-					return 0; // error: S2K not supported
-				mpis.erase(mpis.begin(), mpis.begin()+1);
-				mlen = PacketMPIDecode(mpis, out.x);
+			}
+			// secret fields
+			if (mpis.size() < 1)
+				return 0; // error: no S2K convention
+			s2kconv = mpis[0];
+			mpis.erase(mpis.begin(), mpis.begin()+1);
+			if (s2kconv == 0)
+			{
+				// not encrypted + checksum
+				size_t chksum = 0;
+				mlen = PacketMPIDecode(mpis, out.x, chksum);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				if (mpis.size() < 2)
+					return 0; // error: no checksum
+				size_t chksum2 = (mpis[0] << 8) + mpis[1];
+				if (chksum != chksum2)
+					return 0; // error: checksum mismatch
 				mpis.erase(mpis.begin(), mpis.begin()+2);
 			}
+			else if (s2kconv == 254)
+			{
+				// encrypted + SHA-1 hash
+				if (mpis.size() < 1)
+					return 0; // error: no sym. algorithm
+				out.symalgo = mpis[0];
+				mpis.erase(mpis.begin(), mpis.begin()+1);
+				if (mpis.size() < 2)
+					return 0; // error: bad S2K specifier
+				out.s2k_type = mpis[0];
+				out.s2k_hashalgo = mpis[1];
+				mpis.erase(mpis.begin(), mpis.begin()+2);
+				if (out.s2k_type == 0x00)
+				{
+					// Simple S2K
+				}
+				else if (out.s2k_type == 0x01)
+				{
+					// Salted S2K
+					if (mpis.size() < 8)
+						return 0; // error: no salt
+					for (size_t i = 0; i < 8; i++)
+						out.s2k_salt[i] = mpis[i];
+					mpis.erase(mpis.begin(), 
+						mpis.begin()+8);
+				}
+				else if (out.s2k_type == 0x03)
+				{
+					// Iterated and Salted S2K
+					if (mpis.size() < 8)
+						return 0; // error: no salt
+					for (size_t i = 0; i < 8; i++)
+						out.s2k_salt[i] = mpis[i];
+					mpis.erase(mpis.begin(), 
+						mpis.begin()+8);
+					if (mpis.size() < 1)
+						return 0; // error: no count
+					out.s2k_count = mpis[0];
+					mpis.erase(mpis.begin(), 
+						mpis.begin()+1);
+				}
+				else
+					return 0; // unknown S2K specifier
+				size_t ivlen = AlgorithmIVLength(out.symalgo);
+				if (mpis.size() < ivlen)
+					return 0; // error: no IV
+				for (size_t i = 0; i < ivlen; i++)
+					out.iv[i] = mpis[i];
+				mpis.erase(mpis.begin(), mpis.begin()+1);
+				if (mpis.size() < 22)
+					return 0; // error: bad encrypted data
+				out.encdatalen = mpis.size();
+				out.encdata = new BYTE[out.encdatalen];
+				for (size_t i = 0; i < out.encdatalen; i++)
+					out.encdata[i] = mpis[i];
+			}
+			else
+				return 0; // S2K encryption not supported
 			break;
 		case 6: // Public-Key Packet
 		case 14: // Public-Subkey Packet
@@ -1810,7 +1893,7 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
 			{
 				// Algorithm-Specific Fields for RSA keys
-				size_t mlen = PacketMPIDecode(mpis, out.n);
+				mlen = PacketMPIDecode(mpis, out.n);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -1822,7 +1905,7 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			else if (out.pkalgo == 16)
 			{
 				// Algorithm-Specific Fields for Elgamal keys
-				size_t mlen = PacketMPIDecode(mpis, out.p);
+				mlen = PacketMPIDecode(mpis, out.p);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -1838,7 +1921,7 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			else if (out.pkalgo == 17)
 			{
 				// Algorithm-Specific Fields for DSA keys
-				size_t mlen = PacketMPIDecode(mpis, out.p);
+				mlen = PacketMPIDecode(mpis, out.p);
 				if (!mlen)
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -1862,18 +1945,18 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			out.compalgo = pkt[0];
 			if (out.compalgo > 2)
 				return 0; // error: algorithm not supported
-			out.compresseddatalen = pkt.size();
-			out.compresseddata = new BYTE[out.compresseddatalen];
-			for (size_t i = 0; i < out.compresseddatalen; i++)
-				out.compresseddata[i] = pkt[1+i];
+			out.compdatalen = pkt.size();
+			out.compdata = new BYTE[out.compdatalen];
+			for (size_t i = 0; i < out.compdatalen; i++)
+				out.compdata[i] = pkt[1+i];
 			break;
 		case 9: // Symmetrically Encrypted Data Packet
 			if (pkt.size() == 0)
 				return 0; // error: empty packet body
-			out.encrypteddatalen = pkt.size();
-			out.encrypteddata = new BYTE[out.encrypteddatalen];
-			for (size_t i = 0; i < out.encrypteddatalen; i++)
-				out.encrypteddata[i] = pkt[i];
+			out.encdatalen = pkt.size();
+			out.encdata = new BYTE[out.encdatalen];
+			for (size_t i = 0; i < out.encdatalen; i++)
+				out.encdata[i] = pkt[i];
 			break;
 		case 10: // Marker Packet
 			if (pkt.size() != 3)
@@ -1911,10 +1994,10 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			out.version = pkt[0];
 			if (out.version != 1)
 				return 0; // error: version not supported
-			out.encrypteddatalen = pkt.size() - 1;
-			out.encrypteddata = new BYTE[out.encrypteddatalen];
-			for (size_t i = 0; i < out.encrypteddatalen; i++)
-				out.encrypteddata[i] = pkt[1+i];
+			out.encdatalen = pkt.size() - 1;
+			out.encdata = new BYTE[out.encdatalen];
+			for (size_t i = 0; i < out.encdatalen; i++)
+				out.encdata[i] = pkt[1+i];
 			break;
 		case 19: // Modification Detection Code Packet
 			if (pkt.size() != 20)
@@ -2175,7 +2258,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 			gcry_cipher_close(hd);
 			return ret;
 		}
-		out.push_back(b);
+		out.push_back(b); // encrypted input
 	}
 	gcry_cipher_close(hd);
 

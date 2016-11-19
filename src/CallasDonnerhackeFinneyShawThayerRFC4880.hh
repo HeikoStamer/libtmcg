@@ -142,11 +142,17 @@
 		gcry_mpi_t g;
 		gcry_mpi_t y;
 		gcry_mpi_t x;
+		BYTE symalgo;
+		BYTE s2k_type;
+		BYTE s2k_hashalgo;
+		BYTE s2k_salt[8];
+		BYTE s2k_count;
+		BYTE iv[32];
+		BYTE *encdata; // pointer to an allocated buffer with data
+		size_t encdatalen;
 		BYTE compalgo;
-		BYTE *compresseddata; // pointer to an allocated buffer with data
-		size_t compresseddatalen;
-		BYTE *encrypteddata; // pointer to an allocated buffer with data
-		size_t encrypteddatalen;
+		BYTE *compdata; // pointer to an allocated buffer with data
+		size_t compdatalen;
 		BYTE dataformat;
 		size_t datafilenamelen;
 		BYTE datafilename[255]; // filename of specified length
@@ -173,6 +179,15 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		};
 
 	public:
+		static size_t AlgorithmKeyLength
+			(const BYTE algo);
+		static size_t AlgorithmIVLength
+			(const BYTE algo);
+		static size_t AlgorithmHashLength
+			(const BYTE algo);
+		static int AlgorithmHashGCRY
+			(const BYTE algo);
+
 		static void Radix64Encode
 			(const OCTETS &in, std::string &out);
 		static void Radix64Decode
