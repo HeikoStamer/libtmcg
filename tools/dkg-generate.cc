@@ -134,9 +134,10 @@ void start_instance
 			OCTETS all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
 			OCTETS pub_hashing, sub_hashing;
 			OCTETS uidsig_hashing, subsig_hashing, uidsig_left, subsig_left;
+			OCTETS hash;
 			time_t keytime, sigtime;
-			gcry_mpi_t p, q, g, y, x, r, s, h;
-			gcry_sexp_t key, signature, sigdata;
+			gcry_sexp_t key;
+			gcry_mpi_t p, q, g, y, x, r, s;
 			gcry_error_t ret;
 			size_t erroff;
 			mpz_t dsa_y, dsa_x;
@@ -151,7 +152,6 @@ void start_instance
 			x = gcry_mpi_new(2048);
 			r = gcry_mpi_new(2048);
 			s = gcry_mpi_new(2048);
-			h = gcry_mpi_new(2048);
 				mpz_get_str(buffer, 16, vtmf->p);			
 				ret = gcry_mpi_scan(&p, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
 				assert(!ret); 
@@ -182,15 +182,11 @@ void start_instance
 			dsaflags.push_back(0x20);
 			sigtime = time(NULL); // current time
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, sigtime, dsaflags, keyid, uidsig_hashing);
-			ret = CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, h, uidsig_left);
-			assert(!ret);
-			ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags raw) (value %M))", h);
-			assert(!ret);
-			ret = gcry_pk_sign(&signature, sigdata, key);
-			assert(!ret);
-			ret = gcry_sexp_extract_param(signature, NULL, "rs", &r, &s, NULL);
+			CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, 8, hash, uidsig_left);
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
 			assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(uidsig_hashing, uidsig_left, r, s, uidsig);
+			hash.clear();
 				mpz_get_str(buffer, 16, dkg->y);			
 				ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
 				assert(!ret);
@@ -205,13 +201,8 @@ void start_instance
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, sigtime, elgflags, keyid, subsig_hashing);
 			for (size_t i = 6; i < sub.size(); i++)
 				sub_hashing.push_back(sub[i]);
-			ret = CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, subsig_hashing, h, subsig_left);
-			assert(!ret);
-			ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags raw) (value %M))", h);
-			assert(!ret);
-			ret = gcry_pk_sign(&signature, sigdata, key);
-			assert(!ret);
-			ret = gcry_sexp_extract_param(signature, NULL, "rs", &r, &s, NULL);
+			CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, subsig_hashing, 8, hash, subsig_left);
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
 			assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(subsig_hashing, subsig_left, r, s, subsig);
 			// export generated public key in OpenPGP armor format
@@ -239,10 +230,7 @@ void start_instance
 			gcry_mpi_release(x);
 			gcry_mpi_release(r);
 			gcry_mpi_release(s);
-			gcry_mpi_release(h);
 			gcry_sexp_release(key);
-			gcry_sexp_release(signature);
-			gcry_sexp_release(sigdata);
 			
 			// release DKG
 			delete dkg;

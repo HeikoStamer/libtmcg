@@ -277,18 +277,23 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static BYTE PacketDecode
 			(OCTETS &in, TMCG_OPENPGP_CONTEXT &out);
 
-		static gcry_error_t CertificationHash
-			(const OCTETS &primary, const std::string uid,
-			 const OCTETS &trailer, gcry_mpi_t &h, OCTETS &left);
-		static gcry_error_t SubkeyBindingHash
+		static void CertificationHash
+			(const OCTETS &key, const std::string uid,
+			 const OCTETS &trailer, const BYTE &hashalgo,
+			 OCTETS &hash, OCTETS &left);
+		static void SubkeyBindingHash
 			(const OCTETS &primary, const OCTETS &subkey,
-			 const OCTETS &trailer, gcry_mpi_t &h, OCTETS &left);
+			 const OCTETS &trailer, const BYTE &hashalgo,
+			 OCTETS &hash, OCTETS &left);
 		static gcry_error_t SymmetricEncryptAES256
 			(const OCTETS &in, OCTETS &seskey, OCTETS &prefix,
 			const bool resync, OCTETS &out);
 		static gcry_error_t AsymmetricEncryptElgamal
 			(const OCTETS &in, const gcry_sexp_t key, 
 			 gcry_mpi_t &gk, gcry_mpi_t &myk);
+		static gcry_error_t AsymmetricSignDSA
+			(const OCTETS &in, const gcry_sexp_t key,
+			 gcry_mpi_t &r, gcry_mpi_t &s);
 };
 
 #endif

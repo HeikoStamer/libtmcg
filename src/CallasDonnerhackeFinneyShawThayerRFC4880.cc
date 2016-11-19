@@ -2065,23 +2065,21 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 
 // ===========================================================================
 
-gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
-	(const OCTETS &primary, const std::string uid, const OCTETS &trailer, 
-	 gcry_mpi_t &h, OCTETS &left)
+void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
+	(const OCTETS &key, const std::string uid, const OCTETS &trailer, 
+	 const BYTE &hashalgo, OCTETS &hash, OCTETS &left)
 {
 	OCTETS hash_input;
-	BYTE buffer[1024];
-	size_t uidlen = uid.length(), buflen = 0;
-	gcry_error_t ret;
+	size_t uidlen = uid.length();
 
 	// When a signature is made over a key, the hash data starts with the
 	// octet 0x99, followed by a two-octet length of the key, and then body
 	// of the key packet. (Note that this is an old-style packet header for
 	// a key packet with two-octet length.)
 	hash_input.push_back(0x99);
-	hash_input.push_back(primary.size() >> 8);
-	hash_input.push_back(primary.size());
-	hash_input.insert(hash_input.end(), primary.begin(), primary.end());
+	hash_input.push_back(key.size() >> 8);
+	hash_input.push_back(key.size());
+	hash_input.insert(hash_input.end(), key.begin(), key.end());
 	// A certification signature (type 0x10 through 0x13) hashes the User
 	// ID being bound to the key into the hash context after the above
 	// data. [...] A V4 certification hashes the constant 0xB4 for User
@@ -2113,24 +2111,16 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
-	HashCompute(8, hash_input, left);
-	for (size_t i = 0; ((i < left.size()) && (i < 1024)); i++, buflen++)
-		buffer[i] = left[i];
-	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
-	while (left.size() > 2)
-		left.pop_back();
-
-	return ret;
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; i < 2; i++)
+		left.push_back(hash[i]);
 }
 
-gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
+void CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 	(const OCTETS &primary, const OCTETS &subkey, const OCTETS &trailer,
-	 gcry_mpi_t &h, OCTETS &left)
+	 const BYTE &hashalgo, OCTETS &hash, OCTETS &left)
 {
 	OCTETS hash_input;
-	BYTE buffer[1024];
-	size_t buflen = 0;
-	gcry_error_t ret;
 
 	// When a signature is made over a key, the hash data starts with the
 	// octet 0x99, followed by a two-octet length of the key, and then body
@@ -2164,14 +2154,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
-	HashCompute(8, hash_input, left);
-	for (size_t i = 0; ((i < left.size()) && (i < 1024)); i++, buflen++)
-		buffer[i] = left[i];
-	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
-	while (left.size() > 2)
-		left.pop_back();
-
-	return ret;
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; i < 2; i++)
+		left.push_back(hash[i]);
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
@@ -2318,7 +2303,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
-	(const OCTETS &in, const gcry_sexp_t key, gcry_mpi_t &gk, gcry_mpi_t &myk)
+	(const OCTETS &in, const gcry_sexp_t key, 
+	 gcry_mpi_t &gk, gcry_mpi_t &myk)
 {
 	BYTE buffer[1024];
 	gcry_sexp_t encryption, data;
@@ -2366,6 +2352,55 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	gcry_sexp_release(encryption);
 	gcry_sexp_release(data);
 
-	return ret;
+	return 0;
+}
+
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
+	(const OCTETS &in, const gcry_sexp_t key, 
+	 gcry_mpi_t &r, gcry_mpi_t &s)
+{
+	BYTE buffer[1024];
+	gcry_sexp_t sigdata, signature;
+	gcry_mpi_t h;
+	gcry_error_t ret;
+	size_t buflen = 0, erroff;
+
+	for (size_t i = 0; ((i < in.size()) && (i < 1024)); i++, buflen++)
+		buffer[i] = in[i];
+	h = gcry_mpi_new(2048);
+	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
+	if (ret)
+	{
+		gcry_mpi_release(h);
+		return ret;
+	}
+	ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags raw) (value %M))", h);
+	if (ret)
+	{
+		gcry_mpi_release(h);
+		gcry_sexp_release(sigdata);
+		return ret;
+	}
+	ret = gcry_pk_sign(&signature, sigdata, key);
+	if (ret)
+	{
+		gcry_mpi_release(h);
+		gcry_sexp_release(signature);
+		gcry_sexp_release(sigdata);
+		return ret;
+	}
+	ret = gcry_sexp_extract_param(signature, NULL, "rs", &r, &s, NULL);
+	if (ret)
+	{
+		gcry_mpi_release(h);
+		gcry_sexp_release(signature);
+		gcry_sexp_release(sigdata);
+		return ret;
+	}
+	gcry_mpi_release(h);
+	gcry_sexp_release(signature);
+	gcry_sexp_release(sigdata);
+
+	return 0;
 }
 
