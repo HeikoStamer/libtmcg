@@ -1701,7 +1701,58 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			else
 				return 0; // error: unknown public-key algo
 			break;
-		case 3: // Symmetric-Key Encrypted Session Key Packet, ignore
+		case 3: // Symmetric-Key Encrypted Session Key Packet
+			if (pkt.size() < 4)
+				return 0; // error: incorrect packet body
+			out.version = pkt[0];
+			if (out.version != 4)
+				return 0; // error: version not supported
+			out.symalgo = pkt[1];
+			out.s2k_type = pkt[2];
+			out.s2k_hashalgo = pkt[3];
+			if (out.s2k_type == 0x00)
+			{
+				// Simple S2K
+				out.encdatalen = pkt.size() - 4;
+				if (out.encdatalen == 0)
+					break; // no encrypted session key
+				out.encdata = new BYTE[out.encdatalen];
+				for (size_t i = 0; i < out.encdatalen; i++)
+					out.encdata[i] = pkt[4+i];
+			}
+			else if (out.s2k_type == 0x01)
+			{
+				// Salted S2K
+				if (pkt.size() < 12)
+					return 0; // error: no salt
+				for (size_t i = 0; i < 8; i++)
+					out.s2k_salt[i] = pkt[4+i];
+				out.encdatalen = pkt.size() - 12;
+				if (out.encdatalen == 0)
+					break; // no encrypted session key
+				out.encdata = new BYTE[out.encdatalen];
+				for (size_t i = 0; i < out.encdatalen; i++)
+					out.encdata[i] = pkt[12+i];
+			}
+			else if (out.s2k_type == 0x03)
+			{
+				// Iterated and Salted S2K
+				if (pkt.size() < 12)
+					return 0; // error: no salt
+				for (size_t i = 0; i < 8; i++)
+					out.s2k_salt[i] = pkt[4+i];
+				if (pkt.size() < 13)
+					return 0; // error: no count
+				out.s2k_count = pkt[12];
+				out.encdatalen = pkt.size() - 13;
+				if (out.encdatalen == 0)
+					break; // no encrypted session key
+				out.encdata = new BYTE[out.encdatalen];
+				for (size_t i = 0; i < out.encdatalen; i++)
+					out.encdata[i] = pkt[13+i];
+			}
+			else
+				return 0; // unknown S2K specifier
 			break;
 		case 4: // One-Pass Signature Packet
 			if (pkt.size() != 13)
@@ -2130,8 +2181,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t chksum = 0;
-	size_t bs = 16; // block size of AES256 is 128 bits
-	BYTE key[32], pre[bs+2], b;
+	size_t bs = AlgorithmIVLength(9); // get block size of AES256
+	size_t ks = AlgorithmKeyLength(9); // get key size of AES256
+	BYTE key[ks], pre[bs+2], b;
 
 	// The symmetric cipher used may be specified in a Public-Key or
 	// Symmetric-Key Encrypted Session Key packet that precedes the
