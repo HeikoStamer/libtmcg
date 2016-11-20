@@ -201,8 +201,8 @@ AC_CHECK_FUNCS([clock close fprintf memcmp memcpy memset perror sleep snprintf\
 	AC_MSG_ERROR([some functions are missing]))
 
 # forking tests feature
-AC_MSG_CHECKING([whether forking tests are enabled])
-AC_ARG_ENABLE(forking, [  --disable-forking       disable forking tests],
+AC_MSG_CHECKING([whether forking tests/tools are enabled])
+AC_ARG_ENABLE(forking, [  --disable-forking       disable forking tests/tools],
         use_forking=$enableval, use_forking=yes)
 AC_MSG_RESULT($use_forking)
 if test "$use_forking" = yes ; then
@@ -211,7 +211,7 @@ if test "$use_forking" = yes ; then
 	AC_CHECK_HEADERS([sys/wait.h], , AC_MSG_ERROR([headers are missing]))
 	AC_CHECK_FUNCS([fork pipe waitpid], ,
 		AC_MSG_ERROR([functions are missing]))
-	AC_DEFINE(FORKING, , [Define to enable the forking tests])
+	AC_DEFINE(FORKING, , [Define to enable the forking tests/tools])
 fi
 
 # Enable all compiler warnings

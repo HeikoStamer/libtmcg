@@ -128,6 +128,12 @@ void start_instance
 			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
 			assert(dkg->CheckKey(whoami));
 
+			// at the end: deliver one more round for waiting parties
+			mpz_t m;
+			mpz_init(m);
+			rbc->DeliverFrom(m, whoami);
+			mpz_clear(m);
+
 			// create an OpenPGP DSA-based primary key and Elgamal-based subkey
 			char buffer[2048];
 			std::string out, crcout, armor;
@@ -228,7 +234,7 @@ void start_instance
 			gcry_mpi_release(r);
 			gcry_mpi_release(s);
 			gcry_sexp_release(key);
-			
+
 			// release DKG
 			delete dkg;
 
@@ -310,6 +316,9 @@ int main
 	// start childs
 	for (size_t i = 0; i < N; i++)
 		start_instance(crs, i, uid, passphrase);
+
+	// sleep for five seconds
+	sleep(5);
 	
 	// wait for childs and close pipes
 	for (size_t i = 0; i < N; i++)
@@ -337,7 +346,7 @@ int main
 int main
 	(int argc, char **argv)
 {
-	std::cout << "test skipped" << std::endl;
+	std::cout << "fork(2) needed" << std::endl;
 	return 77;
 }
 

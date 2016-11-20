@@ -196,28 +196,31 @@ int main
 		for (size_t j = 0; j < N; j++)
 		{
 			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
-				perror("dkg-generate (pipe)");
+				perror("dkg-decrypt (pipe)");
 			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
-				perror("dkg-generate (pipe)");
+				perror("dkg-decrypt (pipe)");
 		}
 	}
 	
 	// start childs (all correct)
 	for (size_t i = 0; i < N; i++)
 		start_instance(crs, i);
+
+	// sleep for five seconds
+	sleep(5);
 	
 	// wait for childs and close pipes
 	for (size_t i = 0; i < N; i++)
 	{
 		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
 		if (waitpid(pid[i], NULL, 0) != pid[i])
-			perror("dkg-generate (waitpid)");
+			perror("dkg-decrypt (waitpid)");
 		for (size_t j = 0; j < N; j++)
 		{
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("dkg-generate (close)");
+				perror("dkg-decrypt (close)");
 			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
-				perror("dkg-generate (close)");
+				perror("dkg-decrypt (close)");
 		}
 	}
 	
@@ -232,7 +235,7 @@ int main
 int main
 	(int argc, char **argv)
 {
-	std::cout << "test skipped" << std::endl;
+	std::cout << "fork(2) needed" << std::endl;
 	return 77;
 }
 
