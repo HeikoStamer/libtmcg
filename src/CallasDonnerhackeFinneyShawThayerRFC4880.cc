@@ -129,6 +129,17 @@ int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRY
 	}
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare
+	(const OCTETS &in, const OCTETS &in2)
+{
+	if (in.size() != in2.size())
+		return false;
+	for (size_t i = 0; i < in.size(); i++)
+		if (in[i] != in2[i])
+			return false;
+	return true;
+}
+
 // ===========================================================================
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
@@ -366,22 +377,29 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 
 	rpos = in.find("\r\n\r\n", 0);
 	cpos = in.find("\r\n=", 0); // FIXME: does not work in all cases
-	if ((rpos != in.npos) && (cpos != in.npos))
+	if ((rpos == in.npos) || (cpos == in.npos))
+		return 0;
+	spos = in.find("-----BEGIN PGP MESSAGE-----", 0);
+	epos = in.find("-----END PGP MESSAGE-----", 0);
+	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
+		type = 1;
+	else
 	{
-		spos = in.find("-----BEGIN PGP MESSAGE-----", 0);
-		epos = in.find("-----END PGP MESSAGE-----", 0);
-		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
-			type = 1;
 		spos = in.find("-----BEGIN PGP PRIVATE KEY BLOCK-----", 0);
 		epos = in.find("-----END PGP PRIVATE KEY BLOCK-----", 0);
-		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
-			type = 5;
+	}		
+	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
+		type = 5;
+	else
+	{
 		spos = in.find("-----BEGIN PGP PUBLIC KEY BLOCK-----", 0);
 		epos = in.find("-----END PGP PUBLIC KEY BLOCK-----", 0);
-		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
-			type = 6;
-	}	
-	if ((type > 0) && (rpos > spos) && (rpos < epos) && (rpos < cpos))
+	}
+	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
+		type = 6;
+	if (!type)
+		return 0;	
+	if (((spos + 34) < rpos) && ((rpos + 4) < cpos) && ((cpos + 7) < epos))
 	{
 		if (in.find("-----", spos + 34) != epos)
 			return 0; // nested armor block detected
@@ -431,17 +449,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 	FingerprintCompute(in, fpr);
 	for (size_t i = 12; i < 20; i++)
 		out.push_back(fpr[i]);
-}
-
-bool CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompare
-	(const OCTETS &in, const OCTETS &in2)
-{
-	if (in.size() != in2.size())
-		return false;
-	for (size_t i = 0; i < in.size(); i++)
-		if (in[i] != in2[i])
-			return false;
-	return true;
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
@@ -1061,7 +1068,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	out.push_back(count); // count, a one-octet, coded value
 	for (size_t i = 0; i < sizeof(iv); i++)
 		out.push_back(iv[i]); // IV
-	S2KCompute(8, sizeof(key), passphrase, salt, true, count, seskey);
+	S2KCompute(8, sizeof(key), passphrase, salt, false, count, seskey);
 	for (size_t i = 0; i < sizeof(key); i++)
 		key[i] = seskey[i];
 	PacketMPIEncode(x, plain); // MPI x
@@ -1603,7 +1610,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	else
 		return 0; // unknown error
 std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
-	BYTE sptype = 0xFF, s2kconv = 0;
+	BYTE sptype = 0xFF;
 	size_t mlen = 0;
 	OCTETS pkt, hspd, uspd, mpis;
 	pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+len);
@@ -1631,7 +1638,7 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			{
 				// Algorithm-Specific Fields for RSA 
 				mlen = PacketMPIDecode(mpis, out.me);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
@@ -1639,13 +1646,13 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			{
 				// Algorithm-Specific Fields for Elgamal
 				mlen = PacketMPIDecode(mpis, out.gk);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				if (mpis.size() <= 2)
 					return 0; // error: too few mpis
 				mlen = PacketMPIDecode(mpis, out.myk);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
@@ -1702,7 +1709,7 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			{
 				// Algorithm-Specific Fields for RSA 
 				mlen = PacketMPIDecode(mpis, out.md);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
@@ -1710,13 +1717,13 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			{
 				// Algorithm-Specific Fields for DSA 
 				mlen = PacketMPIDecode(mpis, out.r);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				if (mpis.size() <= 2)
 					return 0; // error: too few mpis
 				mlen = PacketMPIDecode(mpis, out.s);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
@@ -1804,52 +1811,27 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			{
 				// Algorithm-Specific Fields for RSA keys
 				mlen = PacketMPIDecode(mpis, out.n);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.e);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				// secret fields
-				if (mpis[0] != 0)
-					return 0; // error: S2K not supported
-				mpis.erase(mpis.begin(), mpis.begin()+1);
-				mlen = PacketMPIDecode(mpis, out.d);
-				if (!mlen)
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mpis.erase(mpis.begin(), mpis.begin()+2);
-				mlen = PacketMPIDecode(mpis, out.p);
-				if (!mlen)
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mpis.erase(mpis.begin(), mpis.begin()+2);
-				mlen = PacketMPIDecode(mpis, out.q);
-				if (!mlen)
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mpis.erase(mpis.begin(), mpis.begin()+2);
-				mlen = PacketMPIDecode(mpis, out.u);
-				if (!mlen)
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mpis.erase(mpis.begin(), mpis.begin()+2);
-				break;
 			}
 			else if (out.pkalgo == 16)
 			{
 				// Algorithm-Specific Fields for Elgamal keys
 				mlen = PacketMPIDecode(mpis, out.p);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.g);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.y);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
@@ -1857,35 +1839,69 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			{
 				// Algorithm-Specific Fields for DSA keys
 				mlen = PacketMPIDecode(mpis, out.p);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.q);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.g);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.y);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
 			// secret fields
 			if (mpis.size() < 1)
 				return 0; // error: no S2K convention
-			s2kconv = mpis[0];
+			out.s2kconv = mpis[0];
 			mpis.erase(mpis.begin(), mpis.begin()+1);
-			if (s2kconv == 0)
+			if (out.s2kconv == 0)
 			{
 				// not encrypted + checksum
 				size_t chksum = 0;
-				mlen = PacketMPIDecode(mpis, out.x, chksum);
-				if (!mlen)
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				if ((out.pkalgo == 16) || (out.pkalgo == 17))
+				{
+					mlen = PacketMPIDecode(mpis, out.x, 
+						chksum);
+					if (!mlen || (mlen > mpis.size()))
+						return 0; // error: bad mpi
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
+				}
+				else if ((out.pkalgo >= 1)&&(out.pkalgo <= 3))
+				{
+					mlen = PacketMPIDecode(mpis, out.d, 
+						chksum);
+					if (!mlen || (mlen > mpis.size()))
+						return 0; // error: bad mpi
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis, out.p, 
+						chksum);
+					if (!mlen || (mlen > mpis.size()))
+						return 0; // error: bad mpi
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis, out.q, 
+						chksum);
+					if (!mlen || (mlen > mpis.size()))
+						return 0; // error: bad mpi
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis, out.u, 
+						chksum);
+					if (!mlen || (mlen > mpis.size()))
+						return 0; // error: bad mpi
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
+				}
+				else
+					return 0; // error: algo not supported
 				if (mpis.size() < 2)
 					return 0; // error: no checksum
 				size_t chksum2 = (mpis[0] << 8) + mpis[1];
@@ -1893,9 +1909,9 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 					return 0; // error: checksum mismatch
 				mpis.erase(mpis.begin(), mpis.begin()+2);
 			}
-			else if (s2kconv == 254)
+			else if ((out.s2kconv == 254) || (out.s2kconv = 255))
 			{
-				// encrypted + SHA-1 hash
+				// encrypted + SHA-1 hash or checksum
 				if (mpis.size() < 1)
 					return 0; // error: no sym. algorithm
 				out.symalgo = mpis[0];
@@ -1941,8 +1957,8 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 					return 0; // error: no IV
 				for (size_t i = 0; i < ivlen; i++)
 					out.iv[i] = mpis[i];
-				mpis.erase(mpis.begin(), mpis.begin()+1);
-				if (mpis.size() < 22)
+				mpis.erase(mpis.begin(), mpis.begin()+ivlen);
+				if (mpis.size() < 4)
 					return 0; // error: bad encrypted data
 				out.encdatalen = mpis.size();
 				out.encdata = new BYTE[out.encdatalen];
@@ -1950,7 +1966,7 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 					out.encdata[i] = mpis[i];
 			}
 			else
-				return 0; // S2K encryption not supported
+				return 0; // S2K convention not supported
 			break;
 		case 6: // Public-Key Packet
 		case 14: // Public-Subkey Packet
@@ -1967,11 +1983,11 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			{
 				// Algorithm-Specific Fields for RSA keys
 				mlen = PacketMPIDecode(mpis, out.n);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.e);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
@@ -1979,15 +1995,15 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			{
 				// Algorithm-Specific Fields for Elgamal keys
 				mlen = PacketMPIDecode(mpis, out.p);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.g);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.y);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
@@ -1995,19 +2011,19 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			{
 				// Algorithm-Specific Fields for DSA keys
 				mlen = PacketMPIDecode(mpis, out.p);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.q);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.g);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.y);
-				if (!mlen)
+				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}

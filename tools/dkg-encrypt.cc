@@ -85,7 +85,7 @@ int main
 						issuer.push_back(ctx.issuer[i]);
 					}
 					std::cout << std::dec << std::endl;
-					if (pubdsa && !subelg && (ctx.type >= 0x10) && (ctx.type <= 0x13) && CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompare(keyid, issuer))
+					if (pubdsa && !subelg && (ctx.type >= 0x10) && (ctx.type <= 0x13) && CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
 					{
 						std::cout << std::hex;
 						std::cout << " sigtype = 0x";
@@ -118,7 +118,7 @@ int main
 						}
 						sigdsa = true;
 					}
-					else if (pubdsa && subelg && (ctx.type == 0x18) && CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompare(keyid, issuer))
+					else if (pubdsa && subelg && (ctx.type == 0x18) && CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
 					{
 						std::cout << std::hex;
 						std::cout << " sigtype = 0x";
@@ -221,7 +221,6 @@ int main
 		std::cerr << "ERROR: wrong type of ASCII Armor" << std::endl;
 		return -1;
 	}
-
 	if (!pubdsa)
 	{
 		std::cerr << "ERROR: no DSA key found" << std::endl;

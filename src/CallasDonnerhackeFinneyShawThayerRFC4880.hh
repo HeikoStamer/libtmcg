@@ -145,6 +145,7 @@
 		gcry_mpi_t y;
 		gcry_mpi_t x;
 		BYTE symalgo;
+		BYTE s2kconv;
 		BYTE s2k_type;
 		BYTE s2k_hashalgo;
 		BYTE s2k_salt[8];
@@ -189,6 +190,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const BYTE algo);
 		static int AlgorithmHashGCRY
 			(const BYTE algo);
+		static bool OctetsCompare
+			(const OCTETS &in, const OCTETS &in2);
 
 		static void Radix64Encode
 			(const OCTETS &in, std::string &out);
@@ -206,8 +209,6 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const OCTETS &in, OCTETS &out); 
 		static void KeyidCompute
 			(const OCTETS &in, OCTETS &out);
-		static bool KeyidCompare
-			(const OCTETS &in, const OCTETS &in2);
 		static void HashCompute
 			(const BYTE algo, const OCTETS &in, OCTETS &out);
 		static void HashCompute
