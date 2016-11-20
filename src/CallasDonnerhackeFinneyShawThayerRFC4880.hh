@@ -204,6 +204,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const OCTETS &in, OCTETS &out); 
 		static void KeyidCompute
 			(const OCTETS &in, OCTETS &out);
+		static bool KeyidCompare
+			(const OCTETS &in, const OCTETS &in2);
 		static void HashCompute
 			(const BYTE algo, const OCTETS &in, OCTETS &out);
 		static void HashCompute

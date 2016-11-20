@@ -37,14 +37,14 @@ int main
 		armored_pubkey += line + "\r\n";
 	std::cin.clear();
 
-	bool pubdsa = false, subelg = false;
+	bool pubdsa = false, sigdsa = false, subelg = false, sigelg = false;
 	std::string u;
 	BYTE atype = 0, ptag = 0xFF;
 	BYTE dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
-	BYTE dsa_issuer[8], dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_issuer[8], elg_psa[255], elg_pha[255], elg_pca[255];
+	BYTE dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
 	time_t dsa_sigtime, elg_sigtime;
 	OCTETS pkts, pub, sub, msg, lit, mdc, seipd, pkesk, all;
-	OCTETS seskey, prefix, enc, mdc_hashing, hash, keyid, pub_hashing, subkeyid, sub_hashing;
+	OCTETS seskey, prefix, enc, mdc_hashing, hash, keyid, pub_hashing, subkeyid, sub_hashing, issuer;
 	gcry_mpi_t dsa_p, dsa_q, dsa_g, dsa_y, dsa_r, dsa_s, elg_p, elg_g, elg_y, elg_r, elg_s, gk, myk;
 	gcry_sexp_t dsakey, elgkey;
 	gcry_error_t ret;
@@ -80,7 +80,15 @@ int main
 			switch (ptag)
 			{
 				case 2: // Signature Packet
-					if (pubdsa && !subelg && (ctx.type >= 0x10) && (ctx.type <= 0x13))
+					issuer.clear();
+					std::cout << " issuer = " << std::hex;
+					for (size_t i = 0; i < sizeof(ctx.issuer); i++)
+					{
+						std::cout << (int)ctx.issuer[i] << " ";
+						issuer.push_back(ctx.issuer[i]);
+					}
+					std::cout << std::hex << std::endl;
+					if (pubdsa && !subelg && (ctx.type >= 0x10) && (ctx.type <= 0x13) && CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompare(keyid, issuer))
 					{
 						std::cout << std::hex;
 						std::cout << " sigtype = 0x";
@@ -95,8 +103,7 @@ int main
 						dsa_pkalgo = ctx.pkalgo;
 						dsa_hashalgo = ctx.hashalgo;
 						dsa_sigtime = ctx.sigcreationtime;
-						for (size_t i = 0; i < sizeof(dsa_issuer); i++)
-							dsa_issuer[i] = ctx.issuer[i];
+						
 						for (size_t i = 0; i < sizeof(dsa_keyflags); i++)
 							dsa_keyflags[i] = ctx.keyflags[i];
 						for (size_t i = 0; i < sizeof(dsa_psa); i++)
@@ -106,9 +113,10 @@ int main
 						for (size_t i = 0; i < sizeof(dsa_pca); i++)
 							dsa_pca[i] = ctx.pca[i];
 						dsa_r = ctx.r, dsa_s = ctx.s;
+						sigdsa = true;
 
 					}
-					else if (pubdsa && subelg)
+					else if (pubdsa && subelg && (ctx.type == 0x18) && CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompare(keyid, issuer))
 					{
 						std::cout << std::hex;
 						std::cout << " sigtype = 0x";
@@ -118,8 +126,9 @@ int main
 						std::cout << (int)ctx.pkalgo;
 						std::cout << " hashalgo = ";
 						std::cout << (int)ctx.hashalgo;
-						std::cout << std::dec << std::endl;	
+						std::cout << std::dec << std::endl;
 
+						sigelg = true;
 					}
 					break;
 				case 6: // Public-Key Packet
@@ -128,9 +137,16 @@ int main
 						pubdsa = true;
 						dsa_p = ctx.p, dsa_q = ctx.q, dsa_g = ctx.g, dsa_y = ctx.y;
 						CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ctx.keycreationtime,
-							dsa_p, dsa_q, dsa_g, dsa_y, pub);		
+							dsa_p, dsa_q, dsa_g, dsa_y, pub);
+						for (size_t i = 6; i < pub.size(); i++)
+							pub_hashing.push_back(pub[i]);
+						CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
+						std::cout << " Key ID of DSA public key: " << std::hex;
+						for (size_t i = 0; i < keyid.size(); i++)
+							std::cout << (int)keyid[i] << " ";
+						std::cout << std::hex << std::endl;	
 					}
-					else if (pubdsa)
+					else if ((ctx.pkalgo == 17) && pubdsa)
 					{
 						std::cerr << "ERROR: more than one primary key not supported" << std::endl;
 						return -1;
@@ -154,8 +170,15 @@ int main
 						elg_p = ctx.p, elg_g = ctx.g, elg_y = ctx.y;
 						CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime,
 							elg_p, elg_g, elg_y, sub);
+						for (size_t i = 6; i < sub.size(); i++)
+							sub_hashing.push_back(sub[i]);
+						CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, subkeyid);
+							std::cout << "Key ID of Elgamal public subkey: " << std::hex;
+						for (size_t i = 0; i < subkeyid.size(); i++)
+							std::cout << (int)subkeyid[i] << " ";
+						std::cout << std::hex << std::endl;
 					}
-					else if (subelg)
+					else if ((ctx.pkalgo == 16) && subelg)
 						std::cerr << "WARNING: Elgamal subkey already found" << std::endl; 
 					else
 						std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
@@ -179,18 +202,22 @@ int main
 		std::cerr << "ERROR: no Elgamal subkey found" << std::endl;
 		return -1;
 	}
+	if (!sigdsa)
+	{
+		std::cerr << "ERROR: no self-signature for DSA public key found" << std::endl;
+		return -1;
+	}
+	if (!sigelg)
+	{
+		std::cerr << "ERROR: no self-signature for Elgamal subkey found" << std::endl;
+		return -1;
+	}
 	
 	
-// TODO: check keys and signatures
+// TODO: build keys and signatures
 	OCTETS dsa_flags, elg_flags, uidsig_hashing, uidsig_left;
 	std::cout << "Primary User ID: " << u << std::endl;
-	for (size_t i = 6; i < pub.size(); i++)
-		pub_hashing.push_back(pub[i]);
-	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
-	std::cout << "Key ID of DSA public key: " << std::hex;
-	for (size_t i = 0; i < keyid.size(); i++)
-		std::cout << (int)keyid[i] << " ";
-	std::cout << std::hex << std::endl;
+	
 	ret = gcry_sexp_build(&dsakey, &erroff, "(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", dsa_p, dsa_q, dsa_g, dsa_y);
 	if (ret)
 	{
@@ -228,13 +255,7 @@ int main
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, dsa_r, dsa_s);
 std::cerr << "ret=" << gcry_err_code(ret) << std::endl;
 
-	for (size_t i = 6; i < sub.size(); i++)
-		sub_hashing.push_back(sub[i]);
-	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, subkeyid);
-	std::cout << "Key ID of Elgamal public subkey: " << std::hex;
-	for (size_t i = 0; i < subkeyid.size(); i++)
-		std::cout << (int)subkeyid[i] << " ";
-	std::cout << std::hex << std::endl;
+	
 	ret = gcry_sexp_build(&elgkey, &erroff, "(public-key (elg (p %M) (g %M) (y %M)))", elg_p, elg_g, elg_y);
 	if (ret)
 	{

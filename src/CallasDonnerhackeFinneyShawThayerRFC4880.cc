@@ -433,6 +433,17 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 		out.push_back(fpr[i]);
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompare
+	(const OCTETS &in, const OCTETS &in2)
+{
+	if (in.size() != in2.size())
+		return false;
+	for (size_t i = 0; i < in.size(); i++)
+		if (in[i] != in2[i])
+			return false;
+	return true;
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	(const BYTE algo, const OCTETS &in, OCTETS &out)
 {
@@ -1404,7 +1415,7 @@ std::cerr << "subpkt: len = " << len << " type = " << (int)type << std::endl;
 			if (pkt.size() != 8)
 				return 0; // error: incorrect subpacket body
 			for (size_t i = 0; i < pkt.size(); i++)
-				out.issuer[i] = pkt[i]; 
+				out.issuer[i] = pkt[i];
 			break;
 		case 20: // Notation Data
 			if (out.critical)
@@ -1671,6 +1682,13 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 				sptype = SubpacketDecode(uspd, untrusted);
 				if (untrusted.critical && (sptype == 0))
 					return 0; // error: critical bit set
+				if (sptype == 16) // Issuer
+				{
+					for (size_t i = 0; 
+					     i < sizeof(out.issuer); i++)
+						out.issuer[i] = 
+						     untrusted.issuer[i];
+				}					
 			}
 			out.left[0] = pkt[8+hspdlen+uspdlen];
 			out.left[1] = pkt[9+hspdlen+uspdlen];
@@ -2416,7 +2434,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 
 	for (size_t i = 0; ((i < in.size()) && (i < 1024)); i++, buflen++)
 		buffer[i] = in[i];
-std::cerr << "buflen=" << buflen << std::endl;
 	h = gcry_mpi_new(2048);
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	if (ret)
