@@ -788,10 +788,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
 	(const BYTE sigtype, const time_t sigtime, const OCTETS &flags,
-	 const OCTETS &keyid, OCTETS &out)
+	 const OCTETS &issuer, OCTETS &out)
 {
 	size_t subpkts = 6;
-	size_t subpktlen = (subpkts * 6) + 4 + flags.size() + keyid.size() + 3;
+	size_t subpktlen = (subpkts * 6) + 4 + flags.size() + issuer.size() + 3;
 	out.push_back(4); // V4 format
 	out.push_back(sigtype); // type (eg 0x13 UID cert., 0x18 subkey bind.)
 	out.push_back(17); // public-key algorithm: DSA
@@ -806,7 +806,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
 		// key flags
 		SubpacketEncode(27, false, flags, out);
 		// issuer
-		SubpacketEncode(16, false, keyid, out);
+		SubpacketEncode(16, false, issuer, out);
 		// preferred symmetric algorithms
 		OCTETS psa;
 		psa.push_back(9); // AES256
@@ -1663,7 +1663,11 @@ std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 			out.hashalgo = pkt[3];
 			hspdlen = (pkt[4] << 8) + pkt[5];
 			hspd.insert(hspd.end(), 
-				pkt.begin()+6, pkt.begin()+6+hspdlen); 
+				pkt.begin()+6, pkt.begin()+6+hspdlen);
+			out.hspdlen = hspdlen;
+			out.hspd = new BYTE[out.hspdlen];
+			for (size_t i = 0; i < out.hspdlen; i++)
+				out.hspd[i] = pkt[6+i];
 			while (hspd.size() && sptype)
                 	{
 				sptype = SubpacketDecode(hspd, out);

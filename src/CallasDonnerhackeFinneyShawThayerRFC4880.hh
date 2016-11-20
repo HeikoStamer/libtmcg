@@ -97,6 +97,8 @@
 		gcry_mpi_t myk;
 		BYTE type;
 		BYTE hashalgo;
+		BYTE *hspd; // pointer to an allocated buffer with data
+		size_t hspdlen;
 		bool critical;
 		time_t sigcreationtime;
 		BYTE issuer[8]; // key ID
@@ -244,7 +246,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 OCTETS &out);
 		static void PacketSigPrepare
 			(const BYTE sigtype, const time_t sigtime,
-			 const OCTETS &flags, const OCTETS &keyid, 
+			 const OCTETS &flags, const OCTETS &issuer, 
 			 OCTETS &out);
 		static void PacketPubEncode
 			(const time_t keytime, const gcry_mpi_t p, 
