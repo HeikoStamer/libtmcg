@@ -29,15 +29,13 @@ int main
 	(int argc, char **argv)
 {
 	assert(init_libTMCG());
-
 	std::string line, armored_pubkey, message, armored_message;
 
-	std::cout << "1. Please provide the recipients public key (in ASCII Armor): " << std::endl;
+	// parse packets of provided public key
+	std::cout << "1. Please provide the recipients public key (in ASCII Armor; ^D for EOF): " << std::endl;
 	while (std::getline(std::cin, line))
 		armored_pubkey += line + "\r\n";
-	std::cin.clear();
-
-	// parse packets of provided public key
+	std::cin.clear();	
 	bool pubdsa = false, sigdsa = false, subelg = false, sigelg = false;
 	std::string u;
 	BYTE atype = 0, ptag = 0xFF;
@@ -50,7 +48,6 @@ int main
 	gcry_error_t ret;
 	size_t erroff;
 	TMCG_OPENPGP_CONTEXT ctx;
-
 	dsa_p = gcry_mpi_new(2048);
 	dsa_q = gcry_mpi_new(2048);
 	dsa_g = gcry_mpi_new(2048);
@@ -110,6 +107,7 @@ int main
 							dsa_pha[i] = ctx.pha[i];
 						for (size_t i = 0; i < sizeof(dsa_pca); i++)
 							dsa_pca[i] = ctx.pca[i];
+						dsa_hspd.clear();
 						for (size_t i = 0; i < ctx.hspdlen; i++)
 							dsa_hspd.push_back(ctx.hspd[i]);
 						dsa_r = ctx.r, dsa_s = ctx.s;
@@ -142,6 +140,7 @@ int main
 							elg_pha[i] = ctx.pha[i];
 						for (size_t i = 0; i < sizeof(elg_pca); i++)
 							elg_pca[i] = ctx.pca[i];
+						elg_hspd.clear();
 						for (size_t i = 0; i < ctx.hspdlen; i++)
 							elg_hspd.push_back(ctx.hspd[i]);
 						elg_r = ctx.r, elg_s = ctx.s;
@@ -244,7 +243,7 @@ int main
 		return -1;
 	}
 	
-	// build keys and check self-signatures
+	// build keys, check key usage and self-signatures
 	OCTETS dsa_trailer, elg_trailer, dsa_left, elg_left;
 	std::cout << "Primary User ID: " << u << std::endl;
 	ret = gcry_sexp_build(&dsakey, &erroff, "(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", dsa_p, dsa_q, dsa_g, dsa_y);
@@ -287,10 +286,9 @@ int main
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, dsa_trailer, dsa_hashalgo, hash, dsa_left);
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, dsa_r, dsa_s);
-std::cerr << "ret=" << gcry_err_code(ret) << std::endl;
 	if (ret)
 	{
-		std::cerr << "ERROR: verification of DSA self-signature failed" << std::endl;
+		std::cerr << "ERROR: verification of DSA key self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
 		return -1;
 	}
 	ret = gcry_sexp_build(&elgkey, &erroff, "(public-key (elg (p %M) (g %M) (y %M)))", elg_p, elg_g, elg_y);
@@ -323,6 +321,11 @@ std::cerr << "ret=" << gcry_err_code(ret) << std::endl;
 	if ((flags & 0x80) == 0x80)
 		std::cout << "M"; // The private component of this key may be in the possession of more than one person.
 	std::cout << std::endl;
+	if ((flags & 0x04) != 0x04)
+	{
+		std::cerr << "ERROR: Elgamal subkey cannot used to encrypt communications" << std::endl;
+		return -1;
+	}
 	elg_trailer.push_back(4); // only V4 format supported
 	elg_trailer.push_back(elg_sigtype);
 	elg_trailer.push_back(elg_pkalgo);
@@ -333,19 +336,17 @@ std::cerr << "ret=" << gcry_err_code(ret) << std::endl;
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, elg_trailer, elg_hashalgo, hash, elg_left);
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, elg_r, elg_s);
-std::cerr << "ret=" << gcry_err_code(ret) << std::endl;
 	if (ret)
 	{
-		std::cerr << "ERROR: verification of Elgamal self-signature failed" << std::endl;
+		std::cerr << "ERROR: verification of Elgamal subeky self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
 		return -1;
 	}
 
-	// encrypt a message
-	std::cout << "2. Now type your private message (in ASCII): " << std::endl;
+	// encrypt the provided message
+	std::cout << "2. Now type your private message (in ASCII/UTF8; ^D for EOF): " << std::endl;
 	while (std::getline(std::cin, line))
 		message += line + "\r\n";
 	std::cin.clear();
-
 	for (size_t i = 0; i < message.length(); i++)
 		msg.push_back(message[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode(msg, lit);
