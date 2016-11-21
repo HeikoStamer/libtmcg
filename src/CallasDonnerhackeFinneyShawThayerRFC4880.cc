@@ -383,14 +383,14 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	epos = in.find("-----END PGP MESSAGE-----", 0);
 	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
 		type = 1;
-	else
+	if (!type)
 	{
 		spos = in.find("-----BEGIN PGP PRIVATE KEY BLOCK-----", 0);
 		epos = in.find("-----END PGP PRIVATE KEY BLOCK-----", 0);
 	}		
 	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
 		type = 5;
-	else
+	if (!type)
 	{
 		spos = in.find("-----BEGIN PGP PUBLIC KEY BLOCK-----", 0);
 		epos = in.find("-----END PGP PUBLIC KEY BLOCK-----", 0);
@@ -1068,7 +1068,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	out.push_back(count); // count, a one-octet, coded value
 	for (size_t i = 0; i < sizeof(iv); i++)
 		out.push_back(iv[i]); // IV
-	S2KCompute(8, sizeof(key), passphrase, salt, false, count, seskey);
+	S2KCompute(8, sizeof(key), passphrase, salt, true, count, seskey);
 	for (size_t i = 0; i < sizeof(key); i++)
 		key[i] = seskey[i];
 	PacketMPIEncode(x, plain); // MPI x
