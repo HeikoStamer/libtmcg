@@ -803,7 +803,7 @@ int main
 					std::cout << std::dec << std::endl;
 					if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(pkesk_keyid, subkeyid))
 					{
-						std::cerr << "WARNING: pkesk ID not match subkey ID" << std::endl;
+						std::cerr << "WARNING: pkesk-key ID does not match subkey ID" << std::endl;
 						break;
 					}
 					have_pkesk = true;

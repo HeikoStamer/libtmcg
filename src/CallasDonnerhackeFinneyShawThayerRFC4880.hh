@@ -296,6 +296,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static gcry_error_t AsymmetricEncryptElgamal
 			(const OCTETS &in, const gcry_sexp_t key, 
 			 gcry_mpi_t &gk, gcry_mpi_t &myk);
+		static gcry_error_t AsymmetricDecryptElgamal
+			(const gcry_mpi_t gk, const gcry_mpi_t myk,
+			 const gcry_sexp_t key, OCTETS &out);
 		static gcry_error_t AsymmetricSignDSA
 			(const OCTETS &in, const gcry_sexp_t key,
 			 gcry_mpi_t &r, gcry_mpi_t &s);

@@ -2354,7 +2354,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	// EME-PKCS1-v1_5 in Section 7.2.1 of [RFC3447] to form the "m" value
 	// used in the formulas above. See Section 13.1 of this document for
 	// notes on OpenPGP's use of PKCS#1.
-	for (size_t i = 0; ((i < in.size()) && (i < 1024)); i++, buflen++)
+	for (size_t i = 0; (i < in.size()) && (i < sizeof(buffer)); i++, buflen++)
 		buffer[i] = in[i];
 	v = gcry_mpi_new(2048);
 	ret = gcry_mpi_scan(&v, GCRYMPI_FMT_USG, buffer, buflen, NULL);
@@ -2388,6 +2388,59 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	}
 	gcry_mpi_release(v);
 	gcry_sexp_release(encryption);
+	gcry_sexp_release(data);
+
+	return 0;
+}
+
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
+	(const gcry_mpi_t gk, const gcry_mpi_t myk, const gcry_sexp_t key, 
+	 OCTETS &out)
+{
+	BYTE buffer[1024];
+	gcry_sexp_t decryption, data;
+	gcry_mpi_t v;
+	gcry_error_t ret;
+	size_t buflen = 0, erroff;
+
+	// This value is then encoded as described in PKCS#1 block encoding
+	// EME-PKCS1-v1_5 in Section 7.2.1 of [RFC3447] to form the "m" value
+	// used in the formulas above. See Section 13.1 of this document for
+	// notes on OpenPGP's use of PKCS#1.
+	ret = gcry_sexp_build(&data, &erroff,
+		"(enc-val (flags pkcs1) (elg (a %M) (b %M)))", gk, myk);
+	if (ret)
+	{
+		gcry_sexp_release(data);
+		return ret;
+	}
+	ret = gcry_pk_decrypt(&decryption, data, key);
+	if (ret)
+	{
+		gcry_sexp_release(decryption);
+		gcry_sexp_release(data);
+		return ret;
+	}
+	v = gcry_sexp_nth_mpi(decryption, 1, GCRYMPI_FMT_USG);
+	if (v == NULL)
+	{
+		gcry_sexp_release(decryption);
+		gcry_sexp_release(data);
+		return ret;
+	}
+	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buffer, sizeof(buffer),
+		&buflen, v);
+	if (ret)
+	{
+		gcry_mpi_release(v);
+		gcry_sexp_release(decryption);
+		gcry_sexp_release(data);
+		return ret;
+	}
+	for (size_t i = 0; (i < buflen) && (i < sizeof(buffer)); i++)
+		out.push_back(buffer[i]);
+	gcry_mpi_release(v);
+	gcry_sexp_release(decryption);
 	gcry_sexp_release(data);
 
 	return 0;
