@@ -23,6 +23,7 @@
 #ifdef FORKING
 
 #include <sstream>
+#include <fstream>
 #include <vector>
 #include <algorithm>
 #include <cassert>
@@ -209,6 +210,11 @@ void start_instance
 			assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(subsig_hashing, subsig_left, r, s, subsig);
 			// export generated public key in OpenPGP armor format
+			std::stringstream pubfilename;
+			pubfilename << std::hex;
+			for (size_t i = 0; i < keyid.size(); i++)
+				pubfilename << (int)keyid[i];
+			pubfilename << "_dkg-pub.asc";
 			armor = "", all.clear();
 			all.insert(all.end(), pub.begin(), pub.end());
 			all.insert(all.end(), uid.begin(), uid.end());
@@ -217,7 +223,15 @@ void start_instance
 			all.insert(all.end(), subsig.begin(), subsig.end());
 			CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(6, all, armor);
 			std::cout << armor << std::endl;
+			std::ofstream pubofs((pubfilename.str()).c_str(), std::ofstream::out);
+			pubofs << armor;
+			pubofs.close();
 			// export generated private key in OpenPGP armor format
+			std::stringstream secfilename;
+			secfilename << std::hex;
+			for (size_t i = 0; i < keyid.size(); i++)
+				secfilename << (int)keyid[i];
+			secfilename << "_dkg-sec.asc";
 			armor = "", all.clear();
 			all.insert(all.end(), sec.begin(), sec.end());
 			all.insert(all.end(), uid.begin(), uid.end());
@@ -226,6 +240,9 @@ void start_instance
 			all.insert(all.end(), subsig.begin(), subsig.end());
 			CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(5, all, armor);
 			std::cout << armor << std::endl;
+			std::ofstream secofs((secfilename.str()).c_str(), std::ofstream::out);
+			secofs << armor;
+			secofs.close();
 			gcry_mpi_release(p);
 			gcry_mpi_release(q);
 			gcry_mpi_release(g);
@@ -234,6 +251,15 @@ void start_instance
 			gcry_mpi_release(r);
 			gcry_mpi_release(s);
 			gcry_sexp_release(key);
+			// export state of DKG including the secret shares into a file
+			std::stringstream dkgfilename;
+			dkgfilename << std::hex;
+			for (size_t i = 0; i < keyid.size(); i++)
+				dkgfilename << (int)keyid[i];
+			dkgfilename << ".dkg";
+			std::ofstream dkgofs((dkgfilename.str()).c_str(), std::ofstream::out);
+			dkg->PublishState(dkgofs);
+			dkgofs.close();
 
 			// release DKG
 			delete dkg;

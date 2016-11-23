@@ -183,8 +183,8 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
- errno.h functional gcrypt.h gmp.h inttypes.h iostream limits.h map sstream\
- stdio.h string string.h time.h unistd.h vector], , 
+ errno.h fstream functional gcrypt.h gmp.h inttypes.h iostream limits.h map\
+ sstream stdio.h string string.h time.h unistd.h vector], , 
 	AC_MSG_ERROR([some headers are missing]))
 
 # Checks for typedefs, structures, and compiler characteristics
