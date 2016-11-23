@@ -34,17 +34,28 @@ int main
 	BYTE b;
 	
 	// testing ArmorEncode() and ArmorDecode()
-	std::string u = "Max Mustermann <maxi@moritz.de>", armor;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, in);
-	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(6, in, armor);
-	std::cout << armor << std::endl;
-
-	b = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(armor, out);
-	assert(b == 6);
-	assert(in.size() == out.size());
-	for (size_t i = 0; i < in.size(); i++)
+	for (size_t j = 0; j < 10; j++)
 	{
-		assert(in[i] == out[i]);
+		std::string u = "Max Mustermann <maxi@moritz.de>", armor;
+
+		if ((j != 1) && (j != 2) && (j != 5) && (j != 6))
+			continue;
+		in.clear(), out.clear();
+		std::cout << "PackedUidEncode(\"" << u << "\", in)" << std::endl;
+		CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, in);
+		std::cout << "ArmorEncode(" << j << ", in, armor)" << std::endl;
+		CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(j, in, armor);
+		std::cout << armor << std::endl;
+
+		std::cout << "ArmorDecode(armor, out) = ";
+		b = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(armor, out);
+		std::cout << (int)b << std::endl;
+		assert((int)b == j);
+		assert(in.size() == out.size());
+		for (size_t i = 0; i < in.size(); i++)
+		{
+			assert(in[i] == out[i]);
+		}
 	}		
 	
 	return 0;

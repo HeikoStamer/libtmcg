@@ -320,6 +320,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 		case 1:
 			out += "-----BEGIN PGP MESSAGE-----\r\n";
 			break;
+		case 2:
+			out += "-----BEGIN PGP SIGNATURE-----\r\n";
+			break;
 		case 5:
 			out += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
 			break;
@@ -360,6 +363,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 		case 1:
 			out += "-----END PGP MESSAGE-----\r\n";
 			break;
+		case 2:
+			out += "-----END PGP SIGNATURE-----\r\n";
+			break;
 		case 5:
 			out += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
 			break;
@@ -383,6 +389,13 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	epos = in.find("-----END PGP MESSAGE-----", 0);
 	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
 		type = 1;
+	if (!type)
+	{
+		spos = in.find("-----BEGIN PGP SIGNATURE-----", 0);
+		epos = in.find("-----END PGP SIGNATURE-----", 0);
+	}		
+	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
+		type = 2;
 	if (!type)
 	{
 		spos = in.find("-----BEGIN PGP PRIVATE KEY BLOCK-----", 0);

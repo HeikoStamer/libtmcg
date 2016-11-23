@@ -83,8 +83,7 @@
 	};
 
 	static const BYTE tRadix64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-		"abcdefghijklmnopqrstuvwxyz"
-		"0123456789+/";
+		"abcdefghijklmnopqrstuvwxyz0123456789+/";
 
 	typedef struct
 	{
