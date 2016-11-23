@@ -78,6 +78,12 @@ class GennaroJareckiKrawczykRabinDKG
 			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		GennaroJareckiKrawczykRabinDKG
+			(std::istream &in,
+			unsigned long int fieldsize = TMCG_DDH_SIZE,
+			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		void PublishState
+			(std::ostream &out) const;
 		bool CheckGroup
 			() const;
 		bool Generate

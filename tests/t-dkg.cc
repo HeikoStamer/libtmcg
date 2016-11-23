@@ -126,7 +126,7 @@ void start_instance
 			rbc->setID(myID);
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
-			std::stringstream err_log;
+			std::stringstream err_log, state_log;
 			start_clock();
 			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
 			if (corrupted)
@@ -137,7 +137,7 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 
-			// check the generated key share
+			// check the generated key share and publish state
 			start_clock();
 			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
 			if (corrupted)
@@ -146,6 +146,9 @@ void start_instance
 				assert(dkg->CheckKey(whoami));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
+			dkg->PublishState(state_log);
+			std::cout << " state = " << state_log.str() << std::endl;
 
 			// create an instance of threshold signature protocol new-TSch (NTS)
 			GennaroJareckiKrawczykRabinNTS *nts;
@@ -192,6 +195,25 @@ void start_instance
 			
 			// release NTS
 			delete nts;
+			
+			// release DKG
+			delete dkg;
+
+			// create an instance of DKG from state log
+			dkg = new GennaroJareckiKrawczykRabinDKG(state_log);
+
+			// compare state log and check the generated key share again
+			std::stringstream state_log2;
+			dkg->PublishState(state_log2);
+			assert(state_log.str() == state_log2.str());
+			start_clock();
+			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
+			if (corrupted)
+				dkg->CheckKey(whoami);
+			else
+				assert(dkg->CheckKey(whoami));
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			
 			// release DKG
 			delete dkg;

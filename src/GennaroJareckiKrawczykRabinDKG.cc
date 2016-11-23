@@ -41,7 +41,7 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	for (size_t j = 0; j < n_in; j++)
 	{
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
-		mpz_init(tmp1), mpz_init(tmp1);
+		mpz_init(tmp1), mpz_init(tmp2);
 		y_i.push_back(tmp1), z_i.push_back(tmp2);
 		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
 		for (size_t i = 0; i < n_in; i++)
@@ -59,6 +59,80 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
 	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
+	(std::istream &in,
+	unsigned long int fieldsize, unsigned long int subgroupsize):
+			F_size(fieldsize), G_size(subgroupsize)
+{
+	std::string value;
+
+	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(h);
+	in >> p >> q >> g >> h;
+	std::getline(in, value);
+	std::stringstream(value) >> n;
+	std::getline(in, value);
+	std::stringstream(value) >> t;
+	mpz_init(x_i), mpz_init(xprime_i), mpz_init(y);
+	in >> x_i >> xprime_i >> y;
+	size_t qual_size = 0;
+	std::getline(in, value);
+	std::stringstream(value) >> qual_size;
+	for (size_t i = 0; i < qual_size; i++)
+	{
+		size_t who;
+		std::getline(in, value);
+		std::stringstream(value) >> who;
+		QUAL.push_back(who);
+	}
+	for (size_t j = 0; j < n; j++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2);
+		y_i.push_back(tmp1), z_i.push_back(tmp2);
+		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
+		for (size_t i = 0; i < n; i++)
+		{
+			mpz_ptr tmp3 = new mpz_t();
+			mpz_init(tmp3);
+			vtmp1->push_back(tmp3);
+		}
+		s_ij.push_back(*vtmp1);
+	}
+	for (size_t i = 0; i < n; i++)
+		in >> y_i[i];	
+	for (size_t i = 0; i < n; i++)
+		in >> z_i[i];
+	for (size_t i = 0; i < n; i++)
+		for (size_t j = 0; j < n; j++)
+			in >> s_ij[i][j];
+
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+void GennaroJareckiKrawczykRabinDKG::PublishState
+	(std::ostream &out) const
+{
+	out << p << std::endl << q << std::endl << g << std::endl
+		<< h << std::endl;
+	out << n << std::endl << t << std::endl;
+	out << x_i << std::endl << xprime_i << std::endl << y << std::endl;
+	out << QUAL.size() << std::endl;
+	for (size_t i = 0; i < QUAL.size(); i++)
+		out << QUAL[i] << std::endl;
+	for (size_t i = 0; i < n; i++)
+		out << y_i[i] << std::endl;
+	for (size_t i = 0; i < n; i++)
+		out << z_i[i] << std::endl;
+	for (size_t i = 0; i < n; i++)
+		for (size_t j = 0; j < n; j++)
+			out << s_ij[i][j] << std::endl;
 }
 
 bool GennaroJareckiKrawczykRabinDKG::CheckGroup
