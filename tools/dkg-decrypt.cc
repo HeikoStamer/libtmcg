@@ -35,14 +35,13 @@
 #include "pipestream.hh"
 
 #undef NDEBUG
-#define N 7
-#define T 2
+#define MAX_N 1024
 
-int pipefd[N][N][2], broadcast_pipefd[N][N][2];
-pid_t pid[N];
+int pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
+pid_t pid[MAX_N];
 
 void start_instance
-	(std::istream& crs_in, size_t whoami)
+	(const size_t whoami, const std::string my_keyid, const std::string passphrase, const std::string armored_message)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-decrypt (fork)");
@@ -51,16 +50,39 @@ void start_instance
 		if (pid[whoami] == 0)
 		{
 			/* BEGIN child code: participant P_i */
-			
+
+			// read the exported DKG state from file
+			std::string line, dkgfilename = my_keyid + ".dkg";
+			std::stringstream dkgstate;
+			std::ifstream dkgifs(dkgfilename.c_str(), std::ifstream::in);
+			if (!dkgifs.is_open())
+			{
+				std::cerr << "ERROR: cannot open state file" << std::endl;
+				exit(-1);
+			}
+			while (std::getline(dkgifs, line))
+				dkgstate << line << std::endl;
+			dkgifs.close();
+
+			// create an instance of DKG
+			GennaroJareckiKrawczykRabinDKG *dkg;
+			std::cout << "GennaroJareckiKrawczykRabinDKG(...)" << std::endl;
+			dkg = new GennaroJareckiKrawczykRabinDKG(dkgstate);
+			if (!dkg->CheckGroup())
+			{
+				std::cerr << "ERROR: CheckGroup() failed" << std::endl;
+				exit(-1);
+			}
+
 			// create pipe streams and handles between all players
 			std::vector<ipipestream*> P_in;
 			std::vector<opipestream*> P_out;
 			std::vector<int> uP_in, uP_out, bP_in, bP_out;
 			std::vector<std::string> uP_key, bP_key;
-			for (size_t i = 0; i < N; i++)
+			for (size_t i = 0; i < dkg->n; i++)
 			{
 				std::stringstream key;
-				key << "t-dkg::P_" << (i + whoami);
+				key << "dkg-decrypt::P_" << (i + whoami);
 				P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
 				P_out.push_back(new opipestream(pipefd[whoami][i][1]));
 				uP_in.push_back(pipefd[i][whoami][0]);
@@ -70,123 +92,41 @@ void start_instance
 				bP_out.push_back(broadcast_pipefd[whoami][i][1]);
 				bP_key.push_back(key.str());
 			}
-			
-			// create VTMF instance
-			BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crs_in);
-			if (!vtmf->CheckGroup())
-			{
-				std::cout << "P_" << whoami << ": " <<
-					"Group G was not correctly generated!" << std::endl;
-				exit(-1);
-			}
-			
-			// create and exchange VTMF keys
-			vtmf->KeyGenerationProtocol_GenerateKey();
-			for (size_t i = 0; i < N; i++)
-			{
-				if (i != whoami)
-					vtmf->KeyGenerationProtocol_PublishKey(*P_out[i]);
-			}
-			for (size_t i = 0; i < N; i++)
-			{
-				if (i != whoami)
-				{
-					if (!vtmf->KeyGenerationProtocol_UpdateKey(*P_in[i]))
-					{
-						std::cout << "P_" << whoami << ": " << "Public key of P_" <<
-							i << " was not correctly generated!" << std::endl;
-						exit(-1);
-					}
-				}
-			}
-			vtmf->KeyGenerationProtocol_Finalize();
-
-			// create an instance of DKG
-			GennaroJareckiKrawczykRabinDKG *dkg;
-			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", ...)" << std::endl;
-			dkg = new GennaroJareckiKrawczykRabinDKG(N, T,
-				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
-			assert(dkg->CheckGroup());
 
 			// create asynchronous authenticated unicast channels
-			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, uP_key);
+			aiounicast *aiou = new aiounicast(dkg->n, dkg->t, whoami, uP_in, uP_out, uP_key);
 
 			// create asynchronous authenticated unicast channels
-			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, bP_key);
+			aiounicast *aiou2 = new aiounicast(dkg->n, dkg->t, whoami, bP_in, bP_out, bP_key);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
-			std::string myID = "t-dkg";
-			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
+			std::string myID = "dkg-decrypt";
+			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(dkg->n, dkg->t, whoami, aiou2);
 			rbc->setID(myID);
-			
-			// generating $x$ and extracting $y = g^x \bmod p$
-			std::stringstream err_log;
-			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
-			assert(dkg->Generate(whoami, aiou, rbc, err_log));
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 
-			// check the generated key share
+			// check the key share
 			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
-			assert(dkg->CheckKey(whoami));
-
-// TODO
-			
-			// release DKG
-			delete dkg;
-
-			// release RBC			
-			delete rbc;
-
-			// release VTMF instances
-			delete vtmf;
-			
-			// release pipe streams (private channels)
-			size_t numRead = 0, numWrite = 0;
-			for (size_t i = 0; i < N; i++)
+			if (!dkg->CheckKey(whoami)) // FIXME: whoami stimmt nicht mit dem dkg-state ueberein
 			{
-				numRead += P_in[i]->get_numRead() + P_out[i]->get_numRead();
-				numWrite += P_in[i]->get_numWrite() + P_out[i]->get_numWrite();
-				delete P_in[i], delete P_out[i];
+				std::cerr << "ERROR: CheckKey() failed" << std::endl;
+				exit(-1);
 			}
-			std::cout << "P_" << whoami << ": numRead = " << numRead <<
-				" numWrite = " << numWrite << std::endl;
 
-			// release handles (unicast channel)
-			uP_in.clear(), uP_out.clear(), uP_key.clear();
-			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
-				" aiou.numWrite = " << aiou->numWrite << std::endl;
+			// read the private key from file
+			dkgfilename = my_keyid + "_dkg-sec.asc";
+			std::stringstream dkgseckey;
+			std::ifstream secifs(dkgfilename.c_str(), std::ifstream::in);
+			if (!secifs.is_open())
+			{
+				std::cerr << "ERROR: cannot open key file" << std::endl;
+				exit(-1);
+			}
+			while (std::getline(secifs, line))
+				dkgseckey << line << std::endl;
+			secifs.close();
+			std::string armored_seckey = dkgseckey.str();
 
-			// release handles (broadcast channel)
-			bP_in.clear(), bP_out.clear(), bP_key.clear();
-			std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
-				" aiou2.numWrite = " << aiou2->numWrite << std::endl;
-
-			// release asynchronous unicast and broadcast
-			delete aiou, delete aiou2;
-			
-			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
-			exit(0);
-			/* END child code: participant P_i */
-		}
-		else
-			std::cout << "fork() = " << pid[whoami] << std::endl;
-	}
-}
-
-int main
-	(int argc, char **argv)
-{
-	assert(init_libTMCG());
-	std::string passphrase, line, armored_seckey, message, armored_message;
-
-	// read the private key
-	std::cout << "1. Please enter the passphrase to unlock your private key: ";
-	std::getline(std::cin, passphrase);
-
-	std::cout << "2. Now provide your private key (in ASCII Armor; ^D for EOF): " << std::endl;
-	while (std::getline(std::cin, line))
-		armored_seckey += line + "\r\n";
-	std::cin.clear();
+	// parse the private key
 	bool secdsa = false, sigdsa = false, ssbelg = false, sigelg = false;
 	std::string u;
 	BYTE atype = 0, ptag = 0xFF;
@@ -225,7 +165,7 @@ int main
 			if (!ptag)
 			{
 				std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
-				return -1; // error detected
+				exit(-1); // error detected
 			}
 			std::cout << " tag = " << (int)ptag << " version = " << (int)ctx.version;
 			std::cout << std::endl;
@@ -269,7 +209,7 @@ int main
 						if (dsa_pkalgo != 17)
 						{
 							std::cerr << "ERROR: public-key signature algorithms other than DSA not supported" << std::endl;
-							return -1;
+							exit(-1);
 						}
 						sigdsa = true;
 					}
@@ -302,7 +242,7 @@ int main
 						if (elg_pkalgo != 17)
 						{
 							std::cerr << "ERROR: public-key signature algorithms other than DSA not supported" << std::endl;
-							return -1;
+							exit(-1);
 						}
 						sigelg = true;
 					}
@@ -337,7 +277,7 @@ int main
 							if (!keylen || !ivlen)
 							{
 								std::cerr << "ERROR: unknown symmetric algorithm" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							salt.clear();
 							for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
@@ -362,17 +302,17 @@ int main
 							else
 							{
 								std::cerr << "ERROR: unknown S2K specifier" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							if (seskey.size() != keylen)
 							{
 								std::cerr << "ERROR: S2K failed" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							if (!ctx.encdatalen || !ctx.encdata)
 							{
 								std::cerr << "ERROR: nothing to decrypt" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							key = new BYTE[keylen], iv = new BYTE[ivlen];
 							for (size_t i = 0; i < keylen; i++)
@@ -383,25 +323,25 @@ int main
 							if (ret)
 							{
 								std::cerr << "ERROR: gcry_cipher_open() failed" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							ret = gcry_cipher_setkey(hd, key, keylen);
 							if (ret)
 							{
 								std::cerr << "ERROR: gcry_cipher_setkey() failed" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							ret = gcry_cipher_setiv(hd, iv, ivlen);
 							if (ret)
 							{
 								std::cerr << "ERROR: gcry_cipher_setiv() failed" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							ret = gcry_cipher_decrypt(hd, ctx.encdata, ctx.encdatalen, NULL, 0);
 							if (ret)
 							{
 								std::cerr << "ERROR: gcry_cipher_decrypt() failed" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							gcry_cipher_close(hd);
 							delete [] key, delete [] iv;
@@ -414,7 +354,7 @@ int main
 							if (!mlen || (mlen > mpis.size()))
 							{
 								std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							mpis.erase(mpis.begin(), mpis.begin()+mlen);
 							if (ctx.s2kconv == 255)
@@ -422,13 +362,13 @@ int main
 								if (mpis.size() < 2)
 								{
 									std::cerr << "ERROR: no checksum found" << std::endl;
-									return -1;
+									exit(-1);
 								}
 								chksum2 = (mpis[0] << 8) + mpis[1];
 								if (chksum != chksum2)
 								{
 									std::cerr << "ERROR: checksum mismatch" << std::endl;
-									return -1;
+									exit(-1);
 								}
 							}
 							else
@@ -436,7 +376,7 @@ int main
 								if (mpis.size() != 20)
 								{
 									std::cerr << "ERROR: no SHA-1 hash found" << std::endl;
-									return -1;
+									exit(-1);
 								}
 								hash_input.clear(), hash.clear();
 								for (size_t i = 0; i < (ctx.encdatalen - 20); i++)
@@ -445,20 +385,20 @@ int main
 								if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(hash, mpis))
 								{
 									std::cerr << "ERROR: SHA-1 hash mismatch" << std::endl;
-									return -1;
+									exit(-1);
 								}
 							}
 						}
 						else
 						{
 							std::cerr << "ERROR: S2K format not supported" << std::endl;
-							return -1;
+							exit(-1);
 						}
 					}
 					else if ((ctx.pkalgo == 17) && secdsa)
 					{
 						std::cerr << "ERROR: more than one primary key not supported" << std::endl;
-						return -1;
+						exit(-1);
 					}
 					else
 						std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
@@ -502,7 +442,7 @@ int main
 							if (!keylen || !ivlen)
 							{
 								std::cerr << "ERROR: unknown symmetric algorithm" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							salt.clear();
 							for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
@@ -527,17 +467,17 @@ int main
 							else
 							{
 								std::cerr << "ERROR: unknown S2K specifier" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							if (seskey.size() != keylen)
 							{
 								std::cerr << "ERROR: S2K failed" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							if (!ctx.encdatalen || !ctx.encdata)
 							{
 								std::cerr << "ERROR: nothing to decrypt" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							key = new BYTE[keylen], iv = new BYTE[ivlen];
 							for (size_t i = 0; i < keylen; i++)
@@ -548,25 +488,25 @@ int main
 							if (ret)
 							{
 								std::cerr << "ERROR: gcry_cipher_open() failed" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							ret = gcry_cipher_setkey(hd, key, keylen);
 							if (ret)
 							{
 								std::cerr << "ERROR: gcry_cipher_setkey() failed" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							ret = gcry_cipher_setiv(hd, iv, ivlen);
 							if (ret)
 							{
 								std::cerr << "ERROR: gcry_cipher_setiv() failed" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							ret = gcry_cipher_decrypt(hd, ctx.encdata, ctx.encdatalen, NULL, 0);
 							if (ret)
 							{
 								std::cerr << "ERROR: gcry_cipher_decrypt() failed" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							gcry_cipher_close(hd);
 							delete [] key, delete [] iv;
@@ -579,7 +519,7 @@ int main
 							if (!mlen || (mlen > mpis.size()))
 							{
 								std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
-								return -1;
+								exit(-1);
 							}
 							mpis.erase(mpis.begin(), mpis.begin()+mlen);
 							if (ctx.s2kconv == 255)
@@ -587,13 +527,13 @@ int main
 								if (mpis.size() < 2)
 								{
 									std::cerr << "ERROR: no checksum found" << std::endl;
-									return -1;
+									exit(-1);
 								}
 								chksum2 = (mpis[0] << 8) + mpis[1];
 								if (chksum != chksum2)
 								{
 									std::cerr << "ERROR: checksum mismatch" << std::endl;
-									return -1;
+									exit(-1);
 								}
 							}
 							else
@@ -601,7 +541,7 @@ int main
 								if (mpis.size() != 20)
 								{
 									std::cerr << "ERROR: no SHA-1 hash found" << std::endl;
-									return -1;
+									exit(-1);
 								}
 								hash_input.clear(), hash.clear();
 								for (size_t i = 0; i < (ctx.encdatalen - 20); i++)
@@ -610,14 +550,14 @@ int main
 								if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(hash, mpis))
 								{
 									std::cerr << "ERROR: SHA-1 hash mismatch" << std::endl;
-									return -1;
+									exit(-1);
 								}
 							}
 						}
 						else
 						{
 							std::cerr << "ERROR: S2K format not supported" << std::endl;
-							return -1;
+							exit(-1);
 						}
 					}
 					else if ((ctx.pkalgo == 16) && ssbelg)
@@ -640,27 +580,38 @@ int main
 	else
 	{
 		std::cerr << "ERROR: wrong type of ASCII Armor" << std::endl;
-		return -1;
+		exit(-1);
 	}
 	if (!secdsa)
 	{
 		std::cerr << "ERROR: no DSA private key found" << std::endl;
-		return -1;
+		exit(-1);
 	}
 	if (!ssbelg)
 	{
 		std::cerr << "ERROR: no Elgamal private subkey found" << std::endl;
-		return -1;
+		exit(-1);
 	}
 	if (!sigdsa)
 	{
 		std::cerr << "ERROR: no self-signature for DSA key found" << std::endl;
-		return -1;
+		exit(-1);
 	}
 	if (!sigelg)
 	{
 		std::cerr << "ERROR: no self-signature for Elgamal subkey found" << std::endl;
-		return -1;
+		exit(-1);
+	}
+
+	// compare the key IDs
+	std::stringstream seckeyid;
+	seckeyid << std::hex;
+	for (size_t i = 0; i < keyid.size(); i++)
+		seckeyid << (int)keyid[i];
+	if (my_keyid != seckeyid.str())
+	{
+		std::cerr << "ERROR: wrong key ID" << std::endl;
+		exit(-1);
 	}
 
 	// build keys, check key usage and self-signatures
@@ -670,7 +621,7 @@ int main
 	if (ret)
 	{
 		std::cerr << "ERROR: parsing DSA key material failed" << std::endl;
-		return -1;
+		exit(-1);
 	}
 	std::cout << "DSA key flags: ";
 	size_t flags = 0;
@@ -709,13 +660,13 @@ int main
 	if (ret)
 	{
 		std::cerr << "ERROR: verification of DSA key self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
-		return -1;
+		exit(-1);
 	}
 	ret = gcry_sexp_build(&elgkey, &erroff, "(private-key (elg (p %M) (g %M) (y %M) (x %M)))", elg_p, elg_g, elg_y, elg_x);
 	if (ret)
 	{
 		std::cerr << "ERROR: parsing Elgamal key material failed" << std::endl;
-		return -1;
+		exit(-1);
 	}
 	std::cout << "Elgamal key flags: ";
 	flags = 0;
@@ -744,7 +695,7 @@ int main
 	if ((flags & 0x04) != 0x04)
 	{
 		std::cerr << "ERROR: Elgamal subkey cannot used to encrypt communications" << std::endl;
-		return -1;
+		exit(-1);
 	}
 	elg_trailer.push_back(4); // only V4 format supported
 	elg_trailer.push_back(elg_sigtype);
@@ -759,14 +710,10 @@ int main
 	if (ret)
 	{
 		std::cerr << "ERROR: verification of Elgamal subeky self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
-		return -1;
+		exit(-1);
 	}
 
-	// read the encrypted message
-	std::cout << "3. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
-	while (std::getline(std::cin, line))
-		armored_message += line + "\r\n";
-	std::cin.clear();
+	// parse encrypted message
 	bool have_pkesk = false, have_sed = false, have_seipd = false, have_mdc = false;
 	OCTETS pkesk_keyid;
 	gcry_mpi_t gk, myk;
@@ -784,7 +731,7 @@ int main
 			if (!ptag)
 			{
 				std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
-				return -1; // error detected
+				exit(-1); // error detected
 			}
 			std::cout << " tag = " << (int)ptag << " version = " << (int)ctx.version;
 			std::cout << std::endl;
@@ -822,7 +769,7 @@ int main
 					break;
 				default:
 					std::cerr << "ERROR: unrecognized OpenPGP packet found" << std::endl;
-					return -1;
+					exit(-1);
 			}
 			// cleanup allocated buffers
 			if (ctx.hspd != NULL)
@@ -838,79 +785,31 @@ int main
 	else
 	{
 		std::cerr << "ERROR: wrong type of ASCII Armor" << std::endl;
-		return -1;
+		exit(-1);
 	}
 	if (!have_pkesk)
 	{
 		std::cerr << "ERROR: no public-key encrypted session key found" << std::endl;
-		return -1;
+		exit(-1);
 	}
 	if (!have_sed && !have_seipd)
 	{
 		std::cerr << "ERROR: no symmetrically encrypted (and integrity protected) data found" << std::endl;
-		return -1;
+		exit(-1);
 	}
 	if (have_seipd && !have_mdc)
 	{
 		std::cerr << "ERROR: no modification detection code found" << std::endl;
-		return -1;
+		exit(-1);
 	}
 
 
+// TODO
+			
+			
 
-
-// TODO: initialize and check DKG parameters
-
-
-	BarnettSmartVTMF_dlog 	*vtmf;
-	std::stringstream 	crs;
-
-	// create and check VTMF instance
-	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
-	vtmf = new BarnettSmartVTMF_dlog();
-	std::cout << "vtmf.CheckGroup()" << std::endl;
-	assert(vtmf->CheckGroup());
-	
-	// publish VTMF instance as string stream (common reference string)
-	std::cout << "vtmf.PublishGroup(crs)" << std::endl;
-	vtmf->PublishGroup(crs);
-	
-	// open pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		for (size_t j = 0; j < N; j++)
-		{
-			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
-				perror("dkg-decrypt (pipe)");
-			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
-				perror("dkg-decrypt (pipe)");
-		}
-	}
-	
-	// start childs
-//	for (size_t i = 0; i < N; i++)
-//		start_instance(crs, i);
-
-	// sleep for five seconds
-	sleep(5);
-	
-	// wait for childs and close pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], NULL, 0) != pid[i])
-			perror("dkg-decrypt (waitpid)");
-		for (size_t j = 0; j < N; j++)
-		{
-			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("dkg-decrypt (close)");
-			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
-				perror("dkg-decrypt (close)");
-		}
-	}
-	
-	// release VTMF instance
-	delete vtmf;
+			// release RBC			
+			delete rbc;
 
 	gcry_mpi_release(dsa_p);
 	gcry_mpi_release(dsa_q);
@@ -929,6 +828,98 @@ int main
 	gcry_mpi_release(myk);
 	gcry_sexp_release(dsakey);
 	gcry_sexp_release(elgkey);
+			
+			// release pipe streams (private channels)
+			size_t numRead = 0, numWrite = 0;
+			for (size_t i = 0; i < dkg->n; i++)
+			{
+				numRead += P_in[i]->get_numRead() + P_out[i]->get_numRead();
+				numWrite += P_in[i]->get_numWrite() + P_out[i]->get_numWrite();
+				delete P_in[i], delete P_out[i];
+			}
+			std::cout << "P_" << whoami << ": numRead = " << numRead <<
+				" numWrite = " << numWrite << std::endl;
+
+			// release handles (unicast channel)
+			uP_in.clear(), uP_out.clear(), uP_key.clear();
+			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
+				" aiou.numWrite = " << aiou->numWrite << std::endl;
+
+			// release handles (broadcast channel)
+			bP_in.clear(), bP_out.clear(), bP_key.clear();
+			std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
+				" aiou2.numWrite = " << aiou2->numWrite << std::endl;
+
+			// release asynchronous unicast and broadcast
+			delete aiou, delete aiou2;
+
+			// release DKG
+			delete dkg;
+			
+			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
+			exit(0);
+			/* END child code: participant P_i */
+		}
+		else
+			std::cout << "fork() = " << pid[whoami] << std::endl;
+	}
+}
+
+int main
+	(int argc, char **argv)
+{
+	assert(init_libTMCG());
+	std::string passphrase, line, armored_message;
+	std::vector<std::string> keyids;
+
+	// read the passphrase and key IDs
+	std::cout << "1. Please enter the passphrase to unlock your private key: ";
+	std::getline(std::cin, passphrase);
+
+	std::cout << "2. Now provide the key IDs (one per line) of the participants: ";
+	while (std::getline(std::cin, line))
+		keyids.push_back(line);
+	std::cin.clear();
+
+	// read the encrypted message
+	std::cout << "3. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
+	while (std::getline(std::cin, line))
+		armored_message += line + "\r\n";
+	std::cin.clear();
+
+	// open pipes
+	for (size_t i = 0; i < keyids.size(); i++)
+	{
+		for (size_t j = 0; j < keyids.size(); j++)
+		{
+			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
+				perror("dkg-decrypt (pipe)");
+			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
+				perror("dkg-decrypt (pipe)");
+		}
+	}
+	
+	// start childs
+	for (size_t i = 0; i < keyids.size(); i++)
+		start_instance(i, keyids[i], passphrase, armored_message);
+
+	// sleep for five seconds
+	sleep(5);
+	
+	// wait for childs and close pipes
+	for (size_t i = 0; i < keyids.size(); i++)
+	{
+		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
+		if (waitpid(pid[i], NULL, 0) != pid[i])
+			perror("dkg-decrypt (waitpid)");
+		for (size_t j = 0; j < keyids.size(); j++)
+		{
+			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
+				perror("dkg-decrypt (close)");
+			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
+				perror("dkg-decrypt (close)");
+		}
+	}
 	
 	return 0;
 }

@@ -321,7 +321,7 @@ int main
 		return -1;
 	};
 	T = (N / 2) - 1; // maximum synchronous t-resilience
-	std::cout << "1. Please enter an OpenPGP-style user ID: ";
+	std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
 	std::getline(std::cin, uid);
 	std::cout << "2. Choose a passphrase to protect the private key: ";
 	std::getline(std::cin, passphrase);
