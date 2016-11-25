@@ -199,8 +199,8 @@ bool GennaroJareckiKrawczykRabinDKG::CheckGroup
 }
 
 bool GennaroJareckiKrawczykRabinDKG::Generate
-	(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, bool simulate_faulty_behaviour)
+	(const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(t <= n);
 	assert((2 * t) < n); // maximum synchronous t-resilience
@@ -762,7 +762,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 }
 
 bool GennaroJareckiKrawczykRabinDKG::CheckKey
-	(size_t i) const
+	(const size_t i) const
 {
 	// initialize
 	mpz_t foo;
@@ -785,7 +785,7 @@ bool GennaroJareckiKrawczykRabinDKG::CheckKey
 }
 
 bool GennaroJareckiKrawczykRabinDKG::Reconstruct
-	(size_t i, std::vector<size_t> &complaints,
+	(const size_t i, std::vector<size_t> &complaints,
 	std::vector<mpz_ptr> &z_i_in,
 	CachinKursawePetzoldShoupRBC *rbc, std::ostream &err)
 {
@@ -1004,8 +1004,8 @@ bool GennaroJareckiKrawczykRabinNTS::CheckGroup
 }
 
 bool GennaroJareckiKrawczykRabinNTS::Generate
-	(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, bool simulate_faulty_behaviour)
+	(const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	// set ID for RBC
 	std::stringstream myID;
@@ -1043,8 +1043,8 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 
 bool GennaroJareckiKrawczykRabinNTS::Sign
 	(mpz_srcptr m, mpz_ptr c, mpz_ptr s, 
-	size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, bool simulate_faulty_behaviour)
+	const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(n >= t);
 	assert((2 * t) < n); // maximum synchronous t-resilience

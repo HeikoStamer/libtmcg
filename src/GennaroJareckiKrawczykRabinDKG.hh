@@ -87,12 +87,12 @@ class GennaroJareckiKrawczykRabinDKG
 		bool CheckGroup
 			() const;
 		bool Generate
-			(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-			std::ostream &err, bool simulate_faulty_behaviour = false);
+			(const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err, const bool simulate_faulty_behaviour = false);
 		bool CheckKey
-			(size_t i) const;
+			(const size_t i) const;
 		bool Reconstruct
-			(size_t i, std::vector<size_t> &complaints,
+			(const size_t i, std::vector<size_t> &complaints,
 			std::vector<mpz_ptr> &z_i_in,
 			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
 		~GennaroJareckiKrawczykRabinDKG
@@ -124,12 +124,12 @@ class GennaroJareckiKrawczykRabinNTS
 		bool CheckGroup
 			() const;
 		bool Generate
-			(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-			std::ostream &err, bool simulate_faulty_behaviour = false);
+			(const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err, const bool simulate_faulty_behaviour = false);
 		bool Sign
 			(mpz_srcptr m, mpz_ptr c, mpz_ptr s,
-			size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-			std::ostream &err, bool simulate_faulty_behaviour = false);
+			const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err, const bool simulate_faulty_behaviour = false);
 		bool Verify
 			(mpz_srcptr m, mpz_ptr c, mpz_ptr s);
 		~GennaroJareckiKrawczykRabinNTS

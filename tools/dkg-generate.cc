@@ -35,14 +35,13 @@
 #include "pipestream.hh"
 
 #undef NDEBUG
-#define N 7
-#define T 2
+#define MAX_N 1024
 
-int pipefd[N][N][2], broadcast_pipefd[N][N][2];
-pid_t pid[N];
+int pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
+pid_t pid[MAX_N];
 
 void start_instance
-	(std::istream &crs_in, const size_t whoami, const std::string u, const std::string pp)
+	(const size_t N, const size_t T, std::istream &crs_in, const size_t whoami, const std::string u, const std::string pp)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-generate (fork)");
@@ -310,8 +309,18 @@ int main
 
 	BarnettSmartVTMF_dlog 	*vtmf;
 	std::stringstream 	crs;
-	std::string		uid, passphrase;
+	std::string		value, uid, passphrase;
+	size_t			N, T;
 
+	std::cout << "0. Enter the number of participants (< " << MAX_N << "): ";
+	std::getline(std::cin, value);
+	std::stringstream(value) >> N;
+	if ((N < 3)  || (N > MAX_N))
+	{
+		std::cerr << "ERROR: too few or too many participants" << std::endl;
+		return -1;
+	};
+	T = (N / 2) - 1; // maximum synchronous t-resilience
 	std::cout << "1. Please enter an OpenPGP-style user ID: ";
 	std::getline(std::cin, uid);
 	std::cout << "2. Choose a passphrase to protect the private key: ";
@@ -341,7 +350,7 @@ int main
 	
 	// start childs
 	for (size_t i = 0; i < N; i++)
-		start_instance(crs, i, uid, passphrase);
+		start_instance(N, T, crs, i, uid, passphrase);
 
 	// sleep for five seconds
 	sleep(5);

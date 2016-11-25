@@ -23,6 +23,7 @@
 #ifdef FORKING
 
 #include <sstream>
+#include <fstream>
 #include <vector>
 #include <algorithm>
 #include <cassert>
@@ -181,6 +182,7 @@ int main
 	// read the private key
 	std::cout << "1. Please enter the passphrase to unlock your private key: ";
 	std::getline(std::cin, passphrase);
+
 	std::cout << "2. Now provide your private key (in ASCII Armor; ^D for EOF): " << std::endl;
 	while (std::getline(std::cin, line))
 		armored_seckey += line + "\r\n";
