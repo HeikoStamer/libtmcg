@@ -28,10 +28,12 @@
 #include "GennaroJareckiKrawczykRabinDKG.hh"
 
 GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
-	(size_t n_in, size_t t_in,
+	(const size_t n_in, const size_t t_in, const size_t i_in,
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
-	unsigned long int fieldsize, unsigned long int subgroupsize):
-			F_size(fieldsize), G_size(subgroupsize), n(n_in), t(t_in)
+	const unsigned long int fieldsize,
+	const unsigned long int subgroupsize):
+			F_size(fieldsize), G_size(subgroupsize), n(n_in),
+			t(t_in), i(i_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
 		mpz_init_set(h, h_CRS);
@@ -74,6 +76,8 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	std::stringstream(value) >> n;
 	std::getline(in, value);
 	std::stringstream(value) >> t;
+	std::getline(in, value);
+	std::stringstream(value) >> i;
 	mpz_init(x_i), mpz_init(xprime_i), mpz_init(y);
 	in >> x_i >> xprime_i >> y;
 	size_t qual_size = 0;
@@ -121,7 +125,7 @@ void GennaroJareckiKrawczykRabinDKG::PublishState
 {
 	out << p << std::endl << q << std::endl << g << std::endl
 		<< h << std::endl;
-	out << n << std::endl << t << std::endl;
+	out << n << std::endl << t << std::endl << i << std::endl;
 	out << x_i << std::endl << xprime_i << std::endl << y << std::endl;
 	out << QUAL.size() << std::endl;
 	for (size_t i = 0; i < QUAL.size(); i++)
@@ -199,7 +203,7 @@ bool GennaroJareckiKrawczykRabinDKG::CheckGroup
 }
 
 bool GennaroJareckiKrawczykRabinDKG::Generate
-	(const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(t <= n);
@@ -695,7 +699,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			err << "P_" << *it << " ";
 		err << std::endl;
 		// run reconstruction phase of Pedersen-VSS
-		if (!Reconstruct(i, complaints, z_i, rbc, err))
+		if (!Reconstruct(complaints, z_i, rbc, err))
 		{
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
@@ -762,7 +766,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 }
 
 bool GennaroJareckiKrawczykRabinDKG::CheckKey
-	(const size_t i) const
+	() const
 {
 	// initialize
 	mpz_t foo;
@@ -785,8 +789,7 @@ bool GennaroJareckiKrawczykRabinDKG::CheckKey
 }
 
 bool GennaroJareckiKrawczykRabinDKG::Reconstruct
-	(const size_t i, std::vector<size_t> &complaints,
-	std::vector<mpz_ptr> &z_i_in,
+	(std::vector<size_t> &complaints, std::vector<mpz_ptr> &z_i_in,
 	CachinKursawePetzoldShoupRBC *rbc, std::ostream &err)
 {
 	// initialize
@@ -795,7 +798,8 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "GennaroJareckiKrawczykRabinDKG::Reconstruct()" << p << q << g << h << n << t;
+	myID << "GennaroJareckiKrawczykRabinDKG::Reconstruct()"
+		<< p << q << g << h << n << t;
 	rbc->setID(myID.str());
 
 	try
@@ -914,10 +918,11 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 // ===================================================================================================================================
 
 GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
-	(size_t n_in, size_t t_in,
+	(const size_t n_in, const size_t t_in, const size_t i_in,
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 	unsigned long int fieldsize, unsigned long int subgroupsize):
-			F_size(fieldsize), G_size(subgroupsize), n(n_in), t(t_in)
+			F_size(fieldsize), G_size(subgroupsize), n(n_in),
+			t(t_in), i(i_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
 		mpz_init_set(h, h_CRS);
@@ -930,7 +935,7 @@ GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
 		y_i.push_back(tmp1);
 	}
 	
-	dkg = new GennaroJareckiKrawczykRabinDKG(n, t, p, q, g, h);
+	dkg = new GennaroJareckiKrawczykRabinDKG(n_in, t_in, i_in, p, q, g, h);
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1004,7 +1009,7 @@ bool GennaroJareckiKrawczykRabinNTS::CheckGroup
 }
 
 bool GennaroJareckiKrawczykRabinNTS::Generate
-	(const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	// set ID for RBC
@@ -1020,7 +1025,7 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 		// initial call of the protocol New-DKG for generating an additive
 		// share $z_i$ of a common secret $x$ and the public parameters
 		// $y = g^x$ and $y_i = g^{z_i}$ for every $P_i$
-		if (!dkg->Generate(i, aiou, rbc, err, simulate_faulty_behaviour))
+		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		// set the public class variables
 		mpz_set(z_i, dkg->z_i[i]);
@@ -1043,7 +1048,7 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 
 bool GennaroJareckiKrawczykRabinNTS::Sign
 	(mpz_srcptr m, mpz_ptr c, mpz_ptr s, 
-	const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(n >= t);
@@ -1061,7 +1066,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	mpz_t r;
 	std::vector<size_t> QUALprime;
 	std::vector<mpz_ptr> s_i, r_i, u_i;
-	GennaroJareckiKrawczykRabinDKG *dkg2 = new GennaroJareckiKrawczykRabinDKG(n, t, p, q, g, h);
+	GennaroJareckiKrawczykRabinDKG *dkg2 = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h);
 	std::vector<size_t> complaints;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	mpz_init(r);
@@ -1090,7 +1095,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		//    is itself secret-sahred with Feldman-VSS. We denote the
 		//    generated public values $r = g^k$ and $r_i = g^{u_i}$
 		//    for each $P_i$.
-		if (!dkg2->Generate(i, aiou, rbc, err, simulate_faulty_behaviour && simulate_faulty_randomizer))
+		if (!dkg2->Generate(aiou, rbc, err, simulate_faulty_behaviour && simulate_faulty_randomizer))
 			throw false;
 		mpz_set(u_i[i], dkg2->z_i[i]);
 		for (size_t j = 0; j < n; j++)
@@ -1152,12 +1157,12 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 			err << "P_" << *it << " ";
 		err << std::endl;
 		// run reconstruction phases
-		if (!dkg2->Reconstruct(i, complaints, u_i, rbc, err))
+		if (!dkg2->Reconstruct(complaints, u_i, rbc, err))
 		{
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
 		}
-		if (!dkg->Reconstruct(i, complaints, dkg->z_i, rbc, err))
+		if (!dkg->Reconstruct(complaints, dkg->z_i, rbc, err))
 		{
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
@@ -1181,7 +1186,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
-		if (!dkg->Reconstruct(i, complaints, dkg->z_i, rbc, err))
+		if (!dkg->Reconstruct(complaints, dkg->z_i, rbc, err))
 		{
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;

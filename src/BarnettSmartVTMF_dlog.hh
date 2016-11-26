@@ -6,7 +6,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -56,15 +56,15 @@
 class BarnettSmartVTMF_dlog
 {
 	private:
-		mpz_t															x_i, h_i, d, h_i_fp;
-		std::map<std::string, mpz_ptr>		h_j;
+		mpz_t				x_i, h_i, d, h_i_fp;
+		std::map<std::string, mpz_ptr>	h_j;
 	
 	protected:
-		mpz_t															*fpowm_table_g, *fpowm_table_h;
-		unsigned long int									F_size, G_size;
+		mpz_t				*fpowm_table_g, *fpowm_table_h;
+		unsigned long int		F_size, G_size;
 	
 	public:
-		mpz_t															p, q, g, k, h;
+		mpz_t				p, q, g, k, h;
 		
 		BarnettSmartVTMF_dlog
 			(unsigned long int fieldsize = TMCG_DDH_SIZE,

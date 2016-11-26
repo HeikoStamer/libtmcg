@@ -41,7 +41,7 @@ int pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t pid[MAX_N];
 
 void start_instance
-	(const size_t whoami, const std::string my_keyid, const std::string passphrase, const std::string armored_message)
+	(size_t whoami, const std::string my_keyid, const std::string passphrase, const std::string armored_message)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-decrypt (fork)");
@@ -73,6 +73,9 @@ void start_instance
 				std::cerr << "ERROR: CheckGroup() failed" << std::endl;
 				exit(-1);
 			}
+
+			// set correct index from saved DKG state
+			whoami = dkg->i;
 
 			// create pipe streams and handles between all players
 			std::vector<ipipestream*> P_in;
@@ -106,7 +109,7 @@ void start_instance
 
 			// check the key share
 			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
-			if (!dkg->CheckKey(whoami)) // FIXME: whoami stimmt nicht mit dem dkg-state ueberein
+			if (!dkg->CheckKey())
 			{
 				std::cerr << "ERROR: CheckKey() failed" << std::endl;
 				exit(-1);

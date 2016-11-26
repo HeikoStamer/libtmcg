@@ -46,7 +46,7 @@
 
 	// GNU crypto library
 	#include <gcrypt.h>
-	
+
 class aiounicast
 {
 	private:
@@ -56,22 +56,24 @@ class aiounicast
 		std::vector<char*>			buf_in;
 		std::vector<size_t>			buf_ptr;
 		std::vector<bool>			buf_flag;
-		std::vector< std::list<mpz_ptr> > 	buf_mpz;
+		std::vector< std::list<mpz_ptr> >	buf_mpz;
 		std::vector<gcry_mac_hd_t*>		buf_mac_in, buf_mac_out;
 
 	public:
-		static const size_t			aio_scheduler_none		= 0;
-		static const size_t			aio_scheduler_roundrobin	= 1;
-		static const size_t			aio_scheduler_random		= 2;
-		static const size_t			aio_scheduler_direct		= 3;
-		size_t					n, t, j;
-		std::vector<int>			in, out;
-		size_t					numWrite, numRead;
+		static const size_t	aio_scheduler_none		= 0;
+		static const size_t	aio_scheduler_roundrobin	= 1;
+		static const size_t	aio_scheduler_random		= 2;
+		static const size_t	aio_scheduler_direct		= 3;
+		size_t			n, t, j;
+		std::vector<int>	in, out;
+		size_t			numWrite, numRead;
 
 		aiounicast
-			(size_t n_in, size_t t_in, size_t j_in,
-			std::vector<int> &in_in, std::vector<int> &out_in,
-			std::vector<std::string> &key_in):
+			(const size_t n_in, const size_t t_in,
+			const size_t j_in,
+			const std::vector<int> &in_in,
+			const std::vector<int> &out_in,
+			const std::vector<std::string> &key_in):
 				n(n_in), t(t_in), j(j_in)
 		{
 			assert(t_in <= n_in);
@@ -137,7 +139,7 @@ class aiounicast
 		}
 
 		void Send
-			(mpz_srcptr m, size_t i_in)
+			(mpz_srcptr m, const size_t i_in)
 		{
 			// prepare write buffer with m
 			size_t size = mpz_sizeinbase(m, TMCG_MPZ_IO_BASE);
@@ -236,7 +238,7 @@ class aiounicast
 		}
 
 		void Send
-			(const std::vector<mpz_srcptr> &m, size_t i_in)
+			(const std::vector<mpz_srcptr> &m, const size_t i_in)
 		{
 			for (size_t mm = 0; mm < m.size(); mm++)
 				Send(m[mm], i_in);
@@ -373,7 +375,7 @@ class aiounicast
 		}
 
 		bool Receive
-			(std::vector<mpz_ptr> &m, size_t &i_out, size_t scheduler = aio_scheduler_roundrobin)
+			(std::vector<mpz_ptr> &m, size_t &i_out, const size_t scheduler = aio_scheduler_roundrobin)
 		{
 			// determine maximum number of rounds based on scheduler
 			size_t max_rounds = 0; 

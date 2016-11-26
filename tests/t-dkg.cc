@@ -109,8 +109,8 @@ void start_instance
 
 			// create an instance of DKG
 			GennaroJareckiKrawczykRabinDKG *dkg;
-			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", ...)" << std::endl;
-			dkg = new GennaroJareckiKrawczykRabinDKG(N, T,
+			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
+			dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami,
 				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 			assert(dkg->CheckGroup());
 
@@ -130,9 +130,9 @@ void start_instance
 			start_clock();
 			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
 			if (corrupted)
-				dkg->Generate(whoami, aiou, rbc, err_log, true);
+				dkg->Generate(aiou, rbc, err_log, true);
 			else
-				assert(dkg->Generate(whoami, aiou, rbc, err_log));
+				assert(dkg->Generate(aiou, rbc, err_log));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
@@ -141,9 +141,9 @@ void start_instance
 			start_clock();
 			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
 			if (corrupted)
-				dkg->CheckKey(whoami);
+				dkg->CheckKey();
 			else
-				assert(dkg->CheckKey(whoami));
+				assert(dkg->CheckKey());
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
@@ -152,8 +152,8 @@ void start_instance
 
 			// create an instance of threshold signature protocol new-TSch (NTS)
 			GennaroJareckiKrawczykRabinNTS *nts;
-			std::cout << "GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", ...)" << std::endl;
-			nts = new GennaroJareckiKrawczykRabinNTS(N, T,
+			std::cout << "GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
+			nts = new GennaroJareckiKrawczykRabinNTS(N, T, whoami,
 				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 			assert(nts->CheckGroup());
 
@@ -162,9 +162,9 @@ void start_instance
 			start_clock();
 			std::cout << "P_" << whoami << ": nts.Generate()" << std::endl;
 			if (corrupted)
-				nts->Generate(whoami, aiou, rbc, err_log2, true);
+				nts->Generate(aiou, rbc, err_log2, true);
 			else
-				assert(nts->Generate(whoami, aiou, rbc, err_log2));
+				assert(nts->Generate(aiou, rbc, err_log2));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
@@ -176,9 +176,9 @@ void start_instance
 			start_clock();
 			std::cout << "P_" << whoami << ": nts.Sign()" << std::endl;
 			if (corrupted)
-				nts->Sign(m, c, s, whoami, aiou, rbc, err_log3, true);
+				nts->Sign(m, c, s, aiou, rbc, err_log3, true);
 			else
-				assert(nts->Sign(m, c, s, whoami, aiou, rbc, err_log3));
+				assert(nts->Sign(m, c, s, aiou, rbc, err_log3));
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
@@ -209,9 +209,9 @@ void start_instance
 			start_clock();
 			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
 			if (corrupted)
-				dkg->CheckKey(whoami);
+				dkg->CheckKey();
 			else
-				assert(dkg->CheckKey(whoami));
+				assert(dkg->CheckKey());
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			

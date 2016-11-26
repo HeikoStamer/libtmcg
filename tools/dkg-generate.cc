@@ -41,7 +41,7 @@ int pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t pid[MAX_N];
 
 void start_instance
-	(const size_t N, const size_t T, std::istream &crs_in, const size_t whoami, const std::string u, const std::string pp)
+	(const size_t N, const size_t T, const size_t whoami, std::istream &crs_in, const std::string u, const std::string pp)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-generate (fork)");
@@ -102,8 +102,8 @@ void start_instance
 
 			// create an instance of DKG
 			GennaroJareckiKrawczykRabinDKG *dkg;
-			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", ...)" << std::endl;
-			dkg = new GennaroJareckiKrawczykRabinDKG(N, T,
+			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
+			dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami,
 				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 			assert(dkg->CheckGroup());
 
@@ -121,12 +121,12 @@ void start_instance
 			// generating $x$ and extracting $y = g^x \bmod p$
 			std::stringstream err_log;
 			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
-			assert(dkg->Generate(whoami, aiou, rbc, err_log));
+			assert(dkg->Generate(aiou, rbc, err_log));
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 
 			// check the generated key share
 			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
-			assert(dkg->CheckKey(whoami));
+			assert(dkg->CheckKey());
 
 			// at the end: deliver one more round for waiting parties
 			mpz_t m;
@@ -350,7 +350,7 @@ int main
 	
 	// start childs
 	for (size_t i = 0; i < N; i++)
-		start_instance(N, T, crs, i, uid, passphrase);
+		start_instance(N, T, i, crs, uid, passphrase);
 
 	// sleep for five seconds
 	sleep(5);
