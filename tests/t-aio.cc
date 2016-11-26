@@ -73,26 +73,31 @@ void start_instance
 
 			// send a simple message
 			std::vector<size_t> froms;
+			std::vector<size_t>::iterator ipos;
 			mpz_t m;
 			mpz_init_set_ui(m, whoami);
 			for (size_t i = 0; i < N; i++)
 			{
 				if ((i != whoami) && !corrupted)
-				{
 					aiou->Send(m, i);
+				if (i != whoami)
 					froms.push_back(i);
-				}
 			}
 			// receive messages from other parties
 			for (size_t i = 0; i < N; i++)
 			{
 				if (i != whoami)
 				{
-					bool ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
+					bool ret = false;
+					ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
 					if (ret)
 					{
 						assert(!mpz_cmp_ui(m, i));
-						froms.erase(std::find(froms.begin(), froms.end(), i));
+						ipos = std::find(froms.begin(), froms.end(), i);
+						if (ipos != froms.end())
+							froms.erase(ipos);
+						else
+							std::cout << "P_" << whoami << ": entry not found for " << i << std::endl;
 					}
 					else
 						std::cout << "P_" << whoami << ": timeout of " << i << std::endl;
