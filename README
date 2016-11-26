@@ -33,7 +33,10 @@ Introduction
   high-level protocols minimize the effect of coalitions and preserve
   the confidentiality of the players' strategy, i.e., the players are
   not required to reveal their cards at the end of the game to show
-  that they did not cheat.
+  that they did not cheat. For many operations of Schindelhauer's
+  toolbox the library provides optimized protocols based on standard
+  cryptographic assumptions like Desicional Diffie Hellmann (DDH).
+  Therefore a reasonable level of performance is obtained.
 
   LibTMCG is Free Software according to the definition of the Free
   Software Foundation. The source code is released under the GNU
