@@ -36,7 +36,7 @@
 
 #undef NDEBUG
 #define N 11
-#define T 5
+#define T 3
 
 int pipefd[N][N][2];
 pid_t pid[N];
@@ -77,26 +77,27 @@ void start_instance
 			mpz_init_set_ui(m, whoami);
 			for (size_t i = 0; i < N; i++)
 			{
-				if (i != whoami)
+				if ((i != whoami) && !corrupted)
 				{
 					aiou->Send(m, i);
 					froms.push_back(i);
 				}
 			}
 			// receive messages from other parties
-			while (froms.size())
+			for (size_t i = 0; i < N; i++)
 			{
-				size_t from = 0;
-				bool ret = aiou->Receive(m, from);
+				bool ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
 				if (ret)
 				{
-					assert(!mpz_cmp_ui(m, from));
-					froms.erase(std::find(froms.begin(), froms.end(), from));
+					assert(!mpz_cmp_ui(m, i));
+					froms.erase(std::find(froms.begin(), froms.end(), i));
 				}
-				assert (ret);
 			}
-
-// TODO
+			assert(froms.size() <= T);
+			for (size_t i = 0; i < froms.size(); i++)
+			{
+				assert(froms[i] < T); // only corrupted parties should fail
+			}
 
 			// release
 			mpz_clear(m);
