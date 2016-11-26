@@ -32,6 +32,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	(const size_t n_in, const size_t t_in, const size_t j_in,
 	aiounicast *aiou_in)
 {
+	assert(t_in > 0);
 	assert(t_in <= n_in);
 	assert((3 * t_in) < n_in);
 	assert(j_in < n_in);

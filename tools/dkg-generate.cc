@@ -41,7 +41,7 @@ int pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t pid[MAX_N];
 
 void start_instance
-	(const size_t N, const size_t T, const size_t whoami, std::istream &crs_in, const std::string u, const std::string pp)
+	(const size_t N, const size_t T, const size_t whoami, std::istream &crs_in, const std::string u, const std::string pp, const time_t keytime)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-generate (fork)");
@@ -105,7 +105,12 @@ void start_instance
 			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
 			dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami,
 				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
-			assert(dkg->CheckGroup());
+			if (!dkg->CheckGroup())
+			{
+				std::cout << "P_" << whoami << ": " <<
+					"DKG parameters are not correctly generated!" << std::endl;
+				exit(-1);
+			}
 
 			// create asynchronous authenticated unicast channels
 			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, uP_key);
@@ -121,17 +126,30 @@ void start_instance
 			// generating $x$ and extracting $y = g^x \bmod p$
 			std::stringstream err_log;
 			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
-			assert(dkg->Generate(aiou, rbc, err_log));
+			if (!dkg->Generate(aiou, rbc, err_log))
+			{
+				std::cout << "P_" << whoami << ": " <<
+					"DKG Generate() failed" << std::endl;
+				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+				exit(-1);
+			}
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 
 			// check the generated key share
 			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
-			assert(dkg->CheckKey());
+			if (!dkg->CheckKey())
+			{
+				std::cout << "P_" << whoami << ": " <<
+					"DKG CheckKey() failed" << std::endl;
+				exit(-1);
+			}
 
-			// at the end: deliver one more round for waiting parties
+			// at the end: deliver some more rounds for waiting parties
 			mpz_t m;
 			mpz_init(m);
-			rbc->DeliverFrom(m, whoami);
+			time_t start_time = time(NULL);
+			while (time(NULL) < (start_time + 5))
+				rbc->DeliverFrom(m, whoami);
 			mpz_clear(m);
 
 			// create an OpenPGP DSA-based primary key and Elgamal-based subkey
@@ -141,7 +159,7 @@ void start_instance
 			OCTETS pub_hashing, sub_hashing;
 			OCTETS uidsig_hashing, subsig_hashing, uidsig_left, subsig_left;
 			OCTETS hash;
-			time_t keytime, sigtime;
+			time_t sigtime;
 			gcry_sexp_t key;
 			gcry_mpi_t p, q, g, y, x, r, s;
 			gcry_error_t ret;
@@ -150,7 +168,7 @@ void start_instance
 			mpz_init(dsa_y), mpz_init(dsa_x);
 			mpz_srandomm(dsa_x, vtmf->q);
 			mpz_spowm(dsa_y, vtmf->g, dsa_x, vtmf->p);
-			keytime = time(NULL); // current time
+			
 			p = gcry_mpi_new(2048);
 			q = gcry_mpi_new(2048);
 			g = gcry_mpi_new(2048);
@@ -315,18 +333,21 @@ int main
 	std::cout << "0. Enter the number of participants (< " << MAX_N << "): ";
 	std::getline(std::cin, value);
 	std::stringstream(value) >> N;
-	if ((N < 3)  || (N > MAX_N))
+	if ((N < 4)  || (N > MAX_N))
 	{
 		std::cerr << "ERROR: too few or too many participants" << std::endl;
 		return -1;
 	};
-	T = (N / 2) - 1; // maximum synchronous t-resilience
+	T = (N / 3) - 1; // maximum asynchronous t-resilience
+	if (T == 0)
+		T = 1; // RBC will not work with 0-resilience
 	std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
 	std::getline(std::cin, uid);
 	std::cout << "2. Choose a passphrase to protect the private key: ";
 	std::getline(std::cin, passphrase);
 
 	// create and check VTMF instance
+	time_t keytime = time(NULL); // current time
 	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
 	vtmf = new BarnettSmartVTMF_dlog();
 	std::cout << "vtmf.CheckGroup()" << std::endl;
@@ -350,7 +371,7 @@ int main
 	
 	// start childs
 	for (size_t i = 0; i < N; i++)
-		start_instance(N, T, i, crs, uid, passphrase);
+		start_instance(N, T, i, crs, uid, passphrase, keytime);
 
 	// sleep for five seconds
 	sleep(5);
