@@ -29,7 +29,7 @@
 #include "CachinKursawePetzoldShoupSEABP.hh"
 
 CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
-	(size_t n_in, size_t t_in, size_t j_in,
+	(const size_t n_in, const size_t t_in, const size_t j_in,
 	aiounicast *aiou_in)
 {
 	assert(t_in <= n_in);
@@ -90,7 +90,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 }
 
 void CachinKursawePetzoldShoupRBC::setID
-	(std::string ID_in)
+	(const std::string ID_in)
 {
 	// save the last ID
 	mpz_ptr tmp = new mpz_t();
@@ -120,7 +120,7 @@ void CachinKursawePetzoldShoupRBC::unsetID
 }
 
 void CachinKursawePetzoldShoupRBC::Broadcast
-	(mpz_srcptr m, bool simulate_faulty_behaviour)
+	(mpz_srcptr m, const bool simulate_faulty_behaviour)
 {
 	mpz_add_ui(s, s, 1L); // increase sequence counter
 
@@ -214,7 +214,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			// third, nothing buffered
 			if (l == n)
 			{
-				// receive a message from an arbitrary party $P_l$ (round-robin)
+				// receive a message from an arbitrary party $P_l$ (round-robin, short timeout)
 				if (!aiou->Receive(message, l))
 				{
 //std::cerr << "RBC: timeout of party " << j << " from " << l << " in Deliver()" << std::endl;
@@ -493,7 +493,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 }
 
 bool CachinKursawePetzoldShoupRBC::DeliverFrom
-	(mpz_ptr m, size_t i_in)
+	(mpz_ptr m, const size_t i_in)
 {
 	std::vector<size_t> sleep_counter;
 	for (size_t i = 0; i <= n; i++)

@@ -86,11 +86,16 @@ void start_instance
 			// receive messages from other parties
 			for (size_t i = 0; i < N; i++)
 			{
-				bool ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
-				if (ret)
+				if (i != whoami)
 				{
-					assert(!mpz_cmp_ui(m, i));
-					froms.erase(std::find(froms.begin(), froms.end(), i));
+					bool ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
+					if (ret)
+					{
+						assert(!mpz_cmp_ui(m, i));
+						froms.erase(std::find(froms.begin(), froms.end(), i));
+					}
+					else
+						std::cout << "P_" << whoami << ": timeout of " << i << std::endl;
 				}
 			}
 			assert(froms.size() <= T);

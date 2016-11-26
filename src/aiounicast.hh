@@ -259,134 +259,134 @@ class aiounicast
 				i_out = n;
 				return false;
 			}
-			time_t start_time = time(NULL);
-			while (time(NULL) <= (start_time + timeout))
+			for (size_t round = 0; (round < n); round++)
 			{
-				for (size_t round = 0; round < n; round++)
+				// scheduler
+				switch (scheduler)
 				{
-					// scheduler
-					switch (scheduler)
-					{
-						case aio_scheduler_none:
-							i_out = n;
-							return false;
-						case aio_scheduler_roundrobin:
-							i_out = aio_schedule_current++;
-							if (aio_schedule_current == n)
-								aio_schedule_current = 0;
-							break;
-						case aio_scheduler_random:
-							i_out = mpz_wrandom_mod(n);
-							break;
-						case aio_scheduler_direct:
-							if (i_out >= n)
-								return false;
-							break;
-						default:
+					case aio_scheduler_none:
+						i_out = n;
+						return false;
+					case aio_scheduler_roundrobin:
+						i_out = aio_schedule_current++;
+						if (aio_schedule_current == n)
 							aio_schedule_current = 0;
-					}
-					// anything buffered from previous rounds?
-					if (buf_flag[i_out])
+						break;
+					case aio_scheduler_random:
+						i_out = mpz_wrandom_mod(n);
+						break;
+					case aio_scheduler_direct:
+						if (i_out >= n)
+							return false;
+						break;
+					default:
+						aio_schedule_current = 0;
+				}
+				// anything buffered from previous rounds?
+				if (buf_flag[i_out])
+				{
+					// search for line delimiter
+					bool newline_found = false;
+					size_t newline_ptr = 0;
+					for (size_t ptr = 0; ptr < buf_ptr[i_out]; ptr++)
 					{
-						// search for delimiter
-						bool newline_found = false;
-						size_t newline_ptr = 0;
-						for (size_t ptr = 0; ptr < buf_ptr[i_out]; ptr++)
+						if (buf_in[i_out][ptr] == '\n')
 						{
-							if (buf_in[i_out][ptr] == '\n')
-							{
-								newline_ptr = ptr;
-								newline_found = true;
-								break;
-							}
+							newline_ptr = ptr;
+							newline_found = true;
+							break;
 						}
-						// process the buffer
-						if (newline_found && ((buf_ptr[i_out] - newline_ptr - 1) >= maclen))
+					}
+					// process the buffer
+					if (newline_found && ((buf_ptr[i_out] - newline_ptr - 1) >= maclen))
+					{
+						char *tmp = new char[newline_ptr + 1];
+						char *mac = new char[maclen];
+						memset(tmp, 0, newline_ptr + 1);
+						memset(mac, 0, maclen);
+						if (newline_ptr > 0)
+							memcpy(tmp, buf_in[i_out], newline_ptr);
+						memcpy(mac, buf_in[i_out] + newline_ptr + 1, maclen);
+						// adjust buffer (copy remaining characters)
+						char *wptr = buf_in[i_out] + newline_ptr + 1 + maclen;
+						size_t wnum = buf_ptr[i_out] - newline_ptr - 1 - maclen;
+						if (wnum > 0)
+							memmove(buf_in[i_out], wptr, wnum);
+						else
+							buf_flag[i_out] = false;
+						buf_ptr[i_out] = wnum;
+						// calculate and check MAC
+						gcry_error_t err;
+						err = gcry_mac_write(*buf_mac_in[i_out], tmp, newline_ptr);
+						if (err)
 						{
-							char *tmp = new char[newline_ptr + 1];
-							char *mac = new char[maclen];
-							memset(tmp, 0, newline_ptr + 1);
-							memset(mac, 0, maclen);
-							if (newline_ptr > 0)
-								memcpy(tmp, buf_in[i_out], newline_ptr);
-							memcpy(mac, buf_in[i_out] + newline_ptr + 1, maclen);
-							// adjust buffer (copy remaining characters)
-							char *wptr = buf_in[i_out] + newline_ptr + 1 + maclen;
-							size_t wnum = buf_ptr[i_out] - newline_ptr - 1 - maclen;
-							if (wnum > 0)
-								memmove(buf_in[i_out], wptr, wnum);
-							else
-								buf_flag[i_out] = false;
-							buf_ptr[i_out] = wnum;
-							// calculate and check MAC
-							gcry_error_t err;
-							err = gcry_mac_write(*buf_mac_in[i_out], tmp, newline_ptr);
-							if (err)
-							{
-								std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
-								std::cerr << gcry_strerror(err) << std::endl;
-								delete [] tmp, delete [] mac;
-								return false;
-							}
-							err = gcry_mac_verify(*buf_mac_in[i_out], mac, maclen);
-							if (err)
-							{
-								std::cerr << "libgcrypt: gcry_mac_verify() failed" << std::endl;
-								std::cerr << gcry_strerror(err) << std::endl;
-								delete [] tmp, delete [] mac;
-								return false;
-							}
-							// extract value of m
-							if (mpz_set_str(m, tmp, TMCG_MPZ_IO_BASE) < 0)
-							{
-								std::cerr << "libgmp: mpz_set_str() failed" << std::endl;
-								delete [] tmp, delete [] mac;
-								return false;
-							}
+							std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
+							std::cerr << gcry_strerror(err) << std::endl;
 							delete [] tmp, delete [] mac;
-							return true;
+							return false;
 						}
-						// no delimiter found; invalidate buffer flag
-						buf_flag[i_out] = false;
-					}
-					// read(2) -- do everything with asynchronous I/O
-					size_t max = buf_in_size - buf_ptr[i_out];
-					if (max > 0)
-					{
-						char *rptr = buf_in[i_out] + buf_ptr[i_out];
-						ssize_t num = read(in[i_out], rptr, max);
-						if (num < 0)
+						err = gcry_mac_verify(*buf_mac_in[i_out], mac, maclen);
+						if (err)
 						{
-							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || 
-								(errno == EINTR))
-							{
-								if (scheduler == aio_scheduler_direct)
-									sleep(1);
-								continue;
-							}
-							else
-							{
-								perror("aiounicast (read)");
-								return false;
-							}
+							std::cerr << "libgcrypt: gcry_mac_verify() failed" << std::endl;
+							std::cerr << gcry_strerror(err) << std::endl;
+							delete [] tmp, delete [] mac;
+							return false;
 						}
-						if (num == 0)
-							continue;
-						numRead += num;
-						buf_ptr[i_out] += num;
-						buf_flag[i_out] = true;
+						// extract value of m
+						if (mpz_set_str(m, tmp, TMCG_MPZ_IO_BASE) < 0)
+						{
+							std::cerr << "libgmp: mpz_set_str() failed" << std::endl;
+							delete [] tmp, delete [] mac;
+							return false;
+						}
+						delete [] tmp, delete [] mac;
+						return true;
 					}
+					// no delimiter found; invalidate buffer flag
+					buf_flag[i_out] = false;
+				}
+				// read(2) -- do everything with asynchronous I/O
+				size_t max = buf_in_size - buf_ptr[i_out];
+				if (max > 0)
+				{
+					char *rptr = buf_in[i_out] + buf_ptr[i_out];
+					ssize_t num = read(in[i_out], rptr, max);
+					if (num < 0)
+					{
+						if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || 
+							(errno == EINTR))
+						{
+							if (scheduler == aio_scheduler_direct)
+								sleep(timeout);
+							continue;
+						}
+						else
+						{
+							perror("aiounicast (read)");
+							return false;
+						}
+					}
+					if (num == 0)
+						continue;
+					numRead += num;
+					buf_ptr[i_out] += num;
+					buf_flag[i_out] = true;
+				}
+				else
+				{
+					std::cerr << "aiounicast: read buffer exceeded" << std::endl;
 				}
 			}
 			if (scheduler != aio_scheduler_direct)
-				i_out = n; // timeout for some parties
+				i_out = n; // timeout for some (unknown) parties
 			return false;
 		}
 
 		bool Receive
 			(std::vector<mpz_ptr> &m, size_t &i_out,
 			const size_t scheduler = aio_scheduler_roundrobin,
-			const time_t timeout = aio_timeout_null)
+			const time_t timeout = aio_timeout_short)
 		{
 			// determine maximum number of rounds based on scheduler
 			size_t max_rounds = 0; 
@@ -405,7 +405,7 @@ class aiounicast
 					max_rounds = m.size();
 					break;
 			}
-			for (size_t round = 0; round < max_rounds; round++)
+			for (size_t round = 0; (round < max_rounds); round++)
 			{
 				// scheduler
 				switch (scheduler)

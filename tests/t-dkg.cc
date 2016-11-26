@@ -148,7 +148,6 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
 			dkg->PublishState(state_log);
-			std::cout << " state = " << state_log.str() << std::endl;
 
 			// create an instance of threshold signature protocol new-TSch (NTS)
 			GennaroJareckiKrawczykRabinNTS *nts;

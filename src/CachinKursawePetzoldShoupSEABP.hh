@@ -83,18 +83,18 @@ class CachinKursawePetzoldShoupRBC
 		aiounicast							*aiou;
 
 		CachinKursawePetzoldShoupRBC
-			(size_t n_in, size_t t_in, size_t j_in,
+			(const size_t n_in, const size_t t_in, const size_t j_in,
 			aiounicast *aiou_in);
 		void setID
-			(std::string ID_in);
+			(const std::string ID_in);
 		void unsetID
 			();
 		void Broadcast
-			(mpz_srcptr m, bool simulate_faulty_behaviour = false);
+			(mpz_srcptr m, const bool simulate_faulty_behaviour = false);
 		bool Deliver
 			(mpz_ptr m, size_t &i_out);
 		bool DeliverFrom
-			(mpz_ptr m, size_t i_in);
+			(mpz_ptr m, const size_t i_in);
 		~CachinKursawePetzoldShoupRBC
 			();
 };
