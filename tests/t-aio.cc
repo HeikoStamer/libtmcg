@@ -84,8 +84,7 @@ void start_instance
 				}
 			}
 			// receive messages from other parties
-			size_t sleeps = 0;
-			while (froms.size() && (sleeps < 5))
+			while (froms.size())
 			{
 				size_t from = 0;
 				bool ret = aiou->Receive(m, from);
@@ -94,13 +93,8 @@ void start_instance
 					assert(!mpz_cmp_ui(m, from));
 					froms.erase(std::find(froms.begin(), froms.end(), from));
 				}
-				else
-				{
-					sleeps++;
-					sleep(1);
-				}
+				assert (ret);
 			}
-			assert(sleeps < 5);
 
 // TODO
 
