@@ -38,7 +38,7 @@
 #define N 11
 #define T 5
 
-int pipefd[N][N][2], broadcast_pipefd[N][N][2];
+int pipefd[N][N][2];
 pid_t pid[N];
 
 void start_instance
@@ -55,8 +55,8 @@ void start_instance
 			// create pipe streams and handles between all players
 			std::vector<ipipestream*> P_in;
 			std::vector<opipestream*> P_out;
-			std::vector<int> uP_in, uP_out, bP_in, bP_out;
-			std::vector<std::string> uP_key, bP_key;
+			std::vector<int> uP_in, uP_out;
+			std::vector<std::string> uP_key;
 			for (size_t i = 0; i < N; i++)
 			{
 				std::stringstream key;
@@ -66,19 +66,47 @@ void start_instance
 				uP_in.push_back(pipefd[i][whoami][0]);
 				uP_out.push_back(pipefd[whoami][i][1]);
 				uP_key.push_back(key.str());
-				bP_in.push_back(broadcast_pipefd[i][whoami][0]);
-				bP_out.push_back(broadcast_pipefd[whoami][i][1]);
-				bP_key.push_back(key.str());
 			}
 
 			// create asynchronous authenticated unicast channels
 			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, uP_key);
 
-			// create asynchronous authenticated unicast channels
-			aiounicast *aiou2 = new aiounicast(N, T, whoami, bP_in, bP_out, bP_key);
+			// send a simple message
+			std::vector<size_t> froms;
+			mpz_t m;
+			mpz_init_set_ui(m, whoami);
+			for (size_t i = 0; i < N; i++)
+			{
+				if (i != whoami)
+				{
+					aiou->Send(m, i);
+					froms.push_back(i);
+				}
+			}
+			// receive messages from other parties
+			size_t sleeps = 0;
+			while (froms.size() && (sleeps < 5))
+			{
+				size_t from = 0;
+				bool ret = aiou->Receive(m, from);
+				if (ret)
+				{
+					assert(!mpz_cmp_ui(m, from));
+					froms.erase(std::find(froms.begin(), froms.end(), from));
+				}
+				else
+				{
+					sleeps++;
+					sleep(1);
+				}
+			}
+			assert(sleeps < 5);
 
 // TODO
-			
+
+			// release
+			mpz_clear(m);
+
 			// release pipe streams (private channels)
 			size_t numRead = 0, numWrite = 0;
 			for (size_t i = 0; i < N; i++)
@@ -95,13 +123,8 @@ void start_instance
 			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
 				" aiou.numWrite = " << aiou->numWrite << std::endl;
 
-			// release handles (broadcast channel)
-			bP_in.clear(), bP_out.clear(), bP_key.clear();
-			std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
-				" aiou2.numWrite = " << aiou2->numWrite << std::endl;
-
-			// release asynchronous unicast and broadcast
-			delete aiou, delete aiou2;
+			// release asynchronous unicast channels
+			delete aiou;
 			
 			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
@@ -124,8 +147,6 @@ int main
 		{
 			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
 				perror("t-aio (pipe)");
-			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
-				perror("t-aio (pipe)");
 		}
 	}
 	
@@ -143,8 +164,6 @@ int main
 		{
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
 				perror("t-aio (close)");
-			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
-				perror("t-aio (close)");
 		}
 	}
 
@@ -154,8 +173,6 @@ int main
 		for (size_t j = 0; j < N; j++)
 		{
 			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
-				perror("t-aio (pipe)");
-			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
 				perror("t-aio (pipe)");
 		}
 	}
@@ -178,8 +195,6 @@ int main
 		for (size_t j = 0; j < N; j++)
 		{
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("t-aio (close)");
-			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
 				perror("t-aio (close)");
 		}
 	}
