@@ -805,11 +805,78 @@ void start_instance
 		std::cerr << "ERROR: no modification detection code found" << std::endl;
 		exit(-1);
 	}
+	// check whether DSA and Elgamal parameters match
+	if (gcry_mpi_cmp(dsa_p, elg_p) || gcry_mpi_cmp(dsa_g, elg_g))
+	{
+		std::cerr << "ERROR: DSA and Elgamal group parameters does not match" << std::endl;
+		exit(-1);
+	}
+	// check whether $0 < g^k < p$.
+	if ((gcry_mpi_cmp_ui(gk, 0L) <= 0) || (gcry_mpi_cmp(gk, elg_p) >= 0))
+	{
+		std::cerr << "ERROR: 0 < g^k < p not satisfied" << std::endl;
+		exit(-1);
+	}
+	// check whether $(g^k)^q \equiv 1 \pmod{p}$.
+	gcry_mpi_powm(dsa_r, gk, dsa_q, elg_p);
+	if (gcry_mpi_cmp_ui(dsa_r, 1L))
+	{
+		std::cerr << "ERROR: (g^k)^q \equiv 1 mod p not satisfied" << std::endl;
+		exit(-1);
+	}	
+	// compute the decryption share
+	char buffer[2048];
+	size_t buflen = sizeof(buffer);
+	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, x_i, r_i;
+	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(x_i), mpz_init(r_i);
+	std::memset(buffer, 0, buflen);
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, buflen, &buflen, dsa_p);
+	mpz_set_str(nizk_p, buffer, 16);
+	std::memset(buffer, 0, buflen);
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, buflen, &buflen, dsa_q);
+	mpz_set_str(nizk_q, buffer, 16);
+	std::memset(buffer, 0, buflen);
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, buflen, &buflen, dsa_g);
+	mpz_set_str(nizk_g, buffer, 16);
+	std::memset(buffer, 0, buflen);
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, buflen, &buflen, gk);
+	mpz_set_str(nizk_gk, buffer, 16);
+	std::memset(buffer, 0, buflen);
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, buflen, &buflen, elg_x);
+	mpz_set_str(x_i, buffer, 16);
+	mpz_spowm(r_i, nizk_gk, x_i, nizk_p);
+	// compute NIZK argument for decryption share
+std::stringstream nizk;
+		// proof of knowledge (equality of discrete logarithms) [CaS97]
+		mpz_t a, b, omega, c, r;
+		mpz_init(c), mpz_init(r), mpz_init(a), mpz_init(b), mpz_init(omega);
+		// commitment
+		mpz_srandomm(omega, nizk_q);
+		mpz_spowm(a, nizk_gk, omega, nizk_p);
+		mpz_spowm(b, nizk_g, omega, nizk_p);		
+		// challenge
+		// Here we use the well-known "Fiat-Shamir heuristic" to make
+		// the PoK non-interactive, i.e. we turn it into a statistically
+		// zero-knowledge (Schnorr signature scheme style) proof of
+		// knowledge (SPK) in the random oracle model.
+		mpz_shash(c, 6, a, b, r_i, dkg->y_i[dkg->i], nizk_gk, nizk_g);
+		// response
+		mpz_mul(r, c, x_i);
+		mpz_neg(r, r);
+		mpz_add(r, r, omega);
+		mpz_mod(r, r, nizk_q);
+nizk << c << std::endl << r << std::endl;
+
+// TODO: broadcast r_i and NIZK
+	std::cout << "nizk=" << nizk.str() << std::endl;
+	rbc->Broadcast(r_i);
+	rbc->Broadcast(c);
+	rbc->Broadcast(r);
+			
 
 
-// TODO
-			
-			
+	mpz_clear(c), mpz_clear(r), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
+	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i), mpz_clear(r_i);
 
 			// release RBC			
 			delete rbc;
