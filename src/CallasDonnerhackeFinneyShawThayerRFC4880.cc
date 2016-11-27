@@ -2308,7 +2308,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	}
 	if (prefix.size() != sizeof(pre))
 	{
-		// generate a random prefix and it's checksum
+		// generate a random prefix and the checksum
 		gcry_randomize(pre, bs, GCRY_STRONG_RANDOM);
 		pre[bs] = pre[bs-2];
 		pre[bs+1] = pre[bs-1];
@@ -2431,7 +2431,6 @@ std::cerr << "BUG1BUG" << std::endl;
 	ret = gcry_pk_decrypt(&decryption, data, key);
 	if (ret)
 	{
-std::cerr << ret << std::endl;
 		gcry_sexp_release(decryption);
 		gcry_sexp_release(data);
 		return ret;
