@@ -2427,13 +2427,16 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 		gcry_sexp_release(data);
 		return ret;
 	}
+std::cerr << "BUG1BUG" << std::endl;
 	ret = gcry_pk_decrypt(&decryption, data, key);
 	if (ret)
 	{
+std::cerr << ret << std::endl;
 		gcry_sexp_release(decryption);
 		gcry_sexp_release(data);
 		return ret;
 	}
+std::cerr << "BUG2BUG" << std::endl;
 	v = gcry_sexp_nth_mpi(decryption, 1, GCRYMPI_FMT_USG);
 	if (v == NULL)
 	{
@@ -2441,6 +2444,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 		gcry_sexp_release(data);
 		return ret;
 	}
+std::cerr << "BUG3BUG" << std::endl;
 	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buffer, sizeof(buffer),
 		&buflen, v);
 	if (ret)
@@ -2450,6 +2454,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 		gcry_sexp_release(data);
 		return ret;
 	}
+std::cerr << "BUG4BUG" << std::endl;
 	for (size_t i = 0; (i < buflen) && (i < sizeof(buffer)); i++)
 		out.push_back(buffer[i]);
 	gcry_mpi_release(v);

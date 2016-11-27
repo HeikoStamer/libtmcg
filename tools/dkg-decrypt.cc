@@ -846,7 +846,6 @@ void start_instance
 	mpz_set_str(x_i, buffer, 16);
 	mpz_spowm(r_i, nizk_gk, x_i, nizk_p);
 	// compute NIZK argument for decryption share
-std::stringstream nizk;
 		// proof of knowledge (equality of discrete logarithms) [CaS97]
 		mpz_t a, b, omega, c, r;
 		mpz_init(c), mpz_init(r), mpz_init(a), mpz_init(b), mpz_init(omega);
@@ -865,8 +864,7 @@ std::stringstream nizk;
 		mpz_neg(r, r);
 		mpz_add(r, r, omega);
 		mpz_mod(r, r, nizk_q);
-nizk << c << std::endl << r << std::endl;
-std::cout << "nizk=" << nizk.str() << std::endl;
+	// broadcast the decryption share and the NIZK argument
 	rbc->Broadcast(r_i);
 	rbc->Broadcast(c);
 	rbc->Broadcast(r);
@@ -905,7 +903,7 @@ std::cout << "nizk=" << nizk.str() << std::endl;
 				mpz_mod(R, R, nizk_p);
 			}
 			else
-				std::cout << "WARNING: complaints against P_" << i << std::endl;
+				std::cout << "WARNING: complaint against P_" << i << std::endl;
 		}
 
 	}
@@ -928,7 +926,7 @@ std::cout << "nizk=" << nizk.str() << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal(gk, myk, elgkey, seskey);
 	if (ret)
 	{
-		std::cerr << "ERROR: AsymmetricDecryptElgamal() failed" << std::endl;
+		std::cerr << "ERROR: AsymmetricDecryptElgamal() failed with rc = " << gcry_err_code(ret) << std::endl;
 		exit(-1);
 	}
 
