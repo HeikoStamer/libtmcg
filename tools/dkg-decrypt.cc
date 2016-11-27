@@ -827,8 +827,8 @@ void start_instance
 	// compute the decryption share
 	char buffer[2048];
 	size_t buflen = sizeof(buffer);
-	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, x_i, r_i;
-	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(x_i), mpz_init(r_i);
+	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, x_i, r_i, R;
+	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(x_i), mpz_init(r_i), mpz_init(R);
 	std::memset(buffer, 0, buflen);
 	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, buflen, &buflen, dsa_p);
 	mpz_set_str(nizk_p, buffer, 16);
@@ -866,17 +866,77 @@ std::stringstream nizk;
 		mpz_add(r, r, omega);
 		mpz_mod(r, r, nizk_q);
 nizk << c << std::endl << r << std::endl;
-
-// TODO: broadcast r_i and NIZK
-	std::cout << "nizk=" << nizk.str() << std::endl;
+std::cout << "nizk=" << nizk.str() << std::endl;
 	rbc->Broadcast(r_i);
 	rbc->Broadcast(c);
 	rbc->Broadcast(r);
-			
+	mpz_set(R, r_i); // put private key of this party in the accumulator
+	std::vector<size_t> complaints;
+	for (size_t i = 0; i < dkg->n; i++)
+	{
+		if (i != dkg->i)
+		{
+			// receive a decryption share and NIZK argument
+			if (!rbc->DeliverFrom(r_i, i))
+				complaints.push_back(i);
+			if (!rbc->DeliverFrom(c, i))
+				complaints.push_back(i);
+			if (!rbc->DeliverFrom(r, i))
+				complaints.push_back(i);
+			// check the NIZK argument
+			if (mpz_cmpabs(r, nizk_q) >= 0) // check the size of r
+				complaints.push_back(i);
+			// verify proof of knowledge (equality of discrete logarithms) [CaS97]
+			mpz_powm(a, nizk_gk, r, nizk_p);
+			mpz_powm(b, r_i, c, nizk_p);
+			mpz_mul(a, a, b);
+			mpz_mod(a, a, nizk_p);
+			mpz_powm(b, nizk_g, r, nizk_p);
+			mpz_powm(r, dkg->y_i[i], c, nizk_p);
+			mpz_mul(b, b, r);
+			mpz_mod(b, b, nizk_p);
+			mpz_shash(r, 6, a, b, r_i, dkg->y_i[i], nizk_gk, nizk_g);
+			if (mpz_cmp(r, c))
+				complaints.push_back(i);
+			if (std::find(complaints.begin(), complaints.end(), i) == complaints.end())
+			{
+				// accumulate decryption shares
+				mpz_mul(R, R, r_i);
+				mpz_mod(R, R, nizk_p);
+			}
+			else
+				std::cout << "WARNING: complaints against P_" << i << std::endl;
+		}
+
+	}
+
+// TODO: reconstruction of x_i for faulty parties
+
+	// decrypt the session key
+	mpz_get_str(buffer, 16, R);
+	ret = gcry_mpi_scan(&gk, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+	assert(!ret);
+	gcry_sexp_release(elgkey); // release the former private key
+	gcry_mpi_set_ui(elg_x, 1); // the private key of this party has been already used in R
+	ret = gcry_sexp_build(&elgkey, &erroff, "(private-key (elg (p %M) (g %M) (y %M) (x %M)))", elg_p, elg_g, elg_y, elg_x);
+	if (ret)
+	{
+		std::cerr << "ERROR: processing Elgamal key material failed" << std::endl;
+		exit(-1);
+	}
+	seskey.clear();
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal(gk, myk, elgkey, seskey);
+	if (ret)
+	{
+		std::cerr << "ERROR: AsymmetricDecryptElgamal() failed" << std::endl;
+		exit(-1);
+	}
+
+// TODO: decrypt OpenPGP message
 
 
 	mpz_clear(c), mpz_clear(r), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
-	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i), mpz_clear(r_i);
+	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i), mpz_clear(r_i), mpz_clear(R);
 
 			// release RBC			
 			delete rbc;
