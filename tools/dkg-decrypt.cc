@@ -826,24 +826,29 @@ void start_instance
 	}	
 	// compute the decryption share
 	char buffer[2048];
-	size_t buflen = sizeof(buffer);
+	size_t buflen;
 	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, x_i, r_i, R;
 	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(x_i), mpz_init(r_i), mpz_init(R);
-	std::memset(buffer, 0, buflen);
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, buflen, &buflen, dsa_p);
+	std::memset(buffer, 0, sizeof(buffer));
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
 	mpz_set_str(nizk_p, buffer, 16);
-	std::memset(buffer, 0, buflen);
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, buflen, &buflen, dsa_q);
+std::cerr << "nizk_p = " << nizk_p << std::endl;
+	std::memset(buffer, 0, sizeof(buffer));
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
 	mpz_set_str(nizk_q, buffer, 16);
-	std::memset(buffer, 0, buflen);
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, buflen, &buflen, dsa_g);
+std::cerr << "nizk_q = " << nizk_q << std::endl;
+	std::memset(buffer, 0, sizeof(buffer));
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_g);
 	mpz_set_str(nizk_g, buffer, 16);
-	std::memset(buffer, 0, buflen);
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, buflen, &buflen, gk);
+std::cerr << "nizk_g = " << nizk_g << std::endl;
+	std::memset(buffer, 0, sizeof(buffer));
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, gk);
 	mpz_set_str(nizk_gk, buffer, 16);
-	std::memset(buffer, 0, buflen);
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, buflen, &buflen, elg_x);
+std::cerr << "nizk_gk = " << nizk_gk << std::endl;
+	std::memset(buffer, 0, sizeof(buffer));
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, elg_x);
 	mpz_set_str(x_i, buffer, 16);
+std::cerr << "x_i = " << x_i << std::endl;
 	mpz_spowm(r_i, nizk_gk, x_i, nizk_p);
 	// compute NIZK argument for decryption share
 		// proof of knowledge (equality of discrete logarithms) [CaS97]
@@ -868,22 +873,34 @@ void start_instance
 	rbc->Broadcast(r_i);
 	rbc->Broadcast(c);
 	rbc->Broadcast(r);
-	mpz_set(R, r_i); // put private key of this party in the accumulator
+	mpz_set(R, r_i); // take private key of this party in the accumulator
 	std::vector<size_t> complaints;
-	for (size_t i = 0; i < dkg->n; i++)
+	for (size_t i = 0; i < dkg->n; i++) // FIXME: index i does not correspond with order of dkg->y_i
 	{
 		if (i != dkg->i)
 		{
 			// receive a decryption share and NIZK argument
 			if (!rbc->DeliverFrom(r_i, i))
+			{
+				std::cout << "WARNING: DeliverFrom(r_i, i) failed for P_" << i << std::endl;
 				complaints.push_back(i);
+			}
 			if (!rbc->DeliverFrom(c, i))
+			{
+				std::cout << "WARNING: DeliverFrom(c, i) failed for P_" << i << std::endl;
 				complaints.push_back(i);
+			}
 			if (!rbc->DeliverFrom(r, i))
+			{
+				std::cout << "WARNING: DeliverFrom(r, i) failed for P_" << i << std::endl;
 				complaints.push_back(i);
+			}
 			// check the NIZK argument
-			if ((mpz_cmpabs(r, nizk_q) >= 0) || (mpz_sizeinbase(c, 2L) <= 256)) // check the size of r and c
+			if ((mpz_cmpabs(r, nizk_q) >= 0) || (mpz_sizeinbase(c, 2L) > 256)) // check the size of r and c
+			{
+				std::cout << "WARNING: NIZK check failed for P_" << i << std::endl;
 				complaints.push_back(i);
+			}
 			// verify proof of knowledge (equality of discrete logarithms) [CaS97]
 			mpz_powm(a, nizk_gk, r, nizk_p);
 			mpz_powm(b, r_i, c, nizk_p);
@@ -895,7 +912,10 @@ void start_instance
 			mpz_mod(b, b, nizk_p);
 			mpz_shash(r, 6, a, b, r_i, dkg->y_i[i], nizk_gk, nizk_g);
 			if (mpz_cmp(r, c))
+			{
+				std::cout << "WARNING: NIZK verification failed for P_" << i << std::endl;
 				complaints.push_back(i);
+			}
 			if (std::find(complaints.begin(), complaints.end(), i) == complaints.end())
 			{
 				// accumulate decryption shares
@@ -912,6 +932,7 @@ void start_instance
 
 	// decrypt the session key
 	mpz_get_str(buffer, 16, R);
+std::cerr << "buffer = " << buffer << std::endl;
 	ret = gcry_mpi_scan(&gk, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
 	assert(!ret);
 	gcry_sexp_release(elgkey); // release the former private key
