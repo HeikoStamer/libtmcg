@@ -882,7 +882,7 @@ void start_instance
 			if (!rbc->DeliverFrom(r, i))
 				complaints.push_back(i);
 			// check the NIZK argument
-			if (mpz_cmpabs(r, nizk_q) >= 0) // check the size of r
+			if ((mpz_cmpabs(r, nizk_q) >= 0) || (mpz_sizeinbase(c, 2L) <= 256)) // check the size of r and c
 				complaints.push_back(i);
 			// verify proof of knowledge (equality of discrete logarithms) [CaS97]
 			mpz_powm(a, nizk_gk, r, nizk_p);
