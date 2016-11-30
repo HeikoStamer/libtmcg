@@ -152,7 +152,7 @@ void start_instance
 				rbc->DeliverFrom(m, whoami);
 			mpz_clear(m);
 
-			// create an OpenPGP DSA-based primary key and Elgamal-based subkey
+			// create an OpenPGP DSA-based primary key and Elgamal-based subkey based on parameters from DKG
 			char buffer[2048];
 			std::string out, crcout, armor;
 			OCTETS all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
@@ -212,7 +212,7 @@ void start_instance
 				mpz_get_str(buffer, 16, dkg->y);			
 				ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
 				assert(!ret);
-				mpz_get_str(buffer, 16, dkg->x_i);			
+				mpz_get_str(buffer, 16, dkg->z_i[dkg->i]);			
 				ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
 				assert(!ret);
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(keytime, p, g, y, sub);
@@ -228,7 +228,7 @@ void start_instance
 			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(subsig_hashing, subsig_left, r, s, subsig);
 			// export generated public key in OpenPGP armor format
 			std::stringstream pubfilename;
-			pubfilename << std::hex;
+			pubfilename << whoami << "_" << std::hex;
 			for (size_t i = 0; i < keyid.size(); i++)
 				pubfilename << (int)keyid[i];
 			pubfilename << "_dkg-pub.asc";
@@ -245,7 +245,7 @@ void start_instance
 			pubofs.close();
 			// export generated private key in OpenPGP armor format
 			std::stringstream secfilename;
-			secfilename << std::hex;
+			secfilename << whoami << "_" << std::hex;
 			for (size_t i = 0; i < keyid.size(); i++)
 				secfilename << (int)keyid[i];
 			secfilename << "_dkg-sec.asc";
@@ -270,7 +270,7 @@ void start_instance
 			gcry_sexp_release(key);
 			// export state of DKG including the secret shares into a file
 			std::stringstream dkgfilename;
-			dkgfilename << std::hex;
+			dkgfilename << whoami << "_" << std::hex;
 			for (size_t i = 0; i < keyid.size(); i++)
 				dkgfilename << (int)keyid[i];
 			dkgfilename << ".dkg";

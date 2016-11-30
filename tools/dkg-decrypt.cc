@@ -51,8 +51,11 @@ void start_instance
 		{
 			/* BEGIN child code: participant P_i */
 
+			std::stringstream whoamis;
+			whoamis << whoami << "_" << my_keyid;
+
 			// read the exported DKG state from file
-			std::string line, dkgfilename = my_keyid + ".dkg";
+			std::string line, dkgfilename = whoamis.str() + ".dkg";
 			std::stringstream dkgstate;
 			std::ifstream dkgifs(dkgfilename.c_str(), std::ifstream::in);
 			if (!dkgifs.is_open())
@@ -74,8 +77,8 @@ void start_instance
 				exit(-1);
 			}
 
-			// set correct index from saved DKG state
-			whoami = dkg->i;
+// set correct index from saved DKG state
+assert(whoami == dkg->i);
 
 			// create pipe streams and handles between all players
 			std::vector<ipipestream*> P_in;
@@ -116,7 +119,7 @@ void start_instance
 			}
 
 			// read the private key from file
-			dkgfilename = my_keyid + "_dkg-sec.asc";
+			dkgfilename = whoamis.str() + "_dkg-sec.asc";
 			std::stringstream dkgseckey;
 			std::ifstream secifs(dkgfilename.c_str(), std::ifstream::in);
 			if (!secifs.is_open())
@@ -136,8 +139,8 @@ void start_instance
 	BYTE dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
 	BYTE dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
 	BYTE *key, *iv;
-	OCTETS pkts, pub, sub, msg, lit, mdc, seipd, pkesk, all;
-	OCTETS seskey, salt, mpis, prefix, hash_input, hash, keyid, pub_hashing, subkeyid, sub_hashing, issuer, dsa_hspd, elg_hspd;
+	OCTETS pkts, pub, sub, msg, mdc, seipd, pkesk, all;
+	OCTETS seskey, salt, mpis, hash_input, hash, keyid, pub_hashing, subkeyid, sub_hashing, issuer, dsa_hspd, elg_hspd;
 	gcry_mpi_t dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, dsa_r, dsa_s, elg_p, elg_g, elg_y, elg_x, elg_r, elg_s;
 	gcry_sexp_t dsakey, elgkey;
 	gcry_cipher_hd_t hd;
@@ -718,7 +721,7 @@ void start_instance
 
 	// parse encrypted message
 	bool have_pkesk = false, have_sed = false, have_seipd = false, have_mdc = false;
-	OCTETS pkesk_keyid;
+	OCTETS pkesk_keyid, enc, mdc_hash;
 	gcry_mpi_t gk, myk;
 	gk = gcry_mpi_new(2048);
 	myk = gcry_mpi_new(2048);
@@ -763,12 +766,18 @@ void start_instance
 					break;
 				case 9: // Symmetrically Encrypted Data
 					have_sed = true;
+					for (size_t i = 0; i < ctx.encdatalen; i++)
+						enc.push_back(ctx.encdata[i]);
 					break;
 				case 18: // Symmetrically Encrypted Integrity Protected Data
 					have_seipd = true;
+					for (size_t i = 0; i < ctx.encdatalen; i++)
+						enc.push_back(ctx.encdata[i]);
 					break;
 				case 19: // Modification Detection Code
 					have_mdc = true;
+					for (size_t i = 0; i < sizeof(ctx.mdc_hash); i++)
+						mdc_hash.push_back(ctx.mdc_hash[i]);
 					break;
 				default:
 					std::cerr << "ERROR: unrecognized OpenPGP packet found" << std::endl;
@@ -800,6 +809,11 @@ void start_instance
 		std::cerr << "ERROR: no symmetrically encrypted (and integrity protected) data found" << std::endl;
 		exit(-1);
 	}
+	if (have_sed && have_seipd)
+	{
+		std::cerr << "ERROR: multiple types of symmetrically encrypted data found" << std::endl;
+		exit(-1);
+	}
 	if (have_seipd && !have_mdc)
 	{
 		std::cerr << "ERROR: no modification detection code found" << std::endl;
@@ -827,57 +841,79 @@ void start_instance
 	// compute the decryption share
 	char buffer[2048];
 	size_t buflen;
-	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, x_i, r_i, R;
-	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(x_i), mpz_init(r_i), mpz_init(R);
+	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, z_i, r_i, R;
+	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(z_i), mpz_init(r_i), mpz_init(R);
 	std::memset(buffer, 0, sizeof(buffer));
 	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
 	mpz_set_str(nizk_p, buffer, 16);
-std::cerr << "nizk_p = " << nizk_p << std::endl;
 	std::memset(buffer, 0, sizeof(buffer));
 	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
 	mpz_set_str(nizk_q, buffer, 16);
-std::cerr << "nizk_q = " << nizk_q << std::endl;
 	std::memset(buffer, 0, sizeof(buffer));
 	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_g);
 	mpz_set_str(nizk_g, buffer, 16);
-std::cerr << "nizk_g = " << nizk_g << std::endl;
 	std::memset(buffer, 0, sizeof(buffer));
 	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, gk);
 	mpz_set_str(nizk_gk, buffer, 16);
-std::cerr << "nizk_gk = " << nizk_gk << std::endl;
 	std::memset(buffer, 0, sizeof(buffer));
 	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, elg_x);
-	mpz_set_str(x_i, buffer, 16);
-std::cerr << "x_i = " << x_i << std::endl;
-	mpz_spowm(r_i, nizk_gk, x_i, nizk_p);
+	mpz_set_str(z_i, buffer, 16);
+	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g) || mpz_cmp(z_i, dkg->z_i[whoami]))
+	{
+		std::cerr << "ERROR: DSA/Elgamal and DKG group parameters does not match" << std::endl;
+		exit(-1);
+	}
+	mpz_spowm(R, nizk_g, z_i, nizk_p);
+	if (mpz_cmp(R, dkg->y_i[whoami]))
+	{
+		std::cerr << "ERROR: DKG public key verification failed" << std::endl;
+		exit(-1);
+	}
+	mpz_spowm(r_i, nizk_gk, z_i, nizk_p);
 	// compute NIZK argument for decryption share
 		// proof of knowledge (equality of discrete logarithms) [CaS97]
-		mpz_t a, b, omega, c, r;
-		mpz_init(c), mpz_init(r), mpz_init(a), mpz_init(b), mpz_init(omega);
+		mpz_t a, b, omega, c, r, c2;
+		mpz_init(c), mpz_init(r), mpz_init(c2), mpz_init(a), mpz_init(b), mpz_init(omega);
 		// commitment
 		mpz_srandomm(omega, nizk_q);
 		mpz_spowm(a, nizk_gk, omega, nizk_p);
-		mpz_spowm(b, nizk_g, omega, nizk_p);		
+		mpz_spowm(b, nizk_g, omega, nizk_p);
 		// challenge
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
 		// the PoK non-interactive, i.e. we turn it into a statistically
 		// zero-knowledge (Schnorr signature scheme style) proof of
 		// knowledge (SPK) in the random oracle model.
-		mpz_shash(c, 6, a, b, r_i, dkg->y_i[dkg->i], nizk_gk, nizk_g);
+		mpz_shash(c, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g);
 		// response
-		mpz_mul(r, c, x_i);
+		mpz_mul(r, c, z_i);
 		mpz_neg(r, r);
 		mpz_add(r, r, omega);
 		mpz_mod(r, r, nizk_q);
+		// verify proof of knowledge (equality of discrete logarithms) [CaS97]
+		mpz_powm(a, nizk_gk, r, nizk_p);
+		mpz_powm(b, r_i, c, nizk_p);
+		mpz_mul(a, a, b);
+		mpz_mod(a, a, nizk_p);
+		mpz_powm(b, nizk_g, r, nizk_p);
+		mpz_powm(c2, dkg->y_i[whoami], c, nizk_p);
+		mpz_mul(b, b, c2);
+		mpz_mod(b, b, nizk_p);
+		mpz_shash(c2, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g);
+		if (mpz_cmp(c2, c))
+		{
+			std::cout << "WARNING: NIZK self verification failed at " << whoami << std::endl;
+		}
+
+
 	// broadcast the decryption share and the NIZK argument
 	rbc->Broadcast(r_i);
 	rbc->Broadcast(c);
 	rbc->Broadcast(r);
 	mpz_set(R, r_i); // take private key of this party in the accumulator
 	std::vector<size_t> complaints;
-	for (size_t i = 0; i < dkg->n; i++) // FIXME: index i does not correspond with order of dkg->y_i
+	for (size_t i = 0; i < dkg->n; i++)
 	{
-		if (i != dkg->i)
+		if (i != whoami)
 		{
 			// receive a decryption share and NIZK argument
 			if (!rbc->DeliverFrom(r_i, i))
@@ -907,11 +943,11 @@ std::cerr << "x_i = " << x_i << std::endl;
 			mpz_mul(a, a, b);
 			mpz_mod(a, a, nizk_p);
 			mpz_powm(b, nizk_g, r, nizk_p);
-			mpz_powm(r, dkg->y_i[i], c, nizk_p);
-			mpz_mul(b, b, r);
+			mpz_powm(c2, dkg->y_i[i], c, nizk_p);
+			mpz_mul(b, b, c2);
 			mpz_mod(b, b, nizk_p);
-			mpz_shash(r, 6, a, b, r_i, dkg->y_i[i], nizk_gk, nizk_g);
-			if (mpz_cmp(r, c))
+			mpz_shash(c2, 6, a, b, r_i, dkg->y_i[i], nizk_gk, nizk_g);
+			if (mpz_cmp(c2, c))
 			{
 				std::cout << "WARNING: NIZK verification failed for P_" << i << std::endl;
 				complaints.push_back(i);
@@ -928,15 +964,14 @@ std::cerr << "x_i = " << x_i << std::endl;
 
 	}
 
-// TODO: reconstruction of x_i for faulty parties
+// TODO: reconstruction of z_i for faulty parties
 
 	// decrypt the session key
 	mpz_get_str(buffer, 16, R);
-std::cerr << "buffer = " << buffer << std::endl;
 	ret = gcry_mpi_scan(&gk, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
 	assert(!ret);
 	gcry_sexp_release(elgkey); // release the former private key
-	gcry_mpi_set_ui(elg_x, 1); // the private key of this party has been already used in R
+	gcry_mpi_set_ui(elg_x, 1); // the private key share of this party has been already used in R
 	ret = gcry_sexp_build(&elgkey, &erroff, "(private-key (elg (p %M) (g %M) (y %M) (x %M)))", elg_p, elg_g, elg_y, elg_x);
 	if (ret)
 	{
@@ -950,16 +985,8 @@ std::cerr << "buffer = " << buffer << std::endl;
 		std::cerr << "ERROR: AsymmetricDecryptElgamal() failed with rc = " << gcry_err_code(ret) << std::endl;
 		exit(-1);
 	}
-
-// TODO: decrypt OpenPGP message
-
-
-	mpz_clear(c), mpz_clear(r), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
-	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i), mpz_clear(r_i), mpz_clear(R);
-
-			// release RBC			
-			delete rbc;
-
+	mpz_clear(c), mpz_clear(r), mpz_clear(c2), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
+	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(z_i), mpz_clear(r_i), mpz_clear(R);
 	gcry_mpi_release(dsa_p);
 	gcry_mpi_release(dsa_q);
 	gcry_mpi_release(dsa_g);
@@ -977,7 +1004,39 @@ std::cerr << "buffer = " << buffer << std::endl;
 	gcry_mpi_release(myk);
 	gcry_sexp_release(dsakey);
 	gcry_sexp_release(elgkey);
-			
+
+	// decrypt the given message
+	OCTETS prefix, lit, mdc_hashing;
+	if (have_seipd)
+		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256(enc, seskey, prefix, false, lit);
+	else
+		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256(enc, seskey, prefix, true, lit);
+	if (ret)
+	{
+		std::cerr << "ERROR: SymmetricDecryptAES256() failed" << std::endl;
+		exit(-1);
+	}
+	if (have_mdc)
+	{
+		mdc_hashing.insert(mdc_hashing.end(), prefix.begin(), prefix.end()); // "it includes the prefix data described above" [RFC4880]
+		mdc_hashing.insert(mdc_hashing.end(), lit.begin(), lit.end()); // "it includes all of the plaintext" [RFC4880]
+		mdc_hashing.push_back(0xD3); // "and the also includes two octets of values 0xD3, 0x14" [RFC4880]
+		mdc_hashing.push_back(0x14);
+		hash.clear();
+		CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(2, mdc_hashing, hash); // "passed through the SHA-1 hash function" [RFC4880]
+		if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(mdc_hash, hash))
+		{
+			std::cerr << "ERROR: MDC hash does not match" << std::endl;
+			exit(-1);
+		}
+	}
+
+// TODO: parse lit packet
+
+
+			// release RBC
+			delete rbc;
+	
 			// release pipe streams (private channels)
 			size_t numRead = 0, numWrite = 0;
 			for (size_t i = 0; i < dkg->n; i++)

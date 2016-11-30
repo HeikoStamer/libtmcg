@@ -292,6 +292,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static gcry_error_t SymmetricEncryptAES256
 			(const OCTETS &in, OCTETS &seskey, OCTETS &prefix,
 			const bool resync, OCTETS &out);
+		static gcry_error_t SymmetricDecryptAES256
+			(const OCTETS &in, OCTETS &seskey, OCTETS &prefix,
+			const bool resync, OCTETS &out);
 		static gcry_error_t AsymmetricEncryptElgamal
 			(const OCTETS &in, const gcry_sexp_t key, 
 			 gcry_mpi_t &gk, gcry_mpi_t &myk);

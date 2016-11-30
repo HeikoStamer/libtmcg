@@ -1359,9 +1359,9 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 	{
 		out.critical = true;
 		type -= 0x80;
-std::cerr << "subpkt: critical bit set" << std::endl;
+//std::cerr << "subpkt: critical bit set" << std::endl;
 	}
-std::cerr << "subpkt: len = " << len << " type = " << (int)type << std::endl;
+//std::cerr << "subpkt: len = " << len << " type = " << (int)type << std::endl;
 	len -= 1;
 	OCTETS pkt;
 	pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+len);
@@ -1622,7 +1622,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	}
 	else
 		return 0; // unknown error
-std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
+//std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
 	BYTE sptype = 0xFF;
 	size_t mlen = 0;
 	OCTETS pkt, hspd, uspd, mpis;
@@ -2241,7 +2241,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 			chksum += key[i];
 		}
 		chksum %= 65536;
-		if (((chksum >> 8) != seskey[33]) || (chksum != seskey[34]))
+		size_t key_chksum = (seskey[33] << 8) + seskey[34];
+		if (chksum != key_chksum)
 			return -1; // error: checksum does not match
 	}
 	else if (seskey.size() == sizeof(key))
@@ -2353,6 +2354,131 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	return ret;
 }
 
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
+	(const OCTETS &in, OCTETS &seskey, OCTETS &prefix, const bool resync,
+	 OCTETS &out)
+{
+	gcry_cipher_hd_t hd;
+	gcry_error_t ret;
+	size_t chksum = 0;
+	size_t bs = AlgorithmIVLength(9); // get block size of AES256
+	size_t ks = AlgorithmKeyLength(9); // get key size of AES256
+	BYTE key[ks], b;
+
+	// The symmetric cipher used may be specified in a Public-Key or
+	// Symmetric-Key Encrypted Session Key packet that precedes the
+	// Symmetrically Encrypted Data packet. In that case, the cipher
+	// algorithm octet is prefixed to the session key before it is
+	// encrypted.
+	// [...]
+	// Then a two-octet checksum is appended, which is equal to the
+	// sum of the preceding session key octets, not including the
+	// algorithm identifier, modulo 65536.
+	if (seskey.size() == (sizeof(key) + 3))
+	{
+		// use the provided session key and calculate checksum
+		if (seskey[0] != 9)
+			return -1; // error: algorithm is not AES256
+		for (size_t i = 0; i < sizeof(key); i++)
+		{
+			key[i] = seskey[1+i]; // copy the session key
+			chksum += key[i];
+		}
+		chksum %= 65536;
+		size_t key_chksum = (seskey[33] << 8) + seskey[34];
+		if (chksum != key_chksum)
+			return -1; // error: checksum does not match
+	}
+	else if (seskey.size() == sizeof(key))
+	{
+		// use the provided session key and append checksum
+		seskey.insert(seskey.begin(), 9); // constant for AES256
+		for (size_t i = 0; i < sizeof(key); i++)
+		{
+			key[i] = seskey[1+i]; // copy the session key
+			chksum += key[i];
+		}
+		chksum %= 65536;
+		seskey.push_back(chksum >> 8); // checksum
+		seskey.push_back(chksum);
+	}
+	else
+		return -1; // error: no session key provided
+	if (in.size() < (bs + 2))
+		return -1; // error: input too short (no encrypted prefix)
+	// The data is encrypted in CFB mode, with a CFB shift size equal to
+	// the cipher’s block size. The Initial Vector (IV) is specified as
+	// all zeros. Instead of using an IV, OpenPGP prefixes a string of
+	// length equal to the block size of the cipher plus two to the data
+	// before it is encrypted. The first block-size octets (for example,
+	// 8 octets for a 64-bit block length) are random, and the following
+	// two octets are copies of the last two octets of the IV. For example,
+	// in an 8-octet block, octet 9 is a repeat of octet 7, and octet 10
+	// is a repeat of octet 8. In a cipher of length 16, octet 17 is a
+	// repeat of octet 15 and octet 18 is a repeat of octet 16. As a
+	// pedantic clarification, in both these examples, we consider the
+	// first octet to be numbered 1.
+	// After encrypting the first block-size-plus-two octets, the CFB state
+	// is resynchronized. The last block-size octets of ciphertext are
+	// passed through the cipher and the block boundary is reset.
+	ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB,
+		GCRY_CIPHER_ENABLE_SYNC);
+	if (ret)
+	{
+		gcry_cipher_close(hd);
+		return ret;
+	}
+	ret = gcry_cipher_setkey(hd, key, sizeof(key));
+	if (ret)
+	{
+		gcry_cipher_close(hd);
+		return ret;
+	}
+	ret = gcry_cipher_setiv(hd, NULL, 0);
+	if (ret)
+	{
+		gcry_cipher_close(hd);
+		return ret;
+	}
+	for (size_t i = 0; i < (bs + 2); i++)
+	{
+		ret = gcry_cipher_decrypt(hd, &b, 1, &in[i], 1);
+		if (ret)
+		{
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		prefix.push_back(b); // decrypted prefix
+	}
+	if ((prefix[bs] != prefix[bs-2]) || (prefix[bs+1] != prefix[bs-1]))
+	{
+		gcry_cipher_close(hd);
+		return -1; // error: prefix corrupt
+	}
+	if (resync)
+	{  	
+		ret = gcry_cipher_sync(hd);
+		if (ret)
+		{
+			gcry_cipher_close(hd);
+			return ret;
+		}
+	}
+	for (size_t i = 0; i < (in.size() - (bs + 2)); i++)
+	{
+		ret = gcry_cipher_decrypt(hd, &b, 1, &in[bs+2+i], 1);
+		if (ret)
+		{
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		out.push_back(b); // decrypted input
+	}
+	gcry_cipher_close(hd);
+
+	return ret;
+}
+
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	(const OCTETS &in, const gcry_sexp_t key, 
 	 gcry_mpi_t &gk, gcry_mpi_t &myk)
@@ -2427,7 +2553,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 		gcry_sexp_release(data);
 		return ret;
 	}
-std::cerr << "BUG1BUG" << std::endl;
 	ret = gcry_pk_decrypt(&decryption, data, key);
 	if (ret)
 	{
@@ -2435,7 +2560,6 @@ std::cerr << "BUG1BUG" << std::endl;
 		gcry_sexp_release(data);
 		return ret;
 	}
-std::cerr << "BUG2BUG" << std::endl;
 	v = gcry_sexp_nth_mpi(decryption, 1, GCRYMPI_FMT_USG);
 	if (v == NULL)
 	{
@@ -2443,7 +2567,6 @@ std::cerr << "BUG2BUG" << std::endl;
 		gcry_sexp_release(data);
 		return ret;
 	}
-std::cerr << "BUG3BUG" << std::endl;
 	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buffer, sizeof(buffer),
 		&buflen, v);
 	if (ret)
@@ -2453,7 +2576,6 @@ std::cerr << "BUG3BUG" << std::endl;
 		gcry_sexp_release(data);
 		return ret;
 	}
-std::cerr << "BUG4BUG" << std::endl;
 	for (size_t i = 0; (i < buflen) && (i < sizeof(buffer)); i++)
 		out.push_back(buffer[i]);
 	gcry_mpi_release(v);
