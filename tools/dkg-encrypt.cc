@@ -363,7 +363,7 @@ int main
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(2, mdc_hashing, hash); // "passed through the SHA-1 hash function" [RFC4880]
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketMdcEncode(hash, mdc);
-	lit.insert(lit.end(), mdc.begin(), mdc.end());
+	lit.insert(lit.end(), mdc.begin(), mdc.end()); // append Modification Detection Code packet
 	seskey.clear(); // generate a fresh session key, but use the previous prefix
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256(lit, seskey, prefix, false, enc);
 	if (ret)
@@ -382,7 +382,7 @@ int main
 	all.clear();
 	all.insert(all.end(), pkesk.begin(), pkesk.end());
 	all.insert(all.end(), seipd.begin(), seipd.end());
-	all.insert(all.end(), mdc.begin(), mdc.end());
+//	all.insert(all.end(), mdc.begin(), mdc.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(1, all, armored_message);
 	std::cout << armored_message << std::endl;
 

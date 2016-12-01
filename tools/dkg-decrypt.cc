@@ -77,7 +77,7 @@ void start_instance
 				exit(-1);
 			}
 
-// set correct index from saved DKG state
+// assert correct index for saved DKG state
 assert(whoami == dkg->i);
 
 			// create pipe streams and handles between all players
@@ -139,7 +139,7 @@ assert(whoami == dkg->i);
 	BYTE dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
 	BYTE dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
 	BYTE *key, *iv;
-	OCTETS pkts, pub, sub, msg, mdc, seipd, pkesk, all;
+	OCTETS pkts, pub, sub; //, msg, seipd, pkesk;
 	OCTETS seskey, salt, mpis, hash_input, hash, keyid, pub_hashing, subkeyid, sub_hashing, issuer, dsa_hspd, elg_hspd;
 	gcry_mpi_t dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, dsa_r, dsa_s, elg_p, elg_g, elg_y, elg_x, elg_r, elg_s;
 	gcry_sexp_t dsakey, elgkey;
@@ -720,8 +720,8 @@ assert(whoami == dkg->i);
 	}
 
 	// parse encrypted message
-	bool have_pkesk = false, have_sed = false, have_seipd = false, have_mdc = false;
-	OCTETS pkesk_keyid, enc, mdc_hash;
+	bool have_pkesk = false, have_sed = false, have_seipd = false;
+	OCTETS pkesk_keyid, enc;
 	gcry_mpi_t gk, myk;
 	gk = gcry_mpi_new(2048);
 	myk = gcry_mpi_new(2048);
@@ -774,11 +774,6 @@ assert(whoami == dkg->i);
 					for (size_t i = 0; i < ctx.encdatalen; i++)
 						enc.push_back(ctx.encdata[i]);
 					break;
-				case 19: // Modification Detection Code
-					have_mdc = true;
-					for (size_t i = 0; i < sizeof(ctx.mdc_hash); i++)
-						mdc_hash.push_back(ctx.mdc_hash[i]);
-					break;
 				default:
 					std::cerr << "ERROR: unrecognized OpenPGP packet found" << std::endl;
 					exit(-1);
@@ -812,11 +807,6 @@ assert(whoami == dkg->i);
 	if (have_sed && have_seipd)
 	{
 		std::cerr << "ERROR: multiple types of symmetrically encrypted data found" << std::endl;
-		exit(-1);
-	}
-	if (have_seipd && !have_mdc)
-	{
-		std::cerr << "ERROR: no modification detection code found" << std::endl;
 		exit(-1);
 	}
 	// check whether DSA and Elgamal parameters match
@@ -1006,16 +996,70 @@ assert(whoami == dkg->i);
 	gcry_sexp_release(elgkey);
 
 	// decrypt the given message
-	OCTETS prefix, lit, mdc_hashing;
+	OCTETS prefix, litmdc;
 	if (have_seipd)
-		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256(enc, seskey, prefix, false, lit);
+		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256(enc, seskey, prefix, false, litmdc);
 	else
-		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256(enc, seskey, prefix, true, lit);
+		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256(enc, seskey, prefix, true, litmdc);
 	if (ret)
 	{
 		std::cerr << "ERROR: SymmetricDecryptAES256() failed" << std::endl;
 		exit(-1);
 	}
+
+	bool have_lit = false, have_mdc = false;
+	OCTETS lit, msg, mdc_hash;
+	ptag = 0xFF;
+	if (litmdc.size() > 20)
+		lit.insert(lit.end(), litmdc.begin(), litmdc.end() - 20);
+	while (litmdc.size() && ptag)
+	{
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(litmdc, ctx);
+		std::cout << "PacketDecode() = " << (int)ptag;
+		if (!ptag)
+		{
+			std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
+			exit(-1); // error detected
+		}
+		std::cout << " tag = " << (int)ptag << " version = " << (int)ctx.version;
+		std::cout << std::endl;
+		switch (ptag)
+		{
+			case 11: // Literal Data
+				have_lit = true;
+				for (size_t i = 0; i < ctx.datalen; i++)
+					msg.push_back(ctx.data[i]);
+				break;
+			case 19: // Modification Detection Code
+				have_mdc = true;
+				for (size_t i = 0; i < sizeof(ctx.mdc_hash); i++)
+					mdc_hash.push_back(ctx.mdc_hash[i]);
+				break;
+			default:
+				std::cerr << "ERROR: unrecognized OpenPGP packet found" << std::endl;
+				exit(-1);
+		}
+		// cleanup allocated buffers
+		if (ctx.hspd != NULL)
+			delete [] ctx.hspd;
+		if (ctx.encdata != NULL)
+			delete [] ctx.encdata;
+		if (ctx.compdata != NULL)
+			delete [] ctx.compdata;
+		if (ctx.data != NULL)
+			delete [] ctx.data;
+	}
+	if (!have_lit)
+	{
+		std::cerr << "ERROR: no literal data found" << std::endl;
+		exit(-1);
+	}
+	if (have_seipd && !have_mdc)
+	{
+		std::cerr << "ERROR: no modification detection code found" << std::endl;
+		exit(-1);
+	}
+	OCTETS mdc_hashing;
 	if (have_mdc)
 	{
 		mdc_hashing.insert(mdc_hashing.end(), prefix.begin(), prefix.end()); // "it includes the prefix data described above" [RFC4880]
@@ -1031,7 +1075,12 @@ assert(whoami == dkg->i);
 		}
 	}
 
-// TODO: parse lit packet
+	std::cout << "Decrypted message is: ";
+	for (size_t i = 0; i < msg.size(); i++)
+		std::cout << msg[i];
+	std::cout << std::endl;
+
+
 
 
 			// release RBC
