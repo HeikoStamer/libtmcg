@@ -1010,8 +1010,8 @@ assert(whoami == dkg->i);
 	bool have_lit = false, have_mdc = false;
 	OCTETS lit, msg, mdc_hash;
 	ptag = 0xFF;
-	if (litmdc.size() > 20)
-		lit.insert(lit.end(), litmdc.begin(), litmdc.end() - 20);
+	if (litmdc.size() > (sizeof(ctx.mdc_hash) + 2))
+		lit.insert(lit.end(), litmdc.begin(), litmdc.end() - (sizeof(ctx.mdc_hash) + 2));
 	while (litmdc.size() && ptag)
 	{
 		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(litmdc, ctx);

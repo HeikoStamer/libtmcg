@@ -382,7 +382,6 @@ int main
 	all.clear();
 	all.insert(all.end(), pkesk.begin(), pkesk.end());
 	all.insert(all.end(), seipd.begin(), seipd.end());
-//	all.insert(all.end(), mdc.begin(), mdc.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(1, all, armored_message);
 	std::cout << armored_message << std::endl;
 
