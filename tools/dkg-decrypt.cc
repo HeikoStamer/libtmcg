@@ -40,97 +40,90 @@
 int pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t pid[MAX_N];
 
-void start_instance
+void run_instance
 	(size_t whoami, const std::string my_keyid, const std::string passphrase, const std::string armored_message)
 {
-	if ((pid[whoami] = fork()) < 0)
-		perror("dkg-decrypt (fork)");
-	else
+
+	std::stringstream whoamis;
+	whoamis << whoami << "_" << my_keyid;
+
+	// read the exported DKG state from file
+	std::string line, dkgfilename = whoamis.str() + ".dkg";
+	std::stringstream dkgstate;
+	std::ifstream dkgifs(dkgfilename.c_str(), std::ifstream::in);
+	if (!dkgifs.is_open())
 	{
-		if (pid[whoami] == 0)
-		{
-			/* BEGIN child code: participant P_i */
+		std::cerr << "ERROR: cannot open state file" << std::endl;
+		exit(-1);
+	}
+	while (std::getline(dkgifs, line))
+		dkgstate << line << std::endl;
+	dkgifs.close();
 
-			std::stringstream whoamis;
-			whoamis << whoami << "_" << my_keyid;
+	// create an instance of DKG
+	GennaroJareckiKrawczykRabinDKG *dkg;
+	std::cout << "GennaroJareckiKrawczykRabinDKG(...)" << std::endl;
+	dkg = new GennaroJareckiKrawczykRabinDKG(dkgstate);
+	if (!dkg->CheckGroup())
+	{
+		std::cerr << "ERROR: CheckGroup() failed" << std::endl;
+		exit(-1);
+	}
 
-			// read the exported DKG state from file
-			std::string line, dkgfilename = whoamis.str() + ".dkg";
-			std::stringstream dkgstate;
-			std::ifstream dkgifs(dkgfilename.c_str(), std::ifstream::in);
-			if (!dkgifs.is_open())
-			{
-				std::cerr << "ERROR: cannot open state file" << std::endl;
-				exit(-1);
-			}
-			while (std::getline(dkgifs, line))
-				dkgstate << line << std::endl;
-			dkgifs.close();
+	// assert correct index for saved DKG state
+	assert(whoami == dkg->i);
 
-			// create an instance of DKG
-			GennaroJareckiKrawczykRabinDKG *dkg;
-			std::cout << "GennaroJareckiKrawczykRabinDKG(...)" << std::endl;
-			dkg = new GennaroJareckiKrawczykRabinDKG(dkgstate);
-			if (!dkg->CheckGroup())
-			{
-				std::cerr << "ERROR: CheckGroup() failed" << std::endl;
-				exit(-1);
-			}
+	// create pipe streams and handles between all players
+	std::vector<ipipestream*> P_in;
+	std::vector<opipestream*> P_out;
+	std::vector<int> uP_in, uP_out, bP_in, bP_out;
+	std::vector<std::string> uP_key, bP_key;
+	for (size_t i = 0; i < dkg->n; i++)
+	{
+		std::stringstream key;
+		key << "dkg-decrypt::P_" << (i + whoami);
+		P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
+		P_out.push_back(new opipestream(pipefd[whoami][i][1]));
+		uP_in.push_back(pipefd[i][whoami][0]);
+		uP_out.push_back(pipefd[whoami][i][1]);
+		uP_key.push_back(key.str());
+		bP_in.push_back(broadcast_pipefd[i][whoami][0]);
+		bP_out.push_back(broadcast_pipefd[whoami][i][1]);
+		bP_key.push_back(key.str());
+	}
 
-// assert correct index for saved DKG state
-assert(whoami == dkg->i);
+	// create asynchronous authenticated unicast channels
+	aiounicast *aiou = new aiounicast(dkg->n, dkg->t, whoami, uP_in, uP_out, uP_key);
 
-			// create pipe streams and handles between all players
-			std::vector<ipipestream*> P_in;
-			std::vector<opipestream*> P_out;
-			std::vector<int> uP_in, uP_out, bP_in, bP_out;
-			std::vector<std::string> uP_key, bP_key;
-			for (size_t i = 0; i < dkg->n; i++)
-			{
-				std::stringstream key;
-				key << "dkg-decrypt::P_" << (i + whoami);
-				P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
-				P_out.push_back(new opipestream(pipefd[whoami][i][1]));
-				uP_in.push_back(pipefd[i][whoami][0]);
-				uP_out.push_back(pipefd[whoami][i][1]);
-				uP_key.push_back(key.str());
-				bP_in.push_back(broadcast_pipefd[i][whoami][0]);
-				bP_out.push_back(broadcast_pipefd[whoami][i][1]);
-				bP_key.push_back(key.str());
-			}
-
-			// create asynchronous authenticated unicast channels
-			aiounicast *aiou = new aiounicast(dkg->n, dkg->t, whoami, uP_in, uP_out, uP_key);
-
-			// create asynchronous authenticated unicast channels
-			aiounicast *aiou2 = new aiounicast(dkg->n, dkg->t, whoami, bP_in, bP_out, bP_key);
+	// create asynchronous authenticated unicast channels
+	aiounicast *aiou2 = new aiounicast(dkg->n, dkg->t, whoami, bP_in, bP_out, bP_key);
 			
-			// create an instance of a reliable broadcast protocol (RBC)
-			std::string myID = "dkg-decrypt";
-			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(dkg->n, dkg->t, whoami, aiou2);
-			rbc->setID(myID);
+	// create an instance of a reliable broadcast protocol (RBC)
+	std::string myID = "dkg-decrypt";
+	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(dkg->n, dkg->t, whoami, aiou2);
+	rbc->setID(myID);
 
-			// check the key share
-			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
-			if (!dkg->CheckKey())
-			{
-				std::cerr << "ERROR: CheckKey() failed" << std::endl;
-				exit(-1);
-			}
+	// check the key share
+	std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
+	if (!dkg->CheckKey())
+	{
+		std::cerr << "ERROR: CheckKey() failed" << std::endl;
+		exit(-1);
+	}
 
-			// read the private key from file
-			dkgfilename = whoamis.str() + "_dkg-sec.asc";
-			std::stringstream dkgseckey;
-			std::ifstream secifs(dkgfilename.c_str(), std::ifstream::in);
-			if (!secifs.is_open())
-			{
-				std::cerr << "ERROR: cannot open key file" << std::endl;
-				exit(-1);
-			}
-			while (std::getline(secifs, line))
-				dkgseckey << line << std::endl;
-			secifs.close();
-			std::string armored_seckey = dkgseckey.str();
+	// read the private key from file
+	dkgfilename = whoamis.str() + "_dkg-sec.asc";
+	std::stringstream dkgseckey;
+	std::ifstream secifs(dkgfilename.c_str(), std::ifstream::in);
+	if (!secifs.is_open())
+	{
+		std::cerr << "ERROR: cannot open key file" << std::endl;
+		exit(-1);
+	}
+	while (std::getline(secifs, line))
+		dkgseckey << line << std::endl;
+	secifs.close();
+	std::string armored_seckey = dkgseckey.str();
 
 	// parse the private key
 	bool secdsa = false, sigdsa = false, ssbelg = false, sigelg = false;
@@ -861,39 +854,38 @@ assert(whoami == dkg->i);
 	}
 	mpz_spowm(r_i, nizk_gk, z_i, nizk_p);
 	// compute NIZK argument for decryption share
-		// proof of knowledge (equality of discrete logarithms) [CaS97]
-		mpz_t a, b, omega, c, r, c2;
-		mpz_init(c), mpz_init(r), mpz_init(c2), mpz_init(a), mpz_init(b), mpz_init(omega);
-		// commitment
-		mpz_srandomm(omega, nizk_q);
-		mpz_spowm(a, nizk_gk, omega, nizk_p);
-		mpz_spowm(b, nizk_g, omega, nizk_p);
-		// challenge
-		// Here we use the well-known "Fiat-Shamir heuristic" to make
-		// the PoK non-interactive, i.e. we turn it into a statistically
-		// zero-knowledge (Schnorr signature scheme style) proof of
-		// knowledge (SPK) in the random oracle model.
-		mpz_shash(c, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g);
-		// response
-		mpz_mul(r, c, z_i);
-		mpz_neg(r, r);
-		mpz_add(r, r, omega);
-		mpz_mod(r, r, nizk_q);
-		// verify proof of knowledge (equality of discrete logarithms) [CaS97]
-		mpz_powm(a, nizk_gk, r, nizk_p);
-		mpz_powm(b, r_i, c, nizk_p);
-		mpz_mul(a, a, b);
-		mpz_mod(a, a, nizk_p);
-		mpz_powm(b, nizk_g, r, nizk_p);
-		mpz_powm(c2, dkg->y_i[whoami], c, nizk_p);
-		mpz_mul(b, b, c2);
-		mpz_mod(b, b, nizk_p);
-		mpz_shash(c2, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g);
-		if (mpz_cmp(c2, c))
-		{
-			std::cout << "WARNING: NIZK self verification failed at " << whoami << std::endl;
-		}
-
+	// proof of knowledge (equality of discrete logarithms) [CaS97]
+	mpz_t a, b, omega, c, r, c2;
+	mpz_init(c), mpz_init(r), mpz_init(c2), mpz_init(a), mpz_init(b), mpz_init(omega);
+	// commitment
+	mpz_srandomm(omega, nizk_q);
+	mpz_spowm(a, nizk_gk, omega, nizk_p);
+	mpz_spowm(b, nizk_g, omega, nizk_p);
+	// challenge
+	// Here we use the well-known "Fiat-Shamir heuristic" to make
+	// the PoK non-interactive, i.e. we turn it into a statistically
+	// zero-knowledge (Schnorr signature scheme style) proof of
+	// knowledge (SPK) in the random oracle model.
+	mpz_shash(c, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g);
+	// response
+	mpz_mul(r, c, z_i);
+	mpz_neg(r, r);
+	mpz_add(r, r, omega);
+	mpz_mod(r, r, nizk_q);
+	// verify proof of knowledge (equality of discrete logarithms) [CaS97]
+	mpz_powm(a, nizk_gk, r, nizk_p);
+	mpz_powm(b, r_i, c, nizk_p);
+	mpz_mul(a, a, b);
+	mpz_mod(a, a, nizk_p);
+	mpz_powm(b, nizk_g, r, nizk_p);
+	mpz_powm(c2, dkg->y_i[whoami], c, nizk_p);
+	mpz_mul(b, b, c2);
+	mpz_mod(b, b, nizk_p);
+	mpz_shash(c2, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g);
+	if (mpz_cmp(c2, c))
+	{
+		std::cout << "WARNING: NIZK self verification failed at " << whoami << std::endl;
+	}
 
 	// broadcast the decryption share and the NIZK argument
 	rbc->Broadcast(r_i);
@@ -1095,43 +1087,55 @@ assert(whoami == dkg->i);
 		}
 	}
 
+	// print out the decrypted message
 	std::cout << "Decrypted message is: ";
 	for (size_t i = 0; i < msg.size(); i++)
 		std::cout << msg[i];
 	std::cout << std::endl;
 
-
-
-
-			// release RBC
-			delete rbc;
+	// release RBC
+	delete rbc;
 	
-			// release pipe streams (private channels)
-			size_t numRead = 0, numWrite = 0;
-			for (size_t i = 0; i < dkg->n; i++)
-			{
-				numRead += P_in[i]->get_numRead() + P_out[i]->get_numRead();
-				numWrite += P_in[i]->get_numWrite() + P_out[i]->get_numWrite();
-				delete P_in[i], delete P_out[i];
-			}
-			std::cout << "P_" << whoami << ": numRead = " << numRead <<
-				" numWrite = " << numWrite << std::endl;
+	// release pipe streams (private channels)
+	size_t numRead = 0, numWrite = 0;
+	for (size_t i = 0; i < dkg->n; i++)
+	{
+		numRead += P_in[i]->get_numRead() + P_out[i]->get_numRead();
+		numWrite += P_in[i]->get_numWrite() + P_out[i]->get_numWrite();
+		delete P_in[i], delete P_out[i];
+	}
+	std::cout << "P_" << whoami << ": numRead = " << numRead <<
+		" numWrite = " << numWrite << std::endl;
 
-			// release handles (unicast channel)
-			uP_in.clear(), uP_out.clear(), uP_key.clear();
-			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
-				" aiou.numWrite = " << aiou->numWrite << std::endl;
+	// release handles (unicast channel)
+	uP_in.clear(), uP_out.clear(), uP_key.clear();
+	std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
+		" aiou.numWrite = " << aiou->numWrite << std::endl;
 
-			// release handles (broadcast channel)
-			bP_in.clear(), bP_out.clear(), bP_key.clear();
-			std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
-				" aiou2.numWrite = " << aiou2->numWrite << std::endl;
+	// release handles (broadcast channel)
+	bP_in.clear(), bP_out.clear(), bP_key.clear();
+	std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
+		" aiou2.numWrite = " << aiou2->numWrite << std::endl;
 
-			// release asynchronous unicast and broadcast
-			delete aiou, delete aiou2;
+	// release asynchronous unicast and broadcast
+	delete aiou, delete aiou2;
 
-			// release DKG
-			delete dkg;
+	// release DKG
+	delete dkg;
+}
+
+void start_instance
+	(size_t whoami, const std::string my_keyid, const std::string passphrase, const std::string armored_message)
+{
+	if ((pid[whoami] = fork()) < 0)
+		perror("dkg-decrypt (fork)");
+	else
+	{
+		if (pid[whoami] == 0)
+		{
+			/* BEGIN child code: participant P_i */
+			run_instance(whoami, my_keyid, passphrase, armored_message);
+
 			
 			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
