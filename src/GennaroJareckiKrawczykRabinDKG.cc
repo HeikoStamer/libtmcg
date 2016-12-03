@@ -806,7 +806,10 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 	{
 		// run reconstruction phase of Pedersen-VSS
 		if (complaints.size() > t)
+		{
+			err << "P_" << i << ": too many faulty parties (" << complaints.size() << " > t)" << std::endl;
 			throw false;
+		}
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			// broadcast shares for reconstruction of $z_i$ (where $i = *it$) 

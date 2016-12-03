@@ -951,10 +951,30 @@ assert(whoami == dkg->i);
 			else
 				std::cout << "WARNING: complaint against P_" << i << std::endl;
 		}
-
 	}
-
-// TODO: reconstruction of z_i for faulty parties
+	// reconstruction of z_i for faulty parties
+	std::sort(complaints.begin(), complaints.end());
+	std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
+	complaints.resize(std::distance(complaints.begin(), it));
+	std::cout << "P_" << whoami << ": there are extracting complaints against ";
+	for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+		std::cout << "P_" << *it << " ";
+	std::cout << std::endl;
+	std::stringstream errlog;
+	if (!dkg->Reconstruct(complaints, dkg->z_i, rbc, errlog))
+	{
+		std::cout << "P_" << whoami << ": reconstruction failed" << std::endl;
+		std::cout << "error log: " << errlog.str() << std::endl;
+		exit(-1);
+	}
+	for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+	{
+		// compute $r_i = (g^k)^{z_i} \bmod p$
+		mpz_powm(r_i, nizk_gk, dkg->z_i[*it], nizk_p);
+		// accumulate decryption shares
+		mpz_mul(R, R, r_i);
+		mpz_mod(R, R, nizk_p);
+	}
 
 	// decrypt the session key
 	mpz_get_str(buffer, 16, R);
