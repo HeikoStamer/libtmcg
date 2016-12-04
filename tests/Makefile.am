@@ -19,7 +19,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-TESTS = t-mpz t-rfc4880 t-aio t-vtmf t-vsshe t-vrhe t-eotp t-mpc t-key t-poker t-poker-cutnchoose t-poker-rot t-votc t-poker-noninteractive t-poker-rot-noninteractive t-dkg t-astc t-seabp
+TESTS = t-mpz t-rfc4880 t-aio t-vtmf t-vsshe t-vrhe t-eotp t-mpc t-key t-poker t-poker-cutnchoose t-poker-rot t-votc t-poker-noninteractive t-poker-rot-noninteractive t-astc t-seabp t-dkg
 
 AM_CPPFLAGS = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@ @LIBGMP_CFLAGS@
 LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ @LIBGMP_LIBS@ ../src/libTMCG.la
