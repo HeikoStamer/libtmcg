@@ -263,6 +263,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					message2.push_back(r_echo);
 					mpz_shash(message[4], 1, tmp);
 					message2.push_back(message[4]);
+					// send to all parties by unicast transmission
 					for (size_t i = 0; i < n; i++)
 						aiou->Send(message2, i);
 					message2.clear();
@@ -304,6 +305,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					message2.push_back(message[2]);
 					message2.push_back(r_ready);
 					message2.push_back(message[4]);
+					// send to all parties by unicast transmission
 					for (size_t i = 0; i < n; i++)
 						aiou->Send(message2, i);
 					message2.clear();
@@ -346,6 +348,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					message2.push_back(message[2]);
 					message2.push_back(r_ready);
 					message2.push_back(message[4]);
+					// send to all parties by unicast transmission
 					for (size_t i = 0; i < n; i++)
 						aiou->Send(message2, i);
 					message2.clear();
@@ -368,6 +371,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						message2.push_back(message[2]);
 						message2.push_back(r_request);
 						message2.push_back(message[4]);
+						// send to some parties by unicast transmission
 						for (size_t i = 0; i < ((2 * t) + 1); i++)
 							aiou->Send(message2, i);
 						message2.clear();
@@ -467,6 +471,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					message2.push_back(message[2]);
 					message2.push_back(r_answer);
 					message2.push_back(mbar[tag_string]);
+					// send to requesting party by unicast transmission
 					aiou->Send(message2, l);
 					message2.clear();
 				}
@@ -528,7 +533,7 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 				delete tmp;
 				if (sleep_counter[l] < n)
 				{
-					sleep(1);
+					sleep(1); // FIXME: check whether this is neccesary
 					sleep_counter[l] = sleep_counter[l] + 1;
 				}
 			}

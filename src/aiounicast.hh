@@ -42,8 +42,9 @@
 class aiounicast
 {
 	public:
-		static const time_t	aio_timeout_null		= 0;
+		static const time_t	aio_timeout_none		= 0;
 		static const time_t	aio_timeout_short		= 1;
+		static const time_t	aio_timeout_long		= 8;
 		static const size_t	aio_scheduler_none		= 0;
 		static const size_t	aio_scheduler_roundrobin	= 1;
 		static const size_t	aio_scheduler_random		= 2;
