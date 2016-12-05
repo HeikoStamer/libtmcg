@@ -45,6 +45,7 @@
 	#include <map>
 	#include <list>
 	#include <algorithm>
+	#include <unistd.h>
 
 	// GNU crypto library
 	#include <gcrypt.h>

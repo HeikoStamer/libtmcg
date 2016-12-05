@@ -19,6 +19,7 @@
 *******************************************************************************/
 
 #include <libTMCG.hh>
+#include <aiounicast_fd.hh>
 
 #ifdef FORKING
 
@@ -64,7 +65,7 @@ void start_instance
 			}	
 
 			// create asynchronous authenticated broadcast channels
-			aiounicast *aiou = new aiounicast(N, T, whoami, bP_in, bP_out, bP_key);
+			aiounicast_fd *aiou = new aiounicast_fd(N, T, whoami, bP_in, bP_out, bP_key);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
 			std::string myID = "t-seabp";

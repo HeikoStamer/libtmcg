@@ -36,8 +36,8 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	assert(t_in <= n_in);
 	assert((3 * t_in) < n_in);
 	assert(j_in < n_in);
-	assert(n_in == aiou_in->in.size());
-	assert(aiou_in->in.size() == aiou_in->out.size());
+//	assert(n_in == aiou_in->in.size());
+//	assert(aiou_in->in.size() == aiou_in->out.size());
 
 	// initialize basic parameters
 	n = n_in, t = t_in, j = j_in;

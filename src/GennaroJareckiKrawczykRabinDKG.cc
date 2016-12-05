@@ -209,11 +209,11 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	assert(t <= n);
 	assert((2 * t) < n); // maximum synchronous t-resilience
 	assert(i < n);
-	assert(n == aiou->n);
+//	assert(n == aiou->n);
 	assert(n == rbc->n);
-	assert(t == aiou->t);
+//	assert(t == aiou->t);
 	assert(t == rbc->t);
-	assert(i == aiou->j);
+//	assert(i == aiou->j);
 	assert(i == rbc->j);
 
 	// initialize
@@ -1057,11 +1057,11 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	assert(n >= t);
 	assert((2 * t) < n); // maximum synchronous t-resilience
 	assert(i < n);
-	assert(n == aiou->n);
+//	assert(n == aiou->n);
 	assert(n == rbc->n);
-	assert(t == aiou->t);
+//	assert(t == aiou->t);
 	assert(t == rbc->t);
-	assert(i == aiou->j);
+//	assert(i == aiou->j);
 	assert(i == rbc->j);
 
 	// initialize

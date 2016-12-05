@@ -19,6 +19,7 @@
 *******************************************************************************/
 
 #include <libTMCG.hh>
+#include <aiounicast_fd.hh>
 
 #ifdef FORKING
 
@@ -69,7 +70,7 @@ void start_instance
 			}
 
 			// create asynchronous authenticated unicast channels
-			aiounicast *aiou = new aiounicast(N, T, whoami, uP_in, uP_out, uP_key);
+			aiounicast_fd *aiou = new aiounicast_fd(N, T, whoami, uP_in, uP_out, uP_key);
 
 			// send a simple message
 			std::vector<size_t> froms;
