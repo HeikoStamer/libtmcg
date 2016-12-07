@@ -71,7 +71,7 @@ class GennaroJareckiKrawczykRabinDKG
 		std::vector<size_t>			QUAL;
 		mpz_t					x_i, xprime_i, y;
 		std::vector<mpz_ptr>			y_i, z_i;
-		std::vector< std::vector<mpz_ptr> >	s_ij;
+		std::vector< std::vector<mpz_ptr> >	s_ij, sprime_ij, C_ik;
 		
 		GennaroJareckiKrawczykRabinDKG
 			(const size_t n_in, const size_t t_in, const size_t i_in,

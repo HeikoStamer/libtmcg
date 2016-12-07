@@ -53,6 +53,22 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 			vtmp1->push_back(tmp3);
 		}
 		s_ij.push_back(*vtmp1);
+		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
+		for (size_t i = 0; i < n_in; i++)
+		{
+			mpz_ptr tmp3 = new mpz_t();
+			mpz_init(tmp3);
+			vtmp2->push_back(tmp3);
+		}
+		sprime_ij.push_back(*vtmp2);
+		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
+		for (size_t k = 0; k <= t_in; k++)
+		{
+			mpz_ptr tmp3 = new mpz_t();
+			mpz_init(tmp3);
+			vtmp3->push_back(tmp3);
+		}
+		C_ik.push_back(*vtmp3);
 	}
 
 	// Do the precomputation for the fast exponentiation.
@@ -103,14 +119,37 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 			vtmp1->push_back(tmp3);
 		}
 		s_ij.push_back(*vtmp1);
+		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
+		for (size_t i = 0; i < n; i++)
+		{
+			mpz_ptr tmp3 = new mpz_t();
+			mpz_init(tmp3);
+			vtmp2->push_back(tmp3);
+		}
+		sprime_ij.push_back(*vtmp2);
+		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
+		for (size_t k = 0; k <= t; k++)
+		{
+			mpz_ptr tmp3 = new mpz_t();
+			mpz_init(tmp3);
+			vtmp3->push_back(tmp3);
+		}
+		C_ik.push_back(*vtmp3);
 	}
 	for (size_t i = 0; i < n; i++)
 		in >> y_i[i];	
 	for (size_t i = 0; i < n; i++)
 		in >> z_i[i];
 	for (size_t i = 0; i < n; i++)
+	{
 		for (size_t j = 0; j < n; j++)
+		{
 			in >> s_ij[i][j];
+			in >> sprime_ij[i][j];
+		}
+		for (size_t k = 0; k <= t; k++)
+			in >> C_ik[i][k];
+	}
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -135,8 +174,15 @@ void GennaroJareckiKrawczykRabinDKG::PublishState
 	for (size_t i = 0; i < n; i++)
 		out << z_i[i] << std::endl;
 	for (size_t i = 0; i < n; i++)
+	{
 		for (size_t j = 0; j < n; j++)
+		{
 			out << s_ij[i][j] << std::endl;
+			out << sprime_ij[i][j] << std::endl;
+		}
+		for (size_t k = 0; k <= t; k++)
+			out << C_ik[i][k] << std::endl;
+	}
 }
 
 bool GennaroJareckiKrawczykRabinDKG::CheckGroup
@@ -219,7 +265,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	std::vector<mpz_ptr> a_i, b_i, g__a_i;
-	std::vector< std::vector<mpz_ptr> > C_ik, A_ik, sprime_ij, g__s_ij;
+	std::vector< std::vector<mpz_ptr> > A_ik, g__s_ij;
 	std::vector<size_t> complaints, complaints_counter;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	for (size_t k = 0; k <= t; k++)
@@ -233,29 +279,22 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	}
 	for (size_t j = 0; j < n; j++)
 	{
-		std::vector<mpz_ptr> *vtmp = new std::vector<mpz_ptr>;
 		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
 		for (size_t k = 0; k <= t; k++)
 		{
-			mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
-			mpz_init(tmp1), mpz_init(tmp2);
- 			vtmp->push_back(tmp1);
-			vtmp1->push_back(tmp2);
+			mpz_ptr tmp1 = new mpz_t();
+			mpz_init(tmp1);
+			vtmp1->push_back(tmp1);
 		}
-		C_ik.push_back(*vtmp), A_ik.push_back(*vtmp1);
-		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
-		std::vector<mpz_ptr> *vtmp4 = new std::vector<mpz_ptr>;
+		A_ik.push_back(*vtmp1);
+		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
 		for (size_t i2 = 0; i2 < n; i2++)
 		{
 			mpz_ptr tmp2 = new mpz_t();
 			mpz_init(tmp2);
-			vtmp3->push_back(tmp2);
-			mpz_ptr tmp3 = new mpz_t();
-			mpz_init(tmp3);
-			vtmp4->push_back(tmp3);
+			vtmp2->push_back(tmp2);
 		}
-		sprime_ij.push_back(*vtmp3);
-		g__s_ij.push_back(*vtmp4);
+		g__s_ij.push_back(*vtmp2);
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
 
@@ -741,24 +780,18 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		{
 			for (size_t k = 0; k <= t; k++)
 			{
-				mpz_clear(C_ik[j][k]);
 				mpz_clear(A_ik[j][k]);
-				delete C_ik[j][k];
 				delete A_ik[j][k];
 			}
 			for (size_t i2 = 0; i2 < n; i2++)
 			{
-				mpz_clear(sprime_ij[j][i2]);
-				delete sprime_ij[j][i2];
 				mpz_clear(g__s_ij[j][i2]);
 				delete g__s_ij[j][i2];
 			}
-			C_ik[j].clear(), A_ik[j].clear();
-			sprime_ij[j].clear();
+			A_ik[j].clear();
 			g__s_ij[j].clear();
 		}
-		C_ik.clear(), A_ik.clear();
-		sprime_ij.clear();
+		A_ik.clear();
 		g__s_ij.clear();
 		// return
 		return return_value;
@@ -913,7 +946,24 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 		s_ij[j].clear();
 	}
 	s_ij.clear();
-
+	for (size_t j = 0; j < sprime_ij.size(); j++)
+	{
+		for (size_t i = 0; i < sprime_ij[j].size(); i++)
+		{
+			mpz_clear(sprime_ij[j][i]);
+			delete sprime_ij[j][i];
+		}
+		sprime_ij[j].clear();
+	}
+	sprime_ij.clear();
+	for (size_t j = 0; j < C_ik.size(); j++)
+	{
+		for (size_t k = 0; k < C_ik[j].size(); k++)
+		{
+			mpz_clear(C_ik[j][k]);
+			delete C_ik[j][k];
+		}
+	}
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
