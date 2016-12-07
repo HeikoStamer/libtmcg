@@ -693,7 +693,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					for (size_t k = 0; k <= t; k++)
 					{
 						mpz_ui_pow_ui(foo, who + 1, k); // adjust index $i$ in computation
-						mpz_powm(bar, C_ik[j][k], foo , p);
+						mpz_powm(bar, C_ik[j][k], foo, p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
 					}
@@ -847,6 +847,7 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 		{
 			// broadcast shares for reconstruction of $z_i$ (where $i = *it$) 
 			rbc->Broadcast(s_ij[*it][i]);
+// FIXME: sprime_ij
 			// prepare for collecting shares
 			std::vector<size_t> parties;
 			parties.push_back(i);
@@ -861,6 +862,7 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 						err << "P_" << i << ": no share from " << *jt << std::endl;					
 				}
 			}
+// FIXME: check Eq. (4)
 			// check whether enough shares have been collected
 			if (parties.size() <= t)
 			{
@@ -901,6 +903,7 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 				mpz_add(foo, foo, bar);
 				mpz_mod(foo, foo, q);
 			}
+// FIXME: check y_i == g^(z_i)
 			mpz_set(z_i_in[*it], foo);
 			parties.clear();
 		}
