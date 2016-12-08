@@ -253,13 +253,10 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(t <= n);
-	assert((2 * t) < n); // maximum synchronous t-resilience
+	assert((2 * t) < n); // maximum synchronous t-resilience FIXME: only warn, not abort
 	assert(i < n);
-//	assert(n == aiou->n);
 	assert(n == rbc->n);
-//	assert(t == aiou->t);
 	assert(t == rbc->t);
-//	assert(i == aiou->j);
 	assert(i == rbc->j);
 
 	// initialize
@@ -375,7 +372,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		// (b) Each party $P_j$ verifies the shares he received from
 		//     the other parties. For each $i = 1, \ldots, n$, $P_j$
 		//     checks if $g^{s_{ij}} h^{s\prime_{ij}} = \prod_{k=0}^t (C_{ik})^{j^k} \bmod p$.
-		// Note that in this section the indicies $i$ and $j$ are exchanged for convenience.
+		// In opposite to the notation used in the paper the indicies $i$ and $j$ are
+		// exchanged in this section for convenience.
 		for (size_t j = 0; j < n; j++)
 		{
 			if (j != i)
@@ -847,23 +845,42 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 		{
 			// broadcast shares for reconstruction of $z_i$ (where $i = *it$) 
 			rbc->Broadcast(s_ij[*it][i]);
-// FIXME: sprime_ij
-			// prepare for collecting shares
+			rbc->Broadcast(sprime_ij[*it][i]);
+			// prepare for collecting some shares
 			std::vector<size_t> parties;
-			parties.push_back(i);
-			// collect shares $s_{ij}$ from other parties
+			parties.push_back(i); // my own shares are always available
+			// now collect shares $s_{ij}$ of other parties from QUAL
 			for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
 			{
 				if ((*jt != i) && (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end()))
 				{
-					if (rbc->DeliverFrom(s_ij[*it][*jt], *jt))
-						parties.push_back(*jt);
+					if (rbc->DeliverFrom(s_ij[*it][*jt], *jt) && rbc->DeliverFrom(sprime_ij[*it][*jt], *jt))
+					{
+						// compute LHS for the check
+						mpz_fpowm(fpowm_table_g, foo, g, s_ij[*it][*jt], p);
+						mpz_fpowm(fpowm_table_h, bar, h, sprime_ij[*it][*jt], p);
+						mpz_mul(lhs, foo, bar);
+						mpz_mod(lhs, lhs, p);
+						// compute RHS for the check
+						mpz_set_ui(rhs, 1L);
+						for (size_t k = 0; k <= t; k++)
+						{
+							mpz_ui_pow_ui(foo, *it + 1, k); // adjust index $i$ in computation
+							mpz_powm(bar, C_ik[*jt][k], foo , p);
+							mpz_mul(rhs, rhs, bar);
+							mpz_mod(rhs, rhs, p);
+						}
+						// check equation (4)
+						if (mpz_cmp(lhs, rhs))
+							err << "P_" << i << ": bad share from " << *jt << std::endl;
+						else
+							parties.push_back(*jt);
+					}
 					else
 						err << "P_" << i << ": no share from " << *jt << std::endl;					
 				}
 			}
-// FIXME: check Eq. (4)
-			// check whether enough shares have been collected
+			// check whether enough shares (i.e. $t + 1$) have been collected
 			if (parties.size() <= t)
 			{
 				err << "P_" << i << ": not enough shares collected" << std::endl;
@@ -903,7 +920,13 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 				mpz_add(foo, foo, bar);
 				mpz_mod(foo, foo, q);
 			}
-// FIXME: check y_i == g^(z_i)
+			// check whether $y_i = g^(z_i) \bmod p$ holds
+			mpz_fpowm(fpowm_table_g, bar, g, foo, p);
+			if (mpz_cmp(y_i[*it], bar))
+			{
+				err << "P_" << i << ": reconstruction of z_i failed for i = " << *it << std::endl;
+				throw false;
+			}
 			mpz_set(z_i_in[*it], foo);
 			parties.clear();
 		}
@@ -1083,7 +1106,7 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 		// $y = g^x$ and $y_i = g^{z_i}$ for every $P_i$
 		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
-		// set the public class variables
+		// set the public variables of the class
 		mpz_set(z_i, dkg->z_i[i]);
 		for (size_t j = 0; j < y_i.size(); j++)
 			mpz_set(y_i[j], dkg->y_i[j]);
@@ -1108,13 +1131,10 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(n >= t);
-	assert((2 * t) < n); // maximum synchronous t-resilience
+	assert((2 * t) < n); // maximum synchronous t-resilience FIXME: warn only
 	assert(i < n);
-//	assert(n == aiou->n);
 	assert(n == rbc->n);
-//	assert(t == aiou->t);
 	assert(t == rbc->t);
-//	assert(i == aiou->j);
 	assert(i == rbc->j);
 
 	// initialize
@@ -1148,7 +1168,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		//    the outputs of this run of New-DKG as follows. Each party
 		//    $P_i \in QUAL\prime$ holds an additive share $u_i$ of the
 		//    secret-shared secret $k$. Each of these additive shares
-		//    is itself secret-sahred with Feldman-VSS. We denote the
+		//    is itself secret-shared with Feldman-VSS. We denote the
 		//    generated public values $r = g^k$ and $r_i = g^{u_i}$
 		//    for each $P_i$.
 		if (!dkg2->Generate(aiou, rbc, err, simulate_faulty_behaviour && simulate_faulty_randomizer))
@@ -1203,7 +1223,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 				}
 			}
 		}
-		// Otherwise $x_i$ [I guess this means $u_i$] and $z_i$ are
+		// Otherwise $x_i$ [H.Stamer: guess this is a typo and means $u_i$] and $z_i$ are
 		// reconstructed and $s_i$ is computed publicly.
 		std::sort(complaints.begin(), complaints.end());
 		std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
@@ -1238,7 +1258,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			if (std::find(QUALprime.begin(), QUALprime.end(), *it) == QUALprime.end())
 				complaints.push_back(*it);
-		err << "P_" << i << ": there are reconstruction complaints against ";
+		err << "P_" << i << ": there are further reconstruction complaints against ";
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
