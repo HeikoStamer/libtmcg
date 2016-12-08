@@ -315,6 +315,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		}
 		// Let $z_i = a_{i0} = f_i(0)$.
 		mpz_set(z_i[i], a_i[0]);
+		err << "P_" << i << ": z_i = " << z_i[i] << std::endl;
 		// $P_i$ broadcasts $C_{ik} = g^{a_{ik}} h^{b_{ik}} \bmod p$
 		// for $k = 0, \ldots, t$.
 		for (size_t k = 0; k <= t; k++)
@@ -865,19 +866,19 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 						mpz_set_ui(rhs, 1L);
 						for (size_t k = 0; k <= t; k++)
 						{
-							mpz_ui_pow_ui(foo, *it + 1, k); // adjust index $i$ in computation
-							mpz_powm(bar, C_ik[*jt][k], foo , p);
+							mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $i$ in computation
+							mpz_powm(bar, C_ik[*it][k], foo , p);
 							mpz_mul(rhs, rhs, bar);
 							mpz_mod(rhs, rhs, p);
 						}
 						// check equation (4)
 						if (mpz_cmp(lhs, rhs))
-							err << "P_" << i << ": bad share from " << *jt << std::endl;
+							err << "P_" << i << ": bad share received from " << *jt << std::endl;
 						else
 							parties.push_back(*jt);
 					}
 					else
-						err << "P_" << i << ": no share from " << *jt << std::endl;					
+						err << "P_" << i << ": no share received from " << *jt << std::endl;					
 				}
 			}
 			// check whether enough shares (i.e. $t + 1$) have been collected
@@ -919,13 +920,6 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 				mpz_mod(bar, bar, q);
 				mpz_add(foo, foo, bar);
 				mpz_mod(foo, foo, q);
-			}
-			// check whether $y_i = g^(z_i) \bmod p$ holds
-			mpz_fpowm(fpowm_table_g, bar, g, foo, p);
-			if (mpz_cmp(y_i[*it], bar))
-			{
-				err << "P_" << i << ": reconstruction of z_i failed for i = " << *it << std::endl;
-				throw false;
 			}
 			mpz_set(z_i_in[*it], foo);
 			parties.clear();
