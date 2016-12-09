@@ -29,9 +29,9 @@
 #include "JareckiLysyanskayaASTC.hh"
 
 JareckiLysyanskayaRVSS::JareckiLysyanskayaRVSS
-	(size_t n_in, size_t t_in,
+	(const size_t n_in, const size_t t_in,
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
-	unsigned long int fieldsize, unsigned long int subgroupsize):
+	const unsigned long int fieldsize, const unsigned long int subgroupsize):
 			F_size(fieldsize), G_size(subgroupsize), n(n_in), t(t_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
@@ -139,17 +139,14 @@ bool JareckiLysyanskayaRVSS::CheckGroup
 }
 
 bool JareckiLysyanskayaRVSS::Share
-	(size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, bool simulate_faulty_behaviour)
+	(const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(t <= n);
-	assert((2 * t) < n); // maximum synchronous t-resilience
+	assert((2 * t) < n); // maximum synchronous t-resilience FIXME: warn only
 	assert(i < n);
-//	assert(n == aiou->n);
 	assert(n == rbc->n);
-//	assert(t == aiou->t);
 	assert(t == rbc->t);
-//	assert(i == aiou->j);
 	assert(i == rbc->j);
 
 	// initialize
@@ -230,15 +227,11 @@ bool JareckiLysyanskayaRVSS::Share
 			}
 			if (j != i)
 			{
-				if (simulate_faulty_behaviour)
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer)
 				{
 					mpz_add_ui(alpha_ij[i][j], alpha_ij[i][j], 1L);
 				}
 				aiou->Send(alpha_ij[i][j], j);
-				if (simulate_faulty_behaviour && simulate_faulty_randomizer)
-				{
-					mpz_add_ui(hatalpha_ij[i][j], hatalpha_ij[i][j], 1L);
-				}
 				aiou->Send(hatalpha_ij[i][j], j);
 			}
 		}
@@ -278,7 +271,7 @@ bool JareckiLysyanskayaRVSS::Share
 			for (size_t k = 0; k <= t; k++)
 			{
 				mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
-				mpz_powm(bar, C_ik[j][k], foo , p);
+				mpz_powm(bar, C_ik[j][k], foo, p);
 				mpz_mul(rhs, rhs, bar);
 				mpz_mod(rhs, rhs, p);
 			}
@@ -397,11 +390,11 @@ bool JareckiLysyanskayaRVSS::Share
 					for (size_t k = 0; k <= t; k++)
 					{
 						mpz_ui_pow_ui(foo, who + 1, k); // adjust index $j$ in computation
-						mpz_powm(bar, C_ik[j][k], foo , p);
+						mpz_powm(bar, C_ik[j][k], foo, p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
 					}
-					// check equation
+					// check equation (4)
 					if (mpz_cmp(lhs, rhs))
 					{
 						err << "P_" << i << ": checking 1(c) failed; complaint against P_" << j << std::endl;
@@ -461,8 +454,8 @@ bool JareckiLysyanskayaRVSS::Share
 }
 
 bool JareckiLysyanskayaRVSS::Share_twoparty
-	(size_t i, std::istream &in, std::ostream &out,
-	std::ostream &err, bool simulate_faulty_behaviour)
+	(const size_t i, std::istream &in, std::ostream &out,
+	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(n == 2); // two-party protocol
 	assert(i < n);
@@ -537,7 +530,7 @@ bool JareckiLysyanskayaRVSS::Share_twoparty
 }
 
 bool JareckiLysyanskayaRVSS::Reconstruct
-	(size_t i, std::vector<size_t> &complaints,
+	(const size_t i, const std::vector<size_t> &complaints,
 	std::vector<mpz_ptr> &a_i_in,
 	CachinKursawePetzoldShoupRBC *rbc, std::ostream &err)
 {
@@ -554,26 +547,50 @@ bool JareckiLysyanskayaRVSS::Reconstruct
 	{
 		// run reconstruction phase of Pedersen-VSS
 		if (complaints.size() > t)
+		{
+			err << "P_" << i << ": too many faulty parties (" << complaints.size() << " > t)" << std::endl;
 			throw false;
-		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+		}
+		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			// broadcast shares for reconstruction of $z_i$ (where $i = *it$) 
 			rbc->Broadcast(alpha_ij[*it][i]);
+			rbc->Broadcast(hatalpha_ij[*it][i]);
 			// prepare for collecting shares
 			std::vector<size_t> parties;
-			parties.push_back(i);
-			// collect shares $s_{ij}$ from other parties
+			parties.push_back(i); // my own shares are always available
+			// collect shares $\alpha_{ij}$ and $\hat{\alpha}_{ij}$ of other parties from Qual
 			for (std::vector<size_t>::iterator jt = Qual.begin(); jt != Qual.end(); ++jt)
 			{
 				if ((*jt != i) && (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end()))
 				{
-					if (rbc->DeliverFrom(alpha_ij[*it][*jt], *jt))
-						parties.push_back(*jt);
+					if (rbc->DeliverFrom(alpha_ij[*it][*jt], *jt) && rbc->DeliverFrom(hatalpha_ij[*it][*jt], *jt))
+					{
+						// compute LHS for the check
+						mpz_fpowm(fpowm_table_g, foo, g, alpha_ij[*it][*jt], p);
+						mpz_fpowm(fpowm_table_h, bar, h, hatalpha_ij[*it][*jt], p);
+						mpz_mul(lhs, foo, bar);
+						mpz_mod(lhs, lhs, p);
+						// compute RHS for the check
+						mpz_set_ui(rhs, 1L);
+						for (size_t k = 0; k <= t; k++)
+						{
+							mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $j$ in computation
+							mpz_powm(bar, C_ik[*it][k], foo, p);
+							mpz_mul(rhs, rhs, bar);
+							mpz_mod(rhs, rhs, p);
+						}
+						// check equation (4)
+						if (mpz_cmp(lhs, rhs))
+							err << "P_" << i << ": bad share received from " << *jt << std::endl;
+						else
+							parties.push_back(*jt);
+					}
 					else
-						err << "P_" << i << ": no share from " << *jt << std::endl;					
+						err << "P_" << i << ": no share received from " << *jt << std::endl;					
 				}
 			}
-			// check whether enough shares have been collected
+			// check whether enough shares (i.e. $t + 1$) have been collected
 			if (parties.size() <= t)
 			{
 				err << "P_" << i << ": not enough shares collected" << std::endl;
@@ -675,9 +692,9 @@ JareckiLysyanskayaRVSS::~JareckiLysyanskayaRVSS
 // ===================================================================================================================================
 
 JareckiLysyanskayaEDCF::JareckiLysyanskayaEDCF
-	(size_t n_in, size_t t_in,
+	(const size_t n_in, const size_t t_in,
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
-	unsigned long int fieldsize, unsigned long int subgroupsize):
+	const unsigned long int fieldsize, const unsigned long int subgroupsize):
 			F_size(fieldsize), G_size(subgroupsize), n(n_in), t(t_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
@@ -759,18 +776,15 @@ bool JareckiLysyanskayaEDCF::CheckGroup
 }
 
 bool JareckiLysyanskayaEDCF::Flip
-	(size_t i, mpz_ptr a,
+	(const size_t i, mpz_ptr a,
 	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, bool simulate_faulty_behaviour)
+	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(t <= n);
-	assert((2 * t) < n); // maximum synchronous t-resilience
+	assert((2 * t) < n); // maximum synchronous t-resilience FIXME: warn only
 	assert(i < n);
-//	assert(n == aiou->n);
 	assert(n == rbc->n);
-//	assert(t == aiou->t);
 	assert(t == rbc->t);
-//	assert(i == aiou->j);
 	assert(i == rbc->j);
 
 	// initialize
@@ -898,8 +912,8 @@ bool JareckiLysyanskayaEDCF::Flip
 }
 
 bool JareckiLysyanskayaEDCF::Flip_twoparty
-	(size_t i, mpz_ptr a, std::istream &in, std::ostream &out,
-	std::ostream &err, bool simulate_faulty_behaviour)
+	(const size_t i, mpz_ptr a, std::istream &in, std::ostream &out,
+	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(n == 2); // two-party protocol
 	assert(i < n);

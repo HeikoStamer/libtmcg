@@ -859,7 +859,7 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 			// prepare for collecting some shares
 			std::vector<size_t> parties;
 			parties.push_back(i); // my own shares are always available
-			// now collect shares $s_{ij}$ of other parties from QUAL
+			// now collect shares $s_{ij}$ and $s\prime_{ij}$ of other parties from QUAL
 			for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
 			{
 				if ((*jt != i) && (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end()))
