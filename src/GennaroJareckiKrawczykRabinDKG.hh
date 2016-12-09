@@ -77,12 +77,12 @@ class GennaroJareckiKrawczykRabinDKG
 			(const size_t n_in, const size_t t_in, const size_t i_in,
 			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS,
 			mpz_srcptr h_CRS,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		GennaroJareckiKrawczykRabinDKG
 			(std::istream &in,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		void PublishState
 			(std::ostream &out) const;
 		bool CheckGroup
@@ -92,9 +92,11 @@ class GennaroJareckiKrawczykRabinDKG
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);
 		bool CheckKey
+			(const size_t i_in) const;
+		bool CheckKey
 			() const;
 		bool Reconstruct
-			(std::vector<size_t> &complaints,
+			(const std::vector<size_t> &complaints,
 			std::vector<mpz_ptr> &z_i_in,
 			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
 		~GennaroJareckiKrawczykRabinDKG

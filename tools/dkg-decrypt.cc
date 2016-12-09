@@ -962,11 +962,20 @@ void run_instance
 	}
 	for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 	{
-		// compute $r_i = (g^k)^{z_i} \bmod p$
-		mpz_powm(r_i, nizk_gk, dkg->z_i[*it], nizk_p);
-		// accumulate decryption shares
-		mpz_mul(R, R, r_i);
-		mpz_mod(R, R, nizk_p);
+		// check reconstructed z_i
+		if (dkg->CheckKey(*it))
+		{
+			// compute $r_i = (g^k)^{z_i} \bmod p$
+			mpz_powm(r_i, nizk_gk, dkg->z_i[*it], nizk_p);
+			// accumulate decryption shares
+			mpz_mul(R, R, r_i);
+			mpz_mod(R, R, nizk_p);
+		}
+		else
+		{
+			std::cout << "P_" << whoami << ": checking z_i failed for i = " << *it << std::endl;
+			exit(-1);
+		}
 	}
 
 	// decrypt the session key

@@ -81,7 +81,8 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 
 GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	(std::istream &in,
-	unsigned long int fieldsize, unsigned long int subgroupsize):
+	const unsigned long int fieldsize,
+	const unsigned long int subgroupsize):
 			F_size(fieldsize), G_size(subgroupsize)
 {
 	std::string value;
@@ -798,7 +799,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 }
 
 bool GennaroJareckiKrawczykRabinDKG::CheckKey
-	() const
+	(const size_t i_in) const
 {
 	// initialize
 	mpz_t foo;
@@ -806,8 +807,10 @@ bool GennaroJareckiKrawczykRabinDKG::CheckKey
 
 	try
 	{
-		mpz_fspowm(fpowm_table_g, foo, g, z_i[i], p);
-		if (mpz_cmp(y_i[i], foo))
+		if (i_in >= n)
+			throw false;
+		mpz_fspowm(fpowm_table_g, foo, g, z_i[i_in], p);
+		if (mpz_cmp(y_i[i_in], foo))
 			throw false;
 		throw true;
 	}
@@ -820,8 +823,14 @@ bool GennaroJareckiKrawczykRabinDKG::CheckKey
 	}
 }
 
+bool GennaroJareckiKrawczykRabinDKG::CheckKey
+	() const
+{
+	return CheckKey(i);
+}
+
 bool GennaroJareckiKrawczykRabinDKG::Reconstruct
-	(std::vector<size_t> &complaints, std::vector<mpz_ptr> &z_i_in,
+	(const std::vector<size_t> &complaints, std::vector<mpz_ptr> &z_i_in,
 	CachinKursawePetzoldShoupRBC *rbc, std::ostream &err)
 {
 	// initialize
@@ -842,7 +851,7 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 			err << "P_" << i << ": too many faulty parties (" << complaints.size() << " > t)" << std::endl;
 			throw false;
 		}
-		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			// broadcast shares for reconstruction of $z_i$ (where $i = *it$) 
 			rbc->Broadcast(s_ij[*it][i]);
