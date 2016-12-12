@@ -18,10 +18,10 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION(20161112)
-AC_PREREQ(2.57)
+AC_REVISION([20161212])
+AC_PREREQ(2.61)
 
-AC_INIT([libTMCG], [1.2.0])
+AC_INIT([LibTMCG], [1.2.0], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
 
 # The next two paragraphs are copies of libgcrypt behaviour.
 
@@ -38,9 +38,8 @@ LIBTMCG_CONFIG_API_VERSION=2
 
 AC_LANG(C++)
 AC_CONFIG_SRCDIR([src/libTMCG.hh])
+AC_CONFIG_HEADERS(config.h)
 AM_INIT_AUTOMAKE
-##AC_CONFIG_MACRO_DIR([m4])
-AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
 AC_SUBST(LIBTMCG_LT_CURRENT)
@@ -144,16 +143,20 @@ AC_DEFINE(TMCG_MAX_KEY_CHARS,
 	[(TMCG_MAX_KEYBITS * 1024L)],
 	[Define a helping macro])
 
+# Checks for Libtool
+LT_INIT
+LT_LANG([C++])
+
 # Checks for programs
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_MAKE_SET
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
 AC_PROG_LN_S
+AC_PROG_MKDIR_P
 
 # Checks for libraries
-AC_ARG_WITH(gmp, [AS_HELP_STRING([--with-gmp=<path>], [prefix of libgmp installation. e.g. /usr/local or /usr])], [GMP_PREFIX="$with_gmp"],\
+AC_ARG_WITH(gmp, [AS_HELP_STRING([--with-gmp=<path>], [prefix of libgmp installation e.g. /usr/local])], [GMP_PREFIX="$with_gmp"],\
  [AC_CHECK_LIB(gmp, __gmpz_init, , AC_MSG_ERROR([libgmp is needed; maybe you want to call configure with the --with-gmp=<path> option]))])
 AC_CHECK_LIB(gmp, __gmpz_import, , AC_MSG_ERROR([libgmp >= 4.2 is needed]))
 AC_CHECK_LIB(gmp, __gmpz_export, , AC_MSG_ERROR([libgmp >= 4.2 is needed]))
@@ -200,9 +203,9 @@ AC_CHECK_FUNCS([clock close fprintf memcmp memcpy memset perror sleep snprintf\
  strtoul time], ,
 	AC_MSG_ERROR([some functions are missing]))
 
-# forking tests feature
-AC_MSG_CHECKING([whether forking tests/tools are enabled])
-AC_ARG_ENABLE(forking, [  --disable-forking       disable forking tests/tools],
+# Checks for forking tests feature
+AC_MSG_CHECKING([whether forking tests are enabled])
+AC_ARG_ENABLE(forking, [AS_HELP_STRING([--disable-forking], [disable forking tests])],
         use_forking=$enableval, use_forking=yes)
 AC_MSG_RESULT($use_forking)
 if test "$use_forking" = yes ; then
@@ -211,8 +214,51 @@ if test "$use_forking" = yes ; then
 	AC_CHECK_HEADERS([sys/wait.h], , AC_MSG_ERROR([headers are missing]))
 	AC_CHECK_FUNCS([fork pipe waitpid], ,
 		AC_MSG_ERROR([functions are missing]))
-	AC_DEFINE(FORKING, , [Define to enable the forking tests/tools])
+	AC_DEFINE(FORKING, , [Define to enable the forking tests])
 fi
+
+# Checks for GNUnet
+gnunet=0
+lookin=${prefix}
+backup_LDFLAGS="$LDFLAGS"       
+backup_CPPLAGS="$CPPFLAGS"
+GNUNET_LIBS=""
+GNUNET_CFLAGS=""
+AC_MSG_CHECKING(for GNUnet)
+AC_ARG_WITH(gnunet, [AS_HELP_STRING([--with-gnunet=<path>], [prefix of GNUnet installation])],
+   [AC_MSG_RESULT([$with_gnunet])
+    case $with_gnunet in
+      no)
+        lookin=""
+        ;;
+      yes)
+        lookin="${prefix}"
+        ;;
+      *)
+        lookin="$with_gnunet"
+        ;;
+    esac
+   ], [AC_MSG_RESULT([--with-gnunet not specified])]
+)
+
+if test "x$gnunet" == "x0" -a ! "x$lookin" == "x"
+then
+  GNUNET_LIBS="-L${lookin}/lib"
+  GNUNET_CFLAGS="-I${lookin}/include"
+  LDFLAGS="$GNUNET_LIBS $backup_LDFLAGS"
+  CPPFLAGS="$GNUNET_CFLAGS $backup_CPPFLAGS"
+  AC_CHECK_HEADERS([gnunet/gnunet_util_lib.h], [ gnunet=1 ], , [#include <gnunet/platform.h>])
+  AC_CHECK_LIB([gnunetutil], [GNUNET_xfree_], [ gnunet=1 ], [ gnunet=0 ])
+fi
+if test "x$gnunet" == "x1"
+then
+  AC_DEFINE(GNUNET, , [Define to enable the GNUnet-based tools])
+  GNUNET_LIBS="${GNUNET_LIBS} -lgnunetutil"
+fi
+AC_SUBST(GNUNET_LIBS)
+AC_SUBST(GNUNET_CFLAGS)
+LDFLAGS="$backup_LDFLAGS"
+CPPFLAGS="$backup_CPPFLAGS"
 
 # Enable all compiler warnings
 CFLAGS="$CFLAGS -Wall"
