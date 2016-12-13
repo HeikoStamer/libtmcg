@@ -23,6 +23,23 @@
 
 #ifdef FORKING
 
+#ifdef GNUNET
+#undef HAVE_CONFIG_H
+#undef PACKAGE
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_URL
+#undef PACKAGE_VERSION
+#undef VERSION
+#define HAVE_CONFIG_H 1
+#include <gnunet/platform.h>
+#include <gnunet/gnunet_util_lib.h>
+#include <gnunet/gnunet_cadet_service.h>
+#undef HAVE_CONFIG_H
+#endif
+
 #include <sstream>
 #include <fstream>
 #include <vector>

@@ -157,9 +157,9 @@ AC_PROG_MKDIR_P
 
 # Checks for libraries
 AC_ARG_WITH(gmp, [AS_HELP_STRING([--with-gmp=<path>], [prefix of libgmp installation e.g. /usr/local])], [GMP_PREFIX="$with_gmp"],\
- [AC_CHECK_LIB(gmp, __gmpz_init, , AC_MSG_ERROR([libgmp is needed; maybe you want to call configure with the --with-gmp=<path> option]))])
-AC_CHECK_LIB(gmp, __gmpz_import, , AC_MSG_ERROR([libgmp >= 4.2 is needed]))
-AC_CHECK_LIB(gmp, __gmpz_export, , AC_MSG_ERROR([libgmp >= 4.2 is needed]))
+ [AC_CHECK_LIB(gmp, __gmpz_init, [LIBS=""], AC_MSG_ERROR([libgmp is needed; maybe you want to call configure with the --with-gmp=<path> option]))])
+AC_CHECK_LIB(gmp, __gmpz_import, [LIBS=""], AC_MSG_ERROR([libgmp >= 4.2 is needed]))
+AC_CHECK_LIB(gmp, __gmpz_export, [LIBS=""], AC_MSG_ERROR([libgmp >= 4.2 is needed]))
 if test "x$GMP_PREFIX" != x ; then
 	LIBGMP_LIBS=" -L${GMP_PREFIX}/lib"
 	LIBGMP_CFLAGS=" -I${GMP_PREFIX}/include"
@@ -247,13 +247,15 @@ then
   GNUNET_CFLAGS="-I${lookin}/include"
   LDFLAGS="$GNUNET_LIBS $backup_LDFLAGS"
   CPPFLAGS="$GNUNET_CFLAGS $backup_CPPFLAGS"
-  AC_CHECK_HEADERS([gnunet/gnunet_util_lib.h], [ gnunet=1 ], , [#include <gnunet/platform.h>])
-  AC_CHECK_LIB([gnunetutil], [GNUNET_xfree_], [ gnunet=1 ], [ gnunet=0 ])
+  AC_CHECK_HEADERS([gnunet/gnunet_util_lib.h], [gnunet=1], [gnunet=0], [#include <gnunet/platform.h>])
+  AC_CHECK_LIB([gnunetutil], [GNUNET_xfree_], [LIBS=""], [gnunet=0])
+  AC_CHECK_HEADERS([gnunet/gnunet_cadet_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
+  AC_CHECK_LIB([gnunetcadet], [GNUNET_CADET_connect], [LIBS=""], [gnunet=0])
 fi
 if test "x$gnunet" == "x1"
 then
   AC_DEFINE(GNUNET, , [Define to enable the GNUnet-based tools])
-  GNUNET_LIBS="${GNUNET_LIBS} -lgnunetutil"
+  GNUNET_LIBS="${GNUNET_LIBS} -lgnunetutil -lgnunetcadet"
 fi
 AC_SUBST(GNUNET_LIBS)
 AC_SUBST(GNUNET_CFLAGS)
