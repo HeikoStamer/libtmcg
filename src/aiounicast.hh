@@ -55,9 +55,9 @@ class aiounicast
 		{
 		}
 
-		virtual void Send
+		virtual bool Send
 			(mpz_srcptr m, const size_t i_in) = 0;
-		virtual void Send
+		virtual bool Send
 			(const std::vector<mpz_srcptr> &m, const size_t i_in) = 0;
 		virtual bool Receive
 			(mpz_ptr m, size_t &i_out,

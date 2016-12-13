@@ -73,6 +73,7 @@ void start_instance
 			aiounicast_fd *aiou = new aiounicast_fd(N, T, whoami, uP_in, uP_out, uP_key);
 
 			// send a simple message
+			bool ret = false;
 			std::vector<size_t> froms;
 			std::vector<size_t>::iterator ipos;
 			mpz_t m;
@@ -80,7 +81,10 @@ void start_instance
 			for (size_t i = 0; i < N; i++)
 			{
 				if ((i != whoami) && !corrupted)
-					aiou->Send(m, i);
+				{
+					ret = aiou->Send(m, i);
+					assert(ret);
+				}
 				if (i != whoami)
 					froms.push_back(i);
 			}
@@ -89,7 +93,6 @@ void start_instance
 			{
 				if (i != whoami)
 				{
-					bool ret = false;
 					ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
 					if (ret)
 					{

@@ -138,7 +138,7 @@ class aiounicast_fd : public aiounicast
 			}
 		}
 
-		void Send
+		bool Send
 			(mpz_srcptr m, const size_t i_in)
 		{
 			// prepare write buffer with m
@@ -168,14 +168,14 @@ class aiounicast_fd : public aiounicast
 				std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
 				std::cerr << gcry_strerror(err) << std::endl;
 				delete [] buf;
-				return;
+				return false;
 			}
 			size_t maclen = gcry_mac_get_algo_maclen(TMCG_GCRY_MAC_ALGO);
 			if (maclen == 0)
 			{
 				std::cerr << "libgcrypt: gcry_mac_get_algo_maclen() failed" << std::endl;
 				delete [] buf;
-				return;
+				return false;
 			}
 			char *macbuf = new char[maclen];
 			err = gcry_mac_read(*buf_mac_out[i_in], macbuf, &maclen);
@@ -184,7 +184,7 @@ class aiounicast_fd : public aiounicast
 				std::cerr << "libgcrypt: gcry_mac_read() failed" << std::endl;
 				std::cerr << gcry_strerror(err) << std::endl;
 				delete [] buf, delete [] macbuf;
-				return;
+				return false;
 			}
 			// send content of write buffer to party i_in
 			size_t realnum = 0;
@@ -203,7 +203,7 @@ class aiounicast_fd : public aiounicast
 					{
 						delete [] buf, delete [] macbuf;
 						perror("aiounicast_fd (write)");
-						return;
+						return false;
 					}
 				}
 				numWrite += num;
@@ -227,7 +227,7 @@ class aiounicast_fd : public aiounicast
 					{
 						delete [] buf, delete [] macbuf;
 						perror("aiounicast_fd (write)");
-						return;
+						return false;
 					}
 				}
 				numWrite += num;
@@ -235,13 +235,18 @@ class aiounicast_fd : public aiounicast
 			}
 			while (realnum < maclen);
 			delete [] buf, delete [] macbuf;
+			return true;
 		}
 
-		void Send
+		bool Send
 			(const std::vector<mpz_srcptr> &m, const size_t i_in)
 		{
 			for (size_t mm = 0; mm < m.size(); mm++)
-				Send(m[mm], i_in);
+			{
+				if (!Send(m[mm], i_in))
+					return false;
+			}
+			return true;
 		}
 
 		bool Receive
