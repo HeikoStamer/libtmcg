@@ -211,7 +211,7 @@ AC_MSG_RESULT($use_forking)
 if test "$use_forking" = yes ; then
 	AC_TYPE_PID_T
 	AC_FUNC_FORK
-	AC_CHECK_HEADERS([sys/wait.h], , AC_MSG_ERROR([headers are missing]))
+	AC_CHECK_HEADERS([fcntl.h sys/wait.h], , AC_MSG_ERROR([headers are missing]))
 	AC_CHECK_FUNCS([fork pipe waitpid], ,
 		AC_MSG_ERROR([functions are missing]))
 	AC_DEFINE(FORKING, , [Define to enable the forking tests])

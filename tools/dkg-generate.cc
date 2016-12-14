@@ -58,6 +58,91 @@
 int pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t pid[MAX_N];
 
+#ifdef GNUNET
+static char *listen_port;
+static struct GNUNET_CADET_Handle *mh;
+struct GNUNET_CADET_Port *lp;
+static struct GNUNET_SCHEDULER_Task *sd;
+static struct GNUNET_SCHEDULER_Task *job;
+
+static int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
+	void **channel_ctx, const struct GNUNET_MessageHeader *message)
+{
+	GNUNET_CADET_receive_done(channel);
+	return 0;
+}
+
+static void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel,
+	void *channel_ctx)
+{
+	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Channel ended!\n");
+	GNUNET_SCHEDULER_shutdown();
+}
+
+static void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
+	const struct GNUNET_PeerIdentity *initiator, const struct GNUNET_HashCode *port,
+	enum GNUNET_CADET_ChannelOption options)
+{
+	GNUNET_log(GNUNET_ERROR_TYPE_MESSAGE, "Connected from %s\n", GNUNET_i2s_full(initiator));
+	GNUNET_log(GNUNET_ERROR_TYPE_INFO, "Incoming channel %p on port %s\n", channel, GNUNET_h2s(port));
+	if (listen_port == NULL)
+	{
+		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "Not listening to channels\n");
+		return NULL;
+	}
+	return NULL;
+}
+
+static void gnunet_shutdown_task(void *cls)
+{
+	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Shutdown\n");
+	if (mh != NULL)
+	{
+		GNUNET_CADET_disconnect(mh);
+		mh = NULL;
+	}
+	if (job != NULL)
+	{
+		GNUNET_SCHEDULER_cancel(job);
+		job = NULL;
+	}
+}
+
+static void gnunet_generate(void *cls)
+{
+	std::cerr << "Hi! we will fork here" << std::endl;
+}
+
+static void gnunet_run(void *cls, char *const *args, const char *cfgfile,
+	const struct GNUNET_CONFIGURATION_Handle *cfg)
+{
+	static const struct GNUNET_CADET_MessageHandler handlers[] = {
+		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_CADET_CLI, 0},
+		{NULL, 0, 0}
+	};
+	static struct GNUNET_HashCode porthash;
+
+	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to CADET service\n");
+	mh = GNUNET_CADET_connect(cfg,
+                            NULL, /* cls */
+                            &gnunet_channel_ended, /* cleaner */
+                            handlers);
+	if (mh == NULL)
+		GNUNET_SCHEDULER_add_now(&gnunet_shutdown_task, NULL);
+	else
+		sd = GNUNET_SCHEDULER_add_shutdown(&gnunet_shutdown_task, NULL);
+
+	if (listen_port != NULL)
+	{
+		GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Opening CADET listen port\n");
+		GNUNET_CRYPTO_hash(listen_port, strlen(listen_port), &porthash);
+		lp = GNUNET_CADET_open_port(mh, &porthash, &gnunet_channel_incoming, NULL);
+	}
+
+	job = GNUNET_SCHEDULER_add_now(&gnunet_generate, NULL);
+}
+#endif
+
 void start_instance
 	(const size_t N, const size_t T, const size_t whoami, std::istream &crs_in, const std::string u, const std::string pp, const time_t keytime)
 {
@@ -342,6 +427,25 @@ int main
 	(int argc, char **argv)
 {
 	assert(init_libTMCG());
+
+#ifdef GNUNET
+	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
+		{'o', "open-port", NULL, "GNUnet cadet port to listen to",
+			GNUNET_YES, &GNUNET_GETOPT_set_string, &listen_port},
+		GNUNET_GETOPT_OPTION_END
+	};
+
+	int ret = GNUNET_PROGRAM_run (argc, argv, "dkg-generate OPTIONS", "distributed ElGamal key generation",
+                            options, &gnunet_run, NULL);
+
+	GNUNET_free ((void *) argv);
+
+	if (ret == GNUNET_OK)
+		return 0;
+	else
+		return -1;
+#endif
+
 
 	BarnettSmartVTMF_dlog 	*vtmf;
 	std::stringstream 	crs;
