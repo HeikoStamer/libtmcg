@@ -22,11 +22,6 @@
 
 #ifndef INCLUDED_aiounicast_fd_HH
 	#define INCLUDED_aiounicast_fd_HH
-
-	// libTMCG_config.h
-	#ifdef HAVE_CONFIG_H
-		#include "libTMCG_config.h"
-	#endif
 	
 	// C and STL header
 	#include <cstdio>
