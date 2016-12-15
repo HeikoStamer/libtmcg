@@ -34,9 +34,9 @@
 #ifndef INCLUDED_TMCG_SecretKey_HH
 	#define INCLUDED_TMCG_SecretKey_HH
 	
-	// config.h
+	// libTMCG_config.h
 	#ifdef HAVE_CONFIG_H
-		#include "config.h"
+		#include "libTMCG_config.h"
 	#endif
 	
 	// C++/STL header

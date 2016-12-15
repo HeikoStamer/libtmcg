@@ -1,7 +1,7 @@
 /*******************************************************************************
   Data structure for a stack of open cards. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@
 #ifndef INCLUDED_TMCG_OpenStack_HH
 	#define INCLUDED_TMCG_OpenStack_HH
 	
-	// config.h
+	// libTMCG_config.h
 	#ifdef HAVE_CONFIG_H
-		#include "config.h"
+		#include "libTMCG_config.h"
 	#endif
 	
 	// C++/STL header

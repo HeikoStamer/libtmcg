@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2006, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@
 #ifndef INCLUDED_TMCG_PublicKeyRing_HH
 	#define INCLUDED_TMCG_PublicKeyRing_HH
 	
-	// config.h
+	// libTMCG_config.h
 	#ifdef HAVE_CONFIG_H
-		#include "config.h"
+		#include "libTMCG_config.h"
 	#endif
 	
 	// C++/STL header

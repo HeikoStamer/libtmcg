@@ -1,7 +1,8 @@
 /*******************************************************************************
    Data structure for the secrets of a card. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2010  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2007, 2010, 
+                                       2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,9 +22,9 @@
 #ifndef INCLUDED_VTMF_CardSecret_HH
 	#define INCLUDED_VTMF_CardSecret_HH
 
-	// config.h
+	// libTMCG_config.h
 	#ifdef HAVE_CONFIG_H
-		#include "config.h"
+		#include "libTMCG_config.h"
 	#endif
 
 	// C and STL header

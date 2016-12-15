@@ -29,9 +29,9 @@
 #ifndef INCLUDED_JareckiLysyanskayaASTC_HH
 	#define INCLUDED_JareckiLysyanskayaASTC_HH
 
-	// config.h
+	// libTMCG_config.h
 	#ifdef HAVE_CONFIG_H
-		#include "config.h"
+		#include "libTMCG_config.h"
 	#endif
 	
 	// C and STL header

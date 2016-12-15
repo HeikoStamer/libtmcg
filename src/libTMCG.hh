@@ -3,8 +3,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2015, 2016
-                                             Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2007, 2015, 
+                                       2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -191,16 +191,10 @@
 		#define TMCG_OPENPGP_RADIX64_MC 64
 	#endif
 
-	// disable usage of config.h
-	#ifdef HAVE_CONFIG_H
-		#define TMCG_CONFIG_H
-		#undef HAVE_CONFIG_H
-	#endif
-	
+	// data structures and protocols for mental poker
 	#include <TMCG_SecretKey.hh>
 	#include <TMCG_PublicKey.hh>
 	#include <TMCG_PublicKeyRing.hh>
-	
 	#include <VTMF_Card.hh>
 	#include <VTMF_CardSecret.hh>
 	#include <TMCG_Card.hh>
@@ -208,7 +202,6 @@
 	#include <TMCG_Stack.hh>
 	#include <TMCG_OpenStack.hh>
 	#include <TMCG_StackSecret.hh>
-	
 	#include <SchindelhauerTMCG.hh>
 	
 	// protocols not directly related to mental poker	
@@ -217,17 +210,6 @@
 	#include <JareckiLysyanskayaASTC.hh>
 	#include <CachinKursawePetzoldShoupSEABP.hh>
 	#include <CallasDonnerhackeFinneyShawThayerRFC4880.hh>
-	
-	// enable usage of config.h
-	#ifdef TMCG_CONFIG_H
-		#define HAVE_CONFIG_H
-		#undef TMCG_CONFIG_H
-	#endif
-	
-	// config.h
-	#ifdef HAVE_CONFIG_H
-		#include "config.h"
-	#endif
 	
 	#include <cstring>
 	#include <string>

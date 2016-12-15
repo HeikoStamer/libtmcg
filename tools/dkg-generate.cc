@@ -110,7 +110,7 @@ static void gnunet_shutdown_task(void *cls)
 
 static void gnunet_generate(void *cls)
 {
-	std::cerr << "Hi! we will fork here" << std::endl;
+	std::cerr << "Hi! we will fork here later" << std::endl;
 }
 
 static void gnunet_run(void *cls, char *const *args, const char *cfgfile,
@@ -426,8 +426,7 @@ void start_instance
 int main
 	(int argc, char **argv)
 {
-	assert(init_libTMCG());
-
+	size_t N, T;
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
 		{'o', "open-port", NULL, "GNUnet cadet port to listen to",
@@ -435,7 +434,21 @@ int main
 		GNUNET_GETOPT_OPTION_END
 	};
 
-	int ret = GNUNET_PROGRAM_run (argc, argv, "dkg-generate OPTIONS", "distributed ElGamal key generation",
+	if (argc < 2)
+	{
+		std::cerr << "ERROR: no GNUnet peers given as arguments" << std::endl;
+		return -1;
+	}
+	else
+		N = argc - 1;
+	if ((N < 4)  || (N > MAX_N))
+	{
+		std::cerr << "ERROR: too few or too many GNUnet peers given" << std::endl;
+		return -1;
+	};
+		
+
+	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed ElGamal key generation",
                             options, &gnunet_run, NULL);
 
 	GNUNET_free ((void *) argv);
@@ -446,20 +459,13 @@ int main
 		return -1;
 #endif
 
+	assert(init_libTMCG());
 
 	BarnettSmartVTMF_dlog 	*vtmf;
 	std::stringstream 	crs;
 	std::string		value, uid, passphrase;
-	size_t			N, T;
+	
 
-	std::cout << "0. Enter the number of participants (< " << MAX_N << "): ";
-	std::getline(std::cin, value);
-	std::stringstream(value) >> N;
-	if ((N < 4)  || (N > MAX_N))
-	{
-		std::cerr << "ERROR: too few or too many participants" << std::endl;
-		return -1;
-	};
 	T = (N / 3) - 1; // maximum asynchronous t-resilience
 	if (T == 0)
 		T = 1; // RBC will not work with 0-resilience
