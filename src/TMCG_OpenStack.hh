@@ -21,11 +21,6 @@
 #ifndef INCLUDED_TMCG_OpenStack_HH
 	#define INCLUDED_TMCG_OpenStack_HH
 	
-	// libTMCG_config.h
-	#ifdef HAVE_CONFIG_H
-		#include "libTMCG_config.h"
-	#endif
-	
 	// C++/STL header
 	#include <cstdlib>
 	#include <cassert>

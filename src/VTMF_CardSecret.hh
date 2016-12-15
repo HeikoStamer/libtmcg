@@ -22,11 +22,6 @@
 #ifndef INCLUDED_VTMF_CardSecret_HH
 	#define INCLUDED_VTMF_CardSecret_HH
 
-	// libTMCG_config.h
-	#ifdef HAVE_CONFIG_H
-		#include "libTMCG_config.h"
-	#endif
-
 	// C and STL header
 	#include <cassert>
 	#include <string>

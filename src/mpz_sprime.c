@@ -12,7 +12,7 @@
       [HAC]  Alfred J. Menezes, Paul C. van Oorschot, and Scott A. Vanstone:
               'Handbook of Applied Cryptography', CRC Press, 1996.
 
- Copyright (C) 2004, 2005, 2006  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2004, 2005, 2006, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,6 +29,10 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
+// include headers
+#ifdef HAVE_CONFIG_H
+	#include "libTMCG_config.h"
+#endif
 #include "mpz_sprime.h"
 
 #define PRIMES_SIZE 668

@@ -21,8 +21,6 @@ SUBDIRS = src doc tests tools
 
 DIST_SUBDIRS = src doc tests tools
 
-nodist_include_HEADERS = libTMCG_config.h
-
 EXTRA_DIST = AUTHORS BUGS COPYING FDL INSTALL NEWS README TODO THANKS\
 	ChangeLog Doxyfile PATENTS
 

@@ -34,11 +34,6 @@
 #ifndef INCLUDED_TMCG_PublicKey_HH
 	#define INCLUDED_TMCG_PublicKey_HH
 	
-	// libTMCG_config.h
-	#ifdef HAVE_CONFIG_H
-		#include "libTMCG_config.h"
-	#endif
-	
 	// C++/STL header
 	#include <cstdio>
 	#include <cstdlib>

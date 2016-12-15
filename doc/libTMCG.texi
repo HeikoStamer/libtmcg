@@ -472,7 +472,7 @@ is crucial to the security of the entire application.
 @cindex Header Files
 @cindex Name Spaces
 The interface definitions of classes, data types, and security
-parameters@footnote{The security parameters are fixed at compile
+parameters@footnote{Some security parameters are fixed at compile
 time of LibTMCG. Please don't change anything unless you know
 exactly what you are doing! Beside the apparent security concerns
 you will probably break the compatibility with other LibTMCG

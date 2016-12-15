@@ -21,6 +21,10 @@
 #include <sstream>
 #include <cassert>
 
+// include headers
+#ifdef HAVE_CONFIG_H
+	#include "libTMCG_config.h"
+#endif
 #include <libTMCG.hh>
 
 #undef NDEBUG

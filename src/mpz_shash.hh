@@ -21,11 +21,6 @@
 #ifndef INCLUDED_mpz_shash_HH
 	#define INCLUDED_mpz_shash_HH
 	
-	// libTMCG_config.h
-	#ifdef HAVE_CONFIG_H
-		#include "libTMCG_config.h"
-	#endif
-	
 	#include <cstdio>
 	#include <string>
 	#include <vector>

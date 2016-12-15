@@ -26,11 +26,6 @@
 
 #ifndef INCLUDED_NaorPinkasEOTP_HH
 	#define INCLUDED_NaorPinkasEOTP_HH
-
-	// libTMCG_config.h
-	#ifdef HAVE_CONFIG_H
-		#include "libTMCG_config.h"
-	#endif
 	
 	// C and STL header
 	#include <cstdio>

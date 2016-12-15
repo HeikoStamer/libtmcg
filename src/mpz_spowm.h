@@ -21,11 +21,6 @@
 #ifndef INCLUDED_mpz_spowm_H
 	#define INCLUDED_mpz_spowm_H
 	
-	// libTMCG_config.h
-	#ifdef HAVE_CONFIG_H
-		#include "libTMCG_config.h"
-	#endif
-	
 	#include <stdio.h>
 	#include <assert.h>
 	
