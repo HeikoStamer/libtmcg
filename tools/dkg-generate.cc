@@ -18,6 +18,10 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
+// include headers
+#ifdef HAVE_CONFIG_H
+	#include "libTMCG_config.h"
+#endif
 #include <libTMCG.hh>
 #include <aiounicast_fd.hh>
 
@@ -52,11 +56,14 @@
 
 #include "pipestream.hh"
 
-#undef NDEBUG
+//#undef NDEBUG
 #define MAX_N 1024
 
-int pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
-pid_t pid[MAX_N];
+int			pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
+pid_t			pid[MAX_N];
+size_t			N, T;
+std::stringstream 	crs;
+std::string		uid, passphrase;
 
 #ifdef GNUNET
 static char *listen_port;
@@ -154,7 +161,7 @@ void start_instance
 		{
 			/* BEGIN child code: participant P_i */
 			
-			// create pipe streams and handles between all players
+			// create pipe streams and handles for all players
 			std::vector<ipipestream*> P_in;
 			std::vector<opipestream*> P_out;
 			std::vector<int> uP_in, uP_out, bP_in, bP_out;
@@ -426,28 +433,75 @@ void start_instance
 int main
 	(int argc, char **argv)
 {
-	size_t N, T;
+	crs << "W8o8gvA20jfDUDcVBS250oR0uObgSsG9Lwj7HekVkgjr0ZGOSfEqFLIUTqTXE"
+		"pGbrYROsq0T0UMI4QWW89B8Xv0O8G9xoQfOn2yO1ZdqamWLMcOR0zYUSVdWh"
+		"GntzQwshVR8rsqzditokxyshQTkQcZ2RSASrTXtT6J8MRqbzsjwZpCvSLh3k"
+		"BwI3Gqn4d5MJeTFOEES9OnfCXJ8EBXBuKevdwF35HIB8ofPmoAuWgVupLniH"
+		"xd2cdRcofthSvV5NNahjJXuVtNbiEveqrKwFh9mhJolPTleDLPb2Bz3Wqpu2"
+		"RkpAKz7swD5vv2ImYtFH8d1sr1r1riyZJLjczmRu83T" << std::endl <<
+		"fEor5mR9DcBxVvzojzYEqiCAzuzclIysxR1jlSS10i9" << std::endl <<
+		"L98HZrvso7jiECZCUbqrNOlvjwJDeOfTJhOM6rl4k28XWfjC7XSOuuMuLfOt"
+		"JzkkC9xU9BkhN3QZ8KPBBb8NrqmMzXdq2KX2spindKUt5qx3nnuyN2rgmyvr"
+		"BoiJuQdFQ7s0iLjwesaKkfV9LmAheDIHtqrOShJS87W44cWebwSxeSMvDNsl"
+		"rGBvdMM0ynEZxpeYaE7uqSHUV8IYNoKTZcLyzUneVO7idKUdHZt92LXQxUta"
+		"xHP7cjdTv3eVRuipvrYxfRGqdjDlU20Z5xexzEUcG2ZATJyaBt82j9nf0boA"
+		"VmYxD00mXDdHb2RWhfDCot5czPfueGK5BAfJPHcr6yLE" << std::endl <<
+		"mK2zCAnD2Z0WqJ22yaIOLnO1zHU0BAgpVNX3XEUloWVKpfmDs5nVEJDSSDxz"
+		"gEWV6V9YNYudvt819CLDytfNwfVkYiEtL0oOPeh9spw7q1dmy2Cqr687A2rj"
+		"C0HPrQV3FwP27Lb5paPvipaGRPCngedxykaBK4WB52XoDF8FyogzF475EccG"
+		"DeaaTRZmotj3HdiDsVO7Nb66Q8G6Wm1zwwrtEzLOXYKQBJZlwWKRqs23021j"
+		"eVQRQ2I9exPnO1GYF8nigzAexQdBsmSAX8sNZsCuEK1htM0djsb0PmeGW6eY"
+		"A" << std::endl;
+
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
 		{'o', "open-port", NULL, "GNUnet cadet port to listen to",
 			GNUNET_YES, &GNUNET_GETOPT_set_string, &listen_port},
 		GNUNET_GETOPT_OPTION_END
 	};
+#endif
+
+	if (!init_libTMCG())
+	{
+		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
+		return -1;
+	}
+
+	// check VTMF instance from CRS (common reference string)
+	time_t keytime = time(NULL); // current time
+	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crs);
+	if (!vtmf->CheckGroup())
+	{
+		std::cerr << "ERROR: vtmf.CheckGroup() of CRS failed" << std::endl;
+		return -1;
+	}
+	delete vtmf;
 
 	if (argc < 2)
 	{
-		std::cerr << "ERROR: no GNUnet peers given as arguments" << std::endl;
+		std::cerr << "ERROR: no peers given as arguments" << std::endl;
 		return -1;
 	}
 	else
 		N = argc - 1;
 	if ((N < 4)  || (N > MAX_N))
 	{
-		std::cerr << "ERROR: too few or too many GNUnet peers given" << std::endl;
+		std::cerr << "ERROR: too few or too many peers given" << std::endl;
 		return -1;
 	};
-		
 
+	T = (N / 3) - 1; // maximum asynchronous t-resilience
+#ifdef GNUNET
+// TODO: read T from options, if given
+#endif
+	if (T == 0)
+		T = 1; // RBC will not work with 0-resilience
+	std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
+	std::getline(std::cin, uid);
+	std::cout << "2. Choose a passphrase to protect the private key: ";
+	std::getline(std::cin, passphrase);
+
+#ifdef GNUNET
 	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed ElGamal key generation",
                             options, &gnunet_run, NULL);
 
@@ -459,32 +513,7 @@ int main
 		return -1;
 #endif
 
-	assert(init_libTMCG());
 
-	BarnettSmartVTMF_dlog 	*vtmf;
-	std::stringstream 	crs;
-	std::string		value, uid, passphrase;
-	
-
-	T = (N / 3) - 1; // maximum asynchronous t-resilience
-	if (T == 0)
-		T = 1; // RBC will not work with 0-resilience
-	std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
-	std::getline(std::cin, uid);
-	std::cout << "2. Choose a passphrase to protect the private key: ";
-	std::getline(std::cin, passphrase);
-
-	// create and check VTMF instance
-	time_t keytime = time(NULL); // current time
-	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
-	vtmf = new BarnettSmartVTMF_dlog();
-	std::cout << "vtmf.CheckGroup()" << std::endl;
-	assert(vtmf->CheckGroup());
-	
-	// publish VTMF instance as string stream (common reference string)
-	std::cout << "vtmf.PublishGroup(crs)" << std::endl;
-	vtmf->PublishGroup(crs);
-	
 	// open pipes
 	for (size_t i = 0; i < N; i++)
 	{

@@ -206,9 +206,10 @@
 	
 	// protocols not directly related to mental poker	
 	#include <NaorPinkasEOTP.hh>
+	#include <CachinKursawePetzoldShoupSEABP.hh>
 	#include <GennaroJareckiKrawczykRabinDKG.hh>
 	#include <JareckiLysyanskayaASTC.hh>
-	#include <CachinKursawePetzoldShoupSEABP.hh>
+
 	#include <CallasDonnerhackeFinneyShawThayerRFC4880.hh>
 	
 	#include <cstring>
