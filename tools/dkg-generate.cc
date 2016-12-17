@@ -49,6 +49,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <cassert>
 #include <unistd.h>
@@ -67,151 +68,10 @@ size_t				N, T;
 std::stringstream 		crs;
 std::string			uid, passphrase;
 std::vector<std::string>	peers;
-
-#ifdef GNUNET
-static char *gnunet_opt_port = NULL;
-unsigned int gnunet_opt_t_resilience = 0;
-static struct GNUNET_CADET_Handle *mh = NULL;
-//static struct GNUNET_PEERINFO_Handle *ph = NULL;
-static struct GNUNET_TRANSPORT_HelloGetHandle *gh = NULL;
-static struct GNUNET_HELLO_Message *ohello;
-struct GNUNET_CADET_Port *lp = NULL;
-static struct GNUNET_SCHEDULER_Task *sd = NULL;
-static struct GNUNET_SCHEDULER_Task *job = NULL;
-static struct GNUNET_PeerIdentity opi;
-
-static void gnunet_hello_callback(void *cls, const struct GNUNET_MessageHeader *hello)
-{
-	if (hello == NULL)
-	{
-		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "Got no own hello message in callback\n");
-		GNUNET_SCHEDULER_shutdown();
-		return;
-	}
-	ohello = (struct GNUNET_HELLO_Message *) GNUNET_copy_message(hello);
-	if (GNUNET_HELLO_get_id(ohello, &opi) != GNUNET_OK)
-	{
-		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "GNUNET_HELLO_get_id() failed\n");
-		GNUNET_SCHEDULER_shutdown();
-		return;
-	}
-	GNUNET_TRANSPORT_hello_get_cancel(gh);
-	gh = NULL;
-}
-
-static int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
-	void **channel_ctx, const struct GNUNET_MessageHeader *message)
-{
-	GNUNET_CADET_receive_done(channel);
-	return 0;
-}
-
-static void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel,
-	void *channel_ctx)
-{
-	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Channel ended!\n");
-	GNUNET_SCHEDULER_shutdown();
-}
-
-static void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
-	const struct GNUNET_PeerIdentity *initiator, const struct GNUNET_HashCode *port,
-	enum GNUNET_CADET_ChannelOption options)
-{
-	GNUNET_log(GNUNET_ERROR_TYPE_MESSAGE, "Connected from %s\n", GNUNET_i2s_full(initiator));
-	GNUNET_log(GNUNET_ERROR_TYPE_INFO, "Incoming channel %p on port %s\n", channel, GNUNET_h2s(port));
-	if (gnunet_opt_port == NULL)
-	{
-		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "Not listening to channels\n");
-		return NULL;
-	}
-	return NULL;
-}
-
-static void gnunet_shutdown_task(void *cls)
-{
-	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Shutdown\n");
-	if (mh != NULL)
-	{
-		GNUNET_CADET_disconnect(mh);
-		mh = NULL;
-	}
-//	if (ph != NULL)
-//	{
-//		GNUNET_PEERINFO_disconnect(ph);
-//		ph = NULL;
-//	}
-	if (ohello != NULL)
-	{
-		GNUNET_free(ohello);
-		ohello = NULL;
-	}
-	if (job != NULL)
-	{
-		GNUNET_SCHEDULER_cancel(job);
-		job = NULL;
-	}
-}
-
-static void gnunet_generate(void *cls)
-{
-	job = NULL;
-	sleep(1);
-	// check whether we got our own peer identity
-	if (gh != NULL)
-	{
-		job = GNUNET_SCHEDULER_add_now(&gnunet_generate, NULL);
-		return;
-	}
-	std::cout << "INFO: my own peer id = " << GNUNET_i2s_full(&opi) << std::endl;
-	
-	std::cerr << "Hi! we will fork here later a single instance" << std::endl;
-	sleep(1);
-}
-
-static void gnunet_run(void *cls, char *const *args, const char *cfgfile,
-	const struct GNUNET_CONFIGURATION_Handle *cfg)
-{
-	// get our own peer identity
-//	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to PEERINFO service\n");
-//	ph = GNUNET_PEERINFO_connect(cfg);
-//	if (ph == NULL)
-//		return;
-	gh = GNUNET_TRANSPORT_hello_get(cfg, GNUNET_TRANSPORT_AC_ANY, &gnunet_hello_callback, NULL);
-
-	// connect to CADET service
-	static const struct GNUNET_CADET_MessageHandler handlers[] = {
-		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_CADET_CLI, 0},
-		{NULL, 0, 0}
-	};
-	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to CADET service\n");
-	mh = GNUNET_CADET_connect(cfg,
-                            NULL, /* cls */
-                            &gnunet_channel_ended, /* cleaner */
-                            handlers);
-	if (mh == NULL)
-	{
-		GNUNET_SCHEDULER_add_now(&gnunet_shutdown_task, NULL);
-		return;
-	}
-	else
-		sd = GNUNET_SCHEDULER_add_shutdown(&gnunet_shutdown_task, NULL);
-
-	// listen to given CADET port
-	if (gnunet_opt_port != NULL)
-	{
-		static struct GNUNET_HashCode porthash;
-		GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Opening CADET listen port\n");
-		GNUNET_CRYPTO_hash(gnunet_opt_port, strlen(gnunet_opt_port), &porthash);
-		lp = GNUNET_CADET_open_port(mh, &porthash, &gnunet_channel_incoming, NULL);
-	}
-
-	// schedule DKG generate job
-	job = GNUNET_SCHEDULER_add_now(&gnunet_generate, NULL);
-}
-#endif
+bool				instance_forked = false;
 
 void start_instance
-	(const size_t N, const size_t T, const size_t whoami, std::istream &crs_in, const std::string u, const std::string pp, const time_t keytime)
+	(const size_t whoami, std::istream &crs_in, const std::string u, const std::string pp, const time_t keytime)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-generate (fork)");
@@ -229,7 +89,7 @@ void start_instance
 			for (size_t i = 0; i < N; i++)
 			{
 				std::stringstream key;
-				key << "dkg-generate::P_" << (i + whoami);
+				key << "dkg-generate::P_" << (i + whoami); // choose a simple HMAC key
 				P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
 				P_out.push_back(new opipestream(pipefd[whoami][i][1]));
 				uP_in.push_back(pipefd[i][whoami][0]);
@@ -242,14 +102,26 @@ void start_instance
 			
 			// create VTMF instance
 			BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crs_in);
+			// check VTMF instance constructed from CRS (common reference string)
 			if (!vtmf->CheckGroup())
 			{
 				std::cout << "P_" << whoami << ": " <<
 					"Group G was not correctly generated!" << std::endl;
 				exit(-1);
 			}
+
+			// create asynchronous authenticated unicast channels
+			aiounicast_fd *aiou = new aiounicast_fd(N, whoami, uP_in, uP_out, uP_key);
+
+			// create asynchronous authenticated unicast channels
+			aiounicast_fd *aiou2 = new aiounicast_fd(N, whoami, bP_in, bP_out, bP_key);
 			
-			// create and exchange VTMF keys
+			// create an instance of a reliable broadcast protocol (RBC)
+			std::string myID = "dkg-generate";
+			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
+			rbc->setID(myID);
+			
+			// create and exchange VTMF keys FIXME: async. operations needed
 			vtmf->KeyGenerationProtocol_GenerateKey();
 			for (size_t i = 0; i < N; i++)
 			{
@@ -281,17 +153,6 @@ void start_instance
 					"DKG parameters are not correctly generated!" << std::endl;
 				exit(-1);
 			}
-
-			// create asynchronous authenticated unicast channels
-			aiounicast_fd *aiou = new aiounicast_fd(N, T, whoami, uP_in, uP_out, uP_key);
-
-			// create asynchronous authenticated unicast channels
-			aiounicast_fd *aiou2 = new aiounicast_fd(N, T, whoami, bP_in, bP_out, bP_key);
-			
-			// create an instance of a reliable broadcast protocol (RBC)
-			std::string myID = "dkg-generate";
-			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
-			rbc->setID(myID);
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
 			std::stringstream err_log;
@@ -486,13 +347,234 @@ void start_instance
 			/* END child code: participant P_i */
 		}
 		else
+		{
 			std::cout << "fork() = " << pid[whoami] << std::endl;
+			instance_forked = true;
+		}
 	}
 }
+
+#ifdef GNUNET
+static char *gnunet_opt_port = NULL;
+unsigned int gnunet_opt_t_resilience = 0;
+static struct GNUNET_CADET_Handle *mh = NULL;
+//static struct GNUNET_PEERINFO_Handle *ph = NULL;
+static struct GNUNET_TRANSPORT_HelloGetHandle *gh = NULL;
+static struct GNUNET_HELLO_Message *ohello;
+struct GNUNET_CADET_Port *lp = NULL;
+static struct GNUNET_SCHEDULER_Task *sd = NULL;
+static struct GNUNET_SCHEDULER_Task *io = NULL;
+static struct GNUNET_SCHEDULER_Task *job = NULL;
+static struct GNUNET_PeerIdentity opi;
+
+static bool pipes_created = false;
+std::string peer;
+std::map<std::string, size_t> peer2pipe;
+std::map<size_t, std::string> pipe2peer;
+std::map<size_t, GNUNET_PeerIdentity> pipe2peerid;
+
+static void gnunet_hello_callback(void *cls, const struct GNUNET_MessageHeader *hello)
+{
+	if (hello == NULL)
+	{
+		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "Got no own hello message in callback\n");
+		GNUNET_SCHEDULER_shutdown();
+		return;
+	}
+	ohello = (struct GNUNET_HELLO_Message *) GNUNET_copy_message(hello);
+	if (GNUNET_HELLO_get_id(ohello, &opi) != GNUNET_OK)
+	{
+		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "GNUNET_HELLO_get_id() failed\n");
+		GNUNET_SCHEDULER_shutdown();
+		return;
+	}
+	GNUNET_TRANSPORT_hello_get_cancel(gh);
+	gh = NULL;
+}
+
+static int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
+	void **channel_ctx, const struct GNUNET_MessageHeader *message)
+{
+	GNUNET_CADET_receive_done(channel);
+	return 0;
+}
+
+static void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel,
+	void *channel_ctx)
+{
+	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Channel ended!\n");
+	GNUNET_SCHEDULER_shutdown();
+}
+
+static void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
+	const struct GNUNET_PeerIdentity *initiator, const struct GNUNET_HashCode *port,
+	enum GNUNET_CADET_ChannelOption options)
+{
+	GNUNET_log(GNUNET_ERROR_TYPE_MESSAGE, "Connected from %s\n", GNUNET_i2s_full(initiator));
+	GNUNET_log(GNUNET_ERROR_TYPE_INFO, "Incoming channel %p on port %s\n", channel, GNUNET_h2s(port));
+	if (gnunet_opt_port == NULL)
+	{
+		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "Not listening to channels\n");
+		return NULL;
+	}
+	return NULL;
+}
+
+static void gnunet_shutdown_task(void *cls)
+{
+	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Shutdown\n");
+	if (mh != NULL)
+	{
+		GNUNET_CADET_disconnect(mh);
+		mh = NULL;
+	}
+//	if (ph != NULL)
+//	{
+//		GNUNET_PEERINFO_disconnect(ph);
+//		ph = NULL;
+//	}
+	if (ohello != NULL)
+	{
+		GNUNET_free(ohello);
+		ohello = NULL;
+	}
+	if (io != NULL)
+	{
+		GNUNET_SCHEDULER_cancel(io);
+		io = NULL;
+	}
+	if (job != NULL)
+	{
+		GNUNET_SCHEDULER_cancel(job);
+		job = NULL;
+	}
+	// wait for child and close pipes
+	if (instance_forked)
+	{
+		std::cerr << "waitpid(" << pid[peer2pipe[peer]] << ")" << std::endl;
+		if (waitpid(pid[peer2pipe[peer]], NULL, 0) != pid[peer2pipe[peer]])
+			perror("dkg-generate (waitpid)");
+	}
+	for (size_t i = 0; ((i < N) && pipes_created); i++)
+	{
+		for (size_t j = 0; j < N; j++)
+		{
+			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
+				perror("dkg-generate (close)");
+			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
+				perror("dkg-generate (close)");
+		}
+	}
+}
+
+static void gnunet_io(void *cls)
+{
+	io = NULL;
+
+	std::cerr << "I/O job" << std::endl;
+	sleep(1);
+
+	// schedule I/O job again
+	io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
+}
+
+static void gnunet_generate(void *cls)
+{
+	// check whether we got our own peer identity
+	if (gh != NULL)
+	{
+		std::cerr << "waiting ..." << std::endl;
+		sleep(1);
+		job = GNUNET_SCHEDULER_add_now(&gnunet_generate, NULL);
+		return;
+	}
+	// check whether own peer identity is included in peer list
+	peer = GNUNET_i2s_full(&opi);
+	std::cout << "INFO: my own peer id = " << peer << std::endl;
+	for (size_t i = 0; i < peers.size(); i++)
+	{
+		peer2pipe[peers[i]] = i;
+		pipe2peer[i] = peers[i];
+	}
+	std::map<std::string, size_t>::iterator jt = peer2pipe.find(peer);
+	if (jt == peer2pipe.end())
+	{
+		std::cerr << "ERROR: own peer identity is not included in PEERS" << std::endl;
+		GNUNET_SCHEDULER_shutdown();
+		return;
+	}
+// TODO: build CADET channels to peers
+
+	// open pipes
+	for (size_t i = 0; i < N; i++)
+	{
+		for (size_t j = 0; j < N; j++)
+		{
+			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
+				perror("dkg-generate (pipe)");
+			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
+				perror("dkg-generate (pipe)");
+		}
+	}
+	pipes_created = true;
+	// fork instance
+	time_t keytime = time(NULL); // current time
+	start_instance(peer2pipe[peer], crs, uid, passphrase, keytime);
+
+// TODO: read and write data from pipes to CADET
+
+	// schedule I/O job
+	io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
+
+	job = NULL;
+}
+
+static void gnunet_run(void *cls, char *const *args, const char *cfgfile,
+	const struct GNUNET_CONFIGURATION_Handle *cfg)
+{
+	// get our own peer identity
+//	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to PEERINFO service\n");
+//	ph = GNUNET_PEERINFO_connect(cfg);
+//	if (ph == NULL)
+//		return;
+	gh = GNUNET_TRANSPORT_hello_get(cfg, GNUNET_TRANSPORT_AC_ANY, &gnunet_hello_callback, NULL);
+
+	// connect to CADET service
+	static const struct GNUNET_CADET_MessageHandler handlers[] = {
+		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_CADET_CLI, 0},
+		{NULL, 0, 0}
+	};
+	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to CADET service\n");
+	mh = GNUNET_CADET_connect(cfg,
+                            NULL, /* cls */
+                            &gnunet_channel_ended, /* cleaner */
+                            handlers);
+	if (mh == NULL)
+	{
+		GNUNET_SCHEDULER_add_now(&gnunet_shutdown_task, NULL);
+		return;
+	}
+	else
+		sd = GNUNET_SCHEDULER_add_shutdown(&gnunet_shutdown_task, NULL);
+
+	// listen to given CADET port
+	if (gnunet_opt_port != NULL)
+	{
+		static struct GNUNET_HashCode porthash;
+		GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Opening CADET listen port\n");
+		GNUNET_CRYPTO_hash(gnunet_opt_port, strlen(gnunet_opt_port), &porthash);
+		lp = GNUNET_CADET_open_port(mh, &porthash, &gnunet_channel_incoming, NULL);
+	}
+
+	// schedule DKG generate job
+	job = GNUNET_SCHEDULER_add_now(&gnunet_generate, NULL);
+}
+#endif
 
 int main
 	(int argc, char *const *argv)
 {
+	// setup CRS (common reference string) |p| = 2048 bit, |q| = 256 bit
 	crs << "W8o8gvA20jfDUDcVBS250oR0uObgSsG9Lwj7HekVkgjr0ZGOSfEqFLIUTqTXE"
 		"pGbrYROsq0T0UMI4QWW89B8Xv0O8G9xoQfOn2yO1ZdqamWLMcOR0zYUSVdWh"
 		"GntzQwshVR8rsqzditokxyshQTkQcZ2RSASrTXtT6J8MRqbzsjwZpCvSLh3k"
@@ -528,17 +610,6 @@ int main
 		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
 		return -1;
 	}
-
-	// check VTMF instance constructed from CRS (common reference string)
-	time_t keytime = time(NULL); // current time
-	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crs);
-	if (!vtmf->CheckGroup())
-	{
-		std::cerr << "ERROR: vtmf.CheckGroup() of CRS failed" << std::endl;
-		return -1;
-	}
-	delete vtmf;
-
 	if (argc < 2)
 	{
 		std::cerr << "ERROR: no peers given as argument" << std::endl;
@@ -570,7 +641,7 @@ int main
 		std::vector<std::string>::iterator it = std::unique(peers.begin(), peers.end());
 		peers.resize(std::distance(peers.begin(), it));
 		N = peers.size();
-		std::cout << "INFO: canonicalized peer lits => " << std::endl;
+		std::cout << "INFO: canonicalized peer list = " << std::endl;
 		for (size_t i = 0; i < N; i++)
 			std::cout << peers[i] << std::endl;
 	}
@@ -582,19 +653,19 @@ int main
 
 	T = (N / 3) - 1; // assume maximum asynchronous t-resilience
 #ifdef GNUNET
-	T = gnunet_opt_t_resilience;
+	T = gnunet_opt_t_resilience; // get T from GNUnet options
 #endif
 	if (T == 0)
-		T = 1; // RBC will not work with 0-resilience
+		T++; // RBC will not work with 0-resilience
 	std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
 	std::getline(std::cin, uid);
-	std::cout << "2. Choose a passphrase to protect the private key: ";
+	std::cout << "2. Choose a passphrase to protect your private key: ";
 	std::getline(std::cin, passphrase);
 
 #ifdef GNUNET
 	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
     		return -1;
-	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed OpenPGP ElGamal key generation",
+	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed ElGamal key generation with OpenPGP-encoding",
                             options, &gnunet_run, NULL);
 
 	GNUNET_free ((void *) argv);
@@ -618,8 +689,9 @@ int main
 	}
 	
 	// start childs
+	time_t keytime = time(NULL); // current time
 	for (size_t i = 0; i < N; i++)
-		start_instance(N, T, i, crs, uid, passphrase, keytime);
+		start_instance(i, crs, uid, passphrase, keytime);
 
 	// sleep for five seconds
 	sleep(5);

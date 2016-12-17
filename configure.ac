@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20161212])
+AC_REVISION([20161217])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.2.0], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])

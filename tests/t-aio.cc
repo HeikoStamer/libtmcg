@@ -74,7 +74,7 @@ void start_instance
 			}
 
 			// create asynchronous authenticated unicast channels
-			aiounicast_fd *aiou = new aiounicast_fd(N, T, whoami, uP_in, uP_out, uP_key);
+			aiounicast_fd *aiou = new aiounicast_fd(N, whoami, uP_in, uP_out, uP_key);
 
 			// send a simple message
 			bool ret = false;

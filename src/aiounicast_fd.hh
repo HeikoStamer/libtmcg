@@ -59,19 +59,17 @@ class aiounicast_fd : public aiounicast
 		std::vector<gcry_mac_hd_t*>		buf_mac_in, buf_mac_out;
 
 	public:
-		size_t					n, t, j;
+		size_t					n, j;
 		std::vector<int>			fd_in, fd_out;
 		size_t					numWrite, numRead;
 
 		aiounicast_fd
-			(const size_t n_in, const size_t t_in,
-			const size_t j_in,
+			(const size_t n_in, const size_t j_in,
 			const std::vector<int> &fd_in_in,
 			const std::vector<int> &fd_out_in,
 			const std::vector<std::string> &key_in):
-				n(n_in), t(t_in), j(j_in)
+				n(n_in), j(j_in)
 		{
-			assert(t_in <= n_in);
 			assert(j_in < n_in);
 			assert(n_in == fd_in_in.size());
 			assert(fd_in_in.size() == fd_out_in.size());
@@ -372,7 +370,7 @@ class aiounicast_fd : public aiounicast
 				}
 				else
 				{
-					std::cerr << "aiounicast_fd: read buffer exceeded" << std::endl;
+					std::cerr << "WARNING: aiounicast_fd: read buffer exceeded" << std::endl;
 				}
 			}
 			if (scheduler != aio_scheduler_direct)
