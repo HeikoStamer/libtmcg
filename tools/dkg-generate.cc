@@ -56,14 +56,15 @@
 
 #include "pipestream.hh"
 
-//#undef NDEBUG
+#undef NDEBUG
 #define MAX_N 1024
 
-int			pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
-pid_t			pid[MAX_N];
-size_t			N, T;
-std::stringstream 	crs;
-std::string		uid, passphrase;
+int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
+pid_t				pid[MAX_N];
+size_t				N, T;
+std::stringstream 		crs;
+std::string			uid, passphrase;
+std::vector<std::string>	peers;
 
 #ifdef GNUNET
 static char *listen_port;
@@ -467,7 +468,7 @@ int main
 		return -1;
 	}
 
-	// check VTMF instance from CRS (common reference string)
+	// check VTMF instance constructed from CRS (common reference string)
 	time_t keytime = time(NULL); // current time
 	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crs);
 	if (!vtmf->CheckGroup())
@@ -479,18 +480,46 @@ int main
 
 	if (argc < 2)
 	{
-		std::cerr << "ERROR: no peers given as arguments" << std::endl;
+		std::cerr << "ERROR: no peers given as argument" << std::endl;
 		return -1;
 	}
 	else
-		N = argc - 1;
+	{
+		// build peer list
+		for (size_t i = 0; i < (size_t)(argc - 1); i++)
+		{
+			std::string arg = argv[i+1];
+			// ignore options
+			if ((arg.find("-c", 0) == 0) || (arg.find("-o", 0) == 0) || (arg.find("-L", 0) == 0) || (arg.find("-l", 0) == 0))
+			{
+				i++;
+				continue;
+			}
+			else if ((arg.find("--", 0) == 0) || (arg.find("-v", 0) == 0) || (arg.find("-h", 0) == 0))
+				continue;
+			else if (arg.find("-", 0) == 0)
+			{
+				std::cerr << "ERROR: unknown option \"" << arg << "\"" << std::endl;
+				return -1;
+			}
+			peers.push_back(arg);
+		}
+		// canonicalize peer list
+		std::sort(peers.begin(), peers.end());
+		std::vector<std::string>::iterator it = std::unique(peers.begin(), peers.end());
+		peers.resize(std::distance(peers.begin(), it));
+		N = peers.size();
+		std::cout << "INFO: canonicalized peer lits => " << std::endl;
+		for (size_t i = 0; i < N; i++)
+			std::cout << peers[i] << std::endl;
+	}
 	if ((N < 4)  || (N > MAX_N))
 	{
 		std::cerr << "ERROR: too few or too many peers given" << std::endl;
 		return -1;
 	};
 
-	T = (N / 3) - 1; // maximum asynchronous t-resilience
+	T = (N / 3) - 1; // assume maximum asynchronous t-resilience
 #ifdef GNUNET
 // TODO: read T from options, if given
 #endif
@@ -512,7 +541,6 @@ int main
 	else
 		return -1;
 #endif
-
 
 	// open pipes
 	for (size_t i = 0; i < N; i++)
@@ -547,9 +575,6 @@ int main
 				perror("dkg-generate (close)");
 		}
 	}
-	
-	// release VTMF instance
-	delete vtmf;
 	
 	return 0;
 }
