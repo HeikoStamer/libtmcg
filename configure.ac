@@ -249,13 +249,17 @@ then
   CPPFLAGS="$GNUNET_CFLAGS $backup_CPPFLAGS"
   AC_CHECK_HEADERS([gnunet/gnunet_util_lib.h], [gnunet=1], [gnunet=0], [#include <gnunet/platform.h>])
   AC_CHECK_LIB([gnunetutil], [GNUNET_xfree_], [LIBS=""], [gnunet=0])
+##  AC_CHECK_HEADERS([gnunet/gnunet_peerinfo_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
+##  AC_CHECK_LIB([gnunetpeerinfo], [GNUNET_PEERINFO_connect], [LIBS=""], [gnunet=0])
+  AC_CHECK_HEADERS([gnunet/gnunet_transport_hello_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
+  AC_CHECK_LIB([gnunettransport], [GNUNET_TRANSPORT_hello_get], [LIBS=""], [gnunet=0])
   AC_CHECK_HEADERS([gnunet/gnunet_cadet_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
   AC_CHECK_LIB([gnunetcadet], [GNUNET_CADET_connect], [LIBS=""], [gnunet=0])
 fi
 if test "x$gnunet" == "x1"
 then
   AC_DEFINE(GNUNET, , [Define to enable the GNUnet-based tools])
-  GNUNET_LIBS="${GNUNET_LIBS} -lgnunetutil -lgnunetcadet"
+  GNUNET_LIBS="${GNUNET_LIBS} -lgnunetutil -lgnunettransport -lgnunetcadet"
 fi
 AC_SUBST(GNUNET_LIBS)
 AC_SUBST(GNUNET_CFLAGS)

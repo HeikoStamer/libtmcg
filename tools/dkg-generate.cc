@@ -40,6 +40,8 @@
 #define HAVE_CONFIG_H 1
 #include <gnunet/platform.h>
 #include <gnunet/gnunet_util_lib.h>
+//#include <gnunet/gnunet_peerinfo_service.h>
+#include <gnunet/gnunet_transport_hello_service.h>
 #include <gnunet/gnunet_cadet_service.h>
 #undef HAVE_CONFIG_H
 #endif
@@ -67,11 +69,35 @@ std::string			uid, passphrase;
 std::vector<std::string>	peers;
 
 #ifdef GNUNET
-static char *listen_port;
-static struct GNUNET_CADET_Handle *mh;
-struct GNUNET_CADET_Port *lp;
-static struct GNUNET_SCHEDULER_Task *sd;
-static struct GNUNET_SCHEDULER_Task *job;
+static char *gnunet_opt_port = NULL;
+unsigned int gnunet_opt_t_resilience = 0;
+static struct GNUNET_CADET_Handle *mh = NULL;
+//static struct GNUNET_PEERINFO_Handle *ph = NULL;
+static struct GNUNET_TRANSPORT_HelloGetHandle *gh = NULL;
+static struct GNUNET_HELLO_Message *ohello;
+struct GNUNET_CADET_Port *lp = NULL;
+static struct GNUNET_SCHEDULER_Task *sd = NULL;
+static struct GNUNET_SCHEDULER_Task *job = NULL;
+static struct GNUNET_PeerIdentity opi;
+
+static void gnunet_hello_callback(void *cls, const struct GNUNET_MessageHeader *hello)
+{
+	if (hello == NULL)
+	{
+		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "Got no own hello message in callback\n");
+		GNUNET_SCHEDULER_shutdown();
+		return;
+	}
+	ohello = (struct GNUNET_HELLO_Message *) GNUNET_copy_message(hello);
+	if (GNUNET_HELLO_get_id(ohello, &opi) != GNUNET_OK)
+	{
+		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "GNUNET_HELLO_get_id() failed\n");
+		GNUNET_SCHEDULER_shutdown();
+		return;
+	}
+	GNUNET_TRANSPORT_hello_get_cancel(gh);
+	gh = NULL;
+}
 
 static int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 	void **channel_ctx, const struct GNUNET_MessageHeader *message)
@@ -93,7 +119,7 @@ static void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *cha
 {
 	GNUNET_log(GNUNET_ERROR_TYPE_MESSAGE, "Connected from %s\n", GNUNET_i2s_full(initiator));
 	GNUNET_log(GNUNET_ERROR_TYPE_INFO, "Incoming channel %p on port %s\n", channel, GNUNET_h2s(port));
-	if (listen_port == NULL)
+	if (gnunet_opt_port == NULL)
 	{
 		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "Not listening to channels\n");
 		return NULL;
@@ -109,6 +135,16 @@ static void gnunet_shutdown_task(void *cls)
 		GNUNET_CADET_disconnect(mh);
 		mh = NULL;
 	}
+//	if (ph != NULL)
+//	{
+//		GNUNET_PEERINFO_disconnect(ph);
+//		ph = NULL;
+//	}
+	if (ohello != NULL)
+	{
+		GNUNET_free(ohello);
+		ohello = NULL;
+	}
 	if (job != NULL)
 	{
 		GNUNET_SCHEDULER_cancel(job);
@@ -118,35 +154,58 @@ static void gnunet_shutdown_task(void *cls)
 
 static void gnunet_generate(void *cls)
 {
-	std::cerr << "Hi! we will fork here later" << std::endl;
+	job = NULL;
+	sleep(1);
+	// check whether we got our own peer identity
+	if (gh != NULL)
+	{
+		job = GNUNET_SCHEDULER_add_now(&gnunet_generate, NULL);
+		return;
+	}
+	std::cout << "INFO: my own peer id = " << GNUNET_i2s_full(&opi) << std::endl;
+	
+	std::cerr << "Hi! we will fork here later a single instance" << std::endl;
+	sleep(1);
 }
 
 static void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 	const struct GNUNET_CONFIGURATION_Handle *cfg)
 {
+	// get our own peer identity
+//	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to PEERINFO service\n");
+//	ph = GNUNET_PEERINFO_connect(cfg);
+//	if (ph == NULL)
+//		return;
+	gh = GNUNET_TRANSPORT_hello_get(cfg, GNUNET_TRANSPORT_AC_ANY, &gnunet_hello_callback, NULL);
+
+	// connect to CADET service
 	static const struct GNUNET_CADET_MessageHandler handlers[] = {
 		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_CADET_CLI, 0},
 		{NULL, 0, 0}
 	};
-	static struct GNUNET_HashCode porthash;
-
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to CADET service\n");
 	mh = GNUNET_CADET_connect(cfg,
                             NULL, /* cls */
                             &gnunet_channel_ended, /* cleaner */
                             handlers);
 	if (mh == NULL)
+	{
 		GNUNET_SCHEDULER_add_now(&gnunet_shutdown_task, NULL);
+		return;
+	}
 	else
 		sd = GNUNET_SCHEDULER_add_shutdown(&gnunet_shutdown_task, NULL);
 
-	if (listen_port != NULL)
+	// listen to given CADET port
+	if (gnunet_opt_port != NULL)
 	{
+		static struct GNUNET_HashCode porthash;
 		GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Opening CADET listen port\n");
-		GNUNET_CRYPTO_hash(listen_port, strlen(listen_port), &porthash);
+		GNUNET_CRYPTO_hash(gnunet_opt_port, strlen(gnunet_opt_port), &porthash);
 		lp = GNUNET_CADET_open_port(mh, &porthash, &gnunet_channel_incoming, NULL);
 	}
 
+	// schedule DKG generate job
 	job = GNUNET_SCHEDULER_add_now(&gnunet_generate, NULL);
 }
 #endif
@@ -432,7 +491,7 @@ void start_instance
 }
 
 int main
-	(int argc, char **argv)
+	(int argc, char *const *argv)
 {
 	crs << "W8o8gvA20jfDUDcVBS250oR0uObgSsG9Lwj7HekVkgjr0ZGOSfEqFLIUTqTXE"
 		"pGbrYROsq0T0UMI4QWW89B8Xv0O8G9xoQfOn2yO1ZdqamWLMcOR0zYUSVdWh"
@@ -456,8 +515,10 @@ int main
 
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
-		{'o', "open-port", NULL, "GNUnet cadet port to listen to",
-			GNUNET_YES, &GNUNET_GETOPT_set_string, &listen_port},
+		{'p', "port", NULL, "GNUnet cadet port to listen",
+			GNUNET_YES, &GNUNET_GETOPT_set_string, &gnunet_opt_port},
+		{'t', "t-resilience", NULL, "t-resilience of DKG",
+			GNUNET_YES, &GNUNET_GETOPT_set_uint, &gnunet_opt_t_resilience},
 		GNUNET_GETOPT_OPTION_END
 	};
 #endif
@@ -490,7 +551,7 @@ int main
 		{
 			std::string arg = argv[i+1];
 			// ignore options
-			if ((arg.find("-c", 0) == 0) || (arg.find("-o", 0) == 0) || (arg.find("-L", 0) == 0) || (arg.find("-l", 0) == 0))
+			if ((arg.find("-c", 0) == 0) || (arg.find("-p", 0) == 0) || (arg.find("-t", 0) == 0) || (arg.find("-L", 0) == 0) || (arg.find("-l", 0) == 0))
 			{
 				i++;
 				continue;
@@ -521,7 +582,7 @@ int main
 
 	T = (N / 3) - 1; // assume maximum asynchronous t-resilience
 #ifdef GNUNET
-// TODO: read T from options, if given
+	T = gnunet_opt_t_resilience;
 #endif
 	if (T == 0)
 		T = 1; // RBC will not work with 0-resilience
@@ -531,7 +592,9 @@ int main
 	std::getline(std::cin, passphrase);
 
 #ifdef GNUNET
-	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed ElGamal key generation",
+	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
+    		return -1;
+	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed OpenPGP ElGamal key generation",
                             options, &gnunet_run, NULL);
 
 	GNUNET_free ((void *) argv);
