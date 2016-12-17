@@ -56,6 +56,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #include "pipestream.hh"
 
@@ -400,8 +401,7 @@ static int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 	void **channel_ctx, const struct GNUNET_MessageHeader *message)
 {
  	uint16_t len;
-	ssize_t done;
-	uint16_t off;
+	ssize_t rnum = 0;
  	const char *buf;
 	std::string peer = "unknown";
 
@@ -416,13 +416,30 @@ static int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 		std::cerr << "WARNING: incoming message from peer not included in PEERS" << std::endl;
 		return GNUNET_OK;
 	}
-
 	len = ntohs(message->size) - sizeof(*message);
-	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Got %u bytes\n", len);
+	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Got message from %s with %u bytes\n", peer.c_str(), len);
 	buf = (const char *) &message[1];
 std::cerr << "message from " << peer << " = " << buf << std::endl;
-
- // TODO: write buffer into the corresponding pipe
+	do
+	{
+		ssize_t num = write(pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1], buf, len - rnum);
+		if (num < 0)
+		{
+			if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+			{
+				sleep(1);
+				continue;
+			}
+			else
+			{
+				perror("dkg-generate (write)");
+				return GNUNET_SYSERR;
+			}
+		}
+		else
+			rnum += num;
+	}
+	while (rnum < len);
 
 	return GNUNET_OK;
 }
@@ -439,6 +456,7 @@ static void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *c
 			return;
 		}
 	}
+	// TODO: cancel ongoing transmissions
 }
 
 static void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
@@ -466,6 +484,7 @@ static void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *cha
 		std::cerr << "WARNING: incoming channel from peer is not reliable" << std::endl;
 		return NULL;
 	}
+	// add this channel for input
 	pipe2channel_in[peer2pipe[peer]] = channel;
 
 	return NULL;
@@ -487,8 +506,10 @@ static void gnunet_shutdown_task(void *cls)
 	// wait for child and close pipes
 	if (instance_forked)
 	{
-// TODO: send SIGQUIT to child with kill() from signal.h
-		std::cerr << "waitpid(" << pid[peer2pipe[thispeer]] << ")" << std::endl;
+		std::cout << "kill(" << pid[peer2pipe[thispeer]] << ", SIGTERM)" << std::endl;
+		if(kill(pid[peer2pipe[thispeer]], SIGTERM))
+			perror("dkg-generate (kill)");
+		std::cout << "waitpid(" << pid[peer2pipe[thispeer]] << ", NULL, 0)" << std::endl;
 		if (waitpid(pid[peer2pipe[thispeer]], NULL, 0) != pid[peer2pipe[thispeer]])
 			perror("dkg-generate (waitpid)");
 		instance_forked = false;
@@ -761,7 +782,7 @@ int main
 #ifdef GNUNET
 	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
     		return -1;
-	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed ElGamal key generation with OpenPGP-encoding",
+	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed ElGamal key generation with OpenPGP-output",
                             options, &gnunet_run, NULL);
 
 	GNUNET_free ((void *) argv);
