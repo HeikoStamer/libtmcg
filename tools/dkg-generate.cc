@@ -360,23 +360,25 @@ static char *gnunet_opt_port = NULL;
 static unsigned int gnunet_opt_t_resilience = 0;
 static struct GNUNET_CADET_Handle *mh = NULL;
 static struct GNUNET_CADET_TransmitHandle *th = NULL;
+static struct GNUNET_CADET_Channel *th_ch = NULL;
+static size_t th_datalen;
 //static struct GNUNET_PEERINFO_Handle *ph = NULL;
 static struct GNUNET_TRANSPORT_HelloGetHandle *gh = NULL;
 static struct GNUNET_HELLO_Message *ohello = NULL;
-static struct GNUNET_CADET_Port *lp = NULL;
+static struct GNUNET_CADET_Port *lp = NULL, *lp_broadcast = NULL;
 static struct GNUNET_SCHEDULER_Task *sd = NULL;
 static struct GNUNET_SCHEDULER_Task *io = NULL;
 static struct GNUNET_SCHEDULER_Task *job = NULL;
 static struct GNUNET_PeerIdentity opi;
-static struct GNUNET_HashCode porthash;
+static struct GNUNET_HashCode porthash, porthash_broadcast;
 
 static bool pipes_created = false;
 std::string thispeer;
 std::map<std::string, size_t> peer2pipe;
 std::map<size_t, std::string> pipe2peer;
 std::map<size_t, GNUNET_PeerIdentity> pipe2peerid;
-std::map<size_t, GNUNET_CADET_Channel*> pipe2channel_out;
-std::map<size_t, GNUNET_CADET_Channel*> pipe2channel_in;
+std::map<size_t, GNUNET_CADET_Channel*> pipe2channel_out, pipe2channel_out_broadcast;
+std::map<size_t, GNUNET_CADET_Channel*> pipe2channel_in, pipe2channel_in_broadcast;
 
 static void gnunet_hello_callback(void *cls, const struct GNUNET_MessageHeader *hello)
 {
@@ -400,29 +402,39 @@ static void gnunet_hello_callback(void *cls, const struct GNUNET_MessageHeader *
 static int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 	void **channel_ctx, const struct GNUNET_MessageHeader *message)
 {
- 	uint16_t len;
+	int fd; 	
+	uint16_t len;
 	ssize_t rnum = 0;
  	const char *buf;
 	std::string peer = "unknown";
 
-	GNUNET_CADET_receive_done(channel);
+	// check whether the channel is (still) registered
 	for (size_t i = 0; i < N; i++)
 	{
-		if (channel == pipe2channel_in[i])
+		if ((pipe2channel_in.count(i) > 0) && (channel == pipe2channel_in[i]))
+			peer = pipe2peer[i];
+		if ((pipe2channel_in_broadcast.count(i) > 0) && (channel == pipe2channel_in_broadcast[i]))
 			peer = pipe2peer[i];
 	}
 	if (peer == "unknown")
 	{
-		std::cerr << "WARNING: incoming message from peer not included in PEERS" << std::endl;
+		std::cerr << "WARNING: ignore incoming message from unregistered channel" << std::endl;
 		return GNUNET_OK;
 	}
 	len = ntohs(message->size) - sizeof(*message);
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Got message from %s with %u bytes\n", peer.c_str(), len);
-	buf = (const char *) &message[1];
-std::cerr << "message from " << peer << " = " << buf << std::endl;
+	buf = (const char *)&message[1];
+std::cerr << "message from " << peer << " with " << len << " bytes" << std::endl;
+	// write the payload into corresponding pipe
+	if (channel == pipe2channel_in[peer2pipe[peer]])
+		fd = pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1];
+	else if (channel == pipe2channel_in_broadcast[peer2pipe[peer]])
+		fd = broadcast_pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1];
+	else
+		return GNUNET_SYSERR; // should never happen
 	do
 	{
-		ssize_t num = write(pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1], buf, len - rnum);
+		ssize_t num = write(fd, buf, len - rnum);
 		if (num < 0)
 		{
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
@@ -433,6 +445,7 @@ std::cerr << "message from " << peer << " = " << buf << std::endl;
 			else
 			{
 				perror("dkg-generate (write)");
+				GNUNET_SCHEDULER_shutdown();
 				return GNUNET_SYSERR;
 			}
 		}
@@ -441,22 +454,70 @@ std::cerr << "message from " << peer << " = " << buf << std::endl;
 	}
 	while (rnum < len);
 
+	// ready for receiving next message on this channel
+	GNUNET_CADET_receive_done(channel);
+
 	return GNUNET_OK;
+}
+
+static size_t gnunet_data_ready(void *cls, size_t size, void *buf)
+{
+	th = NULL;
+	if ((buf == NULL) || (size == 0))
+	{
+		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "No message to transmit\n");
+		GNUNET_SCHEDULER_shutdown();
+		return 0;
+	}
+	struct GNUNET_MessageHeader *msg;
+	size_t total_size = th_datalen + sizeof(struct GNUNET_MessageHeader);
+	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "sending %u bytes\n", (unsigned int)th_datalen);
+	GNUNET_assert(size >= total_size);
+	msg = (struct GNUNET_MessageHeader*)buf;
+	msg->size = htons(total_size);
+	msg->type = htons(GNUNET_MESSAGE_TYPE_CADET_CLI);
+	GNUNET_memcpy(&msg[1], cls, th_datalen);
+	return total_size;
 }
 
 static void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel,
 	void *channel_ctx)
 {
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "CADET channel ended!\n");
+	// cancel ongoing transmission on this cannel
+	if (channel == th_ch)
+	{
+		GNUNET_CADET_notify_transmit_ready_cancel(th);
+		th = NULL;
+	}
+	// unregister the ended channel	
 	for (size_t i = 0; i < N; i++)
 	{
-		if ((channel == pipe2channel_out[i]) || (channel == pipe2channel_in[i]))
+		if ((pipe2channel_out.count(i) > 0) && (channel == pipe2channel_out[i]))
 		{
 			std::cerr << "WARNING: channel ended for peer = " << pipe2peer[i] << std::endl;
+			pipe2channel_out.erase(i);
+			return;
+		}
+		if ((pipe2channel_in.count(i) > 0) && (channel == pipe2channel_in[i]))
+		{
+			std::cerr << "WARNING: channel ended for peer = " << pipe2peer[i] << std::endl;
+			pipe2channel_in.erase(i);
+			return;
+		}
+		if ((pipe2channel_out_broadcast.count(i) > 0) && (channel == pipe2channel_out_broadcast[i]))
+		{
+			std::cerr << "WARNING: broadcast channel ended for peer = " << pipe2peer[i] << std::endl;
+			pipe2channel_out_broadcast.erase(i);
+			return;
+		}
+		if ((pipe2channel_in_broadcast.count(i) > 0) && (channel == pipe2channel_in_broadcast[i]))
+		{
+			std::cerr << "WARNING: broadcast channel ended for peer = " << pipe2peer[i] << std::endl;
+			pipe2channel_in_broadcast.erase(i);
 			return;
 		}
 	}
-	// TODO: cancel ongoing transmissions
 }
 
 static void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
@@ -468,6 +529,7 @@ static void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *cha
 	if (GNUNET_CRYPTO_hash_cmp(&porthash, port))
 	{
 		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "Not listening to this port\n");
+		GNUNET_SCHEDULER_shutdown();
 		return NULL;
 	}
 	// check whether peer identity is included in peer list
@@ -490,6 +552,38 @@ static void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *cha
 	return NULL;
 }
 
+static void* gnunet_channel_incoming_broadcast(void *cls, struct GNUNET_CADET_Channel *channel,
+	const struct GNUNET_PeerIdentity *initiator, const struct GNUNET_HashCode *port,
+	enum GNUNET_CADET_ChannelOption options)
+{
+	GNUNET_log(GNUNET_ERROR_TYPE_MESSAGE, "Connected from %s\n", GNUNET_i2s_full(initiator));
+	GNUNET_log(GNUNET_ERROR_TYPE_INFO, "Incoming broadcast channel %p on port %s\n", channel, GNUNET_h2s(port));
+	if (GNUNET_CRYPTO_hash_cmp(&porthash_broadcast, port))
+	{
+		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "Not listening to this port\n");
+		GNUNET_SCHEDULER_shutdown();
+		return NULL;
+	}
+	// check whether peer identity is included in peer list
+	std::string peer = GNUNET_i2s_full(initiator);
+	std::map<std::string, size_t>::iterator jt = peer2pipe.find(peer);
+	if (jt == peer2pipe.end())
+	{
+		std::cerr << "WARNING: incoming channel from peer not included in PEERS" << std::endl;
+		return NULL;
+	}
+	// check whether channel is reliable
+	if (options != GNUNET_CADET_OPTION_RELIABLE)
+	{
+		std::cerr << "WARNING: incoming channel from peer is not reliable" << std::endl;
+		return NULL;
+	}
+	// add this channel for input
+	pipe2channel_in_broadcast[peer2pipe[peer]] = channel;
+
+	return NULL;
+}
+
 static void gnunet_shutdown_task(void *cls)
 {
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Shutdown\n");
@@ -502,6 +596,11 @@ static void gnunet_shutdown_task(void *cls)
 	{
 		GNUNET_SCHEDULER_cancel(job);
 		job = NULL;
+	}
+	if (NULL != th)
+	{
+		GNUNET_CADET_notify_transmit_ready_cancel(th);
+		th = NULL;
 	}
 	// wait for child and close pipes
 	if (instance_forked)
@@ -517,7 +616,12 @@ static void gnunet_shutdown_task(void *cls)
 	for (size_t i = 0; ((i < N) && pipes_created); i++)
 	{
 		if (i != peer2pipe[thispeer])
-			GNUNET_CADET_channel_destroy(pipe2channel_out[i]);
+		{
+			if (pipe2channel_out.count(i) > 0)
+				GNUNET_CADET_channel_destroy(pipe2channel_out[i]);
+			if (pipe2channel_out_broadcast.count(i) > 0)
+				GNUNET_CADET_channel_destroy(pipe2channel_out_broadcast[i]);
+		}
 		for (size_t j = 0; j < N; j++)
 		{
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
@@ -527,6 +631,11 @@ static void gnunet_shutdown_task(void *cls)
 		}
 	}
 	pipes_created = false;
+	if (lp_broadcast != NULL)
+	{
+		GNUNET_CADET_close_port(lp_broadcast);
+		lp_broadcast = NULL;
+	}
 	if (lp != NULL)
 	{
 		GNUNET_CADET_close_port(lp);
@@ -547,6 +656,9 @@ static void gnunet_shutdown_task(void *cls)
 		GNUNET_free(ohello);
 		ohello = NULL;
 	}
+	// FIXME: I guess this is not correct. However, otherwise the program does
+	// not terminate, if GNUnet services are not running.
+	exit(-1);
 }
 
 static void gnunet_io(void *cls)
@@ -556,7 +668,28 @@ static void gnunet_io(void *cls)
 	std::cerr << "I/O job" << std::endl;
 	sleep(1);
 
-// TODO: send and receive 
+// TODO: read from pipe and send data
+	if (th == NULL) // FIXME: async operation i.e. no GNUNET_TIME_UNIT_FOREVER_REL
+	{
+		size_t who = 0;
+		if (pipe2channel_out.count(who) > 0)
+		{
+			static char th_buf[60000];
+			th_buf[0] = '0', th_buf[1] = '\n';
+			th_datalen = 2;
+			th_ch = pipe2channel_out[who];
+			th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
+				sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_data_ready, th_buf);
+			if (th == NULL)
+			{
+				std::cerr << "ERROR: cannot transmit data to peer = " << pipe2peer[who] << std::endl;
+				GNUNET_SCHEDULER_shutdown();
+				return;
+			}
+		}
+		else
+			std::cerr << "WARNING: channel to peer " << pipe2peer[who] << " not registered" << std::endl;
+	}
 
 	// reschedule I/O job
 	io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
@@ -613,6 +746,15 @@ static void gnunet_init(void *cls)
 			}
 			else
 				pipe2channel_out[i] = ch;
+			ch = GNUNET_CADET_channel_create(mh, NULL, &pid, &porthash_broadcast, opt);
+			if (ch == NULL)
+			{
+				std::cerr << "ERROR: cannot create broadcast channel to peer = " << pipe2peer[i] << std::endl;
+				GNUNET_SCHEDULER_shutdown();
+				return;
+			}
+			else
+				pipe2channel_out_broadcast[i] = ch;
 		}
 		for (size_t j = 0; j < N; j++)
 		{
@@ -637,7 +779,7 @@ static void gnunet_init(void *cls)
 static void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 	const struct GNUNET_CONFIGURATION_Handle *cfg)
 {
-	// add shutdown task
+	// add our shutdown task
 	sd = GNUNET_SCHEDULER_add_shutdown(&gnunet_shutdown_task, NULL);
 
 	
@@ -651,7 +793,7 @@ static void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 	if (gh == NULL)
 	{
 		std::cerr << "ERROR: no GNUnet hello callback handle" << std::endl;
-		GNUNET_SCHEDULER_add_now(&gnunet_shutdown_task, NULL);
+		GNUNET_SCHEDULER_shutdown();
 		return;
 	}
 
@@ -665,7 +807,7 @@ static void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 	if (mh == NULL)
 	{
 		std::cerr << "ERROR: cannot connect to GNUnet CADET service" << std::endl;
-		GNUNET_SCHEDULER_add_now(&gnunet_shutdown_task, NULL);
+		GNUNET_SCHEDULER_shutdown();
 		return;
 	}
 
@@ -679,7 +821,15 @@ static void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 	if (lp == NULL)
 	{
 		std::cerr << "ERROR: cannot open GNUnet CADET listen port" << std::endl;
-		GNUNET_SCHEDULER_add_now(&gnunet_shutdown_task, NULL);
+		GNUNET_SCHEDULER_shutdown();
+		return;
+	}
+	GNUNET_CRYPTO_hash("42842", 5, &porthash_broadcast); // set our default port for broadcast
+	lp_broadcast = GNUNET_CADET_open_port(mh, &porthash_broadcast, &gnunet_channel_incoming_broadcast, NULL);
+	if (lp_broadcast == NULL)
+	{
+		std::cerr << "ERROR: cannot open GNUnet CADET listen port for broadcast" << std::endl;
+		GNUNET_SCHEDULER_shutdown();
 		return;
 	}
 
@@ -729,7 +879,7 @@ int main
 	}
 	if (argc < 2)
 	{
-		std::cerr << "ERROR: no peers given as argument" << std::endl;
+		std::cerr << "ERROR: no peers given as argument; usage: " << argv[0] << " [OPTIONS] PEERS" << std::endl;
 		return -1;
 	}
 	else
