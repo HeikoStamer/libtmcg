@@ -505,10 +505,12 @@ std::cerr << "select -> pipe_ready" << std::endl;
 				th_buf[0] = '0', th_buf[1] = '\n';
 				th_datalen = 2;
 // TODO: read data from pipe
+std::cerr << "try to send" << std::endl;
 
 				th_ch = pipe2channel_out[i];
 				th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
 					sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_data_ready, th_buf);
+std::cerr << "after notify " << std::endl;
 				if (th == NULL)
 				{
 					std::cerr << "ERROR: cannot transmit data to peer = " << pipe2peer[i] << std::endl;
@@ -523,7 +525,7 @@ std::cerr << "select -> pipe_ready" << std::endl;
 	}
 	else
 		std::cerr << "WARNING: not ready to send the next message" << std::endl;
-
+std::cerr << "fdset destroy" << std::endl;
 	GNUNET_NETWORK_fdset_destroy(rs);
 	// reschedule I/O task
 	if (io == NULL)
@@ -818,23 +820,33 @@ static void gnunet_connect(void *cls)
 
 std::cerr << "connect task" << std::endl;
 
-	// cancel pending transmission
-	if (NULL != th)
-	{
-		GNUNET_CADET_notify_transmit_ready_cancel(th);
-		th = NULL;
-	}
-
-	// create new CADET channels
 	for (size_t i = 0; i < N; i++)
 	{
-		if (i != peer2pipe[thispeer])
+		bool stabilized = (pipe2channel_in.count(i) == 1) && (pipe2channel_out.count(i) > 0);
+		if ((i != peer2pipe[thispeer]) && !stabilized)
 		{
+			// destroy old CADET channels
 			if (pipe2channel_out.count(i) > 0)
+			{
+				// cancel pending transmission
+				if ((th != NULL) && (th_ch == pipe2channel_out[i]))
+				{
+					GNUNET_CADET_notify_transmit_ready_cancel(th);
+					th = NULL;
+				}
 				GNUNET_CADET_channel_destroy(pipe2channel_out[i]);
+			}
 			if (pipe2channel_out_broadcast.count(i) > 0)
+			{
+				// cancel pending transmission
+				if ((th != NULL) && (th_ch == pipe2channel_out_broadcast[i]))
+				{
+					GNUNET_CADET_notify_transmit_ready_cancel(th);
+					th = NULL;
+				}
 				GNUNET_CADET_channel_destroy(pipe2channel_out_broadcast[i]);
-
+			}
+			// create new CADET channels
 			struct GNUNET_PeerIdentity pid;
 			enum GNUNET_CADET_ChannelOption flags = GNUNET_CADET_OPTION_RELIABLE;
 			struct GNUNET_CADET_Channel *ch;
