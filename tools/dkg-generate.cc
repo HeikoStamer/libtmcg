@@ -464,6 +464,7 @@ std::cerr << "message from " << peer << " with " << len << " bytes" << std::endl
 
 static size_t gnunet_data_ready(void *cls, size_t size, void *buf)
 {
+std::cerr << "data ready = " << size << std::endl;
 	th = NULL;
 	if ((buf == NULL) || (size == 0))
 	{
@@ -494,6 +495,8 @@ std::cerr << "select -> pipe_ready" << std::endl;
 	{
 		for (size_t i = 0; i < N; i++)
 		{
+			if (i == peer2pipe[thispeer])
+				continue; // ignore pipe to this peer
 			if ((GNUNET_NETWORK_fdset_test_native(rs, pipefd[peer2pipe[thispeer]][i][0]) == GNUNET_YES) && (pipe2channel_out.count(i) > 0))
 			{
 				static char th_buf[60000];
@@ -510,7 +513,7 @@ std::cerr << "select -> pipe_ready" << std::endl;
 					GNUNET_SCHEDULER_shutdown();
 					return;
 				}
-				break; // we can transmit only one
+				break; // we can transmit only one message
 			}
 			if (pipe2channel_out.count(i) == 0)
 				std::cerr << "WARNING: channel to peer " << pipe2peer[i] << " not registered" << std::endl;
@@ -533,6 +536,8 @@ std::cerr << "select -> broadcast_pipe_ready" << std::endl;
 	{
 		for (size_t i = 0; i < N; i++)
 		{
+			if (i == peer2pipe[thispeer])
+				continue; // ignore pipe to this peer
 			if ((GNUNET_NETWORK_fdset_test_native(rs_broadcast, broadcast_pipefd[peer2pipe[thispeer]][i][0]) == GNUNET_YES) &&
 				(pipe2channel_out_broadcast.count(i) > 0))
 			{
@@ -550,7 +555,7 @@ std::cerr << "select -> broadcast_pipe_ready" << std::endl;
 					GNUNET_SCHEDULER_shutdown();
 					return;
 				}
-				break; // we can transmit only one
+				break; // we can transmit only one message
 			}
 			if (pipe2channel_out_broadcast.count(i) == 0)
 				std::cerr << "WARNING: channel to peer " << pipe2peer[i] << " not registered" << std::endl;
