@@ -594,8 +594,6 @@ std::cerr << "try to send " << num << " bytes on input channel to " << pipe2peer
 			}
 		}	
 	}
-	else
-		std::cerr << "WARNING: not ready to send the next message" << std::endl;
 
 	GNUNET_NETWORK_fdset_destroy(rs);
 	// reschedule I/O task
@@ -656,8 +654,6 @@ std::cerr << "try to send " << num << " bytes on input channel to " << pipe2peer
 			}
 		}	
 	}
-	else
-		std::cerr << "WARNING: not ready to send the next message" << std::endl;
 
 	GNUNET_NETWORK_fdset_destroy(rs_broadcast);
 	// reschedule I/O task
