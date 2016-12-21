@@ -356,6 +356,9 @@ void start_instance
 }
 
 #ifdef GNUNET
+#define GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_CHANNEL_CHECK  10000
+#define GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_UNICAST   10001
+#define GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_BROADCAST 10002
 static char *gnunet_opt_port = NULL;
 static unsigned int gnunet_opt_t_resilience = 0;
 static struct GNUNET_CADET_Handle *mh = NULL;
@@ -363,7 +366,6 @@ static struct GNUNET_CADET_TransmitHandle *th = NULL;
 static struct GNUNET_CADET_Channel *th_ch = NULL;
 static size_t th_datalen;
 static struct GNUNET_NETWORK_FDSet *rs = NULL, *rs_broadcast = NULL;
-//static struct GNUNET_PEERINFO_Handle *ph = NULL;
 static struct GNUNET_TRANSPORT_HelloGetHandle *gh = NULL;
 static struct GNUNET_HELLO_Message *ohello = NULL;
 static struct GNUNET_CADET_Port *lp = NULL;
@@ -429,11 +431,11 @@ static int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 	len = ntohs(message->size) - sizeof(*message);
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Got message from %s with %u bytes\n", peer.c_str(), len);
 	buf = (const char *)&message[1];
-std::cerr << "message of type " << ntohs(message->type) << " from " << peer << " with " << len << " bytes" << std::endl;
+std::cerr << "message of type " << ntohs(message->type) << " from " << peer << " with " << len << " bytes received" << std::endl;
 	// write the payload into corresponding pipe
-	if (ntohs(message->type) == 10001)
+	if (ntohs(message->type) == GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_UNICAST)
 		fd = pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1];
-	else if (ntohs(message->type) == 10002)
+	else if (ntohs(message->type) == GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_BROADCAST)
 		fd = broadcast_pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1];
 	else
 	{
@@ -475,20 +477,19 @@ static size_t gnunet_channel_ready(void *cls, size_t size, void *buf)
 	th = NULL;
 	if ((buf != NULL) && (size != 0))
 	{
-std::cerr << "channel is ready to transmit data" << std::endl;
 		struct GNUNET_MessageHeader *msg;
 		size_t total_size = sizeof(struct GNUNET_MessageHeader);
 		GNUNET_assert(size >= total_size);
 		msg = (struct GNUNET_MessageHeader*)buf;
 		msg->size = htons(total_size);
-		msg->type = htons(10000);
+		msg->type = htons(GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_CHANNEL_CHECK);
 		channel_ready[th_ch] = true;
 		th_ch = NULL;
 		return total_size;
 	}
 	else
 	{
-std::cerr << "error: something to transmit not expected" << std::endl;
+		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "No message to transmit\n");
 		GNUNET_SCHEDULER_shutdown();
 		return 0;
 	}
@@ -496,11 +497,10 @@ std::cerr << "error: something to transmit not expected" << std::endl;
 
 static size_t gnunet_data_ready(void *cls, size_t size, void *buf)
 {
-std::cerr << "data ready = " << size << std::endl;
+std::cerr << "data ready to send = " << size << std::endl;
 	th = NULL, th_ch = NULL;
 	if ((buf == NULL) || (size == 0))
 	{
-std::cerr << "error: no message to transmit" << std::endl;
 		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "No message to transmit\n");
 		GNUNET_SCHEDULER_shutdown();
 		return 0;
@@ -511,18 +511,17 @@ std::cerr << "error: no message to transmit" << std::endl;
 	GNUNET_assert(size >= total_size);
 	msg = (struct GNUNET_MessageHeader*)buf;
 	msg->size = htons(total_size);
-	msg->type = htons(10001);
+	msg->type = htons(GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_UNICAST);
 	GNUNET_memcpy(&msg[1], cls, th_datalen);
 	return total_size;
 }
 
 static size_t gnunet_data_ready_broadcast(void *cls, size_t size, void *buf)
 {
-std::cerr << "data ready broadcast = " << size << std::endl;
+std::cerr << "data ready to broadcast = " << size << std::endl;
 	th = NULL, th_ch = NULL;
 	if ((buf == NULL) || (size == 0))
 	{
-std::cerr << "error: no message to transmit" << std::endl;
 		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "No message to transmit\n");
 		GNUNET_SCHEDULER_shutdown();
 		return 0;
@@ -533,39 +532,57 @@ std::cerr << "error: no message to transmit" << std::endl;
 	GNUNET_assert(size >= total_size);
 	msg = (struct GNUNET_MessageHeader*)buf;
 	msg->size = htons(total_size);
-	msg->type = htons(10002);
+	msg->type = htons(GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_BROADCAST);
 	GNUNET_memcpy(&msg[1], cls, th_datalen);
 	return total_size;
 }
 
 static void gnunet_io(void *cls);
+static void gnunet_connect(void *cls);
+static void gnunet_abort(void *cls);
 
 static void gnunet_pipe_ready(void *cls)
 {
 	pt = NULL;
-std::cerr << "select -> pipe_ready" << std::endl;
 
-	if (th == NULL) // FIXME: async operation i.e. no GNUNET_TIME_UNIT_FOREVER_REL
+	if (th == NULL) // FIXME: async operation, i.e. transmit should aborted after a timeout such that faulty peer cannot block operation
 	{
 		for (size_t i = 0; i < N; i++)
 		{
 			if (i == peer2pipe[thispeer])
-				continue; // ignore pipe to this peer
+				continue; // ignore pipe of this peer
 			if (GNUNET_NETWORK_fdset_test_native(rs, pipefd[peer2pipe[thispeer]][i][0]) == GNUNET_YES)
 			{
-				// first, try sending on output channel
-				if ((pipe2channel_out.count(i) > 0) && channel_ready[pipe2channel_out[i]])
+				if (((pipe2channel_out.count(i) > 0) && channel_ready[pipe2channel_out[i]]) || (pipe2channel_in.count(i) > 0))
 				{
-					static char th_buf[60000];
-					th_buf[0] = '0', th_buf[1] = '\n';
-					th_datalen = 2;
-// TODO: read data from pipe
-std::cerr << "try to send on output channel" << std::endl;
-
-					th_ch = pipe2channel_out[i];
+					static char th_buf[64000];
+					ssize_t num = read(pipefd[peer2pipe[thispeer]][i][0], th_buf, sizeof(th_buf));
+					if (num < 0)
+					{
+						if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+							continue;
+						else
+						{
+							perror("dkg-generate (read)");
+							GNUNET_SCHEDULER_shutdown();
+							return;
+						}
+					}
+					if (num == 0)
+						continue;
+					th_datalen = num;
+					if ((pipe2channel_out.count(i) > 0) && channel_ready[pipe2channel_out[i]])
+					{
+std::cerr << "try to send " << num << " bytes on output channel to " << pipe2peer[i] << std::endl;
+						th_ch = pipe2channel_out[i];
+					}
+					else if (pipe2channel_in.count(i) > 0)
+					{
+std::cerr << "try to send " << num << " bytes on input channel to " << pipe2peer[i] << std::endl;
+						th_ch = pipe2channel_in[i];
+					}
 					th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
 						sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_data_ready, th_buf);
-std::cerr << "after notify " << std::endl;
 					if (th == NULL)
 					{
 						std::cerr << "ERROR: cannot transmit data to peer = " << pipe2peer[i] << std::endl;
@@ -574,27 +591,6 @@ std::cerr << "after notify " << std::endl;
 					}
 					break; // we can transmit only one message
 				}
-				// second, try sending on input channel
-				if (pipe2channel_in.count(i) > 0)
-				{
-					static char th_buf[60000];
-					th_buf[0] = '0', th_buf[1] = '\n';
-					th_datalen = 2;
-// TODO: read data from pipe
-std::cerr << "try to send on input channel" << std::endl;
-
-					th_ch = pipe2channel_in[i];
-					th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
-						sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_data_ready, th_buf);
-std::cerr << "after notify " << std::endl;
-					if (th == NULL)
-					{
-						std::cerr << "ERROR: cannot transmit data to peer = " << pipe2peer[i] << std::endl;
-						GNUNET_SCHEDULER_shutdown();
-						return;
-					}
-					break; // we can transmit only one message
-				}	
 			}
 		}	
 	}
@@ -610,40 +606,59 @@ std::cerr << "after notify " << std::endl;
 static void gnunet_broadcast_pipe_ready(void *cls)
 {
 	pt_broadcast = NULL;
-std::cerr << "select -> broadcast_pipe_ready" << std::endl;
-/*
-	if (th == NULL) // FIXME: async operation i.e. no GNUNET_TIME_UNIT_FOREVER_REL
+
+	if (th == NULL) // FIXME: async operation, i.e. transmit should aborted after a timeout such that faulty peer cannot block operation
 	{
 		for (size_t i = 0; i < N; i++)
 		{
 			if (i == peer2pipe[thispeer])
-				continue; // ignore pipe to this peer
-			if ((GNUNET_NETWORK_fdset_test_native(rs_broadcast, broadcast_pipefd[peer2pipe[thispeer]][i][0]) == GNUNET_YES) &&
-				(pipe2channel_out.count(i) > 0) && channel_ready[pipe2channel_out[i]])
+				continue; // ignore pipe of this peer
+			if (GNUNET_NETWORK_fdset_test_native(rs, broadcast_pipefd[peer2pipe[thispeer]][i][0]) == GNUNET_YES)
 			{
-				static char th_buf[60000];
-				th_buf[0] = '0', th_buf[1] = '\n';
-				th_datalen = 2;
-// TODO: read data from broadcast pipe
-
-				th_ch = pipe2channel_out[i];
-				th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
-					sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_data_ready_broadcast, th_buf);
-				if (th == NULL)
+				if (((pipe2channel_out.count(i) > 0) && channel_ready[pipe2channel_out[i]]) || (pipe2channel_in.count(i) > 0))
 				{
-					std::cerr << "ERROR: cannot transmit data to peer = " << pipe2peer[i] << std::endl;
-					GNUNET_SCHEDULER_shutdown();
-					return;
+					static char th_buf[64000];
+					ssize_t num = read(broadcast_pipefd[peer2pipe[thispeer]][i][0], th_buf, sizeof(th_buf));
+					if (num < 0)
+					{
+						if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+							continue;
+						else
+						{
+							perror("dkg-generate (read)");
+							GNUNET_SCHEDULER_shutdown();
+							return;
+						}
+					}
+					if (num == 0)
+						continue;
+					th_datalen = num;
+					if ((pipe2channel_out.count(i) > 0) && channel_ready[pipe2channel_out[i]])
+					{
+std::cerr << "try to send " << num << " bytes on output channel to " << pipe2peer[i] << std::endl;
+						th_ch = pipe2channel_out[i];
+					}
+					else if (pipe2channel_in.count(i) > 0)
+					{
+std::cerr << "try to send " << num << " bytes on input channel to " << pipe2peer[i] << std::endl;
+						th_ch = pipe2channel_in[i];
+					}
+					th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
+						sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_data_ready_broadcast, th_buf);
+					if (th == NULL)
+					{
+						std::cerr << "ERROR: cannot transmit data to peer = " << pipe2peer[i] << std::endl;
+						GNUNET_SCHEDULER_shutdown();
+						return;
+					}
+					break; // we can transmit only one message
 				}
-				break; // we can transmit only one message
 			}
-			if (pipe2channel_out.count(i) == 0)
-				std::cerr << "WARNING: channel to peer " << pipe2peer[i] << " not registered" << std::endl;
 		}	
 	}
 	else
 		std::cerr << "WARNING: not ready to send the next message" << std::endl;
-*/
+
 	GNUNET_NETWORK_fdset_destroy(rs_broadcast);
 	// reschedule I/O task
 	if (io == NULL)
@@ -660,7 +675,7 @@ static void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *c
 		GNUNET_CADET_notify_transmit_ready_cancel(th);
 		th = NULL, th_ch = NULL;
 	}
-	// unregister the ended channel	
+	// deregister the ended channel	
 	for (size_t i = 0; i < N; i++)
 	{
 		if ((pipe2channel_out.count(i) > 0) && (channel == pipe2channel_out[i]))
@@ -677,7 +692,7 @@ static void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *c
 			return;
 		}
 	}
-	std::cerr << "WARNING: ended channel was not registered" << std::endl;
+	std::cerr << "WARNING: ended channel is not registered" << std::endl;
 }
 
 static void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
@@ -704,15 +719,17 @@ static void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *cha
 	// check whether channel is reliable
 	if (options != GNUNET_CADET_OPTION_RELIABLE)
 	{
-		std::cerr << "WARNING: incoming channel from peer is not reliable" << std::endl;
+		std::cerr << "WARNING: incoming channel is not reliable" << std::endl;
 		return NULL;
 	}
-	// register this channel for input
+	// register this channel
 	if (pipe2channel_in.count(peer2pipe[peer]) == 0)
 		pipe2channel_in[peer2pipe[peer]] = channel;
 	else
-		std::cerr << "WARNING: incoming channel is already registered" << std::endl;
-		// TODO: unregister old channel or destroy new channel
+	{
+		std::cerr << "WARNING: incoming channel already registered for this peer" << std::endl;
+		GNUNET_CADET_channel_destroy(channel);
+	}
 
 	return NULL;
 }
@@ -720,50 +737,42 @@ static void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *cha
 static void gnunet_shutdown_task(void *cls)
 {
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Shutdown\n");
-std::cerr << "BUG0" << std::endl;
 	if (pt_broadcast != NULL)
 	{
 		GNUNET_SCHEDULER_cancel(pt_broadcast);
 		pt_broadcast = NULL;
 	}
-std::cerr << "BUG0a" << std::endl;
 	if (pt != NULL)
 	{
 		GNUNET_SCHEDULER_cancel(pt);
 		pt = NULL;
 	}
-std::cerr << "BUG0b" << std::endl;
 	if (io != NULL)
 	{
 		GNUNET_SCHEDULER_cancel(io);
 		io = NULL;
 	}
-std::cerr << "BUG0b2" << std::endl;
 	if (at != NULL)
 	{
 		GNUNET_SCHEDULER_cancel(at);
 		at = NULL;
 	}
-std::cerr << "BUG0c" << std::endl;
 	if (ct != NULL)
 	{
 		GNUNET_SCHEDULER_cancel(ct);
 		ct = NULL;
 	}
-std::cerr << "BUG0d" << std::endl;
 	if (job != NULL)
 	{
 		GNUNET_SCHEDULER_cancel(job);
 		job = NULL;
 	}
-std::cerr << "BUG0e" << std::endl;
 	if (th != NULL)
 	{
 		GNUNET_CADET_notify_transmit_ready_cancel(th);
 		th = NULL, th_ch = NULL;
 	}
-std::cerr << "BUG1" << std::endl;
-	// destroy CADET channels
+	// destroy remaining CADET channels
 	for (size_t i = 0; ((i < N) && channels_created); i++)
 	{
 		if (i != peer2pipe[thispeer])
@@ -775,7 +784,6 @@ std::cerr << "BUG1" << std::endl;
 		}
 	}
 	channels_created = false;
-std::cerr << "BUG2" << std::endl;
 	// wait for forked instance and close pipes
 	if (instance_forked)
 	{
@@ -808,11 +816,6 @@ std::cerr << "BUG2" << std::endl;
 		GNUNET_CADET_disconnect(mh);
 		mh = NULL;
 	}
-//	if (ph != NULL)
-//	{
-//		GNUNET_PEERINFO_disconnect(ph);
-//		ph = NULL;
-//	}
 	if (ohello != NULL)
 	{
 		GNUNET_free(ohello);
@@ -823,26 +826,22 @@ std::cerr << "BUG2" << std::endl;
 	exit(-1);
 }
 
-static void gnunet_connect(void *cls);
-static void gnunet_abort(void *cls);
-
 static void gnunet_io(void *cls)
 {
 	io = NULL;
 
 //std::cerr << "I/O task" << std::endl;
-sleep(1);
+//sleep(1);
 
 	if ((th == NULL) && (at == NULL))
 	{
-		// check whether the created output channel is ready to send data
+		// check whether the created output channel is ready to transmit
 		for (size_t i = 0; i < N; i++)
 		{
 			if (i == peer2pipe[thispeer])
 				continue; // ignore this peer
 			if ((pipe2channel_out.count(i) > 0) && !channel_ready[pipe2channel_out[i]])
 			{
-std::cerr << "check output channel for peer = " << i << std::endl;
 				th_ch = pipe2channel_out[i];
 				th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
 					sizeof(struct GNUNET_MessageHeader), &gnunet_channel_ready, NULL);
@@ -886,9 +885,6 @@ std::cerr << "check output channel for peer = " << i << std::endl;
 static void gnunet_connect(void *cls)
 {
 	ct = NULL;
-
-std::cerr << "connect task" << std::endl;
-
 	for (size_t i = 0; i < N; i++)
 	{
 		bool stabilized;
@@ -945,9 +941,6 @@ std::cerr << "connect task" << std::endl;
 static void gnunet_abort(void *cls)
 {
 	at = NULL;
-
-std::cerr << "abort task" << std::endl;
-
 	for (size_t i = 0; ((i < N) && (th != NULL)); i++)
 	{
 		if ((i != peer2pipe[thispeer]) && (pipe2channel_out.count(i) > 0) && (th_ch == pipe2channel_out[i]))
@@ -979,11 +972,6 @@ static void gnunet_init(void *cls)
 	// check whether own peer identity is included in peer list
 	thispeer = GNUNET_i2s_full(&opi);
 	std::cout << "INFO: my peer id = " << thispeer << std::endl;
-	for (size_t i = 0; i < peers.size(); i++)
-	{
-		peer2pipe[peers[i]] = i;
-		pipe2peer[i] = peers[i];
-	}
 	std::map<std::string, size_t>::iterator jt = peer2pipe.find(thispeer);
 	if (jt == peer2pipe.end())
 	{
@@ -1016,14 +1004,15 @@ static void gnunet_init(void *cls)
 static void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 	const struct GNUNET_CONFIGURATION_Handle *cfg)
 {
+	// initialize peer2pipe and pipe2peer mapping
+	for (size_t i = 0; i < peers.size(); i++)
+	{
+		peer2pipe[peers[i]] = i;
+		pipe2peer[i] = peers[i];
+	}
+
 	// add our shutdown task
 	sd = GNUNET_SCHEDULER_add_shutdown(&gnunet_shutdown_task, NULL);
-
-	
-//	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to PEERINFO service\n");
-//	ph = GNUNET_PEERINFO_connect(cfg);
-//	if (ph == NULL)
-//		return;
 
 	// get our own peer identity
 	gh = GNUNET_TRANSPORT_hello_get(cfg, GNUNET_TRANSPORT_AC_ANY, &gnunet_hello_callback, NULL);
@@ -1036,9 +1025,9 @@ static void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 
 	// connect to CADET service
 	static const struct GNUNET_CADET_MessageHandler handlers[] = {
-		{&gnunet_data_callback, 10000, 0},
-		{&gnunet_data_callback, 10001, 0},
-		{&gnunet_data_callback, 10002, 0},
+		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_CHANNEL_CHECK, 0},
+		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_UNICAST, 0},
+		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_BROADCAST, 0},
 		{NULL, 0, 0}
 	};
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to CADET service\n");
@@ -1115,7 +1104,7 @@ int main
 	}
 	else
 	{
-		// build peer list
+		// create peer list
 		for (size_t i = 0; i < (size_t)(argc - 1); i++)
 		{
 			std::string arg = argv[i+1];
