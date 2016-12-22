@@ -57,11 +57,11 @@ class aiounicast
 		virtual bool Receive
 			(mpz_ptr m, size_t &i_out,
 			const size_t scheduler = aio_scheduler_roundrobin,
-			const time_t timeout = aio_timeout_short) = 0;
+			const time_t timeout = aio_timeout_long) = 0;
 		virtual bool Receive
 			(std::vector<mpz_ptr> &m, size_t &i_out,
 			const size_t scheduler = aio_scheduler_roundrobin,
-			const time_t timeout = aio_timeout_short) = 0;
+			const time_t timeout = aio_timeout_long) = 0;
 
 		virtual ~aiounicast
 			()

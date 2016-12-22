@@ -88,9 +88,13 @@ class CachinKursawePetzoldShoupRBC
 		void Broadcast
 			(mpz_srcptr m, const bool simulate_faulty_behaviour = false);
 		bool Deliver
-			(mpz_ptr m, size_t &i_out);
+			(mpz_ptr m, size_t &i_out,
+			const size_t scheduler = aiounicast::aio_scheduler_roundrobin,
+			const time_t timeout = aiounicast::aio_timeout_long);
 		bool DeliverFrom
-			(mpz_ptr m, const size_t i_in);
+			(mpz_ptr m, const size_t i_in,
+			const size_t scheduler = aiounicast::aio_scheduler_roundrobin,
+			const time_t timeout = aiounicast::aio_timeout_long);
 		~CachinKursawePetzoldShoupRBC
 			();
 };

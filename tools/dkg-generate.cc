@@ -122,7 +122,7 @@ void start_instance
 			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
 			rbc->setID(myID);
 			
-			// create and exchange VTMF keys FIXME: async. operations needed
+			// create and exchange VTMF keys FIXME: async. operations needed; otherwise VTMF key could be stored in DHT 
 			vtmf->KeyGenerationProtocol_GenerateKey();
 			for (size_t i = 0; i < N; i++)
 			{
