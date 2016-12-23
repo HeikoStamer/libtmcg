@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2007, 2009  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2007, 2009, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -348,9 +348,18 @@ int main
 	// wait for poker childs and close pipes
 	for (size_t i = 0; i < PLAYERS; i++)
 	{
+		int wstatus = 0;
 		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], NULL, 0) != pid[i])
+		if (waitpid(pid[i], &wstatus, 0) != pid[i])
 			perror("t-poker (waitpid)");
+		if (!WIFEXITED(wstatus))
+		{
+			std::cerr << "ERROR: ";
+			if (WIFSIGNALED(wstatus))
+				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
+			if (WCOREDUMP(wstatus))
+				std::cerr << pid[i] << " dumped core" << std::endl;
+		}
 		for (size_t j = 0; j < PLAYERS; j++)
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
 				perror("t-poker (close)");

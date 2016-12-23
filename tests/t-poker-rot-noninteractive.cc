@@ -49,7 +49,7 @@ void start_instance
 	(std::istream& vtmf_str, size_t player)
 {
 	if ((pid[player] = fork()) < 0)
-		perror("t-poker-rot (fork)");
+		perror("t-poker-rot-noninteractive (fork)");
 	else
 	{
 		if (pid[player] == 0)
@@ -331,7 +331,7 @@ int main
 	for (size_t i = 0; i < PLAYERS; i++)
 		for (size_t j = 0; j < PLAYERS; j++)
 			if (pipe(pipefd[i][j]) < 0)
-				perror("t-poker-rot (pipe)");
+				perror("t-poker-rot-noninteractive (pipe)");
 	
 	// start poker childs
 	for (size_t i = 0; i < PLAYERS; i++)
@@ -340,12 +340,21 @@ int main
 	// wait for poker childs and close pipes
 	for (size_t i = 0; i < PLAYERS; i++)
 	{
+		int wstatus = 0;
 		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], NULL, 0) != pid[i])
-			perror("t-poker-rot (waitpid)");
+		if (waitpid(pid[i], &wstatus, 0) != pid[i])
+			perror("t-poker-rot-noninteractive (waitpid)");
+		if (!WIFEXITED(wstatus))
+		{
+			std::cerr << "ERROR: ";
+			if (WIFSIGNALED(wstatus))
+				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
+			if (WCOREDUMP(wstatus))
+				std::cerr << pid[i] << " dumped core" << std::endl;
+		}
 		for (size_t j = 0; j < PLAYERS; j++)
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("t-poker-rot (close)");
+				perror("t-poker-rot-noninteractive (close)");
 	}
 	
 	// release VTMF instance

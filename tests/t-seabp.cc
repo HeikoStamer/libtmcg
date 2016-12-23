@@ -181,9 +181,18 @@ int main
 	// wait for childs and close pipes
 	for (size_t i = 0; i < N; i++)
 	{
+		int wstatus = 0;
 		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], NULL, 0) != pid[i])
+		if (waitpid(pid[i], &wstatus, 0) != pid[i])
 			perror("t-seabp (waitpid)");
+		if (!WIFEXITED(wstatus))
+		{
+			std::cerr << "ERROR: ";
+			if (WIFSIGNALED(wstatus))
+				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
+			if (WCOREDUMP(wstatus))
+				std::cerr << pid[i] << " dumped core" << std::endl;
+		}
 		for (size_t j = 0; j < N; j++)
 		{
 			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))

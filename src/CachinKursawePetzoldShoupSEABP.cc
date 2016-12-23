@@ -224,9 +224,10 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					// receive a message from an arbitrary party $P_l$ (given scheduler, zero timeout)
 					if (!aiou->Receive(message, l, scheduler, 0))
 					{
-//std::cerr << "RBC: timeout of party " << j << " from " << l << " in Deliver()" << std::endl;
+if (l < n)
+std::cerr << "RBC: timeout or error of party " << j << " from " << l << " in Receive(l) = " << l << std::endl;
 						continue; // next round
-					} 
+					}
 				}
 				// compute hash of identifying tag $ID.j.s$
 				mpz_shash(tag, 3, message[0], message[1], message[2]);
@@ -369,7 +370,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						else
 						{
 							mpz_set_ui(foo, 0L);
-std::cerr << "RPC: mbar not found in " << j << std::endl;
+std::cerr << "RPC: mbar not found (r-send not received yet) for " << j << std::endl;
 						}
 						if (mpz_cmp(foo, message[4])) // $ H(\bar{m}) \neq \bar{d}$
 						{
@@ -416,6 +417,12 @@ std::cerr << "RPC: mbar not found in " << j << std::endl;
 std::cerr << "RPC: r-answer from " << l2 << " for " << j << " with m = " << message3[4] << std::endl;
 										answer[l2].insert(std::pair<std::string, bool>(tag_string, true));
 										mpz_shash(foo, 1, message3[4]); // compute $H(m)$
+										if (mbar.find(tag_string) == mbar.end())
+										{
+											mpz_ptr tmp = new mpz_t();
+											mpz_init(tmp);
+											mbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
+										}
 										mpz_set(mbar[tag_string], message3[4]); // $\bar{m} \gets m$
 									}
 									// release
@@ -428,6 +435,8 @@ std::cerr << "RPC: r-answer from " << l2 << " for " << j << " with m = " << mess
 								}
 								else
 								{
+if (l2 < n)
+std::cerr << "RPC: timeout or error in Receive(l2) = " << l2 << std::endl;
 									// release
 									for (size_t mm = 0; mm < message3.size(); mm++)
 									{

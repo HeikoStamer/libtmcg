@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006, 2009, 2015  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2005, 2006, 2009, 2015, 2016  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -265,9 +265,18 @@ int main
 	}
 	
 	// finalize
-	if (waitpid(pid, NULL, 0) != pid)
+	int wstatus = 0;
+	std::cerr << "waitpid(" << pid << ")" << std::endl;
+	if (waitpid(pid, &wstatus, 0) != pid)
 		perror("t-mpc (waitpid)");
-	
+	if (!WIFEXITED(wstatus))
+	{
+		std::cerr << "ERROR: ";
+		if (WIFSIGNALED(wstatus))
+			std::cerr << pid << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
+		if (WCOREDUMP(wstatus))
+			std::cerr << pid << " dumped core" << std::endl;
+	}
 	list.clear();
 	delete A, delete B;
 	

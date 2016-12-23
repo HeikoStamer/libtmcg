@@ -156,8 +156,18 @@ int main
 			
 			delete pipe_in, delete pipe_out;
 		}
-		if (waitpid(pid, NULL, 0) != pid)
+		int wstatus = 0;
+		std::cerr << "waitpid(" << pid << ")" << std::endl;
+		if (waitpid(pid, &wstatus, 0) != pid)
 			perror("t-eotp (waitpid)");
+		if (!WIFEXITED(wstatus))
+		{
+			std::cerr << "ERROR: ";
+			if (WIFSIGNALED(wstatus))
+				std::cerr << pid << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
+			if (WCOREDUMP(wstatus))
+				std::cerr << pid << " dumped core" << std::endl;
+		}
 		close(pipe1fd[0]), close(pipe1fd[1]), close(pipe2fd[0]), close(pipe2fd[1]);
 	}
 
