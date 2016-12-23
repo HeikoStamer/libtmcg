@@ -34,6 +34,7 @@
 
 	// C header for asynchronous I/O
 	#include <unistd.h>
+	#include <fcntl.h>
 	#include <errno.h>
 	#include <string.h>
 	
@@ -78,10 +79,16 @@ class aiounicast_fd : public aiounicast
 			// initialize scheduler
 			aio_schedule_current = 0, aio_schedule_buffer = 0;
 
-			// initialize buffers for read(2)
+			// initialize buffers and check for O_NONBLOCK with fcntl(2)
 			buf_in_size = TMCG_MAX_VALUE_CHARS;
 			for (size_t i = 0; i < n_in; i++)
 			{
+				int flags_in = fcntl(fd_in_in[i], F_GETFL);
+				int flags_out = fcntl(fd_out_in[i], F_GETFL);
+				if ((flags_in == -1) || (flags_out == -1))
+					perror("aiounicast_fd (fcntl)");
+				if (((flags_in & O_NONBLOCK) != O_NONBLOCK) || ((flags_out & O_NONBLOCK) != O_NONBLOCK))
+					std::cerr << "fcntl: O_NONBLOCK not set on fd from " << i << std::endl;
 				fd_in.push_back(fd_in_in[i]);
 				char *buf = new char[buf_in_size];
 				buf_in.push_back(buf), buf_ptr.push_back(0);

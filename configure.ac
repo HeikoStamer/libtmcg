@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20161217])
+AC_REVISION([20161223])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.2.0], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -186,8 +186,8 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
- ctime errno.h fstream functional gcrypt.h gmp.h inttypes.h iostream limits.h\
- list map sstream stdio.h string string.h time.h unistd.h vector], , 
+ ctime errno.h fcntl.h fstream functional gcrypt.h gmp.h inttypes.h iostream\
+ limits.h list map sstream stdio.h string string.h time.h unistd.h vector], , 
 	AC_MSG_ERROR([some headers are missing]))
 
 # Checks for typedefs, structures, and compiler characteristics
@@ -199,8 +199,8 @@ AC_TYPE_SSIZE_T
 # Checks for library functions
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
-AC_CHECK_FUNCS([clock close fprintf memcmp memcpy memset perror sleep snprintf\
- strtoul time], ,
+AC_CHECK_FUNCS([clock close fcntl fprintf memcmp memcpy memset open perror\
+ 	read sleep snprintf strtoul time write], ,
 	AC_MSG_ERROR([some functions are missing]))
 
 # Checks for forking tests feature
