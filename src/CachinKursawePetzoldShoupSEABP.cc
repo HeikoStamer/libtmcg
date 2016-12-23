@@ -386,6 +386,7 @@ std::cerr << "RPC: mbar not found (r-send not received yet) for " << j << std::e
 								aiou->Send(message2, i);
 							message2.clear();
 							// wait for a message $(ID.j.s, r_answer, m)$
+							time_t entry_time2 = time(NULL);
 							do
 							{
 								// prepare
@@ -446,7 +447,7 @@ std::cerr << "RPC: timeout or error in Receive(l2) = " << l2 << std::endl;
 									message3.clear();
 								}
 							}
-							while (mpz_cmp(foo, message[4])); // $H(m) = \bar{d}$
+							while (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time2 + timeout))); // $H(m) = \bar{d}$
 						}
 //std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
 						size_t who = mpz_get_ui(message[1]);
