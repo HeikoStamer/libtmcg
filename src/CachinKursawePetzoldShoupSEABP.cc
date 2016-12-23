@@ -447,7 +447,7 @@ std::cerr << "RPC: timeout or error in Receive(l2) = " << l2 << std::endl;
 									message3.clear();
 								}
 							}
-							while (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time2 + timeout))); // $H(m) = \bar{d}$
+							while (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time2 + 3))); // $H(m) = \bar{d}$ FIXME timeout
 						}
 //std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
 						size_t who = mpz_get_ui(message[1]);
