@@ -426,26 +426,19 @@ std::cerr << "RPC: r-answer from " << l2 << " for " << j << " with m = " << mess
 										}
 										mpz_set(mbar[tag_string], message3[4]); // $\bar{m} \gets m$
 									}
-									// release
-									for (size_t mm = 0; mm < message3.size(); mm++)
-									{
-										mpz_clear(message3[mm]);
-										delete message3[mm];
-									}
-									message3.clear();
 								}
 								else
 								{
 if (l2 < n)
 std::cerr << "RPC: timeout or error in Receive(l2) = " << l2 << std::endl;
-									// release
-									for (size_t mm = 0; mm < message3.size(); mm++)
-									{
-										mpz_clear(message3[mm]);
-										delete message3[mm];
-									}
-									message3.clear();
 								}
+								// release
+								for (size_t mm = 0; mm < message3.size(); mm++)
+								{
+									mpz_clear(message3[mm]);
+									delete message3[mm];
+								}
+								message3.clear();
 							}
 							while (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time2 + 3))); // $H(m) = \bar{d}$ FIXME timeout
 						}
