@@ -423,7 +423,7 @@ std::cerr << "RPC: mbar not found (r-send not received yet) for " << j << std::e
 std::cerr << "RPC: r-answer from " << l2 << " for " << j << " with m = " << message3[4] << std::endl;
 										answer[l2].insert(std::pair<std::string, bool>(tag_string, true));
 										mpz_shash(foo, 1, message3[4]); // compute $H(m)$
-										if (mbar.find(tag_string) == mbar.end())
+										if (mbar.count(tag_string) == 0)
 										{
 											mpz_ptr tmp = new mpz_t();
 											mpz_init(tmp);
@@ -432,12 +432,12 @@ std::cerr << "RPC: r-answer from " << l2 << " for " << j << " with m = " << mess
 										mpz_set(mbar[tag_string], message3[4]); // $\bar{m} \gets m$
 									}
 									else
-										std::cerr << "RBC: should never happen" << std::endl;
+										std::cerr << "RBC: this should never happen" << std::endl;
 								}
 								else
 								{
 if (l2 < n)
-std::cerr << "RPC: timeout or error in Receive(l2) = " << l2 << std::endl;
+std::cerr << "RPC: error in Receive(l2) = " << l2 << std::endl;
 								}
 								// release
 								for (size_t mm = 0; mm < message3.size(); mm++)
@@ -449,30 +449,38 @@ std::cerr << "RPC: timeout or error in Receive(l2) = " << l2 << std::endl;
 							}
 							while (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time2 + 3))); // $H(m) = \bar{d}$ FIXME timeout
 						}
+						if (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time + timeout)))
+							continue; // no r-answer received within timeout
+						else if (!mpz_cmp(foo, message[4]))
+						{
 //std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
-						size_t who = mpz_get_ui(message[1]);
-						// check for matching tag and sequence counter before delivering
-						if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
-						{
-							mpz_set(m, mbar[tag_string]);
-							mpz_add_ui(deliver_s[who], deliver_s[who], 1L);
-							i_out = who;
-							throw true;
-						}
-						else
-						{
-							// buffer the message for later delivery
-							RBC_Message *vtmp = new RBC_Message;
-							for (size_t mm = 0; mm < 5; mm++)
+							size_t who = mpz_get_ui(message[1]);
+							// check for matching tag and sequence counter before delivering
+							if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
 							{
-								mpz_ptr tmp = new mpz_t();
-								mpz_init_set(tmp, message[mm]);
-								vtmp->push_back(tmp);
+std::cerr << "RPC: mbar.count(tag) = " << mbar.count(tag_string) << std::endl;
+								mpz_set(m, mbar[tag_string]);
+								mpz_add_ui(deliver_s[who], deliver_s[who], 1L);
+								i_out = who;
+								throw true;
 							}
-							deliver_buf.push_back(*vtmp);
+							else
+							{
+								// buffer the message for later delivery
+								RBC_Message *vtmp = new RBC_Message;
+								for (size_t mm = 0; mm < 5; mm++)
+								{
+									mpz_ptr tmp = new mpz_t();
+									mpz_init_set(tmp, message[mm]);
+									vtmp->push_back(tmp);
+								}
+								deliver_buf.push_back(*vtmp);
 //std::cerr << "RPC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
+							}
 							continue;
 						}
+						else
+							break; // no r-answer received and timeout exceeded
 					}
 					continue;
 				}
@@ -597,11 +605,11 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		delete (*mit).second;
 	}
 	mbar.clear(), dbar.clear();
-	for (std::map<std::string, RBC_TagCount >::iterator mit = e_d.begin(); mit != e_d.end(); ++mit)
+	for (std::map<std::string, RBC_TagCount>::iterator mit = e_d.begin(); mit != e_d.end(); ++mit)
 	{
 		((*mit).second).clear();
 	}
-	for (std::map<std::string, RBC_TagCount >::iterator mit = r_d.begin(); mit != r_d.end(); ++mit)
+	for (std::map<std::string, RBC_TagCount>::iterator mit = r_d.begin(); mit != r_d.end(); ++mit)
 	{
 		((*mit).second).clear();
 	}	
@@ -624,7 +632,7 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		delete deliver_s[i];
 	}
 	buf_mpz.clear(), buf_msg.clear();
-	for (std::list< RBC_Message >::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
+	for (std::list<RBC_Message>::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
 	{
 		for (RBC_Message::iterator vit = lit->begin(); vit != lit->end(); ++vit)
 		{
