@@ -38,7 +38,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 {
 	assert(t_in > 0);
 	assert(t_in <= n_in);
-	assert((3 * t_in) < n_in); // FIXME: only warn
+	assert((3 * t_in) < n_in); // FIXME: warn only
 	assert(j_in < n_in);
 
 	// initialize basic parameters
@@ -184,8 +184,9 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					std::string tag_string = tag_ss.str();
 					size_t who = mpz_get_ui((*lit)[1]);
 					// check for matching tag and sequence counter before delivering
-					if (!mpz_cmp((*lit)[0], ID) && !mpz_cmp((*lit)[2], deliver_s[who]) && (mbar.count(tag_string) > 0))
+					if (!mpz_cmp((*lit)[0], ID) && !mpz_cmp((*lit)[2], deliver_s[who]))
 					{
+						assert(mbar.count(tag_string));
 						mpz_set(m, mbar[tag_string]);
 //std::cerr << "RPC: restores deliver from " << who << " m = " << m << std::endl;
 						mpz_add_ui(deliver_s[who], deliver_s[who], 1L); // increase sequence counter
@@ -197,11 +198,9 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						}
 						lit->clear();
 						deliver_buf.erase(lit);
-std::cerr << "RBC: Debug1" << std::endl;
 						throw true;
 					}
 				}
-
 				size_t l = n;
 				// second, anything buffered from previous calls/rounds?
 				for (size_t i = 0; i < n; i++)
@@ -226,7 +225,7 @@ std::cerr << "RBC: Debug1" << std::endl;
 					if (!aiou->Receive(message, l, scheduler, 0))
 					{
 if (l < n)
-std::cerr << "RBC: timeout or error of party " << j << " from " << l << " in Receive(l) = " << l << std::endl;
+std::cerr << "RBC: error of party " << j << " from " << l << " in Receive(l) = " << l << std::endl;
 						continue; // next round
 					}
 				}
@@ -375,7 +374,7 @@ std::cerr << "RBC: timeout or error of party " << j << " from " << l << " in Rec
 						else
 						{
 							mpz_set_ui(foo, 0L);
-std::cerr << "RPC: mbar not found (r-send not received yet) for " << j << std::endl;
+std::cerr << "RPC: r-send not received yet for this tag by " << j << std::endl;
 						}
 						if (mpz_cmp(foo, message[4])) // $ H(\bar{m}) \neq \bar{d}$
 						{
@@ -448,39 +447,36 @@ std::cerr << "RPC: error in Receive(l2) = " << l2 << std::endl;
 								message3.clear();
 							}
 							while (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time2 + 3))); // $H(m) = \bar{d}$ FIXME timeout
+							if (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time + timeout)))
+								continue; // no r-answer received within timeout
+							else if (mpz_cmp(foo, message[4]))
+								break; // no r-answer received and timeout exceeded
 						}
-						if (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time + timeout)))
-							continue; // no r-answer received within timeout
-						else if (!mpz_cmp(foo, message[4]))
-						{
 //std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
-							size_t who = mpz_get_ui(message[1]);
-							// check for matching tag and sequence counter before delivering
-							if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
-							{
-std::cerr << "RPC: mbar.count(tag) = " << mbar.count(tag_string) << std::endl;
-								mpz_set(m, mbar[tag_string]);
-								mpz_add_ui(deliver_s[who], deliver_s[who], 1L);
-								i_out = who;
-								throw true;
-							}
-							else
-							{
-								// buffer the message for later delivery
-								RBC_Message *vtmp = new RBC_Message;
-								for (size_t mm = 0; mm < 5; mm++)
-								{
-									mpz_ptr tmp = new mpz_t();
-									mpz_init_set(tmp, message[mm]);
-									vtmp->push_back(tmp);
-								}
-								deliver_buf.push_back(*vtmp);
-//std::cerr << "RPC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
-							}
-							continue;
+						size_t who = mpz_get_ui(message[1]);
+						// check for matching tag and sequence counter before delivering
+						if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
+						{
+							assert(mbar.count(tag_string));
+							mpz_set(m, mbar[tag_string]);
+							mpz_add_ui(deliver_s[who], deliver_s[who], 1L); // increase sequence counter
+							i_out = who;
+							throw true;
 						}
 						else
-							break; // no r-answer received and timeout exceeded
+						{
+							// buffer the message for later delivery
+							RBC_Message *vtmp = new RBC_Message;
+							for (size_t mm = 0; mm < 5; mm++)
+							{
+								mpz_ptr tmp = new mpz_t();
+								mpz_init_set(tmp, message[mm]);
+								vtmp->push_back(tmp);
+							}
+							deliver_buf.push_back(*vtmp);
+//std::cerr << "RPC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
+						}
+						continue;
 					}
 					continue;
 				}
@@ -500,7 +496,7 @@ std::cerr << "RPC: mbar.count(tag) = " << mbar.count(tag_string) << std::endl;
 						message2.push_back(message[2]);
 						message2.push_back(r_answer);
 						message2.push_back(mbar[tag_string]);
-						// send to requesting party by unicast transmission
+						// send only to requesting party by unicast transmission
 						aiou->Send(message2, l);
 						message2.clear();
 					}
@@ -594,12 +590,12 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		answer[i].clear();
 	}
 	send.clear(), echo.clear(), ready.clear(), request.clear(), answer.clear();
-	for (std::map<std::string, mpz_ptr>::iterator mit = mbar.begin(); mit != mbar.end(); ++mit)
+	for (RBC_TagMpz::iterator mit = mbar.begin(); mit != mbar.end(); ++mit)
 	{
 		mpz_clear((*mit).second);
 		delete (*mit).second;
 	}
-	for (std::map<std::string, mpz_ptr>::iterator mit = dbar.begin(); mit != dbar.end(); ++mit)
+	for (RBC_TagMpz::iterator mit = dbar.begin(); mit != dbar.end(); ++mit)
 	{
 		mpz_clear((*mit).second);
 		delete (*mit).second;
