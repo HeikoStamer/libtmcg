@@ -38,7 +38,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 {
 	assert(t_in > 0);
 	assert(t_in <= n_in);
-	assert((3 * t_in) < n_in);
+	assert((3 * t_in) < n_in); // FIXME: only warn
 	assert(j_in < n_in);
 
 	// initialize basic parameters
@@ -66,28 +66,28 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	// initialize message counters
 	for (size_t i = 0; i < n; i++)
 	{
-		std::map<std::string, bool> *mtmp = new std::map<std::string, bool>;
+		RBC_TagCheck *mtmp = new RBC_TagCheck;
 		send.push_back(*mtmp);
-		std::map<std::string, bool> *mtmp2 = new std::map<std::string, bool>;
+		RBC_TagCheck *mtmp2 = new RBC_TagCheck;
 		echo.push_back(*mtmp2);
-		std::map<std::string, bool> *mtmp3 = new std::map<std::string, bool>;
+		RBC_TagCheck *mtmp3 = new RBC_TagCheck;
 		ready.push_back(*mtmp3);
-		std::map<std::string, bool> *mtmp4 = new std::map<std::string, bool>;
+		RBC_TagCheck *mtmp4 = new RBC_TagCheck;
 		request.push_back(*mtmp4);
-		std::map<std::string, bool> *mtmp5 = new std::map<std::string, bool>;
+		RBC_TagCheck *mtmp5 = new RBC_TagCheck;
 		answer.push_back(*mtmp5);
 	}
 
 	// initialize message and deliver buffers
 	for (size_t i = 0; i < n; i++)
 	{
-		std::list<mpz_ptr> *ltmp = new std::list<mpz_ptr>;
+		RBC_Buffer *ltmp = new RBC_Buffer;
 		buf_mpz.push_back(*ltmp);
-		std::list<mpz_ptr> *ltmp2 = new std::list<mpz_ptr>;
+		RBC_Buffer *ltmp2 = new RBC_Buffer;
 		buf_msg.push_back(*ltmp2);
 		deliver_error.push_back(false);
 		mpz_ptr tmp = new mpz_t();
-		mpz_init_set_ui(tmp, 1L);
+		mpz_init_set_ui(tmp, 1L); // initialize sequence counter
 		deliver_s.push_back(tmp);
 	}
 }
@@ -128,7 +128,7 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 	mpz_add_ui(s, s, 1L); // increase sequence counter
 
 	// prepare message $(ID.j.s, r-send, m)$
-	std::vector<mpz_srcptr> message;
+	RBC_ConstMessage message;
 	message.push_back(ID);
 	message.push_back(whoami);
 	message.push_back(s);
@@ -159,7 +159,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 	mpz_t foo, tag;
 	mpz_init(foo), mpz_init(tag);
 	// prepare message $(ID.j.s, action, m)$
-	std::vector<mpz_ptr> message;
+	RBC_Message message;
 	for (size_t mm = 0; mm < 5; mm++)
 	{
 		mpz_ptr tmp = new mpz_t();
@@ -175,7 +175,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			for (size_t rounds = 0; rounds < (8 * n * n * n); rounds++)
 			{
 				// first, process the delivery buffer
-				for (std::list< std::vector<mpz_ptr> >::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
+				for (std::list<RBC_Message>::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
 				{
 					// compute hash of identifying tag $ID.j.s$
 					mpz_shash(tag, 3, (*lit)[0], (*lit)[1], (*lit)[2]);
@@ -184,11 +184,11 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					std::string tag_string = tag_ss.str();
 					size_t who = mpz_get_ui((*lit)[1]);
 					// check for matching tag and sequence counter before delivering
-					if (!mpz_cmp((*lit)[0], ID) && !mpz_cmp((*lit)[2], deliver_s[who]))
+					if (!mpz_cmp((*lit)[0], ID) && !mpz_cmp((*lit)[2], deliver_s[who]) && (mbar.count(tag_string) > 0))
 					{
 						mpz_set(m, mbar[tag_string]);
 //std::cerr << "RPC: restores deliver from " << who << " m = " << m << std::endl;
-						mpz_add_ui(deliver_s[who], deliver_s[who], 1L);
+						mpz_add_ui(deliver_s[who], deliver_s[who], 1L); // increase sequence counter
 						i_out = who;
 						for (size_t mm = 0; mm < lit->size(); mm++)
 						{
@@ -197,6 +197,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						}
 						lit->clear();
 						deliver_buf.erase(lit);
+std::cerr << "RBC: Debug1" << std::endl;
 						throw true;
 					}
 				}
@@ -257,13 +258,13 @@ std::cerr << "RBC: timeout or error of party " << j << " from " << l << " in Rec
 				{
 //std::cerr << "RPC: r-send from " << l << " with m = " << message[4] << std::endl;
 					send[l].insert(std::pair<std::string, bool>(tag_string, true));
-					if (!mpz_cmp_ui(message[1], l) && (mbar.find(tag_string) == mbar.end()))
+					if (!mpz_cmp_ui(message[1], l) && (mbar.count(tag_string) == 0))
 					{
 						mpz_ptr tmp = new mpz_t();
 						mpz_init_set(tmp, message[4]); // $\bar{m} \gets m$
 						mbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
 						// prepare message $(ID.j.s, r-echo, H(m))$
-						std::vector<mpz_srcptr> message2;
+						RBC_ConstMessage message2;
 						message2.push_back(message[0]);
 						message2.push_back(message[1]);
 						message2.push_back(message[2]);
@@ -277,6 +278,8 @@ std::cerr << "RBC: timeout or error of party " << j << " from " << l << " in Rec
 					}
 					continue;
 				}
+				else if (!mpz_cmp(message[3], r_send) && send[l].count(tag_string))
+					std::cerr << "RBC: received r-send for same tag more than once from " << l << std::endl;
 				// upon receiving message $(ID.j.s, r-echo, d)$ from $P_l$
 				if (!mpz_cmp(message[3], r_echo) && !echo[l].count(tag_string))
 				{
@@ -287,26 +290,26 @@ std::cerr << "RBC: timeout or error of party " << j << " from " << l << " in Rec
 					std::string d_string = d_ss.str();
 					if (e_d.find(tag_string) == e_d.end())
 					{
-						std::map<std::string, size_t> *mmm = new std::map<std::string, size_t>;
-						e_d.insert(std::pair<std::string, std::map<std::string, size_t> >(tag_string, *mmm));
+						RBC_TagCount *mmm = new RBC_TagCount;
+						e_d.insert(std::pair<std::string, RBC_TagCount >(tag_string, *mmm));
 					}
-					std::map<std::string, size_t>::iterator eit = e_d[tag_string].find(d_string);
+					RBC_TagCount::iterator eit = e_d[tag_string].find(d_string);
 					if (eit == e_d[tag_string].end())
 						eit = (e_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 1))).first;
 					else
 						(*eit).second++;
 					if (r_d.find(tag_string) == r_d.end())
 					{
-						std::map<std::string, size_t> *mmm = new std::map<std::string, size_t>;
-						r_d.insert(std::pair<std::string, std::map<std::string, size_t> >(tag_string, *mmm));
+						RBC_TagCount *mmm = new RBC_TagCount;
+						r_d.insert(std::pair<std::string, RBC_TagCount >(tag_string, *mmm));
 					}
-					std::map<std::string, size_t>::iterator rit = r_d[tag_string].find(d_string);
+					RBC_TagCount::iterator rit = r_d[tag_string].find(d_string);
 					if (rit == r_d[tag_string].end())
 						rit = (r_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
 					if (((*eit).second == (n - t)) && ((*rit).second <= t))
 					{
 						// prepare message $(ID.j.s, r-ready, d)$
-						std::vector<mpz_srcptr> message2;
+						RBC_ConstMessage message2;
 						message2.push_back(message[0]);
 						message2.push_back(message[1]);
 						message2.push_back(message[2]);
@@ -319,6 +322,8 @@ std::cerr << "RBC: timeout or error of party " << j << " from " << l << " in Rec
 					}
 					continue;
 				}
+				else if (!mpz_cmp(message[3], r_echo) && echo[l].count(tag_string))
+					std::cerr << "RBC: received r-echo for same tag more than once from " << l << std::endl;
 				// upon receiving message $(ID.j.s, r-ready, d)$ from $P_l$
 				if (!mpz_cmp(message[3], r_ready) && !ready[l].count(tag_string))
 				{
@@ -329,27 +334,27 @@ std::cerr << "RBC: timeout or error of party " << j << " from " << l << " in Rec
 					std::string d_string = d_ss.str();
 					if (e_d.find(tag_string) == e_d.end())
 					{
-						std::map<std::string, size_t> *mmm = new std::map<std::string, size_t>;
-						e_d.insert(std::pair<std::string, std::map<std::string, size_t> >(tag_string, *mmm));
+						RBC_TagCount *mmm = new RBC_TagCount;
+						e_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, *mmm));
 					}
 					if (r_d.find(tag_string) == r_d.end())
 					{
-						std::map<std::string, size_t> *mmm = new std::map<std::string, size_t>;
-						r_d.insert(std::pair<std::string, std::map<std::string, size_t> >(tag_string, *mmm));
+						RBC_TagCount *mmm = new RBC_TagCount;
+						r_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, *mmm));
 					}
-					std::map<std::string, size_t>::iterator rit = r_d[tag_string].find(d_string);
+					RBC_TagCount::iterator rit = r_d[tag_string].find(d_string);
 					if (rit == r_d[tag_string].end())
 						rit = (r_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 1))).first;
 					else
 						(*rit).second++;
-					std::map<std::string, size_t>::iterator eit = e_d[tag_string].find(d_string);
+					RBC_TagCount::iterator eit = e_d[tag_string].find(d_string);
 					if (eit == e_d[tag_string].end())
 						eit = (e_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
 //std::cerr << "RPC: r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
 					if (((*rit).second == (t + 1)) && ((*eit).second < (n - t)))
 					{
 						// prepare message $(ID.j.s, r-ready, d)$
-						std::vector<mpz_srcptr> message2;
+						RBC_ConstMessage message2;
 						message2.push_back(message[0]);
 						message2.push_back(message[1]);
 						message2.push_back(message[2]);
@@ -365,7 +370,7 @@ std::cerr << "RBC: timeout or error of party " << j << " from " << l << " in Rec
 						mpz_ptr tmp = new mpz_t();
 						mpz_init_set(tmp, message[4]); // $\bar{d} \gets d$
 						dbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
-						if (mbar.find(tag_string) != mbar.end())
+						if (mbar.count(tag_string) > 0)
 							mpz_shash(foo, 1, mbar[tag_string]);
 						else
 						{
@@ -375,7 +380,7 @@ std::cerr << "RPC: mbar not found (r-send not received yet) for " << j << std::e
 						if (mpz_cmp(foo, message[4])) // $ H(\bar{m}) \neq \bar{d}$
 						{
 							// prepare message $(ID.j.s, r-request)$
-							std::vector<mpz_srcptr> message2;
+							RBC_ConstMessage message2;
 							message2.push_back(message[0]);
 							message2.push_back(message[1]);
 							message2.push_back(message[2]);
@@ -390,7 +395,7 @@ std::cerr << "RPC: mbar not found (r-send not received yet) for " << j << std::e
 							do
 							{
 								// prepare
-								std::vector<mpz_ptr> message3;
+								RBC_Message message3;
 								for (size_t mm = 0; mm < 5; mm++)
 								{
 									mpz_ptr tmp = new mpz_t();
@@ -426,6 +431,8 @@ std::cerr << "RPC: r-answer from " << l2 << " for " << j << " with m = " << mess
 										}
 										mpz_set(mbar[tag_string], message3[4]); // $\bar{m} \gets m$
 									}
+									else
+										std::cerr << "RBC: should never happen" << std::endl;
 								}
 								else
 								{
@@ -455,7 +462,7 @@ std::cerr << "RPC: timeout or error in Receive(l2) = " << l2 << std::endl;
 						else
 						{
 							// buffer the message for later delivery
-							std::vector<mpz_ptr> *vtmp = new std::vector<mpz_ptr>;
+							RBC_Message *vtmp = new RBC_Message;
 							for (size_t mm = 0; mm < 5; mm++)
 							{
 								mpz_ptr tmp = new mpz_t();
@@ -469,6 +476,8 @@ std::cerr << "RPC: timeout or error in Receive(l2) = " << l2 << std::endl;
 					}
 					continue;
 				}
+				else if (!mpz_cmp(message[3], r_ready) && ready[l].count(tag_string))
+					std::cerr << "RBC: received r-ready for same tag more than once from " << l << std::endl;
 				// upon receiving message $(ID.j.s, r-request) from $P_l$ for the first time
 				if (!mpz_cmp(message[3], r_request) && !request[l].count(tag_string))
 				{
@@ -477,7 +486,7 @@ std::cerr << "RPC: timeout or error in Receive(l2) = " << l2 << std::endl;
 					if (mbar.find(tag_string) != mbar.end())
 					{
 						// prepare message $(ID.j.s, r-answer, \bar{m})$
-						std::vector<mpz_srcptr> message2;
+						RBC_ConstMessage message2;
 						message2.push_back(message[0]);
 						message2.push_back(message[1]);
 						message2.push_back(message[2]);
@@ -489,6 +498,8 @@ std::cerr << "RPC: timeout or error in Receive(l2) = " << l2 << std::endl;
 					}
 					continue;
 				}
+				else if (!mpz_cmp(message[3], r_request) && request[l].count(tag_string))
+					std::cerr << "RBC: received r-request for same tag more than once from " << l << std::endl;
 				std::cerr << "RPC: discard message of action " << message[3] << " from " << l << std::endl;
 			}
 		}
@@ -555,7 +566,7 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 	()
 {
 	mpz_clear(ID), mpz_clear(whoami), mpz_clear(s);
-	for (std::list<mpz_ptr>::iterator lit = last_IDs.begin(); lit != last_IDs.end(); ++lit)
+	for (RBC_Buffer::iterator lit = last_IDs.begin(); lit != last_IDs.end(); ++lit)
 	{
 		mpz_clear(*lit);
 		delete *lit;
@@ -586,24 +597,24 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		delete (*mit).second;
 	}
 	mbar.clear(), dbar.clear();
-	for (std::map<std::string, std::map<std::string, size_t> >::iterator mit = e_d.begin(); mit != e_d.end(); ++mit)
+	for (std::map<std::string, RBC_TagCount >::iterator mit = e_d.begin(); mit != e_d.end(); ++mit)
 	{
 		((*mit).second).clear();
 	}
-	for (std::map<std::string, std::map<std::string, size_t> >::iterator mit = r_d.begin(); mit != r_d.end(); ++mit)
+	for (std::map<std::string, RBC_TagCount >::iterator mit = r_d.begin(); mit != r_d.end(); ++mit)
 	{
 		((*mit).second).clear();
 	}	
 	e_d.clear(), r_d.clear();
 	for (size_t i = 0; i < n; i++)
 	{
-		for (std::list<mpz_ptr>::iterator lit = buf_mpz[i].begin(); lit != buf_mpz[i].end(); ++lit)
+		for (RBC_Buffer::iterator lit = buf_mpz[i].begin(); lit != buf_mpz[i].end(); ++lit)
 		{
 			mpz_clear(*lit);
 			delete *lit;
 		}
 		buf_mpz[i].clear();
-		for (std::list<mpz_ptr>::iterator lit = buf_msg[i].begin(); lit != buf_msg[i].end(); ++lit)
+		for (RBC_Buffer::iterator lit = buf_msg[i].begin(); lit != buf_msg[i].end(); ++lit)
 		{
 			mpz_clear(*lit);
 			delete *lit;
@@ -613,9 +624,9 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		delete deliver_s[i];
 	}
 	buf_mpz.clear(), buf_msg.clear();
-	for (std::list< std::vector<mpz_ptr> >::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
+	for (std::list< RBC_Message >::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
 	{
-		for (std::vector<mpz_ptr>::iterator vit = lit->begin(); vit != lit->end(); ++vit)
+		for (RBC_Message::iterator vit = lit->begin(); vit != lit->end(); ++vit)
 		{
 			mpz_clear(*vit);
 			delete *vit;
