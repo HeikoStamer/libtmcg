@@ -88,7 +88,7 @@ class aiounicast_fd : public aiounicast
 				if ((flags_in == -1) || (flags_out == -1))
 					perror("aiounicast_fd (fcntl)");
 				if (((flags_in & O_NONBLOCK) != O_NONBLOCK) || ((flags_out & O_NONBLOCK) != O_NONBLOCK))
-					std::cerr << "fcntl: O_NONBLOCK not set on fd from " << i << std::endl;
+					std::cerr << "fcntl: flag O_NONBLOCK is not set on fd to " << i << std::endl;
 				fd_in.push_back(fd_in_in[i]);
 				char *buf = new char[buf_in_size];
 				buf_in.push_back(buf), buf_ptr.push_back(0);
