@@ -864,15 +864,16 @@ static void gnunet_io(void *cls)
 	{
 		DKG_BufferListEntry ble = send_queue.front();
 		DKG_Buffer buf = ble.second;
-		if (((pipe2channel_out.count(ble.first) > 0) && channel_ready[pipe2channel_out[ble.first]]) || (pipe2channel_in.count(ble.first) > 0))
+std::cerr << "ble.first = " << ble.first << std::endl;
+		if ((pipe2channel_out.count(ble.first) && channel_ready[pipe2channel_out[ble.first]]) || pipe2channel_in.count(ble.first))
 		{
 			th_datalen = buf.first;
-			if ((pipe2channel_out.count(ble.first) > 0) && channel_ready[pipe2channel_out[ble.first]])
+			if (pipe2channel_out.count(ble.first) && channel_ready[pipe2channel_out[ble.first]])
 			{
 std::cerr << "try to send " << th_datalen << " bytes on output channel to " << pipe2peer[ble.first] << std::endl;
 				th_ch = pipe2channel_out[ble.first];
 			}
-			else if (pipe2channel_in.count(ble.first) > 0)
+			else if (pipe2channel_in.count(ble.first))
 			{
 std::cerr << "try to send " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
 				th_ch = pipe2channel_in[ble.first];
@@ -895,15 +896,15 @@ std::cerr << "try to send " << th_datalen << " bytes on input channel to " << pi
 	{
 		DKG_BufferListEntry ble = send_queue_broadcast.front();
 		DKG_Buffer buf = ble.second;
-		if (((pipe2channel_out.count(ble.first) > 0) && channel_ready[pipe2channel_out[ble.first]]) || (pipe2channel_in.count(ble.first) > 0))
+		if ((pipe2channel_out.count(ble.first) && channel_ready[pipe2channel_out[ble.first]]) || pipe2channel_in.count(ble.first))
 		{
 			th_datalen = buf.first;
-			if ((pipe2channel_out.count(ble.first) > 0) && channel_ready[pipe2channel_out[ble.first]])
+			if (pipe2channel_out.count(ble.first) && channel_ready[pipe2channel_out[ble.first]])
 			{
 std::cerr << "try to broadcast " << th_datalen << " bytes on output channel to " << pipe2peer[ble.first] << std::endl;
 				th_ch = pipe2channel_out[ble.first];
 			}
-			else if (pipe2channel_in.count(ble.first) > 0)
+			else if (pipe2channel_in.count(ble.first))
 			{
 std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
 				th_ch = pipe2channel_in[ble.first];
@@ -916,7 +917,7 @@ std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " 
 				GNUNET_SCHEDULER_shutdown();
 				return;
 			}
-			// schedule cancel task
+			// schedule abort task
 			th_at = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, 1), &gnunet_data_abort_broadcast, NULL);
 		}
 	}
@@ -1011,10 +1012,11 @@ static void gnunet_statistics(void *cls)
 	for (std::map<GNUNET_CADET_Channel*, bool>::const_iterator it = channel_ready.begin(); it != channel_ready.end(); ++it)
 		if ((*it).second == true)
 			channel_ready_true++;
+	std::cerr << "pipe2channel_out.size() = " << pipe2channel_out.size() << ", pipe2channel_in.size() = " << pipe2channel_in.size() << std::endl;
 	std::cerr << "channel_ready_true = " << channel_ready_true << std::endl;
 	std::cerr << "send_queue.size() = " << send_queue.size() << ", send_queue_broadcast.size() = " << send_queue_broadcast.size() << std::endl;
 	// reschedule statistics task
-	st = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_MINUTES, 1), &gnunet_statistics, NULL);
+	st = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, 30), &gnunet_statistics, NULL);
 }
 
 static void gnunet_init(void *cls)
