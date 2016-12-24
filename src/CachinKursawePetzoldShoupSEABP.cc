@@ -172,7 +172,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		time_t entry_time = time(NULL);
 		do
 		{
-			for (size_t rounds = 0; rounds < (8 * n * n * n); rounds++)
+			for (size_t rounds = 0; rounds < ((t * n * n * n) + n); rounds++)
 			{
 				// first, process the delivery buffer
 				for (std::list<RBC_Message>::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
@@ -225,7 +225,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					if (!aiou->Receive(message, l, scheduler, 0))
 					{
 if (l < n)
-std::cerr << "RBC: error of party " << j << " from " << l << " in Receive(l) = " << l << std::endl;
+std::cerr << "RBC: error for party " << j << " in Receive(l) = " << l << std::endl;
 						continue; // next round
 					}
 				}
@@ -376,7 +376,7 @@ std::cerr << "RBC: error of party " << j << " from " << l << " in Receive(l) = "
 							mpz_set_ui(foo, 0L);
 std::cerr << "RPC: r-send not received yet for this tag by " << j << std::endl;
 						}
-						if (mpz_cmp(foo, message[4])) // $ H(\bar{m}) \neq \bar{d}$
+						if (mpz_cmp(foo, message[4])) // $H(\bar{m}) \neq \bar{d}$
 						{
 							// prepare message $(ID.j.s, r-request)$
 							RBC_ConstMessage message2;
@@ -390,7 +390,6 @@ std::cerr << "RPC: r-send not received yet for this tag by " << j << std::endl;
 								aiou->Send(message2, i);
 							message2.clear();
 							// wait for a message $(ID.j.s, r_answer, m)$
-							time_t entry_time2 = time(NULL);
 							do
 							{
 								// prepare
@@ -436,7 +435,7 @@ std::cerr << "RPC: r-answer from " << l2 << " for " << j << " with m = " << mess
 								else
 								{
 if (l2 < n)
-std::cerr << "RPC: error in Receive(l2) = " << l2 << std::endl;
+std::cerr << "RPC: error for party " << j << " in Receive(l2) = " << l2 << std::endl;
 								}
 								// release
 								for (size_t mm = 0; mm < message3.size(); mm++)
@@ -446,10 +445,8 @@ std::cerr << "RPC: error in Receive(l2) = " << l2 << std::endl;
 								}
 								message3.clear();
 							}
-							while (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time2 + 3))); // $H(m) = \bar{d}$ FIXME timeout
-							if (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time + timeout)))
-								continue; // no r-answer received within timeout
-							else if (mpz_cmp(foo, message[4]))
+							while (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time + aiounicast::aio_timeout_very_long)));
+							if (mpz_cmp(foo, message[4])) // still $H(\bar{m}) \neq \bar{d}$
 								break; // no r-answer received and timeout exceeded
 						}
 //std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;

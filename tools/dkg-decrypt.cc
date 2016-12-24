@@ -19,7 +19,7 @@
 *******************************************************************************/
 
 #include <libTMCG.hh>
-#include <aiounicast_fd.hh>
+#include <aiounicast_nonblock.hh>
 
 #ifdef FORKING
 
@@ -94,10 +94,10 @@ void run_instance
 	}
 
 	// create asynchronous authenticated unicast channels
-	aiounicast_fd *aiou = new aiounicast_fd(dkg->n, dkg->t, whoami, uP_in, uP_out, uP_key);
+	aiounicast_nonblock *aiou = new aiounicast_nonblock(dkg->n, dkg->t, whoami, uP_in, uP_out, uP_key);
 
 	// create asynchronous authenticated unicast channels
-	aiounicast_fd *aiou2 = new aiounicast_fd(dkg->n, dkg->t, whoami, bP_in, bP_out, bP_key);
+	aiounicast_nonblock *aiou2 = new aiounicast_nonblock(dkg->n, dkg->t, whoami, bP_in, bP_out, bP_key);
 			
 	// create an instance of a reliable broadcast protocol (RBC)
 	std::string myID = "dkg-decrypt";

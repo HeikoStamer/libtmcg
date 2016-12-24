@@ -1,5 +1,5 @@
 /*******************************************************************************
-  aiounicast.hh, derived class for unicast transmission with file descriptors 
+  aiounicast_nonblock.hh, asynchronous unicast with nonblocking file descriptors 
 
    This file is part of LibTMCG.
 
@@ -20,8 +20,8 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
-#ifndef INCLUDED_aiounicast_fd_HH
-	#define INCLUDED_aiounicast_fd_HH
+#ifndef INCLUDED_aiounicast_nonblock_HH
+	#define INCLUDED_aiounicast_nonblock_HH
 	
 	// C and STL header
 	#include <cstdio>
@@ -32,7 +32,7 @@
 	#include <vector>
 	#include <list>
 
-	// C header for asynchronous I/O
+	// C header for (asynchronous) I/O
 	#include <unistd.h>
 	#include <fcntl.h>
 	#include <errno.h>
@@ -47,7 +47,7 @@
 	// abstract base class
 	#include "aiounicast.hh"
 
-class aiounicast_fd : public aiounicast
+class aiounicast_nonblock : public aiounicast
 {
 	private:
 		size_t					aio_schedule_current;
@@ -65,7 +65,7 @@ class aiounicast_fd : public aiounicast
 		std::vector<int>			fd_in, fd_out;
 		size_t					numWrite, numRead;
 
-		aiounicast_fd
+		aiounicast_nonblock
 			(const size_t n_in, const size_t j_in,
 			const std::vector<int> &fd_in_in,
 			const std::vector<int> &fd_out_in,
@@ -440,7 +440,7 @@ class aiounicast_fd : public aiounicast
 			return false;			
 		}
 
-		~aiounicast_fd
+		~aiounicast_nonblock
 			()
 		{
 			fd_in.clear(), fd_out.clear();

@@ -23,7 +23,7 @@
 	#include "libTMCG_config.h"
 #endif
 #include <libTMCG.hh>
-#include <aiounicast_fd.hh>
+#include <aiounicast_nonblock.hh>
 
 #ifdef FORKING
 
@@ -74,7 +74,7 @@ void start_instance
 			}
 
 			// create asynchronous authenticated unicast channels
-			aiounicast_fd *aiou = new aiounicast_fd(N, whoami, uP_in, uP_out, uP_key);
+			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami, uP_in, uP_out, uP_key);
 
 			// send a simple message
 			bool ret = false;
