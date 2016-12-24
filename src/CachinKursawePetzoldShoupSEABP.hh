@@ -60,7 +60,7 @@
 	typedef std::map<std::string, bool>	RBC_TagCheck;
 	typedef std::map<std::string, size_t>	RBC_TagCount;
 	typedef std::map<std::string, mpz_ptr>	RBC_TagMpz;
-	typedef std::list<mpz_ptr>		RBC_Buffer;
+	typedef std::list<mpz_ptr>		RBC_BufferList;
 	typedef std::vector<mpz_ptr>		RBC_Message;
 	typedef std::vector<mpz_srcptr>		RBC_ConstMessage;
 
@@ -72,12 +72,12 @@ class CachinKursawePetzoldShoupRBC
 {
 	private:
 		mpz_t					ID, whoami, s;
-		RBC_Buffer				last_IDs;
+		RBC_BufferList				last_IDs;
 		mpz_t					r_send, r_echo, r_ready, r_request, r_answer;
 		std::vector<RBC_TagCheck>		send, echo, ready, request, answer;
 		RBC_TagMpz				mbar, dbar;
 		std::map<std::string, RBC_TagCount>	e_d, r_d;
-		std::vector<RBC_Buffer>			buf_mpz, buf_msg;
+		std::vector<RBC_BufferList>		buf_mpz, buf_msg;
 		std::vector<bool>			deliver_error;
 		std::list<RBC_Message>			deliver_buf;
 		std::vector<mpz_ptr>			deliver_s;

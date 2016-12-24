@@ -81,9 +81,9 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	// initialize message and deliver buffers
 	for (size_t i = 0; i < n; i++)
 	{
-		RBC_Buffer *ltmp = new RBC_Buffer;
+		RBC_BufferList *ltmp = new RBC_BufferList;
 		buf_mpz.push_back(*ltmp);
-		RBC_Buffer *ltmp2 = new RBC_Buffer;
+		RBC_BufferList *ltmp2 = new RBC_BufferList;
 		buf_msg.push_back(*ltmp2);
 		deliver_error.push_back(false);
 		mpz_ptr tmp = new mpz_t();
@@ -374,7 +374,7 @@ std::cerr << "RBC: error for party " << j << " in Receive(l) = " << l << std::en
 						else
 						{
 							mpz_set_ui(foo, 0L);
-std::cerr << "RPC: r-send not received yet for this tag by " << j << std::endl;
+//std::cerr << "RPC: r-send not received yet for this tag by " << j << std::endl;
 						}
 						if (mpz_cmp(foo, message[4])) // $H(\bar{m}) \neq \bar{d}$
 						{
@@ -418,7 +418,7 @@ std::cerr << "RPC: r-send not received yet for this tag by " << j << std::endl;
 									}
 									else if (!answer[l2].count(tag_string)) // for the first time?
 									{
-std::cerr << "RPC: r-answer from " << l2 << " for " << j << " with m = " << message3[4] << std::endl;
+//std::cerr << "RPC: r-answer from " << l2 << " for " << j << " with m = " << message3[4] << std::endl;
 										answer[l2].insert(std::pair<std::string, bool>(tag_string, true));
 										mpz_shash(foo, 1, message3[4]); // compute $H(m)$
 										if (mbar.count(tag_string) == 0)
@@ -567,7 +567,7 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 	()
 {
 	mpz_clear(ID), mpz_clear(whoami), mpz_clear(s);
-	for (RBC_Buffer::iterator lit = last_IDs.begin(); lit != last_IDs.end(); ++lit)
+	for (RBC_BufferList::iterator lit = last_IDs.begin(); lit != last_IDs.end(); ++lit)
 	{
 		mpz_clear(*lit);
 		delete *lit;
@@ -609,13 +609,13 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 	e_d.clear(), r_d.clear();
 	for (size_t i = 0; i < n; i++)
 	{
-		for (RBC_Buffer::iterator lit = buf_mpz[i].begin(); lit != buf_mpz[i].end(); ++lit)
+		for (RBC_BufferList::iterator lit = buf_mpz[i].begin(); lit != buf_mpz[i].end(); ++lit)
 		{
 			mpz_clear(*lit);
 			delete *lit;
 		}
 		buf_mpz[i].clear();
-		for (RBC_Buffer::iterator lit = buf_msg[i].begin(); lit != buf_msg[i].end(); ++lit)
+		for (RBC_BufferList::iterator lit = buf_msg[i].begin(); lit != buf_msg[i].end(); ++lit)
 		{
 			mpz_clear(*lit);
 			delete *lit;
