@@ -114,7 +114,7 @@ void start_instance
 
 			// create an instance of DKG
 			GennaroJareckiKrawczykRabinDKG *dkg;
-			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
+			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
 			dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami,
 				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 			assert(dkg->CheckGroup());
@@ -156,7 +156,7 @@ void start_instance
 
 			// create an instance of threshold signature protocol new-TSch (NTS)
 			GennaroJareckiKrawczykRabinNTS *nts;
-			std::cout << "GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
+			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
 			nts = new GennaroJareckiKrawczykRabinNTS(N, T, whoami,
 				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 			assert(nts->CheckGroup());
@@ -188,10 +188,15 @@ void start_instance
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
 
 			// verify signature
+			start_clock();
+			std::cout << "P_" << whoami << ": nts.Verify()" << std::endl;
 			if (corrupted)
 				nts->Verify(m, c, s);
 			else
 				assert(nts->Verify(m, c, s));
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
 
 			// at the end: deliver one more round for waiting parties
 			rbc->DeliverFrom(m, whoami);
@@ -203,7 +208,8 @@ void start_instance
 			// release DKG
 			delete dkg;
 
-			// create an instance of DKG from state log
+			// create a copied instance of DKG from state log
+			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinDKG(state_log)" << std::endl;
 			dkg = new GennaroJareckiKrawczykRabinDKG(state_log);
 
 			// compare state log and check the generated key share again
