@@ -501,7 +501,7 @@ std::cerr << "RPC: error for party " << j << " in Receive(l2) = " << l2 << std::
 				}
 				else if (!mpz_cmp(message[3], r_request) && request[l].count(tag_string))
 					std::cerr << "RBC: received r-request for same tag more than once from " << l << std::endl;
-				std::cerr << "RPC: discard message of action " << message[3] << " from " << l << std::endl;
+				std::cerr << "RBC: discard message of action = " << message[3] << " from " << l << std::endl;
 			}
 		}
 		while (time(NULL) < (entry_time + timeout));
@@ -528,6 +528,7 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 	(mpz_ptr m, const size_t i_in,
 	const size_t scheduler,	const time_t timeout)
 {
+std::cerr << "RBC(" << j << "): want mpz from " << i_in << std::endl;
 	time_t entry_time = time(NULL);
 	do
 	{
@@ -538,6 +539,7 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 			mpz_clear(buf_mpz[i_in].front());
 			delete buf_mpz[i_in].front();
 			buf_mpz[i_in].pop_front();
+std::cerr << "RBC(" << j << "): got buffered mpz from " << i_in << std::endl;
 			return true;
 		}
 		else
@@ -548,7 +550,7 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 			mpz_init(tmp);
 			if (Deliver(tmp, l, scheduler, 0))
 			{
-//std::cerr << "RBC: got mpz from " << l << std::endl;
+std::cerr << "RBC(" << j << "): got mpz from " << l << std::endl;
 				buf_mpz[l].push_back(tmp);
 			}
 			else
@@ -559,7 +561,7 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 		}
 	}
 	while (time(NULL) < (entry_time + timeout));
-	std::cerr << "RBC: timeout of party " << j << " delivering from " << i_in << std::endl;
+	std::cerr << "RBC(" << j << "): timeout delivering from " << i_in << std::endl;
 	return false;
 }
 

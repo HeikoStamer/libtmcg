@@ -86,9 +86,9 @@ class aiounicast_nonblock : public aiounicast
 				int flags_in = fcntl(fd_in_in[i], F_GETFL);
 				int flags_out = fcntl(fd_out_in[i], F_GETFL);
 				if ((flags_in == -1) || (flags_out == -1))
-					perror("aiounicast_fd (fcntl)");
+					perror("aiounicast_nonblock (fcntl)");
 				if (((flags_in & O_NONBLOCK) != O_NONBLOCK) || ((flags_out & O_NONBLOCK) != O_NONBLOCK))
-					std::cerr << "fcntl: flag O_NONBLOCK is not set on fd to " << i << std::endl;
+					std::cerr << "aiounicast_nonblock: flag O_NONBLOCK is not set on fd to " << i << std::endl;
 				fd_in.push_back(fd_in_in[i]);
 				char *buf = new char[buf_in_size];
 				buf_in.push_back(buf), buf_ptr.push_back(0);
@@ -199,7 +199,7 @@ class aiounicast_nonblock : public aiounicast
 					else
 					{
 						delete [] buf, delete [] macbuf;
-						perror("aiounicast_fd (write)");
+						perror("aiounicast_nonblock (write)");
 						return false;
 					}
 				}
@@ -222,7 +222,7 @@ class aiounicast_nonblock : public aiounicast
 					else
 					{
 						delete [] buf, delete [] macbuf;
-						perror("aiounicast_fd (write)");
+						perror("aiounicast_nonblock (write)");
 						return false;
 					}
 				}
@@ -250,6 +250,8 @@ class aiounicast_nonblock : public aiounicast
 			const size_t scheduler = aio_scheduler_roundrobin,
 			const time_t timeout = aio_timeout_long)
 		{
+if (scheduler == aio_scheduler_direct)
+std::cerr << "aio(" << j << "): want mpz from " << i_out << std::endl;
 			time_t entry_time = time(NULL);
 			do
 			{
@@ -333,6 +335,8 @@ class aiounicast_nonblock : public aiounicast
 								return false;
 							}
 							delete [] tmp, delete [] mac;
+if (scheduler == aio_scheduler_direct)
+std::cerr << "aio(" << j << "): got mpz from " << i_out << std::endl;
 							return true;
 						}
 						// no delimiter found; invalidate buffer flag
@@ -352,7 +356,7 @@ class aiounicast_nonblock : public aiounicast
 							}
 							else
 							{
-								perror("aiounicast_fd (read)");
+								perror("aiounicast_nonblock (read)");
 								return false;
 							}
 						}
@@ -363,12 +367,14 @@ class aiounicast_nonblock : public aiounicast
 						buf_flag[i_out] = true;
 					}
 					else
-						std::cerr << "WARNING: aiounicast_fd: read buffer exceeded" << std::endl;
+						std::cerr << "WARNING: aiounicast_nonblock read buffer exceeded" << std::endl;
 				}
 			}
 			while (time(NULL) < (entry_time + timeout));
 			if (scheduler != aio_scheduler_direct)
 				i_out = n; // timeout for some (unknown) parties
+			else
+				std::cerr << "aiounicast_nonblock(" << j << "): timeout for " << i_out << std::endl;
 			return false;
 		}
 

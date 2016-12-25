@@ -258,11 +258,14 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(t <= n);
-	assert((2 * t) < n); // maximum synchronous t-resilience FIXME: only warn, not abort
 	assert(i < n);
 	assert(n == rbc->n);
 	assert(t == rbc->t);
 	assert(i == rbc->j);
+
+	// checking maximum synchronous t-resilience
+	if ((2 * t) >= n)
+		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;
 
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
@@ -1138,11 +1141,14 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(n >= t);
-	assert((2 * t) < n); // maximum synchronous t-resilience FIXME: warn only
 	assert(i < n);
 	assert(n == rbc->n);
 	assert(t == rbc->t);
 	assert(i == rbc->j);
+
+	// checking maximum synchronous t-resilience
+	if ((2 * t) >= n)
+		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;
 
 	// initialize
 	mpz_t foo, bar, lhs, rhs;

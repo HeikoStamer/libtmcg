@@ -612,7 +612,7 @@ static void gnunet_pipe_ready(void *cls)
 			}
 			else
 			{
-std::cerr << "queue added i = " << i << " with " << num << " bytes" << std::endl;
+//std::cerr << "queue added i = " << i << " with " << num << " bytes" << std::endl;
 				DKG_BufferListEntry ble = DKG_BufferListEntry(i, DKG_Buffer(num, th_buf));
 				send_queue.push_back(ble);
 			}
@@ -656,7 +656,7 @@ static void gnunet_broadcast_pipe_ready(void *cls)
 			}
 			else
 			{
-std::cerr << "queue added broadcast i = " << i << " with " << num << " bytes" << std::endl;
+//std::cerr << "queue added broadcast i = " << i << " with " << num << " bytes" << std::endl;
 				DKG_BufferListEntry ble = DKG_BufferListEntry(i, DKG_Buffer(num, th_buf));
 				send_queue_broadcast.push_back(ble);
 			}
