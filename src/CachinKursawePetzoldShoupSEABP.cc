@@ -38,11 +38,14 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 {
 	assert(t_in > 0);
 	assert(t_in <= n_in);
-	assert((3 * t_in) < n_in); // FIXME: warn only
 	assert(j_in < n_in);
 
 	// initialize basic parameters
 	n = n_in, t = t_in, j = j_in;
+
+	// checking maximum asynchronous t-resilience
+	if ((3 * t) >= n)
+		std::cerr << "RBC(" << j << ") WARNING: maximum asynchronous t-resilience exceeded" << std::endl;
 
 	// initialize asynchonous unicast
 	aiou = aiou_in;
@@ -87,7 +90,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 		buf_msg.push_back(*ltmp2);
 		deliver_error.push_back(false);
 		mpz_ptr tmp = new mpz_t();
-		mpz_init_set_ui(tmp, 1L); // initialize sequence counter
+		mpz_init_set_ui(tmp, 1L); // initialize sequence counter by 1
 		deliver_s.push_back(tmp);
 	}
 }
@@ -166,7 +169,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		mpz_init(tmp);
 		message.push_back(tmp);
 	}
-	// process messages according to the RBC protocol of [CKPS01] extended with a FIFO-ordered delivery
+	// process messages according to the RBC protocol of [CKPS01] extended with a FIFO-ordered deliver strategy
 	try
 	{
 		time_t entry_time = time(NULL);
@@ -188,7 +191,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					{
 						assert(mbar.count(tag_string));
 						mpz_set(m, mbar[tag_string]);
-//std::cerr << "RPC: restores deliver from " << who << " m = " << m << std::endl;
+//std::cerr << "RBC: restores deliver from " << who << " m = " << m << std::endl;
 						mpz_add_ui(deliver_s[who], deliver_s[who], 1L); // increase sequence counter
 						i_out = who;
 						for (size_t mm = 0; mm < lit->size(); mm++)
@@ -225,7 +228,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					if (!aiou->Receive(message, l, scheduler, 0))
 					{
 if (l < n)
-std::cerr << "RBC: error for party " << j << " in Receive(l) = " << l << std::endl;
+std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
 						continue; // next round
 					}
 				}
@@ -238,24 +241,24 @@ std::cerr << "RBC: error for party " << j << " in Receive(l) = " << l << std::en
 				// discard misformed messages
 				if ((mpz_cmp_ui(message[1], (n - 1)) > 0) || (mpz_cmp_ui(message[1], 0) < 0))
 				{
-					std::cerr << "RBC: wrong j in tag from " << l << std::endl;
+					std::cerr << "RBC(" << j << "): wrong j in tag from " << l << std::endl;
 					continue;
 				}
 				if (mpz_cmp_ui(message[2], 1L) < 0)
 				{
-					std::cerr << "RBC: wrong s in tag from " << l << std::endl;
+					std::cerr << "RBC(" << j << "): wrong s in tag from " << l << std::endl;
 					continue;
 				}
 				if ((mpz_cmp(message[3], r_send) < 0) || (mpz_cmp(message[3], r_answer) > 0))
 				{
-					std::cerr << "RBC: wrong action in tag from " << l << std::endl;
+					std::cerr << "RBC(" << j << "): wrong action in tag from " << l << std::endl;
 					continue;
 				}
 
 				// upon receiving message $(ID.j.s, r-send, m)$ from $P_l$
 				if (!mpz_cmp(message[3], r_send) && !send[l].count(tag_string))
 				{
-//std::cerr << "RPC: r-send from " << l << " with m = " << message[4] << std::endl;
+//std::cerr << "RBC: r-send from " << l << " with m = " << message[4] << std::endl;
 					send[l].insert(std::pair<std::string, bool>(tag_string, true));
 					if (!mpz_cmp_ui(message[1], l) && (mbar.count(tag_string) == 0))
 					{
@@ -278,11 +281,11 @@ std::cerr << "RBC: error for party " << j << " in Receive(l) = " << l << std::en
 					continue;
 				}
 				else if (!mpz_cmp(message[3], r_send) && send[l].count(tag_string))
-					std::cerr << "RBC: received r-send for same tag more than once from " << l << std::endl;
+					std::cerr << "RBC(" << j << "): received r-send for same tag more than once from " << l << std::endl;
 				// upon receiving message $(ID.j.s, r-echo, d)$ from $P_l$
 				if (!mpz_cmp(message[3], r_echo) && !echo[l].count(tag_string))
 				{
-//std::cerr << "RPC: r-echo from " << l << " with d = " << message[4] << std::endl;
+//std::cerr << "RBC: r-echo from " << l << " with d = " << message[4] << std::endl;
 					echo[l].insert(std::pair<std::string, bool>(tag_string, true));
 					std::stringstream d_ss;
 					d_ss << message[4];
@@ -322,11 +325,11 @@ std::cerr << "RBC: error for party " << j << " in Receive(l) = " << l << std::en
 					continue;
 				}
 				else if (!mpz_cmp(message[3], r_echo) && echo[l].count(tag_string))
-					std::cerr << "RBC: received r-echo for same tag more than once from " << l << std::endl;
+					std::cerr << "RBC(" << j << "): received r-echo for same tag more than once from " << l << std::endl;
 				// upon receiving message $(ID.j.s, r-ready, d)$ from $P_l$
 				if (!mpz_cmp(message[3], r_ready) && !ready[l].count(tag_string))
 				{
-//std::cerr << "RPC: r-ready from " << l << " with d = " << message[4] << std::endl;
+//std::cerr << "RBC: r-ready from " << l << " with d = " << message[4] << std::endl;
 					ready[l].insert(std::pair<std::string, bool>(tag_string, true));
 					std::stringstream d_ss;
 					d_ss << message[4];
@@ -349,7 +352,7 @@ std::cerr << "RBC: error for party " << j << " in Receive(l) = " << l << std::en
 					RBC_TagCount::iterator eit = e_d[tag_string].find(d_string);
 					if (eit == e_d[tag_string].end())
 						eit = (e_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
-//std::cerr << "RPC: r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
+//std::cerr << "RBC: r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
 					if (((*rit).second == (t + 1)) && ((*eit).second < (n - t)))
 					{
 						// prepare message $(ID.j.s, r-ready, d)$
@@ -374,7 +377,7 @@ std::cerr << "RBC: error for party " << j << " in Receive(l) = " << l << std::en
 						else
 						{
 							mpz_set_ui(foo, 0L);
-//std::cerr << "RPC: r-send not received yet for this tag by " << j << std::endl;
+//std::cerr << "RBC: r-send not received yet for this tag by " << j << std::endl;
 						}
 						if (mpz_cmp(foo, message[4])) // $H(\bar{m}) \neq \bar{d}$
 						{
@@ -418,7 +421,7 @@ std::cerr << "RBC: error for party " << j << " in Receive(l) = " << l << std::en
 									}
 									else if (!answer[l2].count(tag_string)) // for the first time?
 									{
-//std::cerr << "RPC: r-answer from " << l2 << " for " << j << " with m = " << message3[4] << std::endl;
+//std::cerr << "RBC: r-answer from " << l2 << " for " << j << " with m = " << message3[4] << std::endl;
 										answer[l2].insert(std::pair<std::string, bool>(tag_string, true));
 										mpz_shash(foo, 1, message3[4]); // compute $H(m)$
 										if (mbar.count(tag_string) == 0)
@@ -430,12 +433,12 @@ std::cerr << "RBC: error for party " << j << " in Receive(l) = " << l << std::en
 										mpz_set(mbar[tag_string], message3[4]); // $\bar{m} \gets m$
 									}
 									else
-										std::cerr << "RBC: this should never happen" << std::endl;
+										std::cerr << "RBC(" << j << "): this should never happen" << std::endl;
 								}
 								else
 								{
 if (l2 < n)
-std::cerr << "RPC: error for party " << j << " in Receive(l2) = " << l2 << std::endl;
+std::cerr << "RBC(" << j << "): error in Receive(l2) = " << l2 << std::endl;
 								}
 								// release
 								for (size_t mm = 0; mm < message3.size(); mm++)
@@ -449,7 +452,7 @@ std::cerr << "RPC: error for party " << j << " in Receive(l2) = " << l2 << std::
 							if (mpz_cmp(foo, message[4])) // still $H(\bar{m}) \neq \bar{d}$
 								break; // no r-answer received and timeout exceeded
 						}
-//std::cerr << "RPC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
+//std::cerr << "RBC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
 						size_t who = mpz_get_ui(message[1]);
 						// check for matching tag and sequence counter before delivering
 						if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
@@ -471,18 +474,18 @@ std::cerr << "RPC: error for party " << j << " in Receive(l2) = " << l2 << std::
 								vtmp->push_back(tmp);
 							}
 							deliver_buf.push_back(*vtmp);
-//std::cerr << "RPC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
+//std::cerr << "RBC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
 						}
 						continue;
 					}
 					continue;
 				}
 				else if (!mpz_cmp(message[3], r_ready) && ready[l].count(tag_string))
-					std::cerr << "RBC: received r-ready for same tag more than once from " << l << std::endl;
+					std::cerr << "RBC(" << j << "): received r-ready for same tag more than once from " << l << std::endl;
 				// upon receiving message $(ID.j.s, r-request) from $P_l$ for the first time
 				if (!mpz_cmp(message[3], r_request) && !request[l].count(tag_string))
 				{
-//std::cerr << "RPC: r-request from " << l << std::endl;
+//std::cerr << "RBC: r-request from " << l << std::endl;
 					request[l].insert(std::pair<std::string, bool>(tag_string, true));
 					if (mbar.find(tag_string) != mbar.end())
 					{
@@ -500,8 +503,8 @@ std::cerr << "RPC: error for party " << j << " in Receive(l2) = " << l2 << std::
 					continue;
 				}
 				else if (!mpz_cmp(message[3], r_request) && request[l].count(tag_string))
-					std::cerr << "RBC: received r-request for same tag more than once from " << l << std::endl;
-				std::cerr << "RBC: discard message of action = " << message[3] << " from " << l << std::endl;
+					std::cerr << "RBC(" << j << "): received r-request for same tag more than once from " << l << std::endl;
+				std::cerr << "RBC(" << j << "): discard message of action = " << message[3] << " from " << l << std::endl;
 			}
 		}
 		while (time(NULL) < (entry_time + timeout));
@@ -552,6 +555,8 @@ std::cerr << "RBC(" << j << "): got buffered mpz from " << i_in << std::endl;
 			{
 std::cerr << "RBC(" << j << "): got mpz from " << l << std::endl;
 				buf_mpz[l].push_back(tmp);
+				if (l == i_in)
+					continue;
 			}
 			else
 			{
