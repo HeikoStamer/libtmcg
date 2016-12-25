@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20161223])
+AC_REVISION([20161225])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.2.0], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -200,18 +200,19 @@ AC_TYPE_SSIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([clock close fcntl fprintf memcmp memcpy memset open perror\
- 	read sleep snprintf strtoul time write], ,
+	read sleep snprintf strtoul time write], ,
 	AC_MSG_ERROR([some functions are missing]))
 
 # Checks for forking tests feature
 AC_MSG_CHECKING([whether forking tests are enabled])
-AC_ARG_ENABLE(forking, [AS_HELP_STRING([--disable-forking], [disable forking tests])],
-        use_forking=$enableval, use_forking=yes)
+AC_ARG_ENABLE(forking, [AS_HELP_STRING([--disable-forking],
+	[disable forking tests])], use_forking=$enableval, use_forking=yes)
 AC_MSG_RESULT($use_forking)
 if test "$use_forking" = yes ; then
 	AC_TYPE_PID_T
 	AC_FUNC_FORK
-	AC_CHECK_HEADERS([fcntl.h sys/wait.h], , AC_MSG_ERROR([headers are missing]))
+	AC_CHECK_HEADERS([fcntl.h sys/wait.h signal.h], ,
+		AC_MSG_ERROR([headers are missing]))
 	AC_CHECK_FUNCS([fork pipe waitpid], ,
 		AC_MSG_ERROR([functions are missing]))
 	AC_DEFINE(FORKING, , [Define to enable the forking tests])
@@ -225,41 +226,40 @@ backup_CPPLAGS="$CPPFLAGS"
 GNUNET_LIBS=""
 GNUNET_CFLAGS=""
 AC_MSG_CHECKING(for GNUnet)
-AC_ARG_WITH(gnunet, [AS_HELP_STRING([--with-gnunet=<path>], [prefix of GNUnet installation])],
-   [AC_MSG_RESULT([$with_gnunet])
-    case $with_gnunet in
-      no)
-        lookin=""
-        ;;
-      yes)
-        lookin="${prefix}"
-        ;;
-      *)
-        lookin="$with_gnunet"
-        ;;
-    esac
-   ], [AC_MSG_RESULT([--with-gnunet not specified])]
-)
+AC_ARG_WITH(gnunet, [AS_HELP_STRING([--with-gnunet=<path>],
+	[prefix of GNUnet installation])], [AC_MSG_RESULT([$with_gnunet])
+	case $with_gnunet in
+		no)
+			lookin=""
+			;;
+		yes)
+			lookin="${prefix}"
+			;;
+		*)
+			lookin="$with_gnunet"
+			;;
+	esac
+	], [AC_MSG_RESULT([--with-gnunet not specified])])
 
 if test "x$gnunet" == "x0" -a ! "x$lookin" == "x"
 then
-  GNUNET_LIBS="-L${lookin}/lib"
-  GNUNET_CFLAGS="-I${lookin}/include"
-  LDFLAGS="$GNUNET_LIBS $backup_LDFLAGS"
-  CPPFLAGS="$GNUNET_CFLAGS $backup_CPPFLAGS"
-  AC_CHECK_HEADERS([gnunet/gnunet_util_lib.h], [gnunet=1], [gnunet=0], [#include <gnunet/platform.h>])
-  AC_CHECK_LIB([gnunetutil], [GNUNET_xfree_], [LIBS=""], [gnunet=0])
-##  AC_CHECK_HEADERS([gnunet/gnunet_peerinfo_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
-##  AC_CHECK_LIB([gnunetpeerinfo], [GNUNET_PEERINFO_connect], [LIBS=""], [gnunet=0])
-  AC_CHECK_HEADERS([gnunet/gnunet_transport_hello_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
-  AC_CHECK_LIB([gnunettransport], [GNUNET_TRANSPORT_hello_get], [LIBS=""], [gnunet=0])
-  AC_CHECK_HEADERS([gnunet/gnunet_cadet_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
-  AC_CHECK_LIB([gnunetcadet], [GNUNET_CADET_connect], [LIBS=""], [gnunet=0])
+	GNUNET_LIBS="-L${lookin}/lib"
+	GNUNET_CFLAGS="-I${lookin}/include"
+	LDFLAGS="$GNUNET_LIBS $backup_LDFLAGS"
+	CPPFLAGS="$GNUNET_CFLAGS $backup_CPPFLAGS"
+	AC_CHECK_HEADERS([gnunet/gnunet_util_lib.h], [gnunet=1], [gnunet=0], [#include <gnunet/platform.h>])
+	AC_CHECK_LIB([gnunetutil], [GNUNET_xfree_], [LIBS=""], [gnunet=0])
+##	AC_CHECK_HEADERS([gnunet/gnunet_peerinfo_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
+##	AC_CHECK_LIB([gnunetpeerinfo], [GNUNET_PEERINFO_connect], [LIBS=""], [gnunet=0])
+	AC_CHECK_HEADERS([gnunet/gnunet_transport_hello_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
+	AC_CHECK_LIB([gnunettransport], [GNUNET_TRANSPORT_hello_get], [LIBS=""], [gnunet=0])
+	AC_CHECK_HEADERS([gnunet/gnunet_cadet_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
+	AC_CHECK_LIB([gnunetcadet], [GNUNET_CADET_connect], [LIBS=""], [gnunet=0])
 fi
 if test "x$gnunet" == "x1"
 then
-  AC_DEFINE(GNUNET, , [Define to enable the GNUnet-based tools])
-  GNUNET_LIBS="${GNUNET_LIBS} -lgnunetutil -lgnunettransport -lgnunetcadet"
+	AC_DEFINE(GNUNET, , [Define to enable the GNUnet-based tools])
+	GNUNET_LIBS="${GNUNET_LIBS} -lgnunetutil -lgnunettransport -lgnunetcadet"
 fi
 AC_SUBST(GNUNET_LIBS)
 AC_SUBST(GNUNET_CFLAGS)

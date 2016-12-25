@@ -40,7 +40,6 @@
 #define HAVE_CONFIG_H 1
 #include <gnunet/platform.h>
 #include <gnunet/gnunet_util_lib.h>
-//#include <gnunet/gnunet_peerinfo_service.h>
 #include <gnunet/gnunet_transport_hello_service.h>
 #include <gnunet/gnunet_cadet_service.h>
 #undef HAVE_CONFIG_H

@@ -18,20 +18,45 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
+// include headers
+#ifdef HAVE_CONFIG_H
+	#include "libTMCG_config.h"
+#endif
 #include <libTMCG.hh>
 #include <aiounicast_nonblock.hh>
 
 #ifdef FORKING
 
+#ifdef GNUNET
+#undef HAVE_CONFIG_H
+#undef PACKAGE
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_URL
+#undef PACKAGE_VERSION
+#undef VERSION
+#define HAVE_CONFIG_H 1
+#include <gnunet/platform.h>
+#include <gnunet/gnunet_util_lib.h>
+#include <gnunet/gnunet_transport_hello_service.h>
+#include <gnunet/gnunet_cadet_service.h>
+#undef HAVE_CONFIG_H
+#endif
+
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <list>
+#include <map>
 #include <algorithm>
 #include <cassert>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #include "pipestream.hh"
 

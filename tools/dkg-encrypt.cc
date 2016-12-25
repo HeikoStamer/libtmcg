@@ -18,6 +18,10 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
+// include headers
+#ifdef HAVE_CONFIG_H
+	#include "libTMCG_config.h"
+#endif
 #include <libTMCG.hh>
 
 #include <sstream>
@@ -31,11 +35,13 @@ int main
 	assert(init_libTMCG());
 	std::string line, armored_pubkey, message, armored_message;
 
-	// parse packets of provided public key
+	// read a public key from stdin
 	std::cout << "1. Please provide the recipients public key (in ASCII Armor; ^D for EOF): " << std::endl;
 	while (std::getline(std::cin, line))
 		armored_pubkey += line + "\r\n";
-	std::cin.clear();	
+	std::cin.clear();
+
+	// parse packets of the provided public key
 	bool pubdsa = false, sigdsa = false, subelg = false, sigelg = false;
 	std::string u;
 	BYTE atype = 0, ptag = 0xFF;
@@ -85,7 +91,8 @@ int main
 						issuer.push_back(ctx.issuer[i]);
 					}
 					std::cout << std::dec << std::endl;
-					if (pubdsa && !subelg && (ctx.type >= 0x10) && (ctx.type <= 0x13) && CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
+					if (pubdsa && !subelg && (ctx.type >= 0x10) && (ctx.type <= 0x13) && 
+						CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
 					{
 						std::cout << std::hex;
 						std::cout << " sigtype = 0x";
@@ -118,7 +125,8 @@ int main
 						}
 						sigdsa = true;
 					}
-					else if (pubdsa && subelg && (ctx.type == 0x18) && CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
+					else if (pubdsa && subelg && (ctx.type == 0x18) && 
+						CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
 					{
 						std::cout << std::hex;
 						std::cout << " sigtype = 0x";
@@ -341,11 +349,13 @@ int main
 		return -1;
 	}
 
-	// encrypt the provided message
+	// read a text message from stdin
 	std::cout << "2. Now type your private message (in ASCII/UTF8; ^D for EOF): " << std::endl;
 	while (std::getline(std::cin, line))
 		message += line + "\r\n";
 	std::cin.clear();
+
+	// encrypt the provided message
 	for (size_t i = 0; i < message.length(); i++)
 		msg.push_back(message[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode(msg, lit);
