@@ -172,7 +172,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		time_t entry_time = time(NULL);
 		do
 		{
-			for (size_t rounds = 0; rounds < ((t * n * n * n) + n); rounds++)
+			for (size_t rounds = 0; rounds < (((t + 2) * n * n * n) + n); rounds++)
 			{
 				// first, process the delivery buffer
 				for (std::list<RBC_Message>::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)

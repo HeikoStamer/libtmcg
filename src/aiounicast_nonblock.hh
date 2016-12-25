@@ -424,12 +424,12 @@ class aiounicast_nonblock : public aiounicast
 				}
 				else
 				{
+					mpz_clear(tmp);
+					delete tmp;
 					// error at Receive()?
 					if (i < n)
 					{
 						i_out = i;
-						mpz_clear(tmp);
-						delete tmp;
 						return false;
 					}
 				}

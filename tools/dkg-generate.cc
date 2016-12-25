@@ -437,7 +437,7 @@ static int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 	len = ntohs(message->size) - sizeof(*message);
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Got message from %s with %u bytes\n", peer.c_str(), len);
 	buf = (const char *)&message[1];
-std::cerr << "message of type " << ntohs(message->type) << " from " << peer << " with " << len << " bytes received" << std::endl;
+//std::cerr << "message of type " << ntohs(message->type) << " from " << peer << " with " << len << " bytes received" << std::endl;
 	// write the payload into corresponding pipe
 	if (ntohs(message->type) == GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_UNICAST)
 		fd = pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1];
@@ -482,7 +482,7 @@ static void gnunet_io(void *cls);
 
 static size_t gnunet_data_ready(void *cls, size_t size, void *buf)
 {
-std::cerr << "data ready to send = " << size << std::endl;
+//std::cerr << "data ready to send = " << size << std::endl;
 	if (channel_ready.count(th_ch))
 		channel_ready[th_ch] = true;
 	th = NULL, th_ch = NULL;
@@ -532,7 +532,7 @@ std::cerr << "abort task" << std::endl;
 
 static size_t gnunet_data_ready_broadcast(void *cls, size_t size, void *buf)
 {
-std::cerr << "data ready to broadcast = " << size << std::endl;
+//std::cerr << "data ready to broadcast = " << size << std::endl;
 	if (channel_ready.count(th_ch))
 		channel_ready[th_ch] = true;
 	th = NULL, th_ch = NULL;
@@ -868,12 +868,12 @@ static void gnunet_io(void *cls)
 			th_datalen = buf.first;
 			if (pipe2channel_out.count(ble.first) && channel_ready[pipe2channel_out[ble.first]])
 			{
-std::cerr << "try to send " << th_datalen << " bytes on output channel to " << pipe2peer[ble.first] << std::endl;
+//std::cerr << "try to send " << th_datalen << " bytes on output channel to " << pipe2peer[ble.first] << std::endl;
 				th_ch = pipe2channel_out[ble.first];
 			}
 			else if (pipe2channel_in.count(ble.first))
 			{
-std::cerr << "try to send " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
+//std::cerr << "try to send " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
 				th_ch = pipe2channel_in[ble.first];
 			}
 			th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
@@ -900,12 +900,12 @@ std::cerr << "try to send " << th_datalen << " bytes on input channel to " << pi
 			th_datalen = buf.first;
 			if (pipe2channel_out.count(ble.first) && channel_ready[pipe2channel_out[ble.first]])
 			{
-std::cerr << "try to broadcast " << th_datalen << " bytes on output channel to " << pipe2peer[ble.first] << std::endl;
+//std::cerr << "try to broadcast " << th_datalen << " bytes on output channel to " << pipe2peer[ble.first] << std::endl;
 				th_ch = pipe2channel_out[ble.first];
 			}
 			else if (pipe2channel_in.count(ble.first))
 			{
-std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
+//std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
 				th_ch = pipe2channel_in[ble.first];
 			}
 			th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
@@ -943,8 +943,8 @@ std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " 
 	}
 
 	// next: schedule (re)connect task
-	if (ct == NULL)
-		ct = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_MINUTES, 1), &gnunet_connect, NULL);
+//	if (ct == NULL)
+//		ct = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_MINUTES, 1), &gnunet_connect, NULL);
 }
 
 static void gnunet_connect(void *cls)
