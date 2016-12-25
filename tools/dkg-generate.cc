@@ -433,6 +433,7 @@ static int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 		std::cerr << "WARNING: ignore incoming message from unregistered channel" << std::endl;
 		return GNUNET_OK;
 	}
+	GNUNET_assert(ntohs(message->size) >= sizeof(*message));
 	len = ntohs(message->size) - sizeof(*message);
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Got message from %s with %u bytes\n", peer.c_str(), len);
 	buf = (const char *)&message[1];
@@ -444,11 +445,10 @@ std::cerr << "message of type " << ntohs(message->type) << " from " << peer << "
 		fd = broadcast_pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1];
 	else
 	{
-		// ignore unknown types
+		// ignore unknown message types
 		GNUNET_CADET_receive_done(channel);
 		return GNUNET_OK;
 	}
-
 	do
 	{
 		ssize_t num = write(fd, buf, len - rnum);
@@ -482,7 +482,7 @@ static void gnunet_io(void *cls);
 
 static size_t gnunet_data_ready(void *cls, size_t size, void *buf)
 {
-//std::cerr << "data ready to send = " << size << std::endl;
+std::cerr << "data ready to send = " << size << std::endl;
 	if (channel_ready.count(th_ch))
 		channel_ready[th_ch] = true;
 	th = NULL, th_ch = NULL;
@@ -516,6 +516,7 @@ static size_t gnunet_data_ready(void *cls, size_t size, void *buf)
 
 static void gnunet_data_abort(void *cls)
 {
+std::cerr << "abort task" << std::endl;
 	th_at = NULL;
 	GNUNET_assert(th != NULL);
 	GNUNET_assert(th_ch != NULL);
@@ -531,7 +532,7 @@ static void gnunet_data_abort(void *cls)
 
 static size_t gnunet_data_ready_broadcast(void *cls, size_t size, void *buf)
 {
-//std::cerr << "data ready to broadcast = " << size << std::endl;
+std::cerr << "data ready to broadcast = " << size << std::endl;
 	if (channel_ready.count(th_ch))
 		channel_ready[th_ch] = true;
 	th = NULL, th_ch = NULL;
@@ -565,6 +566,7 @@ static size_t gnunet_data_ready_broadcast(void *cls, size_t size, void *buf)
 
 static void gnunet_data_abort_broadcast(void *cls)
 {
+std::cerr << "abort broadcast task" << std::endl;
 	th_at = NULL;
 	GNUNET_assert(th != NULL);
 	GNUNET_assert(th_ch != NULL);
@@ -581,15 +583,14 @@ static void gnunet_data_abort_broadcast(void *cls)
 static void gnunet_pipe_ready(void *cls)
 {
 	pt = NULL;
-
 	for (size_t i = 0; i < N; i++)
 	{
 		if (i == peer2pipe[thispeer])
 			continue; // ignore pipe of this peer FIXME: write directly back in ouput pipe
-		if (GNUNET_NETWORK_fdset_test_native(rs, pipefd[peer2pipe[thispeer]][i][0]) == GNUNET_YES)
-		{
-			char *th_buf = new char[64000];
-			ssize_t num = read(pipefd[peer2pipe[thispeer]][i][0], th_buf, 64000);
+//		if (GNUNET_NETWORK_fdset_test_native(rs, pipefd[peer2pipe[thispeer]][i][0]) == GNUNET_YES)
+//		{
+			char *th_buf = new char[4096];
+			ssize_t num = read(pipefd[peer2pipe[thispeer]][i][0], th_buf, 4096);
 			if (num < 0)
 			{
 				delete [] th_buf;
@@ -611,14 +612,13 @@ static void gnunet_pipe_ready(void *cls)
 			}
 			else
 			{
-std::cerr << "added i = " << i << " with " << num << " bytes" << std::endl;
+std::cerr << "queue added i = " << i << " with " << num << " bytes" << std::endl;
 				DKG_BufferListEntry ble = DKG_BufferListEntry(i, DKG_Buffer(num, th_buf));
 				send_queue.push_back(ble);
 			}
-		}	
+//		}	
 	}
-
-	GNUNET_NETWORK_fdset_destroy(rs);
+//	GNUNET_NETWORK_fdset_destroy(rs);
 	// reschedule I/O task
 	if (io == NULL)
 		io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
@@ -627,15 +627,14 @@ std::cerr << "added i = " << i << " with " << num << " bytes" << std::endl;
 static void gnunet_broadcast_pipe_ready(void *cls)
 {
 	pt_broadcast = NULL;
-
 	for (size_t i = 0; i < N; i++)
 	{
 		if (i == peer2pipe[thispeer])
 			continue; // ignore pipe of this peer FIXME: write directly back in ouput pipe
-		if (GNUNET_NETWORK_fdset_test_native(rs, broadcast_pipefd[peer2pipe[thispeer]][i][0]) == GNUNET_YES)
-		{
-			char *th_buf = new char[64000];
-			ssize_t num = read(broadcast_pipefd[peer2pipe[thispeer]][i][0], th_buf, 64000);
+//		if (GNUNET_NETWORK_fdset_test_native(rs, broadcast_pipefd[peer2pipe[thispeer]][i][0]) == GNUNET_YES)
+//		{
+			char *th_buf = new char[4096];
+			ssize_t num = read(broadcast_pipefd[peer2pipe[thispeer]][i][0], th_buf, 4096);
 			if (num < 0)
 			{
 				delete [] th_buf;
@@ -657,13 +656,13 @@ static void gnunet_broadcast_pipe_ready(void *cls)
 			}
 			else
 			{
+std::cerr << "queue added broadcast i = " << i << " with " << num << " bytes" << std::endl;
 				DKG_BufferListEntry ble = DKG_BufferListEntry(i, DKG_Buffer(num, th_buf));
 				send_queue_broadcast.push_back(ble);
 			}
-		}	
+//		}	
 	}
-
-	GNUNET_NETWORK_fdset_destroy(rs_broadcast);
+//	GNUNET_NETWORK_fdset_destroy(rs_broadcast);
 	// reschedule I/O task
 	if (io == NULL)
 		io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
@@ -864,7 +863,6 @@ static void gnunet_io(void *cls)
 	{
 		DKG_BufferListEntry ble = send_queue.front();
 		DKG_Buffer buf = ble.second;
-std::cerr << "ble.first = " << ble.first << std::endl;
 		if ((pipe2channel_out.count(ble.first) && channel_ready[pipe2channel_out[ble.first]]) || pipe2channel_in.count(ble.first))
 		{
 			th_datalen = buf.first;
@@ -887,7 +885,8 @@ std::cerr << "try to send " << th_datalen << " bytes on input channel to " << pi
 				return;
 			}
 			// schedule abort task
-			th_at = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, 1), &gnunet_data_abort, NULL);
+			th_at = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, aiounicast::aio_timeout_very_long),
+				&gnunet_data_abort, NULL);
 		}
 	}
 
@@ -918,26 +917,29 @@ std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " 
 				return;
 			}
 			// schedule abort task
-			th_at = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, 1), &gnunet_data_abort_broadcast, NULL);
+			th_at = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, aiounicast::aio_timeout_very_long),
+				&gnunet_data_abort_broadcast, NULL);
 		}
 	}
 
 	// schedule select tasks for reading the input pipes
 	if (pt == NULL)
 	{
-		rs = GNUNET_NETWORK_fdset_create();
-		for (size_t i = 0; i < N; i++)
-			GNUNET_NETWORK_fdset_set_native(rs, pipefd[peer2pipe[thispeer]][i][0]);
-		pt = GNUNET_SCHEDULER_add_select(GNUNET_SCHEDULER_PRIORITY_DEFAULT, GNUNET_TIME_UNIT_FOREVER_REL, rs, NULL,
-			&gnunet_pipe_ready, NULL);
+//		rs = GNUNET_NETWORK_fdset_create();
+//		for (size_t i = 0; i < N; i++)
+//			GNUNET_NETWORK_fdset_set_native(rs, pipefd[peer2pipe[thispeer]][i][0]);
+//		pt = GNUNET_SCHEDULER_add_select(GNUNET_SCHEDULER_PRIORITY_DEFAULT, GNUNET_TIME_UNIT_FOREVER_REL, rs, NULL,
+//			&gnunet_pipe_ready, NULL);
+		pt = GNUNET_SCHEDULER_add_now(&gnunet_pipe_ready, NULL);
 	}
 	if (pt_broadcast == NULL)
 	{
-		rs_broadcast = GNUNET_NETWORK_fdset_create();
-		for (size_t i = 0; i < N; i++)
-			GNUNET_NETWORK_fdset_set_native(rs_broadcast, broadcast_pipefd[peer2pipe[thispeer]][i][0]);
-		pt_broadcast = GNUNET_SCHEDULER_add_select(GNUNET_SCHEDULER_PRIORITY_DEFAULT, GNUNET_TIME_UNIT_FOREVER_REL, rs_broadcast, NULL,
-			&gnunet_broadcast_pipe_ready, NULL);
+//		rs_broadcast = GNUNET_NETWORK_fdset_create();
+//		for (size_t i = 0; i < N; i++)
+//			GNUNET_NETWORK_fdset_set_native(rs_broadcast, broadcast_pipefd[peer2pipe[thispeer]][i][0]);
+//		pt_broadcast = GNUNET_SCHEDULER_add_select(GNUNET_SCHEDULER_PRIORITY_DEFAULT, GNUNET_TIME_UNIT_FOREVER_REL, rs_broadcast, NULL,
+//			&gnunet_broadcast_pipe_ready, NULL);
+		pt_broadcast = GNUNET_SCHEDULER_add_now(&gnunet_broadcast_pipe_ready, NULL);
 	}
 
 	// next: schedule (re)connect task
@@ -1061,7 +1063,7 @@ static void gnunet_init(void *cls)
 	start_instance(peer2pipe[thispeer], crs, uid, passphrase, keytime);
 
 	// next: schedule connect and statistics tasks
-	ct = GNUNET_SCHEDULER_add_now(&gnunet_connect, NULL);
+	ct = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_MINUTES, 1), &gnunet_connect, NULL);
 	st = GNUNET_SCHEDULER_add_now(&gnunet_statistics, NULL);
 }
 

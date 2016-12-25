@@ -191,8 +191,7 @@ class aiounicast_nonblock : public aiounicast
 				ssize_t num = write(fd_out[i_in], buf + realnum, realsize - realnum + 1);
 				if (num < 0)
 				{
-					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || 
-						(errno == EINTR))
+					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
 						sleep(1);
 						continue;
