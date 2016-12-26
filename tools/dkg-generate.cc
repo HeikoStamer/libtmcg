@@ -335,7 +335,7 @@ void fork_instance
 		if (pid[whoami] == 0)
 		{
 			/* BEGIN child code: participant P_i */
-			time_t keytime = time(NULL); // current time
+			time_t keytime = 0; // TODO: participants must agree on a time, otherwise subkeyid does not match
 			run_instance(whoami, crs_in, keytime);
 
 			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
