@@ -25,6 +25,8 @@
 #include <libTMCG.hh>
 #include <aiounicast_nonblock.hh>
 
+#undef GNUNET
+
 #ifdef FORKING
 
 #ifdef GNUNET
@@ -65,21 +67,20 @@
 
 int pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t pid[MAX_N];
+std::string			passphrase, armored_message;
+std::vector<std::string>	peers;
+bool				instance_forked = false;
 
 void run_instance
-	(size_t whoami, const std::string my_keyid, const std::string passphrase, const std::string armored_message)
+	(size_t whoami)
 {
-
-	std::stringstream whoamis;
-	whoamis << whoami << "_" << my_keyid;
-
 	// read the exported DKG state from file
-	std::string line, dkgfilename = whoamis.str() + ".dkg";
+	std::string line, dkgfilename = peers[whoami] + ".dkg";
 	std::stringstream dkgstate;
 	std::ifstream dkgifs(dkgfilename.c_str(), std::ifstream::in);
 	if (!dkgifs.is_open())
 	{
-		std::cerr << "ERROR: cannot open state file" << std::endl;
+		std::cerr << "ERROR: cannot open DKG state file" << std::endl;
 		exit(-1);
 	}
 	while (std::getline(dkgifs, line))
@@ -96,39 +97,6 @@ void run_instance
 		exit(-1);
 	}
 
-	// assert correct index for saved DKG state
-	assert(whoami == dkg->i);
-
-	// create pipe streams and handles between all players
-	std::vector<ipipestream*> P_in;
-	std::vector<opipestream*> P_out;
-	std::vector<int> uP_in, uP_out, bP_in, bP_out;
-	std::vector<std::string> uP_key, bP_key;
-	for (size_t i = 0; i < dkg->n; i++)
-	{
-		std::stringstream key;
-		key << "dkg-decrypt::P_" << (i + whoami);
-		P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
-		P_out.push_back(new opipestream(pipefd[whoami][i][1]));
-		uP_in.push_back(pipefd[i][whoami][0]);
-		uP_out.push_back(pipefd[whoami][i][1]);
-		uP_key.push_back(key.str());
-		bP_in.push_back(broadcast_pipefd[i][whoami][0]);
-		bP_out.push_back(broadcast_pipefd[whoami][i][1]);
-		bP_key.push_back(key.str());
-	}
-
-	// create asynchronous authenticated unicast channels
-	aiounicast_nonblock *aiou = new aiounicast_nonblock(dkg->n, whoami, uP_in, uP_out, uP_key);
-
-	// create asynchronous authenticated unicast channels
-	aiounicast_nonblock *aiou2 = new aiounicast_nonblock(dkg->n, whoami, bP_in, bP_out, bP_key);
-			
-	// create an instance of a reliable broadcast protocol (RBC)
-	std::string myID = "dkg-decrypt";
-	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(dkg->n, dkg->t, whoami, aiou2);
-	rbc->setID(myID);
-
 	// check the key share
 	std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
 	if (!dkg->CheckKey())
@@ -138,7 +106,7 @@ void run_instance
 	}
 
 	// read the private key from file
-	dkgfilename = whoamis.str() + "_dkg-sec.asc";
+	dkgfilename = peers[whoami] + "_dkg-sec.asc";
 	std::stringstream dkgseckey;
 	std::ifstream secifs(dkgfilename.c_str(), std::ifstream::in);
 	if (!secifs.is_open())
@@ -150,6 +118,13 @@ void run_instance
 		dkgseckey << line << std::endl;
 	secifs.close();
 	std::string armored_seckey = dkgseckey.str();
+
+	// assert correct index for saved DKG state
+	if (whoami != dkg->i)
+	{
+		std::cerr << "ERROR: index in PEERS and DKG state does not match" << std::endl;
+		exit(-1);
+	}
 
 	// parse the private key
 	bool secdsa = false, sigdsa = false, ssbelg = false, sigelg = false;
@@ -628,17 +603,6 @@ void run_instance
 		exit(-1);
 	}
 
-	// compare the key IDs
-	std::stringstream seckeyid;
-	seckeyid << std::hex;
-	for (size_t i = 0; i < keyid.size(); i++)
-		seckeyid << (int)keyid[i];
-	if (my_keyid != seckeyid.str())
-	{
-		std::cerr << "ERROR: wrong key ID" << std::endl;
-		exit(-1);
-	}
-
 	// build keys, check key usage and self-signatures
 	OCTETS dsa_trailer, elg_trailer, dsa_left, elg_left;
 	std::cout << "Primary User ID: " << u << std::endl;
@@ -913,6 +877,36 @@ void run_instance
 		std::cout << "WARNING: NIZK self verification failed at " << whoami << std::endl;
 	}
 
+	// create pipe streams and handles between all players
+	std::vector<ipipestream*> P_in;
+	std::vector<opipestream*> P_out;
+	std::vector<int> uP_in, uP_out, bP_in, bP_out;
+	std::vector<std::string> uP_key, bP_key;
+	for (size_t i = 0; i < dkg->n; i++)
+	{
+		std::stringstream key;
+		key << "dkg-decrypt::P_" << (i + whoami);
+		P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
+		P_out.push_back(new opipestream(pipefd[whoami][i][1]));
+		uP_in.push_back(pipefd[i][whoami][0]);
+		uP_out.push_back(pipefd[whoami][i][1]);
+		uP_key.push_back(key.str());
+		bP_in.push_back(broadcast_pipefd[i][whoami][0]);
+		bP_out.push_back(broadcast_pipefd[whoami][i][1]);
+		bP_key.push_back(key.str());
+	}
+
+	// create asynchronous authenticated unicast channels
+	aiounicast_nonblock *aiou = new aiounicast_nonblock(dkg->n, whoami, uP_in, uP_out, uP_key);
+
+	// create asynchronous authenticated unicast channels
+	aiounicast_nonblock *aiou2 = new aiounicast_nonblock(dkg->n, whoami, bP_in, bP_out, bP_key);
+			
+	// create an instance of a reliable broadcast protocol (RBC)
+	std::string myID = "dkg-decrypt";
+	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(dkg->n, dkg->t, whoami, aiou2);
+	rbc->setID(myID);
+
 	// broadcast the decryption share and the NIZK argument
 	rbc->Broadcast(r_i);
 	rbc->Broadcast(c);
@@ -1159,8 +1153,8 @@ void run_instance
 	delete dkg;
 }
 
-void start_instance
-	(size_t whoami, const std::string my_keyid, const std::string passphrase, const std::string armored_message)
+void fork_instance
+	(size_t whoami)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-decrypt (fork)");
@@ -1169,44 +1163,102 @@ void start_instance
 		if (pid[whoami] == 0)
 		{
 			/* BEGIN child code: participant P_i */
-			run_instance(whoami, my_keyid, passphrase, armored_message);
+			run_instance(whoami);
 
-			
 			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
 			/* END child code: participant P_i */
 		}
 		else
+		{
 			std::cout << "fork() = " << pid[whoami] << std::endl;
+			instance_forked = true;
+		}
 	}
 }
 
 int main
-	(int argc, char **argv)
+	(int argc, char *const *argv)
 {
-	assert(init_libTMCG());
-	std::string passphrase, line, armored_message;
-	std::vector<std::string> keyids;
+#ifdef GNUNET
+	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
+		{'p', "port", NULL, "GNUnet cadet port to listen/connect",
+			GNUNET_YES, &GNUNET_GETOPT_set_string, &gnunet_opt_port},
+		GNUNET_GETOPT_OPTION_END
+	};
+#endif
 
-	// read the passphrase and key IDs
+	if (!init_libTMCG())
+	{
+		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
+		return -1;
+	}
+	if (argc < 2)
+	{
+		std::cerr << "ERROR: no peers given as argument; usage: " << argv[0] << " [OPTIONS] PEERS" << std::endl;
+		return -1;
+	}
+	else
+	{
+		// create peer list
+		for (size_t i = 0; i < (size_t)(argc - 1); i++)
+		{
+			std::string arg = argv[i+1];
+			// ignore options
+			if ((arg.find("-c", 0) == 0) || (arg.find("-p", 0) == 0) || (arg.find("-L", 0) == 0) || (arg.find("-l", 0) == 0))
+			{
+				i++;
+				continue;
+			}
+			else if ((arg.find("--", 0) == 0) || (arg.find("-v", 0) == 0) || (arg.find("-h", 0) == 0))
+				continue;
+			else if (arg.find("-", 0) == 0)
+			{
+				std::cerr << "ERROR: unknown option \"" << arg << "\"" << std::endl;
+				return -1;
+			}
+			peers.push_back(arg);
+		}
+		// canonicalize peer list
+		std::sort(peers.begin(), peers.end());
+		std::vector<std::string>::iterator it = std::unique(peers.begin(), peers.end());
+		peers.resize(std::distance(peers.begin(), it));
+		std::cout << "INFO: canonicalized peer list = " << std::endl;
+		for (size_t i = 0; i < peers.size(); i++)
+			std::cout << peers[i] << std::endl;
+	}
+	if ((peers.size() < 4)  || (peers.size() > MAX_N))
+	{
+		std::cerr << "ERROR: too few or too many peers given" << std::endl;
+		return -1;
+	};
+
 	std::cout << "1. Please enter the passphrase to unlock your private key: ";
 	std::getline(std::cin, passphrase);
-
-	std::cout << "2. Now provide the key IDs (one per line) of the participants: ";
-	while (std::getline(std::cin, line))
-		keyids.push_back(line);
-	std::cin.clear();
-
-	// read the encrypted message
-	std::cout << "3. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
+	std::cout << "2. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
+	std::string line;
 	while (std::getline(std::cin, line))
 		armored_message += line + "\r\n";
 	std::cin.clear();
 
+#ifdef GNUNET
+	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
+    		return -1;
+	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-decrypt [OPTIONS] PEERS", "distributed ElGamal decryption with OpenPGP-input",
+                            options, &gnunet_run, NULL);
+
+	GNUNET_free ((void *) argv);
+
+	if (ret == GNUNET_OK)
+		return 0;
+	else
+		return -1;
+#endif
+
 	// open pipes
-	for (size_t i = 0; i < keyids.size(); i++)
+	for (size_t i = 0; i < peers.size(); i++)
 	{
-		for (size_t j = 0; j < keyids.size(); j++)
+		for (size_t j = 0; j < peers.size(); j++)
 		{
 			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
 				perror("dkg-decrypt (pipe)");
@@ -1216,19 +1268,19 @@ int main
 	}
 	
 	// start childs
-	for (size_t i = 0; i < keyids.size(); i++)
-		start_instance(i, keyids[i], passphrase, armored_message);
+	for (size_t i = 0; i < peers.size(); i++)
+		fork_instance(i);
 
 	// sleep for five seconds
 	sleep(5);
 	
 	// wait for childs and close pipes
-	for (size_t i = 0; i < keyids.size(); i++)
+	for (size_t i = 0; i < peers.size(); i++)
 	{
 		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
 		if (waitpid(pid[i], NULL, 0) != pid[i])
 			perror("dkg-decrypt (waitpid)");
-		for (size_t j = 0; j < keyids.size(); j++)
+		for (size_t j = 0; j < peers.size(); j++)
 		{
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
 				perror("dkg-decrypt (close)");
@@ -1245,7 +1297,7 @@ int main
 int main
 	(int argc, char **argv)
 {
-	std::cout << "fork(2) needed" << std::endl;
+	std::cout << "configure switch --enable-forking needed" << std::endl;
 	return 77;
 }
 

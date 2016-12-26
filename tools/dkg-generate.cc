@@ -67,12 +67,266 @@ int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t				pid[MAX_N];
 size_t				N, T;
 std::stringstream 		crs;
-std::string			uid, passphrase;
+std::string			u, passphrase;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
 
-void start_instance
-	(const size_t whoami, std::istream &crs_in, const std::string u, const std::string pp, const time_t keytime)
+void run_instance
+	(const size_t whoami, std::istream &crs_in, const time_t keytime)
+{
+	// create pipe streams and handles for all players
+	std::vector<ipipestream*> P_in;
+	std::vector<opipestream*> P_out;
+	std::vector<int> uP_in, uP_out, bP_in, bP_out;
+	std::vector<std::string> uP_key, bP_key;
+	for (size_t i = 0; i < N; i++)
+	{
+		std::stringstream key;
+		key << "dkg-generate::P_" << (i + whoami); // choose a simple HMAC key
+		P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
+		P_out.push_back(new opipestream(pipefd[whoami][i][1]));
+		uP_in.push_back(pipefd[i][whoami][0]);
+		uP_out.push_back(pipefd[whoami][i][1]);
+		uP_key.push_back(key.str());
+		bP_in.push_back(broadcast_pipefd[i][whoami][0]);
+		bP_out.push_back(broadcast_pipefd[whoami][i][1]);
+		bP_key.push_back(key.str());
+	}
+			
+	// create VTMF instance
+	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crs_in);
+	// check VTMF instance constructed from CRS (common reference string)
+	if (!vtmf->CheckGroup())
+	{
+		std::cout << "P_" << whoami << ": " <<
+			"Group G was not correctly generated!" << std::endl;
+		exit(-1);
+	}
+
+	// create asynchronous authenticated unicast channels
+	aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami, uP_in, uP_out, uP_key);
+
+	// create asynchronous authenticated unicast channels
+	aiounicast_nonblock *aiou2 = new aiounicast_nonblock(N, whoami, bP_in, bP_out, bP_key);
+			
+	// create an instance of a reliable broadcast protocol (RBC)
+	std::string myID = "dkg-generate";
+	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
+	rbc->setID(myID);
+			
+	// create and exchange VTMF keys FIXME: async. operations needed; otherwise VTMF key could be stored in DHT 
+	vtmf->KeyGenerationProtocol_GenerateKey();
+	for (size_t i = 0; i < N; i++)
+	{
+		if (i != whoami)
+			vtmf->KeyGenerationProtocol_PublishKey(*P_out[i]);
+	}
+	for (size_t i = 0; i < N; i++)
+	{
+		if (i != whoami)
+		{
+			if (!vtmf->KeyGenerationProtocol_UpdateKey(*P_in[i]))
+			{
+				std::cout << "P_" << whoami << ": " << "Public key of P_" <<
+					i << " was not correctly generated!" << std::endl;
+				exit(-1);
+			}
+		}
+	}
+	vtmf->KeyGenerationProtocol_Finalize();
+
+	// create an instance of DKG
+	GennaroJareckiKrawczykRabinDKG *dkg;
+	std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
+	dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami,
+		vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+	if (!dkg->CheckGroup())
+	{
+		std::cout << "P_" << whoami << ": " <<
+			"DKG parameters are not correctly generated!" << std::endl;
+		exit(-1);
+	}
+			
+	// generating $x$ and extracting $y = g^x \bmod p$
+	std::stringstream err_log;
+	std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
+	if (!dkg->Generate(aiou, rbc, err_log))
+	{
+		std::cout << "P_" << whoami << ": " <<
+			"DKG Generate() failed" << std::endl;
+		std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+		exit(-1);
+	}
+	std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+
+	// check the generated key share
+	std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
+	if (!dkg->CheckKey())
+	{
+		std::cout << "P_" << whoami << ": " <<
+			"DKG CheckKey() failed" << std::endl;
+		exit(-1);
+	}
+
+	// at the end: deliver some more rounds for waiting parties
+	mpz_t m;
+	mpz_init(m);
+	rbc->DeliverFrom(m, whoami);
+	mpz_clear(m);
+
+	// create an OpenPGP DSA-based primary key and Elgamal-based subkey based on parameters from DKG
+	char buffer[2048];
+	std::string out, crcout, armor;
+	OCTETS all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
+	OCTETS pub_hashing, sub_hashing;
+	OCTETS uidsig_hashing, subsig_hashing, uidsig_left, subsig_left;
+	OCTETS hash;
+	time_t sigtime;
+	gcry_sexp_t key;
+	gcry_mpi_t p, q, g, y, x, r, s;
+	gcry_error_t ret;
+	size_t erroff;
+	mpz_t dsa_y, dsa_x;
+	mpz_init(dsa_y), mpz_init(dsa_x);
+	mpz_srandomm(dsa_x, vtmf->q);
+	mpz_spowm(dsa_y, vtmf->g, dsa_x, vtmf->p);
+			
+	p = gcry_mpi_new(2048);
+	q = gcry_mpi_new(2048);
+	g = gcry_mpi_new(2048);
+	y = gcry_mpi_new(2048);
+	x = gcry_mpi_new(2048);
+	r = gcry_mpi_new(2048);
+	s = gcry_mpi_new(2048);
+	mpz_get_str(buffer, 16, vtmf->p);
+	ret = gcry_mpi_scan(&p, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+	assert(!ret); 
+	mpz_get_str(buffer, 16, vtmf->q);
+	ret = gcry_mpi_scan(&q, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+	assert(!ret); 
+	mpz_get_str(buffer, 16, vtmf->g);
+	ret = gcry_mpi_scan(&g, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+	assert(!ret);
+	mpz_get_str(buffer, 16, dsa_y);
+	ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+	assert(!ret);
+	mpz_get_str(buffer, 16, dsa_x);
+	ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+	assert(!ret);
+	mpz_clear(dsa_y), mpz_clear(dsa_x);
+	ret = gcry_sexp_build(&key, &erroff, "(key-data (public-key (dsa (p %M) (q %M) (g %M) (y %M)))"
+		" (private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M))))", p, q, g, y, p, q, g, y, x);
+	assert(!ret);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(keytime, p, q, g, y, pub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(keytime, p, q, g, y, x, passphrase, sec);
+	for (size_t i = 6; i < pub.size(); i++)
+		pub_hashing.push_back(pub[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, uid);
+	dsaflags.push_back(0x01 | 0x02 | 0x20);
+	sigtime = time(NULL); // current time
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, sigtime, dsaflags, keyid, uidsig_hashing);
+	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, 8, hash, uidsig_left);
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
+	assert(!ret);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(uidsig_hashing, uidsig_left, r, s, uidsig);
+	hash.clear();
+	mpz_get_str(buffer, 16, dkg->y);			
+	ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+	assert(!ret);
+	mpz_get_str(buffer, 16, dkg->z_i[dkg->i]);			
+	ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+	assert(!ret);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(keytime, p, g, y, sub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(keytime, p, g, y, x, passphrase, ssb);
+	elgflags.push_back(0x04 | 0x10);
+	sigtime = time(NULL); // current time
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, sigtime, elgflags, keyid, subsig_hashing);
+	for (size_t i = 6; i < sub.size(); i++)
+		sub_hashing.push_back(sub[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, subsig_hashing, 8, hash, subsig_left);
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
+	assert(!ret);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(subsig_hashing, subsig_left, r, s, subsig);
+	// export generated public key in OpenPGP armor format
+	std::stringstream pubfilename;
+	pubfilename << peers[whoami] << "_dkg-pub.asc";
+	armor = "", all.clear();
+	all.insert(all.end(), pub.begin(), pub.end());
+	all.insert(all.end(), uid.begin(), uid.end());
+	all.insert(all.end(), uidsig.begin(), uidsig.end());
+	all.insert(all.end(), sub.begin(), sub.end());
+	all.insert(all.end(), subsig.begin(), subsig.end());
+	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(6, all, armor);
+	std::cout << armor << std::endl;
+	std::ofstream pubofs((pubfilename.str()).c_str(), std::ofstream::out);
+	pubofs << armor;
+	pubofs.close();
+	// export generated private key in OpenPGP armor format
+	std::stringstream secfilename;
+	secfilename << peers[whoami] << "_dkg-sec.asc";
+	armor = "", all.clear();
+	all.insert(all.end(), sec.begin(), sec.end());
+	all.insert(all.end(), uid.begin(), uid.end());
+	all.insert(all.end(), uidsig.begin(), uidsig.end());
+	all.insert(all.end(), ssb.begin(), ssb.end());
+	all.insert(all.end(), subsig.begin(), subsig.end());
+	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(5, all, armor);
+	std::cout << armor << std::endl;
+	std::ofstream secofs((secfilename.str()).c_str(), std::ofstream::out);
+	secofs << armor;
+	secofs.close();
+	gcry_mpi_release(p);
+	gcry_mpi_release(q);
+	gcry_mpi_release(g);
+	gcry_mpi_release(y);
+	gcry_mpi_release(x);
+	gcry_mpi_release(r);
+	gcry_mpi_release(s);
+	gcry_sexp_release(key);
+	// export state of DKG including the secret shares into a file
+	std::stringstream dkgfilename;
+	dkgfilename << peers[whoami] << ".dkg";
+	std::ofstream dkgofs((dkgfilename.str()).c_str(), std::ofstream::out);
+	dkg->PublishState(dkgofs);
+	dkgofs.close();
+
+	// release DKG
+	delete dkg;
+
+	// release RBC			
+	delete rbc;
+
+	// release VTMF instances
+	delete vtmf;
+			
+	// release pipe streams (private channels)
+	size_t numRead = 0, numWrite = 0;
+	for (size_t i = 0; i < N; i++)
+	{
+		numRead += P_in[i]->get_numRead() + P_out[i]->get_numRead();
+		numWrite += P_in[i]->get_numWrite() + P_out[i]->get_numWrite();
+		delete P_in[i], delete P_out[i];
+	}
+	std::cout << "P_" << whoami << ": numRead = " << numRead <<
+		" numWrite = " << numWrite << std::endl;
+
+	// release handles (unicast channel)
+	uP_in.clear(), uP_out.clear(), uP_key.clear();
+	std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
+		" aiou.numWrite = " << aiou->numWrite << std::endl;
+
+	// release handles (broadcast channel)
+	bP_in.clear(), bP_out.clear(), bP_key.clear();
+	std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
+		" aiou2.numWrite = " << aiou2->numWrite << std::endl;
+
+	// release asynchronous unicast and broadcast
+	delete aiou, delete aiou2;
+}
+
+void fork_instance
+	(const size_t whoami, std::istream &crs_in)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-generate (fork)");
@@ -81,266 +335,9 @@ void start_instance
 		if (pid[whoami] == 0)
 		{
 			/* BEGIN child code: participant P_i */
-			
-			// create pipe streams and handles for all players
-			std::vector<ipipestream*> P_in;
-			std::vector<opipestream*> P_out;
-			std::vector<int> uP_in, uP_out, bP_in, bP_out;
-			std::vector<std::string> uP_key, bP_key;
-			for (size_t i = 0; i < N; i++)
-			{
-				std::stringstream key;
-				key << "dkg-generate::P_" << (i + whoami); // choose a simple HMAC key
-				P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
-				P_out.push_back(new opipestream(pipefd[whoami][i][1]));
-				uP_in.push_back(pipefd[i][whoami][0]);
-				uP_out.push_back(pipefd[whoami][i][1]);
-				uP_key.push_back(key.str());
-				bP_in.push_back(broadcast_pipefd[i][whoami][0]);
-				bP_out.push_back(broadcast_pipefd[whoami][i][1]);
-				bP_key.push_back(key.str());
-			}
-			
-			// create VTMF instance
-			BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crs_in);
-			// check VTMF instance constructed from CRS (common reference string)
-			if (!vtmf->CheckGroup())
-			{
-				std::cout << "P_" << whoami << ": " <<
-					"Group G was not correctly generated!" << std::endl;
-				exit(-1);
-			}
+			time_t keytime = time(NULL); // current time
+			run_instance(whoami, crs_in, keytime);
 
-			// create asynchronous authenticated unicast channels
-			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami, uP_in, uP_out, uP_key);
-
-			// create asynchronous authenticated unicast channels
-			aiounicast_nonblock *aiou2 = new aiounicast_nonblock(N, whoami, bP_in, bP_out, bP_key);
-			
-			// create an instance of a reliable broadcast protocol (RBC)
-			std::string myID = "dkg-generate";
-			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
-			rbc->setID(myID);
-			
-			// create and exchange VTMF keys FIXME: async. operations needed; otherwise VTMF key could be stored in DHT 
-			vtmf->KeyGenerationProtocol_GenerateKey();
-			for (size_t i = 0; i < N; i++)
-			{
-				if (i != whoami)
-					vtmf->KeyGenerationProtocol_PublishKey(*P_out[i]);
-			}
-			for (size_t i = 0; i < N; i++)
-			{
-				if (i != whoami)
-				{
-					if (!vtmf->KeyGenerationProtocol_UpdateKey(*P_in[i]))
-					{
-						std::cout << "P_" << whoami << ": " << "Public key of P_" <<
-							i << " was not correctly generated!" << std::endl;
-						exit(-1);
-					}
-				}
-			}
-			vtmf->KeyGenerationProtocol_Finalize();
-
-			// create an instance of DKG
-			GennaroJareckiKrawczykRabinDKG *dkg;
-			std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-			dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami,
-				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
-			if (!dkg->CheckGroup())
-			{
-				std::cout << "P_" << whoami << ": " <<
-					"DKG parameters are not correctly generated!" << std::endl;
-				exit(-1);
-			}
-			
-			// generating $x$ and extracting $y = g^x \bmod p$
-			std::stringstream err_log;
-			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
-			if (!dkg->Generate(aiou, rbc, err_log))
-			{
-				std::cout << "P_" << whoami << ": " <<
-					"DKG Generate() failed" << std::endl;
-				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
-				exit(-1);
-			}
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
-
-			// check the generated key share
-			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
-			if (!dkg->CheckKey())
-			{
-				std::cout << "P_" << whoami << ": " <<
-					"DKG CheckKey() failed" << std::endl;
-				exit(-1);
-			}
-
-			// at the end: deliver some more rounds for waiting parties
-			mpz_t m;
-			mpz_init(m);
-			rbc->DeliverFrom(m, whoami);
-			mpz_clear(m);
-
-			// create an OpenPGP DSA-based primary key and Elgamal-based subkey based on parameters from DKG
-			char buffer[2048];
-			std::string out, crcout, armor;
-			OCTETS all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
-			OCTETS pub_hashing, sub_hashing;
-			OCTETS uidsig_hashing, subsig_hashing, uidsig_left, subsig_left;
-			OCTETS hash;
-			time_t sigtime;
-			gcry_sexp_t key;
-			gcry_mpi_t p, q, g, y, x, r, s;
-			gcry_error_t ret;
-			size_t erroff;
-			mpz_t dsa_y, dsa_x;
-			mpz_init(dsa_y), mpz_init(dsa_x);
-			mpz_srandomm(dsa_x, vtmf->q);
-			mpz_spowm(dsa_y, vtmf->g, dsa_x, vtmf->p);
-			
-			p = gcry_mpi_new(2048);
-			q = gcry_mpi_new(2048);
-			g = gcry_mpi_new(2048);
-			y = gcry_mpi_new(2048);
-			x = gcry_mpi_new(2048);
-			r = gcry_mpi_new(2048);
-			s = gcry_mpi_new(2048);
-				mpz_get_str(buffer, 16, vtmf->p);
-				ret = gcry_mpi_scan(&p, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-				assert(!ret); 
-				mpz_get_str(buffer, 16, vtmf->q);
-				ret = gcry_mpi_scan(&q, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-				assert(!ret); 
-				mpz_get_str(buffer, 16, vtmf->g);
-				ret = gcry_mpi_scan(&g, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-				assert(!ret);
-				mpz_get_str(buffer, 16, dsa_y);
-				ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-				assert(!ret);
-				mpz_get_str(buffer, 16, dsa_x);
-				ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-				assert(!ret);
-			mpz_clear(dsa_y), mpz_clear(dsa_x);
-			ret = gcry_sexp_build(&key, &erroff, "(key-data (public-key (dsa (p %M) (q %M) (g %M) (y %M)))"
-				" (private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M))))", p, q, g, y, p, q, g, y, x);
-			assert(!ret);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(keytime, p, q, g, y, pub);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(keytime, p, q, g, y, x, pp, sec);
-			for (size_t i = 6; i < pub.size(); i++)
-				pub_hashing.push_back(pub[i]);
-			CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, uid);
-			dsaflags.push_back(0x01 | 0x02 | 0x20);
-			sigtime = time(NULL); // current time
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, sigtime, dsaflags, keyid, uidsig_hashing);
-			CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, 8, hash, uidsig_left);
-			ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
-			assert(!ret);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(uidsig_hashing, uidsig_left, r, s, uidsig);
-			hash.clear();
-				mpz_get_str(buffer, 16, dkg->y);			
-				ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-				assert(!ret);
-				mpz_get_str(buffer, 16, dkg->z_i[dkg->i]);			
-				ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-				assert(!ret);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(keytime, p, g, y, sub);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(keytime, p, g, y, x, pp, ssb);
-			elgflags.push_back(0x04 | 0x10);
-			sigtime = time(NULL); // current time
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, sigtime, elgflags, keyid, subsig_hashing);
-			for (size_t i = 6; i < sub.size(); i++)
-				sub_hashing.push_back(sub[i]);
-			CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, subsig_hashing, 8, hash, subsig_left);
-			ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
-			assert(!ret);
-			CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(subsig_hashing, subsig_left, r, s, subsig);
-			// export generated public key in OpenPGP armor format
-			std::stringstream pubfilename;
-			pubfilename << whoami << "_" << std::hex;
-			for (size_t i = 0; i < keyid.size(); i++)
-				pubfilename << (int)keyid[i];
-			pubfilename << "_dkg-pub.asc";
-			armor = "", all.clear();
-			all.insert(all.end(), pub.begin(), pub.end());
-			all.insert(all.end(), uid.begin(), uid.end());
-			all.insert(all.end(), uidsig.begin(), uidsig.end());
-			all.insert(all.end(), sub.begin(), sub.end());
-			all.insert(all.end(), subsig.begin(), subsig.end());
-			CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(6, all, armor);
-			std::cout << armor << std::endl;
-			std::ofstream pubofs((pubfilename.str()).c_str(), std::ofstream::out);
-			pubofs << armor;
-			pubofs.close();
-			// export generated private key in OpenPGP armor format
-			std::stringstream secfilename;
-			secfilename << whoami << "_" << std::hex;
-			for (size_t i = 0; i < keyid.size(); i++)
-				secfilename << (int)keyid[i];
-			secfilename << "_dkg-sec.asc";
-			armor = "", all.clear();
-			all.insert(all.end(), sec.begin(), sec.end());
-			all.insert(all.end(), uid.begin(), uid.end());
-			all.insert(all.end(), uidsig.begin(), uidsig.end());
-			all.insert(all.end(), ssb.begin(), ssb.end());
-			all.insert(all.end(), subsig.begin(), subsig.end());
-			CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(5, all, armor);
-			std::cout << armor << std::endl;
-			std::ofstream secofs((secfilename.str()).c_str(), std::ofstream::out);
-			secofs << armor;
-			secofs.close();
-			gcry_mpi_release(p);
-			gcry_mpi_release(q);
-			gcry_mpi_release(g);
-			gcry_mpi_release(y);
-			gcry_mpi_release(x);
-			gcry_mpi_release(r);
-			gcry_mpi_release(s);
-			gcry_sexp_release(key);
-			// export state of DKG including the secret shares into a file
-			std::stringstream dkgfilename;
-			dkgfilename << whoami << "_" << std::hex;
-			for (size_t i = 0; i < keyid.size(); i++)
-				dkgfilename << (int)keyid[i];
-			dkgfilename << ".dkg";
-			std::ofstream dkgofs((dkgfilename.str()).c_str(), std::ofstream::out);
-			dkg->PublishState(dkgofs);
-			dkgofs.close();
-
-			// release DKG
-			delete dkg;
-
-			// release RBC			
-			delete rbc;
-
-			// release VTMF instances
-			delete vtmf;
-			
-			// release pipe streams (private channels)
-			size_t numRead = 0, numWrite = 0;
-			for (size_t i = 0; i < N; i++)
-			{
-				numRead += P_in[i]->get_numRead() + P_out[i]->get_numRead();
-				numWrite += P_in[i]->get_numWrite() + P_out[i]->get_numWrite();
-				delete P_in[i], delete P_out[i];
-			}
-			std::cout << "P_" << whoami << ": numRead = " << numRead <<
-				" numWrite = " << numWrite << std::endl;
-
-			// release handles (unicast channel)
-			uP_in.clear(), uP_out.clear(), uP_key.clear();
-			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
-				" aiou.numWrite = " << aiou->numWrite << std::endl;
-
-			// release handles (broadcast channel)
-			bP_in.clear(), bP_out.clear(), bP_key.clear();
-			std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
-				" aiou2.numWrite = " << aiou2->numWrite << std::endl;
-
-			// release asynchronous unicast and broadcast
-			delete aiou, delete aiou2;
-			
 			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
 			/* END child code: participant P_i */
@@ -992,7 +989,7 @@ static void gnunet_statistics(void *cls)
 	std::cerr << "channel_ready_true = " << channel_ready_true << std::endl;
 	std::cerr << "send_queue.size() = " << send_queue.size() << ", send_queue_broadcast.size() = " << send_queue_broadcast.size() << std::endl;
 	// reschedule statistics task
-	st = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, 30), &gnunet_statistics, NULL);
+	st = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, 45), &gnunet_statistics, NULL);
 }
 
 static void gnunet_init(void *cls)
@@ -1033,12 +1030,11 @@ static void gnunet_init(void *cls)
 	pipes_created = true;
 
 	// fork instance
-	time_t keytime = time(NULL); // current time
-	start_instance(peer2pipe[thispeer], crs, uid, passphrase, keytime);
+	fork_instance(peer2pipe[thispeer], crs);
 
 	// next: schedule connect and statistics tasks
 	ct = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_MINUTES, 1), &gnunet_connect, NULL);
-//	st = GNUNET_SCHEDULER_add_now(&gnunet_statistics, NULL);
+	st = GNUNET_SCHEDULER_add_now(&gnunet_statistics, NULL);
 }
 
 static void gnunet_run(void *cls, char *const *args, const char *cfgfile,
@@ -1168,7 +1164,7 @@ int main
 		peers.resize(std::distance(peers.begin(), it));
 		N = peers.size();
 		std::cout << "INFO: canonicalized peer list = " << std::endl;
-		for (size_t i = 0; i < N; i++)
+		for (size_t i = 0; i < peers.size(); i++)
 			std::cout << peers[i] << std::endl;
 	}
 	if ((N < 4)  || (N > MAX_N))
@@ -1184,7 +1180,7 @@ int main
 	if (T == 0)
 		T++; // RBC will not work with 0-resilience
 	std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
-	std::getline(std::cin, uid);
+	std::getline(std::cin, u);
 	std::cout << "2. Choose a passphrase to protect your private key: ";
 	std::getline(std::cin, passphrase);
 
@@ -1203,9 +1199,9 @@ int main
 #endif
 
 	// open pipes
-	for (size_t i = 0; i < N; i++)
+	for (size_t i = 0; i < peers.size(); i++)
 	{
-		for (size_t j = 0; j < N; j++)
+		for (size_t j = 0; j < peers.size(); j++)
 		{
 			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
 				perror("dkg-generate (pipe)");
@@ -1215,20 +1211,19 @@ int main
 	}
 	
 	// start childs
-	time_t keytime = time(NULL); // current time
-	for (size_t i = 0; i < N; i++)
-		start_instance(i, crs, uid, passphrase, keytime);
+	for (size_t i = 0; i < peers.size(); i++)
+		fork_instance(i, crs);
 
 	// sleep for five seconds
 	sleep(5);
 	
 	// wait for childs and close pipes
-	for (size_t i = 0; i < N; i++)
+	for (size_t i = 0; i < peers.size(); i++)
 	{
 		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
 		if (waitpid(pid[i], NULL, 0) != pid[i])
 			perror("dkg-generate (waitpid)");
-		for (size_t j = 0; j < N; j++)
+		for (size_t j = 0; j < peers.size(); j++)
 		{
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
 				perror("dkg-generate (close)");
@@ -1245,7 +1240,7 @@ int main
 int main
 	(int argc, char **argv)
 {
-	std::cout << "fork(2) needed" << std::endl;
+	std::cout << "configure switch --enable-forking needed" << std::endl;
 	return 77;
 }
 
