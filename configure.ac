@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20161225])
+AC_REVISION([20161226])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.2.0], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -183,7 +183,6 @@ fi
 
 # Checks for header files
 AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
  ctime errno.h fcntl.h fstream functional gcrypt.h gmp.h inttypes.h iostream\
@@ -209,11 +208,12 @@ AC_ARG_ENABLE(forking, [AS_HELP_STRING([--disable-forking],
 	[disable forking tests])], use_forking=$enableval, use_forking=yes)
 AC_MSG_RESULT($use_forking)
 if test "$use_forking" = yes ; then
+	AC_HEADER_SYS_WAIT
 	AC_TYPE_PID_T
 	AC_FUNC_FORK
-	AC_CHECK_HEADERS([fcntl.h sys/wait.h signal.h], ,
+	AC_CHECK_HEADERS([unistd.h sys/wait.h signal.h], ,
 		AC_MSG_ERROR([headers are missing]))
-	AC_CHECK_FUNCS([fork pipe waitpid], ,
+	AC_CHECK_FUNCS([fork kill pipe waitpid], ,
 		AC_MSG_ERROR([functions are missing]))
 	AC_DEFINE(FORKING, , [Define to enable the forking tests])
 fi

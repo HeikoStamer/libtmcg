@@ -25,33 +25,11 @@
 #include <libTMCG.hh>
 #include <aiounicast_nonblock.hh>
 
-#undef GNUNET
-
 #ifdef FORKING
-
-#ifdef GNUNET
-#undef HAVE_CONFIG_H
-#undef PACKAGE
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_URL
-#undef PACKAGE_VERSION
-#undef VERSION
-#define HAVE_CONFIG_H 1
-#include <gnunet/platform.h>
-#include <gnunet/gnunet_util_lib.h>
-#include <gnunet/gnunet_transport_hello_service.h>
-#include <gnunet/gnunet_cadet_service.h>
-#undef HAVE_CONFIG_H
-#endif
 
 #include <sstream>
 #include <fstream>
 #include <vector>
-#include <list>
-#include <map>
 #include <algorithm>
 #include <cassert>
 #include <unistd.h>
@@ -61,18 +39,16 @@
 #include <signal.h>
 
 #include "pipestream.hh"
+#include "dkg-gnunet-common.hh"
 
-#undef NDEBUG
-#define MAX_N 1024
-
-int pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
-pid_t pid[MAX_N];
+int 				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
+pid_t 				pid[MAX_N];
 std::string			passphrase, armored_message;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
 
 void run_instance
-	(size_t whoami)
+	(const size_t whoami)
 {
 	// read the exported DKG state from file
 	std::string line, dkgfilename = peers[whoami] + ".dkg";
@@ -1154,7 +1130,7 @@ void run_instance
 }
 
 void fork_instance
-	(size_t whoami)
+	(const size_t whoami)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-decrypt (fork)");
@@ -1176,6 +1152,10 @@ void fork_instance
 		}
 	}
 }
+
+#ifdef GNUNET
+char *gnunet_opt_port = NULL;
+#endif
 
 int main
 	(int argc, char *const *argv)
