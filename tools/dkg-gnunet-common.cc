@@ -111,6 +111,11 @@ int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 		std::cerr << "WARNING: ignore incoming message from unregistered channel" << std::endl;
 		return GNUNET_OK;
 	}
+	else
+	{
+		if (channel_ready.count(channel))
+			channel_ready[channel] = true;
+	}
 	GNUNET_assert(ntohs(message->size) >= sizeof(*message));
 	len = ntohs(message->size) - sizeof(*message);
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Got message from %s with %u bytes\n", peer.c_str(), len);
@@ -529,19 +534,11 @@ void gnunet_io(void *cls)
 	{
 		DKG_BufferListEntry ble = send_queue.front();
 		DKG_Buffer buf = ble.second;
-		if ((pipe2channel_out.count(ble.first) && channel_ready[pipe2channel_out[ble.first]]) || pipe2channel_in.count(ble.first))
+		if (pipe2channel_in.count(ble.first)) // have input channel to this peer?
 		{
 			th_datalen = buf.first;
-			if (pipe2channel_out.count(ble.first) && channel_ready[pipe2channel_out[ble.first]])
-			{
-//std::cerr << "try to send " << th_datalen << " bytes on output channel to " << pipe2peer[ble.first] << std::endl;
-				th_ch = pipe2channel_out[ble.first];
-			}
-			else if (pipe2channel_in.count(ble.first))
-			{
-//std::cerr << "try to send " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
-				th_ch = pipe2channel_in[ble.first];
-			}
+std::cerr << "try to send " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
+			th_ch = pipe2channel_in[ble.first];
 			th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
 				sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_data_ready, buf.second);
 			if (th == NULL)
@@ -561,19 +558,11 @@ void gnunet_io(void *cls)
 	{
 		DKG_BufferListEntry ble = send_queue_broadcast.front();
 		DKG_Buffer buf = ble.second;
-		if ((pipe2channel_out.count(ble.first) && channel_ready[pipe2channel_out[ble.first]]) || pipe2channel_in.count(ble.first))
+		if (pipe2channel_in.count(ble.first)) // have input channel to this peer?
 		{
 			th_datalen = buf.first;
-			if (pipe2channel_out.count(ble.first) && channel_ready[pipe2channel_out[ble.first]])
-			{
-//std::cerr << "try to broadcast " << th_datalen << " bytes on output channel to " << pipe2peer[ble.first] << std::endl;
-				th_ch = pipe2channel_out[ble.first];
-			}
-			else if (pipe2channel_in.count(ble.first))
-			{
-//std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
-				th_ch = pipe2channel_in[ble.first];
-			}
+std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
+			th_ch = pipe2channel_in[ble.first];
 			th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
 				sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_data_ready_broadcast, buf.second);
 			if (th == NULL)
@@ -611,6 +600,7 @@ void gnunet_connect(void *cls)
 		{
 			GNUNET_assert(channel_ready.count(pipe2channel_out[i]));
 			stabilized = channel_ready[pipe2channel_out[i]];
+			channel_ready[pipe2channel_out[i]] = false; // mark channel as not ready
 		}
 		if ((i != peer2pipe[thispeer]) && !stabilized)
 		{
