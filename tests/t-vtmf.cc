@@ -163,6 +163,30 @@ void check
 			
 			TMCG_OpenStack<VTMF_Card> os;
 			TMCG_Stack<VTMF_Card> sA, sAB, sB;
+			std::cout << "A: test basic stack operations" << std::endl;
+			for (size_t i = 0; i < TMCG_MAX_CARDS; i++)
+			{
+				VTMF_Card c;
+				os.push(i, c);
+			}
+			assert(os.size() == TMCG_MAX_CARDS);
+			size_t j = (TMCG_MAX_CARDS - 1);
+			for (size_t i = 0; i < TMCG_MAX_CARDS; i++, j--)
+			{
+				VTMF_Card c;
+				size_t idx = TMCG_MAX_CARDS;
+				bool notempty = os.pop(idx, c);
+				assert(notempty);
+				assert(idx == j);
+			}
+			assert(os.empty());
+			for (size_t i = 0; i < TMCG_MAX_CARDS; i++)
+			{
+				VTMF_Card c;
+				os.push(i, c);
+			}
+			os.clear();
+			assert(os.empty());
 			TMCG_StackSecret<VTMF_CardSecret> ssA;
 			std::cout << "A: CreateOpenCard()" << std::endl;
 			for (size_t i = 0; i < TMCG_MAX_CARDS; i++)

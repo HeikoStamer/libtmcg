@@ -159,8 +159,8 @@ template <typename CardType> struct TMCG_OpenStack
 		if (stack.empty())
 			return false;
 		
-		type = (stack.back())->first;
-		c = (stack.back())->second;
+		type = (stack.back()).first;
+		c = (stack.back()).second;
 		stack.pop_back();
 		return true;
 	}
