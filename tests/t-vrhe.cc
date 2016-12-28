@@ -46,7 +46,10 @@ size_t random_rotation
 	pi.clear();
 	for (size_t i = 0; i < n; i++)
 		pi.push_back((r + i) % n);
-	return ((n - r) % n);
+	if (n > 0)
+		return ((n - r) % n);
+	else
+		return 0;
 }
 
 bool equal_rotations

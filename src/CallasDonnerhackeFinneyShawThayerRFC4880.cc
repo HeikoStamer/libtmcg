@@ -576,7 +576,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 		for (size_t i = 0; (i < hash_out.size()) && (i < sklen); i++)
 			out.push_back(hash_out[i]);
 	}
-	else
+	else if (hashlen > 0)
 	{
 		size_t instances = (sklen / hashlen) + 1;
 		size_t skcnt = 0;
