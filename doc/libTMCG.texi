@@ -450,14 +450,14 @@ of the used features and specifies the required versions:
 		reasonable performance.
 		
 	@item GNU Crypto Library (@file{libgcrypt}),
-		Version@tie{}@math{\ge}@tie{}1.2.0
+		Version@tie{}@math{\ge}@tie{}1.6.0
 		
 		The library provides some basic cryptographic algorithms
 		(e.g. SHA-256, RIPEMD-160) and an easily accessible interface for
 		cryptographically strong pseudo random numbers.
 	
 	@item GNU Privacy Guard Error Code Library (@file{libgpg-error}),
-		Version@tie{}@math{\ge}@tie{}0.5
+		Version@tie{}@math{\ge}@tie{}1.12
 		
 		This library defines common error values, e.g., returned by the
 		GNU Crypto Library.
