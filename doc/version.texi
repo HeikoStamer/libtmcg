@@ -1,4 +1,4 @@
-@set UPDATED 12 November 2016
-@set UPDATED-MONTH November 2016
+@set UPDATED 15 December 2016
+@set UPDATED-MONTH December 2016
 @set EDITION 1.2.0
 @set VERSION 1.2.0
