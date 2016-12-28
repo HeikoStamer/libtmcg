@@ -388,9 +388,9 @@ bool NaorPinkasEOTP::Send_interactive_OneOutOfN
 		for (size_t i = 0; i < M.size(); i++)
 		{
 			mpz_clear(z[i]), mpz_clear(s[i]), mpz_clear(r[i]), mpz_clear(w[i]);
-			delete z[i], delete s[i], delete r[i], delete w[i];
+			delete [] z[i], delete [] s[i], delete [] r[i], delete [] w[i];
 			mpz_clear(ENC[i]);
-			delete ENC[i];
+			delete [] ENC[i];
 		}
 		z.clear(), s.clear(), r.clear(), w.clear(), ENC.clear();
 		// return
@@ -463,9 +463,9 @@ bool NaorPinkasEOTP::Choose_interactive_OneOutOfN
 		for (size_t i = 0; i < N; i++)
 		{
 			mpz_clear(z[i]), mpz_clear(w[i]);
-			delete z[i], delete w[i];
+			delete [] z[i], delete [] w[i];
 			mpz_clear(ENC[i]);
-			delete ENC[i];
+			delete [] ENC[i];
 		}
 		z.clear(), w.clear(), ENC.clear();
 		// return
@@ -542,9 +542,9 @@ bool NaorPinkasEOTP::Send_interactive_OneOutOfN_optimized
 		for (size_t i = 0; i < M.size(); i++)
 		{
 			mpz_clear(s[i]), mpz_clear(r[i]), mpz_clear(w[i]);
-			delete s[i], delete r[i], delete w[i];
+			delete [] s[i], delete [] r[i], delete [] w[i];
 			mpz_clear(ENC[i]);
-			delete ENC[i];
+			delete [] ENC[i];
 		}
 		s.clear(), r.clear(), w.clear(), ENC.clear();
 		// return
@@ -612,9 +612,9 @@ bool NaorPinkasEOTP::Choose_interactive_OneOutOfN_optimized
 		for (size_t i = 0; i < N; i++)
 		{
 			mpz_clear(w[i]);
-			delete w[i];
+			delete [] w[i];
 			mpz_clear(ENC[i]);
-			delete ENC[i];
+			delete [] ENC[i];
 		}
 		w.clear(), ENC.clear();
 		// return

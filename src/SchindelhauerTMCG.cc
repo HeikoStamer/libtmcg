@@ -117,9 +117,9 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 	
 	mpz_clear(foo), mpz_clear(bar), mpz_clear(lej), mpz_clear(t_sqrt);
 	for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ri++)
-		mpz_clear(*ri), delete *ri;
+		mpz_clear(*ri), delete [] *ri;
 	for (std::vector<mpz_ptr>::iterator si = ss.begin(); si != ss.end(); si++)
-		mpz_clear(*si), delete *si;
+		mpz_clear(*si), delete [] *si;
 }
 
 bool SchindelhauerTMCG::TMCG_VerifyQuadraticResidue
@@ -181,9 +181,9 @@ bool SchindelhauerTMCG::TMCG_VerifyQuadraticResidue
 	{
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
 		for (std::vector<mpz_ptr>::iterator ri = RR.begin(); ri != RR.end(); ri++)
-			mpz_clear(*ri), delete *ri;
+			mpz_clear(*ri), delete [] *ri;
 		for (std::vector<mpz_ptr>::iterator si = SS.begin(); si != SS.end(); si++)
-			mpz_clear(*si), delete *si;
+			mpz_clear(*si), delete [] *si;
 		return return_value;
 	}
 }
@@ -369,9 +369,9 @@ void SchindelhauerTMCG::TMCG_ProveMaskValue
 	{
 		mpz_clear(foo), mpz_clear(bar);
 		for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ri++)
-			mpz_clear(*ri), delete *ri;
+			mpz_clear(*ri), delete [] *ri;
 		for (std::vector<mpz_ptr>::iterator bi = bb.begin(); bi != bb.end(); bi++)
-			mpz_clear(*bi), delete *bi;
+			mpz_clear(*bi), delete [] *bi;
 		return;
 	}
 }
@@ -426,7 +426,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskValue
 	{
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
 		for (std::vector<mpz_ptr>::iterator ti = T.begin(); ti != T.end(); ti++)
-			mpz_clear(*ti), delete *ti;
+			mpz_clear(*ti), delete [] *ti;
 		return return_value;
 	}
 }
@@ -560,13 +560,13 @@ void SchindelhauerTMCG::TMCG_ProveMaskOne
 	
 	mpz_clear(y1m), mpz_clear(foo), mpz_clear(bar), mpz_clear(tim);
 	for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ri++)
-		mpz_clear(*ri), delete *ri;
+		mpz_clear(*ri), delete [] *ri;
 	for (std::vector<mpz_ptr>::iterator bi = bb.begin(); bi != bb.end(); bi++)
-		mpz_clear(*bi), delete *bi;
+		mpz_clear(*bi), delete [] *bi;
 	for (std::vector<mpz_ptr>::iterator si = ss.begin(); si != ss.end(); si++)
-		mpz_clear(*si), delete *si;
+		mpz_clear(*si), delete [] *si;
 	for (std::vector<mpz_ptr>::iterator ci = cc.begin(); ci != cc.end(); ci++)
-		mpz_clear(*ci), delete *ci;
+		mpz_clear(*ci), delete [] *ci;
 }
 
 bool SchindelhauerTMCG::TMCG_VerifyMaskOne
@@ -630,9 +630,9 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskOne
 	{	
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
 		for (std::vector<mpz_ptr>::iterator ri = RR.begin(); ri != RR.end(); ri++)
-			mpz_clear(*ri), delete *ri;
+			mpz_clear(*ri), delete [] *ri;
 		for (std::vector<mpz_ptr>::iterator si = SS.begin(); si != SS.end(); si++)
-			mpz_clear(*si), delete *si;
+			mpz_clear(*si), delete [] *si;
 		return return_value;
 	}
 }
@@ -1525,11 +1525,11 @@ void SchindelhauerTMCG::TMCG_ReleaseStackEquality_Groth
 {
 	for (size_t i = 0; i < pi.size(); i++)
 	{
-		mpz_clear(R[i]), delete R[i];
+		mpz_clear(R[i]), delete [] R[i];
 		mpz_clear(e[i].first), mpz_clear(e[i].second);
-		delete e[i].first, delete e[i].second;
+		delete [] e[i].first, delete [] e[i].second;
 		mpz_clear(E[i].first), mpz_clear(E[i].second);
-		delete E[i].first, delete E[i].second;
+		delete [] E[i].first, delete [] E[i].second;
 	}
 	pi.clear(), R.clear(), e.clear(), E.clear();
 }
@@ -1541,11 +1541,11 @@ void SchindelhauerTMCG::TMCG_ReleaseStackEquality_Hoogh
 {
 	for (size_t i = 0; i < R.size(); i++)
 	{
-		mpz_clear(R[i]), delete R[i];
+		mpz_clear(R[i]), delete [] R[i];
 		mpz_clear(e[i].first), mpz_clear(e[i].second);
-		delete e[i].first, delete e[i].second;
+		delete [] e[i].first, delete [] e[i].second;
 		mpz_clear(E[i].first), mpz_clear(E[i].second);
-		delete E[i].first, delete E[i].second;
+		delete [] E[i].first, delete [] E[i].second;
 	}
 	R.clear(), e.clear(), E.clear();
 }
@@ -1557,9 +1557,9 @@ void SchindelhauerTMCG::TMCG_ReleaseStackEquality_Groth
 	for (size_t i = 0; i < e.size(); i++)
 	{
 		mpz_clear(e[i].first), mpz_clear(e[i].second);
-		delete e[i].first, delete e[i].second;
+		delete [] e[i].first, delete [] e[i].second;
 		mpz_clear(E[i].first), mpz_clear(E[i].second);
-		delete E[i].first, delete E[i].second;
+		delete [] E[i].first, delete [] E[i].second;
 	}
 	e.clear(), E.clear();
 }

@@ -67,7 +67,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 			// the last element is called $h$
 			mpz_set(h, tmp);
 			mpz_clear(tmp);
-			delete tmp;
+			delete [] tmp;
 		}
 	}
 	mpz_clear(foo);
@@ -366,7 +366,7 @@ PedersenCommitmentScheme::~PedersenCommitmentScheme
 	for (size_t i = 0; i < g.size(); i++)
 	{
 			mpz_clear(g[i]);
-			delete g[i];
+			delete [] g[i];
 	}
 	g.clear();
 	

@@ -778,9 +778,9 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		for (size_t k = 0; k <= t; k++)
 		{
 			mpz_clear(a_i[k]), mpz_clear(b_i[k]);
-			delete a_i[k], delete b_i[k];
+			delete [] a_i[k], delete [] b_i[k];
 			mpz_clear(g__a_i[k]);
-			delete g__a_i[k];
+			delete [] g__a_i[k];
 		}
 		a_i.clear(), b_i.clear(), g__a_i.clear();
 		for (size_t j = 0; j < n; j++)
@@ -788,12 +788,12 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			for (size_t k = 0; k <= t; k++)
 			{
 				mpz_clear(A_ik[j][k]);
-				delete A_ik[j][k];
+				delete [] A_ik[j][k];
 			}
 			for (size_t i2 = 0; i2 < n; i2++)
 			{
 				mpz_clear(g__s_ij[j][i2]);
-				delete g__s_ij[j][i2];
+				delete [] g__s_ij[j][i2];
 			}
 			A_ik[j].clear();
 			g__s_ij[j].clear();
@@ -963,13 +963,13 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 	for (size_t j = 0; j < y_i.size(); j++)
 	{
 		mpz_clear(y_i[j]);
-		delete y_i[j];
+		delete [] y_i[j];
 	}
 	y_i.clear();
 	for (size_t j = 0; j < z_i.size(); j++)
 	{
 		mpz_clear(z_i[j]);
-		delete z_i[j];
+		delete [] z_i[j];
 	}
 	z_i.clear();
 	for (size_t j = 0; j < s_ij.size(); j++)
@@ -977,7 +977,7 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 		for (size_t i = 0; i < s_ij[j].size(); i++)
 		{
 			mpz_clear(s_ij[j][i]);
-			delete s_ij[j][i];
+			delete [] s_ij[j][i];
 		}
 		s_ij[j].clear();
 	}
@@ -987,7 +987,7 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 		for (size_t i = 0; i < sprime_ij[j].size(); i++)
 		{
 			mpz_clear(sprime_ij[j][i]);
-			delete sprime_ij[j][i];
+			delete [] sprime_ij[j][i];
 		}
 		sprime_ij[j].clear();
 	}
@@ -997,7 +997,7 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 		for (size_t k = 0; k < C_ik[j].size(); k++)
 		{
 			mpz_clear(C_ik[j][k]);
-			delete C_ik[j][k];
+			delete [] C_ik[j][k];
 		}
 	}
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
@@ -1308,7 +1308,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		for (size_t j = 0; j < n; j++)
 		{
 			mpz_clear(s_i[j]), mpz_clear(r_i[j]), mpz_clear(u_i[j]);
-			delete s_i[j], delete r_i[j], delete u_i[j];
+			delete [] s_i[j], delete [] r_i[j], delete [] u_i[j];
 		}
 		s_i.clear(), r_i.clear(), u_i.clear();
 		delete dkg2;
@@ -1360,7 +1360,7 @@ GennaroJareckiKrawczykRabinNTS::~GennaroJareckiKrawczykRabinNTS
 	for (size_t j = 0; j < y_i.size(); j++)
 	{
 		mpz_clear(y_i[j]);
-		delete y_i[j];
+		delete [] y_i[j];
 	}
 	y_i.clear();
 

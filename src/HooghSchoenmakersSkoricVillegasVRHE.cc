@@ -164,8 +164,8 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive
 	{
 		mpz_clear(beta[i]), mpz_clear(f[i]), mpz_clear(tk[i]),
 			mpz_clear(lambdak[i]);
-		delete beta[i], delete f[i], delete tk[i],
-			delete lambdak[i];
+		delete [] beta[i], delete [] f[i], delete [] tk[i],
+			delete [] lambdak[i];
 	}
 	beta.clear(), f.clear(), tk.clear(), lambdak.clear();
 }
@@ -292,8 +292,8 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive_publiccoin
 	{
 		mpz_clear(beta[i]), mpz_clear(f[i]), mpz_clear(tk[i]),
 			mpz_clear(lambdak[i]);
-		delete beta[i], delete f[i], delete tk[i],
-			delete lambdak[i];
+		delete [] beta[i], delete [] f[i], delete [] tk[i],
+			delete [] lambdak[i];
 	}
 	beta.clear(), f.clear(), tk.clear(), lambdak.clear();
 }
@@ -424,8 +424,8 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_noninteractive
 	{
 		mpz_clear(beta[i]), mpz_clear(f[i]), mpz_clear(tk[i]),
 			mpz_clear(lambdak[i]);
-		delete beta[i], delete f[i], delete tk[i],
-			delete lambdak[i];
+		delete [] beta[i], delete [] f[i], delete [] tk[i],
+			delete [] lambdak[i];
 	}
 	beta.clear(), f.clear(), tk.clear(), lambdak.clear();
 }
@@ -533,8 +533,8 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 		{
 			mpz_clear(beta[i]), mpz_clear(f[i]), mpz_clear(tk[i]),
 				mpz_clear(lambdak[i]);
-			delete beta[i], delete f[i], delete tk[i],
-				delete lambdak[i];
+			delete [] beta[i], delete [] f[i], delete [] tk[i],
+				delete [] lambdak[i];
 		}
 		beta.clear(), f.clear(), tk.clear(), lambdak.clear();
 		// return
@@ -652,8 +652,8 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive_publiccoin
 		{
 			mpz_clear(beta[i]), mpz_clear(f[i]), mpz_clear(tk[i]),
 				mpz_clear(lambdak[i]);
-			delete beta[i], delete f[i], delete tk[i],
-				delete lambdak[i];
+			delete [] beta[i], delete [] f[i], delete [] tk[i],
+				delete [] lambdak[i];
 		}
 		beta.clear(), f.clear(), tk.clear(), lambdak.clear();
 		// return
@@ -772,8 +772,8 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_noninteractive
 		{
 			mpz_clear(beta[i]), mpz_clear(f[i]), mpz_clear(tk[i]),
 				mpz_clear(lambdak[i]);
-			delete beta[i], delete f[i], delete tk[i],
-				delete lambdak[i];
+			delete [] beta[i], delete [] f[i], delete [] tk[i],
+				delete [] lambdak[i];
 		}
 		beta.clear(), f.clear(), tk.clear(), lambdak.clear();
 		// return
@@ -1099,20 +1099,21 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive
 		mpz_clear(lhs), mpz_clear(rhs);
 	mpz_clear(LHS.first), mpz_clear(LHS.second),
 		mpz_clear(RHS.first), mpz_clear(RHS.second);
-	delete LHS.first, delete LHS.second, delete RHS.first, delete RHS.second;
+	delete [] LHS.first, delete [] LHS.second, delete [] RHS.first, delete [] RHS.second;
 	for (size_t i = 0; i < s.size(); i++)
 	{
 		mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
 			mpz_clear(tau[i]), mpz_clear(rho[i]), mpz_clear(mu[i]),
 			mpz_clear(uk[i]), mpz_clear(tk[i]), mpz_clear(ok[i]),
 			mpz_clear(pk[i]), mpz_clear(mk[i]);
-		delete alpha[i], delete hk[i], delete fk[i],
-			delete tau[i], delete rho[i], delete mu[i],
-			delete uk[i], delete tk[i], delete ok[i], delete pk[i], delete mk[i];
+		delete [] alpha[i], delete [] hk[i], delete [] fk[i],
+			delete [] tau[i], delete [] rho[i], delete [] mu[i],
+			delete [] uk[i], delete [] tk[i], delete [] ok[i],
+			delete [] pk[i], delete [] mk[i];
 		mpz_clear(Ak[i].first), mpz_clear(Ak[i].second),
 			mpz_clear(Fk[i].first), mpz_clear(Fk[i].second);
-		delete Ak[i].first, delete Ak[i].second,
-			delete Fk[i].first, delete Fk[i].second;
+		delete [] Ak[i].first, delete [] Ak[i].second,
+			delete [] Fk[i].first, delete [] Fk[i].second;
 	}
 	alpha.clear(), hk.clear(), fk.clear(), tau.clear(), rho.clear(),
 		mu.clear(), Ak.clear(), Fk.clear(), uk.clear(), tk.clear(),
@@ -1278,20 +1279,21 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive_publiccoin
 		mpz_clear(lhs), mpz_clear(rhs);
 	mpz_clear(LHS.first), mpz_clear(LHS.second),
 		mpz_clear(RHS.first), mpz_clear(RHS.second);
-	delete LHS.first, delete LHS.second, delete RHS.first, delete RHS.second;
+	delete [] LHS.first, delete [] LHS.second, delete [] RHS.first, delete [] RHS.second;
 	for (size_t i = 0; i < s.size(); i++)
 	{
 		mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
 			mpz_clear(tau[i]), mpz_clear(rho[i]), mpz_clear(mu[i]),
 			mpz_clear(uk[i]), mpz_clear(tk[i]), mpz_clear(ok[i]),
 			mpz_clear(pk[i]), mpz_clear(mk[i]);
-		delete alpha[i], delete hk[i], delete fk[i],
-			delete tau[i], delete rho[i], delete mu[i],
-			delete uk[i], delete tk[i], delete ok[i], delete pk[i], delete mk[i];
+		delete [] alpha[i], delete [] hk[i], delete [] fk[i],
+			delete [] tau[i], delete [] rho[i], delete [] mu[i],
+			delete [] uk[i], delete [] tk[i], delete [] ok[i],
+			delete [] pk[i], delete [] mk[i];
 		mpz_clear(Ak[i].first), mpz_clear(Ak[i].second),
 			mpz_clear(Fk[i].first), mpz_clear(Fk[i].second);
-		delete Ak[i].first, delete Ak[i].second,
-			delete Fk[i].first, delete Fk[i].second;
+		delete [] Ak[i].first, delete [] Ak[i].second,
+			delete [] Fk[i].first, delete [] Fk[i].second;
 	}
 	alpha.clear(), hk.clear(), fk.clear(), tau.clear(), rho.clear(),
 		mu.clear(), Ak.clear(), Fk.clear(), uk.clear(), tk.clear(),
@@ -1460,20 +1462,21 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_noninteractive
 		mpz_clear(lhs), mpz_clear(rhs);
 	mpz_clear(LHS.first), mpz_clear(LHS.second),
 		mpz_clear(RHS.first), mpz_clear(RHS.second);
-	delete LHS.first, delete LHS.second, delete RHS.first, delete RHS.second;
+	delete [] LHS.first, delete [] LHS.second, delete [] RHS.first, delete [] RHS.second;
 	for (size_t i = 0; i < s.size(); i++)
 	{
 		mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
 			mpz_clear(tau[i]), mpz_clear(rho[i]), mpz_clear(mu[i]),
 			mpz_clear(uk[i]), mpz_clear(tk[i]), mpz_clear(ok[i]),
 			mpz_clear(pk[i]), mpz_clear(mk[i]);
-		delete alpha[i], delete hk[i], delete fk[i],
-			delete tau[i], delete rho[i], delete mu[i],
-			delete uk[i], delete tk[i], delete ok[i], delete pk[i], delete mk[i];
+		delete [] alpha[i], delete [] hk[i], delete [] fk[i],
+			delete [] tau[i], delete [] rho[i], delete [] mu[i],
+			delete [] uk[i], delete [] tk[i], delete [] ok[i],
+			delete [] pk[i], delete [] mk[i];
 		mpz_clear(Ak[i].first), mpz_clear(Ak[i].second),
 			mpz_clear(Fk[i].first), mpz_clear(Fk[i].second);
-		delete Ak[i].first, delete Ak[i].second,
-			delete Fk[i].first, delete Fk[i].second;
+		delete [] Ak[i].first, delete [] Ak[i].second,
+			delete [] Fk[i].first, delete [] Fk[i].second;
 	}
 	alpha.clear(), hk.clear(), fk.clear(), tau.clear(), rho.clear(),
 		mu.clear(), Ak.clear(), Fk.clear(), uk.clear(), tk.clear(),
@@ -1631,17 +1634,17 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 			mpz_clear(lhs), mpz_clear(rhs);
 		mpz_clear(LHS.first), mpz_clear(LHS.second),
 			mpz_clear(RHS.first), mpz_clear(RHS.second);
-		delete LHS.first, delete LHS.second, delete RHS.first, delete RHS.second;
+		delete [] LHS.first, delete [] LHS.second, delete [] RHS.first, delete [] RHS.second;
 		for (size_t i = 0; i < X.size(); i++)
 		{
 			mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
 				mpz_clear(tau[i]), mpz_clear(rho[i]), mpz_clear(mu[i]);
-			delete alpha[i], delete hk[i], delete fk[i],
-				delete tau[i], delete rho[i], delete mu[i];
+			delete [] alpha[i], delete [] hk[i], delete [] fk[i],
+				delete [] tau[i], delete [] rho[i], delete [] mu[i];
 			mpz_clear(Ak[i].first), mpz_clear(Ak[i].second),
 				mpz_clear(Fk[i].first), mpz_clear(Fk[i].second);
-			delete Ak[i].first, delete Ak[i].second,
-				delete Fk[i].first, delete Fk[i].second;
+			delete [] Ak[i].first, delete [] Ak[i].second,
+				delete [] Fk[i].first, delete [] Fk[i].second;
 		}
 		alpha.clear(), hk.clear(), fk.clear(), tau.clear(), rho.clear(),
 			mu.clear(), Ak.clear(), Fk.clear();
@@ -1808,17 +1811,17 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 			mpz_clear(lhs), mpz_clear(rhs);
 		mpz_clear(LHS.first), mpz_clear(LHS.second),
 			mpz_clear(RHS.first), mpz_clear(RHS.second);
-		delete LHS.first, delete LHS.second, delete RHS.first, delete RHS.second;
+		delete [] LHS.first, delete [] LHS.second, delete [] RHS.first, delete [] RHS.second;
 		for (size_t i = 0; i < X.size(); i++)
 		{
 			mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
 				mpz_clear(tau[i]), mpz_clear(rho[i]), mpz_clear(mu[i]);
-			delete alpha[i], delete hk[i], delete fk[i],
-				delete tau[i], delete rho[i], delete mu[i];
+			delete [] alpha[i], delete [] hk[i], delete [] fk[i],
+				delete [] tau[i], delete [] rho[i], delete [] mu[i];
 			mpz_clear(Ak[i].first), mpz_clear(Ak[i].second),
 				mpz_clear(Fk[i].first), mpz_clear(Fk[i].second);
-			delete Ak[i].first, delete Ak[i].second,
-				delete Fk[i].first, delete Fk[i].second;
+			delete [] Ak[i].first, delete [] Ak[i].second,
+				delete [] Fk[i].first, delete [] Fk[i].second;
 		}
 		alpha.clear(), hk.clear(), fk.clear(), tau.clear(), rho.clear(),
 			mu.clear(), Ak.clear(), Fk.clear();
@@ -1986,17 +1989,17 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 			mpz_clear(lhs), mpz_clear(rhs);
 		mpz_clear(LHS.first), mpz_clear(LHS.second),
 			mpz_clear(RHS.first), mpz_clear(RHS.second);
-		delete LHS.first, delete LHS.second, delete RHS.first, delete RHS.second;
+		delete [] LHS.first, delete [] LHS.second, delete [] RHS.first, delete [] RHS.second;
 		for (size_t i = 0; i < X.size(); i++)
 		{
 			mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
 				mpz_clear(tau[i]), mpz_clear(rho[i]), mpz_clear(mu[i]);
-			delete alpha[i], delete hk[i], delete fk[i],
-				delete tau[i], delete rho[i], delete mu[i];
+			delete [] alpha[i], delete [] hk[i], delete [] fk[i],
+				delete [] tau[i], delete [] rho[i], delete [] mu[i];
 			mpz_clear(Ak[i].first), mpz_clear(Ak[i].second),
 				mpz_clear(Fk[i].first), mpz_clear(Fk[i].second);
-			delete Ak[i].first, delete Ak[i].second,
-				delete Fk[i].first, delete Fk[i].second;
+			delete [] Ak[i].first, delete [] Ak[i].second,
+				delete [] Fk[i].first, delete [] Fk[i].second;
 		}
 		alpha.clear(), hk.clear(), fk.clear(), tau.clear(), rho.clear(),
 			mu.clear(), Ak.clear(), Fk.clear();

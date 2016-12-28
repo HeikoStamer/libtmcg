@@ -118,7 +118,7 @@ void CachinKursawePetzoldShoupRBC::unsetID
 		mpz_ptr tmp = last_IDs.back();
 		mpz_set(ID, tmp);
 		mpz_clear(tmp);
-		delete tmp;
+		delete [] tmp;
 		last_IDs.pop_back();
 	}
 	else
@@ -197,7 +197,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						for (size_t mm = 0; mm < lit->size(); mm++)
 						{
 							mpz_clear((*lit)[mm]);
-							delete (*lit)[mm];
+							delete [] (*lit)[mm];
 						}
 						lit->clear();
 						deliver_buf.erase(lit);
@@ -214,7 +214,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						{
 							mpz_set(message[mm], buf_msg[i].front());
 							mpz_clear(buf_msg[i].front());
-							delete buf_msg[i].front();
+							delete [] buf_msg[i].front();
 							buf_msg[i].pop_front();
 						}
 						l = i;
@@ -444,7 +444,7 @@ std::cerr << "RBC(" << j << "): error in Receive(l2) = " << l2 << std::endl;
 								for (size_t mm = 0; mm < message3.size(); mm++)
 								{
 									mpz_clear(message3[mm]);
-									delete message3[mm];
+									delete [] message3[mm];
 								}
 								message3.clear();
 							}
@@ -519,7 +519,7 @@ std::cerr << "RBC(" << j << "): error in Receive(l2) = " << l2 << std::endl;
 		for (size_t mm = 0; mm < message.size(); mm++)
 		{
 			mpz_clear(message[mm]);
-			delete message[mm];
+			delete [] message[mm];
 		}
 		message.clear();
 		// return
@@ -540,7 +540,7 @@ std::cerr << "RBC(" << j << "): want mpz from " << i_in << std::endl;
 		{
 			mpz_set(m, buf_mpz[i_in].front());
 			mpz_clear(buf_mpz[i_in].front());
-			delete buf_mpz[i_in].front();
+			delete [] buf_mpz[i_in].front();
 			buf_mpz[i_in].pop_front();
 std::cerr << "RBC(" << j << "): got buffered mpz from " << i_in << std::endl;
 			return true;
@@ -561,7 +561,7 @@ std::cerr << "RBC(" << j << "): got mpz from " << l << std::endl;
 			else
 			{
 				mpz_clear(tmp);
-				delete tmp;
+				delete [] tmp;
 			}
 		}
 	}
@@ -577,7 +577,7 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 	for (RBC_BufferList::iterator lit = last_IDs.begin(); lit != last_IDs.end(); ++lit)
 	{
 		mpz_clear(*lit);
-		delete *lit;
+		delete [] *lit;
 	}
 	last_IDs.clear();
 	mpz_clear(r_send);
@@ -597,12 +597,12 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 	for (RBC_TagMpz::iterator mit = mbar.begin(); mit != mbar.end(); ++mit)
 	{
 		mpz_clear((*mit).second);
-		delete (*mit).second;
+		delete [] (*mit).second;
 	}
 	for (RBC_TagMpz::iterator mit = dbar.begin(); mit != dbar.end(); ++mit)
 	{
 		mpz_clear((*mit).second);
-		delete (*mit).second;
+		delete [] (*mit).second;
 	}
 	mbar.clear(), dbar.clear();
 	for (std::map<std::string, RBC_TagCount>::iterator mit = e_d.begin(); mit != e_d.end(); ++mit)
@@ -619,17 +619,17 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		for (RBC_BufferList::iterator lit = buf_mpz[i].begin(); lit != buf_mpz[i].end(); ++lit)
 		{
 			mpz_clear(*lit);
-			delete *lit;
+			delete [] *lit;
 		}
 		buf_mpz[i].clear();
 		for (RBC_BufferList::iterator lit = buf_msg[i].begin(); lit != buf_msg[i].end(); ++lit)
 		{
 			mpz_clear(*lit);
-			delete *lit;
+			delete [] *lit;
 		}
 		buf_msg[i].clear();
 		mpz_clear(deliver_s[i]);
-		delete deliver_s[i];
+		delete [] deliver_s[i];
 	}
 	buf_mpz.clear(), buf_msg.clear();
 	for (std::list<RBC_Message>::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
@@ -637,7 +637,7 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		for (RBC_Message::iterator vit = lit->begin(); vit != lit->end(); ++vit)
 		{
 			mpz_clear(*vit);
-			delete *vit;
+			delete [] *vit;
 		}
 		lit->clear();
 	}	

@@ -449,7 +449,7 @@ bool JareckiLysyanskayaRVSS::Share
 		for (size_t k = 0; k <= t; k++)
 		{
 			mpz_clear(c_ik[k]), mpz_clear(hatc_ik[k]);
-			delete c_ik[k], delete hatc_ik[k];
+			delete [] c_ik[k], delete [] hatc_ik[k];
 		}
 		c_ik.clear(), hatc_ik.clear();
 		// return
@@ -663,7 +663,7 @@ JareckiLysyanskayaRVSS::~JareckiLysyanskayaRVSS
 		for (size_t i = 0; i < alpha_ij[j].size(); i++)
 		{
 			mpz_clear(alpha_ij[j][i]);
-			delete alpha_ij[j][i];
+			delete [] alpha_ij[j][i];
 		}
 		alpha_ij[j].clear();
 	}
@@ -673,7 +673,7 @@ JareckiLysyanskayaRVSS::~JareckiLysyanskayaRVSS
 		for (size_t i = 0; i < hatalpha_ij[j].size(); i++)
 		{
 			mpz_clear(hatalpha_ij[j][i]);
-			delete hatalpha_ij[j][i];
+			delete [] hatalpha_ij[j][i];
 		}
 		hatalpha_ij[j].clear();
 	}
@@ -683,7 +683,7 @@ JareckiLysyanskayaRVSS::~JareckiLysyanskayaRVSS
 		for (size_t k = 0; k <= t; k++)
 		{
 			mpz_clear(C_ik[j][k]);
-			delete C_ik[j][k];
+			delete [] C_ik[j][k];
 		}
 		C_ik[j].clear();
 	}
@@ -907,7 +907,7 @@ bool JareckiLysyanskayaEDCF::Flip
 		for (size_t j = 0; j < n; j++)
 		{
 			mpz_clear(a_i[j]), mpz_clear(hata_i[j]);
-			delete a_i[j], delete hata_i[j];
+			delete [] a_i[j], delete [] hata_i[j];
 		}
 		a_i.clear(), hata_i.clear();
 		// return
@@ -1001,7 +1001,7 @@ bool JareckiLysyanskayaEDCF::Flip_twoparty
 		for (size_t j = 0; j < n; j++)
 		{
 			mpz_clear(a_i[j]), mpz_clear(hata_i[j]);
-			delete a_i[j], delete hata_i[j];
+			delete [] a_i[j], delete [] hata_i[j];
 		}
 		a_i.clear(), hata_i.clear();
 		// return

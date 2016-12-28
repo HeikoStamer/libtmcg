@@ -413,7 +413,7 @@ std::cerr << "aio(" << j << "): got mpz from " << i_out << std::endl;
 					{
 						mpz_set(m[mm], buf_mpz[i_out].front());
 						mpz_clear(buf_mpz[i_out].front());
-						delete buf_mpz[i_out].front();
+						delete [] buf_mpz[i_out].front();
 						buf_mpz[i_out].pop_front();
 					}
 					return true;
@@ -431,7 +431,7 @@ std::cerr << "aio(" << j << "): got mpz from " << i_out << std::endl;
 				else
 				{
 					mpz_clear(tmp);
-					delete tmp;
+					delete [] tmp;
 					// error at Receive()?
 					if (i < n)
 					{
@@ -455,7 +455,7 @@ std::cerr << "aio(" << j << "): got mpz from " << i_out << std::endl;
 				for (size_t mm = 0; mm < buf_mpz[i].size(); mm++)
 				{
 					mpz_clear(buf_mpz[i].front());
-					delete buf_mpz[i].front();
+					delete [] buf_mpz[i].front();
 					buf_mpz[i].pop_front();
 				}
 				buf_mpz[i].clear();

@@ -307,24 +307,27 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_RemoveKey
 	try
 	{
 		std::ostringstream fp;
+		std::string fpstr;
 		
 		// compute the fingerprint
 		mpz_shash(bar, 1, foo);
 		fp << bar;
+		fpstr = fp.str();
 		
 		// public key with this fingerprint stored?
-		if (h_j.find(fp.str()) != h_j.end())
+		if (h_j.count(fpstr))
 		{
 			// update the global key
-			if (!mpz_invert(foo, h_j[fp.str()], p))
+			if (!mpz_invert(foo, h_j[fpstr], p))
 				throw false;
-			mpz_invert(foo, h_j[fp.str()], p);
+			mpz_invert(foo, h_j[fpstr], p);
 			mpz_mul(h, h, foo);
 			mpz_mod(h, h, p);
 			
 			// release the public key
-			mpz_clear(h_j[fp.str()]);
-			h_j.erase(fp.str());
+			mpz_clear(h_j[fpstr]);
+			delete [] h_j[fpstr];
+			h_j.erase(fpstr);
 			
 			// finish
 			throw true;
@@ -750,6 +753,7 @@ bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 {
 	mpz_t d_j, h_j_fp, foo, bar;
 	std::ostringstream fp;
+	std::string fpstr;
 	
 	mpz_init(d_j), mpz_init(h_j_fp), mpz_init(foo), mpz_init_set_ui(bar, 1L);
 	in >> d_j >> h_j_fp;
@@ -758,7 +762,8 @@ bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 	{
 		// public key stored?
 		fp << h_j_fp;
-		if (h_j.find(fp.str()) == h_j.end())
+		fpstr = fp.str();
+		if (!h_j.count(fpstr))
 			throw false;
 		
 		// verify the in-group property
@@ -766,7 +771,7 @@ bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 			throw false;
 		
 		// invoke CP(d_j, h_j, c_1, g; x_j) as verifier
-		if (!CP_Verify(d_j, h_j[fp.str()], c_1, g, in, false))
+		if (!CP_Verify(d_j, h_j[fpstr], c_1, g, in, false))
 			throw false;
 		
 		// update the value of $d$
@@ -803,7 +808,7 @@ BarnettSmartVTMF_dlog::~BarnettSmartVTMF_dlog
 		j = h_j.begin(); j != h_j.end(); j++)
 	{
 		mpz_clear(j->second);
-		delete j->second;
+		delete [] j->second;
 	}
 	h_j.clear();
 	

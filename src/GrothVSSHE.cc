@@ -220,8 +220,8 @@ void GrothSKC::Prove_interactive
 	{
 		mpz_clear(d[i]), mpz_clear(Delta[i]), mpz_clear(a[i]), 
 			mpz_clear(f[i]), mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
-		delete d[i], delete Delta[i], delete a[i], delete f[i], 
-			delete f_Delta[i], delete lej[i];
+		delete [] d[i], delete [] Delta[i], delete [] a[i], delete [] f[i], 
+			delete [] f_Delta[i], delete [] lej[i];
 	}
 	d.clear(), Delta.clear(), a.clear(), f.clear(), f_Delta.clear(), 
 		lej.clear();
@@ -390,8 +390,8 @@ void GrothSKC::Prove_interactive_publiccoin
 	{
 		mpz_clear(d[i]), mpz_clear(Delta[i]), mpz_clear(a[i]), 
 			mpz_clear(f[i]), mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
-		delete d[i], delete Delta[i], delete a[i], delete f[i], 
-			delete f_Delta[i], delete lej[i];
+		delete [] d[i], delete [] Delta[i], delete [] a[i], delete [] f[i], 
+			delete [] f_Delta[i], delete [] lej[i];
 	}
 	d.clear(), Delta.clear(), a.clear(), f.clear(), f_Delta.clear(), 
 		lej.clear();
@@ -563,8 +563,8 @@ void GrothSKC::Prove_noninteractive
 	{
 		mpz_clear(d[i]), mpz_clear(Delta[i]), mpz_clear(a[i]), 
 			mpz_clear(f[i]), mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
-		delete d[i], delete Delta[i], delete a[i], delete f[i], 
-			delete f_Delta[i], delete lej[i];
+		delete [] d[i], delete [] Delta[i], delete [] a[i], delete [] f[i], 
+			delete [] f_Delta[i], delete [] lej[i];
 	}
 	d.clear(), Delta.clear(), a.clear(), f.clear(), f_Delta.clear(), 
 		lej.clear();
@@ -742,7 +742,7 @@ bool GrothSKC::Verify_interactive
 		for (size_t i = 0; i < m.size(); i++)
 		{
 			mpz_clear(f[i]), mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
-			delete f[i], delete f_Delta[i], delete lej[i];
+			delete [] f[i], delete [] f_Delta[i], delete [] lej[i];
 		}
 		f.clear(), f_Delta.clear(), lej.clear();
 		
@@ -924,7 +924,7 @@ bool GrothSKC::Verify_interactive_publiccoin
 		for (size_t i = 0; i < m.size(); i++)
 		{
 			mpz_clear(f[i]), mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
-			delete f[i], delete f_Delta[i], delete lej[i];
+			delete [] f[i], delete [] f_Delta[i], delete [] lej[i];
 		}
 		f.clear(), f_Delta.clear(), lej.clear();
 		
@@ -1109,7 +1109,7 @@ bool GrothSKC::Verify_noninteractive
 		for (size_t i = 0; i < m.size(); i++)
 		{
 			mpz_clear(f[i]), mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
-			delete f[i], delete f_Delta[i], delete lej[i];
+			delete [] f[i], delete [] f_Delta[i], delete [] lej[i];
 		}
 		f.clear(), f_Delta.clear(), lej.clear();
 		
@@ -1311,7 +1311,7 @@ bool GrothSKC::Verify_interactive
 		for (size_t i = 0; i < m.size(); i++)
 		{
 			mpz_clear(f[i]), mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
-			delete f[i], delete f_Delta[i], delete lej[i];
+			delete [] f[i], delete [] f_Delta[i], delete [] lej[i];
 		}
 		f.clear(), f_Delta.clear(), lej.clear();
 		
@@ -1515,7 +1515,7 @@ bool GrothSKC::Verify_interactive_publiccoin
 		for (size_t i = 0; i < m.size(); i++)
 		{
 			mpz_clear(f[i]), mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
-			delete f[i], delete f_Delta[i], delete lej[i];
+			delete [] f[i], delete [] f_Delta[i], delete [] lej[i];
 		}
 		f.clear(), f_Delta.clear(), lej.clear();
 		
@@ -1721,7 +1721,7 @@ bool GrothSKC::Verify_noninteractive
 		for (size_t i = 0; i < m.size(); i++)
 		{
 			mpz_clear(f[i]), mpz_clear(f_Delta[i]), mpz_clear(lej[i]);
-			delete f[i], delete f_Delta[i], delete lej[i];
+			delete [] f[i], delete [] f_Delta[i], delete [] lej[i];
 		}
 		f.clear(), f_Delta.clear(), lej.clear();
 		
@@ -1965,11 +1965,11 @@ void GrothVSSHE::Prove_interactive
 		mpz_clear(Z), mpz_clear(lambda), mpz_clear(rho), mpz_clear(foo),
 		mpz_clear(bar);
 	mpz_clear(E_d.first), mpz_clear(E_d.second);
-	delete E_d.first, delete E_d.second;
+	delete [] E_d.first, delete [] E_d.second;
 	for (size_t i = 0; i < e.size(); i++)
 	{
 		mpz_clear(d[i]), mpz_clear(f[i]), mpz_clear(m[i]), mpz_clear(t[i]);
-		delete d[i], delete f[i], delete m[i], delete t[i];
+		delete [] d[i], delete [] f[i], delete [] m[i], delete [] t[i];
 	}
 	d.clear(), f.clear(), m.clear(), t.clear();
 }
@@ -2110,11 +2110,11 @@ void GrothVSSHE::Prove_interactive_publiccoin
 		mpz_clear(Z), mpz_clear(lambda), mpz_clear(rho), mpz_clear(foo),
 		mpz_clear(bar);
 	mpz_clear(E_d.first), mpz_clear(E_d.second);
-	delete E_d.first, delete E_d.second;
+	delete [] E_d.first, delete [] E_d.second;
 	for (size_t i = 0; i < e.size(); i++)
 	{
 		mpz_clear(d[i]), mpz_clear(f[i]), mpz_clear(m[i]), mpz_clear(t[i]);
-		delete d[i], delete f[i], delete m[i], delete t[i];
+		delete [] d[i], delete [] f[i], delete [] m[i], delete [] t[i];
 	}
 	d.clear(), f.clear(), m.clear(), t.clear();
 }
@@ -2264,11 +2264,11 @@ void GrothVSSHE::Prove_noninteractive
 		mpz_clear(Z), mpz_clear(lambda), mpz_clear(rho), mpz_clear(foo),
 		mpz_clear(bar);
 	mpz_clear(E_d.first), mpz_clear(E_d.second);
-	delete E_d.first, delete E_d.second;
+	delete [] E_d.first, delete [] E_d.second;
 	for (size_t i = 0; i < e.size(); i++)
 	{
 		mpz_clear(d[i]), mpz_clear(f[i]), mpz_clear(m[i]), mpz_clear(t[i]);
-		delete d[i], delete f[i], delete m[i], delete t[i];
+		delete [] d[i], delete [] f[i], delete [] m[i], delete [] t[i];
 	}
 	d.clear(), f.clear(), m.clear(), t.clear();
 }
@@ -2417,11 +2417,11 @@ bool GrothVSSHE::Verify_interactive
 			mpz_clear(foo), mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2),
 			mpz_clear(foo3), mpz_clear(bar3);
 		mpz_clear(E_d.first), mpz_clear(E_d.second);
-		delete E_d.first, delete E_d.second;
+		delete [] E_d.first, delete [] E_d.second;
 		for (size_t i = 0; i < e.size(); i++)
 		{
 			mpz_clear(f[i]), mpz_clear(m[i]), mpz_clear(t[i]);
-			delete f[i], delete m[i], delete t[i];
+			delete [] f[i], delete [] m[i], delete [] t[i];
 		}
 		f.clear(), m.clear(), t.clear();
 		// return
@@ -2578,11 +2578,11 @@ bool GrothVSSHE::Verify_interactive_publiccoin
 			mpz_clear(foo), mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2),
 			mpz_clear(foo3), mpz_clear(bar3);
 		mpz_clear(E_d.first), mpz_clear(E_d.second);
-		delete E_d.first, delete E_d.second;
+		delete [] E_d.first, delete [] E_d.second;
 		for (size_t i = 0; i < e.size(); i++)
 		{
 			mpz_clear(f[i]), mpz_clear(m[i]), mpz_clear(t[i]);
-			delete f[i], delete m[i], delete t[i];
+			delete [] f[i], delete [] m[i], delete [] t[i];
 		}
 		f.clear(), m.clear(), t.clear();
 		// return
@@ -2746,11 +2746,11 @@ bool GrothVSSHE::Verify_noninteractive
 			mpz_clear(foo), mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2),
 			mpz_clear(foo3), mpz_clear(bar3);
 		mpz_clear(E_d.first), mpz_clear(E_d.second);
-		delete E_d.first, delete E_d.second;
+		delete [] E_d.first, delete [] E_d.second;
 		for (size_t i = 0; i < e.size(); i++)
 		{
 			mpz_clear(f[i]), mpz_clear(m[i]), mpz_clear(t[i]);
-			delete f[i], delete m[i], delete t[i];
+			delete [] f[i], delete [] m[i], delete [] t[i];
 		}
 		f.clear(), m.clear(), t.clear();
 		// return
