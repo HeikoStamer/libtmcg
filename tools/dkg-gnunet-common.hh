@@ -32,6 +32,7 @@
 	#include <errno.h>
 	#include <fcntl.h>
 	#include <aiounicast.hh>
+	#include <mpz_srandom.h>
 
 #ifdef FORKING
 

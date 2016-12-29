@@ -40,6 +40,7 @@ class aiounicast
 		static const time_t	aio_timeout_none		= 0;
 		static const time_t	aio_timeout_very_short		= 1;
 		static const time_t	aio_timeout_short		= 15;
+		static const time_t	aio_timeout_middle		= 30;
 		static const time_t	aio_timeout_long		= 90;
 		static const time_t	aio_timeout_very_long		= 180;
 		static const size_t	aio_scheduler_none		= 0;
