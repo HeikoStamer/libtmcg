@@ -837,7 +837,8 @@ bool GennaroJareckiKrawczykRabinDKG::CheckKey
 }
 
 bool GennaroJareckiKrawczykRabinDKG::Reconstruct
-	(const std::vector<size_t> &complaints, std::vector<mpz_ptr> &z_i_in,
+	(const std::vector<size_t> &complaints,
+	std::vector<mpz_ptr> &z_i_in,
 	CachinKursawePetzoldShoupRBC *rbc, std::ostream &err)
 {
 	// initialize
@@ -865,11 +866,10 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 			rbc->Broadcast(sprime_ij[*it][i]);
 			// prepare for collecting some shares
 			std::vector<size_t> parties;
-			parties.push_back(i); // my own shares are always available
+			parties.push_back(i); // our own shares are always available
 			// now collect shares $s_{ij}$ and $s\prime_{ij}$ of other parties from QUAL
 			for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
 			{
-//FIXME: QUAL setminus complaints oder per Parameter  ; STATE_MAschine for DKG
 				if ((*jt != i) && (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end()))
 				{
 					if (rbc->DeliverFrom(s_ij[*it][*jt], *jt) && rbc->DeliverFrom(sprime_ij[*it][*jt], *jt))
@@ -892,7 +892,7 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 						if (mpz_cmp(lhs, rhs))
 							err << "P_" << i << ": bad share received from " << *jt << std::endl;
 						else
-							parties.push_back(*jt);
+							parties.push_back(*jt); // good share received
 					}
 					else
 						err << "P_" << i << ": no share received from " << *jt << std::endl;					
