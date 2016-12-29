@@ -386,7 +386,11 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	size_t spos = 0, rpos = 0, cpos = 0, epos = 0;
 
 	rpos = in.find("\r\n\r\n", 0);
-	cpos = in.find("\r\n=", 0); // FIXME: does not work in all cases
+	if (rpos == in.npos)
+		rpos = in.find("\n\n", 0);
+	cpos = in.find("\r\n=", 0); // FIXME: does not work in all cases, better use regex for checksum
+	if (cpos == in.npos)
+		cpos = in.find("\n=", 0);
 	if ((rpos == in.npos) || (cpos == in.npos))
 		return 0;
 	spos = in.find("-----BEGIN PGP MESSAGE-----", 0);
@@ -415,8 +419,8 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
 		type = 6;
 	if (!type)
-		return 0;	
-	if (((spos + 34) < rpos) && ((rpos + 4) < cpos) && ((cpos + 7) < epos))
+		return 0;
+	if (((spos + 26) < rpos) && ((rpos + 4) < cpos) && ((cpos + 7) < epos))
 	{
 		if (in.find("-----", spos + 34) != epos)
 			return 0; // nested armor block detected
@@ -428,9 +432,13 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 		if (chksum != in.substr(cpos + 2, 5))
 			return 0; // Checksum error detected
 		out.insert(out.end(), decoded_data.begin(), decoded_data.end());
+		return type;
 	}
-
-	return type;
+	else
+	{
+		std::cerr << "ERROR: ArmorDecode() spos = " << spos << " rpos = " << rpos << " cpos = " << cpos << " epos = " << epos << std::endl; 
+		return 0;
+	}
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
