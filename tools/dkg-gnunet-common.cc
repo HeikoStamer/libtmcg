@@ -37,6 +37,7 @@ extern void fork_instance(const size_t whoami);
 
 extern char			*gnunet_opt_port;
 
+#define GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_CHANNEL_CHECK  10000
 #define GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_UNICAST   10001
 #define GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_BROADCAST 10002
 
@@ -114,7 +115,7 @@ int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 	else
 	{
 		if (channel_ready.count(channel))
-			channel_ready[channel] = true;
+			channel_ready[channel] = true; // mark this channel as okay
 	}
 	GNUNET_assert(ntohs(message->size) >= sizeof(*message));
 	len = ntohs(message->size) - sizeof(*message);
@@ -165,7 +166,7 @@ size_t gnunet_data_ready(void *cls, size_t size, void *buf)
 {
 //std::cerr << "data ready to send = " << size << std::endl;
 	if (channel_ready.count(th_ch))
-		channel_ready[th_ch] = true;
+		channel_ready[th_ch] = true; // mark this channel as okay
 	th = NULL, th_ch = NULL;
 	if ((buf == NULL) || (size == 0))
 	{
@@ -197,13 +198,13 @@ size_t gnunet_data_ready(void *cls, size_t size, void *buf)
 
 void gnunet_data_abort(void *cls)
 {
-std::cerr << "abort task" << std::endl;
+std::cerr << "abort task called" << std::endl;
 	th_at = NULL;
 	GNUNET_assert(th != NULL);
 	GNUNET_assert(th_ch != NULL);
 	GNUNET_CADET_notify_transmit_ready_cancel(th);
 	if (channel_ready.count(th_ch))
-		channel_ready[th_ch] = false;
+		channel_ready[th_ch] = false; // mark this channel as bad
 	th = NULL, th_ch = NULL;
 	// requeue buffered message at end
 	DKG_BufferListEntry ble = send_queue.front();
@@ -215,7 +216,7 @@ size_t gnunet_data_ready_broadcast(void *cls, size_t size, void *buf)
 {
 //std::cerr << "data ready to broadcast = " << size << std::endl;
 	if (channel_ready.count(th_ch))
-		channel_ready[th_ch] = true;
+		channel_ready[th_ch] = true; // mark this channel as okay
 	th = NULL, th_ch = NULL;
 	if ((buf == NULL) || (size == 0))
 	{
@@ -247,13 +248,13 @@ size_t gnunet_data_ready_broadcast(void *cls, size_t size, void *buf)
 
 void gnunet_data_abort_broadcast(void *cls)
 {
-std::cerr << "abort broadcast task" << std::endl;
+std::cerr << "abort broadcast task called" << std::endl;
 	th_at = NULL;
 	GNUNET_assert(th != NULL);
 	GNUNET_assert(th_ch != NULL);
 	GNUNET_CADET_notify_transmit_ready_cancel(th);
 	if (channel_ready.count(th_ch))
-		channel_ready[th_ch] = false;
+		channel_ready[th_ch] = false; // mark this channel as bad
 	th = NULL, th_ch = NULL;
 	// requeue buffered message at end
 	DKG_BufferListEntry ble = send_queue_broadcast.front();
@@ -365,6 +366,7 @@ void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel,
 		if ((pipe2channel_in.count(i) > 0) && (channel == pipe2channel_in[i]))
 		{
 			std::cerr << "WARNING: input channel ended for peer = " << pipe2peer[i] << std::endl;
+			channel_ready.erase(pipe2channel_in[i]);
 			pipe2channel_in.erase(i);
 			return;
 		}
@@ -401,7 +403,10 @@ void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
 	}
 	// register this channel
 	if (pipe2channel_in.count(peer2pipe[peer]) == 0)
+	{
 		pipe2channel_in[peer2pipe[peer]] = channel;
+		channel_ready[channel] = false; // mark this channel initially as bad until we receive data
+	}
 	else
 	{
 		std::cerr << "WARNING: incoming channel already registered for this peer" << std::endl;
@@ -577,6 +582,8 @@ std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " 
 		}
 	}
 
+	// TODO: send channel check messages on output channel
+
 	// schedule select tasks for reading the input pipes
 	if (pt == NULL)
 		pt = GNUNET_SCHEDULER_add_now(&gnunet_pipe_ready, NULL);
@@ -600,7 +607,7 @@ void gnunet_connect(void *cls)
 		{
 			GNUNET_assert(channel_ready.count(pipe2channel_out[i]));
 			stabilized = channel_ready[pipe2channel_out[i]];
-			channel_ready[pipe2channel_out[i]] = false; // mark channel as not ready
+			channel_ready[pipe2channel_out[i]] = false; // mark this channel again as bad until we can send data
 		}
 		if ((i != peer2pipe[thispeer]) && !stabilized)
 		{
@@ -638,7 +645,7 @@ void gnunet_connect(void *cls)
 			else
 			{
 				pipe2channel_out[i] = ch;
-				channel_ready[ch] = false;
+				channel_ready[ch] = false; // mark this channel initially as bad until we can send data
 			}
 		}
 	}
