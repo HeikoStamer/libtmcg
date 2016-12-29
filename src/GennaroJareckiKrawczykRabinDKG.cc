@@ -869,6 +869,7 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 			// now collect shares $s_{ij}$ and $s\prime_{ij}$ of other parties from QUAL
 			for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
 			{
+//FIXME: QUAL setminus complaints oder per Parameter  ; STATE_MAschine for DKG
 				if ((*jt != i) && (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end()))
 				{
 					if (rbc->DeliverFrom(s_ij[*it][*jt], *jt) && rbc->DeliverFrom(sprime_ij[*it][*jt], *jt))

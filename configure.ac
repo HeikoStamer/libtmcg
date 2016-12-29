@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20161226])
+AC_REVISION([20161229])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.2.0], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -251,6 +251,8 @@ then
 	AC_CHECK_LIB([gnunetutil], [GNUNET_xfree_], [LIBS=""], [gnunet=0])
 ##	AC_CHECK_HEADERS([gnunet/gnunet_peerinfo_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
 ##	AC_CHECK_LIB([gnunetpeerinfo], [GNUNET_PEERINFO_connect], [LIBS=""], [gnunet=0])
+	AC_CHECK_HEADERS([gnunet/gnunet_hello_lib.h], , [gnunet=0], [#include <gnunet/platform.h>])
+	AC_CHECK_LIB([gnunethello], [GNUNET_HELLO_get_id], [LIBS=""], [gnunet=0])
 	AC_CHECK_HEADERS([gnunet/gnunet_transport_hello_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
 	AC_CHECK_LIB([gnunettransport], [GNUNET_TRANSPORT_hello_get], [LIBS=""], [gnunet=0])
 	AC_CHECK_HEADERS([gnunet/gnunet_cadet_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
@@ -259,7 +261,7 @@ fi
 if test "x$gnunet" == "x1"
 then
 	AC_DEFINE(GNUNET, , [Define to enable the GNUnet-based tools])
-	GNUNET_LIBS="${GNUNET_LIBS} -lgnunetutil -lgnunettransport -lgnunetcadet"
+	GNUNET_LIBS="${GNUNET_LIBS} -lgnunetutil -lgnunethello -lgnunettransport -lgnunetcadet"
 fi
 AC_SUBST(GNUNET_LIBS)
 AC_SUBST(GNUNET_CFLAGS)

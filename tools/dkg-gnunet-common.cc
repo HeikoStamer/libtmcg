@@ -584,8 +584,8 @@ std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " 
 		pt_broadcast = GNUNET_SCHEDULER_add_now(&gnunet_broadcast_pipe_ready, NULL);
 
 	// next: schedule (re)connect task
-	if (ct == NULL)
-		ct = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_MINUTES, 1), &gnunet_connect, NULL);
+//	if (ct == NULL)
+//		ct = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_MINUTES, 1), &gnunet_connect, NULL);
 }
 
 void gnunet_connect(void *cls)
