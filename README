@@ -141,7 +141,7 @@ Bugs, Contribution, GIT
   Additionally you will need the following free software packages:
   
   * GNU Autoconf, version >= 2.61, http://www.gnu.org/software/autoconf/
-  * GNU Automake, version >= 1.9, http://www.gnu.org/software/automake/
+  * GNU Automake, version >= 1.12, http://www.gnu.org/software/automake/
   * GNU Libtool, version >= 1.5.10, http://www.gnu.org/software/libtool/
 
 Copyright and License of this software
