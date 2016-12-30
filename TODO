@@ -1,3 +1,4 @@
+* dkg-gnunet-common: stabilize reconnect
 * provide aiounicast_select.hh
 * provide simple Bracha RBC
 + provide interactive versions for the non-interactive protocols of VTMF
