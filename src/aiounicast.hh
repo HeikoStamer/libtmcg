@@ -36,6 +36,9 @@
 
 class aiounicast
 {
+	private:
+		size_t			aio_default_scheduler;
+		time_t			aio_default_timeout;
 	public:
 		static const time_t	aio_timeout_none		= 0;
 		static const time_t	aio_timeout_very_short		= 1;
@@ -43,13 +46,18 @@ class aiounicast
 		static const time_t	aio_timeout_middle		= 30;
 		static const time_t	aio_timeout_long		= 90;
 		static const time_t	aio_timeout_very_long		= 180;
+		static const time_t	aio_timeout_default		= 42424242;
 		static const size_t	aio_scheduler_none		= 0;
 		static const size_t	aio_scheduler_roundrobin	= 1;
 		static const size_t	aio_scheduler_random		= 2;
 		static const size_t	aio_scheduler_direct		= 3;
+		static const size_t	aio_scheduler_default		= 42424242;
 
 		aiounicast
-			()
+			(const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
+			const time_t aio_default_timeout_in = aio_timeout_long):
+				aio_default_scheduler(aio_default_scheduler_in),
+				aio_default_timeout(aio_default_timeout_in)
 		{
 		}
 
@@ -59,12 +67,12 @@ class aiounicast
 			(const std::vector<mpz_srcptr> &m, const size_t i_in) = 0;
 		virtual bool Receive
 			(mpz_ptr m, size_t &i_out,
-			const size_t scheduler = aio_scheduler_roundrobin,
-			const time_t timeout = aio_timeout_long) = 0;
+			const size_t scheduler = aio_scheduler_default,
+			const time_t timeout = aio_timeout_default) = 0;
 		virtual bool Receive
 			(std::vector<mpz_ptr> &m, size_t &i_out,
-			const size_t scheduler = aio_scheduler_roundrobin,
-			const time_t timeout = aio_timeout_long) = 0;
+			const size_t scheduler = aio_scheduler_default,
+			const time_t timeout = aio_timeout_default) = 0;
 
 		virtual ~aiounicast
 			()

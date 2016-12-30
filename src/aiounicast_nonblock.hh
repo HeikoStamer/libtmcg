@@ -50,6 +50,8 @@
 class aiounicast_nonblock : public aiounicast
 {
 	private:
+		size_t					aio_default_scheduler;
+		time_t					aio_default_timeout;
 		size_t					aio_schedule_current;
 		size_t					aio_schedule_buffer;
 		size_t					buf_in_size;
@@ -59,7 +61,6 @@ class aiounicast_nonblock : public aiounicast
 		std::vector< std::list<mpz_ptr> >	buf_mpz;
 		size_t					maclen;
 		std::vector<gcry_mac_hd_t*>		buf_mac_in, buf_mac_out;
-
 	public:
 		size_t					n, j;
 		std::vector<int>			fd_in, fd_out;
@@ -69,7 +70,9 @@ class aiounicast_nonblock : public aiounicast
 			(const size_t n_in, const size_t j_in,
 			const std::vector<int> &fd_in_in,
 			const std::vector<int> &fd_out_in,
-			const std::vector<std::string> &key_in):
+			const std::vector<std::string> &key_in,
+			size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
+			time_t aio_default_timeout_in = aio_timeout_long):
 				n(n_in), j(j_in)
 		{
 			assert(j_in < n_in);
@@ -77,6 +80,8 @@ class aiounicast_nonblock : public aiounicast
 			assert(fd_in_in.size() == fd_out_in.size());
 
 			// initialize scheduler
+			aio_default_scheduler = aio_default_scheduler_in;
+			aio_default_timeout = aio_default_timeout_in;
 			aio_schedule_current = 0, aio_schedule_buffer = 0;
 
 			// initialize buffers and check for O_NONBLOCK with fcntl(2)
@@ -247,9 +252,13 @@ class aiounicast_nonblock : public aiounicast
 
 		bool Receive
 			(mpz_ptr m, size_t &i_out,
-			const size_t scheduler = aio_scheduler_roundrobin,
-			const time_t timeout = aio_timeout_long)
+			size_t scheduler = aio_scheduler_default,
+			time_t timeout = aio_timeout_default)
 		{
+			if (scheduler == aio_scheduler_default)
+				scheduler = aio_default_scheduler;
+			if (timeout == aio_timeout_default)
+				timeout = aio_default_timeout;
 if (scheduler == aio_scheduler_direct)
 std::cerr << "aio(" << j << "): want mpz from " << i_out << std::endl;
 			time_t entry_time = time(NULL);
@@ -380,9 +389,13 @@ std::cerr << "aio(" << j << "): got mpz from " << i_out << std::endl;
 
 		bool Receive
 			(std::vector<mpz_ptr> &m, size_t &i_out,
-			const size_t scheduler = aio_scheduler_roundrobin,
-			const time_t timeout = aio_timeout_long)
+			size_t scheduler = aio_scheduler_default,
+			time_t timeout = aio_timeout_default)
 		{
+			if (scheduler == aio_scheduler_default)
+				scheduler = aio_default_scheduler;
+			if (timeout == aio_timeout_default)
+				timeout = aio_default_timeout;
 			time_t entry_time = time(NULL);
 			do
 			{

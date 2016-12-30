@@ -74,7 +74,8 @@ void start_instance
 			}
 
 			// create asynchronous authenticated unicast channels
-			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami, uP_in, uP_out, uP_key);
+			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami, uP_in, uP_out, uP_key,
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 
 			// send a simple message
 			bool ret = false;
@@ -97,7 +98,7 @@ void start_instance
 			{
 				if (i != whoami)
 				{
-					ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct, aiounicast::aio_timeout_short);
+					ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
 					if (ret)
 					{
 						assert(!mpz_cmp_ui(m, i));
