@@ -97,7 +97,7 @@ void start_instance
 			{
 				if (i != whoami)
 				{
-					ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
+					ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct, aiounicast::aio_timeout_short);
 					if (ret)
 					{
 						assert(!mpz_cmp_ui(m, i));
