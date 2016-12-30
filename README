@@ -35,7 +35,7 @@ Introduction
   not required to reveal their cards at the end of the game to show
   that they did not cheat. For many operations of Schindelhauer's
   toolbox the library provides optimized protocols based on standard
-  cryptographic assumptions like Decisional Diffie Hellmann (DDH).
+  cryptographic assumptions like Decisional Diffie Hellman (DDH).
   Therefore a reasonable level of performance is obtained.
 
   LibTMCG is Free Software according to the definition of the Free

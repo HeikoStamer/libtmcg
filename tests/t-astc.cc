@@ -120,14 +120,17 @@ void start_instance
 			assert(edcf->CheckGroup());
 
 			// create asynchronous authenticated unicast channels
-			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami, uP_in, uP_out, uP_key);
+			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami, uP_in, uP_out, uP_key,
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 
 			// create asynchronous authenticated broadcast channels
-			aiounicast_nonblock *aiou2 = new aiounicast_nonblock(N, whoami, bP_in, bP_out, bP_key);
+			aiounicast_nonblock *aiou2 = new aiounicast_nonblock(N, whoami, bP_in, bP_out, bP_key,
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
 			std::string myID = "t-astc";
-			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
+			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2,
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 			rbc->setID(myID);
 			
 			// generating public random value $a \in \mathbb{Z}_q$
