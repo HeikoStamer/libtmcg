@@ -1,3 +1,5 @@
+* [2016-12-31] release 1.2.0 of LibTMCG
+* [2016-12-24] added GNUnet integration for DKG tools
 * [2016-11-14] added a very limited OpenPGP (RFC4880) interface
 * [2016-03-26] improved complexity of hash function g() used as random oracle
 * [2016-03-24] mpz_shash using now hash function g() instead of h()
