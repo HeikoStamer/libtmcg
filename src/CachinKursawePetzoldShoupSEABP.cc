@@ -34,7 +34,8 @@
 
 CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	(const size_t n_in, const size_t t_in, const size_t j_in,
-	aiounicast *aiou_in)
+	aiounicast *aiou_in, const size_t aio_default_scheduler_in,
+	const time_t aio_default_timeout_in)
 {
 	assert(t_in > 0);
 	assert(t_in <= n_in);
@@ -51,6 +52,8 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 		std::cerr << "RBC(" << j << ") WARNING: more than two parties needed; RBC will not work" << std::endl;
 
 	// initialize asynchonous unicast
+	aio_default_scheduler = aio_default_scheduler_in;
+	aio_default_timeout = aio_default_timeout_in;
 	aiou = aiou_in;
 
 	// initialize ID
@@ -159,8 +162,13 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 
 bool CachinKursawePetzoldShoupRBC::Deliver
 	(mpz_ptr m, size_t &i_out,
-	const size_t scheduler,	const time_t timeout)
+	size_t scheduler, time_t timeout)
 {
+	// set aio default values
+	if (scheduler == aiounicast::aio_scheduler_default)
+		scheduler = aio_default_scheduler;
+	if (timeout == aiounicast::aio_timeout_default)
+		timeout = aio_default_timeout;
 	// prepare foo and tag
 	mpz_t foo, tag;
 	mpz_init(foo), mpz_init(tag);
@@ -532,8 +540,13 @@ std::cerr << "RBC(" << j << "): error in Receive(l2) = " << l2 << std::endl;
 
 bool CachinKursawePetzoldShoupRBC::DeliverFrom
 	(mpz_ptr m, const size_t i_in,
-	const size_t scheduler,	const time_t timeout)
+	size_t scheduler, time_t timeout)
 {
+	// set aio default values
+	if (scheduler == aiounicast::aio_scheduler_default)
+		scheduler = aio_default_scheduler;
+	if (timeout == aiounicast::aio_timeout_default)
+		timeout = aio_default_timeout;
 std::cerr << "RBC(" << j << "): want mpz from " << i_in << std::endl;
 	time_t entry_time = time(NULL);
 	do

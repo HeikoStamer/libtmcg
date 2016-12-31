@@ -71,6 +71,8 @@
 class CachinKursawePetzoldShoupRBC
 {
 	private:
+		size_t					aio_default_scheduler;
+		time_t					aio_default_timeout;
 		mpz_t					ID, whoami, s;
 		RBC_BufferList				last_IDs;
 		mpz_t					r_send, r_echo, r_ready, r_request, r_answer;
@@ -88,7 +90,9 @@ class CachinKursawePetzoldShoupRBC
 
 		CachinKursawePetzoldShoupRBC
 			(const size_t n_in, const size_t t_in, const size_t j_in,
-			aiounicast *aiou_in);
+			aiounicast *aiou_in,
+			const size_t aio_default_scheduler_in = aiounicast::aio_scheduler_roundrobin,
+			const time_t aio_default_timeout_in = aiounicast::aio_timeout_very_long);
 		void setID
 			(const std::string ID_in);
 		void unsetID
@@ -97,12 +101,12 @@ class CachinKursawePetzoldShoupRBC
 			(mpz_srcptr m, const bool simulate_faulty_behaviour = false);
 		bool Deliver
 			(mpz_ptr m, size_t &i_out,
-			const size_t scheduler = aiounicast::aio_scheduler_roundrobin,
-			const time_t timeout = aiounicast::aio_timeout_very_long);
+			size_t scheduler = aiounicast::aio_scheduler_default,
+			time_t timeout = aiounicast::aio_timeout_default);
 		bool DeliverFrom
 			(mpz_ptr m, const size_t i_in,
-			const size_t scheduler = aiounicast::aio_scheduler_roundrobin,
-			const time_t timeout = aiounicast::aio_timeout_very_long);
+			size_t scheduler = aiounicast::aio_scheduler_default,
+			time_t timeout = aiounicast::aio_timeout_default);
 		~CachinKursawePetzoldShoupRBC
 			();
 };

@@ -71,8 +71,8 @@ class aiounicast_nonblock : public aiounicast
 			const std::vector<int> &fd_in_in,
 			const std::vector<int> &fd_out_in,
 			const std::vector<std::string> &key_in,
-			size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
-			time_t aio_default_timeout_in = aio_timeout_long):
+			const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
+			const time_t aio_default_timeout_in = aio_timeout_long):
 				n(n_in), j(j_in)
 		{
 			assert(j_in < n_in);
@@ -198,6 +198,7 @@ class aiounicast_nonblock : public aiounicast
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
+						std::cerr << "sleeping ..." << std::endl;
 						sleep(1);
 						continue;
 					}
@@ -221,6 +222,7 @@ class aiounicast_nonblock : public aiounicast
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
+						std::cerr << "sleeping ..." << std::endl;
 						sleep(1);
 						continue;
 					}

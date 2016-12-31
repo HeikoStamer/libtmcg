@@ -74,7 +74,8 @@ void start_instance
 			
 			// create an instance of a reliable broadcast protocol (RBC)
 			std::string myID = "t-seabp";
-			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou);
+			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou,
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 			rbc->setID(myID);
 			
 			// broadcast
@@ -89,7 +90,7 @@ void start_instance
 			{
 				if (someone_corrupted)
 				{
-					if (rbc->DeliverFrom(a, i, aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short))
+					if (rbc->DeliverFrom(a, i))
 					{
 						std::cout << "P_" << whoami << ": a = " << a << " from " << i << std::endl;
 						assert(!mpz_cmp_ui(a, i));
@@ -97,7 +98,7 @@ void start_instance
 				}
 				else
 				{
-					assert(rbc->DeliverFrom(a, i, aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short));
+					assert(rbc->DeliverFrom(a, i));
 					assert(!mpz_cmp_ui(a, i));
 				}
 			}
@@ -105,7 +106,7 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 
 			// at the end: deliver one more round for waiting parties
-			assert(!rbc->DeliverFrom(a, whoami, aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short));
+			assert(!rbc->DeliverFrom(a, whoami));
 			mpz_clear(a);
 			
 			// release RBC			
