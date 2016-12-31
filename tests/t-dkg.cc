@@ -201,8 +201,13 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
 
-			// at the end: deliver one more round for waiting parties
-			rbc->DeliverFrom(m, whoami);
+			// at the end: deliver some more rounds for waiting parties
+			time_t entry_time = time(NULL);
+			do
+			{
+				rbc->DeliverFrom(m, whoami);
+			}
+			while (time(NULL) < (entry_time + aiounicast::aio_timeout_long));
 			mpz_clear(m), mpz_clear(c), mpz_clear(s);
 			
 			// release NTS

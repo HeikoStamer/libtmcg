@@ -148,9 +148,15 @@ void run_instance
 	}
 
 	// at the end: deliver some more rounds for waiting parties
+	std::cout << "P_" << whoami << ": waiting " << aiounicast::aio_timeout_very_long << " seconds for stalled parties" << std::endl;
 	mpz_t m;
 	mpz_init(m);
-	rbc->DeliverFrom(m, whoami);
+	time_t entry_time = time(NULL);
+	do
+	{
+		rbc->DeliverFrom(m, whoami);
+	}
+	while (time(NULL) < (entry_time + aiounicast::aio_timeout_very_long));
 	mpz_clear(m);
 
 	// create an OpenPGP DSA-based primary key and Elgamal-based subkey based on parameters from DKG
