@@ -1,3 +1,4 @@
+1.2.1
 1.2.0 The default security parameters have been updated to current state of
       the art. The complexity of hash function g() was improved. Unfortunately,
       this breaks compatibility with instances that have been compiled with
