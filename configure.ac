@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2006, 2007, 2009, 2015, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2005, 2006, 2007, 2009, 2015, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20161231])
+AC_REVISION([20170107])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.2.1], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -144,6 +144,7 @@ AC_DEFINE(TMCG_MAX_KEY_CHARS,
 	[Define a helping macro])
 
 # Checks for Libtool
+LT_PREREQ([2.4.6])
 LT_INIT
 LT_LANG([C++])
 
