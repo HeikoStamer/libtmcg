@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -79,6 +79,7 @@ void gnunet_hello_callback(void *cls, const struct GNUNET_MessageHeader *hello)
 	if (hello == NULL)
 	{
 		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "No hello message in callback\n");
+		std::cerr << "ERROR: no hello message" << std::endl;
 		GNUNET_SCHEDULER_shutdown();
 		return;
 	}
@@ -86,6 +87,7 @@ void gnunet_hello_callback(void *cls, const struct GNUNET_MessageHeader *hello)
 	if (GNUNET_HELLO_get_id(ohello, &opi) != GNUNET_OK)
 	{
 		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "GNUNET_HELLO_get_id() failed\n");
+		std::cerr << "ERROR: bad format of hello message" << std::endl;
 		GNUNET_SCHEDULER_shutdown();
 		return;
 	}
@@ -191,7 +193,7 @@ size_t gnunet_channel_check_ready(void *cls, size_t size, void *buf)
 	msg->size = htons(total_size);
 	msg->type = htons(GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_CHANNEL_CHECK);
 	GNUNET_memcpy(&msg[1], cls, th_datalen);
-	// cancel abort task
+	// cancel the abort task
 	GNUNET_assert(th_at != NULL);
 	GNUNET_SCHEDULER_cancel(th_at);
 	th_at = NULL;
@@ -233,7 +235,7 @@ size_t gnunet_data_ready(void *cls, size_t size, void *buf)
 	msg->size = htons(total_size);
 	msg->type = htons(GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_UNICAST);
 	GNUNET_memcpy(&msg[1], cls, th_datalen);
-	// cancel abort task
+	// cancel the abort task
 	GNUNET_assert(th_at != NULL);
 	GNUNET_SCHEDULER_cancel(th_at);
 	th_at = NULL;
@@ -285,7 +287,7 @@ size_t gnunet_data_ready_broadcast(void *cls, size_t size, void *buf)
 	msg->size = htons(total_size);
 	msg->type = htons(GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_BROADCAST);
 	GNUNET_memcpy(&msg[1], cls, th_datalen);
-	// cancel abort task
+	// cancel the abort task
 	GNUNET_assert(th_at != NULL);
 	GNUNET_SCHEDULER_cancel(th_at);
 	th_at = NULL;	
@@ -415,7 +417,7 @@ void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel,
 	void *channel_ctx)
 {
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "CADET channel ended!\n");
-	// cancel pending transmission on this channel and abort task
+	// cancel pending transmission on this channel and the abort task
 	if ((th != NULL) && (th_at != NULL) && (th_ch == channel))
 	{
 		GNUNET_CADET_notify_transmit_ready_cancel(th);
@@ -452,6 +454,7 @@ void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
 	if (GNUNET_CRYPTO_hash_cmp(&porthash, port))
 	{
 		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "Not listening to this port\n");
+		std::cerr << "ERROR: not listening to defined CADET port" << std::endl;
 		GNUNET_SCHEDULER_shutdown();
 		return NULL;
 	}
@@ -459,14 +462,14 @@ void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
 	std::string peer = GNUNET_i2s_full(initiator);
 	if (peer2pipe.count(peer) == 0)
 	{
-		std::cerr << "WARNING: incoming channel from peer not included in PEERS" << std::endl;
+		std::cerr << "WARNING: incoming channel from peer not included in PEERS ignored" << std::endl;
 		GNUNET_CADET_channel_destroy(channel);
 		return NULL;
 	}
 	// check whether channel is reliable
 	if (options != GNUNET_CADET_OPTION_RELIABLE)
 	{
-		std::cerr << "WARNING: incoming channel is not reliable" << std::endl;
+		std::cerr << "WARNING: incoming channel is not reliable and will be ignored" << std::endl;
 		GNUNET_CADET_channel_destroy(channel);
 		return NULL;
 	}
@@ -478,7 +481,7 @@ void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
 	}
 	else
 	{
-		std::cerr << "WARNING: incoming channel already registered for this peer" << std::endl;
+		std::cerr << "WARNING: incoming channel is already registered for this peer" << std::endl;
 	}
 	return NULL;
 }
@@ -651,7 +654,7 @@ std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " 
 	}
 
 	// send channel check messages on output channel
-	if ((th == NULL) && (th_at == NULL))
+/*	if ((th == NULL) && (th_at == NULL))
 	{
 		size_t i = mpz_wrandom_mod(peers.size());
 		if (pipe2channel_out.count(i))
@@ -675,7 +678,7 @@ std::cerr << "try to send channel check on output channel to " << i << std::endl
 
 		}
 	}
-
+*/
 	// schedule select tasks for reading the input pipes
 	if (pt == NULL)
 		pt = GNUNET_SCHEDULER_add_now(&gnunet_pipe_ready, NULL);
@@ -692,15 +695,11 @@ void gnunet_connect(void *cls)
 	ct = NULL;
 	for (size_t i = 0; i < peers.size(); i++)
 	{
-		bool stabilized;
-		if (pipe2channel_out.count(i) == 0)
+		bool stabilized = true;
+		if (!pipe2channel_out.count(i))
 			stabilized = false;
-		else
-		{
-			GNUNET_assert(channel_ready.count(pipe2channel_out[i]));
-			stabilized = channel_ready[pipe2channel_out[i]];
-			channel_ready[pipe2channel_out[i]] = false; // mark this channel again as bad until we can send data
-		}
+		else if (!pipe2channel_in.count(i))
+			stabilized = false;
 		if ((i != peer2pipe[thispeer]) && !stabilized)
 		{
 			// destroy old CADET output channels
@@ -824,7 +823,7 @@ void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 	gh = GNUNET_TRANSPORT_hello_get(cfg, GNUNET_TRANSPORT_AC_ANY, &gnunet_hello_callback, NULL);
 	if (gh == NULL)
 	{
-		std::cerr << "ERROR: no GNUnet hello callback handle" << std::endl;
+		std::cerr << "ERROR: got no GNUnet hello callback handle" << std::endl;
 		GNUNET_SCHEDULER_shutdown();
 		return;
 	}
