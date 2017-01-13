@@ -366,9 +366,9 @@ int main
 
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
-		{'p', "port", NULL, "GNUnet cadet port to listen/connect",
+		{'p', "port", NULL, "GNUnet CADET port to listen/connect",
 			GNUNET_YES, &GNUNET_GETOPT_set_string, &gnunet_opt_port},
-		{'t', "t-resilience", NULL, "t-resilience of DKG",
+		{'t', "t-resilience", NULL, "resilience of DKG protocol",
 			GNUNET_YES, &GNUNET_GETOPT_set_uint, &gnunet_opt_t_resilience},
 		GNUNET_GETOPT_OPTION_END
 	};
@@ -435,7 +435,7 @@ int main
 	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
     		return -1;
 	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed ElGamal key generation with OpenPGP-output",
-                            options, &gnunet_run, NULL);
+                            options, &gnunet_run, argv[0]);
 
 	GNUNET_free ((void *) argv);
 

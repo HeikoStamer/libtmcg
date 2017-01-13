@@ -22,12 +22,14 @@
 	#define INCLUDED_dkg_gnunet_common_HH
 
 	// include headers
+	#include <string>
 	#include <iostream>
 	#include <vector>
 	#include <list>
 	#include <map>
 	#include <algorithm>
 	#include <cassert>
+	#include <cstring>
 	#include <unistd.h>
 	#include <errno.h>
 	#include <fcntl.h>

@@ -816,6 +816,19 @@ void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 		pipe2peer[i] = peers[i];
 	}
 
+	// canonicalize CADET port string
+	std::string port = "dkg-gnunet-common|";
+	if (cls != NULL)
+	{
+		const char *last_slash = strrchr((const char*)cls, '/');
+		if (last_slash != NULL)
+			port += std::string((const char*)last_slash) + "|";
+		else
+			port += std::string((const char*)cls) + "|";
+	}
+	for (size_t i = 0; i < peers.size(); i++)
+		port += peers[i] + "|";
+
 	// add our shutdown task
 	sd = GNUNET_SCHEDULER_add_shutdown(&gnunet_shutdown_task, NULL);
 
@@ -849,7 +862,7 @@ void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 	if (gnunet_opt_port != NULL)
 		GNUNET_CRYPTO_hash(gnunet_opt_port, strlen(gnunet_opt_port), &porthash);
 	else
-		GNUNET_CRYPTO_hash("42742", 5, &porthash); // set our default port
+		GNUNET_CRYPTO_hash(port.c_str(), port.length(), &porthash);
 	lp = GNUNET_CADET_open_port(mh, &porthash, &gnunet_channel_incoming, NULL);
 	if (lp == NULL)
 	{

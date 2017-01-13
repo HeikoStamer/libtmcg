@@ -1237,7 +1237,7 @@ int main
 	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
     		return -1;
 	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-decrypt [OPTIONS] PEERS", "distributed ElGamal decryption with OpenPGP-input",
-                            options, &gnunet_run, NULL);
+                            options, &gnunet_run, argv[0]);
 
 	GNUNET_free ((void *) argv);
 
