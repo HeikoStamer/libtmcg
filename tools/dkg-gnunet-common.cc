@@ -42,9 +42,10 @@ DKG_BufferList				send_queue, send_queue_broadcast;
 
 extern char				*gnunet_opt_port;
 
-#define GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_CHANNEL_CHECK  10000
-#define GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_UNICAST   10001
-#define GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_BROADCAST 10002
+// 1080-1109 reserved for TMCG (see gnunet-developers, January 2017)
+#define GNUNET_MESSAGE_TYPE_TMCG_DKG_CHANNEL_CHECK  1080
+#define GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST   1081
+#define GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST 1082
 
 static struct GNUNET_CADET_Handle		*mh = NULL;
 static struct GNUNET_CADET_TransmitHandle	*th = NULL;
@@ -135,9 +136,9 @@ int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 	buf = (const char *)&message[1];
 //std::cerr << "message of type " << ntohs(message->type) << " from " << peer << " with " << len << " bytes received" << std::endl;
 	// write the payload into corresponding pipe
-	if (ntohs(message->type) == GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_UNICAST)
+	if (ntohs(message->type) == GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST)
 		fd = pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1];
-	else if (ntohs(message->type) == GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_BROADCAST)
+	else if (ntohs(message->type) == GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST)
 		fd = broadcast_pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1];
 	else
 	{
@@ -191,7 +192,7 @@ size_t gnunet_channel_check_ready(void *cls, size_t size, void *buf)
 	GNUNET_assert(size >= total_size);
 	msg = (struct GNUNET_MessageHeader*)buf;
 	msg->size = htons(total_size);
-	msg->type = htons(GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_CHANNEL_CHECK);
+	msg->type = htons(GNUNET_MESSAGE_TYPE_TMCG_DKG_CHANNEL_CHECK);
 	GNUNET_memcpy(&msg[1], cls, th_datalen);
 	// cancel the abort task
 	GNUNET_assert(th_at != NULL);
@@ -233,7 +234,7 @@ size_t gnunet_data_ready(void *cls, size_t size, void *buf)
 	GNUNET_assert(size >= total_size);
 	msg = (struct GNUNET_MessageHeader*)buf;
 	msg->size = htons(total_size);
-	msg->type = htons(GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_UNICAST);
+	msg->type = htons(GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST);
 	GNUNET_memcpy(&msg[1], cls, th_datalen);
 	// cancel the abort task
 	GNUNET_assert(th_at != NULL);
@@ -285,7 +286,7 @@ size_t gnunet_data_ready_broadcast(void *cls, size_t size, void *buf)
 	GNUNET_assert(size >= total_size);
 	msg = (struct GNUNET_MessageHeader*)buf;
 	msg->size = htons(total_size);
-	msg->type = htons(GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_BROADCAST);
+	msg->type = htons(GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST);
 	GNUNET_memcpy(&msg[1], cls, th_datalen);
 	// cancel the abort task
 	GNUNET_assert(th_at != NULL);
@@ -843,9 +844,9 @@ void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 
 	// connect to CADET service
 	static const struct GNUNET_CADET_MessageHandler handlers[] = {
-		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_CHANNEL_CHECK, 0},
-		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_UNICAST, 0},
-		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_LIBTMCG_DKG_GENERATE_PIPE_BROADCAST, 0},
+		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_TMCG_DKG_CHANNEL_CHECK, 0},
+		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST, 0},
+		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST, 0},
 		{NULL, 0, 0}
 	};
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to CADET service\n");
