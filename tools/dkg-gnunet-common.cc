@@ -864,6 +864,7 @@ void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 		GNUNET_CRYPTO_hash(gnunet_opt_port, strlen(gnunet_opt_port), &porthash);
 	else
 		GNUNET_CRYPTO_hash(port.c_str(), port.length(), &porthash);
+	std::cout << "INFO: my CADET listen port hash = " << GNUNET_h2s_full(&porthash) << std::endl;
 	lp = GNUNET_CADET_open_port(mh, &porthash, &gnunet_channel_incoming, NULL);
 	if (lp == NULL)
 	{
