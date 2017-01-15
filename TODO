@@ -1,3 +1,4 @@
+* dkg-gnunet-common: use GNUnet CONSENSUS to agree on key creation time and UID
 * dkg-gnunet-common: stabilize reconnect
 * provide aiounicast_select.hh
 * provide simple Bracha RBC
