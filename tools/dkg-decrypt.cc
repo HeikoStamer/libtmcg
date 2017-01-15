@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 	#include "libTMCG_config.h"
 #endif
 #include <libTMCG.hh>
-#include <aiounicast_nonblock.hh>
+#include <aiounicast_select.hh>
 
 #ifdef FORKING
 
@@ -873,10 +873,10 @@ void run_instance
 	}
 
 	// create asynchronous authenticated unicast channels
-	aiounicast_nonblock *aiou = new aiounicast_nonblock(dkg->n, whoami, uP_in, uP_out, uP_key);
+	aiounicast_select *aiou = new aiounicast_select(dkg->n, whoami, uP_in, uP_out, uP_key);
 
 	// create asynchronous authenticated unicast channels
-	aiounicast_nonblock *aiou2 = new aiounicast_nonblock(dkg->n, whoami, bP_in, bP_out, bP_key);
+	aiounicast_select *aiou2 = new aiounicast_select(dkg->n, whoami, bP_in, bP_out, bP_key);
 			
 	// create an instance of a reliable broadcast protocol (RBC)
 	std::string myID = "dkg-decrypt";
@@ -1174,7 +1174,7 @@ int main
 {
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
-		{'p', "port", NULL, "GNUnet cadet port to listen/connect",
+		{'p', "port", NULL, "GNUnet CADET port to listen/connect",
 			GNUNET_YES, &GNUNET_GETOPT_set_string, &gnunet_opt_port},
 		GNUNET_GETOPT_OPTION_END
 	};
@@ -1252,9 +1252,9 @@ int main
 	{
 		for (size_t j = 0; j < peers.size(); j++)
 		{
-			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
+			if (pipe(pipefd[i][j]) < 0)
 				perror("dkg-decrypt (pipe)");
-			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
+			if (pipe(broadcast_pipefd[i][j]) < 0)
 				perror("dkg-decrypt (pipe)");
 		}
 	}
@@ -1289,7 +1289,7 @@ int main
 int main
 	(int argc, char **argv)
 {
-	std::cout << "configure switch --enable-forking needed" << std::endl;
+	std::cout << "configure feature --enable-forking needed" << std::endl;
 	return 77;
 }
 

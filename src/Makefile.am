@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2009, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2005, 2009, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -28,7 +28,7 @@ include_HEADERS = mpz_srandom.h mpz_sqrtm.h mpz_spowm.h mpz_sprime.h\
 	GrothVSSHE.hh\
 	HooghSchoenmakersSkoricVillegasVRHE.hh\
 	NaorPinkasEOTP.hh\
-	aiounicast.hh aiounicast_nonblock.hh\
+	aiounicast.hh aiounicast_nonblock.hh aiounicast_select.hh\
 	CachinKursawePetzoldShoupSEABP.hh\
 	GennaroJareckiKrawczykRabinDKG.hh\
 	JareckiLysyanskayaASTC.hh\
@@ -58,7 +58,7 @@ libTMCG_la_SOURCES = mpz_srandom.c mpz_srandom.h\
 	GrothVSSHE.cc GrothVSSHE.hh\
 	HooghSchoenmakersSkoricVillegasVRHE.cc HooghSchoenmakersSkoricVillegasVRHE.hh\
 	NaorPinkasEOTP.cc NaorPinkasEOTP.hh\
-	aiounicast.hh aiounicast_nonblock.hh\
+	aiounicast.hh aiounicast_nonblock.hh aiounicast_select.hh\
 	CachinKursawePetzoldShoupSEABP.cc CachinKursawePetzoldShoupSEABP.hh\
 	GennaroJareckiKrawczykRabinDKG.cc GennaroJareckiKrawczykRabinDKG.hh\
 	JareckiLysyanskayaASTC.cc JareckiLysyanskayaASTC.hh\

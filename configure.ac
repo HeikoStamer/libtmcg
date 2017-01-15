@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170113])
+AC_REVISION([20170115])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.2.1], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -187,7 +187,8 @@ AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
  ctime errno.h fcntl.h fstream functional gcrypt.h gmp.h inttypes.h iostream\
- limits.h list map sstream stdio.h string string.h time.h unistd.h vector], , 
+ limits.h list map sstream stdio.h string string.h sys/select.h time.h\
+ unistd.h vector], , 
 	AC_MSG_ERROR([some headers are missing]))
 
 # Checks for typedefs, structures, and compiler characteristics
@@ -200,7 +201,7 @@ AC_TYPE_SSIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([clock close fcntl fprintf memcmp memcpy memset open perror\
-	read sleep snprintf strrchr strtoul time write], ,
+	read select sleep snprintf strrchr strtoul time write], ,
 	AC_MSG_ERROR([some functions are missing]))
 
 # Checks for forking tests feature
@@ -213,9 +214,9 @@ if test "$use_forking" = yes ; then
 	AC_TYPE_PID_T
 	AC_FUNC_FORK
 	AC_CHECK_HEADERS([unistd.h sys/wait.h signal.h], ,
-		AC_MSG_ERROR([headers are missing]))
-	AC_CHECK_FUNCS([fork kill pipe waitpid], ,
-		AC_MSG_ERROR([functions are missing]))
+		AC_MSG_ERROR([some headers are missing]))
+	AC_CHECK_FUNCS([fork kill pipe pipe2 waitpid], ,
+		AC_MSG_ERROR([some functions are missing]))
 	AC_DEFINE(FORKING, , [Define to enable the forking tests])
 fi
 
