@@ -606,7 +606,7 @@ void gnunet_io(void *cls)
 		}
 	}
 
-	// schedule select tasks for reading the input pipes
+	// schedule tasks for reading the input pipes FIXME: use GNUNET_SCHEDULER_add_read_file on corresponding pipe fd
 	if (pt == NULL)
 		pt = GNUNET_SCHEDULER_add_now(&gnunet_pipe_ready, NULL);
 	if (pt_broadcast == NULL)
