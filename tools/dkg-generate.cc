@@ -77,7 +77,7 @@ void run_instance
 	// check VTMF instance constructed from CRS (common reference string)
 	if (!vtmf->CheckGroup())
 	{
-		std::cout << "P_" << whoami << ": " <<
+		std::cerr << "P_" << whoami << ": " <<
 			"Group G was not correctly generated!" << std::endl;
 		exit(-1);
 	}
@@ -89,11 +89,13 @@ void run_instance
 	aiounicast_select *aiou2 = new aiounicast_select(N, whoami, bP_in, bP_out, bP_key);
 			
 	// create an instance of a reliable broadcast protocol (RBC)
-	std::string myID = "dkg-generate";
+	std::string myID = "dkg-generate|";
+	for (size_t i = 0; i < peers.size(); i++)
+		myID += peers[i] + "|";
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
 	rbc->setID(myID);
 			
-	// create and exchange VTMF keys FIXME: async. operations needed; otherwise VTMF key could be stored in DHT 
+	// create and exchange VTMF keys FIXME: async. operations and broadcast needed; otherwise VTMF key could be stored in DHT 
 	vtmf->KeyGenerationProtocol_GenerateKey();
 	for (size_t i = 0; i < N; i++)
 	{
@@ -106,8 +108,7 @@ void run_instance
 		{
 			if (!vtmf->KeyGenerationProtocol_UpdateKey(*P_in[i]))
 			{
-				std::cout << "P_" << whoami << ": " << "Public key of P_" <<
-					i << " was not correctly generated!" << std::endl;
+				std::cerr << "P_" << whoami << ": " << "Public key of P_" << i << " was not correctly generated!" << std::endl;
 				exit(-1);
 			}
 		}
@@ -117,12 +118,10 @@ void run_instance
 	// create an instance of DKG
 	GennaroJareckiKrawczykRabinDKG *dkg;
 	std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-	dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami,
-		vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+	dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 	if (!dkg->CheckGroup())
 	{
-		std::cout << "P_" << whoami << ": " <<
-			"DKG parameters are not correctly generated!" << std::endl;
+		std::cerr << "P_" << whoami << ": " << "DKG parameters are not correctly generated!" << std::endl;
 		exit(-1);
 	}
 			
@@ -131,9 +130,8 @@ void run_instance
 	std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
 	if (!dkg->Generate(aiou, rbc, err_log))
 	{
-		std::cout << "P_" << whoami << ": " <<
-			"DKG Generate() failed" << std::endl;
-		std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+		std::cerr << "P_" << whoami << ": " << "DKG Generate() failed" << std::endl;
+		std::cerr << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 		exit(-1);
 	}
 	std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
@@ -142,12 +140,37 @@ void run_instance
 	std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
 	if (!dkg->CheckKey())
 	{
-		std::cout << "P_" << whoami << ": " <<
-			"DKG CheckKey() failed" << std::endl;
+		std::cerr << "P_" << whoami << ": " << "DKG CheckKey() failed" << std::endl;
 		exit(-1);
 	}
 
-	// at the end: deliver some more rounds for waiting parties
+	// participants must agree on a OpenPGP key creation time, otherwise subkeyid does not match
+	time_t ckeytime = 0;
+	std::vector<time_t> tvs;
+	mpz_t mtv;
+	mpz_init_set_ui(mtv, keytime);
+	rbc->Broadcast(mtv);
+	tvs.push_back(keytime);
+	for (size_t i = 0; i < N; i++)
+	{
+		if (i != whoami)
+		{
+			if (rbc->DeliverFrom(mtv, i))
+			{
+				time_t utv;
+				utv = mpz_get_ui(mtv);
+				tvs.push_back(utv);
+			}
+			else
+				std::cerr << "P_" << whoami << ": " << "no key creation time received from " << i << std::endl;
+		}
+	}
+	mpz_clear(mtv);
+	std::sort(tvs.begin(), tvs.end());
+	ckeytime = tvs.back(); // use the biggest value as byzantine agreement
+	std::cout << "P_" << whoami << ": canonicalized key creation time = " << ckeytime << std::endl;
+
+	// at the end: deliver some more rounds for still waiting parties
 	std::cout << "P_" << whoami << ": waiting " << aiounicast::aio_timeout_very_long << " seconds for stalled parties" << std::endl;
 	mpz_t m;
 	mpz_init(m);
@@ -202,8 +225,8 @@ void run_instance
 	ret = gcry_sexp_build(&key, &erroff, "(key-data (public-key (dsa (p %M) (q %M) (g %M) (y %M)))"
 		" (private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M))))", p, q, g, y, p, q, g, y, x);
 	assert(!ret);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(keytime, p, q, g, y, pub);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(keytime, p, q, g, y, x, passphrase, sec);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ckeytime, p, q, g, y, pub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(ckeytime, p, q, g, y, x, passphrase, sec);
 	for (size_t i = 6; i < pub.size(); i++)
 		pub_hashing.push_back(pub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
@@ -222,8 +245,8 @@ void run_instance
 	mpz_get_str(buffer, 16, dkg->z_i[dkg->i]);			
 	ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
 	assert(!ret);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(keytime, p, g, y, sub);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(keytime, p, g, y, x, passphrase, ssb);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ckeytime, p, g, y, sub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(ckeytime, p, g, y, x, passphrase, ssb);
 	elgflags.push_back(0x04 | 0x10);
 	sigtime = time(NULL); // current time
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, sigtime, elgflags, keyid, subsig_hashing);
@@ -320,7 +343,7 @@ void fork_instance
 		if (pid[whoami] == 0)
 		{
 			/* BEGIN child code: participant P_i */
-			time_t keytime = 0; // TODO: participants must agree on a time, otherwise subkeyid does not match
+			time_t keytime = time(NULL);
 			run_instance(whoami, keytime);
 
 			std::cout << "P_" << whoami << ": exit(0)" << std::endl;

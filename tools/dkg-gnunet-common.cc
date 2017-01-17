@@ -31,7 +31,7 @@ extern pid_t				pid[MAX_N];
 extern std::vector<std::string>		peers;
 extern bool				instance_forked;
 
-extern void fork_instance(const size_t whoami);
+extern void				fork_instance(const size_t whoami);
 
 #ifdef GNUNET
 
@@ -132,9 +132,9 @@ int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 	}
 	GNUNET_assert(ntohs(message->size) >= sizeof(*message));
 	len = ntohs(message->size) - sizeof(*message);
-	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Got message from %s with %u bytes\n", peer.c_str(), len);
+	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Got message of type %u from %s with %u bytes\n", ntohs(message->type), peer.c_str(), len);
 	buf = (const char *)&message[1];
-//std::cerr << "message of type " << ntohs(message->type) << " from " << peer << " with " << len << " bytes received" << std::endl;
+
 	// write the payload into corresponding pipe
 	if (ntohs(message->type) == GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST)
 		fd = pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1];
@@ -142,7 +142,7 @@ int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 		fd = broadcast_pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1];
 	else
 	{
-		// ignore unknown message types including channel check message
+		// ignore unknown message types including channel check
 		GNUNET_CADET_receive_done(channel);
 		return GNUNET_OK;
 	}
@@ -175,50 +175,8 @@ int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 	return GNUNET_OK;
 }
 
-size_t gnunet_channel_check_ready(void *cls, size_t size, void *buf)
-{
-	if (channel_ready.count(th_ch))
-		channel_ready[th_ch] = true; // mark this channel as okay
-	th = NULL, th_ch = NULL;
-	if ((buf == NULL) || (size == 0))
-	{
-		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "No message to transmit\n");
-		GNUNET_SCHEDULER_shutdown();
-		return 0;
-	}
-	struct GNUNET_MessageHeader *msg;
-	size_t total_size = th_datalen + sizeof(struct GNUNET_MessageHeader);
-	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "sending %u bytes\n", (unsigned int)th_datalen);
-	GNUNET_assert(size >= total_size);
-	msg = (struct GNUNET_MessageHeader*)buf;
-	msg->size = htons(total_size);
-	msg->type = htons(GNUNET_MESSAGE_TYPE_TMCG_DKG_CHANNEL_CHECK);
-	GNUNET_memcpy(&msg[1], cls, th_datalen);
-	// cancel the abort task
-	GNUNET_assert(th_at != NULL);
-	GNUNET_SCHEDULER_cancel(th_at);
-	th_at = NULL;
-	// reschedule I/O task for next channel check
-	if (io == NULL)
-		io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
-	return total_size;
-}
-
-void gnunet_channel_check_abort(void *cls)
-{
-std::cerr << "channel check abort called" << std::endl;
-	th_at = NULL;
-	GNUNET_assert(th != NULL);
-	GNUNET_assert(th_ch != NULL);
-	GNUNET_CADET_notify_transmit_ready_cancel(th);
-	if (channel_ready.count(th_ch))
-		channel_ready[th_ch] = false; // mark this channel as bad
-	th = NULL, th_ch = NULL;
-}
-
 size_t gnunet_data_ready(void *cls, size_t size, void *buf)
 {
-//std::cerr << "data ready to send = " << size << std::endl;
 	if (channel_ready.count(th_ch))
 		channel_ready[th_ch] = true; // mark this channel as okay
 	th = NULL, th_ch = NULL;
@@ -253,7 +211,7 @@ size_t gnunet_data_ready(void *cls, size_t size, void *buf)
 
 void gnunet_data_abort(void *cls)
 {
-std::cerr << "abort task called" << std::endl;
+std::cerr << "abort task called!!!" << std::endl;
 	th_at = NULL;
 	GNUNET_assert(th != NULL);
 	GNUNET_assert(th_ch != NULL);
@@ -270,7 +228,6 @@ std::cerr << "abort task called" << std::endl;
 
 size_t gnunet_data_ready_broadcast(void *cls, size_t size, void *buf)
 {
-//std::cerr << "data ready to broadcast = " << size << std::endl;
 	if (channel_ready.count(th_ch))
 		channel_ready[th_ch] = true; // mark this channel as okay
 	th = NULL, th_ch = NULL;
@@ -305,7 +262,7 @@ size_t gnunet_data_ready_broadcast(void *cls, size_t size, void *buf)
 
 void gnunet_data_abort_broadcast(void *cls)
 {
-std::cerr << "abort broadcast task called" << std::endl;
+std::cerr << "abort broadcast task called!!!" << std::endl;
 	th_at = NULL;
 	GNUNET_assert(th != NULL);
 	GNUNET_assert(th_ch != NULL);
@@ -350,13 +307,11 @@ void gnunet_pipe_ready(void *cls)
 		{
 			if (i == peer2pipe[thispeer])
 			{
-std::cerr << "self: " << num << std::endl;
 				delete [] th_buf;
-				continue; // ignore pipe of this peer FIXME: write directly back into pipe
+				continue; // ignore pipe of this peer
 			}
 			else
 			{
-//std::cerr << "queue added i = " << i << " with " << num << " bytes" << std::endl;
 				DKG_BufferListEntry ble = DKG_BufferListEntry(i, DKG_Buffer(num, th_buf));
 				send_queue.push_back(ble);
 			}
@@ -397,13 +352,11 @@ void gnunet_broadcast_pipe_ready(void *cls)
 		{
 			if (i == peer2pipe[thispeer])
 			{
-std::cerr << "self broadcast: " << num << std::endl;
 				delete [] th_buf;
-				continue; // ignore pipe of this peer FIXME: write directly back into pipe
+				continue; // ignore pipe of this peer
 			}
 			else
 			{
-//std::cerr << "queue added broadcast i = " << i << " with " << num << " bytes" << std::endl;
 				DKG_BufferListEntry ble = DKG_BufferListEntry(i, DKG_Buffer(num, th_buf));
 				send_queue_broadcast.push_back(ble);
 			}
@@ -414,8 +367,7 @@ std::cerr << "self broadcast: " << num << std::endl;
 		io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
 }
 
-void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel,
-	void *channel_ctx)
+void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel, void *channel_ctx)
 {
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "CADET channel ended!\n");
 	// cancel pending transmission on this channel and the abort task
@@ -614,7 +566,7 @@ void gnunet_io(void *cls)
 		if (pipe2channel_in.count(ble.first)) // have input channel to this peer?
 		{
 			th_datalen = buf.first;
-std::cerr << "try to send " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
+			std::cerr << "INFO: try to send " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
 			th_ch = pipe2channel_in[ble.first];
 			th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
 				sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_data_ready, buf.second);
@@ -638,7 +590,7 @@ std::cerr << "try to send " << th_datalen << " bytes on input channel to " << pi
 		if (pipe2channel_in.count(ble.first)) // have input channel to this peer?
 		{
 			th_datalen = buf.first;
-std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
+			std::cerr << "INFO: try to broadcast " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
 			th_ch = pipe2channel_in[ble.first];
 			th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
 				sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_data_ready_broadcast, buf.second);
@@ -654,32 +606,6 @@ std::cerr << "try to broadcast " << th_datalen << " bytes on input channel to " 
 		}
 	}
 
-	// send channel check messages on output channel
-/*	if ((th == NULL) && (th_at == NULL))
-	{
-		size_t i = mpz_wrandom_mod(peers.size());
-		if (pipe2channel_out.count(i))
-		{
-			char buf[2];
-			memset(buf, 0, sizeof(buf));
-			th_datalen = 2;
-std::cerr << "try to send channel check on output channel to " << i << std::endl;
-			th_ch = pipe2channel_out[i];
-			th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
-				sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_channel_check_ready, buf);
-			if (th == NULL)
-			{
-				std::cerr << "ERROR: cannot transmit data to peer = " << pipe2peer[i] << std::endl;
-				GNUNET_SCHEDULER_shutdown();
-				return;
-			}
-			// schedule abort task
-			th_at = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, aiounicast::aio_timeout_short),
-				&gnunet_channel_check_abort, NULL);
-
-		}
-	}
-*/
 	// schedule select tasks for reading the input pipes
 	if (pt == NULL)
 		pt = GNUNET_SCHEDULER_add_now(&gnunet_pipe_ready, NULL);
@@ -755,9 +681,9 @@ void gnunet_statistics(void *cls)
 	for (std::map<GNUNET_CADET_Channel*, bool>::const_iterator it = channel_ready.begin(); it != channel_ready.end(); ++it)
 		if ((*it).second == true)
 			channel_ready_true++;
-	std::cerr << "pipe2channel_out.size() = " << pipe2channel_out.size() << ", pipe2channel_in.size() = " << pipe2channel_in.size() << std::endl;
-	std::cerr << "channel_ready_true = " << channel_ready_true << std::endl;
-	std::cerr << "send_queue.size() = " << send_queue.size() << ", send_queue_broadcast.size() = " << send_queue_broadcast.size() << std::endl;
+	std::cerr << "INFO: pipe2channel_out.size() = " << pipe2channel_out.size() << ", pipe2channel_in.size() = " << pipe2channel_in.size() << std::endl;
+	std::cerr << "INFO: channel_ready_true = " << channel_ready_true << std::endl;
+	std::cerr << "INFO: send_queue.size() = " << send_queue.size() << ", send_queue_broadcast.size() = " << send_queue_broadcast.size() << std::endl;
 	// reschedule statistics task
 	st = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, 45), &gnunet_statistics, NULL);
 }
