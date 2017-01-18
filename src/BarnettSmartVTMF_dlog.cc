@@ -213,38 +213,47 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
 	// compute $h_i = g^{x_i} \bmod p$ (with timing attack protection)
 	mpz_fspowm(fpowm_table_g, h_i, g, x_i, p);
 	
-	// compute the fingerprint of the public key
+	// compute the fingerprint of the public key $h_i$
 	mpz_shash(h_i_fp, 1, h_i);
 	
-	// set the initial value of the global key $h$
+	// set the initial value of the common public key $h$
 	mpz_set(h, h_i);
 }
 
-void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
-	(std::ostream& out) const
+void BarnettSmartVTMF_dlog::KeyGenerationProtocol_ComputePoK
+	(mpz_ptr c, mpz_ptr r) const
 {
-	mpz_t v, t, c, r;
+	mpz_t v, t;
 	
-	// proof of knowledge [CaS97] for the public key
-	mpz_init(v), mpz_init(t), mpz_init(c), mpz_init(r);
-		
-		// commitment
+	// proof of knowledge $(c, r)$ [CaS97] for the public key $h_i$
+	mpz_init(v), mpz_init(t);
+		// commitment $t = g^v \bmod p$
 		mpz_srandomm(v, q);
 		mpz_fspowm(fpowm_table_g, t, g, v, p);
-		// challenge
+		// challenge $c = h(g || h_i || t)$
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
 		// the PoK non-interactive, i.e. we turn it into a statistically
 		// zero-knowledge (Schnorr signature scheme style) proof of
 		// knowledge (SPK) in the random oracle model.
 		mpz_shash(c, 3, g, h_i, t);
-		// response
+		// response $r = v - c x_i \bmod q$
 		mpz_mul(r, c, x_i);
 		mpz_neg(r, r);
 		mpz_add(r, r, v);
 		mpz_mod(r, r, q);
-		
+	mpz_clear(v), mpz_clear(t);
+}
+
+void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
+	(std::ostream& out) const
+{
+	mpz_t c, r;
+	
+	mpz_init(c), mpz_init(r);
+	KeyGenerationProtocol_ComputePoK(c, r);
+	// the output is $h_i$ appended by PoK $(c, r)$	
 	out << h_i << std::endl << c << std::endl << r << std::endl;
-	mpz_clear(v), mpz_clear(t), mpz_clear(c), mpz_clear(r);
+	mpz_clear(c), mpz_clear(r);
 }
 
 bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
@@ -274,11 +283,11 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 		if (mpz_cmp(c, r))
 			throw false;
 		
-		// update the global key h
+		// update the common public key $h$
 		mpz_mul(h, h, foo);
 		mpz_mod(h, h, p);
 		
-		// store the public key
+		// store this public key $h_j$ indexed with fingerprint
 		mpz_ptr tmp = new mpz_t();
 		std::ostringstream fp;
 		mpz_init_set(tmp, foo);
@@ -302,14 +311,14 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_RemoveKey
 	mpz_t foo, bar;
 	
 	mpz_init(foo), mpz_init(bar);
-	in >> foo >> bar >> bar; // we need only the public key $h_i$
+	in >> foo >> bar >> bar; // we need only the public key
 	
 	try
 	{
 		std::ostringstream fp;
 		std::string fpstr;
 		
-		// compute the fingerprint
+		// compute the fingerprint of $h_j$
 		mpz_shash(bar, 1, foo);
 		fp << bar;
 		fpstr = fp.str();
@@ -317,14 +326,14 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_RemoveKey
 		// public key with this fingerprint stored?
 		if (h_j.count(fpstr))
 		{
-			// update the global key
+			// update the common public key
 			if (!mpz_invert(foo, h_j[fpstr], p))
 				throw false;
 			mpz_invert(foo, h_j[fpstr], p);
 			mpz_mul(h, h, foo);
 			mpz_mod(h, h, p);
 			
-			// release the public key
+			// release the given public key
 			mpz_clear(h_j[fpstr]);
 			delete [] h_j[fpstr];
 			h_j.erase(fpstr);

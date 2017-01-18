@@ -77,9 +77,11 @@ class BarnettSmartVTMF_dlog
 		virtual void RandomElement
 			(mpz_ptr a) const;
 		void IndexElement
-			(mpz_ptr a, std::size_t index) const;
+			(mpz_ptr a, size_t index) const;
 		void KeyGenerationProtocol_GenerateKey
 			();
+		void KeyGenerationProtocol_ComputePoK
+			(mpz_ptr c, mpz_ptr r) const;
 		void KeyGenerationProtocol_PublishKey
 			(std::ostream& out) const;
 		bool KeyGenerationProtocol_UpdateKey

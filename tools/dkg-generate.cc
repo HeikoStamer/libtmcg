@@ -92,11 +92,12 @@ void run_instance
 	std::string myID = "dkg-generate|";
 	for (size_t i = 0; i < peers.size(); i++)
 		myID += peers[i] + "|";
-	myID += T; // include t-resiliance for the ID of broadcast protocol
+	myID += T; // include t-resiliance in the ID of broadcast protocol
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
 	rbc->setID(myID);
 			
-	// create and exchange VTMF keys FIXME: async. operations and broadcast needed; otherwise VTMF key could be stored in DHT 
+	// create and exchange VTMF keys in order to compute a common value $h$ for DKG
+	// FIXME: async. operations and broadcast needed; otherwise each VTMF key could be stored in DHT 
 	vtmf->KeyGenerationProtocol_GenerateKey();
 	for (size_t i = 0; i < N; i++)
 	{
