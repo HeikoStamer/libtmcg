@@ -92,6 +92,7 @@ void run_instance
 	std::string myID = "dkg-generate|";
 	for (size_t i = 0; i < peers.size(); i++)
 		myID += peers[i] + "|";
+	myID += T; // include t-resiliance for the ID of broadcast protocol
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
 	rbc->setID(myID);
 			
@@ -449,6 +450,8 @@ int main
 #endif
 	if (T == 0)
 		T++; // RBC will not work with 0-resilience
+	if (T >= N)
+		T = N - 1; // apply a upper limit on T
 	std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
 	std::getline(std::cin, u);
 	std::cout << "2. Choose a passphrase to protect your private key: ";
