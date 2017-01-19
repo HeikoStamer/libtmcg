@@ -10,7 +10,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 2009,
-                                 2016  Heiko Stamer <HeikoStamer@gmx.net>
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	
 	// Create a finite abelian group $G$ where the DDH problem is hard:
 	// We use the unique subgroup of prime order $q$ where $p = kq + 1$.
+	// Sometimes such groups are called Schnorr groups.
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(k);
 	if (subgroupsize)
 		mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
@@ -225,7 +226,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_ComputePoK
 {
 	mpz_t v, t;
 	
-	// proof of knowledge $(c, r)$ [CaS97] for the public key $h_i$
+	// proof of knowledge $(c, r)$ [CaS97] for the private key $x_i$
 	mpz_init(v), mpz_init(t);
 		// commitment $t = g^v \bmod p$
 		mpz_srandomm(v, q);
@@ -256,12 +257,40 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
 	mpz_clear(c), mpz_clear(r);
 }
 
+bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyPoK
+	(mpz_srcptr foo, mpz_srcptr c, mpz_srcptr r) const
+{
+	mpz_t t2, c2;
+	mpz_init(t2), mpz_init(c2);
+
+	try
+	{
+		// verify the proof of knowledge [CaS97]
+		mpz_fpowm(fpowm_table_g, t2, g, r, p);
+		mpz_powm(c2, foo, c, p);
+		mpz_mul(t2, t2, c2);
+		mpz_mod(t2, t2, p);
+		mpz_shash(c2, 3, g, foo, t2);
+		if (mpz_cmp(c, c2))
+			throw false;
+
+		// finish
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(t2), mpz_clear(c2);
+		return return_value;
+	}
+	
+}
+
 bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 	(std::istream& in)
 {
-	mpz_t foo, t, c, r;
+	mpz_t foo, c, r;
 	
-	mpz_init(foo), mpz_init(t), mpz_init(c), mpz_init(r);
+	mpz_init(foo), mpz_init(c), mpz_init(r);
 	in >> foo >> c >> r;
 	
 	try
@@ -274,13 +303,8 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 		if (mpz_cmpabs(r, q) >= 0)
 			throw false;
 		
-		// verify the proof of knowledge [CaS97]
-		mpz_fpowm(fpowm_table_g, t, g, r, p);
-		mpz_powm(r, foo, c, p);
-		mpz_mul(t, t, r);
-		mpz_mod(t, t, p);
-		mpz_shash(r, 3, g, foo, t);
-		if (mpz_cmp(c, r))
+		// verify the proof of knowledge
+		if (!KeyGenerationProtocol_VerifyPoK(foo, c, r))
 			throw false;
 		
 		// update the common public key $h$
@@ -291,8 +315,8 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 		mpz_ptr tmp = new mpz_t();
 		std::ostringstream fp;
 		mpz_init_set(tmp, foo);
-		mpz_shash(t, 1, foo);
-		fp << t;
+		mpz_shash(c, 1, foo);
+		fp << c;
 		h_j[fp.str()] = tmp;
 		
 		// finish
@@ -300,7 +324,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 	}
 	catch (bool return_value)
 	{
-		mpz_clear(foo), mpz_clear(t), mpz_clear(c), mpz_clear(r);
+		mpz_clear(foo), mpz_clear(c), mpz_clear(r);
 		return return_value;
 	}
 }
