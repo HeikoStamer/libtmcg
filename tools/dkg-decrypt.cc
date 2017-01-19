@@ -819,7 +819,7 @@ void run_instance
 		exit(-1);
 	}
 	mpz_spowm(r_i, nizk_gk, z_i, nizk_p);
-	// compute NIZK argument for decryption share
+	// compute NIZK argument for decryption share, e.g. see [FP01]
 	// proof of knowledge (equality of discrete logarithms) [CaS97]
 	mpz_t a, b, omega, c, r, c2;
 	mpz_init(c), mpz_init(r), mpz_init(c2), mpz_init(a), mpz_init(b), mpz_init(omega);
