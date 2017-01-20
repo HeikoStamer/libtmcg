@@ -231,12 +231,12 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_ComputeNIZK
 		// commitment $t = g^v \bmod p$
 		mpz_srandomm(v, q);
 		mpz_fspowm(fpowm_table_g, t, g, v, p);
-		// challenge $c = h(g || h_i || t)$
+		// challenge $c = h(p || q || g || k || h_i || t)$
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
 		// the PoK non-interactive, i.e. we turn it into a statistically
 		// zero-knowledge (Schnorr signature scheme style) proof (NIZK)
 		// of knowledge (SPK) in the random oracle model.
-		mpz_shash(c, 3, g, h_i, t);
+		mpz_shash(c, 5, p, q, g, h_i, t);
 		// response $r = v - c x_i \bmod q$
 		mpz_mul(r, c, x_i);
 		mpz_neg(r, r);
@@ -265,12 +265,16 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyNIZK
 
 	try
 	{
+		// check the size of $r$
+		if (mpz_cmpabs(r, q) >= 0)
+			throw false;
+
 		// verify the proof of knowledge [CaS97]
 		mpz_fpowm(fpowm_table_g, t2, g, r, p);
 		mpz_powm(c2, foo, c, p);
 		mpz_mul(t2, t2, c2);
 		mpz_mod(t2, t2, p);
-		mpz_shash(c2, 3, g, foo, t2);
+		mpz_shash(c2, 5, p, q, g, foo, t2);
 		if (mpz_cmp(c, c2))
 			throw false;
 
@@ -311,7 +315,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 		mpz_mul(h, h, foo);
 		mpz_mod(h, h, p);
 		
-		// store this public key $h_j$ indexed with fingerprint
+		// store public key $h_j$ indexed with fingerprint
 		mpz_ptr tmp = new mpz_t();
 		std::ostringstream fp;
 		mpz_init_set(tmp, foo);
@@ -410,7 +414,7 @@ void BarnettSmartVTMF_dlog::CP_Prove
 		// the PoK non-interactive, i.e. we turn it into a statistically
 		// zero-knowledge (Schnorr signature scheme style) proof of
 		// knowledge (SPK) in the random oracle model.
-		mpz_shash(c, 6, a, b, x, y, gg, hh);
+		mpz_shash(c, 10, p, q, g, h, a, b, x, y, gg, hh);
 		
 		// response
 		mpz_mul(r, c, alpha);
@@ -460,7 +464,7 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 		mpz_powm(r, y, c, p);
 		mpz_mul(b, b, r);
 		mpz_mod(b, b, p);
-		mpz_shash(r, 6, a, b, x, y, gg, hh);
+		mpz_shash(r, 10, p, q, g, h, a, b, x, y, gg, hh);
 		if (mpz_cmp(r, c))
 			throw false;
 		
@@ -494,7 +498,9 @@ void BarnettSmartVTMF_dlog::OR_ProveFirst
 		mpz_spowm(t_1, g_1, v_1, p);
 		
 		// 2. compute $c = \mathcal{H}(g_1, y_1, g_2, y_2, t_1, t_2)$
-		mpz_shash(c, 6, g_1, y_1, g_2, y_2, t_1, t_2), mpz_mod(c, c, q);
+		// additionally, we hash the group parameters
+		mpz_shash(c, 10, p, q, g, h, g_1, y_1, g_2, y_2, t_1, t_2);
+		mpz_mod(c, c, q);
 		
 		// 3. split the challenge: $c_2 = w$ and $c_1 = c - c_2$
 		mpz_set(c_2, w);
@@ -507,9 +513,9 @@ void BarnettSmartVTMF_dlog::OR_ProveFirst
 		
 	out << c_1 << std::endl << c_2 << std::endl <<
 		r_1 << std::endl << r_2 << std::endl;
-	mpz_clear(v_1), mpz_clear(v_2), mpz_clear(w), mpz_clear(t_1), mpz_clear(t_2);
-	mpz_clear(c_1), mpz_clear(c_2), mpz_clear(r_1), mpz_clear(r_2);
-	mpz_clear(c), mpz_clear(tmp);
+	mpz_clear(v_1), mpz_clear(v_2), mpz_clear(w), mpz_clear(t_1);
+	mpz_clear(t_2), mpz_clear(c_1), mpz_clear(c_2), mpz_clear(r_1);
+ 	mpz_clear(r_2), mpz_clear(c), mpz_clear(tmp);
 }
 
 void BarnettSmartVTMF_dlog::OR_ProveSecond
@@ -532,7 +538,9 @@ void BarnettSmartVTMF_dlog::OR_ProveSecond
 		mpz_spowm(t_2, g_2, v_2, p);
 		
 		// 2. compute $c = \mathcal{H}(g_1, y_1, g_2, y_2, t_1, t_2)$
-		mpz_shash(c, 6, g_1, y_1, g_2, y_2, t_1, t_2), mpz_mod(c, c, q);
+		// additionally, we hash the group parameters
+		mpz_shash(c, 10, p, q, g, h, g_1, y_1, g_2, y_2, t_1, t_2);
+		mpz_mod(c, c, q);
 		
 		// 3. split the challenge: $c_1 = w$ and $c_2 = c - c_1$
 		mpz_set(c_1, w);
@@ -545,9 +553,9 @@ void BarnettSmartVTMF_dlog::OR_ProveSecond
 		
 	out << c_1 << std::endl << c_2 << std::endl <<
 		r_1 << std::endl << r_2 << std::endl;
-	mpz_clear(v_1), mpz_clear(v_2), mpz_clear(w), mpz_clear(t_1), mpz_clear(t_2);
-	mpz_clear(c_1), mpz_clear(c_2), mpz_clear(r_1), mpz_clear(r_2);
-	mpz_clear(c), mpz_clear(tmp);
+	mpz_clear(v_1), mpz_clear(v_2), mpz_clear(w), mpz_clear(t_1);
+	mpz_clear(t_2), mpz_clear(c_1), mpz_clear(c_2), mpz_clear(r_1);
+	mpz_clear(r_2), mpz_clear(c), mpz_clear(tmp);
 }
 
 bool BarnettSmartVTMF_dlog::OR_Verify
@@ -566,7 +574,7 @@ bool BarnettSmartVTMF_dlog::OR_Verify
 		if ((mpz_cmpabs(r_1, q) >= 0L) || (mpz_cmpabs(r_2, q) >= 0L))
 			throw false;
 		
-		// verify (S)PK ($y_1 = g_1^\alpha \vee y_2 = g_2^\beta$) [CaS97]
+		// verify ($y_1 = g_1^\alpha \vee y_2 = g_2^\beta$) [CaS97]
 		mpz_powm(t_1, y_1, c_1, p);
 		mpz_powm(tmp, g_1, r_1, p);
 		mpz_mul(t_1, t_1, tmp), mpz_mod(t_1, t_1, p);
@@ -576,9 +584,12 @@ bool BarnettSmartVTMF_dlog::OR_Verify
 		mpz_mul(t_2, t_2, tmp), mpz_mod(t_2, t_2, p);
 		
 		// check the equation
-		// $c_1 + c_2 \stackrel{?}{=} \mathcal{H}(g_1, y_1, g_2, y_2, t_1, t_2)$
+		// $c_1 + c_2 \stackrel{?}{=} 
+		//                   \mathcal{H}(g_1, y_1, g_2, y_2, t_1, t_2)$
+		// additionally, we hash the group parameters
 		mpz_add(tmp, c_1, c_2), mpz_mod(c, c, q);
-		mpz_shash(c, 6, g_1, y_1, g_2, y_2, t_1, t_2), mpz_mod(c, c, q);
+		mpz_shash(c, 10, p, q, g, h, g_1, y_1, g_2, y_2, t_1, t_2);
+		mpz_mod(c, c, q);
 		if (mpz_cmp(tmp, c))
 			throw false;
 		
@@ -603,7 +614,7 @@ void BarnettSmartVTMF_dlog::MaskingValue
 	while (!mpz_cmp_ui(r, 0L) || !mpz_cmp_ui(r, 1L));
 }
 
-// this is basically an ElGamal encryption using the shared public key $h$
+// this is basically an ElGamal encryption using the common public key $h$
 void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
 	(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2, mpz_ptr r) const
 {
@@ -664,9 +675,10 @@ bool BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Verify
 	}
 }
 
-// again this is basically an ElGamal encryption of 1 using the shared public key $h$
+// again this is basically an ElGamal encryption of 1 using public key $h$
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
-	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, mpz_ptr r) const
+	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, 
+	mpz_ptr r) const
 {
 	MaskingValue(r);
 	
@@ -788,7 +800,8 @@ bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 	std::ostringstream fp;
 	std::string fpstr;
 	
-	mpz_init(d_j), mpz_init(h_j_fp), mpz_init(foo), mpz_init_set_ui(bar, 1L);
+	mpz_init(d_j), mpz_init(h_j_fp), mpz_init(foo);
+	mpz_init_set_ui(bar, 1L);
 	in >> d_j >> h_j_fp;
 	
 	try
@@ -816,7 +829,8 @@ bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 	}
 	catch (bool return_value)
 	{
-		mpz_clear(d_j), mpz_clear(h_j_fp), mpz_clear(foo), mpz_clear(bar);
+		mpz_clear(d_j), mpz_clear(h_j_fp);
+		mpz_clear(foo), mpz_clear(bar);
 		return return_value;
 	}
 }
