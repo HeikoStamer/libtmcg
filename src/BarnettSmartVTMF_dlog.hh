@@ -80,11 +80,11 @@ class BarnettSmartVTMF_dlog
 			(mpz_ptr a, size_t index) const;
 		void KeyGenerationProtocol_GenerateKey
 			();
-		void KeyGenerationProtocol_ComputePoK
+		void KeyGenerationProtocol_ComputeNIZK
 			(mpz_ptr c, mpz_ptr r) const;
 		void KeyGenerationProtocol_PublishKey
 			(std::ostream& out) const;
-		bool KeyGenerationProtocol_VerifyPoK
+		bool KeyGenerationProtocol_VerifyNIZK
 			(mpz_srcptr foo, mpz_srcptr c, mpz_srcptr r) const;
 		bool KeyGenerationProtocol_UpdateKey
 			(std::istream& in);

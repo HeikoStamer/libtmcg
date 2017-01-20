@@ -221,7 +221,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
 	mpz_set(h, h_i);
 }
 
-void BarnettSmartVTMF_dlog::KeyGenerationProtocol_ComputePoK
+void BarnettSmartVTMF_dlog::KeyGenerationProtocol_ComputeNIZK
 	(mpz_ptr c, mpz_ptr r) const
 {
 	mpz_t v, t;
@@ -234,8 +234,8 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_ComputePoK
 		// challenge $c = h(g || h_i || t)$
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
 		// the PoK non-interactive, i.e. we turn it into a statistically
-		// zero-knowledge (Schnorr signature scheme style) proof of
-		// knowledge (SPK) in the random oracle model.
+		// zero-knowledge (Schnorr signature scheme style) proof (NIZK)
+		// of knowledge (SPK) in the random oracle model.
 		mpz_shash(c, 3, g, h_i, t);
 		// response $r = v - c x_i \bmod q$
 		mpz_mul(r, c, x_i);
@@ -251,13 +251,13 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
 	mpz_t c, r;
 	
 	mpz_init(c), mpz_init(r);
-	KeyGenerationProtocol_ComputePoK(c, r);
+	KeyGenerationProtocol_ComputeNIZK(c, r);
 	// the output is $h_i$ appended by PoK $(c, r)$	
 	out << h_i << std::endl << c << std::endl << r << std::endl;
 	mpz_clear(c), mpz_clear(r);
 }
 
-bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyPoK
+bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyNIZK
 	(mpz_srcptr foo, mpz_srcptr c, mpz_srcptr r) const
 {
 	mpz_t t2, c2;
@@ -304,7 +304,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 			throw false;
 		
 		// verify the proof of knowledge
-		if (!KeyGenerationProtocol_VerifyPoK(foo, c, r))
+		if (!KeyGenerationProtocol_VerifyNIZK(foo, c, r))
 			throw false;
 		
 		// update the common public key $h$
