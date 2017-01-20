@@ -8,7 +8,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -374,8 +374,18 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				{
 					mpz_add_ui(s_ij[i][j], s_ij[i][j], 1L);
 				}
-				aiou->Send(s_ij[i][j], j);
-				aiou->Send(sprime_ij[i][j], j);
+				if (!aiou->Send(s_ij[i][j], j))
+				{
+					err << "P_" << i << ": sending s_ij failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
+				if (!aiou->Send(sprime_ij[i][j], j))
+				{
+					err << "P_" << i << ": sending sprime_ij failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
 			}
 		}
 		// (b) Each party $P_j$ verifies the shares he received from

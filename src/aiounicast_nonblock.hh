@@ -3,7 +3,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -148,8 +148,11 @@ class aiounicast_nonblock : public aiounicast
 		}
 
 		bool Send
-			(mpz_srcptr m, const size_t i_in)
+			(mpz_srcptr m, const size_t i_in,
+			time_t timeout = aio_timeout_default)
 		{
+			if (timeout == aio_timeout_default)
+				timeout = aio_default_timeout;
 			// prepare write buffer with m
 			size_t size = mpz_sizeinbase(m, TMCG_MPZ_IO_BASE);
 			char *buf = new char[size + 2];
@@ -165,10 +168,36 @@ class aiounicast_nonblock : public aiounicast
 			}
 			else
 			{
-				buf[0] = '\001'; // set a faulty value
-				buf[1] = '\n'; // set newline as delimiter
-				realsize = 1;
+				std::cerr << "aiounicast_nonblock: realsize does not match size" << std::endl;
+				return false;
 			}
+			// send content of write buffer to party i_in
+			time_t entry_time = time(NULL);
+			size_t realnum = 0;
+			do
+			{
+				ssize_t num = write(fd_out[i_in], buf + realnum, realsize - realnum + 1);
+				if (num < 0)
+				{
+					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+					{
+						std::cerr << "sleeping ..." << std::endl;
+						sleep(1);
+						continue;
+					}
+					else
+					{
+						delete [] buf;
+						perror("aiounicast_nonblock (write)");
+						return false;
+					}
+				}
+				numWrite += num;
+				realnum += num;
+			}
+			while ((realnum < (realsize + 1)) && (time(NULL) < (entry_time + timeout)));
+			if (realnum < (realsize + 1))
+				realsize = realnum; // adjust realsize, if timeout occured
 			// calculate MAC
 			gcry_error_t err;
 			err = gcry_mac_write(*buf_mac_out[i_in], buf, realsize);
@@ -189,30 +218,13 @@ class aiounicast_nonblock : public aiounicast
 				delete [] buf, delete [] macbuf;
 				return false;
 			}
-			// send content of write buffer to party i_in
-			size_t realnum = 0;
-			do
+			// timeout occured?
+			if (realsize == realnum)
 			{
-				ssize_t num = write(fd_out[i_in], buf + realnum, realsize - realnum + 1);
-				if (num < 0)
-				{
-					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
-					{
-						std::cerr << "sleeping ..." << std::endl;
-						sleep(1);
-						continue;
-					}
-					else
-					{
-						delete [] buf, delete [] macbuf;
-						perror("aiounicast_nonblock (write)");
-						return false;
-					}
-				}
-				numWrite += num;
-				realnum += num;
+				std::cerr << "aiounicast_nonblock(" << j << "): send timeout for " << i_in << std::endl;
+				delete [] buf, delete [] macbuf;
+				return false;
 			}
-			while (realnum < (realsize + 1));
 			// send content of MAC buffer to party i_in
 			realnum = 0;
 			do
@@ -242,11 +254,14 @@ class aiounicast_nonblock : public aiounicast
 		}
 
 		bool Send
-			(const std::vector<mpz_srcptr> &m, const size_t i_in)
+			(const std::vector<mpz_srcptr> &m, const size_t i_in,
+			time_t timeout = aio_timeout_default)
 		{
+			if (timeout == aio_timeout_default)
+				timeout = aio_default_timeout;
 			for (size_t mm = 0; mm < m.size(); mm++)
 			{
-				if (!Send(m[mm], i_in))
+				if (!Send(m[mm], i_in, timeout))
 					return false;
 			}
 			return true;
@@ -261,8 +276,8 @@ class aiounicast_nonblock : public aiounicast
 				scheduler = aio_default_scheduler;
 			if (timeout == aio_timeout_default)
 				timeout = aio_default_timeout;
-if (scheduler == aio_scheduler_direct)
-std::cerr << "aio(" << j << "): want mpz from " << i_out << std::endl;
+//if (scheduler == aio_scheduler_direct)
+//std::cerr << "aio(" << j << "): want mpz from " << i_out << std::endl;
 			time_t entry_time = time(NULL);
 			do
 			{
@@ -346,8 +361,8 @@ std::cerr << "aio(" << j << "): want mpz from " << i_out << std::endl;
 								return false;
 							}
 							delete [] tmp, delete [] mac;
-if (scheduler == aio_scheduler_direct)
-std::cerr << "aio(" << j << "): got mpz from " << i_out << std::endl;
+//if (scheduler == aio_scheduler_direct)
+//std::cerr << "aio(" << j << "): got mpz from " << i_out << std::endl;
 							return true;
 						}
 						// no delimiter found; invalidate buffer flag

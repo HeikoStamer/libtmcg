@@ -3,7 +3,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -62,9 +62,11 @@ class aiounicast
 		}
 
 		virtual bool Send
-			(mpz_srcptr m, const size_t i_in) = 0;
+			(mpz_srcptr m, const size_t i_in,
+			const time_t timeout = aio_timeout_default) = 0;
 		virtual bool Send
-			(const std::vector<mpz_srcptr> &m, const size_t i_in) = 0;
+			(const std::vector<mpz_srcptr> &m, const size_t i_in,
+			const time_t timeout = aio_timeout_default) = 0;
 		virtual bool Receive
 			(mpz_ptr m, size_t &i_out,
 			const size_t scheduler = aio_scheduler_default,

@@ -9,7 +9,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -235,8 +235,18 @@ bool JareckiLysyanskayaRVSS::Share
 				{
 					mpz_add_ui(alpha_ij[i][j], alpha_ij[i][j], 1L);
 				}
-				aiou->Send(alpha_ij[i][j], j);
-				aiou->Send(hatalpha_ij[i][j], j);
+				if (!aiou->Send(alpha_ij[i][j], j))
+				{
+					err << "P_" << i << ": sending alpha_ij failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
+				if (!aiou->Send(hatalpha_ij[i][j], j))
+				{
+					err << "P_" << i << ": sending hatalpha_ij failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
 			}
 		}
 		// (b) Each $P_j$ verifies if
