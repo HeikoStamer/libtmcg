@@ -88,7 +88,7 @@ std::ostream& operator <<
 /** @relates VTMF_CardSecret
     This operator imports a secret from an input stream. It has to
     be delimited by a newline character.
-    The failbit of the stream is set, if any parse error occured.
+    The failbit of the stream is set, if any parse error occurred.
     @param in is the input stream.
     @param cardsecret is the secret to be imported. */
 std::istream& operator >>

@@ -197,7 +197,7 @@ class aiounicast_nonblock : public aiounicast
 			}
 			while ((realnum < (realsize + 1)) && (time(NULL) < (entry_time + timeout)));
 			if (realnum < (realsize + 1))
-				realsize = realnum; // adjust realsize, if timeout occured
+				realsize = realnum; // adjust realsize, if timeout occurred
 			// calculate MAC
 			gcry_error_t err;
 			err = gcry_mac_write(*buf_mac_out[i_in], buf, realsize);
@@ -218,7 +218,7 @@ class aiounicast_nonblock : public aiounicast
 				delete [] buf, delete [] macbuf;
 				return false;
 			}
-			// timeout occured?
+			// timeout occurred?
 			if (realsize == realnum)
 			{
 				std::cerr << "aiounicast_nonblock(" << j << "): send timeout for " << i_in << std::endl;
@@ -400,7 +400,7 @@ class aiounicast_nonblock : public aiounicast
 			if (scheduler != aio_scheduler_direct)
 				i_out = n; // timeout for some (unknown) parties
 			else
-				std::cerr << "aiounicast_nonblock(" << j << "): timeout for " << i_out << std::endl;
+				std::cerr << "aiounicast_nonblock(" << j << "): receive timeout for " << i_out << std::endl;
 			return false;
 		}
 

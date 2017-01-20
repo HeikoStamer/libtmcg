@@ -229,7 +229,7 @@ template<typename CardSecretType> std::ostream& operator <<
 /** @relates TMCG_StackSecret
     This operator imports a stack secret from an input stream. It has
     to be delimited by a newline character.
-    The failbit of the stream is set, if any parse error occured.
+    The failbit of the stream is set, if any parse error occurred.
     @param in is the input stream.
     @param stacksecret is the stack secret to be imported. */
 template<typename CardSecretType> std::istream& operator >>

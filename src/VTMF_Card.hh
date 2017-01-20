@@ -87,7 +87,7 @@ std::ostream& operator <<
 /** @relates VTMF_Card
     This operator imports a card from an input stream. It has to
     be delimited by a newline character.
-    The failbit of the stream is set, if any parse error occured.
+    The failbit of the stream is set, if any parse error occurred.
     @param in is the input stream.
     @param card is the card to be imported. */
 std::istream& operator >>

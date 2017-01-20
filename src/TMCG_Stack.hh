@@ -189,7 +189,7 @@ template <typename CardType> struct TMCG_Stack
 		return false;
 	}
 	
-	/** This method removes all occurences of @a c from the stack.
+	/** This method removes all occurrences of @a c from the stack.
 	    @param c is the card to be removed.
 	    @returns The number of removed cards. */
 	size_t removeAll
@@ -270,7 +270,7 @@ template<typename CardType> std::ostream& operator <<
 /** @relates TMCG_Stack
     This operator imports a stack from an input stream. It has to
     be delimited by a newline character.
-    The failbit of the stream is set, if any parse error occured.
+    The failbit of the stream is set, if any parse error occurred.
     @param in is the input stream.
     @param stack is the stack to be imported. */
 template<typename CardType> std::istream& operator >>
