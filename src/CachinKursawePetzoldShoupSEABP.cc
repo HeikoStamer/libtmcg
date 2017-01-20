@@ -144,16 +144,19 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 	message.push_back(r_send);
 	message.push_back(m);
 
-	// send message to all parties
+	// send message to all parties (zero timeout)
 	for (size_t i = 0; i < n; i++)
 	{
 		size_t simulate_faulty_randomizer = mpz_wrandom_ui() % n;
 		if (simulate_faulty_behaviour)
 			mpz_add_ui((mpz_ptr)message[4], (mpz_ptr)message[4], 1L);
 		if (simulate_faulty_behaviour && !simulate_faulty_randomizer)
-			aiou->Send(message, mpz_wrandom_ui() % n);
+			aiou->Send(message, mpz_wrandom_ui() % n, 0);
 		else
-			aiou->Send(message, i);
+		{
+			if (!aiou->Send(message, i, 0))
+				std::cerr << "RBC(" << j << "): sending r-send failed for " << i << std::endl;
+		}
 	}
 
 	// release message
@@ -284,9 +287,12 @@ std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
 						message2.push_back(r_echo);
 						mpz_shash(message[4], 1, tmp);
 						message2.push_back(message[4]);
-						// send to all parties by unicast transmission
+						// send to all parties by unicast transmission (zero timeout)
 						for (size_t i = 0; i < n; i++)
-							aiou->Send(message2, i);
+						{
+							if (!aiou->Send(message2, i, 0))
+								std::cerr << "RBC(" << j << "): sending r-echo failed for " << i << std::endl;
+						}
 						message2.clear();
 					}
 					continue;
@@ -328,9 +334,12 @@ std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
 						message2.push_back(message[2]);
 						message2.push_back(r_ready);
 						message2.push_back(message[4]);
-						// send to all parties by unicast transmission
+						// send to all parties by unicast transmission (zero timeout)
 						for (size_t i = 0; i < n; i++)
-							aiou->Send(message2, i);
+						{
+							if (!aiou->Send(message2, i, 0))
+								std::cerr << "RBC(" << j << "): sending r-ready failed for " << i << std::endl;
+						}
 						message2.clear();
 					}
 					continue;
@@ -373,9 +382,12 @@ std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
 						message2.push_back(message[2]);
 						message2.push_back(r_ready);
 						message2.push_back(message[4]);
-						// send to all parties by unicast transmission
+						// send to all parties by unicast transmission (zero timeout)
 						for (size_t i = 0; i < n; i++)
-							aiou->Send(message2, i);
+						{
+							if (!aiou->Send(message2, i, 0))
+								std::cerr << "RBC(" << j << "): sending r-ready failed for " << i << std::endl;
+						}
 						message2.clear();
 					}
 					else if ((*rit).second == ((2 * t) + 1))
@@ -399,9 +411,12 @@ std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
 							message2.push_back(message[2]);
 							message2.push_back(r_request);
 							message2.push_back(message[4]);
-							// send to some parties by unicast transmission
+							// send to some parties by unicast transmission (zero timeout)
 							for (size_t i = 0; i < ((2 * t) + 1); i++)
-								aiou->Send(message2, i);
+							{
+								if (!aiou->Send(message2, i, 0))
+									std::cerr << "RBC(" << j << "): sending r-request failed for " << i << std::endl;
+							}
 							message2.clear();
 							// wait for a message $(ID.j.s, r_answer, m)$
 							do
@@ -507,8 +522,9 @@ std::cerr << "RBC(" << j << "): error in Receive(l2) = " << l2 << std::endl;
 						message2.push_back(message[2]);
 						message2.push_back(r_answer);
 						message2.push_back(mbar[tag_string]);
-						// send only to requesting party by unicast transmission
-						aiou->Send(message2, l);
+						// send only to requesting party by unicast transmission (zero timeout)
+						if (!aiou->Send(message2, l, 0))
+							std::cerr << "RBC(" << j << "): sending r-answer failed for " << l << std::endl;
 						message2.clear();
 					}
 					continue;
