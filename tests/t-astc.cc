@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 	#include "libTMCG_config.h"
 #endif
 #include <libTMCG.hh>
-#include <aiounicast_nonblock.hh>
+#include <aiounicast_select.hh>
 
 #ifdef FORKING
 
@@ -120,11 +120,11 @@ void start_instance
 			assert(edcf->CheckGroup());
 
 			// create asynchronous authenticated unicast channels
-			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami, uP_in, uP_out, uP_key,
+			aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 
 			// create asynchronous authenticated broadcast channels
-			aiounicast_nonblock *aiou2 = new aiounicast_nonblock(N, whoami, bP_in, bP_out, bP_key,
+			aiounicast_select *aiou2 = new aiounicast_select(N, whoami, bP_in, bP_out, bP_key,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
@@ -147,8 +147,13 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 
-			// at the end: deliver one more round for waiting parties
-			rbc->DeliverFrom(a, whoami);
+			// at the end: deliver some more rounds for waiting parties
+			time_t entry_time = time(NULL);
+			do
+			{
+				rbc->DeliverFrom(a, whoami);
+			}
+			while (time(NULL) < (entry_time + aiounicast::aio_timeout_long));
 			mpz_clear(a);
 			
 			// release EDCF
@@ -219,9 +224,9 @@ int main
 	{
 		for (size_t j = 0; j < N; j++)
 		{
-			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
+			if (pipe(pipefd[i][j]) < 0)
 				perror("t-astc (pipe)");
-			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
+			if (pipe(broadcast_pipefd[i][j]) < 0)
 				perror("t-astc (pipe)");
 		}
 	}
@@ -259,9 +264,9 @@ int main
 	{
 		for (size_t j = 0; j < N; j++)
 		{
-			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
+			if (pipe(pipefd[i][j]) < 0)
 				perror("t-astc (pipe)");
-			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
+			if (pipe(broadcast_pipefd[i][j]) < 0)
 				perror("t-astc (pipe)");
 		}
 	}

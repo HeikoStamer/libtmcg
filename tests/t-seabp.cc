@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 	#include "libTMCG_config.h"
 #endif
 #include <libTMCG.hh>
-#include <aiounicast_nonblock.hh>
+#include <aiounicast_select.hh>
 
 #ifdef FORKING
 
@@ -69,7 +69,7 @@ void start_instance
 			}	
 
 			// create asynchronous authenticated broadcast channels
-			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami, bP_in, bP_out, bP_key,
+			aiounicast_select *aiou = new aiounicast_select(N, whoami, bP_in, bP_out, bP_key,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
@@ -139,7 +139,7 @@ int main
 	{
 		for (size_t j = 0; j < N; j++)
 		{
-			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
+			if (pipe(broadcast_pipefd[i][j]) < 0)
 				perror("t-seabp (pipe)");
 		}
 	}
@@ -166,7 +166,7 @@ int main
 	{
 		for (size_t j = 0; j < N; j++)
 		{
-			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
+			if (pipe(broadcast_pipefd[i][j]) < 0)
 				perror("t-seabp (pipe)");
 		}
 	}

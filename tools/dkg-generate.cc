@@ -96,7 +96,7 @@ void run_instance
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
 	rbc->setID(myID);
 			
-	// create and exchange VTMF keys in order to compute a common value $h$ for DKG
+	// create and exchange VTMF keys in order to create a common value $h$ for DKG
 	// FIXME: async. operations and broadcast needed; otherwise each VTMF key could be stored in DHT 
 	vtmf->KeyGenerationProtocol_GenerateKey();
 	for (size_t i = 0; i < N; i++)
