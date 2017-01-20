@@ -158,9 +158,9 @@ class aiounicast_nonblock : public aiounicast
 			char *buf = new char[size + 2];
 			memset(buf, 0, size + 2);
                		mpz_get_str(buf, TMCG_MPZ_IO_BASE, m);
-			// determine the real size of the string, because
-			// mpz_sizeinbase(m, TMCG_MPZ_IO_BASE) does not
-			// work in all cases correctly
+			// additionally, determine the real size of the
+			// string, because mpz_sizeinbase(m, TMCG_MPZ_IO_BASE)
+			// does not work in all cases correctly
 			size_t realsize = strnlen(buf, size + 2);
 			if (realsize < (size + 2))
 			{

@@ -152,9 +152,9 @@ class aiounicast_select : public aiounicast
 			char *buf = new char[size + 2];
 			memset(buf, 0, size + 2);
                		mpz_get_str(buf, TMCG_MPZ_IO_BASE, m);
-			// determine the real size of the string, because
-			// mpz_sizeinbase(m, TMCG_MPZ_IO_BASE) does not
-			// work in all cases correctly
+			// additionally, determine the real size of the 
+			// string, because mpz_sizeinbase(m, TMCG_MPZ_IO_BASE)
+			// does not work in all cases correctly
 			size_t realsize = strnlen(buf, size + 2);
 			if (realsize < (size + 2))
 			{
@@ -166,6 +166,7 @@ class aiounicast_select : public aiounicast
 				return false;
 			}
 			// send content of write buffer to party i_in
+			time_t entry_time = time(NULL);
 			size_t realnum = 0;
 			do
 			{
@@ -188,7 +189,9 @@ class aiounicast_select : public aiounicast
 				numWrite += num;
 				realnum += num;
 			}
-			while (realnum < (realsize + 1));
+			while ((realnum < (realsize + 1)) && (time(NULL) < (entry_time + timeout)));
+			if (realnum < (realsize + 1))
+				realsize = realnum; // adjust realsize, if timeout occurred
 			// calculate MAC
 			gcry_error_t err;
 			err = gcry_mac_write(*buf_mac_out[i_in], buf, realsize);
@@ -206,6 +209,13 @@ class aiounicast_select : public aiounicast
 			{
 				std::cerr << "libgcrypt: gcry_mac_read() failed" << std::endl;
 				std::cerr << gcry_strerror(err) << std::endl;
+				delete [] buf, delete [] macbuf;
+				return false;
+			}
+			// timeout occurred?
+			if (realsize == realnum)
+			{
+				std::cerr << "aiounicast_select(" << j << "): send timeout for " << i_in << std::endl;
 				delete [] buf, delete [] macbuf;
 				return false;
 			}
