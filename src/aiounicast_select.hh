@@ -255,8 +255,8 @@ class aiounicast_select : public aiounicast
 				scheduler = aio_default_scheduler;
 			if (timeout == aio_timeout_default)
 				timeout = aio_default_timeout;
-if (scheduler == aio_scheduler_direct)
-std::cerr << "aio_select(" << j << "): want mpz from " << i_out << std::endl;
+//if (scheduler == aio_scheduler_direct)
+//std::cerr << "aio_select(" << j << "): want mpz from " << i_out << std::endl;
 			time_t entry_time = time(NULL);
 			do
 			{
@@ -340,8 +340,8 @@ std::cerr << "aio_select(" << j << "): want mpz from " << i_out << std::endl;
 								return false;
 							}
 							delete [] tmp, delete [] mac;
-if (scheduler == aio_scheduler_direct)
-std::cerr << "aio_select(" << j << "): got mpz from " << i_out << std::endl;
+//if (scheduler == aio_scheduler_direct)
+//std::cerr << "aio_select(" << j << "): got mpz from " << i_out << std::endl;
 							return true;
 						}
 						// no delimiter found; invalidate buffer flag

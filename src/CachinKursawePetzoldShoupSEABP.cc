@@ -9,7 +9,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -547,7 +547,7 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 		scheduler = aio_default_scheduler;
 	if (timeout == aiounicast::aio_timeout_default)
 		timeout = aio_default_timeout;
-std::cerr << "RBC(" << j << "): want mpz from " << i_in << std::endl;
+//std::cerr << "RBC(" << j << "): want mpz from " << i_in << std::endl;
 	time_t entry_time = time(NULL);
 	do
 	{
@@ -558,7 +558,7 @@ std::cerr << "RBC(" << j << "): want mpz from " << i_in << std::endl;
 			mpz_clear(buf_mpz[i_in].front());
 			delete [] buf_mpz[i_in].front();
 			buf_mpz[i_in].pop_front();
-std::cerr << "RBC(" << j << "): got buffered mpz from " << i_in << std::endl;
+//std::cerr << "RBC(" << j << "): got buffered mpz from " << i_in << std::endl;
 			return true;
 		}
 		else
@@ -569,7 +569,7 @@ std::cerr << "RBC(" << j << "): got buffered mpz from " << i_in << std::endl;
 			mpz_init(tmp);
 			if (Deliver(tmp, l, scheduler, 0))
 			{
-std::cerr << "RBC(" << j << "): got mpz from " << l << std::endl;
+//std::cerr << "RBC(" << j << "): got mpz from " << l << std::endl;
 				buf_mpz[l].push_back(tmp);
 				if (l == i_in)
 					continue;
