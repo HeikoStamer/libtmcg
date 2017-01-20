@@ -169,6 +169,7 @@ class aiounicast_nonblock : public aiounicast
 			else
 			{
 				std::cerr << "aiounicast_nonblock: realsize does not match size" << std::endl;
+				delete [] buf;
 				return false;
 			}
 			// send content of write buffer to party i_in
@@ -187,8 +188,8 @@ class aiounicast_nonblock : public aiounicast
 					}
 					else
 					{
-						delete [] buf;
 						perror("aiounicast_nonblock (write)");
+						delete [] buf;
 						return false;
 					}
 				}
@@ -240,16 +241,22 @@ class aiounicast_nonblock : public aiounicast
 					}
 					else
 					{
-						delete [] buf, delete [] macbuf;
 						perror("aiounicast_nonblock (write)");
+						delete [] buf, delete [] macbuf;
 						return false;
 					}
 				}
 				numWrite += num;
 				realnum += num;
 			}
-			while (realnum < macbuflen);
+			while ((realnum < macbuflen) && (time(NULL) < (entry_time + timeout)));
 			delete [] buf, delete [] macbuf;
+			// timeout occurred?
+			if (realnum < macbuflen)
+			{
+				std::cerr << "aiounicast_nonblock(" << j << "): MAC send timeout for " << i_in << std::endl;
+				return false;
+			}
 			return true;
 		}
 

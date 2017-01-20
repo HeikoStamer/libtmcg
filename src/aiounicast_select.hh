@@ -163,6 +163,7 @@ class aiounicast_select : public aiounicast
 			else
 			{
 				std::cerr << "aiounicast_select: realsize does not match size" << std::endl;
+				delete [] buf;
 				return false;
 			}
 			// send content of write buffer to party i_in
@@ -170,24 +171,45 @@ class aiounicast_select : public aiounicast
 			size_t realnum = 0;
 			do
 			{
-				ssize_t num = write(fd_out[i_in], buf + realnum, realsize - realnum + 1);
-				if (num < 0)
+				// select(2) -- do everything with asynchronous I/O
+				fd_set wfds;
+				struct timeval tv;
+				int retval;
+				FD_ZERO(&wfds);
+				FD_SET(fd_out[i_in], &wfds);
+				tv.tv_sec = 0;
+				tv.tv_usec = 1000; // sleep only for 1000us = 1ms
+				retval = select((fd_out[i_in] + 1), NULL, &wfds, NULL, &tv);
+				if (retval < 0)
 				{
-					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
-					{
-						std::cerr << "sleeping ..." << std::endl;
-						sleep(1);
-						continue;
-					}
-					else
-					{
-						delete [] buf;
-						perror("aiounicast_select (write)");
-						return false;
-					}
+					perror("aiounicast_select (select)");
+					delete [] buf;
+					return false;
 				}
-				numWrite += num;
-				realnum += num;
+				if (retval == 0)
+					continue;
+				// write(2) -- ready for non-blocking write?
+				if (FD_ISSET(fd_out[i_in], &wfds))
+				{
+					ssize_t num = write(fd_out[i_in], buf + realnum, realsize - realnum + 1);
+					if (num < 0)
+					{
+						if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+						{
+							continue;
+						}
+						else
+						{
+							perror("aiounicast_select (write)");
+							delete [] buf;							
+							return false;
+						}
+					}
+					numWrite += num;
+					realnum += num;
+				}
+				else
+					std::cerr << "WARNING: aiounicast_select FD_ISSET not true" << std::endl;
 			}
 			while ((realnum < (realsize + 1)) && (time(NULL) < (entry_time + timeout)));
 			if (realnum < (realsize + 1))
@@ -223,27 +245,54 @@ class aiounicast_select : public aiounicast
 			realnum = 0;
 			do
 			{
-				ssize_t num = write(fd_out[i_in], macbuf + realnum, macbuflen - realnum);
-				if (num < 0)
+				// select(2) -- do everything with asynchronous I/O
+				fd_set wfds;
+				struct timeval tv;
+				int retval;
+				FD_ZERO(&wfds);
+				FD_SET(fd_out[i_in], &wfds);
+				tv.tv_sec = 0;
+				tv.tv_usec = 1000; // sleep only for 1000us = 1ms
+				retval = select((fd_out[i_in] + 1), NULL, &wfds, NULL, &tv);
+				if (retval < 0)
 				{
-					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
-					{
-						std::cerr << "sleeping ..." << std::endl;
-						sleep(1);
-						continue;
-					}
-					else
-					{
-						delete [] buf, delete [] macbuf;
-						perror("aiounicast_select (write)");
-						return false;
-					}
+					perror("aiounicast_select (select)");
+					delete [] buf, delete [] macbuf;
+					return false;
 				}
-				numWrite += num;
-				realnum += num;
+				if (retval == 0)
+					continue;
+				// write(2) -- ready for non-blocking write?
+				if (FD_ISSET(fd_out[i_in], &wfds))
+				{
+					ssize_t num = write(fd_out[i_in], macbuf + realnum, macbuflen - realnum);
+					if (num < 0)
+					{
+						if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+						{
+							continue;
+						}
+						else
+						{
+							perror("aiounicast_select (write)");
+							delete [] buf, delete [] macbuf;
+							return false;
+						}
+					}
+					numWrite += num;
+					realnum += num;
+				}
+				else
+					std::cerr << "WARNING: aiounicast_select FD_ISSET not true" << std::endl;
 			}
-			while (realnum < macbuflen);
+			while ((realnum < macbuflen) && (time(NULL) < (entry_time + timeout)));
 			delete [] buf, delete [] macbuf;
+			// timeout occurred?
+			if (realnum < macbuflen)
+			{
+				std::cerr << "aiounicast_select(" << j << "): MAC send timeout for " << i_in << std::endl;
+				return false;
+			}
 			return true;
 		}
 
