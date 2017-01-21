@@ -1,20 +1,23 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
-     Christian Schindelhauer: 'A Toolbox for Mental Card Games',
+     [Sc98] Christian Schindelhauer: 'A Toolbox for Mental Card Games',
      Technical Report A-98-14, University of L{\"u}beck, 1998.
 
-     Rosario Gennaro, Daniele Micciancio, Tal Rabin:
+     [GMR98] Rosario Gennaro, Daniele Micciancio, Tal Rabin:
      'An Efficient Non-Interactive Statistical Zero-Knowledge
       Proof System for Quasi-Safe Prime Products',
      5th ACM Conference on Computer and Communication Security, 1998.
 
-     Mihir Bellare, Phillip Rogaway: 'The Exact Security of Digital
-      Signatures -- How to Sign with RSA and Rabin', 1996
+     [BR96] Mihir Bellare, Phillip Rogaway: 'The Exact Security of Digital
+      Signatures -- How to Sign with RSA and Rabin', 
+     Advances in Cryptology - Eurocrypt 96 Proceedings, LNCS 1070, 1996.
 
-     Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
+     [Bo01] Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions',
+     Proceedings of CRYPTO 2001, LNCS 2139, pp. 275--291, 2001.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2007, 2016, 
+                                 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

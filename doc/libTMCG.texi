@@ -172,8 +172,7 @@ The interested reader is referred to the following papers:
 	Advances in Cryptology -- CRYPTO' 86. Lecture Notes in Computer Science 263, pp. 186--194, 1987.@*
 	@uref{http://dx.doi.org/10.1007/3-540-47721-7_12}
 @end quotation
-
-@quotation [BR93]
+@quotation [BR93, BR95]
 	@sc{Mihir Bellare} and @sc{Phillip Rogaway}.
 	@emph{Random Oracles are Practical: A Paradigm for Designing Efficient Protocols.}@*
 	Proceedings of the First ACM Conference on Computer and Communications Security, pp. 62--73, 1993.@*
