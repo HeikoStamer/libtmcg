@@ -1,11 +1,15 @@
 /*******************************************************************************
    BarnettSmartVTMF_dlog.cc, Verifiable k-out-of-k Threshold Masking Function
 
-     Adam Barnett, Nigel P. Smart: 'Mental Poker Revisited',
+     [BS03] Adam Barnett, Nigel P. Smart: 'Mental Poker Revisited',
      Cryptography and Coding 2003, LNCS 2898, pp. 370--383, 2003.
 
      [CaS97] Jan Camenisch, Markus Stadler: 'Proof Systems for General
-              Statements about Discrete Logarithms', Technical Report, 1997
+       Statements about Discrete Logarithms', Technical Report, 1997.
+
+     [Bo98] Dan Boneh: 'The Decision Diffie-Hellman Problem',
+     Proceedings of the 3rd Algorithmic Number Theory Symposium,
+     LNCS 1423, pp. 48--63, 1998.
 
    This file is part of LibTMCG.
 
@@ -34,14 +38,16 @@
 #include "BarnettSmartVTMF_dlog.hh"
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
-	(unsigned long int fieldsize, unsigned long int subgroupsize):
-		F_size(fieldsize), G_size(subgroupsize)
+	(unsigned long int fieldsize, unsigned long int subgroupsize,
+	bool specific_g_usage):
+		F_size(fieldsize), G_size(subgroupsize), 
+		specific_g(specific_g_usage)
 {
-	mpz_t foo;
+	mpz_t foo, bar;
 	
 	// Create a finite abelian group $G$ where the DDH problem is hard:
 	// We use the unique subgroup of prime order $q$ where $p = kq + 1$.
-	// Sometimes such groups are called Schnorr groups.
+	// Sometimes such groups are called Schnorr groups. [Bo98]
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(k);
 	if (subgroupsize)
 		mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
@@ -50,19 +56,40 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	mpz_init(x_i), mpz_init(h_i), mpz_init_set_ui(h, 1L), mpz_init(d);
 	mpz_init(h_i_fp);
 	
-	// Choose randomly a generator $g$ of the unique subgroup of order $q$.
+	// Choose the generator $g$ of the group $G$. 
 	if (subgroupsize)
 	{
-		mpz_init(foo);
+		mpz_init(foo), mpz_init(bar);
 		mpz_sub_ui(foo, p, 1L); // compute $p-1$
-		do
+		if (specific_g)
 		{
-			mpz_wrandomm(d, p);
-			mpz_powm(g, d, k, p); // compute $g := d^k \bmod p$
+			// Here we take the smallest $g$ as possible;
+			// it is supposed as a commonly agreed value.
+			mpz_set_ui(g, 1L);
+			do
+			{
+				mpz_add_ui(g, g, 1L);
+				mpz_powm(bar, g, q, p);
+			}
+			while (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
+				!mpz_cmp(g, foo) || mpz_cmp_ui(bar, 1L));
+			// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
 		}
-		while ((!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
-			!mpz_cmp(g, foo))); // check, whether $1 < g < p-1$
-		mpz_clear(foo);
+		else
+		{
+			// Here we randomly create a generator $g$ of the
+			// unique subgroup $G$ of order $q$.
+			mpz_sub_ui(foo, p, 1L); // compute $p-1$
+			do
+			{
+				mpz_wrandomm(bar, p); // choose [bar] randomly
+				mpz_powm(g, bar, k, p); // $g := [bar]^k \bmod p$
+			}
+			while (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
+				!mpz_cmp(g, foo)); // check $1 < g < p-1$
+			
+		}
+		mpz_clear(foo), mpz_clear(bar);
 	}
 	
 	// Initialize the tables for the fast exponentiation.
@@ -76,9 +103,11 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 }
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
-	(std::istream& in, unsigned long int fieldsize,
-	unsigned long int subgroupsize):
-		F_size(fieldsize), G_size(subgroupsize)
+	(std::istream& in, 
+	unsigned long int fieldsize, unsigned long int subgroupsize,
+	bool specific_g_usage):
+		F_size(fieldsize), G_size(subgroupsize),
+		specific_g(specific_g_usage)
 {
 	// Initialize the members for the finite abelian group $G$.
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(k);
@@ -101,9 +130,9 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 bool BarnettSmartVTMF_dlog::CheckGroup
 	() const
 {
-	mpz_t foo, bar;
+	mpz_t foo, bar, g2;
 	
-	mpz_init(foo), mpz_init_set_ui(bar, 1L);
+	mpz_init(foo), mpz_init(bar), mpz_init(g2);
 	try
 	{
 		// Check whether $p$ and $q$ have appropriate sizes.
@@ -138,13 +167,31 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, bar) >= 0) || 
 			mpz_cmp_ui(foo, 1L))
 				throw false;
+
+		// If we use a specific value for $g$, further checks are needed.
+		if (specific_g)
+		{
+			// Here we check fo the smallest $g$ as possible;
+			// it is supposed as a commonly agreed value.			
+			mpz_set_ui(g2, 1L);
+			do
+			{
+				mpz_add_ui(g2, g2, 1L);
+				mpz_powm(foo, g2, q, p);
+			}
+			while (!mpz_cmp_ui(g2, 0L) || !mpz_cmp_ui(g2, 1L) || 
+				!mpz_cmp(g2, bar) || mpz_cmp_ui(foo, 1L));
+			// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
+			if (mpz_cmp(g, g2))
+				throw false;
+		}
 		
 		// finish
 		throw true;
 	}
 	catch (bool return_value)
 	{
-		mpz_clear(foo), mpz_clear(bar);
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(g2);
 		return return_value;
 	}
 }

@@ -1,8 +1,15 @@
 /*******************************************************************************
    BarnettSmartVTMF_dlog.hh, Verifiable k-out-of-k Threshold Masking Function
 
-     Adam Barnett, Nigel P. Smart: 'Mental Poker Revisited',
+     [BS03] Adam Barnett, Nigel P. Smart: 'Mental Poker Revisited',
      Cryptography and Coding 2003, LNCS 2898, pp. 370--383, 2003.
+
+     [CaS97] Jan Camenisch, Markus Stadler: 'Proof Systems for General
+       Statements about Discrete Logarithms', Technical Report, 1997.
+
+     [Bo98] Dan Boneh: 'The Decision Diffie-Hellman Problem',
+     Proceedings of the 3rd Algorithmic Number Theory Symposium,
+     LNCS 1423, pp. 48--63, 1998.
 
    This file is part of LibTMCG.
 
@@ -57,17 +64,20 @@ class BarnettSmartVTMF_dlog
 	protected:
 		mpz_t				*fpowm_table_g, *fpowm_table_h;
 		unsigned long int		F_size, G_size;
+		bool				specific_g;
 	
 	public:
 		mpz_t				p, q, g, k, h;
 		
 		BarnettSmartVTMF_dlog
 			(unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			bool specific_g_usage = false);
 		BarnettSmartVTMF_dlog
 			(std::istream& in,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			bool specific_g_usage = false);
 		virtual bool CheckGroup
 			() const;
 		void PublishGroup

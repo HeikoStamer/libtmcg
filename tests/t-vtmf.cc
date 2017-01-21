@@ -1,8 +1,8 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006, 2007, 2009, 2015,
-                                       2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2005, 2006, 2007, 2009,
+               2015, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -333,6 +333,46 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 	assert(!vtmf->CheckGroup());
 	mpz_set(vtmf->g, fooo);
 	mpz_clear(fooo);
+	
+	// publish the instance
+	std::cout << "vtmf.PublishGroup(lej)" << std::endl;
+	vtmf->PublishGroup(lej);
+	
+	// create a clone of the instance
+	std::cout << "BarnettSmartVTMF_dlog(lej)" << std::endl;
+	vtmf2 = new BarnettSmartVTMF_dlog(lej);
+	
+	// publish the cloned instance
+	std::cout << "vtmf2.PublishGroup(lej2)" << std::endl;
+	vtmf2->PublishGroup(lej2);
+	std::cout << lej.str() << std::endl;
+	std::cout << "versus" << std::endl;
+	std::cout << lej2.str() << std::endl;
+	assert(lej.str() == lej2.str());
+	
+	// check the instances
+	start_clock();
+	check(vtmf, vtmf2);
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
+	
+	// release the instances
+	delete vtmf, delete vtmf2;
+
+	// create and check the instance
+	std::cout << "BarnettSmartVTMF_dlog(specific_g == true)" << std::endl;
+	vtmf = new BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
+	std::cout << "vtmf.CheckGroup()" << std::endl;
+	assert(vtmf->CheckGroup());
+	
+	// large generator check
+	mpz_init(fooo), mpz_init(barr);
+	mpz_set(fooo, vtmf->g);
+	mpz_wrandomm(barr, vtmf->p);
+	mpz_powm(vtmf->g, barr, vtmf->k, vtmf->p);
+	assert(!vtmf->CheckGroup());
+	mpz_set(vtmf->g, fooo);
+	mpz_clear(fooo), mpz_clear(barr);
 	
 	// publish the instance
 	std::cout << "vtmf.PublishGroup(lej)" << std::endl;
