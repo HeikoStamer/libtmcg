@@ -1,13 +1,13 @@
 /*******************************************************************************
   PedersenCOM.hh, Information Theoretically Binding |COM|mitment Scheme
 
-     Torben P. Pedersen: 'Non-Interactive and Information-Theoretic Secure
+     [Pe92] Torben P. Pedersen: 'Non-Interactive and Information-Theoretic Secure
        Verifiable Secret Sharing',
      Advances in Cryptology - CRYPTO '91, LNCS 576, pp. 129--140, Springer 1992.
 
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2009, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2005, 2009, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
