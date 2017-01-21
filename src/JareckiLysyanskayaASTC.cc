@@ -147,11 +147,14 @@ bool JareckiLysyanskayaRVSS::Share
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(t <= n);
-	assert((2 * t) < n); // maximum synchronous t-resilience FIXME: warn only
 	assert(i < n);
 	assert(n == rbc->n);
 	assert(t == rbc->t);
 	assert(i == rbc->j);
+
+	// checking maximum synchronous t-resilience
+	if ((2 * t) >= n)
+		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;
 
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
@@ -729,64 +732,7 @@ JareckiLysyanskayaEDCF::JareckiLysyanskayaEDCF
 bool JareckiLysyanskayaEDCF::CheckGroup
 	() const
 {
-	mpz_t foo, k;
-
-	mpz_init(foo), mpz_init(k);
-	try
-	{
-		// Compute $k := (p - 1) / q$
-		mpz_set(k, p);
-		mpz_sub_ui(k, k, 1L);
-		mpz_div(k, k, q);
-
-		// Check whether $p$ and $q$ have appropriate sizes.
-		if ((mpz_sizeinbase(p, 2L) < F_size) ||
-			(mpz_sizeinbase(q, 2L) < G_size))
-				throw false;
-
-		// Check whether $p$ has the correct form, i.e. $p = kq + 1$.
-		mpz_mul(foo, q, k);
-		mpz_add_ui(foo, foo, 1L);
-		if (mpz_cmp(foo, p))
-			throw false;
-
-		// Check whether $p$ and $q$ are both (probable) prime with
-		// a soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
-		if (!mpz_probab_prime_p(p, TMCG_MR_ITERATIONS) || 
-			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
-				throw false;
-
-		// Check whether $k$ is not divisible by $q$, i.e. $q, k$ are coprime.
-		mpz_gcd(foo, q, k);
-		if (mpz_cmp_ui(foo, 1L))
-			throw false;
-
-		// Check whether the elements $h$ and $g$ are of order $q$.
-		mpz_fpowm(fpowm_table_h, foo, h, q, p);
-		if (mpz_cmp_ui(foo, 1L))
-			throw false;
-		mpz_fpowm(fpowm_table_g, foo, g, q, p);
-		if (mpz_cmp_ui(foo, 1L))
-			throw false;
-
-		// Check whether the elements $h$ and $g$ are different and non-trivial,
-		// i.e., $1 < h, g < p-1$.
-		mpz_sub_ui(foo, p, 1L); // compute $p-1$
-		if ((mpz_cmp_ui(h, 1L) <= 0) || (mpz_cmp(h, foo) >= 0))
-			throw false;
-		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, foo) >= 0))
-			throw false;
-		if (!mpz_cmp(g, h))
-			throw false;
-
-		// everything is sound
-		throw true;
-	}
-	catch (bool return_value)
-	{
-		mpz_clear(foo), mpz_clear(k);
-		return return_value;
-	}
+	return rvss->CheckGroup();
 }
 
 bool JareckiLysyanskayaEDCF::Flip
@@ -795,11 +741,14 @@ bool JareckiLysyanskayaEDCF::Flip
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
 	assert(t <= n);
-	assert((2 * t) < n); // maximum synchronous t-resilience FIXME: warn only
 	assert(i < n);
 	assert(n == rbc->n);
 	assert(t == rbc->t);
 	assert(i == rbc->j);
+
+	// checking maximum synchronous t-resilience
+	if ((2 * t) >= n)
+		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;	
 
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
