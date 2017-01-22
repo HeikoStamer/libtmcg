@@ -39,9 +39,9 @@
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	(unsigned long int fieldsize, unsigned long int subgroupsize,
-	bool specific_g_usage):
+	bool canonical_g_usage):
 		F_size(fieldsize), G_size(subgroupsize), 
-		specific_g(specific_g_usage)
+		canonical_g(canonical_g_usage)
 {
 	mpz_t foo, bar;
 	
@@ -61,14 +61,17 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	{
 		mpz_init(foo), mpz_init(bar);
 		mpz_sub_ui(foo, p, 1L); // compute $p-1$
-		if (specific_g)
+		if (canonical_g)
 		{
-			// Here we take the smallest $g$ as possible;
-			// it is supposed as a commonly agreed value.
-			mpz_set_ui(g, 1L);
+			// We use a procedure similar to FIPS 186-3 A.2.3;
+			// it is supposed as verifiable generation of $g$.
+			std::stringstream U;
+			U << "LibTMCG|" << p << "|" << q << "|ggen|";
 			do
 			{
-				mpz_add_ui(g, g, 1L);
+				mpz_shash(bar, U.str());
+				mpz_powm(g, bar, k, p); // $g := [bar]^k \bmod p$
+				U << g << "|";
 				mpz_powm(bar, g, q, p);
 			}
 			while (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
@@ -105,9 +108,9 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	(std::istream& in, 
 	unsigned long int fieldsize, unsigned long int subgroupsize,
-	bool specific_g_usage):
+	bool canonical_g_usage):
 		F_size(fieldsize), G_size(subgroupsize),
-		specific_g(specific_g_usage)
+		canonical_g(canonical_g_usage)
 {
 	// Initialize the members for the finite abelian group $G$.
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(k);
@@ -168,15 +171,18 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 			mpz_cmp_ui(foo, 1L))
 				throw false;
 
-		// If we use a specific value for $g$, further checks are needed.
-		if (specific_g)
+		// If we use a canonical value for $g$, further checks are needed.
+		if (canonical_g)
 		{
-			// Here we check fo the smallest $g$ as possible;
-			// it is supposed as a commonly agreed value.			
-			mpz_set_ui(g2, 1L);
+			// We use a procedure similar to FIPS 186-3 A.2.3;
+			// it is supposed as verifiable generation of $g$.
+			std::stringstream U;
+			U << "LibTMCG|" << p << "|" << q << "|ggen|";
 			do
 			{
-				mpz_add_ui(g2, g2, 1L);
+				mpz_shash(foo, U.str());
+				mpz_powm(g2, foo, k, p);
+				U << g2 << "|";
 				mpz_powm(foo, g2, q, p);
 			}
 			while (!mpz_cmp_ui(g2, 0L) || !mpz_cmp_ui(g2, 1L) || 

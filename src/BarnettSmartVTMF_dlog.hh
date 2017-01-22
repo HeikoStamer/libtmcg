@@ -64,7 +64,7 @@ class BarnettSmartVTMF_dlog
 	protected:
 		mpz_t				*fpowm_table_g, *fpowm_table_h;
 		unsigned long int		F_size, G_size;
-		bool				specific_g;
+		bool				canonical_g;
 	
 	public:
 		mpz_t				p, q, g, k, h;
@@ -72,12 +72,12 @@ class BarnettSmartVTMF_dlog
 		BarnettSmartVTMF_dlog
 			(unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			bool specific_g_usage = false);
+			bool canonical_g_usage = false);
 		BarnettSmartVTMF_dlog
 			(std::istream& in,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			bool specific_g_usage = false);
+			bool canonical_g_usage = false);
 		virtual bool CheckGroup
 			() const;
 		void PublishGroup

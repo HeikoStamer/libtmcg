@@ -260,7 +260,7 @@ int main
 	
 	BarnettSmartVTMF_dlog *vtmf, *vtmf2;
 	BarnettSmartVTMF_dlog_GroupQR *vtmf_qr, *vtmf2_qr;
-	
+
 	// create and check the common instance <2048-bit MODP Group [RFC3526]>
 	mpz_init(barr);
 	mpz_set_str(barr, "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1\

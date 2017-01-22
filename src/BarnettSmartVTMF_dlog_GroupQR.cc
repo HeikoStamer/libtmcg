@@ -132,8 +132,8 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
 			(mpz_jacobi(g, p) != 1L))
 				throw false;
 
-		// If we use a specific value for $g$, further checks are needed.
-		if (specific_g)
+		// If we use a canonical value for $g$, further checks are needed.
+		if (canonical_g)
 		{
 			if (mpz_sizeinbase(p, 2L) < E_size)
 				throw false;
