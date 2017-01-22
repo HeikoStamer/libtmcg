@@ -1,12 +1,13 @@
 /*******************************************************************************
   GrothVSSHE.hh, |V|erifiable |S|ecret |S|huffle of |H|omomorphic |E|ncryptions
 
-     Jens Groth: 'A Verifiable Secret Shuffle of Homomorphic Encryptions',
+     [Gr05] Jens Groth: 'A Verifiable Secret Shuffle of Homomorphic Encryptions',
      Cryptology ePrint Archive, Report 2005/246, 2005.
 
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006, 2007, 2009, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2005, 2006, 2007, 2009, 
+                     2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

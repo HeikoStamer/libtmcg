@@ -5,6 +5,9 @@
        Verifiable Secret Sharing',
      Advances in Cryptology - CRYPTO '91, LNCS 576, pp. 129--140, Springer 1992.
 
+     [Gr05] Jens Groth: 'A Verifiable Secret Shuffle of Homomorphic Encryptions',
+     Cryptology ePrint Archive, Report 2005/246, 2005.
+
    This file is part of LibTMCG.
 
  Copyright (C) 2005, 2009, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
@@ -48,6 +51,7 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
+/* This variation of the Pedersen commitment scheme is due to Groth [Gr05]. */
 class PedersenCommitmentScheme
 {
 	private:
