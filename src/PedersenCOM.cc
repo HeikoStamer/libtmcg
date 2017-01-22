@@ -169,6 +169,76 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
+bool PedersenCommitmentScheme::Setup_publiccoin
+	(size_t whoami, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	JareckiLysyanskayaEDCF *edcf)
+{
+	// initialize
+	mpz_t a, foo;
+	std::stringstream err_log;
+	mpz_init_set_ui(a, 0L);
+	mpz_init(foo);
+	mpz_sub_ui(foo, p, 1L); // compute $p-1$
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "PedersenCommitmentScheme::Setup_publiccoin()" << p << q << rbc->n << rbc->t;
+	rbc->setID(myID.str());
+	try
+	{
+		// check ECDF
+		if (!edcf->CheckGroup())
+			throw false;
+
+		// flipping coins for generating $h$
+		do
+		{
+			if (!edcf->Flip(whoami, a, aiou, rbc, err_log))
+				throw false;
+			mpz_powm(h, a, k, p);
+		}
+		while (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L) || 
+			!mpz_cmp(h, foo)); // check, whether $1 < h < p-1$
+		mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+
+		// flipping coins for generating $g_1, \ldots, g_n$
+		for (size_t i = 0; i < g.size(); i++)
+		{
+			do
+			{
+				if (!edcf->Flip(whoami, a, aiou, rbc, err_log))
+					throw false;
+				mpz_powm(g[i], a, k, p);
+			}
+			while (!mpz_cmp_ui(g[i], 0L) || !mpz_cmp_ui(g[i], 1L) || 
+				!mpz_cmp(g[i], foo)); // check, whether $1 < g_i < p-1$
+			if (i < TMCG_MAX_FPOWM_N)
+				mpz_fpowm_precompute(fpowm_table_g[i], g[i], p, mpz_sizeinbase(q, 2L));
+		}
+
+		// at the end: deliver some more rounds for waiting parties
+		time_t entry_time = time(NULL);
+		do
+		{
+			
+			mpz_set_ui(a, 0L);
+			rbc->DeliverFrom(a, whoami);
+		}
+		while (time(NULL) < (entry_time + aiounicast::aio_timeout_long));
+
+		// finish
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// unset ID for RBC
+		rbc->unsetID();
+		
+		mpz_clear(a), mpz_clear(foo);
+		return return_value;
+	}
+}
+
 bool PedersenCommitmentScheme::CheckGroup
 	() const
 {

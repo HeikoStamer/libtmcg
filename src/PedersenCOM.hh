@@ -51,6 +51,9 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
+	// erasure-free distributed coinflip protocol
+	#include "JareckiLysyanskayaASTC.hh"
+
 /* This variation of the Pedersen commitment scheme is due to Groth [Gr05]. */
 class PedersenCommitmentScheme
 {
@@ -76,6 +79,10 @@ class PedersenCommitmentScheme
 			(size_t n, std::istream &in,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		bool Setup_publiccoin
+			(size_t whoami, aiounicast *aiou,
+			CachinKursawePetzoldShoupRBC *rbc,
+			JareckiLysyanskayaEDCF *edcf);
 		bool CheckGroup
 			() const;
 		void PublishGroup
@@ -88,7 +95,8 @@ class PedersenCommitmentScheme
 		bool TestMembership
 			(mpz_srcptr c) const;
 		bool Verify
-			(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m) const;
+			(mpz_srcptr c, mpz_srcptr r,
+			const std::vector<mpz_ptr> &m) const;
 		~PedersenCommitmentScheme
 			();
 };
