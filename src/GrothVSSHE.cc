@@ -1738,32 +1738,7 @@ GrothSKC::~GrothSKC
 }
 
 // =============================================================================
-/*
-GrothVSSHE::GrothVSSHE
-	(size_t n,
-	mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC,
-	unsigned long int ell_e, unsigned long int fieldsize,
-	unsigned long int subgroupsize):
-		l_e(ell_e), l_e_nizk(ell_e * 2L)
-{
-	std::stringstream lej;
-	
-	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), mpz_init_set(g, g_ENC),
-		mpz_init_set(h, h_ENC);
-	
-	// Initialize the commitment scheme and Groth's SKC argument
-	com = new PedersenCommitmentScheme(n, fieldsize, subgroupsize); // FIXME: reuse h_ENC
-	com->PublishGroup(lej);
-	skc = new GrothSKC(n, lej, ell_e);
-		
-	// Do the precomputation for the fast exponentiation.
-	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
-	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
-}
-*/
+
 GrothVSSHE::GrothVSSHE
 	(size_t n,
 	mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr k_ENC,

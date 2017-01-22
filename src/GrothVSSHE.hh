@@ -126,14 +126,7 @@ class GrothVSSHE
 	public:
 		mpz_t					p, q, g, h;
 		PedersenCommitmentScheme		*com;
-/*		
-		GrothVSSHE
-			(size_t n,
-			mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC,
-			mpz_srcptr h_ENC,
-			unsigned long int ell_e = TMCG_GROTH_L_E,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE); */
+
 		GrothVSSHE
 			(size_t n,
 			mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr k_ENC,
