@@ -137,30 +137,58 @@ void start_instance
 			mpz_t a;
 			std::stringstream err_log;
 			mpz_init_set_ui(a, 0L);
+			bool ret;
 			start_clock();
 			std::cout << "P_" << whoami << ": edcf.Flip()" << std::endl;
 			if (corrupted)
-				edcf->Flip(whoami, a, aiou, rbc, err_log, true);
+				ret = edcf->Flip(whoami, a, aiou, rbc, err_log, true);
 			else
-				assert(edcf->Flip(whoami, a, aiou, rbc, err_log));
+				ret = edcf->Flip(whoami, a, aiou, rbc, err_log);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+			if (!corrupted)
+				assert(ret);
 
 			// test coin flipping in PedersenCommitmentScheme::Setup_publiccoin()
-			std::cout << "PedersenCommitmentScheme(32, ...)" << std::endl;
-			PedersenCommitmentScheme *com = new PedersenCommitmentScheme(32,
+			size_t nn = 2;
+			std::cout << "PedersenCommitmentScheme(" << nn << ", ...)" << std::endl;
+			PedersenCommitmentScheme *com = new PedersenCommitmentScheme(nn,
 				vtmf->p, vtmf->q, vtmf->k, vtmf->h);
 			std::stringstream err_log2;
 			start_clock();
 			std::cout << "P_" << whoami << ": com.Setup_publiccoin()" << std::endl;
-			if (corrupted)
-				com->Setup_publiccoin(whoami, aiou, rbc, edcf, err_log2);
-			else
-				assert(com->Setup_publiccoin(whoami, aiou, rbc, edcf, err_log2));
+			ret = com->Setup_publiccoin(whoami, aiou, rbc, edcf, err_log2);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
+			if (!corrupted)
+				assert(ret);
+			// create messages
+			std::vector<mpz_ptr> mp;
+			for (size_t i = 0; i < nn; i++)
+			{
+				mpz_ptr tmp = new mpz_t();
+				mpz_init_set_ui(tmp, i);
+				mp.push_back(tmp);
+			}
+			// commit and verify
+			mpz_t b;
+			mpz_init(b);
+			std::cout << "P_" << whoami << ": com.Commit(...)" << std::endl;
+			com->Commit(a, b, mp);
+			std::cout << "P_" << whoami << ": com.Verify(...)" << std::endl;
+			assert(com->Verify(a, b, mp));
+			mpz_add_ui(mp[0], mp[0], 1L);
+			assert(!com->Verify(a, b, mp));
+			// release
+			mpz_clear(b);
+			for (size_t i = 0; i < nn; i++)
+			{
+				mpz_clear(mp[i]);
+				delete mp[i];
+			}
+			mp.clear();
 			delete com;
 
 			// at the end: deliver some more rounds for waiting parties

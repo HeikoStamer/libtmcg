@@ -170,7 +170,8 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 }
 
 bool PedersenCommitmentScheme::Setup_publiccoin
-	(size_t whoami, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	(const size_t whoami, aiounicast *aiou, 
+	CachinKursawePetzoldShoupRBC *rbc,
 	JareckiLysyanskayaEDCF *edcf, std::ostream &err)
 {
 	// initialize
@@ -181,14 +182,15 @@ bool PedersenCommitmentScheme::Setup_publiccoin
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "PedersenCommitmentScheme::Setup_publiccoin()" << p << q << rbc->n << rbc->t;
+	myID << "PedersenCommitmentScheme::Setup_publiccoin()" << p << q <<
+		rbc->n << rbc->t;
 	rbc->setID(myID.str());
 	try
 	{
 		// check ECDF
 		if (!edcf->CheckGroup())
 		{
-			err << "Setup_publiccoin(): CheckGroup() of EDCF failed" << std::endl;
+			err << "CheckGroup() of EDCF failed" << std::endl;
 			throw false;
 		}
 
@@ -201,7 +203,8 @@ bool PedersenCommitmentScheme::Setup_publiccoin
 		}
 		while (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L) || 
 			!mpz_cmp(h, foo)); // check, whether $1 < h < p-1$
-		mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+		mpz_fpowm_precompute(fpowm_table_h, h, p, 
+			mpz_sizeinbase(q, 2L));
 
 		// flipping coins for generating $g_1, \ldots, g_n$
 		for (size_t i = 0; i < g.size(); i++)
@@ -212,20 +215,12 @@ bool PedersenCommitmentScheme::Setup_publiccoin
 					throw false;
 				mpz_powm(g[i], a, k, p);
 			}
-			while (!mpz_cmp_ui(g[i], 0L) || !mpz_cmp_ui(g[i], 1L) || 
-				!mpz_cmp(g[i], foo)); // check, whether $1 < g_i < p-1$
+			while (!mpz_cmp_ui(g[i], 0L) || !mpz_cmp_ui(g[i], 1L) ||
+				!mpz_cmp(g[i], foo)); // check $1 < g_i < p-1$
 			if (i < TMCG_MAX_FPOWM_N)
-				mpz_fpowm_precompute(fpowm_table_g[i], g[i], p, mpz_sizeinbase(q, 2L));
+				mpz_fpowm_precompute(fpowm_table_g[i], g[i], p,
+					mpz_sizeinbase(q, 2L));
 		}
-
-		// at the end: deliver some more rounds for waiting parties
-		time_t entry_time = time(NULL);
-		do
-		{
-			mpz_set_ui(a, 0L);
-			rbc->DeliverFrom(a, whoami);
-		}
-		while (time(NULL) < (entry_time + aiounicast::aio_timeout_long));
 
 		// finish
 		throw true;
@@ -259,18 +254,20 @@ bool PedersenCommitmentScheme::CheckGroup
 		if (mpz_cmp(foo, p))
 			throw false;
 		
-		// Check whether $p$ and $q$ are both (probable) prime with
-		// a soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
+		// Check whether $p$ and $q$ are both (probable) prime with a
+		// soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
 		if (!mpz_probab_prime_p(p, TMCG_MR_ITERATIONS) || 
 			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
 				throw false;
 		
-		// Check whether $k$ is not divisible by $q$, i.e. $q, k$ are coprime.
+		// Check whether $k$ is not divisible by $q$, i.e. $q, k$
+		// are coprime.
 		mpz_gcd(foo, q, k);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 		
-		// Check whether the elements $h, g_1, \ldots, g_n$ are of order $q$.
+		// Check whether the elements $h, g_1, \ldots, g_n$ are of 
+		// order $q$.
 		mpz_fpowm(fpowm_table_h, foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
@@ -288,15 +285,15 @@ bool PedersenCommitmentScheme::CheckGroup
 				throw false;
 		}
 		
-		// Check whether the elements $h, g_1, \ldots, g_n$ are different
+		// Check whether elements $h, g_1, \ldots, g_n$ are different
 		// and non-trivial, i.e., $1 < h, g_1, \ldots, g_n < p-1$.
 		mpz_sub_ui(foo, p, 1L); // compute $p-1$
 		if ((mpz_cmp_ui(h, 1L) <= 0) || (mpz_cmp(h, foo) >= 0))
 			throw false;
 		for (size_t i = 0; i < g.size(); i++)
 		{
-			if ((mpz_cmp_ui(g[i], 1L) <= 0) || (mpz_cmp(g[i], foo) >= 0) ||
-				!mpz_cmp(g[i], h))
+			if ((mpz_cmp_ui(g[i], 1L) <= 0) || 
+				(mpz_cmp(g[i], foo) >= 0) || !mpz_cmp(g[i], h))
 					throw false;
 			for (size_t j = (i + 1); j < g.size(); j++)
 			{
@@ -318,7 +315,8 @@ bool PedersenCommitmentScheme::CheckGroup
 void PedersenCommitmentScheme::PublishGroup
 	(std::ostream &out) const
 {
-	out << p << std::endl << q << std::endl << k << std::endl << h << std::endl;
+	out << p << std::endl << q << std::endl << k << std::endl << 
+		h << std::endl;
 	for (size_t i = 0; i < g.size(); i++)
 		out << g[i] << std::endl;
 }

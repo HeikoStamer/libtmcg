@@ -80,7 +80,7 @@ class PedersenCommitmentScheme
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		bool Setup_publiccoin
-			(size_t whoami, aiounicast *aiou,
+			(const size_t whoami, aiounicast *aiou,
 			CachinKursawePetzoldShoupRBC *rbc,
 			JareckiLysyanskayaEDCF *edcf, std::ostream &err);
 		bool CheckGroup

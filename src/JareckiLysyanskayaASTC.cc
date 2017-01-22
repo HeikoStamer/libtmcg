@@ -422,6 +422,7 @@ bool JareckiLysyanskayaRVSS::Share
 				while (cnt <= n);
 			}
 		}
+		Qual.clear();
 		for (size_t j = 0; j < n; j++)
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				Qual.push_back(j);
