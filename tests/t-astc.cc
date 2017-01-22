@@ -179,6 +179,7 @@ void start_instance
 			com->Commit(a, b, mp);
 			std::cout << "P_" << whoami << ": com.Verify(...)" << std::endl;
 			assert(com->Verify(a, b, mp));
+			std::cout << "P_" << whoami << ": !com.Verify(...)" << std::endl;
 			mpz_add_ui(mp[0], mp[0], 1L);
 			assert(!com->Verify(a, b, mp));
 			// release

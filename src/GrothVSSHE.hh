@@ -71,6 +71,10 @@ class GrothSKC
 			unsigned long int ell_e = TMCG_GROTH_L_E,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		bool SetupGenerators_publiccoin
+			(const size_t whoami, aiounicast *aiou,
+			CachinKursawePetzoldShoupRBC *rbc,
+			JareckiLysyanskayaEDCF *edcf, std::ostream &err);
 		bool CheckGroup
 			() const;
 		void PublishGroup
@@ -139,6 +143,10 @@ class GrothVSSHE
 			unsigned long int ell_e = TMCG_GROTH_L_E,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		bool SetupGenerators_publiccoin
+			(const size_t whoami, aiounicast *aiou,
+			CachinKursawePetzoldShoupRBC *rbc,
+			JareckiLysyanskayaEDCF *edcf, std::ostream &err);
 		bool CheckGroup
 			() const;
 		void PublishGroup
