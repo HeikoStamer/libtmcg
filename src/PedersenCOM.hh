@@ -82,7 +82,7 @@ class PedersenCommitmentScheme
 		bool Setup_publiccoin
 			(size_t whoami, aiounicast *aiou,
 			CachinKursawePetzoldShoupRBC *rbc,
-			JareckiLysyanskayaEDCF *edcf);
+			JareckiLysyanskayaEDCF *edcf, std::ostream &err);
 		bool CheckGroup
 			() const;
 		void PublishGroup

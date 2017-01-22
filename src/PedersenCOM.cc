@@ -171,11 +171,10 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 
 bool PedersenCommitmentScheme::Setup_publiccoin
 	(size_t whoami, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	JareckiLysyanskayaEDCF *edcf)
+	JareckiLysyanskayaEDCF *edcf, std::ostream &err)
 {
 	// initialize
 	mpz_t a, foo;
-	std::stringstream err_log;
 	mpz_init_set_ui(a, 0L);
 	mpz_init(foo);
 	mpz_sub_ui(foo, p, 1L); // compute $p-1$
@@ -188,12 +187,15 @@ bool PedersenCommitmentScheme::Setup_publiccoin
 	{
 		// check ECDF
 		if (!edcf->CheckGroup())
+		{
+			err << "Setup_publiccoin(): CheckGroup() of EDCF failed" << std::endl;
 			throw false;
+		}
 
 		// flipping coins for generating $h$
 		do
 		{
-			if (!edcf->Flip(whoami, a, aiou, rbc, err_log))
+			if (!edcf->Flip(whoami, a, aiou, rbc, err))
 				throw false;
 			mpz_powm(h, a, k, p);
 		}
@@ -206,7 +208,7 @@ bool PedersenCommitmentScheme::Setup_publiccoin
 		{
 			do
 			{
-				if (!edcf->Flip(whoami, a, aiou, rbc, err_log))
+				if (!edcf->Flip(whoami, a, aiou, rbc, err))
 					throw false;
 				mpz_powm(g[i], a, k, p);
 			}
@@ -220,7 +222,6 @@ bool PedersenCommitmentScheme::Setup_publiccoin
 		time_t entry_time = time(NULL);
 		do
 		{
-			
 			mpz_set_ui(a, 0L);
 			rbc->DeliverFrom(a, whoami);
 		}

@@ -442,6 +442,7 @@ int main
 		else
 		{
 			std::cout << "fork() = " << pid << std::endl;
+
 			/* Verifier */
 			ipipestream *pipe_in = new ipipestream(pipe2fd[0]);
 			opipestream *pipe_out = new opipestream(pipe1fd[1]);

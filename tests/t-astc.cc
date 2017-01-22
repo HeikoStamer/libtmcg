@@ -133,7 +133,7 @@ void start_instance
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 			rbc->setID(myID);
 			
-			// generating public random value $a \in \mathbb{Z}_q$
+			// test generating public random value $a \in \mathbb{Z}_q$
 			mpz_t a;
 			std::stringstream err_log;
 			mpz_init_set_ui(a, 0L);
@@ -146,6 +146,22 @@ void start_instance
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+
+			// test coin flipping in PedersenCommitmentScheme::Setup_publiccoin()
+			std::cout << "PedersenCommitmentScheme(32, ...)" << std::endl;
+			PedersenCommitmentScheme *com = new PedersenCommitmentScheme(32,
+				vtmf->p, vtmf->q, vtmf->k, vtmf->h);
+			std::stringstream err_log2;
+			start_clock();
+			std::cout << "P_" << whoami << ": com.Setup_publiccoin()" << std::endl;
+			if (corrupted)
+				com->Setup_publiccoin(whoami, aiou, rbc, edcf, err_log2);
+			else
+				assert(com->Setup_publiccoin(whoami, aiou, rbc, edcf, err_log2));
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
+			delete com;
 
 			// at the end: deliver some more rounds for waiting parties
 			time_t entry_time = time(NULL);
