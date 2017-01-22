@@ -172,7 +172,8 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 bool PedersenCommitmentScheme::SetupGenerators_publiccoin
 	(const size_t whoami, aiounicast *aiou, 
 	CachinKursawePetzoldShoupRBC *rbc,
-	JareckiLysyanskayaEDCF *edcf, std::ostream &err)
+	JareckiLysyanskayaEDCF *edcf, std::ostream &err,
+	bool without_h)
 {
 	// initialize
 	mpz_t a, foo;
@@ -201,17 +202,20 @@ bool PedersenCommitmentScheme::SetupGenerators_publiccoin
 			throw false;
 		U << a << "|";
 
-		// generating $h$
-		do
+		// generating $h$, if necessary
+		if (!without_h)
 		{
-			mpz_shash(a, U.str());
-			mpz_powm(h, a, k, p);
-			U << h << "|";
+			do
+			{
+				mpz_shash(a, U.str());
+				mpz_powm(h, a, k, p);
+				U << h << "|";
+			}
+			while (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L) || 
+				!mpz_cmp(h, foo)); // check $1 < h < p-1$
+			mpz_fpowm_precompute(fpowm_table_h, h, p, 
+				mpz_sizeinbase(q, 2L));
 		}
-		while (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L) || 
-			!mpz_cmp(h, foo)); // check, whether $1 < h < p-1$
-		mpz_fpowm_precompute(fpowm_table_h, h, p, 
-			mpz_sizeinbase(q, 2L));
 
 		// generating $g_1, \ldots, g_n$
 		for (size_t i = 0; i < g.size(); i++)
