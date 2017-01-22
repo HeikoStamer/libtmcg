@@ -1,5 +1,5 @@
-* COM: choose parameters g_1, ... g_n, h in distributed fashion using EDCF
-* dkg-gnunet-common: agree on key creation time (and maybe later on UID)
+* doc: advise users to call SetupGenerators() in VSSHE
+* dkg-gnunet-common: agree on UID
 * dkg-gnunet-common: stabilize reconnect
 + provide simple Bracha RBC and atomic broadcast protocol
 + provide interactive versions for the non-interactive protocols of VTMF
