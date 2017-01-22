@@ -1738,7 +1738,7 @@ GrothSKC::~GrothSKC
 }
 
 // =============================================================================
-
+/*
 GrothVSSHE::GrothVSSHE
 	(size_t n,
 	mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC,
@@ -1752,7 +1752,7 @@ GrothVSSHE::GrothVSSHE
 		mpz_init_set(h, h_ENC);
 	
 	// Initialize the commitment scheme and Groth's SKC argument
-	com = new PedersenCommitmentScheme(n, fieldsize, subgroupsize);
+	com = new PedersenCommitmentScheme(n, fieldsize, subgroupsize); // FIXME: reuse h_ENC
 	com->PublishGroup(lej);
 	skc = new GrothSKC(n, lej, ell_e);
 		
@@ -1763,7 +1763,7 @@ GrothVSSHE::GrothVSSHE
 	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
-
+*/
 GrothVSSHE::GrothVSSHE
 	(size_t n,
 	mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr k_ENC,
