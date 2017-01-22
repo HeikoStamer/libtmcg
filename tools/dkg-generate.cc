@@ -38,7 +38,6 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#include "pipestream.hh"
 #include "dkg-gnunet-common.hh"
 
 int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
@@ -51,17 +50,13 @@ bool				instance_forked = false;
 void run_instance
 	(const size_t whoami, const time_t keytime)
 {
-	// create pipe streams and handles for all players
-	std::vector<ipipestream*> P_in;
-	std::vector<opipestream*> P_out;
+	// create communication handles for all players
 	std::vector<int> uP_in, uP_out, bP_in, bP_out;
 	std::vector<std::string> uP_key, bP_key;
 	for (size_t i = 0; i < N; i++)
 	{
 		std::stringstream key;
 		key << "dkg-generate::P_" << (i + whoami); // choose a simple HMAC key
-		P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
-		P_out.push_back(new opipestream(pipefd[whoami][i][1]));
 		uP_in.push_back(pipefd[i][whoami][0]);
 		uP_out.push_back(pipefd[whoami][i][1]);
 		uP_key.push_back(key.str());
@@ -327,17 +322,6 @@ void run_instance
 	// release VTMF instances
 	delete vtmf;
 			
-	// release pipe streams (private channels)
-	size_t numRead = 0, numWrite = 0;
-	for (size_t i = 0; i < N; i++)
-	{
-		numRead += P_in[i]->get_numRead() + P_out[i]->get_numRead();
-		numWrite += P_in[i]->get_numWrite() + P_out[i]->get_numWrite();
-		delete P_in[i], delete P_out[i];
-	}
-	std::cout << "P_" << whoami << ": numRead = " << numRead <<
-		" numWrite = " << numWrite << std::endl;
-
 	// release handles (unicast channel)
 	uP_in.clear(), uP_out.clear(), uP_key.clear();
 	std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
