@@ -1,7 +1,8 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006, 2007, 2009, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2005, 2006, 2007, 2009, 
+                     2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -133,6 +134,7 @@ int main
 	mpz_init(a), mpz_init(b), mpz_init(aa), mpz_init(bb);
 	size_t n = 32;
 	
+	// check PedersenCOM
 	PedersenCommitmentScheme *com, *com2;
 	std::stringstream foo;
 	std::vector<mpz_ptr> mp;
@@ -187,7 +189,53 @@ int main
 	}
 	mp.clear();
 	delete com, delete com2;
-	
+
+	// attack PedersenCOM
+	std::stringstream bar;
+	std::cout << "attack PedersenCommitmentScheme(1)" << std::endl;
+	com = new PedersenCommitmentScheme(1);
+	std::cout << "*.CheckGroup()" << std::endl;
+	assert(com->CheckGroup());
+	mpz_wrandomm(bb, com->q);
+	mpz_powm(b, com->h, bb, com->p);
+	bar << com->p << std::endl << com->q << std::endl << com->k << std::endl << com->h << std::endl;
+	bar << b << std::endl;
+	com2 = new PedersenCommitmentScheme(1, bar);
+	std::cout << "*.CheckGroup(modified g)" << std::endl;
+	assert(com2->CheckGroup());
+	{
+		mpz_ptr tmp = new mpz_t();
+		mpz_init_set_ui(tmp, 42L);
+		mp.push_back(tmp);
+	}
+	mpz_wrandomm(aa, com->q);
+	mpz_powm(a, com2->h, aa, com2->p);
+	std::cout << "c = " << a << std::endl;
+	std::cout << "*.TestMembership(c)" << std::endl;
+	assert(com2->TestMembership(a));
+	std::cout << "*.Verify(c, r, mp)" << std::endl;
+	mpz_mul(b, bb, mp[0]);
+	mpz_mod(b, b, com2->q);
+	mpz_sub(b, aa, b);
+	mpz_mod(b, b, com2->q);
+	std::cout << "r = " << b << std::endl;
+	assert(com2->Verify(a, b, mp));
+	std::cout << "*.Verify(c, r, mp + 1)" << std::endl;
+	mpz_add_ui(mp[0], mp[0], 1L);
+	mpz_mul(b, bb, mp[0]);
+	mpz_mod(b, b, com2->q);
+	mpz_sub(b, aa, b);
+	mpz_mod(b, b, com2->q);
+	std::cout << "r = " << b << std::endl;
+	assert(com2->Verify(a, b, mp));
+	{
+		mpz_clear(mp[0]);
+		delete mp[0];
+	}
+	mp.clear();
+	delete com, delete com2;
+
+	// interactive VSSHE checks
 	pid_t pid = 0;
 	int pipe1fd[2], pipe2fd[2];
 	if ((pipe(pipe1fd) < 0) || (pipe(pipe2fd) < 0))

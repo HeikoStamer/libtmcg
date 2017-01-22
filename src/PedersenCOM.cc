@@ -349,7 +349,6 @@ bool PedersenCommitmentScheme::Verify
 			mpz_mul(c2, c2, tmp);
 			mpz_mod(c2, c2, p);
 		}
-		
 		// Verify the commitment: 1. $c\in\mathbb{Z}_p$ and 2. $c = c'$
 		if ((mpz_cmp_ui(c, 0L) < 0) || (mpz_cmp(c, p) >= 0) || mpz_cmp(c, c2))
 			throw false;
