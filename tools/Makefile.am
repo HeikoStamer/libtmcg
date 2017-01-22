@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -24,8 +24,8 @@ LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ @LIBGMP_LIBS@ @GNUNET_LIBS@ ../src/lib
 
 bin_PROGRAMS = dkg-generate dkg-encrypt dkg-decrypt
 
-dkg_generate_SOURCES = dkg-gnunet-common.hh dkg-gnunet-common.cc pipestream.hh dkg-generate.cc
+dkg_generate_SOURCES = dkg-gnunet-common.hh dkg-gnunet-common.cc dkg-generate.cc
 dkg_encrypt_SOURCES = dkg-encrypt.cc
-dkg_decrypt_SOURCES = dkg-gnunet-common.hh dkg-gnunet-common.cc pipestream.hh dkg-decrypt.cc
+dkg_decrypt_SOURCES = dkg-gnunet-common.hh dkg-gnunet-common.cc dkg-decrypt.cc
 
 
