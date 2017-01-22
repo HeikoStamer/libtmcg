@@ -194,27 +194,33 @@ bool PedersenCommitmentScheme::SetupGenerators_publiccoin
 			throw false;
 		}
 
-		// flipping coins for generating $h$
+		// flipping commonly a public coin
+		std::stringstream U;
+		U << "LibTMCG|" << p << "|" << q << "|hggen|";
+		if (!edcf->Flip(whoami, a, aiou, rbc, err))
+			throw false;
+		U << a << "|";
+
+		// generating $h$
 		do
 		{
-			if (!edcf->Flip(whoami, a, aiou, rbc, err))
-				throw false;
+			mpz_shash(a, U.str());
 			mpz_powm(h, a, k, p);
+			U << h << "|";
 		}
 		while (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L) || 
 			!mpz_cmp(h, foo)); // check, whether $1 < h < p-1$
 		mpz_fpowm_precompute(fpowm_table_h, h, p, 
 			mpz_sizeinbase(q, 2L));
 
-		// flipping coins for generating $g_1, \ldots, g_n$
+		// generating $g_1, \ldots, g_n$
 		for (size_t i = 0; i < g.size(); i++)
 		{
-			std::cerr << "^";
 			do
 			{
-				if (!edcf->Flip(whoami, a, aiou, rbc, err))
-					throw false;
+				mpz_shash(a, U.str());
 				mpz_powm(g[i], a, k, p);
+				U << g[i] << "|";
 			}
 			while (!mpz_cmp_ui(g[i], 0L) || !mpz_cmp_ui(g[i], 1L) ||
 				!mpz_cmp(g[i], foo)); // check $1 < g_i < p-1$
@@ -222,7 +228,6 @@ bool PedersenCommitmentScheme::SetupGenerators_publiccoin
 				mpz_fpowm_precompute(fpowm_table_g[i], g[i], p,
 					mpz_sizeinbase(q, 2L));
 		}
-		std::cerr << std::endl;
 
 		// finish
 		throw true;

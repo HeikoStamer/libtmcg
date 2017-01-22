@@ -150,16 +150,8 @@ void start_instance
 			if (!corrupted)
 				assert(ret);
 
-			// at the end: deliver some more rounds for waiting parties
-			time_t entry_time = time(NULL);
-			do
-			{
-				rbc->DeliverFrom(a, whoami);
-			}
-			while (time(NULL) < (entry_time + aiounicast::aio_timeout_long));
-
 			// test coin flipping in PedersenCommitmentScheme::Setup_publiccoin()
-			size_t nn = 2;
+			size_t nn = 32;
 			std::cout << "PedersenCommitmentScheme(" << nn << ", ...)" << std::endl;
 			PedersenCommitmentScheme *com = new PedersenCommitmentScheme(nn,
 				vtmf->p, vtmf->q, vtmf->k, vtmf->h);
@@ -200,7 +192,7 @@ void start_instance
 			delete com;
 
 			// at the end: deliver some more rounds for waiting parties
-			entry_time = time(NULL);
+			time_t entry_time = time(NULL);
 			do
 			{
 				rbc->DeliverFrom(a, whoami);
