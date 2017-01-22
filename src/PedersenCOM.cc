@@ -169,7 +169,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
-bool PedersenCommitmentScheme::Setup_publiccoin
+bool PedersenCommitmentScheme::SetupGenerators_publiccoin
 	(const size_t whoami, aiounicast *aiou, 
 	CachinKursawePetzoldShoupRBC *rbc,
 	JareckiLysyanskayaEDCF *edcf, std::ostream &err)
@@ -182,8 +182,8 @@ bool PedersenCommitmentScheme::Setup_publiccoin
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "PedersenCommitmentScheme::Setup_publiccoin()" << p << q <<
-		rbc->n << rbc->t;
+	myID << "PedersenCommitmentScheme::SetupGenerators_publiccoin()" << 
+		p << q << rbc->n << rbc->t;
 	rbc->setID(myID.str());
 	try
 	{
@@ -209,6 +209,7 @@ bool PedersenCommitmentScheme::Setup_publiccoin
 		// flipping coins for generating $g_1, \ldots, g_n$
 		for (size_t i = 0; i < g.size(); i++)
 		{
+			std::cerr << "^";
 			do
 			{
 				if (!edcf->Flip(whoami, a, aiou, rbc, err))
@@ -221,6 +222,7 @@ bool PedersenCommitmentScheme::Setup_publiccoin
 				mpz_fpowm_precompute(fpowm_table_g[i], g[i], p,
 					mpz_sizeinbase(q, 2L));
 		}
+		std::cerr << std::endl;
 
 		// finish
 		throw true;

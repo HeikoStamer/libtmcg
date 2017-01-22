@@ -150,6 +150,14 @@ void start_instance
 			if (!corrupted)
 				assert(ret);
 
+			// at the end: deliver some more rounds for waiting parties
+			time_t entry_time = time(NULL);
+			do
+			{
+				rbc->DeliverFrom(a, whoami);
+			}
+			while (time(NULL) < (entry_time + aiounicast::aio_timeout_long));
+
 			// test coin flipping in PedersenCommitmentScheme::Setup_publiccoin()
 			size_t nn = 2;
 			std::cout << "PedersenCommitmentScheme(" << nn << ", ...)" << std::endl;
@@ -157,8 +165,8 @@ void start_instance
 				vtmf->p, vtmf->q, vtmf->k, vtmf->h);
 			std::stringstream err_log2;
 			start_clock();
-			std::cout << "P_" << whoami << ": com.Setup_publiccoin()" << std::endl;
-			ret = com->Setup_publiccoin(whoami, aiou, rbc, edcf, err_log2);
+			std::cout << "P_" << whoami << ": com.SetupGenerators_publiccoin()" << std::endl;
+			ret = com->SetupGenerators_publiccoin(whoami, aiou, rbc, edcf, err_log2);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
@@ -192,7 +200,7 @@ void start_instance
 			delete com;
 
 			// at the end: deliver some more rounds for waiting parties
-			time_t entry_time = time(NULL);
+			entry_time = time(NULL);
 			do
 			{
 				rbc->DeliverFrom(a, whoami);
