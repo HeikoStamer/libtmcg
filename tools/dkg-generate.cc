@@ -77,8 +77,7 @@ void run_instance
 	// check VTMF instance constructed from CRS (common reference string)
 	if (!vtmf->CheckGroup())
 	{
-		std::cerr << "P_" << whoami << ": " <<
-			"Group G was not correctly generated!" << std::endl;
+		std::cerr << "P_" << whoami << ": " << "Group G was not correctly generated!" << std::endl;
 		exit(-1);
 	}
 
@@ -97,25 +96,43 @@ void run_instance
 	rbc->setID(myID);
 			
 	// create and exchange VTMF keys in order to create a common value $h$ for DKG
-	// FIXME: async. operations and broadcast needed; otherwise each VTMF key could be stored in DHT 
+	mpz_t nizk_c, nizk_r, h_j;
+	mpz_init(nizk_c), mpz_init(nizk_r), mpz_init(h_j);
 	vtmf->KeyGenerationProtocol_GenerateKey();
-	for (size_t i = 0; i < N; i++)
-	{
-		if (i != whoami)
-			vtmf->KeyGenerationProtocol_PublishKey(*P_out[i]);
-	}
+	vtmf->KeyGenerationProtocol_ComputeNIZK(nizk_c, nizk_r);
+	rbc->Broadcast(vtmf->h_i);
+	rbc->Broadcast(nizk_c);
+	rbc->Broadcast(nizk_r);
 	for (size_t i = 0; i < N; i++)
 	{
 		if (i != whoami)
 		{
-			if (!vtmf->KeyGenerationProtocol_UpdateKey(*P_in[i]))
+			if (!rbc->DeliverFrom(h_j, i))
+			{
+				std::cerr << "P_" << whoami << ": " << "no VTMF key received from " << i << std::endl;
+				// FIXME: error handling
+			}
+			if (!rbc->DeliverFrom(nizk_c, i))
+			{
+				std::cerr << "P_" << whoami << ": " << "no NIZK c received from " << i << std::endl;
+				// FIXME: error handling
+			}
+			if (!rbc->DeliverFrom(nizk_r, i))
+			{
+				std::cerr << "P_" << whoami << ": " << "no NIZK r received from " << i << std::endl;
+				// FIXME: error handling
+			}
+			std::stringstream lej;
+			lej << h_j << std::endl << nizk_c << std::endl << nizk_r << std::endl;
+			if (!vtmf->KeyGenerationProtocol_UpdateKey(lej))
 			{
 				std::cerr << "P_" << whoami << ": " << "Public key of P_" << i << " was not correctly generated!" << std::endl;
-				exit(-1);
+				// FIXME: error handling
 			}
 		}
 	}
 	vtmf->KeyGenerationProtocol_Finalize();
+	mpz_clear(nizk_c), mpz_clear(nizk_r), mpz_clear(h_j);
 
 	// create an instance of DKG
 	GennaroJareckiKrawczykRabinDKG *dkg;
