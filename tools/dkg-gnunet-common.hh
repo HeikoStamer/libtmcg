@@ -95,6 +95,8 @@
 		(void *cls);
 	void gnunet_statistics
 		(void *cls);
+	void gnunet_fork
+		(void *cls);
 	void gnunet_init
 		(void *cls);
 	void gnunet_run

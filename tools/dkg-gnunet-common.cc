@@ -56,6 +56,7 @@ static struct GNUNET_TRANSPORT_HelloGetHandle	*gh = NULL;
 static struct GNUNET_HELLO_Message 		*ohello = NULL;
 static struct GNUNET_CADET_Port 		*lp = NULL;
 static struct GNUNET_SCHEDULER_Task 		*sd = NULL;
+static struct GNUNET_SCHEDULER_Task 		*ft = NULL;
 static struct GNUNET_SCHEDULER_Task 		*st = NULL;
 static struct GNUNET_SCHEDULER_Task 		*io = NULL;
 static struct GNUNET_SCHEDULER_Task 		*ct = NULL;
@@ -467,6 +468,11 @@ void gnunet_shutdown_task(void *cls)
 		GNUNET_SCHEDULER_cancel(st);
 		st = NULL;
 	}
+	if (ft != NULL)
+	{
+		GNUNET_SCHEDULER_cancel(ft);
+		ft = NULL;
+	}
 	if (job != NULL)
 	{
 		GNUNET_SCHEDULER_cancel(job);
@@ -688,6 +694,15 @@ void gnunet_statistics(void *cls)
 	st = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, 45), &gnunet_statistics, NULL);
 }
 
+void gnunet_fork(void *cls)
+{
+	ft = NULL;
+
+	// fork instance
+	std::cout << "INFO: forking the DKG instance ..." << std::endl;
+	fork_instance(peer2pipe[thispeer]);
+}
+
 void gnunet_init(void *cls)
 {
 	job = NULL;
@@ -725,11 +740,9 @@ void gnunet_init(void *cls)
 	}
 	pipes_created = true;
 
-	// fork instance
-	fork_instance(peer2pipe[thispeer]);
-
-	// next: schedule connect and statistics tasks
+	// next: schedule connect, fork and statistics tasks
 	ct = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_MINUTES, 1), &gnunet_connect, NULL);
+	ft = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_MINUTES, 2), &gnunet_fork, NULL);
 	st = GNUNET_SCHEDULER_add_now(&gnunet_statistics, NULL);
 }
 
