@@ -68,7 +68,7 @@ void run_instance
 	// create VTMF instance
 	std::stringstream crss;
 	crss << crs;
-	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crss);
+	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crss, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
 	// check VTMF instance constructed from CRS (common reference string)
 	if (!vtmf->CheckGroup())
 	{
@@ -373,25 +373,25 @@ int main
 	(int argc, char *const *argv)
 {
 	// setup CRS (common reference string) |p| = 2048 bit, |q| = 256 bit
-	crs = "W8o8gvA20jfDUDcVBS250oR0uObgSsG9Lwj7HekVkgjr0ZGOSfEqFLIUTqTXE"
-		"pGbrYROsq0T0UMI4QWW89B8Xv0O8G9xoQfOn2yO1ZdqamWLMcOR0zYUSVdWh"
-		"GntzQwshVR8rsqzditokxyshQTkQcZ2RSASrTXtT6J8MRqbzsjwZpCvSLh3k"
-		"BwI3Gqn4d5MJeTFOEES9OnfCXJ8EBXBuKevdwF35HIB8ofPmoAuWgVupLniH"
-		"xd2cdRcofthSvV5NNahjJXuVtNbiEveqrKwFh9mhJolPTleDLPb2Bz3Wqpu2"
-		"RkpAKz7swD5vv2ImYtFH8d1sr1r1riyZJLjczmRu83T\n"
-		"fEor5mR9DcBxVvzojzYEqiCAzuzclIysxR1jlSS10i9\n"
-		"L98HZrvso7jiECZCUbqrNOlvjwJDeOfTJhOM6rl4k28XWfjC7XSOuuMuLfOt"
-		"JzkkC9xU9BkhN3QZ8KPBBb8NrqmMzXdq2KX2spindKUt5qx3nnuyN2rgmyvr"
-		"BoiJuQdFQ7s0iLjwesaKkfV9LmAheDIHtqrOShJS87W44cWebwSxeSMvDNsl"
-		"rGBvdMM0ynEZxpeYaE7uqSHUV8IYNoKTZcLyzUneVO7idKUdHZt92LXQxUta"
-		"xHP7cjdTv3eVRuipvrYxfRGqdjDlU20Z5xexzEUcG2ZATJyaBt82j9nf0boA"
-		"VmYxD00mXDdHb2RWhfDCot5czPfueGK5BAfJPHcr6yLE\n"
-		"mK2zCAnD2Z0WqJ22yaIOLnO1zHU0BAgpVNX3XEUloWVKpfmDs5nVEJDSSDxz"
-		"gEWV6V9YNYudvt819CLDytfNwfVkYiEtL0oOPeh9spw7q1dmy2Cqr687A2rj"
-		"C0HPrQV3FwP27Lb5paPvipaGRPCngedxykaBK4WB52XoDF8FyogzF475EccG"
-		"DeaaTRZmotj3HdiDsVO7Nb66Q8G6Wm1zwwrtEzLOXYKQBJZlwWKRqs23021j"
-		"eVQRQ2I9exPnO1GYF8nigzAexQdBsmSAX8sNZsCuEK1htM0djsb0PmeGW6eY"
-		"A\n";
+	crs = "VGrhfVRjcpwIUfp50GXPv63qfzVyaBKLR0yudBbcj2N5KVj8I3rqoQs7CJWUvl"
+		"864YyH1XSVJ86UxIjIIVJo9HZN9qjYttl5oENhGJVogiFIdQGPULqRM2Hxtf"
+		"3j7VbDBpMYJA9kpo8SzqwdOxBE74DCWXHa8ZaigVoCxNa8QTjdOkO1Voq44j"
+		"1NFX1hCOCO06NJiWNGKle6bPpHOYRVBKdsXwMTxxxxPvGPSmP1YGUhpnfAK4"
+		"JndDWZacP2Wngeqm4PDwUWO04AFRb4WK3HZ5cxfCxNqIYcmNNCD5Vpzb6CpC"
+		"ooiARqxRLHLOEVj5y3VDnEcdNjutWUdW9jea3QrU6P\n"
+		"fWct4MvrE6hZDW8EbJIbpI71X058yltIzZJlT3lLN9n\n"
+		"65C4XLbi6eBUz5x4uxw12SheBKHDU3JbosE5abajxSg4CnispDlitenTCNte"
+		"LRUc7w3ZghV7lbiPweG6X8Sm8LDqNIWBqJaT6oAS709OCmbJX9UAXtn1SFYd"
+		"Lh4pVpOYD9b7ldD26Dv463KhYoqGlg8VoT4uLyz2fTPzqVMfnf9k7GLxPd0X"
+		"f5ZxZrlQuZyEH68XH9aikEHttQGDevEa1neFqBNEHwF2wcSZlql3bAB1YyW5"
+		"uUbcq2BADGkh4SbzuQI0sMIdWvYbn97T083ckGBx7ceeRTo0nDqaTTnR0XEn"
+		"Wy9gVMuhunosCDxTtcYxDkZ1inggW9fahe4XERHHysUj\n"
+		"kgmtYCbutu1Cs9UVZHiADN8e0QJnNGeILQ7IwNKRZ5vu8vZDnRbkI8IV0gGA"
+		"zi3Z3w08JVkzdjXaR11wzYiwax6hMJETX6JcOzBNKfta2oWaJXrNVNW6zOPG"
+		"lBWpLMggcMsgmnlQOYbemqI7cOHqO5QctOZcpH7ZPaxtYbaYqeErll15Jwpz"
+		"oC87x0yEQ5CCf1vF5zja6CWk0LwGQyPs7V7IKt1sfNold82x2gMAZN9QumxY"
+		"3w97VxrtQABaRTDaiGeTdYaKxi3ok6hRwI1SLtFYCW029vtzCqpfC49Q6a5x"
+		"M\n";
 
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {

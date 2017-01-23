@@ -42,6 +42,8 @@ int main
 	}
 
 	// export group parameters to stdout
+	std::cout << "// setup CRS (common reference string) |p| = " << mpz_sizeinbase(vtmf->p, 2L) <<
+		 " bit, |q| = " << mpz_sizeinbase(vtmf->q, 2L) << " bit" << std::endl; 
 	vtmf->PublishGroup(std::cout);
 
 	// release
