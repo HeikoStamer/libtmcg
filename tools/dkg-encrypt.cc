@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -32,10 +32,14 @@
 int main
 	(int argc, char **argv)
 {
-	assert(init_libTMCG());
-	std::string line, armored_pubkey, message, armored_message;
+	if (!init_libTMCG())
+	{
+		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
+		return -1;
+	}
 
 	// read a public key from stdin
+	std::string line, armored_pubkey, message, armored_message;
 	std::cout << "1. Please provide the recipients public key (in ASCII Armor; ^D for EOF): " << std::endl;
 	while (std::getline(std::cin, line))
 		armored_pubkey += line + "\r\n";
