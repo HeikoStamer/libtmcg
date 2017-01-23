@@ -86,7 +86,7 @@ void run_instance
 	std::string myID = "dkg-generate|";
 	for (size_t i = 0; i < peers.size(); i++)
 		myID += peers[i] + "|";
-	myID += T; // include t-resiliance in the ID of broadcast protocol
+	myID += T; // include parameterized t-resiliance in the ID of broadcast protocol
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
 	rbc->setID(myID);
 			
@@ -104,17 +104,17 @@ void run_instance
 		{
 			if (!rbc->DeliverFrom(h_j, i))
 			{
-				std::cerr << "P_" << whoami << ": " << "no VTMF key received from " << i << std::endl;
+				std::cerr << "P_" << whoami << ": WARNING - no VTMF key received from " << i << std::endl;
 				// FIXME: error handling
 			}
 			if (!rbc->DeliverFrom(nizk_c, i))
 			{
-				std::cerr << "P_" << whoami << ": " << "no NIZK c received from " << i << std::endl;
+				std::cerr << "P_" << whoami << ": WARNING - no NIZK c received from " << i << std::endl;
 				// FIXME: error handling
 			}
 			if (!rbc->DeliverFrom(nizk_r, i))
 			{
-				std::cerr << "P_" << whoami << ": " << "no NIZK r received from " << i << std::endl;
+				std::cerr << "P_" << whoami << ": WARNING - no NIZK r received from " << i << std::endl;
 				// FIXME: error handling
 			}
 			std::stringstream lej;
@@ -176,7 +176,10 @@ void run_instance
 				tvs.push_back(utv);
 			}
 			else
-				std::cerr << "P_" << whoami << ": " << "no key creation time received from " << i << std::endl;
+			{
+				std::cerr << "P_" << whoami << ": WARNING - no key creation time received from " << i << std::endl;
+				// FIXME: error handling
+			}
 		}
 	}
 	mpz_clear(mtv);

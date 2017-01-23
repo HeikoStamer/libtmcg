@@ -742,7 +742,7 @@ void gnunet_init(void *cls)
 
 	// next: schedule connect, fork and statistics tasks
 	ct = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_MINUTES, 1), &gnunet_connect, NULL);
-	ft = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_MINUTES, 2), &gnunet_fork, NULL);
+	ft = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_MINUTES, 5), &gnunet_fork, NULL);
 	st = GNUNET_SCHEDULER_add_now(&gnunet_statistics, NULL);
 }
 
