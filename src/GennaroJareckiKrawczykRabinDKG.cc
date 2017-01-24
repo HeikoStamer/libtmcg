@@ -260,7 +260,6 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	assert(t <= n);
 	assert(i < n);
 	assert(n == rbc->n);
-	assert(t == rbc->t);
 	assert(i == rbc->j);
 
 	// checking maximum synchronous t-resilience
@@ -1154,7 +1153,6 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	assert(n >= t);
 	assert(i < n);
 	assert(n == rbc->n);
-	assert(t == rbc->t);
 	assert(i == rbc->j);
 
 	// checking maximum synchronous t-resilience

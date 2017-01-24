@@ -2,14 +2,14 @@
   CachinKursawePetzoldShoupSEABP.hh,
               |S|ecure and |E|fficient |A|synchronous |B|roadcast |P|rotocols
 
-     Christian Cachin, Klaus Kursawe, Frank Petzold, and Victor Shoup:
+     [CKPS01] Christian Cachin, Klaus Kursawe, Frank Petzold, and Victor Shoup:
        'Secure and Efficient Asynchronous Broadcast Protocols',
      Proceedings of CRYPTO 2001, LNCS 2139, pp. 524--541, Springer 2001.
      Full length version of extended abstract: http://shoup.net/papers/ckps.pdf
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

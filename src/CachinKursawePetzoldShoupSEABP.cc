@@ -2,7 +2,7 @@
   CachinKursawePetzoldShoupSEABP.cc,
               |S|ecure and |E|fficient |A|synchronous |B|roadcast |P|rotocols
 
-     Christian Cachin, Klaus Kursawe, Frank Petzold, and Victor Shoup:
+     [CKPS01] Christian Cachin, Klaus Kursawe, Frank Petzold, and Victor Shoup:
        'Secure and Efficient Asynchronous Broadcast Protocols',
      Proceedings of CRYPTO 2001, LNCS 2139, pp. 524--541, Springer 2001.
      Full length version of extended abstract: http://shoup.net/papers/ckps.pdf
@@ -37,7 +37,6 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	aiounicast *aiou_in, const size_t aio_default_scheduler_in,
 	const time_t aio_default_timeout_in)
 {
-	assert(t_in > 0);
 	assert(t_in <= n_in);
 	assert(j_in < n_in);
 
@@ -476,7 +475,7 @@ std::cerr << "RBC(" << j << "): error in Receive(l2) = " << l2 << std::endl;
 							}
 							while (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time + aiounicast::aio_timeout_very_long)));
 							if (mpz_cmp(foo, message[4])) // still $H(\bar{m}) \neq \bar{d}$
-								break; // no r-answer received and timeout exceeded
+								break; // no correct r-answer received and timeout exceeded
 						}
 //std::cerr << "RBC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
 						size_t who = mpz_get_ui(message[1]);

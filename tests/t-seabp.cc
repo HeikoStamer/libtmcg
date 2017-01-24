@@ -39,6 +39,7 @@
 #include "test_helper.h"
 
 #undef NDEBUG
+#define N_MIN 3
 #define N 7
 #define T 2
 
@@ -46,7 +47,7 @@ int broadcast_pipefd[N][N][2];
 pid_t pid[N];
 
 void start_instance
-	(size_t whoami, bool corrupted, bool someone_corrupted)
+	(size_t n, size_t t, size_t whoami, bool corrupted, bool someone_corrupted)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("t-seabp (fork)");
@@ -59,7 +60,7 @@ void start_instance
 			// create pipe streams and handles between all players
 			std::vector<int> bP_in, bP_out;
 			std::vector<std::string> bP_key;
-			for (size_t i = 0; i < N; i++)
+			for (size_t i = 0; i < n; i++)
 			{
 				std::stringstream key;
 				key << "t-seabp::P_" << (i + whoami);
@@ -69,12 +70,12 @@ void start_instance
 			}	
 
 			// create asynchronous authenticated broadcast channels
-			aiounicast_select *aiou = new aiounicast_select(N, whoami, bP_in, bP_out, bP_key,
+			aiounicast_select *aiou = new aiounicast_select(n, whoami, bP_in, bP_out, bP_key,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
 			std::string myID = "t-seabp";
-			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou,
+			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(n, t, whoami, aiou,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 			rbc->setID(myID);
 			
@@ -86,7 +87,7 @@ void start_instance
 			// deliver
 			start_clock();
 			std::cout << "P_" << whoami << ": rbc.DeliverFrom()" << std::endl;
-			for (size_t i = 0; i < N; i++)
+			for (size_t i = 0; i < n; i++)
 			{
 				if (someone_corrupted)
 				{
@@ -133,6 +134,34 @@ int main
 	(int argc, char **argv)
 {
 	assert(init_libTMCG());
+	assert(N_MIN <= N);
+
+	// open pipes
+	for (size_t i = 0; i < N_MIN; i++)
+	{
+		for (size_t j = 0; j < N_MIN; j++)
+		{
+			if (pipe(broadcast_pipefd[i][j]) < 0)
+				perror("t-seabp (pipe)");
+		}
+	}
+	
+	// start childs (n = N_MIN, t = 0)
+	for (size_t i = 0; i < N_MIN; i++)
+		start_instance(N_MIN, 0, i, false, false);
+	
+	// wait for childs and close pipes
+	for (size_t i = 0; i < N_MIN; i++)
+	{
+		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
+		if (waitpid(pid[i], NULL, 0) != pid[i])
+			perror("t-seabp (waitpid)");
+		for (size_t j = 0; j < N_MIN; j++)
+		{
+			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
+				perror("t-seabp (close)");
+		}
+	}
 	
 	// open pipes
 	for (size_t i = 0; i < N; i++)
@@ -146,7 +175,7 @@ int main
 	
 	// start childs (all correct)
 	for (size_t i = 0; i < N; i++)
-		start_instance(i, false, false);
+		start_instance(N, T, i, false, false);
 	
 	// wait for childs and close pipes
 	for (size_t i = 0; i < N; i++)
@@ -175,9 +204,9 @@ int main
 	for (size_t i = 0; i < N; i++)
 	{
 		if ((i == (N - 1)) || (i == (N - 2)))
-			start_instance(i, true, true); // corrupted instance
+			start_instance(N, T, i, true, true); // corrupted instance
 		else
-			start_instance(i, false, true); // someone corrupted
+			start_instance(N, T, i, false, true); // someone corrupted
 	}
 	
 	// wait for childs and close pipes
