@@ -94,6 +94,13 @@ void run_instance
 	secifs.close();
 	std::string armored_seckey = dkgseckey.str();
 
+	// assert correct number of parties in saved DKG state
+	if (peers.size() != dkg->n)
+	{
+		std::cerr << "ERROR: number of PEERS and DKG state does not match" << std::endl;
+		exit(-1);
+	}
+
 	// assert correct index for saved DKG state
 	if (whoami != dkg->i)
 	{
@@ -849,16 +856,16 @@ void run_instance
 	mpz_shash(c2, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g);
 	if (mpz_cmp(c2, c))
 	{
-		std::cout << "WARNING: NIZK self verification failed at " << whoami << std::endl;
+		std::cerr << "WARNING: NIZK self verification failed at " << whoami << std::endl;
 	}
 
 	// create communication handles between all players
 	std::vector<int> uP_in, uP_out, bP_in, bP_out;
 	std::vector<std::string> uP_key, bP_key;
-	for (size_t i = 0; i < dkg->n; i++)
+	for (size_t i = 0; i < peers.size(); i++)
 	{
 		std::stringstream key;
-		key << "dkg-decrypt::P_" << (i + whoami);
+		key << "dkg-decrypt::P_" << (i + whoami); // use simple HMAC key
 		uP_in.push_back(pipefd[i][whoami][0]);
 		uP_out.push_back(pipefd[whoami][i][1]);
 		uP_key.push_back(key.str());
@@ -868,23 +875,29 @@ void run_instance
 	}
 
 	// create asynchronous authenticated unicast channels
-	aiounicast_select *aiou = new aiounicast_select(dkg->n, whoami, uP_in, uP_out, uP_key);
+	aiounicast_select *aiou = new aiounicast_select(peers.size(), whoami, uP_in, uP_out, uP_key);
 
 	// create asynchronous authenticated unicast channels
-	aiounicast_select *aiou2 = new aiounicast_select(dkg->n, whoami, bP_in, bP_out, bP_key);
+	aiounicast_select *aiou2 = new aiounicast_select(peers.size(), whoami, bP_in, bP_out, bP_key);
 			
 	// create an instance of a reliable broadcast protocol (RBC)
-	std::string myID = "dkg-decrypt";
-	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(dkg->n, dkg->t, whoami, aiou2);
+	std::string myID = "dkg-decrypt|";
+	for (size_t i = 0; i < peers.size(); i++)
+		myID += peers[i] + "|";
+	myID += dkg->t; // include parameterized t-resiliance of DKG in the ID of broadcast protocol
+	size_t T_RBC = 0;
+	if (peers.size() > 3)
+		T_RBC = (peers.size() / 3) - 1; // assume maximum asynchronous t-resilience for RBC
+	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(peers.size(), T_RBC, whoami, aiou2);
 	rbc->setID(myID);
 
 	// broadcast the decryption share and the NIZK argument
 	rbc->Broadcast(r_i);
 	rbc->Broadcast(c);
 	rbc->Broadcast(r);
-	mpz_set(R, r_i); // take private key of this party in the accumulator
+	mpz_set(R, r_i); // take decryption share of this party in the accumulator
 	std::vector<size_t> complaints;
-	for (size_t i = 0; i < dkg->n; i++)
+	for (size_t i = 0; i < peers.size(); i++)
 	{
 		if (i != whoami)
 		{
@@ -957,13 +970,13 @@ void run_instance
 		{
 			// compute $r_i = (g^k)^{z_i} \bmod p$
 			mpz_powm(r_i, nizk_gk, dkg->z_i[*it], nizk_p);
-			// accumulate decryption shares
+			// accumulate remaining decryption shares
 			mpz_mul(R, R, r_i);
 			mpz_mod(R, R, nizk_p);
 		}
 		else
 		{
-			std::cout << "P_" << whoami << ": checking z_i failed for i = " << *it << std::endl;
+			std::cout << "P_" << whoami << ": checking reconstructed z_i failed for i = " << *it << std::endl;
 			exit(-1);
 		}
 	}
@@ -1203,7 +1216,7 @@ int main
 		for (size_t i = 0; i < peers.size(); i++)
 			std::cout << peers[i] << std::endl;
 	}
-	if ((peers.size() < 4)  || (peers.size() > MAX_N))
+	if ((peers.size() < 3)  || (peers.size() > MAX_N))
 	{
 		std::cerr << "ERROR: too few or too many peers given" << std::endl;
 		return -1;

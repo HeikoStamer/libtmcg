@@ -86,8 +86,11 @@ void run_instance
 	std::string myID = "dkg-generate|";
 	for (size_t i = 0; i < peers.size(); i++)
 		myID += peers[i] + "|";
-	myID += T; // include parameterized t-resiliance in the ID of broadcast protocol
-	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2);
+	myID += T; // include parameterized t-resiliance of DKG in the ID of broadcast protocol
+	size_t T_RBC = 0;
+	if (N > 3)
+		T_RBC = (N / 3) - 1; // assume maximum asynchronous t-resilience for RBC
+	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T_RBC, whoami, aiou2);
 	rbc->setID(myID);
 			
 	// create and exchange VTMF keys in order to create a common value $h$ for DKG
@@ -443,20 +446,20 @@ int main
 		for (size_t i = 0; i < peers.size(); i++)
 			std::cout << peers[i] << std::endl;
 	}
-	if ((N < 4)  || (N > MAX_N))
+	if ((N < 3)  || (N > MAX_N))
 	{
 		std::cerr << "ERROR: too few or too many peers given" << std::endl;
 		return -1;
 	};
 
-	T = (N / 3) - 1; // assume maximum asynchronous t-resilience
+	T = N - 1; // assume maximum t-resilience for DKG (RBC is not affected by this)
 #ifdef GNUNET
 	T = gnunet_opt_t_resilience; // get T from GNUnet options
 #endif
 	if (T == 0)
-		T++; // RBC will not work with 0-resilience
+		T++; // 0-resilience is not preferable, because only one party can decrypt everything
 	if (T >= N)
-		T = N - 1; // apply a upper limit on T
+		T = N; // apply an upper limit on T
 	std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
 	std::getline(std::cin, u);
 	std::cout << "2. Choose a passphrase to protect your private key: ";
