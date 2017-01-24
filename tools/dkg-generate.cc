@@ -87,9 +87,7 @@ void run_instance
 	for (size_t i = 0; i < peers.size(); i++)
 		myID += peers[i] + "|";
 	myID += T; // include parameterized t-resiliance of DKG in the ID of broadcast protocol
-	size_t T_RBC = 0;
-	if (N > 3)
-		T_RBC = (N / 3) - 1; // assume maximum asynchronous t-resilience for RBC
+	size_t T_RBC = ((peers.size() + 2) / 3) - 1; // assume maximum asynchronous t-resilience for RBC
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T_RBC, whoami, aiou2);
 	rbc->setID(myID);
 			
@@ -457,7 +455,7 @@ int main
 	T = gnunet_opt_t_resilience; // get T from GNUnet options
 #endif
 	if (T == 0)
-		T++; // 0-resilience is not preferable, because only one party can decrypt everything
+		T++; // 0-resilience is not preferable, because then only one party can decrypt everything
 	if (T >= N)
 		T = N; // apply an upper limit on T
 	std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
