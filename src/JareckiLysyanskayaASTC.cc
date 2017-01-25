@@ -471,6 +471,7 @@ bool JareckiLysyanskayaRVSS::Share
 	}
 }
 
+/* The two-party protocol "Share" is simply a Pedersen commitment to $a_i$. */
 bool JareckiLysyanskayaRVSS::Share_twoparty
 	(const size_t i, std::istream &in, std::ostream &out,
 	std::ostream &err, const bool simulate_faulty_behaviour)
@@ -896,7 +897,7 @@ bool JareckiLysyanskayaEDCF::Flip_twoparty
 
 	try
 	{
-		// 1. Players generate RVSS-data[a] (i.e. perform Joint-RVSS)
+		// 1. Players generate RVSS-data[a] (i.e. simply a Pedersen commitment)
 		if (!rvss->Share_twoparty(i, in, out, err, simulate_faulty_behaviour))
 			throw false;
 		mpz_set(a_i[i], rvss->a_i), mpz_set(hata_i[i], rvss->hata_i);

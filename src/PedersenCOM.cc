@@ -188,7 +188,7 @@ bool PedersenCommitmentScheme::SetupGenerators_publiccoin
 	rbc->setID(myID.str());
 	try
 	{
-		// check ECDF
+		// check EDCF
 		if (!edcf->CheckGroup())
 		{
 			err << "CheckGroup() of EDCF failed" << std::endl;
@@ -414,7 +414,8 @@ bool PedersenCommitmentScheme::Verify
 	mpz_init(tmp), mpz_init(c2);
 	try
 	{
-		// Compute the commitment $c' := g_1^{m_1} \cdots g_n^{m_n} h^r \bmod p$
+		// Compute the commitment for verification
+		// $c' := g_1^{m_1} \cdots g_n^{m_n} h^r \bmod p$
 		mpz_fpowm(fpowm_table_h, c2, h, r, p);
 		for (size_t i = 0; i < m.size(); i++)
 		{
@@ -429,10 +430,14 @@ bool PedersenCommitmentScheme::Verify
 			mpz_mul(c2, c2, tmp);
 			mpz_mod(c2, c2, p);
 		}
-		// Verify the commitment: 1. $c\in\mathbb{Z}_p$ and 2. $c = c'$
-		if ((mpz_cmp_ui(c, 0L) < 0) || (mpz_cmp(c, p) >= 0) || mpz_cmp(c, c2))
+		// Verify the commitment: 1. $c\in\mathbb{Z}_p\setminus\{0\}$
+		if ((mpz_cmp_ui(c, 0L) <= 0) || (mpz_cmp(c, p) >= 0))
+			throw false;
+		// Verify the commitment: 2. $c = c'$
+		if (mpz_cmp(c, c2))
 			throw false;
 		
+		// commitment is sound
 		throw true;
 	}
 	catch (bool return_value)
@@ -448,8 +453,8 @@ PedersenCommitmentScheme::~PedersenCommitmentScheme
 	mpz_clear(p), mpz_clear(q), mpz_clear(k), mpz_clear(h);
 	for (size_t i = 0; i < g.size(); i++)
 	{
-			mpz_clear(g[i]);
-			delete [] g[i];
+		mpz_clear(g[i]);
+		delete [] g[i];
 	}
 	g.clear();
 	
