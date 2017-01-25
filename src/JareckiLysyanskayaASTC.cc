@@ -149,7 +149,6 @@ bool JareckiLysyanskayaRVSS::Share
 	assert(t <= n);
 	assert(i < n);
 	assert(n == rbc->n);
-	assert(t == rbc->t);
 	assert(i == rbc->j);
 
 	// checking maximum synchronous t-resilience
@@ -596,7 +595,7 @@ bool JareckiLysyanskayaRVSS::Reconstruct
 			rbc->Broadcast(hatalpha_ij[*it][i]);
 			// prepare for collecting shares
 			std::vector<size_t> parties;
-			parties.push_back(i); // my own shares are always available
+			parties.push_back(i); // shares of $P_i$ are always available
 			// collect shares $\alpha_{ij}$ and $\hat{\alpha}_{ij}$ of other parties from Qual
 			for (std::vector<size_t>::iterator jt = Qual.begin(); jt != Qual.end(); ++jt)
 			{
@@ -663,7 +662,7 @@ bool JareckiLysyanskayaRVSS::Reconstruct
 				mpz_invert(lhs, lhs, q);
 				mpz_mul(rhs, rhs, lhs);
 				mpz_mod(rhs, rhs, q);
-				mpz_mul(bar, alpha_ij[*it][*jt], rhs);
+				mpz_mul(bar, alpha_ij[*it][*jt], rhs); // use the provided shares (interpolation points)
 				mpz_mod(bar, bar, q);
 				mpz_add(foo, foo, bar);
 				mpz_mod(foo, foo, q);
@@ -764,7 +763,6 @@ bool JareckiLysyanskayaEDCF::Flip
 	assert(t <= n);
 	assert(i < n);
 	assert(n == rbc->n);
-	assert(t == rbc->t);
 	assert(i == rbc->j);
 
 	// checking maximum synchronous t-resilience
