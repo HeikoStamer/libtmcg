@@ -270,7 +270,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	mpz_t foo, bar, lhs, rhs;
 	std::vector<mpz_ptr> a_i, b_i, g__a_i;
 	std::vector< std::vector<mpz_ptr> > A_ik, g__s_ij;
-	std::vector<size_t> complaints, complaints_counter;
+	std::vector<size_t> complaints, complaints_counter, complaints_from;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	for (size_t k = 0; k <= t; k++)
 	{
@@ -436,17 +436,17 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		// If the check fails for an index $i$,
 		// $P_j$ broadcasts a complaint against $P_i$.
 		std::sort(complaints.begin(), complaints.end());
-		std::vector<size_t>::iterator it =
-			std::unique(complaints.begin(), complaints.end());
+		std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
 		complaints.resize(std::distance(complaints.begin(), it));
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
+			err << "P_" << i << ": broadcast complaint against P_" << *it << std::endl;
 			mpz_set_ui(rhs, *it);
 			rbc->Broadcast(rhs);
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		complaints.clear();
+		complaints.clear(), complaints_from.clear(); // reset
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
 		for (size_t j = 0; j < n; j++)
@@ -471,7 +471,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						complaints_counter[who]++;
 						dup.insert(std::pair<size_t, bool>(who, true)); // mark as counted for $P_j$
 						if (who == i)
-							complaints.push_back(j); // revenge!
+							complaints_from.push_back(j);
 					}
 					else if ((who < n) && dup.count(who))
 					{
@@ -488,13 +488,12 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		//     $s\prime_{ij}$ that satisfy (4).
 		if (complaints_counter[i])
 		{
-			std::sort(complaints.begin(), complaints.end());
+			std::sort(complaints_from.begin(), complaints_from.end());
 			err << "P_" << i << ": there are " << complaints_counter[i] << " complaints against me from ";
-			for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 				err << "P_" << *it << " ";
 			err << std::endl;
-			for (std::vector<size_t>::iterator it = complaints.begin();
-				it != complaints.end(); ++it)
+			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 			{
 				mpz_set_ui(lhs, *it); // who?
 				rbc->Broadcast(lhs);
@@ -509,7 +508,6 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		//      * received more than $t$ complaints in Step 1(b), or
 		//      * answered a complaint in Step 1(c) with values that 
 		//        falsify (4).
-		complaints.clear();
 		for (size_t j = 0; j < n; j++)
 		{
 			if (j != i)
