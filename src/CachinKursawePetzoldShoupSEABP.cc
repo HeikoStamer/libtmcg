@@ -47,8 +47,8 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	if ((3 * t) >= n)
 		std::cerr << "RBC(" << j << ") WARNING: maximum asynchronous t-resilience exceeded" << std::endl;
 	// checking minimum number of parties
-	if (n < 3)
-		std::cerr << "RBC(" << j << ") WARNING: more than two parties needed; RBC will not work" << std::endl;
+	if (n < 2)
+		std::cerr << "RBC(" << j << ") WARNING: more than one party needed; RBC will not work" << std::endl;
 
 	// initialize asynchonous unicast
 	aio_default_scheduler = aio_default_scheduler_in;

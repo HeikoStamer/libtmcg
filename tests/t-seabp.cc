@@ -39,7 +39,7 @@
 #include "test_helper.h"
 
 #undef NDEBUG
-#define N_MIN 3
+#define N_MIN 2
 #define N 7
 #define T 2
 
