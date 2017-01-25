@@ -364,7 +364,7 @@ bool JareckiLysyanskayaRVSS::Share
 				rbc->Broadcast(alpha_ij[i][*it]);
 				rbc->Broadcast(hatalpha_ij[i][*it]);
 			}
-			err << "P_" << i << ": corresponding shares have been broadcasted" << std::endl;
+			err << "P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
 		}
 		mpz_set_ui(lhs, n); // broadcast end marker
 		rbc->Broadcast(lhs);
@@ -403,6 +403,8 @@ bool JareckiLysyanskayaRVSS::Share
 						complaints.push_back(j);
 						break;
 					}
+					mpz_t alpha, hatalpha;
+					mpz_init_set(alpha, foo), mpz_init_set(hatalpha, bar);
 					// compute LHS for the check
 					mpz_fpowm(fpowm_table_g, foo, g, foo, p);
 					mpz_fpowm(fpowm_table_h, bar, h, bar, p);
@@ -423,6 +425,17 @@ bool JareckiLysyanskayaRVSS::Share
 						err << "P_" << i << ": checking 1(c) failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 					}
+					else
+					{
+						// don't be too curious
+						if (who == i)
+						{
+							err << "P_" << i << ": shares adjusted 1(c) from P_" << j << std::endl;
+							mpz_set(alpha_ij[j][i], alpha);
+							mpz_set(hatalpha_ij[j][i], hatalpha);
+						}
+					}
+					mpz_clear(alpha), mpz_clear(hatalpha);
 					cnt++;
 				}
 				while (cnt <= n);
@@ -436,8 +449,8 @@ bool JareckiLysyanskayaRVSS::Share
 		for (std::vector<size_t>::iterator it = Qual.begin(); it != Qual.end(); ++it)
 			err << "P_" << *it << " ";
 		err << "}" << std::endl;
-		// 2. $P_i$ sets his polynomial share of the generated secret $a$ as
-		//    $\alpha_i = \sum_{P_j \in Qual} \alpha_{ji}$, and their
+		// 2. $P_i$ sets his polynomial share of the generated secret $a$
+		//    as $\alpha_i = \sum_{P_j \in Qual} \alpha_{ji}$, and their
 		//    associated randomness as
 		//    $\hat{\alpha}_i = \sum_{P_j \in Qual} \hat{\alpha}_{ji}$.
 		// Note that in this section the indicies $i$ and $j$ are exchanged

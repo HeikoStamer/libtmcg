@@ -501,6 +501,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				rbc->Broadcast(s_ij[i][*it]);
 				rbc->Broadcast(sprime_ij[i][*it]);
 			}
+			err << "P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
 		}
 		mpz_set_ui(lhs, n); // send end marker
 		rbc->Broadcast(lhs);
@@ -543,6 +544,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						complaints.push_back(j);
 						break;
 					}
+					mpz_t s, sprime;
+					mpz_init_set(s, foo), mpz_init_set(sprime, bar);
 					// compute LHS for the check
 					mpz_fpowm(fpowm_table_g, foo, g, foo, p);
 					mpz_fpowm(fpowm_table_h, bar, h, bar, p);
@@ -563,6 +566,18 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						err << "P_" << i << ": checking 1(d) failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 					}
+					else
+					{
+						// don't be too curious
+						if (who == i)
+						{
+							err << "P_" << i << ": shares adjusted 1(d) from P_" << j << std::endl;
+							mpz_set(s_ij[j][i], s);
+							mpz_set(sprime_ij[j][i], sprime);
+						}
+
+					}
+					mpz_clear(s), mpz_clear(sprime);
 					cnt++;
 				}
 				while (cnt <= n);
