@@ -2,14 +2,14 @@
   JareckiLysyanskayaASTC.hh,
                              |A|daptively |S|ecure |T|hreshold |C|ryptography
 
-     Stanislaw Jarecki and Anna Lysyanskaya:
+     [JL00] Stanislaw Jarecki and Anna Lysyanskaya:
        'Adaptively Secure Threshold Cryptography: Introducing Concurrency,
         Removing Erasures', Advances in Cryptology - EUROCRYPT 2000,
      LNCS 1807, pp. 221--242, Springer 2000.
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@
 	#include <sstream>
 	#include <vector>
 	#include <algorithm>
+	#include <map>
 
 	// GNU crypto library
 	#include <gcrypt.h>

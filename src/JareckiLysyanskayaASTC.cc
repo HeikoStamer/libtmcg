@@ -2,7 +2,7 @@
   JareckiLysyanskayaASTC.cc,
                              |A|daptively |S|ecure |T|hreshold |C|ryptography
 
-     Stanislaw Jarecki and Anna Lysyanskaya:
+     [JL00] Stanislaw Jarecki and Anna Lysyanskaya:
        'Adaptively Secure Threshold Cryptography: Introducing Concurrency,
         Removing Erasures', Advances in Cryptology - EUROCRYPT 2000,
      LNCS 1807, pp. 221--242, Springer 2000.
@@ -300,20 +300,15 @@ bool JareckiLysyanskayaRVSS::Share
 			}
 		}
 		std::sort(complaints.begin(), complaints.end());
-		std::vector<size_t>::iterator it =
-			std::unique(complaints.begin(), complaints.end());
+		std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
 		complaints.resize(std::distance(complaints.begin(), it));
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			mpz_set_ui(rhs, *it);
-			rbc->Broadcast(rhs);
+			rbc->Broadcast(rhs); // broadcast complaint
 		}
-		mpz_set_ui(rhs, n); // send end marker
+		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		// (c) If $P_j$ complained against $P_i$, $P_i$ broadcasts
-		//     $\alpha_{ij}$, $\hat{\alpha}_{ij}$; everyone verifies
-		//     it. If $P_i$ fails this test or receives more than $t$
-		//     complaints, exclude $P_i$ from $Qual$.
 		complaints.clear();
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
@@ -323,6 +318,7 @@ bool JareckiLysyanskayaRVSS::Share
 			{
 				size_t who;
 				size_t cnt = 0;
+				std::map<size_t, bool> dup;
 				do
 				{
 					if (!rbc->DeliverFrom(rhs, j))
@@ -332,18 +328,28 @@ bool JareckiLysyanskayaRVSS::Share
 						break;
 					}
 					who = mpz_get_ui(rhs);
-					if (who < n)
+					if ((who < n) && !dup.count(who))
 					{
 						err << "P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
 						complaints_counter[who]++;
+						dup.insert(std::pair<size_t, bool>(who, true)); // mark as counted for $P_j$
 						if (who == i)
-							complaints.push_back(j);
+							complaints.push_back(j); // revenge!
+					}
+					else if ((who < n) && dup.count(who))
+					{
+						err << "P_" << i << ": duplicated complaint against P_" << who << " from P_" << j << std::endl;
+						complaints.push_back(j);
 					}
 					cnt++;
 				}
-				while ((who < n) && (cnt <= n)); // until end marker received
+				while ((who < n) && (cnt <= n)); // until end marker received or maximum exceeded
 			}
 		}
+		// (c) If $P_j$ complained against $P_i$, $P_i$ broadcasts
+		//     $\alpha_{ij}$, $\hat{\alpha}_{ij}$; everyone verifies
+		//     it. If $P_i$ fails this test or receives more than $t$
+		//     complaints, exclude $P_i$ from $Qual$.
 		if (complaints_counter[i])
 		{
 			std::sort(complaints.begin(), complaints.end());
@@ -351,16 +357,16 @@ bool JareckiLysyanskayaRVSS::Share
 			for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 				err << "P_" << *it << " ";
 			err << std::endl;
-			for (std::vector<size_t>::iterator it = complaints.begin();
-				it != complaints.end(); ++it)
+			for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			{
 				mpz_set_ui(lhs, *it); // who?
 				rbc->Broadcast(lhs);
 				rbc->Broadcast(alpha_ij[i][*it]);
 				rbc->Broadcast(hatalpha_ij[i][*it]);
 			}
+			err << "P_" << i << ": corresponding shares have been broadcasted" << std::endl;
 		}
-		mpz_set_ui(lhs, n); // send end marker
+		mpz_set_ui(lhs, n); // broadcast end marker
 		rbc->Broadcast(lhs);
 		complaints.clear();
 		for (size_t j = 0; j < n; j++)

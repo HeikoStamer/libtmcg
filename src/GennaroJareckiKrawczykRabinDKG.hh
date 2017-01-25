@@ -37,6 +37,7 @@
 	#include <sstream>
 	#include <vector>
 	#include <algorithm>
+	#include <map>
 
 	// GNU crypto library
 	#include <gcrypt.h>

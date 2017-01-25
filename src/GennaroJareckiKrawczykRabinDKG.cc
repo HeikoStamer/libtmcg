@@ -444,11 +444,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			mpz_set_ui(rhs, *it);
 			rbc->Broadcast(rhs);
 		}
-		mpz_set_ui(rhs, n); // send end marker
+		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		// (c) Each party $P_i$ who, as a dealer, received a complaint
-		//     from party $P_j$ broadcasts the values $s_{ij}$,
-		//     $s\prime_{ij}$ that satisfy (4).
 		complaints.clear();
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
@@ -458,6 +455,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			{
 				size_t who;
 				size_t cnt = 0;
+				std::map<size_t, bool> dup;
 				do
 				{
 					if (!rbc->DeliverFrom(rhs, j))
@@ -467,18 +465,27 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						break;
 					}
 					who = mpz_get_ui(rhs);
-					if (who < n)
+					if ((who < n) && !dup.count(who))
 					{
 						err << "P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
 						complaints_counter[who]++;
+						dup.insert(std::pair<size_t, bool>(who, true)); // mark as counted for $P_j$
 						if (who == i)
-							complaints.push_back(j);
+							complaints.push_back(j); // revenge!
+					}
+					else if ((who < n) && dup.count(who))
+					{
+						err << "P_" << i << ": duplicated complaint against P_" << who << " from P_" << j << std::endl;
+						complaints.push_back(j);
 					}
 					cnt++;
 				}
 				while ((who < n) && (cnt <= n)); // until end marker received
 			}
 		}
+		// (c) Each party $P_i$ who, as a dealer, received a complaint
+		//     from party $P_j$ broadcasts the values $s_{ij}$,
+		//     $s\prime_{ij}$ that satisfy (4).
 		if (complaints_counter[i])
 		{
 			std::sort(complaints.begin(), complaints.end());
