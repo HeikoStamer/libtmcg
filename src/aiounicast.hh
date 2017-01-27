@@ -37,8 +37,8 @@
 class aiounicast
 {
 	private:
-		size_t			aio_default_scheduler;
-		time_t			aio_default_timeout;
+		const size_t		aio_default_scheduler;
+		const time_t		aio_default_timeout;
 	public:
 		static const time_t	aio_timeout_none		= 0;
 		static const time_t	aio_timeout_very_short		= 1;
@@ -53,11 +53,16 @@ class aiounicast
 		static const size_t	aio_scheduler_direct		= 3;
 		static const size_t	aio_scheduler_default		= 42424242;
 
+		const size_t		n;
+		const size_t		j;
+
 		aiounicast
-			(const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
+			(const size_t n_in, const size_t j_in,
+			const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
 			const time_t aio_default_timeout_in = aio_timeout_long):
 				aio_default_scheduler(aio_default_scheduler_in),
-				aio_default_timeout(aio_default_timeout_in)
+				aio_default_timeout(aio_default_timeout_in),
+				n(n_in), j(j_in)
 		{
 		}
 

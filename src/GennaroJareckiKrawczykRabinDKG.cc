@@ -260,7 +260,9 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	assert(t <= n);
 	assert(i < n);
 	assert(n == rbc->n);
+	assert(n == aiou->n);
 	assert(i == rbc->j);
+	assert(i == aiou->j);
 
 	// checking maximum synchronous t-resilience
 	if ((2 * t) >= n)
@@ -870,6 +872,11 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 	std::vector<mpz_ptr> &z_i_in,
 	CachinKursawePetzoldShoupRBC *rbc, std::ostream &err)
 {
+	assert(t <= n);
+	assert(i < n);
+	assert(n == rbc->n);
+	assert(i == rbc->j);
+
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
@@ -1054,7 +1061,8 @@ GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
 		y_i.push_back(tmp1);
 	}
 	
-	dkg = new GennaroJareckiKrawczykRabinDKG(n_in, t_in, i_in, p, q, g, h);
+	dkg = new GennaroJareckiKrawczykRabinDKG(n_in, t_in, i_in, p, q, g, h,
+		fieldsize, subgroupsize);
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1117,6 +1125,10 @@ bool GennaroJareckiKrawczykRabinNTS::CheckGroup
 		if (!mpz_cmp(g, h))
 			throw false;
 
+		// check whether the group for DKG is sound
+		if (!dkg->CheckGroup())
+			throw false;
+
 		// everything is sound
 		throw true;
 	}
@@ -1131,6 +1143,17 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
+	assert(n >= t);
+	assert(i < n);
+	assert(n == rbc->n);
+	assert(n == aiou->n);
+	assert(i == rbc->j);
+	assert(i == aiou->j);
+
+	// checking maximum synchronous t-resilience
+	if ((2 * t) >= n)
+		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;
+
 	// set ID for RBC
 	std::stringstream myID;
 	myID << "GennaroJareckiKrawczykRabinNTS::Generate()" << p << q << g << h << n << t;
@@ -1138,15 +1161,12 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 
 	try
 	{
-		// check whether the group from CRS is sound
-		if (!dkg->CheckGroup())
-			throw false;
 		// initial call of the protocol New-DKG for generating an additive
 		// share $z_i$ of a common secret $x$ and the public parameters
 		// $y = g^x$ and $y_i = g^{z_i}$ for every $P_i$
 		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
-		// set the public variables of the class
+		// set the public variables of the class by results of New-DKG
 		mpz_set(z_i, dkg->z_i[i]);
 		for (size_t j = 0; j < y_i.size(); j++)
 			mpz_set(y_i[j], dkg->y_i[j]);
@@ -1173,7 +1193,9 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	assert(n >= t);
 	assert(i < n);
 	assert(n == rbc->n);
+	assert(n == aiou->n);
 	assert(i == rbc->j);
+	assert(i == aiou->j);
 
 	// checking maximum synchronous t-resilience
 	if ((2 * t) >= n)
