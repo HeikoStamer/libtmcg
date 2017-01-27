@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170120])
+AC_REVISION([20170127])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.0], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -144,7 +144,7 @@ AC_DEFINE(TMCG_MAX_KEY_CHARS,
 	[Define a helping macro])
 
 # Checks for Libtool
-LT_PREREQ([2.4.6])
+LT_PREREQ([2.4.2])
 LT_INIT
 LT_LANG([C++])
 

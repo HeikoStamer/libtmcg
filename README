@@ -145,7 +145,7 @@ Bugs, Contribution, GIT
   
   * GNU Autoconf, version >= 2.61, http://www.gnu.org/software/autoconf/
   * GNU Automake, version >= 1.12, http://www.gnu.org/software/automake/
-  * GNU Libtool, version >= 2.4.6, http://www.gnu.org/software/libtool/
+  * GNU Libtool, version >= 2.4.2, http://www.gnu.org/software/libtool/
 
 Copyright and License of this software
 --------------------------------------
