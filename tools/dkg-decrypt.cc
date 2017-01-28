@@ -885,7 +885,7 @@ void run_instance
 	for (size_t i = 0; i < peers.size(); i++)
 		myID += peers[i] + "|";
 	myID += dkg->t; // include parameterized t-resiliance of DKG in the ID of broadcast protocol
-	size_t T_RBC = ((peers.size() + 2) / 3) - 1; // assume maximum asynchronous t-resilience for RBC
+	size_t T_RBC = (peers.size() - 1) / 3; // assume maximum asynchronous t-resilience for RBC
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(peers.size(), T_RBC, whoami, aiou2);
 	rbc->setID(myID);
 

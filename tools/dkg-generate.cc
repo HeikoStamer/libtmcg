@@ -87,7 +87,7 @@ void run_instance
 	for (size_t i = 0; i < peers.size(); i++)
 		myID += peers[i] + "|";
 	myID += T; // include parameterized t-resiliance of DKG in the ID of broadcast protocol
-	size_t T_RBC = ((peers.size() + 2) / 3) - 1; // assume maximum asynchronous t-resilience for RBC
+	size_t T_RBC = (peers.size() -1) / 3; // assume maximum asynchronous t-resilience for RBC
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T_RBC, whoami, aiou2);
 	rbc->setID(myID);
 			
@@ -450,9 +450,9 @@ int main
 		return -1;
 	};
 
-	T = N - 1; // assume maximum t-resilience for DKG (RBC is not affected by this)
+	T = (N - 1) / 2; // assume maximum synchronous t-resilience for DKG (RBC is not affected by this)
 #ifdef GNUNET
-	T = gnunet_opt_t_resilience; // get T from GNUnet options
+	T = gnunet_opt_t_resilience; // get value of T from GNUnet options
 #endif
 	if (T == 0)
 		T++; // 0-resilience is not preferable, because then only one party can decrypt everything
