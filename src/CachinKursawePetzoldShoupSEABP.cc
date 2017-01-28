@@ -530,7 +530,8 @@ std::cerr << "RBC(" << j << "): error in Receive(l2) = " << l2 << std::endl;
 				}
 				else if (!mpz_cmp(message[3], r_request) && request[l].count(tag_string))
 					std::cerr << "RBC(" << j << "): received r-request for same tag more than once from " << l << std::endl;
-				std::cerr << "RBC(" << j << "): discard message of action = " << message[3] << " from " << l << std::endl;
+				if (mpz_cmp(message[3], r_answer))
+					std::cerr << "RBC(" << j << "): discard message of action = " << message[3] << " from " << l << std::endl;
 			}
 		}
 		while (time(NULL) < (entry_time + timeout));
@@ -597,7 +598,8 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 		}
 	}
 	while (time(NULL) < (entry_time + timeout));
-	std::cerr << "RBC(" << j << "): timeout delivering from " << i_in << std::endl;
+	if (i_in != j)
+		std::cerr << "RBC(" << j << "): timeout delivering from " << i_in << std::endl;
 	return false;
 }
 
