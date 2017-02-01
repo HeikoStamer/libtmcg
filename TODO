@@ -2,7 +2,7 @@
 
 + provide DKG with security against an adaptive adversary [CGJKR99]
 + provide distributed DSS key generation and signature scheme [GJKR01]
-+ DKG, ASTC: transform protocols into variants without aiou->Send()
++ DKG, ASTC: transform protocols into variants without aiou->Send() [BH92]
 + provide byzantine consensus protocol
 + provide interactive versions for the non-interactive protocols of VTMF
   (for applications that cannot rely on the random oracle assumption)
