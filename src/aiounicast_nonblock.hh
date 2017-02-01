@@ -50,8 +50,6 @@
 class aiounicast_nonblock : public aiounicast
 {
 	private:
-		const size_t				aio_default_scheduler;
-		const time_t				aio_default_timeout;
 		size_t					aio_schedule_current;
 		size_t					aio_schedule_buffer;
 		size_t					buf_in_size;
@@ -59,8 +57,9 @@ class aiounicast_nonblock : public aiounicast
 		std::vector<size_t>			buf_ptr;
 		std::vector<bool>			buf_flag;
 		std::vector< std::list<mpz_ptr> >	buf_mpz;
-		size_t					maclen;
+		size_t					maclen, keylen;
 		std::vector<gcry_mac_hd_t*>		buf_mac_in, buf_mac_out;
+		std::vector<gcry_cipher_hd_t*>		buf_enc_in, buf_enc_out;
 	public:
 		std::vector<int>			fd_in, fd_out;
 		size_t					numWrite, numRead;
@@ -71,10 +70,9 @@ class aiounicast_nonblock : public aiounicast
 			const std::vector<int> &fd_out_in,
 			const std::vector<std::string> &key_in,
 			const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
-			const time_t aio_default_timeout_in = aio_timeout_long):
-				aiounicast(n_in, j_in),
-				aio_default_scheduler(aio_default_scheduler_in),
-				aio_default_timeout(aio_default_timeout_in)
+			const time_t aio_default_timeout_in = aio_timeout_long,
+			const bool aio_is_encrypted_in = true):
+				aiounicast(n_in, j_in, aio_default_scheduler_in, aio_default_timeout_in, aio_is_encrypted_in)
 		{
 			assert(j_in < n_in);
 			assert(n_in == fd_in_in.size());
@@ -116,6 +114,8 @@ class aiounicast_nonblock : public aiounicast
 				std::cerr << "libgcrypt: gcry_mac_get_algo_maclen() failed" << std::endl;
 			for (size_t i = 0; i < n_in; i++)
 			{
+				char salt[maclen];
+				char key[maclen];
 				gcry_error_t err;
 				gcry_mac_hd_t *mac_in = new gcry_mac_hd_t(), *mac_out = new gcry_mac_hd_t();
 				buf_mac_in.push_back(mac_in), buf_mac_out.push_back(mac_out);
@@ -125,7 +125,15 @@ class aiounicast_nonblock : public aiounicast
 					std::cerr << "libgcrypt: gcry_mac_open() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
-				err = gcry_mac_setkey(*buf_mac_in[i], key_in[i].c_str(), key_in[i].length());
+				memset(salt, 0, sizeof(salt));
+				err = gcry_kdf_derive(key_in[i].c_str(), key_in[i].length(), GCRY_KDF_PBKDF2, 
+					TMCG_GCRY_MD_ALGO, salt, sizeof(salt), 25000, sizeof(key), key);
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_kdf_derive() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+				}
+				err = gcry_mac_setkey(*buf_mac_in[i], key, sizeof(key));
 				if (err)
 				{
 					std::cerr << "libgcrypt: gcry_mac_setkey() failed" << std::endl;
@@ -137,10 +145,55 @@ class aiounicast_nonblock : public aiounicast
 					std::cerr << "libgcrypt: gcry_mac_open() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
-				err = gcry_mac_setkey(*buf_mac_out[i], key_in[i].c_str(), key_in[i].length());
+				err = gcry_mac_setkey(*buf_mac_out[i], key, sizeof(key));
 				if (err)
 				{
 					std::cerr << "libgcrypt: gcry_mac_setkey() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+				}
+			}
+
+			// initialize ciphers
+			keylen = gcry_cipher_get_algo_keylen(TMCG_GCRY_ENC_ALGO);
+			if (keylen == 0)
+				std::cerr << "libgcrypt: gcry_cipher_get_algo_keylen() failed" << std::endl;
+			for (size_t i = 0; aio_is_encrypted && (i < n_in); i++)
+			{
+				char salt[keylen];
+				char key[keylen];
+				gcry_error_t err;
+				gcry_cipher_hd_t *enc_in = new gcry_cipher_hd_t(), *enc_out = new gcry_cipher_hd_t();
+				buf_enc_in.push_back(enc_in), buf_enc_out.push_back(enc_out);
+				err = gcry_cipher_open(buf_enc_in[i], TMCG_GCRY_ENC_ALGO, GCRY_CIPHER_MODE_CFB, 0); 				
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_cipher_open() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+				}
+				memset(salt, 0, sizeof(salt));
+				err = gcry_kdf_derive(key_in[i].c_str(), key_in[i].length(), GCRY_KDF_PBKDF2, 
+					TMCG_GCRY_MD_ALGO, salt, sizeof(salt), 25000, sizeof(key), key);
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_kdf_derive() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+				}
+				err = gcry_cipher_setkey(*buf_enc_in[i], key, sizeof(key));
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_cipher_setkey() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+				}
+				err = gcry_cipher_open(buf_enc_out[i], TMCG_GCRY_ENC_ALGO, GCRY_CIPHER_MODE_CFB, 0); 				
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_cipher_open() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+				}
+				err = gcry_cipher_setkey(*buf_enc_out[i], key, sizeof(key));
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_cipher_setkey() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
 			}
@@ -171,6 +224,28 @@ class aiounicast_nonblock : public aiounicast
 				delete [] buf;
 				return false;
 			}
+			// calculate MAC
+			gcry_error_t err;
+			err = gcry_mac_write(*buf_mac_out[i_in], buf, realsize);
+			if (err)
+			{
+				std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
+				std::cerr << gcry_strerror(err) << std::endl;
+				delete [] buf;
+				return false;
+			}
+			// encrypt the content of write buffer
+			if (aio_is_encrypted)
+			{
+				err = gcry_cipher_encrypt(*buf_enc_out[i_in], buf, realsize + 1, NULL, 0);
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_cipher_encrypt() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+					delete [] buf;
+					return false;
+				}
+			}
 			// send content of write buffer to party i_in
 			time_t entry_time = time(NULL);
 			size_t realnum = 0;
@@ -198,16 +273,7 @@ class aiounicast_nonblock : public aiounicast
 			while ((realnum < (realsize + 1)) && (time(NULL) < (entry_time + timeout)));
 			if (realnum < (realsize + 1))
 				realsize = realnum; // adjust realsize, if timeout occurred
-			// calculate MAC
-			gcry_error_t err;
-			err = gcry_mac_write(*buf_mac_out[i_in], buf, realsize);
-			if (err)
-			{
-				std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
-				std::cerr << gcry_strerror(err) << std::endl;
-				delete [] buf;
-				return false;
-			}
+			// get current MAC buffer
 			size_t macbuflen = maclen;
 			char *macbuf = new char[macbuflen];
 			err = gcry_mac_read(*buf_mac_out[i_in], macbuf, &macbuflen);
@@ -217,6 +283,18 @@ class aiounicast_nonblock : public aiounicast
 				std::cerr << gcry_strerror(err) << std::endl;
 				delete [] buf, delete [] macbuf;
 				return false;
+			}
+			// encrypt the content of MAC buffer
+			if (aio_is_encrypted)
+			{
+				err = gcry_cipher_encrypt(*buf_enc_out[i_in], macbuf, macbuflen, NULL, 0);
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_cipher_encrypt() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+					delete [] buf, delete [] macbuf;
+					return false;
+				}
 			}
 			// timeout occurred?
 			if (realsize == realnum)
@@ -394,6 +472,18 @@ class aiounicast_nonblock : public aiounicast
 						}
 						if (num == 0)
 							continue;
+						// decrypt this part of read buffer
+						if (aio_is_encrypted)
+						{
+							gcry_error_t err;
+							err = gcry_cipher_decrypt(*buf_enc_in[i_out], rptr, num, NULL, 0);
+							if (err)
+							{
+								std::cerr << "libgcrypt: gcry_cipher_decrypt() failed" << std::endl;
+								std::cerr << gcry_strerror(err) << std::endl;
+								return false;
+							}
+						}
 						numRead += num;
 						buf_ptr[i_out] += num;
 						buf_flag[i_out] = true;
@@ -498,9 +588,17 @@ class aiounicast_nonblock : public aiounicast
 				// release MACs
 				gcry_mac_close(*buf_mac_in[i]), gcry_mac_close(*buf_mac_out[i]);
 				delete buf_mac_in[i], delete buf_mac_out[i];
+				// release ciphers
+				if (aio_is_encrypted)
+				{
+					gcry_cipher_close(*buf_enc_in[i]), gcry_cipher_close(*buf_enc_out[i]);
+					delete buf_enc_in[i], delete buf_enc_out[i];
+				}
 			}
 			buf_in.clear(), buf_ptr.clear(), buf_flag.clear();
-			buf_mpz.clear(), buf_mac_in.clear(), buf_mac_out.clear();
+			buf_mpz.clear();
+			buf_mac_in.clear(), buf_mac_out.clear();
+			buf_enc_in.clear(), buf_enc_out.clear();
 		}
 };
 

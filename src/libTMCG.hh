@@ -58,6 +58,11 @@
 		/* Define the message authentication algorithm for authenticated channels */
 		#define TMCG_GCRY_MAC_ALGO GCRY_MAC_HMAC_SHA256
 	#endif
+
+	#ifndef TMCG_GCRY_ENC_ALGO
+		/* Define the cipher for encrypted channels */
+		#define TMCG_GCRY_ENC_ALGO GCRY_CIPHER_AES256
+	#endif
 	
 	#ifndef TMCG_KEYID_SIZE
 		/* Define the size of the unique TMCG key ID (in characters) */

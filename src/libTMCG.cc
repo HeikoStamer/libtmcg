@@ -3,7 +3,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2007, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -64,6 +64,14 @@ bool init_libTMCG
 		std::cerr << "init_libTMCG(): libgcrypt algorithm " <<
 			TMCG_GCRY_MAC_ALGO << " [" <<
 			gcry_mac_algo_name(TMCG_GCRY_MAC_ALGO) <<
+			"] not available" << std::endl;
+		return false;
+	}
+	if (gcry_cipher_test_algo(TMCG_GCRY_ENC_ALGO)) // check for cipher
+	{
+		std::cerr << "init_libTMCG(): libgcrypt algorithm " <<
+			TMCG_GCRY_ENC_ALGO << " [" <<
+			gcry_cipher_algo_name(TMCG_GCRY_ENC_ALGO) <<
 			"] not available" << std::endl;
 		return false;
 	}

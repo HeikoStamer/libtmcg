@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170127])
+AC_REVISION([20170201])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.0], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -73,6 +73,8 @@ AC_DEFINE(TMCG_GCRY_MD_ALGO, GCRY_MD_SHA256,
 	Underlying assumption: Random Oracle Model])
 AC_DEFINE(TMCG_GCRY_MAC_ALGO, GCRY_MAC_HMAC_SHA256,
 	[Define the message authentication algorithm for authenticated channels])
+AC_DEFINE(TMCG_GCRY_ENC_ALGO, GCRY_CIPHER_AES256,
+	[Define the cipher for encrypted channels])
 
 AC_DEFINE(TMCG_OPENPGP_CRC24_INIT, 0xB704CE,
 	[Define the initial value for OPENPGP CRC24 algorithm])
