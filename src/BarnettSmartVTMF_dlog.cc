@@ -73,10 +73,10 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 				mpz_powm(g, bar, k, p); // $g := [bar]^k \bmod p$
 				U << g << "|";
 				mpz_powm(bar, g, q, p);
+				// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
 			}
 			while (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
 				!mpz_cmp(g, foo) || mpz_cmp_ui(bar, 1L));
-			// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
 		}
 		else
 		{
@@ -184,10 +184,11 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 				mpz_powm(g2, foo, k, p);
 				U << g2 << "|";
 				mpz_powm(foo, g2, q, p);
+				// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
 			}
 			while (!mpz_cmp_ui(g2, 0L) || !mpz_cmp_ui(g2, 1L) || 
 				!mpz_cmp(g2, bar) || mpz_cmp_ui(foo, 1L));
-			// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
+			// Check that the 1st verifiable $g$ is used.
 			if (mpz_cmp(g, g2))
 				throw false;
 		}
