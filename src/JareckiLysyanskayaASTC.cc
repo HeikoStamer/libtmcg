@@ -32,6 +32,250 @@
 #endif
 #include "JareckiLysyanskayaASTC.hh"
 
+/* This is a trapdoor commitment [JL00] based on Pedersen's scheme [Pe92]. */
+PedersenTrapdoorCommitmentScheme::PedersenTrapdoorCommitmentScheme
+	(unsigned long int fieldsize, unsigned long int subgroupsize):
+		F_size(fieldsize), G_size(subgroupsize)
+{
+	// Initialize and choose the parameters of the commitment scheme.
+	mpz_init(p), mpz_init(q), mpz_init(k), mpz_init(g), mpz_init(h);
+	mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
+	
+	mpz_t foo;
+	mpz_init(foo);
+	mpz_sub_ui(foo, p, 1L); // compute $p-1$
+	// choose uniformly at random an element $g$ of order $q$
+	do
+	{
+		mpz_wrandomm(g, p);
+		mpz_powm(g, g, k, p);
+	}
+	while (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
+		!mpz_cmp(g, foo)); // check, whether $1 < g < p-1$
+	mpz_clear(foo);
+
+	// Initialize and choose the trapdoor of the commitment scheme.
+	mpz_init(sigma);
+	mpz_srandomm(sigma, q);
+	// Compute $h := g^\sigma \bmod p$ by using the trapdoor $\sigma$.
+	mpz_spowm(h, g, sigma, p);
+	
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+PedersenTrapdoorCommitmentScheme::PedersenTrapdoorCommitmentScheme
+	(mpz_srcptr p_ENC, mpz_srcptr q_ENC, 
+	mpz_srcptr k_ENC, mpz_srcptr g_ENC, 
+	unsigned long int fieldsize, unsigned long int subgroupsize):
+		F_size(fieldsize), G_size(subgroupsize)
+{
+	// Initialize and choose the parameters of the commitment scheme.
+	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), 
+		mpz_init_set(k, k_ENC), mpz_init_set(g, g_ENC);
+	mpz_init(h);
+	
+	// Initialize and choose the trapdoor of the commitment scheme.
+	mpz_init(sigma);
+	mpz_srandomm(sigma, q);
+	// Compute $h := g^\sigma \bmod p$ by using the trapdoor $\sigma$.
+	mpz_spowm(h, g, sigma, p);
+	
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+PedersenTrapdoorCommitmentScheme::PedersenTrapdoorCommitmentScheme
+	(std::istream &in,
+	unsigned long int fieldsize, unsigned long int subgroupsize):
+		F_size(fieldsize), G_size(subgroupsize)
+{
+	// Initialize the parameters of the commitment scheme.
+	mpz_init(p), mpz_init(q),mpz_init(k), mpz_init(g), mpz_init(h);
+	in >> p >> q >> k >> g >> h;
+
+	// Initialize and choose the trapdoor as unknown (only verify).
+	mpz_init_set_ui(sigma, 0L);
+	
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+bool PedersenTrapdoorCommitmentScheme::CheckGroup
+	() const
+{
+	mpz_t foo;
+	
+	mpz_init(foo);
+	try
+	{
+		// Check whether $p$ and $q$ have appropriate sizes.
+		if ((mpz_sizeinbase(p, 2L) < F_size) || 
+			(mpz_sizeinbase(q, 2L) < G_size))
+				throw false;
+		
+		// Check whether $p$ has the correct form, i.e. $p = kq + 1$.
+		mpz_mul(foo, q, k);
+		mpz_add_ui(foo, foo, 1L);
+		if (mpz_cmp(foo, p))
+			throw false;
+		
+		// Check whether $p$ and $q$ are both (probable) prime with a
+		// soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
+		if (!mpz_probab_prime_p(p, TMCG_MR_ITERATIONS) || 
+			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
+				throw false;
+		
+		// Check whether $k$ is not divisible by $q$, i.e. $q, k$
+		// are coprime.
+		mpz_gcd(foo, q, k);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		
+		// Check whether the elements $g$ and $h$ are of order $q$.
+		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		
+		// Check whether elements $g$ and $h$ are different
+		// and non-trivial, i.e., $1 < g, h < p-1$.
+		mpz_sub_ui(foo, p, 1L); // compute $p-1$
+		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, foo) >= 0))
+			throw false;
+		if ((mpz_cmp_ui(h, 1L) <= 0) || (mpz_cmp(h, foo) >= 0))
+			throw false;
+		if (!mpz_cmp(g, h))
+			throw false;
+		
+		// everything is sound
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo);
+		return return_value;
+	}
+}
+
+void PedersenTrapdoorCommitmentScheme::PublishGroup
+	(std::ostream &out) const
+{
+	out << p << std::endl << q << std::endl << k << std::endl << 
+		g << std::endl << h << std::endl;
+}
+
+void PedersenTrapdoorCommitmentScheme::Commit
+	(mpz_ptr c, mpz_ptr r, mpz_srcptr m) const
+{
+	// Choose a randomizer from $\mathbb{Z}_q$
+	mpz_srandomm(r, q);
+	
+	// Compute the commitment $c := g^{H(m)} h^r \bmod p$
+	mpz_t foo;
+	mpz_init(foo);
+	mpz_shash(foo, 1, m);
+	mpz_mod(foo, foo, q);
+	mpz_fspowm(fpowm_table_h, c, h, r, p);
+	mpz_fspowm(fpowm_table_g, foo, g, foo, p);
+	mpz_mul(c, c, foo);
+	mpz_mod(c, c, p);
+	mpz_clear(foo);
+}
+
+void PedersenTrapdoorCommitmentScheme::CommitBy
+	(mpz_ptr c, mpz_srcptr r, mpz_srcptr m,
+	bool TimingAttackProtection) const
+{
+	assert(mpz_cmp(r, q) < 0);
+	
+	// Compute the commitment $c := g^{H(m)} h^r \bmod p$
+	mpz_t foo;
+	mpz_init(foo);
+	mpz_shash(foo, 1, m);
+	mpz_mod(foo, foo, q);
+	if (TimingAttackProtection)
+	{
+		mpz_fspowm(fpowm_table_h, c, h, r, p);
+		mpz_fspowm(fpowm_table_g, foo, g, foo, p);
+	}
+	else
+	{
+		mpz_fpowm(fpowm_table_h, c, h, r, p);
+		mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+	}
+	mpz_mul(c, c, foo);
+	mpz_mod(c, c, p);
+	mpz_clear(foo);
+}
+
+bool PedersenTrapdoorCommitmentScheme::Verify
+	(mpz_srcptr c, mpz_srcptr r, mpz_srcptr m) const
+{
+	mpz_t foo, c2;
+	mpz_init(foo), mpz_init(c2);
+	try
+	{
+		// Check whether $r < q$ holds 
+		if (mpz_cmp(r, q) >= 0)
+			throw false;
+
+		// Compute the commitment for verification
+		// $c' := g^{H(m)} h^r \bmod p$
+		mpz_shash(foo, 1, m);
+		mpz_mod(foo, foo, q);
+		mpz_fpowm(fpowm_table_h, c2, h, r, p);
+		mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+		mpz_mul(c2, c2, foo);
+		mpz_mod(c2, c2, p);
+		
+		// Verify the commitment: 1. $c\in\mathbb{Z}_p\setminus\{0\}$
+		if ((mpz_cmp_ui(c, 0L) <= 0) || (mpz_cmp(c, p) >= 0))
+			throw false;
+		// Verify the commitment: 2. $c = c'$
+		if (mpz_cmp(c, c2))
+			throw false;
+		
+		// commitment is sound
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo), mpz_clear(c2);
+		return return_value;
+	}
+}
+
+PedersenTrapdoorCommitmentScheme::~PedersenTrapdoorCommitmentScheme
+	()
+{
+	mpz_clear(p), mpz_clear(q), mpz_clear(k), mpz_clear(g), mpz_clear(h);
+	mpz_clear(sigma);
+	mpz_fpowm_done(fpowm_table_g);
+	delete [] fpowm_table_g;
+	mpz_fpowm_done(fpowm_table_h);
+	delete [] fpowm_table_h;
+}
+
+// ===================================================================================================================================
+
 JareckiLysyanskayaRVSS::JareckiLysyanskayaRVSS
 	(const size_t n_in, const size_t t_in,
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,

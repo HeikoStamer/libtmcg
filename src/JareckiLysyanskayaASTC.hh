@@ -55,6 +55,45 @@
 	#include "aiounicast.hh"
 	#include "CachinKursawePetzoldShoupSEABP.hh"
 
+/* This is a trapdoor commitment [JL00] based on Pedersen's scheme [Pe92]. */
+class PedersenTrapdoorCommitmentScheme
+{
+	private:
+		mpz_t					*fpowm_table_g;
+		mpz_t					*fpowm_table_h;
+		const unsigned long int			F_size, G_size;
+
+	public:
+		mpz_t					p, q, k, g, h;
+		mpz_t					sigma;
+		
+		PedersenTrapdoorCommitmentScheme
+			(unsigned long int fieldsize = TMCG_DDH_SIZE,
+			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		PedersenTrapdoorCommitmentScheme
+			(mpz_srcptr p_ENC, mpz_srcptr q_ENC,
+			mpz_srcptr k_ENC, mpz_srcptr g_ENC,
+			unsigned long int fieldsize = TMCG_DDH_SIZE,
+			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		PedersenTrapdoorCommitmentScheme
+			(std::istream &in,
+			unsigned long int fieldsize = TMCG_DDH_SIZE,
+			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		bool CheckGroup
+			() const;
+		void PublishGroup
+			(std::ostream &out) const;
+		void Commit
+			(mpz_ptr c, mpz_ptr r, mpz_srcptr m) const;
+		void CommitBy
+			(mpz_ptr c, mpz_srcptr r, mpz_srcptr m,
+			bool TimingAttackProtection = true) const;
+		bool Verify
+			(mpz_srcptr c, mpz_srcptr r, mpz_srcptr m) const;
+		~PedersenTrapdoorCommitmentScheme
+			();
+};
+
 /* This protocol is based upon [GJKR07] and is called Joint-RVSS [JL00]. */
 class JareckiLysyanskayaRVSS
 {

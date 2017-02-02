@@ -89,9 +89,11 @@ class PedersenCommitmentScheme
 		void PublishGroup
 			(std::ostream &out) const;
 		void Commit
-			(mpz_ptr c, mpz_ptr r, std::vector<mpz_ptr> m) const;
+			(mpz_ptr c, mpz_ptr r, 
+			const std::vector<mpz_ptr> &m) const;
 		void CommitBy
-			(mpz_ptr c, mpz_srcptr r, std::vector<mpz_ptr> m,
+			(mpz_ptr c, mpz_srcptr r, 
+			const std::vector<mpz_ptr> &m,
 			bool TimingAttackProtection = true) const;
 		bool TestMembership
 			(mpz_srcptr c) const;
