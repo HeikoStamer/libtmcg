@@ -60,7 +60,7 @@
 	#endif
 
 	#ifndef TMCG_GCRY_ENC_ALGO
-		/* Define the cipher for encrypted channels */
+		/* Define the cipher for encryption of private channels */
 		#define TMCG_GCRY_ENC_ALGO GCRY_CIPHER_AES256
 	#endif
 	
