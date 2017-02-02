@@ -233,7 +233,7 @@ bool PedersenTrapdoorCommitmentScheme::Verify
 	mpz_init(foo), mpz_init(c2);
 	try
 	{
-		// Check whether $r < q$ holds 
+		// Check whether $r < q$ holds
 		if (mpz_cmp(r, q) >= 0)
 			throw false;
 
