@@ -87,11 +87,12 @@ void run_instance
 	for (size_t i = 0; i < peers.size(); i++)
 		myID += peers[i] + "|";
 	myID += T; // include parameterized t-resiliance of DKG in the ID of broadcast protocol
-	size_t T_RBC = (peers.size() -1) / 3; // assume maximum asynchronous t-resilience for RBC
+	size_t T_RBC = (peers.size() - 1) / 3; // assume maximum asynchronous t-resilience for RBC
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T_RBC, whoami, aiou2);
 	rbc->setID(myID);
 			
-	// create and exchange VTMF keys in order to create a common value $h$ for DKG
+	// create and exchange keys in order to bootstrap the $h$-generation for DKG [JL00]
+	// TODO: replace NIZKs by distributed zero-knowledge proofs of knowledge (interactive)
 	mpz_t nizk_c, nizk_r, h_j;
 	mpz_init(nizk_c), mpz_init(nizk_r), mpz_init(h_j);
 	vtmf->KeyGenerationProtocol_GenerateKey();
