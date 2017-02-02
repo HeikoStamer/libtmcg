@@ -414,6 +414,10 @@ bool PedersenCommitmentScheme::Verify
 	mpz_init(tmp), mpz_init(c2);
 	try
 	{
+		// Check whether $r < q$ holds 
+		if (mpz_cmp(r, q) >= 0)
+			throw false;
+
 		// Compute the commitment for verification
 		// $c' := g_1^{m_1} \cdots g_n^{m_n} h^r \bmod p$
 		mpz_fpowm(fpowm_table_h, c2, h, r, p);
