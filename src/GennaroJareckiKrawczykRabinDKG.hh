@@ -2,13 +2,13 @@
   GennaroJareckiKrawczykRabinDKG.hh,
                                        Secure |D|istributed |K|ey |G|eneration
 
-     Rosario Gennaro, Stanislaw Jarecki, Hugo Krawczyk, and Tal Rabin:
+     [GJKR07] Rosario Gennaro, Stanislaw Jarecki, Hugo Krawczyk, and Tal Rabin:
        'Secure Distributed Key Generation for Discrete-Log Based Cryptosystems',
      Journal of Cryptology, Vol. 20 Nr. 1, pp. 51--83, Springer 2007.
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
