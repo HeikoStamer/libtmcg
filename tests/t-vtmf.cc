@@ -360,7 +360,7 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 	delete vtmf, delete vtmf2;
 
 	// create and check the instance
-	std::cout << "BarnettSmartVTMF_dlog(specific_g == true)" << std::endl;
+	std::cout << "BarnettSmartVTMF_dlog(canonical_g == true)" << std::endl;
 	vtmf = new BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
 	std::cout << "vtmf.CheckGroup()" << std::endl;
 	assert(vtmf->CheckGroup());
