@@ -1,11 +1,13 @@
 * doc: advise users to call SetupGenerators() in VSSHE
 
-+ provide DKG with security against an adaptive adversary [CGJKR99]
++ provide interactive and distributed (multiparty DZKP) versions of
+  bootstrapping non-interactive protocols of VTMF, i.e., key generation
+  (for applications that cannot rely on the random oracle assumption or
+   the h-generation protocol as building block of ASTC [JL00])
++ provide DKG with security against an adaptive adversary [CGJKR99, JL00]
 + provide distributed DSS key generation and signature scheme [GJKR01]
 + DKG, ASTC: transform protocols into variants without aiou->Send() [BH92]
 + provide byzantine consensus protocol
-+ provide interactive versions for the non-interactive protocols of VTMF
-  (for applications that cannot rely on the random oracle assumption)
 
 - implement the exotic card and stack operations of the toolbox; there are
   some obstacles, e.g. that the prover does not know all used randomizers,
