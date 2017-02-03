@@ -1,20 +1,23 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
-     Christian Schindelhauer: 'A Toolbox for Mental Card Games',
+     [Sc98] Christian Schindelhauer: 'A Toolbox for Mental Card Games',
      Technical Report A-98-14, University of L{\"u}beck, 1998.
 
-     Rosario Gennaro, Daniele Micciancio, Tal Rabin:
+     [GMR98] Rosario Gennaro, Daniele Micciancio, Tal Rabin:
      'An Efficient Non-Interactive Statistical Zero-Knowledge
       Proof System for Quasi-Safe Prime Products',
-     5th ACM Conference on Computer and Communication Security, 1998
+     5th ACM Conference on Computer and Communication Security, 1998.
 
-     Mihir Bellare, Phillip Rogaway: 'The Exact Security of Digital
-      Signatures -- How to Sign with RSA and Rabin', 1996
+     [BR96] Mihir Bellare, Phillip Rogaway: 'The Exact Security of Digital
+      Signatures -- How to Sign with RSA and Rabin',
+     Advances in Cryptology - Eurocrypt 96 Proceedings, LNCS 1070, 1996.
 
-     Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
+     [Bo01] Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions',
+     Proceedings of CRYPTO 2001, LNCS 2139, pp. 275--291, 2001.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2007, 
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -101,7 +104,7 @@ bool TMCG_PublicKey::check
 		
 		// sanity check, whether m \not\in P (prime)
 		// (here is a very small probability of false-negative behaviour,
-		// FIXME: give a short witness in public key)
+		// FIXME: give a short witness for compositeness in public key)
 		if (mpz_probab_prime_p(m, 500))
 			throw false;
 		
@@ -450,6 +453,7 @@ std::string TMCG_PublicKey::encrypt
 	assert(rabin_s2 < rabin_s1);
 	assert(TMCG_SAEP_S0 < (mpz_sizeinbase(m, 2L) / 32));
 	
+	// use simplified OAEP = SAEP [Bo01]
 	char *r = new char[rabin_s1];
 	gcry_randomize((unsigned char*)r, rabin_s1, GCRY_STRONG_RANDOM);
 	
@@ -501,7 +505,7 @@ bool TMCG_PublicKey::verify
 			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
 				throw false;
 		
-		// verify signature
+		// verify signature (see PRab [BR96])
 		size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
 		size_t mnsize = mpz_sizeinbase(m, 2L) / 8;
 		

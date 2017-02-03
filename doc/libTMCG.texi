@@ -169,7 +169,7 @@ The interested reader is referred to the following papers:
 @quotation [FS87]
 	@sc{Amos Fiat} and @sc{Adi Shamir}.
 	@emph{How To Prove Yourself: Practical Solutions to Identification and Signature Problems.}@*
-	Advances in Cryptology -- CRYPTO' 86. Lecture Notes in Computer Science 263, pp. 186--194, 1987.@*
+	Advances in Cryptology -- Proceedings CRYPTO' 86. Lecture Notes in Computer Science 263, pp. 186--194, 1987.@*
 	@uref{http://dx.doi.org/10.1007/3-540-47721-7_12}
 @end quotation
 @quotation [BR93, BR95]
@@ -177,6 +177,18 @@ The interested reader is referred to the following papers:
 	@emph{Random Oracles are Practical: A Paradigm for Designing Efficient Protocols.}@*
 	Proceedings of the First ACM Conference on Computer and Communications Security, pp. 62--73, 1993.@*
 	@uref{http://cseweb.ucsd.edu/~mihir/papers/ro.html}
+@end quotation
+@quotation [BR96]
+	@sc{Mihir Bellare} and @sc{Phillip Rogaway}.
+	@emph{The Exact Security of Digital Signatures -- How to Sign with RSA and Rabin.}@*
+	Advances in Cryptology -- Proceedings EUROCRYPT' 96, Lecture Notes in Computer Science 1070, pp. 399--416, 1996.@*
+	@uref{http://web.cs.ucdavis.edu/~rogaway/papers/exact.pdf}
+@end quotation
+@quotation [Bo01]
+	@sc{Dan Boneh}.
+	@emph{Simplified OAEP for the RSA and Rabin Functions.}@*
+	Advances in Cryptology -- Proceedings of CRYPTO' 01, Lecture Notes in Computer Science 2139, pp. 275--291, 2001.@*
+	@uref{http://crypto.stanford.edu/~dabo/abstracts/saep.html}
 @end quotation
 
 @c **********************************************************
@@ -334,13 +346,13 @@ hardness of these problems are not known, and it is not very likely
 that such proofs will ever be found. However, almost all public key
 cryptosystems rely on such assumptions and therefore you should not
 care about this issue, as long as reasonable security parameters are
-chosen.
+chosen and practical quantum computers are out of range.
 
 LibTMCG was originally designed to provide security in the ``honest-but-curious''
-(aka ``semi-honest'') adversary model. That means, all participants follow
+(aka ``semi-honest'' or passive) adversary model. That means, all participants follow
 the protocol instructions properly but they may gather information and
 share them within a coalition to obtain an advantage in the game. Thus we are
-not concerned with robustness and availability issues which are hard to
+basically not concerned with robustness and availability issues which are hard to
 solve in asynchronous environments like the Internet. However, the most
 operations are verifiable such that cheating can be detected. To obtain
 this verifiability, the protocols deploy so-called zero-knowledge proofs
@@ -356,27 +368,28 @@ instructions faithfully. Since version 1.2.0 of LibTMCG we use a two-party
 version of a distributed coin flipping protocol by Jarecki and Lysyanskaya
 (see @emph{Adaptively Secure Threshold Cryptography: Introducing Concurrency,
 Removing Erasures}, EUROCRYPT@tie{}2000, LNCS@tie{}1807, 2000) to protect
-against malicious verifiers.
+against malicious verifiers in that case.
 
 Unfortunately, in practice there is another substantial problem with the
 detection of cheaters. It requires that an authenticated broadcast channel
 has been set up, where all players have read/write access. There exist
 protocols (so-called ``reliable broadcast'' or even ``atomic broadcast'')
 for creating such a channel, however, only under the additional condition
-that the number of parties @math{t} who act faulty or even malicious (i.e.
-so-called ``Byzantine adversary'') is reasonable small. In a full asynchronous
+that the number of parties @math{t} who act faulty or even malicious
+(so-called ``Byzantine adversary'') is reasonable small. In a full asynchronous
 environment like the Internet resilience is achievable for @math{t < n/3}
 only, where @math{n} denotes the total number of parties in the protocol.
 LibTMCG provides a well-known protocol due to Bracha (see @emph{An asynchronous
 [(n - 1)/3]-resilient consensus protocol}, Proceedings of 3rd ACM Symposium
-on Principles of Distributed Computing, 1984) in a further optimized variant
+on Principles of Distributed Computing, 1984) in a slightly optimized variant
 by Cachin, Kursawe, Petzold, and Shoup (see @emph{Secure and Efficient
 Asynchronous Broadcast Protocols}, CRYPTO@tie{}2001, LNCS@tie{}2139, 2001).
 Please note that in most cases the application programmer must decide, where
-the use of a broadcast channel is neccesary. Thus for some protocols of
-LibTMCG you should take into account that not necessarily the player acting
-as prover is the source of evil, if a verification procedure fails. This
-level of uncertainty is another reason for our still limited adversary model.
+the use of a broadcast channel is neccesary and appropriate. Thus, without
+reliable broadcast you should take into account that not necessarily the
+player acting as prover is the source of evil, if a verification procedure
+fails. This level of uncertainty is another reason for our still limited
+adversary model.
 
 Note that it is not known, whether the used protocols retain their
 zero-knowledge property, if they are composed and executed in a concurrent
@@ -645,10 +658,12 @@ and DLOG. The default value is @code{256}.
 @end defmac
 
 @defmac TMCG_GCRY_MD_ALGO
-Defines the message digest algorithm (hash function) for digital signatures
-and the Fiat-Shamir heuristic@tie{}[FS87].
+Defines the message digest algorithm (hash function) for digital signatures with
+PRab@tie{}[BR96] and Rabin encryption with SEAP@tie{}[Bo01] in @code{TMCG_SecretKey}.
+The algorithm is also used to construct an appropriate hash function @math{g()}
+for the Fiat-Shamir heuristic@tie{}[FS87].
 The security of the most non-interactive zero-knowledge proofs resp. arguments (NIZK)
-was only proved in the so-called random oracle model, i.e., we suppose that
+is only proved in the so-called random oracle model, i.e., we suppose that
 the instantiated hash function behaves like an ideal random function
 (which obviously cannot hold in a real world scenario). However, this
 assumption seems to be reasonable, if the hash function is collision-resistant
@@ -662,6 +677,20 @@ to the hash function SHA-256 (@code{GCRY_MD_SHA256}@footnote{This is also a
 constant defined by the GNU Crypto Library.}) for improved collision resistance.
 Thus we gain a security level of approximately @math{2^{128}}, assuming
 that a birthday-attack is the best known attack against this hash function.
+@end defmac
+
+@defmac TMCG_GCRY_MAC_ALGO
+Defines the message authentication algorithm for authenticated channels.
+The default value is @code{GCRY_MAC_HMAC_SHA256}
+@footnote{This is also a constant defined by the GNU Crypto Library.}, i.e.
+the HMAC scheme based on hash algorithm SHA-256.
+@end defmac
+
+@defmac TMCG_GCRY_ENC_ALGO
+Defines the symmetric encryption algorithm (cipher) for private channels.
+The default value is @code{GCRY_CIPHER_AES256}
+@footnote{This is also a constant defined by the GNU Crypto Library.}, i.e.
+the cipher AES256 used in CFB (Cipher Feedback) mode.
 @end defmac
 
 @defmac TMCG_KEYID_SIZE
@@ -753,9 +782,8 @@ Since version 1.2.0 of LibTMCG the new default value is @code{62}.
 
 @defmac TMCG_PRAB_K0
 Defines the security parameter @math{k_0} (in characters) of the PRab
-scheme (see Bellare, Rogaway: @emph{The Exact Security of Digital Signatures
--- How to Sign with RSA and Rabin}, 1996). The default value is @code{20}
-which implies a security level around @math{2^{80}}.
+scheme@tie{}[BR96]. The default value is @code{20} which implies a security
+level around @math{2^{80}}.
 @end defmac
 
 @defmac TMCG_QRA_SIZE
@@ -767,16 +795,15 @@ for TMCG keys and Schindelhauer's encoding scheme.
 
 @defmac TMCG_SAEP_S0
 Defines the security parameter @math{s_0} (in characters) of the Rabin-SAEP
-scheme (see Boneh: @emph{Simplified OAEP for the RSA and Rabin Functions},
-2002). The default value is @code{20} which implies a security around @math{2^{80}}
-against @acronym{CCA, Chosen Ciphertext Attacks}.
+scheme@tie{}[Bo01]. The default value is @code{20} which implies a security
+level around @math{2^{80}} against @acronym{CCA, Chosen Ciphertext Attacks}.
 @end defmac
 
 @defmac TMCG_HASH_COMMITMENT
 Defines whether shortened commitments are used in the shuffle verification
-procedure of Schindelhauer. The default value is @code{true}, because it
-will decrease the communication complexity significantly. However, as an
-immediate consequence the soundness property is violated, if the used
+procedure of Schindelhauer@tie{}[Sc98]. The default value is @code{true},
+because it will decrease the communication complexity significantly. However,
+as an immediate consequence the soundness property is violated, if the used
 hash function @code{TMCG_GCRY_MD_ALGO} is broken.
 @end defmac
 
@@ -1462,8 +1489,8 @@ individual profile or a service provider can issue public key certificates.
 	MIT Technical Report 212, 1979) and Williams (see @emph{A modification of the
 	RSA public-key encryption procedure}, IEEE Transactions on Information
 	Theory, 26(6):726--729, 1980) with minor modifications for encryption padding
-	(SAEP scheme of Boneh) and digital signatures (PRab scheme of Bellare and
-	Rogaway).
+	(SAEP scheme of Boneh@tie{}[Bo01]) and digital signatures (PRab scheme of
+	Bellare and Rogaway@tie{}[BR96]).
 	
 	@deftypecv {Member} TMCG_SecretKey {std::string} name
 		This string contains the name or a pseudonym of the key owner.

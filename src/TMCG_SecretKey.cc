@@ -16,8 +16,8 @@
      [Bo01] Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions',
      Proceedings of CRYPTO 2001, LNCS 2139, pp. 275--291, 2001.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2016, 
-                                 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2007, 
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -114,7 +114,7 @@ void TMCG_SecretKey::generate
 		t << "TMCG/RABIN_" << keysize;
 	type = t.str();
 	
-	// generate appropriate primes for RABIN encryption with SAEP
+	// generate appropriate primes for RABIN encryption with SAEP [Bo01]
 	do
 	{
 		// choose a random safe prime p, but with fixed size (n/2 + 1) bit
@@ -507,8 +507,7 @@ std::string TMCG_SecretKey::sign
 	
 	// WARNING: This is only a probabilistic algorithm (Rabin's signature scheme),
 	// however, it should work with only a few iterations. Additionally the scheme
-	// PRab from [Bellare, Rogaway: The Exact Security of Digital Signatures]
-	// was implemented to increase the security of digital signatures.
+	// PRab [BR96] was implemented to increase the security of digital signatures.
 	do
 	{
 		char *r = new char[TMCG_PRAB_K0];
