@@ -631,16 +631,16 @@ time of LibTMCG and cannot be changed by your application.
 They are only provided here for informational purposes.
 
 @defmac TMCG_MR_ITERATIONS
-	Defines the number of iterations for the Miller-Rabin primality test.
-	The default value is @code{64} which implies a soundness error
-	probability @math{{} \le 4^{-64}}.
+Defines the number of iterations for the Miller-Rabin primality test.
+The default value is @code{64} which implies a soundness error
+probability @math{{} \le 4^{-64}}.
 @end defmac
 
 @defmac TMCG_GROTH_L_E
-	Defines the security parameter @math{\ell_e} of Groth's interactive
-	shuffle argument@tie{}[Gr05]. The default value is @code{80} which
-	implies a soundness error probability @math{{} \le 2^{-80}}. For the
-	intended purposes of LibTMCG this bound seems to be reasonable.
+Defines the security parameter @math{\ell_e} of Groth's (interactive)
+shuffle argument@tie{}[Gr05]. The default value is @code{80} which
+implies a soundness error probability @math{{} \le 2^{-80}}. For the
+intended purposes of LibTMCG this seems to be reasonable.
 @end defmac
 
 @defmac TMCG_DDH_SIZE
@@ -661,34 +661,34 @@ and DLOG. The default value is @code{256}.
 Defines the message digest algorithm (hash function) for digital signatures with
 PRab@tie{}[BR96] and Rabin encryption with SEAP@tie{}[Bo01] in @code{TMCG_SecretKey}.
 The algorithm is also used to construct an appropriate hash function @math{g()}
-for the Fiat-Shamir heuristic@tie{}[FS87].
-The security of the most non-interactive zero-knowledge proofs resp. arguments (NIZK)
-is only proved in the so-called random oracle model, i.e., we suppose that
-the instantiated hash function behaves like an ideal random function
-(which obviously cannot hold in a real world scenario). However, this
-assumption seems to be reasonable, if the hash function is collision-resistant
-and if it is carefully implemented with respect to other instantiations.
-In former versions of LibTMCG the default value was @code{GCRY_MD_RMD160}
-@footnote{This is a constant defined by the GNU Crypto Library.},
-i.e. the hash algorithm RIPEMD-160 (see Dobbertin, Bosselaers,
-Preneel: @emph{RIPEMD-160, a strengthened version of RIPEMD}, 1996),
-which is function that has an output length of 160 bit. Recently we moved
-to the hash function SHA-256 (@code{GCRY_MD_SHA256}@footnote{This is also a
+for the Fiat-Shamir heuristic@tie{}[FS87]. Recently
+@footnote{In former versions of LibTMCG the default value was @code{GCRY_MD_RMD160},
+i.e. the hash algorithm RIPEMD-160 (see Dobbertin, Bosselaers, Preneel: @emph{RIPEMD-160,
+a strengthened version of RIPEMD}, 1996), which is function that has only an output length
+of 160 bit.} we moved
+to the hash function SHA-256 (default value @code{GCRY_MD_SHA256}@footnote{This is also a
 constant defined by the GNU Crypto Library.}) for improved collision resistance.
 Thus we gain a security level of approximately @math{2^{128}}, assuming
 that a birthday-attack is the best known attack against this hash function.
+
+Please note that the security of the non-interactive zero-knowledge proofs resp.
+arguments (NIZK) is only proved in the so-called random oracle model, i.e., we
+suppose that the instantiated hash function behaves like an ideal random function
+(which obviously cannot hold in a real world scenario). However, this
+assumption seems to be reasonable, if the hash function @math{g()} is collision-resistant
+and if it is carefully implemented with respect to other instantiations@tie{}[BR93].
 @end defmac
 
 @defmac TMCG_GCRY_MAC_ALGO
-Defines the message authentication algorithm for authenticated channels.
-The default value is @code{GCRY_MAC_HMAC_SHA256}
+Defines the message authentication algorithm for authenticated channels established
+by the class @code{aiounicast}. The default value is @code{GCRY_MAC_HMAC_SHA256}
 @footnote{This is also a constant defined by the GNU Crypto Library.}, i.e.
-the HMAC scheme based on hash algorithm SHA-256.
+the HMAC based scheme with hashing algorithm SHA-256.
 @end defmac
 
 @defmac TMCG_GCRY_ENC_ALGO
-Defines the symmetric encryption algorithm (cipher) for private channels.
-The default value is @code{GCRY_CIPHER_AES256}
+Defines the symmetric encryption algorithm (called cipher) for private channels established
+by the class @code{aiounicast}. The default value is @code{GCRY_CIPHER_AES256}
 @footnote{This is also a constant defined by the GNU Crypto Library.}, i.e.
 the cipher AES256 used in CFB (Cipher Feedback) mode.
 @end defmac

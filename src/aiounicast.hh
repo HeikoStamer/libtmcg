@@ -39,6 +39,7 @@ class aiounicast
 	protected:
 		const size_t		aio_default_scheduler;
 		const time_t		aio_default_timeout;
+		const bool		aio_is_authenticated;
 		const bool		aio_is_encrypted;
 	public:
 		static const time_t	aio_timeout_none		= 0;
@@ -61,9 +62,11 @@ class aiounicast
 			(const size_t n_in, const size_t j_in,
 			const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
 			const time_t aio_default_timeout_in = aio_timeout_long,
+			const bool aio_is_authenticated_in = true,
 			const bool aio_is_encrypted_in = true):
 				aio_default_scheduler(aio_default_scheduler_in),
 				aio_default_timeout(aio_default_timeout_in),
+				aio_is_authenticated(aio_is_authenticated_in),
 				aio_is_encrypted(aio_is_encrypted_in),
 				n(n_in), j(j_in)
 		{

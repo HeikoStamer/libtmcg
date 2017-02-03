@@ -71,8 +71,9 @@ class aiounicast_select : public aiounicast
 			const std::vector<std::string> &key_in,
 			const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
 			const time_t aio_default_timeout_in = aio_timeout_long,
+			const bool aio_is_authenticated_in = true,
 			const bool aio_is_encrypted_in = true):
-				aiounicast(n_in, j_in, aio_default_scheduler_in, aio_default_timeout_in, aio_is_encrypted_in)
+				aiounicast(n_in, j_in, aio_default_scheduler_in, aio_default_timeout_in, aio_is_authenticated_in, aio_is_encrypted_in)
 		{
 			assert(j_in < n_in);
 			assert(n_in == fd_in_in.size());
@@ -103,10 +104,15 @@ class aiounicast_select : public aiounicast
 			numWrite = 0, numRead = 0;
 
 			// initialize MACs
-			maclen = gcry_mac_get_algo_maclen(TMCG_GCRY_MAC_ALGO);
-			if (maclen == 0)
-				std::cerr << "libgcrypt: gcry_mac_get_algo_maclen() failed" << std::endl;
-			for (size_t i = 0; i < n_in; i++)
+			if (aio_is_authenticated)
+			{
+				maclen = gcry_mac_get_algo_maclen(TMCG_GCRY_MAC_ALGO);
+				if (maclen == 0)
+					std::cerr << "libgcrypt: gcry_mac_get_algo_maclen() failed" << std::endl;
+			}
+			else
+				maclen = 0;
+			for (size_t i = 0; aio_is_authenticated && (i < n_in); i++)
 			{
 				char salt[maclen];
 				char key[maclen];
@@ -148,9 +154,14 @@ class aiounicast_select : public aiounicast
 			}
 
 			// initialize ciphers
-			keylen = gcry_cipher_get_algo_keylen(TMCG_GCRY_ENC_ALGO);
-			if (keylen == 0)
-				std::cerr << "libgcrypt: gcry_cipher_get_algo_keylen() failed" << std::endl;
+			if (aio_is_encrypted)
+			{
+				keylen = gcry_cipher_get_algo_keylen(TMCG_GCRY_ENC_ALGO);
+				if (keylen == 0)
+					std::cerr << "libgcrypt: gcry_cipher_get_algo_keylen() failed" << std::endl;
+			}
+			else
+				keylen = 0;
 			for (size_t i = 0; aio_is_encrypted && (i < n_in); i++)
 			{
 				char salt[keylen];
@@ -218,15 +229,18 @@ class aiounicast_select : public aiounicast
 				delete [] buf;
 				return false;
 			}
-			// calculate MAC
 			gcry_error_t err;
-			err = gcry_mac_write(*buf_mac_out[i_in], buf, realsize);
-			if (err)
+			// calculate MAC	
+			if (aio_is_authenticated)
 			{
-				std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
-				std::cerr << gcry_strerror(err) << std::endl;
-				delete [] buf;
-				return false;
+				err = gcry_mac_write(*buf_mac_out[i_in], buf, realsize);
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+					delete [] buf;
+					return false;
+				}
 			}
 			// encrypt the content of write buffer
 			if (aio_is_encrypted)
@@ -288,87 +302,90 @@ class aiounicast_select : public aiounicast
 			while ((realnum < (realsize + 1)) && (time(NULL) < (entry_time + timeout)));
 			if (realnum < (realsize + 1))
 				realsize = realnum; // adjust realsize, if timeout occurred
-			// get current MAC buffer
-			size_t macbuflen = maclen;
-			char *macbuf = new char[macbuflen];
-			err = gcry_mac_read(*buf_mac_out[i_in], macbuf, &macbuflen);
-			if (err)
-			{
-				std::cerr << "libgcrypt: gcry_mac_read() failed" << std::endl;
-				std::cerr << gcry_strerror(err) << std::endl;
-				delete [] buf, delete [] macbuf;
-				return false;
-			}
-			// encrypt the content of MAC buffer
-			if (aio_is_encrypted)
-			{
-				err = gcry_cipher_encrypt(*buf_enc_out[i_in], macbuf, macbuflen, NULL, 0);
-				if (err)
-				{
-					std::cerr << "libgcrypt: gcry_cipher_encrypt() failed" << std::endl;
-					std::cerr << gcry_strerror(err) << std::endl;
-					delete [] buf, delete [] macbuf;
-					return false;
-				}
-			}
 			// timeout occurred?
 			if (realsize == realnum)
 			{
 				std::cerr << "aiounicast_select(" << j << "): send timeout for " << i_in << std::endl;
-				delete [] buf, delete [] macbuf;
+				delete [] buf;
 				return false;
 			}
-			// send content of MAC buffer to party i_in
-			realnum = 0;
-			do
+			if (aio_is_authenticated)
 			{
-				// select(2) -- do everything with asynchronous I/O
-				fd_set wfds;
-				struct timeval tv;
-				int retval;
-				FD_ZERO(&wfds);
-				FD_SET(fd_out[i_in], &wfds);
-				tv.tv_sec = 0;
-				tv.tv_usec = 1000; // sleep only for 1000us = 1ms
-				retval = select((fd_out[i_in] + 1), NULL, &wfds, NULL, &tv);
-				if (retval < 0)
+				// get current MAC buffer
+				size_t macbuflen = maclen;
+				char *macbuf = new char[macbuflen];
+				err = gcry_mac_read(*buf_mac_out[i_in], macbuf, &macbuflen);
+				if (err)
 				{
-					perror("aiounicast_select (select)");
+					std::cerr << "libgcrypt: gcry_mac_read() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
 					delete [] buf, delete [] macbuf;
 					return false;
 				}
-				if (retval == 0)
-					continue;
-				// write(2) -- ready for non-blocking write?
-				if (FD_ISSET(fd_out[i_in], &wfds))
+				// encrypt the content of MAC buffer
+				if (aio_is_encrypted)
 				{
-					ssize_t num = write(fd_out[i_in], macbuf + realnum, macbuflen - realnum);
-					if (num < 0)
+					err = gcry_cipher_encrypt(*buf_enc_out[i_in], macbuf, macbuflen, NULL, 0);
+					if (err)
 					{
-						if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
-						{
-							continue;
-						}
-						else
-						{
-							perror("aiounicast_select (write)");
-							delete [] buf, delete [] macbuf;
-							return false;
-						}
+						std::cerr << "libgcrypt: gcry_cipher_encrypt() failed" << std::endl;
+						std::cerr << gcry_strerror(err) << std::endl;
+						delete [] buf, delete [] macbuf;
+						return false;
 					}
-					numWrite += num;
-					realnum += num;
 				}
-				else
-					std::cerr << "WARNING: aiounicast_select FD_ISSET not true" << std::endl;
-			}
-			while ((realnum < macbuflen) && (time(NULL) < (entry_time + timeout)));
-			delete [] buf, delete [] macbuf;
-			// timeout occurred?
-			if (realnum < macbuflen)
-			{
-				std::cerr << "aiounicast_select(" << j << "): MAC send timeout for " << i_in << std::endl;
-				return false;
+				// send content of MAC buffer to party i_in
+				realnum = 0;
+				do
+				{
+					// select(2) -- do everything with asynchronous I/O
+					fd_set wfds;
+					struct timeval tv;
+					int retval;
+					FD_ZERO(&wfds);
+					FD_SET(fd_out[i_in], &wfds);
+					tv.tv_sec = 0;
+					tv.tv_usec = 1000; // sleep only for 1000us = 1ms
+					retval = select((fd_out[i_in] + 1), NULL, &wfds, NULL, &tv);
+					if (retval < 0)
+					{
+						perror("aiounicast_select (select)");
+						delete [] buf, delete [] macbuf;
+						return false;
+					}
+					if (retval == 0)
+						continue;
+					// write(2) -- ready for non-blocking write?
+					if (FD_ISSET(fd_out[i_in], &wfds))
+					{
+						ssize_t num = write(fd_out[i_in], macbuf + realnum, macbuflen - realnum);
+						if (num < 0)
+						{
+							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+							{
+								continue;
+							}
+							else
+							{
+								perror("aiounicast_select (write)");
+								delete [] buf, delete [] macbuf;
+								return false;
+							}
+						}
+						numWrite += num;
+						realnum += num;
+					}
+					else
+						std::cerr << "WARNING: aiounicast_select FD_ISSET not true" << std::endl;
+				}
+				while ((realnum < macbuflen) && (time(NULL) < (entry_time + timeout)));
+				delete [] buf, delete [] macbuf;
+				// timeout occurred?
+				if (realnum < macbuflen)
+				{
+					std::cerr << "aiounicast_select(" << j << "): MAC send timeout for " << i_in << std::endl;
+					return false;
+				}
 			}
 			return true;
 		}
@@ -441,7 +458,7 @@ class aiounicast_select : public aiounicast
 						if (newline_found && ((buf_ptr[i_out] - newline_ptr - 1) >= maclen))
 						{
 							char *tmp = new char[newline_ptr + 1];
-							char *mac = new char[maclen];
+							char *mac = new char[maclen + 1];
 							memset(tmp, 0, newline_ptr + 1);
 							memset(mac, 0, maclen);
 							if (newline_ptr > 0)
@@ -456,22 +473,25 @@ class aiounicast_select : public aiounicast
 								buf_flag[i_out] = false;
 							buf_ptr[i_out] = wnum;
 							// calculate and check MAC
-							gcry_error_t err;
-							err = gcry_mac_write(*buf_mac_in[i_out], tmp, newline_ptr);
-							if (err)
+							if (aio_is_authenticated)
 							{
-								std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
-								std::cerr << gcry_strerror(err) << std::endl;
-								delete [] tmp, delete [] mac;
-								return false;
-							}
-							err = gcry_mac_verify(*buf_mac_in[i_out], mac, maclen);
-							if (err)
-							{
-								std::cerr << "libgcrypt: gcry_mac_verify() failed" << std::endl;
-								std::cerr << gcry_strerror(err) << std::endl;
-								delete [] tmp, delete [] mac;
-								return false;
+								gcry_error_t err;
+								err = gcry_mac_write(*buf_mac_in[i_out], tmp, newline_ptr);
+								if (err)
+								{
+									std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
+									std::cerr << gcry_strerror(err) << std::endl;
+									delete [] tmp, delete [] mac;
+									return false;
+								}
+								err = gcry_mac_verify(*buf_mac_in[i_out], mac, maclen);
+								if (err)
+								{
+									std::cerr << "libgcrypt: gcry_mac_verify() failed" << std::endl;
+									std::cerr << gcry_strerror(err) << std::endl;
+									delete [] tmp, delete [] mac;
+									return false;
+								}
 							}
 							// extract value of m
 							if (mpz_set_str(m, tmp, TMCG_MPZ_IO_BASE) < 0)
@@ -636,8 +656,11 @@ class aiounicast_select : public aiounicast
 				}
 				buf_mpz[i].clear();
 				// release MACs
-				gcry_mac_close(*buf_mac_in[i]), gcry_mac_close(*buf_mac_out[i]);
-				delete buf_mac_in[i], delete buf_mac_out[i];
+				if (aio_is_authenticated)
+				{
+					gcry_mac_close(*buf_mac_in[i]), gcry_mac_close(*buf_mac_out[i]);
+					delete buf_mac_in[i], delete buf_mac_out[i];
+				}
 				// release ciphers
 				if (aio_is_encrypted)
 				{

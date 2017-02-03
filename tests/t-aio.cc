@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -38,7 +38,6 @@
 #include <sys/wait.h>
 
 #include "test_helper.h"
-#include "pipestream.hh"
 
 #undef NDEBUG
 #define N 11
@@ -58,23 +57,19 @@ void start_instance_nonblock
 		{
 			/* BEGIN child code: participant P_i */
 			
-			// create pipe streams and handles between all players
-			std::vector<ipipestream*> P_in;
-			std::vector<opipestream*> P_out;
+			// create keys and handles between all players
 			std::vector<int> uP_in, uP_out;
 			std::vector<std::string> uP_key;
 			for (size_t i = 0; i < N; i++)
 			{
 				std::stringstream key;
 				key << "t-aio::P_" << (i + whoami);
-				P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
-				P_out.push_back(new opipestream(pipefd[whoami][i][1]));
 				uP_in.push_back(pipefd[i][whoami][0]);
 				uP_out.push_back(pipefd[whoami][i][1]);
 				uP_key.push_back(key.str());
 			}
 
-			// create asynchronous authenticated unicast channels
+			// create asynchronous authenticated and encrypted unicast channels
 			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami, uP_in, uP_out, uP_key,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 
@@ -122,17 +117,6 @@ void start_instance_nonblock
 			// release
 			mpz_clear(m);
 
-			// release pipe streams (private channels)
-			size_t numRead = 0, numWrite = 0;
-			for (size_t i = 0; i < N; i++)
-			{
-				numRead += P_in[i]->get_numRead() + P_out[i]->get_numRead();
-				numWrite += P_in[i]->get_numWrite() + P_out[i]->get_numWrite();
-				delete P_in[i], delete P_out[i];
-			}
-			std::cout << "P_" << whoami << ": numRead = " << numRead <<
-				" numWrite = " << numWrite << std::endl;
-
 			// release handles (unicast channel)
 			uP_in.clear(), uP_out.clear(), uP_key.clear();
 			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
@@ -161,23 +145,19 @@ void start_instance_select
 		{
 			/* BEGIN child code: participant P_i */
 			
-			// create pipe streams and handles between all players
-			std::vector<ipipestream*> P_in;
-			std::vector<opipestream*> P_out;
+			// create keys and handles between all players
 			std::vector<int> uP_in, uP_out;
 			std::vector<std::string> uP_key;
 			for (size_t i = 0; i < N; i++)
 			{
 				std::stringstream key;
 				key << "t-aio::P_" << (i + whoami);
-				P_in.push_back(new ipipestream(pipefd[i][whoami][0]));
-				P_out.push_back(new opipestream(pipefd[whoami][i][1]));
 				uP_in.push_back(pipefd[i][whoami][0]);
 				uP_out.push_back(pipefd[whoami][i][1]);
 				uP_key.push_back(key.str());
 			}
 
-			// create asynchronous authenticated unicast channels
+			// create asynchronous authenticated and encrypted unicast channels
 			aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 
@@ -224,17 +204,6 @@ void start_instance_select
 
 			// release
 			mpz_clear(m);
-
-			// release pipe streams (private channels)
-			size_t numRead = 0, numWrite = 0;
-			for (size_t i = 0; i < N; i++)
-			{
-				numRead += P_in[i]->get_numRead() + P_out[i]->get_numRead();
-				numWrite += P_in[i]->get_numWrite() + P_out[i]->get_numWrite();
-				delete P_in[i], delete P_out[i];
-			}
-			std::cout << "P_" << whoami << ": numRead = " << numRead <<
-				" numWrite = " << numWrite << std::endl;
 
 			// release handles (unicast channel)
 			uP_in.clear(), uP_out.clear(), uP_key.clear();

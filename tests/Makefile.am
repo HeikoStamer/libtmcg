@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2007, 2009, 2015, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2005, 2007, 2009, 2015, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -32,7 +32,7 @@ SchwarzerPeterBob_SOURCES = SchwarzerPeterBob.cc
 
 t_mpz_SOURCES = test_helper.c test_helper.h t-mpz.cc
 t_rfc4880_SOURCES = test_helper.c test_helper.h t-rfc4880.cc
-t_aio_SOURCES = pipestream.hh test_helper.c test_helper.h t-aio.cc
+t_aio_SOURCES = test_helper.c test_helper.h t-aio.cc
 t_vtmf_SOURCES = pipestream.hh test_helper.c test_helper.h t-vtmf.cc
 t_vsshe_SOURCES = pipestream.hh test_helper.c test_helper.h t-vsshe.cc
 t_vrhe_SOURCES = pipestream.hh test_helper.c test_helper.h t-vrhe.cc
