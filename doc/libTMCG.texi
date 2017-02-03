@@ -147,8 +147,8 @@ The interested reader is referred to the following papers:
 @end quotation
 @quotation [HSSV09]
 	@sc{Sebastiaan de Hoogh}, @sc{Berry Schoenmakers}, @sc{Boris Skoric}, and @sc{Jose Villegas}.
-	@emph{Verifiable Rotation of Homomorphic Encryptions}@*
-	Public Key Cryptography 2009, Lecture Notes in Computer Science 5443, pp. 393--410, 2009.@*
+	@emph{Verifiable Rotation of Homomorphic Encryptions.}@*
+	Proceedings of Public Key Cryptography 2009, Lecture Notes in Computer Science 5443, pp. 393--410, 2009.@*
 	@uref{http://dx.doi.org/10.1007/978-3-642-00468-1_22}
 @end quotation
 @quotation [St04]
@@ -169,19 +169,19 @@ The interested reader is referred to the following papers:
 @quotation [FS87]
 	@sc{Amos Fiat} and @sc{Adi Shamir}.
 	@emph{How To Prove Yourself: Practical Solutions to Identification and Signature Problems.}@*
-	Advances in Cryptology -- Proceedings CRYPTO' 86. Lecture Notes in Computer Science 263, pp. 186--194, 1987.@*
+	Advances in Cryptology -- Proceedings of CRYPTO' 86. Lecture Notes in Computer Science 263, pp. 186--194, 1987.@*
 	@uref{http://dx.doi.org/10.1007/3-540-47721-7_12}
 @end quotation
 @quotation [BR93, BR95]
 	@sc{Mihir Bellare} and @sc{Phillip Rogaway}.
 	@emph{Random Oracles are Practical: A Paradigm for Designing Efficient Protocols.}@*
-	Proceedings of the First ACM Conference on Computer and Communications Security, pp. 62--73, 1993.@*
+	Proceedings of 1st ACM Conference on Computer and Communications Security, pp. 62--73, 1993.@*
 	@uref{http://cseweb.ucsd.edu/~mihir/papers/ro.html}
 @end quotation
 @quotation [BR96]
 	@sc{Mihir Bellare} and @sc{Phillip Rogaway}.
 	@emph{The Exact Security of Digital Signatures -- How to Sign with RSA and Rabin.}@*
-	Advances in Cryptology -- Proceedings EUROCRYPT' 96, Lecture Notes in Computer Science 1070, pp. 399--416, 1996.@*
+	Advances in Cryptology -- Proceedings of EUROCRYPT' 96, Lecture Notes in Computer Science 1070, pp. 399--416, 1996.@*
 	@uref{http://web.cs.ucdavis.edu/~rogaway/papers/exact.pdf}
 @end quotation
 @quotation [Bo01]
@@ -189,6 +189,12 @@ The interested reader is referred to the following papers:
 	@emph{Simplified OAEP for the RSA and Rabin Functions.}@*
 	Advances in Cryptology -- Proceedings of CRYPTO' 01, Lecture Notes in Computer Science 2139, pp. 275--291, 2001.@*
 	@uref{http://crypto.stanford.edu/~dabo/abstracts/saep.html}
+@end quotation
+@quotation [GMR98]
+	@sc{Rosario Gennaro}, @sc{Daniele Micciancio}, and @sc{Tal Rabin}.
+	@emph{An Efficient Non-Interactive Statistical Zero-Knowledge Proof System for Quasi-Safe Prime Products.}@*
+	Proceedings of 5th ACM Conference on Computer and Communication Security, pp. 67--72, 1998.@*
+	@uref{https://cseweb.ucsd.edu/~daniele/papers/GMR.html}
 @end quotation
 
 @c **********************************************************
@@ -698,40 +704,43 @@ Defines the length (in characters w.r.t. @code{TMCG_MPZ_IO_BASE})
 for the distinctive suffix of the unique TMCG key identifier. The
 default value is @code{8} which spans a reasonable name space for
 at least @math{2^{20}} different TMCG keys (see @code{TMCG_PublicKey}).
-However, sometimes it is required to use even smaller sizes.
+However, sometimes it is required to use even smaller sizes due to
+artificial protocol restrictions (e.g. the IRC nickname is sometimes
+restricted to 9 characters).
 
 Each key identifier starts with the string @code{"ID"} followed by
 the decimal encoded value of @code{TMCG_KEYID_SIZE} and the appended
 carret symbol @code{"^"}. The final suffix contains
 @code{TMCG_KEYID_SIZE} alphanumerical characters from the self
-signature of TMCG key. The signature has enough entropy included
+signature of TMCG key. This signature has enough entropy included
 to be used as unique key identifier.
 @end defmac
 
 @defmac TMCG_KEY_NIZK_STAGE1
 Defines the security parameter (number of iterations) of the NIZK
-proof (stage 1) which convince all verifiers that the TMCG key was
-correctly generated. The default value is @code{16} which implies
-a soundness error probability @math{{} \le d^{-16}}, where
-@math{d = {\rm gcd}(m, \phi(m))}. This parameter is only relevant for the
-card encoding scheme of Schindelhauer, where the key has to be of a
-very special format.
+proof@tie{}[GMR98] (stage 1) which convince all verifiers that the
+TMCG key was correctly generated. The default value is @code{16}
+which implies a soundness error probability @math{{} \le d^{-16}},
+where @math{d = {\rm gcd}(m, \phi(m))} and @math{m} is part of
+the public key.
+This parameter is only relevant for the card encoding scheme of
+Schindelhauer, where the key has a very special format.
 @end defmac
 
 @defmac TMCG_KEY_NIZK_STAGE2
 Defines the security parameter (number of iterations) of the NIZK
-proof (stage 2) which convince all verifiers that the TMCG key was
-correctly generated. The default value is @code{128} which implies
-a soundness error probability @math{{} \le 2^{-128}}.
+proof@tie{}[GMR98] (stage 2) which convince all verifiers that the
+TMCG key was correctly generated. The default value is @code{128}
+which implies a soundness error probability @math{{} \le 2^{-128}}.
 This parameter is only relevant for the card encoding scheme of
 Schindelhauer.
 @end defmac
 
 @defmac TMCG_KEY_NIZK_STAGE3
 Defines the security parameter (number of iterations) of the NIZK
-proof (stage 3) which convince all verifiers that the TMCG key was
-correctly generated. The default value is @code{128} which implies
-a soundness error probability @math{{} \le 2^{-128}}.
+proof@tie{}[Sc98] (stage 3) which convince all verifiers that the
+TMCG key was correctly generated. The default value is @code{128}
+which implies a soundness error probability @math{{} \le 2^{-128}}.
 This parameter is only relevant for the card encoding scheme of
 Schindelhauer.
 @end defmac
@@ -802,9 +811,9 @@ level around @math{2^{80}} against @acronym{CCA, Chosen Ciphertext Attacks}.
 @defmac TMCG_HASH_COMMITMENT
 Defines whether shortened commitments are used in the shuffle verification
 procedure of Schindelhauer@tie{}[Sc98]. The default value is @code{true},
-because it will decrease the communication complexity significantly. However,
-as an immediate consequence the soundness property is violated, if the used
-hash function @code{TMCG_GCRY_MD_ALGO} is broken.
+because this will decrease the communication complexity significantly. However,
+as an immediate consequence the soundness property is violated, if the hash
+function @code{TMCG_GCRY_MD_ALGO} is broken.
 @end defmac
 
 @defmac TMCG_MAX_FPOWM_T
@@ -821,7 +830,7 @@ common field sizes.
 Define the maximum number of different bases for doing the above precomputation.
 This value is a trade-off between fast exponentiation for all possible bases
 and memory allocation. Currently it is only relevant for the generators in
-Pedersen commitment scheme (see section on @code{GrothVSSHE}).
+Groth's variant of Pedersen commitment scheme (see section on @code{GrothVSSHE}).
 The default value is @code{256}.
 @end defmac
 
@@ -865,7 +874,7 @@ name contains the suffix @code{CardSecret}. This data type is
 used to represent the secret values involved in a card masking operation.
 
 Because of the reduced computational and communication complexity
-(see@tie{}[St05] for details) the usage of the second card
+(see@tie{}[St05] for more details) the usage of the second card
 encoding scheme, i.e. @code{VTMF_Card} and @code{VTMF_CardSecret}, is
 highly recommended.
 
@@ -1513,10 +1522,9 @@ individual profile or a service provider can issue public key certificates.
 	
 	@deftypecv {Member} TMCG_SecretKey {std::string} nizk
 		This string contains two stages of the non-interactive zero-knowledge
-		proof of Gennaro, Micciancio, and Rabin (@emph{An Efficient Non-Interactive
-		Statistical Zero-Knowledge Proof System for Quasi-Safe Prime Products},
-		ACM@tie{}CCS@tie{}1998). The proof shows that @math{m} was correctly
-		generated as product of two primes both congruent to 3 (modulo 4).
+		proof of Gennaro, Micciancio, and Rabin@tie{}[GMR98]. The proof shows
+		that @math{m} was correctly generated as product of at most two	primes
+		and both are congruent to 3 (modulo 4).
 		Further there is another non-interactive zero-knowledge proof appended
 		which shows that the condition @math{y\in{\bf NQR}^\circ_m} holds.
 	@end deftypecv
@@ -1681,10 +1689,10 @@ individual profile or a service provider can issue public key certificates.
 	@end deftypecv
 	
 	@deftypecv {Member} TMCG_PublicKey {std::string} nizk
-		This string contains two stages of non-interactive zero-knowledge
-		proof of Gennaro, Micciancio and Rabin. They give strong evidence that
-		the modulus @math{m} was generated correctly. Further there is another
-		non-interactive zero-knowledge proof appended which shows that the condition
+		This string contains two stages of non-interactive zero-knowledge proof of
+		Gennaro, Micciancio and Rabin@tie{}[GMR98]. This gives strong evidence that
+		@math{m} was generated correctly. Further there is another non-interactive
+		zero-knowledge proof appended which shows that the condition
 		@math{y\in{\bf NQR}^\circ_m} holds.
 	@end deftypecv
 	
@@ -1824,7 +1832,7 @@ operations in secure card games, e.g., the creation of open cards, the masking
 of cards, the opening of masked cards, the verifiable secret shuffle of a stack,
 and more general tasks like distributed key generation procedures. Each class
 implements the main functionality of the corresponding research
-paper@tie{}[Sc98,BS03,Gr05,HSSV09]. The author names are a prefix of the class
+paper@tie{}[Sc98, BS03, Gr05, HSSV09]. The author names are a prefix of the class
 name and the following part is an abbreviation of (a part of) the title.
 
 @subsubsection Verifiable @var{k}-out-of-@var{k} Threshold Masking Function
