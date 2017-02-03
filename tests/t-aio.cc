@@ -135,7 +135,7 @@ void start_instance_nonblock
 }
 
 void start_instance_select
-	(const size_t whoami, const bool corrupted)
+	(const size_t whoami, const bool corrupted, const bool authenticated)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("t-aio (fork)");
@@ -159,7 +159,7 @@ void start_instance_select
 
 			// create asynchronous authenticated and encrypted unicast channels
 			aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short, authenticated);
 
 			// send a simple message
 			bool ret = false;
@@ -314,9 +314,9 @@ int main
 		}
 	}
 	
-	// start childs (all correct)
+	// start childs (all correct, not authenticated)
 	for (size_t i = 0; i < N; i++)
-		start_instance_select(i, false);
+		start_instance_select(i, false, false);
 	
 	// wait for childs and close pipes
 	for (size_t i = 0; i < N; i++)
@@ -350,13 +350,13 @@ int main
 		}
 	}
 	
-	// start childs (T corrupted parties)
+	// start childs (T corrupted parties, authenticated channels)
 	for (size_t i = 0; i < N; i++)
 	{
 		if (i < T)
-			start_instance_select(i, true); // corrupted
+			start_instance_select(i, true, true); // corrupted
 		else
-			start_instance_select(i, false);
+			start_instance_select(i, false, true);
 	}
 	
 	// wait for childs and close pipes
