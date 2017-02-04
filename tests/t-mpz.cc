@@ -1,7 +1,8 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006, 2007, 2015, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2005, 2006, 2007, 
+               2015, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -64,7 +65,7 @@ int main
 	std::cout << "TMCG_GCRY_MD_ALGO = " << TMCG_GCRY_MD_ALGO <<
 		" [" << gcry_md_algo_name(TMCG_GCRY_MD_ALGO) << "]" << std::endl;
 	
-	// convert (prime p of the Oakley Group 2)
+	// convert (prime p of the Oakley Group 2) and check q = (p - 1) / 2;
 	mpz_set_str(foo, "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E08\
 8A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F1437\
 4FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB\
@@ -75,15 +76,18 @@ int main
 425302077447712589550957937778424442426617334727629299387668709205606050\
 270810842907692932019128194467627007", 10);
 	assert(!mpz_cmp(foo, bar));
+	assert(mpz_probab_prime_p(foo, 500));
 	mpz_set_str(bar, "n0p2ftq59aofqlrjexdmhww37nsdo5636jq09opxoq8amvlodjflhsspl\
 5jzlgnlg0brgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9\
 623r7y6j0m4yj3304o731yt2xooyxw5npftk5yn9fj3m26mjjku1mbn3405h45cz8etbz", 36);
-	mpz_set_str(bar, "SUR8tvw7NPjVX77MA4wyYQcCRKLZetHWGRakKjG235flbyeV3obS6ZdAli\
-yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
-9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 	mpz_sub_ui(foo, foo, 1L);
 	mpz_fdiv_q_2exp(foo, foo, 1L);
 	assert(!mpz_cmp(foo, bar));
+	mpz_set_str(bar, "SUR8tvw7NPjVX77MA4wyYQcCRKLZetHWGRakKjG235flbyeV3obS6ZdAli\
+yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
+9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
+	assert(!mpz_cmp(foo, bar));
+	assert(mpz_probab_prime_p(foo, 500));
 	
 	// mpz_wrandom_ui vs. mpz_wrandom_mod
 	std::cout << "mpz_wrandom_ui() uniformity check / modulo bias" << std::endl;
