@@ -500,8 +500,8 @@ The interface definitions of classes, data types, and security
 parameters@footnote{Some security parameters are fixed at compile
 time of LibTMCG. Please don't change anything unless you know
 exactly what you are doing! Beside the apparent security concerns
-you will probably break the compatibility with other LibTMCG
-applications.} are provided by the central header file
+you will probably break the compatibility with other applications
+using LibTMCG.} are provided by the central header file
 @file{libTMCG.hh}. You have to include this file in all of your
 sources, either directly or through some other included file.
 Thus often you will simply write:
@@ -629,7 +629,7 @@ This function returns an identifier of the library.
 @c *************************  API  **************************
 @c **********************************************************
 @chapter Application Programming Interface
-
+Now we start with a description of some important interfaces.
 @menu
 * Preprocessor Defined Global Symbols::
 * Data Types and Classes::
@@ -674,11 +674,11 @@ and DLOG. The default value is @code{256}.
 Defines the message digest algorithm (hash function) for digital signatures with
 PRab@tie{}[BR96] and Rabin encryption with SEAP@tie{}[Bo01] in @code{TMCG_SecretKey}.
 The algorithm is also used to construct an appropriate hash function @math{g()}
-for the Fiat-Shamir heuristic@tie{}[FS87]. Recently
-@footnote{In former versions of LibTMCG the default value was @code{GCRY_MD_RMD160},
+for the Fiat-Shamir heuristic@tie{}[FS87]. Recently we switched
+@footnote{In former versions of LibTMCG the default value of this symbol was @code{GCRY_MD_RMD160},
 i.e. the hash algorithm RIPEMD-160 (see Dobbertin, Bosselaers, Preneel: @emph{RIPEMD-160,
 a strengthened version of RIPEMD}, 1996), which is function that has only an output length
-of 160 bit.} we moved
+of 160 bit.} 
 to the hash function SHA-256 (default value @code{GCRY_MD_SHA256}@footnote{This is also a
 constant defined by the GNU Crypto Library.}) for improved collision resistance.
 Thus we gain a security level of approximately @math{2^{128}}, assuming
