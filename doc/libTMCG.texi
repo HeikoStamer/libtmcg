@@ -1,5 +1,6 @@
 \input texinfo
 @c %**start of header
+@afourpaper
 @finalout
 @documentencoding ISO-8859-1
 @setfilename libTMCG.info
