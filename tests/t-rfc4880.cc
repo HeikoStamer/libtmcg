@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ int main
 	// testing ArmorEncode() and ArmorDecode()
 	for (size_t j = 0; j < 10; j++)
 	{
-		std::string u = "Max Mustermann <maxi@moritz.de>", armor;
+		std::string u = "Max Mustermann <max@gaos.org>", armor;
 
 		if ((j != 1) && (j != 2) && (j != 5) && (j != 6))
 			continue;
@@ -73,6 +73,7 @@ int main
 	for (size_t i = 0; i < m.length(); i++)
 		in.push_back(m[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode(in, lit);
+	std::cout << "SymmetricEncryptAES256(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256(lit,
 		seskey, prefix, true, enc);
 	assert(!ret);
@@ -81,6 +82,7 @@ int main
 	assert(!ret);
 	ret = gcry_pk_genkey(&elgkey, elgparms);
 	assert(!ret);
+	std::cout << "AsymmetricEncryptElgamal(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal(seskey, elgkey, gk, myk);
 	assert(!ret);
 	for (size_t i = 0; i < 8; i++)
@@ -90,6 +92,7 @@ int main
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(1, out, armored_message);
 	std::cout << armored_message << std::endl;
 	out.clear(), prefix.clear();
+	std::cout << "SymmetricDecryptAES256(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256(enc,
 		seskey, prefix, true, out);
 	assert(!ret);
@@ -98,6 +101,29 @@ int main
 	{
 		assert(lit[i] == out[i]);
 	}
+
+	// testing S2K functions
+	BYTE octcnt = 1;
+	size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6);
+	size_t keylen = gcry_cipher_get_algo_keylen(TMCG_GCRY_ENC_ALGO);
+	std::string keystr = "Test";
+	char salt[8];
+	char key[keylen];
+	gcry_error_t err;
+	gcry_create_nonce(salt, sizeof(salt));
+	std::cout << "gcry_kdf_derive(..., GCRY_KDF_ITERSALTED_S2K, TMCG_GCRY_MD_ALGO, ..., " << hashcnt << ", ...)" << std::endl;
+	err = gcry_kdf_derive(keystr.c_str(), keystr.length(), GCRY_KDF_ITERSALTED_S2K,
+		TMCG_GCRY_MD_ALGO, salt, sizeof(salt), hashcnt, sizeof(key), key);
+	assert(!err);
+	OCTETS salt2, out2;
+	out.clear();
+	for (size_t i = 0; i < sizeof(key); i++)
+		out.push_back(key[i]); // copy the result
+	for (size_t i = 0; i < sizeof(salt); i++)
+		salt2.push_back(salt[i]); // copy the salt
+	std::cout << "S2KCompute(...)" << std::endl;
+	CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(8, keylen, keystr, salt2, true, octcnt, out2);
+	assert(CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(out, out2));
 	
 	return 0;
 }

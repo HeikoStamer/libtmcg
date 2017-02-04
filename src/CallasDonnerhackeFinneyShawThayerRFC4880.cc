@@ -7,7 +7,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -556,6 +556,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 	// Salted S2K is exactly like Simple S2K, except that the input to the
 	// hash function(s) consists of the 8 octets of salt from the S2K
 	// specifier, followed by the passphrase.
+	if (salt.size() != 8)
+		return;
 	// [...]
 	// Iterated-Salted S2K hashes the passphrase and salt data multiple
 	// times. The total number of octets to be hashed is specified in the
