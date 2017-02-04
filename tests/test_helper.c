@@ -21,6 +21,7 @@
 #include "test_helper.h"
 
 clock_t start, stop;
+clock_t start_saved, stop_saved;
 char buf[50];
 
 void start_clock
@@ -33,6 +34,13 @@ void stop_clock
 	()
 {
 	stop = clock();
+}
+
+void save_clock
+	()
+{
+	start_saved = start;
+	stop_saved = stop;
 }
 
 char *elapsed_time
@@ -57,6 +65,31 @@ int compare_time
 	if (start < (stop - diff))
 		return 1;
 	else if (start == (stop - diff))
+		return 0;
+	else
+		return -1;
+}
+
+int compare_elapsed_time
+	(clock_t diff)
+{
+	clock_t elapsed = stop - start;
+	if (elapsed > diff)
+		return 1;
+	else if (elapsed == diff)
+		return 0;
+	else
+		return -1;
+}
+
+int compare_elapsed_time_saved
+	(clock_t diff)
+{
+	clock_t elapsed = stop - start;
+	clock_t elapsed_saved = stop_saved - start_saved;
+	if (elapsed < (elapsed_saved - diff))
+		return 1;
+	else if (elapsed == (elapsed_saved - diff))
 		return 0;
 	else
 		return -1;

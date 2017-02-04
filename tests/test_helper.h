@@ -32,11 +32,17 @@
 		();
 	void stop_clock
 		();
+	void save_clock
+		();
 	char *elapsed_time
 		();
 	char *current_time
 		();
 	int compare_time
+		(clock_t diff);
+	int compare_elapsed_time
+		(clock_t diff);
+	int compare_elapsed_time_saved
 		(clock_t diff);
 	
 	#if defined(__cplusplus)
