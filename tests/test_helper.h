@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -36,6 +36,8 @@
 		();
 	char *current_time
 		();
+	int compare_time
+		(clock_t diff);
 	
 	#if defined(__cplusplus)
 		}

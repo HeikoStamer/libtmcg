@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2005  Heiko Stamer <stamer@gaos.org>
+ Copyright (C) 2005, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -50,3 +50,15 @@ char *current_time
 		(((double) (clock() - start)) / CLOCKS_PER_SEC) * 1000);
 	return buf;
 }
+
+int compare_time
+	(clock_t diff)
+{
+	if (start < (stop - diff))
+		return 1;
+	else if (start == (stop - diff))
+		return 0;
+	else
+		return -1;
+}
+
