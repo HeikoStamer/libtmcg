@@ -1,6 +1,5 @@
 \input texinfo
 @c %**start of header
-@fonttextsize 10
 @finalout
 @documentencoding ISO-8859-1
 @setfilename libTMCG.info
@@ -89,17 +88,18 @@ is performed randomly (presumed that at least one player is honest)
 and thus the cards will be distributed uniformly among the players.
 Further, no coalition can learn the private cards of a player against
 his will (except for trivial conclusions). The corresponding cryptographic
-problem, actually called ``Mental Poker'', has been studied since 1979
-(Shamir, Rivest, and Adleman) by many authors.
+problem, actually called ``@uref{https://en.wikipedia.org/wiki/Mental_poker,,Mental Poker}'',
+has been studied since 1979 (Shamir, Rivest, and Adleman) by many authors.
 LibTMCG provides the first practical implementation of such sophisticated
 protocols.
 
 The security and the verifiability rely on advanced cryptographic techniques---the
-so-called zero-knowledge proofs. Using these `building blocks' the high-level
-protocols minimize the effect of coalitions and preserve the confidentiality
-of the players' strategy, i.e., the players are not required to reveal their
-cards at the end of the game to show that they did not cheat. This important
-property is often required in card games like Poker.
+so-called @uref{https://en.wikipedia.org/wiki/Zero-knowledge_proof,,zero-knowledge proofs}.
+Using these `building blocks' the high-level protocols minimize the effect of
+coalitions and preserve the confidentiality of the players' strategy, i.e., the
+players are not required to reveal their cards at the end of the game in order
+to show that they did not cheat. This important property is often required in
+card games like Poker, where the applied individual strategy must be kept secret.
 
 
 LibTMCG is @emph{Free Software} according to the definition
@@ -207,11 +207,15 @@ of LibTMCG. All relevant data types, public classes and
 security parameters are explained. The reader should have
 an advanced knowledge in applied cryptography and C++
 programming. Reference is made at this point to the famous
-@cite{Handbook of Applied Cryptography} for a brief
-introduction of this topic.
+@cite{@uref{http://cacr.uwaterloo.ca/hac/,,Handbook of Applied Cryptography}}
+for a brief introduction on the first topic. For the underlying
+communication model and some broadcast primitives the outstanding textbook
+@cite{@uref{http://www.distributedprogramming.net/,,Introduction to Reliable and Secure Distributed Programming}}
+and the corresponding @uref{http://www.distributedprogramming.net/handson.shtml,,exercises}
+are recommended.
 
 This document follows, in style and rarely in phrasing,
-the @cite{Reference Manual of the GNU Crypto Library}.
+the @cite{@uref{https://gnupg.org/documentation/manuals/gcrypt/,,Libgcrypt Reference Manual}}.
 Thus don't be surprised, if you recognize some obvious
 analogies.
 
@@ -414,8 +418,8 @@ ACM 51(6):851--898, 2004).
 
 Please also note, that in some protocols the Fiat-Shamir heuristic@tie{}[FS87]
 is used to turn interactive special honest verifier zero-knowledge arguments
-resp. proofs into non-interactive versions in the random oracle model. However,
-there are some theoretical (see e.g. Nir Bitansky, Dana Dachman-Soled, Sanjam
+resp. proofs into non-interactive versions in the @uref{https://en.wikipedia.org/wiki/Random_oracle,,random oracle model}.
+However, there are some theoretical (see e.g. Nir Bitansky, Dana Dachman-Soled, Sanjam
 Garg, Abhishek Jain, Yael Tauman Kalai, Adriana Lopez-Alt, and Daniel Wichs:
 @emph{Why 'Fiat-Shamir for Proofs' Lacks a Proof}, TCC@tie{}2013,
 LNCS@tie{}7785, 2013) and pratical (see David Bernhard, Olivier Pereira, Bogdan
@@ -449,7 +453,7 @@ research papers and to the best of our knowledge. However, we can not eliminate
 any possibility of contained flaws or bugs, because the implementation of
 such complex protocols is always an error-prone process. Thus we encourage
 readers with advanced cryptographic background to review the source code of
-LibTMCG. Please report any complaint or correction proposal.
+LibTMCG. Please report any complaint or correction proposal!
 @end quotation
 
 @c **********************************************************
@@ -473,8 +477,9 @@ of the used features and specifies the required versions:
 		Version@tie{}@math{\ge}@tie{}1.6.0
 		
 		The library provides some basic cryptographic algorithms
-		(e.g. SHA-256, RIPEMD-160) and an easily accessible interface for
-		cryptographically strong pseudo random numbers.
+		(e.g. SHA-256, AES256, RIPEMD-160, ElGamal, DSA) and an easily
+		accessible interface for cryptographically strong pseudo
+		random numbers.
 	
 	@item GNU Privacy Guard Error Code Library (@file{libgpg-error}),
 		Version@tie{}@math{\ge}@tie{}1.12
