@@ -366,8 +366,8 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	}
 	std::cout << "mpz_fpowm_done()" << std::endl;
 	mpz_fpowm_done(fpowm_table_1), mpz_fpowm_done(fpowm_table_2);
-	
-	// mpz_powm vs. mpz_fpowm vs. mpz_fspowm benchmark
+
+	// mpz_powm vs. mpz_spowm vs. mpz_fpowm vs. mpz_fspowm benchmark
 	std::cout << "mpz_powm() benchmark" << std::endl;
 	start_clock();
 	for (size_t i = 0; i < 1000; i++)
@@ -376,17 +376,7 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		mpz_powm(t1, bar, foo2, foo);
 	}
 	stop_clock();
-	std::cout << elapsed_time() << std::endl;
-	std::cout << "mpz_fpowm() benchmark" << std::endl;
-	mpz_fpowm_init(fpowm_table_1);
-	mpz_fpowm_precompute(fpowm_table_1, bar, foo, 160);
-	start_clock();
-	for (size_t i = 0; i < 1000; i++)
-	{
-		mpz_srandomb(foo2, 160);
-		mpz_fpowm(fpowm_table_1, t2, bar, foo2, foo);
-	}
-	stop_clock();
+	save_clock();
 	std::cout << elapsed_time() << std::endl;
 	std::cout << "mpz_spowm() benchmark" << std::endl;
 	start_clock();
@@ -397,16 +387,41 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	}
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
-	std::cout << "mpz_fspowm() benchmark" << std::endl;
-	start_clock();
-	for (size_t i = 0; i < 1000; i++)
+	// check whether spowm() is slower than powm()
+	assert((compare_elapsed_time_saved(0) < 0));
+	size_t bad_cnt = 0; 
+	for (size_t j = 0; j < 30; j++)
 	{
-		mpz_srandomb(foo2, 160);
-		mpz_fspowm(fpowm_table_1, root, bar, foo2, foo);
+		std::cout << "mpz_fpowm() benchmark" << std::endl;
+		mpz_fpowm_init(fpowm_table_1);
+		mpz_fpowm_precompute(fpowm_table_1, bar, foo, 160);
+		start_clock();
+		for (size_t i = 0; i < 10000; i++)
+		{
+			mpz_srandomb(foo2, 160);
+			mpz_fpowm(fpowm_table_1, t2, bar, foo2, foo);
+		}
+		stop_clock();
+		save_clock();
+		std::cout << elapsed_time() << std::endl;
+		std::cout << "mpz_fspowm() benchmark" << std::endl;
+		start_clock();
+		for (size_t i = 0; i < 10000; i++)
+		{
+			mpz_srandomb(foo2, 160);
+			mpz_fspowm(fpowm_table_1, root, bar, foo2, foo);
+		}
+		stop_clock();
+		mpz_fpowm_done(fpowm_table_1);
+		std::cout << elapsed_time() << std::endl;
+		if (compare_elapsed_time_saved(0) >= 0)
+		{
+			bad_cnt++;
+			std::cout << "bad run - fspowm() is faster!" << std::endl;
+		} 
 	}
-	stop_clock();
-	mpz_fpowm_done(fpowm_table_1);
-	std::cout << elapsed_time() << std::endl;
+	// check whether fspowm() is slower than fpowm() for at least 2/3 of runs
+	assert(bad_cnt < 10);
 	
 	// h, g, mpz_shash
 	std::cout << "h()" << std::endl;
