@@ -62,6 +62,7 @@ Free Documentation License''.
 * Introduction::
 * Application Programming Interface::
 * Examples::
+* Tools::
 * Licenses::
 * General and API Index::
 @end menu
@@ -2222,7 +2223,7 @@ of the same instance.
 
 	@deftypemethod GrothVSSHE bool SetupGenerators_publiccoin (@code{size_t} whoami, @code{aiounicast*} aiou, @code{CachinKursawePetzoldShoupRBC*} rbc, @code{JareckiLysyanskayaEDCF*} edcf, @code{std::ostream&} err)
 		This method setup the generators @math{g_1, \ldots, g_n} of the internal Pedersen
-		commitment scheme by using a distributed coin flipping protocol@tie[JL00].
+		commitment scheme by using a distributed coin flipping protocol@tie{}[JL00].
 		Assuming at least one honest player they are randomly and uniformly chosen
 		from @math{{\bf Z}_q} such that @math{\log_{g_i} h} and @math{\log_h g_i}
 		are unkown, for all @math{i = 1, \ldots, n}.
@@ -3037,6 +3038,9 @@ if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) ||
   mpz_cmp(vtmf->g, vsshe->g) || mpz_cmp(vtmf->h, vsshe->h))
     std::cerr << "VSSHE: Encryption scheme does not match!" << std::endl;
 @end example
+Last but not least the setup of internal generators must be accomplished.
+
+TODO TODO TODO
 @end cartouche
 
 @node Operations on Cards

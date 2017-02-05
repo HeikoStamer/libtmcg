@@ -603,6 +603,23 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 	return false;
 }
 
+void CachinKursawePetzoldShoupRBC::Sync
+	(time_t timeout)
+{
+	// set aio default values
+	if (timeout == aiounicast::aio_timeout_default)
+		timeout = aio_default_timeout;
+	mpz_t a;
+	mpz_init(a);
+	time_t entry_time = time(NULL);
+	do
+	{
+		DeliverFrom(a, j);
+	}
+	while (time(NULL) < (entry_time + timeout));
+	mpz_clear(a);
+}
+
 CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 	()
 {

@@ -107,6 +107,8 @@ class CachinKursawePetzoldShoupRBC
 			(mpz_ptr m, const size_t i_in,
 			size_t scheduler = aiounicast::aio_scheduler_default,
 			time_t timeout = aiounicast::aio_timeout_default);
+		void Sync
+			(time_t timeout = aiounicast::aio_timeout_default);
 		~CachinKursawePetzoldShoupRBC
 			();
 };

@@ -1803,10 +1803,13 @@ bool GrothVSSHE::SetupGenerators_publiccoin
 			CachinKursawePetzoldShoupRBC *rbc,
 			JareckiLysyanskayaEDCF *edcf, std::ostream &err)
 {
+err << "BUG1" << std::endl;
 	if (!com->SetupGenerators_publiccoin(whoami, aiou, rbc, edcf, err))
 		return false;
-	if (!skc->SetupGenerators_publiccoin(whoami, aiou, rbc, edcf, err))
+err << "BUG2" << std::endl;
+	if (!skc->SetupGenerators_publiccoin(whoami, aiou, rbc, edcf, err)) // FIXME: generators of com and skc->com must be the same 
 		return false;
+err << "BUG3" << std::endl;
 	return true;
 }
 
