@@ -124,6 +124,7 @@ class GrothVSSHE
 {
 	private:
 		const unsigned long int			l_e, l_e_nizk;
+		const unsigned long int			F_size, G_size;
 		mpz_t					*fpowm_table_g, *fpowm_table_h;
 		GrothSKC				*skc;
 	

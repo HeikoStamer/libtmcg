@@ -867,7 +867,7 @@ Define the maximum number of different bases for doing the above precomputation.
 This value is a trade-off between fast exponentiation for all possible bases
 and memory allocation. Currently it is only relevant for the generators
 @math{g_1, \ldots, g_n} in Groth's variant of Pedersen commitment scheme
-(@xref{GrothVSSHE}). The default value is @code{256}.
+(@pxref{GrothVSSHE}). The default value is @code{256}.
 @end defmac
 
 @c **********************************************************
@@ -2868,7 +2868,7 @@ and @math{P_4}) and a regular deck of 52@tie{}different cards. For convenience
 only the more efficient card encoding scheme of Barnett and Smart@tie{}[BS03]
 is described. Additionally, we complete our exposition with code fragments which
 show the application of the fast shuffle verification protocol due to
-Groth@tie{}[Gr05] with an interactive instantiation. On modern computer hardware
+Groth@tie{}[Gr05, Gr10] with an interactive instantiation. On modern computer hardware
 this implementation strategie achieves good real world performance and simultaneously
 keeps the cheating probability negligible.
 
@@ -3038,9 +3038,17 @@ if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) ||
   mpz_cmp(vtmf->g, vsshe->g) || mpz_cmp(vtmf->h, vsshe->h))
     std::cerr << "VSSHE: Encryption scheme does not match!" << std::endl;
 @end example
-Last but not least the setup of internal generators must be accomplished.
-
-TODO TODO TODO
+@end cartouche
+Last but not least the setup of internal generators must be accomplished by
+all players (@pxref{GrothVSSHE}).
+@cartouche
+@example
+std::stringstream err_log;
+if (!vsshe->SetupGenerators_publiccoin(whoami, aiou, rbc, edcf, err_log))
+  std::cerr << "VSSHE: SetupGenerators_publiccoin() failed!" << std::endl;
+// synchronize
+rbc->Sync(aiounicast::aio_timeout_short);
+@end example
 @end cartouche
 
 @node Operations on Cards

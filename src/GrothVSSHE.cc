@@ -1753,7 +1753,7 @@ GrothVSSHE::GrothVSSHE
 	mpz_srcptr g_ENC, mpz_srcptr h_ENC,
 	unsigned long int ell_e, unsigned long int fieldsize,
 	unsigned long int subgroupsize):
-		l_e(ell_e), l_e_nizk(ell_e * 2L)
+		l_e(ell_e), l_e_nizk(ell_e * 2L), F_size(fieldsize), G_size(subgroupsize)
 {
 	std::stringstream lej;
 	
@@ -1778,7 +1778,7 @@ GrothVSSHE::GrothVSSHE
 	(size_t n, std::istream& in,
 	unsigned long int ell_e, unsigned long int fieldsize,
 	unsigned long int subgroupsize):
-		l_e(ell_e), l_e_nizk(ell_e * 2L)
+		l_e(ell_e), l_e_nizk(ell_e * 2L), F_size(fieldsize), G_size(subgroupsize)
 {
 	std::stringstream lej;
 	
@@ -1803,13 +1803,13 @@ bool GrothVSSHE::SetupGenerators_publiccoin
 			CachinKursawePetzoldShoupRBC *rbc,
 			JareckiLysyanskayaEDCF *edcf, std::ostream &err)
 {
-err << "BUG1" << std::endl;
+	std::stringstream lej;
 	if (!com->SetupGenerators_publiccoin(whoami, aiou, rbc, edcf, err))
 		return false;
-err << "BUG2" << std::endl;
-	if (!skc->SetupGenerators_publiccoin(whoami, aiou, rbc, edcf, err)) // FIXME: generators of com and skc->com must be the same 
-		return false;
-err << "BUG3" << std::endl;
+	com->PublishGroup(lej);
+	delete skc;
+	skc = new GrothSKC(com->g.size(), lej, l_e, F_size, G_size);
+
 	return true;
 }
 
