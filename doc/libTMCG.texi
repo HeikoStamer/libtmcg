@@ -92,7 +92,7 @@ his will (except for trivial conclusions). The corresponding cryptographic
 problem, actually called ``@uref{https://en.wikipedia.org/wiki/Mental_poker,,Mental Poker}'',
 has been studied since 1979 (Shamir, Rivest, and Adleman) by many authors.
 LibTMCG provides the first practical implementation of such sophisticated
-protocols.
+cryptographic protocols.
 
 The security and the verifiability rely on advanced cryptographic techniques---the
 so-called @uref{https://en.wikipedia.org/wiki/Zero-knowledge_proof,,zero-knowledge proofs}.
@@ -100,13 +100,12 @@ Using these `building blocks' the high-level protocols minimize the effect of
 coalitions and preserve the confidentiality of the players' strategy, i.e., the
 players are not required to reveal their cards at the end of the game in order
 to show that they did not cheat. This important property is often required in
-card games like Poker, where the applied individual strategy must be kept secret.
+card games like Poker, where not all cards are opened during the play and the
+applied individual strategy must be kept secret.
 
-
-LibTMCG is @emph{Free Software} according to the definition
-of the @uref{http://www.fsf.org/licensing/essays/free-sw.html,,
-Free Software Foundation}. The source code is released under
-the GNU @emph{General Public License} Version 2.
+LibTMCG is @emph{Free Software} according to the definition of the
+@uref{http://www.fsf.org/licensing/essays/free-sw.html,,Free Software Foundation}.
+The source code is released under the GNU @emph{General Public License} Version 2.
 
 @menu
 * Further Reading::
@@ -199,6 +198,18 @@ The interested reader is referred to the following papers:
 	Proceedings of 5th ACM Conference on Computer and Communication Security, pp. 67--72, 1998.@*
 	@uref{https://cseweb.ucsd.edu/~daniele/papers/GMR.html}
 @end quotation
+@quotation [JL00]
+	@sc{Stanislaw Jarecki} and @sc{Anna Lysyanskaya}.
+	@emph{Adaptively Secure Threshold Cryptography: Introducing Concurrency, Removing Erasures.}@*
+	Advances in Cryptology -- Proceedings of EUROCRYPT' 00, Lecture Notes in Computer Science 1807, pp. 221--242, 2000.@*
+	@uref{http://www.iacr.org/archive/eurocrypt2000/1807/18070223-new.pdf}
+@end quotation
+@quotation [CKPS01]
+	@sc{Christian Cachin}, @sc{Klaus Kursawe}, @sc{Frank Petzold}, and @sc{Victor Shoup}.
+	@emph{Secure and Efficient Asynchronous Broadcast Protocols.}@*
+	Advances in Cryptology -- Proceedings of CRYPTO' 01, Lecture Notes in Computer Science 2139, pp. 524--541, 2001.@*
+	@uref{http://shoup.net/papers/ckps.pdf}
+@end quotation
 
 @c **********************************************************
 @node Getting Started
@@ -257,6 +268,7 @@ card encoding schemes.
 @menu
 * Terminology::
 * Security::
+* Communication::
 @end menu
 
 @node Terminology
@@ -378,10 +390,8 @@ computational and communication complexity. Finally, some of the protocols
 (e.g. the efficient shuffle argument by Groth) are only zero-knowledge with
 respect to a so-called ``honest verifier'' who follows all protocol
 instructions faithfully. Since version 1.2.0 of LibTMCG we use a two-party
-version of a distributed coin flipping protocol by Jarecki and Lysyanskaya
-(see @emph{Adaptively Secure Threshold Cryptography: Introducing Concurrency,
-Removing Erasures}, EUROCRYPT@tie{}2000, LNCS@tie{}1807, 2000) to protect
-against malicious verifiers in that case.
+version of a distributed coin flipping protocol by Jarecki and Lysyanskaya@tie{}[JL00]
+to protect against malicious verifiers in that case.
 
 Unfortunately, in practice there is another substantial problem with the
 detection of cheaters. It requires that an authenticated broadcast channel
@@ -395,8 +405,7 @@ only, where @math{n} denotes the total number of parties in the protocol.
 LibTMCG provides a well-known protocol due to Bracha (see @emph{An asynchronous
 [(n - 1)/3]-resilient consensus protocol}, Proceedings of 3rd ACM Symposium
 on Principles of Distributed Computing, 1984) in a slightly optimized variant
-by Cachin, Kursawe, Petzold, and Shoup (see @emph{Secure and Efficient
-Asynchronous Broadcast Protocols}, CRYPTO@tie{}2001, LNCS@tie{}2139, 2001).
+by Cachin, Kursawe, Petzold, and Shoup@tie{}[CKPS01].
 Please note that in most cases the application programmer must decide, where
 the use of a broadcast channel is neccesary and appropriate. Thus, without
 reliable broadcast you should take into account that not necessarily the
@@ -456,6 +465,24 @@ such complex protocols is always an error-prone process. Thus we encourage
 readers with advanced cryptographic background to review the source code of
 LibTMCG. Please report any complaint or correction proposal!
 @end quotation
+
+@node Communication
+@subsection Communication
+@cindex Communication
+
+Most cryptographic protocols are designed for a @emph{synchronous} communication
+model, i.e., there is a known upper bound on message transmission delays. That
+means, the time period between the point at which a protocol message is sent
+and the point at which the message is delivered is smaller than this bound. 
+Additionally, often the assumption is made that the computation proceeds in
+synchronized rounds and that the parties are connected by a complete network
+of private (i.e. untappable and authenticated) point-to-point channels.
+
+There is an importand distinction between @emph{fully synchronous} and
+@emph{partially synchronous} communication model with respect to coverage
+and resulting adverserial power. The reader is referred to the textbook
+@cite{@uref{http://www.distributedprogramming.net/,,Introduction to Reliable and Secure Distributed Programming}}
+for discussion on that topic.
 
 @c **********************************************************
 @node Preparation
@@ -813,7 +840,7 @@ for TMCG keys and Schindelhauer's encoding scheme.
 @defmac TMCG_SAEP_S0
 Defines the security parameter @math{s_0} (in characters) of the Rabin-SAEP
 scheme@tie{}[Bo01]. The default value is @code{20} which implies a security
-level around @math{2^{80}} against @acronym{CCA, Chosen Ciphertext Attacks}.
+level around @math{2^{80}} against @acronym{CCA, @uref{https://en.wikipedia.org/wiki/Chosen-ciphertext_attack,,chosen-ciphertext attack}}.
 @end defmac
 
 @defmac TMCG_HASH_COMMITMENT
@@ -837,9 +864,9 @@ common field sizes.
 @defmac TMCG_MAX_FPOWM_N
 Define the maximum number of different bases for doing the above precomputation.
 This value is a trade-off between fast exponentiation for all possible bases
-and memory allocation. Currently it is only relevant for the generators in
-Groth's variant of Pedersen commitment scheme (see section on @code{GrothVSSHE}).
-The default value is @code{256}.
+and memory allocation. Currently it is only relevant for the generators
+@math{g_1, \ldots, g_n} in Groth's variant of Pedersen commitment scheme
+(@xref{GrothVSSHE}). The default value is @code{256}.
 @end defmac
 
 @c **********************************************************
@@ -1839,9 +1866,18 @@ or optimizations, but other provide necessary interfaces to perform the basic
 operations in secure card games, e.g., the creation of open cards, the masking
 of cards, the opening of masked cards, the verifiable secret shuffle of a stack,
 and more general tasks like distributed key generation procedures. Each class
-implements the main functionality of the corresponding research
-paper@tie{}[Sc98, BS03, Gr05, HSSV09]. The author names are a prefix of the class
-name and the following part is an abbreviation of (a part of) the title.
+implements the some functionality of the corresponding research
+paper@tie{}[CKPS01, JL00, BS03, Gr05, HSSV09, Sc98]. The author names are a prefix
+of the class name and the following part is an abbreviation of (a part of) the
+title, respectively.
+
+@subsubsection Secure and Efficient Asynchronous Broadcast Protocols
+
+TODO RBC
+
+@subsubsection Adaptively Secure Threshold Cryptography
+
+TODO EDCF
 
 @subsubsection Verifiable @var{k}-out-of-@var{k} Threshold Masking Function
 The two classes of this subsection are concrete instantiations of Barnett
@@ -1855,8 +1891,8 @@ four different protocols:
 @end itemize
 Each protocol uses low-level operations on an appropriately chosen algebraic
 group @math{G}. The choice of this group is crucial to the security of the
-card encoding scheme and thus to the high-level operations on cards resp.
-stacks.
+card encoding scheme and thus also to the security of high-level operations
+on cards resp. stacks.
 
 There are just a few methods and members of these classes that might be of
 general interest for an application programmer, e.g. the methods of the key
@@ -1864,6 +1900,7 @@ generation protocol. The other stuff is only used internally by high-level
 operations of @code{SchindelhauerTMCG}. Therefore this manual omits the
 description of such internal functions and members.
 
+@node BarnettSmartVTMF_dlog
 @deftp {Class} BarnettSmartVTMF_dlog
 	This class implements the discrete logarithm instantiation of the VTMF
 	primitive in the field @math{{\bf Z}/p{\bf Z}}, where @math{p} is a large
@@ -1994,6 +2031,7 @@ description of such internal functions and members.
 	@end defop
 @end deftp
 
+@node BarnettSmartVTMF_dlog_GroupQR
 @deftp {Subclass of @code{BarnettSmartVTMF_dlog}} BarnettSmartVTMF_dlog_GroupQR
 	This subclass implements the discrete logarithm instantiation of the VTMF
 	primitive in the field @math{{\bf Z}/p{\bf Z}}, where @math{p} is a large
@@ -2079,7 +2117,7 @@ description of such internal functions and members.
 @end deftp
 
 @subsubsection Verifiable Secret Shuffle of Homomorphic Encryptions
-Recently, Groth@tie{}[Gr05] has proposed a very efficient solution to perform
+Recently, Groth@tie{}[Gr05, Gr10] has proposed a very efficient solution to perform
 a verifiable shuffle of homomorphically encrypted values. He describes an
 honest verifier zero-knowledge argument which shows the correctness of a
 shuffle. Beside other applications (e.g. verifiable mix networks, electronic
@@ -2089,26 +2127,35 @@ computational complexity and the produced communication traffic are superior
 to previously deployed techniques (e.g. Schindelhauer's cut-and-choose method).
 LibTMCG provides the first known implementation of Groth's famous protocol.
 However, it can only be used along with the VTMF card encoding scheme of
-Barnett and Smart@tie{}[BS03].
+Barnett and Smart@tie{}[BS03] based on the hardness of computing discrete logarithms.
 
-Our implementation uses the generalized statistically hiding and computationally binding
-homomorphic commitment scheme due to Pedersen (see @emph{Non-interactive
+Our implementation uses a generalized variant@tie{}[Gr05, Gr10] of the statistically hiding and
+computationally binding homomorphic commitment scheme due to Pedersen (see @emph{Non-interactive
 and Information-theoretic Secure Verifiable Secret Sharing}, CRYPTO@tie{}'91,
-LNCS@tie{}576). The binding property relies on the hardness of computing
-discrete logarithms in @math{G}, and thus a commitment is only binding for
-computationally bounded provers.@footnote{Strictly speaking, due to this reason
-Groth's protocol is a zero-knowledge @emph{argument} instead of a zero-knowledge
-@emph{proof}. However, for convenience we will not distinguish between these
-terms here.} But this choice seems to be reasonable for the intention of LibTMCG,
-because all players are supposed to be computationally bounded. The security
-parameters of the commitment scheme (in particular the group @math{G}) are
-determined by the corresponding VTMF instance.
+LNCS@tie{}576, 1992). The binding property relies on the hardness of computing
+discrete logarithms in @math{G} w.r.t. random bases @math{g_1, \ldots, g_n} and
+thus a commitment is only binding for computationally bounded provers.@footnote{Strictly
+speaking, due to this reason Groth's protocol is a zero-knowledge @emph{argument}
+instead of a zero-knowledge @emph{proof}. However, for convenience we will not
+distinguish between these terms here.} But this choice seems to be reasonable for
+the intention of LibTMCG, because all players are supposed to be computationally
+bounded. The security parameters of the commitment scheme (in particular the group
+@math{G}) are determined by the corresponding VTMF instance.
+
+Since version 1.2.0 of LibTMCG we use a two-party version of a distributed coin
+flipping protocol by Jarecki and Lysyanskaya@tie{}[JL00] to protect against
+malicious verifiers. Since version 1.3.0 of LibTMCG there is also an additional
+class method to generate the bases @math{g_1, \ldots, g_n} of Pedersen commitment
+scheme by distributed coin flipping. This is necessary in order to ensure, that
+the adversary cannot compute @math{\log_{g_i} h} and @math{\log_h g_i}, for all
+@math{i = 1, \ldots, n}.
 
 Further, to the best of our knowledge it is not known, whether Groth's protocol
 retains the zero-knowledge property when it is executed in a concurrent setting.
 Thus the application programmer should be careful and avoid parallel invocations
 of the same instance.
 
+@node GrothVSSHE
 @deftp {Class} GrothVSSHE
 	This class provides the low-level interface for Groth's protocol.
 	There are just a few methods that might be of general interest.
@@ -2125,24 +2172,32 @@ of the same instance.
 		is the order of the underlying subgroup @math{G}, i.e. the prime
 		number @math{q}, and @var{k_ENC} is the integer such that
 		@math{p = qk + 1} holds. Further, @var{g_ENC} is the generator
-		@math{g}, and finally @var{h_ENC} is the common public key @math{h}.
+		@math{g} of this subgroup, and finally @var{h_ENC} is the common
+		public key @math{h}.
 		The positive integer @var{ell_e} is the security parameter which
 		controls the soundness error probability (@math{2^{-\ell_e}}) of
-		the protocol. The default value is defined by
-		@code{TMCG_GROTH_L_E}, if this argument is omitted. The @var{fieldsize}
-		and the @var{subgroupsize} are supplied to internal classes
-		and are only of interest, if @var{p_ENC} or @var{q_ENC} have
-		lengths different from the default. If these arguments are
-		omitted, they are set to @code{TMCG_DDH_SIZE} and @code{TMCG_DLSE_SIZE},
-		respectively.
-		
-		Note that the generators @math{g'_1, \ldots, g'_n} of the Pedersen
-		commitment scheme are randomly and uniformly chosen from @math{{\bf Z}_q}.
-		Therefore this constructor should be instantiated only once by the session
-		leader. All other instances must be created by the second constructor.
+		the protocol. The default value is defined by @code{TMCG_GROTH_L_E}, 
+		if this argument is omitted. The @var{fieldsize} and the
+		@var{subgroupsize} are supplied to internal classes and are only
+		of interest, if @var{p_ENC} or @var{q_ENC} have lengths different
+		from the default. If these arguments are omitted, they are set to
+		@code{TMCG_DDH_SIZE} and @code{TMCG_DLSE_SIZE}, respectively.
+
+		This constructor should be instantiated only once by the session
+		leader. All other instances can be created by the second constructor.
 		Further, it is very important that the VTMF key generation protocol
 		has been finished before the value of @math{h} is passed to the
-		constructor. Otherwise, the correctness verification will definitely fail.
+		constructors. Otherwise, the correctness verification of the
+		shuffle will fail.
+
+		Note that the generators @math{g_1, \ldots, g_n} of the Pedersen
+		commitment scheme are randomly and uniformly chosen from @math{{\bf Z}_q}
+		by the session leader. However, this is not verifiable by other
+		parties and a malicious leader can choose @math{g_j := h^{\xi_j} \bmod p}
+		for some secret @math{\xi_j\in {\bf Z}_q} and @math{1 \le j \le n}.
+		Thus it is necessary to call the method
+		@code{SetupGenerators_publiccoin} before any shuffle verification is
+		performed.
 	@end deftypeop
 	
 	@deftypeop {Constructor} GrothVSSHE {} GrothVSSHE (@code{size_t} n, @code{std::istream&} in, @code{unsigned long int} ell_e @code{=TMCG_GROTH_L_E}, @code{unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
@@ -2154,7 +2209,29 @@ of the same instance.
 		The positive integer @var{ell_e} controls the soundness error probability
 		of the protocol. The default value is defined by @code{TMCG_GROTH_L_E},
 		if this argument is omitted.
+
+		Note that the generators @math{g_1, \ldots, g_n} of the Pedersen
+		commitment scheme are randomly and uniformly chosen from @math{{\bf Z}_q}
+		by the session leader. However, this is not verifiable by other
+		parties and a malicious leader can choose @math{g_j := h^{\xi_j} \bmod p}
+		for some secret @math{\xi_j\in {\bf Z}_q} and @math{1 \le j \le n}.
+		Thus it is necessary to call the method
+		@code{SetupGenerators_publiccoin} before any shuffle verification is
+		performed.
 	@end deftypeop
+
+	@deftypemethod GrothVSSHE bool SetupGenerators_publiccoin (@code{size_t} whoami, @code{aiounicast*} aiou, @code{CachinKursawePetzoldShoupRBC*} rbc, @code{JareckiLysyanskayaEDCF*} edcf, @code{std::ostream&} err)
+		This method setup the generators @math{g_1, \ldots, g_n} of the internal Pedersen
+		commitment scheme by using a distributed coin flipping protocol@tie[JL00].
+		Assuming at least one honest player they are randomly and uniformly chosen
+		from @math{{\bf Z}_q} such that @math{\log_{g_i} h} and @math{\log_h g_i}
+		are unkown, for all @math{i = 1, \ldots, n}.
+		The positive integer @var{whoami} is an index of this instance with
+		respect to already initialized instances of asynchronous point-to-point
+		channels @var{aiou} and a reliable broadcast channel @var{rbc}. Logging
+		and debug messages are printed to the provided output stream @var{err}.
+		The method returns @code{true}, if all generators have been setup successfully.
+	@end deftypemethod
 	
 	@deftypemethod GrothVSSHE bool CheckGroup ()
 		This method checks whether the initialized commitment scheme is sound.
@@ -2186,6 +2263,7 @@ retains the zero-knowledge property when it is executed in a concurrent setting.
 Thus the application programmer should be careful and avoid parallel invocations
 of the same instance.
 
+@node HooghSchoenmakersSkoricVillegasVRHE
 @deftp {Class} HooghSchoenmakersSkoricVillegasVRHE
 	This class provides the low-level interface for their protocol.
 	There are just a few methods that might be of general interest.
@@ -2245,6 +2323,7 @@ Even if the more efficient card encoding scheme of Barnett and
 Smart@tie{}[BS03] is deployed, at least one instance of the following
 class must be created to perform any card or stack operations.
 
+@node SchindelhauerTMCG
 @deftp {Class} SchindelhauerTMCG
 	This class implements the main core of Schindelhauer's toolbox,
 	i.e. important functions like masking, opening, and shuffling of
@@ -3222,6 +3301,14 @@ In the last step you should release all occupied resources.
 delete vsshe, delete vtmf, delete tmcg;
 @end example
 @end cartouche
+
+@node Tools
+@c **********************************************************
+@c *********************  Tools  ****************************
+@c **********************************************************
+@chapter Tools
+@cindex Tools
+LibTMCG provides some additional programs that may of independent interest.
 
 @c **********************************************************
 @c *******************  Appendices  *************************
