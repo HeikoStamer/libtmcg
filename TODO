@@ -7,7 +7,7 @@
 + provide DKG with security against an adaptive adversary [CGJKR99, JL00]
 + provide distributed DSS key generation and signature scheme [GJKR01]
 + DKG, ASTC: transform protocols into variants without aiou->Send() [BH92]
-+ provide byzantine consensus protocol
++ provide byzantine consensus protocol for agreement on values
 
 - implement the exotic card and stack operations of the toolbox; there are
   some obstacles, e.g. that the prover does not know all used randomizers,
