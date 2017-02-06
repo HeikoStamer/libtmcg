@@ -13,7 +13,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2007, 
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -100,6 +101,10 @@ class BarnettSmartVTMF_dlog
 			(std::istream& in);
 		bool KeyGenerationProtocol_RemoveKey
 			(std::istream& in);
+		bool KeyGenerationProtocol_ProveKey
+			(std::istream& in, std::ostream& out);
+		bool KeyGenerationProtocol_VerifyKey
+			(mpz_srcptr key, std::istream& in, std::ostream& out);
 		void KeyGenerationProtocol_Finalize
 			();
 		void CP_Prove

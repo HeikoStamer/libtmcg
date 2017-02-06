@@ -92,7 +92,7 @@ void run_instance
 	rbc->setID(myID);
 			
 	// create and exchange keys in order to bootstrap the $h$-generation for DKG [JL00]
-	// TODO: replace NIZKs by distributed zero-knowledge proofs of knowledge (interactive)
+	// TODO: replace NIZKs by interactive (distributed) zero-knowledge proofs of knowledge
 	mpz_t nizk_c, nizk_r, h_j;
 	mpz_init(nizk_c), mpz_init(nizk_r), mpz_init(h_j);
 	vtmf->KeyGenerationProtocol_GenerateKey();

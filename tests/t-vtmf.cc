@@ -95,6 +95,8 @@ void check
 			vtmf2->KeyGenerationProtocol_PublishKey(*pipe_out);
 			assert(vtmf2->KeyGenerationProtocol_UpdateKey(*pipe_in));
 			vtmf2->KeyGenerationProtocol_Finalize();
+			*pipe_out << vtmf2->h_i << std::endl;
+			assert(vtmf2->KeyGenerationProtocol_ProveKey(*pipe_in, *pipe_out));
 			
 			SchindelhauerTMCG *tmcg = 
 				new SchindelhauerTMCG(16, 2, TMCG_MAX_TYPEBITS);
@@ -155,6 +157,13 @@ void check
 			assert(vtmf->KeyGenerationProtocol_UpdateKey(*pipe_in));
 			std::cout << "*.KeyGenerationProtocol_Finalize()" << std::endl;
 			vtmf->KeyGenerationProtocol_Finalize();
+			std::cout << "*.KeyGenerationProtocol_VerifyKey()" << std::endl;
+			mpz_t h_j;
+			mpz_init(h_j);
+			*pipe_in >> h_j;
+			std::cout << "h_j = " << h_j << std::endl;
+			assert(vtmf->KeyGenerationProtocol_VerifyKey(h_j, *pipe_in, *pipe_out));
+			mpz_clear(h_j);
 			
 			// TMCG/VTMF
 			std::cout << "TMCG/VTMF Encryption and decryption of cards" << std::endl;

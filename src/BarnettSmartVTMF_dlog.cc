@@ -353,7 +353,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 	
 	try
 	{
-		// verify the in-group property 
+		// verify the in-group property
 		if (!CheckElement(foo))
 			throw false;
 		
@@ -429,6 +429,90 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_RemoveKey
 	catch (bool return_value)
 	{
 		mpz_clear(foo), mpz_clear(bar);
+		return return_value;
+	}
+}
+
+bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_ProveKey
+	(std::istream& in, std::ostream& out)
+{
+	mpz_t foo, bar;
+	
+	mpz_init(foo), mpz_init(bar);
+	try
+	{
+		// compute commitment $m_1 = g^k \bmod p$
+		mpz_srandomm(foo, q);
+		mpz_fspowm(fpowm_table_g, bar, g, foo, p);
+
+		// send commitment $m_1$ and receive challenge $c$
+		out << bar << std::endl;
+		in >> bar;
+
+		// check size of $c$
+		if (mpz_cmpabs(bar, q) >= 0)
+			throw false;
+		
+		// compute response $m_2 = k + x \cdot c$
+		mpz_mul(bar, bar, x_i);
+		mpz_mod(bar, bar, q);
+		mpz_add(bar, bar, foo);
+		mpz_mod(bar, bar, q);
+
+		// send response $m_2$
+		out << bar << std::endl;
+
+		// finish
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo), mpz_clear(bar);
+		return return_value;
+	}
+}
+
+bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey
+	(mpz_srcptr key, std::istream& in, std::ostream& out)
+{
+	mpz_t foo, bar, lej;
+	
+	mpz_init(foo), mpz_init(bar), mpz_init(lej);
+	try
+	{
+		// receive commitment $m_1$
+		in >> bar;
+
+		// verify in-group property of $m_1$
+		if (!CheckElement(bar))
+			throw false;
+
+		// choose challenge $c$ randomly
+		mpz_srandomm(foo, q);
+
+		// send challenge $c$ and receive response $m_2$ 
+		out << foo << std::endl;
+		in >> lej;
+
+		// check size of $m_2$
+		if (mpz_cmpabs(lej, q) >= 0)
+			throw false;
+
+		// compute verify $m_1 = g^{m_2} \cdot h^{-c}$
+		mpz_fpowm(fpowm_table_g, lej, g, lej, p);
+		mpz_neg(foo, foo);
+		mpz_powm(foo, key, foo, p); // FIXME: check whether inverse exists
+		mpz_mul(lej, lej, foo);
+		mpz_mod(lej, lej, p);
+		if (mpz_cmp(bar, lej))
+			throw false;
+
+		// finish
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
 		return return_value;
 	}
 }
