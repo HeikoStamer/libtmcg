@@ -500,8 +500,8 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey
 
 		// compute verify $m_1 = g^{m_2} \cdot h^{-c}$
 		mpz_fpowm(fpowm_table_g, lej, g, lej, p);
-		mpz_neg(foo, foo);
-		mpz_powm(foo, key, foo, p); // FIXME: check whether inverse exists
+		mpz_neg(foo, foo); // FIXME: check whether inverse exists
+		mpz_powm(foo, key, foo, p);
 		mpz_mul(lej, lej, foo);
 		mpz_mod(lej, lej, p);
 		if (mpz_cmp(bar, lej))

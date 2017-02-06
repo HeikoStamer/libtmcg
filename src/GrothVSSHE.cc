@@ -2377,7 +2377,7 @@ bool GrothVSSHE::Verify_interactive
 		for (size_t i = 0; i < e.size(); i++)
 		{
 			mpz_neg(t[i], t[i]);
-			mpz_powm(foo, e[i].first, t[i], p);
+			mpz_powm(foo, e[i].first, t[i], p); // FIXME: check whether inverse exists
 			mpz_mul(foo2, foo2, foo);
 			mpz_mod(foo2, foo2, p);
 			mpz_powm(bar, e[i].second, t[i], p);
@@ -2538,7 +2538,7 @@ bool GrothVSSHE::Verify_interactive_publiccoin
 		for (size_t i = 0; i < e.size(); i++)
 		{
 			mpz_neg(t[i], t[i]);
-			mpz_powm(foo, e[i].first, t[i], p);
+			mpz_powm(foo, e[i].first, t[i], p); // FIXME: check whether inverse exists
 			mpz_mul(foo2, foo2, foo);
 			mpz_mod(foo2, foo2, p);
 			mpz_powm(bar, e[i].second, t[i], p);
@@ -2706,7 +2706,7 @@ bool GrothVSSHE::Verify_noninteractive
 		for (size_t i = 0; i < e.size(); i++)
 		{
 			mpz_neg(t[i], t[i]);
-			mpz_powm(foo, e[i].first, t[i], p);
+			mpz_powm(foo, e[i].first, t[i], p); // FIXME: check whether inverse exists
 			mpz_mul(foo2, foo2, foo);
 			mpz_mod(foo2, foo2, p);
 			mpz_powm(bar, e[i].second, t[i], p);
