@@ -609,6 +609,8 @@ bool GrothSKC::Verify_interactive
 		// verifier: second move
 		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$
 		                             // from the prover
+		if (!in.good())
+			throw false;
 		
 		// verifier: third move
 		do
@@ -626,6 +628,8 @@ bool GrothSKC::Verify_interactive
 			in >> f_Delta[i]; // get $f_{\Delta_1},\ldots,f_{\Delta_{n-1}}$
 			                  // from the prover
 		in >> z_Delta; // get $z_{\Delta}$ from the prover
+		if (!in.good())
+			throw false;
 		
 		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}_{ck}$
 		if (!(com->TestMembership(c_d) && com->TestMembership(c_a) &&
@@ -793,6 +797,8 @@ bool GrothSKC::Verify_interactive_publiccoin
 		// verifier: second move
 		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$
 		                             // from the prover
+		if (!in.good())
+			throw false;
 		
 		// verifier: third move
 		if (!edcf->Flip_twoparty(1, e, in, out, err)) // flip coins with prover to get $e$
@@ -808,6 +814,8 @@ bool GrothSKC::Verify_interactive_publiccoin
 			in >> f_Delta[i]; // get $f_{\Delta_1},\ldots,f_{\Delta_{n-1}}$
 			                  // from the prover
 		in >> z_Delta; // get $z_{\Delta}$ from the prover
+		if (!in.good())
+			throw false;
 		
 		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}_{ck}$
 		if (!(com->TestMembership(c_d) && com->TestMembership(c_a) &&
@@ -976,6 +984,8 @@ bool GrothSKC::Verify_noninteractive
 		// verifier: second move
 		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$
 		                             // from the prover
+		if (!in.good())
+			throw false;
 		
 		// verifier: third move
 			// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
@@ -993,6 +1003,8 @@ bool GrothSKC::Verify_noninteractive
 			in >> f_Delta[i]; // get $f_{\Delta_1},\ldots,f_{\Delta_{n-1}}$
 			                  // from the prover
 		in >> z_Delta; // get $z_{\Delta}$ from the prover
+		if (!in.good())
+			throw false;
 		
 		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}_{ck}$
 		if (!(com->TestMembership(c_d) && com->TestMembership(c_a) &&
@@ -1159,6 +1171,8 @@ bool GrothSKC::Verify_interactive
 		
 		// verifier: second move
 		in >> c_d >> c_Delta >> c_a;
+		if (!in.good())
+			throw false;
 		
 		// verifier: third move
 		do
@@ -1175,6 +1189,8 @@ bool GrothSKC::Verify_interactive
 		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
 			in >> f_Delta[i];
 		in >> z_Delta;
+		if (!in.good())
+			throw false;
 		
 		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}_{ck}$
 		if (!(com->TestMembership(c_d) && com->TestMembership(c_a) &&
@@ -1365,6 +1381,8 @@ bool GrothSKC::Verify_interactive_publiccoin
 		
 		// verifier: second move
 		in >> c_d >> c_Delta >> c_a;
+		if (!in.good())
+			throw false;
 		
 		// verifier: third move
 		if (!edcf->Flip_twoparty(1, e, in, out, err)) // flip coins with prover to get $e$
@@ -1379,6 +1397,8 @@ bool GrothSKC::Verify_interactive_publiccoin
 		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
 			in >> f_Delta[i];
 		in >> z_Delta;
+		if (!in.good())
+			throw false;
 		
 		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}_{ck}$
 		if (!(com->TestMembership(c_d) && com->TestMembership(c_a) &&
@@ -1569,6 +1589,8 @@ bool GrothSKC::Verify_noninteractive
 		
 		// verifier: second move
 		in >> c_d >> c_Delta >> c_a;
+		if (!in.good())
+			throw false;
 		
 		// verifier: third move
 			// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
@@ -1585,6 +1607,8 @@ bool GrothSKC::Verify_noninteractive
 		for (size_t i = 0; i < (f_Delta.size() - 1); i++)
 			in >> f_Delta[i];
 		in >> z_Delta;
+		if (!in.good())
+			throw false;
 		
 		// check whether $c_d, c_a, c_{\Delta} \in\mathcal{C}_{ck}$
 		if (!(com->TestMembership(c_d) && com->TestMembership(c_a) &&
@@ -2302,6 +2326,8 @@ bool GrothVSSHE::Verify_interactive
 	{
 		// verifier: first move
 		in >> c >> c_d >> E_d.first >> E_d.second;
+		if (!in.good())
+			throw false;
 		
 		// verifier: second move
 		for (size_t i = 0; i < t.size(); i++)
@@ -2314,6 +2340,8 @@ bool GrothVSSHE::Verify_interactive
 		for (size_t i = 0; i < f.size(); i++)
 			in >> f[i];
 		in >> Z;
+		if (!in.good())
+			throw false;
 		
 		// verifier: fourth move
 		mpz_srandomb(lambda, l_e);
@@ -2461,6 +2489,8 @@ bool GrothVSSHE::Verify_interactive_publiccoin
 	{
 		// verifier: first move
 		in >> c >> c_d >> E_d.first >> E_d.second;
+		if (!in.good())
+			throw false;
 		
 		// verifier: second move
 		std::stringstream err;
@@ -2476,6 +2506,8 @@ bool GrothVSSHE::Verify_interactive_publiccoin
 		for (size_t i = 0; i < f.size(); i++)
 			in >> f[i];
 		in >> Z;
+		if (!in.good())
+			throw false;
 		
 		// verifier: fourth move
 		if (!edcf->Flip_twoparty(1, lambda, in, out, err)) // flip coins with prover to get $\lambda$
@@ -2624,6 +2656,8 @@ bool GrothVSSHE::Verify_noninteractive
 	{
 		// verifier: first move
 		in >> c >> c_d >> E_d.first >> E_d.second;
+		if (!in.good())
+			throw false;
 		
 		// verifier: second move
 		for (size_t i = 0; i < t.size(); i++)
@@ -2645,6 +2679,8 @@ bool GrothVSSHE::Verify_noninteractive
 		for (size_t i = 0; i < f.size(); i++)
 			in >> f[i];
 		in >> Z;
+		if (!in.good())
+			throw false;
 		
 		// verifier: fourth move
 			// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic

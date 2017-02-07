@@ -43,8 +43,6 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 		F_size(fieldsize), G_size(subgroupsize), 
 		canonical_g(canonical_g_usage)
 {
-	mpz_t foo, bar;
-	
 	// Create a finite abelian group $G$ where the DDH problem is hard:
 	// We use the unique subgroup of prime order $q$ where $p = kq + 1$.
 	// Sometimes such groups are called Schnorr groups. [Bo98]
@@ -59,7 +57,9 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	// Choose the generator $g$ of the group $G$. 
 	if (subgroupsize)
 	{
+		mpz_t foo, bar;
 		mpz_init(foo), mpz_init(bar);
+
 		mpz_sub_ui(foo, p, 1L); // compute $p-1$
 		if (canonical_g)
 		{
@@ -92,6 +92,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 				!mpz_cmp(g, foo)); // check $1 < g < p-1$
 			
 		}
+
 		mpz_clear(foo), mpz_clear(bar);
 	}
 	
@@ -134,8 +135,8 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 	() const
 {
 	mpz_t foo, bar, g2;
-	
 	mpz_init(foo), mpz_init(bar), mpz_init(g2);
+
 	try
 	{
 		// Check whether $p$ and $q$ have appropriate sizes.
@@ -213,8 +214,8 @@ bool BarnettSmartVTMF_dlog::CheckElement
 	(mpz_srcptr a) const
 {
 	mpz_t foo;
-	
 	mpz_init(foo);
+
 	try
 	{
 		// Check whether $0 < a < p$.
@@ -239,16 +240,17 @@ void BarnettSmartVTMF_dlog::RandomElement
 	(mpz_ptr a) const
 {
 	mpz_t b;
+	mpz_init(b);
 	
 	// Choose randomly and uniformly an element $b$ from
 	// $\mathbb{Z}_q \setminus \{ 0 \}$.
-	mpz_init(b);
 	do
 		mpz_srandomm(b, q);
 	while (!mpz_cmp_ui(b, 0L));
 	
 	// Compute $a := g^b \bmod p$.
 	mpz_fspowm(fpowm_table_g, a, g, b, p);
+
 	mpz_clear(b);
 }
 
@@ -279,9 +281,10 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_ComputeNIZK
 	(mpz_ptr c, mpz_ptr r) const
 {
 	mpz_t v, t;
-	
-	// proof of knowledge $(c, r)$ [CaS97] for the private key $x_i$
 	mpz_init(v), mpz_init(t);
+
+	// proof of knowledge $(c, r)$ [CaS97] for the private key $x_i$
+	
 		// commitment $t = g^v \bmod p$
 		mpz_srandomm(v, q);
 		mpz_fspowm(fpowm_table_g, t, g, v, p);
@@ -296,6 +299,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_ComputeNIZK
 		mpz_neg(r, r);
 		mpz_add(r, r, v);
 		mpz_mod(r, r, q);
+
 	mpz_clear(v), mpz_clear(t);
 }
 
@@ -303,11 +307,12 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
 	(std::ostream& out) const
 {
 	mpz_t c, r;
-	
 	mpz_init(c), mpz_init(r);
+
 	KeyGenerationProtocol_ComputeNIZK(c, r);
 	// the output is $h_i$ appended by PoK $(c, r)$	
 	out << h_i << std::endl << c << std::endl << r << std::endl;
+
 	mpz_clear(c), mpz_clear(r);
 }
 
@@ -347,12 +352,14 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 	(std::istream& in)
 {
 	mpz_t foo, c, r;
-	
 	mpz_init(foo), mpz_init(c), mpz_init(r);
-	in >> foo >> c >> r;
 	
 	try
 	{
+		in >> foo >> c >> r;
+		if (!in.good())
+			throw false;
+
 		// verify the in-group property
 		if (!CheckElement(foo))
 			throw false;
@@ -391,19 +398,19 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_RemoveKey
 	(std::istream& in)
 {
 	mpz_t foo, bar;
-	
 	mpz_init(foo), mpz_init(bar);
-	in >> foo >> bar >> bar; // we need only the public key
 	
 	try
 	{
-		std::ostringstream fp;
-		std::string fpstr;
+		in >> foo >> bar >> bar; // we need only the public key
+		if (!in.good())
+			throw false;
 		
 		// compute the fingerprint of $h_j$
 		mpz_shash(bar, 1, foo);
+		std::ostringstream fp;
 		fp << bar;
-		fpstr = fp.str();
+		std::string fpstr = fp.str();
 		
 		// public key with this fingerprint stored?
 		if (h_j.count(fpstr))
@@ -437,8 +444,8 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_ProveKey
 	(std::istream& in, std::ostream& out)
 {
 	mpz_t foo, bar;
-	
 	mpz_init(foo), mpz_init(bar);
+
 	try
 	{
 		// compute commitment $m_1 = g^k \bmod p$
@@ -478,8 +485,8 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey
 	(mpz_srcptr key, std::istream& in, std::ostream& out)
 {
 	mpz_t foo, bar, lej;
-	
 	mpz_init(foo), mpz_init(bar), mpz_init(lej);
+
 	try
 	{
 		// receive commitment $m_1$
@@ -536,9 +543,9 @@ void BarnettSmartVTMF_dlog::CP_Prove
 	std::ostream& out, bool fpowm_usage) const
 {
 	mpz_t a, b, omega, c, r;
-	
-	// proof of knowledge (equality of discrete logarithms) [CaS97]
 	mpz_init(c), mpz_init(r), mpz_init(a), mpz_init(b), mpz_init(omega);
+
+	// proof of knowledge (equality of discrete logarithms) [CaS97]
 		
 		// commitment
 		mpz_srandomm(omega, q);
@@ -568,6 +575,7 @@ void BarnettSmartVTMF_dlog::CP_Prove
 		mpz_mod(r, r, q);
 		
 	out << c << std::endl << r << std::endl;
+
 	mpz_clear(c), mpz_clear(r), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
 }
 
@@ -575,13 +583,15 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 	(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
 	std::istream& in, bool fpowm_usage) const
 {
-	mpz_t a, b, c, r;
-	
+	mpz_t a, b, c, r;	
 	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(r);
-	in >> c >> r;
 	
 	try
 	{
+		in >> c >> r;
+		if (!in.good())
+			throw false;
+
 		// check the size of $r$
 		if (mpz_cmpabs(r, q) >= 0)
 			throw false;
@@ -628,11 +638,11 @@ void BarnettSmartVTMF_dlog::OR_ProveFirst
 		mpz_srcptr alpha, std::ostream& out) const
 {
 	mpz_t v_1, v_2, w, t_1, t_2, c_1, c_2, r_1, r_2, c, tmp;
-	
-	// proof of knowledge ($y_1 = g_1^\alpha \vee y_2 = g_2^\beta$) [CaS97]
 	mpz_init(v_1), mpz_init(v_2), mpz_init(w), mpz_init(t_1), mpz_init(t_2);
 	mpz_init(c_1), mpz_init(c_2), mpz_init(r_1), mpz_init(r_2);
 	mpz_init(c), mpz_init(tmp);
+	
+	// proof of knowledge ($y_1 = g_1^\alpha \vee y_2 = g_2^\beta$) [CaS97]	
 	
 		// 1. choose $v_1, v_2$ and $w\in_R\mathbb{Z}_q$ and compute
 		//    $t_2 = y_2^w g_2^{v_2}$ and $t_1 = g_1^{v_1}$ 
@@ -658,6 +668,7 @@ void BarnettSmartVTMF_dlog::OR_ProveFirst
 		
 	out << c_1 << std::endl << c_2 << std::endl <<
 		r_1 << std::endl << r_2 << std::endl;
+
 	mpz_clear(v_1), mpz_clear(v_2), mpz_clear(w), mpz_clear(t_1);
 	mpz_clear(t_2), mpz_clear(c_1), mpz_clear(c_2), mpz_clear(r_1);
  	mpz_clear(r_2), mpz_clear(c), mpz_clear(tmp);
@@ -668,12 +679,12 @@ void BarnettSmartVTMF_dlog::OR_ProveSecond
 		mpz_srcptr alpha, std::ostream& out) const
 {
 	mpz_t v_1, v_2, w, t_1, t_2, c_1, c_2, r_1, r_2, c, tmp;
-	
-	// proof of knowledge ($y_1 = g_1^\beta \vee y_2 = g_2^\alpha$) [CaS97]
 	mpz_init(v_1), mpz_init(v_2), mpz_init(w), mpz_init(t_1), mpz_init(t_2);
 	mpz_init(c_1), mpz_init(c_2), mpz_init(r_1), mpz_init(r_2);
 	mpz_init(c), mpz_init(tmp);
 	
+	// proof of knowledge ($y_1 = g_1^\beta \vee y_2 = g_2^\alpha$) [CaS97]
+
 		// 1. choose $v_1, v_2$ and $w\in_R\mathbb{Z}_q$ and compute
 		//    $t_1 = y_1^w g_1^{v_1}$ and $t_2 = g_2^{v_2}$
 		mpz_srandomm(v_1, q), mpz_srandomm(v_2, q), mpz_srandomm(w, q);
@@ -698,6 +709,7 @@ void BarnettSmartVTMF_dlog::OR_ProveSecond
 		
 	out << c_1 << std::endl << c_2 << std::endl <<
 		r_1 << std::endl << r_2 << std::endl;
+
 	mpz_clear(v_1), mpz_clear(v_2), mpz_clear(w), mpz_clear(t_1);
 	mpz_clear(t_2), mpz_clear(c_1), mpz_clear(c_2), mpz_clear(r_1);
 	mpz_clear(r_2), mpz_clear(c), mpz_clear(tmp);
@@ -708,13 +720,15 @@ bool BarnettSmartVTMF_dlog::OR_Verify
 		std::istream& in) const
 {
 	mpz_t c_1, c_2, r_1, r_2, t_1, t_2, c, tmp;
-	
 	mpz_init(c_1), mpz_init(c_2), mpz_init(r_1), mpz_init(r_2);
 	mpz_init(t_1), mpz_init(t_2), mpz_init(c), mpz_init(tmp);
-	in >> c_1 >> c_2 >> r_1 >> r_2;
 	
 	try
 	{
+		in >> c_1 >> c_2 >> r_1 >> r_2;
+		if (!in.good())
+			throw false;
+
 		// check the size of $r_1$ and $r_2$
 		if ((mpz_cmpabs(r_1, q) >= 0L) || (mpz_cmpabs(r_2, q) >= 0L))
 			throw false;
@@ -779,14 +793,15 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Prove
 	std::ostream& out) const
 {
 	mpz_t foo;
-	
-	// invoke CP(c_1, c_2/m, g, h; r) as prover
 	mpz_init(foo);
+
+	// invoke CP(c_1, c_2/m, g, h; r) as prover	
 	assert(mpz_invert(foo, m, p));
 	mpz_invert(foo, m, p);
 	mpz_mul(foo, foo, c_2);
 	mpz_mod(foo, foo, p);
 	CP_Prove(c_1, foo, g, h, r, out, true);
+
 	mpz_clear(foo);
 }
 
@@ -794,8 +809,8 @@ bool BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Verify
 	(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, std::istream& in) const
 {
 	mpz_t foo, bar;
-	
 	mpz_init(foo), mpz_init_set_ui(bar, 1L);
+
 	try
 	{
 		// verify the in-group properties
@@ -864,9 +879,9 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Prove
 	mpz_srcptr r, std::ostream& out) const
 {
 	mpz_t foo, bar;
-	
-	// invoke CP(c'_1/c_1, c'_2/c_2, g, h; r) as prover
 	mpz_init(foo), mpz_init(bar);
+
+	// invoke CP(c'_1/c_1, c'_2/c_2, g, h; r) as prover	
 	assert(mpz_invert(foo, c_1, p));
 	mpz_invert(foo, c_1, p);
 	mpz_mul(foo, foo, c__1);
@@ -876,6 +891,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Prove
 	mpz_mul(bar, bar, c__2);
 	mpz_mod(bar, bar, p);
 	CP_Prove(foo, bar, g, h, r, out, true);
+
 	mpz_clear(foo), mpz_clear(bar);
 }
 
@@ -884,8 +900,8 @@ bool BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Verify
 	std::istream& in) const
 {
 	mpz_t foo, bar;
-	
 	mpz_init(foo), mpz_init_set_ui(bar, 1L);
+
 	try
 	{
 		// verify the in-group properties
@@ -918,7 +934,6 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Prove
 	(mpz_srcptr c_1, std::ostream& out) const
 {
 	mpz_t d_i;
-	
 	mpz_init(d_i);
 	
 	// compute $d_i = {c_1}^{x_i} \bmod p$
@@ -941,19 +956,19 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Initialize
 bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 	(mpz_srcptr c_1, std::istream& in)
 {
-	mpz_t d_j, h_j_fp, foo, bar;
-	std::ostringstream fp;
-	std::string fpstr;
-	
-	mpz_init(d_j), mpz_init(h_j_fp), mpz_init(foo);
-	mpz_init_set_ui(bar, 1L);
-	in >> d_j >> h_j_fp;
+	mpz_t d_j, h_j_fp;
+	mpz_init(d_j), mpz_init(h_j_fp);
 	
 	try
 	{
+		in >> d_j >> h_j_fp;
+		if (!in.good())
+			throw false;
+
 		// public key stored?
+		std::ostringstream fp;
 		fp << h_j_fp;
-		fpstr = fp.str();
+		std::string fpstr = fp.str();
 		if (!h_j.count(fpstr))
 			throw false;
 		
@@ -975,7 +990,6 @@ bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
 	catch (bool return_value)
 	{
 		mpz_clear(d_j), mpz_clear(h_j_fp);
-		mpz_clear(foo), mpz_clear(bar);
 		return return_value;
 	}
 }

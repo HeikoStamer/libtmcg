@@ -464,6 +464,8 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 		// verifier: second move
 		for (size_t i = 0; i < f.size(); i++)
 			in >> f[i];
+		if (!in.good())
+			throw false;
 		mpz_srandomm(lambda, q);
 		out << lambda << std::endl;
 		
@@ -472,6 +474,8 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 			in >> lambdak[i];
 		for (size_t i = 0; i < tk.size(); i++)
 			in >> tk[i];
+		if (!in.good())
+			throw false;
 		
 		// check whether $\lambda = \sum_j \lambda_j$
 		mpz_set_ui(rhs, 0L);
@@ -580,6 +584,8 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive_publiccoin
 		// verifier: second move
 		for (size_t i = 0; i < f.size(); i++)
 			in >> f[i];
+		if (!in.good())
+			throw false;
 		std::stringstream err;
 		if (!edcf->Flip_twoparty(1, lambda, in, out, err)) // flip coins with prover to get $\lambda$
 			throw false;
@@ -591,6 +597,8 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive_publiccoin
 			in >> lambdak[i];
 		for (size_t i = 0; i < tk.size(); i++)
 			in >> tk[i];
+		if (!in.good())
+			throw false;
 		
 		// check whether $\lambda = \sum_j \lambda_j$
 		mpz_set_ui(rhs, 0L);
@@ -701,6 +709,8 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_noninteractive
 		// verifier: second move
 		for (size_t i = 0; i < f.size(); i++)
 			in >> f[i];
+		if (!in.good())
+			throw false;
 		// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
 		mpz_shash_4vec(lambda, alpha, c, f, beta, 4, p, q, g, h);
 		// reduce $\lambda$ modulo $q$
@@ -711,6 +721,8 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_noninteractive
 			in >> lambdak[i];
 		for (size_t i = 0; i < tk.size(); i++)
 			in >> tk[i];
+		if (!in.good())
+			throw false;
 		
 		// check whether $\lambda = \sum_j \lambda_j$
 		mpz_set_ui(rhs, 0L);
@@ -1533,12 +1545,16 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 		for (size_t i = 0; i < Ak.size(); i++)
 			in >> Ak[i].first >> Ak[i].second;
 		in >> v;
+		if (!in.good())
+			throw false;
 
 		// verifier: second move (first move of EXP-ZK)
 		for (size_t i = 0; i < fk.size(); i++)
 			in >> fk[i];
 		for (size_t i = 0; i < Fk.size(); i++)
 			in >> Fk[i].first >> Fk[i].second;
+		if (!in.good())
+			throw false;
 
 		// verifier: third move (second move of EXP-ZK)
 		mpz_srandomm(lambda, q);
@@ -1551,6 +1567,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 			in >> rho[i];
 		for (size_t i = 0; i < mu.size(); i++)
 			in >> mu[i];
+		if (!in.good())
+			throw false;
 		
 			// check whether $g^{\tau_k} h^{\rho_k} = f_k h_k^{\lambda}$
 			// Note that we throughout assume that $h = \tilde{h}$ holds.
@@ -1710,12 +1728,16 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 		for (size_t i = 0; i < Ak.size(); i++)
 			in >> Ak[i].first >> Ak[i].second;
 		in >> v;
+		if (!in.good())
+			throw false;
 
 		// verifier: second move (first move of EXP-ZK)
 		for (size_t i = 0; i < fk.size(); i++)
 			in >> fk[i];
 		for (size_t i = 0; i < Fk.size(); i++)
 			in >> Fk[i].first >> Fk[i].second;
+		if (!in.good())
+			throw false;
 
 		// verifier: third move (second move of EXP-ZK)
 		std::stringstream err;
@@ -1731,6 +1753,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 			in >> rho[i];
 		for (size_t i = 0; i < mu.size(); i++)
 			in >> mu[i];
+		if (!in.good())
+			throw false;
 		
 			// check whether $g^{\tau_k} h^{\rho_k} = f_k h_k^{\lambda}$
 			// Note that we throughout assume that $h = \tilde{h}$ holds.
@@ -1892,12 +1916,16 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 		for (size_t i = 0; i < Ak.size(); i++)
 			in >> Ak[i].first >> Ak[i].second;
 		in >> v;
+		if (!in.good())
+			throw false;
 
 		// verifier: second move (first move of EXP-ZK)
 		for (size_t i = 0; i < fk.size(); i++)
 			in >> fk[i];
 		for (size_t i = 0; i < Fk.size(); i++)
 			in >> Fk[i].first >> Fk[i].second;
+		if (!in.good())
+			throw false;
 
 		// verifier: third move (second move of EXP-ZK)
 			// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
@@ -1912,6 +1940,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 			in >> rho[i];
 		for (size_t i = 0; i < mu.size(); i++)
 			in >> mu[i];
+		if (!in.good())
+			throw false;
 		
 			// check whether $g^{\tau_k} h^{\rho_k} = f_k h_k^{\lambda}$
 			// Note that we throughout assume that $h = \tilde{h}$ holds.
