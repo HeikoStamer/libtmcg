@@ -8,7 +8,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2009, 2015, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2009, 2015, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1606,13 +1606,16 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 			mpz_set_ui(LHS.first, 1L), mpz_set_ui(LHS.second, 1L); // mul. accumulator
 			for (size_t j = 0; j < alpha.size(); j++)
 			{
-				mpz_neg(foo, alpha[j]); // FIXME: check whether inverse exists
-				mpz_powm(bar, X[j].first, foo, p);
+				mpz_powm(bar, X[j].first, alpha[j], p);
+				if (!mpz_invert(bar, bar, p))
+					throw false;
 				mpz_mul(bar, bar, Ak[j].first);
 				mpz_mod(bar, bar, p);
 				mpz_mul(LHS.first, LHS.first, bar);
 				mpz_mod(LHS.first, LHS.first, p);
-				mpz_powm(bar, X[j].second, foo, p);
+				mpz_powm(bar, X[j].second, alpha[j], p);
+				if (!mpz_invert(bar, bar, p))
+					throw false;
 				mpz_mul(bar, bar, Ak[j].second);
 				mpz_mod(bar, bar, p);
 				mpz_mul(LHS.second, LHS.second, bar);
@@ -1783,13 +1786,16 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 			mpz_set_ui(LHS.first, 1L), mpz_set_ui(LHS.second, 1L); // mul. accumulator
 			for (size_t j = 0; j < alpha.size(); j++)
 			{
-				mpz_neg(foo, alpha[j]); // FIXME: check whether inverse exists
-				mpz_powm(bar, X[j].first, foo, p);
+				mpz_powm(bar, X[j].first, alpha[j], p);
+				if (!mpz_invert(bar, bar, p))
+					throw false;
 				mpz_mul(bar, bar, Ak[j].first);
 				mpz_mod(bar, bar, p);
 				mpz_mul(LHS.first, LHS.first, bar);
 				mpz_mod(LHS.first, LHS.first, p);
-				mpz_powm(bar, X[j].second, foo, p);
+				mpz_powm(bar, X[j].second, alpha[j], p);
+				if (!mpz_invert(bar, bar, p))
+					throw false;
 				mpz_mul(bar, bar, Ak[j].second);
 				mpz_mod(bar, bar, p);
 				mpz_mul(LHS.second, LHS.second, bar);
@@ -1961,13 +1967,16 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 			mpz_set_ui(LHS.first, 1L), mpz_set_ui(LHS.second, 1L); // mul. accumulator
 			for (size_t j = 0; j < alpha.size(); j++)
 			{
-				mpz_neg(foo, alpha[j]); // FIXME: check whether inverse exists
-				mpz_powm(bar, X[j].first, foo, p);
+				mpz_powm(bar, X[j].first, alpha[j], p);
+				if (!mpz_invert(bar, bar, p))
+					throw false;
 				mpz_mul(bar, bar, Ak[j].first);
 				mpz_mod(bar, bar, p);
 				mpz_mul(LHS.first, LHS.first, bar);
 				mpz_mod(LHS.first, LHS.first, p);
-				mpz_powm(bar, X[j].second, foo, p);
+				mpz_powm(bar, X[j].second, alpha[j], p);
+				if (!mpz_invert(bar, bar, p))
+					throw false;
 				mpz_mul(bar, bar, Ak[j].second);
 				mpz_mod(bar, bar, p);
 				mpz_mul(LHS.second, LHS.second, bar);

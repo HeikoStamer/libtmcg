@@ -448,6 +448,8 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_ProveKey
 		// send commitment $m_1$ and receive challenge $c$
 		out << bar << std::endl;
 		in >> bar;
+		if (!in.good())
+			throw false;
 
 		// check size of $c$
 		if (mpz_cmpabs(bar, q) >= 0)
@@ -482,6 +484,8 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey
 	{
 		// receive commitment $m_1$
 		in >> bar;
+		if (!in.good())
+			throw false;
 
 		// verify in-group property of $m_1$
 		if (!CheckElement(bar))
@@ -493,6 +497,8 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey
 		// send challenge $c$ and receive response $m_2$ 
 		out << foo << std::endl;
 		in >> lej;
+		if (!in.good())
+			throw false;
 
 		// check size of $m_2$
 		if (mpz_cmpabs(lej, q) >= 0)
@@ -500,8 +506,9 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey
 
 		// compute verify $m_1 = g^{m_2} \cdot h^{-c}$
 		mpz_fpowm(fpowm_table_g, lej, g, lej, p);
-		mpz_neg(foo, foo); // FIXME: check whether inverse exists
 		mpz_powm(foo, key, foo, p);
+		if (!mpz_invert(foo, foo, p))
+			throw false;
 		mpz_mul(lej, lej, foo);
 		mpz_mod(lej, lej, p);
 		if (mpz_cmp(bar, lej))
