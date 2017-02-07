@@ -2376,11 +2376,14 @@ bool GrothVSSHE::Verify_interactive
 		mpz_set_ui(foo2, 1L), mpz_set_ui(bar2, 1L);
 		for (size_t i = 0; i < e.size(); i++)
 		{
-			mpz_neg(t[i], t[i]);
-			mpz_powm(foo, e[i].first, t[i], p); // FIXME: check whether inverse exists
+			mpz_powm(foo, e[i].first, t[i], p);
+			if (!mpz_invert(foo, foo, p))
+				throw false;
 			mpz_mul(foo2, foo2, foo);
 			mpz_mod(foo2, foo2, p);
 			mpz_powm(bar, e[i].second, t[i], p);
+			if (!mpz_invert(bar, bar, p))
+				throw false;
 			mpz_mul(bar2, bar2, bar);
 			mpz_mod(bar2, bar2, p);
 		}
@@ -2537,11 +2540,14 @@ bool GrothVSSHE::Verify_interactive_publiccoin
 		mpz_set_ui(foo2, 1L), mpz_set_ui(bar2, 1L);
 		for (size_t i = 0; i < e.size(); i++)
 		{
-			mpz_neg(t[i], t[i]);
-			mpz_powm(foo, e[i].first, t[i], p); // FIXME: check whether inverse exists
+			mpz_powm(foo, e[i].first, t[i], p);
+			if (!mpz_invert(foo, foo, p))
+				throw false;
 			mpz_mul(foo2, foo2, foo);
 			mpz_mod(foo2, foo2, p);
 			mpz_powm(bar, e[i].second, t[i], p);
+			if (!mpz_invert(bar, bar, p))
+				throw false;
 			mpz_mul(bar2, bar2, bar);
 			mpz_mod(bar2, bar2, p);
 		}
@@ -2705,11 +2711,14 @@ bool GrothVSSHE::Verify_noninteractive
 		mpz_set_ui(foo2, 1L), mpz_set_ui(bar2, 1L);
 		for (size_t i = 0; i < e.size(); i++)
 		{
-			mpz_neg(t[i], t[i]);
-			mpz_powm(foo, e[i].first, t[i], p); // FIXME: check whether inverse exists
+			mpz_powm(foo, e[i].first, t[i], p);
+			if (!mpz_invert(foo, foo, p))
+				throw false;
 			mpz_mul(foo2, foo2, foo);
 			mpz_mod(foo2, foo2, p);
 			mpz_powm(bar, e[i].second, t[i], p);
+			if (!mpz_invert(bar, bar, p))
+				throw false;
 			mpz_mul(bar2, bar2, bar);
 			mpz_mod(bar2, bar2, p);
 		}
