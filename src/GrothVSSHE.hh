@@ -51,7 +51,7 @@
 	// Pedersen commitment scheme
 	#include "PedersenCOM.hh"
 
-	// erasure-free distributed coinflip protocol
+	// erasure-free distributed coinflip protocol [JL00]
 	#include "JareckiLysyanskayaASTC.hh"
 
 class GrothSKC

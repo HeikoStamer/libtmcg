@@ -440,7 +440,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_RemoveKey
 	}
 }
 
-bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_ProveKey
+bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_ProveKey_interactive
 	(std::istream& in, std::ostream& out)
 {
 	mpz_t foo, bar;
@@ -448,12 +448,12 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_ProveKey
 
 	try
 	{
-		// compute commitment $m_1 = g^k \bmod p$
+		// compute and send commitment $m_1 = g^k \bmod p$
 		mpz_srandomm(foo, q);
 		mpz_fspowm(fpowm_table_g, bar, g, foo, p);
-
-		// send commitment $m_1$ and receive challenge $c$
 		out << bar << std::endl;
+
+		// receive challenge $c$
 		in >> bar;
 		if (!in.good())
 			throw false;
@@ -481,7 +481,49 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_ProveKey
 	}
 }
 
-bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey
+bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_ProveKey_interactive_publiccoin
+	(JareckiLysyanskayaEDCF *edcf, std::istream& in, std::ostream& out)
+{
+	mpz_t foo, bar;
+	mpz_init(foo), mpz_init(bar);
+
+	try
+	{
+		// compute and send commitment $m_1 = g^k \bmod p$
+		mpz_srandomm(foo, q);
+		mpz_fspowm(fpowm_table_g, bar, g, foo, p);
+		out << bar << std::endl;
+
+		// flip coins with verifier to get $c \in \mathbb{Z}_q$
+		std::stringstream err_log;
+		if (!edcf->Flip_twoparty(0, bar, in, out, err_log))
+			throw false;
+		mpz_mod(bar, bar, q);
+
+		// check size of $c$
+		if (mpz_cmpabs(bar, q) >= 0)
+			throw false;
+		
+		// compute response $m_2 = k + x \cdot c$
+		mpz_mul(bar, bar, x_i);
+		mpz_mod(bar, bar, q);
+		mpz_add(bar, bar, foo);
+		mpz_mod(bar, bar, q);
+
+		// send response $m_2$
+		out << bar << std::endl;
+
+		// finish
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo), mpz_clear(bar);
+		return return_value;
+	}
+}
+
+bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey_interactive
 	(mpz_srcptr key, std::istream& in, std::ostream& out)
 {
 	mpz_t foo, bar, lej;
@@ -503,6 +545,59 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey
 
 		// send challenge $c$ and receive response $m_2$ 
 		out << foo << std::endl;
+		in >> lej;
+		if (!in.good())
+			throw false;
+
+		// check size of $m_2$
+		if (mpz_cmpabs(lej, q) >= 0)
+			throw false;
+
+		// compute verify $m_1 = g^{m_2} \cdot h^{-c}$
+		mpz_fpowm(fpowm_table_g, lej, g, lej, p);
+		mpz_powm(foo, key, foo, p);
+		if (!mpz_invert(foo, foo, p))
+			throw false;
+		mpz_mul(lej, lej, foo);
+		mpz_mod(lej, lej, p);
+		if (mpz_cmp(bar, lej))
+			throw false;
+
+		// finish
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
+		return return_value;
+	}
+}
+
+bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey_interactive_publiccoin
+	(mpz_srcptr key, JareckiLysyanskayaEDCF *edcf, 
+	std::istream& in, std::ostream& out)
+{
+	mpz_t foo, bar, lej;
+	mpz_init(foo), mpz_init(bar), mpz_init(lej);
+
+	try
+	{
+		// receive commitment $m_1$
+		in >> bar;
+		if (!in.good())
+			throw false;
+
+		// verify in-group property of $m_1$
+		if (!CheckElement(bar))
+			throw false;
+
+		// flip coins with prover to get $c \in \mathbb{Z}_q$
+		std::stringstream err_log;
+		if (!edcf->Flip_twoparty(1, foo, in, out, err_log))
+			throw false;
+		mpz_mod(foo, foo, q);
+
+		// receive response $m_2$ 
 		in >> lej;
 		if (!in.good())
 			throw false;

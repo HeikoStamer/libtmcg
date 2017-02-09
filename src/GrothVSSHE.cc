@@ -607,8 +607,7 @@ bool GrothSKC::Verify_interactive
 		out << x << std::endl; // send $x\in\{0,1\}^{\ell_e}$ to the prover
 		
 		// verifier: second move
-		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$
-		                             // from the prover
+		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$ from prover
 		if (!in.good())
 			throw false;
 		
@@ -795,8 +794,7 @@ bool GrothSKC::Verify_interactive_publiccoin
 		// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
 		mpz_tdiv_r_2exp(x, x, l_e);
 		// verifier: second move
-		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$
-		                             // from the prover
+		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$ from prover
 		if (!in.good())
 			throw false;
 		
@@ -982,8 +980,7 @@ bool GrothSKC::Verify_noninteractive
 			mpz_tdiv_r_2exp(x, x, l_e_nizk);
 		
 		// verifier: second move
-		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$
-		                             // from the prover
+		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$ from prover
 		if (!in.good())
 			throw false;
 		

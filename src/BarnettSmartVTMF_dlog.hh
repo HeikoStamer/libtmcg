@@ -56,6 +56,9 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
+	// erasure-free distributed coinflip protocol [JL00]
+	#include "JareckiLysyanskayaASTC.hh"
+
 class BarnettSmartVTMF_dlog
 {
 	private:
@@ -101,10 +104,16 @@ class BarnettSmartVTMF_dlog
 			(std::istream& in);
 		bool KeyGenerationProtocol_RemoveKey
 			(std::istream& in);
-		bool KeyGenerationProtocol_ProveKey
+		bool KeyGenerationProtocol_ProveKey_interactive
 			(std::istream& in, std::ostream& out);
-		bool KeyGenerationProtocol_VerifyKey
+		bool KeyGenerationProtocol_ProveKey_interactive_publiccoin
+			(JareckiLysyanskayaEDCF *edcf,
+			std::istream& in, std::ostream& out);
+		bool KeyGenerationProtocol_VerifyKey_interactive
 			(mpz_srcptr key, std::istream& in, std::ostream& out);
+		bool KeyGenerationProtocol_VerifyKey_interactive_publiccoin
+			(mpz_srcptr key, JareckiLysyanskayaEDCF *edcf,
+			std::istream& in, std::ostream& out);
 		void KeyGenerationProtocol_Finalize
 			();
 		void CP_Prove

@@ -96,7 +96,10 @@ void check
 			assert(vtmf2->KeyGenerationProtocol_UpdateKey(*pipe_in));
 			vtmf2->KeyGenerationProtocol_Finalize();
 			*pipe_out << vtmf2->h_i << std::endl;
-			assert(vtmf2->KeyGenerationProtocol_ProveKey(*pipe_in, *pipe_out));
+			assert(vtmf2->KeyGenerationProtocol_ProveKey_interactive(*pipe_in, *pipe_out));
+			JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,	vtmf2->p, vtmf2->q, vtmf2->g, vtmf2->h);
+			assert(vtmf2->KeyGenerationProtocol_ProveKey_interactive_publiccoin(edcf, *pipe_in, *pipe_out));
+			delete edcf;
 			
 			SchindelhauerTMCG *tmcg = 
 				new SchindelhauerTMCG(16, 2, TMCG_MAX_TYPEBITS);
@@ -162,7 +165,10 @@ void check
 			mpz_init(h_j);
 			*pipe_in >> h_j;
 			std::cout << "h_j = " << h_j << std::endl;
-			assert(vtmf->KeyGenerationProtocol_VerifyKey(h_j, *pipe_in, *pipe_out));
+			assert(vtmf->KeyGenerationProtocol_VerifyKey_interactive(h_j, *pipe_in, *pipe_out));
+			JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,	vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+			assert(vtmf->KeyGenerationProtocol_VerifyKey_interactive_publiccoin(h_j, edcf, *pipe_in, *pipe_out));
+			delete edcf;
 			mpz_clear(h_j);
 			
 			// TMCG/VTMF
