@@ -2868,11 +2868,12 @@ and @math{P_4}) and a regular deck of 52@tie{}different cards. For convenience
 only the more efficient card encoding scheme of Barnett and Smart@tie{}[BS03]
 is described. Additionally, we complete our exposition with code fragments which
 show the application of the fast shuffle verification protocol due to
-Groth@tie{}[Gr05, Gr10] with an interactive instantiation. On modern computer hardware
-this implementation strategie achieves good real world performance and simultaneously
-keeps the cheating probability negligible.
+Groth@tie{}[Gr05, Gr10] with an interactive or even non-interactive instantiation
+of the zero-knowledge proofs.
+On modern computers this approach achieves good real world performance and
+simultaneously keeps the cheating probability negligible.
 
-Throughout the remaining pages we suppose that all players are pairwise connected by
+Throughout the remaining pages we assume that all players are pairwise connected by
 authenticated communication channels. These channels are organized in input resp.
 output streams, where @code{input_stream[i]} resp. @code{output_stream[i]} denote
 the corresponding @code{std::istream} resp. @code{std::ostream} instance for the
@@ -2881,6 +2882,7 @@ are ordered in a natural way such that we can use an uniform nomenclature.}
 
 @menu
 * Library Initialization::
+* Setup Communication Channels::
 * Session Initialization and Key Generation::
 * Operations on Cards::
 * Operations on Stacks::
@@ -2903,6 +2905,31 @@ Additionally, in most cases it is useful to check the installed version of
 the library by comparing the desired value with the returned string of the
 function @code{version_libTMCG}.
 
+@node Setup Communication Channels
+@section Setup Communication Channels
+@cindex Communication
+Some multi-party protocols need additional asynchronous private and authenticated
+communications channels and a reliable broadcast. The following example shows,
+how to setup this for player @math{P_i}:
+@cartouche
+@example
+// create asynchronous private unicast channels
+aiounicast_select *aiou = new aiounicast_select(5, i, uP_in, uP_out, uP_key,
+  aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+
+// create asynchronous private broadcast channels
+aiounicast_select *aiou2 = new aiounicast_select(5, i, bP_in, bP_out, bP_key,
+  aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+			
+// create an instance of a reliable broadcast protocol (RBC)
+std::string myID = "example-poker";
+CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(5, 1, i, 
+  aiou2, aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+rbc->setID(myID);
+@end example
+@end cartouche
+
+
 @node Session Initialization and Key Generation
 @section Session Initialization and Key Generation
 @cindex Initialization
@@ -2911,7 +2938,11 @@ In the next step we create an instance of the class @code{SchindelhauerTMCG}.
 The first parameter determines the number of protocol iterations @math{\kappa}
 which upper-bounds the cheating probability by @math{2^{-\kappa}}. In our
 example the used value @code{64} defines a maximum cheating probability of
-@math{5.421010862\cdot 10^{-20}} which is reasonable small for our purposes.
+@math{5.421010862\cdot 10^{-20}} which is reasonable small for our
+purposes.@footnote{If we use the encoding scheme of Barnett and Smart and
+only Groth's shuffle protocol during the game, then the error probability
+is even smaller, because the security parameters of them are fixed within
+LibTMCG (@pxref{Preprocessor Defined Global Symbols}).}
 The second parameter passes the number of players to the instance which is
 simply @code{5} in our case. The last argument defines the number of bits
 that are necessary to encode all card types in a binary representation.
@@ -2957,7 +2988,7 @@ if (!vtmf->CheckGroup())
 @end example
 @end cartouche
 Afterwards the key generation protocol is carried out. First, every player
-generates his own VTMF key. The secret key material is stored internally
+generates his own VTMF key. The private key material is stored internally
 and will never be exposed.
 @cartouche
 @example
@@ -2965,11 +2996,11 @@ vtmf->KeyGenerationProtocol_GenerateKey();
 @end example
 @end cartouche
 Then every player @math{P_j} sends the public part of his VTMF key along with a
-non-interactive zero-knowledge proof of knowledge to each other player.
+non-interactive zero-knowledge proof of knowledge (NIZK) to each other player.
 The appended proof shows that he indeed knows the corresponding secret key.
 However, due to the non-interactive nature of this proof we have to be
 careful, if the same group @math{G} is eventually used again. It is even better
-to generate a fresh common reference for each new game session. 
+to generate a fresh group (common reference) and key for each new game session. 
 @cartouche
 @example
 for (size_t i = 0; i < 5; i++)
@@ -2979,9 +3010,9 @@ for (size_t i = 0; i < 5; i++)
 @}
 @end example
 @end cartouche
-After sending @math{P_j} receives the public keys of the other players.
-Of course he checks, whether these keys are correctly generated, and
-he updates the common public key @math{h}.
+After sending, @math{P_j} receives the public keys of the other players.
+Of course she checks, whether these keys are correctly generated, and
+she updates the common public key @math{h}.
 @cartouche
 @example
 for (size_t i = 0; i < 5; i++)
@@ -2998,6 +3029,17 @@ Finally, every player must finalize the key generation protocol.
 @cartouche
 @example
 vtmf->KeyGenerationProtocol_Finalize();
+@end example
+@end cartouche
+For some sophisticated parts of LibTMCG a distributed coin flipping protocol is
+neccesary. It protects the honest-verifier zero-knowledge proofs or
+arguments against malicious verifiers. So, all players should execute:
+@cartouche
+@example
+JareckiLysyanskayaEDCF *edcf;
+edcf = new JareckiLysyanskayaEDCF(5, 5, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+if (!edcf->CheckGroup())
+  std::cerr << "Group G was not correctly generated!" << std::endl;
 @end example
 @end cartouche
 If we want to use the more efficient shuffle verification protocol of Groth,
@@ -3235,15 +3277,15 @@ for (size_t i = 0; i < 5; i++)
 @end cartouche
 
 If you want to use the more efficient shuffle verification protocol of Groth,
-then you must simply replace @code{TMCG_ProveStackEquality} and
+then you have to replace @code{TMCG_ProveStackEquality} and
 @code{TMCG_VerifyStackEquality} by @code{TMCG_ProveStackEquality_Groth} and
 @code{TMCG_VerifyStackEquality_Groth}, respectively.@footnote{The non-interactive
 version of Groth's protocol (see @code{TMCG_ProveStackEquality_Groth_noninteractive} and
 @code{TMCG_VerifyStackEquality_Groth_noninteractive}) provides an even more efficient
 implementation, because the prover has to compute the argument of correctness only once.
 Additionallly, it protects agains malicious verifiers and reduces the communication
-complexity. Thus using this version is strongly recommended. However, the security relies
-on the random oracle assumption. Please have a look at the included program code of
+complexity. Thus using this approach is strongly recommended. However, the security relies
+then on the random oracle assumption. Please have a look at the included program code of
 @code{tests/t-poker-noninteractive.cc} to get a clue.}
 
 @node Drawing a Card from the Deck
@@ -3310,7 +3352,8 @@ down the card on the table.
 In the last step you should release all occupied resources.
 @cartouche
 @example
-delete vsshe, delete vtmf, delete tmcg;
+delete vsshe, delete edcf, delete vtmf, delete tmcg;
+delete rbc, delete aiou2, delete aiou;
 @end example
 @end cartouche
 
