@@ -160,13 +160,14 @@ void check
 			assert(vtmf->KeyGenerationProtocol_UpdateKey(*pipe_in));
 			std::cout << "*.KeyGenerationProtocol_Finalize()" << std::endl;
 			vtmf->KeyGenerationProtocol_Finalize();
-			std::cout << "*.KeyGenerationProtocol_VerifyKey()" << std::endl;
+			std::cout << "*.KeyGenerationProtocol_VerifyKey_interactive()" << std::endl;
 			mpz_t h_j;
 			mpz_init(h_j);
 			*pipe_in >> h_j;
 			std::cout << "h_j = " << h_j << std::endl;
 			assert(vtmf->KeyGenerationProtocol_VerifyKey_interactive(h_j, *pipe_in, *pipe_out));
 			JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,	vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+			std::cout << "*.KeyGenerationProtocol_VerifyKey_interactive_publiccoin()" << std::endl;
 			assert(vtmf->KeyGenerationProtocol_VerifyKey_interactive_publiccoin(h_j, edcf, *pipe_in, *pipe_out));
 			delete edcf;
 			mpz_clear(h_j);
