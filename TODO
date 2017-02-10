@@ -1,4 +1,4 @@
-* doc: advise users to call SetupGenerators() in VSSHE
+* doc: describe new interfaces and classes
 
 + provide interactive and distributed (multiparty DZKP) versions for
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
