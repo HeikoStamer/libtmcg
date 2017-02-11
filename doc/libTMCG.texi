@@ -1885,7 +1885,7 @@ Please note that without further assumptions this condition is optimal for
 asynchronous communication and thus have cruicial impact for liveness of the
 high-level protocols using it.
 
-We describe only some methods and members that might be of interest for an
+We describe only those methods and members that might be of interest for an
 application programmer.
 @node CachinKursawePetzoldShoupRBC
 @deftp {Class} CachinKursawePetzoldShoupRBC
@@ -1908,7 +1908,10 @@ application programmer.
 
 
 	@defop {Constructor} CachinKursawePetzoldShoupRBC CachinKursawePetzoldShoupRBC (@code{const size_t} n_in, @code{const size_t} t_in, @code{const size_t} j_in, @code{aiounicast*} aiou_in, @code{const size_t} aio_default_scheduler_in @code{=aiounicast::aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aiounicast::aio_timeout_very_long})
-		This constructor ...
+		This constructor initializes an instance for a reliable
+		broadcast channel.
+
+		TODO
 	@end defop
 
 	@deftypemethod CachinKursawePetzoldShoupRBC void setID (@code{const std::string} ID_in)
