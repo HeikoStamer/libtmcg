@@ -463,9 +463,10 @@ exactly where it is really not needed.
 We have implemented all cryptographic primitives according to the cited
 research papers and to the best of our knowledge. However, we can not eliminate
 any possibility of contained flaws or bugs, because the implementation of
-such complex protocols is always an error-prone process. Thus we encourage
-readers with advanced cryptographic background to review the source code of
-LibTMCG. Please report any complaint or correction proposal!
+such complex protocols is always an error-prone process. Moreover, the
+scientific results are sometimes controversial or even wrong. Thus we encourage
+readers with advanced cryptographic background to review given references
+and the source code of LibTMCG. Please report any complaint or correction proposal!
 @end quotation
 
 @node Communication
@@ -482,9 +483,10 @@ of private (i.e. untappable and authenticated) point-to-point channels.
 
 There is an importand distinction between @emph{fully synchronous} and
 @emph{partially synchronous} communication model with respect to coverage
-and resulting adverserial power. The reader is referred to the textbook
+and the resulting adverserial power. However, a detailed discussion of such issues
+is beyond the scope of this manual. The reader is referred to the famous textbook
 @cite{@uref{http://www.distributedprogramming.net/,,Introduction to Reliable and Secure Distributed Programming}}
-for discussion on that topic.
+for an introduction and discussion on that topic.
 
 @c **********************************************************
 @node Preparation
@@ -872,14 +874,16 @@ and memory allocation. Currently it is only relevant for the generators
 @end defmac
 
 @c **********************************************************
-@node Data Types and Classes
-@section Data Types and Classes
-This section describes all public data types and classes that are
-necessary to create a secure card game. Private methods and only
-internally used members are not explained.
+@node Data Types, Communication Interfaces, and Classes
+@section Data Types, Communication Interfaces, and Classes
+This section describes all public data types, communication interfaces,
+and classes of high-level protocols that are necessary to create a
+secure card game. Private methods and only internally used members are
+not explained.
 
 @menu
 * Data Types::
+* Communication Interfaces::
 * Classes::
 @end menu
 
@@ -1860,6 +1864,11 @@ individual profile or a service provider can issue public key certificates.
 	@end defop
 @end deftp
 
+@node Communication Interfaces
+@subsection Communication Interfaces
+@cindex Communication Interfaces
+TODO
+
 @node Classes
 @subsection Classes
 @cindex Classes
@@ -1879,10 +1888,10 @@ which is based basically on an optimized variant of Bracha's double-echo
 broadcast protocol.
 It works without further authentication (e.g. digital signatures) and thus
 guarantees the desired properties (i.e. validity, consistency, and totality) of
-reliable broadcast, if and only if the number of faulty players @math{t} is
-strictly less than one third of all parties @math{n}, i.e. @math{t < n/3}. 
+reliable broadcast, if and only if the number of faulty or even malicious players
+@math{t} is strictly less than one third of all parties @math{n}, i.e. @math{t < n/3}. 
 Please note that without further assumptions this condition is optimal for
-asynchronous communication and thus have cruicial impact for liveness of the
+asynchronous communication and thus have crucial impact for liveness of the
 high-level protocols using it.
 
 We describe only those methods and members that might be of interest for an
