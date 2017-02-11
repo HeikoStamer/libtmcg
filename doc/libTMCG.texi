@@ -1923,7 +1923,7 @@ included in addition to @code{libTMCG.hh}. Then the following classes can be ins
 by your application.
 @node aiounicast_nonblock
 @deftp {Class} aiounicast_nonblock
-	This class only works with nonblocking file descriptors, i.e., the pipes or sockets
+	This class only works with non-blocking file descriptors, i.e., the pipes or sockets
 	have to be opened with @code{O_NONBLOCK} flag. It uses continiuous polling on the
 	descriptors to achieve asynchronous I/O that results in exorbitant CPU load.
 
@@ -1943,7 +1943,36 @@ by your application.
 		The total number of bytes read from point-to-point links.
 	@end deftypecv
 
+	@defop {Constructor} aiounicast_nonblock aiounicast_nonblock (@code{const size_t} n_in, @code{const size_t} j_in, @code{const std::vector<int>& } fd_in_in, @code{const std::vector<int>& } fd_out_in, @code{const std::vector<std::string>& } key_in, @code{const size_t} aio_default_scheduler_in @code{=aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aio_timeout_long}, @code{const bool} aio_is_authenticated_in @code{=true}, @code{const bool} aio_is_encrypted_in @code{=true})
+		TODO
+	@end defop
+
+	@deftypemethod aiounicast_nonblock bool Send (@code{mpz_srcptr} m, @code{const size_t} i_in, @code{time_t} timeout @code{=aio_timeout_default})
+		This method sends an integer @var{m} over the corresponding
+		point-to-point link to the party with index @var{i_in}. 
+		In presence of the third argument this transmission is tried
+		for at most @var{timeout} seconds. Otherwise, the default
+		timeout given to the constructor is applied.
+ 
+		The method returns @code{false}, if sending fails,
+		and error messages are written to @code{std::cerr}.
+	@end deftypemethod
+
+	@deftypemethod aiounicast_nonblock bool Send (@code{const std::vector<mpz_srcptr>&} m, @code{const size_t} i_in, @code{time_t} timeout @code{=aio_timeout_default})
+		This method works as above, however, a vector @var{m} of integers is sent.
+	@end deftypemethod
+
+	@deftypemethod aiounicast_nonblock bool Receive (@code{mpz_ptr} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aio_scheduler_default}, @code{time_t} timeout @code{=aio_timeout_default})
 	TODO
+	@end deftypemethod
+
+	@deftypemethod aiounicast_nonblock bool Receive (@code{std::vector<mpz_ptr>&} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aio_scheduler_default}, @code{time_t} timeout @code{=aio_timeout_default})
+	TODO
+	@end deftypemethod
+
+	@defop {Destructor} aiounicast_nonblock ~aiounicast_nonblock ()
+		This destructor releases all occupied resources.
+	@end defop
 @end deftp
 @node aiounicast_select
 @deftp {Class} aiounicast_select
