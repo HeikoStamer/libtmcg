@@ -664,7 +664,7 @@ This function returns an identifier of the library.
 Now we start with a description of some important interfaces.
 @menu
 * Preprocessor Defined Global Symbols::
-* Data Types and Classes::
+* Basic Structures::
 @end menu
 
 @c **********************************************************
@@ -874,8 +874,8 @@ and memory allocation. Currently it is only relevant for the generators
 @end defmac
 
 @c **********************************************************
-@node Data Types, Communication Interfaces, and Classes
-@section Data Types, Communication Interfaces, and Classes
+@node Basic Structures
+@section Basic Structures
 This section describes all public data types, communication interfaces,
 and classes of high-level protocols that are necessary to create a
 secure card game. Private methods and only internally used members are
