@@ -380,7 +380,7 @@ LibTMCG was originally designed to provide security in the ``honest-but-curious'
 the protocol instructions properly but they may gather information and
 share them within a coalition to obtain an advantage in the game. Thus we are
 basically not concerned with robustness and availability issues which are hard to
-solve in asynchronous environments like the Internet. However, the most
+solve in almost asynchronous environments like the Internet. However, the most
 operations are verifiable such that cheating can be detected. To obtain
 this verifiability, the protocols deploy so-called zero-knowledge proofs
 which yield no further knowledge but the validity of a statement. The
@@ -412,7 +412,7 @@ Please note that in most cases the application programmer must decide, where
 the use of a broadcast channel is neccesary and appropriate. Thus, without
 reliable broadcast you should take into account that not necessarily the
 player acting as prover is the source of evil, if a verification procedure
-fails. This level of uncertainty is another reason for our still limited
+fails. This level of uncertainty is the main reason for our still limited
 adversary model.
 
 Note that it is not known, whether the used protocols retain their
@@ -441,10 +441,11 @@ that show the insecurity of Fiat-Shamir heuristic w.r.t. the soundness of the
 argument resp. proof. That means, if deterministic hash functions are used as
 public coin@tie{}[BR93], then the random oracle assumption obviously does not hold
 and therefore a malicious prover can manipulate the challenges in order to cheat
-and thus violates soundness. On the other hand, the Fiat-Shamir heuristic, and
-in general the non-interactivness of the transformed protocols, protects against
-a malicious verifier. Thus it is another important measure to deal with the limitation
-of honest verifier zero-knowledge protocols without loosing their efficiency.
+and thus violates the soundness property. On the other hand, the Fiat-Shamir
+heuristic, and in general the non-interactivness of the transformed protocols,
+protect against a malicious verifier. Thus it is another important measure to
+deal with the limitation of honest verifier zero-knowledge proofs resp. arguments
+of knowledge without loosing their efficiency.
 However, non-interactive protocols are necessarily malleable (when used without
 unique identifiers), and the cheating verifier can generate a convincing proof
 of knowledge by copying one sent by the prover in a previous iteration of the
@@ -661,7 +662,7 @@ This function returns an identifier of the library.
 @c *************************  API  **************************
 @c **********************************************************
 @chapter Application Programming Interface
-Now we start with a description of some important interfaces.
+Now we start with a description of some important global symbols and structures.
 @menu
 * Preprocessor Defined Global Symbols::
 * Basic Structures::
@@ -717,11 +718,12 @@ Thus we gain a security level of approximately @math{2^{128}}, assuming
 that a birthday-attack is the best known attack against this hash function.
 
 Please note that the security of the non-interactive zero-knowledge proofs resp.
-arguments (NIZK) is only proved in the so-called random oracle model, i.e., we
-suppose that the instantiated hash function behaves like an ideal random function
-(which obviously cannot hold in a real world scenario). However, this
-assumption seems to be reasonable, if the hash function @math{g()} is collision-resistant
-and if it is carefully implemented with respect to other instantiations@tie{}[BR93].
+arguments (NIZK) is proved in the so-called random oracle model, i.e., we suppose
+that the instantiated hash function behaves like an ideal random function
+(which obviously cannot hold in a real world scenario with deterministic computations).
+However, this assumption seems to be reasonable, if the hash function @math{g()} is
+collision-resistant and if it is carefully implemented with respect to other
+instantiations@tie{}[BR93].
 @end defmac
 
 @defmac TMCG_GCRY_MAC_ALGO
@@ -1867,7 +1869,65 @@ individual profile or a service provider can issue public key certificates.
 @node Communication Interfaces
 @subsection Communication Interfaces
 @cindex Communication Interfaces
-TODO
+The base class @code{aiounicast} and the corresponding derived classes
+@code{aiounicast_nonblock} and @code{aiounicast_select} provide a simple
+communication interface for asynchronous point-to-point communication channels.
+They can be used to transfer data of type @code{mpz_t} (big integers, see @code{libgmp})
+between up to @math{n} parties. Moreover, the channels can be authenticated by
+a message authentication code and encrypted by a symmetric cipher. The deployed
+algorithms are defined by global symbols (@code{TMCG_GCRY_MAC_ALGO} and
+@code{TMCG_GCRY_ENC_ALGO}, respectively) and fixed at compile time of LibTMCG.
+@node aiounicast
+@deftp {Class} aiounicast
+	This class is only an abstract interface and cannot be instantiated directly.
+	We explain some basic class members that are useful for an application
+	programmer. 
+
+	@deftypecv {Member} aiounicast {static const time_t} aio_timeout_very_short
+		This constant defines a very short time interval of only one second.
+	@end deftypecv
+	@deftypecv {Member} aiounicast {static const time_t} aio_timeout_short
+		This constant defines a short time interval of 15 seconds.
+	@end deftypecv
+	@deftypecv {Member} aiounicast {static const time_t} aio_timeout_middle
+		This constant defines a middle time interval of 30 seconds.
+	@end deftypecv
+	@deftypecv {Member} aiounicast {static const time_t} aio_timeout_long
+		This constant defines a long time interval of 90 seconds.
+	@end deftypecv
+	@deftypecv {Member} aiounicast {static const time_t} aio_timeout_very_long
+		This constant defines a very long time interval of 180 seconds.
+	@end deftypecv
+	@deftypecv {Member} aiounicast {static const size_t} aio_scheduler_roundrobin
+		This constant represents the round-robin scheduler for message processing.
+	@end deftypecv
+	@deftypecv {Member} aiounicast {static const size_t} aio_scheduler_random
+		This constant represents the random select scheduler for message processing.
+	@end deftypecv
+	@deftypecv {Member} aiounicast {static const size_t} aio_scheduler_direct
+		This constant represents the constant select scheduler for message processing.
+	@end deftypecv
+
+	@deftypecv {Member} aiounicast {const size_t} n
+		This is the total number of parties @math{n} involved in the communication.
+	@end deftypecv
+
+	@deftypecv {Member} aiounicast {const size_t} j
+		This is an uniqe index of the party running this instance.
+	@end deftypecv
+@end deftp
+Note that either @code{aiounicast_nonblock.hh} or @code{aiounicast_select.hh} must be
+included in addition to @code{libTMCG.hh}. Then the following classes can be instantiated
+by your application.
+@node aiounicast_nonblock
+@deftp {Class} aiounicast_nonblock
+	This class only works with nonblocking file descriptors, i.e., the pipes or sockets
+	have to be opened with @code{O_NONBLOCK} flag.
+@end deftp
+@node aiounicast_select
+@deftp {Class} aiounicast_select
+	This class works with arbitrary file descriptors. 
+@end deftp
 
 @node Classes
 @subsection Classes

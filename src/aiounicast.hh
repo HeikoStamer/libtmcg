@@ -41,6 +41,7 @@ class aiounicast
 		const time_t		aio_default_timeout;
 		const bool		aio_is_authenticated;
 		const bool		aio_is_encrypted;
+
 	public:
 		static const time_t	aio_timeout_none		= 0;
 		static const time_t	aio_timeout_very_short		= 1;
