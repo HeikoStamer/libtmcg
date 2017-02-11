@@ -195,7 +195,7 @@ void start_instance
 			mpz_add_ui(mp[0], mp[0], 1L);
 			assert(!com->Verify(a, b, mp));
 			// release
-			mpz_clear(b);
+			mpz_clear(a), mpz_clear(b);
 			for (size_t i = 0; i < nn; i++)
 			{
 				mpz_clear(mp[i]);
@@ -204,14 +204,8 @@ void start_instance
 			mp.clear();
 			delete com;
 
-			// at the end: deliver some more rounds for waiting parties
-			time_t entry_time = time(NULL);
-			do
-			{
-				rbc->DeliverFrom(a, whoami);
-			}
-			while (time(NULL) < (entry_time + aiounicast::aio_timeout_long));
-			mpz_clear(a);
+			// at the end: sync for waiting parties
+			rbc->Sync(aiounicast::aio_timeout_long);
 			
 			// release EDCF
 			delete edcf;
