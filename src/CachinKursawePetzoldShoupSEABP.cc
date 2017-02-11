@@ -615,15 +615,24 @@ void CachinKursawePetzoldShoupRBC::Sync
 	// set aio default values
 	if (timeout == aiounicast::aio_timeout_default)
 		timeout = aio_default_timeout;
-	mpz_t a;
-	mpz_init(a);
 	time_t entry_time = time(NULL);
 	do
 	{
-		DeliverFrom(a, j);
+		// take part in protocol and store mpz in corresponding buffer
+		size_t l;
+		mpz_ptr tmp = new mpz_t();
+		mpz_init(tmp);
+		if (Deliver(tmp, l, aio_default_scheduler, timeout))
+		{
+			buf_mpz[l].push_back(tmp);
+		}
+		else
+		{
+			mpz_clear(tmp);
+			delete [] tmp;
+		}
 	}
 	while (time(NULL) < (entry_time + timeout));
-	mpz_clear(a);
 }
 
 CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
