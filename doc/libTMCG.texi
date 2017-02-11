@@ -1944,7 +1944,20 @@ by your application.
 	@end deftypecv
 
 	@defop {Constructor} aiounicast_nonblock aiounicast_nonblock (@code{const size_t} n_in, @code{const size_t} j_in, @code{const std::vector<int>& } fd_in_in, @code{const std::vector<int>& } fd_out_in, @code{const std::vector<std::string>& } key_in, @code{const size_t} aio_default_scheduler_in @code{=aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aio_timeout_long}, @code{const bool} aio_is_authenticated_in @code{=true}, @code{const bool} aio_is_encrypted_in @code{=true})
-		TODO
+		The constructor initializes internal queues and data structures
+		for asynchronous point-to-point channels connecting @math{n}
+		parties (i.e. @var{n_in}).
+		The index of the calling party within this set is given by
+		@var{j_in}. It is followed by a vector @var{fd_in_in} of exactly
+		@math{n} input file descriptors that are ready for reading
+		and writing, and by a vector @var{fd_out_in} of exactly @math{n}
+		output file descriptors. Finally, the vector @var{key_in} with exactly @math{n}
+		passphrases@footnote{The key derivation function PBKDF2 is applied with
+		an iteration count of 25.000 and an empty salt.} or pre-shared keys
+		is neccesary, if @var{aio_is_authenticated_in} or @var{aio_is_encrypted_in} is
+		set @code{true}, which is the default behaviour. The default values
+		for timeout (in seconds) and the used receive scheduler can be modified
+		carefully with respect to the usage scenario.
 	@end defop
 
 	@deftypemethod aiounicast_nonblock bool Send (@code{mpz_srcptr} m, @code{const size_t} i_in, @code{time_t} timeout @code{=aio_timeout_default})
@@ -1963,11 +1976,18 @@ by your application.
 	@end deftypemethod
 
 	@deftypemethod aiounicast_nonblock bool Receive (@code{mpz_ptr} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aio_scheduler_default}, @code{time_t} timeout @code{=aio_timeout_default})
-	TODO
+		This method receives an integer @var{m} over the point-to-point
+		links from any party. The index of the sender is returned 
+		in @var{i_out}. In presence of the third argument it waits
+		for at most @var{timeout} seconds. Otherwise, the default
+		timeout given to the constructor is applied.
+
+		The method returns @code{false}, if receiving fails. Only
+		in some critical cases error messages are written to @code{std::cerr}.
 	@end deftypemethod
 
 	@deftypemethod aiounicast_nonblock bool Receive (@code{std::vector<mpz_ptr>&} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aio_scheduler_default}, @code{time_t} timeout @code{=aio_timeout_default})
-	TODO
+		This method works as above, however, a vector @var{m} of integers is received.
 	@end deftypemethod
 
 	@defop {Destructor} aiounicast_nonblock ~aiounicast_nonblock ()
@@ -1981,23 +2001,72 @@ by your application.
 	to achieve asynchronous I/O. This results in a reasonable CPU load in
 	comparison with @code{aiounicast_nonblock}.
 
-	@deftypecv {Member} aiounicast_nonblock {std::vector<int>} fd_in
+	@deftypecv {Member} aiounicast_select {std::vector<int>} fd_in
 		The input file descriptors of point-to-point links to all parties.
 	@end deftypecv
 
-	@deftypecv {Member} aiounicast_nonblock {std::vector<int>} fd_out
+	@deftypecv {Member} aiounicast_select {std::vector<int>} fd_out
 		The ouput file descriptors of point-to-point links to all parties.
 	@end deftypecv
 
-	@deftypecv {Member} aiounicast_nonblock {size_t} numWrite
+	@deftypecv {Member} aiounicast_select {size_t} numWrite
 		The total number of bytes written to point-to-point links.
 	@end deftypecv
 
-	@deftypecv {Member} aiounicast_nonblock {size_t} numRead
+	@deftypecv {Member} aiounicast_select {size_t} numRead
 		The total number of bytes read from point-to-point links.
 	@end deftypecv
 
-	TODO
+	@defop {Constructor} aiounicast_select aiounicast_select (@code{const size_t} n_in, @code{const size_t} j_in, @code{const std::vector<int>& } fd_in_in, @code{const std::vector<int>& } fd_out_in, @code{const std::vector<std::string>& } key_in, @code{const size_t} aio_default_scheduler_in @code{=aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aio_timeout_long}, @code{const bool} aio_is_authenticated_in @code{=true}, @code{const bool} aio_is_encrypted_in @code{=true})
+		The constructor initializes internal queues and data structures
+		for asynchronous point-to-point channels connecting @math{n}
+		parties (i.e. @var{n_in}).
+		The index of the calling party within this set is given by
+		@var{j_in}. It is followed by a vector @var{fd_in_in} of exactly
+		@math{n} input file descriptors that are ready for reading
+		and writing, and by a vector @var{fd_out_in} of exactly @math{n}
+		output file descriptors. Finally, the vector @var{key_in} with exactly @math{n}
+		passphrases@footnote{The key derivation function PBKDF2 is applied with
+		an iteration count of 25.000 and an empty salt.} or pre-shared keys
+		is neccesary, if @var{aio_is_authenticated_in} or @var{aio_is_encrypted_in} is
+		set @code{true}, which is the default behaviour. The default values
+		for timeout (in seconds) and the used receive scheduler can be modified
+		carefully with respect to the usage scenario.
+	@end defop
+
+	@deftypemethod aiounicast_select bool Send (@code{mpz_srcptr} m, @code{const size_t} i_in, @code{time_t} timeout @code{=aio_timeout_default})
+		This method sends an integer @var{m} over the corresponding
+		point-to-point link to the party with index @var{i_in}. 
+		In presence of the third argument this transmission is tried
+		for at most @var{timeout} seconds. Otherwise, the default
+		timeout given to the constructor is applied.
+ 
+		The method returns @code{false}, if sending fails,
+		and error messages are written to @code{std::cerr}.
+	@end deftypemethod
+
+	@deftypemethod aiounicast_select bool Send (@code{const std::vector<mpz_srcptr>&} m, @code{const size_t} i_in, @code{time_t} timeout @code{=aio_timeout_default})
+		This method works as above, however, a vector @var{m} of integers is sent.
+	@end deftypemethod
+
+	@deftypemethod aiounicast_select bool Receive (@code{mpz_ptr} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aio_scheduler_default}, @code{time_t} timeout @code{=aio_timeout_default})
+		This method receives an integer @var{m} over the point-to-point
+		links from any party. The index of the sender is returned 
+		in @var{i_out}. In presence of the third argument it waits
+		for at most @var{timeout} seconds. Otherwise, the default
+		timeout given to the constructor is applied.
+
+		The method returns @code{false}, if receiving fails. Only
+		in some critical cases error messages are written to @code{std::cerr}.
+	@end deftypemethod
+
+	@deftypemethod aiounicast_select bool Receive (@code{std::vector<mpz_ptr>&} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aio_scheduler_default}, @code{time_t} timeout @code{=aio_timeout_default})
+		This method works as above, however, a vector @var{m} of integers is received.
+	@end deftypemethod
+
+	@defop {Destructor} aiounicast_select ~aiounicast_select ()
+		This destructor releases all occupied resources.
+	@end defop
 @end deftp
 
 @node Classes
