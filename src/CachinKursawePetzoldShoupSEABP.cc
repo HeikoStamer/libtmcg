@@ -558,6 +558,12 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 	(mpz_ptr m, const size_t i_in,
 	size_t scheduler, time_t timeout)
 {
+	// sanity check
+	if (i_in >= n)
+	{
+		std::cerr << "RBC(" << j << "): DeliverFrom() with " << i_in << " >= " << n << std::endl;
+		return false;
+	}
 	// set aio default values
 	if (scheduler == aiounicast::aio_scheduler_default)
 		scheduler = aio_default_scheduler;

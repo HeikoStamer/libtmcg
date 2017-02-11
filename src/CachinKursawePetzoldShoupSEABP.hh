@@ -56,7 +56,7 @@
 
 	#include "aiounicast.hh"
 
-	// define some internal types
+	// define some internal types for convenience
 	typedef std::map<std::string, bool>	RBC_TagCheck;
 	typedef std::map<std::string, size_t>	RBC_TagCount;
 	typedef std::map<std::string, mpz_ptr>	RBC_TagMpz;
@@ -83,10 +83,10 @@ class CachinKursawePetzoldShoupRBC
 		std::vector<bool>			deliver_error;
 		std::list<RBC_Message>			deliver_buf;
 		std::vector<mpz_ptr>			deliver_s;
+		aiounicast				*aiou;
 	
 	public:
 		size_t					n, t, j;
-		aiounicast				*aiou;
 
 		CachinKursawePetzoldShoupRBC
 			(const size_t n_in, const size_t t_in, const size_t j_in,

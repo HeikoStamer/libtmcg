@@ -123,7 +123,8 @@ The source code is released under the GNU @emph{General Public License} Version 
 @section Further Reading
 The cryptographic background and a detailed discussion of
 the implementation issues are beyond the scope of this manual.
-The interested reader is referred to the following papers:
+The interested reader is referred to the following scientific
+papers:
 @quotation [Sc98]
 	@sc{Christian Schindelhauer}.
 	@emph{Toolbox for Mental Card Games.}@*
@@ -1873,8 +1874,71 @@ of the class name and the following part is an abbreviation of (a part of) the
 title, respectively.
 
 @subsubsection Secure and Efficient Asynchronous Broadcast Protocols
+Currently this part of LibTMCG provides an implementation of @emph{reliable broadcast},
+which is based basically on an optimized variant of Bracha's double-echo
+broadcast protocol.
+It works without further authentication (e.g. digital signatures) and thus
+guarantees the desired properties (i.e. validity, consistency, and totality) of
+reliable broadcast, if and only if the number of faulty players @math{t} is
+strictly less than one third of all parties @math{n}, i.e. @math{t < n/3}. 
+Please note that without further assumptions this condition is optimal for
+asynchronous communication and thus have cruicial impact for liveness of the
+high-level protocols using it.
 
-TODO RBC
+We describe only some methods and members that might be of interest for an
+application programmer.
+@node CachinKursawePetzoldShoupRBC
+@deftp {Class} CachinKursawePetzoldShoupRBC
+	This class implements the protocol RBC of Cachin, Kursawe, Petzold, and
+	Shoup@tie{}[CKPS01] for a reliable broadcast in asynchronous
+	communication model, where @math{t < n/3} holds. Additionally, a
+	FIFO-ordered delivery based on sequence numbers has been implemented.
+	
+	@deftypecv {Member} CachinKursawePetzoldShoupRBC {size_t} n
+		This is the total number of parties @math{n} involved in this protocol.
+	@end deftypecv
+
+	@deftypecv {Member} CachinKursawePetzoldShoupRBC {size_t} t
+		This is the number of possible faulty parties @math{t}.
+	@end deftypecv
+
+	@deftypecv {Member} CachinKursawePetzoldShoupRBC {size_t} j
+		This is an uniqe index of the party running this instance.
+	@end deftypecv
+
+
+	@defop {Constructor} CachinKursawePetzoldShoupRBC CachinKursawePetzoldShoupRBC (@code{const size_t} n_in, @code{const size_t} t_in, @code{const size_t} j_in, @code{aiounicast*} aiou_in, @code{const size_t} aio_default_scheduler_in @code{=aiounicast::aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aiounicast::aio_timeout_very_long})
+		This constructor ...
+	@end defop
+
+	@deftypemethod CachinKursawePetzoldShoupRBC void setID (@code{const std::string} ID_in)
+		TODO
+	@end deftypemethod
+
+	@deftypemethod CachinKursawePetzoldShoupRBC void unsetID ()
+		TODO
+	@end deftypemethod
+
+	@deftypemethod CachinKursawePetzoldShoupRBC void Broadcast (@code{mpz_srcptr} m, @code{const bool} simulate_faulty_behaviour @code{=false})
+		TODO
+	@end deftypemethod
+
+	@deftypemethod CachinKursawePetzoldShoupRBC bool Deliver (@code{mpz_ptr} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aiounicast::aio_scheduler_default}, 	@code{time_t} timeout @code{=aiounicast::aio_timeout_default})
+		TODO
+	@end deftypemethod
+
+	@deftypemethod CachinKursawePetzoldShoupRBC bool DeliverFrom (@code{mpz_ptr} m, @code{const size_t} i_in, @code{size_t} scheduler @code{=aiounicast::aio_scheduler_default}, @code{time_t} timeout @code{=aiounicast::aio_timeout_default})
+		TODO
+	@end deftypemethod
+
+	@deftypemethod CachinKursawePetzoldShoupRBC void Sync (@code{time_t} timeout @code{=aiounicast::aio_timeout_default})
+		TODO
+	@end deftypemethod
+	
+	@defop {Destructor} CachinKursawePetzoldShoupRBC ~CachinKursawePetzoldShoupRBC ()
+		This destructor releases all occupied resources.
+	@end defop
+@end deftp
 
 @subsubsection Adaptively Secure Threshold Cryptography
 
@@ -3228,18 +3292,12 @@ all players.
 
 @node Shuffling the Deck
 @subsection Shuffling the Deck
-Each player must perform a shuffle of the deck, because only such a procedure
+Every player must perform a shuffle of the deck, because only such a procedure
 guarantees that no coalition has influence on the outcome. Thus we build a
-shuffle chain (e.g. using the strict total order @math{P_i < P_j} iff @math{i < j})
-such that every player shuffles the deck. Consider the following code fragment
-for the player @math{P_j}.
+shuffle chain (e.g. using the strict total order @math{P_i < P_j}, if and only
+if @math{i < j}) such that each player shuffles the deck once. Consider the
+following code fragment for the player @math{P_j}.
 
-First the regular stack @code{s} is initialized with open cards from @code{deck}.
-Then each player shuffles the stack (see @code{TMCG_MixStack}) using randomness
-(see @code{TMCG_CreateStackSecret}) and proves the correctness of this operation
-(see @code{TMCG_ProveStackEquality}). Consequently, every player should verify
-these proofs (see @code{TMCG_VerifyStackEquality}) and complain deviations immediately.
-Finally, the stack @code{s} contains the shuffled result.
 @cartouche
 @example
 TMCG_Stack<VTMF_Card> s;
@@ -3276,6 +3334,13 @@ for (size_t i = 0; i < 5; i++)
 @end example
 @end cartouche
 
+First the regular stack @code{s} is initialized with open cards from @code{deck}.
+Then each player shuffles the stack (see @code{TMCG_MixStack}) using randomness
+(see @code{TMCG_CreateStackSecret}) and proves the correctness of this operation
+(see @code{TMCG_ProveStackEquality}). Consequently, every player should verify
+these proofs (see @code{TMCG_VerifyStackEquality}) and complain deviations immediately.
+Finally, the stack @code{s} contains the shuffled result.
+
 If you want to use the more efficient shuffle verification protocol of Groth,
 then you have to replace @code{TMCG_ProveStackEquality} and
 @code{TMCG_VerifyStackEquality} by @code{TMCG_ProveStackEquality_Groth} and
@@ -3284,9 +3349,10 @@ version of Groth's protocol (see @code{TMCG_ProveStackEquality_Groth_noninteract
 @code{TMCG_VerifyStackEquality_Groth_noninteractive}) provides an even more efficient
 implementation, because the prover has to compute the argument of correctness only once.
 Additionallly, it protects agains malicious verifiers and reduces the communication
-complexity. Thus using this approach is strongly recommended. However, the security relies
-then on the random oracle assumption. Please have a look at the included program code of
-@code{tests/t-poker-noninteractive.cc} to get a clue.}
+complexity, i.e. instead of @math{O(n^2)} operations the prover must only perform
+@math{O(n)} steps. Thus using this approach is strongly recommended. However, the security
+then relies on the random oracle assumption. Please have a look at the included source
+code of @code{tests/t-poker-noninteractive.cc} to get a clue.}
 
 @node Drawing a Card from the Deck
 @subsection Drawing a Card from the Deck
