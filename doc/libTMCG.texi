@@ -1872,8 +1872,10 @@ individual profile or a service provider can issue public key certificates.
 The base class @code{aiounicast} and the corresponding derived classes
 @code{aiounicast_nonblock} and @code{aiounicast_select} provide a simple
 communication interface for asynchronous point-to-point communication channels.
-They can be used to transfer data of type @code{mpz_t} (big integers, see @code{libgmp})
-between up to @math{n} parties. Moreover, the channels can be authenticated by
+They can be used to transfer data of type @code{mpz_t} (big integers, see
+@code{libgmp} for explanation of this data type) between up to @math{n} parties.
+
+Moreover, the channels can be authenticated by
 a message authentication code and encrypted by a symmetric cipher. The deployed
 algorithms are defined by global symbols (@code{TMCG_GCRY_MAC_ALGO} and
 @code{TMCG_GCRY_ENC_ALGO}, respectively) and fixed at compile time of LibTMCG.
@@ -1922,11 +1924,51 @@ by your application.
 @node aiounicast_nonblock
 @deftp {Class} aiounicast_nonblock
 	This class only works with nonblocking file descriptors, i.e., the pipes or sockets
-	have to be opened with @code{O_NONBLOCK} flag.
+	have to be opened with @code{O_NONBLOCK} flag. It uses continiuous polling on the
+	descriptors to achieve asynchronous I/O that results in exorbitant CPU load.
+
+	@deftypecv {Member} aiounicast_nonblock {std::vector<int>} fd_in
+		The input file descriptors of point-to-point links to all parties.
+	@end deftypecv
+
+	@deftypecv {Member} aiounicast_nonblock {std::vector<int>} fd_out
+		The ouput file descriptors of point-to-point links to all parties.
+	@end deftypecv
+
+	@deftypecv {Member} aiounicast_nonblock {size_t} numWrite
+		The total number of bytes written to point-to-point links.
+	@end deftypecv
+
+	@deftypecv {Member} aiounicast_nonblock {size_t} numRead
+		The total number of bytes read from point-to-point links.
+	@end deftypecv
+
+	TODO
 @end deftp
 @node aiounicast_select
 @deftp {Class} aiounicast_select
-	This class works with arbitrary file descriptors. 
+	This class works with arbitrary file descriptors. It uses the select
+	interface of the operation system with negligible timeout of 1000us
+	to achieve asynchronous I/O. This results in a reasonable CPU load in
+	comparison with @code{aiounicast_nonblock}.
+
+	@deftypecv {Member} aiounicast_nonblock {std::vector<int>} fd_in
+		The input file descriptors of point-to-point links to all parties.
+	@end deftypecv
+
+	@deftypecv {Member} aiounicast_nonblock {std::vector<int>} fd_out
+		The ouput file descriptors of point-to-point links to all parties.
+	@end deftypecv
+
+	@deftypecv {Member} aiounicast_nonblock {size_t} numWrite
+		The total number of bytes written to point-to-point links.
+	@end deftypecv
+
+	@deftypecv {Member} aiounicast_nonblock {size_t} numRead
+		The total number of bytes read from point-to-point links.
+	@end deftypecv
+
+	TODO
 @end deftp
 
 @node Classes
