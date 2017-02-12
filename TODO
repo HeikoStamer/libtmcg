@@ -6,7 +6,7 @@
    the h-generation protocol as building block of ASTC [JL00])
 + provide DKG with security against an adaptive adversary [CGJKR99, JL00]
 + provide distributed DSS key generation and signature scheme [GJKR01]
-+ move to event-driven architecture and state-based representation
++ move to event-driven architecture and state-based protocol representation
 + DKG, ASTC: transform protocols into variants without aiou->Send() [BH92]
 + provide byzantine consensus protocol for agreement on values
 
