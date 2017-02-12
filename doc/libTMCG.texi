@@ -1956,7 +1956,7 @@ by your application.
 		an iteration count of 25.000 and an empty salt.} or pre-shared keys
 		is neccesary, if @var{aio_is_authenticated_in} or @var{aio_is_encrypted_in} is
 		set @code{true}, which is the default behaviour. The default values
-		for timeout (in seconds) and the used receive scheduler can be modified
+		for timeout (in seconds) and the receive scheduler can be modified
 		carefully with respect to the usage scenario.
 	@end defop
 
@@ -1983,7 +1983,7 @@ by your application.
 		timeout given to the constructor is applied.
 
 		The method returns @code{false}, if receiving fails. Only
-		in some critical cases error messages are written to @code{std::cerr}.
+		in critical cases some error messages are written to @code{std::cerr}.
 	@end deftypemethod
 
 	@deftypemethod aiounicast_nonblock bool Receive (@code{std::vector<mpz_ptr>&} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aio_scheduler_default}, @code{time_t} timeout @code{=aio_timeout_default})
@@ -2030,7 +2030,7 @@ by your application.
 		an iteration count of 25.000 and an empty salt.} or pre-shared keys
 		is neccesary, if @var{aio_is_authenticated_in} or @var{aio_is_encrypted_in} is
 		set @code{true}, which is the default behaviour. The default values
-		for timeout (in seconds) and the used receive scheduler can be modified
+		for timeout (in seconds) and the receive scheduler can be modified
 		carefully with respect to the usage scenario.
 	@end defop
 
@@ -2057,7 +2057,7 @@ by your application.
 		timeout given to the constructor is applied.
 
 		The method returns @code{false}, if receiving fails. Only
-		in some critical cases error messages are written to @code{std::cerr}.
+		in critical cases some error messages are written to @code{std::cerr}.
 	@end deftypemethod
 
 	@deftypemethod aiounicast_select bool Receive (@code{std::vector<mpz_ptr>&} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aio_scheduler_default}, @code{time_t} timeout @code{=aio_timeout_default})
@@ -2120,10 +2120,23 @@ application programmer.
 
 
 	@defop {Constructor} CachinKursawePetzoldShoupRBC CachinKursawePetzoldShoupRBC (@code{const size_t} n_in, @code{const size_t} t_in, @code{const size_t} j_in, @code{aiounicast*} aiou_in, @code{const size_t} aio_default_scheduler_in @code{=aiounicast::aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aiounicast::aio_timeout_very_long})
-		This constructor initializes an instance for a reliable
-		broadcast channel.
-
-		TODO
+		The constructor initializes an instance for a reliable
+		broadcast channel of @math{n} parties. This total number
+		of parties is given in the first argument @var{n_in}. The 
+		number of possible faulty or even malicious parties @math{t}
+		(given in the second argument @var{t_in}) must not exceed
+		@math{n/3}. Otherwise a warning is printed to @code{std::cerr}
+		and the liveness of the protocol RBC is not guaranteed. Thus,
+		it is recommended to set @var{t_in} to the asynchronous maximum
+		@math{(n-1)/3}. The third argument @var{j_in} is an index of
+		the party running this instance. Finally, the constructor needs
+		as fourth argument @var{aiou_in} a reference to already established
+		point-to-point channels (@pxref{Communication Interfaces}), which
+		should exclusively@footnote{These channels should be authenticated
+		such that network attacks or errors can be detetcted.} used
+		for this broadcast channels. The default values	for timeout
+		(in seconds) and the deliver scheduler can be modified
+		carefully with respect to the usage scenario.
 	@end defop
 
 	@deftypemethod CachinKursawePetzoldShoupRBC void setID (@code{const std::string} ID_in)
@@ -2136,19 +2149,36 @@ application programmer.
 	@end deftypemethod
 
 	@deftypemethod CachinKursawePetzoldShoupRBC void Broadcast (@code{mpz_srcptr} m, @code{const bool} simulate_faulty_behaviour @code{=false})
-		TODO
+		This method broadcasts the integer @var{m} to all parties. 
 	@end deftypemethod
 
 	@deftypemethod CachinKursawePetzoldShoupRBC bool Deliver (@code{mpz_ptr} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aiounicast::aio_scheduler_default}, 	@code{time_t} timeout @code{=aiounicast::aio_timeout_default})
-		TODO
+		This method delivers a broadcasted integer @var{m} from any
+		party using deliver scheduler @var{scheduler}. The index of
+		the sender is returned in @var{i_out}. In presence of the
+		fourth argument it waits for at most @var{timeout} seconds.
+		Otherwise, the default timeout given to the constructor is applied.
+
+		The method returns @code{false}, if delivering fails. Only
+		in some critical cases error messages are written to @code{std::cerr}.
 	@end deftypemethod
 
 	@deftypemethod CachinKursawePetzoldShoupRBC bool DeliverFrom (@code{mpz_ptr} m, @code{const size_t} i_in, @code{size_t} scheduler @code{=aiounicast::aio_scheduler_default}, @code{time_t} timeout @code{=aiounicast::aio_timeout_default})
-		TODO
+		This method delivers a broadcasted integer @var{m} from a
+		specified party with index @var{i_in} using deliver scheduler
+		@var{scheduler}. In presence of the fourth argument it waits
+		at most for @var{timeout} seconds.
+		Otherwise, the default timeout given to the constructor is applied.
+
+		The method returns @code{false}, if delivering fails. Only
+		in some critical cases error messages are written to @code{std::cerr}.
 	@end deftypemethod
 
 	@deftypemethod CachinKursawePetzoldShoupRBC void Sync (@code{time_t} timeout @code{=aiounicast::aio_timeout_default})
-		TODO
+		This method continues the execution of RBC protocol such that
+		the requests of other waiting parties are satisfied. In presence
+		of the only argument it waits exactly for @var{timeout} seconds.
+		Otherwise, the default timeout given to the constructor is applied. 
 	@end deftypemethod
 	
 	@defop {Destructor} CachinKursawePetzoldShoupRBC ~CachinKursawePetzoldShoupRBC ()
