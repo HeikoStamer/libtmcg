@@ -3595,10 +3595,10 @@ version of Groth's protocol (see @code{TMCG_ProveStackEquality_Groth_noninteract
 @code{TMCG_VerifyStackEquality_Groth_noninteractive}) provides an even more efficient
 implementation, because the prover has to compute the argument of correctness only once.
 Additionallly, it protects agains malicious verifiers and reduces the communication
-complexity, i.e. instead of @math{O(n^2)} operations the prover must only perform
-@math{O(n)} steps. Thus using this approach is strongly recommended. However, the security
+complexity, i.e. instead of @math{O(n^2)} the prover must perform only
+@math{O(n)} steps. Thus this approach is strongly recommended. However, the security
 then relies on the random oracle assumption. Please have a look at the included source
-code of @code{tests/t-poker-noninteractive.cc} to get a clue.}
+code @code{tests/t-poker-noninteractive.cc} to get a clue.}
 
 @node Drawing a Card from the Deck
 @subsection Drawing a Card from the Deck
@@ -3675,7 +3675,10 @@ delete rbc, delete aiou2, delete aiou;
 @c **********************************************************
 @chapter Tools
 @cindex Tools
-LibTMCG provides some additional programs that may of independent interest.
+LibTMCG provides some additional programs that may be of independent interest.
+
+@section Distributed Key Generation with OpenPGP-output
+TODO
 
 @c **********************************************************
 @c *******************  Appendices  *************************
