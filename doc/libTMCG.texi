@@ -2078,7 +2078,7 @@ operations in secure card games, e.g., the creation of open cards, the masking
 of cards, the opening of masked cards, the verifiable secret shuffle of a stack,
 and more general tasks like distributed key generation procedures. Each class
 implements the some functionality of the corresponding research
-paper@tie{}[CKPS01, JL00, BS03, Gr05, HSSV09, Sc98]. The author names are a prefix
+paper@tie{}[CKPS01, BS03, JL00, Gr05, HSSV09, Sc98]. The author names are a prefix
 of the class name and the following part is an abbreviation of (a part of) the
 title, respectively.
 
@@ -2100,6 +2100,7 @@ high-level protocols using it.
 We describe only those methods and members that might be of interest for an
 application programmer.
 @node CachinKursawePetzoldShoupRBC
+@cindex RBC
 @deftp {Class} CachinKursawePetzoldShoupRBC
 	This class implements the protocol RBC of Cachin, Kursawe, Petzold, and
 	Shoup@tie{}[CKPS01] for a reliable broadcast in asynchronous
@@ -2186,10 +2187,6 @@ application programmer.
 	@end defop
 @end deftp
 
-@subsubsection Adaptively Secure Threshold Cryptography
-
-TODO EDCF
-
 @subsubsection Verifiable @var{k}-out-of-@var{k} Threshold Masking Function
 The two classes of this subsection are concrete instantiations of Barnett
 and Smart's VTMF primitive@tie{}[BS03]. More formally, the authors specify
@@ -2211,7 +2208,7 @@ generation protocol. The other stuff is only used internally by high-level
 operations of @code{SchindelhauerTMCG}. Therefore this manual omits the
 description of such internal functions and members.
 
-@node BarnettSmartVTMF_dlog
+@node BarnettSmartVTMF
 @deftp {Class} BarnettSmartVTMF_dlog
 	This class implements the discrete logarithm instantiation of the VTMF
 	primitive in the field @math{{\bf Z}/p{\bf Z}}, where @math{p} is a large
@@ -2342,7 +2339,6 @@ description of such internal functions and members.
 	@end defop
 @end deftp
 
-@node BarnettSmartVTMF_dlog_GroupQR
 @deftp {Subclass of @code{BarnettSmartVTMF_dlog}} BarnettSmartVTMF_dlog_GroupQR
 	This subclass implements the discrete logarithm instantiation of the VTMF
 	primitive in the field @math{{\bf Z}/p{\bf Z}}, where @math{p} is a large
@@ -2423,6 +2419,65 @@ description of such internal functions and members.
 	@end deftypemethod
 	
 	@defop {Destructor} BarnettSmartVTMF_dlog_GroupQR ~BarnettSmartVTMF_dlog_GroupQR ()
+		This destructor releases all occupied resources.
+	@end defop
+@end deftp
+
+@subsubsection Adaptively Secure Threshold Cryptography
+Jarecki and Lysyanskaya@tie{}[JL00] describe some useful building blocks to gain
+security against an adaptive adversary.
+
+@node JareckiLysyanskayaEDCF
+@cindex EDCF
+@deftp {Class} JareckiLysyanskayaEDCF
+	This class provides the erasure-free distributed coinflip (EDCF) protocol.
+	It works in a group @math{G_q} of prime order @math{q} where the discrete
+	log problem is computationally hard. The protocol produces a public random
+	value @math{a} such that @math{0 \le a < q} is uniformly distributed.
+
+	@deftypecv {Member} JareckiLysyanskayaEDCF {mpz_t} p
+		This is the public prime number @math{p} which defines the
+		underlying field @math{{\bf Z}/p{\bf Z}}.
+	@end deftypecv
+	
+	@deftypecv {Member} JareckiLysyanskayaEDCF {mpz_t} q
+		This is the public prime number @math{q} which defines the
+		underlying cyclic group @math{G_q}. @math{G_q} is a subgroup of
+		@math{{\bf Z}/p{\bf Z}} and is exactly of order @math{q}.
+	@end deftypecv
+	
+	@deftypecv {Member} JareckiLysyanskayaEDCF {mpz_t} g
+		This is the fixed public generator @math{g} of the underlying
+		group @math{G_q}.
+	@end deftypecv
+	
+	@deftypecv {Member} JareckiLysyanskayaEDCF {mpz_t} h
+		This is a common public value @math{h} such that nobody knows
+		@math{\log_g h}. It can be obtained by the above key generation
+		protocol (@pxref{BarnettSmartVTMF}). 
+
+		@smallquotation Jarecki and Lysyanskaya@tie{}[JL00]
+			``When secure channels are present, @math{h} can be obtained by using general
+			techniques of multi-party computation@tie{}[BGW88, CDD+99]. When secure channel
+			are not there, and implementing them by erasure is not an option, we can use
+			another protocol, where each player generates his share @math{h_i} of @math{h},
+			and then all players, in parallel, prove knowledge of @math{\log_g h_i} to each
+			other.''
+		@end smallquotation
+	@end deftypecv
+
+	@deftypecv {Member} JareckiLysyanskayaEDCF {size_t} n
+		This is the total number of parties @math{n} involved in this protocol.
+	@end deftypecv
+
+	@deftypecv {Member} JareckiLysyanskayaEDCF {size_t} t
+		This is the number of possible faulty parties @math{t} (threshold).
+	@end deftypecv
+
+	@deftypeop {Constructor} JareckiLysyanskayaEDCF {} JareckiLysyanskayaEDCF ()
+	@end deftypeop
+
+	@defop {Destructor} JareckiLysyanskayaEDCF ~JareckiLysyanskayaEDCF ()
 		This destructor releases all occupied resources.
 	@end defop
 @end deftp
@@ -2654,7 +2709,7 @@ class must be created to perform any card or stack operations.
 		proofs in the encoding scheme of Schindelhauer.	Further it defines the
 		soundness error probability (also @math{2^{-\kappa}}) of the shuffle
 		argument in the encoding scheme of Barnett and Smart, if the efficient
-		protocols of Groth@tie{}[Gr05] and others@tie{}[HSSV09] are not used.
+		protocols of Groth@tie{}[Gr05, Gr10] and others@tie{}[HSSV09] are not used.
 	@end deftypecv
 	
 	@deftypecv {Member} SchindelhauerTMCG {size_t} TMCG_Players
@@ -3218,9 +3273,10 @@ function @code{version_libTMCG}.
 @node Setup Communication Channels
 @section Setup Communication Channels
 @cindex Communication
-Some multi-party protocols need additional asynchronous private and authenticated
-communications channels and a reliable broadcast. The following example shows,
-how to setup this for player @math{P_i}:
+Some multiparty protocols require additional asynchronous point-to-point
+communication channels (authenticated and private) and a reliable
+broadcast channel. The following example shows, how to setup these
+channels for player @math{P_i}:
 @cartouche
 @example
 // create asynchronous private unicast channels
@@ -3232,13 +3288,17 @@ aiounicast_select *aiou2 = new aiounicast_select(5, i, bP_in, bP_out, bP_key,
   aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 			
 // create an instance of a reliable broadcast protocol (RBC)
-std::string myID = "example-poker";
+std::string myID = "example-poker-libTMCG-reference-manual";
 CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(5, 1, i, 
   aiou2, aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 rbc->setID(myID);
 @end example
 @end cartouche
-
+We assume that pairwise private keys (e.g. passphrases) have been exchanged
+(i.e. vector @code{uP_key} resp. @code{bP_key}) and point-to-point links
+(i.e. input file descriptors in vector @code{uP_in} resp. @code{bP_in} and
+output file descriptors in vector @code{uP_out} resp. @code{bP_out}) have
+been already established.
 
 @node Session Initialization and Key Generation
 @section Session Initialization and Key Generation
@@ -3519,8 +3579,8 @@ API part of the manual (see @code{TMCG_Stack} and @code{TMCG_OpenStack}).
 @subsection Creating the Deck
 A quite common operation is the creation of a card deck. The deck will
 initially be represented by an open stack (see @code{TMCG_OpenStack}) called
-@code{deck}. Every player creates his own deck which consists of 52@tie{}open
-cards of different type in our example.
+@code{deck}. Every player creates his own instance of the deck, which consists
+of 52@tie{}open cards of different type in our example.
 @cartouche
 @example
 TMCG_OpenStack<VTMF_Card> deck;
@@ -3532,23 +3592,35 @@ for (size_t type = 0; type < 52; type++)
 @}
 @end example
 @end cartouche
-Note that this card deck must be consistent for all players, that means,
-the order of the open cards and their types must be exactly the same for
+Note that the instances of the deck must be consistent for all players, that
+means, the order of the open cards and their types must be exactly the same for
 all players.
+
+Finally, we copy the deck to a regular stack @code{s} for further processing:
+@cartouche
+@example
+TMCG_Stack<VTMF_Card> s;
+s.push(deck);
+@end example
+@end cartouche
 
 @node Shuffling the Deck
 @subsection Shuffling the Deck
 Every player must perform a shuffle of the deck, because only such a procedure
 guarantees that no coalition has influence on the outcome. Thus we build a
 shuffle chain (e.g. using the strict total order @math{P_i < P_j}, if and only
-if @math{i < j}) such that each player shuffles the deck once. Consider the
-following code fragment for the player @math{P_j}.
+if @math{i < j}) such that each player shuffles the deck once.
+
+First the regular stack @code{s} is initialized with open cards from @code{deck}.
+Then each player shuffles the stack (see @code{TMCG_MixStack}) using randomness
+(see @code{TMCG_CreateStackSecret}) and proves the correctness of this operation
+(see @code{TMCG_ProveStackEquality}). Consequently, every player should verify
+these proofs (see @code{TMCG_VerifyStackEquality}) and complain deviations immediately.
+Finally, the stack @code{s} contains the shuffled result. Consider the following
+code fragment for the player @math{P_j}.
 
 @cartouche
 @example
-TMCG_Stack<VTMF_Card> s;
-s.push(deck);
-
 for (size_t i = 0; i < 5; i++)
 @{
   TMCG_Stack<VTMF_Card> s2;
@@ -3579,13 +3651,6 @@ for (size_t i = 0; i < 5; i++)
 @}
 @end example
 @end cartouche
-
-First the regular stack @code{s} is initialized with open cards from @code{deck}.
-Then each player shuffles the stack (see @code{TMCG_MixStack}) using randomness
-(see @code{TMCG_CreateStackSecret}) and proves the correctness of this operation
-(see @code{TMCG_ProveStackEquality}). Consequently, every player should verify
-these proofs (see @code{TMCG_VerifyStackEquality}) and complain deviations immediately.
-Finally, the stack @code{s} contains the shuffled result.
 
 If you want to use the more efficient shuffle verification protocol of Groth,
 then you have to replace @code{TMCG_ProveStackEquality} and
@@ -3619,8 +3684,8 @@ for (size_t i = 0; i < 5; i++)
 @end cartouche
 Further, probably you want disclose the card types to the corresponding
 player. Consider the code fragment for the player @math{P_j}: Every player
-receives the necessary information from the other players and computes the
-card types of his hand @code{hand[j]}. Finally, these types are stored
+receives the necessary information from the other players and she computes the
+card types of her hand @code{hand[j]}. Finally, these types are stored
 together with the masked cards in the open stack @code{private_hand}. 
 @cartouche
 @example
@@ -3657,7 +3722,7 @@ for (size_t i = 0; i < 5; i++)
 @end cartouche
 The example can be modified in a straightforward way to publicly disclose a
 card from a players hand or from the remaining stack @code{s}, i.e. to lay
-down the card on the table.
+down the card face-up on the table.
 
 @node Quit a Session
 @section Quit a Session
