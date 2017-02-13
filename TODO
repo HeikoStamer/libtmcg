@@ -5,6 +5,7 @@
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
   (for applications that cannot rely on the random oracle assumption or
    the h-generation protocol as building block of ASTC [JL00])
++ DZKP also called "Simultaneous Zero-Knowledge Proofs of Knowledge" [JL00]
 + provide DKG with security against an adaptive adversary [CGJKR99, JL00]
 + provide distributed DSS key generation and signature scheme [GJKR01]
 + move to event-driven architecture and state-based protocol representation

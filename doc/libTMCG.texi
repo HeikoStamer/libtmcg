@@ -1879,7 +1879,7 @@ Moreover, the channels can be authenticated by
 a message authentication code and encrypted by a symmetric cipher. The deployed
 algorithms are defined by global symbols (@code{TMCG_GCRY_MAC_ALGO} and
 @code{TMCG_GCRY_ENC_ALGO}, respectively) and fixed at compile time of LibTMCG.
-@node aiounicast
+
 @deftp {Class} aiounicast
 	This class is only an abstract interface and cannot be instantiated directly.
 	We explain some basic class members that are useful for an application
@@ -1921,7 +1921,6 @@ algorithms are defined by global symbols (@code{TMCG_GCRY_MAC_ALGO} and
 Note that either @code{aiounicast_nonblock.hh} or @code{aiounicast_select.hh} must be
 included in addition to @code{libTMCG.hh}. Then the following classes can be instantiated
 by your application.
-@node aiounicast_nonblock
 @deftp {Class} aiounicast_nonblock
 	This class only works with non-blocking file descriptors, i.e., the pipes or sockets
 	have to be opened with @code{O_NONBLOCK} flag. It uses continiuous polling on the
@@ -1994,7 +1993,6 @@ by your application.
 		This destructor releases all occupied resources.
 	@end defop
 @end deftp
-@node aiounicast_select
 @deftp {Class} aiounicast_select
 	This class works with arbitrary file descriptors. It uses the select
 	interface of the operation system with negligible timeout of 1000us
@@ -2082,6 +2080,7 @@ paper@tie{}[CKPS01, BS03, JL00, Gr05, HSSV09, Sc98]. The author names are a pref
 of the class name and the following part is an abbreviation of (a part of) the
 title, respectively.
 
+@node CachinKursawePetzoldShoupRBC
 @subsubsection Secure and Efficient Asynchronous Broadcast Protocols
 Currently this part of LibTMCG provides an implementation of @emph{reliable broadcast},
 which is based basically on an optimized variant of Bracha's double-echo
@@ -2093,13 +2092,13 @@ or don't. In the literature consistency and totality properties are often combin
 into a single condition called @emph{agreement}.}) of
 reliable broadcast, if and only if the number of faulty or even malicious players
 @math{t} is strictly less than one third of all parties @math{n}, i.e. @math{t < n/3}. 
-Please note that without further assumptions this condition is optimal for
-asynchronous communication and thus have crucial impact for liveness of the
+Please note that without further assumptions this condition is rather optimal
+for asynchronous communication and thus have crucial impact for liveness of the
 high-level protocols using it.
 
-We describe only those methods and members that might be of interest for an
-application programmer.
-@node CachinKursawePetzoldShoupRBC
+We describe only those classes, methods, and members that might be of interest
+for an application programmer.
+
 @cindex RBC
 @deftp {Class} CachinKursawePetzoldShoupRBC
 	This class implements the protocol RBC of Cachin, Kursawe, Petzold, and
@@ -2187,6 +2186,7 @@ application programmer.
 	@end defop
 @end deftp
 
+@node BarnettSmartVTMF
 @subsubsection Verifiable @var{k}-out-of-@var{k} Threshold Masking Function
 The two classes of this subsection are concrete instantiations of Barnett
 and Smart's VTMF primitive@tie{}[BS03]. More formally, the authors specify
@@ -2208,7 +2208,7 @@ generation protocol. The other stuff is only used internally by high-level
 operations of @code{SchindelhauerTMCG}. Therefore this manual omits the
 description of such internal functions and members.
 
-@node BarnettSmartVTMF
+@cindex VTMF
 @deftp {Class} BarnettSmartVTMF_dlog
 	This class implements the discrete logarithm instantiation of the VTMF
 	primitive in the field @math{{\bf Z}/p{\bf Z}}, where @math{p} is a large
@@ -2423,17 +2423,19 @@ description of such internal functions and members.
 	@end defop
 @end deftp
 
+@node JareckiLysyanskayaEDCF
 @subsubsection Adaptively Secure Threshold Cryptography
-Jarecki and Lysyanskaya@tie{}[JL00] describe some useful building blocks to gain
+Jarecki and Lysyanskaya@tie{}[JL00] introduce some useful building blocks to gain
 security against an adaptive adversary.
 
-@node JareckiLysyanskayaEDCF
 @cindex EDCF
 @deftp {Class} JareckiLysyanskayaEDCF
 	This class provides the erasure-free distributed coinflip (EDCF) protocol.
-	It works in a group @math{G_q} of prime order @math{q} where the discrete
-	log problem is computationally hard. The protocol produces a public random
-	value @math{a} such that @math{0 \le a < q} is uniformly distributed.
+	It also needs a group @math{G_q} of prime order @math{q} where the discrete
+	logarithm problem is computationally hard. The protocol produces a public
+	value @math{a = \sum_{i=1}^n a_i \bmod q} such that @math{0 \le a < q} is
+	random and uniformly distributed, if at least one party @math{P_j} has been
+	chosen their corresponding share @math{a_j\in{\bf Z}_q} uniformly at random.
 
 	@deftypecv {Member} JareckiLysyanskayaEDCF {mpz_t} p
 		This is the public prime number @math{p} which defines the
@@ -2442,8 +2444,9 @@ security against an adaptive adversary.
 	
 	@deftypecv {Member} JareckiLysyanskayaEDCF {mpz_t} q
 		This is the public prime number @math{q} which defines the
-		underlying cyclic group @math{G_q}. @math{G_q} is a subgroup of
-		@math{{\bf Z}/p{\bf Z}} and is exactly of order @math{q}.
+		underlying cyclic group @math{G_q}. Note that @math{G_q} is
+		a subgroup of @math{{\bf Z}/p{\bf Z}} and it must be chosen
+		to have order @math{q}.
 	@end deftypecv
 	
 	@deftypecv {Member} JareckiLysyanskayaEDCF {mpz_t} g
@@ -2452,9 +2455,9 @@ security against an adaptive adversary.
 	@end deftypecv
 	
 	@deftypecv {Member} JareckiLysyanskayaEDCF {mpz_t} h
-		This is a common public value @math{h} such that nobody knows
+		This is the common public value @math{h \in G_q} such that nobody knows
 		@math{\log_g h}. It can be obtained by the above key generation
-		protocol (@pxref{BarnettSmartVTMF}). 
+		protocol (@pxref{BarnettSmartVTMF}).
 
 		@smallquotation Jarecki and Lysyanskaya@tie{}[JL00]
 			``When secure channels are present, @math{h} can be obtained by using general
@@ -2471,21 +2474,41 @@ security against an adaptive adversary.
 	@end deftypecv
 
 	@deftypecv {Member} JareckiLysyanskayaEDCF {size_t} t
-		This is the number of possible faulty parties @math{t} (threshold).
+		This is the maximum number of faulty parties @math{t} (reconstruction threshold).
 	@end deftypecv
 
-	@deftypeop {Constructor} JareckiLysyanskayaEDCF {} JareckiLysyanskayaEDCF ()
+	@deftypeop {Constructor} JareckiLysyanskayaEDCF {} JareckiLysyanskayaEDCF (@code{const size_t} n_in, @code{const size_t} t_in, @code{mpz_srcptr} p_CRS, @code{mpz_srcptr} q_CRS, @code{mpz_srcptr} g_CRS, @code{mpz_srcptr} h_CRS, @code{const unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{const unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
+		TODO
 	@end deftypeop
+
+	@deftypemethod JareckiLysyanskayaEDCF bool CheckGroup ()
+		This method checks whether @math{p} and @math{q} have appropriate sizes
+		with respect to the bit lengths given during the initialization of the
+		corresponding instance. Further, it checks whether @math{p} has the correct
+		form (i.e. @math{p = kq +1}), whether @math{p} and @math{q} are probable
+		prime, and whether @math{g} resp. @math{h} are different generators of the
+		subgroup @math{G_q}. It returns @code{true}, if all of these checks
+		have been passed successfully.
+	@end deftypemethod
+
+	@deftypemethod JareckiLysyanskayaEDCF bool Flip (@code{const size_t} i, @code{mpz_ptr} a, @code{aiounicast*} aiou, @code{CachinKursawePetzoldShoupRBC*} rbc, @code{std::ostream&} err, @code{const bool} simulate_faulty_behaviour @code{=false})
+		TODO	
+	@end deftypemethod
+
+	@deftypemethod JareckiLysyanskayaEDCF bool Flip_twoparty (@code{const size_t} i, @code{mpz_ptr} a, @code{std::istream&} in, @code{std::ostream&} out, @code{std::ostream&} err, @code{const bool} simulate_faulty_behaviour @code{=false})
+		TODO	
+	@end deftypemethod
 
 	@defop {Destructor} JareckiLysyanskayaEDCF ~JareckiLysyanskayaEDCF ()
 		This destructor releases all occupied resources.
 	@end defop
 @end deftp
 
+@node GrothVSSHE
 @subsubsection Verifiable Secret Shuffle of Homomorphic Encryptions
-Recently, Groth@tie{}[Gr05, Gr10] has proposed a very efficient solution to perform
-a verifiable shuffle of homomorphically encrypted values. He describes an
-honest verifier zero-knowledge argument which shows the correctness of a
+Recently, Groth@tie{}[Gr05, Gr10] has proposed a very efficient solution to
+perform a verifiable shuffle of homomorphically encrypted values. He describes
+an honest verifier zero-knowledge argument which shows the correctness of a
 shuffle. Beside other applications (e.g. verifiable mix networks, electronic
 voting) his protocol can be used to show (with overwhelming probability) that
 the secret shuffle of a deck of cards was performed correctly. The
@@ -2493,35 +2516,38 @@ computational complexity and the produced communication traffic are superior
 to previously deployed techniques (e.g. Schindelhauer's cut-and-choose method).
 LibTMCG provides the first known implementation of Groth's famous protocol.
 However, it can only be used along with the VTMF card encoding scheme of
-Barnett and Smart@tie{}[BS03] based on the hardness of computing discrete logarithms.
+Barnett and Smart@tie{}[BS03] based on the hardness of computing discrete
+logarithms.
 
-Our implementation uses a generalized variant@tie{}[Gr05, Gr10] of the statistically hiding and
-computationally binding homomorphic commitment scheme due to Pedersen (see @emph{Non-interactive
-and Information-theoretic Secure Verifiable Secret Sharing}, CRYPTO@tie{}'91,
-LNCS@tie{}576, 1992). The binding property relies on the hardness of computing
-discrete logarithms in @math{G} w.r.t. random bases @math{g_1, \ldots, g_n} and
-thus a commitment is only binding for computationally bounded provers.@footnote{Strictly
-speaking, due to this reason Groth's protocol is a zero-knowledge @emph{argument}
-instead of a zero-knowledge @emph{proof}. However, for convenience we will not
-distinguish between these terms here.} But this choice seems to be reasonable for
-the intention of LibTMCG, because all players are supposed to be computationally
-bounded. The security parameters of the commitment scheme (in particular the group
-@math{G}) are determined by the corresponding VTMF instance.
+Our implementation uses a generalized variant@tie{}[Gr05, Gr10] of the
+statistically hiding and computationally binding homomorphic commitment scheme
+due to Pedersen (see @emph{Non-interactive and Information-theoretic Secure
+Verifiable Secret Sharing}, CRYPTO@tie{}'91, LNCS@tie{}576, 1992). The binding
+property relies on the hardness of computing discrete logarithms in @math{G}
+w.r.t. random bases @math{g_1, \ldots, g_n} and thus a commitment is only
+binding for computationally bounded provers.@footnote{Strictly speaking, due to
+this reason Groth's protocol is a zero-knowledge @emph{argument} instead of a
+zero-knowledge @emph{proof}. However, for convenience we will not distinguish
+between these terms here.} But this choice seems to be reasonable for the
+intention of LibTMCG, because all players are supposed to be computationally
+bounded. The security parameters of the commitment scheme (in particular the
+group @math{G}) are determined by the corresponding VTMF instance.
 
 Since version 1.2.0 of LibTMCG we use a two-party version of a distributed coin
 flipping protocol by Jarecki and Lysyanskaya@tie{}[JL00] to protect against
-malicious verifiers. Since version 1.3.0 of LibTMCG there is also an additional
-class method to generate the bases @math{g_1, \ldots, g_n} of Pedersen commitment
-scheme by distributed coin flipping. This is necessary in order to ensure, that
-the adversary cannot compute @math{\log_{g_i} h} and @math{\log_h g_i}, for all
-@math{i = 1, \ldots, n}.
+malicious verifiers attacking the zero-knowledge property. Since version 1.3.0
+there is an additional method for generating the bases @math{g_1, \ldots, g_n}
+of the Pedersen commitment scheme by distributed coin flipping. This step is
+necessary in order to ensure, that a malicious prover cannot compute
+@math{\log_{g_i} h} resp. @math{\log_h g_i}, for some @math{i = 1, \ldots, n},
+and thus erroneously pass the shuffle verification.
 
 Further, to the best of our knowledge it is not known, whether Groth's protocol
 retains the zero-knowledge property when it is executed in a concurrent setting.
 Thus the application programmer should be careful and avoid parallel invocations
 of the same instance.
 
-@node GrothVSSHE
+@cindex VSSHE
 @deftp {Class} GrothVSSHE
 	This class provides the low-level interface for Groth's protocol.
 	There are just a few methods that might be of general interest.
@@ -2560,9 +2586,9 @@ of the same instance.
 		commitment scheme are randomly and uniformly chosen from @math{{\bf Z}_q}
 		by the session leader. However, this is not verifiable by other
 		parties and a malicious leader can choose @math{g_j := h^{\xi_j} \bmod p}
-		for some secret @math{\xi_j\in {\bf Z}_q} and @math{1 \le j \le n}.
-		Thus it is necessary to call the method
-		@code{SetupGenerators_publiccoin} before any shuffle verification is
+		for some secret @math{\xi_j\in {\bf Z}_q} where @math{1 \le j \le n}.
+		Thus it is importand to call @code{SetupGenerators_publiccoin}
+		during game initialization before any shuffle verification is
 		performed.
 	@end deftypeop
 	
@@ -2587,12 +2613,13 @@ of the same instance.
 	@end deftypeop
 
 	@deftypemethod GrothVSSHE bool SetupGenerators_publiccoin (@code{size_t} whoami, @code{aiounicast*} aiou, @code{CachinKursawePetzoldShoupRBC*} rbc, @code{JareckiLysyanskayaEDCF*} edcf, @code{std::ostream&} err)
-		This method setup the generators @math{g_1, \ldots, g_n} of the internal Pedersen
-		commitment scheme by using a distributed coin flipping protocol@tie{}[JL00].
-		Assuming at least one honest player they are randomly and uniformly chosen
-		from @math{{\bf Z}_q} such that @math{\log_{g_i} h} and @math{\log_h g_i}
+		This method setup the generators @math{g_1, \ldots, g_n} of the internal
+		Pedersen commitment scheme by using a distributed coinflip
+		protocol@tie{}[JL00].
+		Assuming at least one honest player these values are randomly and uniformly
+		chosen from @math{{\bf Z}_q} such that @math{\log_{g_i} h} and @math{\log_h g_i}
 		are unkown, for all @math{i = 1, \ldots, n}.
-		The positive integer @var{whoami} is an index of this instance with
+		The positive integer @var{whoami} is an index of the running instance with
 		respect to already initialized instances of asynchronous point-to-point
 		channels @var{aiou} and a reliable broadcast channel @var{rbc}. Logging
 		and debug messages are printed to the provided output stream @var{err}.
@@ -2615,6 +2642,7 @@ of the same instance.
 	@end defop
 @end deftp
 
+@node HooghSchoenmakersSkoricVillegasVRHE
 @subsubsection Verifiable Rotation of Homomorphic Encryptions
 De Hoogh, Schoenmakers, Skoric, and Villegas@tie{}[HSSV09] has proposed
 an efficient solution to perform a verifiable rotation (also known as
@@ -2629,7 +2657,7 @@ retains the zero-knowledge property when it is executed in a concurrent setting.
 Thus the application programmer should be careful and avoid parallel invocations
 of the same instance.
 
-@node HooghSchoenmakersSkoricVillegasVRHE
+@cindex VRHE
 @deftp {Class} HooghSchoenmakersSkoricVillegasVRHE
 	This class provides the low-level interface for their protocol.
 	There are just a few methods that might be of general interest.
@@ -2682,14 +2710,15 @@ of the same instance.
 	@end defop
 @end deftp
 
+@node SchindelhauerTMCG
 @subsubsection Toolbox for Mental Card Games
-This section explains the main class of LibTMCG which provides all
+This section explains the main class of LibTMCG which provides some
 ``high-level operations'' from Schindelhauer's toolbox@tie{}[Sc98].
 Even if the more efficient card encoding scheme of Barnett and
-Smart@tie{}[BS03] is deployed, at least one instance of the following
-class must be created to perform any card or stack operations.
+Smart@tie{}[BS03] will deployed in your application, at least one
+instance of the following class must be created to perform any card
+or stack operations.
 
-@node SchindelhauerTMCG
 @deftp {Class} SchindelhauerTMCG
 	This class implements the main core of Schindelhauer's toolbox,
 	i.e. important functions like masking, opening, and shuffling of
@@ -2697,9 +2726,8 @@ class must be created to perform any card or stack operations.
 	e.g., the possibility to insert a masked card secretly into a stack or
 	the verifiable subset properties of stacks.
 	All implemented operations are available for the original encoding scheme
-	of Schindelhauer (see @code{TMCG_Card}) and, of course, for the more efficient
-	encoding scheme of Barnett and Smart (see @code{VTMF_Card} and
-	@code{BarnettSmartVTMF_dlog}) as well.
+	of Schindelhauer (@pxref{Data Types}) and, of course, for the more efficient
+	encoding scheme of Barnett and Smart (@pxref{BarnettSmartVTMF}) as well.
 	
 	@deftypecv {Member} SchindelhauerTMCG {unsigned long int} TMCG_SecurityLevel
 		This read-only nonnegative integer represents the security parameter
@@ -2760,7 +2788,7 @@ class must be created to perform any card or stack operations.
 		using the encoding scheme of Schindelhauer. The @var{type} MUST be an
 		integer from the interval @math{[0, 2^{w} - 1]}, where @math{w} is the
 		number given to the constructor of this class. The @math{w} MUST be the
-		same number as used at creation of @var{c} (see @code{TMCG_Card}). The
+		same number as used at creation of @var{c} (@pxref{Data Types}). The
 		parameter @var{ring} is a container with exactly @math{k} public keys,
 		where @math{k} is the number given to the constructor of this class.
 		The @math{k} MUST be the same number as used at the creation of @var{c}.
@@ -2772,7 +2800,7 @@ class must be created to perform any card or stack operations.
 		integer from the interval @math{[0, 2^{w} - 1]}, where @math{w} is the
 		number given to the constructor of this class. The parameter @var{vtmf}
 		is a pointer to an already initialized VTMF instance, i.e. the key
-		generation protocol was successfully finished (see @code{BarnettSmartVTMF_dlog}
+		generation protocol was successfully finished (@pxref{BarnettSmartVTMF}
 		and @code{BarnettSmartVTMF_dlog_GroupQR}, respectively).
 	@end deftypemethod
 	
@@ -2782,7 +2810,7 @@ class must be created to perform any card or stack operations.
 		The parameter @var{ring} is a container with exactly @math{k} public
 		keys, where @math{k} is the number given to the constructor of this
 		class. It MUST be the same number as used at the creation of @var{cs}
-		(see @code{TMCG_CardSecret}). The parameter @var{index} is from the
+		(@pxref{Data Types}). The parameter @var{index} is from the
 		interval @math{[0, k - 1]} and determines the position of the players
 		public key in the container @var{ring}.
 	@end deftypemethod
@@ -2792,8 +2820,7 @@ class must be created to perform any card or stack operations.
 		which is necessary to perform later a masking operation on a card.
 		The parameter @var{vtmf} is a pointer to an already initialized VTMF
 		instance, i.e. the key generation protocol MUST be successfully finished
-		(see @code{BarnettSmartVTMF_dlog} and @code{BarnettSmartVTMF_dlog_GroupQR},
-		respectively).
+		(@pxref{BarnettSmartVTMF}).
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_CreatePrivateCard (@code{TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{size_t} type)
@@ -2802,8 +2829,8 @@ class must be created to perform any card or stack operations.
 		Schindelhauer.
 		The @var{type} MUST be an integer from the interval @math{[0, 2^{w} - 1]},
 		where @math{w} is the number given to the constructor of this class. The
-		@math{w} MUST be the same number as used at creation of @var{c} (see
-		@code{TMCG_Card}) and @var{cs} (see @code{TMCG_CardSecret}). The parameter
+		@math{w} MUST be the same number as used at creation of @var{c} and @var{cs}
+		(@pxref{Data Types}). The parameter
 		@var{ring} is a container with exactly @math{k} public keys, where @math{k}
 		is the number given to the constructor of this class. The @math{k} MUST be
 		the same number as used at the creation of @var{c} and @var{cs}. The parameter
@@ -2825,9 +2852,8 @@ class must be created to perform any card or stack operations.
 		@math{[0, 2^{w} - 1]}, where @math{w} is the number given to the constructor
 		of this class. The parameter @var{vtmf} is a pointer to an already initialized
 		VTMF instance, i.e. the key generation protocol MUST be successfully finished
-		(see @code{BarnettSmartVTMF_dlog} and @code{BarnettSmartVTMF_dlog_GroupQR},
-		respectively). Specifically, @code{TMCG_CreatePrivateCard} directly executes
-		the masking operation of the verifiable masking protocol.
+		(@pxref{BarnettSmartVTMF}). Specifically, @code{TMCG_CreatePrivateCard} directly
+		executes the masking operation of the verifiable masking protocol.
 	@end deftypemethod
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_MaskCard (@code{const TMCG_Card&} c, @code{TMCG_Card&} cc, @code{const TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{bool} TimingAttackProtection @code{=true})
@@ -2853,8 +2879,7 @@ class must be created to perform any card or stack operations.
 		NEVER been involved in a masking operation before.
 		The parameter @var{vtmf} is a pointer to an already initialized
 		VTMF instance, i.e. the key generation protocol MUST be successfully finished
-		(see @code{BarnettSmartVTMF_dlog} and @code{BarnettSmartVTMF_dlog_GroupQR},
-		respectively). The protection against timing attacks is turned on, if
+		(@pxref{BarnettSmartVTMF}). The protection against timing attacks is turned on, if
 		@var{TimingAttackProtection} is set to @code{true}.
 	@end deftypemethod
 	
@@ -2913,8 +2938,8 @@ class must be created to perform any card or stack operations.
 		Every player must execute this method as prover.
 		The card @var{c} MUST be created such that its @math{k} resp. @math{w}
 		corresponds to the numbers given to the constructor of this class.
-		The parameter @var{key} is the corresponding secret key (see
-		@code{TMCG_SecretKey}) of the prover. The parameter @var{index} is from the
+		The parameter @var{key} is the corresponding secret key (@pxref{Data Types})
+		of the prover. The parameter @var{index} is from the
 		interval @math{[0, k - 1]} and contains the position of the provers
 		public key in the container @var{ring} (same as in @code{TMCG_CreateCardSecret}).
 		The input/output protocol messages from and to the verifier are
@@ -2940,7 +2965,7 @@ class must be created to perform any card or stack operations.
 		the parameter @var{cs}.
 		Thus @var{c} and @var{cs} MUST be created such that their @math{k} resp. @math{w}
 		corresponds to the numbers given to the constructor of this class.
-		The parameter @var{key} is the corresponding public key (see @code{TMCG_PublicKey})
+		The parameter @var{key} is the corresponding public key (@pxref{Data Types})
 		of the prover. The parameter @var{index} is from the interval @math{[0, k - 1]}
 		and contains the position of the provers public key in the container @var{ring}
 		(same as in @code{TMCG_CreateCardSecret}).
@@ -2970,7 +2995,7 @@ class must be created to perform any card or stack operations.
 		the parameter @var{cs}.
 		Thus @var{c} and @var{cs} MUST be created such that their @math{k} resp. @math{w}
 		corresponds to the numbers given to the constructor of this class.
-		The parameter @var{key} is the corresponding secret key (see @code{TMCG_SecretKey})
+		The parameter @var{key} is the corresponding secret key (@pxref{Data Types})
 		of the player. The parameter @var{index} is from the interval @math{[0, k - 1]}
 		and contains the position of the players public key in the container @var{ring}
 		(same as in @code{TMCG_CreateCardSecret}).
@@ -3069,7 +3094,7 @@ class must be created to perform any card or stack operations.
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_MixStack (@code{const TMCG_Stack<TMCG_Card>&} s, @code{TMCG_Stack<TMCG_Card>&} s2, @code{const TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{const TMCG_PublicKeyRing&} ring, @code{bool} TimingAttackProtection @code{=true})
 		This method shuffles a given stack @var{s} according to the previously
-		created stack secret @var{ss} (see @code{TMCG_CreateStackSecret}). The
+		created stack secret @var{ss} (@pxref{Data Types}). The
 		result of the shuffle is returned in @var{s2}.
 		The parameter @var{ss} MUST be a fresh stack secret which has NEVER
 		been involved in a shuffle operation before. The parameters @var{s}
@@ -3082,7 +3107,7 @@ class must be created to perform any card or stack operations.
 	
 	@deftypemethod SchindelhauerTMCG void TMCG_MixStack (@code{const TMCG_Stack<VTMF_Card>&} s, @code{TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf, @code{bool} TimingAttackProtection @code{=true})
 		This method shuffles a given stack @var{s} according to the previously
-		created stack secret @var{ss} (see @code{TMCG_CreateStackSecret}). The
+		created stack secret @var{ss} (@pxref{Data Types}). The
 		result of the shuffle is returned in @var{s2}.
 		The parameter @var{ss} MUST be a fresh stack secret which has NEVER
 		been involved in a shuffle operation before. The parameters @var{s}
@@ -3567,7 +3592,7 @@ Please notice that first @code{TMCG_SelfCardSecret} is called, then
 There exist a lot of basic operations on stacks, e.g. pushing a card to a stack
 or importing a stack. These functions are to simple for explaining them here, but
 they are used implicitly. However, a short description can be found in the
-API part of the manual (see @code{TMCG_Stack} and @code{TMCG_OpenStack}).
+API part of the manual (@pxref{Data Types}).
 
 @menu
 * Creating the Deck::
@@ -3612,7 +3637,7 @@ shuffle chain (e.g. using the strict total order @math{P_i < P_j}, if and only
 if @math{i < j}) such that each player shuffles the deck once.
 
 First the regular stack @code{s} is initialized with open cards from @code{deck}.
-Then each player shuffles the stack (see @code{TMCG_MixStack}) using randomness
+Then each player shuffles the stack (@pxref{SchindelhauerTMCG}, i.e, @code{TMCG_MixStack}) using randomness
 (see @code{TMCG_CreateStackSecret}) and proves the correctness of this operation
 (see @code{TMCG_ProveStackEquality}). Consequently, every player should verify
 these proofs (see @code{TMCG_VerifyStackEquality}) and complain deviations immediately.
@@ -3663,7 +3688,7 @@ Additionallly, it protects agains malicious verifiers and reduces the communicat
 complexity, i.e. instead of @math{O(n^2)} the prover must perform only
 @math{O(n)} steps. Thus this approach is strongly recommended. However, the security
 then relies on the random oracle assumption. Please have a look at the included source
-code @code{tests/t-poker-noninteractive.cc} to get a clue.}
+code @file{tests/t-poker-noninteractive.cc} to get a clue.}
 
 @node Drawing a Card from the Deck
 @subsection Drawing a Card from the Deck
