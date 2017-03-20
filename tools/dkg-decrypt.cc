@@ -1169,8 +1169,14 @@ int main
 {
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
-		{'p', "port", NULL, "GNUnet CADET port to listen/connect",
-			GNUNET_YES, &GNUNET_GETOPT_set_string, &gnunet_opt_port},
+		GNUNET_GETOPT_OPTION_STRING('p',
+			"port",
+			NULL,
+			"GNUnet CADET port to listen/connect",
+			&gnunet_opt_port
+		),
+//		{'p', "port", NULL, "GNUnet CADET port to listen/connect",
+//			GNUNET_YES, &GNUNET_GETOPT_set_string, &gnunet_opt_port},
 		GNUNET_GETOPT_OPTION_END
 	};
 #endif

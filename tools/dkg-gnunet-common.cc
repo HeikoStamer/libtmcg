@@ -48,10 +48,6 @@ extern char				*gnunet_opt_port;
 #define GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST 1082
 
 static struct GNUNET_CADET_Handle		*mh = NULL;
-static struct GNUNET_CADET_TransmitHandle	*th = NULL;
-static struct GNUNET_CADET_Channel		*th_ch = NULL;
-static struct GNUNET_SCHEDULER_Task		*th_at = NULL;
-static size_t 					th_datalen = 0;
 static struct GNUNET_TRANSPORT_HelloGetHandle	*gh = NULL;
 static struct GNUNET_HELLO_Message 		*ohello = NULL;
 static struct GNUNET_CADET_Port 		*lp = NULL;
@@ -97,9 +93,14 @@ void gnunet_hello_callback(void *cls, const struct GNUNET_MessageHeader *hello)
 	gh = NULL;
 }
 
-int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
-	void **channel_ctx, const struct GNUNET_MessageHeader *message)
+int check_gnunet_data_callback(void *cls, const struct GNUNET_MessageHeader *message)
 {
+	return GNUNET_OK;
+}
+
+void handle_gnunet_data_callback(void *cls, const struct GNUNET_MessageHeader *message)
+{
+	struct GNUNET_CADET_Channel *channel = (GNUNET_CADET_Channel*)cls;
 	int fd;
 	uint16_t len = 0, cnt = 0;
 	ssize_t rnum = 0;
@@ -118,13 +119,13 @@ int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 	if (!cnt)
 	{
 		std::cerr << "WARNING: ignore incoming message from unregistered channel" << std::endl;
-		return GNUNET_OK;
+		return;
 	}
 	else if (cnt > 1)
 	{
 		std::cerr << "ERROR: this channel is registered more than once" << std::endl;
 		GNUNET_SCHEDULER_shutdown();
-		return GNUNET_SYSERR;
+		return;
 	}
 	else
 	{
@@ -145,7 +146,7 @@ int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 	{
 		// ignore unknown message types including channel check
 		GNUNET_CADET_receive_done(channel);
-		return GNUNET_OK;
+		return;
 	}
 	GNUNET_assert(buf != NULL);
 	do
@@ -163,7 +164,7 @@ int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 			{
 				perror("dkg-gnunet-common (write)");
 				GNUNET_SCHEDULER_shutdown();
-				return GNUNET_SYSERR;
+				return;
 			}
 		}
 		else
@@ -173,109 +174,7 @@ int gnunet_data_callback(void *cls, struct GNUNET_CADET_Channel *channel,
 
 	// ready for receiving next message on this channel
 	GNUNET_CADET_receive_done(channel);
-	return GNUNET_OK;
-}
-
-size_t gnunet_data_ready(void *cls, size_t size, void *buf)
-{
-	if (channel_ready.count(th_ch))
-		channel_ready[th_ch] = true; // mark this channel as okay
-	th = NULL, th_ch = NULL;
-	if ((buf == NULL) || (size == 0))
-	{
-		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "No message to transmit\n");
-		GNUNET_SCHEDULER_shutdown();
-		return 0;
-	}
-	struct GNUNET_MessageHeader *msg;
-	size_t total_size = th_datalen + sizeof(struct GNUNET_MessageHeader);
-	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "sending %u bytes\n", (unsigned int)th_datalen);
-	GNUNET_assert(size >= total_size);
-	msg = (struct GNUNET_MessageHeader*)buf;
-	msg->size = htons(total_size);
-	msg->type = htons(GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST);
-	GNUNET_memcpy(&msg[1], cls, th_datalen);
-	// cancel the abort task
-	GNUNET_assert(th_at != NULL);
-	GNUNET_SCHEDULER_cancel(th_at);
-	th_at = NULL;
-	// release buffered message and reschedule I/O task, if further messages available
-	GNUNET_assert(send_queue.size());
-	DKG_BufferListEntry ble = send_queue.front();
-	DKG_Buffer qbuf = ble.second;
-	delete [] qbuf.second;
-	send_queue.pop_front();
-	if ((io == NULL) && (send_queue.size() || send_queue_broadcast.size()))
-		io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
-	return total_size;
-}
-
-void gnunet_data_abort(void *cls)
-{
-std::cerr << "abort task called!!!" << std::endl;
-	th_at = NULL;
-	GNUNET_assert(th != NULL);
-	GNUNET_assert(th_ch != NULL);
-	GNUNET_CADET_notify_transmit_ready_cancel(th);
-	if (channel_ready.count(th_ch))
-		channel_ready[th_ch] = false; // mark this channel as bad
-	th = NULL, th_ch = NULL;
-	// requeue buffered message at end
-	GNUNET_assert(send_queue.size());
-	DKG_BufferListEntry ble = send_queue.front();
-	send_queue.pop_front();
-	send_queue.push_back(ble);
-}
-
-size_t gnunet_data_ready_broadcast(void *cls, size_t size, void *buf)
-{
-	if (channel_ready.count(th_ch))
-		channel_ready[th_ch] = true; // mark this channel as okay
-	th = NULL, th_ch = NULL;
-	if ((buf == NULL) || (size == 0))
-	{
-		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "No message to transmit\n");
-		GNUNET_SCHEDULER_shutdown();
-		return 0;
-	}
-	struct GNUNET_MessageHeader *msg;
-	size_t total_size = th_datalen + sizeof(struct GNUNET_MessageHeader);
-	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "sending %u bytes\n", (unsigned int)th_datalen);
-	GNUNET_assert(size >= total_size);
-	msg = (struct GNUNET_MessageHeader*)buf;
-	msg->size = htons(total_size);
-	msg->type = htons(GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST);
-	GNUNET_memcpy(&msg[1], cls, th_datalen);
-	// cancel the abort task
-	GNUNET_assert(th_at != NULL);
-	GNUNET_SCHEDULER_cancel(th_at);
-	th_at = NULL;	
-	// release buffered message and reschedule I/O task, if further messages available
-	GNUNET_assert(send_queue_broadcast.size());
-	DKG_BufferListEntry ble = send_queue_broadcast.front();
-	DKG_Buffer qbuf = ble.second;
-	delete [] qbuf.second;
-	send_queue_broadcast.pop_front();
-	if ((io == NULL) && (send_queue.size() || send_queue_broadcast.size()))
-		io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
-	return total_size;
-}
-
-void gnunet_data_abort_broadcast(void *cls)
-{
-std::cerr << "abort broadcast task called!!!" << std::endl;
-	th_at = NULL;
-	GNUNET_assert(th != NULL);
-	GNUNET_assert(th_ch != NULL);
-	GNUNET_CADET_notify_transmit_ready_cancel(th);
-	if (channel_ready.count(th_ch))
-		channel_ready[th_ch] = false; // mark this channel as bad
-	th = NULL, th_ch = NULL;
-	// requeue buffered message at end
-	GNUNET_assert(send_queue_broadcast.size());
-	DKG_BufferListEntry ble = send_queue_broadcast.front();
-	send_queue_broadcast.pop_front();
-	send_queue_broadcast.push_back(ble);
+	return;
 }
 
 void gnunet_pipe_ready(void *cls)
@@ -368,16 +267,9 @@ void gnunet_broadcast_pipe_ready(void *cls)
 		io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
 }
 
-void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel, void *channel_ctx)
+void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel)
 {
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "CADET channel ended!\n");
-	// cancel pending transmission on this channel and the abort task
-	if ((th != NULL) && (th_at != NULL) && (th_ch == channel))
-	{
-		GNUNET_CADET_notify_transmit_ready_cancel(th);
-		GNUNET_SCHEDULER_cancel(th_at);
-		th = NULL, th_at = NULL, th_ch = NULL;
-	}
 	// deregister the ended channel	
 	for (size_t i = 0; i < peers.size(); i++)
 	{
@@ -400,30 +292,14 @@ void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel,
 }
 
 void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
-	const struct GNUNET_PeerIdentity *initiator, const struct GNUNET_HashCode *port,
-	enum GNUNET_CADET_ChannelOption options)
+	const struct GNUNET_PeerIdentity *initiator)
 {
 	GNUNET_log(GNUNET_ERROR_TYPE_MESSAGE, "Connected from %s\n", GNUNET_i2s_full(initiator));
-	GNUNET_log(GNUNET_ERROR_TYPE_INFO, "Incoming channel %p on port %s\n", channel, GNUNET_h2s(port));
-	if (GNUNET_CRYPTO_hash_cmp(&porthash, port))
-	{
-		GNUNET_log(GNUNET_ERROR_TYPE_ERROR, "Not listening to this port\n");
-		std::cerr << "ERROR: not listening to defined CADET port" << std::endl;
-		GNUNET_SCHEDULER_shutdown();
-		return NULL;
-	}
 	// check whether peer identity is included in peer list
 	std::string peer = GNUNET_i2s_full(initiator);
 	if (peer2pipe.count(peer) == 0)
 	{
 		std::cerr << "WARNING: incoming channel from peer not included in PEERS ignored" << std::endl;
-		GNUNET_CADET_channel_destroy(channel);
-		return NULL;
-	}
-	// check whether channel is reliable
-	if (options != GNUNET_CADET_OPTION_RELIABLE)
-	{
-		std::cerr << "WARNING: incoming channel is not reliable and will be ignored" << std::endl;
 		GNUNET_CADET_channel_destroy(channel);
 		return NULL;
 	}
@@ -437,7 +313,7 @@ void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
 	{
 		std::cerr << "WARNING: incoming channel is already registered for this peer" << std::endl;
 	}
-	return NULL;
+	return channel;
 }
 
 void gnunet_shutdown_task(void *cls)
@@ -477,16 +353,6 @@ void gnunet_shutdown_task(void *cls)
 	{
 		GNUNET_SCHEDULER_cancel(job);
 		job = NULL;
-	}
-	if (th != NULL)
-	{
-		GNUNET_CADET_notify_transmit_ready_cancel(th);
-		th = NULL, th_ch = NULL;
-	}
-	if (th_at != NULL)
-	{
-		GNUNET_SCHEDULER_cancel(th_at);
-		th_at = NULL;
 	}
 	// release buffered messages
 	while (send_queue.size())
@@ -565,52 +431,46 @@ void gnunet_io(void *cls)
 	sleep(1);
 
 	// send messages to peers
-	if ((th == NULL) && (th_at == NULL) && send_queue.size())
+	if (send_queue.size())
 	{
 		DKG_BufferListEntry ble = send_queue.front();
 		DKG_Buffer buf = ble.second;
+		struct GNUNET_MQ_Envelope *env;
+		struct GNUNET_MessageHeader *msg;
 		if (pipe2channel_in.count(ble.first)) // have input channel to this peer?
 		{
-			th_datalen = buf.first;
-			std::cerr << "INFO: try to send " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
-			th_ch = pipe2channel_in[ble.first];
-			th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
-				sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_data_ready, buf.second);
-			if (th == NULL)
-			{
-				std::cerr << "ERROR: cannot transmit data to peer = " << pipe2peer[ble.first] << std::endl;
-				GNUNET_SCHEDULER_shutdown();
-				return;
-			}
-			// schedule abort task
-			th_at = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, aiounicast::aio_timeout_middle),
-				&gnunet_data_abort, NULL);
+			std::cerr << "INFO: try to send " << buf.first << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
+			env = GNUNET_MQ_msg_extra(msg, buf.first, GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST);
+			GNUNET_memcpy(&msg[1], buf.second, buf.first);
+			GNUNET_MQ_send(GNUNET_CADET_get_mq(pipe2channel_in[ble.first]), env);
+			// release buffered message
+			delete [] buf.second;
+			send_queue.pop_front();
 		}
 	}
 
 	// send broadcast messages to peers
-	if ((th == NULL) && (th_at == NULL) && send_queue_broadcast.size())
+	if (send_queue_broadcast.size())
 	{
 		DKG_BufferListEntry ble = send_queue_broadcast.front();
 		DKG_Buffer buf = ble.second;
+		struct GNUNET_MQ_Envelope *env;
+		struct GNUNET_MessageHeader *msg;
 		if (pipe2channel_in.count(ble.first)) // have input channel to this peer?
 		{
-			th_datalen = buf.first;
-			std::cerr << "INFO: try to broadcast " << th_datalen << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
-			th_ch = pipe2channel_in[ble.first];
-			th = GNUNET_CADET_notify_transmit_ready(th_ch, GNUNET_NO, GNUNET_TIME_UNIT_FOREVER_REL,
-				sizeof(struct GNUNET_MessageHeader) + th_datalen, &gnunet_data_ready_broadcast, buf.second);
-			if (th == NULL)
-			{
-				std::cerr << "ERROR: cannot transmit data to peer = " << pipe2peer[ble.first] << std::endl;
-				GNUNET_SCHEDULER_shutdown();
-				return;
-			}
-			// schedule abort task
-			th_at = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, aiounicast::aio_timeout_middle),
-				&gnunet_data_abort_broadcast, NULL);
+			std::cerr << "INFO: try to broadcast " << buf.first << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
+			env = GNUNET_MQ_msg_extra(msg, buf.first, GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST);
+			GNUNET_memcpy(&msg[1], buf.second, buf.first);
+			GNUNET_MQ_send(GNUNET_CADET_get_mq(pipe2channel_in[ble.first]), env);
+			// release buffered message
+			delete [] buf.second;
+			send_queue_broadcast.pop_front();
 		}
 	}
+
+	// reschedule I/O task, if further messages available
+	if (send_queue.size() || send_queue_broadcast.size())
+		io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
 
 	// schedule tasks for reading the input pipes FIXME: use GNUNET_SCHEDULER_add_read_file on corresponding pipe fd
 	if (pt == NULL)
@@ -638,13 +498,6 @@ void gnunet_connect(void *cls)
 			// destroy old CADET output channels
 			if (pipe2channel_out.count(i))
 			{
-				// cancel pending transmission and abort task
-				if ((th != NULL) && (th_at != NULL) && (th_ch == pipe2channel_out[i]))
-				{
-					GNUNET_CADET_notify_transmit_ready_cancel(th);
-					GNUNET_SCHEDULER_cancel(th_at);
-					th = NULL, th_ch = NULL, th_at = NULL;
-				}
 				channel_ready.erase(pipe2channel_out[i]);
 				GNUNET_CADET_channel_destroy(pipe2channel_out[i]);
 			}
@@ -659,7 +512,22 @@ void gnunet_connect(void *cls)
 				return;
 			}
 			GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to `%s'\n", pipe2peer[i].c_str());
-			ch = GNUNET_CADET_channel_create(mh, NULL, &pid, &porthash, flags);
+			static const struct GNUNET_MQ_MessageHandler handlers[] = {
+				GNUNET_MQ_hd_var_size(gnunet_data_callback,
+					GNUNET_MESSAGE_TYPE_TMCG_DKG_CHANNEL_CHECK,
+					struct GNUNET_MessageHeader,
+					NULL),
+				GNUNET_MQ_hd_var_size(gnunet_data_callback,
+					GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST,
+					struct GNUNET_MessageHeader,
+					NULL),
+				GNUNET_MQ_hd_var_size(gnunet_data_callback,
+					GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST,
+					struct GNUNET_MessageHeader,
+					NULL),
+				GNUNET_MQ_handler_end()
+			};
+			ch = GNUNET_CADET_channel_create(mh, NULL, &pid, &porthash, flags, NULL, &gnunet_channel_ended, handlers);
 			if (ch == NULL)
 			{
 				std::cerr << "ERROR: cannot create channel to peer = " << pipe2peer[i] << std::endl;
@@ -782,14 +650,23 @@ void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 	}
 
 	// connect to CADET service
-	static const struct GNUNET_CADET_MessageHandler handlers[] = {
-		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_TMCG_DKG_CHANNEL_CHECK, 0},
-		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST, 0},
-		{&gnunet_data_callback, GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST, 0},
-		{NULL, 0, 0}
+	static const struct GNUNET_MQ_MessageHandler handlers[] = {
+		GNUNET_MQ_hd_var_size(gnunet_data_callback,
+			GNUNET_MESSAGE_TYPE_TMCG_DKG_CHANNEL_CHECK,
+			struct GNUNET_MessageHeader,
+		NULL),
+		GNUNET_MQ_hd_var_size(gnunet_data_callback,
+			GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST,
+			struct GNUNET_MessageHeader,
+		NULL),
+		GNUNET_MQ_hd_var_size(gnunet_data_callback,
+			GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST,
+			struct GNUNET_MessageHeader,
+		NULL),
+		GNUNET_MQ_handler_end()
 	};
 	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to CADET service\n");
-	mh = GNUNET_CADET_connect(cfg, NULL, &gnunet_channel_ended, handlers);
+	mh = GNUNET_CADET_connect(cfg);	
 	if (mh == NULL)
 	{
 		std::cerr << "ERROR: cannot connect to GNUnet CADET service" << std::endl;
@@ -804,7 +681,7 @@ void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 	else
 		GNUNET_CRYPTO_hash(port.c_str(), port.length(), &porthash);
 	std::cout << "INFO: my CADET listen port hash = " << GNUNET_h2s_full(&porthash) << std::endl;
-	lp = GNUNET_CADET_open_port(mh, &porthash, &gnunet_channel_incoming, NULL);
+	lp = GNUNET_CADET_open_port(mh, &porthash, &gnunet_channel_incoming, NULL, NULL, &gnunet_channel_ended, handlers);
 	if (lp == NULL)
 	{
 		std::cerr << "ERROR: cannot open GNUnet CADET listen port" << std::endl;

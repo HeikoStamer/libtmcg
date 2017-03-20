@@ -64,17 +64,10 @@
 
 	void gnunet_hello_callback
 		(void *cls, const struct GNUNET_MessageHeader *hello);
-	int gnunet_data_callback
-		(void *cls, struct GNUNET_CADET_Channel *channel,
-		void **channel_ctx, const struct GNUNET_MessageHeader *message);
-	size_t gnunet_data_ready
-		(void *cls, size_t size, void *buf);
-	void gnunet_data_abort
-		(void *cls);
-	size_t gnunet_data_ready_broadcast
-		(void *cls, size_t size, void *buf);
-	void gnunet_data_abort_broadcast
-		(void *cls);
+	int check_gnunet_data_callback
+		(void *cls, const struct GNUNET_MessageHeader *message);
+	void handle_gnunet_data_callback
+		(void *cls, const struct GNUNET_MessageHeader *message);
 	void gnunet_pipe_ready
 		(void *cls);
 	void gnunet_broadcast_pipe_ready

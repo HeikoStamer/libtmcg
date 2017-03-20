@@ -397,10 +397,22 @@ int main
 
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
-		{'p', "port", NULL, "GNUnet CADET port to listen/connect",
-			GNUNET_YES, &GNUNET_GETOPT_set_string, &gnunet_opt_port},
-		{'t', "t-resilience", NULL, "resilience of DKG protocol",
-			GNUNET_YES, &GNUNET_GETOPT_set_uint, &gnunet_opt_t_resilience},
+		GNUNET_GETOPT_OPTION_STRING('p',
+			"port",
+			NULL,
+			"GNUnet CADET port to listen/connect",
+			&gnunet_opt_port
+		),
+//		{'p', "port", NULL, "GNUnet CADET port to listen/connect",
+//			GNUNET_YES, &GNUNET_GETOPT_set_string, &gnunet_opt_port},
+		GNUNET_GETOPT_OPTION_SET_UINT('t',
+			"t-resilience",
+			NULL,
+			"resilience of DKG protocol",
+			&gnunet_opt_t_resilience
+		),
+//		{'t', "t-resilience", NULL, "resilience of DKG protocol",
+//			GNUNET_YES, &GNUNET_GETOPT_set_uint, &gnunet_opt_t_resilience},
 		GNUNET_GETOPT_OPTION_END
 	};
 #endif
