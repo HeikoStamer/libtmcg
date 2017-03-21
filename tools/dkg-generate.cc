@@ -79,7 +79,7 @@ void run_instance
 	// create asynchronous authenticated unicast channels
 	aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key);
 
-	// create asynchronous authenticated unicast channels
+	// create asynchronous authenticated unicast channels for broadcast protocol
 	aiounicast_select *aiou2 = new aiounicast_select(N, whoami, bP_in, bP_out, bP_key);
 			
 	// create an instance of a reliable broadcast protocol (RBC)
@@ -92,7 +92,7 @@ void run_instance
 	rbc->setID(myID);
 			
 	// create and exchange keys in order to bootstrap the $h$-generation for DKG [JL00]
-	// TODO: replace NIZKs by interactive (distributed) zero-knowledge proofs of knowledge
+	// TODO: replace N-time NIZK by one interactive (distributed) zero-knowledge proof of knowledge
 	mpz_t nizk_c, nizk_r, h_j;
 	mpz_init(nizk_c), mpz_init(nizk_r), mpz_init(h_j);
 	vtmf->KeyGenerationProtocol_GenerateKey();
@@ -107,24 +107,20 @@ void run_instance
 			if (!rbc->DeliverFrom(h_j, i))
 			{
 				std::cerr << "P_" << whoami << ": WARNING - no VTMF key received from " << i << std::endl;
-				// FIXME: error handling
 			}
 			if (!rbc->DeliverFrom(nizk_c, i))
 			{
 				std::cerr << "P_" << whoami << ": WARNING - no NIZK c received from " << i << std::endl;
-				// FIXME: error handling
 			}
 			if (!rbc->DeliverFrom(nizk_r, i))
 			{
 				std::cerr << "P_" << whoami << ": WARNING - no NIZK r received from " << i << std::endl;
-				// FIXME: error handling
 			}
 			std::stringstream lej;
 			lej << h_j << std::endl << nizk_c << std::endl << nizk_r << std::endl;
 			if (!vtmf->KeyGenerationProtocol_UpdateKey(lej))
 			{
 				std::cerr << "P_" << whoami << ": " << "Public key of P_" << i << " was not correctly generated!" << std::endl;
-				// FIXME: error handling
 			}
 		}
 	}
@@ -160,7 +156,7 @@ void run_instance
 		exit(-1);
 	}
 
-	// participants must agree on a OpenPGP key creation time, otherwise subkeyid does not match
+	// participants must agree on a common key creation time (OpenPGP), otherwise later subkeyid does not match
 	time_t ckeytime = 0;
 	std::vector<time_t> tvs;
 	mpz_t mtv;
@@ -180,13 +176,12 @@ void run_instance
 			else
 			{
 				std::cerr << "P_" << whoami << ": WARNING - no key creation time received from " << i << std::endl;
-				// FIXME: error handling
 			}
 		}
 	}
 	mpz_clear(mtv);
 	std::sort(tvs.begin(), tvs.end());
-	ckeytime = tvs.back(); // use the biggest value as byzantine agreement
+	ckeytime = tvs.back(); // use the biggest value as agreement
 	std::cout << "P_" << whoami << ": canonicalized key creation time = " << ckeytime << std::endl;
 
 	// at the end: deliver some more rounds for still waiting parties
@@ -341,9 +336,22 @@ void run_instance
 	delete aiou, delete aiou2;
 }
 
+#ifdef GNUNET
+unsigned int gnunet_opt_t_resilience = 0;
+#endif
+
 void fork_instance
 	(const size_t whoami)
 {
+	T = (N - 1) / 2; // default: maximum synchronous t-resilience for DKG (RBC is not affected by this)
+#ifdef GNUNET
+	if (gnunet_opt_t_resilience != 0)
+		T = gnunet_opt_t_resilience; // get value of T from GNUnet options
+#endif
+	if (T == 0)
+		T++; // 0-resilience is not preferable, because then only one party can decrypt everything
+	if (T > N)
+		T = N; // apply an upper limit on T
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-generate (fork)");
 	else
@@ -368,7 +376,6 @@ void fork_instance
 
 #ifdef GNUNET
 char *gnunet_opt_port = NULL;
-unsigned int gnunet_opt_t_resilience = 0;
 #endif
 
 int main
@@ -395,33 +402,7 @@ int main
 		"3w97VxrtQABaRTDaiGeTdYaKxi3ok6hRwI1SLtFYCW029vtzCqpfC49Q6a5x"
 		"M\n";
 
-#ifdef GNUNET
-	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
-		GNUNET_GETOPT_OPTION_STRING('p',
-			"port",
-			NULL,
-			"GNUnet CADET port to listen/connect",
-			&gnunet_opt_port
-		),
-//		{'p', "port", NULL, "GNUnet CADET port to listen/connect",
-//			GNUNET_YES, &GNUNET_GETOPT_set_string, &gnunet_opt_port},
-		GNUNET_GETOPT_OPTION_SET_UINT('t',
-			"t-resilience",
-			NULL,
-			"resilience of DKG protocol",
-			&gnunet_opt_t_resilience
-		),
-//		{'t', "t-resilience", NULL, "resilience of DKG protocol",
-//			GNUNET_YES, &GNUNET_GETOPT_set_uint, &gnunet_opt_t_resilience},
-		GNUNET_GETOPT_OPTION_END
-	};
-#endif
-
-	if (!init_libTMCG())
-	{
-		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
-		return -1;
-	}
+	bool notcon = false;
 	if (argc < 2)
 	{
 		std::cerr << "ERROR: no peers given as argument; usage: " << argv[0] << " [OPTIONS] PEERS" << std::endl;
@@ -440,7 +421,13 @@ int main
 				continue;
 			}
 			else if ((arg.find("--", 0) == 0) || (arg.find("-v", 0) == 0) || (arg.find("-h", 0) == 0))
+			{
+				if ((arg.find("--help") == 0) || (arg.find("--version") == 0))
+					notcon = true;
+				if ((arg.find("-h") == 0) || (arg.find("-v") == 0))
+					notcon = true;
 				continue;
+			}
 			else if (arg.find("-", 0) == 0)
 			{
 				std::cerr << "ERROR: unknown option \"" << arg << "\"" << std::endl;
@@ -453,37 +440,49 @@ int main
 		std::vector<std::string>::iterator it = std::unique(peers.begin(), peers.end());
 		peers.resize(std::distance(peers.begin(), it));
 		N = peers.size();
+	}
+	if (!notcon)
+	{
+		if ((N < 3)  || (N > MAX_N))
+		{
+			std::cerr << "ERROR: too few or too many peers given" << std::endl;
+			return -1;
+		}
+		if (!init_libTMCG())
+		{
+			std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
+			return -1;
+		}
+		std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
+		std::getline(std::cin, u);
+		std::cout << "2. Choose a passphrase to protect your private key: ";
+		std::getline(std::cin, passphrase);
 		std::cout << "INFO: canonicalized peer list = " << std::endl;
 		for (size_t i = 0; i < peers.size(); i++)
 			std::cout << peers[i] << std::endl;
 	}
-	if ((N < 3)  || (N > MAX_N))
-	{
-		std::cerr << "ERROR: too few or too many peers given" << std::endl;
-		return -1;
+
+#ifdef GNUNET
+	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
+		GNUNET_GETOPT_OPTION_STRING('p',
+			"port",
+			NULL,
+			"GNUnet CADET port to listen/connect",
+			&gnunet_opt_port
+		),
+		GNUNET_GETOPT_OPTION_SET_UINT('t',
+			"t-resilience",
+			NULL,
+			"resilience of DKG protocol",
+			&gnunet_opt_t_resilience
+		),
+		GNUNET_GETOPT_OPTION_END
 	};
-
-	T = (N - 1) / 2; // assume maximum synchronous t-resilience for DKG (RBC is not affected by this)
-#ifdef GNUNET
-	T = gnunet_opt_t_resilience; // get value of T from GNUnet options
-#endif
-	if (T == 0)
-		T++; // 0-resilience is not preferable, because then only one party can decrypt everything
-	if (T >= N)
-		T = N; // apply an upper limit on T
-	std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
-	std::getline(std::cin, u);
-	std::cout << "2. Choose a passphrase to protect your private key: ";
-	std::getline(std::cin, passphrase);
-
-#ifdef GNUNET
 	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
     		return -1;
-	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed ElGamal key generation with OpenPGP-output",
+	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed key generation (ElGamal with OpenPGP-output)",
                             options, &gnunet_run, argv[0]);
-
-	GNUNET_free ((void *) argv);
-
+	GNUNET_free((void *) argv);
 	if (ret == GNUNET_OK)
 		return 0;
 	else

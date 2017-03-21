@@ -472,7 +472,7 @@ void gnunet_io(void *cls)
 	if (send_queue.size() || send_queue_broadcast.size())
 		io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
 
-	// schedule tasks for reading the input pipes FIXME: use GNUNET_SCHEDULER_add_read_file on corresponding pipe fd
+	// schedule tasks for reading the input pipes TODO: use GNUNET_SCHEDULER_add_read_file on corresponding pipe fd
 	if (pt == NULL)
 		pt = GNUNET_SCHEDULER_add_now(&gnunet_pipe_ready, NULL);
 	if (pt_broadcast == NULL)
@@ -537,7 +537,7 @@ void gnunet_connect(void *cls)
 			else
 			{
 				pipe2channel_out[i] = ch;
-				channel_ready[ch] = false; // mark this channel initially as bad until we are ready to send data
+				channel_ready[ch] = false; // mark this channel initially as bad
 			}
 		}
 	}

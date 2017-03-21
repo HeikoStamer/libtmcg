@@ -877,7 +877,7 @@ void run_instance
 	// create asynchronous authenticated unicast channels
 	aiounicast_select *aiou = new aiounicast_select(peers.size(), whoami, uP_in, uP_out, uP_key);
 
-	// create asynchronous authenticated unicast channels
+	// create asynchronous authenticated unicast channels for broadcast protocol
 	aiounicast_select *aiou2 = new aiounicast_select(peers.size(), whoami, bP_in, bP_out, bP_key);
 			
 	// create an instance of a reliable broadcast protocol (RBC)
@@ -1167,25 +1167,7 @@ char *gnunet_opt_port = NULL;
 int main
 	(int argc, char *const *argv)
 {
-#ifdef GNUNET
-	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
-		GNUNET_GETOPT_OPTION_STRING('p',
-			"port",
-			NULL,
-			"GNUnet CADET port to listen/connect",
-			&gnunet_opt_port
-		),
-//		{'p', "port", NULL, "GNUnet CADET port to listen/connect",
-//			GNUNET_YES, &GNUNET_GETOPT_set_string, &gnunet_opt_port},
-		GNUNET_GETOPT_OPTION_END
-	};
-#endif
-
-	if (!init_libTMCG())
-	{
-		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
-		return -1;
-	}
+	bool notcon = false;
 	if (argc < 2)
 	{
 		std::cerr << "ERROR: no peers given as argument; usage: " << argv[0] << " [OPTIONS] PEERS" << std::endl;
@@ -1204,7 +1186,13 @@ int main
 				continue;
 			}
 			else if ((arg.find("--", 0) == 0) || (arg.find("-v", 0) == 0) || (arg.find("-h", 0) == 0))
+			{
+				if ((arg.find("--help") == 0) || (arg.find("--version") == 0))
+					notcon = true;
+				if ((arg.find("-h") == 0) || (arg.find("-v") == 0))
+					notcon = true;
 				continue;
+			}
 			else if (arg.find("-", 0) == 0)
 			{
 				std::cerr << "ERROR: unknown option \"" << arg << "\"" << std::endl;
@@ -1216,32 +1204,46 @@ int main
 		std::sort(peers.begin(), peers.end());
 		std::vector<std::string>::iterator it = std::unique(peers.begin(), peers.end());
 		peers.resize(std::distance(peers.begin(), it));
+	}
+	if (!notcon)
+	{
+		if ((peers.size() < 3)  || (peers.size() > MAX_N))
+		{
+			std::cerr << "ERROR: too few or too many peers given" << std::endl;
+			return -1;
+		}
+		if (!init_libTMCG())
+		{
+			std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
+			return -1;
+		}
+		std::cout << "1. Please enter the passphrase to unlock your private key: ";
+		std::getline(std::cin, passphrase);
+		std::cout << "2. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
+		std::string line;
+		while (std::getline(std::cin, line))
+			armored_message += line + "\r\n";
+		std::cin.clear();
 		std::cout << "INFO: canonicalized peer list = " << std::endl;
 		for (size_t i = 0; i < peers.size(); i++)
 			std::cout << peers[i] << std::endl;
 	}
-	if ((peers.size() < 3)  || (peers.size() > MAX_N))
-	{
-		std::cerr << "ERROR: too few or too many peers given" << std::endl;
-		return -1;
-	};
-
-	std::cout << "1. Please enter the passphrase to unlock your private key: ";
-	std::getline(std::cin, passphrase);
-	std::cout << "2. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
-	std::string line;
-	while (std::getline(std::cin, line))
-		armored_message += line + "\r\n";
-	std::cin.clear();
 
 #ifdef GNUNET
+	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
+		GNUNET_GETOPT_OPTION_STRING('p',
+			"port",
+			NULL,
+			"GNUnet CADET port to listen/connect",
+			&gnunet_opt_port
+		),
+		GNUNET_GETOPT_OPTION_END
+	};
 	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
     		return -1;
 	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-decrypt [OPTIONS] PEERS", "distributed ElGamal decryption with OpenPGP-input",
                             options, &gnunet_run, argv[0]);
-
-	GNUNET_free ((void *) argv);
-
+	GNUNET_free((void *) argv);
 	if (ret == GNUNET_OK)
 		return 0;
 	else
