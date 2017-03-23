@@ -824,7 +824,7 @@ void run_instance
 		std::cerr << "ERROR: DKG public key verification failed" << std::endl;
 		exit(-1);
 	}
-	mpz_spowm(r_i, nizk_gk, z_i, nizk_p);
+	mpz_spowm(r_i, nizk_gk, z_i, nizk_p); // FIXME: use share x_i here instead of z_i
 	// compute NIZK argument for decryption share, e.g. see [FP01]
 	// proof of knowledge (equality of discrete logarithms) [CaS97]
 	mpz_t a, b, omega, c, r, c2;
@@ -838,7 +838,7 @@ void run_instance
 	// the PoK non-interactive, i.e. we turn it into a statistically
 	// zero-knowledge (Schnorr signature scheme style) proof of
 	// knowledge (SPK) in the random oracle model.
-	mpz_shash(c, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g);
+	mpz_shash(c, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g); // FIXME: use dkg->v_i[whoami], where v_i = g^x_i
 	// response
 	mpz_mul(r, c, z_i);
 	mpz_neg(r, r);
@@ -850,10 +850,10 @@ void run_instance
 	mpz_mul(a, a, b);
 	mpz_mod(a, a, nizk_p);
 	mpz_powm(b, nizk_g, r, nizk_p);
-	mpz_powm(c2, dkg->y_i[whoami], c, nizk_p);
+	mpz_powm(c2, dkg->y_i[whoami], c, nizk_p); // FIXME: use dkg->v_i[whoami], where v_i = g^x_i
 	mpz_mul(b, b, c2);
 	mpz_mod(b, b, nizk_p);
-	mpz_shash(c2, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g);
+	mpz_shash(c2, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g); // FIXME: use dkg->v_i[whoami], where v_i = g^x_i
 	if (mpz_cmp(c2, c))
 	{
 		std::cerr << "WARNING: NIZK self verification failed at " << whoami << std::endl;
@@ -927,15 +927,16 @@ void run_instance
 			mpz_mul(a, a, b);
 			mpz_mod(a, a, nizk_p);
 			mpz_powm(b, nizk_g, r, nizk_p);
-			mpz_powm(c2, dkg->y_i[i], c, nizk_p);
+			mpz_powm(c2, dkg->y_i[i], c, nizk_p); // FIXME: use dkg->v_i[whoami], where v_i = g^x_i
 			mpz_mul(b, b, c2);
 			mpz_mod(b, b, nizk_p);
-			mpz_shash(c2, 6, a, b, r_i, dkg->y_i[i], nizk_gk, nizk_g);
+			mpz_shash(c2, 6, a, b, r_i, dkg->y_i[i], nizk_gk, nizk_g); // FIXME: use dkg->v_i[whoami], where v_i = g^x_i
 			if (mpz_cmp(c2, c))
 			{
 				std::cout << "WARNING: NIZK verification failed for P_" << i << std::endl;
 				complaints.push_back(i);
 			}
+			// FIXME: compute r_i = r_i^\lambda_{i,\Lambda} \bmod p (interpolate) where \lambda_{i, \Lambda} = \prod_{l\in\Lambda\setminus\{i\}\frac{l}{l-i}}
 			if (std::find(complaints.begin(), complaints.end(), i) == complaints.end())
 			{
 				// accumulate decryption shares
@@ -946,7 +947,7 @@ void run_instance
 				std::cout << "WARNING: complaint against P_" << i << std::endl;
 		}
 	}
-	// reconstruction of z_i for faulty parties
+	// reconstruction of z_i for faulty parties FIXME: not needed, if (t + 1) decryption shares r_i = nizk_gk ^ x_i are interpolated
 	std::sort(complaints.begin(), complaints.end());
 	std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
 	complaints.resize(std::distance(complaints.begin(), it));
