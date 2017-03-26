@@ -55,6 +55,7 @@
 	#include "CachinKursawePetzoldShoupSEABP.hh"
 
 /* This protocol for dlog-based distributed key generation is called New-DKG in [GJKR07]. */
+/* $v_i$ is an array of public verification keys (see p. 64 [GJKR07], proof of Theorem 1) */
 class GennaroJareckiKrawczykRabinDKG
 {
 	private:
@@ -66,7 +67,7 @@ class GennaroJareckiKrawczykRabinDKG
 		size_t					n, t, i;
 		std::vector<size_t>			QUAL;
 		mpz_t					x_i, xprime_i, y;
-		std::vector<mpz_ptr>			y_i, z_i;
+		std::vector<mpz_ptr>			y_i, z_i, v_i;
 		std::vector< std::vector<mpz_ptr> >	s_ij, sprime_ij, C_ik;
 		
 		GennaroJareckiKrawczykRabinDKG
@@ -91,9 +92,14 @@ class GennaroJareckiKrawczykRabinDKG
 			(const size_t i_in) const;
 		bool CheckKey
 			() const;
+		bool Interpolate
+			(const std::vector<mpz_ptr> &a, 
+			const std::vector<mpz_ptr> &b,
+			std::vector<mpz_ptr> &f);
 		bool Reconstruct
 			(const std::vector<size_t> &complaints,
 			std::vector<mpz_ptr> &z_i_in,
+			std::vector< std::vector<mpz_ptr> > &a_ik_in,
 			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
 		~GennaroJareckiKrawczykRabinDKG
 			();

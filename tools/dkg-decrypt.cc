@@ -927,56 +927,25 @@ void run_instance
 			mpz_mul(a, a, b);
 			mpz_mod(a, a, nizk_p);
 			mpz_powm(b, nizk_g, r, nizk_p);
-			mpz_powm(c2, dkg->y_i[i], c, nizk_p); // FIXME: use dkg->v_i[whoami], where v_i = g^x_i
+			mpz_powm(c2, dkg->y_i[i], c, nizk_p); // FIXME: use dkg->v_i[i], where v_i = g^x_i
 			mpz_mul(b, b, c2);
 			mpz_mod(b, b, nizk_p);
-			mpz_shash(c2, 6, a, b, r_i, dkg->y_i[i], nizk_gk, nizk_g); // FIXME: use dkg->v_i[whoami], where v_i = g^x_i
+			mpz_shash(c2, 6, a, b, r_i, dkg->y_i[i], nizk_gk, nizk_g); // FIXME: use dkg->v_i[i], where v_i = g^x_i
 			if (mpz_cmp(c2, c))
 			{
 				std::cout << "WARNING: NIZK verification failed for P_" << i << std::endl;
 				complaints.push_back(i);
 			}
 			// FIXME: compute r_i = r_i^\lambda_{i,\Lambda} \bmod p (interpolate) where \lambda_{i, \Lambda} = \prod_{l\in\Lambda\setminus\{i\}\frac{l}{l-i}}
+			// (t + 1) decryption shares r_i = nizk_gk ^ x_i are interpolated
 			if (std::find(complaints.begin(), complaints.end(), i) == complaints.end())
 			{
-				// accumulate decryption shares
+				// accumulate correct decryption shares
 				mpz_mul(R, R, r_i);
 				mpz_mod(R, R, nizk_p);
 			}
 			else
 				std::cout << "WARNING: complaint against P_" << i << std::endl;
-		}
-	}
-	// reconstruction of z_i for faulty parties FIXME: not needed, if (t + 1) decryption shares r_i = nizk_gk ^ x_i are interpolated
-	std::sort(complaints.begin(), complaints.end());
-	std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
-	complaints.resize(std::distance(complaints.begin(), it));
-	std::cout << "P_" << whoami << ": there are extracting complaints against ";
-	for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
-		std::cout << "P_" << *it << " ";
-	std::cout << std::endl;
-	std::stringstream errlog;
-	if (!dkg->Reconstruct(complaints, dkg->z_i, rbc, errlog))
-	{
-		std::cout << "P_" << whoami << ": reconstruction failed" << std::endl;
-		std::cout << "error log: " << errlog.str() << std::endl;
-		exit(-1);
-	}
-	for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
-	{
-		// check reconstructed z_i
-		if (dkg->CheckKey(*it))
-		{
-			// compute $r_i = (g^k)^{z_i} \bmod p$
-			mpz_powm(r_i, nizk_gk, dkg->z_i[*it], nizk_p);
-			// accumulate remaining decryption shares
-			mpz_mul(R, R, r_i);
-			mpz_mod(R, R, nizk_p);
-		}
-		else
-		{
-			std::cout << "P_" << whoami << ": checking reconstructed z_i failed for i = " << *it << std::endl;
-			exit(-1);
 		}
 	}
 
@@ -1163,6 +1132,7 @@ void fork_instance
 
 #ifdef GNUNET
 char *gnunet_opt_port = NULL;
+unsigned int gnunet_opt_wait = 5;
 #endif
 
 int main
@@ -1181,7 +1151,7 @@ int main
 		{
 			std::string arg = argv[i+1];
 			// ignore options
-			if ((arg.find("-c", 0) == 0) || (arg.find("-p", 0) == 0) || (arg.find("-L", 0) == 0) || (arg.find("-l", 0) == 0))
+			if ((arg.find("-c", 0) == 0) || (arg.find("-p", 0) == 0) || (arg.find("-w", 0) == 0) || (arg.find("-L", 0) == 0) || (arg.find("-l", 0) == 0))
 			{
 				i++;
 				continue;
@@ -1237,6 +1207,12 @@ int main
 			NULL,
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
+		),
+		GNUNET_GETOPT_OPTION_SET_UINT('w',
+			"wait",
+			NULL,
+			"minutes to wait until start of DKG protocol",
+			&gnunet_opt_wait
 		),
 		GNUNET_GETOPT_OPTION_END
 	};

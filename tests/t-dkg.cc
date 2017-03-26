@@ -156,7 +156,7 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
 			dkg->PublishState(state_log);
-
+/*
 			// create an instance of threshold signature protocol new-TSch (NTS)
 			GennaroJareckiKrawczykRabinNTS *nts;
 			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
@@ -201,15 +201,15 @@ void start_instance
 			mpz_clear(m), mpz_clear(c), mpz_clear(s);
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
-
-			// at the end: sync for waiting parties
-			rbc->Sync(aiounicast::aio_timeout_long);
 			
 			// release NTS
 			delete nts;
-			
+*/			
 			// release DKG
 			delete dkg;
+
+			// at the end: sync for waiting parties
+			rbc->Sync(aiounicast::aio_timeout_long);
 
 			// create a copied instance of DKG from state log
 			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinDKG(state_log)" << std::endl;

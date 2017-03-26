@@ -210,8 +210,8 @@ void run_instance
 	size_t erroff;
 	mpz_t dsa_y, dsa_x;
 	mpz_init(dsa_y), mpz_init(dsa_x);
-	mpz_srandomm(dsa_x, vtmf->q);
-	mpz_spowm(dsa_y, vtmf->g, dsa_x, vtmf->p);
+	mpz_srandomm(dsa_x, vtmf->q); // choose private key for DSA
+	mpz_spowm(dsa_y, vtmf->g, dsa_x, vtmf->p); // compute public key for DSA
 			
 	p = gcry_mpi_new(2048);
 	q = gcry_mpi_new(2048);
@@ -256,7 +256,7 @@ void run_instance
 	mpz_get_str(buffer, 16, dkg->y);			
 	ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
 	assert(!ret);
-	mpz_get_str(buffer, 16, dkg->z_i[dkg->i]);			
+	mpz_get_str(buffer, 16, dkg->x_i);			
 	ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
 	assert(!ret);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ckeytime, p, g, y, sub);
@@ -376,12 +376,14 @@ void fork_instance
 
 #ifdef GNUNET
 char *gnunet_opt_port = NULL;
+unsigned int gnunet_opt_wait = 5;
 #endif
 
 int main
 	(int argc, char *const *argv)
 {
 	// setup CRS (common reference string) |p| = 2048 bit, |q| = 256 bit
+	// parameter of the underlying group have been generated with dkg-gencrs
 	crs = "VGrhfVRjcpwIUfp50GXPv63qfzVyaBKLR0yudBbcj2N5KVj8I3rqoQs7CJWUvl"
 		"864YyH1XSVJ86UxIjIIVJo9HZN9qjYttl5oENhGJVogiFIdQGPULqRM2Hxtf"
 		"3j7VbDBpMYJA9kpo8SzqwdOxBE74DCWXHa8ZaigVoCxNa8QTjdOkO1Voq44j"
@@ -415,7 +417,8 @@ int main
 		{
 			std::string arg = argv[i+1];
 			// ignore options
-			if ((arg.find("-c", 0) == 0) || (arg.find("-p", 0) == 0) || (arg.find("-t", 0) == 0) || (arg.find("-L", 0) == 0) || (arg.find("-l", 0) == 0))
+			if ((arg.find("-c", 0) == 0) || (arg.find("-p", 0) == 0) || (arg.find("-t", 0) == 0) || (arg.find("-w", 0) == 0) || 
+				(arg.find("-L", 0) == 0) || (arg.find("-l", 0) == 0))
 			{
 				i++;
 				continue;
@@ -475,6 +478,12 @@ int main
 			NULL,
 			"resilience of DKG protocol",
 			&gnunet_opt_t_resilience
+		),
+		GNUNET_GETOPT_OPTION_SET_UINT('w',
+			"wait",
+			NULL,
+			"minutes to wait until start of DKG protocol",
+			&gnunet_opt_wait
 		),
 		GNUNET_GETOPT_OPTION_END
 	};

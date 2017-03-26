@@ -47,8 +47,9 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	for (size_t j = 0; j < n_in; j++)
 	{
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
-		mpz_init(tmp1), mpz_init(tmp2);
-		y_i.push_back(tmp1), z_i.push_back(tmp2);
+		mpz_ptr tmp4 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp4);
+		y_i.push_back(tmp1), z_i.push_back(tmp2), v_i.push_back(tmp4);
 		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
 		for (size_t i = 0; i < n_in; i++)
 		{
@@ -114,8 +115,9 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	for (size_t j = 0; j < n; j++)
 	{
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
-		mpz_init(tmp1), mpz_init(tmp2);
-		y_i.push_back(tmp1), z_i.push_back(tmp2);
+		mpz_ptr tmp4 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp4);
+		y_i.push_back(tmp1), z_i.push_back(tmp2), v_i.push_back(tmp4);
 		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
 		for (size_t i = 0; i < n; i++)
 		{
@@ -145,6 +147,8 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 		in >> y_i[i];	
 	for (size_t i = 0; i < n; i++)
 		in >> z_i[i];
+	for (size_t i = 0; i < n; i++)
+		in >> v_i[i];
 	for (size_t i = 0; i < n; i++)
 	{
 		for (size_t j = 0; j < n; j++)
@@ -178,6 +182,8 @@ void GennaroJareckiKrawczykRabinDKG::PublishState
 		out << y_i[i] << std::endl;
 	for (size_t i = 0; i < n; i++)
 		out << z_i[i] << std::endl;
+	for (size_t i = 0; i < n; i++)
+		out << v_i[i] << std::endl;
 	for (size_t i = 0; i < n; i++)
 	{
 		for (size_t j = 0; j < n; j++)
@@ -271,7 +277,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	std::vector<mpz_ptr> a_i, b_i, g__a_i;
-	std::vector< std::vector<mpz_ptr> > A_ik, g__s_ij;
+	std::vector< std::vector<mpz_ptr> > A_ik, g__s_ij, a_ik;
 	std::vector<size_t> complaints, complaints_counter, complaints_from;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	for (size_t k = 0; k <= t; k++)
@@ -301,6 +307,14 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			vtmp2->push_back(tmp2);
 		}
 		g__s_ij.push_back(*vtmp2);
+		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
+		for (size_t k = 0; k <= t; k++)
+		{
+			mpz_ptr tmp3 = new mpz_t();
+			mpz_init(tmp3);
+			vtmp3->push_back(tmp3);
+		}
+		a_ik.push_back(*vtmp3);
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
 
@@ -776,19 +790,23 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			err << "P_" << *it << " ";
 		err << std::endl;
 		// run reconstruction phase of Pedersen-VSS
-		if (!Reconstruct(complaints, z_i, rbc, err))
+		if (!Reconstruct(complaints, z_i, a_ik, rbc, err))
 		{
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
 		}
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			// compute $A_{i0} = g^{z_i} \bmod p$
-			mpz_fpowm(fpowm_table_g, A_ik[*it][0], g, z_i[*it], p);
+			// compute $A_{ik} = g^{a_{ik}} \bmod p$
+			for (size_t k = 0; k <= t; k++)
+			{
+				err << "P_" << i << ": a_" << *it << "," << k << " = " << a_ik[*it][k] << std::endl;
+				mpz_fpowm(fpowm_table_g, A_ik[*it][k], g, a_ik[*it][k], p);
+			}
 		}
 		// For all parties in $QUAL$, set $y_i = A_{i0} = g^{z_i} \bmod p$.
-		for (size_t j = 0; j < n; j++)
-			mpz_set(y_i[j], A_ik[j][0]);
+		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
+			mpz_set(y_i[*it], A_ik[*it][0]);
 		err << "P_" << i << ": y_i = " << y_i[i] << std::endl;
 		// Compute $y = \prod_{i \in QUAL} y_i \bmod p$.
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
@@ -797,7 +815,22 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			mpz_mod(y, y, p);
 		}
 		err << "P_" << i << ": y = " << y << std::endl;
-
+		// Compute public verification keys $v_j = \prod_{i \in QUAL} \prod_{k=0}^t (A_{ik})^{j^k} \bmod p$
+		for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
+		{
+			mpz_set_ui(v_i[*jt], 1L);
+			for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
+			{
+				for (size_t k = 0; k <= t; k++)
+				{
+					mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $j$ in computation
+					mpz_powm(bar, A_ik[*it][k], foo , p);
+					mpz_mul(v_i[*jt], v_i[*jt], bar);
+					mpz_mod(v_i[*jt], v_i[*jt], p);
+				}
+			}
+			err << "P_" << i << ": v_" << *jt << " = " << v_i[*jt] << std::endl;
+		}
 		throw true;
 	}
 	catch (bool return_value)
@@ -818,18 +851,18 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		{
 			for (size_t k = 0; k <= t; k++)
 			{
-				mpz_clear(A_ik[j][k]);
-				delete [] A_ik[j][k];
+				mpz_clear(A_ik[j][k]), mpz_clear(a_ik[j][k]);
+				delete [] A_ik[j][k], delete [] a_ik[j][k];
 			}
 			for (size_t i2 = 0; i2 < n; i2++)
 			{
 				mpz_clear(g__s_ij[j][i2]);
 				delete [] g__s_ij[j][i2];
 			}
-			A_ik[j].clear();
+			A_ik[j].clear(), a_ik[j].clear();
 			g__s_ij[j].clear();
 		}
-		A_ik.clear();
+		A_ik.clear(), a_ik.clear();
 		g__s_ij.clear();
 		// return
 		return return_value;
@@ -850,6 +883,7 @@ bool GennaroJareckiKrawczykRabinDKG::CheckKey
 		mpz_fspowm(fpowm_table_g, foo, g, z_i[i_in], p);
 		if (mpz_cmp(y_i[i_in], foo))
 			throw false;
+		
 		throw true;
 	}
 	catch (bool return_value)
@@ -864,12 +898,126 @@ bool GennaroJareckiKrawczykRabinDKG::CheckKey
 bool GennaroJareckiKrawczykRabinDKG::CheckKey
 	() const
 {
-	return CheckKey(i);
+	// initialize
+	mpz_t foo;
+	mpz_init(foo);
+
+	try
+	{
+		mpz_fspowm(fpowm_table_g, foo, g, x_i, p);
+		if (mpz_cmp(v_i[i], foo))
+			throw false;
+
+		throw CheckKey(i);
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(foo);
+		// return
+		return return_value;
+	}
+}
+
+/* The algorithm for polynomial interpolation is adapted from Victor Shoup's NTL 10.3.0. */
+bool GennaroJareckiKrawczykRabinDKG::Interpolate
+	(const std::vector<mpz_ptr> &a, const std::vector<mpz_ptr> &b,
+	std::vector<mpz_ptr> &f)
+{
+	size_t m = a.size();
+	if ((b.size() != m) || (m == 0) || (f.size() != m)) 
+		return false;
+	std::vector<mpz_ptr> prod, res;
+	for (size_t k = 0; k < m; k++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2);
+		prod.push_back(tmp1), res.push_back(tmp2);
+	}
+	for (size_t k = 0; k < m; k++)
+		mpz_set(prod[k], a[k]), mpz_set_ui(res[k], 0L);
+	mpz_t t1, t2, aa;
+	mpz_init(t1), mpz_init(t2), mpz_init(aa);
+
+	try
+	{
+		for (size_t k = 0; k < m; k++)
+		{
+			mpz_set(aa, a[k]);
+			mpz_set_ui(t1, 1L);
+			for (long i = k-1; i >= 0; i--)
+			{
+				mpz_mul(t1, t1, aa);
+				mpz_mod(t1, t1, q);
+				mpz_add(t1, t1, prod[i]);
+				mpz_mod(t1, t1, q);
+			}
+			mpz_set_ui(t2, 0L);
+			for (long i = k-1; i >= 0; i--)
+			{
+				mpz_mul(t2, t2, aa);
+				mpz_mod(t2, t2, q);
+				mpz_add(t2, t2, res[i]);
+				mpz_mod(t2, t2, q);
+			}
+			mpz_invert(t1, t1, q);
+			mpz_sub(t2, b[k], t2);
+			mpz_mod(t2, t2, q);
+			mpz_mul(t1, t1, t2);
+			mpz_mod(t1, t1, q);
+			for (size_t i = 0; i < k; i++)
+			{
+				mpz_mul(t2, prod[i], t1);
+				mpz_mod(t2, t2, q);
+				mpz_add(res[i], res[i], t2);
+				mpz_mod(res[i], res[i], q);
+			}
+			mpz_set(res[k], t1);
+			if (k < (m - 1))
+			{
+				if (k == 0)
+					mpz_neg(prod[0], prod[0]);
+				else
+				{
+					mpz_neg(t1, a[k]);
+					mpz_add(prod[k], t1, prod[k-1]);
+					mpz_mod(prod[k], prod[k], q);
+					for (long i = k-1; i >= 1; i--)
+					{
+						mpz_mul(t2, prod[i], t1);
+						mpz_mod(t2, t2, q);
+						mpz_add(prod[i], t2, prod[i-1]);
+						mpz_mod(prod[i], prod[i], q);
+					}
+					mpz_mul(prod[0], prod[0], t1);
+					mpz_mod(prod[0], prod[0], q);
+				}
+			}
+		}
+		for (size_t k = 0; k < m; k++)
+			mpz_set(f[k], res[k]);
+
+		// finish
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		for (size_t k = 0; k < m; k++)
+		{
+			mpz_clear(prod[k]), mpz_clear(res[k]);
+			delete [] prod[k], delete [] res[k];
+		}
+		prod.clear(), res.clear();
+		mpz_clear(t1), mpz_clear(t2), mpz_clear(aa);
+		// return
+		return return_value;
+	}
 }
 
 bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 	(const std::vector<size_t> &complaints,
 	std::vector<mpz_ptr> &z_i_in,
+	std::vector< std::vector<mpz_ptr> > &a_ik_in,
 	CachinKursawePetzoldShoupRBC *rbc, std::ostream &err)
 {
 	assert(t <= n);
@@ -950,7 +1098,7 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 			mpz_set_ui(foo, 0L);
 			for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
 			{
-				mpz_set_ui(rhs, 1L); // compute the optimized Lagrange multipliers
+				mpz_set_ui(rhs, 1L); // compute optimized Lagrange coefficients
 				for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
 				{
 					if (*lt != *jt)
@@ -968,14 +1116,39 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 				}
 				mpz_invert(lhs, lhs, q);
 				mpz_mul(rhs, rhs, lhs);
-				mpz_mod(rhs, rhs, q);
+				mpz_mod(rhs, rhs, q); // computation of Lagrange coefficients finished
 				mpz_mul(bar, s_ij[*it][*jt], rhs);
 				mpz_mod(bar, bar, q);
 				mpz_add(foo, foo, bar);
 				mpz_mod(foo, foo, q);
 			}
 			mpz_set(z_i_in[*it], foo);
-			parties.clear();
+			err << "P_" << i << ": reconstructed z_" << *it << " = " << z_i_in[*it] << std::endl;
+			// compute $f_i(z)$ using general interpolation
+			std::vector<mpz_ptr> points, shares, f;
+			for (size_t k = 0; k < parties.size(); k++)
+			{
+				mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
+				mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3);
+				points.push_back(tmp1), shares.push_back(tmp2), f.push_back(tmp3);
+			}
+			for (size_t k = 0; k < parties.size(); k++)
+			{
+				mpz_set_ui(points[k], parties[k] + 1); // adjust index in computation
+				mpz_set(shares[k], s_ij[*it][parties[k]]);
+			}
+			if (!Interpolate(points, shares, f))
+				throw false;
+			err << "P_" << i << ": reconstructed f_0 = " << f[0] << std::endl;
+			for (size_t k = 0; k < parties.size(); k++)
+				mpz_set(a_ik_in[*it][k], f[k]);
+			for (size_t k = 0; k < parties.size(); k++)
+			{
+				mpz_clear(points[k]), mpz_clear(shares[k]), mpz_clear(f[k]);
+				delete [] points[k], delete [] shares[k], delete [] f[k];
+			}
+			points.clear(), shares.clear(), f.clear();
+			parties.clear(); 
 		}
 
 		throw true;
@@ -1009,6 +1182,12 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 		delete [] z_i[j];
 	}
 	z_i.clear();
+	for (size_t j = 0; j < v_i.size(); j++)
+	{
+		mpz_clear(v_i[j]);
+		delete [] v_i[j];
+	}
+	v_i.clear();
 	for (size_t j = 0; j < s_ij.size(); j++)
 	{
 		for (size_t i = 0; i < s_ij[j].size(); i++)
@@ -1206,6 +1385,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	mpz_t r;
 	std::vector<size_t> QUALprime;
 	std::vector<mpz_ptr> s_i, r_i, u_i;
+	std::vector< std::vector<mpz_ptr> > a_ik;
 	GennaroJareckiKrawczykRabinDKG *dkg2 = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h);
 	std::vector<size_t> complaints;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
@@ -1215,6 +1395,14 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
 		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3);
 		s_i.push_back(tmp1), r_i.push_back(tmp2), u_i.push_back(tmp3);
+		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
+		for (size_t k = 0; k <= t; k++)
+		{
+			mpz_ptr tmp4 = new mpz_t();
+			mpz_init(tmp4);
+			vtmp1->push_back(tmp4);
+		}
+		a_ik.push_back(*vtmp1);
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
 
@@ -1297,12 +1485,12 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 			err << "P_" << *it << " ";
 		err << std::endl;
 		// run reconstruction phases
-		if (!dkg2->Reconstruct(complaints, u_i, rbc, err))
+		if (!dkg2->Reconstruct(complaints, u_i, a_ik, rbc, err))
 		{
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
 		}
-		if (!dkg->Reconstruct(complaints, dkg->z_i, rbc, err))
+		if (!dkg->Reconstruct(complaints, dkg->z_i, a_ik, rbc, err))
 		{
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
@@ -1326,7 +1514,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
-		if (!dkg->Reconstruct(complaints, dkg->z_i, rbc, err))
+		if (!dkg->Reconstruct(complaints, dkg->z_i, a_ik, rbc, err))
 		{
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
@@ -1360,8 +1548,15 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		{
 			mpz_clear(s_i[j]), mpz_clear(r_i[j]), mpz_clear(u_i[j]);
 			delete [] s_i[j], delete [] r_i[j], delete [] u_i[j];
+			for (size_t k = 0; k <= t; k++)
+			{
+				mpz_clear(a_ik[j][k]);
+				delete [] a_ik[j][k];
+			}
+			a_ik[j].clear();
 		}
 		s_i.clear(), r_i.clear(), u_i.clear();
+		a_ik.clear();
 		delete dkg2;
 		// return
 		return return_value;
