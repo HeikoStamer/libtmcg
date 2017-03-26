@@ -404,7 +404,7 @@ void run_instance
 						for (size_t i = 6; i < sub.size(); i++)
 							sub_hashing.push_back(sub[i]);
 						CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, subkeyid);
-							std::cout << "Key ID of Elgamal subkey: " << std::hex;
+							std::cout << "Key ID of ElGamal subkey: " << std::hex;
 						for (size_t i = 0; i < subkeyid.size(); i++)
 							std::cout << (int)subkeyid[i] << " ";
 						std::cout << std::dec << std::endl;
@@ -543,7 +543,7 @@ void run_instance
 						}
 					}
 					else if ((ctx.pkalgo == 16) && ssbelg)
-						std::cerr << "WARNING: Elgamal subkey already found" << std::endl; 
+						std::cerr << "WARNING: ElGamal subkey already found" << std::endl; 
 					else
 						std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
 					break;
@@ -571,7 +571,7 @@ void run_instance
 	}
 	if (!ssbelg)
 	{
-		std::cerr << "ERROR: no Elgamal private subkey found" << std::endl;
+		std::cerr << "ERROR: no ElGamal private subkey found" << std::endl;
 		exit(-1);
 	}
 	if (!sigdsa)
@@ -581,7 +581,7 @@ void run_instance
 	}
 	if (!sigelg)
 	{
-		std::cerr << "ERROR: no self-signature for Elgamal subkey found" << std::endl;
+		std::cerr << "ERROR: no self-signature for ElGamal subkey found" << std::endl;
 		exit(-1);
 	}
 
@@ -636,10 +636,10 @@ void run_instance
 	ret = gcry_sexp_build(&elgkey, &erroff, "(private-key (elg (p %M) (g %M) (y %M) (x %M)))", elg_p, elg_g, elg_y, elg_x);
 	if (ret)
 	{
-		std::cerr << "ERROR: parsing Elgamal key material failed" << std::endl;
+		std::cerr << "ERROR: parsing ElGamal key material failed" << std::endl;
 		exit(-1);
 	}
-	std::cout << "Elgamal key flags: ";
+	std::cout << "ElGamal key flags: ";
 	flags = 0;
 	for (size_t i = 0; i < sizeof(elg_keyflags); i++)
 	{
@@ -665,7 +665,7 @@ void run_instance
 	std::cout << std::endl;
 	if ((flags & 0x04) != 0x04)
 	{
-		std::cerr << "ERROR: Elgamal subkey cannot used to encrypt communications" << std::endl;
+		std::cerr << "ERROR: ElGamal subkey cannot used to encrypt communications" << std::endl;
 		exit(-1);
 	}
 	elg_trailer.push_back(4); // only V4 format supported
@@ -680,7 +680,7 @@ void run_instance
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, elg_r, elg_s);
 	if (ret)
 	{
-		std::cerr << "ERROR: verification of Elgamal subkey self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
+		std::cerr << "ERROR: verification of ElGamal subkey self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
 		exit(-1);
 	}
 
@@ -774,10 +774,10 @@ void run_instance
 		std::cerr << "ERROR: multiple types of symmetrically encrypted data found" << std::endl;
 		exit(-1);
 	}
-	// check whether DSA and Elgamal parameters match
+	// check whether DSA and ElGamal parameters match
 	if (gcry_mpi_cmp(dsa_p, elg_p) || gcry_mpi_cmp(dsa_g, elg_g))
 	{
-		std::cerr << "ERROR: DSA and Elgamal group parameters does not match" << std::endl;
+		std::cerr << "ERROR: DSA and ElGamal group parameters does not match" << std::endl;
 		exit(-1);
 	}
 	// check whether $0 < g^k < p$.
@@ -796,8 +796,8 @@ void run_instance
 	// compute the decryption share
 	char buffer[2048];
 	size_t buflen;
-	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, z_i, r_i, R;
-	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(z_i), mpz_init(r_i), mpz_init(R);
+	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, x_i, r_i, R;
+	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(x_i), mpz_init(r_i), mpz_init(R);
 	std::memset(buffer, 0, sizeof(buffer));
 	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
 	mpz_set_str(nizk_p, buffer, 16);
@@ -812,23 +812,23 @@ void run_instance
 	mpz_set_str(nizk_gk, buffer, 16);
 	std::memset(buffer, 0, sizeof(buffer));
 	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, elg_x);
-	mpz_set_str(z_i, buffer, 16);
-	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g) || mpz_cmp(z_i, dkg->z_i[whoami]))
+	mpz_set_str(x_i, buffer, 16);
+	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g) || mpz_cmp(x_i, dkg->x_i))
 	{
-		std::cerr << "ERROR: DSA/Elgamal and DKG group parameters does not match" << std::endl;
+		std::cerr << "ERROR: DSA/ElGamal and DKG group parameters does not match" << std::endl;
 		exit(-1);
 	}
-	mpz_spowm(R, nizk_g, z_i, nizk_p);
-	if (mpz_cmp(R, dkg->y_i[whoami]))
+	mpz_spowm(R, nizk_g, x_i, nizk_p);
+	if (mpz_cmp(R, dkg->v_i[whoami]))
 	{
-		std::cerr << "ERROR: DKG public key verification failed" << std::endl;
+		std::cerr << "ERROR: check of DKG public verification key failed" << std::endl;
 		exit(-1);
 	}
-	mpz_spowm(r_i, nizk_gk, z_i, nizk_p); // FIXME: use share x_i here instead of z_i
+	mpz_spowm(r_i, nizk_gk, x_i, nizk_p);
 	// compute NIZK argument for decryption share, e.g. see [FP01]
 	// proof of knowledge (equality of discrete logarithms) [CaS97]
-	mpz_t a, b, omega, c, r, c2;
-	mpz_init(c), mpz_init(r), mpz_init(c2), mpz_init(a), mpz_init(b), mpz_init(omega);
+	mpz_t a, b, omega, c, r, c2, lambda;
+	mpz_init(c), mpz_init(r), mpz_init(c2), mpz_init(a), mpz_init(b), mpz_init(omega), mpz_init(lambda);
 	// commitment
 	mpz_srandomm(omega, nizk_q);
 	mpz_spowm(a, nizk_gk, omega, nizk_p);
@@ -838,9 +838,9 @@ void run_instance
 	// the PoK non-interactive, i.e. we turn it into a statistically
 	// zero-knowledge (Schnorr signature scheme style) proof of
 	// knowledge (SPK) in the random oracle model.
-	mpz_shash(c, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g); // FIXME: use dkg->v_i[whoami], where v_i = g^x_i
+	mpz_shash(c, 6, a, b, r_i, dkg->v_i[whoami], nizk_gk, nizk_g);
 	// response
-	mpz_mul(r, c, z_i);
+	mpz_mul(r, c, x_i);
 	mpz_neg(r, r);
 	mpz_add(r, r, omega);
 	mpz_mod(r, r, nizk_q);
@@ -850,14 +850,17 @@ void run_instance
 	mpz_mul(a, a, b);
 	mpz_mod(a, a, nizk_p);
 	mpz_powm(b, nizk_g, r, nizk_p);
-	mpz_powm(c2, dkg->y_i[whoami], c, nizk_p); // FIXME: use dkg->v_i[whoami], where v_i = g^x_i
+	mpz_powm(c2, dkg->v_i[whoami], c, nizk_p);
 	mpz_mul(b, b, c2);
 	mpz_mod(b, b, nizk_p);
-	mpz_shash(c2, 6, a, b, r_i, dkg->y_i[whoami], nizk_gk, nizk_g); // FIXME: use dkg->v_i[whoami], where v_i = g^x_i
+	mpz_shash(c2, 6, a, b, r_i, dkg->v_i[whoami], nizk_gk, nizk_g);
 	if (mpz_cmp(c2, c))
 	{
 		std::cerr << "WARNING: NIZK self verification failed at " << whoami << std::endl;
 	}
+	std::cout << "P_" << whoami << ": decryption share r_i = " << r_i << std::endl;
+	std::cout << "P_" << whoami << ": NIZK argument c = " << c << std::endl;
+	std::cout << "P_" << whoami << ": NIZK argument r = " << r << std::endl;
 
 	// create communication handles between all players
 	std::vector<int> uP_in, uP_out, bP_in, bP_out;
@@ -893,7 +896,15 @@ void run_instance
 	rbc->Broadcast(r_i);
 	rbc->Broadcast(c);
 	rbc->Broadcast(r);
-	mpz_set(R, r_i); // take decryption share of this party in the accumulator
+
+	// use decryption share of this party for interpolation
+	std::vector<size_t> interpol_parties;
+	std::vector<mpz_ptr> interpol_shares;
+	mpz_ptr tmp1 = new mpz_t();
+	mpz_init_set(tmp1, r_i);
+	interpol_parties.push_back(whoami), interpol_shares.push_back(tmp1);
+
+	// for interpolation we need at least t other decryption shares
 	std::vector<size_t> complaints;
 	for (size_t i = 0; i < peers.size(); i++)
 	{
@@ -918,7 +929,7 @@ void run_instance
 			// check the NIZK argument
 			if ((mpz_cmpabs(r, nizk_q) >= 0) || (mpz_sizeinbase(c, 2L) > 256)) // check the size of r and c
 			{
-				std::cout << "WARNING: NIZK check failed for P_" << i << std::endl;
+				std::cout << "WARNING: NIZK argument check failed for P_" << i << std::endl;
 				complaints.push_back(i);
 			}
 			// verify proof of knowledge (equality of discrete logarithms) [CaS97]
@@ -927,27 +938,73 @@ void run_instance
 			mpz_mul(a, a, b);
 			mpz_mod(a, a, nizk_p);
 			mpz_powm(b, nizk_g, r, nizk_p);
-			mpz_powm(c2, dkg->y_i[i], c, nizk_p); // FIXME: use dkg->v_i[i], where v_i = g^x_i
+			mpz_powm(c2, dkg->v_i[i], c, nizk_p);
 			mpz_mul(b, b, c2);
 			mpz_mod(b, b, nizk_p);
-			mpz_shash(c2, 6, a, b, r_i, dkg->y_i[i], nizk_gk, nizk_g); // FIXME: use dkg->v_i[i], where v_i = g^x_i
+			mpz_shash(c2, 6, a, b, r_i, dkg->v_i[i], nizk_gk, nizk_g);
 			if (mpz_cmp(c2, c))
 			{
 				std::cout << "WARNING: NIZK verification failed for P_" << i << std::endl;
 				complaints.push_back(i);
 			}
-			// FIXME: compute r_i = r_i^\lambda_{i,\Lambda} \bmod p (interpolate) where \lambda_{i, \Lambda} = \prod_{l\in\Lambda\setminus\{i\}\frac{l}{l-i}}
-			// (t + 1) decryption shares r_i = nizk_gk ^ x_i are interpolated
 			if (std::find(complaints.begin(), complaints.end(), i) == complaints.end())
 			{
-				// accumulate correct decryption shares
-				mpz_mul(R, R, r_i);
-				mpz_mod(R, R, nizk_p);
+				mpz_ptr tmp1 = new mpz_t();
+				mpz_init_set(tmp1, r_i);
+				interpol_parties.push_back(i), interpol_shares.push_back(tmp1);
 			}
-			else
-				std::cout << "WARNING: complaint against P_" << i << std::endl;
 		}
 	}
+
+	if (interpol_parties.size() <= dkg->t)
+	{
+		std::cerr << "ERROR: not enough decryption shares collected" << std::endl;
+		exit(-1);
+	}
+	if (interpol_parties.size() > (dkg->t + 1))
+		interpol_parties.resize(dkg->t + 1);
+	std::cout << "interpolation parties = ";
+	for (std::vector<size_t>::iterator jt = interpol_parties.begin(); jt != interpol_parties.end(); ++jt)
+		std::cout << "P_" << *jt << " ";
+	std::cout << std::endl;
+
+	// compute $R = \prod_{i\in\Lambda} r_i^\lambda_{i,\Lambda} \bmod p$ where $\lambda_{i, \Lambda} = \prod_{l\in\Lambda\setminus\{i\}\frac{l}{l-i}}$
+	mpz_set_ui(R, 1L);
+	size_t j = 0;
+	for (std::vector<size_t>::iterator jt = interpol_parties.begin(); jt != interpol_parties.end(); ++jt, ++j)
+	{
+		mpz_set_ui(a, 1L); // compute optimized Lagrange coefficients
+		for (std::vector<size_t>::iterator lt = interpol_parties.begin(); lt != interpol_parties.end(); ++lt)
+		{
+			if (*lt != *jt)
+				mpz_mul_ui(a, a, (*lt + 1)); // adjust index in computation
+		}
+		mpz_set_ui(b, 1L);
+		for (std::vector<size_t>::iterator lt = interpol_parties.begin(); lt != interpol_parties.end(); ++lt)
+		{
+			if (*lt != *jt)
+			{
+				mpz_set_ui(c, (*lt + 1)); // adjust index in computation
+				mpz_sub_ui(c, c, (*jt + 1)); // adjust index in computation
+				mpz_mul(b, b, c);
+			}
+		}
+		mpz_invert(b, b, nizk_q);
+		mpz_mul(lambda, a, b);
+		mpz_mod(lambda, lambda, nizk_q); // computation of Lagrange coefficients finished
+		// interpolate and accumulate correct decryption shares
+		mpz_powm(r_i, interpol_shares[j], lambda, nizk_p);
+		mpz_mul(R, R, r_i);
+		mpz_mod(R, R, nizk_p);
+	}
+
+	// release collected shares
+	for (size_t i = 0; i < interpol_shares.size(); i++)
+	{
+		mpz_clear(interpol_shares[i]);
+		delete [] interpol_shares[i];
+	}
+	interpol_shares.clear(), interpol_parties.clear();
 
 	// at the end: deliver some more rounds for waiting parties
 	std::cout << "P_" << whoami << ": waiting " << aiounicast::aio_timeout_very_long << " seconds for stalled parties" << std::endl;
@@ -970,7 +1027,7 @@ void run_instance
 	ret = gcry_sexp_build(&elgkey, &erroff, "(private-key (elg (p %M) (g %M) (y %M) (x %M)))", elg_p, elg_g, elg_y, elg_x);
 	if (ret)
 	{
-		std::cerr << "ERROR: processing Elgamal key material failed" << std::endl;
+		std::cerr << "ERROR: processing ElGamal key material failed" << std::endl;
 		exit(-1);
 	}
 	seskey.clear();
@@ -980,8 +1037,8 @@ void run_instance
 		std::cerr << "ERROR: AsymmetricDecryptElgamal() failed with rc = " << gcry_err_code(ret) << std::endl;
 		exit(-1);
 	}
-	mpz_clear(c), mpz_clear(r), mpz_clear(c2), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
-	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(z_i), mpz_clear(r_i), mpz_clear(R);
+	mpz_clear(c), mpz_clear(r), mpz_clear(c2), mpz_clear(a), mpz_clear(b), mpz_clear(omega), mpz_clear(lambda);
+	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i), mpz_clear(r_i), mpz_clear(R);
 	gcry_mpi_release(dsa_p);
 	gcry_mpi_release(dsa_q);
 	gcry_mpi_release(dsa_g);
@@ -1218,7 +1275,7 @@ int main
 	};
 	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
     		return -1;
-	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-decrypt [OPTIONS] PEERS", "distributed ElGamal decryption with OpenPGP-input",
+	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-decrypt [OPTIONS] PEERS", "distributed decryption (ElGamal with OpenPGP-input)",
                             options, &gnunet_run, argv[0]);
 	GNUNET_free((void *) argv);
 	if (ret == GNUNET_OK)
