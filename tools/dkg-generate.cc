@@ -467,19 +467,19 @@ int main
 
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
-		GNUNET_GETOPT_OPTION_STRING('p',
+		GNUNET_GETOPT_option_string('p',
 			"port",
 			NULL,
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
 		),
-		GNUNET_GETOPT_OPTION_SET_UINT('t',
+		GNUNET_GETOPT_option_uint('t',
 			"t-resilience",
 			NULL,
 			"resilience of DKG protocol",
 			&gnunet_opt_t_resilience
 		),
-		GNUNET_GETOPT_OPTION_SET_UINT('w',
+		GNUNET_GETOPT_option_uint('w',
 			"wait",
 			NULL,
 			"minutes to wait until start of DKG protocol",
