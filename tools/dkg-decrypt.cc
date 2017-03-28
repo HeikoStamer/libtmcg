@@ -852,7 +852,6 @@ void run_instance
 	init_decryption();
 
 
-
 	// compute the decryption share
 	char buffer[2048];
 	size_t buflen;
@@ -1321,7 +1320,11 @@ int main
 			init_dkg(thispeer + ".dkg", whoami);
 			read_private_key(thispeer + "_dkg-sec.asc");
 			std::cout << "INFO: whoami = " << whoami << std::endl;
+			init_private_key();
+			init_decryption();
 // TODO
+			release_mpis();
+			release_keys();
 			done_dkg();
 			print_message(msg);
 			return 0;
