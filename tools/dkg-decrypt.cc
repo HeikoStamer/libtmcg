@@ -42,17 +42,24 @@
 
 int 				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t 				pid[MAX_N];
-std::string			passphrase, armored_message;
+std::string			passphrase, armored_message, armored_seckey;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
 
-void run_instance
-	(const size_t whoami)
+GennaroJareckiKrawczykRabinDKG	*dkg;
+gcry_mpi_t 			dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, dsa_r, dsa_s, elg_p, elg_g, elg_y, elg_x, elg_r, elg_s;
+gcry_mpi_t 			gk, myk;
+gcry_sexp_t			dsakey, elgkey;
+OCTETS				subkeyid, enc;
+bool				have_seipd = false;
+
+void init_dkg
+	(const std::string filename, size_t &whoami)
 {
 	// read the exported DKG state from file
-	std::string line, dkgfilename = peers[whoami] + ".dkg";
+	std::string line;
 	std::stringstream dkgstate;
-	std::ifstream dkgifs(dkgfilename.c_str(), std::ifstream::in);
+	std::ifstream dkgifs(filename.c_str(), std::ifstream::in);
 	if (!dkgifs.is_open())
 	{
 		std::cerr << "ERROR: cannot open DKG state file" << std::endl;
@@ -61,9 +68,7 @@ void run_instance
 	while (std::getline(dkgifs, line))
 		dkgstate << line << std::endl;
 	dkgifs.close();
-
 	// create an instance of DKG
-	GennaroJareckiKrawczykRabinDKG *dkg;
 	std::cout << "GennaroJareckiKrawczykRabinDKG(...)" << std::endl;
 	dkg = new GennaroJareckiKrawczykRabinDKG(dkgstate);
 	if (!dkg->CheckGroup())
@@ -71,19 +76,30 @@ void run_instance
 		std::cerr << "ERROR: CheckGroup() failed" << std::endl;
 		exit(-1);
 	}
-
-	// check the key share
-	std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
+	// check the key share of DKG
 	if (!dkg->CheckKey())
 	{
 		std::cerr << "ERROR: CheckKey() failed" << std::endl;
 		exit(-1);
 	}
+	// set the correct index from saved DKG state
+	whoami = dkg->i;
+}
 
+void done_dkg
+	()
+{
+	// release DKG
+	delete dkg;
+}
+
+void read_private_key
+	(const std::string filename)
+{
 	// read the private key from file
-	dkgfilename = peers[whoami] + "_dkg-sec.asc";
+	std::string line;
 	std::stringstream dkgseckey;
-	std::ifstream secifs(dkgfilename.c_str(), std::ifstream::in);
+	std::ifstream secifs(filename.c_str(), std::ifstream::in);
 	if (!secifs.is_open())
 	{
 		std::cerr << "ERROR: cannot open key file" << std::endl;
@@ -92,22 +108,23 @@ void run_instance
 	while (std::getline(secifs, line))
 		dkgseckey << line << std::endl;
 	secifs.close();
-	std::string armored_seckey = dkgseckey.str();
+	armored_seckey = dkgseckey.str();
+}
 
-	// assert correct number of parties in saved DKG state
-	if (peers.size() != dkg->n)
-	{
-		std::cerr << "ERROR: number of PEERS and DKG state does not match" << std::endl;
-		exit(-1);
-	}
+void print_message
+	(const OCTETS &msg)
+{
+	// print out the decrypted message
+	std::cout << "Decrypted message is: ";
+	for (size_t i = 0; i < msg.size(); i++)
+		std::cout << msg[i];
+	std::cout << std::endl;
+}
 
-	// assert correct index for saved DKG state
-	if (whoami != dkg->i)
-	{
-		std::cerr << "ERROR: index in PEERS and DKG state does not match" << std::endl;
-		exit(-1);
-	}
 
+void init_private_key
+	()
+{
 	// parse the private key
 	bool secdsa = false, sigdsa = false, ssbelg = false, sigelg = false;
 	std::string u;
@@ -115,10 +132,9 @@ void run_instance
 	BYTE dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
 	BYTE dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
 	BYTE *key, *iv;
-	OCTETS pkts, pub, sub; //, msg, seipd, pkesk;
-	OCTETS seskey, salt, mpis, hash_input, hash, keyid, pub_hashing, subkeyid, sub_hashing, issuer, dsa_hspd, elg_hspd;
-	gcry_mpi_t dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, dsa_r, dsa_s, elg_p, elg_g, elg_y, elg_x, elg_r, elg_s;
-	gcry_sexp_t dsakey, elgkey;
+	OCTETS pkts, pub, sub;
+	OCTETS seskey, salt, mpis, hash_input, hash, keyid, pub_hashing, sub_hashing, issuer, dsa_hspd, elg_hspd;
+	
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t erroff, keylen, ivlen, chksum, mlen, chksum2;
@@ -683,15 +699,19 @@ void run_instance
 		std::cerr << "ERROR: verification of ElGamal subkey self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
 		exit(-1);
 	}
+}
 
+void init_decryption
+	()
+{
 	// parse encrypted message
-	bool have_pkesk = false, have_sed = false, have_seipd = false;
-	OCTETS pkesk_keyid, enc;
-	gcry_mpi_t gk, myk;
+	TMCG_OPENPGP_CONTEXT ctx;
+	OCTETS pkts, pkesk_keyid;
+	bool have_pkesk = false, have_sed = false;
 	gk = gcry_mpi_new(2048);
 	myk = gcry_mpi_new(2048);
-	ptag = 0xFF;
-	atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(armored_message, pkts);
+	BYTE ptag = 0xFF;
+	BYTE atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(armored_message, pkts);
 	std::cout << "ArmorDecode() = " << (int)atype << std::endl;
 	if (atype == 1)
 	{
@@ -792,7 +812,47 @@ void run_instance
 	{
 		std::cerr << "ERROR: (g^k)^q \equiv 1 mod p not satisfied" << std::endl;
 		exit(-1);
-	}	
+	}
+}
+
+void release_mpis
+	()
+{
+	gcry_mpi_release(dsa_p);
+	gcry_mpi_release(dsa_q);
+	gcry_mpi_release(dsa_g);
+	gcry_mpi_release(dsa_y);
+	gcry_mpi_release(dsa_x);
+	gcry_mpi_release(dsa_r);
+	gcry_mpi_release(dsa_s);
+	gcry_mpi_release(elg_p);
+	gcry_mpi_release(elg_g);
+	gcry_mpi_release(elg_y);
+	gcry_mpi_release(elg_x);
+	gcry_mpi_release(elg_r);
+	gcry_mpi_release(elg_s);
+	gcry_mpi_release(gk);
+	gcry_mpi_release(myk);
+}
+
+void release_keys
+	()
+{
+	gcry_sexp_release(dsakey);
+	gcry_sexp_release(elgkey);
+}
+
+void run_instance
+	(size_t whoami)
+{
+	std::string thispeer = peers[whoami];
+	init_dkg(thispeer + ".dkg", whoami);
+	read_private_key(thispeer + "_dkg-sec.asc");
+	init_private_key();
+	init_decryption();
+
+
+
 	// compute the decryption share
 	char buffer[2048];
 	size_t buflen;
@@ -998,6 +1058,17 @@ void run_instance
 		mpz_mod(R, R, nizk_p);
 	}
 
+	// copy the result from R to gk
+	gcry_error_t ret;
+	size_t erroff;
+	mpz_get_str(buffer, 16, R);
+	ret = gcry_mpi_scan(&gk, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting the result failed" << std::endl;
+		exit(-1);
+	}
+
 	// release collected shares
 	for (size_t i = 0; i < interpol_shares.size(); i++)
 	{
@@ -1018,12 +1089,30 @@ void run_instance
 	while (time(NULL) < (entry_time + aiounicast::aio_timeout_very_long));
 	mpz_clear(m);
 
+	// release RBC
+	delete rbc;
+	
+	// release handles (unicast channel)
+	uP_in.clear(), uP_out.clear(), uP_key.clear();
+	std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
+		" aiou.numWrite = " << aiou->numWrite << std::endl;
+
+	// release handles (broadcast channel)
+	bP_in.clear(), bP_out.clear(), bP_key.clear();
+	std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
+		" aiou2.numWrite = " << aiou2->numWrite << std::endl;
+
+	// release asynchronous unicast and broadcast
+	delete aiou, delete aiou2;
+
+	mpz_clear(c), mpz_clear(r), mpz_clear(c2), mpz_clear(a), mpz_clear(b), mpz_clear(omega), mpz_clear(lambda);
+	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i), mpz_clear(r_i), mpz_clear(R);
+
 	// decrypt the session key
-	mpz_get_str(buffer, 16, R);
-	ret = gcry_mpi_scan(&gk, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	assert(!ret);
+	OCTETS seskey, hash;
+	TMCG_OPENPGP_CONTEXT ctx;
 	gcry_sexp_release(elgkey); // release the former private key
-	gcry_mpi_set_ui(elg_x, 1); // the private key share of this party has been already used in R
+	gcry_mpi_set_ui(elg_x, 1); // cheat libgcrypt (the private key share of this party has been already used in R)
 	ret = gcry_sexp_build(&elgkey, &erroff, "(private-key (elg (p %M) (g %M) (y %M) (x %M)))", elg_p, elg_g, elg_y, elg_x);
 	if (ret)
 	{
@@ -1037,25 +1126,6 @@ void run_instance
 		std::cerr << "ERROR: AsymmetricDecryptElgamal() failed with rc = " << gcry_err_code(ret) << std::endl;
 		exit(-1);
 	}
-	mpz_clear(c), mpz_clear(r), mpz_clear(c2), mpz_clear(a), mpz_clear(b), mpz_clear(omega), mpz_clear(lambda);
-	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i), mpz_clear(r_i), mpz_clear(R);
-	gcry_mpi_release(dsa_p);
-	gcry_mpi_release(dsa_q);
-	gcry_mpi_release(dsa_g);
-	gcry_mpi_release(dsa_y);
-	gcry_mpi_release(dsa_x);
-	gcry_mpi_release(dsa_r);
-	gcry_mpi_release(dsa_s);
-	gcry_mpi_release(elg_p);
-	gcry_mpi_release(elg_g);
-	gcry_mpi_release(elg_y);
-	gcry_mpi_release(elg_x);
-	gcry_mpi_release(elg_r);
-	gcry_mpi_release(elg_s);
-	gcry_mpi_release(gk);
-	gcry_mpi_release(myk);
-	gcry_sexp_release(dsakey);
-	gcry_sexp_release(elgkey);
 
 	// decrypt the given message
 	OCTETS prefix, litmdc;
@@ -1071,7 +1141,7 @@ void run_instance
 
 	bool have_lit = false, have_mdc = false;
 	OCTETS lit, msg, mdc_hash;
-	ptag = 0xFF;
+	BYTE ptag = 0xFF;
 	if (litmdc.size() > (sizeof(ctx.mdc_hash) + 2))
 		lit.insert(lit.end(), litmdc.begin(), litmdc.end() - (sizeof(ctx.mdc_hash) + 2));
 	while (litmdc.size() && ptag)
@@ -1137,30 +1207,10 @@ void run_instance
 		}
 	}
 
-	// print out the decrypted message
-	std::cout << "Decrypted message is: ";
-	for (size_t i = 0; i < msg.size(); i++)
-		std::cout << msg[i];
-	std::cout << std::endl;
-
-	// release RBC
-	delete rbc;
-	
-	// release handles (unicast channel)
-	uP_in.clear(), uP_out.clear(), uP_key.clear();
-	std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
-		" aiou.numWrite = " << aiou->numWrite << std::endl;
-
-	// release handles (broadcast channel)
-	bP_in.clear(), bP_out.clear(), bP_key.clear();
-	std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
-		" aiou2.numWrite = " << aiou2->numWrite << std::endl;
-
-	// release asynchronous unicast and broadcast
-	delete aiou, delete aiou2;
-
-	// release DKG
-	delete dkg;
+	release_mpis();
+	release_keys();
+	done_dkg();
+	print_message(msg);
 }
 
 void fork_instance
@@ -1189,13 +1239,14 @@ void fork_instance
 
 #ifdef GNUNET
 char *gnunet_opt_port = NULL;
+int gnunet_opt_nonint = 0;
 unsigned int gnunet_opt_wait = 5;
 #endif
 
 int main
 	(int argc, char *const *argv)
 {
-	bool notcon = false;
+	bool notcon = false, nonint = false;
 	if (argc < 2)
 	{
 		std::cerr << "ERROR: no peers given as argument; usage: " << argv[0] << " [OPTIONS] PEERS" << std::endl;
@@ -1208,17 +1259,19 @@ int main
 		{
 			std::string arg = argv[i+1];
 			// ignore options
-			if ((arg.find("-c", 0) == 0) || (arg.find("-p", 0) == 0) || (arg.find("-w", 0) == 0) || (arg.find("-L", 0) == 0) || (arg.find("-l", 0) == 0))
+			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || (arg.find("-l") == 0))
 			{
 				i++;
 				continue;
 			}
-			else if ((arg.find("--", 0) == 0) || (arg.find("-v", 0) == 0) || (arg.find("-h", 0) == 0))
+			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-n") == 0))
 			{
 				if ((arg.find("--help") == 0) || (arg.find("--version") == 0))
 					notcon = true;
 				if ((arg.find("-h") == 0) || (arg.find("-v") == 0))
 					notcon = true;
+				if ((arg.find("-n") == 0) || (arg.find("--non-interactive") == 0))
+					nonint = true;
 				continue;
 			}
 			else if (arg.find("-", 0) == 0)
@@ -1235,7 +1288,12 @@ int main
 	}
 	if (!notcon)
 	{
-		if ((peers.size() < 3)  || (peers.size() > MAX_N))
+		if (!nonint && ((peers.size() < 3)  || (peers.size() > MAX_N)))
+		{
+			std::cerr << "ERROR: too few or too many peers given" << std::endl;
+			return -1;
+		}
+		else if (nonint && (peers.size() != 1))
 		{
 			std::cerr << "ERROR: too few or too many peers given" << std::endl;
 			return -1;
@@ -1255,10 +1313,28 @@ int main
 		std::cout << "INFO: canonicalized peer list = " << std::endl;
 		for (size_t i = 0; i < peers.size(); i++)
 			std::cout << peers[i] << std::endl;
+		if (nonint)
+		{
+			size_t whoami = 0;
+			OCTETS msg;
+			std::string thispeer = peers[whoami];
+			init_dkg(thispeer + ".dkg", whoami);
+			read_private_key(thispeer + "_dkg-sec.asc");
+			std::cout << "INFO: whoami = " << whoami << std::endl;
+// TODO
+			done_dkg();
+			print_message(msg);
+			return 0;
+		}
 	}
 
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
+		GNUNET_GETOPT_option_flag('n',
+			"non-interactive",
+			"run non-interactive version of the program",
+			&gnunet_opt_nonint
+		),
 		GNUNET_GETOPT_option_string('p',
 			"port",
 			NULL,
