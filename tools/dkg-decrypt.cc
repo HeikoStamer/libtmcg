@@ -47,7 +47,7 @@ std::vector<std::string>	peers;
 bool				instance_forked = false;
 
 GennaroJareckiKrawczykRabinDKG	*dkg;
-gcry_mpi_t 			dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, dsa_r, dsa_s, elg_p, elg_g, elg_y, elg_x, elg_r, elg_s;
+gcry_mpi_t 			dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_g, elg_y, elg_x;
 gcry_mpi_t 			gk, myk;
 gcry_sexp_t			dsakey, elgkey;
 OCTETS				subkeyid, enc;
@@ -94,7 +94,7 @@ void done_dkg
 }
 
 void read_private_key
-	(const std::string filename)
+	(const std::string filename, std::string &result)
 {
 	// read the private key from file
 	std::string line;
@@ -108,7 +108,7 @@ void read_private_key
 	while (std::getline(secifs, line))
 		dkgseckey << line << std::endl;
 	secifs.close();
-	armored_seckey = dkgseckey.str();
+	result = dkgseckey.str();
 }
 
 void print_message
@@ -121,9 +121,24 @@ void print_message
 	std::cout << std::endl;
 }
 
-
-void init_private_key
+void init_mpis
 	()
+{
+	dsa_p = gcry_mpi_new(2048);
+	dsa_q = gcry_mpi_new(2048);
+	dsa_g = gcry_mpi_new(2048);
+	dsa_y = gcry_mpi_new(2048);
+	dsa_x = gcry_mpi_new(2048);
+	elg_p = gcry_mpi_new(2048);
+	elg_g = gcry_mpi_new(2048);
+	elg_y = gcry_mpi_new(2048);
+	elg_x = gcry_mpi_new(2048);
+	gk = gcry_mpi_new(2048);
+	myk = gcry_mpi_new(2048);
+}
+
+void parse_private_key
+	(const std::string in)
 {
 	// parse the private key
 	bool secdsa = false, sigdsa = false, ssbelg = false, sigelg = false;
@@ -134,25 +149,16 @@ void init_private_key
 	BYTE *key, *iv;
 	OCTETS pkts, pub, sub;
 	OCTETS seskey, salt, mpis, hash_input, hash, keyid, pub_hashing, sub_hashing, issuer, dsa_hspd, elg_hspd;
-	
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t erroff, keylen, ivlen, chksum, mlen, chksum2;
 	TMCG_OPENPGP_CONTEXT ctx;
-	dsa_p = gcry_mpi_new(2048);
-	dsa_q = gcry_mpi_new(2048);
-	dsa_g = gcry_mpi_new(2048);
-	dsa_y = gcry_mpi_new(2048);
-	dsa_x = gcry_mpi_new(2048);
+	gcry_mpi_t dsa_r, dsa_s, elg_r, elg_s;
 	dsa_r = gcry_mpi_new(2048);
 	dsa_s = gcry_mpi_new(2048);
-	elg_p = gcry_mpi_new(2048);
-	elg_g = gcry_mpi_new(2048);
-	elg_y = gcry_mpi_new(2048);
-	elg_x = gcry_mpi_new(2048);
 	elg_r = gcry_mpi_new(2048);
 	elg_s = gcry_mpi_new(2048);
-	atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(armored_seckey, pkts);
+	atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(in, pkts);
 	std::cout << "ArmorDecode() = " << (int)atype << std::endl;
 	if (atype == 5)
 	{
@@ -699,19 +705,21 @@ void init_private_key
 		std::cerr << "ERROR: verification of ElGamal subkey self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
 		exit(-1);
 	}
+	gcry_mpi_release(dsa_r);
+	gcry_mpi_release(dsa_s);
+	gcry_mpi_release(elg_r);
+	gcry_mpi_release(elg_s);
 }
 
-void init_decryption
-	()
+void parse_message
+	(const std::string in)
 {
 	// parse encrypted message
 	TMCG_OPENPGP_CONTEXT ctx;
 	OCTETS pkts, pkesk_keyid;
 	bool have_pkesk = false, have_sed = false;
-	gk = gcry_mpi_new(2048);
-	myk = gcry_mpi_new(2048);
 	BYTE ptag = 0xFF;
-	BYTE atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(armored_message, pkts);
+	BYTE atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(in, pkts);
 	std::cout << "ArmorDecode() = " << (int)atype << std::endl;
 	if (atype == 1)
 	{
@@ -807,12 +815,13 @@ void init_decryption
 		exit(-1);
 	}
 	// check whether $(g^k)^q \equiv 1 \pmod{p}$.
-	gcry_mpi_powm(dsa_r, gk, dsa_q, elg_p);
-	if (gcry_mpi_cmp_ui(dsa_r, 1L))
+	gcry_mpi_powm(dsa_p, gk, dsa_q, elg_p);
+	if (gcry_mpi_cmp_ui(dsa_p, 1L))
 	{
 		std::cerr << "ERROR: (g^k)^q \equiv 1 mod p not satisfied" << std::endl;
 		exit(-1);
 	}
+	gcry_mpi_set(dsa_p, elg_p);
 }
 
 void release_mpis
@@ -823,14 +832,10 @@ void release_mpis
 	gcry_mpi_release(dsa_g);
 	gcry_mpi_release(dsa_y);
 	gcry_mpi_release(dsa_x);
-	gcry_mpi_release(dsa_r);
-	gcry_mpi_release(dsa_s);
 	gcry_mpi_release(elg_p);
 	gcry_mpi_release(elg_g);
 	gcry_mpi_release(elg_y);
 	gcry_mpi_release(elg_x);
-	gcry_mpi_release(elg_r);
-	gcry_mpi_release(elg_s);
 	gcry_mpi_release(gk);
 	gcry_mpi_release(myk);
 }
@@ -847,9 +852,10 @@ void run_instance
 {
 	std::string thispeer = peers[whoami];
 	init_dkg(thispeer + ".dkg", whoami);
-	read_private_key(thispeer + "_dkg-sec.asc");
-	init_private_key();
-	init_decryption();
+	read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
+	init_mpis();
+	parse_private_key(armored_seckey);
+	parse_message(armored_message);
 
 
 	// compute the decryption share
@@ -1318,10 +1324,10 @@ int main
 			OCTETS msg;
 			std::string thispeer = peers[whoami];
 			init_dkg(thispeer + ".dkg", whoami);
-			read_private_key(thispeer + "_dkg-sec.asc");
-			std::cout << "INFO: whoami = " << whoami << std::endl;
-			init_private_key();
-			init_decryption();
+			read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
+			init_mpis();
+			parse_private_key(armored_seckey);
+			parse_message(armored_message);
 // TODO
 			release_mpis();
 			release_keys();
