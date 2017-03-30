@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170202])
+AC_REVISION([20170330])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.0], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -203,7 +203,7 @@ AC_TYPE_SSIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([clock close fcntl fprintf memcmp memcpy memset open perror\
-	read select sleep snprintf strrchr strtoul time write], ,
+	read sscanf select sleep snprintf strrchr strtoul time write], ,
 	AC_MSG_ERROR([some functions are missing]))
 
 # Checks for forking tests feature

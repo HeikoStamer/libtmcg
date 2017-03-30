@@ -32,6 +32,7 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
+#include <cstdio>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -880,25 +881,161 @@ void compute_decryption_share
 	mpz_neg(r, r);
 	mpz_add(r, r, omega);
 	mpz_mod(r, r, nizk_q);
-	// verify proof of knowledge (equality of discrete logarithms) [CaS97]
-	mpz_powm(a, nizk_gk, r, nizk_p);
-	mpz_powm(b, r_i, c, nizk_p);
-	mpz_mul(a, a, b);
-	mpz_mod(a, a, nizk_p);
-	mpz_powm(b, nizk_g, r, nizk_p);
-	mpz_powm(c2, dkg->v_i[whoami], c, nizk_p);
-	mpz_mul(b, b, c2);
-	mpz_mod(b, b, nizk_p);
-	mpz_shash(c2, 6, a, b, r_i, dkg->v_i[whoami], nizk_gk, nizk_g);
-	if (mpz_cmp(c2, c))
-	{
-		std::cerr << "WARNING: NIZK self verification failed" << std::endl;
-	}
+	// construct dds
 	std::ostringstream dds;
 	dds << "dds|" << whoami << "|" << r_i << "|" << c << "|" << r << "|";
 	mpz_clear(c), mpz_clear(r), mpz_clear(c2), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
 	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i), mpz_clear(r_i), mpz_clear(R);
 	result = dds.str();
+}
+
+bool verify_decryption_share
+	(std::string in, size_t &idx, mpz_ptr r_i_out, mpz_ptr c_out, mpz_ptr r_out)
+{
+	// init
+	mpz_t c2, a, b;
+	mpz_init(c2), mpz_init(a), mpz_init(b);
+	char buffer[2048];
+	size_t buflen;
+	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk;
+	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk);
+	std::memset(buffer, 0, sizeof(buffer));
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
+	mpz_set_str(nizk_p, buffer, 16);
+	std::memset(buffer, 0, sizeof(buffer));
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
+	mpz_set_str(nizk_q, buffer, 16);
+	std::memset(buffer, 0, sizeof(buffer));
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_g);
+	mpz_set_str(nizk_g, buffer, 16);
+	std::memset(buffer, 0, sizeof(buffer));
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, gk);
+	mpz_set_str(nizk_gk, buffer, 16);
+
+	try
+	{
+		// check magic
+		if (!TMCG_ParseHelper::cm(in, "dds", '|'))
+			throw false;
+		// parse index
+		std::string idxstr = TMCG_ParseHelper::gs(in, '|');
+		if ((sscanf(idxstr.c_str(), "%zu", &idx) < 1) || (!TMCG_ParseHelper::nx(in, '|')))
+			throw false;
+		// r_i
+		if ((mpz_set_str(r_i_out, TMCG_ParseHelper::gs(in, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(in, '|')))
+			throw false;
+		// c
+		if ((mpz_set_str(c_out, TMCG_ParseHelper::gs(in, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(in, '|')))
+			throw false;
+		// r
+		if ((mpz_set_str(r_out, TMCG_ParseHelper::gs(in, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(in, '|')))
+			throw false;
+		// check index for sanity
+		if (idx >= (dkg->v_i).size())
+			throw false;
+		// check the NIZK argument for sanity
+		if ((mpz_cmpabs(r_out, nizk_q) >= 0) || (mpz_sizeinbase(c_out, 2L) > 256)) // check the size of r and c
+			throw false;
+		// verify proof of knowledge (equality of discrete logarithms) [CaS97]
+		mpz_powm(a, nizk_gk, r_out, nizk_p);
+		mpz_powm(b, r_i_out, c_out, nizk_p);
+		mpz_mul(a, a, b);
+		mpz_mod(a, a, nizk_p);
+		mpz_powm(b, nizk_g, r_out, nizk_p);
+		mpz_powm(c2, dkg->v_i[idx], c_out, nizk_p);
+		mpz_mul(b, b, c2);
+		mpz_mod(b, b, nizk_p);
+		mpz_shash(c2, 6, a, b, r_i_out, dkg->v_i[idx], nizk_gk, nizk_g);
+		if (mpz_cmp(c2, c_out))
+			throw false;		
+
+		// finish
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(c2), mpz_clear(a), mpz_clear(b);
+		mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk);
+		// return
+		return return_value;
+	}
+}
+
+void combine_decryption_shares
+	(std::vector<size_t> &parties, std::vector<mpz_ptr> &shares)
+{
+	char buffer[2048];
+	size_t buflen;
+	mpz_t nizk_p, nizk_q;
+	mpz_init(nizk_p), mpz_init(nizk_q);
+	std::memset(buffer, 0, sizeof(buffer));
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
+	mpz_set_str(nizk_p, buffer, 16);
+	std::memset(buffer, 0, sizeof(buffer));
+	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
+	mpz_set_str(nizk_q, buffer, 16);
+	std::vector<size_t> parties_sorted = parties;
+	std::sort(parties_sorted.begin(), parties_sorted.end());
+	std::vector<size_t>::iterator ut = std::unique(parties_sorted.begin(), parties_sorted.end());
+	parties_sorted.resize(std::distance(parties_sorted.begin(), ut));
+	if ((parties.size() <= dkg->t) || (shares.size() <= dkg->t) || (parties.size() != shares.size()) || (parties_sorted.size() <= dkg->t))
+	{
+		std::cerr << "ERROR: not enough decryption shares collected" << std::endl;
+		exit(-1);
+	}
+	if (parties.size() > (dkg->t + 1))
+		parties.resize(dkg->t + 1); // we need exactly $t + 1$ decryption shares
+	std::cout << "combine_decryption_shares(): Lagrange interpolation with ";
+	for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
+		std::cout << "P_" << *jt << " ";
+	std::cout << std::endl;
+
+	// compute $R = \prod_{i\in\Lambda} r_i^\lambda_{i,\Lambda} \bmod p$ where $\lambda_{i, \Lambda} = \prod_{l\in\Lambda\setminus\{i\}\frac{l}{l-i}}$
+	mpz_t a, b, c, lambda, R;
+	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(lambda), mpz_init_set_ui(R, 1L);
+	size_t j = 0;
+	for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt, ++j)
+	{
+		mpz_set_ui(a, 1L); // compute optimized Lagrange coefficients
+		for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+		{
+			if (*lt != *jt)
+				mpz_mul_ui(a, a, (*lt + 1)); // adjust index in computation
+		}
+		mpz_set_ui(b, 1L);
+		for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+		{
+			if (*lt != *jt)
+			{
+				mpz_set_ui(c, (*lt + 1)); // adjust index in computation
+				mpz_sub_ui(c, c, (*jt + 1)); // adjust index in computation
+				mpz_mul(b, b, c);
+			}
+		}
+		mpz_invert(b, b, nizk_q);
+		mpz_mul(lambda, a, b);
+		mpz_mod(lambda, lambda, nizk_q); // computation of Lagrange coefficients finished
+		// interpolate and accumulate correct decryption shares
+		mpz_powm(a, shares[j], lambda, nizk_p);
+		mpz_mul(R, R, a);
+		mpz_mod(R, R, nizk_p);
+	}
+
+	// copy the result from R to gk
+	gcry_error_t ret;
+	size_t erroff;
+	mpz_get_str(buffer, 16, R);
+	ret = gcry_mpi_scan(&gk, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting the interpolated result failed" << std::endl;
+		exit(-1);
+	}
+
+	// release
+	mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(lambda), mpz_clear(R);
+	mpz_clear(nizk_p), mpz_clear(nizk_q);
 }
 
 void decrypt_session_key
@@ -909,7 +1046,7 @@ void decrypt_session_key
 	size_t erroff;
 	if (elgkey != NULL)
 		gcry_sexp_release(elgkey); // release the former private key
-	gcry_mpi_set_ui(elg_x, 1); // cheat libgcrypt (the private key share of this party has been already used in R)
+	gcry_mpi_set_ui(elg_x, 1); // cheat libgcrypt (decryption key shares have been already applied to gk)
 	ret = gcry_sexp_build(&elgkey, &erroff, "(private-key (elg (p %M) (g %M) (y %M) (x %M)))", elg_p, elg_g, elg_y, elg_x);
 	if (ret)
 	{
@@ -1035,7 +1172,7 @@ void release_keys
 void run_instance
 	(size_t whoami)
 {
-	std::string thispeer = peers[whoami];
+	std::string dds, thispeer = peers[whoami];
 	init_dkg(thispeer + ".dkg", whoami);
 	read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
 	init_mpis();
@@ -1043,73 +1180,12 @@ void run_instance
 	parse_message(armored_message);
 
 	// compute the decryption share
-	char buffer[2048];
-	size_t buflen;
-	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, x_i, r_i, R;
-	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(x_i), mpz_init(r_i), mpz_init(R);
-	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
-	mpz_set_str(nizk_p, buffer, 16);
-	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
-	mpz_set_str(nizk_q, buffer, 16);
-	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_g);
-	mpz_set_str(nizk_g, buffer, 16);
-	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, gk);
-	mpz_set_str(nizk_gk, buffer, 16);
-	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, elg_x);
-	mpz_set_str(x_i, buffer, 16);
-	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g) || mpz_cmp(x_i, dkg->x_i))
-	{
-		std::cerr << "ERROR: DSA/ElGamal and DKG group parameters does not match" << std::endl;
-		exit(-1);
-	}
-	mpz_spowm(R, nizk_g, x_i, nizk_p);
-	if (mpz_cmp(R, dkg->v_i[whoami]))
-	{
-		std::cerr << "ERROR: check of DKG public verification key failed" << std::endl;
-		exit(-1);
-	}
-	mpz_spowm(r_i, nizk_gk, x_i, nizk_p);
-	// compute NIZK argument for decryption share, e.g. see [FP01]
-	// proof of knowledge (equality of discrete logarithms) [CaS97]
-	mpz_t a, b, omega, c, r, c2, lambda;
-	mpz_init(c), mpz_init(r), mpz_init(c2), mpz_init(a), mpz_init(b), mpz_init(omega), mpz_init(lambda);
-	// commitment
-	mpz_srandomm(omega, nizk_q);
-	mpz_spowm(a, nizk_gk, omega, nizk_p);
-	mpz_spowm(b, nizk_g, omega, nizk_p);
-	// challenge
-	// Here we use the well-known "Fiat-Shamir heuristic" to make
-	// the PoK non-interactive, i.e. we turn it into a statistically
-	// zero-knowledge (Schnorr signature scheme style) proof of
-	// knowledge (SPK) in the random oracle model.
-	mpz_shash(c, 6, a, b, r_i, dkg->v_i[whoami], nizk_gk, nizk_g);
-	// response
-	mpz_mul(r, c, x_i);
-	mpz_neg(r, r);
-	mpz_add(r, r, omega);
-	mpz_mod(r, r, nizk_q);
-	// verify proof of knowledge (equality of discrete logarithms) [CaS97]
-	mpz_powm(a, nizk_gk, r, nizk_p);
-	mpz_powm(b, r_i, c, nizk_p);
-	mpz_mul(a, a, b);
-	mpz_mod(a, a, nizk_p);
-	mpz_powm(b, nizk_g, r, nizk_p);
-	mpz_powm(c2, dkg->v_i[whoami], c, nizk_p);
-	mpz_mul(b, b, c2);
-	mpz_mod(b, b, nizk_p);
-	mpz_shash(c2, 6, a, b, r_i, dkg->v_i[whoami], nizk_gk, nizk_g);
-	if (mpz_cmp(c2, c))
-	{
-		std::cerr << "WARNING: NIZK self verification failed at " << whoami << std::endl;
-	}
-	std::ostringstream dds;
-	dds << "dds|" << whoami << "|" << r_i << "|" << c << "|" << r << "|";
-	std::cout << "P_" << whoami << ": decryption share = " << dds.str() << std::endl;
+	size_t idx;
+	mpz_t r_i, c, r;
+	mpz_init(r_i), mpz_init(c), mpz_init(r);
+	compute_decryption_share(whoami, dds);
+	if (!verify_decryption_share(dds, idx, r_i, c, r))
+		std::cerr << "WARNING: verification of my own decryption share failed at P_" << whoami << std::endl;
 
 	// create communication handles between all players
 	std::vector<int> uP_in, uP_out, bP_in, bP_out;
@@ -1146,20 +1222,21 @@ void run_instance
 	rbc->Broadcast(c);
 	rbc->Broadcast(r);
 
-	// use decryption share of this party for interpolation
+	// use decryption share of this party for Lagrange interpolation
 	std::vector<size_t> interpol_parties;
 	std::vector<mpz_ptr> interpol_shares;
 	mpz_ptr tmp1 = new mpz_t();
 	mpz_init_set(tmp1, r_i);
 	interpol_parties.push_back(whoami), interpol_shares.push_back(tmp1);
 
-	// for interpolation we need at least t other decryption shares
+	// collect at least t other decryption shares
 	std::vector<size_t> complaints;
 	for (size_t i = 0; i < peers.size(); i++)
 	{
 		if (i != whoami)
 		{
-			// receive a decryption share and NIZK argument
+			mpz_set_ui(r_i, 1L), mpz_set_ui(c, 1L), mpz_set_ui(r, 1L);
+			// receive a decryption share including NIZK argument
 			if (!rbc->DeliverFrom(r_i, i))
 			{
 				std::cout << "WARNING: DeliverFrom(r_i, i) failed for P_" << i << std::endl;
@@ -1175,29 +1252,19 @@ void run_instance
 				std::cout << "WARNING: DeliverFrom(r, i) failed for P_" << i << std::endl;
 				complaints.push_back(i);
 			}
-			// check the NIZK argument
-			if ((mpz_cmpabs(r, nizk_q) >= 0) || (mpz_sizeinbase(c, 2L) > 256)) // check the size of r and c
+			// construct string from received mpis and verify NIZK
+			std::ostringstream ddss;
+			ddss << "dds|" << i << "|" << r_i << "|" << c << "|" << r << "|";
+			if (!verify_decryption_share(ddss.str(), idx, r_i, c, r))
 			{
-				std::cout << "WARNING: NIZK argument check failed for P_" << i << std::endl;
+				std::cout << "WARNING: verification of decryption share from P_" << i << " failed" << std::endl;
 				complaints.push_back(i);
 			}
-			// verify proof of knowledge (equality of discrete logarithms) [CaS97]
-			mpz_powm(a, nizk_gk, r, nizk_p);
-			mpz_powm(b, r_i, c, nizk_p);
-			mpz_mul(a, a, b);
-			mpz_mod(a, a, nizk_p);
-			mpz_powm(b, nizk_g, r, nizk_p);
-			mpz_powm(c2, dkg->v_i[i], c, nizk_p);
-			mpz_mul(b, b, c2);
-			mpz_mod(b, b, nizk_p);
-			mpz_shash(c2, 6, a, b, r_i, dkg->v_i[i], nizk_gk, nizk_g);
-			if (mpz_cmp(c2, c))
-			{
-				std::cout << "WARNING: NIZK verification failed for P_" << i << std::endl;
-				complaints.push_back(i);
-			}
+			if (idx != i)
+				std::cout << "WARNING: index of decryption share from P_" << i << " does not match" << std::endl;
 			if (std::find(complaints.begin(), complaints.end(), i) == complaints.end())
 			{
+				// collect only verified decryption shares
 				mpz_ptr tmp1 = new mpz_t();
 				mpz_init_set(tmp1, r_i);
 				interpol_parties.push_back(i), interpol_shares.push_back(tmp1);
@@ -1205,60 +1272,11 @@ void run_instance
 		}
 	}
 
-	if (interpol_parties.size() <= dkg->t)
-	{
-		std::cerr << "ERROR: not enough decryption shares collected" << std::endl;
-		exit(-1);
-	}
-	if (interpol_parties.size() > (dkg->t + 1))
-		interpol_parties.resize(dkg->t + 1); // we need exactly $t + 1$ decryption shares
-	std::cout << "interpolation parties = ";
-	for (std::vector<size_t>::iterator jt = interpol_parties.begin(); jt != interpol_parties.end(); ++jt)
-		std::cout << "P_" << *jt << " ";
-	std::cout << std::endl;
+	// Lagrange interpolation
+	combine_decryption_shares(interpol_parties, interpol_shares);
 
-	// compute $R = \prod_{i\in\Lambda} r_i^\lambda_{i,\Lambda} \bmod p$ where $\lambda_{i, \Lambda} = \prod_{l\in\Lambda\setminus\{i\}\frac{l}{l-i}}$
-	mpz_set_ui(R, 1L);
-	size_t j = 0;
-	for (std::vector<size_t>::iterator jt = interpol_parties.begin(); jt != interpol_parties.end(); ++jt, ++j)
-	{
-		mpz_set_ui(a, 1L); // compute optimized Lagrange coefficients
-		for (std::vector<size_t>::iterator lt = interpol_parties.begin(); lt != interpol_parties.end(); ++lt)
-		{
-			if (*lt != *jt)
-				mpz_mul_ui(a, a, (*lt + 1)); // adjust index in computation
-		}
-		mpz_set_ui(b, 1L);
-		for (std::vector<size_t>::iterator lt = interpol_parties.begin(); lt != interpol_parties.end(); ++lt)
-		{
-			if (*lt != *jt)
-			{
-				mpz_set_ui(c, (*lt + 1)); // adjust index in computation
-				mpz_sub_ui(c, c, (*jt + 1)); // adjust index in computation
-				mpz_mul(b, b, c);
-			}
-		}
-		mpz_invert(b, b, nizk_q);
-		mpz_mul(lambda, a, b);
-		mpz_mod(lambda, lambda, nizk_q); // computation of Lagrange coefficients finished
-		// interpolate and accumulate correct decryption shares
-		mpz_powm(r_i, interpol_shares[j], lambda, nizk_p);
-		mpz_mul(R, R, r_i);
-		mpz_mod(R, R, nizk_p);
-	}
-
-	// copy the result from R to gk
-	gcry_error_t ret;
-	size_t erroff;
-	mpz_get_str(buffer, 16, R);
-	ret = gcry_mpi_scan(&gk, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	if (ret)
-	{
-		std::cerr << "ERROR: converting the result failed" << std::endl;
-		exit(-1);
-	}
-
-	// release collected shares
+	// release mpis and collected shares	
+	mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
 	for (size_t i = 0; i < interpol_shares.size(); i++)
 	{
 		mpz_clear(interpol_shares[i]);
@@ -1293,9 +1311,6 @@ void run_instance
 
 	// release asynchronous unicast and broadcast
 	delete aiou, delete aiou2;
-
-	mpz_clear(c), mpz_clear(r), mpz_clear(c2), mpz_clear(a), mpz_clear(b), mpz_clear(omega), mpz_clear(lambda);
-	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i), mpz_clear(r_i), mpz_clear(R);
 
 	OCTETS msg, seskey;
 	decrypt_session_key(seskey);
@@ -1408,9 +1423,13 @@ int main
 			std::cout << peers[i] << std::endl;
 		if (nonint)
 		{
-			size_t whoami = 0;
+			size_t idx, whoami = 0;
 			OCTETS msg, seskey;
 			std::string dds, thispeer = peers[whoami];
+			mpz_t r_i, c, r;
+			std::vector<size_t> interpol_parties;
+			std::vector<mpz_ptr> interpol_shares;
+
 			init_dkg(thispeer + ".dkg", whoami);
 			read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
 			init_mpis();
@@ -1418,7 +1437,36 @@ int main
 			parse_message(armored_message);
 			compute_decryption_share(whoami, dds);
 			std::cout << "My decryption share is: " << dds << std::endl;
-// TODO
+			mpz_init(r_i), mpz_init(c), mpz_init(r);
+			if (!verify_decryption_share(dds, idx, r_i, c, r))
+			{
+				std::cerr << "ERROR: verification of my decryption share failed" << std::endl;
+				exit(-1);
+			}
+			mpz_ptr tmp1 = new mpz_t();
+			mpz_init_set(tmp1, r_i);
+			interpol_parties.push_back(whoami), interpol_shares.push_back(tmp1);
+			std::cout << "Now, enter decryption shares (^D for EOF) from other parties: " << std::endl;
+			while (std::getline(std::cin, dds))
+			{
+				mpz_set_ui(r_i, 1L), mpz_set_ui(c, 1L), mpz_set_ui(r, 1L);
+				if (verify_decryption_share(dds, idx, r_i, c, r))
+				{
+					mpz_ptr tmp1 = new mpz_t();
+					mpz_init_set(tmp1, r_i);
+					interpol_parties.push_back(idx), interpol_shares.push_back(tmp1);
+				}
+				else
+					std::cout << "WARNING: verification of decryption share from P_" << idx << " failed" << std::endl;
+			}
+			combine_decryption_shares(interpol_parties, interpol_shares);
+			mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
+			for (size_t i = 0; i < interpol_shares.size(); i++)
+			{
+				mpz_clear(interpol_shares[i]);
+				delete [] interpol_shares[i];
+			}
+			interpol_shares.clear(), interpol_parties.clear();
 			decrypt_session_key(seskey);
 			decrypt_message(enc, seskey, msg);
 			release_mpis();
