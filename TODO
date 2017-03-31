@@ -9,6 +9,7 @@
 + provide DKG with security against an adaptive adversary [CGJKR99, JL00]
 + provide distributed DSS key generation and signature scheme [GJKR01]
 + move to event-driven architecture and state-based protocol representation
++ add a generic group abstraction layer, e.g. for future use of ECC groups
 + DKG, ASTC: transform protocols into variants without aiou->Send() [BH92]
 + provide byzantine consensus protocol for agreement on values
 
