@@ -2081,6 +2081,15 @@ paper@tie{}[CKPS01, BS03, JL00, Gr05, HSSV09, Sc98]. The author names are a pref
 of the class name and the following part is an abbreviation of (a part of) the
 title, respectively.
 
+@menu
+* CachinKursawePetzoldShoupRBC::
+* BarnettSmartVTMF::
+* JareckiLysyanskayaEDCF::
+* GrothVSSHE::
+* HooghSchoenmakersSkoricVillegasVRHE::
+* SchindelhauerTMCG::
+@end menu
+
 @node CachinKursawePetzoldShoupRBC
 @subsubsection Secure and Efficient Asynchronous Broadcast Protocols
 Currently this part of LibTMCG provides an implementation of @emph{reliable broadcast},
