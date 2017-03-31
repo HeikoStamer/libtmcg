@@ -24,6 +24,8 @@ LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ @LIBGMP_LIBS@ @GNUNET_LIBS@ ../src/lib
 
 bin_PROGRAMS = dkg-gencrs dkg-generate dkg-encrypt dkg-decrypt
 
+dist_man_MANS = dkg-generate.1 dkg-decrypt.1
+
 dkg_gencrs_SOURCES = dkg-gencrs.cc
 dkg_generate_SOURCES = dkg-gnunet-common.hh dkg-gnunet-common.cc dkg-generate.cc
 dkg_encrypt_SOURCES = dkg-encrypt.cc

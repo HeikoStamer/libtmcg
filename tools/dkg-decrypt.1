@@ -1,0 +1,48 @@
+.TH DKG\-DECRYPT "1" "March 2017" "LibTMCG 1.3.0" "User Commands"
+
+.SH NAME
+dkg\-decrypt \- distributed decryption
+
+.SH SYNOPSIS
+.B dkg\-decrypt
+.RI [ options ]
+.IR PEERS
+
+.SH DESCRIPTION
+distributed decryption (ElGamal with OpenPGP\-input)
+
+.SH OPTIONS
+Arguments mandatory for long options are also mandatory for short options.
+.TP
+\fB\-c\fR, \fB\-\-config\fR=\fI\,FILENAME\/\fR
+use GNUnet configuration file FILENAME
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+print this help
+.TP
+\fB\-L\fR, \fB\-\-log\fR=\fI\,LOGLEVEL\/\fR
+configure logging to use LOGLEVEL
+.TP
+\fB\-l\fR, \fB\-\-logfile\fR=\fI\,FILENAME\/\fR
+configure logging to write logs to FILENAME
+.TP
+\fB\-n\fR, \fB\-\-non\-interactive\fR
+run non\-interactive version of the program
+.TP
+\fB\-p\fR, \fB\-\-port\fR
+GNUnet CADET port to listen/connect
+.TP
+\fB\-v\fR, \fB\-\-version\fR
+print the GNUnet version number
+.TP
+\fB\-w\fR, \fB\-\-wait\fR
+minutes to wait until start of DKG protocol
+
+.SH "REPORTING BUGS"
+Report bugs via <http://savannah.nongnu.org/bugs/?group=libtmcg>
+.br
+Home page of LibTMCG: <http://www.nongnu.org/libtmcg/>
+
+.SH "SEE ALSO"
+dkg\-generate(1)
+
