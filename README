@@ -57,30 +57,48 @@ Security
   proofs will ever be found. However, almost all public key cryptosystems
   rely on such assumptions and therefore you should not worry about
   this issue, as long as reasonable security parameters are chosen.
-
-  LibTMCG was designed to provide security in the ``honest-but-curious''
-  (aka semi-honest) adversary model. That means, all participants follow
-  the protocol instructions properly but they may gather information and
-  share them within a coalition to obtain a game advantage. Thus we are
-  not concerned with robustness and availability issues which are hard to
-  solve in asynchronous environments like the Internet. However, the most
-  operations are verifiable such that cheating can be detected. To obtain
-  this verifiability, the protocols deploy so-called zero-knowledge proofs
+ 
+  LibTMCG was originally designed to provide security in the so-called
+  ``honest-but-curious'' (aka ``semi-honest'' or passive) adversary model.
+  That means, all participants follow the protocol instructions properly
+  but they may gather information and share them within a coalition to
+  obtain an advantage in the game. Thus we are basically not concerned
+  with robustness and availability issues which are hard to solve in almost
+  asynchronous environments like the Internet. However, the most operations
+  are verifiable such that cheating can be detected. To obtain this
+  verifiability, the protocols deploy so-called zero-knowledge proofs
   which yield no further knowledge but the validity of a statement. The
-  soundness error of these proofs is bounded by a security parameter
-  @math{\kappa}. Depending on your application scenario this parameter should
+  soundness error of these proofs is bounded by a fixed security parameter
+  $\kappa$. Depending on your application scenario this parameter should
   be chosen such that there is a reasonable tradeoff between the cheating
-  probability (which is less or equal than @math{2^{-\kappa}}) and the 
-  produced computational and communication complexity.
+  probability (which is less or equal than $2^{-\kappa}$) and the produced
+  computational and communication complexity. Finally, some of the protocols
+  (e.g. the efficient shuffle argument by Groth) are only zero-knowledge with
+  respect to a so-called ``honest verifier'' who follows all protocol
+  instructions faithfully. Since version 1.2.0 of LibTMCG we use a two-party
+  version of a distributed coin flipping protocol by Jarecki and Lysyanskaya
+  to protect against malicious verifiers in that case. The non-interactive
+  zero-knowledge proofs of knowledge (NIZK) does not have this problem,
+  however, they require an additional cryptographic assumption: the secure
+  of this protocols was proved in the so-called random oracle model.
 
-  Unfortunately, in practice there is a substantial problem with the
-  detection of cheaters. Reliable cheater detection requires that an
-  authenticated broadcast channel has been established, where all players
-  have read/write access. LibTMCG does not yet contain the necessary 
-  protocols (reliable or even atomic broadcast) for creating such a channel.
-  Thus you should take into account that not necessarily the player acting
-  as prover is the source of evil, if a verification procedure fails. This
-  level of uncertainty is also a reason for our restricted adversary model.
+  Unfortunately, in practice there is another substantial problem with the
+  detection of cheaters. It requires that an authenticated broadcast channel
+  has been set up, where all players have read/write access. There exist
+  protocols (so-called ``reliable broadcast'' or even ``atomic broadcast'')
+  for creating such a channel, however, only under the additional condition
+  that the number of parties $t$ who act faulty or even malicious is
+  reasonable small. In an almost full asynchronous environment like the
+  Internet resilience (somtimes called robustness) is achievable for $t < n/3$
+  only, where $n$ denotes the total number of parties in the protocol.
+  LibTMCG provides a well-known protocol due to Bracha in a slightly optimized
+  variant by Cachin, Kursawe, Petzold, and Shoup.
+  Please note that in most cases the application programmer must decide,
+  where the use of a broadcast channel is neccesary and appropriate. Thus,
+  without reliable broadcast you should take into account that not necessarily
+  the player acting as prover is the source of evil, if a verification
+  procedure fails. This level of uncertainty is the main reason for our still
+  limited adversary model.
   
   Note that it is not known, whether the used protocols retain their
   zero-knowledge property, when they are composed and executed in a
@@ -101,6 +119,7 @@ Security
   implementation of such complex protocols is always an error-prone process.
   Thus we encourage readers with advanced cryptographic background to review
   the source code of LibTMCG.
+
   Please report any complaint or correction proposal.
 
 Requirements
