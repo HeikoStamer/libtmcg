@@ -3777,8 +3777,31 @@ delete rbc, delete aiou2, delete aiou;
 @cindex Tools
 LibTMCG provides some additional programs that may be of independent interest.
 
-@section Distributed Key Generation with OpenPGP-output
-TODO
+@section Distributed Key Generation and Decryption
+We have implemented a robust and secure protocol for Distributed Key Generation
+(DKG) of public-key cryptosystems (see Rosario Gennaro, Stanislaw Jarecki,
+Hugo Krawczyk, and Tal Rabin: @emph{Secure Distributed Key Generation for
+Discrete-Log Based Cryptosystems}, Journal of Cryptology, Vol. 20 Nr. 1,
+Springer 2007). The program @code{dkg-generate} provides an instantiation
+for the ElGamal cryptosystem with output of the keys in OpenPGP (see J. Callas,
+L. Donnerhacke, H. Finney, D. Shaw, R. Thayer: @emph{OpenPGP Message Format},
+Network Working Group, Request for Comments: 4880, November 2007) format. Due
+to the interactiveness of the protocol a lot of messages between the participating
+parties have to be exchanged. We use GNUnet (see TODO), and in particular their
+CADET service, to establish private and broadcast channels for this message exchange.
+
+Additionally, the program @code{dkg-encrypt} encrypts a text message for a
+given public key in OpenPGP format. A corresponding distributed decryption
+protocol (see TODO) have been implemented as program @code{dkg-decrypt}.
+It provides an interactive version and a non-interactive version for computing,
+verifying and combining decryption shares.
+  
+Thus for usage of @code{dkg-generate} and the interactive version of
+@code{dkg-decrypt} the development files for a recent GNUnet version must be
+present when you configure and compile LibTMCG.
+
+Currently the implementation is in experimental state and should not be used
+in production environments. Please report any bugs to the maintainer of LibTMCG. 
 
 @c **********************************************************
 @c *******************  Appendices  *************************
