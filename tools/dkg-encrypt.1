@@ -1,0 +1,28 @@
+.TH DKG\-ENCRYPT "1" "March 2017" "LibTMCG 1.3.0" "User Commands"
+
+.SH NAME
+dkg\-encrypt \- simple encryption with AES\-256 according to OpenPGP
+
+.SH SYNOPSIS
+.B dkg\-encrypt
+
+.SH DESCRIPTION
+This program encrypts a given input text according to the OpenPGP standard with AES\-256.
+However, as public-key algorithm only ElGamal is supported and the certifying signatures
+in the corresponding subkey packet must be DSA signatures. This is due to the general
+limitation of the provided distributed key generation of LibTMCG.
+.br
+If you follow the instructions properly, then at the end the program outputs an encrypted
+message in armored OpenPGP format. This message can be processed with dkg\-decrypt(1).
+
+.SH OPTIONS
+None.
+
+.SH "REPORTING BUGS"
+Report bugs via <http://savannah.nongnu.org/bugs/?group=libtmcg>
+.br
+Home page of LibTMCG: <http://www.nongnu.org/libtmcg/>
+
+.SH "SEE ALSO"
+dkg\-generate(1), dkg\-decrypt(1)
+

@@ -185,7 +185,7 @@ int main
 						return -1;
 					}
 					else
-						std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
+						std::cerr << "WARNING: public-key algorithm 0x" << std::hex << ctx.pkalgo << std::dec << " not supported" << std::endl;
 					break;
 				case 13: // User ID Packet
 					std::cout << " uid = " << ctx.uid << std::endl;
@@ -214,7 +214,7 @@ int main
 					else if ((ctx.pkalgo == 16) && subelg)
 						std::cerr << "WARNING: Elgamal subkey already found" << std::endl; 
 					else
-						std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
+						std::cerr << "WARNING: public-key algorithm 0x" << std::hex << ctx.pkalgo << std::dec << " not supported" << std::endl;
 					break;
 			}
 			// cleanup allocated buffers
