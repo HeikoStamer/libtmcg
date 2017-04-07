@@ -37,14 +37,14 @@ int main
 	// check the instance
 	if (!vtmf->CheckGroup())
 	{
-		std::cerr << "ERROR: Group G of CRS was not correctly generated!" << std::endl;
+		std::cerr << "ERROR: Group G for CRS was not correctly generated!" << std::endl;
 		exit(-1);
 	}
 
 	// export group parameters to stdout
 	std::cout << "// setup CRS (common reference string) |p| = " << mpz_sizeinbase(vtmf->p, 2L) <<
-		 " bit, |q| = " << mpz_sizeinbase(vtmf->q, 2L) << " bit" << std::endl; 
-	vtmf->PublishGroup(std::cout);
+		 " bit, |q| = " << mpz_sizeinbase(vtmf->q, 2L) << " bit" << std::endl;
+	std::cout << "crs = \"crs|" << vtmf->p << "|" << vtmf->q << "|" << vtmf->g << "|" << vtmf->k << "|\"" << std::endl;
 
 	// release
 	delete vtmf;

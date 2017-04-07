@@ -65,11 +65,29 @@ void run_instance
 		bP_key.push_back(key.str());
 	}
 			
-	// create VTMF instance
+	// create VTMF instance from CRS (common reference string)
 	std::stringstream crss;
-	crss << crs;
+	mpz_t crsmpz;
+	mpz_init(crsmpz);
+	// check magic
+	if (!TMCG_ParseHelper::cm(crs, "crs", '|'))
+	{
+		std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+		exit(-1);
+	}
+	// p, q, g, k
+	for (size_t i = 0; i < 4; i++)
+	{
+		if ((mpz_set_str(crsmpz, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
+		{
+			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+			exit(-1);
+		}
+		crss << crsmpz << std::endl;
+	}
+	mpz_clear(crsmpz);
 	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crss, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
-	// check VTMF instance constructed from CRS (common reference string)
+	// check VTMF instance constructed
 	if (!vtmf->CheckGroup())
 	{
 		std::cerr << "P_" << whoami << ": " << "Group G was not correctly generated!" << std::endl;
@@ -337,6 +355,7 @@ void run_instance
 }
 
 #ifdef GNUNET
+char *gnunet_opt_crs = NULL;
 unsigned int gnunet_opt_t_resilience = 0;
 #endif
 
@@ -345,6 +364,8 @@ void fork_instance
 {
 	T = (N - 1) / 2; // default: maximum synchronous t-resilience for DKG (RBC is not affected by this)
 #ifdef GNUNET
+	if (gnunet_opt_crs != NULL)
+		crs = gnunet_opt_crs; // get different CRS from GNUnet options
 	if (gnunet_opt_t_resilience != 0)
 		T = gnunet_opt_t_resilience; // get value of T from GNUnet options
 #endif
@@ -383,26 +404,25 @@ int main
 	(int argc, char *const *argv)
 {
 	// setup CRS (common reference string) |p| = 2048 bit, |q| = 256 bit
-	// parameter of the underlying group have been generated with dkg-gencrs
-	crs = "VGrhfVRjcpwIUfp50GXPv63qfzVyaBKLR0yudBbcj2N5KVj8I3rqoQs7CJWUvl"
-		"864YyH1XSVJ86UxIjIIVJo9HZN9qjYttl5oENhGJVogiFIdQGPULqRM2Hxtf"
-		"3j7VbDBpMYJA9kpo8SzqwdOxBE74DCWXHa8ZaigVoCxNa8QTjdOkO1Voq44j"
-		"1NFX1hCOCO06NJiWNGKle6bPpHOYRVBKdsXwMTxxxxPvGPSmP1YGUhpnfAK4"
-		"JndDWZacP2Wngeqm4PDwUWO04AFRb4WK3HZ5cxfCxNqIYcmNNCD5Vpzb6CpC"
-		"ooiARqxRLHLOEVj5y3VDnEcdNjutWUdW9jea3QrU6P\n"
-		"fWct4MvrE6hZDW8EbJIbpI71X058yltIzZJlT3lLN9n\n"
-		"65C4XLbi6eBUz5x4uxw12SheBKHDU3JbosE5abajxSg4CnispDlitenTCNte"
-		"LRUc7w3ZghV7lbiPweG6X8Sm8LDqNIWBqJaT6oAS709OCmbJX9UAXtn1SFYd"
-		"Lh4pVpOYD9b7ldD26Dv463KhYoqGlg8VoT4uLyz2fTPzqVMfnf9k7GLxPd0X"
-		"f5ZxZrlQuZyEH68XH9aikEHttQGDevEa1neFqBNEHwF2wcSZlql3bAB1YyW5"
-		"uUbcq2BADGkh4SbzuQI0sMIdWvYbn97T083ckGBx7ceeRTo0nDqaTTnR0XEn"
-		"Wy9gVMuhunosCDxTtcYxDkZ1inggW9fahe4XERHHysUj\n"
-		"kgmtYCbutu1Cs9UVZHiADN8e0QJnNGeILQ7IwNKRZ5vu8vZDnRbkI8IV0gGA"
-		"zi3Z3w08JVkzdjXaR11wzYiwax6hMJETX6JcOzBNKfta2oWaJXrNVNW6zOPG"
-		"lBWpLMggcMsgmnlQOYbemqI7cOHqO5QctOZcpH7ZPaxtYbaYqeErll15Jwpz"
-		"oC87x0yEQ5CCf1vF5zja6CWk0LwGQyPs7V7IKt1sfNold82x2gMAZN9QumxY"
-		"3w97VxrtQABaRTDaiGeTdYaKxi3ok6hRwI1SLtFYCW029vtzCqpfC49Q6a5x"
-		"M\n";
+	// parameters of the underlying group have been generated with dkg-gencrs
+	crs = "crs|Ya4kG0PQkxSNfXs0GPvNvrLqeyLc13aypAwaHZ3kxi6uYagVELARgiqVBV"
+		"yBe485oVJmXAVATaJIYpQQhgBawHpzPAOyRICy7hQdBvYtmForYx5MGTK7Uf"
+		"7PPIgnVDQ7csNgsFfMNkUQVKpiszcb4dVi9sGx4DiZltjdDWH8id2RRQTrEi"
+		"jv6rnSVK4Fd3O3QWbEb1DLXmzEni8bSxDk3rjaRfDzhxAWXG8fTB7bcDYDtb"
+		"HOdKlCmFsuYPtet475MelcOkdfeEKh2CzwzqKWN48XTl1kkpJsCvio9Kf2Tr"
+		"uYTx1bJNnb0izSiTKjf6YFZZaEHxfCmPfKtEvN31yvOTOH|h7jBszmKCVvyj"
+		"bosdkGmh4zBedweLDpNLG5IvYfsHZJ|OSIgkt0vUOd31qvyKLuxXbCDJO3co"
+		"2tCPiVCRRGe6zXYrMopBgPQewxSSMrPSQwJEuTbIqJYvRWBlBVih723m5av5"
+		"D4GewO4nQ5shtcuEY1u0pRLToLCMaheCvCEE8tT49xdYKV4UOOFZryobgYfq"
+		"nZctunR82uTnlUTiFMN2STYXZhlB7Asjj5XMjfF2nsoay4785p7DibvgiHta"
+		"D3A5yAavGnUhRGm5Ir279eUNMqoJNubC5g4wzSwMGvhLh2VnYsMl7m9dcWw0"
+		"jOiTKBzemrawcv16EEHbV97a1gt5JyDn9MsDwIGDuUD5vi39nBmUOOdSb5xs"
+		"pjr4qViYGAHRTKx|niWPateQX4M9KJ28L2k6J2izaSuyq7oDQOr3l0LQojzd"
+		"TyLAxJX1NIaUl1qhO3qn71JAVFCbhlYLkFvthr2dIJVXCrmdIuJ7EXgXTWqc"
+		"tNEHeqGEicuGmL4kEc98zJJCHx6d0xLPJn0fHBnge3iewZCeCaOnWHxHnQtH"
+		"o3nIAXfODzZx6njMuyuVXg957FxtmKmU5ot96nA5j33kejKu10MGhvrWQMA3"
+		"z86EcA4uvHdTTcYhXwaRssKfidViHKJbQxT9MPXkjbmKw1Sm93777gxSUQjt"
+		"BC5EXRYiI1xSqW02e|";
 
 	bool notcon = false;
 	if (argc < 2)
@@ -415,15 +435,15 @@ int main
 		// create peer list
 		for (size_t i = 0; i < (size_t)(argc - 1); i++)
 		{
-			std::string arg = argv[i+1];
+			std::string arg = argv[i + 1];
 			// ignore options
-			if ((arg.find("-c", 0) == 0) || (arg.find("-p", 0) == 0) || (arg.find("-t", 0) == 0) || (arg.find("-w", 0) == 0) || 
-				(arg.find("-L", 0) == 0) || (arg.find("-l", 0) == 0))
+			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-t") == 0) || (arg.find("-w") == 0) || 
+				(arg.find("-L") == 0) || (arg.find("-l") == 0) || (arg.find("-g") == 0))
 			{
 				i++;
 				continue;
 			}
-			else if ((arg.find("--", 0) == 0) || (arg.find("-v", 0) == 0) || (arg.find("-h", 0) == 0))
+			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0))
 			{
 				if ((arg.find("--help") == 0) || (arg.find("--version") == 0))
 					notcon = true;
@@ -431,7 +451,7 @@ int main
 					notcon = true;
 				continue;
 			}
-			else if (arg.find("-", 0) == 0)
+			else if (arg.find("-") == 0)
 			{
 				std::cerr << "ERROR: unknown option \"" << arg << "\"" << std::endl;
 				return -1;
@@ -467,6 +487,12 @@ int main
 
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
+		GNUNET_GETOPT_option_string('g',
+			"group",
+			NULL,
+			"common reference string defining a different DDH-hard group",
+			&gnunet_opt_crs
+		),
 		GNUNET_GETOPT_option_string('p',
 			"port",
 			NULL,

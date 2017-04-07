@@ -1382,7 +1382,7 @@ int main
 					nonint = true;
 				continue;
 			}
-			else if (arg.find("-", 0) == 0)
+			else if (arg.find("-") == 0)
 			{
 				std::cerr << "ERROR: unknown option \"" << arg << "\"" << std::endl;
 				return -1;
