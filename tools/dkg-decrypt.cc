@@ -830,6 +830,10 @@ void parse_message
 void compute_decryption_share
 	(const size_t whoami, std::string &result)
 {
+	// [CGS97] Ronald Cramer, Rosario Gennaro, and Berry Schoenmakers:
+	//  'A Secure and Optimally Efficient Multi-Authority Election Scheme'
+	// Advances in Cryptology - EUROCRYPT '97, LNCS 1233, pp. 103--118, 1997.
+
 	// compute the decryption share
 	char buffer[2048];
 	size_t buflen;
@@ -862,8 +866,8 @@ void compute_decryption_share
 		exit(-1);
 	}
 	mpz_spowm(r_i, nizk_gk, x_i, nizk_p);
-	// compute NIZK argument for decryption share, e.g. see [FP01]
-	// proof of knowledge (equality of discrete logarithms) [CaS97]
+	// compute NIZK argument for decryption share, e.g. see [CGS97]
+	// proof of knowledge (equality of discrete logarithms)
 	mpz_t a, b, omega, c, r, c2;
 	mpz_init(c), mpz_init(r), mpz_init(c2), mpz_init(a), mpz_init(b), mpz_init(omega);
 	// commitment
@@ -936,7 +940,7 @@ bool verify_decryption_share
 		// check the NIZK argument for sanity
 		if ((mpz_cmpabs(r_out, nizk_q) >= 0) || (mpz_sizeinbase(c_out, 2L) > 256)) // check the size of r and c
 			throw false;
-		// verify proof of knowledge (equality of discrete logarithms) [CaS97]
+		// verify proof of knowledge (equality of discrete logarithms), e.g. see [CGS97]
 		mpz_powm(a, nizk_gk, r_out, nizk_p);
 		mpz_powm(b, r_i_out, c_out, nizk_p);
 		mpz_mul(a, a, b);
