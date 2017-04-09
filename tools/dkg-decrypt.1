@@ -9,7 +9,16 @@ dkg\-decrypt \- distributed decryption for OpenPGP
 .IR PEERS
 
 .SH DESCRIPTION
-distributed decryption (ElGamal with OpenPGP\-input)
+This program decrypts a given message in armored OpenPGP format, where the private key
+(only ElGamal) is shared between multiple parties with dkg\-generate(1). For decryption
+at least t+1 decryption shares are needed. Currently, only AES\-256 is supported as
+symmetric algorithm.
+.br
+There are two modes of operation: First, the interactive mode using GNUnet for exchange of
+the decryption shares, where PEERS must be the same list of GNUnet peer identities used
+at the corresponding initial call of dkg\-generate(1). Second, in the non\-interactive mode
+the parameter PEERS contains only the GNUnet identity of this peer. Then the own decryption
+share is printed, and the user must exchange the shares manually before decryption starts.
 
 .SH OPTIONS
 Arguments mandatory for long options are also mandatory for short options.
@@ -27,7 +36,7 @@ configure logging to use LOGLEVEL
 configure logging to write logs to FILENAME
 .TP
 \fB\-n\fR, \fB\-\-non\-interactive\fR
-run non\-interactive version of the program
+run in non\-interactive mode
 .TP
 \fB\-p\fR, \fB\-\-port\fR
 GNUnet CADET port to listen/connect
@@ -36,7 +45,7 @@ GNUnet CADET port to listen/connect
 print the GNUnet version number
 .TP
 \fB\-w\fR, \fB\-\-wait\fR
-minutes to wait until start of DKG protocol
+minutes to wait until start of decryption (only interactive mode)
 
 .SH "REPORTING BUGS"
 Report bugs via <http://savannah.nongnu.org/bugs/?group=libtmcg>

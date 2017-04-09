@@ -1379,9 +1379,9 @@ int main
 			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-n") == 0))
 			{
 				if ((arg.find("--help") == 0) || (arg.find("--version") == 0))
-					notcon = true;
+					notcon = true; // not continue
 				if ((arg.find("-h") == 0) || (arg.find("-v") == 0))
-					notcon = true;
+					notcon = true; // not continue
 				if ((arg.find("-n") == 0) || (arg.find("--non-interactive") == 0))
 					nonint = true;
 				continue;
@@ -1485,7 +1485,7 @@ int main
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
 		GNUNET_GETOPT_option_flag('n',
 			"non-interactive",
-			"run non-interactive version of the program",
+			"run in non-interactive mode",
 			&gnunet_opt_nonint
 		),
 		GNUNET_GETOPT_option_string('p',
@@ -1497,7 +1497,7 @@ int main
 		GNUNET_GETOPT_option_uint('w',
 			"wait",
 			NULL,
-			"minutes to wait until start of DKG protocol",
+			"minutes to wait until start of decryption",
 			&gnunet_opt_wait
 		),
 		GNUNET_GETOPT_OPTION_END
