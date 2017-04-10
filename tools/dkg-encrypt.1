@@ -5,15 +5,21 @@ dkg\-encrypt \- simple encryption with AES\-256 according to OpenPGP
 
 .SH SYNOPSIS
 .B dkg\-encrypt
+.IR KEYFILE
 
 .SH DESCRIPTION
-This program encrypts a given input text according to the OpenPGP standard with AES\-256.
-However, as public-key algorithm only ElGamal is supported and the certifying signatures
-in the corresponding subkey packet must be DSA signatures. This is due to the general
-limitation of the provided distributed key generation of LibTMCG.
+This program encrypts a text message read from STDIN according to the OpenPGP standard.
+KEYFILE must contain a special crafted ASCII-armored public key, for which the following
+encryption is performed.
+.br  
+First, AES is applied as symmetric cipher with a randomly chosen 256-bit session key.
+Then this session key is transformed by PKCS#1 block encoding and encrypted with then
+ElGamal public-key algorithm. Currently, as public-key algorithm only ElGamal is supported
+and the certifying signatures in the corresponding subkey packet of the public key must
+be DSA signatures. This is due to the limitation in distributed key generation of LibTMCG.
 .br
-If you follow the instructions properly, then at the end the program outputs an encrypted
-message in armored OpenPGP format. This message can be processed with dkg\-decrypt(1).
+The encrypted message in ASCII-armored OpenPGP format is written to STDOUT and it
+can be further processed with dkg\-decrypt(1).
 
 .SH OPTIONS
 None.

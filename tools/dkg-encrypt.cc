@@ -24,7 +24,7 @@
 #endif
 #include <libTMCG.hh>
 
-#include <sstream>
+#include <fstream>
 #include <vector>
 #include <algorithm>
 #include <cassert>
@@ -32,18 +32,28 @@
 int main
 	(int argc, char **argv)
 {
-	if (!init_libTMCG())
+	if (argc < 2)
+	{
+		std::cerr << "ERROR: no KEYFILE given as argument; usage: " << argv[0] << " KEYFILE" << std::endl;
+		return -1;
+	}
+	else if (!init_libTMCG())
 	{
 		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
 		return -1;
 	}
 
-	// read a public key from stdin
+	// read a public key from file
 	std::string line, armored_pubkey, message, armored_message;
-	std::cout << "1. Please provide the recipients public key (in ASCII Armor; ^D for EOF): " << std::endl;
-	while (std::getline(std::cin, line))
-		armored_pubkey += line + "\r\n";
-	std::cin.clear();
+	std::ifstream pubifs(argv[1], std::ifstream::in);
+	if (!pubifs.is_open())
+	{
+		std::cerr << "ERROR: cannot open KEYFILE" << std::endl;
+		exit(-1);
+	}
+	while (std::getline(pubifs, line))
+		armored_pubkey += line + "\n";
+	pubifs.close();
 
 	// parse packets of the provided public key
 	bool pubdsa = false, sigdsa = false, subelg = false, sigelg = false;
@@ -70,43 +80,25 @@ int main
 	elg_r = gcry_mpi_new(2048);
 	elg_s = gcry_mpi_new(2048);
 	atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(armored_pubkey, pkts);
-	std::cout << "ArmorDecode() = " << (int)atype << std::endl;
 	if (atype == 6)
 	{
 		while (pkts.size() && ptag)
 		{
 			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx);
-			std::cout << "PacketDecode() = " << (int)ptag;
 			if (!ptag)
 			{
 				std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
-				return -1; // error detected
+				return -2; // parsing error detected
 			}
-			std::cout << " tag = " << (int)ptag << " version = " << (int)ctx.version;
-			std::cout << std::endl;
 			switch (ptag)
 			{
 				case 2: // Signature Packet
 					issuer.clear();
-					std::cout << " issuer = " << std::hex;
 					for (size_t i = 0; i < sizeof(ctx.issuer); i++)
-					{
-						std::cout << (int)ctx.issuer[i] << " ";
 						issuer.push_back(ctx.issuer[i]);
-					}
-					std::cout << std::dec << std::endl;
 					if (pubdsa && !subelg && (ctx.type >= 0x10) && (ctx.type <= 0x13) && 
 						CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
 					{
-						std::cout << std::hex;
-						std::cout << " sigtype = 0x";
-						std::cout << (int)ctx.type;
-						std::cout << std::dec;
-						std::cout << " pkalgo = ";
-						std::cout << (int)ctx.pkalgo;
-						std::cout << " hashalgo = ";
-						std::cout << (int)ctx.hashalgo;
-						std::cout << std::endl;
 						dsa_sigtype = ctx.type;
 						dsa_pkalgo = ctx.pkalgo;
 						dsa_hashalgo = ctx.hashalgo;
@@ -132,15 +124,6 @@ int main
 					else if (pubdsa && subelg && (ctx.type == 0x18) && 
 						CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
 					{
-						std::cout << std::hex;
-						std::cout << " sigtype = 0x";
-						std::cout << (int)ctx.type;
-						std::cout << std::dec;
-						std::cout << " pkalgo = ";
-						std::cout << (int)ctx.pkalgo;
-						std::cout << " hashalgo = ";
-						std::cout << (int)ctx.hashalgo;
-						std::cout << std::endl;
 						elg_sigtype = ctx.type;
 						elg_pkalgo = ctx.pkalgo;
 						elg_hashalgo = ctx.hashalgo;
@@ -174,10 +157,6 @@ int main
 						for (size_t i = 6; i < pub.size(); i++)
 							pub_hashing.push_back(pub[i]);
 						CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
-						std::cout << " Key ID of DSA public key: " << std::hex;
-						for (size_t i = 0; i < keyid.size(); i++)
-							std::cout << (int)keyid[i] << " ";
-						std::cout << std::dec << std::endl;	
 					}
 					else if ((ctx.pkalgo == 17) && pubdsa)
 					{
@@ -188,7 +167,6 @@ int main
 						std::cerr << "WARNING: public-key algorithm 0x" << std::hex << (int)ctx.pkalgo << std::dec << " not supported" << std::endl;
 					break;
 				case 13: // User ID Packet
-					std::cout << " uid = " << ctx.uid << std::endl;
 					u = "";
 					for (size_t i = 0; i < sizeof(ctx.uid); i++)
 						if (ctx.uid[i])
@@ -206,13 +184,9 @@ int main
 						for (size_t i = 6; i < sub.size(); i++)
 							sub_hashing.push_back(sub[i]);
 						CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, subkeyid);
-							std::cout << "Key ID of Elgamal public subkey: " << std::hex;
-						for (size_t i = 0; i < subkeyid.size(); i++)
-							std::cout << (int)subkeyid[i] << " ";
-						std::cout << std::dec << std::endl;
 					}
 					else if ((ctx.pkalgo == 16) && subelg)
-						std::cerr << "WARNING: Elgamal subkey already found" << std::endl; 
+						std::cerr << "WARNING: ElGamal subkey already found; the first one is used" << std::endl; 
 					else
 						std::cerr << "WARNING: public-key algorithm 0x" << std::hex << (int)ctx.pkalgo << std::dec << " not supported" << std::endl;
 					break;
@@ -230,7 +204,7 @@ int main
 	}
 	else
 	{
-		std::cerr << "ERROR: wrong type of ASCII Armor" << std::endl;
+		std::cerr << "ERROR: wrong ASCII armor found (type = " << (int)atype << ")" << std::endl;
 		return -1;
 	}
 	if (!pubdsa)
@@ -240,7 +214,7 @@ int main
 	}
 	if (!subelg)
 	{
-		std::cerr << "ERROR: no Elgamal subkey found" << std::endl;
+		std::cerr << "ERROR: no ElGamal subkey found" << std::endl;
 		return -1;
 	}
 	if (!sigdsa)
@@ -250,20 +224,18 @@ int main
 	}
 	if (!sigelg)
 	{
-		std::cerr << "ERROR: no self-signature for Elgamal subkey found" << std::endl;
+		std::cerr << "ERROR: no self-signature for ElGamal subkey found" << std::endl;
 		return -1;
 	}
 	
 	// build keys, check key usage and self-signatures
 	OCTETS dsa_trailer, elg_trailer, dsa_left, elg_left;
-	std::cout << "Primary User ID: " << u << std::endl;
 	ret = gcry_sexp_build(&dsakey, &erroff, "(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", dsa_p, dsa_q, dsa_g, dsa_y);
 	if (ret)
 	{
 		std::cerr << "ERROR: parsing DSA key material failed" << std::endl;
 		return -1;
 	}
-	std::cout << "DSA key flags: ";
 	size_t flags = 0;
 	for (size_t i = 0; i < sizeof(dsa_keyflags); i++)
 	{
@@ -272,21 +244,6 @@ int main
 		else
 			break;
 	}
-	if ((flags & 0x01) == 0x01)
-		std::cout << "C"; // The key may be used to certify other keys.
-	if ((flags & 0x02) == 0x02)
-		std::cout << "S"; // The key may be used to sign data.
-	if ((flags & 0x04) == 0x04)
-		std::cout << "E"; // The key may be used encrypt communications.
-	if ((flags & 0x08) == 0x08)
-		std::cout << "e"; // The key may be used encrypt storage.
-	if ((flags & 0x10) == 0x10)
-		std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
-	if ((flags & 0x20) == 0x20)
-		std::cout << "A"; // The key may be used for authentication.
-	if ((flags & 0x80) == 0x80)
-		std::cout << "M"; // The private component of this key may be in the possession of more than one person.
-	std::cout << std::endl;
 	dsa_trailer.push_back(4); // only V4 format supported
 	dsa_trailer.push_back(dsa_sigtype);
 	dsa_trailer.push_back(dsa_pkalgo);
@@ -305,10 +262,9 @@ int main
 	ret = gcry_sexp_build(&elgkey, &erroff, "(public-key (elg (p %M) (g %M) (y %M)))", elg_p, elg_g, elg_y);
 	if (ret)
 	{
-		std::cerr << "ERROR: parsing Elgamal key material failed" << std::endl;
+		std::cerr << "ERROR: parsing ElGamal key material failed" << std::endl;
 		return -1;
 	}
-	std::cout << "Elgamal key flags: ";
 	flags = 0;
 	for (size_t i = 0; i < sizeof(elg_keyflags); i++)
 	{
@@ -317,21 +273,6 @@ int main
 		else
 			break;
 	}
-	if ((flags & 0x01) == 0x01)
-		std::cout << "C"; // The key may be used to certify other keys.
-	if ((flags & 0x02) == 0x02)
-		std::cout << "S"; // The key may be used to sign data.
-	if ((flags & 0x04) == 0x04)
-		std::cout << "E"; // The key may be used encrypt communications.
-	if ((flags & 0x08) == 0x08)
-		std::cout << "e"; // The key may be used encrypt storage.
-	if ((flags & 0x10) == 0x10)
-		std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
-	if ((flags & 0x20) == 0x20)
-		std::cout << "A"; // The key may be used for authentication.
-	if ((flags & 0x80) == 0x80)
-		std::cout << "M"; // The private component of this key may be in the possession of more than one person.
-	std::cout << std::endl;
 	if ((flags & 0x04) != 0x04)
 	{
 		std::cerr << "ERROR: Elgamal subkey cannot used to encrypt communications" << std::endl;
@@ -354,7 +295,6 @@ int main
 	}
 
 	// read a text message from stdin
-	std::cout << "2. Now type your private message (in ASCII/UTF8; ^D for EOF): " << std::endl;
 	while (std::getline(std::cin, line))
 		message += line + "\r\n";
 	std::cin.clear();
@@ -366,7 +306,7 @@ int main
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256(lit, seskey, prefix, true, enc);
 	if (ret)
 	{
-		std::cerr << "ERROR: SymmetricEncryptAES256() failed" << std::endl;
+		std::cerr << "ERROR: SymmetricEncryptAES256() failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
 		return ret;
 	}
 	enc.clear();
@@ -382,23 +322,26 @@ int main
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256(lit, seskey, prefix, false, enc);
 	if (ret)
 	{
-		std::cerr << "ERROR: SymmetricEncryptAES256() failed" << std::endl;
+		std::cerr << "ERROR: SymmetricEncryptAES256() failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
 		return ret;
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSeipdEncode(enc, seipd);
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal(seskey, elgkey, gk, myk);
 	if (ret)
 	{
-		std::cerr << "ERROR: AsymmetricEncryptElgamal() failed" << std::endl;
+		std::cerr << "ERROR: AsymmetricEncryptElgamal() failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
 		return ret;
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode(subkeyid, gk, myk, pkesk);
+
+	// encode the packages in ASCII armor and print to stdout 
 	all.clear();
 	all.insert(all.end(), pkesk.begin(), pkesk.end());
 	all.insert(all.end(), seipd.begin(), seipd.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(1, all, armored_message);
 	std::cout << armored_message << std::endl;
 
+	// release mpis and keys
 	gcry_mpi_release(dsa_p);
 	gcry_mpi_release(dsa_q);
 	gcry_mpi_release(dsa_g);
