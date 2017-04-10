@@ -303,7 +303,7 @@ int main
 	for (size_t i = 0; i < message.length(); i++)
 		msg.push_back(message[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode(msg, lit);
-	ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256(lit, seskey, prefix, true, enc);
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256(lit, seskey, prefix, true, enc); // seskey and prefix only
 	if (ret)
 	{
 		std::cerr << "ERROR: SymmetricEncryptAES256() failed (rc = " << gcry_err_code(ret) << ")" << std::endl;

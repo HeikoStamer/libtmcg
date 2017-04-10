@@ -13,10 +13,12 @@ KEYFILE must contain a special crafted ASCII-armored public key, for which the f
 encryption is performed.
 .br  
 First, AES is applied as symmetric cipher with a randomly chosen 256-bit session key.
-Then this session key is transformed by PKCS#1 block encoding and encrypted with then
-ElGamal public-key algorithm. Currently, as public-key algorithm only ElGamal is supported
-and the certifying signatures in the corresponding subkey packet of the public key must
-be DSA signatures. This is due to the limitation in distributed key generation of LibTMCG.
+Note that an integrity protection packet (MDC) is appended. Finally, the session key is
+transformed by PKCS#1 v1.5 block encoding and encrypted with the ElGamal public-key algorithm. 
+.br
+Currently, as public-key algorithm only ElGamal is supported and the certifying signatures
+in the corresponding subkey packet of the public key must be DSA signatures. This is due
+to the limitation in distributed key generation of LibTMCG.
 .br
 The encrypted message in ASCII-armored OpenPGP format is written to STDOUT and it
 can be further processed with dkg\-decrypt(1).
