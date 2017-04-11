@@ -150,7 +150,10 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 		if (simulate_faulty_behaviour)
 			mpz_add_ui((mpz_ptr)message[4], (mpz_ptr)message[4], 1L);
 		if (simulate_faulty_behaviour && !simulate_faulty_randomizer)
-			aiou->Send(message, mpz_wrandom_ui() % n, 0);
+		{
+			if (!aiou->Send(message, mpz_wrandom_ui() % n, 0))
+				std::cerr << "RBC(" << j << "): sending r-send failed for random party" << std::endl;
+		}
 		else
 		{
 			if (!aiou->Send(message, i, 0))

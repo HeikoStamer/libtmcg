@@ -97,7 +97,7 @@ int main
 		seskey, prefix, true, out);
 	assert(!ret);
 	assert(lit.size() == out.size());
-	for (size_t i = 0; i < in.size(); i++)
+	for (size_t i = 0; i < lit.size(); i++)
 	{
 		assert(lit[i] == out[i]);
 	}

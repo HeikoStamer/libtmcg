@@ -76,7 +76,7 @@ TMCG_SecretKey::TMCG_SecretKey
 		name(that.name), email(that.email), type(that.type),
 		nizk(that.nizk), sig(that.sig)
 {
-	mpz_init_set(m, that.m), mpz_init_set(y, that.m),
+	mpz_init_set(m, that.m), mpz_init_set(y, that.y),
 		mpz_init_set(p, that.p), mpz_init_set(q, that.q);
 	mpz_init_set(y1, that.y1), mpz_init_set(m1pq, that.m1pq),
 		mpz_init_set(gcdext_up, that.gcdext_up),

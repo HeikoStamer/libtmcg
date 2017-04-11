@@ -1900,7 +1900,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 				}
-				else if ((out.pkalgo >= 1)&&(out.pkalgo <= 3))
+				else if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
 				{
 					mlen = PacketMPIDecode(mpis, out.d, 
 						chksum);
@@ -1936,7 +1936,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: checksum mismatch
 				mpis.erase(mpis.begin(), mpis.begin()+2);
 			}
-			else if ((out.s2kconv == 254) || (out.s2kconv = 255))
+			else if ((out.s2kconv == 254) || (out.s2kconv == 255))
 			{
 				// encrypted + SHA-1 hash or checksum
 				if (mpis.size() < 1)
