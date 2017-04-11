@@ -107,9 +107,9 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 		~basic_pipebuf
 			()
 		{
+			sync();
 			delete [] mRBuffer;
 			delete [] mWBuffer;
-			sync();
 		}
 	
 	protected:

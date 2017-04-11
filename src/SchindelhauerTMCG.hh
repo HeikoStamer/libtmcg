@@ -6,7 +6,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2003, 2004, 2005, 2006, 2015, 2016
+ Copyright (C) 2002, 2003, 2004, 2005, 2006, 2015, 2016, 2017
  					Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
@@ -64,7 +64,6 @@ class SchindelhauerTMCG
 {
 	private:
 		size_t							TMCG_MaxCardType;
-		int							ret;
 		mpz_t							*message_space;
 		
 		// private zero-knowledge proofs on values

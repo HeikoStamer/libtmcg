@@ -6,7 +6,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2015, 2016 
+ Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2015, 2016, 2017 
                Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
@@ -78,7 +78,7 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 		while (mpz_cmp_ui(lej, 1L) || !mpz_cmp_ui(r, 1L));
 		
 		// compute $s := t_sqrt \cdot r_i^{-1} \bmod m$
-		ret = mpz_invert(s, r, key.m);
+		int ret = mpz_invert(s, r, key.m);
 		assert(ret);
 		mpz_mul(s, s, t_sqrt);
 		mpz_mod(s, s, key.m);
@@ -442,7 +442,7 @@ void SchindelhauerTMCG::TMCG_ProveMaskOne
 	
 	// compute y1m = y^{-1} mod m
 	mpz_init(y1m);
-	ret = mpz_invert(y1m, key.y, key.m);
+	int ret = mpz_invert(y1m, key.y, key.m);
 	assert(ret);
 	
 	mpz_init(foo), mpz_init(bar), mpz_init(tim);
