@@ -938,7 +938,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	//    usage octet is not zero). Note that for all other values, a
 	//    two-octet checksum is required.
 	PacketTagEncode(5, out);
-	PacketLengthEncode(1+4+1+2+plen+2+qlen+2+glen+2+ylen+29+2+xlen+20, out);
+	if (passphrase.length() == 0)
+		PacketLengthEncode(1+4+1+2+plen+2+qlen+2+glen+2+ylen+1+2+xlen+2, out);
+	else
+		PacketLengthEncode(1+4+1+2+plen+2+qlen+2+glen+2+ylen+29+2+xlen+20, out);
 	out.push_back(4); // V4 format
 	PacketTimeEncode(keytime, out);
 	out.push_back(17); // public-key algorithm: DSA
@@ -970,67 +973,78 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	// should rather use the SHA-1 hash denoted with a usage octet of 254.
 	// The reason for this is that there are some attacks that involve
 	// undetectably modifying the secret key.
-	out.push_back(254); // S2K convention: specifier given + SHA-1 hash
-	out.push_back(9); // AES256
-	out.push_back(0x03); // Iterated and Salted S2K
-	out.push_back(8); // SHA256
-	BYTE rand[8], iv[16], key[32], count;
-	OCTETS salt, plain, hash, seskey, prefix;
-	gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
-	gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
-	count = 0x01;
-	for (size_t i = 0; i < sizeof(rand); i++)
+	if (passphrase.length() == 0)
 	{
-		salt.push_back(rand[i]);
-		out.push_back(rand[i]); // salt
+		size_t chksum = 0;
+		out.push_back(0); // S2K convention: no encryption
+		PacketMPIEncode(x, out, chksum); // MPI x
+		out.push_back(chksum >> 8); // two-octet checksum
+		out.push_back(chksum);
 	}
-	out.push_back(count); // count, a one-octet, coded value
-	for (size_t i = 0; i < sizeof(iv); i++)
-		out.push_back(iv[i]); // IV
-	S2KCompute(8, sizeof(key), passphrase, salt, true, count, seskey);
-	for (size_t i = 0; i < sizeof(key); i++)
-		key[i] = seskey[i];
-	PacketMPIEncode(x, plain); // MPI x
-	HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
-	plain.insert(plain.end(), hash.begin(), hash.end()); // append hash
-	BYTE *buffer = new BYTE[plain.size()];
-	for (size_t i = 0; i < plain.size(); i++)
-		buffer[i] = plain[i];
-	gcry_cipher_hd_t hd;
-	gcry_error_t ret;
-	ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, 
-		GCRY_CIPHER_MODE_CFB, 0);
-	if (ret)
+	else
 	{
+		out.push_back(254); // S2K convention: specifier given + SHA-1 hash
+		out.push_back(9); // AES256
+		out.push_back(0x03); // Iterated and Salted S2K
+		out.push_back(8); // SHA256
+		BYTE rand[8], iv[16], key[32], count;
+		OCTETS salt, plain, hash, seskey, prefix;
+		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
+		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
+		count = 0x01;
+		for (size_t i = 0; i < sizeof(rand); i++)
+		{
+			salt.push_back(rand[i]);
+			out.push_back(rand[i]); // salt
+		}
+		out.push_back(count); // count, a one-octet, coded value
+		for (size_t i = 0; i < sizeof(iv); i++)
+			out.push_back(iv[i]); // IV
+		S2KCompute(8, sizeof(key), passphrase, salt, true, count, seskey);
+		for (size_t i = 0; i < sizeof(key); i++)
+			key[i] = seskey[i];
+		PacketMPIEncode(x, plain); // MPI x
+		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
+		plain.insert(plain.end(), hash.begin(), hash.end()); // append hash
+		BYTE *buffer = new BYTE[plain.size()];
+		for (size_t i = 0; i < plain.size(); i++)
+			buffer[i] = plain[i];
+		gcry_cipher_hd_t hd;
+		gcry_error_t ret;
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, 
+			GCRY_CIPHER_MODE_CFB, 0);
+		if (ret)
+		{
+			delete [] buffer;
+			gcry_cipher_close(hd);
+			return;
+		}
+		ret = gcry_cipher_setkey(hd, key, sizeof(key));
+		if (ret)
+		{
+			delete [] buffer;
+			gcry_cipher_close(hd);
+			return;
+		}
+		ret = gcry_cipher_setiv(hd, iv, sizeof(iv));
+		if (ret)
+		{
+			delete [] buffer;
+			gcry_cipher_close(hd);
+			return;
+		}
+		ret = gcry_cipher_encrypt(hd, buffer, plain.size(), NULL, 0);
+		if (ret)
+		{
+			delete [] buffer;
+			gcry_cipher_close(hd);
+			return;
+		}
+		for (size_t i = 0; i < plain.size(); i++)
+			out.push_back(buffer[i]);
 		delete [] buffer;
 		gcry_cipher_close(hd);
-		return;
 	}
-	ret = gcry_cipher_setkey(hd, key, sizeof(key));
-	if (ret)
-	{
-		delete [] buffer;
-		gcry_cipher_close(hd);
-		return;
-	}
-	ret = gcry_cipher_setiv(hd, iv, sizeof(iv));
-	if (ret)
-	{
-		delete [] buffer;
-		gcry_cipher_close(hd);
-		return;
-	}
-	ret = gcry_cipher_encrypt(hd, buffer, plain.size(), NULL, 0);
-	if (ret)
-	{
-		delete [] buffer;
-		gcry_cipher_close(hd);
-		return;
-	}
-	for (size_t i = 0; i < plain.size(); i++)
-		out.push_back(buffer[i]);
-	delete [] buffer;
-	gcry_cipher_close(hd);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
@@ -1071,74 +1085,88 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	// A Secret-Subkey packet (tag 7) is the subkey analog of the Secret
 	// Key packet and has exactly the same format.
 	PacketTagEncode(7, out);
-	PacketLengthEncode(1+4+1+2+plen+2+glen+2+ylen+29+2+xlen+20, out);
+	if (passphrase.length() == 0)
+		PacketLengthEncode(1+4+1+2+plen+2+glen+2+ylen+1+2+xlen+2, out);
+	else
+		PacketLengthEncode(1+4+1+2+plen+2+glen+2+ylen+29+2+xlen+20, out);
 	out.push_back(4); // V4 format
 	PacketTimeEncode(keytime, out);
 	out.push_back(16); // public-key algorithm: Elgamal
 	PacketMPIEncode(p, out); // MPI p
 	PacketMPIEncode(g, out); // MPI g
 	PacketMPIEncode(y, out); // MPI y
-	out.push_back(254); // S2K convention: specifier given + SHA-1 hash
-	out.push_back(9); // AES256
-	out.push_back(0x03); // Iterated and Salted S2K
-	out.push_back(8); // SHA256
-	BYTE rand[8], iv[16], key[32], count;
-	OCTETS salt, plain, hash, seskey, prefix;
-	gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
-	gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
-	count = 0x01;
-	for (size_t i = 0; i < sizeof(rand); i++)
+	if (passphrase.length() == 0)
 	{
-		salt.push_back(rand[i]);
-		out.push_back(rand[i]); // salt
+		size_t chksum = 0;
+		out.push_back(0); // S2K convention: no encryption
+		PacketMPIEncode(x, out, chksum); // MPI x
+		out.push_back(chksum >> 8); // two-octet checksum
+		out.push_back(chksum);
 	}
-	out.push_back(count); // count, a one-octet, coded value
-	for (size_t i = 0; i < sizeof(iv); i++)
-		out.push_back(iv[i]); // IV
-	S2KCompute(8, sizeof(key), passphrase, salt, true, count, seskey);
-	for (size_t i = 0; i < sizeof(key); i++)
-		key[i] = seskey[i];
-	PacketMPIEncode(x, plain); // MPI x
-	HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
-	plain.insert(plain.end(), hash.begin(), hash.end()); // append hash
-	BYTE *buffer = new BYTE[plain.size()];
-	for (size_t i = 0; i < plain.size(); i++)
-		buffer[i] = plain[i];
-	gcry_cipher_hd_t hd;
-	gcry_error_t ret;
-	ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, 
-		GCRY_CIPHER_MODE_CFB, 0);
-	if (ret)
+	else
 	{
+		out.push_back(254); // S2K convention: specifier given + SHA-1 hash
+		out.push_back(9); // AES256
+		out.push_back(0x03); // Iterated and Salted S2K
+		out.push_back(8); // SHA256
+		BYTE rand[8], iv[16], key[32], count;
+		OCTETS salt, plain, hash, seskey, prefix;
+		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
+		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
+		count = 0x01;
+		for (size_t i = 0; i < sizeof(rand); i++)
+		{
+			salt.push_back(rand[i]);
+			out.push_back(rand[i]); // salt
+		}
+		out.push_back(count); // count, a one-octet, coded value
+		for (size_t i = 0; i < sizeof(iv); i++)
+			out.push_back(iv[i]); // IV
+		S2KCompute(8, sizeof(key), passphrase, salt, true, count, seskey);
+		for (size_t i = 0; i < sizeof(key); i++)
+			key[i] = seskey[i];
+		PacketMPIEncode(x, plain); // MPI x
+		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
+		plain.insert(plain.end(), hash.begin(), hash.end()); // append hash
+		BYTE *buffer = new BYTE[plain.size()];
+		for (size_t i = 0; i < plain.size(); i++)
+			buffer[i] = plain[i];
+		gcry_cipher_hd_t hd;
+		gcry_error_t ret;
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, 
+			GCRY_CIPHER_MODE_CFB, 0);
+		if (ret)
+		{
+			delete [] buffer;
+			gcry_cipher_close(hd);
+			return;
+		}
+		ret = gcry_cipher_setkey(hd, key, sizeof(key));
+		if (ret)
+		{
+			delete [] buffer;
+			gcry_cipher_close(hd);
+			return;
+		}
+		ret = gcry_cipher_setiv(hd, iv, sizeof(iv));
+		if (ret)
+		{
+			delete [] buffer;
+			gcry_cipher_close(hd);
+			return;
+		}
+		ret = gcry_cipher_encrypt(hd, buffer, plain.size(), NULL, 0);
+		if (ret)
+		{
+			delete [] buffer;
+			gcry_cipher_close(hd);
+			return;
+		}
+		for (size_t i = 0; i < plain.size(); i++)
+			out.push_back(buffer[i]);
 		delete [] buffer;
 		gcry_cipher_close(hd);
-		return;
 	}
-	ret = gcry_cipher_setkey(hd, key, sizeof(key));
-	if (ret)
-	{
-		delete [] buffer;
-		gcry_cipher_close(hd);
-		return;
-	}
-	ret = gcry_cipher_setiv(hd, iv, sizeof(iv));
-	if (ret)
-	{
-		delete [] buffer;
-		gcry_cipher_close(hd);
-		return;
-	}
-	ret = gcry_cipher_encrypt(hd, buffer, plain.size(), NULL, 0);
-	if (ret)
-	{
-		delete [] buffer;
-		gcry_cipher_close(hd);
-		return;
-	}
-	for (size_t i = 0; i < plain.size(); i++)
-		out.push_back(buffer[i]);
-	delete [] buffer;
-	gcry_cipher_close(hd);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode
