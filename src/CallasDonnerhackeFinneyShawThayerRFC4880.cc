@@ -380,53 +380,59 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	(const std::string in, OCTETS &out)
 {
 	BYTE type = 0;
-	size_t spos = 0, rpos = 0, cpos = 0, epos = 0;
+	size_t spos = 0, rpos = 0, rlen = 4, cpos = 0, clen = 3, epos = 0;
 
-	rpos = in.find("\r\n\r\n", 0);
+	rpos = in.find("\r\n\r\n");
 	if (rpos == in.npos)
-		rpos = in.find("\n\n", 0);
-	cpos = in.find("\r\n=", 0); // FIXME: does not work in all cases, better use regex for checksum
+	{
+		rpos = in.find("\n\n");
+		rlen = 2;
+	}
+	cpos = in.find("\r\n="); // FIXME: does not work in all cases, better use regex for detecting checksum
 	if (cpos == in.npos)
-		cpos = in.find("\n=", 0);
+	{
+		cpos = in.find("\n=");
+		clen = 2;
+	}
 	if ((rpos == in.npos) || (cpos == in.npos))
-		return 0;
-	spos = in.find("-----BEGIN PGP MESSAGE-----", 0);
-	epos = in.find("-----END PGP MESSAGE-----", 0);
+		return 0; // no radix-64 start position or checksum position found
+	spos = in.find("-----BEGIN PGP MESSAGE-----");
+	epos = in.find("-----END PGP MESSAGE-----");
 	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
 		type = 1;
 	if (!type)
 	{
-		spos = in.find("-----BEGIN PGP SIGNATURE-----", 0);
-		epos = in.find("-----END PGP SIGNATURE-----", 0);
+		spos = in.find("-----BEGIN PGP SIGNATURE-----");
+		epos = in.find("-----END PGP SIGNATURE-----");
 	}		
 	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
 		type = 2;
 	if (!type)
 	{
-		spos = in.find("-----BEGIN PGP PRIVATE KEY BLOCK-----", 0);
-		epos = in.find("-----END PGP PRIVATE KEY BLOCK-----", 0);
+		spos = in.find("-----BEGIN PGP PRIVATE KEY BLOCK-----");
+		epos = in.find("-----END PGP PRIVATE KEY BLOCK-----");
 	}		
 	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
 		type = 5;
 	if (!type)
 	{
-		spos = in.find("-----BEGIN PGP PUBLIC KEY BLOCK-----", 0);
-		epos = in.find("-----END PGP PUBLIC KEY BLOCK-----", 0);
+		spos = in.find("-----BEGIN PGP PUBLIC KEY BLOCK-----");
+		epos = in.find("-----END PGP PUBLIC KEY BLOCK-----");
 	}
 	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
 		type = 6;
 	if (!type)
-		return 0;
-	if (((spos + 26) < rpos) && ((rpos + 4) < cpos) && ((cpos + 7) < epos))
+		return 0; // no armor header or trailer line found
+	if (((spos + 26) < rpos) && ((rpos + rlen) < cpos) && ((cpos + clen + 4) < epos))
 	{
 		if (in.find("-----", spos + 34) != epos)
 			return 0; // nested armor block detected
 		OCTETS decoded_data;
 		std::string chksum = "";
-		std::string data = in.substr(rpos + 4, cpos - rpos - 4);
+		std::string data = in.substr(rpos + rlen, cpos - rpos - rlen);
 		Radix64Decode(data, decoded_data);
 		CRC24Encode(decoded_data, chksum);
-		if (chksum != in.substr(cpos + 2, 5))
+		if (chksum != in.substr(cpos + (clen - 1), 5))
 			return 0; // Checksum error detected
 		out.insert(out.end(), decoded_data.begin(), decoded_data.end());
 		return type;
@@ -692,7 +698,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 	ret = gcry_mpi_scan(&out, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	delete [] buffer;
 	if (ret)
-		return 0; // error: could not read mpi
+		return 0; // error: could not read/parse mpi
 	else
 		return (2 + buflen);
 }
