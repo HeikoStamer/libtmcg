@@ -37,6 +37,24 @@ int main
 	gcry_error_t ret;
 	OCTETS in, out;
 	BYTE b;
+
+	// testing Radix64Encode() and Radix64Decode()
+	for (size_t j = 0; j < 256; j++)
+	{
+		std::string radix;
+		in.push_back(j);
+		std::cout << "Radix64Encode(in, radix) = " << std::endl;
+		CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode(in, radix);
+		std::cout << radix << std::endl;
+		out.clear();
+		std::cout << "Radix64Decode(radix, out)" << std::endl;
+		CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode(radix, out);
+		assert(in.size() == out.size());
+		for (size_t i = 0; i < in.size(); i++)
+		{
+			assert(in[i] == out[i]);
+		}		
+	}
 	
 	// testing ArmorEncode() and ArmorDecode()
 	for (size_t j = 0; j < 10; j++)
@@ -44,7 +62,7 @@ int main
 		std::string u = "Max Mustermann <max@gaos.org>", armor;
 
 		if ((j != 1) && (j != 2) && (j != 5) && (j != 6))
-			continue;
+			continue; // currently only this armor types are supported
 		in.clear(), out.clear();
 		std::cout << "PackedUidEncode(\"" << u << "\", in)" << std::endl;
 		CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, in);

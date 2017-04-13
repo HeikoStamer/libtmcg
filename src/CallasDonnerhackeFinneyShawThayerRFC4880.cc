@@ -223,19 +223,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 			out += "\r\n"; // add a line delimiter
 		out += "=";
 	}
-    return;
+	return;
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode
 	(std::string in, OCTETS &out)
 {
-	// remove whitespaces and delimiters
+	// remove all whitespaces, delimiters and other non-radix64 characters
 	in.erase(std::remove_if(in.begin(), in.end(), notRadix64()), in.end());
 
 	size_t len = in.size();
 	for (size_t j = 0; j < (4 - (len % 4)); j++)
 		in += "="; // append pad until multiple of four
-
 	for (size_t i = 0; i < len; i += 4)
 	{
         	BYTE l[4];
@@ -246,9 +245,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode
 		t[1] = ((l[1] & 0x0F) << 4) + ((l[2] & 0x3C) >> 2);
 		t[2] = ((l[2] & 0x03) << 6) + (l[3] & 0x3F);
 		for (size_t j = 0; j < 3; j++)
-			if (l[j+1] != 255) out.push_back(t[j]);
+			if (l[j+1] != 255)
+				out.push_back(t[j]);
 	}
-    return;
+	return;
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Compute
