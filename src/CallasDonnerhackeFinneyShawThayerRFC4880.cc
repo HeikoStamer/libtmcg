@@ -155,7 +155,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 	// Each 6-bit group is used as an index into an array of 
 	// 64 printable characters from the table below. The character
 	// referenced by the index is placed in the output string.
-	for(; len >= 3; len -= 3, i += 3)
+	for (; len >= 3; len -= 3, i += 3)
 	{
 		BYTE l[4];
 		l[0] = (in[i] & 0xFC) >> 2;
@@ -223,7 +223,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 			out += "\r\n"; // add a line delimiter
 		out += "=";
 	}
-	return;
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode
@@ -248,7 +247,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode
 			if (l[j+1] != 255)
 				out.push_back(t[j]);
 	}
-	return;
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Compute
@@ -274,7 +272,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Compute
 	out.push_back(crc >> 16);
 	out.push_back(crc >> 8);
 	out.push_back(crc);
-	return;
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Encode
