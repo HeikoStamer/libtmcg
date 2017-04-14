@@ -1,7 +1,7 @@
 .TH DKG\-DECRYPT "1" "March 2017" "LibTMCG 1.3.0" "User Commands"
 
 .SH NAME
-dkg\-decrypt \- distributed decryption for OpenPGP
+dkg\-decrypt \- threshold decryption for OpenPGP
 
 .SH SYNOPSIS
 .B dkg\-decrypt
@@ -9,22 +9,25 @@ dkg\-decrypt \- distributed decryption for OpenPGP
 .IR PEERS
 
 .SH DESCRIPTION
-This program decrypts a given message in armored OpenPGP format, where the private key
-(only ElGamal) is shared between multiple parties with dkg\-generate(1). For decryption
-at least t+1 decryption shares are needed. Currently, only AES\-256 is supported as
-symmetric algorithm.
+This program decrypts a message given in armored OpenPGP format, where the private key
+has been shared between multiple parties by dkg\-generate(1). For successful decryption
+at least t+1 decryption shares from different parties are needed. The threshold parameter
+t was fixed during key generation and cannot changed later.
+.br
+Currently, only ElGamal and AES\-256 are supported as cryptographic algorithms.
 .br
 There are two modes of operation: First, the interactive mode employs GNUnet for exchange of
 the decryption shares, where PEERS must be the same list of GNUnet peer identities used
-at the corresponding initial call of dkg\-generate(1). Second, in the non\-interactive mode
-the parameter PEERS contains only the GNUnet identity of this peer. Then the own decryption
-share is printed, and the user must exchange the shares manually before decryption starts.
+during key generation with dkg\-generate(1). Second, in the non\-interactive mode the
+parameter PEERS contains only the GNUnet identity of this peer. Then the corresponding
+decryption share is written to STDOUT, and the user must exchange the shares manually
+before decryption can start.
 
 .SH OPTIONS
 Arguments mandatory for long options are also mandatory for short options.
 .TP
 \fB\-c\fR, \fB\-\-config\fR=\fI\,FILENAME\/\fR
-use GNUnet configuration file FILENAME
+use GNUnet configuration file FILENAME (only interactive mode)
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 print this help
@@ -36,16 +39,16 @@ configure logging to use LOGLEVEL
 configure logging to write logs to FILENAME
 .TP
 \fB\-n\fR, \fB\-\-non\-interactive\fR
-run in non\-interactive mode
+switch to non\-interactive mode
 .TP
 \fB\-p\fR, \fB\-\-port\fR
-GNUnet CADET port to listen/connect
+GNUnet CADET port to listen/connect (only interactive mode)
 .TP
 \fB\-v\fR, \fB\-\-version\fR
 print the GNUnet version number
 .TP
 \fB\-w\fR, \fB\-\-wait\fR
-minutes to wait until start of decryption (only interactive mode)
+minutes to wait until start of share exchange (only interactive mode)
 
 .SH "REPORTING BUGS"
 Report bugs via <http://savannah.nongnu.org/bugs/?group=libtmcg>
