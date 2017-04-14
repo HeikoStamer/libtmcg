@@ -147,7 +147,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare
 // ===========================================================================
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
-	(const OCTETS &in, std::string &out)
+	(const OCTETS &in, std::string &out, bool linebreaks)
 {
 	size_t len = in.size();
 	size_t i = 0, c = 1;
@@ -168,7 +168,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 			// The encoded output stream must be represented
 			// in lines of no more than 76 characters each.
 			if (((c % TMCG_OPENPGP_RADIX64_MC) == 0) &&
-			    ((len >= 4) || (j < 3)))
+			    ((len >= 4) || (j < 3)) && linebreaks)
 				out += "\r\n"; // add a line delimiter
 		}
 	}
@@ -198,7 +198,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 			out += tRadix64[l[j]];
 			// The encoded output stream must be represented
 			// in lines of no more than 76 characters each.
-			if ((c % TMCG_OPENPGP_RADIX64_MC) == 0)
+			if (linebreaks && ((c % TMCG_OPENPGP_RADIX64_MC) == 0))
 				out += "\r\n"; // add a line delimiter
 		}
 		out += "=";
@@ -213,13 +213,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 			out += tRadix64[l[j]];
 			// The encoded output stream must be represented
 			// in lines of no more than 76 characters each.
-			if ((c % TMCG_OPENPGP_RADIX64_MC) == 0)
+			if (linebreaks && ((c % TMCG_OPENPGP_RADIX64_MC) == 0))
 				out += "\r\n"; // add a line delimiter
 		}
 		out += "=", c++;
 		// The encoded output stream must be represented
 		// in lines of no more than 76 characters each.
-		if ((c % TMCG_OPENPGP_RADIX64_MC) == 0)
+		if (linebreaks && ((c % TMCG_OPENPGP_RADIX64_MC) == 0))
 			out += "\r\n"; // add a line delimiter
 		out += "=";
 	}

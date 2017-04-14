@@ -188,7 +188,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const OCTETS &in, const OCTETS &in2);
 
 		static void Radix64Encode
-			(const OCTETS &in, std::string &out);
+			(const OCTETS &in, std::string &out, bool linebreaks = true);
 		static void Radix64Decode
 			(std::string in, OCTETS &out);
 		static void CRC24Compute

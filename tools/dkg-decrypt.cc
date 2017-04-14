@@ -1440,7 +1440,12 @@ int main
 			parse_private_key(armored_seckey);
 			parse_message(armored_message);
 			compute_decryption_share(whoami, dds);
-			std::cout << "My decryption share is: " << dds << std::endl;
+			OCTETS dds_input;
+			for (size_t i = 0; i < dds.length(); i++)
+				dds_input.push_back(dds[i]);
+			std::string dds_radix;
+			CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode(dds_input, dds_radix, false);
+			std::cout << "My decryption share is: " << dds_radix << std::endl;
 			mpz_init(r_i), mpz_init(c), mpz_init(r);
 			if (!verify_decryption_share(dds, idx, r_i, c, r))
 			{
@@ -1450,9 +1455,14 @@ int main
 			mpz_ptr tmp1 = new mpz_t();
 			mpz_init_set(tmp1, r_i);
 			interpol_parties.push_back(whoami), interpol_shares.push_back(tmp1);
-			std::cout << "Now, enter decryption shares (^D for EOF) from other parties: " << std::endl;
-			while (std::getline(std::cin, dds))
+			std::cout << "Now, enter decryption shares (one per line; ^D for EOF) from other parties: " << std::endl;
+			while (std::getline(std::cin, dds_radix))
 			{
+				OCTETS dds_output;
+				dds = "";
+				CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode(dds_radix, dds_output);
+				for (size_t i = 0; i < dds_output.size(); i++)
+					dds += dds_output[i];
 				mpz_set_ui(r_i, 1L), mpz_set_ui(c, 1L), mpz_set_ui(r, 1L);
 				if (verify_decryption_share(dds, idx, r_i, c, r))
 				{
