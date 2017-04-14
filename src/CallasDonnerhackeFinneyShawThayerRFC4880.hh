@@ -38,10 +38,12 @@
 	// GNU crypto library
 	#include <gcrypt.h>
 
+	#include "mpz_srandom.h"
+
 	typedef unsigned char BYTE;
 	typedef std::vector<BYTE> OCTETS;
 
-
+	// FIXME: move following defintions into class
 	static const BYTE fRadix64[] = {
 		255, 255, 255, 255, 255, 255, 255, 255,
 		255, 255, 255, 255, 255, 255, 255, 255,

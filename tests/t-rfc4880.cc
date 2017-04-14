@@ -43,8 +43,16 @@ int main
 	{
 		std::string radix;
 		in.push_back(j);
-		std::cout << "Radix64Encode(in, radix) = " << std::endl;
-		CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode(in, radix);
+		if (mpz_wrandom_ui() % 2)
+		{
+			std::cout << "Radix64Encode(in, radix, false) = " << std::endl;
+			CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode(in, radix, false);
+		}
+		else
+		{
+			std::cout << "Radix64Encode(in, radix) = " << std::endl;
+			CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode(in, radix);
+		}
 		std::cout << radix << std::endl;
 		out.clear();
 		std::cout << "Radix64Decode(radix, out)" << std::endl;

@@ -1441,6 +1441,7 @@ int main
 			parse_message(armored_message);
 			compute_decryption_share(whoami, dds);
 			OCTETS dds_input;
+			dds_input.push_back((BYTE)(mpz_wrandom_ui() % 256)); // bluring the decryption share
 			for (size_t i = 0; i < dds.length(); i++)
 				dds_input.push_back(dds[i]);
 			std::string dds_radix;
@@ -1461,7 +1462,7 @@ int main
 				OCTETS dds_output;
 				dds = "";
 				CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode(dds_radix, dds_output);
-				for (size_t i = 0; i < dds_output.size(); i++)
+				for (size_t i = 1; i < dds_output.size(); i++)
 					dds += dds_output[i];
 				mpz_set_ui(r_i, 1L), mpz_set_ui(c, 1L), mpz_set_ui(r, 1L);
 				if (verify_decryption_share(dds, idx, r_i, c, r))
