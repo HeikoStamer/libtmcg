@@ -1,5 +1,3 @@
-* doc: describe new interfaces and classes
-
 + implement asynchronous VSS [CKLS02] for DKG
 + provide interactive and distributed (multiparty DZKP) versions for
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
