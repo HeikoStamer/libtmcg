@@ -9,9 +9,37 @@ dkg\-generate \- distributed key generation for OpenPGP
 .IR PEERS
 
 .SH DESCRIPTION
-distributed key generation (ElGamal with OpenPGP\-output)
-
-TODO
+This program performs the t-resilient distributed key generation protocol for
+discrete logarithm based cryptosystems as described by Gennaro et al.
+It employs GNUnet for exchange of protocol messages between the participants.
+Thus a working GNUnet peer is neccesary to proceed. 
+.br
+For each party an individual DSA signing key is generated which is the OpenPGP
+primary key. The shared ElGamal key for encryption is arranged as subkey. Thus
+each party should verify after key generation, that the published public key
+of the group contains this shared ElGamal key. The program generates three
+different files: First, a file with the extension .dkg which contains the
+internal state of the DKG protocol including some verification keys for
+threshold decryption (see dkg\-decrypt(1)), second, a file that stores the
+individual private key in ASCII-armored OpenPGP format, and finally, a file
+that contains the individual public key. All file names have the GNUnet peer
+identity of the participating party as common prefix.
+.br
+The parameter t determines how many parties may deviate from the protocol
+during the key generation and later during threshold decryption. At least
+t+1 participants are needed to recover or to decrypt a OpenPGP message.
+This parameter can be adjusted by using the option "-t". The default value
+is (n-1)/2 where n is the number of participants. Since 0-resilience and
+other deviations are not desireable, the program ensures that 0 < t <= n holds. 
+.br
+The underlying DDH-hard group, i.e. a prime order subgroup of special form,
+can be adjusted by using the option "-g". The included program dkg\-gencrs
+generates a different corresponding common reference string on that all 
+participants must agree. The generated group parameters are verifiable up
+to a certain level. However, it is recommended that this crucial part is
+accomplished by some trusted members or all participants together.
+.br
+TODO (passphrase, waiting time for DKG protocol)
 
 .SH OPTIONS
 Arguments mandatory for long options are also mandatory for short options.
@@ -47,6 +75,9 @@ minutes to wait until start of DKG protocol
 Report bugs via <http://savannah.nongnu.org/bugs/?group=libtmcg>
 .br
 Home page of LibTMCG: <http://www.nongnu.org/libtmcg/>
+
+.SH "EXAMPLES"
+TODO
 
 .SH "SEE ALSO"
 dkg\-encrypt(1), dkg\-decrypt(1)
