@@ -199,7 +199,7 @@ void run_instance
 	}
 	mpz_clear(mtv);
 	std::sort(tvs.begin(), tvs.end());
-	ckeytime = tvs.back(); // use the biggest value as agreement
+	ckeytime = tvs.back(); // use the biggest value as some kind of gentle agreement
 	std::cout << "P_" << whoami << ": canonicalized key creation time = " << ckeytime << std::endl;
 
 	// at the end: deliver some more rounds for still waiting parties

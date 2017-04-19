@@ -686,8 +686,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 	(const OCTETS &in, gcry_mpi_t &out, size_t &sum)
 {
+	if (in.size() < 2)
+		return 0; // error: no length given
 	gcry_error_t ret;
 	size_t buflen = ((in[0] << 8) + in[1] + 7) / 8;
+	if (in.size() < (2 + buflen))
+		return 0; // error: mpi too short
 	BYTE *buffer = new BYTE[buflen];
 	for (size_t i = 0; i < buflen; i++)
 	{
@@ -1404,10 +1408,13 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 	{
 		out.critical = true;
 		type -= 0x80;
-//std::cerr << "subpkt: critical bit set" << std::endl;
 	}
-//std::cerr << "subpkt: len = " << len << " type = " << (int)type << std::endl;
-	len -= 1;
+	if (len > 0)
+		len -= 1; // first octet (subpacket type) is already processed
+	else
+		return 0; // error: subpacket without type octet
+	if (in.size() < (headlen + len))
+		return 0; // error: subpacket too short
 	OCTETS pkt;
 	pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+len);
 	switch (type)
@@ -1482,7 +1489,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.issuer[i] = pkt[i];
 			break;
-		case 20: // Notation Data
+		case 20: // Notation Data -- not implemented; ignore subpacket
 			if (out.critical)
 				return 0; // error: subpacket can't ignored
 			break;
@@ -1565,8 +1572,20 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.embeddedsignature[i] = pkt[i]; 
 			break;
-		default:
-			return 0; // unknown subpacket type
+		case 100: // Private or experimental -- not yet impl.; ignore
+		case 101:
+		case 102:
+		case 103:
+		case 104:
+		case 105:
+		case 106:
+		case 107:
+		case 108:
+		case 109:
+		case 110:
+			break;
+		default: // unknown subpacket type; ignore
+			break; 
 	}
 	in.erase(in.begin(), in.begin()+headlen+len); // remove subpacket
 	return type;
@@ -1667,7 +1686,8 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	}
 	else
 		return 0; // unknown error
-//std::cerr << "pkt: len = " << len << " tag = " << (int)tag << std::endl;
+	if (in.size() < (headlen + len))
+		return 0; // error: packet too short
 	BYTE sptype = 0xFF;
 	size_t mlen = 0;
 	OCTETS pkt, hspd, uspd, mpis;
@@ -1727,6 +1747,8 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			out.pkalgo = pkt[2];
 			out.hashalgo = pkt[3];
 			hspdlen = (pkt[4] << 8) + pkt[5];
+			if (pkt.size() < (6 + hspdlen))
+				return 0; // error: packet too short
 			hspd.insert(hspd.end(), 
 				pkt.begin()+6, pkt.begin()+6+hspdlen);
 			out.hspdlen = hspdlen;
@@ -1736,10 +1758,12 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			while (hspd.size() && sptype)
                 	{
 				sptype = SubpacketDecode(hspd, out);
-				if (out.critical && (sptype == 0))
-					return 0; // error: critical bit set
+				if (sptype == 0)
+					return 0; // error: incorrect subpacket
 			}
 			uspdlen = (pkt[6+hspdlen] << 8) + pkt[7+hspdlen];
+			if (pkt.size() < (8 + hspdlen + uspdlen))
+				return 0; // error: packet too short
 			uspd.insert(uspd.end(), pkt.begin()+8+hspdlen,
 					 pkt.begin()+8+hspdlen+uspdlen);
 			// If a subpacket is not hashed, then the information
@@ -1749,9 +1773,9 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			while (uspd.size() && sptype)
                 	{
 				sptype = SubpacketDecode(uspd, untrusted);
-				if (untrusted.critical && (sptype == 0))
-					return 0; // error: critical bit set
-				if (sptype == 16) // Issuer
+				if (sptype == 0)
+					return 0; // error: incorrect subpacket
+				if (sptype == 16) // only copy the Issuer
 				{
 					for (size_t i = 0; 
 					     i < sizeof(out.issuer); i++)
@@ -1759,6 +1783,8 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						     untrusted.issuer[i];
 				}					
 			}
+			if (pkt.size() < (10 + hspdlen + uspdlen))
+				return 0; // error: packet too short
 			out.left[0] = pkt[8+hspdlen+uspdlen];
 			out.left[1] = pkt[9+hspdlen+uspdlen];
 			mpis.insert(mpis.end(), pkt.begin()+10+hspdlen+uspdlen,
@@ -1786,7 +1812,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
 			else
-				return 0; // error: unknown public-key algo
+				return 0; // error: unsupported public-key algo
 			break;
 		case 3: // Symmetric-Key Encrypted Session Key Packet
 			if (pkt.size() < 4)
@@ -2090,7 +2116,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (pkt.size() < 2)
 				return 0; // error: incorrect packet body
 			out.compalgo = pkt[0];
-			if (out.compalgo > 2)
+			if (out.compalgo > 3)
 				return 0; // error: algorithm not supported
 			out.compdatalen = pkt.size();
 			out.compdata = new BYTE[out.compdatalen];
@@ -2108,6 +2134,9 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		case 10: // Marker Packet
 			if (pkt.size() != 3)
 				return 0; // error: incorrect packet body
+			if ((pkt[0] != 0x50) || (pkt[1] != 0x47) || 
+				(pkt[3] != 0x50))
+					return 0; // error: bad marker 
 			break;
 		case 11: // Literal Data Packet
 			if (pkt.size() < 2)
@@ -2116,6 +2145,8 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			out.datafilenamelen = pkt[1];
 			for (size_t i = 0; i < out.datafilenamelen; i++)
 				out.datafilename[i] = pkt[2+i];
+			if (pkt.size() < (6 + out.datafilenamelen + 1))
+				return 0; // error: packet too short
 			out.datatime = (pkt[3+out.datafilenamelen] << 24) +
 				(pkt[4+out.datafilenamelen] << 16) +
 				(pkt[5+out.datafilenamelen] << 8) +
@@ -2129,7 +2160,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			break;
 		case 13: // User ID Packet
 			if (pkt.size() > sizeof(out.uid))
-				return 0; // error: empty packet body
+				return 0; // error: packet too long
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.uid[i] = pkt[i];
 			break;

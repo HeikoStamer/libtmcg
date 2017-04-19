@@ -1100,6 +1100,9 @@ void decrypt_message
 		std::cout << std::endl;
 		switch (ptag)
 		{
+			case 8: // Compressed Data Packet
+				std::cerr << "WARNING: compressed OpenPGP packet found; not supported" << std::endl;
+				break;
 			case 11: // Literal Data
 				have_lit = true;
 				for (size_t i = 0; i < ctx.datalen; i++)
