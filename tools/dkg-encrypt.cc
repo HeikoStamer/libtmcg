@@ -53,6 +53,11 @@ int main
 	}
 	while (std::getline(pubifs, line))
 		armored_pubkey += line + "\n";
+	if (!pubifs.eof())
+	{
+		std::cerr << "ERROR: reading until EOF failed" << std::endl;
+		exit(-1);
+	}
 	pubifs.close();
 
 	// parse packets of the provided public key

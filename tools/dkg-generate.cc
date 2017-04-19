@@ -300,7 +300,17 @@ void run_instance
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(6, all, armor);
 	std::cout << armor << std::endl;
 	std::ofstream pubofs((pubfilename.str()).c_str(), std::ofstream::out);
+	if (!pubofs.good())
+	{
+		std::cerr << "P_" << whoami << ": opening public key file failed" << std::endl;
+		exit(-1);
+	}
 	pubofs << armor;
+	if (!pubofs.good())
+	{
+		std::cerr << "P_" << whoami << ": writing public key file failed" << std::endl;
+		exit(-1);
+	}
 	pubofs.close();
 	// export generated private key in OpenPGP armor format
 	std::stringstream secfilename;
@@ -314,7 +324,17 @@ void run_instance
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(5, all, armor);
 	std::cout << armor << std::endl;
 	std::ofstream secofs((secfilename.str()).c_str(), std::ofstream::out);
+	if (!secofs.good())
+	{
+		std::cerr << "P_" << whoami << ": opening private key file failed" << std::endl;
+		exit(-1);
+	}
 	secofs << armor;
+	if (!secofs.good())
+	{
+		std::cerr << "P_" << whoami << ": writing private key file failed" << std::endl;
+		exit(-1);
+	}
 	secofs.close();
 	gcry_mpi_release(p);
 	gcry_mpi_release(q);
@@ -328,7 +348,17 @@ void run_instance
 	std::stringstream dkgfilename;
 	dkgfilename << peers[whoami] << ".dkg";
 	std::ofstream dkgofs((dkgfilename.str()).c_str(), std::ofstream::out);
+	if (!dkgofs.good())
+	{
+		std::cerr << "P_" << whoami << ": opening DKG state file failed" << std::endl;
+		exit(-1);
+	}
 	dkg->PublishState(dkgofs);
+	if (!dkgofs.good())
+	{
+		std::cerr << "P_" << whoami << ": writing DKG state file failed" << std::endl;
+		exit(-1);
+	}
 	dkgofs.close();
 
 	// release DKG

@@ -68,6 +68,11 @@ void init_dkg
 	}
 	while (std::getline(dkgifs, line))
 		dkgstate << line << std::endl;
+	if (!dkgifs.eof())
+	{
+		std::cerr << "ERROR: reading until EOF failed" << std::endl;
+		exit(-1);
+	}
 	dkgifs.close();
 	// create an instance of DKG
 	std::cout << "GennaroJareckiKrawczykRabinDKG(...)" << std::endl;
@@ -108,6 +113,11 @@ void read_private_key
 	}
 	while (std::getline(secifs, line))
 		dkgseckey << line << std::endl;
+	if (!secifs.eof())
+	{
+		std::cerr << "ERROR: reading until EOF failed" << std::endl;
+		exit(-1);
+	}
 	secifs.close();
 	result = dkgseckey.str();
 }
@@ -1100,7 +1110,7 @@ void decrypt_message
 		std::cout << std::endl;
 		switch (ptag)
 		{
-			case 8: // Compressed Data Packet
+			case 8: // Compressed Data
 				std::cerr << "WARNING: compressed OpenPGP packet found; not supported" << std::endl;
 				break;
 			case 11: // Literal Data
