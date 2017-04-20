@@ -1210,7 +1210,7 @@ void run_instance
 	for (size_t i = 0; i < peers.size(); i++)
 	{
 		std::stringstream key;
-		key << "dkg-decrypt::P_" << (i + whoami); // use simple key FIXME
+		key << "dkg-decrypt::P_" << (i + whoami); // use simple key for now FIXME later -- we assume that GNUnet provides secure channels
 		uP_in.push_back(pipefd[i][whoami][0]);
 		uP_out.push_back(pipefd[whoami][i][1]);
 		uP_key.push_back(key.str());

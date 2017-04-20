@@ -234,7 +234,7 @@ class aiounicast_nonblock : public aiounicast
 				return false;
 			if (timeout == aio_timeout_default)
 				timeout = aio_default_timeout;
-			// prepare write buffer with m
+			// prepare write buffer with the message m
 			size_t size = mpz_sizeinbase(m, TMCG_MPZ_IO_BASE);
 			char *buf = new char[size + 2];
 			memset(buf, 0, size + 2);
@@ -253,6 +253,13 @@ class aiounicast_nonblock : public aiounicast
 				delete [] buf;
 				return false;
 			}
+			// We use the MAC-then-Encrypt (MtE) paradigm, because it is more convenient for our
+			// purposes. However, it does not provide the best security properties with respect to
+			// the required 'secure channel'. Please note the scientific discussion on the topic,
+			// e.g., Mihir Bellare and Chanathip Namprempre: 'Authenticated Encryption: Relations
+			//       among notions and analysis of the generic composition paradigm', Advances in
+			//       Cryptology - ASIACRYPT 2000, LNCS 1976, pp. 531--545, 2000.
+			// To avoid problems, e.g. padding oracle attacks, we always use a stream cipher mode.
 			gcry_error_t err;
 			// calculate MAC
 			if (aio_is_authenticated)
@@ -429,7 +436,7 @@ class aiounicast_nonblock : public aiounicast
 						// search for line delimiter
 						bool newline_found = false;
 						size_t newline_ptr = 0;
-						for (size_t ptr = 0; ptr < buf_ptr[i_out]; ptr++)
+						for (size_t ptr = 0; ptr < buf_ptr[i_out]; ++ptr)
 						{
 							if (buf_in[i_out][ptr] == '\n')
 							{

@@ -56,7 +56,7 @@ void run_instance
 	for (size_t i = 0; i < N; i++)
 	{
 		std::stringstream key;
-		key << "dkg-generate::P_" << (i + whoami); // choose a simple key FIXME
+		key << "dkg-generate::P_" << (i + whoami); // choose a simple key for now FIXME later -- we assume that GNUnet provides secure channels
 		uP_in.push_back(pipefd[i][whoami][0]);
 		uP_out.push_back(pipefd[whoami][i][1]);
 		uP_key.push_back(key.str());

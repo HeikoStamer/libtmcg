@@ -247,6 +247,13 @@ class aiounicast_select : public aiounicast
 				delete [] buf;
 				return false;
 			}
+			// We use the MAC-then-Encrypt (MtE) paradigm, because it is more convenient for our
+			// purposes. However, it does not provide the best security properties with respect to
+			// the required 'secure channel'. Please note the scientific discussion on the topic,
+			// e.g., Mihir Bellare and Chanathip Namprempre: 'Authenticated Encryption: Relations
+			//       among notions and analysis of the generic composition paradigm', Advances in
+			//       Cryptology - ASIACRYPT 2000, LNCS 1976, pp. 531--545, 2000.
+			// To avoid problems, e.g. padding oracle attacks, we always use a stream cipher mode.
 			gcry_error_t err;
 			// calculate MAC	
 			if (aio_is_authenticated)
@@ -465,7 +472,7 @@ class aiounicast_select : public aiounicast
 						// search for line delimiter
 						bool newline_found = false;
 						size_t newline_ptr = 0;
-						for (size_t ptr = 0; ptr < buf_ptr[i_out]; ptr++)
+						for (size_t ptr = 0; ptr < buf_ptr[i_out]; ++ptr)
 						{
 							if (buf_in[i_out][ptr] == '\n')
 							{
