@@ -41,6 +41,7 @@ class aiounicast
 		const time_t		aio_default_timeout;
 		const bool		aio_is_authenticated;
 		const bool		aio_is_encrypted;
+		bool			aio_is_initialized;
 	public:
 		static const time_t	aio_timeout_none		= 0;
 		static const time_t	aio_timeout_very_short		= 1;
@@ -68,6 +69,7 @@ class aiounicast
 				aio_default_timeout(aio_default_timeout_in),
 				aio_is_authenticated(aio_is_authenticated_in),
 				aio_is_encrypted(aio_is_encrypted_in),
+				aio_is_initialized(true),
 				n(n_in), j(j_in)
 		{
 		}

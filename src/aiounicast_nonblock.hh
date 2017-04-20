@@ -114,7 +114,10 @@ class aiounicast_nonblock : public aiounicast
 			{
 				maclen = gcry_mac_get_algo_maclen(TMCG_GCRY_MAC_ALGO);
 				if (maclen == 0)
+				{
+					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_mac_get_algo_maclen() failed" << std::endl;
+				}
 			}
 			else
 				maclen = 0;
@@ -128,6 +131,7 @@ class aiounicast_nonblock : public aiounicast
 				err = gcry_mac_open(buf_mac_in[i], TMCG_GCRY_MAC_ALGO, 0, NULL); 				
 				if (err)
 				{
+					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_mac_open() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
@@ -136,24 +140,28 @@ class aiounicast_nonblock : public aiounicast
 					TMCG_GCRY_MD_ALGO, salt, sizeof(salt), 25000, sizeof(key), key);
 				if (err)
 				{
+					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_kdf_derive() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
 				err = gcry_mac_setkey(*buf_mac_in[i], key, sizeof(key));
 				if (err)
 				{
+					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_mac_setkey() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
 				err = gcry_mac_open(buf_mac_out[i], TMCG_GCRY_MAC_ALGO, 0, NULL); 				
 				if (err)
 				{
+					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_mac_open() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
 				err = gcry_mac_setkey(*buf_mac_out[i], key, sizeof(key));
 				if (err)
 				{
+					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_mac_setkey() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
@@ -164,7 +172,10 @@ class aiounicast_nonblock : public aiounicast
 			{
 				keylen = gcry_cipher_get_algo_keylen(TMCG_GCRY_ENC_ALGO);
 				if (keylen == 0)
+				{
+					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_cipher_get_algo_keylen() failed" << std::endl;
+				}
 			}
 			else
 				keylen = 0;
@@ -178,32 +189,37 @@ class aiounicast_nonblock : public aiounicast
 				err = gcry_cipher_open(buf_enc_in[i], TMCG_GCRY_ENC_ALGO, GCRY_CIPHER_MODE_CFB, 0); 				
 				if (err)
 				{
+					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_cipher_open() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
-				memset(salt, 0, sizeof(salt));
+				memset(salt, 1, sizeof(salt));
 				err = gcry_kdf_derive(key_in[i].c_str(), key_in[i].length(), GCRY_KDF_PBKDF2, 
 					TMCG_GCRY_MD_ALGO, salt, sizeof(salt), 25000, sizeof(key), key);
 				if (err)
 				{
+					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_kdf_derive() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
 				err = gcry_cipher_setkey(*buf_enc_in[i], key, sizeof(key));
 				if (err)
 				{
+					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_cipher_setkey() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
 				err = gcry_cipher_open(buf_enc_out[i], TMCG_GCRY_ENC_ALGO, GCRY_CIPHER_MODE_CFB, 0); 				
 				if (err)
 				{
+					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_cipher_open() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
 				err = gcry_cipher_setkey(*buf_enc_out[i], key, sizeof(key));
 				if (err)
 				{
+					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_cipher_setkey() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
@@ -214,6 +230,8 @@ class aiounicast_nonblock : public aiounicast
 			(mpz_srcptr m, const size_t i_in,
 			time_t timeout = aio_timeout_default)
 		{
+			if (!aio_is_initialized)
+				return false;
 			if (timeout == aio_timeout_default)
 				timeout = aio_default_timeout;
 			// prepare write buffer with m
@@ -358,6 +376,8 @@ class aiounicast_nonblock : public aiounicast
 			(const std::vector<mpz_srcptr> &m, const size_t i_in,
 			time_t timeout = aio_timeout_default)
 		{
+			if (!aio_is_initialized)
+				return false;
 			if (timeout == aio_timeout_default)
 				timeout = aio_default_timeout;
 			for (size_t mm = 0; mm < m.size(); mm++)
@@ -373,12 +393,12 @@ class aiounicast_nonblock : public aiounicast
 			size_t scheduler = aio_scheduler_default,
 			time_t timeout = aio_timeout_default)
 		{
+			if (!aio_is_initialized)
+				return false;
 			if (scheduler == aio_scheduler_default)
 				scheduler = aio_default_scheduler;
 			if (timeout == aio_timeout_default)
 				timeout = aio_default_timeout;
-//if (scheduler == aio_scheduler_direct)
-//std::cerr << "aio(" << j << "): want mpz from " << i_out << std::endl;
 			time_t entry_time = time(NULL);
 			do
 			{
@@ -465,8 +485,6 @@ class aiounicast_nonblock : public aiounicast
 								return false;
 							}
 							delete [] tmp, delete [] mac;
-//if (scheduler == aio_scheduler_direct)
-//std::cerr << "aio(" << j << "): got mpz from " << i_out << std::endl;
 							return true;
 						}
 						// no delimiter found; invalidate buffer flag
@@ -525,6 +543,8 @@ class aiounicast_nonblock : public aiounicast
 			size_t scheduler = aio_scheduler_default,
 			time_t timeout = aio_timeout_default)
 		{
+			if (!aio_is_initialized)
+				return false;
 			if (scheduler == aio_scheduler_default)
 				scheduler = aio_default_scheduler;
 			if (timeout == aio_timeout_default)
