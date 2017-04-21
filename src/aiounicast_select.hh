@@ -53,11 +53,11 @@ class aiounicast_select : public aiounicast
 		size_t					aio_schedule_current;
 		size_t					aio_schedule_buffer;
 		size_t					buf_in_size;
-		std::vector<char*>			buf_in;
+		std::vector<char*>			buf_in, iv_out;
 		std::vector<size_t>			buf_ptr;
-		std::vector<bool>			buf_flag;
+		std::vector<bool>			buf_flag, iv_flag_out, iv_flag_in;
 		std::vector< std::list<mpz_ptr> >	buf_mpz;
-		size_t					maclen, keylen;
+		size_t					maclen, keylen, blklen;
 		std::vector<gcry_mac_hd_t*>		buf_mac_in, buf_mac_out;
 		std::vector<gcry_cipher_hd_t*>		buf_enc_in, buf_enc_out;
 	public:
@@ -170,13 +170,20 @@ class aiounicast_select : public aiounicast
 					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_cipher_get_algo_keylen() failed" << std::endl;
 				}
+				blklen = gcry_cipher_get_algo_blklen(TMCG_GCRY_ENC_ALGO);
+				if (blklen == 0)
+				{
+					aio_is_initialized = false;
+					std::cerr << "libgcrypt: gcry_cipher_get_algo_blklen() failed" << std::endl;
+				}
 			}
 			else
-				keylen = 0;
+				keylen = 0, blklen = 0;
 			for (size_t i = 0; aio_is_encrypted && (i < n_in); i++)
 			{
 				char salt[keylen];
 				char key[keylen];
+				char iv[blklen];
 				gcry_error_t err;
 				gcry_cipher_hd_t *enc_in = new gcry_cipher_hd_t(), *enc_out = new gcry_cipher_hd_t();
 				buf_enc_in.push_back(enc_in), buf_enc_out.push_back(enc_out);
@@ -187,7 +194,7 @@ class aiounicast_select : public aiounicast
 					std::cerr << "libgcrypt: gcry_cipher_open() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
-				memset(salt, 1, sizeof(salt));
+				memset(salt, 1, sizeof(salt)); // use a different salt to derive encryption key
 				err = gcry_kdf_derive(key_in[i].c_str(), key_in[i].length(), GCRY_KDF_PBKDF2, 
 					TMCG_GCRY_MD_ALGO, salt, sizeof(salt), 25000, sizeof(key), key);
 				if (err)
@@ -203,6 +210,7 @@ class aiounicast_select : public aiounicast
 					std::cerr << "libgcrypt: gcry_cipher_setkey() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
+				iv_flag_in.push_back(false); // flag means: IV not yet received
 				err = gcry_cipher_open(buf_enc_out[i], TMCG_GCRY_ENC_ALGO, GCRY_CIPHER_MODE_CFB, 0); 				
 				if (err)
 				{
@@ -217,6 +225,18 @@ class aiounicast_select : public aiounicast
 					std::cerr << "libgcrypt: gcry_cipher_setkey() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
+				gcry_create_nonce(iv, blklen); // an unpredictable IV is sufficient
+				err = gcry_cipher_setiv(*buf_enc_out[i], iv, sizeof(iv));
+				if (err)
+				{
+					aio_is_initialized = false;
+					std::cerr << "libgcrypt: gcry_cipher_setiv() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+				}
+				iv_flag_out.push_back(false); // flag means: IV not yet sent
+				char *ivcopy = new char[blklen];
+				memcpy(ivcopy, iv, blklen);
+				iv_out.push_back(ivcopy); // store a copy of the used IV for Send()
 			}
 		}
 
@@ -230,24 +250,25 @@ class aiounicast_select : public aiounicast
 				timeout = aio_default_timeout;
 			// prepare write buffer with m
 			size_t size = mpz_sizeinbase(m, TMCG_MPZ_IO_BASE);
-			char *buf = new char[size + 2];
-			memset(buf, 0, size + 2);
+			size_t bufsize = size + 2;
+			char *buf = new char[bufsize];
+			memset(buf, 0, bufsize);
                		mpz_get_str(buf, TMCG_MPZ_IO_BASE, m);
 			// additionally, determine the real size of the 
 			// string, because mpz_sizeinbase(m, TMCG_MPZ_IO_BASE)
 			// does not work in all cases correctly
-			size_t realsize = strnlen(buf, size + 2);
-			if (realsize < (size + 2))
+			size_t realsize = strnlen(buf, bufsize);
+			if (realsize < bufsize)
 			{
 				buf[realsize] = '\n'; // set newline as delimiter
 			}
 			else
 			{
-				std::cerr << "aiounicast_select: realsize does not match size" << std::endl;
+				std::cerr << "aiounicast_select: realsize does not match bufsize" << std::endl;
 				delete [] buf;
 				return false;
 			}
-			// We use the MAC-then-Encrypt (MtE) paradigm, because it is more convenient for our
+			// We follow the MAC-then-Encrypt (MtE) paradigm, because it is more convenient for our
 			// purposes. However, it does not provide the best security properties with respect to
 			// the required 'secure channel'. Please note the scientific discussion on the topic,
 			// e.g., Mihir Bellare and Chanathip Namprempre: 'Authenticated Encryption: Relations
@@ -277,6 +298,63 @@ class aiounicast_select : public aiounicast
 					std::cerr << gcry_strerror(err) << std::endl;
 					delete [] buf;
 					return false;
+				}
+				// first, send the plain IV to the receiver
+				if (!iv_flag_out[i_in])
+				{
+					time_t entry_time = time(NULL);
+					size_t realnum = 0;
+					do
+					{
+						// select(2) -- do everything with asynchronous I/O
+						fd_set wfds;
+						struct timeval tv;
+						int retval;
+						FD_ZERO(&wfds);
+						FD_SET(fd_out[i_in], &wfds);
+						tv.tv_sec = 0;
+						tv.tv_usec = 1000; // sleep only for 1000us = 1ms
+						retval = select((fd_out[i_in] + 1), NULL, &wfds, NULL, &tv);
+						if (retval < 0)
+						{
+							perror("aiounicast_select (select)");
+							delete [] buf;
+							return false;
+						}
+						if (retval == 0)
+							continue;
+						// write(2) -- ready for non-blocking write?
+						if (FD_ISSET(fd_out[i_in], &wfds))
+						{
+							ssize_t num = write(fd_out[i_in], iv_out[i_in] + realnum, blklen - realnum);
+							if (num < 0)
+							{
+								if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+								{
+									continue;
+								}
+								else
+								{
+									perror("aiounicast_select (write)");
+									delete [] buf;							
+									return false;
+								}
+							}
+							numWrite += num;
+							realnum += num;
+						}
+						else
+							std::cerr << "WARNING: aiounicast_select FD_ISSET not true" << std::endl;
+					}
+					while ((realnum < blklen) && (time(NULL) < (entry_time + timeout)));
+					if (realnum != blklen)
+					{
+						std::cerr << "aiounicast_select: sending IV failed" << std::endl;
+						delete [] buf;
+						return false;
+					}
+					else
+						iv_flag_out[i_in] = true; // IV has been sent
 				}
 			}
 			// send content of write buffer to party i_in
@@ -562,23 +640,45 @@ class aiounicast_select : public aiounicast
 								perror("aiounicast_select (read)");
 								return false;
 							}
-							if (num == 0)
-								continue;
+							numRead += num;
+							buf_ptr[i_out] += num;
 							// decrypt this part of read buffer
 							if (aio_is_encrypted)
 							{
-								gcry_error_t err;
-								err = gcry_cipher_decrypt(*buf_enc_in[i_out], rptr, num, NULL, 0);
-								if (err)
+								// take the first blklen bytes from sender as IV for cipher
+								if (!iv_flag_in[i_out] && (buf_ptr[i_out] >= blklen))
 								{
-									std::cerr << "libgcrypt: gcry_cipher_decrypt() failed" << std::endl;
-									std::cerr << gcry_strerror(err) << std::endl;
-									return false;
+									gcry_error_t err;							
+									err = gcry_cipher_setiv(*buf_enc_in[i_out], buf_in[i_out], blklen);
+									if (err)
+									{
+										aio_is_initialized = false;
+										std::cerr << "libgcrypt: gcry_cipher_setiv() failed" << std::endl;
+										std::cerr << gcry_strerror(err) << std::endl;
+									}
+									iv_flag_in[i_out] = true; // IV set
+									num = buf_ptr[i_out] - blklen; // number of remaining bytes
+									// remove IV from the read buffer
+									memmove(buf_in[i_out], buf_in[i_out] + blklen, num);
+									rptr = buf_in[i_out];
+									buf_ptr[i_out] = num;
+								}
+								// decrypt the remainig part of the read buffer
+								if (iv_flag_in[i_out] && (num > 0))
+								{
+									gcry_error_t err;
+									err = gcry_cipher_decrypt(*buf_enc_in[i_out], rptr, num, NULL, 0);
+									if (err)
+									{
+										std::cerr << "libgcrypt: gcry_cipher_decrypt() failed" << std::endl;
+										std::cerr << gcry_strerror(err) << std::endl;
+										return false;
+									}
+									buf_flag[i_out] = true;
 								}
 							}
-							numRead += num;
-							buf_ptr[i_out] += num;
-							buf_flag[i_out] = true;
+							else if (num > 0)
+								buf_flag[i_out] = true;
 						}
 						else
 							std::cerr << "WARNING: aiounicast_select FD_ISSET not true" << std::endl;
@@ -693,10 +793,12 @@ class aiounicast_select : public aiounicast
 				{
 					gcry_cipher_close(*buf_enc_in[i]), gcry_cipher_close(*buf_enc_out[i]);
 					delete buf_enc_in[i], delete buf_enc_out[i];
+					delete [] iv_out[i];
 				}
 			}
 			buf_in.clear(), buf_ptr.clear(), buf_flag.clear();
 			buf_mpz.clear();
+			iv_out.clear(), iv_flag_in.clear(), iv_flag_out.clear();
 			buf_mac_in.clear(), buf_mac_out.clear();
 			buf_enc_in.clear(), buf_enc_out.clear();
 		}
