@@ -416,6 +416,7 @@ int main
 		start_instance(vtmf_str, i);
 	
 	// wait for poker childs and close pipes
+	bool result = true;
 	for (size_t i = 0; i < PLAYERS; i++)
 	{
 		int wstatus = 0;
@@ -429,6 +430,7 @@ int main
 				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
 			if (WCOREDUMP(wstatus))
 				std::cerr << pid[i] << " dumped core" << std::endl;
+			result = false;
 		}
 		for (size_t j = 0; j < PLAYERS; j++)
 		{
@@ -442,7 +444,10 @@ int main
 	// release VTMF instance
 	delete vtmf;
 	
-	return 0;
+	if (result)
+		return 0;
+	else
+		return 1;
 }
 
 #else

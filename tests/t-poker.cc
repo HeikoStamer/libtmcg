@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2007, 2009, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2007, 2009, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -346,6 +346,7 @@ int main
 		start_instance(vtmf_str, i);
 	
 	// wait for poker childs and close pipes
+	bool result = true;
 	for (size_t i = 0; i < PLAYERS; i++)
 	{
 		int wstatus = 0;
@@ -359,6 +360,7 @@ int main
 				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
 			if (WCOREDUMP(wstatus))
 				std::cerr << pid[i] << " dumped core" << std::endl;
+			result = false;
 		}
 		for (size_t j = 0; j < PLAYERS; j++)
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
@@ -368,7 +370,10 @@ int main
 	// release VTMF instance
 	delete vtmf;
 	
-	return 0;
+	if (result)
+		return 0;
+	else
+		return 1;
 }
 
 #else

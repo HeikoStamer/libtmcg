@@ -130,91 +130,30 @@ void start_instance
 	}
 }
 
-int main
-	(int argc, char **argv)
+void init
+	(size_t num)
 {
-	assert(init_libTMCG());
-	assert(N_MIN <= N);
+	// open pipes
+	for (size_t i = 0; i < num; i++)
+	{
+		for (size_t j = 0; j < num; j++)
+		{
+			if (pipe(broadcast_pipefd[i][j]) < 0)
+				perror("t-seabp (pipe)");
+		}
+	}
+}
 
-	// open pipes
-	for (size_t i = 0; i < N_MIN; i++)
-	{
-		for (size_t j = 0; j < N_MIN; j++)
-		{
-			if (pipe(broadcast_pipefd[i][j]) < 0)
-				perror("t-seabp (pipe)");
-		}
-	}
-	
-	// start childs (n = N_MIN, t = 0)
-	for (size_t i = 0; i < N_MIN; i++)
-		start_instance(N_MIN, 0, i, false, false);
-	
+bool done
+	(size_t num)
+{
 	// wait for childs and close pipes
-	for (size_t i = 0; i < N_MIN; i++)
-	{
-		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], NULL, 0) != pid[i])
-			perror("t-seabp (waitpid)");
-		for (size_t j = 0; j < N_MIN; j++)
-		{
-			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
-				perror("t-seabp (close)");
-		}
-	}
-	
-	// open pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		for (size_t j = 0; j < N; j++)
-		{
-			if (pipe(broadcast_pipefd[i][j]) < 0)
-				perror("t-seabp (pipe)");
-		}
-	}
-	
-	// start childs (all correct)
-	for (size_t i = 0; i < N; i++)
-		start_instance(N, T, i, false, false);
-	
-	// wait for childs and close pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], NULL, 0) != pid[i])
-			perror("t-seabp (waitpid)");
-		for (size_t j = 0; j < N; j++)
-		{
-			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
-				perror("t-seabp (close)");
-		}
-	}
-
-	// open pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		for (size_t j = 0; j < N; j++)
-		{
-			if (pipe(broadcast_pipefd[i][j]) < 0)
-				perror("t-seabp (pipe)");
-		}
-	}
-	
-	// start childs (two corrupted parties)
-	for (size_t i = 0; i < N; i++)
-	{
-		if ((i == (N - 1)) || (i == (N - 2)))
-			start_instance(N, T, i, true, true); // corrupted instance
-		else
-			start_instance(N, T, i, false, true); // someone corrupted
-	}
-	
-	// wait for childs and close pipes
-	for (size_t i = 0; i < N; i++)
+	bool result = true;
+	for (size_t i = 0; i < num; i++)
 	{
 		int wstatus = 0;
 		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], &wstatus, 0) != pid[i])
+		if (waitpid(pid[i], NULL, 0) != pid[i])
 			perror("t-seabp (waitpid)");
 		if (!WIFEXITED(wstatus))
 		{
@@ -223,13 +162,48 @@ int main
 				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
 			if (WCOREDUMP(wstatus))
 				std::cerr << pid[i] << " dumped core" << std::endl;
+			result = false;
 		}
-		for (size_t j = 0; j < N; j++)
+		for (size_t j = 0; j < num; j++)
 		{
 			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
 				perror("t-seabp (close)");
 		}
 	}
+	return result;
+}
+
+int main
+	(int argc, char **argv)
+{
+	assert(init_libTMCG());
+	assert(N_MIN <= N);
+
+	// test case #1: n = N_MIN, t = 0
+	init(N_MIN);
+	for (size_t i = 0; i < N_MIN; i++)
+		start_instance(N_MIN, 0, i, false, false);
+	if (!done(N_MIN))
+		return 1;
+	
+	// test case #2: all correct
+	init(N);
+	for (size_t i = 0; i < N; i++)
+		start_instance(N, T, i, false, false);
+	if (!done(N))
+		return 1;
+		
+	// test case #3: two corrupted parties
+	init(N);
+	for (size_t i = 0; i < N; i++)
+	{
+		if ((i == (N - 1)) || (i == (N - 2)))
+			start_instance(N, T, i, true, true); // corrupted instance
+		else
+			start_instance(N, T, i, false, true); // someone corrupted
+	}
+	if (!done(N))
+		return 1;
 	
 	return 0;
 }
