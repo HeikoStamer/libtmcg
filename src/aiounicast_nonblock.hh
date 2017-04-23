@@ -58,8 +58,8 @@ class aiounicast_nonblock : public aiounicast
 		std::vector<bool>			buf_flag, iv_flag_out, iv_flag_in;
 		std::vector< std::list<mpz_ptr> >	buf_mpz;
 		size_t					maclen, keylen, blklen;
-		std::vector<gcry_mac_hd_t*>		buf_mac_in, buf_mac_out;
-		std::vector<gcry_cipher_hd_t*>		buf_enc_in, buf_enc_out;
+		std::vector<gcry_mac_hd_t*>		mac_in, mac_out;
+		std::vector<gcry_cipher_hd_t*>		enc_in, enc_out;
 	public:
 		std::vector<int>			fd_in, fd_out;
 		size_t					numWrite, numRead;
@@ -128,9 +128,9 @@ class aiounicast_nonblock : public aiounicast
 				char salt[maclen];
 				char key[maclen];
 				gcry_error_t err;
-				gcry_mac_hd_t *mac_in = new gcry_mac_hd_t(), *mac_out = new gcry_mac_hd_t();
-				buf_mac_in.push_back(mac_in), buf_mac_out.push_back(mac_out);
-				err = gcry_mac_open(buf_mac_in[i], TMCG_GCRY_MAC_ALGO, 0, NULL); 				
+				gcry_mac_hd_t *mac_in_hd = new gcry_mac_hd_t(), *mac_out_hd = new gcry_mac_hd_t();
+				mac_in.push_back(mac_in_hd), mac_out.push_back(mac_out_hd);
+				err = gcry_mac_open(mac_in[i], TMCG_GCRY_MAC_ALGO, 0, NULL); 				
 				if (err)
 				{
 					aio_is_initialized = false;
@@ -146,21 +146,21 @@ class aiounicast_nonblock : public aiounicast
 					std::cerr << "libgcrypt: gcry_kdf_derive() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
-				err = gcry_mac_setkey(*buf_mac_in[i], key, sizeof(key));
+				err = gcry_mac_setkey(*mac_in[i], key, sizeof(key));
 				if (err)
 				{
 					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_mac_setkey() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
-				err = gcry_mac_open(buf_mac_out[i], TMCG_GCRY_MAC_ALGO, 0, NULL); 				
+				err = gcry_mac_open(mac_out[i], TMCG_GCRY_MAC_ALGO, 0, NULL); 				
 				if (err)
 				{
 					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_mac_open() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
-				err = gcry_mac_setkey(*buf_mac_out[i], key, sizeof(key));
+				err = gcry_mac_setkey(*mac_out[i], key, sizeof(key));
 				if (err)
 				{
 					aio_is_initialized = false;
@@ -193,9 +193,9 @@ class aiounicast_nonblock : public aiounicast
 				char key[keylen];
 				char iv[blklen];
 				gcry_error_t err;
-				gcry_cipher_hd_t *enc_in = new gcry_cipher_hd_t(), *enc_out = new gcry_cipher_hd_t();
-				buf_enc_in.push_back(enc_in), buf_enc_out.push_back(enc_out);
-				err = gcry_cipher_open(buf_enc_in[i], TMCG_GCRY_ENC_ALGO, GCRY_CIPHER_MODE_CFB, 0); 				
+				gcry_cipher_hd_t *enc_in_hd = new gcry_cipher_hd_t(), *enc_out_hd = new gcry_cipher_hd_t();
+				enc_in.push_back(enc_in_hd), enc_out.push_back(enc_out_hd);
+				err = gcry_cipher_open(enc_in[i], TMCG_GCRY_ENC_ALGO, GCRY_CIPHER_MODE_CFB, 0); 				
 				if (err)
 				{
 					aio_is_initialized = false;
@@ -211,7 +211,7 @@ class aiounicast_nonblock : public aiounicast
 					std::cerr << "libgcrypt: gcry_kdf_derive() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
-				err = gcry_cipher_setkey(*buf_enc_in[i], key, sizeof(key));
+				err = gcry_cipher_setkey(*enc_in[i], key, sizeof(key));
 				if (err)
 				{
 					aio_is_initialized = false;
@@ -219,14 +219,14 @@ class aiounicast_nonblock : public aiounicast
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
 				iv_flag_in.push_back(false); // flag means: IV not yet received
-				err = gcry_cipher_open(buf_enc_out[i], TMCG_GCRY_ENC_ALGO, GCRY_CIPHER_MODE_CFB, 0); 				
+				err = gcry_cipher_open(enc_out[i], TMCG_GCRY_ENC_ALGO, GCRY_CIPHER_MODE_CFB, 0); 				
 				if (err)
 				{
 					aio_is_initialized = false;
 					std::cerr << "libgcrypt: gcry_cipher_open() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
-				err = gcry_cipher_setkey(*buf_enc_out[i], key, sizeof(key));
+				err = gcry_cipher_setkey(*enc_out[i], key, sizeof(key));
 				if (err)
 				{
 					aio_is_initialized = false;
@@ -234,7 +234,7 @@ class aiounicast_nonblock : public aiounicast
 					std::cerr << gcry_strerror(err) << std::endl;
 				}
 				gcry_create_nonce(iv, blklen); // an unpredictable IV is sufficient
-				err = gcry_cipher_setiv(*buf_enc_out[i], iv, sizeof(iv));
+				err = gcry_cipher_setiv(*enc_out[i], iv, sizeof(iv));
 				if (err)
 				{
 					aio_is_initialized = false;
@@ -293,7 +293,7 @@ class aiounicast_nonblock : public aiounicast
 			{
 				memmove(buf + 1, buf, realsize - 1);
 				buf[0] = '+'; // set plus-character als non-zero prefix
-				err = gcry_cipher_encrypt(*buf_enc_out[i_in], buf + 1, realsize - 1, NULL, 0);
+				err = gcry_cipher_encrypt(*enc_out[i_in], buf + 1, realsize - 1, NULL, 0);
 				if (err)
 				{
 					std::cerr << "libgcrypt: gcry_cipher_encrypt() failed" << std::endl;
@@ -366,7 +366,7 @@ class aiounicast_nonblock : public aiounicast
 			// calculate the MAC over all data including line delimiter
 			if (aio_is_authenticated)
 			{
-				err = gcry_mac_write(*buf_mac_out[i_in], buf, realsize);
+				err = gcry_mac_write(*mac_out[i_in], buf, realsize);
 				if (err)
 				{
 					std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
@@ -409,13 +409,21 @@ class aiounicast_nonblock : public aiounicast
 			}
 			if (aio_is_authenticated)
 			{
-				// get current MAC buffer
+				// get current MAC buffer and reset MAC
 				size_t macbuflen = maclen;
 				char *macbuf = new char[macbuflen];
-				err = gcry_mac_read(*buf_mac_out[i_in], macbuf, &macbuflen);
+				err = gcry_mac_read(*mac_out[i_in], macbuf, &macbuflen);
 				if (err)
 				{
 					std::cerr << "libgcrypt: gcry_mac_read() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+					delete [] macbuf;
+					return false;
+				}
+				err = gcry_mac_reset(*mac_out[i_in]);
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_mac_reset() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
 					delete [] macbuf;
 					return false;
@@ -509,7 +517,7 @@ class aiounicast_nonblock : public aiounicast
 					// anything buffered from previous rounds?
 					if (buf_flag[i_out])
 					{
-						// search for line delimiter
+						// search for the first line delimiter
 						bool newline_found = false;
 						size_t newline_ptr = 0;
 						for (size_t ptr = 0; ptr < buf_ptr[i_out]; ++ptr)
@@ -525,12 +533,13 @@ class aiounicast_nonblock : public aiounicast
 						if (newline_found && ((buf_ptr[i_out] - newline_ptr - 1) >= maclen))
 						{
 							char *tmp = new char[newline_ptr + 1]; // allocate at least one char
-							char *mac = new char[maclen + 1]; // allocate at least one char
+							char *mac = new char[maclen + 1]; // allocate at least one char, if maclen == 0
 							memset(tmp, 0, newline_ptr + 1);
 							memset(mac, 0, maclen);
 							if (newline_ptr > 0)
 								memcpy(tmp, buf_in[i_out], newline_ptr);
-							memcpy(mac, buf_in[i_out] + newline_ptr + 1, maclen);
+							if (maclen > 0)
+								memcpy(mac, buf_in[i_out] + newline_ptr + 1, maclen);
 							// adjust buffer (copy remaining characters)
 							char *wptr = buf_in[i_out] + newline_ptr + 1 + maclen;
 							size_t wnum = buf_ptr[i_out] - newline_ptr - 1 - maclen;
@@ -539,11 +548,11 @@ class aiounicast_nonblock : public aiounicast
 							else
 								buf_flag[i_out] = false;
 							buf_ptr[i_out] = wnum;
-							// calculate and check MAC
+							// calculate, check, and reset MAC
 							if (aio_is_authenticated)
 							{
 								gcry_error_t err;
-								err = gcry_mac_write(*buf_mac_in[i_out], tmp, newline_ptr);
+								err = gcry_mac_write(*mac_in[i_out], tmp, newline_ptr);
 								if (err)
 								{
 									std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
@@ -553,7 +562,7 @@ class aiounicast_nonblock : public aiounicast
 								}
 								numAuthenticated += newline_ptr;
 								char delim = '\n'; // include line delimiter
-								err = gcry_mac_write(*buf_mac_in[i_out], &delim, 1);
+								err = gcry_mac_write(*mac_in[i_out], &delim, 1);
 								if (err)
 								{
 									std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
@@ -562,10 +571,18 @@ class aiounicast_nonblock : public aiounicast
 									return false;
 								}
 								numAuthenticated += 1;
-								err = gcry_mac_verify(*buf_mac_in[i_out], mac, maclen);
+								err = gcry_mac_verify(*mac_in[i_out], mac, maclen);
 								if (err)
 								{
-									std::cerr << "libgcrypt: gcry_mac_verify() failed" << std::endl;
+									std::cerr << "libgcrypt: gcry_mac_verify() from " << i_out << " failed" << std::endl;
+									std::cerr << gcry_strerror(err) << std::endl;
+									delete [] tmp, delete [] mac;
+									return false;
+								}
+								err = gcry_mac_reset(*mac_in[i_out]);
+								if (err)
+								{
+									std::cerr << "libgcrypt: gcry_mac_reset() failed" << std::endl;
 									std::cerr << gcry_strerror(err) << std::endl;
 									delete [] tmp, delete [] mac;
 									return false;
@@ -599,7 +616,7 @@ class aiounicast_nonblock : public aiounicast
 									return false;
 								}
 								gcry_error_t err;
-								err = gcry_cipher_decrypt(*buf_enc_in[i_out], tmp + 1, realsize - 1, NULL, 0);
+								err = gcry_cipher_decrypt(*enc_in[i_out], tmp + 1, realsize - 1, NULL, 0);
 								if (err)
 								{
 									std::cerr << "libgcrypt: gcry_cipher_decrypt() failed" << std::endl;
@@ -652,7 +669,7 @@ class aiounicast_nonblock : public aiounicast
 							if (!iv_flag_in[i_out] && (buf_ptr[i_out] >= blklen))
 							{
 								gcry_error_t err;							
-								err = gcry_cipher_setiv(*buf_enc_in[i_out], buf_in[i_out], blklen);
+								err = gcry_cipher_setiv(*enc_in[i_out], buf_in[i_out], blklen);
 								if (err)
 								{
 									aio_is_initialized = false;
@@ -773,22 +790,22 @@ class aiounicast_nonblock : public aiounicast
 				// release MACs
 				if (aio_is_authenticated)
 				{
-					gcry_mac_close(*buf_mac_in[i]), gcry_mac_close(*buf_mac_out[i]);
-					delete buf_mac_in[i], delete buf_mac_out[i];
+					gcry_mac_close(*mac_in[i]), gcry_mac_close(*mac_out[i]);
+					delete mac_in[i], delete mac_out[i];
 				}
 				// release ciphers
 				if (aio_is_encrypted)
 				{
-					gcry_cipher_close(*buf_enc_in[i]), gcry_cipher_close(*buf_enc_out[i]);
-					delete buf_enc_in[i], delete buf_enc_out[i];
+					gcry_cipher_close(*enc_in[i]), gcry_cipher_close(*enc_out[i]);
+					delete enc_in[i], delete enc_out[i];
 					delete [] iv_out[i];
 				}
 			}
 			buf_in.clear(), buf_ptr.clear(), buf_flag.clear();
 			buf_mpz.clear();
 			iv_out.clear(), iv_flag_in.clear(), iv_flag_out.clear();
-			buf_mac_in.clear(), buf_mac_out.clear();
-			buf_enc_in.clear(), buf_enc_out.clear();
+			mac_in.clear(), mac_out.clear();
+			enc_in.clear(), enc_out.clear();
 		}
 };
 

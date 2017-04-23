@@ -228,11 +228,19 @@ void start_instance
 			uP_in.clear(), uP_out.clear(), uP_key.clear();
 			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
 				" aiou.numWrite = " << aiou->numWrite << std::endl;
+			std::cout << "P_" << whoami << ": aiou.numDecrypted = " << aiou->numDecrypted <<
+				" aiou.numEncrypted = " << aiou->numEncrypted << std::endl;
+			std::cout << "P_" << whoami << ": aiou.numAuthenticated = " <<
+				aiou->numAuthenticated << std::endl;
 
 			// release handles (broadcast channel)
 			bP_in.clear(), bP_out.clear(), bP_key.clear();
 			std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
 				" aiou2.numWrite = " << aiou2->numWrite << std::endl;
+			std::cout << "P_" << whoami << ": aiou2.numDecrypted = " << aiou2->numDecrypted <<
+				" aiou2.numEncrypted = " << aiou2->numEncrypted << std::endl;
+			std::cout << "P_" << whoami << ": aiou2.numAuthenticated = " <<
+				aiou2->numAuthenticated << std::endl;
 
 			// release asynchronous unicast and broadcast
 			delete aiou, delete aiou2;
@@ -247,6 +255,53 @@ void start_instance
 		else
 			std::cout << "fork() = " << pid[whoami] << std::endl;
 	}
+}
+
+void init
+	()
+{
+	// open pipes
+	for (size_t i = 0; i < N; i++)
+	{
+		for (size_t j = 0; j < N; j++)
+		{
+			if (pipe(pipefd[i][j]) < 0)
+				perror("t-astc (pipe)");
+			if (pipe(broadcast_pipefd[i][j]) < 0)
+				perror("t-astc (pipe)");
+		}
+	}
+}
+
+bool done
+	()
+{
+	// wait for childs and close pipes
+	bool result = true;
+	for (size_t i = 0; i < N; i++)
+	{
+		int wstatus = 0;
+		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
+		if (waitpid(pid[i], &wstatus, 0) != pid[i])
+			perror("t-astc (waitpid)");
+		if (!WIFEXITED(wstatus))
+		{
+			std::cerr << "ERROR: ";
+			if (WIFSIGNALED(wstatus))
+				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
+			if (WCOREDUMP(wstatus))
+				std::cerr << pid[i] << " dumped core" << std::endl;
+			result = false;
+		}
+		for (size_t j = 0; j < N; j++)
+		{
+			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
+				perror("t-astc (close)");
+			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
+				perror("t-astc (close)");
+		}
+	}
+	return result;
 }
 
 int main
@@ -270,59 +325,15 @@ int main
 	std::cout << "vtmf.PublishGroup(crs)" << std::endl;
 	vtmf->PublishGroup(crs);
 	
-	// open pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		for (size_t j = 0; j < N; j++)
-		{
-			if (pipe(pipefd[i][j]) < 0)
-				perror("t-astc (pipe)");
-			if (pipe(broadcast_pipefd[i][j]) < 0)
-				perror("t-astc (pipe)");
-		}
-	}
-	
-	// start childs (all correct)
+	// test case #1: all correct
+	init();
 	for (size_t i = 0; i < N; i++)
 		start_instance(crs, i, false);
+	if (!done())
+		return 1;
 	
-	// wait for childs and close pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		int wstatus = 0;
-		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], &wstatus, 0) != pid[i])
-			perror("t-astc (waitpid)");
-		if (!WIFEXITED(wstatus))
-		{
-			std::cerr << "ERROR: ";
-			if (WIFSIGNALED(wstatus))
-				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
-			if (WCOREDUMP(wstatus))
-				std::cerr << pid[i] << " dumped core" << std::endl;
-		}
-		for (size_t j = 0; j < N; j++)
-		{
-			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("t-astc (close)");
-			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
-				perror("t-astc (close)");
-		}
-	}
-
-	// open pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		for (size_t j = 0; j < N; j++)
-		{
-			if (pipe(pipefd[i][j]) < 0)
-				perror("t-astc (pipe)");
-			if (pipe(broadcast_pipefd[i][j]) < 0)
-				perror("t-astc (pipe)");
-		}
-	}
-	
-	// start childs (two corrupted parties)
+	// test case #2: two corrupted parties
+	init();
 	for (size_t i = 0; i < N; i++)
 	{
 		if ((i == (N - 1)) || (i == (N - 2)))
@@ -330,21 +341,8 @@ int main
 		else
 			start_instance(crs, i, false);
 	}
-	
-	// wait for childs and close pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], NULL, 0) != pid[i])
-			perror("t-astc (waitpid)");
-		for (size_t j = 0; j < N; j++)
-		{
-			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("t-astc (close)");
-			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
-				perror("t-astc (close)");
-		}
-	}
+	if (!done())
+		return 1;
 	
 	// release VTMF instance
 	delete vtmf;
