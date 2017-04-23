@@ -42,6 +42,7 @@ class aiounicast
 		const bool		aio_is_authenticated;
 		const bool		aio_is_encrypted;
 		bool			aio_is_initialized;
+		mpz_t			aio_hide_length;
 	public:
 		static const time_t	aio_timeout_none		= 0;
 		static const time_t	aio_timeout_very_short		= 1;
@@ -72,6 +73,8 @@ class aiounicast
 				aio_is_initialized(true),
 				n(n_in), j(j_in)
 		{
+			mpz_init_set_ui(aio_hide_length, 1L);
+			mpz_mul_2exp(aio_hide_length, aio_hide_length, 256L);
 		}
 
 		virtual bool Send
@@ -92,6 +95,7 @@ class aiounicast
 		virtual ~aiounicast
 			()
 		{
+			mpz_clear(aio_hide_length);
 		}
 };
 

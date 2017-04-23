@@ -63,6 +63,8 @@ class aiounicast_nonblock : public aiounicast
 	public:
 		std::vector<int>			fd_in, fd_out;
 		size_t					numWrite, numRead;
+		size_t					numEncrypted, numDecrypted;
+		size_t					numAuthenticated;
 
 		aiounicast_nonblock
 			(const size_t n_in, const size_t j_in,
@@ -107,7 +109,7 @@ class aiounicast_nonblock : public aiounicast
 			}
 
 			// initialize character counters
-			numWrite = 0, numRead = 0;
+			numWrite = 0, numRead = 0, numEncrypted = 0, numDecrypted = 0, numAuthenticated = 0;
 
 			// initialize MACs
 			if (aio_is_authenticated)
@@ -254,50 +256,44 @@ class aiounicast_nonblock : public aiounicast
 				return false;
 			if (timeout == aio_timeout_default)
 				timeout = aio_default_timeout;
-			// prepare write buffer with the message m
-			size_t size = mpz_sizeinbase(m, TMCG_MPZ_IO_BASE);
+			// prepare write buffer from the message m
+			mpz_t tmp;
+			mpz_init_set(tmp, m);
+			if (aio_is_encrypted)
+				mpz_add(tmp, tmp, aio_hide_length);
+			size_t size = mpz_sizeinbase(tmp, TMCG_MPZ_IO_BASE);
 			size_t bufsize = size + 2;
 			char *buf = new char[bufsize];
 			memset(buf, 0, bufsize);
-               		mpz_get_str(buf, TMCG_MPZ_IO_BASE, m);
-			// additionally, determine the real size of the
-			// string, because mpz_sizeinbase(m, TMCG_MPZ_IO_BASE)
-			// does not work in all cases correctly
+               		mpz_get_str(buf, TMCG_MPZ_IO_BASE, tmp);
+			mpz_clear(tmp);
+			// additionally, determine the real size of the corresponding string
+			// because mpz_sizeinbase() sometimes does not work correctly
 			size_t realsize = strnlen(buf, bufsize);
-			if (realsize < bufsize)
+			if ((realsize > 0) && (realsize < bufsize))
 			{
 				buf[realsize] = '\n'; // set newline as delimiter
+				realsize++;
 			}
 			else
 			{
-				std::cerr << "aiounicast_nonblock: realsize does not match bufsize" << std::endl;
+				std::cerr << "aiounicast_nonblock: realsize does not fit" << std::endl;
 				delete [] buf;
 				return false;
 			}
-			// We follow the MAC-then-Encrypt (MtE) paradigm, because it is more convenient for our
-			// purposes. However, it does not provide the best security properties with respect to
-			// the required 'secure channel'. We are aware of scientific discussion on that topic,
+			// We follow the Encrypt-then-Authenticate (EtA) paradigm, because it provides the
+			// best security properties with respect to the required 'secure channel'.
+			// Please note the scientific discussion on that topic,
 			// e.g., Mihir Bellare and Chanathip Namprempre: 'Authenticated Encryption: Relations
 			//       among notions and analysis of the generic composition paradigm', Advances in
 			//       Cryptology - ASIACRYPT 2000, LNCS 1976, pp. 531--545, 2000.
-			// To avoid problems, e.g. padding oracle attacks, we always use a stream cipher mode.
 			gcry_error_t err;
-			// calculate MAC
-			if (aio_is_authenticated)
-			{
-				err = gcry_mac_write(*buf_mac_out[i_in], buf, realsize);
-				if (err)
-				{
-					std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
-					std::cerr << gcry_strerror(err) << std::endl;
-					delete [] buf;
-					return false;
-				}
-			}
-			// encrypt the content of write buffer
+			// encrypt the content of write buffer (without delimiter) and send the IV to the receiver
 			if (aio_is_encrypted)
 			{
-				err = gcry_cipher_encrypt(*buf_enc_out[i_in], buf, realsize + 1, NULL, 0);
+				memmove(buf + 1, buf, realsize - 1);
+				buf[0] = '+'; // set plus-character als non-zero prefix
+				err = gcry_cipher_encrypt(*buf_enc_out[i_in], buf + 1, realsize - 1, NULL, 0);
 				if (err)
 				{
 					std::cerr << "libgcrypt: gcry_cipher_encrypt() failed" << std::endl;
@@ -305,7 +301,31 @@ class aiounicast_nonblock : public aiounicast
 					delete [] buf;
 					return false;
 				}
-				// first, send the plain IV to the receiver
+				numEncrypted += (realsize - 1);
+				// convert encrypted content to mpz and adjust write buffer accordingly
+				mpz_t encval;
+				mpz_init(encval);
+				mpz_import(encval, realsize, 1, 1, 1, 0, buf);
+				delete [] buf;
+				size = mpz_sizeinbase(encval, TMCG_MPZ_IO_BASE);
+				bufsize = size + 2;
+				buf = new char[bufsize];
+				memset(buf, 0, bufsize); // clear write buffer
+               			mpz_get_str(buf, TMCG_MPZ_IO_BASE, encval);
+				mpz_clear(encval);
+				realsize = strnlen(buf, bufsize);
+				if ((realsize > 0) && (realsize < bufsize))
+				{
+					buf[realsize] = '\n'; // set newline as delimiter
+					realsize++;
+				}
+				else
+				{
+					std::cerr << "aiounicast_nonblock: realsize does not fit" << std::endl;
+					delete [] buf;
+					return false;
+				}
+				// first, send IV without encryption 
 				if (!iv_flag_out[i_in])
 				{
 					time_t entry_time = time(NULL);
@@ -332,9 +352,10 @@ class aiounicast_nonblock : public aiounicast
 						realnum += num;
 					}
 					while ((realnum < blklen) && (time(NULL) < (entry_time + timeout)));
-					if (realnum != blklen)
+					// timeout occurred?
+					if (realnum < blklen)
 					{
-						std::cerr << "aiounicast_nonblock: sending IV failed" << std::endl;
+						std::cerr << "aiounicast_nonblock(" << j << "): IV send timeout for " << i_in << std::endl;
 						delete [] buf;
 						return false;
 					}
@@ -342,12 +363,24 @@ class aiounicast_nonblock : public aiounicast
 						iv_flag_out[i_in] = true; // IV has been sent
 				}
 			}
+			// calculate the MAC over all data including line delimiter
+			if (aio_is_authenticated)
+			{
+				err = gcry_mac_write(*buf_mac_out[i_in], buf, realsize);
+				if (err)
+				{
+					std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
+					std::cerr << gcry_strerror(err) << std::endl;
+					delete [] buf;
+					return false;
+				}
+			}
 			// send content of write buffer to party i_in
 			time_t entry_time = time(NULL);
 			size_t realnum = 0;
 			do
 			{
-				ssize_t num = write(fd_out[i_in], buf + realnum, realsize - realnum + 1);
+				ssize_t num = write(fd_out[i_in], buf + realnum, realsize - realnum);
 				if (num < 0)
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
@@ -366,14 +399,12 @@ class aiounicast_nonblock : public aiounicast
 				numWrite += num;
 				realnum += num;
 			}
-			while ((realnum < (realsize + 1)) && (time(NULL) < (entry_time + timeout)));
-			if (realnum < (realsize + 1))
-				realsize = realnum; // adjust realsize, if timeout occurred
+			while ((realnum < realsize) && (time(NULL) < (entry_time + timeout)));
+			delete [] buf;
 			// timeout occurred?
-			if (realsize == realnum)
+			if (realnum < realsize)
 			{
 				std::cerr << "aiounicast_nonblock(" << j << "): send timeout for " << i_in << std::endl;
-				delete [] buf;
 				return false;
 			}
 			if (aio_is_authenticated)
@@ -386,22 +417,10 @@ class aiounicast_nonblock : public aiounicast
 				{
 					std::cerr << "libgcrypt: gcry_mac_read() failed" << std::endl;
 					std::cerr << gcry_strerror(err) << std::endl;
-					delete [] buf, delete [] macbuf;
+					delete [] macbuf;
 					return false;
 				}
-				// encrypt the content of MAC buffer
-				if (aio_is_encrypted)
-				{
-					err = gcry_cipher_encrypt(*buf_enc_out[i_in], macbuf, macbuflen, NULL, 0);
-					if (err)
-					{
-						std::cerr << "libgcrypt: gcry_cipher_encrypt() failed" << std::endl;
-						std::cerr << gcry_strerror(err) << std::endl;
-						delete [] buf, delete [] macbuf;
-						return false;
-					}
-				}
-				// send content of MAC buffer (tag) to party i_in
+				// send content of MAC buffer (i.e. authentication tag)
 				realnum = 0;
 				do
 				{
@@ -417,7 +436,7 @@ class aiounicast_nonblock : public aiounicast
 						else
 						{
 							perror("aiounicast_nonblock (write)");
-							delete [] buf, delete [] macbuf;
+							delete [] macbuf;
 							return false;
 						}
 					}
@@ -425,7 +444,7 @@ class aiounicast_nonblock : public aiounicast
 					realnum += num;
 				}
 				while ((realnum < macbuflen) && (time(NULL) < (entry_time + timeout)));
-				delete [] buf, delete [] macbuf;
+				delete [] macbuf;
 				// timeout occurred?
 				if (realnum < macbuflen)
 				{
@@ -505,8 +524,8 @@ class aiounicast_nonblock : public aiounicast
 						// process the buffer
 						if (newline_found && ((buf_ptr[i_out] - newline_ptr - 1) >= maclen))
 						{
-							char *tmp = new char[newline_ptr + 1];
-							char *mac = new char[maclen + 1];
+							char *tmp = new char[newline_ptr + 1]; // allocate at least one char
+							char *mac = new char[maclen + 1]; // allocate at least one char
 							memset(tmp, 0, newline_ptr + 1);
 							memset(mac, 0, maclen);
 							if (newline_ptr > 0)
@@ -532,6 +551,17 @@ class aiounicast_nonblock : public aiounicast
 									delete [] tmp, delete [] mac;
 									return false;
 								}
+								numAuthenticated += newline_ptr;
+								char delim = '\n'; // include line delimiter
+								err = gcry_mac_write(*buf_mac_in[i_out], &delim, 1);
+								if (err)
+								{
+									std::cerr << "libgcrypt: gcry_mac_write() failed" << std::endl;
+									std::cerr << gcry_strerror(err) << std::endl;
+									delete [] tmp, delete [] mac;
+									return false;
+								}
+								numAuthenticated += 1;
 								err = gcry_mac_verify(*buf_mac_in[i_out], mac, maclen);
 								if (err)
 								{
@@ -541,25 +571,67 @@ class aiounicast_nonblock : public aiounicast
 									return false;
 								}
 							}
+							// convert and decrypt the corresponding part of the read buffer
+							if (aio_is_encrypted)
+							{
+								mpz_t encval;
+								mpz_init(encval);
+								if (mpz_set_str(encval, tmp, TMCG_MPZ_IO_BASE) < 0)
+								{
+									std::cerr << "libgmp: mpz_set_str() for encval failed" << std::endl;
+									delete [] tmp, delete [] mac;
+									return false;
+								}
+								size_t realsize = 0;
+								memset(tmp, 0, newline_ptr + 1); // clear tmp buffer
+								mpz_export(tmp, &realsize, 1, 1, 1, 0, encval);
+								if (realsize == 0)
+								{
+									std::cerr << "libgmp: mpz_export() failed for " << encval << std::endl;
+									delete [] tmp, delete [] mac;
+									return false;
+								}
+								mpz_clear(encval);
+								if (tmp[0] != '+')
+								{
+									std::cerr << "no prefix found" << std::endl;
+									delete [] tmp, delete [] mac;
+									return false;
+								}
+								gcry_error_t err;
+								err = gcry_cipher_decrypt(*buf_enc_in[i_out], tmp + 1, realsize - 1, NULL, 0);
+								if (err)
+								{
+									std::cerr << "libgcrypt: gcry_cipher_decrypt() failed" << std::endl;
+									std::cerr << gcry_strerror(err) << std::endl;
+									delete [] tmp, delete [] mac;
+									return false;
+								}
+								numDecrypted += (realsize - 1);
+								memmove(tmp, tmp + 1, realsize - 1); // remove prefix
+								tmp[realsize-1] = 0x00; // append a string delimiter
+							}
 							// extract value of m
 							if (mpz_set_str(m, tmp, TMCG_MPZ_IO_BASE) < 0)
 							{
-								std::cerr << "libgmp: mpz_set_str() failed" << std::endl;
+								std::cerr << "libgmp: mpz_set_str() for m from " << i_out << " failed" << std::endl;
 								delete [] tmp, delete [] mac;
 								return false;
 							}
 							delete [] tmp, delete [] mac;
+							if (aio_is_encrypted)
+								mpz_sub(m, m, aio_hide_length);
 							return true;
 						}
 						// no delimiter found; invalidate buffer flag
 						buf_flag[i_out] = false;
 					}
 					// read(2) -- do everything with asynchronous I/O
-					size_t max = buf_in_size - buf_ptr[i_out];
-					if (max > 0)
+					size_t maxbuf = buf_in_size - buf_ptr[i_out];
+					if (maxbuf > 0)
 					{
 						char *rptr = buf_in[i_out] + buf_ptr[i_out];
-						ssize_t num = read(fd_in[i_out], rptr, max);
+						ssize_t num = read(fd_in[i_out], rptr, maxbuf);
 						if (num < 0)
 						{
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
@@ -587,26 +659,14 @@ class aiounicast_nonblock : public aiounicast
 									std::cerr << "libgcrypt: gcry_cipher_setiv() failed" << std::endl;
 									std::cerr << gcry_strerror(err) << std::endl;
 								}
-								iv_flag_in[i_out] = true; // IV set
+								iv_flag_in[i_out] = true; // IV is set
 								num = buf_ptr[i_out] - blklen; // number of remaining bytes
 								// remove IV from the read buffer
 								memmove(buf_in[i_out], buf_in[i_out] + blklen, num);
-								rptr = buf_in[i_out];
 								buf_ptr[i_out] = num;
 							}
-							// decrypt the remainig part of the read buffer
 							if (iv_flag_in[i_out] && (num > 0))
-							{
-								gcry_error_t err;
-								err = gcry_cipher_decrypt(*buf_enc_in[i_out], rptr, num, NULL, 0);
-								if (err)
-								{
-									std::cerr << "libgcrypt: gcry_cipher_decrypt() failed" << std::endl;
-									std::cerr << gcry_strerror(err) << std::endl;
-									return false;
-								}
 								buf_flag[i_out] = true;
-							}
 						}
 						else if (num > 0)
 							buf_flag[i_out] = true;

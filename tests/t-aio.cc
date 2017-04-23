@@ -47,7 +47,7 @@ int pipefd[N][N][2];
 pid_t pid[N];
 
 void start_instance_nonblock
-	(const size_t whoami, const bool corrupted)
+	(const size_t whoami, const bool corrupted, const bool authenticated, const bool encrypted)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("t-aio (fork)");
@@ -71,7 +71,7 @@ void start_instance_nonblock
 
 			// create asynchronous authenticated and encrypted unicast channels
 			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami, uP_in, uP_out, uP_key,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short, authenticated, encrypted);
 
 			// send a simple message
 			bool ret = false;
@@ -97,7 +97,7 @@ void start_instance_nonblock
 					ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
 					if (ret)
 					{
-						assert(!mpz_cmp_ui(m, i));
+						assert(!mpz_cmp_ui(m, i)); // data should be always correct
 						ipos = std::find(froms.begin(), froms.end(), i);
 						if (ipos != froms.end())
 							froms.erase(ipos);
@@ -108,7 +108,7 @@ void start_instance_nonblock
 						std::cout << "P_" << whoami << ": timeout of " << i << std::endl;
 				}
 			}
-			assert(froms.size() <= T);
+			assert(froms.size() <= T); // at most T messages not received
 			for (size_t i = 0; i < froms.size(); i++)
 			{
 				assert(froms[i] < T); // only corrupted parties should fail
@@ -121,6 +121,10 @@ void start_instance_nonblock
 			uP_in.clear(), uP_out.clear(), uP_key.clear();
 			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
 				" aiou.numWrite = " << aiou->numWrite << std::endl;
+			std::cout << "P_" << whoami << ": aiou.numDecrypted = " << aiou->numDecrypted <<
+				" aiou.numEncrypted = " << aiou->numEncrypted << std::endl;
+			std::cout << "P_" << whoami << ": aiou.numAuthenticated = " <<
+				aiou->numAuthenticated << std::endl;
 
 			// release asynchronous unicast channels
 			delete aiou;
@@ -135,7 +139,7 @@ void start_instance_nonblock
 }
 
 void start_instance_select
-	(const size_t whoami, const bool corrupted, const bool authenticated)
+	(const size_t whoami, const bool corrupted, const bool authenticated, const bool encrypted)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("t-aio (fork)");
@@ -159,7 +163,7 @@ void start_instance_select
 
 			// create asynchronous authenticated and encrypted unicast channels
 			aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short, authenticated);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short, authenticated, encrypted);
 
 			// send a simple message
 			bool ret = false;
@@ -185,7 +189,7 @@ void start_instance_select
 					ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
 					if (ret)
 					{
-						assert(!mpz_cmp_ui(m, i));
+						assert(!mpz_cmp_ui(m, i)); // data should be always correct
 						ipos = std::find(froms.begin(), froms.end(), i);
 						if (ipos != froms.end())
 							froms.erase(ipos);
@@ -196,7 +200,7 @@ void start_instance_select
 						std::cout << "P_" << whoami << ": timeout of " << i << std::endl;
 				}
 			}
-			assert(froms.size() <= T);
+			assert(froms.size() <= T); // at most T messages not received
 			for (size_t i = 0; i < froms.size(); i++)
 			{
 				assert(froms[i] < T); // only corrupted parties should fail
@@ -209,6 +213,10 @@ void start_instance_select
 			uP_in.clear(), uP_out.clear(), uP_key.clear();
 			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
 				" aiou.numWrite = " << aiou->numWrite << std::endl;
+			std::cout << "P_" << whoami << ": aiou.numDecrypted = " << aiou->numDecrypted <<
+				" aiou.numEncrypted = " << aiou->numEncrypted << std::endl;
+			std::cout << "P_" << whoami << ": aiou.numAuthenticated = " <<
+				aiou->numAuthenticated << std::endl;
 
 			// release asynchronous unicast channels
 			delete aiou;
@@ -222,164 +230,141 @@ void start_instance_select
 	}
 }
 
+void init_nonblock
+	()
+{
+	// open pipes
+	for (size_t i = 0; i < N; i++)
+	{
+		for (size_t j = 0; j < N; j++)
+		{
+			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
+				perror("t-aio (pipe)");
+		}
+	}
+}
+
+void init_select
+	()
+{
+	// open pipes
+	for (size_t i = 0; i < N; i++)
+	{
+		for (size_t j = 0; j < N; j++)
+		{
+			if (pipe(pipefd[i][j]) < 0)
+				perror("t-aio (pipe)");
+		}
+	}
+}
+
+bool done
+	()
+{
+	// wait for childs and close pipes
+	bool result = true;
+	for (size_t i = 0; i < N; i++)
+	{
+		int wstatus = 0;
+		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
+		if (waitpid(pid[i], &wstatus, 0) != pid[i])
+			perror("t-aio (waitpid)");
+		if (!WIFEXITED(wstatus))
+		{
+			std::cerr << "ERROR: ";
+			if (WIFSIGNALED(wstatus))
+				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
+			if (WCOREDUMP(wstatus))
+				std::cerr << pid[i] << " dumped core" << std::endl;
+			result = false;
+		}
+		for (size_t j = 0; j < N; j++)
+		{
+			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
+				perror("t-aio (close)");
+		}
+	}
+	return result;
+}
+
 int main
 	(int argc, char **argv)
 {
 	assert(init_libTMCG());
 	
-	// open pipes
+	// test case #1a: all correct, not authenticated, not encrypted
+	init_nonblock();
 	for (size_t i = 0; i < N; i++)
-	{
-		for (size_t j = 0; j < N; j++)
-		{
-			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
-				perror("t-aio (pipe)");
-		}
-	}
+		start_instance_nonblock(i, false, false, false);
+	if (!done())
+		return 1;
+	// test case #1b: all correct, authenticated, not encrypted
+	init_nonblock();
+	for (size_t i = 0; i < N; i++)
+		start_instance_nonblock(i, false, true, false);
+	if (!done())
+		return 1;
+	// test case #1c: all correct, not authenticated, encrypted
+	init_nonblock();
+	for (size_t i = 0; i < N; i++)
+		start_instance_nonblock(i, false, false, true);
+	if (!done())
+		return 1;
+	// test case #1d: all correct, authenticated, encrypted
+	init_nonblock();
+	for (size_t i = 0; i < N; i++)
+		start_instance_nonblock(i, false, true, true);
+	if (!done())
+		return 1;
 	
-	// start childs (all correct)
-	for (size_t i = 0; i < N; i++)
-		start_instance_nonblock(i, false);
-	
-	// wait for childs and close pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		int wstatus = 0;
-		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], &wstatus, 0) != pid[i])
-			perror("t-aio (waitpid)");
-		if (!WIFEXITED(wstatus))
-		{
-			std::cerr << "ERROR: ";
-			if (WIFSIGNALED(wstatus))
-				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
-			if (WCOREDUMP(wstatus))
-				std::cerr << pid[i] << " dumped core" << std::endl;
-		}
-		for (size_t j = 0; j < N; j++)
-		{
-			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("t-aio (close)");
-		}
-	}
-
-	// open pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		for (size_t j = 0; j < N; j++)
-		{
-			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
-				perror("t-aio (pipe)");
-		}
-	}
-	
-	// start childs (T corrupted parties)
+	// test case #2: T corrupted parties, authenticated, encrypted
+	init_nonblock();
 	for (size_t i = 0; i < N; i++)
 	{
 		if (i < T)
-			start_instance_nonblock(i, true); // corrupted
+			start_instance_nonblock(i, true, true, true); // corrupted
 		else
-			start_instance_nonblock(i, false);
+			start_instance_nonblock(i, false, true, true);
 	}
-	
-	// wait for childs and close pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		int wstatus = 0;
-		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], &wstatus, 0) != pid[i])
-			perror("t-aio (waitpid)");
-		if (!WIFEXITED(wstatus))
-		{
-			std::cerr << "ERROR: ";
-			if (WIFSIGNALED(wstatus))
-				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
-			if (WCOREDUMP(wstatus))
-				std::cerr << pid[i] << " dumped core" << std::endl;
-		}
-		for (size_t j = 0; j < N; j++)
-		{
-			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("t-aio (close)");
-		}
-	}
+	if (!done())
+		return 1;
 
-	// open pipes
+	// test case #3a: all correct, not authenticated, not encrypted
+	init_select();
 	for (size_t i = 0; i < N; i++)
-	{
-		for (size_t j = 0; j < N; j++)
-		{
-			if (pipe(pipefd[i][j]) < 0)
-				perror("t-aio (pipe)");
-		}
-	}
-	
-	// start childs (all correct, not authenticated)
+		start_instance_select(i, false, false, false);
+	if (!done())
+		return 1;
+	// test case #3b: all correct, authenticated, not encrypted
+	init_select();
 	for (size_t i = 0; i < N; i++)
-		start_instance_select(i, false, false);
-	
-	// wait for childs and close pipes
+		start_instance_select(i, false, true, false);
+	if (!done())
+		return 1;
+	// test case #3c: all correct, not authenticated, encrypted
+	init_select();
 	for (size_t i = 0; i < N; i++)
-	{
-		int wstatus = 0;
-		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], &wstatus, 0) != pid[i])
-			perror("t-aio (waitpid)");
-		if (!WIFEXITED(wstatus))
-		{
-			std::cerr << "ERROR: ";
-			if (WIFSIGNALED(wstatus))
-				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
-			if (WCOREDUMP(wstatus))
-				std::cerr << pid[i] << " dumped core" << std::endl;
-		}
-		for (size_t j = 0; j < N; j++)
-		{
-			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("t-aio (close)");
-		}
-	}
+		start_instance_select(i, false, false, true);
+	if (!done())
+		return 1;
+	// test case #3d: all correct, authenticated, encrypted
+	init_select();
+	for (size_t i = 0; i < N; i++)
+		start_instance_select(i, false, true, true);
+	if (!done())
+		return 1;
 
-	// open pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		for (size_t j = 0; j < N; j++)
-		{
-			if (pipe(pipefd[i][j]) < 0)
-				perror("t-aio (pipe)");
-		}
-	}
-	
-	// start childs (T corrupted parties, authenticated channels)
+	// test case #4: T corrupted parties, authenticated, encrypted
+	init_select();
 	for (size_t i = 0; i < N; i++)
 	{
 		if (i < T)
-			start_instance_select(i, true, true); // corrupted
+			start_instance_select(i, true, true, true); // corrupted
 		else
-			start_instance_select(i, false, true);
+			start_instance_select(i, false, true, true);
 	}
-	
-	// wait for childs and close pipes
-	for (size_t i = 0; i < N; i++)
-	{
-		int wstatus = 0;
-		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], &wstatus, 0) != pid[i])
-			perror("t-aio (waitpid)");
-		if (!WIFEXITED(wstatus))
-		{
-			std::cerr << "ERROR: ";
-			if (WIFSIGNALED(wstatus))
-				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
-			if (WCOREDUMP(wstatus))
-				std::cerr << pid[i] << " dumped core" << std::endl;
-		}
-		for (size_t j = 0; j < N; j++)
-		{
-			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("t-aio (close)");
-		}
-	}
+	if (!done())
+		return 1;
 	
 	return 0;
 }

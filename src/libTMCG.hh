@@ -4,7 +4,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 2015, 
-                                       2016  Heiko Stamer <HeikoStamer@gmx.net>
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -209,12 +209,13 @@
 	#include <TMCG_StackSecret.hh>
 	#include <SchindelhauerTMCG.hh>
 	
-	// protocols not directly related to mental poker	
+	// cryptographic protocols not directly related to mental poker	
 	#include <NaorPinkasEOTP.hh>
 	#include <CachinKursawePetzoldShoupSEABP.hh>
 	#include <GennaroJareckiKrawczykRabinDKG.hh>
 	#include <JareckiLysyanskayaASTC.hh>
 
+	// miscellaneous stuff
 	#include <CallasDonnerhackeFinneyShawThayerRFC4880.hh>
 	
 	#include <cstring>
