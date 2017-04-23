@@ -188,7 +188,7 @@ void run_instance
 			if (rbc->DeliverFrom(mtv, i))
 			{
 				time_t utv;
-				utv = mpz_get_ui(mtv);
+				utv = (time_t)mpz_get_ui(mtv);
 				tvs.push_back(utv);
 			}
 			else
@@ -203,16 +203,9 @@ void run_instance
 	std::cout << "P_" << whoami << ": canonicalized key creation time = " << ckeytime << std::endl;
 
 	// at the end: deliver some more rounds for still waiting parties
-	std::cout << "P_" << whoami << ": waiting " << aiounicast::aio_timeout_very_long << " seconds for stalled parties" << std::endl;
-	mpz_t m;
-	mpz_init(m);
-	time_t entry_time = time(NULL);
-	do
-	{
-		rbc->DeliverFrom(m, whoami);
-	}
-	while (time(NULL) < (entry_time + aiounicast::aio_timeout_very_long));
-	mpz_clear(m);
+	time_t synctime = aiounicast::aio_timeout_very_long;
+	std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
+	rbc->Sync(synctime);
 
 	// create an OpenPGP DSA-based primary key and Elgamal-based subkey based on parameters from DKG
 	char buffer[2048];

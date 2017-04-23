@@ -1302,16 +1302,9 @@ void run_instance
 	interpol_shares.clear(), interpol_parties.clear();
 
 	// at the end: deliver some more rounds for waiting parties
-	std::cout << "P_" << whoami << ": waiting " << aiounicast::aio_timeout_very_long << " seconds for stalled parties" << std::endl;
-	mpz_t m;
-	mpz_init(m);
-	time_t entry_time = time(NULL);
-	do
-	{
-		rbc->DeliverFrom(m, whoami);
-	}
-	while (time(NULL) < (entry_time + aiounicast::aio_timeout_very_long));
-	mpz_clear(m);
+	time_t synctime = aiounicast::aio_timeout_very_long;
+	std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
+	rbc->Sync(synctime);
 
 	// release RBC
 	delete rbc;
