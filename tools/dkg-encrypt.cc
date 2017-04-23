@@ -63,16 +63,16 @@ int main
 	// parse packets of the provided public key
 	bool pubdsa = false, sigdsa = false, subelg = false, sigelg = false;
 	std::string u;
-	BYTE atype = 0, ptag = 0xFF;
-	BYTE dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
-	BYTE dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
-	OCTETS pkts, pub, sub, msg, lit, mdc, seipd, pkesk, all;
-	OCTETS seskey, prefix, enc, mdc_hashing, hash, keyid, pub_hashing, subkeyid, sub_hashing, issuer, dsa_hspd, elg_hspd;
+	tmcg_byte_t atype = 0, ptag = 0xFF;
+	tmcg_byte_t dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
+	tmcg_byte_t dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
+	tmcg_octets_t pkts, pub, sub, msg, lit, mdc, seipd, pkesk, all;
+	tmcg_octets_t seskey, prefix, enc, mdc_hashing, hash, keyid, pub_hashing, subkeyid, sub_hashing, issuer, dsa_hspd, elg_hspd;
 	gcry_mpi_t dsa_p, dsa_q, dsa_g, dsa_y, dsa_r, dsa_s, elg_p, elg_g, elg_y, elg_r, elg_s, gk, myk;
 	gcry_sexp_t dsakey, elgkey;
 	gcry_error_t ret;
 	size_t erroff;
-	TMCG_OPENPGP_CONTEXT ctx;
+	tmcg_openpgp_context_t ctx;
 	dsa_p = gcry_mpi_new(2048);
 	dsa_q = gcry_mpi_new(2048);
 	dsa_g = gcry_mpi_new(2048);
@@ -234,7 +234,7 @@ int main
 	}
 	
 	// build keys, check key usage and self-signatures
-	OCTETS dsa_trailer, elg_trailer, dsa_left, elg_left;
+	tmcg_octets_t dsa_trailer, elg_trailer, dsa_left, elg_left;
 	ret = gcry_sexp_build(&dsakey, &erroff, "(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", dsa_p, dsa_q, dsa_g, dsa_y);
 	if (ret)
 	{

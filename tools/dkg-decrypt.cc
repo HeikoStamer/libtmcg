@@ -51,7 +51,7 @@ GennaroJareckiKrawczykRabinDKG	*dkg;
 gcry_mpi_t 			dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_g, elg_y, elg_x;
 gcry_mpi_t 			gk, myk;
 gcry_sexp_t			elgkey;
-OCTETS				subkeyid, enc;
+tmcg_octets_t				subkeyid, enc;
 bool				have_seipd = false;
 
 void init_dkg
@@ -123,7 +123,7 @@ void read_private_key
 }
 
 void print_message
-	(const OCTETS &msg)
+	(const tmcg_octets_t &msg)
 {
 	// print out the decrypted message
 	std::cout << "Decrypted message is: ";
@@ -154,16 +154,16 @@ void parse_private_key
 	// parse the private key
 	bool secdsa = false, sigdsa = false, ssbelg = false, sigelg = false;
 	std::string u;
-	BYTE atype = 0, ptag = 0xFF;
-	BYTE dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
-	BYTE dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
-	BYTE *key, *iv;
-	OCTETS pkts, pub, sub;
-	OCTETS seskey, salt, mpis, hash_input, hash, keyid, pub_hashing, sub_hashing, issuer, dsa_hspd, elg_hspd;
+	tmcg_byte_t atype = 0, ptag = 0xFF;
+	tmcg_byte_t dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
+	tmcg_byte_t dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
+	tmcg_byte_t *key, *iv;
+	tmcg_octets_t pkts, pub, sub;
+	tmcg_octets_t seskey, salt, mpis, hash_input, hash, keyid, pub_hashing, sub_hashing, issuer, dsa_hspd, elg_hspd;
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t erroff, keylen, ivlen, chksum, mlen, chksum2;
-	TMCG_OPENPGP_CONTEXT ctx;
+	tmcg_openpgp_context_t ctx;
 	gcry_mpi_t dsa_r, dsa_s, elg_r, elg_s;
 	dsa_r = gcry_mpi_new(2048);
 	dsa_s = gcry_mpi_new(2048);
@@ -329,7 +329,7 @@ void parse_private_key
 								std::cerr << "ERROR: nothing to decrypt" << std::endl;
 								exit(-1);
 							}
-							key = new BYTE[keylen], iv = new BYTE[ivlen];
+							key = new tmcg_byte_t[keylen], iv = new tmcg_byte_t[ivlen];
 							for (size_t i = 0; i < keylen; i++)
 								key[i] = seskey[i];
 							for (size_t i = 0; i < ivlen; i++)
@@ -494,7 +494,7 @@ void parse_private_key
 								std::cerr << "ERROR: nothing to decrypt" << std::endl;
 								exit(-1);
 							}
-							key = new BYTE[keylen], iv = new BYTE[ivlen];
+							key = new tmcg_byte_t[keylen], iv = new tmcg_byte_t[ivlen];
 							for (size_t i = 0; i < keylen; i++)
 								key[i] = seskey[i];
 							for (size_t i = 0; i < ivlen; i++)
@@ -620,7 +620,7 @@ void parse_private_key
 
 	// build keys, check key usage and self-signatures
 	gcry_sexp_t dsakey;
-	OCTETS dsa_trailer, elg_trailer, dsa_left, elg_left;
+	tmcg_octets_t dsa_trailer, elg_trailer, dsa_left, elg_left;
 	std::cout << "Primary User ID: " << u << std::endl;
 	ret = gcry_sexp_build(&dsakey, &erroff, "(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))", dsa_p, dsa_q, dsa_g, dsa_y, dsa_x);
 	if (ret)
@@ -728,11 +728,11 @@ void parse_message
 	(const std::string in)
 {
 	// parse encrypted message
-	TMCG_OPENPGP_CONTEXT ctx;
-	OCTETS pkts, pkesk_keyid;
+	tmcg_openpgp_context_t ctx;
+	tmcg_octets_t pkts, pkesk_keyid;
 	bool have_pkesk = false, have_sed = false;
-	BYTE ptag = 0xFF;
-	BYTE atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(in, pkts);
+	tmcg_byte_t ptag = 0xFF;
+	tmcg_byte_t atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(in, pkts);
 	std::cout << "ArmorDecode() = " << (int)atype << std::endl;
 	if (atype == 1)
 	{
@@ -1053,7 +1053,7 @@ void combine_decryption_shares
 }
 
 void decrypt_session_key
-	(OCTETS &out)
+	(tmcg_octets_t &out)
 {
 	// decrypt the session key
 	gcry_error_t ret;
@@ -1076,11 +1076,11 @@ void decrypt_session_key
 }
 
 void decrypt_message
-	(const OCTETS &in, OCTETS &key, OCTETS &out)
+	(const tmcg_octets_t &in, tmcg_octets_t &key, tmcg_octets_t &out)
 {
 	// decrypt the given message
 	gcry_error_t ret;
-	OCTETS prefix, litmdc;
+	tmcg_octets_t prefix, litmdc;
 	if (have_seipd)
 		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256(in, key, prefix, false, litmdc);
 	else
@@ -1091,10 +1091,10 @@ void decrypt_message
 		exit(-1);
 	}
 	// parse content
-	TMCG_OPENPGP_CONTEXT ctx;
+	tmcg_openpgp_context_t ctx;
 	bool have_lit = false, have_mdc = false;
-	OCTETS lit, mdc_hash;
-	BYTE ptag = 0xFF;
+	tmcg_octets_t lit, mdc_hash;
+	tmcg_byte_t ptag = 0xFF;
 	if (litmdc.size() > (sizeof(ctx.mdc_hash) + 2))
 		lit.insert(lit.end(), litmdc.begin(), litmdc.end() - (sizeof(ctx.mdc_hash) + 2));
 	while (litmdc.size() && ptag)
@@ -1147,7 +1147,7 @@ void decrypt_message
 		std::cerr << "ERROR: no modification detection code found" << std::endl;
 		exit(-1);
 	}
-	OCTETS mdc_hashing, hash;
+	tmcg_octets_t mdc_hashing, hash;
 	if (have_mdc)
 	{
 		mdc_hashing.insert(mdc_hashing.end(), prefix.begin(), prefix.end()); // "it includes the prefix data described above" [RFC4880]
@@ -1329,7 +1329,7 @@ void run_instance
 	// release asynchronous unicast and broadcast
 	delete aiou, delete aiou2;
 
-	OCTETS msg, seskey;
+	tmcg_octets_t msg, seskey;
 	decrypt_session_key(seskey);
 	decrypt_message(enc, seskey, msg);
 	release_mpis();
@@ -1441,7 +1441,7 @@ int main
 		if (nonint)
 		{
 			size_t idx, whoami = 0;
-			OCTETS msg, seskey;
+			tmcg_octets_t msg, seskey;
 			std::string dds, thispeer = peers[whoami];
 			mpz_t r_i, c, r;
 			std::vector<size_t> interpol_parties;
@@ -1453,8 +1453,8 @@ int main
 			parse_private_key(armored_seckey);
 			parse_message(armored_message);
 			compute_decryption_share(whoami, dds);
-			OCTETS dds_input;
-			dds_input.push_back((BYTE)(mpz_wrandom_ui() % 256)); // bluring the decryption share
+			tmcg_octets_t dds_input;
+			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // bluring the decryption share
 			for (size_t i = 0; i < dds.length(); i++)
 				dds_input.push_back(dds[i]);
 			std::string dds_radix;
@@ -1472,7 +1472,7 @@ int main
 			std::cout << "Now, enter decryption shares (one per line; ^D for EOF) from other parties: " << std::endl;
 			while (std::getline(std::cin, dds_radix))
 			{
-				OCTETS dds_output;
+				tmcg_octets_t dds_output;
 				dds = "";
 				CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode(dds_radix, dds_output);
 				for (size_t i = 1; i < dds_output.size(); i++)

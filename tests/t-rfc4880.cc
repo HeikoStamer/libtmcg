@@ -35,8 +35,8 @@ int main
 	(int argc, char **argv)
 {
 	gcry_error_t ret;
-	OCTETS in, out;
-	BYTE b;
+	tmcg_octets_t in, out;
+	tmcg_byte_t b;
 
 	// testing Radix64Encode() and Radix64Decode()
 	for (size_t j = 0; j < 256; j++)
@@ -93,7 +93,7 @@ int main
 	size_t erroff;
 	gcry_mpi_t gk, myk;
 	gcry_sexp_t elgkey, elgparms;
-	OCTETS lit, seskey, prefix, enc, subkeyid;
+	tmcg_octets_t lit, seskey, prefix, enc, subkeyid;
 	std::string m = "This is a test message.", armored_message;
 	in.clear();
 	for (size_t i = 0; i < m.length(); i++)
@@ -129,7 +129,7 @@ int main
 	}
 
 	// testing S2K functions
-	BYTE octcnt = 1;
+	tmcg_byte_t octcnt = 1;
 	size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6);
 	size_t keylen = gcry_cipher_get_algo_keylen(TMCG_GCRY_ENC_ALGO);
 	std::string keystr = "Test";
@@ -141,7 +141,7 @@ int main
 	err = gcry_kdf_derive(keystr.c_str(), keystr.length(), GCRY_KDF_ITERSALTED_S2K,
 		TMCG_GCRY_MD_ALGO, salt, sizeof(salt), hashcnt, sizeof(key), key);
 	assert(!err);
-	OCTETS salt2, out2;
+	tmcg_octets_t salt2, out2;
 	out.clear();
 	for (size_t i = 0; i < sizeof(key); i++)
 		out.push_back(key[i]); // copy the result

@@ -31,7 +31,7 @@
 #include "CallasDonnerhackeFinneyShawThayerRFC4880.hh"
 
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength
-	(const BYTE algo)
+	(const tmcg_byte_t algo)
 {
 	switch (algo)
 	{
@@ -59,7 +59,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength
 }
 
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength
-	(const BYTE algo)
+	(const tmcg_byte_t algo)
 {
 	// Most ciphers have a block size of 8 octets. The AES and
 	// Twofish have a block size of 16 octets.
@@ -87,7 +87,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength
 }
 
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashLength
-	(const BYTE algo)
+	(const tmcg_byte_t algo)
 {
 	switch (algo)
 	{
@@ -110,7 +110,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashLength
 }
 
 int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRY
-	(const BYTE algo)
+	(const tmcg_byte_t algo)
 {
 	switch (algo)
 	{
@@ -134,7 +134,7 @@ int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRY
 }
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare
-	(const OCTETS &in, const OCTETS &in2)
+	(const tmcg_octets_t &in, const tmcg_octets_t &in2)
 {
 	if (in.size() != in2.size())
 		return false;
@@ -147,7 +147,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare
 // ===========================================================================
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
-	(const OCTETS &in, std::string &out, bool linebreaks)
+	(const tmcg_octets_t &in, std::string &out, bool linebreaks)
 {
 	size_t len = in.size();
 	size_t i = 0, c = 1;
@@ -157,14 +157,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 	// referenced by the index is placed in the output string.
 	for (; len >= 3; len -= 3, i += 3)
 	{
-		BYTE l[4];
+		tmcg_byte_t l[4];
 		l[0] = (in[i] & 0xFC) >> 2;
 		l[1] = ((in[i] & 0x03) << 4) + ((in[i+1] & 0xF0) >> 4);
 		l[2] = ((in[i+1] & 0x0F) << 2) + ((in[i+2] & 0xC0) >> 6);
 		l[3] = in[i+2] & 0x3F;
 		for (size_t j = 0; j < 4; j++, c++)
 		{
-			out += tRadix64[l[j]];
+			out += tmcg_tRadix64[l[j]];
 			// The encoded output stream must be represented
 			// in lines of no more than 76 characters each.
 			if (((c % TMCG_OPENPGP_RADIX64_MC) == 0) &&
@@ -189,13 +189,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 	//    to the output. 
 	if (len == 2)
 	{
-		BYTE l[3];
+		tmcg_byte_t l[3];
 		l[0] = (in[i] & 0xFC) >> 2;
 		l[1] = ((in[i] & 0x03) << 4) + ((in[i+1] & 0xF0) >> 4);
 		l[2] = ((in[i+1] & 0x0F) << 2);
 		for (size_t j = 0; j < 3; j++, c++)
 		{
-			out += tRadix64[l[j]];
+			out += tmcg_tRadix64[l[j]];
 			// The encoded output stream must be represented
 			// in lines of no more than 76 characters each.
 			if (linebreaks && ((c % TMCG_OPENPGP_RADIX64_MC) == 0))
@@ -205,12 +205,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 	}
 	else if (len == 1)
 	{
-		BYTE l[2];
+		tmcg_byte_t l[2];
 		l[0] = (in[i] & 0xFC) >> 2;
 		l[1] = ((in[i] & 0x03) << 4);
 		for (size_t j = 0; j < 2; j++, c++)
 		{
-			out += tRadix64[l[j]];
+			out += tmcg_tRadix64[l[j]];
 			// The encoded output stream must be represented
 			// in lines of no more than 76 characters each.
 			if (linebreaks && ((c % TMCG_OPENPGP_RADIX64_MC) == 0))
@@ -226,7 +226,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode
-	(std::string in, OCTETS &out)
+	(std::string in, tmcg_octets_t &out)
 {
 	// remove all whitespaces, delimiters and other non-radix64 characters
 	in.erase(std::remove_if(in.begin(), in.end(), notRadix64()), in.end());
@@ -236,10 +236,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode
 		in += "="; // append pad until multiple of four
 	for (size_t i = 0; i < len; i += 4)
 	{
-        	BYTE l[4];
+        	tmcg_byte_t l[4];
 		for (size_t j = 0; j < 4; j++)
-			l[j] = fRadix64[(size_t)in[i+j]];
-		BYTE t[3];
+			l[j] = tmcg_fRadix64[(size_t)in[i+j]];
+		tmcg_byte_t t[3];
 		t[0] = ((l[0] & 0x3F) << 2) + ((l[1] & 0x30) >> 4);
 		t[1] = ((l[1] & 0x0F) << 4) + ((l[2] & 0x3C) >> 2);
 		t[2] = ((l[2] & 0x03) << 6) + (l[3] & 0x3F);
@@ -250,7 +250,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Compute
-	(const OCTETS &in, OCTETS &out)
+	(const tmcg_octets_t &in, tmcg_octets_t &out)
 {
 	// The CRC is computed by using the generator 0x864CFB and an
 	// initialization of 0xB704CE. The accumulation is done on the
@@ -275,9 +275,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Compute
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Encode
-	(const OCTETS &in, std::string &out)
+	(const tmcg_octets_t &in, std::string &out)
 {
-	OCTETS crc;
+	tmcg_octets_t crc;
 
 	// The checksum is a 24-bit Cyclic Redundancy Check (CRC) converted
 	// to four characters of radix-64 encoding by the same MIME base64
@@ -288,7 +288,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Encode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
-	(const BYTE type, const OCTETS &in, std::string &out)
+	(const tmcg_byte_t type, const tmcg_octets_t &in, std::string &out)
 {
 	// Concatenating the following data creates ASCII Armor:
 	//  - An Armor Header Line, appropriate for the type of data
@@ -376,10 +376,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 	}
 }
 
-BYTE CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
-	(const std::string in, OCTETS &out)
+tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
+	(const std::string in, tmcg_octets_t &out)
 {
-	BYTE type = 0;
+	tmcg_byte_t type = 0;
 	size_t spos = 0, rpos = 0, rlen = 4, cpos = 0, clen = 3, epos = 0;
 
 	rpos = in.find("\r\n\r\n");
@@ -427,7 +427,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	{
 		if (in.find("-----", spos + 34) != epos)
 			return 0; // nested armor block detected
-		OCTETS decoded_data;
+		tmcg_octets_t decoded_data;
 		std::string chksum = "";
 		std::string data = in.substr(rpos + rlen, cpos - rpos - rlen);
 		Radix64Decode(data, decoded_data);
@@ -445,10 +445,10 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
-	(const OCTETS &in, OCTETS &out)
+	(const tmcg_octets_t &in, tmcg_octets_t &out)
 {
-	BYTE *buffer = new BYTE[in.size() + 3]; // additional 3 bytes needed
-	BYTE *hash = new BYTE[20]; // fixed output size of SHA-1
+	tmcg_byte_t *buffer = new tmcg_byte_t[in.size() + 3]; // additional 3 bytes needed
+	tmcg_byte_t *hash = new tmcg_byte_t[20]; // fixed output size of SHA-1
 
 	// A V4 fingerprint is the 160-bit SHA-1 hash of the octet 0x99,
 	// followed by the two-octet packet length, followed by the entire
@@ -466,9 +466,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
-	(const OCTETS &in, OCTETS &out)
+	(const tmcg_octets_t &in, tmcg_octets_t &out)
 {
-	OCTETS fpr;
+	tmcg_octets_t fpr;
 
 	// A Key ID is an eight-octet scalar that identifies a key.
 	// Implementations SHOULD NOT assume that Key IDs are unique.
@@ -480,12 +480,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
-	(const BYTE algo, const OCTETS &in, OCTETS &out)
+	(const tmcg_byte_t algo, const tmcg_octets_t &in, tmcg_octets_t &out)
 {
 	int a = AlgorithmHashGCRY(algo);
 	size_t dlen = gcry_md_get_algo_dlen(a);
-	BYTE *buffer = new BYTE[in.size()];
-	BYTE *hash = new BYTE[dlen];
+	tmcg_byte_t *buffer = new tmcg_byte_t[in.size()];
+	tmcg_byte_t *hash = new tmcg_byte_t[dlen];
 	for (size_t i = 0; i < in.size(); i++)
 		buffer[i] = in[i];
 	gcry_md_hash_buffer(a, hash, buffer, in.size()); 
@@ -496,7 +496,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
-	(const BYTE algo, const size_t cnt, const OCTETS &in, OCTETS &out)
+	(const tmcg_byte_t algo, const size_t cnt, const tmcg_octets_t &in, tmcg_octets_t &out)
 {
 	int a = AlgorithmHashGCRY(algo);
 	gcry_error_t ret;
@@ -512,7 +512,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 		for (size_t i = 0; (i < in.size()) && (c < cnt); i++, c++)
 			gcry_md_putc(hd, in[i]);
 	}
-	BYTE *hash = gcry_md_read(hd, a);
+	tmcg_byte_t *hash = gcry_md_read(hd, a);
 	if (hash != NULL)
 	{
 		size_t dlen = gcry_md_get_algo_dlen(a);
@@ -523,9 +523,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
-	(const BYTE algo, const size_t sklen, const std::string in, 
-	 const OCTETS &salt, const bool iterated, const BYTE octcnt, 
-	 OCTETS &out)
+	(const tmcg_byte_t algo, const size_t sklen, const std::string in, 
+	 const tmcg_octets_t &salt, const bool iterated, const tmcg_byte_t octcnt, 
+	 tmcg_octets_t &out)
 {
 	// The count is coded into a one-octet number using the following
 	// formula:
@@ -578,7 +578,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 	// context(s) as with the other S2K algorithms.
 	if (hashlen >= sklen)
 	{
-		OCTETS hash_in, hash_out;
+		tmcg_octets_t hash_in, hash_out;
 		hash_in.insert(hash_in.end(), salt.begin(), salt.end());
 		for (size_t i = 0; i < in.length(); i++)
 			hash_in.push_back(in[i]);
@@ -595,7 +595,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 		size_t skcnt = 0;
 		for (size_t j = 0; j < instances; j++)
 		{
-			OCTETS hash_in, hash_out;
+			tmcg_octets_t hash_in, hash_out;
 			for (size_t i = 0; i < j; i++)
 				hash_in.push_back(0x00); // preload zeros
 			hash_in.insert(hash_in.end(), salt.begin(), salt.end());
@@ -615,14 +615,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 // ===========================================================================
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTagEncode
-	(const BYTE tag, OCTETS &out)
+	(const tmcg_byte_t tag, tmcg_octets_t &out)
 {
 	// use V4 packet format
 	out.push_back(tag | 0x80 | 0x40);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthEncode
-	(const size_t len, OCTETS &out)
+	(const size_t len, tmcg_octets_t &out)
 {
 	// use scalar length format
 	out.push_back(0xFF);
@@ -633,7 +633,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode
-	(const time_t in, OCTETS &out)
+	(const time_t in, tmcg_octets_t &out)
 {
 	// A time field is an unsigned four-octet number containing the number
 	// of seconds elapsed since midnight, 1 January 1970 UTC.
@@ -644,19 +644,19 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode
-	(OCTETS &out)
+	(tmcg_octets_t &out)
 {
 	time_t current = time(NULL);
 	PacketTimeEncode(current, out);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
-	(const gcry_mpi_t in, OCTETS &out, size_t &sum)
+	(const gcry_mpi_t in, tmcg_octets_t &out, size_t &sum)
 {
 	gcry_error_t ret;
 	size_t bitlen = gcry_mpi_get_nbits(in);
 	size_t buflen = ((bitlen + 7) / 8) + 2;
-	BYTE *buffer = new BYTE[buflen];
+	tmcg_byte_t *buffer = new tmcg_byte_t[buflen];
 
 	// Multiprecision integers (also called MPIs) are unsigned integers
 	// used to hold large integers such as the ones used in cryptographic
@@ -677,14 +677,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
-	(const gcry_mpi_t in, OCTETS &out)
+	(const gcry_mpi_t in, tmcg_octets_t &out)
 {
 	size_t sum = 0;
 	PacketMPIEncode(in, out, sum);
 }
 
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
-	(const OCTETS &in, gcry_mpi_t &out, size_t &sum)
+	(const tmcg_octets_t &in, gcry_mpi_t &out, size_t &sum)
 {
 	if (in.size() < 2)
 		return 0; // error: no length given
@@ -692,7 +692,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 	size_t buflen = ((in[0] << 8) + in[1] + 7) / 8;
 	if (in.size() < (2 + buflen))
 		return 0; // error: mpi too short
-	BYTE *buffer = new BYTE[buflen];
+	tmcg_byte_t *buffer = new tmcg_byte_t[buflen];
 	for (size_t i = 0; i < buflen; i++)
 	{
 		buffer[i] = in[2 + i];
@@ -708,7 +708,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 }
 
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
-	(const OCTETS &in, gcry_mpi_t &out)
+	(const tmcg_octets_t &in, gcry_mpi_t &out)
 {
 	size_t sum = 0;
 	return PacketMPIDecode(in, out, sum);
@@ -717,8 +717,8 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 // ===========================================================================
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode
-	(const OCTETS &keyid, const gcry_mpi_t gk, const gcry_mpi_t myk, 
-	 OCTETS &out)
+	(const tmcg_octets_t &keyid, const gcry_mpi_t gk, const gcry_mpi_t myk, 
+	 tmcg_octets_t &out)
 {
 	size_t gklen = (gcry_mpi_get_nbits(gk) + 7) / 8;
 	size_t myklen = (gcry_mpi_get_nbits(myk) + 7) / 8;
@@ -777,8 +777,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
-	(const OCTETS &hashing, const OCTETS &left, const gcry_mpi_t r, 
-	 const gcry_mpi_t s, OCTETS &out)
+	(const tmcg_octets_t &hashing, const tmcg_octets_t &left, const gcry_mpi_t r, 
+	 const gcry_mpi_t s, tmcg_octets_t &out)
 {
 	size_t rlen = (gcry_mpi_get_nbits(r) + 7) / 8;
 	size_t slen = (gcry_mpi_get_nbits(s) + 7) / 8;
@@ -804,7 +804,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
-	(const BYTE type, bool critical, const OCTETS &in, OCTETS &out)
+	(const tmcg_byte_t type, bool critical, const tmcg_octets_t &in, tmcg_octets_t &out)
 {
 	// A subpacket data set consists of zero or more Signature subpackets.
 	// In Signature packets, the subpacket data set is preceded by a two-
@@ -828,8 +828,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
-	(const BYTE sigtype, const time_t sigtime, const OCTETS &flags,
-	 const OCTETS &issuer, OCTETS &out)
+	(const tmcg_byte_t sigtype, const time_t sigtime, const tmcg_octets_t &flags,
+	 const tmcg_octets_t &issuer, tmcg_octets_t &out)
 {
 	size_t subpkts = 6;
 	size_t subpktlen = (subpkts * 6) + 4 + flags.size() + issuer.size() + 3;
@@ -841,7 +841,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
 	out.push_back(subpktlen >> 8); // length of hashed subpacket data
 	out.push_back(subpktlen);
 		// signature creation time
-		OCTETS subpkt_sigtime;
+		tmcg_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
 		SubpacketEncode(2, false, subpkt_sigtime, out);
 		// key flags
@@ -849,22 +849,22 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
 		// issuer
 		SubpacketEncode(16, false, issuer, out);
 		// preferred symmetric algorithms
-		OCTETS psa;
+		tmcg_octets_t psa;
 		psa.push_back(9); // AES256
 		SubpacketEncode(11, false, psa, out);
 		// preferred hash algorithms
-		OCTETS pha;
+		tmcg_octets_t pha;
 		pha.push_back(8); // SHA256
 		SubpacketEncode(21, false, pha, out);
 		// preferred compression algorithms
-		OCTETS pca;
+		tmcg_octets_t pca;
 		pca.push_back(0); // uncompressed
 		SubpacketEncode(22, false, pca, out);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	(const time_t keytime, const gcry_mpi_t p, const gcry_mpi_t q, 
-	 const gcry_mpi_t g, const gcry_mpi_t y, OCTETS &out)
+	 const gcry_mpi_t g, const gcry_mpi_t y, tmcg_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
 	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
@@ -908,7 +908,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	(const time_t keytime, const gcry_mpi_t p, const gcry_mpi_t q,
 	 const gcry_mpi_t g, const gcry_mpi_t y, const gcry_mpi_t x, 
-	 const std::string passphrase, OCTETS &out)
+	 const std::string passphrase, tmcg_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
 	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
@@ -994,8 +994,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 		out.push_back(9); // AES256
 		out.push_back(0x03); // Iterated and Salted S2K
 		out.push_back(8); // SHA256
-		BYTE rand[8], iv[16], key[32], count;
-		OCTETS salt, plain, hash, seskey, prefix;
+		tmcg_byte_t rand[8], iv[16], key[32], count;
+		tmcg_octets_t salt, plain, hash, seskey, prefix;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
 		count = 0x01;
@@ -1013,7 +1013,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 		PacketMPIEncode(x, plain); // MPI x
 		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
 		plain.insert(plain.end(), hash.begin(), hash.end()); // append hash
-		BYTE *buffer = new BYTE[plain.size()];
+		tmcg_byte_t *buffer = new tmcg_byte_t[plain.size()];
 		for (size_t i = 0; i < plain.size(); i++)
 			buffer[i] = plain[i];
 		gcry_cipher_hd_t hd;
@@ -1056,7 +1056,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 	(const time_t keytime, const gcry_mpi_t p, const gcry_mpi_t g, 
-	 const gcry_mpi_t y, OCTETS &out)
+	 const gcry_mpi_t y, tmcg_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
 	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
@@ -1082,7 +1082,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	(const time_t keytime, const gcry_mpi_t p, const gcry_mpi_t g,
 	 const gcry_mpi_t y, const gcry_mpi_t x, const std::string passphrase,
-	 OCTETS &out)
+	 tmcg_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
 	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
@@ -1116,8 +1116,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 		out.push_back(9); // AES256
 		out.push_back(0x03); // Iterated and Salted S2K
 		out.push_back(8); // SHA256
-		BYTE rand[8], iv[16], key[32], count;
-		OCTETS salt, plain, hash, seskey, prefix;
+		tmcg_byte_t rand[8], iv[16], key[32], count;
+		tmcg_octets_t salt, plain, hash, seskey, prefix;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
 		count = 0x01;
@@ -1135,7 +1135,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 		PacketMPIEncode(x, plain); // MPI x
 		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
 		plain.insert(plain.end(), hash.begin(), hash.end()); // append hash
-		BYTE *buffer = new BYTE[plain.size()];
+		tmcg_byte_t *buffer = new tmcg_byte_t[plain.size()];
 		for (size_t i = 0; i < plain.size(); i++)
 			buffer[i] = plain[i];
 		gcry_cipher_hd_t hd;
@@ -1177,7 +1177,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode
-	(const OCTETS &in, OCTETS &out)
+	(const tmcg_octets_t &in, tmcg_octets_t &out)
 {
 	// The Symmetrically Encrypted Data packet contains data encrypted with
 	// a symmetric-key algorithm. When it has been decrypted, it contains
@@ -1193,7 +1193,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode
-	(const OCTETS &in, OCTETS &out)
+	(const tmcg_octets_t &in, tmcg_octets_t &out)
 {
 	// A Literal Data packet contains the body of a message; data that is
 	// not to be further interpreted.
@@ -1233,7 +1233,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode
-	(const std::string uid, OCTETS &out)
+	(const std::string uid, tmcg_octets_t &out)
 {
 	// A User ID packet consists of UTF-8 text that is intended to 
 	// represent the name and email address of the key holder. By
@@ -1247,7 +1247,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSeipdEncode
-	(const OCTETS &in, OCTETS &out)
+	(const tmcg_octets_t &in, tmcg_octets_t &out)
 {
 	// The Symmetrically Encrypted Integrity Protected Data packet is a
 	// variant of the Symmetrically Encrypted Data packet. It is a new
@@ -1321,7 +1321,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSeipdEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMdcEncode
-	(const OCTETS &in, OCTETS &out)
+	(const tmcg_octets_t &in, tmcg_octets_t &out)
 {
 	// The Modification Detection Code packet contains a SHA-1 hash of
 	// plaintext data, which is used to detect message modification. It is
@@ -1350,8 +1350,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMdcEncode
 
 // ===========================================================================
 
-BYTE CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
-	(OCTETS &in, TMCG_OPENPGP_CONTEXT &out)
+tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
+	(tmcg_octets_t &in, tmcg_openpgp_context_t &out)
 {
 	if (in.size() < 2)
 		return 0; // error: incorrect subpacket header
@@ -1403,7 +1403,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 	// evaluator that it would prefer a new, unknown feature to generate an
 	// error than be ignored.
 	out.critical = false;
-	BYTE type = in[headlen-1];
+	tmcg_byte_t type = in[headlen-1];
 	if ((type & 0x80) == 0x80)
 	{
 		out.critical = true;
@@ -1415,7 +1415,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 		return 0; // error: subpacket without type octet
 	if (in.size() < (headlen + len))
 		return 0; // error: subpacket too short
-	OCTETS pkt;
+	tmcg_octets_t pkt;
 	pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+len);
 	switch (type)
 	{
@@ -1591,13 +1591,13 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 	return type;
 }
 
-BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
-	(OCTETS &in, TMCG_OPENPGP_CONTEXT &out)
+tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
+	(tmcg_octets_t &in, tmcg_openpgp_context_t &out)
 {
 	if (in.size() < 2)
 		return 0; // error: incorrect packet header
-	BYTE tag = in[0];
-	BYTE lentype = 0x00;
+	tmcg_byte_t tag = in[0];
+	tmcg_byte_t lentype = 0x00;
 	if ((tag & 0x80) != 0x80)
 		return 0; // error: Bit 7 of first octet not set
 	if ((tag & 0x40) == 0x40)
@@ -1688,9 +1688,9 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		return 0; // unknown error
 	if (in.size() < (headlen + len))
 		return 0; // error: packet too short
-	BYTE sptype = 0xFF;
+	tmcg_byte_t sptype = 0xFF;
 	size_t mlen = 0;
-	OCTETS pkt, hspd, uspd, mpis;
+	tmcg_octets_t pkt, hspd, uspd, mpis;
 	pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+len);
 	memset(&out, 0, sizeof(out)); // clear output context
 	// Exportable Certification: If this packet is not present, the
@@ -1752,7 +1752,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			hspd.insert(hspd.end(), 
 				pkt.begin()+6, pkt.begin()+6+hspdlen);
 			out.hspdlen = hspdlen;
-			out.hspd = new BYTE[out.hspdlen];
+			out.hspd = new tmcg_byte_t[out.hspdlen];
 			for (size_t i = 0; i < out.hspdlen; i++)
 				out.hspd[i] = pkt[6+i];
 			while (hspd.size() && sptype)
@@ -1769,7 +1769,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			// If a subpacket is not hashed, then the information
 			// in it cannot be considered definitive because it 
 			// is not part of the signature proper.
-			TMCG_OPENPGP_CONTEXT untrusted;
+			tmcg_openpgp_context_t untrusted;
 			while (uspd.size() && sptype)
                 	{
 				sptype = SubpacketDecode(uspd, untrusted);
@@ -1829,7 +1829,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.encdatalen = pkt.size() - 4;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
-				out.encdata = new BYTE[out.encdatalen];
+				out.encdata = new tmcg_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = pkt[4+i];
 			}
@@ -1843,7 +1843,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.encdatalen = pkt.size() - 12;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
-				out.encdata = new BYTE[out.encdatalen];
+				out.encdata = new tmcg_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = pkt[12+i];
 			}
@@ -1860,7 +1860,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.encdatalen = pkt.size() - 13;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
-				out.encdata = new BYTE[out.encdatalen];
+				out.encdata = new tmcg_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = pkt[13+i];
 			}
@@ -2045,7 +2045,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if (mpis.size() < 4)
 					return 0; // error: bad encrypted data
 				out.encdatalen = mpis.size();
-				out.encdata = new BYTE[out.encdatalen];
+				out.encdata = new tmcg_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = mpis[i];
 			}
@@ -2119,7 +2119,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (out.compalgo > 3)
 				return 0; // error: algorithm not supported
 			out.compdatalen = pkt.size();
-			out.compdata = new BYTE[out.compdatalen];
+			out.compdata = new tmcg_byte_t[out.compdatalen];
 			for (size_t i = 0; i < out.compdatalen; i++)
 				out.compdata[i] = pkt[1+i];
 			break;
@@ -2127,7 +2127,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (pkt.size() == 0)
 				return 0; // error: empty packet body
 			out.encdatalen = pkt.size();
-			out.encdata = new BYTE[out.encdatalen];
+			out.encdata = new tmcg_byte_t[out.encdatalen];
 			for (size_t i = 0; i < out.encdatalen; i++)
 				out.encdata[i] = pkt[i];
 			break;
@@ -2152,7 +2152,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				(pkt[5+out.datafilenamelen] << 8) +
 				 pkt[6+out.datafilenamelen];
 			out.datalen = pkt.size() - out.datafilenamelen - 6;
-			out.data = new BYTE[out.datalen];
+			out.data = new tmcg_byte_t[out.datalen];
 			for (size_t i = 0; i < out.datalen; i++)
 				out.data[i] = pkt[6+out.datafilenamelen+i];
 			break;
@@ -2173,7 +2173,7 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (out.version != 1)
 				return 0; // error: version not supported
 			out.encdatalen = pkt.size() - 1;
-			out.encdata = new BYTE[out.encdatalen];
+			out.encdata = new tmcg_byte_t[out.encdatalen];
 			for (size_t i = 0; i < out.encdatalen; i++)
 				out.encdata[i] = pkt[1+i];
 			break;
@@ -2193,10 +2193,10 @@ BYTE CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 // ===========================================================================
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
-	(const OCTETS &key, const std::string uid, const OCTETS &trailer, 
-	 const BYTE &hashalgo, OCTETS &hash, OCTETS &left)
+	(const tmcg_octets_t &key, const std::string uid, const tmcg_octets_t &trailer, 
+	 const tmcg_byte_t &hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
 {
-	OCTETS hash_input;
+	tmcg_octets_t hash_input;
 	size_t uidlen = uid.length();
 
 	// When a signature is made over a key, the hash data starts with the
@@ -2244,10 +2244,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
-	(const OCTETS &primary, const OCTETS &subkey, const OCTETS &trailer,
-	 const BYTE &hashalgo, OCTETS &hash, OCTETS &left)
+	(const tmcg_octets_t &primary, const tmcg_octets_t &subkey, const tmcg_octets_t &trailer,
+	 const tmcg_byte_t &hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
 {
-	OCTETS hash_input;
+	tmcg_octets_t hash_input;
 
 	// When a signature is made over a key, the hash data starts with the
 	// octet 0x99, followed by a two-octet length of the key, and then body
@@ -2287,15 +2287,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
-	(const OCTETS &in, OCTETS &seskey, OCTETS &prefix, const bool resync,
-	 OCTETS &out)
+	(const tmcg_octets_t &in, tmcg_octets_t &seskey, tmcg_octets_t &prefix, const bool resync,
+	 tmcg_octets_t &out)
 {
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t chksum = 0;
 	size_t bs = AlgorithmIVLength(9); // get block size of AES256
 	size_t ks = AlgorithmKeyLength(9); // get key size of AES256
-	BYTE key[ks], pre[bs+2], b;
+	tmcg_byte_t key[ks], pre[bs+2], b;
 
 	// The symmetric cipher used may be specified in a Public-Key or
 	// Symmetric-Key Encrypted Session Key packet that precedes the
@@ -2431,15 +2431,15 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
-	(const OCTETS &in, OCTETS &seskey, OCTETS &prefix, const bool resync,
-	 OCTETS &out)
+	(const tmcg_octets_t &in, tmcg_octets_t &seskey, tmcg_octets_t &prefix, const bool resync,
+	 tmcg_octets_t &out)
 {
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t chksum = 0;
 	size_t bs = AlgorithmIVLength(9); // get block size of AES256
 	size_t ks = AlgorithmKeyLength(9); // get key size of AES256
-	BYTE key[ks], b;
+	tmcg_byte_t key[ks], b;
 
 	// The symmetric cipher used may be specified in a Public-Key or
 	// Symmetric-Key Encrypted Session Key packet that precedes the
@@ -2556,10 +2556,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
-	(const OCTETS &in, const gcry_sexp_t key, 
+	(const tmcg_octets_t &in, const gcry_sexp_t key, 
 	 gcry_mpi_t &gk, gcry_mpi_t &myk)
 {
-	BYTE buffer[1024];
+	tmcg_byte_t buffer[1024];
 	gcry_sexp_t encryption, data;
 	gcry_mpi_t v;
 	gcry_error_t ret;
@@ -2610,9 +2610,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 	(const gcry_mpi_t gk, const gcry_mpi_t myk, const gcry_sexp_t key, 
-	 OCTETS &out)
+	 tmcg_octets_t &out)
 {
-	BYTE buffer[1024];
+	tmcg_byte_t buffer[1024];
 	gcry_sexp_t decryption, data;
 	gcry_mpi_t v;
 	gcry_error_t ret;
@@ -2662,10 +2662,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
-	(const OCTETS &in, const gcry_sexp_t key, 
+	(const tmcg_octets_t &in, const gcry_sexp_t key, 
 	 gcry_mpi_t &r, gcry_mpi_t &s)
 {
-	BYTE buffer[1024];
+	tmcg_byte_t buffer[1024];
 	gcry_sexp_t sigdata, signature;
 	gcry_mpi_t h;
 	gcry_error_t ret;
@@ -2711,10 +2711,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
-	(const OCTETS &in, const gcry_sexp_t key, 
+	(const tmcg_octets_t &in, const gcry_sexp_t key, 
 	 const gcry_mpi_t r, const gcry_mpi_t s)
 {
-	BYTE buffer[1024];
+	tmcg_byte_t buffer[1024];
 	gcry_sexp_t sigdata, signature;
 	gcry_mpi_t h;
 	gcry_error_t ret;

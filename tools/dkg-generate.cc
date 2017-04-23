@@ -217,10 +217,10 @@ void run_instance
 	// create an OpenPGP DSA-based primary key and Elgamal-based subkey based on parameters from DKG
 	char buffer[2048];
 	std::string out, crcout, armor;
-	OCTETS all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
-	OCTETS pub_hashing, sub_hashing;
-	OCTETS uidsig_hashing, subsig_hashing, uidsig_left, subsig_left;
-	OCTETS hash;
+	tmcg_octets_t all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
+	tmcg_octets_t pub_hashing, sub_hashing;
+	tmcg_octets_t uidsig_hashing, subsig_hashing, uidsig_left, subsig_left;
+	tmcg_octets_t hash;
 	time_t sigtime;
 	gcry_sexp_t key;
 	gcry_mpi_t p, q, g, y, x, r, s;

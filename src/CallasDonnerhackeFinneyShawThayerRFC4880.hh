@@ -40,12 +40,11 @@
 
 	#include "mpz_srandom.h"
 
-	// FIXME: use a proper prefix to avoid name space clashes
-	typedef unsigned char BYTE;
-	typedef std::vector<BYTE> OCTETS;
+	typedef unsigned char tmcg_byte_t;
+	typedef std::vector<tmcg_byte_t> tmcg_octets_t;
 
 	// FIXME(C++11): move following definitions into class
-	static const BYTE fRadix64[] = {
+	static const tmcg_byte_t tmcg_fRadix64[] = {
 			255, 255, 255, 255, 255, 255, 255, 255,
 			255, 255, 255, 255, 255, 255, 255, 255,
 			255, 255, 255, 255, 255, 255, 255, 255,
@@ -79,57 +78,57 @@
 			255, 255, 255, 255, 255, 255, 255, 255,
 			255, 255, 255, 255, 255, 255, 255, 255
 	};
-	static const BYTE tRadix64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	static const tmcg_byte_t tmcg_tRadix64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 			"abcdefghijklmnopqrstuvwxyz0123456789+/";
 
 	typedef struct
 	{
 		bool newformat;
-		BYTE version;
-		BYTE keyid[8];
-		BYTE pkalgo;
+		tmcg_byte_t version;
+		tmcg_byte_t keyid[8];
+		tmcg_byte_t pkalgo;
 		gcry_mpi_t me;
 		gcry_mpi_t gk;
 		gcry_mpi_t myk;
-		BYTE type;
-		BYTE hashalgo;
-		BYTE *hspd; // pointer to an allocated buffer with data
+		tmcg_byte_t type;
+		tmcg_byte_t hashalgo;
+		tmcg_byte_t *hspd; // pointer to an allocated buffer with data
 		size_t hspdlen;
 		bool critical;
 		time_t sigcreationtime;
-		BYTE issuer[8]; // key ID
+		tmcg_byte_t issuer[8]; // key ID
 		time_t keyexpirationtime;
-		BYTE psa[255]; // array of 1-octet flags
-		BYTE pha[255]; // array of 1-octet flags
-		BYTE pca[255]; // array of 1-octet flags
+		tmcg_byte_t psa[255]; // array of 1-octet flags
+		tmcg_byte_t pha[255]; // array of 1-octet flags
+		tmcg_byte_t pca[255]; // array of 1-octet flags
 		time_t sigexpirationtime;
 		bool exportablecertification;
 		bool revocable;
-		BYTE trustlevel;
-		BYTE trustamount;
-		BYTE trustregex[1024]; // string
-		BYTE revocationkey_class;
-		BYTE revocationkey_pkalgo; // id of public-key algorithm
-		BYTE revocationkey_fingerprint[20]; // SHA-1 based fingerprint
-		BYTE keyserverpreferences[255]; // array of 1-octet flags
-		BYTE preferedkeyserver[1024]; // string
+		tmcg_byte_t trustlevel;
+		tmcg_byte_t trustamount;
+		tmcg_byte_t trustregex[1024]; // string
+		tmcg_byte_t revocationkey_class;
+		tmcg_byte_t revocationkey_pkalgo; // id of public-key algorithm
+		tmcg_byte_t revocationkey_fingerprint[20]; // SHA-1 based fingerprint
+		tmcg_byte_t keyserverpreferences[255]; // array of 1-octet flags
+		tmcg_byte_t preferedkeyserver[1024]; // string
 		bool primaryuserid;
-		BYTE policyuri[1024]; // string
-		BYTE keyflags[32]; // n-octets of flags
-		BYTE signersuserid[1024]; // string
-		BYTE revocationcode;
-		BYTE revocationreason[1024]; // string
-		BYTE features[32]; // n-octets of flags
-		BYTE signaturetarget_pkalgo; // id of public-key algorithm
-		BYTE signaturetarget_hashalgo; // id of hash algorithm
-		BYTE signaturetarget_hash[1024]; // n-octets hash
-		BYTE embeddedsignature[4096]; // signature packet body
-		BYTE left[2];
+		tmcg_byte_t policyuri[1024]; // string
+		tmcg_byte_t keyflags[32]; // n-octets of flags
+		tmcg_byte_t signersuserid[1024]; // string
+		tmcg_byte_t revocationcode;
+		tmcg_byte_t revocationreason[1024]; // string
+		tmcg_byte_t features[32]; // n-octets of flags
+		tmcg_byte_t signaturetarget_pkalgo; // id of public-key algorithm
+		tmcg_byte_t signaturetarget_hashalgo; // id of hash algorithm
+		tmcg_byte_t signaturetarget_hash[1024]; // n-octets hash
+		tmcg_byte_t embeddedsignature[4096]; // signature packet body
+		tmcg_byte_t left[2];
 		gcry_mpi_t md;
 		gcry_mpi_t r;
 		gcry_mpi_t s;
-		BYTE signingkeyid[8];
-		BYTE nestedsignature;
+		tmcg_byte_t signingkeyid[8];
+		tmcg_byte_t nestedsignature;
 		time_t keycreationtime;
 		gcry_mpi_t n;
 		gcry_mpi_t e;
@@ -140,27 +139,27 @@
 		gcry_mpi_t g;
 		gcry_mpi_t y;
 		gcry_mpi_t x;
-		BYTE symalgo;
-		BYTE s2kconv;
-		BYTE s2k_type;
-		BYTE s2k_hashalgo;
-		BYTE s2k_salt[8];
-		BYTE s2k_count;
-		BYTE iv[32];
-		BYTE *encdata; // pointer to an allocated buffer with data
+		tmcg_byte_t symalgo;
+		tmcg_byte_t s2kconv;
+		tmcg_byte_t s2k_type;
+		tmcg_byte_t s2k_hashalgo;
+		tmcg_byte_t s2k_salt[8];
+		tmcg_byte_t s2k_count;
+		tmcg_byte_t iv[32];
+		tmcg_byte_t *encdata; // pointer to an allocated buffer with data
 		size_t encdatalen;
-		BYTE compalgo;
-		BYTE *compdata; // pointer to an allocated buffer with data
+		tmcg_byte_t compalgo;
+		tmcg_byte_t *compdata; // pointer to an allocated buffer with data
 		size_t compdatalen;
-		BYTE dataformat;
+		tmcg_byte_t dataformat;
 		size_t datafilenamelen;
-		BYTE datafilename[255]; // filename of specified length
+		tmcg_byte_t datafilename[255]; // filename of specified length
 		time_t datatime;
-		BYTE *data; // pointer to an allocated buffer with data
+		tmcg_byte_t *data; // pointer to an allocated buffer with data
 		size_t datalen;
-		BYTE uid[1024]; // string
-		BYTE mdc_hash[20];
-	} TMCG_OPENPGP_CONTEXT;
+		tmcg_byte_t uid[1024]; // string
+		tmcg_byte_t mdc_hash[20];
+	} tmcg_openpgp_context_t;
 
 class CallasDonnerhackeFinneyShawThayerRFC4880
 {
@@ -168,9 +167,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		struct notRadix64 {
 			bool operator() (const char c)
 			{
-				for (size_t i = 0; i < sizeof(tRadix64); i++)
+				for (size_t i = 0; i < sizeof(tmcg_tRadix64); i++)
 				{
-					if (c == tRadix64[i])
+					if (c == tmcg_tRadix64[i])
 						return false;
 				}
 				return true;
@@ -179,130 +178,130 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 
 	public:
 		static size_t AlgorithmKeyLength
-			(const BYTE algo);
+			(const tmcg_byte_t algo);
 		static size_t AlgorithmIVLength
-			(const BYTE algo);
+			(const tmcg_byte_t algo);
 		static size_t AlgorithmHashLength
-			(const BYTE algo);
+			(const tmcg_byte_t algo);
 		static int AlgorithmHashGCRY
-			(const BYTE algo);
+			(const tmcg_byte_t algo);
 		static bool OctetsCompare
-			(const OCTETS &in, const OCTETS &in2);
+			(const tmcg_octets_t &in, const tmcg_octets_t &in2);
 
 		static void Radix64Encode
-			(const OCTETS &in, std::string &out, bool linebreaks = true);
+			(const tmcg_octets_t &in, std::string &out, bool linebreaks = true);
 		static void Radix64Decode
-			(std::string in, OCTETS &out);
+			(std::string in, tmcg_octets_t &out);
 		static void CRC24Compute
-			(const OCTETS &in, OCTETS &out);
+			(const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void CRC24Encode
-			(const OCTETS &in, std::string &out);
+			(const tmcg_octets_t &in, std::string &out);
 		static void ArmorEncode
-			(const BYTE type, const OCTETS &in, std::string &out);
-		static BYTE ArmorDecode
-			(const std::string in, OCTETS &out);
+			(const tmcg_byte_t type, const tmcg_octets_t &in, std::string &out);
+		static tmcg_byte_t ArmorDecode
+			(const std::string in, tmcg_octets_t &out);
 		static void FingerprintCompute
-			(const OCTETS &in, OCTETS &out); 
+			(const tmcg_octets_t &in, tmcg_octets_t &out); 
 		static void KeyidCompute
-			(const OCTETS &in, OCTETS &out);
+			(const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void HashCompute
-			(const BYTE algo, const OCTETS &in, OCTETS &out);
+			(const tmcg_byte_t algo, const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void HashCompute
-			(const BYTE algo, const size_t cnt, const OCTETS &in,
-			 OCTETS &out);
+			(const tmcg_byte_t algo, const size_t cnt, const tmcg_octets_t &in,
+			 tmcg_octets_t &out);
 		static void S2KCompute
-			(const BYTE algo, const size_t sklen,
-			 const std::string in, const OCTETS &salt, 
-			 const bool iterated, const BYTE octcnt, OCTETS &out);
+			(const tmcg_byte_t algo, const size_t sklen,
+			 const std::string in, const tmcg_octets_t &salt, 
+			 const bool iterated, const tmcg_byte_t octcnt, tmcg_octets_t &out);
 
 		static void PacketTagEncode
-			(const BYTE tag, OCTETS &out); 
+			(const tmcg_byte_t tag, tmcg_octets_t &out); 
 		static void PacketLengthEncode
-			(const size_t len, OCTETS &out);
+			(const size_t len, tmcg_octets_t &out);
 		static void PacketTimeEncode
-			(const time_t in, OCTETS &out);
+			(const time_t in, tmcg_octets_t &out);
 		static void PacketTimeEncode
-			(OCTETS &out);
+			(tmcg_octets_t &out);
 		static void PacketMPIEncode
-			(const gcry_mpi_t in, OCTETS &out, size_t &sum);
+			(const gcry_mpi_t in, tmcg_octets_t &out, size_t &sum);
 		static void PacketMPIEncode
-			(const gcry_mpi_t in, OCTETS &out);
+			(const gcry_mpi_t in, tmcg_octets_t &out);
 		static size_t PacketMPIDecode
-			(const OCTETS &in, gcry_mpi_t &out, size_t &sum);
+			(const tmcg_octets_t &in, gcry_mpi_t &out, size_t &sum);
 		static size_t PacketMPIDecode
-			(const OCTETS &in, gcry_mpi_t &out);
+			(const tmcg_octets_t &in, gcry_mpi_t &out);
 
 		static void PacketPkeskEncode
-			(const OCTETS &keyid, const gcry_mpi_t gk,
-			 const gcry_mpi_t myk, OCTETS &out);
+			(const tmcg_octets_t &keyid, const gcry_mpi_t gk,
+			 const gcry_mpi_t myk, tmcg_octets_t &out);
 		static void PacketSigEncode
-			(const OCTETS &hashing, const OCTETS &left,
-			 const gcry_mpi_t r, const gcry_mpi_t s, OCTETS &out);
+			(const tmcg_octets_t &hashing, const tmcg_octets_t &left,
+			 const gcry_mpi_t r, const gcry_mpi_t s, tmcg_octets_t &out);
 		static void SubpacketEncode
-			(const BYTE type, bool critical, const OCTETS &in,
-			 OCTETS &out);
+			(const tmcg_byte_t type, bool critical, const tmcg_octets_t &in,
+			 tmcg_octets_t &out);
 		static void PacketSigPrepare
-			(const BYTE sigtype, const time_t sigtime,
-			 const OCTETS &flags, const OCTETS &issuer, 
-			 OCTETS &out);
+			(const tmcg_byte_t sigtype, const time_t sigtime,
+			 const tmcg_octets_t &flags, const tmcg_octets_t &issuer, 
+			 tmcg_octets_t &out);
 		static void PacketPubEncode
 			(const time_t keytime, const gcry_mpi_t p, 
 			 const gcry_mpi_t q, const gcry_mpi_t g, 
-			 const gcry_mpi_t y, OCTETS &out);
+			 const gcry_mpi_t y, tmcg_octets_t &out);
 		static void PacketSecEncode
 			(const time_t keytime, const gcry_mpi_t p, 
 			 const gcry_mpi_t q, const gcry_mpi_t g, 
 			 const gcry_mpi_t y, const gcry_mpi_t x,
-			 const std::string passphrase, OCTETS &out);
+			 const std::string passphrase, tmcg_octets_t &out);
 		static void PacketSubEncode
 			(const time_t keytime, const gcry_mpi_t p, 
-			 const gcry_mpi_t g, const gcry_mpi_t y, OCTETS &out);
+			 const gcry_mpi_t g, const gcry_mpi_t y, tmcg_octets_t &out);
 		static void PacketSsbEncode
 			(const time_t keytime, const gcry_mpi_t p, 
 			 const gcry_mpi_t g, const gcry_mpi_t y, 
 			 const gcry_mpi_t x, const std::string passphrase,
-			 OCTETS &out);
+			 tmcg_octets_t &out);
 		static void PacketSedEncode
-			(const OCTETS &in, OCTETS &out);
+			(const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void PacketLitEncode
-			(const OCTETS &in, OCTETS &out);
+			(const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void PacketUidEncode
-			(const std::string uid, OCTETS &out);
+			(const std::string uid, tmcg_octets_t &out);
 		static void PacketSeipdEncode
-			(const OCTETS &in, OCTETS &out);
+			(const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void PacketMdcEncode
-			(const OCTETS &in, OCTETS &out);
+			(const tmcg_octets_t &in, tmcg_octets_t &out);
 
-		static BYTE SubpacketDecode
-			(OCTETS &in, TMCG_OPENPGP_CONTEXT &out);
-		static BYTE PacketDecode
-			(OCTETS &in, TMCG_OPENPGP_CONTEXT &out);
+		static tmcg_byte_t SubpacketDecode
+			(tmcg_octets_t &in, tmcg_openpgp_context_t &out);
+		static tmcg_byte_t PacketDecode
+			(tmcg_octets_t &in, tmcg_openpgp_context_t &out);
 
 		static void CertificationHash
-			(const OCTETS &key, const std::string uid,
-			 const OCTETS &trailer, const BYTE &hashalgo,
-			 OCTETS &hash, OCTETS &left);
+			(const tmcg_octets_t &key, const std::string uid,
+			 const tmcg_octets_t &trailer, const tmcg_byte_t &hashalgo,
+			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static void SubkeyBindingHash
-			(const OCTETS &primary, const OCTETS &subkey,
-			 const OCTETS &trailer, const BYTE &hashalgo,
-			 OCTETS &hash, OCTETS &left);
+			(const tmcg_octets_t &primary, const tmcg_octets_t &subkey,
+			 const tmcg_octets_t &trailer, const tmcg_byte_t &hashalgo,
+			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static gcry_error_t SymmetricEncryptAES256
-			(const OCTETS &in, OCTETS &seskey, OCTETS &prefix,
-			const bool resync, OCTETS &out);
+			(const tmcg_octets_t &in, tmcg_octets_t &seskey, tmcg_octets_t &prefix,
+			const bool resync, tmcg_octets_t &out);
 		static gcry_error_t SymmetricDecryptAES256
-			(const OCTETS &in, OCTETS &seskey, OCTETS &prefix,
-			const bool resync, OCTETS &out);
+			(const tmcg_octets_t &in, tmcg_octets_t &seskey, tmcg_octets_t &prefix,
+			const bool resync, tmcg_octets_t &out);
 		static gcry_error_t AsymmetricEncryptElgamal
-			(const OCTETS &in, const gcry_sexp_t key, 
+			(const tmcg_octets_t &in, const gcry_sexp_t key, 
 			 gcry_mpi_t &gk, gcry_mpi_t &myk);
 		static gcry_error_t AsymmetricDecryptElgamal
 			(const gcry_mpi_t gk, const gcry_mpi_t myk,
-			 const gcry_sexp_t key, OCTETS &out);
+			 const gcry_sexp_t key, tmcg_octets_t &out);
 		static gcry_error_t AsymmetricSignDSA
-			(const OCTETS &in, const gcry_sexp_t key,
+			(const tmcg_octets_t &in, const gcry_sexp_t key,
 			 gcry_mpi_t &r, gcry_mpi_t &s);
 		static gcry_error_t AsymmetricVerifyDSA
-			(const OCTETS &in, const gcry_sexp_t key, 
+			(const tmcg_octets_t &in, const gcry_sexp_t key, 
 	 		 const gcry_mpi_t r, const gcry_mpi_t s);
 };
 
