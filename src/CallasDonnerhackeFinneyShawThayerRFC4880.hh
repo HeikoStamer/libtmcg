@@ -101,7 +101,7 @@
 		tmcg_byte_t psa[255]; // array of 1-octet flags
 		tmcg_byte_t pha[255]; // array of 1-octet flags
 		tmcg_byte_t pca[255]; // array of 1-octet flags
-		time_t sigexpirationtime;
+		uint32_t sigexpirationtime;
 		bool exportablecertification;
 		bool revocable;
 		tmcg_byte_t trustlevel;

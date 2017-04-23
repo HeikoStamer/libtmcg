@@ -153,7 +153,7 @@ bool done
 	{
 		int wstatus = 0;
 		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
-		if (waitpid(pid[i], NULL, 0) != pid[i])
+		if (waitpid(pid[i], &wstatus, 0) != pid[i])
 			perror("t-seabp (waitpid)");
 		if (!WIFEXITED(wstatus))
 		{

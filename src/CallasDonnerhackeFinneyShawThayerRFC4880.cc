@@ -1363,7 +1363,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 	// The length includes the type octet but not this length. Its format
 	// is similar to the "new" format packet header lengths, but cannot
 	// have Partial Body Lengths.
-	size_t len = 0, headlen = 1;
+	uint32_t len = 0, headlen = 1;
 	if (in[0] < 192)
 	{
 		// A one-octet Body Length header encodes a length of 0 to
@@ -1622,7 +1622,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	// 4. When the length of the packet body is not known in advance by
 	//    the issuer, Partial Body Length headers encode a packet of
 	//    indeterminate length, effectively making it a stream.
-	size_t len = 0, headlen = 1, hspdlen = 0, uspdlen = 0;
+	uint32_t len = 0, headlen = 1, hspdlen = 0, uspdlen = 0;
 	if (out.newformat && (in[1] < 192))
 	{
 		// A one-octet Body Length header encodes a length of 0 to
