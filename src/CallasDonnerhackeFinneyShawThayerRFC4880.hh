@@ -95,9 +95,9 @@
 		tmcg_byte_t *hspd; // pointer to an allocated buffer with data
 		size_t hspdlen;
 		bool critical;
-		time_t sigcreationtime;
+		uint32_t sigcreationtime;
 		tmcg_byte_t issuer[8]; // key ID
-		time_t keyexpirationtime;
+		uint32_t keyexpirationtime;
 		tmcg_byte_t psa[255]; // array of 1-octet flags
 		tmcg_byte_t pha[255]; // array of 1-octet flags
 		tmcg_byte_t pca[255]; // array of 1-octet flags
@@ -129,7 +129,7 @@
 		gcry_mpi_t s;
 		tmcg_byte_t signingkeyid[8];
 		tmcg_byte_t nestedsignature;
-		time_t keycreationtime;
+		uint32_t keycreationtime;
 		gcry_mpi_t n;
 		gcry_mpi_t e;
 		gcry_mpi_t d;
@@ -154,7 +154,7 @@
 		tmcg_byte_t dataformat;
 		size_t datafilenamelen;
 		tmcg_byte_t datafilename[255]; // filename of specified length
-		time_t datatime;
+		uint32_t datatime;
 		tmcg_byte_t *data; // pointer to an allocated buffer with data
 		size_t datalen;
 		tmcg_byte_t uid[1024]; // string
