@@ -29,6 +29,15 @@
 		   (maximum soundness error probability 4^{-TMCG_MR_ITERATIONS}) */
 		#define TMCG_MR_ITERATIONS 64
 	#endif
+
+	#ifndef TMCG_MAX_ZNP_ITERATIONS
+		/* Define the maximum number of iterations for the prover in
+		   cut-and-choose style zero-knowledge protocols of 
+		   Schindelhauer's toolbox. This limits the soundness error
+		   probability to 2^{-TMCG_MAX_ZNP_ITERATIONS}, however, it
+		   avoids some obvious denial-of-service attacks. */  
+		#define TMCG_MAX_ZNP_ITERATIONS 80
+	#endif
 	
 	#ifndef TMCG_GROTH_L_E
 		/* Define the security parameter for the soundness of the

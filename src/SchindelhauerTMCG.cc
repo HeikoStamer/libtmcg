@@ -36,6 +36,7 @@ SchindelhauerTMCG::SchindelhauerTMCG
 {
 	assert(TMCG_Players <= TMCG_MAX_PLAYERS);
 	assert(TMCG_TypeBits <= TMCG_MAX_TYPEBITS);
+	assert(TMCG_SecurityLevel <= TMCG_MAX_ZNP_ITERATIONS);
 	
 	TMCG_MaxCardType = 1;
 	for (size_t i = 0; i < TMCG_TypeBits; i++)
@@ -64,7 +65,7 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 		key.gcdext_up, key.gcdext_vq, key.pa1d4, key.qa1d4);
 	
 	// phase (P2)
-	for (unsigned long int i = 0; i < security_desire; i++)
+	for (unsigned long int i = 0; (i < security_desire) && (i < TMCG_MAX_ZNP_ITERATIONS); i++)
 	{
 		mpz_ptr r = new mpz_t(), s = new mpz_t();
 		mpz_init(r), mpz_init(s);
@@ -103,7 +104,7 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 	}
 	
 	// phase (P4)
-	for (unsigned long int i = 0; i < security_desire; i++)
+	for (unsigned long int i = 0; (i < security_desire) && (i < TMCG_MAX_ZNP_ITERATIONS); i++)
 	{
 		// receive R/S-question from the verifier
 		in >> foo;
@@ -293,7 +294,7 @@ void SchindelhauerTMCG::TMCG_ProveMaskValue
 	try
 	{
 		// phase (P2)
-		for (unsigned long int i = 0; i < security_desire; i++)
+		for (unsigned long int i = 0; (i < security_desire) && (i < TMCG_MAX_ZNP_ITERATIONS); i++)
 		{
 			mpz_ptr r2 = new mpz_t(), b2 = new mpz_t();
 			mpz_init(r2), mpz_init(b2);
@@ -330,7 +331,7 @@ void SchindelhauerTMCG::TMCG_ProveMaskValue
 		}
 		
 		// phase (P4)
-		for (unsigned long int i = 0; i < security_desire; i++)
+		for (unsigned long int i = 0; (i < security_desire) && (i < TMCG_MAX_ZNP_ITERATIONS); i++)
 		{
 			// receive Z/Z'-question from verifier
 			in >> foo;
@@ -448,7 +449,7 @@ void SchindelhauerTMCG::TMCG_ProveMaskOne
 	mpz_init(foo), mpz_init(bar), mpz_init(tim);
 	
 	// phase (P2)
-	for (unsigned long int i = 0; i < security_desire; i++)
+	for (unsigned long int i = 0; (i < security_desire) && (i < TMCG_MAX_ZNP_ITERATIONS); i++)
 	{
 		mpz_ptr r3 = new mpz_t(), s = new mpz_t(),
 			b3 = new mpz_t(), c = new mpz_t();
@@ -546,7 +547,7 @@ void SchindelhauerTMCG::TMCG_ProveMaskOne
 	}
 	
 	// phase (P4)
-	for (unsigned long int i = 0; i < security_desire; i++)
+	for (unsigned long int i = 0; (i < security_desire) && (i < TMCG_MAX_ZNP_ITERATIONS); i++)
 	{
 		// receive R/S-question from verifier
 		in >> foo;
@@ -649,7 +650,7 @@ void SchindelhauerTMCG::TMCG_ProveNonQuadraticResidue_PerfectZeroKnowledge
 	try
 	{
 		// phase (P2) and (P3)
-		for (unsigned long int i = 0; i < security_desire; i++)
+		for (unsigned long int i = 0; (i < security_desire) && (i < TMCG_MAX_ZNP_ITERATIONS); i++)
 		{
 			// receive question
 			in >> foo;
@@ -1381,7 +1382,7 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 	in >> security_desire, in.ignore(1, '\n');
 	
 	mpz_init(foo);
-	for (unsigned long int i = 0; i < security_desire; i++)
+	for (unsigned long int i = 0; (i < security_desire) && (i < TMCG_MAX_ZNP_ITERATIONS); i++)
 	{
 		TMCG_Stack<TMCG_Card> s3;
 		TMCG_StackSecret<TMCG_CardSecret> ss2;
@@ -1427,7 +1428,7 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 	in >> security_desire, in.ignore(1, '\n');
 	
 	mpz_init(foo);
-	for (unsigned long int i = 0; i < security_desire; i++)
+	for (unsigned long int i = 0; (i < security_desire) && (i < TMCG_MAX_ZNP_ITERATIONS); i++)
 	{
 		TMCG_Stack<VTMF_Card> s3;
 		TMCG_StackSecret<VTMF_CardSecret> ss2;
