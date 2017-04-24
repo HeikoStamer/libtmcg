@@ -100,6 +100,8 @@ AC_DEFINE(TMCG_DDH_SIZE, 2048,
 AC_DEFINE(TMCG_DLSE_SIZE, 256,
 	[Define the security parameter of the shortened exponents;
 	Underlying assumptions: DLSE (related to DDH), DLOG])
+AC_DEFINE(TMCG_AIO_HIDE_SIZE, 256,
+	[Define the security parameter for hiding the length of integers.])
 AC_DEFINE(TMCG_QRA_SIZE, 2048,
 	[Define the security parameter of the TMCG public key;
 	Underlying assumptions: QRA, FACTOR])

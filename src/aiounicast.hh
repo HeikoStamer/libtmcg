@@ -74,7 +74,7 @@ class aiounicast
 				n(n_in), j(j_in)
 		{
 			mpz_init_set_ui(aio_hide_length, 1L);
-			mpz_mul_2exp(aio_hide_length, aio_hide_length, 256L);
+			mpz_mul_2exp(aio_hide_length, aio_hide_length, TMCG_AIO_HIDE_SIZE);
 		}
 
 		virtual bool Send

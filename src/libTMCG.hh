@@ -56,6 +56,11 @@
 		   Underlying assumptions: DLSE (related to DDH), DLOG */
 		#define TMCG_DLSE_SIZE 256
 	#endif
+
+	#ifndef TMCG_AIO_HIDE_SIZE
+		/* Define the security parameter for hiding the length of integers. */
+		#define TMCG_AIO_HIDE_SIZE 256
+	#endif
 	
 	#ifndef TMCG_GCRY_MD_ALGO
 		/* Define the message digest algorithm for signatures and FS-heuristic;
