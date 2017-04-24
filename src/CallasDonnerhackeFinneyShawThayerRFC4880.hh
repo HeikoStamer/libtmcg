@@ -159,7 +159,7 @@
 		size_t datalen;
 		tmcg_byte_t uid[1024]; // string
 		tmcg_byte_t mdc_hash[20];
-	} tmcg_openpgp_context_t;
+	} tmcg_openpgp_packet_ctx;
 
 class CallasDonnerhackeFinneyShawThayerRFC4880
 {
@@ -273,9 +273,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_octets_t &in, tmcg_octets_t &out);
 
 		static tmcg_byte_t SubpacketDecode
-			(tmcg_octets_t &in, tmcg_openpgp_context_t &out);
+			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out);
 		static tmcg_byte_t PacketDecode
-			(tmcg_octets_t &in, tmcg_openpgp_context_t &out);
+			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out);
 
 		static void CertificationHash
 			(const tmcg_octets_t &key, const std::string uid,

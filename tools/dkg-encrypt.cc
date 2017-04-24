@@ -72,7 +72,7 @@ int main
 	gcry_sexp_t dsakey, elgkey;
 	gcry_error_t ret;
 	size_t erroff;
-	tmcg_openpgp_context_t ctx;
+	tmcg_openpgp_packet_ctx ctx;
 	dsa_p = gcry_mpi_new(2048);
 	dsa_q = gcry_mpi_new(2048);
 	dsa_g = gcry_mpi_new(2048);

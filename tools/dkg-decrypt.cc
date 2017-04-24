@@ -163,7 +163,7 @@ void parse_private_key
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t erroff, keylen, ivlen, chksum, mlen, chksum2;
-	tmcg_openpgp_context_t ctx;
+	tmcg_openpgp_packet_ctx ctx;
 	gcry_mpi_t dsa_r, dsa_s, elg_r, elg_s;
 	dsa_r = gcry_mpi_new(2048);
 	dsa_s = gcry_mpi_new(2048);
@@ -728,7 +728,7 @@ void parse_message
 	(const std::string in)
 {
 	// parse encrypted message
-	tmcg_openpgp_context_t ctx;
+	tmcg_openpgp_packet_ctx ctx;
 	tmcg_octets_t pkts, pkesk_keyid;
 	bool have_pkesk = false, have_sed = false;
 	tmcg_byte_t ptag = 0xFF;
@@ -1091,7 +1091,7 @@ void decrypt_message
 		exit(-1);
 	}
 	// parse content
-	tmcg_openpgp_context_t ctx;
+	tmcg_openpgp_packet_ctx ctx;
 	bool have_lit = false, have_mdc = false;
 	tmcg_octets_t lit, mdc_hash;
 	tmcg_byte_t ptag = 0xFF;

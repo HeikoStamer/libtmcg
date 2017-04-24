@@ -1351,7 +1351,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMdcEncode
 // ===========================================================================
 
 tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
-	(tmcg_octets_t &in, tmcg_openpgp_context_t &out)
+	(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out)
 {
 	if (in.size() < 2)
 		return 0; // error: incorrect subpacket header
@@ -1592,7 +1592,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 }
 
 tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
-	(tmcg_octets_t &in, tmcg_openpgp_context_t &out)
+	(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out)
 {
 	if (in.size() < 2)
 		return 0; // error: incorrect packet header
@@ -1769,7 +1769,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			// If a subpacket is not hashed, then the information
 			// in it cannot be considered definitive because it 
 			// is not part of the signature proper.
-			tmcg_openpgp_context_t untrusted;
+			tmcg_openpgp_packet_ctx untrusted;
 			while (uspd.size() && sptype)
                 	{
 				sptype = SubpacketDecode(uspd, untrusted);
