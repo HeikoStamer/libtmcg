@@ -1,3 +1,7 @@
+* use mpn_sec_*-functions from libgmp to improve resilience of spowm.c
+* use secure memory allocation from libgcrypt
+
++ add interactive versions of Chaum-Pedersen PoK of dlog equality
 + implement asynchronous VSS [CKLS02] for DKG
 + provide interactive and distributed (multiparty DZKP) versions for
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
