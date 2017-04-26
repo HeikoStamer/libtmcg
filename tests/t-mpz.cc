@@ -370,7 +370,7 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	// mpz_powm vs. mpz_spowm vs. mpz_fpowm vs. mpz_fspowm benchmark
 	std::cout << "mpz_powm() benchmark" << std::endl;
 	start_clock();
-	for (size_t i = 0; i < 1000; i++)
+	for (size_t i = 0; i < 10000; i++)
 	{
 		mpz_srandomb(foo2, 160);
 		mpz_powm(t1, bar, foo2, foo);
@@ -380,7 +380,7 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	std::cout << elapsed_time() << std::endl;
 	std::cout << "mpz_spowm() benchmark" << std::endl;
 	start_clock();
-	for (size_t i = 0; i < 1000; i++)
+	for (size_t i = 0; i < 10000; i++)
 	{
 		mpz_srandomb(foo2, 160);
 		mpz_spowm(t1, bar, foo2, foo);

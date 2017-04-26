@@ -1,4 +1,4 @@
-* use mpn_sec_*-functions from libgmp to improve resilience of spowm.c
+* use mpz_powm_sec-function from libgmp to improve resilience of spowm.c
 * use secure memory allocation from libgcrypt
 
 + add interactive versions of Chaum-Pedersen PoK of dlog equality

@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -33,7 +33,9 @@
 		extern "C"
 		{
 	#endif
-			/* Kocher's efficient blinding technique for modexp */
+			/* Kocher's efficient blinding technique for modular exponentiation [Ko96] 
+                           -- cf. the scientific discussion e.g. https://eprint.iacr.org/2013/447 
+			   https://eprint.iacr.org/2014/869 and https://eprint.iacr.org/2016/597 */
 			void mpz_spowm_init
 				(mpz_srcptr x, mpz_srcptr p);
 			
@@ -43,7 +45,9 @@
 			void mpz_spowm_clear
 				();
 			
-			/* Chaum's blinding technique for modular exponentiation */
+			/* Chaum's blinding technique for modular exponentiation
+			   -- cf. the scientific discussion e.g. https://eprint.iacr.org/2013/447 
+			   https://eprint.iacr.org/2014/869 and https://eprint.iacr.org/2016/597 */
 			void mpz_spowm
 				(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p);
 			

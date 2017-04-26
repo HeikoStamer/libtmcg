@@ -1,7 +1,8 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2007, 
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,9 +25,9 @@
 #endif
 #include "mpz_spowm.h"
 
-/* Kocher's efficient blinding technique for modular exponentiation */
+/* Kocher's efficient blinding technique for modular exponentiation [Ko96] */
 
-mpz_t		bvi, bvf, bx, bp;
+mpz_t bvi, bvf, bx, bp;
 
 void mpz_spowm_init
 	(mpz_srcptr x, mpz_srcptr p)
@@ -189,47 +190,46 @@ void mpz_fspowm
 	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 	size_t i;
-	mpz_t tmp, xx;
+	mpz_t foo, bar, xx;
 	
-	mpz_init(tmp), mpz_init_set(xx, x);
+	mpz_init(foo), mpz_init(bar), mpz_init_set(xx, x);
 	if (mpz_sgn(x) == -1)
 		mpz_neg(xx, x);
 	else
-		mpz_neg(tmp, x);
+		mpz_neg(bar, x);
 	
 	if (mpz_sizeinbase(xx, 2L) <= TMCG_MAX_FPOWM_T)
 	{
+		/* compute result by multiplying precomputed values */
 		mpz_set_ui(res, 1L);
 		for (i = 0; i < mpz_sizeinbase(xx, 2L); i++)
 		{
+			mpz_mul(foo, res, fpowm_table[i]);
+			mpz_mod(foo, foo, p);
+			mpz_add(bar, bar, foo); /* dummy bar usage */
 			if (mpz_tstbit(xx, i))
-			{
-				mpz_mul(res, res, fpowm_table[i]);
-				mpz_mod(res, res, p);
-			}
+				mpz_set(res, foo);
 			else
-			{
-				/* Timing attack protection */
-				mpz_mul(tmp, res, fpowm_table[i]);
-				mpz_mod(tmp, tmp, p);
-			}
+				mpz_set(bar, foo);
 		}
 		/* invert the input, if x was negative */
+		if (!mpz_invert(foo, res, p))
+			mpz_set_ui(foo, 0L);
 		if (mpz_sgn(x) == -1)
-		{
-			if (!mpz_invert(res, res, p))
-				mpz_set_ui(res, 0L);
-		}
+			mpz_set(res, foo);
 		else
-		{
-			/* Timing attack protection */
-			if (!mpz_invert(tmp, res, p))
-				mpz_set_ui(tmp, 0L);
-		}
+			mpz_set(bar, foo);
+		/* additional dummy to prevent compiler optimizations */
+		if (!mpz_invert(foo, bar, p))
+			mpz_set_ui(foo, 1L), mpz_set_ui(bar, 1L);
+		mpz_mul(res, bar, res); /* res = bar * res * bar^{-1} mod p */
+		mpz_mod(res, res, p);
+		mpz_mul(res, res, foo);
+		mpz_mod(res, res, p);
 	}
 	else
-		mpz_set_ui(res, 0L);
-	mpz_clear(tmp), mpz_clear(xx);
+		mpz_set_ui(res, 0L); // indicates an error
+	mpz_clear(foo), mpz_clear(bar), mpz_clear(xx);
 }
 
 void mpz_fpowm_done
