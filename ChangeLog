@@ -1,3 +1,4 @@
+* [2017-04-27] improved resilience of mpz_spowm()
 * [2017-04-26] improved resilience of mpz_fspowm()
 * [2017-04-23] AIO: bugfixes and change to EtA paradigma 
 * [2017-04-12] fixed some small bugs found by coverity scan

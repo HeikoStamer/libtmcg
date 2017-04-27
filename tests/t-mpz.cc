@@ -427,7 +427,7 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	std::cout << "h()" << std::endl;
 	dig1 = new char[gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)];
 	dig2 = new char[gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)];
-	for (size_t i = 0; i < 5; i++)
+	for (size_t i = 0; i < 50; i++)
 	{
 		gcry_randomize((unsigned char *)&tmp_ar1, sizeof(tmp_ar1),
 			GCRY_STRONG_RANDOM);
@@ -441,7 +441,7 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	delete [] dig1, delete [] dig2;
 	std::cout << "g()" << std::endl;
 	dig1 = new char[1024], dig2 = new char[1024];
-	for (size_t i = 0; i < 5; i++)
+	for (size_t i = 0; i < 50; i++)
 	{
 		gcry_randomize((unsigned char *)&tmp_ar1, sizeof(tmp_ar1),
 			GCRY_STRONG_RANDOM);
@@ -468,7 +468,7 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	mpz_sprime(foo, bar, 512, TMCG_MR_ITERATIONS);
 	mpz_sprime(foo2, bar2, 512, TMCG_MR_ITERATIONS);
 	mpz_mul(bar, foo, foo2);
-	for (size_t i = 0; i < 5; i++)
+	for (size_t i = 0; i < 50; i++)
 	{
 		do
 			mpz_srandomm(bar2, bar);
