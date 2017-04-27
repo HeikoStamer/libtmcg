@@ -20,10 +20,10 @@ each party should verify after key generation, that the published public key
 of the group contains this shared ElGamal key. The program generates three
 different files: First, a file with the extension .dkg which contains the
 internal state of the DKG protocol including some verification keys for
-threshold decryption (see dkg\-decrypt(1)), second, a file that stores the
-individual private key in ASCII-armored OpenPGP format, and finally, a file
-that contains the individual public key. All file names have the GNUnet peer
-identity of the participating party as common prefix.
+threshold decryption, second, a file that stores the individual private key in
+ASCII-armored OpenPGP format, and finally, a file that contains the public key
+again in ASCII-armored format. All file names have the GNUnet peer identity of
+the corresponding party as a common prefix.
 .br
 The parameter t determines how many parties may deviate from the protocol
 during the key generation and later during threshold decryption. At least
