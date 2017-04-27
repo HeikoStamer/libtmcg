@@ -1,3 +1,5 @@
+* [2017-04-26] improved resilience of mpz_fspowm()
+* [2017-04-23] AIO: bugfixes and change to EtA paradigma 
 * [2017-04-12] fixed some small bugs found by coverity scan
 * [2017-03-31] added simple manpages for DKG tools
 * [2017-03-26] added general interpolation for DKG and changed dkg-decrypt 
@@ -9,7 +11,7 @@
 * [2016-12-24] added GNUnet integration for DKG tools
 * [2016-11-14] added a very limited OpenPGP (RFC4880) interface
 * [2016-03-26] improved complexity of hash function g() used as random oracle
-* [2016-03-24] mpz_shash using now hash function g() instead of h()
+* [2016-03-24] mpz_shash* using now hash function g() instead of h()
 * [2016-03-20] protection against malicious verifiers through EDCF for SHVZK
 * [2016-03-02] provides a distributed coin-flipping (EDCF) protocol
 * [2016-02-27] provides a distributed signature scheme (NTS)

@@ -387,6 +387,18 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	}
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
+	// mpz_powm_sec benchmark
+#ifdef HAVE_POWMSEC
+	std::cout << "mpz_powm_sec() benchmark" << std::endl;
+	start_clock();
+	for (size_t i = 0; i < 10000; i++)
+	{
+		mpz_srandomb(foo2, 160);
+		mpz_powm_sec(t1, bar, foo2, foo);
+	}
+	stop_clock();
+	std::cout << elapsed_time() << std::endl;
+#endif
 	// check whether spowm() is slower than powm()
 	assert((compare_elapsed_time_saved(0) < 0));
 	size_t bad_cnt = 0; 
