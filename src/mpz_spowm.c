@@ -69,8 +69,7 @@ void mpz_spowm_clear
 }
 
 /* Chaum's blinding technique for modular exponentiation */
-
-void mpz_spowm
+void mpz_spowm_baseblind
 	(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 	int ret;
@@ -99,6 +98,20 @@ void mpz_spowm
 	mpz_mod(res, res, p);
 	
 	mpz_clear(r), mpz_clear(r1);
+}
+
+/* Use constant-time function mpz_powm_sec() from libgmp, if available. 
+   Otherwise Chaum's blinding technique for modular exponentiation is 
+   applied. */
+
+void mpz_spowm
+	(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
+{
+#ifdef HAVE_POWMSEC
+	mpz_powm_sec(res, m, x, p);
+#else
+	mpz_spowm_baseblind(res, m, x, p);
+#endif
 }
 
 /* Fast modular exponentiation using precomputed tables */

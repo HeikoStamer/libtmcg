@@ -34,7 +34,7 @@
 		{
 	#endif
 			/* Kocher's efficient blinding technique for modular exponentiation [Ko96] 
-                           -- cf. the scientific discussion e.g. https://eprint.iacr.org/2013/447 
+                           -- cf. scientific discussion e.g. https://eprint.iacr.org/2013/447 
 			   https://eprint.iacr.org/2014/869 and https://eprint.iacr.org/2016/597 */
 			void mpz_spowm_init
 				(mpz_srcptr x, mpz_srcptr p);
@@ -46,8 +46,13 @@
 				();
 			
 			/* Chaum's blinding technique for modular exponentiation
-			   -- cf. the scientific discussion e.g. https://eprint.iacr.org/2013/447 
+			   -- cf. scientific discussion e.g. https://eprint.iacr.org/2013/447 
 			   https://eprint.iacr.org/2014/869 and https://eprint.iacr.org/2016/597 */
+			void mpz_spowm_baseblind
+				(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p);
+
+			/* Use the constant-time function mpz_powm_sec() from libgmp, if available. 
+   			   Otherwise Chaum's blinding technique for modular exponentiation is applied. */
 			void mpz_spowm
 				(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p);
 			
