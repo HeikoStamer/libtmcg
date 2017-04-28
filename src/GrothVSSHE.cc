@@ -1913,7 +1913,7 @@ void GrothVSSHE::Prove_interactive
 	mpz_fspowm(fpowm_table_h, bar, h, R_d, p);
 	mpz_mul(E_d.second, E_d.second, bar);
 	mpz_mod(E_d.second, E_d.second, p);
-	
+
 	out << c << std::endl << c_d << std::endl << E_d.first << std::endl << 
 		E_d.second << std::endl;
 	

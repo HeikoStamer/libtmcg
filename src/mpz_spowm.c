@@ -108,7 +108,32 @@ void mpz_spowm
 	(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 #ifdef HAVE_POWMSEC
-	mpz_powm_sec(res, m, x, p);
+	mpz_t foo, bar, xx;
+	if (!mpz_odd_p(p))
+		mpz_set_ui(foo, 0L); // indicates an error
+
+	mpz_init(foo), mpz_init(bar), mpz_init_set(xx, x);
+	if (mpz_sgn(x) == -1)
+		mpz_neg(xx, x);
+	else
+		mpz_neg(bar, x);
+	/* compute res = m^x mod p with care */
+	mpz_powm_sec(res, m, xx, p);
+	/* invert the input, if x was negative */
+	if (!mpz_invert(foo, res, p))
+		mpz_set_ui(foo, 0L); // indicates an error
+	if (mpz_sgn(x) == -1)
+		mpz_set(res, foo);
+	else
+		mpz_set(bar, foo);
+	/* additional dummy to prevent compiler optimizations */
+	if (!mpz_invert(foo, bar, p))
+		mpz_set_ui(foo, 1L), mpz_set_ui(bar, 1L);
+	mpz_mul(res, bar, res); /* res = bar * res * bar^{-1} mod p */
+	mpz_mod(res, res, p);
+	mpz_mul(res, res, foo);
+	mpz_mod(res, res, p);
+	mpz_clear(foo), mpz_clear(bar), mpz_clear(xx);
 #else
 	mpz_spowm_baseblind(res, m, x, p);
 #endif
@@ -165,11 +190,11 @@ void mpz_fpowm
 		if (mpz_sgn(x) == -1)
 		{
 			if (!mpz_invert(res, res, p))
-				mpz_set_ui(res, 0L);
+				mpz_set_ui(res, 0L); // indicates an error
 		}
 	}
 	else
-		mpz_set_ui(res, 0L);
+		mpz_set_ui(res, 0L); // indicates an error
 	mpz_clear(xx);
 }
 
@@ -194,7 +219,7 @@ void mpz_fpowm_ui
 		}
 	}
 	else
-		mpz_set_ui(res, 0L);
+		mpz_set_ui(res, 0L); // indicates an error
 	mpz_clear(x);
 }
 
@@ -210,7 +235,6 @@ void mpz_fspowm
 		mpz_neg(xx, x);
 	else
 		mpz_neg(bar, x);
-	
 	if (mpz_sizeinbase(xx, 2L) <= TMCG_MAX_FPOWM_T)
 	{
 		/* compute result by multiplying precomputed values */
@@ -227,7 +251,7 @@ void mpz_fspowm
 		}
 		/* invert the input, if x was negative */
 		if (!mpz_invert(foo, res, p))
-			mpz_set_ui(foo, 0L);
+			mpz_set_ui(foo, 0L); // indicates an error
 		if (mpz_sgn(x) == -1)
 			mpz_set(res, foo);
 		else

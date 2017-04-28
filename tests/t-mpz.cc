@@ -294,7 +294,25 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	
-	// mpz_spowm_baseblind, mpz_spowm_init, mpz_spowm_calc, mpz_spowm_clear
+	// mpz_spowm, mpz_spowm_baseblind, mpz_spowm_init, mpz_spowm_calc, mpz_spowm_clear
+	std::cout << "mpz_spowm()" << std::endl;
+	mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
+	for (size_t i = 0; i < 500; i++)
+	{
+		mpz_srandomm(bar, foo), mpz_srandomm(bar2, foo);
+		mpz_spowm(foo2, bar, bar2, foo);
+		mpz_powm(bar, bar, bar2, foo);
+		assert(!mpz_cmp(foo2, bar));
+	}
+	for (size_t i = 0; i < 500; i++)
+	{
+		// test negative exponents
+		mpz_srandomm(bar, foo), mpz_srandomm(bar2, foo);
+		mpz_neg(bar2, bar2);
+		mpz_spowm(foo2, bar, bar2, foo);
+		mpz_powm(bar, bar, bar2, foo);
+		assert(!mpz_cmp(foo2, bar));
+	}
 	std::cout << "mpz_spowm_baseblind()" << std::endl;
 	mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	for (size_t i = 0; i < 500; i++)
