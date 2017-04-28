@@ -2274,6 +2274,7 @@ description of such internal functions and members.
 		If the arguments are omitted, then @var{fieldsize}, @var{subgroupsize} and
 		@var{canonical_g_usage} are set to their default values @code{TMCG_DDH_SIZE},
 		@code{TMCG_DLSE_SIZE}, and @code{false}, respectively.
+		The argument @var{initialize_group} should be always set @code{true}.
 		Depending on @var{fieldsize} and @var{subgroupsize} the group generation
 		is a very time-consuming task and some dots are sent to @code{std::cerr} as
 		a progress indicator.
@@ -2285,8 +2286,9 @@ description of such internal functions and members.
 		the method @code{PublishGroup} of an already created instance. The arguments
 		@var{fieldsize}, @var{subgroupsize}, and @var{canonical_g_usage} are stored
 		for later following usage, e.g. by the method @code{CheckGroup} as explained
-		below. If these arguments are omitted, then they are set to the default values
-		@code{TMCG_DDH_SIZE}, @code{TMCG_DLSE_SIZE}, and @code{false}, respectively.
+		below. The argument @var{precompute} should be always set @code{true}.
+		If these arguments are omitted, then they are set to the default values
+		@code{TMCG_DDH_SIZE}, @code{TMCG_DLSE_SIZE}, @code{false}, and @code{true} respectively.
 	@end deftypeop
 	
 	@deftypemethod BarnettSmartVTMF_dlog bool CheckGroup ()

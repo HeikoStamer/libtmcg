@@ -73,9 +73,9 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 		BarnettSmartVTMF_dlog(in, fieldsize, fieldsize - 1L, true, false),
 		E_size(exponentsize)
 {
-	mpz_set_ui(g, 2L), mpz_set_ui(k, 2L);
-	
-	// Now shift the generator (according to [KK04]) to allow
+	mpz_set_ui(g, 2L);
+
+	// We shift the generator (according to [KK04]) to allow
 	// the usage of shortened exponents. (cf. masking protocols)
 	// We use the (Short, Full)-ElGamal variant [KK04] here,
 	// i.e. the secret key should be still of full size $\ell_q$.
@@ -85,7 +85,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	mpz_ui_pow_ui(foo, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
 	mpz_powm(g, g, foo, p);
 	mpz_clear(foo);
-	
+
 	// Precompute the $g$-table for the fast exponentiation.
 	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
@@ -102,23 +102,23 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
 		if ((mpz_sizeinbase(p, 2L) < F_size) || 
 			(mpz_sizeinbase(q, 2L) < G_size))
 				throw false;
-		
+
 		// Check whether $p$ has the correct form, i.e. $p = 2q + 1$.
 		mpz_mul_2exp(foo, q, 1L);
 		mpz_add_ui(foo, foo, 1L);
 		if (mpz_cmp(foo, p))
 			throw false;
-		
+
 		// Check whether $p$ and $q$ are both (probable) prime with a
 		// soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
 		if (!mpz_probab_prime_p(p, TMCG_MR_ITERATIONS) || 
 			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
 				throw false;
-		
+
 		// Check whether $p$ is congruent 7 modulo 8.
 		if (!mpz_congruent_ui_p(p, 7L, 8L))
 			throw false;
-		
+
 		// Check whether $g$ is a generator for the subgroup $G$ of 
 		// order $q$. It is sufficient to assert that $g$ is a quadratic
 		// residue mod $p$, i.e. we can simply do this by computing the

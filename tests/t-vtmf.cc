@@ -290,11 +290,11 @@ C2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F\
 E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9\
 DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 15728E5A8AACAA68FFFFFFFFFFFFFFFF", 16);
-	oak << barr << std::endl;
+	oak << barr << std::endl; // p
 	mpz_sub_ui(barr, barr, 1L);
 	mpz_fdiv_q_2exp(barr, barr, 1L);
-	oak << barr << std::endl;
-	oak << "2" << std::endl << "2" << std::endl;
+	oak << barr << std::endl; // q
+	oak << "2" << std::endl << "2" << std::endl; // g and k
 	std::cout << "BarnettSmartVTMF_dlog_GroupQR(<2048-bit MODP Group [RFC3526]>)" << std::endl;
 	vtmf_qr = new BarnettSmartVTMF_dlog_GroupQR(oak);
 	std::cout << "vtmf_qr.CheckGroup()" << std::endl;
