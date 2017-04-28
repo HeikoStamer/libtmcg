@@ -62,16 +62,16 @@
 class BarnettSmartVTMF_dlog_GroupQR : public BarnettSmartVTMF_dlog
 {
 	protected:
-		unsigned long int		E_size;
+		const unsigned long int		E_size;
 	
 	public:
 		BarnettSmartVTMF_dlog_GroupQR
-			(unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int exponentsize = TMCG_DLSE_SIZE);
+			(const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			const unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		BarnettSmartVTMF_dlog_GroupQR
 			(std::istream &in,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int exponentsize = TMCG_DLSE_SIZE);
+			const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			const unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		virtual bool CheckGroup
 			() const;
 		virtual bool CheckElement

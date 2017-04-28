@@ -66,22 +66,24 @@ class BarnettSmartVTMF_dlog
 		std::map<std::string, mpz_ptr>	h_j;
 	
 	protected:
+		const unsigned long int		F_size, G_size;
+		const bool			canonical_g;
 		mpz_t				*fpowm_table_g, *fpowm_table_h;
-		unsigned long int		F_size, G_size;
-		bool				canonical_g;
 	
 	public:
 		mpz_t				p, q, g, k, h, h_i;
 		
 		BarnettSmartVTMF_dlog
-			(unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			bool canonical_g_usage = false);
+			(const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			const bool canonical_g_usage = false,
+			const bool initialize_group = true);
 		BarnettSmartVTMF_dlog
 			(std::istream& in,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			bool canonical_g_usage = false);
+			const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			const bool canonical_g_usage = false,
+			const bool precompute = true);
 		virtual bool CheckGroup
 			() const;
 		void PublishGroup

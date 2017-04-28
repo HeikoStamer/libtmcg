@@ -41,7 +41,7 @@
 
 BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	(unsigned long int fieldsize, unsigned long int exponentsize):
-		BarnettSmartVTMF_dlog(fieldsize, 0L, true),
+		BarnettSmartVTMF_dlog(fieldsize, fieldsize - 1L, true, false),
 		E_size(exponentsize)
 {
 	// Create a finite abelian group $G$ where DDH is hard:
@@ -51,18 +51,17 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	// $p \equiv 7 \pmod{8}$. [Bo98]
 	mpz_sprime2g(p, q, fieldsize - 1L, TMCG_MR_ITERATIONS);
 	mpz_set_ui(g, 2L), mpz_set_ui(k, 2L);
-	G_size = fieldsize - 1L;
 	
-	// We shift the generator (according to [KK04]) for the later
-	// following usage of shortened exponents. (cf. masking protocols)
+	// We shift the generator (according to [KK04]) to allow
+	// the usage of shortened exponents. (cf. masking protocols)
 	// We use the (Short, Full)-ElGamal variant [KK04] here,
 	// i.e. the secret key should be still of full size $\ell_q$.
 	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
-	mpz_t tmp;
-	mpz_init(tmp);
-	mpz_ui_pow_ui(tmp, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
-	mpz_powm(g, g, tmp, p);
-	mpz_clear(tmp);
+	mpz_t foo;
+	mpz_init(foo);
+	mpz_ui_pow_ui(foo, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
+	mpz_powm(g, g, foo, p);
+	mpz_clear(foo);
 	
 	// Precompute the $g$-table for the fast exponentiation.
 	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
@@ -71,22 +70,21 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	(std::istream& in,
 	unsigned long int fieldsize, unsigned long int exponentsize):
-		BarnettSmartVTMF_dlog(in, fieldsize, 0L, true),
+		BarnettSmartVTMF_dlog(in, fieldsize, fieldsize - 1L, true, false),
 		E_size(exponentsize)
 {
 	mpz_set_ui(g, 2L), mpz_set_ui(k, 2L);
-	G_size = fieldsize - 1L;
 	
-	// Now shift the generator (according to [KK04]) for the later
-	// following usage of shortened exponents. (cf. masking protocols)
+	// Now shift the generator (according to [KK04]) to allow
+	// the usage of shortened exponents. (cf. masking protocols)
 	// We use the (Short, Full)-ElGamal variant [KK04] here,
 	// i.e. the secret key should be still of full size $\ell_q$.
 	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
-	mpz_t tmp;
-	mpz_init(tmp);
-	mpz_ui_pow_ui(tmp, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
-	mpz_powm(g, g, tmp, p);
-	mpz_clear(tmp);
+	mpz_t foo;
+	mpz_init(foo);
+	mpz_ui_pow_ui(foo, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
+	mpz_powm(g, g, foo, p);
+	mpz_clear(foo);
 	
 	// Precompute the $g$-table for the fast exponentiation.
 	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));

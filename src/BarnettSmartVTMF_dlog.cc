@@ -38,24 +38,24 @@
 #include "BarnettSmartVTMF_dlog.hh"
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
-	(unsigned long int fieldsize, unsigned long int subgroupsize,
-	bool canonical_g_usage):
+	(const unsigned long int fieldsize, const unsigned long int subgroupsize,
+	const bool canonical_g_usage, const bool initialize_group):
 		F_size(fieldsize), G_size(subgroupsize), 
 		canonical_g(canonical_g_usage)
 {
-	// Create a finite abelian group $G$ where the DDH problem is hard:
-	// We use the unique subgroup of prime order $q$ where $p = kq + 1$.
-	// Sometimes such groups are called Schnorr groups. [Bo98]
+	// Initialize all members of the class
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(k);
-	if (subgroupsize)
-		mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
-	
-	// Initialize all members of the key.
 	mpz_init(x_i), mpz_init(h_i), mpz_init_set_ui(h, 1L), mpz_init(d);
 	mpz_init(h_i_fp);
+
+	// Create a finite abelian group $G$ where the DDH problem is hard:
+	// We use the unique subgroup of prime order $q$ where $p = kq + 1$.
+	// Sometimes such groups are called Schnorr groups. [Bo98]	
+	if (initialize_group)
+		mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
 	
 	// Choose the generator $g$ of the group $G$. 
-	if (subgroupsize)
+	if (initialize_group)
 	{
 		mpz_t foo, bar;
 		mpz_init(foo), mpz_init(bar);
@@ -102,32 +102,32 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
 	
 	// Precompute the values $g^{2^i} \bmod p$ for all $0 \le i \le |q|$.
-	if (subgroupsize)
+	if (initialize_group)
 		mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	(std::istream& in, 
-	unsigned long int fieldsize, unsigned long int subgroupsize,
-	bool canonical_g_usage):
+	const unsigned long int fieldsize, const unsigned long int subgroupsize,
+	const bool canonical_g_usage, const bool precompute):
 		F_size(fieldsize), G_size(subgroupsize),
 		canonical_g(canonical_g_usage)
 {
-	// Initialize the members for the finite abelian group $G$.
+	// Initialize all members of the class
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(k);
-	in >> p >> q >> g >> k;
-	
-	// Initialize all members for the key.
 	mpz_init(x_i), mpz_init(h_i), mpz_init_set_ui(h, 1L), mpz_init(d);
 	mpz_init(h_i_fp);
+
+	// Read parameters of group $G$ from input stream
+	in >> p >> q >> g >> k;
 	
-	// Initialize the tables for the fast exponentiation.
+	// Initialize the tables for the fast exponentiation
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
 	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
 	
-	// Precompute the values $g^{2^i} \bmod p$ for all $0 \le i \le |q|$.
-	if (subgroupsize)
+	// Precompute the values $g^{2^i} \bmod p$ for all $0 \le i \le |q|$
+	if (precompute)
 		mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
