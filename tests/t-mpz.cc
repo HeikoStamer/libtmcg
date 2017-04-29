@@ -408,9 +408,9 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	// check whether spowm() is slower than powm()
 	assert((compare_elapsed_time_saved(0) < 0));
 	size_t bad_cnt = 0; 
+	std::cout << "mpz_fpowm() vs. mpz_fspowm() benchmark" << std::endl;
 	for (size_t j = 0; j < 30; j++)
 	{
-		std::cout << "mpz_fpowm() benchmark" << std::endl;
 		mpz_fpowm_init(fpowm_table_1);
 		mpz_fpowm_precompute(fpowm_table_1, bar, foo, 160);
 		start_clock();
@@ -421,8 +421,7 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		}
 		stop_clock();
 		save_clock();
-		std::cout << elapsed_time() << std::endl;
-		std::cout << "mpz_fspowm() benchmark" << std::endl;
+		std::cout << elapsed_time() << " vs. ";
 		start_clock();
 		for (size_t i = 0; i < 10000; i++)
 		{
