@@ -58,7 +58,7 @@ LIBTMCG_CONFIG_CFLAGS=""
 
 # Define some security parameters and helping macros
 # (NOTE: Please update also libTMCG.hh, if changed!)
-AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.7.0",
+AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.6.0",
 	[Define the necessary version number of the GNU gcrypt library])
 AC_DEFINE(TMCG_LIBGMP_VERSION, "4.2.0",
 	[Define the necessary version number of the GNU gmp library])

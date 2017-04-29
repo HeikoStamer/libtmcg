@@ -508,10 +508,10 @@ of the used features and specifies the required versions:
 		reasonable performance.
 		
 	@item GNU Crypto Library (@file{libgcrypt}),
-		Version@tie{}@math{\ge}@tie{}1.7.0
+		Version@tie{}@math{\ge}@tie{}1.6.0
 		
 		The library provides some basic cryptographic algorithms
-		(e.g. SHA3-512, SHA-256, AES256, RIPEMD-160, ElGamal, DSA)
+		(e.g. SHA-256, AES256, RIPEMD-160, ElGamal, DSA)
 		and an easily accessible interface for cryptographically
 		strong pseudo random numbers.
 	
