@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -36,10 +36,12 @@
 	
 	/* hash functions h, g, and mpz_shash */
 	void h
-		(char *output, const char *input, size_t size);
+		(unsigned char *output,
+		const unsigned char *input, const size_t size);
 	
 	void g
-		(char *output, size_t osize, const char *input, size_t isize);
+		(unsigned char *output, const size_t osize,
+		const unsigned char *input, const size_t isize);
 		
 	void mpz_shash
 		(mpz_ptr r, std::string input);

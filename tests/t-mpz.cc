@@ -40,8 +40,6 @@ int main
 {
 	mpz_t foo, bar, foo2, bar2, root, t1, t2;
 	mpz_t fpowm_table_1[TMCG_MAX_FPOWM_T], fpowm_table_2[TMCG_MAX_FPOWM_T];
-	char tmp_ar1[1024], tmp_ar2[1024];
-	char *dig1, *dig2;
 	unsigned long int tmp_ui = 0L, cnt[MOD_BIAS_WIDTH];
 	std::stringstream lej;
 	std::string s;
@@ -441,13 +439,13 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	assert(bad_cnt < 10);
 	
 	// h, g, mpz_shash
+	unsigned char tmp_ar1[1024], tmp_ar2[1024];
 	std::cout << "h()" << std::endl;
-	dig1 = new char[gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)];
-	dig2 = new char[gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)];
+	unsigned char *dig1 = new unsigned char[gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)];
+	unsigned char *dig2 = new unsigned char[gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)];
 	for (size_t i = 0; i < 50; i++)
 	{
-		gcry_randomize((unsigned char *)&tmp_ar1, sizeof(tmp_ar1),
-			GCRY_STRONG_RANDOM);
+		gcry_randomize(&tmp_ar1, sizeof(tmp_ar1), GCRY_STRONG_RANDOM);
 		h(dig1, tmp_ar1, sizeof(tmp_ar1));
 		h(dig2, tmp_ar2, sizeof(tmp_ar2));
 		assert(memcmp(dig1, dig2, gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)));
@@ -457,11 +455,10 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	}
 	delete [] dig1, delete [] dig2;
 	std::cout << "g()" << std::endl;
-	dig1 = new char[1024], dig2 = new char[1024];
+	dig1 = new unsigned char[1024], dig2 = new unsigned char[1024];
 	for (size_t i = 0; i < 50; i++)
 	{
-		gcry_randomize((unsigned char *)&tmp_ar1, sizeof(tmp_ar1),
-			GCRY_STRONG_RANDOM);
+		gcry_randomize(&tmp_ar1, sizeof(tmp_ar1), GCRY_STRONG_RANDOM);
 		g(dig1, 1024, tmp_ar1, sizeof(tmp_ar1));
 		g(dig2, 1024, tmp_ar2, sizeof(tmp_ar2));
 		assert(memcmp(dig1, dig2, gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)));

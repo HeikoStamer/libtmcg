@@ -51,7 +51,7 @@ TMCG_SecretKey::TMCG_SecretKey
 
 TMCG_SecretKey::TMCG_SecretKey
 	(const std::string& n, const std::string& e,
-	unsigned long int keysize, bool nizk_key):
+	const unsigned long int keysize, const bool nizk_key):
 		name(n), email(e)
 {
 	mpz_init(m), mpz_init(y), mpz_init(p), mpz_init(q);
@@ -99,7 +99,7 @@ TMCG_SecretKey& TMCG_SecretKey::operator =
 }
 
 void TMCG_SecretKey::generate
-	(unsigned long int keysize, bool nizk_key)
+	(const unsigned long int keysize, const bool nizk_key)
 {
 	mpz_t foo, bar;
 	
@@ -166,7 +166,7 @@ void TMCG_SecretKey::generate
 	std::ostringstream nizk2, input;
 	input << m << "^" << y, nizk2 << "nzk^";
 	size_t mnsize = mpz_sizeinbase(m, 2L) / 8;
-	char *mn = new char[mnsize];
+	unsigned char *mn = new unsigned char[mnsize];
 	
 	// STAGE1: m Square Free
 	// soundness error probability \le d^{-TMCG_KEY_NIZK_STAGE1}
@@ -176,7 +176,7 @@ void TMCG_SecretKey::generate
 		// common random number foo \in Z^*_m (build from hash function g)
 		do
 		{
-			g(mn, mnsize, (input.str()).c_str(), (input.str()).length());
+			g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
 			mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 			mpz_mod(foo, foo, m);
 			mpz_gcd(bar, foo, m);
@@ -199,7 +199,7 @@ void TMCG_SecretKey::generate
 		// common random number foo \in Z^*_m (build from hash function g)
 		do
 		{
-			g(mn, mnsize, (input.str()).c_str(), (input.str()).length());
+			g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
 			mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 			mpz_mod(foo, foo, m);
 			mpz_gcd(bar, foo, m);
@@ -243,7 +243,7 @@ void TMCG_SecretKey::generate
 		// common random number foo \in Z^\circ_m (build from hash function g)
 		do
 		{
-			g(mn, mnsize, (input.str()).c_str(), (input.str()).length());
+			g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
 			mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 			mpz_mod(foo, foo, m);
 			input << foo;
@@ -334,7 +334,7 @@ std::string TMCG_SecretKey::selfid
 }
 
 std::string TMCG_SecretKey::keyid
-	(size_t size) const
+	(const size_t size) const
 {
 	TMCG_PublicKey pub(*this);
 	return pub.keyid(size);
@@ -423,20 +423,23 @@ bool TMCG_SecretKey::import
 }
 
 bool TMCG_SecretKey::decrypt
-	(char* value, std::string s) const
+	(unsigned char* value, std::string s) const
 {
 	mpz_t vdata, vroot[4];
 	size_t rabin_s2 = 2 * TMCG_SAEP_S0;
 	size_t rabin_s1 = (mpz_sizeinbase(m, 2L) / 8) - rabin_s2;
 	
-	assert(rabin_s2 < (mpz_sizeinbase(m, 2L) / 16));
-	assert(rabin_s2 < rabin_s1);
-	assert(TMCG_SAEP_S0 < (mpz_sizeinbase(m, 2L) / 32));
+	if (rabin_s2 >= (mpz_sizeinbase(m, 2L) / 16))
+		return false;
+	if (rabin_s2 >= rabin_s1)
+		return false;
+	if (TMCG_SAEP_S0 >= (mpz_sizeinbase(m, 2L) / 32))
+		return false;
 	
-	char *yy = new char[rabin_s2 + rabin_s1 + 1024];
-	char *r = new char[rabin_s1];
-	char *Mt = new char[rabin_s2];
-	char *g12 = new char[rabin_s2];
+	unsigned char *yy = new unsigned char[rabin_s2 + rabin_s1 + 1024];
+	unsigned char *r = new unsigned char[rabin_s1];
+	unsigned char *Mt = new unsigned char[rabin_s2];
+	unsigned char *g12 = new unsigned char[rabin_s2];
 	mpz_init(vdata), mpz_init(vroot[0]), mpz_init(vroot[1]),
 		mpz_init(vroot[2]), mpz_init(vroot[3]);
 	try
@@ -511,23 +514,23 @@ std::string TMCG_SecretKey::sign
 	// PRab [BR96] was implemented to increase the security of digital signatures.
 	do
 	{
-		char *r = new char[TMCG_PRAB_K0];
-		gcry_randomize((unsigned char*)r, TMCG_PRAB_K0, GCRY_STRONG_RANDOM);
+		unsigned char *r = new unsigned char[TMCG_PRAB_K0];
+		gcry_randomize(r, TMCG_PRAB_K0, GCRY_STRONG_RANDOM);
 		
-		char *Mr = new char[data.length() + TMCG_PRAB_K0];
+		unsigned char *Mr = new unsigned char[data.length() + TMCG_PRAB_K0];
 		memcpy(Mr, data.c_str(), data.length());
 		memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
 		
-		char *w = new char[mdsize];
+		unsigned char *w = new unsigned char[mdsize];
 		h(w, Mr, data.length() + TMCG_PRAB_K0);
 		
-		char *g12 = new char[mnsize];
+		unsigned char *g12 = new unsigned char[mnsize];
 		g(g12, mnsize - mdsize, w, mdsize);
 		
 		for (size_t i = 0; i < TMCG_PRAB_K0; i++)
 			r[i] ^= g12[i];
 		
-		char *yy = new char[mnsize];
+		unsigned char *yy = new unsigned char[mnsize];
 		memcpy(yy, w, mdsize);
 		memcpy(yy + mdsize, r, TMCG_PRAB_K0);
 		memcpy(yy + mdsize + TMCG_PRAB_K0, g12 + TMCG_PRAB_K0,
@@ -550,7 +553,7 @@ std::string TMCG_SecretKey::sign
 }
 
 std::string TMCG_SecretKey::encrypt
-	(const char* value) const
+	(const unsigned char* value) const
 {
 	TMCG_PublicKey pub(*this);
 	return pub.encrypt(value);

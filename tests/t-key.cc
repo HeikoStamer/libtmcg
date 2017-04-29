@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2005, 2006, 2007, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -69,8 +69,8 @@ int main
 	
 	// encrypt and decrypt
 	std::cout << "*.encrypt(), TMCG_SecretKey.decrypt()" << std::endl;
-	char tmp[TMCG_SAEP_S0], dec[TMCG_SAEP_S0], dec2[TMCG_SAEP_S0];
-	gcry_randomize((unsigned char *)tmp, sizeof(tmp), GCRY_STRONG_RANDOM);
+	unsigned char tmp[TMCG_SAEP_S0], dec[TMCG_SAEP_S0], dec2[TMCG_SAEP_S0];
+	gcry_randomize(tmp, sizeof(tmp), GCRY_STRONG_RANDOM);
 	enc = pub.encrypt(tmp);
 	enc2 = sec.encrypt(tmp);
 	assert(sec.decrypt(dec, enc));

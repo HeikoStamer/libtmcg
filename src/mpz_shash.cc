@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
      [BR95] Mihir Bellare, Phillip Rogaway: 'Random Oracles are Practical:
              A Paradigm for Designing Efficient Protocols',
@@ -29,30 +29,32 @@
 #endif
 #include "mpz_shash.hh"
 
-/* hash function h() (assumption: at least collision-resistant) */
+/* hash function h() (assumption: collision-resistant) */
 void h
-	(char *output, const char *input, size_t size)
+	(unsigned char *output,
+	const unsigned char *input, const size_t size)
 {
 	gcry_md_hash_buffer(TMCG_GCRY_MD_ALGO, output, input, size);
 }
 
 /* hash function g() (The design is based on the ideas of [BR95].) */
 void g
-	(char *output, size_t osize, const char *input, size_t isize)
+	(unsigned char *output, const size_t osize,
+	const unsigned char *input, const size_t isize)
 {
 	size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
 	// hopefully this truncation size does not match the border
 	// of chaining variables in the compression function of h
 	size_t usesize = (mdsize / 4) + 1;
 	size_t times = (osize / usesize) + 1;
-	char *out = new char[(times + 1) * mdsize];
+	unsigned char *out = new unsigned char[(times + 1) * mdsize];
 	memset(out, 0, (times + 1) * mdsize);
 	for (size_t i = 0; i < times; i++)
 	{
 		/* construct the expanded input y = x || libTMCG<i> || x */
-		char *data = new char[9 + (2 * isize)];
+		unsigned char *data = new unsigned char[9 + (2 * isize)];
 		memcpy(data, input, isize);
-		snprintf(data + isize, 9, "libTMCG%02x", (unsigned int)i);
+		snprintf((char*)data + isize, 9, "libTMCG%02x", (unsigned int)i);
 		memcpy(data + isize + 9, input, isize);
 		
 		/* using h(y) "in some nonstandard way" with "output truncated" [BR95] */
@@ -70,18 +72,18 @@ void mpz_shash
 	(mpz_ptr r, std::string input)
 {
 	size_t hash_size = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
-	char *digest = new char[hash_size];
-	char *hex_digest = new char[(2 * hash_size) + 1];
+	unsigned char *digest = new unsigned char[hash_size];
+	unsigned char *hex_digest = new unsigned char[(2 * hash_size) + 1];
 	
 	/* hash the input */
-	g(digest, hash_size, input.c_str(), input.length());
+	g(digest, hash_size, (unsigned char*)input.c_str(), input.length());
 	
 	/* convert the digest to a hexadecimal encoded string */
 	for (size_t i = 0; i < hash_size; i++)
-		snprintf(hex_digest + (2 * i), 3, "%02x", (unsigned char)digest[i]);
+		snprintf((char*)hex_digest + (2 * i), 3, "%02x", digest[i]);
 	
 	/* convert the hexadecimal encoded string to an mpz-integer */
-	mpz_set_str(r, hex_digest, 16);
+	mpz_set_str(r, (char*)hex_digest, 16);
 	
 	delete [] digest, delete [] hex_digest;
 }
@@ -100,7 +102,8 @@ void mpz_shash
 	for (size_t i = 0; i < n; i++)
 	{
 		a = (mpz_srcptr) va_arg(ap, mpz_srcptr);
-		char *vtmp = new char[(2 * mpz_sizeinbase(a, 16)) + 1];
+		size_t vlen = (2 * mpz_sizeinbase(a, 16)) + 1;
+		char *vtmp = new char[vlen];
 		acc += mpz_get_str(vtmp, 16, a);
 		acc += "|";
 		delete [] vtmp;

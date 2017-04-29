@@ -89,7 +89,8 @@ bool TMCG_PublicKey::check
 	std::string s = nizk;
 	size_t stage1_size = 0, stage2_size = 0, stage3_size = 0;
 	size_t mnsize = mpz_sizeinbase(m, 2L) / 8;
-	char *ec, *mn = new char[mnsize];
+	char *ec;
+	unsigned char *mn = new unsigned char[mnsize];
 	
 	mpz_init(foo), mpz_init(bar);
 	try
@@ -173,7 +174,7 @@ bool TMCG_PublicKey::check
 			// common random number foo \in Z^*_m (build from hash function g)
 			do
 			{
-				g(mn, mnsize, (input.str()).c_str(), (input.str()).length());
+				g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
 				mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 				mpz_mod(foo, foo, m);
 				mpz_gcd(bar, foo, m);
@@ -212,7 +213,7 @@ bool TMCG_PublicKey::check
 			// common random number foo \in Z^*_m (build from hash function g)
 			do
 			{
-				g(mn, mnsize, (input.str()).c_str(), (input.str()).length());
+				g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
 				mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 				mpz_mod(foo, foo, m);
 				mpz_gcd(bar, foo, m);
@@ -264,7 +265,7 @@ bool TMCG_PublicKey::check
 			// common random number foo \in Z^\circ_m (build from hash function g)
 			do
 			{
-				g(mn, mnsize, (input.str()).c_str(), (input.str()).length());
+				g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
 				mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 				mpz_mod(foo, foo, m);
 				input << foo;
@@ -305,18 +306,17 @@ std::string TMCG_PublicKey::fingerprint
 	() const
 {
 	unsigned int hash_size = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
-	char *digest = new char[hash_size];
+	unsigned char *digest = new unsigned char[hash_size];
 	char *hex_digest = new char[(3 * hash_size) + 1];
 	std::ostringstream data;
 	
 	// compute the digest
 	data << "pub|" << name << "|" << email << "|" << type << 
 		"|" << m << "|" << y << "|" << nizk << "|" << sig;
-	h(digest, data.str().c_str(), data.str().length());
+	h(digest, (unsigned char*)(data.str()).c_str(), (data.str()).length());
 	// convert the digest to a hexadecimal encoded string
-	for (unsigned int i = 0; i < (hash_size / 2); i++)
-		snprintf(hex_digest + (5 * i), 6, "%02X%02X ", 
-			(unsigned char)digest[2 * i], (unsigned char)digest[(2 * i) + 1]);
+	for (size_t i = 0; i < (hash_size / 2); i++)
+		snprintf(hex_digest + (5 * i), 6, "%02X%02X ", digest[2 * i], digest[(2 * i) + 1]);
 	std::string fp_str = hex_digest;
 	// release resources
 	delete [] digest, delete [] hex_digest;
@@ -346,7 +346,7 @@ std::string TMCG_PublicKey::selfid
 }
 
 std::string TMCG_PublicKey::keyid
-	(size_t size) const
+	(const size_t size) const
 {
 	std::ostringstream data;
 	std::string tmp = selfid();
@@ -369,8 +369,7 @@ size_t TMCG_PublicKey::keyid_size
 	
 	// extract the size
 	char *ec;
-	size_t size = 
-	    std::strtoul(s.substr(2, s.find("^") - 2).c_str(), &ec, 10);
+	size_t size = std::strtoul(s.substr(2, s.find("^") - 2).c_str(), &ec, 10);
 	if ((*ec != '\0') || (size != (s.length() - s.find("^") - 1)))
 		return 0;
 	
@@ -443,7 +442,7 @@ bool TMCG_PublicKey::import
 }
 
 std::string TMCG_PublicKey::encrypt
-	(const char* value) const
+	(const unsigned char* value) const
 {
 	mpz_t vdata;
 	size_t rabin_s2 = 2 * TMCG_SAEP_S0;
@@ -454,10 +453,11 @@ std::string TMCG_PublicKey::encrypt
 	assert(TMCG_SAEP_S0 < (mpz_sizeinbase(m, 2L) / 32));
 	
 	// use simplified OAEP = SAEP [Bo01]
-	char *r = new char[rabin_s1];
-	gcry_randomize((unsigned char*)r, rabin_s1, GCRY_STRONG_RANDOM);
+	unsigned char *r = new unsigned char[rabin_s1];
+	gcry_randomize(r, rabin_s1, GCRY_STRONG_RANDOM);
 	
-	char *Mt = new char[rabin_s2], *g12 = new char[rabin_s2];
+	unsigned char *Mt = new unsigned char[rabin_s2];
+	unsigned char *g12 = new unsigned char[rabin_s2];
 	memcpy(Mt, value, TMCG_SAEP_S0);
 	memset(Mt + TMCG_SAEP_S0, 0, TMCG_SAEP_S0);
 	g(g12, rabin_s2, r, rabin_s1);
@@ -465,14 +465,14 @@ std::string TMCG_PublicKey::encrypt
 	for (size_t i = 0; i < rabin_s2; i++)
 		Mt[i] ^= g12[i];
 	
-	char *yy = new char[rabin_s2 + rabin_s1];
+	unsigned char *yy = new unsigned char[rabin_s2 + rabin_s1];
 	memcpy(yy, Mt, rabin_s2);
 	memcpy(yy + rabin_s2, r, rabin_s1);
 	mpz_init(vdata);
 	mpz_import(vdata, 1, -1, rabin_s2 + rabin_s1, 1, 0, yy);
 	delete [] yy, delete [] g12, delete [] Mt, delete [] r;
 	
-	// apply RABIN function vdata = vdata^2 mod m
+	// apply Rabin's encryption function, i.e., vdata = vdata^2 mod m
 	mpz_mul(vdata, vdata, vdata);
 	mpz_mod(vdata, vdata, m);
 	
@@ -508,16 +508,16 @@ bool TMCG_PublicKey::verify
 		// verify signature (see PRab [BR96])
 		size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
 		size_t mnsize = mpz_sizeinbase(m, 2L) / 8;
-		
-		assert(mpz_sizeinbase(m, 2L) > (mnsize * 8));
-		assert(mnsize > (mdsize + TMCG_PRAB_K0));
-		
-		mpz_mul(foo, foo, foo);
+		if (mpz_sizeinbase(m, 2L) <= (mnsize * 8))
+			throw false;
+		if (mnsize <= (mdsize + TMCG_PRAB_K0))
+			throw false;
+		mpz_mul(foo, foo, foo); // apply Rabin's verification function
 		mpz_mod(foo, foo, m);
-		
-		char *w = new char[mdsize], *r = new char[TMCG_PRAB_K0];
-		char *gamma = new char[mnsize - mdsize - TMCG_PRAB_K0];
-		char *yy = new char[mnsize + 1024];
+		unsigned char *w = new unsigned char[mdsize];
+		unsigned char *r = new unsigned char[TMCG_PRAB_K0];
+		unsigned char *gamma = new unsigned char[mnsize - mdsize - TMCG_PRAB_K0];
+		unsigned char *yy = new unsigned char[mnsize + 1024];
 		size_t cnt = 1;
 		mpz_export(yy, &cnt, -1, mnsize, 1, 0, foo);
 		memcpy(w, yy, mdsize);
@@ -525,17 +525,17 @@ bool TMCG_PublicKey::verify
 		memcpy(gamma, yy + mdsize + TMCG_PRAB_K0,
 			mnsize - mdsize - TMCG_PRAB_K0);
 		
-		char *g12 = new char[mnsize];
+		unsigned char *g12 = new unsigned char[mnsize];
 		g(g12, mnsize - mdsize, w, mdsize);
 		
 		for (size_t i = 0; i < TMCG_PRAB_K0; i++)
 			r[i] ^= g12[i];
 		
-		char *Mr = new char[data.length() + TMCG_PRAB_K0];
+		unsigned char *Mr = new unsigned char[data.length() + TMCG_PRAB_K0];
 		memcpy(Mr, data.c_str(), data.length());
 		memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
 		
-		char *w2 = new char[mdsize];
+		unsigned char *w2 = new unsigned char[mdsize];
 		h(w2, Mr, data.length() + TMCG_PRAB_K0);
 		
 		bool ok = (memcmp(w, w2, mdsize) == 0) && (memcmp(gamma,

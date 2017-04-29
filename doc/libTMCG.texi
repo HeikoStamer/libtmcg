@@ -1616,7 +1616,7 @@ individual profile or a service provider can issue public key certificates.
 		This default constructor initializes an empty secret key.
 	@end defop
 	
-	@deftypeop {Constructor} TMCG_SecretKey {} TMCG_SecretKey (@code{const std::string&} n, @code{const std::string&} e, @code{unsigned long int} keysize @code{=TMCG_QRA_SIZE}, @code{bool} nizk_key @code{=true})
+	@deftypeop {Constructor} TMCG_SecretKey {} TMCG_SecretKey (@code{const std::string&} n, @code{const std::string&} e, @code{const unsigned long int} keysize @code{=TMCG_QRA_SIZE}, @code{const bool} nizk_key @code{=true})
 		This constructor generates a new secret key, where @var{n} is the name or
 		a pseudonym of the owner, @var{e} is a corresponding email address, 
 		@var{keysize} is the desired bit length of the modulus @math{m}, and
@@ -1664,7 +1664,7 @@ individual profile or a service provider can issue public key certificates.
 		if the self signature @code{sig} was empty.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_SecretKey {std::string} keyid (@code{size_t} size @code{=TMCG_KEYID_SIZE})
+	@deftypemethod TMCG_SecretKey {std::string} keyid (@code{const size_t} size @code{=TMCG_KEYID_SIZE})
 		This method returns the unique key identifier of length @var{size}.
 		The default value of the first argument is set to @code{TMCG_KEYID_SIZE},
 		if @var{size} is omitted in the call.
@@ -1686,7 +1686,7 @@ individual profile or a service provider can issue public key certificates.
 		@var{s}. It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_SecretKey bool decrypt (@code{char*} value, @code{std::string} s)
+	@deftypemethod TMCG_SecretKey bool decrypt (@code{unsigned char*} value, @code{std::string} s)
 		This method decrypts the given encryption packet @var{s} and stores
 		the content in @var{value} which is a pointer to a character array
 		of size @code{TMCG_SAEP_S0}. The method returns @code{true}, if the
@@ -1697,7 +1697,7 @@ individual profile or a service provider can issue public key certificates.
 		This method returns a digital signature on @var{data}.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_SecretKey {std::string} encrypt (@code{const char*} value)
+	@deftypemethod TMCG_SecretKey {std::string} encrypt (@code{const unsigned char*} value)
 		This method encrypts the content of @var{value} which is a pointer to a
 		character array of size @code{TMCG_SAEP_S0}. The method returns a
 		corresponding encryption packet that can be decrypted by the owner of the
@@ -1808,7 +1808,7 @@ individual profile or a service provider can issue public key certificates.
 		if the self signature @code{sig} was empty.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_PublicKey {std::string} keyid (@code{size_t} size @code{=TMCG_KEYID_SIZE})
+	@deftypemethod TMCG_PublicKey {std::string} keyid (@code{const size_t} size @code{=TMCG_KEYID_SIZE})
 		This method returns the unique key identifier of length @var{size}.
 		The default value of the first argument is set to @code{TMCG_KEYID_SIZE},
 		if @var{size} is omitted in the call.
@@ -1830,7 +1830,7 @@ individual profile or a service provider can issue public key certificates.
 		@var{s}. It returns @code{true}, if the import was successful.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_PublicKey {std::string} encrypt (@code{const char*} value)
+	@deftypemethod TMCG_PublicKey {std::string} encrypt (@code{const unsigned char*} value)
 		This method encrypts the content of @var{value} which is a pointer to a
 		character array of size @code{TMCG_SAEP_S0}. The method returns a
 		corresponding encryption packet that can be decrypted by the owner of the

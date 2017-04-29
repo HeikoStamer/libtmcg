@@ -16,8 +16,8 @@
      [Bo01] Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions',
      Proceedings of CRYPTO 2001, LNCS 2139, pp. 275--291, 2001.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2016, 
-                                 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2007, 
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -68,8 +68,8 @@ struct TMCG_SecretKey
 	
 	TMCG_SecretKey
 		(const std::string& n, const std::string& e,
-		unsigned long int keysize = TMCG_QRA_SIZE, 
-		bool nizk_key = true);
+		const unsigned long int keysize = TMCG_QRA_SIZE, 
+		const bool nizk_key = true);
 	
 	TMCG_SecretKey
 		(const std::string& s);
@@ -81,7 +81,7 @@ struct TMCG_SecretKey
 		(const TMCG_SecretKey& that);
 	
 	void generate
-		(unsigned long int keysize, bool nizk_key);
+		(const unsigned long int keysize, const bool nizk_key);
 	
 	bool precompute
 		();
@@ -96,7 +96,7 @@ struct TMCG_SecretKey
 		() const;
 	
 	std::string keyid
-		(size_t size = TMCG_KEYID_SIZE) const;
+		(const size_t size = TMCG_KEYID_SIZE) const;
 	
 	size_t keyid_size
 		(const std::string& s) const;
@@ -108,13 +108,13 @@ struct TMCG_SecretKey
 		(std::string s);
 	
 	bool decrypt
-		(char* value, std::string s) const;
+		(unsigned char* value, std::string s) const;
 	
 	std::string sign
 		(const std::string& data) const;
 	
 	std::string encrypt
-		(const char* value) const;
+		(const unsigned char* value) const;
 	
 	bool verify
 		(const std::string& data, const std::string& s) const;
