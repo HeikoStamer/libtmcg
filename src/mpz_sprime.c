@@ -425,7 +425,7 @@ void mpz_sprime_test_naive
 	fprintf(stderr, "\n");
 
 	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
-		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); // indicates an error	
+		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); // indicates an error
 }
 
 void mpz_sprime
@@ -510,8 +510,8 @@ void mpz_lprime
 	mpz_clear(foo);
 	fprintf(stderr, "\n");
 	
-	assert(mpz_probab_prime_p(p, mr_iterations));
-	assert(mpz_probab_prime_p(q, mr_iterations));
+	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
+		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); // indicates an error
 }
 
 void mpz_oprime
