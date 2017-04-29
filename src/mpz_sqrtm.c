@@ -42,7 +42,7 @@
 
 *******************************************************************************/
 
-// include headers
+/* include headers */
 #ifdef HAVE_CONFIG_H
 	#include "libTMCG_config.h"
 #endif
@@ -624,7 +624,7 @@ void mpz_sqrtmn_fast
 	mpz_t root_p, root_q;
 	
 	/* fast single square roots for Blum Integer */
-	mpz_init(root_p), mpz_init (root_q);
+	mpz_init(root_p), mpz_init(root_q);
 	mpz_powm(root_p, a, pa1d4, p);
 	mpz_powm(root_q, a, qa1d4, q);
 	

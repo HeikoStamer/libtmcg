@@ -19,7 +19,7 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
-// include headers
+/* include headers */
 #ifdef HAVE_CONFIG_H
 	#include "libTMCG_config.h"
 #endif
@@ -110,7 +110,7 @@ void mpz_spowm
 #ifdef HAVE_POWMSEC
 	mpz_t foo, bar, xx;
 	if (!mpz_odd_p(p))
-		mpz_set_ui(foo, 0L); // indicates an error
+		mpz_set_ui(foo, 0L); /* indicates an error */
 
 	mpz_init(foo), mpz_init(bar), mpz_init_set(xx, x);
 	if (mpz_sgn(x) == -1)
@@ -121,7 +121,7 @@ void mpz_spowm
 	mpz_powm_sec(res, m, xx, p);
 	/* invert the input, if x was negative */
 	if (!mpz_invert(foo, res, p))
-		mpz_set_ui(foo, 0L); // indicates an error
+		mpz_set_ui(foo, 0L); /* indicates an error */
 	if (mpz_sgn(x) == -1)
 		mpz_set(res, foo);
 	else
@@ -190,11 +190,11 @@ void mpz_fpowm
 		if (mpz_sgn(x) == -1)
 		{
 			if (!mpz_invert(res, res, p))
-				mpz_set_ui(res, 0L); // indicates an error
+				mpz_set_ui(res, 0L); /* indicates an error */
 		}
 	}
 	else
-		mpz_set_ui(res, 0L); // indicates an error
+		mpz_set_ui(res, 0L); /* indicates an error */
 	mpz_clear(xx);
 }
 
@@ -219,7 +219,7 @@ void mpz_fpowm_ui
 		}
 	}
 	else
-		mpz_set_ui(res, 0L); // indicates an error
+		mpz_set_ui(res, 0L); /* indicates an error */
 	mpz_clear(x);
 }
 
@@ -251,7 +251,7 @@ void mpz_fspowm
 		}
 		/* invert the input, if x was negative */
 		if (!mpz_invert(foo, res, p))
-			mpz_set_ui(foo, 0L); // indicates an error
+			mpz_set_ui(foo, 0L); /* indicates an error */
 		if (mpz_sgn(x) == -1)
 			mpz_set(res, foo);
 		else
@@ -265,7 +265,7 @@ void mpz_fspowm
 		mpz_mod(res, res, p);
 	}
 	else
-		mpz_set_ui(res, 0L); // indicates an error
+		mpz_set_ui(res, 0L); /* indicates an error */
 	mpz_clear(foo), mpz_clear(bar), mpz_clear(xx);
 }
 

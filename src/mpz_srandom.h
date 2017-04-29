@@ -1,7 +1,8 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2004, 2005, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2002, 2004, 2005, 2007,
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,10 +26,10 @@
 	#include <assert.h>
 	#include <limits.h>
 	
-	// GNU crypto library
+	/* GNU crypto library */
 	#include <gcrypt.h>
 	
-	// GNU multiple precision library
+	/* GNU multiple precision library */
 	#include <gmp.h>
 	
 	#if defined (__cplusplus)
@@ -42,18 +43,18 @@
 			unsigned long int mpz_wrandom_ui
 				();
 			unsigned long int mpz_ssrandom_mod
-				(unsigned long int modulo);
+				(const unsigned long int modulo);
 			unsigned long int mpz_srandom_mod
-				(unsigned long int modulo);
+				(const unsigned long int modulo);
 			unsigned long int mpz_wrandom_mod
-				(unsigned long int modulo);
+				(const unsigned long int modulo);
 			
 			void mpz_ssrandomb
-				(mpz_ptr r, unsigned long int size);
+				(mpz_ptr r, const unsigned long int size);
 			void mpz_srandomb
-				(mpz_ptr r, unsigned long int size);
+				(mpz_ptr r, const unsigned long int size);
 			void mpz_wrandomb
-				(mpz_ptr r, unsigned long int size);
+				(mpz_ptr r, const unsigned long int size);
 			void mpz_ssrandomm
 				(mpz_ptr r, mpz_srcptr m);
 			void mpz_srandomm

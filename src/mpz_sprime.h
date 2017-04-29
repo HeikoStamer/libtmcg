@@ -36,7 +36,7 @@
 	#include <stdio.h>
 	#include <assert.h>
 	
-	// GNU multiple precision library
+	/* GNU multiple precision library */
 	#include <gmp.h>
 	
 	#include "mpz_srandom.h"

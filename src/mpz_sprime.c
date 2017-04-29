@@ -30,7 +30,7 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
-// include headers
+/* include headers */
 #ifdef HAVE_CONFIG_H
 	#include "libTMCG_config.h"
 #endif
@@ -367,7 +367,7 @@ void mpz_sprime_test
 	mpz_clear(tmp), mpz_clear(y), mpz_clear(pm1), mpz_clear(a);
 	
 	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
-		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); // indicates an error
+		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); /* indicates an error */
 }
 
 /** A naive generator for safe primes (slow for $\log_2 p \ge 1024$). */
@@ -421,7 +421,7 @@ void mpz_sprime_test_naive
 	}
 	
 	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
-		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); // indicates an error
+		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); /* indicates an error */
 }
 
 void mpz_sprime
@@ -502,7 +502,7 @@ void mpz_lprime
 	mpz_clear(foo);
 		
 	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
-		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); // indicates an error
+		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); /* indicates an error */
 }
 
 void mpz_oprime

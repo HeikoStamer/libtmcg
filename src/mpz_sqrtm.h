@@ -21,8 +21,9 @@
 #ifndef INCLUDED_mpz_sqrtm_H
 	#define INCLUDED_mpz_sqrtm_H
 	
-	// GNU multiple precision library
+	/* GNU multiple precision library */
 	#include <gmp.h>
+
 	#include "mpz_srandom.h"
 	
 	#if defined (__cplusplus)
