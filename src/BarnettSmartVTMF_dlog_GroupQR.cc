@@ -174,22 +174,24 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckElement
 void BarnettSmartVTMF_dlog_GroupQR::RandomElement
 	(mpz_ptr a) const
 {
-	// Choose randomly and uniformly an element from $\mathbb{Z}_p$.
+	// Choose randomly and uniformly an element from 
+	// $\mathbb{Z}_p \setminus \{ 0 \}$.
 	do
 		mpz_srandomm(a, p);
 	while (!mpz_cmp_ui(a, 0L));
 	
 	// Square $a$ to obtain a quadratic residue from $\mathbb{QR}_p$.
-	mpz_mul_2exp(a, a, 1L);
+	mpz_mul(a, a, a);
 	mpz_mod(a, a, p);
 }
 
 void BarnettSmartVTMF_dlog_GroupQR::MaskingValue
 	(mpz_ptr r) const
 {
+	// Choose randomly and uniformly an element from 
+	// $\mathbb{Z}_q \setminus \{ 0, 1 \}$.
 	if (mpz_sizeinbase(p, 2L) <= E_size)
 	{
-		// Choose randomly and uniformly an element from $\mathbb{Z}_q$.
 		do
 			mpz_srandomm(r, q);
 		while (!mpz_cmp_ui(r, 0L) || !mpz_cmp_ui(r, 1L));
