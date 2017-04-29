@@ -1612,7 +1612,8 @@ individual profile or a service provider can issue public key certificates.
 		if @var{keysize} is omitted in the call. The default value of the fourth
 		argument is set to @code{true}, whenever it is omitted in the call.
 		Depending on @var{keysize} and @var{nizk_key} the generation is a very
-		time-consuming task and dots are sent to @code{std::cerr} as progress indicator.
+		time-consuming task that should be taken into account by the
+		application designer.
 	@end deftypeop
 	
 	@deftypeop {Constructor} TMCG_SecretKey {} TMCG_SecretKey (@code{const std::string&} s)
@@ -2276,8 +2277,8 @@ description of such internal functions and members.
 		@code{TMCG_DLSE_SIZE}, and @code{false}, respectively.
 		The argument @var{initialize_group} should be always set @code{true}.
 		Depending on @var{fieldsize} and @var{subgroupsize} the group generation
-		is a very time-consuming task and some dots are sent to @code{std::cerr} as
-		a progress indicator.
+		is a very time-consuming task that should be taken into account by the
+		application designer.
 	@end deftypeop
 	
 	@deftypeop {Constructor} BarnettSmartVTMF_dlog {} BarnettSmartVTMF_dlog (@code{std::istream&} in, @code{const unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{const unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE}, @code{bool} canonical_g_usage @code{=false}, @code{const bool} precompute @code{=true})
@@ -2409,8 +2410,8 @@ description of such internal functions and members.
 		@var{exponentsize} are set to their default values @code{TMCG_DDH_SIZE} and
 		@code{TMCG_DLSE_SIZE}, respectively.
 		Depending on @var{fieldsize} and @var{exponentsize} the group generation
-		is a very time-consuming task and some dots are sent to @code{std::cerr} as
-		a progress indicator.
+		is a very time-consuming task that should be taken into account by the
+		application designer.
 	@end deftypeop
 	
 	@deftypeop {Constructor} BarnettSmartVTMF_dlog_GroupQR {} BarnettSmartVTMF_dlog_GroupQR (@code{std::istream&} in, @code{const unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{const unsigned long int} exponentsize @code{=TMCG_DLSE_SIZE})

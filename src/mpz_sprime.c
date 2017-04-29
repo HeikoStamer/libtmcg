@@ -347,7 +347,6 @@ void mpz_sprime_test
 		/* Optimization: do a single test for $q$ first */
 		if (!mpz_probab_prime_p(q, 1))
 			continue;
-		fprintf(stderr, ".");
 		
 		/* Step 3. [CS00]: Test whether 2 is not a Miller-Rabin witness to the
 		   compositeness of $q$. */
@@ -366,7 +365,6 @@ void mpz_sprime_test
 			break;
 	}
 	mpz_clear(tmp), mpz_clear(y), mpz_clear(pm1), mpz_clear(a);
-	fprintf(stderr, "\n");
 	
 	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
 		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); // indicates an error
@@ -414,7 +412,6 @@ void mpz_sprime_test_naive
 		
 		if (!mpz_probab_prime_p(p, 1))
 			continue;
-		fprintf(stderr, ".");
 		
 		if (!mpz_probab_prime_p(q, mr_iterations))
 			continue;
@@ -422,8 +419,7 @@ void mpz_sprime_test_naive
 		if (mpz_probab_prime_p(p, mr_iterations - 1))
 			break;
 	}
-	fprintf(stderr, "\n");
-
+	
 	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
 		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); // indicates an error
 }
@@ -477,8 +473,6 @@ void mpz_lprime
 	const unsigned long int mr_iterations)
 {
 	mpz_t foo;
-	unsigned long int cnt = 0;
-	
 	assert(psize > qsize);
 	
 	/* Choose randomly a prime number $q$ of appropriate size.
@@ -502,14 +496,11 @@ void mpz_lprime
 		mpz_add_ui(p, p, 1L);
 		/* Check wether $k$ and $q$ are coprime, i.e. $gcd(k, q) = 1$. */
 		mpz_gcd(foo, k, q);
-		if ((cnt++ % 100) == 0)
-			fprintf(stderr, ".");
 	}
 	while (mpz_cmp_ui(foo, 1L) || (mpz_sizeinbase(p, 2L) < psize) || 
 		!mpz_probab_prime_p(p, mr_iterations));
 	mpz_clear(foo);
-	fprintf(stderr, "\n");
-	
+		
 	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
 		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); // indicates an error
 }
@@ -519,8 +510,6 @@ void mpz_oprime
 	const unsigned long int psize,
 	const unsigned long int mr_iterations)
 {
-	unsigned long int cnt = 0;
-	
 	/* Choose randomly an odd number $p$ of appropriate size. */
 	do
 		mpz_srandomb(p, psize);
@@ -528,10 +517,5 @@ void mpz_oprime
 	
 	/* Add two as long as $p$ is not probable prime. */
 	while (!mpz_probab_prime_p(p, mr_iterations))
-	{
 		mpz_add_ui(p, p, 2L);
-		if ((cnt++ % 100) == 0)
-			fprintf(stderr, ".");
-	}
-	fprintf(stderr, "\n");
 }
