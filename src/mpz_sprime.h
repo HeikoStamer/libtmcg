@@ -1,7 +1,19 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+     [CS00]  Ronald Cramer, Victor Shoup: 'Signature schemes based on the
+              strong RSA assumption', ACM Transactions on Information and
+             System Security, Vol.3(3), pp. 161--185, 2000
+
+     [RS00]  Jean-Francois Raymond, Anton Stiglic: 'Security Issues in the
+              Diffie-Hellman Key Agreement Protocol', ZKS technical report
+             http://citeseer.ist.psu.edu/455251.html
+
+      [HAC]  Alfred J. Menezes, Paul C. van Oorschot, and Scott A. Vanstone:
+              'Handbook of Applied Cryptography', CRC Press, 1996.
+
+ Copyright (C) 2004, 2005, 2006, 2007, 
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,24 +46,30 @@
 		{
 	#endif
 			void mpz_sprime
-				(mpz_ptr p, mpz_ptr q, unsigned long int qsize, 
-				 unsigned long int mr_iterations);
+				(mpz_ptr p, mpz_ptr q,
+				const unsigned long int qsize, 
+				const unsigned long int mr_iterations);
 			void mpz_sprime_naive
-				(mpz_ptr p, mpz_ptr q, unsigned long int qsize, 
-				 unsigned long int mr_iterations);
+				(mpz_ptr p, mpz_ptr q,
+				const unsigned long int qsize, 
+				const unsigned long int mr_iterations);
 			void mpz_sprime2g
-				(mpz_ptr p, mpz_ptr q, unsigned long int qsize, 
-				 unsigned long int mr_iterations);
+				(mpz_ptr p, mpz_ptr q,
+				const unsigned long int qsize, 
+				const unsigned long int mr_iterations);
 			void mpz_sprime3mod4
-				(mpz_ptr p, unsigned long int psize, 
-				 unsigned long int mr_iterations);
+				(mpz_ptr p,
+				const unsigned long int psize, 
+				const unsigned long int mr_iterations);
 			void mpz_lprime
 				(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
-				 unsigned long int psize, unsigned long int qsize, 
-				 unsigned long int mr_iterations);
+				const unsigned long int psize,
+				const unsigned long int qsize, 
+				const unsigned long int mr_iterations);
 			void mpz_oprime
-				(mpz_ptr p, unsigned long int psize, 
-				 unsigned long int mr_iterations);
+				(mpz_ptr p,
+				const unsigned long int psize, 
+				const unsigned long int mr_iterations);
 	#if defined(__cplusplus)
 		}
 	#endif

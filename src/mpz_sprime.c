@@ -12,7 +12,8 @@
       [HAC]  Alfred J. Menezes, Paul C. van Oorschot, and Scott A. Vanstone:
               'Handbook of Applied Cryptography', CRC Press, 1996.
 
- Copyright (C) 2004, 2005, 2006, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -196,7 +197,7 @@ int notest
 	return 1;
 }
 
-int test2g
+int test7mod8
 	(mpz_ptr p, mpz_ptr q)
 {
 	return mpz_congruent_ui_p(p, 7L, 8L);
@@ -264,8 +265,10 @@ int mpz_mr_witness
     and M.J. Wiener's "Safe Prime Generation with a Combined Sieve". */
 
 void mpz_sprime_test
-	(mpz_ptr p, mpz_ptr q, unsigned long int qsize,
-	int (*test)(mpz_ptr, mpz_ptr), unsigned long int mr_iterations)
+	(mpz_ptr p, mpz_ptr q,
+	const unsigned long int qsize,
+	int (*test)(mpz_ptr, mpz_ptr),
+	const unsigned long int mr_iterations)
 {
 	unsigned long int R_q[SIEVE_SIZE], R_p[SIEVE_SIZE];
 	size_t i = 0, fail = 0;
@@ -279,7 +282,7 @@ void mpz_sprime_test
 	while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
 	
 	/* Compute $p = 2q + 1$. */
-	mpz_mul_2exp(pm1, q, 1L),	mpz_add_ui(p, pm1, 1L);
+	mpz_mul_2exp(pm1, q, 1L), mpz_add_ui(p, pm1, 1L);
 	
 	/* Initalize the sieves for testing divisability by small primes. */
 	for (i = 0; i < SIEVE_SIZE; i++)
@@ -365,15 +368,17 @@ void mpz_sprime_test
 	mpz_clear(tmp), mpz_clear(y), mpz_clear(pm1), mpz_clear(a);
 	fprintf(stderr, "\n");
 	
-	assert(mpz_probab_prime_p(p, mr_iterations));
-	assert(mpz_probab_prime_p(q, mr_iterations));
+	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
+		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); // indicates an error
 }
 
 /** A naive generator for safe primes (slow for $\log_2 p \ge 1024$). */
 
 void mpz_sprime_test_naive
-	(mpz_ptr p, mpz_ptr q, unsigned long int qsize,
-	int (*test)(mpz_ptr, mpz_ptr), unsigned long int mr_iterations)
+	(mpz_ptr p, mpz_ptr q,
+	const unsigned long int qsize,
+	int (*test)(mpz_ptr, mpz_ptr),
+	const unsigned long int mr_iterations)
 {
 	size_t i = 0;
 	
@@ -418,38 +423,43 @@ void mpz_sprime_test_naive
 			break;
 	}
 	fprintf(stderr, "\n");
-	
-	assert(mpz_probab_prime_p(p, mr_iterations));
-	assert(mpz_probab_prime_p(q, mr_iterations));
+
+	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
+		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); // indicates an error	
 }
 
 void mpz_sprime
-	(mpz_ptr p, mpz_ptr q, unsigned long int qsize, 
-	 unsigned long int mr_iterations)
+	(mpz_ptr p, mpz_ptr q,
+	const unsigned long int qsize, 
+	const unsigned long int mr_iterations)
 {
 	mpz_sprime_test(p, q, qsize, notest, mr_iterations);
 }
 
 void mpz_sprime_naive
-	(mpz_ptr p, mpz_ptr q, unsigned long int qsize, 
-	 unsigned long int mr_iterations)
+	(mpz_ptr p, mpz_ptr q,
+	const unsigned long int qsize, 
+	const unsigned long int mr_iterations)
 {
 	mpz_sprime_test_naive(p, q, qsize, notest, mr_iterations);
 }
 
 void mpz_sprime2g
-	(mpz_ptr p, mpz_ptr q, unsigned long int qsize, 
-	 unsigned long int mr_iterations)
+	(mpz_ptr p, mpz_ptr q,
+	const unsigned long int qsize, 
+	const unsigned long int mr_iterations)
 {
 	/* The additional test is e.g. necessary, if we want 2 as generator
 	   of $\mathbb{QR}_p$. If $p$ is congruent 7 modulo 8, then 2 is a
 	   quadratic residue and hence it will generate the cyclic subgroup
 	   of prime order $q = (p-1)/2$. [RS00] */
-	mpz_sprime_test(p, q, qsize, test2g, mr_iterations);
+	mpz_sprime_test(p, q, qsize, test7mod8, mr_iterations);
 }
 
 void mpz_sprime3mod4
-	(mpz_ptr p, unsigned long int psize, unsigned long int mr_iterations)
+	(mpz_ptr p,
+	const unsigned long int psize,
+	const unsigned long int mr_iterations)
 {
 	mpz_t q;
 
@@ -462,8 +472,9 @@ void mpz_sprime3mod4
 
 void mpz_lprime
 	(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
-	 unsigned long int psize, unsigned long int qsize, 
-	 unsigned long int mr_iterations)
+	const unsigned long int psize,
+	const unsigned long int qsize, 
+	const unsigned long int mr_iterations)
 {
 	mpz_t foo;
 	unsigned long int cnt = 0;
@@ -504,7 +515,9 @@ void mpz_lprime
 }
 
 void mpz_oprime
-	(mpz_ptr p, unsigned long int psize, unsigned long int mr_iterations)
+	(mpz_ptr p,
+	const unsigned long int psize,
+	const unsigned long int mr_iterations)
 {
 	unsigned long int cnt = 0;
 	

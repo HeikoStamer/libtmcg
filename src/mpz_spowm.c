@@ -152,7 +152,7 @@ void mpz_fpowm_init
 
 void mpz_fpowm_precompute
 	(mpz_t fpowm_table[],
-	mpz_srcptr m, mpz_srcptr p, size_t t)
+	mpz_srcptr m, mpz_srcptr p, const size_t t)
 {
 	size_t i;
 	
@@ -200,7 +200,7 @@ void mpz_fpowm
 
 void mpz_fpowm_ui
 	(mpz_t fpowm_table[],
-	mpz_ptr res, mpz_srcptr m, unsigned long int x_ui, mpz_srcptr p)
+	mpz_ptr res, mpz_srcptr m, const unsigned long int x_ui, mpz_srcptr p)
 {
 	size_t i;
 	mpz_t x;

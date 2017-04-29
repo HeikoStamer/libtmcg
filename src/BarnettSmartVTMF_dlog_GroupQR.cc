@@ -40,7 +40,7 @@
 #include "BarnettSmartVTMF_dlog_GroupQR.hh"
 
 BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
-	(unsigned long int fieldsize, unsigned long int exponentsize):
+	(const unsigned long int fieldsize, const unsigned long int exponentsize):
 		BarnettSmartVTMF_dlog(fieldsize, fieldsize - 1L, true, false),
 		E_size(exponentsize)
 {
@@ -48,7 +48,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	// We use the subgroup of quadratic residues modulo $p$,
 	// such that $p = 2q + 1$ and $p$, $q$ are both prime.
 	// The integer 2 is a generator of $\mathbb{QR}_p$ since
-	// $p \equiv 7 \pmod{8}$. [Bo98]
+	// we choose $p \equiv 7 \pmod{8}$. [Bo98, RS00]
 	mpz_sprime2g(p, q, fieldsize - 1L, TMCG_MR_ITERATIONS);
 	mpz_set_ui(g, 2L), mpz_set_ui(k, 2L);
 	
@@ -56,12 +56,16 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	// the usage of shortened exponents. (cf. masking protocols)
 	// We use the (Short, Full)-ElGamal variant [KK04] here,
 	// i.e. the secret key should be still of full size $\ell_q$.
-	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
-	mpz_t foo;
-	mpz_init(foo);
-	mpz_ui_pow_ui(foo, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
-	mpz_powm(g, g, foo, p);
-	mpz_clear(foo);
+	if (mpz_sizeinbase(p, 2L) >= exponentsize)
+	{
+		mpz_t foo;
+		mpz_init(foo);
+		mpz_ui_pow_ui(foo, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
+		mpz_powm(g, g, foo, p);
+		mpz_clear(foo);
+	}
+	else
+		mpz_set(g, 0L); // indicates an error
 	
 	// Precompute the $g$-table for the fast exponentiation.
 	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
@@ -69,7 +73,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 
 BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	(std::istream& in,
-	unsigned long int fieldsize, unsigned long int exponentsize):
+	const unsigned long int fieldsize, const unsigned long int exponentsize):
 		BarnettSmartVTMF_dlog(in, fieldsize, fieldsize - 1L, true, false),
 		E_size(exponentsize)
 {
@@ -79,12 +83,16 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	// the usage of shortened exponents. (cf. masking protocols)
 	// We use the (Short, Full)-ElGamal variant [KK04] here,
 	// i.e. the secret key should be still of full size $\ell_q$.
-	assert(mpz_sizeinbase(p, 2L) >= exponentsize);
-	mpz_t foo;
-	mpz_init(foo);
-	mpz_ui_pow_ui(foo, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
-	mpz_powm(g, g, foo, p);
-	mpz_clear(foo);
+	if (mpz_sizeinbase(p, 2L) >= exponentsize)
+	{
+		mpz_t foo;
+		mpz_init(foo);
+		mpz_ui_pow_ui(foo, 2L, mpz_sizeinbase(p, 2L) - exponentsize);
+		mpz_powm(g, g, foo, p);
+		mpz_clear(foo);
+	}
+	else
+		mpz_set(g, 0L); // indicates an error
 
 	// Precompute the $g$-table for the fast exponentiation.
 	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
