@@ -508,12 +508,12 @@ of the used features and specifies the required versions:
 		reasonable performance.
 		
 	@item GNU Crypto Library (@file{libgcrypt}),
-		Version@tie{}@math{\ge}@tie{}1.6.0
+		Version@tie{}@math{\ge}@tie{}1.7.0
 		
 		The library provides some basic cryptographic algorithms
-		(e.g. SHA-256, AES256, RIPEMD-160, ElGamal, DSA) and an easily
-		accessible interface for cryptographically strong pseudo
-		random numbers.
+		(e.g. SHA3-512, SHA-256, AES256, RIPEMD-160, ElGamal, DSA)
+		and an easily accessible interface for cryptographically
+		strong pseudo random numbers.
 	
 	@item GNU Privacy Guard Error Code Library (@file{libgpg-error}),
 		Version@tie{}@math{\ge}@tie{}1.12
@@ -683,6 +683,14 @@ The default value is @code{64} which implies a soundness error
 probability @math{{} \le 4^{-64}}.
 @end defmac
 
+@defmac TMCG_MAX_ZNP_ITERATIONS
+Define the maximum number of iterations for the prover in cut-and-choose
+style zero-knowledge protocols of Schindelhauer's toolbox.
+The default value is @code{80} which limits the soundness error
+probability to @math{{} \ge 2^{-80}}, however, it avoids some obvious
+denial-of-service attacks from a malicious verifier.
+@end defmac
+
 @defmac TMCG_GROTH_L_E
 Defines the security parameter @math{\ell_e} of Groth's (interactive)
 shuffle argument@tie{}[Gr05]. The default value is @code{80} which
@@ -702,6 +710,11 @@ Defines the security parameter (subgroup size in bit) of the group
 @math{G} which is used by the card encoding scheme of Barnett and
 Smart@tie{}[BS03]. The underlying assumptions are DLSE (related to DDH)
 and DLOG. The default value is @code{256}.
+@end defmac
+
+@defmac TMCG_AIO_HIDE_SIZE
+Define the security parameter for hiding the length of integers in
+derived classes from @code{aiounicast}. The default value is @code{256}.
 @end defmac
 
 @defmac TMCG_GCRY_MD_ALGO
@@ -789,7 +802,7 @@ Schindelhauer.
 
 @defmac TMCG_LIBGCRYPT_VERSION
 Defines the required minimum version number of the GNU Crypto Library.
-The default value is @code{"1.2.0"}. During the initialization of
+The default value is @code{"1.7.0"}. During the initialization of
 LibTMCG (see @code{init_libTMCG}) it is checked, whether the
 version number of the linked shared object fulfills this condition.
 @end defmac

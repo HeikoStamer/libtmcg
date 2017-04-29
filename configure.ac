@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170330])
+AC_REVISION([20170429])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.0], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -58,7 +58,7 @@ LIBTMCG_CONFIG_CFLAGS=""
 
 # Define some security parameters and helping macros
 # (NOTE: Please update also libTMCG.hh, if changed!)
-AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.6.0",
+AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.7.0",
 	[Define the necessary version number of the GNU gcrypt library])
 AC_DEFINE(TMCG_LIBGMP_VERSION, "4.2.0",
 	[Define the necessary version number of the GNU gmp library])
@@ -182,9 +182,9 @@ LIBGMP_LIBS="${GMP_LIBS} -lgmp"
 AC_SUBST(LIBGMP_LIBS)
 AC_SUBST(LIBGMP_CFLAGS)
 
-AM_PATH_LIBGCRYPT("1.6.0")
+AM_PATH_LIBGCRYPT("1.7.0")
 if test "x$LIBGCRYPT_LIBS" = "x"; then
-	AC_MSG_ERROR([libgcrypt >= 1.6.0 is needed])
+	AC_MSG_ERROR([libgcrypt >= 1.7.0 is needed])
 fi
 
 AM_PATH_GPG_ERROR("1.12")
