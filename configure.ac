@@ -182,9 +182,9 @@ LIBGMP_LIBS="${GMP_LIBS} -lgmp"
 AC_SUBST(LIBGMP_LIBS)
 AC_SUBST(LIBGMP_CFLAGS)
 
-AM_PATH_LIBGCRYPT("1.7.0")
+AM_PATH_LIBGCRYPT("1.6.0")
 if test "x$LIBGCRYPT_LIBS" = "x"; then
-	AC_MSG_ERROR([libgcrypt >= 1.7.0 is needed])
+	AC_MSG_ERROR([libgcrypt >= 1.6.0 is needed])
 fi
 
 AM_PATH_GPG_ERROR("1.12")
