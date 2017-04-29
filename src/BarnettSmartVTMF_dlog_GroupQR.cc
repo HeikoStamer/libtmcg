@@ -180,7 +180,7 @@ void BarnettSmartVTMF_dlog_GroupQR::RandomElement
 	while (!mpz_cmp_ui(a, 0L));
 	
 	// Square $a$ to obtain a quadratic residue from $\mathbb{QR}_p$.
-	mpz_mul(a, a, a);
+	mpz_mul_2exp(a, a, 1L);
 	mpz_mod(a, a, p);
 }
 
@@ -196,7 +196,7 @@ void BarnettSmartVTMF_dlog_GroupQR::MaskingValue
 	}
 	else
 	{
-		// Under additional DLSE assumption we can reduce the size of
+		// Under the additional DLSE assumption we can reduce the size of
 		// the exponent. Note that generator $g$ must be shifted [KK04].
 		do
 			mpz_srandomb(r, E_size);
