@@ -1,5 +1,5 @@
-* use secure memory allocation from libgcrypt
-
++ use secure memory allocation from libgcrypt
++ improve oracle function g() by including a second hash function (SHA3)
 + add interactive versions of Chaum-Pedersen PoK of dlog equality
 + implement asynchronous VSS [CKLS02] for DKG
 + provide interactive and distributed (multiparty DZKP) versions for
