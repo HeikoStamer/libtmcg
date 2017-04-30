@@ -49,7 +49,7 @@ aiounicast_select::aiounicast_select
 	for (size_t i = 0; i < n_in; i++)
 	{
 		fd_in.push_back(fd_in_in[i]);
-		char *buf = new char[buf_in_size];
+		unsigned char *buf = new unsigned char[buf_in_size];
 		buf_in.push_back(buf), buf_ptr.push_back(0);
 		buf_flag.push_back(false);
 		fd_out.push_back(fd_out_in[i]);
@@ -79,8 +79,8 @@ aiounicast_select::aiounicast_select
 		maclen = 0;
 	for (size_t i = 0; aio_is_authenticated && (i < n_in); i++)
 	{
-		char salt[maclen];
-		char key[maclen];
+		unsigned char salt[maclen];
+		unsigned char key[maclen];
 		gcry_error_t err;
 		gcry_mac_hd_t *mac_in_hd = new gcry_mac_hd_t(), *mac_out_hd = new gcry_mac_hd_t();
 		mac_in.push_back(mac_in_hd), mac_out.push_back(mac_out_hd);
@@ -143,9 +143,9 @@ aiounicast_select::aiounicast_select
 		keylen = 0, blklen = 0;
 	for (size_t i = 0; aio_is_encrypted && (i < n_in); i++)
 	{
-		char salt[keylen];
-		char key[keylen];
-		char iv[blklen];
+		unsigned char salt[keylen];
+		unsigned char key[keylen];
+		unsigned char iv[blklen];
 		gcry_error_t err;
 		gcry_cipher_hd_t *enc_in_hd = new gcry_cipher_hd_t(), *enc_out_hd = new gcry_cipher_hd_t();
 		enc_in.push_back(enc_in_hd), enc_out.push_back(enc_out_hd);
@@ -196,7 +196,7 @@ aiounicast_select::aiounicast_select
 			std::cerr << gcry_strerror(err) << std::endl;
 		}
 		iv_flag_out.push_back(false); // flag means: IV not yet sent
-		char *ivcopy = new char[blklen];
+		unsigned char *ivcopy = new unsigned char[blklen];
 		memcpy(ivcopy, iv, blklen);
 		iv_out.push_back(ivcopy); // store a copy of the used IV for Send()
 	}
@@ -407,7 +407,7 @@ bool aiounicast_select::Send
 	{
 		// get current MAC buffer and reset MAC
 		size_t macbuflen = maclen;
-		char *macbuf = new char[macbuflen];
+		unsigned char *macbuf = new unsigned char[macbuflen];
 		err = gcry_mac_read(*mac_out[i_in], macbuf, &macbuflen);
 		if (err)
 		{
@@ -549,7 +549,7 @@ bool aiounicast_select::Receive
 				if (newline_found && ((buf_ptr[i_out] - newline_ptr - 1) >= maclen))
 				{
 					char *tmp = new char[newline_ptr + 1]; // allocate at least one char
-					char *mac = new char[maclen + 1]; // allocate at least one char, if maclen == 0
+					unsigned char *mac = new unsigned char[maclen + 1]; // allocate at least one char, if maclen == 0
 					memset(tmp, 0, newline_ptr + 1);
 					memset(mac, 0, maclen);
 					if (newline_ptr > 0)
@@ -557,7 +557,7 @@ bool aiounicast_select::Receive
 					if (maclen > 0)
 						memcpy(mac, buf_in[i_out] + newline_ptr + 1, maclen);
 					// adjust buffer (copy remaining characters)
-					char *wptr = buf_in[i_out] + newline_ptr + 1 + maclen;
+					unsigned char *wptr = buf_in[i_out] + newline_ptr + 1 + maclen;
 					size_t wnum = buf_ptr[i_out] - newline_ptr - 1 - maclen;
 					if (wnum > 0)
 						memmove(buf_in[i_out], wptr, wnum);
@@ -577,7 +577,7 @@ bool aiounicast_select::Receive
 							return false;
 						}
 						numAuthenticated += newline_ptr;
-						char delim = '\n'; // include line delimiter
+						unsigned char delim = '\n'; // include line delimiter
 						err = gcry_mac_write(*mac_in[i_out], &delim, 1);
 						if (err)
 						{
@@ -681,7 +681,7 @@ bool aiounicast_select::Receive
 				// read(2) -- ready for non-blocking read?
 				if (FD_ISSET(fd_in[i_out], &rfds))
 				{
-					char *rptr = buf_in[i_out] + buf_ptr[i_out];
+					unsigned char *rptr = buf_in[i_out] + buf_ptr[i_out];
 					ssize_t num = read(fd_in[i_out], rptr, maxbuf);
 					if (num < 0)
 					{

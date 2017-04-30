@@ -56,7 +56,7 @@ class aiounicast_select : public aiounicast
 		size_t					aio_schedule_current;
 		size_t					aio_schedule_buffer;
 		size_t					buf_in_size;
-		std::vector<char*>			buf_in, iv_out;
+		std::vector<unsigned char*>		buf_in, iv_out;
 		std::vector<size_t>			buf_ptr;
 		std::vector<bool>			buf_flag, iv_flag_out, iv_flag_in;
 		std::vector< std::list<mpz_ptr> >	buf_mpz;
