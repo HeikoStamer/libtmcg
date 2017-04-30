@@ -291,7 +291,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_ComputeNIZK
 		// challenge $c = h(p || q || g || k || h_i || t)$
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
 		// the PoK non-interactive, i.e. we turn it into a statistically
-		// zero-knowledge (Schnorr signature scheme style) proof (NIZK)
+		// zero-knowledge (Schnorr signature scheme style) proof
 		// of knowledge (SPK) in the random oracle model.
 		mpz_shash(c, 5, p, q, g, h_i, t);
 		// response $r = v - c x_i \bmod q$

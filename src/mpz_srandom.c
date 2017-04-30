@@ -30,9 +30,9 @@ unsigned long int mpz_grandom_ui
 {
 	unsigned long int tmp = 0;
 	if (level == GCRY_WEAK_RANDOM)
-		gcry_create_nonce((unsigned char *)&tmp, sizeof(tmp));
+		gcry_create_nonce((unsigned char*)&tmp, sizeof(tmp));
 	else
-		gcry_randomize((unsigned char *)&tmp, sizeof(tmp), level);
+		gcry_randomize((unsigned char*)&tmp, sizeof(tmp), level);
 	return tmp;
 }
 
@@ -94,16 +94,21 @@ void mpz_grandomb
 	(mpz_ptr r, const unsigned long int size, enum gcry_random_level level)
 {
 	unsigned char *rtmp;
+	char htmp[size];
+	size_t hlen;
 	gcry_mpi_t rr;
+	assert(size > 1L);
 	assert(size <= UINT_MAX);
 	
 	rr = gcry_mpi_new((unsigned int)size);
 	gcry_mpi_randomize(rr, (unsigned int)size, level);
-	gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, NULL, rr);
-	mpz_set_str(r, (char*)rtmp, 16);
-	mpz_tdiv_r_2exp(r, r, size); /* r mod 2^size, i.e. shift right */
+	gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
 	gcry_mpi_release(rr);
+	memset(htmp, 0, size);
+	memcpy(htmp, rtmp, hlen);
 	gcry_free(rtmp);
+	mpz_set_str(r, htmp, 16);
+	mpz_tdiv_r_2exp(r, r, size); /* r mod 2^size, i.e. shift right */
 }
 
 void mpz_ssrandomb
@@ -129,16 +134,21 @@ void mpz_grandomm
 {
 	unsigned long int size = mpz_sizeinbase(m, 2L);
 	unsigned char *rtmp;
+	char htmp[size];
+	size_t hlen;
 	gcry_mpi_t rr;
+	assert(size > 1L);
 	assert(size <= UINT_MAX);
 	
 	rr = gcry_mpi_new((unsigned int)size);
 	gcry_mpi_randomize(rr, (unsigned int)size, level);
-	gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, NULL, rr);
-	mpz_set_str(r, (char*)rtmp, 16);
-	mpz_mod(r, r, m); /* modulo bias is negligible here */
+	gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
 	gcry_mpi_release(rr);
+	memset(htmp, 0, size);
+	memcpy(htmp, rtmp, hlen);
 	gcry_free(rtmp);
+	mpz_set_str(r, htmp, 16);
+	mpz_mod(r, r, m); /* modulo bias is negligible here */
 }
 
 void mpz_ssrandomm

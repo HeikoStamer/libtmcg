@@ -23,6 +23,7 @@
 	#define INCLUDED_mpz_srandom_H
 	
 	#include <stdio.h>
+	#include <string.h>
 	#include <assert.h>
 	#include <limits.h>
 	

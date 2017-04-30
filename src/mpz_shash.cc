@@ -73,23 +73,23 @@ void mpz_shash
 {
 	size_t hash_size = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
 	unsigned char *digest = new unsigned char[hash_size];
-	unsigned char *hex_digest = new unsigned char[(2 * hash_size) + 1];
+	char *hex_digest = new char[(2 * hash_size) + 1];
 	
 	/* hash the input */
 	g(digest, hash_size, (unsigned char*)input.c_str(), input.length());
 	
 	/* convert the digest to a hexadecimal encoded string */
 	for (size_t i = 0; i < hash_size; i++)
-		snprintf((char*)hex_digest + (2 * i), 3, "%02x", digest[i]);
+		snprintf(hex_digest + (2 * i), 3, "%02x", digest[i]);
 	
 	/* convert the hexadecimal encoded string to an mpz-integer */
-	mpz_set_str(r, (char*)hex_digest, 16);
+	mpz_set_str(r, hex_digest, 16);
 	
 	delete [] digest, delete [] hex_digest;
 }
 
 /* Hashing of the public inputs (aka Fiat-Shamir heuristic) with g(),
-   e.g. to make some proofs of knowledge (PoK) non-interactive. */
+   e.g. to make some proofs of knowledge (PoK) non-interactive (NIZK). */
 void mpz_shash
 	(mpz_ptr r, size_t n, ...)
 {
