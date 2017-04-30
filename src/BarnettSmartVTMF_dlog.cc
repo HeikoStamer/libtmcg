@@ -310,7 +310,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_PublishKey
 	mpz_init(c), mpz_init(r);
 
 	KeyGenerationProtocol_ComputeNIZK(c, r);
-	// the output is $h_i$ appended by PoK $(c, r)$	
+	// the output is $h_i$ appended by SPK $(c, r)$	
 	out << h_i << std::endl << c << std::endl << r << std::endl;
 
 	mpz_clear(c), mpz_clear(r);
@@ -641,34 +641,35 @@ void BarnettSmartVTMF_dlog::CP_Prove
 	mpz_init(c), mpz_init(r), mpz_init(a), mpz_init(b), mpz_init(omega);
 
 	// proof of knowledge (equality of discrete logarithms) [CaS97]
-		
-		// commitment
-		mpz_srandomm(omega, q);
-		if (fpowm_usage)
-		{
-			assert(!mpz_cmp(g, gg) && !mpz_cmp(h, hh));
-			mpz_fspowm(fpowm_table_g, a, gg, omega, p);
-			mpz_fspowm(fpowm_table_h, b, hh, omega, p);
-		}
-		else
-		{
-			mpz_spowm(a, gg, omega, p);
-			mpz_spowm(b, hh, omega, p);
-		}
-		
-		// challenge
-		// Here we use the well-known "Fiat-Shamir heuristic" to make
-		// the PoK non-interactive, i.e. we turn it into a statistically
-		// zero-knowledge (Schnorr signature scheme style) proof of
-		// knowledge (SPK) in the random oracle model.
-		mpz_shash(c, 10, p, q, g, h, a, b, x, y, gg, hh);
-		
-		// response
-		mpz_mul(r, c, alpha);
-		mpz_neg(r, r);
-		mpz_add(r, r, omega);
-		mpz_mod(r, r, q);
-		
+	// the original technique is due to Chaum and Pedersen, see e.g.,
+	// David Chaum and Torben Pryds Pedersen: 'Wallet Databases with Observers'
+	// Advances in Cryptology - CRYPTO'92, LNCS 740, pp. 89--105, 1992.
+	// 1. commitment
+	mpz_srandomm(omega, q);
+	if (fpowm_usage)
+	{
+		assert(!mpz_cmp(g, gg) && !mpz_cmp(h, hh));
+		mpz_fspowm(fpowm_table_g, a, gg, omega, p);
+		mpz_fspowm(fpowm_table_h, b, hh, omega, p);
+	}
+	else
+	{
+		mpz_spowm(a, gg, omega, p);
+		mpz_spowm(b, hh, omega, p);
+	}
+	// 2. challenge
+	// Here we use the well-known "Fiat-Shamir heuristic" to make
+	// the PoK non-interactive, i.e. we turn it into a statistically
+	// zero-knowledge (Schnorr signature scheme style) proof of
+	// knowledge (SPK) in the random oracle model.
+	mpz_shash(c, 10, p, q, g, h, a, b, x, y, gg, hh);
+	// 3. response
+	mpz_mul(r, c, alpha);
+	mpz_neg(r, r);
+	mpz_add(r, r, omega);
+	mpz_mod(r, r, q);
+
+	// write SPK to output stream 
 	out << c << std::endl << r << std::endl;
 
 	mpz_clear(c), mpz_clear(r), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
@@ -687,11 +688,15 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 		if (!in.good())
 			throw false;
 
-		// check the size of $r$
+		// check size of $c$
+		if ((mpz_sizeinbase(c, 2L) / 8L) > mpz_shash_len())
+			throw false;
+
+		// check size of $r$
 		if (mpz_cmpabs(r, q) >= 0)
 			throw false;
 		
-		// verify proof of knowledge (equality of discrete logarithms) [CaS97]
+		// verify the proof of knowledge (equality of discrete logarithms) [CaS97]
 		if (fpowm_usage)
 		{
 			if (!mpz_cmp(g, gg))
@@ -889,10 +894,11 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Prove
 {
 	mpz_t foo;
 	mpz_init(foo);
-
-	// invoke CP(c_1, c_2/m, g, h; r) as prover	
 	assert(mpz_invert(foo, m, p));
-	mpz_invert(foo, m, p);
+
+	// invoke CP(c_1, c_2/m, g, h; r) as prover
+	if (!mpz_invert(foo, m, p))
+		mpz_set_ui(foo, 0L); // indicates an error
 	mpz_mul(foo, foo, c_2);
 	mpz_mod(foo, foo, p);
 	CP_Prove(c_1, foo, g, h, r, out, true);
@@ -975,14 +981,16 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Prove
 {
 	mpz_t foo, bar;
 	mpz_init(foo), mpz_init(bar);
-
-	// invoke CP(c'_1/c_1, c'_2/c_2, g, h; r) as prover	
 	assert(mpz_invert(foo, c_1, p));
-	mpz_invert(foo, c_1, p);
+	assert(mpz_invert(bar, c_2, p));
+
+	// invoke CP(c'_1/c_1, c'_2/c_2, g, h; r) as prover
+	if (!mpz_invert(foo, c_1, p))
+		mpz_set_ui(foo, 0L);  // indicates an error
 	mpz_mul(foo, foo, c__1);
 	mpz_mod(foo, foo, p);
-	assert(mpz_invert(bar, c_2, p));
-	mpz_invert(bar, c_2, p);
+	if (!mpz_invert(bar, c_2, p))
+		mpz_set_ui(bar, 0L);  // indicates an error
 	mpz_mul(bar, bar, c__2);
 	mpz_mod(bar, bar, p);
 	CP_Prove(foo, bar, g, h, r, out, true);
@@ -1030,6 +1038,7 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Prove
 {
 	mpz_t d_i;
 	mpz_init(d_i);
+	assert(CheckElement(c_1));
 	
 	// compute $d_i = {c_1}^{x_i} \bmod p$
 	mpz_spowm(d_i, c_1, x_i, p);
@@ -1044,6 +1053,8 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Prove
 void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Initialize
 	(mpz_srcptr c_1)
 {
+	assert(CheckElement(c_1));
+
 	// compute $d = d_i = {c_1}^{x_i} \bmod p$
 	mpz_spowm(d, c_1, x_i, p);
 }
@@ -1095,7 +1106,8 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Finalize
 	assert(mpz_invert(m, d, p));
 	
 	// finalize the decryption
-	mpz_invert(m, d, p);
+	if (!mpz_invert(m, d, p))
+		mpz_set_ui(m, 0L); // indicates an error
 	mpz_mul(m, m, c_2);
 	mpz_mod(m, m, p);
 }
