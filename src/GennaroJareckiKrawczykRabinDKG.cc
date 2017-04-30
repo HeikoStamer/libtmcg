@@ -960,7 +960,8 @@ bool GennaroJareckiKrawczykRabinDKG::Interpolate
 				mpz_add(t2, t2, res[i]);
 				mpz_mod(t2, t2, q);
 			}
-			mpz_invert(t1, t1, q);
+			if (!mpz_invert(t1, t1, q))
+				throw false;
 			mpz_sub(t2, b[k], t2);
 			mpz_mod(t2, t2, q);
 			mpz_mul(t1, t1, t2);
@@ -1114,7 +1115,11 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 						mpz_mul(lhs, lhs, bar);
 					}
 				}
-				mpz_invert(lhs, lhs, q);
+				if (!mpz_invert(lhs, lhs, q))
+				{
+					err << "P_" << i << ": cannot invert LHS during reconstruction" << std::endl;
+					throw false;
+				}
 				mpz_mul(rhs, rhs, lhs);
 				mpz_mod(rhs, rhs, q); // computation of Lagrange coefficients finished
 				mpz_mul(bar, s_ij[*it][*jt], rhs);

@@ -1027,7 +1027,11 @@ void combine_decryption_shares
 				mpz_mul(b, b, c);
 			}
 		}
-		mpz_invert(b, b, nizk_q);
+		if (!mpz_invert(b, b, nizk_q))
+		{
+			std::cerr << "ERROR: cannot invert during interpolation" << std::endl;
+			exit(-1);
+		}
 		mpz_mul(lambda, a, b);
 		mpz_mod(lambda, lambda, nizk_q); // computation of Lagrange coefficients finished
 		// interpolate and accumulate correct decryption shares

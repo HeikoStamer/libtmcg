@@ -418,7 +418,6 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_RemoveKey
 			// update the common public key
 			if (!mpz_invert(foo, h_j[fpstr], p))
 				throw false;
-			mpz_invert(foo, h_j[fpstr], p);
 			mpz_mul(h, h, foo);
 			mpz_mod(h, h, p);
 			

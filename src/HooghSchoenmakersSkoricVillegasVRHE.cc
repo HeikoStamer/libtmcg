@@ -113,7 +113,8 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive
 			mpz_mul(f[j], f[j], bar);
 			mpz_mod(f[j], f[j], p);
 			mpz_spowm(foo, G, lambdak[j], p);
-			mpz_invert(bar, foo, p);
+			if (!mpz_invert(bar, foo, p))
+				mpz_set_ui(bar, 0L); // indicates an error
 			mpz_mul(f[j], f[j], bar);
 			mpz_mod(f[j], f[j], p);
 		}
@@ -240,7 +241,8 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive_publiccoin
 			mpz_mul(f[j], f[j], bar);
 			mpz_mod(f[j], f[j], p);
 			mpz_spowm(foo, G, lambdak[j], p);
-			mpz_invert(bar, foo, p);
+			if (!mpz_invert(bar, foo, p))
+				mpz_set_ui(bar, 0L); // indicates an error
 			mpz_mul(f[j], f[j], bar);
 			mpz_mod(f[j], f[j], p);
 		}
@@ -371,7 +373,8 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_noninteractive
 			mpz_mul(f[j], f[j], bar);
 			mpz_mod(f[j], f[j], p);
 			mpz_spowm(foo, G, lambdak[j], p);
-			mpz_invert(bar, foo, p);
+			if (!mpz_invert(bar, foo, p))
+				mpz_set_ui(bar, 0L); // indicates an error
 			mpz_mul(f[j], f[j], bar);
 			mpz_mod(f[j], f[j], p);
 		}

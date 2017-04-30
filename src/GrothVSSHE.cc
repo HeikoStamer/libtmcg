@@ -711,7 +711,8 @@ bool GrothSKC::Verify_interactive
 		mpz_mul(foo, e, x);
 		mpz_mod(foo, foo, com->q);
 		assert(mpz_invert(bar, e, com->q));
-		mpz_invert(bar, e, com->q);
+		if (!mpz_invert(bar, e, com->q))
+			mpz_set_ui(bar, 0L); // indicates an error
 		mpz_set_ui(foo2, 1L); // foo2 stores $F_{n-1}$
 		for (size_t i = 0; i < f.size(); i++)
 		{ // compute left-hand side $F_n$, for $i = 1, \ldots, n$
@@ -896,7 +897,8 @@ bool GrothSKC::Verify_interactive_publiccoin
 		mpz_mul(foo, e, x);
 		mpz_mod(foo, foo, com->q);
 		assert(mpz_invert(bar, e, com->q));
-		mpz_invert(bar, e, com->q);
+		if (!mpz_invert(bar, e, com->q))
+			mpz_set_ui(bar, 0L); // indicates an error
 		mpz_set_ui(foo2, 1L); // foo2 stores $F_{n-1}$
 		for (size_t i = 0; i < f.size(); i++)
 		{ // compute left-hand side $F_n$, for $i = 1, \ldots, n$
@@ -1084,7 +1086,8 @@ bool GrothSKC::Verify_noninteractive
 		mpz_mul(foo, e, x);
 		mpz_mod(foo, foo, com->q);
 		assert(mpz_invert(bar, e, com->q));
-		mpz_invert(bar, e, com->q);
+		if (!mpz_invert(bar, e, com->q))
+			mpz_set_ui(bar, 0L); // indicates an error
 		mpz_set_ui(foo2, 1L); // foo2 stores $F_{n-1}$
 		for (size_t i = 0; i < f.size(); i++)
 		{ // compute left-hand side $F_n$, for $i = 1, \ldots, n$
@@ -1290,7 +1293,8 @@ bool GrothSKC::Verify_interactive
 		mpz_mul(foo, e, x);
 		mpz_mod(foo, foo, com->q);
 		assert(mpz_invert(bar, e, com->q));
-		mpz_invert(bar, e, com->q);
+		if (!mpz_invert(bar, e, com->q))
+			mpz_set_ui(bar, 0L); // indicates an error
 		mpz_set_ui(foo2, 1L);
 		for (size_t i = 0; i < f.size(); i++)
 		{
@@ -1498,7 +1502,8 @@ bool GrothSKC::Verify_interactive_publiccoin
 		mpz_mul(foo, e, x);
 		mpz_mod(foo, foo, com->q);
 		assert(mpz_invert(bar, e, com->q));
-		mpz_invert(bar, e, com->q);
+		if (!mpz_invert(bar, e, com->q))
+			mpz_set_ui(bar, 0L); // indicates an error
 		mpz_set_ui(foo2, 1L);
 		for (size_t i = 0; i < f.size(); i++)
 		{
@@ -1708,7 +1713,8 @@ bool GrothSKC::Verify_noninteractive
 		mpz_mul(foo, e, x);
 		mpz_mod(foo, foo, com->q);
 		assert(mpz_invert(bar, e, com->q));
-		mpz_invert(bar, e, com->q);
+		if (!mpz_invert(bar, e, com->q))
+			mpz_set_ui(bar, 0L); // indicates an error
 		mpz_set_ui(foo2, 1L);
 		for (size_t i = 0; i < f.size(); i++)
 		{

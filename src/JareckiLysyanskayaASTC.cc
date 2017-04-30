@@ -903,7 +903,11 @@ bool JareckiLysyanskayaRVSS::Reconstruct
 						mpz_mul(lhs, lhs, bar);
 					}
 				}
-				mpz_invert(lhs, lhs, q);
+				if (!mpz_invert(lhs, lhs, q))
+				{
+					err << "P_" << i << ": cannot invert LHS during reconstruction" << std::endl;
+					throw false;
+				}
 				mpz_mul(rhs, rhs, lhs);
 				mpz_mod(rhs, rhs, q);
 				mpz_mul(bar, alpha_ij[*it][*jt], rhs); // use the provided shares (interpolation points)
