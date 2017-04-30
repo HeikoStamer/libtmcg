@@ -58,7 +58,9 @@ libTMCG_la_SOURCES = mpz_srandom.c mpz_srandom.h\
 	GrothVSSHE.cc GrothVSSHE.hh\
 	HooghSchoenmakersSkoricVillegasVRHE.cc HooghSchoenmakersSkoricVillegasVRHE.hh\
 	NaorPinkasEOTP.cc NaorPinkasEOTP.hh\
-	aiounicast.hh aiounicast_nonblock.hh aiounicast_select.hh\
+	aiounicast.hh\
+	aiounicast_nonblock.cc aiounicast_nonblock.hh\
+	aiounicast_select.cc aiounicast_select.hh\
 	CachinKursawePetzoldShoupSEABP.cc CachinKursawePetzoldShoupSEABP.hh\
 	GennaroJareckiKrawczykRabinDKG.cc GennaroJareckiKrawczykRabinDKG.hh\
 	JareckiLysyanskayaASTC.cc JareckiLysyanskayaASTC.hh\
