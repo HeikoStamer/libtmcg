@@ -68,6 +68,12 @@ void g
 	delete [] out;
 }
 
+size_t mpz_shash_len
+	()
+{
+	return gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
+}
+
 void mpz_shash
 	(mpz_ptr r, std::string input)
 {

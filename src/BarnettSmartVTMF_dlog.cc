@@ -324,7 +324,11 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyNIZK
 
 	try
 	{
-		// check the size of $r$
+		// check size of $c$
+		if ((mpz_sizeinbase(c, 2L) / 8L) > mpz_shash_len())
+			throw false;
+
+		// check size of $r$
 		if (mpz_cmpabs(r, q) >= 0)
 			throw false;
 

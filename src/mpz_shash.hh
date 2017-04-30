@@ -42,6 +42,9 @@
 	void g
 		(unsigned char *output, const size_t osize,
 		const unsigned char *input, const size_t isize);
+
+	size_t mpz_shash_len
+		();
 		
 	void mpz_shash
 		(mpz_ptr r, std::string input);

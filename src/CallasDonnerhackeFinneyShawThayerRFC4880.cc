@@ -2671,7 +2671,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
 
-	for (size_t i = 0; ((i < in.size()) && (i < 1024)); i++, buflen++)
+	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer))); i++, buflen++)
 		buffer[i] = in[i];
 	h = gcry_mpi_new(2048);
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
@@ -2720,7 +2720,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
 
-	for (size_t i = 0; ((i < in.size()) && (i < 1024)); i++, buflen++)
+	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer))); i++, buflen++)
 		buffer[i] = in[i];
 	h = gcry_mpi_new(2048);
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
