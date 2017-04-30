@@ -94,21 +94,20 @@ void mpz_grandomb
 	(mpz_ptr r, const unsigned long int size, enum gcry_random_level level)
 {
 	unsigned char *rtmp;
-	char htmp[size];
+	char htmp[size + 3]; // at least two characters + delimiter
 	size_t hlen;
 	gcry_mpi_t rr;
-	assert(size > 1L);
 	assert(size <= UINT_MAX);
 	
 	rr = gcry_mpi_new((unsigned int)size);
 	gcry_mpi_randomize(rr, (unsigned int)size, level);
 	gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
 	gcry_mpi_release(rr);
-	memset(htmp, 0, size);
+	memset(htmp, 0, size + 3);
 	memcpy(htmp, rtmp, hlen);
 	gcry_free(rtmp);
 	mpz_set_str(r, htmp, 16);
-	mpz_tdiv_r_2exp(r, r, size); /* r mod 2^size, i.e. shift right */
+	mpz_tdiv_r_2exp(r, r, size); /* r mod 2^size, i.e. shift right FIXME: size = 1 ???*/
 }
 
 void mpz_ssrandomb
@@ -134,17 +133,16 @@ void mpz_grandomm
 {
 	unsigned long int size = mpz_sizeinbase(m, 2L);
 	unsigned char *rtmp;
-	char htmp[size];
+	char htmp[size + 3]; // at least two characters + delimiter
 	size_t hlen;
 	gcry_mpi_t rr;
-	assert(size > 1L);
 	assert(size <= UINT_MAX);
 	
 	rr = gcry_mpi_new((unsigned int)size);
 	gcry_mpi_randomize(rr, (unsigned int)size, level);
 	gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
 	gcry_mpi_release(rr);
-	memset(htmp, 0, size);
+	memset(htmp, 0, size + 3);
 	memcpy(htmp, rtmp, hlen);
 	gcry_free(rtmp);
 	mpz_set_str(r, htmp, 16);

@@ -41,6 +41,7 @@ int main
 	mpz_t foo, bar, foo2, bar2, root, t1, t2;
 	mpz_t fpowm_table_1[TMCG_MAX_FPOWM_T], fpowm_table_2[TMCG_MAX_FPOWM_T];
 	unsigned long int tmp_ui = 0L, cnt[MOD_BIAS_WIDTH];
+	size_t cnt_zero = 0, cnt_one = 0;
 	std::stringstream lej;
 	std::string s;
 	assert(init_libTMCG());
@@ -144,6 +145,21 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		assert(tmp_ui != mpz_wrandom_ui());
 	}
 #endif
+	std::cout << "mpz_wrandomb(..., 1L)" << std::endl;
+	cnt_zero = 0, cnt_one = 0;
+	for (size_t i = 0; i < 25; i++)
+	{
+		mpz_wrandomb(foo, 1L), mpz_set_ui(bar, 0L);
+		assert((mpz_sizeinbase(foo, 2L) == 1L));
+		lej << foo << std::endl, lej >> bar;
+		assert(!mpz_cmp(foo, bar));
+		if (!mpz_cmp_ui(foo, 0L))
+			cnt_zero++;
+		if (!mpz_cmp_ui(foo, 1L))
+			cnt_one++;
+	}
+	assert(cnt_zero > 0);
+	assert(cnt_one > 0);
 	std::cout << "mpz_wrandomb()" << std::endl;
 	for (size_t i = 0; i < 25; i++)
 	{
@@ -155,6 +171,21 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		assert(!mpz_cmp(foo, bar));
 		assert(mpz_cmp(foo, foo2));
 	}
+	std::cout << "mpz_srandomb(..., 1L)" << std::endl;
+	cnt_zero = 0, cnt_one = 0;
+	for (size_t i = 0; i < 25; i++)
+	{
+		mpz_srandomb(foo, 1L), mpz_set_ui(bar, 0L);
+		assert((mpz_sizeinbase(foo, 2L) == 1L));
+		lej << foo << std::endl, lej >> bar;
+		assert(!mpz_cmp(foo, bar));
+		if (!mpz_cmp_ui(foo, 0L))
+			cnt_zero++;
+		if (!mpz_cmp_ui(foo, 1L))
+			cnt_one++;
+	}
+	assert(cnt_zero > 0);
+	assert(cnt_one > 0);
 	std::cout << "mpz_srandomb()" << std::endl;
 	for (size_t i = 0; i < 25; i++)
 	{
