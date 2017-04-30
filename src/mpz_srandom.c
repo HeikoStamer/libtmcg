@@ -107,7 +107,7 @@ void mpz_grandomb
 	memcpy(htmp, rtmp, hlen);
 	gcry_free(rtmp);
 	mpz_set_str(r, htmp, 16);
-	mpz_tdiv_r_2exp(r, r, size); /* r mod 2^size, i.e. shift right FIXME: size = 1 ???*/
+	mpz_tdiv_r_2exp(r, r, size); /* r mod 2^size, i.e. shift right and bit mask */
 }
 
 void mpz_ssrandomb
