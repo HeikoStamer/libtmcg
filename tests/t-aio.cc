@@ -81,32 +81,28 @@ void start_instance_nonblock
 			mpz_init_set_ui(m, whoami);
 			for (size_t i = 0; i < N; i++)
 			{
-				if ((i != whoami) && !corrupted)
+				if (!corrupted)
 				{
 					ret = aiou->Send(m, i);
 					assert(ret);
 				}
-				if (i != whoami)
-					froms.push_back(i);
+				froms.push_back(i);
 			}
-			// receive messages from other parties
+			// receive messages from parties
 			for (size_t i = 0; i < N; i++)
 			{
-				if (i != whoami)
+				ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
+				if (ret)
 				{
-					ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
-					if (ret)
-					{
-						assert(!mpz_cmp_ui(m, i)); // data should be always correct
-						ipos = std::find(froms.begin(), froms.end(), i);
-						if (ipos != froms.end())
-							froms.erase(ipos);
-						else
-							std::cout << "P_" << whoami << ": entry not found for " << i << std::endl;
-					}
+					assert(!mpz_cmp_ui(m, i)); // data should be always correct
+					ipos = std::find(froms.begin(), froms.end(), i);
+					if (ipos != froms.end())
+						froms.erase(ipos);
 					else
-						std::cout << "P_" << whoami << ": timeout of " << i << std::endl;
+						std::cout << "P_" << whoami << ": entry not found for " << i << std::endl;
 				}
+				else
+					std::cout << "P_" << whoami << ": timeout of " << i << std::endl;
 			}
 			assert(froms.size() <= T); // at most T messages not received
 			for (size_t i = 0; i < froms.size(); i++)
@@ -173,32 +169,28 @@ void start_instance_select
 			mpz_init_set_ui(m, whoami);
 			for (size_t i = 0; i < N; i++)
 			{
-				if ((i != whoami) && !corrupted)
+				if (!corrupted)
 				{
 					ret = aiou->Send(m, i);
 					assert(ret);
 				}
-				if (i != whoami)
-					froms.push_back(i);
+				froms.push_back(i);
 			}
-			// receive messages from other parties
+			// receive messages from parties
 			for (size_t i = 0; i < N; i++)
 			{
-				if (i != whoami)
+				ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
+				if (ret)
 				{
-					ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
-					if (ret)
-					{
-						assert(!mpz_cmp_ui(m, i)); // data should be always correct
-						ipos = std::find(froms.begin(), froms.end(), i);
-						if (ipos != froms.end())
-							froms.erase(ipos);
-						else
-							std::cout << "P_" << whoami << ": entry not found for " << i << std::endl;
-					}
+					assert(!mpz_cmp_ui(m, i)); // data should be always correct
+					ipos = std::find(froms.begin(), froms.end(), i);
+					if (ipos != froms.end())
+						froms.erase(ipos);
 					else
-						std::cout << "P_" << whoami << ": timeout of " << i << std::endl;
+						std::cout << "P_" << whoami << ": entry not found for " << i << std::endl;
 				}
+				else
+					std::cout << "P_" << whoami << ": timeout of " << i << std::endl;
 			}
 			assert(froms.size() <= T); // at most T messages not received
 			for (size_t i = 0; i < froms.size(); i++)
