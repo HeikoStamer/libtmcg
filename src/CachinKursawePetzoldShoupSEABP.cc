@@ -274,7 +274,7 @@ std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
 				// upon receiving message $(ID.j.s, r-send, m)$ from $P_l$
 				if (!mpz_cmp(message[3], r_send) && !send[l].count(tag_string))
 				{
-//std::cerr << "RBC: r-send from " << l << " with m = " << message[4] << std::endl;
+std::cerr << "RBC: r-send from " << l << " with m = " << message[4] << std::endl;
 					send[l].insert(std::pair<std::string, bool>(tag_string, true));
 					if (!mpz_cmp_ui(message[1], l) && (mbar.count(tag_string) == 0))
 					{
@@ -304,7 +304,7 @@ std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
 				// upon receiving message $(ID.j.s, r-echo, d)$ from $P_l$
 				if (!mpz_cmp(message[3], r_echo) && !echo[l].count(tag_string))
 				{
-//std::cerr << "RBC: r-echo from " << l << " with d = " << message[4] << std::endl;
+std::cerr << "RBC: r-echo from " << l << " with d = " << message[4] << std::endl;
 					echo[l].insert(std::pair<std::string, bool>(tag_string, true));
 					std::stringstream d_ss;
 					d_ss << message[4];
@@ -351,7 +351,7 @@ std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
 				// upon receiving message $(ID.j.s, r-ready, d)$ from $P_l$
 				if (!mpz_cmp(message[3], r_ready) && !ready[l].count(tag_string))
 				{
-//std::cerr << "RBC: r-ready from " << l << " with d = " << message[4] << std::endl;
+std::cerr << "RBC: r-ready from " << l << " with d = " << message[4] << std::endl;
 					ready[l].insert(std::pair<std::string, bool>(tag_string, true));
 					std::stringstream d_ss;
 					d_ss << message[4];
@@ -374,7 +374,7 @@ std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
 					RBC_TagCount::iterator eit = e_d[tag_string].find(d_string);
 					if (eit == e_d[tag_string].end())
 						eit = (e_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
-//std::cerr << "RBC: r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
+std::cerr << "RBC: r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
 					if (((*rit).second == (t + 1)) && ((*eit).second < (n - t)))
 					{
 						// prepare message $(ID.j.s, r-ready, d)$
@@ -402,7 +402,7 @@ std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
 						else
 						{
 							mpz_set_ui(foo, 0L);
-//std::cerr << "RBC: r-send not received yet for this tag by " << j << std::endl;
+std::cerr << "RBC: r-send not received yet for this tag by " << j << std::endl;
 						}
 						if (mpz_cmp(foo, message[4])) // $H(\bar{m}) \neq \bar{d}$
 						{
@@ -449,7 +449,7 @@ std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
 									}
 									else if (!answer[l2].count(tag_string)) // for the first time?
 									{
-//std::cerr << "RBC: r-answer from " << l2 << " for " << j << " with m = " << message3[4] << std::endl;
+std::cerr << "RBC: r-answer from " << l2 << " for " << j << " with m = " << message3[4] << std::endl;
 										answer[l2].insert(std::pair<std::string, bool>(tag_string, true));
 										mpz_shash(foo, 1, message3[4]); // compute $H(m)$
 										if (mbar.count(tag_string) == 0)
@@ -513,7 +513,7 @@ std::cerr << "RBC(" << j << "): error in Receive(l2) = " << l2 << std::endl;
 				// upon receiving message $(ID.j.s, r-request) from $P_l$ for the first time
 				if (!mpz_cmp(message[3], r_request) && !request[l].count(tag_string))
 				{
-//std::cerr << "RBC: r-request from " << l << std::endl;
+std::cerr << "RBC: r-request from " << l << std::endl;
 					request[l].insert(std::pair<std::string, bool>(tag_string, true));
 					if (mbar.find(tag_string) != mbar.end())
 					{
