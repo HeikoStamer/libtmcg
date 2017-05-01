@@ -92,7 +92,7 @@ class CachinKursawePetzoldShoupRBC
 			(const size_t n_in, const size_t t_in, const size_t j_in,
 			aiounicast *aiou_in,
 			const size_t aio_default_scheduler_in = aiounicast::aio_scheduler_roundrobin,
-			const time_t aio_default_timeout_in = aiounicast::aio_timeout_very_long);
+			const time_t aio_default_timeout_in = aiounicast::aio_timeout_extremly_long);
 		void setID
 			(const std::string ID_in);
 		void unsetID
