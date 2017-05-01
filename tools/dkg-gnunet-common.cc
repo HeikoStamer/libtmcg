@@ -188,7 +188,6 @@ void gnunet_pipe_ready(void *cls)
 				delete [] th_buf;
 				if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 				{
-					perror("dkg-gnunet-common (read)");
 					continue;
 				}
 				else
@@ -229,7 +228,6 @@ void gnunet_broadcast_pipe_ready(void *cls)
 				delete [] th_buf;
 				if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 				{
-					perror("dkg-gnunet-common (read)");
 					continue;
 				}
 				else
