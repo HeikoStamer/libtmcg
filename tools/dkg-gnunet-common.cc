@@ -547,7 +547,7 @@ void gnunet_fork(void *cls)
 	}
 	else
 	{
-		std::cerr << "ERROR: no enough channels established" << std::endl;
+		std::cerr << "ERROR: not enough channels established" << std::endl;
 		GNUNET_SCHEDULER_shutdown();
 		return;
 	}
