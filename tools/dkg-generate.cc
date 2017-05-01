@@ -513,7 +513,7 @@ int main
 		GNUNET_GETOPT_option_string('g',
 			"group",
 			NULL,
-			"common reference string defining a different DDH-hard group",
+			"common reference string that defines the underlying DDH-hard group",
 			&gnunet_opt_crs
 		),
 		GNUNET_GETOPT_option_string('p',

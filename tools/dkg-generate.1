@@ -9,8 +9,9 @@ dkg\-generate \- distributed key generation for OpenPGP
 .IR PEERS
 
 .SH DESCRIPTION
-This program performs the t-resilient distributed key generation protocol for
-discrete logarithm based cryptosystems as described by Gennaro et al.
+This program performs the t-resilient distributed key generation protocol (DKG)
+for discrete logarithm based cryptosystems as described in Journal of Cryptology
+20(1) by Gennaro et al.
 It employs GNUnet for exchange of protocol messages between the participants.
 Thus a working GNUnet peer is neccesary to proceed. 
 .br
@@ -39,7 +40,10 @@ participants must agree. The generated group parameters are verifiable up
 to a certain level. However, it is recommended that this crucial part is
 accomplished by some trusted members or all participants together.
 .br
-TODO (passphrase, waiting time for DKG protocol)
+With the option "-w" the number of minutes can be adjusted until the DKG
+protocol is started. The default value is 5. It is crucial for the key
+generation that all participants are connected with GNUnet CADET within
+this waiting time.
 
 .SH OPTIONS
 Arguments mandatory for long options are also mandatory for short options.
@@ -48,7 +52,7 @@ Arguments mandatory for long options are also mandatory for short options.
 use GNUnet configuration file FILENAME
 .TP
 \fB\-g\fR, \fB\-\-group\fR
-common reference string defining the underlying DDH-hard group
+common reference string that defines the underlying DDH-hard group
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 print this help
@@ -70,6 +74,10 @@ print the GNUnet version number
 .TP
 \fB\-w\fR, \fB\-\-wait\fR
 minutes to wait until start of DKG protocol
+
+.SH "SECURITY"
+The current implementation is in experimental state and should NOT
+be used in production environments.
 
 .SH "REPORTING BUGS"
 Security vulnerabilities or cryptographic complaints should be reported
