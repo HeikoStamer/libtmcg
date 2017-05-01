@@ -50,6 +50,7 @@ class aiounicast
 		static const time_t	aio_timeout_middle		= 30;
 		static const time_t	aio_timeout_long		= 90;
 		static const time_t	aio_timeout_very_long		= 180;
+		static const time_t	aio_timeout_extremly_long	= 300;
 		static const time_t	aio_timeout_default		= 42424242;
 		static const size_t	aio_scheduler_none		= 0;
 		static const size_t	aio_scheduler_roundrobin	= 1;
@@ -63,7 +64,7 @@ class aiounicast
 		aiounicast
 			(const size_t n_in, const size_t j_in,
 			const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
-			const time_t aio_default_timeout_in = aio_timeout_long,
+			const time_t aio_default_timeout_in = aio_timeout_very_long,
 			const bool aio_is_authenticated_in = true,
 			const bool aio_is_encrypted_in = true):
 				aio_default_scheduler(aio_default_scheduler_in),

@@ -75,7 +75,7 @@ class aiounicast_select : public aiounicast
 			const std::vector<int> &fd_out_in,
 			const std::vector<std::string> &key_in,
 			const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
-			const time_t aio_default_timeout_in = aio_timeout_long,
+			const time_t aio_default_timeout_in = aio_timeout_very_long,
 			const bool aio_is_authenticated_in = true,
 			const bool aio_is_encrypted_in = true);
 		bool Send
