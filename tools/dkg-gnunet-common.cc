@@ -294,10 +294,9 @@ void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
 	if (peer2pipe.count(peer) == 0)
 	{
 		std::cerr << "WARNING: incoming channel from peer not included in PEERS ignored" << std::endl;
-		GNUNET_CADET_channel_destroy(channel);
-		return NULL;
+		return channel;
 	}
-	// register this channel
+	// register this channel, if not already done
 	if (pipe2channel_in.count(peer2pipe[peer]) == 0)
 	{
 		pipe2channel_in[peer2pipe[peer]] = channel;
