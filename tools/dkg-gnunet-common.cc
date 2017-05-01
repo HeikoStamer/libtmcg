@@ -266,7 +266,6 @@ void gnunet_broadcast_pipe_ready(void *cls)
 
 void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel)
 {
-	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "CADET channel ended!\n");
 	// deregister the ended channel	
 	for (size_t i = 0; i < peers.size(); i++)
 	{
@@ -289,7 +288,7 @@ void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel)
 void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
 	const struct GNUNET_PeerIdentity *initiator)
 {
-	GNUNET_log(GNUNET_ERROR_TYPE_MESSAGE, "Connected from %s\n", GNUNET_i2s_full(initiator));
+	std::cerr << "INFO: incoming channel from " << GNUNET_i2s_full(initiator) << std::endl;
 	// check whether peer identity is included in peer list
 	std::string peer = GNUNET_i2s_full(initiator);
 	if (peer2pipe.count(peer) == 0)
@@ -485,8 +484,8 @@ void gnunet_connect(void *cls)
 		bool stabilized = true;
 		if (!pipe2channel_out.count(i))
 			stabilized = false;
-		else if (!pipe2channel_in.count(i))
-			stabilized = false;
+//		else if (!pipe2channel_in.count(i))
+//			stabilized = false;
 		if ((i != peer2pipe[thispeer]) && !stabilized)
 		{
 			// destroy old CADET output channels, if exist
