@@ -539,7 +539,7 @@ void gnunet_fork(void *cls)
 {
 	ft = NULL;
 
-	if (pipe2channel_in.size() < (peers.size() - 1))
+	if (pipe2channel_in.size() == (peers.size() - 1))
 	{
 		// fork instance
 		std::cout << "INFO: forking the DKG instance ..." << std::endl;
