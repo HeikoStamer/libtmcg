@@ -179,33 +179,29 @@ void gnunet_pipe_ready(void *cls)
 	pt = NULL;
 	for (size_t i = 0; i < peers.size(); i++)
 	{
-		char *th_buf = new char[4096];
-		ssize_t num = read(pipefd[peer2pipe[thispeer]][i][0], th_buf, 4096);
-		if (num < 0)
+		if (i != peer2pipe[thispeer])
 		{
-			delete [] th_buf;
-			if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
-			{
-				continue;
-			}
-			else
-			{
-				perror("dkg-gnunet-common (read)");
-				GNUNET_SCHEDULER_shutdown();
-				return;
-			}
-		}
-		else if (num == 0)
-		{
-			delete [] th_buf;
-			continue;
-		}
-		else
-		{
-			if (i == peer2pipe[thispeer])
+			char *th_buf = new char[4096];
+			ssize_t num = read(pipefd[peer2pipe[thispeer]][i][0], th_buf, 4096);
+			if (num < 0)
 			{
 				delete [] th_buf;
-				continue; // ignore pipe of this peer
+				if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+				{
+					perror("dkg-gnunet-common (read)");
+					continue;
+				}
+				else
+				{
+					perror("dkg-gnunet-common (read)");
+					GNUNET_SCHEDULER_shutdown();
+					return;
+				}
+			}
+			else if (num == 0)
+			{
+				delete [] th_buf;
+				continue;
 			}
 			else
 			{
@@ -224,33 +220,29 @@ void gnunet_broadcast_pipe_ready(void *cls)
 	pt_broadcast = NULL;
 	for (size_t i = 0; i < peers.size(); i++)
 	{
-		char *th_buf = new char[4096];
-		ssize_t num = read(broadcast_pipefd[peer2pipe[thispeer]][i][0], th_buf, 4096);
-		if (num < 0)
+		if (i != peer2pipe[thispeer])
 		{
-			delete [] th_buf;
-			if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
-			{
-				continue;
-			}
-			else
-			{
-				perror("dkg-gnunet-common (read)");
-				GNUNET_SCHEDULER_shutdown();
-				return;
-			}
-		}
-		else if (num == 0)
-		{
-			delete [] th_buf;
-			continue;
-		}
-		else
-		{
-			if (i == peer2pipe[thispeer])
+			char *th_buf = new char[4096];
+			ssize_t num = read(broadcast_pipefd[peer2pipe[thispeer]][i][0], th_buf, 4096);
+			if (num < 0)
 			{
 				delete [] th_buf;
-				continue; // ignore pipe of this peer
+				if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+				{
+					perror("dkg-gnunet-common (read)");
+					continue;
+				}
+				else
+				{
+					perror("dkg-gnunet-common (read)");
+					GNUNET_SCHEDULER_shutdown();
+					return;
+				}
+			}
+			else if (num == 0)
+			{
+				delete [] th_buf;
+				continue;
 			}
 			else
 			{
