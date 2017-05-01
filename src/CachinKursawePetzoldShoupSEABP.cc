@@ -502,7 +502,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 								vtmp->push_back(tmp);
 							}
 							deliver_buf.push_back(*vtmp);
-//std::cerr << "RBC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
+std::cerr << "RBC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
 						}
 						continue;
 					}

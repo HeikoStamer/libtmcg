@@ -48,7 +48,7 @@ std::vector<std::string>	peers;
 bool				instance_forked = false;
 
 void run_instance
-	(const size_t whoami, const time_t keytime)
+	(const size_t whoami, const time_t keytime, const size_t num_xtests)
 {
 	// create communication handles for all players
 	std::vector<int> uP_in, uP_out, bP_in, bP_out;
@@ -108,6 +108,27 @@ void run_instance
 	size_t T_RBC = (peers.size() - 1) / 3; // assume maximum asynchronous t-resilience for RBC
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T_RBC, whoami, aiou2);
 	rbc->setID(myID);
+
+	// perform exchange test
+	for (size_t i = 0; i < num_xtests; i++)
+	{
+		mpz_t xtest;
+		mpz_init_set_ui(xtest, i);
+		std::cout << "P_" << whoami << ": xtest = " << i << " <-> ";
+		rbc->Broadcast(xtest);
+		for (size_t ii = 0; ii < N; ii++)
+		{
+			if (ii != whoami)
+			{
+				if (!rbc->DeliverFrom(xtest, ii))
+					std::cout << xtest << " ";
+				else
+					std::cout << "<X> ";
+			}
+		}
+		std::cout << std::endl;
+		mpz_clear(xtest);
+	}
 			
 	// create and exchange keys in order to bootstrap the $h$-generation for DKG [JL00]
 	// TODO: replace N-time NIZK by one interactive (distributed) zero-knowledge proof of knowledge
@@ -380,6 +401,7 @@ void run_instance
 #ifdef GNUNET
 char *gnunet_opt_crs = NULL;
 unsigned int gnunet_opt_t_resilience = 0;
+unsigned int gnunet_opt_xtests = 0;
 #endif
 
 void fork_instance
@@ -404,7 +426,7 @@ void fork_instance
 		{
 			/* BEGIN child code: participant P_i */
 			time_t keytime = time(NULL);
-			run_instance(whoami, keytime);
+			run_instance(whoami, keytime, gnunet_opt_xtests);
 
 			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
@@ -461,7 +483,7 @@ int main
 			std::string arg = argv[i + 1];
 			// ignore options
 			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-t") == 0) || (arg.find("-w") == 0) || 
-				(arg.find("-L") == 0) || (arg.find("-l") == 0) || (arg.find("-g") == 0))
+				(arg.find("-L") == 0) || (arg.find("-l") == 0) || (arg.find("-g") == 0) || (arg.find("-x") == 0))
 			{
 				i++;
 				continue;
@@ -533,6 +555,12 @@ int main
 			NULL,
 			"minutes to wait until start of DKG protocol",
 			&gnunet_opt_wait
+		),
+		GNUNET_GETOPT_option_uint('x',
+			"x-tests",
+			NULL,
+			"number of exchange tests",
+			&gnunet_opt_xtests
 		),
 		GNUNET_GETOPT_OPTION_END
 	};

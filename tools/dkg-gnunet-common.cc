@@ -42,6 +42,7 @@ DKG_BufferList				send_queue, send_queue_broadcast;
 
 extern char				*gnunet_opt_port;
 extern unsigned int			gnunet_opt_wait;
+extern unsigned int			gnunet_opt_xtests;
 
 // 1080-1109 reserved for TMCG (see gnunet-developers, January 2017)
 #define GNUNET_MESSAGE_TYPE_TMCG_DKG_CHANNEL_CHECK  1080
