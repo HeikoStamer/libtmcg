@@ -102,10 +102,7 @@ void handle_gnunet_data_callback(void *cls, const struct GNUNET_MessageHeader *m
 {
 	size_t peer_id = (size_t)cls;
 	struct GNUNET_CADET_Channel *channel = pipe2channel_out.count(peer_id) ? pipe2channel_out[peer_id] : NULL;
-	int fd;
-	uint16_t len = 0, cnt = 0;
-	ssize_t rnum = 0;
- 	const char *buf;	
+	uint16_t cnt = 0;
 	std::string peer;
 
 	// check whether the used channel is (still) registered
@@ -129,12 +126,12 @@ void handle_gnunet_data_callback(void *cls, const struct GNUNET_MessageHeader *m
 		return;
 	}
 
+	// initialize variables
 	GNUNET_assert(ntohs(message->size) >= sizeof(*message));
-	len = ntohs(message->size) - sizeof(*message);
+	uint16_t len = ntohs(message->size) - sizeof(*message);
 	GNUNET_log(GNUNET_ERROR_TYPE_MESSAGE, "Got message of type %u from %s with %u bytes\n", ntohs(message->type), peer.c_str(), len);
-	buf = (const char *)&message[1];
-
-	// write the payload into corresponding pipe
+	const char *buf = (const char *)&message[1];
+	int fd;
 	if (ntohs(message->type) == GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST)
 		fd = pipefd[peer2pipe[peer]][peer2pipe[thispeer]][1];
 	else if (ntohs(message->type) == GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST)
@@ -145,10 +142,13 @@ void handle_gnunet_data_callback(void *cls, const struct GNUNET_MessageHeader *m
 		GNUNET_CADET_receive_done(channel);
 		return;
 	}
+
+	// write payload into the corresponding pipe
 	GNUNET_assert(buf != NULL);
+	ssize_t wnum = 0;
 	do
 	{
-		ssize_t num = write(fd, buf + rnum, len - rnum);
+		ssize_t num = write(fd, buf + wnum, len - wnum);
 		if (num < 0)
 		{
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
@@ -165,9 +165,9 @@ void handle_gnunet_data_callback(void *cls, const struct GNUNET_MessageHeader *m
 			}
 		}
 		else
-			rnum += num;
+			wnum += num;
 	}
-	while (rnum < len);
+	while (wnum < len);
 
 	// ready for receiving next message on this channel
 	GNUNET_CADET_receive_done(channel);
@@ -539,9 +539,18 @@ void gnunet_fork(void *cls)
 {
 	ft = NULL;
 
-	// fork instance
-	std::cout << "INFO: forking the DKG instance ..." << std::endl;
-	fork_instance(peer2pipe[thispeer]);
+	if (pipe2channel_in.size() < (peers.size() - 1))
+	{
+		// fork instance
+		std::cout << "INFO: forking the DKG instance ..." << std::endl;
+		fork_instance(peer2pipe[thispeer]);
+	}
+	else
+	{
+		std::cerr << "ERROR: no enough channels established" << std::endl;
+		GNUNET_SCHEDULER_shutdown();
+		return;
+	}
 }
 
 void gnunet_init(void *cls)
