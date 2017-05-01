@@ -288,7 +288,7 @@ void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel)
 void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
 	const struct GNUNET_PeerIdentity *initiator)
 {
-	std::cerr << "INFO: incoming channel from " << GNUNET_i2s_full(initiator) << std::endl;
+	std::cout << "INFO: incoming channel from " << GNUNET_i2s_full(initiator) << std::endl;
 	// check whether peer identity is included in peer list
 	std::string peer = GNUNET_i2s_full(initiator);
 	if (peer2pipe.count(peer) == 0)
@@ -431,7 +431,7 @@ void gnunet_io(void *cls)
 		struct GNUNET_MessageHeader *msg;
 		if (pipe2channel_in.count(ble.first)) // have input channel to this peer?
 		{
-			std::cerr << "INFO: try to send " << buf.first << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
+			std::cout << "INFO: try to send " << buf.first << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
 			env = GNUNET_MQ_msg_extra(msg, buf.first, GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST);
 			GNUNET_memcpy(&msg[1], buf.second, buf.first);
 			GNUNET_MQ_send(GNUNET_CADET_get_mq(pipe2channel_in[ble.first]), env);
@@ -450,7 +450,7 @@ void gnunet_io(void *cls)
 		struct GNUNET_MessageHeader *msg;
 		if (pipe2channel_in.count(ble.first)) // have input channel to this peer?
 		{
-			std::cerr << "INFO: try to broadcast " << buf.first << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
+			std::cout << "INFO: try to broadcast " << buf.first << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
 			env = GNUNET_MQ_msg_extra(msg, buf.first, GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST);
 			GNUNET_memcpy(&msg[1], buf.second, buf.first);
 			GNUNET_MQ_send(GNUNET_CADET_get_mq(pipe2channel_in[ble.first]), env);
@@ -486,6 +486,7 @@ void gnunet_connect(void *cls)
 			stabilized = false;
 //		else if (!pipe2channel_in.count(i))
 //			stabilized = false;
+// FIXME: reconnect not needed, if GNUnet CADET work correctly
 		if ((i != peer2pipe[thispeer]) && !stabilized)
 		{
 			// destroy old CADET output channels, if exist
@@ -539,8 +540,8 @@ void gnunet_statistics(void *cls)
 {
 	st = NULL;
 
-	std::cerr << "INFO: pipe2channel_out.size() = " << pipe2channel_out.size() << ", pipe2channel_in.size() = " << pipe2channel_in.size() << std::endl;
-	std::cerr << "INFO: send_queue.size() = " << send_queue.size() << ", send_queue_broadcast.size() = " << send_queue_broadcast.size() << std::endl;
+	std::cout << "INFO: pipe2channel_out.size() = " << pipe2channel_out.size() << ", pipe2channel_in.size() = " << pipe2channel_in.size() << std::endl;
+	std::cout << "INFO: send_queue.size() = " << send_queue.size() << ", send_queue_broadcast.size() = " << send_queue_broadcast.size() << std::endl;
 	// reschedule statistics task
 	st = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, 45), &gnunet_statistics, NULL);
 }
