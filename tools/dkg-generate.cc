@@ -121,9 +121,9 @@ void run_instance
 			if (ii != whoami)
 			{
 				if (!rbc->DeliverFrom(xtest, ii))
-					std::cout << xtest << " ";
-				else
 					std::cout << "<X> ";
+				else
+					std::cout << xtest << " ";
 			}
 		}
 		std::cout << std::endl;
