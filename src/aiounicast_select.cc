@@ -216,6 +216,11 @@ bool aiounicast_select::Send
 	if (aio_is_encrypted)
 		mpz_add(tmp, tmp, aio_hide_length);
 	size_t size = mpz_sizeinbase(tmp, TMCG_MPZ_IO_BASE);
+	if ((size * 2) >= buf_in_size)
+	{
+		std::cerr << "aiounicast_select: big integer too large" << std::endl;
+		return false;
+	}
 	size_t bufsize = size + 2;
 	char *buf = new char[bufsize];
 	memset(buf, 0, bufsize);
@@ -231,7 +236,7 @@ bool aiounicast_select::Send
 	}
 	else
 	{
-		std::cerr << "aiounicast_nonblock: realsize does not fit" << std::endl;
+		std::cerr << "aiounicast_select: realsize does not fit" << std::endl;
 		delete [] buf;
 		return false;
 	}
@@ -275,7 +280,7 @@ bool aiounicast_select::Send
 		}
 		else
 		{
-			std::cerr << "aiounicast_nonblock: realsize does not fit" << std::endl;
+			std::cerr << "aiounicast_select: realsize does not fit" << std::endl;
 			delete [] buf;
 			return false;
 		}
