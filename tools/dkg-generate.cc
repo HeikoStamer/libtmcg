@@ -109,12 +109,12 @@ void run_instance
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T_RBC, whoami, aiou2);
 	rbc->setID(myID);
 
-	// perform exchange test
+	// perform a simple exchange test
 	for (size_t i = 0; i < num_xtests; i++)
 	{
 		mpz_t xtest;
 		mpz_init_set_ui(xtest, i);
-		std::cout << "P_" << whoami << ": xtest = " << i << " <-> ";
+		std::cout << "P_" << whoami << ": xtest = " << xtest << " <-> ";
 		rbc->Broadcast(xtest);
 		for (size_t ii = 0; ii < N; ii++)
 		{
