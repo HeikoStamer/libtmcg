@@ -42,6 +42,7 @@
 #undef NDEBUG
 #define N 11
 #define T 3
+#define K 10
 
 int pipefd[N][N][2];
 pid_t pid[N];
@@ -109,9 +110,49 @@ void start_instance_nonblock
 			{
 				assert(froms[i] < T); // only corrupted parties should fail
 			}
+			// send array of K big random numbers
+			std::vector<mpz_ptr> mm;
+			for (size_t k = 0; k < K; k++)
+			{
+				mpz_ptr tmp = new mpz_t();
+				mpz_init(tmp);
+				mm.push_back(tmp);
+			}
+			for (size_t i = 0; i < N; i++)
+			{
+				for (size_t k = 0; !corrupted && (k < K); k++)
+				{
+					mpz_wrandomb(m, TMCG_DDH_SIZE);
+					mpz_mul_ui(m, m, (i + k + 1));
+					ret = aiou->Send(m, i);
+					assert(ret);
+				}
+			}
+			// receive array of big random numbers with round-robin scheduler
+			size_t num = 0, from = 0;
+			do
+			{
+				ret = aiou->Receive(mm, from, aiounicast::aio_scheduler_roundrobin);
+				if (num < (N - T))
+					assert(ret);
+				if (ret)
+					std::cout << "P_" << whoami << ": received array from P_" << from << std::endl;
+				for (size_t k = 0; ret && (k < mm.size()); k++)
+				{
+					assert(mpz_divisible_ui_p(mm[k], (whoami + k + 1)));
+				}
+				num++;
+			}
+			while (num < N);
 
 			// release
 			mpz_clear(m);
+			for (size_t k = 0; k < mm.size(); k++)
+			{
+				mpz_clear(mm[k]);
+				delete [] mm[k];
+			}
+			mm.clear();
 
 			// release handles (unicast channel)
 			uP_in.clear(), uP_out.clear(), uP_key.clear();
@@ -197,9 +238,49 @@ void start_instance_select
 			{
 				assert(froms[i] < T); // only corrupted parties should fail
 			}
+			// send array of K big random numbers
+			std::vector<mpz_ptr> mm;
+			for (size_t k = 0; k < K; k++)
+			{
+				mpz_ptr tmp = new mpz_t();
+				mpz_init(tmp);
+				mm.push_back(tmp);
+			}
+			for (size_t i = 0; i < N; i++)
+			{
+				for (size_t k = 0; !corrupted && (k < K); k++)
+				{
+					mpz_wrandomb(m, TMCG_DDH_SIZE);
+					mpz_mul_ui(m, m, (i + k + 1));
+					ret = aiou->Send(m, i);
+					assert(ret);
+				}
+			}
+			// receive array of big random numbers with round-robin scheduler
+			size_t num = 0, from = 0;
+			do
+			{
+				ret = aiou->Receive(mm, from, aiounicast::aio_scheduler_roundrobin);
+				if (num < (N - T))
+					assert(ret);
+				if (ret)
+					std::cout << "P_" << whoami << ": received array from P_" << from << std::endl;
+				for (size_t k = 0; ret && (k < mm.size()); k++)
+				{
+					assert(mpz_divisible_ui_p(mm[k], (whoami + k + 1)));
+				}
+				num++;
+			}
+			while (num < N);
 
 			// release
 			mpz_clear(m);
+			for (size_t k = 0; k < mm.size(); k++)
+			{
+				mpz_clear(mm[k]);
+				delete [] mm[k];
+			}
+			mm.clear();
 
 			// release handles (unicast channel)
 			uP_in.clear(), uP_out.clear(), uP_key.clear();
