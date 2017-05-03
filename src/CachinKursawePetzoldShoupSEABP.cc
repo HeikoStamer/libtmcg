@@ -392,7 +392,8 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						}
 						message2.clear();
 					}
-					else if ((*rit).second >= ((2 * t) + 1)) // NOTE: the requirement $r_d = 2t + 1$ [CKSP01] is wrong for $t = 0$
+					else if (((*rit).second == ((2 * t) + 1)) || 
+						((t == 0) && ((*rit).second == n))) // NOTE: artificial case $t = 0$ not considered by [CKPS01]
 					{
 						mpz_ptr tmp = new mpz_t();
 						mpz_init_set(tmp, message[4]); // $\bar{d} \gets d$
