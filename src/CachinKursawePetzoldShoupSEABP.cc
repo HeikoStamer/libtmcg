@@ -392,7 +392,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						}
 						message2.clear();
 					}
-					else if (((*rit).second == ((2 * t) + 1)) || 
+					else if (((t > 0) && ((*rit).second == ((2 * t) + 1))) || 
 						((t == 0) && ((*rit).second == n))) // NOTE: artificial case $t = 0$ not considered by [CKPS01]
 					{
 						mpz_ptr tmp = new mpz_t();
