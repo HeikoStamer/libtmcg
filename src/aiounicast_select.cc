@@ -482,7 +482,7 @@ bool aiounicast_select::Send
 			return false;
 		}
 	}
-std::cerr << "send(" << j << ") to " << i_in << ": m = " << m << std::endl;
+//std::cerr << "send(" << j << ") to " << i_in << ": m = " << m << std::endl;
 	return true;
 }
 
@@ -660,7 +660,7 @@ bool aiounicast_select::Receive
 					delete [] tmp, delete [] mac;
 					if (aio_is_encrypted)
 						mpz_sub(m, m, aio_hide_length);
-std::cerr << "receive(" << j << ") from " << i_out << ": m = " << m << std::endl;
+//std::cerr << "receive(" << j << ") from " << i_out << ": m = " << m << std::endl;
 					return true;
 				}
 				// no delimiter found; invalidate buffer flag

@@ -118,13 +118,10 @@ void run_instance
 		rbc->Broadcast(xtest);
 		for (size_t ii = 0; ii < N; ii++)
 		{
-			if (ii != whoami)
-			{
-				if (!rbc->DeliverFrom(xtest, ii))
-					std::cout << "<X> ";
-				else
-					std::cout << xtest << " ";
-			}
+			if (!rbc->DeliverFrom(xtest, ii))
+				std::cout << "<X> ";
+			else
+				std::cout << xtest << " ";
 		}
 		std::cout << std::endl;
 		mpz_clear(xtest);

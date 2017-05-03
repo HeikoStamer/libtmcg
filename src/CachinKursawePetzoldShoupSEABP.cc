@@ -374,7 +374,7 @@ std::cerr << "RBC: r-ready from " << l << " with d = " << message[4] << std::end
 					RBC_TagCount::iterator eit = e_d[tag_string].find(d_string);
 					if (eit == e_d[tag_string].end())
 						eit = (e_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
-std::cerr << "RBC: r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
+std::cerr << "RBC: [" << tag_string << "] r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
 					if (((*rit).second == (t + 1)) && ((*eit).second < (n - t)))
 					{
 						// prepare message $(ID.j.s, r-ready, d)$
@@ -392,7 +392,7 @@ std::cerr << "RBC: r_d = " << (*rit).second << " e_d = " << (*eit).second << std
 						}
 						message2.clear();
 					}
-					else if ((*rit).second == ((2 * t) + 1))
+					else if ((*rit).second >= ((2 * t) + 1)) // NOTE: the requirement $r_d = 2t + 1$ [CKSP01] is wrong for $t = 0$
 					{
 						mpz_ptr tmp = new mpz_t();
 						mpz_init_set(tmp, message[4]); // $\bar{d} \gets d$
@@ -480,8 +480,9 @@ std::cerr << "RBC: r-answer from " << l2 << " for " << j << " with m = " << mess
 							if (mpz_cmp(foo, message[4])) // still $H(\bar{m}) \neq \bar{d}$
 								break; // no correct r-answer received and timeout exceeded
 						}
-//std::cerr << "RBC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
+std::cerr << "RBC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
 						size_t who = mpz_get_ui(message[1]);
+						assert(who < n);
 						// check for matching tag and sequence counter before delivering
 						if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
 						{
@@ -502,7 +503,7 @@ std::cerr << "RBC: r-answer from " << l2 << " for " << j << " with m = " << mess
 								vtmp->push_back(tmp);
 							}
 							deliver_buf.push_back(*vtmp);
-//std::cerr << "RBC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
+std::cerr << "RBC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
 						}
 						continue;
 					}
