@@ -185,15 +185,22 @@ int main
 		start_instance(N_MIN, 0, i, false, false);
 	if (!done(N_MIN))
 		return 1;
+
+	// test case #2: n = 3, t = 0
+	init(3);
+	for (size_t i = 0; i < 3; i++)
+		start_instance(3, 0, i, false, false);
+	if (!done(3))
+		return 1;
 	
-	// test case #2: all correct
+	// test case #3: all correct
 	init(N);
 	for (size_t i = 0; i < N; i++)
 		start_instance(N, T, i, false, false);
 	if (!done(N))
 		return 1;
 		
-	// test case #3: two corrupted parties
+	// test case #4: two corrupted parties
 	init(N);
 	for (size_t i = 0; i < N; i++)
 	{
