@@ -351,7 +351,7 @@ std::cerr << "RBC: r-send from " << l << " with m = " << message[4] << std::endl
 				// upon receiving message $(ID.j.s, r-ready, d)$ from $P_l$
 				if (!mpz_cmp(message[3], r_ready) && !ready[l].count(tag_string))
 				{
-//std::cerr << "RBC: r-ready from " << l << " with d = " << message[4] << std::endl;
+std::cerr << "RBC: r-ready from " << l << " with d = " << message[4] << std::endl;
 					ready[l].insert(std::pair<std::string, bool>(tag_string, true));
 					std::stringstream d_ss;
 					d_ss << message[4];
@@ -375,7 +375,7 @@ std::cerr << "RBC: r-send from " << l << " with m = " << message[4] << std::endl
 					if (eit == e_d[tag_string].end())
 						eit = (e_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
 std::cerr << "RBC: [" << tag_string << "] r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
-					if (((*rit).second == (t + 1)) && ((*eit).second < (n - t)))
+					if ((t > 0) && ((*rit).second == (t + 1)) && ((*eit).second < (n - t)))
 					{
 						// prepare message $(ID.j.s, r-ready, d)$
 						RBC_ConstMessage message2;
@@ -392,8 +392,8 @@ std::cerr << "RBC: [" << tag_string << "] r_d = " << (*rit).second << " e_d = " 
 						}
 						message2.clear();
 					}
-					else if (((t > 0) && ((*rit).second == ((2 * t) + 1))) || 
-						((t == 0) && ((*rit).second == n))) // NOTE: artificial case $t = 0$ not considered by [CKPS01]
+					else if (((t > 0) && ((*rit).second == ((2 * t) + 1))) ||
+						((t == 0) && ((*rit).second == 1))) // NOTE: artificial case where $t = 0$, not considered by [CKPS01]
 					{
 						mpz_ptr tmp = new mpz_t();
 						mpz_init_set(tmp, message[4]); // $\bar{d} \gets d$
@@ -403,7 +403,7 @@ std::cerr << "RBC: [" << tag_string << "] r_d = " << (*rit).second << " e_d = " 
 						else
 						{
 							mpz_set_ui(foo, 0L);
-std::cerr << "RBC: r-send not received yet for this tag by " << j << std::endl;
+//std::cerr << "RBC: r-send not received yet for this tag by " << j << std::endl;
 						}
 						if (mpz_cmp(foo, message[4])) // $H(\bar{m}) \neq \bar{d}$
 						{
