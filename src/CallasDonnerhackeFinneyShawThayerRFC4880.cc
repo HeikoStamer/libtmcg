@@ -343,7 +343,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 	// Currently defined Armor Header Keys are as follows:
 	//  - "Version", which states the OpenPGP implementation and version
 	//    used to encode the message.
-	out += "Version: LibTMCG "VERSION"\r\n";
+	out += "Version: LibTMCG " VERSION "\r\n";
 
 	// Next, a blank (zero-length, or containing only whitespace) line
 	out += "\r\n";

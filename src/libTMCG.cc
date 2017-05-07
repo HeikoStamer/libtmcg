@@ -28,7 +28,7 @@
 
 // LibTMCG identifier
 std::string LibTMCG_ID = 
-    "LibTMCG "VERSION"  (C) Heiko Stamer, License: GNU GPL version 2";
+    "LibTMCG " VERSION "  (C) Heiko Stamer, License: GNU GPL version 2";
 
 // LibTMCG general functions
 bool init_libTMCG

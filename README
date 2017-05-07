@@ -139,6 +139,7 @@ Requirements
   The library was tested (++ successful, -- erroneous) on the following
   platforms with the given compilers, respectively:
 
+  ++ GNU/Linux (Gentoo Linux)    x86_64    gcc 6.3.0 (details omitted)
   ++ GNU/Linux (Gentoo Linux)    x86_64    gcc 5.4.0 (details omitted)
   ++ GNU/Linux (Ubuntu Linux)    x86_64    gcc 5.4.0 (details omitted)
   ++ GNU/Linux (Debian Linux)    x86_64    gcc 4.9.2 (details omitted)

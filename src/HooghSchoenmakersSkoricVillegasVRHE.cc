@@ -1573,50 +1573,50 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 		if (!in.good())
 			throw false;
 		
-			// check whether $g^{\tau_k} h^{\rho_k} = f_k h_k^{\lambda}$
-			// Note that we throughout assume that $h = \tilde{h}$ holds.
-			for (size_t i = 0; i < tau.size(); i++)
-			{
-				// LHS i.e. $g^{\tau_k} h^{\rho_k}$
-				mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
-				mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
-				mpz_mul(lhs, foo, bar);
-				mpz_mod(lhs, lhs, p);
-				// RHS i.e. $f_k h_k^{\lambda}$
-				mpz_powm(rhs, hk[i], lambda, p);
-				mpz_mul(rhs, rhs, fk[i]);
-				mpz_mod(rhs, rhs, p);
-				// compare LHS and RHS
-				if (mpz_cmp(lhs, rhs))
-					throw false;
-			}
-			// check whether $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k}) =
-			//                F_k A_k^{\lambda}$
-			// Note that we have $Y_k = (d_k, e_k)$, for all $0 \le k \le n-1$.
-			for (size_t i = 0; i < tau.size(); i++)
-			{
-				// LHS i.e. $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k})$
-				mpz_powm(foo, Y[i].first, tau[i], p);
-				mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
-				mpz_mul(LHS.first, foo, bar);
-				mpz_mod(LHS.first, LHS.first, p);
-				mpz_powm(foo, Y[i].second, tau[i], p);
-				mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
-				mpz_mul(LHS.second, foo, bar);
-				mpz_mod(LHS.second, LHS.second, p);
-				// RHS i.e. $F_k A_k^{\lambda}$
-				mpz_powm(RHS.first, Ak[i].first, lambda, p);
-				mpz_mul(RHS.first, RHS.first, Fk[i].first);
-				mpz_mod(RHS.first, RHS.first, p);
-				mpz_powm(RHS.second, Ak[i].second, lambda, p);
-				mpz_mul(RHS.second, RHS.second, Fk[i].second);
-				mpz_mod(RHS.second, RHS.second, p);
-				// compare LHS and RHS (both components)
-				if (mpz_cmp(LHS.first, RHS.first))
-					throw false;
-				if (mpz_cmp(LHS.second, RHS.second))
-					throw false;
-			}
+		// check whether $g^{\tau_k} h^{\rho_k} = f_k h_k^{\lambda}$
+		// Note that we throughout assume that $h = \tilde{h}$ holds.
+		for (size_t i = 0; i < tau.size(); i++)
+		{
+			// LHS i.e. $g^{\tau_k} h^{\rho_k}$
+			mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
+			mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
+			mpz_mul(lhs, foo, bar);
+			mpz_mod(lhs, lhs, p);
+			// RHS i.e. $f_k h_k^{\lambda}$
+			mpz_powm(rhs, hk[i], lambda, p);
+			mpz_mul(rhs, rhs, fk[i]);
+			mpz_mod(rhs, rhs, p);
+			// compare LHS and RHS
+			if (mpz_cmp(lhs, rhs))
+				throw false;
+		}
+		// check whether $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k}) =
+		//                F_k A_k^{\lambda}$
+		// Note that we have $Y_k = (d_k, e_k)$, for all $0 \le k \le n-1$.
+		for (size_t i = 0; i < tau.size(); i++)
+		{
+			// LHS i.e. $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k})$
+			mpz_powm(foo, Y[i].first, tau[i], p);
+			mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
+			mpz_mul(LHS.first, foo, bar);
+			mpz_mod(LHS.first, LHS.first, p);
+			mpz_powm(foo, Y[i].second, tau[i], p);
+			mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
+			mpz_mul(LHS.second, foo, bar);
+			mpz_mod(LHS.second, LHS.second, p);
+			// RHS i.e. $F_k A_k^{\lambda}$
+			mpz_powm(RHS.first, Ak[i].first, lambda, p);
+			mpz_mul(RHS.first, RHS.first, Fk[i].first);
+			mpz_mod(RHS.first, RHS.first, p);
+			mpz_powm(RHS.second, Ak[i].second, lambda, p);
+			mpz_mul(RHS.second, RHS.second, Fk[i].second);
+			mpz_mod(RHS.second, RHS.second, p);
+			// compare LHS and RHS (both components)
+			if (mpz_cmp(LHS.first, RHS.first))
+				throw false;
+			if (mpz_cmp(LHS.second, RHS.second))
+				throw false;
+		}
 
 		// perform and verify PUB-ROT-ZK
 		if (!pub_rot_zk->Verify_interactive(alpha, hk, in, out))
@@ -1759,50 +1759,50 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 		if (!in.good())
 			throw false;
 		
-			// check whether $g^{\tau_k} h^{\rho_k} = f_k h_k^{\lambda}$
-			// Note that we throughout assume that $h = \tilde{h}$ holds.
-			for (size_t i = 0; i < tau.size(); i++)
-			{
-				// LHS i.e. $g^{\tau_k} h^{\rho_k}$
-				mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
-				mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
-				mpz_mul(lhs, foo, bar);
-				mpz_mod(lhs, lhs, p);
-				// RHS i.e. $f_k h_k^{\lambda}$
-				mpz_powm(rhs, hk[i], lambda, p);
-				mpz_mul(rhs, rhs, fk[i]);
-				mpz_mod(rhs, rhs, p);
-				// compare LHS and RHS
-				if (mpz_cmp(lhs, rhs))
-					throw false;
-			}
-			// check whether $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k}) =
-			//                F_k A_k^{\lambda}$
-			// Note that we have $Y_k = (d_k, e_k)$, for all $0 \le k \le n-1$.
-			for (size_t i = 0; i < tau.size(); i++)
-			{
-				// LHS i.e. $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k})$
-				mpz_powm(foo, Y[i].first, tau[i], p);
-				mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
-				mpz_mul(LHS.first, foo, bar);
-				mpz_mod(LHS.first, LHS.first, p);
-				mpz_powm(foo, Y[i].second, tau[i], p);
-				mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
-				mpz_mul(LHS.second, foo, bar);
-				mpz_mod(LHS.second, LHS.second, p);
-				// RHS i.e. $F_k A_k^{\lambda}$
-				mpz_powm(RHS.first, Ak[i].first, lambda, p);
-				mpz_mul(RHS.first, RHS.first, Fk[i].first);
-				mpz_mod(RHS.first, RHS.first, p);
-				mpz_powm(RHS.second, Ak[i].second, lambda, p);
-				mpz_mul(RHS.second, RHS.second, Fk[i].second);
-				mpz_mod(RHS.second, RHS.second, p);
-				// compare LHS and RHS (both components)
-				if (mpz_cmp(LHS.first, RHS.first))
-					throw false;
-				if (mpz_cmp(LHS.second, RHS.second))
-					throw false;
-			}
+		// check whether $g^{\tau_k} h^{\rho_k} = f_k h_k^{\lambda}$
+		// Note that we throughout assume that $h = \tilde{h}$ holds.
+		for (size_t i = 0; i < tau.size(); i++)
+		{
+			// LHS i.e. $g^{\tau_k} h^{\rho_k}$
+			mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
+			mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
+			mpz_mul(lhs, foo, bar);
+			mpz_mod(lhs, lhs, p);
+			// RHS i.e. $f_k h_k^{\lambda}$
+			mpz_powm(rhs, hk[i], lambda, p);
+			mpz_mul(rhs, rhs, fk[i]);
+			mpz_mod(rhs, rhs, p);
+			// compare LHS and RHS
+			if (mpz_cmp(lhs, rhs))
+				throw false;
+		}
+		// check whether $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k}) =
+		//                F_k A_k^{\lambda}$
+		// Note that we have $Y_k = (d_k, e_k)$, for all $0 \le k \le n-1$.
+		for (size_t i = 0; i < tau.size(); i++)
+		{
+			// LHS i.e. $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k})$
+			mpz_powm(foo, Y[i].first, tau[i], p);
+			mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
+			mpz_mul(LHS.first, foo, bar);
+			mpz_mod(LHS.first, LHS.first, p);
+			mpz_powm(foo, Y[i].second, tau[i], p);
+			mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
+			mpz_mul(LHS.second, foo, bar);
+			mpz_mod(LHS.second, LHS.second, p);
+			// RHS i.e. $F_k A_k^{\lambda}$
+			mpz_powm(RHS.first, Ak[i].first, lambda, p);
+			mpz_mul(RHS.first, RHS.first, Fk[i].first);
+			mpz_mod(RHS.first, RHS.first, p);
+			mpz_powm(RHS.second, Ak[i].second, lambda, p);
+			mpz_mul(RHS.second, RHS.second, Fk[i].second);
+			mpz_mod(RHS.second, RHS.second, p);
+			// compare LHS and RHS (both components)
+			if (mpz_cmp(LHS.first, RHS.first))
+				throw false;
+			if (mpz_cmp(LHS.second, RHS.second))
+				throw false;
+		}
 
 		// perform and verify PUB-ROT-ZK
 		if (!pub_rot_zk->Verify_interactive_publiccoin(alpha, hk, edcf, in, out))
@@ -1946,50 +1946,50 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 		if (!in.good())
 			throw false;
 		
-			// check whether $g^{\tau_k} h^{\rho_k} = f_k h_k^{\lambda}$
-			// Note that we throughout assume that $h = \tilde{h}$ holds.
-			for (size_t i = 0; i < tau.size(); i++)
-			{
-				// LHS i.e. $g^{\tau_k} h^{\rho_k}$
-				mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
-				mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
-				mpz_mul(lhs, foo, bar);
-				mpz_mod(lhs, lhs, p);
-				// RHS i.e. $f_k h_k^{\lambda}$
-				mpz_powm(rhs, hk[i], lambda, p);
-				mpz_mul(rhs, rhs, fk[i]);
-				mpz_mod(rhs, rhs, p);
-				// compare LHS and RHS
-				if (mpz_cmp(lhs, rhs))
-					throw false;
-			}
-			// check whether $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k}) =
-			//                F_k A_k^{\lambda}$
-			// Note that we have $Y_k = (d_k, e_k)$, for all $0 \le k \le n-1$.
-			for (size_t i = 0; i < tau.size(); i++)
-			{
-				// LHS i.e. $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k})$
-				mpz_powm(foo, Y[i].first, tau[i], p);
-				mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
-				mpz_mul(LHS.first, foo, bar);
-				mpz_mod(LHS.first, LHS.first, p);
-				mpz_powm(foo, Y[i].second, tau[i], p);
-				mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
-				mpz_mul(LHS.second, foo, bar);
-				mpz_mod(LHS.second, LHS.second, p);
-				// RHS i.e. $F_k A_k^{\lambda}$
-				mpz_powm(RHS.first, Ak[i].first, lambda, p);
-				mpz_mul(RHS.first, RHS.first, Fk[i].first);
-				mpz_mod(RHS.first, RHS.first, p);
-				mpz_powm(RHS.second, Ak[i].second, lambda, p);
-				mpz_mul(RHS.second, RHS.second, Fk[i].second);
-				mpz_mod(RHS.second, RHS.second, p);
-				// compare LHS and RHS (both components)
-				if (mpz_cmp(LHS.first, RHS.first))
-					throw false;
-				if (mpz_cmp(LHS.second, RHS.second))
-					throw false;
-			}
+		// check whether $g^{\tau_k} h^{\rho_k} = f_k h_k^{\lambda}$
+		// Note that we throughout assume that $h = \tilde{h}$ holds.
+		for (size_t i = 0; i < tau.size(); i++)
+		{
+			// LHS i.e. $g^{\tau_k} h^{\rho_k}$
+			mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
+			mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
+			mpz_mul(lhs, foo, bar);
+			mpz_mod(lhs, lhs, p);
+			// RHS i.e. $f_k h_k^{\lambda}$
+			mpz_powm(rhs, hk[i], lambda, p);
+			mpz_mul(rhs, rhs, fk[i]);
+			mpz_mod(rhs, rhs, p);
+			// compare LHS and RHS
+			if (mpz_cmp(lhs, rhs))
+				throw false;
+		}
+		// check whether $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k}) =
+		//                F_k A_k^{\lambda}$
+		// Note that we have $Y_k = (d_k, e_k)$, for all $0 \le k \le n-1$.
+		for (size_t i = 0; i < tau.size(); i++)
+		{
+			// LHS i.e. $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k})$
+			mpz_powm(foo, Y[i].first, tau[i], p);
+			mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
+			mpz_mul(LHS.first, foo, bar);
+			mpz_mod(LHS.first, LHS.first, p);
+			mpz_powm(foo, Y[i].second, tau[i], p);
+			mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
+			mpz_mul(LHS.second, foo, bar);
+			mpz_mod(LHS.second, LHS.second, p);
+			// RHS i.e. $F_k A_k^{\lambda}$
+			mpz_powm(RHS.first, Ak[i].first, lambda, p);
+			mpz_mul(RHS.first, RHS.first, Fk[i].first);
+			mpz_mod(RHS.first, RHS.first, p);
+			mpz_powm(RHS.second, Ak[i].second, lambda, p);
+			mpz_mul(RHS.second, RHS.second, Fk[i].second);
+			mpz_mod(RHS.second, RHS.second, p);
+			// compare LHS and RHS (both components)
+			if (mpz_cmp(LHS.first, RHS.first))
+				throw false;
+			if (mpz_cmp(LHS.second, RHS.second))
+				throw false;
+		}
 
 		// perform and verify PUB-ROT-ZK
 		if (!pub_rot_zk->Verify_noninteractive(alpha, hk, in))
