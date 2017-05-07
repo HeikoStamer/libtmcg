@@ -1363,6 +1363,7 @@ void fork_instance
 char *gnunet_opt_port = NULL;
 int gnunet_opt_nonint = 0;
 unsigned int gnunet_opt_wait = 5;
+int gnunet_opt_verbose = 0;
 #endif
 
 int main
@@ -1386,7 +1387,7 @@ int main
 				i++;
 				continue;
 			}
-			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-n") == 0))
+			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-n") == 0) || (arg.find("-V") == 0))
 			{
 				if ((arg.find("--help") == 0) || (arg.find("--version") == 0))
 					notcon = true; // not continue
@@ -1514,6 +1515,11 @@ int main
 			NULL,
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
+		),
+		GNUNET_GETOPT_option_flag('V',
+			"verbose",
+			"turn on verbose output",
+			&gnunet_opt_verbose
 		),
 		GNUNET_GETOPT_option_uint('w',
 			"wait",

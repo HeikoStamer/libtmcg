@@ -440,6 +440,7 @@ void fork_instance
 #ifdef GNUNET
 char *gnunet_opt_port = NULL;
 unsigned int gnunet_opt_wait = 5;
+int gnunet_opt_verbose = 0;
 #endif
 
 int main
@@ -485,7 +486,7 @@ int main
 				i++;
 				continue;
 			}
-			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0))
+			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-V") == 0))
 			{
 				if ((arg.find("--help") == 0) || (arg.find("--version") == 0))
 					notcon = true;
@@ -547,6 +548,11 @@ int main
 			"resilience of DKG protocol",
 			&gnunet_opt_t_resilience
 		),
+		GNUNET_GETOPT_option_flag('V',
+			"verbose",
+			"turn on verbose output",
+			&gnunet_opt_verbose
+		),
 		GNUNET_GETOPT_option_uint('w',
 			"wait",
 			NULL,
@@ -570,8 +576,11 @@ int main
 		return 0;
 	else
 		return -1;
+#else
+	std::cerr << "WARNING: GNunet development files are required for message exchange of DKG protocol"
 #endif
 
+	std::cout << "INFO: running local test with " << peers.size() << " participants" << std::endl;
 	// open pipes
 	for (size_t i = 0; i < peers.size(); i++)
 	{

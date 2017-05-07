@@ -43,6 +43,7 @@ DKG_BufferList				send_queue, send_queue_broadcast;
 extern char				*gnunet_opt_port;
 extern unsigned int			gnunet_opt_wait;
 extern unsigned int			gnunet_opt_xtests;
+extern int				gnunet_opt_verbose;
 
 // 1080-1109 reserved for TMCG (see gnunet-developers, January 2017)
 #define GNUNET_MESSAGE_TYPE_TMCG_DKG_CHANNEL_CHECK  1080
@@ -130,7 +131,8 @@ void handle_gnunet_data_callback(void *cls, const struct GNUNET_MessageHeader *m
 	// initialize variables
 	GNUNET_assert(ntohs(message->size) >= sizeof(*message));
 	uint16_t len = ntohs(message->size) - sizeof(*message);
-	GNUNET_log(GNUNET_ERROR_TYPE_MESSAGE, "Got message of type %u from %s with %u bytes\n", ntohs(message->type), peer.c_str(), len);
+	if (gnunet_opt_verbose)
+		GNUNET_log(GNUNET_ERROR_TYPE_MESSAGE, "Got message of type %u from %s with %u bytes\n", ntohs(message->type), peer.c_str(), len);
 	const char *buf = (const char *)&message[1];
 	int fd;
 	if (ntohs(message->type) == GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST)
@@ -154,7 +156,8 @@ void handle_gnunet_data_callback(void *cls, const struct GNUNET_MessageHeader *m
 		{
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 			{
-				std::cerr << "sleeping ..." << std::endl;
+				if (gnunet_opt_verbose)
+					std::cerr << "sleeping ..." << std::endl;
 				sleep(1);
 				continue;
 			}
@@ -421,7 +424,8 @@ void gnunet_io(void *cls)
 		struct GNUNET_MessageHeader *msg;
 		if (pipe2channel_in.count(ble.first)) // have input channel to this peer?
 		{
-			std::cout << "INFO: try to send " << buf.first << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
+			if (gnunet_opt_verbose)
+				std::cout << "INFO: try to send " << buf.first << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
 			env = GNUNET_MQ_msg_extra(msg, buf.first, GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST);
 			GNUNET_memcpy(&msg[1], buf.second, buf.first);
 			GNUNET_MQ_send(GNUNET_CADET_get_mq(pipe2channel_in[ble.first]), env);
@@ -440,7 +444,8 @@ void gnunet_io(void *cls)
 		struct GNUNET_MessageHeader *msg;
 		if (pipe2channel_in.count(ble.first)) // have input channel to this peer?
 		{
-			std::cout << "INFO: try to broadcast " << buf.first << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
+			if (gnunet_opt_verbose)
+				std::cout << "INFO: try to broadcast " << buf.first << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
 			env = GNUNET_MQ_msg_extra(msg, buf.first, GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST);
 			GNUNET_memcpy(&msg[1], buf.second, buf.first);
 			GNUNET_MQ_send(GNUNET_CADET_get_mq(pipe2channel_in[ble.first]), env);
@@ -530,8 +535,10 @@ void gnunet_statistics(void *cls)
 {
 	st = NULL;
 
-	std::cout << "INFO: pipe2channel_out.size() = " << pipe2channel_out.size() << ", pipe2channel_in.size() = " << pipe2channel_in.size() << std::endl;
-	std::cout << "INFO: send_queue.size() = " << send_queue.size() << ", send_queue_broadcast.size() = " << send_queue_broadcast.size() << std::endl;
+	if (gnunet_opt_verbose)
+		std::cout << "INFO: pipe2channel_out.size() = " << pipe2channel_out.size() << ", pipe2channel_in.size() = " << pipe2channel_in.size() << std::endl;
+	if (gnunet_opt_verbose)
+		std::cout << "INFO: send_queue.size() = " << send_queue.size() << ", send_queue_broadcast.size() = " << send_queue_broadcast.size() << std::endl;
 	// reschedule statistics task
 	st = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, 45), &gnunet_statistics, NULL);
 }
@@ -561,7 +568,8 @@ void gnunet_init(void *cls)
 	// wait until we got our own peer identity from TRANSPORT
 	if (gh != NULL)
 	{
-		std::cerr << "waiting ..." << std::endl;
+		if (gnunet_opt_verbose)
+			std::cerr << "waiting ..." << std::endl;
 		sleep(1);
 		job = GNUNET_SCHEDULER_add_now(&gnunet_init, NULL); // reschedule
 		return;
@@ -648,7 +656,8 @@ void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 		GNUNET_CRYPTO_hash(gnunet_opt_port, strlen(gnunet_opt_port), &porthash);
 	else
 		GNUNET_CRYPTO_hash(port.c_str(), port.length(), &porthash);
-	std::cout << "INFO: my CADET listen port hash = " << GNUNET_h2s_full(&porthash) << std::endl;
+	if (gnunet_opt_verbose)
+		std::cout << "INFO: my CADET listen port hash = " << GNUNET_h2s_full(&porthash) << std::endl;
 	static const struct GNUNET_MQ_MessageHandler handlers[] = {
 		GNUNET_MQ_handler_end()
 	};
