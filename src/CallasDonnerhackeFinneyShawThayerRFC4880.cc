@@ -686,17 +686,19 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 	(const tmcg_octets_t &in, gcry_mpi_t &out, size_t &sum)
 {
+	gcry_error_t ret;
 	if (in.size() < 2)
 		return 0; // error: no length given
-	gcry_error_t ret;
 	size_t buflen = ((in[0] << 8) + in[1] + 7) / 8;
+	if (buflen <= 0)
+		return 0; // error: invalid length
 	if (in.size() < (2 + buflen))
 		return 0; // error: mpi too short
 	tmcg_byte_t *buffer = new tmcg_byte_t[buflen];
 	for (size_t i = 0; i < buflen; i++)
 	{
 		buffer[i] = in[2 + i];
-		sum += buffer[i];
+		sum += buffer[i]; // FIXME: compute checksum also over prefix (length)
 		sum %= 65536;
 	}
 	ret = gcry_mpi_scan(&out, GCRYMPI_FMT_USG, buffer, buflen, NULL);
@@ -1700,6 +1702,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	// Revocable: If this packet is not present, the signature is
 	// revocable.
 	out.revocable = true;
+std::cerr << " tag = " << std::hex << (int)tag << std::dec << std::endl;
 	switch (tag)
 	{
 		case 1: // Public-Key Encrypted Session Key Packet
@@ -1950,10 +1953,12 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				size_t chksum = 0;
 				if ((out.pkalgo == 16) || (out.pkalgo == 17))
 				{
+std::cerr << "d" << std::endl;
 					mlen = PacketMPIDecode(mpis, out.x, 
 						chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
+std::cerr << "d mlen = " << mlen << std::endl;
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 				}
@@ -1988,7 +1993,9 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: algo not supported
 				if (mpis.size() < 2)
 					return 0; // error: no checksum
+std::cerr << "e chksum = " << chksum << std::endl;
 				size_t chksum2 = (mpis[0] << 8) + mpis[1];
+std::cerr << "e chksum2 = " << chksum2 << std::endl;
 				if (chksum != chksum2)
 					return 0; // error: checksum mismatch
 				mpis.erase(mpis.begin(), mpis.begin()+2);

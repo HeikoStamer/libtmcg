@@ -171,431 +171,428 @@ void parse_private_key
 	elg_s = gcry_mpi_new(2048);
 	atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(in, pkts);
 	std::cout << "ArmorDecode() = " << (int)atype << std::endl;
-	if (atype == 5)
-	{
-		while (pkts.size() && ptag)
-		{
-			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx);
-			std::cout << "PacketDecode() = " << (int)ptag;
-			if (!ptag)
-			{
-				std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
-				exit(-1); // error detected
-			}
-			std::cout << " tag = " << (int)ptag << " version = " << (int)ctx.version;
-			std::cout << std::endl;
-			switch (ptag)
-			{
-				case 2: // Signature Packet
-					issuer.clear();
-					std::cout << " issuer = " << std::hex;
-					for (size_t i = 0; i < sizeof(ctx.issuer); i++)
-					{
-						std::cout << (int)ctx.issuer[i] << " ";
-						issuer.push_back(ctx.issuer[i]);
-					}
-					std::cout << std::dec << std::endl;
-					if (secdsa && !ssbelg && (ctx.type >= 0x10) && (ctx.type <= 0x13) && CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
-					{
-						std::cout << std::hex;
-						std::cout << " sigtype = 0x";
-						std::cout << (int)ctx.type;
-						std::cout << std::dec;
-						std::cout << " pkalgo = ";
-						std::cout << (int)ctx.pkalgo;
-						std::cout << " hashalgo = ";
-						std::cout << (int)ctx.hashalgo;
-						std::cout << std::endl;
-						dsa_sigtype = ctx.type;
-						dsa_pkalgo = ctx.pkalgo;
-						dsa_hashalgo = ctx.hashalgo;
-						for (size_t i = 0; i < sizeof(dsa_keyflags); i++)
-							dsa_keyflags[i] = ctx.keyflags[i];
-						for (size_t i = 0; i < sizeof(dsa_psa); i++)
-							dsa_psa[i] = ctx.psa[i];
-						for (size_t i = 0; i < sizeof(dsa_pha); i++)
-							dsa_pha[i] = ctx.pha[i];
-						for (size_t i = 0; i < sizeof(dsa_pca); i++)
-							dsa_pca[i] = ctx.pca[i];
-						dsa_hspd.clear();
-						for (size_t i = 0; i < ctx.hspdlen; i++)
-							dsa_hspd.push_back(ctx.hspd[i]);
-						dsa_r = ctx.r, dsa_s = ctx.s;
-						if (dsa_pkalgo != 17)
-						{
-							std::cerr << "ERROR: public-key signature algorithms other than DSA not supported" << std::endl;
-							exit(-1);
-						}
-						sigdsa = true;
-					}
-					else if (secdsa && ssbelg && (ctx.type == 0x18) && CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
-					{
-						std::cout << std::hex;
-						std::cout << " sigtype = 0x";
-						std::cout << (int)ctx.type;
-						std::cout << std::dec;
-						std::cout << " pkalgo = ";
-						std::cout << (int)ctx.pkalgo;
-						std::cout << " hashalgo = ";
-						std::cout << (int)ctx.hashalgo;
-						std::cout << std::endl;
-						elg_sigtype = ctx.type;
-						elg_pkalgo = ctx.pkalgo;
-						elg_hashalgo = ctx.hashalgo;
-						for (size_t i = 0; i < sizeof(elg_keyflags); i++)
-							elg_keyflags[i] = ctx.keyflags[i];
-						for (size_t i = 0; i < sizeof(elg_psa); i++)
-							elg_psa[i] = ctx.psa[i];
-						for (size_t i = 0; i < sizeof(elg_pha); i++)
-							elg_pha[i] = ctx.pha[i];
-						for (size_t i = 0; i < sizeof(elg_pca); i++)
-							elg_pca[i] = ctx.pca[i];
-						elg_hspd.clear();
-						for (size_t i = 0; i < ctx.hspdlen; i++)
-							elg_hspd.push_back(ctx.hspd[i]);
-						elg_r = ctx.r, elg_s = ctx.s;
-						if (elg_pkalgo != 17)
-						{
-							std::cerr << "ERROR: public-key signature algorithms other than DSA not supported" << std::endl;
-							exit(-1);
-						}
-						sigelg = true;
-					}
-					break;
-				case 5: // Secret-Key Packet
-					if ((ctx.pkalgo == 17) && !secdsa)
-					{
-						secdsa = true;
-						dsa_p = ctx.p, dsa_q = ctx.q, dsa_g = ctx.g, dsa_y = ctx.y;
-						CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ctx.keycreationtime,
-							dsa_p, dsa_q, dsa_g, dsa_y, pub);
-						for (size_t i = 6; i < pub.size(); i++)
-							pub_hashing.push_back(pub[i]);
-						CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
-						std::cout << " Key ID of DSA key: " << std::hex;
-						for (size_t i = 0; i < keyid.size(); i++)
-							std::cout << (int)keyid[i] << " ";
-						std::cout << std::dec << std::endl;
-						std::cout << " symalgo = " << (int)ctx.symalgo << std::endl;
-						std::cout << " encdatalen = " << ctx.encdatalen << std::endl;
-						std::cout << " S2K: convention = " << (int)ctx.s2kconv << " type = " << (int)ctx.s2k_type;
-						std::cout << " hashalgo = " << (int)ctx.s2k_hashalgo << " count = " << (int)ctx.s2k_count;
-						std::cout << std::endl;
-						if (ctx.s2kconv == 0)
-						{
-							dsa_x = ctx.x; // not encrypted
-						}
-						else if ((ctx.s2kconv == 254) || (ctx.s2kconv == 255))
-						{
-							keylen = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength(ctx.symalgo);
-							ivlen = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength(ctx.symalgo);
-							if (!keylen || !ivlen)
-							{
-								std::cerr << "ERROR: unknown symmetric algorithm" << std::endl;
-								exit(-1);
-							}
-							salt.clear();
-							for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
-								salt.push_back(ctx.s2k_salt[i]);
-							seskey.clear();
-							if (ctx.s2k_type == 0x00)
-							{
-								salt.clear();
-								CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
-									keylen, passphrase, salt, false, ctx.s2k_count, seskey);
-							}
-							else if (ctx.s2k_type == 0x01)
-							{
-								CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
-									keylen, passphrase, salt, false, ctx.s2k_count, seskey);
-							}
-							else if (ctx.s2k_type == 0x03)
-							{
-								CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
-									keylen, passphrase, salt, true, ctx.s2k_count, seskey);
-							}
-							else
-							{
-								std::cerr << "ERROR: unknown S2K specifier" << std::endl;
-								exit(-1);
-							}
-							if (seskey.size() != keylen)
-							{
-								std::cerr << "ERROR: S2K failed" << std::endl;
-								exit(-1);
-							}
-							if (!ctx.encdatalen || !ctx.encdata)
-							{
-								std::cerr << "ERROR: nothing to decrypt" << std::endl;
-								exit(-1);
-							}
-							key = new tmcg_byte_t[keylen], iv = new tmcg_byte_t[ivlen];
-							for (size_t i = 0; i < keylen; i++)
-								key[i] = seskey[i];
-							for (size_t i = 0; i < ivlen; i++)
-								iv[i] = ctx.iv[i];
-							ret = gcry_cipher_open(&hd, (int)ctx.symalgo, GCRY_CIPHER_MODE_CFB, 0);
-							if (ret)
-							{
-								std::cerr << "ERROR: gcry_cipher_open() failed" << std::endl;
-								exit(-1);
-							}
-							ret = gcry_cipher_setkey(hd, key, keylen);
-							if (ret)
-							{
-								std::cerr << "ERROR: gcry_cipher_setkey() failed" << std::endl;
-								exit(-1);
-							}
-							ret = gcry_cipher_setiv(hd, iv, ivlen);
-							if (ret)
-							{
-								std::cerr << "ERROR: gcry_cipher_setiv() failed" << std::endl;
-								exit(-1);
-							}
-							ret = gcry_cipher_decrypt(hd, ctx.encdata, ctx.encdatalen, NULL, 0);
-							if (ret)
-							{
-								std::cerr << "ERROR: gcry_cipher_decrypt() failed" << std::endl;
-								exit(-1);
-							}
-							gcry_cipher_close(hd);
-							delete [] key, delete [] iv;
-							// read MPI x and verify checksum/hash
-							mpis.clear();
-							chksum = 0;
-							for (size_t i = 0; i < ctx.encdatalen; i++)
-								mpis.push_back(ctx.encdata[i]);
-							mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, dsa_x, chksum);
-							if (!mlen || (mlen > mpis.size()))
-							{
-								std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
-								exit(-1);
-							}
-							mpis.erase(mpis.begin(), mpis.begin()+mlen);
-							if (ctx.s2kconv == 255)
-							{
-								if (mpis.size() < 2)
-								{
-									std::cerr << "ERROR: no checksum found" << std::endl;
-									exit(-1);
-								}
-								chksum2 = (mpis[0] << 8) + mpis[1];
-								if (chksum != chksum2)
-								{
-									std::cerr << "ERROR: checksum mismatch" << std::endl;
-									exit(-1);
-								}
-							}
-							else
-							{
-								if (mpis.size() != 20)
-								{
-									std::cerr << "ERROR: no SHA-1 hash found" << std::endl;
-									exit(-1);
-								}
-								hash_input.clear(), hash.clear();
-								for (size_t i = 0; i < (ctx.encdatalen - 20); i++)
-									hash_input.push_back(ctx.encdata[i]);
-								CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(2, hash_input, hash);
-								if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(hash, mpis))
-								{
-									std::cerr << "ERROR: SHA-1 hash mismatch" << std::endl;
-									exit(-1);
-								}
-							}
-						}
-						else
-						{
-							std::cerr << "ERROR: S2K format not supported" << std::endl;
-							exit(-1);
-						}
-					}
-					else if ((ctx.pkalgo == 17) && secdsa)
-					{
-						std::cerr << "ERROR: more than one primary key not supported" << std::endl;
-						exit(-1);
-					}
-					else
-						std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
-					break;
-				case 13: // User ID Packet
-					std::cout << " uid = " << ctx.uid << std::endl;
-					u = "";
-					for (size_t i = 0; i < sizeof(ctx.uid); i++)
-						if (ctx.uid[i])
-							u += ctx.uid[i];
-						else
-							break;
-					break;
-				case 7: // Secret-Subkey Packet
-					if ((ctx.pkalgo == 16) && !ssbelg)
-					{
-						ssbelg = true;
-						elg_p = ctx.p, elg_g = ctx.g, elg_y = ctx.y;
-						CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime,
-							elg_p, elg_g, elg_y, sub);
-						for (size_t i = 6; i < sub.size(); i++)
-							sub_hashing.push_back(sub[i]);
-						CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, subkeyid);
-							std::cout << "Key ID of ElGamal subkey: " << std::hex;
-						for (size_t i = 0; i < subkeyid.size(); i++)
-							std::cout << (int)subkeyid[i] << " ";
-						std::cout << std::dec << std::endl;
-						std::cout << " symalgo = " << (int)ctx.symalgo << std::endl;
-						std::cout << " encdatalen = " << ctx.encdatalen << std::endl;
-						std::cout << " S2K: convention = " << (int)ctx.s2kconv << " type = " << (int)ctx.s2k_type;
-						std::cout << " hashalgo = " << (int)ctx.s2k_hashalgo << " count = " << (int)ctx.s2k_count;
-						std::cout << std::endl;
-						if (ctx.s2kconv == 0)
-						{
-							elg_x = ctx.x; // not encrypted
-						}
-						else if ((ctx.s2kconv == 254) || (ctx.s2kconv == 255))
-						{
-							keylen = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength(ctx.symalgo);
-							ivlen = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength(ctx.symalgo);
-							if (!keylen || !ivlen)
-							{
-								std::cerr << "ERROR: unknown symmetric algorithm" << std::endl;
-								exit(-1);
-							}
-							salt.clear();
-							for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
-								salt.push_back(ctx.s2k_salt[i]);
-							seskey.clear();
-							if (ctx.s2k_type == 0x00)
-							{
-								salt.clear();
-								CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
-									keylen, passphrase, salt, false, ctx.s2k_count, seskey);
-							}
-							else if (ctx.s2k_type == 0x01)
-							{
-								CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
-									keylen, passphrase, salt, false, ctx.s2k_count, seskey);
-							}
-							else if (ctx.s2k_type == 0x03)
-							{
-								CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
-									keylen, passphrase, salt, true, ctx.s2k_count, seskey);
-							}
-							else
-							{
-								std::cerr << "ERROR: unknown S2K specifier" << std::endl;
-								exit(-1);
-							}
-							if (seskey.size() != keylen)
-							{
-								std::cerr << "ERROR: S2K failed" << std::endl;
-								exit(-1);
-							}
-							if (!ctx.encdatalen || !ctx.encdata)
-							{
-								std::cerr << "ERROR: nothing to decrypt" << std::endl;
-								exit(-1);
-							}
-							key = new tmcg_byte_t[keylen], iv = new tmcg_byte_t[ivlen];
-							for (size_t i = 0; i < keylen; i++)
-								key[i] = seskey[i];
-							for (size_t i = 0; i < ivlen; i++)
-								iv[i] = ctx.iv[i];
-							ret = gcry_cipher_open(&hd, (int)ctx.symalgo, GCRY_CIPHER_MODE_CFB, 0);
-							if (ret)
-							{
-								std::cerr << "ERROR: gcry_cipher_open() failed" << std::endl;
-								exit(-1);
-							}
-							ret = gcry_cipher_setkey(hd, key, keylen);
-							if (ret)
-							{
-								std::cerr << "ERROR: gcry_cipher_setkey() failed" << std::endl;
-								exit(-1);
-							}
-							ret = gcry_cipher_setiv(hd, iv, ivlen);
-							if (ret)
-							{
-								std::cerr << "ERROR: gcry_cipher_setiv() failed" << std::endl;
-								exit(-1);
-							}
-							ret = gcry_cipher_decrypt(hd, ctx.encdata, ctx.encdatalen, NULL, 0);
-							if (ret)
-							{
-								std::cerr << "ERROR: gcry_cipher_decrypt() failed" << std::endl;
-								exit(-1);
-							}
-							gcry_cipher_close(hd);
-							delete [] key, delete [] iv;
-							// read MPI x and verify checksum/hash
-							mpis.clear();
-							chksum = 0;
-							for (size_t i = 0; i < ctx.encdatalen; i++)
-								mpis.push_back(ctx.encdata[i]);
-							mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, elg_x, chksum);
-							if (!mlen || (mlen > mpis.size()))
-							{
-								std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
-								exit(-1);
-							}
-							mpis.erase(mpis.begin(), mpis.begin()+mlen);
-							if (ctx.s2kconv == 255)
-							{
-								if (mpis.size() < 2)
-								{
-									std::cerr << "ERROR: no checksum found" << std::endl;
-									exit(-1);
-								}
-								chksum2 = (mpis[0] << 8) + mpis[1];
-								if (chksum != chksum2)
-								{
-									std::cerr << "ERROR: checksum mismatch" << std::endl;
-									exit(-1);
-								}
-							}
-							else
-							{
-								if (mpis.size() != 20)
-								{
-									std::cerr << "ERROR: no SHA-1 hash found" << std::endl;
-									exit(-1);
-								}
-								hash_input.clear(), hash.clear();
-								for (size_t i = 0; i < (ctx.encdatalen - 20); i++)
-									hash_input.push_back(ctx.encdata[i]);
-								CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(2, hash_input, hash);
-								if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(hash, mpis))
-								{
-									std::cerr << "ERROR: SHA-1 hash mismatch" << std::endl;
-									exit(-1);
-								}
-							}
-						}
-						else
-						{
-							std::cerr << "ERROR: S2K format not supported" << std::endl;
-							exit(-1);
-						}
-					}
-					else if ((ctx.pkalgo == 16) && ssbelg)
-						std::cerr << "WARNING: ElGamal subkey already found" << std::endl; 
-					else
-						std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
-					break;
-			}
-			// cleanup allocated buffers
-			if (ctx.hspd != NULL)
-				delete [] ctx.hspd;
-			if (ctx.encdata != NULL)
-				delete [] ctx.encdata;
-			if (ctx.compdata != NULL)
-				delete [] ctx.compdata;
-			if (ctx.data != NULL)
-				delete [] ctx.data;
-		}
-	}
-	else
+	if (atype != 5)
 	{
 		std::cerr << "ERROR: wrong type of ASCII Armor" << std::endl;
 		exit(-1);
+	}
+	while (pkts.size() && ptag)
+	{
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx);
+		std::cout << "PacketDecode(pkts.size = " << pkts.size() << ") = " << (int)ptag;
+		if (!ptag)
+		{
+			std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
+			exit(-1); // error detected
+		}
+		std::cout << " tag = " << (int)ptag << " version = " << (int)ctx.version;
+		std::cout << std::endl;
+		switch (ptag)
+		{
+			case 2: // Signature Packet
+				issuer.clear();
+				std::cout << " issuer = " << std::hex;
+				for (size_t i = 0; i < sizeof(ctx.issuer); i++)
+				{
+					std::cout << (int)ctx.issuer[i] << " ";
+					issuer.push_back(ctx.issuer[i]);
+				}
+				std::cout << std::dec << std::endl;
+				if (secdsa && !ssbelg && (ctx.type >= 0x10) && (ctx.type <= 0x13) && CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
+				{
+					std::cout << std::hex;
+					std::cout << " sigtype = 0x";
+					std::cout << (int)ctx.type;
+					std::cout << std::dec;
+					std::cout << " pkalgo = ";
+					std::cout << (int)ctx.pkalgo;
+					std::cout << " hashalgo = ";
+					std::cout << (int)ctx.hashalgo;
+					std::cout << std::endl;
+					dsa_sigtype = ctx.type;
+					dsa_pkalgo = ctx.pkalgo;
+					dsa_hashalgo = ctx.hashalgo;
+					for (size_t i = 0; i < sizeof(dsa_keyflags); i++)
+						dsa_keyflags[i] = ctx.keyflags[i];
+					for (size_t i = 0; i < sizeof(dsa_psa); i++)
+						dsa_psa[i] = ctx.psa[i];
+					for (size_t i = 0; i < sizeof(dsa_pha); i++)
+						dsa_pha[i] = ctx.pha[i];
+					for (size_t i = 0; i < sizeof(dsa_pca); i++)
+						dsa_pca[i] = ctx.pca[i];
+					dsa_hspd.clear();
+					for (size_t i = 0; i < ctx.hspdlen; i++)
+						dsa_hspd.push_back(ctx.hspd[i]);
+					dsa_r = ctx.r, dsa_s = ctx.s;
+					if (dsa_pkalgo != 17)
+					{
+						std::cerr << "ERROR: public-key signature algorithms other than DSA not supported" << std::endl;
+						exit(-1);
+					}
+					sigdsa = true;
+				}
+				else if (secdsa && ssbelg && (ctx.type == 0x18) && CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
+				{
+					std::cout << std::hex;
+					std::cout << " sigtype = 0x";
+					std::cout << (int)ctx.type;
+					std::cout << std::dec;
+					std::cout << " pkalgo = ";
+					std::cout << (int)ctx.pkalgo;
+					std::cout << " hashalgo = ";
+					std::cout << (int)ctx.hashalgo;
+					std::cout << std::endl;
+					elg_sigtype = ctx.type;
+					elg_pkalgo = ctx.pkalgo;
+					elg_hashalgo = ctx.hashalgo;
+					for (size_t i = 0; i < sizeof(elg_keyflags); i++)
+						elg_keyflags[i] = ctx.keyflags[i];
+					for (size_t i = 0; i < sizeof(elg_psa); i++)
+						elg_psa[i] = ctx.psa[i];
+					for (size_t i = 0; i < sizeof(elg_pha); i++)
+						elg_pha[i] = ctx.pha[i];
+					for (size_t i = 0; i < sizeof(elg_pca); i++)
+						elg_pca[i] = ctx.pca[i];
+					elg_hspd.clear();
+					for (size_t i = 0; i < ctx.hspdlen; i++)
+						elg_hspd.push_back(ctx.hspd[i]);
+					elg_r = ctx.r, elg_s = ctx.s;
+					if (elg_pkalgo != 17)
+					{
+						std::cerr << "ERROR: public-key signature algorithms other than DSA not supported" << std::endl;
+						exit(-1);
+					}
+					sigelg = true;
+				}
+				break;
+			case 5: // Secret-Key Packet
+				if ((ctx.pkalgo == 17) && !secdsa)
+				{
+					secdsa = true;
+					dsa_p = ctx.p, dsa_q = ctx.q, dsa_g = ctx.g, dsa_y = ctx.y;
+					CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ctx.keycreationtime,
+						dsa_p, dsa_q, dsa_g, dsa_y, pub);
+					for (size_t i = 6; i < pub.size(); i++)
+						pub_hashing.push_back(pub[i]);
+					CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
+					std::cout << " Key ID of DSA key: " << std::hex;
+					for (size_t i = 0; i < keyid.size(); i++)
+						std::cout << (int)keyid[i] << " ";
+					std::cout << std::dec << std::endl;
+					std::cout << " symalgo = " << (int)ctx.symalgo << std::endl;
+					std::cout << " encdatalen = " << ctx.encdatalen << std::endl;
+					std::cout << " S2K: convention = " << (int)ctx.s2kconv << " type = " << (int)ctx.s2k_type;
+					std::cout << " hashalgo = " << (int)ctx.s2k_hashalgo << " count = " << (int)ctx.s2k_count;
+					std::cout << std::endl;
+					if (ctx.s2kconv == 0)
+					{
+						dsa_x = ctx.x; // not encrypted
+					}
+					else if ((ctx.s2kconv == 254) || (ctx.s2kconv == 255))
+					{
+						keylen = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength(ctx.symalgo);
+						ivlen = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength(ctx.symalgo);
+						if (!keylen || !ivlen)
+						{
+							std::cerr << "ERROR: unknown symmetric algorithm" << std::endl;
+							exit(-1);
+						}
+						salt.clear();
+						for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
+							salt.push_back(ctx.s2k_salt[i]);
+						seskey.clear();
+						if (ctx.s2k_type == 0x00)
+						{
+							salt.clear();
+							CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
+								keylen, passphrase, salt, false, ctx.s2k_count, seskey);
+						}
+						else if (ctx.s2k_type == 0x01)
+						{
+							CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
+								keylen, passphrase, salt, false, ctx.s2k_count, seskey);
+						}
+						else if (ctx.s2k_type == 0x03)
+						{
+							CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
+								keylen, passphrase, salt, true, ctx.s2k_count, seskey);
+						}
+						else
+						{
+							std::cerr << "ERROR: unknown S2K specifier" << std::endl;
+							exit(-1);
+						}
+						if (seskey.size() != keylen)
+						{
+							std::cerr << "ERROR: S2K failed" << std::endl;
+							exit(-1);
+						}
+						if (!ctx.encdatalen || !ctx.encdata)
+						{
+							std::cerr << "ERROR: nothing to decrypt" << std::endl;
+							exit(-1);
+						}
+						key = new tmcg_byte_t[keylen], iv = new tmcg_byte_t[ivlen];
+						for (size_t i = 0; i < keylen; i++)
+							key[i] = seskey[i];
+						for (size_t i = 0; i < ivlen; i++)
+							iv[i] = ctx.iv[i];
+						ret = gcry_cipher_open(&hd, (int)ctx.symalgo, GCRY_CIPHER_MODE_CFB, 0);
+						if (ret)
+						{
+							std::cerr << "ERROR: gcry_cipher_open() failed" << std::endl;
+							exit(-1);
+						}
+						ret = gcry_cipher_setkey(hd, key, keylen);
+						if (ret)
+						{
+							std::cerr << "ERROR: gcry_cipher_setkey() failed" << std::endl;
+							exit(-1);
+						}
+						ret = gcry_cipher_setiv(hd, iv, ivlen);
+						if (ret)
+						{
+							std::cerr << "ERROR: gcry_cipher_setiv() failed" << std::endl;
+							exit(-1);
+						}
+						ret = gcry_cipher_decrypt(hd, ctx.encdata, ctx.encdatalen, NULL, 0);
+						if (ret)
+						{
+							std::cerr << "ERROR: gcry_cipher_decrypt() failed" << std::endl;
+							exit(-1);
+						}
+						gcry_cipher_close(hd);
+						delete [] key, delete [] iv;
+						// read MPI x and verify checksum/hash
+						mpis.clear();
+						chksum = 0;
+						for (size_t i = 0; i < ctx.encdatalen; i++)
+							mpis.push_back(ctx.encdata[i]);
+						mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, dsa_x, chksum);
+						if (!mlen || (mlen > mpis.size()))
+						{
+							std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
+							exit(-1);
+						}
+						mpis.erase(mpis.begin(), mpis.begin()+mlen);
+						if (ctx.s2kconv == 255)
+						{
+							if (mpis.size() < 2)
+							{
+								std::cerr << "ERROR: no checksum found" << std::endl;
+								exit(-1);
+							}
+							chksum2 = (mpis[0] << 8) + mpis[1];
+							if (chksum != chksum2)
+							{
+								std::cerr << "ERROR: checksum mismatch" << std::endl;
+								exit(-1);
+							}
+						}
+						else
+						{
+							if (mpis.size() != 20)
+							{
+								std::cerr << "ERROR: no SHA-1 hash found" << std::endl;
+								exit(-1);
+							}
+							hash_input.clear(), hash.clear();
+							for (size_t i = 0; i < (ctx.encdatalen - 20); i++)
+								hash_input.push_back(ctx.encdata[i]);
+							CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(2, hash_input, hash);
+							if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(hash, mpis))
+							{
+								std::cerr << "ERROR: SHA-1 hash mismatch" << std::endl;
+								exit(-1);
+							}
+						}
+					}
+					else
+					{
+						std::cerr << "ERROR: S2K format not supported" << std::endl;
+						exit(-1);
+					}
+				}
+				else if ((ctx.pkalgo == 17) && secdsa)
+				{
+					std::cerr << "ERROR: more than one primary key not supported" << std::endl;
+					exit(-1);
+				}
+				else
+					std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
+				break;
+			case 13: // User ID Packet
+				std::cout << " uid = " << ctx.uid << std::endl;
+				u = "";
+				for (size_t i = 0; i < sizeof(ctx.uid); i++)
+					if (ctx.uid[i])
+						u += ctx.uid[i];
+					else
+						break;
+				break;
+			case 7: // Secret-Subkey Packet
+				if ((ctx.pkalgo == 16) && !ssbelg)
+				{
+					ssbelg = true;
+					elg_p = ctx.p, elg_g = ctx.g, elg_y = ctx.y;
+					CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime,
+						elg_p, elg_g, elg_y, sub);
+					for (size_t i = 6; i < sub.size(); i++)
+						sub_hashing.push_back(sub[i]);
+					CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, subkeyid);
+						std::cout << "Key ID of ElGamal subkey: " << std::hex;
+					for (size_t i = 0; i < subkeyid.size(); i++)
+						std::cout << (int)subkeyid[i] << " ";
+					std::cout << std::dec << std::endl;
+					std::cout << " symalgo = " << (int)ctx.symalgo << std::endl;
+					std::cout << " encdatalen = " << ctx.encdatalen << std::endl;
+					std::cout << " S2K: convention = " << (int)ctx.s2kconv << " type = " << (int)ctx.s2k_type;
+					std::cout << " hashalgo = " << (int)ctx.s2k_hashalgo << " count = " << (int)ctx.s2k_count;
+					std::cout << std::endl;
+					if (ctx.s2kconv == 0)
+					{
+						elg_x = ctx.x; // not encrypted
+					}
+					else if ((ctx.s2kconv == 254) || (ctx.s2kconv == 255))
+					{
+						keylen = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength(ctx.symalgo);
+						ivlen = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength(ctx.symalgo);
+						if (!keylen || !ivlen)
+						{
+							std::cerr << "ERROR: unknown symmetric algorithm" << std::endl;
+							exit(-1);
+						}
+						salt.clear();
+						for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
+							salt.push_back(ctx.s2k_salt[i]);
+						seskey.clear();
+						if (ctx.s2k_type == 0x00)
+						{
+							salt.clear();
+							CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
+								keylen, passphrase, salt, false, ctx.s2k_count, seskey);
+						}
+						else if (ctx.s2k_type == 0x01)
+						{
+							CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
+								keylen, passphrase, salt, false, ctx.s2k_count, seskey);
+						}
+						else if (ctx.s2k_type == 0x03)
+						{
+							CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
+								keylen, passphrase, salt, true, ctx.s2k_count, seskey);
+						}
+						else
+						{
+							std::cerr << "ERROR: unknown S2K specifier" << std::endl;
+							exit(-1);
+						}
+						if (seskey.size() != keylen)
+						{
+							std::cerr << "ERROR: S2K failed" << std::endl;
+							exit(-1);
+						}
+						if (!ctx.encdatalen || !ctx.encdata)
+						{
+							std::cerr << "ERROR: nothing to decrypt" << std::endl;
+							exit(-1);
+						}
+						key = new tmcg_byte_t[keylen], iv = new tmcg_byte_t[ivlen];
+						for (size_t i = 0; i < keylen; i++)
+							key[i] = seskey[i];
+						for (size_t i = 0; i < ivlen; i++)
+							iv[i] = ctx.iv[i];
+						ret = gcry_cipher_open(&hd, (int)ctx.symalgo, GCRY_CIPHER_MODE_CFB, 0);
+						if (ret)
+						{
+							std::cerr << "ERROR: gcry_cipher_open() failed" << std::endl;
+							exit(-1);
+						}
+						ret = gcry_cipher_setkey(hd, key, keylen);
+						if (ret)
+						{
+							std::cerr << "ERROR: gcry_cipher_setkey() failed" << std::endl;
+							exit(-1);
+						}
+						ret = gcry_cipher_setiv(hd, iv, ivlen);
+						if (ret)
+						{
+							std::cerr << "ERROR: gcry_cipher_setiv() failed" << std::endl;
+							exit(-1);
+						}
+						ret = gcry_cipher_decrypt(hd, ctx.encdata, ctx.encdatalen, NULL, 0);
+						if (ret)
+						{
+							std::cerr << "ERROR: gcry_cipher_decrypt() failed" << std::endl;
+							exit(-1);
+						}
+						gcry_cipher_close(hd);
+						delete [] key, delete [] iv;
+						// read MPI x and verify checksum/hash
+						mpis.clear();
+						chksum = 0;
+						for (size_t i = 0; i < ctx.encdatalen; i++)
+							mpis.push_back(ctx.encdata[i]);
+						mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, elg_x, chksum);
+						if (!mlen || (mlen > mpis.size()))
+						{
+							std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
+							exit(-1);
+						}
+						mpis.erase(mpis.begin(), mpis.begin()+mlen);
+						if (ctx.s2kconv == 255)
+						{
+							if (mpis.size() < 2)
+							{
+								std::cerr << "ERROR: no checksum found" << std::endl;
+								exit(-1);
+							}
+							chksum2 = (mpis[0] << 8) + mpis[1];
+							if (chksum != chksum2)
+							{
+								std::cerr << "ERROR: checksum mismatch" << std::endl;
+								exit(-1);
+							}
+						}
+						else
+						{
+							if (mpis.size() != 20)
+							{
+								std::cerr << "ERROR: no SHA-1 hash found" << std::endl;
+								exit(-1);
+							}
+							hash_input.clear(), hash.clear();
+							for (size_t i = 0; i < (ctx.encdatalen - 20); i++)
+								hash_input.push_back(ctx.encdata[i]);
+							CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(2, hash_input, hash);
+							if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(hash, mpis))
+							{
+								std::cerr << "ERROR: SHA-1 hash mismatch" << std::endl;
+								exit(-1);
+							}
+						}
+					}
+					else
+					{
+						std::cerr << "ERROR: S2K format not supported" << std::endl;
+						exit(-1);
+					}
+				}
+				else if ((ctx.pkalgo == 16) && ssbelg)
+					std::cerr << "WARNING: ElGamal subkey already found" << std::endl; 
+				else
+					std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
+				break;
+		}
+		// cleanup allocated buffers
+		if (ctx.hspd != NULL)
+			delete [] ctx.hspd;
+		if (ctx.encdata != NULL)
+			delete [] ctx.encdata;
+		if (ctx.compdata != NULL)
+			delete [] ctx.compdata;
+		if (ctx.data != NULL)
+			delete [] ctx.data;
 	}
 	if (!secdsa)
 	{
@@ -1449,6 +1446,7 @@ int main
 			read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
 			init_mpis();
 			parse_private_key(armored_seckey);
+std::cerr << "parse_private_key() okay" << std::endl;
 			parse_message(armored_message);
 			compute_decryption_share(whoami, dds);
 			tmcg_octets_t dds_input;
