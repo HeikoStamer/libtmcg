@@ -30,7 +30,6 @@ extern int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 extern pid_t				pid[MAX_N];
 extern std::vector<std::string>		peers;
 extern bool				instance_forked;
-
 extern void				fork_instance(const size_t whoami);
 
 #ifdef GNUNET
@@ -39,6 +38,7 @@ typedef std::pair<size_t, char*>	DKG_Buffer;
 typedef std::pair<size_t, DKG_Buffer>	DKG_BufferListEntry;
 typedef std::list<DKG_BufferListEntry>	DKG_BufferList;
 DKG_BufferList				send_queue, send_queue_broadcast;
+static const size_t			pipe_buffer_size = 4096;
 
 extern char				*gnunet_opt_port;
 extern unsigned int			gnunet_opt_wait;
@@ -185,8 +185,8 @@ void gnunet_pipe_ready(void *cls)
 	{
 		if (i != peer2pipe[thispeer])
 		{
-			char *th_buf = new char[4096];
-			ssize_t num = read(pipefd[peer2pipe[thispeer]][i][0], th_buf, 4096);
+			char *th_buf = new char[pipe_buffer_size];
+			ssize_t num = read(pipefd[peer2pipe[thispeer]][i][0], th_buf, pipe_buffer_size);
 			if (num < 0)
 			{
 				delete [] th_buf;
@@ -225,8 +225,8 @@ void gnunet_broadcast_pipe_ready(void *cls)
 	{
 		if (i != peer2pipe[thispeer])
 		{
-			char *th_buf = new char[4096];
-			ssize_t num = read(broadcast_pipefd[peer2pipe[thispeer]][i][0], th_buf, 4096);
+			char *th_buf = new char[pipe_buffer_size];
+			ssize_t num = read(broadcast_pipefd[peer2pipe[thispeer]][i][0], th_buf, pipe_buffer_size);
 			if (num < 0)
 			{
 				delete [] th_buf;
@@ -369,11 +369,12 @@ void gnunet_shutdown_task(void *cls)
 	// wait for forked instance and close pipes
 	if (instance_forked)
 	{
-		std::cout << "kill(" << pid[peer2pipe[thispeer]] << ", SIGTERM)" << std::endl;
-		if(kill(pid[peer2pipe[thispeer]], SIGTERM))
+		int thispid = pid[peer2pipe[thispeer]];
+		std::cout << "kill(" << thispid << ", SIGTERM)" << std::endl;
+		if(kill(thispid, SIGTERM))
 			perror("dkg-gnunet-common (kill)");
-		std::cout << "waitpid(" << pid[peer2pipe[thispeer]] << ", NULL, 0)" << std::endl;
-		if (waitpid(pid[peer2pipe[thispeer]], NULL, 0) != pid[peer2pipe[thispeer]])
+		std::cout << "waitpid(" << thispid << ", NULL, 0)" << std::endl;
+		if (waitpid(thispid, NULL, 0) != thispid)
 			perror("dkg-gnunet-common (waitpid)");
 		instance_forked = false;
 	}
@@ -403,7 +404,7 @@ void gnunet_shutdown_task(void *cls)
 		GNUNET_free(ohello);
 		ohello = NULL;
 	}
-	// FIXME: I guess this is not correct. However, otherwise the program
+	// FIXME: I guess this exit-call is not correct. However, otherwise the program
 	//        does not terminate, if GNUnet services are not running.
 	exit(-1);
 }
@@ -412,7 +413,7 @@ void gnunet_io(void *cls)
 {
 	io = NULL;
 
-	// FIXME: We need a short pause here, otherwise GNUnet CADET will be disrupted.
+	// NOTE: We need a short pause here, otherwise GNUnet CADET will be disrupted.
 	sleep(1);
 
 	// send messages to peers
@@ -459,7 +460,8 @@ void gnunet_io(void *cls)
 	if (send_queue.size() || send_queue_broadcast.size())
 		io = GNUNET_SCHEDULER_add_now(&gnunet_io, NULL);
 
-	// schedule tasks for reading the input pipes TODO: use GNUNET_SCHEDULER_add_read_file on corresponding pipe fd
+	// schedule tasks for reading the input pipes 
+	// TODO: use GNUNET_SCHEDULER_add_read_file() on corresponding pipe fd
 	if (pt == NULL)
 		pt = GNUNET_SCHEDULER_add_now(&gnunet_pipe_ready, NULL);
 	if (pt_broadcast == NULL)
@@ -481,7 +483,7 @@ void gnunet_connect(void *cls)
 			stabilized = false;
 //		else if (!pipe2channel_in.count(i))
 //			stabilized = false;
-// FIXME: reconnect not needed, if GNUnet CADET work correctly
+// NOTE: reconnect not needed, if GNUnet CADET works correctly
 		if ((i != peer2pipe[thispeer]) && !stabilized)
 		{
 			// destroy old CADET output channels, if exist
@@ -561,6 +563,7 @@ void gnunet_statistics(void *cls)
 			{
 				std::cerr << "INFO: DKG instance " << thispid << " terminated with exit status " << WEXITSTATUS(wstatus) << std::endl;
 			}
+			instance_forked = false;
 			GNUNET_SCHEDULER_shutdown();
 		}
 	}
