@@ -539,6 +539,31 @@ void gnunet_statistics(void *cls)
 		std::cout << "INFO: pipe2channel_out.size() = " << pipe2channel_out.size() << ", pipe2channel_in.size() = " << pipe2channel_in.size() << std::endl;
 	if (gnunet_opt_verbose)
 		std::cout << "INFO: send_queue.size() = " << send_queue.size() << ", send_queue_broadcast.size() = " << send_queue_broadcast.size() << std::endl;
+	if (instance_forked)
+	{
+		// shutdown, if forked DKG instance has terminated 
+		int wstatus = 0;
+		int thispid = pid[peer2pipe[thispeer]];
+		int ret = waitpid(thispid, &wstatus, WNOHANG);
+		if (ret < 0)
+			perror("dkg-gnunet-common (waitpid)");
+		else if (ret == thispid)
+		{
+			if (!WIFEXITED(wstatus))
+			{
+				std::cerr << "ERROR: DKG instance ";
+				if (WIFSIGNALED(wstatus))
+					std::cerr << thispid << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
+				if (WCOREDUMP(wstatus))
+					std::cerr << thispid << " dumped core" << std::endl;
+			}
+			else if (WIFEXITED(wstatus))
+			{
+				std::cerr << "INFO: DKG instance " << thispid << " terminated with exit status " << WEXITSTATUS(wstatus) << std::endl;
+			}
+			GNUNET_SCHEDULER_shutdown();
+		}
+	}
 	// reschedule statistics task
 	st = GNUNET_SCHEDULER_add_delayed(GNUNET_TIME_relative_multiply(GNUNET_TIME_UNIT_SECONDS, 45), &gnunet_statistics, NULL);
 }
