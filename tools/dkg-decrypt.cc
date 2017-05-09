@@ -1479,12 +1479,17 @@ int main
 				mpz_set_ui(r_i, 1L), mpz_set_ui(c, 1L), mpz_set_ui(r, 1L);
 				if (verify_decryption_share(dds, idx, r_i, c, r))
 				{
-					mpz_ptr tmp1 = new mpz_t();
-					mpz_init_set(tmp1, r_i);
-					interpol_parties.push_back(idx), interpol_shares.push_back(tmp1);
+					if (std::count(interpol_parties.begin(), interpol_parties.end(), idx))
+					{
+						mpz_ptr tmp1 = new mpz_t();
+						mpz_init_set(tmp1, r_i);
+						interpol_parties.push_back(idx), interpol_shares.push_back(tmp1);
+					}
+					else
+						std::cerr << "WARNING: decryption share of P_" << idx << " already stored" << std::endl;
 				}
 				else
-					std::cout << "WARNING: verification of decryption share from P_" << idx << " failed" << std::endl;
+					std::cerr << "WARNING: verification of decryption share from P_" << idx << " failed" << std::endl;
 			}
 			combine_decryption_shares(interpol_parties, interpol_shares);
 			mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
@@ -1541,6 +1546,7 @@ int main
 		return -1;
 #endif
 
+	std::cout << "INFO: running local test with " << peers.size() << " participants" << std::endl;
 	// open pipes
 	for (size_t i = 0; i < peers.size(); i++)
 	{
