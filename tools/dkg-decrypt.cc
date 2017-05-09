@@ -1348,13 +1348,15 @@ void run_instance
 	
 	// release handles (unicast channel)
 	uP_in.clear(), uP_out.clear(), uP_key.clear();
-	std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
-		" aiou.numWrite = " << aiou->numWrite << std::endl;
+	if (opt_verbose)
+		std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
+			" aiou.numWrite = " << aiou->numWrite << std::endl;
 
 	// release handles (broadcast channel)
 	bP_in.clear(), bP_out.clear(), bP_key.clear();
-	std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
-		" aiou2.numWrite = " << aiou2->numWrite << std::endl;
+	if (opt_verbose)
+		std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
+			" aiou2.numWrite = " << aiou2->numWrite << std::endl;
 
 	// release asynchronous unicast and broadcast
 	delete aiou, delete aiou2;
@@ -1381,13 +1383,15 @@ void fork_instance
 			/* BEGIN child code: participant P_i */
 			run_instance(whoami);
 
-			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
+			if (opt_verbose)
+				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
 			/* END child code: participant P_i */
 		}
 		else
 		{
-			std::cout << "fork() = " << pid[whoami] << std::endl;
+			if (opt_verbose)
+				std::cout << "fork() = " << pid[whoami] << std::endl;
 			instance_forked = true;
 		}
 	}

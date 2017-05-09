@@ -46,6 +46,7 @@ size_t				N, T;
 std::string			crs, u, passphrase;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
+int 				opt_verbose = 0;
 
 void run_instance
 	(const size_t whoami, const time_t keytime, const size_t num_xtests)
@@ -129,6 +130,8 @@ void run_instance
 			
 	// create and exchange keys in order to bootstrap the $h$-generation for DKG [JL00]
 	// TODO: replace N-time NIZK by one interactive (distributed) zero-knowledge proof of knowledge
+	if (opt_verbose)
+		std::cout << "generate h by using VTMF key generation protocol" << std::endl;
 	mpz_t nizk_c, nizk_r, h_j;
 	mpz_init(nizk_c), mpz_init(nizk_r), mpz_init(h_j);
 	vtmf->KeyGenerationProtocol_GenerateKey();
@@ -182,7 +185,8 @@ void run_instance
 		std::cerr << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 		exit(-1);
 	}
-	std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+	if (opt_verbose)
+		std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 
 	// check the generated key share
 	std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
@@ -218,7 +222,8 @@ void run_instance
 	mpz_clear(mtv);
 	std::sort(tvs.begin(), tvs.end());
 	ckeytime = tvs.back(); // use the biggest value as some kind of gentle agreement
-	std::cout << "P_" << whoami << ": canonicalized key creation time = " << ckeytime << std::endl;
+	if (opt_verbose)
+		std::cout << "P_" << whoami << ": canonicalized key creation time = " << ckeytime << std::endl;
 
 	// at the end: deliver some more rounds for still waiting parties
 	time_t synctime = aiounicast::aio_timeout_very_long;
@@ -309,7 +314,8 @@ void run_instance
 	all.insert(all.end(), sub.begin(), sub.end());
 	all.insert(all.end(), subsig.begin(), subsig.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(6, all, armor);
-	std::cout << armor << std::endl;
+	if (opt_verbose)
+		std::cout << armor << std::endl;
 	std::ofstream pubofs((pubfilename.str()).c_str(), std::ofstream::out);
 	if (!pubofs.good())
 	{
@@ -333,7 +339,8 @@ void run_instance
 	all.insert(all.end(), ssb.begin(), ssb.end());
 	all.insert(all.end(), subsig.begin(), subsig.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(5, all, armor);
-	std::cout << armor << std::endl;
+	if (opt_verbose)
+		std::cout << armor << std::endl;
 	std::ofstream secofs((secfilename.str()).c_str(), std::ofstream::out);
 	if (!secofs.good())
 	{
@@ -383,13 +390,15 @@ void run_instance
 			
 	// release handles (unicast channel)
 	uP_in.clear(), uP_out.clear(), uP_key.clear();
-	std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
-		" aiou.numWrite = " << aiou->numWrite << std::endl;
+	if (opt_verbose)
+		std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
+			" aiou.numWrite = " << aiou->numWrite << std::endl;
 
 	// release handles (broadcast channel)
 	bP_in.clear(), bP_out.clear(), bP_key.clear();
-	std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
-		" aiou2.numWrite = " << aiou2->numWrite << std::endl;
+	if (opt_verbose)
+		std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
+			" aiou2.numWrite = " << aiou2->numWrite << std::endl;
 
 	// release asynchronous unicast and broadcast
 	delete aiou, delete aiou2;
@@ -425,13 +434,15 @@ void fork_instance
 			time_t keytime = time(NULL);
 			run_instance(whoami, keytime, gnunet_opt_xtests);
 
-			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
+			if (opt_verbose)
+				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
 			/* END child code: participant P_i */
 		}
 		else
 		{
-			std::cout << "fork() = " << pid[whoami] << std::endl;
+			if (opt_verbose)
+				std::cout << "fork() = " << pid[whoami] << std::endl;
 			instance_forked = true;
 		}
 	}
@@ -489,9 +500,11 @@ int main
 			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-V") == 0))
 			{
 				if ((arg.find("--help") == 0) || (arg.find("--version") == 0))
-					notcon = true;
+					notcon = true; // not continue
 				if ((arg.find("-h") == 0) || (arg.find("-v") == 0))
-					notcon = true;
+					notcon = true; // not continue
+				if ((arg.find("-V") == 0) || (arg.find("--verbose") == 0))
+					opt_verbose = 1; // verbose output
 				continue;
 			}
 			else if (arg.find("-") == 0)
@@ -523,9 +536,12 @@ int main
 		std::getline(std::cin, u);
 		std::cout << "2. Choose a passphrase to protect your private key: ";
 		std::getline(std::cin, passphrase);
-		std::cout << "INFO: canonicalized peer list = " << std::endl;
-		for (size_t i = 0; i < peers.size(); i++)
-			std::cout << peers[i] << std::endl;
+		if (opt_verbose)
+		{
+			std::cout << "INFO: canonicalized peer list = " << std::endl;
+			for (size_t i = 0; i < peers.size(); i++)
+				std::cout << peers[i] << std::endl;
+		}
 	}
 
 #ifdef GNUNET
