@@ -1446,11 +1446,14 @@ int main
 			read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
 			init_mpis();
 			parse_private_key(armored_seckey);
-std::cerr << "parse_private_key() okay" << std::endl;
 			parse_message(armored_message);
 			compute_decryption_share(whoami, dds);
 			tmcg_octets_t dds_input;
 			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // bluring the decryption share
+			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
+			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
+			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
+			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
 			for (size_t i = 0; i < dds.length(); i++)
 				dds_input.push_back(dds[i]);
 			std::string dds_radix;
@@ -1471,7 +1474,7 @@ std::cerr << "parse_private_key() okay" << std::endl;
 				tmcg_octets_t dds_output;
 				dds = "";
 				CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode(dds_radix, dds_output);
-				for (size_t i = 1; i < dds_output.size(); i++)
+				for (size_t i = 5; i < dds_output.size(); i++)
 					dds += dds_output[i];
 				mpz_set_ui(r_i, 1L), mpz_set_ui(c, 1L), mpz_set_ui(r, 1L);
 				if (verify_decryption_share(dds, idx, r_i, c, r))
