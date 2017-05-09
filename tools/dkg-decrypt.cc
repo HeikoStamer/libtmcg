@@ -782,15 +782,15 @@ void parse_message
 						break;
 					}
 					if (opt_verbose)
-					{
 						std::cout << " keyid = " << std::hex;
-						for (size_t i = 0; i < sizeof(ctx.keyid); i++)
-						{
+					for (size_t i = 0; i < sizeof(ctx.keyid); i++)
+					{
+						if (opt_verbose)
 							std::cout << (int)ctx.keyid[i] << " ";
-							pkesk_keyid.push_back(ctx.keyid[i]);
-						}
-						std::cout << std::dec << std::endl;
+						pkesk_keyid.push_back(ctx.keyid[i]);
 					}
+					if (opt_verbose)
+						std::cout << std::dec << std::endl;
 					if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(pkesk_keyid, subkeyid))
 					{
 						std::cerr << "WARNING: pkesk-key ID does not match subkey ID" << std::endl;
