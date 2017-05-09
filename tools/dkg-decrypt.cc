@@ -1472,24 +1472,24 @@ int main
 			while (std::getline(std::cin, dds_radix))
 			{
 				tmcg_octets_t dds_output;
-				dds = "";
+				dds = "", idx = 0;
 				CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode(dds_radix, dds_output);
 				for (size_t i = 5; i < dds_output.size(); i++)
 					dds += dds_output[i];
 				mpz_set_ui(r_i, 1L), mpz_set_ui(c, 1L), mpz_set_ui(r, 1L);
 				if (verify_decryption_share(dds, idx, r_i, c, r))
 				{
-					if (std::count(interpol_parties.begin(), interpol_parties.end(), idx))
+					if (!std::count(interpol_parties.begin(), interpol_parties.end(), idx))
 					{
 						mpz_ptr tmp1 = new mpz_t();
 						mpz_init_set(tmp1, r_i);
 						interpol_parties.push_back(idx), interpol_shares.push_back(tmp1);
 					}
 					else
-						std::cerr << "WARNING: decryption share of P_" << idx << " already stored" << std::endl;
+						std::cout << "WARNING: decryption share of P_" << idx << " already stored" << std::endl;
 				}
 				else
-					std::cerr << "WARNING: verification of decryption share from P_" << idx << " failed" << std::endl;
+					std::cout << "WARNING: verification of decryption share from P_" << idx << " failed" << std::endl;
 			}
 			combine_decryption_shares(interpol_parties, interpol_shares);
 			mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
