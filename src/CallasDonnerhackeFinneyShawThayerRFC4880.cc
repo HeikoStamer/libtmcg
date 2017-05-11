@@ -694,8 +694,6 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 	sum %= 65536;
 	sum += in[1];
 	sum %= 65536;
-	if (buflen < 0)
-		return 0; // error: invalid length
 	if (in.size() < (2 + buflen))
 		return 0; // error: mpi too short
 	tmcg_byte_t *buffer = new tmcg_byte_t[buflen];
