@@ -1496,7 +1496,7 @@ int main
 			compute_decryption_share(whoami, dds);
 			tmcg_octets_t dds_input;
 			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // bluring the decryption share
-			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
+			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // makes NSA's spying harder
 			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
 			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
 			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
@@ -1504,7 +1504,7 @@ int main
 				dds_input.push_back(dds[i]);
 			std::string dds_radix;
 			CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode(dds_input, dds_radix, false);
-			std::cout << "My decryption share is: " << dds_radix << std::endl;
+			std::cout << "My decryption share (keep confidential): " << dds_radix << std::endl;
 			mpz_init(r_i), mpz_init(c), mpz_init(r);
 			if (!verify_decryption_share(dds, idx, r_i, c, r))
 			{

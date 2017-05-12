@@ -10,11 +10,12 @@ dkg\-generate \- distributed key generation for OpenPGP
 
 .SH DESCRIPTION
 This program performs the t-resilient distributed key generation protocol (DKG)
-for discrete logarithm based cryptosystems as described in Journal of Cryptology
-20(1) by Gennaro et al.
+for discrete logarithm based cryptosystems as described in
+.I Journal of Cryptology 20(1)
+by Gennaro et al.
 It employs GNUnet for exchange of protocol messages between the participants.
 Thus a working GNUnet peer is neccesary to proceed. 
-.br
+.PP
 For each party an individual DSA signing key is generated which is the OpenPGP
 primary key. The shared ElGamal key for encryption is arranged as subkey. Thus
 each party should verify after key generation, that the published public key
@@ -24,15 +25,16 @@ internal state of the DKG protocol including some verification keys for
 threshold decryption, second, a file that stores the individual private key in
 ASCII-armored OpenPGP format, and finally, a file that contains the public key
 again in ASCII-armored format. All file names have the GNUnet peer identity of
-the corresponding party as a common prefix.
-.br
+the corresponding party as a common prefix. The first and the second file must
+be kept confidential.
+.PP
 The parameter t determines how many parties may deviate from the protocol
 during the key generation and later during threshold decryption. At least
 t+1 participants are needed to recover or to decrypt a OpenPGP message.
 This parameter can be adjusted by using the option "-t". The default value
 is (n-1)/2 where n is the number of participants. Since 0-resilience and
 other deviations are not desireable, the program ensures that 0 < t <= n holds. 
-.br
+.PP
 The underlying DDH-hard group, i.e. a prime order subgroup of special form,
 can be adjusted by using the option "-g". The included program dkg\-gencrs
 generates a corresponding common reference string on that all participants
@@ -40,7 +42,7 @@ must agree. The generated group parameters are verifiable up to a certain
 level. However, it is recommended that this crucial part is either
 accomplished by some trusted members or all participants together. Without
 this option the hard coded group of the source code is used by default.
-.br
+.PP
 With the option "-w" the number of minutes can be adjusted until the DKG
 protocol is started. The default value is 5. It is crucial for the key
 generation that all participants are connected with GNUnet CADET within
@@ -88,20 +90,26 @@ Security vulnerabilities or cryptographic complaints should be reported
 via an email directly to
 <HeikoStamer@gmx.net>.
 Reported problems will be published after they've been fixed.
-.br
+.PP
 Please report other bugs via <http://savannah.nongnu.org/bugs/?group=libtmcg>
-.br
+.PP
 Home page of LibTMCG: <http://www.nongnu.org/libtmcg/>
 
 .SH "EXAMPLES"
 .TP
+The following command initiates a distributed key generation process with four participants defined by their GNUnet peer identities. 
+.PP
+.nf
+.RS
 dkg-generate -w 10 -t 2 WS3KHEYKKF6QQ6NDQKKCJ2B374RSSXJ05TB5D9W9FYKPPEJ3QKFG XS72STGDBKT6YRRVF8CPMGJFZ0FEYQE9EJECDNXWZJSB5G5H4ZVG 3PT18Z2345NA6FM86BKVJ32DK88KXF0YWKTDPPQX1QJMBPEF4530 S41SNHFSGVR3A88ZPX3ZB3BKD2EN0Z29VEKKS1BMVMQNMWSRG3N0
-.br
-This command initiates a distributed key generation process with four participants defined by their GNUnet peer identities. Each
-party must run such a process with identical parameter set, e.g., a fixed t-resilience where t=2. That means at least three participants
-are needed later in order to decrypt a message for the generated OpenPGP key. The program waits ten minutes before the main DKG protocol
-is started, because establishing a CADET channel with GNUnet may take some time.
+.RE
+.fi
+.PP
+Each party must run such a process with identical parameter set, i.e., setup t-resilience where parameter t is fixed. Note that, e.g.
+2-resilience, means that later at least three participants are needed in order to decrypt a message for the generated ElGamal subkey.
+The program waits ten minutes before the main DKG protocol is started, because establishing a CADET channel with GNUnet may take some time.
 
 .SH "SEE ALSO"
-dkg\-encrypt(1), dkg\-decrypt(1)
+.BR dkg\-encrypt (1),
+.BR dkg\-decrypt (1)
 

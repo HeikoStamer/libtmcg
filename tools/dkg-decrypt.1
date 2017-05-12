@@ -10,16 +10,18 @@ dkg\-decrypt \- threshold decryption for OpenPGP
 
 .SH DESCRIPTION
 This program decrypts a message given in armored OpenPGP format, where the
-private key has been shared between multiple parties by dkg\-generate(1).
+private key has been shared between multiple parties by
+.BR dkg\-generate (1).
 For successful decryption at least t+1 decryption shares from different 
 participants are needed. The threshold parameter t was fixed during key 
 generation and cannot changed at this stage of processing.
-.br
+.PP
 Currently, only ElGamal and AES\-256 are supported as cryptographic algorithms.
-.br
+.PP
 There are two modes of operation: First, the interactive mode employs GNUnet
 for exchange of the decryption shares, where PEERS must be the same list of
-GNUnet peer identities used during key generation with dkg\-generate(1).
+GNUnet peer identities used during key generation with
+.BR dkg\-generate (1).
 Second, in the non\-interactive mode the parameter PEERS contains only the
 GNUnet identity of this peer. Then the corresponding decryption share is
 written to STDOUT, and the user must exchange the shares manually before
@@ -64,14 +66,15 @@ Security vulnerabilities or cryptographic complaints should be reported
 via an email directly to
 <HeikoStamer@gmx.net>.
 Reported problems will be published after they've been fixed.
-.br
+.PP
 Please report other bugs via <http://savannah.nongnu.org/bugs/?group=libtmcg>
-.br
+.PP
 Home page of LibTMCG: <http://www.nongnu.org/libtmcg/>
 
 .SH "EXAMPLES"
 TODO
 
 .SH "SEE ALSO"
-dkg\-generate(1), dkg\-encrypt(1)
+.BR dkg\-generate (1),
+.BR dkg\-encrypt (1)
 

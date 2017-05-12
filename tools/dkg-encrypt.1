@@ -11,17 +11,18 @@ dkg\-encrypt \- simple encryption with AES\-256 according to OpenPGP
 This program encrypts a text message read from STDIN according to the OpenPGP standard.
 KEYFILE must contain a special crafted ASCII-armored public key, for which the following
 encryption is performed.
-.br  
+.PP
 First, AES is applied as symmetric cipher with a randomly chosen 256-bit session key.
 Note that an integrity protection packet (MDC) is appended. Finally, the session key is
 transformed by PKCS#1 v1.5 block encoding and encrypted with the ElGamal public-key algorithm. 
-.br
+.PP
 Currently, as public-key algorithm only ElGamal is supported and the certifying signatures
 in the corresponding subkey packet of the public key must be DSA signatures. This is due
 to the limitation in distributed key generation of LibTMCG.
-.br
+.PP
 The encrypted message in ASCII-armored OpenPGP format is written to STDOUT and it
-can be further processed with dkg\-decrypt(1).
+can be further processed with
+.BR dkg\-decrypt (1).
 
 .SH OPTIONS
 None.
@@ -35,11 +36,12 @@ Security vulnerabilities or cryptographic complaints should be reported
 via an email directly to
 <HeikoStamer@gmx.net>.
 Reported problems will be published after they've been fixed.
-.br
+.PP
 Please report other bugs via <http://savannah.nongnu.org/bugs/?group=libtmcg>
-.br
+.PP
 Home page of LibTMCG: <http://www.nongnu.org/libtmcg/>
 
 .SH "SEE ALSO"
-dkg\-generate(1), dkg\-decrypt(1)
+.BR dkg\-generate (1),
+.BR dkg\-decrypt (1)
 
