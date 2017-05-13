@@ -72,7 +72,28 @@ Please report other bugs via <http://savannah.nongnu.org/bugs/?group=libtmcg>
 Home page of LibTMCG: <http://www.nongnu.org/libtmcg/>
 
 .SH "EXAMPLES"
-TODO
+.TP
+The following command performs a non-interactive threshold decryption for a specific participant defined by its GNUnet peer identity. 
+.PP
+.nf
+.RS
+dkg-generate -n WS3KHEYKKF6QQ6NDQKKCJ2B374RSSXJ05TB5D9W9FYKPPEJ3QKFG
+.RE
+.fi
+.PP
+At least t+1 participants must run such a process on the same message to get a corresponding decryption share, where t is the t-resilience used during key generation.
+The shares must be exchanged between them in a secure way, i.e., authenticated and confidential. Finally, the received decryption shares are given to the
+program one per line. After giving a trailing end of data sign (^D) the decrypted message is printed.
+.PP
+The following command performs an interactive threshold decryption with three participants defined by their GNUnet peer identities. 
+.PP
+.nf
+.RS
+dkg-decrypt -w 10 3PT18Z2345NA6FM86BKVJ32DK88KXF0YWKTDPPQX1QJMBPEF4530 S41SNHFSGVR3A88ZPX3ZB3BKD2EN0Z29VEKKS1BMVMQNMWSRG3N0 WS3KHEYKKF6QQ6NDQKKCJ2B374RSSXJ05TB5D9W9FYKPPEJ3QKFG
+.RE
+.fi
+.PP
+At least t+1 parties must run such a process on the same message. The program waits ten minutes before the threshold decryption protocol is started, because establishing a CADET channel with GNUnet may take some time.
 
 .SH "SEE ALSO"
 .BR dkg\-generate (1),

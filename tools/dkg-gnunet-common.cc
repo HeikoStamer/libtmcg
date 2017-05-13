@@ -265,13 +265,15 @@ void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel)
 	{
 		if (pipe2channel_out.count(i) && (pipe2channel_out[i] == channel))
 		{
-			std::cerr << "WARNING: output channel ended for peer = " << pipe2peer[i] << std::endl;
+			if (gnunet_opt_verbose)
+				std::cerr << "WARNING: output channel ended for peer = " << pipe2peer[i] << std::endl;
 			pipe2channel_out.erase(i);
 			return;
 		}
 		if (pipe2channel_in.count(i) && (pipe2channel_in[i] == channel))
 		{
-			std::cerr << "WARNING: input channel ended for peer = " << pipe2peer[i] << std::endl;
+			if (gnunet_opt_verbose)
+				std::cerr << "WARNING: input channel ended for peer = " << pipe2peer[i] << std::endl;
 			pipe2channel_in.erase(i);
 			return;
 		}
@@ -282,7 +284,8 @@ void gnunet_channel_ended(void *cls, const struct GNUNET_CADET_Channel *channel)
 void* gnunet_channel_incoming(void *cls, struct GNUNET_CADET_Channel *channel,
 	const struct GNUNET_PeerIdentity *initiator)
 {
-	std::cout << "INFO: incoming channel from " << GNUNET_i2s_full(initiator) << std::endl;
+	if (gnunet_opt_verbose)
+		std::cout << "INFO: incoming channel from " << GNUNET_i2s_full(initiator) << std::endl;
 	// check whether peer identity is included in peer list
 	std::string peer = GNUNET_i2s_full(initiator);
 	if (peer2pipe.count(peer) == 0)
@@ -499,7 +502,8 @@ void gnunet_connect(void *cls)
 				GNUNET_SCHEDULER_shutdown();
 				return;
 			}
-			GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to `%s'\n", pipe2peer[i].c_str());
+			if (gnunet_opt_verbose)
+				GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to `%s'\n", pipe2peer[i].c_str());
 			static const struct GNUNET_MQ_MessageHandler handlers[] = {
 				GNUNET_MQ_hd_var_size(gnunet_data_callback,
 					GNUNET_MESSAGE_TYPE_TMCG_DKG_CHANNEL_CHECK,
@@ -561,7 +565,8 @@ void gnunet_statistics(void *cls)
 			}
 			else if (WIFEXITED(wstatus))
 			{
-				std::cerr << "INFO: DKG instance " << thispid << " terminated with exit status " << WEXITSTATUS(wstatus) << std::endl;
+				if (gnunet_opt_verbose)
+					std::cerr << "INFO: DKG instance " << thispid << " terminated with exit status " << WEXITSTATUS(wstatus) << std::endl;
 			}
 			instance_forked = false;
 			GNUNET_SCHEDULER_shutdown();
@@ -578,7 +583,8 @@ void gnunet_fork(void *cls)
 	if (pipe2channel_in.size() == (peers.size() - 1))
 	{
 		// fork instance
-		std::cout << "INFO: forking the DKG instance ..." << std::endl;
+		if (gnunet_opt_verbose)
+			std::cout << "INFO: forking the DKG instance ..." << std::endl;
 		fork_instance(peer2pipe[thispeer]);
 	}
 	else
@@ -605,7 +611,8 @@ void gnunet_init(void *cls)
 
 	// check whether own peer identity is included in peer list
 	thispeer = GNUNET_i2s_full(&opi);
-	std::cout << "INFO: my peer id = " << thispeer << std::endl;
+	if (gnunet_opt_verbose)
+		std::cout << "INFO: my peer id = " << thispeer << std::endl;
 	std::map<std::string, size_t>::const_iterator jt = peer2pipe.find(thispeer);
 	if (jt == peer2pipe.end())
 	{
@@ -669,7 +676,8 @@ void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 	}
 
 	// connect to CADET service
-	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to CADET service\n");
+	if (gnunet_opt_verbose)
+		GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Connecting to CADET service\n");
 	mh = GNUNET_CADET_connect(cfg);	
 	if (mh == NULL)
 	{
@@ -679,7 +687,8 @@ void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 	}
 
 	// listen to a defined CADET port
-	GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Opening CADET listen port\n");
+	if (gnunet_opt_verbose)
+		GNUNET_log(GNUNET_ERROR_TYPE_DEBUG, "Opening CADET listen port\n");
 	if (gnunet_opt_port != NULL)
 		GNUNET_CRYPTO_hash(gnunet_opt_port, strlen(gnunet_opt_port), &porthash);
 	else
