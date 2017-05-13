@@ -31,7 +31,6 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
-#include <cassert>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -196,7 +195,7 @@ void run_instance
 		exit(-1);
 	}
 
-	// participants must agree on a common key creation time (OpenPGP), otherwise later subkeyid does not match
+	// participants must agree on a common key creation time (OpenPGP), otherwise subkeyid does not match
 	time_t ckeytime = 0;
 	std::vector<time_t> tvs;
 	mpz_t mtv;
@@ -230,7 +229,7 @@ void run_instance
 	std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
 	rbc->Sync(synctime);
 
-	// create an OpenPGP DSA-based primary key and Elgamal-based subkey based on parameters from DKG
+	// create an OpenPGP DSA-based primary key and ElGamal-based subkey based on parameters from DKG
 	char buffer[2048];
 	std::string out, crcout, armor;
 	tmcg_octets_t all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
@@ -245,8 +244,7 @@ void run_instance
 	mpz_t dsa_y, dsa_x;
 	mpz_init(dsa_y), mpz_init(dsa_x);
 	mpz_srandomm(dsa_x, vtmf->q); // choose private key for DSA
-	mpz_spowm(dsa_y, vtmf->g, dsa_x, vtmf->p); // compute public key for DSA
-			
+	mpz_spowm(dsa_y, vtmf->g, dsa_x, vtmf->p); // compute public key for DSA	
 	p = gcry_mpi_new(2048);
 	q = gcry_mpi_new(2048);
 	g = gcry_mpi_new(2048);
@@ -254,55 +252,95 @@ void run_instance
 	x = gcry_mpi_new(2048);
 	r = gcry_mpi_new(2048);
 	s = gcry_mpi_new(2048);
-	mpz_get_str(buffer, 16, vtmf->p);
+	mpz_get_str(buffer, 16, vtmf->p); // from CRS
 	ret = gcry_mpi_scan(&p, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	assert(!ret); 
-	mpz_get_str(buffer, 16, vtmf->q);
+	if (ret)
+	{
+		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for p" << std::endl;
+		exit(-1);
+	}
+	mpz_get_str(buffer, 16, vtmf->q); // from CRS
 	ret = gcry_mpi_scan(&q, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	assert(!ret); 
-	mpz_get_str(buffer, 16, vtmf->g);
+	if (ret)
+	{
+		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for q" << std::endl;
+		exit(-1);
+	}
+	mpz_get_str(buffer, 16, vtmf->g); // from CRS
 	ret = gcry_mpi_scan(&g, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	assert(!ret);
-	mpz_get_str(buffer, 16, dsa_y);
+	if (ret)
+	{
+		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for g" << std::endl;
+		exit(-1);
+	}
+	mpz_get_str(buffer, 16, dsa_y); // computed for each participant/peer
 	ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	assert(!ret);
-	mpz_get_str(buffer, 16, dsa_x);
+	if (ret)
+	{
+		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for dsa_y" << std::endl;
+		exit(-1);
+	}
+	mpz_get_str(buffer, 16, dsa_x); // randomly choosen for each participant/peer (see above)
 	ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	assert(!ret);
+	if (ret)
+	{
+		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for dsa_x" << std::endl;
+		exit(-1);
+	}
 	mpz_clear(dsa_y), mpz_clear(dsa_x);
 	ret = gcry_sexp_build(&key, &erroff, "(key-data (public-key (dsa (p %M) (q %M) (g %M) (y %M)))"
 		" (private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M))))", p, q, g, y, p, q, g, y, x);
-	assert(!ret);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ckeytime, p, q, g, y, pub);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(ckeytime, p, q, g, y, x, passphrase, sec);
+	if (ret)
+	{
+		std::cerr << "P_" << whoami << ": gcry_sexp_build() failed" << std::endl;
+		exit(-1);
+	}
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ckeytime, p, q, g, y, pub); // use common key creation time
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(ckeytime, p, q, g, y, x, passphrase, sec); // use common key creation time and individual passphrase
 	for (size_t i = 6; i < pub.size(); i++)
 		pub_hashing.push_back(pub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, uid);
-	dsaflags.push_back(0x01 | 0x02 | 0x20);
+	dsaflags.push_back(0x01 | 0x02 | 0x20); // key may be used to certify other keys, to sign data, and for authentication
 	sigtime = time(NULL); // current time
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, sigtime, dsaflags, keyid, uidsig_hashing);
-	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, 8, hash, uidsig_left);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, sigtime, dsaflags, keyid, uidsig_hashing); // positive certification (0x13) of uid and pub
+	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, 8, hash, uidsig_left); // use SHA256 (alg 8)
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
-	assert(!ret);
+	if (ret)
+	{
+		std::cerr << "P_" << whoami << ": CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA() failed" << std::endl;
+		exit(-1);
+	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(uidsig_hashing, uidsig_left, r, s, uidsig);
 	hash.clear();
-	mpz_get_str(buffer, 16, dkg->y);			
+	mpz_get_str(buffer, 16, dkg->y); // computed by DKG (cf. LibTMCG source code)	
 	ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	assert(!ret);
-	mpz_get_str(buffer, 16, dkg->x_i);			
+	if (ret)
+	{
+		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for dkg->y" << std::endl;
+		exit(-1);
+	}
+	mpz_get_str(buffer, 16, dkg->x_i); // computed by DKG for each participant/peer (cf. LibTMCG source code)	
 	ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	assert(!ret);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ckeytime, p, g, y, sub);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(ckeytime, p, g, y, x, passphrase, ssb);
-	elgflags.push_back(0x04 | 0x10);
+	if (ret)
+	{
+		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for dkg->x_i" << std::endl;
+		exit(-1);
+	}
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ckeytime, p, g, y, sub); // use common key creation time
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(ckeytime, p, g, y, x, passphrase, ssb); // use common key creation time and individual passphrase
+	elgflags.push_back(0x04 | 0x10); // key may be used to encrypt communications and have been split by a secret-sharing mechanism
 	sigtime = time(NULL); // current time
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, sigtime, elgflags, keyid, subsig_hashing);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, sigtime, elgflags, keyid, subsig_hashing); // Subkey Binding Signature (0x18) of sub
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
-	CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, subsig_hashing, 8, hash, subsig_left);
+	CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, subsig_hashing, 8, hash, subsig_left); // use SHA256 (alg 8)
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
-	assert(!ret);
+	if (ret)
+	{
+		std::cerr << "P_" << whoami << ": CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA() failed" << std::endl;
+		exit(-1);
+	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(subsig_hashing, subsig_left, r, s, subsig);
 	// export generated public key in OpenPGP armor format
 	std::stringstream pubfilename;
@@ -385,7 +423,7 @@ void run_instance
 	// release RBC			
 	delete rbc;
 
-	// release VTMF instances
+	// release VTMF
 	delete vtmf;
 			
 	// release handles (unicast channel)

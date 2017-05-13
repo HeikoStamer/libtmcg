@@ -31,7 +31,6 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
-#include <cassert>
 #include <cstdio>
 #include <unistd.h>
 #include <errno.h>

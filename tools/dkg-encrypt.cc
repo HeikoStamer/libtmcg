@@ -27,7 +27,6 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
-#include <cassert>
 
 int main
 	(int argc, char **argv)

@@ -12,7 +12,7 @@
 * [2017-01-20] VTMF: improved NIZK generation (added group parameter hashing)
 * [2016-12-31] release 1.2.0 of LibTMCG
 * [2016-12-24] added GNUnet integration for DKG tools
-* [2016-11-14] added a very limited interface for OpenPGP (RFC4880) 
+* [2016-11-14] added a very limited interface for OpenPGP (cf. RFC 4880) 
 * [2016-03-26] improved complexity of hash function g() used as random oracle
 * [2016-03-24] mpz_shash* using now hash function g() instead of h()
 * [2016-03-20] protection against malicious verifiers through EDCF for SHVZK
