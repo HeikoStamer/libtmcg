@@ -8,11 +8,11 @@
    the h-generation protocol as building block of ASTC [JL00])
 + DZKP also called "Simultaneous Zero-Knowledge Proofs of Knowledge" [JL00]
 + provide DKG with security against an adaptive adversary [CGJKR99, JL00]
-+ provide distributed DSS key generation and signature scheme [GJKR01]
++ provide distributed DSS/DSA key generation and signature scheme [GJKR01]
 + move to event-driven architecture and state-based protocol representation
 + add a generic group abstraction layer, e.g. for future use of ECC groups
 + DKG, ASTC: transform protocols into variants without aiou->Send() [BH92]
-+ provide byzantine consensus protocol for agreement on values
++ provide a byzantine consensus protocol for agreement on values
 
 - implement the exotic card and stack operations of the toolbox; there are
   some obstacles, e.g. that the prover does not know all used randomizers,
