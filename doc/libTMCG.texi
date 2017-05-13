@@ -3794,6 +3794,7 @@ delete rbc, delete aiou2, delete aiou;
 @chapter Tools
 @cindex Tools
 LibTMCG provides some additional programs that may be of independent interest.
+Please consult the corresponding manual pages for further information.
 
 @section Distributed Key Generation and Threshold Decryption
 We have implemented a robust and secure protocol for Distributed Key Generation
@@ -3805,8 +3806,8 @@ for the ElGamal cryptosystem with output of the keys in OpenPGP format (see J. C
 L. Donnerhacke, H. Finney, D. Shaw, R. Thayer: @emph{OpenPGP Message Format},
 Network Working Group, Request for Comments: 4880, November 2007). Due to the
 interactiveness of the protocol a lot of messages between the participating
-parties have to be exchanged. We employ @uref{https://gnunet.org/,,GNUnet}, 
-and in particular the mesh routed CADET service, to establish private and
+parties have to be exchanged in a secure way. We employ @uref{https://gnunet.org/,,GNUnet}, 
+and in particular its mesh routed CADET service, to establish private and
 broadcast channels for this message exchange.
 
 Additionally, the program @code{dkg-encrypt} encrypts a text message for a
@@ -3815,11 +3816,12 @@ protocol (see Ronald Cramer, Rosario Gennaro, and Berry Schoenmakers: @emph{A Se
 and Optimally Efficient Multi-Authority Election Scheme}, Advances in Cryptology --
 EUROCRYPT '97, LNCS 1233, pp. 103--118, 1997) has been implemented as
 program @code{dkg-decrypt}. It provides an interactive version and a non-interactive
-version for computing, verifying, and combining decryption shares.
+version for computing, verifying, and combining the required decryption shares.
   
 Please note that for building @code{dkg-generate} and the interactive version of
 @code{dkg-decrypt} the development files for a recent GNUnet version (at least
-v0.10.2) must be present at configure-time and compile-time of LibTMCG.
+v0.10.2, which is when writing these lines still not yet released) must be present
+at configure-time and compile-time of LibTMCG.
 
 The current implementation is in experimental state and should not be used
 in production environments. Please report any bugs to the maintainer of LibTMCG. 

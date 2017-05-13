@@ -1,4 +1,9 @@
-1.3.0
+1.3.0 This is mainly a bugfix release that removes some issues found by
+      coverity scan. However, there are also some new undocumented protocols
+      and experimental support for distributed key generation has been added.
+      The most important change is a verifiable setup of VTMF group generator.
+      For some advanced protocols (e.g. Groth's shuffle) with more than two
+      parties the distributed coin flipping protocol (EDCF) should be used.
 1.2.0 The default security parameters have been updated to current state of
       the art. The complexity of hash function g() was improved. Unfortunately,
       this breaks compatibility with instances that have been compiled with
