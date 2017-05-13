@@ -470,8 +470,11 @@ void fork_instance
 		{
 			/* BEGIN child code: participant P_i */
 			time_t keytime = time(NULL);
+#ifdef GNUNET
 			run_instance(whoami, keytime, gnunet_opt_xtests);
-
+#else
+			run_instance(whoami, keytime, 0);
+#endif
 			if (opt_verbose)
 				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
@@ -631,7 +634,7 @@ int main
 	else
 		return -1;
 #else
-	std::cerr << "WARNING: GNunet development files are required for message exchange of DKG protocol"
+	std::cerr << "WARNING: GNunet development files are required for message exchange of DKG protocol" << std::endl;
 #endif
 
 	std::cout << "INFO: running local test with " << peers.size() << " participants" << std::endl;

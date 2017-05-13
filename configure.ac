@@ -21,7 +21,7 @@
 AC_REVISION([20170513])
 AC_PREREQ(2.61)
 
-AC_INIT([LibTMCG], [1.3.1], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
+AC_INIT([LibTMCG], [1.3.0], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
 
 # The next two paragraphs are copies of libgcrypt behaviour.
 
@@ -31,7 +31,7 @@ AC_INIT([LibTMCG], [1.3.1], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu
 #   (No interfaces changed:                   REVISION++)
 LIBTMCG_LT_CURRENT=5
 LIBTMCG_LT_AGE=0
-LIBTMCG_LT_REVISION=1
+LIBTMCG_LT_REVISION=0
 
 # If API is changed in an incompatible way: increment the next counter.
 LIBTMCG_CONFIG_API_VERSION=3
@@ -274,6 +274,11 @@ if test "x$gnunet" == "x1"
 then
 	AC_DEFINE(GNUNET, , [Define to enable the GNUnet-based tools])
 	GNUNET_LIBS="${GNUNET_LIBS} -lgnunetutil -lgnunethello -lgnunettransport -lgnunetcadet"
+fi
+if test "x$gnunet" == "x0"
+then
+	GNUNET_LIBS=""
+	GNUNET_CFLAGS=""
 fi
 AC_SUBST(GNUNET_LIBS)
 AC_SUBST(GNUNET_CFLAGS)
