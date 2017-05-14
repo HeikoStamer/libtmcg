@@ -632,6 +632,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthEncode
 	out.push_back(len);
 }
 
+size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthDecode
+	(const tmcg_octets_t &in, bool newformat, tmcg_byte_t lentype,
+	size_t &len, size_t &partlen)
+{
+// TODO
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode
 	(const time_t in, tmcg_octets_t &out)
 {
@@ -1626,7 +1633,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	// 4. When the length of the packet body is not known in advance by
 	//    the issuer, Partial Body Length headers encode a packet of
 	//    indeterminate length, effectively making it a stream.
-	uint32_t len = 0, headlen = 1, hspdlen = 0, uspdlen = 0;
+	uint32_t len = 0, headlen = 1, hspdlen = 0, uspdlen = 0, partlen = 0;
 	if (out.newformat && (in[1] < 192))
 	{
 		// A one-octet Body Length header encodes a length of 0 to
@@ -1656,7 +1663,24 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	}
 	else if (out.newformat)
 	{
-		return 0; // error: Partial Body Lengths are not supported
+		// A Partial Body Length header is one octet long and encodes
+		// the length of only part of the data packet. This length is
+		// a power of 2, from 1 to 1,073,741,824 (2 to the 30th
+		// power). It is recognized by its one octet value that is
+		// greater than or equal to 224, and less than 255.
+		partlen = (1 << (in[1] & 0x1F));
+		headlen += 1;
+		// An implementation MAY use Partial Body Lengths for data
+		// packets, be they literal, compressed, or encrypted. The
+		// first partial length MUST be at least 512 octets long.
+		// Partial Body Lengths MUST NOT be used for any other packet
+		// types.
+		if (partlen < 512)
+			return 0; // error: partial length less than 512 octets
+		if ((tag != 8) && (tag != 9) && (tag != 11) && (tag != 18))
+			return 0; // error: no literal, compressed, or encrypted
+std::cerr << "partlen = " << partlen << std::endl;
+		len = partlen;
 	}
 	else if (!out.newformat && (lentype == 0x00))
 	{
@@ -1695,7 +1719,27 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	tmcg_byte_t sptype = 0xFF;
 	size_t mlen = 0;
 	tmcg_octets_t pkt, hspd, uspd, mpis;
-	pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+len);
+	if (partlen)
+	{
+		// Each Partial Body Length header is followed by a portion of
+		// the packet body data. The Partial Body Length header
+		// specifies this portion's length. Another length header (one
+		// octet, two-octet, five-octet, or partial) follows that
+		// portion. The last length header in the packet MUST NOT be a
+		// Partial Body Length header. Partial Body Length headers may
+		// only be used for the non-final parts of the packet.
+		while (partlen)
+		{
+			if (in.size() < (headlen + partlen))
+				return 0; // error: packet too short	
+			pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+partlen);
+			headlen += partlen;
+// FIXME: parse remaining Partial Body Lengths
+partlen = 0;
+		}
+	}
+	else
+		pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+len);
 	memset(&out, 0, sizeof(out)); // clear output context
 	// Exportable Certification: If this packet is not present, the
 	// certification is exportable; it is equivalent to a flag 
