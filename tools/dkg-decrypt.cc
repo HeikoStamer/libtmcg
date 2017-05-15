@@ -1495,7 +1495,7 @@ int main
 			compute_decryption_share(whoami, dds);
 			tmcg_octets_t dds_input;
 			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // bluring the decryption share
-			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // makes NSA's spying harder
+			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // make NSA's spying a bit harder
 			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
 			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
 			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
@@ -1513,7 +1513,7 @@ int main
 			mpz_ptr tmp1 = new mpz_t();
 			mpz_init_set(tmp1, r_i);
 			interpol_parties.push_back(whoami), interpol_shares.push_back(tmp1);
-			std::cout << "Now, enter decryption shares (one per line; ^D for EOF) from other parties: " << std::endl;
+			std::cout << "Now, enter decryption shares (one per line; ^D for EOF) from other parties/devices: " << std::endl;
 			while (std::getline(std::cin, dds_radix))
 			{
 				tmcg_octets_t dds_output;
