@@ -634,9 +634,89 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthEncode
 
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthDecode
 	(const tmcg_octets_t &in, bool newformat, tmcg_byte_t lentype,
-	size_t &len, size_t &partlen)
+	uint32_t &len, bool &partlen)
 {
-// TODO
+	// New format packets have four possible ways of encoding length:
+	// 1. A one-octet Body Length header encodes packet lengths of up to
+	//    191 octets.
+	// 2. A two-octet Body Length header encodes packet lengths of 192 to
+	//    8383 octets.
+	// 3. A five-octet Body Length header encodes packet lengths of up to
+	//    4,294,967,295 (0xFFFFFFFF) octets in length. (This actually
+	//    encodes a four-octet scalar number.)
+	// 4. When the length of the packet body is not known in advance by
+	//    the issuer, Partial Body Length headers encode a packet of
+	//    indeterminate length, effectively making it a stream.
+	partlen = false;
+	if (in.size() < 1)
+		return 0; // error: too few octets of length encoding
+	if (newformat && (in[0] < 192))
+	{
+		// A one-octet Body Length header encodes a length of 0 to
+		// 191 octets. This type of length header is recognized
+		// because the one octet value is less than 192.
+		len = in[0];	
+		return 1;
+	}
+	else if (newformat && (in[0] < 224))
+	{
+		if (in.size() < 2)
+			return 0; // error: too few octets of length encoding
+		// A two-octet Body Length header encodes a length of 192 to
+		// 8383 octets. It is recognized because its first octet is
+		// in the range 192 to 223.
+		len = ((in[0] - 192) << 8) + in[1] + 192;
+		return 2;
+	}
+	else if (newformat && (in[0] == 255))
+	{
+		if (in.size() < 5)
+			return 0; // error: too few octets of length encoding
+		// A five-octet Body Length header consists of a single octet
+		// holding the value 255, followed by a four-octet scalar.
+		len = (in[1] << 24) + (in[2] << 16) + (in[3] << 8) + in[4];
+		return 5;
+	}
+	else if (newformat)
+	{
+		// A Partial Body Length header is one octet long and encodes
+		// the length of only part of the data packet. This length is
+		// a power of 2, from 1 to 1,073,741,824 (2 to the 30th
+		// power). It is recognized by its one octet value that is
+		// greater than or equal to 224, and less than 255.
+		len = (1 << (in[0] & 0x1F));
+		partlen = true;
+		return 1;
+	}
+	else if (!newformat && (lentype == 0x00))
+	{
+		// The packet has a one-octet length.
+		len = in[0];
+		return 1;
+	}
+	else if (!newformat && (lentype == 0x01))
+	{
+		// The packet has a two-octet length.
+		if (in.size() < 2)
+			return 0; // error: too few octets of length encoding
+		len = (in[0] << 8) + in[1];
+		return 2;
+	}
+	else if (!newformat && (lentype == 0x02))
+	{
+		// The packet has a four-octet length.
+		if (in.size() < 4)
+			return 0; // error: too few octets of length encoding
+		// A five-octet Body Length header consists of a single octet
+		len = (in[0] << 24) + (in[1] << 16) + (in[2] << 8) + in[3];
+		return 4;
+	}
+	else if (!newformat && (lentype == 0x03))
+	{
+		return 0; // error: indeterminate length is not supported
+	}
+	else
+		return 0; // error: unknown length type 
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode
@@ -1622,124 +1702,42 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		lentype = tag & 0x03; // Bits 1-0 -- length-type
 		tag = (tag >> 2) & 0x1F; // Bits 5-2 -- packet tag
 	}
-	// New format packets have four possible ways of encoding length:
-	// 1. A one-octet Body Length header encodes packet lengths of up to
-	//    191 octets.
-	// 2. A two-octet Body Length header encodes packet lengths of 192 to
-	//    8383 octets.
-	// 3. A five-octet Body Length header encodes packet lengths of up to
-	//    4,294,967,295 (0xFFFFFFFF) octets in length. (This actually
-	//    encodes a four-octet scalar number.)
-	// 4. When the length of the packet body is not known in advance by
-	//    the issuer, Partial Body Length headers encode a packet of
-	//    indeterminate length, effectively making it a stream.
-	uint32_t len = 0, headlen = 1, hspdlen = 0, uspdlen = 0, partlen = 0;
-	if (out.newformat && (in[1] < 192))
+	in.erase(in.begin(), in.begin()+1); // remove first octet
+	// Each Partial Body Length header is followed by a portion of the
+	// packet body data. The Partial Body Length header specifies this
+	// portion's length. Another length header (one octet, two-octet,
+	// five-octet, or partial) follows that portion. The last length
+	// header in the packet MUST NOT be a Partial Body Length header.
+	// Partial Body Length headers may only be used for the non-final
+	// parts of the packet.
+	tmcg_octets_t pkt;
+	size_t headlen = 0;
+	uint32_t len = 0;
+	bool partlen = true, firstlen = true;
+	while (partlen)
 	{
-		// A one-octet Body Length header encodes a length of 0 to
-		// 191 octets. This type of length header is recognized
-		// because the one octet value is less than 192.
-		headlen += 1;
-		len = in[1];
-	}
-	else if (out.newformat && (in[1] < 224))
-	{
-		if (in.size() < 3)
-			return 0; // error: too few octets of length encoding
-		// A two-octet Body Length header encodes a length of 192 to
-		// 8383 octets. It is recognized because its first octet is
-		// in the range 192 to 223.
-		headlen += 2;
-		len = ((in[1] - 192) << 8) + in[2] + 192;
-	}
-	else if (out.newformat && (in[1] == 255))
-	{
-		if (in.size() < 6)
-			return 0; // error: too few octets of length encoding
-		// A five-octet Body Length header consists of a single octet
-		// holding the value 255, followed by a four-octet scalar.
-		headlen += 5;
-		len = (in[2] << 24) + (in[3] << 16) + (in[4] << 8) + in[5];
-	}
-	else if (out.newformat)
-	{
-		// A Partial Body Length header is one octet long and encodes
-		// the length of only part of the data packet. This length is
-		// a power of 2, from 1 to 1,073,741,824 (2 to the 30th
-		// power). It is recognized by its one octet value that is
-		// greater than or equal to 224, and less than 255.
-		partlen = (1 << (in[1] & 0x1F));
-		headlen += 1;
+		headlen = PacketLengthDecode(in, out.newformat, lentype, len, partlen);
+		if (!headlen)
+			return 0; // error: invalid length header
+		if (in.size() < (headlen + len))
+			return 0; // error: packet too short
 		// An implementation MAY use Partial Body Lengths for data
 		// packets, be they literal, compressed, or encrypted. The
 		// first partial length MUST be at least 512 octets long.
 		// Partial Body Lengths MUST NOT be used for any other packet
 		// types.
-		if (partlen < 512)
-			return 0; // error: partial length less than 512 octets
-		if ((tag != 8) && (tag != 9) && (tag != 11) && (tag != 18))
+		if (partlen && firstlen && (len < 512))
+			return 0; // error: first partial length less than 512 octets
+		if (partlen && (tag != 8) && (tag != 9) && (tag != 11) && (tag != 18))
 			return 0; // error: no literal, compressed, or encrypted
-std::cerr << "partlen = " << partlen << std::endl;
-		len = partlen;
-	}
-	else if (!out.newformat && (lentype == 0x00))
-	{
-		// The packet has a one-octet length.
-		len = in[1];
-		// The header is 2 octets long.
-		headlen += 1;
-	}
-	else if (!out.newformat && (lentype == 0x01))
-	{
-		// The packet has a two-octet length.
-		if (in.size() < 3)
-			return 0; // error: too few octets of length encoding
-		len = (in[1] << 8) + in[2];
-		// The header is 3 octets long.
-		headlen += 2;
-	}
-	else if (!out.newformat && (lentype == 0x02))
-	{
-		// The packet has a four-octet length.
-		if (in.size() < 5)
-			return 0; // error: too few octets of length encoding
-		// A five-octet Body Length header consists of a single octet
-		len = (in[1] << 24) + (in[2] << 16) + (in[3] << 8) + in[4];
-		// The header is 5 octets long.
-		headlen += 4;
-	}
-	else if (!out.newformat && (lentype == 0x03))
-	{
-		return 0; // error: indeterminate length is not supported
-	}
-	else
-		return 0; // unknown error
-	if (in.size() < (headlen + len))
-		return 0; // error: packet too short
-	tmcg_byte_t sptype = 0xFF;
-	size_t mlen = 0;
-	tmcg_octets_t pkt, hspd, uspd, mpis;
-	if (partlen)
-	{
-		// Each Partial Body Length header is followed by a portion of
-		// the packet body data. The Partial Body Length header
-		// specifies this portion's length. Another length header (one
-		// octet, two-octet, five-octet, or partial) follows that
-		// portion. The last length header in the packet MUST NOT be a
-		// Partial Body Length header. Partial Body Length headers may
-		// only be used for the non-final parts of the packet.
-		while (partlen)
-		{
-			if (in.size() < (headlen + partlen))
-				return 0; // error: packet too short	
-			pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+partlen);
-			headlen += partlen;
-// FIXME: parse remaining Partial Body Lengths
-partlen = 0;
-		}
-	}
-	else
 		pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+len);
+		in.erase(in.begin(), in.begin()+headlen+len); // remove (partial) packet
+		firstlen = false;
+	}
+	tmcg_byte_t sptype = 0xFF;
+	tmcg_octets_t hspd, uspd, mpis;
+	size_t mlen = 0;
+	uint32_t hspdlen = 0, uspdlen = 0;
 	memset(&out, 0, sizeof(out)); // clear output context
 	// Exportable Certification: If this packet is not present, the
 	// certification is exportable; it is equivalent to a flag 
@@ -2234,7 +2232,6 @@ partlen = 0;
 		default:
 			return 0; // error: unknown packet tag
 	}
-	in.erase(in.begin(), in.begin()+headlen+len); // remove packet
 	return tag;
 }
 

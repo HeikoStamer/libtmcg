@@ -220,7 +220,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const size_t len, tmcg_octets_t &out);
 		static size_t PacketLengthDecode
 			(const tmcg_octets_t &in, bool newformat, tmcg_byte_t lentype,
-			size_t &len, size_t &partlen);
+			uint32_t &len, bool &partlen);
 		static void PacketTimeEncode
 			(const time_t in, tmcg_octets_t &out);
 		static void PacketTimeEncode
