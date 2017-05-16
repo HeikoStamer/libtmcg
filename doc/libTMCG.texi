@@ -2108,18 +2108,18 @@ title, respectively.
 
 @node CachinKursawePetzoldShoupRBC
 @subsubsection Secure and Efficient Asynchronous Broadcast Protocols
-Currently this part of LibTMCG provides an implementation of @emph{reliable broadcast},
-which is based basically on an optimized variant of Bracha's double-echo
+This part of LibTMCG provides an implementation of @emph{reliable broadcast},
+which is actually based on an optimized variant of Bracha's double-echo
 broadcast protocol.
-It works without further authentication (e.g. digital signatures) and thus
+It works without further authentication mechanisms (e.g. digital signatures) and thus
 guarantees the desired properties (i.e. validity, consistency, and
 totality@footnote{Totality ensures that all correct parties either deliver a message
 or don't. In the literature consistency and totality properties are often combined
 into a single condition called @emph{agreement}.}) of
-reliable broadcast, if and only if the number of faulty or even malicious players
+reliable broadcast only, if the number of faulty or even malicious players
 @math{t} is strictly less than one third of all parties @math{n}, i.e. @math{t < n/3}. 
 Please note that without further assumptions this condition is rather optimal
-for asynchronous communication and thus have crucial impact for liveness of the
+for asynchronous communication and thus has crucial impact for liveness of the
 high-level protocols using it.
 
 We describe only those classes, methods, and members that might be of interest
@@ -2127,10 +2127,10 @@ for an application programmer.
 
 @cindex RBC
 @deftp {Class} CachinKursawePetzoldShoupRBC
-	This class implements the protocol RBC of Cachin, Kursawe, Petzold, and
-	Shoup@tie{}[CKPS01] for a reliable broadcast in asynchronous
+	This class implements the protocol RBC by Cachin, Kursawe, Petzold, and
+	Shoup@tie{}[CKPS01] for a reliable broadcast in the asynchronous
 	communication model, where @math{t < n/3} holds. Additionally, a
-	FIFO-ordered delivery based on sequence numbers has been implemented.
+	FIFO-ordered delivery mechanism based on sequence numbers has been implemented.
 	
 	@deftypecv {Member} CachinKursawePetzoldShoupRBC {size_t} n
 		This is the total number of parties @math{n} involved in this protocol.
