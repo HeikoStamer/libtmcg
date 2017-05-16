@@ -77,7 +77,7 @@ size_t mpz_shash_len
 void mpz_shash
 	(mpz_ptr r, std::string input)
 {
-	size_t hash_size = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
+	size_t hash_size = mpz_shash_len();
 	unsigned char *digest = new unsigned char[hash_size];
 	char *hex_digest = new char[(2 * hash_size) + 1];
 	
