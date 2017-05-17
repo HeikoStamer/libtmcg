@@ -684,7 +684,7 @@ probability @math{{} \le 4^{-64}}.
 @end defmac
 
 @defmac TMCG_MAX_ZNP_ITERATIONS
-Define the maximum number of iterations for the prover in cut-and-choose
+Defines the maximum number of iterations for the prover in cut-and-choose
 style zero-knowledge protocols of Schindelhauer's toolbox.
 The default value is @code{80} which limits the soundness error
 probability to @math{{} \ge 2^{-80}}, however, it avoids some obvious
@@ -713,15 +713,15 @@ and DLOG. The default value is @code{256}.
 @end defmac
 
 @defmac TMCG_AIO_HIDE_SIZE
-Define the security parameter for hiding the length of integers in
+Defines the security parameter for hiding the length of integers in
 derived classes from @code{aiounicast}. The default value is @code{256}.
 @end defmac
 
 @defmac TMCG_GCRY_MD_ALGO
-Defines the message digest algorithm (hash function) for digital signatures with
-PRab@tie{}[BR96] and Rabin encryption with SEAP@tie{}[Bo01] in @code{TMCG_SecretKey}.
-The algorithm is also used to construct an appropriate hash function @math{g()}
-for the Fiat-Shamir heuristic@tie{}[FS87]. Recently we switched
+Defines the main message digest algorithm (i.e. hash function @math{h()}) for digital signatures with
+PRab@tie{}[BR96] and mask generation for Rabin encryption with SEAP@tie{}[Bo01] in @code{TMCG_SecretKey}.
+This algorithm is also used for the construction of a special hash function @math{g()}, which is
+needed for the Fiat-Shamir heuristic@tie{}[FS87]. Recently we switched
 @footnote{In former versions of LibTMCG the default value of this symbol was @code{GCRY_MD_RMD160},
 i.e. the hash algorithm RIPEMD-160 (see Dobbertin, Bosselaers, Preneel: @emph{RIPEMD-160,
 a strengthened version of RIPEMD}, 1996), which is a function that has only an output length
@@ -729,13 +729,13 @@ of 160 bit.}
 to the hash function SHA-256 (default value @code{GCRY_MD_SHA256}@footnote{This is also a
 constant defined by the GNU Crypto Library.}) for improved collision resistance.
 Thus we gain a security level of approximately @math{2^{128}}, assuming
-that a birthday-attack is the best known attack against this hash function.
+that a birthday-attack is the best known attack against this message digest.
 
 Please note that the security of the non-interactive zero-knowledge proofs resp.
-arguments (NIZK) is proved in the so-called random oracle model, i.e., we suppose
-that the instantiated hash function behaves like an ideal random function
+arguments (NIZK) is proved in the so-called random oracle model (ROM), i.e., we
+suppose that the instantiated hash function @math{g()} behaves like an ideal random function
 (which obviously cannot hold in a real world scenario with deterministic computations).
-However, this assumption seems to be reasonable, if the hash function @math{g()} is
+However, this assumption seems to be reasonable, if the underlying hash function is
 collision-resistant and if it is carefully implemented with respect to other
 instantiations@tie{}[BR93].
 @end defmac
@@ -748,10 +748,10 @@ the HMAC based scheme with hashing algorithm SHA-256.
 @end defmac
 
 @defmac TMCG_GCRY_ENC_ALGO
-Defines the symmetric encryption algorithm (called cipher) for private channels
+Defines the symmetric encryption algorithm (sometimes also called cipher) for private channels
 established by the class @code{aiounicast}. The default value is @code{GCRY_CIPHER_AES256}
 @footnote{This is also a constant defined by the GNU Crypto Library.}, i.e.
-the cipher AES256, which is used in CFB (Cipher Feedback) mode.
+the cipher AES256, which is used by LibTMCG in CFB (Cipher Feedback) mode.
 @end defmac
 
 @defmac TMCG_KEYID_SIZE

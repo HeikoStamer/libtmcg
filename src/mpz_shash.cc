@@ -37,13 +37,13 @@ void h
 	gcry_md_hash_buffer(TMCG_GCRY_MD_ALGO, output, input, size);
 }
 
-/* hash function g() (The design is based on the ideas of [BR95].) */
+/* hash function g() (The design is based on ideas from [BR95].) */
 void g
 	(unsigned char *output, const size_t osize,
 	const unsigned char *input, const size_t isize)
 {
 	size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
-	// hopefully this truncation size does not match the border
+	// hopefully, size of truncation does not match the border
 	// of chaining variables in the compression function of h
 	size_t usesize = (mdsize / 4) + 1;
 	size_t times = (osize / usesize) + 1;
@@ -71,6 +71,7 @@ void g
 size_t mpz_shash_len
 	()
 {
+// FIXME: check wheter this length in bit matches the used subgroup size
 	return gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
 }
 

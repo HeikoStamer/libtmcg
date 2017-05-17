@@ -32,7 +32,18 @@ int main
 	assert(init_libTMCG());
 
 	// create VTMF instance for CRS (common reference string)
-	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
+	BarnettSmartVTMF_dlog *vtmf;
+	if (argc >= 2)
+	{
+		// for each argument, sizes of underlying number field and subgroup are increased by 1024 bit resp. 128 bit
+		size_t factor = (argc - 1);
+		vtmf = new BarnettSmartVTMF_dlog(TMCG_DDH_SIZE + (factor * 1024), TMCG_DLSE_SIZE + (factor * 128), true);
+	}
+	else
+	{
+		// use default security parameter from LibTMCG
+		vtmf = new BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
+	}
 
 	// check the instance
 	if (!vtmf->CheckGroup())

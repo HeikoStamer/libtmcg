@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170513])
+AC_REVISION([20170517])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.1], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -98,7 +98,7 @@ AC_DEFINE(TMCG_DDH_SIZE, 2048,
 	[Define the security parameter of the DDH-hard group G;
 	Underlying assumptions: DDH, CDH, DLOG])
 AC_DEFINE(TMCG_DLSE_SIZE, 256,
-	[Define the security parameter of the shortened exponents;
+	[Define the security parameter of the used exponents (subgroup size);
 	Underlying assumptions: DLSE (related to DDH), DLOG])
 AC_DEFINE(TMCG_AIO_HIDE_SIZE, 256,
 	[Define the security parameter for hiding the length of integers.])

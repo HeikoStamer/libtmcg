@@ -52,7 +52,7 @@
 	#endif
 	
 	#ifndef TMCG_DLSE_SIZE
-		/* Define the security parameter of the used exponents;
+		/* Define the security parameter of the used exponents (subgroup size);
 		   Underlying assumptions: DLSE (related to DDH), DLOG */
 		#define TMCG_DLSE_SIZE 256
 	#endif
