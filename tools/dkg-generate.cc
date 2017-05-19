@@ -75,7 +75,7 @@ void run_instance
 		std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
 		exit(-1);
 	}
-	// p, q, g, k
+	// parse p, q, g, k
 	for (size_t i = 0; i < 4; i++)
 	{
 		if ((mpz_set_str(crsmpz, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
@@ -109,7 +109,7 @@ void run_instance
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T_RBC, whoami, aiou2);
 	rbc->setID(myID);
 
-	// perform a simple exchange test
+	// perform a simple exchange test with debug output
 	for (size_t i = 0; i < num_xtests; i++)
 	{
 		mpz_t xtest;
@@ -243,7 +243,7 @@ void run_instance
 	size_t erroff;
 	mpz_t dsa_y, dsa_x;
 	mpz_init(dsa_y), mpz_init(dsa_x);
-	mpz_srandomm(dsa_x, vtmf->q); // choose private key for DSA
+	mpz_ssrandomm(dsa_x, vtmf->q); // choose private key for DSA
 	mpz_spowm(dsa_y, vtmf->g, dsa_x, vtmf->p); // compute public key for DSA	
 	p = gcry_mpi_new(2048);
 	q = gcry_mpi_new(2048);

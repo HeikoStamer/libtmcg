@@ -35,9 +35,11 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	(const size_t n_in, const size_t t_in, const size_t i_in,
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 	const unsigned long int fieldsize,
-	const unsigned long int subgroupsize):
-			F_size(fieldsize), G_size(subgroupsize), n(n_in),
-			t(t_in), i(i_in)
+	const unsigned long int subgroupsize,
+	bool use_very_strong_randomness_in):
+			F_size(fieldsize), G_size(subgroupsize),
+			use_very_strong_randomness(use_very_strong_randomness_in),
+			n(n_in), t(t_in), i(i_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
 		mpz_init_set(h, h_CRS);
@@ -87,8 +89,10 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	(std::istream &in,
 	const unsigned long int fieldsize,
-	const unsigned long int subgroupsize):
-			F_size(fieldsize), G_size(subgroupsize)
+	const unsigned long int subgroupsize,
+	bool use_very_strong_randomness_in):
+			F_size(fieldsize), G_size(subgroupsize),
+			use_very_strong_randomness(use_very_strong_randomness_in)
 {
 	std::string value;
 
@@ -333,8 +337,16 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		//     $f\prime_i(z) = b_{i0} + b_{i1}z + \ldots + b_{it}z^t$
 		for (size_t k = 0; k <= t; k++)
 		{
-			mpz_srandomm(a_i[k], q);
-			mpz_srandomm(b_i[k], q);
+			if (use_very_strong_randomness)
+			{
+				mpz_ssrandomm(a_i[k], q);
+				mpz_ssrandomm(b_i[k], q);
+			}
+			else
+			{
+				mpz_srandomm(a_i[k], q);
+				mpz_srandomm(b_i[k], q);
+			}
 		}
 		// Let $z_i = a_{i0} = f_i(0)$.
 		mpz_set(z_i[i], a_i[0]);
