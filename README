@@ -125,8 +125,8 @@ Security
 
 Requirements
 ------------
-  You need the following libraries and appropriate header files to build
-  (GNU gcc/g++ version 4.x.y or higher is recommended) LibTMCG successfully:
+  You need the following programs, libraries and appropriate header files to
+  build (GNU gcc/g++ >= 5.4.y or higher is recommended) LibTMCG successfully:
 
   * GNU Multiple Precision Arithmetic Library (libgmp), version >= 4.2.0,
     http://www.swox.com/gmp/
@@ -135,6 +135,8 @@ Requirements
     ftp://ftp.gnupg.org/
   * GNU Privacy Guard Error Code Library (libgpg-error), version >= 1.12,
     ftp://ftp.gnupg.org/
+  * GNU info program and utilities (texinfo), version >= 6.0
+    https://www.gnu.org/software/texinfo/
 
   The library was tested (++ successful, -- erroneous) on the following
   platforms with the given compilers, respectively:
