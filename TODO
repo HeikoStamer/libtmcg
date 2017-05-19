@@ -1,3 +1,4 @@
+* use very strong random generation of libgcrypt for dkg-generate
 + use secure memory allocation from libgcrypt
 + improve oracle function g() by including a second hash function (SHA3)
 + add interactive versions of Chaum-Pedersen PoK of dlog equality
