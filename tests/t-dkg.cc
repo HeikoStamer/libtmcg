@@ -116,7 +116,7 @@ void start_instance
 			GennaroJareckiKrawczykRabinDKG *dkg;
 			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
 			dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami,
-				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+				vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
 			assert(dkg->CheckGroup());
 
 			// create asynchronous authenticated unicast channels
