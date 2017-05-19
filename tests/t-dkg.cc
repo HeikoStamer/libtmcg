@@ -112,7 +112,7 @@ void start_instance
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 
-			// create an instance of DKG
+			// create an instance of DKG (without using very strong randomness)
 			GennaroJareckiKrawczykRabinDKG *dkg;
 			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
 			dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami,
