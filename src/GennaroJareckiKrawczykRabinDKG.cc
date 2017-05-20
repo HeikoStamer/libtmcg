@@ -92,7 +92,8 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	const unsigned long int subgroupsize,
 	bool use_very_strong_randomness_in):
 			F_size(fieldsize), G_size(subgroupsize),
-			use_very_strong_randomness(use_very_strong_randomness_in)
+			use_very_strong_randomness(use_very_strong_randomness_in),
+			n(0), t(0), i(0)
 {
 	std::string value;
 
@@ -109,7 +110,7 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	size_t qual_size = 0;
 	std::getline(in, value);
 	std::stringstream(value) >> qual_size;
-	for (size_t i = 0; i < qual_size; i++)
+	for (size_t i = 0; (i < qual_size) && (i < n); i++)
 	{
 		size_t who;
 		std::getline(in, value);
