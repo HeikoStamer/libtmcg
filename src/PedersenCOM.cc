@@ -157,7 +157,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	}
 	
 	// Do the precomputation for the fast exponentiation.
-	for (size_t i = 0; i < g.size() && i < TMCG_MAX_FPOWM_N; i++)
+	for (size_t i = 0; (i < g.size()) && (i < TMCG_MAX_FPOWM_N); i++)
 	{
 		mpz_t *tmp = new mpz_t[TMCG_MAX_FPOWM_T]();
 		mpz_fpowm_init(tmp);
@@ -169,6 +169,53 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
+void PedersenCommitmentScheme::SetupGenerators_publiccoin
+	(mpz_srcptr a_in, bool without_h)
+{
+	// initialize
+	mpz_t a, foo;
+	mpz_init_set(a, a_in), mpz_init(foo);
+	mpz_sub_ui(foo, p, 1L); // compute $p-1$
+
+	// verifiable generation of $h, g_1, \ldots, g_n$
+	std::stringstream U;
+	U << "LibTMCG|" << p << "|" << q << "|hggen|" << a << "|";
+
+	// generating $h$, if necessary
+	if (!without_h)
+	{
+		do
+		{
+			mpz_shash(a, U.str());
+			mpz_powm(h, a, k, p);
+			U << h << "|";
+		}
+		while (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L) || 
+			!mpz_cmp(h, foo)); // check $1 < h < p-1$
+		mpz_fpowm_precompute(fpowm_table_h, h, p, 
+			mpz_sizeinbase(q, 2L));
+	}
+
+	// generating $g_1, \ldots, g_n$
+	for (size_t i = 0; i < g.size(); i++)
+	{
+		do
+		{
+			mpz_shash(a, U.str());
+			mpz_powm(g[i], a, k, p);
+			U << g[i] << "|";
+		}
+		while (!mpz_cmp_ui(g[i], 0L) || !mpz_cmp_ui(g[i], 1L) ||
+			!mpz_cmp(g[i], foo)); // check $1 < g_i < p-1$
+		if (i < TMCG_MAX_FPOWM_N)
+			mpz_fpowm_precompute(fpowm_table_g[i], g[i], p,
+				mpz_sizeinbase(q, 2L));
+	}
+
+	// release
+	mpz_clear(a), mpz_clear(foo);
+}
+
 bool PedersenCommitmentScheme::SetupGenerators_publiccoin
 	(const size_t whoami, aiounicast *aiou, 
 	CachinKursawePetzoldShoupRBC *rbc,
@@ -176,10 +223,8 @@ bool PedersenCommitmentScheme::SetupGenerators_publiccoin
 	bool without_h)
 {
 	// initialize
-	mpz_t a, foo;
+	mpz_t a;
 	mpz_init_set_ui(a, 0L);
-	mpz_init(foo);
-	mpz_sub_ui(foo, p, 1L); // compute $p-1$
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -191,47 +236,15 @@ bool PedersenCommitmentScheme::SetupGenerators_publiccoin
 		// check EDCF
 		if (!edcf->CheckGroup())
 		{
-			err << "CheckGroup() of EDCF failed" << std::endl;
+			err << "CheckGroup() for EDCF failed" << std::endl;
 			throw false;
 		}
 
-		// flipping commonly a public coin
-		std::stringstream U;
-		U << "LibTMCG|" << p << "|" << q << "|hggen|";
+		// flip commonly public coins to get $a$ and use it as seed
+		// value for verifiable generation of $h, g_1, \ldots, g_n$
 		if (!edcf->Flip(whoami, a, aiou, rbc, err))
 			throw false;
-		U << a << "|";
-
-		// generating $h$, if necessary
-		if (!without_h)
-		{
-			do
-			{
-				mpz_shash(a, U.str());
-				mpz_powm(h, a, k, p);
-				U << h << "|";
-			}
-			while (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L) || 
-				!mpz_cmp(h, foo)); // check $1 < h < p-1$
-			mpz_fpowm_precompute(fpowm_table_h, h, p, 
-				mpz_sizeinbase(q, 2L));
-		}
-
-		// generating $g_1, \ldots, g_n$
-		for (size_t i = 0; i < g.size(); i++)
-		{
-			do
-			{
-				mpz_shash(a, U.str());
-				mpz_powm(g[i], a, k, p);
-				U << g[i] << "|";
-			}
-			while (!mpz_cmp_ui(g[i], 0L) || !mpz_cmp_ui(g[i], 1L) ||
-				!mpz_cmp(g[i], foo)); // check $1 < g_i < p-1$
-			if (i < TMCG_MAX_FPOWM_N)
-				mpz_fpowm_precompute(fpowm_table_g[i], g[i], p,
-					mpz_sizeinbase(q, 2L));
-		}
+		SetupGenerators_publiccoin(a, without_h);
 
 		// finish
 		throw true;
@@ -241,7 +254,7 @@ bool PedersenCommitmentScheme::SetupGenerators_publiccoin
 		// unset ID for RBC
 		rbc->unsetID();
 		
-		mpz_clear(a), mpz_clear(foo);
+		mpz_clear(a);
 		return return_value;
 	}
 }

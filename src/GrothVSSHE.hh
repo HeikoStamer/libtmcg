@@ -48,7 +48,7 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
-	// Pedersen commitment scheme
+	// generalized Pedersen commitment scheme
 	#include "PedersenCOM.hh"
 
 	// erasure-free distributed coinflip protocol [JL00]
