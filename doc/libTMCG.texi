@@ -2643,14 +2643,14 @@ of the same instance.
 	@deftypemethod GrothVSSHE void SetupGenerators_publiccoin (@code{mpz_srcptr} a)
 		This is a simple method to setup the generators @math{g_1, \ldots, g_n}
 		of the internal Pedersen commitment scheme by using a common random
-		value @var{a}. Note that the same @var{a} must be used by all participants
+		value @var{a} for a verifiable generation procedure similar to FIPS 186-3
+		A.2.3. Note that the same @var{a} must be used by all participants
 		and that this value should be different for each game session.
 	@end deftypemethod
 
 	@deftypemethod GrothVSSHE bool SetupGenerators_publiccoin (@code{size_t} whoami, @code{aiounicast*} aiou, @code{CachinKursawePetzoldShoupRBC*} rbc, @code{JareckiLysyanskayaEDCF*} edcf, @code{std::ostream&} err)
 		This method setup the generators @math{g_1, \ldots, g_n} of the internal
-		Pedersen commitment scheme by using a distributed coinflip
-		protocol@tie{}[JL00].
+		Pedersen commitment scheme by using a distributed coinflip protocol@tie{}[JL00].
 		Assuming at least one honest player these values are randomly and uniformly
 		chosen from @math{{\bf Z}_q} such that @math{\log_{g_i} h} and @math{\log_h g_i}
 		are unkown, for all @math{i = 1, \ldots, n}.
@@ -3815,14 +3815,18 @@ Discrete-Log Based Cryptosystems}, Journal of Cryptology, Vol. 20 Nr. 1,
 Springer 2007). The program @code{dkg-generate} provides an instantiation
 for the ElGamal cryptosystem with output of the keys in OpenPGP format (see J. Callas,
 L. Donnerhacke, H. Finney, D. Shaw, R. Thayer: @emph{OpenPGP Message Format},
-Network Working Group, Request for Comments: 4880, November 2007). Due to the
-interactiveness of the protocol a lot of messages between the participating
+Network Working Group, Request for Comments: 4880, November 2007).
+
+Due to the interactiveness of the protocol a lot of messages between participating
 parties have to be exchanged in a secure way. We employ @uref{https://gnunet.org/,,GNUnet}, 
 and in particular its mesh routed CADET service, to establish private and
-broadcast channels for this message exchange.
+broadcast channels for this message exchange. The well-known reliable broadcast 
+protocol (@pxref{CachinKursawePetzoldShoupRBC}) is used as mechanism to achieve some
+validity, consistency, and totality in a most likely asynchronous communication
+environment for @math{t < n/3}.
 
 Additionally, the program @code{dkg-encrypt} encrypts a text message for a
-given public key in OpenPGP format. A corresponding threshold decryption
+given public key in OpenPGP format. Conversely, a corresponding threshold decryption
 protocol (see Ronald Cramer, Rosario Gennaro, and Berry Schoenmakers: @emph{A Secure
 and Optimally Efficient Multi-Authority Election Scheme}, Advances in Cryptology --
 EUROCRYPT '97, LNCS 1233, pp. 103--118, 1997) has been implemented as
@@ -3830,11 +3834,11 @@ program @code{dkg-decrypt}. It provides an interactive version and a non-interac
 version for computing, verifying, and combining the required decryption shares.
   
 Please note that for building @code{dkg-generate} and the interactive version of
-@code{dkg-decrypt} the development files for a recent GNUnet version (at least
+@code{dkg-decrypt} the development files for a very recent GNUnet version (at least
 v0.10.2, which is when writing these lines still not yet released) must be present
 at configure-time and compile-time of LibTMCG.
 
-The current implementation is in experimental state and should not be used
+The current implementation is in @emph{experimental state} and should not be used
 in production environments. Please report any bugs to the maintainer of LibTMCG. 
 
 @c **********************************************************
