@@ -2565,10 +2565,12 @@ Since version 1.2.0 of LibTMCG we use a two-party version of a distributed coin
 flipping protocol by Jarecki and Lysyanskaya@tie{}[JL00] to protect against
 malicious verifiers attacking the zero-knowledge property. Since version 1.3.0
 there is an additional method for generating the bases @math{g_1, \ldots, g_n}
-of the Pedersen commitment scheme by distributed coin flipping. This step is
-necessary in order to ensure, that a malicious prover cannot compute
-@math{\log_{g_i} h} resp. @math{\log_h g_i}, for some @math{i = 1, \ldots, n},
-and thus erroneously pass the shuffle verification.
+of the Pedersen commitment scheme by distributed coin flipping and a verifiable
+generation procedure similar to FIPS 186-3 A.2.3. This step is important in order
+to ensure, that a malicious prover cannot compute @math{\log_{g_i} h} resp.
+@math{\log_h g_i}, for some @math{i = 1, \ldots, n}, and thus erroneously pass
+the shuffle verification. It improves our former security model which considered
+only a passive adversary.
 
 Further, to the best of our knowledge it is not known, whether Groth's protocol
 retains the zero-knowledge property when it is executed in a concurrent setting.
@@ -2650,7 +2652,8 @@ of the same instance.
 
 	@deftypemethod GrothVSSHE bool SetupGenerators_publiccoin (@code{size_t} whoami, @code{aiounicast*} aiou, @code{CachinKursawePetzoldShoupRBC*} rbc, @code{JareckiLysyanskayaEDCF*} edcf, @code{std::ostream&} err)
 		This method setup the generators @math{g_1, \ldots, g_n} of the internal
-		Pedersen commitment scheme by using a distributed coinflip protocol@tie{}[JL00].
+		Pedersen commitment scheme by using a distributed coinflip protocol@tie{}[JL00]
+		and a verifiable generation procedure similar to FIPS 186-3 A.2.3.
 		Assuming at least one honest player these values are randomly and uniformly
 		chosen from @math{{\bf Z}_q} such that @math{\log_{g_i} h} and @math{\log_h g_i}
 		are unkown, for all @math{i = 1, \ldots, n}.
