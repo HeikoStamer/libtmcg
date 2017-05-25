@@ -48,10 +48,16 @@ GrothSKC::GrothSKC
 	com = new PedersenCommitmentScheme(n, in, fieldsize, subgroupsize);
 }
 
+void GrothSKC::SetupGenerators_publiccoin
+	(mpz_srcptr a)
+{
+	com->SetupGenerators_publiccoin(a);
+}
+
 bool GrothSKC::SetupGenerators_publiccoin
-			(const size_t whoami, aiounicast *aiou,
-			CachinKursawePetzoldShoupRBC *rbc,
-			JareckiLysyanskayaEDCF *edcf, std::ostream &err)
+	(const size_t whoami, aiounicast *aiou,
+	CachinKursawePetzoldShoupRBC *rbc,
+	JareckiLysyanskayaEDCF *edcf, std::ostream &err)
 {
 	return com->SetupGenerators_publiccoin(whoami, aiou, rbc, edcf, err);
 }
@@ -1825,14 +1831,26 @@ GrothVSSHE::GrothVSSHE
 	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
+void GrothVSSHE::SetupGenerators_publiccoin
+	(mpz_srcptr a)
+{
+	com->SetupGenerators_publiccoin(a);
+	// reinitialization of Groth's SKC argument
+	std::stringstream lej;
+	com->PublishGroup(lej);
+	delete skc;
+	skc = new GrothSKC(com->g.size(), lej, l_e, F_size, G_size);
+}
+
 bool GrothVSSHE::SetupGenerators_publiccoin
 			(const size_t whoami, aiounicast *aiou,
 			CachinKursawePetzoldShoupRBC *rbc,
 			JareckiLysyanskayaEDCF *edcf, std::ostream &err)
 {
-	std::stringstream lej;
 	if (!com->SetupGenerators_publiccoin(whoami, aiou, rbc, edcf, err))
 		return false;
+	// reinitialization of Groth's SKC argument
+	std::stringstream lej;
 	com->PublishGroup(lej);
 	delete skc;
 	skc = new GrothSKC(com->g.size(), lej, l_e, F_size, G_size);

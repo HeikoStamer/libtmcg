@@ -71,6 +71,8 @@ class GrothSKC
 			unsigned long int ell_e = TMCG_GROTH_L_E,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		void SetupGenerators_publiccoin
+			(mpz_srcptr a);
 		bool SetupGenerators_publiccoin
 			(const size_t whoami, aiounicast *aiou,
 			CachinKursawePetzoldShoupRBC *rbc,
@@ -144,6 +146,8 @@ class GrothVSSHE
 			unsigned long int ell_e = TMCG_GROTH_L_E,
 			unsigned long int fieldsize = TMCG_DDH_SIZE,
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+		void SetupGenerators_publiccoin
+			(mpz_srcptr a);
 		bool SetupGenerators_publiccoin
 			(const size_t whoami, aiounicast *aiou,
 			CachinKursawePetzoldShoupRBC *rbc,

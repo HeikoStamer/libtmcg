@@ -2640,6 +2640,13 @@ of the same instance.
 		performed.
 	@end deftypeop
 
+	@deftypemethod GrothVSSHE void SetupGenerators_publiccoin (@code{mpz_srcptr} a)
+		This is a simple method to setup the generators @math{g_1, \ldots, g_n}
+		of the internal Pedersen commitment scheme by using a common random
+		value @var{a}. Note that the same @var{a} must be used by all participants
+		and that this value should be different for each game session.
+	@end deftypemethod
+
 	@deftypemethod GrothVSSHE bool SetupGenerators_publiccoin (@code{size_t} whoami, @code{aiounicast*} aiou, @code{CachinKursawePetzoldShoupRBC*} rbc, @code{JareckiLysyanskayaEDCF*} edcf, @code{std::ostream&} err)
 		This method setup the generators @math{g_1, \ldots, g_n} of the internal
 		Pedersen commitment scheme by using a distributed coinflip
@@ -3454,9 +3461,10 @@ Finally, every player must finalize the key generation protocol.
 vtmf->KeyGenerationProtocol_Finalize();
 @end example
 @end cartouche
-For some sophisticated parts of LibTMCG a distributed coin flipping protocol is
-neccesary. It protects the honest-verifier zero-knowledge proofs or
-arguments against malicious verifiers. So, all players should execute:
+For some sophisticated parts of LibTMCG a distributed coin flipping protocol
+is neccesary. It protects the honest-verifier zero-knowledge proofs or
+arguments against malicious verifiers. So, all players should execute
+as an initialization procedure:
 @cartouche
 @example
 JareckiLysyanskayaEDCF *edcf;
@@ -3504,8 +3512,11 @@ if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) ||
     std::cerr << "VSSHE: Encryption scheme does not match!" << std::endl;
 @end example
 @end cartouche
-Last but not least the setup of internal generators must be accomplished by
-all players (@pxref{GrothVSSHE}).
+Last but not least the setup of some internal generators must be accomplished
+by all players in a verifiable way (@pxref{GrothVSSHE}).@footnote{There is also
+the possibility to use the simple variant of @code{SetupGenerators_publiccoin}
+with the already generated public key @math{h} as a common random value. However,
+this value should be refreshed periodically.}
 @cartouche
 @example
 std::stringstream err_log;
