@@ -109,9 +109,10 @@ dkg-generate -w 10 -t 2 WS3KHEYKKF6QQ6NDQKKCJ2B374RSSXJ05TB5D9W9FYKPPEJ3QKFG XS7
 .RE
 .fi
 .PP
-Each party must run such a process with identical parameter set, i.e., setup t-resilience where parameter t is fixed. Note that, e.g.
-2-resilience, means that later at least three participants are needed in order to decrypt a message for the generated ElGamal subkey.
-The program waits ten minutes before the main DKG protocol is started, because establishing a CADET channel with GNUnet may take some time.
+Each party must run such a process with identical parameter set, i.e., please configure the same t-resilience. Note that, e.g.
+2-resilience, means that later at least three participants are needed in order to decrypt a message for the generated common
+ElGamal subkey. The program waits ten minutes before the main DKG protocol is started, because establishing a CADET channel
+with GNUnet may take some time.
 
 .SH "SEE ALSO"
 .BR dkg\-encrypt (1),
