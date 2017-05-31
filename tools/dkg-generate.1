@@ -30,10 +30,11 @@ be kept confidential.
 .PP
 The parameter t determines how many parties may deviate from the protocol
 during the key generation and later during threshold decryption. At least
-t+1 participants are needed to recover or to decrypt a OpenPGP message.
-This parameter can be adjusted by using the option "-t". The default value
-is (n-1)/2 where n is the number of participants. Since 0-resilience and
-other deviations are not desireable, the program ensures that 0 < t <= n holds. 
+t+1 participants are needed to recover a key share or to decrypt a OpenPGP
+message. This parameter can be adjusted by using the option "-t". The default
+value is (n-1)/2 where n is the number of participants. Since 0-resilience and
+other artificial deviations are not desireable, the program ensures by
+clipping that 0 < t <= n holds.
 .PP
 The underlying DDH-hard group, i.e. a prime order subgroup of special form,
 can be adjusted by using the option "-g". The included program dkg\-gencrs
@@ -41,12 +42,13 @@ generates a corresponding common reference string on that all participants
 must agree. The generated group parameters are verifiable up to a certain
 level. However, it is recommended that this crucial part is either
 accomplished by some trusted members or all participants together. Without
-this option the hard coded group of the source code is used by default.
+this option the hard coded group of the source code (|p| = 2048 bit,
+|q| = 256 bit) is used by default.
 .PP
 With the option "-w" the number of minutes can be adjusted until the DKG
 protocol is started. The default value is 5. It is crucial for the key
 generation that all participants are connected with GNUnet CADET within
-this waiting time.
+this waiting time. Otherwise the distributed key generation may fail.
 
 .SH OPTIONS
 Arguments mandatory for long options are also mandatory for short options.
