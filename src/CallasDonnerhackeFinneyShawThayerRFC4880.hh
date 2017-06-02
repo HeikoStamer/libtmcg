@@ -181,6 +181,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_byte_t algo);
 		static size_t AlgorithmIVLength
 			(const tmcg_byte_t algo);
+		static int AlgorithmSymGCRY
+			(const tmcg_byte_t algo);
 		static size_t AlgorithmHashLength
 			(const tmcg_byte_t algo);
 		static int AlgorithmHashGCRY
@@ -291,6 +293,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static gcry_error_t SymmetricEncryptAES256
 			(const tmcg_octets_t &in, tmcg_octets_t &seskey, tmcg_octets_t &prefix,
 			const bool resync, tmcg_octets_t &out);
+		static gcry_error_t SymmetricDecrypt
+			(const tmcg_octets_t &in, tmcg_octets_t &seskey, tmcg_octets_t &prefix,
+			const bool resync, const tmcg_byte_t algo, tmcg_octets_t &out);
 		static gcry_error_t SymmetricDecryptAES256
 			(const tmcg_octets_t &in, tmcg_octets_t &seskey, tmcg_octets_t &prefix,
 			const bool resync, tmcg_octets_t &out);

@@ -86,6 +86,34 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength
 	}
 }
 
+int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmSymGCRY
+	(const tmcg_byte_t algo)
+{
+	switch (algo)
+	{
+		case 0: // Plaintext or unencrypted data
+			return GCRY_CIPHER_NONE;
+		case 1: // IDEA
+			return GCRY_CIPHER_IDEA;
+		case 2: // TripleDES (DES-EDE, 168 bit key derived from 192)
+			return GCRY_CIPHER_3DES;
+		case 3: // CAST5 (128 bit key, as per [RFC2144])
+			return GCRY_CIPHER_CAST5;
+		case 4: // Blowfish (128 bit key, 16 rounds)
+			return GCRY_CIPHER_BLOWFISH;
+		case 7: // AES with 128-bit key
+			return GCRY_CIPHER_AES;
+		case 8: // AES with 192-bit key
+			return GCRY_CIPHER_AES192;
+		case 9: // AES with 256-bit key
+			return GCRY_CIPHER_AES256;
+		case 10: // Twofish with 256-bit key
+			return GCRY_CIPHER_TWOFISH;
+		default:
+			return 0;
+	}
+}
+
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashLength
 	(const tmcg_byte_t algo)
 {
@@ -2475,15 +2503,15 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	return ret;
 }
 
-gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	(const tmcg_octets_t &in, tmcg_octets_t &seskey, tmcg_octets_t &prefix, const bool resync,
-	 tmcg_octets_t &out)
+	 const tmcg_byte_t algo, tmcg_octets_t &out)
 {
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t chksum = 0;
-	size_t bs = AlgorithmIVLength(9); // get block size of AES256
-	size_t ks = AlgorithmKeyLength(9); // get key size of AES256
+	size_t bs = AlgorithmIVLength(algo); // get block size of algorithm
+	size_t ks = AlgorithmKeyLength(algo); // get key size of algorithm
 	tmcg_byte_t key[ks], b;
 
 	// The symmetric cipher used may be specified in a Public-Key or
@@ -2495,11 +2523,11 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
 	// Then a two-octet checksum is appended, which is equal to the
 	// sum of the preceding session key octets, not including the
 	// algorithm identifier, modulo 65536.
-	if (seskey.size() == (sizeof(key) + 3))
+	if (seskey.size() == 0)
+		return -1; // error: no session key provided
+	else if (seskey.size() == (sizeof(key) + 3))
 	{
 		// use the provided session key and calculate checksum
-		if (seskey[0] != 9)
-			return -1; // error: algorithm is not AES256
 		for (size_t i = 0; i < sizeof(key); i++)
 		{
 			key[i] = seskey[1+i]; // copy the session key
@@ -2513,7 +2541,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
 	else if (seskey.size() == sizeof(key))
 	{
 		// use the provided session key and append checksum
-		seskey.insert(seskey.begin(), 9); // constant for AES256
+		seskey.insert(seskey.begin(), algo); // specified algorithm
 		for (size_t i = 0; i < sizeof(key); i++)
 		{
 			key[i] = seskey[1+i]; // copy the session key
@@ -2524,7 +2552,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
 		seskey.push_back(chksum);
 	}
 	else
-		return -1; // error: no session key provided
+		return -1; // error: bad session key provided
 	if (in.size() < (bs + 2))
 		return -1; // error: input too short (no encrypted prefix)
 	// The data is encrypted in CFB mode, with a CFB shift size equal to
@@ -2542,7 +2570,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
 	// After encrypting the first block-size-plus-two octets, the CFB state
 	// is resynchronized. The last block-size octets of ciphertext are
 	// passed through the cipher and the block boundary is reset.
-	ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB,
+	ret = gcry_cipher_open(&hd, AlgorithmSymGCRY(algo), GCRY_CIPHER_MODE_CFB,
 		GCRY_CIPHER_ENABLE_SYNC);
 	if (ret)
 	{
@@ -2598,6 +2626,13 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
 	gcry_cipher_close(hd);
 
 	return ret;
+}
+
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
+	(const tmcg_octets_t &in, tmcg_octets_t &seskey, tmcg_octets_t &prefix, const bool resync,
+	 tmcg_octets_t &out)
+{
+	return CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt(in, seskey, prefix, resync, 9, out);
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal

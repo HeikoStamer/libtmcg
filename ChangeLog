@@ -1,3 +1,4 @@
+* [2017-06-02] RFC4880: added generic SymmetricDecrypt() for full RFC compliance
 * [2017-05-25] release 1.3.1 of LibTMCG
 * [2017-05-25] VSSHE: added a simple variant of SetupGenerators_publiccoin()
 * [2017-05-19] DKG: use very strong randomness from libgcrypt (long term keys)
