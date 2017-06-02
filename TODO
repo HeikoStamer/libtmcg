@@ -1,3 +1,4 @@
+* dkg-gencrs: use EDCF to generate CRS by coin-flips of all participants
 * VTMF: protect KeyGenerationProtocol_ProveKey_interactive() with EDCF
 + use secure memory allocation from libgcrypt
 + improve oracle function g() by including a second hash function (SHA3)
