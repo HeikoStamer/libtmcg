@@ -98,30 +98,30 @@
 		uint32_t sigcreationtime;
 		tmcg_byte_t issuer[8]; // key ID
 		uint32_t keyexpirationtime;
-		tmcg_byte_t psa[255]; // array of 1-octet flags
-		tmcg_byte_t pha[255]; // array of 1-octet flags
-		tmcg_byte_t pca[255]; // array of 1-octet flags
+		tmcg_byte_t psa[2048]; // array of 1-octet flags
+		tmcg_byte_t pha[2048]; // array of 1-octet flags
+		tmcg_byte_t pca[2048]; // array of 1-octet flags
 		uint32_t sigexpirationtime;
 		bool exportablecertification;
 		bool revocable;
 		tmcg_byte_t trustlevel;
 		tmcg_byte_t trustamount;
-		tmcg_byte_t trustregex[1024]; // string
+		tmcg_byte_t trustregex[2048]; // string
 		tmcg_byte_t revocationkey_class;
 		tmcg_byte_t revocationkey_pkalgo; // id of public-key algorithm
 		tmcg_byte_t revocationkey_fingerprint[20]; // SHA-1 based fingerprint
-		tmcg_byte_t keyserverpreferences[255]; // array of 1-octet flags
-		tmcg_byte_t preferedkeyserver[1024]; // string
+		tmcg_byte_t keyserverpreferences[2048]; // array of 1-octet flags
+		tmcg_byte_t preferedkeyserver[2048]; // string
 		bool primaryuserid;
-		tmcg_byte_t policyuri[1024]; // string
+		tmcg_byte_t policyuri[2048]; // string
 		tmcg_byte_t keyflags[32]; // n-octets of flags
-		tmcg_byte_t signersuserid[1024]; // string
+		tmcg_byte_t signersuserid[2048]; // string
 		tmcg_byte_t revocationcode;
-		tmcg_byte_t revocationreason[1024]; // string
+		tmcg_byte_t revocationreason[2048]; // string
 		tmcg_byte_t features[32]; // n-octets of flags
 		tmcg_byte_t signaturetarget_pkalgo; // id of public-key algorithm
 		tmcg_byte_t signaturetarget_hashalgo; // id of hash algorithm
-		tmcg_byte_t signaturetarget_hash[1024]; // n-octets hash
+		tmcg_byte_t signaturetarget_hash[2048]; // n-octets hash
 		tmcg_byte_t embeddedsignature[4096]; // signature packet body
 		tmcg_byte_t left[2];
 		gcry_mpi_t md;
@@ -153,11 +153,11 @@
 		size_t compdatalen;
 		tmcg_byte_t dataformat;
 		size_t datafilenamelen;
-		tmcg_byte_t datafilename[255]; // filename of specified length
+		tmcg_byte_t datafilename[2048]; // filename of specified length
 		uint32_t datatime;
 		tmcg_byte_t *data; // pointer to an allocated buffer with data
 		size_t datalen;
-		tmcg_byte_t uid[1024]; // string
+		tmcg_byte_t uid[2048]; // string
 		tmcg_byte_t mdc_hash[20];
 	} tmcg_openpgp_packet_ctx;
 
