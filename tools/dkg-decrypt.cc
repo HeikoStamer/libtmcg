@@ -51,6 +51,7 @@ gcry_mpi_t 			dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_g, elg_y, elg_x;
 gcry_mpi_t 			gk, myk;
 gcry_sexp_t			elgkey;
 tmcg_octets_t			subkeyid, enc;
+tmcg_byte_t			symalgo = 0;
 bool				have_seipd = false;
 int 				opt_verbose = 0;
 
@@ -775,6 +776,8 @@ void parse_message
 			switch (ptag)
 			{
 				case 1: // Public-Key Encrypted Session Key
+					if (opt_verbose)
+						std::cout << " pkalgo = " << ctx.pkalgo << std::endl;
 					if (ctx.pkalgo != 16)
 					{
 						std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
@@ -795,8 +798,11 @@ void parse_message
 						std::cerr << "WARNING: pkesk-key ID does not match subkey ID" << std::endl;
 						break;
 					}
+					if (opt_verbose)
+						std::cout << " symalgo = " << ctx.symalgo << std::endl;
 					have_pkesk = true;
 					gk = ctx.gk, myk = ctx.myk;
+					symalgo = ctx.symalgo;
 					break;
 				case 9: // Symmetrically Encrypted Data
 					have_sed = true;
@@ -1117,12 +1123,12 @@ void decrypt_message
 	gcry_error_t ret;
 	tmcg_octets_t prefix, litmdc;
 	if (have_seipd)
-		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256(in, key, prefix, false, litmdc);
+		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt(in, key, prefix, false, symalgo, litmdc);
 	else
-		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256(in, key, prefix, true, litmdc);
+		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt(in, key, prefix, true, symalgo, litmdc);
 	if (ret)
 	{
-		std::cerr << "ERROR: SymmetricDecryptAES256() failed" << std::endl;
+		std::cerr << "ERROR: SymmetricDecrypt() failed" << std::endl;
 		exit(-1);
 	}
 	// parse content
