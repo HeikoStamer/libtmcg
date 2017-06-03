@@ -1,7 +1,7 @@
 .TH DKG\-DECRYPT "1" "May 2017" "LibTMCG 1.3.2" "User Commands"
 
 .SH NAME
-dkg\-decrypt \- threshold decryption for OpenPGP
+dkg\-decrypt \- threshold decryption for OpenPGP (only ElGamal)
 
 .SH SYNOPSIS
 .B dkg\-decrypt
@@ -10,21 +10,21 @@ dkg\-decrypt \- threshold decryption for OpenPGP
 
 .SH DESCRIPTION
 This program decrypts a message given in armored OpenPGP format, where the
-private key has been shared between multiple parties by
+private ElGamal key has been shared between multiple parties by
 .BR dkg\-generate (1).
 For successful decryption at least t+1 decryption shares from different 
-participants are needed. The threshold parameter t was fixed during key 
-generation and cannot changed at this stage of processing.
+participants are required. The threshold parameter t has been fixed during
+distributed key generation and cannot changed at this stage of processing.
 .PP
-Currently, only ElGamal and AES\-256 are supported as cryptographic algorithms.
+Currently, only ElGamal is supported as public-key algorithm.
 .PP
 There are two modes of operation: First, the interactive mode employs GNUnet
 for exchange of the decryption shares, where PEERS must be the same list of
-GNUnet peer identities used during key generation with
+GNUnet peer identities used during distributed key generation with
 .BR dkg\-generate (1).
 Second, in the non\-interactive mode the parameter PEERS contains only the
-GNUnet identity of this peer. Then the corresponding decryption share is
-written to STDOUT, and the user must exchange the shares manually before
+GNUnet identity of the calling peer. Then the corresponding decryption share
+is written to STDOUT, and the user must exchange enough shares manually before
 decryption can start.
 
 .SH OPTIONS
@@ -36,6 +36,9 @@ use GNUnet configuration file FILENAME (only interactive mode)
 \fB\-h\fR, \fB\-\-help\fR
 print this help
 .TP
+\fB\-i\fR, \fB\-\-input\fR=\fI\,FILENAME\/\fR
+read encrypted message from FILENAME
+.TP
 \fB\-L\fR, \fB\-\-log\fR=\fI\,LOGLEVEL\/\fR
 configure logging to use LOGLEVEL
 .TP
@@ -44,6 +47,9 @@ configure logging to write logs to FILENAME
 .TP
 \fB\-n\fR, \fB\-\-non\-interactive\fR
 switch to non\-interactive mode
+.TP
+\fB\-o\fR, \fB\-\-output\fR=\fI\,FILENAME\/\fR
+write decrypted message to FILENAME
 .TP
 \fB\-p\fR, \fB\-\-port\fR
 GNUnet CADET port to listen/connect (only interactive mode)

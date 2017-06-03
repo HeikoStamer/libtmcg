@@ -55,6 +55,11 @@ tmcg_byte_t			symalgo = 0;
 bool				have_seipd = false;
 int 				opt_verbose = 0;
 
+#ifdef GNUNET
+char				*gnunet_opt_ifilename = NULL;
+char				*gnunet_opt_ofilename = NULL;
+#endif
+
 void init_dkg
 	(const std::string filename, size_t &whoami)
 {
@@ -122,6 +127,51 @@ void read_private_key
 	}
 	secifs.close();
 	result = dkgseckey.str();
+}
+
+void read_message
+	(const std::string ifilename, std::string &result)
+{
+	// read the encrypted message from file
+	std::string line;
+	std::stringstream msg;
+	std::ifstream ifs(ifilename.c_str(), std::ifstream::in);
+	if (!ifs.is_open())
+	{
+		std::cerr << "ERROR: cannot open input file" << std::endl;
+		exit(-1);
+	}
+	while (std::getline(ifs, line))
+		msg << line << std::endl;
+	if (!ifs.eof())
+	{
+		std::cerr << "ERROR: reading until EOF failed" << std::endl;
+		exit(-1);
+	}
+	ifs.close();
+	result = msg.str();
+}
+
+void write_message
+	(const std::string ofilename, const tmcg_octets_t &msg)
+{
+	// write out the decrypted message
+	std::ofstream ofs(ofilename.c_str(), std::ofstream::out);
+	if (!ofs.good())
+	{
+		std::cerr << "ERROR: opening output file failed" << std::endl;
+		exit(-1);
+	}
+	for (size_t i = 0; i < msg.size(); i++)
+	{
+		ofs << msg[i];
+		if (!ofs.good())
+		{
+			std::cerr << "ERROR: writing to output file failed" << std::endl;
+			exit(-1);
+		}
+	}
+	ofs.close();
 }
 
 void print_message
@@ -1373,7 +1423,16 @@ void run_instance
 	release_mpis();
 	release_keys();
 	done_dkg();
+
+	// output result
+#ifdef GNUNET
+	if (gnunet_opt_ofilename != NULL)
+		write_message(gnunet_opt_ofilename, msg);
+	else
+		print_message(msg);
+#else
 	print_message(msg);
+#endif
 }
 
 void fork_instance
@@ -1412,10 +1471,61 @@ int gnunet_opt_verbose = 0;
 int main
 	(int argc, char *const *argv)
 {
+	static const char *usage = "dkg-decrypt [OPTIONS] PEERS";
+#ifdef GNUNET
+	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
+		GNUNET_GETOPT_option_string('i',
+			"input",
+			"FILENAME",
+			"read encrypted message from FILENAME",
+			&gnunet_opt_ifilename
+		),
+		GNUNET_GETOPT_option_flag('n',
+			"non-interactive",
+			"run in non-interactive mode",
+			&gnunet_opt_nonint
+		),
+		GNUNET_GETOPT_option_string('o',
+			"output",
+			"FILENAME",
+			"write decrypted message to FILENAME",
+			&gnunet_opt_ofilename
+		),
+		GNUNET_GETOPT_option_string('p',
+			"port",
+			NULL,
+			"GNUnet CADET port to listen/connect",
+			&gnunet_opt_port
+		),
+		GNUNET_GETOPT_option_flag('V',
+			"verbose",
+			"turn on verbose output",
+			&gnunet_opt_verbose
+		),
+		GNUNET_GETOPT_option_uint('w',
+			"wait",
+			NULL,
+			"minutes to wait until start of decryption",
+			&gnunet_opt_wait
+		),
+		GNUNET_GETOPT_OPTION_END
+	};
+	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
+	{
+		std::cerr << "ERROR: GNUNET_STRINGS_get_utf8_args() failed" << std::endl;
+    		return -1;
+	}
+	if (GNUNET_GETOPT_run(usage, options, argc, argv) == GNUNET_SYSERR)
+	{
+		std::cerr << "ERROR: GNUNET_GETOPT_run() failed" << std::endl;
+		return -1;
+	}
+#endif
+
 	bool notcon = false, nonint = false;
 	if (argc < 2)
 	{
-		std::cerr << "ERROR: no peers given as argument; usage: " << argv[0] << " [OPTIONS] PEERS" << std::endl;
+		std::cerr << "ERROR: no peers given as argument; usage: " << usage << std::endl;
 		return -1;
 	}
 	else
@@ -1425,7 +1535,8 @@ int main
 		{
 			std::string arg = argv[i+1];
 			// ignore options
-			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || (arg.find("-l") == 0))
+			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || (arg.find("-l") == 0) ||
+				(arg.find("-i") == 0) || (arg.find("-o") == 0))
 			{
 				i++;
 				continue;
@@ -1473,11 +1584,24 @@ int main
 		}
 		std::cout << "1. Please enter the passphrase to unlock your private key: ";
 		std::getline(std::cin, passphrase);
+#ifdef GNUNET
+		if (gnunet_opt_ifilename != NULL)
+			read_message(gnunet_opt_ifilename, armored_message);
+		else
+		{
+			std::cout << "2. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
+			std::string line;
+			while (std::getline(std::cin, line))
+				armored_message += line + "\r\n";
+			std::cin.clear();
+		}
+#else
 		std::cout << "2. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
 		std::string line;
 		while (std::getline(std::cin, line))
 			armored_message += line + "\r\n";
 		std::cin.clear();
+#endif
 		if (opt_verbose)
 		{
 			std::cout << "INFO: canonicalized peer list = " << std::endl;
@@ -1555,40 +1679,21 @@ int main
 			release_mpis();
 			release_keys();
 			done_dkg();
+#ifdef GNUNET
+			if (gnunet_opt_ofilename != NULL)
+				write_message(gnunet_opt_ofilename, msg);
+			else
+				print_message(msg);
+#else
 			print_message(msg);
+#endif
 			return 0;
 		}
 	}
 
+	// start interactive variant or a local test
 #ifdef GNUNET
-	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
-		GNUNET_GETOPT_option_flag('n',
-			"non-interactive",
-			"run in non-interactive mode",
-			&gnunet_opt_nonint
-		),
-		GNUNET_GETOPT_option_string('p',
-			"port",
-			NULL,
-			"GNUnet CADET port to listen/connect",
-			&gnunet_opt_port
-		),
-		GNUNET_GETOPT_option_flag('V',
-			"verbose",
-			"turn on verbose output",
-			&gnunet_opt_verbose
-		),
-		GNUNET_GETOPT_option_uint('w',
-			"wait",
-			NULL,
-			"minutes to wait until start of decryption",
-			&gnunet_opt_wait
-		),
-		GNUNET_GETOPT_OPTION_END
-	};
-	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
-    		return -1;
-	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-decrypt [OPTIONS] PEERS", "distributed decryption (ElGamal with OpenPGP-input)",
+	int ret = GNUNET_PROGRAM_run(argc, argv, usage, "threshold decryption for OpenPGP (only ElGamal)",
                             options, &gnunet_run, argv[0]);
 	GNUNET_free((void *) argv);
 	if (ret == GNUNET_OK)
