@@ -1,4 +1,4 @@
-.TH DKG\-DECRYPT "1" "May 2017" "LibTMCG 1.3.2" "User Commands"
+.TH DKG\-DECRYPT "1" "June 2017" "LibTMCG 1.3.2" "User Commands"
 
 .SH NAME
 dkg\-decrypt \- threshold decryption for OpenPGP (only ElGamal)
@@ -58,7 +58,7 @@ GNUnet CADET port to listen/connect (only interactive mode)
 print the GNUnet version number
 .TP
 \fB\-V\fR, \fB\-\-verbose\fR
-turn on verbose output (only interactive mode)
+turn on verbose output
 .TP
 \fB\-w\fR, \fB\-\-wait\fR
 minutes to wait until start of share exchange (only interactive mode)
@@ -79,17 +79,18 @@ Home page of LibTMCG: <http://www.nongnu.org/libtmcg/>
 
 .SH "EXAMPLES"
 .TP
-The following command performs a non-interactive threshold decryption for a specific participant defined by its GNUnet peer identity. 
+The following command performs a non-interactive threshold decryption for a specific participant defined by its GNUnet peer identity. The encrypted
+message is read from a given input file.
 .PP
 .nf
 .RS
-dkg-generate -n WS3KHEYKKF6QQ6NDQKKCJ2B374RSSXJ05TB5D9W9FYKPPEJ3QKFG
+dkg-generate -i my_msg.asc -n WS3KHEYKKF6QQ6NDQKKCJ2B374RSSXJ05TB5D9W9FYKPPEJ3QKFG
 .RE
 .fi
 .PP
 At least t+1 participants must run such a process on the same message to get a corresponding decryption share, where t is the t-resilience used during key generation.
 The shares must be exchanged between them in a secure way, i.e., authenticated and confidential. Finally, the received decryption shares are given to the
-program one per line. After giving a trailing end of data sign (^D) the decrypted message is printed.
+program one per line. After giving a trailing end of data sign (^D) the decrypted message is printed to STDOUT.
 .PP
 The following command performs an interactive threshold decryption with three participants defined by their GNUnet peer identities. 
 .PP
