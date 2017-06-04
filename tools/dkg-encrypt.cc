@@ -62,7 +62,7 @@ int main
 	// parse packets of the provided public key
 	bool pubdsa = false, sigdsa = false, subelg = false, sigelg = false;
 	std::string u;
-	tmcg_byte_t atype = 0, ptag = 0xFF;
+	tmcg_byte_t atype = 0;
 	tmcg_byte_t dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
 	tmcg_byte_t dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
 	tmcg_octets_t pkts, pub, sub, msg, lit, mdc, seipd, pkesk, all;
@@ -71,7 +71,6 @@ int main
 	gcry_sexp_t dsakey, elgkey;
 	gcry_error_t ret;
 	size_t erroff;
-	tmcg_openpgp_packet_ctx ctx;
 	dsa_p = gcry_mpi_new(2048);
 	dsa_q = gcry_mpi_new(2048);
 	dsa_g = gcry_mpi_new(2048);
@@ -86,8 +85,10 @@ int main
 	atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(armored_pubkey, pkts);
 	if (atype == 6)
 	{
+		tmcg_byte_t ptag = 0xFF;
 		while (pkts.size() && ptag)
 		{
+			tmcg_openpgp_packet_ctx ctx;
 			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx);
 			if (!ptag)
 			{
@@ -103,6 +104,8 @@ int main
 					if (pubdsa && !subelg && (ctx.type >= 0x10) && (ctx.type <= 0x13) && 
 						CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
 					{
+						if (sigdsa)
+							std::cerr << "WARING: more than one self-signatures; using last signature to check UID" << std::endl;
 						dsa_sigtype = ctx.type;
 						dsa_pkalgo = ctx.pkalgo;
 						dsa_hashalgo = ctx.hashalgo;
@@ -128,6 +131,8 @@ int main
 					else if (pubdsa && subelg && (ctx.type == 0x18) && 
 						CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
 					{
+						if (sigelg)
+							std::cerr << "WARING: more than one subkey binding signature; using last signature" << std::endl;
 						elg_sigtype = ctx.type;
 						elg_pkalgo = ctx.pkalgo;
 						elg_hashalgo = ctx.hashalgo;
@@ -168,7 +173,7 @@ int main
 						return -1;
 					}
 					else
-						std::cerr << "WARNING: public-key algorithm 0x" << std::hex << (int)ctx.pkalgo << std::dec << " not supported" << std::endl;
+						std::cerr << "WARNING: public-key algorithm " << (int)ctx.pkalgo << " not supported" << std::endl;
 					break;
 				case 13: // User ID Packet
 					u = "";
@@ -192,7 +197,7 @@ int main
 					else if ((ctx.pkalgo == 16) && subelg)
 						std::cerr << "WARNING: ElGamal subkey already found; the first one is used" << std::endl; 
 					else
-						std::cerr << "WARNING: public-key algorithm 0x" << std::hex << (int)ctx.pkalgo << std::dec << " not supported" << std::endl;
+						std::cerr << "WARNING: public-key algorithm " << (int)ctx.pkalgo << " not supported" << std::endl;
 					break;
 			}
 			// cleanup allocated buffers
