@@ -24,6 +24,7 @@
 #endif
 #include <libTMCG.hh>
 #include <aiounicast_select.hh>
+static const char *version = VERSION; // copy VERSION from LibTMCG before overwritten by GNUnet headers
 
 #ifdef FORKING
 
@@ -54,11 +55,7 @@ tmcg_octets_t			subkeyid, enc;
 tmcg_byte_t			symalgo = 0;
 bool				have_seipd = false;
 int 				opt_verbose = 0;
-
-#ifdef GNUNET
-char				*gnunet_opt_ifilename = NULL;
-char				*gnunet_opt_ofilename = NULL;
-#endif
+char				*opt_ofilename = NULL;
 
 void init_dkg
 	(const std::string filename, size_t &whoami)
@@ -1425,14 +1422,10 @@ void run_instance
 	done_dkg();
 
 	// output result
-#ifdef GNUNET
-	if (gnunet_opt_ofilename != NULL)
-		write_message(gnunet_opt_ofilename, msg);
+	if (opt_ofilename != NULL)
+		write_message(opt_ofilename, msg);
 	else
 		print_message(msg);
-#else
-	print_message(msg);
-#endif
 }
 
 void fork_instance
@@ -1462,6 +1455,8 @@ void fork_instance
 }
 
 #ifdef GNUNET
+char *gnunet_opt_ifilename = NULL;
+char *gnunet_opt_ofilename = NULL;
 char *gnunet_opt_port = NULL;
 int gnunet_opt_nonint = 0;
 unsigned int gnunet_opt_wait = 5;
@@ -1472,8 +1467,246 @@ int main
 	(int argc, char *const *argv)
 {
 	static const char *usage = "dkg-decrypt [OPTIONS] PEERS";
+	static const char *about = "threshold decryption for OpenPGP (only ElGamal)";
 #ifdef GNUNET
+	char **dummy = NULL;
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
+		GNUNET_GETOPT_option_cfgfile(dummy),
+		GNUNET_GETOPT_option_help(about),
+		GNUNET_GETOPT_option_string('i',
+			"input",
+			"FILENAME",
+			"read encrypted message from FILENAME",
+			&gnunet_opt_ifilename
+		),
+		GNUNET_GETOPT_option_logfile(dummy),
+		GNUNET_GETOPT_option_loglevel(dummy),
+		GNUNET_GETOPT_option_flag('n',
+			"non-interactive",
+			"run in non-interactive mode",
+			&gnunet_opt_nonint
+		),
+		GNUNET_GETOPT_option_string('o',
+			"output",
+			"FILENAME",
+			"write decrypted message to FILENAME",
+			&gnunet_opt_ofilename
+		),
+		GNUNET_GETOPT_option_string('p',
+			"port",
+			NULL,
+			"GNUnet CADET port to listen/connect",
+			&gnunet_opt_port
+		),
+		GNUNET_GETOPT_option_version(version),
+		GNUNET_GETOPT_option_flag('V',
+			"verbose",
+			"turn on verbose output",
+			&gnunet_opt_verbose
+		),
+		GNUNET_GETOPT_option_uint('w',
+			"wait",
+			NULL,
+			"minutes to wait until start of decryption",
+			&gnunet_opt_wait
+		),
+		GNUNET_GETOPT_OPTION_END
+	};
+	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
+	{
+		std::cerr << "ERROR: GNUNET_STRINGS_get_utf8_args() failed" << std::endl;
+    		return -1;
+	}
+	if (GNUNET_GETOPT_run(usage, options, argc, argv) == GNUNET_SYSERR)
+	{
+		std::cerr << "ERROR: GNUNET_GETOPT_run() failed" << std::endl;
+		return -1;
+	}
+	if (gnunet_opt_ofilename != NULL)
+		opt_ofilename = gnunet_opt_ofilename;
+#endif
+
+	bool nonint = false;
+	if (argc < 2)
+	{
+		std::cerr << "ERROR: no peers given as argument; usage: " << usage << std::endl;
+		return -1;
+	}
+	else
+	{
+		// create peer list
+		for (size_t i = 0; i < (size_t)(argc - 1); i++)
+		{
+			std::string arg = argv[i+1];
+			// ignore options
+			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || (arg.find("-l") == 0) ||
+				(arg.find("-i") == 0) || (arg.find("-o") == 0))
+			{
+				i++;
+				continue;
+			}
+			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-n") == 0) || (arg.find("-V") == 0))
+			{
+				if ((arg.find("-h") == 0) || (arg.find("--help") == 0))
+				{
+#ifndef GNUNET
+					std::cout << usage << std::endl;
+					std::cout << about << std::endl;
+					std::cout << "Arguments mandatory for long options are also mandatory for short options." << std::endl;
+					std::cout << "  -h, --help                 print this help" << std::endl;
+					std::cout << "  -n, --non-interactive      run in non-interactive mode" << std::endl;
+					std::cout << "  -v, --version              print the version number" << std::endl;
+					std::cout << "  -V, --verbose              turn on verbose output" << std::endl;
+#endif
+					return 0; // not continue
+				}
+				if ((arg.find("-v") == 0) || (arg.find("--version") == 0))
+				{
+#ifndef GNUNET
+					std::cout << "dkg-decrypt " << version << std::endl;
+#endif
+					return 0; // not continue
+				}
+				if ((arg.find("-n") == 0) || (arg.find("--non-interactive") == 0))
+					nonint = true; // non-interactive mode
+				if ((arg.find("-V") == 0) || (arg.find("--verbose") == 0))
+					opt_verbose = 1; // verbose output
+				continue;
+			}
+			else if (arg.find("-") == 0)
+			{
+				std::cerr << "ERROR: unknown option \"" << arg << "\"" << std::endl;
+				return -1;
+			}
+			peers.push_back(arg);
+		}
+		// canonicalize peer list
+		std::sort(peers.begin(), peers.end());
+		std::vector<std::string>::iterator it = std::unique(peers.begin(), peers.end());
+		peers.resize(std::distance(peers.begin(), it));
+	}
+	if (!nonint && ((peers.size() < 3)  || (peers.size() > MAX_N)))
+	{
+		std::cerr << "ERROR: too few or too many peers given" << std::endl;
+		return -1;
+	}
+	else if (nonint && (peers.size() != 1))
+	{
+		std::cerr << "ERROR: too few or too many peers given" << std::endl;
+		return -1;
+	}
+	if (!init_libTMCG())
+	{
+		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
+		return -1;
+	}
+	std::cout << "1. Please enter the passphrase to unlock your private key: ";
+	std::getline(std::cin, passphrase);
+#ifdef GNUNET
+	if (gnunet_opt_ifilename != NULL)
+		read_message(gnunet_opt_ifilename, armored_message);
+	else
+	{
+		std::cout << "2. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
+		std::string line;
+		while (std::getline(std::cin, line))
+			armored_message += line + "\r\n";
+		std::cin.clear();
+	}
+#else
+	std::cout << "2. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
+	std::string line;
+	while (std::getline(std::cin, line))
+		armored_message += line + "\r\n";
+	std::cin.clear();
+#endif
+	if (opt_verbose)
+	{
+		std::cout << "INFO: canonicalized peer list = " << std::endl;
+		for (size_t i = 0; i < peers.size(); i++)
+			std::cout << peers[i] << std::endl;
+	}
+	if (nonint)
+	{
+		size_t idx, whoami = 0;
+		tmcg_octets_t msg, seskey;
+		std::string dds, thispeer = peers[whoami];
+		mpz_t r_i, c, r;
+		std::vector<size_t> interpol_parties;
+		std::vector<mpz_ptr> interpol_shares;
+
+		init_dkg(thispeer + ".dkg", whoami);
+		read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
+		init_mpis();
+		parse_private_key(armored_seckey);
+		parse_message(armored_message);
+		compute_decryption_share(whoami, dds);
+		tmcg_octets_t dds_input;
+		dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // bluring the decryption share
+		dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // make NSA's spying a bit harder
+		dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
+		dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
+		dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
+		for (size_t i = 0; i < dds.length(); i++)
+			dds_input.push_back(dds[i]);
+		std::string dds_radix;
+		CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode(dds_input, dds_radix, false);
+		std::cout << "My decryption share (keep confidential): " << dds_radix << std::endl;
+		mpz_init(r_i), mpz_init(c), mpz_init(r);
+		if (!verify_decryption_share(dds, idx, r_i, c, r))
+		{
+			std::cerr << "ERROR: verification of my decryption share failed" << std::endl;
+			exit(-1);
+		}
+		mpz_ptr tmp1 = new mpz_t();
+		mpz_init_set(tmp1, r_i);
+		interpol_parties.push_back(whoami), interpol_shares.push_back(tmp1);
+		std::cout << "Now, enter decryption shares (one per line; ^D for EOF) from other parties/devices: " << std::endl;
+		while (std::getline(std::cin, dds_radix))
+		{
+			tmcg_octets_t dds_output;
+			dds = "", idx = 0;
+			CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode(dds_radix, dds_output);
+			for (size_t i = 5; i < dds_output.size(); i++)
+				dds += dds_output[i];
+			mpz_set_ui(r_i, 1L), mpz_set_ui(c, 1L), mpz_set_ui(r, 1L);
+			if (verify_decryption_share(dds, idx, r_i, c, r))
+			{
+				if (!std::count(interpol_parties.begin(), interpol_parties.end(), idx))
+				{
+					mpz_ptr tmp1 = new mpz_t();
+					mpz_init_set(tmp1, r_i);
+					interpol_parties.push_back(idx), interpol_shares.push_back(tmp1);
+				}
+				else
+					std::cout << "WARNING: decryption share of P_" << idx << " already stored" << std::endl;
+			}
+			else
+				std::cout << "WARNING: verification of decryption share from P_" << idx << " failed" << std::endl;
+		}
+		combine_decryption_shares(interpol_parties, interpol_shares);
+		mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
+		for (size_t i = 0; i < interpol_shares.size(); i++)
+		{
+			mpz_clear(interpol_shares[i]);
+			delete [] interpol_shares[i];
+		}
+		interpol_shares.clear(), interpol_parties.clear();
+		decrypt_session_key(seskey);
+		decrypt_message(enc, seskey, msg);
+		release_mpis();
+		release_keys();
+		done_dkg();
+		if (opt_ofilename != NULL)
+			write_message(opt_ofilename, msg);
+		else
+			print_message(msg);
+		return 0;
+	}
+
+	// start interactive variant with GNUnet or otherwise a local test
+#ifdef GNUNET
+	static const struct GNUNET_GETOPT_CommandLineOption myoptions[] = {
 		GNUNET_GETOPT_option_string('i',
 			"input",
 			"FILENAME",
@@ -1510,191 +1743,7 @@ int main
 		),
 		GNUNET_GETOPT_OPTION_END
 	};
-	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
-	{
-		std::cerr << "ERROR: GNUNET_STRINGS_get_utf8_args() failed" << std::endl;
-    		return -1;
-	}
-	if (GNUNET_GETOPT_run(usage, options, argc, argv) == GNUNET_SYSERR)
-	{
-		std::cerr << "ERROR: GNUNET_GETOPT_run() failed" << std::endl;
-		return -1;
-	}
-#endif
-
-	bool notcon = false, nonint = false;
-	if (argc < 2)
-	{
-		std::cerr << "ERROR: no peers given as argument; usage: " << usage << std::endl;
-		return -1;
-	}
-	else
-	{
-		// create peer list
-		for (size_t i = 0; i < (size_t)(argc - 1); i++)
-		{
-			std::string arg = argv[i+1];
-			// ignore options
-			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || (arg.find("-l") == 0) ||
-				(arg.find("-i") == 0) || (arg.find("-o") == 0))
-			{
-				i++;
-				continue;
-			}
-			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-n") == 0) || (arg.find("-V") == 0))
-			{
-				if ((arg.find("--help") == 0) || (arg.find("--version") == 0))
-					notcon = true; // not continue
-				if ((arg.find("-h") == 0) || (arg.find("-v") == 0))
-					notcon = true; // not continue
-				if ((arg.find("-n") == 0) || (arg.find("--non-interactive") == 0))
-					nonint = true; // non-interactive mode
-				if ((arg.find("-V") == 0) || (arg.find("--verbose") == 0))
-					opt_verbose = 1; // verbose output
-				continue;
-			}
-			else if (arg.find("-") == 0)
-			{
-				std::cerr << "ERROR: unknown option \"" << arg << "\"" << std::endl;
-				return -1;
-			}
-			peers.push_back(arg);
-		}
-		// canonicalize peer list
-		std::sort(peers.begin(), peers.end());
-		std::vector<std::string>::iterator it = std::unique(peers.begin(), peers.end());
-		peers.resize(std::distance(peers.begin(), it));
-	}
-	if (!notcon)
-	{
-		if (!nonint && ((peers.size() < 3)  || (peers.size() > MAX_N)))
-		{
-			std::cerr << "ERROR: too few or too many peers given" << std::endl;
-			return -1;
-		}
-		else if (nonint && (peers.size() != 1))
-		{
-			std::cerr << "ERROR: too few or too many peers given" << std::endl;
-			return -1;
-		}
-		if (!init_libTMCG())
-		{
-			std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
-			return -1;
-		}
-		std::cout << "1. Please enter the passphrase to unlock your private key: ";
-		std::getline(std::cin, passphrase);
-#ifdef GNUNET
-		if (gnunet_opt_ifilename != NULL)
-			read_message(gnunet_opt_ifilename, armored_message);
-		else
-		{
-			std::cout << "2. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
-			std::string line;
-			while (std::getline(std::cin, line))
-				armored_message += line + "\r\n";
-			std::cin.clear();
-		}
-#else
-		std::cout << "2. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
-		std::string line;
-		while (std::getline(std::cin, line))
-			armored_message += line + "\r\n";
-		std::cin.clear();
-#endif
-		if (opt_verbose)
-		{
-			std::cout << "INFO: canonicalized peer list = " << std::endl;
-			for (size_t i = 0; i < peers.size(); i++)
-				std::cout << peers[i] << std::endl;
-		}
-		if (nonint)
-		{
-			size_t idx, whoami = 0;
-			tmcg_octets_t msg, seskey;
-			std::string dds, thispeer = peers[whoami];
-			mpz_t r_i, c, r;
-			std::vector<size_t> interpol_parties;
-			std::vector<mpz_ptr> interpol_shares;
-
-			init_dkg(thispeer + ".dkg", whoami);
-			read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
-			init_mpis();
-			parse_private_key(armored_seckey);
-			parse_message(armored_message);
-			compute_decryption_share(whoami, dds);
-			tmcg_octets_t dds_input;
-			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // bluring the decryption share
-			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // make NSA's spying a bit harder
-			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
-			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
-			dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256));
-			for (size_t i = 0; i < dds.length(); i++)
-				dds_input.push_back(dds[i]);
-			std::string dds_radix;
-			CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode(dds_input, dds_radix, false);
-			std::cout << "My decryption share (keep confidential): " << dds_radix << std::endl;
-			mpz_init(r_i), mpz_init(c), mpz_init(r);
-			if (!verify_decryption_share(dds, idx, r_i, c, r))
-			{
-				std::cerr << "ERROR: verification of my decryption share failed" << std::endl;
-				exit(-1);
-			}
-			mpz_ptr tmp1 = new mpz_t();
-			mpz_init_set(tmp1, r_i);
-			interpol_parties.push_back(whoami), interpol_shares.push_back(tmp1);
-			std::cout << "Now, enter decryption shares (one per line; ^D for EOF) from other parties/devices: " << std::endl;
-			while (std::getline(std::cin, dds_radix))
-			{
-				tmcg_octets_t dds_output;
-				dds = "", idx = 0;
-				CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode(dds_radix, dds_output);
-				for (size_t i = 5; i < dds_output.size(); i++)
-					dds += dds_output[i];
-				mpz_set_ui(r_i, 1L), mpz_set_ui(c, 1L), mpz_set_ui(r, 1L);
-				if (verify_decryption_share(dds, idx, r_i, c, r))
-				{
-					if (!std::count(interpol_parties.begin(), interpol_parties.end(), idx))
-					{
-						mpz_ptr tmp1 = new mpz_t();
-						mpz_init_set(tmp1, r_i);
-						interpol_parties.push_back(idx), interpol_shares.push_back(tmp1);
-					}
-					else
-						std::cout << "WARNING: decryption share of P_" << idx << " already stored" << std::endl;
-				}
-				else
-					std::cout << "WARNING: verification of decryption share from P_" << idx << " failed" << std::endl;
-			}
-			combine_decryption_shares(interpol_parties, interpol_shares);
-			mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
-			for (size_t i = 0; i < interpol_shares.size(); i++)
-			{
-				mpz_clear(interpol_shares[i]);
-				delete [] interpol_shares[i];
-			}
-			interpol_shares.clear(), interpol_parties.clear();
-			decrypt_session_key(seskey);
-			decrypt_message(enc, seskey, msg);
-			release_mpis();
-			release_keys();
-			done_dkg();
-#ifdef GNUNET
-			if (gnunet_opt_ofilename != NULL)
-				write_message(gnunet_opt_ofilename, msg);
-			else
-				print_message(msg);
-#else
-			print_message(msg);
-#endif
-			return 0;
-		}
-	}
-
-	// start interactive variant or a local test
-#ifdef GNUNET
-	int ret = GNUNET_PROGRAM_run(argc, argv, usage, "threshold decryption for OpenPGP (only ElGamal)",
-                            options, &gnunet_run, argv[0]);
+	int ret = GNUNET_PROGRAM_run(argc, argv, usage, about, myoptions, &gnunet_run, argv[0]);
 	GNUNET_free((void *) argv);
 	if (ret == GNUNET_OK)
 		return 0;
