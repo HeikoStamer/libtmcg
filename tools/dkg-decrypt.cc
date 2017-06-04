@@ -52,7 +52,6 @@ gcry_mpi_t 			dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_g, elg_y, elg_x;
 gcry_mpi_t 			gk, myk;
 gcry_sexp_t			elgkey;
 tmcg_octets_t			subkeyid, enc;
-tmcg_byte_t			symalgo = 0;
 bool				have_seipd = false;
 int 				opt_verbose = 0;
 char				*opt_ofilename = NULL;
@@ -212,6 +211,7 @@ void parse_private_key
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t erroff, keylen, ivlen, chksum, mlen, chksum2;
+	int algo;
 	tmcg_openpgp_packet_ctx ctx;
 	gcry_mpi_t dsa_r, dsa_s, elg_r, elg_s;
 	dsa_r = gcry_mpi_new(2048);
@@ -259,11 +259,11 @@ void parse_private_key
 						std::cout << std::hex;
 						std::cout << " sigtype = 0x";
 						std::cout << (int)ctx.type;
-						std::cout << " pkalgo = 0x";
-						std::cout << (int)ctx.pkalgo;
-						std::cout << " hashalgo = 0x";
-						std::cout << (int)ctx.hashalgo;
 						std::cout << std::dec;
+						std::cout << " pkalgo = ";
+						std::cout << (int)ctx.pkalgo;
+						std::cout << " hashalgo = ";
+						std::cout << (int)ctx.hashalgo;
 						std::cout << std::endl;
 					}
 					dsa_sigtype = ctx.type;
@@ -295,11 +295,11 @@ void parse_private_key
 						std::cout << std::hex;
 						std::cout << " sigtype = 0x";
 						std::cout << (int)ctx.type;
-						std::cout << " pkalgo = 0x";
-						std::cout << (int)ctx.pkalgo;
-						std::cout << " hashalgo = 0x";
-						std::cout << (int)ctx.hashalgo;
 						std::cout << std::dec;
+						std::cout << " pkalgo = ";
+						std::cout << (int)ctx.pkalgo;
+						std::cout << " hashalgo = ";
+						std::cout << (int)ctx.hashalgo;
 						std::cout << std::endl;
 					}
 					elg_sigtype = ctx.type;
@@ -340,11 +340,11 @@ void parse_private_key
 						std::cout << " Key ID of DSA key: " << std::hex;
 						for (size_t i = 0; i < keyid.size(); i++)
 							std::cout << (int)keyid[i] << " ";
-						std::cout << " symalgo = 0x" << (int)ctx.symalgo << std::endl;
-						std::cout << " S2K: convention = 0x" << (int)ctx.s2kconv << " type = 0x" << (int)ctx.s2k_type;
-						std::cout << " hashalgo = 0x" << (int)ctx.s2k_hashalgo << " count = 0x" << (int)ctx.s2k_count;
 						std::cout << std::dec << std::endl;
 						std::cout << " encdatalen = " << ctx.encdatalen << std::endl;
+						std::cout << " symalgo = " << (int)ctx.symalgo << std::endl;
+						std::cout << " S2K: convention = " << (int)ctx.s2kconv << " type = " << (int)ctx.s2k_type;
+						std::cout << " hashalgo = " << (int)ctx.s2k_hashalgo << " count = " << (int)ctx.s2k_count;
 						std::cout << std::endl;
 					}
 					if (ctx.s2kconv == 0)
@@ -355,6 +355,7 @@ void parse_private_key
 					{
 						keylen = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength(ctx.symalgo);
 						ivlen = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength(ctx.symalgo);
+						algo = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmSymGCRY(ctx.symalgo);
 						if (!keylen || !ivlen)
 						{
 							std::cerr << "ERROR: unknown symmetric algorithm" << std::endl;
@@ -400,7 +401,7 @@ void parse_private_key
 							key[i] = seskey[i];
 						for (size_t i = 0; i < ivlen; i++)
 							iv[i] = ctx.iv[i];
-						ret = gcry_cipher_open(&hd, (int)ctx.symalgo, GCRY_CIPHER_MODE_CFB, 0);
+						ret = gcry_cipher_open(&hd, algo, GCRY_CIPHER_MODE_CFB, 0);
 						if (ret)
 						{
 							std::cerr << "ERROR: gcry_cipher_open() failed" << std::endl;
@@ -509,11 +510,11 @@ void parse_private_key
 						std::cout << "Key ID of ElGamal subkey: " << std::hex;
 						for (size_t i = 0; i < subkeyid.size(); i++)
 							std::cout << (int)subkeyid[i] << " ";
-						std::cout << " symalgo = 0x" << (int)ctx.symalgo << std::endl;
-						std::cout << " S2K: convention = 0x" << (int)ctx.s2kconv << " type = 0x" << (int)ctx.s2k_type;
-						std::cout << " hashalgo = 0x" << (int)ctx.s2k_hashalgo << " count = 0x" << (int)ctx.s2k_count;
 						std::cout << std::dec << std::endl;
+						std::cout << " symalgo = " << (int)ctx.symalgo << std::endl;
 						std::cout << " encdatalen = " << ctx.encdatalen << std::endl;
+						std::cout << " S2K: convention = " << (int)ctx.s2kconv << " type = " << (int)ctx.s2k_type;
+						std::cout << " hashalgo = " << (int)ctx.s2k_hashalgo << " count = " << (int)ctx.s2k_count;
 						std::cout << std::endl;
 					}
 					if (ctx.s2kconv == 0)
@@ -845,11 +846,8 @@ void parse_message
 						std::cerr << "WARNING: pkesk-key ID does not match subkey ID" << std::endl;
 						break;
 					}
-					if (opt_verbose)
-						std::cout << " symalgo = " << (int)ctx.symalgo << std::endl;
 					have_pkesk = true;
 					gk = ctx.gk, myk = ctx.myk;
-					symalgo = ctx.symalgo; // FIXME: symalgo not parsed?
 					break;
 				case 9: // Symmetrically Encrypted Data
 					have_sed = true;
@@ -1167,8 +1165,22 @@ void decrypt_message
 	(const tmcg_octets_t &in, tmcg_octets_t &key, tmcg_octets_t &out)
 {
 	// decrypt the given message
+	tmcg_byte_t symalgo = 0;
 	gcry_error_t ret;
 	tmcg_octets_t prefix, litmdc;
+	if (opt_verbose)
+		std::cout << "symmetric decryption of message ..." << std::endl;
+	if (key.size() > 0)
+	{
+		symalgo = key[0];
+		if (opt_verbose)
+			std::cout << "symalgo = " << (int)symalgo << std::endl;
+	}
+	else
+	{
+		std::cerr << "ERROR: no session key provided" << std::endl;
+		exit(-1);
+	}
 	if (have_seipd)
 		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt(in, key, prefix, false, symalgo, litmdc);
 	else
