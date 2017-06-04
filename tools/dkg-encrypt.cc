@@ -299,7 +299,7 @@ int main
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, elg_r, elg_s);
 	if (ret)
 	{
-		std::cerr << "ERROR: verification of Elgamal subeky self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
+		std::cerr << "ERROR: verification of Elgamal subkey self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
 		return -1;
 	}
 
