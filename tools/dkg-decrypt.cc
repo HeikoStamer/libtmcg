@@ -266,6 +266,8 @@ void parse_private_key
 						std::cout << (int)ctx.hashalgo;
 						std::cout << std::endl;
 					}
+					if (sigdsa)
+						std::cerr << "WARNING: more than one self-signatures; using last signature to check UID" << std::endl;
 					dsa_sigtype = ctx.type;
 					dsa_pkalgo = ctx.pkalgo;
 					dsa_hashalgo = ctx.hashalgo;
@@ -286,6 +288,8 @@ void parse_private_key
 						std::cerr << "ERROR: public-key signature algorithms other than DSA not supported" << std::endl;
 						exit(-1);
 					}
+					if ((dsa_hashalgo < 8) || (dsa_hashalgo > 11))
+						std::cerr << "WARNING: insecure hash algorithm " << (int)dsa_hashalgo << " used for signatures" << std::endl;
 					sigdsa = true;
 				}
 				else if (secdsa && ssbelg && (ctx.type == 0x18) && CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
@@ -302,6 +306,8 @@ void parse_private_key
 						std::cout << (int)ctx.hashalgo;
 						std::cout << std::endl;
 					}
+					if (sigelg)
+						std::cerr << "WARNING: more than one subkey binding signature; using last signature" << std::endl;
 					elg_sigtype = ctx.type;
 					elg_pkalgo = ctx.pkalgo;
 					elg_hashalgo = ctx.hashalgo;
@@ -322,6 +328,8 @@ void parse_private_key
 						std::cerr << "ERROR: public-key signature algorithms other than DSA not supported" << std::endl;
 						exit(-1);
 					}
+					if ((elg_hashalgo < 8) || (elg_hashalgo > 11))
+						std::cerr << "WARNING: insecure hash algorithm " << (int)elg_hashalgo << " used for signatures" << std::endl;
 					sigelg = true;
 				}
 				break;
