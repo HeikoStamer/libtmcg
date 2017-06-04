@@ -172,6 +172,15 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareZero
+	(const tmcg_octets_t &in)
+{
+	for (size_t i = 0; i < in.size(); i++)
+		if (in[i] != 0x00)
+			return false;
+	return true;
+}
+
 // ===========================================================================
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode

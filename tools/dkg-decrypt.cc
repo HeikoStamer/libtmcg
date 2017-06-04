@@ -800,17 +800,18 @@ void parse_message
 	(const std::string in)
 {
 	// parse encrypted message
-	tmcg_openpgp_packet_ctx ctx;
-	tmcg_octets_t pkts, pkesk_keyid;
 	bool have_pkesk = false, have_sed = false;
-	tmcg_byte_t ptag = 0xFF;
+	tmcg_octets_t pkts;
 	tmcg_byte_t atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(in, pkts);
 	if (opt_verbose)
 		std::cout << "ArmorDecode() = " << (int)atype << std::endl;
 	if (atype == 1)
-	{
+	{	
+		tmcg_byte_t ptag = 0xFF;
 		while (pkts.size() && ptag)
 		{
+			tmcg_octets_t pkesk_keyid;
+			tmcg_openpgp_packet_ctx ctx;
 			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx);
 			if (opt_verbose)
 				std::cout << "PacketDecode() = " << (int)ptag;
@@ -841,7 +842,9 @@ void parse_message
 					}
 					if (opt_verbose)
 						std::cout << std::dec << std::endl;
-					if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(pkesk_keyid, subkeyid))
+					if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareZero(pkesk_keyid))
+						std::cerr << "WARNING: wildcard pkesk-key ID found" << std::endl; // TODO: not only the first PKESK packet
+					else if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(pkesk_keyid, subkeyid))
 					{
 						std::cerr << "WARNING: pkesk-key ID does not match subkey ID" << std::endl;
 						break;
@@ -850,11 +853,21 @@ void parse_message
 					gk = ctx.gk, myk = ctx.myk;
 					break;
 				case 9: // Symmetrically Encrypted Data
+					if (have_sed)
+					{
+						std::cerr << "ERROR: duplicate SED packet found" << std::endl;
+						exit(-1);
+					}
 					have_sed = true;
 					for (size_t i = 0; i < ctx.encdatalen; i++)
 						enc.push_back(ctx.encdata[i]);
 					break;
 				case 18: // Symmetrically Encrypted Integrity Protected Data
+					if (have_seipd)
+					{
+						std::cerr << "ERROR: duplicate SEIPD packet found" << std::endl;
+						exit(-1);
+					}
 					have_seipd = true;
 					for (size_t i = 0; i < ctx.encdatalen; i++)
 						enc.push_back(ctx.encdata[i]);
