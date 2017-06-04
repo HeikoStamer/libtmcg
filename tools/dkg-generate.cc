@@ -229,7 +229,7 @@ void run_instance
 	std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
 	rbc->Sync(synctime);
 
-	// create an OpenPGP DSA-based primary key and ElGamal-based subkey based on parameters from DKG
+	// create an OpenPGP DSA-based primary key and ElGamal-based subkey using computed values from DKG
 	char buffer[2048];
 	std::string out, crcout, armor;
 	tmcg_octets_t all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
@@ -304,7 +304,7 @@ void run_instance
 	dsaflags.push_back(0x01 | 0x02 | 0x20); // key may be used to certify other keys, to sign data, and for authentication
 	sigtime = time(NULL); // current time
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, sigtime, dsaflags, keyid, uidsig_hashing); // positive certification (0x13) of uid and pub
-	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, 8, hash, uidsig_left); // use SHA256 (alg 8)
+	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, 8, hash, uidsig_left); // use SHA256 (alg 8) FIXME: depends on size of q
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
 	if (ret)
 	{
