@@ -159,6 +159,16 @@ int main
 							std::cerr << "WARNING: insecure hash algorithm " << (int)elg_hashalgo << " used for signatures" << std::endl;
 						sigelg = true;
 					}
+					else if (pubdsa && !subelg && (ctx.type == 0x20) && // Key revocation signature 
+						CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
+					{
+						std::cerr << "WARNING: key revocation signature on primary key" << std::endl;
+					}
+					else if (pubdsa && subelg && (ctx.type == 0x28) && // Subkey revocation signature 
+						CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
+					{
+						std::cerr << "WARNING: subkey revocation signature on subkey" << std::endl;
+					}
 					break;
 				case 6: // Public-Key Packet
 					if ((ctx.pkalgo == 17) && !pubdsa)
