@@ -259,11 +259,11 @@ void parse_private_key
 						std::cout << std::hex;
 						std::cout << " sigtype = 0x";
 						std::cout << (int)ctx.type;
-						std::cout << std::dec;
-						std::cout << " pkalgo = ";
+						std::cout << " pkalgo = 0x";
 						std::cout << (int)ctx.pkalgo;
-						std::cout << " hashalgo = ";
+						std::cout << " hashalgo = 0x";
 						std::cout << (int)ctx.hashalgo;
+						std::cout << std::dec;
 						std::cout << std::endl;
 					}
 					dsa_sigtype = ctx.type;
@@ -295,11 +295,11 @@ void parse_private_key
 						std::cout << std::hex;
 						std::cout << " sigtype = 0x";
 						std::cout << (int)ctx.type;
-						std::cout << std::dec;
-						std::cout << " pkalgo = ";
+						std::cout << " pkalgo = 0x";
 						std::cout << (int)ctx.pkalgo;
-						std::cout << " hashalgo = ";
+						std::cout << " hashalgo = 0x";
 						std::cout << (int)ctx.hashalgo;
+						std::cout << std::dec;
 						std::cout << std::endl;
 					}
 					elg_sigtype = ctx.type;
@@ -340,11 +340,11 @@ void parse_private_key
 						std::cout << " Key ID of DSA key: " << std::hex;
 						for (size_t i = 0; i < keyid.size(); i++)
 							std::cout << (int)keyid[i] << " ";
+						std::cout << " symalgo = 0x" << (int)ctx.symalgo << std::endl;
+						std::cout << " S2K: convention = 0x" << (int)ctx.s2kconv << " type = 0x" << (int)ctx.s2k_type;
+						std::cout << " hashalgo = 0x" << (int)ctx.s2k_hashalgo << " count = 0x" << (int)ctx.s2k_count;
 						std::cout << std::dec << std::endl;
-						std::cout << " symalgo = " << (int)ctx.symalgo << std::endl;
 						std::cout << " encdatalen = " << ctx.encdatalen << std::endl;
-						std::cout << " S2K: convention = " << (int)ctx.s2kconv << " type = " << (int)ctx.s2k_type;
-						std::cout << " hashalgo = " << (int)ctx.s2k_hashalgo << " count = " << (int)ctx.s2k_count;
 						std::cout << std::endl;
 					}
 					if (ctx.s2kconv == 0)
@@ -509,11 +509,11 @@ void parse_private_key
 						std::cout << "Key ID of ElGamal subkey: " << std::hex;
 						for (size_t i = 0; i < subkeyid.size(); i++)
 							std::cout << (int)subkeyid[i] << " ";
+						std::cout << " symalgo = 0x" << (int)ctx.symalgo << std::endl;
+						std::cout << " S2K: convention = 0x" << (int)ctx.s2kconv << " type = 0x" << (int)ctx.s2k_type;
+						std::cout << " hashalgo = 0x" << (int)ctx.s2k_hashalgo << " count = 0x" << (int)ctx.s2k_count;
 						std::cout << std::dec << std::endl;
-						std::cout << " symalgo = " << (int)ctx.symalgo << std::endl;
 						std::cout << " encdatalen = " << ctx.encdatalen << std::endl;
-						std::cout << " S2K: convention = " << (int)ctx.s2kconv << " type = " << (int)ctx.s2k_type;
-						std::cout << " hashalgo = " << (int)ctx.s2k_hashalgo << " count = " << (int)ctx.s2k_count;
 						std::cout << std::endl;
 					}
 					if (ctx.s2kconv == 0)
@@ -824,7 +824,7 @@ void parse_message
 			{
 				case 1: // Public-Key Encrypted Session Key
 					if (opt_verbose)
-						std::cout << " pkalgo = " << ctx.pkalgo << std::endl;
+						std::cout << " pkalgo = " << (int)ctx.pkalgo << std::endl;
 					if (ctx.pkalgo != 16)
 					{
 						std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
@@ -846,10 +846,10 @@ void parse_message
 						break;
 					}
 					if (opt_verbose)
-						std::cout << " symalgo = " << ctx.symalgo << std::endl;
+						std::cout << " symalgo = " << (int)ctx.symalgo << std::endl;
 					have_pkesk = true;
 					gk = ctx.gk, myk = ctx.myk;
-					symalgo = ctx.symalgo;
+					symalgo = ctx.symalgo; // FIXME: symalgo not parsed?
 					break;
 				case 9: // Symmetrically Encrypted Data
 					have_sed = true;
