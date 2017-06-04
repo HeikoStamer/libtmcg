@@ -257,6 +257,14 @@ void run_instance
 	if (ret)
 	{
 		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for p" << std::endl;
+		mpz_clear(dsa_y), mpz_clear(dsa_x);
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
 		exit(-1);
 	}
 	mpz_get_str(buffer, 16, vtmf->q); // from CRS
@@ -264,6 +272,14 @@ void run_instance
 	if (ret)
 	{
 		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for q" << std::endl;
+		mpz_clear(dsa_y), mpz_clear(dsa_x);
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
 		exit(-1);
 	}
 	mpz_get_str(buffer, 16, vtmf->g); // from CRS
@@ -271,6 +287,14 @@ void run_instance
 	if (ret)
 	{
 		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for g" << std::endl;
+		mpz_clear(dsa_y), mpz_clear(dsa_x);
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
 		exit(-1);
 	}
 	mpz_get_str(buffer, 16, dsa_y); // computed for each participant/peer
@@ -278,6 +302,14 @@ void run_instance
 	if (ret)
 	{
 		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for dsa_y" << std::endl;
+		mpz_clear(dsa_y), mpz_clear(dsa_x);
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
 		exit(-1);
 	}
 	mpz_get_str(buffer, 16, dsa_x); // randomly choosen for each participant/peer (see above)
@@ -285,6 +317,14 @@ void run_instance
 	if (ret)
 	{
 		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for dsa_x" << std::endl;
+		mpz_clear(dsa_y), mpz_clear(dsa_x);
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
 		exit(-1);
 	}
 	mpz_clear(dsa_y), mpz_clear(dsa_x);
@@ -293,6 +333,33 @@ void run_instance
 	if (ret)
 	{
 		std::cerr << "P_" << whoami << ": gcry_sexp_build() failed" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		exit(-1);
+	}
+	tmcg_byte_t hashalgo = 0;
+	if (mpz_sizeinbase(vtmf->q, 2L) == 256)
+		hashalgo = 8; // SHA256 (alg 8)
+	else if (mpz_sizeinbase(vtmf->q, 2L) == 384)
+		hashalgo = 9; // SHA384 (alg 9)
+	else if (mpz_sizeinbase(vtmf->q, 2L) == 512)
+		hashalgo = 10; // SHA512 (alg 10)
+	else
+	{
+		std::cerr << "P_" << whoami << ": selecting hash algorithm failed for |q| = " << mpz_sizeinbase(vtmf->q, 2L) << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		gcry_sexp_release(key);
 		exit(-1);
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ckeytime, p, q, g, y, pub); // use common key creation time
@@ -304,11 +371,19 @@ void run_instance
 	dsaflags.push_back(0x01 | 0x02 | 0x20); // key may be used to certify other keys, to sign data, and for authentication
 	sigtime = time(NULL); // current time
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, sigtime, dsaflags, keyid, uidsig_hashing); // positive certification (0x13) of uid and pub
-	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, 8, hash, uidsig_left); // use SHA256 (alg 8) FIXME: depends on size of q
+	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, hashalgo, hash, uidsig_left);
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
 	if (ret)
 	{
 		std::cerr << "P_" << whoami << ": CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA() failed" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		gcry_sexp_release(key);
 		exit(-1);
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(uidsig_hashing, uidsig_left, r, s, uidsig);
@@ -318,6 +393,14 @@ void run_instance
 	if (ret)
 	{
 		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for dkg->y" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		gcry_sexp_release(key);
 		exit(-1);
 	}
 	mpz_get_str(buffer, 16, dkg->x_i); // computed by DKG for each participant/peer (cf. LibTMCG source code)	
@@ -325,6 +408,14 @@ void run_instance
 	if (ret)
 	{
 		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for dkg->x_i" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		gcry_sexp_release(key);
 		exit(-1);
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ckeytime, p, g, y, sub); // use common key creation time
@@ -334,11 +425,19 @@ void run_instance
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, sigtime, elgflags, keyid, subsig_hashing); // Subkey Binding Signature (0x18) of sub
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
-	CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, subsig_hashing, 8, hash, subsig_left); // use SHA256 FIXME: depends on size of q
+	CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, subsig_hashing, hashalgo, hash, subsig_left);
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
 	if (ret)
 	{
 		std::cerr << "P_" << whoami << ": CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA() failed" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		gcry_sexp_release(key);
 		exit(-1);
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(subsig_hashing, subsig_left, r, s, subsig);
@@ -358,12 +457,28 @@ void run_instance
 	if (!pubofs.good())
 	{
 		std::cerr << "P_" << whoami << ": opening public key file failed" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		gcry_sexp_release(key);
 		exit(-1);
 	}
 	pubofs << armor;
 	if (!pubofs.good())
 	{
 		std::cerr << "P_" << whoami << ": writing public key file failed" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		gcry_sexp_release(key);
 		exit(-1);
 	}
 	pubofs.close();
@@ -383,12 +498,28 @@ void run_instance
 	if (!secofs.good())
 	{
 		std::cerr << "P_" << whoami << ": opening private key file failed" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		gcry_sexp_release(key);
 		exit(-1);
 	}
 	secofs << armor;
 	if (!secofs.good())
 	{
 		std::cerr << "P_" << whoami << ": writing private key file failed" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		gcry_sexp_release(key);
 		exit(-1);
 	}
 	secofs.close();
