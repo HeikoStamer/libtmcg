@@ -1,4 +1,4 @@
-.TH DKG\-GENERATE "1" "May 2017" "LibTMCG 1.3.2" "User Commands"
+.TH DKG\-GENERATE "1" "June 2017" "LibTMCG 1.3.2" "User Commands"
 
 .SH NAME
 dkg\-generate \- distributed key generation for OpenPGP
@@ -10,9 +10,8 @@ dkg\-generate \- distributed key generation for OpenPGP
 
 .SH DESCRIPTION
 This program performs the t-resilient distributed key generation protocol (DKG)
-for discrete logarithm based cryptosystems as described in
-.I Journal of Cryptology, Vol. 20(1) 2007,
-by Gennaro et al.
+by Gennaro et al. for discrete logarithm based cryptosystems as described in
+.I Journal of Cryptology, Vol. 20(1) 2007.
 It employs GNUnet for exchange of protocol messages between the participants.
 Thus a working GNUnet peer is neccesary to proceed. 
 .PP
@@ -25,8 +24,8 @@ internal state of the DKG protocol including some verification keys for
 threshold decryption, second, a file that stores the individual private key in
 ASCII-armored OpenPGP format, and finally, a file that contains the public key
 again in ASCII-armored format. All file names have the GNUnet peer identity of
-the corresponding party as a common prefix. The first and the second file must
-be kept confidential.
+the corresponding party as a common prefix. The second file must be kept
+confidential. A passphrase can be used to protect the private key by encryption.
 .PP
 The parameter t determines how many parties may deviate from the protocol
 during the key generation and later during threshold decryption. At least
@@ -37,11 +36,12 @@ other artificial deviations are not desireable, the program ensures by
 clipping that 0 < t <= n holds.
 .PP
 The underlying DDH-hard group, i.e. a large prime-order subgroup of special
-form that sometimes is called Schnorr group,
-can be adjusted by using the option "-g". The included program
+form that sometimes is called Schnorr group, can be adjusted by using the
+option "-g". The included program
 .BR dkg\-gencrs
 generates a corresponding common reference string on that all participants
-must agree. The generated group parameters are verifiable up to a certain
+must agree. The security level is increased for each given dummy argument of
+this program. The generated group parameters are verifiable up to a certain
 level. However, it is recommended that this crucial part of the setup is
 either accomplished by some trusted members or all participants together.
 Without this option the hard coded group in the source code (|p| = 2048 bit,

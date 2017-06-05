@@ -531,19 +531,19 @@ void run_instance
 	gcry_mpi_release(r);
 	gcry_mpi_release(s);
 	gcry_sexp_release(key);
-	// export state of DKG including the secret shares into a file
+	// export verification keys of DKG into a file
 	std::stringstream dkgfilename;
 	dkgfilename << peers[whoami] << ".dkg";
 	std::ofstream dkgofs((dkgfilename.str()).c_str(), std::ofstream::out);
 	if (!dkgofs.good())
 	{
-		std::cerr << "P_" << whoami << ": opening DKG state file failed" << std::endl;
+		std::cerr << "P_" << whoami << ": opening DKG file failed" << std::endl;
 		exit(-1);
 	}
-	dkg->PublishState(dkgofs);
+	dkg->PublishVerificationKeys(dkgofs);
 	if (!dkgofs.good())
 	{
-		std::cerr << "P_" << whoami << ": writing DKG state file failed" << std::endl;
+		std::cerr << "P_" << whoami << ": writing DKG file failed" << std::endl;
 		exit(-1);
 	}
 	dkgofs.close();

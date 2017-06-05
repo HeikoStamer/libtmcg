@@ -59,13 +59,13 @@ char				*opt_ofilename = NULL;
 void init_dkg
 	(const std::string filename, size_t &whoami)
 {
-	// read the exported DKG state from file
+	// read the exported DKG verification keys from file
 	std::string line;
 	std::stringstream dkgstate;
 	std::ifstream dkgifs(filename.c_str(), std::ifstream::in);
 	if (!dkgifs.is_open())
 	{
-		std::cerr << "ERROR: cannot open DKG state file" << std::endl;
+		std::cerr << "ERROR: cannot open DKG file" << std::endl;
 		exit(-1);
 	}
 	while (std::getline(dkgifs, line))
@@ -83,12 +83,6 @@ void init_dkg
 	if (!dkg->CheckGroup())
 	{
 		std::cerr << "ERROR: CheckGroup() failed" << std::endl;
-		exit(-1);
-	}
-	// check the key share of DKG
-	if (!dkg->CheckKey())
-	{
-		std::cerr << "ERROR: CheckKey() failed" << std::endl;
 		exit(-1);
 	}
 	// set the correct index from saved DKG state
@@ -851,7 +845,7 @@ void parse_message
 					if (opt_verbose)
 						std::cout << std::dec << std::endl;
 					if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareZero(pkesk_keyid))
-						std::cerr << "WARNING: wildcard pkesk-key ID found" << std::endl; // TODO: not only the first PKESK packet
+						std::cerr << "WARNING: wildcard pkesk-key ID found" << std::endl; // TODO: maybe not only the first PKESK packet
 					else if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(pkesk_keyid, subkeyid))
 					{
 						std::cerr << "WARNING: pkesk-key ID does not match subkey ID" << std::endl;
@@ -964,7 +958,7 @@ void compute_decryption_share
 	std::memset(buffer, 0, sizeof(buffer));
 	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, elg_x);
 	mpz_set_str(x_i, buffer, 16);
-	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g) || mpz_cmp(x_i, dkg->x_i))
+	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g))
 	{
 		std::cerr << "ERROR: DSA/ElGamal and DKG group parameters does not match" << std::endl;
 		exit(-1);
