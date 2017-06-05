@@ -201,6 +201,34 @@ void GennaroJareckiKrawczykRabinDKG::PublishState
 	}
 }
 
+void GennaroJareckiKrawczykRabinDKG::PublishVerificationKeys
+	(std::ostream &out) const
+{
+	out << p << std::endl << q << std::endl << g << std::endl
+		<< h << std::endl;
+	out << n << std::endl << t << std::endl << i << std::endl;
+	out << "0" << std::endl << "0" << std::endl << y << std::endl;
+	out << QUAL.size() << std::endl;
+	for (size_t i = 0; i < QUAL.size(); i++)
+		out << QUAL[i] << std::endl;
+	for (size_t i = 0; i < n; i++)
+		out << "1" << std::endl;
+	for (size_t i = 0; i < n; i++)
+		out << "0" << std::endl;
+	for (size_t i = 0; i < n; i++)
+		out << v_i[i] << std::endl;
+	for (size_t i = 0; i < n; i++)
+	{
+		for (size_t j = 0; j < n; j++)
+		{
+			out << "0" << std::endl;
+			out << "0" << std::endl;
+		}
+		for (size_t k = 0; k <= t; k++)
+			out << C_ik[i][k] << std::endl;
+	}
+}
+
 bool GennaroJareckiKrawczykRabinDKG::CheckGroup
 	() const
 {
