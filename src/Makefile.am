@@ -31,6 +31,7 @@ include_HEADERS = mpz_srandom.h mpz_sqrtm.h mpz_spowm.h mpz_sprime.h\
 	aiounicast.hh aiounicast_nonblock.hh aiounicast_select.hh\
 	CachinKursawePetzoldShoupSEABP.hh\
 	GennaroJareckiKrawczykRabinDKG.hh\
+	CanettiGennaroJareckiKrawczykRabinASTC.hh\
 	JareckiLysyanskayaASTC.hh\
 	CallasDonnerhackeFinneyShawThayerRFC4880.hh\
 	SchindelhauerTMCG.hh\
@@ -63,6 +64,7 @@ libTMCG_la_SOURCES = mpz_srandom.c mpz_srandom.h\
 	aiounicast_select.cc aiounicast_select.hh\
 	CachinKursawePetzoldShoupSEABP.cc CachinKursawePetzoldShoupSEABP.hh\
 	GennaroJareckiKrawczykRabinDKG.cc GennaroJareckiKrawczykRabinDKG.hh\
+	CanettiGennaroJareckiKrawczykRabinASTC.cc CanettiGennaroJareckiKrawczykRabinASTC.hh\
 	JareckiLysyanskayaASTC.cc JareckiLysyanskayaASTC.hh\
 	CallasDonnerhackeFinneyShawThayerRFC4880.cc CallasDonnerhackeFinneyShawThayerRFC4880.hh\
 	SchindelhauerTMCG.cc SchindelhauerTMCG.hh\

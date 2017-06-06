@@ -227,6 +227,7 @@
 	#include <NaorPinkasEOTP.hh>
 	#include <CachinKursawePetzoldShoupSEABP.hh>
 	#include <GennaroJareckiKrawczykRabinDKG.hh>
+	#include <CanettiGennaroJareckiKrawczykRabinASTC.hh>
 	#include <JareckiLysyanskayaASTC.hh>
 
 	// miscellaneous stuff
