@@ -559,7 +559,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			}
 			err << "P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
 		}
-		mpz_set_ui(lhs, n); // send end marker
+		mpz_set_ui(lhs, n); // broadcast end marker
 		rbc->Broadcast(lhs);
 		// (d) Each party marks disqualified any party either
 		//      * received more than $t$ complaints in Step 1(b), or
@@ -733,7 +733,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			rbc->Broadcast(s_ij[i][*it]);
 			rbc->Broadcast(sprime_ij[i][*it]);
 		}
-		mpz_set_ui(rhs, n); // send end marker
+		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
 		// (c) For parties $P_i$ who receive at least one valid complaint,
 		//     i.e., values which satisfy (4) and not (5), the other
