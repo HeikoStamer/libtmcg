@@ -65,16 +65,15 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 	
 	public:
 		mpz_t					p, q, g, h;
-		size_t					n, t, i;
+		size_t					n, t, i, tprime;
 		std::vector<size_t>			QUAL;
 		mpz_t					x_i, xprime_i;
 		mpz_t					z_i, zprime_i;
 		std::vector< std::vector<mpz_ptr> >	s_ji, sprime_ji, C_ik;
 		
 		CanettiGennaroJareckiKrawczykRabinRVSS
-			(const size_t n_in, const size_t t_in, const size_t i_in,
-			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS,
-			mpz_srcptr h_CRS,
+			(const size_t n_in, const size_t t_in, const size_t i_in, const size_t tprime_in,
+			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
 			bool use_very_strong_randomness_in = true);
@@ -85,6 +84,8 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 			bool use_very_strong_randomness_in = true);
 		void PublishState
 			(std::ostream &out) const;
+		void Erase
+			();
 		bool CheckGroup
 			() const;
 		bool Share
@@ -108,15 +109,14 @@ class CanettiGennaroJareckiKrawczykRabinZVSS
 	
 	public:
 		mpz_t					p, q, g, h;
-		size_t					n, t, i;
+		size_t					n, t, i, tprime;
 		std::vector<size_t>			QUAL;
 		mpz_t					x_i, xprime_i;
 		std::vector< std::vector<mpz_ptr> >	s_ji, sprime_ji, C_ik;
 		
 		CanettiGennaroJareckiKrawczykRabinZVSS
-			(const size_t n_in, const size_t t_in, const size_t i_in,
-			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS,
-			mpz_srcptr h_CRS,
+			(const size_t n_in, const size_t t_in, const size_t i_in, const size_t tprime_in,
+			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
 			bool use_very_strong_randomness_in = true);
@@ -127,6 +127,8 @@ class CanettiGennaroJareckiKrawczykRabinZVSS
 			bool use_very_strong_randomness_in = true);
 		void PublishState
 			(std::ostream &out) const;
+		void Erase
+			();
 		bool CheckGroup
 			() const;
 		bool Share
@@ -138,13 +140,13 @@ class CanettiGennaroJareckiKrawczykRabinZVSS
 };
 
 /* This protocol is called DKG in [CGJKR99]. However, we implement a variant with optimal resilience $t < n/2$. */
-// TODO: use previously defined RVSS
 class CanettiGennaroJareckiKrawczykRabinDKG
 {
 	private:
 		mpz_t					*fpowm_table_g, *fpowm_table_h;
 		const unsigned long int			F_size, G_size;
 		bool					use_very_strong_randomness;
+		CanettiGennaroJareckiKrawczykRabinRVSS	*x_rvss, *d_rvss;
 	
 	public:
 		mpz_t					p, q, g, h;
@@ -152,12 +154,10 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 		std::vector<size_t>			QUAL;
 		mpz_t					x_i, xprime_i, y;
 		std::vector<mpz_ptr>			y_i, z_i, v_i;
-		std::vector< std::vector<mpz_ptr> >	s_ij, sprime_ij, C_ik;
 		
 		CanettiGennaroJareckiKrawczykRabinDKG
 			(const size_t n_in, const size_t t_in, const size_t i_in,
-			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS,
-			mpz_srcptr h_CRS,
+			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
 			bool use_very_strong_randomness_in = true);
@@ -180,12 +180,9 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 			(const size_t i_in) const;
 		bool CheckKey
 			() const;
-		bool Interpolate
-			(const std::vector<mpz_ptr> &a, 
-			const std::vector<mpz_ptr> &b,
-			std::vector<mpz_ptr> &f);
 		bool Reconstruct
 			(const std::vector<size_t> &complaints,
+			CanettiGennaroJareckiKrawczykRabinRVSS *rvss,
 			std::vector<mpz_ptr> &z_i_in,
 			std::vector< std::vector<mpz_ptr> > &a_ik_in,
 			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);

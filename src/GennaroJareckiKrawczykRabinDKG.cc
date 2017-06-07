@@ -960,102 +960,6 @@ bool GennaroJareckiKrawczykRabinDKG::CheckKey
 	}
 }
 
-/* The algorithm for polynomial interpolation is adapted from Victor Shoup's NTL 10.3.0. */
-bool GennaroJareckiKrawczykRabinDKG::Interpolate
-	(const std::vector<mpz_ptr> &a, const std::vector<mpz_ptr> &b,
-	std::vector<mpz_ptr> &f)
-{
-	size_t m = a.size();
-	if ((b.size() != m) || (m == 0) || (f.size() != m)) 
-		return false;
-	std::vector<mpz_ptr> prod, res;
-	for (size_t k = 0; k < m; k++)
-	{
-		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
-		mpz_init(tmp1), mpz_init(tmp2);
-		prod.push_back(tmp1), res.push_back(tmp2);
-	}
-	for (size_t k = 0; k < m; k++)
-		mpz_set(prod[k], a[k]), mpz_set_ui(res[k], 0L);
-	mpz_t t1, t2, aa;
-	mpz_init(t1), mpz_init(t2), mpz_init(aa);
-
-	try
-	{
-		for (size_t k = 0; k < m; k++)
-		{
-			mpz_set(aa, a[k]);
-			mpz_set_ui(t1, 1L);
-			for (long i = k-1; i >= 0; i--)
-			{
-				mpz_mul(t1, t1, aa);
-				mpz_mod(t1, t1, q);
-				mpz_add(t1, t1, prod[i]);
-				mpz_mod(t1, t1, q);
-			}
-			mpz_set_ui(t2, 0L);
-			for (long i = k-1; i >= 0; i--)
-			{
-				mpz_mul(t2, t2, aa);
-				mpz_mod(t2, t2, q);
-				mpz_add(t2, t2, res[i]);
-				mpz_mod(t2, t2, q);
-			}
-			if (!mpz_invert(t1, t1, q))
-				throw false;
-			mpz_sub(t2, b[k], t2);
-			mpz_mod(t2, t2, q);
-			mpz_mul(t1, t1, t2);
-			mpz_mod(t1, t1, q);
-			for (size_t i = 0; i < k; i++)
-			{
-				mpz_mul(t2, prod[i], t1);
-				mpz_mod(t2, t2, q);
-				mpz_add(res[i], res[i], t2);
-				mpz_mod(res[i], res[i], q);
-			}
-			mpz_set(res[k], t1);
-			if (k < (m - 1))
-			{
-				if (k == 0)
-					mpz_neg(prod[0], prod[0]);
-				else
-				{
-					mpz_neg(t1, a[k]);
-					mpz_add(prod[k], t1, prod[k-1]);
-					mpz_mod(prod[k], prod[k], q);
-					for (long i = k-1; i >= 1; i--)
-					{
-						mpz_mul(t2, prod[i], t1);
-						mpz_mod(t2, t2, q);
-						mpz_add(prod[i], t2, prod[i-1]);
-						mpz_mod(prod[i], prod[i], q);
-					}
-					mpz_mul(prod[0], prod[0], t1);
-					mpz_mod(prod[0], prod[0], q);
-				}
-			}
-		}
-		for (size_t k = 0; k < m; k++)
-			mpz_set(f[k], res[k]);
-
-		// finish
-		throw true;
-	}
-	catch (bool return_value)
-	{
-		for (size_t k = 0; k < m; k++)
-		{
-			mpz_clear(prod[k]), mpz_clear(res[k]);
-			delete [] prod[k], delete [] res[k];
-		}
-		prod.clear(), res.clear();
-		mpz_clear(t1), mpz_clear(t2), mpz_clear(aa);
-		// return
-		return return_value;
-	}
-}
-
 bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 	(const std::vector<size_t> &complaints,
 	std::vector<mpz_ptr> &z_i_in,
@@ -1183,7 +1087,7 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 				mpz_set_ui(points[k], parties[k] + 1); // adjust index in computation
 				mpz_set(shares[k], s_ij[*it][parties[k]]);
 			}
-			if (!Interpolate(points, shares, f))
+			if (!interpolate_polynom(points, shares, q, f))
 				throw false;
 			err << "P_" << i << ": reconstructed f_0 = " << f[0] << std::endl;
 			for (size_t k = 0; k < parties.size(); k++)

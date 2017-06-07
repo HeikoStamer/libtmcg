@@ -97,10 +97,6 @@ class GennaroJareckiKrawczykRabinDKG
 			(const size_t i_in) const;
 		bool CheckKey
 			() const;
-		bool Interpolate
-			(const std::vector<mpz_ptr> &a, 
-			const std::vector<mpz_ptr> &b,
-			std::vector<mpz_ptr> &f);
 		bool Reconstruct
 			(const std::vector<size_t> &complaints,
 			std::vector<mpz_ptr> &z_i_in,

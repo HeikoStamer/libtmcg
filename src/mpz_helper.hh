@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 	#define INCLUDED_mpz_helper_HH
 	
 	#include <iostream>
+	#include <vector>
 	
 	// GNU multiple precision library
 	#include <gmp.h>
@@ -31,4 +32,9 @@
 		(std::ostream &out, mpz_srcptr value);
 	std::istream& operator >>
 		(std::istream &in, mpz_ptr value);
+
+	// polynomial interpolation
+	bool interpolate_polynom
+		(const std::vector<mpz_ptr> &a, const std::vector<mpz_ptr> &b,
+		mpz_srcptr q, std::vector<mpz_ptr> &f);
 #endif
