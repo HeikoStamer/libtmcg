@@ -36,9 +36,10 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in, const std::string label_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
+			label(label_in),
 			n(n_in), t(t_in), i(i_in), tprime(tprime_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
@@ -84,9 +85,10 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	(std::istream &in,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	const bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in, const std::string label_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
+			label(label_in),
 			n(0), t(0), i(0), tprime(0)
 {
 	std::string value;
@@ -295,7 +297,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "CanettiGennaroJareckiKrawczykRabinRVSS::Share()" << p << q << g << h << n << t << tprime;
+	myID << "CanettiGennaroJareckiKrawczykRabinRVSS::Share()" << p << q << g << h << n << t << tprime << label;
 	rbc->setID(myID.str());
 
 	try
@@ -672,9 +674,10 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	const bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in, const std::string label_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
+			label(label_in),
 			n(n_in), t(t_in), i(i_in), tprime(tprime_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
@@ -719,9 +722,10 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	(std::istream &in,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	const bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in, const std::string label_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
+			label(label_in),
 			n(0), t(0), i(0), tprime(0)
 {
 	std::string value;
@@ -926,7 +930,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "CanettiGennaroJareckiKrawczykRabinZVSS::Share()" << p << q << g << h << n << t << tprime;
+	myID << "CanettiGennaroJareckiKrawczykRabinZVSS::Share()" << p << q << g << h << n << t << tprime << label;
 	rbc->setID(myID.str());
 
 	try
@@ -1521,8 +1525,8 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	rbc->setID(myID.str());
 
 	// initialize subprotocols
-	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness);
-	d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness);
+	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness, "x_rvss");
+	d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness, "d_rvss");
 
 	try
 	{
