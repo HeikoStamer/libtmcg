@@ -61,7 +61,7 @@ class GennaroJareckiKrawczykRabinDKG
 	private:
 		mpz_t					*fpowm_table_g, *fpowm_table_h;
 		const unsigned long int			F_size, G_size;
-		bool					use_very_strong_randomness;
+		const bool				use_very_strong_randomness;
 	
 	public:
 		mpz_t					p, q, g, h;
@@ -77,12 +77,12 @@ class GennaroJareckiKrawczykRabinDKG
 			mpz_srcptr h_CRS,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			bool use_very_strong_randomness_in = true);
+			const bool use_very_strong_randomness_in = true);
 		GennaroJareckiKrawczykRabinDKG
 			(std::istream &in,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			bool use_very_strong_randomness_in = true);
+			const bool use_very_strong_randomness_in = true);
 		void PublishState
 			(std::ostream &out) const;
 		void PublishVerificationKeys

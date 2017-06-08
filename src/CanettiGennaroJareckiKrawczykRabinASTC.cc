@@ -84,7 +84,7 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	(std::istream &in,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
 			n(0), t(0), i(0), tprime(0)
@@ -672,7 +672,7 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
 			n(n_in), t(t_in), i(i_in), tprime(tprime_in)
@@ -719,7 +719,7 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	(std::istream &in,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
 			n(0), t(0), i(0), tprime(0)
@@ -1313,7 +1313,7 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
 			n(n_in), t(t_in), i(i_in)
@@ -1339,7 +1339,7 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 	(std::istream &in,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
 			n(0), t(0), i(0)
