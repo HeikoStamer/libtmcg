@@ -852,7 +852,7 @@ void parse_message
 						break;
 					}
 					if (have_pkesk)
-						std::cerr << "WARNING: matching PKESK packet already found; overwritten values" << std::endl;
+						std::cerr << "WARNING: matching PKESK packet already found; g^k and my^k overwritten" << std::endl;
 					have_pkesk = true;
 					gk = ctx.gk, myk = ctx.myk;
 					break;
@@ -921,6 +921,12 @@ void parse_message
 	if ((gcry_mpi_cmp_ui(gk, 0L) <= 0) || (gcry_mpi_cmp(gk, elg_p) >= 0))
 	{
 		std::cerr << "ERROR: 0 < g^k < p not satisfied" << std::endl;
+		exit(-1);
+	}
+	// check whether $0 < my^k < p$.
+	if ((gcry_mpi_cmp_ui(myk, 0L) <= 0) || (gcry_mpi_cmp(myk, elg_p) >= 0))
+	{
+		std::cerr << "ERROR: 0 < my^k < p not satisfied" << std::endl;
 		exit(-1);
 	}
 	// check whether $(g^k)^q \equiv 1 \pmod{p}$.
