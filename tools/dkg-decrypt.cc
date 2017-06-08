@@ -845,12 +845,14 @@ void parse_message
 					if (opt_verbose)
 						std::cout << std::dec << std::endl;
 					if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareZero(pkesk_keyid))
-						std::cerr << "WARNING: wildcard pkesk-key ID found" << std::endl; // TODO: maybe not only the first PKESK packet
+						std::cerr << "WARNING: PKESK wildcard keyid found" << std::endl;
 					else if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(pkesk_keyid, subkeyid))
 					{
-						std::cerr << "WARNING: pkesk-key ID does not match subkey ID" << std::endl;
+						std::cerr << "WARNING: PKESK keyid does not match subkey ID" << std::endl;
 						break;
 					}
+					if (have_pkesk)
+						std::cerr << "WARNING: matching PKESK packet already found; overwritten values" << std::endl;
 					have_pkesk = true;
 					gk = ctx.gk, myk = ctx.myk;
 					break;
@@ -909,7 +911,7 @@ void parse_message
 		std::cerr << "ERROR: multiple types of symmetrically encrypted data found" << std::endl;
 		exit(-1);
 	}
-	// check whether DSA and ElGamal parameters match
+	// check whether DSA and ElGamal group parameters match
 	if (gcry_mpi_cmp(dsa_p, elg_p) || gcry_mpi_cmp(dsa_g, elg_g))
 	{
 		std::cerr << "ERROR: DSA and ElGamal group parameters does not match" << std::endl;
