@@ -185,6 +185,12 @@ void CanettiGennaroJareckiKrawczykRabinRVSS::PublishState
 	}
 }
 
+std::string CanettiGennaroJareckiKrawczykRabinRVSS::Label
+	() const
+{
+	return label;
+}
+
 void CanettiGennaroJareckiKrawczykRabinRVSS::Erase
 	()
 {
@@ -628,6 +634,128 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 	}
 }
 
+bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
+	(const std::vector<size_t> &complaints,
+	std::vector<mpz_ptr> &a_i_in,
+	CachinKursawePetzoldShoupRBC *rbc, std::ostream &err)
+{
+	// initialize
+	mpz_t foo, bar, lhs, rhs;
+	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct()" << p << q << g << h << n << t << tprime << label;
+	rbc->setID(myID.str());
+
+	try
+	{
+		// run reconstruction phase of Pedersen-VSS
+		if (complaints.size() > t)
+		{
+			err << "P_" << i << ": too many faulty parties (" << complaints.size() << " > t)" << std::endl;
+			throw false;
+		}
+		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
+		{
+			// broadcast shares for reconstruction of $z_i$ (where $i = *it$) 
+			rbc->Broadcast(s_ji[*it][i]);
+			rbc->Broadcast(sprime_ji[*it][i]);
+			// prepare for collecting shares
+			std::vector<size_t> parties;
+			parties.push_back(i); // shares of $P_i$ are always available
+			// collect shares $s_{ji}$ and $s\prime_{ji}$ of other parties from QUAL
+			for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
+			{
+				if ((*jt != i) && (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end()))
+				{
+					if (rbc->DeliverFrom(s_ji[*it][*jt], *jt) && rbc->DeliverFrom(sprime_ji[*it][*jt], *jt))
+					{
+						// compute LHS for the check
+						mpz_fpowm(fpowm_table_g, foo, g, s_ji[*it][*jt], p);
+						mpz_fpowm(fpowm_table_h, bar, h, sprime_ji[*it][*jt], p);
+						mpz_mul(lhs, foo, bar);
+						mpz_mod(lhs, lhs, p);
+						// compute RHS for the check
+						mpz_set_ui(rhs, 1L);
+						for (size_t k = 0; k <= tprime; k++)
+						{
+							mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $j$ in computation
+							mpz_powm(bar, C_ik[*it][k], foo, p);
+							mpz_mul(rhs, rhs, bar);
+							mpz_mod(rhs, rhs, p);
+						}
+						// check equation (1)
+						if (mpz_cmp(lhs, rhs))
+							err << "P_" << i << ": bad share received from " << *jt << std::endl;
+						else
+							parties.push_back(*jt);
+					}
+					else
+						err << "P_" << i << ": no share received from " << *jt << std::endl;					
+				}
+			}
+			// check whether enough shares (i.e. $t + 1$) have been collected
+			if (parties.size() <= t)
+			{
+				err << "P_" << i << ": not enough shares collected" << std::endl;
+				throw false;
+			}
+			if (parties.size() > (t + 1))
+				parties.resize(t + 1);
+			err << "P_" << i << ": reconstructing parties = ";
+			for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
+				err << "P_" << *jt << " ";
+			err << std::endl;
+			// compute $z_i$ using Lagrange interpolation (without corrupted parties)
+			mpz_set_ui(foo, 0L);
+			for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
+			{
+				mpz_set_ui(rhs, 1L); // compute the optimized Lagrange multipliers
+				for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+				{
+					if (*lt != *jt)
+						mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
+				}
+				mpz_set_ui(lhs, 1L);
+				for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+				{
+					if (*lt != *jt)
+					{
+						mpz_set_ui(bar, (*lt + 1)); // adjust index in computation
+						mpz_sub_ui(bar, bar, (*jt + 1)); // adjust index in computation
+						mpz_mul(lhs, lhs, bar);
+					}
+				}
+				if (!mpz_invert(lhs, lhs, q))
+				{
+					err << "P_" << i << ": cannot invert LHS during reconstruction" << std::endl;
+					throw false;
+				}
+				mpz_mul(rhs, rhs, lhs);
+				mpz_mod(rhs, rhs, q);
+				mpz_mul(bar, s_ji[*it][*jt], rhs); // use the provided shares (interpolation points)
+				mpz_mod(bar, bar, q);
+				mpz_add(foo, foo, bar);
+				mpz_mod(foo, foo, q);
+			}
+			mpz_set(a_i_in[*it], foo);
+			parties.clear();
+		}
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// unset ID for RBC
+		rbc->unsetID();
+		// release
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
+		// return
+		return return_value;
+	}
+}
+
 CanettiGennaroJareckiKrawczykRabinRVSS::~CanettiGennaroJareckiKrawczykRabinRVSS
 	()
 {
@@ -817,6 +945,12 @@ void CanettiGennaroJareckiKrawczykRabinZVSS::PublishState
 		for (size_t k = 0; k <= tprime; k++)
 			out << C_ik[i][k] << std::endl;
 	}
+}
+
+std::string CanettiGennaroJareckiKrawczykRabinZVSS::Label
+	() const
+{
+	return label;
 }
 
 void CanettiGennaroJareckiKrawczykRabinZVSS::Erase
@@ -1464,16 +1598,19 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
-	mpz_t d, d_i, dprime_i, r_i, rprime_i;
-	std::vector<mpz_ptr> A_i, B_i, T_i, Tprime_i, z_i;
-	std::vector<size_t> complaints, complaints_counter, complaints_from;
+	mpz_t d, r_i, rprime_i;
+	std::vector<mpz_ptr> A_i, B_i, T_i, Tprime_i, z_i, d_i, dprime_i;
+	std::vector<size_t> complaints, complaints_counter, complaints_from, d_complaints;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
-	mpz_init(d), mpz_init(d_i), mpz_init(dprime_i), mpz_init(r_i), mpz_init(rprime_i);
+	mpz_init(d), mpz_init(r_i), mpz_init(rprime_i);
 	for (size_t j = 0; j < n; j++)
 	{
-		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(), tmp4 = new mpz_t(), tmp5 = new mpz_t();
-		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4), mpz_init(tmp5);
-		A_i.push_back(tmp1), B_i.push_back(tmp2), T_i.push_back(tmp3), Tprime_i.push_back(tmp4), z_i.push_back(tmp5);
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(), tmp4 = new mpz_t();
+		mpz_ptr tmp5 = new mpz_t(), tmp6 = new mpz_t(), tmp7 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4);
+		mpz_init(tmp5), mpz_init(tmp6), mpz_init(tmp7);
+		A_i.push_back(tmp1), B_i.push_back(tmp2), T_i.push_back(tmp3), Tprime_i.push_back(tmp4);
+		z_i.push_back(tmp5), d_i.push_back(tmp6), dprime_i.push_back(tmp7);
 	}
 	size_t simulate_faulty_randomizer[10];
 	for (size_t idx = 0; idx < 10; idx++)
@@ -1484,7 +1621,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	myID << "CanettiGennaroJareckiKrawczykRabinDKG::Generate()" << p << q << g << h << n << t;
 	rbc->setID(myID.str());
 
-	// initialize subprotocols
+	// initialize required subprotocols
 	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness, "x_rvss");
 	d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness, "d_rvss");
 
@@ -1512,7 +1649,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		// 2. Each player $P_i$, $i \in QUAL$, broadcasts $A_i = g^{f_i(0)} = g^{z_i} \bmod p$ and
 		//    $B_i = h^{f\prime_i(0)} \bmod p$, s.t. $C_{i0} = A_i B_i$. $P_i$ also chooses random
 		//    values $r_i$ and $r\prime_i$ and broadcasts $T_i = g^{r_i}, T\prime_i = h^{r\prime_i} \bmod p$.
-		mpz_fspowm(fpowm_table_g, A_i[i], g, z_i[i], p);
+		mpz_fspowm(fpowm_table_g, A_i[i], g, x_rvss->z_i, p);
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[1])
 			mpz_add_ui(A_i[i], A_i[i], 1L);
 		mpz_fspowm(fpowm_table_h, B_i[i], h, x_rvss->zprime_i, p);
@@ -1524,143 +1661,200 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		rbc->Broadcast(B_i[i]);
 		rbc->Broadcast(T_i[i]);
 		rbc->Broadcast(Tprime_i[i]);
-		complaints.clear();
 		for (size_t j = 0; j < n; j++)
 		{
-			if ((j != i) &&
-				(std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
+			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
 			{
-					if (!rbc->DeliverFrom(A_i[j], j))
-					{
-						err << "P_" << i << ": receiving A_i failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
-						break;
-					}
-					if (!rbc->DeliverFrom(B_i[j], j))
-					{
-						err << "P_" << i << ": receiving B_i failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
-						break;
-					}
-					if (!rbc->DeliverFrom(T_i[j], j))
-					{
-						err << "P_" << i << ": receiving T_i failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
-						break;
-					}
-					if (!rbc->DeliverFrom(Tprime_i[j], j))
-					{
-						err << "P_" << i << ": receiving Tprime_i failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
-						break;
-					}
-					// compute RHS and check that $C_{j0} = A_j B_j \bmod p$
-					mpz_mul(rhs, A_i[j], B_i[j]);
-					mpz_mod(rhs, rhs, p);
-					if (mpz_cmp(x_rvss->C_ik[j][0], rhs))
-					{
-						err << "P_" << i << ": checking in step 2. failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
-						break;
-					}
+				if (!rbc->DeliverFrom(A_i[j], j))
+				{
+					err << "P_" << i << ": receiving A_i failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					break;
+				}
+				if (!rbc->DeliverFrom(B_i[j], j))
+				{
+					err << "P_" << i << ": receiving B_i failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					break;
+				}
+				if (!rbc->DeliverFrom(T_i[j], j))
+				{
+					err << "P_" << i << ": receiving T_i failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					break;
+				}
+				if (!rbc->DeliverFrom(Tprime_i[j], j))
+				{
+					err << "P_" << i << ": receiving Tprime_i failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					break;
+				}
+				// compute RHS and check that $C_{j0} = A_j B_j \bmod p$
+				mpz_mul(rhs, A_i[j], B_i[j]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(x_rvss->C_ik[j][0], rhs))
+				{
+					err << "P_" << i << ": checking in step 2. failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					break;
+				}
 			}
 		}
 		// 3. Players execute Joint-RVSS(t,n,t) for a joint random challenge $d$. Player $P_i$ sets
-		//    his local share of the secret challenge to $d_i$. All other secret output generated by
-		//    this Joint-RVSS and held by $P_i$ is erased.
+		//    his local share of the secret challenge to $d_i$.
 		if (!d_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[2])
 			throw false;
-		mpz_set(d_i, d_rvss->x_i), mpz_set(dprime_i, d_rvss->xprime_i);
-		d_rvss->Erase();
+		mpz_set(d_i[i], d_rvss->x_i), mpz_set(dprime_i[i], d_rvss->xprime_i);
 		// 4. Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[3])
-			mpz_add_ui(d_i, d_i, 1L);
-		rbc->Broadcast(d_i);
-		rbc->Broadcast(dprime_i);
-// TODO: receive shares and get $d$ either by summation, if nobody fails, or otherwise by interpolation
-
-
-		
-// FIXME: next steps are copied from the other DKG protocol and need to be adjusted
-		// 4. Each party $i \in QUAL$ exposes $y_i = g^{z_i} \bmod p$
-		//    via Feldman-VSS:
-		// (a) Each party $P_i$, $i \in QUAL$, broadcasts $A_{ik} = 
-		//     g^{a_{ik}} \bmod p$ for $k = 0, \ldots, t$.
-		for (size_t k = 0; k <= t; k++)
-		{
-//			mpz_fspowm(fpowm_table_g, A_ik[i][k], g, a_i[k], p);
-//			if (simulate_faulty_behaviour)
-//				mpz_add_ui(A_ik[i][k], A_ik[i][k], 1L);
-//			rbc->Broadcast(A_ik[i][k]);
-		}
-		// (b) Each party $P_j$ verifies the values broadcast by the
-		//     other parties in $QUAL$, namely for each $i \in QUAL$,
-		//     $P_j$ checks if $g^{s_{ij}} = \prod_{k=0}^t (A_{ik})^{j^k} \bmod p$.
-		// Note that in this section the indicies $i$ and $j$ are exchanged for convenience.
-		complaints.clear();
+			mpz_add_ui(d_i[i], d_i[i], 1L);
+		rbc->Broadcast(d_i[i]);
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[4])
+			mpz_add_ui(dprime_i[i], dprime_i[i], 1L);
+		rbc->Broadcast(dprime_i[i]);
 		for (size_t j = 0; j < n; j++)
 		{
-			if ((j != i) &&
-				(std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
+			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
 			{
-				for (size_t k = 0; k <= t; k++)
+				if (!rbc->DeliverFrom(d_i[j], j))
 				{
-//					if (!rbc->DeliverFrom(A_ik[j][k], j))
-					{
-						err << "P_" << i << ": receiving A_ik failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
-						break;
-					}
+					err << "P_" << i << ": receiving d_i failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					break;
 				}
-				// compute LHS for the check
-				mpz_fspowm(fpowm_table_g, lhs, g, x_rvss->s_ji[j][i], p);
-				// compute RHS for the check
+				if (!rbc->DeliverFrom(dprime_i[j], j))
+				{
+					err << "P_" << i << ": receiving dprime_i failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					break;
+				}
+				// However, we can achieve optimal resilience by sieving out bad shares with
+				// Pedersen verification equation (Eq. (1)) if the players submit the associated
+				// random values generated by Joint-RVSS together with there shares. Therefore
+				// the players must no longer erase these values as in the current Step 3.
+				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
+				mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
+				mpz_mul(lhs, foo, bar);
+				mpz_mod(lhs, lhs, p);
 				mpz_set_ui(rhs, 1L);
-				for (size_t k = 0; k <= t; k++)
-				{
-					mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
-//					mpz_powm(bar, A_ik[j][k], foo , p);
-					mpz_mul(rhs, rhs, bar);
-					mpz_mod(rhs, rhs, p);
-				}
-				// check equation (5)
+				mpz_mul(rhs, rhs, d_rvss->C_ik[j][0]);
+				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i << ": checking 4(b) failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << i << ": checking d_i resp. dprime_i failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
 				}
 			}
 		}
-		// If the check fails for an index $i$, $P_j$ complains against
-		// $P_i$ by broadcasting the values $s_{ij}$, $s\prime_{ij}$
-		// that satisfy (4) but do not satisfy (5).
+		// public reconstruction of $d_j$, for every failed player $P_j$
+		std::sort(d_complaints.begin(), d_complaints.end());
+		std::vector<size_t>::iterator it = std::unique(d_complaints.begin(), d_complaints.end());
+		d_complaints.resize(std::distance(d_complaints.begin(), it));
+		err << "P_" << i << ": there are extracting complaints against ";
+		for (std::vector<size_t>::iterator it = d_complaints.begin(); it != d_complaints.end(); ++it)
+			err << "P_" << *it << " ";
+		err << std::endl;
+		if (!d_rvss->Reconstruct(d_complaints, d_i, rbc, err))
+		{
+			err << "P_" << i << ": reconstruction in step 4. failed" << std::endl;
+			throw false;
+		}
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[5])
+			throw false;
+		// Get $d = \sum_{P_i \in QUAL} d_i$
+		mpz_set_ui(d, 0L);
+		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
+		{
+			mpz_add(d, d, d_i[*it]);
+			mpz_mod(d, d, q);
+		}
+		err << "P_" << i << ": d = " << d << std::endl;
+		// 5. $P_i$ broadcasts $R_i = r_i + d \cdot f_i(0)$ and $R\prime_i = r\prime_i + d \cdot f\prime_i(0)$
+		mpz_mul(foo, d, x_rvss->z_i);
+		mpz_mod(foo, foo, q);
+		mpz_add(foo, foo, r_i);
+		mpz_mod(foo, foo, q);
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[6])
+			mpz_add_ui(foo, foo, 1L);
+		rbc->Broadcast(foo);
+		mpz_mul(bar, d, x_rvss->zprime_i);
+		mpz_mod(bar, bar, q);
+		mpz_add(bar, bar, r_i);
+		mpz_mod(bar, bar, q);
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[7])
+			mpz_add_ui(bar, bar, 1L);
+		rbc->Broadcast(bar);
+		// 6. Player $P_j$ checks for each $P_i$ that $g^{R_i} = T_i \cdot A_i^d$ and
+		//    $h^{R\prime_i} = T\prime_i \cdot B_i^d$. If the equation is not satisfied
+		//    then $P_j$ complains against $P_i$.
+		// In opposite to the notation used in the paper the indicies $i$ and $j$ are
+		// exchanged in this step for convenience.
+		for (size_t j = 0; j < n; j++)
+		{
+			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
+			{
+				if (!rbc->DeliverFrom(foo, j))
+				{
+					err << "P_" << i << ": receiving R_i failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					break;
+				}
+				if (!rbc->DeliverFrom(bar, j))
+				{
+					err << "P_" << i << ": receiving Rprime_i failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					break;
+				}
+				mpz_fpowm(fpowm_table_g, lhs, g, foo, p);
+				mpz_powm(rhs, A_i[j], d, p);
+				mpz_mul(rhs, rhs, T_i[j]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+				}
+				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				mpz_powm(rhs, B_i[j], d, p);
+				mpz_mul(rhs, rhs, Tprime_i[j]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+				}
+			}
+		}
+		// 7. If player $P_i$ receives more than $t$ complaints, then $P_j$ 
+		//    broadcasts $s_{ij}$ (and $s\prime_{ij}$ for the optimally-resilient variant). 
+		// The broadcasts are done inside public reconstruction of $z_i$.
+		// In opposite to the notation used in the paper the indicies $i$ and $j$ are
+		// exchanged in this step for convenience.
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[8])
+			throw false;
 		std::sort(complaints.begin(), complaints.end());
-		std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
+		it = std::unique(complaints.begin(), complaints.end());
 		complaints.resize(std::distance(complaints.begin(), it));
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
+			err << "P_" << i << ": broadcast complaint against P_" << *it << std::endl;
 			mpz_set_ui(rhs, *it);
 			rbc->Broadcast(rhs);
-			rbc->Broadcast(x_rvss->s_ji[i][*it]);
-			rbc->Broadcast(x_rvss->sprime_ji[i][*it]);
 		}
-		mpz_set_ui(rhs, n); // send end marker
+		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		// (c) For parties $P_i$ who receive at least one valid complaint,
-		//     i.e., values which satisfy (4) and not (5), the other
-		//     parties run the reconstruction phase of Pedersen-VSS to
-		//     compute $z_i$, $f_i(z)$, $A_{ik}$ for $k = 0, \ldots, t$
-		//     in the clear.
-		// Note that in this section the indicies $i$ and $j$ are exchanged for convenience.
-		complaints.clear();
+		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset
+		for (size_t j = 0; j < n; j++)
+			complaints_counter.push_back(0); // initialize counter
 		for (size_t j = 0; j < n; j++)
 		{
 			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j)	!= QUAL.end()))
 			{
 				size_t who;
 				size_t cnt = 0;
+				std::map<size_t, bool> dup;
 				do
 				{
 					if (!rbc->DeliverFrom(rhs, j))
@@ -1670,70 +1864,41 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 						break;
 					}
 					who = mpz_get_ui(rhs);
-					if (who < n)
+					if ((who < n) && !dup.count(who))
 					{
 						err << "P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
+						complaints_counter[who]++;
+						dup.insert(std::pair<size_t, bool>(who, true)); // mark as counted for $P_j$
+						if (who == i)
+							complaints_from.push_back(j);
 					}
-					else
-						break; // end marker received 
-					if (!rbc->DeliverFrom(foo, j))
+					else if ((who < n) && dup.count(who))
 					{
-						err << "P_" << i << ": receiving s_ij failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
-						break;
-					}
-					if (!rbc->DeliverFrom(bar, j))
-					{
-						err << "P_" << i << ": receiving sprime_ij failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
-						break;
-					}
-					// verify complaint, i.e. (4) holds (5) not.
-					// compute LHS for the check
-					mpz_fpowm(fpowm_table_g, lhs, g, foo, p);
-					mpz_fpowm(fpowm_table_h, bar, h, bar, p);
-					mpz_mul(lhs, lhs, bar);
-					mpz_mod(lhs, lhs, p);
-					// compute RHS for the check
-					mpz_set_ui(rhs, 1L);
-					for (size_t k = 0; k <= t; k++)
-					{
-						mpz_ui_pow_ui(foo, who + 1, k); // adjust index $i$ in computation
-						mpz_powm(bar, x_rvss->C_ik[j][k], foo, p);
-						mpz_mul(rhs, rhs, bar);
-						mpz_mod(rhs, rhs, p);
-					}
-					// check equation (4)
-					if (mpz_cmp(lhs, rhs))
-					{
-						err << "P_" << i << ": checking 4(c)(4) failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
-					}
-					// compute LHS for the check
-					mpz_fpowm(fpowm_table_g, lhs, g, foo, p);
-					// compute RHS for the check
-					mpz_set_ui(rhs, 1L);
-					for (size_t k = 0; k <= t; k++)
-					{
-						mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
-//						mpz_powm(bar, A_ik[j][k], foo , p);
-						mpz_mul(rhs, rhs, bar);
-						mpz_mod(rhs, rhs, p);
-					}
-					// check equation (5)
-					if (mpz_cmp(lhs, rhs))
-					{
-						err << "P_" << i << ": checking 4(c)(5) failed; complaint against P_" << who << std::endl;
-						complaints.push_back(who);
-					}
-					else
-					{
-						err << "P_" << i << ": checking 4(c)(5) not failed; complaint against P_" << j << std::endl;
+						err << "P_" << i << ": duplicated complaint against P_" << who << " from P_" << j << std::endl;
 						complaints.push_back(j);
 					}
 					cnt++;
 				}
-				while ((who < n) && (cnt <= n)); // no end marker received
+				while ((who < n) && (cnt <= n)); // until end marker received
+			}
+		}
+		if (complaints_counter[i])
+		{
+			std::sort(complaints_from.begin(), complaints_from.end());
+			err << "P_" << i << ": there are " << complaints_counter[i] << " complaints against me from ";
+			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
+				err << "P_" << *it << " ";
+			err << std::endl;
+		}
+		for (size_t j = 0; j < n; j++)
+		{
+			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j)	!= QUAL.end()))
+			{
+				if (complaints_counter[j] > t)
+				{
+					complaints.push_back(j);
+					continue;
+				}
 			}
 		}
 		std::sort(complaints.begin(), complaints.end());
@@ -1743,27 +1908,14 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
-		// run reconstruction phase of Pedersen-VSS
-//		if (!Reconstruct(complaints, x_rvss, z_i, a_ik, rbc, err))
+		if (!x_rvss->Reconstruct(complaints, z_i, rbc, err))
 		{
-			err << "P_" << i << ": reconstruction failed" << std::endl;
+			err << "P_" << i << ": reconstruction in step 7. failed" << std::endl;
 			throw false;
 		}
+		// Set $A_j = g^{z_j}$, for every failed player $P_j$.
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
-		{
-			// compute $A_{ik} = g^{a_{ik}} \bmod p$
-			for (size_t k = 0; k <= t; k++)
-			{
-//				err << "P_" << i << ": a_" << *it << "," << k << " = " << a_ik[*it][k] << std::endl;
-//				mpz_fpowm(fpowm_table_g, A_ik[*it][k], g, a_ik[*it][k], p);
-			}
-		}
-
-
-
-
-
-
+			mpz_fpowm(fpowm_table_g, A_i[*it], g, z_i[*it], p);
 		// 8. The public value $y$ is set to $y = \prod_{i \in QUAL} A_i \bmod p$.
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 		{
@@ -1785,167 +1937,16 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		rbc->unsetID();
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
-		mpz_clear(d), mpz_clear(d_i), mpz_clear(dprime_i), mpz_clear(r_i), mpz_clear(rprime_i);
+		mpz_clear(d), mpz_clear(r_i), mpz_clear(rprime_i);
 		for (size_t j = 0; j < n; j++)
 		{
-			mpz_clear(A_i[j]), mpz_clear(B_i[j]), mpz_clear(T_i[j]), mpz_clear(Tprime_i[j]), mpz_clear(z_i[j]);
-			delete [] A_i[j], delete [] B_i[j], delete [] T_i[j], delete [] Tprime_i[j], delete [] z_i[j];
+			mpz_clear(A_i[j]), mpz_clear(B_i[j]), mpz_clear(T_i[j]), mpz_clear(Tprime_i[j]);
+			mpz_clear(z_i[j]), mpz_clear(d_i[j]), mpz_clear(dprime_i[j]);
+			delete [] A_i[j], delete [] B_i[j], delete [] T_i[j], delete [] Tprime_i[j];
+			delete [] z_i[j], delete [] d_i[j], delete [] dprime_i[j];
 		}
-		A_i.clear(), B_i.clear(), T_i.clear(), Tprime_i.clear(), z_i.clear();
-		// return
-		return return_value;
-	}
-}
-
-bool CanettiGennaroJareckiKrawczykRabinDKG::Reconstruct
-	(const std::vector<size_t> &complaints,
-	CanettiGennaroJareckiKrawczykRabinRVSS *rvss,
-	std::vector<mpz_ptr> &z_i_in,
-	std::vector< std::vector<mpz_ptr> > &a_ik_in,
-	CachinKursawePetzoldShoupRBC *rbc, std::ostream &err)
-{
-	assert(t <= n);
-	assert(i < n);
-	assert(n == rbc->n);
-	assert(i == rbc->j);
-
-	// initialize
-	mpz_t foo, bar, lhs, rhs;
-	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
-
-	// set ID for RBC
-	std::stringstream myID;
-	myID << "CanettiGennaroJareckiKrawczykRabinDKG::Reconstruct()" << p << q << g << h << n << t;
-	rbc->setID(myID.str());
-
-	try
-	{
-		// run reconstruction phase of Pedersen-VSS
-		if (complaints.size() > t)
-		{
-			err << "P_" << i << ": too many faulty parties (" << complaints.size() << " > t)" << std::endl;
-			throw false;
-		}
-		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
-		{
-			// broadcast shares for reconstruction of $z_i$ (where $i = *it$) 
-			rbc->Broadcast(rvss->s_ji[*it][i]);
-			rbc->Broadcast(rvss->sprime_ji[*it][i]);
-			// prepare for collecting some shares
-			std::vector<size_t> parties;
-			parties.push_back(i); // our own shares are always available
-			// now collect shares $s_{ij}$ and $s\prime_{ij}$ of other parties from QUAL
-			for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
-			{
-				if ((*jt != i) && (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end()))
-				{
-					if (rbc->DeliverFrom(rvss->s_ji[*it][*jt], *jt) && rbc->DeliverFrom(rvss->sprime_ji[*it][*jt], *jt))
-					{
-						// compute LHS for the check
-						mpz_fpowm(fpowm_table_g, foo, g, rvss->s_ji[*it][*jt], p);
-						mpz_fpowm(fpowm_table_h, bar, h, rvss->sprime_ji[*it][*jt], p);
-						mpz_mul(lhs, foo, bar);
-						mpz_mod(lhs, lhs, p);
-						// compute RHS for the check
-						mpz_set_ui(rhs, 1L);
-						for (size_t k = 0; k <= t; k++)
-						{
-							mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $i$ in computation
-							mpz_powm(bar, rvss->C_ik[*it][k], foo , p);
-							mpz_mul(rhs, rhs, bar);
-							mpz_mod(rhs, rhs, p);
-						}
-						// check equation (4)
-						if (mpz_cmp(lhs, rhs))
-							err << "P_" << i << ": bad share received from " << *jt << std::endl;
-						else
-							parties.push_back(*jt); // good share received
-					}
-					else
-						err << "P_" << i << ": no share received from " << *jt << std::endl;					
-				}
-			}
-			// check whether enough shares (i.e. $t + 1$) have been collected
-			if (parties.size() <= t)
-			{
-				err << "P_" << i << ": not enough shares collected" << std::endl;
-				throw false;
-			}
-			if (parties.size() > (t + 1))
-				parties.resize(t + 1);
-			err << "P_" << i << ": reconstructing parties = ";
-			for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
-				err << "P_" << *jt << " ";
-			err << std::endl;
-			// compute $z_i$ using Lagrange interpolation (without corrupted parties)
-			mpz_set_ui(foo, 0L);
-			for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
-			{
-				mpz_set_ui(rhs, 1L); // compute optimized Lagrange coefficients
-				for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
-				{
-					if (*lt != *jt)
-						mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
-				}
-				mpz_set_ui(lhs, 1L);
-				for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
-				{
-					if (*lt != *jt)
-					{
-						mpz_set_ui(bar, (*lt + 1)); // adjust index in computation
-						mpz_sub_ui(bar, bar, (*jt + 1)); // adjust index in computation
-						mpz_mul(lhs, lhs, bar);
-					}
-				}
-				if (!mpz_invert(lhs, lhs, q))
-				{
-					err << "P_" << i << ": cannot invert LHS during reconstruction" << std::endl;
-					throw false;
-				}
-				mpz_mul(rhs, rhs, lhs);
-				mpz_mod(rhs, rhs, q); // computation of Lagrange coefficients finished
-				mpz_mul(bar, rvss->s_ji[*it][*jt], rhs);
-				mpz_mod(bar, bar, q);
-				mpz_add(foo, foo, bar);
-				mpz_mod(foo, foo, q);
-			}
-			mpz_set(z_i_in[*it], foo);
-			err << "P_" << i << ": reconstructed z_" << *it << " = " << z_i_in[*it] << std::endl;
-			// compute $f_i(z)$ using general interpolation
-			std::vector<mpz_ptr> points, shares, f;
-			for (size_t k = 0; k < parties.size(); k++)
-			{
-				mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
-				mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3);
-				points.push_back(tmp1), shares.push_back(tmp2), f.push_back(tmp3);
-			}
-			for (size_t k = 0; k < parties.size(); k++)
-			{
-				mpz_set_ui(points[k], parties[k] + 1); // adjust index in computation
-				mpz_set(shares[k], rvss->s_ji[*it][parties[k]]);
-			}
-			if (!interpolate_polynom(points, shares, q, f))
-				throw false;
-			err << "P_" << i << ": reconstructed f_0 = " << f[0] << std::endl;
-			for (size_t k = 0; k < parties.size(); k++)
-				mpz_set(a_ik_in[*it][k], f[k]);
-			for (size_t k = 0; k < parties.size(); k++)
-			{
-				mpz_clear(points[k]), mpz_clear(shares[k]), mpz_clear(f[k]);
-				delete [] points[k], delete [] shares[k], delete [] f[k];
-			}
-			points.clear(), shares.clear(), f.clear();
-			parties.clear(); 
-		}
-
-		throw true;
-	}
-	catch (bool return_value)
-	{
-		// unset ID for RBC
-		rbc->unsetID();
-		// release
-		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
+		A_i.clear(), B_i.clear(), T_i.clear(), Tprime_i.clear();
+		z_i.clear(), d_i.clear(), dprime_i.clear();
 		// return
 		return return_value;
 	}

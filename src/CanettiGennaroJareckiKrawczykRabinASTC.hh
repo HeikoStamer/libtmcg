@@ -87,6 +87,8 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 			const std::string label_in = "");
 		void PublishState
 			(std::ostream &out) const;
+		std::string Label
+			() const;
 		void Erase
 			();
 		bool CheckGroup
@@ -95,6 +97,10 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);
+		bool Reconstruct
+			(const std::vector<size_t> &complaints,
+			std::vector<mpz_ptr> &a_i_in,
+			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
 		~CanettiGennaroJareckiKrawczykRabinRVSS
 			();
 };
@@ -133,6 +139,8 @@ class CanettiGennaroJareckiKrawczykRabinZVSS
 			const std::string label_in = "");
 		void PublishState
 			(std::ostream &out) const;
+		std::string Label
+			() const;
 		void Erase
 			();
 		bool CheckGroup
@@ -179,16 +187,6 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);
-		bool CheckKey
-			(const size_t i_in) const;
-		bool CheckKey
-			() const;
-		bool Reconstruct
-			(const std::vector<size_t> &complaints,
-			CanettiGennaroJareckiKrawczykRabinRVSS *rvss,
-			std::vector<mpz_ptr> &z_i_in,
-			std::vector< std::vector<mpz_ptr> > &a_ik_in,
-			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
 		~CanettiGennaroJareckiKrawczykRabinDKG
 			();
 };
