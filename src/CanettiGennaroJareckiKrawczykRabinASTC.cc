@@ -1735,6 +1735,14 @@ std::cerr << "step2(" << i << ")" << std::endl;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[2])
 			throw false;
 		mpz_set(d_i[i], d_rvss->z_i), mpz_set(dprime_i[i], d_rvss->zprime_i);
+		// remove those players from $QUAL$, who are disqualified in this Joint-RVSS
+		std::vector<size_t> tmp;
+		for (size_t j = 0; j < n; j++)
+		{
+			std::vector<size_t>::iterator it = std::find(QUAL.begin(), QUAL.end(), j);
+			if ((it != QUAL.end()) && (std::find(d_rvss->QUAL.begin(), d_rvss->QUAL.end(), j) == d_rvss->QUAL.end()))
+				QUAL.erase(it);
+		}
 std::cerr << "step3(" << i << ")" << std::endl;
 		// 4. Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[3])
@@ -1777,7 +1785,7 @@ std::cerr << "step3(" << i << ")" << std::endl;
 				}
 			}
 		}
-		// public reconstruction of $d_j$, for every failed player $P_j$
+		// public reconstruction of $d_j$, for every failed player $P_j \in QUAL$
 		std::sort(d_complaints.begin(), d_complaints.end());
 		std::vector<size_t>::iterator it = std::unique(d_complaints.begin(), d_complaints.end());
 		d_complaints.resize(std::distance(d_complaints.begin(), it));
