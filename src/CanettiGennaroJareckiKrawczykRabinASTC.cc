@@ -1624,13 +1624,14 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	// initialize required subprotocols
 	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness, "x_rvss");
 	d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness, "d_rvss");
-
+std::cerr << "init(" << i << ")" << std::endl;
 	try
 	{
 		// Generating $x$:
 		// Players execute Joint-RVSS(t,n,t)
 		if (!x_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
+std::cerr << "after share" << std::endl;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[0])
 			throw false;
 		// 1. Player $P_i$ gets the following secret outputs of Joint-RVSS
@@ -1642,8 +1643,9 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		//      from others
 		//    Players also get public outputs $C_{ik}$ for $i = 1, \ldots, n, k = 0, \ldots, t$
 		//    and the set QUAL
-		std::copy(x_rvss->QUAL.begin(), x_rvss->QUAL.end(), QUAL.begin()); 
-
+		for (size_t j = 0; j < x_rvss->QUAL.size(); j++)
+			QUAL.push_back(x_rvss->QUAL[j]);
+std::cerr << "step1(" << i << ")" << std::endl;
 		// Extracting $y = g^x \bmod p$:
 		// Each player exposes $y_i = g^{z_i} \bmod p$ to enable the computation of $y = g^x \bmod p$.
 		// 2. Each player $P_i$, $i \in QUAL$, broadcasts $A_i = g^{f_i(0)} = g^{z_i} \bmod p$ and
@@ -1669,25 +1671,25 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				{
 					err << "P_" << i << ": receiving A_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
-					break;
+					continue;
 				}
 				if (!rbc->DeliverFrom(B_i[j], j))
 				{
 					err << "P_" << i << ": receiving B_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
-					break;
+					continue;
 				}
 				if (!rbc->DeliverFrom(T_i[j], j))
 				{
 					err << "P_" << i << ": receiving T_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
-					break;
+					continue;
 				}
 				if (!rbc->DeliverFrom(Tprime_i[j], j))
 				{
 					err << "P_" << i << ": receiving Tprime_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
-					break;
+					continue;
 				}
 				// compute RHS and check that $C_{j0} = A_j B_j \bmod p$
 				mpz_mul(rhs, A_i[j], B_i[j]);
@@ -1696,17 +1698,18 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				{
 					err << "P_" << i << ": checking in step 2. failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
-					break;
 				}
 			}
 		}
+std::cerr << "step2(" << i << ")" << std::endl;
 		// 3. Players execute Joint-RVSS(t,n,t) for a joint random challenge $d$. Player $P_i$ sets
 		//    his local share of the secret challenge to $d_i$.
 		if (!d_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[2])
 			throw false;
-		mpz_set(d_i[i], d_rvss->x_i), mpz_set(dprime_i[i], d_rvss->xprime_i);
+		mpz_set(d_i[i], d_rvss->z_i), mpz_set(dprime_i[i], d_rvss->zprime_i);
+std::cerr << "step3(" << i << ")" << std::endl;
 		// 4. Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[3])
 			mpz_add_ui(d_i[i], d_i[i], 1L);
@@ -1722,13 +1725,13 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				{
 					err << "P_" << i << ": receiving d_i failed; complaint against P_" << j << std::endl;
 					d_complaints.push_back(j);
-					break;
+					continue;
 				}
 				if (!rbc->DeliverFrom(dprime_i[j], j))
 				{
 					err << "P_" << i << ": receiving dprime_i failed; complaint against P_" << j << std::endl;
 					d_complaints.push_back(j);
-					break;
+					continue;
 				}
 				// However, we can achieve optimal resilience by sieving out bad shares with
 				// Pedersen verification equation (Eq. (1)) if the players submit the associated
@@ -1771,6 +1774,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 			mpz_mod(d, d, q);
 		}
 		err << "P_" << i << ": d = " << d << std::endl;
+std::cerr << "step4(" << i << ")" << std::endl;
 		// 5. $P_i$ broadcasts $R_i = r_i + d \cdot f_i(0)$ and $R\prime_i = r\prime_i + d \cdot f\prime_i(0)$
 		mpz_mul(foo, d, x_rvss->z_i);
 		mpz_mod(foo, foo, q);
@@ -1781,11 +1785,12 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		rbc->Broadcast(foo);
 		mpz_mul(bar, d, x_rvss->zprime_i);
 		mpz_mod(bar, bar, q);
-		mpz_add(bar, bar, r_i);
+		mpz_add(bar, bar, rprime_i);
 		mpz_mod(bar, bar, q);
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[7])
 			mpz_add_ui(bar, bar, 1L);
 		rbc->Broadcast(bar);
+std::cerr << "step5(" << i << ")" << std::endl;
 		// 6. Player $P_j$ checks for each $P_i$ that $g^{R_i} = T_i \cdot A_i^d$ and
 		//    $h^{R\prime_i} = T\prime_i \cdot B_i^d$. If the equation is not satisfied
 		//    then $P_j$ complains against $P_i$.
@@ -1799,34 +1804,38 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				{
 					err << "P_" << i << ": receiving R_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
-					break;
+					continue;
 				}
 				if (!rbc->DeliverFrom(bar, j))
 				{
 					err << "P_" << i << ": receiving Rprime_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
-					break;
+					continue;
 				}
 				mpz_fpowm(fpowm_table_g, lhs, g, foo, p);
 				mpz_powm(rhs, A_i[j], d, p);
 				mpz_mul(rhs, rhs, T_i[j]);
 				mpz_mod(rhs, rhs, p);
+//std::cerr << "lhs = " << lhs << " rhs = " << rhs << std::endl;
 				if (mpz_cmp(lhs, rhs))
 				{
 					err << "P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					complaints.push_back(j);
+					continue;
 				}
 				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				mpz_powm(rhs, B_i[j], d, p);
 				mpz_mul(rhs, rhs, Tprime_i[j]);
 				mpz_mod(rhs, rhs, p);
+//std::cerr << "lhs2 = " << lhs << " rhs2 = " << rhs << std::endl;
 				if (mpz_cmp(lhs, rhs))
 				{
 					err << "P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					complaints.push_back(j);
 				}
 			}
 		}
+std::cerr << "step6(" << i << ")" << std::endl;
 		// 7. If player $P_i$ receives more than $t$ complaints, then $P_j$ 
 		//    broadcasts $s_{ij}$ (and $s\prime_{ij}$ for the optimally-resilient variant). 
 		// The broadcasts are done inside public reconstruction of $z_i$.
@@ -1895,10 +1904,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j)	!= QUAL.end()))
 			{
 				if (complaints_counter[j] > t)
-				{
 					complaints.push_back(j);
-					continue;
-				}
 			}
 		}
 		std::sort(complaints.begin(), complaints.end());
