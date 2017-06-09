@@ -159,7 +159,6 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 		size_t					n, t, i;
 		std::vector<size_t>			QUAL;
 		mpz_t					x_i, xprime_i, y;
-		std::vector<mpz_ptr>			y_i, z_i, v_i;
 		
 		CanettiGennaroJareckiKrawczykRabinDKG
 			(const size_t n_in, const size_t t_in, const size_t i_in,

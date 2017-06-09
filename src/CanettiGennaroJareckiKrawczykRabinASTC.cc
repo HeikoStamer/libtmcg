@@ -1324,12 +1324,6 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
 	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L), mpz_init_set_ui(y, 1L);
-	for (size_t j = 0; j < n_in; j++)
-	{
-		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(),	tmp3 = new mpz_t();
-		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3);
-		y_i.push_back(tmp1), z_i.push_back(tmp2), v_i.push_back(tmp3);
-	}
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1370,18 +1364,6 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 		std::stringstream(value) >> who;
 		QUAL.push_back(who);
 	}
-	for (size_t j = 0; j < n; j++)
-	{
-		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(),	tmp3 = new mpz_t();
-		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3);
-		y_i.push_back(tmp1), z_i.push_back(tmp2), v_i.push_back(tmp3);
-	}
-	for (size_t i = 0; i < n; i++)
-		in >> y_i[i];	
-	for (size_t i = 0; i < n; i++)
-		in >> z_i[i];
-	for (size_t i = 0; i < n; i++)
-		in >> v_i[i];
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1400,12 +1382,6 @@ void CanettiGennaroJareckiKrawczykRabinDKG::PublishState
 	out << QUAL.size() << std::endl;
 	for (size_t i = 0; i < QUAL.size(); i++)
 		out << QUAL[i] << std::endl;
-	for (size_t i = 0; i < n; i++)
-		out << y_i[i] << std::endl;
-	for (size_t i = 0; i < n; i++)
-		out << z_i[i] << std::endl;
-	for (size_t i = 0; i < n; i++)
-		out << v_i[i] << std::endl;
 }
 
 bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
@@ -1489,15 +1465,15 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	mpz_t d, d_i, dprime_i, r_i, rprime_i;
-	std::vector<mpz_ptr> A_i, B_i, T_i, Tprime_i;
+	std::vector<mpz_ptr> A_i, B_i, T_i, Tprime_i, z_i;
 	std::vector<size_t> complaints, complaints_counter, complaints_from;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	mpz_init(d), mpz_init(d_i), mpz_init(dprime_i), mpz_init(r_i), mpz_init(rprime_i);
 	for (size_t j = 0; j < n; j++)
 	{
-		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(), tmp4 = new mpz_t();
-		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4);
-		A_i.push_back(tmp1), B_i.push_back(tmp2), T_i.push_back(tmp3), Tprime_i.push_back(tmp4);
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(), tmp4 = new mpz_t(), tmp5 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4), mpz_init(tmp5);
+		A_i.push_back(tmp1), B_i.push_back(tmp2), T_i.push_back(tmp3), Tprime_i.push_back(tmp4), z_i.push_back(tmp5);
 	}
 	size_t simulate_faulty_randomizer[10];
 	for (size_t idx = 0; idx < 10; idx++)
@@ -1782,16 +1758,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 //				mpz_fpowm(fpowm_table_g, A_ik[*it][k], g, a_ik[*it][k], p);
 			}
 		}
-		// For all parties in $QUAL$, set $y_i = A_i = g^{z_i} \bmod p$.
-		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
-			mpz_set(y_i[*it], A_i[*it]);
-		err << "P_" << i << ": y_i = " << y_i[i] << std::endl;
-		// Set public verification keys $v_j = A_i$
-		for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
-		{
-			mpz_set_ui(v_i[*jt], 0);
-			err << "P_" << i << ": v_" << *jt << " = " << v_i[*jt] << std::endl;
-		}
+
 
 
 
@@ -1821,60 +1788,10 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		mpz_clear(d), mpz_clear(d_i), mpz_clear(dprime_i), mpz_clear(r_i), mpz_clear(rprime_i);
 		for (size_t j = 0; j < n; j++)
 		{
-			mpz_clear(A_i[j]), mpz_clear(B_i[j]), mpz_clear(T_i[j]), mpz_clear(Tprime_i[j]);
-			delete [] A_i[j], delete [] B_i[j], delete [] T_i[j], delete [] Tprime_i[j];
+			mpz_clear(A_i[j]), mpz_clear(B_i[j]), mpz_clear(T_i[j]), mpz_clear(Tprime_i[j]), mpz_clear(z_i[j]);
+			delete [] A_i[j], delete [] B_i[j], delete [] T_i[j], delete [] Tprime_i[j], delete [] z_i[j];
 		}
-		A_i.clear(), B_i.clear(), T_i.clear(), Tprime_i.clear();
-		// return
-		return return_value;
-	}
-}
-
-bool CanettiGennaroJareckiKrawczykRabinDKG::CheckKey
-	(const size_t i_in) const
-{
-	// initialize
-	mpz_t foo;
-	mpz_init(foo);
-
-	try
-	{
-		if (i_in >= n)
-			throw false;
-		mpz_fspowm(fpowm_table_g, foo, g, z_i[i_in], p);
-		if (mpz_cmp(y_i[i_in], foo))
-			throw false;
-		
-		throw true;
-	}
-	catch (bool return_value)
-	{
-		// release
-		mpz_clear(foo);
-		// return
-		return return_value;
-	}
-}
-
-bool CanettiGennaroJareckiKrawczykRabinDKG::CheckKey
-	() const
-{
-	// initialize
-	mpz_t foo;
-	mpz_init(foo);
-
-	try
-	{
-		mpz_fspowm(fpowm_table_g, foo, g, x_i, p);
-		if (mpz_cmp(v_i[i], foo))
-			throw false;
-
-		throw CheckKey(i);
-	}
-	catch (bool return_value)
-	{
-		// release
-		mpz_clear(foo);
+		A_i.clear(), B_i.clear(), T_i.clear(), Tprime_i.clear(), z_i.clear();
 		// return
 		return return_value;
 	}
@@ -2040,24 +1957,7 @@ CanettiGennaroJareckiKrawczykRabinDKG::~CanettiGennaroJareckiKrawczykRabinDKG
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
 	QUAL.clear();
 	mpz_clear(x_i), mpz_clear(xprime_i), mpz_clear(y);
-	for (size_t i = 0; i < y_i.size(); i++)
-	{
-		mpz_clear(y_i[i]);
-		delete [] y_i[i];
-	}
-	y_i.clear();
-	for (size_t i = 0; i < z_i.size(); i++)
-	{
-		mpz_clear(z_i[i]);
-		delete [] z_i[i];
-	}
-	z_i.clear();
-	for (size_t i = 0; i < v_i.size(); i++)
-	{
-		mpz_clear(v_i[i]);
-		delete [] v_i[i];
-	}
-	v_i.clear();
+
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
