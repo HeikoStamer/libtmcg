@@ -38,6 +38,11 @@
 		   avoids some obvious denial-of-service attacks. */  
 		#define TMCG_MAX_ZNP_ITERATIONS 80
 	#endif
+
+	#ifndef TMCG_MAX_DKG_PLAYERS
+		/* Define the maximum number of parties for DKG protocols. */
+		#define TMCG_MAX_DKG_PLAYERS 256
+	#endif
 	
 	#ifndef TMCG_GROTH_L_E
 		/* Define the security parameter for the soundness of the

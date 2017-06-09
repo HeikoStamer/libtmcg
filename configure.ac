@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170602])
+AC_REVISION([20170609])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.2], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -91,6 +91,8 @@ AC_DEFINE(TMCG_MAX_ZNP_ITERATIONS, 80,
 	style zero-knowledge protocols of Schindelhauer's toolbox. This limits the
 	soundness error probability to 2^{-TMCG_MAX_ZNP_ITERATIONS}, however, it
 	avoids some obvious denial-of-service attacks.])
+AC_DEFINE(TMCG_MAX_DKG_PLAYERS, 256,
+	[Define the maximum number of parties for DKG protocols.])
 AC_DEFINE(TMCG_GROTH_L_E, 80,
 	[Define the security parameter for the soundness of the
 	interactive argument for Groth's VSSHE and SKC.])

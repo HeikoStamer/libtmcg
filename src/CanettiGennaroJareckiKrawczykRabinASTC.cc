@@ -97,12 +97,20 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	in >> p >> q >> g >> h;
 	std::getline(in, value);
 	std::stringstream(value) >> n;
+	if (n > TMCG_MAX_DKG_PLAYERS)
+		n = TMCG_MAX_DKG_PLAYERS;
 	std::getline(in, value);
 	std::stringstream(value) >> t;
+	if (t > n)
+		t = n;
 	std::getline(in, value);
 	std::stringstream(value) >> i;
+	if (i >= n)
+		i = 0;
 	std::getline(in, value);
 	std::stringstream(value) >> tprime;
+	if (tprime > n)
+		tprime = n;
 	mpz_init(x_i), mpz_init(xprime_i);
 	in >> x_i >> xprime_i;
 	mpz_init(z_i), mpz_init(zprime_i);
@@ -862,12 +870,20 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	in >> p >> q >> g >> h;
 	std::getline(in, value);
 	std::stringstream(value) >> n;
+	if (n > TMCG_MAX_DKG_PLAYERS)
+		n = TMCG_MAX_DKG_PLAYERS;
 	std::getline(in, value);
 	std::stringstream(value) >> t;
+	if (t > n)
+		t = n;
 	std::getline(in, value);
 	std::stringstream(value) >> i;
+	if (i >= n)
+		i = 0;
 	std::getline(in, value);
 	std::stringstream(value) >> tprime;
+	if (tprime > n)
+		tprime = n;
 	mpz_init(x_i), mpz_init(xprime_i);
 	in >> x_i >> xprime_i;
 	size_t qual_size = 0;
@@ -1816,7 +1832,6 @@ std::cerr << "step5(" << i << ")" << std::endl;
 				mpz_powm(rhs, A_i[j], d, p);
 				mpz_mul(rhs, rhs, T_i[j]);
 				mpz_mod(rhs, rhs, p);
-//std::cerr << "lhs = " << lhs << " rhs = " << rhs << std::endl;
 				if (mpz_cmp(lhs, rhs))
 				{
 					err << "P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
@@ -1827,7 +1842,6 @@ std::cerr << "step5(" << i << ")" << std::endl;
 				mpz_powm(rhs, B_i[j], d, p);
 				mpz_mul(rhs, rhs, Tprime_i[j]);
 				mpz_mod(rhs, rhs, p);
-//std::cerr << "lhs2 = " << lhs << " rhs2 = " << rhs << std::endl;
 				if (mpz_cmp(lhs, rhs))
 				{
 					err << "P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
