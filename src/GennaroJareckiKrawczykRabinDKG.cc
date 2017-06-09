@@ -99,10 +99,16 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	in >> p >> q >> g >> h;
 	std::getline(in, value);
 	std::stringstream(value) >> n;
+	if (n > TMCG_MAX_DKG_PLAYERS)
+		n = TMCG_MAX_DKG_PLAYERS;
 	std::getline(in, value);
 	std::stringstream(value) >> t;
+	if (t > n)
+		t = n;
 	std::getline(in, value);
 	std::stringstream(value) >> i;
+	if (i >= n)
+		i = 0;
 	mpz_init(x_i), mpz_init(xprime_i), mpz_init(y);
 	in >> x_i >> xprime_i >> y;
 	size_t qual_size = 0;
