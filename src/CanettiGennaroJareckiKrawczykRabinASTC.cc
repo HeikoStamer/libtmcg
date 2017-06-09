@@ -1741,7 +1741,10 @@ std::cerr << "step2(" << i << ")" << std::endl;
 		{
 			std::vector<size_t>::iterator it = std::find(QUAL.begin(), QUAL.end(), j);
 			if ((it != QUAL.end()) && (std::find(d_rvss->QUAL.begin(), d_rvss->QUAL.end(), j) == d_rvss->QUAL.end()))
+			{
 				QUAL.erase(it);
+				complaints.push_back(j);
+			}
 		}
 std::cerr << "step3(" << i << ")" << std::endl;
 		// 4. Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).

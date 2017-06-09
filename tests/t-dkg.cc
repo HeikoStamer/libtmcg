@@ -135,15 +135,17 @@ void start_instance
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
 			std::stringstream err_log, state_log;
+			bool ret = true;
 			start_clock();
 			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
 			if (corrupted)
 				dkg->Generate(aiou, rbc, err_log, true);
 			else
-				assert(dkg->Generate(aiou, rbc, err_log));
+				ret = dkg->Generate(aiou, rbc, err_log);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+			assert(ret);
 
 			// check the generated key share and publish state
 			start_clock();
@@ -172,10 +174,11 @@ void start_instance
 			if (corrupted)
 				nts->Generate(aiou, rbc, err_log2, true);
 			else
-				assert(nts->Generate(aiou, rbc, err_log2));
+				ret = nts->Generate(aiou, rbc, err_log2);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
+			assert(ret);
 
 			// sign a message (create a signature share)
 			std::stringstream err_log3;
@@ -186,10 +189,11 @@ void start_instance
 			if (corrupted)
 				nts->Sign(m, c, s, aiou, rbc, err_log3, true);
 			else
-				assert(nts->Sign(m, c, s, aiou, rbc, err_log3));
+				ret = nts->Sign(m, c, s, aiou, rbc, err_log3);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
+			assert(ret);
 
 			// verify signature
 			start_clock();
