@@ -1475,6 +1475,10 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
 	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L), mpz_init_set_ui(y, 1L);
 
+	// initialize required subprotocols
+	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness, "x_rvss");
+	d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness, "d_rvss");
+
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1498,22 +1502,32 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 	in >> p >> q >> g >> h;
 	std::getline(in, value);
 	std::stringstream(value) >> n;
+	if (n > TMCG_MAX_DKG_PLAYERS)
+		n = TMCG_MAX_DKG_PLAYERS;
 	std::getline(in, value);
 	std::stringstream(value) >> t;
+	if (t > n)
+		t = n;
 	std::getline(in, value);
 	std::stringstream(value) >> i;
+	if (i >= n)
+		i = 0;
 	mpz_init(x_i), mpz_init(xprime_i), mpz_init(y);
 	in >> x_i >> xprime_i >> y;
 	size_t qual_size = 0;
 	std::getline(in, value);
 	std::stringstream(value) >> qual_size;
-	for (size_t i = 0; (i < qual_size) && (i < n); i++)
+	for (size_t j = 0; (j < qual_size) && (j < n); j++)
 	{
 		size_t who;
 		std::getline(in, value);
 		std::stringstream(value) >> who;
 		QUAL.push_back(who);
 	}
+
+	// initialize required subprotocols
+	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness, "x_rvss");
+	d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness, "d_rvss");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1637,9 +1651,6 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	myID << "CanettiGennaroJareckiKrawczykRabinDKG::Generate()" << p << q << g << h << n << t;
 	rbc->setID(myID.str());
 
-	// initialize required subprotocols
-	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness, "x_rvss");
-	d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, use_very_strong_randomness, "d_rvss");
 std::cerr << "init(" << i << ")" << std::endl;
 	try
 	{
@@ -1950,9 +1961,6 @@ std::cerr << "step6(" << i << ")" << std::endl;
 	}
 	catch (bool return_value)
 	{
-		// release subprotocols
-		delete x_rvss;
-		delete d_rvss;
 		// unset ID for RBC
 		rbc->unsetID();
 		// release
@@ -1978,6 +1986,10 @@ CanettiGennaroJareckiKrawczykRabinDKG::~CanettiGennaroJareckiKrawczykRabinDKG
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
 	QUAL.clear();
 	mpz_clear(x_i), mpz_clear(xprime_i), mpz_clear(y);
+
+	// release subprotocols
+	delete x_rvss;
+	delete d_rvss;
 
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;

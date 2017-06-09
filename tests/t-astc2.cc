@@ -135,15 +135,17 @@ void start_instance
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
 			std::stringstream err_log, state_log;
+			bool ret = true;
 			start_clock();
 			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
 			if (corrupted)
 				dkg->Generate(aiou, rbc, err_log, true);
 			else
-				assert(dkg->Generate(aiou, rbc, err_log));
+				ret = dkg->Generate(aiou, rbc, err_log);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+			assert(ret);
 
 			// publish state
 			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
