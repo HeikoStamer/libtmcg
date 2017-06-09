@@ -174,8 +174,6 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 			const bool use_very_strong_randomness_in = true);
 		void PublishState
 			(std::ostream &out) const;
-		void PublishVerificationKeys
-			(std::ostream &out) const;
 		bool CheckGroup
 			() const;
 		bool Generate

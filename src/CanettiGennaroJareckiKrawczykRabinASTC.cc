@@ -1408,23 +1408,6 @@ void CanettiGennaroJareckiKrawczykRabinDKG::PublishState
 		out << v_i[i] << std::endl;
 }
 
-void CanettiGennaroJareckiKrawczykRabinDKG::PublishVerificationKeys
-	(std::ostream &out) const
-{
-	out << p << std::endl << q << std::endl << g << std::endl << h << std::endl;
-	out << n << std::endl << t << std::endl << i << std::endl;
-	out << "0" << std::endl << "0" << std::endl << y << std::endl;
-	out << QUAL.size() << std::endl;
-	for (size_t i = 0; i < QUAL.size(); i++)
-		out << QUAL[i] << std::endl;
-	for (size_t i = 0; i < n; i++)
-		out << "1" << std::endl;
-	for (size_t i = 0; i < n; i++)
-		out << "0" << std::endl;
-	for (size_t i = 0; i < n; i++)
-		out << v_i[i] << std::endl;
-}
-
 bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
 	() const
 {
@@ -1549,14 +1532,14 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		std::copy(x_rvss->QUAL.begin(), x_rvss->QUAL.end(), QUAL.begin()); 
 
 		// Extracting $y = g^x \bmod p$:
-		// Each player exposes $y_i = g^{x_i} \bmod p$ to enable the computation of $y = g^x \bmod p$.
-		// 2. Each player $P_i$, $i \in QUAL$, broadcasts $A_i = g^{f_i(0)} = g^{x_i} \bmod p$ and
+		// Each player exposes $y_i = g^{z_i} \bmod p$ to enable the computation of $y = g^x \bmod p$.
+		// 2. Each player $P_i$, $i \in QUAL$, broadcasts $A_i = g^{f_i(0)} = g^{z_i} \bmod p$ and
 		//    $B_i = h^{f\prime_i(0)} \bmod p$, s.t. $C_{i0} = A_i B_i$. $P_i$ also chooses random
 		//    values $r_i$ and $r\prime_i$ and broadcasts $T_i = g^{r_i}, T\prime_i = h^{r\prime_i} \bmod p$.
-		mpz_fspowm(fpowm_table_g, A_i[i], g, x_i, p);
+		mpz_fspowm(fpowm_table_g, A_i[i], g, z_i[i], p);
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[1])
 			mpz_add_ui(A_i[i], A_i[i], 1L);
-		mpz_fspowm(fpowm_table_h, B_i[i], h, xprime_i, p);
+		mpz_fspowm(fpowm_table_h, B_i[i], h, x_rvss->zprime_i, p);
 		mpz_srandomm(r_i, q);
 		mpz_srandomm(rprime_i, q);
 		mpz_fspowm(fpowm_table_g, T_i[i], g, r_i, p);
@@ -1799,23 +1782,31 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 //				mpz_fpowm(fpowm_table_g, A_ik[*it][k], g, a_ik[*it][k], p);
 			}
 		}
-		// For all parties in $QUAL$, set $y_i = A_{i0} = g^{z_i} \bmod p$.
+		// For all parties in $QUAL$, set $y_i = A_i = g^{z_i} \bmod p$.
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			mpz_set(y_i[*it], A_i[*it]);
 		err << "P_" << i << ": y_i = " << y_i[i] << std::endl;
-		// Compute $y = \prod_{i \in QUAL} y_i \bmod p$.
-		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
-		{
-			mpz_mul(y, y, y_i[*it]);
-			mpz_mod(y, y, p);
-		}
-		err << "P_" << i << ": y = " << y << std::endl;
 		// Set public verification keys $v_j = A_i$
 		for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
 		{
-			mpz_set(v_i[*jt], A_i[*jt]);
+			mpz_set_ui(v_i[*jt], 0);
 			err << "P_" << i << ": v_" << *jt << " = " << v_i[*jt] << std::endl;
 		}
+
+
+
+
+
+		// 8. The public value $y$ is set to $y = \prod_{i \in QUAL} A_i \bmod p$.
+		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
+		{
+			mpz_mul(y, y, A_i[*it]);
+			mpz_mod(y, y, p);
+		}
+		err << "P_" << i << ": y = " << y << std::endl;
+		// 9. Player $P_i$ erases all secret information aside from his share $x_i$.
+// TODO
+
 		throw true;
 	}
 	catch (bool return_value)
