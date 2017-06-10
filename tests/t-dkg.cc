@@ -158,7 +158,7 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
 			dkg->PublishState(state_log);
-/* FIXME: fix timeout problem -- we must avoid the aio_scheduler_direct in step 1(b) of DKG, becaus a corrupt party can harm, i.e. slow down, honest parties
+/* FIXME: fix timeout problem -- we must avoid the aio_scheduler_direct in step 1(b) of DKG, because a corrupt party can harm, i.e. slow down, honest parties
 
 			// create an instance of threshold signature protocol new-TSch (NTS)
 			GennaroJareckiKrawczykRabinNTS *nts;

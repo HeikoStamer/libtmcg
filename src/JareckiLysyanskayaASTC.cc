@@ -552,7 +552,7 @@ bool JareckiLysyanskayaRVSS::Share
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		complaints.clear(), complaints_from.clear(); // reset
+		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
 		for (size_t j = 0; j < n; j++)
@@ -613,14 +613,13 @@ bool JareckiLysyanskayaRVSS::Share
 		rbc->Broadcast(lhs);
 		for (size_t j = 0; j < n; j++)
 		{
+			if (complaints_counter[j] > t)
+			{
+				complaints.push_back(j);
+				continue;
+			}
 			if (j != i)
 			{
-				size_t who;
-				if (complaints_counter[j] > t)
-				{
-					complaints.push_back(j);
-					continue;
-				}
 				size_t cnt = 0;
 				do
 				{
@@ -630,7 +629,7 @@ bool JareckiLysyanskayaRVSS::Share
 						complaints.push_back(j);
 						break;
 					}
-					who = mpz_get_ui(lhs);
+					size_t who = mpz_get_ui(lhs);
 					if (who >= n)
 						break; // end marker received
 					if (!rbc->DeliverFrom(foo, j))

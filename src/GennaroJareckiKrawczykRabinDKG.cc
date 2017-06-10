@@ -507,7 +507,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		complaints.clear(), complaints_from.clear(); // reset
+		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
 		for (size_t j = 0; j < n; j++)
@@ -571,14 +571,13 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		//        falsify (4).
 		for (size_t j = 0; j < n; j++)
 		{
-			if (j != i)
+			if (complaints_counter[j] > t)
 			{
-				size_t who;
-				if (complaints_counter[j] > t)
-				{
-					complaints.push_back(j);
-					continue;
-				}
+				complaints.push_back(j);
+				continue;
+			}
+			if (j != i)
+			{	
 				size_t cnt = 0;
 				do
 				{
@@ -588,7 +587,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						complaints.push_back(j);
 						break;
 					}
-					who = mpz_get_ui(lhs);
+					size_t who = mpz_get_ui(lhs);
 					if (who >= n)
 						break; // end marker received
 					if (!rbc->DeliverFrom(foo, j))
@@ -643,6 +642,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			}
 		}
 		// 2. Each party the builds the set of non-disqualified parties $QUAL$.
+		QUAL.clear();
 		for (size_t j = 0; j < n; j++)
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				QUAL.push_back(j);

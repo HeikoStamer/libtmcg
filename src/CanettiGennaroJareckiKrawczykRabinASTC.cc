@@ -460,7 +460,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		complaints.clear(), complaints_from.clear(); // reset
+		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
 		for (size_t j = 0; j < n; j++)
@@ -523,14 +523,13 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		//      - answered to a complaint in Step 1c with values that violate Eq. (1).
 		for (size_t j = 0; j < n; j++)
 		{
+			if (complaints_counter[j] > t)
+			{
+				complaints.push_back(j);
+				continue;
+			}
 			if (j != i)
 			{
-				size_t who;
-				if (complaints_counter[j] > t)
-				{
-					complaints.push_back(j);
-					continue;
-				}
 				size_t cnt = 0;
 				do
 				{
@@ -540,7 +539,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 						complaints.push_back(j);
 						break;
 					}
-					who = mpz_get_ui(lhs);
+					size_t who = mpz_get_ui(lhs);
 					if (who >= n)
 						break; // end marker received
 					if (!rbc->DeliverFrom(foo, j))
@@ -594,6 +593,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				while (cnt <= n);
 			}
 		}
+		QUAL.clear();
 		for (size_t j = 0; j < n; j++)
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				QUAL.push_back(j);
@@ -1240,7 +1240,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		complaints.clear(), complaints_from.clear(); // reset
+		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
 		for (size_t j = 0; j < n; j++)
@@ -1303,14 +1303,13 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		//      - answered to a complaint in Step 1c with values that violate Eq. (1).
 		for (size_t j = 0; j < n; j++)
 		{
+			if (complaints_counter[j] > t)
+			{
+				complaints.push_back(j);
+				continue;
+			}
 			if (j != i)
 			{
-				size_t who;
-				if (complaints_counter[j] > t)
-				{
-					complaints.push_back(j);
-					continue;
-				}
 				size_t cnt = 0;
 				do
 				{
@@ -1320,7 +1319,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 						complaints.push_back(j);
 						break;
 					}
-					who = mpz_get_ui(lhs);
+					size_t who = mpz_get_ui(lhs);
 					if (who >= n)
 						break; // end marker received
 					if (!rbc->DeliverFrom(foo, j))
@@ -1374,6 +1373,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				while (cnt <= n);
 			}
 		}
+		QUAL.clear();
 		for (size_t j = 0; j < n; j++)
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				QUAL.push_back(j);
@@ -1657,7 +1657,6 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		// Players execute Joint-RVSS(t,n,t)
 		if (!x_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
-std::cerr << "after share" << std::endl;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[0])
 			throw false;
 		// 1. Player $P_i$ gets the following secret outputs of Joint-RVSS
@@ -1671,7 +1670,6 @@ std::cerr << "after share" << std::endl;
 		//    and the set QUAL
 		for (size_t j = 0; j < x_rvss->QUAL.size(); j++)
 			QUAL.push_back(x_rvss->QUAL[j]);
-std::cerr << "step1(" << i << ")" << std::endl;
 		// Extracting $y = g^x \bmod p$:
 		// Each player exposes $y_i = g^{z_i} \bmod p$ to enable the computation of $y = g^x \bmod p$.
 		// 2. Each player $P_i$, $i \in QUAL$, broadcasts $A_i = g^{f_i(0)} = g^{z_i} \bmod p$ and
@@ -1727,7 +1725,6 @@ std::cerr << "step1(" << i << ")" << std::endl;
 				}
 			}
 		}
-std::cerr << "step2(" << i << ")" << std::endl;
 		// 3. Players execute Joint-RVSS(t,n,t) for a joint random challenge $d$. Player $P_i$ sets
 		//    his local share of the secret challenge to $d_i$.
 		if (!d_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
@@ -1746,7 +1743,6 @@ std::cerr << "step2(" << i << ")" << std::endl;
 				complaints.push_back(j);
 			}
 		}
-std::cerr << "step3(" << i << ")" << std::endl;
 		// 4. Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[3])
 			mpz_add_ui(d_i[i], d_i[i], 1L);
@@ -1811,7 +1807,6 @@ std::cerr << "step3(" << i << ")" << std::endl;
 			mpz_mod(d, d, q);
 		}
 		err << "P_" << i << ": d = " << d << std::endl;
-std::cerr << "step4(" << i << ")" << std::endl;
 		// 5. $P_i$ broadcasts $R_i = r_i + d \cdot f_i(0)$ and $R\prime_i = r\prime_i + d \cdot f\prime_i(0)$
 		mpz_mul(foo, d, x_rvss->z_i);
 		mpz_mod(foo, foo, q);
@@ -1827,7 +1822,6 @@ std::cerr << "step4(" << i << ")" << std::endl;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[7])
 			mpz_add_ui(bar, bar, 1L);
 		rbc->Broadcast(bar);
-std::cerr << "step5(" << i << ")" << std::endl;
 		// 6. Player $P_j$ checks for each $P_i$ that $g^{R_i} = T_i \cdot A_i^d$ and
 		//    $h^{R\prime_i} = T\prime_i \cdot B_i^d$. If the equation is not satisfied
 		//    then $P_j$ complains against $P_i$.
@@ -1870,7 +1864,6 @@ std::cerr << "step5(" << i << ")" << std::endl;
 				}
 			}
 		}
-std::cerr << "step6(" << i << ")" << std::endl;
 		// 7. If player $P_i$ receives more than $t$ complaints, then $P_j$ 
 		//    broadcasts $s_{ij}$ (and $s\prime_{ij}$ for the optimally-resilient variant). 
 		// The broadcasts are done inside public reconstruction of $z_i$.
@@ -1936,7 +1929,7 @@ std::cerr << "step6(" << i << ")" << std::endl;
 		}
 		for (size_t j = 0; j < n; j++)
 		{
-			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j)	!= QUAL.end()))
+			if (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end())
 			{
 				if (complaints_counter[j] > t)
 					complaints.push_back(j);
@@ -1968,7 +1961,10 @@ std::cerr << "step6(" << i << ")" << std::endl;
 		err << "}" << std::endl;
 		err << "P_" << i << ": y = " << y << std::endl;
 		// 9. Player $P_i$ erases all secret information aside from his share $x_i$.
-// TODO
+		x_rvss->Erase();
+		d_rvss->Erase();
+		for (size_t j = 0; j < z_i.size(); j++)
+			mpz_set_ui(z_i[j], 0L);
 
 		throw true;
 	}
