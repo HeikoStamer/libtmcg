@@ -45,23 +45,23 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
 	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L);
 	mpz_init_set_ui(z_i, 0L), mpz_init_set_ui(zprime_i, 0L);
+	s_ji.resize(n);
+	sprime_ji.resize(n);
+	C_ik.resize(n);
 	for (size_t j = 0; j < n_in; j++)
 	{
-		s_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n_in; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
 			s_ji[j].push_back(tmp3);
 		}
-		sprime_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n_in; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
 			sprime_ji[j].push_back(tmp3);
 		}
-		C_ik.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t k = 0; k <= tprime_in; k++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
@@ -122,23 +122,23 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 		std::stringstream(value) >> who;
 		QUAL.push_back(who);
 	}
+	s_ji.resize(n);
+	sprime_ji.resize(n);
+	C_ik.resize(n);
 	for (size_t j = 0; j < n; j++)
 	{
-		s_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
 			s_ji[j].push_back(tmp3);
 		}
-		sprime_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
 			sprime_ji[j].push_back(tmp3);
 		}
-		C_ik.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t k = 0; k <= tprime; k++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
@@ -814,23 +814,23 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
 	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L);
+	s_ji.resize(n);
+	sprime_ji.resize(n);
+	C_ik.resize(n);
 	for (size_t j = 0; j < n_in; j++)
 	{
-		s_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n_in; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
 			s_ji[j].push_back(tmp3);
 		}
-		sprime_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n_in; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
 			sprime_ji[j].push_back(tmp3);
 		}
-		C_ik.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t k = 0; k <= tprime_in; k++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
@@ -889,23 +889,23 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 		std::stringstream(value) >> who;
 		QUAL.push_back(who);
 	}
+	s_ji.resize(n);
+	sprime_ji.resize(n);
+	C_ik.resize(n);
 	for (size_t j = 0; j < n; j++)
 	{
-		s_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
 			s_ji[j].push_back(tmp3);
 		}
-		sprime_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
 			sprime_ji[j].push_back(tmp3);
 		}
-		C_ik.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t k = 0; k <= tprime; k++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
