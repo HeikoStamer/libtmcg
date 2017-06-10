@@ -480,13 +480,13 @@ bool JareckiLysyanskayaRVSS::Share
 				{
 					mpz_add_ui(alpha_ij[i][j], alpha_ij[i][j], 1L);
 				}
-				if (!aiou->Send(alpha_ij[i][j], j))
+				if (!aiou->Send(alpha_ij[i][j], j, 0))
 				{
 					err << "P_" << i << ": sending alpha_ij failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-				if (!aiou->Send(hatalpha_ij[i][j], j))
+				if (!aiou->Send(hatalpha_ij[i][j], j, 0))
 				{
 					err << "P_" << i << ": sending hatalpha_ij failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);

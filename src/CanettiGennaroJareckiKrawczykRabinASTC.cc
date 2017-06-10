@@ -388,13 +388,13 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				{
 					mpz_add_ui(s_ji[i][j], s_ji[i][j], 1L);
 				}
-				if (!aiou->Send(s_ji[i][j], j))
+				if (!aiou->Send(s_ji[i][j], j, 0))
 				{
 					err << "P_" << i << ": sending s_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-				if (!aiou->Send(sprime_ji[i][j], j))
+				if (!aiou->Send(sprime_ji[i][j], j, 0))
 				{
 					err << "P_" << i << ": sending sprime_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
@@ -1161,13 +1161,13 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				{
 					mpz_add_ui(s_ji[i][j], s_ji[i][j], 1L);
 				}
-				if (!aiou->Send(s_ji[i][j], j))
+				if (!aiou->Send(s_ji[i][j], j, 0))
 				{
 					err << "P_" << i << ": sending s_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-				if (!aiou->Send(sprime_ji[i][j], j))
+				if (!aiou->Send(sprime_ji[i][j], j, 0))
 				{
 					err << "P_" << i << ": sending sprime_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
@@ -1958,11 +1958,14 @@ std::cerr << "step6(" << i << ")" << std::endl;
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			mpz_fpowm(fpowm_table_g, A_i[*it], g, z_i[*it], p);
 		// 8. The public value $y$ is set to $y = \prod_{i \in QUAL} A_i \bmod p$.
+		err << "P_" << i << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 		{
+			err << "P_" << *it << " ";
 			mpz_mul(y, y, A_i[*it]);
 			mpz_mod(y, y, p);
 		}
+		err << "}" << std::endl;
 		err << "P_" << i << ": y = " << y << std::endl;
 		// 9. Player $P_i$ erases all secret information aside from his share $x_i$.
 // TODO

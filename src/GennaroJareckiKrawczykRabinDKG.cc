@@ -434,13 +434,13 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				{
 					mpz_add_ui(s_ij[i][j], s_ij[i][j], 1L);
 				}
-				if (!aiou->Send(s_ij[i][j], j))
+				if (!aiou->Send(s_ij[i][j], j, 0))
 				{
 					err << "P_" << i << ": sending s_ij failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-				if (!aiou->Send(sprime_ij[i][j], j))
+				if (!aiou->Send(sprime_ij[i][j], j, 0))
 				{
 					err << "P_" << i << ": sending sprime_ij failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
