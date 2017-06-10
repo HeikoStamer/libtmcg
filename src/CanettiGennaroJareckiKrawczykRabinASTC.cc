@@ -124,30 +124,27 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	}
 	for (size_t j = 0; j < n; j++)
 	{
-		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
+		s_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp1->push_back(tmp3);
+			s_ji[j].push_back(tmp3);
 		}
-		s_ji.push_back(*vtmp1);
-		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
+		sprime_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp2->push_back(tmp3);
+			sprime_ji[j].push_back(tmp3);
 		}
-		sprime_ji.push_back(*vtmp2);
-		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
+		C_ik.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t k = 0; k <= tprime; k++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp3->push_back(tmp3);
-		}
-		C_ik.push_back(*vtmp3);
+			C_ik[j].push_back(tmp3);
+		}		
 	}
 	for (size_t i = 0; i < n; i++)
 	{
@@ -776,7 +773,6 @@ CanettiGennaroJareckiKrawczykRabinRVSS::~CanettiGennaroJareckiKrawczykRabinRVSS
 			delete [] s_ji[j][i];
 		}
 		s_ji[j].clear();
-//		delete &s_ji[j];
 	}
 	s_ji.clear();
 	for (size_t j = 0; j < sprime_ji.size(); j++)
@@ -787,7 +783,6 @@ CanettiGennaroJareckiKrawczykRabinRVSS::~CanettiGennaroJareckiKrawczykRabinRVSS
 			delete [] sprime_ji[j][i];
 		}
 		sprime_ji[j].clear();
-//		delete &sprime_ji[j];
 	}
 	sprime_ji.clear();
 	for (size_t i = 0; i < C_ik.size(); i++)
@@ -798,7 +793,6 @@ CanettiGennaroJareckiKrawczykRabinRVSS::~CanettiGennaroJareckiKrawczykRabinRVSS
 			delete [] C_ik[i][k];
 		}
 		C_ik[i].clear();
-//		delete &C_ik[i];
 	}
 	C_ik.clear();
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
@@ -822,30 +816,27 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L);
 	for (size_t j = 0; j < n_in; j++)
 	{
-		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
+		s_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n_in; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp1->push_back(tmp3);
+			s_ji[j].push_back(tmp3);
 		}
-		s_ji.push_back(*vtmp1);
-		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
+		sprime_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n_in; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp2->push_back(tmp3);
+			sprime_ji[j].push_back(tmp3);
 		}
-		sprime_ji.push_back(*vtmp2);
-		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
+		C_ik.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t k = 0; k <= tprime_in; k++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp3->push_back(tmp3);
+			C_ik[j].push_back(tmp3);
 		}
-		C_ik.push_back(*vtmp3);
 	}
 
 	// Do the precomputation for the fast exponentiation.
@@ -900,30 +891,27 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	}
 	for (size_t j = 0; j < n; j++)
 	{
-		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
+		s_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp1->push_back(tmp3);
+			s_ji[j].push_back(tmp3);
 		}
-		s_ji.push_back(*vtmp1);
-		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
+		sprime_ji.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t i = 0; i < n; i++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp2->push_back(tmp3);
+			sprime_ji[j].push_back(tmp3);
 		}
-		sprime_ji.push_back(*vtmp2);
-		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
+		C_ik.push_back(*(new std::vector<mpz_ptr>));
 		for (size_t k = 0; k <= tprime; k++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp3->push_back(tmp3);
+			C_ik[j].push_back(tmp3);
 		}
-		C_ik.push_back(*vtmp3);
 	}
 	for (size_t i = 0; i < n; i++)
 	{
