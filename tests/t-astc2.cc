@@ -112,11 +112,13 @@ void start_instance
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 
+/* FIXME: fix timeout problem -- we must avoid the aio_scheduler_direct in step 1(b) of DKG, because a corrupt party can harm, i.e. slow down, honest parties
+          as workaround we temporarily remove all simulated faulty behaviour that aborts the protocols */
+
 			// create an instance of DKG (without using very strong randomness)
 			CanettiGennaroJareckiKrawczykRabinDKG *dkg;
 			std::cout << "P_" << whoami << ": CanettiGennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-			dkg = new CanettiGennaroJareckiKrawczykRabinDKG(N, T, whoami,
-				vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
+			dkg = new CanettiGennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
 			assert(dkg->CheckGroup());
 
 			// create asynchronous authenticated unicast channels
@@ -151,9 +153,45 @@ void start_instance
 			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
 			dkg->PublishState(state_log);
 
+			// create an instance of DSS (without using very strong randomness)
+			CanettiGennaroJareckiKrawczykRabinDSS *dss;
+			std::cout << "P_" << whoami << ": CanettiGennaroJareckiKrawczykRabinDSS(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
+			dss = new CanettiGennaroJareckiKrawczykRabinDSS(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
+			assert(dss->CheckGroup());
+
+			// generate distributed key shares
+			std::stringstream err_log2;
+			start_clock();
+			std::cout << "P_" << whoami << ": dss.Generate()" << std::endl;
+			if (corrupted)
+				dss->Generate(aiou, rbc, err_log, true);
+			else
+				ret = dss->Generate(aiou, rbc, err_log);
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+			assert(ret);
+
+// TODO: check singing and verifying a hash value of a message
+
+			// release DSS
+			delete dss;
+			
+			// release DKG
+			delete dkg;
+
 			// at the end: sync for waiting parties
 			rbc->Sync(aiounicast::aio_timeout_long);
-			
+
+			// create a copied instance of DKG from state log
+			std::cout << "P_" << whoami << ": CanettiGennaroJareckiKrawczykRabinDKG(state_log)" << std::endl;
+			dkg = new CanettiGennaroJareckiKrawczykRabinDKG(state_log);
+
+			// compare state log and check the generated key share again
+			std::stringstream state_log2;
+			dkg->PublishState(state_log2);
+			assert(state_log.str() == state_log2.str());
+
 			// release DKG
 			delete dkg;
 

@@ -127,8 +127,7 @@ void start_instance
 			// create an instance of EDCF
 			JareckiLysyanskayaEDCF *edcf;
 			std::cout << "JareckiLysyanskayaEDCF(" << N << ", " << T << ", ...)" << std::endl;
-			edcf = new JareckiLysyanskayaEDCF(N, T,
-				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+			edcf = new JareckiLysyanskayaEDCF(N, T,	vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 			assert(edcf->CheckGroup());
 
 			// create asynchronous authenticated unicast channels
@@ -165,8 +164,7 @@ void start_instance
 			// test coin flipping in PedersenCommitmentScheme::Setup_publiccoin()
 			size_t nn = 32;
 			std::cout << "PedersenCommitmentScheme(" << nn << ", ...)" << std::endl;
-			PedersenCommitmentScheme *com = new PedersenCommitmentScheme(nn,
-				vtmf->p, vtmf->q, vtmf->k, vtmf->h);
+			PedersenCommitmentScheme *com = new PedersenCommitmentScheme(nn, vtmf->p, vtmf->q, vtmf->k, vtmf->h);
 			std::stringstream err_log2;
 			start_clock();
 			std::cout << "P_" << whoami << ": com.SetupGenerators_publiccoin()" << std::endl;
