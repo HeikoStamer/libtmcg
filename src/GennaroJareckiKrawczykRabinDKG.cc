@@ -36,9 +36,10 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	const bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in, const std::string label_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
+			label(label_in),
 			n(n_in), t(t_in), i(i_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
@@ -83,9 +84,10 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	(std::istream &in,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	const bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in, const std::string label_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
+			label(label_in),
 			n(0), t(0), i(0)
 {
 	std::string value;
@@ -342,7 +344,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "GennaroJareckiKrawczykRabinDKG::Generate()" << p << q << g << h << n << t;
+	myID << "GennaroJareckiKrawczykRabinDKG::Generate()" << p << q << g << h << n << t << label;
 	rbc->setID(myID.str());
 
 	try
@@ -1166,13 +1168,15 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
 	(const size_t n_in, const size_t t_in, const size_t i_in,
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
-	unsigned long int fieldsize, unsigned long int subgroupsize):
+	const unsigned long int fieldsize, const unsigned long int subgroupsize,
+	const bool use_very_strong_randomness_in):
 			F_size(fieldsize), G_size(subgroupsize),
+			use_very_strong_randomness(use_very_strong_randomness_in),
 			n(n_in), t(t_in), i(i_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
 	mpz_init_set_ui(z_i, 0L), mpz_init_set_ui(y, 0L);
-	for (size_t i = 0; i < n; i++)
+	for (size_t i2 = 0; i2 < n; i2++)
 	{
 		mpz_ptr tmp1 = new mpz_t();
 		mpz_init_set_ui(tmp1, 0L);
@@ -1180,7 +1184,7 @@ GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
 	}
 	
 	// initialize required subprotocols
-	dkg = new GennaroJareckiKrawczykRabinDKG(n_in, t_in, i_in, p, q, g, h, fieldsize, subgroupsize);
+	dkg = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h, fieldsize, subgroupsize, use_very_strong_randomness_in, "dkg");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1342,13 +1346,14 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		}
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+	size_t simulate_faulty_randomizer2 = mpz_wrandom_ui() % 2L;
 
 	// initialize required subprotocol
-	GennaroJareckiKrawczykRabinDKG *dkg2 = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h);
+	GennaroJareckiKrawczykRabinDKG *k_dkg = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h, F_size, G_size, use_very_strong_randomness, "k_dkg");
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "GennaroJareckiKrawczykRabinNTS::Sign()" << p << q << g << h << n << t;
+	myID << "GennaroJareckiKrawczykRabinNTS::Sign()" << p << q << g << h << n << t << m;
 	rbc->setID(myID.str());
 
 	try
@@ -1363,16 +1368,18 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		//    is itself secret-shared with Feldman-VSS. We denote the
 		//    generated public values $r = g^k$ and $r_i = g^{u_i}$
 		//    for each $P_i$.
-		if (!dkg2->Generate(aiou, rbc, err, simulate_faulty_behaviour && simulate_faulty_randomizer))
+		if (!k_dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
-		mpz_set(u_i[i], dkg2->z_i[i]);
+		mpz_set(u_i[i], k_dkg->z_i[i]);
 		for (size_t j = 0; j < n; j++)
-			mpz_set(r_i[j], dkg2->y_i[j]);
-		mpz_set(r, dkg2->y);
-		for (size_t j = 0; j < dkg2->QUAL.size(); j++)
-			QUALprime.push_back(dkg2->QUAL[j]);
+			mpz_set(r_i[j], k_dkg->y_i[j]);
+		mpz_set(r, k_dkg->y);
+		for (size_t j = 0; j < k_dkg->QUAL.size(); j++)
+			QUALprime.push_back(k_dkg->QUAL[j]);
 		// 2. Each party locally computes the challenge $c = H(m, r)$.
 		mpz_shash(c, 2, m, r);
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer)
+			mpz_add_ui(c, c, 1L);
 		// 3. Parties perform the reconstruction phase of Feldman's
 		//    secret-sharing of value $s = k + cx$ as follows.
 		//    Each party $P_i \in QUAL \cap QUAL\prime$ broadcasts
@@ -1386,7 +1393,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 			mpz_mod(s_i[i], s_i[i], q);
 			mpz_add(s_i[i], s_i[i], u_i[i]);
 			mpz_mod(s_i[i], s_i[i], q);
-			if (simulate_faulty_behaviour)
+			if (simulate_faulty_behaviour && simulate_faulty_randomizer2)
 				mpz_add_ui(s_i[i], s_i[i], 1L);
 			rbc->Broadcast(s_i[i]);
 		}
@@ -1425,7 +1432,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 			err << "P_" << *it << " ";
 		err << std::endl;
 		// run reconstruction phases
-		if (!dkg2->Reconstruct(complaints, u_i, a_ik, rbc, err))
+		if (!k_dkg->Reconstruct(complaints, u_i, a_ik, rbc, err))
 		{
 			err << "P_" << i << ": reconstruction failed" << std::endl;
 			throw false;
@@ -1498,7 +1505,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		s_i.clear(), r_i.clear(), u_i.clear();
 		a_ik.clear();
 		// release subprotocol
-		delete dkg2;
+		delete k_dkg;
 		// return
 		return return_value;
 	}
