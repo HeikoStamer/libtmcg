@@ -1459,9 +1459,10 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	const bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in, const std::string label_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
+			label(label_in),
 			n(n_in), t(t_in), i(i_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
@@ -1483,9 +1484,10 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 	(std::istream &in,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
-	const bool use_very_strong_randomness_in):
+	const bool use_very_strong_randomness_in, const std::string label_in):
 			F_size(fieldsize), G_size(subgroupsize),
 			use_very_strong_randomness(use_very_strong_randomness_in),
+			label(label_in),
 			n(0), t(0), i(0)
 {
 	std::string value;
@@ -1646,7 +1648,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "CanettiGennaroJareckiKrawczykRabinDKG::Generate()" << p << q << g << h << n << t;
+	myID << "CanettiGennaroJareckiKrawczykRabinDKG::Generate()" << p << q << g << h << n << t << label;
 	rbc->setID(myID.str());
 
 	try
@@ -2004,4 +2006,301 @@ CanettiGennaroJareckiKrawczykRabinDKG::~CanettiGennaroJareckiKrawczykRabinDKG
 
 // ===================================================================================================================================
 
+CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
+	(const size_t n_in, const size_t t_in, const size_t i_in,
+	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
+	const unsigned long int fieldsize,
+	const unsigned long int subgroupsize,
+	const bool use_very_strong_randomness_in):
+			F_size(fieldsize), G_size(subgroupsize),
+			use_very_strong_randomness(use_very_strong_randomness_in),
+			n(n_in), t(t_in), i(i_in)
+{
+	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
+	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L), mpz_init_set_ui(y, 1L);
+
+	// initialize required subprotocols
+	dkg = new CanettiGennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h, fieldsize, subgroupsize, use_very_strong_randomness_in, "dkg");
+
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
+	(std::istream &in,
+	const unsigned long int fieldsize,
+	const unsigned long int subgroupsize,
+	const bool use_very_strong_randomness_in):
+			F_size(fieldsize), G_size(subgroupsize),
+			use_very_strong_randomness(use_very_strong_randomness_in),
+			n(0), t(0), i(0)
+{
+	std::string value;
+
+	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(h);
+	in >> p >> q >> g >> h;
+	std::getline(in, value);
+	std::stringstream(value) >> n;
+	if (n > TMCG_MAX_DKG_PLAYERS)
+		n = TMCG_MAX_DKG_PLAYERS;
+	std::getline(in, value);
+	std::stringstream(value) >> t;
+	if (t > n)
+		t = n;
+	std::getline(in, value);
+	std::stringstream(value) >> i;
+	if (i >= n)
+		i = 0;
+	mpz_init(x_i), mpz_init(xprime_i), mpz_init(y);
+	in >> x_i >> xprime_i >> y;
+	size_t qual_size = 0;
+	std::getline(in, value);
+	std::stringstream(value) >> qual_size;
+	for (size_t j = 0; (j < qual_size) && (j < n); j++)
+	{
+		size_t who;
+		std::getline(in, value);
+		std::stringstream(value) >> who;
+		QUAL.push_back(who);
+	}
+
+	// initialize required subprotocols
+	dkg = new CanettiGennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h, fieldsize, subgroupsize, use_very_strong_randomness_in, "dkg");
+
+	// Do the precomputation for the fast exponentiation.
+	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
+	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
+	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+void CanettiGennaroJareckiKrawczykRabinDSS::PublishState
+	(std::ostream &out) const
+{
+	out << p << std::endl << q << std::endl << g << std::endl << h << std::endl;
+	out << n << std::endl << t << std::endl << i << std::endl;
+	out << x_i << std::endl << xprime_i << std::endl << y << std::endl;
+	out << QUAL.size() << std::endl;
+	for (size_t i = 0; i < QUAL.size(); i++)
+		out << QUAL[i] << std::endl;
+}
+
+bool CanettiGennaroJareckiKrawczykRabinDSS::CheckGroup
+	() const
+{
+	mpz_t foo, k;
+
+	mpz_init(foo), mpz_init(k);
+	try
+	{
+		// Compute $k := (p - 1) / q$
+		mpz_set(k, p);
+		mpz_sub_ui(k, k, 1L);
+		mpz_div(k, k, q);
+
+		// Check whether $p$ and $q$ have appropriate sizes.
+		if ((mpz_sizeinbase(p, 2L) < F_size) ||
+			(mpz_sizeinbase(q, 2L) < G_size))
+				throw false;
+
+		// Check whether $p$ has the correct form, i.e. $p = kq + 1$.
+		mpz_mul(foo, q, k);
+		mpz_add_ui(foo, foo, 1L);
+		if (mpz_cmp(foo, p))
+			throw false;
+
+		// Check whether $p$ and $q$ are both (probable) prime with
+		// a soundness error probability ${} \le 4^{-TMCG_MR_ITERATIONS}$.
+		if (!mpz_probab_prime_p(p, TMCG_MR_ITERATIONS) || 
+			!mpz_probab_prime_p(q, TMCG_MR_ITERATIONS))
+				throw false;
+
+		// Check whether $k$ is not divisible by $q$, i.e. $q, k$ are coprime.
+		mpz_gcd(foo, q, k);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+
+		// Check whether the elements $h$ and $g$ are of order $q$.
+		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+
+		// Check whether the elements $h$ and $g$ are different and non-trivial,
+		// i.e., $1 < h, g < p-1$.
+		mpz_sub_ui(foo, p, 1L); // compute $p-1$
+		if ((mpz_cmp_ui(h, 1L) <= 0) || (mpz_cmp(h, foo) >= 0))
+			throw false;
+		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, foo) >= 0))
+			throw false;
+		if (!mpz_cmp(g, h))
+			throw false;
+
+		// check whether the group for DKG is sound
+		if (!dkg->CheckGroup())
+			throw false;
+
+		// everything is sound
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo), mpz_clear(k);
+		return return_value;
+	}
+}
+
+bool CanettiGennaroJareckiKrawczykRabinDSS::Generate
+	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour)
+{
+	assert(t <= n);
+	assert(i < n);
+	assert(n == rbc->n);
+	assert(n == aiou->n);
+	assert(i == rbc->j);
+	assert(i == aiou->j);
+
+	// checking maximum synchronous t-resilience
+	if ((2 * t) >= n)
+		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "CanettiGennaroJareckiKrawczykRabinDSS::Generate()" << p << q << g << h << n << t;
+	rbc->setID(myID.str());
+
+	try
+	{
+		// call DKG as subprotocol
+		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour))
+			throw false;
+
+		// copy the generated $y$, $x_i$, and $x\prime_i$
+		mpz_set(y, dkg->y);
+		mpz_set(x_i, dkg->x_i);
+		mpz_set(xprime_i, dkg->xprime_i);
+
+		// copy the set of non-disqualified players
+		QUAL.clear();
+		for (size_t i = 0; i < dkg->QUAL.size(); i++)
+			QUAL.push_back(dkg->QUAL[i]);
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// unset ID for RBC
+		rbc->unsetID();
+
+		// return
+		return return_value;
+	}
+}
+
+bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
+	(mpz_srcptr m, mpz_ptr r, mpz_ptr s,
+	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour)
+{
+	assert(t <= n);
+	assert(i < n);
+	assert(n == rbc->n);
+	assert(n == aiou->n);
+	assert(i == rbc->j);
+	assert(i == aiou->j);
+
+	// checking maximum synchronous t-resilience
+	if ((2 * t) >= n)
+		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;
+
+	// initialize
+// TODO
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "CanettiGennaroJareckiKrawczykRabinDSS::Sign()" << p << q << g << h << n << t << m;
+	rbc->setID(myID.str());
+
+	try
+	{
+// TODO
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// unset ID for RBC
+		rbc->unsetID();
+
+		// release
+// TODO
+
+		// return
+		return return_value;
+	}
+
+}
+
+bool CanettiGennaroJareckiKrawczykRabinDSS::Verify
+	(mpz_srcptr m, mpz_srcptr r, mpz_srcptr s) const
+{
+	// initialize
+	mpz_t foo, bar, rprime;
+	mpz_init(foo), mpz_init(bar), mpz_init(rprime);
+
+	try
+	{
+		// 1. Checking that $0 < r < q$ and $0 < s < q$
+		if ((mpz_cmp_ui(r, 0L) <= 0) || (mpz_cmp(r, q) >= 0))
+			throw false;
+		if ((mpz_cmp_ui(s, 0L) <= 0) || (mpz_cmp(s, q) >= 0))
+			throw false;
+		// 2. Compute $r\prime = (g^{ms^{-1}} y^{rs^{-1}} \bmod p) \bmod q$
+		if (!mpz_invert(foo, s, q))
+			throw false;
+		mpz_mul(bar, m, foo);
+		mpz_mod(bar, bar, q);
+		mpz_fpowm(fpowm_table_g, rprime, g, bar, p);
+		mpz_mul(bar, r, foo);
+		mpz_mod(bar, bar, q);
+		mpz_powm(foo, y, bar, p);
+		mpz_mul(rprime, rprime, foo);
+		mpz_mod(rprime, rprime, p);
+		mpz_mod(rprime, rprime, q);
+		// 3. Checking that $r = r\prime$.
+		if (mpz_cmp(r, rprime))
+			throw false;
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// release
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(rprime);
+		// return
+		return return_value;
+	}
+}
+
+CanettiGennaroJareckiKrawczykRabinDSS::~CanettiGennaroJareckiKrawczykRabinDSS
+	()
+{
+	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
+	QUAL.clear();
+	mpz_clear(x_i), mpz_clear(xprime_i), mpz_clear(y);
+
+	// release subprotocol
+	delete dkg;
+
+	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	delete [] fpowm_table_g, delete [] fpowm_table_h;
+}
 

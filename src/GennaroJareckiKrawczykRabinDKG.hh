@@ -73,8 +73,7 @@ class GennaroJareckiKrawczykRabinDKG
 		
 		GennaroJareckiKrawczykRabinDKG
 			(const size_t n_in, const size_t t_in, const size_t i_in,
-			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS,
-			mpz_srcptr h_CRS,
+			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
 			const bool use_very_strong_randomness_in = true);
@@ -125,8 +124,7 @@ class GennaroJareckiKrawczykRabinNTS
 		
 		GennaroJareckiKrawczykRabinNTS
 			(const size_t n_in, const size_t t_in, const size_t i_in,
-			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS,
-			mpz_srcptr h_CRS,
+			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
@@ -141,7 +139,7 @@ class GennaroJareckiKrawczykRabinNTS
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);
 		bool Verify
-			(mpz_srcptr m, mpz_ptr c, mpz_ptr s);
+			(mpz_srcptr m, mpz_srcptr c, mpz_srcptr s);
 		~GennaroJareckiKrawczykRabinNTS
 			();
 };

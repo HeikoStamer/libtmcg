@@ -1505,7 +1505,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 }
 
 bool GennaroJareckiKrawczykRabinNTS::Verify
-	(mpz_srcptr m, mpz_ptr c, mpz_ptr s)
+	(mpz_srcptr m, mpz_srcptr c, mpz_srcptr s)
 {
 	// initialize
 	mpz_t foo, bar, r;

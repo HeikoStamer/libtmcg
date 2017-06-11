@@ -160,6 +160,7 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 		mpz_t					*fpowm_table_g, *fpowm_table_h;
 		const unsigned long int			F_size, G_size;
 		const bool				use_very_strong_randomness;
+		const std::string			label;
 		CanettiGennaroJareckiKrawczykRabinRVSS	*x_rvss, *d_rvss;
 	
 	public:
@@ -173,8 +174,49 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			const bool use_very_strong_randomness_in = true);
+			const bool use_very_strong_randomness_in = true,
+			const std::string label_in = "");
 		CanettiGennaroJareckiKrawczykRabinDKG
+			(std::istream &in,
+			const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			const bool use_very_strong_randomness_in = true,
+			const std::string label_in = "");
+		void PublishState
+			(std::ostream &out) const;
+		bool CheckGroup
+			() const;
+		bool Generate
+			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err,
+			const bool simulate_faulty_behaviour = false);
+		~CanettiGennaroJareckiKrawczykRabinDKG
+			();
+};
+
+/* This protocol is called Sig-Gen in [CGJKR99]. However, we implement a variant with optimal resilience $t < n/2$.
+   It is described in the extended version of the paper (Figure 6) and called DSS-Sig-Gen there. */
+class CanettiGennaroJareckiKrawczykRabinDSS
+{
+	private:
+		mpz_t					*fpowm_table_g, *fpowm_table_h;
+		const unsigned long int			F_size, G_size;
+		const bool				use_very_strong_randomness;
+		CanettiGennaroJareckiKrawczykRabinDKG	*dkg;
+
+	public:
+		mpz_t					p, q, g, h;
+		size_t					n, t, i;
+		std::vector<size_t>			QUAL;
+		mpz_t					x_i, xprime_i, y;
+
+		CanettiGennaroJareckiKrawczykRabinDSS
+			(const size_t n_in, const size_t t_in, const size_t i_in,
+			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
+			const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			const bool use_very_strong_randomness_in = true);
+		CanettiGennaroJareckiKrawczykRabinDSS
 			(std::istream &in,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
@@ -187,7 +229,14 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);
-		~CanettiGennaroJareckiKrawczykRabinDKG
+		bool Sign
+			(mpz_srcptr m, mpz_ptr r, mpz_ptr s,
+			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err,
+			const bool simulate_faulty_behaviour = false);
+		bool Verify
+			(mpz_srcptr m, mpz_srcptr r, mpz_srcptr s) const;
+		~CanettiGennaroJareckiKrawczykRabinDSS
 			();
 };
 
