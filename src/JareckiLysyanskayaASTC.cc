@@ -280,38 +280,36 @@ JareckiLysyanskayaRVSS::JareckiLysyanskayaRVSS
 	(const size_t n_in, const size_t t_in,
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 	const unsigned long int fieldsize, const unsigned long int subgroupsize):
-			F_size(fieldsize), G_size(subgroupsize), n(n_in), t(t_in)
+			F_size(fieldsize), G_size(subgroupsize),
+			n(n_in), t(t_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),	mpz_init_set(h, h_CRS);
 
 	mpz_init_set_ui(a_i, 0L), mpz_init_set_ui(hata_i, 0L);
 	mpz_init_set_ui(alpha_i, 0L), mpz_init_set_ui(hatalpha_i, 0L);
-	for (size_t j = 0; j < n_in; j++)
+	alpha_ij.resize(n);
+	hatalpha_ij.resize(n);
+	C_ik.resize(n);
+	for (size_t i = 0; i < n; i++)
 	{
-		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
-		for (size_t i = 0; i < n_in; i++)
+		for (size_t j = 0; j < n; j++)
 		{
 			mpz_ptr tmp1 = new mpz_t();
 			mpz_init(tmp1);
-			vtmp1->push_back(tmp1);
+			alpha_ij[i].push_back(tmp1);
 		}
-		alpha_ij.push_back(*vtmp1);
-		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
-		for (size_t i = 0; i < n_in; i++)
+		for (size_t j = 0; j < n; j++)
 		{
 			mpz_ptr tmp2 = new mpz_t();
 			mpz_init(tmp2);
-			vtmp2->push_back(tmp2);
+			hatalpha_ij[i].push_back(tmp2);
 		}
-		hatalpha_ij.push_back(*vtmp2);
-		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
-		for (size_t k = 0; k <= t_in; k++)
+		for (size_t k = 0; k <= t; k++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
- 			vtmp3->push_back(tmp3);
+ 			C_ik[i].push_back(tmp3);
 		}
-		C_ik.push_back(*vtmp3);
 	}
 
 	// Do the precomputation for the fast exponentiation.
