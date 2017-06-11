@@ -42,38 +42,33 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 			n(n_in), t(t_in), i(i_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
-	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L),
-		mpz_init_set_ui(y, 1L);
-	for (size_t j = 0; j < n_in; j++)
+	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L), mpz_init_set_ui(y, 1L);
+	s_ij.resize(n);
+	sprime_ij.resize(n);
+	C_ik.resize(n);
+	for (size_t i = 0; i < n; i++)
 	{
-		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
-		mpz_ptr tmp4 = new mpz_t();
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp4 = new mpz_t();
 		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp4);
 		y_i.push_back(tmp1), z_i.push_back(tmp2), v_i.push_back(tmp4);
-		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
-		for (size_t i = 0; i < n_in; i++)
+		for (size_t j = 0; j < n; j++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp1->push_back(tmp3);
+			s_ij[i].push_back(tmp3);
 		}
-		s_ij.push_back(*vtmp1);
-		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
-		for (size_t i = 0; i < n_in; i++)
+		for (size_t j = 0; j < n; j++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp2->push_back(tmp3);
+			sprime_ij[i].push_back(tmp3);
 		}
-		sprime_ij.push_back(*vtmp2);
-		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
-		for (size_t k = 0; k <= t_in; k++)
+		for (size_t k = 0; k <= t; k++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp3->push_back(tmp3);
+			C_ik[i].push_back(tmp3);
 		}
-		C_ik.push_back(*vtmp3);
 	}
 
 	// Do the precomputation for the fast exponentiation.
@@ -121,36 +116,32 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 		std::stringstream(value) >> who;
 		QUAL.push_back(who);
 	}
-	for (size_t j = 0; j < n; j++)
+	s_ij.resize(n);
+	sprime_ij.resize(n);
+	C_ik.resize(n);
+	for (size_t i = 0; i < n; i++)
 	{
-		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
-		mpz_ptr tmp4 = new mpz_t();
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp4 = new mpz_t();
 		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp4);
 		y_i.push_back(tmp1), z_i.push_back(tmp2), v_i.push_back(tmp4);
-		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
-		for (size_t i = 0; i < n; i++)
+		for (size_t j = 0; j < n; j++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp1->push_back(tmp3);
+			s_ij[i].push_back(tmp3);
 		}
-		s_ij.push_back(*vtmp1);
-		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
-		for (size_t i = 0; i < n; i++)
+		for (size_t j = 0; j < n; j++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp2->push_back(tmp3);
+			sprime_ij[i].push_back(tmp3);
 		}
-		sprime_ij.push_back(*vtmp2);
-		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
 		for (size_t k = 0; k <= t; k++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp3->push_back(tmp3);
+			C_ik[i].push_back(tmp3);
 		}
-		C_ik.push_back(*vtmp3);
 	}
 	for (size_t i = 0; i < n; i++)
 		in >> y_i[i];	
@@ -319,39 +310,33 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	for (size_t k = 0; k <= t; k++)
 	{
-		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
-		mpz_init(tmp1), mpz_init(tmp2);
-		a_i.push_back(tmp1), b_i.push_back(tmp2);
-		mpz_ptr tmp3 = new mpz_t();
-		mpz_init(tmp3);
-		g__a_i.push_back(tmp3);
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3);
+		a_i.push_back(tmp1), b_i.push_back(tmp2), g__a_i.push_back(tmp3);
 	}
-	for (size_t j = 0; j < n; j++)
+	A_ik.resize(n);
+	g__s_ij.resize(n);
+	a_ik.resize(n);
+	for (size_t i2 = 0; i2 < n; i2++)
 	{
-		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
 		for (size_t k = 0; k <= t; k++)
 		{
 			mpz_ptr tmp1 = new mpz_t();
 			mpz_init(tmp1);
-			vtmp1->push_back(tmp1);
+			A_ik[i2].push_back(tmp1);
 		}
-		A_ik.push_back(*vtmp1);
-		std::vector<mpz_ptr> *vtmp2 = new std::vector<mpz_ptr>;
-		for (size_t i2 = 0; i2 < n; i2++)
+		for (size_t j = 0; j < n; j++)
 		{
 			mpz_ptr tmp2 = new mpz_t();
 			mpz_init(tmp2);
-			vtmp2->push_back(tmp2);
+			g__s_ij[i2].push_back(tmp2);
 		}
-		g__s_ij.push_back(*vtmp2);
-		std::vector<mpz_ptr> *vtmp3 = new std::vector<mpz_ptr>;
 		for (size_t k = 0; k <= t; k++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
-			vtmp3->push_back(tmp3);
+			a_ik[i2].push_back(tmp3);
 		}
-		a_ik.push_back(*vtmp3);
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
 
@@ -1124,52 +1109,54 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
 	QUAL.clear();
 	mpz_clear(x_i), mpz_clear(xprime_i), mpz_clear(y);
-	for (size_t j = 0; j < y_i.size(); j++)
+	for (size_t i = 0; i < y_i.size(); i++)
 	{
-		mpz_clear(y_i[j]);
-		delete [] y_i[j];
+		mpz_clear(y_i[i]);
+		delete [] y_i[i];
 	}
 	y_i.clear();
-	for (size_t j = 0; j < z_i.size(); j++)
+	for (size_t i = 0; i < z_i.size(); i++)
 	{
-		mpz_clear(z_i[j]);
-		delete [] z_i[j];
+		mpz_clear(z_i[i]);
+		delete [] z_i[i];
 	}
 	z_i.clear();
-	for (size_t j = 0; j < v_i.size(); j++)
+	for (size_t i = 0; i < v_i.size(); i++)
 	{
-		mpz_clear(v_i[j]);
-		delete [] v_i[j];
+		mpz_clear(v_i[i]);
+		delete [] v_i[i];
 	}
 	v_i.clear();
-	for (size_t j = 0; j < s_ij.size(); j++)
+	for (size_t i = 0; i < s_ij.size(); i++)
 	{
-		for (size_t i = 0; i < s_ij[j].size(); i++)
+		for (size_t j = 0; j < s_ij[i].size(); j++)
 		{
-			mpz_clear(s_ij[j][i]);
-			delete [] s_ij[j][i];
+			mpz_clear(s_ij[i][j]);
+			delete [] s_ij[i][j];
 		}
-		s_ij[j].clear();
+		s_ij[i].clear();
 	}
 	s_ij.clear();
-	for (size_t j = 0; j < sprime_ij.size(); j++)
+	for (size_t i = 0; i < sprime_ij.size(); i++)
 	{
-		for (size_t i = 0; i < sprime_ij[j].size(); i++)
+		for (size_t j = 0; j < sprime_ij[i].size(); j++)
 		{
-			mpz_clear(sprime_ij[j][i]);
-			delete [] sprime_ij[j][i];
+			mpz_clear(sprime_ij[i][j]);
+			delete [] sprime_ij[i][j];
 		}
-		sprime_ij[j].clear();
+		sprime_ij[i].clear();
 	}
 	sprime_ij.clear();
-	for (size_t j = 0; j < C_ik.size(); j++)
+	for (size_t i = 0; i < C_ik.size(); i++)
 	{
-		for (size_t k = 0; k < C_ik[j].size(); k++)
+		for (size_t k = 0; k < C_ik[i].size(); k++)
 		{
-			mpz_clear(C_ik[j][k]);
-			delete [] C_ik[j][k];
+			mpz_clear(C_ik[i][k]);
+			delete [] C_ik[i][k];
 		}
+		C_ik[i].clear();
 	}
+	C_ik.clear();
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
@@ -1180,18 +1167,19 @@ GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
 	(const size_t n_in, const size_t t_in, const size_t i_in,
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 	unsigned long int fieldsize, unsigned long int subgroupsize):
-			F_size(fieldsize), G_size(subgroupsize), n(n_in),
-			t(t_in), i(i_in)
+			F_size(fieldsize), G_size(subgroupsize),
+			n(n_in), t(t_in), i(i_in)
 {
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
 	mpz_init_set_ui(z_i, 0L), mpz_init_set_ui(y, 0L);
-	for (size_t j = 0; j < n_in; j++)
+	for (size_t i = 0; i < n; i++)
 	{
 		mpz_ptr tmp1 = new mpz_t();
 		mpz_init_set_ui(tmp1, 0L);
 		y_i.push_back(tmp1);
 	}
 	
+	// initialize required subprotocols
 	dkg = new GennaroJareckiKrawczykRabinDKG(n_in, t_in, i_in, p, q, g, h, fieldsize, subgroupsize);
 
 	// Do the precomputation for the fast exponentiation.
@@ -1291,7 +1279,7 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 
 	try
 	{
-		// initial call of the protocol New-DKG for generating an additive
+		// call of the protocol New-DKG for generating an additive
 		// share $z_i$ of a common secret $x$ and the public parameters
 		// $y = g^x$ and $y_i = g^{z_i}$ for every $P_i$
 		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour))
@@ -1337,25 +1325,26 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	std::vector<size_t> QUALprime;
 	std::vector<mpz_ptr> s_i, r_i, u_i;
 	std::vector< std::vector<mpz_ptr> > a_ik;
-	GennaroJareckiKrawczykRabinDKG *dkg2 = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h);
 	std::vector<size_t> complaints;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	mpz_init(r);
-	for (size_t j = 0; j < n; j++)
+	a_ik.resize(n);
+	for (size_t i2 = 0; i2 < n; i2++)
 	{
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
 		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3);
 		s_i.push_back(tmp1), r_i.push_back(tmp2), u_i.push_back(tmp3);
-		std::vector<mpz_ptr> *vtmp1 = new std::vector<mpz_ptr>;
 		for (size_t k = 0; k <= t; k++)
 		{
 			mpz_ptr tmp4 = new mpz_t();
 			mpz_init(tmp4);
-			vtmp1->push_back(tmp4);
+			a_ik[i2].push_back(tmp4);
 		}
-		a_ik.push_back(*vtmp1);
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+
+	// initialize required subprotocol
+	GennaroJareckiKrawczykRabinDKG *dkg2 = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h);
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -1495,19 +1484,20 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
 		mpz_clear(r);
-		for (size_t j = 0; j < n; j++)
+		for (size_t i = 0; i < n; i++)
 		{
-			mpz_clear(s_i[j]), mpz_clear(r_i[j]), mpz_clear(u_i[j]);
-			delete [] s_i[j], delete [] r_i[j], delete [] u_i[j];
+			mpz_clear(s_i[i]), mpz_clear(r_i[i]), mpz_clear(u_i[i]);
+			delete [] s_i[i], delete [] r_i[i], delete [] u_i[i];
 			for (size_t k = 0; k <= t; k++)
 			{
-				mpz_clear(a_ik[j][k]);
-				delete [] a_ik[j][k];
+				mpz_clear(a_ik[i][k]);
+				delete [] a_ik[i][k];
 			}
-			a_ik[j].clear();
+			a_ik[i].clear();
 		}
 		s_i.clear(), r_i.clear(), u_i.clear();
 		a_ik.clear();
+		// release subprotocol
 		delete dkg2;
 		// return
 		return return_value;
@@ -1549,8 +1539,9 @@ bool GennaroJareckiKrawczykRabinNTS::Verify
 GennaroJareckiKrawczykRabinNTS::~GennaroJareckiKrawczykRabinNTS
 	()
 {
+	// release subprotocol
 	delete dkg;
-
+	// release
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
 	QUAL.clear();
 	mpz_clear(z_i), mpz_clear(y);

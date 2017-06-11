@@ -1593,6 +1593,12 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
 		if (!mpz_cmp(g, h))
 			throw false;
 
+		// check whether the group for Joint-RVSS is sound
+		if (!x_rvss->CheckGroup())
+			throw false;
+		if (!d_rvss->CheckGroup())
+			throw false;
+
 		// everything is sound
 		throw true;
 	}
