@@ -332,9 +332,9 @@ int main
 	BarnettSmartVTMF_dlog 	*vtmf;
 	std::stringstream 	crs;
 
-	// create and check VTMF instance
-	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
-	vtmf = new BarnettSmartVTMF_dlog();
+	// create and check VTMF instance (with verifiable generation of $g$)
+	std::cout << "BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true)" << std::endl;
+	vtmf = new BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
 	std::cout << "vtmf.CheckGroup()" << std::endl;
 	start_clock();
 	assert(vtmf->CheckGroup());
