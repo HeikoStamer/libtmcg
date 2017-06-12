@@ -214,9 +214,9 @@ void CanettiGennaroJareckiKrawczykRabinRVSS::Erase
 bool CanettiGennaroJareckiKrawczykRabinRVSS::CheckGroup
 	() const
 {
-	mpz_t foo, k;
+	mpz_t foo, bar, k, g2;
 
-	mpz_init(foo), mpz_init(k);
+	mpz_init(foo), mpz_init(bar), mpz_init(k), mpz_init(g2);
 	try
 	{
 		// Compute $k := (p - 1) / q$
@@ -264,12 +264,31 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::CheckGroup
 		if (!mpz_cmp(g, h))
 			throw false;
 
+		// We use a procedure similar to FIPS 186-3 A.2.3;
+		// it is supposed as verifiable generation of $g$.
+		std::stringstream U;
+		U << "LibTMCG|" << p << "|" << q << "|ggen|";
+		mpz_sub_ui(bar, p, 1L); // compute $p-1$
+		do
+		{
+			mpz_shash(foo, U.str());
+			mpz_powm(g2, foo, k, p);
+			U << g2 << "|";
+			mpz_powm(foo, g2, q, p);
+			// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
+		}
+		while (!mpz_cmp_ui(g2, 0L) || !mpz_cmp_ui(g2, 1L) || 
+			!mpz_cmp(g2, bar) || mpz_cmp_ui(foo, 1L));
+		// Check that the 1st verifiable $g$ is used.
+		if (mpz_cmp(g, g2))
+			throw false;
+
 		// everything is sound
 		throw true;
 	}
 	catch (bool return_value)
 	{
-		mpz_clear(foo), mpz_clear(k);
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(k), mpz_clear(g2);
 		return return_value;
 	}
 }
@@ -979,9 +998,9 @@ void CanettiGennaroJareckiKrawczykRabinZVSS::Erase
 bool CanettiGennaroJareckiKrawczykRabinZVSS::CheckGroup
 	() const
 {
-	mpz_t foo, k;
+	mpz_t foo, bar, k, g2;
 
-	mpz_init(foo), mpz_init(k);
+	mpz_init(foo), mpz_init(bar), mpz_init(k), mpz_init(g2);
 	try
 	{
 		// Compute $k := (p - 1) / q$
@@ -1029,12 +1048,31 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::CheckGroup
 		if (!mpz_cmp(g, h))
 			throw false;
 
+		// We use a procedure similar to FIPS 186-3 A.2.3;
+		// it is supposed as verifiable generation of $g$.
+		std::stringstream U;
+		U << "LibTMCG|" << p << "|" << q << "|ggen|";
+		mpz_sub_ui(bar, p, 1L); // compute $p-1$
+		do
+		{
+			mpz_shash(foo, U.str());
+			mpz_powm(g2, foo, k, p);
+			U << g2 << "|";
+			mpz_powm(foo, g2, q, p);
+			// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
+		}
+		while (!mpz_cmp_ui(g2, 0L) || !mpz_cmp_ui(g2, 1L) || 
+			!mpz_cmp(g2, bar) || mpz_cmp_ui(foo, 1L));
+		// Check that the 1st verifiable $g$ is used.
+		if (mpz_cmp(g, g2))
+			throw false;
+
 		// everything is sound
 		throw true;
 	}
 	catch (bool return_value)
 	{
-		mpz_clear(foo), mpz_clear(k);
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(k), mpz_clear(g2);
 		return return_value;
 	}
 }
@@ -1545,9 +1583,9 @@ void CanettiGennaroJareckiKrawczykRabinDKG::PublishState
 bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
 	() const
 {
-	mpz_t foo, k;
+	mpz_t foo, bar, k, g2;
 
-	mpz_init(foo), mpz_init(k);
+	mpz_init(foo), mpz_init(bar), mpz_init(k), mpz_init(g2);
 	try
 	{
 		// Compute $k := (p - 1) / q$
@@ -1595,6 +1633,25 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
 		if (!mpz_cmp(g, h))
 			throw false;
 
+		// We use a procedure similar to FIPS 186-3 A.2.3;
+		// it is supposed as verifiable generation of $g$.
+		std::stringstream U;
+		U << "LibTMCG|" << p << "|" << q << "|ggen|";
+		mpz_sub_ui(bar, p, 1L); // compute $p-1$
+		do
+		{
+			mpz_shash(foo, U.str());
+			mpz_powm(g2, foo, k, p);
+			U << g2 << "|";
+			mpz_powm(foo, g2, q, p);
+			// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
+		}
+		while (!mpz_cmp_ui(g2, 0L) || !mpz_cmp_ui(g2, 1L) || 
+			!mpz_cmp(g2, bar) || mpz_cmp_ui(foo, 1L));
+		// Check that the 1st verifiable $g$ is used.
+		if (mpz_cmp(g, g2))
+			throw false;
+
 		// check whether the group for Joint-RVSS is sound
 		if (!x_rvss->CheckGroup())
 			throw false;
@@ -1606,7 +1663,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
 	}
 	catch (bool return_value)
 	{
-		mpz_clear(foo), mpz_clear(k);
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(k), mpz_clear(g2);
 		return return_value;
 	}
 }
@@ -2093,9 +2150,9 @@ void CanettiGennaroJareckiKrawczykRabinDSS::PublishState
 bool CanettiGennaroJareckiKrawczykRabinDSS::CheckGroup
 	() const
 {
-	mpz_t foo, k;
+	mpz_t foo, bar, k, g2;
 
-	mpz_init(foo), mpz_init(k);
+	mpz_init(foo), mpz_init(bar), mpz_init(k), mpz_init(g2);
 	try
 	{
 		// Compute $k := (p - 1) / q$
@@ -2143,6 +2200,25 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::CheckGroup
 		if (!mpz_cmp(g, h))
 			throw false;
 
+		// We use a procedure similar to FIPS 186-3 A.2.3;
+		// it is supposed as verifiable generation of $g$.
+		std::stringstream U;
+		U << "LibTMCG|" << p << "|" << q << "|ggen|";
+		mpz_sub_ui(bar, p, 1L); // compute $p-1$
+		do
+		{
+			mpz_shash(foo, U.str());
+			mpz_powm(g2, foo, k, p);
+			U << g2 << "|";
+			mpz_powm(foo, g2, q, p);
+			// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
+		}
+		while (!mpz_cmp_ui(g2, 0L) || !mpz_cmp_ui(g2, 1L) || 
+			!mpz_cmp(g2, bar) || mpz_cmp_ui(foo, 1L));
+		// Check that the 1st verifiable $g$ is used.
+		if (mpz_cmp(g, g2))
+			throw false;
+
 		// check whether the group for DKG is sound
 		if (!dkg->CheckGroup())
 			throw false;
@@ -2152,7 +2228,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::CheckGroup
 	}
 	catch (bool return_value)
 	{
-		mpz_clear(foo), mpz_clear(k);
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(k), mpz_clear(g2);
 		return return_value;
 	}
 }
