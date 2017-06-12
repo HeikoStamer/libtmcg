@@ -2276,7 +2276,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	(const tmcg_octets_t &key, const std::string uid, const tmcg_octets_t &trailer, 
-	 const tmcg_byte_t &hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
+	 const tmcg_byte_t hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
 {
 	tmcg_octets_t hash_input;
 	size_t uidlen = uid.length();
@@ -2327,7 +2327,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 	(const tmcg_octets_t &primary, const tmcg_octets_t &subkey, const tmcg_octets_t &trailer,
-	 const tmcg_byte_t &hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
+	 const tmcg_byte_t hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
 {
 	tmcg_octets_t hash_input;
 
