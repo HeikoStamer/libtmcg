@@ -219,7 +219,7 @@ int test3mod4
 int mpz_mr_witness
 	(mpz_srcptr n, mpz_srcptr base)
 {
-	size_t result = 1;
+	int result = 1;
 	mpz_t y, r, nm1;
 	unsigned long int s;
 	
