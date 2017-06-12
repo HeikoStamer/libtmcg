@@ -158,13 +158,14 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
 			dkg->PublishState(state_log);
-/* FIXME: fix timeout problem -- we must avoid the aio_scheduler_direct in step 1(b) of DKG, because a corrupt party can harm, i.e. slow down, honest parties
-          as workaround we temporarily remove all simulated faulty behaviour that aborts the protocols */
+
+/* FIXME: fix timeout problem -- we must avoid the aio_scheduler_direct in step 1(b) of DKG, because a corrupted party can harm, i.e. slow down, honest parties
+          maybe the problem stems from inproper invocation of subprotocols and RBC IDs */
 
 			// create an instance of threshold signature protocol new-TSch (NTS) (without using very strong randomness)
 			GennaroJareckiKrawczykRabinNTS *nts;
 			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-			nts = new GennaroJareckiKrawczykRabinNTS(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, false);
+			nts = new GennaroJareckiKrawczykRabinNTS(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
 			assert(nts->CheckGroup());
 
 			// generate distributed key shares

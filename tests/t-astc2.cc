@@ -112,9 +112,6 @@ void start_instance
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 
-/* FIXME: fix timeout problem -- we must avoid the aio_scheduler_direct in step 1(b) of DKG, because a corrupt party can harm, i.e. slow down, honest parties
-          as workaround we temporarily remove all simulated faulty behaviour that aborts the protocols */
-
 			// create an instance of DKG (without using very strong randomness)
 			CanettiGennaroJareckiKrawczykRabinDKG *dkg;
 			std::cout << "P_" << whoami << ": CanettiGennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
