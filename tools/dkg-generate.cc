@@ -220,7 +220,12 @@ void run_instance
 	}
 	mpz_clear(mtv);
 	std::sort(tvs.begin(), tvs.end());
-	ckeytime = tvs.back(); // use the biggest value as some kind of gentle agreement
+	if (tvs.size() < (T + 1))
+	{
+		std::cerr << "P_" << whoami << ": not enough timestamps received" << std::endl;
+		exit(-1);
+	}
+	ckeytime = tvs[tvs.size()/2]; // use a median value as some kind of gentle agreement
 	if (opt_verbose)
 		std::cout << "P_" << whoami << ": canonicalized key creation time = " << ckeytime << std::endl;
 
