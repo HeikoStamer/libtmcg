@@ -144,7 +144,8 @@ void start_instance
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
-			assert(ret);
+			if (!corrupted)
+				assert(ret);
 
 			// check the generated key share and publish state
 			start_clock();
@@ -177,7 +178,8 @@ void start_instance
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
-			assert(ret);
+			if (!corrupted)
+				assert(ret);
 
 			// sign a message (create a signature share)
 			std::stringstream err_log3;
@@ -192,7 +194,8 @@ void start_instance
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
-			assert(ret);
+			if (!corrupted)
+				assert(ret);
 
 			// verify signature
 			start_clock();

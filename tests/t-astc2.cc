@@ -170,7 +170,8 @@ void start_instance
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
-			assert(ret);
+			if (!corrupted)
+				assert(ret);
 
 // TODO: check singing and verifying a hash value of a message
 
