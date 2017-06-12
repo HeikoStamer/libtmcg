@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170609])
+AC_REVISION([20170612])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.2], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -139,7 +139,7 @@ AC_DEFINE(TMCG_MAX_TYPEBITS, 10,
 	size of the message space in the scheme of Barnett and Smart])
 	
 AC_DEFINE(TMCG_MAX_KEYBITS,
-	[((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? TMCG_DDH_SIZE : TMCG_QRA_SIZE)],
+	[((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? (4 * TMCG_DDH_SIZE) : (4 * TMCG_QRA_SIZE))],
 	[Define a helping macro])
 AC_DEFINE(TMCG_MAX_VALUE_CHARS,
 	[(TMCG_MAX_KEYBITS / 2L)],
