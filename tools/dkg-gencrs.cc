@@ -41,7 +41,7 @@ int main
 	}
 	else
 	{
-		// use default security parameter from LibTMCG
+		// use default security parameter from LibTMCG and verifiable generation of $g$
 		vtmf = new BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
 	}
 

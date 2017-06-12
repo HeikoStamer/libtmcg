@@ -86,7 +86,7 @@ void run_instance
 		crss << crsmpz << std::endl;
 	}
 	mpz_clear(crsmpz);
-	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crss, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
+	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crss, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true); // with verifiable generation of $g$
 	// check VTMF instance constructed
 	if (!vtmf->CheckGroup())
 	{
