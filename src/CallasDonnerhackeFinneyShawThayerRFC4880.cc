@@ -956,15 +956,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
-	(const tmcg_byte_t sigtype, const time_t sigtime, const tmcg_octets_t &flags,
-	 const tmcg_octets_t &issuer, tmcg_octets_t &out)
+	(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, const time_t sigtime,
+	 const tmcg_octets_t &flags, const tmcg_octets_t &issuer, tmcg_octets_t &out)
 {
 	size_t subpkts = 6;
 	size_t subpktlen = (subpkts * 6) + 4 + flags.size() + issuer.size() + 3;
 	out.push_back(4); // V4 format
-	out.push_back(sigtype); // type (eg 0x13 UID cert., 0x18 subkey bind.)
+	out.push_back(sigtype); // type (e.g. 0x13 UID cert., 0x18 subkey bind.)
 	out.push_back(17); // public-key algorithm: DSA
-	out.push_back(8); // hash algorithm: SHA256
+	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
 	out.push_back(subpktlen >> 8); // length of hashed subpacket data
 	out.push_back(subpktlen);

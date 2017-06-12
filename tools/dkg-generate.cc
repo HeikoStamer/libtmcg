@@ -370,7 +370,7 @@ void run_instance
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, uid);
 	dsaflags.push_back(0x01 | 0x02 | 0x20); // key may be used to certify other keys, to sign data, and for authentication
 	sigtime = time(NULL); // current time
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, sigtime, dsaflags, keyid, uidsig_hashing); // positive certification (0x13) of uid and pub
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, hashalgo, sigtime, dsaflags, keyid, uidsig_hashing); // positive certification (0x13) of uid and pub
 	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, hashalgo, hash, uidsig_left);
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
 	if (ret)
@@ -422,7 +422,7 @@ void run_instance
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(ckeytime, p, g, y, x, passphrase, ssb); // use common key creation time and individual passphrase
 	elgflags.push_back(0x04 | 0x10); // key may be used to encrypt communications and have been split by a secret-sharing mechanism
 	sigtime = time(NULL); // current time
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, sigtime, elgflags, keyid, subsig_hashing); // Subkey Binding Signature (0x18) of sub
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, hashalgo, sigtime, elgflags, keyid, subsig_hashing); // Subkey Binding Signature (0x18) of sub
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, subsig_hashing, hashalgo, hash, subsig_left);

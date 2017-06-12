@@ -248,7 +248,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_byte_t type, bool critical, const tmcg_octets_t &in,
 			 tmcg_octets_t &out);
 		static void PacketSigPrepare
-			(const tmcg_byte_t sigtype, const time_t sigtime,
+			(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, 
+			 const time_t sigtime,
 			 const tmcg_octets_t &flags, const tmcg_octets_t &issuer, 
 			 tmcg_octets_t &out);
 		static void PacketPubEncode
