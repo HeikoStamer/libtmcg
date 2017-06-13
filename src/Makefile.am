@@ -25,6 +25,7 @@ include_HEADERS = mpz_srandom.h mpz_sqrtm.h mpz_spowm.h mpz_sprime.h\
 	mpz_shash.hh parse_helper.hh mpz_helper.hh\
 	BarnettSmartVTMF_dlog.hh BarnettSmartVTMF_dlog_GroupQR.hh\
 	PedersenCOM.hh\
+	PedersenVSS.hh\
 	GrothVSSHE.hh\
 	HooghSchoenmakersSkoricVillegasVRHE.hh\
 	NaorPinkasEOTP.hh\
@@ -56,6 +57,7 @@ libTMCG_la_SOURCES = mpz_srandom.c mpz_srandom.h\
 	BarnettSmartVTMF_dlog.cc BarnettSmartVTMF_dlog.hh\
 	BarnettSmartVTMF_dlog_GroupQR.cc BarnettSmartVTMF_dlog_GroupQR.hh\
 	PedersenCOM.cc PedersenCOM.hh\
+	PedersenVSS.cc PedersenVSS.hh\
 	GrothVSSHE.cc GrothVSSHE.hh\
 	HooghSchoenmakersSkoricVillegasVRHE.cc HooghSchoenmakersSkoricVillegasVRHE.hh\
 	NaorPinkasEOTP.cc NaorPinkasEOTP.hh\
