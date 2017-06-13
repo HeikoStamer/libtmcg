@@ -231,6 +231,7 @@
 	// cryptographic protocols not directly related to mental poker	
 	#include <NaorPinkasEOTP.hh>
 	#include <CachinKursawePetzoldShoupSEABP.hh>
+	#include <PedersenVSS.hh>
 	#include <GennaroJareckiKrawczykRabinDKG.hh>
 	#include <CanettiGennaroJareckiKrawczykRabinASTC.hh>
 	#include <JareckiLysyanskayaASTC.hh>

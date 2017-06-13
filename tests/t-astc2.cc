@@ -144,11 +144,70 @@ void start_instance
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
-			assert(ret);
+			if (!corrupted)
+				assert(ret);
 
 			// publish state
 			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
 			dkg->PublishState(state_log);
+
+			// create an instance of VSS (without using very strong randomness)
+			PedersenVSS *vss;
+			std::cout << "P_" << whoami << ": PedersenVSS(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
+			vss = new PedersenVSS(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
+			assert(vss->CheckGroup());
+
+			// share a secret
+			mpz_t sigma;
+			mpz_init(sigma);
+			for (size_t j = 0; j < N; j++)
+			{
+				std::stringstream err_log_vss;
+				if (j == whoami)
+				{
+					mpz_set_ui(sigma, j);
+					start_clock();
+					std::cout << "P_" << whoami << ": vss.Share(sigma)" << std::endl;
+					if (corrupted)
+						vss->Share(sigma, aiou, rbc, err_log_vss, true);
+					else
+						ret = vss->Share(sigma, aiou, rbc, err_log_vss);
+					stop_clock();
+					std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+					std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_vss.str();
+					if (!corrupted)
+						assert(ret);
+				}
+				else
+				{
+					mpz_set_ui(sigma, 42L);
+					start_clock();
+					std::cout << "P_" << whoami << ": vss.Share(" << j << ")" << std::endl;
+					if (corrupted)
+						vss->Share(j, aiou, rbc, err_log_vss, true);
+					else
+						ret = vss->Share(j, aiou, rbc, err_log_vss);
+					stop_clock();
+					std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+					std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_vss.str();
+					if (!corrupted)
+						assert(ret);
+					start_clock();
+					std::cout << "P_" << whoami << ": vss.Reconstruct(sigma)" << std::endl;
+					ret = vss->Reconstruct(j, sigma, rbc, err_log_vss);
+					stop_clock();
+					std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+					std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_vss.str();
+					if (!corrupted)
+						assert(ret);
+					if (!corrupted)
+						assert(!mpz_cmp_ui(sigma, j));
+				}
+			}
+			mpz_clear(sigma);
+
+			// release VSS
+			delete vss;
 
 			// create an instance of DSS (without using very strong randomness)
 			CanettiGennaroJareckiKrawczykRabinDSS *dss;
@@ -157,16 +216,16 @@ void start_instance
 			assert(dss->CheckGroup());
 
 			// generate distributed key shares
-			std::stringstream err_log2;
+			std::stringstream err_log_dss;
 			start_clock();
 			std::cout << "P_" << whoami << ": dss.Generate()" << std::endl;
 			if (corrupted)
-				dss->Generate(aiou, rbc, err_log, true);
+				dss->Generate(aiou, rbc, err_log_dss, true);
 			else
-				ret = dss->Generate(aiou, rbc, err_log);
+				ret = dss->Generate(aiou, rbc, err_log_dss);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_dss.str();
 			if (!corrupted)
 				assert(ret);
 
