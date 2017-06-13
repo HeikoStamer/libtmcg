@@ -1,8 +1,8 @@
 /*******************************************************************************
   PedersenCOM.cc, Information Theoretically Binding |COM|mitment Scheme
 
-     [Pe92] Torben P. Pedersen: 'Non-Interactive and Information-Theoretic Secure
-       Verifiable Secret Sharing',
+     [Pe92] Torben P. Pedersen: 'Non-Interactive and Information-Theoretic 
+       Secure Verifiable Secret Sharing',
      Advances in Cryptology - CRYPTO '91, LNCS 576, pp. 129--140, Springer 1992.
 
      [Gr05] Jens Groth: 'A Verifiable Secret Shuffle of Homomorphic Encryptions',

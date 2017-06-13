@@ -2,7 +2,13 @@
   PedersenVSS.cc,
                                                |V|erifiable |S|ecret |S|haring
 
-     [Ped] TODO
+     [Pe92] Torben P. Pedersen: 'Non-Interactive and Information-Theoretic 
+       Secure Verifiable Secret Sharing',
+     Advances in Cryptology - CRYPTO '91, LNCS 576, pp. 129--140, Springer 1992.
+
+     [GJKR01] Rosario Gennaro, Stanislaw Jarecki, Hugo Krawczyk, and Tal Rabin:
+       'Robust Threshold DSS Signatures',
+     Information and Computation 164, pp. 54--84, 2001. 
 
    This file is part of LibTMCG.
 
