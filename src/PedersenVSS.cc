@@ -373,6 +373,8 @@ bool PedersenVSS::Share
 			err << "P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
 		}
 
+		mpz_set_ui(sigma_i, 1L);
+		mpz_set_ui(tau_i, 1L);
 		throw true;
 	}
 	catch (bool return_value)
@@ -456,7 +458,7 @@ bool PedersenVSS::Share
 		for (size_t j = 0; j <= t; j++)
 		{
 			mpz_ui_pow_ui(foo, i + 1, j); // adjust index $i$ in computation
-			mpz_powm(bar, A_j[j], foo , p);
+			mpz_powm(bar, A_j[j], foo, p);
 			mpz_mul(rhs, rhs, bar);
 			mpz_mod(rhs, rhs, p);
 		}
@@ -544,7 +546,7 @@ bool PedersenVSS::Share
 				size_t who = mpz_get_ui(lhs);
 				if ((who >= n) || (who != *it))
 				{
-					err << "P_" << i << ": bad value; complaint against dealer P_" << dealer << std::endl;
+					err << "P_" << i << ": bad who value; complaint against dealer P_" << dealer << std::endl;
 					complaints.push_back(dealer);
 					break;
 				}
@@ -581,6 +583,12 @@ bool PedersenVSS::Share
 				{
 					err << "P_" << i << ": checking equation (2) failed; complaint against dealer P_" << dealer << std::endl;
 					complaints.push_back(dealer);
+				}
+				else if (who == i)
+				{
+					err << "P_" << i << ": shares have been adjusted by public values" << std::endl;
+					mpz_set(sigma_i, s);
+					mpz_set(tau_i, sprime);
 				}
 				mpz_clear(s), mpz_clear(sprime);
 			}
@@ -626,12 +634,23 @@ bool PedersenVSS::Reconstruct
 	
 	try
 	{
-		// broadcast my shares for reconstruction
-		rbc->Broadcast(sigma_i);
-		rbc->Broadcast(tau_i);
+		// broadcast own shares for public reconstruction
+		if (i != dealer)
+		{
+			if (mpz_cmp_ui(sigma_i, 0L) && mpz_cmp_ui(tau_i, 0L))
+			{
+				rbc->Broadcast(sigma_i);
+				rbc->Broadcast(tau_i);
+			}
+			else
+			{
+				err << "P_" << i << ": no shares stored for reconstruction" << std::endl;
+				throw false;
+			}
+		}
 		// prepare for collecting shares of other parties
 		std::vector<size_t> parties;
-		parties.push_back(i); // own share is always available
+		parties.push_back(i); // my own share is always available
 		mpz_set(shares[i], sigma_i);
 		for (size_t j = 0; j < n; j++)
 		{
@@ -660,17 +679,20 @@ bool PedersenVSS::Reconstruct
 						parties.push_back(j);
 				}
 				else
-					err << "P_" << i << ": no share received from P_" << j << std::endl;					
+					err << "P_" << i << ": no share received from P_" << j << std::endl;			
 			}
 		}
-		// check whether enough shares (i.e. $t + 1$) have been collected
+		// no reconstruction, if this party was the dealer
+		if (i == dealer)
+			throw true;
+		// check whether enough verified shares (i.e. ${} \ge t + 1$) have been collected
 		if (parties.size() <= t)
 		{
 			err << "P_" << i << ": not enough shares collected" << std::endl;
 			parties.clear();
 			throw false;
 		}
-		if (parties.size() > (t + 1))
+		else
 			parties.resize(t + 1);
 		err << "P_" << i << ": reconstructing parties = ";
 		for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
@@ -709,7 +731,6 @@ bool PedersenVSS::Reconstruct
 			mpz_mod(sigma, sigma, q);
 		}
 		parties.clear();
-
 		throw true;
 	}
 	catch (bool return_value)

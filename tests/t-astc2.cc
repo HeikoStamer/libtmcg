@@ -162,12 +162,12 @@ void start_instance
 			mpz_init(sigma);
 			for (size_t j = 0; j < N; j++)
 			{
-				std::stringstream err_log_vss;
+				std::stringstream err_log_vss, err_log_vss2;
 				if (j == whoami)
 				{
 					mpz_set_ui(sigma, j);
 					start_clock();
-					std::cout << "P_" << whoami << ": vss.Share(sigma)" << std::endl;
+					std::cout << "P_" << whoami << ": vss.Share(sigma, ...)" << std::endl;
 					if (corrupted)
 						vss->Share(sigma, aiou, rbc, err_log_vss, true);
 					else
@@ -180,9 +180,8 @@ void start_instance
 				}
 				else
 				{
-					mpz_set_ui(sigma, 42L);
 					start_clock();
-					std::cout << "P_" << whoami << ": vss.Share(" << j << ")" << std::endl;
+					std::cout << "P_" << whoami << ": vss.Share(" << j << ", ...)" << std::endl;
 					if (corrupted)
 						vss->Share(j, aiou, rbc, err_log_vss, true);
 					else
@@ -192,17 +191,18 @@ void start_instance
 					std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_vss.str();
 					if (!corrupted)
 						assert(ret);
-					start_clock();
-					std::cout << "P_" << whoami << ": vss.Reconstruct(sigma)" << std::endl;
-					ret = vss->Reconstruct(j, sigma, rbc, err_log_vss);
-					stop_clock();
-					std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-					std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_vss.str();
-					if (!corrupted)
-						assert(ret);
-					if (!corrupted)
-						assert(!mpz_cmp_ui(sigma, j));
 				}
+				start_clock();
+				std::cout << "P_" << whoami << ": vss.Reconstruct(" << j << ", sigma, ...)" << std::endl;
+				mpz_set_ui(sigma, 42L);
+				ret = vss->Reconstruct(j, sigma, rbc, err_log_vss2);
+				stop_clock();
+				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_vss2.str();
+				if (!corrupted)
+					assert(ret);
+				if (!corrupted && (j != whoami))
+					assert(!mpz_cmp_ui(sigma, j));
 			}
 			mpz_clear(sigma);
 
