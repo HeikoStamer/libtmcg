@@ -138,6 +138,44 @@ void start_instance
 			mpz_clear(a);
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 
+			// broadcast again
+			mpz_init_set_ui(a, 42 * whoami);
+			rbc->Broadcast(a, corrupted);
+
+			// switch to further subprotocol
+			myID = "t-seabp::subprotocol::subprotocol";
+			rbc->setID(myID);
+
+			// deliver nothing
+			for (size_t i = 0; i < n; i++)
+				assert(!rbc->DeliverFrom(a, i));
+
+			// switch back to subprotocol
+			rbc->unsetID();
+
+			// deliver again
+			start_clock();
+			std::cout << "P_" << whoami << ": rbc.DeliverFrom() inside subprotocol" << std::endl;
+			for (size_t i = 0; i < n; i++)
+			{
+				if (someone_corrupted)
+				{
+					if (rbc->DeliverFrom(a, i))
+					{
+						std::cout << "P_" << whoami << ": a = " << a << " from " << i << " inside subprotocol" << std::endl;
+						assert(!mpz_cmp_ui(a, 42 * i));
+					}					
+				}
+				else
+				{
+					assert(rbc->DeliverFrom(a, i));
+					assert(!mpz_cmp_ui(a, 42 * i));
+				}
+			}
+			stop_clock();
+			mpz_clear(a);
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+
 			// switch back to main protocol
 			rbc->unsetID();
 			

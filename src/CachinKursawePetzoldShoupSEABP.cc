@@ -72,27 +72,17 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	mpz_init_set_ui(r_answer, 5L);
 
 	// initialize message counters
-	for (size_t i = 0; i < n; i++)
-	{
-		RBC_TagCheck *mtmp = new RBC_TagCheck;
-		send.push_back(*mtmp);
-		RBC_TagCheck *mtmp2 = new RBC_TagCheck;
-		echo.push_back(*mtmp2);
-		RBC_TagCheck *mtmp3 = new RBC_TagCheck;
-		ready.push_back(*mtmp3);
-		RBC_TagCheck *mtmp4 = new RBC_TagCheck;
-		request.push_back(*mtmp4);
-		RBC_TagCheck *mtmp5 = new RBC_TagCheck;
-		answer.push_back(*mtmp5);
-	}
+	send.resize(n);
+	echo.resize(n);
+	ready.resize(n);
+	request.resize(n);
+	answer.resize(n);
 
 	// initialize message and deliver buffers
+	buf_mpz.resize(n);
+	buf_msg.resize(n);
 	for (size_t i = 0; i < n; i++)
 	{
-		RBC_BufferList *ltmp = new RBC_BufferList;
-		buf_mpz.push_back(*ltmp);
-		RBC_BufferList *ltmp2 = new RBC_BufferList;
-		buf_msg.push_back(*ltmp2);
 		deliver_error.push_back(false);
 		mpz_ptr tmp = new mpz_t();
 		mpz_init_set_ui(tmp, 1L); // initialize sequence counter by 1
@@ -363,7 +353,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					if (e_d.find(tag_string) == e_d.end())
 					{
 						RBC_TagCount *mmm = new RBC_TagCount;
-						e_d.insert(std::pair<std::string, RBC_TagCount >(tag_string, *mmm));
+						e_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, *mmm));
 					}
 					RBC_TagCount::iterator eit = e_d[tag_string].find(d_string);
 					if (eit == e_d[tag_string].end())
@@ -373,7 +363,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					if (r_d.find(tag_string) == r_d.end())
 					{
 						RBC_TagCount *mmm = new RBC_TagCount;
-						r_d.insert(std::pair<std::string, RBC_TagCount >(tag_string, *mmm));
+						r_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, *mmm));
 					}
 					RBC_TagCount::iterator rit = r_d[tag_string].find(d_string);
 					if (rit == r_d[tag_string].end())
@@ -547,14 +537,14 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						else
 						{
 							// buffer the message for later delivery
-							RBC_Message *vtmp = new RBC_Message;
+							RBC_Message vtmp;
 							for (size_t mm = 0; mm < 5; mm++)
 							{
 								mpz_ptr tmp = new mpz_t();
 								mpz_init_set(tmp, message[mm]);
-								vtmp->push_back(tmp);
+								vtmp.push_back(tmp);
 							}
-							deliver_buf.push_back(*vtmp);
+							deliver_buf.push_back(vtmp);
 //std::cerr << "RBC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
 						}
 						continue;
@@ -767,7 +757,7 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		mpz_clear(deliver_s[i]);
 		delete [] deliver_s[i];
 	}
-	buf_mpz.clear(), buf_msg.clear();
+	buf_mpz.clear(), buf_msg.clear(), deliver_s.clear();
 	for (std::list<RBC_Message>::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
 	{
 		for (RBC_Message::iterator vit = lit->begin(); vit != lit->end(); ++vit)
@@ -777,6 +767,6 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		}
 		lit->clear();
 	}	
-	deliver_error.clear(), deliver_buf.clear(), deliver_s.clear();
+	deliver_buf.clear(), deliver_error.clear();
 }
 
