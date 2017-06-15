@@ -236,6 +236,7 @@ bool PedersenVSS::Share
 		a_j.push_back(tmp1), b_j.push_back(tmp2);
 	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+	size_t simulate_faulty_randomizer2 = mpz_wrandom_ui() % 2L;
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -293,7 +294,7 @@ bool PedersenVSS::Share
 					mpz_add(tau_i, tau_i, bar);
 					mpz_mod(tau_i, tau_i, q);
 				}
-				if (simulate_faulty_behaviour && simulate_faulty_randomizer)
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer && (mpz_wrandom_ui() % 2L))
 					mpz_add_ui(sigma_i, sigma_i, 1L);
 				if (!aiou->Send(sigma_i, j, 0))
 				{
@@ -354,6 +355,8 @@ bool PedersenVSS::Share
 				mpz_set_ui(foo, *it); // who?
 				rbc->Broadcast(foo);
 				mpz_set_ui(sigma_i, 0L);
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer2 && (mpz_wrandom_ui() % 2L))
+					mpz_add_ui(sigma_i, sigma_i, 1L);
 				mpz_set_ui(tau_i, 0L);
 				for (size_t k = 0; k <= t; k++)
 				{
