@@ -104,14 +104,35 @@ void CachinKursawePetzoldShoupRBC::setID
 	(const std::string ID_in)
 {
 	// save the last ID
-	mpz_ptr tmp = new mpz_t();
-	mpz_init_set(tmp, ID);
-	last_IDs.push_back(tmp);
+	mpz_ptr tmp1 = new mpz_t();
+	mpz_init_set(tmp1, ID);
+	last_IDs.push_back(tmp1);
+
+	// save the last sequence counter
+	mpz_ptr tmp2 = new mpz_t();
+	mpz_init_set(tmp2, s);
+	last_s.push_back(tmp2);
+
+	// save deliver sequence counters
+	last_deliver_s.resize(last_deliver_s.size() + 1);
+	for (size_t i = 0; i < n; i++)
+	{
+		mpz_ptr tmp3 = new mpz_t();
+		mpz_init_set(tmp3, deliver_s[i]);
+		(last_deliver_s.back()).push_back(tmp3);
+	}
 
 	// set new ID
 	std::stringstream myID;
 	myID << "CachinKursawePetzoldShoupRBC called from [" << ID_in << "] with last ID = " << ID;
 	mpz_shash(ID, myID.str());
+
+	// reset sequence counter
+	mpz_set_ui(s, 0L);
+
+	// reset deliver sequence counters
+	for (size_t i = 0; i < n; i++)
+		mpz_set_ui(deliver_s[i], 1L);
 }
 
 void CachinKursawePetzoldShoupRBC::unsetID
@@ -128,6 +149,36 @@ void CachinKursawePetzoldShoupRBC::unsetID
 	}
 	else
 		mpz_set_ui(ID, 0L);
+
+	// set last sequence counter
+	if (last_s.size() > 0)
+	{
+		mpz_ptr tmp = last_s.back();
+		mpz_set(s, tmp);
+		mpz_clear(tmp);
+		delete [] tmp;
+		last_s.pop_back();
+	}
+	else
+		mpz_set_ui(s, 0L);
+
+	// set last deliver sequence counters
+	if (last_deliver_s.size() > 0)
+	{
+		std::vector<mpz_ptr> vtmp = last_deliver_s.back();
+		for (size_t i = 0; i < n; i++)
+		{
+			mpz_set(deliver_s[i], vtmp[i]);
+			mpz_clear(vtmp[i]);
+			delete [] vtmp[i];
+		}
+		last_deliver_s.pop_back();
+	}
+	else
+	{
+		for (size_t i = 0; i < n; i++)
+			mpz_set_ui(deliver_s[i], 1L);
+	}
 }
 
 void CachinKursawePetzoldShoupRBC::Broadcast
@@ -650,6 +701,21 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		delete [] *lit;
 	}
 	last_IDs.clear();
+	for (RBC_BufferList::iterator lit = last_s.begin(); lit != last_s.end(); ++lit)
+	{
+		mpz_clear(*lit);
+		delete [] *lit;
+	}
+	last_s.clear();
+	for (RBC_VectorList::iterator lit = last_deliver_s.begin(); lit != last_deliver_s.end(); ++lit)
+	{
+		for (size_t i = 0; i < lit->size(); i++)
+		{
+			mpz_clear((*lit)[i]);
+			delete [] (*lit)[i];
+		}
+	}
+	last_deliver_s.clear();
 	mpz_clear(r_send);
 	mpz_clear(r_echo);
 	mpz_clear(r_ready);

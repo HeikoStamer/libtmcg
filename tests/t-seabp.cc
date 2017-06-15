@@ -107,6 +107,67 @@ void start_instance
 			mpz_clear(a);
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 
+			// switch to subprotocol
+			myID = "t-seabp::subprotocol";
+			rbc->setID(myID);
+			
+			// broadcast again
+			mpz_init_set_ui(a, whoami);
+			rbc->Broadcast(a, corrupted);
+
+			// deliver again
+			start_clock();
+			std::cout << "P_" << whoami << ": rbc.DeliverFrom() inside subprotocol" << std::endl;
+			for (size_t i = 0; i < n; i++)
+			{
+				if (someone_corrupted)
+				{
+					if (rbc->DeliverFrom(a, i))
+					{
+						std::cout << "P_" << whoami << ": a = " << a << " from " << i << " inside subprotocol" << std::endl;
+						assert(!mpz_cmp_ui(a, i));
+					}					
+				}
+				else
+				{
+					assert(rbc->DeliverFrom(a, i));
+					assert(!mpz_cmp_ui(a, i));
+				}
+			}
+			stop_clock();
+			mpz_clear(a);
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+
+			// switch back to main protocol
+			rbc->unsetID();
+			
+			// broadcast again
+			mpz_init_set_ui(a, whoami);
+			rbc->Broadcast(a, corrupted);
+
+			// deliver again
+			start_clock();
+			std::cout << "P_" << whoami << ": rbc.DeliverFrom()" << std::endl;
+			for (size_t i = 0; i < n; i++)
+			{
+				if (someone_corrupted)
+				{
+					if (rbc->DeliverFrom(a, i))
+					{
+						std::cout << "P_" << whoami << ": a = " << a << " from " << i << std::endl;
+						assert(!mpz_cmp_ui(a, i));
+					}					
+				}
+				else
+				{
+					assert(rbc->DeliverFrom(a, i));
+					assert(!mpz_cmp_ui(a, i));
+				}
+			}
+			stop_clock();
+			mpz_clear(a);
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+
 			// at the end: sync for waiting parties
 			rbc->Sync();
 			

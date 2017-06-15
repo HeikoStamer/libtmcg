@@ -57,12 +57,13 @@
 	#include "aiounicast.hh"
 
 	// define some internal types for convenience
-	typedef std::map<std::string, bool>	RBC_TagCheck;
-	typedef std::map<std::string, size_t>	RBC_TagCount;
-	typedef std::map<std::string, mpz_ptr>	RBC_TagMpz;
-	typedef std::list<mpz_ptr>		RBC_BufferList;
-	typedef std::vector<mpz_ptr>		RBC_Message;
-	typedef std::vector<mpz_srcptr>		RBC_ConstMessage;
+	typedef std::map<std::string, bool>		RBC_TagCheck;
+	typedef std::map<std::string, size_t>		RBC_TagCount;
+	typedef std::map<std::string, mpz_ptr>		RBC_TagMpz;
+	typedef std::list<mpz_ptr>			RBC_BufferList;
+	typedef std::list< std::vector<mpz_ptr> >	RBC_VectorList;
+	typedef std::vector<mpz_ptr>			RBC_Message;
+	typedef std::vector<mpz_srcptr>			RBC_ConstMessage;
 
 /* The following class implements an optimized version of Bracha's protocol described in [CKPS01].
    Additionally, a FIFO-ordered delivery based on sequence numbers has been implemented. 
@@ -74,7 +75,8 @@ class CachinKursawePetzoldShoupRBC
 		size_t					aio_default_scheduler;
 		time_t					aio_default_timeout;
 		mpz_t					ID, whoami, s;
-		RBC_BufferList				last_IDs;
+		RBC_BufferList				last_IDs, last_s;
+		RBC_VectorList				last_deliver_s;
 		mpz_t					r_send, r_echo, r_ready, r_request, r_answer;
 		std::vector<RBC_TagCheck>		send, echo, ready, request, answer;
 		RBC_TagMpz				mbar, dbar;
