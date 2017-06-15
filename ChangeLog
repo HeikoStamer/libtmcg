@@ -1,3 +1,5 @@
+* [2017-06-15] RBC: added sequence counter separation for subprotocols
+* [2017-06-12] RFC4880: added support for other hash algorithms in DSA
 * [2017-06-03] DKG-tools: added options "-i" and "-o" for dkg-decrypt
 * [2017-06-02] DKG-tools: added support for other symmetric algorithms
 * [2017-06-02] RFC4880: added generic SymmetricDecrypt() for full RFC compliance
