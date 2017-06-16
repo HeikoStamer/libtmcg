@@ -189,7 +189,7 @@ void start_instance
 					stop_clock();
 					std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 					std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_vss.str();
-					if (!corrupted)
+					if (!corrupted && (j < (N - 2)))
 						assert(ret);
 				}
 				start_clock();
@@ -201,7 +201,7 @@ void start_instance
 				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_vss2.str();
 				if (!corrupted)
 					assert(ret);
-				if (!corrupted && (j != whoami))
+				if (!corrupted && (j != whoami) && (j < (N - 2)))
 					assert(!mpz_cmp_ui(sigma, j));
 			}
 			mpz_clear(sigma);
