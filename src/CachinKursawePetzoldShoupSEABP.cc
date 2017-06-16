@@ -352,8 +352,8 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					std::string d_string = d_ss.str();
 					if (e_d.find(tag_string) == e_d.end())
 					{
-						RBC_TagCount *mmm = new RBC_TagCount;
-						e_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, *mmm));
+						RBC_TagCount mmm;
+						e_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, mmm));
 					}
 					RBC_TagCount::iterator eit = e_d[tag_string].find(d_string);
 					if (eit == e_d[tag_string].end())
@@ -362,8 +362,8 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						(*eit).second++;
 					if (r_d.find(tag_string) == r_d.end())
 					{
-						RBC_TagCount *mmm = new RBC_TagCount;
-						r_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, *mmm));
+						RBC_TagCount mmm;
+						r_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, mmm));
 					}
 					RBC_TagCount::iterator rit = r_d[tag_string].find(d_string);
 					if (rit == r_d[tag_string].end())
@@ -399,13 +399,13 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					std::string d_string = d_ss.str();
 					if (e_d.find(tag_string) == e_d.end())
 					{
-						RBC_TagCount *mmm = new RBC_TagCount;
-						e_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, *mmm));
+						RBC_TagCount mmm;
+						e_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, mmm));
 					}
 					if (r_d.find(tag_string) == r_d.end())
 					{
-						RBC_TagCount *mmm = new RBC_TagCount;
-						r_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, *mmm));
+						RBC_TagCount mmm;
+						r_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, mmm));
 					}
 					RBC_TagCount::iterator rit = r_d[tag_string].find(d_string);
 					if (rit == r_d[tag_string].end())
