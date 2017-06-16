@@ -532,6 +532,7 @@ bool PedersenVSS::Share
 			throw false;
 		else if (complaints_counter > 0)
 		{
+			complaints.clear(); // reset
 			std::sort(complaints_from.begin(), complaints_from.end());
 			err << "P_" << i << ": there are " << complaints_counter << " complaints against dealer from ";
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
