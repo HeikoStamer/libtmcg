@@ -195,7 +195,7 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 };
 
 /* This protocol is called Sig-Gen in [CGJKR99]. However, we implement a variant with optimal resilience $t < n/2$.
-   It is described in the extended version of the paper (Figure 6) and called DSS-Sig-Gen there. */
+   It is described in the extended version of the paper (Figure 6) and is called DSS-Sig-Gen there. */
 class CanettiGennaroJareckiKrawczykRabinDSS
 {
 	private:

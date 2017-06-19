@@ -350,7 +350,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		}
 		// Let $z_i = a_{i0} = f_i(0)$.
 		mpz_set(z_i, a_i[0]), mpz_set(zprime_i, b_i[0]);
-		err << "P_" << i << ": z_i = " << z_i << " zprime_i = " << zprime_i << std::endl;
+		err << "RVSS(" << label << "): P_" << i << ": z_i = " << z_i << " zprime_i = " << zprime_i << std::endl;
 		// $P_i$ broadcasts $C_{ik} = g^{a_{ik}} h^{b_{ik}} \bmod p$
 		// for $k = 0, \ldots, t\prime$.
 		for (size_t k = 0; k <= tprime; k++)
@@ -369,7 +369,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				{
 					if (!rbc->DeliverFrom(C_ik[j][k], j))
 					{
-						err << "P_" << i << ": receiving C_ik failed; complaint against P_" << j << std::endl;
+						err << "RVSS(" << label << "): P_" << i << ": receiving C_ik failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
@@ -403,13 +403,13 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				}
 				if (!aiou->Send(s_ji[i][j], j, 0))
 				{
-					err << "P_" << i << ": sending s_ji failed; complaint against P_" << j << std::endl;
+					err << "RVSS(" << label << "): P_" << i << ": sending s_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
 				if (!aiou->Send(sprime_ji[i][j], j, 0))
 				{
-					err << "P_" << i << ": sending sprime_ji failed; complaint against P_" << j << std::endl;
+					err << "RVSS(" << label << "): P_" << i << ": sending sprime_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
@@ -425,13 +425,13 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 			{
 				if (!aiou->Receive(s_ji[j][i], j, aiou->aio_scheduler_direct))
 				{
-					err << "P_" << i << ": receiving s_ji failed; complaint against P_" << j << std::endl;
+					err << "RVSS(" << label << "): P_" << i << ": receiving s_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
 				if (!aiou->Receive(sprime_ji[j][i], j, aiou->aio_scheduler_direct))
 				{
-					err << "P_" << i << ": receiving sprime_ji failed; complaint against P_" << j << std::endl;
+					err << "RVSS(" << label << "): P_" << i << ": receiving sprime_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
@@ -456,7 +456,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 			// check equation (1)
 			if (mpz_cmp(lhs, rhs))
 			{
-				err << "P_" << i << ": checking step 1b failed; complaint against P_" << j << std::endl;
+				err << "RVSS(" << label << "): P_" << i << ": checking step 1b failed; complaint against P_" << j << std::endl;
 				complaints.push_back(j);
 			}
 		}
@@ -467,7 +467,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		complaints.resize(std::distance(complaints.begin(), it));
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			err << "P_" << i << ": broadcast complaint against P_" << *it << std::endl;
+			err << "RVSS(" << label << "): P_" << i << ": broadcast complaint against P_" << *it << std::endl;
 			mpz_set_ui(rhs, *it);
 			rbc->Broadcast(rhs);
 		}
@@ -487,14 +487,14 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				{
 					if (!rbc->DeliverFrom(rhs, j))
 					{
-						err << "P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
+						err << "RVSS(" << label << "): P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
 					who = mpz_get_ui(rhs);
 					if ((who < n) && !dup.count(who))
 					{
-						err << "P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
+						err << "RVSS(" << label << "): P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
 						complaints_counter[who]++;
 						dup.insert(std::pair<size_t, bool>(who, true)); // mark as counted for $P_j$
 						if (who == i)
@@ -502,7 +502,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 					}
 					else if ((who < n) && dup.count(who))
 					{
-						err << "P_" << i << ": duplicated complaint against P_" << who << " from P_" << j << std::endl;
+						err << "RVSS(" << label << "): P_" << i << ": duplicated complaint against P_" << who << " from P_" << j << std::endl;
 						complaints.push_back(j);
 					}
 					cnt++;
@@ -516,7 +516,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		if (complaints_counter[i])
 		{
 			std::sort(complaints_from.begin(), complaints_from.end());
-			err << "P_" << i << ": there are " << complaints_counter[i] << " complaints against me from ";
+			err << "RVSS(" << label << "): P_" << i << ": there are " << complaints_counter[i] << " complaints against me from ";
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 				err << "P_" << *it << " ";
 			err << std::endl;
@@ -527,7 +527,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				rbc->Broadcast(s_ji[i][*it]);
 				rbc->Broadcast(sprime_ji[i][*it]);
 			}
-			err << "P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
+			err << "RVSS(" << label << "): P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
 		}
 		mpz_set_ui(lhs, n); // broadcast end marker
 		rbc->Broadcast(lhs);
@@ -548,7 +548,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				{
 					if (!rbc->DeliverFrom(lhs, j))
 					{
-						err << "P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
+						err << "RVSS(" << label << "): P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
@@ -557,13 +557,13 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 						break; // end marker received
 					if (!rbc->DeliverFrom(foo, j))
 					{
-						err << "P_" << i << ": receiving foo failed; complaint against P_" << j << std::endl;
+						err << "RVSS(" << label << "): P_" << i << ": receiving foo failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
 					if (!rbc->DeliverFrom(bar, j))
 					{
-						err << "P_" << i << ": receiving bar failed; complaint against P_" << j << std::endl;
+						err << "RVSS(" << label << "): P_" << i << ": receiving bar failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
@@ -586,7 +586,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 					// check equation (1)
 					if (mpz_cmp(lhs, rhs))
 					{
-						err << "P_" << i << ": checking step 1d failed; complaint against P_" << j << std::endl;
+						err << "RVSS(" << label << "): P_" << i << ": checking step 1d failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 					}
 					else
@@ -594,7 +594,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 						// don't be too curious
 						if (who == i)
 						{
-							err << "P_" << i << ": shares adjusted in step 1d from P_" << j << std::endl;
+							err << "RVSS(" << label << "): P_" << i << ": shares adjusted in step 1d from P_" << j << std::endl;
 							mpz_set(s_ji[j][i], s);
 							mpz_set(sprime_ji[j][i], sprime);
 						}
@@ -610,7 +610,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		for (size_t j = 0; j < n; j++)
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				QUAL.push_back(j);
-		err << "P_" << i << ": QUAL = { ";
+		err << "RVSS(" << label << "): P_" << i << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			err << "P_" << *it << " ";
 		err << "}" << std::endl;
@@ -628,8 +628,8 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 			mpz_add(xprime_i, xprime_i, sprime_ji[*it][i]);
 			mpz_mod(xprime_i, xprime_i, q);
 		}
-		err << "P_" << i << ": x_i = " << x_i << std::endl;
-		err << "P_" << i << ": xprime_i = " << xprime_i << std::endl;
+		err << "RVSS(" << label << "): P_" << i << ": x_i = " << x_i << std::endl;
+		err << "RVSS(" << label << "): P_" << i << ": xprime_i = " << xprime_i << std::endl;
 		
 		if (std::find(QUAL.begin(), QUAL.end(), i) == QUAL.end())
 			throw false;
@@ -674,7 +674,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
 		// run reconstruction phase of Pedersen-VSS
 		if (complaints.size() > t)
 		{
-			err << "P_" << i << ": too many faulty parties (" << complaints.size() << " > t)" << std::endl;
+			err << "RVSS(" << label << "): P_" << i << ": too many faulty parties (" << complaints.size() << " > t)" << std::endl;
 			throw false;
 		}
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
@@ -708,23 +708,23 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
 						}
 						// check equation (1)
 						if (mpz_cmp(lhs, rhs))
-							err << "P_" << i << ": bad share received from " << *jt << std::endl;
+							err << "RVSS(" << label << "): P_" << i << ": bad share received from " << *jt << std::endl;
 						else
 							parties.push_back(*jt);
 					}
 					else
-						err << "P_" << i << ": no share received from " << *jt << std::endl;					
+						err << "RVSS(" << label << "): P_" << i << ": no share received from " << *jt << std::endl;					
 				}
 			}
 			// check whether enough shares (i.e. $t + 1$) have been collected
 			if (parties.size() <= t)
 			{
-				err << "P_" << i << ": not enough shares collected" << std::endl;
+				err << "RVSS(" << label << "): P_" << i << ": not enough shares collected" << std::endl;
 				throw false;
 			}
 			if (parties.size() > (t + 1))
 				parties.resize(t + 1);
-			err << "P_" << i << ": reconstructing parties = ";
+			err << "RVSS(" << label << "): P_" << i << ": reconstructing parties = ";
 			for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
 				err << "P_" << *jt << " ";
 			err << std::endl;
@@ -750,7 +750,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
 				}
 				if (!mpz_invert(lhs, lhs, q))
 				{
-					err << "P_" << i << ": cannot invert LHS during reconstruction" << std::endl;
+					err << "RVSS(" << label << "): P_" << i << ": cannot invert LHS during reconstruction" << std::endl;
 					throw false;
 				}
 				mpz_mul(rhs, rhs, lhs);
@@ -1157,7 +1157,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				{
 					if (!rbc->DeliverFrom(C_ik[j][k], j))
 					{
-						err << "P_" << i << ": receiving C_ik failed; complaint against P_" << j << std::endl;
+						err << "ZVSS(" << label << "): P_" << i << ": receiving C_ik failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
@@ -1191,13 +1191,13 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				}
 				if (!aiou->Send(s_ji[i][j], j, 0))
 				{
-					err << "P_" << i << ": sending s_ji failed; complaint against P_" << j << std::endl;
+					err << "ZVSS(" << label << "): P_" << i << ": sending s_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
 				if (!aiou->Send(sprime_ji[i][j], j, 0))
 				{
-					err << "P_" << i << ": sending sprime_ji failed; complaint against P_" << j << std::endl;
+					err << "ZVSS(" << label << "): P_" << i << ": sending sprime_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
@@ -1213,13 +1213,13 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			{
 				if (!aiou->Receive(s_ji[j][i], j, aiou->aio_scheduler_direct))
 				{
-					err << "P_" << i << ": receiving s_ji failed; complaint against P_" << j << std::endl;
+					err << "ZVSS(" << label << "): P_" << i << ": receiving s_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
 				if (!aiou->Receive(sprime_ji[j][i], j, aiou->aio_scheduler_direct))
 				{
-					err << "P_" << i << ": receiving sprime_ji failed; complaint against P_" << j << std::endl;
+					err << "ZVSS(" << label << "): P_" << i << ": receiving sprime_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
@@ -1244,14 +1244,14 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			// check equation (1)
 			if (mpz_cmp(lhs, rhs))
 			{
-				err << "P_" << i << ": checking step 1b failed; complaint against P_" << j << std::endl;
+				err << "ZVSS(" << label << "): P_" << i << ": checking step 1b failed; complaint against P_" << j << std::endl;
 				complaints.push_back(j);
 			}
 			// [...] and in Step (1b) each player $P_j$ additionally checks
 			// for each $i$ that $C_{i0} = 1 \bmod p$.
 			if (mpz_cmp_ui(C_ik[j][0], 1L))
 			{
-				err << "P_" << i << ": additional check in step 1b failed; complaint against P_" << j << std::endl;
+				err << "ZVSS(" << label << "): P_" << i << ": additional check in step 1b failed; complaint against P_" << j << std::endl;
 				complaints.push_back(j);
 			}		
 		}
@@ -1262,7 +1262,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		complaints.resize(std::distance(complaints.begin(), it));
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			err << "P_" << i << ": broadcast complaint against P_" << *it << std::endl;
+			err << "ZVSS(" << label << "): P_" << i << ": broadcast complaint against P_" << *it << std::endl;
 			mpz_set_ui(rhs, *it);
 			rbc->Broadcast(rhs);
 		}
@@ -1282,14 +1282,14 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				{
 					if (!rbc->DeliverFrom(rhs, j))
 					{
-						err << "P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
+						err << "ZVSS(" << label << "): P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
 					who = mpz_get_ui(rhs);
 					if ((who < n) && !dup.count(who))
 					{
-						err << "P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
+						err << "ZVSS(" << label << "): P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
 						complaints_counter[who]++;
 						dup.insert(std::pair<size_t, bool>(who, true)); // mark as counted for $P_j$
 						if (who == i)
@@ -1297,7 +1297,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 					}
 					else if ((who < n) && dup.count(who))
 					{
-						err << "P_" << i << ": duplicated complaint against P_" << who << " from P_" << j << std::endl;
+						err << "ZVSS(" << label << "): P_" << i << ": duplicated complaint against P_" << who << " from P_" << j << std::endl;
 						complaints.push_back(j);
 					}
 					cnt++;
@@ -1311,7 +1311,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		if (complaints_counter[i])
 		{
 			std::sort(complaints_from.begin(), complaints_from.end());
-			err << "P_" << i << ": there are " << complaints_counter[i] << " complaints against me from ";
+			err << "ZVSS(" << label << "): P_" << i << ": there are " << complaints_counter[i] << " complaints against me from ";
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 				err << "P_" << *it << " ";
 			err << std::endl;
@@ -1322,7 +1322,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				rbc->Broadcast(s_ji[i][*it]);
 				rbc->Broadcast(sprime_ji[i][*it]);
 			}
-			err << "P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
+			err << "ZVSS(" << label << "): P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
 		}
 		mpz_set_ui(lhs, n); // broadcast end marker
 		rbc->Broadcast(lhs);
@@ -1343,7 +1343,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				{
 					if (!rbc->DeliverFrom(lhs, j))
 					{
-						err << "P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
+						err << "ZVSS(" << label << "): P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
@@ -1352,13 +1352,13 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 						break; // end marker received
 					if (!rbc->DeliverFrom(foo, j))
 					{
-						err << "P_" << i << ": receiving foo failed; complaint against P_" << j << std::endl;
+						err << "ZVSS(" << label << "): P_" << i << ": receiving foo failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
 					if (!rbc->DeliverFrom(bar, j))
 					{
-						err << "P_" << i << ": receiving bar failed; complaint against P_" << j << std::endl;
+						err << "ZVSS(" << label << "): P_" << i << ": receiving bar failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
@@ -1381,7 +1381,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 					// check equation (1)
 					if (mpz_cmp(lhs, rhs))
 					{
-						err << "P_" << i << ": checking step 1d failed; complaint against P_" << j << std::endl;
+						err << "ZVSS(" << label << "): P_" << i << ": checking step 1d failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 					}
 					else
@@ -1389,7 +1389,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 						// don't be too curious
 						if (who == i)
 						{
-							err << "P_" << i << ": shares adjusted in step 1d from P_" << j << std::endl;
+							err << "ZVSS(" << label << "): P_" << i << ": shares adjusted in step 1d from P_" << j << std::endl;
 							mpz_set(s_ji[j][i], s);
 							mpz_set(sprime_ji[j][i], sprime);
 						}
@@ -1405,7 +1405,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		for (size_t j = 0; j < n; j++)
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				QUAL.push_back(j);
-		err << "P_" << i << ": QUAL = { ";
+		err << "ZVSS(" << label << "): P_" << i << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			err << "P_" << *it << " ";
 		err << "}" << std::endl;
@@ -1423,8 +1423,8 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			mpz_add(xprime_i, xprime_i, sprime_ji[*it][i]);
 			mpz_mod(xprime_i, xprime_i, q);
 		}
-		err << "P_" << i << ": x_i = " << x_i << std::endl;
-		err << "P_" << i << ": xprime_i = " << xprime_i << std::endl;
+		err << "ZVSS(" << label << "): P_" << i << ": x_i = " << x_i << std::endl;
+		err << "ZVSS(" << label << "): P_" << i << ": xprime_i = " << xprime_i << std::endl;
 		
 		if (std::find(QUAL.begin(), QUAL.end(), i) == QUAL.end())
 			throw false;
@@ -1750,25 +1750,25 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 			{
 				if (!rbc->DeliverFrom(A_i[j], j))
 				{
-					err << "P_" << i << ": receiving A_i failed; complaint against P_" << j << std::endl;
+					err << "DKG(" << label << "): P_" << i << ": receiving A_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
 				if (!rbc->DeliverFrom(B_i[j], j))
 				{
-					err << "P_" << i << ": receiving B_i failed; complaint against P_" << j << std::endl;
+					err << "DKG(" << label << "): P_" << i << ": receiving B_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
 				if (!rbc->DeliverFrom(T_i[j], j))
 				{
-					err << "P_" << i << ": receiving T_i failed; complaint against P_" << j << std::endl;
+					err << "DKG(" << label << "): P_" << i << ": receiving T_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
 				if (!rbc->DeliverFrom(Tprime_i[j], j))
 				{
-					err << "P_" << i << ": receiving Tprime_i failed; complaint against P_" << j << std::endl;
+					err << "DKG(" << label << "): P_" << i << ": receiving Tprime_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
@@ -1777,7 +1777,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(x_rvss->C_ik[j][0], rhs))
 				{
-					err << "P_" << i << ": checking in step 2. failed; complaint against P_" << j << std::endl;
+					err << "DKG(" << label << "): P_" << i << ": checking in step 2. failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 				}
 			}
@@ -1813,13 +1813,13 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 			{
 				if (!rbc->DeliverFrom(d_i[j], j))
 				{
-					err << "P_" << i << ": receiving d_i failed; complaint against P_" << j << std::endl;
+					err << "DKG(" << label << "): P_" << i << ": receiving d_i failed; complaint against P_" << j << std::endl;
 					d_complaints.push_back(j);
 					continue;
 				}
 				if (!rbc->DeliverFrom(dprime_i[j], j))
 				{
-					err << "P_" << i << ": receiving dprime_i failed; complaint against P_" << j << std::endl;
+					err << "DKG(" << label << "): P_" << i << ": receiving dprime_i failed; complaint against P_" << j << std::endl;
 					d_complaints.push_back(j);
 					continue;
 				}
@@ -1836,7 +1836,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i << ": checking d_i resp. dprime_i failed; complaint against P_" << j << std::endl;
+					err << "DKG(" << label << "): P_" << i << ": checking d_i resp. dprime_i failed; complaint against P_" << j << std::endl;
 					d_complaints.push_back(j);
 				}
 			}
@@ -1845,13 +1845,13 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		std::sort(d_complaints.begin(), d_complaints.end());
 		std::vector<size_t>::iterator it = std::unique(d_complaints.begin(), d_complaints.end());
 		d_complaints.resize(std::distance(d_complaints.begin(), it));
-		err << "P_" << i << ": there are extracting complaints against ";
+		err << "DKG(" << label << "): P_" << i << ": there are extracting complaints against ";
 		for (std::vector<size_t>::iterator it = d_complaints.begin(); it != d_complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
 		if (!d_rvss->Reconstruct(d_complaints, d_i, rbc, err))
 		{
-			err << "P_" << i << ": reconstruction in step 4. failed" << std::endl;
+			err << "DKG(" << label << "): P_" << i << ": reconstruction in step 4. failed" << std::endl;
 			throw false;
 		}
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[5])
@@ -1890,13 +1890,13 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 			{
 				if (!rbc->DeliverFrom(foo, j))
 				{
-					err << "P_" << i << ": receiving R_i failed; complaint against P_" << j << std::endl;
+					err << "DKG(" << label << "): P_" << i << ": receiving R_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
 				if (!rbc->DeliverFrom(bar, j))
 				{
-					err << "P_" << i << ": receiving Rprime_i failed; complaint against P_" << j << std::endl;
+					err << "DKG(" << label << "): P_" << i << ": receiving Rprime_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
@@ -1906,7 +1906,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
+					err << "DKG(" << label << "): P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
@@ -1916,7 +1916,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
+					err << "DKG(" << label << "): P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 				}
 			}
@@ -1933,7 +1933,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		complaints.resize(std::distance(complaints.begin(), it));
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			err << "P_" << i << ": broadcast complaint against P_" << *it << std::endl;
+			err << "DKG(" << label << "): P_" << i << ": broadcast complaint against P_" << *it << std::endl;
 			mpz_set_ui(rhs, *it);
 			rbc->Broadcast(rhs);
 		}
@@ -1953,14 +1953,14 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				{
 					if (!rbc->DeliverFrom(rhs, j))
 					{
-						err << "P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
+						err << "DKG(" << label << "): P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
 					}
 					who = mpz_get_ui(rhs);
 					if ((who < n) && !dup.count(who))
 					{
-						err << "P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
+						err << "DKG(" << label << "): P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
 						complaints_counter[who]++;
 						dup.insert(std::pair<size_t, bool>(who, true)); // mark as counted for $P_j$
 						if (who == i)
@@ -1968,7 +1968,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 					}
 					else if ((who < n) && dup.count(who))
 					{
-						err << "P_" << i << ": duplicated complaint against P_" << who << " from P_" << j << std::endl;
+						err << "DKG(" << label << "): P_" << i << ": duplicated complaint against P_" << who << " from P_" << j << std::endl;
 						complaints.push_back(j);
 					}
 					cnt++;
@@ -1979,7 +1979,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		if (complaints_counter[i])
 		{
 			std::sort(complaints_from.begin(), complaints_from.end());
-			err << "P_" << i << ": there are " << complaints_counter[i] << " complaints against me from ";
+			err << "DKG(" << label << "): P_" << i << ": there are " << complaints_counter[i] << " complaints against me from ";
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 				err << "P_" << *it << " ";
 			err << std::endl;
@@ -1995,20 +1995,20 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		std::sort(complaints.begin(), complaints.end());
 		it = std::unique(complaints.begin(), complaints.end());
 		complaints.resize(std::distance(complaints.begin(), it));
-		err << "P_" << i << ": there are extracting complaints against ";
+		err << "DKG(" << label << "): P_" << i << ": there are extracting complaints against ";
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
 		if (!x_rvss->Reconstruct(complaints, z_i, rbc, err))
 		{
-			err << "P_" << i << ": reconstruction in step 7. failed" << std::endl;
+			err << "DKG(" << label << "): P_" << i << ": reconstruction in step 7. failed" << std::endl;
 			throw false;
 		}
 		// Set $A_j = g^{z_j}$, for every failed player $P_j$.
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			mpz_fpowm(fpowm_table_g, A_i[*it], g, z_i[*it], p);
 		// 8. The public value $y$ is set to $y = \prod_{i \in QUAL} A_i \bmod p$.
-		err << "P_" << i << ": QUAL = { ";
+		err << "DKG(" << label << "): P_" << i << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 		{
 			err << "P_" << *it << " ";
@@ -2016,7 +2016,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 			mpz_mod(y, y, p);
 		}
 		err << "}" << std::endl;
-		err << "P_" << i << ": y = " << y << std::endl;
+		err << "DKG(" << label << "): P_" << i << ": y = " << y << std::endl;
 		// 9. Player $P_i$ erases all secret information aside from his share $x_i$.
 		x_rvss->Erase();
 		d_rvss->Erase();
@@ -2298,7 +2298,26 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;
 
 	// initialize
+	CanettiGennaroJareckiKrawczykRabinRVSS *k_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, 
+		F_size, G_size, use_very_strong_randomness, "k_rvss");
+	CanettiGennaroJareckiKrawczykRabinDKG *a_dkg = new CanettiGennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h, 
+		F_size, G_size, use_very_strong_randomness, "a_dkg");
+	mpz_t foo, bar, lhs, rhs;
+	std::vector<mpz_ptr> k_i, a_i, alpha_i, beta_i, gamma_i, delta_i, v_i, chi_i;
+	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+	for (size_t j = 0; j < n; j++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(), tmp4 = new mpz_t();
+		mpz_ptr tmp5 = new mpz_t(), tmp6 = new mpz_t(), tmp7 = new mpz_t(), tmp8 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4);
+		mpz_init(tmp5), mpz_init(tmp6), mpz_init(tmp7), mpz_init(tmp8);
+		k_i.push_back(tmp1), a_i.push_back(tmp2), alpha_i.push_back(tmp3), beta_i.push_back(tmp4);
+		gamma_i.push_back(tmp5), delta_i.push_back(tmp6), v_i.push_back(tmp7), chi_i.push_back(tmp8);
+	}
 // TODO
+	size_t simulate_faulty_randomizer[10];
+	for (size_t idx = 0; idx < 10; idx++)
+		simulate_faulty_randomizer[idx] = mpz_wrandom_ui() % 2L;
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -2307,6 +2326,36 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 
 	try
 	{
+		// 1. Generate $r = g^{k^{-1}} \bmod p \bmod q$
+		//    (a) Generate $k$. Players execute Joint-RVSS(t).
+		if (!k_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
+			throw false;
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[0])
+			throw false;
+		//        Player $P_i$ sets $k_i, k\prime_i$ to his share of the secret and the auxiliary secret.
+		mpz_set(k_i[i], k_rvss->x_i);
+		//        For each $i$ the value $\alpha_i = g^{k_i} h^{k\prime_i} \bmod p$ is public.
+		for (size_t j = 0; j < n; j++)
+		{
+			mpz_set_ui(alpha_i[j], 1L);
+			for (size_t k = 0; k <= t; k++)
+			{
+				mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
+				mpz_powm(bar, k_rvss->C_ik[j][k], foo , p);
+				mpz_mul(alpha_i[j], alpha_i[j], bar);
+				mpz_mod(alpha_i[j], alpha_i[j], p);
+			}
+		}
+		//    (b) Generate a random value $a$ and $g^a \bmod p$ using (the optimally-resilient) DL-Key-Gen.
+		if (!a_dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour))
+			throw false;
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[1])
+			throw false;
+		//        Player $P_i$ sets $a_i, a\prime_i$ to his share of the secret $a$ and the auxiliary secret.
+		mpz_set(a_i[i], a_dkg->x_i);
+// TODO
+
+		// 2. Generate $s = k(m + xr) \bmod q$
 // TODO
 
 		throw true;
@@ -2317,7 +2366,19 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		rbc->unsetID();
 
 		// release
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
+		for (size_t j = 0; j < n; j++)
+		{
+			mpz_clear(k_i[j]), mpz_clear(a_i[j]), mpz_clear(alpha_i[j]), mpz_clear(beta_i[j]);
+			mpz_clear(gamma_i[j]), mpz_clear(delta_i[j]), mpz_clear(v_i[j]), mpz_clear(chi_i[j]);
+			delete [] k_i[j], delete [] a_i[j], delete [] alpha_i[j], delete [] beta_i[j];
+			delete [] gamma_i[j], delete [] delta_i[j], delete [] v_i[j], delete [] chi_i[j];
+		}
+		k_i.clear(), a_i.clear(), alpha_i.clear(), beta_i.clear();
+		gamma_i.clear(), delta_i.clear(), v_i.clear(), chi_i.clear();
 // TODO
+		delete a_dkg;
+		delete k_rvss;
 
 		// return
 		return return_value;
@@ -2351,7 +2412,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Verify
 		mpz_mul(rprime, rprime, foo);
 		mpz_mod(rprime, rprime, p);
 		mpz_mod(rprime, rprime, q);
-		// 3. Checking that $r = r\prime$.
+		// 3. Checking that $r = r\prime$
 		if (mpz_cmp(r, rprime))
 			throw false;
 
