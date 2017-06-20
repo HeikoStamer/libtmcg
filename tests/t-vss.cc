@@ -50,7 +50,7 @@ void start_instance
 	(std::istream& crs_in, size_t whoami, bool corrupted)
 {
 	if ((pid[whoami] = fork()) < 0)
-		perror("t-astc2 (fork)");
+		perror("t-vss (fork)");
 	else
 	{
 		if (pid[whoami] == 0)
@@ -121,78 +121,69 @@ void start_instance
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
-			std::string myID = "t-astc2";
+			std::string myID = "t-vss";
 			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 			rbc->setID(myID);
-
-			// create an instance of DKG (without using very strong randomness)
-			CanettiGennaroJareckiKrawczykRabinDKG *dkg;
-			std::cout << "P_" << whoami << ": CanettiGennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-			dkg = new CanettiGennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
-			assert(dkg->CheckGroup());
 			
-			// generating $x$ and extracting $y = g^x \bmod p$
-			std::stringstream err_log, state_log;
+			// create an instance of VSS (without using very strong randomness)
+			PedersenVSS *vss;
+			std::cout << "P_" << whoami << ": PedersenVSS(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
+			vss = new PedersenVSS(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
+			assert(vss->CheckGroup());
+
+			// share a secret
 			bool ret = true;
-			start_clock();
-			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
-			if (corrupted)
-				dkg->Generate(aiou, rbc, err_log, true);
-			else
-				ret = dkg->Generate(aiou, rbc, err_log);
-			stop_clock();
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
-			if (!corrupted)
-				assert(ret);
+			mpz_t sigma;
+			mpz_init(sigma);
+			for (size_t j = 0; j < N; j++)
+			{
+				std::stringstream err_log_vss, err_log_vss2;
+				if (j == whoami)
+				{
+					mpz_set_ui(sigma, j);
+					start_clock();
+					std::cout << "P_" << whoami << ": vss.Share(sigma, ...)" << std::endl;
+					if (corrupted)
+						vss->Share(sigma, aiou, rbc, err_log_vss, true);
+					else
+						ret = vss->Share(sigma, aiou, rbc, err_log_vss);
+					stop_clock();
+					std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+					std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_vss.str();
+					if (!corrupted)
+						assert(ret);
+				}
+				else
+				{
+					start_clock();
+					std::cout << "P_" << whoami << ": vss.Share(" << j << ", ...)" << std::endl;
+					if (corrupted)
+						vss->Share(j, aiou, rbc, err_log_vss, true);
+					else
+						ret = vss->Share(j, aiou, rbc, err_log_vss);
+					stop_clock();
+					std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+					std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_vss.str();
+					if (!corrupted && (j < (N - 2)))
+						assert(ret);
+				}
+				start_clock();
+				std::cout << "P_" << whoami << ": vss.Reconstruct(" << j << ", sigma, ...)" << std::endl;
+				mpz_set_ui(sigma, 42L);
+				ret = vss->Reconstruct(j, sigma, rbc, err_log_vss2);
+				stop_clock();
+				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_vss2.str();
+				if (!corrupted)
+					assert(ret);
+				if (!corrupted && (j != whoami) && (j < (N - 2)))
+					assert(!mpz_cmp_ui(sigma, j));
+			}
+			mpz_clear(sigma);
 
-			// publish state
-			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
-			dkg->PublishState(state_log);
-
-			// create an instance of DSS (without using very strong randomness)
-			CanettiGennaroJareckiKrawczykRabinDSS *dss;
-			std::cout << "P_" << whoami << ": CanettiGennaroJareckiKrawczykRabinDSS(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-			dss = new CanettiGennaroJareckiKrawczykRabinDSS(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
-			assert(dss->CheckGroup());
-
-			// generate distributed key shares
-			std::stringstream err_log_dss;
-			start_clock();
-			std::cout << "P_" << whoami << ": dss.Generate()" << std::endl;
-			if (corrupted)
-				dss->Generate(aiou, rbc, err_log_dss, true);
-			else
-				ret = dss->Generate(aiou, rbc, err_log_dss);
-			stop_clock();
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_dss.str();
-			if (!corrupted)
-				assert(ret);
-
-// TODO: check singing and verifying a hash value of a message
-
-			// release DSS
-			delete dss;
-			
-			// release DKG
-			delete dkg;
-
-			// at the end: sync for waiting parties
-			rbc->Sync(aiounicast::aio_timeout_long);
-
-			// create a copied instance of DKG from state log
-			std::cout << "P_" << whoami << ": CanettiGennaroJareckiKrawczykRabinDKG(state_log)" << std::endl;
-			dkg = new CanettiGennaroJareckiKrawczykRabinDKG(state_log);
-
-			// compare state log and check the generated key share again
-			std::stringstream state_log2;
-			dkg->PublishState(state_log2);
-			assert(state_log.str() == state_log2.str());
-
-			// release DKG
-			delete dkg;
+			// release VSS
+			delete vss;
 
 			// release RBC			
 			delete rbc;
@@ -250,9 +241,9 @@ void init
 		for (size_t j = 0; j < N; j++)
 		{
 			if (pipe(pipefd[i][j]) < 0)
-				perror("t-astc2 (pipe)");
+				perror("t-vss (pipe)");
 			if (pipe(broadcast_pipefd[i][j]) < 0)
-				perror("t-astc2 (pipe)");
+				perror("t-vss (pipe)");
 		}
 	}
 }
@@ -280,9 +271,9 @@ bool done
 		for (size_t j = 0; j < N; j++)
 		{
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("t-astc2 (close)");
+				perror("t-vss (close)");
 			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
-				perror("t-astc2 (close)");
+				perror("t-vss (close)");
 		}
 	}
 	return result;
