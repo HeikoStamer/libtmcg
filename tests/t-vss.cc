@@ -182,6 +182,9 @@ void start_instance
 			}
 			mpz_clear(sigma);
 
+			// at the end: sync for waiting parties
+			rbc->Sync(aiounicast::aio_timeout_long);
+
 			// release VSS
 			delete vss;
 
