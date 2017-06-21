@@ -74,11 +74,6 @@ class CramerDamgardZNPFFA
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
 			const std::string label_in = "");
-		CramerDamgardZNPFFA
-			(std::istream &in,
-			const unsigned long int fieldsize = TMCG_DDH_SIZE,
-			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			const std::string label_in = "");
 		std::string Label
 			() const;
 // TODO
