@@ -2453,8 +2453,8 @@ description of such internal functions and members.
 
 @node JareckiLysyanskayaEDCF
 @subsubsection Adaptively Secure Threshold Cryptography
-Jarecki and Lysyanskaya@tie{}[JL00] introduce some useful building blocks to gain
-security against an adaptive adversary.
+Jarecki and Lysyanskaya@tie{}[JL00] have introduced some useful building blocks in order
+to gain security against an adaptive adversary for threshold cryptography.
 
 @cindex EDCF
 @deftp {Class} JareckiLysyanskayaEDCF
@@ -2506,7 +2506,12 @@ security against an adaptive adversary.
 	@end deftypecv
 
 	@deftypeop {Constructor} JareckiLysyanskayaEDCF {} JareckiLysyanskayaEDCF (@code{const size_t} n_in, @code{const size_t} t_in, @code{mpz_srcptr} p_CRS, @code{mpz_srcptr} q_CRS, @code{mpz_srcptr} g_CRS, @code{mpz_srcptr} h_CRS, @code{const unsigned long int} fieldsize @code{=TMCG_DDH_SIZE}, @code{const unsigned long int} subgroupsize @code{=TMCG_DLSE_SIZE})
-		TODO
+		This constructor creates a new EDCF instance. That means, the required primes
+		@math{p} and @math{q} and the generators @math{g} and @math{h} are
+		initialized from the given arguments @var{p_CRS}, @var{q_CRS}, @var{g_CRS},
+		and @var{h_CRS}, respectively. @var{n_in} is the total number of participating
+		players, for which at most @var{t_in} are faulty or act malicious during the
+		protocol execution.
 	@end deftypeop
 
 	@deftypemethod JareckiLysyanskayaEDCF bool CheckGroup ()
@@ -3828,21 +3833,29 @@ protocol (@pxref{CachinKursawePetzoldShoupRBC}) is used as mechanism to achieve 
 validity, consistency, and totality in a most likely asynchronous communication
 environment for @math{t < n/3}.
 
-Additionally, the program @code{dkg-encrypt} encrypts a text message for a
-given public key in OpenPGP format. Conversely, a corresponding threshold decryption
-protocol (see Ronald Cramer, Rosario Gennaro, and Berry Schoenmakers: @emph{A Secure
-and Optimally Efficient Multi-Authority Election Scheme}, Advances in Cryptology --
-EUROCRYPT '97, LNCS 1233, pp. 103--118, 1997) has been implemented as
-program @code{dkg-decrypt}. It provides an interactive version and a non-interactive
-version for computing, verifying, and combining the required decryption shares.
+The program @code{dkg-encrypt} encrypts a text message for a given public key in
+OpenPGP format. It uses AES256 as symmetric cipher and ElGamal as public-key algorithm.
+A similar encryption can be done by any OpenPGP implementation.
+Conversely, a corresponding threshold decryption protocol (see Ronald Cramer,
+Rosario Gennaro, and Berry Schoenmakers: @emph{A Secure and Optimally Efficient
+Multi-Authority Election Scheme}, Advances in Cryptology -- EUROCRYPT '97, LNCS 1233,
+pp. 103--118, 1997) has been implemented in the program @code{dkg-decrypt}. It provides
+an interactive version and a non-interactive version for computing, verifying, and
+combining the required decryption shares.
   
 Please note that for building @code{dkg-generate} and the interactive version of
 @code{dkg-decrypt} the development files for a very recent GNUnet version (at least
 v0.10.2, which is when writing these lines still not yet released) must be present
-at configure-time and compile-time of LibTMCG.
+at configure-time resp. compile-time of LibTMCG.
 
 The current implementation is in @emph{experimental state} and should not be used
-in production environments. Please report any bugs to the maintainer of LibTMCG. 
+in production environments. Motivation, cryptographical background and some usage
+scenarios have been presented recently at 26th Krypto-Tag. Please consult the
+@uref{http://www.nongnu.org/libtmcg/kryptotag26_stamer_slides.pdf,,slides} for a
+first overview. 
+
+Please report any bugs to the maintainer of LibTMCG. Any help with development or
+testing is very welcome!
 
 @c **********************************************************
 @c *******************  Appendices  *************************
