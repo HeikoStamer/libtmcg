@@ -162,11 +162,13 @@ Bugs, Contribution, GIT
 
     git clone git://git.savannah.nongnu.org/libtmcg.git
 
+  The GNU C++ compiler from GCC and the GNU Make program is required.
   Additionally you will need the following free software packages:
   
-  * GNU Autoconf, version >= 2.61, http://www.gnu.org/software/autoconf/
-  * GNU Automake, version >= 1.12, http://www.gnu.org/software/automake/
-  * GNU Libtool, version >= 2.4.2, http://www.gnu.org/software/libtool/
+  * GNU Autoconf, version >= 2.61, https://www.gnu.org/software/autoconf/
+  * GNU Automake, version >= 1.12, https://www.gnu.org/software/automake/
+  * GNU Libtool, version >= 2.4.2, https://www.gnu.org/software/libtool/
+  * GNU Texinfo, version >= 5.0, https://www.gnu.org/software/texinfo/
 
 Copyright and License of this software
 --------------------------------------
@@ -174,7 +176,7 @@ Copyright and License of this software
       2015, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
         GNU General Public License version 2
 
-  Please have a look at file 'COPYING' and http://www.fsf.org/.
+  Please have a look at file 'COPYING' and https://www.fsf.org/.
 
 APPENDIX: GNU Free Documentation License
 ----------------------------------------
