@@ -2462,8 +2462,8 @@ to gain security against an adaptive adversary for threshold cryptography.
 	It also needs a group @math{G_q} of prime order @math{q} where the discrete
 	logarithm problem is computationally hard. The protocol produces a public
 	value @math{a = \sum_{i=1}^n a_i \bmod q} such that @math{0 \le a < q} is
-	random and uniformly distributed, if at least one party @math{P_j} has been
-	chosen their corresponding share @math{a_j\in{\bf Z}_q} uniformly at random.
+	random and uniformly distributed, if at least one party @math{P_i, 1 \le i \le n}
+	has chosen their corresponding share @math{a_i\in{\bf Z}_q} uniformly at random.
 
 	@deftypecv {Member} JareckiLysyanskayaEDCF {mpz_t} p
 		This is the public prime number @math{p} which defines the
@@ -2525,11 +2525,22 @@ to gain security against an adaptive adversary for threshold cryptography.
 	@end deftypemethod
 
 	@deftypemethod JareckiLysyanskayaEDCF bool Flip (@code{const size_t} i, @code{mpz_ptr} a, @code{aiounicast*} aiou, @code{CachinKursawePetzoldShoupRBC*} rbc, @code{std::ostream&} err, @code{const bool} simulate_faulty_behaviour @code{=false})
-		TODO	
+		This method starts the protocol which produces a public
+		value @math{a = \sum_{i=1}^n a_i \bmod q} such that @math{0 \le a < q} is
+		random and uniformly distributed, if at least one party
+		@math{P_i, 1 \le i \le n} has chosen their corresponding share
+		@math{a_i\in{\bf Z}_q} uniformly at random. If it returns
+		@code{true}, then @var{a} contains this common random value.
+		The argument @var{i} is an index of the running instance with
+		respect to already initialized instances of asynchronous point-to-point
+		channels @var{aiou} and a reliable broadcast channel @var{rbc}. Logging
+		and debug messages are printed to the provided output stream @var{err}.
 	@end deftypemethod
 
 	@deftypemethod JareckiLysyanskayaEDCF bool Flip_twoparty (@code{const size_t} i, @code{mpz_ptr} a, @code{std::istream&} in, @code{std::ostream&} out, @code{std::ostream&} err, @code{const bool} simulate_faulty_behaviour @code{=false})
-		TODO	
+		This is the two-party version of the above method. Thus there are
+		only an input stream @var{in} and output stream @var{out} for
+		communication between the players. The other arguments are as above.
 	@end deftypemethod
 
 	@defop {Destructor} JareckiLysyanskayaEDCF ~JareckiLysyanskayaEDCF ()
@@ -2662,7 +2673,7 @@ of the same instance.
 		Assuming at least one honest player these values are randomly and uniformly
 		chosen from @math{{\bf Z}_q} such that @math{\log_{g_i} h} and @math{\log_h g_i}
 		are unkown, for all @math{i = 1, \ldots, n}.
-		The positive integer @var{whoami} is an index of the running instance with
+		The argument @var{whoami} is an index of the running instance with
 		respect to already initialized instances of asynchronous point-to-point
 		channels @var{aiou} and a reliable broadcast channel @var{rbc}. Logging
 		and debug messages are printed to the provided output stream @var{err}.
