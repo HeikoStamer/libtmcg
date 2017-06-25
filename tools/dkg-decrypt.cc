@@ -947,51 +947,33 @@ void compute_decryption_share
 	// Advances in Cryptology - EUROCRYPT '97, LNCS 1233, pp. 103--118, 1997.
 
 	// compute the decryption share
-	char buffer[2048];
-	size_t buflen;
-	gcry_error_t ret;
 	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, x_i, r_i, R;
 	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(x_i), mpz_init(r_i), mpz_init(R);
-	std::memset(buffer, 0, sizeof(buffer));
-	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
-	if (ret)
+	if (!mpz_set_gcry_mpi(dsa_p, nizk_p))
 	{
 		std::cerr << "ERROR: converting group parameters failed" << std::endl;
 		exit(-1);
 	}
-	mpz_set_str(nizk_p, buffer, 16);
-	std::memset(buffer, 0, sizeof(buffer));
-	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
-	if (ret)
+	if (!mpz_set_gcry_mpi(dsa_q, nizk_q))
 	{
 		std::cerr << "ERROR: converting group parameters failed" << std::endl;
 		exit(-1);
 	}
-	mpz_set_str(nizk_q, buffer, 16);
-	std::memset(buffer, 0, sizeof(buffer));
-	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_g);
-	if (ret)
+	if (!mpz_set_gcry_mpi(dsa_g, nizk_g))
 	{
 		std::cerr << "ERROR: converting group parameters failed" << std::endl;
 		exit(-1);
 	}
-	mpz_set_str(nizk_g, buffer, 16);
-	std::memset(buffer, 0, sizeof(buffer));
-	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, gk);
-	if (ret)
+	if (!mpz_set_gcry_mpi(gk, nizk_gk))
 	{
-		std::cerr << "ERROR: converting message part failed" << std::endl;
+		std::cerr << "ERROR: converting message component failed" << std::endl;
 		exit(-1);
 	}
-	mpz_set_str(nizk_gk, buffer, 16);
-	std::memset(buffer, 0, sizeof(buffer));
-	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, elg_x);
-	if (ret)
+	if (!mpz_set_gcry_mpi(elg_x, x_i))
 	{
 		std::cerr << "ERROR: converting private key share failed" << std::endl;
 		exit(-1);
 	}
-	mpz_set_str(x_i, buffer, 16);
 	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g))
 	{
 		std::cerr << "ERROR: DSA/ElGamal and DKG group parameters does not match" << std::endl;
@@ -1037,43 +1019,28 @@ bool verify_decryption_share
 	// init
 	mpz_t c2, a, b;
 	mpz_init(c2), mpz_init(a), mpz_init(b);
-	char buffer[2048];
-	size_t buflen;
-	gcry_error_t ret;
 	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk;
 	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk);
-	std::memset(buffer, 0, sizeof(buffer));
-	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
-	if (ret)
+	if (!mpz_set_gcry_mpi(dsa_p, nizk_p))
 	{
 		std::cerr << "ERROR: converting group parameters failed" << std::endl;
 		exit(-1);
 	}
-	mpz_set_str(nizk_p, buffer, 16);
-	std::memset(buffer, 0, sizeof(buffer));
-	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
-	if (ret)
+	if (!mpz_set_gcry_mpi(dsa_q, nizk_q))
 	{
 		std::cerr << "ERROR: converting group parameters failed" << std::endl;
 		exit(-1);
 	}
-	mpz_set_str(nizk_q, buffer, 16);
-	std::memset(buffer, 0, sizeof(buffer));
-	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_g);
-	if (ret)
+	if (!mpz_set_gcry_mpi(dsa_g, nizk_g))
 	{
 		std::cerr << "ERROR: converting group parameters failed" << std::endl;
 		exit(-1);
 	}
-	mpz_set_str(nizk_g, buffer, 16);
-	std::memset(buffer, 0, sizeof(buffer));
-	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, gk);
-	if (ret)
+	if (!mpz_set_gcry_mpi(gk, nizk_gk))
 	{
-		std::cerr << "ERROR: converting message part failed" << std::endl;
+		std::cerr << "ERROR: converting message component failed" << std::endl;
 		exit(-1);
 	}
-	mpz_set_str(nizk_gk, buffer, 16);
 
 	try
 	{
@@ -1134,27 +1101,18 @@ bool verify_decryption_share
 void combine_decryption_shares
 	(std::vector<size_t> &parties, std::vector<mpz_ptr> &shares)
 {
-	char buffer[2048];
-	size_t buflen;
-	gcry_error_t ret;
 	mpz_t nizk_p, nizk_q;
 	mpz_init(nizk_p), mpz_init(nizk_q);
-	std::memset(buffer, 0, sizeof(buffer));
-	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
-	if (ret)
+	if (!mpz_set_gcry_mpi(dsa_p, nizk_p))
 	{
 		std::cerr << "ERROR: converting group parameters failed" << std::endl;
 		exit(-1);
 	}
-	mpz_set_str(nizk_p, buffer, 16);
-	std::memset(buffer, 0, sizeof(buffer));
-	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
-	if (ret)
+	if (!mpz_set_gcry_mpi(dsa_q, nizk_q))
 	{
 		std::cerr << "ERROR: converting group parameters failed" << std::endl;
 		exit(-1);
 	}
-	mpz_set_str(nizk_q, buffer, 16);
 	std::vector<size_t> parties_sorted = parties;
 	std::sort(parties_sorted.begin(), parties_sorted.end());
 	std::vector<size_t>::iterator ut = std::unique(parties_sorted.begin(), parties_sorted.end());
