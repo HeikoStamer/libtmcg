@@ -2463,7 +2463,15 @@ to gain security against an adaptive adversary for threshold cryptography.
 	logarithm problem is computationally hard. The protocol produces a public
 	value @math{a = \sum_{i=1}^n a_i \bmod q} such that @math{0 \le a < q} is
 	random and uniformly distributed, if at least one party @math{P_i, 1 \le i \le n}
-	has chosen their corresponding share @math{a_i\in{\bf Z}_q} uniformly at random.
+	has chosen their corresponding coin share @math{a_i\in{\bf Z}_q} uniformly at random.
+
+	The coinflip protocol is useful in order to transform special honest-verifier
+	zero-knowledge proofs of knowledge (SHVZK) into interactive proof systems resp.
+	interactive arguments which preserve the zero-knowledge property even in case of
+	malicious verifiers. The general model of Jarecki and Lysyanskaya@tie{}[JL00]
+	considers a synchronous communication network of @math{n} players with access to
+	a reliable broadcast channel, where an adaptive adversary can corrupt up to a
+	minority @math{t < n/2} of the players.
 
 	@deftypecv {Member} JareckiLysyanskayaEDCF {mpz_t} p
 		This is the public prime number @math{p} which defines the
