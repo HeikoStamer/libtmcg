@@ -389,7 +389,11 @@ soundness error of these proofs is bounded by a fixed security parameter
 @math{\kappa}. Depending on your application scenario this parameter should
 be chosen such that there is a reasonable tradeoff between the cheating
 probability (which is less or equal than @math{2^{-\kappa}}) and the produced
-computational and communication complexity. Finally, some of the protocols
+computational and communication complexity. LibTMCG also uses so-called
+zero-knowledge proofs of knowledge due to Bellare and Goldreich (see
+@emph{On defining proofs of knowledge}, Advances in Cryptology -- Proceedings
+of CRYPTO' 92, 1992), however, for convenience we will not further distinguish
+between these building blocks. Finally, some of the protocols
 (e.g. the efficient shuffle argument by Groth) are only zero-knowledge with
 respect to a so-called ``honest verifier'' who follows all protocol
 instructions faithfully. Since version 1.2.0 of LibTMCG we use a two-party
@@ -2465,10 +2469,11 @@ to gain security against an adaptive adversary for threshold cryptography.
 	random and uniformly distributed, if at least one party @math{P_i, 1 \le i \le n}
 	has chosen their corresponding coin share @math{a_i\in{\bf Z}_q} uniformly at random.
 
-	The coinflip protocol is useful in order to transform special honest-verifier
-	zero-knowledge proofs of knowledge (SHVZK) into interactive proof systems resp.
-	interactive arguments which preserve the zero-knowledge property even in case of
-	malicious verifiers. The general model of Jarecki and Lysyanskaya@tie{}[JL00]
+	The coinflip protocol is useful in order to transform a public-coin honest-verifier
+	zero-knowledge proof of knowledge (HVZKP) into interactive proof resp. argument
+	which preserve the zero-knowledge property even in case of malicious verifiers.
+	Such proof systems are called @emph{simultaneous} zero-knowledge proofs of
+	knowledge. The underlying general model of Jarecki and Lysyanskaya@tie{}[JL00]
 	considers a synchronous communication network of @math{n} players with access to
 	a reliable broadcast channel, where an adaptive adversary can corrupt up to a
 	minority @math{t < n/2} of the players.
