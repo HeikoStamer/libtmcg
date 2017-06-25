@@ -57,7 +57,7 @@ int 				opt_verbose = 0;
 char				*opt_ofilename = NULL;
 
 void init_dkg
-	(const std::string filename, size_t &whoami)
+	(const std::string filename, size_t &whoami_dkg)
 {
 	// read the exported DKG verification keys from file
 	std::string line;
@@ -86,7 +86,7 @@ void init_dkg
 		exit(-1);
 	}
 	// set the correct index from saved DKG state
-	whoami = dkg->i;
+	whoami_dkg = dkg->i;
 }
 
 void done_dkg
@@ -940,7 +940,7 @@ void parse_message
 }
 
 void compute_decryption_share
-	(const size_t whoami, std::string &result)
+	(const size_t whoami_dkg, std::string &result)
 {
 	// [CGS97] Ronald Cramer, Rosario Gennaro, and Berry Schoenmakers:
 	//  'A Secure and Optimally Efficient Multi-Authority Election Scheme'
@@ -980,7 +980,7 @@ void compute_decryption_share
 		exit(-1);
 	}
 	mpz_spowm(R, nizk_g, x_i, nizk_p);
-	if (mpz_cmp(R, dkg->v_i[whoami]))
+	if (mpz_cmp(R, dkg->v_i[whoami_dkg]))
 	{
 		std::cerr << "ERROR: check of DKG public verification key failed" << std::endl;
 		exit(-1);
@@ -999,7 +999,7 @@ void compute_decryption_share
 	// the PoK non-interactive, i.e. we turn it into a statistically
 	// zero-knowledge (Schnorr signature scheme style) proof of
 	// knowledge (SPK) in the random oracle model.
-	mpz_shash(c, 6, a, b, r_i, dkg->v_i[whoami], nizk_gk, nizk_g);
+	mpz_shash(c, 6, a, b, r_i, dkg->v_i[whoami_dkg], nizk_gk, nizk_g);
 	// response
 	mpz_mul(r, c, x_i);
 	mpz_neg(r, r);
@@ -1007,14 +1007,14 @@ void compute_decryption_share
 	mpz_mod(r, r, nizk_q);
 	// construct dds
 	std::ostringstream dds;
-	dds << "dds|" << whoami << "|" << r_i << "|" << c << "|" << r << "|";
+	dds << "dds|" << whoami_dkg << "|" << r_i << "|" << c << "|" << r << "|";
 	mpz_clear(c), mpz_clear(r), mpz_clear(c2), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
 	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i), mpz_clear(r_i), mpz_clear(R);
 	result = dds.str();
 }
 
 bool verify_decryption_share
-	(std::string in, size_t &idx, mpz_ptr r_i_out, mpz_ptr c_out, mpz_ptr r_out)
+	(std::string in, size_t &idx_dkg, mpz_ptr r_i_out, mpz_ptr c_out, mpz_ptr r_out)
 {
 	// init
 	mpz_t c2, a, b;
@@ -1049,7 +1049,7 @@ bool verify_decryption_share
 			throw false;
 		// parse index
 		std::string idxstr = TMCG_ParseHelper::gs(in, '|');
-		if ((sscanf(idxstr.c_str(), "%zu", &idx) < 1) || (!TMCG_ParseHelper::nx(in, '|')))
+		if ((sscanf(idxstr.c_str(), "%zu", &idx_dkg) < 1) || (!TMCG_ParseHelper::nx(in, '|')))
 			throw false;
 		// r_i
 		if ((mpz_set_str(r_i_out, TMCG_ParseHelper::gs(in, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(in, '|')))
@@ -1061,7 +1061,7 @@ bool verify_decryption_share
 		if ((mpz_set_str(r_out, TMCG_ParseHelper::gs(in, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(in, '|')))
 			throw false;
 		// check index for sanity
-		if (idx >= (dkg->v_i).size())
+		if (idx_dkg >= (dkg->v_i).size())
 			throw false;
 		// check r_i for sanity
 		if ((mpz_cmp_ui(r_i_out, 0L) <= 0) || (mpz_cmp(r_i_out, nizk_p) >= 0))
@@ -1078,10 +1078,10 @@ bool verify_decryption_share
 		mpz_mul(a, a, b);
 		mpz_mod(a, a, nizk_p);
 		mpz_powm(b, nizk_g, r_out, nizk_p);
-		mpz_powm(c2, dkg->v_i[idx], c_out, nizk_p);
+		mpz_powm(c2, dkg->v_i[idx_dkg], c_out, nizk_p);
 		mpz_mul(b, b, c2);
 		mpz_mod(b, b, nizk_p);
-		mpz_shash(c2, 6, a, b, r_i_out, dkg->v_i[idx], nizk_gk, nizk_g);
+		mpz_shash(c2, 6, a, b, r_i_out, dkg->v_i[idx_dkg], nizk_gk, nizk_g);
 		if (mpz_cmp(c2, c_out))
 			throw false;		
 
@@ -1333,19 +1333,22 @@ void run_instance
 	(size_t whoami)
 {
 	std::string dds, thispeer = peers[whoami];
-	init_dkg(thispeer + ".dkg", whoami);
+	size_t whoami_dkg;
+	init_dkg(thispeer + ".dkg", whoami_dkg);
 	read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
 	init_mpis();
 	parse_private_key(armored_seckey);
 	parse_message(armored_message);
 
 	// compute the decryption share
-	size_t idx;
-	mpz_t r_i, c, r;
-	mpz_init(r_i), mpz_init(c), mpz_init(r);
-	compute_decryption_share(whoami, dds);
-	if (!verify_decryption_share(dds, idx, r_i, c, r))
-		std::cout << "WARNING: verification of my own decryption share failed at P_" << whoami << std::endl;
+	size_t idx_dkg;
+	mpz_t idx, r_i, c, r;
+	mpz_init(idx), mpz_init(r_i), mpz_init(c), mpz_init(r);
+	compute_decryption_share(whoami_dkg, dds);
+	if (!verify_decryption_share(dds, idx_dkg, r_i, c, r))
+		std::cout << "WARNING: verification of own decryption share failed for P_" << whoami << std::endl;
+	else
+		mpz_set_ui(idx, idx_dkg);
 
 	// create communication handles between all players
 	std::vector<int> uP_in, uP_out, bP_in, bP_out;
@@ -1377,7 +1380,82 @@ void run_instance
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(peers.size(), T_RBC, whoami, aiou2);
 	rbc->setID(myID);
 
+	// initialize for interactive part
+	mpz_t crs_p, crs_q, crs_g, crs_k;
+	mpz_init(crs_p), mpz_init(crs_q), mpz_init(crs_g), mpz_init(crs_k);
+	if (!mpz_set_gcry_mpi(dsa_p, crs_p))
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
+	if (!mpz_set_gcry_mpi(dsa_q, crs_q))
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
+	if (!mpz_set_gcry_mpi(dsa_g, crs_g))
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
+	mpz_sub_ui(crs_k, crs_p, 1L);
+	mpz_div(crs_k, crs_k, crs_q);
+
+	// create VTMF instance from original CRS (common reference string)
+	std::stringstream crss;
+	crss << crs_p << std::endl << crs_q << std::endl << crs_g << std::endl << crs_k << std::endl;
+	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crss, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true); // with verifiable generation of $g$
+	if (!vtmf->CheckGroup())
+	{
+		std::cout << "P_" << whoami << ": " << "VTMF: Group G was not correctly generated!" << std::endl;
+		exit(-1);
+	}
+
+	// create and exchange keys in order to bootstrap the $h$-generation for DKG [JL00]
+	// TODO: replace N-time NIZK by one interactive (distributed) zero-knowledge proof of knowledge
+	if (opt_verbose)
+		std::cout << "generate h by using VTMF key generation protocol" << std::endl;
+	mpz_t nizk_c, nizk_r, h_j;
+	mpz_init(nizk_c), mpz_init(nizk_r), mpz_init(h_j);
+	vtmf->KeyGenerationProtocol_GenerateKey();
+	vtmf->KeyGenerationProtocol_ComputeNIZK(nizk_c, nizk_r);
+	rbc->Broadcast(vtmf->h_i);
+	rbc->Broadcast(nizk_c);
+	rbc->Broadcast(nizk_r);
+	for (size_t i = 0; i < peers.size(); i++)
+	{
+		if (i != whoami)
+		{
+			if (!rbc->DeliverFrom(h_j, i))
+			{
+				std::cerr << "P_" << whoami << ": WARNING - no VTMF key received from " << i << std::endl;
+			}
+			if (!rbc->DeliverFrom(nizk_c, i))
+			{
+				std::cerr << "P_" << whoami << ": WARNING - no NIZK c received from " << i << std::endl;
+			}
+			if (!rbc->DeliverFrom(nizk_r, i))
+			{
+				std::cerr << "P_" << whoami << ": WARNING - no NIZK r received from " << i << std::endl;
+			}
+			std::stringstream lej;
+			lej << h_j << std::endl << nizk_c << std::endl << nizk_r << std::endl;
+			if (!vtmf->KeyGenerationProtocol_UpdateKey(lej))
+			{
+				std::cerr << "P_" << whoami << ": " << "Public key of P_" << i << " was not correctly generated!" << std::endl;
+			}
+		}
+	}
+	vtmf->KeyGenerationProtocol_Finalize();
+	mpz_clear(nizk_c), mpz_clear(nizk_r), mpz_clear(h_j);
+
+	// create an instance of the distributed coin-flip protocol (EDCF)
+	if (opt_verbose)
+		std::cout << "JareckiLysyanskayaEDCF(" << peers.size() << ", " << T_RBC << ", ...)" << std::endl;
+	JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(peers.size(), T_RBC, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+
 	// broadcast the decryption share and the NIZK argument
+	rbc->Broadcast(idx);
 	rbc->Broadcast(r_i);
 	rbc->Broadcast(c);
 	rbc->Broadcast(r);
@@ -1387,7 +1465,7 @@ void run_instance
 	std::vector<mpz_ptr> interpol_shares;
 	mpz_ptr tmp1 = new mpz_t();
 	mpz_init_set(tmp1, r_i);
-	interpol_parties.push_back(whoami), interpol_shares.push_back(tmp1);
+	interpol_parties.push_back(whoami_dkg), interpol_shares.push_back(tmp1);
 
 	// collect at least t other decryption shares
 	std::vector<size_t> complaints;
@@ -1396,39 +1474,52 @@ void run_instance
 		if (i != whoami)
 		{
 			mpz_set_ui(r_i, 1L), mpz_set_ui(c, 1L), mpz_set_ui(r, 1L);
+			// receive index
+			if (!rbc->DeliverFrom(idx, i))
+			{
+				std::cerr << "WARNING: DeliverFrom(idx, i) failed for P_" << i << std::endl;
+				complaints.push_back(i);
+			}
 			// receive a decryption share including NIZK argument
 			if (!rbc->DeliverFrom(r_i, i))
 			{
-				std::cout << "WARNING: DeliverFrom(r_i, i) failed for P_" << i << std::endl;
+				std::cerr << "WARNING: DeliverFrom(r_i, i) failed for P_" << i << std::endl;
 				complaints.push_back(i);
 			}
 			if (!rbc->DeliverFrom(c, i))
 			{
-				std::cout << "WARNING: DeliverFrom(c, i) failed for P_" << i << std::endl;
+				std::cerr << "WARNING: DeliverFrom(c, i) failed for P_" << i << std::endl;
 				complaints.push_back(i);
 			}
 			if (!rbc->DeliverFrom(r, i))
 			{
-				std::cout << "WARNING: DeliverFrom(r, i) failed for P_" << i << std::endl;
+				std::cerr << "WARNING: DeliverFrom(r, i) failed for P_" << i << std::endl;
 				complaints.push_back(i);
-			}
+			}			
 			// construct string from received mpis and verify NIZK
+			idx_dkg = mpz_get_ui(idx);
 			std::ostringstream ddss;
-			ddss << "dds|" << i << "|" << r_i << "|" << c << "|" << r << "|";
-			if (!verify_decryption_share(ddss.str(), idx, r_i, c, r))
+			ddss << "dds|" << idx_dkg << "|" << r_i << "|" << c << "|" << r << "|";
+			if (!verify_decryption_share(ddss.str(), idx_dkg, r_i, c, r))
 			{
-				std::cout << "WARNING: verification of decryption share from P_" << i << " failed" << std::endl;
+				std::cerr << "WARNING: verification of decryption share from P_" << i << " failed" << std::endl;
 				complaints.push_back(i);
 			}
-			if (idx != i)
-				std::cout << "WARNING: index of decryption share from P_" << i << " does not match" << std::endl;
+			// interactive part: verify this decryption share
+// TODO
+
 			if (std::find(complaints.begin(), complaints.end(), i) == complaints.end())
 			{
 				// collect only verified decryption shares
 				mpz_ptr tmp1 = new mpz_t();
 				mpz_init_set(tmp1, r_i);
-				interpol_parties.push_back(i), interpol_shares.push_back(tmp1);
+				interpol_parties.push_back(idx_dkg), interpol_shares.push_back(tmp1);
 			}
+		}
+		else
+		{
+			// interactive part: prove this decryption share
+// TODO
 		}
 	}
 
@@ -1436,7 +1527,7 @@ void run_instance
 	combine_decryption_shares(interpol_parties, interpol_shares);
 
 	// release mpis and collected shares	
-	mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
+	mpz_clear(idx), mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
 	for (size_t i = 0; i < interpol_shares.size(); i++)
 	{
 		mpz_clear(interpol_shares[i]);
@@ -1448,6 +1539,15 @@ void run_instance
 	time_t synctime = aiounicast::aio_timeout_very_long;
 	std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
 	rbc->Sync(synctime);
+
+	// release EDCF
+	delete edcf;
+
+	// release VTMF
+	delete vtmf;
+
+	// release for interactive part
+	mpz_clear(crs_p), mpz_clear(crs_q), mpz_clear(crs_g), mpz_clear(crs_k);
 
 	// release RBC
 	delete rbc;
@@ -1467,7 +1567,7 @@ void run_instance
 	// release asynchronous unicast and broadcast
 	delete aiou, delete aiou2;
 
-	// do remainig decryption work
+	// do remaining decryption work
 	tmcg_octets_t msg, seskey;
 	decrypt_session_key(seskey);
 	decrypt_message(enc, seskey, msg);
