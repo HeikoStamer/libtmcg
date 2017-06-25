@@ -23,9 +23,16 @@
 	
 	#include <iostream>
 	#include <vector>
+
+	// GNU crypto library
+	#include <gcrypt.h>
 	
 	// GNU multiple precision library
 	#include <gmp.h>
+
+	// get content of mpz_t into gcry_mpi_t
+	bool mpz_get_gcry_mpi
+		(gcry_mpi_t *out, mpz_srcptr value);
 	
 	// iostream operators for mpz_t
 	std::ostream& operator <<

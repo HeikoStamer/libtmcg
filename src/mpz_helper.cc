@@ -24,14 +24,34 @@
 #endif
 #include "mpz_helper.hh"
 
+// get content of mpz_t into gcry_mpi_t
+bool mpz_get_gcry_mpi
+	(gcry_mpi_t *out, mpz_srcptr value)
+{
+	size_t size = mpz_sizeinbase(value, 16);
+	size_t bufsize = size + 2; // two extra bytes are for a possible minus sign, and the null-terminator
+	char *buf = new char[bufsize];
+	memset(buf, 0, bufsize);
+	mpz_get_str(buf, 16, value);
+	size_t erroff;
+	gcry_error_t ret = gcry_mpi_scan(out, GCRYMPI_FMT_HEX, buf, 0, &erroff);
+	delete [] buf;
+	if (ret)
+		return false;
+	else
+		return true;
+}
+
 // iostream operators for mpz_t
 std::ostream& operator <<
 	(std::ostream &out, mpz_srcptr value)
 {
-	char *tmp = new char[TMCG_MAX_VALUE_CHARS];
-	if (mpz_sizeinbase(value, TMCG_MPZ_IO_BASE) < TMCG_MAX_VALUE_CHARS)
-		out << mpz_get_str(tmp, TMCG_MPZ_IO_BASE, value);
-	delete [] tmp;
+	size_t size = mpz_sizeinbase(value, TMCG_MPZ_IO_BASE);
+	size_t bufsize = size + 2; // two extra bytes are for a possible minus sign, and the null-terminator
+	char *buf = new char[bufsize];
+	memset(buf, 0, bufsize);
+	out << mpz_get_str(buf, TMCG_MPZ_IO_BASE, value);
+	delete [] buf;
 	return out;
 }
 

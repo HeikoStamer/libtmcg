@@ -235,7 +235,6 @@ void run_instance
 	rbc->Sync(synctime);
 
 	// create an OpenPGP DSA-based primary key and ElGamal-based subkey using computed values from DKG
-	char buffer[2048];
 	std::string out, crcout, armor;
 	tmcg_octets_t all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
 	tmcg_octets_t pub_hashing, sub_hashing;
@@ -245,94 +244,64 @@ void run_instance
 	gcry_sexp_t key;
 	gcry_mpi_t p, q, g, y, x, r, s;
 	gcry_error_t ret;
-	size_t erroff;
 	mpz_t dsa_y, dsa_x;
 	mpz_init(dsa_y), mpz_init(dsa_x);
 	mpz_ssrandomm(dsa_x, vtmf->q); // choose private key for DSA
 	mpz_spowm(dsa_y, vtmf->g, dsa_x, vtmf->p); // compute public key for DSA	
-	p = gcry_mpi_new(2048);
-	q = gcry_mpi_new(2048);
-	g = gcry_mpi_new(2048);
-	y = gcry_mpi_new(2048);
-	x = gcry_mpi_new(2048);
 	r = gcry_mpi_new(2048);
 	s = gcry_mpi_new(2048);
-	mpz_get_str(buffer, 16, vtmf->p); // from CRS
-	ret = gcry_mpi_scan(&p, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	if (ret)
+	if (!mpz_get_gcry_mpi(&p, vtmf->p))
 	{
-		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for p" << std::endl;
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for p" << std::endl;
 		mpz_clear(dsa_y), mpz_clear(dsa_x);
-		gcry_mpi_release(p);
-		gcry_mpi_release(q);
-		gcry_mpi_release(g);
-		gcry_mpi_release(y);
-		gcry_mpi_release(x);
 		gcry_mpi_release(r);
 		gcry_mpi_release(s);
 		exit(-1);
 	}
-	mpz_get_str(buffer, 16, vtmf->q); // from CRS
-	ret = gcry_mpi_scan(&q, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	if (ret)
+	if (!mpz_get_gcry_mpi(&q, vtmf->q))
 	{
-		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for q" << std::endl;
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for q" << std::endl;
 		mpz_clear(dsa_y), mpz_clear(dsa_x);
 		gcry_mpi_release(p);
-		gcry_mpi_release(q);
-		gcry_mpi_release(g);
-		gcry_mpi_release(y);
-		gcry_mpi_release(x);
 		gcry_mpi_release(r);
 		gcry_mpi_release(s);
 		exit(-1);
 	}
-	mpz_get_str(buffer, 16, vtmf->g); // from CRS
-	ret = gcry_mpi_scan(&g, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	if (ret)
+	if (!mpz_get_gcry_mpi(&g, vtmf->g))
 	{
-		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for g" << std::endl;
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for g" << std::endl;
 		mpz_clear(dsa_y), mpz_clear(dsa_x);
 		gcry_mpi_release(p);
 		gcry_mpi_release(q);
-		gcry_mpi_release(g);
-		gcry_mpi_release(y);
-		gcry_mpi_release(x);
 		gcry_mpi_release(r);
 		gcry_mpi_release(s);
 		exit(-1);
 	}
-	mpz_get_str(buffer, 16, dsa_y); // computed for each participant/peer
-	ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	if (ret)
+	if (!mpz_get_gcry_mpi(&y, dsa_y))
 	{
-		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for dsa_y" << std::endl;
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_y" << std::endl;
 		mpz_clear(dsa_y), mpz_clear(dsa_x);
 		gcry_mpi_release(p);
 		gcry_mpi_release(q);
 		gcry_mpi_release(g);
-		gcry_mpi_release(y);
-		gcry_mpi_release(x);
 		gcry_mpi_release(r);
 		gcry_mpi_release(s);
 		exit(-1);
 	}
-	mpz_get_str(buffer, 16, dsa_x); // randomly choosen for each participant/peer (see above)
-	ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	if (ret)
+	if (!mpz_get_gcry_mpi(&x, dsa_x))
 	{
-		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for dsa_x" << std::endl;
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_x" << std::endl;
 		mpz_clear(dsa_y), mpz_clear(dsa_x);
 		gcry_mpi_release(p);
 		gcry_mpi_release(q);
 		gcry_mpi_release(g);
 		gcry_mpi_release(y);
-		gcry_mpi_release(x);
 		gcry_mpi_release(r);
 		gcry_mpi_release(s);
 		exit(-1);
 	}
 	mpz_clear(dsa_y), mpz_clear(dsa_x);
+	size_t erroff;
 	ret = gcry_sexp_build(&key, &erroff, "(key-data (public-key (dsa (p %M) (q %M) (g %M) (y %M)))"
 		" (private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M))))", p, q, g, y, p, q, g, y, x);
 	if (ret)
@@ -393,31 +362,26 @@ void run_instance
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(uidsig_hashing, uidsig_left, r, s, uidsig);
 	hash.clear();
-	mpz_get_str(buffer, 16, dkg->y); // computed by DKG (cf. LibTMCG source code)	
-	ret = gcry_mpi_scan(&y, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	if (ret)
+	gcry_mpi_release(x);
+	gcry_mpi_release(y);
+	if (!mpz_get_gcry_mpi(&y, dkg->y)) // computed by DKG (cf. LibTMCG source code)
 	{
-		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for dkg->y" << std::endl;
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->y" << std::endl;
 		gcry_mpi_release(p);
 		gcry_mpi_release(q);
 		gcry_mpi_release(g);
-		gcry_mpi_release(y);
-		gcry_mpi_release(x);
 		gcry_mpi_release(r);
 		gcry_mpi_release(s);
 		gcry_sexp_release(key);
 		exit(-1);
 	}
-	mpz_get_str(buffer, 16, dkg->x_i); // computed by DKG for each participant/peer (cf. LibTMCG source code)	
-	ret = gcry_mpi_scan(&x, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	if (ret)
+	if (!mpz_get_gcry_mpi(&x, dkg->x_i)) // computed by DKG for each participant/peer (cf. LibTMCG source code)
 	{
-		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for dkg->x_i" << std::endl;
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->x_i" << std::endl;
 		gcry_mpi_release(p);
 		gcry_mpi_release(q);
 		gcry_mpi_release(g);
 		gcry_mpi_release(y);
-		gcry_mpi_release(x);
 		gcry_mpi_release(r);
 		gcry_mpi_release(s);
 		gcry_sexp_release(key);

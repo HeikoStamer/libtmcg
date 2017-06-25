@@ -97,17 +97,25 @@ void mpz_grandomb
 	char htmp[size + 3]; // at least two characters + delimiter
 	size_t hlen;
 	gcry_mpi_t rr;
+	gcry_error_t ret;
 	assert(size <= UINT_MAX);
 	
 	rr = gcry_mpi_new((unsigned int)size);
 	gcry_mpi_randomize(rr, (unsigned int)size, level);
-	gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
+	ret = gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
+	if (ret)
+	{
+		mpz_set_ui(r, 0L); /* indicates an error */
+	}
+	else
+	{
+		memset(htmp, 0, size + 3);
+		memcpy(htmp, rtmp, hlen);
+		gcry_free(rtmp);
+		mpz_set_str(r, htmp, 16);
+		mpz_tdiv_r_2exp(r, r, size); /* r mod 2^size, i.e. shift right and bit mask */
+	}
 	gcry_mpi_release(rr);
-	memset(htmp, 0, size + 3);
-	memcpy(htmp, rtmp, hlen);
-	gcry_free(rtmp);
-	mpz_set_str(r, htmp, 16);
-	mpz_tdiv_r_2exp(r, r, size); /* r mod 2^size, i.e. shift right and bit mask */
 }
 
 void mpz_ssrandomb
@@ -136,17 +144,25 @@ void mpz_grandomm
 	char htmp[size + 3]; // at least two characters + delimiter
 	size_t hlen;
 	gcry_mpi_t rr;
+	gcry_error_t ret;
 	assert(size <= UINT_MAX);
 	
 	rr = gcry_mpi_new((unsigned int)size);
 	gcry_mpi_randomize(rr, (unsigned int)size, level);
-	gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
+	ret = gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
+	if (ret)
+	{
+		mpz_set_ui(r, 0L); /* indicates an error */
+	}
+	else
+	{
+		memset(htmp, 0, size + 3);
+		memcpy(htmp, rtmp, hlen);
+		gcry_free(rtmp);
+		mpz_set_str(r, htmp, 16);
+		mpz_mod(r, r, m); /* modulo bias is negligible here */
+	}
 	gcry_mpi_release(rr);
-	memset(htmp, 0, size + 3);
-	memcpy(htmp, rtmp, hlen);
-	gcry_free(rtmp);
-	mpz_set_str(r, htmp, 16);
-	mpz_mod(r, r, m); /* modulo bias is negligible here */
 }
 
 void mpz_ssrandomm
