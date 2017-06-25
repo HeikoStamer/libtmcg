@@ -527,6 +527,7 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	}
 
 	// mpz_get_gcry_mpi, mpz_set_gcry_mpi
+	std::cout << "mpz_get_gcry_mpi(), mpz_set_gcry_mpi()" << std::endl;
 	gcry_mpi_t a;
 	mpz_wrandomb(foo, 256L);
 	assert(mpz_get_gcry_mpi(&a, foo));
