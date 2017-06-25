@@ -3834,7 +3834,10 @@ Discrete-Log Based Cryptosystems}, Journal of Cryptology, Vol. 20 Nr. 1,
 Springer 2007). The program @code{dkg-generate} provides an instantiation
 for the ElGamal cryptosystem with output of the keys in OpenPGP format (see J. Callas,
 L. Donnerhacke, H. Finney, D. Shaw, R. Thayer: @emph{OpenPGP Message Format},
-Network Working Group, Request for Comments: 4880, November 2007).
+Network Working Group, Request for Comments: 4880, November 2007). It needs
+a lot of strong randomness obtained from the GNU Crypto Library (@code{libgcrypt}),
+that means, the execution will slow down or even fail on systems where only low
+entropy sources for @code{/dev/random} are available.
 
 Due to the interactiveness of the protocol a lot of messages between participating
 parties have to be exchanged in a secure way. We employ @uref{https://gnunet.org/,,GNUnet}, 
