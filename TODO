@@ -1,20 +1,20 @@
 * dkg-gencrs: use EDCF to generate CRS by coin-flips of all participants
-* VTMF: protect KeyGenerationProtocol_ProveKey_interactive() with EDCF
-+ use secure memory allocation from libgcrypt
-+ improve oracle function g() by including a second hash function (SHA3)
-+ add interactive versions of Chaum-Pedersen PoK of dlog equality
-+ implement asynchronous VSS [CKLS02] for DKG
+* dkg-tools: protect KeyGenerationProtocol_ProveKey_interactive() with EDCF
+* provide distributed DSS/DSA key generation and signature scheme [GJKR01]
 + provide interactive and distributed (multiparty DZKP) versions for
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
   (for applications that cannot rely on the random oracle assumption or
    the h-generation protocol as building block of ASTC [JL00])
++ VTMF: add interactive versions of Chaum-Pedersen PoK of dlog equality
 + DZKP also called "Simultaneous Zero-Knowledge Proofs of Knowledge" [JL00]
 + provide DKG with security against an adaptive adversary [CGJKR99, JL00]
-+ provide distributed DSS/DSA key generation and signature scheme [GJKR01]
-+ move to event-driven architecture and state-based protocol representation
-+ add a generic group abstraction layer, e.g. for future use of ECC groups
 + DKG, ASTC: transform protocols into variants without aiou->Send() [BH92]
++ move to event-driven architecture and state-based protocol representation
++ improve oracle function g() by including a second hash function (SHA3)
++ add a generic group abstraction layer, e.g. for future use of ECC groups
++ use secure memory allocation from libgcrypt
 + provide a byzantine consensus protocol for agreement on values
++ implement asynchronous VSS [CKLS02] for DKG
 
 - implement the exotic card and stack operations of the toolbox; there are
   some obstacles, e.g. that the prover does not know all used randomizers,
