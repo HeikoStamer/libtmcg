@@ -1210,10 +1210,8 @@ void combine_decryption_shares
 	}
 
 	// copy the result from R to gk
-	size_t erroff;
-	mpz_get_str(buffer, 16, R);
-	ret = gcry_mpi_scan(&gk, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
-	if (ret)
+	gcry_mpi_release(gk);
+	if (!mpz_get_gcry_mpi(&gk, R))
 	{
 		std::cerr << "ERROR: converting interpolated result failed" << std::endl;
 		exit(-1);
@@ -1231,7 +1229,7 @@ void decrypt_session_key
 	gcry_error_t ret;
 	size_t erroff;
 	if (elgkey != NULL)
-		gcry_sexp_release(elgkey); // release the former private key
+		gcry_sexp_release(elgkey); // release already obtained private key
 	gcry_mpi_set_ui(elg_x, 1); // cheat libgcrypt (decryption key shares have been already applied to gk)
 	ret = gcry_sexp_build(&elgkey, &erroff, "(private-key (elg (p %M) (g %M) (y %M) (x %M)))", elg_p, elg_g, elg_y, elg_x);
 	if (ret)
