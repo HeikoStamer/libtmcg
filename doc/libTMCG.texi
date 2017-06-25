@@ -19,7 +19,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20170513.
+Revision 20170625.
 
 Copyright @copyright{} 2005, 2006, 2007, 2009, 2015, 2016, 2017 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
