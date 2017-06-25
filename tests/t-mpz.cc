@@ -525,6 +525,14 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		mpz_powm_ui(root, root, 2L, bar);
 		assert(!mpz_cmp(root, bar2));
 	}
+
+	// mpz_get_gcry_mpi, mpz_set_gcry_mpi
+	gcry_mpi_t a;
+	mpz_wrandomb(foo, 256L);
+	assert(mpz_get_gcry_mpi(&a, foo));
+	assert(mpz_set_gcry_mpi(a, bar));
+	gcry_mpi_release(a);
+	assert(!mpz_cmp(foo, bar));
 	
 	mpz_clear(foo), mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2),
 		mpz_clear(root), mpz_clear(t1), mpz_clear(t2);
