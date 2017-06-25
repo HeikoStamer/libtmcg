@@ -33,6 +33,10 @@
 	// get content of mpz_t into gcry_mpi_t
 	bool mpz_get_gcry_mpi
 		(gcry_mpi_t *out, mpz_srcptr value);
+
+	// set content of mpz_t from gcry_mpi_t
+	bool mpz_set_gcry_mpi
+		(gcry_mpi_t in, mpz_ptr value);
 	
 	// iostream operators for mpz_t
 	std::ostream& operator <<

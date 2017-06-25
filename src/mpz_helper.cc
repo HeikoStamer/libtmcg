@@ -42,6 +42,28 @@ bool mpz_get_gcry_mpi
 		return true;
 }
 
+// set content of mpz_t from gcry_mpi_t
+bool mpz_set_gcry_mpi
+	(gcry_mpi_t in, mpz_ptr value)
+{
+	char *buf = new char[TMCG_MAX_VALUE_CHARS];
+	memset(buf, 0, TMCG_MAX_VALUE_CHARS);
+	size_t buflen;
+	gcry_error_t ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buf, TMCG_MAX_VALUE_CHARS - 1, &buflen, in);
+	if (ret)
+	{
+		mpz_set_ui(value, 0L); // indicates an error
+		delete [] buf;
+		return false;
+	}
+	else
+	{
+		mpz_set_str(value, buf, 16);
+		delete [] buf;
+		return true;
+	}
+}
+
 // iostream operators for mpz_t
 std::ostream& operator <<
 	(std::ostream &out, mpz_srcptr value)
@@ -58,14 +80,14 @@ std::ostream& operator <<
 std::istream& operator >>
 	(std::istream &in, mpz_ptr value)
 {
-	char *tmp = new char[TMCG_MAX_VALUE_CHARS];
-	in.getline(tmp, TMCG_MAX_VALUE_CHARS);
-	if (mpz_set_str(value, tmp, TMCG_MPZ_IO_BASE) < 0)
+	char *buf = new char[TMCG_MAX_VALUE_CHARS];
+	in.getline(buf, TMCG_MAX_VALUE_CHARS - 1);
+	if (mpz_set_str(value, buf, TMCG_MPZ_IO_BASE) < 0)
 	{
-		mpz_set_ui(value, 0L);
+		mpz_set_ui(value, 0L); // indicates an error
 		in.setstate(std::istream::iostate(std::istream::failbit));
 	}
-	delete [] tmp;
+	delete [] buf;
 	return in;
 }
 
