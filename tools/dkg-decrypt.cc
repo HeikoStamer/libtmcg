@@ -949,22 +949,48 @@ void compute_decryption_share
 	// compute the decryption share
 	char buffer[2048];
 	size_t buflen;
+	gcry_error_t ret;
 	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, x_i, r_i, R;
 	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(x_i), mpz_init(r_i), mpz_init(R);
 	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
+	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
 	mpz_set_str(nizk_p, buffer, 16);
 	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
+	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
 	mpz_set_str(nizk_q, buffer, 16);
 	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_g);
+	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_g);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
 	mpz_set_str(nizk_g, buffer, 16);
 	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, gk);
+	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, gk);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting message part failed" << std::endl;
+		exit(-1);
+	}
 	mpz_set_str(nizk_gk, buffer, 16);
 	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, elg_x);
+	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, elg_x);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting private key share failed" << std::endl;
+		exit(-1);
+	}
 	mpz_set_str(x_i, buffer, 16);
 	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g))
 	{
@@ -1013,19 +1039,40 @@ bool verify_decryption_share
 	mpz_init(c2), mpz_init(a), mpz_init(b);
 	char buffer[2048];
 	size_t buflen;
+	gcry_error_t ret;
 	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk;
 	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk);
 	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
+	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
 	mpz_set_str(nizk_p, buffer, 16);
 	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
+	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
 	mpz_set_str(nizk_q, buffer, 16);
 	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_g);
+	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_g);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
 	mpz_set_str(nizk_g, buffer, 16);
 	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, gk);
+	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, gk);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting message part failed" << std::endl;
+		exit(-1);
+	}
 	mpz_set_str(nizk_gk, buffer, 16);
 
 	try
@@ -1049,8 +1096,14 @@ bool verify_decryption_share
 		// check index for sanity
 		if (idx >= (dkg->v_i).size())
 			throw false;
+		// check r_i for sanity
+		if ((mpz_cmp_ui(r_i_out, 0L) <= 0) || (mpz_cmp(r_i_out, nizk_p) >= 0))
+			throw false;
+		mpz_powm(a, r_i_out, nizk_q, nizk_p);
+		if (mpz_cmp_ui(a, 1L))
+			throw false;
 		// check the NIZK argument for sanity
-		if ((mpz_cmpabs(r_out, nizk_q) >= 0) || (mpz_sizeinbase(c_out, 2L) > 256)) // check the size of r and c
+		if ((mpz_cmpabs(r_out, nizk_q) >= 0) || (mpz_sizeinbase(c_out, 2L) > 256)) // check the size of r and c (NOTE: output size of mpz_shash is fixed)
 			throw false;
 		// verify proof of knowledge (equality of discrete logarithms), e.g. see [CGS97]
 		mpz_powm(a, nizk_gk, r_out, nizk_p);
@@ -1083,13 +1136,24 @@ void combine_decryption_shares
 {
 	char buffer[2048];
 	size_t buflen;
+	gcry_error_t ret;
 	mpz_t nizk_p, nizk_q;
 	mpz_init(nizk_p), mpz_init(nizk_q);
 	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
+	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_p);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
 	mpz_set_str(nizk_p, buffer, 16);
 	std::memset(buffer, 0, sizeof(buffer));
-	gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
+	ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buffer, sizeof(buffer), &buflen, dsa_q);
+	if (ret)
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
 	mpz_set_str(nizk_q, buffer, 16);
 	std::vector<size_t> parties_sorted = parties;
 	std::sort(parties_sorted.begin(), parties_sorted.end());
@@ -1146,13 +1210,12 @@ void combine_decryption_shares
 	}
 
 	// copy the result from R to gk
-	gcry_error_t ret;
 	size_t erroff;
 	mpz_get_str(buffer, 16, R);
 	ret = gcry_mpi_scan(&gk, GCRYMPI_FMT_HEX, buffer, 0, &erroff);
 	if (ret)
 	{
-		std::cerr << "ERROR: converting the interpolated result failed" << std::endl;
+		std::cerr << "ERROR: converting interpolated result failed" << std::endl;
 		exit(-1);
 	}
 
