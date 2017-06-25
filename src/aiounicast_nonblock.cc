@@ -62,11 +62,7 @@ aiounicast_nonblock::aiounicast_nonblock
 	}
 
 	// initialize ordered buffer for receiving mpz_t
-	for (size_t i = 0; i < n_in; i++)
-	{
-		std::list<mpz_ptr> *ltmp = new std::list<mpz_ptr>;
-		buf_mpz.push_back(*ltmp);
-	}
+	buf_mpz.resize(n);
 
 	// initialize character counters
 	numWrite = 0, numRead = 0, numEncrypted = 0, numDecrypted = 0, numAuthenticated = 0;
