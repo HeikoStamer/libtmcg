@@ -1202,6 +1202,25 @@ bool verify_decryption_share_interactive_publiccoin
 
 	try
 	{
+		// check index for sanity
+		if (idx_dkg >= (dkg->v_i).size())
+		{
+			err << "verify PoK: bad idx_dkg for P_" << idx << std::endl;
+			throw false;
+		}
+		// check r_i for sanity
+		if ((mpz_cmp_ui(r_i, 0L) <= 0) || (mpz_cmp(r_i, nizk_p) >= 0))
+		{
+			err << "verify PoK: not 0 < r_i < p for P_" << idx << std::endl;
+			throw false;
+		}
+		mpz_powm(foo, r_i, nizk_q, nizk_p);
+		if (mpz_cmp_ui(foo, 1L))
+		{
+			err << "verify PoK: r_i not in G for P_" << idx << std::endl;
+			throw false;
+		}
+
 		// verify proof of knowledge (equality of discrete logarithms) [CGS97]
 		// 1. receive and check the commitment, i.e., $a, b \in G$
 		if (!rbc->DeliverFrom(a, idx))
@@ -1512,16 +1531,6 @@ void run_instance
 	parse_private_key(armored_seckey);
 	parse_message(armored_message);
 
-	// compute the decryption share
-	size_t idx_dkg;
-	mpz_t idx, r_i, c, r;
-	mpz_init(idx), mpz_init(r_i), mpz_init(c), mpz_init(r);
-	compute_decryption_share(whoami_dkg, dds);
-	if (!verify_decryption_share(dds, idx_dkg, r_i, c, r))
-		std::cout << "WARNING: verification of own decryption share failed for P_" << whoami << std::endl;
-	else
-		mpz_set_ui(idx, idx_dkg);
-
 	// create communication handles between all players
 	std::vector<int> uP_in, uP_out, bP_in, bP_out;
 	std::vector<std::string> uP_key, bP_key;
@@ -1626,13 +1635,22 @@ void run_instance
 		std::cout << "JareckiLysyanskayaEDCF(" << peers.size() << ", " << T_RBC << ", ...)" << std::endl;
 	JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(peers.size(), T_RBC, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 
-	// broadcast the decryption share and the NIZK argument
+	// compute own decryption share and check it
+	size_t idx_dkg;
+	mpz_t idx, r_i, c, r;
+	mpz_init(idx), mpz_init(r_i), mpz_init(c), mpz_init(r);
+	compute_decryption_share(whoami_dkg, dds);
+	if (!verify_decryption_share(dds, idx_dkg, r_i, c, r))
+		std::cout << "WARNING: verification of own decryption share failed for P_" << whoami << std::endl;
+	else
+		mpz_set_ui(idx, idx_dkg);
+	mpz_clear(c), mpz_clear(r);
+
+	// broadcast own decryption share
 	rbc->Broadcast(idx);
 	rbc->Broadcast(r_i);
-	rbc->Broadcast(c);
-	rbc->Broadcast(r);
 
-	// use decryption share of this party for Lagrange interpolation
+	// use this decryption share for Lagrange interpolation
 	std::vector<size_t> interpol_parties;
 	std::vector<mpz_ptr> interpol_shares;
 	mpz_ptr tmp1 = new mpz_t();
@@ -1645,7 +1663,7 @@ void run_instance
 	{
 		if (i != whoami)
 		{
-			mpz_set_ui(r_i, 1L), mpz_set_ui(c, 1L), mpz_set_ui(r, 1L);
+			mpz_set_ui(idx, dkg->n), mpz_set_ui(r_i, 1L);
 			// receive index
 			if (!rbc->DeliverFrom(idx, i))
 			{
@@ -1658,27 +1676,9 @@ void run_instance
 				std::cerr << "WARNING: DeliverFrom(r_i, i) failed for P_" << i << std::endl;
 				complaints.push_back(i);
 			}
-			if (!rbc->DeliverFrom(c, i))
-			{
-				std::cerr << "WARNING: DeliverFrom(c, i) failed for P_" << i << std::endl;
-				complaints.push_back(i);
-			}
-			if (!rbc->DeliverFrom(r, i))
-			{
-				std::cerr << "WARNING: DeliverFrom(r, i) failed for P_" << i << std::endl;
-				complaints.push_back(i);
-			}			
-			// construct string from received mpis and verify NIZK
-			idx_dkg = mpz_get_ui(idx);
-			std::ostringstream ddss;
-			ddss << "dds|" << idx_dkg << "|" << r_i << "|" << c << "|" << r << "|";
-			if (!verify_decryption_share(ddss.str(), idx_dkg, r_i, c, r))
-			{
-				std::cerr << "WARNING: verification of decryption share from P_" << i << " failed" << std::endl;
-				complaints.push_back(i);
-			}
-			// interactive part: verify this decryption share interactively
+			// verify decryption share interactively
 			std::stringstream err_log;
+			idx_dkg = mpz_get_ui(idx);
 			if (!verify_decryption_share_interactive_publiccoin(i, idx_dkg, r_i, aiou, rbc, edcf, err_log))
 			{
 				std::cerr << "WARNING: interactive verification of decryption share from P_" << i << " failed" << std::endl;
@@ -1696,7 +1696,7 @@ void run_instance
 		}
 		else
 		{
-			// interactive part: prove own decryption share interactively
+			// prove own decryption share interactively
 			std::stringstream err_log;
 			prove_decryption_share_interactive_publiccoin(interpol_parties[0], interpol_shares[0], aiou, rbc, edcf, err_log);
 			if (opt_verbose)
@@ -1708,7 +1708,7 @@ void run_instance
 	combine_decryption_shares(interpol_parties, interpol_shares);
 
 	// release mpis and collected shares	
-	mpz_clear(idx), mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
+	mpz_clear(idx), mpz_clear(r_i);
 	for (size_t i = 0; i < interpol_shares.size(); i++)
 	{
 		mpz_clear(interpol_shares[i]);
