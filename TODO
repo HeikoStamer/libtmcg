@@ -1,5 +1,6 @@
 * dkg-gencrs: use EDCF to generate CRS by coin-flips of all participants
-* dkg-tools: protect KeyGenerationProtocol_ProveKey_interactive() with EDCF
+* dkg-tools: protect h-generation protocol with EDCF to avoid ROM
+* provide proactive security (program dkg-refresh) [HJJKY97]
 * provide distributed DSS/DSA key generation and signature scheme [GJKR01]
 + provide interactive and distributed (multiparty DZKP) versions for
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
