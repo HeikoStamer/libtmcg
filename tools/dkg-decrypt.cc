@@ -1678,12 +1678,12 @@ void run_instance
 				complaints.push_back(i);
 			}
 			// interactive part: verify this decryption share interactively
-			std::stringstream errlog;
-			if (!verify_decryption_share_interactive_publiccoin(i, idx_dkg, r_i, aiou, rbc, edcf, errlog))
+			std::stringstream err_log;
+			if (!verify_decryption_share_interactive_publiccoin(i, idx_dkg, r_i, aiou, rbc, edcf, err_log))
 			{
 				std::cerr << "WARNING: interactive verification of decryption share from P_" << i << " failed" << std::endl;
 				if (opt_verbose)
-					std::cerr << errlog << std::endl;
+					std::cerr << err_log.str() << std::endl;
 				complaints.push_back(i);
 			}
 			if (std::find(complaints.begin(), complaints.end(), i) == complaints.end())
@@ -1697,8 +1697,10 @@ void run_instance
 		else
 		{
 			// interactive part: prove own decryption share interactively
-			std::stringstream errlog;
-			prove_decryption_share_interactive_publiccoin(interpol_parties[0], interpol_shares[0], aiou, rbc, edcf, errlog);
+			std::stringstream err_log;
+			prove_decryption_share_interactive_publiccoin(interpol_parties[0], interpol_shares[0], aiou, rbc, edcf, err_log);
+			if (opt_verbose)
+				std::cerr << err_log.str() << std::endl;
 		}
 	}
 
