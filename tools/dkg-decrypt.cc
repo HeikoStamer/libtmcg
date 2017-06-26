@@ -1709,6 +1709,7 @@ void run_instance
 
 	// release mpis and collected shares	
 	mpz_clear(idx), mpz_clear(r_i);
+	mpz_clear(crs_p), mpz_clear(crs_q), mpz_clear(crs_g), mpz_clear(crs_k);
 	for (size_t i = 0; i < interpol_shares.size(); i++)
 	{
 		mpz_clear(interpol_shares[i]);
@@ -1726,9 +1727,6 @@ void run_instance
 
 	// release VTMF
 	delete vtmf;
-
-	// release for interactive part
-	mpz_clear(crs_p), mpz_clear(crs_q), mpz_clear(crs_g), mpz_clear(crs_k);
 
 	// release RBC
 	delete rbc;
