@@ -1013,10 +1013,74 @@ void compute_decryption_share
 	result = dds.str();
 }
 
+void prove_decryption_share_interactive_publiccoin
+	(const size_t whoami_dkg, mpz_srcptr r_i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc, JareckiLysyanskayaEDCF *edcf, std::ostream &err)
+{
+	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, x_i;
+	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(x_i);
+	if (!mpz_set_gcry_mpi(dsa_p, nizk_p))
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
+	if (!mpz_set_gcry_mpi(dsa_q, nizk_q))
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
+	if (!mpz_set_gcry_mpi(dsa_g, nizk_g))
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
+	if (!mpz_set_gcry_mpi(gk, nizk_gk))
+	{
+		std::cerr << "ERROR: converting message component failed" << std::endl;
+		exit(-1);
+	}
+	if (!mpz_set_gcry_mpi(elg_x, x_i))
+	{
+		std::cerr << "ERROR: converting private key share failed" << std::endl;
+		exit(-1);
+	}
+	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g))
+	{
+		std::cerr << "ERROR: DSA/ElGamal and DKG group parameters does not match" << std::endl;
+		exit(-1);
+	}
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "dkg-decrypt::*_decryption_share_interactive_publiccoin" << dkg->p << dkg->q << dkg->g << edcf->h << r_i << "|" << rbc->j << "|" << whoami_dkg;
+	rbc->setID(myID.str());
+	// proof of knowledge (equality of discrete logarithms) [CGS97]
+	mpz_t a, b, omega, c, r, c2;
+	mpz_init(c), mpz_init(r), mpz_init(c2), mpz_init(a), mpz_init(b), mpz_init(omega);
+	// 1. commitment
+	mpz_srandomm(omega, nizk_q);
+	mpz_spowm(a, nizk_gk, omega, nizk_p);
+	mpz_spowm(b, nizk_g, omega, nizk_p);
+	rbc->Broadcast(a);
+	rbc->Broadcast(b);
+	// 2. challenge
+	if (!edcf->Flip(rbc->j, c, aiou, rbc, err))
+		mpz_set_ui(c, 0L); // indicates an error
+	// 3. response
+	mpz_mul(r, c, x_i);
+	mpz_neg(r, r);
+	mpz_add(r, r, omega);
+	mpz_mod(r, r, nizk_q);
+	rbc->Broadcast(r);
+	// release
+	mpz_clear(c), mpz_clear(r), mpz_clear(c2), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
+	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i);
+	// unset ID for RBC
+	rbc->unsetID();
+}
+
 bool verify_decryption_share
 	(std::string in, size_t &idx_dkg, mpz_ptr r_i_out, mpz_ptr c_out, mpz_ptr r_out)
 {
-	// init
+	// initialize
 	mpz_t c2, a, b;
 	mpz_init(c2), mpz_init(a), mpz_init(b);
 	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk;
@@ -1092,6 +1156,114 @@ bool verify_decryption_share
 	{
 		// release
 		mpz_clear(c2), mpz_clear(a), mpz_clear(b);
+		mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk);
+		// return
+		return return_value;
+	}
+}
+
+bool verify_decryption_share_interactive_publiccoin
+	(const size_t idx, const size_t idx_dkg, mpz_srcptr r_i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc, JareckiLysyanskayaEDCF *edcf, std::ostream &err)
+{
+	// initialize
+	mpz_t a, b, c, r, foo, bar;
+	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(r), mpz_init(foo), mpz_init(bar);
+	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk;
+	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk);
+	if (!mpz_set_gcry_mpi(dsa_p, nizk_p))
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
+	if (!mpz_set_gcry_mpi(dsa_q, nizk_q))
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
+	if (!mpz_set_gcry_mpi(dsa_g, nizk_g))
+	{
+		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		exit(-1);
+	}
+	if (!mpz_set_gcry_mpi(gk, nizk_gk))
+	{
+		std::cerr << "ERROR: converting message component failed" << std::endl;
+		exit(-1);
+	}
+	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g))
+	{
+		std::cerr << "ERROR: DSA/ElGamal and DKG group parameters does not match" << std::endl;
+		exit(-1);
+	}
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "dkg-decrypt::*_decryption_share_interactive_publiccoin" << dkg->p << dkg->q << dkg->g << edcf->h << r_i << "|" << idx << "|" << idx_dkg;
+	rbc->setID(myID.str());
+
+	try
+	{
+		// verify proof of knowledge (equality of discrete logarithms) [CGS97]
+		// 1. receive and check the commitment, i.e., $a, b \in G$
+		if (!rbc->DeliverFrom(a, idx))
+		{
+			err << "verify PoK: DeliverFrom(a, idx) failed for P_" << idx << std::endl;
+			throw false;
+		}
+		if (!rbc->DeliverFrom(b, idx))
+		{
+			err << "verify PoK: DeliverFrom(b, idx) failed for P_" << idx << std::endl;
+			throw false;
+		}
+		mpz_powm(foo, a, nizk_q, nizk_p);
+		mpz_powm(bar, b, nizk_q, nizk_p);
+		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
+		{
+			err << "verify PoK: check commitment failed for P_" << idx << std::endl;
+			throw false;
+		}
+		// 2. challenge: $c\in\mathbb{Z}_q$ is computed by a distributed coin-flip protocol [JL00]
+		if (!edcf->Flip(rbc->j, c, aiou, rbc, err))
+			throw false;
+		// 3. receive, check and verify the response
+		if (!rbc->DeliverFrom(r, idx))
+		{
+			err << "verify PoK: DeliverFrom(r, idx) failed for P_" << idx << std::endl;
+			throw false;
+		}
+		if (mpz_cmpabs(r, nizk_q) >= 0)
+		{
+			err << "verify PoK: check response failed for P_" << idx << std::endl;
+			throw false;
+		}
+		// verify PoK equations [CGS97]
+		mpz_powm(foo, nizk_g, r, nizk_p);
+		mpz_powm(bar, dkg->v_i[idx_dkg], c, nizk_p);
+		mpz_mul(bar, bar, a);
+		mpz_mod(bar, bar, nizk_p);
+		if (mpz_cmp(foo, bar))
+		{
+			err << "verify PoK: verify first equation failed for P_" << idx << std::endl;
+			throw false;
+		}
+		mpz_powm(foo, nizk_gk, r, nizk_p);
+		mpz_powm(bar, r_i, c, nizk_p);
+		mpz_mul(bar, bar, b);
+		mpz_mod(bar, bar, nizk_p);
+		if (mpz_cmp(foo, bar))
+		{
+			err << "verify PoK: verify second equation failed for P_" << idx << std::endl;
+			throw false;
+		}
+	
+		// finish
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// unset ID for RBC
+		rbc->unsetID();
+		// release
+		mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(r), mpz_clear(foo), mpz_clear(bar);
 		mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk);
 		// return
 		return return_value;
@@ -1411,7 +1583,7 @@ void run_instance
 		exit(-1);
 	}
 
-	// create and exchange keys in order to bootstrap the $h$-generation for DKG [JL00]
+	// create and exchange keys in order to bootstrap the $h$-generation for EDCF [JL00]
 	// TODO: replace N-time NIZK by one interactive (distributed) zero-knowledge proof of knowledge
 	if (opt_verbose)
 		std::cout << "generate h by using VTMF key generation protocol" << std::endl;
@@ -1505,9 +1677,15 @@ void run_instance
 				std::cerr << "WARNING: verification of decryption share from P_" << i << " failed" << std::endl;
 				complaints.push_back(i);
 			}
-			// interactive part: verify this decryption share
-// TODO
-
+			// interactive part: verify this decryption share interactively
+			std::stringstream errlog;
+			if (!verify_decryption_share_interactive_publiccoin(i, idx_dkg, r_i, aiou, rbc, edcf, errlog))
+			{
+				std::cerr << "WARNING: interactive verification of decryption share from P_" << i << " failed" << std::endl;
+				if (opt_verbose)
+					std::cerr << errlog << std::endl;
+				complaints.push_back(i);
+			}
 			if (std::find(complaints.begin(), complaints.end(), i) == complaints.end())
 			{
 				// collect only verified decryption shares
@@ -1518,8 +1696,9 @@ void run_instance
 		}
 		else
 		{
-			// interactive part: prove this decryption share
-// TODO
+			// interactive part: prove own decryption share interactively
+			std::stringstream errlog;
+			prove_decryption_share_interactive_publiccoin(interpol_parties[0], interpol_shares[0], aiou, rbc, edcf, errlog);
 		}
 	}
 
