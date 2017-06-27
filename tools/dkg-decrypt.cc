@@ -1080,7 +1080,7 @@ void prove_decryption_share_interactive_publiccoin
 		mpz_set_ui(c, 0L); // indicates an error
 	// 3. response
 	mpz_mul(r, c, x_i);
-	mpz_neg(r, r);
+	mpz_mod(r, r, nizk_q);
 	mpz_add(r, r, omega);
 	mpz_mod(r, r, nizk_q);
 	rbc->Broadcast(r);
