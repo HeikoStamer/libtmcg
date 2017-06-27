@@ -190,7 +190,7 @@ void init_mpis
 	myk = gcry_mpi_new(2048);
 }
 
-void parse_private_key
+bool parse_private_key
 	(const std::string in)
 {
 	// parse the private key
@@ -438,7 +438,20 @@ void parse_private_key
 						if (!mlen || (mlen > mpis.size()))
 						{
 							std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
-							exit(-1);
+							// cleanup
+							if (ctx.hspd != NULL)
+								delete [] ctx.hspd;
+							if (ctx.encdata != NULL)
+								delete [] ctx.encdata;
+							if (ctx.compdata != NULL)
+								delete [] ctx.compdata;
+							if (ctx.data != NULL)
+								delete [] ctx.data;
+							gcry_mpi_release(dsa_r);
+							gcry_mpi_release(dsa_s);
+							gcry_mpi_release(elg_r);
+							gcry_mpi_release(elg_s);
+							return false;
 						}
 						mpis.erase(mpis.begin(), mpis.begin()+mlen);
 						if (ctx.s2kconv == 255)
@@ -796,6 +809,7 @@ void parse_private_key
 	gcry_mpi_release(dsa_s);
 	gcry_mpi_release(elg_r);
 	gcry_mpi_release(elg_s);
+	return true;
 }
 
 void parse_message
@@ -1528,7 +1542,15 @@ void run_instance
 	init_dkg(thispeer + ".dkg", whoami_dkg);
 	read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
 	init_mpis();
-	parse_private_key(armored_seckey);
+	if (!parse_private_key(armored_seckey))
+	{
+		// protected with password
+		std::cout << "Please enter the passphrase to unlock your private key: ";
+		std::getline(std::cin, passphrase);
+		std::cin.clear();
+		if (!parse_private_key(armored_seckey))
+			exit(-1);
+	}
 	parse_message(armored_message);
 
 	// create communication handles between all players
@@ -1933,21 +1955,20 @@ int main
 		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
 		return -1;
 	}
-	std::cout << "1. Please enter the passphrase to unlock your private key: ";
-	std::getline(std::cin, passphrase);
+
 #ifdef GNUNET
 	if (gnunet_opt_ifilename != NULL)
 		read_message(gnunet_opt_ifilename, armored_message);
 	else
 	{
-		std::cout << "2. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
+		std::cout << "Please enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
 		std::string line;
 		while (std::getline(std::cin, line))
 			armored_message += line + "\r\n";
 		std::cin.clear();
 	}
 #else
-	std::cout << "2. Finally, enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
+	std::cout << "Please enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
 	std::string line;
 	while (std::getline(std::cin, line))
 		armored_message += line + "\r\n";
@@ -1971,7 +1992,15 @@ int main
 		init_dkg(thispeer + ".dkg", whoami);
 		read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
 		init_mpis();
-		parse_private_key(armored_seckey);
+		if (!parse_private_key(armored_seckey))
+		{
+			// protected with password
+			std::cout << "Please enter the passphrase to unlock your private key: ";
+			std::getline(std::cin, passphrase);
+			std::cin.clear();
+			if (!parse_private_key(armored_seckey))
+				exit(-1);
+		}
 		parse_message(armored_message);
 		compute_decryption_share(whoami, dds);
 		tmcg_octets_t dds_input;
