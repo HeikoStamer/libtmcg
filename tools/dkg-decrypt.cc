@@ -1303,9 +1303,10 @@ bool verify_decryption_share_interactive_publiccoin
 	}
 }
 
-void combine_decryption_shares
+bool combine_decryption_shares
 	(std::vector<size_t> &parties, std::vector<mpz_ptr> &shares)
 {
+	// initialize
 	mpz_t nizk_p, nizk_q;
 	mpz_init(nizk_p), mpz_init(nizk_q);
 	if (!mpz_set_gcry_mpi(dsa_p, nizk_p))
@@ -1318,71 +1319,82 @@ void combine_decryption_shares
 		std::cerr << "ERROR: converting group parameters failed" << std::endl;
 		exit(-1);
 	}
-	std::vector<size_t> parties_sorted = parties;
-	std::sort(parties_sorted.begin(), parties_sorted.end());
-	std::vector<size_t>::iterator ut = std::unique(parties_sorted.begin(), parties_sorted.end());
-	parties_sorted.resize(std::distance(parties_sorted.begin(), ut));
-	if ((parties.size() <= dkg->t) || (shares.size() <= dkg->t) || (parties.size() != shares.size()) || (parties_sorted.size() <= dkg->t))
-	{
-		std::cerr << "ERROR: not enough decryption shares collected" << std::endl;
-		exit(-1);
-	}
-	if (parties.size() > (dkg->t + 1))
-		parties.resize(dkg->t + 1); // we need exactly $t + 1$ decryption shares
-	if (opt_verbose)
-	{
-		std::cout << "combine_decryption_shares(): Lagrange interpolation with ";
-		for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
-			std::cout << "P_" << *jt << " ";
-		std::cout << std::endl;
-	}
-
-	// compute $R = \prod_{i\in\Lambda} r_i^\lambda_{i,\Lambda} \bmod p$ where $\lambda_{i, \Lambda} = \prod_{l\in\Lambda\setminus\{i\}\frac{l}{l-i}}$
 	mpz_t a, b, c, lambda, R;
 	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(lambda), mpz_init_set_ui(R, 1L);
-	size_t j = 0;
-	for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt, ++j)
+
+	try
 	{
-		mpz_set_ui(a, 1L); // compute optimized Lagrange coefficients
-		for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+		std::vector<size_t> parties_sorted = parties;
+		std::sort(parties_sorted.begin(), parties_sorted.end());
+		std::vector<size_t>::iterator ut = std::unique(parties_sorted.begin(), parties_sorted.end());
+		parties_sorted.resize(std::distance(parties_sorted.begin(), ut));
+		if ((parties.size() <= dkg->t) || (shares.size() <= dkg->t) || (parties.size() != shares.size()) || (parties_sorted.size() <= dkg->t))
 		{
-			if (*lt != *jt)
-				mpz_mul_ui(a, a, (*lt + 1)); // adjust index in computation
+			std::cerr << "ERROR: not enough decryption shares collected" << std::endl;
+			throw false;
 		}
-		mpz_set_ui(b, 1L);
-		for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+		if (parties.size() > (dkg->t + 1))
+			parties.resize(dkg->t + 1); // we need exactly $t + 1$ decryption shares
+		if (opt_verbose)
 		{
-			if (*lt != *jt)
+			std::cout << "combine_decryption_shares(): Lagrange interpolation with ";
+			for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
+				std::cout << "P_" << *jt << " ";
+			std::cout << std::endl;
+		}
+
+		// compute $R = \prod_{i\in\Lambda} r_i^\lambda_{i,\Lambda} \bmod p$ where $\lambda_{i, \Lambda} = \prod_{l\in\Lambda\setminus\{i\}\frac{l}{l-i}}$
+		size_t j = 0;
+		for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt, ++j)
+		{
+			mpz_set_ui(a, 1L); // compute optimized Lagrange coefficients
+			for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
 			{
-				mpz_set_ui(c, (*lt + 1)); // adjust index in computation
-				mpz_sub_ui(c, c, (*jt + 1)); // adjust index in computation
-				mpz_mul(b, b, c);
+				if (*lt != *jt)
+					mpz_mul_ui(a, a, (*lt + 1)); // adjust index in computation
 			}
+			mpz_set_ui(b, 1L);
+			for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+			{
+				if (*lt != *jt)
+				{
+					mpz_set_ui(c, (*lt + 1)); // adjust index in computation
+					mpz_sub_ui(c, c, (*jt + 1)); // adjust index in computation
+					mpz_mul(b, b, c);
+				}
+			}
+			if (!mpz_invert(b, b, nizk_q))
+			{
+				std::cerr << "ERROR: cannot invert during interpolation" << std::endl;
+				throw false;
+			}
+			mpz_mul(lambda, a, b);
+			mpz_mod(lambda, lambda, nizk_q); // computation of Lagrange coefficients finished
+			// interpolate and accumulate correct decryption shares
+			mpz_powm(a, shares[j], lambda, nizk_p);
+			mpz_mul(R, R, a);
+			mpz_mod(R, R, nizk_p);
 		}
-		if (!mpz_invert(b, b, nizk_q))
+
+		// copy the result from R to gk
+		gcry_mpi_release(gk);
+		if (!mpz_get_gcry_mpi(&gk, R))
 		{
-			std::cerr << "ERROR: cannot invert during interpolation" << std::endl;
+			std::cerr << "ERROR: converting interpolated result failed" << std::endl;
 			exit(-1);
 		}
-		mpz_mul(lambda, a, b);
-		mpz_mod(lambda, lambda, nizk_q); // computation of Lagrange coefficients finished
-		// interpolate and accumulate correct decryption shares
-		mpz_powm(a, shares[j], lambda, nizk_p);
-		mpz_mul(R, R, a);
-		mpz_mod(R, R, nizk_p);
-	}
 
-	// copy the result from R to gk
-	gcry_mpi_release(gk);
-	if (!mpz_get_gcry_mpi(&gk, R))
+		// finish
+		throw true;
+	}
+	catch (bool return_value)
 	{
-		std::cerr << "ERROR: converting interpolated result failed" << std::endl;
-		exit(-1);
+		// release
+		mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(lambda), mpz_clear(R);
+		mpz_clear(nizk_p), mpz_clear(nizk_q);
+		// return
+		return return_value;
 	}
-
-	// release
-	mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(lambda), mpz_clear(R);
-	mpz_clear(nizk_p), mpz_clear(nizk_q);
 }
 
 void decrypt_session_key
@@ -1727,7 +1739,7 @@ void run_instance
 	}
 
 	// Lagrange interpolation
-	combine_decryption_shares(interpol_parties, interpol_shares);
+	bool res = combine_decryption_shares(interpol_parties, interpol_shares);
 
 	// release mpis and collected shares	
 	mpz_clear(idx), mpz_clear(r_i);
@@ -1770,17 +1782,21 @@ void run_instance
 
 	// do remaining decryption work
 	tmcg_octets_t msg, seskey;
-	decrypt_session_key(seskey);
-	decrypt_message(enc, seskey, msg);
+	if (res)
+	{
+		decrypt_session_key(seskey);
+		decrypt_message(enc, seskey, msg);
+		// output result
+		if (opt_ofilename != NULL)
+			write_message(opt_ofilename, msg);
+		else
+			print_message(msg);
+	}
+
+	// release
 	release_mpis();
 	release_keys();
 	done_dkg();
-
-	// output result
-	if (opt_ofilename != NULL)
-		write_message(opt_ofilename, msg);
-	else
-		print_message(msg);
 }
 
 void fork_instance
@@ -2047,7 +2063,7 @@ int main
 			else
 				std::cout << "WARNING: verification of decryption share from P_" << idx << " failed" << std::endl;
 		}
-		combine_decryption_shares(interpol_parties, interpol_shares);
+		bool res = combine_decryption_shares(interpol_parties, interpol_shares);
 		mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
 		for (size_t i = 0; i < interpol_shares.size(); i++)
 		{
@@ -2055,16 +2071,24 @@ int main
 			delete [] interpol_shares[i];
 		}
 		interpol_shares.clear(), interpol_parties.clear();
-		decrypt_session_key(seskey);
-		decrypt_message(enc, seskey, msg);
+		if (res)
+		{
+			decrypt_session_key(seskey);
+			decrypt_message(enc, seskey, msg);
+		}
 		release_mpis();
 		release_keys();
 		done_dkg();
-		if (opt_ofilename != NULL)
-			write_message(opt_ofilename, msg);
+		if (res)
+		{
+			if (opt_ofilename != NULL)
+				write_message(opt_ofilename, msg);
+			else
+				print_message(msg);
+			return 0;
+		}
 		else
-			print_message(msg);
-		return 0;
+			return 1;
 	}
 
 	// start interactive variant with GNUnet or otherwise a local test
