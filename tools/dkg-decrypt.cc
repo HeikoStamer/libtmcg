@@ -1824,9 +1824,11 @@ int main
 	static const char *usage = "dkg-decrypt [OPTIONS] PEERS";
 	static const char *about = "threshold decryption for OpenPGP (only ElGamal)";
 #ifdef GNUNET
-	char **dummy = NULL;
+	char *loglev = NULL;
+	char *logfile = NULL;
+	char *cfg_fn = NULL;
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
-		GNUNET_GETOPT_option_cfgfile(dummy),
+		GNUNET_GETOPT_option_cfgfile(&cfg_fn),
 		GNUNET_GETOPT_option_help(about),
 		GNUNET_GETOPT_option_string('i',
 			"input",
@@ -1834,8 +1836,8 @@ int main
 			"read encrypted message from FILENAME",
 			&gnunet_opt_ifilename
 		),
-		GNUNET_GETOPT_option_logfile(dummy),
-		GNUNET_GETOPT_option_loglevel(dummy),
+		GNUNET_GETOPT_option_logfile(&logfile),
+		GNUNET_GETOPT_option_loglevel(&loglev),
 		GNUNET_GETOPT_option_flag('n',
 			"non-interactive",
 			"run in non-interactive mode",
@@ -1955,7 +1957,6 @@ int main
 		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
 		return -1;
 	}
-
 #ifdef GNUNET
 	if (gnunet_opt_ifilename != NULL)
 		read_message(gnunet_opt_ifilename, armored_message);
