@@ -1919,6 +1919,9 @@ algorithms are defined by global symbols (@code{TMCG_GCRY_MAC_ALGO} and
 	@deftypecv {Member} aiounicast {static const time_t} aio_timeout_very_long
 		This constant defines a very long time interval of 180 seconds.
 	@end deftypecv
+	@deftypecv {Member} aiounicast {static const time_t} aio_timeout_extremly_long
+		This constant defines an extremly long time interval of 300 seconds.
+	@end deftypecv
 	@deftypecv {Member} aiounicast {static const size_t} aio_scheduler_roundrobin
 		This constant represents the round-robin scheduler for message processing.
 	@end deftypecv
