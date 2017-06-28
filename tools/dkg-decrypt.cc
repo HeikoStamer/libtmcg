@@ -1944,7 +1944,7 @@ int main
 			std::string arg = argv[i+1];
 			// ignore options
 			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || (arg.find("-l") == 0) ||
-				(arg.find("-i") == 0) || (arg.find("-o") == 0))
+				(arg.find("-i") == 0) || (arg.find("-o") == 0) || (arg.find("-x") == 0))
 			{
 				i++;
 				continue;
