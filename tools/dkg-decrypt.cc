@@ -1547,7 +1547,7 @@ void release_keys
 }
 
 void run_instance
-	(size_t whoami)
+	(size_t whoami, const size_t num_xtests)
 {
 	std::string dds, thispeer = peers[whoami];
 	size_t whoami_dkg;
@@ -1594,6 +1594,24 @@ void run_instance
 	size_t T_RBC = (peers.size() - 1) / 3; // assume maximum asynchronous t-resilience for RBC
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(peers.size(), T_RBC, whoami, aiou2);
 	rbc->setID(myID);
+
+	// perform a simple exchange test with debug output
+	for (size_t i = 0; i < num_xtests; i++)
+	{
+		mpz_t xtest;
+		mpz_init_set_ui(xtest, i);
+		std::cout << "P_" << whoami << ": xtest = " << xtest << " <-> ";
+		rbc->Broadcast(xtest);
+		for (size_t ii = 0; ii < peers.size(); ii++)
+		{
+			if (!rbc->DeliverFrom(xtest, ii))
+				std::cout << "<X> ";
+			else
+				std::cout << xtest << " ";
+		}
+		std::cout << std::endl;
+		mpz_clear(xtest);
+	}
 
 	// initialize for interactive part
 	mpz_t crs_p, crs_q, crs_g, crs_k;
@@ -1799,6 +1817,10 @@ void run_instance
 	done_dkg();
 }
 
+#ifdef GNUNET
+unsigned int gnunet_opt_xtests = 0;
+#endif
+
 void fork_instance
 	(const size_t whoami)
 {
@@ -1809,8 +1831,11 @@ void fork_instance
 		if (pid[whoami] == 0)
 		{
 			/* BEGIN child code: participant P_i */
-			run_instance(whoami);
-
+#ifdef GNUNET
+			run_instance(whoami, gnunet_opt_xtests);
+#else
+			run_instance(whoami, 0);
+#endif
 			if (opt_verbose)
 				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
@@ -1882,6 +1907,12 @@ int main
 			NULL,
 			"minutes to wait until start of decryption",
 			&gnunet_opt_wait
+		),
+		GNUNET_GETOPT_option_uint('x',
+			"x-tests",
+			NULL,
+			"number of exchange tests",
+			&gnunet_opt_xtests
 		),
 		GNUNET_GETOPT_OPTION_END
 	};
@@ -2127,6 +2158,12 @@ int main
 			NULL,
 			"minutes to wait until start of decryption",
 			&gnunet_opt_wait
+		),
+		GNUNET_GETOPT_option_uint('x',
+			"x-tests",
+			NULL,
+			"number of exchange tests",
+			&gnunet_opt_xtests
 		),
 		GNUNET_GETOPT_OPTION_END
 	};
