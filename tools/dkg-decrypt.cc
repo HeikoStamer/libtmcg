@@ -1071,19 +1071,20 @@ void prove_decryption_share_interactive_publiccoin
 	mpz_init(c), mpz_init(r), mpz_init(c2), mpz_init(a), mpz_init(b), mpz_init(omega);
 	// 1. commitment
 	mpz_srandomm(omega, nizk_q);
-	mpz_spowm(a, nizk_gk, omega, nizk_p);
-	mpz_spowm(b, nizk_g, omega, nizk_p);
+	mpz_spowm(a, nizk_g, omega, nizk_p);
+	mpz_spowm(b, nizk_gk, omega, nizk_p);
 	rbc->Broadcast(a);
 	rbc->Broadcast(b);
 	// 2. challenge
-	if (!edcf->Flip(rbc->j, c, aiou, rbc, err))
-		mpz_set_ui(c, 0L); // indicates an error
-	// 3. response
-	mpz_mul(r, c, x_i);
-	mpz_mod(r, r, nizk_q);
-	mpz_add(r, r, omega);
-	mpz_mod(r, r, nizk_q);
-	rbc->Broadcast(r);
+	if (edcf->Flip(rbc->j, c, aiou, rbc, err))
+	{
+		// 3. response
+		mpz_mul(r, c, x_i);
+		mpz_mod(r, r, nizk_q);
+		mpz_add(r, r, omega);
+		mpz_mod(r, r, nizk_q);
+		rbc->Broadcast(r);
+	}
 	// release
 	mpz_clear(c), mpz_clear(r), mpz_clear(c2), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
 	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i);
