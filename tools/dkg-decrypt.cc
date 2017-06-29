@@ -1744,7 +1744,7 @@ void run_instance
 			}
 			if (std::find(complaints.begin(), complaints.end(), i) == complaints.end())
 			{
-				std::cout << "good decryption share received from P_" << i << std::endl;
+				std::cout << "P_" << whoami << ": good decryption share received from P_" << i << std::endl;
 				// collect only verified decryption shares
 				mpz_ptr tmp1 = new mpz_t();
 				mpz_init_set(tmp1, r_i);
@@ -1782,7 +1782,7 @@ void run_instance
 	interpol_shares.clear(), interpol_parties.clear();
 
 	// at the end: deliver some more rounds for waiting parties
-	time_t synctime = aiounicast::aio_timeout_very_long;
+	time_t synctime = aiounicast::aio_timeout_long;
 	std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
 	rbc->Sync(synctime);
 
