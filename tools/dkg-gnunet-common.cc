@@ -547,7 +547,7 @@ void gnunet_statistics(void *cls)
 		std::cout << "INFO: send_queue.size() = " << send_queue.size() << ", send_queue_broadcast.size() = " << send_queue_broadcast.size() << std::endl;
 	if (instance_forked)
 	{
-		// shutdown, if forked DKG instance has terminated 
+		// shutdown, if forked instance has terminated 
 		int wstatus = 0;
 		int thispid = pid[peer2pipe[thispeer]];
 		int ret = waitpid(thispid, &wstatus, WNOHANG);

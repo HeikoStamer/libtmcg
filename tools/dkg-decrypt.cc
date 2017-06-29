@@ -1257,7 +1257,9 @@ bool verify_decryption_share_interactive_publiccoin
 		}
 		// 2. challenge: $c\in\mathbb{Z}_q$ is computed by a distributed coin-flip protocol [JL00]
 		if (!edcf->Flip(rbc->j, c, aiou, rbc, err))
+		{
 			throw false;
+		}
 		// 3. receive, check and verify the response
 		if (!rbc->DeliverFrom(r, idx))
 		{
@@ -1550,7 +1552,7 @@ void release_keys
 void run_instance
 	(size_t whoami, const size_t num_xtests)
 {
-	std::string dds, thispeer = peers[whoami];
+	std::string thispeer = peers[whoami];
 	size_t whoami_dkg;
 	init_dkg(thispeer + ".dkg", whoami_dkg);
 	read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
@@ -1648,7 +1650,7 @@ void run_instance
 	// create and exchange keys in order to bootstrap the $h$-generation for EDCF [JL00]
 	// TODO: replace N-time NIZK by one interactive (distributed) zero-knowledge proof of knowledge
 	if (opt_verbose)
-		std::cout << "generate h by using VTMF key generation protocol" << std::endl;
+		std::cout << "INFO: generate h by using VTMF key generation protocol" << std::endl;
 	mpz_t nizk_c, nizk_r, h_j;
 	mpz_init(nizk_c), mpz_init(nizk_r), mpz_init(h_j);
 	vtmf->KeyGenerationProtocol_GenerateKey();
@@ -1676,7 +1678,7 @@ void run_instance
 			lej << h_j << std::endl << nizk_c << std::endl << nizk_r << std::endl;
 			if (!vtmf->KeyGenerationProtocol_UpdateKey(lej))
 			{
-				std::cerr << "P_" << whoami << ": " << "Public key of P_" << i << " was not correctly generated!" << std::endl;
+				std::cerr << "P_" << whoami << ": WARNING - public key of P_" << i << " was not correctly generated!" << std::endl;
 			}
 		}
 	}
@@ -1684,33 +1686,34 @@ void run_instance
 	mpz_clear(nizk_c), mpz_clear(nizk_r), mpz_clear(h_j);
 
 	// create an instance of the distributed coin-flip protocol (EDCF)
+	size_t T_EDCF = (peers.size() - 1) / 2; // assume maximum synchronous t-resilience for EDCF
 	if (opt_verbose)
-		std::cout << "JareckiLysyanskayaEDCF(" << peers.size() << ", " << T_RBC << ", ...)" << std::endl;
-	JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(peers.size(), T_RBC, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+		std::cout << "JareckiLysyanskayaEDCF(" << peers.size() << ", " << T_EDCF << ", ...)" << std::endl;
+	JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(peers.size(), T_EDCF, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 
-	// compute own decryption share and check it
-	size_t idx_dkg;
+	// initialize
 	mpz_t idx, r_i, c, r;
 	mpz_init(idx), mpz_init(r_i), mpz_init(c), mpz_init(r);
-	compute_decryption_share(whoami_dkg, dds);
-	if (!verify_decryption_share(dds, idx_dkg, r_i, c, r))
-		std::cout << "WARNING: verification of own decryption share failed for P_" << whoami << std::endl;
-	else
-		mpz_set_ui(idx, idx_dkg);
-	mpz_clear(c), mpz_clear(r);
-
-	// broadcast own decryption share
-	rbc->Broadcast(idx);
-	rbc->Broadcast(r_i);
-
-	// use this decryption share for Lagrange interpolation
 	std::vector<size_t> interpol_parties;
 	std::vector<mpz_ptr> interpol_shares;
-	mpz_ptr tmp1 = new mpz_t();
-	mpz_init_set(tmp1, r_i);
-	interpol_parties.push_back(whoami_dkg), interpol_shares.push_back(tmp1);
 
-	// collect at least t other decryption shares
+	// compute own decryption share and store it
+	std::string dds;
+	size_t idx_tmp;
+	compute_decryption_share(whoami_dkg, dds);
+	if (verify_decryption_share(dds, idx_tmp, r_i, c, r))
+	{
+		// use this decryption share as first point for Lagrange interpolation
+		mpz_ptr tmp1 = new mpz_t();
+		mpz_init_set(tmp1, r_i);
+		interpol_parties.push_back(whoami_dkg), interpol_shares.push_back(tmp1);
+	}
+	else
+		std::cerr << "WARNING: verification of own decryption share failed for P_" << whoami << std::endl;
+
+	// collect other decryption shares
+	if (opt_verbose)
+		std::cout << "INFO: start collecting other decryption shares" << std::endl;
 	std::vector<size_t> complaints;
 	for (size_t i = 0; i < peers.size(); i++)
 	{
@@ -1731,7 +1734,7 @@ void run_instance
 			}
 			// verify decryption share interactively
 			std::stringstream err_log;
-			idx_dkg = mpz_get_ui(idx);
+			size_t idx_dkg = mpz_get_ui(idx);
 			if (!verify_decryption_share_interactive_publiccoin(i, idx_dkg, r_i, aiou, rbc, edcf, err_log))
 			{
 				std::cerr << "WARNING: interactive verification of decryption share from P_" << i << " failed" << std::endl;
@@ -1741,6 +1744,7 @@ void run_instance
 			}
 			if (std::find(complaints.begin(), complaints.end(), i) == complaints.end())
 			{
+				std::cout << "good decryption share received from P_" << i << std::endl;
 				// collect only verified decryption shares
 				mpz_ptr tmp1 = new mpz_t();
 				mpz_init_set(tmp1, r_i);
@@ -1749,19 +1753,26 @@ void run_instance
 		}
 		else
 		{
+			if (verify_decryption_share(dds, idx_tmp, r_i, c, r))
+				mpz_set_ui(idx, idx_tmp);
+			else
+				mpz_set_ui(idx, dkg->n); // indicates an error
+			// broadcast own index and decryption share
+			rbc->Broadcast(idx);
+			rbc->Broadcast(r_i);
 			// prove own decryption share interactively
 			std::stringstream err_log;
-			prove_decryption_share_interactive_publiccoin(interpol_parties[0], interpol_shares[0], aiou, rbc, edcf, err_log);
+			prove_decryption_share_interactive_publiccoin(idx_tmp, r_i, aiou, rbc, edcf, err_log);
 			if (opt_verbose)
-				std::cerr << err_log.str() << std::endl;
+				std::cout << "prove_decryption_share_interactive_publiccoin() finished; log follows" << std::endl << err_log.str() << std::endl;
 		}
 	}
 
 	// Lagrange interpolation
 	bool res = combine_decryption_shares(interpol_parties, interpol_shares);
 
-	// release mpis and collected shares	
-	mpz_clear(idx), mpz_clear(r_i);
+	// release
+	mpz_clear(idx), mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
 	mpz_clear(crs_p), mpz_clear(crs_q), mpz_clear(crs_g), mpz_clear(crs_k);
 	for (size_t i = 0; i < interpol_shares.size(); i++)
 	{
