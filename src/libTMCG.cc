@@ -83,11 +83,11 @@ bool init_libTMCG
 			"] not available" << std::endl;
 		return false;
 	}
-	if (gcry_md_test_algo(GCRY_MD_SHA256)) // check for SHA256
+	if (gcry_md_test_algo(GCRY_MD_SHA256)) // check for SHA2-256
 	{
 		std::cerr << "init_libTMCG(): libgcrypt algorithm " <<
 			GCRY_MD_SHA256 << " [" <<
-			"SHA256" <<
+			"SHA2-256" <<
 			"] not available" << std::endl;
 		return false;
 	}
