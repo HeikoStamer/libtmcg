@@ -557,7 +557,7 @@ void gnunet_statistics(void *cls)
 		{
 			if (!WIFEXITED(wstatus))
 			{
-				std::cerr << "ERROR: DKG instance ";
+				std::cerr << "ERROR: instance ";
 				if (WIFSIGNALED(wstatus))
 					std::cerr << thispid << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
 				if (WCOREDUMP(wstatus))
