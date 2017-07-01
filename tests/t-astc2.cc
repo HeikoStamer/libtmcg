@@ -171,7 +171,32 @@ void start_instance
 			if (!corrupted)
 				assert(ret);
 
-// TODO: check singing and verifying a hash value of a message
+			// check signing and verifying of a message
+			std::stringstream err_log_sign;
+			mpz_t m, r, s;
+			mpz_init_set_ui(m, 42L), mpz_init_set_ui(r, 0L), mpz_init_set_ui(s, 0L);
+			start_clock();
+			std::cout << "P_" << whoami << ": dss.Sign(42, ...)" << std::endl;
+			if (corrupted)
+				dss->Sign(m, r, s, aiou, rbc, err_log_sign, true);
+			else
+				ret = dss->Sign(m, r, s, aiou, rbc, err_log_sign);
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
+			if (!corrupted)
+				assert(ret);
+			start_clock();
+			std::cout << "P_" << whoami << ": dss.Verify(42, ...)" << std::endl;
+			if (corrupted)
+				dss->Verify(m, r, s);
+			else
+				ret = dss->Verify(m, r, s);
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+//			if (!corrupted)
+//				assert(ret);
+			mpz_clear(m), mpz_clear(r), mpz_clear(s);
 
 			// release DSS
 			delete dss;

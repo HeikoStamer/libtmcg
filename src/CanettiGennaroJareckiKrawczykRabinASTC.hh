@@ -53,6 +53,7 @@
 
 	#include "aiounicast.hh"
 	#include "CachinKursawePetzoldShoupSEABP.hh"
+	#include "PedersenVSS.hh"
 
 /* This protocol is called Joint-RVSS in [CGJKR99]. It is basically a joint Pedersen VSS of a random value. 
    A slightly corrected version was pusblished by the same authors in an extended version of the paper. */
@@ -161,12 +162,13 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 		const unsigned long int			F_size, G_size;
 		const bool				use_very_strong_randomness;
 		const std::string			label;
-		CanettiGennaroJareckiKrawczykRabinRVSS	*x_rvss, *d_rvss;
+		CanettiGennaroJareckiKrawczykRabinRVSS	*d_rvss;
 	
 	public:
 		mpz_t					p, q, g, h;
 		size_t					n, t, i;
 		std::vector<size_t>			QUAL;
+		CanettiGennaroJareckiKrawczykRabinRVSS	*x_rvss;
 		mpz_t					x_i, xprime_i, y;
 		
 		CanettiGennaroJareckiKrawczykRabinDKG

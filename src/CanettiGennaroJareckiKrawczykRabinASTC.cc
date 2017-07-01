@@ -449,7 +449,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 			for (size_t k = 0; k <= tprime; k++)
 			{
 				mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
-				mpz_powm(bar, C_ik[j][k], foo , p);
+				mpz_powm(bar, C_ik[j][k], foo, p);
 				mpz_mul(rhs, rhs, bar);
 				mpz_mod(rhs, rhs, p);
 			}
@@ -579,7 +579,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 					for (size_t k = 0; k <= tprime; k++)
 					{
 						mpz_ui_pow_ui(foo, who + 1, k); // adjust index $j$ in computation
-						mpz_powm(bar, C_ik[j][k], foo , p);
+						mpz_powm(bar, C_ik[j][k], foo, p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
 					}
@@ -1237,7 +1237,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			for (size_t k = 0; k <= tprime; k++)
 			{
 				mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
-				mpz_powm(bar, C_ik[j][k], foo , p);
+				mpz_powm(bar, C_ik[j][k], foo, p);
 				mpz_mul(rhs, rhs, bar);
 				mpz_mod(rhs, rhs, p);
 			}
@@ -1374,7 +1374,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 					for (size_t k = 0; k <= tprime; k++)
 					{
 						mpz_ui_pow_ui(foo, who + 1, k); // adjust index $j$ in computation
-						mpz_powm(bar, C_ik[j][k], foo , p);
+						mpz_powm(bar, C_ik[j][k], foo, p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
 					}
@@ -2302,6 +2302,15 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		F_size, G_size, use_very_strong_randomness, "k_rvss");
 	CanettiGennaroJareckiKrawczykRabinDKG *a_dkg = new CanettiGennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h, 
 		F_size, G_size, use_very_strong_randomness, "a_dkg");
+	std::vector<PedersenVSS*> k_i_vss, a_i_vss;
+	for (size_t j = 0; j < n; j++)
+	{
+		std::stringstream k_i_vss_label, a_i_vss_label;
+		k_i_vss_label << "k_i_vss[" << j << "]";
+		k_i_vss.push_back(new PedersenVSS(n, t, i, p, q, g, h, F_size, G_size, false, k_i_vss_label.str()));
+		a_i_vss_label << "a_i_vss[" << j << "]";
+		a_i_vss.push_back(new PedersenVSS(n, t, i, p, q, g, h, F_size, G_size, false, a_i_vss_label.str()));
+	}
 	mpz_t foo, bar, lhs, rhs;
 	std::vector<mpz_ptr> k_i, a_i, alpha_i, beta_i, gamma_i, delta_i, v_i, chi_i;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
@@ -2335,13 +2344,14 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Player $P_i$ sets $k_i, k\prime_i$ to his share of the secret and the auxiliary secret.
 		mpz_set(k_i[i], k_rvss->x_i);
 		//        For each $i$ the value $\alpha_i = g^{k_i} h^{k\prime_i} \bmod p$ is public.
+		//        (Note that indices $i$ and $j$ are changed for convenience.)
 		for (size_t j = 0; j < n; j++)
 		{
 			mpz_set_ui(alpha_i[j], 1L);
 			for (size_t k = 0; k <= t; k++)
 			{
-				mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
-				mpz_powm(bar, k_rvss->C_ik[j][k], foo , p);
+				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $i$ in computation
+				mpz_powm(bar, k_rvss->C_ik[j][k], foo, p);
 				mpz_mul(alpha_i[j], alpha_i[j], bar);
 				mpz_mod(alpha_i[j], alpha_i[j], p);
 			}
@@ -2353,6 +2363,47 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			throw false;
 		//        Player $P_i$ sets $a_i, a\prime_i$ to his share of the secret $a$ and the auxiliary secret.
 		mpz_set(a_i[i], a_dkg->x_i);
+		//        For each $i$ the value $\beta_i = g^{a_i} h^{a\prime_i} \bmod p$ is public.
+		//        (Note that indices $i$ and $j$ are changed for convenience.)
+		for (size_t j = 0; j < n; j++)
+		{
+			mpz_set_ui(beta_i[j], 1L);
+			for (size_t k = 0; k <= t; k++)
+			{
+				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $i$ in computation
+				mpz_powm(bar, a_dkg->x_rvss->C_ik[j][k], foo, p);
+				mpz_mul(beta_i[j], beta_i[j], bar);
+				mpz_mod(beta_i[j], beta_i[j], p);
+			}
+		}
+		//    (c) Back-up $k_i$ and $a_i$. Each player $P_i$ shares $k_i$ and $a_i$ using Pedersen's VSS.
+		for (size_t j = 0; j < n; j++)
+		{
+			if (j != i)
+			{
+				if (!k_i_vss[j]->Share(j, aiou, rbc, err, simulate_faulty_behaviour))
+					err << "P_" << i << ": WARNING - VSS of k_i failed for P_" << j << std::endl;
+				if (!a_i_vss[j]->Share(j, aiou, rbc, err, simulate_faulty_behaviour))
+					err << "P_" << i << ": WARNING - VSS of a_i failed for P_" << j << std::endl;
+			}
+			else
+			{
+				if (!k_i_vss[j]->Share(k_i[i], aiou, rbc, err, simulate_faulty_behaviour))
+					throw false;
+				if (!a_i_vss[j]->Share(a_i[i], aiou, rbc, err, simulate_faulty_behaviour))
+					throw false;
+			}
+		}
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[2])
+			throw false;
+		//        The values $\gamma_i = g^{k_i} h^{\rho_i} \bmod p$ and $\delta_i = g^{a_i} h^{\sigma_i}$
+		//        (for some randomizers $\rho_i, \sigma_i$ are public.
+// TODO
+		//        $P_i$ is required to prove in ZK that the value committed to in $\alpha_i$ (resp. $\beta_i$)
+		//        is the same value committed to in $\gamma_i$ (resp. $\delta_i$). This ist done using a
+		//        zero-knowledge proof from [CD98]. This is a 3-move public coin proof and it is performed
+		//        by all players together computing the challenge as in Steps 3-4 of (the optimally-resilient)
+		//        DL-Key-Gen. Ignore those that fail this step. At least $t+1$ good players will pass it.
 // TODO
 
 		// 2. Generate $s = k(m + xr) \bmod q$
@@ -2377,6 +2428,12 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		k_i.clear(), a_i.clear(), alpha_i.clear(), beta_i.clear();
 		gamma_i.clear(), delta_i.clear(), v_i.clear(), chi_i.clear();
 // TODO
+		for (size_t j = 0; j < n; j++)
+		{
+			delete a_i_vss[j];
+			delete k_i_vss[j];
+		}
+		a_i_vss.clear(), k_i_vss.clear();
 		delete a_dkg;
 		delete k_rvss;
 
