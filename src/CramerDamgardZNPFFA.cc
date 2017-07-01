@@ -33,23 +33,21 @@
 #include "CramerDamgardZNPFFA.hh"
 
 CramerDamgardZNPFFA::CramerDamgardZNPFFA
-	(const size_t n_in, const size_t t_in, const size_t i_in,
-	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
+	(mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr y_CRS, mpz_srcptr g_CRS,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
 	const std::string label_in):
 			F_size(fieldsize), G_size(subgroupsize),
-			label(label_in),
-			n(n_in), t(t_in), i(i_in)
+			label(label_in)
 {
-	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
+	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(y, y_CRS), mpz_init_set(g, g_CRS);
 
 	// Do the precomputation for the fast exponentiation.
+	fpowm_table_y = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
-	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	mpz_fpowm_init(fpowm_table_y), mpz_fpowm_init(fpowm_table_g);
+	mpz_fpowm_precompute(fpowm_table_y, y, p, mpz_sizeinbase(q, 2L));
 	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 std::string CramerDamgardZNPFFA::Label
@@ -63,9 +61,9 @@ std::string CramerDamgardZNPFFA::Label
 CramerDamgardZNPFFA::~CramerDamgardZNPFFA
 	()
 {
-	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
+	mpz_clear(p), mpz_clear(q), mpz_clear(y), mpz_clear(g);
 	
-	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
-	delete [] fpowm_table_g, delete [] fpowm_table_h;
+	mpz_fpowm_done(fpowm_table_y), mpz_fpowm_done(fpowm_table_g);
+	delete [] fpowm_table_y, delete [] fpowm_table_g;
 }
 

@@ -54,23 +54,24 @@
 
 	#include "aiounicast.hh"
 	#include "CachinKursawePetzoldShoupSEABP.hh"
+	#include "JareckiLysyanskayaASTC.hh"
 
 /* The protocols are implemented according to the description in the technical report BRICS RS-97-27.
-   However, we consider only the "DISCRETE LOG GENERATOR" as underlying group homomorphism $f$. */
+   However, we consider only the "DISCRETE LOG GENERATOR" as $\mathcal{G}$, i.e., $p, q$ are primes
+   such that $q|p-1$, $H = \mathbb{Z}_q$, $G$ is the unique subgroup in $\mathbb{Z}_p^*$ of order $q$,
+   and $f\,:\, H\to G$ is the underlying group homomorphism s.t. $f(x) = g^x \bmod p$ for all $x\in H$. */
 class CramerDamgardZNPFFA
 {
 	private:
-		mpz_t					*fpowm_table_g, *fpowm_table_h;
+		mpz_t					*fpowm_table_y, *fpowm_table_g;
 		const unsigned long int			F_size, G_size;
 		const std::string			label;
 	
 	public:
-		mpz_t					p, q, g, h;
-		size_t					n, t, i;
+		mpz_t					p, q, y, g;
 		
 		CramerDamgardZNPFFA
-			(const size_t n_in, const size_t t_in, const size_t i_in,
-			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
+			(mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr y_CRS, mpz_srcptr g_CRS,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
 			const std::string label_in = "");
