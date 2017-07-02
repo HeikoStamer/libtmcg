@@ -107,7 +107,7 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 };
 
 /* This protocol is called Joint-ZVSS in [CGJKR99] and stands for "Joint Zero VSS". They used it as
-   subprotocol of Sig-Gen for randomization of polynomials to hide all partial information.
+   a subprotocol of Sig-Gen for randomization of polynomials to hide all partial information.
    It is a slight modification of Joint-RVSS where all players fix their values $z_i = a_{i0}$ and
    $b_{i0}$ to zero. This can be verified by other players by checking that $C_{i0} = 1 \bmod p$. */
 class CanettiGennaroJareckiKrawczykRabinZVSS
