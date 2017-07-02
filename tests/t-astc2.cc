@@ -194,8 +194,8 @@ void start_instance
 				ret = dss->Verify(m, r, s);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-//			if (!corrupted)
-//				assert(ret);
+			if (!corrupted)
+				assert(ret);
 			mpz_clear(m), mpz_clear(r), mpz_clear(s);
 
 			// release DSS

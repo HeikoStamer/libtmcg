@@ -50,9 +50,9 @@ PedersenVSS::PedersenVSS
 	mpz_init_set_ui(sigma_i, 0L), mpz_init_set_ui(tau_i, 0L);	
 	for (size_t j = 0; j <= t; j++)
 	{
-		mpz_ptr tmp3 = new mpz_t();
-		mpz_init(tmp3);
-		A_j.push_back(tmp3);
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3);
+		a_j.push_back(tmp1), b_j.push_back(tmp2), A_j.push_back(tmp3);
 	}
 
 	// Do the precomputation for the fast exponentiation.
@@ -93,10 +93,14 @@ PedersenVSS::PedersenVSS
 	in >> sigma_i >> tau_i;
 	for (size_t j = 0; j <= t; j++)
 	{
-		mpz_ptr tmp3 = new mpz_t();
-		mpz_init(tmp3);
-		A_j.push_back(tmp3);
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3);
+		a_j.push_back(tmp1), b_j.push_back(tmp2), A_j.push_back(tmp3);
 	}
+	for (size_t j = 0; j <= t; j++)
+		in >> a_j[j];
+	for (size_t j = 0; j <= t; j++)
+		in >> b_j[j];
 	for (size_t j = 0; j <= t; j++)
 		in >> A_j[j];
 
@@ -115,6 +119,10 @@ void PedersenVSS::PublishState
 	out << n << std::endl << t << std::endl << i << std::endl;
 	out << sigma_i << std::endl;
 	out << tau_i << std::endl;
+	for (size_t j = 0; j <= t; j++)
+		out << a_j[j] << std::endl;
+	for (size_t j = 0; j <= t; j++)
+		out << b_j[j] << std::endl;
 	for (size_t j = 0; j <= t; j++)
 		out << A_j[j] << std::endl;
 }
@@ -225,16 +233,10 @@ bool PedersenVSS::Share
 
 	// initialize
 	mpz_t foo, bar;
-	std::vector<mpz_ptr> a_j, b_j;
+	
 	size_t complaints_counter = 0;
 	std::vector<size_t> complaints_from;
 	mpz_init(foo), mpz_init(bar);
-	for (size_t j = 0; j <= t; j++)
-	{
-		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t();
-		mpz_init(tmp1), mpz_init(tmp2);
-		a_j.push_back(tmp1), b_j.push_back(tmp2);
-	}
 	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
 	size_t simulate_faulty_randomizer2 = mpz_wrandom_ui() % 2L;
 
@@ -386,12 +388,6 @@ bool PedersenVSS::Share
 		rbc->unsetID();
 		// release
 		mpz_clear(foo), mpz_clear(bar);
-		for (size_t j = 0; j <= t; j++)
-		{
-			mpz_clear(a_j[j]), mpz_clear(b_j[j]);
-			delete [] a_j[j], delete [] b_j[j];
-		}
-		a_j.clear(), b_j.clear();
 		// return
 		return return_value;
 	}
@@ -759,6 +755,18 @@ PedersenVSS::~PedersenVSS
 {
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
 	mpz_clear(sigma_i), mpz_clear(tau_i);
+	for (size_t j = 0; j < a_j.size(); j++)
+	{
+		mpz_clear(a_j[j]);
+		delete [] a_j[j];
+	}
+	a_j.clear();
+	for (size_t j = 0; j < b_j.size(); j++)
+	{
+		mpz_clear(b_j[j]);
+		delete [] b_j[j];
+	}
+	b_j.clear();
 	for (size_t j = 0; j < A_j.size(); j++)
 	{
 		mpz_clear(A_j[j]);

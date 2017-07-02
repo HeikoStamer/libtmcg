@@ -71,7 +71,7 @@ class PedersenVSS
 		mpz_t					p, q, g, h;
 		size_t					n, t, i;
 		mpz_t					sigma_i, tau_i;
-		std::vector<mpz_ptr>			A_j;
+		std::vector<mpz_ptr> 			a_j, b_j, A_j;
 		
 		PedersenVSS
 			(const size_t n_in, const size_t t_in, const size_t i_in,

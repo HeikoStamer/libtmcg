@@ -2397,8 +2397,27 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[2])
 			throw false;
 		//        The values $\gamma_i = g^{k_i} h^{\rho_i} \bmod p$ and $\delta_i = g^{a_i} h^{\sigma_i}$
-		//        (for some randomizers $\rho_i, \sigma_i$ are public.
-// TODO
+		//        (for some randomizers $\rho_i, \sigma_i$) are public.
+		//        (Note that indices $i$ and $j$ are changed for convenience.)
+		for (size_t j = 0; j < n; j++)
+		{
+			mpz_set_ui(gamma_i[j], 1L);
+			for (size_t k = 0; k <= k_i_vss[j]->t; k++)
+			{
+				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $i$ in computation
+				mpz_powm(bar, k_i_vss[j]->A_j[k], foo, p);
+				mpz_mul(gamma_i[j], gamma_i[j], bar);
+				mpz_mod(gamma_i[j], gamma_i[j], p);
+			}
+			mpz_set_ui(delta_i[j], 1L);
+			for (size_t k = 0; k <= a_i_vss[j]->t; k++)
+			{
+				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $i$ in computation
+				mpz_powm(bar, a_i_vss[j]->A_j[k], foo, p);
+				mpz_mul(delta_i[j], delta_i[j], bar);
+				mpz_mod(delta_i[j], delta_i[j], p);
+			}
+		}
 		//        $P_i$ is required to prove in ZK that the value committed to in $\alpha_i$ (resp. $\beta_i$)
 		//        is the same value committed to in $\gamma_i$ (resp. $\delta_i$). This ist done using a
 		//        zero-knowledge proof from [CD98]. This is a 3-move public coin proof and it is performed
