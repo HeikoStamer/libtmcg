@@ -90,7 +90,7 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 			(std::ostream &out) const;
 		std::string Label
 			() const;
-		void Erase
+		void EraseSecrets
 			();
 		bool CheckGroup
 			() const;
@@ -142,7 +142,7 @@ class CanettiGennaroJareckiKrawczykRabinZVSS
 			(std::ostream &out) const;
 		std::string Label
 			() const;
-		void Erase
+		void EraseSecrets
 			();
 		bool CheckGroup
 			() const;

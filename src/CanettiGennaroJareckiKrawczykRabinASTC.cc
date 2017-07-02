@@ -193,12 +193,11 @@ std::string CanettiGennaroJareckiKrawczykRabinRVSS::Label
 	return label;
 }
 
-void CanettiGennaroJareckiKrawczykRabinRVSS::Erase
+void CanettiGennaroJareckiKrawczykRabinRVSS::EraseSecrets
 	()
 {
 	mpz_set_ui(x_i, 0L), mpz_set_ui(xprime_i, 0L);
 	mpz_set_ui(z_i, 0L), mpz_set_ui(zprime_i, 0L);
-	QUAL.clear();
 	for (size_t i = 0; i < n; i++)
 	{
 		for (size_t j = 0; j < n; j++)
@@ -206,8 +205,6 @@ void CanettiGennaroJareckiKrawczykRabinRVSS::Erase
 			mpz_set_ui(s_ji[j][i], 0L);
 			mpz_set_ui(sprime_ji[j][i], 0L);
 		}
-		for (size_t k = 0; k <= tprime; k++)
-			mpz_set_ui(C_ik[i][k], 0L);
 	}	
 }
 
@@ -978,11 +975,10 @@ std::string CanettiGennaroJareckiKrawczykRabinZVSS::Label
 	return label;
 }
 
-void CanettiGennaroJareckiKrawczykRabinZVSS::Erase
+void CanettiGennaroJareckiKrawczykRabinZVSS::EraseSecrets
 	()
 {
 	mpz_set_ui(x_i, 0L), mpz_set_ui(xprime_i, 0L);
-	QUAL.clear();
 	for (size_t i = 0; i < n; i++)
 	{
 		for (size_t j = 0; j < n; j++)
@@ -990,8 +986,6 @@ void CanettiGennaroJareckiKrawczykRabinZVSS::Erase
 			mpz_set_ui(s_ji[j][i], 0L);
 			mpz_set_ui(sprime_ji[j][i], 0L);
 		}
-		for (size_t k = 0; k <= tprime; k++)
-			mpz_set_ui(C_ik[i][k], 0L);
 	}	
 }
 
@@ -2018,8 +2012,8 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		err << "}" << std::endl;
 		err << "DKG(" << label << "): P_" << i << ": y = " << y << std::endl;
 		// 9. Player $P_i$ erases all secret information aside from his share $x_i$.
-		x_rvss->Erase();
-		d_rvss->Erase();
+		x_rvss->EraseSecrets();
+		d_rvss->EraseSecrets();
 		for (size_t j = 0; j < z_i.size(); j++)
 			mpz_set_ui(z_i[j], 0L);
 
@@ -2311,9 +2305,9 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		a_i_vss_label << "a_i_vss[" << j << "]";
 		a_i_vss.push_back(new PedersenVSS(n, t, i, p, q, g, h, F_size, G_size, false, a_i_vss_label.str()));
 	}
-	mpz_t foo, bar, lhs, rhs;
+	mpz_t foo, bar, lhs, rhs, kprime_i, aprime_i, rho_i, sigma_i;
 	std::vector<mpz_ptr> k_i, a_i, alpha_i, beta_i, gamma_i, delta_i, v_i, chi_i;
-	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs), mpz_init(kprime_i), mpz_init(aprime_i), mpz_init(rho_i), mpz_init(sigma_i);
 	for (size_t j = 0; j < n; j++)
 	{
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(), tmp4 = new mpz_t();
@@ -2342,13 +2336,13 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[0])
 			throw false;
 		//        Player $P_i$ sets $k_i, k\prime_i$ to his share of the secret and the auxiliary secret.
-		mpz_set(k_i[i], k_rvss->x_i);
+		mpz_set(k_i[i], k_rvss->x_i), mpz_set(kprime_i, k_rvss->xprime_i);
 		//        For each $i$ the value $\alpha_i = g^{k_i} h^{k\prime_i} \bmod p$ is public.
 		//        (Note that indices $i$ and $j$ are changed for convenience.)
 		for (size_t j = 0; j < n; j++)
 		{
 			mpz_set_ui(alpha_i[j], 1L);
-			for (size_t k = 0; k <= t; k++)
+			for (size_t k = 0; k <= k_rvss->t; k++)
 			{
 				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $i$ in computation
 				mpz_powm(bar, k_rvss->C_ik[j][k], foo, p);
@@ -2362,13 +2356,13 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[1])
 			throw false;
 		//        Player $P_i$ sets $a_i, a\prime_i$ to his share of the secret $a$ and the auxiliary secret.
-		mpz_set(a_i[i], a_dkg->x_i);
+		mpz_set(a_i[i], a_dkg->x_i), mpz_set(aprime_i, a_dkg->xprime_i);
 		//        For each $i$ the value $\beta_i = g^{a_i} h^{a\prime_i} \bmod p$ is public.
 		//        (Note that indices $i$ and $j$ are changed for convenience.)
 		for (size_t j = 0; j < n; j++)
 		{
 			mpz_set_ui(beta_i[j], 1L);
-			for (size_t k = 0; k <= t; k++)
+			for (size_t k = 0; k <= a_dkg->x_rvss->t; k++)
 			{
 				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $i$ in computation
 				mpz_powm(bar, a_dkg->x_rvss->C_ik[j][k], foo, p);
@@ -2388,6 +2382,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 			else
 			{
+				err << "P_" << i << ": k_i = " << k_i[i] << std::endl;
+				err << "P_" << i << ": a_i = " << a_i[i] << std::endl;
 				if (!k_i_vss[j]->Share(k_i[i], aiou, rbc, err, simulate_faulty_behaviour))
 					throw false;
 				if (!a_i_vss[j]->Share(a_i[i], aiou, rbc, err, simulate_faulty_behaviour))
@@ -2404,7 +2400,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			mpz_set_ui(gamma_i[j], 1L);
 			for (size_t k = 0; k <= k_i_vss[j]->t; k++)
 			{
-				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $i$ in computation
+				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
 				mpz_powm(bar, k_i_vss[j]->A_j[k], foo, p);
 				mpz_mul(gamma_i[j], gamma_i[j], bar);
 				mpz_mod(gamma_i[j], gamma_i[j], p);
@@ -2412,10 +2408,43 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			mpz_set_ui(delta_i[j], 1L);
 			for (size_t k = 0; k <= a_i_vss[j]->t; k++)
 			{
-				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $i$ in computation
+				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
 				mpz_powm(bar, a_i_vss[j]->A_j[k], foo, p);
 				mpz_mul(delta_i[j], delta_i[j], bar);
 				mpz_mod(delta_i[j], delta_i[j], p);
+			}
+			if (j == i)
+			{
+				// Additionally, the dealer computes $\rho_i$ and $\sigma_i$.
+				mpz_set_ui(rho_i, 0L), mpz_set_ui(sigma_i, 0L);
+				for (size_t jj = 0; jj < n; jj++)
+				{
+					if (jj != i)
+					{
+						mpz_set_ui(bar, 0L);
+						for (size_t k = 0; k <= k_i_vss[i]->t; k++)
+						{
+							mpz_ui_pow_ui(foo, jj + 1, k); // adjust index $j$ in computation
+							mpz_mul(foo, foo, k_i_vss[i]->b_j[k]);
+							mpz_mod(foo, foo, q);
+							mpz_add(bar, bar, foo);
+							mpz_mod(bar, bar, q);
+						}
+						mpz_add(rho_i, rho_i, bar);
+						mpz_mod(rho_i, rho_i, q);
+						mpz_set_ui(bar, 0L);
+						for (size_t k = 0; k <= a_i_vss[i]->t; k++)
+						{
+							mpz_ui_pow_ui(foo, jj + 1, k); // adjust index $j$ in computation
+							mpz_mul(foo, foo, a_i_vss[i]->b_j[k]);
+							mpz_mod(foo, foo, q);
+							mpz_add(bar, bar, foo);
+							mpz_mod(bar, bar, q);
+						}
+						mpz_add(sigma_i, sigma_i, bar);
+						mpz_mod(sigma_i, sigma_i, q);
+					}
+				}
 			}
 		}
 		//        $P_i$ is required to prove in ZK that the value committed to in $\alpha_i$ (resp. $\beta_i$)
@@ -2423,7 +2452,27 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        zero-knowledge proof from [CD98]. This is a 3-move public coin proof and it is performed
 		//        by all players together computing the challenge as in Steps 3-4 of (the optimally-resilient)
 		//        DL-Key-Gen. Ignore those that fail this step. At least $t+1$ good players will pass it.
+		//        (Note that indices $i$ and $j$ are changed for convenience.)
+		for (size_t j = 0; j < n; j++)
+		{
+			err << "P_" << i << ": alpha_i[" << j << "] = " << alpha_i[j] << std::endl;
+			err << "P_" << i << ": beta_i[" << j << "] = " << beta_i[j] << std::endl;
+			err << "P_" << i << ": gamma_i[" << j << "] = " << gamma_i[j] << std::endl;
+			err << "P_" << i << ": delta_i[" << j << "] = " << delta_i[j] << std::endl;
+		}
+		err << "P_" << i << ": kprime_i = " << kprime_i << std::endl;
+		err << "P_" << i << ": aprime_i = " << aprime_i << std::endl;
+		err << "P_" << i << ": rho_i = " << rho_i << std::endl;
+		err << "P_" << i << ": sigma_i = " << sigma_i << std::endl;
+		for (size_t j = 0; j < n; j++)
+		{
+
 // TODO
+		}
+
+// TODO
+
+
 
 		// 2. Generate $s = k(m + xr) \bmod q$
 // TODO
@@ -2436,7 +2485,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		rbc->unsetID();
 
 		// release
-		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs), mpz_clear(kprime_i), mpz_clear(aprime_i), mpz_clear(rho_i), mpz_clear(sigma_i);
 		for (size_t j = 0; j < n; j++)
 		{
 			mpz_clear(k_i[j]), mpz_clear(a_i[j]), mpz_clear(alpha_i[j]), mpz_clear(beta_i[j]);
