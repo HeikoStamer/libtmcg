@@ -383,6 +383,32 @@ bool JareckiLysyanskayaRVSS::CheckGroup
 	}
 }
 
+bool JareckiLysyanskayaRVSS::CheckElement
+	(mpz_srcptr a) const
+{
+	mpz_t foo;
+	mpz_init(foo);
+
+	try
+	{
+		// Check whether $0 < a < p$.
+		if ((mpz_cmp_ui(a, 0L) <= 0) || (mpz_cmp(a, p) >= 0))
+			throw false;
+		
+		// Check whether $a^q \equiv 1 \pmod{p}$.
+		mpz_powm(foo, a, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo);
+		return return_value;
+	}
+}
+
 bool JareckiLysyanskayaRVSS::Share
 	(const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour)
@@ -450,6 +476,12 @@ bool JareckiLysyanskayaRVSS::Share
 						complaints.push_back(j);
 						break;
 					}
+					if (!CheckElement(C_ik[j][k]))
+					{
+						err << "P_" << i << ": bad C_ik received; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+						mpz_set_ui(C_ik[j][k], 0L); // indicates an error
+					}
 				}
 			}
 		}
@@ -508,11 +540,23 @@ bool JareckiLysyanskayaRVSS::Share
 					complaints.push_back(j);
 					continue;
 				}
+				if (mpz_cmpabs(alpha_ij[j][i], q) >= 0)
+				{
+					err << "P_" << i << ": bad alpha_ij received; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(alpha_ij[j][i], 0L); // indicates an error
+				}
 				if (!aiou->Receive(hatalpha_ij[j][i], j, aiou->aio_scheduler_direct))
 				{
 					err << "P_" << i << ": receiving hatalpha_ij failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
+				}
+				if (mpz_cmpabs(hatalpha_ij[j][i], q) >= 0)
+				{
+					err << "P_" << i << ": bad hatalpha_ij received; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(hatalpha_ij[j][i], 0L); // indicates an error
 				}
 			}
 		}
@@ -636,11 +680,23 @@ bool JareckiLysyanskayaRVSS::Share
 						complaints.push_back(j);
 						break;
 					}
+					if (mpz_cmpabs(foo, q) >= 0)
+					{
+						err << "P_" << i << ": bad foo received; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+						mpz_set_ui(foo, 0L); // indicates an error
+					}
 					if (!rbc->DeliverFrom(bar, j))
 					{
 						err << "P_" << i << ": receiving bar failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
+					}
+					if (mpz_cmpabs(bar, q) >= 0)
+					{
+						err << "P_" << i << ": bad bar received; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+						mpz_set_ui(bar, 0L); // indicates an error
 					}
 					mpz_t alpha, hatalpha;
 					mpz_init_set(alpha, foo), mpz_init_set(hatalpha, bar);
@@ -773,6 +829,11 @@ bool JareckiLysyanskayaRVSS::Share_twoparty
 					err << "P_" << i << ": receiving C_ik failed" << std::endl;
 					throw false;
 				}
+				if (!CheckElement(C_ik[j][0]))
+				{
+					err << "P_" << i << ": bad C_ik received" << std::endl;
+					throw false;
+				}
 			}
 		}
 		// Set $F_{a_i}(z) = \prod_{k=0}^t (C_{ik})^{z^k}$.
@@ -843,25 +904,30 @@ bool JareckiLysyanskayaRVSS::Reconstruct
 				{
 					if (rbc->DeliverFrom(alpha_ij[*it][*jt], *jt) && rbc->DeliverFrom(hatalpha_ij[*it][*jt], *jt))
 					{
-						// compute LHS for the check
-						mpz_fpowm(fpowm_table_g, foo, g, alpha_ij[*it][*jt], p);
-						mpz_fpowm(fpowm_table_h, bar, h, hatalpha_ij[*it][*jt], p);
-						mpz_mul(lhs, foo, bar);
-						mpz_mod(lhs, lhs, p);
-						// compute RHS for the check
-						mpz_set_ui(rhs, 1L);
-						for (size_t k = 0; k <= t; k++)
-						{
-							mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $j$ in computation
-							mpz_powm(bar, C_ik[*it][k], foo, p);
-							mpz_mul(rhs, rhs, bar);
-							mpz_mod(rhs, rhs, p);
-						}
-						// check equation (4)
-						if (mpz_cmp(lhs, rhs))
+						if ((mpz_cmpabs(alpha_ij[*it][*jt], q) >= 0) || (mpz_cmpabs(hatalpha_ij[*it][*jt], q) >= 0))
 							err << "P_" << i << ": bad share received from " << *jt << std::endl;
 						else
-							parties.push_back(*jt);
+						{
+							// compute LHS for the check
+							mpz_fpowm(fpowm_table_g, foo, g, alpha_ij[*it][*jt], p);
+							mpz_fpowm(fpowm_table_h, bar, h, hatalpha_ij[*it][*jt], p);
+							mpz_mul(lhs, foo, bar);
+							mpz_mod(lhs, lhs, p);
+							// compute RHS for the check
+							mpz_set_ui(rhs, 1L);
+							for (size_t k = 0; k <= t; k++)
+							{
+								mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $j$ in computation
+								mpz_powm(bar, C_ik[*it][k], foo, p);
+								mpz_mul(rhs, rhs, bar);
+								mpz_mod(rhs, rhs, p);
+							}
+							// check equation (4)
+							if (mpz_cmp(lhs, rhs))
+								err << "P_" << i << ": bad share received from " << *jt << std::endl;
+							else
+								parties.push_back(*jt);
+						}
 					}
 					else
 						err << "P_" << i << ": no share received from " << *jt << std::endl;					
@@ -1060,11 +1126,23 @@ bool JareckiLysyanskayaEDCF::Flip
 					complaints.push_back(j);
 					continue;
 				}
+				if (mpz_cmpabs(a_i[j], q) >= 0)
+				{
+					err << "P_" << i << ": bad a_i received; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(a_i[j], 0L); // indicates an error
+				}
 				if (!rbc->DeliverFrom(hata_i[j], j))
 				{
 					err << "P_" << i << ": receiving hata_i failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
+				}
+				if (mpz_cmpabs(hata_i[j], q) >= 0)
+				{
+					err << "P_" << i << ": bad hata_i received; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(hata_i[j], 0L); // indicates an error
 				}
 			}
 		}
@@ -1179,7 +1257,27 @@ bool JareckiLysyanskayaEDCF::Flip_twoparty
 			if (j != i)
 			{
 				in >> a_i[j];
+				if (!in.good())
+				{
+					err << "P_" << i << ": receiving a_i failed" << std::endl;
+					throw false;
+				}
+				if (mpz_cmpabs(a_i[j], q) >= 0)
+				{
+					err << "P_" << i << ": bad a_i received" << std::endl;
+					throw false;
+				}
 				in >> hata_i[j];
+				if (!in.good())
+				{
+					err << "P_" << i << ": receiving hata_i failed" << std::endl;
+					throw false;
+				}
+				if (mpz_cmpabs(hata_i[j], q) >= 0)
+				{
+					err << "P_" << i << ": bad hata_i received" << std::endl;
+					throw false;
+				}
 				// compute LHS for the check
 				mpz_fspowm(fpowm_table_g, foo, g, a_i[j], p);
 				mpz_fspowm(fpowm_table_h, bar, h, hata_i[j], p);

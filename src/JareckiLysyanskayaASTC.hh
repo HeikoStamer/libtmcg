@@ -118,6 +118,8 @@ class JareckiLysyanskayaRVSS
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
 			() const;
+		bool CheckElement
+			(mpz_srcptr a) const;
 		bool Share
 			(const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err, const bool simulate_faulty_behaviour = false);

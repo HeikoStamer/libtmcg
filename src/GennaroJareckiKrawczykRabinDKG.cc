@@ -442,6 +442,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					{
 						err << "P_" << i << ": bad C_ik received; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
+						mpz_set_ui(C_ik[j][k], 0L); // indicates an error
 					}
 				}
 			}
@@ -532,7 +533,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			for (size_t k = 0; k <= t; k++)
 			{
 				mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
-				mpz_powm(bar, C_ik[j][k], foo , p);
+				mpz_powm(bar, C_ik[j][k], foo, p);
 				mpz_mul(rhs, rhs, bar);
 				mpz_mod(rhs, rhs, p);
 			}
@@ -675,7 +676,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					for (size_t k = 0; k <= t; k++)
 					{
 						mpz_ui_pow_ui(foo, who + 1, k); // adjust index $j$ in computation
-						mpz_powm(bar, C_ik[j][k], foo , p);
+						mpz_powm(bar, C_ik[j][k], foo, p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
 					}
@@ -764,6 +765,12 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						complaints.push_back(j);
 						break;
 					}
+					if (!CheckElement(A_ik[j][k]))
+					{
+						err << "P_" << i << ": bad A_ik received; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+						mpz_set_ui(A_ik[j][k], 0L); // indicates an error
+					}
 				}
 				// compute LHS for the check
 				// OPTIMIZED: mpz_fspowm(fpowm_table_g, lhs, g, s_ij[j][i], p);
@@ -772,14 +779,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				mpz_set_ui(rhs, 1L);
 				for (size_t k = 0; k <= t; k++)
 				{
-					if (!CheckElement(A_ik[j][k]))
-					{
-						err << "P_" << i << ": bad A_ik received; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
-						break;
-					}
 					mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
-					mpz_powm(bar, A_ik[j][k], foo , p);
+					mpz_powm(bar, A_ik[j][k], foo, p);
 					mpz_mul(rhs, rhs, bar);
 					mpz_mod(rhs, rhs, p);
 				}
@@ -886,7 +887,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					for (size_t k = 0; k <= t; k++)
 					{
 						mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
-						mpz_powm(bar, A_ik[j][k], foo , p);
+						mpz_powm(bar, A_ik[j][k], foo, p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
 					}
@@ -948,7 +949,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				for (size_t k = 0; k <= t; k++)
 				{
 					mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $j$ in computation
-					mpz_powm(bar, A_ik[*it][k], foo , p);
+					mpz_powm(bar, A_ik[*it][k], foo, p);
 					mpz_mul(v_i[*jt], v_i[*jt], bar);
 					mpz_mod(v_i[*jt], v_i[*jt], p);
 				}
@@ -1101,7 +1102,7 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 							for (size_t k = 0; k <= t; k++)
 							{
 								mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $i$ in computation
-								mpz_powm(bar, C_ik[*it][k], foo , p);
+								mpz_powm(bar, C_ik[*it][k], foo, p);
 								mpz_mul(rhs, rhs, bar);
 								mpz_mod(rhs, rhs, p);
 							}
