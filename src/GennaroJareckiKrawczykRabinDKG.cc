@@ -308,6 +308,32 @@ bool GennaroJareckiKrawczykRabinDKG::CheckGroup
 	}
 }
 
+bool GennaroJareckiKrawczykRabinDKG::CheckElement
+	(mpz_srcptr a) const
+{
+	mpz_t foo;
+	mpz_init(foo);
+
+	try
+	{
+		// Check whether $0 < a < p$.
+		if ((mpz_cmp_ui(a, 0L) <= 0) || (mpz_cmp(a, p) >= 0))
+			throw false;
+		
+		// Check whether $a^q \equiv 1 \pmod{p}$.
+		mpz_powm(foo, a, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo);
+		return return_value;
+	}
+}
+
 bool GennaroJareckiKrawczykRabinDKG::Generate
 	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour)
@@ -412,6 +438,11 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						complaints.push_back(j);
 						break;
 					}
+					if (!CheckElement(C_ik[j][k]))
+					{
+						err << "P_" << i << ": bad C_ik received; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+					}
 				}
 			}
 		}
@@ -469,11 +500,23 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					complaints.push_back(j);
 					continue;
 				}
+				if (mpz_cmpabs(s_ij[j][i], q) >= 0)
+				{
+					err << "P_" << i << ": bad s_ij received; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(s_ij[j][i], 0L); // indicates an error
+				}
 				if (!aiou->Receive(sprime_ij[j][i], j, aiou->aio_scheduler_direct))
 				{
 					err << "P_" << i << ": receiving sprime_ij failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
+				}
+				if (mpz_cmpabs(sprime_ij[j][i], q) >= 0)
+				{
+					err << "P_" << i << ": bad sprime_ij received; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(sprime_ij[j][i], 0L); // indicates an error
 				}
 			}
 		}
@@ -602,11 +645,23 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						complaints.push_back(j);
 						break;
 					}
+					if (mpz_cmpabs(foo, q) >= 0)
+					{
+						err << "P_" << i << ": bad foo received; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+						mpz_set_ui(foo, 0L); // indicates an error
+					}
 					if (!rbc->DeliverFrom(bar, j))
 					{
 						err << "P_" << i << ": receiving bar failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
+					}
+					if (mpz_cmpabs(bar, q) >= 0)
+					{
+						err << "P_" << i << ": bad bar received; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+						mpz_set_ui(bar, 0L); // indicates an error
 					}
 					mpz_t s, sprime;
 					mpz_init_set(s, foo), mpz_init_set(sprime, bar);
@@ -717,6 +772,12 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 				mpz_set_ui(rhs, 1L);
 				for (size_t k = 0; k <= t; k++)
 				{
+					if (!CheckElement(A_ik[j][k]))
+					{
+						err << "P_" << i << ": bad A_ik received; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+						break;
+					}
 					mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
 					mpz_powm(bar, A_ik[j][k], foo , p);
 					mpz_mul(rhs, rhs, bar);
@@ -779,11 +840,23 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 						complaints.push_back(j);
 						break;
 					}
+					if (mpz_cmpabs(foo, q) >= 0)
+					{
+						err << "P_" << i << ": bad s_ij received; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+						mpz_set_ui(foo, 0L); // indicates an error
+					}
 					if (!rbc->DeliverFrom(bar, j))
 					{
 						err << "P_" << i << ": receiving sprime_ij failed; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 						break;
+					}
+					if (mpz_cmpabs(bar, q) >= 0)
+					{
+						err << "P_" << i << ": bad sprime_ij received; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+						mpz_set_ui(bar, 0L); // indicates an error
 					}
 					// verify complaint, i.e. (4) holds (5) not.
 					// compute LHS for the check
@@ -1014,25 +1087,30 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 				{
 					if (rbc->DeliverFrom(s_ij[*it][*jt], *jt) && rbc->DeliverFrom(sprime_ij[*it][*jt], *jt))
 					{
-						// compute LHS for the check
-						mpz_fpowm(fpowm_table_g, foo, g, s_ij[*it][*jt], p);
-						mpz_fpowm(fpowm_table_h, bar, h, sprime_ij[*it][*jt], p);
-						mpz_mul(lhs, foo, bar);
-						mpz_mod(lhs, lhs, p);
-						// compute RHS for the check
-						mpz_set_ui(rhs, 1L);
-						for (size_t k = 0; k <= t; k++)
-						{
-							mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $i$ in computation
-							mpz_powm(bar, C_ik[*it][k], foo , p);
-							mpz_mul(rhs, rhs, bar);
-							mpz_mod(rhs, rhs, p);
-						}
-						// check equation (4)
-						if (mpz_cmp(lhs, rhs))
+						if ((mpz_cmpabs(s_ij[*it][*jt], q) >= 0) || (mpz_cmpabs(sprime_ij[*it][*jt], q) >= 0))
 							err << "P_" << i << ": bad share received from " << *jt << std::endl;
 						else
-							parties.push_back(*jt); // good share received
+						{
+							// compute LHS for the check
+							mpz_fpowm(fpowm_table_g, foo, g, s_ij[*it][*jt], p);
+							mpz_fpowm(fpowm_table_h, bar, h, sprime_ij[*it][*jt], p);
+							mpz_mul(lhs, foo, bar);
+							mpz_mod(lhs, lhs, p);
+							// compute RHS for the check
+							mpz_set_ui(rhs, 1L);
+							for (size_t k = 0; k <= t; k++)
+							{
+								mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $i$ in computation
+								mpz_powm(bar, C_ik[*it][k], foo , p);
+								mpz_mul(rhs, rhs, bar);
+								mpz_mod(rhs, rhs, p);
+							}
+							// check equation (4)
+							if (mpz_cmp(lhs, rhs))
+								err << "P_" << i << ": bad share received from " << *jt << std::endl;
+							else
+								parties.push_back(*jt); // good share received
+						}
 					}
 					else
 						err << "P_" << i << ": no share received from " << *jt << std::endl;					
@@ -1444,6 +1522,12 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 				if (!rbc->DeliverFrom(s_i[j], j))
 				{
 					err << "P_" << i << ": receiving s_i failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
+				if (mpz_cmpabs(s_i[j], q) >= 0)
+				{
+					err << "P_" << i << ": bad s_i received; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}

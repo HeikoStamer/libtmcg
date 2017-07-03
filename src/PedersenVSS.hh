@@ -92,6 +92,8 @@ class PedersenVSS
 			() const;
 		bool CheckGroup
 			() const;
+		bool CheckElement
+			(mpz_srcptr a) const;
 		bool Share
 			(mpz_srcptr sigma,
 			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,

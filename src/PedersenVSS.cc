@@ -215,6 +215,32 @@ bool PedersenVSS::CheckGroup
 	}
 }
 
+bool PedersenVSS::CheckElement
+	(mpz_srcptr a) const
+{
+	mpz_t foo;
+	mpz_init(foo);
+
+	try
+	{
+		// Check whether $0 < a < p$.
+		if ((mpz_cmp_ui(a, 0L) <= 0) || (mpz_cmp(a, p) >= 0))
+			throw false;
+		
+		// Check whether $a^q \equiv 1 \pmod{p}$.
+		mpz_powm(foo, a, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo);
+		return return_value;
+	}
+}
+
 bool PedersenVSS::Share
 	(mpz_srcptr sigma,
 	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
@@ -430,7 +456,7 @@ bool PedersenVSS::Share
 		{
 			if (!rbc->DeliverFrom(A_j[j], dealer))
 			{
-				err << "VSS(" << label << "): P_" << i << ": receiving A_j failed; complaint against P_" << dealer << std::endl;
+				err << "VSS(" << label << "): P_" << i << ": receiving A_j failed; complaint against dealer P_" << dealer << std::endl;
 				complaints.push_back(dealer);
 				break;
 			}
@@ -442,10 +468,22 @@ bool PedersenVSS::Share
 			err << "VSS(" << label << "): P_" << i << ": receiving sigma_i failed; complaint against dealer P_" << dealer << std::endl;
 			complaints.push_back(dealer);
 		}
+		if (mpz_cmpabs(sigma_i, q) >= 0)
+		{
+			err << "VSS(" << label << "): P_" << i << ": bad sigma_i received; complaint against dealer P_" << dealer << std::endl;
+			complaints.push_back(dealer);
+			mpz_set_ui(sigma_i, 0L); // indicates an error
+		}
 		if (!aiou->Receive(tau_i, dealer, aiou->aio_scheduler_direct))
 		{
 			err << "VSS(" << label << "): P_" << i << ": receiving tau_i failed; complaint against dealer P_" << dealer << std::endl;
 			complaints.push_back(dealer);
+		}
+		if (mpz_cmpabs(tau_i, q) >= 0)
+		{
+			err << "VSS(" << label << "): P_" << i << ": bad tau_i received; complaint against dealer P_" << dealer << std::endl;
+			complaints.push_back(dealer);
+			mpz_set_ui(tau_i, 0L); // indicates an error
 		}
 		// compute LHS for the check
 		mpz_fspowm(fpowm_table_g, foo, g, sigma_i, p);
@@ -456,6 +494,12 @@ bool PedersenVSS::Share
 		mpz_set_ui(rhs, 1L);
 		for (size_t j = 0; j <= t; j++)
 		{
+			if (!CheckElement(A_j[j]))
+			{
+				err << "VSS(" << label << "): P_" << i << ": bad A_j received; complaint against dealer P_" << dealer << std::endl;
+				complaints.push_back(dealer);
+				break;
+			}
 			mpz_ui_pow_ui(foo, i + 1, j); // adjust index $i$ in computation
 			mpz_powm(bar, A_j[j], foo, p);
 			mpz_mul(rhs, rhs, bar);
@@ -556,11 +600,23 @@ bool PedersenVSS::Share
 					complaints.push_back(dealer);
 					break;
 				}
+				if (mpz_cmpabs(foo, q) >= 0)
+				{
+					err << "VSS(" << label << "): P_" << i << ": bad foo received; complaint against dealer P_" << dealer << std::endl;
+					complaints.push_back(dealer);
+					mpz_set_ui(foo, 0L); // indicates an error
+				}
 				if (!rbc->DeliverFrom(bar, dealer))
 				{
 					err << "VSS(" << label << "): P_" << i << ": receiving bar failed; complaint against dealer P_" << dealer << std::endl;
 					complaints.push_back(dealer);
 					break;
+				}
+				if (mpz_cmpabs(bar, q) >= 0)
+				{
+					err << "VSS(" << label << "): P_" << i << ": bad bar received; complaint against dealer P_" << dealer << std::endl;
+					complaints.push_back(dealer);
+					mpz_set_ui(bar, 0L); // indicates an error
 				}
 				mpz_t s, sprime;
 				mpz_init_set(s, foo), mpz_init_set(sprime, bar);
@@ -658,25 +714,32 @@ bool PedersenVSS::Reconstruct
 			{
 				if (rbc->DeliverFrom(shares[j], j) && rbc->DeliverFrom(bar, j))
 				{
-					// compute LHS for the check
-					mpz_fpowm(fpowm_table_g, foo, g, shares[j], p);
-					mpz_fpowm(fpowm_table_h, bar, h, bar, p);
-					mpz_mul(lhs, foo, bar);
-					mpz_mod(lhs, lhs, p);
-					// compute RHS for the check
-					mpz_set_ui(rhs, 1L);
-					for (size_t k = 0; k <= t; k++)
+					if (mpz_cmpabs(bar, q) >= 0)
 					{
-						mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
-						mpz_powm(bar, A_j[k], foo, p);
-						mpz_mul(rhs, rhs, bar);
-						mpz_mod(rhs, rhs, p);
+						err << "VSS(" << label << "): P_" << i << ": ignore bad share received from P_" << dealer << std::endl;
 					}
-					// check equation (2)
-					if (mpz_cmp(lhs, rhs))
-						err << "VSS(" << label << "): P_" << i << ": ignore bad share received from P_" << j << std::endl;
 					else
-						parties.push_back(j);
+					{
+						// compute LHS for the check
+						mpz_fpowm(fpowm_table_g, foo, g, shares[j], p);
+						mpz_fpowm(fpowm_table_h, bar, h, bar, p);
+						mpz_mul(lhs, foo, bar);
+						mpz_mod(lhs, lhs, p);
+						// compute RHS for the check
+						mpz_set_ui(rhs, 1L);
+						for (size_t k = 0; k <= t; k++)
+						{
+							mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
+							mpz_powm(bar, A_j[k], foo, p);
+							mpz_mul(rhs, rhs, bar);
+							mpz_mod(rhs, rhs, p);
+						}
+						// check equation (2)
+						if (mpz_cmp(lhs, rhs))
+							err << "VSS(" << label << "): P_" << i << ": ignore bad share received from P_" << j << std::endl;
+						else
+							parties.push_back(j);
+					}
 				}
 				else
 					err << "VSS(" << label << "): P_" << i << ": no share received from P_" << j << std::endl;			

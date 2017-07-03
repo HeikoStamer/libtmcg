@@ -91,6 +91,8 @@ class GennaroJareckiKrawczykRabinDKG
 			(std::ostream &out) const;
 		bool CheckGroup
 			() const;
+		bool CheckElement
+			(mpz_srcptr a) const;
 		bool Generate
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
