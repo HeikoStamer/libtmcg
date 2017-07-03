@@ -32,7 +32,6 @@ include_HEADERS = mpz_srandom.h mpz_sqrtm.h mpz_spowm.h mpz_sprime.h\
 	CachinKursawePetzoldShoupSEABP.hh\
 	GennaroJareckiKrawczykRabinDKG.hh\
 	PedersenVSS.hh\
-	CramerDamgardZNPFFA.hh\
 	CanettiGennaroJareckiKrawczykRabinASTC.hh\
 	JareckiLysyanskayaASTC.hh\
 	CallasDonnerhackeFinneyShawThayerRFC4880.hh\
@@ -67,7 +66,6 @@ libTMCG_la_SOURCES = mpz_srandom.c mpz_srandom.h\
 	CachinKursawePetzoldShoupSEABP.cc CachinKursawePetzoldShoupSEABP.hh\
 	GennaroJareckiKrawczykRabinDKG.cc GennaroJareckiKrawczykRabinDKG.hh\
 	PedersenVSS.cc PedersenVSS.hh\
-	CramerDamgardZNPFFA.cc CramerDamgardZNPFFA.hh\
 	CanettiGennaroJareckiKrawczykRabinASTC.cc CanettiGennaroJareckiKrawczykRabinASTC.hh\
 	JareckiLysyanskayaASTC.cc JareckiLysyanskayaASTC.hh\
 	CallasDonnerhackeFinneyShawThayerRFC4880.cc CallasDonnerhackeFinneyShawThayerRFC4880.hh\
