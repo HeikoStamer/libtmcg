@@ -62,6 +62,8 @@ class HooghSchoenmakersSkoricVillegasPUBROTZK
 		
 		HooghSchoenmakersSkoricVillegasPUBROTZK
 			(mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC);
+		bool CheckElement
+			(mpz_srcptr a) const;
 		void Prove_interactive
 			(size_t r, const std::vector<mpz_ptr> &s,
 			const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
@@ -114,6 +116,8 @@ class HooghSchoenmakersSkoricVillegasVRHE
 			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
 			() const;
+		bool CheckElement
+			(mpz_srcptr a) const;
 		void PublishGroup
 			(std::ostream &out) const;
 		void Prove_interactive

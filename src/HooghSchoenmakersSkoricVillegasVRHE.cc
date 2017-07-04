@@ -45,6 +45,32 @@ HooghSchoenmakersSkoricVillegasPUBROTZK::HooghSchoenmakersSkoricVillegasPUBROTZK
 	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
+bool HooghSchoenmakersSkoricVillegasPUBROTZK::CheckElement
+	(mpz_srcptr a) const
+{
+	mpz_t foo;
+	mpz_init(foo);
+
+	try
+	{
+		// Check whether $0 < a < p$.
+		if ((mpz_cmp_ui(a, 0L) <= 0) || (mpz_cmp(a, p) >= 0))
+			throw false;
+		
+		// Check whether $a^q \equiv 1 \pmod{p}$.
+		mpz_powm(foo, a, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo);
+		return return_value;
+	}
+}
+
 void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive
 	(size_t r, const std::vector<mpz_ptr> &s, 
 	const std::vector<mpz_ptr> &alpha, const std::vector<mpz_ptr> &c,
@@ -466,7 +492,11 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 		
 		// verifier: second move
 		for (size_t i = 0; i < f.size(); i++)
+		{
 			in >> f[i];
+			if (!CheckElement(f[i]))
+				throw false;
+		}
 		if (!in.good())
 			throw false;
 		mpz_srandomm(lambda, q);
@@ -474,9 +504,17 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 		
 		// verifier: third move
 		for (size_t i = 0; i < lambdak.size(); i++)
+		{
 			in >> lambdak[i];
+			if (mpz_cmpabs(lambdak[i], q) >= 0)
+				throw false;
+		}
 		for (size_t i = 0; i < tk.size(); i++)
+		{
 			in >> tk[i];
+			if (mpz_cmpabs(tk[i], q) >= 0)
+				throw false;
+		}
 		if (!in.good())
 			throw false;
 		
@@ -586,7 +624,11 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive_publiccoin
 		
 		// verifier: second move
 		for (size_t i = 0; i < f.size(); i++)
+		{
 			in >> f[i];
+			if (!CheckElement(f[i]))
+				throw false;
+		}
 		if (!in.good())
 			throw false;
 		std::stringstream err;
@@ -597,9 +639,17 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive_publiccoin
 		
 		// verifier: third move
 		for (size_t i = 0; i < lambdak.size(); i++)
+		{
 			in >> lambdak[i];
+			if (mpz_cmpabs(lambdak[i], q) >= 0)
+				throw false;
+		}
 		for (size_t i = 0; i < tk.size(); i++)
+		{
 			in >> tk[i];
+			if (mpz_cmpabs(tk[i], q) >= 0)
+				throw false;
+		}
 		if (!in.good())
 			throw false;
 		
@@ -711,7 +761,11 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_noninteractive
 		
 		// verifier: second move
 		for (size_t i = 0; i < f.size(); i++)
+		{
 			in >> f[i];
+			if (!CheckElement(f[i]))
+				throw false;
+		}
 		if (!in.good())
 			throw false;
 		// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
@@ -721,9 +775,17 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_noninteractive
 		
 		// verifier: third move
 		for (size_t i = 0; i < lambdak.size(); i++)
+		{
 			in >> lambdak[i];
+			if (mpz_cmpabs(lambdak[i], q) >= 0)
+				throw false;
+		}
 		for (size_t i = 0; i < tk.size(); i++)
+		{
 			in >> tk[i];
+			if (mpz_cmpabs(tk[i], q) >= 0)
+				throw false;
+		}
 		if (!in.good())
 			throw false;
 		
@@ -948,6 +1010,32 @@ bool HooghSchoenmakersSkoricVillegasVRHE::CheckGroup
 	catch (bool return_value)
 	{
 		mpz_clear(foo), mpz_clear(k);
+		return return_value;
+	}
+}
+
+bool HooghSchoenmakersSkoricVillegasVRHE::CheckElement
+	(mpz_srcptr a) const
+{
+	mpz_t foo;
+	mpz_init(foo);
+
+	try
+	{
+		// Check whether $0 < a < p$.
+		if ((mpz_cmp_ui(a, 0L) <= 0) || (mpz_cmp(a, p) >= 0))
+			throw false;
+		
+		// Check whether $a^q \equiv 1 \pmod{p}$.
+		mpz_powm(foo, a, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
+		
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		mpz_clear(foo);
 		return return_value;
 	}
 }
@@ -1544,18 +1632,36 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 
 		// verifier: second move
 		for (size_t i = 0; i < hk.size(); i++)
+		{
 			in >> hk[i];
+			if (!CheckElement(hk[i]))
+				throw false;
+		}
 		for (size_t i = 0; i < Ak.size(); i++)
+		{
 			in >> Ak[i].first >> Ak[i].second;
+			if (!CheckElement(Ak[i].first) || !CheckElement(Ak[i].second))
+				throw false;
+		}
 		in >> v;
+		if (mpz_cmpabs(v, q) >= 0)
+			throw false;
 		if (!in.good())
 			throw false;
 
 		// verifier: second move (first move of EXP-ZK)
 		for (size_t i = 0; i < fk.size(); i++)
+		{
 			in >> fk[i];
+			if (!CheckElement(fk[i]))
+				throw false;
+		}
 		for (size_t i = 0; i < Fk.size(); i++)
+		{
 			in >> Fk[i].first >> Fk[i].second;
+			if (!CheckElement(Fk[i].first) || !CheckElement(Fk[i].second))
+				throw false;
+		}
 		if (!in.good())
 			throw false;
 
@@ -1565,11 +1671,23 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 
 		// verifier: fourth move (third move of EXP-ZK)
 		for (size_t i = 0; i < tau.size(); i++)
+		{
 			in >> tau[i];
+			if (mpz_cmpabs(tau[i], q) >= 0)
+				throw false;
+		}
 		for (size_t i = 0; i < rho.size(); i++)
+		{
 			in >> rho[i];
+			if (mpz_cmpabs(rho[i], q) >= 0)
+				throw false;
+		}
 		for (size_t i = 0; i < mu.size(); i++)
+		{
 			in >> mu[i];
+			if (mpz_cmpabs(mu[i], q) >= 0)
+				throw false;
+		}
 		if (!in.good())
 			throw false;
 		
@@ -1727,18 +1845,36 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 
 		// verifier: second move
 		for (size_t i = 0; i < hk.size(); i++)
+		{
 			in >> hk[i];
+			if (!CheckElement(hk[i]))
+				throw false;
+		}
 		for (size_t i = 0; i < Ak.size(); i++)
+		{
 			in >> Ak[i].first >> Ak[i].second;
+			if (!CheckElement(Ak[i].first) || !CheckElement(Ak[i].second))
+				throw false;
+		}
 		in >> v;
+		if (mpz_cmpabs(v, q) >= 0)
+			throw false;
 		if (!in.good())
 			throw false;
 
 		// verifier: second move (first move of EXP-ZK)
 		for (size_t i = 0; i < fk.size(); i++)
+		{
 			in >> fk[i];
+			if (!CheckElement(fk[i]))
+				throw false;
+		}
 		for (size_t i = 0; i < Fk.size(); i++)
+		{
 			in >> Fk[i].first >> Fk[i].second;
+			if (!CheckElement(Fk[i].first) || !CheckElement(Fk[i].second))
+				throw false;
+		}
 		if (!in.good())
 			throw false;
 
@@ -1751,11 +1887,23 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 
 		// verifier: fourth move (third move of EXP-ZK)
 		for (size_t i = 0; i < tau.size(); i++)
+		{
 			in >> tau[i];
+			if (mpz_cmpabs(tau[i], q) >= 0)
+				throw false;
+		}
 		for (size_t i = 0; i < rho.size(); i++)
+		{
 			in >> rho[i];
+			if (mpz_cmpabs(rho[i], q) >= 0)
+				throw false;
+		}
 		for (size_t i = 0; i < mu.size(); i++)
+		{
 			in >> mu[i];
+			if (mpz_cmpabs(mu[i], q) >= 0)
+				throw false;
+		}
 		if (!in.good())
 			throw false;
 		
@@ -1915,18 +2063,36 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 
 		// verifier: second move
 		for (size_t i = 0; i < hk.size(); i++)
+		{
 			in >> hk[i];
+			if (!CheckElement(hk[i]))
+				throw false;
+		}
 		for (size_t i = 0; i < Ak.size(); i++)
+		{
 			in >> Ak[i].first >> Ak[i].second;
+			if (!CheckElement(Ak[i].first) || !CheckElement(Ak[i].second))
+				throw false;
+		}
 		in >> v;
+		if (mpz_cmpabs(v, q) >= 0)
+			throw false;
 		if (!in.good())
 			throw false;
 
 		// verifier: second move (first move of EXP-ZK)
 		for (size_t i = 0; i < fk.size(); i++)
+		{
 			in >> fk[i];
+			if (!CheckElement(fk[i]))
+				throw false;
+		}
 		for (size_t i = 0; i < Fk.size(); i++)
+		{
 			in >> Fk[i].first >> Fk[i].second;
+			if (!CheckElement(Fk[i].first) || !CheckElement(Fk[i].second))
+				throw false;
+		}
 		if (!in.good())
 			throw false;
 
@@ -1938,11 +2104,23 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 
 		// verifier: fourth move (third move of EXP-ZK)
 		for (size_t i = 0; i < tau.size(); i++)
+		{
 			in >> tau[i];
+			if (mpz_cmpabs(tau[i], q) >= 0)
+				throw false;
+		}
 		for (size_t i = 0; i < rho.size(); i++)
+		{
 			in >> rho[i];
+			if (mpz_cmpabs(rho[i], q) >= 0)
+				throw false;
+		}
 		for (size_t i = 0; i < mu.size(); i++)
+		{
 			in >> mu[i];
+			if (mpz_cmpabs(mu[i], q) >= 0)
+				throw false;
+		}
 		if (!in.good())
 			throw false;
 		
