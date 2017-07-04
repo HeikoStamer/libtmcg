@@ -1143,10 +1143,7 @@ bool verify_decryption_share
 		if (idx_dkg >= (dkg->v_i).size())
 			throw false;
 		// check r_i for sanity
-		if ((mpz_cmp_ui(r_i_out, 0L) <= 0) || (mpz_cmp(r_i_out, nizk_p) >= 0))
-			throw false;
-		mpz_powm(a, r_i_out, nizk_q, nizk_p);
-		if (mpz_cmp_ui(a, 1L))
+		if (!dkg->CheckElement(r_i_out))
 			throw false;
 		// check the NIZK argument for sanity
 		if ((mpz_cmpabs(r_out, nizk_q) >= 0) || (mpz_sizeinbase(c_out, 2L) > 256)) // check the size of r and c (NOTE: output size of mpz_shash is fixed)
@@ -1224,18 +1221,11 @@ bool verify_decryption_share_interactive_publiccoin
 			throw false;
 		}
 		// check r_i for sanity
-		if ((mpz_cmp_ui(r_i, 0L) <= 0) || (mpz_cmp(r_i, nizk_p) >= 0))
-		{
-			err << "verify PoK: not 0 < r_i < p for P_" << idx << std::endl;
-			throw false;
-		}
-		mpz_powm(foo, r_i, nizk_q, nizk_p);
-		if (mpz_cmp_ui(foo, 1L))
+		if (!dkg->CheckElement(r_i))
 		{
 			err << "verify PoK: r_i not in G for P_" << idx << std::endl;
 			throw false;
 		}
-
 		// verify proof of knowledge (equality of discrete logarithms) [CGS97]
 		// 1. receive and check the commitment, i.e., $a, b \in G$
 		if (!rbc->DeliverFrom(a, idx))
@@ -1248,9 +1238,7 @@ bool verify_decryption_share_interactive_publiccoin
 			err << "verify PoK: DeliverFrom(b, idx) failed for P_" << idx << std::endl;
 			throw false;
 		}
-		mpz_powm(foo, a, nizk_q, nizk_p);
-		mpz_powm(bar, b, nizk_q, nizk_p);
-		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
+		if (!dkg->CheckElement(a) || !dkg->CheckElement(b))
 		{
 			err << "verify PoK: check commitment failed for P_" << idx << std::endl;
 			throw false;
