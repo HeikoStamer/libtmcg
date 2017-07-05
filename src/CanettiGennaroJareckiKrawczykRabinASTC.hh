@@ -94,6 +94,8 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 			();
 		bool CheckGroup
 			() const;
+		bool CheckElement
+			(mpz_srcptr a) const;
 		bool Share
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
@@ -146,6 +148,8 @@ class CanettiGennaroJareckiKrawczykRabinZVSS
 			();
 		bool CheckGroup
 			() const;
+		bool CheckElement
+			(mpz_srcptr a) const;
 		bool Share
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
@@ -188,6 +192,8 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 			(std::ostream &out) const;
 		bool CheckGroup
 			() const;
+		bool CheckElement
+			(mpz_srcptr a) const;
 		bool Generate
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
@@ -227,6 +233,8 @@ class CanettiGennaroJareckiKrawczykRabinDSS
 			(std::ostream &out) const;
 		bool CheckGroup
 			() const;
+		bool CheckElement
+			(mpz_srcptr a) const;
 		bool Generate
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
