@@ -2570,7 +2570,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		{
 			mpz_set_ui(alpha_i[j], 1L);
 			for (size_t k = 0; k <= k_rvss->t; k++)
-			{
+			{//FIXME: computation of \alpha_i
 				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $i$ in computation
 				mpz_powm(bar, k_rvss->C_ik[j][k], foo, p);
 				mpz_mul(alpha_i[j], alpha_i[j], bar);
@@ -2624,6 +2624,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        (Note that indices $i$ and $j$ are changed for convenience.)
 		for (size_t j = 0; j < n; j++)
 		{
+/*
 			mpz_set_ui(gamma_i[j], 1L);
 			for (size_t k = 0; k <= k_i_vss[j]->t; k++)
 			{
@@ -2640,8 +2641,12 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mul(delta_i[j], delta_i[j], bar);
 				mpz_mod(delta_i[j], delta_i[j], p);
 			}
+*/
+mpz_set(gamma_i[j], k_i_vss[j]->A_j[0]);
+mpz_set(delta_i[j], a_i_vss[j]->A_j[0]);
 			if (j == i)
 			{
+/*
 				// Additionally, the dealer computes $\rho_i$ and $\sigma_i$.
 				mpz_set_ui(rho_i, 0L), mpz_set_ui(sigma_i, 0L);
 				for (size_t jj = 0; jj < n; jj++)
@@ -2672,6 +2677,9 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 						mpz_mod(sigma_i, sigma_i, q);
 					}
 				}
+*/
+mpz_set(rho_i, k_i_vss[i]->b_j[0]);
+mpz_set(sigma_i, a_i_vss[i]->b_j[0]);
 			}
 		}
 		//        $P_i$ is required to prove in ZK that the value committed to in $\alpha_i$ (resp. $\beta_i$)
@@ -2695,9 +2703,11 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Then we show in parallel, that commitment $\alpha_i \gamma_i^{-1}$ resp. $\beta_i \delta_i^{-1}$
 		//        equals zero, i.e., the former commitment was made to the same value $k_i$ resp. $a_i$. This works
 		//        since Pedersen commitments have homomorphic properties.
-		mpz_srandomm(r_k_i, q), mpz_srandomm(r_a_i, q);
+// FIXME		mpz_srandomm(r_k_i, q), mpz_srandomm(r_a_i, q);
+mpz_set_ui(r_k_i, 0L), mpz_set_ui(r_a_i, 0L);
 		mpz_fspowm(fpowm_table_h, Tk_i[i], h, r_k_i, p);
 		mpz_fspowm(fpowm_table_h, Ta_i[i], h, r_a_i, p);
+std::cerr << "Tk_i = " << Tk_i[i] << std::endl; 
 		for (size_t j = 0; j < n; j++)
 		{
 			if (j == i)
@@ -2820,15 +2830,15 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		}
 		err << "P_" << i << ": d = " << d << std::endl;
 		d_complaints.clear();
-		//        Broadcast the reponses $z_{k_i} = r_{k_i} + (k\prime_i + \rho_i) \cdot d \bmod q$
-		//        and $z_{a_i} = r_{a_i} + (a\prime_i + \sigma_i) \cdot d$ and verify the results.
-		mpz_add(foo, kprime_i, rho_i);
+		//        Broadcast the reponses $z_{k_i} = r_{k_i} + (k\prime_i - \rho_i) \cdot d \bmod q$
+		//        and $z_{a_i} = r_{a_i} + (a\prime_i - \sigma_i) \cdot d$ and verify the results.
+		mpz_sub(foo, kprime_i, rho_i);
 		mpz_mod(foo, foo, q);
 		mpz_mul(foo, foo, d);
 		mpz_mod(foo, foo, q);
 		mpz_add(foo, foo, r_k_i);
 		mpz_mod(foo, foo, q);
-		mpz_add(bar, aprime_i, sigma_i);
+		mpz_sub(bar, aprime_i, sigma_i);
 		mpz_mod(bar, bar, q);
 		mpz_mul(bar, bar, d);
 		mpz_mod(bar, bar, q);
@@ -2860,7 +2870,39 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					err << "P_" << i << ": bad bar received from P_" << j << std::endl;
 					continue;
 				}
-// TODO: verify PoK
+				if (!mpz_invert(rhs, gamma_i[j], p))
+				{
+					err << "P_" << i << ": cannot invert gamma_i from P_" << j << std::endl;
+					continue;
+				}
+				mpz_mul(rhs, rhs, alpha_i[j]);
+				mpz_mod(rhs, rhs, p);
+				mpz_powm(rhs, rhs, d, p);
+				mpz_mul(rhs, rhs, Tk_i[j]);
+				mpz_mod(rhs, rhs, p);
+				mpz_fpowm(fpowm_table_h, lhs, h, foo, p);
+std::cerr << "lhs = " << lhs << " rhs = " << rhs << std::endl;
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i << ": ZNPoK for k_i in step 1(c) failed for P_" << j << std::endl;
+//					continue;
+				}
+				if (!mpz_invert(rhs, delta_i[j], p))
+				{
+					err << "P_" << i << ": cannot invert delta_i from P_" << j << std::endl;
+					continue;
+				}
+				mpz_mul(rhs, rhs, beta_i[j]);
+				mpz_mod(rhs, rhs, p);
+				mpz_powm(rhs, rhs, d, p);
+				mpz_mul(rhs, rhs, Ta_i[j]);
+				mpz_mod(rhs, rhs, p);
+				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i << ": ZNPoK for a_i in step 1(c) failed for P_" << j << std::endl;
+					continue;
+				}
 			}
 		}
 // TODO
