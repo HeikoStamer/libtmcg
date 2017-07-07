@@ -240,7 +240,8 @@ class CanettiGennaroJareckiKrawczykRabinDSS
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);
 		bool Sign
-			(mpz_srcptr m, mpz_ptr r, mpz_ptr s,
+			(const size_t n_in, const size_t i_in,
+			mpz_srcptr m, mpz_ptr r, mpz_ptr s,
 			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);

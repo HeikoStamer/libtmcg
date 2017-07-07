@@ -75,6 +75,19 @@ void start_instance
 				bP_out.push_back(broadcast_pipefd[whoami][i][1]);
 				bP_key.push_back(key.str());
 			}
+			std::vector<int> uP_in_nm1, uP_out_nm1, bP_in_nm1, bP_out_nm1;
+			std::vector<std::string> uP_key_nm1, bP_key_nm1;
+			for (size_t i = 0; i < (N-1); i++)
+			{
+				std::stringstream key;
+				key << "t-astc2_nm1::P_" << (i + whoami);
+				uP_in_nm1.push_back(pipefd[i][whoami][0]);
+				uP_out_nm1.push_back(pipefd[whoami][i][1]);
+				uP_key_nm1.push_back(key.str());
+				bP_in_nm1.push_back(broadcast_pipefd[i][whoami][0]);
+				bP_out_nm1.push_back(broadcast_pipefd[whoami][i][1]);
+				bP_key_nm1.push_back(key.str());
+			}
 			
 			// create VTMF instance
 			start_clock();
@@ -115,16 +128,23 @@ void start_instance
 			// create asynchronous authenticated unicast channels
 			aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+			aiounicast_select *aiou_nm1 = new aiounicast_select(N-1, (whoami==N-1)?0:whoami, uP_in_nm1, uP_out_nm1, uP_key_nm1,
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 
 			// create asynchronous authenticated broadcast channels
 			aiounicast_select *aiou2 = new aiounicast_select(N, whoami, bP_in, bP_out, bP_key,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
+			aiounicast_select *aiou2_nm1 = new aiounicast_select(N-1, (whoami==N-1)?0:whoami, bP_in_nm1, bP_out_nm1, bP_key_nm1,
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 			
-			// create an instance of a reliable broadcast protocol (RBC)
-			std::string myID = "t-astc2";
+			// create two instances of a reliable broadcast protocol (RBC)
+			std::string myID = "t-astc2", myID_nm1 = "t-astc2_nm1";
 			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 			rbc->setID(myID);
+			CachinKursawePetzoldShoupRBC *rbc_nm1 = new CachinKursawePetzoldShoupRBC(N-1, T-1, (whoami==N-1)?0:whoami, aiou2_nm1,
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
+			rbc_nm1->setID(myID_nm1);
 
 			// create an instance of DKG (without using very strong randomness)
 			CanettiGennaroJareckiKrawczykRabinDKG *dkg;
@@ -171,16 +191,17 @@ void start_instance
 			if (!corrupted)
 				assert(ret);
 
-			// check signing and verifying of a message
-			std::stringstream err_log_sign;
+			std::stringstream err_log_sign, err_log_sign_nm1;
 			mpz_t m, r, s;
-			mpz_init_set_ui(m, 42L), mpz_init_set_ui(r, 0L), mpz_init_set_ui(s, 0L);
+			mpz_init(m), mpz_init(r), mpz_init(s);
+			// check signing and verifying of a message with N signers
+/*			mpz_set_ui(m, 42L), mpz_set_ui(r, 0L), mpz_set_ui(s, 0L);
 			start_clock();
 			std::cout << "P_" << whoami << ": dss.Sign(42, ...)" << std::endl;
 			if (corrupted)
-				dss->Sign(m, r, s, aiou, rbc, err_log_sign, true);
+				dss->Sign(N, whoami, m, r, s, aiou, rbc, err_log_sign, true);
 			else
-				ret = dss->Sign(m, r, s, aiou, rbc, err_log_sign);
+				ret = dss->Sign(N, whoami, m, r, s, aiou, rbc, err_log_sign);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
@@ -188,6 +209,30 @@ void start_instance
 				assert(ret);
 			start_clock();
 			std::cout << "P_" << whoami << ": dss.Verify(42, ...)" << std::endl;
+			if (corrupted)
+				dss->Verify(m, r, s);
+			else
+				ret = dss->Verify(m, r, s);
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			if (!corrupted)
+				assert(ret);
+*/
+			// check signing and verifying of a message with N-1 signers
+			mpz_set_ui(m, 23L), mpz_set_ui(r, 0L), mpz_set_ui(s, 0L);
+			start_clock();
+			std::cout << "P_" << whoami << ": dss.Sign(23, ...)" << std::endl;
+			if (corrupted)
+				dss->Sign(N-1, whoami, m, r, s, aiou_nm1, rbc_nm1, err_log_sign_nm1, true);
+			else
+				ret = dss->Sign(N-1, whoami, m, r, s, aiou_nm1, rbc_nm1, err_log_sign_nm1);
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign_nm1.str();
+			if (!corrupted)
+				assert(ret);
+			start_clock();
+			std::cout << "P_" << whoami << ": dss.Verify(23, ...)" << std::endl;
 			if (corrupted)
 				dss->Verify(m, r, s);
 			else
@@ -219,8 +264,8 @@ void start_instance
 			// release DKG
 			delete dkg;
 
-			// release RBC			
-			delete rbc;
+			// release RBCs		
+			delete rbc, delete rbc_nm1;
 			
 			// release pipe streams (private channels)
 			size_t numRead = 0, numWrite = 0;
@@ -252,7 +297,7 @@ void start_instance
 				aiou2->numAuthenticated << std::endl;
 
 			// release asynchronous unicast and broadcast
-			delete aiou, delete aiou2;
+			delete aiou, delete aiou2, delete aiou_nm1, delete aiou2_nm1;
 
 			// release VTMF instance
 			delete vtmf;
