@@ -2522,6 +2522,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		F_size, G_size, false, "a_dkg");
 	CanettiGennaroJareckiKrawczykRabinRVSS *d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n_in, t, i_in, t, p, q, g, h,
 		F_size, G_size, false, "d_rvss");
+	CanettiGennaroJareckiKrawczykRabinRVSS *dd_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n_in, t, i_in, t, p, q, g, h,
+		F_size, G_size, false, "dd_rvss");
 	std::vector<PedersenVSS*> k_i_vss, a_i_vss, v_i_vss;
 	for (size_t j = 0; j < n_in; j++)
 	{
@@ -2533,25 +2535,29 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		v_i_vss_label << "v_i_vss[dealer = " << j << "]";
 		v_i_vss.push_back(new PedersenVSS(n_in, t, i_in, p, q, g, h, F_size, G_size, false, v_i_vss_label.str()));
 	}
-	mpz_t foo, bar, lhs, rhs, kprime_i, aprime_i, rho_i, sigma_i, d, r_k_i, r_a_i, tau_i;
-	std::vector<mpz_ptr> k_i, a_i, alpha_i, beta_i, gamma_i, delta_i, v_i, chi_i, Tk_i, Ta_i, d_i, dprime_i;
+	mpz_t foo, bar, lhs, rhs, kprime_i, aprime_i, rho_i, sigma_i, d, r_k_i, r_a_i, tau_i, dd, ee, ss, ssprime, tt;
+	std::vector<mpz_ptr> k_i, a_i, alpha_i, beta_i, gamma_i, delta_i, v_i, chi_i, Tk_i, Ta_i, d_i, dprime_i, DD, DDprime, EE;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs), mpz_init(kprime_i), mpz_init(aprime_i), mpz_init(rho_i),
-		mpz_init(sigma_i), mpz_init(d), mpz_init(r_k_i), mpz_init(r_a_i), mpz_init(tau_i);
+		mpz_init(sigma_i), mpz_init(d), mpz_init(r_k_i), mpz_init(r_a_i), mpz_init(tau_i), mpz_init(dd), mpz_init(ee),
+		mpz_init(ss), mpz_init(ssprime), mpz_init(tt);
 	for (size_t j = 0; j < n_in; j++)
 	{
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(), tmp4 = new mpz_t();
 		mpz_ptr tmp5 = new mpz_t(), tmp6 = new mpz_t(), tmp7 = new mpz_t(), tmp8 = new mpz_t();
 		mpz_ptr tmp9 = new mpz_t(), tmp10 = new mpz_t(), tmp11 = new mpz_t(), tmp12 = new mpz_t();
+		mpz_ptr tmp13 = new mpz_t(), tmp14 = new mpz_t(), tmp15 = new mpz_t();
 		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4);
 		mpz_init(tmp5), mpz_init(tmp6), mpz_init(tmp7), mpz_init(tmp8);
 		mpz_init(tmp9), mpz_init(tmp10), mpz_init(tmp11), mpz_init(tmp12);
+		mpz_init(tmp13), mpz_init(tmp13), mpz_init(tmp15);
 		k_i.push_back(tmp1), a_i.push_back(tmp2), alpha_i.push_back(tmp3), beta_i.push_back(tmp4);
 		gamma_i.push_back(tmp5), delta_i.push_back(tmp6), v_i.push_back(tmp7), chi_i.push_back(tmp8);
 		Tk_i.push_back(tmp9), Ta_i.push_back(tmp10), d_i.push_back(tmp11), dprime_i.push_back(tmp12);
+		DD.push_back(tmp13), DDprime.push_back(tmp14), EE.push_back(tmp15);
 	}
 // TODO
-	size_t simulate_faulty_randomizer[10];
-	for (size_t idx = 0; idx < 10; idx++)
+	size_t simulate_faulty_randomizer[50];
+	for (size_t idx = 0; idx < 50; idx++)
 		simulate_faulty_randomizer[idx] = mpz_wrandom_ui() % 2L;
 
 	// set ID for RBC
@@ -2625,8 +2631,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 			else
 			{
-				err << "P_" << i_in << ": k_i = " << k_i[i] << std::endl;
-				err << "P_" << i_in << ": a_i = " << a_i[i] << std::endl;
+				err << "P_" << i_in << ": k_i = " << k_i[i_in] << std::endl;
+				err << "P_" << i_in << ": a_i = " << a_i[i_in] << std::endl;
 				if (!k_i_vss[j]->Share(k_i[i_in], aiou, rbc, err, simulate_faulty_behaviour))
 					throw false;
 				if (!a_i_vss[j]->Share(a_i[i_in], aiou, rbc, err, simulate_faulty_behaviour))
@@ -2836,7 +2842,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				}
 				if (!mpz_invert(rhs, gamma_i[j], p))
 				{
-					err << "P_" << i << ": cannot invert gamma_i from P_" << j << std::endl;
+					err << "P_" << i_in << ": cannot invert gamma_i from P_" << j << std::endl;
 					continue;
 				}
 				mpz_mul(rhs, rhs, alpha_i[j]);
@@ -2907,7 +2913,296 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			err << "P_" << i_in << ": chi_i[" << j << "] = " << chi_i[j] << std::endl;
 		}
 		err << "P_" << i_in << ": tau_i = " << tau_i << std::endl;
-
+		//        Each $P_i$ proves in ZK that the value committed in $\chi_i$ is the product
+		//        of the values committed to in $\alpha_i$ and $\beta_i$. This is done using
+		//        a zero-knowledge proof from [CD98]. This is a 3-move public coin proof and
+		//        it is performed by all players as above.
+		//        (We use the simplified presentation from [BCCG15] called $\Sigma_{prod}$.)
+		mpz_srandomm(dd, q), mpz_srandomm(ee, q), mpz_srandomm(ss, q), mpz_srandomm(ssprime, q), mpz_srandomm(tt, q);
+		mpz_fspowm(fpowm_table_g, foo, g, dd, p);
+		mpz_fspowm(fpowm_table_h, bar, h, ss, p);
+		mpz_mul(DD[i_in], foo, bar);
+		mpz_mod(DD[i_in], DD[i_in], p);
+		mpz_spowm(foo, beta_i[i_in], dd, p);
+		mpz_fspowm(fpowm_table_h, bar, h, ssprime, p);
+		mpz_mul(DDprime[i_in], foo, bar);
+		mpz_mod(DDprime[i_in], DDprime[i_in], p);
+		mpz_fspowm(fpowm_table_g, foo, g, ee, p);
+		mpz_fspowm(fpowm_table_h, bar, h, tt, p);
+		mpz_mul(EE[i_in], foo, bar);
+		mpz_mod(EE[i_in], EE[i_in], p);
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if (j == i_in)
+			{
+				rbc->Broadcast(DD[i_in]);
+				rbc->Broadcast(DDprime[i_in]);
+				rbc->Broadcast(EE[i_in]);
+			}
+			else
+			{
+				if (!rbc->DeliverFrom(DD[j], j))
+				{
+					err << "P_" << i_in << ": receiving DD failed for P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
+				if (!rbc->DeliverFrom(DDprime[j], j))
+				{
+					err << "P_" << i_in << ": receiving DDprime failed for P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
+				if (!rbc->DeliverFrom(EE[j], j))
+				{
+					err << "P_" << i_in << ": receiving EE failed for P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
+				if (!CheckElement(DD[j]))
+				{
+					err << "P_" << i_in << ": bad DD received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(DD[j], 0L); // indicates an error
+				}
+				if (!CheckElement(DDprime[j]))
+				{
+					err << "P_" << i_in << ": bad DDprime received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(DDprime[j], 0L); // indicates an error
+				}
+				if (!CheckElement(EE[j]))
+				{
+					err << "P_" << i_in << ": bad EE received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(EE[j], 0L); // indicates an error
+				}
+			}
+		}
+		//        Players execute Joint-RVSS(t,n,t) for a joint random challenge $d$. Player $P_i$ sets
+		//        his local share of the secret challenge to $d_i$. (In [CD98] this callenge is called $e$
+		//        and in [BCCG15] it is called $x$.)
+		if (!dd_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
+			throw false;
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[9])
+			throw false;
+		mpz_set(d_i[i_in], dd_rvss->z_i), mpz_set(dprime_i[i_in], dd_rvss->zprime_i);
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if (std::find(dd_rvss->QUAL.begin(), dd_rvss->QUAL.end(), j) == dd_rvss->QUAL.end())
+				d_complaints.push_back(j);
+		}
+		//        Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if ((j == i_in) && (std::find(dd_rvss->QUAL.begin(), dd_rvss->QUAL.end(), j) != dd_rvss->QUAL.end()))
+			{
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer[10])
+					mpz_add_ui(d_i[i_in], d_i[i_in], 1L);
+				rbc->Broadcast(d_i[i_in]);
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer[11])
+					mpz_add_ui(dprime_i[i_in], dprime_i[i_in], 1L);
+				rbc->Broadcast(dprime_i[i_in]);
+			}
+			else if ((j != i_in) && (std::find(dd_rvss->QUAL.begin(), dd_rvss->QUAL.end(), j) != dd_rvss->QUAL.end()))
+			{
+				if (!rbc->DeliverFrom(d_i[j], j))
+				{
+					err << "P_" << i_in << ": receiving d_i failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					continue;
+				}
+				if (mpz_cmpabs(d_i[j], q) >= 0)
+				{
+					err << "P_" << i_in << ": bad d_i received; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					mpz_set_ui(d_i[j], 0L); // indicates an error
+				}
+				if (!rbc->DeliverFrom(dprime_i[j], j))
+				{
+					err << "P_" << i_in << ": receiving dprime_i failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					continue;
+				}
+				if (mpz_cmpabs(dprime_i[j], q) >= 0)
+				{
+					err << "P_" << i_in << ": bad dprime_i received; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					mpz_set_ui(dprime_i[j], 0L); // indicates an error
+				}
+				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
+				mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
+				mpz_mul(lhs, foo, bar);
+				mpz_mod(lhs, lhs, p);
+				mpz_set_ui(rhs, 1L);
+				mpz_mul(rhs, rhs, dd_rvss->C_ik[j][0]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i_in << ": checking d_i resp. dprime_i failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+				}
+			}
+			else
+				err << "P_" << i_in << ": WARNING - P_" << j << " not in QUAL of dd_rvss" << std::endl;
+		}
+		//        Public reconstruction of $d_j$, for every failed player $P_j$
+		std::sort(d_complaints.begin(), d_complaints.end());
+		it = std::unique(d_complaints.begin(), d_complaints.end());
+		d_complaints.resize(std::distance(d_complaints.begin(), it));
+		err << "P_" << i_in << ": there are extracting complaints of dd_rvss against ";
+		for (std::vector<size_t>::iterator it = d_complaints.begin(); it != d_complaints.end(); ++it)
+			err << "P_" << *it << " ";
+		err << std::endl;
+		if (!dd_rvss->Reconstruct(d_complaints, d_i, rbc, err))
+		{
+			err << "P_" << i_in << ": reconstruction of d_i in step 1(d) failed" << std::endl;
+			throw false;
+		}
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[12])
+			throw false;
+		//        Get $d = \sum_{P_i \in QUAL} d_i$
+		mpz_set_ui(d, 0L);
+		for (std::vector<size_t>::iterator it = dd_rvss->QUAL.begin(); it != dd_rvss->QUAL.end(); ++it)
+		{
+			mpz_add(d, d, d_i[*it]);
+			mpz_mod(d, d, q);
+		}
+		err << "P_" << i_in << ": d = " << d << std::endl;
+		d_complaints.clear();
+		//        Broadcast the responses...
+		//        $f_1 = k_i d + dd \bmod q$
+		mpz_mul(foo, k_i[i_in], d);
+		mpz_mod(foo, foo, q);
+		mpz_add(foo, foo, dd);
+		mpz_mod(foo, foo, q);
+		//        $z_1 = kprime_i d + ss \bmod q$
+		mpz_mul(bar, kprime_i, d);
+		mpz_mod(bar, bar, q);
+		mpz_add(bar, bar, ss);
+		mpz_mod(bar, bar, q);
+		//        $f_2 = a_i d + ee \bmod q$
+		mpz_mul(lhs, a_i[i_in], d);
+		mpz_mod(lhs, lhs, q);
+		mpz_add(lhs, lhs, ee);
+		mpz_mod(lhs, lhs, q);
+		//        $z_2 = aprime_i d + tt \bmod q$
+		mpz_mul(rhs, aprime_i, d);
+		mpz_mod(rhs, rhs, q);
+		mpz_add(rhs, rhs, tt);
+		mpz_mod(rhs, rhs, q);
+		rbc->Broadcast(foo);
+		rbc->Broadcast(bar);
+		rbc->Broadcast(lhs);
+		rbc->Broadcast(rhs);
+		//        $z_3 = (\tau_i - k_i aprime_i) d + ssprime$
+		mpz_mul(foo, k_i[i_in], aprime_i);
+		mpz_mod(foo, foo, q);
+		mpz_sub(bar, tau_i, foo);
+		mpz_mod(bar, bar, q);
+		mpz_mul(bar, bar, d);
+		mpz_mod(bar, bar, q);
+		mpz_add(bar, bar, ssprime);
+		mpz_mod(bar, bar, q);
+		rbc->Broadcast(bar);
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if (j != i_in)
+			{
+				if (!rbc->DeliverFrom(foo, j))
+				{
+					err << "P_" << i_in << ": receiving foo failed for P_" << j << std::endl;
+					continue;
+				}
+				if (!rbc->DeliverFrom(bar, j))
+				{
+					err << "P_" << i_in << ": receiving bar failed for P_" << j << std::endl;
+					continue;
+				}
+				if (mpz_cmpabs(foo, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad foo received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(foo, 0L); // indicates an error
+				}
+				if (mpz_cmpabs(bar, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad bar received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(foo, 0L); // indicates an error
+				}
+				mpz_set(ssprime, foo); // save $f_1$ for third ZNPoK
+				mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
+				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				mpz_mul(lhs, lhs, rhs);
+				mpz_mod(lhs, lhs, p);
+				mpz_powm(rhs, alpha_i[j], d, p);
+				mpz_mul(rhs, rhs, DD[j]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i_in << ": first ZNPoK in step 1(d) failed for P_" << j << std::endl;
+					complaints.push_back(j);
+				}
+				if (!rbc->DeliverFrom(foo, j))
+				{
+					err << "P_" << i_in << ": receiving foo failed for P_" << j << std::endl;
+					continue;
+				}
+				if (!rbc->DeliverFrom(bar, j))
+				{
+					err << "P_" << i_in << ": receiving bar failed for P_" << j << std::endl;
+					continue;
+				}
+				if (mpz_cmpabs(foo, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad foo received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(foo, 0L); // indicates an error
+				}
+				if (mpz_cmpabs(bar, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad bar received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(foo, 0L); // indicates an error
+				}
+				mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
+				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				mpz_mul(lhs, lhs, rhs);
+				mpz_mod(lhs, lhs, p);
+				mpz_powm(rhs, beta_i[j], d, p);
+				mpz_mul(rhs, rhs, EE[j]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i_in << ": second ZNPoK in step 1(d) failed for P_" << j << std::endl;
+					complaints.push_back(j);
+				}
+				if (!rbc->DeliverFrom(bar, j))
+				{
+					err << "P_" << i_in << ": receiving bar failed for P_" << j << std::endl;
+					continue;
+				}
+				if (mpz_cmpabs(bar, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad bar received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(foo, 0L); // indicates an error
+				}
+				mpz_powm(rhs, beta_i[j], ssprime, p);
+				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				mpz_mul(lhs, lhs, rhs);
+				mpz_mod(lhs, lhs, p);
+				mpz_powm(rhs, chi_i[j], d, p);
+				mpz_mul(rhs, rhs, DDprime[j]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i_in << ": third ZNPoK in step 1(d) failed for P_" << j << std::endl;
+					complaints.push_back(j);
+				}	
+			}
+		}
 
 // TODO
 
@@ -2925,19 +3220,23 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs), mpz_clear(kprime_i), mpz_clear(aprime_i), mpz_clear(rho_i),
-			mpz_clear(sigma_i), mpz_clear(d), mpz_clear(r_k_i), mpz_clear(r_a_i), mpz_clear(tau_i);
+			mpz_clear(sigma_i), mpz_clear(d), mpz_clear(r_k_i), mpz_clear(r_a_i), mpz_clear(tau_i), mpz_clear(dd), mpz_clear(ee),
+			mpz_clear(ss), mpz_clear(ssprime), mpz_clear(tt);
 		for (size_t j = 0; j < n_in; j++)
 		{
 			mpz_clear(k_i[j]), mpz_clear(a_i[j]), mpz_clear(alpha_i[j]), mpz_clear(beta_i[j]);
 			mpz_clear(gamma_i[j]), mpz_clear(delta_i[j]), mpz_clear(v_i[j]), mpz_clear(chi_i[j]);
 			mpz_clear(Tk_i[j]), mpz_clear(Ta_i[j]), mpz_clear(d_i[j]), mpz_clear(dprime_i[j]);
+			mpz_clear(DD[j]), mpz_clear(DDprime[j]), mpz_clear(EE[j]);
 			delete [] k_i[j], delete [] a_i[j], delete [] alpha_i[j], delete [] beta_i[j];
 			delete [] gamma_i[j], delete [] delta_i[j], delete [] v_i[j], delete [] chi_i[j];
 			delete [] Tk_i[j], delete [] Ta_i[j], delete [] d_i[j], delete [] dprime_i[j];
+			delete [] DD[j], delete [] DDprime[j], delete [] EE[j];
 		}
 		k_i.clear(), a_i.clear(), alpha_i.clear(), beta_i.clear();
 		gamma_i.clear(), delta_i.clear(), v_i.clear(), chi_i.clear();
 		Tk_i.clear(), Ta_i.clear(), d_i.clear(), dprime_i.clear();
+		DD.clear(), DDprime.clear(), EE.clear();
 // TODO
 		for (size_t j = 0; j < n_in; j++)
 		{
@@ -2946,7 +3245,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			delete v_i_vss[j];
 		}
 		a_i_vss.clear(), k_i_vss.clear(), v_i_vss.clear();
-		delete d_rvss;
+		delete d_rvss, delete dd_rvss;
 		delete a_dkg;
 		delete k_rvss;
 

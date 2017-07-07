@@ -219,28 +219,31 @@ void start_instance
 				assert(ret);
 */
 			// check signing and verifying of a message with N-1 signers
-			mpz_set_ui(m, 23L), mpz_set_ui(r, 0L), mpz_set_ui(s, 0L);
-			start_clock();
-			std::cout << "P_" << whoami << ": dss.Sign(23, ...)" << std::endl;
-			if (corrupted)
-				dss->Sign(N-1, whoami, m, r, s, aiou_nm1, rbc_nm1, err_log_sign_nm1, true);
-			else
-				ret = dss->Sign(N-1, whoami, m, r, s, aiou_nm1, rbc_nm1, err_log_sign_nm1);
-			stop_clock();
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign_nm1.str();
-			if (!corrupted)
-				assert(ret);
-			start_clock();
-			std::cout << "P_" << whoami << ": dss.Verify(23, ...)" << std::endl;
-			if (corrupted)
-				dss->Verify(m, r, s);
-			else
-				ret = dss->Verify(m, r, s);
-			stop_clock();
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			if (!corrupted)
-				assert(ret);
+			if (whoami < (N-1))
+			{
+				mpz_set_ui(m, 23L), mpz_set_ui(r, 0L), mpz_set_ui(s, 0L);
+				start_clock();
+				std::cout << "P_" << whoami << ": dss.Sign(23, ...)" << std::endl;
+				if (corrupted)
+					dss->Sign(N-1, whoami, m, r, s, aiou_nm1, rbc_nm1, err_log_sign_nm1, true);
+				else
+					ret = dss->Sign(N-1, whoami, m, r, s, aiou_nm1, rbc_nm1, err_log_sign_nm1);
+				stop_clock();
+				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign_nm1.str();
+				if (!corrupted)
+					assert(ret);
+				start_clock();
+				std::cout << "P_" << whoami << ": dss.Verify(23, ...)" << std::endl;
+				if (corrupted)
+					dss->Verify(m, r, s);
+				else
+					ret = dss->Verify(m, r, s);
+				stop_clock();
+				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+				if (!corrupted)
+					assert(ret);
+			}
 			mpz_clear(m), mpz_clear(r), mpz_clear(s);
 
 			// release DSS
