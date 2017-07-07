@@ -2535,11 +2535,11 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		v_i_vss_label << "v_i_vss[dealer = " << j << "]";
 		v_i_vss.push_back(new PedersenVSS(n_in, t, i_in, p, q, g, h, F_size, G_size, false, v_i_vss_label.str()));
 	}
-	mpz_t foo, bar, lhs, rhs, kprime_i, aprime_i, rho_i, sigma_i, d, r_k_i, r_a_i, tau_i, dd, ee, ss, ssprime, tt;
+	mpz_t foo, bar, lhs, rhs, kprime_i, aprime_i, rho_i, sigma_i, d, r_k_i, r_a_i, tau_i, dd, ee, ss, ssprime, tt, mu;
 	std::vector<mpz_ptr> k_i, a_i, alpha_i, beta_i, gamma_i, delta_i, v_i, chi_i, Tk_i, Ta_i, d_i, dprime_i, DD, DDprime, EE;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs), mpz_init(kprime_i), mpz_init(aprime_i), mpz_init(rho_i),
 		mpz_init(sigma_i), mpz_init(d), mpz_init(r_k_i), mpz_init(r_a_i), mpz_init(tau_i), mpz_init(dd), mpz_init(ee),
-		mpz_init(ss), mpz_init(ssprime), mpz_init(tt);
+		mpz_init(ss), mpz_init(ssprime), mpz_init(tt), mpz_init(mu);
 	for (size_t j = 0; j < n_in; j++)
 	{
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(), tmp4 = new mpz_t();
@@ -3206,7 +3206,34 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 
 // TODO
 
+		//    (f) The value $\mu = ka$ is a linear combination of the values $v_1, \ldots, v_{2t+1}$.
+		//        Thus it can be computed interpolating the polynomial of degree $t$ which is a linear
+		//        combination of the polynomials used in Step 1d to share $v_1, \ldots, v_{2t+1}$.
+		//        Each player broadcasts its share (together with its associated randomness) of that
+		//        $t$-degree polynomial, which is itself a linear combination of the shares of
+		//        $v_1, \ldots, v_{2t+1}$ received in Step 1d. For the $v_j$'s that were exposed in
+		//        Step 1e, we use the constant sharing polynomial. Bad shares are detected using the
+		//        public commitments, and $\mu$ is reconstructed.
+		mpz_set_ui(foo, 1L), mpz_set_ui(bar, 1L);
+		for (size_t j = 0; j < n_in; j++)
+		{
+			mpz_mul(foo, foo, v_i_vss[j]->sigma_i);
+			mpz_mod(foo, foo, q);
+			mpz_mul(bar, bar, v_i_vss[j]->tau_i);
+			mpz_mod(bar, bar, q);
+		}
+		rbc->Broadcast(foo);
+		rbc->Broadcast(bar);
+// TODO: collect shares, check and interpolate to get mu
 
+		//    (g) Player $P_i$ computes locally $\mu^{-1} \bmod q$ and $r = (g^a)^{\mu^{-1}} \bmod p \bmod q$.
+		if (!mpz_invert(foo, mu, q))
+		{
+			err << "P_" << i_in << ": cannot invert mu" << std::endl;
+			throw false;
+		}
+		mpz_powm(r, a_dkg->y, foo, p);
+		mpz_mod(r, r, q);
 
 		// 2. Generate $s = k(m + xr) \bmod q$
 // TODO
@@ -3221,7 +3248,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs), mpz_clear(kprime_i), mpz_clear(aprime_i), mpz_clear(rho_i),
 			mpz_clear(sigma_i), mpz_clear(d), mpz_clear(r_k_i), mpz_clear(r_a_i), mpz_clear(tau_i), mpz_clear(dd), mpz_clear(ee),
-			mpz_clear(ss), mpz_clear(ssprime), mpz_clear(tt);
+			mpz_clear(ss), mpz_clear(ssprime), mpz_clear(tt), mpz_clear(mu);
 		for (size_t j = 0; j < n_in; j++)
 		{
 			mpz_clear(k_i[j]), mpz_clear(a_i[j]), mpz_clear(alpha_i[j]), mpz_clear(beta_i[j]);
