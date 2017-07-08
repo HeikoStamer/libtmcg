@@ -3214,12 +3214,12 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        $v_1, \ldots, v_{2t+1}$ received in Step 1d. For the $v_j$'s that were exposed in
 		//        Step 1e, we use the constant sharing polynomial. Bad shares are detected using the
 		//        public commitments, and $\mu$ is reconstructed.
-		mpz_set_ui(foo, 1L), mpz_set_ui(bar, 1L);
+		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			mpz_mul(foo, foo, v_i_vss[j]->sigma_i);
+			mpz_add(foo, foo, v_i_vss[j]->sigma_i);
 			mpz_mod(foo, foo, q);
-			mpz_mul(bar, bar, v_i_vss[j]->tau_i);
+			mpz_add(bar, bar, v_i_vss[j]->tau_i);
 			mpz_mod(bar, bar, q);
 		}
 		rbc->Broadcast(foo);
