@@ -403,9 +403,21 @@ bool PedersenVSS::Share
 			}
 			err << "VSS(" << label << "): P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
 		}
-
-		mpz_set_ui(sigma_i, 1L);
-		mpz_set_ui(tau_i, 1L);
+		// compute own shares of dealer $P_i$
+		mpz_set_ui(sigma_i, 0L);
+		mpz_set_ui(tau_i, 0L);
+		for (size_t k = 0; k <= t; k++)
+		{
+			mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
+			mpz_mul(bar, foo, b_j[k]);
+			mpz_mod(bar, bar, q);
+			mpz_mul(foo, foo, a_j[k]);
+			mpz_mod(foo, foo, q);
+			mpz_add(sigma_i, sigma_i, foo);
+			mpz_mod(sigma_i, sigma_i, q);				
+			mpz_add(tau_i, tau_i, bar);
+			mpz_mod(tau_i, tau_i, q);
+		}
 		throw true;
 	}
 	catch (bool return_value)
