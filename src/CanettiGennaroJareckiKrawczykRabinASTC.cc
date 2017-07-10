@@ -3263,7 +3263,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				{
 					for (size_t k = 0; k < v_i_vss[jj]->A_j.size(); k++)
 					{
-						mpz_ui_pow_ui(foo, i_in + 1, k); // adjust index $i$ in computation
+						mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
 						mpz_powm(bar, v_i_vss[jj]->A_j[k], foo, p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
