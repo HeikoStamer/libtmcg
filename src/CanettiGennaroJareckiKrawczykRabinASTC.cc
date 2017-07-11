@@ -3203,9 +3203,38 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				}	
 			}
 		}
-
-// TODO: Step (e)
-
+		//    (e) If player $P_j$ fails the proof in the above step, his shares $a_j, k_j$ are publicly
+		//        reconstructed via interpolation of the back-ups of shares distributed in Step 1c.
+		//        Since each $a_j$ (resp. $k_j$) can be computed as a linear combination of some $t+1$
+		//        values $a_i$ (resp. $k_i$) that were properly shared in Step 1c, each player broadcasts
+		//        the appropriate linear combination of its shares of these $a_i$'s (resp. $k_i$'s),
+		//        together with their associated randomness (computed as the same linear combination of
+		//        the associated randomness generated in Step 1c). Bad values are sieved out using the
+		//        public commitments of Step 1c, $a_j$ and $k_j$ are reconstructed, and $v_j$ is set to
+		//        $a_j k_j$.
+		std::sort(complaints.begin(), complaints.end());
+		it = std::unique(complaints.begin(), complaints.end());
+		complaints.resize(std::distance(complaints.begin(), it));
+		err << "P_" << i_in << ": there are extracting complaints of v_j against ";
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+			err << "P_" << *it << " ";
+		err << std::endl;
+		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
+		{
+			if (k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+			{
+				err << "P_" << i_in << ": reconstruction of k_j failed for P_" << *it << std::endl;	
+				throw false;
+			}
+			if (k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+			{
+				err << "P_" << i_in << ": reconstruction of k_j failed for P_" << *it << std::endl;	
+				throw false;
+			}
+			mpz_mul(v_i[*it], foo, bar);
+			mpz_mod(v_i[*it], v_i[*it], q);
+			err << "P_" << i_in << ": v_i[" << *it << "] = " << v_i[*it] << std::endl;
+		}
 		//    (f) The value $\mu = ka$ is a linear combination of the values $v_1, \ldots, v_{2t+1}$.
 		//        Thus it can be computed interpolating the polynomial of degree $t$ which is a linear
 		//        combination of the polynomials used in Step 1d to share $v_1, \ldots, v_{2t+1}$.
@@ -3217,6 +3246,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 		for (size_t j = 0; j < n_in; j++)
 		{
+// TODO: include v_i for failed parties
 			mpz_add(foo, foo, v_i_vss[j]->sigma_i);
 			mpz_mod(foo, foo, q);
 			mpz_add(bar, bar, v_i_vss[j]->tau_i);
@@ -3331,6 +3361,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		}
 		mpz_powm(r, a_dkg->y, foo, p);
 		mpz_mod(r, r, q);
+		err << "P_" << i_in << ": r = " << r << std::endl;
 
 		// 2. Generate $s = k(m + xr) \bmod q$
 // TODO
