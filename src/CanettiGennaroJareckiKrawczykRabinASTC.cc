@@ -2535,11 +2535,11 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		v_i_vss_label << "v_i_vss[dealer = " << j << "]";
 		v_i_vss.push_back(new PedersenVSS(n_in, t, i_in, p, q, g, h, F_size, G_size, false, v_i_vss_label.str()));
 	}
-	mpz_t foo, bar, lhs, rhs, kprime_i, aprime_i, rho_i, sigma_i, d, r_k_i, r_a_i, tau_i, dd, ee, ss, ssprime, tt, mu;
+	mpz_t foo, bar, lhs, rhs, kprime_i, aprime_i, rho_i, sigma_i, d, r_k_i, r_a_i, tau_i, dd, ee, ss, ssprime, tt, mu, lambda_j;
 	std::vector<mpz_ptr> k_i, a_i, alpha_i, beta_i, gamma_i, delta_i, v_i, chi_i, Tk_i, Ta_i, d_i, dprime_i, DD, DDprime, EE, shares;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs), mpz_init(kprime_i), mpz_init(aprime_i), mpz_init(rho_i),
 		mpz_init(sigma_i), mpz_init(d), mpz_init(r_k_i), mpz_init(r_a_i), mpz_init(tau_i), mpz_init(dd), mpz_init(ee),
-		mpz_init(ss), mpz_init(ssprime), mpz_init(tt), mpz_init(mu);
+		mpz_init(ss), mpz_init(ssprime), mpz_init(tt), mpz_init(mu), mpz_init(lambda_j);
 	for (size_t j = 0; j < n_in; j++)
 	{
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(), tmp4 = new mpz_t();
@@ -3221,12 +3221,12 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		err << std::endl;
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			if (k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+			if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
 			{
 				err << "P_" << i_in << ": reconstruction of k_j failed for P_" << *it << std::endl;	
 				throw false;
 			}
-			if (k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+			if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
 			{
 				err << "P_" << i_in << ": reconstruction of k_j failed for P_" << *it << std::endl;	
 				throw false;
@@ -3246,8 +3246,33 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 		for (size_t j = 0; j < n_in; j++)
 		{
-// TODO: include v_i for failed parties
-			mpz_add(foo, foo, v_i_vss[j]->sigma_i);
+mpz_set_ui(rhs, 1L); // compute the optimized Lagrange multipliers
+for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+{
+	if (*lt != j)
+		mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
+}
+mpz_set_ui(lhs, 1L);
+for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+{
+	if (*lt != j)
+	{
+		mpz_set_ui(bar, (*lt + 1)); // adjust index in computation
+		mpz_sub_ui(bar, bar, (j + 1)); // adjust index in computation
+		mpz_mul(lhs, lhs, bar);
+	}
+}
+if (!mpz_invert(lhs, lhs, q))
+{
+	err << "P_" << i_in << ": cannot invert LHS during reconstruction" << std::endl;
+	throw false;
+}
+mpz_mul(lambda_j, rhs, lhs);
+mpz_mod(lambda_j, lambda_j, q);
+// TODO: include v_i's for failed parties from the vector complaints
+			mpz_mul(rhs, lambda_j, v_i_vss[j]->sigma_i);
+			mpz_mod(rhs, rhs, q);
+			mpz_add(foo, foo, rhs);
 			mpz_mod(foo, foo, q);
 			mpz_add(bar, bar, v_i_vss[j]->tau_i);
 			mpz_mod(bar, bar, q);
@@ -3352,6 +3377,62 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		}
 		parties.clear();
 		err << "P_" << i_in << ": mu = " << mu << std::endl;
+// FIXME: testing code for reconstructing mu from shared v_i's
+parties.clear();
+for (size_t j = 0; j < n_in; j++)
+{
+	if (j != i_in)
+	{
+		if (!v_i_vss[j]->Reconstruct(j, v_i[j], rbc, err))
+			throw false;
+	}
+	err << "P_" << i_in << ": v_i[" << j << "] = " << v_i[j] << std::endl;
+	parties.push_back(j);
+}
+mpz_set_ui(mu, 0L);
+if (parties.size() > (t + 1))
+	parties.resize(t + 1);
+err << "P_" << i_in << ": reconstructing parties = ";
+for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
+	err << "P_" << *jt << " ";
+err << std::endl;
+// compute $\mu$ using Lagrange interpolation
+mpz_set_ui(mu, 0L);
+for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
+{
+	mpz_set_ui(rhs, 1L); // compute the optimized Lagrange multipliers
+	for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+	{
+		if (*lt != *jt)
+			mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
+	}
+	mpz_set_ui(lhs, 1L);
+	for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+	{
+		if (*lt != *jt)
+		{
+			mpz_set_ui(bar, (*lt + 1)); // adjust index in computation
+			mpz_sub_ui(bar, bar, (*jt + 1)); // adjust index in computation
+			mpz_mul(lhs, lhs, bar);
+		}
+	}
+	if (!mpz_invert(lhs, lhs, q))
+	{
+		err << "P_" << i_in << ": cannot invert LHS during reconstruction" << std::endl;
+		throw false;
+	}
+	mpz_mul(rhs, rhs, lhs);
+	mpz_mod(rhs, rhs, q);
+	mpz_mul(bar, v_i[*jt], rhs); // use the reconstructed v_i's (interpolation points)
+	mpz_mod(bar, bar, q);
+	mpz_add(mu, mu, bar);
+	mpz_mod(mu, mu, q);
+}
+parties.clear();
+err << "P_" << i_in << ": mu = " << mu << std::endl;
+
+
+
 
 		//    (g) Player $P_i$ computes locally $\mu^{-1} \bmod q$ and $r = (g^a)^{\mu^{-1}} \bmod p \bmod q$.
 		if (!mpz_invert(foo, mu, q))
@@ -3376,7 +3457,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs), mpz_clear(kprime_i), mpz_clear(aprime_i), mpz_clear(rho_i),
 			mpz_clear(sigma_i), mpz_clear(d), mpz_clear(r_k_i), mpz_clear(r_a_i), mpz_clear(tau_i), mpz_clear(dd), mpz_clear(ee),
-			mpz_clear(ss), mpz_clear(ssprime), mpz_clear(tt), mpz_clear(mu);
+			mpz_clear(ss), mpz_clear(ssprime), mpz_clear(tt), mpz_clear(mu), mpz_clear(lambda_j);
 		for (size_t j = 0; j < n_in; j++)
 		{
 			mpz_clear(k_i[j]), mpz_clear(a_i[j]), mpz_clear(alpha_i[j]), mpz_clear(beta_i[j]);
