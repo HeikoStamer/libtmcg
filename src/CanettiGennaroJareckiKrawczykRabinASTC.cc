@@ -563,7 +563,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 			err << std::endl;
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 			{
-				mpz_set_ui(lhs, *it); // who?
+				mpz_set_ui(lhs, *it); // who failed?
 				rbc->Broadcast(lhs);
 				rbc->Broadcast(s_ji[i][*it]);
 				rbc->Broadcast(sprime_ji[i][*it]);
@@ -621,7 +621,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 						mpz_set_ui(bar, 0L); // indicates an error
 					}
 					mpz_t s, sprime;
-					mpz_init_set(s, foo), mpz_init_set(sprime, bar);
+					mpz_init_set(s, foo), mpz_init_set(sprime, bar); // save shares
 					// compute LHS for the check
 					mpz_fpowm(fpowm_table_g, foo, g, foo, p);
 					mpz_fpowm(fpowm_table_h, bar, h, bar, p);
@@ -644,7 +644,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 					}
 					else
 					{
-						// don't be too curious
+						// don't be too curious, store only shares for this player
 						if (who == i)
 						{
 							err << "RVSS(" << label << "): P_" << i << ": shares adjusted in step 1d from P_" << j << std::endl;
@@ -720,6 +720,8 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
 	// set ID for RBC
 	std::stringstream myID;
 	myID << "CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct()" << p << q << g << h << n << t << tprime << label;
+	for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
+		myID << "[" << *it << "]";
 	rbc->setID(myID.str());
 
 	try
@@ -2207,11 +2209,13 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		err << "}" << std::endl;
 		err << "DKG(" << label << "): P_" << i << ": y = " << y << std::endl;
 		// 9. Player $P_i$ erases all secret information aside from his share $x_i$.
+// FIXME
+/*
 		x_rvss->EraseSecrets();
 		d_rvss->EraseSecrets();
 		for (size_t j = 0; j < z_i.size(); j++)
 			mpz_set_ui(z_i[j], 0L);
-
+*/
 		throw true;
 	}
 	catch (bool return_value)
@@ -3434,6 +3438,73 @@ for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++
 }
 parties.clear();
 err << "P_" << i_in << ": mu = " << mu << std::endl;
+// FIXME: testing code for reconstructing mu from shared k_i's and a_i's
+err << "[a]" << std::endl;
+parties.clear();
+for (size_t j = 0; j < t; j++)
+	parties.push_back(j);
+if (!k_rvss->Reconstruct(parties, v_i, rbc, err))
+{
+	err << "P_" << i_in << ": reconstruction of k_rvss failed " << std::endl;
+	throw false;
+}
+if (!a_dkg->x_rvss->Reconstruct(parties, chi_i, rbc, err))
+{
+	err << "P_" << i_in << ": reconstruction of a_dkg failed " << std::endl;
+	throw false;
+}
+err << "[b]" << std::endl;
+parties.clear();
+for (size_t j = t; j < (2*t); j++)
+	parties.push_back(j);
+if (!k_rvss->Reconstruct(parties, v_i, rbc, err))
+{
+	err << "P_" << i_in << ": reconstruction of k_rvss failed " << std::endl;
+	throw false;
+}
+if (!a_dkg->x_rvss->Reconstruct(parties, chi_i, rbc, err))
+{
+	err << "P_" << i_in << ": reconstruction of a_dkg failed " << std::endl;
+	throw false;
+}
+err << "[c]" << std::endl;
+parties.clear();
+for (size_t j = (2*t); j < n_in; j++)
+	parties.push_back(j);
+if (!k_rvss->Reconstruct(parties, v_i, rbc, err))
+{
+	err << "P_" << i_in << ": reconstruction of k_rvss failed " << std::endl;
+	throw false;
+}
+if (!a_dkg->x_rvss->Reconstruct(parties, chi_i, rbc, err))
+{
+	err << "P_" << i_in << ": reconstruction of a_dkg failed " << std::endl;
+	throw false;
+}
+mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
+for (size_t j = 0; j < n_in; j++)
+{
+	mpz_add(foo, foo, v_i[j]);
+	mpz_mod(foo, foo, q);
+	mpz_add(bar, bar, chi_i[j]);
+	mpz_mod(bar, bar, q);
+}
+mpz_mul(mu, foo, bar);
+mpz_mod(mu, mu, q);
+err << "P_" << i_in << ": mu = " << mu << std::endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

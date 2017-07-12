@@ -1061,8 +1061,9 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "GennaroJareckiKrawczykRabinDKG::Reconstruct()"
-		<< p << q << g << h << n << t;
+	myID << "GennaroJareckiKrawczykRabinDKG::Reconstruct()" << p << q << g << h << n << t;
+	for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
+		myID << "[" << *it << "]";
 	rbc->setID(myID.str());
 
 	try
