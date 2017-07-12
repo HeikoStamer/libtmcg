@@ -3329,9 +3329,9 @@ mpz_mod(lambda_j, lambda_j, q);
 					}
 				}
 				// check equation (1)
-				if (mpz_cmp(lhs, rhs))
-					err << "P_" << i_in << ": bad share received from " << j << std::endl;
-				else
+//				if (mpz_cmp(lhs, rhs))
+//					err << "P_" << i_in << ": bad share received from " << j << std::endl;
+//				else
 					parties.push_back(j);
 			}
 		}
