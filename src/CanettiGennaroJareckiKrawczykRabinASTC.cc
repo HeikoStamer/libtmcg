@@ -3243,38 +3243,42 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        $v_1, \ldots, v_{2t+1}$ received in Step 1d. For the $v_j$'s that were exposed in
 		//        Step 1e, we use the constant sharing polynomial. Bad shares are detected using the
 		//        public commitments, and $\mu$ is reconstructed.
+		std::vector<size_t> signers;
+// TODO: include v_i's for failed parties from the vector complaints
+for (size_t j = 0; j < ((2 * t) + 1); j++)
+	signers.push_back(j);
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
-		for (size_t j = 0; j < n_in; j++)
+		for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
 		{
 mpz_set_ui(rhs, 1L); // compute the optimized Lagrange multipliers
-for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+for (std::vector<size_t>::iterator lt = signers.begin(); lt != signers.end(); ++lt)
 {
-	if (*lt != j)
+	if (*lt != *jt)
 		mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
 }
 mpz_set_ui(lhs, 1L);
-for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+for (std::vector<size_t>::iterator lt = signers.begin(); lt != signers.end(); ++lt)
 {
-	if (*lt != j)
+	if (*lt != *jt)
 	{
 		mpz_set_ui(bar, (*lt + 1)); // adjust index in computation
-		mpz_sub_ui(bar, bar, (j + 1)); // adjust index in computation
+		mpz_sub_ui(bar, bar, (*jt + 1)); // adjust index in computation
 		mpz_mul(lhs, lhs, bar);
 	}
 }
 if (!mpz_invert(lhs, lhs, q))
 {
-	err << "P_" << i_in << ": cannot invert LHS during reconstruction" << std::endl;
+	err << "P_" << i_in << ": cannot invert LHS during computation of linear combination for P_" << *jt << std::endl;
 	throw false;
 }
 mpz_mul(lambda_j, rhs, lhs);
 mpz_mod(lambda_j, lambda_j, q);
 // TODO: include v_i's for failed parties from the vector complaints
-			mpz_mul(rhs, lambda_j, v_i_vss[j]->sigma_i);
+			mpz_mul(rhs, lambda_j, v_i_vss[*jt]->sigma_i);
 			mpz_mod(rhs, rhs, q);
 			mpz_add(foo, foo, rhs);
 			mpz_mod(foo, foo, q);
-			mpz_add(bar, bar, v_i_vss[j]->tau_i);
+			mpz_add(bar, bar, v_i_vss[*jt]->tau_i);
 			mpz_mod(bar, bar, q);
 		}
 		rbc->Broadcast(foo);
@@ -3306,7 +3310,7 @@ mpz_mod(lambda_j, lambda_j, q);
 					err << "P_" << i_in << ": bad bar received from P_" << j << std::endl;
 					continue;
 				}
-				mpz_set(shares[j], foo);
+				mpz_set(shares[j], foo); // save the share for later reconstruction
 				// compute LHS for the check
 				mpz_fpowm(fpowm_table_g, foo, g, foo, p);
 				mpz_fpowm(fpowm_table_h, bar, h, bar, p);
@@ -3314,12 +3318,12 @@ mpz_mod(lambda_j, lambda_j, q);
 				mpz_mod(lhs, lhs, p);
 				// compute RHS for the check
 				mpz_set_ui(rhs, 1L);
-				for (size_t jj = 0; jj < n_in; jj++)
+				for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
 				{
-					for (size_t k = 0; k < v_i_vss[jj]->A_j.size(); k++)
+					for (size_t k = 0; k < v_i_vss[*jt]->A_j.size(); k++)
 					{
 						mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
-						mpz_powm(bar, v_i_vss[jj]->A_j[k], foo, p);
+						mpz_powm(bar, v_i_vss[*jt]->A_j[k], foo, p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
 					}
