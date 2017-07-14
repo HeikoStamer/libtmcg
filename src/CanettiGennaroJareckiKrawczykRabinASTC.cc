@@ -3230,9 +3230,9 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				err << "P_" << i_in << ": reconstruction of k_j failed for P_" << *it << std::endl;	
 				throw false;
 			}
-			if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+			if (!a_i_vss[*it]->Reconstruct(*it, bar, rbc, err))
 			{
-				err << "P_" << i_in << ": reconstruction of k_j failed for P_" << *it << std::endl;	
+				err << "P_" << i_in << ": reconstruction of a_j failed for P_" << *it << std::endl;	
 				throw false;
 			}
 			mpz_mul(v_i[*it], foo, bar);
