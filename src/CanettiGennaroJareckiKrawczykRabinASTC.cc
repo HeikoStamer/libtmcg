@@ -2539,25 +2539,28 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		v_i_vss_label << "v_i_vss[dealer = " << j << "]";
 		v_i_vss.push_back(new PedersenVSS(n_in, t, i_in, p, q, g, h, F_size, G_size, false, v_i_vss_label.str()));
 	}
-	mpz_t foo, bar, lhs, rhs, kprime_i, aprime_i, rho_i, sigma_i, d, r_k_i, r_a_i, tau_i, dd, ee, ss, ssprime, tt, mu, lambda_j;
-	std::vector<mpz_ptr> k_i, a_i, alpha_i, beta_i, gamma_i, delta_i, v_i, chi_i, Tk_i, Ta_i, d_i, dprime_i, DD, DDprime, EE, shares;
+	mpz_t foo, bar, lhs, rhs, kprime_i, aprime_i, rho_i, sigma_i, d, r_k_i, r_a_i, tau_i, dd, ee, ss, ssprime, tt, mu;
+	std::vector<mpz_ptr> k_i, a_i, alpha_i, beta_i, gamma_i, delta_i, v_i, chi_i, Tk_i, Ta_i, d_i, dprime_i, DD, DDprime, EE, shares, lambda_j;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs), mpz_init(kprime_i), mpz_init(aprime_i), mpz_init(rho_i),
 		mpz_init(sigma_i), mpz_init(d), mpz_init(r_k_i), mpz_init(r_a_i), mpz_init(tau_i), mpz_init(dd), mpz_init(ee),
-		mpz_init(ss), mpz_init(ssprime), mpz_init(tt), mpz_init(mu), mpz_init(lambda_j);
+		mpz_init(ss), mpz_init(ssprime), mpz_init(tt), mpz_init(mu);
 	for (size_t j = 0; j < n_in; j++)
 	{
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(), tmp4 = new mpz_t();
 		mpz_ptr tmp5 = new mpz_t(), tmp6 = new mpz_t(), tmp7 = new mpz_t(), tmp8 = new mpz_t();
 		mpz_ptr tmp9 = new mpz_t(), tmp10 = new mpz_t(), tmp11 = new mpz_t(), tmp12 = new mpz_t();
 		mpz_ptr tmp13 = new mpz_t(), tmp14 = new mpz_t(), tmp15 = new mpz_t(), tmp16 = new mpz_t();
+		mpz_ptr tmp17 = new mpz_t();
 		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4);
 		mpz_init(tmp5), mpz_init(tmp6), mpz_init(tmp7), mpz_init(tmp8);
 		mpz_init(tmp9), mpz_init(tmp10), mpz_init(tmp11), mpz_init(tmp12);
 		mpz_init(tmp13), mpz_init(tmp13), mpz_init(tmp15), mpz_init(tmp16);
+		mpz_init(tmp17);
 		k_i.push_back(tmp1), a_i.push_back(tmp2), alpha_i.push_back(tmp3), beta_i.push_back(tmp4);
 		gamma_i.push_back(tmp5), delta_i.push_back(tmp6), v_i.push_back(tmp7), chi_i.push_back(tmp8);
 		Tk_i.push_back(tmp9), Ta_i.push_back(tmp10), d_i.push_back(tmp11), dprime_i.push_back(tmp12);
 		DD.push_back(tmp13), DDprime.push_back(tmp14), EE.push_back(tmp15), shares.push_back(tmp16);
+		lambda_j.push_back(tmp17);
 	}
 // TODO
 	size_t simulate_faulty_randomizer[50];
@@ -3248,37 +3251,37 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Step 1e, we use the constant sharing polynomial. Bad shares are detected using the
 		//        public commitments, and $\mu$ is reconstructed.
 		std::vector<size_t> signers;
-// TODO: include v_i's for failed parties from the vector complaints
-for (size_t j = 0; j < ((2 * t) + 1); j++)
-	signers.push_back(j);
+// TODO: exclude v_i's for failed parties from the vector complaints
+		for (size_t j = 0; j < n_in; j++)
+			signers.push_back(j);
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 		for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
 		{
-mpz_set_ui(rhs, 1L); // compute the optimized Lagrange multipliers
-for (std::vector<size_t>::iterator lt = signers.begin(); lt != signers.end(); ++lt)
-{
-	if (*lt != *jt)
-		mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
-}
-mpz_set_ui(lhs, 1L);
-for (std::vector<size_t>::iterator lt = signers.begin(); lt != signers.end(); ++lt)
-{
-	if (*lt != *jt)
-	{
-		mpz_set_ui(bar, (*lt + 1)); // adjust index in computation
-		mpz_sub_ui(bar, bar, (*jt + 1)); // adjust index in computation
-		mpz_mul(lhs, lhs, bar);
-	}
-}
-if (!mpz_invert(lhs, lhs, q))
-{
-	err << "P_" << i_in << ": cannot invert LHS during computation of linear combination for P_" << *jt << std::endl;
-	throw false;
-}
-mpz_mul(lambda_j, rhs, lhs);
-mpz_mod(lambda_j, lambda_j, q);
+			mpz_set_ui(lhs, 1L); // compute the optimized Lagrange multipliers
+			for (std::vector<size_t>::iterator lt = signers.begin(); lt != signers.end(); ++lt)
+			{
+				if (*lt != *jt)
+				{
+					mpz_set_ui(rhs, (*lt + 1)); // adjust index in computation
+					mpz_sub_ui(rhs, rhs, (*jt + 1)); // adjust index in computation
+					mpz_mul(lhs, lhs, rhs);
+				}
+			}
+			if (!mpz_invert(lhs, lhs, q))
+			{
+				err << "P_" << i_in << ": cannot invert LHS during computation of linear combination for P_" << *jt << std::endl;
+				throw false;
+			}
+			mpz_set_ui(rhs, 1L);
+			for (std::vector<size_t>::iterator lt = signers.begin(); lt != signers.end(); ++lt)
+			{
+				if (*lt != *jt)
+					mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
+			}
+			mpz_mul(lambda_j[*jt], rhs, lhs);
+			mpz_mod(lambda_j[*jt], lambda_j[*jt], q);
 // TODO: include v_i's for failed parties from the vector complaints
-			mpz_mul(rhs, lambda_j, v_i_vss[*jt]->sigma_i);
+			mpz_mul(rhs, lambda_j[*jt], v_i_vss[*jt]->sigma_i);
 			mpz_mod(rhs, rhs, q);
 			mpz_add(foo, foo, rhs);
 			mpz_mod(foo, foo, q);
@@ -3314,7 +3317,7 @@ mpz_mod(lambda_j, lambda_j, q);
 					err << "P_" << i_in << ": bad bar received from P_" << j << std::endl;
 					continue;
 				}
-				mpz_set(shares[j], foo); // save the share for later reconstruction
+				mpz_set(shares[j], foo); // save the share for later following reconstruction
 				// compute LHS for the check
 				mpz_fpowm(fpowm_table_g, foo, g, foo, p);
 				mpz_fpowm(fpowm_table_h, bar, h, bar, p);
@@ -3331,11 +3334,14 @@ mpz_mod(lambda_j, lambda_j, q);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
 					}
+					mpz_fpowm(fpowm_table_g, foo, g, lambda_j[*jt], p); // include Lagrange multipliers
+					mpz_mul(rhs, rhs, foo);
+					mpz_mod(rhs, rhs, p);
 				}
 				// check equation (1)
-//				if (mpz_cmp(lhs, rhs))
-//					err << "P_" << i_in << ": bad share received from " << j << std::endl;
-//				else
+				if (mpz_cmp(lhs, rhs))
+					err << "P_" << i_in << ": bad share received from " << j << std::endl;
+				else
 					parties.push_back(j);
 			}
 		}
@@ -3351,24 +3357,18 @@ mpz_mod(lambda_j, lambda_j, q);
 		for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
 			err << "P_" << *jt << " ";
 		err << std::endl;
-		// compute $\mu$ using Lagrange interpolation
+		// compute $\mu$ by Lagrange interpolation
 		mpz_set_ui(mu, 0L);
 		for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
 		{
-			mpz_set_ui(rhs, 1L); // compute the optimized Lagrange multipliers
-			for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
-			{
-				if (*lt != *jt)
-					mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
-			}
-			mpz_set_ui(lhs, 1L);
+			mpz_set_ui(lhs, 1L); // compute the optimized Lagrange multipliers
 			for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
 			{
 				if (*lt != *jt)
 				{
-					mpz_set_ui(bar, (*lt + 1)); // adjust index in computation
-					mpz_sub_ui(bar, bar, (*jt + 1)); // adjust index in computation
-					mpz_mul(lhs, lhs, bar);
+					mpz_set_ui(rhs, (*lt + 1)); // adjust index in computation
+					mpz_sub_ui(rhs, rhs, (*jt + 1)); // adjust index in computation
+					mpz_mul(lhs, lhs, rhs);
 				}
 			}
 			if (!mpz_invert(lhs, lhs, q))
@@ -3376,11 +3376,17 @@ mpz_mod(lambda_j, lambda_j, q);
 				err << "P_" << i_in << ": cannot invert LHS during reconstruction" << std::endl;
 				throw false;
 			}
+			mpz_set_ui(rhs, 1L);
+			for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+			{
+				if (*lt != *jt)
+					mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
+			}
 			mpz_mul(rhs, rhs, lhs);
 			mpz_mod(rhs, rhs, q);
-			mpz_mul(bar, shares[*jt], rhs); // use the provided shares (interpolation points)
-			mpz_mod(bar, bar, q);
-			mpz_add(mu, mu, bar);
+			mpz_mul(rhs, rhs, shares[*jt]); // use the provided shares (interpolation points)
+			mpz_mod(rhs, rhs, q);
+			mpz_add(mu, mu, rhs);
 			mpz_mod(mu, mu, q);
 		}
 		parties.clear();
@@ -3532,22 +3538,25 @@ err << "P_" << i_in << ": mu = " << mu << std::endl;
 		// release
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs), mpz_clear(kprime_i), mpz_clear(aprime_i), mpz_clear(rho_i),
 			mpz_clear(sigma_i), mpz_clear(d), mpz_clear(r_k_i), mpz_clear(r_a_i), mpz_clear(tau_i), mpz_clear(dd), mpz_clear(ee),
-			mpz_clear(ss), mpz_clear(ssprime), mpz_clear(tt), mpz_clear(mu), mpz_clear(lambda_j);
+			mpz_clear(ss), mpz_clear(ssprime), mpz_clear(tt), mpz_clear(mu);
 		for (size_t j = 0; j < n_in; j++)
 		{
 			mpz_clear(k_i[j]), mpz_clear(a_i[j]), mpz_clear(alpha_i[j]), mpz_clear(beta_i[j]);
 			mpz_clear(gamma_i[j]), mpz_clear(delta_i[j]), mpz_clear(v_i[j]), mpz_clear(chi_i[j]);
 			mpz_clear(Tk_i[j]), mpz_clear(Ta_i[j]), mpz_clear(d_i[j]), mpz_clear(dprime_i[j]);
 			mpz_clear(DD[j]), mpz_clear(DDprime[j]), mpz_clear(EE[j]), mpz_clear(shares[j]);
+			mpz_clear(lambda_j[j]);
 			delete [] k_i[j], delete [] a_i[j], delete [] alpha_i[j], delete [] beta_i[j];
 			delete [] gamma_i[j], delete [] delta_i[j], delete [] v_i[j], delete [] chi_i[j];
 			delete [] Tk_i[j], delete [] Ta_i[j], delete [] d_i[j], delete [] dprime_i[j];
 			delete [] DD[j], delete [] DDprime[j], delete [] EE[j], delete [] shares[j];
+			delete [] lambda_j[j];
 		}
 		k_i.clear(), a_i.clear(), alpha_i.clear(), beta_i.clear();
 		gamma_i.clear(), delta_i.clear(), v_i.clear(), chi_i.clear();
 		Tk_i.clear(), Ta_i.clear(), d_i.clear(), dprime_i.clear();
 		DD.clear(), DDprime.clear(), EE.clear(), shares.clear();
+		lambda_j.clear();
 // TODO
 		for (size_t j = 0; j < n_in; j++)
 		{
