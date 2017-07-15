@@ -3279,13 +3279,16 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
 			}
 			mpz_mul(lambda_j[*jt], rhs, lhs);
+err << "lambda_j[" << *jt << "] = " << lambda_j[*jt] << std::endl;
 			mpz_mod(lambda_j[*jt], lambda_j[*jt], q);
-// TODO: include v_i's for failed parties from the vector complaints
+// TODO: include v_i's for failed parties from the vector complaints with "constant sharing polynomial"
 			mpz_mul(rhs, lambda_j[*jt], v_i_vss[*jt]->sigma_i);
 			mpz_mod(rhs, rhs, q);
 			mpz_add(foo, foo, rhs);
 			mpz_mod(foo, foo, q);
-			mpz_add(bar, bar, v_i_vss[*jt]->tau_i);
+			mpz_mul(rhs, lambda_j[*jt], v_i_vss[*jt]->tau_i);
+			mpz_mod(rhs, rhs, q);
+			mpz_add(bar, bar, rhs);
 			mpz_mod(bar, bar, q);
 		}
 		rbc->Broadcast(foo);
@@ -3327,15 +3330,16 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_set_ui(rhs, 1L);
 				for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
 				{
+					mpz_set_ui(bar, 1L);
 					for (size_t k = 0; k < v_i_vss[*jt]->A_j.size(); k++)
 					{
 						mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
-						mpz_powm(bar, v_i_vss[*jt]->A_j[k], foo, p);
-						mpz_mul(rhs, rhs, bar);
-						mpz_mod(rhs, rhs, p);
+						mpz_powm(foo, v_i_vss[*jt]->A_j[k], foo, p);
+						mpz_mul(bar, bar, foo);
+						mpz_mod(bar, bar, p);
 					}
-					mpz_fpowm(fpowm_table_g, foo, g, lambda_j[*jt], p); // include Lagrange multipliers
-					mpz_mul(rhs, rhs, foo);
+					mpz_powm(bar, bar, lambda_j[*jt], p); // include Lagrange multipliers
+					mpz_mul(rhs, rhs, bar);
 					mpz_mod(rhs, rhs, p);
 				}
 				// check equation (1)
