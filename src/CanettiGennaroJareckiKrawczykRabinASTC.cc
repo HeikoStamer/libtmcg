@@ -754,7 +754,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
 							err << "RVSS(" << label << "): P_" << i << ": bad share received from " << *jt << std::endl;
 						else
 						{
-							mpz_set(shares[*jt], foo); // save received share for later following reconstruction
+							mpz_set(shares[*jt], foo); // save the received share for later following interpolation
 							// compute LHS for the check
 							mpz_fpowm(fpowm_table_g, foo, g, foo, p);
 							mpz_fpowm(fpowm_table_h, bar, h, bar, p);
@@ -2538,16 +2538,24 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		F_size, G_size, false, "d_rvss");
 	CanettiGennaroJareckiKrawczykRabinRVSS *dd_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n_in, t, i_in, t, p, q, g, h,
 		F_size, G_size, false, "dd_rvss");
-	std::vector<PedersenVSS*> k_i_vss, a_i_vss, v_i_vss;
+	CanettiGennaroJareckiKrawczykRabinRVSS *ddd_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n_in, t, i_in, t, p, q, g, h,
+		F_size, G_size, false, "ddd_rvss");
+	CanettiGennaroJareckiKrawczykRabinRVSS *dddd_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n_in, t, i_in, t, p, q, g, h,
+		F_size, G_size, false, "dddd_rvss");
+	std::vector<PedersenVSS*> k_i_vss, a_i_vss, v_i_vss, aa_i_vss, vv_i_vss;
 	for (size_t j = 0; j < n_in; j++)
 	{
-		std::stringstream k_i_vss_label, a_i_vss_label, v_i_vss_label;
+		std::stringstream k_i_vss_label, a_i_vss_label, v_i_vss_label, aa_i_vss_label, vv_i_vss_label;
 		k_i_vss_label << "k_i_vss[dealer = " << j << "]";
 		k_i_vss.push_back(new PedersenVSS(n_in, t, i_in, p, q, g, h, F_size, G_size, false, k_i_vss_label.str()));
 		a_i_vss_label << "a_i_vss[dealer = " << j << "]";
 		a_i_vss.push_back(new PedersenVSS(n_in, t, i_in, p, q, g, h, F_size, G_size, false, a_i_vss_label.str()));
 		v_i_vss_label << "v_i_vss[dealer = " << j << "]";
 		v_i_vss.push_back(new PedersenVSS(n_in, t, i_in, p, q, g, h, F_size, G_size, false, v_i_vss_label.str()));
+		aa_i_vss_label << "aa_i_vss[dealer = " << j << "]";
+		aa_i_vss.push_back(new PedersenVSS(n_in, t, i_in, p, q, g, h, F_size, G_size, false, aa_i_vss_label.str()));
+		vv_i_vss_label << "vv_i_vss[dealer = " << j << "]";
+		vv_i_vss.push_back(new PedersenVSS(n_in, t, i_in, p, q, g, h, F_size, G_size, false, vv_i_vss_label.str()));
 	}
 	mpz_t foo, bar, lhs, rhs, kprime_i, aprime_i, rho_i, sigma_i, d, r_k_i, r_a_i, tau_i, dd, ee, ss, ssprime, tt, mu;
 	std::vector<mpz_ptr> k_i, a_i, alpha_i, beta_i, gamma_i, delta_i, v_i, chi_i, Tk_i, Ta_i, d_i, dprime_i, DD, DDprime, EE, shares, lambda_j;
@@ -2803,7 +2811,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		err << std::endl;
 		if (!d_rvss->Reconstruct(d_complaints, d_i, rbc, err))
 		{
-			err << "P_" << i_in << ": reconstruction of d_i in step 1(c) failed" << std::endl;
+			err << "P_" << i_in << ": reconstruction of d_i in Step 1c failed" << std::endl;
 			throw false;
 		}
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[6])
@@ -2870,7 +2878,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_fpowm(fpowm_table_h, lhs, h, foo, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": ZNPoK for k_i in step 1(c) failed for P_" << j << std::endl;
+					err << "P_" << i_in << ": ZNPoK for k_i in Step 1c failed for P_" << j << std::endl;
 					continue;
 				}
 				if (!mpz_invert(rhs, delta_i[j], p))
@@ -2886,7 +2894,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": ZNPoK for a_i in step 1(c) failed for P_" << j << std::endl;
+					err << "P_" << i_in << ": ZNPoK for a_i in Step 1c failed for P_" << j << std::endl;
 					continue;
 				}
 			}
@@ -3073,7 +3081,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		err << std::endl;
 		if (!dd_rvss->Reconstruct(d_complaints, d_i, rbc, err))
 		{
-			err << "P_" << i_in << ": reconstruction of d_i in step 1(d) failed" << std::endl;
+			err << "P_" << i_in << ": reconstruction of d_i in Step 1d failed" << std::endl;
 			throw false;
 		}
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[12])
@@ -3158,7 +3166,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": first ZNPoK in step 1(d) failed for P_" << j << std::endl;
+					err << "P_" << i_in << ": first ZNPoK in Step 1d failed for P_" << j << std::endl;
 					complaints.push_back(j);
 				}
 				if (!rbc->DeliverFrom(foo, j))
@@ -3192,7 +3200,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": second ZNPoK in step 1(d) failed for P_" << j << std::endl;
+					err << "P_" << i_in << ": second ZNPoK in Step 1d failed for P_" << j << std::endl;
 					complaints.push_back(j);
 				}
 				if (!rbc->DeliverFrom(bar, j))
@@ -3215,7 +3223,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": third ZNPoK in step 1(d) failed for P_" << j << std::endl;
+					err << "P_" << i_in << ": third ZNPoK in Step 1d failed for P_" << j << std::endl;
 					complaints.push_back(j);
 				}	
 			}
@@ -3262,7 +3270,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        public commitments, and $\mu$ is reconstructed.
 		std::vector<size_t> signers;
 // TODO: exclude v_i's for failed parties from the vector complaints
-		for (size_t j = 0; j < n_in; j++)
+		for (size_t j = 0; j < ((2 * t) + 1); j++)
 			signers.push_back(j);
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 		for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
@@ -3406,6 +3414,11 @@ err << "lambda_j[" << *jt << "] = " << lambda_j[*jt] << std::endl;
 		parties.clear();
 		err << "P_" << i_in << ": mu = " << mu << std::endl;
 
+
+
+
+
+
 // FIXME: testing code for reconstructing mu from shared k_i's and a_i's
 err << "[a]" << std::endl;
 parties.clear();
@@ -3467,16 +3480,6 @@ err << "P_" << i_in << ": mu = " << mu << std::endl;
 
 
 
-
-
-
-
-
-
-
-
-
-
 		//    (g) Player $P_i$ computes locally $\mu^{-1} \bmod q$ and $r = (g^a)^{\mu^{-1}} \bmod p \bmod q$.
 		if (!mpz_invert(foo, mu, q))
 		{
@@ -3488,7 +3491,725 @@ err << "P_" << i_in << ": mu = " << mu << std::endl;
 		err << "P_" << i_in << ": r = " << r << std::endl;
 
 		// 2. Generate $s = k(m + xr) \bmod q$
-// TODO
+		//    To reconstruct $s = k(m + xr)$, players perform steps equivalent to Steps 1c-1f above, with the
+		//    values $m + x_i r$ taking the role of the $a_i$'s, and with $s$ taking the role of $\mu$. The
+		//    only difference is that in the back-up step equivalent to Step 1c above, the players need only to
+		//    create the back-ups of the $m + x_i r$ values. In the following steps (equivalent to Steps 1d-1f
+		//    above), the players reuse the back-ups of the $k_i$ values that were created in Step 1c.
+		mpz_mul(a_i[i_in], x_i, r);
+		mpz_mod(a_i[i_in], a_i[i_in], q);
+		mpz_add(a_i[i_in], a_i[i_in], m);
+		mpz_mod(a_i[i_in], a_i[i_in], q);
+		//    (c) Back-up $a_i$. Each player $P_i$ shares $a_i$ using Pedersen's VSS.
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if (j != i_in)
+			{
+				if (!aa_i_vss[j]->Share(j, aiou, rbc, err, simulate_faulty_behaviour))
+					err << "P_" << i_in << ": WARNING - VSS of a_i (in Step 2c) failed for P_" << j << std::endl;
+			}
+			else
+			{
+				err << "P_" << i_in << ": a_i (Step 2c) = " << a_i[i_in] << std::endl;
+				if (!aa_i_vss[j]->Share(a_i[i_in], aiou, rbc, err, simulate_faulty_behaviour))
+					throw false;
+			}
+		}
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[13])
+			throw false;
+		//        The values $\delta_i = g^{a_i} h^{\sigma_i}$ (for some randomizers $\sigma_i$) are public.
+		//        (Note that indices $i$ and $j$ are changed for convenience.)
+		for (size_t j = 0; j < n_in; j++)
+		{
+			mpz_set(delta_i[j], aa_i_vss[j]->A_j[0]);
+			if (j == i_in)
+				mpz_set(sigma_i, aa_i_vss[i_in]->b_j[0]);
+		}
+		//        $P_i$ is required to prove in ZK that the value committed to in $\beta_i$ is the same
+		//        value committed to in $\delta_i$. This ist done using a zero-knowledge proof from [CD98].
+		//        This is a 3-move public coin proof and it is performed by all players together computing
+		//        the challenge as in Steps 3-4 of (the optimally-resilient) DL-Key-Gen. Ignore those that
+		//        fail this step. At least $t+1$ good players will pass it.
+		//        (Note that indices $i$ and $j$ are changed for convenience.)
+		for (size_t j = 0; j < n_in; j++)
+			err << "P_" << i_in << ": delta_i[" << j << "] (Step 2c) = " << delta_i[j] << std::endl;
+// TODO: compute aprime_i
+err << "P_" << i_in << ": aprime_i = " << aprime_i << std::endl;
+		err << "P_" << i_in << ": sigma_i (Step 2c) = " << sigma_i << std::endl;
+		//        Broadcast commitments for the zero-knowledge proofs of knowledge (we use presentation from [BCCG15]).
+		//        Then we show in parallel, that commitment $\beta_i \delta_i^{-1}$ equals zero, i.e., the former
+		//        commitment was made to the same value $k_i$ resp. $a_i$. This works since Pedersen commitments have
+		//        homomorphic properties.
+		mpz_srandomm(r_a_i, q);
+		mpz_fspowm(fpowm_table_h, Ta_i[i_in], h, r_a_i, p);
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if (j == i_in)
+			{
+				rbc->Broadcast(Ta_i[i_in]);
+			}
+			else
+			{
+				if (!rbc->DeliverFrom(Ta_i[j], j))
+				{
+					err << "P_" << i_in << ": receiving Ta_i (in Step 2c) failed for P_" << j << std::endl;
+					continue;
+				}
+				if (!CheckElement(Ta_i[j]))
+				{
+					err << "P_" << i_in << ": bad Ta_i (in Step 2c) received from P_" << j << std::endl;
+					mpz_set_ui(Ta_i[j], 0L); // indicates an error
+				}
+			}
+		}
+		//        Players execute Joint-RVSS(t,n,t) for a joint random challenge $d$. Player $P_i$ sets
+		//        his local share of the secret challenge to $d_i$. (In [CD98] this callenge is called $e$.)
+		if (!ddd_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
+			throw false;
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[14])
+			throw false;
+		mpz_set(d_i[i_in], ddd_rvss->z_i), mpz_set(dprime_i[i_in], ddd_rvss->zprime_i);
+		d_complaints.clear();
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if (std::find(ddd_rvss->QUAL.begin(), ddd_rvss->QUAL.end(), j) == ddd_rvss->QUAL.end())
+				d_complaints.push_back(j);
+		}
+		//        Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if ((j == i_in) && (std::find(ddd_rvss->QUAL.begin(), ddd_rvss->QUAL.end(), j) != ddd_rvss->QUAL.end()))
+			{
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer[15])
+					mpz_add_ui(d_i[i_in], d_i[i_in], 1L);
+				rbc->Broadcast(d_i[i_in]);
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer[16])
+					mpz_add_ui(dprime_i[i_in], dprime_i[i_in], 1L);
+				rbc->Broadcast(dprime_i[i_in]);
+			}
+			else if ((j != i_in) && (std::find(ddd_rvss->QUAL.begin(), ddd_rvss->QUAL.end(), j) != ddd_rvss->QUAL.end()))
+			{
+				if (!rbc->DeliverFrom(d_i[j], j))
+				{
+					err << "P_" << i_in << ": receiving d_i (in Step 2c) failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					continue;
+				}
+				if (mpz_cmpabs(d_i[j], q) >= 0)
+				{
+					err << "P_" << i_in << ": bad d_i (in Step 2c) received; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					mpz_set_ui(d_i[j], 0L); // indicates an error
+				}
+				if (!rbc->DeliverFrom(dprime_i[j], j))
+				{
+					err << "P_" << i_in << ": receiving dprime_i (in Step 2c) failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					continue;
+				}
+				if (mpz_cmpabs(dprime_i[j], q) >= 0)
+				{
+					err << "P_" << i_in << ": bad dprime_i (in Step 2c) received; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					mpz_set_ui(dprime_i[j], 0L); // indicates an error
+				}
+				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
+				mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
+				mpz_mul(lhs, foo, bar);
+				mpz_mod(lhs, lhs, p);
+				mpz_set_ui(rhs, 1L);
+				mpz_mul(rhs, rhs, ddd_rvss->C_ik[j][0]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i_in << ": checking d_i resp. dprime_i (in Step 2c) failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+				}
+			}
+			else
+				err << "P_" << i_in << ": WARNING - P_" << j << " not in QUAL of ddd_rvss" << std::endl;
+		}
+		//        Public reconstruction of $d_j$, for every failed player $P_j$
+		std::sort(d_complaints.begin(), d_complaints.end());
+		it = std::unique(d_complaints.begin(), d_complaints.end());
+		d_complaints.resize(std::distance(d_complaints.begin(), it));
+		err << "P_" << i_in << ": there are extracting complaints of ddd_rvss against ";
+		for (std::vector<size_t>::iterator it = d_complaints.begin(); it != d_complaints.end(); ++it)
+			err << "P_" << *it << " ";
+		err << std::endl;
+		if (!ddd_rvss->Reconstruct(d_complaints, d_i, rbc, err))
+		{
+			err << "P_" << i_in << ": reconstruction of d_i in Step 2c failed" << std::endl;
+			throw false;
+		}
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[17])
+			throw false;
+		//        Get $d = \sum_{P_i \in QUAL} d_i$
+		mpz_set_ui(d, 0L);
+		for (std::vector<size_t>::iterator it = ddd_rvss->QUAL.begin(); it != ddd_rvss->QUAL.end(); ++it)
+		{
+			mpz_add(d, d, d_i[*it]);
+			mpz_mod(d, d, q);
+		}
+		err << "P_" << i_in << ": d (Step 2c) = " << d << std::endl;
+		d_complaints.clear();
+		//        Broadcast the reponse $z_{a_i} = r_{a_i} + (a\prime_i - \sigma_i) \cdot d$ and verify the results.
+		mpz_sub(bar, aprime_i, sigma_i);
+		mpz_mod(bar, bar, q);
+		mpz_mul(bar, bar, d);
+		mpz_mod(bar, bar, q);
+		mpz_add(bar, bar, r_a_i);
+		mpz_mod(bar, bar, q);
+		rbc->Broadcast(bar);
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if (j != i_in)
+			{
+				if (!rbc->DeliverFrom(bar, j))
+				{
+					err << "P_" << i_in << ": receiving bar (in Step 2c) failed for P_" << j << std::endl;
+					continue;
+				}
+				if (mpz_cmpabs(bar, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad bar (in Step 2c) received from P_" << j << std::endl;
+					continue;
+				}
+				if (!mpz_invert(rhs, delta_i[j], p))
+				{
+					err << "P_" << i_in << ": cannot invert delta_i (in Step 2c) from P_" << j << std::endl;
+					continue;
+				}
+				mpz_mul(rhs, rhs, beta_i[j]);
+				mpz_mod(rhs, rhs, p);
+				mpz_powm(rhs, rhs, d, p);
+				mpz_mul(rhs, rhs, Ta_i[j]);
+				mpz_mod(rhs, rhs, p);
+				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i_in << ": ZNPoK for a_i in Step 2c failed for P_" << j << std::endl;
+					continue;
+				}
+			}
+		}
+		//    (d) Each player $P_i, i = 1, \ldots, 2t + 1$, shares its value $v_i = k_i a_i \bmod q$
+		//        using Pedersen's VSS.
+		complaints.clear();
+		mpz_mul(v_i[i_in], k_i[i_in], a_i[i_in]);
+		mpz_mod(v_i[i_in], v_i[i_in], q);
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[18])
+			mpz_add_ui(v_i[i_in], v_i[i_in], 1L);
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if (j != i_in)
+			{
+				if (!vv_i_vss[j]->Share(j, aiou, rbc, err, simulate_faulty_behaviour))
+				{
+					err << "P_" << i_in << ": WARNING - VSS of v_i (in Step 2d) failed; complaint against P_" << j << std::endl;
+					complaints.push_back(j);
+				}
+			}
+			else
+			{
+				err << "P_" << i_in << ": v_i = " << v_i[i_in] << std::endl;
+				if (!vv_i_vss[j]->Share(v_i[i_in], aiou, rbc, err, simulate_faulty_behaviour))
+					throw false;
+			}
+		}
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[19])
+			throw false;
+		//        The values $\chi_i = g^{k_i a_i} h^{\tau_i}, i = 1, \ldots, 2t + 1$, (for some
+		//        randomizers $\tau_i$) are public.
+		for (size_t j = 0; j < n_in; j++)
+		{
+			mpz_set(chi_i[j], vv_i_vss[j]->A_j[0]);
+			if (j == i_in)
+				mpz_set(tau_i, vv_i_vss[i_in]->b_j[0]);
+		}
+		for (size_t j = 0; j < n_in; j++)
+		{
+			err << "P_" << i_in << ": chi_i[" << j << "] (Step 2d) = " << chi_i[j] << std::endl;
+		}
+		err << "P_" << i_in << ": tau_i (Step 2d) = " << tau_i << std::endl;
+		//        Each $P_i$ proves in ZK that the value committed in $\chi_i$ is the product
+		//        of the values committed to in $\alpha_i$ and $\beta_i$. This is done using
+		//        a zero-knowledge proof from [CD98]. This is a 3-move public coin proof and
+		//        it is performed by all players as above.
+		//        (We use the simplified presentation from [BCCG15] called $\Sigma_{prod}$.)
+		mpz_srandomm(dd, q), mpz_srandomm(ee, q), mpz_srandomm(ss, q), mpz_srandomm(ssprime, q), mpz_srandomm(tt, q);
+		mpz_fspowm(fpowm_table_g, foo, g, dd, p);
+		mpz_fspowm(fpowm_table_h, bar, h, ss, p);
+		mpz_mul(DD[i_in], foo, bar);
+		mpz_mod(DD[i_in], DD[i_in], p);
+		mpz_spowm(foo, beta_i[i_in], dd, p);
+		mpz_fspowm(fpowm_table_h, bar, h, ssprime, p);
+		mpz_mul(DDprime[i_in], foo, bar);
+		mpz_mod(DDprime[i_in], DDprime[i_in], p);
+		mpz_fspowm(fpowm_table_g, foo, g, ee, p);
+		mpz_fspowm(fpowm_table_h, bar, h, tt, p);
+		mpz_mul(EE[i_in], foo, bar);
+		mpz_mod(EE[i_in], EE[i_in], p);
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if (j == i_in)
+			{
+				rbc->Broadcast(DD[i_in]);
+				rbc->Broadcast(DDprime[i_in]);
+				rbc->Broadcast(EE[i_in]);
+			}
+			else
+			{
+				if (!rbc->DeliverFrom(DD[j], j))
+				{
+					err << "P_" << i_in << ": receiving DD (in Step 2d) failed for P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
+				if (!rbc->DeliverFrom(DDprime[j], j))
+				{
+					err << "P_" << i_in << ": receiving DDprime (in Step 2d) failed for P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
+				if (!rbc->DeliverFrom(EE[j], j))
+				{
+					err << "P_" << i_in << ": receiving EE (in Step 2d) failed for P_" << j << std::endl;
+					complaints.push_back(j);
+					continue;
+				}
+				if (!CheckElement(DD[j]))
+				{
+					err << "P_" << i_in << ": bad DD (in Step 2d) received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(DD[j], 0L); // indicates an error
+				}
+				if (!CheckElement(DDprime[j]))
+				{
+					err << "P_" << i_in << ": bad DDprime (in Step 2d) received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(DDprime[j], 0L); // indicates an error
+				}
+				if (!CheckElement(EE[j]))
+				{
+					err << "P_" << i_in << ": bad EE (in Step 2d) received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(EE[j], 0L); // indicates an error
+				}
+			}
+		}
+		//        Players execute Joint-RVSS(t,n,t) for a joint random challenge $d$. Player $P_i$ sets
+		//        his local share of the secret challenge to $d_i$. (In [CD98] this callenge is called $e$
+		//        and in [BCCG15] it is called $x$.)
+		if (!dddd_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
+			throw false;
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[20])
+			throw false;
+		mpz_set(d_i[i_in], dddd_rvss->z_i), mpz_set(dprime_i[i_in], dddd_rvss->zprime_i);
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if (std::find(dddd_rvss->QUAL.begin(), dddd_rvss->QUAL.end(), j) == dddd_rvss->QUAL.end())
+				d_complaints.push_back(j);
+		}
+		//        Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if ((j == i_in) && (std::find(dddd_rvss->QUAL.begin(), dddd_rvss->QUAL.end(), j) != dddd_rvss->QUAL.end()))
+			{
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer[21])
+					mpz_add_ui(d_i[i_in], d_i[i_in], 1L);
+				rbc->Broadcast(d_i[i_in]);
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer[22])
+					mpz_add_ui(dprime_i[i_in], dprime_i[i_in], 1L);
+				rbc->Broadcast(dprime_i[i_in]);
+			}
+			else if ((j != i_in) && (std::find(dddd_rvss->QUAL.begin(), dddd_rvss->QUAL.end(), j) != dddd_rvss->QUAL.end()))
+			{
+				if (!rbc->DeliverFrom(d_i[j], j))
+				{
+					err << "P_" << i_in << ": receiving d_i (in Step 2d) failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					continue;
+				}
+				if (mpz_cmpabs(d_i[j], q) >= 0)
+				{
+					err << "P_" << i_in << ": bad d_i (in Step 2d) received; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					mpz_set_ui(d_i[j], 0L); // indicates an error
+				}
+				if (!rbc->DeliverFrom(dprime_i[j], j))
+				{
+					err << "P_" << i_in << ": receiving dprime_i (in Step 2d) failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					continue;
+				}
+				if (mpz_cmpabs(dprime_i[j], q) >= 0)
+				{
+					err << "P_" << i_in << ": bad dprime_i (in Step 2d) received; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+					mpz_set_ui(dprime_i[j], 0L); // indicates an error
+				}
+				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
+				mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
+				mpz_mul(lhs, foo, bar);
+				mpz_mod(lhs, lhs, p);
+				mpz_set_ui(rhs, 1L);
+				mpz_mul(rhs, rhs, dddd_rvss->C_ik[j][0]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i_in << ": checking d_i resp. dprime_i (in Step 2d) failed; complaint against P_" << j << std::endl;
+					d_complaints.push_back(j);
+				}
+			}
+			else
+				err << "P_" << i_in << ": WARNING - P_" << j << " not in QUAL of dddd_rvss" << std::endl;
+		}
+		//        Public reconstruction of $d_j$, for every failed player $P_j$
+		std::sort(d_complaints.begin(), d_complaints.end());
+		it = std::unique(d_complaints.begin(), d_complaints.end());
+		d_complaints.resize(std::distance(d_complaints.begin(), it));
+		err << "P_" << i_in << ": there are extracting complaints of dddd_rvss against ";
+		for (std::vector<size_t>::iterator it = d_complaints.begin(); it != d_complaints.end(); ++it)
+			err << "P_" << *it << " ";
+		err << std::endl;
+		if (!dddd_rvss->Reconstruct(d_complaints, d_i, rbc, err))
+		{
+			err << "P_" << i_in << ": reconstruction of d_i in Step 2d failed" << std::endl;
+			throw false;
+		}
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[23])
+			throw false;
+		//        Get $d = \sum_{P_i \in QUAL} d_i$
+		mpz_set_ui(d, 0L);
+		for (std::vector<size_t>::iterator it = dddd_rvss->QUAL.begin(); it != dddd_rvss->QUAL.end(); ++it)
+		{
+			mpz_add(d, d, d_i[*it]);
+			mpz_mod(d, d, q);
+		}
+		err << "P_" << i_in << ": d (Step 2d) = " << d << std::endl;
+		d_complaints.clear();
+		//        Broadcast the responses...
+		//        $f_1 = k_i d + dd \bmod q$
+		mpz_mul(foo, k_i[i_in], d);
+		mpz_mod(foo, foo, q);
+		mpz_add(foo, foo, dd);
+		mpz_mod(foo, foo, q);
+		//        $z_1 = kprime_i d + ss \bmod q$
+		mpz_mul(bar, kprime_i, d);
+		mpz_mod(bar, bar, q);
+		mpz_add(bar, bar, ss);
+		mpz_mod(bar, bar, q);
+		//        $f_2 = a_i d + ee \bmod q$
+		mpz_mul(lhs, a_i[i_in], d);
+		mpz_mod(lhs, lhs, q);
+		mpz_add(lhs, lhs, ee);
+		mpz_mod(lhs, lhs, q);
+		//        $z_2 = aprime_i d + tt \bmod q$
+		mpz_mul(rhs, aprime_i, d);
+		mpz_mod(rhs, rhs, q);
+		mpz_add(rhs, rhs, tt);
+		mpz_mod(rhs, rhs, q);
+		rbc->Broadcast(foo);
+		rbc->Broadcast(bar);
+		rbc->Broadcast(lhs);
+		rbc->Broadcast(rhs);
+		//        $z_3 = (\tau_i - k_i aprime_i) d + ssprime$
+		mpz_mul(foo, k_i[i_in], aprime_i);
+		mpz_mod(foo, foo, q);
+		mpz_sub(bar, tau_i, foo);
+		mpz_mod(bar, bar, q);
+		mpz_mul(bar, bar, d);
+		mpz_mod(bar, bar, q);
+		mpz_add(bar, bar, ssprime);
+		mpz_mod(bar, bar, q);
+		rbc->Broadcast(bar);
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if (j != i_in)
+			{
+				if (!rbc->DeliverFrom(foo, j))
+				{
+					err << "P_" << i_in << ": receiving foo (in Step 2d) failed for P_" << j << std::endl;
+					continue;
+				}
+				if (!rbc->DeliverFrom(bar, j))
+				{
+					err << "P_" << i_in << ": receiving bar (in Step 2d) failed for P_" << j << std::endl;
+					continue;
+				}
+				if (mpz_cmpabs(foo, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad foo (in Step 2d) received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(foo, 0L); // indicates an error
+				}
+				if (mpz_cmpabs(bar, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad bar (in Step 2d) received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(foo, 0L); // indicates an error
+				}
+				mpz_set(ssprime, foo); // save $f_1$ for third ZNPoK
+				mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
+				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				mpz_mul(lhs, lhs, rhs);
+				mpz_mod(lhs, lhs, p);
+				mpz_powm(rhs, alpha_i[j], d, p);
+				mpz_mul(rhs, rhs, DD[j]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i_in << ": first ZNPoK in Step 2d failed for P_" << j << std::endl;
+					complaints.push_back(j);
+				}
+				if (!rbc->DeliverFrom(foo, j))
+				{
+					err << "P_" << i_in << ": receiving foo (in Step 2d) failed for P_" << j << std::endl;
+					continue;
+				}
+				if (!rbc->DeliverFrom(bar, j))
+				{
+					err << "P_" << i_in << ": receiving bar (in Step 2d) failed for P_" << j << std::endl;
+					continue;
+				}
+				if (mpz_cmpabs(foo, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad foo (in Step 2d) received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(foo, 0L); // indicates an error
+				}
+				if (mpz_cmpabs(bar, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad bar (in Step 2d) received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(foo, 0L); // indicates an error
+				}
+				mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
+				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				mpz_mul(lhs, lhs, rhs);
+				mpz_mod(lhs, lhs, p);
+				mpz_powm(rhs, beta_i[j], d, p);
+				mpz_mul(rhs, rhs, EE[j]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i_in << ": second ZNPoK in Step 2d failed for P_" << j << std::endl;
+					complaints.push_back(j);
+				}
+				if (!rbc->DeliverFrom(bar, j))
+				{
+					err << "P_" << i_in << ": receiving bar (in Step 2d) failed for P_" << j << std::endl;
+					continue;
+				}
+				if (mpz_cmpabs(bar, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad bar (in Step 2d) received from P_" << j << std::endl;
+					complaints.push_back(j);
+					mpz_set_ui(foo, 0L); // indicates an error
+				}
+				mpz_powm(rhs, beta_i[j], ssprime, p);
+				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				mpz_mul(lhs, lhs, rhs);
+				mpz_mod(lhs, lhs, p);
+				mpz_powm(rhs, chi_i[j], d, p);
+				mpz_mul(rhs, rhs, DDprime[j]);
+				mpz_mod(rhs, rhs, p);
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "P_" << i_in << ": third ZNPoK in Step 2d failed for P_" << j << std::endl;
+					complaints.push_back(j);
+				}	
+			}
+		}
+		//    (e) If player $P_j$ fails the proof in the above step, his shares $a_j, k_j$ are publicly
+		//        reconstructed via interpolation of the back-ups of shares distributed in Step 2c resp.
+		//        Step 1c. Since each $a_j$ (resp. $k_j$) can be computed as a linear combination of some
+		//        $t+1$ values $a_i$ (resp. $k_i$) that were properly shared in Step 2c resp. Step 1c,
+		//        each player broadcasts the appropriate linear combination of its shares of these $a_i$'s
+		//        (resp. $k_i$'s), together with their associated randomness (computed as the same linear
+		//        combination of the associated randomness generated in Step 1c). Bad values are sieved out
+		//        using the public commitments of Step 2c resp. Step 1c, $a_j$ and $k_j$ are reconstructed,
+		//        and $v_j$ is set to $a_j k_j$.
+		std::sort(complaints.begin(), complaints.end());
+		it = std::unique(complaints.begin(), complaints.end());
+		complaints.resize(std::distance(complaints.begin(), it));
+		err << "P_" << i_in << ": there are extracting complaints of v_j against ";
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+			err << "P_" << *it << " ";
+		err << std::endl;
+		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
+		{
+			if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+			{
+				err << "P_" << i_in << ": reconstruction of k_j (in Step 2e) failed for P_" << *it << std::endl;	
+				throw false;
+			}
+			if (!aa_i_vss[*it]->Reconstruct(*it, bar, rbc, err))
+			{
+				err << "P_" << i_in << ": reconstruction of a_j (in Step 2e) failed for P_" << *it << std::endl;	
+				throw false;
+			}
+			mpz_mul(v_i[*it], foo, bar);
+			mpz_mod(v_i[*it], v_i[*it], q);
+			err << "P_" << i_in << ": v_i[" << *it << "] (Step 2e) = " << v_i[*it] << std::endl;
+		}
+		//    (f) The value $s = k(m + xr)$ is a linear combination of the values $v_1, \ldots, v_{2t+1}$.
+		//        Thus it can be computed interpolating the polynomial of degree $t$ which is a linear
+		//        combination of the polynomials used in Step 1d to share $v_1, \ldots, v_{2t+1}$.
+		//        Each player broadcasts its share (together with its associated randomness) of that
+		//        $t$-degree polynomial, which is itself a linear combination of the shares of
+		//        $v_1, \ldots, v_{2t+1}$ received in Step 2d. For the $v_j$'s that were exposed in
+		//        Step 2e, we use the constant sharing polynomial. Bad shares are detected using the
+		//        public commitments, and $\mu$ is reconstructed.
+		signers.clear();
+// TODO: exclude v_i's for failed parties from the vector complaints
+		for (size_t j = 0; j < ((2 * t) + 1); j++)
+			signers.push_back(j);
+		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
+		for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
+		{
+			mpz_set_ui(lhs, 1L); // compute the optimized Lagrange multipliers
+			for (std::vector<size_t>::iterator lt = signers.begin(); lt != signers.end(); ++lt)
+			{
+				if (*lt != *jt)
+				{
+					mpz_set_ui(rhs, (*lt + 1)); // adjust index in computation
+					mpz_sub_ui(rhs, rhs, (*jt + 1)); // adjust index in computation
+					mpz_mul(lhs, lhs, rhs);
+				}
+			}
+			if (!mpz_invert(lhs, lhs, q))
+			{
+				err << "P_" << i_in << ": cannot invert LHS during computation of linear combination for P_" << *jt << std::endl;
+				throw false;
+			}
+			mpz_set_ui(rhs, 1L);
+			for (std::vector<size_t>::iterator lt = signers.begin(); lt != signers.end(); ++lt)
+			{
+				if (*lt != *jt)
+					mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
+			}
+			mpz_mul(lambda_j[*jt], rhs, lhs);
+err << "lambda_j[" << *jt << "] = " << lambda_j[*jt] << std::endl;
+			mpz_mod(lambda_j[*jt], lambda_j[*jt], q);
+// TODO: include v_i's for failed parties from the vector complaints with "constant sharing polynomial"
+			mpz_mul(rhs, lambda_j[*jt], vv_i_vss[*jt]->sigma_i);
+			mpz_mod(rhs, rhs, q);
+			mpz_add(foo, foo, rhs);
+			mpz_mod(foo, foo, q);
+			mpz_mul(rhs, lambda_j[*jt], vv_i_vss[*jt]->tau_i);
+			mpz_mod(rhs, rhs, q);
+			mpz_add(bar, bar, rhs);
+			mpz_mod(bar, bar, q);
+		}
+		rbc->Broadcast(foo);
+		rbc->Broadcast(bar);
+		parties.clear();
+		parties.push_back(i_in); // shares of this player are always available
+		mpz_set(shares[i_in], foo);
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if (j != i_in)
+			{
+				if (!rbc->DeliverFrom(foo, j))
+				{
+					err << "P_" << i_in << ": receiving foo (in Step 2f) failed for P_" << j << std::endl;
+					continue;
+				}
+				if (!rbc->DeliverFrom(bar, j))
+				{
+					err << "P_" << i_in << ": receiving bar (in Step 2f) failed for P_" << j << std::endl;
+					continue;
+				}
+				if (mpz_cmpabs(foo, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad foo (in Step 2f) received from P_" << j << std::endl;
+					continue;
+				}
+				if (mpz_cmpabs(bar, q) >= 0)
+				{
+					err << "P_" << i_in << ": bad bar (in Step 2f) received from P_" << j << std::endl;
+					continue;
+				}
+				mpz_set(shares[j], foo); // save the share for later following reconstruction
+				// compute LHS for the check
+				mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+				mpz_fpowm(fpowm_table_h, bar, h, bar, p);
+				mpz_mul(lhs, foo, bar);
+				mpz_mod(lhs, lhs, p);
+				// compute RHS for the check
+				mpz_set_ui(rhs, 1L);
+				for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
+				{
+					mpz_set_ui(bar, 1L);
+					for (size_t k = 0; k < vv_i_vss[*jt]->A_j.size(); k++)
+					{
+						mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
+						mpz_powm(foo, vv_i_vss[*jt]->A_j[k], foo, p);
+						mpz_mul(bar, bar, foo);
+						mpz_mod(bar, bar, p);
+					}
+					mpz_powm(bar, bar, lambda_j[*jt], p); // include Lagrange multipliers
+					mpz_mul(rhs, rhs, bar);
+					mpz_mod(rhs, rhs, p);
+				}
+				// check equation (1)
+				if (mpz_cmp(lhs, rhs))
+					err << "P_" << i_in << ": bad share  (in Step 2f) received from " << j << std::endl;
+				else
+					parties.push_back(j);
+			}
+		}
+		// check whether enough shares (i.e. $t + 1$) have been collected
+		if (parties.size() <= t)
+		{
+			err << "P_" << i_in << ": not enough shares collected for reconstructing s" << std::endl;
+			throw false;
+		}
+		if (parties.size() > (t + 1))
+			parties.resize(t + 1);
+		err << "P_" << i_in << ": reconstructing parties = ";
+		for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
+			err << "P_" << *jt << " ";
+		err << std::endl;
+		// compute $s$ by Lagrange interpolation
+		mpz_set_ui(s, 0L);
+		for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
+		{
+			mpz_set_ui(lhs, 1L); // compute the optimized Lagrange multipliers
+			for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+			{
+				if (*lt != *jt)
+				{
+					mpz_set_ui(rhs, (*lt + 1)); // adjust index in computation
+					mpz_sub_ui(rhs, rhs, (*jt + 1)); // adjust index in computation
+					mpz_mul(lhs, lhs, rhs);
+				}
+			}
+			if (!mpz_invert(lhs, lhs, q))
+			{
+				err << "P_" << i_in << ": cannot invert LHS during reconstruction" << std::endl;
+				throw false;
+			}
+			mpz_set_ui(rhs, 1L);
+			for (std::vector<size_t>::iterator lt = parties.begin(); lt != parties.end(); ++lt)
+			{
+				if (*lt != *jt)
+					mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
+			}
+			mpz_mul(rhs, rhs, lhs);
+			mpz_mod(rhs, rhs, q);
+			mpz_mul(rhs, rhs, shares[*jt]); // use the provided shares (interpolation points)
+			mpz_mod(rhs, rhs, q);
+			mpz_add(s, s, rhs);
+			mpz_mod(s, s, q);
+		}
+		parties.clear();
+		err << "P_" << i_in << ": s = " << s << std::endl;
+
+		// 3. Player $P_i$ erases all secret information generated in this signing protocol.
+		k_rvss->EraseSecrets();
 
 		throw true;
 	}
@@ -3522,12 +4243,14 @@ err << "P_" << i_in << ": mu = " << mu << std::endl;
 // TODO
 		for (size_t j = 0; j < n_in; j++)
 		{
-			delete a_i_vss[j];
 			delete k_i_vss[j];
+			delete a_i_vss[j];
 			delete v_i_vss[j];
+			delete aa_i_vss[j];
+			delete vv_i_vss[j];
 		}
-		a_i_vss.clear(), k_i_vss.clear(), v_i_vss.clear();
-		delete d_rvss, delete dd_rvss;
+		k_i_vss.clear(), a_i_vss.clear(), v_i_vss.clear(), aa_i_vss.clear(), vv_i_vss.clear();
+		delete d_rvss, delete dd_rvss, delete ddd_rvss, delete dddd_rvss;
 		delete a_dkg;
 		delete k_rvss;
 
