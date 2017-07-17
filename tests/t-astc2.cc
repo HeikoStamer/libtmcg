@@ -44,6 +44,7 @@
 #define T 2
 
 int pipefd[N][N][2], broadcast_pipefd[N][N][2];
+int pipefd_nm1[N-1][N-1][2], broadcast_pipefd_nm1[N-1][N-1][2];
 pid_t pid[N];
 
 void start_instance
@@ -81,11 +82,11 @@ void start_instance
 			{
 				std::stringstream key;
 				key << "t-astc2_nm1::P_" << (i + whoami);
-				uP_in_nm1.push_back(pipefd[i][whoami][0]);
-				uP_out_nm1.push_back(pipefd[whoami][i][1]);
+				uP_in_nm1.push_back(pipefd_nm1[i][whoami][0]);
+				uP_out_nm1.push_back(pipefd_nm1[whoami][i][1]);
 				uP_key_nm1.push_back(key.str());
-				bP_in_nm1.push_back(broadcast_pipefd[i][whoami][0]);
-				bP_out_nm1.push_back(broadcast_pipefd[whoami][i][1]);
+				bP_in_nm1.push_back(broadcast_pipefd_nm1[i][whoami][0]);
+				bP_out_nm1.push_back(broadcast_pipefd_nm1[whoami][i][1]);
 				bP_key_nm1.push_back(key.str());
 			}
 			
@@ -328,6 +329,16 @@ void init
 				perror("t-astc2 (pipe)");
 		}
 	}
+	for (size_t i = 0; i < (N-1); i++)
+	{
+		for (size_t j = 0; j < (N-1); j++)
+		{
+			if (pipe(pipefd_nm1[i][j]) < 0)
+				perror("t-astc2 (pipe)");
+			if (pipe(broadcast_pipefd_nm1[i][j]) < 0)
+				perror("t-astc2 (pipe)");
+		}
+	}
 }
 
 bool done
@@ -355,6 +366,16 @@ bool done
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
 				perror("t-astc2 (close)");
 			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
+				perror("t-astc2 (close)");
+		}
+	}
+	for (size_t i = 0; i < (N-1); i++)
+	{
+		for (size_t j = 0; j < (N-1); j++)
+		{
+			if ((close(pipefd_nm1[i][j][0]) < 0) || (close(pipefd_nm1[i][j][1]) < 0))
+				perror("t-astc2 (close)");
+			if ((close(broadcast_pipefd_nm1[i][j][0]) < 0) || (close(broadcast_pipefd_nm1[i][j][1]) < 0))
 				perror("t-astc2 (close)");
 		}
 	}

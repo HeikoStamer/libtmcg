@@ -3500,6 +3500,10 @@ err << "P_" << i_in << ": mu = " << mu << std::endl;
 		mpz_mod(a_i[i_in], a_i[i_in], q);
 		mpz_add(a_i[i_in], a_i[i_in], m);
 		mpz_mod(a_i[i_in], a_i[i_in], q);
+		mpz_mul(aprime_i, xprime_i, r);
+		mpz_mod(aprime_i, aprime_i, q);
+		mpz_add(aprime_i, aprime_i, m);
+		mpz_mod(aprime_i, aprime_i, q);
 		//    (c) Back-up $a_i$. Each player $P_i$ shares $a_i$ using Pedersen's VSS.
 		for (size_t j = 0; j < n_in; j++)
 		{
@@ -3533,8 +3537,7 @@ err << "P_" << i_in << ": mu = " << mu << std::endl;
 		//        (Note that indices $i$ and $j$ are changed for convenience.)
 		for (size_t j = 0; j < n_in; j++)
 			err << "P_" << i_in << ": delta_i[" << j << "] (Step 2c) = " << delta_i[j] << std::endl;
-// TODO: compute aprime_i
-err << "P_" << i_in << ": aprime_i = " << aprime_i << std::endl;
+		err << "P_" << i_in << ": aprime_i (Step 2c) = " << aprime_i << std::endl;
 		err << "P_" << i_in << ": sigma_i (Step 2c) = " << sigma_i << std::endl;
 		//        Broadcast commitments for the zero-knowledge proofs of knowledge (we use presentation from [BCCG15]).
 		//        Then we show in parallel, that commitment $\beta_i \delta_i^{-1}$ equals zero, i.e., the former
