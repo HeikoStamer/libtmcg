@@ -255,6 +255,7 @@ void start_instance
 
 			// at the end: sync for waiting parties
 			rbc->Sync(aiounicast::aio_timeout_long);
+			rbc_nm1->Sync(aiounicast::aio_timeout_long);
 
 			// create a copied instance of DKG from state log
 			std::cout << "P_" << whoami << ": CanettiGennaroJareckiKrawczykRabinDKG(state_log)" << std::endl;
