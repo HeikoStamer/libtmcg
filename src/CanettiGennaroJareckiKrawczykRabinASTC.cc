@@ -2219,13 +2219,11 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		err << "}" << std::endl;
 		err << "DKG(" << label << "): P_" << i << ": y = " << y << std::endl;
 		// 9. Player $P_i$ erases all secret information aside from his share $x_i$.
-// FIXME: temp. disabled
-/*
 		x_rvss->EraseSecrets();
 		d_rvss->EraseSecrets();
 		for (size_t j = 0; j < z_i.size(); j++)
 			mpz_set_ui(z_i[j], 0L);
-*/
+
 		throw true;
 	}
 	catch (bool return_value)
@@ -2580,7 +2578,6 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		DD.push_back(tmp13), DDprime.push_back(tmp14), EE.push_back(tmp15), shares.push_back(tmp16);
 		lambda_j.push_back(tmp17);
 	}
-// TODO
 	size_t simulate_faulty_randomizer[50];
 	for (size_t idx = 0; idx < 50; idx++)
 		simulate_faulty_randomizer[idx] = mpz_wrandom_ui() % 2L;
@@ -2597,6 +2594,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			err << "P_" << i_in << ": not enough players (< 2t+1) for signing" << std::endl;
 			throw false;
 		}
+
 		// 1. Generate $r = g^{k^{-1}} \bmod p \bmod q$
 		//    (a) Generate $k$. Players execute Joint-RVSS(t).
 		if (!k_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
@@ -3297,7 +3295,6 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
 			}
 			mpz_mul(lambda_j[*jt], rhs, lhs);
-err << "lambda_j[" << *jt << "] = " << lambda_j[*jt] << std::endl;
 			mpz_mod(lambda_j[*jt], lambda_j[*jt], q);
 // TODO: include v_i's for failed parties from the vector complaints with "constant sharing polynomial"
 			mpz_mul(rhs, lambda_j[*jt], v_i_vss[*jt]->sigma_i);
@@ -3413,73 +3410,6 @@ err << "lambda_j[" << *jt << "] = " << lambda_j[*jt] << std::endl;
 		}
 		parties.clear();
 		err << "P_" << i_in << ": mu = " << mu << std::endl;
-
-
-
-
-
-
-// FIXME: testing code for reconstructing mu from shared k_i's and a_i's
-err << "[a]" << std::endl;
-parties.clear();
-for (size_t j = 0; j < t; j++)
-	parties.push_back(j);
-if (!k_rvss->Reconstruct(parties, v_i, rbc, err))
-{
-	err << "P_" << i_in << ": reconstruction of k_rvss failed " << std::endl;
-	throw false;
-}
-if (!a_dkg->x_rvss->Reconstruct(parties, chi_i, rbc, err))
-{
-	err << "P_" << i_in << ": reconstruction of a_dkg failed " << std::endl;
-	throw false;
-}
-err << "[b]" << std::endl;
-parties.clear();
-for (size_t j = t; j < (2*t); j++)
-	parties.push_back(j);
-if (!k_rvss->Reconstruct(parties, v_i, rbc, err))
-{
-	err << "P_" << i_in << ": reconstruction of k_rvss failed " << std::endl;
-	throw false;
-}
-if (!a_dkg->x_rvss->Reconstruct(parties, chi_i, rbc, err))
-{
-	err << "P_" << i_in << ": reconstruction of a_dkg failed " << std::endl;
-	throw false;
-}
-err << "[c]" << std::endl;
-parties.clear();
-for (size_t j = (2*t); j < n_in; j++)
-	parties.push_back(j);
-if (!k_rvss->Reconstruct(parties, v_i, rbc, err))
-{
-	err << "P_" << i_in << ": reconstruction of k_rvss failed " << std::endl;
-	throw false;
-}
-if (!a_dkg->x_rvss->Reconstruct(parties, chi_i, rbc, err))
-{
-	err << "P_" << i_in << ": reconstruction of a_dkg failed " << std::endl;
-	throw false;
-}
-mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
-for (size_t j = 0; j < n_in; j++)
-{
-	mpz_add(foo, foo, v_i[j]);
-	mpz_mod(foo, foo, q);
-	mpz_add(bar, bar, chi_i[j]);
-	mpz_mod(bar, bar, q);
-}
-mpz_mul(mu, foo, bar);
-mpz_mod(mu, mu, q);
-err << "P_" << i_in << ": mu = " << mu << std::endl;
-
-
-
-
-
-
-
 		//    (g) Player $P_i$ computes locally $\mu^{-1} \bmod q$ and $r = (g^a)^{\mu^{-1}} \bmod p \bmod q$.
 		if (!mpz_invert(foo, mu, q))
 		{
@@ -3504,6 +3434,27 @@ err << "P_" << i_in << ": mu = " << mu << std::endl;
 		mpz_mod(aprime_i, aprime_i, q);
 		mpz_add(aprime_i, aprime_i, m);
 		mpz_mod(aprime_i, aprime_i, q);
+		for (size_t j = 0; j < n_in; j++) // FIXME: maybe n is needed here due to complete set of players in dkg
+		{
+			mpz_set_ui(beta_i[j], 1L);
+			for (std::vector<size_t>::iterator it = dkg->x_rvss->QUAL.begin(); it != dkg->x_rvss->QUAL.end(); ++it)
+			{
+				for (size_t k = 0; k <= dkg->x_rvss->t; k++)
+				{
+					mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
+					mpz_powm(bar, dkg->x_rvss->C_ik[*it][k], foo, p);
+					mpz_mul(beta_i[j], beta_i[j], bar);
+					mpz_mod(beta_i[j], beta_i[j], p);
+				}
+			}
+			mpz_powm(beta_i[j], beta_i[j], r, p);
+			mpz_fpowm(fpowm_table_g, foo, g, m, p);
+			mpz_fpowm(fpowm_table_h, bar, h, m, p);
+			mpz_mul(beta_i[j], beta_i[j], foo);
+			mpz_mod(beta_i[j], beta_i[j], p);
+			mpz_mul(beta_i[j], beta_i[j], bar);
+			mpz_mod(beta_i[j], beta_i[j], p);
+		}
 		//    (c) Back-up $a_i$. Each player $P_i$ shares $a_i$ using Pedersen's VSS.
 		for (size_t j = 0; j < n_in; j++)
 		{
@@ -3536,7 +3487,10 @@ err << "P_" << i_in << ": mu = " << mu << std::endl;
 		//        fail this step. At least $t+1$ good players will pass it.
 		//        (Note that indices $i$ and $j$ are changed for convenience.)
 		for (size_t j = 0; j < n_in; j++)
+		{
+			err << "P_" << i_in << ": beta_i[" << j << "] (Step 2c) = " << beta_i[j] << std::endl;
 			err << "P_" << i_in << ": delta_i[" << j << "] (Step 2c) = " << delta_i[j] << std::endl;
+		}
 		err << "P_" << i_in << ": aprime_i (Step 2c) = " << aprime_i << std::endl;
 		err << "P_" << i_in << ": sigma_i (Step 2c) = " << sigma_i << std::endl;
 		//        Broadcast commitments for the zero-knowledge proofs of knowledge (we use presentation from [BCCG15]).
@@ -4094,7 +4048,6 @@ err << "P_" << i_in << ": mu = " << mu << std::endl;
 					mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
 			}
 			mpz_mul(lambda_j[*jt], rhs, lhs);
-err << "lambda_j[" << *jt << "] = " << lambda_j[*jt] << std::endl;
 			mpz_mod(lambda_j[*jt], lambda_j[*jt], q);
 // TODO: include v_i's for failed parties from the vector complaints with "constant sharing polynomial"
 			mpz_mul(rhs, lambda_j[*jt], vv_i_vss[*jt]->sigma_i);
@@ -4243,7 +4196,6 @@ err << "lambda_j[" << *jt << "] = " << lambda_j[*jt] << std::endl;
 		Tk_i.clear(), Ta_i.clear(), d_i.clear(), dprime_i.clear();
 		DD.clear(), DDprime.clear(), EE.clear(), shares.clear();
 		lambda_j.clear();
-// TODO
 		for (size_t j = 0; j < n_in; j++)
 		{
 			delete k_i_vss[j];

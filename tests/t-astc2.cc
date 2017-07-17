@@ -192,11 +192,12 @@ void start_instance
 			if (!corrupted)
 				assert(ret);
 
+			// signing and verifying messages
 			std::stringstream err_log_sign, err_log_sign_nm1;
 			mpz_t m, r, s;
 			mpz_init(m), mpz_init(r), mpz_init(s);
 			// check signing and verifying of a message with N signers
-/*			mpz_set_ui(m, 42L), mpz_set_ui(r, 0L), mpz_set_ui(s, 0L);
+			mpz_set_ui(m, 42L), mpz_set_ui(r, 0L), mpz_set_ui(s, 0L);
 			start_clock();
 			std::cout << "P_" << whoami << ": dss.Sign(42, ...)" << std::endl;
 			if (corrupted)
@@ -218,7 +219,6 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			if (!corrupted)
 				assert(ret);
-*/
 			// check signing and verifying of a message with N-1 signers
 			if (whoami < (N-1))
 			{
@@ -279,26 +279,27 @@ void start_instance
 				numWrite += P_in[i]->get_numWrite() + P_out[i]->get_numWrite();
 				delete P_in[i], delete P_out[i];
 			}
-			std::cout << "P_" << whoami << ": numRead = " << numRead <<
-				" numWrite = " << numWrite << std::endl;
+			std::cout << "P_" << whoami << ": numRead = " << numRead << " numWrite = " << numWrite << std::endl;
 
 			// release handles (unicast channel)
 			uP_in.clear(), uP_out.clear(), uP_key.clear();
-			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
-				" aiou.numWrite = " << aiou->numWrite << std::endl;
-			std::cout << "P_" << whoami << ": aiou.numDecrypted = " << aiou->numDecrypted <<
-				" aiou.numEncrypted = " << aiou->numEncrypted << std::endl;
-			std::cout << "P_" << whoami << ": aiou.numAuthenticated = " <<
-				aiou->numAuthenticated << std::endl;
+			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead << " aiou.numWrite = " << aiou->numWrite << std::endl;
+			std::cout << "P_" << whoami << ": aiou.numDecrypted = " << aiou->numDecrypted << " aiou.numEncrypted = " << aiou->numEncrypted << std::endl;
+			std::cout << "P_" << whoami << ": aiou.numAuthenticated = " << aiou->numAuthenticated << std::endl;
+			std::cout << "P_" << whoami << ": aiou_nm1.numRead = " << aiou_nm1->numRead << " aiou_nm1.numWrite = " << aiou_nm1->numWrite << std::endl;
+			std::cout << "P_" << whoami << ": aiou_nm1.numDecrypted = " << aiou_nm1->numDecrypted <<
+				" aiou_nm1.numEncrypted = " << aiou_nm1->numEncrypted << std::endl;
+			std::cout << "P_" << whoami << ": aiou_nm1.numAuthenticated = " << aiou_nm1->numAuthenticated << std::endl;
 
 			// release handles (broadcast channel)
 			bP_in.clear(), bP_out.clear(), bP_key.clear();
-			std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
-				" aiou2.numWrite = " << aiou2->numWrite << std::endl;
-			std::cout << "P_" << whoami << ": aiou2.numDecrypted = " << aiou2->numDecrypted <<
-				" aiou2.numEncrypted = " << aiou2->numEncrypted << std::endl;
-			std::cout << "P_" << whoami << ": aiou2.numAuthenticated = " <<
-				aiou2->numAuthenticated << std::endl;
+			std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead << " aiou2.numWrite = " << aiou2->numWrite << std::endl;
+			std::cout << "P_" << whoami << ": aiou2.numDecrypted = " << aiou2->numDecrypted << " aiou2.numEncrypted = " << aiou2->numEncrypted << std::endl;
+			std::cout << "P_" << whoami << ": aiou2.numAuthenticated = " << aiou2->numAuthenticated << std::endl;
+			std::cout << "P_" << whoami << ": aiou2_nm1.numRead = " << aiou2_nm1->numRead << " aiou2_nm1.numWrite = " << aiou2_nm1->numWrite << std::endl;
+			std::cout << "P_" << whoami << ": aiou2_nm1.numDecrypted = " << aiou2_nm1->numDecrypted <<
+				" aiou2_nm1.numEncrypted = " << aiou2_nm1->numEncrypted << std::endl;
+			std::cout << "P_" << whoami << ": aiou2_nm1.numAuthenticated = " << aiou2_nm1->numAuthenticated << std::endl;
 
 			// release asynchronous unicast and broadcast
 			delete aiou, delete aiou2, delete aiou_nm1, delete aiou2_nm1;
