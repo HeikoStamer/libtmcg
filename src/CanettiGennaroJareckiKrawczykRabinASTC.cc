@@ -2822,7 +2822,6 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			mpz_mod(d, d, q);
 		}
 		err << "P_" << i_in << ": d = " << d << std::endl;
-		d_complaints.clear();
 		//        Broadcast the reponses $z_{k_i} = r_{k_i} + (k\prime_i - \rho_i) \cdot d \bmod q$
 		//        and $z_{a_i} = r_{a_i} + (a\prime_i - \sigma_i) \cdot d$ and verify the results.
 		mpz_sub(foo, kprime_i, rho_i);
@@ -3010,6 +3009,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[9])
 			throw false;
 		mpz_set(d_i[i_in], dd_rvss->z_i), mpz_set(dprime_i[i_in], dd_rvss->zprime_i);
+		d_complaints.clear();
 		for (size_t j = 0; j < n_in; j++)
 		{
 			if (std::find(dd_rvss->QUAL.begin(), dd_rvss->QUAL.end(), j) == dd_rvss->QUAL.end())
@@ -3092,7 +3092,6 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			mpz_mod(d, d, q);
 		}
 		err << "P_" << i_in << ": d = " << d << std::endl;
-		d_complaints.clear();
 		//        Broadcast the responses...
 		//        $f_1 = k_i d + dd \bmod q$
 		mpz_mul(foo, k_i[i_in], d);
@@ -3219,6 +3218,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_powm(rhs, chi_i[j], d, p);
 				mpz_mul(rhs, rhs, DDprime[j]);
 				mpz_mod(rhs, rhs, p);
+mpz_add_ui(rhs, rhs, 1L);
 				if (mpz_cmp(lhs, rhs))
 				{
 					err << "P_" << i_in << ": third ZNPoK in Step 1d failed for P_" << j << std::endl;
@@ -3244,6 +3244,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		err << std::endl;
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
+			mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 			if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
 			{
 				err << "P_" << i_in << ": reconstruction of k_j failed for P_" << *it << std::endl;	
@@ -3267,12 +3268,12 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Step 1e, we use the constant sharing polynomial. Bad shares are detected using the
 		//        public commitments, and $\mu$ is reconstructed.
 		std::vector<size_t> signers;
-// TODO: exclude v_i's for failed parties from the vector complaints
-		for (size_t j = 0; j < ((2 * t) + 1); j++)
+		for (size_t j = 0; j < ((2 * t) + 1); j++) // FIXME: use n_in here to catch all possible signers??
 			signers.push_back(j);
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 		for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
 		{
+			
 			mpz_set_ui(lhs, 1L); // compute the optimized Lagrange multipliers
 			for (std::vector<size_t>::iterator lt = signers.begin(); lt != signers.end(); ++lt)
 			{
@@ -3296,15 +3297,25 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 			mpz_mul(lambda_j[*jt], rhs, lhs);
 			mpz_mod(lambda_j[*jt], lambda_j[*jt], q);
+			if (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end())
+			{
+				mpz_mul(rhs, lambda_j[*jt], v_i_vss[*jt]->sigma_i);
+				mpz_mod(rhs, rhs, q);
+				mpz_add(foo, foo, rhs);
+				mpz_mod(foo, foo, q);
+				mpz_mul(rhs, lambda_j[*jt], v_i_vss[*jt]->tau_i);
+				mpz_mod(rhs, rhs, q);
+				mpz_add(bar, bar, rhs);
+				mpz_mod(bar, bar, q);
+			}
+			else
+			{
 // TODO: include v_i's for failed parties from the vector complaints with "constant sharing polynomial"
-			mpz_mul(rhs, lambda_j[*jt], v_i_vss[*jt]->sigma_i);
-			mpz_mod(rhs, rhs, q);
-			mpz_add(foo, foo, rhs);
-			mpz_mod(foo, foo, q);
-			mpz_mul(rhs, lambda_j[*jt], v_i_vss[*jt]->tau_i);
-			mpz_mod(rhs, rhs, q);
-			mpz_add(bar, bar, rhs);
-			mpz_mod(bar, bar, q);
+				mpz_mul(rhs, lambda_j[*jt], v_i[*jt]);
+				mpz_mod(rhs, rhs, q);
+				mpz_add(foo, foo, rhs);
+				mpz_mod(foo, foo, q);
+			}
 		}
 		rbc->Broadcast(foo);
 		rbc->Broadcast(bar);
@@ -3345,13 +3356,21 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_set_ui(rhs, 1L);
 				for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
 				{
-					mpz_set_ui(bar, 1L);
-					for (size_t k = 0; k < v_i_vss[*jt]->A_j.size(); k++)
+					if (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end())
 					{
-						mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
-						mpz_powm(foo, v_i_vss[*jt]->A_j[k], foo, p);
-						mpz_mul(bar, bar, foo);
-						mpz_mod(bar, bar, p);
+						mpz_set_ui(bar, 1L);
+						for (size_t k = 0; k < v_i_vss[*jt]->A_j.size(); k++)
+						{
+							mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
+							mpz_powm(foo, v_i_vss[*jt]->A_j[k], foo, p);
+							mpz_mul(bar, bar, foo);
+							mpz_mod(bar, bar, p);
+						}	
+					}
+					else
+					{
+// TODO: include v_i's for failed parties from the vector complaints with "constant sharing polynomial"
+						mpz_fpowm(fpowm_table_g, bar, g, v_i[*jt], p);
 					}
 					mpz_powm(bar, bar, lambda_j[*jt], p); // include Lagrange multipliers
 					mpz_mul(rhs, rhs, bar);
@@ -3609,7 +3628,6 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			mpz_mod(d, d, q);
 		}
 		err << "P_" << i_in << ": d (Step 2c) = " << d << std::endl;
-		d_complaints.clear();
 		//        Broadcast the reponse $z_{a_i} = r_{a_i} + (a\prime_i - \sigma_i) \cdot d$ and verify the results.
 		mpz_sub(bar, aprime_i, sigma_i);
 		mpz_mod(bar, bar, q);
@@ -3763,6 +3781,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[20])
 			throw false;
 		mpz_set(d_i[i_in], dddd_rvss->z_i), mpz_set(dprime_i[i_in], dddd_rvss->zprime_i);
+		d_complaints.clear();
 		for (size_t j = 0; j < n_in; j++)
 		{
 			if (std::find(dddd_rvss->QUAL.begin(), dddd_rvss->QUAL.end(), j) == dddd_rvss->QUAL.end())
@@ -3845,7 +3864,6 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			mpz_mod(d, d, q);
 		}
 		err << "P_" << i_in << ": d (Step 2d) = " << d << std::endl;
-		d_complaints.clear();
 		//        Broadcast the responses...
 		//        $f_1 = k_i d + dd \bmod q$
 		mpz_mul(foo, k_i[i_in], d);
@@ -3997,6 +4015,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		err << std::endl;
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
+			mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 			if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
 			{
 				err << "P_" << i_in << ": reconstruction of k_j (in Step 2e) failed for P_" << *it << std::endl;	

@@ -128,9 +128,9 @@ void start_instance
 
 			// create asynchronous authenticated unicast channels
 			aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_middle);
 			aiounicast_select *aiou_nm1 = new aiounicast_select(N-1, (whoami==N-1)?0:whoami, uP_in_nm1, uP_out_nm1, uP_key_nm1,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_middle);
 
 			// create asynchronous authenticated broadcast channels
 			aiounicast_select *aiou2 = new aiounicast_select(N, whoami, bP_in, bP_out, bP_key,
@@ -411,7 +411,7 @@ int main
 		start_instance(crs, i, false);
 	if (!done())
 		return 1;
-	
+/*	
 	// test case #2: two corrupted parties
 	init();
 	for (size_t i = 0; i < N; i++)
@@ -423,6 +423,7 @@ int main
 	}
 	if (!done())
 		return 1;
+*/
 	
 	// release VTMF instance
 	delete vtmf;
