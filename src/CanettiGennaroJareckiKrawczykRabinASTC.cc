@@ -3225,6 +3225,7 @@ mpz_add_ui(rhs, rhs, 1L);
 					complaints.push_back(j);
 				}	
 			}
+else complaints.push_back(j);
 		}
 		//    (e) If player $P_j$ fails the proof in the above step, his shares $a_j, k_j$ are publicly
 		//        reconstructed via interpolation of the back-ups of shares distributed in Step 1c.
@@ -3244,19 +3245,22 @@ mpz_add_ui(rhs, rhs, 1L);
 		err << std::endl;
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
-			if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+			if (*it != i_in)
 			{
-				err << "P_" << i_in << ": reconstruction of k_j failed for P_" << *it << std::endl;	
-				throw false;
+				mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
+				if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+				{
+					err << "P_" << i_in << ": reconstruction of k_j failed for P_" << *it << std::endl;	
+					throw false;
+				}
+				if (!a_i_vss[*it]->Reconstruct(*it, bar, rbc, err))
+				{
+					err << "P_" << i_in << ": reconstruction of a_j failed for P_" << *it << std::endl;	
+					throw false;
+				}
+				mpz_mul(v_i[*it], foo, bar);
+				mpz_mod(v_i[*it], v_i[*it], q);
 			}
-			if (!a_i_vss[*it]->Reconstruct(*it, bar, rbc, err))
-			{
-				err << "P_" << i_in << ": reconstruction of a_j failed for P_" << *it << std::endl;	
-				throw false;
-			}
-			mpz_mul(v_i[*it], foo, bar);
-			mpz_mod(v_i[*it], v_i[*it], q);
 			err << "P_" << i_in << ": v_i[" << *it << "] = " << v_i[*it] << std::endl;
 		}
 		//    (f) The value $\mu = ka$ is a linear combination of the values $v_1, \ldots, v_{2t+1}$.
@@ -3310,7 +3314,6 @@ mpz_add_ui(rhs, rhs, 1L);
 			}
 			else
 			{
-// TODO: include v_i's for failed parties from the vector complaints with "constant sharing polynomial"
 				mpz_mul(rhs, lambda_j[*jt], v_i[*jt]);
 				mpz_mod(rhs, rhs, q);
 				mpz_add(foo, foo, rhs);
@@ -3369,7 +3372,6 @@ mpz_add_ui(rhs, rhs, 1L);
 					}
 					else
 					{
-// TODO: include v_i's for failed parties from the vector complaints with "constant sharing polynomial"
 						mpz_fpowm(fpowm_table_g, bar, g, v_i[*jt], p);
 					}
 					mpz_powm(bar, bar, lambda_j[*jt], p); // include Lagrange multipliers
@@ -3453,7 +3455,7 @@ mpz_add_ui(rhs, rhs, 1L);
 		mpz_mod(aprime_i, aprime_i, q);
 		mpz_add(aprime_i, aprime_i, m);
 		mpz_mod(aprime_i, aprime_i, q);
-		for (size_t j = 0; j < n_in; j++) // FIXME: maybe n is needed here due to complete set of players in dkg
+		for (size_t j = 0; j < n_in; j++)
 		{
 			mpz_set_ui(beta_i[j], 1L);
 			for (std::vector<size_t>::iterator it = dkg->x_rvss->QUAL.begin(); it != dkg->x_rvss->QUAL.end(); ++it)
@@ -4015,19 +4017,22 @@ mpz_add_ui(rhs, rhs, 1L);
 		err << std::endl;
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
-			if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+			if (*it != i_in)
 			{
-				err << "P_" << i_in << ": reconstruction of k_j (in Step 2e) failed for P_" << *it << std::endl;	
-				throw false;
+				mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
+				if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+				{
+					err << "P_" << i_in << ": reconstruction of k_j (in Step 2e) failed for P_" << *it << std::endl;	
+					throw false;
+				}
+				if (!aa_i_vss[*it]->Reconstruct(*it, bar, rbc, err))
+				{
+					err << "P_" << i_in << ": reconstruction of a_j (in Step 2e) failed for P_" << *it << std::endl;	
+					throw false;
+				}
+				mpz_mul(v_i[*it], foo, bar);
+				mpz_mod(v_i[*it], v_i[*it], q);
 			}
-			if (!aa_i_vss[*it]->Reconstruct(*it, bar, rbc, err))
-			{
-				err << "P_" << i_in << ": reconstruction of a_j (in Step 2e) failed for P_" << *it << std::endl;	
-				throw false;
-			}
-			mpz_mul(v_i[*it], foo, bar);
-			mpz_mod(v_i[*it], v_i[*it], q);
 			err << "P_" << i_in << ": v_i[" << *it << "] (Step 2e) = " << v_i[*it] << std::endl;
 		}
 		//    (f) The value $s = k(m + xr)$ is a linear combination of the values $v_1, \ldots, v_{2t+1}$.
@@ -4039,8 +4044,7 @@ mpz_add_ui(rhs, rhs, 1L);
 		//        Step 2e, we use the constant sharing polynomial. Bad shares are detected using the
 		//        public commitments, and $\mu$ is reconstructed.
 		signers.clear();
-// TODO: exclude v_i's for failed parties from the vector complaints
-		for (size_t j = 0; j < ((2 * t) + 1); j++)
+		for (size_t j = 0; j < ((2 * t) + 1); j++) // FIXME: needs n_in here??
 			signers.push_back(j);
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 		for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
@@ -4068,15 +4072,24 @@ mpz_add_ui(rhs, rhs, 1L);
 			}
 			mpz_mul(lambda_j[*jt], rhs, lhs);
 			mpz_mod(lambda_j[*jt], lambda_j[*jt], q);
-// TODO: include v_i's for failed parties from the vector complaints with "constant sharing polynomial"
-			mpz_mul(rhs, lambda_j[*jt], vv_i_vss[*jt]->sigma_i);
-			mpz_mod(rhs, rhs, q);
-			mpz_add(foo, foo, rhs);
-			mpz_mod(foo, foo, q);
-			mpz_mul(rhs, lambda_j[*jt], vv_i_vss[*jt]->tau_i);
-			mpz_mod(rhs, rhs, q);
-			mpz_add(bar, bar, rhs);
-			mpz_mod(bar, bar, q);
+			if (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end())
+			{
+				mpz_mul(rhs, lambda_j[*jt], vv_i_vss[*jt]->sigma_i);
+				mpz_mod(rhs, rhs, q);
+				mpz_add(foo, foo, rhs);
+				mpz_mod(foo, foo, q);
+				mpz_mul(rhs, lambda_j[*jt], vv_i_vss[*jt]->tau_i);
+				mpz_mod(rhs, rhs, q);
+				mpz_add(bar, bar, rhs);
+				mpz_mod(bar, bar, q);
+			}
+			else
+			{
+				mpz_mul(rhs, lambda_j[*jt], v_i[*jt]);
+				mpz_mod(rhs, rhs, q);
+				mpz_add(foo, foo, rhs);
+				mpz_mod(foo, foo, q);
+			}
 		}
 		rbc->Broadcast(foo);
 		rbc->Broadcast(bar);
@@ -4117,13 +4130,20 @@ mpz_add_ui(rhs, rhs, 1L);
 				mpz_set_ui(rhs, 1L);
 				for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
 				{
-					mpz_set_ui(bar, 1L);
-					for (size_t k = 0; k < vv_i_vss[*jt]->A_j.size(); k++)
+					if (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end())
 					{
-						mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
-						mpz_powm(foo, vv_i_vss[*jt]->A_j[k], foo, p);
-						mpz_mul(bar, bar, foo);
-						mpz_mod(bar, bar, p);
+						mpz_set_ui(bar, 1L);
+						for (size_t k = 0; k < vv_i_vss[*jt]->A_j.size(); k++)
+						{
+							mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
+							mpz_powm(foo, vv_i_vss[*jt]->A_j[k], foo, p);
+							mpz_mul(bar, bar, foo);
+							mpz_mod(bar, bar, p);
+						}	
+					}
+					else
+					{
+						mpz_fpowm(fpowm_table_g, bar, g, v_i[*jt], p);
 					}
 					mpz_powm(bar, bar, lambda_j[*jt], p); // include Lagrange multipliers
 					mpz_mul(rhs, rhs, bar);
