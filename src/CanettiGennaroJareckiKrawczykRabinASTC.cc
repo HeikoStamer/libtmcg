@@ -2123,6 +2123,8 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 					err << "DKG(" << label << "): P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 				}
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer[8])
+					complaints.push_back(j);
 			}
 		}
 		// 7. If player $P_i$ receives more than $t$ complaints, then $P_j$ 
@@ -2130,7 +2132,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		// The broadcasts are done inside public reconstruction of $z_i$.
 		// In opposite to the notation used in the paper the indicies $i$ and $j$ are
 		// exchanged in this step for convenience.
-		if (simulate_faulty_behaviour && simulate_faulty_randomizer[8])
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[9])
 			throw false;
 		std::sort(complaints.begin(), complaints.end());
 		it = std::unique(complaints.begin(), complaints.end());
