@@ -1058,6 +1058,13 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+	std::vector<mpz_ptr> shares;
+	for (size_t j = 0; j < n; j++)
+	{
+		mpz_ptr tmp1 = new mpz_t();
+		mpz_init(tmp1);
+		shares.push_back(tmp1);
+	}
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -1076,33 +1083,43 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 		}
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			// broadcast shares for reconstruction of $z_i$ (where $i = *it$) 
-			rbc->Broadcast(s_ij[*it][i]);
-			rbc->Broadcast(sprime_ij[*it][i]);
+			if (std::find(QUAL.begin(), QUAL.end(), *it) == QUAL.end())
+			{
+				err << "P_" << i << ": reconstruction of z_i failed because P_" << *it << " not in QUAL" << std::endl;
+				throw false;
+			}
 			// prepare for collecting some shares
 			std::vector<size_t> parties;
-			parties.push_back(i); // our own shares are always available
+			parties.push_back(i); // share of this player is always available and correct
+			mpz_set(shares[i], s_ij[*it][i]);
+			// broadcast shares for reconstruction of $z_i$ (where $i = *it$ is here the index of the failed party)
+			if ((std::find(complaints.begin(), complaints.end(), i) == complaints.end()) && (std::find(QUAL.begin(), QUAL.end(), i) != QUAL.end()))
+			{
+				rbc->Broadcast(s_ij[*it][i]);
+				rbc->Broadcast(sprime_ij[*it][i]);
+			}			
 			// now collect shares $s_{ij}$ and $s\prime_{ij}$ of other parties from QUAL
 			for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
 			{
 				if ((*jt != i) && (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end()))
 				{
-					if (rbc->DeliverFrom(s_ij[*it][*jt], *jt) && rbc->DeliverFrom(sprime_ij[*it][*jt], *jt))
+					if (rbc->DeliverFrom(foo, *jt) && rbc->DeliverFrom(bar, *jt))
 					{
-						if ((mpz_cmpabs(s_ij[*it][*jt], q) >= 0) || (mpz_cmpabs(sprime_ij[*it][*jt], q) >= 0))
+						if ((mpz_cmpabs(foo, q) >= 0) || (mpz_cmpabs(bar, q) >= 0))
 							err << "P_" << i << ": bad share received from " << *jt << std::endl;
 						else
 						{
+							mpz_set(shares[*jt], foo); // save the received share for later following interpolation
 							// compute LHS for the check
-							mpz_fpowm(fpowm_table_g, foo, g, s_ij[*it][*jt], p);
-							mpz_fpowm(fpowm_table_h, bar, h, sprime_ij[*it][*jt], p);
+							mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+							mpz_fpowm(fpowm_table_h, bar, h, bar, p);
 							mpz_mul(lhs, foo, bar);
 							mpz_mod(lhs, lhs, p);
 							// compute RHS for the check
 							mpz_set_ui(rhs, 1L);
 							for (size_t k = 0; k <= t; k++)
 							{
-								mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $i$ in computation
+								mpz_ui_pow_ui(foo, *jt + 1, k);
 								mpz_powm(bar, C_ik[*it][k], foo, p);
 								mpz_mul(rhs, rhs, bar);
 								mpz_mod(rhs, rhs, p);
@@ -1156,8 +1173,8 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 					throw false;
 				}
 				mpz_mul(rhs, rhs, lhs);
-				mpz_mod(rhs, rhs, q); // computation of Lagrange coefficients finished
-				mpz_mul(bar, s_ij[*it][*jt], rhs);
+				mpz_mod(rhs, rhs, q);
+				mpz_mul(bar, rhs, shares[*jt]); // use the provided shares (interpolation points)
 				mpz_mod(bar, bar, q);
 				mpz_add(foo, foo, bar);
 				mpz_mod(foo, foo, q);
@@ -1165,29 +1182,29 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 			mpz_set(z_i_in[*it], foo);
 			err << "P_" << i << ": reconstructed z_" << *it << " = " << z_i_in[*it] << std::endl;
 			// compute $f_i(z)$ using general interpolation
-			std::vector<mpz_ptr> points, shares, f;
+			std::vector<mpz_ptr> points, shares_f, f;
 			for (size_t k = 0; k < parties.size(); k++)
 			{
 				mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
 				mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3);
-				points.push_back(tmp1), shares.push_back(tmp2), f.push_back(tmp3);
+				points.push_back(tmp1), shares_f.push_back(tmp2), f.push_back(tmp3);
 			}
 			for (size_t k = 0; k < parties.size(); k++)
 			{
 				mpz_set_ui(points[k], parties[k] + 1); // adjust index in computation
-				mpz_set(shares[k], s_ij[*it][parties[k]]);
+				mpz_set(shares_f[k], shares[parties[k]]);
 			}
-			if (!interpolate_polynom(points, shares, q, f))
+			if (!interpolate_polynom(points, shares_f, q, f))
 				throw false;
 			err << "P_" << i << ": reconstructed f_0 = " << f[0] << std::endl;
 			for (size_t k = 0; k < parties.size(); k++)
 				mpz_set(a_ik_in[*it][k], f[k]);
 			for (size_t k = 0; k < parties.size(); k++)
 			{
-				mpz_clear(points[k]), mpz_clear(shares[k]), mpz_clear(f[k]);
-				delete [] points[k], delete [] shares[k], delete [] f[k];
+				mpz_clear(points[k]), mpz_clear(shares_f[k]), mpz_clear(f[k]);
+				delete [] points[k], delete [] shares_f[k], delete [] f[k];
 			}
-			points.clear(), shares.clear(), f.clear();
+			points.clear(), shares_f.clear(), f.clear();
 			parties.clear(); 
 		}
 
@@ -1198,6 +1215,12 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 		// unset ID for RBC
 		rbc->unsetID();
 		// release
+		for (size_t j = 0; j < shares.size(); j++)
+		{
+			mpz_clear(shares[j]);
+			delete [] shares[j];
+		}
+		shares.clear();
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
 		// return
 		return return_value;

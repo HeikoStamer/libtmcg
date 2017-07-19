@@ -555,7 +555,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 			err << std::endl;
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 			{
-				mpz_set_ui(lhs, *it); // who failed?
+				mpz_set_ui(lhs, *it); // who is complaining?
 				rbc->Broadcast(lhs);
 				rbc->Broadcast(s_ji[i][*it]);
 				rbc->Broadcast(sprime_ji[i][*it]);
@@ -570,10 +570,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		for (size_t j = 0; j < n; j++)
 		{
 			if (complaints_counter[j] > t)
-			{
 				complaints.push_back(j);
-				continue;
-			}
 			if (j != i)
 			{
 				size_t cnt = 0;
@@ -643,7 +640,6 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 							mpz_set(s_ji[j][i], s);
 							mpz_set(sprime_ji[j][i], sprime);
 						}
-
 					}
 					mpz_clear(s), mpz_clear(sprime);
 					cnt++;
@@ -735,11 +731,16 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
 		}
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
+			if (std::find(QUAL.begin(), QUAL.end(), *it) == QUAL.end())
+			{
+				err << "RVSS(" << label << "): P_" << i << ": reconstruction of z_i failed because P_" << *it << " not in QUAL" << std::endl;
+				throw false;
+			}
 			// prepare for collecting shares
 			std::vector<size_t> parties;
-			parties.push_back(i); // share of this player $P_i$ is always available
+			parties.push_back(i); // share of this player is always available and correct
 			mpz_set(shares[i], s_ji[*it][i]);
-			// broadcast shares for reconstruction of $z_i$ (where $i = *it$ is the reconstructed party)
+			// broadcast shares for reconstruction of $z_i$ (where $i$ is here the index of the failed party)
 			if ((std::find(complaints.begin(), complaints.end(), i) == complaints.end()) && (std::find(QUAL.begin(), QUAL.end(), i) != QUAL.end()))
 			{
 				rbc->Broadcast(s_ji[*it][i]);
@@ -1368,8 +1369,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				complaints.push_back(j);
 			}		
 		}
-		// If the check fails for an index $i$,
-		// $P_j$ broadcasts a complaint against $P_i$.
+		// If the check fails for an index $i$, $P_j$ broadcasts a complaint against $P_i$.
 		std::sort(complaints.begin(), complaints.end());
 		std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
 		complaints.resize(std::distance(complaints.begin(), it));
@@ -1430,7 +1430,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			err << std::endl;
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 			{
-				mpz_set_ui(lhs, *it); // who?
+				mpz_set_ui(lhs, *it); // who is complaining?
 				rbc->Broadcast(lhs);
 				rbc->Broadcast(s_ji[i][*it]);
 				rbc->Broadcast(sprime_ji[i][*it]);
@@ -1445,10 +1445,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		for (size_t j = 0; j < n; j++)
 		{
 			if (complaints_counter[j] > t)
-			{
 				complaints.push_back(j);
-				continue;
-			}
 			if (j != i)
 			{
 				size_t cnt = 0;
@@ -1488,7 +1485,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 						mpz_set_ui(bar, 0L); // indicates an error
 					}
 					mpz_t s, sprime;
-					mpz_init_set(s, foo), mpz_init_set(sprime, bar);
+					mpz_init_set(s, foo), mpz_init_set(sprime, bar); // save shares
 					// compute LHS for the check
 					mpz_fpowm(fpowm_table_g, foo, g, foo, p);
 					mpz_fpowm(fpowm_table_h, bar, h, bar, p);
@@ -1518,7 +1515,6 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 							mpz_set(s_ji[j][i], s);
 							mpz_set(sprime_ji[j][i], sprime);
 						}
-
 					}
 					mpz_clear(s), mpz_clear(sprime);
 					cnt++;

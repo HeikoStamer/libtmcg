@@ -875,6 +875,13 @@ bool JareckiLysyanskayaRVSS::Reconstruct
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+	std::vector<mpz_ptr> shares;
+	for (size_t j = 0; j < n; j++)
+	{
+		mpz_ptr tmp1 = new mpz_t();
+		mpz_init(tmp1);
+		shares.push_back(tmp1);
+	}
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -893,26 +900,36 @@ bool JareckiLysyanskayaRVSS::Reconstruct
 		}
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			// broadcast shares for reconstruction of $z_i$ (where $i = *it$) 
-			rbc->Broadcast(alpha_ij[*it][i]);
-			rbc->Broadcast(hatalpha_ij[*it][i]);
+			if (std::find(Qual.begin(), Qual.end(), *it) == Qual.end())
+			{
+				err << "P_" << i << ": reconstruction of z_i failed because P_" << *it << " not in Qual" << std::endl;
+				throw false;
+			}
 			// prepare for collecting shares
 			std::vector<size_t> parties;
-			parties.push_back(i); // shares of $P_i$ are always available
+			parties.push_back(i); // share of this player is always available
+			mpz_set(shares[i], alpha_ij[*it][i]);
+			// broadcast shares for reconstruction of $z_i$ (where $i = *it$ is here the index of the failed party)
+			if ((std::find(complaints.begin(), complaints.end(), i) == complaints.end()) && (std::find(Qual.begin(), Qual.end(), i) != Qual.end()))
+			{
+				rbc->Broadcast(alpha_ij[*it][i]);
+				rbc->Broadcast(hatalpha_ij[*it][i]);
+			}
 			// collect shares $\alpha_{ij}$ and $\hat{\alpha}_{ij}$ of other parties from Qual
 			for (std::vector<size_t>::iterator jt = Qual.begin(); jt != Qual.end(); ++jt)
 			{
 				if ((*jt != i) && (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end()))
 				{
-					if (rbc->DeliverFrom(alpha_ij[*it][*jt], *jt) && rbc->DeliverFrom(hatalpha_ij[*it][*jt], *jt))
+					if (rbc->DeliverFrom(foo, *jt) && rbc->DeliverFrom(bar, *jt))
 					{
-						if ((mpz_cmpabs(alpha_ij[*it][*jt], q) >= 0) || (mpz_cmpabs(hatalpha_ij[*it][*jt], q) >= 0))
+						if ((mpz_cmpabs(foo, q) >= 0) || (mpz_cmpabs(bar, q) >= 0))
 							err << "P_" << i << ": bad share received from " << *jt << std::endl;
 						else
 						{
+							mpz_set(shares[*jt], foo); // save the received share for later following interpolation
 							// compute LHS for the check
-							mpz_fpowm(fpowm_table_g, foo, g, alpha_ij[*it][*jt], p);
-							mpz_fpowm(fpowm_table_h, bar, h, hatalpha_ij[*it][*jt], p);
+							mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+							mpz_fpowm(fpowm_table_h, bar, h, bar, p);
 							mpz_mul(lhs, foo, bar);
 							mpz_mod(lhs, lhs, p);
 							// compute RHS for the check
@@ -974,7 +991,7 @@ bool JareckiLysyanskayaRVSS::Reconstruct
 				}
 				mpz_mul(rhs, rhs, lhs);
 				mpz_mod(rhs, rhs, q);
-				mpz_mul(bar, alpha_ij[*it][*jt], rhs); // use the provided shares (interpolation points)
+				mpz_mul(bar, rhs, shares[*jt]); // use the provided shares (interpolation points)
 				mpz_mod(bar, bar, q);
 				mpz_add(foo, foo, bar);
 				mpz_mod(foo, foo, q);
@@ -990,6 +1007,12 @@ bool JareckiLysyanskayaRVSS::Reconstruct
 		// unset ID for RBC
 		rbc->unsetID();
 		// release
+		for (size_t j = 0; j < shares.size(); j++)
+		{
+			mpz_clear(shares[j]);
+			delete [] shares[j];
+		}
+		shares.clear();
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
 		// return
 		return return_value;
