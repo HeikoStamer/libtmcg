@@ -1,5 +1,6 @@
 * dkg-gencrs: use EDCF to generate CRS by coin-flips of all participants
 * dkg-tools: protect h-generation protocol with EDCF to avoid ROM
+* provide revocation of OpenPGP keys (program dkg-revoke)
 * provide proactive security (program dkg-refresh) [HJJKY97]
 * provide distributed DSS/DSA key generation and signature scheme [GJKR01]
 + provide interactive and distributed (multiparty DZKP) versions for
@@ -13,9 +14,9 @@
 + move to event-driven architecture and state-based protocol representation
 + improve oracle function g() by including a second hash function (SHA3)
 + add a generic group abstraction layer, e.g. for future use of ECC groups
-+ use secure memory allocation from libgcrypt
++ use secure memory allocation and erasing from libgcrypt
 + provide a byzantine consensus protocol for agreement on values
-+ implement asynchronous VSS [CKLS02] for DKG
++ implement asynchronous VSS [CKLS02] for DKG and other applications
 
 - implement the exotic card and stack operations of the toolbox; there are
   some obstacles, e.g. that the prover does not know all used randomizers,
