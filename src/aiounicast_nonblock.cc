@@ -534,7 +534,7 @@ bool aiounicast_nonblock::Receive
 						err = gcry_mac_verify(*mac_in[i_out], mac, maclen);
 						if (err)
 						{
-							std::cerr << "libgcrypt: gcry_mac_verify() from " << i_out << " failed" << std::endl;
+							std::cerr << "libgcrypt: gcry_mac_verify() for " << j << " from " << i_out << " failed" << std::endl;
 							std::cerr << gcry_strerror(err) << std::endl;
 							delete [] tmp, delete [] mac;
 							return false;

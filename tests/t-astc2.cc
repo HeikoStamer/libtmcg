@@ -191,7 +191,7 @@ void start_instance
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_dss.str();
 			if (!corrupted)
 				assert(ret);
-
+/*
 			// signing and verifying messages
 			std::stringstream err_log_sign, err_log_sign_nm1;
 			mpz_t m, r, s;
@@ -246,7 +246,7 @@ void start_instance
 					assert(ret);
 			}
 			mpz_clear(m), mpz_clear(r), mpz_clear(s);
-
+*/
 			// release DSS
 			delete dss;
 			
@@ -411,7 +411,7 @@ int main
 		start_instance(crs, i, false);
 	if (!done())
 		return 1;
-/*	
+	
 	// test case #2: two corrupted parties
 	init();
 	for (size_t i = 0; i < N; i++)
@@ -423,7 +423,6 @@ int main
 	}
 	if (!done())
 		return 1;
-*/
 	
 	// release VTMF instance
 	delete vtmf;

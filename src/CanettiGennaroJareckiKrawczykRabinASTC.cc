@@ -1967,6 +1967,10 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[2])
 			throw false;
 		mpz_set(d_i[i], d_rvss->z_i), mpz_set(dprime_i[i], d_rvss->zprime_i);
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[3])
+			mpz_add_ui(d_i[i], d_i[i], 1L);
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[4])
+			mpz_add_ui(dprime_i[i], dprime_i[i], 1L);
 		// remove those players from $QUAL$, who are disqualified in this Joint-RVSS
 		for (size_t j = 0; j < n; j++)
 		{
@@ -1978,15 +1982,14 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 			}
 		}
 		// 4. Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
-		if (simulate_faulty_behaviour && simulate_faulty_randomizer[3])
-			mpz_add_ui(d_i[i], d_i[i], 1L);
-		rbc->Broadcast(d_i[i]);
-		if (simulate_faulty_behaviour && simulate_faulty_randomizer[4])
-			mpz_add_ui(dprime_i[i], dprime_i[i], 1L);
-		rbc->Broadcast(dprime_i[i]);
 		for (size_t j = 0; j < n; j++)
 		{
-			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
+			if ((j == i) && (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
+			{
+				rbc->Broadcast(d_i[i]);
+				rbc->Broadcast(dprime_i[i]);
+			}
+			else if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
 			{
 				if (!rbc->DeliverFrom(d_i[j], j))
 				{
