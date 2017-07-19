@@ -532,11 +532,11 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 						complaints_counter[who]++;
 						dup.insert(std::pair<size_t, bool>(who, true)); // mark as counted for $P_j$
 						if (who == i)
-							complaints_from.push_back(j);
+							complaints_from.push_back(j); // remember where the complaints are from
 					}
 					else if ((who < n) && dup.count(who))
 					{
-						err << "RVSS(" << label << "): P_" << i << ": duplicated complaint against P_" << who << " from P_" << j << std::endl;
+						err << "RVSS(" << label << "): P_" << i << ": duplicated complaint for P_" << who << "; complaint against P_" << j << std::endl;
 						complaints.push_back(j);
 					}
 					cnt++;
@@ -653,8 +653,10 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		}
 		QUAL.clear();
 		for (size_t j = 0; j < n; j++)
+		{
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				QUAL.push_back(j);
+		}
 		err << "RVSS(" << label << "): P_" << i << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			err << "P_" << *it << " ";
@@ -1408,7 +1410,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 					}
 					else if ((who < n) && dup.count(who))
 					{
-						err << "ZVSS(" << label << "): P_" << i << ": duplicated complaint against P_" << who << " from P_" << j << std::endl;
+						err << "ZVSS(" << label << "): P_" << i << ": duplicated complaint for P_" << who << "; complaint againts P_" << j << std::endl;
 						complaints.push_back(j);
 					}
 					cnt++;
@@ -1526,8 +1528,10 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		}
 		QUAL.clear();
 		for (size_t j = 0; j < n; j++)
+		{
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				QUAL.push_back(j);
+		}
 		err << "ZVSS(" << label << "): P_" << i << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			err << "P_" << *it << " ";
@@ -3218,14 +3222,12 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_powm(rhs, chi_i[j], d, p);
 				mpz_mul(rhs, rhs, DDprime[j]);
 				mpz_mod(rhs, rhs, p);
-mpz_add_ui(rhs, rhs, 1L);
 				if (mpz_cmp(lhs, rhs))
 				{
 					err << "P_" << i_in << ": third ZNPoK in Step 1d failed for P_" << j << std::endl;
 					complaints.push_back(j);
 				}	
 			}
-else complaints.push_back(j);
 		}
 		//    (e) If player $P_j$ fails the proof in the above step, his shares $a_j, k_j$ are publicly
 		//        reconstructed via interpolation of the back-ups of shares distributed in Step 1c.
@@ -3272,7 +3274,7 @@ else complaints.push_back(j);
 		//        Step 1e, we use the constant sharing polynomial. Bad shares are detected using the
 		//        public commitments, and $\mu$ is reconstructed.
 		std::vector<size_t> signers;
-		for (size_t j = 0; j < ((2 * t) + 1); j++) // FIXME: use n_in here to catch all possible signers??
+		for (size_t j = 0; j < n_in; j++)
 			signers.push_back(j);
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 		for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
@@ -4044,7 +4046,7 @@ else complaints.push_back(j);
 		//        Step 2e, we use the constant sharing polynomial. Bad shares are detected using the
 		//        public commitments, and $\mu$ is reconstructed.
 		signers.clear();
-		for (size_t j = 0; j < ((2 * t) + 1); j++) // FIXME: needs n_in here??
+		for (size_t j = 0; j < n_in; j++)
 			signers.push_back(j);
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 		for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
