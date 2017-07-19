@@ -1977,6 +1977,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 			std::vector<size_t>::iterator it = std::find(QUAL.begin(), QUAL.end(), j);
 			if ((it != QUAL.end()) && (std::find(d_rvss->QUAL.begin(), d_rvss->QUAL.end(), j) == d_rvss->QUAL.end()))
 			{
+				err << "DKG(" << label << "): P_" << i << ": WARNING - party erased from QUAL; complaint against P_" << j << std::endl;
 				QUAL.erase(it);
 				complaints.push_back(j);
 			}
