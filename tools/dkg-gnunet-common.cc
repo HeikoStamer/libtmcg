@@ -566,7 +566,7 @@ void gnunet_statistics(void *cls)
 			else if (WIFEXITED(wstatus))
 			{
 				if (gnunet_opt_verbose)
-					std::cerr << "INFO: DKG instance " << thispid << " terminated with exit status " << WEXITSTATUS(wstatus) << std::endl;
+					std::cerr << "INFO: DKG/tDSS instance " << thispid << " terminated with exit status " << WEXITSTATUS(wstatus) << std::endl;
 			}
 			instance_forked = false;
 			GNUNET_SCHEDULER_shutdown();
@@ -584,7 +584,7 @@ void gnunet_fork(void *cls)
 	{
 		// fork instance
 		if (gnunet_opt_verbose)
-			std::cout << "INFO: forking the DKG instance ..." << std::endl;
+			std::cout << "INFO: forking the DKG/tDSS instance ..." << std::endl;
 		fork_instance(peer2pipe[thispeer]);
 	}
 	else
