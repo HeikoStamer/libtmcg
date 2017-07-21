@@ -545,7 +545,7 @@ void run_instance
 #ifdef GNUNET
 char *gnunet_opt_crs = NULL;
 unsigned int gnunet_opt_t_resilience = 0;
-unsigned int gnunet_opt_s_resilience = 0;
+unsigned int gnunet_opt_s_resilience = MAX_N;
 unsigned int gnunet_opt_xtests = 0;
 #endif
 
@@ -553,13 +553,13 @@ void fork_instance
 	(const size_t whoami)
 {
 	T = (N - 1) / 2; // default: maximum synchronous t-resilience for DKG (RBC is not affected by this)
-	S = (N - 1) / 2; // default: maximum synchronous t-resilience for tDSS (RBC is not affected by this)
+	S = (N - 1) / 2; // default: maximum s-resilience for tDSS (RBC is also not affected by this)
 #ifdef GNUNET
 	if (gnunet_opt_crs != NULL)
 		crs = gnunet_opt_crs; // get different CRS from GNUnet options
 	if (gnunet_opt_t_resilience != 0)
 		T = gnunet_opt_t_resilience; // get value of T from GNUnet options
-	if (gnunet_opt_s_resilience != 0)
+	if (gnunet_opt_s_resilience != MAX_N)
 		S = gnunet_opt_s_resilience; // get value of S from GNUnet options
 #endif
 	if (T == 0)
@@ -709,7 +709,7 @@ int main
 		GNUNET_GETOPT_option_uint('s',
 			"s-resilience",
 			NULL,
-			"resilience of threshold DSS protocol",
+			"resilience of threshold DSS (tDSS) protocol",
 			&gnunet_opt_s_resilience
 		),
 		GNUNET_GETOPT_option_uint('t',

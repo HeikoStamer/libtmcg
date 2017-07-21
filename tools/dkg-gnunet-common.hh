@@ -42,7 +42,7 @@
 	#include <signal.h>
 
 	#undef NDEBUG
-	#define MAX_N 1024
+	#define MAX_N 32
 
 #ifdef GNUNET
 
