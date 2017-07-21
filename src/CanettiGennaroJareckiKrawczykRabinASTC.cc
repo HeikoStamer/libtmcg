@@ -6,6 +6,15 @@
                and Tal Rabin: 'Adaptive Security for Threshold Cryptosystems',
      Advances in Cryptology - CRYPTO'99, LNCS 1666, pp. 98--116, 1999.
 
+     [CD98] Ronald Cramer and Ivan Damgard: 'Zero-knowledge proofs for finite
+       field arithmetic, or: Can zero-knowledge be for free?',
+     Advances in Cryptology - CRYPTO'98, LNCS 1462, pp. 424--441, 1998.
+
+     [BCCG15] Jonathan Bootle, Andrea Cerulli, Pyrros Chaidos, and Jens Groth:
+       'Efficient Zero-Knowledge Proof Systems',
+     Foundations of Security Analysis and Design VIII: FOSAD 2014/2015/2016
+       Tutorial Lectures, LNCS 9808, pp. 1--31, 2016.
+
    This file is part of LibTMCG.
 
  Copyright (C) 2017  Heiko Stamer <HeikoStamer@gmx.net>
@@ -2746,11 +2755,6 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			throw false;
 		mpz_set(d_i[i_in], d_rvss->z_i), mpz_set(dprime_i[i_in], d_rvss->zprime_i);
 		std::vector<size_t> d_complaints;
-		for (size_t j = 0; j < n_in; j++)
-		{
-			if (std::find(d_rvss->QUAL.begin(), d_rvss->QUAL.end(), j) == d_rvss->QUAL.end())
-				d_complaints.push_back(j);
-		}
 		//        Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		for (size_t j = 0; j < n_in; j++)
 		{
@@ -3016,11 +3020,6 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			throw false;
 		mpz_set(d_i[i_in], dd_rvss->z_i), mpz_set(dprime_i[i_in], dd_rvss->zprime_i);
 		d_complaints.clear();
-		for (size_t j = 0; j < n_in; j++)
-		{
-			if (std::find(dd_rvss->QUAL.begin(), dd_rvss->QUAL.end(), j) == dd_rvss->QUAL.end())
-				d_complaints.push_back(j);
-		}
 		//        Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		for (size_t j = 0; j < n_in; j++)
 		{
@@ -3552,11 +3551,6 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			throw false;
 		mpz_set(d_i[i_in], ddd_rvss->z_i), mpz_set(dprime_i[i_in], ddd_rvss->zprime_i);
 		d_complaints.clear();
-		for (size_t j = 0; j < n_in; j++)
-		{
-			if (std::find(ddd_rvss->QUAL.begin(), ddd_rvss->QUAL.end(), j) == ddd_rvss->QUAL.end())
-				d_complaints.push_back(j);
-		}
 		//        Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		for (size_t j = 0; j < n_in; j++)
 		{
@@ -3788,11 +3782,6 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			throw false;
 		mpz_set(d_i[i_in], dddd_rvss->z_i), mpz_set(dprime_i[i_in], dddd_rvss->zprime_i);
 		d_complaints.clear();
-		for (size_t j = 0; j < n_in; j++)
-		{
-			if (std::find(dddd_rvss->QUAL.begin(), dddd_rvss->QUAL.end(), j) == dddd_rvss->QUAL.end())
-				d_complaints.push_back(j);
-		}
 		//        Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		for (size_t j = 0; j < n_in; j++)
 		{
