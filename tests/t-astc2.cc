@@ -91,6 +91,8 @@ void start_instance
 			}
 			
 			// create VTMF instance
+			std::cout << "P_" << whoami << ": BarnettSmartVTMF_dlog(crs_in)" << std::endl;
+			std::cout << "P_" << whoami << ": vtmf.CheckGroup()" << std::endl;
 			start_clock();
 			BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crs_in);
 			if (!vtmf->CheckGroup())
@@ -103,6 +105,7 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			
 			// create and exchange VTMF keys
+			std::cout << "P_" << whoami << ": vtmf.KeyGenerationProtocol_*()" << std::endl;
 			start_clock();
 			vtmf->KeyGenerationProtocol_GenerateKey();
 			for (size_t i = 0; i < N; i++)
@@ -191,7 +194,7 @@ void start_instance
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_dss.str();
 			if (!corrupted)
 				assert(ret);
-/*
+
 			// signing and verifying messages
 			std::stringstream err_log_sign, err_log_sign_nm1;
 			mpz_t m, r, s;
@@ -219,6 +222,16 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			if (!corrupted)
 				assert(ret);
+			std::cout << "P_" << whoami << ": !dss.Verify(43, ...)" << std::endl;
+			mpz_add_ui(m, m, 1L);
+			if (corrupted)
+				dss->Verify(m, r, s);
+			else
+				ret = dss->Verify(m, r, s);
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			if (!corrupted)
+				assert(!ret);
 			// check signing and verifying of a message with N-1 signers
 			if (whoami < (N-1))
 			{
@@ -246,7 +259,7 @@ void start_instance
 					assert(ret);
 			}
 			mpz_clear(m), mpz_clear(r), mpz_clear(s);
-*/
+
 			// release DSS
 			delete dss;
 			
