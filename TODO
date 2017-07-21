@@ -2,7 +2,6 @@
 * dkg-tools: protect h-generation protocol with EDCF to avoid ROM
 * provide revocation of OpenPGP keys (program dkg-revoke)
 * provide proactive security (program dkg-refresh) [HJJKY97]
-* provide distributed DSS/DSA key generation and signature scheme [GJKR01]
 + provide interactive and distributed (multiparty DZKP) versions for
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
   (for applications that cannot rely on the random oracle assumption or
