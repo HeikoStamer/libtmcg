@@ -127,7 +127,7 @@ void run_instance
 		mpz_clear(xtest);
 	}
 			
-	// create and exchange keys in order to bootstrap the $h$-generation for DKG [JL00]
+	// create and exchange keys in order to bootstrap the $h$-generation for DKG/tDSS [JL00]
 	// TODO: replace N-time NIZK by one interactive (distributed) zero-knowledge proof of knowledge
 	if (opt_verbose)
 		std::cout << "generate h by using VTMF key generation protocol" << std::endl;
@@ -165,6 +165,31 @@ void run_instance
 	vtmf->KeyGenerationProtocol_Finalize();
 	mpz_clear(nizk_c), mpz_clear(nizk_r), mpz_clear(h_j);
 
+	if (S > 0)
+	{
+		// create an instance of tDSS, if s-resilience is not zero
+		CanettiGennaroJareckiKrawczykRabinDSS *dss;
+		std::cout << "CanettiGennaroJareckiKrawczykRabinDSS(" << N << ", " << S << ", " << whoami << ", ...)" << std::endl;
+		dss = new CanettiGennaroJareckiKrawczykRabinDSS(N, S, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+		if (!dss->CheckGroup())
+		{
+			std::cerr << "P_" << whoami << ": " << "tDSS parameters are not correctly generated!" << std::endl;
+			exit(-1);
+		}
+			
+		// generate shared $x$ and extract $y = g^x \bmod p$
+		std::stringstream err_log;
+		std::cout << "P_" << whoami << ": dss.Generate()" << std::endl;
+		if (!dss->Generate(aiou, rbc, err_log))
+		{
+			std::cerr << "P_" << whoami << ": " << "tDSS Generate() failed" << std::endl;
+			std::cerr << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+			exit(-1);
+		}
+		if (opt_verbose)
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+	}
+
 	// create an instance of DKG
 	GennaroJareckiKrawczykRabinDKG *dkg;
 	std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
@@ -175,7 +200,7 @@ void run_instance
 		exit(-1);
 	}
 			
-	// generating $x$ and extracting $y = g^x \bmod p$
+	// generate shared $x$ and extract $y = g^x \bmod p$
 	std::stringstream err_log;
 	std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
 	if (!dkg->Generate(aiou, rbc, err_log))
@@ -519,6 +544,9 @@ void run_instance
 
 	// release DKG
 	delete dkg;
+
+	// release tDSS
+	delete dss;
 
 	// release RBC			
 	delete rbc;
