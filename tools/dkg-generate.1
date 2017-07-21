@@ -35,7 +35,7 @@ value is (n-1)/2 where n is the number of participants. Since 0-resilience and
 other artificial deviations are not desireable, the program ensures by
 clipping that 0 < t <= n holds.
 .PP
-The underlying DDH-hard group, i.e. a large prime-order subgroup of special
+The underlying DDH-hard group, i.e., a large prime-order subgroup of special
 form that sometimes is called Schnorr group, can be adjusted by using the
 option "-g". The included program
 .BR dkg\-gencrs
@@ -45,7 +45,7 @@ this program. The generated group parameters are verifiable up to a certain
 level. However, it is recommended that this crucial part of the setup is
 either accomplished by some trusted members or all participants together.
 Without this option the hard coded group in the source code (|p| = 2048 bit,
-|q| = 256 bit) is used by default.
+|q| = 256 bit) is used by default. It was created by the author.
 .PP
 With the option "-w" the number of minutes can be adjusted until the DKG
 protocol is started. The default value is 5. It is crucial for the key
