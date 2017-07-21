@@ -41,7 +41,7 @@
 
 int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t				pid[MAX_N];
-size_t				N, T;
+size_t				N, T, S;
 std::string			crs, u, passphrase;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
@@ -545,6 +545,7 @@ void run_instance
 #ifdef GNUNET
 char *gnunet_opt_crs = NULL;
 unsigned int gnunet_opt_t_resilience = 0;
+unsigned int gnunet_opt_s_resilience = 0;
 unsigned int gnunet_opt_xtests = 0;
 #endif
 
@@ -552,16 +553,21 @@ void fork_instance
 	(const size_t whoami)
 {
 	T = (N - 1) / 2; // default: maximum synchronous t-resilience for DKG (RBC is not affected by this)
+	S = (N - 1) / 2; // default: maximum synchronous t-resilience for tDSS (RBC is not affected by this)
 #ifdef GNUNET
 	if (gnunet_opt_crs != NULL)
 		crs = gnunet_opt_crs; // get different CRS from GNUnet options
 	if (gnunet_opt_t_resilience != 0)
 		T = gnunet_opt_t_resilience; // get value of T from GNUnet options
+	if (gnunet_opt_s_resilience != 0)
+		S = gnunet_opt_s_resilience; // get value of S from GNUnet options
 #endif
 	if (T == 0)
 		T++; // 0-resilience is not preferable, because then only one party can decrypt everything
 	if (T > N)
 		T = N; // apply an upper limit on T
+	if (S > ((N - 1) / 2))
+		S = (N - 1) / 2; // apply an upper limit on S
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-generate (fork)");
 	else
@@ -627,13 +633,14 @@ int main
 	}
 	else
 	{
-		// create peer list
+		// create peer list from remaining arguments
 		for (size_t i = 0; i < (size_t)(argc - 1); i++)
 		{
 			std::string arg = argv[i + 1];
 			// ignore options
 			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-t") == 0) || (arg.find("-w") == 0) || 
-				(arg.find("-L") == 0) || (arg.find("-l") == 0) || (arg.find("-g") == 0) || (arg.find("-x") == 0))
+				(arg.find("-L") == 0) || (arg.find("-l") == 0) || (arg.find("-g") == 0) || (arg.find("-x") == 0) ||
+				(arg.find("-s") == 0))
 			{
 				i++;
 				continue;
@@ -699,6 +706,12 @@ int main
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
 		),
+		GNUNET_GETOPT_option_uint('s',
+			"s-resilience",
+			NULL,
+			"resilience of threshold DSS protocol",
+			&gnunet_opt_s_resilience
+		),
 		GNUNET_GETOPT_option_uint('t',
 			"t-resilience",
 			NULL,
@@ -713,7 +726,7 @@ int main
 		GNUNET_GETOPT_option_uint('w',
 			"wait",
 			NULL,
-			"minutes to wait until start of DKG protocol",
+			"minutes to wait until start of DKG/tDSS protocol",
 			&gnunet_opt_wait
 		),
 		GNUNET_GETOPT_option_uint('x',
@@ -726,7 +739,7 @@ int main
 	};
 	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
     		return -1;
-	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed key generation (ElGamal with OpenPGP-output)",
+	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed key generation (DSA+ElGamal with OpenPGP-output)",
                             options, &gnunet_run, argv[0]);
 	GNUNET_free((void *) argv);
 	if (ret == GNUNET_OK)
@@ -734,7 +747,7 @@ int main
 	else
 		return -1;
 #else
-	std::cerr << "WARNING: GNunet development files are required for message exchange of DKG protocol" << std::endl;
+	std::cerr << "WARNING: GNunet development files are required for message exchange of DKG/tDSS protocol" << std::endl;
 #endif
 
 	std::cout << "INFO: running local test with " << peers.size() << " participants" << std::endl;
