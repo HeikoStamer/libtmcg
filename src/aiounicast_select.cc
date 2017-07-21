@@ -672,7 +672,7 @@ bool aiounicast_select::Receive
 				FD_ZERO(&rfds);
 				FD_SET(fd_in[i_out], &rfds);
 				tv.tv_sec = 0;
-				tv.tv_usec = 1000; // sleep only for 1000us = 1ms
+				tv.tv_usec = 10000; // sleep only for 10000us = 10ms
 				retval = select((fd_in[i_out] + 1), &rfds, NULL, NULL, &tv);
 				if (retval < 0)
 				{
