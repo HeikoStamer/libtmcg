@@ -970,7 +970,7 @@ int main
 	else
 		return -1;
 #else
-	std::cerr << "WARNING: GNunet development files are required for message exchange of DKG/tDSS protocol" << std::endl;
+	std::cerr << "WARNING: GNUnet development files are required for message exchange of DKG/tDSS protocol" << std::endl;
 #endif
 
 	std::cout << "INFO: running local test with " << peers.size() << " participants" << std::endl;
