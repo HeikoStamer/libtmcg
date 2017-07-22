@@ -2658,14 +2658,21 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 		}
 		//    (c) Back-up $k_i$ and $a_i$. Each player $P_i$ shares $k_i$ and $a_i$ using Pedersen's VSS.
+		std::vector<size_t> ignore;
 		for (size_t j = 0; j < n_in; j++)
 		{
 			if (j != i_in)
 			{
 				if (!k_i_vss[j]->Share(j, aiou, rbc, err, simulate_faulty_behaviour))
+				{
 					err << "P_" << i_in << ": WARNING - VSS of k_i failed for P_" << j << std::endl;
+					ignore.push_back(j);
+				}
 				if (!a_i_vss[j]->Share(j, aiou, rbc, err, simulate_faulty_behaviour))
+				{
 					err << "P_" << i_in << ": WARNING - VSS of a_i failed for P_" << j << std::endl;
+					ignore.push_back(j);
+				}
 			}
 			else
 			{
@@ -3242,26 +3249,32 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		err << "P_" << i_in << ": there are extracting complaints of v_j against ";
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			err << "P_" << *it << " ";
+		err << "but ignoring ";
+		for (std::vector<size_t>::iterator it = ignore.begin(); it != ignore.end(); ++it)
+			err << "P_" << *it << " ";
 		err << std::endl;
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			if (*it != i_in)
+			if (std::find(ignore.begin(), ignore.end(), *it) != ignore.end())
 			{
-				mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
-				if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+				if (*it != i_in)
 				{
-					err << "P_" << i_in << ": reconstruction of k_j failed for P_" << *it << std::endl;	
-					throw false;
+					mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
+					if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+					{
+						err << "P_" << i_in << ": reconstruction of k_j failed for P_" << *it << std::endl;	
+						throw false;
+					}
+					if (!a_i_vss[*it]->Reconstruct(*it, bar, rbc, err))
+					{
+						err << "P_" << i_in << ": reconstruction of a_j failed for P_" << *it << std::endl;	
+						throw false;
+					}
+					mpz_mul(v_i[*it], foo, bar);
+					mpz_mod(v_i[*it], v_i[*it], q);
 				}
-				if (!a_i_vss[*it]->Reconstruct(*it, bar, rbc, err))
-				{
-					err << "P_" << i_in << ": reconstruction of a_j failed for P_" << *it << std::endl;	
-					throw false;
-				}
-				mpz_mul(v_i[*it], foo, bar);
-				mpz_mod(v_i[*it], v_i[*it], q);
+				err << "P_" << i_in << ": v_i[" << *it << "] = " << v_i[*it] << std::endl;
 			}
-			err << "P_" << i_in << ": v_i[" << *it << "] = " << v_i[*it] << std::endl;
 		}
 		//    (f) The value $\mu = ka$ is a linear combination of the values $v_1, \ldots, v_{2t+1}$.
 		//        Thus it can be computed interpolating the polynomial of degree $t$ which is a linear
@@ -3273,7 +3286,15 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        public commitments, and $\mu$ is reconstructed.
 		std::vector<size_t> signers;
 		for (size_t j = 0; j < n_in; j++)
-			signers.push_back(j);
+		{
+			if (std::find(ignore.begin(), ignore.end(), j) == ignore.end())
+				signers.push_back(j);
+		}
+		if (signers.size() < ((2 * t) + 1))
+		{
+			err << "P_" << i_in << ": not enough cooperative players (< 2t+1) for signing" << std::endl;
+			throw false;
+		}
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 		for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
 		{
@@ -3482,7 +3503,10 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			if (j != i_in)
 			{
 				if (!aa_i_vss[j]->Share(j, aiou, rbc, err, simulate_faulty_behaviour))
+				{
 					err << "P_" << i_in << ": WARNING - VSS of a_i (in Step 2c) failed for P_" << j << std::endl;
+					ignore.push_back(j);
+				}
 			}
 			else
 			{
@@ -4001,26 +4025,32 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		err << "P_" << i_in << ": there are extracting complaints of v_j against ";
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			err << "P_" << *it << " ";
+		err << "but ignoring ";
+		for (std::vector<size_t>::iterator it = ignore.begin(); it != ignore.end(); ++it)
+			err << "P_" << *it << " ";
 		err << std::endl;
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			if (*it != i_in)
+			if (std::find(ignore.begin(), ignore.end(), *it) != ignore.end())
 			{
-				mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
-				if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+				if (*it != i_in)
 				{
-					err << "P_" << i_in << ": reconstruction of k_j (in Step 2e) failed for P_" << *it << std::endl;	
-					throw false;
+					mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
+					if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+					{
+						err << "P_" << i_in << ": reconstruction of k_j (in Step 2e) failed for P_" << *it << std::endl;	
+						throw false;
+					}
+					if (!aa_i_vss[*it]->Reconstruct(*it, bar, rbc, err))
+					{
+						err << "P_" << i_in << ": reconstruction of a_j (in Step 2e) failed for P_" << *it << std::endl;	
+						throw false;
+					}
+					mpz_mul(v_i[*it], foo, bar);
+					mpz_mod(v_i[*it], v_i[*it], q);
 				}
-				if (!aa_i_vss[*it]->Reconstruct(*it, bar, rbc, err))
-				{
-					err << "P_" << i_in << ": reconstruction of a_j (in Step 2e) failed for P_" << *it << std::endl;	
-					throw false;
-				}
-				mpz_mul(v_i[*it], foo, bar);
-				mpz_mod(v_i[*it], v_i[*it], q);
+				err << "P_" << i_in << ": v_i[" << *it << "] (Step 2e) = " << v_i[*it] << std::endl;
 			}
-			err << "P_" << i_in << ": v_i[" << *it << "] (Step 2e) = " << v_i[*it] << std::endl;
 		}
 		//    (f) The value $s = k(m + xr)$ is a linear combination of the values $v_1, \ldots, v_{2t+1}$.
 		//        Thus it can be computed interpolating the polynomial of degree $t$ which is a linear
@@ -4032,7 +4062,15 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        public commitments, and $\mu$ is reconstructed.
 		signers.clear();
 		for (size_t j = 0; j < n_in; j++)
-			signers.push_back(j);
+		{
+			if (std::find(ignore.begin(), ignore.end(), j) == ignore.end())
+				signers.push_back(j);
+		}
+		if (signers.size() < ((2 * t) + 1))
+		{
+			err << "P_" << i_in << ": not enough cooperative players (< 2t+1) for signing" << std::endl;
+			throw false;
+		}
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
 		for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
 		{
