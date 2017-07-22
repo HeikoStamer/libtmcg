@@ -518,8 +518,8 @@ void run_instance
 		gcry_sexp_release(key);
 		exit(-1);
 	}
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ckeytime, p, g, y, sub); // use common key creation time
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(ckeytime, p, g, y, x, passphrase, ssb); // use common key creation time and individual passphrase
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ckeytime, 16, p, q, g, y, sub); // use common key creation time and Elgamal algorithm id
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(ckeytime, 16, p, q, g, y, x, passphrase, ssb); // additionally, secret x and individual passphrase
 	elgflags.push_back(0x04 | 0x10); // key may be used to encrypt communications and have been split by a secret-sharing mechanism
 	if (S > 0)
 		sigtime = ckeytime; // use common key creation time as OpenPGP signature creation time

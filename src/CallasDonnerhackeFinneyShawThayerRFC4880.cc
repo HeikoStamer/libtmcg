@@ -1183,12 +1183,24 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
-	(const time_t keytime, const gcry_mpi_t p, const gcry_mpi_t g, 
-	 const gcry_mpi_t y, tmcg_octets_t &out)
+	(const time_t keytime, const tmcg_byte_t algo, const gcry_mpi_t p,
+	 const gcry_mpi_t q, const gcry_mpi_t g, const gcry_mpi_t y,
+	 tmcg_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
+	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
 	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
 	size_t ylen = (gcry_mpi_get_nbits(y) + 7) / 8;
+	size_t len = 1+4+1; // number of octets for version, keytime, and algo
+	switch (algo)
+	{
+		case 16: // public-key algorithm: Elgamal
+			len += 2+plen+2+glen+2+ylen;
+			break;
+		case 17: // public-key algorithm: DSA
+			len += 2+plen+2+qlen+2+glen+2+ylen;
+			break;
+	}
 
 	// A Public-Subkey packet (tag 14) has exactly the same format as a
 	// Public-Key packet, but denotes a subkey. One or more subkeys may be
@@ -1198,38 +1210,73 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 	// [...]
 	//
 	PacketTagEncode(14, out);
-	PacketLengthEncode(1+4+1+2+plen+2+glen+2+ylen, out);
+	PacketLengthEncode(len, out);
 	out.push_back(4); // V4 format
 	PacketTimeEncode(keytime, out);
-	out.push_back(16); // public-key algorithm: Elgamal
-	PacketMPIEncode(p, out); // MPI p
-	PacketMPIEncode(g, out); // MPI g
-	PacketMPIEncode(y, out); // MPI y
+	out.push_back(algo);
+	switch (algo)
+	{
+		case 16: // public-key algorithm: Elgamal
+			PacketMPIEncode(p, out); // MPI p
+			PacketMPIEncode(g, out); // MPI g
+			PacketMPIEncode(y, out); // MPI y
+			break;
+		case 17: // public-key algorithm: DSA
+			PacketMPIEncode(p, out); // MPI p
+			PacketMPIEncode(q, out); // MPI q
+			PacketMPIEncode(g, out); // MPI g
+			PacketMPIEncode(y, out); // MPI y
+			break;
+	}
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
-	(const time_t keytime, const gcry_mpi_t p, const gcry_mpi_t g,
-	 const gcry_mpi_t y, const gcry_mpi_t x, const std::string passphrase,
+	(const time_t keytime, const tmcg_byte_t algo, const gcry_mpi_t p,
+	 const gcry_mpi_t q, const gcry_mpi_t g, const gcry_mpi_t y,
+	 const gcry_mpi_t x, const std::string passphrase,
 	 tmcg_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
+	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
 	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
 	size_t ylen = (gcry_mpi_get_nbits(y) + 7) / 8;
 	size_t xlen = (gcry_mpi_get_nbits(x) + 7) / 8;
+	size_t len = 1+4+1; // number of octets for version, keytime, and algo
+	switch (algo)
+	{
+		case 16: // public-key algorithm: Elgamal
+			len += 2+plen+2+glen+2+ylen;
+			break;
+		case 17: // public-key algorithm: DSA
+			len += 2+plen+2+qlen+2+glen+2+ylen;
+			break;
+	}
+	if (passphrase.length() == 0)
+		len += 1+2+xlen+2; // S2K usage is zero
+	else
+		len += 29+2+xlen+20; // S2K usage is 254
 
 	// A Secret-Subkey packet (tag 7) is the subkey analog of the Secret
 	// Key packet and has exactly the same format.
 	PacketTagEncode(7, out);
-	if (passphrase.length() == 0)
-		PacketLengthEncode(1+4+1+2+plen+2+glen+2+ylen+1+2+xlen+2, out);
-	else
-		PacketLengthEncode(1+4+1+2+plen+2+glen+2+ylen+29+2+xlen+20, out);
+	PacketLengthEncode(len, out);
 	out.push_back(4); // V4 format
 	PacketTimeEncode(keytime, out);
-	out.push_back(16); // public-key algorithm: Elgamal
-	PacketMPIEncode(p, out); // MPI p
-	PacketMPIEncode(g, out); // MPI g
-	PacketMPIEncode(y, out); // MPI y
+	out.push_back(algo);
+	switch (algo)
+	{
+		case 16: // public-key algorithm: Elgamal
+			PacketMPIEncode(p, out); // MPI p
+			PacketMPIEncode(g, out); // MPI g
+			PacketMPIEncode(y, out); // MPI y
+			break;
+		case 17: // public-key algorithm: DSA
+			PacketMPIEncode(p, out); // MPI p
+			PacketMPIEncode(q, out); // MPI q
+			PacketMPIEncode(g, out); // MPI g
+			PacketMPIEncode(y, out); // MPI y
+			break;
+	}
 	if (passphrase.length() == 0)
 	{
 		size_t chksum = 0;

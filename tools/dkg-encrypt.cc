@@ -202,8 +202,8 @@ int main
 					{
 						subelg = true;
 						elg_p = ctx.p, elg_g = ctx.g, elg_y = ctx.y;
-						CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime,
-							elg_p, elg_g, elg_y, sub);
+						CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime, ctx.pkalgo,
+							elg_p, dsa_q, elg_g, elg_y, sub);
 						for (size_t i = 6; i < sub.size(); i++)
 							sub_hashing.push_back(sub[i]);
 						CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, subkeyid);
