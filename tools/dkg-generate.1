@@ -11,8 +11,8 @@ dkg\-generate \- distributed key generation for OpenPGP
 .SH DESCRIPTION
 This program performs the t-resilient distributed key generation protocol (DKG)
 by Gennaro et al. for discrete logarithm based cryptosystems as described in
-.I Journal of Cryptology, Vol. 20(1) 2007.
-Additionally, it can start instances of the adaptively-secure threshold DSS
+.I Journal of Cryptology, Vol. 20(1) 2007
+. Additionally, it can start instances of the adaptively-secure threshold DSS
 protocol (tDSS) by Canetti et al. as given in the extended version of a paper
 that appeared under the title
 .I Adaptive Security for Threshold Cryptosystems
@@ -31,8 +31,8 @@ a file that stores the individual private key shares in ASCII-armored OpenPGP
 format, and finally, a file that contains the public key again in ASCII-armored
 format. All files have as a common prefix of their name the GNUnet peer identity
 of the corresponding party, i.e., the given argument list from
-.IR PEERS.
-The second file must be kept confidential. A passphrase can be used to protect
+.IR PEERS
+. The second file must be kept confidential. A passphrase can be used to protect
 the private key by a simple OpenPGP S2K encryption scheme. If an empty passphrase
 is entered, then the secrets are stored in plain text and have to be protected
 otherwise.
