@@ -91,6 +91,7 @@ void run_instance
 	if (!vtmf->CheckGroup())
 	{
 		std::cerr << "P_" << whoami << ": " << "Group G was not correctly generated!" << std::endl;
+		delete vtmf;
 		exit(-1);
 	}
 
@@ -172,6 +173,7 @@ void run_instance
 	if (!dss->CheckGroup())
 	{
 		std::cerr << "P_" << whoami << ": " << "tDSS parameters are not correctly generated!" << std::endl;
+		delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	// generate shared $x$ and extract $y = g^x \bmod p$, if s-resilience is not zero
@@ -183,6 +185,7 @@ void run_instance
 		{
 			std::cerr << "P_" << whoami << ": " << "tDSS Generate() failed" << std::endl;
 			std::cerr << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+			delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 		if (opt_verbose)
@@ -196,6 +199,7 @@ void run_instance
 	if (!dkg->CheckGroup())
 	{
 		std::cerr << "P_" << whoami << ": " << "DKG parameters are not correctly generated!" << std::endl;
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 			
@@ -206,6 +210,7 @@ void run_instance
 	{
 		std::cerr << "P_" << whoami << ": " << "DKG Generate() failed" << std::endl;
 		std::cerr << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	if (opt_verbose)
@@ -216,6 +221,7 @@ void run_instance
 	if (!dkg->CheckKey())
 	{
 		std::cerr << "P_" << whoami << ": " << "DKG CheckKey() failed" << std::endl;
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 
@@ -247,6 +253,7 @@ void run_instance
 	if (tvs.size() < (T + 1))
 	{
 		std::cerr << "P_" << whoami << ": not enough timestamps received" << std::endl;
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	ckeytime = tvs[tvs.size()/2]; // use a median value as some kind of gentle agreement
@@ -258,12 +265,29 @@ void run_instance
 	std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
 	rbc->Sync(synctime);
 
+	// select hash algorithm for OpenPGP based on |q| (size in bit)
+	tmcg_byte_t hashalgo = 0;
+	if (mpz_sizeinbase(vtmf->q, 2L) == 256)
+		hashalgo = 8; // SHA256 (alg 8)
+	else if (mpz_sizeinbase(vtmf->q, 2L) == 384)
+		hashalgo = 9; // SHA384 (alg 9)
+	else if (mpz_sizeinbase(vtmf->q, 2L) == 512)
+		hashalgo = 10; // SHA512 (alg 10)
+	else
+	{
+		std::cerr << "P_" << whoami << ": selecting hash algorithm failed for |q| = " << mpz_sizeinbase(vtmf->q, 2L) << std::endl;
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+		exit(-1);
+	}
+
 	// create an OpenPGP DSA-based primary key resp. ElGamal-based subkey using computed values from tDSS resp. DKG protocols
+	// additionally, a DSA subkey is required to store the secret randomizer xprime_i from tDSS
 	std::string out, crcout, armor;
 	tmcg_octets_t all, pub, sec, uid, uidsig, sub, ssb, subsig, keyid, dsaflags, elgflags;
 	tmcg_octets_t pub_hashing, sub_hashing;
 	tmcg_octets_t uidsig_hashing, subsig_hashing, uidsig_left, subsig_left;
 	tmcg_octets_t hash;
+	tmcg_octets_t dsasub, dsassb, dsasubsig, dsasub_hashing, dsasubsig_hashing, dsasubsig_left;
 	time_t sigtime;
 	gcry_sexp_t key;
 	gcry_mpi_t p, q, g, y, x, r, s;
@@ -282,14 +306,11 @@ void run_instance
 		mpz_ssrandomm(dsa_x, vtmf->q); // choose private key for DSA
 		mpz_spowm(dsa_y, vtmf->g, dsa_x, vtmf->p); // compute public key for DSA
 	}
-	r = gcry_mpi_new(2048);
-	s = gcry_mpi_new(2048);
 	if (!mpz_get_gcry_mpi(&p, vtmf->p))
 	{
 		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for p" << std::endl;
 		mpz_clear(dsa_y), mpz_clear(dsa_x), mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	if (!mpz_get_gcry_mpi(&q, vtmf->q))
@@ -297,8 +318,7 @@ void run_instance
 		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for q" << std::endl;
 		mpz_clear(dsa_y), mpz_clear(dsa_x), mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
 		gcry_mpi_release(p);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	if (!mpz_get_gcry_mpi(&g, vtmf->g))
@@ -307,8 +327,7 @@ void run_instance
 		mpz_clear(dsa_y), mpz_clear(dsa_x), mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
 		gcry_mpi_release(p);
 		gcry_mpi_release(q);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	if (!mpz_get_gcry_mpi(&y, dsa_y))
@@ -318,8 +337,7 @@ void run_instance
 		gcry_mpi_release(p);
 		gcry_mpi_release(q);
 		gcry_mpi_release(g);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	if (!mpz_get_gcry_mpi(&x, dsa_x))
@@ -330,8 +348,7 @@ void run_instance
 		gcry_mpi_release(q);
 		gcry_mpi_release(g);
 		gcry_mpi_release(y);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	mpz_clear(dsa_y), mpz_clear(dsa_x);
@@ -347,29 +364,7 @@ void run_instance
 		gcry_mpi_release(g);
 		gcry_mpi_release(y);
 		gcry_mpi_release(x);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
-		exit(-1);
-	}
-	tmcg_byte_t hashalgo = 0;
-	if (mpz_sizeinbase(vtmf->q, 2L) == 256)
-		hashalgo = 8; // SHA256 (alg 8)
-	else if (mpz_sizeinbase(vtmf->q, 2L) == 384)
-		hashalgo = 9; // SHA384 (alg 9)
-	else if (mpz_sizeinbase(vtmf->q, 2L) == 512)
-		hashalgo = 10; // SHA512 (alg 10)
-	else
-	{
-		std::cerr << "P_" << whoami << ": selecting hash algorithm failed for |q| = " << mpz_sizeinbase(vtmf->q, 2L) << std::endl;
-		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
-		gcry_mpi_release(p);
-		gcry_mpi_release(q);
-		gcry_mpi_release(g);
-		gcry_mpi_release(y);
-		gcry_mpi_release(x);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
-		gcry_sexp_release(key);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ckeytime, p, q, g, y, pub); // use common key creation time
@@ -389,6 +384,7 @@ void run_instance
 		sigtime = time(NULL); // current time
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, hashalgo, sigtime, dsaflags, keyid, uidsig_hashing); // positive certification (0x13) of uid and pub
+	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, hashalgo, hash, uidsig_left);
 	if (S > 0)
 	{
@@ -410,6 +406,7 @@ void run_instance
 			gcry_mpi_release(y);
 			gcry_mpi_release(x);
 			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 		if (!mpz_set_gcry_mpi(h, dsa_m))
@@ -423,6 +420,7 @@ void run_instance
 			gcry_mpi_release(y);
 			gcry_mpi_release(x);
 			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 		gcry_mpi_release(h);
@@ -439,12 +437,11 @@ void run_instance
 			gcry_mpi_release(y);
 			gcry_mpi_release(x);
 			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 		if (opt_verbose)
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
 		if (!mpz_get_gcry_mpi(&r, dsa_r))
 		{
 			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_r" << std::endl;
@@ -455,6 +452,7 @@ void run_instance
 			gcry_mpi_release(y);
 			gcry_mpi_release(x);
 			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 		if (!mpz_get_gcry_mpi(&s, dsa_s))
@@ -468,11 +466,14 @@ void run_instance
 			gcry_mpi_release(x);
 			gcry_mpi_release(r);
 			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 	}
 	else
 	{
+		r = gcry_mpi_new(2048);
+		s = gcry_mpi_new(2048);
 		ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
 		if (ret)
 		{
@@ -486,11 +487,13 @@ void run_instance
 			gcry_mpi_release(r);
 			gcry_mpi_release(s);
 			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(uidsig_hashing, uidsig_left, r, s, uidsig);
-	hash.clear();
+	gcry_mpi_release(r);
+	gcry_mpi_release(s);
 	gcry_mpi_release(x);
 	gcry_mpi_release(y);
 	if (!mpz_get_gcry_mpi(&y, dkg->y)) // computed by DKG (cf. LibTMCG source code)
@@ -500,9 +503,8 @@ void run_instance
 		gcry_mpi_release(p);
 		gcry_mpi_release(q);
 		gcry_mpi_release(g);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
 		gcry_sexp_release(key);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	if (!mpz_get_gcry_mpi(&x, dkg->x_i)) // computed by DKG for each participant/peer (cf. LibTMCG source code)
@@ -513,9 +515,8 @@ void run_instance
 		gcry_mpi_release(q);
 		gcry_mpi_release(g);
 		gcry_mpi_release(y);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
 		gcry_sexp_release(key);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ckeytime, 16, p, q, g, y, sub); // use common key creation time and Elgamal algorithm id
@@ -528,6 +529,7 @@ void run_instance
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, hashalgo, sigtime, elgflags, keyid, subsig_hashing); // Subkey Binding Signature (0x18) of sub
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
+	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, subsig_hashing, hashalgo, hash, subsig_left);
 	if (S > 0)
 	{
@@ -549,6 +551,7 @@ void run_instance
 			gcry_mpi_release(y);
 			gcry_mpi_release(x);
 			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 		if (!mpz_set_gcry_mpi(h, dsa_m))
@@ -562,6 +565,7 @@ void run_instance
 			gcry_mpi_release(y);
 			gcry_mpi_release(x);
 			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 		gcry_mpi_release(h);
@@ -578,12 +582,11 @@ void run_instance
 			gcry_mpi_release(y);
 			gcry_mpi_release(x);
 			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 		if (opt_verbose)
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
 		if (!mpz_get_gcry_mpi(&r, dsa_r))
 		{
 			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_r" << std::endl;
@@ -594,6 +597,7 @@ void run_instance
 			gcry_mpi_release(y);
 			gcry_mpi_release(x);
 			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 		if (!mpz_get_gcry_mpi(&s, dsa_s))
@@ -607,11 +611,14 @@ void run_instance
 			gcry_mpi_release(x);
 			gcry_mpi_release(r);
 			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 	}
 	else
 	{
+		r = gcry_mpi_new(2048);
+		s = gcry_mpi_new(2048);
 		ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, key, r, s);
 		if (ret)
 		{
@@ -625,12 +632,133 @@ void run_instance
 			gcry_mpi_release(r);
 			gcry_mpi_release(s);
 			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
 	}
-	mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(subsig_hashing, subsig_left, r, s, subsig);
-	// export generated public key in OpenPGP armor format
+	gcry_mpi_release(r);
+	gcry_mpi_release(s);
+	gcry_mpi_release(x);
+	gcry_mpi_release(y);
+	gcry_sexp_release(key);
+	if (S > 0)
+	{
+		if (!mpz_get_gcry_mpi(&y, dss->y)) // computed by tDSS (cf. LibTMCG source code)
+		{
+			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dss->y" << std::endl;
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		if (!mpz_get_gcry_mpi(&x, dss->xprime_i)) // computed by tDSS (cf. LibTMCG source code)
+		{
+			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dss->xprime_i" << std::endl;
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			gcry_mpi_release(y);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ckeytime, 17, p, q, g, y, dsasub); // use common key creation time and DSA algorithm id
+		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(ckeytime, 17, p, q, g, y, x, passphrase, dsassb); // additionally, secret x and individual passphrase
+		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, hashalgo, sigtime, dsaflags, keyid, dsasubsig_hashing); // Subkey Binding Signature (0x18)
+		for (size_t i = 6; i < dsasub.size(); i++)
+			dsasub_hashing.push_back(dsasub[i]);
+		hash.clear();
+		CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, dsasub_hashing, dsasubsig_hashing, hashalgo, hash, dsasubsig_left);
+		tmcg_byte_t buffer[1024];
+		gcry_mpi_t h;
+		size_t buflen = 0;
+		for (size_t i = 0; ((i < hash.size()) && (i < sizeof(buffer))); i++, buflen++)
+			buffer[i] = hash[i];
+		h = gcry_mpi_new(2048);
+		ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
+		if (ret)
+		{
+			std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for h" << std::endl;
+			gcry_mpi_release(h);
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			gcry_mpi_release(y);
+			gcry_mpi_release(x);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		if (!mpz_set_gcry_mpi(h, dsa_m))
+		{
+			std::cerr << "P_" << whoami << ": mpz_set_gcry_mpi() failed for dsa_m" << std::endl;
+			gcry_mpi_release(h);
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			gcry_mpi_release(y);
+			gcry_mpi_release(x);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		gcry_mpi_release(h);
+		std::stringstream err_log_sign;
+		std::cout << "P_" << whoami << ": dss.Sign()" << std::endl;
+		if (!dss->Sign(N, whoami, dsa_m, dsa_r, dsa_s, aiou, rbc, err_log_sign))
+		{
+			std::cerr << "P_" << whoami << ": " << "tDSS Sign() failed" << std::endl;
+			std::cerr << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			gcry_mpi_release(y);
+			gcry_mpi_release(x);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		if (opt_verbose)
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
+		if (!mpz_get_gcry_mpi(&r, dsa_r))
+		{
+			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_r" << std::endl;
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			gcry_mpi_release(y);
+			gcry_mpi_release(x);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		if (!mpz_get_gcry_mpi(&s, dsa_s))
+		{
+			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_s" << std::endl;
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			gcry_mpi_release(y);
+			gcry_mpi_release(x);
+			gcry_mpi_release(r);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(dsasubsig_hashing, dsasubsig_left, r, s, dsasubsig);
+	}
+	mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+	gcry_mpi_release(p);
+	gcry_mpi_release(q);
+	gcry_mpi_release(g);
+	gcry_mpi_release(y);
+	gcry_mpi_release(x);
+	gcry_mpi_release(r);
+	gcry_mpi_release(s);
+	// export generated public keys in OpenPGP armor format
 	std::stringstream pubfilename;
 	pubfilename << peers[whoami] << "_dkg-pub.asc";
 	armor = "", all.clear();
@@ -646,32 +774,18 @@ void run_instance
 	if (!pubofs.good())
 	{
 		std::cerr << "P_" << whoami << ": opening public key file failed" << std::endl;
-		gcry_mpi_release(p);
-		gcry_mpi_release(q);
-		gcry_mpi_release(g);
-		gcry_mpi_release(y);
-		gcry_mpi_release(x);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
-		gcry_sexp_release(key);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	pubofs << armor;
 	if (!pubofs.good())
 	{
 		std::cerr << "P_" << whoami << ": writing public key file failed" << std::endl;
-		gcry_mpi_release(p);
-		gcry_mpi_release(q);
-		gcry_mpi_release(g);
-		gcry_mpi_release(y);
-		gcry_mpi_release(x);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
-		gcry_sexp_release(key);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	pubofs.close();
-	// export generated private key in OpenPGP armor format
+	// export generated private keys in OpenPGP armor format
 	std::stringstream secfilename;
 	secfilename << peers[whoami] << "_dkg-sec.asc";
 	armor = "", all.clear();
@@ -680,6 +794,8 @@ void run_instance
 	all.insert(all.end(), uidsig.begin(), uidsig.end());
 	all.insert(all.end(), ssb.begin(), ssb.end());
 	all.insert(all.end(), subsig.begin(), subsig.end());
+	all.insert(all.end(), dsassb.begin(), dsassb.end());
+	all.insert(all.end(), dsasubsig.begin(), dsasubsig.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(5, all, armor);
 	if (opt_verbose)
 		std::cout << armor << std::endl;
@@ -687,39 +803,17 @@ void run_instance
 	if (!secofs.good())
 	{
 		std::cerr << "P_" << whoami << ": opening private key file failed" << std::endl;
-		gcry_mpi_release(p);
-		gcry_mpi_release(q);
-		gcry_mpi_release(g);
-		gcry_mpi_release(y);
-		gcry_mpi_release(x);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
-		gcry_sexp_release(key);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	secofs << armor;
 	if (!secofs.good())
 	{
 		std::cerr << "P_" << whoami << ": writing private key file failed" << std::endl;
-		gcry_mpi_release(p);
-		gcry_mpi_release(q);
-		gcry_mpi_release(g);
-		gcry_mpi_release(y);
-		gcry_mpi_release(x);
-		gcry_mpi_release(r);
-		gcry_mpi_release(s);
-		gcry_sexp_release(key);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	secofs.close();
-	gcry_mpi_release(p);
-	gcry_mpi_release(q);
-	gcry_mpi_release(g);
-	gcry_mpi_release(y);
-	gcry_mpi_release(x);
-	gcry_mpi_release(r);
-	gcry_mpi_release(s);
-	gcry_sexp_release(key);
 	// export verification keys of DKG into a file
 	std::stringstream dkgfilename;
 	dkgfilename << peers[whoami] << ".dkg";
@@ -727,12 +821,14 @@ void run_instance
 	if (!dkgofs.good())
 	{
 		std::cerr << "P_" << whoami << ": opening DKG file failed" << std::endl;
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	dkg->PublishVerificationKeys(dkgofs);
 	if (!dkgofs.good())
 	{
 		std::cerr << "P_" << whoami << ": writing DKG file failed" << std::endl;
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
 	dkgofs.close();
