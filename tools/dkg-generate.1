@@ -20,17 +20,22 @@ in the proceedings of CRYPTO'99. Both protocols employ GNUnet for exchange of
 internal protocol messages between the participants. Thus a working GNUnet peer
 is neccesary to proceed. 
 .PP
-For each party an individual DSA signing key is generated which is the OpenPGP
-primary key. The shared ElGamal key for encryption is arranged as subkey. Thus
-each party should verify after key generation, that the published public key
-of the group contains this shared ElGamal key. The program generates three
-different files: First, a file with the extension .dkg which contains the
-internal state of the DKG protocol including some verification keys for
-threshold decryption, second, a file that stores the individual private key in
-ASCII-armored OpenPGP format, and finally, a file that contains the public key
-again in ASCII-armored format. All file names have the GNUnet peer identity of
-the corresponding party as a common prefix. The second file must be kept
-confidential. A passphrase can be used to protect the private key by encryption.
+For each party either an individual or a shared DSA signing key is generated.
+This key acts as the OpenPGP primary key. The shared ElGamal key for encryption
+is arranged as subkey. Thus each party should verify after key generation, that
+the published public key of the group contains this shared ElGamal key, if no
+shared DSA signing key is used. The program generates three different files:
+First, a file with the extension .dkg which contains the internal state of the
+DKG protocol including some verification keys for threshold decryption, second,
+a file that stores the individual private key shares in ASCII-armored OpenPGP
+format, and finally, a file that contains the public key again in ASCII-armored
+format. All files have as a common prefix of their name the GNUnet peer identity
+of the corresponding party, i.e., the given argument list from
+.IR PEERS.
+The second file must be kept confidential. A passphrase can be used to protect
+the private key by a simple OpenPGP S2K encryption scheme. If an empty passphrase
+is entered, then the secrets are stored in plain text and have to be protected
+otherwise.
 .PP
 The parameter t determines how many parties may deviate from the protocol
 during the key generation and later during threshold decryption. At least
@@ -39,6 +44,13 @@ message. This parameter can be adjusted by using the option "-t". The default
 value is (n-1)/2 where n is the number of participants. Since 0-resilience and
 other artificial deviations are not desireable, the program ensures by
 clipping that 0 < t <= n holds.
+.PP
+The option "-s" defines the parameter s, i.e., the s-resilience of the tDSS
+protocol. At least 2s+1 participants are required to create a signature for the
+shared DSA primary key, however, s+1 parties can recover all secret key shares.
+The default value for s is (n-1)/2. The generation of an unique shared DSA
+key is disabled, if s is set to zero. In that case individual DSA keys are
+generated.
 .PP
 The underlying DDH-hard group, i.e., a large prime-order subgroup of special
 form that sometimes is called Schnorr group, can be adjusted by using the
@@ -50,7 +62,7 @@ this program. The generated group parameters are verifiable up to a certain
 level. However, it is recommended that this crucial part of the setup is
 either accomplished by some trusted members or all participants together.
 Without this option the hard coded group in the source code (|p| = 2048 bit,
-|q| = 256 bit) is used by default. It was created by the author.
+|q| = 256 bit) is used by default. It was created by the author of the program.
 .PP
 With the option "-w" the number of minutes can be adjusted until the DKG
 protocol is started. The default value is 5. It is crucial for the key
