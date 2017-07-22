@@ -77,6 +77,8 @@ void start_instance
 			}
 			
 			// create VTMF instance
+			std::cout << "P_" << whoami << ": BarnettSmartVTMF_dlog(crs_in)" << std::endl;
+			std::cout << "P_" << whoami << ": vtmf.CheckGroup()" << std::endl;
 			start_clock();
 			BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crs_in);
 			if (!vtmf->CheckGroup())
@@ -89,6 +91,7 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			
 			// create and exchange VTMF keys
+			std::cout << "P_" << whoami << ": vtmf.KeyGenerationProtocol_*()" << std::endl;
 			start_clock();
 			vtmf->KeyGenerationProtocol_GenerateKey();
 			for (size_t i = 0; i < N; i++)

@@ -46,8 +46,11 @@ PedersenVSS::PedersenVSS
 			label(label_in),
 			n(n_in), t(t_in), i(i_in)
 {
+std::cerr << "[a]" << std::endl;
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
-	mpz_init_set_ui(sigma_i, 0L), mpz_init_set_ui(tau_i, 0L);	
+std::cerr << "[b]" << std::endl;
+	mpz_init_set_ui(sigma_i, 0L), mpz_init_set_ui(tau_i, 0L);
+std::cerr << "[c]" << std::endl;	
 	for (size_t j = 0; j <= t; j++)
 	{
 		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
