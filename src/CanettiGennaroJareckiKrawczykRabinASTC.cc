@@ -2918,10 +2918,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			if (j != i_in)
 			{
 				if (!v_i_vss[j]->Share(j, aiou, rbc, err, simulate_faulty_behaviour))
-				{
 					err << "P_" << i_in << ": WARNING - VSS of v_i failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
-				}
 			}
 			else
 			{
@@ -3680,10 +3677,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			if (j != i_in)
 			{
 				if (!vv_i_vss[j]->Share(j, aiou, rbc, err, simulate_faulty_behaviour))
-				{
 					err << "P_" << i_in << ": WARNING - VSS of v_i (in Step 2d) failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
-				}
 			}
 			else
 			{
