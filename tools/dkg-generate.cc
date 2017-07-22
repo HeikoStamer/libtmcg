@@ -165,19 +165,18 @@ void run_instance
 	vtmf->KeyGenerationProtocol_Finalize();
 	mpz_clear(nizk_c), mpz_clear(nizk_r), mpz_clear(h_j);
 
+	// create an instance of tDSS
+	CanettiGennaroJareckiKrawczykRabinDSS *dss;
+	std::cout << "CanettiGennaroJareckiKrawczykRabinDSS(" << N << ", " << S << ", " << whoami << ", ...)" << std::endl;
+	dss = new CanettiGennaroJareckiKrawczykRabinDSS(N, S, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+	if (!dss->CheckGroup())
+	{
+		std::cerr << "P_" << whoami << ": " << "tDSS parameters are not correctly generated!" << std::endl;
+		exit(-1);
+	}
+	// generate shared $x$ and extract $y = g^x \bmod p$, if s-resilience is not zero
 	if (S > 0)
 	{
-		// create an instance of tDSS, if s-resilience is not zero
-		CanettiGennaroJareckiKrawczykRabinDSS *dss;
-		std::cout << "CanettiGennaroJareckiKrawczykRabinDSS(" << N << ", " << S << ", " << whoami << ", ...)" << std::endl;
-		dss = new CanettiGennaroJareckiKrawczykRabinDSS(N, S, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
-		if (!dss->CheckGroup())
-		{
-			std::cerr << "P_" << whoami << ": " << "tDSS parameters are not correctly generated!" << std::endl;
-			exit(-1);
-		}
-			
-		// generate shared $x$ and extract $y = g^x \bmod p$
 		std::stringstream err_log;
 		std::cout << "P_" << whoami << ": dss.Generate()" << std::endl;
 		if (!dss->Generate(aiou, rbc, err_log))
