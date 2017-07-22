@@ -1,4 +1,4 @@
-.TH DKG\-GENERATE "1" "June 2017" "LibTMCG 1.3.2" "User Commands"
+.TH DKG\-GENERATE "1" "July 2017" "LibTMCG 1.3.2" "User Commands"
 
 .SH NAME
 dkg\-generate \- distributed key generation for OpenPGP
@@ -12,8 +12,13 @@ dkg\-generate \- distributed key generation for OpenPGP
 This program performs the t-resilient distributed key generation protocol (DKG)
 by Gennaro et al. for discrete logarithm based cryptosystems as described in
 .I Journal of Cryptology, Vol. 20(1) 2007.
-It employs GNUnet for exchange of protocol messages between the participants.
-Thus a working GNUnet peer is neccesary to proceed. 
+Additionally, it can start instances of the adaptively-secure threshold DSS
+protocol (tDSS) by Canetti et al. as given in the extended version of a paper
+that appeared under the title
+.I Adaptive Security for Threshold Cryptosystems
+in the proceedings of CRYPTO'99. Both protocols employ GNUnet for exchange of
+internal protocol messages between the participants. Thus a working GNUnet peer
+is neccesary to proceed. 
 .PP
 For each party an individual DSA signing key is generated which is the OpenPGP
 primary key. The shared ElGamal key for encryption is arranged as subkey. Thus
@@ -75,6 +80,9 @@ configure logging to write logs to FILENAME
 \fB\-p\fR, \fB\-\-port\fR
 GNUnet CADET port to listen/connect
 .TP
+\fB\-s\fR, \fB\-\-s\-resilience\fR
+resilience of threshold DSS (tDSS) protocol
+.TP
 \fB\-t\fR, \fB\-\-t\-resilience\fR
 resilience of DKG protocol
 .TP
@@ -85,7 +93,7 @@ print the GNUnet version number
 turn on verbose output
 .TP
 \fB\-w\fR, \fB\-\-wait\fR
-minutes to wait until start of DKG protocol
+minutes to wait until start of DKG/tDSS protocol
 
 .SH "SECURITY"
 The current implementation is in experimental state and should NOT
@@ -107,14 +115,15 @@ The following command initiates a distributed key generation process with four p
 .PP
 .nf
 .RS
-dkg-generate -w 10 -t 2 WS3KHEYKKF6QQ6NDQKKCJ2B374RSSXJ05TB5D9W9FYKPPEJ3QKFG XS72STGDBKT6YRRVF8CPMGJFZ0FEYQE9EJECDNXWZJSB5G5H4ZVG 3PT18Z2345NA6FM86BKVJ32DK88KXF0YWKTDPPQX1QJMBPEF4530 S41SNHFSGVR3A88ZPX3ZB3BKD2EN0Z29VEKKS1BMVMQNMWSRG3N0
+dkg-generate -w 10 -s 0 -t 2 WS3KHEYKKF6QQ6NDQKKCJ2B374RSSXJ05TB5D9W9FYKPPEJ3QKFG XS72STGDBKT6YRRVF8CPMGJFZ0FEYQE9EJECDNXWZJSB5G5H4ZVG 3PT18Z2345NA6FM86BKVJ32DK88KXF0YWKTDPPQX1QJMBPEF4530 S41SNHFSGVR3A88ZPX3ZB3BKD2EN0Z29VEKKS1BMVMQNMWSRG3N0
 .RE
 .fi
 .PP
 Each party must run such a process with identical parameter set, i.e., please configure always the same t-resilience. Note that,
 e.g. 2-resilience, means that later at least three participants are needed in order to decrypt a message for the generated common
 ElGamal subkey. However, robustness of the DKG protocol is only guaranteed for t < n/2 which is violated in this example. Thus a
-malicious party may disturb the key generation without being identified and excluded. The program waits ten minutes before the
+malicious party may disturb the key generation without being identified and excluded. The s-resilience is set to zero, which
+means that individual DSA keys instead of a shared unique primary key are generated. The program waits ten minutes before the
 main DKG protocol is started, because establishing a CADET channel with GNUnet may take some time.
 
 .SH "SEE ALSO"
