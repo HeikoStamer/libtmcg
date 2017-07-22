@@ -3447,7 +3447,6 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//    only difference is that in the back-up step equivalent to Step 1c above, the players need only to
 		//    create the back-ups of the $m + x_i r$ values. In the following steps (equivalent to Steps 1d-1f
 		//    above), the players reuse the back-ups of the $k_i$ values that were created in Step 1c.
-		mpz_mod(m, m, q);
 		mpz_mul(a_i[i_in], x_i, r);
 		mpz_mod(a_i[i_in], a_i[i_in], q);
 		mpz_add(a_i[i_in], a_i[i_in], m);
