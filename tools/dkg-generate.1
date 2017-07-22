@@ -11,7 +11,7 @@ dkg\-generate \- distributed key generation for OpenPGP
 .SH DESCRIPTION
 This program performs the t-resilient distributed key generation protocol (DKG)
 by Gennaro et al. for discrete logarithm based cryptosystems as described in
-.I "Journal of Cryptology, Vol. 20(1) 2007".
+.I "Journal of Cryptology, Vol. 20(1), 2007".
 Additionally, it can start instances of the adaptively-secure threshold DSS
 protocol (tDSS) by Canetti et al. as given in the extended version of a paper
 that appeared under the title
@@ -61,8 +61,8 @@ must agree. The security level is increased for each given dummy argument of
 this program. The generated group parameters are verifiable up to a certain
 level. However, it is recommended that this crucial part of the setup is
 either accomplished by some trusted members or all participants together.
-Without this option the hard coded group in the source code (|p| = 2048 bit,
-|q| = 256 bit) is used by default. It was created by the author of the program.
+Without this option a hard coded group with |p| = 2048 bit and |q| = 256 bit
+is used by default. It was created by the author of the program at random.
 .PP
 With the option "-w" the number of minutes can be adjusted until the DKG
 protocol is started. The default value is 5. It is crucial for the key
