@@ -88,6 +88,8 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 			const std::string label_in = "");
 		void PublishState
 			(std::ostream &out) const;
+		void PublishCommitments
+			(std::ostream &out) const;
 		std::string Label
 			() const;
 		void EraseSecrets
@@ -166,7 +168,6 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 		const unsigned long int			F_size, G_size;
 		const bool				use_very_strong_randomness;
 		const std::string			label;
-		CanettiGennaroJareckiKrawczykRabinRVSS	*d_rvss;
 	
 	public:
 		mpz_t					p, q, g, h;
@@ -189,6 +190,8 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 			const bool use_very_strong_randomness_in = true,
 			const std::string label_in = "");
 		void PublishState
+			(std::ostream &out) const;
+		void PublishCommitments
 			(std::ostream &out) const;
 		bool CheckGroup
 			() const;

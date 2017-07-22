@@ -196,6 +196,16 @@ void CanettiGennaroJareckiKrawczykRabinRVSS::PublishState
 	}
 }
 
+void CanettiGennaroJareckiKrawczykRabinRVSS::PublishCommitments
+	(std::ostream &out) const
+{
+	for (size_t i = 0; i < n; i++)
+	{
+		for (size_t k = 0; k <= tprime; k++)
+			out << C_ik[i][k] << std::endl;
+	}
+}
+
 std::string CanettiGennaroJareckiKrawczykRabinRVSS::Label
 	() const
 {
@@ -1638,9 +1648,8 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
 	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L), mpz_init_set_ui(y, 1L);
 
-	// initialize required subprotocols
+	// initialize required subprotocol
 	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, fieldsize, subgroupsize, use_very_strong_randomness_in, "x_rvss");
-	d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, fieldsize, subgroupsize, false, "d_rvss");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1689,9 +1698,10 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 		QUAL.push_back(who);
 	}
 
-	// initialize required subprotocols
+	// initialize required subprotocol
 	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, fieldsize, subgroupsize, use_very_strong_randomness_in, "x_rvss");
-	d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, fieldsize, subgroupsize, false, "d_rvss");
+
+// FIXME: setup commitments of x_rvss or store them otherwise
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1710,6 +1720,12 @@ void CanettiGennaroJareckiKrawczykRabinDKG::PublishState
 	out << QUAL.size() << std::endl;
 	for (size_t i = 0; i < QUAL.size(); i++)
 		out << QUAL[i] << std::endl;
+}
+
+void CanettiGennaroJareckiKrawczykRabinDKG::PublishCommitments
+	(std::ostream &out) const
+{
+	x_rvss->PublishCommitments(out);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
@@ -1787,8 +1803,6 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
 		// check whether the group for Joint-RVSS is sound
 		if (!x_rvss->CheckGroup())
 			throw false;
-		if (!d_rvss->CheckGroup())
-			throw false;
 
 		// everything is sound
 		throw true;
@@ -1842,6 +1856,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;
 
 	// initialize
+	CanettiGennaroJareckiKrawczykRabinRVSS	*d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, false, "d_rvss");
 	mpz_t foo, bar, lhs, rhs;
 	mpz_t d, r_i, rprime_i;
 	std::vector<mpz_ptr> A_i, B_i, T_i, Tprime_i, z_i, d_i, dprime_i;
@@ -2246,6 +2261,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		// unset ID for RBC
 		rbc->unsetID();
 		// release
+		delete d_rvss;
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
 		mpz_clear(d), mpz_clear(r_i), mpz_clear(rprime_i);
 		for (size_t j = 0; j < n; j++)
@@ -2269,9 +2285,8 @@ CanettiGennaroJareckiKrawczykRabinDKG::~CanettiGennaroJareckiKrawczykRabinDKG
 	QUAL.clear();
 	mpz_clear(x_i), mpz_clear(xprime_i), mpz_clear(y);
 
-	// release subprotocols
+	// release subprotocol
 	delete x_rvss;
-	delete d_rvss;
 
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
@@ -2292,7 +2307,7 @@ CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
 	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L), mpz_init_set_ui(y, 1L);
 
-	// initialize required subprotocols
+	// initialize required subprotocol
 	dkg = new CanettiGennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h, fieldsize, subgroupsize, use_very_strong_randomness_in, "dkg");
 
 	// Do the precomputation for the fast exponentiation.
@@ -2341,7 +2356,7 @@ CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
 		QUAL.push_back(who);
 	}
 
-	// initialize required subprotocols
+	// initialize required subprotocol
 	dkg = new CanettiGennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h, fieldsize, subgroupsize, use_very_strong_randomness_in, "dkg");
 
 	// Do the precomputation for the fast exponentiation.
