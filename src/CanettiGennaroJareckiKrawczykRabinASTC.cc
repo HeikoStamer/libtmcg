@@ -3270,7 +3270,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		err << std::endl;
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			if (std::find(ignore.begin(), ignore.end(), *it) != ignore.end())
+			if (std::find(ignore.begin(), ignore.end(), *it) == ignore.end())
 			{
 				if (*it != i_in)
 				{
@@ -4046,7 +4046,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		err << std::endl;
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			if (std::find(ignore.begin(), ignore.end(), *it) != ignore.end())
+			if (std::find(ignore.begin(), ignore.end(), *it) == ignore.end())
 			{
 				if (*it != i_in)
 				{
