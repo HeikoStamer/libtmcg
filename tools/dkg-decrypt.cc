@@ -334,7 +334,7 @@ bool parse_private_key
 				{
 					secdsa = true;
 					dsa_p = ctx.p, dsa_q = ctx.q, dsa_g = ctx.g, dsa_y = ctx.y;
-					CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ctx.keycreationtime, ctx.pkalgo,
+					CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ctx.keycreationtime, 17, // public-key is in both cases a DSA key 
 						dsa_p, dsa_q, dsa_g, dsa_y, pub);
 					for (size_t i = 6; i < pub.size(); i++)
 						pub_hashing.push_back(pub[i]);
