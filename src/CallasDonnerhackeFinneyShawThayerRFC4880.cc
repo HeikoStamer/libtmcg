@@ -1939,7 +1939,9 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 }
 
 tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
-	(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out)
+	(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out,
+	 std::vector<gcry_mpi_t> &qual,
+	 std::vector< std::vector<gcry_mpi_t> > c_ik)
 {
 	if (in.size() < 2)
 		return 0; // error: incorrect packet header
@@ -2241,6 +2243,70 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
+			else if (out.pkalgo == 108)
+			{
+				// Algorithm-Specific Fields for tDSS keys
+				mlen = PacketMPIDecode(mpis, out.p);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.q);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.g);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.h);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.y);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.n);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.t);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.i);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.qualsize);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				if (get_gcry_mpi_ui(out.qualsize) > 255)
+					return 0; // error: too many parties
+				qual.resize(get_gcry_mpi_ui(out.qualsize));
+				for (size_t j = 0; j < get_gcry_mpi_ui(out.qualsize); j++)
+				{
+					mlen = PacketMPIDecode(mpis, qual[j]);
+					if (!mlen || (mlen > mpis.size()))
+						return 0; // error: bad or zero mpi
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				}
+				if ((get_gcry_mpi_ui(out.n) > 255) || (get_gcry_mpi_ui(out.t) > 128))
+					return 0; // error: too many parties
+				c_ik.resize(get_gcry_mpi_ui(out.n));
+				for (size_t j = 0; j < get_gcry_mpi_ui(out.n); j++)
+				{
+					c_ik[j].resize(get_gcry_mpi_ui(out.t));
+					for (size_t k = 0; k < get_gcry_mpi_ui(out.t); k++)
+					{
+						mlen = PacketMPIDecode(mpis, c_ik[j][k]);
+						if (!mlen || (mlen > mpis.size()))
+							return 0; // error: bad or zero mpi
+						mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					}
+				}
+			}
 			// secret fields
 			if (mpis.size() < 1)
 				return 0; // error: no S2K convention
@@ -2252,6 +2318,8 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				size_t chksum = 0;
 				if ((out.pkalgo == 16) || (out.pkalgo == 17))
 				{
+					// Algorithm-Specific Fields for Elgamal
+					// and DSA keys
 					mlen = PacketMPIDecode(mpis, out.x, 
 						chksum);
 					if (!mlen || (mlen > mpis.size()))
@@ -2261,6 +2329,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				}
 				else if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
 				{
+					// Algorithm-Specific Fields for RSA keys
 					mlen = PacketMPIDecode(mpis, out.d, 
 						chksum);
 					if (!mlen || (mlen > mpis.size()))
@@ -2280,6 +2349,22 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 					mlen = PacketMPIDecode(mpis, out.u, 
+						chksum);
+					if (!mlen || (mlen > mpis.size()))
+						return 0; // error: bad mpi
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
+				}
+				else if (out.pkalgo == 108)
+				{
+					// Algorithm-Specific Fields for tDSS keys
+					mlen = PacketMPIDecode(mpis, out.x_i, 
+						chksum);
+					if (!mlen || (mlen > mpis.size()))
+						return 0; // error: bad mpi
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis, out.xprime_i, 
 						chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi

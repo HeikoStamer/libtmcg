@@ -138,8 +138,14 @@
 		gcry_mpi_t q;
 		gcry_mpi_t u;
 		gcry_mpi_t g;
+		gcry_mpi_t h;
 		gcry_mpi_t y;
 		gcry_mpi_t x;
+		gcry_mpi_t t;
+		gcry_mpi_t i;
+		gcry_mpi_t qualsize;
+		gcry_mpi_t x_i;
+		gcry_mpi_t xprime_i;
 		tmcg_byte_t symalgo;
 		tmcg_byte_t s2kconv;
 		tmcg_byte_t s2k_type;
@@ -305,7 +311,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static tmcg_byte_t SubpacketDecode
 			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out);
 		static tmcg_byte_t PacketDecode
-			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out);
+			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out,
+			 std::vector<gcry_mpi_t> &qual,
+			 std::vector< std::vector<gcry_mpi_t> > c_ik);
 
 		static void BinaryDocumentHash
 			(const tmcg_octets_t &in,
