@@ -39,6 +39,7 @@
 	#include <gcrypt.h>
 
 	#include "mpz_srandom.h"
+	#include "mpz_helper.hh"
 
 	typedef unsigned char tmcg_byte_t;
 	typedef std::vector<tmcg_byte_t> tmcg_octets_t;
@@ -268,7 +269,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t q, const gcry_mpi_t g,
 			 const gcry_mpi_t h, const gcry_mpi_t y,
 			 const gcry_mpi_t n, const gcry_mpi_t t,
-			 const gcry_mpi_t i,
+			 const gcry_mpi_t i, const gcry_mpi_t qualsize,
+			 const std::vector<gcry_mpi_t> qual,
 			 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
 			 const std::string passphrase,
 			 tmcg_octets_t &out);

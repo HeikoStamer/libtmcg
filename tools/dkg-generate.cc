@@ -369,7 +369,8 @@ void run_instance
 	if (S > 0)
 	{
 		// create an OpenPGP private key as experimental algorithm ID 108 to store everything from tDSS
-		gcry_mpi_t h, n, t, i, x_i, xprime_i;
+		gcry_mpi_t h, n, t, i, qualsize, x_i, xprime_i;
+		std::vector<gcry_mpi_t> qual;
 		if (!mpz_get_gcry_mpi(&h, dss->h))
 		{
 			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dss->h" << std::endl;
@@ -386,6 +387,12 @@ void run_instance
 		n = gcry_mpi_set_ui(NULL, dss->n);
 		t = gcry_mpi_set_ui(NULL, dss->t);
 		i = gcry_mpi_set_ui(NULL, dss->i);
+		qualsize = gcry_mpi_set_ui(NULL, dss->QUAL.size());
+		for (size_t j = 0; j < dss->QUAL.size(); j++)
+		{
+			gcry_mpi_t tmp = gcry_mpi_set_ui(NULL, dss->QUAL[j]);
+			qual.push_back(tmp);
+		}
 		if (!mpz_get_gcry_mpi(&x_i, dss->x_i))
 		{
 			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dss->x_i" << std::endl;
@@ -399,6 +406,9 @@ void run_instance
 			gcry_mpi_release(n);
 			gcry_mpi_release(t);
 			gcry_mpi_release(i);
+			gcry_mpi_release(qualsize);
+			for (size_t j = 0; j < qual.size(); j++)
+				gcry_mpi_release(qual[j]);
 			gcry_sexp_release(key);
 			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
@@ -416,16 +426,22 @@ void run_instance
 			gcry_mpi_release(n);
 			gcry_mpi_release(t);
 			gcry_mpi_release(i);
+			gcry_mpi_release(qualsize);
+			for (size_t j = 0; j < qual.size(); j++)
+				gcry_mpi_release(qual[j]);
 			gcry_mpi_release(x_i);
 			gcry_sexp_release(key);
 			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
-		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108(ckeytime, p, q, g, h, y, n, t, i, x_i, xprime_i, passphrase, sec);
+		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108(ckeytime, p, q, g, h, y, n, t, i, qualsize, qual, x_i, xprime_i, passphrase, sec);
 		gcry_mpi_release(h);
 		gcry_mpi_release(n);
 		gcry_mpi_release(t);
 		gcry_mpi_release(i);
+		gcry_mpi_release(qualsize);
+		for (size_t j = 0; j < qual.size(); j++)
+			gcry_mpi_release(qual[j]);
 		gcry_mpi_release(x_i);
 		gcry_mpi_release(xprime_i);
 	}

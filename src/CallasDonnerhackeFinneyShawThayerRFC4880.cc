@@ -1230,6 +1230,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	(const time_t keytime, const gcry_mpi_t p, const gcry_mpi_t q,
 	 const gcry_mpi_t g, const gcry_mpi_t h, const gcry_mpi_t y,
 	 const gcry_mpi_t n, const gcry_mpi_t t, const gcry_mpi_t i,
+	 const gcry_mpi_t qualsize, const std::vector<gcry_mpi_t> qual,
 	 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
 	 const std::string passphrase,
 	 tmcg_octets_t &out)
@@ -1242,10 +1243,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	size_t nlen = (gcry_mpi_get_nbits(n) + 7) / 8;
 	size_t tlen = (gcry_mpi_get_nbits(t) + 7) / 8;
 	size_t ilen = (gcry_mpi_get_nbits(i) + 7) / 8;
+	size_t qualsizelen = (gcry_mpi_get_nbits(qualsize) + 7) / 8;
 	size_t x_ilen = (gcry_mpi_get_nbits(x_i) + 7) / 8;
 	size_t xprime_ilen = (gcry_mpi_get_nbits(xprime_i) + 7) / 8;
 	size_t len = 1+4+1; // number of octets for version, keytime, and algo
-	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen;
+	size_t qs = get_gcry_mpi_ui(qualsize);
+	for (size_t j = 0; j < qs; j++)
+		len += 2+((gcry_mpi_get_nbits(qual[j]) + 7) / 8);
+	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+2+qualsizelen;
 	if (passphrase.length() == 0)
 		len += 1+2+x_ilen+2+xprime_ilen+2; // S2K usage is zero
 	else
@@ -1263,6 +1268,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	PacketMPIEncode(n, out); // MPI n
 	PacketMPIEncode(t, out); // MPI t
 	PacketMPIEncode(i, out); // MPI i
+	PacketMPIEncode(qualsize, out); // MPI qualsize
+	for (size_t j = 0; j < qs; j++)
+		PacketMPIEncode(qual[j], out); // MPI qual[j]
 	if (passphrase.length() == 0)
 	{
 		size_t chksum = 0;

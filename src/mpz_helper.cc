@@ -64,6 +64,26 @@ bool mpz_set_gcry_mpi
 	}
 }
 
+// get small values from gcry_mpi_t
+size_t get_gcry_mpi_ui
+	(gcry_mpi_t in)
+{
+	char *buf = new char[TMCG_MAX_VALUE_CHARS];
+	memset(buf, 0, TMCG_MAX_VALUE_CHARS);
+	size_t buflen, result;
+	mpz_t value;
+	mpz_init(value);
+	gcry_error_t ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buf, TMCG_MAX_VALUE_CHARS - 1, &buflen, in);
+	if (ret)
+		mpz_set_ui(value, 0L); // indicates an error
+	else
+		mpz_set_str(value, buf, 16);
+	result = mpz_get_ui(value);
+	delete [] buf;
+	mpz_clear(value);
+	return result;
+}
+
 // iostream operators for mpz_t
 std::ostream& operator <<
 	(std::ostream &out, mpz_srcptr value)

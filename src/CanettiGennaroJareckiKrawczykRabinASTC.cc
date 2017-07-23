@@ -196,16 +196,6 @@ void CanettiGennaroJareckiKrawczykRabinRVSS::PublishState
 	}
 }
 
-void CanettiGennaroJareckiKrawczykRabinRVSS::PublishCommitments
-	(std::ostream &out) const
-{
-	for (size_t i = 0; i < n; i++)
-	{
-		for (size_t k = 0; k <= tprime; k++)
-			out << C_ik[i][k] << std::endl;
-	}
-}
-
 std::string CanettiGennaroJareckiKrawczykRabinRVSS::Label
 	() const
 {
@@ -1698,10 +1688,8 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 		QUAL.push_back(who);
 	}
 
-	// initialize required subprotocol
-	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, fieldsize, subgroupsize, use_very_strong_randomness_in, "x_rvss");
-
-// FIXME: setup commitments of x_rvss or store them otherwise
+	// initialize required subprotocol from istream in
+	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(in, fieldsize, subgroupsize, use_very_strong_randomness_in, "x_rvss");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1720,12 +1708,7 @@ void CanettiGennaroJareckiKrawczykRabinDKG::PublishState
 	out << QUAL.size() << std::endl;
 	for (size_t i = 0; i < QUAL.size(); i++)
 		out << QUAL[i] << std::endl;
-}
-
-void CanettiGennaroJareckiKrawczykRabinDKG::PublishCommitments
-	(std::ostream &out) const
-{
-	x_rvss->PublishCommitments(out);
+	x_rvss->PublishState(out);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
@@ -2356,8 +2339,8 @@ CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
 		QUAL.push_back(who);
 	}
 
-	// initialize required subprotocol
-	dkg = new CanettiGennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h, fieldsize, subgroupsize, use_very_strong_randomness_in, "dkg");
+	// initialize required subprotocol from istream in
+	dkg = new CanettiGennaroJareckiKrawczykRabinDKG(in, fieldsize, subgroupsize, use_very_strong_randomness_in, "dkg");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -2376,6 +2359,7 @@ void CanettiGennaroJareckiKrawczykRabinDSS::PublishState
 	out << QUAL.size() << std::endl;
 	for (size_t i = 0; i < QUAL.size(); i++)
 		out << QUAL[i] << std::endl;
+	dkg->PublishState(out);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinDSS::CheckGroup
