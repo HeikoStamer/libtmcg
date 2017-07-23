@@ -1,3 +1,4 @@
+* dkg-tools: add key expiration time with option "-e" for dkg-generate
 * dkg-gencrs: use EDCF to generate CRS by coin-flips of all participants
 * dkg-tools: protect h-generation protocol with EDCF to avoid ROM
 * provide revocation of OpenPGP keys (program dkg-revoke)
