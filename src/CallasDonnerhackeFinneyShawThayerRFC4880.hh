@@ -263,6 +263,15 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t g, const gcry_mpi_t y,
 			 const gcry_mpi_t x, const std::string passphrase,
 			 tmcg_octets_t &out);
+		static void PacketSecEncodeExperimental108
+			(const time_t keytime, const gcry_mpi_t p,
+			 const gcry_mpi_t q, const gcry_mpi_t g,
+			 const gcry_mpi_t h, const gcry_mpi_t y,
+			 const gcry_mpi_t n, const gcry_mpi_t t,
+			 const gcry_mpi_t i,
+			 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
+			 const std::string passphrase,
+			 tmcg_octets_t &out);
 		static void PacketSubEncode
 			(const time_t keytime, const tmcg_byte_t algo,
 			 const gcry_mpi_t p, const gcry_mpi_t q,
