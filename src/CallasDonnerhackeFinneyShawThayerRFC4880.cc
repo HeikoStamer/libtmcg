@@ -791,6 +791,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
 	// These octets form a big-endian number; a big-endian number can be
 	// made into an MPI by prefixing it with the appropriate length.
 	ret = gcry_mpi_print(GCRYMPI_FMT_PGP, buffer, buflen, &buflen, in);
+std::cerr << "buflen = " << buflen << std::endl;
 	for (size_t i = 0; ((!ret) && (i < buflen)); i++)
 	{
 		out.push_back(buffer[i]);
