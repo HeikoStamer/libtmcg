@@ -194,7 +194,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_octets_t &in);
 
 		static void Radix64Encode
-			(const tmcg_octets_t &in, std::string &out, bool linebreaks = true);
+			(const tmcg_octets_t &in, std::string &out,
+			 bool linebreaks = true);
 		static void Radix64Decode
 			(std::string in, tmcg_octets_t &out);
 		static void CRC24Compute
@@ -202,7 +203,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void CRC24Encode
 			(const tmcg_octets_t &in, std::string &out);
 		static void ArmorEncode
-			(const tmcg_byte_t type, const tmcg_octets_t &in, std::string &out);
+			(const tmcg_byte_t type, const tmcg_octets_t &in,
+			 std::string &out);
 		static tmcg_byte_t ArmorDecode
 			(const std::string in, tmcg_octets_t &out);
 		static void FingerprintCompute
@@ -210,22 +212,24 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void KeyidCompute
 			(const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void HashCompute
-			(const tmcg_byte_t algo, const tmcg_octets_t &in, tmcg_octets_t &out);
-		static void HashCompute
-			(const tmcg_byte_t algo, const size_t cnt, const tmcg_octets_t &in,
+			(const tmcg_byte_t algo, const tmcg_octets_t &in,
 			 tmcg_octets_t &out);
+		static void HashCompute
+			(const tmcg_byte_t algo, const size_t cnt,
+			 const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void S2KCompute
 			(const tmcg_byte_t algo, const size_t sklen,
 			 const std::string in, const tmcg_octets_t &salt, 
-			 const bool iterated, const tmcg_byte_t octcnt, tmcg_octets_t &out);
+			 const bool iterated, const tmcg_byte_t octcnt,
+			 tmcg_octets_t &out);
 
 		static void PacketTagEncode
 			(const tmcg_byte_t tag, tmcg_octets_t &out); 
 		static void PacketLengthEncode
 			(const size_t len, tmcg_octets_t &out);
 		static size_t PacketLengthDecode
-			(const tmcg_octets_t &in, bool newformat, tmcg_byte_t lentype,
-			uint32_t &len, bool &partlen);
+			(const tmcg_octets_t &in, bool newformat,
+			 tmcg_byte_t lentype, uint32_t &len, bool &partlen);
 		static void PacketTimeEncode
 			(const time_t in, tmcg_octets_t &out);
 		static void PacketTimeEncode
@@ -244,10 +248,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t myk, tmcg_octets_t &out);
 		static void PacketSigEncode
 			(const tmcg_octets_t &hashing, const tmcg_octets_t &left,
-			 const gcry_mpi_t r, const gcry_mpi_t s, tmcg_octets_t &out);
-		static void SubpacketEncode
-			(const tmcg_byte_t type, bool critical, const tmcg_octets_t &in,
+			 const gcry_mpi_t r, const gcry_mpi_t s,
 			 tmcg_octets_t &out);
+		static void SubpacketEncode
+			(const tmcg_byte_t type, bool critical,
+			 const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void PacketSigPrepare
 			(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, 
 			 const time_t sigtime,
@@ -302,6 +307,10 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static tmcg_byte_t PacketDecode
 			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out);
 
+		static void BinaryDocumentHash
+			(const tmcg_octets_t &in,
+			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
+			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static void CertificationHash
 			(const tmcg_octets_t &key, const std::string uid,
 			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
@@ -311,14 +320,18 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
 			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static gcry_error_t SymmetricEncryptAES256
-			(const tmcg_octets_t &in, tmcg_octets_t &seskey, tmcg_octets_t &prefix,
-			const bool resync, tmcg_octets_t &out);
+			(const tmcg_octets_t &in,
+			 tmcg_octets_t &seskey, tmcg_octets_t &prefix,
+			 const bool resync, tmcg_octets_t &out);
 		static gcry_error_t SymmetricDecrypt
-			(const tmcg_octets_t &in, tmcg_octets_t &seskey, tmcg_octets_t &prefix,
-			const bool resync, const tmcg_byte_t algo, tmcg_octets_t &out);
+			(const tmcg_octets_t &in,
+			 tmcg_octets_t &seskey, tmcg_octets_t &prefix,
+			 const bool resync, const tmcg_byte_t algo,
+			 tmcg_octets_t &out);
 		static gcry_error_t SymmetricDecryptAES256
-			(const tmcg_octets_t &in, tmcg_octets_t &seskey, tmcg_octets_t &prefix,
-			const bool resync, tmcg_octets_t &out);
+			(const tmcg_octets_t &in,
+			 tmcg_octets_t &seskey, tmcg_octets_t &prefix,
+			 const bool resync, tmcg_octets_t &out);
 		static gcry_error_t AsymmetricEncryptElgamal
 			(const tmcg_octets_t &in, const gcry_sexp_t key, 
 			 gcry_mpi_t &gk, gcry_mpi_t &myk);

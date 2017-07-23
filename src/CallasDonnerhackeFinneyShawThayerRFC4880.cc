@@ -2493,6 +2493,40 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 
 // ===========================================================================
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
+	(const tmcg_octets_t &in, const tmcg_octets_t &trailer, 
+	 const tmcg_byte_t hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
+{
+	tmcg_octets_t hash_input;
+
+	// All signatures are formed by producing a hash over the signature
+	// data, and then using the resulting hash in the signature algorithm.
+	// For binary document signatures (type 0x00), the document data is
+	// hashed directly.
+	for (size_t i = 0; i < in.size(); i++)
+		hash_input.push_back(in[i]);
+	// Once the data body is hashed, then a trailer is hashed. [...]
+	// A V4 signature hashes the packet body starting from its first
+	// field, the version number, through the end of the hashed subpacket
+	// data. Thus, the fields hashed are the signature version, the
+	// signature type, the public-key algorithm, the hash algorithm,
+	// the hashed subpacket length, and the hashed subpacket body.
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// V4 signatures also hash in a final trailer of six octets: the
+	// version of the Signature packet, i.e., 0x04; 0xFF; and a four-octet,
+	// big-endian number that is the length of the hashed data from the
+	// Signature packet (note that this number does not include these final
+	// six octets).
+	hash_input.push_back(0x04);
+	PacketLengthEncode(trailer.size(), hash_input);
+	// After all this has been hashed in a single hash context, the
+	// resulting hash field is used in the signature algorithm and placed
+	// at the end of the Signature packet.
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; i < 2; i++)
+		left.push_back(hash[i]);
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	(const tmcg_octets_t &key, const std::string uid, const tmcg_octets_t &trailer, 
 	 const tmcg_byte_t hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
