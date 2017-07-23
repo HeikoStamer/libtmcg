@@ -209,12 +209,12 @@ class CanettiGennaroJareckiKrawczykRabinDSS
 		mpz_t					*fpowm_table_g, *fpowm_table_h;
 		const unsigned long int			F_size, G_size;
 		const bool				use_very_strong_randomness;
-		CanettiGennaroJareckiKrawczykRabinDKG	*dkg;
 
 	public:
 		mpz_t					p, q, g, h;
 		size_t					n, t, i;
 		std::vector<size_t>			QUAL;
+		CanettiGennaroJareckiKrawczykRabinDKG	*dkg;
 		mpz_t					x_i, xprime_i, y;
 
 		CanettiGennaroJareckiKrawczykRabinDSS

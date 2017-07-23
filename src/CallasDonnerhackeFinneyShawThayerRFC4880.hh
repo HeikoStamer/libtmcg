@@ -271,6 +271,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t n, const gcry_mpi_t t,
 			 const gcry_mpi_t i, const gcry_mpi_t qualsize,
 			 const std::vector<gcry_mpi_t> qual,
+			 const std::vector< std::vector<gcry_mpi_t> > c_ik,
 			 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
 			 const std::string passphrase,
 			 tmcg_octets_t &out);

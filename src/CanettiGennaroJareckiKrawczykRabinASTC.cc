@@ -1839,7 +1839,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;
 
 	// initialize
-	CanettiGennaroJareckiKrawczykRabinRVSS	*d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, false, "d_rvss");
+	CanettiGennaroJareckiKrawczykRabinRVSS *d_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h, F_size, G_size, false, "d_rvss");
 	mpz_t foo, bar, lhs, rhs;
 	mpz_t d, r_i, rprime_i;
 	std::vector<mpz_ptr> A_i, B_i, T_i, Tprime_i, z_i, d_i, dprime_i;
