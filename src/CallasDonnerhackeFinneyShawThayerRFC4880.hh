@@ -253,18 +253,21 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_octets_t &flags, const tmcg_octets_t &issuer, 
 			 tmcg_octets_t &out);
 		static void PacketPubEncode
-			(const time_t keytime, const gcry_mpi_t p, 
-			 const gcry_mpi_t q, const gcry_mpi_t g, 
-			 const gcry_mpi_t y, tmcg_octets_t &out);
+			(const time_t keytime, const tmcg_byte_t algo,
+			 const gcry_mpi_t p, const gcry_mpi_t q,
+			 const gcry_mpi_t g, const gcry_mpi_t y,
+			 tmcg_octets_t &out);
 		static void PacketSecEncode
-			(const time_t keytime, const gcry_mpi_t p, 
-			 const gcry_mpi_t q, const gcry_mpi_t g, 
-			 const gcry_mpi_t y, const gcry_mpi_t x,
-			 const std::string passphrase, tmcg_octets_t &out);
+			(const time_t keytime, const tmcg_byte_t algo,
+			 const gcry_mpi_t p, const gcry_mpi_t q,
+			 const gcry_mpi_t g, const gcry_mpi_t y,
+			 const gcry_mpi_t x, const std::string passphrase,
+			 tmcg_octets_t &out);
 		static void PacketSubEncode
 			(const time_t keytime, const tmcg_byte_t algo,
 			 const gcry_mpi_t p, const gcry_mpi_t q,
-			 const gcry_mpi_t g, const gcry_mpi_t y, tmcg_octets_t &out);
+			 const gcry_mpi_t g, const gcry_mpi_t y,
+			 tmcg_octets_t &out);
 		static void PacketSsbEncode
 			(const time_t keytime, const tmcg_byte_t algo,
 			 const gcry_mpi_t p, const gcry_mpi_t q,

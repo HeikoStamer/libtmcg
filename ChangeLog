@@ -1,3 +1,4 @@
+* [2017-07-23] RFC4880: interface of Packet{Pub,Sec}Encode() changed 
 * [2017-07-22] RFC4880: interface of PacketS{ub,sb}Encode() changed for DSA
 * [2017-07-22] DKG-tools: added option "-s" for generating a shared DSA key
 * [2017-07-21] added threshold DSS/DSA scheme of Canetti et al. (ASTC, DSS)

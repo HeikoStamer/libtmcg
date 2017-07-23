@@ -991,13 +991,24 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
-	(const time_t keytime, const gcry_mpi_t p, const gcry_mpi_t q, 
-	 const gcry_mpi_t g, const gcry_mpi_t y, tmcg_octets_t &out)
+	(const time_t keytime, const tmcg_byte_t algo, const gcry_mpi_t p,
+	 const gcry_mpi_t q, const gcry_mpi_t g, const gcry_mpi_t y,
+	 tmcg_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
 	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
 	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
 	size_t ylen = (gcry_mpi_get_nbits(y) + 7) / 8;
+	size_t len = 1+4+1; // number of octets for version, keytime, and algo
+	switch (algo)
+	{
+		case 16: // public-key algorithm: Elgamal
+			len += 2+plen+2+glen+2+ylen;
+			break;
+		case 17: // public-key algorithm: DSA
+			len += 2+plen+2+qlen+2+glen+2+ylen;
+			break;
+	}
 
 	// A Public-Key packet starts a series of packets that forms an
 	// OpenPGP key (sometimes called an OpenPGP certificate).
@@ -1023,26 +1034,51 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	//       - MPI of Elgamal public key value y (= g**x mod p where x
 	//         is secret).
 	PacketTagEncode(6, out);
-	PacketLengthEncode(1+4+1+2+plen+2+qlen+2+glen+2+ylen, out);
+	PacketLengthEncode(len, out);
 	out.push_back(4); // V4 format
 	PacketTimeEncode(keytime, out);
-	out.push_back(17); // public-key algorithm: DSA
-	PacketMPIEncode(p, out); // MPI p
-	PacketMPIEncode(q, out); // MPI q
-	PacketMPIEncode(g, out); // MPI g
-	PacketMPIEncode(y, out); // MPI y
+	out.push_back(algo);
+	switch (algo)
+	{
+		case 16: // public-key algorithm: Elgamal
+			PacketMPIEncode(p, out); // MPI p
+			PacketMPIEncode(g, out); // MPI g
+			PacketMPIEncode(y, out); // MPI y
+			break;
+		case 17: // public-key algorithm: DSA
+			PacketMPIEncode(p, out); // MPI p
+			PacketMPIEncode(q, out); // MPI q
+			PacketMPIEncode(g, out); // MPI g
+			PacketMPIEncode(y, out); // MPI y
+			break;
+	}
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
-	(const time_t keytime, const gcry_mpi_t p, const gcry_mpi_t q,
-	 const gcry_mpi_t g, const gcry_mpi_t y, const gcry_mpi_t x, 
-	 const std::string passphrase, tmcg_octets_t &out)
+	(const time_t keytime, const tmcg_byte_t algo, const gcry_mpi_t p,
+	 const gcry_mpi_t q, const gcry_mpi_t g, const gcry_mpi_t y,
+	 const gcry_mpi_t x, const std::string passphrase,
+	 tmcg_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
 	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
 	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
 	size_t ylen = (gcry_mpi_get_nbits(y) + 7) / 8;
 	size_t xlen = (gcry_mpi_get_nbits(x) + 7) / 8;
+	size_t len = 1+4+1; // number of octets for version, keytime, and algo
+	switch (algo)
+	{
+		case 16: // public-key algorithm: Elgamal
+			len += 2+plen+2+glen+2+ylen;
+			break;
+		case 17: // public-key algorithm: DSA
+			len += 2+plen+2+qlen+2+glen+2+ylen;
+			break;
+	}
+	if (passphrase.length() == 0)
+		len += 1+2+xlen+2; // S2K usage is zero
+	else
+		len += 29+2+xlen+20; // S2K usage is 254
 
 	// The Secret-Key and Secret-Subkey packets contain all the data of the
 	// Public-Key and Public-Subkey packets, with additional algorithm-
@@ -1073,17 +1109,25 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	//    usage octet is not zero). Note that for all other values, a
 	//    two-octet checksum is required.
 	PacketTagEncode(5, out);
-	if (passphrase.length() == 0)
-		PacketLengthEncode(1+4+1+2+plen+2+qlen+2+glen+2+ylen+1+2+xlen+2, out);
-	else
-		PacketLengthEncode(1+4+1+2+plen+2+qlen+2+glen+2+ylen+29+2+xlen+20, out);
+	PacketLengthEncode(len, out);
 	out.push_back(4); // V4 format
 	PacketTimeEncode(keytime, out);
-	out.push_back(17); // public-key algorithm: DSA
-	PacketMPIEncode(p, out); // MPI p
-	PacketMPIEncode(q, out); // MPI q
-	PacketMPIEncode(g, out); // MPI g
-	PacketMPIEncode(y, out); // MPI y
+	out.push_back(algo);
+	switch (algo)
+	{
+		case 16: // public-key algorithm: Elgamal
+			PacketMPIEncode(p, out); // MPI p
+			PacketMPIEncode(g, out); // MPI g
+			PacketMPIEncode(y, out); // MPI y
+			break;
+		case 17: // public-key algorithm: DSA
+			PacketMPIEncode(p, out); // MPI p
+			PacketMPIEncode(q, out); // MPI q
+			PacketMPIEncode(g, out); // MPI g
+			PacketMPIEncode(y, out); // MPI y
+			break;
+	}
+
 	// Secret MPI values can be encrypted using a passphrase. If a string-
 	// to-key specifier is given, that describes the algorithm for
 	// converting the passphrase to a key, else a simple MD5 hash of the

@@ -365,8 +365,8 @@ void run_instance
 		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ckeytime, p, q, g, y, pub); // use common key creation time
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(ckeytime, p, q, g, y, x, passphrase, sec); // use common key creation time and individual passphrase
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ckeytime, 17, p, q, g, y, pub); // use common key creation time
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(ckeytime, 17, p, q, g, y, x, passphrase, sec); // use common key creation time and individual passphrase
 	for (size_t i = 6; i < pub.size(); i++)
 		pub_hashing.push_back(pub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
