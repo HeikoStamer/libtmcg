@@ -366,7 +366,71 @@ void run_instance
 		exit(-1);
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ckeytime, 17, p, q, g, y, pub); // use common key creation time
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(ckeytime, 17, p, q, g, y, x, passphrase, sec); // use common key creation time and individual passphrase
+	if (S > 0)
+	{
+		// create an OpenPGP private key as experimental algorithm ID 108 to store everything from tDSS
+		gcry_mpi_t h, n, t, i, x_i, xprime_i;
+		if (!mpz_get_gcry_mpi(&h, dss->h))
+		{
+			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dss->h" << std::endl;
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			gcry_mpi_release(y);
+			gcry_mpi_release(x);
+			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		n = gcry_mpi_set_ui(NULL, dss->n);
+		t = gcry_mpi_set_ui(NULL, dss->t);
+		i = gcry_mpi_set_ui(NULL, dss->i);
+		if (!mpz_get_gcry_mpi(&x_i, dss->x_i))
+		{
+			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dss->x_i" << std::endl;
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			gcry_mpi_release(y);
+			gcry_mpi_release(x);
+			gcry_mpi_release(h);
+			gcry_mpi_release(n);
+			gcry_mpi_release(t);
+			gcry_mpi_release(i);
+			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		if (!mpz_get_gcry_mpi(&xprime_i, dss->xprime_i))
+		{
+			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dss->xprime_i" << std::endl;
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			gcry_mpi_release(y);
+			gcry_mpi_release(x);
+			gcry_mpi_release(h);
+			gcry_mpi_release(n);
+			gcry_mpi_release(t);
+			gcry_mpi_release(i);
+			gcry_mpi_release(x_i);
+			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108(ckeytime, p, q, g, h, y, n, t, i, x_i, xprime_i, passphrase, sec);
+		gcry_mpi_release(h);
+		gcry_mpi_release(n);
+		gcry_mpi_release(t);
+		gcry_mpi_release(i);
+		gcry_mpi_release(x_i);
+		gcry_mpi_release(xprime_i);
+	}
+	else
+		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(ckeytime, 17, p, q, g, y, x, passphrase, sec);
 	for (size_t i = 6; i < pub.size(); i++)
 		pub_hashing.push_back(pub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
