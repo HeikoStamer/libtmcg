@@ -330,7 +330,7 @@ bool parse_private_key
 				}
 				break;
 			case 5: // Secret-Key Packet
-				if ((ctx.pkalgo == 17) && !secdsa)
+				if (((ctx.pkalgo == 17) || (ctx.pkalgo == 108)) && !secdsa)
 				{
 					secdsa = true;
 					dsa_p = ctx.p, dsa_q = ctx.q, dsa_g = ctx.g, dsa_y = ctx.y;
@@ -341,7 +341,7 @@ bool parse_private_key
 					CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
 					if (opt_verbose)
 					{
-						std::cout << " Key ID of DSA key: " << std::hex;
+						std::cout << " Key ID of DSA/tDSS key: " << std::hex;
 						for (size_t i = 0; i < keyid.size(); i++)
 							std::cout << (int)keyid[i] << " ";
 						std::cout << std::dec << std::endl;
@@ -353,7 +353,10 @@ bool parse_private_key
 					}
 					if (ctx.s2kconv == 0)
 					{
-						dsa_x = ctx.x; // not encrypted
+						if (ctx.pkalgo == 17)
+							dsa_x = ctx.x; // not encrypted
+						else if (ctx.pkalgo == 108)
+							gcry_mpi_set_ui(dsa_x, 0L); // no single secret key available
 					}
 					else if ((ctx.s2kconv == 254) || (ctx.s2kconv == 255))
 					{
@@ -431,31 +434,77 @@ bool parse_private_key
 						}
 						gcry_cipher_close(hd);
 						delete [] key, delete [] iv;
-						// read MPI x and verify checksum/hash
+						// read MPI x reps. MPIs x_i, xprime_i and verify checksum/hash
 						mpis.clear();
 						chksum = 0;
 						for (size_t i = 0; i < ctx.encdatalen; i++)
 							mpis.push_back(ctx.encdata[i]);
-						mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, dsa_x, chksum);
-						if (!mlen || (mlen > mpis.size()))
+						if (ctx.pkalgo == 17)
 						{
-							std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
-							// cleanup
-							if (ctx.hspd != NULL)
-								delete [] ctx.hspd;
-							if (ctx.encdata != NULL)
-								delete [] ctx.encdata;
-							if (ctx.compdata != NULL)
-								delete [] ctx.compdata;
-							if (ctx.data != NULL)
-								delete [] ctx.data;
-							gcry_mpi_release(dsa_r);
-							gcry_mpi_release(dsa_s);
-							gcry_mpi_release(elg_r);
-							gcry_mpi_release(elg_s);
-							return false;
+							mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, dsa_x, chksum);
+							if (!mlen || (mlen > mpis.size()))
+							{
+								std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
+								// cleanup
+								if (ctx.hspd != NULL)
+									delete [] ctx.hspd;
+								if (ctx.encdata != NULL)
+									delete [] ctx.encdata;
+								if (ctx.compdata != NULL)
+									delete [] ctx.compdata;
+								if (ctx.data != NULL)
+									delete [] ctx.data;
+								gcry_mpi_release(dsa_r);
+								gcry_mpi_release(dsa_s);
+								gcry_mpi_release(elg_r);
+								gcry_mpi_release(elg_s);
+								return false;
+							}
+							mpis.erase(mpis.begin(), mpis.begin()+mlen);
 						}
-						mpis.erase(mpis.begin(), mpis.begin()+mlen);
+						else if (ctx.pkalgo == 108)
+						{
+							mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, dsa_x, chksum);
+							if (!mlen || (mlen > mpis.size()))
+							{
+								std::cerr << "ERROR: reading MPI x_i failed (bad passphrase)" << std::endl;
+								// cleanup
+								if (ctx.hspd != NULL)
+									delete [] ctx.hspd;
+								if (ctx.encdata != NULL)
+									delete [] ctx.encdata;
+								if (ctx.compdata != NULL)
+									delete [] ctx.compdata;
+								if (ctx.data != NULL)
+									delete [] ctx.data;
+								gcry_mpi_release(dsa_r);
+								gcry_mpi_release(dsa_s);
+								gcry_mpi_release(elg_r);
+								gcry_mpi_release(elg_s);
+								return false;
+							}
+							mpis.erase(mpis.begin(), mpis.begin()+mlen);
+							mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, dsa_x, chksum);
+							if (!mlen || (mlen > mpis.size()))
+							{
+								std::cerr << "ERROR: reading MPI xprime_i failed (bad passphrase)" << std::endl;
+								// cleanup
+								if (ctx.hspd != NULL)
+									delete [] ctx.hspd;
+								if (ctx.encdata != NULL)
+									delete [] ctx.encdata;
+								if (ctx.compdata != NULL)
+									delete [] ctx.compdata;
+								if (ctx.data != NULL)
+									delete [] ctx.data;
+								gcry_mpi_release(dsa_r);
+								gcry_mpi_release(dsa_s);
+								gcry_mpi_release(elg_r);
+								gcry_mpi_release(elg_s);
+								return false;
+							}
+							mpis.erase(mpis.begin(), mpis.begin()+mlen);
+						}
 						if (ctx.s2kconv == 255)
 						{
 							if (mpis.size() < 2)
@@ -494,7 +543,7 @@ bool parse_private_key
 						exit(-1);
 					}
 				}
-				else if ((ctx.pkalgo == 17) && secdsa)
+				else if (((ctx.pkalgo == 17) || (ctx.pkalgo == 108)) && secdsa)
 				{
 					std::cerr << "ERROR: more than one primary key not supported" << std::endl;
 					exit(-1);
