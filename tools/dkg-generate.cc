@@ -260,11 +260,6 @@ void run_instance
 	if (opt_verbose)
 		std::cout << "P_" << whoami << ": canonicalized key creation time = " << ckeytime << std::endl;
 
-	// at the end: deliver some more rounds for still waiting parties
-	time_t synctime = aiounicast::aio_timeout_very_long;
-	std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
-	rbc->Sync(synctime);
-
 	// select hash algorithm for OpenPGP based on |q| (size in bit)
 	tmcg_byte_t hashalgo = 0;
 	if (mpz_sizeinbase(vtmf->q, 2L) == 256)
@@ -764,6 +759,12 @@ void run_instance
 	gcry_mpi_release(r);
 	gcry_mpi_release(s);
 	gcry_sexp_release(key);
+	
+	// at the end: deliver some more rounds for still waiting parties
+	time_t synctime = aiounicast::aio_timeout_very_long;
+	std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
+	rbc->Sync(synctime);
+
 	// export generated public keys in OpenPGP armor format
 	std::stringstream pubfilename;
 	pubfilename << peers[whoami] << "_dkg-pub.asc";
@@ -791,6 +792,7 @@ void run_instance
 		exit(-1);
 	}
 	pubofs.close();
+
 	// export generated private keys in OpenPGP armor format
 	std::stringstream secfilename;
 	secfilename << peers[whoami] << "_dkg-sec.asc";
@@ -818,6 +820,7 @@ void run_instance
 		exit(-1);
 	}
 	secofs.close();
+
 	// export verification keys of DKG into a file
 	std::stringstream dkgfilename;
 	dkgfilename << peers[whoami] << ".dkg";
