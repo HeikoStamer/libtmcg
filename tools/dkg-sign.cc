@@ -43,7 +43,7 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 
 int 				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t 				pid[MAX_N];
-std::string			passphrase, armored_seckey;
+std::string			passphrase, armored_seckey, ifilename, ofilename;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
 
@@ -709,6 +709,14 @@ void release_mpis
 	mpz_clear(dss_h);
 	mpz_clear(dss_x_i);
 	mpz_clear(dss_xprime_i);
+	for (size_t i = 0; i < dss_c_ik.size(); i++)
+	{
+		for (size_t k = 0; k < dss_c_ik[i].size(); k++)
+		{
+			mpz_clear(dss_c_ik[i][k]);
+			delete [] dss_c_ik[i][k];
+		}
+	}
 	gcry_mpi_release(dsa_p);
 	gcry_mpi_release(dsa_q);
 	gcry_mpi_release(dsa_g);
@@ -781,27 +789,6 @@ void run_instance
 		std::cout << std::endl;
 		mpz_clear(xtest);
 	}
-
-	// initialize for interactive part
-	mpz_t crs_p, crs_q, crs_g, crs_k;
-	mpz_init(crs_p), mpz_init(crs_q), mpz_init(crs_g), mpz_init(crs_k);
-	if (!mpz_set_gcry_mpi(dsa_p, crs_p))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
-	if (!mpz_set_gcry_mpi(dsa_q, crs_q))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
-	if (!mpz_set_gcry_mpi(dsa_g, crs_g))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
-	mpz_sub_ui(crs_k, crs_p, 1L);
-	mpz_div(crs_k, crs_k, crs_q);
 
 // TODO
 
@@ -957,7 +944,16 @@ int main
 				(arg.find("-l") == 0) || (arg.find("-i") == 0) || (arg.find("-o") == 0) || (arg.find("-x") == 0))
 			{
 				i++;
-// TODO: store arguments from -i and -o and set opt_ifilename resp opt_ofilename
+				if ((arg.find("-i") == 0) && (i < (size_t)(argc - 1)) && (opt_ifilename == NULL))
+				{
+					ifilename = argv[i];
+					opt_ifilename = (char*)ifilename.c_str();
+				}
+				if ((arg.find("-o") == 0) && (i < (size_t)(argc - 1)) && (opt_ofilename == NULL))
+				{
+					ofilename = argv[i];
+					opt_ofilename = (char*)ofilename.c_str();
+				}
 				continue;
 			}
 			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-V") == 0))
@@ -968,7 +964,9 @@ int main
 					std::cout << usage << std::endl;
 					std::cout << about << std::endl;
 					std::cout << "Arguments mandatory for long options are also mandatory for short options." << std::endl;
+					std::cout << "  -i, --input=FILENAME       create detached signature from FILENAME" << std::endl;
 					std::cout << "  -h, --help                 print this help" << std::endl;
+					std::cout << "  -o, --output=FILENAME      write detached signature to FILENAME" << std::endl;
 					std::cout << "  -v, --version              print the version number" << std::endl;
 					std::cout << "  -V, --verbose              turn on verbose output" << std::endl;
 #endif
