@@ -49,7 +49,9 @@ bool				instance_forked = false;
 
 CanettiGennaroJareckiKrawczykRabinDSS	*dss;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
-size_t					dss_n, dss_t, dss_i;
+size_t					dss_n, dss_t, dss_i, dss_qualsize;
+std::vector<size_t>			dss_qual;
+std::vector< std::vector<mpz_ptr> >	dss_c_ik;
 gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_g, elg_y;
 int 					opt_verbose = 0;
 char					*opt_ifilename = NULL;
@@ -307,9 +309,24 @@ bool parse_private_key
 					dss_n = get_gcry_mpi_ui(ctx.n);
 					dss_t = get_gcry_mpi_ui(ctx.t);
 					dss_i = get_gcry_mpi_ui(ctx.i);
-
-
-// TODO: store public values for dss
+					dss_qualsize = qual.size();
+					for (size_t i = 0; i < dss_qualsize; i++)
+						dss_qual.push_back(get_gcry_mpi_ui(qual[i]));
+					dss_c_ik.resize(c_ik.size());
+					for (size_t i = 0; i < c_ik.size(); i++)
+					{
+						for (size_t k = 0; k < c_ik[i].size(); k++)
+						{
+							mpz_ptr tmp = new mpz_t();
+							mpz_init(tmp);
+							if (!mpz_set_gcry_mpi(c_ik[i][k], tmp))
+							{
+								std::cerr << "ERROR: mpz_set_gcry_mpi() failed for tmp" << std::endl;
+								exit(-1);
+							}
+							dss_c_ik[i].push_back(tmp);
+						}
+					}
 					if (ctx.s2kconv == 0)
 					{
 						if (!mpz_set_gcry_mpi(ctx.x_i, dss_x_i))

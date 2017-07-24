@@ -1292,7 +1292,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	for (size_t j = 0; j < qs; j++)
 		len += 2+((gcry_mpi_get_nbits(qual[j]) + 7) / 8);
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
-		for (size_t k = 0; k < get_gcry_mpi_ui(t); k++)
+		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
 			len += 2+((gcry_mpi_get_nbits(c_ik[j][k]) + 7) / 8);
 	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+2+qualsizelen;
 	if (passphrase.length() == 0)
@@ -1316,7 +1316,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	for (size_t j = 0; j < qs; j++)
 		PacketMPIEncode(qual[j], out); // MPI qual[j]
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
-		for (size_t k = 0; k < get_gcry_mpi_ui(t); k++)
+		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
 			PacketMPIEncode(c_ik[j][k], out); // MPI c_ik[j][k]
 	if (passphrase.length() == 0)
 	{
@@ -2337,8 +2337,8 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				c_ik.resize(get_gcry_mpi_ui(out.n));
 				for (size_t j = 0; j < get_gcry_mpi_ui(out.n); j++)
 				{
-					c_ik[j].resize(get_gcry_mpi_ui(out.t));
-					for (size_t k = 0; k < get_gcry_mpi_ui(out.t); k++)
+					c_ik[j].resize(get_gcry_mpi_ui(out.t) + 1);
+					for (size_t k = 0; k <= get_gcry_mpi_ui(out.t); k++)
 					{
 						mlen = PacketMPIDecode(mpis, c_ik[j][k]);
 						if (!mlen || (mlen > mpis.size()))
@@ -2619,7 +2619,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 // ===========================================================================
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
-	(const tmcg_octets_t &in, const tmcg_octets_t &trailer, 
+	(const std::string filename, const tmcg_octets_t &trailer, 
 	 const tmcg_byte_t hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
 {
 	tmcg_octets_t hash_input;
@@ -2628,8 +2628,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 	// data, and then using the resulting hash in the signature algorithm.
 	// For binary document signatures (type 0x00), the document data is
 	// hashed directly.
-	for (size_t i = 0; i < in.size(); i++)
-		hash_input.push_back(in[i]);
+	// [...]
 	// Once the data body is hashed, then a trailer is hashed. [...]
 	// A V4 signature hashes the packet body starting from its first
 	// field, the version number, through the end of the hashed subpacket
@@ -2647,7 +2646,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
-	HashCompute(hashalgo, hash_input, hash);
+	HashComputeFile(hashalgo, filename, hash_input, hash);
 	for (size_t i = 0; i < 2; i++)
 		left.push_back(hash[i]);
 }

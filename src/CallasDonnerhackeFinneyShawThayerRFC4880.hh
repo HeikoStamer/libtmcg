@@ -320,7 +320,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 std::vector< std::vector<gcry_mpi_t> > c_ik);
 
 		static void BinaryDocumentHash
-			(const tmcg_octets_t &in,
+			(const std::string filename,
 			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
 			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static void CertificationHash
