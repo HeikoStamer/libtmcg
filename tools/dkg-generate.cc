@@ -390,9 +390,9 @@ void run_instance
 			qual.push_back(tmp);
 		}
 		c_ik.resize(dss->n);
-		for (size_t j = 0; j < dss->n; j++)
+		for (size_t j = 0; j < c_ik.size(); j++)
 		{
-			for (size_t k = 0; k < dss->t; k++)
+			for (size_t k = 0; k <= dss->t; k++)
 			{
 				gcry_mpi_t tmp;
 				if (!mpz_get_gcry_mpi(&tmp, dss->dkg->x_rvss->C_ik[j][k]))
@@ -435,8 +435,8 @@ void run_instance
 			gcry_mpi_release(qualsize);
 			for (size_t j = 0; j < qual.size(); j++)
 				gcry_mpi_release(qual[j]);
-			for (size_t j = 0; j < dss->n; j++)
-				for (size_t k = 0; k < dss->t; k++)
+			for (size_t j = 0; j < c_ik.size(); j++)
+				for (size_t k = 0; k < c_ik[j].size(); k++)
 					gcry_mpi_release(c_ik[j][k]);
 			gcry_sexp_release(key);
 			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
@@ -458,8 +458,8 @@ void run_instance
 			gcry_mpi_release(qualsize);
 			for (size_t j = 0; j < qual.size(); j++)
 				gcry_mpi_release(qual[j]);
-			for (size_t j = 0; j < dss->n; j++)
-				for (size_t k = 0; k < dss->t; k++)
+			for (size_t j = 0; j < c_ik.size(); j++)
+				for (size_t k = 0; k < c_ik[j].size(); k++)
 					gcry_mpi_release(c_ik[j][k]);
 			gcry_mpi_release(x_i);
 			gcry_sexp_release(key);
@@ -474,8 +474,8 @@ void run_instance
 		gcry_mpi_release(qualsize);
 		for (size_t j = 0; j < qual.size(); j++)
 			gcry_mpi_release(qual[j]);
-		for (size_t j = 0; j < dss->n; j++)
-			for (size_t k = 0; k < dss->t; k++)
+		for (size_t j = 0; j < c_ik.size(); j++)
+			for (size_t k = 0; k < c_ik[j].size(); k++)
 				gcry_mpi_release(c_ik[j][k]);
 		gcry_mpi_release(x_i);
 		gcry_mpi_release(xprime_i);
