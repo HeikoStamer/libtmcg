@@ -30,6 +30,7 @@
 	// C and STL header
 	#include <vector>
 	#include <string>
+	#include <fstream>
 	#include <iostream>
 	#include <algorithm>
 	#include <ctime>
@@ -223,6 +224,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void HashCompute
 			(const tmcg_byte_t algo, const size_t cnt,
 			 const tmcg_octets_t &in, tmcg_octets_t &out);
+		static bool HashComputeFile
+			(const tmcg_byte_t algo, const std::string filename,
+			 const tmcg_octets_t &trailer, tmcg_octets_t &out);
 		static void S2KCompute
 			(const tmcg_byte_t algo, const size_t sklen,
 			 const std::string in, const tmcg_octets_t &salt, 

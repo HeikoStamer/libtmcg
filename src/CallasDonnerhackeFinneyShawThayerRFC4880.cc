@@ -533,7 +533,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
-	(const tmcg_byte_t algo, const size_t cnt, const tmcg_octets_t &in, tmcg_octets_t &out)
+	(const tmcg_byte_t algo, const size_t cnt, const tmcg_octets_t &in,
+	 tmcg_octets_t &out)
 {
 	int a = AlgorithmHashGCRY(algo);
 	gcry_error_t ret;
@@ -557,6 +558,45 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 			out.push_back(hash[i]);
 	}
 	gcry_md_close(hd);
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
+	(const tmcg_byte_t algo, const std::string filename,
+	 const tmcg_octets_t &trailer, tmcg_octets_t &out)
+{
+	char c;
+	int a = AlgorithmHashGCRY(algo);
+	gcry_error_t ret;
+	gcry_md_hd_t hd;
+	ret = gcry_md_open(&hd, a, 0);
+	if (ret || (hd == NULL))
+		return false;
+	std::ifstream ifs(filename.c_str(), std::ifstream::in);
+	if (!ifs.is_open())
+	{
+		gcry_md_close(hd);
+		return false;
+	}
+	while (ifs.get(c))
+		gcry_md_putc(hd, c);
+	if (!ifs.eof())
+	{
+		ifs.close();
+		gcry_md_close(hd);
+		return false;
+	}
+	ifs.close();
+	for (size_t i = 0; i < trailer.size(); i++)
+		gcry_md_putc(hd, trailer[i]);
+	tmcg_byte_t *hash = gcry_md_read(hd, a);
+	if (hash != NULL)
+	{
+		size_t dlen = gcry_md_get_algo_dlen(a);
+		for (size_t i = 0; i < dlen; i++)
+			out.push_back(hash[i]);
+	}
+	gcry_md_close(hd);
+	return true;
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
