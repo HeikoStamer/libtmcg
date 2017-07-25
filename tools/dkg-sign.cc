@@ -47,9 +47,9 @@ std::string			passphrase, armored_seckey, ifilename, ofilename;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
 
-CanettiGennaroJareckiKrawczykRabinDSS	*dss;
+tmcg_octets_t				keyid;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
-size_t					dss_n, dss_t, dss_i, dss_qualsize;
+size_t					dss_n, dss_t, dss_i;
 std::vector<size_t>			dss_qual;
 std::vector< std::vector<mpz_ptr> >	dss_c_ik;
 gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_g, elg_y;
@@ -81,19 +81,17 @@ void read_private_key
 }
 
 void write_signature
-	(const std::string ofilename, const tmcg_octets_t &sig)
+	(const std::string filename, const std::string armored_signature)
 {
-	std::string sigstr;
-	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(2, sig, sigstr);
 
-	// write out the computed signature
+	// write out the armored signature
 	std::ofstream ofs(ofilename.c_str(), std::ofstream::out);
 	if (!ofs.good())
 	{
 		std::cerr << "ERROR: opening output file failed" << std::endl;
 		exit(-1);
 	}
-	ofs << sigstr << std::endl;
+	ofs << armored_signature << std::endl;
 	if (!ofs.good())
 	{
 		std::cerr << "ERROR: writing to output file failed" << std::endl;
@@ -132,7 +130,7 @@ bool parse_private_key
 	tmcg_byte_t dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
 	tmcg_byte_t *key, *iv;
 	tmcg_octets_t pkts, pub, sub;
-	tmcg_octets_t seskey, salt, mpis, hash_input, hash, keyid, subkeyid, pub_hashing, sub_hashing, issuer, dsa_hspd, elg_hspd;
+	tmcg_octets_t seskey, salt, mpis, hash_input, hash, subkeyid, pub_hashing, sub_hashing, issuer, dsa_hspd, elg_hspd;
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t erroff, keylen, ivlen, chksum, mlen, chksum2;
@@ -309,8 +307,8 @@ bool parse_private_key
 					dss_n = get_gcry_mpi_ui(ctx.n);
 					dss_t = get_gcry_mpi_ui(ctx.t);
 					dss_i = get_gcry_mpi_ui(ctx.i);
-					dss_qualsize = qual.size();
-					for (size_t i = 0; i < dss_qualsize; i++)
+					size_t qualsize = qual.size();
+					for (size_t i = 0; i < qualsize; i++)
 						dss_qual.push_back(get_gcry_mpi_ui(qual[i]));
 					dss_c_ik.resize(c_ik.size());
 					for (size_t i = 0; i < c_ik.size(); i++)
@@ -728,8 +726,9 @@ void release_mpis
 }
 
 void run_instance
-	(size_t whoami, const size_t num_xtests)
+	(size_t whoami, const time_t sigtime, const size_t num_xtests)
 {
+	// read and parse the private key
 	std::string thispeer = peers[whoami];
 	read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
 	init_mpis();
@@ -740,7 +739,10 @@ void run_instance
 		std::getline(std::cin, passphrase);
 		std::cin.clear();
 		if (!parse_private_key(armored_seckey))
+		{
+			release_mpis();
 			exit(-1);
+		}
 	}
 
 	// create communication handles between all players
@@ -790,7 +792,191 @@ void run_instance
 		mpz_clear(xtest);
 	}
 
-// TODO
+	// participants must agree on a common signature creation time (OpenPGP)
+	time_t csigtime = 0;
+	std::vector<time_t> tvs;
+	mpz_t mtv;
+	mpz_init_set_ui(mtv, sigtime);
+	rbc->Broadcast(mtv);
+	tvs.push_back(sigtime);
+	for (size_t i = 0; i < peers.size(); i++)
+	{
+		if (i != whoami)
+		{
+			if (rbc->DeliverFrom(mtv, i))
+			{
+				time_t utv;
+				utv = (time_t)mpz_get_ui(mtv);
+				tvs.push_back(utv);
+			}
+			else
+			{
+				std::cerr << "P_" << whoami << ": WARNING - no signature creation time received from " << i << std::endl;
+			}
+		}
+	}
+	mpz_clear(mtv);
+	std::sort(tvs.begin(), tvs.end());
+	if (tvs.size() < (dss_t + 1))
+	{
+		std::cerr << "P_" << whoami << ": not enough timestamps received" << std::endl;
+		delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	csigtime = tvs[tvs.size()/2]; // use a median value as some kind of gentle agreement
+	if (opt_verbose)
+		std::cout << "P_" << whoami << ": canonicalized signature creation time = " << csigtime << std::endl;
+
+	// select hash algorithm for OpenPGP based on |q| (size in bit)
+	tmcg_byte_t hashalgo = 0;
+	if (mpz_sizeinbase(dss_q, 2L) == 256)
+		hashalgo = 8; // SHA256 (alg 8)
+	else if (mpz_sizeinbase(dss_q, 2L) == 384)
+		hashalgo = 9; // SHA384 (alg 9)
+	else if (mpz_sizeinbase(dss_q, 2L) == 512)
+		hashalgo = 10; // SHA512 (alg 10)
+	else
+	{
+		std::cerr << "P_" << whoami << ": selecting hash algorithm failed for |q| = " << mpz_sizeinbase(dss_q, 2L) << std::endl;
+		delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+
+	// compute the hash of the input file
+	tmcg_octets_t trailer, hash, left;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, hashalgo, csigtime, keyid, trailer);
+	if (!CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash(opt_ifilename, trailer, hashalgo, hash, left))
+	{
+		std::cerr << "P_" << whoami << ": BinaryDocumentHash() failed; cannot process input file \"" << opt_ifilename << "\"" << std::endl;
+		delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+
+	// create an instance of tDSS by stored parameters from private key
+	std::stringstream dss_in;
+	dss_in << dss_p << std::endl << dss_q << std::endl << dss_g << std::endl << dss_h << std::endl;
+	dss_in << dss_n << std::endl << dss_t << std::endl << dss_i << std::endl;
+	dss_in << dss_x_i << std::endl << dss_xprime_i << std::endl << dsa_y << std::endl;
+	dss_in << dss_qual.size() << std::endl;
+	for (size_t i = 0; i < dss_qual.size(); i++)
+		dss_in << dss_qual[i] << std::endl;
+	dss_in << dss_p << std::endl << dss_q << std::endl << dss_g << std::endl << dss_h << std::endl;
+	dss_in << dss_n << std::endl << dss_t << std::endl << dss_i << std::endl;
+	dss_in << dss_x_i << std::endl << dss_xprime_i << std::endl << dsa_y << std::endl;
+	dss_in << dss_qual.size() << std::endl;
+	for (size_t i = 0; i < dss_qual.size(); i++)
+		dss_in << dss_qual[i] << std::endl;
+	dss_in << dss_p << std::endl << dss_q << std::endl << dss_g << std::endl << dss_h << std::endl;
+	dss_in << dss_n << std::endl << dss_t << std::endl << dss_i << std::endl << dss_t << std::endl;
+	dss_in << dss_x_i << std::endl << dss_xprime_i << std::endl;
+	dss_in << "0" << std::endl << "0" << std::endl;
+	dss_in << dss_qual.size() << std::endl;
+	for (size_t i = 0; i < dss_qual.size(); i++)
+		dss_in << dss_qual[i] << std::endl;
+	assert((dss_c_ik.size() == dss_n));
+	for (size_t i = 0; i < dss_c_ik.size(); i++)
+	{
+		for (size_t j = 0; j < dss_c_ik.size(); j++)
+			dss_in << "0" << std::endl << "0" << std::endl;
+		assert((dss_c_ik[i].size() == (dss_t + 1)));
+		for (size_t k = 0; k < dss_c_ik[i].size(); k++)
+			dss_in << dss_c_ik[i][k] << std::endl;
+	}
+	std::cout << "CanettiGennaroJareckiKrawczykRabinDSS(in, ...)" << std::endl;
+	CanettiGennaroJareckiKrawczykRabinDSS *dss = new CanettiGennaroJareckiKrawczykRabinDSS(dss_in);
+	if (!dss->CheckGroup())
+	{
+		std::cerr << "P_" << whoami << ": " << "tDSS parameters are not correctly generated!" << std::endl;
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+
+	// sign the hash
+	tmcg_byte_t buffer[1024];
+	gcry_mpi_t h, r, s;
+	mpz_t dsa_m, dsa_r, dsa_s;
+	size_t buflen = 0;
+	gcry_error_t ret;
+	for (size_t i = 0; ((i < hash.size()) && (i < sizeof(buffer))); i++, buflen++)
+		buffer[i] = hash[i];
+	h = gcry_mpi_new(2048);
+	r = gcry_mpi_new(2048);
+	s = gcry_mpi_new(2048);
+	mpz_init(dsa_m), mpz_init(dsa_r), mpz_init(dsa_s);
+	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
+	if (ret)
+	{
+		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for h" << std::endl;
+		gcry_mpi_release(h);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (!mpz_set_gcry_mpi(h, dsa_m))
+	{
+		std::cerr << "P_" << whoami << ": mpz_set_gcry_mpi() failed for dsa_m" << std::endl;
+		gcry_mpi_release(h);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	std::stringstream err_log_sign;
+	std::cout << "P_" << whoami << ": dss.Sign()" << std::endl;
+	if (!dss->Sign(peers.size(), whoami, dsa_m, dsa_r, dsa_s, aiou, rbc, err_log_sign))
+	{
+		std::cerr << "P_" << whoami << ": " << "tDSS Sign() failed" << std::endl;
+		std::cerr << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
+		gcry_mpi_release(h);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (opt_verbose)
+		std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
+	if (!mpz_get_gcry_mpi(&r, dsa_r))
+	{
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_r" << std::endl;
+		gcry_mpi_release(h);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (!mpz_get_gcry_mpi(&s, dsa_s))
+	{
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_s" << std::endl;
+		gcry_mpi_release(h);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	tmcg_octets_t sig;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(trailer, left, r, s, sig);
+	gcry_mpi_release(h);
+	gcry_mpi_release(r);
+	gcry_mpi_release(s);
+	mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+
+	// release tDSS
+	delete dss;
 
 	// release RBC
 	delete rbc;
@@ -810,12 +996,16 @@ void run_instance
 	// release asynchronous unicast and broadcast
 	delete aiou, delete aiou2;
 
-	// do remaining work
-
-// TODO
-
 	// release
 	release_mpis();
+
+	// output the result
+	std::string sigstr;
+	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(2, sig, sigstr);
+	if (opt_ofilename == NULL)
+		std::cout << sigstr << std::endl;
+	else
+		write_signature(opt_ofilename, sigstr);
 }
 
 #ifdef GNUNET
@@ -832,10 +1022,11 @@ void fork_instance
 		if (pid[whoami] == 0)
 		{
 			/* BEGIN child code: participant P_i */
+			time_t sigtime = time(NULL);
 #ifdef GNUNET
-			run_instance(whoami, gnunet_opt_xtests);
+			run_instance(whoami, sigtime, gnunet_opt_xtests);
 #else
-			run_instance(whoami, 0);
+			run_instance(whoami, sigtime, 0);
 #endif
 			if (opt_verbose)
 				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
@@ -943,15 +1134,15 @@ int main
 			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || 
 				(arg.find("-l") == 0) || (arg.find("-i") == 0) || (arg.find("-o") == 0) || (arg.find("-x") == 0))
 			{
-				i++;
-				if ((arg.find("-i") == 0) && (i < (size_t)(argc - 1)) && (opt_ifilename == NULL))
+				size_t idx = ++i;
+				if ((arg.find("-i") == 0) && (idx < (size_t)(argc - 1)) && (opt_ifilename == NULL))
 				{
-					ifilename = argv[i];
+					ifilename = argv[i+1];
 					opt_ifilename = (char*)ifilename.c_str();
 				}
-				if ((arg.find("-o") == 0) && (i < (size_t)(argc - 1)) && (opt_ofilename == NULL))
+				if ((arg.find("-o") == 0) && (idx < (size_t)(argc - 1)) && (opt_ofilename == NULL))
 				{
-					ofilename = argv[i];
+					ofilename = argv[i+1];
 					opt_ofilename = (char*)ofilename.c_str();
 				}
 				continue;

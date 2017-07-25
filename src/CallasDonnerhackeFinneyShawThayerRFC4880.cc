@@ -995,7 +995,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
 	out.insert(out.end(), in.begin(), in.end());
 }
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 	(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, const time_t sigtime,
 	 const tmcg_octets_t &flags, const tmcg_octets_t &issuer, tmcg_octets_t &out)
 {
@@ -1028,6 +1028,27 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare
 		tmcg_octets_t pca;
 		pca.push_back(0); // uncompressed
 		SubpacketEncode(22, false, pca, out);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
+	(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, const time_t sigtime,
+	 const tmcg_octets_t &issuer, tmcg_octets_t &out)
+{
+	size_t subpkts = 2;
+	size_t subpktlen = (subpkts * 6) + 4 + issuer.size();
+	out.push_back(4); // V4 format
+	out.push_back(sigtype); // type (e.g. 0x00 Binary Document)
+	out.push_back(17); // public-key algorithm: DSA
+	out.push_back(hashalgo); // hash algorithm
+	// hashed subpacket area
+	out.push_back(subpktlen >> 8); // length of hashed subpacket data
+	out.push_back(subpktlen);
+		// signature creation time
+		tmcg_octets_t subpkt_sigtime;
+		PacketTimeEncode(sigtime, subpkt_sigtime);
+		SubpacketEncode(2, false, subpkt_sigtime, out);
+		// issuer
+		SubpacketEncode(16, false, issuer, out);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
@@ -1270,8 +1291,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	(const time_t keytime, const gcry_mpi_t p, const gcry_mpi_t q,
 	 const gcry_mpi_t g, const gcry_mpi_t h, const gcry_mpi_t y,
 	 const gcry_mpi_t n, const gcry_mpi_t t, const gcry_mpi_t i,
-	 const gcry_mpi_t qualsize, const std::vector<gcry_mpi_t> qual,
-	 const std::vector< std::vector<gcry_mpi_t> > c_ik,
+	 const gcry_mpi_t qualsize, const std::vector<gcry_mpi_t> &qual,
+	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
 	 const std::string passphrase,
 	 tmcg_octets_t &out)
@@ -1288,8 +1309,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	size_t x_ilen = (gcry_mpi_get_nbits(x_i) + 7) / 8;
 	size_t xprime_ilen = (gcry_mpi_get_nbits(xprime_i) + 7) / 8;
 	size_t len = 1+4+1; // number of octets for version, keytime, and algo
-	size_t qs = get_gcry_mpi_ui(qualsize);
-	for (size_t j = 0; j < qs; j++)
+	assert((qual.size() == get_gcry_mpi_ui(qualsize)));
+	for (size_t j = 0; j < qual.size(); j++)
 		len += 2+((gcry_mpi_get_nbits(qual[j]) + 7) / 8);
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
 		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
@@ -1313,7 +1334,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	PacketMPIEncode(t, out); // MPI t
 	PacketMPIEncode(i, out); // MPI i
 	PacketMPIEncode(qualsize, out); // MPI qualsize
-	for (size_t j = 0; j < qs; j++)
+	for (size_t j = 0; j < qual.size(); j++)
 		PacketMPIEncode(qual[j], out); // MPI qual[j]
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
 		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
@@ -1981,7 +2002,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out,
 	 std::vector<gcry_mpi_t> &qual,
-	 std::vector< std::vector<gcry_mpi_t> > c_ik)
+	 std::vector< std::vector<gcry_mpi_t> > &c_ik)
 {
 	if (in.size() < 2)
 		return 0; // error: incorrect packet header
@@ -2618,7 +2639,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 
 // ===========================================================================
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
+bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 	(const std::string filename, const tmcg_octets_t &trailer, 
 	 const tmcg_byte_t hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
 {
@@ -2646,9 +2667,11 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
-	HashComputeFile(hashalgo, filename, hash_input, hash);
+	if (!HashComputeFile(hashalgo, filename, hash_input, hash))
+		return false;
 	for (size_t i = 0; i < 2; i++)
 		left.push_back(hash[i]);
+	return true;
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash

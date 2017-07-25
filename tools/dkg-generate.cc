@@ -496,7 +496,7 @@ void run_instance
 		dsaflags.push_back(0x01 | 0x02 | 0x20); // key may be used to certify other keys, to sign data, and for authentication
 		sigtime = time(NULL); // current time
 	}
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x13, hashalgo, sigtime, dsaflags, keyid, uidsig_hashing); // positive certification (0x13) of uid and pub
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature(0x13, hashalgo, sigtime, dsaflags, keyid, uidsig_hashing); // positive certification (0x13) of uid and pub
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, hashalgo, hash, uidsig_left);
 	if (S > 0)
@@ -639,7 +639,7 @@ void run_instance
 		sigtime = ckeytime; // use common key creation time as OpenPGP signature creation time
 	else
 		sigtime = time(NULL); // current time
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepare(0x18, hashalgo, sigtime, elgflags, keyid, subsig_hashing); // Subkey Binding Signature (0x18) of sub
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature(0x18, hashalgo, sigtime, elgflags, keyid, subsig_hashing); // Subkey Binding Signature (0x18) of sub
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
 	hash.clear();

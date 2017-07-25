@@ -263,10 +263,14 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void SubpacketEncode
 			(const tmcg_byte_t type, bool critical,
 			 const tmcg_octets_t &in, tmcg_octets_t &out);
-		static void PacketSigPrepare
+		static void PacketSigPrepareSelfSignature
 			(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, 
 			 const time_t sigtime,
 			 const tmcg_octets_t &flags, const tmcg_octets_t &issuer, 
+			 tmcg_octets_t &out);
+		static void PacketSigPrepareDetachedSignature
+			(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, 
+			 const time_t sigtime, const tmcg_octets_t &issuer, 
 			 tmcg_octets_t &out);
 		static void PacketPubEncode
 			(const time_t keytime, const tmcg_byte_t algo,
@@ -285,8 +289,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t h, const gcry_mpi_t y,
 			 const gcry_mpi_t n, const gcry_mpi_t t,
 			 const gcry_mpi_t i, const gcry_mpi_t qualsize,
-			 const std::vector<gcry_mpi_t> qual,
-			 const std::vector< std::vector<gcry_mpi_t> > c_ik,
+			 const std::vector<gcry_mpi_t> &qual,
+			 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 			 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
 			 const std::string passphrase,
 			 tmcg_octets_t &out);
@@ -317,9 +321,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static tmcg_byte_t PacketDecode
 			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out,
 			 std::vector<gcry_mpi_t> &qual,
-			 std::vector< std::vector<gcry_mpi_t> > c_ik);
+			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
 
-		static void BinaryDocumentHash
+		static bool BinaryDocumentHash
 			(const std::string filename,
 			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
 			 tmcg_octets_t &hash, tmcg_octets_t &left);
