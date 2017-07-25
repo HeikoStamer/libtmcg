@@ -1678,6 +1678,11 @@ void run_instance
 		exit(-1);
 	}
 	mpz_sub_ui(crs_k, crs_p, 1L);
+	if (!mpz_cmp_ui(crs_q, 0L))
+	{
+		std::cerr << "ERROR: q must not be zero" << std::endl;
+		exit(-1);
+	}
 	mpz_div(crs_k, crs_k, crs_q);
 
 	// create VTMF instance from original CRS (common reference string)

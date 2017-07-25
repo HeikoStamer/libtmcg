@@ -229,7 +229,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::CheckGroup
 		mpz_set(k, p);
 		mpz_sub_ui(k, k, 1L);
 		if (!mpz_cmp_ui(q, 0L))
-			return false;
+			throw false;
 		mpz_div(k, k, q);
 
 		// Check whether $p$ and $q$ have appropriate sizes.
@@ -1088,7 +1088,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::CheckGroup
 		mpz_set(k, p);
 		mpz_sub_ui(k, k, 1L);
 		if (!mpz_cmp_ui(q, 0L))
-			return false;
+			throw false;
 		mpz_div(k, k, q);
 
 		// Check whether $p$ and $q$ have appropriate sizes.
@@ -1727,7 +1727,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
 		mpz_set(k, p);
 		mpz_sub_ui(k, k, 1L);
 		if (!mpz_cmp_ui(q, 0L))
-			return false;
+			throw false;
 		mpz_div(k, k, q);
 
 		// Check whether $p$ and $q$ have appropriate sizes.
@@ -2380,7 +2380,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::CheckGroup
 		mpz_set(k, p);
 		mpz_sub_ui(k, k, 1L);
 		if (!mpz_cmp_ui(q, 0L))
-			return false;
+			throw false;
 		mpz_div(k, k, q);
 
 		// Check whether $p$ and $q$ have appropriate sizes.
