@@ -3502,6 +3502,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					err << "P_" << i_in << ": Step 2. j_dkg = " << j_dkg << " for P_" << j << std::endl;
 				}
 			}
+			else
+				j_dkg = dkg->i;
 			mpz_set_ui(beta_i[j], 1L);
 			for (std::vector<size_t>::iterator it = dkg->x_rvss->QUAL.begin(); it != dkg->x_rvss->QUAL.end(); ++it)
 			{
@@ -3562,10 +3564,10 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		}
 		err << "P_" << i_in << ": aprime_i (Step 2c) = " << aprime_i << std::endl;
 		err << "P_" << i_in << ": sigma_i (Step 2c) = " << sigma_i << std::endl;
-		//        Broadcast commitments for the zero-knowledge proofs of knowledge (we use presentation from [BCCG15]).
-		//        Then we show in parallel, that commitment $\beta_i \delta_i^{-1}$ equals zero, i.e., the former
-		//        commitment was made to the same value $k_i$ resp. $a_i$. This works since Pedersen commitments have
-		//        homomorphic properties.
+		//        Broadcast commitments for the zero-knowledge proofs of knowledge (we use the presentation
+		//        from [BCCG15]). Then we show in parallel, that commitment $\beta_i \delta_i^{-1}$ equals
+		//        zero, i.e., the former commitment was made to the same value $a_i$. This works since
+		//        Pedersen commitments have homomorphic properties.
 		mpz_srandomm(r_a_i, q);
 		mpz_fspowm(fpowm_table_h, Ta_i[i_in], h, r_a_i, p);
 		for (size_t j = 0; j < n_in; j++)
