@@ -3485,6 +3485,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_mod(aprime_i, aprime_i, q);
 		mpz_set_ui(foo, dkg->i); // broadcast index of this party from DKG
 		rbc->Broadcast(foo);
+		std::map<size_t, size_t> idx2dkg, dkg2idx;
 		for (size_t j = 0; j < n_in; j++)
 		{
 			size_t j_dkg = j;
@@ -3504,6 +3505,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 			else
 				j_dkg = dkg->i;
+			idx2dkg[j] = j_dkg; // keep one-to-one mapping of indicies for later processing of $v_i$'s
+			dkg2idx[j_dkg] = j;
 			mpz_set_ui(beta_i[j], 1L);
 			for (std::vector<size_t>::iterator it = dkg->x_rvss->QUAL.begin(); it != dkg->x_rvss->QUAL.end(); ++it)
 			{
@@ -4090,7 +4093,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		for (size_t j = 0; j < n_in; j++)
 		{
 			if (std::find(ignore.begin(), ignore.end(), j) == ignore.end())
-				signers.push_back(j);
+				signers.push_back(idx2dkg[j]);
 		}
 		if (signers.size() < ((2 * t) + 1))
 		{
@@ -4121,22 +4124,22 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				if (*lt != *jt)
 					mpz_mul_ui(rhs, rhs, (*lt + 1)); // adjust index in computation
 			}
-			mpz_mul(lambda_j[*jt], rhs, lhs);
-			mpz_mod(lambda_j[*jt], lambda_j[*jt], q);
-			if (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end())
+			mpz_mul(lambda_j[dkg2idx[*jt]], rhs, lhs);
+			mpz_mod(lambda_j[dkg2idx[*jt]], lambda_j[dkg2idx[*jt]], q);
+			if (std::find(complaints.begin(), complaints.end(), dkg2idx[*jt]) == complaints.end())
 			{
-				mpz_mul(rhs, lambda_j[*jt], vv_i_vss[*jt]->sigma_i);
+				mpz_mul(rhs, lambda_j[dkg2idx[*jt]], vv_i_vss[dkg2idx[*jt]]->sigma_i);
 				mpz_mod(rhs, rhs, q);
 				mpz_add(foo, foo, rhs);
 				mpz_mod(foo, foo, q);
-				mpz_mul(rhs, lambda_j[*jt], vv_i_vss[*jt]->tau_i);
+				mpz_mul(rhs, lambda_j[dkg2idx[*jt]], vv_i_vss[dkg2idx[*jt]]->tau_i);
 				mpz_mod(rhs, rhs, q);
 				mpz_add(bar, bar, rhs);
 				mpz_mod(bar, bar, q);
 			}
 			else
 			{
-				mpz_mul(rhs, lambda_j[*jt], v_i[*jt]);
+				mpz_mul(rhs, lambda_j[dkg2idx[*jt]], v_i[dkg2idx[*jt]]);
 				mpz_mod(rhs, rhs, q);
 				mpz_add(foo, foo, rhs);
 				mpz_mod(foo, foo, q);
@@ -4181,22 +4184,22 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_set_ui(rhs, 1L);
 				for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
 				{
-					if (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end())
+					if (std::find(complaints.begin(), complaints.end(), dkg2idx[*jt]) == complaints.end())
 					{
 						mpz_set_ui(bar, 1L);
-						for (size_t k = 0; k < vv_i_vss[*jt]->A_j.size(); k++)
+						for (size_t k = 0; k < vv_i_vss[dkg2idx[*jt]]->A_j.size(); k++)
 						{
 							mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
-							mpz_powm(foo, vv_i_vss[*jt]->A_j[k], foo, p);
+							mpz_powm(foo, vv_i_vss[dkg2idx[*jt]]->A_j[k], foo, p);
 							mpz_mul(bar, bar, foo);
 							mpz_mod(bar, bar, p);
 						}	
 					}
 					else
 					{
-						mpz_fpowm(fpowm_table_g, bar, g, v_i[*jt], p);
+						mpz_fpowm(fpowm_table_g, bar, g, v_i[dkg2idx[*jt]], p);
 					}
-					mpz_powm(bar, bar, lambda_j[*jt], p); // include Lagrange multipliers
+					mpz_powm(bar, bar, lambda_j[dkg2idx[*jt]], p); // include Lagrange multipliers
 					mpz_mul(rhs, rhs, bar);
 					mpz_mod(rhs, rhs, p);
 				}
