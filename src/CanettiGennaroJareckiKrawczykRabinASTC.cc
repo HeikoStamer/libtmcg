@@ -3468,7 +3468,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_powm(r, a_dkg->y, foo, p);
 		mpz_mod(r, r, q);
 		err << "P_" << i_in << ": r = " << r << std::endl;
-
+// ==============================================================================================================================
 		// 2. Generate $s = k(m + xr) \bmod q$
 		//    To reconstruct $s = k(m + xr)$, players perform steps equivalent to Steps 1c-1f above, with the
 		//    values $m + x_i r$ taking the role of the $a_i$'s, and with $s$ taking the role of $\mu$. The
@@ -3483,14 +3483,31 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_mod(aprime_i, aprime_i, q);
 		mpz_add(aprime_i, aprime_i, m);
 		mpz_mod(aprime_i, aprime_i, q);
+		mpz_set_ui(foo, dkg->i); // broadcast index of this party from DKG
+		rbc->Broadcast(foo);
 		for (size_t j = 0; j < n_in; j++)
 		{
+			size_t j_dkg = j;
+			if (j != i_in)
+			{
+				if (!rbc->DeliverFrom(foo, j))
+				{
+					err << "P_" << i_in << ": WARNING: receiving foo failed for P_" << j << std::endl;
+				}
+				if (mpz_cmpabs_ui(foo, dkg->n) > 0)
+					err << "P_" << i_in << ": WARNING: bad foo received from P_" << j << std::endl;
+				else
+				{
+					j_dkg = mpz_get_ui(foo);
+					err << "P_" << i_in << ": Step 2. j_dkg = " << j_dkg << " for P_" << j << std::endl;
+				}
+			}
 			mpz_set_ui(beta_i[j], 1L);
 			for (std::vector<size_t>::iterator it = dkg->x_rvss->QUAL.begin(); it != dkg->x_rvss->QUAL.end(); ++it)
 			{
 				for (size_t k = 0; k <= dkg->x_rvss->t; k++)
 				{
-					mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
+					mpz_ui_pow_ui(foo, j_dkg + 1, k); // adjust index $j$ in computation
 					mpz_powm(bar, dkg->x_rvss->C_ik[*it][k], foo, p);
 					mpz_mul(beta_i[j], beta_i[j], bar);
 					mpz_mod(beta_i[j], beta_i[j], p);
