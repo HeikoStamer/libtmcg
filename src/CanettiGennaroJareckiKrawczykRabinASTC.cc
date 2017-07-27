@@ -4926,7 +4926,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			if (std::find(ignore.begin(), ignore.end(), j) == ignore.end())
 			{
 				signers.push_back(idx2dkg[j]);
-				err << "S_" << idx2dkg[j] << std::endl;
+				err << "S_" << idx2dkg[j] << " ";
 			}
 		}
 		err << std::endl;
