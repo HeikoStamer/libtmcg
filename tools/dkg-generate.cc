@@ -1042,13 +1042,13 @@ int main
 		GNUNET_GETOPT_option_uint('s',
 			"s-resilience",
 			NULL,
-			"resilience of threshold DSS (tDSS) protocol",
+			"resilience of threshold DSS protocol (signature scheme)",
 			&gnunet_opt_s_resilience
 		),
 		GNUNET_GETOPT_option_uint('t',
 			"t-resilience",
 			NULL,
-			"resilience of DKG protocol",
+			"resilience of DKG protocol (threshold decryption)",
 			&gnunet_opt_t_resilience
 		),
 		GNUNET_GETOPT_option_flag('V',
