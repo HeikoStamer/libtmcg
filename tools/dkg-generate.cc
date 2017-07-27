@@ -1023,19 +1023,19 @@ int main
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
 		GNUNET_GETOPT_option_uint('e',
 			"expiration",
-			NULL,
+			"TIME",
 			"expiration time of generated keys in seconds",
 			&gnunet_opt_keyexptime
 		),
 		GNUNET_GETOPT_option_string('g',
 			"group",
-			NULL,
+			"STRING",
 			"common reference string that defines the underlying DDH-hard group",
 			&gnunet_opt_crs
 		),
 		GNUNET_GETOPT_option_string('p',
 			"port",
-			NULL,
+			"STRING",
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
 		),
@@ -1058,7 +1058,7 @@ int main
 		),
 		GNUNET_GETOPT_option_uint('w',
 			"wait",
-			NULL,
+			"TIME",
 			"minutes to wait until start of DKG/tDSS protocol",
 			&gnunet_opt_wait
 		),

@@ -1952,7 +1952,7 @@ int main
 		),
 		GNUNET_GETOPT_option_string('p',
 			"port",
-			NULL,
+			"STRING",
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
 		),
@@ -1964,7 +1964,7 @@ int main
 		),
 		GNUNET_GETOPT_option_uint('w',
 			"wait",
-			NULL,
+			"TIME",
 			"minutes to wait until start of decryption",
 			&gnunet_opt_wait
 		),
@@ -2204,7 +2204,7 @@ int main
 		),
 		GNUNET_GETOPT_option_string('p',
 			"port",
-			NULL,
+			"STRING",
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
 		),
@@ -2215,7 +2215,7 @@ int main
 		),
 		GNUNET_GETOPT_option_uint('w',
 			"wait",
-			NULL,
+			"TIME",
 			"minutes to wait until start of decryption",
 			&gnunet_opt_wait
 		),
