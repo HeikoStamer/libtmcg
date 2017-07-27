@@ -4139,12 +4139,17 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        $v_1, \ldots, v_{2t+1}$ received in Step 1d. For the $v_j$'s that were exposed in
 		//        Step 1e, we use the constant sharing polynomial. Bad shares are detected using the
 		//        public commitments, and $\mu$ is reconstructed.
+		err << "P_" << i_in << ": signers (index from DKG) in Step 1f: ";
 		std::vector<size_t> signers;
 		for (size_t j = 0; j < n_in; j++)
 		{
 			if (std::find(ignore.begin(), ignore.end(), j) == ignore.end())
+			{
 				signers.push_back(idx2dkg[j]);
+				err << "S_" << idx2dkg[j] << " ";
+			}
 		}
+		err << std::endl;
 		if (signers.size() < ((2 * t) + 1))
 		{
 			err << "P_" << i_in << ": not enough cooperative players (< 2t+1) for signing" << std::endl;
@@ -4915,11 +4920,16 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Step 2e, we use the constant sharing polynomial. Bad shares are detected using the
 		//        public commitments, and $\mu$ is reconstructed.
 		signers.clear();
+		err << "P_" << i_in << ": signers (index from DKG) in Step 2f: ";
 		for (size_t j = 0; j < n_in; j++)
 		{
 			if (std::find(ignore.begin(), ignore.end(), j) == ignore.end())
+			{
 				signers.push_back(idx2dkg[j]);
+				err << "S_" << idx2dkg[j] << std::endl;
+			}
 		}
+		err << std::endl;
 		if (signers.size() < ((2 * t) + 1))
 		{
 			err << "P_" << i_in << ": not enough cooperative players (< 2t+1) for signing" << std::endl;
