@@ -4203,7 +4203,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		rbc->Broadcast(foo);
 		rbc->Broadcast(bar);
 		std::vector<size_t> parties;
-		parties.push_back(i_in); // shares of this player are always available
+		parties.push_back(idx2dkg[i_in]); // shares of this player are always available
 		mpz_set(shares[i_in], foo);
 		for (size_t j = 0; j < n_in; j++)
 		{
@@ -4262,7 +4262,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				if (mpz_cmp(lhs, rhs))
 					err << "P_" << i_in << ": bad share received from " << j << std::endl;
 				else
-					parties.push_back(j);
+					parties.push_back(idx2dkg[j]);
 			}
 		}
 		// check whether enough shares (i.e. $t + 1$) have been collected
@@ -4304,7 +4304,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 			mpz_mul(rhs, rhs, lhs);
 			mpz_mod(rhs, rhs, q);
-			mpz_mul(rhs, rhs, shares[*jt]); // use the provided shares (interpolation points)
+			mpz_mul(rhs, rhs, shares[dkg2idx[*jt]]); // use the provided shares (interpolation points)
 			mpz_mod(rhs, rhs, q);
 			mpz_add(mu, mu, rhs);
 			mpz_mod(mu, mu, q);
@@ -4983,7 +4983,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		rbc->Broadcast(foo);
 		rbc->Broadcast(bar);
 		parties.clear();
-		parties.push_back(i_in); // shares of this player are always available
+		parties.push_back(idx2dkg[i_in]); // shares of this player are always available
 		mpz_set(shares[i_in], foo);
 		for (size_t j = 0; j < n_in; j++)
 		{
@@ -5042,7 +5042,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				if (mpz_cmp(lhs, rhs))
 					err << "P_" << i_in << ": bad share  (in Step 2f) received from " << j << std::endl;
 				else
-					parties.push_back(j);
+					parties.push_back(idx2dkg[j]);
 			}
 		}
 		// check whether enough shares (i.e. $t + 1$) have been collected
@@ -5084,7 +5084,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 			mpz_mul(rhs, rhs, lhs);
 			mpz_mod(rhs, rhs, q);
-			mpz_mul(rhs, rhs, shares[*jt]); // use the provided shares (interpolation points)
+			mpz_mul(rhs, rhs, shares[dkg2idx[*jt]]); // use the provided shares (interpolation points)
 			mpz_mod(rhs, rhs, q);
 			mpz_add(s, s, rhs);
 			mpz_mod(s, s, q);
