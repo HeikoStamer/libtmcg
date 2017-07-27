@@ -77,6 +77,9 @@ function of GNUnet. Thus this program has to be compiled accordingly.
 \fB\-c\fR, \fB\-\-config\fR=\fI\,FILENAME\/\fR
 use GNUnet configuration file FILENAME
 .TP
+\fB\-e\fR, \fB\-\-expiration\fR=\fI,TIME\/\fR
+expiration time of generated keys in seconds
+.TP
 \fB\-g\fR, \fB\-\-group\fR
 common reference string that defines the underlying DDH-hard group
 .TP
@@ -109,7 +112,10 @@ minutes to wait until start of DKG/tDSS protocol
 
 .SH "SECURITY"
 The current implementation is in experimental state and should NOT
-be used in production environments.
+be used in production environments. Note that for key generation
+a lot of good randomness is required. Please ensure that your
+system can provide these randomness without exceeding protocol
+timeouts.
 
 .SH "REPORTING BUGS"
 Security vulnerabilities or cryptographic complaints should be reported
@@ -140,5 +146,6 @@ main DKG protocol is started, because establishing a CADET channel with GNUnet m
 
 .SH "SEE ALSO"
 .BR dkg\-encrypt (1),
-.BR dkg\-decrypt (1)
+.BR dkg\-decrypt (1),
+.BR dkg\-sign (1)
 
