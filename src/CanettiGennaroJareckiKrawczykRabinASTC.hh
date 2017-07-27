@@ -100,6 +100,11 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);
+		bool Share
+			(std::map<size_t, size_t> &idx2dkg,
+			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err,
+			const bool simulate_faulty_behaviour = false);
 		bool Reconstruct
 			(const std::vector<size_t> &complaints,
 			std::vector<mpz_ptr> &a_i_in,
@@ -195,6 +200,11 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 			(mpz_srcptr a) const;
 		bool Generate
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err,
+			const bool simulate_faulty_behaviour = false);
+		bool Generate
+			(std::map<size_t, size_t> &idx2dkg,
+			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);
 		~CanettiGennaroJareckiKrawczykRabinDKG

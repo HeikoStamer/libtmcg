@@ -434,6 +434,196 @@ bool PedersenVSS::Share
 }
 
 bool PedersenVSS::Share
+	(mpz_srcptr sigma, std::map<size_t, size_t> &idx2dkg,
+	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour)
+{
+	assert(t <= n);
+	assert(i < n);
+	assert(n == rbc->n);
+	assert(n == aiou->n);
+	assert(i == rbc->j);
+	assert(i == aiou->j);
+
+	// checking maximum synchronous t-resilience
+	if ((2 * t) >= n)
+		err << "VSS(" << label << "): WARNING: maximum synchronous t-resilience exceeded" << std::endl;
+
+	// initialize
+	mpz_t foo, bar;
+	
+	size_t complaints_counter = 0;
+	std::vector<size_t> complaints_from;
+	mpz_init(foo), mpz_init(bar);
+	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+	size_t simulate_faulty_randomizer2 = mpz_wrandom_ui() % 2L;
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "PedersenVSS::Share()" << p << q << g << h << n << t << i << label;
+	rbc->setID(myID.str());
+
+	try
+	{
+		// The dealer first chooses two $t$-degree polynomials $f(z) = \sum_j a_j z^j$
+		// and $f\prime(z) = \sum_j b_j z^j$ with random coefficients subject to
+		// $f(0) = \sigma$ and sends to each player $P_i$ the values $\sigma_i = f(i)$
+		// and $\tau_i = f\prime(i) \bmod q$. The dealer commits to each coefficient
+		// of the polynomials $f$ and $f\prime$ by publishing the values
+		// $A_j = g^{a_j} h^{b_j} \bmod p$.
+		for (size_t j = 0; j <= t; j++)
+		{
+			if (use_very_strong_randomness)
+			{
+				if (j == 0)
+					mpz_set(a_j[j], sigma);
+				else
+					mpz_ssrandomm(a_j[j], q);
+				mpz_ssrandomm(b_j[j], q);
+			}
+			else
+			{
+				if (j == 0)
+					mpz_set(a_j[j], sigma);
+				else
+					mpz_srandomm(a_j[j], q);
+				mpz_srandomm(b_j[j], q);
+			}
+			mpz_fspowm(fpowm_table_g, foo, g, a_j[j], p);
+			mpz_fspowm(fpowm_table_h, bar, h, b_j[j], p);
+			mpz_mul(A_j[j], foo, bar);
+			mpz_mod(A_j[j], A_j[j], p);
+			rbc->Broadcast(A_j[j]);
+		} 
+		// The dealer sends $\sigma_i$ and $\tau_i$ to each player $P_i$.
+		for (size_t j = 0; j < n; j++)
+		{
+			if (j != i)
+			{
+				mpz_set_ui(sigma_i, 0L);
+				mpz_set_ui(tau_i, 0L);
+				for (size_t k = 0; k <= t; k++)
+				{
+					mpz_ui_pow_ui(foo, idx2dkg[j] + 1, k); // adjust index $j$ in computation
+					mpz_mul(bar, foo, b_j[k]);
+					mpz_mod(bar, bar, q);
+					mpz_mul(foo, foo, a_j[k]);
+					mpz_mod(foo, foo, q);
+					mpz_add(sigma_i, sigma_i, foo);
+					mpz_mod(sigma_i, sigma_i, q);				
+					mpz_add(tau_i, tau_i, bar);
+					mpz_mod(tau_i, tau_i, q);
+				}
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer && (mpz_wrandom_ui() % 2L))
+					mpz_add_ui(sigma_i, sigma_i, 1L);
+				if (!aiou->Send(sigma_i, j, 0))
+				{
+					err << "VSS(" << label << "): P_" << i << ": sending sigma_i failed for P_" << j << std::endl;
+					continue;
+				}
+				if (!aiou->Send(tau_i, j, 0))
+					err << "VSS(" << label << "): P_" << i << ": sending tau_i failed for P_" << j << std::endl;
+			}
+		}
+		// As in Feldman's VSS the players who hold shares that do not satisfy the
+		// above equation broadcast a complaint. If more than $t$ players complain
+		// the dealer is disqualified. Otherwise the dealer broadcasts the values
+		// $\sigma_i$ and $\tau_i$ matching the above equation for each complaining
+		// player $P_i$.
+		complaints_from.clear(); // reset
+		for (size_t j = 0; j < n; j++)
+		{
+			if (j != i)
+			{
+				size_t who;
+				size_t cnt = 0;
+				std::map<size_t, bool> dup;
+				do
+				{
+					if (!rbc->DeliverFrom(foo, j))
+					{
+						err << "VSS(" << label << "): P_" << i << ": receiving who failed from P_" << j << std::endl;
+						break;
+					}
+					who = mpz_get_ui(foo);
+					if ((who < n) && (who == i) && !dup.count(j))
+					{
+						err << "VSS(" << label << "): P_" << i << ": receiving complaint against me from P_" << j << std::endl;
+						complaints_counter++;
+						dup.insert(std::pair<size_t, bool>(j, true)); // mark as counted for $P_j$
+						complaints_from.push_back(j);
+					}
+					else if (who < n)
+						err << "VSS(" << label << "): P_" << i << ": bad complaint against P_" << who << " from P_" << j << std::endl;
+					cnt++;
+				}
+				while ((who < n) && (cnt <= n)); // until end marker received
+			}
+		}
+		err << "VSS(" << label << "): P_" << i << ": complaints_counter = " << complaints_counter << std::endl;
+		if (complaints_counter > t)
+			throw false;
+		else if (complaints_counter > 0)
+		{
+			std::sort(complaints_from.begin(), complaints_from.end());
+			err << "VSS(" << label << "): P_" << i << ": there are " << complaints_counter << " complaints against me from ";
+			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
+				err << "P_" << *it << " ";
+			err << std::endl;
+			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
+			{
+				mpz_set_ui(foo, *it); // who?
+				rbc->Broadcast(foo);
+				mpz_set_ui(sigma_i, 0L);
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer2 && (mpz_wrandom_ui() % 2L))
+					mpz_add_ui(sigma_i, sigma_i, 1L);
+				mpz_set_ui(tau_i, 0L);
+				for (size_t k = 0; k <= t; k++)
+				{
+					mpz_ui_pow_ui(foo, idx2dkg[*it] + 1, k); // adjust index $j$ in computation
+					mpz_mul(bar, foo, b_j[k]);
+					mpz_mod(bar, bar, q);
+					mpz_mul(foo, foo, a_j[k]);
+					mpz_mod(foo, foo, q);
+					mpz_add(sigma_i, sigma_i, foo);
+					mpz_mod(sigma_i, sigma_i, q);				
+					mpz_add(tau_i, tau_i, bar);
+					mpz_mod(tau_i, tau_i, q);
+				}
+				rbc->Broadcast(sigma_i);
+				rbc->Broadcast(tau_i);
+			}
+			err << "VSS(" << label << "): P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
+		}
+		// compute own shares of dealer $P_i$
+		mpz_set_ui(sigma_i, 0L);
+		mpz_set_ui(tau_i, 0L);
+		for (size_t k = 0; k <= t; k++)
+		{
+			mpz_ui_pow_ui(foo, idx2dkg[i] + 1, k); // adjust index $i$ in computation
+			mpz_mul(bar, foo, b_j[k]);
+			mpz_mod(bar, bar, q);
+			mpz_mul(foo, foo, a_j[k]);
+			mpz_mod(foo, foo, q);
+			mpz_add(sigma_i, sigma_i, foo);
+			mpz_mod(sigma_i, sigma_i, q);				
+			mpz_add(tau_i, tau_i, bar);
+			mpz_mod(tau_i, tau_i, q);
+		}
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// unset ID for RBC
+		rbc->unsetID();
+		// release
+		mpz_clear(foo), mpz_clear(bar);
+		// return
+		return return_value;
+	}
+}
+
+bool PedersenVSS::Share
 	(size_t dealer,
 	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour)
@@ -644,6 +834,255 @@ bool PedersenVSS::Share
 				for (size_t j = 0; j <= t; j++)
 				{
 					mpz_ui_pow_ui(foo, who + 1, j); // adjust index $i$ in computation
+					mpz_powm(bar, A_j[j], foo , p);
+					mpz_mul(rhs, rhs, bar);
+					mpz_mod(rhs, rhs, p);
+				}
+				// check equation (2)
+				if (mpz_cmp(lhs, rhs))
+				{
+					err << "VSS(" << label << "): P_" << i << ": checking equation (2) failed; complaint against dealer P_" << dealer << std::endl;
+					complaints.push_back(dealer);
+				}
+				else if (who == i)
+				{
+					err << "VSS(" << label << "): P_" << i << ": shares have been adjusted by public values" << std::endl;
+					mpz_set(sigma_i, s);
+					mpz_set(tau_i, sprime);
+				}
+				mpz_clear(s), mpz_clear(sprime);
+			}
+			std::sort(complaints.begin(), complaints.end());
+			std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
+			complaints.resize(std::distance(complaints.begin(), it));
+			if (complaints.size() > 0)
+				throw false;
+		}
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// unset ID for RBC
+		rbc->unsetID();
+		// release
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
+		// return
+		return return_value;
+	}
+}
+
+bool PedersenVSS::Share
+	(size_t dealer, std::map<size_t, size_t> &idx2dkg,
+	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour)
+{
+	assert(t <= n);
+	assert(i < n);
+	assert(dealer < n);
+	assert(n == rbc->n);
+	assert(n == aiou->n);
+	assert(i == rbc->j);
+	assert(i == aiou->j);
+
+	// checking maximum synchronous t-resilience
+	if ((2 * t) >= n)
+		err << "VSS(" << label << "): WARNING: maximum synchronous t-resilience exceeded" << std::endl;
+
+	// initialize
+	mpz_t foo, bar, lhs, rhs;
+	std::vector<size_t> complaints, complaints_from;
+	size_t complaints_counter = 0;
+	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "PedersenVSS::Share()" << p << q << g << h << n << t << dealer << label;
+	rbc->setID(myID.str());
+
+	try
+	{
+		// The dealer commits to each coefficient of the polynomials $f$ and
+		// $f\prime$ by publishing the values $A_j = g^{a_j} h^{b_j} \bmod p$.
+		for (size_t j = 0; j <= t; j++)
+		{
+			if (!rbc->DeliverFrom(A_j[j], dealer))
+			{
+				err << "VSS(" << label << "): P_" << i << ": receiving A_j failed; complaint against dealer P_" << dealer << std::endl;
+				complaints.push_back(dealer);
+				break;
+			}
+		}
+		// This allows the players to verify the received shares by checking that
+		// $g^{\sigma_i} h^{\tau_i} = \prod_{j} (A_j)^{i^j} \bmod p$.
+		if (!aiou->Receive(sigma_i, dealer, aiou->aio_scheduler_direct))
+		{
+			err << "VSS(" << label << "): P_" << i << ": receiving sigma_i failed; complaint against dealer P_" << dealer << std::endl;
+			complaints.push_back(dealer);
+		}
+		if (mpz_cmpabs(sigma_i, q) >= 0)
+		{
+			err << "VSS(" << label << "): P_" << i << ": bad sigma_i received; complaint against dealer P_" << dealer << std::endl;
+			complaints.push_back(dealer);
+			mpz_set_ui(sigma_i, 0L); // indicates an error
+		}
+		if (!aiou->Receive(tau_i, dealer, aiou->aio_scheduler_direct))
+		{
+			err << "VSS(" << label << "): P_" << i << ": receiving tau_i failed; complaint against dealer P_" << dealer << std::endl;
+			complaints.push_back(dealer);
+		}
+		if (mpz_cmpabs(tau_i, q) >= 0)
+		{
+			err << "VSS(" << label << "): P_" << i << ": bad tau_i received; complaint against dealer P_" << dealer << std::endl;
+			complaints.push_back(dealer);
+			mpz_set_ui(tau_i, 0L); // indicates an error
+		}
+		// compute LHS for the check
+		mpz_fspowm(fpowm_table_g, foo, g, sigma_i, p);
+		mpz_fspowm(fpowm_table_h, bar, h, tau_i, p);
+		mpz_mul(lhs, foo, bar);
+		mpz_mod(lhs, lhs, p);
+		// compute RHS for the check
+		mpz_set_ui(rhs, 1L);
+		for (size_t j = 0; j <= t; j++)
+		{
+			if (!CheckElement(A_j[j]))
+			{
+				err << "VSS(" << label << "): P_" << i << ": bad A_j received; complaint against dealer P_" << dealer << std::endl;
+				complaints.push_back(dealer);
+				break;
+			}
+			mpz_ui_pow_ui(foo, idx2dkg[i] + 1, j); // adjust index $i$ in computation
+			mpz_powm(bar, A_j[j], foo, p);
+			mpz_mul(rhs, rhs, bar);
+			mpz_mod(rhs, rhs, p);
+		}
+		// check equation (2)
+		if (mpz_cmp(lhs, rhs))
+		{
+			err << "VSS(" << label << "): P_" << i << ": checking share with equation (2) failed; complaint against dealer P_" << dealer << std::endl;
+			complaints.push_back(dealer);
+		}
+		// As in Feldman's VSS the players who hold shares that do not satisfy the
+		// above equation broadcast a complaint. If more than $t$ players complain
+		// the dealer is disqualified. Otherwise the dealer broadcasts the values
+		// $\sigma_i$ and $\tau_i$ matching the above equation for each complaining
+		// player $P_i$.
+		std::sort(complaints.begin(), complaints.end());
+		std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
+		complaints.resize(std::distance(complaints.begin(), it));
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+		{
+			err << "VSS(" << label << "): P_" << i << ": broadcast complaint against dealer P_" << *it << std::endl;
+			mpz_set_ui(rhs, *it);
+			rbc->Broadcast(rhs);
+		}
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer)
+		{
+			err << "VSS(" << label << "): P_" << i << ": broadcast false complaint against dealer P_" << dealer << std::endl;
+			mpz_set_ui(rhs, dealer);
+			rbc->Broadcast(rhs);
+		}
+		mpz_set_ui(rhs, n); // broadcast end marker
+		rbc->Broadcast(rhs);
+		complaints.clear(), complaints_from.clear(); // reset
+		for (size_t j = 0; j < n; j++)
+		{
+			if ((j != i) && (j != dealer))
+			{
+				size_t who;
+				size_t cnt = 0;
+				std::map<size_t, bool> dup;
+				do
+				{
+					if (!rbc->DeliverFrom(rhs, j))
+					{
+						err << "VSS(" << label << "): P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
+						complaints.push_back(j);
+						break;
+					}
+					who = mpz_get_ui(rhs);
+					if ((who < n) && (who == dealer) && !dup.count(j))
+					{
+						err << "VSS(" << label << "): P_" << i << ": receiving complaint against dealer P_" << dealer << " from P_" << j << std::endl;
+						complaints_counter++;
+						dup.insert(std::pair<size_t, bool>(j, true)); // mark as counted for $P_j$
+						complaints_from.push_back(j);
+					}
+					else if ((who < n))
+					{
+						err << "VSS(" << label << "): P_" << i << ": bad complaint against P_" << who << " from P_" << j << std::endl;
+						complaints.push_back(j);
+					}
+					cnt++;
+				}
+				while ((who < n) && (cnt <= n)); // until end marker received
+			}
+		}
+		err << "VSS(" << label << "): P_" << i << ": complaints_counter = " << complaints_counter << std::endl;
+		if (complaints_counter > t)
+			throw false;
+		else if (complaints_counter > 0)
+		{
+			complaints.clear(); // reset
+			std::sort(complaints_from.begin(), complaints_from.end());
+			err << "VSS(" << label << "): P_" << i << ": there are " << complaints_counter << " complaints against dealer from ";
+			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
+				err << "P_" << *it << " ";
+			err << std::endl;
+			err << "VSS(" << label << "): P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
+			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
+			{
+				if (!rbc->DeliverFrom(lhs, dealer))
+				{
+					err << "VSS(" << label << "): P_" << i << ": receiving who failed; complaint against dealer P_" << dealer << std::endl;
+					complaints.push_back(dealer);
+					break;
+				}
+				size_t who = mpz_get_ui(lhs);
+				if ((who >= n) || (who != *it))
+				{
+					err << "VSS(" << label << "): P_" << i << ": bad who value; complaint against dealer P_" << dealer << std::endl;
+					complaints.push_back(dealer);
+					break;
+				}
+				if (!rbc->DeliverFrom(foo, dealer))
+				{
+					err << "VSS(" << label << "): P_" << i << ": receiving foo failed; complaint against dealer P_" << dealer << std::endl;
+					complaints.push_back(dealer);
+					break;
+				}
+				if (mpz_cmpabs(foo, q) >= 0)
+				{
+					err << "VSS(" << label << "): P_" << i << ": bad foo received; complaint against dealer P_" << dealer << std::endl;
+					complaints.push_back(dealer);
+					mpz_set_ui(foo, 0L); // indicates an error
+				}
+				if (!rbc->DeliverFrom(bar, dealer))
+				{
+					err << "VSS(" << label << "): P_" << i << ": receiving bar failed; complaint against dealer P_" << dealer << std::endl;
+					complaints.push_back(dealer);
+					break;
+				}
+				if (mpz_cmpabs(bar, q) >= 0)
+				{
+					err << "VSS(" << label << "): P_" << i << ": bad bar received; complaint against dealer P_" << dealer << std::endl;
+					complaints.push_back(dealer);
+					mpz_set_ui(bar, 0L); // indicates an error
+				}
+				mpz_t s, sprime;
+				mpz_init_set(s, foo), mpz_init_set(sprime, bar);
+				// compute LHS for the check
+				mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+				mpz_fpowm(fpowm_table_h, bar, h, bar, p);
+				mpz_mul(lhs, foo, bar);
+				mpz_mod(lhs, lhs, p);
+				// compute RHS for the check
+				mpz_set_ui(rhs, 1L);
+				for (size_t j = 0; j <= t; j++)
+				{
+					mpz_ui_pow_ui(foo, idx2dkg[who] + 1, j); // adjust index $i$ in computation
 					mpz_powm(bar, A_j[j], foo , p);
 					mpz_mul(rhs, rhs, bar);
 					mpz_mod(rhs, rhs, p);

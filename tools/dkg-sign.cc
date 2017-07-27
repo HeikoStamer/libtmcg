@@ -726,7 +726,7 @@ void release_mpis
 }
 
 void run_instance
-	(size_t whoami, const time_t sigtime, const size_t num_xtests)
+	(size_t whoami, const time_t sigtime, const time_t sigexptime, const size_t num_xtests)
 {
 	// read and parse the private key
 	std::string thispeer = peers[whoami];
@@ -846,7 +846,7 @@ void run_instance
 
 	// compute the hash of the input file
 	tmcg_octets_t trailer, hash, left;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, hashalgo, csigtime, keyid, trailer);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, hashalgo, csigtime, sigexptime, keyid, trailer);
 	if (!CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash(opt_ifilename, trailer, hashalgo, hash, left))
 	{
 		std::cerr << "P_" << whoami << ": BinaryDocumentHash() failed; cannot process input file \"" << opt_ifilename << "\"" << std::endl;
@@ -1009,6 +1009,7 @@ void run_instance
 }
 
 #ifdef GNUNET
+unsigned int gnunet_opt_sigexptime = 0;
 unsigned int gnunet_opt_xtests = 0;
 #endif
 
@@ -1024,9 +1025,9 @@ void fork_instance
 			/* BEGIN child code: participant P_i */
 			time_t sigtime = time(NULL);
 #ifdef GNUNET
-			run_instance(whoami, sigtime, gnunet_opt_xtests);
+			run_instance(whoami, sigtime, gnunet_opt_sigexptime, gnunet_opt_xtests);
 #else
-			run_instance(whoami, sigtime, 0);
+			run_instance(whoami, sigtime, 0, 0);
 #endif
 			if (opt_verbose)
 				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
@@ -1063,6 +1064,12 @@ int main
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
 		GNUNET_GETOPT_option_cfgfile(&cfg_fn),
 		GNUNET_GETOPT_option_help(about),
+		GNUNET_GETOPT_option_uint('e',
+			"expiration",
+			NULL,
+			"expiration time of generated signature in seconds",
+			&gnunet_opt_sigexptime
+		),
 		GNUNET_GETOPT_option_string('i',
 			"input",
 			"FILENAME",
@@ -1211,6 +1218,12 @@ int main
 	// start interactive variant with GNUnet or otherwise a local test
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption myoptions[] = {
+		GNUNET_GETOPT_option_uint('e',
+			"expiration",
+			NULL,
+			"expiration time of generated signature in seconds",
+			&gnunet_opt_sigexptime
+		),
 		GNUNET_GETOPT_option_string('i',
 			"input",
 			"FILENAME",

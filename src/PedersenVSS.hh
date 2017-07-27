@@ -100,7 +100,17 @@ class PedersenVSS
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);
 		bool Share
+			(mpz_srcptr sigma, std::map<size_t, size_t> &idx2dkg,
+			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err,
+			const bool simulate_faulty_behaviour = false);
+		bool Share
 			(size_t dealer,
+			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err,
+			const bool simulate_faulty_behaviour = false);
+		bool Share
+			(size_t dealer, std::map<size_t, size_t> &idx2dkg,
 			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);

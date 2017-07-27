@@ -996,11 +996,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
-	(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, const time_t sigtime,
-	 const tmcg_octets_t &flags, const tmcg_octets_t &issuer, tmcg_octets_t &out)
+	(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo,
+	 const time_t sigtime, const time_t keyexptime, 
+	 const tmcg_octets_t &flags, const tmcg_octets_t &issuer, 
+	 tmcg_octets_t &out)
 {
 	size_t subpkts = 6;
-	size_t subpktlen = (subpkts * 6) + 4 + flags.size() + issuer.size() + 3;
+	size_t subpktlen = (subpkts * 6) + 4 + flags.size() + issuer.size() + 1 + 1 + 1;
+	if (keyexptime != 0)
+		subpktlen += (6 + 4);
 	out.push_back(4); // V4 format
 	out.push_back(sigtype); // type (e.g. 0x13 UID cert., 0x18 subkey bind.)
 	out.push_back(17); // public-key algorithm: DSA
@@ -1014,6 +1018,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		SubpacketEncode(2, false, subpkt_sigtime, out);
 		// key flags
 		SubpacketEncode(27, false, flags, out);
+		// key expiration time
+		if (keyexptime != 0)
+		{
+			tmcg_octets_t subpkt_keyexptime;
+			PacketTimeEncode(keyexptime, subpkt_keyexptime);
+			SubpacketEncode(9, false, subpkt_keyexptime, out);
+		}
 		// issuer
 		SubpacketEncode(16, false, issuer, out);
 		// preferred symmetric algorithms
@@ -1031,11 +1042,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
-	(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, const time_t sigtime,
-	 const tmcg_octets_t &issuer, tmcg_octets_t &out)
+	(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, 
+	 const time_t sigtime, const time_t sigexptime, 
+	 const tmcg_octets_t &issuer, 
+	 tmcg_octets_t &out)
 {
 	size_t subpkts = 2;
 	size_t subpktlen = (subpkts * 6) + 4 + issuer.size();
+	if (sigexptime != 0)
+		subpktlen += (6 + 4);
 	out.push_back(4); // V4 format
 	out.push_back(sigtype); // type (e.g. 0x00 Binary Document)
 	out.push_back(17); // public-key algorithm: DSA
@@ -1047,6 +1062,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 		tmcg_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
 		SubpacketEncode(2, false, subpkt_sigtime, out);
+		// signature expiration time
+		if (sigexptime != 0)
+		{
+			tmcg_octets_t subpkt_sigexptime;
+			PacketTimeEncode(sigexptime, subpkt_sigexptime);
+			SubpacketEncode(3, false, subpkt_sigexptime, out);
+		}
 		// issuer
 		SubpacketEncode(16, false, issuer, out);
 }

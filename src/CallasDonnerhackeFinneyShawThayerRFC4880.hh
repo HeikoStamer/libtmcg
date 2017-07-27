@@ -265,12 +265,13 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void PacketSigPrepareSelfSignature
 			(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, 
-			 const time_t sigtime,
+			 const time_t sigtime, const time_t keyexptime,
 			 const tmcg_octets_t &flags, const tmcg_octets_t &issuer, 
 			 tmcg_octets_t &out);
 		static void PacketSigPrepareDetachedSignature
 			(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, 
-			 const time_t sigtime, const tmcg_octets_t &issuer, 
+			 const time_t sigtime, const time_t sigexptime,
+			 const tmcg_octets_t &issuer, 
 			 tmcg_octets_t &out);
 		static void PacketPubEncode
 			(const time_t keytime, const tmcg_byte_t algo,

@@ -48,7 +48,7 @@ bool				instance_forked = false;
 int 				opt_verbose = 0;
 
 void run_instance
-	(const size_t whoami, const time_t keytime, const size_t num_xtests)
+	(const size_t whoami, const time_t keytime, const time_t keyexptime, const size_t num_xtests)
 {
 	// create communication handles for all players
 	std::vector<int> uP_in, uP_out, bP_in, bP_out;
@@ -496,7 +496,7 @@ void run_instance
 		dsaflags.push_back(0x01 | 0x02 | 0x20); // key may be used to certify other keys, to sign data, and for authentication
 		sigtime = time(NULL); // current time
 	}
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature(0x13, hashalgo, sigtime, dsaflags, keyid, uidsig_hashing); // positive certification (0x13) of uid and pub
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature(0x13, hashalgo, sigtime, keyexptime, dsaflags, keyid, uidsig_hashing); // positive certification (0x13) of uid and pub
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, u, uidsig_hashing, hashalgo, hash, uidsig_left);
 	if (S > 0)
@@ -639,7 +639,7 @@ void run_instance
 		sigtime = ckeytime; // use common key creation time as OpenPGP signature creation time
 	else
 		sigtime = time(NULL); // current time
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature(0x18, hashalgo, sigtime, elgflags, keyid, subsig_hashing); // Subkey Binding Signature (0x18) of sub
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature(0x18, hashalgo, sigtime, keyexptime, elgflags, keyid, subsig_hashing); // Subkey Binding Signature (0x18) of sub
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
 	hash.clear();
@@ -872,6 +872,7 @@ void run_instance
 char *gnunet_opt_crs = NULL;
 unsigned int gnunet_opt_t_resilience = 0;
 unsigned int gnunet_opt_s_resilience = MAX_N;
+unsigned int gnunet_opt_keyexptime = 0;
 unsigned int gnunet_opt_xtests = 0;
 #endif
 
@@ -903,9 +904,9 @@ void fork_instance
 			/* BEGIN child code: participant P_i */
 			time_t keytime = time(NULL);
 #ifdef GNUNET
-			run_instance(whoami, keytime, gnunet_opt_xtests);
+			run_instance(whoami, keytime, gnunet_opt_keyexptime, gnunet_opt_xtests);
 #else
-			run_instance(whoami, keytime, 0);
+			run_instance(whoami, keytime, 0, 0);
 #endif
 			if (opt_verbose)
 				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
@@ -966,7 +967,7 @@ int main
 			// ignore options
 			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-t") == 0) || (arg.find("-w") == 0) || 
 				(arg.find("-L") == 0) || (arg.find("-l") == 0) || (arg.find("-g") == 0) || (arg.find("-x") == 0) ||
-				(arg.find("-s") == 0))
+				(arg.find("-s") == 0) || (arg.find("-e") == 0))
 			{
 				i++;
 				continue;
@@ -1020,6 +1021,12 @@ int main
 
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
+		GNUNET_GETOPT_option_uint('e',
+			"expiration",
+			NULL,
+			"expiration time of generated keys in seconds",
+			&gnunet_opt_keyexptime
+		),
 		GNUNET_GETOPT_option_string('g',
 			"group",
 			NULL,
