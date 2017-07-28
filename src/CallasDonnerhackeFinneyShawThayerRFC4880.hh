@@ -273,6 +273,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const time_t sigtime, const time_t sigexptime,
 			 const tmcg_octets_t &issuer, 
 			 tmcg_octets_t &out);
+		static void PacketSigPrepareRevocationSignature
+			(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, 
+			 const time_t sigtime, const tmcg_byte_t revcode,
+			 const std::string &reason, const tmcg_octets_t &issuer, 
+			 tmcg_octets_t &out);
 		static void PacketPubEncode
 			(const time_t keytime, const tmcg_byte_t algo,
 			 const gcry_mpi_t p, const gcry_mpi_t q,
@@ -334,6 +339,10 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static void SubkeyBindingHash
 			(const tmcg_octets_t &primary, const tmcg_octets_t &subkey,
+			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
+			 tmcg_octets_t &hash, tmcg_octets_t &left);
+		static void KeyRevocationHash
+			(const tmcg_octets_t &key,
 			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
 			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static gcry_error_t SymmetricEncryptAES256

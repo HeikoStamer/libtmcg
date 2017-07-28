@@ -1002,7 +1002,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 	 tmcg_octets_t &out)
 {
 	size_t subpkts = 6;
-	size_t subpktlen = (subpkts * 6) + 4 + flags.size() + issuer.size() + 1 + 1 + 1;
+	size_t subpktlen = (subpkts * 6) + 4 + 1 + issuer.size() + 1 + 1 + flags.size();
 	if (keyexptime != 0)
 		subpktlen += (6 + 4);
 	out.push_back(4); // V4 format
@@ -1016,8 +1016,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		tmcg_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
 		SubpacketEncode(2, false, subpkt_sigtime, out);
-		// key flags
-		SubpacketEncode(27, false, flags, out);
 		// key expiration time
 		if (keyexptime != 0)
 		{
@@ -1025,12 +1023,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 			PacketTimeEncode(keyexptime, subpkt_keyexptime);
 			SubpacketEncode(9, false, subpkt_keyexptime, out);
 		}
-		// issuer
-		SubpacketEncode(16, false, issuer, out);
 		// preferred symmetric algorithms
 		tmcg_octets_t psa;
 		psa.push_back(9); // AES256
 		SubpacketEncode(11, false, psa, out);
+		// issuer
+		SubpacketEncode(16, false, issuer, out);
 		// preferred hash algorithms
 		tmcg_octets_t pha;
 		pha.push_back(8); // SHA256
@@ -1039,6 +1037,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		tmcg_octets_t pca;
 		pca.push_back(0); // uncompressed
 		SubpacketEncode(22, false, pca, out);
+		// key flags
+		SubpacketEncode(27, false, flags, out);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
@@ -1071,6 +1071,36 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 		}
 		// issuer
 		SubpacketEncode(16, false, issuer, out);
+}
+
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature
+	(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, 
+	 const time_t sigtime, const tmcg_byte_t revcode,
+	 const std::string &reason, const tmcg_octets_t &issuer, 
+	 tmcg_octets_t &out)
+{
+	size_t subpkts = 3;
+	size_t subpktlen = (subpkts * 6) + 4 + issuer.size() + 1 + reason.length();
+	out.push_back(4); // V4 format
+	out.push_back(sigtype); // type (e.g. 0x20 key revocation, 0x28 subkey revocation)
+	out.push_back(17); // public-key algorithm: DSA
+	out.push_back(hashalgo); // hash algorithm
+	// hashed subpacket area
+	out.push_back(subpktlen >> 8); // length of hashed subpacket data
+	out.push_back(subpktlen);
+		// signature creation time
+		tmcg_octets_t subpkt_sigtime;
+		PacketTimeEncode(sigtime, subpkt_sigtime);
+		SubpacketEncode(2, false, subpkt_sigtime, out);
+		// issuer
+		SubpacketEncode(16, false, issuer, out);
+		// reason for revocation
+		tmcg_octets_t subpkt_reason;
+		subpkt_reason.push_back(revcode); // machine-readable code
+		for (size_t i = 0; i < reason.length(); i++)
+			subpkt_reason.push_back(reason[i]);
+		SubpacketEncode(29, false, subpkt_reason, out);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
@@ -2768,6 +2798,46 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 	hash_input.push_back(subkey.size() >> 8);
 	hash_input.push_back(subkey.size());
 	hash_input.insert(hash_input.end(), subkey.begin(), subkey.end());
+	// Once the data body is hashed, then a trailer is hashed. [...]
+	// A V4 signature hashes the packet body starting from its first
+	// field, the version number, through the end of the hashed subpacket
+	// data. Thus, the fields hashed are the signature version, the
+	// signature type, the public-key algorithm, the hash algorithm,
+	// the hashed subpacket length, and the hashed subpacket body.
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// V4 signatures also hash in a final trailer of six octets: the
+	// version of the Signature packet, i.e., 0x04; 0xFF; and a four-octet,
+	// big-endian number that is the length of the hashed data from the
+	// Signature packet (note that this number does not include these final
+	// six octets).
+	hash_input.push_back(0x04);
+	PacketLengthEncode(trailer.size(), hash_input);
+	// After all this has been hashed in a single hash context, the
+	// resulting hash field is used in the signature algorithm and placed
+	// at the end of the Signature packet.
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; i < 2; i++)
+		left.push_back(hash[i]);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash
+	(const tmcg_octets_t &key, const tmcg_octets_t &trailer,
+	 const tmcg_byte_t hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
+{
+	tmcg_octets_t hash_input;
+
+	// When a signature is made over a key, the hash data starts with the
+	// octet 0x99, followed by a two-octet length of the key, and then body
+	// of the key packet. (Note that this is an old-style packet header for
+	// a key packet with two-octet length.) A subkey binding signature
+	// (type 0x18) or primary key binding signature (type 0x19) then hashes
+	// the subkey using the same format as the main key (also using 0x99 as
+	// the first octet). Key revocation signatures (types 0x20 and 0x28)
+	// hash only the key being revoked.
+	hash_input.push_back(0x99);
+	hash_input.push_back(key.size() >> 8);
+	hash_input.push_back(key.size());
+	hash_input.insert(hash_input.end(), key.begin(), key.end());
 	// Once the data body is hashed, then a trailer is hashed. [...]
 	// A V4 signature hashes the packet body starting from its first
 	// field, the version number, through the end of the hashed subpacket
