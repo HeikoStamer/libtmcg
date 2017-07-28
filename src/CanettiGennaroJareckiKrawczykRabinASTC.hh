@@ -109,6 +109,11 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 			(const std::vector<size_t> &complaints,
 			std::vector<mpz_ptr> &a_i_in,
 			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
+		bool Reconstruct
+			(const std::vector<size_t> &complaints,
+			std::vector<mpz_ptr> &a_i_in,
+			std::map<size_t, size_t> &idx2dkg,
+			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
 		~CanettiGennaroJareckiKrawczykRabinRVSS
 			();
 };

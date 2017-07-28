@@ -12,7 +12,7 @@ dkg\-sign \- threshold signature scheme for OpenPGP (only DSA/DSS)
 This program generates a detached signature for a given file, where the
 private DSA key has been shared between multiple parties by
 .BR dkg\-generate (1).
-For successful signature at least 2s+1 different participants must join
+For a successful signature at least 2s+1 different participants must join
 the protocol and provide their corresponding shares. The threshold parameter s
 has been fixed during distributed key generation and cannot changed at
 this stage of processing.
@@ -93,5 +93,5 @@ protocol is started, because establishing a CADET channel with GNUnet may take s
 .SH "SEE ALSO"
 .BR dkg\-generate (1),
 .BR dkg\-encrypt (1),
-.BR dkg\-sign (1)
+.BR dkg\-decrypt (1)
 
