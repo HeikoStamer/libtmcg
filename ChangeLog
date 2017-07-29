@@ -1,3 +1,4 @@
+* [2017-07.28] RFC4880: added interfaces for key revocation signatures
 * [2017-07-27] DKG-tools: added dkg-sign for creating detached signatures
 * [2017-07-27] DKG-tools: added option "-e" for expiration of keys and sigs
 * [2017-07-27] RFC4880: more interfaces for signatures changed or added

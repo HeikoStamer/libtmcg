@@ -20,7 +20,7 @@
 AM_CPPFLAGS = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@ @LIBGMP_CFLAGS@ @GNUNET_CFLAGS@
 LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ @LIBGMP_LIBS@ @GNUNET_LIBS@ ../src/libTMCG.la
 
-bin_PROGRAMS = dkg-gencrs dkg-generate dkg-encrypt dkg-decrypt dkg-sign
+bin_PROGRAMS = dkg-gencrs dkg-generate dkg-encrypt dkg-decrypt dkg-sign dkg-revoke
 
 dist_man_MANS = dkg-generate.1 dkg-encrypt.1 dkg-decrypt.1 dkg-sign.1
 
@@ -29,5 +29,6 @@ dkg_generate_SOURCES = dkg-gnunet-common.hh dkg-gnunet-common.cc dkg-generate.cc
 dkg_encrypt_SOURCES = dkg-encrypt.cc
 dkg_decrypt_SOURCES = dkg-gnunet-common.hh dkg-gnunet-common.cc dkg-decrypt.cc
 dkg_sign_SOURCES = dkg-gnunet-common.hh dkg-gnunet-common.cc dkg-sign.cc
+dkg_revoke_SOURCES = dkg-gnunet-common.hh dkg-gnunet-common.cc dkg-revoke.cc
 
 

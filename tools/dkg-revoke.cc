@@ -43,19 +43,17 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 
 int 				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t 				pid[MAX_N];
-std::string			passphrase, armored_seckey, ifilename, ofilename;
+std::string			passphrase, armored_seckey;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
 
-tmcg_octets_t				keyid;
+tmcg_octets_t				keyid, pub, sub;;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 size_t					dss_n, dss_t, dss_i;
 std::vector<size_t>			dss_qual;
 std::vector< std::vector<mpz_ptr> >	dss_c_ik;
 gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_g, elg_y;
 int 					opt_verbose = 0;
-char					*opt_ifilename = NULL;
-char					*opt_ofilename = NULL;
 
 void read_private_key
 	(const std::string filename, std::string &result)
@@ -78,26 +76,6 @@ void read_private_key
 	}
 	secifs.close();
 	result = dkgseckey.str();
-}
-
-void write_signature
-	(const std::string filename, const std::string armored_signature)
-{
-
-	// write out the armored signature
-	std::ofstream ofs(ofilename.c_str(), std::ofstream::out);
-	if (!ofs.good())
-	{
-		std::cerr << "ERROR: opening output file failed" << std::endl;
-		exit(-1);
-	}
-	ofs << armored_signature << std::endl;
-	if (!ofs.good())
-	{
-		std::cerr << "ERROR: writing to output file failed" << std::endl;
-		exit(-1);
-	}
-	ofs.close();
 }
 
 void init_mpis
@@ -129,7 +107,7 @@ bool parse_private_key
 	tmcg_byte_t dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
 	tmcg_byte_t dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
 	tmcg_byte_t *key, *iv;
-	tmcg_octets_t pkts, pub, sub;
+	tmcg_octets_t pkts;
 	tmcg_octets_t seskey, salt, mpis, hash_input, hash, subkeyid, pub_hashing, sub_hashing, issuer, dsa_hspd, elg_hspd;
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
@@ -726,7 +704,7 @@ void release_mpis
 }
 
 void run_instance
-	(size_t whoami, const time_t sigtime, const time_t sigexptime, const size_t num_xtests)
+	(size_t whoami, const time_t sigtime, const size_t num_xtests)
 {
 	// read and parse the private key
 	std::string thispeer = peers[whoami];
@@ -751,7 +729,7 @@ void run_instance
 	for (size_t i = 0; i < peers.size(); i++)
 	{
 		std::stringstream key;
-		key << "dkg-sign::P_" << (i + whoami); // use simple key for now FIXME later -- we assume that GNUnet provides secure channels
+		key << "dkg-revoke::P_" << (i + whoami); // use simple key for now FIXME later -- we assume that GNUnet provides secure channels
 		uP_in.push_back(pipefd[i][whoami][0]);
 		uP_out.push_back(pipefd[whoami][i][1]);
 		uP_key.push_back(key.str());
@@ -767,7 +745,7 @@ void run_instance
 	aiounicast_select *aiou2 = new aiounicast_select(peers.size(), whoami, bP_in, bP_out, bP_key);
 			
 	// create an instance of a reliable broadcast protocol (RBC)
-	std::string myID = "dkg-sign|";
+	std::string myID = "dkg-revoke|";
 	for (size_t i = 0; i < peers.size(); i++)
 		myID += peers[i] + "|";
 	size_t T_RBC = (peers.size() - 1) / 3; // assume maximum asynchronous t-resilience for RBC
@@ -844,17 +822,6 @@ void run_instance
 		exit(-1);
 	}
 
-	// compute the hash of the input file
-	tmcg_octets_t trailer, hash, left;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, hashalgo, csigtime, sigexptime, keyid, trailer);
-	if (!CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash(opt_ifilename, trailer, hashalgo, hash, left))
-	{
-		std::cerr << "P_" << whoami << ": BinaryDocumentHash() failed; cannot process input file \"" << opt_ifilename << "\"" << std::endl;
-		delete rbc, delete aiou, delete aiou2;
-		release_mpis();
-		exit(-1);
-	}
-
 	// create an instance of tDSS by stored parameters from private key
 	std::stringstream dss_in;
 	dss_in << dss_p << std::endl << dss_q << std::endl << dss_g << std::endl << dss_h << std::endl;
@@ -895,18 +862,26 @@ void run_instance
 		exit(-1);
 	}
 
-	// sign the hash
+	// compute a hash of pub and sub, respectively
+	tmcg_octets_t trailer_pub, hash_pub, left_pub, trailer_sub, hash_sub, left_sub;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature(0x20, hashalgo, csigtime, 0x00, "", keyid, trailer_pub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature(0x28, hashalgo, csigtime, 0x00, "", keyid, trailer_sub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash(pub, trailer_pub, hashalgo, hash_pub, left_pub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash(sub, trailer_sub, hashalgo, hash_sub, left_sub);
+
+	// sign the hashes
+	tmcg_octets_t revsig_pub, revsig_sub;
 	tmcg_byte_t buffer[1024];
 	gcry_mpi_t h, r, s;
 	mpz_t dsa_m, dsa_r, dsa_s;
 	size_t buflen = 0;
 	gcry_error_t ret;
-	for (size_t i = 0; ((i < hash.size()) && (i < sizeof(buffer))); i++, buflen++)
-		buffer[i] = hash[i];
 	h = gcry_mpi_new(2048);
 	r = gcry_mpi_new(2048);
 	s = gcry_mpi_new(2048);
 	mpz_init(dsa_m), mpz_init(dsa_r), mpz_init(dsa_s);
+	for (size_t i = 0; ((i < hash_pub.size()) && (i < sizeof(buffer))); i++, buflen++)
+		buffer[i] = hash_pub[i];
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	if (ret)
 	{
@@ -931,10 +906,10 @@ void run_instance
 		exit(-1);
 	}
 	std::stringstream err_log_sign;
-	std::cout << "P_" << whoami << ": dss.Sign()" << std::endl;
+	std::cout << "P_" << whoami << ": dss.Sign() on pub" << std::endl;
 	if (!dss->Sign(peers.size(), whoami, dsa_m, dsa_r, dsa_s, aiou, rbc, err_log_sign))
 	{
-		std::cerr << "P_" << whoami << ": " << "tDSS Sign() failed" << std::endl;
+		std::cerr << "P_" << whoami << ": " << "tDSS Sign() on pub failed" << std::endl;
 		std::cerr << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
 		gcry_mpi_release(h);
 		gcry_mpi_release(r);
@@ -968,8 +943,72 @@ void run_instance
 		release_mpis();
 		exit(-1);
 	}
-	tmcg_octets_t sig;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(trailer, left, r, s, sig);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(trailer_pub, left_pub, r, s, revsig_pub);
+	buflen = 0;
+	for (size_t i = 0; ((i < hash_sub.size()) && (i < sizeof(buffer))); i++, buflen++)
+		buffer[i] = hash_sub[i];
+	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
+	if (ret)
+	{
+		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for h" << std::endl;
+		gcry_mpi_release(h);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (!mpz_set_gcry_mpi(h, dsa_m))
+	{
+		std::cerr << "P_" << whoami << ": mpz_set_gcry_mpi() failed for dsa_m" << std::endl;
+		gcry_mpi_release(h);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	std::stringstream err_log_sign2;
+	std::cout << "P_" << whoami << ": dss.Sign() on sub" << std::endl;
+	if (!dss->Sign(peers.size(), whoami, dsa_m, dsa_r, dsa_s, aiou, rbc, err_log_sign2))
+	{
+		std::cerr << "P_" << whoami << ": " << "tDSS Sign() on sub failed" << std::endl;
+		std::cerr << "P_" << whoami << ": log follows " << std::endl << err_log_sign2.str();
+		gcry_mpi_release(h);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (opt_verbose)
+		std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign2.str();
+	if (!mpz_get_gcry_mpi(&r, dsa_r))
+	{
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_r" << std::endl;
+		gcry_mpi_release(h);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (!mpz_get_gcry_mpi(&s, dsa_s))
+	{
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_s" << std::endl;
+		gcry_mpi_release(h);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
+		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(trailer_sub, left_sub, r, s, revsig_sub);
 	gcry_mpi_release(h);
 	gcry_mpi_release(r);
 	gcry_mpi_release(s);
@@ -999,17 +1038,11 @@ void run_instance
 	// release
 	release_mpis();
 
-	// output the result
-	std::string sigstr;
-	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(2, sig, sigstr);
-	if (opt_ofilename == NULL)
-		std::cout << sigstr << std::endl;
-	else
-		write_signature(opt_ofilename, sigstr);
+// TODO: store revsig_pub and revsig_sub in pubkey and seckey file
+
 }
 
 #ifdef GNUNET
-unsigned int gnunet_opt_sigexptime = 0;
 unsigned int gnunet_opt_xtests = 0;
 #endif
 
@@ -1017,7 +1050,7 @@ void fork_instance
 	(const size_t whoami)
 {
 	if ((pid[whoami] = fork()) < 0)
-		perror("dkg-sign (fork)");
+		perror("dkg-revoke (fork)");
 	else
 	{
 		if (pid[whoami] == 0)
@@ -1025,9 +1058,9 @@ void fork_instance
 			/* BEGIN child code: participant P_i */
 			time_t sigtime = time(NULL);
 #ifdef GNUNET
-			run_instance(whoami, sigtime, gnunet_opt_sigexptime, gnunet_opt_xtests);
+			run_instance(whoami, sigtime, gnunet_opt_xtests);
 #else
-			run_instance(whoami, sigtime, 0, 0);
+			run_instance(whoami, sigtime, 0);
 #endif
 			if (opt_verbose)
 				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
@@ -1044,8 +1077,6 @@ void fork_instance
 }
 
 #ifdef GNUNET
-char *gnunet_opt_ifilename = NULL;
-char *gnunet_opt_ofilename = NULL;
 char *gnunet_opt_port = NULL;
 int gnunet_opt_nonint = 0;
 unsigned int gnunet_opt_wait = 5;
@@ -1055,8 +1086,8 @@ int gnunet_opt_verbose = 0;
 int main
 	(int argc, char *const *argv)
 {
-	static const char *usage = "dkg-sign [OPTIONS] PEERS";
-	static const char *about = "threshold signature scheme for OpenPGP (only DSA/DSS)";
+	static const char *usage = "dkg-revoke [OPTIONS] PEERS";
+	static const char *about = "threshold key revocation for OpenPGP (only DSA+ElGamal)";
 #ifdef GNUNET
 	char *loglev = NULL;
 	char *logfile = NULL;
@@ -1064,26 +1095,8 @@ int main
 	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
 		GNUNET_GETOPT_option_cfgfile(&cfg_fn),
 		GNUNET_GETOPT_option_help(about),
-		GNUNET_GETOPT_option_uint('e',
-			"expiration",
-			"TIME",
-			"expiration time of generated signature in seconds",
-			&gnunet_opt_sigexptime
-		),
-		GNUNET_GETOPT_option_string('i',
-			"input",
-			"FILENAME",
-			"create detached signature from FILENAME",
-			&gnunet_opt_ifilename
-		),
 		GNUNET_GETOPT_option_logfile(&logfile),
 		GNUNET_GETOPT_option_loglevel(&loglev),
-		GNUNET_GETOPT_option_string('o',
-			"output",
-			"FILENAME",
-			"write detached signature to FILENAME",
-			&gnunet_opt_ofilename
-		),
 		GNUNET_GETOPT_option_string('p',
 			"port",
 			"STRING",
@@ -1099,7 +1112,7 @@ int main
 		GNUNET_GETOPT_option_uint('w',
 			"wait",
 			"TIME",
-			"minutes to wait until start of signature protocol",
+			"minutes to wait until start of revocation protocol",
 			&gnunet_opt_wait
 		),
 		GNUNET_GETOPT_option_uint('x',
@@ -1120,10 +1133,6 @@ int main
 		std::cerr << "ERROR: GNUNET_GETOPT_run() failed" << std::endl;
 		return -1;
 	}
-	if (gnunet_opt_ifilename != NULL)
-		opt_ifilename = gnunet_opt_ifilename;
-	if (gnunet_opt_ofilename != NULL)
-		opt_ofilename = gnunet_opt_ofilename;
 #endif
 
 	if (argc < 2)
@@ -1139,19 +1148,9 @@ int main
 			std::string arg = argv[i+1];
 			// ignore options
 			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || 
-				(arg.find("-l") == 0) || (arg.find("-i") == 0) || (arg.find("-o") == 0) || (arg.find("-e") == 0) || (arg.find("-x") == 0))
+				(arg.find("-l") == 0) || (arg.find("-x") == 0))
 			{
-				size_t idx = ++i;
-				if ((arg.find("-i") == 0) && (idx < (size_t)(argc - 1)) && (opt_ifilename == NULL))
-				{
-					ifilename = argv[i+1];
-					opt_ifilename = (char*)ifilename.c_str();
-				}
-				if ((arg.find("-o") == 0) && (idx < (size_t)(argc - 1)) && (opt_ofilename == NULL))
-				{
-					ofilename = argv[i+1];
-					opt_ofilename = (char*)ofilename.c_str();
-				}
+				++i;
 				continue;
 			}
 			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-V") == 0))
@@ -1162,9 +1161,7 @@ int main
 					std::cout << usage << std::endl;
 					std::cout << about << std::endl;
 					std::cout << "Arguments mandatory for long options are also mandatory for short options." << std::endl;
-					std::cout << "  -i, --input=FILENAME       create detached signature from FILENAME" << std::endl;
 					std::cout << "  -h, --help                 print this help" << std::endl;
-					std::cout << "  -o, --output=FILENAME      write detached signature to FILENAME" << std::endl;
 					std::cout << "  -v, --version              print the version number" << std::endl;
 					std::cout << "  -V, --verbose              turn on verbose output" << std::endl;
 #endif
@@ -1173,7 +1170,7 @@ int main
 				if ((arg.find("-v") == 0) || (arg.find("--version") == 0))
 				{
 #ifndef GNUNET
-					std::cout << "dkg-sign " << version << std::endl;
+					std::cout << "dkg-revoke " << version << std::endl;
 #endif
 					return 0; // not continue
 				}
@@ -1203,11 +1200,6 @@ int main
 		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
 		return -1;
 	}
-	if (opt_ifilename == NULL)
-	{
-		std::cerr << "ERROR: option -i required to specify an input file" << std::endl;
-		return -1;
-	}
 	if (opt_verbose)
 	{
 		std::cout << "INFO: canonicalized peer list = " << std::endl;
@@ -1218,24 +1210,6 @@ int main
 	// start interactive variant with GNUnet or otherwise a local test
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption myoptions[] = {
-		GNUNET_GETOPT_option_uint('e',
-			"expiration",
-			NULL,
-			"expiration time of generated signature in seconds",
-			&gnunet_opt_sigexptime
-		),
-		GNUNET_GETOPT_option_string('i',
-			"input",
-			"FILENAME",
-			"create detached signature from FILENAME",
-			&gnunet_opt_ifilename
-		),
-		GNUNET_GETOPT_option_string('o',
-			"output",
-			"FILENAME",
-			"write detached signature to FILENAME",
-			&gnunet_opt_ofilename
-		),
 		GNUNET_GETOPT_option_string('p',
 			"port",
 			NULL,
@@ -1250,7 +1224,7 @@ int main
 		GNUNET_GETOPT_option_uint('w',
 			"wait",
 			NULL,
-			"minutes to wait until start of signature protocol",
+			"minutes to wait until start of revocation protocol",
 			&gnunet_opt_wait
 		),
 		GNUNET_GETOPT_option_uint('x',
@@ -1276,9 +1250,9 @@ int main
 		for (size_t j = 0; j < peers.size(); j++)
 		{
 			if (pipe(pipefd[i][j]) < 0)
-				perror("dkg-sign (pipe)");
+				perror("dkg-revoke (pipe)");
 			if (pipe(broadcast_pipefd[i][j]) < 0)
-				perror("dkg-sign (pipe)");
+				perror("dkg-revoke (pipe)");
 		}
 	}
 	
@@ -1294,13 +1268,13 @@ int main
 	{
 		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
 		if (waitpid(pid[i], NULL, 0) != pid[i])
-			perror("dkg-sign (waitpid)");
+			perror("dkg-revoke (waitpid)");
 		for (size_t j = 0; j < peers.size(); j++)
 		{
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("dkg-sign (close)");
+				perror("dkg-revoke (close)");
 			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
-				perror("dkg-sign (close)");
+				perror("dkg-revoke (close)");
 		}
 	}
 	
