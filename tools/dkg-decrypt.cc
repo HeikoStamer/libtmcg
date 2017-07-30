@@ -224,7 +224,8 @@ bool parse_private_key
 	}
 	while (pkts.size() && ptag)
 	{
-		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, qual, c_ik);
+		tmcg_octets_t current_packet;
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, c_ik);
 		if (opt_verbose)
 			std::cout << "PacketDecode(pkts.size = " << pkts.size() << ") = " << (int)ptag;
 		if (!ptag)
@@ -879,9 +880,10 @@ void parse_message
 		{
 			tmcg_octets_t pkesk_keyid;
 			tmcg_openpgp_packet_ctx ctx;
+			tmcg_octets_t current_packet;
 			std::vector<gcry_mpi_t> qual;
 			std::vector< std::vector<gcry_mpi_t> > c_ik;
-			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, qual, c_ik);
+			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, c_ik);
 			if (opt_verbose)
 				std::cout << "PacketDecode() = " << (int)ptag;
 			if (!ptag)
@@ -1504,7 +1506,8 @@ void decrypt_message
 		lit.insert(lit.end(), litmdc.begin(), litmdc.end() - (sizeof(ctx.mdc_hash) + 2));
 	while (litmdc.size() && ptag)
 	{
-		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(litmdc, ctx, qual, c_ik);
+		tmcg_octets_t current_packet;
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(litmdc, ctx, current_packet, qual, c_ik);
 		if (opt_verbose)
 			std::cout << "PacketDecode() = " << (int)ptag;
 		if (!ptag)

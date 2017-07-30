@@ -43,11 +43,11 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 
 int 				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t 				pid[MAX_N];
-std::string			passphrase, armored_seckey;
+std::string			passphrase, armored_seckey, u;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
 
-tmcg_octets_t				keyid, pub, sub;;
+tmcg_octets_t				keyid, pub, sub, uidsig, subsig;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 size_t					dss_n, dss_t, dss_i;
 std::vector<size_t>			dss_qual;
@@ -102,7 +102,6 @@ bool parse_private_key
 {
 	// parse the private key
 	bool secdsa = false, sigdsa = false, ssbelg = false, sigelg = false;
-	std::string u;
 	tmcg_byte_t atype = 0, ptag = 0xFF;
 	tmcg_byte_t dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
 	tmcg_byte_t dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
@@ -131,7 +130,8 @@ bool parse_private_key
 	}
 	while (pkts.size() && ptag)
 	{
-		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, qual, c_ik);
+		tmcg_octets_t current_packet;
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, c_ik);
 		if (opt_verbose)
 			std::cout << "PacketDecode(pkts.size = " << pkts.size() << ") = " << (int)ptag;
 		if (!ptag)
@@ -1014,6 +1014,43 @@ void run_instance
 	gcry_mpi_release(s);
 	mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
 
+	// at the end: deliver some more rounds for still waiting parties
+	time_t synctime = aiounicast::aio_timeout_very_long;
+	std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
+	rbc->Sync(synctime);
+
+	// export updated public key in OpenPGP armor format
+	std::stringstream pubfilename;
+	pubfilename << peers[whoami] << "_dkg-pub.asc";
+	std::string armor = "";
+	tmcg_octets_t all, uid;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, uid);
+	all.insert(all.end(), pub.begin(), pub.end());
+	all.insert(all.end(), revsig_pub.begin(), revsig_pub.end());
+	all.insert(all.end(), uid.begin(), uid.end());
+	all.insert(all.end(), uidsig.begin(), uidsig.end());
+	all.insert(all.end(), sub.begin(), sub.end());
+	all.insert(all.end(), revsig_sub.begin(), revsig_sub.end());
+	all.insert(all.end(), subsig.begin(), subsig.end());
+	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(6, all, armor);
+	if (opt_verbose)
+		std::cout << armor << std::endl;
+	std::ofstream pubofs((pubfilename.str()).c_str(), std::ofstream::out);
+	if (!pubofs.good())
+	{
+		std::cerr << "P_" << whoami << ": opening public key file failed" << std::endl;
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		exit(-1);
+	}
+	pubofs << armor;
+	if (!pubofs.good())
+	{
+		std::cerr << "P_" << whoami << ": writing public key file failed" << std::endl;
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		exit(-1);
+	}
+	pubofs.close();
+
 	// release tDSS
 	delete dss;
 
@@ -1037,9 +1074,6 @@ void run_instance
 
 	// release
 	release_mpis();
-
-// TODO: store revsig_pub and revsig_sub in pubkey and seckey file
-
 }
 
 #ifdef GNUNET

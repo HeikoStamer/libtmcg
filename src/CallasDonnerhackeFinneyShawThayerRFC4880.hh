@@ -326,6 +326,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out);
 		static tmcg_byte_t PacketDecode
 			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out,
+			 tmcg_octets_t &current_packet,
 			 std::vector<gcry_mpi_t> &qual,
 			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
 

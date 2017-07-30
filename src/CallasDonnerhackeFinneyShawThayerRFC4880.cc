@@ -2053,6 +2053,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 
 tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out,
+	 tmcg_octets_t &current_packet,
 	 std::vector<gcry_mpi_t> &qual,
 	 std::vector< std::vector<gcry_mpi_t> > &c_ik)
 {
@@ -2074,6 +2075,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		tag = (tag >> 2) & 0x1F; // Bits 5-2 -- packet tag
 	}
 	in.erase(in.begin(), in.begin()+1); // remove first octet
+	current_packet.push_back(tag);
 	// Each Partial Body Length header is followed by a portion of the
 	// packet body data. The Partial Body Length header specifies this
 	// portion's length. Another length header (one octet, two-octet,
@@ -2101,6 +2103,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			return 0; // error: first partial length less than 512 octets
 		if (partlen && (tag != 8) && (tag != 9) && (tag != 11) && (tag != 18))
 			return 0; // error: no literal, compressed, or encrypted
+		current_packet.insert(current_packet.end(), in.begin(), in.begin()+headlen+len); // copy length and content of the (partial) packet
 		pkt.insert(pkt.end(), in.begin()+headlen, in.begin()+headlen+len);
 		in.erase(in.begin(), in.begin()+headlen+len); // remove (partial) packet
 		firstlen = false;
