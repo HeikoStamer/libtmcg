@@ -196,6 +196,8 @@ bool parse_private_key
 						std::cerr << "WARNING: insecure hash algorithm " << (int)dsa_hashalgo << 
 							" used for signatures" << std::endl;
 					sigdsa = true;
+					for (size_t i = 0; i < current_packet.size(); i++)
+						uidsig.push_back(current_packet[i]);
 				}
 				else if (secdsa && ssbelg && (ctx.type == 0x18) && 
 					CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
@@ -238,6 +240,8 @@ bool parse_private_key
 						std::cerr << "WARNING: insecure hash algorithm " << (int)elg_hashalgo << 
 							" used for signatures" << std::endl;
 					sigelg = true;
+					for (size_t i = 0; i < current_packet.size(); i++)
+						subsig.push_back(current_packet[i]);
 				}
 				break;
 			case 5: // Secret-Key Packet
