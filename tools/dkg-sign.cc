@@ -1221,7 +1221,7 @@ int main
 	static const struct GNUNET_GETOPT_CommandLineOption myoptions[] = {
 		GNUNET_GETOPT_option_uint('e',
 			"expiration",
-			NULL,
+			"TIME",
 			"expiration time of generated signature in seconds",
 			&gnunet_opt_sigexptime
 		),
@@ -1239,7 +1239,7 @@ int main
 		),
 		GNUNET_GETOPT_option_string('p',
 			"port",
-			NULL,
+			"STRING",
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
 		),
@@ -1250,7 +1250,7 @@ int main
 		),
 		GNUNET_GETOPT_option_uint('w',
 			"wait",
-			NULL,
+			"TIME",
 			"minutes to wait until start of signature protocol",
 			&gnunet_opt_wait
 		),

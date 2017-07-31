@@ -708,7 +708,7 @@ void release_mpis
 }
 
 void run_instance
-	(size_t whoami, const time_t sigtime, const size_t num_xtests)
+	(size_t whoami, const time_t sigtime, const size_t reason, const size_t num_xtests)
 {
 	// read and parse the private key
 	std::string thispeer = peers[whoami];
@@ -865,11 +865,16 @@ void run_instance
 		release_mpis();
 		exit(-1);
 	}
+	
+	// reason for revocation
+	tmcg_byte_t revcode = 0x00;
+	if (reason < 255)
+		revcode = reason;
 
 	// compute a hash of pub and sub, respectively
 	tmcg_octets_t trailer_pub, hash_pub, left_pub, trailer_sub, hash_sub, left_sub;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature(0x20, hashalgo, csigtime, 0x00, "", keyid, trailer_pub);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature(0x28, hashalgo, csigtime, 0x00, "", keyid, trailer_sub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature(0x20, hashalgo, csigtime, revcode, "", keyid, trailer_pub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature(0x28, hashalgo, csigtime, revcode, "", keyid, trailer_sub);
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash(pub, trailer_pub, hashalgo, hash_pub, left_pub);
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash(sub, trailer_sub, hashalgo, hash_sub, left_sub);
 
@@ -1081,6 +1086,7 @@ void run_instance
 }
 
 #ifdef GNUNET
+unsigned int gnunet_opt_reason = 0;
 unsigned int gnunet_opt_xtests = 0;
 #endif
 
@@ -1096,9 +1102,9 @@ void fork_instance
 			/* BEGIN child code: participant P_i */
 			time_t sigtime = time(NULL);
 #ifdef GNUNET
-			run_instance(whoami, sigtime, gnunet_opt_xtests);
+			run_instance(whoami, sigtime, gnunet_opt_reason, gnunet_opt_xtests);
 #else
-			run_instance(whoami, sigtime, 0);
+			run_instance(whoami, sigtime, 0, 0);
 #endif
 			if (opt_verbose)
 				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
@@ -1140,6 +1146,12 @@ int main
 			"STRING",
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
+		),
+		GNUNET_GETOPT_option_uint('r',
+			"reason",
+			"NUMBER",
+			"reason for revocation (OpenPGP machine-readable code)",
+			&gnunet_opt_reason
 		),
 		GNUNET_GETOPT_option_version(version),
 		GNUNET_GETOPT_option_flag('V',
@@ -1185,7 +1197,7 @@ int main
 		{
 			std::string arg = argv[i+1];
 			// ignore options
-			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || 
+			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-r") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || 
 				(arg.find("-l") == 0) || (arg.find("-x") == 0))
 			{
 				++i;
@@ -1250,9 +1262,15 @@ int main
 	static const struct GNUNET_GETOPT_CommandLineOption myoptions[] = {
 		GNUNET_GETOPT_option_string('p',
 			"port",
-			NULL,
+			"STRING",
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
+		),
+		GNUNET_GETOPT_option_uint('r',
+			"reason",
+			"NUMBER",
+			"reason for revocation (OpenPGP machine-readable code)",
+			&gnunet_opt_reason
 		),
 		GNUNET_GETOPT_option_flag('V',
 			"verbose",
@@ -1261,7 +1279,7 @@ int main
 		),
 		GNUNET_GETOPT_option_uint('w',
 			"wait",
-			NULL,
+			"TIME",
 			"minutes to wait until start of revocation protocol",
 			&gnunet_opt_wait
 		),
