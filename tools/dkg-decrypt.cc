@@ -587,7 +587,10 @@ bool parse_private_key
 					}
 					if (ctx.s2kconv == 0)
 					{
-						elg_x = ctx.x; // not encrypted
+						if (ctx.pkalgo == 16)
+							elg_x = ctx.x; // not encrypted
+						else if (ctx.pkalgo == 109)
+							elg_x = ctx.x_i; // not encrypted
 					}
 					else if ((ctx.s2kconv == 254) || (ctx.s2kconv == 255))
 					{
