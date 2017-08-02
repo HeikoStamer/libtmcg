@@ -43,7 +43,7 @@ int main
 	}
 
 	// read a public key from file
-	std::string line, armored_pubkey, message, armored_message;
+	std::string line, armored_pubkey, armored_message;
 	std::ifstream pubifs(argv[1], std::ifstream::in);
 	if (!pubifs.is_open())
 	{
@@ -90,9 +90,9 @@ int main
 		{
 			tmcg_openpgp_packet_ctx ctx;
 			tmcg_octets_t current_packet;
-			std::vector<gcry_mpi_t> qual;
+			std::vector<gcry_mpi_t> qual, v_i;
 			std::vector< std::vector<gcry_mpi_t> > c_ik;
-			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, c_ik);
+			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, v_i, c_ik);
 			if (!ptag)
 			{
 				std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
@@ -320,14 +320,13 @@ int main
 		return -1;
 	}
 
-	// read a text message from stdin
-	while (std::getline(std::cin, line))
-		message += line + "\r\n";
+	// read message from stdin
+	char c;
+	while (std::cin.get(c))
+		msg.push_back(c);
 	std::cin.clear();
 
 	// encrypt the provided message
-	for (size_t i = 0; i < message.length(); i++)
-		msg.push_back(message[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode(msg, lit);
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256(lit, seskey, prefix, true, enc); // seskey and prefix only
 	if (ret)

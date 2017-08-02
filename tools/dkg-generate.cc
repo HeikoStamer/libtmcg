@@ -633,7 +633,162 @@ void run_instance
 		exit(-1);
 	}
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ckeytime, 16, p, q, g, y, sub); // use common key creation time and Elgamal algorithm id
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(ckeytime, 16, p, q, g, y, x, passphrase, ssb); // additionally, secret x and individual passphrase
+	if (T > 0)
+	{
+		// create an OpenPGP private subkey as experimental algorithm ID 109 to store everything from DKG
+		gcry_mpi_t h, n, t, i, qualsize, x_i, xprime_i;
+		std::vector<gcry_mpi_t> qual, v_i;
+		std::vector< std::vector<gcry_mpi_t> > c_ik;
+		if (!mpz_get_gcry_mpi(&h, dkg->h))
+		{
+			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dss->h" << std::endl;
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			gcry_mpi_release(y);
+			gcry_mpi_release(x);
+			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		n = gcry_mpi_set_ui(NULL, dkg->n);
+		t = gcry_mpi_set_ui(NULL, dkg->t);
+		i = gcry_mpi_set_ui(NULL, dkg->i);
+		qualsize = gcry_mpi_set_ui(NULL, dkg->QUAL.size());
+		for (size_t j = 0; j < dkg->QUAL.size(); j++)
+		{
+			gcry_mpi_t tmp = gcry_mpi_set_ui(NULL, dkg->QUAL[j]);
+			qual.push_back(tmp);
+		}
+		v_i.resize(dkg->n);
+		for (size_t j = 0; j < v_i.size(); j++)
+		{
+			if (!mpz_get_gcry_mpi(&v_i[j], dkg->v_i[j]))
+			{
+				std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->v_i[j]" << std::endl;
+				mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+				gcry_mpi_release(p);
+				gcry_mpi_release(q);
+				gcry_mpi_release(g);
+				gcry_mpi_release(y);
+				gcry_mpi_release(x);
+				gcry_mpi_release(h);
+				gcry_mpi_release(n);
+				gcry_mpi_release(t);
+				gcry_mpi_release(i);
+				gcry_mpi_release(qualsize);
+				for (size_t jj = 0; jj < qual.size(); jj++)
+					gcry_mpi_release(qual[jj]);
+				for (size_t j = 0; j < v_i.size(); j++)
+					gcry_mpi_release(v_i[j]);
+				for (size_t jj = 0; jj < c_ik.size(); jj++)
+					for (size_t kk = 0; kk < c_ik[jj].size(); kk++)
+						gcry_mpi_release(c_ik[jj][kk]);
+				exit(-1); 
+			}
+		}
+		c_ik.resize(dkg->n);
+		for (size_t j = 0; j < c_ik.size(); j++)
+		{
+			for (size_t k = 0; k <= dkg->t; k++)
+			{
+				gcry_mpi_t tmp;
+				if (!mpz_get_gcry_mpi(&tmp, dkg->C_ik[j][k]))
+				{
+					std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->C_ik[j][k]" << std::endl;
+					mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+					gcry_mpi_release(p);
+					gcry_mpi_release(q);
+					gcry_mpi_release(g);
+					gcry_mpi_release(y);
+					gcry_mpi_release(x);
+					gcry_mpi_release(h);
+					gcry_mpi_release(n);
+					gcry_mpi_release(t);
+					gcry_mpi_release(i);
+					gcry_mpi_release(qualsize);
+					for (size_t jj = 0; jj < qual.size(); jj++)
+						gcry_mpi_release(qual[jj]);
+					for (size_t j = 0; j < v_i.size(); j++)
+						gcry_mpi_release(v_i[j]);
+					for (size_t jj = 0; jj < c_ik.size(); jj++)
+						for (size_t kk = 0; kk < c_ik[jj].size(); kk++)
+							gcry_mpi_release(c_ik[jj][kk]);
+					exit(-1); 
+				}
+				c_ik[j].push_back(tmp);
+			}
+		}
+		if (!mpz_get_gcry_mpi(&x_i, dkg->x_i))
+		{
+			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->x_i" << std::endl;
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			gcry_mpi_release(y);
+			gcry_mpi_release(x);
+			gcry_mpi_release(h);
+			gcry_mpi_release(n);
+			gcry_mpi_release(t);
+			gcry_mpi_release(i);
+			gcry_mpi_release(qualsize);
+			for (size_t j = 0; j < qual.size(); j++)
+				gcry_mpi_release(qual[j]);
+			for (size_t j = 0; j < v_i.size(); j++)
+				gcry_mpi_release(v_i[j]);
+			for (size_t j = 0; j < c_ik.size(); j++)
+				for (size_t k = 0; k < c_ik[j].size(); k++)
+					gcry_mpi_release(c_ik[j][k]);
+			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		if (!mpz_get_gcry_mpi(&xprime_i, dkg->xprime_i))
+		{
+			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->xprime_i" << std::endl;
+			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+			gcry_mpi_release(p);
+			gcry_mpi_release(q);
+			gcry_mpi_release(g);
+			gcry_mpi_release(y);
+			gcry_mpi_release(x);
+			gcry_mpi_release(h);
+			gcry_mpi_release(n);
+			gcry_mpi_release(t);
+			gcry_mpi_release(i);
+			gcry_mpi_release(qualsize);
+			for (size_t j = 0; j < qual.size(); j++)
+				gcry_mpi_release(qual[j]);
+			for (size_t j = 0; j < v_i.size(); j++)
+				gcry_mpi_release(v_i[j]);
+			for (size_t j = 0; j < c_ik.size(); j++)
+				for (size_t k = 0; k < c_ik[j].size(); k++)
+					gcry_mpi_release(c_ik[j][k]);
+			gcry_mpi_release(x_i);
+			gcry_sexp_release(key);
+			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+			exit(-1);
+		}
+		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109(ckeytime, p, q, g, h, y, n, t, i, qualsize, qual, v_i, c_ik, x_i, xprime_i, passphrase, ssb);
+		gcry_mpi_release(h);
+		gcry_mpi_release(n);
+		gcry_mpi_release(t);
+		gcry_mpi_release(i);
+		gcry_mpi_release(qualsize);
+		for (size_t j = 0; j < qual.size(); j++)
+			gcry_mpi_release(qual[j]);
+		for (size_t j = 0; j < v_i.size(); j++)
+			gcry_mpi_release(v_i[j]);
+		for (size_t j = 0; j < c_ik.size(); j++)
+			for (size_t k = 0; k < c_ik[j].size(); k++)
+				gcry_mpi_release(c_ik[j][k]);
+		gcry_mpi_release(x_i);
+		gcry_mpi_release(xprime_i);
+	}
+	else
+		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(ckeytime, 16, p, q, g, y, x, passphrase, ssb);
 	elgflags.push_back(0x04 | 0x10); // key may be used to encrypt communications and have been split by a secret-sharing mechanism
 	if (S > 0)
 		sigtime = ckeytime; // use common key creation time as OpenPGP signature creation time

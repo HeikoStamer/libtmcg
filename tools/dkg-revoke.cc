@@ -113,7 +113,7 @@ bool parse_private_key
 	size_t erroff, keylen, ivlen, chksum, mlen, chksum2;
 	int algo;
 	tmcg_openpgp_packet_ctx ctx;
-	std::vector<gcry_mpi_t> qual;
+	std::vector<gcry_mpi_t> qual, v_i;
 	std::vector< std::vector<gcry_mpi_t> > c_ik;
 	gcry_mpi_t dsa_r, dsa_s, elg_r, elg_s;
 	dsa_r = gcry_mpi_new(2048);
@@ -131,7 +131,7 @@ bool parse_private_key
 	while (pkts.size() && ptag)
 	{
 		tmcg_octets_t current_packet;
-		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, c_ik);
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, v_i, c_ik);
 		if (opt_verbose)
 			std::cout << "PacketDecode(pkts.size = " << pkts.size() << ") = " << (int)ptag;
 		if (!ptag)
@@ -508,11 +508,11 @@ bool parse_private_key
 						break;
 				break;
 			case 7: // Secret-Subkey Packet
-				if ((ctx.pkalgo == 16) && !ssbelg)
+				if (((ctx.pkalgo == 16) || (ctx.pkalgo == 109)) && !ssbelg)
 				{
 					ssbelg = true;
 					elg_p = ctx.p, elg_g = ctx.g, elg_y = ctx.y;
-					CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime, ctx.pkalgo,
+					CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime, 16, // public-key is ElGamal 
 						elg_p, dsa_q, elg_g, elg_y, sub);
 					for (size_t i = 6; i < sub.size(); i++)
 						sub_hashing.push_back(sub[i]);
@@ -530,7 +530,7 @@ bool parse_private_key
 						std::cout << std::endl;
 					}
 				}
-				else if ((ctx.pkalgo == 16) && ssbelg)
+				else if (((ctx.pkalgo == 16) || (ctx.pkalgo == 109)) && ssbelg)
 					std::cerr << "WARNING: ElGamal subkey already found" << std::endl; 
 				else
 					std::cerr << "WARNING: public-key algorithm not supported" << std::endl;

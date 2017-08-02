@@ -311,6 +311,18 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t g, const gcry_mpi_t y, 
 			 const gcry_mpi_t x, const std::string passphrase,
 			 tmcg_octets_t &out);
+		static void PacketSsbEncodeExperimental109
+			(const time_t keytime, const gcry_mpi_t p,
+			 const gcry_mpi_t q, const gcry_mpi_t g,
+			 const gcry_mpi_t h, const gcry_mpi_t y,
+			 const gcry_mpi_t n, const gcry_mpi_t t,
+			 const gcry_mpi_t i, const gcry_mpi_t qualsize,
+			 const std::vector<gcry_mpi_t> &qual,
+			 const std::vector<gcry_mpi_t> &v_i,
+			 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
+			 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
+			 const std::string passphrase,
+			 tmcg_octets_t &out);
 		static void PacketSedEncode
 			(const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void PacketLitEncode
@@ -328,6 +340,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out,
 			 tmcg_octets_t &current_packet,
 			 std::vector<gcry_mpi_t> &qual,
+			 std::vector<gcry_mpi_t> &v_i,
 			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
 
 		static bool BinaryDocumentHash

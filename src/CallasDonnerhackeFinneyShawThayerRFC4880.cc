@@ -1636,6 +1636,141 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	}
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
+	(const time_t keytime, const gcry_mpi_t p, const gcry_mpi_t q,
+	 const gcry_mpi_t g, const gcry_mpi_t h, const gcry_mpi_t y,
+	 const gcry_mpi_t n, const gcry_mpi_t t, const gcry_mpi_t i,
+	 const gcry_mpi_t qualsize, const std::vector<gcry_mpi_t> &qual,
+	 const std::vector<gcry_mpi_t> &v_i,
+	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
+	 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
+	 const std::string passphrase,
+	 tmcg_octets_t &out)
+{
+	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
+	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
+	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
+	size_t hlen = (gcry_mpi_get_nbits(h) + 7) / 8;
+	size_t ylen = (gcry_mpi_get_nbits(y) + 7) / 8;
+	size_t nlen = (gcry_mpi_get_nbits(n) + 7) / 8;
+	size_t tlen = (gcry_mpi_get_nbits(t) + 7) / 8;
+	size_t ilen = (gcry_mpi_get_nbits(i) + 7) / 8;
+	size_t qualsizelen = (gcry_mpi_get_nbits(qualsize) + 7) / 8;
+	size_t x_ilen = (gcry_mpi_get_nbits(x_i) + 7) / 8;
+	size_t xprime_ilen = (gcry_mpi_get_nbits(xprime_i) + 7) / 8;
+	size_t len = 1+4+1; // number of octets for version, keytime, and algo
+	assert((qual.size() == get_gcry_mpi_ui(qualsize)));
+	for (size_t j = 0; j < qual.size(); j++)
+		len += 2+((gcry_mpi_get_nbits(qual[j]) + 7) / 8);
+	assert((v_i.size() == get_gcry_mpi_ui(n)));
+	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+		len += 2+((gcry_mpi_get_nbits(v_i[j]) + 7) / 8);
+	assert((c_ik.size() == get_gcry_mpi_ui(n)));
+	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
+			len += 2+((gcry_mpi_get_nbits(c_ik[j][k]) + 7) / 8);
+	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+2+qualsizelen;
+	if (passphrase.length() == 0)
+		len += 1+2+x_ilen+2+xprime_ilen+2; // S2K usage is zero
+	else
+		len += 29+2+x_ilen+2+xprime_ilen+20; // S2K usage is 254
+	PacketTagEncode(7, out);
+	PacketLengthEncode(len, out);
+	out.push_back(4); // V4 format
+	PacketTimeEncode(keytime, out);
+	out.push_back(109); // public-key algo: ID 109 (private/experimental) 
+	PacketMPIEncode(p, out); // MPI p
+	PacketMPIEncode(q, out); // MPI q
+	PacketMPIEncode(g, out); // MPI g
+	PacketMPIEncode(h, out); // MPI h
+	PacketMPIEncode(y, out); // MPI y
+	PacketMPIEncode(n, out); // MPI n
+	PacketMPIEncode(t, out); // MPI t
+	PacketMPIEncode(i, out); // MPI i
+	PacketMPIEncode(qualsize, out); // MPI qualsize
+	for (size_t j = 0; j < qual.size(); j++)
+		PacketMPIEncode(qual[j], out); // MPI qual[j]
+	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+		PacketMPIEncode(v_i[j], out); // MPI v_i[j]
+	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
+			PacketMPIEncode(c_ik[j][k], out); // MPI c_ik[j][k]
+	if (passphrase.length() == 0)
+	{
+		size_t chksum = 0;
+		out.push_back(0); // S2K convention: no encryption
+		PacketMPIEncode(x_i, out, chksum); // MPI x_i
+		PacketMPIEncode(xprime_i, out, chksum); // MPI xprime_i
+		out.push_back(chksum >> 8); // two-octet checksum
+		out.push_back(chksum);
+	}
+	else
+	{
+		out.push_back(254); // S2K convention: specifier given + SHA-1 hash
+		out.push_back(9); // AES256
+		out.push_back(0x03); // Iterated and Salted S2K
+		out.push_back(8); // SHA256
+		tmcg_byte_t rand[8], iv[16], key[32], count;
+		tmcg_octets_t salt, plain, hash, seskey, prefix;
+		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
+		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
+		count = 0x01;
+		for (size_t i = 0; i < sizeof(rand); i++)
+		{
+			salt.push_back(rand[i]);
+			out.push_back(rand[i]); // salt
+		}
+		out.push_back(count); // count, a one-octet, coded value
+		for (size_t i = 0; i < sizeof(iv); i++)
+			out.push_back(iv[i]); // IV
+		S2KCompute(8, sizeof(key), passphrase, salt, true, count, seskey);
+		for (size_t i = 0; i < sizeof(key); i++)
+			key[i] = seskey[i];
+		PacketMPIEncode(x_i, plain); // MPI x_i
+		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
+		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
+		plain.insert(plain.end(), hash.begin(), hash.end()); // append hash
+		tmcg_byte_t *buffer = new tmcg_byte_t[plain.size()];
+		for (size_t i = 0; i < plain.size(); i++)
+			buffer[i] = plain[i];
+		gcry_cipher_hd_t hd;
+		gcry_error_t ret;
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, 
+			GCRY_CIPHER_MODE_CFB, 0);
+		if (ret)
+		{
+			delete [] buffer;
+			gcry_cipher_close(hd);
+			return;
+		}
+		ret = gcry_cipher_setkey(hd, key, sizeof(key));
+		if (ret)
+		{
+			delete [] buffer;
+			gcry_cipher_close(hd);
+			return;
+		}
+		ret = gcry_cipher_setiv(hd, iv, sizeof(iv));
+		if (ret)
+		{
+			delete [] buffer;
+			gcry_cipher_close(hd);
+			return;
+		}
+		ret = gcry_cipher_encrypt(hd, buffer, plain.size(), NULL, 0);
+		if (ret)
+		{
+			delete [] buffer;
+			gcry_cipher_close(hd);
+			return;
+		}
+		for (size_t i = 0; i < plain.size(); i++)
+			out.push_back(buffer[i]);
+		delete [] buffer;
+		gcry_cipher_close(hd);
+	}
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode
 	(const tmcg_octets_t &in, tmcg_octets_t &out)
 {
@@ -2055,6 +2190,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out,
 	 tmcg_octets_t &current_packet,
 	 std::vector<gcry_mpi_t> &qual,
+	 std::vector<gcry_mpi_t> &v_i,
 	 std::vector< std::vector<gcry_mpi_t> > &c_ik)
 {
 	if (in.size() < 2)
@@ -2423,6 +2559,78 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					}
 				}
 			}
+			else if (out.pkalgo == 109)
+			{
+				// Algorithm-Specific Fields for DKG keys
+				mlen = PacketMPIDecode(mpis, out.p);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.q);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.g);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.h);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.y);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.n);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.t);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.i);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				mlen = PacketMPIDecode(mpis, out.qualsize);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				if (get_gcry_mpi_ui(out.qualsize) > 255)
+					return 0; // error: too many parties
+				qual.resize(get_gcry_mpi_ui(out.qualsize));
+				for (size_t j = 0; j < get_gcry_mpi_ui(out.qualsize); j++)
+				{
+					mlen = PacketMPIDecode(mpis, qual[j]);
+					if (!mlen || (mlen > mpis.size()))
+						return 0; // error: bad or zero mpi
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				}
+				if ((get_gcry_mpi_ui(out.n) > 255) || (get_gcry_mpi_ui(out.t) > 128))
+					return 0; // error: too many parties
+				v_i.resize(get_gcry_mpi_ui(out.n));
+				for (size_t j = 0; j < get_gcry_mpi_ui(out.n); j++)
+				{
+					mlen = PacketMPIDecode(mpis, v_i[j]);
+					if (!mlen || (mlen > mpis.size()))
+						return 0; // error: bad or zero mpi
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				}
+				c_ik.resize(get_gcry_mpi_ui(out.n));
+				for (size_t j = 0; j < get_gcry_mpi_ui(out.n); j++)
+				{
+					c_ik[j].resize(get_gcry_mpi_ui(out.t) + 1);
+					for (size_t k = 0; k <= get_gcry_mpi_ui(out.t); k++)
+					{
+						mlen = PacketMPIDecode(mpis, c_ik[j][k]);
+						if (!mlen || (mlen > mpis.size()))
+							return 0; // error: bad or zero mpi
+						mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					}
+				}
+			}
 			// secret fields
 			if (mpis.size() < 1)
 				return 0; // error: no S2K convention
@@ -2471,9 +2679,9 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 				}
-				else if (out.pkalgo == 108)
+				else if ((out.pkalgo == 108) || (out.pkalgo == 109))
 				{
-					// Algorithm-Specific Fields for tDSS keys
+					// Algorithm-Specific Fields for tDSS/DKG keys
 					mlen = PacketMPIDecode(mpis, out.x_i, 
 						chksum);
 					if (!mlen || (mlen > mpis.size()))

@@ -8,19 +8,19 @@ dkg\-encrypt \- simple encryption with AES\-256 according to OpenPGP
 .IR KEYFILE
 
 .SH DESCRIPTION
-This program encrypts a text message read from STDIN according to the OpenPGP standard.
-KEYFILE must contain a special crafted ASCII-armored public key, for which the following
+This program encrypts a (text) message read from STDIN according to the OpenPGP standard.
+KEYFILE must contain the ASCII-armored public key, for which the then following
 encryption is performed.
 .PP
 First, AES is applied as symmetric cipher with a randomly chosen 256-bit session key.
-Note that an integrity protection packet (MDC) is appended. Finally, the session key is
-transformed by PKCS#1 v1.5 block encoding and encrypted with the ElGamal public-key algorithm. 
+Finally, the session key is transformed by PKCS#1 v1.5 block encoding and encrypted with
+the ElGamal public-key algorithm. Note that an integrity protection packet (MDC) is appended. 
 .PP
-Currently, as public-key algorithm only ElGamal is supported and the certifying signatures
+Currently, as public-key algorithm only ElGamal is supported and all certifying signatures
 in the corresponding subkey packet of the public key must be DSA signatures. This is due
 to the limitation in distributed key generation of LibTMCG.
 .PP
-The encrypted message in ASCII-armored OpenPGP format is written to STDOUT and it
+The encrypted message in ASCII-armored OpenPGP format is written to STDOUT and later it
 can be further processed with
 .BR dkg\-decrypt (1).
 
@@ -44,5 +44,6 @@ Home page of LibTMCG: <http://www.nongnu.org/libtmcg/>
 .SH "SEE ALSO"
 .BR dkg\-generate (1),
 .BR dkg\-decrypt (1),
-.BR dkg\-sign (1)
+.BR dkg\-sign (1),
+.BR dkg\-revoke (1)
 

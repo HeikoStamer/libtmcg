@@ -141,11 +141,13 @@ Each party must run such a process with identical parameter set, i.e., please co
 e.g. 2-resilience, means that later at least three participants are needed in order to decrypt a message for the generated common
 ElGamal subkey. However, robustness of the DKG protocol is only guaranteed for t < n/2 which is violated in this example. Thus a
 malicious party may disturb the key generation without being identified and excluded. The s-resilience is set to zero, which
-means that individual DSA keys instead of a shared unique primary key are generated. The program waits ten minutes before the
-main DKG protocol is started, because establishing a CADET channel with GNUnet may take some time.
+means that individual DSA keys instead of a shared primary key are generated. Thus
+.BR dkg\-sign (1) will not work with these keys. The program waits ten minutes before the DKG protocol is started, because
+establishing a CADET channel with GNUnet may take some time.
 
 .SH "SEE ALSO"
 .BR dkg\-encrypt (1),
 .BR dkg\-decrypt (1),
-.BR dkg\-sign (1)
+.BR dkg\-sign (1),
+.BR dkg\-revoke (1)
 

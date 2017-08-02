@@ -43,7 +43,7 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 
 int 				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t 				pid[MAX_N];
-std::string			passphrase, armored_message, armored_seckey;
+std::string			passphrase, armored_message, armored_seckey, ifilename, ofilename;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
 
@@ -54,6 +54,7 @@ gcry_sexp_t			elgkey;
 tmcg_octets_t			subkeyid, enc;
 bool				have_seipd = false;
 int 				opt_verbose = 0;
+char				*opt_ifilename = NULL;
 char				*opt_ofilename = NULL;
 
 void init_dkg
@@ -207,7 +208,7 @@ bool parse_private_key
 	size_t erroff, keylen, ivlen, chksum, mlen, chksum2;
 	int algo;
 	tmcg_openpgp_packet_ctx ctx;
-	std::vector<gcry_mpi_t> qual;
+	std::vector<gcry_mpi_t> qual, v_i;
 	std::vector< std::vector<gcry_mpi_t> > c_ik;
 	gcry_mpi_t dsa_r, dsa_s, elg_r, elg_s;
 	dsa_r = gcry_mpi_new(2048);
@@ -225,7 +226,7 @@ bool parse_private_key
 	while (pkts.size() && ptag)
 	{
 		tmcg_octets_t current_packet;
-		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, c_ik);
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, v_i, c_ik);
 		if (opt_verbose)
 			std::cout << "PacketDecode(pkts.size = " << pkts.size() << ") = " << (int)ptag;
 		if (!ptag)
@@ -563,11 +564,11 @@ bool parse_private_key
 						break;
 				break;
 			case 7: // Secret-Subkey Packet
-				if ((ctx.pkalgo == 16) && !ssbelg)
+				if (((ctx.pkalgo == 16) || (ctx.pkalgo == 109)) && !ssbelg)
 				{
 					ssbelg = true;
 					elg_p = ctx.p, elg_g = ctx.g, elg_y = ctx.y;
-					CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime, ctx.pkalgo,
+					CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime, 16, // public-key is ElGamal 
 						elg_p, dsa_q, elg_g, elg_y, sub);
 					for (size_t i = 6; i < sub.size(); i++)
 						sub_hashing.push_back(sub[i]);
@@ -663,18 +664,38 @@ bool parse_private_key
 						}
 						gcry_cipher_close(hd);
 						delete [] key, delete [] iv;
-						// read MPI x and verify checksum/hash
+						// read MPI x reps. MPIs x_i, xprime_i and verify checksum/hash
 						mpis.clear();
 						chksum = 0;
 						for (size_t i = 0; i < ctx.encdatalen; i++)
 							mpis.push_back(ctx.encdata[i]);
-						mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, elg_x, chksum);
-						if (!mlen || (mlen > mpis.size()))
+						if (ctx.pkalgo == 16)
 						{
-							std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
-							exit(-1);
+							mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, elg_x, chksum);
+							if (!mlen || (mlen > mpis.size()))
+							{
+								std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
+								exit(-1);
+							}
+							mpis.erase(mpis.begin(), mpis.begin()+mlen);
 						}
-						mpis.erase(mpis.begin(), mpis.begin()+mlen);
+						else if (ctx.pkalgo == 109)
+						{
+							mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, elg_x, chksum);
+							if (!mlen || (mlen > mpis.size()))
+							{
+								std::cerr << "ERROR: reading MPI x_i failed (bad passphrase)" << std::endl;
+								exit(-1);
+							}
+							mpis.erase(mpis.begin(), mpis.begin()+mlen);
+							mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, dsa_x, chksum);
+							if (!mlen || (mlen > mpis.size()))
+							{
+								std::cerr << "ERROR: reading MPI xprime_i failed (bad passphrase)" << std::endl;
+								exit(-1);
+							}
+							mpis.erase(mpis.begin(), mpis.begin()+mlen);
+						}
 						if (ctx.s2kconv == 255)
 						{
 							if (mpis.size() < 2)
@@ -713,7 +734,7 @@ bool parse_private_key
 						exit(-1);
 					}
 				}
-				else if ((ctx.pkalgo == 16) && ssbelg)
+				else if (((ctx.pkalgo == 16) || (ctx.pkalgo == 109)) && ssbelg)
 					std::cerr << "WARNING: ElGamal subkey already found" << std::endl; 
 				else
 					std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
@@ -881,9 +902,9 @@ void parse_message
 			tmcg_octets_t pkesk_keyid;
 			tmcg_openpgp_packet_ctx ctx;
 			tmcg_octets_t current_packet;
-			std::vector<gcry_mpi_t> qual;
+			std::vector<gcry_mpi_t> qual, v_i;
 			std::vector< std::vector<gcry_mpi_t> > c_ik;
-			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, c_ik);
+			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, v_i, c_ik);
 			if (opt_verbose)
 				std::cout << "PacketDecode() = " << (int)ptag;
 			if (!ptag)
@@ -1497,7 +1518,7 @@ void decrypt_message
 	}
 	// parse content
 	tmcg_openpgp_packet_ctx ctx;
-	std::vector<gcry_mpi_t> qual;
+	std::vector<gcry_mpi_t> qual, v_i;
 	std::vector< std::vector<gcry_mpi_t> > c_ik;
 	bool have_lit = false, have_mdc = false;
 	tmcg_octets_t lit, mdc_hash;
@@ -1507,7 +1528,7 @@ void decrypt_message
 	while (litmdc.size() && ptag)
 	{
 		tmcg_octets_t current_packet;
-		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(litmdc, ctx, current_packet, qual, c_ik);
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(litmdc, ctx, current_packet, qual, v_i, c_ik);
 		if (opt_verbose)
 			std::cout << "PacketDecode() = " << (int)ptag;
 		if (!ptag)
@@ -1989,6 +2010,8 @@ int main
 		std::cerr << "ERROR: GNUNET_GETOPT_run() failed" << std::endl;
 		return -1;
 	}
+	if (gnunet_opt_ifilename != NULL)
+		opt_ifilename = gnunet_opt_ifilename;
 	if (gnunet_opt_ofilename != NULL)
 		opt_ofilename = gnunet_opt_ofilename;
 #endif
@@ -2009,7 +2032,17 @@ int main
 			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || (arg.find("-l") == 0) ||
 				(arg.find("-i") == 0) || (arg.find("-o") == 0) || (arg.find("-x") == 0))
 			{
-				i++;
+				size_t idx = ++i;
+				if ((arg.find("-i") == 0) && (idx < (size_t)(argc - 1)) && (opt_ifilename == NULL))
+				{
+					ifilename = argv[i+1];
+					opt_ifilename = (char*)ifilename.c_str();
+				}
+				if ((arg.find("-o") == 0) && (idx < (size_t)(argc - 1)) && (opt_ofilename == NULL))
+				{
+					ofilename = argv[i+1];
+					opt_ofilename = (char*)ofilename.c_str();
+				}
 				continue;
 			}
 			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-n") == 0) || (arg.find("-V") == 0))
@@ -2021,7 +2054,9 @@ int main
 					std::cout << about << std::endl;
 					std::cout << "Arguments mandatory for long options are also mandatory for short options." << std::endl;
 					std::cout << "  -h, --help                 print this help" << std::endl;
+					std::cout << "  -i, --input=FILENAME       create detached signature from FILENAME" << std::endl;
 					std::cout << "  -n, --non-interactive      run in non-interactive mode" << std::endl;
+					std::cout << "  -o, --output=FILENAME      write detached signature to FILENAME" << std::endl;
 					std::cout << "  -v, --version              print the version number" << std::endl;
 					std::cout << "  -V, --verbose              turn on verbose output" << std::endl;
 #endif
@@ -2067,9 +2102,8 @@ int main
 		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
 		return -1;
 	}
-#ifdef GNUNET
-	if (gnunet_opt_ifilename != NULL)
-		read_message(gnunet_opt_ifilename, armored_message);
+	if (opt_ifilename != NULL)
+		read_message(opt_ifilename, armored_message);
 	else
 	{
 		std::cout << "Please enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
@@ -2078,13 +2112,6 @@ int main
 			armored_message += line + "\r\n";
 		std::cin.clear();
 	}
-#else
-	std::cout << "Please enter the encrypted message (in ASCII Armor; ^D for EOF): " << std::endl;
-	std::string line;
-	while (std::getline(std::cin, line))
-		armored_message += line + "\r\n";
-	std::cin.clear();
-#endif
 	if (opt_verbose)
 	{
 		std::cout << "INFO: canonicalized peer list = " << std::endl;
