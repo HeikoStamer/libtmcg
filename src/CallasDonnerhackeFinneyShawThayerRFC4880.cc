@@ -253,12 +253,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 			if (linebreaks && ((c % TMCG_OPENPGP_RADIX64_MC) == 0))
 				out += "\r\n"; // add a line delimiter
 		}
-		out += "=", c++;
-		// The encoded output stream must be represented
-		// in lines of no more than 76 characters each.
-		if (linebreaks && ((c % TMCG_OPENPGP_RADIX64_MC) == 0))
-			out += "\r\n"; // add a line delimiter
-		out += "=";
+		out += "==";
 	}
 }
 
@@ -2197,6 +2192,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		return 0; // error: incorrect packet header
 	tmcg_byte_t tag = in[0];
 	tmcg_byte_t lentype = 0x00;
+	current_packet.push_back(tag); // store packet header
 	if ((tag & 0x80) != 0x80)
 		return 0; // error: Bit 7 of first octet not set
 	if ((tag & 0x40) == 0x40)
@@ -2211,7 +2207,6 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		tag = (tag >> 2) & 0x1F; // Bits 5-2 -- packet tag
 	}
 	in.erase(in.begin(), in.begin()+1); // remove first octet
-	current_packet.push_back(tag);
 	// Each Partial Body Length header is followed by a portion of the
 	// packet body data. The Partial Body Length header specifies this
 	// portion's length. Another length header (one octet, two-octet,
