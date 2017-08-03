@@ -359,6 +359,10 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_octets_t &key,
 			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
 			 tmcg_octets_t &hash, tmcg_octets_t &left);
+		static void KeyRevocationHash
+			(const tmcg_octets_t &primary, const tmcg_octets_t &subkey,
+			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
+			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static gcry_error_t SymmetricEncryptAES256
 			(const tmcg_octets_t &in,
 			 tmcg_octets_t &seskey, tmcg_octets_t &prefix,

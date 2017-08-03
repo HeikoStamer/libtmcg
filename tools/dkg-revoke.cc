@@ -876,7 +876,7 @@ void run_instance
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature(0x20, hashalgo, csigtime, revcode, "", keyid, trailer_pub);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature(0x28, hashalgo, csigtime, revcode, "", keyid, trailer_sub);
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash(pub, trailer_pub, hashalgo, hash_pub, left_pub);
-	CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash(sub, trailer_sub, hashalgo, hash_sub, left_sub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash(pub, sub, trailer_sub, hashalgo, hash_sub, left_sub);
 
 	// sign the hashes
 	tmcg_octets_t revsig_pub, revsig_sub;

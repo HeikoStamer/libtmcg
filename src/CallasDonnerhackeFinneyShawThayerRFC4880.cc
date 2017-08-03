@@ -2933,8 +2933,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
-	(const tmcg_octets_t &key, const std::string uid, const tmcg_octets_t &trailer, 
-	 const tmcg_byte_t hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
+	(const tmcg_octets_t &key, const std::string uid, 
+	 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
+	 tmcg_octets_t &hash, tmcg_octets_t &left)
 {
 	tmcg_octets_t hash_input;
 	size_t uidlen = uid.length();
@@ -2984,8 +2985,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
-	(const tmcg_octets_t &primary, const tmcg_octets_t &subkey, const tmcg_octets_t &trailer,
-	 const tmcg_byte_t hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
+	(const tmcg_octets_t &primary, const tmcg_octets_t &subkey,
+	 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
+	 tmcg_octets_t &hash, tmcg_octets_t &left)
 {
 	tmcg_octets_t hash_input;
 
@@ -3027,8 +3029,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash
-	(const tmcg_octets_t &key, const tmcg_octets_t &trailer,
-	 const tmcg_byte_t hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
+	(const tmcg_octets_t &key,
+	 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo, 
+	 tmcg_octets_t &hash, tmcg_octets_t &left)
 {
 	tmcg_octets_t hash_input;
 
@@ -3040,10 +3043,60 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash
 	// the subkey using the same format as the main key (also using 0x99 as
 	// the first octet). Key revocation signatures (types 0x20 and 0x28)
 	// hash only the key being revoked.
+	// RFC ERRATA: Primary key revocation signatures (type 0x20) hash only
+	// the key being revoked. Subkey revocation signature (type 0x28) hash
+	// first the primary key and then the subkey being revoked.
 	hash_input.push_back(0x99);
 	hash_input.push_back(key.size() >> 8);
 	hash_input.push_back(key.size());
 	hash_input.insert(hash_input.end(), key.begin(), key.end());
+	// Once the data body is hashed, then a trailer is hashed. [...]
+	// A V4 signature hashes the packet body starting from its first
+	// field, the version number, through the end of the hashed subpacket
+	// data. Thus, the fields hashed are the signature version, the
+	// signature type, the public-key algorithm, the hash algorithm,
+	// the hashed subpacket length, and the hashed subpacket body.
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// V4 signatures also hash in a final trailer of six octets: the
+	// version of the Signature packet, i.e., 0x04; 0xFF; and a four-octet,
+	// big-endian number that is the length of the hashed data from the
+	// Signature packet (note that this number does not include these final
+	// six octets).
+	hash_input.push_back(0x04);
+	PacketLengthEncode(trailer.size(), hash_input);
+	// After all this has been hashed in a single hash context, the
+	// resulting hash field is used in the signature algorithm and placed
+	// at the end of the Signature packet.
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; i < 2; i++)
+		left.push_back(hash[i]);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash
+	(const tmcg_octets_t &primary, const tmcg_octets_t &subkey,
+	 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo, 
+	 tmcg_octets_t &hash, tmcg_octets_t &left)
+{
+	tmcg_octets_t hash_input;
+
+	// When a signature is made over a key, the hash data starts with the
+	// octet 0x99, followed by a two-octet length of the key, and then body
+	// of the key packet. (Note that this is an old-style packet header for
+	// a key packet with two-octet length.) A subkey binding signature
+	// (type 0x18) or primary key binding signature (type 0x19) then hashes
+	// the subkey using the same format as the main key (also using 0x99 as
+	// the first octet).
+	// RFC ERRATA: Primary key revocation signatures (type 0x20) hash only
+	// the key being revoked. Subkey revocation signature (type 0x28) hash
+	// first the primary key and then the subkey being revoked.
+	hash_input.push_back(0x99);
+	hash_input.push_back(primary.size() >> 8);
+	hash_input.push_back(primary.size());
+	hash_input.insert(hash_input.end(), primary.begin(), primary.end());
+	hash_input.push_back(0x99);
+	hash_input.push_back(subkey.size() >> 8);
+	hash_input.push_back(subkey.size());
+	hash_input.insert(hash_input.end(), subkey.begin(), subkey.end());
 	// Once the data body is hashed, then a trailer is hashed. [...]
 	// A V4 signature hashes the packet body starting from its first
 	// field, the version number, through the end of the hashed subpacket
