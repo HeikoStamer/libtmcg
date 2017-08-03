@@ -41,61 +41,26 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 
 #include "dkg-gnunet-common.hh"
 
-int 				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
-pid_t 				pid[MAX_N];
-std::string			passphrase, armored_message, armored_seckey, ifilename, ofilename;
-std::vector<std::string>	peers;
-bool				instance_forked = false;
+int 					pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
+pid_t 					pid[MAX_N];
+std::string				passphrase, armored_message, armored_seckey, ifilename, ofilename;
+std::vector<std::string>		peers;
+bool					instance_forked = false;
 
-GennaroJareckiKrawczykRabinDKG	*dkg;
-gcry_mpi_t 			dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_g, elg_y, elg_x;
-gcry_mpi_t 			gk, myk;
-gcry_sexp_t			elgkey;
-tmcg_octets_t			subkeyid, enc;
-bool				have_seipd = false;
-int 				opt_verbose = 0;
-char				*opt_ifilename = NULL;
-char				*opt_ofilename = NULL;
-
-void init_dkg
-	(const std::string filename, size_t &whoami_dkg)
-{
-	// read the exported DKG verification keys from file
-	std::string line;
-	std::stringstream dkgstate;
-	std::ifstream dkgifs(filename.c_str(), std::ifstream::in);
-	if (!dkgifs.is_open())
-	{
-		std::cerr << "ERROR: cannot open DKG file" << std::endl;
-		exit(-1);
-	}
-	while (std::getline(dkgifs, line))
-		dkgstate << line << std::endl;
-	if (!dkgifs.eof())
-	{
-		std::cerr << "ERROR: reading until EOF failed" << std::endl;
-		exit(-1);
-	}
-	dkgifs.close();
-	// create an instance of DKG
-	if (opt_verbose)
-		std::cout << "GennaroJareckiKrawczykRabinDKG(...)" << std::endl;
-	dkg = new GennaroJareckiKrawczykRabinDKG(dkgstate);
-	if (!dkg->CheckGroup())
-	{
-		std::cerr << "ERROR: CheckGroup() failed" << std::endl;
-		exit(-1);
-	}
-	// set the correct index from saved DKG state
-	whoami_dkg = dkg->i;
-}
-
-void done_dkg
-	()
-{
-	// release DKG
-	delete dkg;
-}
+gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_q, elg_g, elg_y, elg_x;
+gcry_mpi_t 				gk, myk;
+gcry_sexp_t				elgkey;
+tmcg_octets_t				subkeyid, enc;
+bool					have_seipd = false;
+GennaroJareckiKrawczykRabinDKG		*dkg;
+mpz_t					dkg_p, dkg_q, dkg_g, dkg_h, dkg_x_i, dkg_xprime_i, dkg_y;
+size_t					dkg_n, dkg_t, dkg_i;
+std::vector<size_t>			dkg_qual;
+std::vector<mpz_ptr>			dkg_v_i;
+std::vector< std::vector<mpz_ptr> >	dkg_c_ik;
+int 					opt_verbose = 0;
+char					*opt_ifilename = NULL;
+char					*opt_ofilename = NULL;
 
 void read_private_key
 	(const std::string filename, std::string &result)
@@ -169,10 +134,9 @@ void print_message
 	(const tmcg_octets_t &msg)
 {
 	// print out the decrypted message
-	std::cout << "Decrypted message is: ";
+	std::cout << "Decrypted message:" << std::endl;
 	for (size_t i = 0; i < msg.size(); i++)
 		std::cout << msg[i];
-	std::cout << std::endl;
 }
 
 void init_mpis
@@ -184,11 +148,63 @@ void init_mpis
 	dsa_y = gcry_mpi_new(2048);
 	dsa_x = gcry_mpi_new(2048);
 	elg_p = gcry_mpi_new(2048);
+	elg_q = gcry_mpi_new(2048);
 	elg_g = gcry_mpi_new(2048);
 	elg_y = gcry_mpi_new(2048);
 	elg_x = gcry_mpi_new(2048);
 	gk = gcry_mpi_new(2048);
 	myk = gcry_mpi_new(2048);
+	mpz_init(dkg_p);
+	mpz_init(dkg_q);
+	mpz_init(dkg_g);
+	mpz_init(dkg_h);
+	mpz_init(dkg_x_i);
+	mpz_init(dkg_xprime_i);
+	mpz_init(dkg_y);
+}
+
+void init_dkg
+	()
+{
+	// create an instance of DKG by stored parameters from private key
+	std::stringstream dkg_in;
+	dkg_in << dkg_p << std::endl << dkg_q << std::endl << dkg_g << std::endl << dkg_h << std::endl;
+	dkg_in << dkg_n << std::endl << dkg_t << std::endl << dkg_i << std::endl;
+	dkg_in << dkg_x_i << std::endl << dkg_xprime_i << std::endl << dkg_y << std::endl;
+	dkg_in << dkg_qual.size() << std::endl;
+	for (size_t i = 0; i < dkg_qual.size(); i++)
+		dkg_in << dkg_qual[i] << std::endl;
+	for (size_t i = 0; i < dkg_n; i++)
+		dkg_in << "1" << std::endl; // y_i not yet stored
+	for (size_t i = 0; i < dkg_n; i++)
+		dkg_in << "0" << std::endl; // z_i not yet stored
+	assert((dkg_v_i.size() == dkg_n));
+	for (size_t i = 0; i < dkg_v_i.size(); i++)
+		dkg_in << dkg_v_i[i] << std::endl;
+	assert((dkg_c_ik.size() == dkg_n));
+	for (size_t i = 0; i < dkg_n; i++)
+	{
+		for (size_t j = 0; j < dkg_n; j++)
+			dkg_in << "0" << std::endl << "0" << std::endl; // s_ij and sprime_ij not yet stored
+		assert((dkg_c_ik[i].size() == (dkg_t + 1)));
+		for (size_t k = 0; k < dkg_c_ik[i].size(); k++)
+			dkg_in << dkg_c_ik[i][k] << std::endl;
+	}
+	if (opt_verbose)
+		std::cout << "GennaroJareckiKrawczykRabinDKG(in, ...)" << std::endl;
+	dkg = new GennaroJareckiKrawczykRabinDKG(dkg_in);
+	if (!dkg->CheckGroup())
+	{
+		std::cerr << "ERROR: DKG parameters are not correctly generated!" << std::endl;
+		delete dkg;
+		exit(-1);
+	}
+	if (!dkg->CheckKey())
+	{
+		std::cerr << "ERROR: DKG CheckKey() failed!" << std::endl;
+		delete dkg;
+		exit(-1);
+	}
 }
 
 bool parse_private_key
@@ -208,8 +224,6 @@ bool parse_private_key
 	size_t erroff, keylen, ivlen, chksum, mlen, chksum2;
 	int algo;
 	tmcg_openpgp_packet_ctx ctx;
-	std::vector<gcry_mpi_t> qual, v_i;
-	std::vector< std::vector<gcry_mpi_t> > c_ik;
 	gcry_mpi_t dsa_r, dsa_s, elg_r, elg_s;
 	dsa_r = gcry_mpi_new(2048);
 	dsa_s = gcry_mpi_new(2048);
@@ -226,6 +240,8 @@ bool parse_private_key
 	while (pkts.size() && ptag)
 	{
 		tmcg_octets_t current_packet;
+		std::vector<gcry_mpi_t> qual, v_i;
+		std::vector< std::vector<gcry_mpi_t> > c_ik;
 		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, v_i, c_ik);
 		if (opt_verbose)
 			std::cout << "PacketDecode(pkts.size = " << pkts.size() << ") = " << (int)ptag;
@@ -564,10 +580,10 @@ bool parse_private_key
 						break;
 				break;
 			case 7: // Secret-Subkey Packet
-				if (((ctx.pkalgo == 16) || (ctx.pkalgo == 109)) && !ssbelg)
+				if ((ctx.pkalgo == 109) && !ssbelg)
 				{
 					ssbelg = true;
-					elg_p = ctx.p, elg_g = ctx.g, elg_y = ctx.y;
+					elg_p = ctx.p, elg_q = ctx.q, elg_g = ctx.g, elg_y = ctx.y;
 					CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime, 16, // public-key is ElGamal 
 						elg_p, dsa_q, elg_g, elg_y, sub);
 					for (size_t i = 6; i < sub.size(); i++)
@@ -585,12 +601,75 @@ bool parse_private_key
 						std::cout << " hashalgo = " << (int)ctx.s2k_hashalgo << " count = " << (int)ctx.s2k_count;
 						std::cout << std::endl;
 					}
+					if (!mpz_set_gcry_mpi(ctx.p, dkg_p))
+					{
+						std::cerr << "ERROR: converting key component dkg_p failed" << std::endl;
+						exit(-1);
+					}
+					if (!mpz_set_gcry_mpi(ctx.q, dkg_q))
+					{
+						std::cerr << "ERROR: converting key component dkg_q failed" << std::endl;
+						exit(-1);
+					}
+					if (!mpz_set_gcry_mpi(ctx.g, dkg_g))
+					{
+						std::cerr << "ERROR: converting key component dkg_g failed" << std::endl;
+						exit(-1);
+					}
+					if (!mpz_set_gcry_mpi(ctx.h, dkg_h))
+					{
+						std::cerr << "ERROR: converting key component dkg_h failed" << std::endl;
+						exit(-1);
+					}
+					if (!mpz_set_gcry_mpi(ctx.y, dkg_y))
+					{
+						std::cerr << "ERROR: converting key component dkg_y failed" << std::endl;
+						exit(-1);
+					}
+					dkg_n = get_gcry_mpi_ui(ctx.n);
+					dkg_t = get_gcry_mpi_ui(ctx.t);
+					dkg_i = get_gcry_mpi_ui(ctx.i);
+					for (size_t i = 0; i < qual.size(); i++)
+						dkg_qual.push_back(get_gcry_mpi_ui(qual[i]));
+					for (size_t i = 0; i < v_i.size(); i++)
+					{
+						mpz_ptr tmp = new mpz_t();
+						mpz_init(tmp);
+						if (!mpz_set_gcry_mpi(v_i[i], tmp))
+						{
+							std::cerr << "ERROR: mpz_set_gcry_mpi() failed for tmp (v_i)" << std::endl;
+							exit(-1);
+						}
+						dkg_v_i.push_back(tmp);
+					}
+					dkg_c_ik.resize(c_ik.size());
+					for (size_t i = 0; i < c_ik.size(); i++)
+					{
+						for (size_t k = 0; k < c_ik[i].size(); k++)
+						{
+							mpz_ptr tmp = new mpz_t();
+							mpz_init(tmp);
+							if (!mpz_set_gcry_mpi(c_ik[i][k], tmp))
+							{
+								std::cerr << "ERROR: mpz_set_gcry_mpi() failed for tmp (c_ik)" << std::endl;
+								exit(-1);
+							}
+							dkg_c_ik[i].push_back(tmp);
+						}
+					}
 					if (ctx.s2kconv == 0)
 					{
-						if (ctx.pkalgo == 16)
-							elg_x = ctx.x; // not encrypted
-						else if (ctx.pkalgo == 109)
-							elg_x = ctx.x_i; // not encrypted
+						elg_x = ctx.x_i; // not encrypted
+						if (!mpz_set_gcry_mpi(ctx.x_i, dkg_x_i))
+						{
+							std::cerr << "ERROR: converting key component dkg_x_i failed" << std::endl;
+							exit(-1);
+						}
+						if (!mpz_set_gcry_mpi(ctx.xprime_i, dkg_xprime_i))
+						{
+							std::cerr << "ERROR: converting key component dkg_xprime_i failed" << std::endl;
+							exit(-1);
+						}
 					}
 					else if ((ctx.s2kconv == 254) || (ctx.s2kconv == 255))
 					{
@@ -672,32 +751,29 @@ bool parse_private_key
 						chksum = 0;
 						for (size_t i = 0; i < ctx.encdatalen; i++)
 							mpis.push_back(ctx.encdata[i]);
-						if (ctx.pkalgo == 16)
+						mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, elg_x, chksum);
+						if (!mlen || (mlen > mpis.size()))
 						{
-							mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, elg_x, chksum);
-							if (!mlen || (mlen > mpis.size()))
-							{
-								std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
-								exit(-1);
-							}
-							mpis.erase(mpis.begin(), mpis.begin()+mlen);
+							std::cerr << "ERROR: reading MPI x_i failed (bad passphrase)" << std::endl;
+							exit(-1);
 						}
-						else if (ctx.pkalgo == 109)
+						mpis.erase(mpis.begin(), mpis.begin()+mlen);
+						mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, dsa_x, chksum);
+						if (!mlen || (mlen > mpis.size()))
 						{
-							mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, elg_x, chksum);
-							if (!mlen || (mlen > mpis.size()))
-							{
-								std::cerr << "ERROR: reading MPI x_i failed (bad passphrase)" << std::endl;
-								exit(-1);
-							}
-							mpis.erase(mpis.begin(), mpis.begin()+mlen);
-							mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, dsa_x, chksum);
-							if (!mlen || (mlen > mpis.size()))
-							{
-								std::cerr << "ERROR: reading MPI xprime_i failed (bad passphrase)" << std::endl;
-								exit(-1);
-							}
-							mpis.erase(mpis.begin(), mpis.begin()+mlen);
+							std::cerr << "ERROR: reading MPI xprime_i failed (bad passphrase)" << std::endl;
+							exit(-1);
+						}
+						mpis.erase(mpis.begin(), mpis.begin()+mlen);
+						if (!mpz_set_gcry_mpi(elg_x, dkg_x_i))
+						{
+							std::cerr << "ERROR: converting key component dkg_x_i failed" << std::endl;
+							exit(-1);
+						}
+						if (!mpz_set_gcry_mpi(dsa_x, dkg_xprime_i))
+						{
+							std::cerr << "ERROR: converting key component dkg_xprime_i failed" << std::endl;
+							exit(-1);
 						}
 						if (ctx.s2kconv == 255)
 						{
@@ -737,8 +813,8 @@ bool parse_private_key
 						exit(-1);
 					}
 				}
-				else if (((ctx.pkalgo == 16) || (ctx.pkalgo == 109)) && ssbelg)
-					std::cerr << "WARNING: ElGamal subkey already found" << std::endl; 
+				else if ((ctx.pkalgo == 109) && ssbelg)
+					std::cerr << "WARNING: DKG/ElGamal subkey already found" << std::endl; 
 				else
 					std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
 				break;
@@ -755,12 +831,12 @@ bool parse_private_key
 	}
 	if (!secdsa)
 	{
-		std::cerr << "ERROR: no DSA private key found" << std::endl;
+		std::cerr << "ERROR: no tDSS/DSA private key found" << std::endl;
 		exit(-1);
 	}
 	if (!ssbelg)
 	{
-		std::cerr << "ERROR: no ElGamal private subkey found" << std::endl;
+		std::cerr << "ERROR: no DKG/ElGamal private subkey found" << std::endl;
 		exit(-1);
 	}
 	if (!sigdsa)
@@ -1004,12 +1080,6 @@ void parse_message
 		std::cerr << "ERROR: multiple types of symmetrically encrypted data found" << std::endl;
 		exit(-1);
 	}
-	// check whether DSA and ElGamal group parameters match
-	if (gcry_mpi_cmp(dsa_p, elg_p) || gcry_mpi_cmp(dsa_g, elg_g))
-	{
-		std::cerr << "ERROR: DSA and ElGamal group parameters does not match" << std::endl;
-		exit(-1);
-	}
 	// check whether $0 < g^k < p$.
 	if ((gcry_mpi_cmp_ui(gk, 0L) <= 0) || (gcry_mpi_cmp(gk, elg_p) >= 0))
 	{
@@ -1023,38 +1093,31 @@ void parse_message
 		exit(-1);
 	}
 	// check whether $(g^k)^q \equiv 1 \pmod{p}$.
-	gcry_mpi_powm(dsa_p, gk, dsa_q, elg_p);
-	if (gcry_mpi_cmp_ui(dsa_p, 1L))
+	gcry_mpi_t tmp;
+	tmp = gcry_mpi_new(2048);
+	gcry_mpi_powm(tmp, gk, elg_q, elg_p);
+	if (gcry_mpi_cmp_ui(tmp, 1L))
 	{
 		std::cerr << "ERROR: (g^k)^q \equiv 1 mod p not satisfied" << std::endl;
 		exit(-1);
 	}
-	gcry_mpi_set(dsa_p, elg_p);
+	gcry_mpi_release(tmp);
 }
 
 void compute_decryption_share
-	(const size_t whoami_dkg, std::string &result)
+	(std::string &result)
 {
 	// [CGS97] Ronald Cramer, Rosario Gennaro, and Berry Schoenmakers:
 	//  'A Secure and Optimally Efficient Multi-Authority Election Scheme'
 	// Advances in Cryptology - EUROCRYPT '97, LNCS 1233, pp. 103--118, 1997.
 
 	// compute the decryption share
-	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, x_i, r_i, R;
-	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(x_i), mpz_init(r_i), mpz_init(R);
-	if (!mpz_set_gcry_mpi(dsa_p, nizk_p))
+	mpz_t nizk_gk, r_i, R;
+	mpz_init(nizk_gk), mpz_init(r_i), mpz_init(R);
+	mpz_spowm(R, dkg->g, dkg->x_i, dkg->p);
+	if (mpz_cmp(R, dkg->v_i[dkg->i]))
 	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
-	if (!mpz_set_gcry_mpi(dsa_q, nizk_q))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
-	if (!mpz_set_gcry_mpi(dsa_g, nizk_g))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		std::cerr << "ERROR: check of DKG public verification key failed" << std::endl;
 		exit(-1);
 	}
 	if (!mpz_set_gcry_mpi(gk, nizk_gk))
@@ -1062,111 +1125,71 @@ void compute_decryption_share
 		std::cerr << "ERROR: converting message component failed" << std::endl;
 		exit(-1);
 	}
-	if (!mpz_set_gcry_mpi(elg_x, x_i))
-	{
-		std::cerr << "ERROR: converting private key share failed" << std::endl;
-		exit(-1);
-	}
-	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g))
-	{
-		std::cerr << "ERROR: DSA/ElGamal and DKG group parameters does not match" << std::endl;
-		exit(-1);
-	}
-	mpz_spowm(R, nizk_g, x_i, nizk_p);
-	if (mpz_cmp(R, dkg->v_i[whoami_dkg]))
-	{
-		std::cerr << "ERROR: check of DKG public verification key failed" << std::endl;
-		exit(-1);
-	}
-	mpz_spowm(r_i, nizk_gk, x_i, nizk_p);
+	mpz_spowm(r_i, nizk_gk, dkg->x_i, dkg->p);
 	// compute NIZK argument for decryption share, e.g. see [CGS97]
 	// proof of knowledge (equality of discrete logarithms)
 	mpz_t a, b, omega, c, r, c2;
 	mpz_init(c), mpz_init(r), mpz_init(c2), mpz_init(a), mpz_init(b), mpz_init(omega);
 	// commitment
-	mpz_srandomm(omega, nizk_q);
-	mpz_spowm(a, nizk_gk, omega, nizk_p);
-	mpz_spowm(b, nizk_g, omega, nizk_p);
+	mpz_srandomm(omega, dkg->q);
+	mpz_spowm(a, nizk_gk, omega, dkg->p);
+	mpz_spowm(b, dkg->g, omega, dkg->p);
 	// challenge
 	// Here we use the well-known "Fiat-Shamir heuristic" to make
 	// the PoK non-interactive, i.e. we turn it into a statistically
 	// zero-knowledge (Schnorr signature scheme style) proof of
 	// knowledge (SPK) in the random oracle model.
-	mpz_shash(c, 6, a, b, r_i, dkg->v_i[whoami_dkg], nizk_gk, nizk_g);
+	mpz_shash(c, 6, a, b, r_i, dkg->v_i[dkg->i], nizk_gk, dkg->g);
 	// response
-	mpz_mul(r, c, x_i);
+	mpz_mul(r, c, dkg->x_i);
 	mpz_neg(r, r);
 	mpz_add(r, r, omega);
-	mpz_mod(r, r, nizk_q);
+	mpz_mod(r, r, dkg->q);
 	// construct dds
 	std::ostringstream dds;
-	dds << "dds|" << whoami_dkg << "|" << r_i << "|" << c << "|" << r << "|";
+	dds << "dds|" << dkg->i << "|" << r_i << "|" << c << "|" << r << "|";
 	mpz_clear(c), mpz_clear(r), mpz_clear(c2), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
-	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i), mpz_clear(r_i), mpz_clear(R);
+	mpz_clear(nizk_gk), mpz_clear(r_i), mpz_clear(R);
 	result = dds.str();
 }
 
 void prove_decryption_share_interactive_publiccoin
-	(const size_t whoami_dkg, mpz_srcptr r_i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc, JareckiLysyanskayaEDCF *edcf, std::ostream &err)
+	(mpz_srcptr r_i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc, JareckiLysyanskayaEDCF *edcf, std::ostream &err)
 {
-	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk, x_i;
-	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk), mpz_init(x_i);
-	if (!mpz_set_gcry_mpi(dsa_p, nizk_p))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
-	if (!mpz_set_gcry_mpi(dsa_q, nizk_q))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
-	if (!mpz_set_gcry_mpi(dsa_g, nizk_g))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
+	mpz_t nizk_gk;
+	mpz_init(nizk_gk);
 	if (!mpz_set_gcry_mpi(gk, nizk_gk))
 	{
 		std::cerr << "ERROR: converting message component failed" << std::endl;
 		exit(-1);
 	}
-	if (!mpz_set_gcry_mpi(elg_x, x_i))
-	{
-		std::cerr << "ERROR: converting private key share failed" << std::endl;
-		exit(-1);
-	}
-	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g))
-	{
-		std::cerr << "ERROR: DSA/ElGamal and DKG group parameters does not match" << std::endl;
-		exit(-1);
-	}
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "dkg-decrypt::*_decryption_share_interactive_publiccoin" << dkg->p << dkg->q << dkg->g << edcf->h << r_i << "|" << rbc->j << "|" << whoami_dkg;
+	myID << "dkg-decrypt::*_decryption_share_interactive_publiccoin" << dkg->p << dkg->q << dkg->g << dkg->h << 
+		edcf->h << r_i << "|" << rbc->j << "|" << dkg->i;
 	rbc->setID(myID.str());
 	// proof of knowledge (equality of discrete logarithms) [CGS97]
 	mpz_t a, b, omega, c, r, c2;
 	mpz_init(c), mpz_init(r), mpz_init(c2), mpz_init(a), mpz_init(b), mpz_init(omega);
 	// 1. commitment
-	mpz_srandomm(omega, nizk_q);
-	mpz_spowm(a, nizk_g, omega, nizk_p);
-	mpz_spowm(b, nizk_gk, omega, nizk_p);
+	mpz_srandomm(omega, dkg->q);
+	mpz_spowm(a, dkg->g, omega, dkg->p);
+	mpz_spowm(b, nizk_gk, omega, dkg->p);
 	rbc->Broadcast(a);
 	rbc->Broadcast(b);
 	// 2. challenge
 	if (edcf->Flip(rbc->j, c, aiou, rbc, err))
 	{
 		// 3. response
-		mpz_mul(r, c, x_i);
-		mpz_mod(r, r, nizk_q);
+		mpz_mul(r, c, dkg->x_i);
+		mpz_mod(r, r, dkg->q);
 		mpz_add(r, r, omega);
-		mpz_mod(r, r, nizk_q);
+		mpz_mod(r, r, dkg->q);
 		rbc->Broadcast(r);
 	}
 	// release
 	mpz_clear(c), mpz_clear(r), mpz_clear(c2), mpz_clear(a), mpz_clear(b), mpz_clear(omega);
-	mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk), mpz_clear(x_i);
+	mpz_clear(nizk_gk);
 	// unset ID for RBC
 	rbc->unsetID();
 }
@@ -1177,23 +1200,8 @@ bool verify_decryption_share
 	// initialize
 	mpz_t c2, a, b;
 	mpz_init(c2), mpz_init(a), mpz_init(b);
-	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk;
-	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk);
-	if (!mpz_set_gcry_mpi(dsa_p, nizk_p))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
-	if (!mpz_set_gcry_mpi(dsa_q, nizk_q))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
-	if (!mpz_set_gcry_mpi(dsa_g, nizk_g))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
+	mpz_t nizk_gk;
+	mpz_init(nizk_gk);
 	if (!mpz_set_gcry_mpi(gk, nizk_gk))
 	{
 		std::cerr << "ERROR: converting message component failed" << std::endl;
@@ -1225,18 +1233,18 @@ bool verify_decryption_share
 		if (!dkg->CheckElement(r_i_out))
 			throw false;
 		// check the NIZK argument for sanity
-		if ((mpz_cmpabs(r_out, nizk_q) >= 0) || (mpz_sizeinbase(c_out, 2L) > 256)) // check the size of r and c (NOTE: output size of mpz_shash is fixed)
+		if ((mpz_cmpabs(r_out, dkg->q) >= 0) || (mpz_sizeinbase(c_out, 2L) > 256)) // check the size of r and c (NOTE: output size of mpz_shash is fixed)
 			throw false;
 		// verify proof of knowledge (equality of discrete logarithms), e.g. see [CGS97]
-		mpz_powm(a, nizk_gk, r_out, nizk_p);
-		mpz_powm(b, r_i_out, c_out, nizk_p);
+		mpz_powm(a, nizk_gk, r_out, dkg->p);
+		mpz_powm(b, r_i_out, c_out, dkg->p);
 		mpz_mul(a, a, b);
-		mpz_mod(a, a, nizk_p);
-		mpz_powm(b, nizk_g, r_out, nizk_p);
-		mpz_powm(c2, dkg->v_i[idx_dkg], c_out, nizk_p);
+		mpz_mod(a, a, dkg->p);
+		mpz_powm(b, dkg->g, r_out, dkg->p);
+		mpz_powm(c2, dkg->v_i[idx_dkg], c_out, dkg->p);
 		mpz_mul(b, b, c2);
-		mpz_mod(b, b, nizk_p);
-		mpz_shash(c2, 6, a, b, r_i_out, dkg->v_i[idx_dkg], nizk_gk, nizk_g);
+		mpz_mod(b, b, dkg->p);
+		mpz_shash(c2, 6, a, b, r_i_out, dkg->v_i[idx_dkg], nizk_gk, dkg->g);
 		if (mpz_cmp(c2, c_out))
 			throw false;		
 
@@ -1247,48 +1255,29 @@ bool verify_decryption_share
 	{
 		// release
 		mpz_clear(c2), mpz_clear(a), mpz_clear(b);
-		mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk);
+		mpz_clear(nizk_gk);
 		// return
 		return return_value;
 	}
 }
 
 bool verify_decryption_share_interactive_publiccoin
-	(const size_t idx, const size_t idx_dkg, mpz_srcptr r_i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc, JareckiLysyanskayaEDCF *edcf, std::ostream &err)
+	(const size_t idx_rbc, const size_t idx_dkg, mpz_srcptr r_i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc, JareckiLysyanskayaEDCF *edcf, std::ostream &err)
 {
 	// initialize
 	mpz_t a, b, c, r, foo, bar;
 	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(r), mpz_init(foo), mpz_init(bar);
-	mpz_t nizk_p, nizk_q, nizk_g, nizk_gk;
-	mpz_init(nizk_p), mpz_init(nizk_q), mpz_init(nizk_g), mpz_init(nizk_gk);
-	if (!mpz_set_gcry_mpi(dsa_p, nizk_p))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
-	if (!mpz_set_gcry_mpi(dsa_q, nizk_q))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
-	if (!mpz_set_gcry_mpi(dsa_g, nizk_g))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
+	mpz_t nizk_gk;
+	mpz_init(nizk_gk);
 	if (!mpz_set_gcry_mpi(gk, nizk_gk))
 	{
 		std::cerr << "ERROR: converting message component failed" << std::endl;
 		exit(-1);
 	}
-	if (mpz_cmp(nizk_p, dkg->p) || mpz_cmp(nizk_q, dkg->q) || mpz_cmp(nizk_g, dkg->g))
-	{
-		std::cerr << "ERROR: DSA/ElGamal and DKG group parameters does not match" << std::endl;
-		exit(-1);
-	}
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "dkg-decrypt::*_decryption_share_interactive_publiccoin" << dkg->p << dkg->q << dkg->g << edcf->h << r_i << "|" << idx << "|" << idx_dkg;
+	myID << "dkg-decrypt::*_decryption_share_interactive_publiccoin" << dkg->p << dkg->q << dkg->g << dkg->h <<
+		edcf->h << r_i << "|" << idx_rbc << "|" << idx_dkg;
 	rbc->setID(myID.str());
 
 	try
@@ -1296,65 +1285,63 @@ bool verify_decryption_share_interactive_publiccoin
 		// check index for sanity
 		if (idx_dkg >= (dkg->v_i).size())
 		{
-			err << "verify PoK: bad idx_dkg for P_" << idx << std::endl;
+			err << "verify PoK: bad idx_dkg for D_" << idx_rbc << std::endl;
 			throw false;
 		}
 		// check r_i for sanity
 		if (!dkg->CheckElement(r_i))
 		{
-			err << "verify PoK: r_i not in G for P_" << idx << std::endl;
+			err << "verify PoK: r_i not in G for D_" << idx_rbc << std::endl;
 			throw false;
 		}
 		// verify proof of knowledge (equality of discrete logarithms) [CGS97]
 		// 1. receive and check the commitment, i.e., $a, b \in G$
-		if (!rbc->DeliverFrom(a, idx))
+		if (!rbc->DeliverFrom(a, idx_rbc))
 		{
-			err << "verify PoK: DeliverFrom(a, idx) failed for P_" << idx << std::endl;
+			err << "verify PoK: DeliverFrom(a, idx_rbc) failed for D_" << idx_rbc << std::endl;
 			throw false;
 		}
-		if (!rbc->DeliverFrom(b, idx))
+		if (!rbc->DeliverFrom(b, idx_rbc))
 		{
-			err << "verify PoK: DeliverFrom(b, idx) failed for P_" << idx << std::endl;
+			err << "verify PoK: DeliverFrom(b, idx_rbc) failed for D_" << idx_rbc << std::endl;
 			throw false;
 		}
 		if (!dkg->CheckElement(a) || !dkg->CheckElement(b))
 		{
-			err << "verify PoK: check commitment failed for P_" << idx << std::endl;
+			err << "verify PoK: check commitment failed for D_" << idx_rbc << std::endl;
 			throw false;
 		}
 		// 2. challenge: $c\in\mathbb{Z}_q$ is computed by a distributed coin-flip protocol [JL00]
 		if (!edcf->Flip(rbc->j, c, aiou, rbc, err))
-		{
 			throw false;
-		}
 		// 3. receive, check and verify the response
-		if (!rbc->DeliverFrom(r, idx))
+		if (!rbc->DeliverFrom(r, idx_rbc))
 		{
-			err << "verify PoK: DeliverFrom(r, idx) failed for P_" << idx << std::endl;
+			err << "verify PoK: DeliverFrom(r, idx_rbc) failed for D_" << idx_rbc << std::endl;
 			throw false;
 		}
-		if (mpz_cmpabs(r, nizk_q) >= 0)
+		if (mpz_cmpabs(r, dkg->q) >= 0)
 		{
-			err << "verify PoK: check response failed for P_" << idx << std::endl;
+			err << "verify PoK: check response failed for D_" << idx_rbc << std::endl;
 			throw false;
 		}
 		// verify PoK equations [CGS97]
-		mpz_powm(foo, nizk_g, r, nizk_p);
-		mpz_powm(bar, dkg->v_i[idx_dkg], c, nizk_p);
+		mpz_powm(foo, dkg->g, r, dkg->p);
+		mpz_powm(bar, dkg->v_i[idx_dkg], c, dkg->p);
 		mpz_mul(bar, bar, a);
-		mpz_mod(bar, bar, nizk_p);
+		mpz_mod(bar, bar, dkg->p);
 		if (mpz_cmp(foo, bar))
 		{
-			err << "verify PoK: verify first equation failed for P_" << idx << std::endl;
+			err << "verify PoK: verify first equation failed for D_" << idx_rbc << std::endl;
 			throw false;
 		}
-		mpz_powm(foo, nizk_gk, r, nizk_p);
-		mpz_powm(bar, r_i, c, nizk_p);
+		mpz_powm(foo, nizk_gk, r, dkg->p);
+		mpz_powm(bar, r_i, c, dkg->p);
 		mpz_mul(bar, bar, b);
-		mpz_mod(bar, bar, nizk_p);
+		mpz_mod(bar, bar, dkg->p);
 		if (mpz_cmp(foo, bar))
 		{
-			err << "verify PoK: verify second equation failed for P_" << idx << std::endl;
+			err << "verify PoK: verify second equation failed for D_" << idx_rbc << std::endl;
 			throw false;
 		}
 	
@@ -1367,7 +1354,7 @@ bool verify_decryption_share_interactive_publiccoin
 		rbc->unsetID();
 		// release
 		mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(r), mpz_clear(foo), mpz_clear(bar);
-		mpz_clear(nizk_p), mpz_clear(nizk_q), mpz_clear(nizk_g), mpz_clear(nizk_gk);
+		mpz_clear(nizk_gk);
 		// return
 		return return_value;
 	}
@@ -1377,18 +1364,6 @@ bool combine_decryption_shares
 	(std::vector<size_t> &parties, std::vector<mpz_ptr> &shares)
 {
 	// initialize
-	mpz_t nizk_p, nizk_q;
-	mpz_init(nizk_p), mpz_init(nizk_q);
-	if (!mpz_set_gcry_mpi(dsa_p, nizk_p))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
-	if (!mpz_set_gcry_mpi(dsa_q, nizk_q))
-	{
-		std::cerr << "ERROR: converting group parameters failed" << std::endl;
-		exit(-1);
-	}
 	mpz_t a, b, c, lambda, R;
 	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(lambda), mpz_init_set_ui(R, 1L);
 
@@ -1433,17 +1408,17 @@ bool combine_decryption_shares
 					mpz_mul(b, b, c);
 				}
 			}
-			if (!mpz_invert(b, b, nizk_q))
+			if (!mpz_invert(b, b, dkg->q))
 			{
 				std::cerr << "ERROR: cannot invert during interpolation" << std::endl;
 				throw false;
 			}
 			mpz_mul(lambda, a, b);
-			mpz_mod(lambda, lambda, nizk_q); // computation of Lagrange coefficients finished
+			mpz_mod(lambda, lambda, dkg->q); // computation of Lagrange coefficients finished
 			// interpolate and accumulate correct decryption shares
-			mpz_powm(a, shares[j], lambda, nizk_p);
+			mpz_powm(a, shares[j], lambda, dkg->p);
 			mpz_mul(R, R, a);
-			mpz_mod(R, R, nizk_p);
+			mpz_mod(R, R, dkg->p);
 		}
 
 		// copy the result from R to gk
@@ -1461,7 +1436,6 @@ bool combine_decryption_shares
 	{
 		// release
 		mpz_clear(a), mpz_clear(b), mpz_clear(c), mpz_clear(lambda), mpz_clear(R);
-		mpz_clear(nizk_p), mpz_clear(nizk_q);
 		// return
 		return return_value;
 	}
@@ -1606,11 +1580,19 @@ void release_mpis
 	gcry_mpi_release(dsa_y);
 	gcry_mpi_release(dsa_x);
 	gcry_mpi_release(elg_p);
+	gcry_mpi_release(elg_q);
 	gcry_mpi_release(elg_g);
 	gcry_mpi_release(elg_y);
 	gcry_mpi_release(elg_x);
 	gcry_mpi_release(gk);
 	gcry_mpi_release(myk);
+	mpz_clear(dkg_p);
+	mpz_clear(dkg_q);
+	mpz_clear(dkg_g);
+	mpz_clear(dkg_h);
+	mpz_clear(dkg_x_i);
+	mpz_clear(dkg_xprime_i);
+	mpz_clear(dkg_y);
 }
 
 void release_keys
@@ -1619,12 +1601,17 @@ void release_keys
 	gcry_sexp_release(elgkey);
 }
 
+void done_dkg
+	()
+{
+	// release DKG
+	delete dkg;
+}
+
 void run_instance
 	(size_t whoami, const size_t num_xtests)
 {
 	std::string thispeer = peers[whoami];
-	size_t whoami_dkg;
-	init_dkg(thispeer + ".dkg", whoami_dkg);
 	read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
 	init_mpis();
 	if (!parse_private_key(armored_seckey))
@@ -1634,8 +1621,12 @@ void run_instance
 		std::getline(std::cin, passphrase);
 		std::cin.clear();
 		if (!parse_private_key(armored_seckey))
+		{
+			std::cerr << "ERROR: cannot read encrypted content of private key";
 			exit(-1);
+		}
 	}
+	init_dkg();
 	parse_message(armored_message);
 
 	// create communication handles between all players
@@ -1644,7 +1635,7 @@ void run_instance
 	for (size_t i = 0; i < peers.size(); i++)
 	{
 		std::stringstream key;
-		key << "dkg-decrypt::P_" << (i + whoami); // use simple key for now FIXME later -- we assume that GNUnet provides secure channels
+		key << "dkg-decrypt::D_" << (i + whoami); // use simple key for now FIXME later -- we assume that GNUnet provides secure channels
 		uP_in.push_back(pipefd[i][whoami][0]);
 		uP_out.push_back(pipefd[whoami][i][1]);
 		uP_key.push_back(key.str());
@@ -1673,7 +1664,7 @@ void run_instance
 	{
 		mpz_t xtest;
 		mpz_init_set_ui(xtest, i);
-		std::cout << "P_" << whoami << ": xtest = " << xtest << " <-> ";
+		std::cout << "D_" << whoami << ": xtest = " << xtest << " <-> ";
 		rbc->Broadcast(xtest);
 		for (size_t ii = 0; ii < peers.size(); ii++)
 		{
@@ -1718,7 +1709,7 @@ void run_instance
 	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crss, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true); // with verifiable generation of $g$
 	if (!vtmf->CheckGroup())
 	{
-		std::cout << "P_" << whoami << ": " << "VTMF: Group G was not correctly generated!" << std::endl;
+		std::cout << "D_" << whoami << ": " << "VTMF: Group G was not correctly generated!" << std::endl;
 		exit(-1);
 	}
 
@@ -1739,21 +1730,22 @@ void run_instance
 		{
 			if (!rbc->DeliverFrom(h_j, i))
 			{
-				std::cerr << "P_" << whoami << ": WARNING - no VTMF key received from " << i << std::endl;
+				std::cerr << "D_" << whoami << ": WARNING - no VTMF key received from " << i << std::endl;
 			}
 			if (!rbc->DeliverFrom(nizk_c, i))
 			{
-				std::cerr << "P_" << whoami << ": WARNING - no NIZK c received from " << i << std::endl;
+				std::cerr << "D_" << whoami << ": WARNING - no NIZK c received from " << i << std::endl;
 			}
 			if (!rbc->DeliverFrom(nizk_r, i))
 			{
-				std::cerr << "P_" << whoami << ": WARNING - no NIZK r received from " << i << std::endl;
+				std::cerr << "D_" << whoami << ": WARNING - no NIZK r received from " << i << std::endl;
 			}
 			std::stringstream lej;
 			lej << h_j << std::endl << nizk_c << std::endl << nizk_r << std::endl;
 			if (!vtmf->KeyGenerationProtocol_UpdateKey(lej))
 			{
-				std::cerr << "P_" << whoami << ": WARNING - public key of P_" << i << " was not correctly generated!" << std::endl;
+				std::cerr << "D_" << whoami << ": WARNING - VTMF public key of D_" << i <<
+					" was not correctly generated!" << std::endl;
 			}
 		}
 	}
@@ -1775,16 +1767,17 @@ void run_instance
 	// compute own decryption share and store it
 	std::string dds;
 	size_t idx_tmp;
-	compute_decryption_share(whoami_dkg, dds);
+	compute_decryption_share(dds);
 	if (verify_decryption_share(dds, idx_tmp, r_i, c, r))
 	{
+		assert((idx_tmp == dkg->i));
 		// use this decryption share as first point for Lagrange interpolation
 		mpz_ptr tmp1 = new mpz_t();
 		mpz_init_set(tmp1, r_i);
-		interpol_parties.push_back(whoami_dkg), interpol_shares.push_back(tmp1);
+		interpol_parties.push_back(dkg->i), interpol_shares.push_back(tmp1);
 	}
 	else
-		std::cerr << "WARNING: verification of own decryption share failed for P_" << whoami << std::endl;
+		std::cerr << "WARNING: verification of own decryption share failed for D_" << whoami << std::endl;
 
 	// collect other decryption shares
 	if (opt_verbose)
@@ -1798,13 +1791,13 @@ void run_instance
 			// receive index
 			if (!rbc->DeliverFrom(idx, i))
 			{
-				std::cerr << "WARNING: DeliverFrom(idx, i) failed for P_" << i << std::endl;
+				std::cerr << "WARNING: DeliverFrom(idx, i) failed for D_" << i << std::endl;
 				complaints.push_back(i);
 			}
 			// receive a decryption share including NIZK argument
 			if (!rbc->DeliverFrom(r_i, i))
 			{
-				std::cerr << "WARNING: DeliverFrom(r_i, i) failed for P_" << i << std::endl;
+				std::cerr << "WARNING: DeliverFrom(r_i, i) failed for D_" << i << std::endl;
 				complaints.push_back(i);
 			}
 			// verify decryption share interactively
@@ -1812,14 +1805,16 @@ void run_instance
 			size_t idx_dkg = mpz_get_ui(idx);
 			if (!verify_decryption_share_interactive_publiccoin(i, idx_dkg, r_i, aiou, rbc, edcf, err_log))
 			{
-				std::cerr << "WARNING: interactive verification of decryption share from P_" << i << " failed" << std::endl;
+				std::cerr << "WARNING: bad decryption share of P_" << idx_dkg << " received from D_" << i << std::endl;
 				if (opt_verbose)
 					std::cerr << err_log.str() << std::endl;
 				complaints.push_back(i);
 			}
 			if (std::find(complaints.begin(), complaints.end(), i) == complaints.end())
 			{
-				std::cout << "P_" << whoami << ": good decryption share received from P_" << i << std::endl;
+				if (opt_verbose)
+					std::cout << "D_" << whoami << ": good decryption share of P_" << idx_dkg << " received from D_" <<
+						i << std::endl;
 				// collect only verified decryption shares
 				mpz_ptr tmp1 = new mpz_t();
 				mpz_init_set(tmp1, r_i);
@@ -1837,7 +1832,7 @@ void run_instance
 			rbc->Broadcast(r_i);
 			// prove own decryption share interactively
 			std::stringstream err_log;
-			prove_decryption_share_interactive_publiccoin(idx_tmp, r_i, aiou, rbc, edcf, err_log);
+			prove_decryption_share_interactive_publiccoin(r_i, aiou, rbc, edcf, err_log);
 			if (opt_verbose)
 				std::cout << "prove_decryption_share_interactive_publiccoin() finished; log follows" << std::endl << err_log.str() << std::endl;
 		}
@@ -1858,7 +1853,7 @@ void run_instance
 
 	// at the end: deliver some more rounds for waiting parties
 	time_t synctime = aiounicast::aio_timeout_long;
-	std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
+	std::cout << "D_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
 	rbc->Sync(synctime);
 
 	// release EDCF
@@ -1873,13 +1868,13 @@ void run_instance
 	// release handles (unicast channel)
 	uP_in.clear(), uP_out.clear(), uP_key.clear();
 	if (opt_verbose)
-		std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
+		std::cout << "D_" << whoami << ": aiou.numRead = " << aiou->numRead <<
 			" aiou.numWrite = " << aiou->numWrite << std::endl;
 
 	// release handles (broadcast channel)
 	bP_in.clear(), bP_out.clear(), bP_key.clear();
 	if (opt_verbose)
-		std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
+		std::cout << "D_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
 			" aiou2.numWrite = " << aiou2->numWrite << std::endl;
 
 	// release asynchronous unicast and broadcast
@@ -1917,16 +1912,16 @@ void fork_instance
 	{
 		if (pid[whoami] == 0)
 		{
-			/* BEGIN child code: participant P_i */
+			/* BEGIN child code: participant D_i */
 #ifdef GNUNET
 			run_instance(whoami, gnunet_opt_xtests);
 #else
 			run_instance(whoami, 0);
 #endif
 			if (opt_verbose)
-				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
+				std::cout << "D_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
-			/* END child code: participant P_i */
+			/* END child code: participant D_i */
 		}
 		else
 		{
@@ -2123,14 +2118,13 @@ int main
 	}
 	if (nonint)
 	{
-		size_t idx, whoami = 0;
+		size_t idx;
 		tmcg_octets_t msg, seskey;
-		std::string dds, thispeer = peers[whoami];
+		std::string dds, thispeer = peers[0];
 		mpz_t r_i, c, r;
 		std::vector<size_t> interpol_parties;
 		std::vector<mpz_ptr> interpol_shares;
 
-		init_dkg(thispeer + ".dkg", whoami);
 		read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
 		init_mpis();
 		if (!parse_private_key(armored_seckey))
@@ -2142,8 +2136,9 @@ int main
 			if (!parse_private_key(armored_seckey))
 				exit(-1);
 		}
+		init_dkg();
 		parse_message(armored_message);
-		compute_decryption_share(whoami, dds);
+		compute_decryption_share(dds);
 		tmcg_octets_t dds_input;
 		dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // bluring the decryption share
 		dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // make NSA's spying a bit harder
@@ -2163,8 +2158,8 @@ int main
 		}
 		mpz_ptr tmp1 = new mpz_t();
 		mpz_init_set(tmp1, r_i);
-		interpol_parties.push_back(whoami), interpol_shares.push_back(tmp1);
-		std::cout << "Now, enter decryption shares (one per line; ^D for EOF) from other parties/devices: " << std::endl;
+		interpol_parties.push_back(dkg->i), interpol_shares.push_back(tmp1);
+		std::cout << "Enter decryption shares (one per line; ^D for EOF) from other parties/devices:" << std::endl;
 		while (std::getline(std::cin, dds_radix))
 		{
 			tmcg_octets_t dds_output;
@@ -2291,7 +2286,8 @@ int main
 	// wait for childs and close pipes
 	for (size_t i = 0; i < peers.size(); i++)
 	{
-		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
+		if (opt_verbose)
+			std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
 		if (waitpid(pid[i], NULL, 0) != pid[i])
 			perror("dkg-decrypt (waitpid)");
 		for (size_t j = 0; j < peers.size(); j++)
@@ -2311,7 +2307,7 @@ int main
 int main
 	(int argc, char **argv)
 {
-	std::cout << "configure feature --enable-forking needed" << std::endl;
+	std::cerr << "configure feature --enable-forking needed" << std::endl;
 	return 77;
 }
 

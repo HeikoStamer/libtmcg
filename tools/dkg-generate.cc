@@ -168,7 +168,8 @@ void run_instance
 
 	// create an instance of tDSS
 	CanettiGennaroJareckiKrawczykRabinDSS *dss;
-	std::cout << "CanettiGennaroJareckiKrawczykRabinDSS(" << N << ", " << S << ", " << whoami << ", ...)" << std::endl;
+	if (opt_verbose)
+		std::cout << "CanettiGennaroJareckiKrawczykRabinDSS(" << N << ", " << S << ", " << whoami << ", ...)" << std::endl;
 	dss = new CanettiGennaroJareckiKrawczykRabinDSS(N, S, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 	if (!dss->CheckGroup())
 	{
@@ -180,7 +181,8 @@ void run_instance
 	if (S > 0)
 	{
 		std::stringstream err_log;
-		std::cout << "P_" << whoami << ": dss.Generate()" << std::endl;
+		if (opt_verbose)
+			std::cout << "P_" << whoami << ": dss.Generate()" << std::endl;
 		if (!dss->Generate(aiou, rbc, err_log))
 		{
 			std::cerr << "P_" << whoami << ": " << "tDSS Generate() failed" << std::endl;
@@ -194,7 +196,8 @@ void run_instance
 
 	// create an instance of DKG
 	GennaroJareckiKrawczykRabinDKG *dkg;
-	std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
+	if (opt_verbose)
+		std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
 	dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
 	if (!dkg->CheckGroup())
 	{
@@ -205,7 +208,8 @@ void run_instance
 			
 	// generate shared $x$ and extract $y = g^x \bmod p$
 	std::stringstream err_log;
-	std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
+	if (opt_verbose)
+		std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
 	if (!dkg->Generate(aiou, rbc, err_log))
 	{
 		std::cerr << "P_" << whoami << ": " << "DKG Generate() failed" << std::endl;
@@ -217,7 +221,8 @@ void run_instance
 		std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 
 	// check the generated key share
-	std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
+	if (opt_verbose)
+		std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
 	if (!dkg->CheckKey())
 	{
 		std::cerr << "P_" << whoami << ": " << "DKG CheckKey() failed" << std::endl;
@@ -620,9 +625,15 @@ void run_instance
 		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
-	if (!mpz_get_gcry_mpi(&x, dkg->x_i)) // computed by DKG for each participant/peer (cf. LibTMCG source code)
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ckeytime, 16, p, q, g, y, sub); // use common key creation time and Elgamal algorithm id
+
+	// create an OpenPGP private subkey as experimental algorithm ID 109 to store everything from DKG
+	gcry_mpi_t h, n, t, i, qualsize, x_i, xprime_i;
+	std::vector<gcry_mpi_t> qual, v_i;
+	std::vector< std::vector<gcry_mpi_t> > c_ik;
+	if (!mpz_get_gcry_mpi(&h, dkg->h))
 	{
-		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->x_i" << std::endl;
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->h" << std::endl;
 		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
 		gcry_mpi_release(p);
 		gcry_mpi_release(q);
@@ -632,47 +643,55 @@ void run_instance
 		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 		exit(-1);
 	}
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ckeytime, 16, p, q, g, y, sub); // use common key creation time and Elgamal algorithm id
-	if (T > 0)
+	n = gcry_mpi_set_ui(NULL, dkg->n);
+	t = gcry_mpi_set_ui(NULL, dkg->t);
+	i = gcry_mpi_set_ui(NULL, dkg->i);
+	qualsize = gcry_mpi_set_ui(NULL, dkg->QUAL.size());
+	for (size_t j = 0; j < dkg->QUAL.size(); j++)
 	{
-		// create an OpenPGP private subkey as experimental algorithm ID 109 to store everything from DKG
-		gcry_mpi_t h, n, t, i, qualsize, x_i, xprime_i;
-		std::vector<gcry_mpi_t> qual, v_i;
-		std::vector< std::vector<gcry_mpi_t> > c_ik;
-		if (!mpz_get_gcry_mpi(&h, dkg->h))
+		gcry_mpi_t tmp = gcry_mpi_set_ui(NULL, dkg->QUAL[j]);
+		qual.push_back(tmp);
+	}
+	v_i.resize(dkg->n);
+	for (size_t j = 0; j < v_i.size(); j++)
+	{
+		if (!mpz_get_gcry_mpi(&v_i[j], dkg->v_i[j]))
 		{
-			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dss->h" << std::endl;
+			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->v_i[j]" << std::endl;
 			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
 			gcry_mpi_release(p);
 			gcry_mpi_release(q);
 			gcry_mpi_release(g);
 			gcry_mpi_release(y);
-			gcry_mpi_release(x);
-			gcry_sexp_release(key);
-			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
-			exit(-1);
+			gcry_mpi_release(h);
+			gcry_mpi_release(n);
+			gcry_mpi_release(t);
+			gcry_mpi_release(i);
+			gcry_mpi_release(qualsize);
+			for (size_t jj = 0; jj < qual.size(); jj++)
+				gcry_mpi_release(qual[jj]);
+			for (size_t j = 0; j < v_i.size(); j++)
+				gcry_mpi_release(v_i[j]);
+			for (size_t jj = 0; jj < c_ik.size(); jj++)
+				for (size_t kk = 0; kk < c_ik[jj].size(); kk++)
+					gcry_mpi_release(c_ik[jj][kk]);
+			exit(-1); 
 		}
-		n = gcry_mpi_set_ui(NULL, dkg->n);
-		t = gcry_mpi_set_ui(NULL, dkg->t);
-		i = gcry_mpi_set_ui(NULL, dkg->i);
-		qualsize = gcry_mpi_set_ui(NULL, dkg->QUAL.size());
-		for (size_t j = 0; j < dkg->QUAL.size(); j++)
+	}
+	c_ik.resize(dkg->n);
+	for (size_t j = 0; j < c_ik.size(); j++)
+	{
+		for (size_t k = 0; k <= dkg->t; k++)
 		{
-			gcry_mpi_t tmp = gcry_mpi_set_ui(NULL, dkg->QUAL[j]);
-			qual.push_back(tmp);
-		}
-		v_i.resize(dkg->n);
-		for (size_t j = 0; j < v_i.size(); j++)
-		{
-			if (!mpz_get_gcry_mpi(&v_i[j], dkg->v_i[j]))
+			gcry_mpi_t tmp;
+			if (!mpz_get_gcry_mpi(&tmp, dkg->C_ik[j][k]))
 			{
-				std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->v_i[j]" << std::endl;
+				std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->C_ik[j][k]" << std::endl;
 				mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
 				gcry_mpi_release(p);
 				gcry_mpi_release(q);
 				gcry_mpi_release(g);
 				gcry_mpi_release(y);
-				gcry_mpi_release(x);
 				gcry_mpi_release(h);
 				gcry_mpi_release(n);
 				gcry_mpi_release(t);
@@ -687,91 +706,41 @@ void run_instance
 						gcry_mpi_release(c_ik[jj][kk]);
 				exit(-1); 
 			}
+			c_ik[j].push_back(tmp);
 		}
-		c_ik.resize(dkg->n);
+	}
+	if (!mpz_get_gcry_mpi(&x_i, dkg->x_i))
+	{
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->x_i" << std::endl;
+		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
+		gcry_mpi_release(h);
+		gcry_mpi_release(n);
+		gcry_mpi_release(t);
+		gcry_mpi_release(i);
+		gcry_mpi_release(qualsize);
+		for (size_t j = 0; j < qual.size(); j++)
+			gcry_mpi_release(qual[j]);
+		for (size_t j = 0; j < v_i.size(); j++)
+			gcry_mpi_release(v_i[j]);
 		for (size_t j = 0; j < c_ik.size(); j++)
-		{
-			for (size_t k = 0; k <= dkg->t; k++)
-			{
-				gcry_mpi_t tmp;
-				if (!mpz_get_gcry_mpi(&tmp, dkg->C_ik[j][k]))
-				{
-					std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->C_ik[j][k]" << std::endl;
-					mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
-					gcry_mpi_release(p);
-					gcry_mpi_release(q);
-					gcry_mpi_release(g);
-					gcry_mpi_release(y);
-					gcry_mpi_release(x);
-					gcry_mpi_release(h);
-					gcry_mpi_release(n);
-					gcry_mpi_release(t);
-					gcry_mpi_release(i);
-					gcry_mpi_release(qualsize);
-					for (size_t jj = 0; jj < qual.size(); jj++)
-						gcry_mpi_release(qual[jj]);
-					for (size_t j = 0; j < v_i.size(); j++)
-						gcry_mpi_release(v_i[j]);
-					for (size_t jj = 0; jj < c_ik.size(); jj++)
-						for (size_t kk = 0; kk < c_ik[jj].size(); kk++)
-							gcry_mpi_release(c_ik[jj][kk]);
-					exit(-1); 
-				}
-				c_ik[j].push_back(tmp);
-			}
-		}
-		if (!mpz_get_gcry_mpi(&x_i, dkg->x_i))
-		{
-			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->x_i" << std::endl;
-			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
-			gcry_mpi_release(p);
-			gcry_mpi_release(q);
-			gcry_mpi_release(g);
-			gcry_mpi_release(y);
-			gcry_mpi_release(x);
-			gcry_mpi_release(h);
-			gcry_mpi_release(n);
-			gcry_mpi_release(t);
-			gcry_mpi_release(i);
-			gcry_mpi_release(qualsize);
-			for (size_t j = 0; j < qual.size(); j++)
-				gcry_mpi_release(qual[j]);
-			for (size_t j = 0; j < v_i.size(); j++)
-				gcry_mpi_release(v_i[j]);
-			for (size_t j = 0; j < c_ik.size(); j++)
-				for (size_t k = 0; k < c_ik[j].size(); k++)
-					gcry_mpi_release(c_ik[j][k]);
-			gcry_sexp_release(key);
-			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
-			exit(-1);
-		}
-		if (!mpz_get_gcry_mpi(&xprime_i, dkg->xprime_i))
-		{
-			std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->xprime_i" << std::endl;
-			mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
-			gcry_mpi_release(p);
-			gcry_mpi_release(q);
-			gcry_mpi_release(g);
-			gcry_mpi_release(y);
-			gcry_mpi_release(x);
-			gcry_mpi_release(h);
-			gcry_mpi_release(n);
-			gcry_mpi_release(t);
-			gcry_mpi_release(i);
-			gcry_mpi_release(qualsize);
-			for (size_t j = 0; j < qual.size(); j++)
-				gcry_mpi_release(qual[j]);
-			for (size_t j = 0; j < v_i.size(); j++)
-				gcry_mpi_release(v_i[j]);
-			for (size_t j = 0; j < c_ik.size(); j++)
-				for (size_t k = 0; k < c_ik[j].size(); k++)
-					gcry_mpi_release(c_ik[j][k]);
-			gcry_mpi_release(x_i);
-			gcry_sexp_release(key);
-			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
-			exit(-1);
-		}
-		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109(ckeytime, p, q, g, h, y, n, t, i, qualsize, qual, v_i, c_ik, x_i, xprime_i, passphrase, ssb);
+			for (size_t k = 0; k < c_ik[j].size(); k++)
+				gcry_mpi_release(c_ik[j][k]);
+		gcry_sexp_release(key);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+		exit(-1);
+	}
+	if (!mpz_get_gcry_mpi(&xprime_i, dkg->xprime_i))
+	{
+		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dkg->xprime_i" << std::endl;
+		mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(y);
 		gcry_mpi_release(h);
 		gcry_mpi_release(n);
 		gcry_mpi_release(t);
@@ -785,10 +754,25 @@ void run_instance
 			for (size_t k = 0; k < c_ik[j].size(); k++)
 				gcry_mpi_release(c_ik[j][k]);
 		gcry_mpi_release(x_i);
-		gcry_mpi_release(xprime_i);
+		gcry_sexp_release(key);
+		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
+		exit(-1);
 	}
-	else
-		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode(ckeytime, 16, p, q, g, y, x, passphrase, ssb);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109(ckeytime, p, q, g, h, y, n, t, i, qualsize, qual, v_i, c_ik, x_i, xprime_i, passphrase, ssb);
+	gcry_mpi_release(h);
+	gcry_mpi_release(n);
+	gcry_mpi_release(t);
+	gcry_mpi_release(i);
+	gcry_mpi_release(qualsize);
+	for (size_t j = 0; j < qual.size(); j++)
+		gcry_mpi_release(qual[j]);
+	for (size_t j = 0; j < v_i.size(); j++)
+		gcry_mpi_release(v_i[j]);
+	for (size_t j = 0; j < c_ik.size(); j++)
+		for (size_t k = 0; k < c_ik[j].size(); k++)
+			gcry_mpi_release(c_ik[j][k]);
+	gcry_mpi_release(x_i);
+	gcry_mpi_release(xprime_i);
 	elgflags.push_back(0x04 | 0x10); // key may be used to encrypt communications and have been split by a secret-sharing mechanism
 	if (S > 0)
 		sigtime = ckeytime; // use common key creation time as OpenPGP signature creation time
@@ -817,7 +801,6 @@ void run_instance
 			gcry_mpi_release(q);
 			gcry_mpi_release(g);
 			gcry_mpi_release(y);
-			gcry_mpi_release(x);
 			gcry_sexp_release(key);
 			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
@@ -831,7 +814,6 @@ void run_instance
 			gcry_mpi_release(q);
 			gcry_mpi_release(g);
 			gcry_mpi_release(y);
-			gcry_mpi_release(x);
 			gcry_sexp_release(key);
 			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
@@ -848,7 +830,6 @@ void run_instance
 			gcry_mpi_release(q);
 			gcry_mpi_release(g);
 			gcry_mpi_release(y);
-			gcry_mpi_release(x);
 			gcry_sexp_release(key);
 			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
@@ -863,7 +844,6 @@ void run_instance
 			gcry_mpi_release(q);
 			gcry_mpi_release(g);
 			gcry_mpi_release(y);
-			gcry_mpi_release(x);
 			gcry_sexp_release(key);
 			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
@@ -876,7 +856,6 @@ void run_instance
 			gcry_mpi_release(q);
 			gcry_mpi_release(g);
 			gcry_mpi_release(y);
-			gcry_mpi_release(x);
 			gcry_mpi_release(r);
 			gcry_sexp_release(key);
 			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
@@ -896,7 +875,6 @@ void run_instance
 			gcry_mpi_release(q);
 			gcry_mpi_release(g);
 			gcry_mpi_release(y);
-			gcry_mpi_release(x);
 			gcry_mpi_release(r);
 			gcry_mpi_release(s);
 			gcry_sexp_release(key);
@@ -910,14 +888,14 @@ void run_instance
 	gcry_mpi_release(q);
 	gcry_mpi_release(g);
 	gcry_mpi_release(y);
-	gcry_mpi_release(x);
 	gcry_mpi_release(r);
 	gcry_mpi_release(s);
 	gcry_sexp_release(key);
 	
 	// at the end: deliver some more rounds for still waiting parties
 	time_t synctime = aiounicast::aio_timeout_very_long;
-	std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
+	if (opt_verbose)
+		std::cout << "P_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
 	rbc->Sync(synctime);
 
 	// export generated public keys in OpenPGP armor format
@@ -975,25 +953,6 @@ void run_instance
 		exit(-1);
 	}
 	secofs.close();
-
-	// export verification keys of DKG into a file
-	std::stringstream dkgfilename;
-	dkgfilename << peers[whoami] << ".dkg";
-	std::ofstream dkgofs((dkgfilename.str()).c_str(), std::ofstream::out);
-	if (!dkgofs.good())
-	{
-		std::cerr << "P_" << whoami << ": opening DKG file failed" << std::endl;
-		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
-		exit(-1);
-	}
-	dkg->PublishVerificationKeys(dkgofs);
-	if (!dkgofs.good())
-	{
-		std::cerr << "P_" << whoami << ": writing DKG file failed" << std::endl;
-		delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
-		exit(-1);
-	}
-	dkgofs.close();
 
 	// release DKG
 	delete dkg;
@@ -1261,7 +1220,8 @@ int main
 	// wait for childs and close pipes
 	for (size_t i = 0; i < peers.size(); i++)
 	{
-		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
+		if (opt_verbose)
+			std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
 		if (waitpid(pid[i], NULL, 0) != pid[i])
 			perror("dkg-generate (waitpid)");
 		for (size_t j = 0; j < peers.size(); j++)
@@ -1281,7 +1241,7 @@ int main
 int main
 	(int argc, char **argv)
 {
-	std::cout << "configure feature --enable-forking needed" << std::endl;
+	std::cerr << "configure feature --enable-forking needed" << std::endl;
 	return 77;
 }
 
