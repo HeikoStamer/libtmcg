@@ -1,3 +1,4 @@
+* [2017-08-04] DKG-tools: changed storage of public data for shared keys (DKG)
 * [2017-07-30] DKG-tools: added dkg-revoke for revocation of a shared key
 * [2017-07-30] RFC4880: interface of PacketDecode() changed
 * [2017-07-28] RFC4880: added interfaces for key revocation signatures

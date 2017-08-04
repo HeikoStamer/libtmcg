@@ -735,6 +735,8 @@ void run_instance
 	init_mpis();
 	if (!parse_private_key(armored_seckey))
 	{
+		keyid.clear();
+		dss_qual.clear(), dss_c_ik.clear();
 		// protected with password
 		std::cout << "Please enter the passphrase to unlock your private key: ";
 		std::getline(std::cin, passphrase);
@@ -752,7 +754,7 @@ void run_instance
 	for (size_t i = 0; i < peers.size(); i++)
 	{
 		std::stringstream key;
-		key << "dkg-sign::P_" << (i + whoami); // use simple key for now FIXME later -- we assume that GNUnet provides secure channels
+		key << "dkg-sign::S_" << (i + whoami); // use simple key for now FIXME later -- we assume that GNUnet provides secure channels
 		uP_in.push_back(pipefd[i][whoami][0]);
 		uP_out.push_back(pipefd[whoami][i][1]);
 		uP_key.push_back(key.str());
@@ -780,7 +782,7 @@ void run_instance
 	{
 		mpz_t xtest;
 		mpz_init_set_ui(xtest, i);
-		std::cout << "P_" << whoami << ": xtest = " << xtest << " <-> ";
+		std::cout << "S_" << whoami << ": xtest = " << xtest << " <-> ";
 		rbc->Broadcast(xtest);
 		for (size_t ii = 0; ii < peers.size(); ii++)
 		{
@@ -812,7 +814,7 @@ void run_instance
 			}
 			else
 			{
-				std::cerr << "P_" << whoami << ": WARNING - no signature creation time received from " << i << std::endl;
+				std::cerr << "S_" << whoami << ": WARNING - no signature creation time received from " << i << std::endl;
 			}
 		}
 	}
@@ -820,14 +822,14 @@ void run_instance
 	std::sort(tvs.begin(), tvs.end());
 	if (tvs.size() < (dss_t + 1))
 	{
-		std::cerr << "P_" << whoami << ": not enough timestamps received" << std::endl;
+		std::cerr << "S_" << whoami << ": not enough timestamps received" << std::endl;
 		delete rbc, delete aiou, delete aiou2;
 		release_mpis();
 		exit(-1);
 	}
 	csigtime = tvs[tvs.size()/2]; // use a median value as some kind of gentle agreement
 	if (opt_verbose)
-		std::cout << "P_" << whoami << ": canonicalized signature creation time = " << csigtime << std::endl;
+		std::cout << "S_" << whoami << ": canonicalized signature creation time = " << csigtime << std::endl;
 
 	// select hash algorithm for OpenPGP based on |q| (size in bit)
 	tmcg_byte_t hashalgo = 0;
@@ -839,7 +841,7 @@ void run_instance
 		hashalgo = 10; // SHA512 (alg 10)
 	else
 	{
-		std::cerr << "P_" << whoami << ": selecting hash algorithm failed for |q| = " << mpz_sizeinbase(dss_q, 2L) << std::endl;
+		std::cerr << "S_" << whoami << ": selecting hash algorithm failed for |q| = " << mpz_sizeinbase(dss_q, 2L) << std::endl;
 		delete rbc, delete aiou, delete aiou2;
 		release_mpis();
 		exit(-1);
@@ -850,7 +852,7 @@ void run_instance
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, hashalgo, csigtime, sigexptime, keyid, trailer);
 	if (!CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash(opt_ifilename, trailer, hashalgo, hash, left))
 	{
-		std::cerr << "P_" << whoami << ": BinaryDocumentHash() failed; cannot process input file \"" << opt_ifilename << "\"" << std::endl;
+		std::cerr << "S_" << whoami << ": BinaryDocumentHash() failed; cannot process input file \"" << opt_ifilename << "\"" << std::endl;
 		delete rbc, delete aiou, delete aiou2;
 		release_mpis();
 		exit(-1);
@@ -886,11 +888,12 @@ void run_instance
 		for (size_t k = 0; k < dss_c_ik[i].size(); k++)
 			dss_in << dss_c_ik[i][k] << std::endl;
 	}
-	std::cout << "CanettiGennaroJareckiKrawczykRabinDSS(in, ...)" << std::endl;
+	if (opt_verbose)
+		std::cout << "CanettiGennaroJareckiKrawczykRabinDSS(in, ...)" << std::endl;
 	CanettiGennaroJareckiKrawczykRabinDSS *dss = new CanettiGennaroJareckiKrawczykRabinDSS(dss_in);
 	if (!dss->CheckGroup())
 	{
-		std::cerr << "P_" << whoami << ": " << "tDSS parameters are not correctly generated!" << std::endl;
+		std::cerr << "S_" << whoami << ": " << "tDSS parameters are not correctly generated!" << std::endl;
 		delete dss, delete rbc, delete aiou, delete aiou2;
 		release_mpis();
 		exit(-1);
@@ -911,7 +914,7 @@ void run_instance
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	if (ret)
 	{
-		std::cerr << "P_" << whoami << ": gcry_mpi_scan() failed for h" << std::endl;
+		std::cerr << "S_" << whoami << ": gcry_mpi_scan() failed for h" << std::endl;
 		gcry_mpi_release(h);
 		gcry_mpi_release(r);
 		gcry_mpi_release(s);
@@ -922,7 +925,7 @@ void run_instance
 	}
 	if (!mpz_set_gcry_mpi(h, dsa_m))
 	{
-		std::cerr << "P_" << whoami << ": mpz_set_gcry_mpi() failed for dsa_m" << std::endl;
+		std::cerr << "S_" << whoami << ": mpz_set_gcry_mpi() failed for dsa_m" << std::endl;
 		gcry_mpi_release(h);
 		gcry_mpi_release(r);
 		gcry_mpi_release(s);
@@ -932,11 +935,12 @@ void run_instance
 		exit(-1);
 	}
 	std::stringstream err_log_sign;
-	std::cout << "P_" << whoami << ": dss.Sign()" << std::endl;
+	if (opt_verbose)
+		std::cout << "S_" << whoami << ": dss.Sign()" << std::endl;
 	if (!dss->Sign(peers.size(), whoami, dsa_m, dsa_r, dsa_s, aiou, rbc, err_log_sign))
 	{
-		std::cerr << "P_" << whoami << ": " << "tDSS Sign() failed" << std::endl;
-		std::cerr << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
+		std::cerr << "S_" << whoami << ": " << "tDSS Sign() failed" << std::endl;
+		std::cerr << "S_" << whoami << ": log follows " << std::endl << err_log_sign.str();
 		gcry_mpi_release(h);
 		gcry_mpi_release(r);
 		gcry_mpi_release(s);
@@ -946,10 +950,10 @@ void run_instance
 		exit(-1);
 	}
 	if (opt_verbose)
-		std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
+		std::cout << "S_" << whoami << ": log follows " << std::endl << err_log_sign.str();
 	if (!mpz_get_gcry_mpi(&r, dsa_r))
 	{
-		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_r" << std::endl;
+		std::cerr << "S_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_r" << std::endl;
 		gcry_mpi_release(h);
 		gcry_mpi_release(r);
 		gcry_mpi_release(s);
@@ -960,7 +964,7 @@ void run_instance
 	}
 	if (!mpz_get_gcry_mpi(&s, dsa_s))
 	{
-		std::cerr << "P_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_s" << std::endl;
+		std::cerr << "S_" << whoami << ": mpz_get_gcry_mpi() failed for dsa_s" << std::endl;
 		gcry_mpi_release(h);
 		gcry_mpi_release(r);
 		gcry_mpi_release(s);
@@ -976,6 +980,12 @@ void run_instance
 	gcry_mpi_release(s);
 	mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
 
+	// at the end: deliver some more rounds for still waiting parties
+	time_t synctime = aiounicast::aio_timeout_very_long;
+	if (opt_verbose)
+		std::cout << "S_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
+	rbc->Sync(synctime);
+
 	// release tDSS
 	delete dss;
 
@@ -985,13 +995,13 @@ void run_instance
 	// release handles (unicast channel)
 	uP_in.clear(), uP_out.clear(), uP_key.clear();
 	if (opt_verbose)
-		std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
+		std::cout << "S_" << whoami << ": aiou.numRead = " << aiou->numRead <<
 			" aiou.numWrite = " << aiou->numWrite << std::endl;
 
 	// release handles (broadcast channel)
 	bP_in.clear(), bP_out.clear(), bP_key.clear();
 	if (opt_verbose)
-		std::cout << "P_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
+		std::cout << "S_" << whoami << ": aiou2.numRead = " << aiou2->numRead <<
 			" aiou2.numWrite = " << aiou2->numWrite << std::endl;
 
 	// release asynchronous unicast and broadcast
@@ -1023,7 +1033,7 @@ void fork_instance
 	{
 		if (pid[whoami] == 0)
 		{
-			/* BEGIN child code: participant P_i */
+			/* BEGIN child code: participant S_i */
 			time_t sigtime = time(NULL);
 #ifdef GNUNET
 			run_instance(whoami, sigtime, gnunet_opt_sigexptime, gnunet_opt_xtests);
@@ -1031,9 +1041,9 @@ void fork_instance
 			run_instance(whoami, sigtime, 0, 0);
 #endif
 			if (opt_verbose)
-				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
+				std::cout << "S_" << whoami << ": exit(0)" << std::endl;
 			exit(0);
-			/* END child code: participant P_i */
+			/* END child code: participant S_i */
 		}
 		else
 		{
@@ -1268,6 +1278,8 @@ int main
 		return 0;
 	else
 		return -1;
+#else
+	std::cerr << "WARNING: GNUnet development files are required for message exchange of signing protocol" << std::endl;
 #endif
 
 	std::cout << "INFO: running local test with " << peers.size() << " participants" << std::endl;
@@ -1293,7 +1305,8 @@ int main
 	// wait for childs and close pipes
 	for (size_t i = 0; i < peers.size(); i++)
 	{
-		std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
+		if (opt_verbose)
+			std::cerr << "waitpid(" << pid[i] << ")" << std::endl;
 		if (waitpid(pid[i], NULL, 0) != pid[i])
 			perror("dkg-sign (waitpid)");
 		for (size_t j = 0; j < peers.size(); j++)
@@ -1313,7 +1326,7 @@ int main
 int main
 	(int argc, char **argv)
 {
-	std::cout << "configure feature --enable-forking needed" << std::endl;
+	std::cerr << "configure feature --enable-forking needed" << std::endl;
 	return 77;
 }
 

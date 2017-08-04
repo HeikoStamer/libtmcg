@@ -543,7 +543,8 @@ void run_instance
 		}
 		gcry_mpi_release(h);
 		std::stringstream err_log_sign;
-		std::cout << "P_" << whoami << ": dss.Sign()" << std::endl;
+		if (opt_verbose)
+			std::cout << "P_" << whoami << ": dss.Sign()" << std::endl;
 		if (!dss->Sign(N, whoami, dsa_m, dsa_r, dsa_s, aiou, rbc, err_log_sign))
 		{
 			std::cerr << "P_" << whoami << ": " << "tDSS Sign() failed" << std::endl;
@@ -820,7 +821,8 @@ void run_instance
 		}
 		gcry_mpi_release(h);
 		std::stringstream err_log_sign;
-		std::cout << "P_" << whoami << ": dss.Sign()" << std::endl;
+		if (opt_verbose)
+			std::cout << "P_" << whoami << ": dss.Sign()" << std::endl;
 		if (!dss->Sign(N, whoami, dsa_m, dsa_r, dsa_s, aiou, rbc, err_log_sign))
 		{
 			std::cerr << "P_" << whoami << ": " << "tDSS Sign() failed" << std::endl;

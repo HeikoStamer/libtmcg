@@ -1,4 +1,4 @@
-.TH DKG\-REVOKE "1" "July 2017" "LibTMCG 1.3.2" "User Commands"
+.TH DKG\-REVOKE "1" "August 2017" "LibTMCG 1.3.2" "User Commands"
 
 .SH NAME
 dkg\-revoke \- threshold revocation protocol for OpenPGP (only DSA/DSS)
@@ -22,12 +22,12 @@ The results, i.e., the key revocation signatures, are written to the public
 key file in ASCII-armored OpenPGP format.
 .PP
 The program employs GNUnet for exchange of protocol messages, where PEERS
-must be a sufficient subset (i.e. at least 2s+1) of the GNUnet peer identities
-used during distributed key generation with
+must be a sufficient subset (i.e. at least 2s+1 parties) of the GNUnet peer
+identities used during distributed key generation with
 .BR dkg\-generate (1)
 including the calling peer.
 .PP
-By the additional option "-r" the callers can specify a reason for revocation
+By the additional option "-r" the caller can specify a reason for revocation
 (machine-readable code) as defined by RFC 4880:
 .RS 4
 \fB 0\fR No reason specified
@@ -35,7 +35,9 @@ By the additional option "-r" the callers can specify a reason for revocation
 \fB 2\fR Key material has been compromised
 \fB 3\fR Key is retired and no longer used
 .RE
-The default value is zero (no reason specified).
+The default value is zero (no reason specified). This reason must be the
+same for all parties who run the revocation protocol. Otherwise the
+generation of the revocation signature will fail.
 
 .SH OPTIONS
 Arguments mandatory for long options are also mandatory for short options.
@@ -80,7 +82,7 @@ Home page of LibTMCG: <http://www.nongnu.org/libtmcg/>
 
 .SH "EXAMPLES"
 .TP
-The following command revokes the shared keys with three participants defined by their GNUnet peer identities. The signature in armored OpenPGP format is written to foo.txt.asc and can be verified by any OpenPGP implementation.
+The following command revokes the shared keys with three participants defined by their GNUnet peer identities (3PT1...4530, S41S...G3N0, WS3K...QKFG). The signature in armored OpenPGP format is written to foo.txt.asc and can be verified by any OpenPGP implementation.
 .PP
 .nf
 .RS
@@ -88,7 +90,7 @@ dkg-revoke -r 1 -w 10 3PT18Z2345NA6FM86BKVJ32DK88KXF0YWKTDPPQX1QJMBPEF4530 S41SN
 .RE
 .fi
 .PP
-At least 2s+1 parties must run such a process with the same revocation reason (key is superseded). The program waits ten minutes before the revocation protocol is started, because establishing a CADET channel with GNUnet may take some time.
+At least 2s+1 parties must run such a process with the same revocation reason (here: key is superseded). The program waits ten minutes before the revocation protocol is started, because establishing a CADET channel with GNUnet may take some time.
 
 .SH "SEE ALSO"
 .BR dkg\-generate (1),

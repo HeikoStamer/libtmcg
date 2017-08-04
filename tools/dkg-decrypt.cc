@@ -1616,6 +1616,8 @@ void run_instance
 	init_mpis();
 	if (!parse_private_key(armored_seckey))
 	{
+		subkeyid.clear(), enc.clear();
+		dkg_qual.clear(), dkg_v_i.clear(), dkg_c_ik.clear();
 		// protected with password
 		std::cout << "Please enter the passphrase to unlock your private key: ";
 		std::getline(std::cin, passphrase);
@@ -1853,7 +1855,8 @@ void run_instance
 
 	// at the end: deliver some more rounds for waiting parties
 	time_t synctime = aiounicast::aio_timeout_long;
-	std::cout << "D_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
+	if (opt_verbose)
+		std::cout << "D_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
 	rbc->Sync(synctime);
 
 	// release EDCF
@@ -2129,6 +2132,8 @@ int main
 		init_mpis();
 		if (!parse_private_key(armored_seckey))
 		{
+			subkeyid.clear(), enc.clear();
+			dkg_qual.clear(), dkg_v_i.clear(), dkg_c_ik.clear();
 			// protected with password
 			std::cout << "Please enter the passphrase to unlock your private key: ";
 			std::getline(std::cin, passphrase);
@@ -2261,6 +2266,8 @@ int main
 		return 0;
 	else
 		return -1;
+#else
+	std::cerr << "WARNING: GNUnet development files are required for message exchange of decryption protocol" << std::endl;
 #endif
 
 	std::cout << "INFO: running local test with " << peers.size() << " participants" << std::endl;
