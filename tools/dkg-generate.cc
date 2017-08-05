@@ -62,6 +62,7 @@ void run_instance
 		if (passwords.length())
 		{
 			key << TMCG_ParseHelper::gs(passwords, '/');
+std::cerr << "P_" << whoami << ": pwd(" << i << " = " << key.str() << " passwords = " << passwords << std::endl;
 			if (((i + 1) < N) && !TMCG_ParseHelper::nx(passwords, '/'))
 			{
 				std::cerr << "P_" << whoami << ": " << "cannot read next password for protecting channel to P_" << (i + 1) << std::endl;
