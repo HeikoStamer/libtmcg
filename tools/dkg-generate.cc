@@ -59,7 +59,17 @@ void run_instance
 	for (size_t i = 0; i < N; i++)
 	{
 		std::stringstream key;
-		key << "dkg-generate::P_" << (i + whoami); // choose a simple key for now FIXME later -- we assume that GNUnet provides secure channels
+		if (passwords.length())
+		{
+			key << TMCG_ParseHelper::gs(passwords, '/');
+			if (((i + 1) < N) && !TMCG_ParseHelper::nx(passwords, '/'))
+			{
+				std::cerr << "P_" << whoami << ": " << "cannot read next password for protecting channel to P_" << (i + 1) << std::endl;
+				exit(-1);
+			}
+		}
+		else
+			key << "dkg-generate::P_" << (i + whoami); // choose a simple key -- we assume that GNUnet provides secure channels
 		uP_in.push_back(pipefd[i][whoami][0]);
 		uP_out.push_back(pipefd[whoami][i][1]);
 		uP_key.push_back(key.str());
