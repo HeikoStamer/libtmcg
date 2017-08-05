@@ -29,6 +29,20 @@ Second, in the non\-interactive mode PEERS contains only the GNUnet identity
 of the calling peer. Then the corresponding decryption share is written to
 STDOUT, and the users must exchange enough shares manually before decryption
 of the message can start.
+.PP
+The established private communication channels for the protocols should be
+protected with bilateral exchanged passwords for encryption and message
+authentication, if the underlying P2P network does not guarantee
+confidentiality and integrity by itself. The passwords for every channel
+are defined as a string, where a slash (/) marks the end of each password.
+The order of the passwords depends on position of each peer in the
+canonicalized peer list, i.e., the sorted unique list of given PEERS. For
+example, if participant D_0 uses A/B/C/ as password string, then "B" is
+the password for his channel to D_1 and "C" is the password for his channel
+to D_2. That means D_1 and D_2 have to provide matching password strings,
+i.e., B/D/E/ and C/E/F/, respectively. The default value of option "-P" is
+an empty password string (simple default passwords) based on the assumption,
+that GNUnet will protect the exchanged protocol messages.
 
 .SH OPTIONS
 Arguments mandatory for long options are also mandatory for short options.
@@ -56,6 +70,9 @@ write decrypted message to FILENAME
 .TP
 \fB\-p\fR, \fB\-\-port\fR=\fI\,STRING\/\fR
 GNUnet CADET port to listen/connect (only interactive mode)
+.TP
+\fB\-P\fR, \fB\-\-passwords\fR=\fI\,STRING\/\fR
+exchanged passwords to protect private and broadcast channels
 .TP
 \fB\-v\fR, \fB\-\-version\fR
 print the GNUnet version number

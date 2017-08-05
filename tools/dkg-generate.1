@@ -69,6 +69,20 @@ With the option "-w" the number of minutes can be adjusted until DKG/tDSS
 protocols are started. The default value is 5. It is crucial for the key
 generation that all participants are connected with GNUnet CADET within
 this waiting time. Otherwise the distributed key generation may fail.
+.PP
+The established private communication channels for the protocols should be
+protected with bilateral exchanged passwords for encryption and message
+authentication, if the underlying P2P network does not guarantee
+confidentiality and integrity by itself. The passwords for every channel
+are defined as a string, where a slash (/) marks the end of each password.
+The order of the passwords depends on position of each peer in the
+canonicalized peer list, i.e., the sorted unique list of given PEERS. For
+example, if participant P_0 uses A/B/C/ as password string, then "B" is
+the password for his channel to P_1 and "C" is the password for his channel
+to P_2. That means P_1 and P_2 have to provide matching password strings,
+i.e., B/D/E/ and C/E/F/, respectively. The default value of option "-P" is
+an empty password string (simple default passwords) based on the assumption,
+that GNUnet will protect the exchanged protocol messages.
 
 .SH OPTIONS
 Arguments mandatory for long options are also mandatory for short options.
@@ -95,6 +109,9 @@ configure logging to write logs to FILENAME
 .TP
 \fB\-p\fR, \fB\-\-port\fR=\fI\,STRING\/\fR
 GNUnet CADET port to listen/connect
+.TP
+\fB\-P\fR, \fB\-\-passwords\fR=\fI\,STRING\/\fR
+exchanged passwords to protect private and broadcast channels
 .TP
 \fB\-s\fR, \fB\-\-s\-resilience\fR
 resilience of threshold DSS protocol (signature scheme)
