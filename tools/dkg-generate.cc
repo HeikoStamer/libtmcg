@@ -56,7 +56,7 @@ void run_instance
 	// create communication handles for all players
 	std::vector<int> uP_in, uP_out, bP_in, bP_out;
 	std::vector<std::string> uP_key, bP_key;
-	for (size_t i = 0; i < N; i++)
+	for (size_t i = 0; i < peers.size(); i++)
 	{
 		std::stringstream key;
 		if (passwords.length())
@@ -67,14 +67,14 @@ void run_instance
 				std::cerr << "P_" << whoami << ": " << "cannot read password for protecting channel to P_" << i << std::endl;
 				exit(-1);
 			}
-			else if (((i + 1) < N) && !TMCG_ParseHelper::nx(passwords, '/'))
+			else if (((i + 1) < peers.size()) && !TMCG_ParseHelper::nx(passwords, '/'))
 			{
 				std::cerr << "P_" << whoami << ": " << "cannot skip to next password for protecting channel to P_" << (i + 1) << std::endl;
 				exit(-1);
 			}
 		}
 		else
-			key << "dkg-generate::P_" << (i + whoami); // choose a simple key -- we assume that GNUnet provides secure channels
+			key << "dkg-generate::P_" << (i + whoami); // use a simple key -- we assume that GNUnet provides secure channels
 		uP_in.push_back(pipefd[i][whoami][0]);
 		uP_out.push_back(pipefd[whoami][i][1]);
 		uP_key.push_back(key.str());
@@ -1007,11 +1007,11 @@ void run_instance
 #ifdef GNUNET
 char *gnunet_opt_crs = NULL;
 char *gnunet_opt_passwords = NULL;
+char *gnunet_opt_port = NULL;
 unsigned int gnunet_opt_t_resilience = 0;
 unsigned int gnunet_opt_s_resilience = MAX_N;
 unsigned int gnunet_opt_keyexptime = 0;
 unsigned int gnunet_opt_xtests = 0;
-char *gnunet_opt_port = NULL;
 unsigned int gnunet_opt_wait = 5;
 int gnunet_opt_verbose = 0;
 #endif
@@ -1019,24 +1019,6 @@ int gnunet_opt_verbose = 0;
 void fork_instance
 	(const size_t whoami)
 {
-	T = (N - 1) / 2; // default: maximum synchronous t-resilience for DKG (RBC is not affected by this)
-	S = (N - 1) / 2; // default: maximum s-resilience for tDSS (RBC is also not affected by this)
-#ifdef GNUNET
-	if (gnunet_opt_crs != NULL)
-		crs = gnunet_opt_crs; // get different CRS from GNUnet options
-	if (gnunet_opt_passwords != NULL)
-		passwords = gnunet_opt_passwords; // get passwords from GNUnet options
-	if (gnunet_opt_t_resilience != 0)
-		T = gnunet_opt_t_resilience; // get value of T from GNUnet options
-	if (gnunet_opt_s_resilience != MAX_N)
-		S = gnunet_opt_s_resilience; // get value of S from GNUnet options
-#endif
-	if (T == 0)
-		T++; // 0-resilience is not preferable, because then only one party can decrypt everything
-	if (T > N)
-		T = N; // apply an upper limit on T
-	if (S > ((N - 1) / 2))
-		S = (N - 1) / 2; // apply an upper limit on S
 	if ((pid[whoami] = fork()) < 0)
 		perror("dkg-generate (fork)");
 	else
@@ -1168,6 +1150,10 @@ int main
 		opt_crs = gnunet_opt_crs;
 	if (gnunet_opt_passwords != NULL)
 		opt_passwords = gnunet_opt_passwords;
+	if (gnunet_opt_crs != NULL)
+		crs = gnunet_opt_crs; // get different CRS from GNUnet options
+	if (gnunet_opt_passwords != NULL)
+		passwords = gnunet_opt_passwords; // get passwords from GNUnet options
 #endif
 
 	if (argc < 2)
@@ -1239,6 +1225,8 @@ int main
 		peers.resize(std::distance(peers.begin(), it));
 	}
 	N = peers.size();
+	T = (N - 1) / 2; // default: maximum synchronous t-resilience for DKG (RBC is not affected by this)
+	S = (N - 1) / 2; // default: maximum s-resilience for tDSS (RBC is also not affected by this)
 
 	if ((N < 3)  || (N > MAX_N))
 	{
@@ -1260,6 +1248,18 @@ int main
 		for (size_t i = 0; i < peers.size(); i++)
 			std::cout << peers[i] << std::endl;
 	}
+#ifdef GNUNET
+	if (gnunet_opt_t_resilience != 0)
+		T = gnunet_opt_t_resilience; // get value of T from GNUnet options
+	if (gnunet_opt_s_resilience != MAX_N)
+		S = gnunet_opt_s_resilience; // get value of S from GNUnet options
+#endif
+	if (T == 0)
+		T++; // 0-resilience is not preferable, because then only a single party can decrypt everything
+	if (T > N)
+		T = N; // apply an upper limit on T
+	if (S > ((N - 1) / 2))
+		S = (N - 1) / 2; // apply an upper limit on S
 
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption myoptions[] = {

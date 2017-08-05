@@ -43,7 +43,7 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 
 int 					pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t 					pid[MAX_N];
-std::string				passphrase, armored_message, armored_seckey, ifilename, ofilename;
+std::string				passphrase, armored_message, armored_seckey, ifilename, ofilename, passwords;
 std::vector<std::string>		peers;
 bool					instance_forked = false;
 
@@ -61,6 +61,7 @@ std::vector< std::vector<mpz_ptr> >	dkg_c_ik;
 int 					opt_verbose = 0;
 char					*opt_ifilename = NULL;
 char					*opt_ofilename = NULL;
+char					*opt_passwords = NULL;
 
 void read_private_key
 	(const std::string filename, std::string &result)
@@ -1637,7 +1638,22 @@ void run_instance
 	for (size_t i = 0; i < peers.size(); i++)
 	{
 		std::stringstream key;
-		key << "dkg-decrypt::D_" << (i + whoami); // use simple key for now FIXME later -- we assume that GNUnet provides secure channels
+		if (passwords.length())
+		{
+			key << TMCG_ParseHelper::gs(passwords, '/');
+			if (TMCG_ParseHelper::gs(passwords, '/') == "ERROR")
+			{
+				std::cerr << "D_" << whoami << ": " << "cannot read password for protecting channel to D_" << i << std::endl;
+				exit(-1);
+			}
+			else if (((i + 1) < peers.size()) && !TMCG_ParseHelper::nx(passwords, '/'))
+			{
+				std::cerr << "D_" << whoami << ": " << "cannot skip to next password for protecting channel to D_" << (i + 1) << std::endl;
+				exit(-1);
+			}
+		}
+		else
+			key << "dkg-decrypt::D_" << (i + whoami); // use simple key -- we assume that GNUnet provides secure channels
 		uP_in.push_back(pipefd[i][whoami][0]);
 		uP_out.push_back(pipefd[whoami][i][1]);
 		uP_key.push_back(key.str());
@@ -1903,12 +1919,13 @@ void run_instance
 }
 
 #ifdef GNUNET
-unsigned int gnunet_opt_xtests = 0;
 char *gnunet_opt_ifilename = NULL;
 char *gnunet_opt_ofilename = NULL;
+char *gnunet_opt_passwords = NULL;
 char *gnunet_opt_port = NULL;
-int gnunet_opt_nonint = 0;
+unsigned int gnunet_opt_xtests = 0;
 unsigned int gnunet_opt_wait = 5;
+int gnunet_opt_nonint = 0;
 int gnunet_opt_verbose = 0;
 #endif
 
@@ -1978,6 +1995,12 @@ int main
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
 		),
+		GNUNET_GETOPT_option_string('P',
+			"passwords",
+			"STRING",
+			"exchanged passwords to protect private and broadcast channels",
+			&gnunet_opt_passwords
+		),
 		GNUNET_GETOPT_option_version(version),
 		GNUNET_GETOPT_option_flag('V',
 			"verbose",
@@ -2012,6 +2035,10 @@ int main
 		opt_ifilename = gnunet_opt_ifilename;
 	if (gnunet_opt_ofilename != NULL)
 		opt_ofilename = gnunet_opt_ofilename;
+	if (gnunet_opt_passwords != NULL)
+		opt_passwords = gnunet_opt_passwords;
+	if (gnunet_opt_passwords != NULL)
+		passwords = gnunet_opt_passwords; // get passwords from GNUnet options
 #endif
 
 	bool nonint = false;
@@ -2028,7 +2055,7 @@ int main
 			std::string arg = argv[i+1];
 			// ignore options
 			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || (arg.find("-l") == 0) ||
-				(arg.find("-i") == 0) || (arg.find("-o") == 0) || (arg.find("-x") == 0))
+				(arg.find("-i") == 0) || (arg.find("-o") == 0) || (arg.find("-x") == 0) || (arg.find("-P") == 0))
 			{
 				size_t idx = ++i;
 				if ((arg.find("-i") == 0) && (idx < (size_t)(argc - 1)) && (opt_ifilename == NULL))
@@ -2041,6 +2068,11 @@ int main
 					ofilename = argv[i+1];
 					opt_ofilename = (char*)ofilename.c_str();
 				}
+				if ((arg.find("-P") == 0) && (idx < (size_t)(argc - 1)) && (opt_passwords == NULL))
+				{
+					passwords = argv[i+1];
+					opt_passwords = (char*)passwords.c_str();
+				}
 				continue;
 			}
 			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-n") == 0) || (arg.find("-V") == 0))
@@ -2051,12 +2083,13 @@ int main
 					std::cout << usage << std::endl;
 					std::cout << about << std::endl;
 					std::cout << "Arguments mandatory for long options are also mandatory for short options." << std::endl;
-					std::cout << "  -h, --help                 print this help" << std::endl;
-					std::cout << "  -i FILENAME                read encrypted message from FILENAME" << std::endl;
-					std::cout << "  -n, --non-interactive      run in non-interactive mode" << std::endl;
-					std::cout << "  -o FILENAME                write decrypted message to FILENAME" << std::endl;
-					std::cout << "  -v, --version              print the version number" << std::endl;
-					std::cout << "  -V, --verbose              turn on verbose output" << std::endl;
+					std::cout << "  -h, --help             print this help" << std::endl;
+					std::cout << "  -i FILENAME            read encrypted message from FILENAME" << std::endl;
+					std::cout << "  -n, --non-interactive  run in non-interactive mode" << std::endl;
+					std::cout << "  -o FILENAME            write decrypted message to FILENAME" << std::endl;
+					std::cout << "  -P STRING              exchanged passwords to protect private and broadcast channels" << std::endl;
+					std::cout << "  -v, --version          print the version number" << std::endl;
+					std::cout << "  -V, --verbose          turn on verbose output" << std::endl;
 #endif
 					return 0; // not continue
 				}
@@ -2237,6 +2270,12 @@ int main
 			"STRING",
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
+		),
+		GNUNET_GETOPT_option_string('P',
+			"passwords",
+			"STRING",
+			"exchanged passwords to protect private and broadcast channels",
+			&gnunet_opt_passwords
 		),
 		GNUNET_GETOPT_option_flag('V',
 			"verbose",
