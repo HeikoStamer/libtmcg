@@ -73,6 +73,7 @@ void run_instance
 	if (!TMCG_ParseHelper::cm(crs, "crs", '|'))
 	{
 		std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+		mpz_clear(crsmpz);
 		exit(-1);
 	}
 	// parse p, q, g, k
@@ -81,13 +82,14 @@ void run_instance
 		if ((mpz_set_str(crsmpz, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
 		{
 			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+			mpz_clear(crsmpz);
 			exit(-1);
 		}
 		crss << crsmpz << std::endl;
 	}
 	mpz_clear(crsmpz);
 	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crss, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true); // with verifiable generation of $g$
-	// check VTMF instance constructed
+	// check the constructed VTMF instance
 	if (!vtmf->CheckGroup())
 	{
 		std::cerr << "P_" << whoami << ": " << "Group G was not correctly generated!" << std::endl;
@@ -128,8 +130,8 @@ void run_instance
 		mpz_clear(xtest);
 	}
 			
-	// create and exchange keys in order to bootstrap the $h$-generation for DKG/tDSS [JL00]
-	// TODO: replace N-time NIZK by one interactive (distributed) zero-knowledge proof of knowledge
+	// create and exchange temporary keys in order to bootstrap the $h$-generation for DKG/tDSS [JL00]
+	// TODO: replace N-time NIZK by one interactive (distributed) zero-knowledge proof of knowledge, i.e., removes ROM assumption here
 	if (opt_verbose)
 		std::cout << "generate h by using VTMF key generation protocol" << std::endl;
 	mpz_t nizk_c, nizk_r, h_j;
@@ -493,7 +495,7 @@ void run_instance
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, uid);
 	if (S > 0)
 	{
-		dsaflags.push_back(0x01 | 0x02 | 0x10); // key may be used to certify other keys, to sign data, and have been split by a secret-sharing mechanism
+		dsaflags.push_back(0x01 | 0x02 | 0x10); // key may be used to certify other keys, to sign data, and has been split by a secret-sharing mechanism
 		sigtime = ckeytime; // use common key creation time as OpenPGP signature creation time
 	}
 	else
@@ -774,11 +776,11 @@ void run_instance
 			gcry_mpi_release(c_ik[j][k]);
 	gcry_mpi_release(x_i);
 	gcry_mpi_release(xprime_i);
-	elgflags.push_back(0x04 | 0x10); // key may be used to encrypt communications and have been split by a secret-sharing mechanism
+	elgflags.push_back(0x04 | 0x10); // key may be used to encrypt communications and has been split by a secret-sharing mechanism
 	if (S > 0)
 		sigtime = ckeytime; // use common key creation time as OpenPGP signature creation time
 	else
-		sigtime = time(NULL); // current time
+		sigtime = time(NULL); // otherwise use current time
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature(0x18, hashalgo, sigtime, keyexptime, elgflags, keyid, subsig_hashing); // Subkey Binding Signature (0x18) of sub
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
