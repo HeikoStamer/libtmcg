@@ -24,6 +24,7 @@
 #endif
 #include <libTMCG.hh>
 #include <aiounicast_select.hh>
+static const char *version = VERSION; // copy VERSION from LibTMCG before overwritten by GNUnet headers
 
 #ifdef FORKING
 
@@ -42,10 +43,12 @@
 int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t				pid[MAX_N];
 size_t				N, T, S;
-std::string			crs, u, passphrase;
+std::string			crs, u, passphrase, passwords;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
 int 				opt_verbose = 0;
+char				*opt_crs = NULL;
+char				*opt_passwords = NULL;
 
 void run_instance
 	(const size_t whoami, const time_t keytime, const time_t keyexptime, const size_t num_xtests)
@@ -988,10 +991,14 @@ void run_instance
 
 #ifdef GNUNET
 char *gnunet_opt_crs = NULL;
+char *gnunet_opt_passwords = NULL;
 unsigned int gnunet_opt_t_resilience = 0;
 unsigned int gnunet_opt_s_resilience = MAX_N;
 unsigned int gnunet_opt_keyexptime = 0;
 unsigned int gnunet_opt_xtests = 0;
+char *gnunet_opt_port = NULL;
+unsigned int gnunet_opt_wait = 5;
+int gnunet_opt_verbose = 0;
 #endif
 
 void fork_instance
@@ -1002,6 +1009,8 @@ void fork_instance
 #ifdef GNUNET
 	if (gnunet_opt_crs != NULL)
 		crs = gnunet_opt_crs; // get different CRS from GNUnet options
+	if (gnunet_opt_passwords != NULL)
+		passwords = gnunet_opt_passwords; // get passwords from GNUnet options
 	if (gnunet_opt_t_resilience != 0)
 		T = gnunet_opt_t_resilience; // get value of T from GNUnet options
 	if (gnunet_opt_s_resilience != MAX_N)
@@ -1040,12 +1049,6 @@ void fork_instance
 	}
 }
 
-#ifdef GNUNET
-char *gnunet_opt_port = NULL;
-unsigned int gnunet_opt_wait = 5;
-int gnunet_opt_verbose = 0;
-#endif
-
 int main
 	(int argc, char *const *argv)
 {
@@ -1069,11 +1072,92 @@ int main
 		"o3nIAXfODzZx6njMuyuVXg957FxtmKmU5ot96nA5j33kejKu10MGhvrWQMA3"
 		"z86EcA4uvHdTTcYhXwaRssKfidViHKJbQxT9MPXkjbmKw1Sm93777gxSUQjt"
 		"BC5EXRYiI1xSqW02e|";
+	static const char *usage = "dkg-generate [OPTIONS] PEERS";
+	static const char *about = "distributed key generation (DSA+ElGamal with OpenPGP-output)";
+#ifdef GNUNET
+	char *loglev = NULL;
+	char *logfile = NULL;
+	char *cfg_fn = NULL;
+	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
+		GNUNET_GETOPT_option_cfgfile(&cfg_fn),
+		GNUNET_GETOPT_option_help(about),
+		GNUNET_GETOPT_option_uint('e',
+			"expiration",
+			"TIME",
+			"expiration time of generated keys in seconds",
+			&gnunet_opt_keyexptime
+		),
+		GNUNET_GETOPT_option_string('g',
+			"group",
+			"STRING",
+			"common reference string that defines the underlying DDH-hard group",
+			&gnunet_opt_crs
+		),
+		GNUNET_GETOPT_option_logfile(&logfile),
+		GNUNET_GETOPT_option_loglevel(&loglev),
+		GNUNET_GETOPT_option_string('p',
+			"port",
+			"STRING",
+			"GNUnet CADET port to listen/connect",
+			&gnunet_opt_port
+		),
+		GNUNET_GETOPT_option_string('P',
+			"passwords",
+			"STRING",
+			"exchanged passwords to protect private and broadcast channels",
+			&gnunet_opt_passwords
+		),
+		GNUNET_GETOPT_option_uint('s',
+			"s-resilience",
+			NULL,
+			"resilience of threshold DSS protocol (signature scheme)",
+			&gnunet_opt_s_resilience
+		),
+		GNUNET_GETOPT_option_uint('t',
+			"t-resilience",
+			NULL,
+			"resilience of DKG protocol (threshold decryption)",
+			&gnunet_opt_t_resilience
+		),
+		GNUNET_GETOPT_option_version(version),
+		GNUNET_GETOPT_option_flag('V',
+			"verbose",
+			"turn on verbose output",
+			&gnunet_opt_verbose
+		),
+		GNUNET_GETOPT_option_uint('w',
+			"wait",
+			"TIME",
+			"minutes to wait until start of DKG/tDSS protocol",
+			&gnunet_opt_wait
+		),
+		GNUNET_GETOPT_option_uint('x',
+			"x-tests",
+			NULL,
+			"number of exchange tests",
+			&gnunet_opt_xtests
+		),
+		GNUNET_GETOPT_OPTION_END
+	};
+	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
+	{
+		std::cerr << "ERROR: GNUNET_STRINGS_get_utf8_args() failed" << std::endl;
+    		return -1;
+	}
+	if (GNUNET_GETOPT_run(usage, options, argc, argv) == GNUNET_SYSERR)
+	{
+		std::cerr << "ERROR: GNUNET_GETOPT_run() failed" << std::endl;
+		return -1;
+	}
+	if (gnunet_opt_crs != NULL)
+		opt_crs = gnunet_opt_crs;
+	if (gnunet_opt_passwords != NULL)
+		opt_passwords = gnunet_opt_passwords;
+#endif
 
-	bool notcon = false;
 	if (argc < 2)
 	{
-		std::cerr << "ERROR: no peers given as argument; usage: " << argv[0] << " [OPTIONS] PEERS" << std::endl;
+		std::cerr << "ERROR: no peers given as argument; usage: " << usage << std::endl;
 		return -1;
 	}
 	else
@@ -1081,21 +1165,48 @@ int main
 		// create peer list from remaining arguments
 		for (size_t i = 0; i < (size_t)(argc - 1); i++)
 		{
-			std::string arg = argv[i + 1];
+			std::string arg = argv[i+1];
 			// ignore options
 			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-t") == 0) || (arg.find("-w") == 0) || 
 				(arg.find("-L") == 0) || (arg.find("-l") == 0) || (arg.find("-g") == 0) || (arg.find("-x") == 0) ||
-				(arg.find("-s") == 0) || (arg.find("-e") == 0))
+				(arg.find("-s") == 0) || (arg.find("-e") == 0) || (arg.find("-P") == 0))
 			{
-				i++;
+				size_t idx = ++i;
+				if ((arg.find("-g") == 0) && (idx < (size_t)(argc - 1)) && (opt_crs == NULL))
+				{
+					crs = argv[i+1];
+					opt_crs = (char*)crs.c_str();
+				}
+				if ((arg.find("-P") == 0) && (idx < (size_t)(argc - 1)) && (opt_passwords == NULL))
+				{
+					passwords = argv[i+1];
+					opt_passwords = (char*)passwords.c_str();
+				}
 				continue;
 			}
 			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-V") == 0))
 			{
-				if ((arg.find("--help") == 0) || (arg.find("--version") == 0))
-					notcon = true; // not continue
-				if ((arg.find("-h") == 0) || (arg.find("-v") == 0))
-					notcon = true; // not continue
+				if ((arg.find("-h") == 0) || (arg.find("--help") == 0))
+				{
+#ifndef GNUNET
+					std::cout << usage << std::endl;
+					std::cout << about << std::endl;
+					std::cout << "Arguments mandatory for long options are also mandatory for short options." << std::endl;
+					std::cout << "  -h, --help     print this help" << std::endl;
+					std::cout << "  -g STRING      common reference string that defines underlying DDH-hard group" << std::endl;
+					std::cout << "  -P STRING      exchanged passwords to protect private and broadcast channels" << std::endl;
+					std::cout << "  -v, --version  print the version number" << std::endl;
+					std::cout << "  -V, --verbose  turn on verbose output" << std::endl;
+#endif
+					return 0; // not continue
+				}
+				if ((arg.find("-v") == 0) || (arg.find("--version") == 0))
+				{
+#ifndef GNUNET
+					std::cout << "dkg-generate " << version << std::endl;
+#endif
+					return 0; // not continue
+				}
 				if ((arg.find("-V") == 0) || (arg.find("--verbose") == 0))
 					opt_verbose = 1; // verbose output
 				continue;
@@ -1111,34 +1222,32 @@ int main
 		std::sort(peers.begin(), peers.end());
 		std::vector<std::string>::iterator it = std::unique(peers.begin(), peers.end());
 		peers.resize(std::distance(peers.begin(), it));
-		N = peers.size();
 	}
-	if (!notcon)
+	N = peers.size();
+
+	if ((N < 3)  || (N > MAX_N))
 	{
-		if ((N < 3)  || (N > MAX_N))
-		{
-			std::cerr << "ERROR: too few or too many peers given" << std::endl;
-			return -1;
-		}
-		if (!init_libTMCG())
-		{
-			std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
-			return -1;
-		}
-		std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
-		std::getline(std::cin, u);
-		std::cout << "2. Choose a passphrase to protect your private key: ";
-		std::getline(std::cin, passphrase);
-		if (opt_verbose)
-		{
-			std::cout << "INFO: canonicalized peer list = " << std::endl;
-			for (size_t i = 0; i < peers.size(); i++)
-				std::cout << peers[i] << std::endl;
-		}
+		std::cerr << "ERROR: too few or too many peers given" << std::endl;
+		return -1;
+	}
+	if (!init_libTMCG())
+	{
+		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
+		return -1;
+	}
+	std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
+	std::getline(std::cin, u);
+	std::cout << "2. Choose a passphrase to protect your private key: ";
+	std::getline(std::cin, passphrase);
+	if (opt_verbose)
+	{
+		std::cout << "INFO: canonicalized peer list = " << std::endl;
+		for (size_t i = 0; i < peers.size(); i++)
+			std::cout << peers[i] << std::endl;
 	}
 
 #ifdef GNUNET
-	static const struct GNUNET_GETOPT_CommandLineOption options[] = {
+	static const struct GNUNET_GETOPT_CommandLineOption myoptions[] = {
 		GNUNET_GETOPT_option_uint('e',
 			"expiration",
 			"TIME",
@@ -1156,6 +1265,12 @@ int main
 			"STRING",
 			"GNUnet CADET port to listen/connect",
 			&gnunet_opt_port
+		),
+		GNUNET_GETOPT_option_string('P',
+			"passwords",
+			"STRING",
+			"exchanged passwords to protect private and broadcast channels",
+			&gnunet_opt_passwords
 		),
 		GNUNET_GETOPT_option_uint('s',
 			"s-resilience",
@@ -1188,10 +1303,7 @@ int main
 		),
 		GNUNET_GETOPT_OPTION_END
 	};
-	if (GNUNET_STRINGS_get_utf8_args(argc, argv, &argc, &argv) != GNUNET_OK)
-    		return -1;
-	int ret = GNUNET_PROGRAM_run(argc, argv, "dkg-generate [OPTIONS] PEERS", "distributed key generation (DSA+ElGamal with OpenPGP-output)",
-                            options, &gnunet_run, argv[0]);
+	int ret = GNUNET_PROGRAM_run(argc, argv, usage, about, myoptions, &gnunet_run, argv[0]);
 	GNUNET_free((void *) argv);
 	if (ret == GNUNET_OK)
 		return 0;

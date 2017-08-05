@@ -1904,6 +1904,12 @@ void run_instance
 
 #ifdef GNUNET
 unsigned int gnunet_opt_xtests = 0;
+char *gnunet_opt_ifilename = NULL;
+char *gnunet_opt_ofilename = NULL;
+char *gnunet_opt_port = NULL;
+int gnunet_opt_nonint = 0;
+unsigned int gnunet_opt_wait = 5;
+int gnunet_opt_verbose = 0;
 #endif
 
 void fork_instance
@@ -1934,15 +1940,6 @@ void fork_instance
 		}
 	}
 }
-
-#ifdef GNUNET
-char *gnunet_opt_ifilename = NULL;
-char *gnunet_opt_ofilename = NULL;
-char *gnunet_opt_port = NULL;
-int gnunet_opt_nonint = 0;
-unsigned int gnunet_opt_wait = 5;
-int gnunet_opt_verbose = 0;
-#endif
 
 int main
 	(int argc, char *const *argv)
@@ -2025,7 +2022,7 @@ int main
 	}
 	else
 	{
-		// create peer list
+		// create peer list from remaining arguments
 		for (size_t i = 0; i < (size_t)(argc - 1); i++)
 		{
 			std::string arg = argv[i+1];
@@ -2055,9 +2052,9 @@ int main
 					std::cout << about << std::endl;
 					std::cout << "Arguments mandatory for long options are also mandatory for short options." << std::endl;
 					std::cout << "  -h, --help                 print this help" << std::endl;
-					std::cout << "  -i, --input=FILENAME       create detached signature from FILENAME" << std::endl;
+					std::cout << "  -i FILENAME                read encrypted message from FILENAME" << std::endl;
 					std::cout << "  -n, --non-interactive      run in non-interactive mode" << std::endl;
-					std::cout << "  -o, --output=FILENAME      write detached signature to FILENAME" << std::endl;
+					std::cout << "  -o FILENAME                write decrypted message to FILENAME" << std::endl;
 					std::cout << "  -v, --version              print the version number" << std::endl;
 					std::cout << "  -V, --verbose              turn on verbose output" << std::endl;
 #endif

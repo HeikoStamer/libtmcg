@@ -1100,6 +1100,10 @@ void run_instance
 #ifdef GNUNET
 unsigned int gnunet_opt_reason = 0;
 unsigned int gnunet_opt_xtests = 0;
+char *gnunet_opt_port = NULL;
+int gnunet_opt_nonint = 0;
+unsigned int gnunet_opt_wait = 5;
+int gnunet_opt_verbose = 0;
 #endif
 
 void fork_instance
@@ -1131,13 +1135,6 @@ void fork_instance
 		}
 	}
 }
-
-#ifdef GNUNET
-char *gnunet_opt_port = NULL;
-int gnunet_opt_nonint = 0;
-unsigned int gnunet_opt_wait = 5;
-int gnunet_opt_verbose = 0;
-#endif
 
 int main
 	(int argc, char *const *argv)
