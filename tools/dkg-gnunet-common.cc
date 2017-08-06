@@ -417,7 +417,7 @@ void gnunet_io(void *cls)
 	io = NULL;
 
 	// NOTE: We need a short pause here, otherwise GNUnet CADET will be disrupted.
-	sleep(1);
+//	sleep(1);
 
 	// send messages to peers
 	if (send_queue.size())
