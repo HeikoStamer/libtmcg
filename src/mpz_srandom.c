@@ -121,6 +121,16 @@ void mpz_grandomb
 void mpz_ssrandomb
 	(mpz_ptr r, const unsigned long int size)
 {
+	FILE *fhd = fopen("/proc/sys/kernel/random/entropy_avail", "r");
+	if (fhd != NULL)
+	{
+		unsigned long int entropy_avail = 0;
+		if (fscanf(fhd, "%lu", &entropy_avail) != 1)
+			entropy_avail = 0;
+		fclose(fhd);
+		if (entropy_avail < size)
+			fprintf(stderr, "mpz_ssrandomb(): too few entropy (%lu bits) available; blocking\n", entropy_avail);
+	}
 	mpz_grandomb(r, size, GCRY_VERY_STRONG_RANDOM);
 }
 
@@ -168,6 +178,16 @@ void mpz_grandomm
 void mpz_ssrandomm
 	(mpz_ptr r, mpz_srcptr m)
 {
+	FILE *fhd = fopen("/proc/sys/kernel/random/entropy_avail", "r");
+	if (fhd != NULL)
+	{
+		unsigned long int entropy_avail = 0;
+		if (fscanf(fhd, "%lu", &entropy_avail) != 1)
+			entropy_avail = 0;
+		fclose(fhd);
+		if (entropy_avail < mpz_sizeinbase(m, 2L))
+			fprintf(stderr, "mpz_ssrandomm(): too few entropy (%lu bits) available; blocking\n", entropy_avail);
+	}
 	mpz_grandomm(r, m, GCRY_VERY_STRONG_RANDOM);
 }
 

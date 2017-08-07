@@ -3859,8 +3859,8 @@ for Comments: 4880, November 2007). For key generation it needs a lot of strong
 quality randomness (cf. D. Eastlake, J. Schiller, and S. Crocker: @emph{Randomness
 Requirements for Security}, Network Working Group, Request for Comments: 4086,
 June 2005) obtained from the GNU Crypto Library (@code{libgcrypt}), that means,
-the execution will slow down or even fail on systems (e.g. servers) where only
-low entropy sources for @code{/dev/random} are available.
+the execution will slow down or even fail on systems (e.g. headless servers) where
+only low entropy sources for @code{/dev/random} are available.
 
 Due to the interactiveness of the protocols a lot of messages between participating
 parties have to be exchanged in a secure way. We employ @uref{https://gnunet.org/,,GNUnet}, 
@@ -3885,8 +3885,8 @@ combining the required decryption shares.
 The program @code{dkg-sign} creates a detached signature on a binary file for a
 shared DSA/DSS key, if a threshold of the parties work together in an interactive
 signing protocol. Such a detached signature can be verified with any OpenPGP-compatible
-implementation. Thus it solves the problem of distributing trust for code signing
-without secret key splitting.
+implementation. Thus it solves the problem of distributing the power of code-signing
+without secret key splitting (e.g. libgfshare) and laborious reconstruction ceremonies.
   
 Please note that for building @code{dkg-generate}, @code{dkg-sign} and the interactive
 version of @code{dkg-decrypt} the development files for a very recent GNUnet version
