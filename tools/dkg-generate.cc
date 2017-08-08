@@ -38,17 +38,19 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 #include <sys/wait.h>
 #include <signal.h>
 
+#include "dkg-builtin-common.hh"
 #include "dkg-gnunet-common.hh"
 
 int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t				pid[MAX_N];
 size_t				N, T, S;
-std::string			crs, u, passphrase, passwords;
+std::string			crs, u, passphrase, passwords, hostname;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
 int 				opt_verbose = 0;
 char				*opt_crs = NULL;
 char				*opt_passwords = NULL;
+char				*opt_hostname = NULL;
 
 void run_instance
 	(const size_t whoami, const time_t keytime, const time_t keyexptime, const size_t num_xtests)
@@ -1006,6 +1008,7 @@ void run_instance
 
 #ifdef GNUNET
 char *gnunet_opt_crs = NULL;
+char *gnunet_opt_hostname = NULL;
 char *gnunet_opt_passwords = NULL;
 char *gnunet_opt_port = NULL;
 unsigned int gnunet_opt_t_resilience = 0;
@@ -1090,6 +1093,12 @@ int main
 			"common reference string that defines the underlying DDH-hard group",
 			&gnunet_opt_crs
 		),
+		GNUNET_GETOPT_option_string('H',
+			"hostname",
+			"STRING",
+			"hostname (e.g. onion address) of this peer within PEERS",
+			&gnunet_opt_hostname
+		),
 		GNUNET_GETOPT_option_logfile(&logfile),
 		GNUNET_GETOPT_option_loglevel(&loglev),
 		GNUNET_GETOPT_option_string('p',
@@ -1150,10 +1159,14 @@ int main
 		opt_crs = gnunet_opt_crs;
 	if (gnunet_opt_passwords != NULL)
 		opt_passwords = gnunet_opt_passwords;
+	if (gnunet_opt_hostname != NULL)
+		opt_hostname = gnunet_opt_hostname;
 	if (gnunet_opt_crs != NULL)
 		crs = gnunet_opt_crs; // get different CRS from GNUnet options
 	if (gnunet_opt_passwords != NULL)
 		passwords = gnunet_opt_passwords; // get passwords from GNUnet options
+	if (gnunet_opt_hostname != NULL)
+		hostname = gnunet_opt_hostname; // get hostname from GNUnet options
 #endif
 
 	if (argc < 2)
@@ -1170,13 +1183,18 @@ int main
 			// ignore options
 			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-t") == 0) || (arg.find("-w") == 0) || 
 				(arg.find("-L") == 0) || (arg.find("-l") == 0) || (arg.find("-g") == 0) || (arg.find("-x") == 0) ||
-				(arg.find("-s") == 0) || (arg.find("-e") == 0) || (arg.find("-P") == 0))
+				(arg.find("-s") == 0) || (arg.find("-e") == 0) || (arg.find("-P") == 0) || (arg.find("-H") == 0))
 			{
 				size_t idx = ++i;
 				if ((arg.find("-g") == 0) && (idx < (size_t)(argc - 1)) && (opt_crs == NULL))
 				{
 					crs = argv[i+1];
 					opt_crs = (char*)crs.c_str();
+				}
+				if ((arg.find("-H") == 0) && (idx < (size_t)(argc - 1)) && (opt_hostname == NULL))
+				{
+					hostname = argv[i+1];
+					opt_hostname = (char*)hostname.c_str();
 				}
 				if ((arg.find("-P") == 0) && (idx < (size_t)(argc - 1)) && (opt_passwords == NULL))
 				{
@@ -1195,6 +1213,7 @@ int main
 					std::cout << "Arguments mandatory for long options are also mandatory for short options." << std::endl;
 					std::cout << "  -h, --help     print this help" << std::endl;
 					std::cout << "  -g STRING      common reference string that defines underlying DDH-hard group" << std::endl;
+					std::cout << "  -H STRING      hostname (e.g. onion address) of this peer within PEERS" << std::endl;      
 					std::cout << "  -P STRING      exchanged passwords to protect private and broadcast channels" << std::endl;
 					std::cout << "  -v, --version  print the version number" << std::endl;
 					std::cout << "  -V, --verbose  turn on verbose output" << std::endl;
@@ -1260,6 +1279,19 @@ int main
 		T = N; // apply an upper limit on T
 	if (S > ((N - 1) / 2))
 		S = (N - 1) / 2; // apply an upper limit on S
+	if (opt_hostname != NULL)
+	{
+		builtin_init(hostname);
+
+// TODO: establish connections and listen for connections
+
+		builtin_fork();
+
+// TODO: exchange data from/to peers and pipes
+
+		builtin_done();
+		return 0;
+	}
 
 #ifdef GNUNET
 	static const struct GNUNET_GETOPT_CommandLineOption myoptions[] = {
@@ -1274,6 +1306,12 @@ int main
 			"STRING",
 			"common reference string that defines the underlying DDH-hard group",
 			&gnunet_opt_crs
+		),
+		GNUNET_GETOPT_option_string('H',
+			"hostname",
+			"STRING",
+			"hostname (e.g. onion address) of this peer within PEERS",
+			&gnunet_opt_hostname
 		),
 		GNUNET_GETOPT_option_string('p',
 			"port",
