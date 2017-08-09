@@ -86,7 +86,7 @@ void write_signature
 {
 
 	// write out the armored signature
-	std::ofstream ofs(ofilename.c_str(), std::ofstream::out);
+	std::ofstream ofs(filename.c_str(), std::ofstream::out);
 	if (!ofs.good())
 	{
 		std::cerr << "ERROR: opening output file failed" << std::endl;
