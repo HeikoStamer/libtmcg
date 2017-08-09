@@ -70,7 +70,6 @@ static bool 					channels_created = false;
 std::string 					thispeer;
 std::map<std::string, size_t> 			peer2pipe;
 std::map<size_t, std::string> 			pipe2peer;
-std::map<size_t, struct GNUNET_PeerIdentity> 	pipe2peerid;
 std::map<size_t, struct GNUNET_CADET_Channel*> 	pipe2channel_out;
 std::map<size_t, struct GNUNET_CADET_Channel*> 	pipe2channel_in;
 

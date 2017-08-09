@@ -17,9 +17,13 @@
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
+if DKGTOOLS
 SUBDIRS = src doc tests tools
-
 DIST_SUBDIRS = src doc tests tools
+else
+SUBDIRS = src doc tests
+DIST_SUBDIRS = src doc tests
+endif
 
 EXTRA_DIST = AUTHORS BUGS COPYING FDL INSTALL NEWS README TODO THANKS\
 	ChangeLog Doxyfile PATENTS

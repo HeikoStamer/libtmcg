@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170722])
+AC_REVISION([20170809])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.2], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -213,7 +213,7 @@ AC_TYPE_SSIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([clock close fcntl fprintf memcmp memcpy memset open perror\
-	read sscanf select sleep snprintf strrchr strtoul time write], ,
+ read sscanf select sleep snprintf strrchr strtoul time write], ,
 	AC_MSG_ERROR([some functions are missing]))
 
 # Checks for forking tests feature
@@ -225,12 +225,31 @@ if test "$use_forking" = yes ; then
 	AC_HEADER_SYS_WAIT
 	AC_TYPE_PID_T
 	AC_FUNC_FORK
-	AC_CHECK_HEADERS([unistd.h sys/wait.h signal.h], ,
+	AC_CHECK_HEADERS([unistd.h sys/types.h sys/wait.h signal.h], ,
 		AC_MSG_ERROR([some headers are missing]))
 	AC_CHECK_FUNCS([fork kill pipe pipe2 waitpid], ,
 		AC_MSG_ERROR([some functions are missing]))
 	AC_DEFINE(FORKING, , [Define to enable the forking tests])
 fi
+
+# Checks for dkg-tools
+AC_MSG_CHECKING([whether building dkg-tools is enabled])
+AC_ARG_ENABLE(dkgtools, [AS_HELP_STRING([--disable-dkg-tools],
+	[disable building of dkg-tools])], use_dkgtools=$enableval, use_dkgtools=yes)
+AC_MSG_RESULT($use_dkgtools)
+if test "$use_dkgtools" = yes ; then
+	AC_HEADER_SYS_WAIT
+	AC_TYPE_PID_T
+	AC_FUNC_FORK
+	AC_CHECK_HEADERS([unistd.h sys/types.h sys/wait.h signal.h arpa/inet.h\
+ netdb.h netinet/in.h sys/socket.h], ,
+		AC_MSG_ERROR([some headers are missing]))
+	AC_CHECK_FUNCS([fork kill pipe pipe2 waitpid gethostbyname htons htonl\
+ inet_ntoa socket setsockopt connect bind listen accept send recv], , 
+		AC_MSG_ERROR([some functions are missing]))
+	AC_DEFINE(DKGTOOLS, , [Define to enable building of dkg-tools])
+fi
+AM_CONDITIONAL([DKGTOOLS], [test x$use_dkgtools = xyes])
 
 # Checks for GNUnet
 gnunet=0
@@ -239,7 +258,7 @@ backup_LDFLAGS="$LDFLAGS"
 backup_CPPLAGS="$CPPFLAGS"
 GNUNET_LIBS=""
 GNUNET_CFLAGS=""
-AC_MSG_CHECKING(for GNUnet)
+AC_MSG_CHECKING([for GNUnet])
 AC_ARG_WITH(gnunet, [AS_HELP_STRING([--with-gnunet=<path>],
 	[prefix of GNUnet installation])], [AC_MSG_RESULT([$with_gnunet])
 	case $with_gnunet in

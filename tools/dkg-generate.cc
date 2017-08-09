@@ -26,8 +26,6 @@
 #include <aiounicast_select.hh>
 static const char *version = VERSION; // copy VERSION from LibTMCG before overwritten by GNUnet headers
 
-#ifdef FORKING
-
 #include <sstream>
 #include <fstream>
 #include <vector>
@@ -1282,13 +1280,17 @@ int main
 	if (opt_hostname != NULL)
 	{
 		builtin_init(hostname);
-
-// TODO: establish connections and listen for connections
+		builtin_bindports(44000, false);
+		builtin_bindports(45000, true);
+		builtin_connect(44000, false);
+		builtin_connect(45000, true);
+		builtin_accept();
 
 		builtin_fork();
 
 // TODO: exchange data from/to peers and pipes
 
+		builtin_close();
 		builtin_done();
 		return 0;
 	}
@@ -1405,13 +1407,3 @@ int main
 	return 0;
 }
 
-#else
-
-int main
-	(int argc, char **argv)
-{
-	std::cerr << "configure feature --enable-forking needed" << std::endl;
-	return 77;
-}
-
-#endif

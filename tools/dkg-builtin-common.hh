@@ -36,22 +36,31 @@
 	#include <aiounicast.hh>
 	#include <mpz_srandom.h>
 
-#ifdef FORKING
-
+	#include <sys/types.h>
 	#include <sys/wait.h>
 	#include <signal.h>
+	#include <arpa/inet.h>
+	#include <netdb.h>
+	#include <netinet/in.h>
+	#include <sys/socket.h>
 
 	#undef NDEBUG
 	#define MAX_N 32
 
 	void builtin_init
 		(const std::string &hostname);
+	void builtin_bindports
+		(const int start, const bool broadcast);
+	void builtin_connect
+		(const int start, const bool broadcast);
+	void builtin_accept
+		();
 	void builtin_fork
+		();
+	void builtin_close
 		();
 	void builtin_done
 		();
-
-#endif
 
 #endif
 
