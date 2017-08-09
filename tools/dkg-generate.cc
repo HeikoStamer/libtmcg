@@ -800,7 +800,8 @@ void run_instance
 		sigtime = ckeytime; // use common key creation time as OpenPGP signature creation time
 	else
 		sigtime = time(NULL); // otherwise use current time
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature(0x18, hashalgo, sigtime, keyexptime, elgflags, keyid, subsig_hashing); // Subkey Binding Signature (0x18) of sub
+	// Subkey Binding Signature (0x18) of sub
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature(0x18, hashalgo, sigtime, keyexptime, elgflags, keyid, subsig_hashing);
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
 	hash.clear();
@@ -1212,7 +1213,7 @@ int main
 					std::cout << "Arguments mandatory for long options are also mandatory for short options." << std::endl;
 					std::cout << "  -h, --help     print this help" << std::endl;
 					std::cout << "  -g STRING      common reference string that defines underlying DDH-hard group" << std::endl;
-					std::cout << "  -H STRING      hostname (e.g. onion address) of this peer within PEERS" << std::endl;      
+					std::cout << "  -H STRING      hostname (e.g. onion address) of this peer within PEERS" << std::endl;
 					std::cout << "  -P STRING      exchanged passwords to protect private and broadcast channels" << std::endl;
 					std::cout << "  -v, --version  print the version number" << std::endl;
 					std::cout << "  -V, --verbose  turn on verbose output" << std::endl;

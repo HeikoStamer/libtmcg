@@ -1,3 +1,4 @@
+* [2017-08-09] DKG-tools: added built-in TCP/IP message exchange (option "-H")
 * [2017-08-09] added configure feature --disable-dkgtools
 * [2017-08-04] DKG-tools: changed storage of public data for shared keys (DKG)
 * [2017-07-30] DKG-tools: added dkg-revoke for revocation of a shared key

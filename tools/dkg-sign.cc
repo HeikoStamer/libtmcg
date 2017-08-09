@@ -45,7 +45,7 @@ pid_t 					pid[MAX_N];
 std::vector<std::string>		peers;
 bool					instance_forked = false;
 
-std::string				passphrase, armored_seckey, ifilename, ofilename, passwords;
+std::string				passphrase, armored_seckey, ifilename, ofilename, passwords, hostname;
 tmcg_octets_t				keyid;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 size_t					dss_n, dss_t, dss_i;
@@ -56,6 +56,7 @@ int 					opt_verbose = 0;
 char					*opt_ifilename = NULL;
 char					*opt_ofilename = NULL;
 char					*opt_passwords = NULL;
+char					*opt_hostname = NULL;
 
 void read_private_key
 	(const std::string filename, std::string &result)
@@ -1035,6 +1036,7 @@ void run_instance
 }
 
 #ifdef GNUNET
+char *gnunet_opt_hostname = NULL;
 char *gnunet_opt_ifilename = NULL;
 char *gnunet_opt_ofilename = NULL;
 char *gnunet_opt_passwords = NULL;
@@ -1092,6 +1094,12 @@ int main
 			"TIME",
 			"expiration time of generated signature in seconds",
 			&gnunet_opt_sigexptime
+		),
+		GNUNET_GETOPT_option_string('H',
+			"hostname",
+			"STRING",
+			"hostname (e.g. onion address) of this peer within PEERS",
+			&gnunet_opt_hostname
 		),
 		GNUNET_GETOPT_option_string('i',
 			"input",
@@ -1153,10 +1161,14 @@ int main
 		opt_ifilename = gnunet_opt_ifilename;
 	if (gnunet_opt_ofilename != NULL)
 		opt_ofilename = gnunet_opt_ofilename;
+	if (gnunet_opt_hostname != NULL)
+		opt_hostname = gnunet_opt_hostname;
 	if (gnunet_opt_passwords != NULL)
 		opt_passwords = gnunet_opt_passwords;
 	if (gnunet_opt_passwords != NULL)
 		passwords = gnunet_opt_passwords; // get passwords from GNUnet options
+	if (gnunet_opt_hostname != NULL)
+		hostname = gnunet_opt_hostname; // get hostname from GNUnet options
 #endif
 
 	if (argc < 2)
@@ -1173,7 +1185,7 @@ int main
 			// ignore options
 			if ((arg.find("-c") == 0) || (arg.find("-p") == 0) || (arg.find("-w") == 0) || (arg.find("-L") == 0) || 
 				(arg.find("-l") == 0) || (arg.find("-i") == 0) || (arg.find("-o") == 0) || (arg.find("-e") == 0) ||
-				(arg.find("-x") == 0) || (arg.find("-P") == 0))
+				(arg.find("-x") == 0) || (arg.find("-P") == 0) || (arg.find("-H") == 0))
 			{
 				size_t idx = ++i;
 				if ((arg.find("-i") == 0) && (idx < (size_t)(argc - 1)) && (opt_ifilename == NULL))
@@ -1185,6 +1197,11 @@ int main
 				{
 					ofilename = argv[i+1];
 					opt_ofilename = (char*)ofilename.c_str();
+				}
+				if ((arg.find("-H") == 0) && (idx < (size_t)(argc - 1)) && (opt_hostname == NULL))
+				{
+					hostname = argv[i+1];
+					opt_hostname = (char*)hostname.c_str();
 				}
 				if ((arg.find("-P") == 0) && (idx < (size_t)(argc - 1)) && (opt_passwords == NULL))
 				{
@@ -1202,6 +1219,7 @@ int main
 					std::cout << about << std::endl;
 					std::cout << "Arguments mandatory for long options are also mandatory for short options." << std::endl;
 					std::cout << "  -h, --help     print this help" << std::endl;
+					std::cout << "  -H STRING      hostname (e.g. onion address) of this peer within PEERS" << std::endl;
 					std::cout << "  -i FILENAME    create detached signature from FILENAME" << std::endl;
 					std::cout << "  -o FILENAME    write detached signature to FILENAME" << std::endl;
 					std::cout << "  -P STRING      exchanged passwords to protect private and broadcast channels" << std::endl;
@@ -1254,6 +1272,23 @@ int main
 		for (size_t i = 0; i < peers.size(); i++)
 			std::cout << peers[i] << std::endl;
 	}
+	if (opt_hostname != NULL)
+	{
+		int ret = 0;
+		builtin_init(hostname);
+		builtin_bindports(35000, false);
+		builtin_bindports(36000, true);
+		while (builtin_connect(35000, false) < peers.size())
+			sleep(1);
+		while (builtin_connect(36000, true) < peers.size())
+			sleep(1);
+		builtin_accept();
+		builtin_fork();
+		ret = builtin_io();
+		builtin_close();
+		builtin_done();
+		return ret;
+	}
 
 	// start interactive variant with GNUnet or otherwise a local test
 #ifdef GNUNET
@@ -1263,6 +1298,12 @@ int main
 			"TIME",
 			"expiration time of generated signature in seconds",
 			&gnunet_opt_sigexptime
+		),
+		GNUNET_GETOPT_option_string('H',
+			"hostname",
+			"STRING",
+			"hostname (e.g. onion address) of this peer within PEERS",
+			&gnunet_opt_hostname
 		),
 		GNUNET_GETOPT_option_string('i',
 			"input",
