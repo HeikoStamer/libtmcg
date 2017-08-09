@@ -36,18 +36,18 @@ extern void				fork_instance(const size_t whoami);
 typedef std::pair<size_t, char*>	DKG_Buffer;
 typedef std::pair<size_t, DKG_Buffer>	DKG_BufferListEntry;
 typedef std::list<DKG_BufferListEntry>	DKG_BufferList;
-DKG_BufferList				send_queue, send_queue_broadcast;
-static const size_t			pipe_buffer_size = 4096;
+//DKG_BufferList			send_queue, send_queue_broadcast;
+//static const size_t			pipe_buffer_size = 4096;
 
-std::string 				thispeer;
-std::map<std::string, size_t> 		peer2pipe;
-std::map<size_t, std::string> 		pipe2peer;
+std::string 				builtin_thispeer;
+std::map<std::string, size_t> 		builtin_peer2pipe;
+std::map<size_t, std::string> 		builtin_pipe2peer;
 
 void builtin_init
 	(const std::string &hostname)
 {
 	// initialize peer identity
-	thispeer = hostname;
+	builtin_thispeer = hostname;
 	// initialize peer2pipe and pipe2peer mapping
 	if (opt_verbose)
 		std::cout << "INFO: using built-in service for message exchange instead of GNUnet CADET" << std::endl;
@@ -58,8 +58,8 @@ void builtin_init
 	}
 	for (size_t i = 0; i < peers.size(); i++)
 	{
-		peer2pipe[peers[i]] = i;
-		pipe2peer[i] = peers[i];
+		builtin_peer2pipe[peers[i]] = i;
+		builtin_pipe2peer[i] = peers[i];
 	}
 	// open pipes to communicate with forked instance
 	for (size_t i = 0; i < peers.size(); i++)
@@ -86,13 +86,13 @@ void builtin_fork
 	// fork instance
 	if (opt_verbose)
 		std::cout << "INFO: forking the protocol instance ..." << std::endl;
-	fork_instance(peer2pipe[thispeer]);
+	fork_instance(builtin_peer2pipe[builtin_thispeer]);
 }
 
 void builtin_done
 	()
 {
-	int thispid = pid[peer2pipe[thispeer]];
+	int thispid = pid[builtin_peer2pipe[builtin_thispeer]];
 	if (opt_verbose)
 		std::cout << "kill(" << thispid << ", SIGTERM)" << std::endl;
 	if(kill(thispid, SIGTERM))
