@@ -26,8 +26,6 @@
 #include <aiounicast_select.hh>
 static const char *version = VERSION; // copy VERSION from LibTMCG before overwritten by GNUnet headers
 
-#ifdef FORKING
-
 #include <sstream>
 #include <fstream>
 #include <vector>
@@ -1357,13 +1355,3 @@ int main
 	return 0;
 }
 
-#else
-
-int main
-	(int argc, char **argv)
-{
-	std::cerr << "configure feature --enable-forking needed" << std::endl;
-	return 77;
-}
-
-#endif
