@@ -37,14 +37,15 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 #include <sys/wait.h>
 #include <signal.h>
 
+#include "dkg-builtin-common.hh"
 #include "dkg-gnunet-common.hh"
 
-int 				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
-pid_t 				pid[MAX_N];
-std::string			passphrase, armored_seckey, u, passwords;
-std::vector<std::string>	peers;
-bool				instance_forked = false;
+int 					pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
+pid_t 					pid[MAX_N];
+std::vector<std::string>		peers;
+bool					instance_forked = false;
 
+std::string				passphrase, armored_seckey, u, passwords;
 tmcg_octets_t				keyid, pub, sub, uidsig, subsig;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 size_t					dss_n, dss_t, dss_i;

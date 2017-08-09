@@ -37,14 +37,15 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 #include <sys/wait.h>
 #include <signal.h>
 
+#include "dkg-builtin-common.hh"
 #include "dkg-gnunet-common.hh"
 
 int 					pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t 					pid[MAX_N];
-std::string				passphrase, armored_message, armored_seckey, ifilename, ofilename, passwords;
 std::vector<std::string>		peers;
 bool					instance_forked = false;
 
+std::string				passphrase, armored_message, armored_seckey, ifilename, ofilename, passwords;
 gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_q, elg_g, elg_y, elg_x;
 gcry_mpi_t 				gk, myk;
 gcry_sexp_t				elgkey;

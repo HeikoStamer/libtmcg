@@ -41,10 +41,11 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 
 int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t				pid[MAX_N];
-size_t				N, T, S;
-std::string			crs, u, passphrase, passwords, hostname;
 std::vector<std::string>	peers;
 bool				instance_forked = false;
+
+size_t				N, T, S;
+std::string			crs, u, passphrase, passwords, hostname;
 int 				opt_verbose = 0;
 char				*opt_crs = NULL;
 char				*opt_passwords = NULL;
