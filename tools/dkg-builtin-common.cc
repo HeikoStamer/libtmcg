@@ -335,7 +335,39 @@ int builtin_io
 			exit(-1);
 		}
 		if (retval == 0)
-			continue; // timeout
+		{
+			if (instance_forked)
+			{
+				// exit, if forked instance has terminated 
+				int wstatus = 0;
+				int thispid = pid[builtin_peer2pipe[builtin_thispeer]];
+				int ret = waitpid(thispid, &wstatus, WNOHANG);
+				if (ret < 0)
+					perror("dkg-builtin-common (waitpid)");
+				else if (ret == thispid)
+				{
+					instance_forked = false;
+					if (!WIFEXITED(wstatus))
+					{
+						std::cerr << "ERROR: protocol instance ";
+						if (WIFSIGNALED(wstatus))
+							std::cerr << thispid << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
+						if (WCOREDUMP(wstatus))
+							std::cerr << thispid << " dumped core" << std::endl;
+						return -1;
+					}
+					else if (WIFEXITED(wstatus))
+					{
+						if (opt_verbose)
+							std::cerr << "INFO: protocol instance " << thispid << " terminated with exit status " << 
+								WEXITSTATUS(wstatus) << std::endl;
+						return WEXITSTATUS(wstatus);
+					}
+					return 0;
+				}
+			}
+			continue;
+		}
 		for (std::map<size_t, int>::const_iterator pi = builtin_pipe2socket_in.begin(); pi != builtin_pipe2socket_in.end(); ++pi)
 		{
 			if ((pi->first != builtin_peer2pipe[builtin_thispeer]) && FD_ISSET(pi->second, &rfds))
@@ -557,35 +589,6 @@ int builtin_io
 					}
 					while (wnum < len);
 				}
-			}
-		}
-		if (instance_forked)
-		{
-			// exit, if forked instance has terminated 
-			int wstatus = 0;
-			int thispid = pid[builtin_peer2pipe[builtin_thispeer]];
-			int ret = waitpid(thispid, &wstatus, WNOHANG);
-			if (ret < 0)
-				perror("dkg-builtin-common (waitpid)");
-			else if (ret == thispid)
-			{
-				instance_forked = false;
-				if (!WIFEXITED(wstatus))
-				{
-					std::cerr << "ERROR: protocol instance ";
-					if (WIFSIGNALED(wstatus))
-						std::cerr << thispid << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
-					if (WCOREDUMP(wstatus))
-						std::cerr << thispid << " dumped core" << std::endl;
-					return -1;
-				}
-				else if (WIFEXITED(wstatus))
-				{
-					if (opt_verbose)
-						std::cerr << "INFO: protocol instance " << thispid << " terminated with exit status " << WEXITSTATUS(wstatus) << std::endl;
-					return WEXITSTATUS(wstatus);
-				}
-				return 0;
 			}
 		}
 	}
