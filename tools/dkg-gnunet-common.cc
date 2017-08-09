@@ -415,9 +415,6 @@ void gnunet_io(void *cls)
 {
 	io = NULL;
 
-	// NOTE: We need a short pause here, otherwise GNUnet CADET will be disrupted.
-//	sleep(1);
-
 	// send messages to peers
 	if (send_queue.size())
 	{
@@ -556,7 +553,7 @@ void gnunet_statistics(void *cls)
 		{
 			if (!WIFEXITED(wstatus))
 			{
-				std::cerr << "ERROR: instance ";
+				std::cerr << "ERROR: protocol instance ";
 				if (WIFSIGNALED(wstatus))
 					std::cerr << thispid << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
 				if (WCOREDUMP(wstatus))
@@ -565,7 +562,7 @@ void gnunet_statistics(void *cls)
 			else if (WIFEXITED(wstatus))
 			{
 				if (gnunet_opt_verbose)
-					std::cerr << "INFO: DKG/tDSS instance " << thispid << " terminated with exit status " << WEXITSTATUS(wstatus) << std::endl;
+					std::cerr << "INFO: protocol instance " << thispid << " terminated with exit status " << WEXITSTATUS(wstatus) << std::endl;
 			}
 			instance_forked = false;
 			GNUNET_SCHEDULER_shutdown();
@@ -583,7 +580,7 @@ void gnunet_fork(void *cls)
 	{
 		// fork instance
 		if (gnunet_opt_verbose)
-			std::cout << "INFO: forking the DKG/tDSS instance ..." << std::endl;
+			std::cout << "INFO: forking the protocol instance ..." << std::endl;
 		fork_instance(peer2pipe[thispeer]);
 	}
 	else

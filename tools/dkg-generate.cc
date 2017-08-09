@@ -1279,20 +1279,20 @@ int main
 		S = (N - 1) / 2; // apply an upper limit on S
 	if (opt_hostname != NULL)
 	{
+		int ret = 0;
 		builtin_init(hostname);
-		builtin_bindports(44000, false);
-		builtin_bindports(45000, true);
-		builtin_connect(44000, false);
-		builtin_connect(45000, true);
+		builtin_bindports(35000, false);
+		builtin_bindports(36000, true);
+		while (builtin_connect(35000, false) < peers.size())
+			sleep(1);
+		while (builtin_connect(36000, true) < peers.size())
+			sleep(1);
 		builtin_accept();
-
 		builtin_fork();
-
-// TODO: exchange data from/to peers and pipes
-
+		ret = builtin_io();
 		builtin_close();
 		builtin_done();
-		return 0;
+		return ret;
 	}
 
 #ifdef GNUNET

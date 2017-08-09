@@ -33,11 +33,7 @@ extern bool				instance_forked;
 extern int				opt_verbose;
 extern void				fork_instance(const size_t whoami);
 
-typedef std::pair<size_t, char*>	DKG_Buffer;
-typedef std::pair<size_t, DKG_Buffer>	DKG_BufferListEntry;
-typedef std::list<DKG_BufferListEntry>	DKG_BufferList;
-//DKG_BufferList			send_queue, send_queue_broadcast;
-//static const size_t			pipe_buffer_size = 4096;
+static const size_t			builtin_pipe_buffer_size = 4096;
 
 std::string 				builtin_thispeer;
 std::map<std::string, size_t> 		builtin_peer2pipe;
@@ -86,8 +82,9 @@ void builtin_init
 void builtin_bindports
 	(const int start, const bool broadcast)
 {
+	int local_start = start + (builtin_peer2pipe[builtin_thispeer] * (MAX_N + 1));
 	size_t i = 0;
-	for (int port = start; port < (start + (int)peers.size()); port++, i++)
+	for (int port = local_start; port < (local_start + (int)peers.size()); port++, i++)
 	{
 		int sockfd;
 		struct sockaddr_in sin = { 0 };
@@ -97,23 +94,17 @@ void builtin_bindports
 		if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		{
 			perror("dkg-builtin-common (socket)");
+			builtin_close();
+			builtin_done();
 			exit(-1);
 		}
-/*
-		long socket_option = 1;
-		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &socket_option, sizeof(socket_option)) < 0)
-		{
-			perror("dkg-builtin-common (setsockopt)");
-			if (close(sockfd) < 0)
-				perror("dkg-builtin-common (close)");
-			exit(-1);
-		}
-*/
 		if (bind(sockfd, (struct sockaddr*)&sin, sizeof(sin)) < 0)
 		{
 			perror("dkg-builtin-common (bind)");
 			if (close(sockfd) < 0)
 				perror("dkg-builtin-common (close)");
+			builtin_close();
+			builtin_done();
 			exit(-1);
 		}
 		if (listen(sockfd, SOMAXCONN) < 0)
@@ -121,6 +112,8 @@ void builtin_bindports
 			perror("dkg-builtin-common (listen)");
 			if (close(sockfd) < 0)
 				perror("dkg-builtin-common (close)");
+			builtin_close();
+			builtin_done();
 			exit(-1);
 		}
 		if (broadcast)
@@ -130,51 +123,72 @@ void builtin_bindports
 	}
 }
 
-void builtin_connect
+size_t builtin_connect
 	(const int start, const bool broadcast)
 {
-	size_t i = 0;
-	for (int port = start; port < (start + (int)peers.size()); port++, i++)
+	for (size_t i = 0; i < peers.size(); i++)
 	{
-		int sockfd;
-		struct hostent *hostinf;
-		struct sockaddr_in sin = { 0 };
-		sin.sin_port = htons(port);
-		sin.sin_family = AF_INET;
-		if ((hostinf = gethostbyname(peers[i].c_str())) != NULL)
+		if ((broadcast && !builtin_broadcast_pipe2socket_out.count(i)) || (!broadcast && !builtin_pipe2socket_out.count(i)))
 		{
-			memcpy((char*)&sin.sin_addr, hostinf->h_addr, hostinf->h_length);
-		}
-		else
-		{
-			std::cerr << "ERROR: resolving hostname \"" << peers[i] << "\" failed" << std::endl;
-			if (h_errno == HOST_NOT_FOUND)
-				std::cerr << "host not found" << std::endl;
-			else if (h_errno == NO_ADDRESS)
-				std::cerr << "no address data" << std::endl;
+			int port = start + (i * (MAX_N + 1)) + builtin_peer2pipe[builtin_thispeer];
+			int sockfd;
+			struct hostent *hostinf;
+			struct sockaddr_in sin = { 0 };
+			sin.sin_port = htons(port);
+			sin.sin_family = AF_INET;
+			if ((hostinf = gethostbyname(peers[i].c_str())) != NULL)
+			{
+				memcpy((char*)&sin.sin_addr, hostinf->h_addr, hostinf->h_length);
+			}
 			else
-				std::cerr << "unknown error" << std::endl;
-			exit(-1);
+			{
+				std::cerr << "ERROR: resolving hostname \"" << peers[i] << "\" failed: ";
+				if (h_errno == HOST_NOT_FOUND)
+					std::cerr << "host not found" << std::endl;
+				else if (h_errno == NO_ADDRESS)
+					std::cerr << "no address data" << std::endl;
+				else
+					std::cerr << "unknown error" << std::endl;
+				builtin_close();
+				builtin_done();
+				exit(-1);
+			}
+			if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+			{
+				perror("dkg-builtin-common (socket)");
+				builtin_close();
+				builtin_done();
+				exit(-1);
+			}
+			if ((connect(sockfd, (struct sockaddr*)&sin, sizeof(sin))) < 0)
+			{
+				if (errno == ECONNREFUSED)
+				{
+					if (close(sockfd) < 0)
+						perror("dkg-builtin-common (close)");
+					continue;
+				}
+				perror("dkg-builtin-common (connect)");
+				if (close(sockfd) < 0)
+					perror("dkg-builtin-common (close)");
+				builtin_close();
+				builtin_done();
+				exit(-1);
+			}
+			if (opt_verbose)
+				std::cout << "INFO: resolved hostname \"" << peers[i] << "\" to adress " << inet_ntoa(sin.sin_addr) << std::endl;
+			if (opt_verbose)
+				std::cout << "INFO: connected to hostname \"" << peers[i] << "\" on port " << port << std::endl;
+			if (broadcast)
+				builtin_broadcast_pipe2socket_out[i] = sockfd;
+			else
+				builtin_pipe2socket_out[i] = sockfd;
 		}
-		if (opt_verbose)
-			std::cout << "INFO: resolved hostname \"" << peers[i] << "\" to adress " << inet_ntoa(sin.sin_addr) << std::endl;
-		if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		{
-			perror("dkg-builtin-common (socket)");
-			exit(-1);
-		}
-		if ((connect(sockfd, (struct sockaddr*)&sin, sizeof(sin))) < 0)
-		{
-			perror("dkg-builtin-common (connect)");
-			if (close(sockfd) < 0)
-				perror("dkg-builtin-common (close)");
-			exit(-1);
-		}
-		if (broadcast)
-			builtin_broadcast_pipe2socket_out[i] = sockfd;
-		else
-			builtin_pipe2socket_out[i] = sockfd;
 	}
+	if (broadcast)
+		return builtin_broadcast_pipe2socket_out.size();
+	else
+		return builtin_pipe2socket_out.size();
 }
 
 void builtin_accept
@@ -204,6 +218,8 @@ void builtin_accept
 		if (retval < 0)
 		{
 			perror("dkg-builtin-common (select)");
+			builtin_close();
+			builtin_done();
 			exit(-1);
 		}
 		if (retval == 0)
@@ -218,6 +234,8 @@ void builtin_accept
 				if (connfd < 0)
 				{
 					perror("dkg-builtin-common (accept)");
+					builtin_close();
+					builtin_done();
 					exit(-1);
 				}
 				builtin_pipe2socket_in[pi->first] = connfd;
@@ -251,10 +269,326 @@ void builtin_accept
 void builtin_fork
 	()
 {
-	// fork instance
-	if (opt_verbose)
-		std::cout << "INFO: forking the protocol instance ..." << std::endl;
-	fork_instance(builtin_peer2pipe[builtin_thispeer]);
+	if ((builtin_pipe2socket_in.size() == peers.size()) && (builtin_broadcast_pipe2socket_in.size() == peers.size()))
+	{
+		// fork instance
+		if (opt_verbose)
+			std::cout << "INFO: forking the protocol instance ..." << std::endl;
+		fork_instance(builtin_peer2pipe[builtin_thispeer]);
+	}
+	else
+	{
+		std::cerr << "ERROR: not enough connections established" << std::endl;
+		builtin_close();
+		builtin_done();
+		exit(-1);
+	}
+}
+
+int builtin_io
+	()
+{
+	while (1)
+	{
+		fd_set rfds;
+		struct timeval tv;
+		int retval, maxfd = 0;
+		FD_ZERO(&rfds);
+		for (std::map<size_t, int>::const_iterator pi = builtin_pipe2socket_in.begin(); pi != builtin_pipe2socket_in.end(); ++pi)
+		{
+			if (pi->first != builtin_peer2pipe[builtin_thispeer])
+			{
+				FD_SET(pi->second, &rfds);
+				if (pi->second > maxfd)
+					maxfd = pi->second;
+			}
+		}
+		for (std::map<size_t, int>::const_iterator pi = builtin_broadcast_pipe2socket_in.begin(); pi != builtin_broadcast_pipe2socket_in.end(); ++pi)
+		{
+			if (pi->first != builtin_peer2pipe[builtin_thispeer])
+			{
+				FD_SET(pi->second, &rfds);
+				if (pi->second > maxfd)
+					maxfd = pi->second;
+			}
+		}
+		for (size_t i = 0; i < peers.size(); i++)
+		{
+			if (i != builtin_peer2pipe[builtin_thispeer])
+			{
+				FD_SET(pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], &rfds);
+				if (pipefd[builtin_peer2pipe[builtin_thispeer]][i][0] > maxfd)
+					maxfd = pipefd[builtin_peer2pipe[builtin_thispeer]][i][0];
+				FD_SET(broadcast_pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], &rfds);
+				if (broadcast_pipefd[builtin_peer2pipe[builtin_thispeer]][i][0] > maxfd)
+					maxfd = broadcast_pipefd[builtin_peer2pipe[builtin_thispeer]][i][0];
+			}
+		}
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
+		retval = select((maxfd + 1), &rfds, NULL, NULL, &tv);
+		if (retval < 0)
+		{
+			perror("dkg-builtin-common (select)");
+			builtin_close();
+			builtin_done();
+			exit(-1);
+		}
+		if (retval == 0)
+			continue; // timeout
+		for (std::map<size_t, int>::const_iterator pi = builtin_pipe2socket_in.begin(); pi != builtin_pipe2socket_in.end(); ++pi)
+		{
+			if ((pi->first != builtin_peer2pipe[builtin_thispeer]) && FD_ISSET(pi->second, &rfds))
+			{
+				char buf[builtin_pipe_buffer_size];
+				ssize_t len = read(pi->second, buf, sizeof(buf));
+				if (len < 0)
+				{
+					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+					{
+						continue;
+					}
+					else
+					{
+						perror("dkg-builtin-common (read)");
+						builtin_close();
+						builtin_done();
+						exit(-1);
+					}
+				}
+				else if (len == 0)
+				{
+					continue;
+				}
+				else
+				{
+					if (opt_verbose)
+						std::cout << "INFO: received " << len << " bytes on connection for P_" << pi->first << std::endl;
+					ssize_t wnum = 0;
+					do
+					{
+						ssize_t num = write(pipefd[pi->first][builtin_peer2pipe[builtin_thispeer]][1],
+								buf + wnum, len - wnum);
+						if (num < 0)
+						{
+							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+							{
+								if (opt_verbose)
+									std::cerr << "sleeping ..." << std::endl;
+								sleep(1);
+								continue;
+							}
+							else
+							{
+								perror("dkg-builtin-common (write)");
+								builtin_close();
+								builtin_done();
+								exit(-1);
+							}
+						}
+						else
+							wnum += num;
+					}
+					while (wnum < len);
+				}
+			}
+		}
+		for (std::map<size_t, int>::const_iterator pi = builtin_broadcast_pipe2socket_in.begin(); pi != builtin_broadcast_pipe2socket_in.end(); ++pi)
+		{
+			if ((pi->first != builtin_peer2pipe[builtin_thispeer]) && FD_ISSET(pi->second, &rfds))
+			{
+				char buf[builtin_pipe_buffer_size];
+				ssize_t len = read(pi->second, buf, sizeof(buf));
+				if (len < 0)
+				{
+					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+					{
+						continue;
+					}
+					else
+					{
+						perror("dkg-builtin-common (read)");
+						builtin_close();
+						builtin_done();
+						exit(-1);
+					}
+				}
+				else if (len == 0)
+				{
+					continue;
+				}
+				else
+				{
+					if (opt_verbose)
+						std::cout << "INFO: received " << len << " bytes on broadcast connection for P_" << pi->first << std::endl;
+					ssize_t wnum = 0;
+					do
+					{
+						ssize_t num = write(broadcast_pipefd[pi->first][builtin_peer2pipe[builtin_thispeer]][1],
+								buf + wnum, len - wnum);
+						if (num < 0)
+						{
+							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+							{
+								if (opt_verbose)
+									std::cerr << "sleeping ..." << std::endl;
+								sleep(1);
+								continue;
+							}
+							else
+							{
+								perror("dkg-builtin-common (write)");
+								builtin_close();
+								builtin_done();
+								exit(-1);
+							}
+						}
+						else
+							wnum += num;
+					}
+					while (wnum < len);
+				}
+			}
+		}
+		for (size_t i = 0; i < peers.size(); i++)
+		{
+			if ((i != builtin_peer2pipe[builtin_thispeer]) && FD_ISSET(pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], &rfds))
+			{
+				char buf[builtin_pipe_buffer_size];
+				ssize_t len = read(pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], buf, sizeof(buf));
+				if (len < 0)
+				{
+					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+					{
+						continue;
+					}
+					else
+					{
+						perror("dkg-builtin-common (read)");
+						builtin_close();
+						builtin_done();
+						exit(-1);
+					}
+				}
+				else if (len == 0)
+				{
+					continue;
+				}
+				else
+				{
+					if (opt_verbose)
+						std::cout << "INFO: sending " << len << " bytes on connection to P_" << i << std::endl;
+					ssize_t wnum = 0;
+					do
+					{
+						ssize_t num = write(builtin_pipe2socket_out[i], buf + wnum, len - wnum);
+						if (num < 0)
+						{
+							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+							{
+								if (opt_verbose)
+									std::cerr << "sleeping ..." << std::endl;
+								sleep(1);
+								continue;
+							}
+							else
+							{
+								perror("dkg-builtin-common (write)");
+								builtin_close();
+								builtin_done();
+								exit(-1);
+							}
+						}
+						else
+							wnum += num;
+					}
+					while (wnum < len);
+				}
+			}
+			if ((i != builtin_peer2pipe[builtin_thispeer]) && FD_ISSET(broadcast_pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], &rfds))
+			{
+				char buf[builtin_pipe_buffer_size];
+				ssize_t len = read(broadcast_pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], buf, sizeof(buf));
+				if (len < 0)
+				{
+					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+					{
+						continue;
+					}
+					else
+					{
+						perror("dkg-builtin-common (read)");
+						builtin_close();
+						builtin_done();
+						exit(-1);
+					}
+				}
+				else if (len == 0)
+				{
+					continue;
+				}
+				else
+				{
+					if (opt_verbose)
+						std::cout << "INFO: sending " << len << " bytes on broadcast connection to P_" << i << std::endl;
+					ssize_t wnum = 0;
+					do
+					{
+						ssize_t num = write(builtin_broadcast_pipe2socket_out[i], buf + wnum, len - wnum);
+						if (num < 0)
+						{
+							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
+							{
+								if (opt_verbose)
+									std::cerr << "sleeping ..." << std::endl;
+								sleep(1);
+								continue;
+							}
+							else
+							{
+								perror("dkg-builtin-common (write)");
+								builtin_close();
+								builtin_done();
+								exit(-1);
+							}
+						}
+						else
+							wnum += num;
+					}
+					while (wnum < len);
+				}
+			}
+		}
+		if (instance_forked)
+		{
+			// exit, if forked instance has terminated 
+			int wstatus = 0;
+			int thispid = pid[builtin_peer2pipe[builtin_thispeer]];
+			int ret = waitpid(thispid, &wstatus, WNOHANG);
+			if (ret < 0)
+				perror("dkg-builtin-common (waitpid)");
+			else if (ret == thispid)
+			{
+				instance_forked = false;
+				if (!WIFEXITED(wstatus))
+				{
+					std::cerr << "ERROR: protocol instance ";
+					if (WIFSIGNALED(wstatus))
+						std::cerr << thispid << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
+					if (WCOREDUMP(wstatus))
+						std::cerr << thispid << " dumped core" << std::endl;
+					return -1;
+				}
+				else if (WIFEXITED(wstatus))
+				{
+					if (opt_verbose)
+						std::cerr << "INFO: protocol instance " << thispid << " terminated with exit status " << WEXITSTATUS(wstatus) << std::endl;
+					return WEXITSTATUS(wstatus);
+				}
+				return 0;
+			}
+		}
+	}
 }
 
 void builtin_close
@@ -295,15 +629,18 @@ void builtin_close
 void builtin_done
 	()
 {
-	int thispid = pid[builtin_peer2pipe[builtin_thispeer]];
-	if (opt_verbose)
-		std::cout << "kill(" << thispid << ", SIGTERM)" << std::endl;
-	if(kill(thispid, SIGTERM))
-		perror("dkg-builtin-common (kill)");
-	if (opt_verbose)
-		std::cout << "waitpid(" << thispid << ", NULL, 0)" << std::endl;
-	if (waitpid(thispid, NULL, 0) != thispid)
-		perror("dkg-builtin-common (waitpid)");
+	if (instance_forked)
+	{
+		int thispid = pid[builtin_peer2pipe[builtin_thispeer]];
+		if (opt_verbose)
+			std::cout << "kill(" << thispid << ", SIGTERM)" << std::endl;
+		if(kill(thispid, SIGTERM))
+			perror("dkg-builtin-common (kill)");
+		if (opt_verbose)
+			std::cout << "waitpid(" << thispid << ", NULL, 0)" << std::endl;
+		if (waitpid(thispid, NULL, 0) != thispid)
+			perror("dkg-builtin-common (waitpid)");
+	}
 	for (size_t i = 0; i < peers.size(); i++)
 	{
 		for (size_t j = 0; j < peers.size(); j++)

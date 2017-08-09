@@ -51,11 +51,13 @@
 		(const std::string &hostname);
 	void builtin_bindports
 		(const int start, const bool broadcast);
-	void builtin_connect
+	size_t builtin_connect
 		(const int start, const bool broadcast);
 	void builtin_accept
 		();
 	void builtin_fork
+		();
+	int builtin_io
 		();
 	void builtin_close
 		();
