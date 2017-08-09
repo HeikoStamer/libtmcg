@@ -110,10 +110,10 @@ void read_message
 }
 
 void write_message
-	(const std::string ofilename, const tmcg_octets_t &msg)
+	(const std::string filename, const tmcg_octets_t &msg)
 {
 	// write out the decrypted message
-	std::ofstream ofs(ofilename.c_str(), std::ofstream::out);
+	std::ofstream ofs(filename.c_str(), std::ofstream::out);
 	if (!ofs.good())
 	{
 		std::cerr << "ERROR: opening output file failed" << std::endl;
