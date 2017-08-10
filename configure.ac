@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170809])
+AC_REVISION([20170810])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.2], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -240,12 +240,13 @@ AC_MSG_RESULT($use_dkgtools)
 if test "$use_dkgtools" = yes ; then
 	AC_HEADER_SYS_WAIT
 	AC_TYPE_PID_T
+	AC_TYPE_SIGNAL
 	AC_FUNC_FORK
 	AC_CHECK_HEADERS([unistd.h sys/types.h sys/wait.h signal.h arpa/inet.h\
  netdb.h netinet/in.h sys/socket.h], ,
 		AC_MSG_ERROR([some headers are missing]))
 	AC_CHECK_FUNCS([fork kill pipe pipe2 waitpid gethostbyname htons htonl\
- inet_ntoa socket setsockopt connect bind listen accept send recv], , 
+ inet_ntoa socket setsockopt connect bind listen accept signal sigaction], , 
 		AC_MSG_ERROR([some functions are missing]))
 	AC_DEFINE(DKGTOOLS, , [Define to enable building of dkg-tools])
 fi

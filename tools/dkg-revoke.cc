@@ -55,6 +55,7 @@ gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_g, elg_y;
 int 					opt_verbose = 0;
 char					*opt_passwords = NULL;
 char					*opt_hostname = NULL;
+unsigned long int			opt_r = 0;
 
 void read_private_key
 	(const std::string filename, std::string &result)
@@ -1137,7 +1138,7 @@ void fork_instance
 #ifdef GNUNET
 			run_instance(whoami, sigtime, gnunet_opt_reason, gnunet_opt_xtests);
 #else
-			run_instance(whoami, sigtime, 0, 0);
+			run_instance(whoami, sigtime, opt_r, 0);
 #endif
 			if (opt_verbose)
 				std::cout << "R_" << whoami << ": exit(0)" << std::endl;
@@ -1187,7 +1188,7 @@ int main
 		),
 		GNUNET_GETOPT_option_uint('r',
 			"reason",
-			"NUMBER",
+			"INTEGER",
 			"reason for revocation (OpenPGP machine-readable code)",
 			&gnunet_opt_reason
 		),
@@ -1257,6 +1258,8 @@ int main
 					passwords = argv[i+1];
 					opt_passwords = (char*)passwords.c_str();
 				}
+				if ((arg.find("-r") == 0) && (idx < (size_t)(argc - 1)) && (opt_r == 0))
+					opt_r = strtoul(argv[i+1], NULL, 10);
 				continue;
 			}
 			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-V") == 0))
@@ -1270,6 +1273,7 @@ int main
 					std::cout << "  -h, --help     print this help" << std::endl;
 					std::cout << "  -H STRING      hostname (e.g. onion address) of this peer within PEERS" << std::endl;
 					std::cout << "  -P STRING      exchanged passwords to protect private and broadcast channels" << std::endl;
+					std::cout << "  -r INTEGER     reason for revocation (OpenPGP machine-readable code)" << std::endl;
 					std::cout << "  -v, --version  print the version number" << std::endl;
 					std::cout << "  -V, --verbose  turn on verbose output" << std::endl;
 #endif
@@ -1306,6 +1310,11 @@ int main
 	if (!init_libTMCG())
 	{
 		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
+		return -1;
+	}
+	if ((opt_hostname != NULL) && (opt_passwords == NULL))
+	{
+		std::cerr << "ERROR: option \"-P\" is necessary due to insecure network" << std::endl;
 		return -1;
 	}
 	if (opt_verbose)
@@ -1355,7 +1364,7 @@ int main
 		),
 		GNUNET_GETOPT_option_uint('r',
 			"reason",
-			"NUMBER",
+			"INTEGER",
 			"reason for revocation (OpenPGP machine-readable code)",
 			&gnunet_opt_reason
 		),

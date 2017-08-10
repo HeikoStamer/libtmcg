@@ -2150,6 +2150,11 @@ int main
 		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
 		return -1;
 	}
+	if ((opt_hostname != NULL) && (opt_passwords == NULL))
+	{
+		std::cerr << "ERROR: option \"-P\" is necessary due to insecure network" << std::endl;
+		return -1;
+	}
 	if (opt_ifilename != NULL)
 		read_message(opt_ifilename, armored_message);
 	else

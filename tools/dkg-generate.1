@@ -83,6 +83,15 @@ to P_2. That means P_1 and P_2 have to provide matching password strings,
 i.e., B/D/E/ and C/E/F/, respectively. The default value of option "-P" is
 an empty password string (simple default passwords) based on the assumption,
 that GNUnet will protect the exchanged protocol messages.
+.PP
+Additionally, instead of relying on GNUnet CADET the protocol messages can
+be exchanged by the built-in TCP/IP communication framework. In that case
+the given peer identities from PEERS are simple resolvable hostnames and the
+corresponding option "-H" defines the hostname of the calling peer within
+that list. The program binds some TCP ports up from 35000 to 37000 to listen
+for incoming connections and connects to other peers in that port range.
+Since this communication is not protected by the network itself the option
+"-P" is always required.
 
 .SH OPTIONS
 Arguments mandatory for long options are also mandatory for short options.
@@ -101,6 +110,9 @@ common reference string that defines the underlying DDH-hard group
 \fB\-h\fR, \fB\-\-help\fR
 print this help
 .TP
+\fB\-H\fR, \fB\-\-hostname\fR=\fI\,STRING\/\fR
+hostname (e.g. onion address) of this peer within PEERS
+.TP
 \fB\-L\fR, \fB\-\-log\fR=\fI\,LOGLEVEL\/\fR
 configure logging to use LOGLEVEL
 .TP
@@ -113,10 +125,10 @@ GNUnet CADET port to listen/connect
 \fB\-P\fR, \fB\-\-passwords\fR=\fI\,STRING\/\fR
 exchanged passwords to protect private and broadcast channels
 .TP
-\fB\-s\fR, \fB\-\-s\-resilience\fR
+\fB\-s\fR, \fB\-\-s\-resilience\fR=\fI\,INTEGER\/\fR
 resilience of threshold DSS protocol (signature scheme)
 .TP
-\fB\-t\fR, \fB\-\-t\-resilience\fR
+\fB\-t\fR, \fB\-\-t\-resilience\fR=\fI\,INTEGER\/\fR
 resilience of DKG protocol (threshold decryption)
 .TP
 \fB\-v\fR, \fB\-\-version\fR
@@ -159,8 +171,9 @@ Each party must run such a process with identical parameter set, i.e., please co
 e.g. 2-resilience, means that later at least three participants are needed in order to decrypt a message for the generated common
 ElGamal subkey. However, robustness of the DKG protocol is only guaranteed for t < n/2 which is violated in this example. Thus a
 malicious party may disturb the key generation without being identified and excluded. The s-resilience is set to zero, which
-means that individual DSA keys instead of a shared primary key are generated. Thus
-.BR dkg\-sign (1) will not work with these keys. The program waits ten minutes before the DKG protocol is started, because
+means that individual DSA keys instead of a shared key are generated and used as OpenPGP primary keys. Thus
+.BR dkg\-sign (1)
+will not work with such keys. The program waits ten minutes before the DKG protocol is started, because
 establishing a CADET channel with GNUnet may take some time.
 
 .SH "SEE ALSO"

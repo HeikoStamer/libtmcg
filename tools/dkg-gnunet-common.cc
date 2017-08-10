@@ -24,8 +24,6 @@
 #endif
 #include "dkg-gnunet-common.hh"
 
-#ifdef FORKING
-
 extern int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 extern pid_t				pid[MAX_N];
 extern std::vector<std::string>		peers;
@@ -707,7 +705,4 @@ void gnunet_run(void *cls, char *const *args, const char *cfgfile,
 }
 
 #endif
-
-#endif
-
 

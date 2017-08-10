@@ -44,9 +44,10 @@
 	#include <netinet/in.h>
 	#include <sys/socket.h>
 
-	#undef NDEBUG
 	#define MAX_N 32
 
+	RETSIGTYPE builtin_sig_handler_quit
+		(int sig);
 	void builtin_init
 		(const std::string &hostname);
 	void builtin_bindports

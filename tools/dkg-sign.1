@@ -40,18 +40,30 @@ to S_2. That means S_1 and S_2 have to provide matching password strings,
 i.e., B/D/E/ and C/E/F/, respectively. The default value of option "-P" is
 an empty password string (simple default passwords) based on the assumption,
 that GNUnet will protect the exchanged protocol messages.
+.PP
+Additionally, instead of relying on GNUnet CADET the protocol messages can
+be exchanged by the built-in TCP/IP communication framework. In that case
+the given peer identities from PEERS are simple resolvable hostnames and the
+corresponding option "-H" defines the hostname of the calling peer within
+that list. The program binds some TCP ports up from 35000 to 37000 to listen
+for incoming connections and connects to other peers in that port range.
+Since this communication is not protected by the network itself the option
+"-P" is always required.
 
 .SH OPTIONS
 Arguments mandatory for long options are also mandatory for short options.
 .TP
 \fB\-c\fR, \fB\-\-config\fR=\fI\,FILENAME\/\fR
-use GNUnet configuration file FILENAME (only interactive mode)
+use GNUnet configuration file FILENAME
 .TP
 \fB\-e\fR, \fB\-\-expiration\fR=\fI\,TIME\/\fR
 expiration time of generated signature in seconds
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 print this help
+.TP
+\fB\-H\fR, \fB\-\-hostname\fR=\fI\,STRING\/\fR
+hostname (e.g. onion address) of this peer within PEERS
 .TP
 \fB\-i\fR, \fB\-\-input\fR=\fI\,FILENAME\/\fR
 create detached signature from FILENAME

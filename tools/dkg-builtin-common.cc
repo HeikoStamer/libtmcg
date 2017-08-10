@@ -24,8 +24,6 @@
 #endif
 #include "dkg-builtin-common.hh"
 
-#ifdef FORKING
-
 extern int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 extern pid_t				pid[MAX_N];
 extern std::vector<std::string>		peers;
@@ -42,6 +40,23 @@ std::map<size_t, int>	 		builtin_pipe2socket, builtin_broadcast_pipe2socket;
 std::map<size_t, int>	 		builtin_pipe2socket_out, builtin_broadcast_pipe2socket_out;
 std::map<size_t, int>	 		builtin_pipe2socket_in, builtin_broadcast_pipe2socket_in;
 
+
+// This is the signal handler called when receiving SIGINT, SIGQUIT, and SIGTERM, respectively.
+RETSIGTYPE builtin_sig_handler_quit(int sig)
+{
+	if (pid[builtin_peer2pipe[builtin_thispeer]] != 0) // parent process?
+	{
+		if (opt_verbose)
+			std::cerr << "builtin_sig_handler_quit(): got signal " << sig << std::endl;
+		signal(SIGINT, SIG_DFL);
+		signal(SIGQUIT, SIG_DFL);
+		signal(SIGTERM, SIG_DFL);
+		builtin_close();
+		builtin_done();
+		exit(-1);
+	}
+}
+
 void builtin_init
 	(const std::string &hostname)
 {
@@ -49,7 +64,7 @@ void builtin_init
 	builtin_thispeer = hostname;
 	// initialize peer2pipe and pipe2peer mapping
 	if (opt_verbose)
-		std::cout << "INFO: using built-in service for message exchange instead of GNUnet CADET" << std::endl;
+		std::cout << "INFO: using built-in TCP/IP service for message exchange instead of GNUnet CADET" << std::endl;
 	if (std::find(peers.begin(), peers.end(), hostname) == peers.end())
 	{
 		std::cerr << "ERROR: cannot find hostname \"" << hostname << "\" of this peer within PEERS" << std::endl;
@@ -76,6 +91,25 @@ void builtin_init
 				exit(-1);
 			}
 		}
+	}
+	// install our own signal handler
+	struct sigaction act;
+	memset(&act, 0, sizeof(act));
+	act.sa_handler = &builtin_sig_handler_quit;
+	if (sigaction(SIGINT, &act, NULL) < 0)
+	{
+		perror("dkg-builtin-common (sigaction)");
+		exit(-1);
+	}
+	if (sigaction(SIGQUIT, &act, NULL) < 0)
+	{
+		perror("dkg-builtin-common (sigaction)");
+		exit(-1);
+	}
+	if (sigaction(SIGTERM, &act, NULL) < 0)
+	{
+		perror("dkg-builtin-common (sigaction)");
+		exit(-1);
 	}
 }
 
@@ -240,7 +274,7 @@ void builtin_accept
 				}
 				builtin_pipe2socket_in[pi->first] = connfd;
 				if (opt_verbose)
-					std::cout << "INFO: accept connection for P_" << pi->first << " from adress " <<
+					std::cout << "INFO: accept connection for P/D/R/S_" << pi->first << " from adress " <<
 						inet_ntoa(sin.sin_addr) << std::endl;
 			}
 		}
@@ -258,7 +292,7 @@ void builtin_accept
 				}
 				builtin_broadcast_pipe2socket_in[pi->first] = connfd;
 				if (opt_verbose)
-					std::cout << "INFO: accept broadcast connection for P_" << pi->first << " from adress " << 
+					std::cout << "INFO: accept broadcast connection for P/D/R/S_" << pi->first << " from adress " << 
 						inet_ntoa(sin.sin_addr) << std::endl;
 			}
 		}
@@ -392,7 +426,8 @@ int builtin_io
 				else
 				{
 					if (opt_verbose)
-						std::cout << "INFO: received " << len << " bytes on connection for P_" << pi->first << std::endl;
+						std::cout << "INFO: received " << len << " bytes on connection for P/D/R/S_" << 
+							pi->first << std::endl;
 					ssize_t wnum = 0;
 					do
 					{
@@ -449,7 +484,8 @@ int builtin_io
 				else
 				{
 					if (opt_verbose)
-						std::cout << "INFO: received " << len << " bytes on broadcast connection for P_" << pi->first << std::endl;
+						std::cout << "INFO: received " << len << " bytes on broadcast connection for P/D/R/S_" << 
+							pi->first << std::endl;
 					ssize_t wnum = 0;
 					do
 					{
@@ -506,7 +542,7 @@ int builtin_io
 				else
 				{
 					if (opt_verbose)
-						std::cout << "INFO: sending " << len << " bytes on connection to P_" << i << std::endl;
+						std::cout << "INFO: sending " << len << " bytes on connection to P/D/R/S_" << i << std::endl;
 					ssize_t wnum = 0;
 					do
 					{
@@ -559,7 +595,7 @@ int builtin_io
 				else
 				{
 					if (opt_verbose)
-						std::cout << "INFO: sending " << len << " bytes on broadcast connection to P_" << i << std::endl;
+						std::cout << "INFO: sending " << len << " bytes on broadcast connection to P/D/R/S_" << i << std::endl;
 					ssize_t wnum = 0;
 					do
 					{
@@ -652,7 +688,4 @@ void builtin_done
 		}
 	}
 }
-
-#endif
-
 

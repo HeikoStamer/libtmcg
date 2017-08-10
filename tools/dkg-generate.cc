@@ -50,6 +50,7 @@ int 				opt_verbose = 0;
 char				*opt_crs = NULL;
 char				*opt_passwords = NULL;
 char				*opt_hostname = NULL;
+unsigned long int		opt_t = 0, opt_s = 0, opt_e = 0;
 
 void run_instance
 	(const size_t whoami, const time_t keytime, const time_t keyexptime, const size_t num_xtests)
@@ -1033,7 +1034,7 @@ void fork_instance
 #ifdef GNUNET
 			run_instance(whoami, keytime, gnunet_opt_keyexptime, gnunet_opt_xtests);
 #else
-			run_instance(whoami, keytime, 0, 0);
+			run_instance(whoami, keytime, opt_e, 0);
 #endif
 			if (opt_verbose)
 				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
@@ -1115,13 +1116,13 @@ int main
 		),
 		GNUNET_GETOPT_option_uint('s',
 			"s-resilience",
-			NULL,
+			"INTEGER",
 			"resilience of threshold DSS protocol (signature scheme)",
 			&gnunet_opt_s_resilience
 		),
 		GNUNET_GETOPT_option_uint('t',
 			"t-resilience",
-			NULL,
+			"INTEGER",
 			"resilience of DKG protocol (threshold decryption)",
 			&gnunet_opt_t_resilience
 		),
@@ -1201,6 +1202,12 @@ int main
 					passwords = argv[i+1];
 					opt_passwords = (char*)passwords.c_str();
 				}
+				if ((arg.find("-t") == 0) && (idx < (size_t)(argc - 1)) && (opt_t == 0))
+					opt_t = strtoul(argv[i+1], NULL, 10);
+				if ((arg.find("-s") == 0) && (idx < (size_t)(argc - 1)) && (opt_s == 0))
+					opt_s = strtoul(argv[i+1], NULL, 10);
+				if ((arg.find("-e") == 0) && (idx < (size_t)(argc - 1)) && (opt_e == 0))
+					opt_e = strtoul(argv[i+1], NULL, 10);
 				continue;
 			}
 			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-V") == 0))
@@ -1212,9 +1219,12 @@ int main
 					std::cout << about << std::endl;
 					std::cout << "Arguments mandatory for long options are also mandatory for short options." << std::endl;
 					std::cout << "  -h, --help     print this help" << std::endl;
+					std::cout << "  -e TIME        expiration time of generated keys in seconds" << std::endl;
 					std::cout << "  -g STRING      common reference string that defines underlying DDH-hard group" << std::endl;
 					std::cout << "  -H STRING      hostname (e.g. onion address) of this peer within PEERS" << std::endl;
 					std::cout << "  -P STRING      exchanged passwords to protect private and broadcast channels" << std::endl;
+					std::cout << "  -s INTEGER     resilience of threshold DSS protocol (signature scheme)" << std::endl;
+					std::cout << "  -t INTEGER     resilience of DKG protocol (threshold decryption)" << std::endl;
 					std::cout << "  -v, --version  print the version number" << std::endl;
 					std::cout << "  -V, --verbose  turn on verbose output" << std::endl;
 #endif
@@ -1257,6 +1267,11 @@ int main
 		std::cerr << "ERROR: initialization of LibTMCG failed" << std::endl;
 		return -1;
 	}
+	if ((opt_hostname != NULL) && (opt_passwords == NULL))
+	{
+		std::cerr << "ERROR: option \"-P\" is necessary due to insecure network" << std::endl;
+		return -1;
+	}
 	std::cout << "1. Please enter an OpenPGP-style user ID (name <email>): ";
 	std::getline(std::cin, u);
 	std::cout << "2. Choose a passphrase to protect your private key: ";
@@ -1272,6 +1287,11 @@ int main
 		T = gnunet_opt_t_resilience; // get value of T from GNUnet options
 	if (gnunet_opt_s_resilience != MAX_N)
 		S = gnunet_opt_s_resilience; // get value of S from GNUnet options
+#else
+	if (opt_t != 0)
+		T = opt_t; // get vaule of T from options
+	if (opt_s != 0)
+		S = opt_s; // get vaule of S from options
 #endif
 	if (T == 0)
 		T++; // 0-resilience is not preferable, because then only a single party can decrypt everything
@@ -1331,13 +1351,13 @@ int main
 		),
 		GNUNET_GETOPT_option_uint('s',
 			"s-resilience",
-			NULL,
+			"INTEGER",
 			"resilience of threshold DSS protocol (signature scheme)",
 			&gnunet_opt_s_resilience
 		),
 		GNUNET_GETOPT_option_uint('t',
 			"t-resilience",
-			NULL,
+			"INTEGER",
 			"resilience of DKG protocol (threshold decryption)",
 			&gnunet_opt_t_resilience
 		),

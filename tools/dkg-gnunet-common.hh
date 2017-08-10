@@ -36,8 +36,6 @@
 	#include <aiounicast.hh>
 	#include <mpz_srandom.h>
 
-#ifdef FORKING
-
 	#include <sys/wait.h>
 	#include <signal.h>
 
@@ -95,8 +93,6 @@
 	void gnunet_run
 		(void *cls, char *const *args, const char *cfgfile, 
 		const struct GNUNET_CONFIGURATION_Handle *cfg);
-#endif
-
 #endif
 
 #endif
