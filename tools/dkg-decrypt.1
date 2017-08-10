@@ -30,10 +30,10 @@ of the calling peer. Then the corresponding decryption share is written to
 STDOUT, and the users must exchange enough shares manually before decryption
 of the message can start.
 .PP
-The established private communication channels for the protocols should be
+The established communication channels for the protocols should be
 protected with bilateral exchanged passwords for encryption and message
-authentication, if the underlying P2P network does not guarantee
-confidentiality and integrity by itself. The passwords for every channel
+authentication, if the underlying P2P network does not guarantee required
+confidentiality and integrity by itself. The passwords for all channels
 are defined as a string, where a slash (/) marks the end of each password.
 The order of the passwords depends on position of each peer in the
 canonicalized peer list, i.e., the sorted unique list of given PEERS. For

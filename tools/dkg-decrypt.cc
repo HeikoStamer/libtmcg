@@ -1638,7 +1638,7 @@ void run_instance
 	for (size_t i = 0; i < peers.size(); i++)
 	{
 		std::stringstream key;
-		if (passwords.length())
+		if (opt_passwords != NULL)
 		{
 			key << TMCG_ParseHelper::gs(passwords, '/');
 			if (TMCG_ParseHelper::gs(passwords, '/') == "ERROR")

@@ -72,9 +72,10 @@ this waiting time. Otherwise the distributed key generation may fail.
 .PP
 The established private communication channels for the protocols should be
 protected with bilateral exchanged passwords for encryption and message
-authentication, if the underlying P2P network does not guarantee
-confidentiality and integrity by itself. The passwords for every channel
-are defined as a string, where a slash (/) marks the end of each password.
+authentication, if the underlying P2P network does not guarantee required
+confidentiality and integrity by itself. Moreover, the broadcast channel
+has to be authenticated too. The passwords for all channels are defined
+as a string, where a slash (/) marks the end of each password.
 The order of the passwords depends on position of each peer in the
 canonicalized peer list, i.e., the sorted unique list of given PEERS. For
 example, if participant P_0 uses A/B/C/ as password string, then "B" is
@@ -175,6 +176,16 @@ means that individual DSA keys instead of a shared key are generated and used as
 .BR dkg\-sign (1)
 will not work with such keys. The program waits ten minutes before the DKG protocol is started, because
 establishing a CADET channel with GNUnet may take some time.
+.PP
+Instead of using GNUnet for message exchange the built-in TCP/IP service can carry out this job. However, then each peer has to
+be reachable by all other peers over the underlying network. Resolvable hostnames are used as peer identities: 
+PP
+.nf
+.RS
+dkg-generate -s 2 -t 2 -P secret1/secret2/secret3/secret4/ -H host2.example.com host1.example.com host2.example.com host3.example.com  
+.RE
+.fi
+The s-resilience is set non-zero in this example, which means that a shared DSA key is generated and used as OpenPGP primary key.
 
 .SH "SEE ALSO"
 .BR dkg\-encrypt (1),

@@ -44,7 +44,12 @@ std::map<size_t, int>	 		builtin_pipe2socket_in, builtin_broadcast_pipe2socket_i
 // This is the signal handler called when receiving SIGINT, SIGQUIT, and SIGTERM, respectively.
 RETSIGTYPE builtin_sig_handler_quit(int sig)
 {
-	if (pid[builtin_peer2pipe[builtin_thispeer]] != 0) // parent process?
+	if (instance_forked && (pid[builtin_peer2pipe[builtin_thispeer]] == 0)) // child process?
+	{
+		if (opt_verbose)
+			std::cerr << "builtin_sig_handler_quit(): child got signal " << sig << std::endl;
+	}
+	else
 	{
 		if (opt_verbose)
 			std::cerr << "builtin_sig_handler_quit(): got signal " << sig << std::endl;
