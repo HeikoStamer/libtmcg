@@ -45,7 +45,7 @@ pid_t 					pid[MAX_N];
 std::vector<std::string>		peers;
 bool					instance_forked = false;
 
-std::string				passphrase, armored_seckey, ifilename, ofilename, passwords, hostname;
+std::string				passphrase, armored_seckey, ifilename, ofilename, passwords, hostname, port;
 tmcg_octets_t				keyid;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 size_t					dss_n, dss_t, dss_i;
@@ -57,7 +57,7 @@ char					*opt_ifilename = NULL;
 char					*opt_ofilename = NULL;
 char					*opt_passwords = NULL;
 char					*opt_hostname = NULL;
-unsigned long int			opt_e = 0;
+unsigned long int			opt_e = 0, opt_p = 35000;
 
 void read_private_key
 	(const std::string filename, std::string &result)
@@ -1211,6 +1211,8 @@ int main
 				}
 				if ((arg.find("-e") == 0) && (idx < (size_t)(argc - 1)) && (opt_e == 0))
 					opt_e = strtoul(argv[i+1], NULL, 10);
+				if ((arg.find("-p") == 0) && (idx < (size_t)(argc - 1)) && (port.length() == 0))
+					port = argv[i+1];
 				continue;
 			}
 			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-V") == 0))
@@ -1226,6 +1228,7 @@ int main
 					std::cout << "  -H STRING      hostname (e.g. onion address) of this peer within PEERS" << std::endl;
 					std::cout << "  -i FILENAME    create detached signature from FILENAME" << std::endl;
 					std::cout << "  -o FILENAME    write detached signature to FILENAME" << std::endl;
+					std::cout << "  -p INTEGER     start port for built-in TCP/IP message exchange service" << std::endl;
 					std::cout << "  -P STRING      exchanged passwords to protect private and broadcast channels" << std::endl;
 					std::cout << "  -v, --version  print the version number" << std::endl;
 					std::cout << "  -V, --verbose  turn on verbose output" << std::endl;
@@ -1284,12 +1287,14 @@ int main
 	if (opt_hostname != NULL)
 	{
 		int ret = 0;
+		if (port.length())
+			opt_p = strtoul(port.c_str(), NULL, 10); // get start port from options
 		builtin_init(hostname);
-		builtin_bindports(35000, false);
-		builtin_bindports(36000, true);
-		while (builtin_connect(35000, false) < peers.size())
+		builtin_bindports((uint16_t)opt_p, false);
+		builtin_bindports((uint16_t)opt_p, true);
+		while (builtin_connect((uint16_t)opt_p, false) < peers.size())
 			sleep(1);
-		while (builtin_connect(36000, true) < peers.size())
+		while (builtin_connect((uint16_t)opt_p, true) < peers.size())
 			sleep(1);
 		builtin_accept();
 		builtin_fork();

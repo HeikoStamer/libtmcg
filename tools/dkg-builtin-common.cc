@@ -119,11 +119,13 @@ void builtin_init
 }
 
 void builtin_bindports
-	(const int start, const bool broadcast)
+	(const uint16_t start, const bool broadcast)
 {
-	int local_start = start + (builtin_peer2pipe[builtin_thispeer] * (MAX_N + 1));
+	uint16_t local_start = start + (builtin_peer2pipe[builtin_thispeer] * peers.size());
 	size_t i = 0;
-	for (int port = local_start; port < (local_start + (int)peers.size()); port++, i++)
+	if (broadcast)
+		local_start += (peers.size() * peers.size());
+	for (uint16_t port = local_start; port < (local_start + (uint16_t)peers.size()); port++, i++)
 	{
 		int sockfd;
 		struct sockaddr_in sin = { 0 };
@@ -163,16 +165,18 @@ void builtin_bindports
 }
 
 size_t builtin_connect
-	(const int start, const bool broadcast)
+	(const uint16_t start, const bool broadcast)
 {
 	for (size_t i = 0; i < peers.size(); i++)
 	{
 		if ((broadcast && !builtin_broadcast_pipe2socket_out.count(i)) || (!broadcast && !builtin_pipe2socket_out.count(i)))
 		{
-			int port = start + (i * (MAX_N + 1)) + builtin_peer2pipe[builtin_thispeer];
+			uint16_t port = start + (i * peers.size()) + (uint16_t)builtin_peer2pipe[builtin_thispeer];
 			int sockfd;
 			struct hostent *hostinf;
 			struct sockaddr_in sin = { 0 };
+			if (broadcast)
+				port += (peers.size() * peers.size());
 			sin.sin_port = htons(port);
 			sin.sin_family = AF_INET;
 			if ((hostinf = gethostbyname(peers[i].c_str())) != NULL)
@@ -187,7 +191,7 @@ size_t builtin_connect
 				else if (h_errno == NO_ADDRESS)
 					std::cerr << "no address data" << std::endl;
 				else
-					std::cerr << "unknown error" << std::endl;
+					std::cerr << "unknown error code " << h_errno << " with errno = " << errno << std::endl;
 				builtin_close();
 				builtin_done();
 				exit(-1);

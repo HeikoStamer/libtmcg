@@ -51,9 +51,9 @@
 	void builtin_init
 		(const std::string &hostname);
 	void builtin_bindports
-		(const int start, const bool broadcast);
+		(const uint16_t start, const bool broadcast);
 	size_t builtin_connect
-		(const int start, const bool broadcast);
+		(const uint16_t start, const bool broadcast);
 	void builtin_accept
 		();
 	void builtin_fork

@@ -45,12 +45,12 @@ std::vector<std::string>	peers;
 bool				instance_forked = false;
 
 size_t				N, T, S;
-std::string			crs, u, passphrase, passwords, hostname;
+std::string			crs, u, passphrase, passwords, hostname, port;
 int 				opt_verbose = 0;
 char				*opt_crs = NULL;
 char				*opt_passwords = NULL;
 char				*opt_hostname = NULL;
-unsigned long int		opt_t = 0, opt_s = 0, opt_e = 0;
+unsigned long int		opt_t = 0, opt_s = 0, opt_e = 0, opt_p = 35000;
 
 void run_instance
 	(const size_t whoami, const time_t keytime, const time_t keyexptime, const size_t num_xtests)
@@ -1208,6 +1208,8 @@ int main
 					opt_s = strtoul(argv[i+1], NULL, 10);
 				if ((arg.find("-e") == 0) && (idx < (size_t)(argc - 1)) && (opt_e == 0))
 					opt_e = strtoul(argv[i+1], NULL, 10);
+				if ((arg.find("-p") == 0) && (idx < (size_t)(argc - 1)) && (port.length() == 0))
+					port = argv[i+1];
 				continue;
 			}
 			else if ((arg.find("--") == 0) || (arg.find("-v") == 0) || (arg.find("-h") == 0) || (arg.find("-V") == 0))
@@ -1222,6 +1224,7 @@ int main
 					std::cout << "  -e TIME        expiration time of generated keys in seconds" << std::endl;
 					std::cout << "  -g STRING      common reference string that defines underlying DDH-hard group" << std::endl;
 					std::cout << "  -H STRING      hostname (e.g. onion address) of this peer within PEERS" << std::endl;
+					std::cout << "  -p INTEGER     start port for built-in TCP/IP message exchange service" << std::endl; 
 					std::cout << "  -P STRING      exchanged passwords to protect private and broadcast channels" << std::endl;
 					std::cout << "  -s INTEGER     resilience of threshold DSS protocol (signature scheme)" << std::endl;
 					std::cout << "  -t INTEGER     resilience of DKG protocol (threshold decryption)" << std::endl;
@@ -1302,12 +1305,14 @@ int main
 	if (opt_hostname != NULL)
 	{
 		int ret = 0;
+		if (port.length())
+			opt_p = strtoul(port.c_str(), NULL, 10); // get start port from options
 		builtin_init(hostname);
-		builtin_bindports(35000, false);
-		builtin_bindports(36000, true);
-		while (builtin_connect(35000, false) < peers.size())
+		builtin_bindports((uint16_t)opt_p, false);
+		builtin_bindports((uint16_t)opt_p, true);
+		while (builtin_connect((uint16_t)opt_p, false) < peers.size())
 			sleep(1);
-		while (builtin_connect(36000, true) < peers.size())
+		while (builtin_connect((uint16_t)opt_p, true) < peers.size())
 			sleep(1);
 		builtin_accept();
 		builtin_fork();
