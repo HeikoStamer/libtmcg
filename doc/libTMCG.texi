@@ -3891,7 +3891,8 @@ without secret key splitting (e.g. libgfshare) and laborious reconstruction cere
 Please note that for building @code{dkg-generate}, @code{dkg-sign} and the interactive
 version of @code{dkg-decrypt} the development files for a very recent GNUnet version
 (at least v0.11.x, which is when writing these lines still not yet released) must be
-present at configure-time resp. compile-time of LibTMCG.
+present at configure-time resp. compile-time of LibTMCG. However, as alternative to
+GNUnet a built-in TCP/IP based service for message exchnage is included. 
 
 The current implementation is in @emph{experimental state} and should not be used
 in production environments. Motivation, cryptographical background and some usage
