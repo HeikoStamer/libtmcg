@@ -131,9 +131,9 @@ void start_instance
 
 			// create asynchronous authenticated unicast channels
 			aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_middle);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 			aiounicast_select *aiou_nm1 = new aiounicast_select(N-1, (whoami==N-1)?0:whoami, uP_in_nm1, uP_out_nm1, uP_key_nm1,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_middle);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 
 			// create asynchronous authenticated broadcast channels
 			aiounicast_select *aiou2 = new aiounicast_select(N, whoami, bP_in, bP_out, bP_key,
@@ -267,8 +267,8 @@ void start_instance
 			delete dkg;
 
 			// at the end: sync for waiting parties
-			rbc->Sync(aiounicast::aio_timeout_long);
-			rbc_nm1->Sync(aiounicast::aio_timeout_long);
+			rbc->Sync(aiounicast::aio_timeout_middle);
+			rbc_nm1->Sync(aiounicast::aio_timeout_middle);
 
 			// create a copied instance of DKG from state log
 			std::cout << "P_" << whoami << ": CanettiGennaroJareckiKrawczykRabinDKG(state_log)" << std::endl;
