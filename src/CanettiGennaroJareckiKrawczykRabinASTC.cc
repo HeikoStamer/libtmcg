@@ -669,7 +669,6 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				while (cnt <= n);
 			}
 		}
-		QUAL.clear();
 		for (size_t j = 0; j < n; j++)
 		{
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
@@ -1558,7 +1557,6 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				while (cnt <= n);
 			}
 		}
-		QUAL.clear();
 		for (size_t j = 0; j < n; j++)
 		{
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
@@ -2650,6 +2648,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			err << "P_" << i_in << ": not enough players (< 2t+1) for signing" << std::endl;
 			throw false;
 		}
+		std::vector<size_t> notqual;
 		std::map<size_t, size_t> idx2dkg, dkg2idx;
 		mpz_set_ui(foo, dkg->i); // broadcast index of this party from DKG
 		rbc->Broadcast(foo);
@@ -2669,7 +2668,10 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					}
 				}
 				else
+				{
 					err << "P_" << i_in << ": WARNING: receiving dkg->i failed for P_" << j << std::endl;
+					notqual.push_back(j);
+				}
 			}
 			else
 				idx = dkg->i;
@@ -2679,6 +2681,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 
 		// 1. Generate $r = g^{k^{-1}} \bmod p \bmod q$
 		//    (a) Generate $k$. Players execute Joint-RVSS(t).
+		for (size_t j = 0; j < notqual.size(); j++)
+			k_rvss->QUAL.push_back(notqual[j]); // initialize the set QUAL
 		if (!k_rvss->Share(idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[0])
@@ -2702,6 +2706,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 		}
 		//    (b) Generate a random value $a$ and $g^a \bmod p$ using (the optimally-resilient) DL-Key-Gen.
+		for (size_t j = 0; j < k_rvss->QUAL.size(); j++)
+			a_dkg->x_rvss->QUAL.push_back(k_rvss->QUAL[j]); // initialize the set QUAL
 		if (!a_dkg->Generate(idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[1])
