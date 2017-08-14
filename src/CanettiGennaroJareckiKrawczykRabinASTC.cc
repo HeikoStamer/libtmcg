@@ -446,13 +446,13 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 			{
 				if (simulate_faulty_behaviour && simulate_faulty_randomizer)
 					mpz_add_ui(s_ji[i][j], s_ji[i][j], 1L);
-				if (!aiou->Send(s_ji[i][j], j, 0))
+				if (!aiou->Send(s_ji[i][j], j, aiou->aio_timeout_very_short))
 				{
 					err << "RVSS(" << label << "): P_" << i << ": sending s_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-				if (!aiou->Send(sprime_ji[i][j], j, 0))
+				if (!aiou->Send(sprime_ji[i][j], j, aiou->aio_timeout_very_short))
 				{
 					err << "RVSS(" << label << "): P_" << i << ": sending sprime_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
@@ -1327,13 +1327,13 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				{
 					mpz_add_ui(s_ji[i][j], s_ji[i][j], 1L);
 				}
-				if (!aiou->Send(s_ji[i][j], j, 0))
+				if (!aiou->Send(s_ji[i][j], j, aiou->aio_timeout_very_short))
 				{
 					err << "ZVSS(" << label << "): P_" << i << ": sending s_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);
 					continue;
 				}
-				if (!aiou->Send(sprime_ji[i][j], j, 0))
+				if (!aiou->Send(sprime_ji[i][j], j, aiou->aio_timeout_very_short))
 				{
 					err << "ZVSS(" << label << "): P_" << i << ": sending sprime_ji failed; complaint against P_" << j << std::endl;
 					complaints.push_back(j);

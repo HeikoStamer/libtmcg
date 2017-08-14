@@ -337,12 +337,12 @@ bool PedersenVSS::Share
 				}
 				if (simulate_faulty_behaviour && simulate_faulty_randomizer && (mpz_wrandom_ui() % 2L))
 					mpz_add_ui(sigma_i, sigma_i, 1L);
-				if (!aiou->Send(sigma_i, j, 0))
+				if (!aiou->Send(sigma_i, j, aiou->aio_timeout_very_short))
 				{
 					err << "VSS(" << label << "): P_" << i << ": sending sigma_i failed for P_" << j << std::endl;
 					continue;
 				}
-				if (!aiou->Send(tau_i, j, 0))
+				if (!aiou->Send(tau_i, j, aiou->aio_timeout_very_short))
 					err << "VSS(" << label << "): P_" << i << ": sending tau_i failed for P_" << j << std::endl;
 			}
 		}
