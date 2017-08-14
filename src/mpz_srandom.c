@@ -94,7 +94,7 @@ void mpz_grandomb
 	(mpz_ptr r, const unsigned long int size, enum gcry_random_level level)
 {
 	unsigned char *rtmp;
-	char htmp[size + 3]; // at least two characters + delimiter
+	char htmp[size + 3]; /* at least two characters + delimiter */
 	size_t hlen;
 	gcry_mpi_t rr;
 	gcry_error_t ret;
@@ -149,9 +149,9 @@ void mpz_wrandomb
 void mpz_grandomm
 	(mpz_ptr r, mpz_srcptr m, enum gcry_random_level level)
 {
-	unsigned long int size = mpz_sizeinbase(m, 2L);
+	unsigned long int size = mpz_sizeinbase(m, 2L) + 64; /* cf. BSI TR-02102-1, B.4 Verfahren 2 */
 	unsigned char *rtmp;
-	char htmp[size + 3]; // at least two characters + delimiter
+	char htmp[size + 3]; /* at least two characters + delimiter */
 	size_t hlen;
 	gcry_mpi_t rr;
 	gcry_error_t ret;
