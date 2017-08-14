@@ -139,6 +139,8 @@ void builtin_bindports
 			builtin_done();
 			exit(-1);
 		}
+		if (opt_verbose)
+			std::cout << "INFO: bind TCP/IP port " << port << std::endl;
 		if (bind(sockfd, (struct sockaddr*)&sin, sizeof(sin)) < 0)
 		{
 			perror("dkg-builtin-common (bind)");
@@ -172,60 +174,82 @@ size_t builtin_connect
 		if ((broadcast && !builtin_broadcast_pipe2socket_out.count(i)) || (!broadcast && !builtin_pipe2socket_out.count(i)))
 		{
 			uint16_t port = start + (i * peers.size()) + (uint16_t)builtin_peer2pipe[builtin_thispeer];
-			int sockfd;
-			struct hostent *hostinf;
-			struct sockaddr_in sin = { 0 };
+			int sockfd, ret;
+			struct addrinfo hints = { 0 }, *res, *rp;
+			hints.ai_family = AF_INET;
+			hints.ai_socktype = SOCK_STREAM;
 			if (broadcast)
 				port += (peers.size() * peers.size());
-			sin.sin_port = htons(port);
-			sin.sin_family = AF_INET;
-			if ((hostinf = gethostbyname(peers[i].c_str())) != NULL)
-			{
-				memcpy((char*)&sin.sin_addr, hostinf->h_addr, hostinf->h_length);
-			}
-			else
+			std::stringstream ports;
+			ports << port;
+			if ((ret = getaddrinfo(peers[i].c_str(), (ports.str()).c_str(), &hints, &res)) != 0)
 			{
 				std::cerr << "ERROR: resolving hostname \"" << peers[i] << "\" failed: ";
-				if (h_errno == HOST_NOT_FOUND)
-					std::cerr << "host not found" << std::endl;
-				else if (h_errno == NO_ADDRESS)
-					std::cerr << "no address data" << std::endl;
+				if (ret == EAI_SYSTEM)
+					perror("getaddrinfo");
 				else
-					std::cerr << "unknown error code " << h_errno << " with errno = " << errno << std::endl;
+					std::cerr << gai_strerror(ret);
+				std::cerr << std::endl;
 				builtin_close();
 				builtin_done();
 				exit(-1);
 			}
-			if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+			for (rp = res; rp != NULL; rp = rp->ai_next)
 			{
-				perror("dkg-builtin-common (socket)");
-				builtin_close();
-				builtin_done();
-				exit(-1);
-			}
-			if ((connect(sockfd, (struct sockaddr*)&sin, sizeof(sin))) < 0)
-			{
-				if (errno == ECONNREFUSED)
+				if ((sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) < 0)
 				{
+					perror("dkg-builtin-common (socket)");
+					builtin_close();
+					builtin_done();
+					exit(-1);
+				}
+				if (connect(sockfd, rp->ai_addr, rp->ai_addrlen) < 0)
+				{
+					if (errno == ECONNREFUSED)
+					{
+						if (close(sockfd) < 0)
+							perror("dkg-builtin-common (close)");
+						continue;
+					}
+					perror("dkg-builtin-common (connect)");
 					if (close(sockfd) < 0)
 						perror("dkg-builtin-common (close)");
-					continue;
+					builtin_close();
+					builtin_done();
+					exit(-1);
 				}
-				perror("dkg-builtin-common (connect)");
+				else
+				{
+					char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
+					memset(hbuf, 0, sizeof(hbuf));
+					memset(sbuf, 0, sizeof(sbuf));
+					if (getnameinfo(rp->ai_addr, rp->ai_addrlen, hbuf, sizeof(hbuf), sbuf, sizeof(sbuf),
+						NI_NUMERICHOST | NI_NUMERICSERV) != 0)
+					{
+						std::cerr << "ERROR: resolving hostname \"" << peers[i] << "\" failed: ";
+						if (ret == EAI_SYSTEM)
+							perror("getnameinfo");
+						else
+							std::cerr << gai_strerror(ret);
+						std::cerr << std::endl;
+						builtin_close();
+						builtin_done();
+						exit(-1);
+					}
+					if (opt_verbose)
+						std::cout << "INFO: resolved hostname \"" << peers[i] << "\" to address " << hbuf << std::endl;
+					if (opt_verbose)
+						std::cout << "INFO: connected to hostname \"" << peers[i] << "\" on port " << port << std::endl;
+					if (broadcast)
+						builtin_broadcast_pipe2socket_out[i] = sockfd;
+					else
+						builtin_pipe2socket_out[i] = sockfd;
+					break;
+				}
 				if (close(sockfd) < 0)
 					perror("dkg-builtin-common (close)");
-				builtin_close();
-				builtin_done();
-				exit(-1);
 			}
-			if (opt_verbose)
-				std::cout << "INFO: resolved hostname \"" << peers[i] << "\" to adress " << inet_ntoa(sin.sin_addr) << std::endl;
-			if (opt_verbose)
-				std::cout << "INFO: connected to hostname \"" << peers[i] << "\" on port " << port << std::endl;
-			if (broadcast)
-				builtin_broadcast_pipe2socket_out[i] = sockfd;
-			else
-				builtin_pipe2socket_out[i] = sockfd;
+			freeaddrinfo(res);
 		}
 	}
 	if (broadcast)
@@ -401,10 +425,17 @@ int builtin_io
 		retval = select((maxfd + 1), &rfds, NULL, NULL, &tv);
 		if (retval < 0)
 		{
-			perror("dkg-builtin-common (select)");
-			builtin_close();
-			builtin_done();
-			exit(-1);
+			if ((errno == EAGAIN) || (errno == EINTR))
+			{
+				continue;
+			}
+			else
+			{
+				perror("dkg-builtin-common (select)");
+				builtin_close();
+				builtin_done();
+				exit(-1);
+			}
 		}
 		if (retval == 0)
 			continue; // timeout
@@ -430,7 +461,10 @@ int builtin_io
 				}
 				else if (len == 0)
 				{
-					continue;
+					std::cerr << "ERROR: connection collapsed for P/D/R/S_" << pi->first << std::endl;
+					builtin_pipe2socket_out.erase(pi->first);
+					builtin_pipe2socket_in.erase(pi);
+					break;
 				}
 				else
 				{
@@ -447,7 +481,7 @@ int builtin_io
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 							{
 								if (opt_verbose)
-									std::cerr << "sleeping ..." << std::endl;
+									std::cerr << "sleeping to write into pipe ..." << std::endl;
 								sleep(1);
 								continue;
 							}
@@ -488,7 +522,10 @@ int builtin_io
 				}
 				else if (len == 0)
 				{
-					continue;
+					std::cerr << "ERROR: broadcast connection collapsed for P/D/R/S_" << pi->first << std::endl;
+					builtin_broadcast_pipe2socket_out.erase(pi->first);
+					builtin_broadcast_pipe2socket_in.erase(pi);
+					break;
 				}
 				else
 				{
@@ -505,7 +542,7 @@ int builtin_io
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 							{
 								if (opt_verbose)
-									std::cerr << "sleeping ..." << std::endl;
+									std::cerr << "sleeping to write into pipe ..." << std::endl;
 								sleep(1);
 								continue;
 							}
@@ -546,9 +583,10 @@ int builtin_io
 				}
 				else if (len == 0)
 				{
+					std::cerr << "pipe to child collapsed" << std::endl;
 					continue;
 				}
-				else
+				else if (builtin_pipe2socket_out.count(i))
 				{
 					if (opt_verbose)
 						std::cout << "INFO: sending " << len << " bytes on connection to P/D/R/S_" << i << std::endl;
@@ -561,7 +599,7 @@ int builtin_io
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 							{
 								if (opt_verbose)
-									std::cerr << "sleeping ..." << std::endl;
+									std::cerr << "sleeping to write into pipe ..." << std::endl;
 								sleep(1);
 								continue;
 							}
@@ -577,6 +615,11 @@ int builtin_io
 							wnum += num;
 					}
 					while (wnum < len);
+				}
+				else
+				{
+					if (opt_verbose)
+						std::cout << "INFO: discarding " << len << " bytes for P/D/R/S_" << i << std::endl;
 				}
 			}
 			if ((i != builtin_peer2pipe[builtin_thispeer]) && FD_ISSET(broadcast_pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], &rfds))
@@ -601,7 +644,7 @@ int builtin_io
 				{
 					continue;
 				}
-				else
+				else if (builtin_broadcast_pipe2socket_out.count(i))
 				{
 					if (opt_verbose)
 						std::cout << "INFO: sending " << len << " bytes on broadcast connection to P/D/R/S_" << i << std::endl;
@@ -614,7 +657,7 @@ int builtin_io
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 							{
 								if (opt_verbose)
-									std::cerr << "sleeping ..." << std::endl;
+									std::cerr << "sleeping to write into pipe ..." << std::endl;
 								sleep(1);
 								continue;
 							}
@@ -630,6 +673,11 @@ int builtin_io
 							wnum += num;
 					}
 					while (wnum < len);
+				}
+				else
+				{
+					if (opt_verbose)
+						std::cout << "INFO: discarding " << len << " bytes for P/D/R/S_" << i << std::endl;
 				}
 			}
 		}

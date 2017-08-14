@@ -245,8 +245,9 @@ if test "$use_dkgtools" = yes ; then
 	AC_CHECK_HEADERS([unistd.h sys/types.h sys/wait.h signal.h arpa/inet.h\
  netdb.h netinet/in.h sys/socket.h], ,
 		AC_MSG_ERROR([some headers are missing]))
-	AC_CHECK_FUNCS([fork kill pipe pipe2 waitpid gethostbyname htons htonl\
- inet_ntoa socket setsockopt connect bind listen accept signal sigaction], , 
+	AC_CHECK_FUNCS([fork kill pipe pipe2 waitpid getaddrinfo getnameinfo\
+ htons htonl socket setsockopt connect bind listen accept signal sigaction\
+ gai_strerror freeaddrinfo], , 
 		AC_MSG_ERROR([some functions are missing]))
 	AC_DEFINE(DKGTOOLS, , [Define to enable building of dkg-tools])
 fi
