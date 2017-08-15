@@ -674,6 +674,9 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				QUAL.push_back(j);
 		}
+		std::sort(QUAL.begin(), QUAL.end());
+		it = std::unique(QUAL.begin(), QUAL.end());
+		QUAL.resize(std::distance(QUAL.begin(), it));
 		err << "RVSS(" << label << "): P_" << i << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			err << "P_" << *it << " ";
@@ -1562,6 +1565,9 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				QUAL.push_back(j);
 		}
+		std::sort(QUAL.begin(), QUAL.end());
+		it = std::unique(QUAL.begin(), QUAL.end());
+		QUAL.resize(std::distance(QUAL.begin(), it));
 		err << "ZVSS(" << label << "): P_" << i << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			err << "P_" << *it << " ";
