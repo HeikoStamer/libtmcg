@@ -312,6 +312,8 @@ bool aiounicast_select::Send
 					{
 						if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 						{
+							if (errno == EAGAIN)
+								perror("aiounicast_select (write)");
 							continue;
 						}
 						else
@@ -381,6 +383,8 @@ bool aiounicast_select::Send
 			{
 				if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 				{
+					if (errno == EAGAIN)
+						perror("aiounicast_select (write)");
 					continue;
 				}
 				else
@@ -454,6 +458,8 @@ bool aiounicast_select::Send
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
+						if (errno == EAGAIN)
+							perror("aiounicast_select (write)");
 						continue;
 					}
 					else

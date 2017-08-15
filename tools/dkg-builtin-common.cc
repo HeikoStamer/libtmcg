@@ -427,6 +427,8 @@ int builtin_io
 		{
 			if ((errno == EAGAIN) || (errno == EINTR))
 			{
+				if (errno == EAGAIN)
+					perror("dkg-builtin-common (select)");
 				continue;
 			}
 			else
@@ -449,6 +451,8 @@ int builtin_io
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
+						if (errno == EAGAIN)
+							perror("dkg-builtin-common (read)");
 						continue;
 					}
 					else
@@ -480,6 +484,8 @@ int builtin_io
 						{
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 							{
+								if (errno == EAGAIN)
+									perror("dkg-builtin-common (write)");
 								if (opt_verbose)
 									std::cerr << "sleeping to write into pipe ..." << std::endl;
 								sleep(1);
@@ -510,6 +516,8 @@ int builtin_io
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
+						if (errno == EAGAIN)
+							perror("dkg-builtin-common (read)");
 						continue;
 					}
 					else
@@ -541,6 +549,8 @@ int builtin_io
 						{
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 							{
+								if (errno == EAGAIN)
+									perror("dkg-builtin-common (write)");
 								if (opt_verbose)
 									std::cerr << "sleeping to write into pipe ..." << std::endl;
 								sleep(1);
@@ -571,6 +581,8 @@ int builtin_io
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
+						if (errno == EAGAIN)
+							perror("dkg-builtin-common (read)");
 						continue;
 					}
 					else
@@ -598,6 +610,8 @@ int builtin_io
 						{
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 							{
+								if (errno == EAGAIN)
+									perror("dkg-builtin-common (write)");
 								if (opt_verbose)
 									std::cerr << "sleeping to write into pipe ..." << std::endl;
 								sleep(1);
@@ -630,6 +644,8 @@ int builtin_io
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
+						if (errno == EAGAIN)
+							perror("dkg-builtin-common (read)");
 						continue;
 					}
 					else
@@ -656,6 +672,8 @@ int builtin_io
 						{
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 							{
+								if (errno == EAGAIN)
+									perror("dkg-builtin-common (write)");
 								if (opt_verbose)
 									std::cerr << "sleeping to write into pipe ..." << std::endl;
 								sleep(1);

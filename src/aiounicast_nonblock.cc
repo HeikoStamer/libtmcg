@@ -298,6 +298,8 @@ bool aiounicast_nonblock::Send
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
+						if (errno == EAGAIN)
+							perror("aiounicast_nonblock (write)");
 						std::cerr << "sleeping ..." << std::endl;
 						sleep(1);
 						continue;
@@ -346,6 +348,8 @@ bool aiounicast_nonblock::Send
 		{
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 			{
+				if (errno == EAGAIN)
+					perror("aiounicast_nonblock (write)");
 				std::cerr << "sleeping ..." << std::endl;
 				sleep(1);
 				continue;
@@ -398,6 +402,8 @@ bool aiounicast_nonblock::Send
 			{
 				if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 				{
+					if (errno == EAGAIN)
+						perror("aiounicast_nonblock (write)");
 					std::cerr << "sleeping ..." << std::endl;
 					sleep(1);
 					continue;
@@ -613,6 +619,8 @@ bool aiounicast_nonblock::Receive
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
+						if (errno == EAGAIN)
+							perror("aiounicast_nonblock (read)");
 						continue;
 					}
 					else
