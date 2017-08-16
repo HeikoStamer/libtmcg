@@ -147,6 +147,7 @@ void start_instance
 			rbc->setID(myID);
 
 			// deliver nothing
+			std::cout << "P_" << whoami << ": !rbc.DeliverFrom() inside further subprotocol" << std::endl;
 			for (size_t i = 0; i < n; i++)
 				assert(!rbc->DeliverFrom(a, i));
 
@@ -205,7 +206,8 @@ void start_instance
 			stop_clock();
 			mpz_clear(a);
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-
+			
+			std::cout << "P_" << whoami << ": synchronizing ..." << std::endl;
 			// at the end: sync for waiting parties
 			rbc->Sync();
 			

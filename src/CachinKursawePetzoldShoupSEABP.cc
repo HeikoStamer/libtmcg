@@ -226,7 +226,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		mpz_init(tmp);
 		message.push_back(tmp);
 	}
-	// process messages according to the RBC protocol of [CKPS01] extended with a FIFO-ordered deliver strategy
+	// process messages according to the RBC protocol of [CKPS01] extended with a FIFO-ordered deliver mechanism
 	try
 	{
 		time_t entry_time = time(NULL);
@@ -338,6 +338,8 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						}
 						message2.clear();
 					}
+					else
+						std::cerr << "RBC(" << j << "): received bad or dup r-send message from " << l << std::endl; 
 					continue;
 				}
 				else if (!mpz_cmp(message[3], r_send) && send[l].count(tag_string))
@@ -368,8 +370,10 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					RBC_TagCount::iterator rit = r_d[tag_string].find(d_string);
 					if (rit == r_d[tag_string].end())
 						rit = (r_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
+//std::cerr << "RBC: [" << tag_string << "] r-echo-branch with r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
 					if (((*eit).second == (n - t)) && ((*rit).second <= t))
 					{
+//std::cerr << "RBC(" << j << "): [" << tag_string << "] send r-ready message" << std::endl;
 						// prepare message $(ID.j.s, r-ready, d)$
 						RBC_ConstMessage message2;
 						message2.push_back(message[0]);
@@ -415,9 +419,10 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					RBC_TagCount::iterator eit = e_d[tag_string].find(d_string);
 					if (eit == e_d[tag_string].end())
 						eit = (e_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
-//std::cerr << "RBC: [" << tag_string << "] r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
+//std::cerr << "RBC: [" << tag_string << "] r-ready-branch with r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
 					if ((t > 0) && ((*rit).second == (t + 1)) && ((*eit).second < (n - t)))
 					{
+//std::cerr << "RBC(" << j << "): [" << tag_string << "] send r-ready message" << std::endl;
 						// prepare message $(ID.j.s, r-ready, d)$
 						RBC_ConstMessage message2;
 						message2.push_back(message[0]);
@@ -473,7 +478,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 									mpz_init(tmp);
 									message3.push_back(tmp);
 								}
-								// receive an answer from an arbitrary party (given scheduler, very short timeout)
+								// receive an answer from an arbitrary party (given scheduler, zero timeout)
 								size_t l2;
 								if (aiou->Receive(message3, l2, scheduler, 0))
 								{
@@ -487,7 +492,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 										// store message for later processing
 										for (size_t mm = 0; mm < message3.size(); mm++)
 											buf_msg[l2].push_back(message3[mm]);
-										continue;
+										continue; // keep storage allocated
 									}
 									else if (!answer[l2].count(tag_string)) // for the first time?
 									{
@@ -503,7 +508,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 										mpz_set(mbar[tag_string], message3[4]); // $\bar{m} \gets m$
 									}
 									else
-										std::cerr << "RBC(" << j << "): this should never happen" << std::endl;
+										std::cerr << "RBC(" << j << "): dup r-answer from " << l2 << std::endl;
 								}
 								else
 								{
@@ -536,6 +541,9 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						}
 						else
 						{
+							if (!mpz_cmp(message[0], ID) && mpz_cmp(message[2], deliver_s[who]))
+								std::cerr << "RBC(" << j << "): squence counter does not match for " <<
+									who << std::endl;
 							// buffer the message for later delivery
 							RBC_Message vtmp;
 							for (size_t mm = 0; mm < 5; mm++)
@@ -661,24 +669,61 @@ void CachinKursawePetzoldShoupRBC::Sync
 	// set aio default values
 	if (timeout == aiounicast::aio_timeout_default)
 		timeout = aio_default_timeout;
+	// set common channel ID
+	std::stringstream myID;
+	myID << "CachinKursawePetzoldShoupRBC::Sync(" << timeout << ")";
+	setID(myID.str());
+	// initialize
+	time_t max_timeout = timeout;
+	time_t slice_timeout = (timeout / sync_slices) + 1;
 	time_t entry_time = time(NULL);
+	mpz_t mtv;
+	mpz_init(mtv);
 	do
 	{
-		// take part in protocol and store mpz in corresponding buffer
-		size_t l;
-		mpz_ptr tmp = new mpz_t();
-		mpz_init(tmp);
-		if (Deliver(tmp, l, aio_default_scheduler, timeout))
+		time_t slice_entry_time = time(NULL);
+		if (timeout <= (slice_entry_time - entry_time))
+			break;
+		mpz_set_ui(mtv, timeout - (slice_entry_time - entry_time));
+		Broadcast(mtv);
+		std::map<size_t, time_t> tvs;
+		tvs[j] = timeout - (slice_entry_time - entry_time);
+		do
 		{
-			buf_mpz[l].push_back(tmp);
+			size_t l;
+			if (Deliver(mtv, l, aio_default_scheduler, 0))
+			{
+				time_t utv;
+				utv = (time_t)mpz_get_ui(mtv);
+				if (utv <= max_timeout)
+					tvs[l] = utv;
+				else
+					std::cerr << "RBC(" << j << "): bad sync timestamp " << utv << " received from " << l << std::endl;
+			}
 		}
+		while (time(NULL) < (slice_entry_time + slice_timeout));
+		std::vector<time_t> vtvs;
+		for (std::map<size_t, time_t>::const_iterator ti = tvs.begin(); ti != tvs.end(); ++ti)
+			vtvs.push_back(ti->second);
+		std::sort(vtvs.begin(), vtvs.end());
+		if (vtvs.size() < (n - t))
+			std::cerr << "RBC(" << j << "): not enough sync timestamps received" << std::endl;
 		else
 		{
-			mpz_clear(tmp);
-			delete [] tmp;
+//std::cerr << "RBC(" << j << "): old timeout = " << timeout << " vtvs.size() = " << vtvs.size() << std::endl;
+			time_t median_timeout = vtvs[vtvs.size()/2]; // use a median value as some kind of gentle agreement
+std::cerr << "RBC(" << j << "): synchronized median_timeout = " << median_timeout << std::endl;
+			if ((median_timeout <= max_timeout) && (median_timeout <= timeout)) 
+				timeout = median_timeout;
+			else
+				std::cerr << "RBC(" << j << "): time jump detected" << std::endl;
+//std::cerr << "RBC(" << j << "): new timeout = " << timeout << std::endl;
 		}
 	}
 	while (time(NULL) < (entry_time + timeout));
+	// release
+	mpz_clear(mtv);
+	unsetID();
 }
 
 CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC

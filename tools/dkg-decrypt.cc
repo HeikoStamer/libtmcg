@@ -1120,11 +1120,13 @@ void compute_decryption_share
 	if (mpz_cmp(R, dkg->v_i[dkg->i]))
 	{
 		std::cerr << "ERROR: check of DKG public verification key failed" << std::endl;
+		mpz_clear(nizk_gk), mpz_clear(r_i), mpz_clear(R);
 		exit(-1);
 	}
 	if (!mpz_set_gcry_mpi(gk, nizk_gk))
 	{
 		std::cerr << "ERROR: converting message component failed" << std::endl;
+		mpz_clear(nizk_gk), mpz_clear(r_i), mpz_clear(R);
 		exit(-1);
 	}
 	mpz_spowm(r_i, nizk_gk, dkg->x_i, dkg->p);
@@ -1163,6 +1165,7 @@ void prove_decryption_share_interactive_publiccoin
 	if (!mpz_set_gcry_mpi(gk, nizk_gk))
 	{
 		std::cerr << "ERROR: converting message component failed" << std::endl;
+		mpz_clear(nizk_gk);
 		exit(-1);
 	}
 	// set ID for RBC
@@ -1207,6 +1210,7 @@ bool verify_decryption_share
 	if (!mpz_set_gcry_mpi(gk, nizk_gk))
 	{
 		std::cerr << "ERROR: converting message component failed" << std::endl;
+		mpz_clear(nizk_gk);
 		exit(-1);
 	}
 
@@ -1274,6 +1278,7 @@ bool verify_decryption_share_interactive_publiccoin
 	if (!mpz_set_gcry_mpi(gk, nizk_gk))
 	{
 		std::cerr << "ERROR: converting message component failed" << std::endl;
+		mpz_clear(nizk_gk);
 		exit(-1);
 	}
 	// set ID for RBC
@@ -1813,7 +1818,7 @@ void run_instance
 				std::cerr << "WARNING: DeliverFrom(idx, i) failed for D_" << i << std::endl;
 				complaints.push_back(i);
 			}
-			// receive a decryption share including NIZK argument
+			// receive a decryption share
 			if (!rbc->DeliverFrom(r_i, i))
 			{
 				std::cerr << "WARNING: DeliverFrom(r_i, i) failed for D_" << i << std::endl;
