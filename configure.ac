@@ -212,7 +212,7 @@ AC_TYPE_SSIZE_T
 # Checks for library functions
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
-AC_CHECK_FUNCS([clock close fcntl fprintf memcmp memcpy memset open perror\
+AC_CHECK_FUNCS([abs clock close fcntl fprintf memcmp memcpy memset open perror\
  read sscanf select sleep snprintf strrchr strtoul time write], ,
 	AC_MSG_ERROR([some functions are missing]))
 
