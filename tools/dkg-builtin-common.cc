@@ -467,7 +467,7 @@ int builtin_io
 				{
 					std::cerr << "ERROR: connection collapsed for P/D/R/S_" << pi->first << std::endl;
 					builtin_pipe2socket_out.erase(pi->first);
-					builtin_pipe2socket_in.erase(pi);
+					builtin_pipe2socket_in.erase(pi->first);
 					break;
 				}
 				else
@@ -532,7 +532,7 @@ int builtin_io
 				{
 					std::cerr << "ERROR: broadcast connection collapsed for P/D/R/S_" << pi->first << std::endl;
 					builtin_broadcast_pipe2socket_out.erase(pi->first);
-					builtin_broadcast_pipe2socket_in.erase(pi);
+					builtin_broadcast_pipe2socket_in.erase(pi->first);
 					break;
 				}
 				else

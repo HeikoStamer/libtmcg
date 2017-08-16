@@ -207,8 +207,8 @@ void start_instance
 			mpz_clear(a);
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			
-			std::cout << "P_" << whoami << ": synchronizing ..." << std::endl;
 			// at the end: sync for waiting parties
+			std::cout << "P_" << whoami << ": synchronizing ..." << std::endl;
 			rbc->Sync();
 			
 			// release RBC			
