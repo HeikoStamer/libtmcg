@@ -232,6 +232,8 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			if (!corrupted)
 				assert(!ret);
+			// now: sync for waiting parties
+			rbc->Sync(aiounicast::aio_timeout_middle);
 			// check signing and verifying of a message with N-1 signers
 			if (whoami < (N-1))
 			{
@@ -257,6 +259,8 @@ void start_instance
 				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 				if (!corrupted)
 					assert(ret);
+				// at the end: sync for waiting parties
+				rbc_nm1->Sync(aiounicast::aio_timeout_middle);
 			}
 			mpz_clear(m), mpz_clear(r), mpz_clear(s);
 
@@ -265,10 +269,6 @@ void start_instance
 			
 			// release DKG
 			delete dkg;
-
-			// at the end: sync for waiting parties
-			rbc->Sync(aiounicast::aio_timeout_middle);
-			rbc_nm1->Sync(aiounicast::aio_timeout_middle);
 
 			// create a copied instance of DKG from state log
 			std::cout << "P_" << whoami << ": CanettiGennaroJareckiKrawczykRabinDKG(state_log)" << std::endl;

@@ -80,6 +80,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 
 	// initialize message and deliver buffers
 	buf_mpz.resize(n);
+	buf_id.resize(n);
 	buf_msg.resize(n);
 	for (size_t i = 0; i < n; i++)
 	{
@@ -206,6 +207,36 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 	message.clear();
 }
 
+void CachinKursawePetzoldShoupRBC::InitializeMessage
+	(RBC_Message &message)
+{
+	for (size_t mm = 0; mm < 5; mm++)
+	{
+		mpz_ptr tmp = new mpz_t();
+		mpz_init(tmp);
+		message.push_back(tmp);
+	}
+}
+
+void CachinKursawePetzoldShoupRBC::InitializeMessage
+	(RBC_Message &message, RBC_Message &source)
+{
+	InitializeMessage(message);
+	for (size_t mm = 0; mm < 5; mm++)
+		mpz_set(message[mm], source[mm]);
+}
+
+void CachinKursawePetzoldShoupRBC::ReleaseMessage
+	(RBC_Message &message)
+{
+	for (size_t mm = 0; mm < message.size(); mm++)
+	{
+		mpz_clear(message[mm]);
+		delete [] message[mm];
+	}
+	message.clear();
+}
+
 bool CachinKursawePetzoldShoupRBC::Deliver
 	(mpz_ptr m, size_t &i_out,
 	size_t scheduler, time_t timeout)
@@ -215,378 +246,359 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		scheduler = aio_default_scheduler;
 	if (timeout == aiounicast::aio_timeout_default)
 		timeout = aio_default_timeout;
-	// prepare foo and tag
+	// initialize foo and tag
 	mpz_t foo, tag;
 	mpz_init(foo), mpz_init(tag);
-	// prepare message $(ID.j.s, action, m)$
+	// initialize message $(ID.j.s, action, m)$
 	RBC_Message message;
-	for (size_t mm = 0; mm < 5; mm++)
-	{
-		mpz_ptr tmp = new mpz_t();
-		mpz_init(tmp);
-		message.push_back(tmp);
-	}
-	// process messages according to the RBC protocol of [CKPS01] extended with a FIFO-ordered deliver mechanism
+	InitializeMessage(message);
+	// process messages according to the RBC protocol of [CKPS01] extended with a FIFO-order deliver mechanism
 	try
 	{
 		time_t entry_time = time(NULL);
 		do
 		{
-			for (size_t rounds = 0; rounds < (((t + 2) * n * n * n) + n); rounds++)
+			// first, process the delivery buffer
+			for (std::list<RBC_Message>::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
 			{
-				// first, process the delivery buffer
-				for (std::list<RBC_Message>::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
-				{
-					// compute hash of identifying tag $ID.j.s$
-					mpz_shash(tag, 3, (*lit)[0], (*lit)[1], (*lit)[2]);
-					std::stringstream tag_ss;
-					tag_ss << tag;
-					std::string tag_string = tag_ss.str();
-					size_t who = mpz_get_ui((*lit)[1]);
-					// check for matching tag and sequence counter before delivering
-					if (!mpz_cmp((*lit)[0], ID) && !mpz_cmp((*lit)[2], deliver_s[who]))
-					{
-						assert(mbar.count(tag_string));
-						mpz_set(m, mbar[tag_string]);
-//std::cerr << "RBC: restores deliver from " << who << " m = " << m << std::endl;
-						mpz_add_ui(deliver_s[who], deliver_s[who], 1L); // increase sequence counter
-						i_out = who;
-						for (size_t mm = 0; mm < lit->size(); mm++)
-						{
-							mpz_clear((*lit)[mm]);
-							delete [] (*lit)[mm];
-						}
-						lit->clear();
-						deliver_buf.erase(lit);
-						throw true;
-					}
-				}
-				size_t l = n;
-				// second, anything buffered from previous calls/rounds?
-				for (size_t i = 0; i < n; i++)
-				{
-					if (buf_msg[i].size() >= message.size())
-					{
-						for (size_t mm = 0; mm < message.size(); mm++)
-						{
-							mpz_set(message[mm], buf_msg[i].front());
-							mpz_clear(buf_msg[i].front());
-							delete [] buf_msg[i].front();
-							buf_msg[i].pop_front();
-						}
-						l = i;
-						break;
-					}
-				}
-				// third, nothing buffered
-				if (l == n)
-				{
-					// receive a message from an arbitrary party $P_l$ (given scheduler, zero timeout)
-					if (!aiou->Receive(message, l, scheduler, 0))
-					{
-//if (l < n)
-//std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
-						continue; // next round
-					}
-				}
 				// compute hash of identifying tag $ID.j.s$
-				mpz_shash(tag, 3, message[0], message[1], message[2]);
+				mpz_shash(tag, 3, (*lit)[0], (*lit)[1], (*lit)[2]);
 				std::stringstream tag_ss;
 				tag_ss << tag;
 				std::string tag_string = tag_ss.str();
-
-				// discard misformed messages
-				if ((mpz_cmp_ui(message[1], (n - 1)) > 0) || (mpz_cmp_ui(message[1], 0) < 0))
+				size_t who = mpz_get_ui((*lit)[1]);
+				// check for matching tag and sequence counter before delivering
+				if (!mpz_cmp((*lit)[0], ID) && !mpz_cmp((*lit)[2], deliver_s[who]))
 				{
-					std::cerr << "RBC(" << j << "): wrong j in tag from " << l << std::endl;
-					continue;
+					assert(mbar.count(tag_string));
+					mpz_set(m, mbar[tag_string]);
+//std::cerr << "RBC: restores deliver from " << who << " m = " << m << std::endl;
+					mpz_add_ui(deliver_s[who], deliver_s[who], 1L); // increase sequence counter
+					i_out = who;
+					ReleaseMessage(*lit);
+					deliver_buf.erase(lit);
+					throw true;
 				}
-				if (mpz_cmp_ui(message[2], 1L) < 0)
-				{
-					std::cerr << "RBC(" << j << "): wrong s in tag from " << l << std::endl;
-					continue;
-				}
-				if ((mpz_cmp(message[3], r_send) < 0) || (mpz_cmp(message[3], r_answer) > 0))
-				{
-					std::cerr << "RBC(" << j << "): wrong action in tag from " << l << std::endl;
-					continue;
-				}
-
-				// upon receiving message $(ID.j.s, r-send, m)$ from $P_l$
-				if (!mpz_cmp(message[3], r_send) && !send[l].count(tag_string))
-				{
-//std::cerr << "RBC: r-send from " << l << " with m = " << message[4] << std::endl;
-					send[l].insert(std::pair<std::string, bool>(tag_string, true));
-					if (!mpz_cmp_ui(message[1], l) && (mbar.count(tag_string) == 0))
-					{
-						mpz_ptr tmp = new mpz_t();
-						mpz_init_set(tmp, message[4]); // $\bar{m} \gets m$
-						mbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
-						// prepare message $(ID.j.s, r-echo, H(m))$
-						RBC_ConstMessage message2;
-						message2.push_back(message[0]);
-						message2.push_back(message[1]);
-						message2.push_back(message[2]);
-						message2.push_back(r_echo);
-						mpz_shash(message[4], 1, tmp);
-						message2.push_back(message[4]);
-						// send to all parties by unicast transmission (very short timeout)
-						for (size_t i = 0; i < n; i++)
-						{
-							if (!aiou->Send(message2, i, aiou->aio_timeout_very_short))
-								std::cerr << "RBC(" << j << "): sending r-echo failed for " << i << std::endl;
-						}
-						message2.clear();
-					}
-					else
-						std::cerr << "RBC(" << j << "): received bad or dup r-send message from " << l << std::endl; 
-					continue;
-				}
-				else if (!mpz_cmp(message[3], r_send) && send[l].count(tag_string))
-					std::cerr << "RBC(" << j << "): received r-send for same tag more than once from " << l << std::endl;
-				// upon receiving message $(ID.j.s, r-echo, d)$ from $P_l$
-				if (!mpz_cmp(message[3], r_echo) && !echo[l].count(tag_string))
-				{
-//std::cerr << "RBC: r-echo from " << l << " with d = " << message[4] << std::endl;
-					echo[l].insert(std::pair<std::string, bool>(tag_string, true));
-					std::stringstream d_ss;
-					d_ss << message[4];
-					std::string d_string = d_ss.str();
-					if (e_d.find(tag_string) == e_d.end())
-					{
-						RBC_TagCount mmm;
-						e_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, mmm));
-					}
-					RBC_TagCount::iterator eit = e_d[tag_string].find(d_string);
-					if (eit == e_d[tag_string].end())
-						eit = (e_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 1))).first;
-					else
-						(*eit).second++;
-					if (r_d.find(tag_string) == r_d.end())
-					{
-						RBC_TagCount mmm;
-						r_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, mmm));
-					}
-					RBC_TagCount::iterator rit = r_d[tag_string].find(d_string);
-					if (rit == r_d[tag_string].end())
-						rit = (r_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
-//std::cerr << "RBC: [" << tag_string << "] r-echo-branch with r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
-					if (((*eit).second == (n - t)) && ((*rit).second <= t))
-					{
-//std::cerr << "RBC(" << j << "): [" << tag_string << "] send r-ready message" << std::endl;
-						// prepare message $(ID.j.s, r-ready, d)$
-						RBC_ConstMessage message2;
-						message2.push_back(message[0]);
-						message2.push_back(message[1]);
-						message2.push_back(message[2]);
-						message2.push_back(r_ready);
-						message2.push_back(message[4]);
-						// send to all parties by unicast transmission (very short timeout)
-						for (size_t i = 0; i < n; i++)
-						{
-							if (!aiou->Send(message2, i, aiou->aio_timeout_very_short))
-								std::cerr << "RBC(" << j << "): sending r-ready failed for " << i << std::endl;
-						}
-						message2.clear();
-					}
-					continue;
-				}
-				else if (!mpz_cmp(message[3], r_echo) && echo[l].count(tag_string))
-					std::cerr << "RBC(" << j << "): received r-echo for same tag more than once from " << l << std::endl;
-				// upon receiving message $(ID.j.s, r-ready, d)$ from $P_l$
-				if (!mpz_cmp(message[3], r_ready) && !ready[l].count(tag_string))
-				{
-//std::cerr << "RBC: r-ready from " << l << " with d = " << message[4] << std::endl;
-					ready[l].insert(std::pair<std::string, bool>(tag_string, true));
-					std::stringstream d_ss;
-					d_ss << message[4];
-					std::string d_string = d_ss.str();
-					if (e_d.find(tag_string) == e_d.end())
-					{
-						RBC_TagCount mmm;
-						e_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, mmm));
-					}
-					if (r_d.find(tag_string) == r_d.end())
-					{
-						RBC_TagCount mmm;
-						r_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, mmm));
-					}
-					RBC_TagCount::iterator rit = r_d[tag_string].find(d_string);
-					if (rit == r_d[tag_string].end())
-						rit = (r_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 1))).first;
-					else
-						(*rit).second++;
-					RBC_TagCount::iterator eit = e_d[tag_string].find(d_string);
-					if (eit == e_d[tag_string].end())
-						eit = (e_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
-//std::cerr << "RBC: [" << tag_string << "] r-ready-branch with r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
-					if ((t > 0) && ((*rit).second == (t + 1)) && ((*eit).second < (n - t)))
-					{
-//std::cerr << "RBC(" << j << "): [" << tag_string << "] send r-ready message" << std::endl;
-						// prepare message $(ID.j.s, r-ready, d)$
-						RBC_ConstMessage message2;
-						message2.push_back(message[0]);
-						message2.push_back(message[1]);
-						message2.push_back(message[2]);
-						message2.push_back(r_ready);
-						message2.push_back(message[4]);
-						// send to all parties by unicast transmission (very short timeout)
-						for (size_t i = 0; i < n; i++)
-						{
-							if (!aiou->Send(message2, i, aiou->aio_timeout_very_short))
-								std::cerr << "RBC(" << j << "): sending r-ready failed for " << i << std::endl;
-						}
-						message2.clear();
-					}
-					else if (((t > 0) && ((*rit).second == ((2 * t) + 1))) ||
-						((t == 0) && ((*rit).second == 1))) // NOTE: artificial case where $t = 0$, not considered by [CKPS01]
-					{
-						mpz_ptr tmp = new mpz_t();
-						mpz_init_set(tmp, message[4]); // $\bar{d} \gets d$
-						dbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
-						if (mbar.count(tag_string) > 0)
-							mpz_shash(foo, 1, mbar[tag_string]);
-						else
-						{
-							mpz_set_ui(foo, 0L);
-//std::cerr << "RBC: r-send not received yet for this tag by " << j << std::endl;
-						}
-						if (mpz_cmp(foo, message[4])) // $H(\bar{m}) \neq \bar{d}$
-						{
-							// prepare message $(ID.j.s, r-request)$
-							RBC_ConstMessage message2;
-							message2.push_back(message[0]);
-							message2.push_back(message[1]);
-							message2.push_back(message[2]);
-							message2.push_back(r_request);
-							message2.push_back(message[4]);
-							// send to some parties by unicast transmission (very short timeout)
-							for (size_t i = 0; i < ((2 * t) + 1); i++)
-							{
-								if (!aiou->Send(message2, i, aiou->aio_timeout_very_short))
-									std::cerr << "RBC(" << j << "): sending r-request failed for " << i << std::endl;
-							}
-							message2.clear();
-							// wait for a message $(ID.j.s, r_answer, m)$
-							do
-							{
-								// prepare
-								RBC_Message message3;
-								for (size_t mm = 0; mm < 5; mm++)
-								{
-									mpz_ptr tmp = new mpz_t();
-									mpz_init(tmp);
-									message3.push_back(tmp);
-								}
-								// receive an answer from an arbitrary party (given scheduler, zero timeout)
-								size_t l2;
-								if (aiou->Receive(message3, l2, scheduler, 0))
-								{
-									// compute hash of identifying tag $ID.j.s$
-									mpz_shash(tag, 3, message3[0], message3[1], message3[2]);
-									std::stringstream tag3_ss;
-									tag3_ss << tag;
-									std::string tag3_string = tag3_ss.str();
-									if ((tag_string != tag3_string) || mpz_cmp(message3[3], r_answer))
-									{
-										// store message for later processing
-										for (size_t mm = 0; mm < message3.size(); mm++)
-											buf_msg[l2].push_back(message3[mm]);
-										continue; // keep storage allocated
-									}
-									else if (!answer[l2].count(tag_string)) // for the first time?
-									{
-//std::cerr << "RBC: r-answer from " << l2 << " for " << j << " with m = " << message3[4] << std::endl;
-										answer[l2].insert(std::pair<std::string, bool>(tag_string, true));
-										mpz_shash(foo, 1, message3[4]); // compute $H(m)$
-										if (mbar.count(tag_string) == 0)
-										{
-											mpz_ptr tmp = new mpz_t();
-											mpz_init(tmp);
-											mbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
-										}
-										mpz_set(mbar[tag_string], message3[4]); // $\bar{m} \gets m$
-									}
-									else
-										std::cerr << "RBC(" << j << "): dup r-answer from " << l2 << std::endl;
-								}
-								else
-								{
-//if (l2 < n)
-//std::cerr << "RBC(" << j << "): error in Receive(l2) = " << l2 << std::endl;
-								}
-								// release
-								for (size_t mm = 0; mm < message3.size(); mm++)
-								{
-									mpz_clear(message3[mm]);
-									delete [] message3[mm];
-								}
-								message3.clear();
-							}
-							while (mpz_cmp(foo, message[4]) && (time(NULL) < (entry_time + aiounicast::aio_timeout_very_long)));
-							if (mpz_cmp(foo, message[4])) // still $H(\bar{m}) \neq \bar{d}$
-								break; // no correct r-answer received and timeout exceeded
-						}
-//std::cerr << "RBC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
-						size_t who = mpz_get_ui(message[1]);
-						assert(who < n);
-						// check for matching tag and sequence counter before delivering
-						if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
-						{
-							assert(mbar.count(tag_string));
-							mpz_set(m, mbar[tag_string]);
-							mpz_add_ui(deliver_s[who], deliver_s[who], 1L); // increase sequence counter
-							i_out = who;
-							throw true;
-						}
-						else
-						{
-							if (!mpz_cmp(message[0], ID) && mpz_cmp(message[2], deliver_s[who]))
-								std::cerr << "RBC(" << j << "): squence counter does not match for " <<
-									who << std::endl;
-							// buffer the message for later delivery
-							RBC_Message vtmp;
-							for (size_t mm = 0; mm < 5; mm++)
-							{
-								mpz_ptr tmp = new mpz_t();
-								mpz_init_set(tmp, message[mm]);
-								vtmp.push_back(tmp);
-							}
-							deliver_buf.push_back(vtmp);
-//std::cerr << "RBC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
-						}
-						continue;
-					}
-					continue;
-				}
-				else if (!mpz_cmp(message[3], r_ready) && ready[l].count(tag_string))
-					std::cerr << "RBC(" << j << "): received r-ready for same tag more than once from " << l << std::endl;
-				// upon receiving message $(ID.j.s, r-request) from $P_l$ for the first time
-				if (!mpz_cmp(message[3], r_request) && !request[l].count(tag_string))
-				{
-//std::cerr << "RBC: r-request from " << l << std::endl;
-					request[l].insert(std::pair<std::string, bool>(tag_string, true));
-					if (mbar.find(tag_string) != mbar.end())
-					{
-						// prepare message $(ID.j.s, r-answer, \bar{m})$
-						RBC_ConstMessage message2;
-						message2.push_back(message[0]);
-						message2.push_back(message[1]);
-						message2.push_back(message[2]);
-						message2.push_back(r_answer);
-						message2.push_back(mbar[tag_string]);
-						// send only to requesting party by unicast transmission (very short timeout)
-						if (!aiou->Send(message2, l, aiou->aio_timeout_very_short))
-							std::cerr << "RBC(" << j << "): sending r-answer failed for " << l << std::endl;
-						message2.clear();
-					}
-					continue;
-				}
-				else if (!mpz_cmp(message[3], r_request) && request[l].count(tag_string))
-					std::cerr << "RBC(" << j << "): received r-request for same tag more than once from " << l << std::endl;
-				if (mpz_cmp(message[3], r_answer))
-					std::cerr << "RBC(" << j << "): discard message of action = " << message[3] << " from " << l << std::endl;
 			}
+			// second, anything buffered from previous calls/rounds?
+			size_t l = n;
+			for (size_t i = 0; i < n; i++)
+			{
+				if (buf_msg[i].size() >= message.size())
+				{
+					for (size_t mm = 0; mm < message.size(); mm++)
+					{
+						mpz_set(message[mm], buf_msg[i].front());
+						mpz_clear(buf_msg[i].front());
+						delete [] buf_msg[i].front();
+						buf_msg[i].pop_front();
+					}
+					l = i;
+					break;
+				}
+			}
+			// third, receive message, if nothing else is buffered
+			if (l == n)
+			{
+				// receive a message from an arbitrary party $P_l$ (given scheduler, zero timeout)
+				if (!aiou->Receive(message, l, scheduler, 0))
+				{
+//if (l < n)
+//std::cerr << "RBC(" << j << "): error in Receive(l) = " << l << std::endl;
+					continue; // next round
+				}
+			}
+			// compute hash of identifying tag $ID.j.s$
+			mpz_shash(tag, 3, message[0], message[1], message[2]);
+			std::stringstream tag_ss;
+			tag_ss << tag;
+			std::string tag_string = tag_ss.str();
+
+			// discard and report misformed messages
+			if ((mpz_cmp_ui(message[1], (n - 1)) > 0) || (mpz_cmp_ui(message[1], 0) < 0))
+			{
+				std::cerr << "RBC(" << j << "): wrong j in tag from " << l << std::endl;
+				continue;
+			}
+			if (mpz_cmp_ui(message[2], 1L) < 0)
+			{
+				std::cerr << "RBC(" << j << "): wrong s in tag from " << l << std::endl;
+				continue;
+			}
+			if ((mpz_cmp(message[3], r_send) < 0) || (mpz_cmp(message[3], r_answer) > 0))
+			{
+				std::cerr << "RBC(" << j << "): wrong action in tag from " << l << std::endl;
+				continue;
+			}
+
+			// upon receiving message $(ID.j.s, r-send, m)$ from $P_l$
+			if (!mpz_cmp(message[3], r_send) && !send[l].count(tag_string))
+			{
+//std::cerr << "RBC: r-send from " << l << " with m = " << message[4] << std::endl;
+				send[l].insert(std::pair<std::string, bool>(tag_string, true));
+				if (!mpz_cmp_ui(message[1], l) && (mbar.count(tag_string) == 0))
+				{
+					mpz_ptr tmp = new mpz_t();
+					mpz_init_set(tmp, message[4]); // $\bar{m} \gets m$
+					mbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
+					// prepare message $(ID.j.s, r-echo, H(m))$
+					RBC_ConstMessage message2;
+					message2.push_back(message[0]);
+					message2.push_back(message[1]);
+					message2.push_back(message[2]);
+					message2.push_back(r_echo);
+					mpz_shash(message[4], 1, tmp);
+					message2.push_back(message[4]);
+					// send to all parties by unicast transmission (very short timeout)
+					for (size_t i = 0; i < n; i++)
+					{
+						if (!aiou->Send(message2, i, aiou->aio_timeout_very_short))
+							std::cerr << "RBC(" << j << "): sending r-echo failed for " << i << std::endl;
+					}
+					message2.clear();
+				}
+				else
+					std::cerr << "RBC(" << j << "): received bad or dup r-send message from " << l << std::endl; 
+				continue;
+			}
+			else if (!mpz_cmp(message[3], r_send) && send[l].count(tag_string))
+				std::cerr << "RBC(" << j << "): received r-send for same tag more than once from " << l << std::endl;
+			// upon receiving message $(ID.j.s, r-echo, d)$ from $P_l$
+			if (!mpz_cmp(message[3], r_echo) && !echo[l].count(tag_string))
+			{
+//std::cerr << "RBC: r-echo from " << l << " with d = " << message[4] << std::endl;
+				std::stringstream d_ss;
+				d_ss << message[4];
+				std::string d_string = d_ss.str();
+				if (d_string.length() > (2 * tag_string.length()))
+				{
+					std::cerr << "RBC(" << j << "): size of d exceeded in r-echo from " << l << std::endl;
+					continue;
+				}
+				echo[l].insert(std::pair<std::string, bool>(tag_string, true));
+				if (e_d.find(tag_string) == e_d.end())
+				{
+					RBC_TagCount mmm;
+					e_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, mmm));
+				}
+				RBC_TagCount::iterator eit = e_d[tag_string].find(d_string);
+				if (eit == e_d[tag_string].end())
+					eit = (e_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 1))).first;
+				else
+					(*eit).second++;
+				if (r_d.find(tag_string) == r_d.end())
+				{
+					RBC_TagCount mmm;
+					r_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, mmm));
+				}
+				RBC_TagCount::iterator rit = r_d[tag_string].find(d_string);
+				if (rit == r_d[tag_string].end())
+					rit = (r_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
+//std::cerr << "RBC: [" << tag_string << "] r-echo-branch with r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
+				if (((*eit).second == (n - t)) && ((*rit).second <= t))
+				{
+//std::cerr << "RBC(" << j << "): [" << tag_string << "] send r-ready message" << std::endl;
+					// prepare message $(ID.j.s, r-ready, d)$
+					RBC_ConstMessage message2;
+					message2.push_back(message[0]);
+					message2.push_back(message[1]);
+					message2.push_back(message[2]);
+					message2.push_back(r_ready);
+					message2.push_back(message[4]);
+					// send to all parties by unicast transmission (very short timeout)
+					for (size_t i = 0; i < n; i++)
+					{
+						if (!aiou->Send(message2, i, aiou->aio_timeout_very_short))
+							std::cerr << "RBC(" << j << "): sending r-ready failed for " << i << std::endl;
+					}
+					message2.clear();
+				}
+				continue;
+			}
+			else if (!mpz_cmp(message[3], r_echo) && echo[l].count(tag_string))
+				std::cerr << "RBC(" << j << "): received r-echo for same tag more than once from " << l << std::endl;
+			// upon receiving message $(ID.j.s, r-ready, d)$ from $P_l$
+			if (!mpz_cmp(message[3], r_ready) && !ready[l].count(tag_string))
+			{
+//std::cerr << "RBC: r-ready from " << l << " with d = " << message[4] << std::endl;
+				std::stringstream d_ss;
+				d_ss << message[4];
+				std::string d_string = d_ss.str();
+				if (d_string.length() > (2 * tag_string.length()))
+				{
+					std::cerr << "RBC(" << j << "): size of d exceeded in r-ready from " << l << std::endl;
+					continue;
+				}
+				ready[l].insert(std::pair<std::string, bool>(tag_string, true));
+				if (e_d.find(tag_string) == e_d.end())
+				{
+					RBC_TagCount mmm;
+					e_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, mmm));
+				}
+				if (r_d.find(tag_string) == r_d.end())
+				{
+					RBC_TagCount mmm;
+					r_d.insert(std::pair<std::string, RBC_TagCount>(tag_string, mmm));
+				}
+				RBC_TagCount::iterator rit = r_d[tag_string].find(d_string);
+				if (rit == r_d[tag_string].end())
+					rit = (r_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 1))).first;
+				else
+					(*rit).second++;
+				RBC_TagCount::iterator eit = e_d[tag_string].find(d_string);
+				if (eit == e_d[tag_string].end())
+					eit = (e_d[tag_string].insert(std::pair<std::string, size_t>(d_string, 0))).first;
+//std::cerr << "RBC: [" << tag_string << "] r-ready-branch with r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
+				if ((t > 0) && ((*rit).second == (t + 1)) && ((*eit).second < (n - t)))
+				{
+//std::cerr << "RBC(" << j << "): [" << tag_string << "] send r-ready message" << std::endl;
+					// prepare message $(ID.j.s, r-ready, d)$
+					RBC_ConstMessage message2;
+					message2.push_back(message[0]);
+					message2.push_back(message[1]);
+					message2.push_back(message[2]);
+					message2.push_back(r_ready);
+					message2.push_back(message[4]);
+					// send to all parties by unicast transmission (very short timeout)
+					for (size_t i = 0; i < n; i++)
+					{
+						if (!aiou->Send(message2, i, aiou->aio_timeout_very_short))
+							std::cerr << "RBC(" << j << "): sending r-ready failed for " << i << std::endl;
+					}
+					message2.clear();
+				}
+				else if (((t > 0) && ((*rit).second == ((2 * t) + 1))) ||
+					((t == 0) && ((*rit).second == 1))) // NOTE: artificial case where $t = 0$, not considered by [CKPS01]
+				{
+					mpz_ptr tmp = new mpz_t();
+					mpz_init_set(tmp, message[4]); // $\bar{d} \gets d$
+					dbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
+					if (mbar.count(tag_string) > 0)
+						mpz_shash(foo, 1, mbar[tag_string]);
+					else
+					{
+						mpz_set_ui(foo, 0L);
+//std::cerr << "RBC: r-send not received yet for this tag by " << j << std::endl;
+					}
+					if (mpz_cmp(foo, message[4])) // $H(\bar{m}) \neq \bar{d}$
+					{
+						// prepare message $(ID.j.s, r-request)$
+						RBC_ConstMessage message2;
+						message2.push_back(message[0]);
+						message2.push_back(message[1]);
+						message2.push_back(message[2]);
+						message2.push_back(r_request);
+						message2.push_back(message[4]);
+						// send to some parties by unicast transmission (very short timeout)
+						for (size_t i = 0; i < ((2 * t) + 1); i++)
+						{
+							if (!aiou->Send(message2, i, aiou->aio_timeout_very_short))
+								std::cerr << "RBC(" << j << "): sending r-request failed for " <<
+									i << std::endl;
+						}
+						message2.clear();
+						continue; // waiting for r-answer is done in main loop
+					}
+//std::cerr << "RBC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
+					size_t who = mpz_get_ui(message[1]);
+					assert(who < n); // should always be true
+					// check for matching tag and sequence counter before delivering
+					if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
+					{
+						assert(mbar.count(tag_string)); // should always be true
+						mpz_set(m, mbar[tag_string]); // set the result to $\bar{m}$
+						mpz_add_ui(deliver_s[who], deliver_s[who], 1L); // increase sequence counter
+						i_out = who;
+						throw true;
+					}
+					if (!mpz_cmp(message[0], ID) && mpz_cmp(message[2], deliver_s[who]))
+						std::cerr << "RBC(" << j << "): sequence counter does not match for " << who << std::endl;
+					// buffer the acknowledged message for later delivery
+					RBC_Message vtmp;
+					InitializeMessage(vtmp, message);
+					deliver_buf.push_back(vtmp);
+//std::cerr << "RBC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
+					continue;
+				}
+				continue;
+			}
+			else if (!mpz_cmp(message[3], r_ready) && ready[l].count(tag_string))
+				std::cerr << "RBC(" << j << "): received r-ready for same tag more than once from " << l << std::endl;
+			// upon receiving message $(ID.j.s, r-request) from $P_l$ for the first time
+			if (!mpz_cmp(message[3], r_request) && !request[l].count(tag_string))
+			{
+//std::cerr << "RBC: r-request from " << l << std::endl;
+				request[l].insert(std::pair<std::string, bool>(tag_string, true));
+				if (mbar.find(tag_string) != mbar.end())
+				{
+					// prepare message $(ID.j.s, r-answer, \bar{m})$
+					RBC_ConstMessage message2;
+					message2.push_back(message[0]);
+					message2.push_back(message[1]);
+					message2.push_back(message[2]);
+					message2.push_back(r_answer);
+					message2.push_back(mbar[tag_string]);
+					// send only to requesting party by unicast transmission (very short timeout)
+					if (!aiou->Send(message2, l, aiou->aio_timeout_very_short))
+						std::cerr << "RBC(" << j << "): sending r-answer failed for " << l << std::endl;
+					message2.clear();
+				}
+				continue;
+			}
+			else if (!mpz_cmp(message[3], r_request) && request[l].count(tag_string))
+				std::cerr << "RBC(" << j << "): received r-request for same tag more than once from " << l << std::endl;
+			// upon receiving message $(ID.j.s, r-answer, m) from $P_l$ for the first time
+			if (!mpz_cmp(message[3], r_answer) && !answer[l].count(tag_string))
+			{
+//std::cerr << "RBC: r-answer from " << l << std::endl;
+				answer[l].insert(std::pair<std::string, bool>(tag_string, true));
+				if (!dbar.count(tag_string))
+				{
+					std::cerr << "RBC(" << j << "): no request for r-answer from " << l << std::endl;
+					continue;
+				}
+				mpz_shash(foo, 1, message[4]); // compute $H(m)$
+				if (!mpz_cmp(foo, dbar[tag_string]))
+				{
+//std::cerr << "RBC: r-answer from " << l2 << " for " << j << " with m = " << message3[4] << std::endl;
+					if (mbar.count(tag_string) == 0)
+					{
+						mpz_ptr tmp = new mpz_t();
+						mpz_init(tmp);
+						mbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
+					}
+					mpz_set(mbar[tag_string], message[4]); // $\bar{m} \gets m$
+				}
+				else
+				{
+					std::cerr << "RBC(" << j << "): bad r-answer from " << l << std::endl;
+					continue;
+				}
+//std::cerr << "RBC: deliver from " << mpz_get_ui(message[1]) << " m = " << mbar[tag_string] << std::endl;
+				size_t who = mpz_get_ui(message[1]);
+				assert(who < n); // should always be true
+				// check for matching tag and sequence counter before delivering
+				if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
+				{
+					assert(mbar.count(tag_string)); // should always be true
+					mpz_set(m, mbar[tag_string]); // set the result to $\bar{m}$
+					mpz_add_ui(deliver_s[who], deliver_s[who], 1L); // increase sequence counter
+					i_out = who;
+					throw true;
+				}
+				if (!mpz_cmp(message[0], ID) && mpz_cmp(message[2], deliver_s[who]))
+					std::cerr << "RBC(" << j << "): squence counter does not match for " << who << std::endl;
+				// buffer the acknowledged message for later delivery
+				RBC_Message vtmp;
+				InitializeMessage(vtmp, message);
+				deliver_buf.push_back(vtmp);
+//std::cerr << "RBC: P_" << j << " buffers deliver from " << who << " m = " << mbar[tag_string] << std::endl;
+				continue;
+			}
+			else if (!mpz_cmp(message[3], r_answer) && answer[l].count(tag_string))
+				std::cerr << "RBC(" << j << "): received r-answer for same tag more than once from " << l << std::endl;
+			// report on discarded messages
+			std::cerr << "RBC(" << j << "): WARNING - discard message of action = " << message[3] << " from " << l << std::endl;
 		}
 		while (time(NULL) < (entry_time + timeout));
 		i_out = n; // timeout for all parties
@@ -597,12 +609,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		// release foo and tag
 		mpz_clear(foo), mpz_clear(tag);
 		// release message
-		for (size_t mm = 0; mm < message.size(); mm++)
-		{
-			mpz_clear(message[mm]);
-			delete [] message[mm];
-		}
-		message.clear();
+		ReleaseMessage(message);
 		// return
 		return return_value;
 	}
@@ -628,32 +635,40 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 	do
 	{
 		// anything buffered?
-		if (buf_mpz[i_in].size() > 0)
+		if ((buf_mpz[i_in].size() > 0) && (buf_id[i_in].size() > 0))
 		{
-			mpz_set(m, buf_mpz[i_in].front());
-			mpz_clear(buf_mpz[i_in].front());
-			delete [] buf_mpz[i_in].front();
-			buf_mpz[i_in].pop_front();
+			for (RBC_BufferList::iterator lit = buf_mpz[i_in].begin(), litid = buf_id[i_in].begin();
+				((lit != buf_mpz[i_in].end()) && (litid != buf_id[i_in].end())); ++lit, ++litid)
+			{
+				if (!mpz_cmp(*litid, ID))
+				{
+					mpz_set(m, *lit);
+					mpz_clear(*lit), mpz_clear(*litid);
+					delete [] *lit, delete [] *litid;
+					buf_mpz[i_in].erase(lit), buf_id[i_in].erase(litid);
 //std::cerr << "RBC(" << j << "): got buffered mpz from " << i_in << std::endl;
-			return true;
+					return true;
+				}
+			}
 		}
 		else
 		{
 			// store mpz in corresponding buffer
 			size_t l;
-			mpz_ptr tmp = new mpz_t();
-			mpz_init(tmp);
+			mpz_ptr tmp = new mpz_t(), tmpID = new mpz_t();
+			mpz_init(tmp), mpz_init_set(tmpID, ID);
 			if (Deliver(tmp, l, scheduler, 0))
 			{
 //std::cerr << "RBC(" << j << "): got mpz from " << l << std::endl;
 				buf_mpz[l].push_back(tmp);
-				if (l == i_in)
-					continue;
+				buf_id[l].push_back(tmpID);
+//				if (l == i_in)
+//					continue;
 			}
 			else
 			{
-				mpz_clear(tmp);
-				delete [] tmp;
+				mpz_clear(tmp), mpz_clear(tmpID);
+				delete [] tmp, delete [] tmpID;
 			}
 		}
 	}
@@ -686,6 +701,7 @@ void CachinKursawePetzoldShoupRBC::Sync
 			break;
 		mpz_set_ui(mtv, timeout - (slice_entry_time - entry_time));
 		Broadcast(mtv);
+//std::cerr << "RBC(" << j << ") debug 1 " << time(NULL) << std::endl;
 		std::map<size_t, time_t> tvs;
 		tvs[j] = timeout - (slice_entry_time - entry_time);
 		do
@@ -702,6 +718,7 @@ void CachinKursawePetzoldShoupRBC::Sync
 			}
 		}
 		while (time(NULL) < (slice_entry_time + slice_timeout));
+//std::cerr << "RBC(" << j << ") debug 2 " << time(NULL) << " with tvs.size() = " << tvs.size() << std::endl;
 		std::vector<time_t> vtvs;
 		for (std::map<size_t, time_t>::const_iterator ti = tvs.begin(); ti != tvs.end(); ++ti)
 			vtvs.push_back(ti->second);
@@ -710,7 +727,6 @@ void CachinKursawePetzoldShoupRBC::Sync
 			std::cerr << "RBC(" << j << "): not enough sync timestamps received" << std::endl;
 		else
 		{
-//std::cerr << "RBC(" << j << "): old timeout = " << timeout << " vtvs.size() = " << vtvs.size() << std::endl;
 			time_t median_timeout = vtvs[vtvs.size()/2]; // use a median value as some kind of gentle agreement
 std::cerr << "RBC(" << j << "): synchronized median_timeout = " << median_timeout << std::endl;
 			long int diff = median_timeout - (timeout - (slice_entry_time - entry_time));
@@ -719,7 +735,6 @@ std::cerr << "RBC(" << j << "): diff = " << diff << std::endl;
 				timeout += diff;
 			else
 				std::cerr << "RBC(" << j << "): time jump detected" << std::endl;
-//std::cerr << "RBC(" << j << "): new timeout = " << timeout << std::endl;
 		}
 	}
 	while (time(NULL) < (entry_time + timeout));
@@ -795,6 +810,12 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 			delete [] *lit;
 		}
 		buf_mpz[i].clear();
+		for (RBC_BufferList::iterator lit = buf_id[i].begin(); lit != buf_id[i].end(); ++lit)
+		{
+			mpz_clear(*lit);
+			delete [] *lit;
+		}
+		buf_id[i].clear();
 		for (RBC_BufferList::iterator lit = buf_msg[i].begin(); lit != buf_msg[i].end(); ++lit)
 		{
 			mpz_clear(*lit);
@@ -804,7 +825,7 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		mpz_clear(deliver_s[i]);
 		delete [] deliver_s[i];
 	}
-	buf_mpz.clear(), buf_msg.clear(), deliver_s.clear();
+	buf_mpz.clear(), buf_id.clear(), buf_msg.clear(), deliver_s.clear();
 	for (std::list<RBC_Message>::iterator lit = deliver_buf.begin(); lit != deliver_buf.end(); ++lit)
 	{
 		for (RBC_Message::iterator vit = lit->begin(); vit != lit->end(); ++vit)

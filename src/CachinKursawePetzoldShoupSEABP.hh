@@ -66,7 +66,7 @@
 	typedef std::vector<mpz_srcptr>			RBC_ConstMessage;
 
 /* The following class implements an optimized version of Bracha's protocol described in [CKPS01].
-   Additionally, a FIFO-ordered deliver mechanism based on sequence numbers has been implemented. 
+   Additionally, a FIFO-order deliver mechanism based on sequence numbers has been implemented. 
    Original paper cited: G. Bracha: 'An asynchronous [(n - 1)/3]-resilient consensus protocol',
    Proc. 3rd ACM Symposium on Principles of Distributed Computing (PODC), pp. 154–162, 1984. */
 class CachinKursawePetzoldShoupRBC
@@ -81,7 +81,7 @@ class CachinKursawePetzoldShoupRBC
 		std::vector<RBC_TagCheck>		send, echo, ready, request, answer;
 		RBC_TagMpz				mbar, dbar;
 		std::map<std::string, RBC_TagCount>	e_d, r_d;
-		std::vector<RBC_BufferList>		buf_mpz, buf_msg;
+		std::vector<RBC_BufferList>		buf_mpz, buf_id, buf_msg;
 		std::vector<bool>			deliver_error;
 		std::list<RBC_Message>			deliver_buf;
 		std::vector<mpz_ptr>			deliver_s;
@@ -102,6 +102,12 @@ class CachinKursawePetzoldShoupRBC
 			();
 		void Broadcast
 			(mpz_srcptr m, const bool simulate_faulty_behaviour = false);
+		void InitializeMessage
+			(RBC_Message &message);
+		void InitializeMessage
+			(RBC_Message &message, RBC_Message &source);
+		void ReleaseMessage
+			(RBC_Message &message);
 		bool Deliver
 			(mpz_ptr m, size_t &i_out,
 			size_t scheduler = aiounicast::aio_scheduler_default,

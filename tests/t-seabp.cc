@@ -95,7 +95,12 @@ void start_instance
 					{
 						std::cout << "P_" << whoami << ": a = " << a << " from " << i << std::endl;
 						assert(!mpz_cmp_ui(a, i));
-					}					
+					}
+					else
+					{
+						std::cout << "P_" << whoami << ": got nothing from " << i << std::endl;
+						assert(i >= (n - t));
+					}
 				}
 				else
 				{
@@ -126,7 +131,12 @@ void start_instance
 					{
 						std::cout << "P_" << whoami << ": a = " << a << " from " << i << " inside subprotocol" << std::endl;
 						assert(!mpz_cmp_ui(a, i));
-					}					
+					}
+					else
+					{
+						std::cout << "P_" << whoami << ": got nothing from " << i << " inside subprotocol" << std::endl;
+						assert(i >= (n - t));
+					}
 				}
 				else
 				{
@@ -149,7 +159,19 @@ void start_instance
 			// deliver nothing
 			std::cout << "P_" << whoami << ": !rbc.DeliverFrom() inside further subprotocol" << std::endl;
 			for (size_t i = 0; i < n; i++)
-				assert(!rbc->DeliverFrom(a, i));
+			{
+				if (someone_corrupted)
+				{
+					if (rbc->DeliverFrom(a, i))
+					{
+						std::cout << "P_" << whoami << ": a = " << a << " from " << i <<
+							" inside further subprotocol" << std::endl;
+						assert(i >= (n - t));
+					}
+				}
+				else
+					assert(!rbc->DeliverFrom(a, i));
+			}
 
 			// switch back to subprotocol
 			rbc->unsetID();
@@ -165,7 +187,12 @@ void start_instance
 					{
 						std::cout << "P_" << whoami << ": a = " << a << " from " << i << " inside subprotocol" << std::endl;
 						assert(!mpz_cmp_ui(a, 42 * i));
-					}					
+					}
+					else
+					{
+						std::cout << "P_" << whoami << ": got nothing from " << i << " inside subprotocol" << std::endl;
+						assert(i >= (n - t));
+					}
 				}
 				else
 				{
@@ -195,7 +222,12 @@ void start_instance
 					{
 						std::cout << "P_" << whoami << ": a = " << a << " from " << i << std::endl;
 						assert(!mpz_cmp_ui(a, i));
-					}					
+					}
+					else
+					{
+						std::cout << "P_" << whoami << ": got nothing from " << i << std::endl;
+						assert(i >= (n - t));
+					}
 				}
 				else
 				{

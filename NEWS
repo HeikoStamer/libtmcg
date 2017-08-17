@@ -4,7 +4,8 @@
       contains an implementation of these protocols that provides threshold
       decryption and signatures for OpenPGP (RFC 4880). However, such schemes
       are of independent interest and can be used for distributed electronic
-      card games (e.g. drop-out tolerance) as well.
+      card games (e.g. drop-out tolerance) as well. Finally some bugfixes
+      improve the robustness of the reliable broadcast protocol (RBC).
 1.3.1 Small enhancements have been added. In particular, the class VSSHE now
       provides a simple variant of the SetupGenerators_publiccoin(). 
 1.3.0 This is mainly a bugfix release that removes some issues found by
