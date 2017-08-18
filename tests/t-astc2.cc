@@ -81,12 +81,13 @@ void start_instance
 			for (size_t i = 0; i < (N-1); i++)
 			{
 				std::stringstream key;
-				key << "t-astc2_nm1::P_" << (i + whoami);
-				uP_in_nm1.push_back(pipefd_nm1[i][whoami][0]);
-				uP_out_nm1.push_back(pipefd_nm1[whoami][i][1]);
+				size_t idx = (whoami==0)?0:whoami-1;
+				key << "t-astc2_nm1::P_" << (i + idx);
+				uP_in_nm1.push_back(pipefd_nm1[i][idx][0]);
+				uP_out_nm1.push_back(pipefd_nm1[idx][i][1]);
 				uP_key_nm1.push_back(key.str());
-				bP_in_nm1.push_back(broadcast_pipefd_nm1[i][whoami][0]);
-				bP_out_nm1.push_back(broadcast_pipefd_nm1[whoami][i][1]);
+				bP_in_nm1.push_back(broadcast_pipefd_nm1[i][idx][0]);
+				bP_out_nm1.push_back(broadcast_pipefd_nm1[idx][i][1]);
 				bP_key_nm1.push_back(key.str());
 			}
 			
@@ -132,13 +133,13 @@ void start_instance
 			// create asynchronous authenticated unicast channels
 			aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
-			aiounicast_select *aiou_nm1 = new aiounicast_select(N-1, (whoami==N-1)?0:whoami, uP_in_nm1, uP_out_nm1, uP_key_nm1,
+			aiounicast_select *aiou_nm1 = new aiounicast_select(N-1, (whoami==0)?0:whoami-1, uP_in_nm1, uP_out_nm1, uP_key_nm1,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 
 			// create asynchronous authenticated broadcast channels
 			aiounicast_select *aiou2 = new aiounicast_select(N, whoami, bP_in, bP_out, bP_key,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
-			aiounicast_select *aiou2_nm1 = new aiounicast_select(N-1, (whoami==N-1)?0:whoami, bP_in_nm1, bP_out_nm1, bP_key_nm1,
+			aiounicast_select *aiou2_nm1 = new aiounicast_select(N-1, (whoami==0)?0:whoami-1, bP_in_nm1, bP_out_nm1, bP_key_nm1,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 			
 			// create two instances of a reliable broadcast protocol (RBC)
@@ -146,7 +147,7 @@ void start_instance
 			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 			rbc->setID(myID);
-			CachinKursawePetzoldShoupRBC *rbc_nm1 = new CachinKursawePetzoldShoupRBC(N-1, T-1, (whoami==N-1)?0:whoami, aiou2_nm1,
+			CachinKursawePetzoldShoupRBC *rbc_nm1 = new CachinKursawePetzoldShoupRBC(N-1, T-1, (whoami==0)?0:whoami-1, aiou2_nm1,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 			rbc_nm1->setID(myID_nm1);
 
@@ -234,16 +235,19 @@ void start_instance
 				assert(!ret);
 			// now: sync for waiting parties
 			rbc->Sync(aiounicast::aio_timeout_middle);
-			// check signing and verifying of a message with N-1 signers
-			if (whoami < (N-1))
+			// check signing and verifying of a message with N-1 signers = P_1, P_2, ...
+			if (whoami > 0)
 			{
+				std::map<size_t, size_t> idx2dkg, dkg2idx;
+				for (size_t i = 0; i < (N-1); i++)
+					idx2dkg[i] = i + 1, dkg2idx[i + 1] = i; // create one-to-one mapping
 				mpz_set_ui(m, 23L), mpz_set_ui(r, 0L), mpz_set_ui(s, 0L);
 				start_clock();
 				std::cout << "P_" << whoami << ": dss.Sign(23, ...)" << std::endl;
-				if (corrupted)
-					dss->Sign(N-1, whoami, m, r, s, aiou_nm1, rbc_nm1, err_log_sign_nm1, true);
+				if ((corrupted) && (whoami == (N-1)))
+					dss->Sign(N-1, whoami-1, m, r, s, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_sign_nm1, true);
 				else
-					ret = dss->Sign(N-1, whoami, m, r, s, aiou_nm1, rbc_nm1, err_log_sign_nm1);
+					ret = dss->Sign(N-1, whoami-1, m, r, s, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_sign_nm1);
 				stop_clock();
 				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign_nm1.str();

@@ -124,7 +124,7 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	size_t qual_size = 0;
 	std::getline(in, value);
 	std::stringstream(value) >> qual_size;
-	for (size_t i = 0; (i < qual_size) && (i < n); i++)
+	for (size_t j = 0; (j < qual_size) && (j < n); j++)
 	{
 		size_t who;
 		std::getline(in, value);
@@ -136,13 +136,13 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	C_ik.resize(n);
 	for (size_t j = 0; j < n; j++)
 	{
-		for (size_t i = 0; i < n; i++)
+		for (size_t ii = 0; ii < n; ii++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
 			s_ji[j].push_back(tmp3);
 		}
-		for (size_t i = 0; i < n; i++)
+		for (size_t ii = 0; ii < n; ii++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
@@ -155,15 +155,15 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 			C_ik[j].push_back(tmp3);
 		}		
 	}
-	for (size_t i = 0; i < n; i++)
+	for (size_t ii = 0; ii < n; ii++)
 	{
 		for (size_t j = 0; j < n; j++)
 		{
-			in >> s_ji[j][i];
-			in >> sprime_ji[j][i];
+			in >> s_ji[j][ii];
+			in >> sprime_ji[j][ii];
 		}
 		for (size_t k = 0; k <= tprime; k++)
-			in >> C_ik[i][k];
+			in >> C_ik[ii][k];
 	}
 
 	// Do the precomputation for the fast exponentiation.
@@ -182,17 +182,17 @@ void CanettiGennaroJareckiKrawczykRabinRVSS::PublishState
 	out << x_i << std::endl << xprime_i << std::endl;
 	out << z_i << std::endl << zprime_i << std::endl;
 	out << QUAL.size() << std::endl;
-	for (size_t i = 0; i < QUAL.size(); i++)
-		out << QUAL[i] << std::endl;
-	for (size_t i = 0; i < n; i++)
+	for (size_t j = 0; j < QUAL.size(); j++)
+		out << QUAL[j] << std::endl;
+	for (size_t ii = 0; ii < n; ii++)
 	{
 		for (size_t j = 0; j < n; j++)
 		{
-			out << s_ji[j][i] << std::endl;
-			out << sprime_ji[j][i] << std::endl;
+			out << s_ji[j][ii] << std::endl;
+			out << sprime_ji[j][ii] << std::endl;
 		}
 		for (size_t k = 0; k <= tprime; k++)
-			out << C_ik[i][k] << std::endl;
+			out << C_ik[ii][k] << std::endl;
 	}
 }
 
@@ -207,12 +207,12 @@ void CanettiGennaroJareckiKrawczykRabinRVSS::EraseSecrets
 {
 	mpz_set_ui(x_i, 0L), mpz_set_ui(xprime_i, 0L);
 	mpz_set_ui(z_i, 0L), mpz_set_ui(zprime_i, 0L);
-	for (size_t i = 0; i < n; i++)
+	for (size_t ii = 0; ii < n; ii++)
 	{
 		for (size_t j = 0; j < n; j++)
 		{
-			mpz_set_ui(s_ji[j][i], 0L);
-			mpz_set_ui(sprime_ji[j][i], 0L);
+			mpz_set_ui(s_ji[j][ii], 0L);
+			mpz_set_ui(sprime_ji[j][ii], 0L);
 		}
 	}	
 }
@@ -334,11 +334,12 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 	std::map<size_t, size_t> id;
 	for (size_t j = 0; j < n; j++)
 		id[j] = j;
-	return Share(id, aiou, rbc, err, simulate_faulty_behaviour);
+	return Share(id, id, aiou, rbc, err, simulate_faulty_behaviour);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 	(std::map<size_t, size_t> &idx2dkg,
+	std::map<size_t, size_t> &dkg2idx,
 	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
@@ -349,6 +350,11 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 	assert(n == aiou->n);
 	assert(i == rbc->j);
 	assert(i == aiou->j);
+	err << "CanettiGennaroJareckiKrawczykRabinRVSS::Share()" << std::endl;
+	err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": QUAL = { ";
+	for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
+		err << "P_" << *it << " ";
+	err << "}" << std::endl;
 
 	// checking maximum synchronous t-resilience
 	if ((2 * t) >= n)
@@ -393,7 +399,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		}
 		//     Let $z_i = a_{i0} = f_i(0)$.
 		mpz_set(z_i, a_i[0]), mpz_set(zprime_i, b_i[0]);
-		err << "RVSS(" << label << "): P_" << i << ": z_i = " << z_i << " zprime_i = " << zprime_i << std::endl;
+		err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": z_i = " << z_i << " zprime_i = " << zprime_i << std::endl;
 		//     $P_i$ broadcasts $C_{ik} = g^{a_{ik}} h^{b_{ik}} \bmod p$ for $k = 0, \ldots, t\prime$.
 		for (size_t k = 0; k <= tprime; k++)
 		{
@@ -411,14 +417,14 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				{
 					if (!rbc->DeliverFrom(C_ik[j][k], j))
 					{
-						err << "RVSS(" << label << "): P_" << i << ": receiving C_ik failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": receiving C_ik failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						break;
 					}
 					if (!CheckElement(C_ik[j][k]))
 					{
-						err << "RVSS(" << label << "): P_" << i << ": bad C_ik received; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": bad C_ik received; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						mpz_set_ui(C_ik[j][k], 0L); // indicates an error
 					}
 				}
@@ -448,14 +454,14 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 					mpz_add_ui(s_ji[i][j], s_ji[i][j], 1L);
 				if (!aiou->Send(s_ji[i][j], j, aiou->aio_timeout_very_short))
 				{
-					err << "RVSS(" << label << "): P_" << i << ": sending s_ji failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": sending s_ji failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!aiou->Send(sprime_ji[i][j], j, aiou->aio_timeout_very_short))
 				{
-					err << "RVSS(" << label << "): P_" << i << ": sending sprime_ji failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": sending sprime_ji failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 			}
@@ -470,26 +476,26 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 			{
 				if (!aiou->Receive(s_ji[j][i], j, aiou->aio_scheduler_direct))
 				{
-					err << "RVSS(" << label << "): P_" << i << ": receiving s_ji failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": receiving s_ji failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(s_ji[j][i], q) >= 0)
 				{
-					err << "RVSS(" << label << "): P_" << i << ": bad s_ji received; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": bad s_ji received; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(s_ji[j][i], 0L); // indicates an error
 				}
 				if (!aiou->Receive(sprime_ji[j][i], j, aiou->aio_scheduler_direct))
 				{
-					err << "RVSS(" << label << "): P_" << i << ": receiving sprime_ji failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": receiving sprime_ji failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(sprime_ji[j][i], q) >= 0)
 				{
-					err << "RVSS(" << label << "): P_" << i << ": bad sprime_ji received; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": bad sprime_ji received; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(sprime_ji[j][i], 0L); // indicates an error
 				}
 			}
@@ -513,8 +519,8 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 			// check equation (1)
 			if (mpz_cmp(lhs, rhs))
 			{
-				err << "RVSS(" << label << "): P_" << i << ": checking step 1b failed; complaint against P_" << j << std::endl;
-				complaints.push_back(j);
+				err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": checking step 1b failed; complaint against P_" << idx2dkg[j] << std::endl;
+				complaints.push_back(idx2dkg[j]);
 			}
 		}
 		// If the check fails for an index $i$, $P_j$ broadcasts a complaint against $P_i$.
@@ -523,13 +529,13 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		complaints.resize(std::distance(complaints.begin(), it));
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			err << "RVSS(" << label << "): P_" << i << ": broadcast complaint against P_" << *it << std::endl;
-			mpz_set_ui(rhs, *it);
+			err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": broadcast complaint against P_" << *it << std::endl;
+			mpz_set_ui(rhs, dkg2idx[*it]);
 			rbc->Broadcast(rhs);
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset
+		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset for final complaint resolution
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
 		for (size_t j = 0; j < n; j++)
@@ -543,23 +549,23 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				{
 					if (!rbc->DeliverFrom(rhs, j))
 					{
-						err << "RVSS(" << label << "): P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": receiving who failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						break;
 					}
 					who = mpz_get_ui(rhs);
 					if ((who < n) && !dup.count(who))
 					{
-						err << "RVSS(" << label << "): P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
+						err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": receiving complaint against P_" << idx2dkg[who] << " from P_" << idx2dkg[j] << std::endl;
 						complaints_counter[who]++;
 						dup.insert(std::pair<size_t, bool>(who, true)); // mark as counted for $P_j$
 						if (who == i)
-							complaints_from.push_back(j); // remember where the complaints are from
+							complaints_from.push_back(idx2dkg[j]); // remember where the complaints are from
 					}
 					else if ((who < n) && dup.count(who))
 					{
-						err << "RVSS(" << label << "): P_" << i << ": duplicated complaint for P_" << who << "; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": duplicated complaint for P_" << idx2dkg[who] << "; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 					}
 					cnt++;
 				}
@@ -571,18 +577,18 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		if (complaints_counter[i])
 		{
 			std::sort(complaints_from.begin(), complaints_from.end());
-			err << "RVSS(" << label << "): P_" << i << ": there are " << complaints_counter[i] << " complaints against me from ";
+			err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": there are " << complaints_counter[i] << " complaints against me from ";
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 				err << "P_" << *it << " ";
 			err << std::endl;
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 			{
-				mpz_set_ui(lhs, *it); // who is complaining?
+				mpz_set_ui(lhs, dkg2idx[*it]); // who is complaining?
 				rbc->Broadcast(lhs);
-				rbc->Broadcast(s_ji[i][*it]);
-				rbc->Broadcast(sprime_ji[i][*it]);
+				rbc->Broadcast(s_ji[i][dkg2idx[*it]]);
+				rbc->Broadcast(sprime_ji[i][dkg2idx[*it]]);
 			}
-			err << "RVSS(" << label << "): P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
+			err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": some corresponding shares have been revealed to public!" << std::endl;
 		}
 		mpz_set_ui(lhs, n); // broadcast end marker
 		rbc->Broadcast(lhs);
@@ -592,7 +598,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		for (size_t j = 0; j < n; j++)
 		{
 			if (complaints_counter[j] > t)
-				complaints.push_back(j);
+				complaints.push_back(idx2dkg[j]);
 			if (j != i)
 			{
 				size_t cnt = 0;
@@ -600,8 +606,8 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				{
 					if (!rbc->DeliverFrom(lhs, j))
 					{
-						err << "RVSS(" << label << "): P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": receiving who failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						break;
 					}
 					size_t who = mpz_get_ui(lhs);
@@ -609,26 +615,26 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 						break; // end marker received
 					if (!rbc->DeliverFrom(foo, j))
 					{
-						err << "RVSS(" << label << "): P_" << i << ": receiving foo failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": receiving foo failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						break;
 					}
 					if (mpz_cmpabs(foo, q) >= 0)
 					{
-						err << "RVSS(" << label << "): P_" << i << ": bad foo received; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": bad foo received; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						mpz_set_ui(foo, 0L); // indicates an error
 					}
 					if (!rbc->DeliverFrom(bar, j))
 					{
-						err << "RVSS(" << label << "): P_" << i << ": receiving bar failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": receiving bar failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						break;
 					}
 					if (mpz_cmpabs(bar, q) >= 0)
 					{
-						err << "RVSS(" << label << "): P_" << i << ": bad bar received; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": bad bar received; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						mpz_set_ui(bar, 0L); // indicates an error
 					}
 					mpz_t s, sprime;
@@ -650,15 +656,15 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 					// check equation (1)
 					if (mpz_cmp(lhs, rhs))
 					{
-						err << "RVSS(" << label << "): P_" << i << ": checking step 1d failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": checking step 1d failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 					}
 					else
 					{
 						// don't be too curious, store only shares for this player
 						if (who == i)
 						{
-							err << "RVSS(" << label << "): P_" << i << ": shares adjusted in step 1d from P_" << j << std::endl;
+							err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": shares adjusted in step 1d from P_" << idx2dkg[j] << std::endl;
 							mpz_set(s_ji[j][i], s);
 							mpz_set(sprime_ji[j][i], sprime);
 						}
@@ -671,13 +677,13 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		}
 		for (size_t j = 0; j < n; j++)
 		{
-			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
-				QUAL.push_back(j);
+			if (std::find(complaints.begin(), complaints.end(), idx2dkg[j]) == complaints.end())
+				QUAL.push_back(idx2dkg[j]);
 		}
 		std::sort(QUAL.begin(), QUAL.end());
 		it = std::unique(QUAL.begin(), QUAL.end());
 		QUAL.resize(std::distance(QUAL.begin(), it));
-		err << "RVSS(" << label << "): P_" << i << ": QUAL = { ";
+		err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			err << "P_" << *it << " ";
 		err << "}" << std::endl;
@@ -690,15 +696,15 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		mpz_set_ui(x_i, 0L), mpz_set_ui(xprime_i, 0L);
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 		{
-			mpz_add(x_i, x_i, s_ji[*it][i]);
+			mpz_add(x_i, x_i, s_ji[dkg2idx[*it]][i]);
 			mpz_mod(x_i, x_i, q);
-			mpz_add(xprime_i, xprime_i, sprime_ji[*it][i]);
+			mpz_add(xprime_i, xprime_i, sprime_ji[dkg2idx[*it]][i]);
 			mpz_mod(xprime_i, xprime_i, q);
 		}
-		err << "RVSS(" << label << "): P_" << i << ": x_i = " << x_i << std::endl;
-		err << "RVSS(" << label << "): P_" << i << ": xprime_i = " << xprime_i << std::endl;
+		err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": x_i = " << x_i << std::endl;
+		err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": xprime_i = " << xprime_i << std::endl;
 		
-		if (std::find(QUAL.begin(), QUAL.end(), i) == QUAL.end())
+		if (std::find(QUAL.begin(), QUAL.end(), idx2dkg[i]) == QUAL.end())
 			throw false;
 		if (QUAL.size() <= t)
 			throw false;
@@ -730,15 +736,17 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
 	std::map<size_t, size_t> id;
 	for (size_t j = 0; j < n; j++)
 		id[j] = j;
-	return Reconstruct(complaints, a_i_in, id, rbc, err);
+	return Reconstruct(complaints, a_i_in, id, id, rbc, err);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
 	(const std::vector<size_t> &complaints,
 	std::vector<mpz_ptr> &a_i_in,
 	std::map<size_t, size_t> &idx2dkg,
+	std::map<size_t, size_t> &dkg2idx,
 	CachinKursawePetzoldShoupRBC *rbc, std::ostream &err)
 {
+	err << "CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct()" << std::endl;
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
@@ -762,38 +770,38 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
 		// run reconstruction phase of Pedersen-VSS
 		if (complaints.size() > t)
 		{
-			err << "RVSS(" << label << "): P_" << i << ": too many faulty parties (" << complaints.size() << " > t)" << std::endl;
+			err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": too many faulty parties (" << complaints.size() << " > t)" << std::endl;
 			throw false;
 		}
 		for (std::vector<size_t>::const_iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
 			if (std::find(QUAL.begin(), QUAL.end(), *it) == QUAL.end())
 			{
-				err << "RVSS(" << label << "): P_" << i << ": reconstruction of z_i failed because P_" << *it << " not in QUAL" << std::endl;
+				err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": reconstruction of z_i failed because P_" << *it << " not in QUAL" << std::endl;
 				throw false;
 			}
 			// prepare for collecting shares
 			std::vector<size_t> parties;
 			parties.push_back(idx2dkg[i]); // share of this player is always available and correct
-			mpz_set(shares[i], s_ji[*it][i]);
+			mpz_set(shares[i], s_ji[dkg2idx[*it]][i]);
 			// broadcast shares for reconstruction of $z_i$ (where $i$ is here the index of the failed party)
-			if ((std::find(complaints.begin(), complaints.end(), i) == complaints.end()) && (std::find(QUAL.begin(), QUAL.end(), i) != QUAL.end()))
+			if ((std::find(complaints.begin(), complaints.end(), idx2dkg[i]) == complaints.end()) && (std::find(QUAL.begin(), QUAL.end(), idx2dkg[i]) != QUAL.end()))
 			{
-				rbc->Broadcast(s_ji[*it][i]);
-				rbc->Broadcast(sprime_ji[*it][i]);
+				rbc->Broadcast(s_ji[dkg2idx[*it]][i]);
+				rbc->Broadcast(sprime_ji[dkg2idx[*it]][i]);
 			}
 			// collect shares $s_{ji}$ and $s\prime_{ji}$ of other parties from QUAL
 			for (std::vector<size_t>::iterator jt = QUAL.begin(); jt != QUAL.end(); ++jt)
 			{
-				if ((*jt != i) && (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end()))
+				if ((*jt != idx2dkg[i]) && (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end()))
 				{
-					if (rbc->DeliverFrom(foo, *jt) && rbc->DeliverFrom(bar, *jt))
+					if (rbc->DeliverFrom(foo, dkg2idx[*jt]) && rbc->DeliverFrom(bar, dkg2idx[*jt]))
 					{
 						if ((mpz_cmpabs(foo, q) >= 0) || (mpz_cmpabs(bar, q) >= 0))
-							err << "RVSS(" << label << "): P_" << i << ": bad share received from " << *jt << std::endl;
+							err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": bad share received from P_" << *jt << std::endl;
 						else
 						{
-							mpz_set(shares[*jt], foo); // save the received share for later following interpolation
+							mpz_set(shares[dkg2idx[*jt]], foo); // store the received share for interpolation
 							// compute LHS for the check
 							mpz_fpowm(fpowm_table_g, foo, g, foo, p);
 							mpz_fpowm(fpowm_table_h, bar, h, bar, p);
@@ -803,31 +811,31 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
 							mpz_set_ui(rhs, 1L);
 							for (size_t k = 0; k <= tprime; k++)
 							{
-								mpz_ui_pow_ui(foo, idx2dkg[*jt] + 1, k); // adjust index $j$ in computation
-								mpz_powm(bar, C_ik[*it][k], foo, p);
+								mpz_ui_pow_ui(foo, *jt + 1, k); // adjust index $j$ in computation
+								mpz_powm(bar, C_ik[dkg2idx[*it]][k], foo, p);
 								mpz_mul(rhs, rhs, bar);
 								mpz_mod(rhs, rhs, p);
 							}
 							// check equation (1)
 							if (mpz_cmp(lhs, rhs))
-								err << "RVSS(" << label << "): P_" << i << ": bad share received from " << *jt << std::endl;
+								err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": bad share received from P_" << *jt << std::endl;
 							else
-								parties.push_back(idx2dkg[*jt]);
+								parties.push_back(*jt);
 						}
 					}
 					else
-						err << "RVSS(" << label << "): P_" << i << ": no share received from " << *jt << std::endl;					
+						err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": no share received from P_" << *jt << std::endl;					
 				}
 			}
 			// check whether enough shares (i.e. $t + 1$) have been collected
 			if (parties.size() <= t)
 			{
-				err << "RVSS(" << label << "): P_" << i << ": not enough shares collected" << std::endl;
+				err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": not enough shares collected" << std::endl;
 				throw false;
 			}
 			if (parties.size() > (t + 1))
 				parties.resize(t + 1);
-			err << "RVSS(" << label << "): P_" << i << ": reconstructing parties = ";
+			err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": reconstructing parties = ";
 			for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
 				err << "P_" << *jt << " ";
 			err << std::endl;
@@ -853,17 +861,17 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
 				}
 				if (!mpz_invert(lhs, lhs, q))
 				{
-					err << "RVSS(" << label << "): P_" << i << ": cannot invert LHS during reconstruction" << std::endl;
+					err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": cannot invert LHS during reconstruction" << std::endl;
 					throw false;
 				}
 				mpz_mul(rhs, rhs, lhs);
 				mpz_mod(rhs, rhs, q);
-				mpz_mul(bar, rhs, shares[*jt]); // use the provided shares (interpolation points)
+				mpz_mul(bar, rhs, shares[dkg2idx[*jt]]); // use the provided shares (interpolation points)
 				mpz_mod(bar, bar, q);
 				mpz_add(foo, foo, bar);
 				mpz_mod(foo, foo, q);
 			}
-			mpz_set(a_i_in[*it], foo);
+			mpz_set(a_i_in[dkg2idx[*it]], foo);
 			parties.clear();
 		}
 
@@ -895,32 +903,32 @@ CanettiGennaroJareckiKrawczykRabinRVSS::~CanettiGennaroJareckiKrawczykRabinRVSS
 	mpz_clear(z_i), mpz_clear(zprime_i);
 	for (size_t j = 0; j < s_ji.size(); j++)
 	{
-		for (size_t i = 0; i < s_ji[j].size(); i++)
+		for (size_t ii = 0; ii < s_ji[j].size(); ii++)
 		{
-			mpz_clear(s_ji[j][i]);
-			delete [] s_ji[j][i];
+			mpz_clear(s_ji[j][ii]);
+			delete [] s_ji[j][ii];
 		}
 		s_ji[j].clear();
 	}
 	s_ji.clear();
 	for (size_t j = 0; j < sprime_ji.size(); j++)
 	{
-		for (size_t i = 0; i < sprime_ji[j].size(); i++)
+		for (size_t ii = 0; ii < sprime_ji[j].size(); ii++)
 		{
-			mpz_clear(sprime_ji[j][i]);
-			delete [] sprime_ji[j][i];
+			mpz_clear(sprime_ji[j][ii]);
+			delete [] sprime_ji[j][ii];
 		}
 		sprime_ji[j].clear();
 	}
 	sprime_ji.clear();
-	for (size_t i = 0; i < C_ik.size(); i++)
+	for (size_t ii = 0; ii < C_ik.size(); ii++)
 	{
-		for (size_t k = 0; k < C_ik[i].size(); k++)
+		for (size_t k = 0; k < C_ik[ii].size(); k++)
 		{
-			mpz_clear(C_ik[i][k]);
-			delete [] C_ik[i][k];
+			mpz_clear(C_ik[ii][k]);
+			delete [] C_ik[ii][k];
 		}
-		C_ik[i].clear();
+		C_ik[ii].clear();
 	}
 	C_ik.clear();
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
@@ -947,13 +955,13 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	C_ik.resize(n);
 	for (size_t j = 0; j < n_in; j++)
 	{
-		for (size_t i = 0; i < n_in; i++)
+		for (size_t ii = 0; ii < n_in; ii++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
 			s_ji[j].push_back(tmp3);
 		}
-		for (size_t i = 0; i < n_in; i++)
+		for (size_t ii = 0; ii < n_in; ii++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
@@ -1010,7 +1018,7 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	size_t qual_size = 0;
 	std::getline(in, value);
 	std::stringstream(value) >> qual_size;
-	for (size_t i = 0; (i < qual_size) && (i < n); i++)
+	for (size_t j = 0; (j < qual_size) && (j < n); j++)
 	{
 		size_t who;
 		std::getline(in, value);
@@ -1022,13 +1030,13 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	C_ik.resize(n);
 	for (size_t j = 0; j < n; j++)
 	{
-		for (size_t i = 0; i < n; i++)
+		for (size_t ii = 0; ii < n; ii++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
 			s_ji[j].push_back(tmp3);
 		}
-		for (size_t i = 0; i < n; i++)
+		for (size_t ii = 0; ii < n; ii++)
 		{
 			mpz_ptr tmp3 = new mpz_t();
 			mpz_init(tmp3);
@@ -1041,15 +1049,15 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 			C_ik[j].push_back(tmp3);
 		}
 	}
-	for (size_t i = 0; i < n; i++)
+	for (size_t ii = 0; ii < n; ii++)
 	{
 		for (size_t j = 0; j < n; j++)
 		{
-			in >> s_ji[j][i];
-			in >> sprime_ji[j][i];
+			in >> s_ji[j][ii];
+			in >> sprime_ji[j][ii];
 		}
 		for (size_t k = 0; k <= tprime; k++)
-			in >> C_ik[i][k];
+			in >> C_ik[ii][k];
 	}
 
 	// Do the precomputation for the fast exponentiation.
@@ -1067,17 +1075,17 @@ void CanettiGennaroJareckiKrawczykRabinZVSS::PublishState
 	out << n << std::endl << t << std::endl << i << std::endl << tprime << std::endl;
 	out << x_i << std::endl << xprime_i << std::endl;
 	out << QUAL.size() << std::endl;
-	for (size_t i = 0; i < QUAL.size(); i++)
-		out << QUAL[i] << std::endl;
-	for (size_t i = 0; i < n; i++)
+	for (size_t j = 0; j < QUAL.size(); j++)
+		out << QUAL[j] << std::endl;
+	for (size_t ii = 0; ii < n; ii++)
 	{
 		for (size_t j = 0; j < n; j++)
 		{
-			out << s_ji[j][i] << std::endl;
-			out << sprime_ji[j][i] << std::endl;
+			out << s_ji[j][ii] << std::endl;
+			out << sprime_ji[j][ii] << std::endl;
 		}
 		for (size_t k = 0; k <= tprime; k++)
-			out << C_ik[i][k] << std::endl;
+			out << C_ik[ii][k] << std::endl;
 	}
 }
 
@@ -1091,12 +1099,12 @@ void CanettiGennaroJareckiKrawczykRabinZVSS::EraseSecrets
 	()
 {
 	mpz_set_ui(x_i, 0L), mpz_set_ui(xprime_i, 0L);
-	for (size_t i = 0; i < n; i++)
+	for (size_t ii = 0; ii < n; ii++)
 	{
 		for (size_t j = 0; j < n; j++)
 		{
-			mpz_set_ui(s_ji[j][i], 0L);
-			mpz_set_ui(sprime_ji[j][i], 0L);
+			mpz_set_ui(s_ji[j][ii], 0L);
+			mpz_set_ui(sprime_ji[j][ii], 0L);
 		}
 	}	
 }
@@ -1222,6 +1230,11 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 	assert(n == aiou->n);
 	assert(i == rbc->j);
 	assert(i == aiou->j);
+	err << "CanettiGennaroJareckiKrawczykRabinZVSS::Share()" << std::endl;
+	err << "ZVSS(" << label << "): P_" << i << ": QUAL = { ";
+	for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
+		err << "P_" << *it << " ";
+	err << "}" << std::endl;
 
 	// checking maximum synchronous t-resilience
 	if ((2 * t) >= n)
@@ -1621,32 +1634,32 @@ CanettiGennaroJareckiKrawczykRabinZVSS::~CanettiGennaroJareckiKrawczykRabinZVSS
 	mpz_clear(x_i), mpz_clear(xprime_i);
 	for (size_t j = 0; j < s_ji.size(); j++)
 	{
-		for (size_t i = 0; i < s_ji[j].size(); i++)
+		for (size_t ii = 0; ii < s_ji[j].size(); ii++)
 		{
-			mpz_clear(s_ji[j][i]);
-			delete [] s_ji[j][i];
+			mpz_clear(s_ji[j][ii]);
+			delete [] s_ji[j][ii];
 		}
 		s_ji[j].clear();
 	}
 	s_ji.clear();
 	for (size_t j = 0; j < sprime_ji.size(); j++)
 	{
-		for (size_t i = 0; i < sprime_ji[j].size(); i++)
+		for (size_t ii = 0; ii < sprime_ji[j].size(); ii++)
 		{
-			mpz_clear(sprime_ji[j][i]);
-			delete [] sprime_ji[j][i];
+			mpz_clear(sprime_ji[j][ii]);
+			delete [] sprime_ji[j][ii];
 		}
 		sprime_ji[j].clear();
 	}
 	sprime_ji.clear();
-	for (size_t i = 0; i < C_ik.size(); i++)
+	for (size_t ii = 0; ii < C_ik.size(); ii++)
 	{
-		for (size_t k = 0; k < C_ik[i].size(); k++)
+		for (size_t k = 0; k < C_ik[ii].size(); k++)
 		{
-			mpz_clear(C_ik[i][k]);
-			delete [] C_ik[i][k];
+			mpz_clear(C_ik[ii][k]);
+			delete [] C_ik[ii][k];
 		}
-		C_ik[i].clear();
+		C_ik[ii].clear();
 	}
 	C_ik.clear();
 	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
@@ -1737,8 +1750,8 @@ void CanettiGennaroJareckiKrawczykRabinDKG::PublishState
 	out << n << std::endl << t << std::endl << i << std::endl;
 	out << x_i << std::endl << xprime_i << std::endl << y << std::endl;
 	out << QUAL.size() << std::endl;
-	for (size_t i = 0; i < QUAL.size(); i++)
-		out << QUAL[i] << std::endl;
+	for (size_t j = 0; j < QUAL.size(); j++)
+		out << QUAL[j] << std::endl;
 	x_rvss->PublishState(out);
 }
 
@@ -1863,11 +1876,12 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	std::map<size_t, size_t> id;
 	for (size_t j = 0; j < n; j++)
 		id[j] = j;
-	return Generate(id, aiou, rbc, err, simulate_faulty_behaviour);
+	return Generate(id, id, aiou, rbc, err, simulate_faulty_behaviour);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	(std::map<size_t, size_t> &idx2dkg,
+	std::map<size_t, size_t> &dkg2idx,
 	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
@@ -1877,6 +1891,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	assert(n == aiou->n);
 	assert(i == rbc->j);
 	assert(i == aiou->j);
+	err << "CanettiGennaroJareckiKrawczykRabinDKG::Generate()" << std::endl;
 
 	// checking maximum synchronous t-resilience
 	if ((2 * t) >= n)
@@ -1912,7 +1927,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	{
 		// Generating $x$:
 		// Players execute Joint-RVSS(t,n,t)
-		if (!x_rvss->Share(idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
+		if (!x_rvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[0])
 			throw false;
@@ -1942,61 +1957,61 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		mpz_fspowm(fpowm_table_h, Tprime_i[i], h, rprime_i, p);
 		for (size_t j = 0; j < n; j++)
 		{
-			if ((j == i) && (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
+			if ((j == i) && (std::find(QUAL.begin(), QUAL.end(), idx2dkg[j]) != QUAL.end()))
 			{
 				rbc->Broadcast(A_i[i]);
 				rbc->Broadcast(B_i[i]);
 				rbc->Broadcast(T_i[i]);
 				rbc->Broadcast(Tprime_i[i]);
 			}
-			else if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
+			else if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), idx2dkg[j]) != QUAL.end()))
 			{
 				if (!rbc->DeliverFrom(A_i[j], j))
 				{
-					err << "DKG(" << label << "): P_" << i << ": receiving A_i failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": receiving A_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!CheckElement(A_i[j]))
 				{
-					err << "DKG(" << label << "): P_" << i << ": bad A_i received; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": bad A_i received; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(A_i[j], 0L); // indicates an error
 				}
 				if (!rbc->DeliverFrom(B_i[j], j))
 				{
-					err << "DKG(" << label << "): P_" << i << ": receiving B_i failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": receiving B_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!CheckElement(B_i[j]))
 				{
-					err << "DKG(" << label << "): P_" << i << ": bad B_i received; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": bad B_i received; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(B_i[j], 0L); // indicates an error
 				}
 				if (!rbc->DeliverFrom(T_i[j], j))
 				{
-					err << "DKG(" << label << "): P_" << i << ": receiving T_i failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": receiving T_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!CheckElement(T_i[j]))
 				{
-					err << "DKG(" << label << "): P_" << i << ": bad T_i received; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": bad T_i received; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(T_i[j], 0L); // indicates an error
 				}
 				if (!rbc->DeliverFrom(Tprime_i[j], j))
 				{
-					err << "DKG(" << label << "): P_" << i << ": receiving Tprime_i failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": receiving Tprime_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!CheckElement(Tprime_i[j]))
 				{
-					err << "DKG(" << label << "): P_" << i << ": bad Tprime_i received; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": bad Tprime_i received; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(Tprime_i[j], 0L); // indicates an error
 				}
 				// compute RHS and check that $C_{j0} = A_j B_j \bmod p$
@@ -2004,16 +2019,16 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(x_rvss->C_ik[j][0], rhs))
 				{
-					err << "DKG(" << label << "): P_" << i << ": checking in step 2. failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": checking in step 2. failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 				}
 			}
 			else
-				err << "DKG(" << label << "): P_" << i << ": WARNING - P_" << j << " not in QUAL" << std::endl;
+				err << "DKG(" << label << "): P_" << idx2dkg[i] << ": WARNING - P_" << idx2dkg[j] << " not in QUAL" << std::endl;
 		}
 		// 3. Players execute Joint-RVSS(t,n,t) for a joint random challenge $d$. Player $P_i$ sets
 		//    his local share of the secret challenge to $d_i$.
-		if (!d_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
+		if (!d_rvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[2])
 			throw false;
@@ -2025,46 +2040,46 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		// remove those players from $QUAL$, who are disqualified in this Joint-RVSS
 		for (size_t j = 0; j < n; j++)
 		{
-			std::vector<size_t>::iterator it = std::find(QUAL.begin(), QUAL.end(), j);
-			if ((it != QUAL.end()) && (std::find(d_rvss->QUAL.begin(), d_rvss->QUAL.end(), j) == d_rvss->QUAL.end()))
+			std::vector<size_t>::iterator it = std::find(QUAL.begin(), QUAL.end(), idx2dkg[j]);
+			if ((it != QUAL.end()) && (std::find(d_rvss->QUAL.begin(), d_rvss->QUAL.end(), idx2dkg[j]) == d_rvss->QUAL.end()))
 			{
-				err << "DKG(" << label << "): P_" << i << ": WARNING - party erased from QUAL; complaint against P_" << j << std::endl;
+				err << "DKG(" << label << "): P_" << idx2dkg[i] << ": WARNING - party erased from QUAL; complaint against P_" << idx2dkg[j] << std::endl;
 				QUAL.erase(it);
-				complaints.push_back(j);
+				complaints.push_back(idx2dkg[j]);
 			}
 		}
 		// 4. Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		for (size_t j = 0; j < n; j++)
 		{
-			if ((j == i) && (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
+			if ((j == i) && (std::find(QUAL.begin(), QUAL.end(), idx2dkg[j]) != QUAL.end()))
 			{
 				rbc->Broadcast(d_i[i]);
 				rbc->Broadcast(dprime_i[i]);
 			}
-			else if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
+			else if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), idx2dkg[j]) != QUAL.end()))
 			{
 				if (!rbc->DeliverFrom(d_i[j], j))
 				{
-					err << "DKG(" << label << "): P_" << i << ": receiving d_i failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": receiving d_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(d_i[j], q) >= 0)
 				{
-					err << "DKG(" << label << "): P_" << i << ": bad d_i received; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": bad d_i received; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(d_i[j], 0L); // indicates an error
 				}
 				if (!rbc->DeliverFrom(dprime_i[j], j))
 				{
-					err << "DKG(" << label << "): P_" << i << ": receiving dprime_i failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": receiving dprime_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(dprime_i[j], q) >= 0)
 				{
-					err << "DKG(" << label << "): P_" << i << ": bad dprime_i received; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": bad dprime_i received; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(dprime_i[j], 0L); // indicates an error
 				}
 				// However, we can achieve optimal resilience by sieving out bad shares with
@@ -2080,8 +2095,8 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "DKG(" << label << "): P_" << i << ": checking d_i resp. dprime_i failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": checking d_i resp. dprime_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 				}
 			}
 		}
@@ -2089,13 +2104,13 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		std::sort(d_complaints.begin(), d_complaints.end());
 		std::vector<size_t>::iterator it = std::unique(d_complaints.begin(), d_complaints.end());
 		d_complaints.resize(std::distance(d_complaints.begin(), it));
-		err << "DKG(" << label << "): P_" << i << ": there are extracting complaints against ";
+		err << "DKG(" << label << "): P_" << idx2dkg[i] << ": there are extracting complaints against ";
 		for (std::vector<size_t>::iterator it = d_complaints.begin(); it != d_complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
-		if (!d_rvss->Reconstruct(d_complaints, d_i, rbc, err))
+		if (!d_rvss->Reconstruct(d_complaints, d_i, idx2dkg, dkg2idx, rbc, err))
 		{
-			err << "DKG(" << label << "): P_" << i << ": reconstruction in step 4. failed" << std::endl;
+			err << "DKG(" << label << "): P_" << idx2dkg[i] << ": reconstruction in step 4. failed" << std::endl;
 			throw false;
 		}
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[5])
@@ -2104,10 +2119,10 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		mpz_set_ui(d, 0L);
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 		{
-			mpz_add(d, d, d_i[*it]);
+			mpz_add(d, d, d_i[dkg2idx[*it]]);
 			mpz_mod(d, d, q);
 		}
-		err << "P_" << i << ": d = " << d << std::endl;
+		err << "P_" << idx2dkg[i] << ": d = " << d << std::endl;
 		// 5. $P_i$ broadcasts $R_i = r_i + d \cdot f_i(0)$ and $R\prime_i = r\prime_i + d \cdot f\prime_i(0)$
 		mpz_mul(foo, d, x_rvss->z_i);
 		mpz_mod(foo, foo, q);
@@ -2130,30 +2145,30 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		// exchanged in this step for convenience.
 		for (size_t j = 0; j < n; j++)
 		{
-			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end()))
+			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), idx2dkg[j]) != QUAL.end()))
 			{
 				if (!rbc->DeliverFrom(foo, j))
 				{
-					err << "DKG(" << label << "): P_" << i << ": receiving R_i failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": receiving R_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!rbc->DeliverFrom(bar, j))
 				{
-					err << "DKG(" << label << "): P_" << i << ": receiving Rprime_i failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": receiving Rprime_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(foo, q) >= 0)
 				{
-					err << "DKG(" << label << "): P_" << i << ": bad R_i received; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": bad R_i received; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(bar, q) >= 0)
 				{
-					err << "DKG(" << label << "): P_" << i << ": bad Rprime_i received; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": bad Rprime_i received; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				mpz_fpowm(fpowm_table_g, lhs, g, foo, p);
@@ -2162,8 +2177,8 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "DKG(" << label << "): P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": checking in step 6. failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
@@ -2172,11 +2187,11 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "DKG(" << label << "): P_" << i << ": checking in step 6. failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "DKG(" << label << "): P_" << idx2dkg[i] << ": checking in step 6. failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 				}
 				if (simulate_faulty_behaviour && simulate_faulty_randomizer[8])
-					complaints.push_back(j);
+					complaints.push_back(idx2dkg[j]);
 			}
 		}
 		// 7. If player $P_i$ receives more than $t$ complaints, then $P_j$ 
@@ -2191,18 +2206,18 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		complaints.resize(std::distance(complaints.begin(), it));
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			err << "DKG(" << label << "): P_" << i << ": broadcast complaint against P_" << *it << std::endl;
-			mpz_set_ui(rhs, *it);
+			err << "DKG(" << label << "): P_" << idx2dkg[i] << ": broadcast complaint against P_" << *it << std::endl;
+			mpz_set_ui(rhs, dkg2idx[*it]);
 			rbc->Broadcast(rhs);
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset
+		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset for final complaint resolution
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
 		for (size_t j = 0; j < n; j++)
 		{
-			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), j)	!= QUAL.end()))
+			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), idx2dkg[j]) != QUAL.end()))
 			{
 				size_t who;
 				size_t cnt = 0;
@@ -2211,23 +2226,23 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				{
 					if (!rbc->DeliverFrom(rhs, j))
 					{
-						err << "DKG(" << label << "): P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "DKG(" << label << "): P_" << idx2dkg[i] << ": receiving who failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						break;
 					}
 					who = mpz_get_ui(rhs);
 					if ((who < n) && !dup.count(who))
 					{
-						err << "DKG(" << label << "): P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
+						err << "DKG(" << label << "): P_" << idx2dkg[i] << ": receiving complaint against P_" << idx2dkg[who] << " from P_" << idx2dkg[j] << std::endl;
 						complaints_counter[who]++;
 						dup.insert(std::pair<size_t, bool>(who, true)); // mark as counted for $P_j$
 						if (who == i)
-							complaints_from.push_back(j);
+							complaints_from.push_back(idx2dkg[j]);
 					}
 					else if ((who < n) && dup.count(who))
 					{
-						err << "DKG(" << label << "): P_" << i << ": duplicated complaint against P_" << who << " from P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "DKG(" << label << "): P_" << idx2dkg[i] << ": duplicated complaint against P_" << idx2dkg[who] << " from P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 					}
 					cnt++;
 				}
@@ -2237,44 +2252,44 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		if (complaints_counter[i])
 		{
 			std::sort(complaints_from.begin(), complaints_from.end());
-			err << "DKG(" << label << "): P_" << i << ": there are " << complaints_counter[i] << " complaints against me from ";
+			err << "DKG(" << label << "): P_" << idx2dkg[i] << ": there are " << complaints_counter[i] << " complaints against me from ";
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 				err << "P_" << *it << " ";
 			err << std::endl;
 		}
 		for (size_t j = 0; j < n; j++)
 		{
-			if (std::find(QUAL.begin(), QUAL.end(), j) != QUAL.end())
+			if (std::find(QUAL.begin(), QUAL.end(), idx2dkg[j]) != QUAL.end())
 			{
 				if (complaints_counter[j] > t)
-					complaints.push_back(j);
+					complaints.push_back(idx2dkg[j]);
 			}
 		}
 		std::sort(complaints.begin(), complaints.end());
 		it = std::unique(complaints.begin(), complaints.end());
 		complaints.resize(std::distance(complaints.begin(), it));
-		err << "DKG(" << label << "): P_" << i << ": there are extracting complaints against ";
+		err << "DKG(" << label << "): P_" << idx2dkg[i] << ": there are extracting complaints against ";
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
-		if (!x_rvss->Reconstruct(complaints, z_i, rbc, err))
+		if (!x_rvss->Reconstruct(complaints, z_i, idx2dkg, dkg2idx, rbc, err))
 		{
-			err << "DKG(" << label << "): P_" << i << ": reconstruction in step 7. failed" << std::endl;
+			err << "DKG(" << label << "): P_" << idx2dkg[i] << ": reconstruction in step 7. failed" << std::endl;
 			throw false;
 		}
 		// Set $A_j = g^{z_j}$, for every failed player $P_j$.
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
-			mpz_fpowm(fpowm_table_g, A_i[*it], g, z_i[*it], p);
+			mpz_fpowm(fpowm_table_g, A_i[dkg2idx[*it]], g, z_i[dkg2idx[*it]], p);
 		// 8. The public value $y$ is set to $y = \prod_{i \in QUAL} A_i \bmod p$.
-		err << "DKG(" << label << "): P_" << i << ": QUAL = { ";
+		err << "DKG(" << label << "): P_" << idx2dkg[i] << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 		{
 			err << "P_" << *it << " ";
-			mpz_mul(y, y, A_i[*it]);
+			mpz_mul(y, y, A_i[dkg2idx[*it]]);
 			mpz_mod(y, y, p);
 		}
 		err << "}" << std::endl;
-		err << "DKG(" << label << "): P_" << i << ": y = " << y << std::endl;
+		err << "DKG(" << label << "): P_" << idx2dkg[i] << ": y = " << y << std::endl;
 		// 9. Player $P_i$ erases all secret information aside from his share $x_i$.
 		x_rvss->EraseSecrets();
 		d_rvss->EraseSecrets();
@@ -2401,8 +2416,8 @@ void CanettiGennaroJareckiKrawczykRabinDSS::PublishState
 	out << n << std::endl << t << std::endl << i << std::endl;
 	out << x_i << std::endl << xprime_i << std::endl << y << std::endl;
 	out << QUAL.size() << std::endl;
-	for (size_t i = 0; i < QUAL.size(); i++)
-		out << QUAL[i] << std::endl;
+	for (size_t j = 0; j < QUAL.size(); j++)
+		out << QUAL[j] << std::endl;
 	dkg->PublishState(out);
 }
 
@@ -2530,6 +2545,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Generate
 	assert(n == aiou->n);
 	assert(i == rbc->j);
 	assert(i == aiou->j);
+	err << "CanettiGennaroJareckiKrawczykRabinDSS::Generate()" << std::endl;
 
 	// checking maximum synchronous t-resilience
 	if ((2 * t) >= n)
@@ -2553,8 +2569,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Generate
 
 		// copy the set of non-disqualified players
 		QUAL.clear();
-		for (size_t i = 0; i < dkg->QUAL.size(); i++)
-			QUAL.push_back(dkg->QUAL[i]);
+		for (size_t j = 0; j < dkg->QUAL.size(); j++)
+			QUAL.push_back(dkg->QUAL[j]);
 
 		throw true;
 	}
@@ -2574,6 +2590,20 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
+	std::map<size_t, size_t> id;
+	for (size_t j = 0; j < n_in; j++)
+		id[j] = j;
+	return Sign(n_in, i_in, m, r, s, id, id, aiou, rbc, err, simulate_faulty_behaviour);
+}
+
+bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
+	(const size_t n_in, const size_t i_in,
+	mpz_srcptr m, mpz_ptr r, mpz_ptr s,
+	std::map<size_t, size_t> &idx2dkg,
+	std::map<size_t, size_t> &dkg2idx,
+	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour)
+{
 	assert(t <= n);
 	assert(i < n);
 	assert(n_in <= n);
@@ -2582,6 +2612,12 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 	assert(n_in == aiou->n);
 	assert(i_in == rbc->j);
 	assert(i_in == aiou->j);
+	assert(idx2dkg.size() == n_in);
+	assert(idx2dkg.size() == dkg2idx.size());
+	assert(idx2dkg.count(i_in) == 1);
+	assert(dkg2idx.count(idx2dkg[i_in]) == 1);
+	assert(i_in == dkg2idx[idx2dkg[i_in]]);
+	err << "CanettiGennaroJareckiKrawczykRabinDSS::Sign()" << std::endl;
 
 	// checking maximum synchronous t-resilience of DSS
 	if ((2 * t) >= n)
@@ -2651,45 +2687,13 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 	{
 		if (n_in < ((2 * t) + 1))
 		{
-			err << "P_" << i_in << ": not enough players (< 2t+1) for signing" << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": not enough players (< 2t+1) for signing" << std::endl;
 			throw false;
-		}
-		std::vector<size_t> notqual;
-		std::map<size_t, size_t> idx2dkg, dkg2idx;
-		mpz_set_ui(foo, dkg->i); // broadcast index of this party from DKG
-		rbc->Broadcast(foo);
-		for (size_t j = 0; j < n_in; j++)
-		{
-			size_t idx = j;
-			if (j != i_in)
-			{
-				if (rbc->DeliverFrom(foo, j))
-				{
-					if (mpz_cmpabs_ui(foo, dkg->n) > 0)
-						err << "P_" << i_in << ": WARNING: bad dkg->i received from P_" << j << std::endl;
-					else
-					{
-						idx = mpz_get_ui(foo);
-						err << "P_" << i_in << ": idx = " << idx << " for P_" << j << std::endl;
-					}
-				}
-				else
-				{
-					err << "P_" << i_in << ": WARNING: receiving dkg->i failed for P_" << j << std::endl;
-					notqual.push_back(j);
-				}
-			}
-			else
-				idx = dkg->i;
-			idx2dkg[j] = idx; // keep one-to-one mapping of indicies from DKG for later processing during interpolation
-			dkg2idx[idx] = j;
 		}
 
 		// 1. Generate $r = g^{k^{-1}} \bmod p \bmod q$
 		//    (a) Generate $k$. Players execute Joint-RVSS(t).
-		for (size_t j = 0; j < notqual.size(); j++)
-			k_rvss->QUAL.push_back(notqual[j]); // initialize the set QUAL
-		if (!k_rvss->Share(idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
+		if (!k_rvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[0])
 			throw false;
@@ -2705,7 +2709,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				for (size_t k = 0; k <= k_rvss->t; k++)
 				{
 					mpz_ui_pow_ui(foo, idx2dkg[j] + 1, k); // adjust index $j$ in computation
-					mpz_powm(bar, k_rvss->C_ik[*it][k], foo, p);
+					mpz_powm(bar, k_rvss->C_ik[dkg2idx[*it]][k], foo, p);
 					mpz_mul(alpha_i[j], alpha_i[j], bar);
 					mpz_mod(alpha_i[j], alpha_i[j], p);
 				}
@@ -2714,7 +2718,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//    (b) Generate a random value $a$ and $g^a \bmod p$ using (the optimally-resilient) DL-Key-Gen.
 		for (size_t j = 0; j < k_rvss->QUAL.size(); j++)
 			a_dkg->x_rvss->QUAL.push_back(k_rvss->QUAL[j]); // initialize the set QUAL
-		if (!a_dkg->Generate(idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
+		if (!a_dkg->Generate(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[1])
 			throw false;
@@ -2730,7 +2734,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				for (size_t k = 0; k <= a_dkg->x_rvss->t; k++)
 				{
 					mpz_ui_pow_ui(foo, idx2dkg[j] + 1, k); // adjust index $j$ in computation
-					mpz_powm(bar, a_dkg->x_rvss->C_ik[*it][k], foo, p);
+					mpz_powm(bar, a_dkg->x_rvss->C_ik[dkg2idx[*it]][k], foo, p);
 					mpz_mul(beta_i[j], beta_i[j], bar);
 					mpz_mod(beta_i[j], beta_i[j], p);
 				}
@@ -2742,24 +2746,24 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		{
 			if (j != i_in)
 			{
-				if (!k_i_vss[j]->Share(j, aiou, rbc, err, simulate_faulty_behaviour))
+				if (!k_i_vss[j]->Share(j, idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 				{
-					err << "P_" << i_in << ": WARNING - VSS of k_i failed for P_" << j << std::endl;
-					ignore.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": WARNING - VSS of k_i failed for P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 				}
-				if (!a_i_vss[j]->Share(j, aiou, rbc, err, simulate_faulty_behaviour))
+				if (!a_i_vss[j]->Share(j, idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 				{
-					err << "P_" << i_in << ": WARNING - VSS of a_i failed for P_" << j << std::endl;
-					ignore.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": WARNING - VSS of a_i failed for P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 				}
 			}
 			else
 			{
-				err << "P_" << i_in << ": k_i = " << k_i[i_in] << std::endl;
-				err << "P_" << i_in << ": a_i = " << a_i[i_in] << std::endl;
-				if (!k_i_vss[j]->Share(k_i[i_in], aiou, rbc, err, simulate_faulty_behaviour))
+				err << "P_" << idx2dkg[i_in] << ": k_i = " << k_i[i_in] << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": a_i = " << a_i[i_in] << std::endl;
+				if (!k_i_vss[j]->Share(k_i[i_in], idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 					throw false;
-				if (!a_i_vss[j]->Share(a_i[i_in], aiou, rbc, err, simulate_faulty_behaviour))
+				if (!a_i_vss[j]->Share(a_i[i_in], idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 					throw false;
 			}
 		}
@@ -2786,15 +2790,15 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        (Note that indices $i$ and $j$ are changed for convenience.)
 		for (size_t j = 0; j < n_in; j++)
 		{
-			err << "P_" << i_in << ": alpha_i[" << j << "] = " << alpha_i[j] << std::endl;
-			err << "P_" << i_in << ": beta_i[" << j << "] = " << beta_i[j] << std::endl;
-			err << "P_" << i_in << ": gamma_i[" << j << "] = " << gamma_i[j] << std::endl;
-			err << "P_" << i_in << ": delta_i[" << j << "] = " << delta_i[j] << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": alpha_i[" << j << "] = " << alpha_i[j] << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": beta_i[" << j << "] = " << beta_i[j] << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": gamma_i[" << j << "] = " << gamma_i[j] << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": delta_i[" << j << "] = " << delta_i[j] << std::endl;
 		}
-		err << "P_" << i_in << ": kprime_i = " << kprime_i << std::endl;
-		err << "P_" << i_in << ": aprime_i = " << aprime_i << std::endl;
-		err << "P_" << i_in << ": rho_i = " << rho_i << std::endl;
-		err << "P_" << i_in << ": sigma_i = " << sigma_i << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": kprime_i = " << kprime_i << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": aprime_i = " << aprime_i << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": rho_i = " << rho_i << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": sigma_i = " << sigma_i << std::endl;
 		//        Broadcast commitments for the zero-knowledge proofs of knowledge (we use presentation from [BCCG15]).
 		//        Then we show in parallel, that commitment $\alpha_i \gamma_i^{-1}$ resp. $\beta_i \delta_i^{-1}$
 		//        equals zero, i.e., the former commitment was made to the same value $k_i$ resp. $a_i$. This works
@@ -2813,29 +2817,31 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			{
 				if (!rbc->DeliverFrom(Tk_i[j], j))
 				{
-					err << "P_" << i_in << ": receiving Tk_i failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving Tk_i failed for P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!rbc->DeliverFrom(Ta_i[j], j))
 				{
-					err << "P_" << i_in << ": receiving Ta_i failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving Ta_i failed for P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!CheckElement(Tk_i[j]))
 				{
-					err << "P_" << i_in << ": bad Tk_i received from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": bad Tk_i received from P_" << idx2dkg[j] << std::endl;
 					mpz_set_ui(Tk_i[j], 0L); // indicates an error
 				}
 				if (!CheckElement(Ta_i[j]))
 				{
-					err << "P_" << i_in << ": bad Ta_i received from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": bad Ta_i received from P_" << idx2dkg[j] << std::endl;
 					mpz_set_ui(Ta_i[j], 0L); // indicates an error
 				}
 			}
 		}
 		//        Players execute Joint-RVSS(t,n,t) for a joint random challenge $d$. Player $P_i$ sets
 		//        his local share of the secret challenge to $d_i$. (In [CD98] this callenge is called $e$.)
-		if (!d_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
+		if (!d_rvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[3])
 			throw false;
@@ -2844,7 +2850,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if ((j == i_in) && (std::find(d_rvss->QUAL.begin(), d_rvss->QUAL.end(), j) != d_rvss->QUAL.end()))
+			if ((j == i_in) && (std::find(d_rvss->QUAL.begin(), d_rvss->QUAL.end(), idx2dkg[j]) != d_rvss->QUAL.end()))
 			{
 				if (simulate_faulty_behaviour && simulate_faulty_randomizer[4])
 					mpz_add_ui(d_i[i_in], d_i[i_in], 1L);
@@ -2853,30 +2859,30 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					mpz_add_ui(dprime_i[i_in], dprime_i[i_in], 1L);
 				rbc->Broadcast(dprime_i[i_in]);
 			}
-			else if ((j != i_in) && (std::find(d_rvss->QUAL.begin(), d_rvss->QUAL.end(), j) != d_rvss->QUAL.end()))
+			else if ((j != i_in) && (std::find(d_rvss->QUAL.begin(), d_rvss->QUAL.end(), idx2dkg[j]) != d_rvss->QUAL.end()))
 			{
 				if (!rbc->DeliverFrom(d_i[j], j))
 				{
-					err << "P_" << i_in << ": receiving d_i failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving d_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(d_i[j], q) >= 0)
 				{
-					err << "P_" << i_in << ": bad d_i received; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad d_i received; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(d_i[j], 0L); // indicates an error
 				}
 				if (!rbc->DeliverFrom(dprime_i[j], j))
 				{
-					err << "P_" << i_in << ": receiving dprime_i failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving dprime_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(dprime_i[j], q) >= 0)
 				{
-					err << "P_" << i_in << ": bad dprime_i received; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad dprime_i received; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(dprime_i[j], 0L); // indicates an error
 				}
 				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
@@ -2888,24 +2894,24 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": checking d_i resp. dprime_i failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": checking d_i resp. dprime_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 				}
 			}
 			else
-				err << "P_" << i_in << ": WARNING - P_" << j << " not in QUAL of d_rvss" << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": WARNING - P_" << idx2dkg[j] << " not in QUAL of d_rvss" << std::endl;
 		}
 		//        Public reconstruction of $d_j$, for every failed player $P_j$
 		std::sort(d_complaints.begin(), d_complaints.end());
 		std::vector<size_t>::iterator it = std::unique(d_complaints.begin(), d_complaints.end());
 		d_complaints.resize(std::distance(d_complaints.begin(), it));
-		err << "P_" << i_in << ": there are extracting complaints of d_rvss against ";
+		err << "P_" << idx2dkg[i_in] << ": there are extracting complaints of d_rvss against ";
 		for (std::vector<size_t>::iterator it = d_complaints.begin(); it != d_complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
-		if (!d_rvss->Reconstruct(d_complaints, d_i, rbc, err))
+		if (!d_rvss->Reconstruct(d_complaints, d_i, idx2dkg, dkg2idx, rbc, err))
 		{
-			err << "P_" << i_in << ": reconstruction of d_i in Step 1c failed" << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": reconstruction of d_i in Step 1c failed" << std::endl;
 			throw false;
 		}
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[6])
@@ -2914,10 +2920,10 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_set_ui(d, 0L);
 		for (std::vector<size_t>::iterator it = d_rvss->QUAL.begin(); it != d_rvss->QUAL.end(); ++it)
 		{
-			mpz_add(d, d, d_i[*it]);
+			mpz_add(d, d, d_i[dkg2idx[*it]]);
 			mpz_mod(d, d, q);
 		}
-		err << "P_" << i_in << ": d = " << d << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": d = " << d << std::endl;
 		//        Broadcast the reponses $z_{k_i} = r_{k_i} + (k\prime_i - \rho_i) \cdot d \bmod q$
 		//        and $z_{a_i} = r_{a_i} + (a\prime_i - \sigma_i) \cdot d$ and verify the results.
 		mpz_sub(foo, kprime_i, rho_i);
@@ -2940,27 +2946,32 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			{
 				if (!rbc->DeliverFrom(foo, j))
 				{
-					err << "P_" << i_in << ": receiving foo failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving foo failed for P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!rbc->DeliverFrom(bar, j))
 				{
-					err << "P_" << i_in << ": receiving bar failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving bar failed for P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(foo, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad foo received from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": bad foo received from P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(bar, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad bar received from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": bad bar received from P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!mpz_invert(rhs, gamma_i[j], p))
 				{
-					err << "P_" << i_in << ": cannot invert gamma_i from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": cannot invert gamma_i from P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				mpz_mul(rhs, rhs, alpha_i[j]);
@@ -2971,12 +2982,14 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_fpowm(fpowm_table_h, lhs, h, foo, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": ZNPoK for k_i in Step 1c failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": ZNPoK for k_i in Step 1c failed for P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!mpz_invert(rhs, delta_i[j], p))
 				{
-					err << "P_" << i_in << ": cannot invert delta_i from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": cannot invert delta_i from P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				mpz_mul(rhs, rhs, beta_i[j]);
@@ -2987,7 +3000,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": ZNPoK for a_i in Step 1c failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": ZNPoK for a_i in Step 1c failed for P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 			}
@@ -3004,11 +3018,14 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			if (j != i_in)
 			{
 				if (!v_i_vss[j]->Share(j, idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
-					err << "P_" << i_in << ": WARNING - VSS of v_i failed; complaint against P_" << j << std::endl;
+				{
+					err << "P_" << idx2dkg[i_in] << ": WARNING - VSS of v_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
+				}
 			}
 			else
 			{
-				err << "P_" << i_in << ": v_i = " << v_i[i_in] << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": v_i = " << v_i[i_in] << std::endl;
 				if (!v_i_vss[j]->Share(v_i[i_in], idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 					throw false;
 			}
@@ -3025,9 +3042,9 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		}
 		for (size_t j = 0; j < n_in; j++)
 		{
-			err << "P_" << i_in << ": chi_i[" << j << "] = " << chi_i[j] << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": chi_i[" << j << "] = " << chi_i[j] << std::endl;
 		}
-		err << "P_" << i_in << ": tau_i = " << tau_i << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": tau_i = " << tau_i << std::endl;
 		//        Each $P_i$ proves in ZK that the value committed in $\chi_i$ is the product
 		//        of the values committed to in $\alpha_i$ and $\beta_i$. This is done using
 		//        a zero-knowledge proof from [CD98]. This is a 3-move public coin proof and
@@ -3058,38 +3075,38 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			{
 				if (!rbc->DeliverFrom(DD[j], j))
 				{
-					err << "P_" << i_in << ": receiving DD failed for P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving DD failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!rbc->DeliverFrom(DDprime[j], j))
 				{
-					err << "P_" << i_in << ": receiving DDprime failed for P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving DDprime failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!rbc->DeliverFrom(EE[j], j))
 				{
-					err << "P_" << i_in << ": receiving EE failed for P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving EE failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!CheckElement(DD[j]))
 				{
-					err << "P_" << i_in << ": bad DD received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad DD received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(DD[j], 0L); // indicates an error
 				}
 				if (!CheckElement(DDprime[j]))
 				{
-					err << "P_" << i_in << ": bad DDprime received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad DDprime received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(DDprime[j], 0L); // indicates an error
 				}
 				if (!CheckElement(EE[j]))
 				{
-					err << "P_" << i_in << ": bad EE received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad EE received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(EE[j], 0L); // indicates an error
 				}
 			}
@@ -3097,7 +3114,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Players execute Joint-RVSS(t,n,t) for a joint random challenge $d$. Player $P_i$ sets
 		//        his local share of the secret challenge to $d_i$. (In [CD98] this callenge is called $e$
 		//        and in [BCCG15] it is called $x$.)
-		if (!dd_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
+		if (!dd_rvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[9])
 			throw false;
@@ -3106,7 +3123,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if ((j == i_in) && (std::find(dd_rvss->QUAL.begin(), dd_rvss->QUAL.end(), j) != dd_rvss->QUAL.end()))
+			if ((j == i_in) && (std::find(dd_rvss->QUAL.begin(), dd_rvss->QUAL.end(), idx2dkg[j]) != dd_rvss->QUAL.end()))
 			{
 				if (simulate_faulty_behaviour && simulate_faulty_randomizer[10])
 					mpz_add_ui(d_i[i_in], d_i[i_in], 1L);
@@ -3115,30 +3132,30 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					mpz_add_ui(dprime_i[i_in], dprime_i[i_in], 1L);
 				rbc->Broadcast(dprime_i[i_in]);
 			}
-			else if ((j != i_in) && (std::find(dd_rvss->QUAL.begin(), dd_rvss->QUAL.end(), j) != dd_rvss->QUAL.end()))
+			else if ((j != i_in) && (std::find(dd_rvss->QUAL.begin(), dd_rvss->QUAL.end(), idx2dkg[j]) != dd_rvss->QUAL.end()))
 			{
 				if (!rbc->DeliverFrom(d_i[j], j))
 				{
-					err << "P_" << i_in << ": receiving d_i failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving d_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(d_i[j], q) >= 0)
 				{
-					err << "P_" << i_in << ": bad d_i received; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad d_i received; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(d_i[j], 0L); // indicates an error
 				}
 				if (!rbc->DeliverFrom(dprime_i[j], j))
 				{
-					err << "P_" << i_in << ": receiving dprime_i failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving dprime_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(dprime_i[j], q) >= 0)
 				{
-					err << "P_" << i_in << ": bad dprime_i received; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad dprime_i received; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(dprime_i[j], 0L); // indicates an error
 				}
 				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
@@ -3150,24 +3167,24 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": checking d_i resp. dprime_i failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": checking d_i resp. dprime_i failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 				}
 			}
 			else
-				err << "P_" << i_in << ": WARNING - P_" << j << " not in QUAL of dd_rvss" << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": WARNING - P_" << idx2dkg[j] << " not in QUAL of dd_rvss" << std::endl;
 		}
 		//        Public reconstruction of $d_j$, for every failed player $P_j$
 		std::sort(d_complaints.begin(), d_complaints.end());
 		it = std::unique(d_complaints.begin(), d_complaints.end());
 		d_complaints.resize(std::distance(d_complaints.begin(), it));
-		err << "P_" << i_in << ": there are extracting complaints of dd_rvss against ";
+		err << "P_" << idx2dkg[i_in] << ": there are extracting complaints of dd_rvss against ";
 		for (std::vector<size_t>::iterator it = d_complaints.begin(); it != d_complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
-		if (!dd_rvss->Reconstruct(d_complaints, d_i, rbc, err))
+		if (!dd_rvss->Reconstruct(d_complaints, d_i, idx2dkg, dkg2idx, rbc, err))
 		{
-			err << "P_" << i_in << ": reconstruction of d_i in Step 1d failed" << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": reconstruction of d_i in Step 1d failed" << std::endl;
 			throw false;
 		}
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[12])
@@ -3176,10 +3193,10 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_set_ui(d, 0L);
 		for (std::vector<size_t>::iterator it = dd_rvss->QUAL.begin(); it != dd_rvss->QUAL.end(); ++it)
 		{
-			mpz_add(d, d, d_i[*it]);
+			mpz_add(d, d, d_i[dkg2idx[*it]]);
 			mpz_mod(d, d, q);
 		}
-		err << "P_" << i_in << ": d = " << d << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": d = " << d << std::endl;
 		//        Broadcast the responses...
 		//        $f_1 = k_i d + dd \bmod q$
 		mpz_mul(foo, k_i[i_in], d);
@@ -3221,24 +3238,26 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			{
 				if (!rbc->DeliverFrom(foo, j))
 				{
-					err << "P_" << i_in << ": receiving foo failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving foo failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!rbc->DeliverFrom(bar, j))
 				{
-					err << "P_" << i_in << ": receiving bar failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving bar failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(foo, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad foo received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad foo received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				if (mpz_cmpabs(bar, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad bar received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad bar received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				mpz_set(ssprime, foo); // save $f_1$ for third ZNPoK
@@ -3251,29 +3270,31 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": first ZNPoK in Step 1d failed for P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": first ZNPoK in Step 1d failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 				}
 				if (!rbc->DeliverFrom(foo, j))
 				{
-					err << "P_" << i_in << ": receiving foo failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving foo failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!rbc->DeliverFrom(bar, j))
 				{
-					err << "P_" << i_in << ": receiving bar failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving bar failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(foo, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad foo received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad foo received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				if (mpz_cmpabs(bar, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad bar received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad bar received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
@@ -3285,18 +3306,19 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": second ZNPoK in Step 1d failed for P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": second ZNPoK in Step 1d failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 				}
 				if (!rbc->DeliverFrom(bar, j))
 				{
-					err << "P_" << i_in << ": receiving bar failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving bar failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(bar, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad bar received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad bar received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				mpz_powm(rhs, beta_i[j], ssprime, p);
@@ -3308,8 +3330,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": third ZNPoK in Step 1d failed for P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": third ZNPoK in Step 1d failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 				}	
 			}
 		}
@@ -3325,7 +3347,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		std::sort(complaints.begin(), complaints.end());
 		it = std::unique(complaints.begin(), complaints.end());
 		complaints.resize(std::distance(complaints.begin(), it));
-		err << "P_" << i_in << ": there are extracting complaints of v_j against ";
+		err << "P_" << idx2dkg[i_in] << ": there are extracting complaints of v_j against ";
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << "but ignoring ";
@@ -3336,23 +3358,23 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		{
 			if (std::find(ignore.begin(), ignore.end(), *it) == ignore.end())
 			{
-				if (*it != i_in)
+				if (*it != idx2dkg[i_in])
 				{
 					mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
-					if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+					if (!k_i_vss[dkg2idx[*it]]->Reconstruct(dkg2idx[*it], foo, idx2dkg, rbc, err))
 					{
-						err << "P_" << i_in << ": reconstruction of k_j failed for P_" << *it << std::endl;	
+						err << "P_" << idx2dkg[i_in] << ": reconstruction of k_j failed for P_" << *it << std::endl;	
 						throw false;
 					}
-					if (!a_i_vss[*it]->Reconstruct(*it, bar, rbc, err))
+					if (!a_i_vss[dkg2idx[*it]]->Reconstruct(dkg2idx[*it], bar, idx2dkg, rbc, err))
 					{
-						err << "P_" << i_in << ": reconstruction of a_j failed for P_" << *it << std::endl;	
+						err << "P_" << idx2dkg[i_in] << ": reconstruction of a_j failed for P_" << *it << std::endl;	
 						throw false;
 					}
-					mpz_mul(v_i[*it], foo, bar);
-					mpz_mod(v_i[*it], v_i[*it], q);
+					mpz_mul(v_i[dkg2idx[*it]], foo, bar);
+					mpz_mod(v_i[dkg2idx[*it]], v_i[dkg2idx[*it]], q);
 				}
-				err << "P_" << i_in << ": v_i[" << *it << "] = " << v_i[*it] << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": v_i[" << dkg2idx[*it] << "] = " << v_i[dkg2idx[*it]] << std::endl;
 			}
 		}
 		//    (f) The value $\mu = ka$ is a linear combination of the values $v_1, \ldots, v_{2t+1}$.
@@ -3363,20 +3385,20 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        $v_1, \ldots, v_{2t+1}$ received in Step 1d. For the $v_j$'s that were exposed in
 		//        Step 1e, we use the constant sharing polynomial. Bad shares are detected using the
 		//        public commitments, and $\mu$ is reconstructed.
-		err << "P_" << i_in << ": signers (index from DKG) in Step 1f: ";
+		err << "P_" << idx2dkg[i_in] << ": signers (index from DKG) in Step 1f: ";
 		std::vector<size_t> signers;
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (std::find(ignore.begin(), ignore.end(), j) == ignore.end())
+			if (std::find(ignore.begin(), ignore.end(), idx2dkg[j]) == ignore.end())
 			{
 				signers.push_back(idx2dkg[j]);
-				err << "S_" << idx2dkg[j] << " ";
+				err << "P_" << idx2dkg[j] << " ";
 			}
 		}
 		err << std::endl;
 		if (signers.size() < ((2 * t) + 1))
 		{
-			err << "P_" << i_in << ": not enough cooperative players (< 2t+1) for signing" << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": not enough cooperative players (< 2t+1) for signing" << std::endl;
 			throw false;
 		}
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
@@ -3394,7 +3416,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 			if (!mpz_invert(lhs, lhs, q))
 			{
-				err << "P_" << i_in << ": cannot invert LHS during computation of linear combination for P_" << *jt << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": cannot invert LHS during computation of linear combination for P_" << *jt << std::endl;
 				throw false;
 			}
 			mpz_set_ui(rhs, 1L);
@@ -3435,22 +3457,22 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			{
 				if (!rbc->DeliverFrom(foo, j))
 				{
-					err << "P_" << i_in << ": receiving foo failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving foo failed for P_" << idx2dkg[j] << std::endl;
 					continue;
 				}
 				if (!rbc->DeliverFrom(bar, j))
 				{
-					err << "P_" << i_in << ": receiving bar failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving bar failed for P_" << idx2dkg[j] << std::endl;
 					continue;
 				}
 				if (mpz_cmpabs(foo, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad foo received from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": bad foo received from P_" << idx2dkg[j] << std::endl;
 					continue;
 				}
 				if (mpz_cmpabs(bar, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad bar received from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": bad bar received from P_" << idx2dkg[j] << std::endl;
 					continue;
 				}
 				mpz_set(shares[j], foo); // save the share for later following reconstruction
@@ -3463,7 +3485,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_set_ui(rhs, 1L);
 				for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
 				{
-					if (std::find(complaints.begin(), complaints.end(), dkg2idx[*jt]) == complaints.end())
+					if (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end())
 					{
 						mpz_set_ui(bar, 1L);
 						for (size_t k = 0; k < v_i_vss[dkg2idx[*jt]]->A_j.size(); k++)
@@ -3484,7 +3506,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				}
 				// check equation (1)
 				if (mpz_cmp(lhs, rhs))
-					err << "P_" << i_in << ": bad share received from " << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": bad share received from " << idx2dkg[j] << std::endl;
 				else
 					parties.push_back(idx2dkg[j]);
 			}
@@ -3492,12 +3514,12 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		// check whether enough shares (i.e. $t + 1$) have been collected
 		if (parties.size() <= t)
 		{
-			err << "P_" << i_in << ": not enough shares collected for reconstructing mu" << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": not enough shares collected for reconstructing mu" << std::endl;
 			throw false;
 		}
 		if (parties.size() > (t + 1))
 			parties.resize(t + 1);
-		err << "P_" << i_in << ": reconstructing parties = ";
+		err << "P_" << idx2dkg[i_in] << ": reconstructing parties = ";
 		for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
 			err << "P_" << *jt << " ";
 		err << std::endl;
@@ -3517,7 +3539,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 			if (!mpz_invert(lhs, lhs, q))
 			{
-				err << "P_" << i_in << ": cannot invert LHS during reconstruction" << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": cannot invert LHS during reconstruction" << std::endl;
 				throw false;
 			}
 			mpz_set_ui(rhs, 1L);
@@ -3534,16 +3556,16 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			mpz_mod(mu, mu, q);
 		}
 		parties.clear();
-		err << "P_" << i_in << ": mu = " << mu << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": mu = " << mu << std::endl;
 		//    (g) Player $P_i$ computes locally $\mu^{-1} \bmod q$ and $r = (g^a)^{\mu^{-1}} \bmod p \bmod q$.
 		if (!mpz_invert(foo, mu, q))
 		{
-			err << "P_" << i_in << ": cannot invert mu" << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": cannot invert mu" << std::endl;
 			throw false;
 		}
 		mpz_powm(r, a_dkg->y, foo, p);
 		mpz_mod(r, r, q);
-		err << "P_" << i_in << ": r = " << r << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": r = " << r << std::endl;
 
 		// 2. Generate $s = k(m + xr) \bmod q$
 		//    To reconstruct $s = k(m + xr)$, players perform steps equivalent to Steps 1c-1f above, with the
@@ -3567,7 +3589,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				for (size_t k = 0; k <= dkg->x_rvss->t; k++)
 				{
 					mpz_ui_pow_ui(foo, idx2dkg[j] + 1, k); // adjust index $j$ in computation
-					mpz_powm(bar, dkg->x_rvss->C_ik[*it][k], foo, p);
+					mpz_powm(bar, dkg->x_rvss->C_ik[*it][k], foo, p); // note that *it is here an index from DKG
 					mpz_mul(beta_i[j], beta_i[j], bar);
 					mpz_mod(beta_i[j], beta_i[j], p);
 				}
@@ -3585,16 +3607,16 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		{
 			if (j != i_in)
 			{
-				if (!aa_i_vss[j]->Share(j, aiou, rbc, err, simulate_faulty_behaviour))
+				if (!aa_i_vss[j]->Share(j, idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 				{
-					err << "P_" << i_in << ": WARNING - VSS of a_i (in Step 2c) failed for P_" << j << std::endl;
-					ignore.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": WARNING - VSS of a_i (in Step 2c) failed for P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 				}
 			}
 			else
 			{
-				err << "P_" << i_in << ": a_i (Step 2c) = " << a_i[i_in] << std::endl;
-				if (!aa_i_vss[j]->Share(a_i[i_in], aiou, rbc, err, simulate_faulty_behaviour))
+				err << "P_" << idx2dkg[i_in] << ": a_i (Step 2c) = " << a_i[i_in] << std::endl;
+				if (!aa_i_vss[j]->Share(a_i[i_in], idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 					throw false;
 			}
 		}
@@ -3616,11 +3638,11 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        (Note that indices $i$ and $j$ are changed for convenience.)
 		for (size_t j = 0; j < n_in; j++)
 		{
-			err << "P_" << i_in << ": beta_i[" << j << "] (Step 2c) = " << beta_i[j] << std::endl;
-			err << "P_" << i_in << ": delta_i[" << j << "] (Step 2c) = " << delta_i[j] << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": beta_i[" << j << "] (Step 2c) = " << beta_i[j] << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": delta_i[" << j << "] (Step 2c) = " << delta_i[j] << std::endl;
 		}
-		err << "P_" << i_in << ": aprime_i (Step 2c) = " << aprime_i << std::endl;
-		err << "P_" << i_in << ": sigma_i (Step 2c) = " << sigma_i << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": aprime_i (Step 2c) = " << aprime_i << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": sigma_i (Step 2c) = " << sigma_i << std::endl;
 		//        Broadcast commitments for the zero-knowledge proofs of knowledge (we use the presentation
 		//        from [BCCG15]). Then we show in parallel, that commitment $\beta_i \delta_i^{-1}$ equals
 		//        zero, i.e., the former commitment was made to the same value $a_i$. This works since
@@ -3637,19 +3659,20 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			{
 				if (!rbc->DeliverFrom(Ta_i[j], j))
 				{
-					err << "P_" << i_in << ": receiving Ta_i (in Step 2c) failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving Ta_i (in Step 2c) failed for P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!CheckElement(Ta_i[j]))
 				{
-					err << "P_" << i_in << ": bad Ta_i (in Step 2c) received from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": bad Ta_i (in Step 2c) received from P_" << idx2dkg[j] << std::endl;
 					mpz_set_ui(Ta_i[j], 0L); // indicates an error
 				}
 			}
 		}
 		//        Players execute Joint-RVSS(t,n,t) for a joint random challenge $d$. Player $P_i$ sets
 		//        his local share of the secret challenge to $d_i$. (In [CD98] this callenge is called $e$.)
-		if (!ddd_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
+		if (!ddd_rvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[14])
 			throw false;
@@ -3658,7 +3681,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if ((j == i_in) && (std::find(ddd_rvss->QUAL.begin(), ddd_rvss->QUAL.end(), j) != ddd_rvss->QUAL.end()))
+			if ((j == i_in) && (std::find(ddd_rvss->QUAL.begin(), ddd_rvss->QUAL.end(), idx2dkg[j]) != ddd_rvss->QUAL.end()))
 			{
 				if (simulate_faulty_behaviour && simulate_faulty_randomizer[15])
 					mpz_add_ui(d_i[i_in], d_i[i_in], 1L);
@@ -3667,30 +3690,30 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					mpz_add_ui(dprime_i[i_in], dprime_i[i_in], 1L);
 				rbc->Broadcast(dprime_i[i_in]);
 			}
-			else if ((j != i_in) && (std::find(ddd_rvss->QUAL.begin(), ddd_rvss->QUAL.end(), j) != ddd_rvss->QUAL.end()))
+			else if ((j != i_in) && (std::find(ddd_rvss->QUAL.begin(), ddd_rvss->QUAL.end(), idx2dkg[j]) != ddd_rvss->QUAL.end()))
 			{
 				if (!rbc->DeliverFrom(d_i[j], j))
 				{
-					err << "P_" << i_in << ": receiving d_i (in Step 2c) failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving d_i (in Step 2c) failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(d_i[j], q) >= 0)
 				{
-					err << "P_" << i_in << ": bad d_i (in Step 2c) received; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad d_i (in Step 2c) received; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(d_i[j], 0L); // indicates an error
 				}
 				if (!rbc->DeliverFrom(dprime_i[j], j))
 				{
-					err << "P_" << i_in << ": receiving dprime_i (in Step 2c) failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving dprime_i (in Step 2c) failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(dprime_i[j], q) >= 0)
 				{
-					err << "P_" << i_in << ": bad dprime_i (in Step 2c) received; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad dprime_i (in Step 2c) received; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(dprime_i[j], 0L); // indicates an error
 				}
 				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
@@ -3702,24 +3725,24 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": checking d_i resp. dprime_i (in Step 2c) failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": checking d_i resp. dprime_i (in Step 2c) failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 				}
 			}
 			else
-				err << "P_" << i_in << ": WARNING - P_" << j << " not in QUAL of ddd_rvss" << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": WARNING - P_" << idx2dkg[j] << " not in QUAL of ddd_rvss" << std::endl;
 		}
 		//        Public reconstruction of $d_j$, for every failed player $P_j$
 		std::sort(d_complaints.begin(), d_complaints.end());
 		it = std::unique(d_complaints.begin(), d_complaints.end());
 		d_complaints.resize(std::distance(d_complaints.begin(), it));
-		err << "P_" << i_in << ": there are extracting complaints of ddd_rvss against ";
+		err << "P_" << idx2dkg[i_in] << ": there are extracting complaints of ddd_rvss against ";
 		for (std::vector<size_t>::iterator it = d_complaints.begin(); it != d_complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
-		if (!ddd_rvss->Reconstruct(d_complaints, d_i, rbc, err))
+		if (!ddd_rvss->Reconstruct(d_complaints, d_i, idx2dkg, dkg2idx, rbc, err))
 		{
-			err << "P_" << i_in << ": reconstruction of d_i in Step 2c failed" << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": reconstruction of d_i in Step 2c failed" << std::endl;
 			throw false;
 		}
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[17])
@@ -3728,10 +3751,10 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_set_ui(d, 0L);
 		for (std::vector<size_t>::iterator it = ddd_rvss->QUAL.begin(); it != ddd_rvss->QUAL.end(); ++it)
 		{
-			mpz_add(d, d, d_i[*it]);
+			mpz_add(d, d, d_i[dkg2idx[*it]]);
 			mpz_mod(d, d, q);
 		}
-		err << "P_" << i_in << ": d (Step 2c) = " << d << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": d (Step 2c) = " << d << std::endl;
 		//        Broadcast the reponse $z_{a_i} = r_{a_i} + (a\prime_i - \sigma_i) \cdot d$ and verify the results.
 		mpz_sub(bar, aprime_i, sigma_i);
 		mpz_mod(bar, bar, q);
@@ -3746,17 +3769,20 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			{
 				if (!rbc->DeliverFrom(bar, j))
 				{
-					err << "P_" << i_in << ": receiving bar (in Step 2c) failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving bar (in Step 2c) failed for P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(bar, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad bar (in Step 2c) received from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": bad bar (in Step 2c) received from P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!mpz_invert(rhs, delta_i[j], p))
 				{
-					err << "P_" << i_in << ": cannot invert delta_i (in Step 2c) from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": cannot invert delta_i (in Step 2c) from P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 				mpz_mul(rhs, rhs, beta_i[j]);
@@ -3767,7 +3793,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": ZNPoK for a_i in Step 2c failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": ZNPoK for a_i in Step 2c failed for P_" << idx2dkg[j] << std::endl;
+					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
 			}
@@ -3784,11 +3811,14 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			if (j != i_in)
 			{
 				if (!vv_i_vss[j]->Share(j, idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
-					err << "P_" << i_in << ": WARNING - VSS of v_i (in Step 2d) failed; complaint against P_" << j << std::endl;
+				{
+					err << "P_" << idx2dkg[i_in] << ": WARNING - VSS of v_i (in Step 2d) failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
+				}
 			}
 			else
 			{
-				err << "P_" << i_in << ": v_i = " << v_i[i_in] << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": v_i = " << v_i[i_in] << std::endl;
 				if (!vv_i_vss[j]->Share(v_i[i_in], idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 					throw false;
 			}
@@ -3805,9 +3835,9 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		}
 		for (size_t j = 0; j < n_in; j++)
 		{
-			err << "P_" << i_in << ": chi_i[" << j << "] (Step 2d) = " << chi_i[j] << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": chi_i[" << j << "] (Step 2d) = " << chi_i[j] << std::endl;
 		}
-		err << "P_" << i_in << ": tau_i (Step 2d) = " << tau_i << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": tau_i (Step 2d) = " << tau_i << std::endl;
 		//        Each $P_i$ proves in ZK that the value committed in $\chi_i$ is the product
 		//        of the values committed to in $\alpha_i$ and $\beta_i$. This is done using
 		//        a zero-knowledge proof from [CD98]. This is a 3-move public coin proof and
@@ -3838,38 +3868,38 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			{
 				if (!rbc->DeliverFrom(DD[j], j))
 				{
-					err << "P_" << i_in << ": receiving DD (in Step 2d) failed for P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving DD (in Step 2d) failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!rbc->DeliverFrom(DDprime[j], j))
 				{
-					err << "P_" << i_in << ": receiving DDprime (in Step 2d) failed for P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving DDprime (in Step 2d) failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!rbc->DeliverFrom(EE[j], j))
 				{
-					err << "P_" << i_in << ": receiving EE (in Step 2d) failed for P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving EE (in Step 2d) failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!CheckElement(DD[j]))
 				{
-					err << "P_" << i_in << ": bad DD (in Step 2d) received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad DD (in Step 2d) received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(DD[j], 0L); // indicates an error
 				}
 				if (!CheckElement(DDprime[j]))
 				{
-					err << "P_" << i_in << ": bad DDprime (in Step 2d) received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad DDprime (in Step 2d) received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(DDprime[j], 0L); // indicates an error
 				}
 				if (!CheckElement(EE[j]))
 				{
-					err << "P_" << i_in << ": bad EE (in Step 2d) received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad EE (in Step 2d) received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(EE[j], 0L); // indicates an error
 				}
 			}
@@ -3877,7 +3907,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Players execute Joint-RVSS(t,n,t) for a joint random challenge $d$. Player $P_i$ sets
 		//        his local share of the secret challenge to $d_i$. (In [CD98] this callenge is called $e$
 		//        and in [BCCG15] it is called $x$.)
-		if (!dddd_rvss->Share(aiou, rbc, err, simulate_faulty_behaviour))
+		if (!dddd_rvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[20])
 			throw false;
@@ -3886,7 +3916,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Each player broadcasts $d_i$ (and $d\prime_i$ for the optimally-resilient variant).
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if ((j == i_in) && (std::find(dddd_rvss->QUAL.begin(), dddd_rvss->QUAL.end(), j) != dddd_rvss->QUAL.end()))
+			if ((j == i_in) && (std::find(dddd_rvss->QUAL.begin(), dddd_rvss->QUAL.end(), idx2dkg[j]) != dddd_rvss->QUAL.end()))
 			{
 				if (simulate_faulty_behaviour && simulate_faulty_randomizer[21])
 					mpz_add_ui(d_i[i_in], d_i[i_in], 1L);
@@ -3895,30 +3925,30 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					mpz_add_ui(dprime_i[i_in], dprime_i[i_in], 1L);
 				rbc->Broadcast(dprime_i[i_in]);
 			}
-			else if ((j != i_in) && (std::find(dddd_rvss->QUAL.begin(), dddd_rvss->QUAL.end(), j) != dddd_rvss->QUAL.end()))
+			else if ((j != i_in) && (std::find(dddd_rvss->QUAL.begin(), dddd_rvss->QUAL.end(), idx2dkg[j]) != dddd_rvss->QUAL.end()))
 			{
 				if (!rbc->DeliverFrom(d_i[j], j))
 				{
-					err << "P_" << i_in << ": receiving d_i (in Step 2d) failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving d_i (in Step 2d) failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(d_i[j], q) >= 0)
 				{
-					err << "P_" << i_in << ": bad d_i (in Step 2d) received; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad d_i (in Step 2d) received; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(d_i[j], 0L); // indicates an error
 				}
 				if (!rbc->DeliverFrom(dprime_i[j], j))
 				{
-					err << "P_" << i_in << ": receiving dprime_i (in Step 2d) failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": receiving dprime_i (in Step 2d) failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(dprime_i[j], q) >= 0)
 				{
-					err << "P_" << i_in << ": bad dprime_i (in Step 2d) received; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad dprime_i (in Step 2d) received; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(dprime_i[j], 0L); // indicates an error
 				}
 				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
@@ -3930,24 +3960,24 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": checking d_i resp. dprime_i (in Step 2d) failed; complaint against P_" << j << std::endl;
-					d_complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": checking d_i resp. dprime_i (in Step 2d) failed; complaint against P_" << idx2dkg[j] << std::endl;
+					d_complaints.push_back(idx2dkg[j]);
 				}
 			}
 			else
-				err << "P_" << i_in << ": WARNING - P_" << j << " not in QUAL of dddd_rvss" << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": WARNING - P_" << idx2dkg[j] << " not in QUAL of dddd_rvss" << std::endl;
 		}
 		//        Public reconstruction of $d_j$, for every failed player $P_j$
 		std::sort(d_complaints.begin(), d_complaints.end());
 		it = std::unique(d_complaints.begin(), d_complaints.end());
 		d_complaints.resize(std::distance(d_complaints.begin(), it));
-		err << "P_" << i_in << ": there are extracting complaints of dddd_rvss against ";
+		err << "P_" << idx2dkg[i_in] << ": there are extracting complaints of dddd_rvss against ";
 		for (std::vector<size_t>::iterator it = d_complaints.begin(); it != d_complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << std::endl;
-		if (!dddd_rvss->Reconstruct(d_complaints, d_i, rbc, err))
+		if (!dddd_rvss->Reconstruct(d_complaints, d_i, idx2dkg, dkg2idx, rbc, err))
 		{
-			err << "P_" << i_in << ": reconstruction of d_i in Step 2d failed" << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": reconstruction of d_i in Step 2d failed" << std::endl;
 			throw false;
 		}
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[23])
@@ -3956,10 +3986,10 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_set_ui(d, 0L);
 		for (std::vector<size_t>::iterator it = dddd_rvss->QUAL.begin(); it != dddd_rvss->QUAL.end(); ++it)
 		{
-			mpz_add(d, d, d_i[*it]);
+			mpz_add(d, d, d_i[dkg2idx[*it]]);
 			mpz_mod(d, d, q);
 		}
-		err << "P_" << i_in << ": d (Step 2d) = " << d << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": d (Step 2d) = " << d << std::endl;
 		//        Broadcast the responses...
 		//        $f_1 = k_i d + dd \bmod q$
 		mpz_mul(foo, k_i[i_in], d);
@@ -4001,24 +4031,26 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			{
 				if (!rbc->DeliverFrom(foo, j))
 				{
-					err << "P_" << i_in << ": receiving foo (in Step 2d) failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving foo (in Step 2d) failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!rbc->DeliverFrom(bar, j))
 				{
-					err << "P_" << i_in << ": receiving bar (in Step 2d) failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving bar (in Step 2d) failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(foo, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad foo (in Step 2d) received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad foo (in Step 2d) received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				if (mpz_cmpabs(bar, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad bar (in Step 2d) received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad bar (in Step 2d) received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				mpz_set(ssprime, foo); // save $f_1$ for third ZNPoK
@@ -4031,29 +4063,31 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": first ZNPoK in Step 2d failed for P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": first ZNPoK in Step 2d failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 				}
 				if (!rbc->DeliverFrom(foo, j))
 				{
-					err << "P_" << i_in << ": receiving foo (in Step 2d) failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving foo (in Step 2d) failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!rbc->DeliverFrom(bar, j))
 				{
-					err << "P_" << i_in << ": receiving bar (in Step 2d) failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving bar (in Step 2d) failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(foo, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad foo (in Step 2d) received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad foo (in Step 2d) received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				if (mpz_cmpabs(bar, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad bar (in Step 2d) received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad bar (in Step 2d) received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
@@ -4065,18 +4099,19 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": second ZNPoK in Step 2d failed for P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": second ZNPoK in Step 2d failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 				}
 				if (!rbc->DeliverFrom(bar, j))
 				{
-					err << "P_" << i_in << ": receiving bar (in Step 2d) failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving bar (in Step 2d) failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(bar, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad bar (in Step 2d) received from P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": bad bar (in Step 2d) received from P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				mpz_powm(rhs, beta_i[j], ssprime, p);
@@ -4088,8 +4123,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_mod(rhs, rhs, p);
 				if (mpz_cmp(lhs, rhs))
 				{
-					err << "P_" << i_in << ": third ZNPoK in Step 2d failed for P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i_in] << ": third ZNPoK in Step 2d failed for P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 				}	
 			}
 		}
@@ -4105,7 +4140,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		std::sort(complaints.begin(), complaints.end());
 		it = std::unique(complaints.begin(), complaints.end());
 		complaints.resize(std::distance(complaints.begin(), it));
-		err << "P_" << i_in << ": there are extracting complaints of v_j against ";
+		err << "P_" << idx2dkg[i_in] << ": there are extracting complaints of v_j against ";
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 			err << "P_" << *it << " ";
 		err << "but ignoring ";
@@ -4116,23 +4151,23 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		{
 			if (std::find(ignore.begin(), ignore.end(), *it) == ignore.end())
 			{
-				if (*it != i_in)
+				if (dkg2idx[*it] != i_in)
 				{
 					mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
-					if (!k_i_vss[*it]->Reconstruct(*it, foo, rbc, err))
+					if (!k_i_vss[dkg2idx[*it]]->Reconstruct(dkg2idx[*it], foo, idx2dkg, rbc, err))
 					{
-						err << "P_" << i_in << ": reconstruction of k_j (in Step 2e) failed for P_" << *it << std::endl;	
+						err << "P_" << idx2dkg[i_in] << ": reconstruction of k_j (in Step 2e) failed for P_" << *it << std::endl;	
 						throw false;
 					}
-					if (!aa_i_vss[*it]->Reconstruct(*it, bar, rbc, err))
+					if (!aa_i_vss[dkg2idx[*it]]->Reconstruct(dkg2idx[*it], bar, idx2dkg, rbc, err))
 					{
-						err << "P_" << i_in << ": reconstruction of a_j (in Step 2e) failed for P_" << *it << std::endl;	
+						err << "P_" << idx2dkg[i_in] << ": reconstruction of a_j (in Step 2e) failed for P_" << *it << std::endl;	
 						throw false;
 					}
-					mpz_mul(v_i[*it], foo, bar);
-					mpz_mod(v_i[*it], v_i[*it], q);
+					mpz_mul(v_i[dkg2idx[*it]], foo, bar);
+					mpz_mod(v_i[dkg2idx[*it]], v_i[dkg2idx[*it]], q);
 				}
-				err << "P_" << i_in << ": v_i[" << *it << "] (Step 2e) = " << v_i[*it] << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": v_i[" << dkg2idx[*it] << "] (Step 2e) = " << v_i[dkg2idx[*it]] << std::endl;
 			}
 		}
 		//    (f) The value $s = k(m + xr)$ is a linear combination of the values $v_1, \ldots, v_{2t+1}$.
@@ -4144,19 +4179,19 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Step 2e, we use the constant sharing polynomial. Bad shares are detected using the
 		//        public commitments, and $\mu$ is reconstructed.
 		signers.clear();
-		err << "P_" << i_in << ": signers (index from DKG) in Step 2f: ";
+		err << "P_" << idx2dkg[i_in] << ": signers (index from DKG) in Step 2f: ";
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (std::find(ignore.begin(), ignore.end(), j) == ignore.end())
+			if (std::find(ignore.begin(), ignore.end(), idx2dkg[j]) == ignore.end())
 			{
 				signers.push_back(idx2dkg[j]);
-				err << "S_" << idx2dkg[j] << " ";
+				err << "P_" << idx2dkg[j] << " ";
 			}
 		}
 		err << std::endl;
 		if (signers.size() < ((2 * t) + 1))
 		{
-			err << "P_" << i_in << ": not enough cooperative players (< 2t+1) for signing" << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": not enough cooperative players (< 2t+1) for signing" << std::endl;
 			throw false;
 		}
 		mpz_set_ui(foo, 0L), mpz_set_ui(bar, 0L);
@@ -4174,7 +4209,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 			if (!mpz_invert(lhs, lhs, q))
 			{
-				err << "P_" << i_in << ": cannot invert LHS during computation of linear combination for P_" << *jt << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": cannot invert LHS during computation of linear combination for P_" << *jt << std::endl;
 				throw false;
 			}
 			mpz_set_ui(rhs, 1L);
@@ -4185,7 +4220,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 			mpz_mul(lambda_j[dkg2idx[*jt]], rhs, lhs);
 			mpz_mod(lambda_j[dkg2idx[*jt]], lambda_j[dkg2idx[*jt]], q);
-			if (std::find(complaints.begin(), complaints.end(), dkg2idx[*jt]) == complaints.end())
+			if (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end())
 			{
 				mpz_mul(rhs, lambda_j[dkg2idx[*jt]], vv_i_vss[dkg2idx[*jt]]->sigma_i);
 				mpz_mod(rhs, rhs, q);
@@ -4215,22 +4250,22 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			{
 				if (!rbc->DeliverFrom(foo, j))
 				{
-					err << "P_" << i_in << ": receiving foo (in Step 2f) failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving foo (in Step 2f) failed for P_" << idx2dkg[j] << std::endl;
 					continue;
 				}
 				if (!rbc->DeliverFrom(bar, j))
 				{
-					err << "P_" << i_in << ": receiving bar (in Step 2f) failed for P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": receiving bar (in Step 2f) failed for P_" << idx2dkg[j] << std::endl;
 					continue;
 				}
 				if (mpz_cmpabs(foo, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad foo (in Step 2f) received from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": bad foo (in Step 2f) received from P_" << idx2dkg[j] << std::endl;
 					continue;
 				}
 				if (mpz_cmpabs(bar, q) >= 0)
 				{
-					err << "P_" << i_in << ": bad bar (in Step 2f) received from P_" << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": bad bar (in Step 2f) received from P_" << idx2dkg[j] << std::endl;
 					continue;
 				}
 				mpz_set(shares[j], foo); // save the share for later following reconstruction
@@ -4243,7 +4278,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_set_ui(rhs, 1L);
 				for (std::vector<size_t>::iterator jt = signers.begin(); jt != signers.end(); ++jt)
 				{
-					if (std::find(complaints.begin(), complaints.end(), dkg2idx[*jt]) == complaints.end())
+					if (std::find(complaints.begin(), complaints.end(), *jt) == complaints.end())
 					{
 						mpz_set_ui(bar, 1L);
 						for (size_t k = 0; k < vv_i_vss[dkg2idx[*jt]]->A_j.size(); k++)
@@ -4264,7 +4299,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				}
 				// check equation (1)
 				if (mpz_cmp(lhs, rhs))
-					err << "P_" << i_in << ": bad share  (in Step 2f) received from " << j << std::endl;
+					err << "P_" << idx2dkg[i_in] << ": bad share  (in Step 2f) received from " << idx2dkg[j] << std::endl;
 				else
 					parties.push_back(idx2dkg[j]);
 			}
@@ -4272,12 +4307,12 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		// check whether enough shares (i.e. $t + 1$) have been collected
 		if (parties.size() <= t)
 		{
-			err << "P_" << i_in << ": not enough shares collected for reconstructing s" << std::endl;
+			err << "P_" << idx2dkg[i_in] << ": not enough shares collected for reconstructing s" << std::endl;
 			throw false;
 		}
 		if (parties.size() > (t + 1))
 			parties.resize(t + 1);
-		err << "P_" << i_in << ": reconstructing parties (index from DKG) = ";
+		err << "P_" << idx2dkg[i_in] << ": reconstructing parties (index from DKG) = ";
 		for (std::vector<size_t>::iterator jt = parties.begin(); jt != parties.end(); ++jt)
 			err << "P_" << *jt << " ";
 		err << std::endl;
@@ -4297,7 +4332,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 			if (!mpz_invert(lhs, lhs, q))
 			{
-				err << "P_" << i_in << ": cannot invert LHS during reconstruction" << std::endl;
+				err << "P_" << idx2dkg[i_in] << ": cannot invert LHS during reconstruction" << std::endl;
 				throw false;
 			}
 			mpz_set_ui(rhs, 1L);
@@ -4314,7 +4349,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			mpz_mod(s, s, q);
 		}
 		parties.clear();
-		err << "P_" << i_in << ": s = " << s << std::endl;
+		err << "P_" << idx2dkg[i_in] << ": s = " << s << std::endl;
 
 		// 3. Player $P_i$ erases all secret information generated in this signing protocol.
 		k_rvss->EraseSecrets();

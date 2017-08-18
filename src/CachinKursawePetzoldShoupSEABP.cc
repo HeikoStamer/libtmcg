@@ -728,9 +728,9 @@ void CachinKursawePetzoldShoupRBC::Sync
 		else
 		{
 			time_t median_timeout = vtvs[vtvs.size()/2]; // use a median value as some kind of gentle agreement
-std::cerr << "RBC(" << j << "): synchronized median_timeout = " << median_timeout << std::endl;
+//std::cerr << "RBC(" << j << "): synchronized median_timeout = " << median_timeout << std::endl;
 			long int diff = median_timeout - (timeout - (slice_entry_time - entry_time));
-std::cerr << "RBC(" << j << "): diff = " << diff << std::endl;
+//std::cerr << "RBC(" << j << "): diff = " << diff << std::endl;
 			if (abs(diff) <= max_timeout) 
 				timeout += diff;
 			else

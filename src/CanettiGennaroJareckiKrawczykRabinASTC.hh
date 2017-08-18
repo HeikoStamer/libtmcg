@@ -102,6 +102,7 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 			const bool simulate_faulty_behaviour = false);
 		bool Share
 			(std::map<size_t, size_t> &idx2dkg,
+			std::map<size_t, size_t> &dkg2idx,
 			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);
@@ -113,6 +114,7 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 			(const std::vector<size_t> &complaints,
 			std::vector<mpz_ptr> &a_i_in,
 			std::map<size_t, size_t> &idx2dkg,
+			std::map<size_t, size_t> &dkg2idx,
 			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
 		~CanettiGennaroJareckiKrawczykRabinRVSS
 			();
@@ -209,6 +211,7 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 			const bool simulate_faulty_behaviour = false);
 		bool Generate
 			(std::map<size_t, size_t> &idx2dkg,
+			std::map<size_t, size_t> &dkg2idx,
 			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false);
@@ -257,8 +260,14 @@ class CanettiGennaroJareckiKrawczykRabinDSS
 			(const size_t n_in, const size_t i_in,
 			mpz_srcptr m, mpz_ptr r, mpz_ptr s,
 			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			std::ostream &err, const bool simulate_faulty_behaviour = false);
+		bool Sign
+			(const size_t n_in, const size_t i_in,
+			mpz_srcptr m, mpz_ptr r, mpz_ptr s,
+			std::map<size_t, size_t> &idx2dkg,
+			std::map<size_t, size_t> &dkg2idx,
+			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err, const bool simulate_faulty_behaviour = false);
 		bool Verify
 			(mpz_srcptr m, mpz_srcptr r, mpz_srcptr s) const;
 		~CanettiGennaroJareckiKrawczykRabinDSS
