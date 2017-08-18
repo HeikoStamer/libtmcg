@@ -198,7 +198,7 @@ void start_instance
 			if (!corrupted)
 				assert(ret);
 			// now: sync for waiting parties
-			rbc->Sync(aiounicast::aio_timeout_middle);
+			rbc->Sync(aiounicast::aio_timeout_middle+10);
 
 			// signing and verifying messages
 			std::stringstream err_log_sign, err_log_sign_nm1;
@@ -238,7 +238,7 @@ void start_instance
 			if (!corrupted)
 				assert(!ret);
 			// now: sync for waiting parties
-			rbc->Sync(aiounicast::aio_timeout_middle);
+			rbc->Sync(aiounicast::aio_timeout_middle+20);
 			// check signing and verifying of a message with N-1 signers = P_1, P_2, ...
 			if (whoami > 0)
 			{
