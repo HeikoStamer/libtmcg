@@ -596,9 +596,12 @@ bool JareckiLysyanskayaRVSS::Share
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset
+		complaints_counter.clear(), complaints_from.clear(); // reset for final complaint resolution
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+			complaints_counter[*it]++; // count my own complaints
+		complaints.clear();
 		for (size_t j = 0; j < n; j++)
 		{
 			if (j != i)
@@ -1107,7 +1110,7 @@ bool JareckiLysyanskayaEDCF::Flip
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
 	std::vector<mpz_ptr> a_i, hata_i;
-	std::vector<size_t> complaints, complaints_counter;
+	std::vector<size_t> complaints;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
 	for (size_t j = 0; j < n; j++)
 	{

@@ -535,9 +535,12 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset for final complaint resolution
+		complaints_counter.clear(), complaints_from.clear(); // reset for final complaint resolution
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+			complaints_counter[dkg2idx[*it]]++; // count my own complaints
+		complaints.clear();
 		for (size_t j = 0; j < n; j++)
 		{
 			if (j != i)
@@ -1432,9 +1435,12 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset
+		complaints_counter.clear(), complaints_from.clear(); // reset for final complaint resolution
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+			complaints_counter[*it]++; // count my own complaints
+		complaints.clear();
 		for (size_t j = 0; j < n; j++)
 		{
 			if (j != i)
@@ -2212,9 +2218,12 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		complaints.clear(), complaints_counter.clear(), complaints_from.clear(); // reset for final complaint resolution
+		complaints_counter.clear(), complaints_from.clear(); // reset for final complaint resolution
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+			complaints_counter[dkg2idx[*it]]++; // count my own complaints
+		complaints.clear();		
 		for (size_t j = 0; j < n; j++)
 		{
 			if ((j != i) && (std::find(QUAL.begin(), QUAL.end(), idx2dkg[j]) != QUAL.end()))

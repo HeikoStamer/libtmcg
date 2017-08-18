@@ -352,7 +352,7 @@ bool PedersenVSS::Share
 		// the dealer is disqualified. Otherwise the dealer broadcasts the values
 		// $\sigma_i$ and $\tau_i$ matching the above equation for each complaining
 		// player $P_i$.
-		complaints_from.clear(); // reset
+		complaints_from.clear(); // reset for final complaint resolution
 		for (size_t j = 0; j < n; j++)
 		{
 			if (j != i)
@@ -476,6 +476,7 @@ bool PedersenVSS::Share
 
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
+	bool complaint = false;
 	std::vector<size_t> complaints, complaints_from;
 	size_t complaints_counter = 0;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
@@ -495,7 +496,7 @@ bool PedersenVSS::Share
 			if (!rbc->DeliverFrom(A_j[j], dealer))
 			{
 				err << "VSS(" << label << "): P_" << idx2dkg[i] << ": receiving A_j failed; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-				complaints.push_back(dealer);
+				complaint = true;
 				break;
 			}
 		}
@@ -504,23 +505,23 @@ bool PedersenVSS::Share
 		if (!aiou->Receive(sigma_i, dealer, aiou->aio_scheduler_direct))
 		{
 			err << "VSS(" << label << "): P_" << idx2dkg[i] << ": receiving sigma_i failed; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-			complaints.push_back(dealer);
+			complaint = true;
 		}
 		if (mpz_cmpabs(sigma_i, q) >= 0)
 		{
 			err << "VSS(" << label << "): P_" << idx2dkg[i] << ": bad sigma_i received; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-			complaints.push_back(dealer);
+			complaint = true;
 			mpz_set_ui(sigma_i, 0L); // indicates an error
 		}
 		if (!aiou->Receive(tau_i, dealer, aiou->aio_scheduler_direct))
 		{
 			err << "VSS(" << label << "): P_" << idx2dkg[i] << ": receiving tau_i failed; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-			complaints.push_back(dealer);
+			complaint = true;
 		}
 		if (mpz_cmpabs(tau_i, q) >= 0)
 		{
 			err << "VSS(" << label << "): P_" << idx2dkg[i] << ": bad tau_i received; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-			complaints.push_back(dealer);
+			complaint = true;
 			mpz_set_ui(tau_i, 0L); // indicates an error
 		}
 		// compute LHS for the check
@@ -535,7 +536,7 @@ bool PedersenVSS::Share
 			if (!CheckElement(A_j[j]))
 			{
 				err << "VSS(" << label << "): P_" << idx2dkg[i] << ": bad A_j received; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-				complaints.push_back(dealer);
+				complaint = true;
 				break;
 			}
 			mpz_ui_pow_ui(foo, idx2dkg[i] + 1, j); // adjust index $i$ in computation
@@ -547,31 +548,30 @@ bool PedersenVSS::Share
 		if (mpz_cmp(lhs, rhs))
 		{
 			err << "VSS(" << label << "): P_" << idx2dkg[i] << ": checking share with equation (2) failed; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-			complaints.push_back(dealer);
+			complaint = true;
 		}
 		// As in Feldman's VSS the players who hold shares that do not satisfy the
 		// above equation broadcast a complaint. If more than $t$ players complain
 		// the dealer is disqualified. Otherwise the dealer broadcasts the values
 		// $\sigma_i$ and $\tau_i$ matching the above equation for each complaining
 		// player $P_i$.
-		std::sort(complaints.begin(), complaints.end());
-		std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
-		complaints.resize(std::distance(complaints.begin(), it));
-		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+		if (complaint)
 		{
-			err << "VSS(" << label << "): P_" << idx2dkg[i] << ": broadcast complaint against dealer P_" << idx2dkg[*it] << std::endl;
-			mpz_set_ui(rhs, *it);
+			err << "VSS(" << label << "): P_" << idx2dkg[i] << ": broadcast complaint against dealer P_" << idx2dkg[dealer] << std::endl;
+			mpz_set_ui(rhs, dealer);
 			rbc->Broadcast(rhs);
+			complaints_counter++;
 		}
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer)
 		{
 			err << "VSS(" << label << "): P_" << idx2dkg[i] << ": false complaint against dealer P_" << idx2dkg[dealer] << std::endl;
 			mpz_set_ui(rhs, dealer);
 			rbc->Broadcast(rhs);
+			complaints_counter++;
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
 		rbc->Broadcast(rhs);
-		complaints.clear(), complaints_from.clear(); // reset
+		complaints.clear(), complaints_from.clear(); // reset for final complaint resolution
 		for (size_t j = 0; j < n; j++)
 		{
 			if ((j != i) && (j != dealer))
@@ -610,7 +610,7 @@ bool PedersenVSS::Share
 			throw false;
 		else if (complaints_counter > 0)
 		{
-			complaints.clear(); // reset
+			complaint = false; // reset again
 			std::sort(complaints_from.begin(), complaints_from.end());
 			err << "VSS(" << label << "): P_" << idx2dkg[i] << ": there are " << complaints_counter << " complaints against dealer from ";
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
@@ -622,38 +622,38 @@ bool PedersenVSS::Share
 				if (!rbc->DeliverFrom(lhs, dealer))
 				{
 					err << "VSS(" << label << "): P_" << idx2dkg[i] << ": receiving who failed; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-					complaints.push_back(dealer);
+					complaint = true;
 					break;
 				}
 				size_t who = mpz_get_ui(lhs);
 				if ((who >= n) || (who != *it))
 				{
 					err << "VSS(" << label << "): P_" << idx2dkg[i] << ": bad who value; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-					complaints.push_back(dealer);
+					complaint = true;
 					break;
 				}
 				if (!rbc->DeliverFrom(foo, dealer))
 				{
 					err << "VSS(" << label << "): P_" << idx2dkg[i] << ": receiving foo failed; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-					complaints.push_back(dealer);
+					complaint = true;
 					break;
 				}
 				if (mpz_cmpabs(foo, q) >= 0)
 				{
 					err << "VSS(" << label << "): P_" << idx2dkg[i] << ": bad foo received; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-					complaints.push_back(dealer);
+					complaint = true;
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				if (!rbc->DeliverFrom(bar, dealer))
 				{
 					err << "VSS(" << label << "): P_" << idx2dkg[i] << ": receiving bar failed; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-					complaints.push_back(dealer);
+					complaint = true;
 					break;
 				}
 				if (mpz_cmpabs(bar, q) >= 0)
 				{
 					err << "VSS(" << label << "): P_" << idx2dkg[i] << ": bad bar received; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-					complaints.push_back(dealer);
+					complaint = true;
 					mpz_set_ui(bar, 0L); // indicates an error
 				}
 				mpz_t s, sprime;
@@ -676,7 +676,7 @@ bool PedersenVSS::Share
 				if (mpz_cmp(lhs, rhs))
 				{
 					err << "VSS(" << label << "): P_" << idx2dkg[i] << ": checking equation (2) failed; complaint against dealer P_" << idx2dkg[dealer] << std::endl;
-					complaints.push_back(dealer);
+					complaint = true;
 				}
 				else if (who == i)
 				{
@@ -686,12 +686,13 @@ bool PedersenVSS::Share
 				}
 				mpz_clear(s), mpz_clear(sprime);
 			}
-			std::sort(complaints.begin(), complaints.end());
-			std::vector<size_t>::iterator it = std::unique(complaints.begin(), complaints.end());
-			complaints.resize(std::distance(complaints.begin(), it));
-			if (complaints.size() > 0)
+			if (complaint)
 				throw false;
 		}
+		err << "VSS(" << label << "): P_" << idx2dkg[i] << ": during resolution there have been complaints against ";
+		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
+			err << "P_" << idx2dkg[*it] << " ";
+		err << std::endl;
 
 		throw true;
 	}
