@@ -171,6 +171,8 @@ void start_instance
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 			if (!corrupted)
 				assert(ret);
+			// now: sync for waiting parties
+			rbc->Sync(aiounicast::aio_timeout_middle);
 
 			// publish state
 			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
@@ -195,6 +197,8 @@ void start_instance
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_dss.str();
 			if (!corrupted)
 				assert(ret);
+			// now: sync for waiting parties
+			rbc->Sync(aiounicast::aio_timeout_middle);
 
 			// signing and verifying messages
 			std::stringstream err_log_sign, err_log_sign_nm1;
