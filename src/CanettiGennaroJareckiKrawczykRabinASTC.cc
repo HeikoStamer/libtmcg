@@ -680,8 +680,14 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		}
 		for (size_t j = 0; j < n; j++)
 		{
-			if (std::find(complaints.begin(), complaints.end(), idx2dkg[j]) == complaints.end())
+			std::vector<size_t>::iterator jt = std::find(complaints.begin(), complaints.end(), idx2dkg[j]);
+			if (jt == complaints.end())
 				QUAL.push_back(idx2dkg[j]);
+			else
+			{
+				err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": WARNING - P_" << *jt << " erased from QUAL" << std::endl;
+				QUAL.erase(jt);
+			}
 		}
 		std::sort(QUAL.begin(), QUAL.end());
 		it = std::unique(QUAL.begin(), QUAL.end());
