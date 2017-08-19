@@ -351,10 +351,6 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 	assert(i == rbc->j);
 	assert(i == aiou->j);
 	err << "CanettiGennaroJareckiKrawczykRabinRVSS::Share()" << std::endl;
-	err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": QUAL = { ";
-	for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
-		err << "P_" << *it << " ";
-	err << "}" << std::endl;
 
 	// checking maximum synchronous t-resilience
 	if ((2 * t) >= n)
@@ -538,8 +534,8 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		complaints_counter.clear(), complaints_from.clear(); // reset for final complaint resolution
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
-		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
-			complaints_counter[dkg2idx[*it]]++; // count my own complaints
+		for (std::vector<size_t>::iterator jt = complaints.begin(); jt != complaints.end(); ++jt)
+			complaints_counter[dkg2idx[*jt]]++; // count my own complaints
 		complaints.clear();
 		for (size_t j = 0; j < n; j++)
 		{
@@ -678,20 +674,12 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				while (cnt <= n);
 			}
 		}
+		QUAL.clear();
 		for (size_t j = 0; j < n; j++)
 		{
-			std::vector<size_t>::iterator jt = std::find(complaints.begin(), complaints.end(), idx2dkg[j]);
-			if (jt == complaints.end())
+			if (std::find(complaints.begin(), complaints.end(), idx2dkg[j]) == complaints.end())
 				QUAL.push_back(idx2dkg[j]);
-			else
-			{
-				err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": WARNING - P_" << *jt << " erased from QUAL" << std::endl;
-				QUAL.erase(jt);
-			}
 		}
-		std::sort(QUAL.begin(), QUAL.end());
-		it = std::unique(QUAL.begin(), QUAL.end());
-		QUAL.resize(std::distance(QUAL.begin(), it));
 		err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			err << "P_" << *it << " ";
@@ -1240,10 +1228,6 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 	assert(i == rbc->j);
 	assert(i == aiou->j);
 	err << "CanettiGennaroJareckiKrawczykRabinZVSS::Share()" << std::endl;
-	err << "ZVSS(" << label << "): P_" << i << ": QUAL = { ";
-	for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
-		err << "P_" << *it << " ";
-	err << "}" << std::endl;
 
 	// checking maximum synchronous t-resilience
 	if ((2 * t) >= n)
@@ -1585,14 +1569,12 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				while (cnt <= n);
 			}
 		}
+		QUAL.clear();
 		for (size_t j = 0; j < n; j++)
 		{
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				QUAL.push_back(j);
 		}
-		std::sort(QUAL.begin(), QUAL.end());
-		it = std::unique(QUAL.begin(), QUAL.end());
-		QUAL.resize(std::distance(QUAL.begin(), it));
 		err << "ZVSS(" << label << "): P_" << i << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			err << "P_" << *it << " ";
@@ -2731,8 +2713,6 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			}
 		}
 		//    (b) Generate a random value $a$ and $g^a \bmod p$ using (the optimally-resilient) DL-Key-Gen.
-		for (size_t j = 0; j < k_rvss->QUAL.size(); j++)
-			a_dkg->x_rvss->QUAL.push_back(k_rvss->QUAL[j]); // initialize the set QUAL
 		if (!a_dkg->Generate(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[1])
@@ -2744,22 +2724,32 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		for (size_t j = 0; j < n_in; j++)
 		{
 			mpz_set_ui(beta_i[j], 1L);
-			for (std::vector<size_t>::iterator it = a_dkg->x_rvss->QUAL.begin(); it != a_dkg->x_rvss->QUAL.end(); ++it)
+			if (std::find(k_rvss->QUAL.begin(), k_rvss->QUAL.end(), idx2dkg[j]) != k_rvss->QUAL.end())
 			{
-				for (size_t k = 0; k <= a_dkg->x_rvss->t; k++)
-				{
-					mpz_ui_pow_ui(foo, idx2dkg[j] + 1, k); // adjust index $j$ in computation
-					mpz_powm(bar, a_dkg->x_rvss->C_ik[dkg2idx[*it]][k], foo, p);
-					mpz_mul(beta_i[j], beta_i[j], bar);
-					mpz_mod(beta_i[j], beta_i[j], p);
+				for (std::vector<size_t>::iterator it = a_dkg->x_rvss->QUAL.begin(); it != a_dkg->x_rvss->QUAL.end(); ++it)
+				{			
+					for (size_t k = 0; k <= a_dkg->x_rvss->t; k++)
+					{
+						mpz_ui_pow_ui(foo, idx2dkg[j] + 1, k); // adjust index $j$ in computation
+						mpz_powm(bar, a_dkg->x_rvss->C_ik[dkg2idx[*it]][k], foo, p);
+						mpz_mul(beta_i[j], beta_i[j], bar);
+						mpz_mod(beta_i[j], beta_i[j], p);
+					}
 				}
 			}
+		}
+		std::vector<size_t> joinedQUAL;
+		for (size_t j = 0; j < n_in; j++)
+		{
+			if ((std::find(k_rvss->QUAL.begin(), k_rvss->QUAL.end(), idx2dkg[j]) != k_rvss->QUAL.end()) && 
+			    (std::find(a_dkg->x_rvss->QUAL.begin(), a_dkg->x_rvss->QUAL.end(), idx2dkg[j]) != a_dkg->x_rvss->QUAL.end()))
+				joinedQUAL.push_back(idx2dkg[j]);
 		}
 		//    (c) Back-up $k_i$ and $a_i$. Each player $P_i$ shares $k_i$ and $a_i$ using Pedersen's VSS.
 		std::vector<size_t> ignore;
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j != i_in)
+			if ((j != i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				if (!k_i_vss[j]->Share(j, idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 				{
@@ -2772,7 +2762,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					ignore.push_back(idx2dkg[j]);
 				}
 			}
-			else
+			else if (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end())
 			{
 				err << "P_" << idx2dkg[i_in] << ": k_i = " << k_i[i_in] << std::endl;
 				err << "P_" << idx2dkg[i_in] << ": a_i = " << a_i[i_in] << std::endl;
@@ -2823,12 +2813,12 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_fspowm(fpowm_table_h, Ta_i[i_in], h, r_a_i, p);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j == i_in)
+			if ((j == i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				rbc->Broadcast(Tk_i[i_in]);
 				rbc->Broadcast(Ta_i[i_in]);
 			}
-			else
+			else if (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end())
 			{
 				if (!rbc->DeliverFrom(Tk_i[j], j))
 				{
@@ -2957,7 +2947,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		rbc->Broadcast(bar);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j != i_in)
+			if ((j != i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				if (!rbc->DeliverFrom(foo, j))
 				{
@@ -3030,7 +3020,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			mpz_add_ui(v_i[i_in], v_i[i_in], 1L);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j != i_in)
+			if ((j != i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				if (!v_i_vss[j]->Share(j, idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 				{
@@ -3038,7 +3028,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					complaints.push_back(idx2dkg[j]);
 				}
 			}
-			else
+			else if (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end())
 			{
 				err << "P_" << idx2dkg[i_in] << ": v_i = " << v_i[i_in] << std::endl;
 				if (!v_i_vss[j]->Share(v_i[i_in], idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
@@ -3080,13 +3070,13 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_mod(EE[i_in], EE[i_in], p);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j == i_in)
+			if ((j == i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				rbc->Broadcast(DD[i_in]);
 				rbc->Broadcast(DDprime[i_in]);
 				rbc->Broadcast(EE[i_in]);
 			}
-			else
+			else if (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end())
 			{
 				if (!rbc->DeliverFrom(DD[j], j))
 				{
@@ -3249,7 +3239,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		rbc->Broadcast(bar);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j != i_in)
+			if ((j != i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				if (!rbc->DeliverFrom(foo, j))
 				{
@@ -3468,7 +3458,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_set(shares[i_in], foo);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j != i_in)
+			if ((j != i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				if (!rbc->DeliverFrom(foo, j))
 				{
@@ -3620,7 +3610,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//    (c) Back-up $a_i$. Each player $P_i$ shares $a_i$ using Pedersen's VSS.
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j != i_in)
+			if ((j != i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				if (!aa_i_vss[j]->Share(j, idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 				{
@@ -3628,7 +3618,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					ignore.push_back(idx2dkg[j]);
 				}
 			}
-			else
+			else if (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end())
 			{
 				err << "P_" << idx2dkg[i_in] << ": a_i (Step 2c) = " << a_i[i_in] << std::endl;
 				if (!aa_i_vss[j]->Share(a_i[i_in], idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
@@ -3666,11 +3656,11 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_fspowm(fpowm_table_h, Ta_i[i_in], h, r_a_i, p);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j == i_in)
+			if ((j == i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				rbc->Broadcast(Ta_i[i_in]);
 			}
-			else
+			else if (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end())
 			{
 				if (!rbc->DeliverFrom(Ta_i[j], j))
 				{
@@ -3780,7 +3770,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		rbc->Broadcast(bar);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j != i_in)
+			if ((j != i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				if (!rbc->DeliverFrom(bar, j))
 				{
@@ -3823,7 +3813,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 			mpz_add_ui(v_i[i_in], v_i[i_in], 1L);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j != i_in)
+			if ((j != i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				if (!vv_i_vss[j]->Share(j, idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
 				{
@@ -3831,7 +3821,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					complaints.push_back(idx2dkg[j]);
 				}
 			}
-			else
+			else if (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end())
 			{
 				err << "P_" << idx2dkg[i_in] << ": v_i = " << v_i[i_in] << std::endl;
 				if (!vv_i_vss[j]->Share(v_i[i_in], idx2dkg, aiou, rbc, err, simulate_faulty_behaviour))
@@ -3873,13 +3863,13 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_mod(EE[i_in], EE[i_in], p);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j == i_in)
+			if ((j == i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				rbc->Broadcast(DD[i_in]);
 				rbc->Broadcast(DDprime[i_in]);
 				rbc->Broadcast(EE[i_in]);
 			}
-			else
+			else if (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end())
 			{
 				if (!rbc->DeliverFrom(DD[j], j))
 				{
@@ -4042,7 +4032,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		rbc->Broadcast(bar);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j != i_in)
+			if ((j != i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				if (!rbc->DeliverFrom(foo, j))
 				{
@@ -4261,7 +4251,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_set(shares[i_in], foo);
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (j != i_in)
+			if ((j != i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				if (!rbc->DeliverFrom(foo, j))
 				{
