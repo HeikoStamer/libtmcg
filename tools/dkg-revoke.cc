@@ -1298,7 +1298,16 @@ int main
 				std::cerr << "ERROR: unknown option \"" << arg << "\"" << std::endl;
 				return -1;
 			}
-			peers.push_back(arg);
+			// store argument for peer list
+			if (arg.length() <= 255)
+			{
+				peers.push_back(arg);
+			}
+			else
+			{
+				std::cerr << "ERROR: peer identity \"" << arg << "\" too long" << std::endl;
+				return -1;
+			}
 		}
 		// canonicalize peer list
 		std::sort(peers.begin(), peers.end());
