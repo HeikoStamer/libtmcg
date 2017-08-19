@@ -29,6 +29,7 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <cstdio>
 #include <unistd.h>
@@ -47,6 +48,7 @@ bool					instance_forked = false;
 
 std::string				passphrase, armored_seckey, ifilename, ofilename, passwords, hostname, port;
 tmcg_octets_t				keyid;
+std::map<size_t, size_t>		idx2dkg, dkg2idx;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 size_t					dss_n, dss_t, dss_i;
 std::vector<size_t>			dss_qual;
@@ -510,6 +512,35 @@ bool parse_private_key
 						std::cerr << "ERROR: S2K format not supported" << std::endl;
 						exit(-1);
 					}
+					// create one-to-one mapping based on the stored canonicalized peer list
+					idx2dkg.clear(), dkg2idx.clear();
+					for (size_t i = 0; i < peers.size(); i++)
+					{
+						bool found = false;
+						for (size_t j = 0; j < capl.size(); j++)
+						{
+							if (peers[i] == capl[j])
+							{
+								found = true;
+								if (capl.size() == dss_qual.size())
+								{
+									idx2dkg[i] = dss_qual[j];
+									dkg2idx[dss_qual[j]] = i;
+								}
+								else
+								{
+									std::cerr << "ERROR: QUAL sizes of tDSS key does not match" << std::endl;
+									exit(-1);
+								}
+								break;
+							}
+						}
+						if (!found)
+						{
+							std::cerr << "ERROR: peer \"" << peers[i] << "\" not found inside set QUAL of tDSS key" << std::endl;
+							exit(-1);
+						}
+					}
 				}
 				else if ((ctx.pkalgo == 108) && secdsa)
 				{
@@ -955,7 +986,7 @@ void run_instance
 	std::stringstream err_log_sign;
 	if (opt_verbose)
 		std::cout << "S_" << whoami << ": dss.Sign()" << std::endl;
-	if (!dss->Sign(peers.size(), whoami, dsa_m, dsa_r, dsa_s, aiou, rbc, err_log_sign))
+	if (!dss->Sign(peers.size(), whoami, dsa_m, dsa_r, dsa_s, idx2dkg, dkg2idx, aiou, rbc, err_log_sign))
 	{
 		std::cerr << "S_" << whoami << ": " << "tDSS Sign() failed" << std::endl;
 		std::cerr << "S_" << whoami << ": log follows " << std::endl << err_log_sign.str();
