@@ -139,6 +139,7 @@ bool parse_private_key
 	int algo;
 	tmcg_openpgp_packet_ctx ctx;
 	std::vector<gcry_mpi_t> qual, v_i;
+	std::vector<std::string> capl;
 	std::vector< std::vector<gcry_mpi_t> > c_ik;
 	gcry_mpi_t dsa_r, dsa_s, elg_r, elg_s;
 	dsa_r = gcry_mpi_new(2048);
@@ -156,7 +157,7 @@ bool parse_private_key
 	while (pkts.size() && ptag)
 	{
 		tmcg_octets_t current_packet;
-		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, v_i, c_ik);
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, capl, v_i, c_ik);
 		if (opt_verbose)
 			std::cout << "PacketDecode(pkts.size = " << pkts.size() << ") = " << (int)ptag;
 		if (!ptag)

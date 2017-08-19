@@ -91,8 +91,9 @@ int main
 			tmcg_openpgp_packet_ctx ctx;
 			tmcg_octets_t current_packet;
 			std::vector<gcry_mpi_t> qual, v_i;
+			std::vector<std::string> capl;
 			std::vector< std::vector<gcry_mpi_t> > c_ik;
-			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, v_i, c_ik);
+			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, capl, v_i, c_ik);
 			if (!ptag)
 			{
 				std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;

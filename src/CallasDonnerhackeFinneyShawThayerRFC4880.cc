@@ -877,6 +877,32 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 	return PacketMPIDecode(in, out, sum);
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketStringEncode
+	(const std::string in, tmcg_octets_t &out)
+{
+	PacketLengthEncode(in.length(), out);
+	for (size_t i = 0; i < in.length(); i++)
+		out.push_back(in[i]);
+}
+
+size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketStringDecode
+	(const tmcg_octets_t &in, std::string &out)
+{
+	size_t headlen = 0;
+	uint32_t len = 0;
+	bool partlen = false;
+	headlen = PacketLengthDecode(in, true, 0x00, len, partlen);
+	if (!headlen || partlen)
+		return 0; // error: wrong length
+	if (!len)
+		return 0; // error: string of zero length
+	if (in.size() < (len + headlen))
+		return 0; // error: input too short 
+	for (size_t i = 0; i < len; i++)
+		out += in[headlen+i];
+	return len + headlen;
+}
+
 // ===========================================================================
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode
@@ -1339,6 +1365,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	 const gcry_mpi_t g, const gcry_mpi_t h, const gcry_mpi_t y,
 	 const gcry_mpi_t n, const gcry_mpi_t t, const gcry_mpi_t i,
 	 const gcry_mpi_t qualsize, const std::vector<gcry_mpi_t> &qual,
+	 const std::vector<std::string> &capl,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
 	 const std::string passphrase,
@@ -1359,6 +1386,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	assert((qual.size() == get_gcry_mpi_ui(qualsize)));
 	for (size_t j = 0; j < qual.size(); j++)
 		len += 2+((gcry_mpi_get_nbits(qual[j]) + 7) / 8);
+	for (size_t j = 0; j < capl.size(); j++)
+		len += 5+capl[j].length();
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
 		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
 			len += 2+((gcry_mpi_get_nbits(c_ik[j][k]) + 7) / 8);
@@ -1383,6 +1412,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	PacketMPIEncode(qualsize, out); // MPI qualsize
 	for (size_t j = 0; j < qual.size(); j++)
 		PacketMPIEncode(qual[j], out); // MPI qual[j]
+	for (size_t j = 0; j < qual.size(); j++)
+		PacketStringEncode(capl[j], out); // STRING capl[j]
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
 		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
 			PacketMPIEncode(c_ik[j][k], out); // MPI c_ik[j][k]
@@ -2185,6 +2216,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out,
 	 tmcg_octets_t &current_packet,
 	 std::vector<gcry_mpi_t> &qual,
+	 std::vector<std::string> &capl,
 	 std::vector<gcry_mpi_t> &v_i,
 	 std::vector< std::vector<gcry_mpi_t> > &c_ik)
 {
@@ -2538,6 +2570,16 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad or zero mpi
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				}
+				capl.clear();
+				for (size_t j = 0; j < get_gcry_mpi_ui(out.qualsize); j++)
+				{
+					std::string peerid;
+					mlen = PacketStringDecode(mpis, peerid);
+					if (!mlen || (mlen > mpis.size()))
+						return 0; // error: bad or zero mpi
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					capl.push_back(peerid);
 				}
 				if ((get_gcry_mpi_ui(out.n) > 255) || (get_gcry_mpi_ui(out.t) > 128))
 					return 0; // error: too many parties

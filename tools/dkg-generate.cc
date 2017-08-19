@@ -393,6 +393,7 @@ void run_instance
 		// create an OpenPGP private key as experimental algorithm ID 108 to store everything from tDSS
 		gcry_mpi_t h, n, t, i, qualsize, x_i, xprime_i;
 		std::vector<gcry_mpi_t> qual;
+		std::vector<std::string> capl; // canonicalized peer list
 		std::vector< std::vector<gcry_mpi_t> > c_ik;
 		if (!mpz_get_gcry_mpi(&h, dss->h))
 		{
@@ -415,6 +416,7 @@ void run_instance
 		{
 			gcry_mpi_t tmp = gcry_mpi_set_ui(NULL, dss->QUAL[j]);
 			qual.push_back(tmp);
+			capl.push_back(peers[j]);
 		}
 		c_ik.resize(dss->n);
 		for (size_t j = 0; j < c_ik.size(); j++)
@@ -493,7 +495,8 @@ void run_instance
 			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
-		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108(ckeytime, p, q, g, h, y, n, t, i, qualsize, qual, c_ik, x_i, xprime_i, passphrase, sec);
+		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108(ckeytime, p, q, g, h, y, 
+			n, t, i, qualsize, qual, capl, c_ik, x_i, xprime_i, passphrase, sec);
 		gcry_mpi_release(h);
 		gcry_mpi_release(n);
 		gcry_mpi_release(t);

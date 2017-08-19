@@ -252,6 +252,10 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_octets_t &in, gcry_mpi_t &out, size_t &sum);
 		static size_t PacketMPIDecode
 			(const tmcg_octets_t &in, gcry_mpi_t &out);
+		static void PacketStringEncode
+			(const std::string in, tmcg_octets_t &out);
+		static size_t PacketStringDecode
+			(const tmcg_octets_t &in, std::string &out);
 
 		static void PacketPkeskEncode
 			(const tmcg_octets_t &keyid, const gcry_mpi_t gk,
@@ -296,6 +300,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t n, const gcry_mpi_t t,
 			 const gcry_mpi_t i, const gcry_mpi_t qualsize,
 			 const std::vector<gcry_mpi_t> &qual,
+			 const std::vector<std::string> &capl,
 			 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 			 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
 			 const std::string passphrase,
@@ -340,6 +345,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out,
 			 tmcg_octets_t &current_packet,
 			 std::vector<gcry_mpi_t> &qual,
+			 std::vector<std::string> &capl,
 			 std::vector<gcry_mpi_t> &v_i,
 			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
 
