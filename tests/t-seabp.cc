@@ -239,9 +239,14 @@ void start_instance
 			mpz_clear(a);
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			
-			// at the end: sync for waiting parties
+			// at the end: test sync for waiting parties
+			std::cout << "P_" << whoami << ": sleeping " << whoami << " seconds ..." << std::endl;
+			sleep(whoami);
 			std::cout << "P_" << whoami << ": synchronizing ..." << std::endl;
-			rbc->Sync();
+			if (!corrupted)
+				assert(rbc->Sync());
+			else
+				rbc->Sync();
 			
 			// release RBC			
 			delete rbc;

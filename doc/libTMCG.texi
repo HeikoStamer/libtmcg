@@ -2174,11 +2174,12 @@ for an application programmer.
 
 	@deftypemethod CachinKursawePetzoldShoupRBC void setID (@code{const std::string} ID_in)
 		Broadcast channels are parameterized by a @emph{tag} called ID, that is contained in every message.
-		This method sets the tag to @var{ID_in}, which should be equal for all parties.
+		This method sets the tag to @var{ID_in}, which should be equal for all parties for the desired channel.
 	@end deftypemethod
 
 	@deftypemethod CachinKursawePetzoldShoupRBC void unsetID ()
-		This method unset the current channel tag and returns to the previous value.
+		This method unset the current channel tag and returns to the previous value. This is commonly used to
+		return from a channel of a subprotcol to the channel of the calling protocol.
 	@end deftypemethod
 
 	@deftypemethod CachinKursawePetzoldShoupRBC void Broadcast (@code{mpz_srcptr} m, @code{const bool} simulate_faulty_behaviour @code{=false})
@@ -2207,11 +2208,14 @@ for an application programmer.
 		in some critical cases error messages are written to @code{std::cerr}.
 	@end deftypemethod
 
-	@deftypemethod CachinKursawePetzoldShoupRBC void Sync (@code{time_t} timeout @code{=aiounicast::aio_timeout_default})
+	@deftypemethod CachinKursawePetzoldShoupRBC bool Sync (@code{time_t} timeout @code{=aiounicast::aio_timeout_default})
 		This method continues the execution of RBC protocol such that
 		the requests of other waiting parties are satisfied. In presence
-		of the only argument it waits exactly for @var{timeout} seconds.
-		Otherwise, the default timeout given to the constructor is applied. 
+		of the only argument it waits exactly for @var{timeout} seconds
+		and tries to synchronize all parties based on local Unix Epoch time.
+		Otherwise, the default timeout given to the constructor is applied.
+
+		The method returns @code{false}, if synchronizing fails. 
 	@end deftypemethod
 	
 	@defop {Destructor} CachinKursawePetzoldShoupRBC ~CachinKursawePetzoldShoupRBC ()

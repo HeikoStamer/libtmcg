@@ -678,7 +678,7 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 	return false;
 }
 
-void CachinKursawePetzoldShoupRBC::Sync
+bool CachinKursawePetzoldShoupRBC::Sync
 	(time_t timeout)
 {
 	// set aio default values
@@ -692,6 +692,7 @@ void CachinKursawePetzoldShoupRBC::Sync
 	time_t max_timeout = timeout;
 	time_t slice_timeout = (timeout / sync_slices) + 1;
 	time_t entry_time = time(NULL);
+	long int last_diff = 42;
 	mpz_t mtv;
 	mpz_init(mtv);
 	do
@@ -724,12 +725,15 @@ void CachinKursawePetzoldShoupRBC::Sync
 			vtvs.push_back(ti->second);
 		std::sort(vtvs.begin(), vtvs.end());
 		if (vtvs.size() < (n - t))
+		{
 			std::cerr << "RBC(" << j << "): not enough sync timestamps received" << std::endl;
+		}
 		else
 		{
 			time_t median_timeout = vtvs[vtvs.size()/2]; // use a median value as some kind of gentle agreement
 //std::cerr << "RBC(" << j << "): synchronized median_timeout = " << median_timeout << std::endl;
 			long int diff = median_timeout - (timeout - (slice_entry_time - entry_time));
+			last_diff = diff;
 //std::cerr << "RBC(" << j << "): diff = " << diff << std::endl;
 			if (abs(diff) <= max_timeout) 
 				timeout += diff;
@@ -741,6 +745,10 @@ void CachinKursawePetzoldShoupRBC::Sync
 	// release
 	mpz_clear(mtv);
 	unsetID();
+	if (last_diff == 0)
+		return true;
+	else
+		return false;
 }
 
 CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
