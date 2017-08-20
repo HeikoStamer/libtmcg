@@ -692,7 +692,7 @@ bool CachinKursawePetzoldShoupRBC::Sync
 	time_t max_timeout = timeout;
 	time_t slice_timeout = (timeout / sync_slices) + 1;
 	time_t entry_time = time(NULL);
-	long int last_diff = 424242;
+	long int last_diff = 42424242;
 	mpz_t mtv;
 	mpz_init(mtv);
 	do
