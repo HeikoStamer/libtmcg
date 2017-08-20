@@ -692,7 +692,7 @@ bool CachinKursawePetzoldShoupRBC::Sync
 	time_t max_timeout = timeout;
 	time_t slice_timeout = (timeout / sync_slices) + 1;
 	time_t entry_time = time(NULL);
-	long int last_diff = 42;
+	long int last_diff = 424242;
 	mpz_t mtv;
 	mpz_init(mtv);
 	do
@@ -738,17 +738,20 @@ bool CachinKursawePetzoldShoupRBC::Sync
 			if (abs(diff) <= max_timeout) 
 				timeout += diff;
 			else
-				std::cerr << "RBC(" << j << "): time jump detected" << std::endl;
+				std::cerr << "RBC(" << j << "): time jump detected with diff = " << diff << std::endl;
 		}
 	}
 	while (time(NULL) < (entry_time + timeout));
 	// release
 	mpz_clear(mtv);
 	unsetID();
-	if (last_diff == 0)
+	if (abs(last_diff) <= slice_timeout)
 		return true;
 	else
+	{
+		std::cerr << "RBC(" << j << "): synchoniziation failed with diff = " << last_diff << std::endl;
 		return false;
+	}
 }
 
 CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC

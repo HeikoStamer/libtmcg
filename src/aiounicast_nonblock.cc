@@ -54,11 +54,11 @@ aiounicast_nonblock::aiounicast_nonblock
 			perror("aiounicast_nonblock (fcntl)");
 		if (((flags_in & O_NONBLOCK) != O_NONBLOCK) || ((flags_out & O_NONBLOCK) != O_NONBLOCK))
 			std::cerr << "aiounicast_nonblock: flag O_NONBLOCK is not set on fd to " << i << std::endl;
-		fd_in.push_back(fd_in_in[i]);
+		fd_in[i] = fd_in_in[i];
 		unsigned char *buf = new unsigned char[buf_in_size];
 		buf_in.push_back(buf), buf_ptr.push_back(0);
 		buf_flag.push_back(false);
-		fd_out.push_back(fd_out_in[i]);
+		fd_out[i] = fd_out_in[i];
 	}
 
 	// initialize ordered buffer for receiving mpz_t
@@ -212,6 +212,9 @@ bool aiounicast_nonblock::Send
 		return false;
 	if (timeout == aio_timeout_default)
 		timeout = aio_default_timeout;
+	// check whether output file descriptor exists
+	if (!fd_out.count(i_in))
+		return false;
 	// prepare write buffer from the message m
 	mpz_t tmp;
 	mpz_init_set(tmp, m);
@@ -609,6 +612,9 @@ bool aiounicast_nonblock::Receive
 				// no delimiter found; invalidate buffer flag
 				buf_flag[i_out] = false;
 			}
+			// check whether input file descriptor exists
+			if (!fd_in.count(i_out))
+				continue;
 			// read(2) -- do everything with asynchronous I/O
 			size_t maxbuf = buf_in_size - buf_ptr[i_out];
 			if (maxbuf > 0)
@@ -619,8 +625,8 @@ bool aiounicast_nonblock::Receive
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
-						if (errno == EAGAIN)
-							perror("aiounicast_nonblock (read)");
+//						if (errno == EAGAIN)
+//							perror("aiounicast_nonblock (read)");
 						continue;
 					}
 					else
@@ -628,6 +634,13 @@ bool aiounicast_nonblock::Receive
 						perror("aiounicast_nonblock (read)");
 						return false;
 					}
+				}
+				if (num == 0)
+				{
+					// got EOF
+					fd_in.erase(i_out); // erase corresponding input file descriptor
+					fd_out.erase(i_out); // erase corresponding output file descriptor
+					continue;
 				}
 				buf_ptr[i_out] += num;
 				numRead += num;

@@ -31,6 +31,7 @@
 	#include <string>
 	#include <vector>
 	#include <list>
+	#include <map>
 	#include <iostream>
 
 	// C header for (asynchronous) I/O
@@ -64,7 +65,7 @@ class aiounicast_select : public aiounicast
 		std::vector<gcry_mac_hd_t*>		mac_in, mac_out;
 		std::vector<gcry_cipher_hd_t*>		enc_in, enc_out;
 	public:
-		std::vector<int>			fd_in, fd_out;
+		std::map<size_t, int>			fd_in, fd_out;
 		size_t					numWrite, numRead;
 		size_t					numEncrypted, numDecrypted;
 		size_t					numAuthenticated;

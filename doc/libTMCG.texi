@@ -1948,11 +1948,11 @@ by your application.
 	have to be opened with @code{O_NONBLOCK} flag. It uses continiuous polling on the
 	descriptors to achieve asynchronous I/O that results in exorbitant CPU load.
 
-	@deftypecv {Member} aiounicast_nonblock {std::vector<int>} fd_in
+	@deftypecv {Member} aiounicast_nonblock {std::map<size_t, int>} fd_in
 		The input file descriptors of point-to-point links to all parties.
 	@end deftypecv
 
-	@deftypecv {Member} aiounicast_nonblock {std::vector<int>} fd_out
+	@deftypecv {Member} aiounicast_nonblock {std::map<size_t, int>} fd_out
 		The ouput file descriptors of point-to-point links to all parties.
 	@end deftypecv
 
@@ -2022,11 +2022,11 @@ by your application.
 	to achieve asynchronous I/O. This results in a reasonable CPU load in
 	comparison with @code{aiounicast_nonblock}.
 
-	@deftypecv {Member} aiounicast_select {std::vector<int>} fd_in
+	@deftypecv {Member} aiounicast_select {std::map<size_t, int>} fd_in
 		The input file descriptors of point-to-point links to all parties.
 	@end deftypecv
 
-	@deftypecv {Member} aiounicast_select {std::vector<int>} fd_out
+	@deftypecv {Member} aiounicast_select {std::map<size_t, int>} fd_out
 		The ouput file descriptors of point-to-point links to all parties.
 	@end deftypecv
 

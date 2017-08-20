@@ -48,11 +48,11 @@ aiounicast_select::aiounicast_select
 	buf_in_size = TMCG_MAX_VALUE_CHARS;
 	for (size_t i = 0; i < n_in; i++)
 	{
-		fd_in.push_back(fd_in_in[i]);
+		fd_in[i] = fd_in_in[i];
 		unsigned char *buf = new unsigned char[buf_in_size];
 		buf_in.push_back(buf), buf_ptr.push_back(0);
 		buf_flag.push_back(false);
-		fd_out.push_back(fd_out_in[i]);
+		fd_out[i] = fd_out_in[i];
 	}
 
 	// initialize ordered buffer for receiving mpz_t
@@ -206,6 +206,9 @@ bool aiounicast_select::Send
 		return false;
 	if (timeout == aio_timeout_default)
 		timeout = aio_default_timeout;
+	// check whether output file descriptor exists
+	if (!fd_out.count(i_in))
+		return false;
 	// prepare write buffer from the message m
 	mpz_t tmp;
 	mpz_init_set(tmp, m);
@@ -668,6 +671,9 @@ bool aiounicast_select::Receive
 				// no delimiter found; invalidate buffer flag
 				buf_flag[i_out] = false;
 			}
+			// check whether input file descriptor exists
+			if (!fd_in.count(i_out))
+				continue;
 			size_t maxbuf = buf_in_size - buf_ptr[i_out];
 			if (maxbuf > 0)
 			{
@@ -696,6 +702,13 @@ bool aiounicast_select::Receive
 					{
 						perror("aiounicast_select (read)");
 						return false;
+					}
+					if (num == 0)
+					{
+						// got EOF
+						fd_in.erase(i_out); // erase corresponding input file descriptor
+						fd_out.erase(i_out); // erase corresponding output file descriptor
+						continue;
 					}
 					buf_ptr[i_out] += num;
 					numRead += num;
