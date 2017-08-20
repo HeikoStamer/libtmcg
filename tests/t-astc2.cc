@@ -48,7 +48,7 @@ int pipefd_nm1[N-1][N-1][2], broadcast_pipefd_nm1[N-1][N-1][2];
 pid_t pid[N];
 
 void start_instance
-	(std::istream& crs_in, size_t whoami, bool corrupted)
+	(std::istream& crs_in, size_t whoami, bool corrupted, bool someone_corrupted)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("t-astc2 (fork)");
@@ -172,7 +172,10 @@ void start_instance
 			if (!corrupted)
 				assert(ret);
 			// now: sync for waiting parties
-			rbc->Sync(aiounicast::aio_timeout_middle);
+			if (someone_corrupted)
+				rbc->Sync(aiounicast::aio_timeout_extremly_long);
+			else
+				rbc->Sync(aiounicast::aio_timeout_middle);
 
 			// publish state
 			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
@@ -198,7 +201,10 @@ void start_instance
 			if (!corrupted)
 				assert(ret);
 			// now: sync for waiting parties
-			rbc->Sync(aiounicast::aio_timeout_middle+10);
+			if (someone_corrupted)
+				rbc->Sync(aiounicast::aio_timeout_extremly_long+10);
+			else
+				rbc->Sync(aiounicast::aio_timeout_middle+10);
 
 			// signing and verifying messages
 			std::stringstream err_log_sign, err_log_sign_nm1;
@@ -238,7 +244,10 @@ void start_instance
 			if (!corrupted)
 				assert(!ret);
 			// now: sync for waiting parties
-			rbc->Sync(aiounicast::aio_timeout_middle+20);
+			if (someone_corrupted)
+				rbc->Sync(aiounicast::aio_timeout_extremly_long+20);
+			else
+				rbc->Sync(aiounicast::aio_timeout_middle+20);
 			// check signing and verifying of a message with N-1 signers = P_1, P_2, ...
 			if (whoami > 0)
 			{
@@ -268,7 +277,10 @@ void start_instance
 				if (!corrupted)
 					assert(ret);
 				// at the end: sync for waiting parties
-				rbc_nm1->Sync(aiounicast::aio_timeout_middle);
+				if (someone_corrupted)
+					rbc_nm1->Sync(aiounicast::aio_timeout_extremly_long);
+				else
+					rbc_nm1->Sync(aiounicast::aio_timeout_middle);
 			}
 			mpz_clear(m), mpz_clear(r), mpz_clear(s);
 
@@ -429,7 +441,7 @@ int main
 	// test case #1: all correct
 	init();
 	for (size_t i = 0; i < N; i++)
-		start_instance(crs, i, false);
+		start_instance(crs, i, false, false);
 	if (!done())
 		return 1;
 	
@@ -438,9 +450,9 @@ int main
 	for (size_t i = 0; i < N; i++)
 	{
 		if ((i == (N - 1)) || (i == (N - 2)))
-			start_instance(crs, i, true); // corrupted
+			start_instance(crs, i, true, true); // corrupted
 		else
-			start_instance(crs, i, false);
+			start_instance(crs, i, false, true);
 	}
 	if (!done())
 		return 1;

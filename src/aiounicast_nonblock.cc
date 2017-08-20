@@ -638,6 +638,7 @@ bool aiounicast_nonblock::Receive
 				if (num == 0)
 				{
 					// got EOF
+					std::cerr << "aiounicast_nonblock(" << j << "): got EOF for " << i_out << std::endl;
 					fd_in.erase(i_out); // erase corresponding input file descriptor
 					fd_out.erase(i_out); // erase corresponding output file descriptor
 					continue;
