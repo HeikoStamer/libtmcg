@@ -749,7 +749,7 @@ bool CachinKursawePetzoldShoupRBC::Sync
 		return true;
 	else
 	{
-		std::cerr << "RBC(" << j << "): synchoniziation failed with diff = " << last_diff << std::endl;
+		std::cerr << "RBC(" << j << "): synchroniziation failed with diff = " << last_diff << std::endl;
 		return false;
 	}
 }
