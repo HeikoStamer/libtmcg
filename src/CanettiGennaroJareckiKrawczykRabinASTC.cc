@@ -3425,7 +3425,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		std::vector<size_t> signers;
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (std::find(ignore.begin(), ignore.end(), idx2dkg[j]) == ignore.end())
+			if ((std::find(ignore.begin(), ignore.end(), idx2dkg[j]) == ignore.end()) &&
+				(std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) == joinedQUAL.end()))
 			{
 				signers.push_back(idx2dkg[j]);
 				err << "P_" << idx2dkg[j] << " ";
@@ -4218,7 +4219,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		err << "P_" << idx2dkg[i_in] << ": signers (index from DKG) in Step 2f: ";
 		for (size_t j = 0; j < n_in; j++)
 		{
-			if (std::find(ignore.begin(), ignore.end(), idx2dkg[j]) == ignore.end())
+			if ((std::find(ignore.begin(), ignore.end(), idx2dkg[j]) == ignore.end()) &&
+				(std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) == joinedQUAL.end()))
 			{
 				signers.push_back(idx2dkg[j]);
 				err << "P_" << idx2dkg[j] << " ";
