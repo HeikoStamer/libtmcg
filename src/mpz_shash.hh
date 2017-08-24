@@ -37,7 +37,8 @@
 	/* hash functions h, g, and mpz_shash */
 	void h
 		(unsigned char *output,
-		const unsigned char *input, const size_t size);
+		const unsigned char *input, const size_t size,
+		int algo = TMCG_GCRY_MD_ALGO);
 	
 	void g
 		(unsigned char *output, const size_t osize,
@@ -45,10 +46,18 @@
 
 	size_t mpz_shash_len
 		();
+	size_t mpz_fhash_len
+		(int algo);
+
+	void mpz_fhash
+		(mpz_ptr r, int algo, mpz_srcptr input);
+	void mpz_fhash_ggen
+		(mpz_ptr r, int algo,
+		mpz_srcptr input1, const std::string input2,
+		mpz_srcptr input3, mpz_srcptr input4);
 		
 	void mpz_shash
-		(mpz_ptr r, std::string input);
-		
+		(mpz_ptr r, const std::string input);
 	void mpz_shash
 		(mpz_ptr r, size_t n, ...);
 

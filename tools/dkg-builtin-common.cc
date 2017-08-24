@@ -306,9 +306,16 @@ void builtin_accept
 					exit(-1);
 				}
 				builtin_pipe2socket_in[pi->first] = connfd;
+				char ipaddr[INET6_ADDRSTRLEN];
+				if (inet_ntop(sin.sin_family, &sin.sin_addr, ipaddr, INET6_ADDRSTRLEN) == NULL)
+				{
+					perror("dkg-builtin-common (inet_ntop)");
+					builtin_close();
+					builtin_done();
+					exit(-1);
+				}
 				if (opt_verbose)
-					std::cout << "INFO: accept connection for P/D/R/S_" << pi->first << " from adress " <<
-						inet_ntoa(sin.sin_addr) << std::endl;
+					std::cout << "INFO: accept connection for P/D/R/S_" << pi->first << " from adress " << ipaddr << std::endl;
 			}
 		}
 		for (std::map<size_t, int>::const_iterator pi = builtin_broadcast_pipe2socket.begin(); pi != builtin_broadcast_pipe2socket.end(); ++pi)
@@ -324,9 +331,17 @@ void builtin_accept
 					exit(-1);
 				}
 				builtin_broadcast_pipe2socket_in[pi->first] = connfd;
+				char ipaddr[INET6_ADDRSTRLEN];
+				if (inet_ntop(sin.sin_family, &sin.sin_addr, ipaddr, INET6_ADDRSTRLEN) == NULL)
+				{
+					perror("dkg-builtin-common (inet_ntop)");
+					builtin_close();
+					builtin_done();
+					exit(-1);
+				}
 				if (opt_verbose)
 					std::cout << "INFO: accept broadcast connection for P/D/R/S_" << pi->first << " from adress " << 
-						inet_ntoa(sin.sin_addr) << std::endl;
+						ipaddr << std::endl;
 			}
 		}
 	}

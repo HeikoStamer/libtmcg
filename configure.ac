@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170810])
+AC_REVISION([20170824])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.2], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -247,7 +247,7 @@ if test "$use_dkgtools" = yes ; then
 		AC_MSG_ERROR([some headers are missing]))
 	AC_CHECK_FUNCS([fork kill pipe pipe2 waitpid getaddrinfo getnameinfo\
  htons htonl socket setsockopt connect bind listen accept signal sigaction\
- gai_strerror freeaddrinfo], , 
+ gai_strerror freeaddrinfo inet_ntop], , 
 		AC_MSG_ERROR([some functions are missing]))
 	AC_DEFINE(DKGTOOLS, , [Define to enable building of dkg-tools])
 fi

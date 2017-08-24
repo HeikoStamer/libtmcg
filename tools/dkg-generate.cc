@@ -85,37 +85,365 @@ void run_instance
 		bP_key.push_back(key.str());
 	}
 			
-	// create VTMF instance from CRS (common reference string)
-	std::stringstream crss;
-	mpz_t crsmpz;
-	mpz_init(crsmpz);
-	// check magic
-	if (!TMCG_ParseHelper::cm(crs, "crs", '|'))
+	// check magic of CRS (common reference string)
+	bool fips = false;
+	if (TMCG_ParseHelper::cm(crs, "crs", '|'))
 	{
-		std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
-		mpz_clear(crsmpz);
+		if (opt_verbose)
+			std::cout << "public domain parameters (generated according to LibTMCG::VTMF constructor):" << std::endl;
+	}
+	else if (TMCG_ParseHelper::cm(crs, "fips-crs", '|'))
+	{
+		if (opt_verbose)
+			std::cout << "public domain parameters (generated according to FIPS 186-4 section A.1.1.2):" << std::endl;
+		fips = true;
+	}
+	else
+	{
+		std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is not valid!" << std::endl;
 		exit(-1);
 	}
 	// parse p, q, g, k
+	std::stringstream crss;
+	mpz_t crsmpz, fips_p, fips_q, fips_g;
+	mpz_init(crsmpz), mpz_init(fips_p), mpz_init(fips_q), mpz_init(fips_g);
 	for (size_t i = 0; i < 4; i++)
 	{
 		if ((mpz_set_str(crsmpz, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
 		{
 			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
-			mpz_clear(crsmpz);
+			mpz_clear(crsmpz), mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
 			exit(-1);
 		}
 		crss << crsmpz << std::endl;
+		if (i == 0)
+		{
+			mpz_set(fips_p, crsmpz);
+			if (opt_verbose)
+				std::cout << "p";
+		}
+		else if (i == 1)
+		{
+			mpz_set(fips_q, crsmpz);
+			if (opt_verbose)
+				std::cout << "q";
+		}
+		else if (i == 2)
+		{
+			mpz_set(fips_g, crsmpz);
+			if (opt_verbose)
+				std::cout << "g";
+		}
+		if ((opt_verbose) && (i < 3))
+			std::cout << " (" << mpz_sizeinbase(crsmpz, 2L) << " bits) = " << crsmpz << std::endl;
 	}
 	mpz_clear(crsmpz);
-	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crss, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true); // with verifiable generation of $g$
+	// create VTMF instance from CRS
+	BarnettSmartVTMF_dlog *vtmf;
+	if (fips)
+		vtmf = new BarnettSmartVTMF_dlog(crss, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
+	else	
+		vtmf = new BarnettSmartVTMF_dlog(crss, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true); // with verifiable generation of $g$
 	// check the constructed VTMF instance
 	if (!vtmf->CheckGroup())
 	{
-		std::cerr << "P_" << whoami << ": " << "Group G was not correctly generated!" << std::endl;
+		std::cerr << "P_" << whoami << ": " << "group G from CRS is incorrectly generated!" << std::endl;
 		delete vtmf;
 		exit(-1);
 	}
+	// check the domain parameters according to FIPS 186-4 sections A.1.1.3 and A.2.4
+	if (fips)
+	{
+		mpz_t fips_hashalgo, fips_dps, fips_counter, fips_index;
+		mpz_init_set_ui(fips_hashalgo, 0L), mpz_init_set_ui(fips_dps, 0L);
+		mpz_init_set_ui(fips_counter, 0L), mpz_init_set_ui(fips_index, 0L);
+		if ((mpz_set_str(fips_hashalgo, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
+		{
+			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			exit(-1);
+		}
+		if ((mpz_set_str(fips_dps, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
+		{
+			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			exit(-1);
+		}
+		if ((mpz_set_str(fips_counter, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
+		{
+			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			exit(-1);
+		}
+		if ((mpz_set_str(fips_index, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
+		{
+			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			exit(-1);
+		}
+		if (mpz_get_ui(fips_hashalgo) != GCRY_MD_SHA256) 
+		{
+			std::cerr << "P_" << whoami << ": " << "hash function is not approved according to FIPS 186-4!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			exit(-1);
+		}
+		// 1. $L = \mathbf{len}(p)$.
+		size_t fips_L = mpz_sizeinbase(fips_p, 2L);
+		// 2. $N = \mathbf{len}(q)$.
+		size_t fips_N = mpz_sizeinbase(fips_q, 2L);
+		// 3. Check that the $(L, N)$ pair is in the list of acceptable $(L, N)$ pairs.
+		//    If the pair is not in the list, the return INVALID.
+		if (!((fips_L == 2048) && (fips_N == 256)) && !((fips_L == 3072) && (fips_N == 256)))
+		{
+			std::cerr << "P_" << whoami << ": " << "domain parameters are not set according to FIPS 186-4!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			exit(-1);
+		}
+		// 4. If $counter > (4L - 1)$, the return INVALID.
+		if (mpz_cmp_ui(fips_counter, (4L * fips_L) - 1L) > 0)
+		{
+			std::cerr << "P_" << whoami << ": " << "domain parameters are not set according to FIPS 186-4!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			exit(-1);
+		}
+		// 5. $seedlen = \mathbf{len}(domain_parameter_seed)$.
+		size_t fips_seedlen = mpz_sizeinbase(fips_dps, 2L);
+		// 6. If $(seedlen < N)$, then return INVALID.
+		if (fips_seedlen < fips_N)
+		{
+			std::cerr << "P_" << whoami << ": " << "domain parameters are not set according to FIPS 186-4!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			exit(-1);
+		}
+		// 7. $U = \mathbf{Hash}(domain\_parameter\_seed) \bmod 2^{N-1}$.
+		mpz_t U, computed_q;
+		mpz_init(U), mpz_init(computed_q),
+		mpz_fhash(U, mpz_get_ui(fips_hashalgo), fips_dps);
+		mpz_tdiv_r_2exp(U, U, fips_N - 1);
+		// 8. $computed\_q = 2^{N-1} + U + 1 - (U \bmod 2)$.
+		mpz_set_ui(computed_q, 1L);
+		mpz_mul_2exp(computed_q, computed_q, fips_N - 1);
+		mpz_add(computed_q, computed_q, U);
+		mpz_add_ui(computed_q, computed_q, 1L);
+		if (mpz_odd_p(U))
+			mpz_sub_ui(computed_q, computed_q, 1L);
+		// 9. Test whether or not $computed\_q$ is prime as specified in Appendix C.3.
+		//    If $(computed\_q \neq q)$ or ($computed\_q$ is not prime), the return INVALID.
+		if (mpz_cmp(computed_q, fips_q) || !mpz_probab_prime_p(computed_q, 56))
+		{
+			std::cerr << "P_" << whoami << ": " << "domain parameters are not set according to FIPS 186-4!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			mpz_clear(U), mpz_clear(computed_q);
+			exit(-1);
+		}
+		// 10. $n = \lceil L / outlen \rceil - 1$.
+		size_t fips_n = (fips_L / (mpz_fhash_len(mpz_get_ui(fips_hashalgo)) * 8)) - 1;
+		// 11. $b = L - 1 - (n * outlen)$.
+		size_t fips_b = fips_L - 1 - (fips_n * mpz_fhash_len(mpz_get_ui(fips_hashalgo)) * 8);
+		// 12. $offset = 1$.
+		size_t fips_offset = 1;
+		// 13. For $i = 0$ to $counter$ do
+		mpz_t q2, W, X, c, computed_p;
+		mpz_init(q2), mpz_init(W), mpz_init(X), mpz_init(c), mpz_init(computed_p);
+		std::vector<mpz_ptr> V_j;
+		for (size_t j = 0; j <= fips_n; j++)
+		{
+			mpz_ptr tmp = new mpz_t();
+			mpz_init(tmp);
+			V_j.push_back(tmp);
+		}
+		mpz_mul_2exp(q2, fips_q, 1L);
+		size_t fips_i = 0;
+		for (fips_i = 0; fips_i <= mpz_get_ui(fips_counter); fips_i++)
+		{
+			// 13.1 For $j = 0$ to $n$ do
+			for (size_t j = 0; j <= fips_n; j++)
+			{
+				// $V_j = \mathbf{Hash}((domain_parameter_seed + offset + j) \bmod 2^{seedlen})$.
+				mpz_t tmp;
+				mpz_init_set(tmp, fips_dps);
+				mpz_add_ui(tmp, tmp, fips_offset);
+				mpz_add_ui(tmp, tmp, j);
+				mpz_tdiv_r_2exp(tmp, tmp, fips_seedlen);
+				mpz_fhash(V_j[j], mpz_get_ui(fips_hashalgo), tmp);
+				mpz_clear(tmp);
+			}
+			// 13.2 $W = V_0 + (V_1 * 2^{outlen}) + \cdots + (V_{n-1} * 2^{(n-1)*outlen}) + ((V_n \bmod 2^b) * 2^{n*outlen})$.
+			mpz_set_ui(W, 0L);
+			for (size_t j = 0; j <= fips_n; j++)
+			{
+				mpz_t tmp;
+				mpz_init_set(tmp, V_j[j]);
+				if (j == fips_n)
+					mpz_tdiv_r_2exp(tmp, tmp, fips_b);
+				mpz_mul_2exp(tmp, tmp, (j * mpz_fhash_len(mpz_get_ui(fips_hashalgo)) * 8));
+				mpz_add(W, W, tmp);
+				mpz_clear(tmp);
+			}
+			// 13.3 $X = W + 2^{L-1}$.
+			mpz_set_ui(X, 1L);
+			mpz_mul_2exp(X, X, fips_L - 1);
+			mpz_add(X, X, W);
+			// 13.4 $c = X \bmod 2q$.
+			mpz_mod(c, X, q2);
+			// 13.5 $computed\_p = X - (c - 1)$.
+			mpz_sub(computed_p, X, c);
+			mpz_add_ui(computed_p, computed_p, 1L);
+			// 13.6 If $(computed\_p < 2^{L-1})$, then go to step 13.9.
+			if (mpz_sizeinbase(computed_p, 2L) < fips_L)
+			{
+				fips_offset += (fips_n + 1);
+				continue;
+			}
+			// 13.7 Test whether or not $computed\_p$ is prime as specified in Appendix C.3.
+			// 13.8 If $computed\_p$ is determined to be prime, then go to step 14. 
+			if (mpz_probab_prime_p(computed_p, 56))
+				break;
+			// 13.9 $offset = offset + n + 1$.
+			fips_offset += (fips_n + 1);
+		}
+		// 14. If ($(i \neq counter)$ or $(computed\_p \neq p)$ or ($computed\_p$ is not a prime)),
+		//     then return INVALID.
+		if ((fips_i != mpz_get_ui(fips_counter)) || mpz_cmp(computed_p, fips_p) || !mpz_probab_prime_p(computed_p, 56))
+		{
+			std::cerr << "P_" << whoami << ": " << "domain parameters are not set according to FIPS 186-4!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			mpz_clear(U), mpz_clear(computed_q), mpz_clear(q2), mpz_clear(W), mpz_clear(X), mpz_clear(c), mpz_clear(computed_p);
+			for (size_t j = 0; j <= fips_n; j++)
+			{
+				mpz_clear(V_j[j]);
+				delete [] V_j[j];
+			}
+			V_j.clear();
+			exit(-1);
+		}
+		// 1. If ($index$ is incorrect), then return INVALID.
+		if (mpz_cmp_ui(fips_index, 108L))
+		{		
+			std::cerr << "P_" << whoami << ": " << "domain parameters are not set according to FIPS 186-4!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			mpz_clear(U), mpz_clear(computed_q), mpz_clear(q2), mpz_clear(W), mpz_clear(X), mpz_clear(c), mpz_clear(computed_p);
+			for (size_t j = 0; j <= fips_n; j++)
+			{
+				mpz_clear(V_j[j]);
+				delete [] V_j[j];
+			}
+			V_j.clear();
+			exit(-1);
+		}
+		// 2. Verify that $2 \le g \le (p - 1)$. If not true, return INVALID.
+		mpz_set(q2, fips_p);
+		mpz_sub_ui(q2, q2, 1L);
+		if ((mpz_cmp_ui(fips_g, 2L) < 0) || (mpz_cmp(fips_g, q2) > 0))
+		{
+			std::cerr << "P_" << whoami << ": " << "domain parameters are not set according to FIPS 186-4!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			mpz_clear(U), mpz_clear(computed_q), mpz_clear(q2), mpz_clear(W), mpz_clear(X), mpz_clear(c), mpz_clear(computed_p);
+			for (size_t j = 0; j <= fips_n; j++)
+			{
+				mpz_clear(V_j[j]);
+				delete [] V_j[j];
+			}
+			V_j.clear();
+			exit(-1);
+		}
+		// 3. If $(g^q \neq 1 \bmod p)$, then return INVALID.
+		mpz_powm(q2, fips_g, fips_q, fips_p);
+		if (mpz_cmp_ui(q2, 1L))
+		{
+			std::cerr << "P_" << whoami << ": " << "domain parameters are not set according to FIPS 186-4!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			mpz_clear(U), mpz_clear(computed_q), mpz_clear(q2), mpz_clear(W), mpz_clear(X), mpz_clear(c), mpz_clear(computed_p);
+			for (size_t j = 0; j <= fips_n; j++)
+			{
+				mpz_clear(V_j[j]);
+				delete [] V_j[j];
+			}
+			V_j.clear();
+			exit(-1);
+		}
+		// 4. $N = \mathbf{len}(q)$.
+		fips_N = mpz_sizeinbase(fips_q, 2L);
+		// 5. $e = (p - 1)/q$.
+		mpz_t e;
+		mpz_init_set(e, fips_p);
+		mpz_sub_ui(e, e, 1L);
+		mpz_div(e, e, fips_q);
+		// 6. $count = 0$.
+		mpz_t count, computed_g;
+		mpz_init_set_ui(count, 0L);
+		mpz_init(computed_g);
+		while (1)
+		{
+			// 7. $count = count + 1$.
+			mpz_add_ui(count, count, 1L);
+			// 8. If $(count = 0)$, then return INVALID.
+			if (!mpz_cmp_ui(count, 0L))
+			{
+				std::cerr << "P_" << whoami << ": " << "domain parameters are not set according to FIPS 186-4!" << std::endl;
+				mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+				mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+				mpz_clear(U), mpz_clear(computed_q), mpz_clear(q2), mpz_clear(W), mpz_clear(X), mpz_clear(c), mpz_clear(computed_p);
+				for (size_t j = 0; j <= fips_n; j++)
+				{
+					mpz_clear(V_j[j]);
+					delete [] V_j[j];
+				}
+				V_j.clear();
+				mpz_clear(e), mpz_clear(count), mpz_clear(computed_g);
+				exit(-1);
+			}
+			// 9. $U = domain_parameter_seed || "ggen" || index || count$.
+			// 10. $W = \mathbf{Hash}(U)$.
+			mpz_fhash_ggen(W, mpz_get_ui(fips_hashalgo), fips_dps, "ggen", fips_index, count);
+			// 11. $computed\_g = W^e \bmod p$.
+			mpz_powm(computed_g, W, e, fips_p);
+			// 12. If $(computed\_g < 2)$, the go to step 7.
+			if (mpz_cmp_ui(computed_g, 2L) < 0)
+				continue;
+			// 13. If $(computed\_g = g)$, then return VALID, else return INVALID.
+			if (mpz_cmp(computed_g, fips_g))
+			{
+				std::cerr << "P_" << whoami << ": " << "domain parameters are not set according to FIPS 186-4!" << std::endl;
+				mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+				mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+				mpz_clear(U), mpz_clear(computed_q), mpz_clear(q2), mpz_clear(W), mpz_clear(X), mpz_clear(c), mpz_clear(computed_p);
+				for (size_t j = 0; j <= fips_n; j++)
+				{
+					mpz_clear(V_j[j]);
+					delete [] V_j[j];
+				}
+				V_j.clear();
+				mpz_clear(e), mpz_clear(count), mpz_clear(computed_g);
+				exit(-1);
+			}
+			break;
+		}
+		// release
+		mpz_clear(U), mpz_clear(computed_q), mpz_clear(q2), mpz_clear(W), mpz_clear(X), mpz_clear(c), mpz_clear(computed_p);
+		for (size_t j = 0; j <= fips_n; j++)
+		{
+			mpz_clear(V_j[j]);
+			delete [] V_j[j];
+		}
+		V_j.clear();
+		mpz_clear(e), mpz_clear(count), mpz_clear(computed_g);
+		mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+	}
+	mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
 
 	// create asynchronous authenticated unicast channels
 	aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key);
@@ -192,7 +520,12 @@ void run_instance
 	CanettiGennaroJareckiKrawczykRabinDSS *dss;
 	if (opt_verbose)
 		std::cout << "CanettiGennaroJareckiKrawczykRabinDSS(" << N << ", " << S << ", " << whoami << ", ...)" << std::endl;
-	dss = new CanettiGennaroJareckiKrawczykRabinDSS(N, S, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+	if (fips)
+		dss = new CanettiGennaroJareckiKrawczykRabinDSS(N, S, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h,
+			TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false, true);
+	else
+		dss = new CanettiGennaroJareckiKrawczykRabinDSS(N, S, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h,
+			TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true, true); // with verifiable generation of $g$
 	if (!dss->CheckGroup())
 	{
 		std::cerr << "P_" << whoami << ": " << "tDSS parameters are not correctly generated!" << std::endl;
@@ -220,7 +553,12 @@ void run_instance
 	GennaroJareckiKrawczykRabinDKG *dkg;
 	if (opt_verbose)
 		std::cout << "GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-	dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+	if (fips)
+		dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h,
+			TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false, true);
+	else
+		dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h,
+			TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true, true); // with verifiable generation of $g$
 	if (!dkg->CheckGroup())
 	{
 		std::cerr << "P_" << whoami << ": " << "DKG parameters are not correctly generated!" << std::endl;

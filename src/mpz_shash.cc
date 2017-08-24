@@ -32,9 +32,9 @@
 /* hash function h() (assumption: collision-resistant) */
 void h
 	(unsigned char *output,
-	const unsigned char *input, const size_t size)
+	const unsigned char *input, const size_t size, int algo)
 {
-	gcry_md_hash_buffer(TMCG_GCRY_MD_ALGO, output, input, size);
+	gcry_md_hash_buffer(algo, output, input, size);
 }
 
 /* hash function g() (The design is based on ideas from [BR95].) */
@@ -75,8 +75,74 @@ size_t mpz_shash_len
 	return gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
 }
 
+size_t mpz_fhash_len
+	(int algo)
+{
+	return gcry_md_get_algo_dlen(algo);
+}
+
+void mpz_fhash
+	(mpz_ptr r, int algo, mpz_srcptr input)
+{
+	size_t input_size = (mpz_sizeinbase(input, 2L) + 7) / 8;
+	size_t hash_size = mpz_fhash_len(algo);
+	unsigned char *buffer = new unsigned char[input_size];
+	unsigned char *digest = new unsigned char[hash_size];
+	char *hex_digest = new char[(2 * hash_size) + 1];
+
+	/* construct and hash the input with default hash function */
+	memset(buffer, 0, input_size);
+	mpz_export(buffer, NULL, 1, 1, 1, 0, input);
+	h(digest, buffer, input_size, algo);
+	
+	/* convert the digest to a hexadecimal encoded string */
+	for (size_t i = 0; i < hash_size; i++)
+		snprintf(hex_digest + (2 * i), 3, "%02x", digest[i]);
+	
+	/* convert the hexadecimal encoded string to an mpz-integer */
+	mpz_set_str(r, hex_digest, 16);
+	
+	/* release buffers */
+	delete [] buffer, delete [] digest, delete [] hex_digest;
+}
+
+void mpz_fhash_ggen
+	(mpz_ptr r, int algo,
+	mpz_srcptr input1, const std::string input2,
+	mpz_srcptr input3, mpz_srcptr input4)
+{
+	size_t input1_size = ((mpz_sizeinbase(input1, 2L) + 7) / 8);
+	size_t input12_size = input1_size + input2.length();
+	size_t input3_size = ((mpz_sizeinbase(input3, 2L) + 7) / 8);
+	size_t input123_size = input12_size + input3_size;
+	size_t input4_size = ((mpz_sizeinbase(input4, 2L) + 7) / 8);
+	size_t input_size = input123_size + input4_size;
+	size_t hash_size = mpz_fhash_len(algo);
+	unsigned char *buffer = new unsigned char[input_size];
+	unsigned char *digest = new unsigned char[hash_size];
+	char *hex_digest = new char[(2 * hash_size) + 1];
+
+	/* construct and hash the input with default hash function */
+	memset(buffer, 0, input_size);
+	mpz_export(buffer, NULL, 1, 1, 1, 0, input1);
+	memcpy(buffer + input1_size, input2.c_str(), input2.length());
+	mpz_export(buffer + input12_size, NULL, 1, 1, 1, 0, input3);
+	mpz_export(buffer + input123_size, NULL, 1, 1, 1, 0, input4);
+	h(digest, buffer, input_size, algo);
+	
+	/* convert the digest to a hexadecimal encoded string */
+	for (size_t i = 0; i < hash_size; i++)
+		snprintf(hex_digest + (2 * i), 3, "%02x", digest[i]);
+	
+	/* convert the hexadecimal encoded string to an mpz-integer */
+	mpz_set_str(r, hex_digest, 16);
+	
+	/* release buffers */
+	delete [] buffer, delete [] digest, delete [] hex_digest;
+}
+
 void mpz_shash
-	(mpz_ptr r, std::string input)
+	(mpz_ptr r, const std::string input)
 {
 	size_t hash_size = mpz_shash_len();
 	unsigned char *digest = new unsigned char[hash_size];
@@ -92,6 +158,7 @@ void mpz_shash
 	/* convert the hexadecimal encoded string to an mpz-integer */
 	mpz_set_str(r, hex_digest, 16);
 	
+	/* release buffers */
 	delete [] digest, delete [] hex_digest;
 }
 

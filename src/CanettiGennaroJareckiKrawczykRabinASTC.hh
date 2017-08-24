@@ -62,6 +62,7 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 	private:
 		mpz_t					*fpowm_table_g, *fpowm_table_h;
 		const unsigned long int			F_size, G_size;
+		const bool				canonical_g;
 		const bool				use_very_strong_randomness;
 		const std::string			label;
 	
@@ -78,12 +79,14 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			const bool canonical_g_usage = false,
 			const bool use_very_strong_randomness_in = true,
 			const std::string label_in = "");
 		CanettiGennaroJareckiKrawczykRabinRVSS
 			(std::istream &in,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			const bool canonical_g_usage = false,
 			const bool use_very_strong_randomness_in = true,
 			const std::string label_in = "");
 		void PublishState
@@ -129,6 +132,7 @@ class CanettiGennaroJareckiKrawczykRabinZVSS
 	private:
 		mpz_t					*fpowm_table_g, *fpowm_table_h;
 		const unsigned long int			F_size, G_size;
+		const bool				canonical_g;
 		const bool				use_very_strong_randomness;
 		const std::string			label;
 	
@@ -144,12 +148,14 @@ class CanettiGennaroJareckiKrawczykRabinZVSS
 			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			const bool canonical_g_usage = false,
 			const bool use_very_strong_randomness_in = true,
 			const std::string label_in = "");
 		CanettiGennaroJareckiKrawczykRabinZVSS
 			(std::istream &in,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			const bool canonical_g_usage = false,
 			const bool use_very_strong_randomness_in = true,
 			const std::string label_in = "");
 		void PublishState
@@ -176,6 +182,7 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 	private:
 		mpz_t					*fpowm_table_g, *fpowm_table_h;
 		const unsigned long int			F_size, G_size;
+		const bool				canonical_g;
 		const bool				use_very_strong_randomness;
 		const std::string			label;
 	
@@ -191,12 +198,14 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			const bool canonical_g_usage = false,
 			const bool use_very_strong_randomness_in = true,
 			const std::string label_in = "");
 		CanettiGennaroJareckiKrawczykRabinDKG
 			(std::istream &in,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			const bool canonical_g_usage = false,
 			const bool use_very_strong_randomness_in = true,
 			const std::string label_in = "");
 		void PublishState
@@ -226,6 +235,7 @@ class CanettiGennaroJareckiKrawczykRabinDSS
 	private:
 		mpz_t					*fpowm_table_g, *fpowm_table_h;
 		const unsigned long int			F_size, G_size;
+		const bool				canonical_g;
 		const bool				use_very_strong_randomness;
 
 	public:
@@ -240,11 +250,13 @@ class CanettiGennaroJareckiKrawczykRabinDSS
 			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			const bool canonical_g_usage = false,
 			const bool use_very_strong_randomness_in = true);
 		CanettiGennaroJareckiKrawczykRabinDSS
 			(std::istream &in,
 			const unsigned long int fieldsize = TMCG_DDH_SIZE,
 			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			const bool canonical_g_usage = false,
 			const bool use_very_strong_randomness_in = true);
 		void PublishState
 			(std::ostream &out) const;

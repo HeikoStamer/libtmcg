@@ -36,8 +36,10 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
+	const bool canonical_g_usage,
 	const bool use_very_strong_randomness_in, const std::string label_in):
 			F_size(fieldsize), G_size(subgroupsize),
+			canonical_g(canonical_g_usage),
 			use_very_strong_randomness(use_very_strong_randomness_in),
 			label(label_in),
 			n(n_in), t(t_in), i(i_in)
@@ -84,8 +86,10 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	(std::istream &in,
 	const unsigned long int fieldsize,
 	const unsigned long int subgroupsize,
+	const bool canonical_g_usage,
 	const bool use_very_strong_randomness_in, const std::string label_in):
 			F_size(fieldsize), G_size(subgroupsize),
+			canonical_g(canonical_g_usage),
 			use_very_strong_randomness(use_very_strong_randomness_in),
 			label(label_in),
 			n(0), t(0), i(0)
@@ -281,24 +285,27 @@ bool GennaroJareckiKrawczykRabinDKG::CheckGroup
 		if (!mpz_cmp(g, h))
 			throw false;
 
-		// We use a procedure similar to FIPS 186-3 A.2.3;
-		// it is supposed as verifiable generation of $g$.
-		std::stringstream U;
-		U << "LibTMCG|" << p << "|" << q << "|ggen|";
-		mpz_sub_ui(bar, p, 1L); // compute $p-1$
-		do
+		if (canonical_g)
 		{
-			mpz_shash(foo, U.str());
-			mpz_powm(g2, foo, k, p);
-			U << g2 << "|";
-			mpz_powm(foo, g2, q, p);
-			// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
+			// We use a procedure similar to FIPS 186-3 A.2.3;
+			// it is supposed as verifiable generation of $g$.
+			std::stringstream U;
+			U << "LibTMCG|" << p << "|" << q << "|ggen|";
+			mpz_sub_ui(bar, p, 1L); // compute $p-1$
+			do
+			{
+				mpz_shash(foo, U.str());
+				mpz_powm(g2, foo, k, p);
+				U << g2 << "|";
+				mpz_powm(foo, g2, q, p);
+				// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
+			}
+			while (!mpz_cmp_ui(g2, 0L) || !mpz_cmp_ui(g2, 1L) || 
+				!mpz_cmp(g2, bar) || mpz_cmp_ui(foo, 1L));
+			// Check that the 1st verifiable $g$ is used.
+			if (mpz_cmp(g, g2))
+				throw false;
 		}
-		while (!mpz_cmp_ui(g2, 0L) || !mpz_cmp_ui(g2, 1L) || 
-			!mpz_cmp(g2, bar) || mpz_cmp_ui(foo, 1L));
-		// Check that the 1st verifiable $g$ is used.
-		if (mpz_cmp(g, g2))
-			throw false;
 
 		// everything is sound
 		throw true;
@@ -1296,8 +1303,10 @@ GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
 	(const size_t n_in, const size_t t_in, const size_t i_in,
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
 	const unsigned long int fieldsize, const unsigned long int subgroupsize,
+	const bool canonical_g_usage,
 	const bool use_very_strong_randomness_in):
 			F_size(fieldsize), G_size(subgroupsize),
+			canonical_g(canonical_g_usage),
 			use_very_strong_randomness(use_very_strong_randomness_in),
 			n(n_in), t(t_in), i(i_in)
 {
@@ -1311,7 +1320,8 @@ GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
 	}
 	
 	// initialize required subprotocols
-	dkg = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h, fieldsize, subgroupsize, use_very_strong_randomness_in, "dkg");
+	dkg = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h,
+		fieldsize, subgroupsize, canonical_g_usage, use_very_strong_randomness_in, "dkg");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1376,24 +1386,27 @@ bool GennaroJareckiKrawczykRabinNTS::CheckGroup
 		if (!mpz_cmp(g, h))
 			throw false;
 
-		// We use a procedure similar to FIPS 186-3 A.2.3;
-		// it is supposed as verifiable generation of $g$.
-		std::stringstream U;
-		U << "LibTMCG|" << p << "|" << q << "|ggen|";
-		mpz_sub_ui(bar, p, 1L); // compute $p-1$
-		do
+		if (canonical_g)
 		{
-			mpz_shash(foo, U.str());
-			mpz_powm(g2, foo, k, p);
-			U << g2 << "|";
-			mpz_powm(foo, g2, q, p);
-			// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
+			// We use a procedure similar to FIPS 186-3 A.2.3;
+			// it is supposed as verifiable generation of $g$.
+			std::stringstream U;
+			U << "LibTMCG|" << p << "|" << q << "|ggen|";
+			mpz_sub_ui(bar, p, 1L); // compute $p-1$
+			do
+			{
+				mpz_shash(foo, U.str());
+				mpz_powm(g2, foo, k, p);
+				U << g2 << "|";
+				mpz_powm(foo, g2, q, p);
+				// check $1 < g < p-1$ and $g^q \equiv 1 \pmod{p}$
+			}
+			while (!mpz_cmp_ui(g2, 0L) || !mpz_cmp_ui(g2, 1L) || 
+				!mpz_cmp(g2, bar) || mpz_cmp_ui(foo, 1L));
+			// Check that the 1st verifiable $g$ is used.
+			if (mpz_cmp(g, g2))
+				throw false;
 		}
-		while (!mpz_cmp_ui(g2, 0L) || !mpz_cmp_ui(g2, 1L) || 
-			!mpz_cmp(g2, bar) || mpz_cmp_ui(foo, 1L));
-		// Check that the 1st verifiable $g$ is used.
-		if (mpz_cmp(g, g2))
-			throw false;
 
 		// check whether the group for DKG is sound
 		if (!dkg->CheckGroup())
@@ -1497,7 +1510,8 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	size_t simulate_faulty_randomizer2 = mpz_wrandom_ui() % 2L;
 
 	// initialize required subprotocol
-	GennaroJareckiKrawczykRabinDKG *k_dkg = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h, F_size, G_size, use_very_strong_randomness, "k_dkg");
+	GennaroJareckiKrawczykRabinDKG *k_dkg = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h,
+		F_size, G_size, canonical_g, use_very_strong_randomness, "k_dkg");
 
 	// set ID for RBC
 	std::stringstream myID;
