@@ -3426,7 +3426,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		for (size_t j = 0; j < n_in; j++)
 		{
 			if ((std::find(ignore.begin(), ignore.end(), idx2dkg[j]) == ignore.end()) &&
-				(std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) == joinedQUAL.end()))
+				(std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				signers.push_back(idx2dkg[j]);
 				err << "P_" << idx2dkg[j] << " ";
@@ -4220,7 +4220,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		for (size_t j = 0; j < n_in; j++)
 		{
 			if ((std::find(ignore.begin(), ignore.end(), idx2dkg[j]) == ignore.end()) &&
-				(std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) == joinedQUAL.end()))
+				(std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
 			{
 				signers.push_back(idx2dkg[j]);
 				err << "P_" << idx2dkg[j] << " ";
