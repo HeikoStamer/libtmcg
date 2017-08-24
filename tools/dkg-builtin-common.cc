@@ -315,7 +315,7 @@ void builtin_accept
 					exit(-1);
 				}
 				if (opt_verbose)
-					std::cout << "INFO: accept connection for P/D/R/S_" << pi->first << " from adress " << ipaddr << std::endl;
+					std::cout << "INFO: accept connection for P/D/R/S_" << pi->first << " from address " << ipaddr << std::endl;
 			}
 		}
 		for (std::map<size_t, int>::const_iterator pi = builtin_broadcast_pipe2socket.begin(); pi != builtin_broadcast_pipe2socket.end(); ++pi)
@@ -340,7 +340,7 @@ void builtin_accept
 					exit(-1);
 				}
 				if (opt_verbose)
-					std::cout << "INFO: accept broadcast connection for P/D/R/S_" << pi->first << " from adress " << 
+					std::cout << "INFO: accept broadcast connection for P/D/R/S_" << pi->first << " from address " << 
 						ipaddr << std::endl;
 			}
 		}
