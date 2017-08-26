@@ -2507,14 +2507,14 @@ to gain security against an adaptive adversary for threshold cryptography.
 		@math{\log_g h}. It can be obtained by the above key generation
 		protocol (@pxref{BarnettSmartVTMF}).
 
-		@smallquotation Jarecki and Lysyanskaya@tie{}[JL00]
+		@quotation Jarecki and Lysyanskaya@tie{}[JL00]
 			``When secure channels are present, @math{h} can be obtained by using general
 			techniques of multi-party computation@tie{}[BGW88, CDD+99]. When secure channel
 			are not there, and implementing them by erasure is not an option, we can use
 			another protocol, where each player generates his share @math{h_i} of @math{h},
 			and then all players, in parallel, prove knowledge of @math{\log_g h_i} to each
 			other.''
-		@end smallquotation
+		@end quotation
 	@end deftypecv
 
 	@deftypecv {Member} JareckiLysyanskayaEDCF {size_t} n
