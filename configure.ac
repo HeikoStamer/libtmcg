@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170824])
+AC_REVISION([20170827])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.2], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -169,7 +169,11 @@ AC_PROG_MKDIR_P
 
 # Checks for libraries
 AC_ARG_WITH(gmp, [AS_HELP_STRING([--with-gmp=<path>], [prefix of libgmp installation e.g. /usr/local])], [GMP_PREFIX="$with_gmp"],\
- [AC_CHECK_LIB(gmp, __gmpz_init, [LIBS=""], AC_MSG_ERROR([libgmp is needed; maybe you want to call configure with the --with-gmp=<path> option]))])
+ [AC_CHECK_LIB(gmp, __gmpz_init, [LIBS=""], AC_MSG_ERROR([libgmp is needed; maybe you want call configure with the --with-gmp=<path> option]))])
+backup_LDFLAGS="$LDFLAGS"       
+backup_CPPLAGS="$CPPFLAGS"
+LDFLAGS="$GNUNET_LIBS $backup_LDFLAGS"
+CPPFLAGS="$GNUNET_CFLAGS $backup_CPPFLAGS"
 AC_CHECK_LIB(gmp, __gmpz_import, [LIBS=""], AC_MSG_ERROR([libgmp >= 4.2 is needed]))
 AC_CHECK_LIB(gmp, __gmpz_export, [LIBS=""], AC_MSG_ERROR([libgmp >= 4.2 is needed]))
 AC_CHECK_LIB(gmp, __gmpz_powm_sec, AC_DEFINE(HAVE_POWMSEC, , [Defined if your libgmp have the mpz_powm_sec() function]), AC_MSG_WARN([libgmp >= 5.0.3 is recommended]))
@@ -183,6 +187,8 @@ fi
 LIBGMP_LIBS="${GMP_LIBS} -lgmp"
 AC_SUBST(LIBGMP_LIBS)
 AC_SUBST(LIBGMP_CFLAGS)
+LDFLAGS="$backup_LDFLAGS"
+CPPFLAGS="$backup_CPPFLAGS"
 
 AM_PATH_LIBGCRYPT("1.6.0")
 if test "x$LIBGCRYPT_LIBS" = "x"; then
