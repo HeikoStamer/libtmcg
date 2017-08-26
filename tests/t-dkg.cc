@@ -118,7 +118,7 @@ void start_instance
 			// create an instance of DKG (without using very strong randomness)
 			GennaroJareckiKrawczykRabinDKG *dkg;
 			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-			dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
+			dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true, false);
 			assert(dkg->CheckGroup());
 
 			// create asynchronous authenticated unicast channels
@@ -168,7 +168,7 @@ void start_instance
 			// create an instance of threshold signature protocol new-TSch (NTS) (without using very strong randomness)
 			GennaroJareckiKrawczykRabinNTS *nts;
 			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-			nts = new GennaroJareckiKrawczykRabinNTS(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
+			nts = new GennaroJareckiKrawczykRabinNTS(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true, false);
 			assert(nts->CheckGroup());
 
 			// generate distributed key shares
