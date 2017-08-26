@@ -176,6 +176,7 @@ AC_ARG_WITH(gmp, [AS_HELP_STRING([--with-gmp=<path>], [prefix of libgmp installa
 AC_CHECK_LIB(gmp, __gmpz_import, [LIBS=""], AC_MSG_ERROR([libgmp >= 4.2 is needed]))
 AC_CHECK_LIB(gmp, __gmpz_export, [LIBS=""], AC_MSG_ERROR([libgmp >= 4.2 is needed]))
 AC_CHECK_LIB(gmp, __gmpz_powm_sec, AC_DEFINE(HAVE_POWMSEC, , [Defined if your libgmp have the mpz_powm_sec() function]), AC_MSG_WARN([libgmp >= 5.0.3 is recommended]))
+AC_CHECK_HEADERS([gmp.h], , AC_MSG_ERROR([libgmp headers are missing]))
 if test "x$GMP_PREFIX" != x ; then
 	LIBGMP_LIBS=" -L${GMP_PREFIX}/lib"
 	LIBGMP_CFLAGS=" -I${GMP_PREFIX}/include"
@@ -193,6 +194,10 @@ AM_PATH_LIBGCRYPT("1.6.0")
 if test "x$LIBGCRYPT_LIBS" = "x"; then
 	AC_MSG_ERROR([libgcrypt >= 1.6.0 is needed])
 fi
+backup_CPPLAGS="$CPPFLAGS"
+CPPFLAGS="$LIBGCRYPT_CFLAGS $backup_CPPFLAGS"
+AC_CHECK_HEADERS([gcrypt.h], , AC_MSG_ERROR([libgcrypt headers are missing]))
+CPPFLAGS="$backup_CPPFLAGS"
 
 AM_PATH_GPG_ERROR("1.12")
 if test "x$GPG_ERROR_LIBS" = "x"; then
@@ -203,9 +208,8 @@ fi
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
- ctime errno.h fcntl.h fstream functional gcrypt.h gmp.h inttypes.h iostream\
- limits.h list map sstream stdio.h string string.h sys/select.h time.h\
- unistd.h vector], , 
+ ctime errno.h fcntl.h fstream functional inttypes.h iostream limits.h list\
+ map sstream stdio.h string string.h sys/select.h time.h unistd.h vector], , 
 	AC_MSG_ERROR([some headers are missing]))
 
 # Checks for typedefs, structures, and compiler characteristics
