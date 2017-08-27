@@ -2,7 +2,8 @@
    This file is part of LibTMCG.
 
  Copyright (C) 1999, 2000 Kevin Birch <kbirch@pobox.com>,
-               2002, 2004, 2005, 2007, 2016 Heiko Stamer <HeikoStamer@gmx.net>
+               2002, 2004, 2005, 2007, 
+                           2016, 2017 Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,8 +26,8 @@
 /*!
  * @module pipestream
  * @author Kevin Birch <kbirch@pobox.com>,
- *         Heiko Stamer <stamer@gaos.org>
- * @version 1.1, 2016-02-17
+ *         Heiko Stamer <HeikoStamer@gmx.net>
+ * @version 1.2, 2017-08-27
  * This C++ class is designed to allow the use of BSD-style
  * pipe/file descriptors by applications that use iostreams.
  */
@@ -188,7 +189,7 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 			size_t numPutBack = gptr() - eback();
 			if (numPutBack > traits_type::putback_sz())
 				numPutBack = traits_type::putback_sz();
-			std::memcpy(mRBuffer+(traits_type::putback_sz() - numPutBack),
+			std::memmove(mRBuffer+(traits_type::putback_sz() - numPutBack),
 				gptr() - numPutBack, numPutBack);
 			
 			size_t bufsiz = traits_type::i_buffer_sz() - 
