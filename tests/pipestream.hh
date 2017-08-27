@@ -119,7 +119,7 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 		int flushOutput
 			()
 		{
-			int num = pptr() - pbase();
+			ssize_t num = pptr() - pbase();
 			if (write(mPipe, mWBuffer, num) != num)
 				return EOF;
 			pbump(-num);
@@ -193,7 +193,7 @@ template <class traits = pipebuf_traits> class basic_pipebuf :
 			
 			size_t bufsiz = traits_type::i_buffer_sz() - 
 				traits_type::putback_sz();
-			int count;
+			ssize_t count;
 			while (1)
 			{
 				count = read(mPipe, mRBuffer+traits_type::putback_sz(),
