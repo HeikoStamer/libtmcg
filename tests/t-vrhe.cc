@@ -71,7 +71,7 @@ int main
 	const size_t pi_check_factor = 512;
 	const size_t pi_check_n = 3, pi_check_size = 3 * pi_check_factor;
 	long double V = 0.0;
-	std::vector<size_t> cntn, delta[pi_check_n], alpha[pi_check_size], beta[pi_check_size];
+	std::vector<size_t> cntn, delta[pi_check_n], alpha[pi_check_size];
 	// construct all possible rotations and store them in delta	
 	for (size_t n = 0; n < pi_check_n; n++)	
 		for (size_t i = 0; i < pi_check_n; i++)
