@@ -1,1 +1,3 @@
-No bugs are known. Please report!
+OpenBSD: test programs fail due to restrictive rlimits
+
+No further bugs are known. Please report!
