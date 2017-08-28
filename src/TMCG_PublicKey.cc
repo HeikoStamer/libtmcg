@@ -328,19 +328,19 @@ std::string TMCG_PublicKey::selfid
 	
 	// maybe a self signature
 	if (s == "")
-		return SELFSIG;
+		return tmcg_SELFSIG;
 	
 	// check magic
 	if (!TMCG_ParseHelper::cm(s, "sig", '|'))
-		return ERROR;
+		return tmcg_ERROR;
 	
 	// skip the keyID
 	if (!TMCG_ParseHelper::nx(s, '|'))
-		return ERROR;
+		return tmcg_ERROR;
 	
 	// get the sigID
 	if (!TMCG_ParseHelper::gs(s, '|', TMP))
-		return ERROR;
+		return tmcg_ERROR;
 
 	return TMP;
 }
@@ -352,7 +352,7 @@ std::string TMCG_PublicKey::keyid
 	std::string tmp = selfid();
 	
 	if (tmp == "ERROR")
-		return ERROR;
+		return tmcg_ERROR;
 	
 	data << "ID" << size << "^" << tmp.substr(tmp.length() - 
 		((size < tmp.length()) ? size : tmp.length()),
@@ -383,11 +383,11 @@ std::string TMCG_PublicKey::sigid
 {
 	// check magic
 	if (!TMCG_ParseHelper::cm(s, "sig", '|'))
-		return ERROR;
+		return tmcg_ERROR;
 	
 	// get the keyID
 	if (!TMCG_ParseHelper::gs(s, '|', TMP))
-		return ERROR;
+		return tmcg_ERROR;
 
 	return TMP;
 }

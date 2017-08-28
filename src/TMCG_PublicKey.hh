@@ -54,13 +54,17 @@
 	#include "mpz_shash.hh"
 	#include "TMCG_SecretKey.hh"
 
+	// FIXME(C++11): move following definitions into class
+	static const std::string tmcg_SELFSIG = "SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG";
+	static const std::string tmcg_ERROR = "ERROR";
+
 struct TMCG_PublicKey
 {
-	const std::string	SELFSIG = "SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG";
-	const std::string	ERROR = "ERROR";
-	std::string		TMP;
-	std::string		name, email, type, nizk, sig;
-	mpz_t			m, y;
+	private:
+		std::string			TMP;
+	public:
+		std::string			name, email, type, nizk, sig;
+		mpz_t				m, y;
 	
 	TMCG_PublicKey
 		();
