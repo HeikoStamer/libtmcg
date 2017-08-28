@@ -2208,14 +2208,18 @@ for an application programmer.
 		in some critical cases error messages are written to @code{std::cerr}.
 	@end deftypemethod
 
-	@deftypemethod CachinKursawePetzoldShoupRBC bool Sync (@code{time_t} timeout @code{=aiounicast::aio_timeout_default})
+	@deftypemethod CachinKursawePetzoldShoupRBC bool Sync (@code{time_t} timeout @code{=aiounicast::aio_timeout_default}, @code{const std::string} tag @code{=""})
 		This method continues the execution of RBC protocol such that
 		the requests of other waiting parties are satisfied. In presence
-		of the only argument it waits exactly for @var{timeout} seconds
-		and tries to synchronize all parties based on local Unix Epoch time.
-		Otherwise, the default timeout given to the constructor is applied.
+		of the first argument it waits approximately for @math{(t + 1) \cdot{}}
+		@var{timeout} seconds while trying to synchronize all parties based
+		on their corresponding local Unix Epoch time. Otherwise, the default
+		timeout given to the constructor is applied. Each synchronization
+		point is required to be unique. Thus, a string called @var{tag} with
+		a description of the synchronization point can be supplied as second
+		argument of this method.
 
-		The method returns @code{false}, if synchronizing fails. 
+		The method returns @code{false}, if synchronization is failed. 
 	@end deftypemethod
 	
 	@defop {Destructor} CachinKursawePetzoldShoupRBC ~CachinKursawePetzoldShoupRBC ()

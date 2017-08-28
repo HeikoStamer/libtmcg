@@ -679,14 +679,16 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 }
 
 bool CachinKursawePetzoldShoupRBC::Sync
-	(time_t timeout)
+	(time_t timeout, const std::string tag)
 {
-	// set aio default values
+	// set aio default values w.r.t. number of potentially corrupted parties
 	if (timeout == aiounicast::aio_timeout_default)
-		timeout = aio_default_timeout;
+		timeout = (t + 1) * aio_default_timeout;
+	else
+		timeout *= (t + 1);
 	// set common channel ID
 	std::stringstream myID;
-	myID << "CachinKursawePetzoldShoupRBC::Sync(" << timeout << ")";
+	myID << "CachinKursawePetzoldShoupRBC::Sync(" << timeout << ", " << tag << ")";
 	setID(myID.str());
 	// initialize
 	time_t max_timeout = timeout;
@@ -698,10 +700,13 @@ bool CachinKursawePetzoldShoupRBC::Sync
 	do
 	{
 		time_t slice_entry_time = time(NULL);
-		if (timeout <= (slice_entry_time - entry_time))
+		if (timeout > (slice_entry_time - entry_time))
+		{
+			mpz_set_ui(mtv, timeout - (slice_entry_time - entry_time));
+			Broadcast(mtv);
+		}
+		else
 			break;
-		mpz_set_ui(mtv, timeout - (slice_entry_time - entry_time));
-		Broadcast(mtv);
 //std::cerr << "RBC(" << j << ") debug 1 " << time(NULL) << std::endl;
 		std::map<size_t, time_t> tvs;
 		tvs[j] = timeout - (slice_entry_time - entry_time);
@@ -734,7 +739,8 @@ bool CachinKursawePetzoldShoupRBC::Sync
 //std::cerr << "RBC(" << j << "): synchronized median_timeout = " << median_timeout << std::endl;
 			long int diff = median_timeout - (timeout - (slice_entry_time - entry_time));
 			last_diff = diff;
-//std::cerr << "RBC(" << j << "): diff = " << diff << std::endl;
+if (abs(diff) > 0)
+std::cerr << "RBC(" << j << "): diff = " << diff << std::endl;
 			if (abs(diff) <= max_timeout) 
 				timeout += diff;
 			else

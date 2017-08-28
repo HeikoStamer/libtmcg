@@ -96,6 +96,8 @@ class PedersenTrapdoorCommitmentScheme
 
 /* TODO: This class implements the non-committing encryption scheme [JL00]. */
 
+// TODO 
+
 /* This protocol is based upon [GJKR07] and is called Joint-RVSS [JL00]. */
 class JareckiLysyanskayaRVSS
 {

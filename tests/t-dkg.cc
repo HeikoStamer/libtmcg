@@ -118,7 +118,8 @@ void start_instance
 			// create an instance of DKG (without using very strong randomness)
 			GennaroJareckiKrawczykRabinDKG *dkg;
 			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-			dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true, false);
+			dkg = new GennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h,
+				TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true, false);
 			assert(dkg->CheckGroup());
 
 			// create asynchronous authenticated unicast channels
@@ -162,13 +163,14 @@ void start_instance
 			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
 			dkg->PublishState(state_log);
 
-/* FIXME: fix timeout problem -- we must avoid the aio_scheduler_direct in step 1(b) of DKG, because a corrupted party can harm, i.e. slow down, honest parties
-          maybe the problem stems from inproper invocation of subprotocols and RBC IDs */
+			// now: sync for waiting parties
+			rbc->Sync(aiounicast::aio_timeout_long, "step 1");
 
 			// create an instance of threshold signature protocol new-TSch (NTS) (without using very strong randomness)
 			GennaroJareckiKrawczykRabinNTS *nts;
 			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinNTS(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-			nts = new GennaroJareckiKrawczykRabinNTS(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true, false);
+			nts = new GennaroJareckiKrawczykRabinNTS(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h,
+				TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true, false);
 			assert(nts->CheckGroup());
 
 			// generate distributed key shares
@@ -184,6 +186,9 @@ void start_instance
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
 			if (!corrupted)
 				assert(ret);
+
+			// now: sync for waiting parties
+			rbc->Sync(aiounicast::aio_timeout_long, "step 2");
 
 			// sign a message (create a signature share)
 			std::stringstream err_log3;
@@ -220,7 +225,7 @@ void start_instance
 			delete dkg;
 
 			// at the end: sync for waiting parties
-			rbc->Sync(aiounicast::aio_timeout_long);
+			rbc->Sync(aiounicast::aio_timeout_long, "step 3");
 
 			// create a copied instance of DKG from state log
 			std::cout << "P_" << whoami << ": GennaroJareckiKrawczykRabinDKG(state_log)" << std::endl;
@@ -336,9 +341,9 @@ int main
 	BarnettSmartVTMF_dlog 	*vtmf;
 	std::stringstream 	crs;
 
-	// create and check VTMF instance (with verifiable generation of $g$)
+	// create and check VTMF instance
 	std::cout << "BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true)" << std::endl;
-	vtmf = new BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
+	vtmf = new BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true); // with verifiable generation of $g$
 	std::cout << "vtmf.CheckGroup()" << std::endl;
 	start_clock();
 	assert(vtmf->CheckGroup());

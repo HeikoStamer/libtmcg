@@ -154,7 +154,8 @@ void start_instance
 			// create an instance of DKG (without using very strong randomness)
 			CanettiGennaroJareckiKrawczykRabinDKG *dkg;
 			std::cout << "P_" << whoami << ": CanettiGennaroJareckiKrawczykRabinDKG(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-			dkg = new CanettiGennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
+			dkg = new CanettiGennaroJareckiKrawczykRabinDKG(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h,
+				TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true, false);
 			assert(dkg->CheckGroup());
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
@@ -173,9 +174,9 @@ void start_instance
 				assert(ret);
 			// now: sync for waiting parties
 			if (someone_corrupted)
-				rbc->Sync(aiounicast::aio_timeout_extremly_long);
+				rbc->Sync(aiounicast::aio_timeout_extremly_long, "step 1");
 			else
-				rbc->Sync(aiounicast::aio_timeout_middle);
+				rbc->Sync(aiounicast::aio_timeout_middle, "step 1");
 
 			// publish state
 			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
@@ -184,7 +185,8 @@ void start_instance
 			// create an instance of DSS (without using very strong randomness)
 			CanettiGennaroJareckiKrawczykRabinDSS *dss;
 			std::cout << "P_" << whoami << ": CanettiGennaroJareckiKrawczykRabinDSS(" << N << ", " << T << ", " << whoami << ", ...)" << std::endl;
-			dss = new CanettiGennaroJareckiKrawczykRabinDSS(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false);
+			dss = new CanettiGennaroJareckiKrawczykRabinDSS(N, T, whoami, vtmf->p, vtmf->q, vtmf->g, vtmf->h,
+				TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true, false);
 			assert(dss->CheckGroup());
 
 			// generate distributed key shares
@@ -202,9 +204,9 @@ void start_instance
 				assert(ret);
 			// now: sync for waiting parties
 			if (someone_corrupted)
-				rbc->Sync(aiounicast::aio_timeout_extremly_long+10);
+				rbc->Sync(aiounicast::aio_timeout_extremly_long, "step 2");
 			else
-				rbc->Sync(aiounicast::aio_timeout_middle+10);
+				rbc->Sync(aiounicast::aio_timeout_middle, "step 2");
 
 			// signing and verifying messages
 			std::stringstream err_log_sign, err_log_sign_nm1;
@@ -245,9 +247,9 @@ void start_instance
 				assert(!ret);
 			// now: sync for waiting parties
 			if (someone_corrupted)
-				rbc->Sync(aiounicast::aio_timeout_extremly_long+20);
+				rbc->Sync(aiounicast::aio_timeout_extremly_long, "step 3");
 			else
-				rbc->Sync(aiounicast::aio_timeout_middle+20);
+				rbc->Sync(aiounicast::aio_timeout_middle, "step 3");
 			// check signing and verifying of a message with N-1 signers = P_1, P_2, ...
 			if (whoami > 0)
 			{
@@ -278,9 +280,9 @@ void start_instance
 					assert(ret);
 				// at the end: sync for waiting parties
 				if (someone_corrupted)
-					rbc_nm1->Sync(aiounicast::aio_timeout_extremly_long);
+					rbc_nm1->Sync(aiounicast::aio_timeout_extremly_long, "step 4");
 				else
-					rbc_nm1->Sync(aiounicast::aio_timeout_middle);
+					rbc_nm1->Sync(aiounicast::aio_timeout_middle, "step 4");
 			}
 			mpz_clear(m), mpz_clear(r), mpz_clear(s);
 
