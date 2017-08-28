@@ -1,7 +1,8 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2007, 
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -105,8 +106,6 @@ void TMCG_Card::resize
 bool TMCG_Card::import
 	(std::string s)
 {
-	char *ec;
-	
 	try
 	{
 		// check magic
@@ -114,19 +113,17 @@ bool TMCG_Card::import
 			throw false;
 		
 		// card description
-		if (TMCG_ParseHelper::gs(s, '|').length() == 0)
+		std::string k_str, w_str;
+		if (!TMCG_ParseHelper::gs(s, '|', k_str))
 			throw false;
-		size_t k = 
-		    std::strtoul(TMCG_ParseHelper::gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) || 
-			(!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
-		if (TMCG_ParseHelper::gs(s, '|').length() == 0)
+		char *ec;
+		size_t k = std::strtoul(k_str.c_str(), &ec, 10);
+		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) || !TMCG_ParseHelper::nx(s, '|'))
 			throw false;
-		size_t w = 
-		    std::strtoul(TMCG_ParseHelper::gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) || 
-			(!TMCG_ParseHelper::nx(s, '|')))
+		if (!TMCG_ParseHelper::gs(s, '|', w_str))
+			throw false;
+		size_t w = std::strtoul(w_str.c_str(), &ec, 10);
+		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) || !TMCG_ParseHelper::nx(s, '|'))
 				throw false;
 		
 		// resize this
@@ -137,10 +134,12 @@ bool TMCG_Card::import
 		{
 			for (size_t j = 0; j < z[i].size(); j++)
 			{
+				std::string mpz_str;
 				// z_ij
-				if ((mpz_set_str(&z[i][j], TMCG_ParseHelper::gs(s, '|').c_str(), 
-					TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
-						throw false;
+				if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+					throw false;
+				if ((mpz_set_str(&z[i][j], mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+					throw false;
 			}
 		}
 		throw true;

@@ -83,13 +83,12 @@ TMCG_PublicKey& TMCG_PublicKey::operator =
 }
 
 bool TMCG_PublicKey::check
-	() const
+	()
 {
 	mpz_t foo, bar;
 	std::string s = nizk;
 	size_t stage1_size = 0, stage2_size = 0, stage3_size = 0;
 	size_t mnsize = mpz_sizeinbase(m, 2L) / 8;
-	char *ec;
 	unsigned char *mn = new unsigned char[mnsize];
 	
 	mpz_init(foo), mpz_init(bar);
@@ -156,12 +155,12 @@ bool TMCG_PublicKey::check
 		input << m << "^" << y;
 		
 		// get security parameter of STAGE1
-		if (TMCG_ParseHelper::gs(s, '^').length() == 0)
+		std::string size_str;
+		if (!TMCG_ParseHelper::gs(s, '^', size_str))
 			throw false;
-		
-		stage1_size = 
-		    std::strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
-		if ((*ec != '\0') || (stage1_size <= 0) || (!TMCG_ParseHelper::nx(s, '^')))
+		char *ec;
+		stage1_size = std::strtoul(size_str.c_str(), &ec, 10);
+		if ((*ec != '\0') || (stage1_size <= 0) || !TMCG_ParseHelper::nx(s, '^'))
 			throw false;
 		
 		// check security constraint of STAGE1
@@ -183,11 +182,11 @@ bool TMCG_PublicKey::check
 			while (mpz_cmp_ui(bar, 1L));
 			
 			// read NIZK proof
-			if (TMCG_ParseHelper::gs(s, '^').length() == 0)
+			std::string mpz_str;
+			if (!TMCG_ParseHelper::gs(s, '^', mpz_str))
 				throw false;
-			if ((mpz_set_str(bar, TMCG_ParseHelper::gs(s, '^').c_str(), 
-				TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '^')))
-					throw false;
+			if ((mpz_set_str(bar, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '^'))
+				throw false;
 			
 			// check, whether bar^m mod m is equal to foo
 			mpz_powm(bar, bar, m, m);
@@ -196,11 +195,10 @@ bool TMCG_PublicKey::check
 		}
 		
 		// get security parameter of STAGE2
-		if (TMCG_ParseHelper::gs(s, '^').length() == 0)
+		if (!TMCG_ParseHelper::gs(s, '^', size_str))
 			throw false;
-		stage2_size = 
-		    std::strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
-		if ((*ec != '\0') || (stage2_size <= 0) || (!TMCG_ParseHelper::nx(s, '^')))
+		stage2_size = std::strtoul(size_str.c_str(), &ec, 10);
+		if ((*ec != '\0') || (stage2_size <= 0) || !TMCG_ParseHelper::nx(s, '^'))
 			throw false;
 		
 		// check security constraint of STAGE2
@@ -222,10 +220,10 @@ bool TMCG_PublicKey::check
 			while (mpz_cmp_ui(bar, 1L));
 			
 			// read NIZK proof
-			if (TMCG_ParseHelper::gs(s, '^').length() == 0)
+			std::string mpz_str;
+			if (!TMCG_ParseHelper::gs(s, '^', mpz_str))
 				throw false;
-			if ((mpz_set_str(bar, TMCG_ParseHelper::gs(s, '^').c_str(), 
-				TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '^')))
+			if ((mpz_set_str(bar, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '^'))
 					throw false;
 			
 			// check, whether bar^2 \equiv +-foo or \equiv +-2foo (mod m)
@@ -248,11 +246,10 @@ bool TMCG_PublicKey::check
 		}
 		
 		// get security parameter of STAGE3
-		if (TMCG_ParseHelper::gs(s, '^').length() == 0)
+		if (!TMCG_ParseHelper::gs(s, '^', size_str))
 			throw false;
-		stage3_size = 
-		    std::strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
-		if ((*ec != '\0') || (stage3_size <= 0) || (!TMCG_ParseHelper::nx(s, '^')))
+		stage3_size = std::strtoul(size_str.c_str(), &ec, 10);
+		if ((*ec != '\0') || (stage3_size <= 0) || !TMCG_ParseHelper::nx(s, '^'))
 			throw false;
 		
 		// check security constraint of STAGE3
@@ -273,11 +270,11 @@ bool TMCG_PublicKey::check
 			while (mpz_jacobi(foo, m) != 1);
 			
 			// read NIZK proof
-			if (TMCG_ParseHelper::gs(s, '^').length() == 0)
+			std::string mpz_str;
+			if (!TMCG_ParseHelper::gs(s, '^', mpz_str))
 				throw false;
-			if ((mpz_set_str(bar, TMCG_ParseHelper::gs(s, '^').c_str(), 
-				TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '^')))
-					throw false;
+			if ((mpz_set_str(bar, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '^'))
+				throw false;
 			
 			// check congruence [Goldwasser-Micali NIZK proof for NQR]
 			mpz_mul(bar, bar, bar);
@@ -325,39 +322,44 @@ std::string TMCG_PublicKey::fingerprint
 }
 
 std::string TMCG_PublicKey::selfid
-	() const
+	()
 {
 	std::string s = sig;
 	
 	// maybe a self signature
 	if (s == "")
-		return std::string("SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG");
+		return SELFSIG;
 	
 	// check magic
 	if (!TMCG_ParseHelper::cm(s, "sig", '|'))
-		return std::string("ERROR");
+		return ERROR;
 	
 	// skip the keyID
 	if (!TMCG_ParseHelper::nx(s, '|'))
-		return std::string("ERROR");
+		return ERROR;
 	
 	// get the sigID
-	return std::string(TMCG_ParseHelper::gs(s, '|'));
+	if (!TMCG_ParseHelper::gs(s, '|', TMP))
+		return ERROR;
+
+	return TMP;
 }
 
 std::string TMCG_PublicKey::keyid
-	(const size_t size) const
+	(const size_t size)
 {
 	std::ostringstream data;
 	std::string tmp = selfid();
 	
 	if (tmp == "ERROR")
-		return std::string("ERROR");
+		return ERROR;
 	
 	data << "ID" << size << "^" << tmp.substr(tmp.length() - 
 		((size < tmp.length()) ? size : tmp.length()),
 		(size < tmp.length()) ? size : tmp.length());
-	return data.str();
+	TMP = data.str();
+
+	return TMP;
 }
 
 size_t TMCG_PublicKey::keyid_size
@@ -377,14 +379,17 @@ size_t TMCG_PublicKey::keyid_size
 }
 
 std::string TMCG_PublicKey::sigid
-	(std::string s) const
+	(std::string s)
 {
 	// check magic
 	if (!TMCG_ParseHelper::cm(s, "sig", '|'))
-		return std::string("ERROR");
+		return ERROR;
 	
 	// get the keyID
-	return std::string(TMCG_ParseHelper::gs(s, '|'));
+	if (!TMCG_ParseHelper::gs(s, '|', TMP))
+		return ERROR;
+
+	return TMP;
 }
 
 bool TMCG_PublicKey::import
@@ -397,38 +402,41 @@ bool TMCG_PublicKey::import
 			throw false;
 		
 		// name
-		name = TMCG_ParseHelper::gs(s, '|');
-		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
-			(!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', name))
+			throw false;
+		if (!TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// email
-		email = TMCG_ParseHelper::gs(s, '|');
-		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
-			(!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', email))
+			throw false;
+		if (!TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// type
-		type = TMCG_ParseHelper::gs(s, '|');
-		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
-			(!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
-		
+		if (!TMCG_ParseHelper::gs(s, '|', type))
+			throw false;
+		if (!TMCG_ParseHelper::nx(s, '|'))
+			throw false;
+
+		std::string mpz_str;		
 		// m
-		if ((mpz_set_str(m, TMCG_ParseHelper::gs(s, '|').c_str(), 
-			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+			throw false;
+		if ((mpz_set_str(m, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// y
-		if ((mpz_set_str(y, TMCG_ParseHelper::gs(s, '|').c_str(), 
-			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+			throw false;
+		if ((mpz_set_str(y, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// NIZK
-		nizk = TMCG_ParseHelper::gs(s, '|');
-		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
-			(!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', nizk))
+			throw false;
+		if (!TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// sig
 		sig = s;
@@ -442,7 +450,7 @@ bool TMCG_PublicKey::import
 }
 
 std::string TMCG_PublicKey::encrypt
-	(const unsigned char* value) const
+	(const unsigned char* value)
 {
 	mpz_t vdata;
 	size_t rabin_s2 = 2 * TMCG_SAEP_S0;
@@ -484,7 +492,7 @@ std::string TMCG_PublicKey::encrypt
 }
 
 bool TMCG_PublicKey::verify
-	(const std::string& data, std::string s) const
+	(const std::string& data, std::string s)
 {
 	mpz_t foo;
 	
@@ -496,14 +504,18 @@ bool TMCG_PublicKey::verify
 			throw false;
 		
 		// check keyID
-		std::string kid = TMCG_ParseHelper::gs(s, '|');
-		if ((kid != keyid(keyid_size(kid))) || (!TMCG_ParseHelper::nx(s, '|')))
+		std::string kid;
+		if (!TMCG_ParseHelper::gs(s, '|', kid))
+			throw false;
+		if ((kid != keyid(keyid_size(kid))) || !TMCG_ParseHelper::nx(s, '|'))
 			throw false;
 		
 		// value
-		if ((mpz_set_str(foo, TMCG_ParseHelper::gs(s, '|').c_str(), 
-			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		std::string mpz_str;
+		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+			throw false;
+		if ((mpz_set_str(foo, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// verify signature (see PRab [BR96])
 		size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);

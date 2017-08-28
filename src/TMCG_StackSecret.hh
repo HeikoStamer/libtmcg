@@ -1,7 +1,8 @@
 /*******************************************************************************
   Data structure for the secrets of a stack. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2007, 
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -147,8 +148,7 @@ template <typename CardSecretType> struct TMCG_StackSecret
 	bool import
 		(std::string s)
 	{
-		size_t size = 0;
-		char *ec;
+
 		
 		try
 		{
@@ -157,34 +157,32 @@ template <typename CardSecretType> struct TMCG_StackSecret
 				throw false;
 			
 			// size of stack
-			if (TMCG_ParseHelper::gs(s, '^').length() == 0)
+			std::string size_str;
+			if (!TMCG_ParseHelper::gs(s, '^', size_str))
 				throw false;
-			size = 
-			    std::strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
-			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) || 
-				(!TMCG_ParseHelper::nx(s, '^')))
-					throw false;
+			char *ec;
+			size_t size = std::strtoul(size_str.c_str(), &ec, 10);
+			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) || !TMCG_ParseHelper::nx(s, '^'))
+				throw false;
 			
 			// cards on stack
 			for (size_t i = 0; i < size; i++)
 			{
 				std::pair<size_t, CardSecretType> lej;
+				std::string pi_str, cs_str;
 				
 				// permutation index
-				if (TMCG_ParseHelper::gs(s, '^').length() == 0)
+				if (!TMCG_ParseHelper::gs(s, '^', pi_str))
 					throw false;
-				lej.first = std::strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), 
-					&ec, 10);
-				if ((*ec != '\0') || (lej.first < 0) || (lej.first >= size) || 
-					(!TMCG_ParseHelper::nx(s, '^')))
-						throw false;
+				lej.first = std::strtoul(pi_str.c_str(), &ec, 10);
+				if ((*ec != '\0') || (lej.first < 0) || (lej.first >= size) || !TMCG_ParseHelper::nx(s, '^'))
+					throw false;
 				
 				// card secret
-				if (TMCG_ParseHelper::gs(s, '^').length() == 0)
+				if (!TMCG_ParseHelper::gs(s, '^', cs_str))
 					throw false;
-				if ((!lej.second.import(TMCG_ParseHelper::gs(s, '^'))) || 
-					(!TMCG_ParseHelper::nx(s, '^')))
-						throw false;
+				if (!lej.second.import(cs_str) || !TMCG_ParseHelper::nx(s, '^'))
+					throw false;
 				
 				// store pair
 				stack.push_back(lej);

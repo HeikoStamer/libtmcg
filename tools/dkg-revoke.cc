@@ -771,13 +771,14 @@ void run_instance
 		std::stringstream key;
 		if (opt_passwords != NULL)
 		{
-			key << TMCG_ParseHelper::gs(passwords, '/');
-			if (TMCG_ParseHelper::gs(passwords, '/') == "ERROR")
+			std::string pwd;
+			if (!TMCG_ParseHelper::gs(passwords, '/', pwd))
 			{
 				std::cerr << "R_" << whoami << ": " << "cannot read password for protecting channel to R_" << i << std::endl;
 				exit(-1);
 			}
-			else if (((i + 1) < peers.size()) && !TMCG_ParseHelper::nx(passwords, '/'))
+			key << pwd;
+			if (((i + 1) < peers.size()) && !TMCG_ParseHelper::nx(passwords, '/'))
 			{
 				std::cerr << "R_" << whoami << ": " << "cannot skip to next password for protecting channel to R_" << (i + 1) << std::endl;
 				exit(-1);

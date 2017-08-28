@@ -1,7 +1,8 @@
 /*******************************************************************************
   Data structure for a stack of cards. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2007, 
+                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -178,8 +179,7 @@ template <typename CardType> struct TMCG_Stack
 	bool remove
 		(const CardType& c)
 	{
-		typename std::vector<CardType>::iterator si =
-			std::find(stack.begin(), stack.end(), c);
+		typename std::vector<CardType>::iterator si = std::find(stack.begin(), stack.end(), c);
 		
 		if (si != stack.end())
 		{
@@ -207,9 +207,6 @@ template <typename CardType> struct TMCG_Stack
 	bool import
 		(std::string s)
 	{
-		size_t size = 0;
-		char *ec;
-		
 		try
 		{
 			// check magic
@@ -217,24 +214,24 @@ template <typename CardType> struct TMCG_Stack
 				throw false;
 			
 			// size of stack
-			if (TMCG_ParseHelper::gs(s, '^').length() == 0)
+			std::string size_str;
+			if (!TMCG_ParseHelper::gs(s, '^', size_str))
 				throw false;
-			size = 
-			    std::strtoul(TMCG_ParseHelper::gs(s, '^').c_str(), &ec, 10);
-			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) || 
-				(!TMCG_ParseHelper::nx(s, '^')))
-					throw false;
+			char *ec;
+			size_t size = std::strtoul(size_str.c_str(), &ec, 10);
+			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) || !TMCG_ParseHelper::nx(s, '^'))
+				throw false;
 			
 			// cards on stack
 			for (size_t i = 0; i < size; i++)
 			{
 				CardType c;
+				std::string card_str;
 				
-				if (TMCG_ParseHelper::gs(s, '^').length() == 0)
+				if (!TMCG_ParseHelper::gs(s, '^', card_str))
 					throw false;
-				if ((!c.import(TMCG_ParseHelper::gs(s, '^'))) || 
-					(!TMCG_ParseHelper::nx(s, '^')))
-						throw false;
+				if (!c.import(card_str) || !TMCG_ParseHelper::nx(s, '^'))
+					throw false;
 				stack.push_back(c);
 			}
 			

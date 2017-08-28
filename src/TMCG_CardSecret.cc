@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ void TMCG_CardSecret::resize
 {
 	assert((k > 0) && (w > 0));
 	
-	// FIXME: should be done more efficiently
+	// TODO: copy should be done more efficiently
 	for (size_t i = 0; i < r.size(); i++)
 	{
 		for (size_t j = 0; j < r[i].size(); j++)
@@ -93,8 +93,6 @@ void TMCG_CardSecret::resize
 bool TMCG_CardSecret::import
 	(std::string s)
 {
-	char *ec;
-	
 	try
 	{
 		// check magic
@@ -102,20 +100,18 @@ bool TMCG_CardSecret::import
 			throw false;
 		
 		// public card data
-		if (TMCG_ParseHelper::gs(s, '|').length() == 0)
+		std::string k_str, w_str;
+		if (!TMCG_ParseHelper::gs(s, '|', k_str))
 			throw false;
-		size_t k = 
-		    std::strtoul(TMCG_ParseHelper::gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) || 
-			(!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
-		if (TMCG_ParseHelper::gs(s, '|').length() == 0)
+		char *ec;
+		size_t k = std::strtoul(k_str.c_str(), &ec, 10);
+		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) || !TMCG_ParseHelper::nx(s, '|'))
 			throw false;
-		size_t w = 
-		    std::strtoul(TMCG_ParseHelper::gs(s, '|').c_str(), &ec, 10);
-		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) || 
-			(!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', w_str))
+			throw false;
+		size_t w = std::strtoul(w_str.c_str(), &ec, 10);
+		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) || !TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// resize this
 		resize(k, w);
@@ -125,15 +121,18 @@ bool TMCG_CardSecret::import
 		{
 			for (size_t j = 0; j < r[i].size(); j++)
 			{
+				std::string mpz_str;
 				// r_ij
-				if ((mpz_set_str(&r[i][j], TMCG_ParseHelper::gs(s, '|').c_str(), 
-					TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
-						throw false;
+				if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+					throw false;
+				if ((mpz_set_str(&r[i][j], mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+					throw false;
 						
 				// b_ij
-				if ((mpz_set_str(&b[i][j], TMCG_ParseHelper::gs(s, '|').c_str(), 
-					TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
-						throw false;
+				if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+					throw false;
+				if ((mpz_set_str(&b[i][j], mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+					throw false;
 			}
 		}
 		

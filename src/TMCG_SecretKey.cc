@@ -364,48 +364,53 @@ bool TMCG_SecretKey::import
 			throw false;
 		
 		// name
-		name = TMCG_ParseHelper::gs(s, '|');
-		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
-			(!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', name))
+			throw false;
+		if (!TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// email
-		email = TMCG_ParseHelper::gs(s, '|');
-		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
-			(!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', email))
+			throw false;
+		if (!TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// type
-		type = TMCG_ParseHelper::gs(s, '|');
-		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
-			(!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
-		
+		if (!TMCG_ParseHelper::gs(s, '|', type))
+			throw false;
+		if (!TMCG_ParseHelper::nx(s, '|'))
+			throw false;
+
+		std::string mpz_str;		
 		// m
-		if ((mpz_set_str(m, TMCG_ParseHelper::gs(s, '|').c_str(), 
-			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+			throw false;
+		if ((mpz_set_str(m, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// y
-		if ((mpz_set_str(y, TMCG_ParseHelper::gs(s, '|').c_str(), 
-			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+			throw false;
+		if ((mpz_set_str(y, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// p
-		if ((mpz_set_str(p, TMCG_ParseHelper::gs(s, '|').c_str(), 
-			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+			throw false;
+		if ((mpz_set_str(p, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// q
-		if ((mpz_set_str(q, TMCG_ParseHelper::gs(s, '|').c_str(), 
-			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+			throw false;
+		if ((mpz_set_str(q, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// NIZK
-		nizk = TMCG_ParseHelper::gs(s, '|');
-		if ((TMCG_ParseHelper::gs(s, '|').length() == 0) || 
-			(!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		if (!TMCG_ParseHelper::gs(s, '|', nizk))
+			throw false;
+		if (!TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		// sig
 		sig = s;
@@ -449,13 +454,17 @@ bool TMCG_SecretKey::decrypt
 			throw false;
 		
 		// check keyID
-		std::string kid = TMCG_ParseHelper::gs(s, '|');
-		if ((kid != keyid(keyid_size(kid))) || (!TMCG_ParseHelper::nx(s, '|')))
+		std::string kid;
+		if (!TMCG_ParseHelper::gs(s, '|', kid))
+			throw false;
+		if ((kid != keyid(keyid_size(kid))) || !TMCG_ParseHelper::nx(s, '|'))
 			throw false;
 		
 		// vdata
-		if ((mpz_set_str(vdata, TMCG_ParseHelper::gs(s, '|').c_str(), 
-			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
+		std::string mpz_str;
+		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+			throw false;
+		if ((mpz_set_str(vdata, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
 				throw false;
 		
 		// decrypt value, i.e., compute the modular square roots

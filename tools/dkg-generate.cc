@@ -63,13 +63,14 @@ void run_instance
 		std::stringstream key;
 		if (opt_passwords != NULL)
 		{
-			key << TMCG_ParseHelper::gs(passwords, '/');
-			if (TMCG_ParseHelper::gs(passwords, '/') == "ERROR")
+			std::string pwd;
+			if (!TMCG_ParseHelper::gs(passwords, '/', pwd))
 			{
 				std::cerr << "P_" << whoami << ": " << "cannot read password for protecting channel to P_" << i << std::endl;
 				exit(-1);
 			}
-			else if (((i + 1) < peers.size()) && !TMCG_ParseHelper::nx(passwords, '/'))
+			key << pwd;
+			if (((i + 1) < peers.size()) && !TMCG_ParseHelper::nx(passwords, '/'))
 			{
 				std::cerr << "P_" << whoami << ": " << "cannot skip to next password for protecting channel to P_" << (i + 1) << std::endl;
 				exit(-1);
@@ -104,12 +105,19 @@ void run_instance
 		exit(-1);
 	}
 	// parse p, q, g, k
+	std::string mpz_str;
 	std::stringstream crss;
 	mpz_t crsmpz, fips_p, fips_q, fips_g;
 	mpz_init(crsmpz), mpz_init(fips_p), mpz_init(fips_q), mpz_init(fips_g);
 	for (size_t i = 0; i < 4; i++)
 	{
-		if ((mpz_set_str(crsmpz, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
+		if (!TMCG_ParseHelper::gs(crs, '|', mpz_str))
+		{
+			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+			mpz_clear(crsmpz), mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			exit(-1);
+		}
+		else if ((mpz_set_str(crsmpz, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(crs, '|'))
 		{
 			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
 			mpz_clear(crsmpz), mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
@@ -157,28 +165,56 @@ void run_instance
 		mpz_t fips_hashalgo, fips_dps, fips_counter, fips_index;
 		mpz_init_set_ui(fips_hashalgo, 0L), mpz_init_set_ui(fips_dps, 0L);
 		mpz_init_set_ui(fips_counter, 0L), mpz_init_set_ui(fips_index, 0L);
-		if ((mpz_set_str(fips_hashalgo, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
+		if (!TMCG_ParseHelper::gs(crs, '|', mpz_str))
 		{
 			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
 			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
 			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
 			exit(-1);
 		}
-		if ((mpz_set_str(fips_dps, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
+		if ((mpz_set_str(fips_hashalgo, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(crs, '|'))
 		{
 			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
 			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
 			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
 			exit(-1);
 		}
-		if ((mpz_set_str(fips_counter, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
+		if (!TMCG_ParseHelper::gs(crs, '|', mpz_str))
 		{
 			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
 			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
 			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
 			exit(-1);
 		}
-		if ((mpz_set_str(fips_index, TMCG_ParseHelper::gs(crs, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
+		if ((mpz_set_str(fips_dps, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
+		{
+			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			exit(-1);
+		}
+		if (!TMCG_ParseHelper::gs(crs, '|', mpz_str))
+		{
+			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			exit(-1);
+		}
+		if ((mpz_set_str(fips_counter, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
+		{
+			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			exit(-1);
+		}
+		if (!TMCG_ParseHelper::gs(crs, '|', mpz_str))
+		{
+			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
+			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);
+			mpz_clear(fips_hashalgo), mpz_clear(fips_dps), mpz_clear(fips_counter), mpz_clear(fips_index);
+			exit(-1);
+		}
+		if ((mpz_set_str(fips_index, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(crs, '|')))
 		{
 			std::cerr << "P_" << whoami << ": " << "common reference string (CRS) is corrupted!" << std::endl;
 			mpz_clear(fips_p), mpz_clear(fips_q), mpz_clear(fips_g);

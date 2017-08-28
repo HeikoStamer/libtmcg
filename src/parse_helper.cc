@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2006, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2006, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -52,12 +52,13 @@ bool TMCG_ParseHelper::nx
 	return true;
 }
 
-std::string TMCG_ParseHelper::gs
-	(const std::string &s, char p)
+bool TMCG_ParseHelper::gs
+	(const std::string &s, char p, std::string &out)
 {
 	size_t ei;
 	if ((ei = s.find(p, 0)) != s.npos)
-		return s.substr(0, ei);
+		out = s.substr(0, ei);
 	else
-		return std::string("ERROR");
+		return false;
+	return true;
 }

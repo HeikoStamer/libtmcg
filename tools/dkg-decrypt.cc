@@ -1222,17 +1222,25 @@ bool verify_decryption_share
 		if (!TMCG_ParseHelper::cm(in, "dds", '|'))
 			throw false;
 		// parse index
-		std::string idxstr = TMCG_ParseHelper::gs(in, '|');
-		if ((sscanf(idxstr.c_str(), "%zu", &idx_dkg) < 1) || (!TMCG_ParseHelper::nx(in, '|')))
+		std::string idxstr, mpzstr;
+		if (!TMCG_ParseHelper::gs(in, '|', idxstr))
+			throw false;
+		if ((sscanf(idxstr.c_str(), "%zu", &idx_dkg) < 1) || !TMCG_ParseHelper::nx(in, '|'))
 			throw false;
 		// r_i
-		if ((mpz_set_str(r_i_out, TMCG_ParseHelper::gs(in, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(in, '|')))
+		if (!TMCG_ParseHelper::gs(in, '|', mpzstr))
+			throw false;
+		if ((mpz_set_str(r_i_out, mpzstr.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(in, '|'))
 			throw false;
 		// c
-		if ((mpz_set_str(c_out, TMCG_ParseHelper::gs(in, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(in, '|')))
+		if (!TMCG_ParseHelper::gs(in, '|', mpzstr))
+			throw false;
+		if ((mpz_set_str(c_out, mpzstr.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(in, '|'))
 			throw false;
 		// r
-		if ((mpz_set_str(r_out, TMCG_ParseHelper::gs(in, '|').c_str(), TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(in, '|')))
+		if (!TMCG_ParseHelper::gs(in, '|', mpzstr))
+			throw false;
+		if ((mpz_set_str(r_out, mpzstr.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(in, '|'))
 			throw false;
 		// check index for sanity
 		if (idx_dkg >= (dkg->v_i).size())
@@ -1649,13 +1657,14 @@ void run_instance
 		std::stringstream key;
 		if (opt_passwords != NULL)
 		{
-			key << TMCG_ParseHelper::gs(passwords, '/');
-			if (TMCG_ParseHelper::gs(passwords, '/') == "ERROR")
+			std::string pwd;
+			if (!TMCG_ParseHelper::gs(passwords, '/', pwd))
 			{
 				std::cerr << "D_" << whoami << ": " << "cannot read password for protecting channel to D_" << i << std::endl;
 				exit(-1);
 			}
-			else if (((i + 1) < peers.size()) && !TMCG_ParseHelper::nx(passwords, '/'))
+			key << pwd;
+			if (((i + 1) < peers.size()) && !TMCG_ParseHelper::nx(passwords, '/'))
 			{
 				std::cerr << "D_" << whoami << ": " << "cannot skip to next password for protecting channel to D_" << (i + 1) << std::endl;
 				exit(-1);

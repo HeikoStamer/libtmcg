@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -53,9 +53,11 @@ bool VTMF_CardSecret::import
 			throw false;
 		
 		// secret card data
-		if ((mpz_set_str(r, TMCG_ParseHelper::gs(s, '|').c_str(), 
-			TMCG_MPZ_IO_BASE) < 0) || (!TMCG_ParseHelper::nx(s, '|')))
-				throw false;
+		std::string mpz_str;
+		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+			throw false;
+		if ((mpz_set_str(r, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+			throw false;
 		
 		throw true;
 	}

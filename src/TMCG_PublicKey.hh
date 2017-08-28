@@ -56,8 +56,11 @@
 
 struct TMCG_PublicKey
 {
-	std::string	name, email, type, nizk, sig;
-	mpz_t		m, y;
+	const std::string	SELFSIG = "SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG";
+	const std::string	ERROR = "ERROR";
+	std::string		TMP;
+	std::string		name, email, type, nizk, sig;
+	mpz_t			m, y;
 	
 	TMCG_PublicKey
 		();
@@ -75,31 +78,31 @@ struct TMCG_PublicKey
 	(const TMCG_PublicKey& that);
 	
 	bool check
-		() const;
+		();
 	
 	std::string fingerprint
 		() const;
 	
 	std::string selfid
-		() const;
+		();
 	
 	std::string keyid
-		(const size_t size = TMCG_KEYID_SIZE) const;
+		(const size_t size = TMCG_KEYID_SIZE);
 	
 	size_t keyid_size
 		(const std::string& s) const;
 	
 	std::string sigid
-		(std::string s) const;
+		(std::string s);
 	
 	bool import
 		(std::string s);
 	
 	std::string encrypt
-		(const unsigned char* value) const;
+		(const unsigned char* value);
 	
 	bool verify
-		(const std::string& data, std::string s) const;
+		(const std::string& data, std::string s);
 	
 	~TMCG_PublicKey
 		();
