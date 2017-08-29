@@ -50,7 +50,7 @@ int 				opt_verbose = 0;
 char				*opt_crs = NULL;
 char				*opt_passwords = NULL;
 char				*opt_hostname = NULL;
-unsigned long int		opt_t = 0, opt_s = 0, opt_e = 0, opt_p = 35000;
+unsigned long int		opt_t = MAX_N, opt_s = MAX_N, opt_e = 0, opt_p = 35000;
 
 void run_instance
 	(const size_t whoami, const time_t keytime, const time_t keyexptime, const size_t num_xtests)
@@ -1589,9 +1589,9 @@ int main
 					passwords = argv[i+1];
 					opt_passwords = (char*)passwords.c_str();
 				}
-				if ((arg.find("-t") == 0) && (idx < (size_t)(argc - 1)) && (opt_t == 0))
+				if ((arg.find("-t") == 0) && (idx < (size_t)(argc - 1)) && (opt_t == MAX_N))
 					opt_t = strtoul(argv[i+1], NULL, 10);
-				if ((arg.find("-s") == 0) && (idx < (size_t)(argc - 1)) && (opt_s == 0))
+				if ((arg.find("-s") == 0) && (idx < (size_t)(argc - 1)) && (opt_s == MAX_N))
 					opt_s = strtoul(argv[i+1], NULL, 10);
 				if ((arg.find("-e") == 0) && (idx < (size_t)(argc - 1)) && (opt_e == 0))
 					opt_e = strtoul(argv[i+1], NULL, 10);
@@ -1687,9 +1687,9 @@ int main
 	if (gnunet_opt_s_resilience != MAX_N)
 		S = gnunet_opt_s_resilience; // get value of S from GNUnet options
 #else
-	if (opt_t != 0)
+	if (opt_t != MAX_N)
 		T = opt_t; // get vaule of T from options
-	if (opt_s != 0)
+	if (opt_s != MAX_N)
 		S = opt_s; // get vaule of S from options
 #endif
 	if (T > N)
