@@ -1182,6 +1182,7 @@ void run_instance
 				gcry_mpi_release(c_ik[j][k]);
 		gcry_mpi_release(x_i);
 		gcry_mpi_release(xprime_i);
+		gcry_mpi_release(y);
 		elgflags.push_back(0x04 | 0x10); // key may be used to encrypt communications and has been split by a secret-sharing mechanism
 		if (S > 0)
 			sigtime = ckeytime; // use common key creation time as OpenPGP signature creation time
@@ -1210,7 +1211,6 @@ void run_instance
 				gcry_mpi_release(p);
 				gcry_mpi_release(q);
 				gcry_mpi_release(g);
-				gcry_mpi_release(y);
 				gcry_sexp_release(key);
 				delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 				exit(-1);
@@ -1223,7 +1223,6 @@ void run_instance
 				gcry_mpi_release(p);
 				gcry_mpi_release(q);
 				gcry_mpi_release(g);
-				gcry_mpi_release(y);
 				gcry_sexp_release(key);
 				delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 				exit(-1);
@@ -1240,7 +1239,6 @@ void run_instance
 				gcry_mpi_release(p);
 				gcry_mpi_release(q);
 				gcry_mpi_release(g);
-				gcry_mpi_release(y);
 				gcry_sexp_release(key);
 				delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 				exit(-1);
@@ -1254,7 +1252,6 @@ void run_instance
 				gcry_mpi_release(p);
 				gcry_mpi_release(q);
 				gcry_mpi_release(g);
-				gcry_mpi_release(y);
 				gcry_sexp_release(key);
 				delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 				exit(-1);
@@ -1266,7 +1263,6 @@ void run_instance
 				gcry_mpi_release(p);
 				gcry_mpi_release(q);
 				gcry_mpi_release(g);
-				gcry_mpi_release(y);
 				gcry_mpi_release(r);
 				gcry_sexp_release(key);
 				delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
@@ -1285,7 +1281,6 @@ void run_instance
 				gcry_mpi_release(p);
 				gcry_mpi_release(q);
 				gcry_mpi_release(g);
-				gcry_mpi_release(y);
 				gcry_mpi_release(r);
 				gcry_mpi_release(s);
 				gcry_sexp_release(key);
@@ -1294,14 +1289,13 @@ void run_instance
 			}
 		}
 		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(subsig_hashing, subsig_left, r, s, subsig);
+		gcry_mpi_release(r);
+		gcry_mpi_release(s);
 	}
 	mpz_clear(dsa_m), mpz_clear(dsa_r), mpz_clear(dsa_s);
 	gcry_mpi_release(p);
 	gcry_mpi_release(q);
 	gcry_mpi_release(g);
-	gcry_mpi_release(y);
-	gcry_mpi_release(r);
-	gcry_mpi_release(s);
 	gcry_sexp_release(key);
 	
 	// at the end: deliver some more rounds for still waiting parties
