@@ -371,7 +371,8 @@ size_t TMCG_PublicKey::keyid_size
 	
 	// extract the size
 	char *ec;
-	size_t size = std::strtoul(s.substr(2, s.find("^") - 2).c_str(), &ec, 10);
+	std::string idlen_str = s.substr(2, s.find("^") - 2);
+	size_t size = std::strtoul(idlen_str.c_str(), &ec, 10);
 	if ((*ec != '\0') || (size != (s.length() - s.find("^") - 1)))
 		return 0;
 	
