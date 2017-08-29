@@ -9,40 +9,43 @@ dkg\-generate \- distributed key generation for OpenPGP
 .IR PEERS
 
 .SH DESCRIPTION
-This program performs the t-resilient distributed key generation protocol (DKG)
+This program implements the t-resilient distributed key generation protocol (DKG)
 by Gennaro et al. for discrete logarithm based cryptosystems as described in
 .I "Journal of Cryptology, Vol. 20(1), 2007".
-Additionally, it can start instances of the adaptively-secure threshold DSS
-protocol (tDSS) by Canetti et al. as published in the extended version of a
-paper that appeared under the title
+Additionally, it can perform the adaptively-secure threshold DSS protocol (tDSS)
+by Canetti et al. for generating a shared DSA key as proposed in the extended
+version of a paper appeared under the title
 .I "Adaptive Security for Threshold Cryptosystems"
-in the proceedings of CRYPTO'99. Both protocols employ GNUnet for exchange of
-internal protocol messages between the participants. Thus a working GNUnet peer
-is neccesary to proceed. Otherwise only a local test is started.
+in the proceedings of CRYPTO'99. Both protocols employ GNUnet or a simple built-in
+TCP/IP service as underlying peer-to-peer (P2P) network for exchange of internal
+protocol messages between the participants. Thus either a working GNUnet peer or
+a host with appropriate TCP/IP port forwarding (e.g. via Tor Hidden Service) is
+neccesary to proceed. Otherwise only local test instances are started.
 .PP
 For each party either an individual or a shared DSA signing key is generated.
-This key acts as OpenPGP's primary key. The shared ElGamal encryption key
+This key acts as OpenPGP's primary key. Then the shared ElGamal encryption key
 is arranged as subkey. Thus each party should verify after key generation, that
 the published public key of the group contains this shared ElGamal key, if no
 shared DSA signing key is used as integrity measure. The program generates two
-different files: First, a file that stores the individual private key shares in
+different files: First, one file that stores the individual private key shares in
 ASCII-armored OpenPGP format (experimental public-key algorithm IDs 108 an 109),
-and second, a file that contains the public keys again in ASCII-armored format.
-All files have as a common prefix of their filename the GNUnet peer identity of
-the calling party, i.e., the corresponding string from the list
+and second, another file that contains the public keys again in ASCII-armored
+format. These files have as a common prefix of their filename the GNUnet peer
+identity or the hostname of the calling party, i.e., the corresponding string
+from the n-element list
 .IR "PEERS". 
 The first file must be kept confidential. A passphrase can be used to protect
 the private keys by a simple OpenPGP S2K encryption scheme. If an empty passphrase
-is entered, then the secrets are stored in plain text and have to be protected
-otherwise.
+is entered, then the corresponding secrets are stored in plain text and have
+to be protected otherwise.
 .PP
-The parameter t determines how many parties may deviate from the protocol
+The parameter t determines how many parties may deviate from the DKG protocol
 during the key generation and later during threshold decryption. At least
 t+1 participants are needed to recover a key share or to decrypt a OpenPGP
 message. This parameter can be adjusted by using the option "-t". The default
-value is (n-1)/2 where n is the number of participants. Since 0-resilience and
-other artificial deviations are not desireable, the program ensures by
-clipping that 0 < t <= n holds.
+value is (n-1)/2 where n is the number of participants. If the program is
+called with a zero t-resilience (i.e. "-t 0"), then no ElGamal encryption
+subkey is generated. It is always ensured by clipping that t <= n holds.
 .PP
 The option "-s" defines the parameter s, i.e., the s-resilience of the tDSS
 protocol. At least 2s+1 participants are required to create a signature of the
@@ -52,15 +55,17 @@ key is disabled, if parameter s is set to zero. In that case individual DSA keys
 are generated which allows full control over the shared encryption subkey.
 .PP
 The underlying DDH-hard group, i.e., a large prime-order subgroup of special
-form, sometimes it is called Schnorr group, can be tweaked by using the
-option "-g". The included program
+form (sometimes called Schnorr group), can be tweaked by using the option "-g"
+with a common reference string (CRS) also known as domain parameter set. The
+included program
 .BR dkg\-gencrs
-generates a corresponding common reference string on that all participants
-must agree. The security level is increased for each given dummy argument of
-this program. The generated group parameters are verifiable up to a certain
-level. However, it is recommended that this crucial part of the setup is
-either accomplished by some trusted members or all participants together.
-Without this option a hard coded group with |p| = 2048 bit and |q| = 256 bit
+generates such a string on that all participants must agree. The security
+level is increased for each remaining dummy argument of dkg\-gencrs.
+The generated domain parameters are verifiable up to a certain
+level. In particular there is an option for compliance with FIPS 186-4.
+However, it is recommended that this crucial part of the setup is either
+accomplished by some trusted members or all participants together.
+Without option "-g" a hard coded group with |p| = 2048 bit and |q| = 256 bit
 is used by default. It was created by the author of the program at random
 and is fully compatible with DSA as defined in RFC 4880. Other choices may
 not be supported by all OpenPGP implementations.
@@ -85,12 +90,12 @@ i.e., B/D/E/ and C/E/F/, respectively. The default value of option "-P" is
 an empty password string (simple default passwords) based on the assumption,
 that GNUnet will protect the exchanged protocol messages.
 .PP
-Additionally, instead of relying on GNUnet CADET the protocol messages can
+Additionally, instead of relying on GNUnet CADET protocol the messages can
 be exchanged by the built-in TCP/IP communication framework. In that case
 the given peer identities from PEERS are simple resolvable hostnames and the
 corresponding option "-H" defines the hostname of the calling peer within
-that list. The program binds some TCP ports up from 35000 to 37000 to listen
-for incoming connections and connects to other peers in that port range.
+that list. The program binds some TCP ports up from 35000 to listen for
+incoming connections and connects to other peers in that port range.
 Since this communication is not protected by the network itself the option
 "-P" is always required.
 
