@@ -604,17 +604,12 @@ bool parse_private_key
 		std::cerr << "ERROR: no tDSS private key found" << std::endl;
 		exit(-1);
 	}
-	if (!ssbelg)
-	{
-		std::cerr << "ERROR: no ElGamal private subkey found" << std::endl;
-		exit(-1);
-	}
 	if (!sigdsa)
 	{
 		std::cerr << "ERROR: no self-signature for tDSS key found" << std::endl;
 		exit(-1);
 	}
-	if (!sigelg)
+	if (ssbelg && !sigelg)
 	{
 		std::cerr << "ERROR: no self-signature for ElGamal subkey found" << std::endl;
 		exit(-1);
@@ -678,52 +673,55 @@ bool parse_private_key
 		std::cerr << "ERROR: verification of tDSS key self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
 		exit(-1);
 	}
-	flags = 0;
-	for (size_t i = 0; i < sizeof(elg_keyflags); i++)
+	if (ssbelg)
 	{
-		if (elg_keyflags[i])
-			flags = (flags << 8) + elg_keyflags[i];
-		else
-			break;
-	}
-	if (opt_verbose)
-	{
-		std::cout << "ElGamal key flags: ";
-		if ((flags & 0x01) == 0x01)
-			std::cout << "C"; // The key may be used to certify other keys.
-		if ((flags & 0x02) == 0x02)
-			std::cout << "S"; // The key may be used to sign data.
-		if ((flags & 0x04) == 0x04)
-			std::cout << "E"; // The key may be used encrypt communications.
-		if ((flags & 0x08) == 0x08)
-			std::cout << "e"; // The key may be used encrypt storage.
-		if ((flags & 0x10) == 0x10)
-			std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
-		if ((flags & 0x20) == 0x20)
-			std::cout << "A"; // The key may be used for authentication.
-		if ((flags & 0x80) == 0x80)
-			std::cout << "M"; // The private component of this key may be in the possession of more than one person.
-		std::cout << std::endl;
-	}
-	if ((flags & 0x04) != 0x04)
-	{
-		std::cerr << "ERROR: ElGamal subkey cannot used to encrypt communications" << std::endl;
-		exit(-1);
-	}
-	elg_trailer.push_back(4); // only V4 format supported
-	elg_trailer.push_back(elg_sigtype);
-	elg_trailer.push_back(elg_pkalgo);
-	elg_trailer.push_back(elg_hashalgo);
-	elg_trailer.push_back(elg_hspd.size() >> 8); // length of hashed subpacket data
-	elg_trailer.push_back(elg_hspd.size());
-	elg_trailer.insert(elg_trailer.end(), elg_hspd.begin(), elg_hspd.end());
-	hash.clear();
-	CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, elg_trailer, elg_hashalgo, hash, elg_left);
-	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, elg_r, elg_s);
-	if (ret)
-	{
-		std::cerr << "ERROR: verification of ElGamal subkey self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
-		exit(-1);
+		flags = 0;
+		for (size_t i = 0; i < sizeof(elg_keyflags); i++)
+		{
+			if (elg_keyflags[i])
+				flags = (flags << 8) + elg_keyflags[i];
+			else
+				break;
+		}
+		if (opt_verbose)
+		{
+			std::cout << "ElGamal key flags: ";
+			if ((flags & 0x01) == 0x01)
+				std::cout << "C"; // The key may be used to certify other keys.
+			if ((flags & 0x02) == 0x02)
+				std::cout << "S"; // The key may be used to sign data.
+			if ((flags & 0x04) == 0x04)
+				std::cout << "E"; // The key may be used encrypt communications.
+			if ((flags & 0x08) == 0x08)
+				std::cout << "e"; // The key may be used encrypt storage.
+			if ((flags & 0x10) == 0x10)
+				std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
+			if ((flags & 0x20) == 0x20)
+				std::cout << "A"; // The key may be used for authentication.
+			if ((flags & 0x80) == 0x80)
+				std::cout << "M"; // The private component of this key may be in the possession of more than one person.
+			std::cout << std::endl;
+		}
+		if ((flags & 0x04) != 0x04)
+		{
+			std::cerr << "ERROR: ElGamal subkey cannot used to encrypt communications" << std::endl;
+			exit(-1);
+		}
+		elg_trailer.push_back(4); // only V4 format supported
+		elg_trailer.push_back(elg_sigtype);
+		elg_trailer.push_back(elg_pkalgo);
+		elg_trailer.push_back(elg_hashalgo);
+		elg_trailer.push_back(elg_hspd.size() >> 8); // length of hashed subpacket data
+		elg_trailer.push_back(elg_hspd.size());
+		elg_trailer.insert(elg_trailer.end(), elg_hspd.begin(), elg_hspd.end());
+		hash.clear();
+		CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, elg_trailer, elg_hashalgo, hash, elg_left);
+		ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, elg_r, elg_s);
+		if (ret)
+		{
+			std::cerr << "ERROR: verification of ElGamal subkey self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
+			exit(-1);
+		}
 	}
 	gcry_sexp_release(dsakey);
 	gcry_mpi_release(dsa_r);
