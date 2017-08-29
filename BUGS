@@ -1,3 +1,4 @@
-OpenBSD: test programs fail due to restrictive rlimits
+OpenBSD: some test programs may fail due to restrictive rlimits (kern.maxfiles)
+All: t-dkg and t-astc2 may fail due to missing synchronization inside protocols
 
 No further bugs are known. Please report!
