@@ -353,6 +353,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 	assert(n == aiou->n);
 	assert(i == rbc->j);
 	assert(i == aiou->j);
+	err << "GennaroJareckiKrawczykRabinDKG::Generate()" << std::endl;
 
 	// checking maximum synchronous t-resilience
 	if ((2 * t) >= n)
@@ -718,8 +719,10 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		// 2. Each party the builds the set of non-disqualified parties $QUAL$.
 		QUAL.clear();
 		for (size_t j = 0; j < n; j++)
+		{
 			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
 				QUAL.push_back(j);
+		}
 		err << "P_" << i << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			err << "P_" << *it << " ";
@@ -946,6 +949,7 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 			mpz_set(y_i[*it], A_ik[*it][0]);
 		err << "P_" << i << ": y_i = " << y_i[i] << std::endl;
 		// Compute $y = \prod_{i \in QUAL} y_i \bmod p$.
+		mpz_set_ui(y, 1L);
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 		{
 			mpz_mul(y, y, y_i[*it]);
@@ -1066,6 +1070,7 @@ bool GennaroJareckiKrawczykRabinDKG::Reconstruct
 	assert(i < n);
 	assert(n == rbc->n);
 	assert(i == rbc->j);
+	err << "GennaroJareckiKrawczykRabinDKG::Reconstruct()" << std::endl;
 
 	// initialize
 	mpz_t foo, bar, lhs, rhs;
@@ -1432,6 +1437,7 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 	assert(n == aiou->n);
 	assert(i == rbc->j);
 	assert(i == aiou->j);
+	err << "GennaroJareckiKrawczykRabinNTS::Generate()" << std::endl;
 
 	// checking maximum synchronous t-resilience
 	if ((2 * t) >= n)
@@ -1479,6 +1485,7 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 	assert(n == aiou->n);
 	assert(i == rbc->j);
 	assert(i == aiou->j);
+	err << "GennaroJareckiKrawczykRabinNTS::Sign()" << std::endl;
 
 	// checking maximum synchronous t-resilience
 	if ((2 * t) >= n)
