@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170827])
+AC_REVISION([20170830])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.2], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -336,7 +336,8 @@ datadir=$datadir
 ]])
 
 # Define output
-AC_CONFIG_FILES([Makefile src/Makefile src/libTMCG-config doc/Makefile tests/Makefile tools/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/libTMCG-config doc/Makefile tests/Makefile tools/Makefile\
+ tools/dkg-generate.1 tools/dkg-encrypt.1 tools/dkg-decrypt.1 tools/dkg-sign.1 tools/dkg-revoke.1])
 AC_OUTPUT
 
 echo "Now type 'make && make install' to build and install LibTMCG."

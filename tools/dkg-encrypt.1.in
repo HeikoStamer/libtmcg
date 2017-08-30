@@ -1,4 +1,4 @@
-.TH DKG\-ENCRYPT "1" "July 2017" "LibTMCG 1.3.2" "User Commands"
+.TH DKG\-ENCRYPT "1" "July 2017" "@PACKAGE_NAME@ @PACKAGE_VERSION@" "User Commands"
 
 .SH NAME
 dkg\-encrypt \- simple encryption with AES\-256 according to OpenPGP
