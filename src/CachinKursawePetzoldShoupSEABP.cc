@@ -270,7 +270,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				// check for matching tag and sequence counter before delivering
 				if (!mpz_cmp((*lit)[0], ID) && !mpz_cmp((*lit)[2], deliver_s[who]))
 				{
-					assert(mbar.count(tag_string));
+					assert(mbar.count(tag_string)); // should be always true
 					mpz_set(m, mbar[tag_string]);
 //std::cerr << "RBC: restores deliver from " << who << " m = " << m << std::endl;
 					mpz_add_ui(deliver_s[who], deliver_s[who], 1L); // increase sequence counter
@@ -336,18 +336,28 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			{
 //std::cerr << "RBC: r-send from " << l << " with m = " << message[4] << std::endl;
 				send[l].insert(std::pair<std::string, bool>(tag_string, true));
-				if (!mpz_cmp_ui(message[1], l) && (mbar.count(tag_string) == 0))
+				if (mpz_cmp_ui(message[1], l))
+					std::cerr << "RBC(" << j << "): received wrong r-send message of " << message[1] << " from " << l << std::endl;
+				else
 				{
-					mpz_ptr tmp = new mpz_t();
-					mpz_init_set(tmp, message[4]); // $\bar{m} \gets m$
-					mbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
+					if (mbar.count(tag_string) == 0)
+					{
+						mpz_ptr tmp = new mpz_t();
+						mpz_init_set(tmp, message[4]); // $\bar{m} \gets m$
+						mbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
+					}
+					else if (mpz_cmp(mbar[tag_string], message[4]))
+					{
+						std::cerr << "RBC(" << j << "): received bad r-send message from " << l << std::endl;
+						continue;
+					}
 					// prepare message $(ID.j.s, r-echo, H(m))$
 					RBC_ConstMessage message2;
 					message2.push_back(message[0]);
 					message2.push_back(message[1]);
 					message2.push_back(message[2]);
 					message2.push_back(r_echo);
-					mpz_shash(message[4], 1, tmp);
+					mpz_shash(message[4], 1, message[4]);
 					message2.push_back(message[4]);
 					// send to all parties by unicast transmission (very short timeout)
 					for (size_t i = 0; i < n; i++)
@@ -357,8 +367,6 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					}
 					message2.clear();
 				}
-				else
-					std::cerr << "RBC(" << j << "): received bad or dup r-send message from " << l << std::endl; 
 				continue;
 			}
 			else if (!mpz_cmp(message[3], r_send) && send[l].count(tag_string))
@@ -529,7 +537,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			{
 //std::cerr << "RBC: r-request from " << l << std::endl;
 				request[l].insert(std::pair<std::string, bool>(tag_string, true));
-				if (mbar.find(tag_string) != mbar.end())
+				if (mbar.count(tag_string))
 				{
 					// prepare message $(ID.j.s, r-answer, \bar{m})$
 					RBC_ConstMessage message2;
@@ -566,6 +574,11 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 						mpz_ptr tmp = new mpz_t();
 						mpz_init(tmp);
 						mbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
+					}
+					else if (mpz_cmp(mbar[tag_string], message[4]))
+					{
+						std::cerr << "RBC(" << j << "): bad r-answer from " << l << std::endl;
+						continue;
 					}
 					mpz_set(mbar[tag_string], message[4]); // $\bar{m} \gets m$
 				}
@@ -740,7 +753,7 @@ bool CachinKursawePetzoldShoupRBC::Sync
 			long int diff = median_timeout - (timeout - (slice_entry_time - entry_time));
 			last_diff = diff;
 if (abs(diff) > 0)
-std::cerr << "RBC(" << j << "): diff = " << diff << std::endl;
+std::cerr << "RBC(" << j << "): sync diff = " << diff << std::endl;
 			if (abs(diff) <= max_timeout) 
 				timeout += diff;
 			else

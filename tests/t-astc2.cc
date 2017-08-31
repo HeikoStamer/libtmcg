@@ -174,7 +174,7 @@ void start_instance
 				assert(ret);
 			// now: sync for waiting parties
 			if (someone_corrupted)
-				rbc->Sync(aiounicast::aio_timeout_extremly_long, "step 1");
+				rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 1");
 			else
 				rbc->Sync(aiounicast::aio_timeout_middle, "step 1");
 
@@ -204,7 +204,7 @@ void start_instance
 				assert(ret);
 			// now: sync for waiting parties
 			if (someone_corrupted)
-				rbc->Sync(aiounicast::aio_timeout_extremly_long, "step 2");
+				rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 2");
 			else
 				rbc->Sync(aiounicast::aio_timeout_middle, "step 2");
 
@@ -247,7 +247,7 @@ void start_instance
 				assert(!ret);
 			// now: sync for waiting parties
 			if (someone_corrupted)
-				rbc->Sync(aiounicast::aio_timeout_extremly_long, "step 3");
+				rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 3");
 			else
 				rbc->Sync(aiounicast::aio_timeout_middle, "step 3");
 			// check signing and verifying of a message with N-1 signers = P_1, P_2, ...
@@ -280,7 +280,7 @@ void start_instance
 					assert(ret);
 				// at the end: sync for waiting parties
 				if (someone_corrupted)
-					rbc_nm1->Sync(aiounicast::aio_timeout_extremly_long, "step 4");
+					rbc_nm1->Sync(aiounicast::aio_timeout_extremely_long, "step 4");
 				else
 					rbc_nm1->Sync(aiounicast::aio_timeout_middle, "step 4");
 			}

@@ -127,25 +127,64 @@ void builtin_bindports
 		local_start += (peers.size() * peers.size());
 	for (uint16_t port = local_start; port < (local_start + (uint16_t)peers.size()); port++, i++)
 	{
-		int sockfd;
-		struct sockaddr_in sin = { 0 };
-		sin.sin_port = htons(port);
-		sin.sin_family = AF_INET;
-		sin.sin_addr.s_addr = htonl(INADDR_ANY);
-		if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		int sockfd, ret;
+		struct addrinfo hints = { 0 }, *res, *rp;
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_PASSIVE;
+		std::stringstream ports;
+		ports << port;
+		if ((ret = getaddrinfo(builtin_thispeer.c_str(), (ports.str()).c_str(), &hints, &res)) != 0)
 		{
-			perror("dkg-builtin-common (socket)");
+			std::cerr << "ERROR: resolving hostname \"" << builtin_thispeer << "\" failed: ";
+			if (ret == EAI_SYSTEM)
+				perror("dkg-builtin-common (getaddrinfo)");
+			else
+				std::cerr << gai_strerror(ret);
+			std::cerr << std::endl;
 			builtin_close();
 			builtin_done();
 			exit(-1);
 		}
-		if (opt_verbose)
-			std::cout << "INFO: bind TCP/IP port " << port << std::endl;
-		if (bind(sockfd, (struct sockaddr*)&sin, sizeof(sin)) < 0)
+		for (rp = res; rp != NULL; rp = rp->ai_next)
 		{
-			perror("dkg-builtin-common (bind)");
-			if (close(sockfd) < 0)
-				perror("dkg-builtin-common (close)");
+			if ((sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) < 0)
+			{
+				perror("dkg-builtin-common (socket)");
+				continue; // try next address
+			}
+			char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
+			memset(hbuf, 0, sizeof(hbuf));
+			memset(sbuf, 0, sizeof(sbuf));
+			if (getnameinfo(rp->ai_addr, rp->ai_addrlen, hbuf, sizeof(hbuf), sbuf, sizeof(sbuf),
+				NI_NUMERICHOST | NI_NUMERICSERV) != 0)
+			{
+				std::cerr << "ERROR: resolving hostname \"" << builtin_thispeer << "\" failed: ";
+				if (ret == EAI_SYSTEM)
+					perror("dkg-builtin-common (getnameinfo)");
+				else
+					std::cerr << gai_strerror(ret);
+				std::cerr << std::endl;
+				if (close(sockfd) < 0)
+					perror("dkg-builtin-common (close)");
+				freeaddrinfo(res);
+				builtin_close();
+				builtin_done();
+				exit(-1);
+			}
+			if (opt_verbose)
+				std::cout << "INFO: bind TCP/IP port " << port << " at address " << hbuf << std::endl;
+			if (bind(sockfd, rp->ai_addr, rp->ai_addrlen) < 0)
+			{
+				perror("dkg-builtin-common (bind)");
+				continue; // try next address
+			}
+			break; // on success: leave the loop
+		}
+		freeaddrinfo(res);
+		if (rp == NULL)
+		{
+			std::cerr << "ERROR: cannot bind TCP/IP port " << port << " to valid IP address of this host" << std::endl;
 			builtin_close();
 			builtin_done();
 			exit(-1);
@@ -186,7 +225,7 @@ size_t builtin_connect
 			{
 				std::cerr << "ERROR: resolving hostname \"" << peers[i] << "\" failed: ";
 				if (ret == EAI_SYSTEM)
-					perror("getaddrinfo");
+					perror("dkg-builtin-common (getaddrinfo)");
 				else
 					std::cerr << gai_strerror(ret);
 				std::cerr << std::endl;
@@ -199,24 +238,15 @@ size_t builtin_connect
 				if ((sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) < 0)
 				{
 					perror("dkg-builtin-common (socket)");
-					builtin_close();
-					builtin_done();
-					exit(-1);
+					continue; // try next address
 				}
 				if (connect(sockfd, rp->ai_addr, rp->ai_addrlen) < 0)
 				{
-					if (errno == ECONNREFUSED)
-					{
-						if (close(sockfd) < 0)
-							perror("dkg-builtin-common (close)");
-						continue;
-					}
-					perror("dkg-builtin-common (connect)");
+					if (errno != ECONNREFUSED)
+						perror("dkg-builtin-common (connect)");					
 					if (close(sockfd) < 0)
 						perror("dkg-builtin-common (close)");
-					builtin_close();
-					builtin_done();
-					exit(-1);
+					continue; // try next address
 				}
 				else
 				{
@@ -228,10 +258,13 @@ size_t builtin_connect
 					{
 						std::cerr << "ERROR: resolving hostname \"" << peers[i] << "\" failed: ";
 						if (ret == EAI_SYSTEM)
-							perror("getnameinfo");
+							perror("dkg-builtin-common (getnameinfo)");
 						else
 							std::cerr << gai_strerror(ret);
 						std::cerr << std::endl;
+						if (close(sockfd) < 0)
+							perror("dkg-builtin-common (close)");
+						freeaddrinfo(res);
 						builtin_close();
 						builtin_done();
 						exit(-1);
@@ -239,15 +272,13 @@ size_t builtin_connect
 					if (opt_verbose)
 						std::cout << "INFO: resolved hostname \"" << peers[i] << "\" to address " << hbuf << std::endl;
 					if (opt_verbose)
-						std::cout << "INFO: connected to hostname \"" << peers[i] << "\" on port " << port << std::endl;
+						std::cout << "INFO: connected to host \"" << peers[i] << "\" on port " << port << std::endl;
 					if (broadcast)
 						builtin_broadcast_pipe2socket_out[i] = sockfd;
 					else
 						builtin_pipe2socket_out[i] = sockfd;
-					break;
+					break; // on success: leave the loop
 				}
-				if (close(sockfd) < 0)
-					perror("dkg-builtin-common (close)");
 			}
 			freeaddrinfo(res);
 		}
