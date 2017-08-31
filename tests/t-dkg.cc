@@ -126,9 +126,9 @@ void start_instance
 			aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key,
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 
-			// create asynchronous authenticated unicast channels
+			// create asynchronous authenticated broadcast channels
 			aiounicast_select *aiou2 = new aiounicast_select(N, whoami, bP_in, bP_out, bP_key,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_middle);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
 			std::string myID = "t-dkg";
