@@ -909,8 +909,12 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 					// check equation (5)
 					if (mpz_cmp(lhs, rhs))
 					{
-						err << "P_" << i << ": checking 4(c)(5) failed; complaint against P_" << who << std::endl;
-						complaints.push_back(who);
+						err << "P_" << i << ": checking 4(c)(5) failed; complaint against P_" << who;
+						if (std::find(QUAL.begin(), QUAL.end(), who) != QUAL.end())
+							complaints.push_back(who);
+						else
+							err << " (ignoring; not in QUAL)";
+						err << std::endl;
 					}
 					else
 					{
