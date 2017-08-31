@@ -134,9 +134,9 @@ void builtin_bindports
 		hints.ai_flags = AI_PASSIVE;
 		std::stringstream ports;
 		ports << port;
-		if ((ret = getaddrinfo(builtin_thispeer.c_str(), (ports.str()).c_str(), &hints, &res)) != 0)
+		if ((ret = getaddrinfo(NULL, (ports.str()).c_str(), &hints, &res)) != 0)
 		{
-			std::cerr << "ERROR: resolving hostname \"" << builtin_thispeer << "\" failed: ";
+			std::cerr << "ERROR: resolving wildcard address failed: ";
 			if (ret == EAI_SYSTEM)
 				perror("dkg-builtin-common (getaddrinfo)");
 			else
@@ -159,7 +159,7 @@ void builtin_bindports
 			if (getnameinfo(rp->ai_addr, rp->ai_addrlen, hbuf, sizeof(hbuf), sbuf, sizeof(sbuf),
 				NI_NUMERICHOST | NI_NUMERICSERV) != 0)
 			{
-				std::cerr << "ERROR: resolving hostname \"" << builtin_thispeer << "\" failed: ";
+				std::cerr << "ERROR: resolving wildcard address failed: ";
 				if (ret == EAI_SYSTEM)
 					perror("dkg-builtin-common (getnameinfo)");
 				else
