@@ -162,7 +162,7 @@ void start_instance
 			std::stringstream err_log, state_log;
 			bool ret = true;
 			start_clock();
-			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
+			std::cout << "P_" << whoami << ": dkg.Generate() at " << time(NULL) << std::endl;
 			if (corrupted)
 				dkg->Generate(aiou, rbc, err_log, true);
 			else
@@ -179,7 +179,7 @@ void start_instance
 				rbc->Sync(aiounicast::aio_timeout_middle, "step 1");
 
 			// publish state
-			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
+			std::cout << "P_" << whoami << ": dkg.PublishState() at " << time(NULL) << std::endl;
 			dkg->PublishState(state_log);
 
 			// create an instance of DSS (without using very strong randomness)
@@ -192,7 +192,7 @@ void start_instance
 			// generate distributed key shares
 			std::stringstream err_log_dss;
 			start_clock();
-			std::cout << "P_" << whoami << ": dss.Generate()" << std::endl;
+			std::cout << "P_" << whoami << ": dss.Generate() at " << time(NULL) << std::endl;
 			if (corrupted)
 				dss->Generate(aiou, rbc, err_log_dss, true);
 			else
@@ -215,7 +215,7 @@ void start_instance
 			// check signing and verifying of a message with N signers
 			mpz_set_ui(m, 42L), mpz_set_ui(r, 0L), mpz_set_ui(s, 0L);
 			start_clock();
-			std::cout << "P_" << whoami << ": dss.Sign(42, ...)" << std::endl;
+			std::cout << "P_" << whoami << ": dss.Sign(42, ...) at " << time(NULL) << std::endl;
 			if (corrupted)
 				dss->Sign(N, whoami, m, r, s, aiou, rbc, err_log_sign, true);
 			else
@@ -226,7 +226,7 @@ void start_instance
 			if (!corrupted)
 				assert(ret);
 			start_clock();
-			std::cout << "P_" << whoami << ": dss.Verify(42, ...)" << std::endl;
+			std::cout << "P_" << whoami << ": dss.Verify(42, ...) at " << time(NULL) << std::endl;
 			if (corrupted)
 				dss->Verify(m, r, s);
 			else
@@ -235,7 +235,7 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			if (!corrupted)
 				assert(ret);
-			std::cout << "P_" << whoami << ": !dss.Verify(43, ...)" << std::endl;
+			std::cout << "P_" << whoami << ": !dss.Verify(43, ...) at " << time(NULL) << std::endl;
 			mpz_add_ui(m, m, 1L);
 			if (corrupted)
 				dss->Verify(m, r, s);
@@ -258,7 +258,7 @@ void start_instance
 					idx2dkg[i] = i + 1, dkg2idx[i + 1] = i; // create one-to-one mapping
 				mpz_set_ui(m, 23L), mpz_set_ui(r, 0L), mpz_set_ui(s, 0L);
 				start_clock();
-				std::cout << "P_" << whoami << ": dss.Sign(23, ...)" << std::endl;
+				std::cout << "P_" << whoami << ": dss.Sign(23, ...) at " << time(NULL) << std::endl;
 				if ((corrupted) && (whoami == (N-1)))
 					dss->Sign(N-1, whoami-1, m, r, s, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_sign_nm1, true);
 				else
@@ -269,7 +269,7 @@ void start_instance
 				if (!corrupted)
 					assert(ret);
 				start_clock();
-				std::cout << "P_" << whoami << ": dss.Verify(23, ...)" << std::endl;
+				std::cout << "P_" << whoami << ": dss.Verify(23, ...) at " << time(NULL) << std::endl;
 				if (corrupted)
 					dss->Verify(m, r, s);
 				else

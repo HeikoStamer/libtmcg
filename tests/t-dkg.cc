@@ -133,14 +133,14 @@ void start_instance
 			// create an instance of a reliable broadcast protocol (RBC)
 			std::string myID = "t-dkg";
 			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_middle);
 			rbc->setID(myID);
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
 			std::stringstream err_log, state_log;
 			bool ret = true;
 			start_clock();
-			std::cout << "P_" << whoami << ": dkg.Generate()" << std::endl;
+			std::cout << "P_" << whoami << ": dkg.Generate() at " << time(NULL) << std::endl;
 			if (corrupted)
 				dkg->Generate(aiou, rbc, err_log, true);
 			else
@@ -153,14 +153,14 @@ void start_instance
 
 			// check the generated key share and publish state
 			start_clock();
-			std::cout << "P_" << whoami << ": dkg.CheckKey()" << std::endl;
+			std::cout << "P_" << whoami << ": dkg.CheckKey() at " << time(NULL) << std::endl;
 			if (corrupted)
 				dkg->CheckKey();
 			else
 				assert(dkg->CheckKey());
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": dkg.PublishState()" << std::endl;
+			std::cout << "P_" << whoami << ": dkg.PublishState() at " << time(NULL) << std::endl;
 			dkg->PublishState(state_log);
 
 			// now: sync for waiting parties
@@ -176,7 +176,7 @@ void start_instance
 			// generate distributed key shares
 			std::stringstream err_log2;
 			start_clock();
-			std::cout << "P_" << whoami << ": nts.Generate()" << std::endl;
+			std::cout << "P_" << whoami << ": nts.Generate() at " << time(NULL) << std::endl;
 			if (corrupted)
 				nts->Generate(aiou, rbc, err_log2, true);
 			else
@@ -195,7 +195,7 @@ void start_instance
 			mpz_t m, c, s;
 			mpz_init_set_ui(m, 1L), mpz_init_set_ui(c, 0L), mpz_init_set_ui(s, 0L);
 			start_clock();
-			std::cout << "P_" << whoami << ": nts.Sign()" << std::endl;
+			std::cout << "P_" << whoami << ": nts.Sign() at " << time(NULL) << std::endl;
 			if (corrupted)
 				nts->Sign(m, c, s, aiou, rbc, err_log3, true);
 			else
@@ -208,7 +208,7 @@ void start_instance
 
 			// verify signature
 			start_clock();
-			std::cout << "P_" << whoami << ": nts.Verify()" << std::endl;
+			std::cout << "P_" << whoami << ": nts.Verify() at " << time(NULL) << std::endl;
 			if (corrupted)
 				nts->Verify(m, c, s);
 			else
