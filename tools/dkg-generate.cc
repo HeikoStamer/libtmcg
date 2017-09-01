@@ -91,12 +91,12 @@ void run_instance
 	if (TMCG_ParseHelper::cm(crs, "crs", '|'))
 	{
 		if (opt_verbose)
-			std::cout << "public domain parameters (generated according to LibTMCG::VTMF constructor):" << std::endl;
+			std::cout << "verifying public domain parameters (according to LibTMCG::VTMF constructor)" << std::endl;
 	}
 	else if (TMCG_ParseHelper::cm(crs, "fips-crs", '|'))
 	{
 		if (opt_verbose)
-			std::cout << "public domain parameters (generated according to FIPS 186-4 section A.1.1.2):" << std::endl;
+			std::cout << "verifying public domain parameters (according to FIPS 186-4 section A.1.1.2)" << std::endl;
 		fips = true;
 	}
 	else
@@ -127,22 +127,22 @@ void run_instance
 		if (i == 0)
 		{
 			mpz_set(fips_p, crsmpz);
-			if (opt_verbose)
+			if (opt_verbose > 1)
 				std::cout << "p";
 		}
 		else if (i == 1)
 		{
 			mpz_set(fips_q, crsmpz);
-			if (opt_verbose)
+			if (opt_verbose > 1)
 				std::cout << "q";
 		}
 		else if (i == 2)
 		{
 			mpz_set(fips_g, crsmpz);
-			if (opt_verbose)
+			if (opt_verbose > 1)
 				std::cout << "g";
 		}
-		if ((opt_verbose) && (i < 3))
+		if ((opt_verbose > 1) && (i < 3))
 			std::cout << " (" << mpz_sizeinbase(crsmpz, 2L) << " bits) = " << crsmpz << std::endl;
 	}
 	mpz_clear(crsmpz);
@@ -584,7 +584,7 @@ void run_instance
 			delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
-		if (opt_verbose)
+		if (opt_verbose > 1)
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 	}
 
@@ -618,7 +618,7 @@ void run_instance
 			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
-		if (opt_verbose)
+		if (opt_verbose > 1)
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
 	
 		// check the generated key share
@@ -633,6 +633,8 @@ void run_instance
 	}
 
 	// participants must agree on a common key creation time (OpenPGP), otherwise subkeyid does not match
+	if (opt_verbose)
+		std::cout << "agree on a key creation time for OpenPGP" << std::endl;
 	time_t ckeytime = 0;
 	std::vector<time_t> tvs;
 	mpz_t mtv;
@@ -950,7 +952,7 @@ void run_instance
 		gcry_mpi_release(h);
 		std::stringstream err_log_sign;
 		if (opt_verbose)
-			std::cout << "P_" << whoami << ": dss.Sign()" << std::endl;
+			std::cout << "P_" << whoami << ": dss.Sign() for self signature on uid" << std::endl;
 		if (!dss->Sign(N, whoami, dsa_m, dsa_r, dsa_s, aiou, rbc, err_log_sign))
 		{
 			std::cerr << "P_" << whoami << ": " << "tDSS Sign() failed" << std::endl;
@@ -965,7 +967,7 @@ void run_instance
 			delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 			exit(-1);
 		}
-		if (opt_verbose)
+		if (opt_verbose > 1)
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
 		if (!mpz_get_gcry_mpi(&r, dsa_r))
 		{
@@ -1230,7 +1232,7 @@ void run_instance
 			gcry_mpi_release(h);
 			std::stringstream err_log_sign;
 			if (opt_verbose)
-				std::cout << "P_" << whoami << ": dss.Sign()" << std::endl;
+				std::cout << "P_" << whoami << ": dss.Sign() for subkey binding signature" << std::endl;
 			if (!dss->Sign(N, whoami, dsa_m, dsa_r, dsa_s, aiou, rbc, err_log_sign))
 			{
 				std::cerr << "P_" << whoami << ": " << "tDSS Sign() failed" << std::endl;
@@ -1243,7 +1245,7 @@ void run_instance
 				delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 				exit(-1);
 			}
-			if (opt_verbose)
+			if (opt_verbose > 1)
 				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
 			if (!mpz_get_gcry_mpi(&r, dsa_r))
 			{
@@ -1314,7 +1316,7 @@ void run_instance
 	all.insert(all.end(), sub.begin(), sub.end());
 	all.insert(all.end(), subsig.begin(), subsig.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(6, all, armor);
-	if (opt_verbose)
+	if (opt_verbose > 1)
 		std::cout << armor << std::endl;
 	std::ofstream pubofs((pubfilename.str()).c_str(), std::ofstream::out);
 	if (!pubofs.good())
@@ -1342,7 +1344,7 @@ void run_instance
 	all.insert(all.end(), ssb.begin(), ssb.end());
 	all.insert(all.end(), subsig.begin(), subsig.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(5, all, armor);
-	if (opt_verbose)
+	if (opt_verbose > 1)
 		std::cout << armor << std::endl;
 	std::ofstream secofs((secfilename.str()).c_str(), std::ofstream::out);
 	if (!secofs.good())

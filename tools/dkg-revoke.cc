@@ -825,6 +825,8 @@ void run_instance
 	}
 
 	// participants must agree on a common signature creation time (OpenPGP)
+	if (opt_verbose)
+		std::cout << "agree on a signature creation time for OpenPGP" << std::endl;
 	time_t csigtime = 0;
 	std::vector<time_t> tvs;
 	mpz_t mtv;
@@ -985,7 +987,7 @@ void run_instance
 		release_mpis();
 		exit(-1);
 	}
-	if (opt_verbose)
+	if (opt_verbose > 1)
 		std::cout << "R_" << whoami << ": log follows " << std::endl << err_log_sign.str();
 	if (!mpz_get_gcry_mpi(&r, dsa_r))
 	{
@@ -1052,7 +1054,7 @@ void run_instance
 		release_mpis();
 		exit(-1);
 	}
-	if (opt_verbose)
+	if (opt_verbose > 1)
 		std::cout << "R_" << whoami << ": log follows " << std::endl << err_log_sign2.str();
 	if (!mpz_get_gcry_mpi(&r, dsa_r))
 	{
@@ -1102,7 +1104,7 @@ void run_instance
 	all.insert(all.end(), revsig_sub.begin(), revsig_sub.end());
 	all.insert(all.end(), subsig.begin(), subsig.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(6, all, armor);
-	if (opt_verbose)
+	if (opt_verbose > 1)
 		std::cout << armor << std::endl;
 	std::ofstream pubofs((pubfilename.str()).c_str(), std::ofstream::out);
 	if (!pubofs.good())

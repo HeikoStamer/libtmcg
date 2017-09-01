@@ -844,6 +844,8 @@ void run_instance
 	}
 
 	// participants must agree on a common signature creation time (OpenPGP)
+	if (opt_verbose)
+		std::cout << "agree on a signature creation time for OpenPGP" << std::endl;
 	time_t csigtime = 0;
 	std::vector<time_t> tvs;
 	mpz_t mtv;
@@ -896,6 +898,8 @@ void run_instance
 	}
 
 	// compute the hash of the input file
+	if (opt_verbose)
+		std::cout << "hashing the input file \"" << opt_ifilename << "\"" << std::endl;
 	tmcg_octets_t trailer, hash, left;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, hashalgo, csigtime, sigexptime, keyid, trailer);
 	if (!CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash(opt_ifilename, trailer, hashalgo, hash, left))
@@ -997,7 +1001,7 @@ void run_instance
 		release_mpis();
 		exit(-1);
 	}
-	if (opt_verbose)
+	if (opt_verbose > 1)
 		std::cout << "S_" << whoami << ": log follows " << std::endl << err_log_sign.str();
 	if (!mpz_get_gcry_mpi(&r, dsa_r))
 	{

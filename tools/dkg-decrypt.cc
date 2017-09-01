@@ -1752,7 +1752,7 @@ void run_instance
 	// create and exchange keys in order to bootstrap the $h$-generation for EDCF [JL00]
 	// TODO: replace N-time NIZK by one interactive (distributed) zero-knowledge proof of knowledge
 	if (opt_verbose)
-		std::cout << "INFO: generate h by using VTMF key generation protocol" << std::endl;
+		std::cout << "INFO: generate h for EDCF by using VTMF key generation protocol" << std::endl;
 	mpz_t nizk_c, nizk_r, h_j;
 	mpz_init(nizk_c), mpz_init(nizk_r), mpz_init(h_j);
 	vtmf->KeyGenerationProtocol_GenerateKey();
@@ -1851,6 +1851,8 @@ void run_instance
 				if (opt_verbose)
 					std::cout << "D_" << whoami << ": good decryption share of P_" << idx_dkg << " received from D_" <<
 						i << std::endl;
+				if (opt_verbose > 1)
+					std::cerr << err_log.str() << std::endl;
 				// collect only verified decryption shares
 				mpz_ptr tmp1 = new mpz_t();
 				mpz_init_set(tmp1, r_i);
@@ -1870,7 +1872,9 @@ void run_instance
 			std::stringstream err_log;
 			prove_decryption_share_interactive_publiccoin(r_i, aiou, rbc, edcf, err_log);
 			if (opt_verbose)
-				std::cout << "prove_decryption_share_interactive_publiccoin() finished; log follows" << std::endl << err_log.str() << std::endl;
+				std::cout << "prove_decryption_share_interactive_publiccoin() finished" << std::endl;
+			if (opt_verbose > 1)
+				std::cout << "D_" << whoami << ": log follows" << std::endl << err_log.str();
 		}
 	}
 
