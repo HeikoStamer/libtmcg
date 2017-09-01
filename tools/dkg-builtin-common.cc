@@ -177,6 +177,8 @@ void builtin_bindports
 			if (bind(sockfd, rp->ai_addr, rp->ai_addrlen) < 0)
 			{
 				perror("dkg-builtin-common (bind)");
+				if (close(sockfd) < 0)
+					perror("dkg-builtin-common (close)");
 				continue; // try next address
 			}
 			break; // on success: leave the loop
