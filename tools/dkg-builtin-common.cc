@@ -643,7 +643,7 @@ int builtin_io
 				}
 				else if (len == 0)
 				{
-					std::cerr << "pipe to child collapsed" << std::endl;
+					std::cerr << "ERROR: pipe to child collapsed" << std::endl;
 					continue;
 				}
 				else if (builtin_pipe2socket_out.count(i))
@@ -661,9 +661,16 @@ int builtin_io
 								if (errno == EAGAIN)
 									perror("dkg-builtin-common (write)");
 								if (opt_verbose)
-									std::cerr << "sleeping for write into pipe ..." << std::endl;
+									std::cerr << "sleeping for write into socket ..." << std::endl;
 								sleep(1);
 								continue;
+							}
+							else if (errno == ECONNRESET)
+							{
+								std::cerr << "ERROR: connection collapsed for P/D/R/S_" << i << std::endl;
+								builtin_broadcast_pipe2socket_out.erase(i);
+								builtin_broadcast_pipe2socket_in.erase(i);
+								break;
 							}
 							else
 							{
@@ -723,9 +730,16 @@ int builtin_io
 								if (errno == EAGAIN)
 									perror("dkg-builtin-common (write)");
 								if (opt_verbose)
-									std::cerr << "sleeping for write into pipe ..." << std::endl;
+									std::cerr << "sleeping for write into socket ..." << std::endl;
 								sleep(1);
 								continue;
+							}
+							else if (errno == ECONNRESET)
+							{
+								std::cerr << "ERROR: broadcast connection collapsed for P/D/R/S_" << i << std::endl;
+								builtin_broadcast_pipe2socket_out.erase(i);
+								builtin_broadcast_pipe2socket_in.erase(i);
+								break;
 							}
 							else
 							{
