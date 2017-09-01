@@ -211,11 +211,12 @@ void mpz_ssrandomm_cache_init
 	size_t *mpz_ssrandomm_cache_avail,
 	size_t n, mpz_srcptr m)
 {
+	size_t i = 0;
 	if ((n == 0) || (n > TMCG_MAX_SSRANDOMM_CACHE))
 		return;
-	for (size_t i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
+	for (i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
 		mpz_init(mpz_ssrandomm_cache[i]);	
-	for (size_t i = 0; i < n; i++)
+	for (i = 0; i < n; i++)
 		mpz_ssrandomm(mpz_ssrandomm_cache[i], m);
 	mpz_init_set(mpz_ssrandomm_cache_mod, m);
 	*mpz_ssrandomm_cache_avail = n;
@@ -241,9 +242,10 @@ void mpz_ssrandomm_cache_done
 	mpz_ptr mpz_ssrandomm_cache_mod,
 	size_t *mpz_ssrandomm_cache_avail)
 {
+	size_t i = 0;
 	*mpz_ssrandomm_cache_avail = 0;
 	mpz_clear(mpz_ssrandomm_cache_mod);
-	for (size_t i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
+	for (i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
 		mpz_clear(mpz_ssrandomm_cache[i]);
 }
 
