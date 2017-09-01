@@ -105,6 +105,7 @@ void mpz_grandomb
 	ret = gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
 	if (ret)
 	{
+		fprintf(stderr, "mpz_grandomb(): gcry_mpi_aprint() failed: %s\n", gcry_strerror(ret));
 		mpz_set_ui(r, 0L); /* indicates an error */
 	}
 	else
@@ -162,6 +163,7 @@ void mpz_grandomm
 	ret = gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
 	if (ret)
 	{
+		fprintf(stderr, "mpz_grandomm(): gcry_mpi_aprint() failed: %s\n", gcry_strerror(ret));
 		mpz_set_ui(r, 0L); /* indicates an error */
 	}
 	else
@@ -202,3 +204,46 @@ void mpz_wrandomm
 {
 	mpz_grandomm(r, m, GCRY_WEAK_RANDOM);
 }
+
+void mpz_ssrandomm_cache_init
+	(mpz_t mpz_ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_ptr mpz_ssrandomm_cache_mod,
+	size_t *mpz_ssrandomm_cache_avail,
+	size_t n, mpz_srcptr m)
+{
+	if ((n == 0) || (n > TMCG_MAX_SSRANDOMM_CACHE))
+		return;
+	for (size_t i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
+		mpz_init(mpz_ssrandomm_cache[i]);	
+	for (size_t i = 0; i < n; i++)
+		mpz_ssrandomm(mpz_ssrandomm_cache[i], m);
+	mpz_init_set(mpz_ssrandomm_cache_mod, m);
+	*mpz_ssrandomm_cache_avail = n;
+}
+
+void mpz_ssrandomm_cache
+	(mpz_t mpz_ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr mpz_ssrandomm_cache_mod,
+	size_t *mpz_ssrandomm_cache_avail,
+	mpz_ptr r, mpz_srcptr m)
+{
+	if (!mpz_cmp(m, mpz_ssrandomm_cache_mod) && *mpz_ssrandomm_cache_avail)
+	{
+		(*mpz_ssrandomm_cache_avail)--; // next cached random value
+		mpz_set(r, mpz_ssrandomm_cache[*mpz_ssrandomm_cache_avail]);
+	}
+	else
+		mpz_ssrandomm(r, m);
+}
+
+void mpz_ssrandomm_cache_done
+	(mpz_t mpz_ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_ptr mpz_ssrandomm_cache_mod,
+	size_t *mpz_ssrandomm_cache_avail)
+{
+	*mpz_ssrandomm_cache_avail = 0;
+	mpz_clear(mpz_ssrandomm_cache_mod);
+	for (size_t i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
+		mpz_clear(mpz_ssrandomm_cache[i]);
+}
+

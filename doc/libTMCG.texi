@@ -552,11 +552,11 @@ There are no uniform C++ name spaces for the most parts of the
 library. Some classes and data types have the common prefix
 @code{TMCG_*} resp. @code{VTMF_*} while others are composed of
 the author names and an abbreviation of the title from the related
-research paper. Further there are internally
-used C functions which might produce conflicting names. These
-function names are prepended by @code{mpz_*} because they are
-extensions for the large integer support of the GNU Multiple
-Precision Arithmetic Library.
+research paper. Further there are internally used C functions
+which might produce conflicting names. These function names are
+prepended by @code{mpz_*} because they are extensions for the
+large integer support of the GNU Multiple Precision Arithmetic
+Library.
 
 @c **********************************************************
 @node Building Sources
@@ -650,15 +650,16 @@ containing the version number of the library in a common format. It
 is strongly recommended to check, whether the installed version
 matches your requirements.
 
-@deftypefun std::string version_libTMCG ()
+@deftypefun const std::string version_libTMCG ()
 This function returns the version of the library in the
 format @emph{major.minor.revision}.
 @end deftypefun
 
 Last but not least, there is a function @code{identifier_libTMCG}
-which returns an identifier of LibTMCG including the version.
+which returns an identifier of LibTMCG including the version,
+copyright mark and license.
 
-@deftypefun std::string identifier_libTMCG ()
+@deftypefun const std::string identifier_libTMCG ()
 This function returns an identifier of the library.
 @end deftypefun
 
@@ -703,7 +704,7 @@ intended purposes of LibTMCG this seems to be reasonable.
 @end defmac
 
 @defmac TMCG_DDH_SIZE
-Defines the security parameter (field size in bit) of the group
+Defines the security parameter (finite field size in bit) of the group
 @math{G} which is used by the card encoding scheme of Barnett and
 Smart@tie{}[BS03]. The underlying assumptions are DDH, CDH, and DLOG.
 The default value is @code{2048}.
@@ -882,7 +883,7 @@ this parameter has a strong influence on the amount of memory allocated
 by LibTMCG since it determines the size of the precomputed tables.
 However, it should be at least greater or equal than @code{TMCG_DDH_SIZE}
 and @code{TMCG_QRA_SIZE} in order to support the possible exponents of
-common field sizes.
+common finite field sizes.
 @end defmac
 
 @defmac TMCG_MAX_FPOWM_N
@@ -892,6 +893,15 @@ and memory allocation. Currently it is only relevant for the generators
 @math{g_1, \ldots, g_n} in Groth's variant of Pedersen commitment scheme
 (@pxref{GrothVSSHE}). The default value is @code{256}.
 @end defmac
+
+@defmac TMCG_MAX_SSRANDOMM_CACHE
+Define the maximum size of the cache for function @code{mpz_ssrandomm}. The cache
+must be proper initialized and is useful in interactive protocols, where entropy
+is limited and a lot of very secure randomness is required immediately. Thus some
+values should be aquired and cached before the protocol starts.  
+The default value is @code{256}.
+@end defmac
+
 
 @c **********************************************************
 @node Basic Structures
@@ -1576,7 +1586,7 @@ individual profile or a service provider can issue public key certificates.
 		bit size of the modulus @math{m}. The suffix @code{NIZK} signals
 		that the correctness of the key is shown by an appended non-interactive
 		zero-knowledge proof. The single parts of the description are separated	
-		by underscore characters @code{_}, e.g., @code{TMCG/RABIN_1024_NIZK} has
+		by underscore characters @code{_}, e.g., @code{TMCG/RABIN_2048_NIZK} has
 		the correct form. The suffix can be left empty, if the key is only used
 		for encryption and signing (so-called non-NIZK key) without card encoding.
 	@end deftypecv
@@ -1745,7 +1755,7 @@ individual profile or a service provider can issue public key certificates.
 		bit size of the modulus @math{m}. The suffix @code{NIZK} signals
 		that the correctness of the key is shown by an appended non-interactive
 		zero-knowledge proof. The single parts of the string are separated by underscore
-		characters @code{_}, e.g., @code{TMCG/RABIN_1024_NIZK} has the correct
+		characters @code{_}, e.g., @code{TMCG/RABIN_2048_NIZK} has the correct
 		form. However, the suffix can be left empty, if the key is
 		only used for encryption and signing.
 	@end deftypecv
@@ -2265,7 +2275,7 @@ description of such internal functions and members.
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} p
 		This is the public prime number @math{p} which defines the
-		underlying field @math{{\bf Z}/p{\bf Z}}.
+		underlying finite field @math{{\bf Z}/p{\bf Z}}.
 	@end deftypecv
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} q
@@ -2397,7 +2407,7 @@ description of such internal functions and members.
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} p
 		This is the public prime number @math{p} which defines the
-		underlying field @math{{\bf Z}/p{\bf Z}}.
+		underlying finite field @math{{\bf Z}/p{\bf Z}}.
 	@end deftypecv
 	
 	@deftypecv {Member} BarnettSmartVTMF_dlog {mpz_t} q
@@ -2491,7 +2501,7 @@ to gain security against an adaptive adversary for threshold cryptography.
 
 	@deftypecv {Member} JareckiLysyanskayaEDCF {mpz_t} p
 		This is the public prime number @math{p} which defines the
-		underlying field @math{{\bf Z}/p{\bf Z}}.
+		underlying finite field @math{{\bf Z}/p{\bf Z}}.
 	@end deftypecv
 	
 	@deftypecv {Member} JareckiLysyanskayaEDCF {mpz_t} q

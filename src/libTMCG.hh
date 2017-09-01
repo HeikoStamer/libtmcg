@@ -199,6 +199,11 @@
 		#define TMCG_MAX_FPOWM_N 256
 	#endif
 
+	#ifndef TMCG_MAX_SSRANDOMM_CACHE
+		/* Define the maximum size of mpz_ssrandomm_cache */
+		#define TMCG_MAX_SSRANDOMM_CACHE 256
+	#endif
+
 	#ifndef TMCG_OPENPGP_CRC24_INIT
 		/* Define the initial value for OPENPGP CRC24 algorithm */
 		#define TMCG_OPENPGP_CRC24_INIT 0xB704CE
@@ -247,10 +252,10 @@
 		();
 	
 	// Returns the version of LibTMCG
-	std::string version_libTMCG
+	const std::string version_libTMCG
 		();
 
 	// Returns the identifier of LibTMCG
-	std::string identifier_libTMCG
+	const std::string identifier_libTMCG
 		();
 #endif

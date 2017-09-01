@@ -27,7 +27,7 @@
 #include "libTMCG.hh"
 
 // LibTMCG identifier
-std::string LibTMCG_ID = 
+static const std::string LibTMCG_ID = 
     "LibTMCG " VERSION "  (C) Heiko Stamer, License: GNU GPL version 2";
 
 // LibTMCG general functions
@@ -134,14 +134,14 @@ bool init_libTMCG
 	return true;
 }
 
-std::string version_libTMCG
+const std::string version_libTMCG
 	()
 {
 	return std::string(VERSION);
 }
 
-std::string identifier_libTMCG
+const std::string identifier_libTMCG
 	()
 {
-	return std::string(LibTMCG_ID);
+	return LibTMCG_ID;
 }

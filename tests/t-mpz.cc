@@ -34,6 +34,7 @@
 #undef NDEBUG
 
 #define MOD_BIAS_WIDTH 3
+#define TEST_SSRANDOM
 
 int main
 	(int argc, char **argv)
@@ -47,6 +48,7 @@ int main
 	assert(init_libTMCG());
 	
 	std::cout << "version_libTMCG() = " << version_libTMCG() << std::endl;
+	std::cout << "identifier_libTMCG() = " << identifier_libTMCG() << std::endl;
 	std::cout << "gmp_version = " << gmp_version << ", " << 
 		"gcry_check_version() = " << gcry_check_version("0.0.0") << std::endl;
 	
@@ -236,6 +238,30 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		assert(mpz_cmp(foo, bar) < 0);
 		assert(mpz_cmp(foo, foo2));
 	}
+#endif
+
+	// mpz_ssrandomm_cache_init, mpz_ssrandomm_cache, mpz_ssrandomm_cache_done
+	mpz_t cache[TMCG_MAX_SSRANDOMM_CACHE];
+	mpz_t cache_mod;
+	size_t cache_avail = 0, cache_n = 25;
+#ifdef TEST_SSRANDOM
+	std::cout << "mpz_ssrandomm_cache_init()" << std::endl;
+	mpz_ssrandomm_cache_init(cache, cache_mod, &cache_avail, cache_n, bar);
+	assert(cache_avail == cache_n);
+	std::cout << "mpz_ssrandomm_cache()" << std::endl;
+	for (size_t i = 0; i < cache_n; i++)
+	{
+		mpz_ssrandomm_cache(cache, cache_mod, &cache_avail, foo, bar);
+		assert(mpz_cmp(foo, bar) < 0);
+		std::cout << foo << " (cached)" << std::endl;
+	}
+	assert(!cache_avail);
+	mpz_ssrandomm_cache(cache, cache_mod, &cache_avail, foo, bar);
+	assert(mpz_cmp(foo, bar) < 0);
+	std::cout << foo << " (not cached)" << std::endl;
+	std::cout << "mpz_ssrandomm_cache_done()" << std::endl;
+	mpz_ssrandomm_cache_done(cache, cache_mod, &cache_avail);
+	assert(!cache_avail);
 #endif
 	
 	// mpz_sprime, mpz_sprime2g, mpz_sprime3mod4
