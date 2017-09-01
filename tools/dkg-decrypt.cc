@@ -2141,7 +2141,7 @@ int main
 				if ((arg.find("-n") == 0) || (arg.find("--non-interactive") == 0))
 					nonint = true; // non-interactive mode
 				if ((arg.find("-V") == 0) || (arg.find("--verbose") == 0))
-					opt_verbose = 1; // verbose output
+					opt_verbose++; // increade verbosity
 				continue;
 			}
 			else if (arg.find("-") == 0)

@@ -518,7 +518,7 @@ int builtin_io
 				}
 				else
 				{
-					if (opt_verbose)
+					if (opt_verbose > 1)
 						std::cout << "INFO: received " << len << " bytes on connection for P/D/R/S_" << 
 							pi->first << std::endl;
 					ssize_t wnum = 0;
@@ -533,7 +533,7 @@ int builtin_io
 								if (errno == EAGAIN)
 									perror("dkg-builtin-common (write)");
 								if (opt_verbose)
-									std::cerr << "sleeping to write into pipe ..." << std::endl;
+									std::cerr << "sleeping for write into pipe ..." << std::endl;
 								sleep(1);
 								continue;
 							}
@@ -583,7 +583,7 @@ int builtin_io
 				}
 				else
 				{
-					if (opt_verbose)
+					if (opt_verbose > 1)
 						std::cout << "INFO: received " << len << " bytes on broadcast connection for P/D/R/S_" << 
 							pi->first << std::endl;
 					ssize_t wnum = 0;
@@ -598,7 +598,7 @@ int builtin_io
 								if (errno == EAGAIN)
 									perror("dkg-builtin-common (write)");
 								if (opt_verbose)
-									std::cerr << "sleeping to write into pipe ..." << std::endl;
+									std::cerr << "sleeping for write into pipe ..." << std::endl;
 								sleep(1);
 								continue;
 							}
@@ -646,7 +646,7 @@ int builtin_io
 				}
 				else if (builtin_pipe2socket_out.count(i))
 				{
-					if (opt_verbose)
+					if (opt_verbose > 1)
 						std::cout << "INFO: sending " << len << " bytes on connection to P/D/R/S_" << i << std::endl;
 					ssize_t wnum = 0;
 					do
@@ -659,7 +659,7 @@ int builtin_io
 								if (errno == EAGAIN)
 									perror("dkg-builtin-common (write)");
 								if (opt_verbose)
-									std::cerr << "sleeping to write into pipe ..." << std::endl;
+									std::cerr << "sleeping for write into pipe ..." << std::endl;
 								sleep(1);
 								continue;
 							}
@@ -678,7 +678,7 @@ int builtin_io
 				}
 				else
 				{
-					if (opt_verbose)
+					if (opt_verbose > 1)
 						std::cout << "INFO: discarding " << len << " bytes for P/D/R/S_" << i << std::endl;
 				}
 			}
@@ -708,7 +708,7 @@ int builtin_io
 				}
 				else if (builtin_broadcast_pipe2socket_out.count(i))
 				{
-					if (opt_verbose)
+					if (opt_verbose > 1)
 						std::cout << "INFO: sending " << len << " bytes on broadcast connection to P/D/R/S_" << i << std::endl;
 					ssize_t wnum = 0;
 					do
@@ -721,7 +721,7 @@ int builtin_io
 								if (errno == EAGAIN)
 									perror("dkg-builtin-common (write)");
 								if (opt_verbose)
-									std::cerr << "sleeping to write into pipe ..." << std::endl;
+									std::cerr << "sleeping for write into pipe ..." << std::endl;
 								sleep(1);
 								continue;
 							}
@@ -740,7 +740,7 @@ int builtin_io
 				}
 				else
 				{
-					if (opt_verbose)
+					if (opt_verbose > 1)
 						std::cout << "INFO: discarding " << len << " bytes for P/D/R/S_" << i << std::endl;
 				}
 			}

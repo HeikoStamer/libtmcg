@@ -1321,7 +1321,7 @@ int main
 					return 0; // not continue
 				}
 				if ((arg.find("-V") == 0) || (arg.find("--verbose") == 0))
-					opt_verbose = 1; // verbose output
+					opt_verbose++; // increase verbosity
 				continue;
 			}
 			else if (arg.find("-") == 0)
