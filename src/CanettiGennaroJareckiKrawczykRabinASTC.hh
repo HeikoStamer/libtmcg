@@ -102,13 +102,19 @@ class CanettiGennaroJareckiKrawczykRabinRVSS
 		bool Share
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			const bool simulate_faulty_behaviour = false,
+			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
+			mpz_srcptr ssrandomm_cache_mod = NULL,
+			size_t *ssrandomm_cache_avail = NULL);
 		bool Share
 			(std::map<size_t, size_t> &idx2dkg,
 			std::map<size_t, size_t> &dkg2idx,
 			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			const bool simulate_faulty_behaviour = false,
+			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
+			mpz_srcptr ssrandomm_cache_mod = NULL,
+			size_t *ssrandomm_cache_avail = NULL);
 		bool Reconstruct
 			(const std::vector<size_t> &complaints,
 			std::vector<mpz_ptr> &a_i_in,
@@ -171,7 +177,10 @@ class CanettiGennaroJareckiKrawczykRabinZVSS
 		bool Share
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			const bool simulate_faulty_behaviour = false,
+			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
+			mpz_srcptr ssrandomm_cache_mod = NULL,
+			size_t *ssrandomm_cache_avail = NULL);
 		~CanettiGennaroJareckiKrawczykRabinZVSS
 			();
 };
@@ -217,13 +226,19 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 		bool Generate
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			const bool simulate_faulty_behaviour = false,
+			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
+			mpz_srcptr ssrandomm_cache_mod = NULL,
+			size_t *ssrandomm_cache_avail = NULL);
 		bool Generate
 			(std::map<size_t, size_t> &idx2dkg,
 			std::map<size_t, size_t> &dkg2idx,
 			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			const bool simulate_faulty_behaviour = false,
+			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
+			mpz_srcptr ssrandomm_cache_mod = NULL,
+			size_t *ssrandomm_cache_avail = NULL);
 		~CanettiGennaroJareckiKrawczykRabinDKG
 			();
 };
@@ -267,7 +282,10 @@ class CanettiGennaroJareckiKrawczykRabinDSS
 		bool Generate
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			const bool simulate_faulty_behaviour = false,
+			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
+			mpz_srcptr ssrandomm_cache_mod = NULL,
+			size_t *ssrandomm_cache_avail = NULL);
 		bool Sign
 			(const size_t n_in, const size_t i_in,
 			mpz_srcptr m, mpz_ptr r, mpz_ptr s,

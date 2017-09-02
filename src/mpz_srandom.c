@@ -206,46 +206,46 @@ void mpz_wrandomm
 }
 
 void mpz_ssrandomm_cache_init
-	(mpz_t mpz_ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
-	mpz_ptr mpz_ssrandomm_cache_mod,
-	size_t *mpz_ssrandomm_cache_avail,
+	(mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_ptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail,
 	size_t n, mpz_srcptr m)
 {
 	size_t i = 0;
 	if ((n == 0) || (n > TMCG_MAX_SSRANDOMM_CACHE))
 		return;
 	for (i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
-		mpz_init(mpz_ssrandomm_cache[i]);	
+		mpz_init(ssrandomm_cache[i]);	
 	for (i = 0; i < n; i++)
-		mpz_ssrandomm(mpz_ssrandomm_cache[i], m);
-	mpz_init_set(mpz_ssrandomm_cache_mod, m);
-	*mpz_ssrandomm_cache_avail = n;
+		mpz_ssrandomm(ssrandomm_cache[i], m);
+	mpz_init_set(ssrandomm_cache_mod, m);
+	*ssrandomm_cache_avail = n;
 }
 
 void mpz_ssrandomm_cache
-	(mpz_t mpz_ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
-	mpz_srcptr mpz_ssrandomm_cache_mod,
-	size_t *mpz_ssrandomm_cache_avail,
+	(mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail,
 	mpz_ptr r, mpz_srcptr m)
 {
-	if (!mpz_cmp(m, mpz_ssrandomm_cache_mod) && *mpz_ssrandomm_cache_avail)
+	if (!mpz_cmp(m, ssrandomm_cache_mod) && *ssrandomm_cache_avail)
 	{
-		(*mpz_ssrandomm_cache_avail)--; // next cached random value
-		mpz_set(r, mpz_ssrandomm_cache[*mpz_ssrandomm_cache_avail]);
+		(*ssrandomm_cache_avail)--; // next cached random value
+		mpz_set(r, ssrandomm_cache[*ssrandomm_cache_avail]);
 	}
 	else
 		mpz_ssrandomm(r, m);
 }
 
 void mpz_ssrandomm_cache_done
-	(mpz_t mpz_ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
-	mpz_ptr mpz_ssrandomm_cache_mod,
-	size_t *mpz_ssrandomm_cache_avail)
+	(mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_ptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
 {
 	size_t i = 0;
-	*mpz_ssrandomm_cache_avail = 0;
-	mpz_clear(mpz_ssrandomm_cache_mod);
+	*ssrandomm_cache_avail = 0;
+	mpz_clear(ssrandomm_cache_mod);
 	for (i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
-		mpz_clear(mpz_ssrandomm_cache[i]);
+		mpz_clear(ssrandomm_cache[i]);
 }
 

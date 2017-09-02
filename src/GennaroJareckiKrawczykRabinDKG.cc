@@ -345,7 +345,10 @@ bool GennaroJareckiKrawczykRabinDKG::CheckElement
 
 bool GennaroJareckiKrawczykRabinDKG::Generate
 	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, const bool simulate_faulty_behaviour)
+	std::ostream &err, const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
 {
 	assert(t <= n);
 	assert(i < n);
@@ -414,8 +417,17 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 		{
 			if (use_very_strong_randomness)
 			{
-				mpz_ssrandomm(a_i[k], q);
-				mpz_ssrandomm(b_i[k], q);
+				if ((ssrandomm_cache != NULL) && (ssrandomm_cache_mod != NULL) && (ssrandomm_cache_avail != NULL))
+				{
+					err << "P_" << i << ": using very strong randomness from cache" << std::endl;
+					mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, a_i[k], q);
+					mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, b_i[k], q);
+				}
+				else
+				{
+					mpz_ssrandomm(a_i[k], q);
+					mpz_ssrandomm(b_i[k], q);
+				}
 			}
 			else
 			{
@@ -1433,7 +1445,10 @@ bool GennaroJareckiKrawczykRabinNTS::CheckGroup
 
 bool GennaroJareckiKrawczykRabinNTS::Generate
 	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, const bool simulate_faulty_behaviour)
+	std::ostream &err, const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
 {
 	assert(n >= t);
 	assert(i < n);
@@ -1457,7 +1472,7 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 		// call of the protocol New-DKG for generating an additive
 		// share $z_i$ of a common secret $x$ and the public parameters
 		// $y = g^x$ and $y_i = g^{z_i}$ for every $P_i$
-		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour))
+		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail))
 			throw false;
 		// set the public variables of the class by results of New-DKG
 		mpz_set(z_i, dkg->z_i[i]);

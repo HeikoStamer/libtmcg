@@ -336,19 +336,25 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::CheckElement
 
 bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, const bool simulate_faulty_behaviour)
+	std::ostream &err, const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
 {
 	std::map<size_t, size_t> id;
 	for (size_t j = 0; j < n; j++)
 		id[j] = j;
-	return Share(id, id, aiou, rbc, err, simulate_faulty_behaviour);
+	return Share(id, id, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 	(std::map<size_t, size_t> &idx2dkg,
 	std::map<size_t, size_t> &dkg2idx,
 	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, const bool simulate_faulty_behaviour)
+	std::ostream &err, const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
 {
 	assert(t <= n);
 	assert(tprime <= n);
@@ -391,8 +397,17 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		{
 			if (use_very_strong_randomness)
 			{
-				mpz_ssrandomm(a_i[k], q);
-				mpz_ssrandomm(b_i[k], q);
+				if ((ssrandomm_cache != NULL) && (ssrandomm_cache_mod != NULL) && (ssrandomm_cache_avail != NULL))
+				{
+					err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": using very strong randomness from cache" << std::endl;
+					mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, a_i[k], q);
+					mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, b_i[k], q);
+				}
+				else
+				{
+					mpz_ssrandomm(a_i[k], q);
+					mpz_ssrandomm(b_i[k], q);
+				}
 			}
 			else
 			{
@@ -1232,7 +1247,10 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::CheckElement
 
 bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, const bool simulate_faulty_behaviour)
+	std::ostream &err, const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
 {
 	assert(t <= n);
 	assert(tprime <= n);
@@ -1283,8 +1301,17 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			}
 			else if (use_very_strong_randomness)
 			{
-				mpz_ssrandomm(a_i[k], q);
-				mpz_ssrandomm(b_i[k], q);
+				if ((ssrandomm_cache != NULL) && (ssrandomm_cache_mod != NULL) && (ssrandomm_cache_avail != NULL))
+				{
+					err << "ZVSS(" << label << "): P_" << i << ": using very strong randomness from cache" << std::endl;
+					mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, a_i[k], q);
+					mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, b_i[k], q);
+				}
+				else
+				{
+					mpz_ssrandomm(a_i[k], q);
+					mpz_ssrandomm(b_i[k], q);
+				}
 			}
 			else
 			{
@@ -1887,19 +1914,25 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::CheckElement
 
 bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, const bool simulate_faulty_behaviour)
+	std::ostream &err, const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
 {
 	std::map<size_t, size_t> id;
 	for (size_t j = 0; j < n; j++)
 		id[j] = j;
-	return Generate(id, id, aiou, rbc, err, simulate_faulty_behaviour);
+	return Generate(id, id, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	(std::map<size_t, size_t> &idx2dkg,
 	std::map<size_t, size_t> &dkg2idx,
 	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, const bool simulate_faulty_behaviour)
+	std::ostream &err, const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
 {
 	assert(t <= n);
 	assert(i < n);
@@ -1944,7 +1977,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	{
 		// Generating $x$:
 		// Players execute Joint-RVSS(t,n,t)
-		if (!x_rvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour))
+		if (!x_rvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[0])
 			throw false;
@@ -2045,7 +2078,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		}
 		// 3. Players execute Joint-RVSS(t,n,t) for a joint random challenge $d$. Player $P_i$ sets
 		//    his local share of the secret challenge to $d_i$.
-		if (!d_rvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour))
+		if (!d_rvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[2])
 			throw false;
@@ -2565,7 +2598,10 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::CheckElement
 
 bool CanettiGennaroJareckiKrawczykRabinDSS::Generate
 	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-	std::ostream &err, const bool simulate_faulty_behaviour)
+	std::ostream &err, const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
 {
 	assert(t <= n);
 	assert(i < n);
@@ -2587,7 +2623,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Generate
 	try
 	{
 		// call DKG as subprotocol
-		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour))
+		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail))
 			throw false;
 
 		// copy the generated $y$, $x_i$, and $x\prime_i$

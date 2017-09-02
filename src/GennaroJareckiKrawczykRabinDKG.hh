@@ -99,7 +99,10 @@ class GennaroJareckiKrawczykRabinDKG
 		bool Generate
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			const bool simulate_faulty_behaviour = false,
+			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
+			mpz_srcptr ssrandomm_cache_mod = NULL,
+			size_t *ssrandomm_cache_avail = NULL);
 		bool CheckKey
 			(const size_t i_in) const;
 		bool CheckKey
@@ -144,7 +147,10 @@ class GennaroJareckiKrawczykRabinNTS
 		bool Generate
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			const bool simulate_faulty_behaviour = false,
+			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
+			mpz_srcptr ssrandomm_cache_mod = NULL,
+			size_t *ssrandomm_cache_avail = NULL);
 		bool Sign
 			(mpz_srcptr m, mpz_ptr c, mpz_ptr s,
 			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
