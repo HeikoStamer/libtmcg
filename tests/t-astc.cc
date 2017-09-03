@@ -150,7 +150,7 @@ void start_instance
 			mpz_init_set_ui(a, 0L);
 			bool ret;
 			start_clock();
-			std::cout << "P_" << whoami << ": edcf.Flip()" << std::endl;
+			std::cout << "P_" << whoami << ": edcf.Flip() at " << time(NULL) << std::endl;
 			if (corrupted)
 				ret = edcf->Flip(whoami, a, aiou, rbc, err_log, true);
 			else
@@ -167,7 +167,7 @@ void start_instance
 			PedersenCommitmentScheme *com = new PedersenCommitmentScheme(nn, vtmf->p, vtmf->q, vtmf->k, vtmf->h);
 			std::stringstream err_log2;
 			start_clock();
-			std::cout << "P_" << whoami << ": com.SetupGenerators_publiccoin()" << std::endl;
+			std::cout << "P_" << whoami << ": com.SetupGenerators_publiccoin() at " << time(NULL) << std::endl;
 			ret = com->SetupGenerators_publiccoin(whoami, aiou, rbc, edcf, err_log2);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
@@ -185,11 +185,11 @@ void start_instance
 			// commit and verify
 			mpz_t b;
 			mpz_init(b);
-			std::cout << "P_" << whoami << ": com.Commit(...)" << std::endl;
+			std::cout << "P_" << whoami << ": com.Commit(...) at " << time(NULL) << std::endl;
 			com->Commit(a, b, mp);
-			std::cout << "P_" << whoami << ": com.Verify(...)" << std::endl;
+			std::cout << "P_" << whoami << ": com.Verify(...) at " << time(NULL) << std::endl;
 			assert(com->Verify(a, b, mp));
-			std::cout << "P_" << whoami << ": !com.Verify(...)" << std::endl;
+			std::cout << "P_" << whoami << ": !com.Verify(...) at " << time(NULL) << std::endl;
 			mpz_add_ui(mp[0], mp[0], 1L);
 			assert(!com->Verify(a, b, mp));
 			// release
