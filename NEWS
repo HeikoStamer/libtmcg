@@ -1,3 +1,4 @@
+1.3.3
 1.3.2 Major improvements for distributed key generation (DKG) and threshold
       cryptography have been added. For example, the robust DSA compatible
       threshold signature scheme of Canetti et al. is now included. LibTMCG
