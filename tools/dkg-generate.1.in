@@ -187,10 +187,17 @@ be reachable by all other peers over the underlying network. Resolvable hostname
 PP
 .nf
 .RS
-dkg-generate -s 2 -t 2 -P secret1/secret2/secret3/secret4/ -H host2.example.com host1.example.com host2.example.com host3.example.com  
+dkg-generate -s 2 -t 2 -P secret1/secret2/secret3/secret4/ -H host2.example.com host1.example.com host2.example.com host3.example.com host4.example.com  
 .RE
 .fi
 The s-resilience is set non-zero in this example, which means that a shared DSA key is generated and used as OpenPGP primary key.
+.PP
+Last but not least, in the following example only a shared DSA key, e.g. for distributed code signing, is generated:
+.nf
+.RS
+dkg-generate -t 0 -P secret1/secret2/secret3/ -H supertapir evilsloth supertapir lazyhedgehog 
+.RE
+.fi
 
 .SH "SEE ALSO"
 .BR dkg\-encrypt (1),
