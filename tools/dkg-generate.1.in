@@ -45,7 +45,7 @@ t+1 participants are needed to recover a key share or to decrypt a OpenPGP
 message. This parameter can be adjusted by using the option "-t". The default
 value is (n-1)/2 where n is the number of participants. If the program is
 called with a zero t-resilience (i.e. "-t 0"), then no ElGamal encryption
-subkey is generated. It is always ensured by clipping that t <= n holds.
+subkey is generated. It is always ensured by clipping that t < n holds.
 .PP
 The option "-s" defines the parameter s, i.e., the s-resilience of the tDSS
 protocol. At least 2s+1 participants are required to create a signature of the

@@ -1532,8 +1532,8 @@ int main
 	if (opt_s != MAX_N)
 		S = opt_s; // get vaule of S from options
 #endif
-	if (T > N)
-		T = N; // apply an upper limit on T
+	if (T >= N)
+		T = (N - 1); // apply an upper limit on T
 	if (S > ((N - 1) / 2))
 		S = (N - 1) / 2; // apply an upper limit on S
 	// check magic of CRS (common reference string)
