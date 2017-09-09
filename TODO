@@ -1,3 +1,4 @@
+* deterministic DSA for ASTC/DSS: cf. RFC 6979
 * dkg-gencrs: use EDCF to generate CRS by coin-flips of all participants
 * dkg-tools: protect h-generation protocol with EDCF to avoid ROM
 * provide proactive security (program dkg-refresh) [HJJKY97]
