@@ -170,7 +170,7 @@ AC_PROG_LN_S
 AC_PROG_MKDIR_P
 
 # Checks for libraries
-backup_LDFLAGS="$LDFLAGS"       
+backup_LDFLAGS="$LDFLAGS"
 backup_CPPLAGS="$CPPFLAGS"
 AC_ARG_WITH(gmp, [AS_HELP_STRING([--with-gmp=<path>], [prefix of libgmp installation e.g. /usr/local])],\
  [GMP_PREFIX="$with_gmp" LDFLAGS="-L${with_gmp}/lib $backup_LDFLAGS" CPPFLAGS="-I${with_gmp}/include $backup_CPPFLAGS"],\
