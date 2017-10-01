@@ -29,7 +29,7 @@
 #endif
 #include "mpz_shash.hh"
 
-/* hash function h() (assumption: collision-resistant) */
+/* hash function h() (assumption: collision-resistant cryptographic hash) */
 void h
 	(unsigned char *output,
 	const unsigned char *input, const size_t size, int algo)
