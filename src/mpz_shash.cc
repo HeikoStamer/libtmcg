@@ -54,7 +54,7 @@ void g
 		/* construct the expanded input y = x || libTMCG<i> || x */
 		unsigned char *data = new unsigned char[9 + (2 * isize)];
 		memcpy(data, input, isize);
-		snprintf((char*)data + isize, 9, "libTMCG%02x", (unsigned int)i);
+		snprintf((char*)data + isize, 9, "libTMCG%02x", (uint8_t)i);
 		memcpy(data + isize + 9, input, isize);
 		
 		/* using h(y) "in some nonstandard way" with "output truncated" [BR95] */
@@ -71,7 +71,6 @@ void g
 size_t mpz_shash_len
 	()
 {
-// FIXME: check wheter this length in bit matches the used subgroup size
 	return gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
 }
 
