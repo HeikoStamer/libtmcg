@@ -1742,8 +1742,8 @@ void run_instance
 	// create VTMF instance from original CRS (common reference string)
 	std::stringstream crss;
 	crss << crs_p << std::endl << crs_q << std::endl << crs_g << std::endl << crs_k << std::endl;
-	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crss, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true); // with verifiable generation of $g$
-	if (!vtmf->CheckGroup()) // FIXME: FIPS domain parameters will not here; verification of $g$ failed
+	BarnettSmartVTMF_dlog *vtmf = new BarnettSmartVTMF_dlog(crss, TMCG_DDH_SIZE, TMCG_DLSE_SIZE, false); // without verifiable generation of $g$ due to possible FIPS-CRS
+	if (!vtmf->CheckGroup())
 	{
 		std::cout << "D_" << whoami << ": " << "VTMF: Group G was not correctly generated!" << std::endl;
 		exit(-1);
