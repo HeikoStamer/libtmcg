@@ -129,12 +129,11 @@ Requirements
   build (GNU gcc/g++ >= 5.4.y or higher is recommended) LibTMCG successfully:
 
   * GNU Multiple Precision Arithmetic Library (libgmp), version >= 4.2.0,
-    http://www.swox.com/gmp/
-    (built WITHOUT C++ support: ./configure --enable-cxx=no)
+    https://gmplib.org/
   * GNU Crypto Library (libgcrypt), version >= 1.6.0,
-    ftp://ftp.gnupg.org/
+    https://gnupg.org/download/index.html
   * GNU Privacy Guard Error Code Library (libgpg-error), version >= 1.12,
-    ftp://ftp.gnupg.org/
+    https://gnupg.org/download/index.html
   * GNU info program and utilities (texinfo), version >= 6.0
     https://www.gnu.org/software/texinfo/
 
@@ -146,6 +145,7 @@ Requirements
   ++ GNU/Linux (Ubuntu Linux)    x86_64    gcc 5.4.0 (details omitted)
   ++ GNU/Linux (Debian Linux)    x86_64    gcc 6.3.0 (details omitted)
   ++ GNU/Linux (Debian Linux)    x86_64    gcc 4.9.2 (details omitted)
+  ++ GNU/Linux (Arch Linux)      x86_64    gcc 7.2.0 (details omitted)
   ++ OpenBSD 6.1                 amd64     gcc 4.2.1 (details omitted)
 
 Build & Install
