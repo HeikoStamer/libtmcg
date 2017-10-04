@@ -62,7 +62,7 @@ char					*opt_ifilename = NULL;
 char					*opt_ofilename = NULL;
 char					*opt_passwords = NULL;
 char					*opt_hostname = NULL;
-unsigned long int			opt_p = 35000;
+unsigned long int			opt_p = 55000;
 
 void read_private_key
 	(const std::string filename, std::string &result)

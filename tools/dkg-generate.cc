@@ -50,7 +50,7 @@ int 				opt_verbose = 0;
 char				*opt_crs = NULL;
 char				*opt_passwords = NULL;
 char				*opt_hostname = NULL;
-unsigned long int		opt_t = MAX_N, opt_s = MAX_N, opt_e = 0, opt_p = 35000;
+unsigned long int		opt_t = MAX_N, opt_s = MAX_N, opt_e = 0, opt_p = 55000;
 
 bool				fips = false;
 std::stringstream		crss;

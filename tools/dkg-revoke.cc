@@ -57,7 +57,7 @@ gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_g, elg_y;
 int 					opt_verbose = 0;
 char					*opt_passwords = NULL;
 char					*opt_hostname = NULL;
-unsigned long int			opt_r = 0, opt_p = 35000;
+unsigned long int			opt_r = 0, opt_p = 55000;
 
 void read_private_key
 	(const std::string filename, std::string &result)

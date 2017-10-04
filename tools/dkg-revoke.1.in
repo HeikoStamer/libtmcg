@@ -57,7 +57,7 @@ Additionally, instead of relying on GNUnet CADET the protocol messages can
 be exchanged by the built-in TCP/IP communication framework. In that case
 the given peer identities from PEERS are simple resolvable hostnames and the
 corresponding option "-H" defines the hostname of the calling peer within
-that list. The program binds some TCP ports up from 35000 to listen for
+that list. The program binds some TCP ports up from 55000 to listen for
 incoming connections and connects to other peers in that port range.
 Since the communication is not protected by the network itself "-P" is
 a mandatory option in that case.
