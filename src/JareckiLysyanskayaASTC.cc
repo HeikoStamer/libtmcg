@@ -1077,7 +1077,7 @@ JareckiLysyanskayaEDCF::JareckiLysyanskayaEDCF
 	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),	mpz_init_set(h, h_CRS);
 
 	// initialize RVSS
-	rvss = new JareckiLysyanskayaRVSS(n_in, t_in, p_CRS, q_CRS, g_CRS, h_CRS, fieldsize, subgroupsize);	
+	rvss = new JareckiLysyanskayaRVSS(n, t, p, q, g, h, F_size, G_size);	
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();

@@ -1721,7 +1721,7 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 
 	// initialize required subprotocol
 	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h,
-		fieldsize, subgroupsize, canonical_g_usage, use_very_strong_randomness_in, "x_rvss");
+		F_size, G_size, canonical_g, use_very_strong_randomness, "x_rvss");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1773,7 +1773,7 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 	}
 
 	// initialize required subprotocol from istream in
-	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(in, fieldsize, subgroupsize, canonical_g_usage, use_very_strong_randomness_in, "x_rvss");
+	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(in, F_size, G_size, canonical_g, use_very_strong_randomness, "x_rvss");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -2406,7 +2406,7 @@ CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
 
 	// initialize required subprotocol
 	dkg = new CanettiGennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h,
-		fieldsize, subgroupsize, canonical_g_usage, use_very_strong_randomness_in, "dkg");
+		F_size, G_size, canonical_g, use_very_strong_randomness, "dkg");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -2457,7 +2457,7 @@ CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
 	}
 
 	// initialize required subprotocol from istream in
-	dkg = new CanettiGennaroJareckiKrawczykRabinDKG(in, fieldsize, subgroupsize, canonical_g_usage, use_very_strong_randomness_in, "dkg");
+	dkg = new CanettiGennaroJareckiKrawczykRabinDKG(in, F_size, G_size, canonical_g, use_very_strong_randomness, "dkg");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
