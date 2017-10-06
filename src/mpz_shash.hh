@@ -21,6 +21,7 @@
 #ifndef INCLUDED_mpz_shash_HH
 	#define INCLUDED_mpz_shash_HH
 	
+	#include <stdint.h>
 	#include <cstdio>
 	#include <string>
 	#include <vector>

@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20170904])
+AC_REVISION([20171006])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.3], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -211,7 +211,8 @@ AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
  ctime errno.h fcntl.h fstream functional inttypes.h iostream limits.h list\
- map sstream stdio.h string string.h sys/select.h time.h unistd.h vector], , 
+ map sstream stdint.h stdio.h string string.h sys/select.h time.h unistd.h\
+ vector], , 
 	AC_MSG_ERROR([some headers are missing]))
 
 # Checks for typedefs, structures, and compiler characteristics
