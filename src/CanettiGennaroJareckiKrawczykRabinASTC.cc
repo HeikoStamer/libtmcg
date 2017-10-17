@@ -1252,6 +1252,21 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 	mpz_srcptr ssrandomm_cache_mod,
 	size_t *ssrandomm_cache_avail)
 {
+	std::map<size_t, size_t> id;
+	for (size_t j = 0; j < n; j++)
+		id[j] = j;
+	return Share(id, id, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
+}
+
+bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
+	(std::map<size_t, size_t> &idx2dkg,
+	std::map<size_t, size_t> &dkg2idx,
+	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
+{
 	assert(t <= n);
 	assert(tprime <= n);
 	assert(i < n);
@@ -1303,7 +1318,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			{
 				if ((ssrandomm_cache != NULL) && (ssrandomm_cache_mod != NULL) && (ssrandomm_cache_avail != NULL))
 				{
-					err << "ZVSS(" << label << "): P_" << i << ": using very strong randomness from cache" << std::endl;
+					err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": using very strong randomness from cache" << std::endl;
 					mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, a_i[k], q);
 					mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, b_i[k], q);
 				}
@@ -1322,7 +1337,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		// Let $z_i = a_{i0} = f_i(0)$.
 		// $P_i$ broadcasts $C_{ik} = g^{a_{ik}} h^{b_{ik}} \bmod p$
 		// for $k = 0, \ldots, t\prime$.
-		for (size_t k = 0; k <= t; k++)
+		for (size_t k = 0; k <= tprime; k++)
 		{
 			mpz_fspowm(fpowm_table_g, foo, g, a_i[k], p);
 			mpz_fspowm(fpowm_table_h, bar, h, b_i[k], p);
@@ -1338,14 +1353,14 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				{
 					if (!rbc->DeliverFrom(C_ik[j][k], j))
 					{
-						err << "ZVSS(" << label << "): P_" << i << ": receiving C_ik failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": receiving C_ik failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						break;
 					}
 					if (!CheckElement(C_ik[j][k]))
 					{
-						err << "ZVSS(" << label << "): P_" << i << ": bad C_ik received; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": bad C_ik received; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						mpz_set_ui(C_ik[j][k], 0L); // indicates an error
 					}
 				}
@@ -1360,7 +1375,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			mpz_set_ui(sprime_ji[i][j], 0L);
 			for (size_t k = 0; k <= tprime; k++)
 			{
-				mpz_ui_pow_ui(foo, j + 1, k); // adjust index $j$ in computation
+				mpz_ui_pow_ui(foo, idx2dkg[j] + 1, k); // adjust index $j$ in computation
 				mpz_mul(bar, foo, b_i[k]);
 				mpz_mod(bar, bar, q);
 				mpz_mul(foo, foo, a_i[k]);
@@ -1378,14 +1393,14 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				}
 				if (!aiou->Send(s_ji[i][j], j, aiou->aio_timeout_very_short))
 				{
-					err << "ZVSS(" << label << "): P_" << i << ": sending s_ji failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": sending s_ji failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (!aiou->Send(sprime_ji[i][j], j, aiou->aio_timeout_very_short))
 				{
-					err << "ZVSS(" << label << "): P_" << i << ": sending sprime_ji failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": sending sprime_ji failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 			}
@@ -1400,26 +1415,26 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			{
 				if (!aiou->Receive(s_ji[j][i], j, aiou->aio_scheduler_direct))
 				{
-					err << "ZVSS(" << label << "): P_" << i << ": receiving s_ji failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": receiving s_ji failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(s_ji[j][i], q) >= 0)
 				{
-					err << "P_" << i << ": bad s_ji received; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i] << ": bad s_ji received; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(s_ji[j][i], 0L); // indicates an error
 				}
 				if (!aiou->Receive(sprime_ji[j][i], j, aiou->aio_scheduler_direct))
 				{
-					err << "ZVSS(" << label << "): P_" << i << ": receiving sprime_ji failed; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": receiving sprime_ji failed; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
 				if (mpz_cmpabs(sprime_ji[j][i], q) >= 0)
 				{
-					err << "P_" << i << ": bad sprime_ji received; complaint against P_" << j << std::endl;
-					complaints.push_back(j);
+					err << "P_" << idx2dkg[i] << ": bad sprime_ji received; complaint against P_" << idx2dkg[j] << std::endl;
+					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(sprime_ji[j][i], 0L); // indicates an error
 				}
 			}
@@ -1435,7 +1450,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			mpz_set_ui(rhs, 1L);
 			for (size_t k = 0; k <= tprime; k++)
 			{
-				mpz_ui_pow_ui(foo, i + 1, k); // adjust index $i$ in computation
+				mpz_ui_pow_ui(foo, idx2dkg[i] + 1, k); // adjust index $i$ in computation
 				mpz_powm(bar, C_ik[j][k], foo, p);
 				mpz_mul(rhs, rhs, bar);
 				mpz_mod(rhs, rhs, p);
@@ -1443,15 +1458,15 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			// check equation (1)
 			if (mpz_cmp(lhs, rhs))
 			{
-				err << "ZVSS(" << label << "): P_" << i << ": checking step 1b failed; complaint against P_" << j << std::endl;
-				complaints.push_back(j);
+				err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": checking step 1b failed; complaint against P_" << idx2dkg[j] << std::endl;
+				complaints.push_back(idx2dkg[j]);
 			}
 			// [...] and in Step (1b) each player $P_j$ additionally checks
 			// for each $i$ that $C_{i0} = 1 \bmod p$.
 			if (mpz_cmp_ui(C_ik[j][0], 1L))
 			{
-				err << "ZVSS(" << label << "): P_" << i << ": additional check in step 1b failed; complaint against P_" << j << std::endl;
-				complaints.push_back(j);
+				err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": additional check in step 1b failed; complaint against P_" << idx2dkg[j] << std::endl;
+				complaints.push_back(idx2dkg[j]);
 			}		
 		}
 		// If the check fails for an index $i$, $P_j$ broadcasts a complaint against $P_i$.
@@ -1460,8 +1475,8 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		complaints.resize(std::distance(complaints.begin(), it));
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
 		{
-			err << "ZVSS(" << label << "): P_" << i << ": broadcast complaint against P_" << *it << std::endl;
-			mpz_set_ui(rhs, *it);
+			err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": broadcast complaint against P_" << *it << std::endl;
+			mpz_set_ui(rhs, dkg2idx[*it]);
 			rbc->Broadcast(rhs);
 		}
 		mpz_set_ui(rhs, n); // broadcast end marker
@@ -1470,7 +1485,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		for (size_t j = 0; j < n; j++)
 			complaints_counter.push_back(0); // initialize counter
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
-			complaints_counter[*it]++; // count my own complaints
+			complaints_counter[dkg2idx[*it]]++; // count my own complaints
 		complaints.clear();
 		for (size_t j = 0; j < n; j++)
 		{
@@ -1483,23 +1498,23 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				{
 					if (!rbc->DeliverFrom(rhs, j))
 					{
-						err << "ZVSS(" << label << "): P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": receiving who failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						break;
 					}
 					who = mpz_get_ui(rhs);
 					if ((who < n) && !dup.count(who))
 					{
-						err << "ZVSS(" << label << "): P_" << i << ": receiving complaint against P_" << who << " from P_" << j << std::endl;
+						err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": receiving complaint against P_" << idx2dkg[who] << " from P_" << idx2dkg[j] << std::endl;
 						complaints_counter[who]++;
 						dup.insert(std::pair<size_t, bool>(who, true)); // mark as counted for $P_j$
 						if (who == i)
-							complaints_from.push_back(j);
+							complaints_from.push_back(idx2dkg[j]);
 					}
 					else if ((who < n) && dup.count(who))
 					{
-						err << "ZVSS(" << label << "): P_" << i << ": duplicated complaint for P_" << who << "; complaint againts P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": duplicated complaint for P_" << idx2dkg[who] << "; complaint againts P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 					}
 					cnt++;
 				}
@@ -1512,18 +1527,18 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		if (complaints_counter[i])
 		{
 			std::sort(complaints_from.begin(), complaints_from.end());
-			err << "ZVSS(" << label << "): P_" << i << ": there are " << complaints_counter[i] << " complaints against me from ";
+			err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": there are " << complaints_counter[i] << " complaints against me from ";
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 				err << "P_" << *it << " ";
 			err << std::endl;
 			for (std::vector<size_t>::iterator it = complaints_from.begin(); it != complaints_from.end(); ++it)
 			{
-				mpz_set_ui(lhs, *it); // who is complaining?
+				mpz_set_ui(lhs, dkg2idx[*it]); // who is complaining?
 				rbc->Broadcast(lhs);
-				rbc->Broadcast(s_ji[i][*it]);
-				rbc->Broadcast(sprime_ji[i][*it]);
+				rbc->Broadcast(s_ji[i][dkg2idx[*it]]);
+				rbc->Broadcast(sprime_ji[i][dkg2idx[*it]]);
 			}
-			err << "ZVSS(" << label << "): P_" << i << ": some corresponding shares have been revealed to public!" << std::endl;
+			err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": some corresponding shares have been revealed to public!" << std::endl;
 		}
 		mpz_set_ui(lhs, n); // broadcast end marker
 		rbc->Broadcast(lhs);
@@ -1533,7 +1548,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		for (size_t j = 0; j < n; j++)
 		{
 			if (complaints_counter[j] > t)
-				complaints.push_back(j);
+				complaints.push_back(idx2dkg[j]);
 			if (j != i)
 			{
 				size_t cnt = 0;
@@ -1541,8 +1556,8 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				{
 					if (!rbc->DeliverFrom(lhs, j))
 					{
-						err << "ZVSS(" << label << "): P_" << i << ": receiving who failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": receiving who failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						break;
 					}
 					size_t who = mpz_get_ui(lhs);
@@ -1550,26 +1565,26 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 						break; // end marker received
 					if (!rbc->DeliverFrom(foo, j))
 					{
-						err << "ZVSS(" << label << "): P_" << i << ": receiving foo failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": receiving foo failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						break;
 					}
 					if (mpz_cmpabs(foo, q) >= 0)
 					{
-						err << "ZVSS(" << label << "): P_" << i << ": bad foo received; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": bad foo received; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						mpz_set_ui(foo, 0L); // indicates an error
 					}
 					if (!rbc->DeliverFrom(bar, j))
 					{
-						err << "ZVSS(" << label << "): P_" << i << ": receiving bar failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": receiving bar failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						break;
 					}
 					if (mpz_cmpabs(bar, q) >= 0)
 					{
-						err << "ZVSS(" << label << "): P_" << i << ": bad bar received; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": bad bar received; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 						mpz_set_ui(bar, 0L); // indicates an error
 					}
 					mpz_t s, sprime;
@@ -1583,7 +1598,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 					mpz_set_ui(rhs, 1L);
 					for (size_t k = 0; k <= tprime; k++)
 					{
-						mpz_ui_pow_ui(foo, who + 1, k); // adjust index $j$ in computation
+						mpz_ui_pow_ui(foo, idx2dkg[who] + 1, k); // adjust index $j$ in computation
 						mpz_powm(bar, C_ik[j][k], foo, p);
 						mpz_mul(rhs, rhs, bar);
 						mpz_mod(rhs, rhs, p);
@@ -1591,15 +1606,15 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 					// check equation (1)
 					if (mpz_cmp(lhs, rhs))
 					{
-						err << "ZVSS(" << label << "): P_" << i << ": checking step 1d failed; complaint against P_" << j << std::endl;
-						complaints.push_back(j);
+						err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": checking step 1d failed; complaint against P_" << idx2dkg[j] << std::endl;
+						complaints.push_back(idx2dkg[j]);
 					}
 					else
 					{
 						// don't be too curious
 						if (who == i)
 						{
-							err << "ZVSS(" << label << "): P_" << i << ": shares adjusted in step 1d from P_" << j << std::endl;
+							err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": shares adjusted in step 1d from P_" << idx2dkg[j] << std::endl;
 							mpz_set(s_ji[j][i], s);
 							mpz_set(sprime_ji[j][i], sprime);
 						}
@@ -1613,10 +1628,10 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		QUAL.clear();
 		for (size_t j = 0; j < n; j++)
 		{
-			if (std::find(complaints.begin(), complaints.end(), j) == complaints.end())
-				QUAL.push_back(j);
+			if (std::find(complaints.begin(), complaints.end(), idx2dkg[j]) == complaints.end())
+				QUAL.push_back(idx2dkg[j]);
 		}
-		err << "ZVSS(" << label << "): P_" << i << ": QUAL = { ";
+		err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 			err << "P_" << *it << " ";
 		err << "}" << std::endl;
@@ -1629,15 +1644,15 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		mpz_set_ui(x_i, 0L), mpz_set_ui(xprime_i, 0L);
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
 		{
-			mpz_add(x_i, x_i, s_ji[*it][i]);
+			mpz_add(x_i, x_i, s_ji[dkg2idx[*it]][i]);
 			mpz_mod(x_i, x_i, q);
-			mpz_add(xprime_i, xprime_i, sprime_ji[*it][i]);
+			mpz_add(xprime_i, xprime_i, sprime_ji[dkg2idx[*it]][i]);
 			mpz_mod(xprime_i, xprime_i, q);
 		}
-		err << "ZVSS(" << label << "): P_" << i << ": x_i = " << x_i << std::endl;
-		err << "ZVSS(" << label << "): P_" << i << ": xprime_i = " << xprime_i << std::endl;
+		err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": x_i = " << x_i << std::endl;
+		err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": xprime_i = " << xprime_i << std::endl;
 		
-		if (std::find(QUAL.begin(), QUAL.end(), i) == QUAL.end())
+		if (std::find(QUAL.begin(), QUAL.end(), idx2dkg[i]) == QUAL.end())
 			throw false;
 		if (QUAL.size() <= t)
 			throw false;
