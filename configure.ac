@@ -29,7 +29,7 @@ AC_INIT([LibTMCG], [1.3.3], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
 #   (Interfaces added:      CURRENT++, AGE++, REVISION=0)
 #   (No interfaces changed:                   REVISION++)
-LIBTMCG_LT_CURRENT=6
+LIBTMCG_LT_CURRENT=7
 LIBTMCG_LT_AGE=1
 LIBTMCG_LT_REVISION=0
 
