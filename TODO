@@ -8,8 +8,6 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 
-* deterministic DSA for ASTC/DSS: cf. RFC 6979
-* dkg-gencrs: use EDCF to generate CRS by coin-flips of all participants
 * dkg-tools: protect h-generation protocol with EDCF to avoid ROM
 * provide proactive security (program dkg-refresh) [HJJKY97]
 
@@ -26,7 +24,9 @@ in the sources of this package and additionally can be obtained from Internet
 + use secure memory allocation and erasing from libgcrypt
 + provide a byzantine consensus protocol for agreement on values
 + implement asynchronous VSS [CKLS02] for DKG and other applications
++ dkg-gencrs: use EDCF to generate CRS by coin-flips of all participants
 
+- deterministic DSA for ASTC/DSS: cf. RFC 6979; maybe it's impossible for TC
 - implement the exotic card and stack operations of the toolbox; there are
   some obstacles, e.g. that the prover does not know all used randomizers,
   for the subset and superset protocols; general protocols for private
