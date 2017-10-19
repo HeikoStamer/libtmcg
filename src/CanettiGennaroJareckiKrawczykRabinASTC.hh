@@ -248,6 +248,22 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
 			mpz_srcptr ssrandomm_cache_mod = NULL,
 			size_t *ssrandomm_cache_avail = NULL);
+		bool Refresh
+			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err,
+			const bool simulate_faulty_behaviour = false,
+			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
+			mpz_srcptr ssrandomm_cache_mod = NULL,
+			size_t *ssrandomm_cache_avail = NULL);
+		bool Refresh
+			(std::map<size_t, size_t> &idx2dkg,
+			std::map<size_t, size_t> &dkg2idx,
+			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err,
+			const bool simulate_faulty_behaviour = false,
+			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
+			mpz_srcptr ssrandomm_cache_mod = NULL,
+			size_t *ssrandomm_cache_avail = NULL);
 		~CanettiGennaroJareckiKrawczykRabinDKG
 			();
 };

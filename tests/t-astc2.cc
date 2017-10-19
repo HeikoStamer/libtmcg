@@ -159,17 +159,17 @@ void start_instance
 			assert(dkg->CheckGroup());
 			
 			// generating $x$ and extracting $y = g^x \bmod p$
-			std::stringstream err_log, state_log;
+			std::stringstream err_log_generate;
 			bool ret = true;
 			start_clock();
 			std::cout << "P_" << whoami << ": dkg.Generate() at " << time(NULL) << std::endl;
 			if (corrupted)
-				dkg->Generate(aiou, rbc, err_log, true);
+				dkg->Generate(aiou, rbc, err_log_generate, true);
 			else
-				ret = dkg->Generate(aiou, rbc, err_log);
+				ret = dkg->Generate(aiou, rbc, err_log_generate);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_generate.str();
 			if (!corrupted)
 				assert(ret);
 			// now: sync for waiting parties
@@ -178,7 +178,26 @@ void start_instance
 			else
 				rbc->Sync(aiounicast::aio_timeout_middle, "step 1");
 
+			// refreshing key shares $x_i$ and $x\prime_i$ for all $P_i$
+			std::stringstream err_log_refresh;
+			std::cout << "P_" << whoami << ": dkg.Refresh() at " << time(NULL) << std::endl;
+			if (corrupted)
+				dkg->Refresh(aiou, rbc, err_log_refresh, true);
+			else
+				ret = dkg->Refresh(aiou, rbc, err_log_refresh);
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_refresh.str();
+			if (!corrupted)
+				assert(ret);
+			// now: sync for waiting parties
+			if (someone_corrupted)
+				rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 2");
+			else
+				rbc->Sync(aiounicast::aio_timeout_middle, "step 2");
+
 			// publish state
+			std::stringstream state_log;
 			std::cout << "P_" << whoami << ": dkg.PublishState() at " << time(NULL) << std::endl;
 			dkg->PublishState(state_log);
 
@@ -204,9 +223,9 @@ void start_instance
 				assert(ret);
 			// now: sync for waiting parties
 			if (someone_corrupted)
-				rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 2");
+				rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 3");
 			else
-				rbc->Sync(aiounicast::aio_timeout_middle, "step 2");
+				rbc->Sync(aiounicast::aio_timeout_middle, "step 3");
 
 			// signing and verifying messages
 			std::stringstream err_log_sign, err_log_sign_nm1;
@@ -247,9 +266,9 @@ void start_instance
 				assert(!ret);
 			// now: sync for waiting parties
 			if (someone_corrupted)
-				rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 3");
+				rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 4");
 			else
-				rbc->Sync(aiounicast::aio_timeout_middle, "step 3");
+				rbc->Sync(aiounicast::aio_timeout_middle, "step 4");
 			// check signing and verifying of a message with N-1 signers = P_1, P_2, ...
 			if (whoami > 0)
 			{
@@ -280,9 +299,9 @@ void start_instance
 					assert(ret);
 				// at the end: sync for waiting parties
 				if (someone_corrupted)
-					rbc_nm1->Sync(aiounicast::aio_timeout_extremely_long, "step 4");
+					rbc_nm1->Sync(aiounicast::aio_timeout_extremely_long, "step 5");
 				else
-					rbc_nm1->Sync(aiounicast::aio_timeout_middle, "step 4");
+					rbc_nm1->Sync(aiounicast::aio_timeout_middle, "step 5");
 			}
 			mpz_clear(m), mpz_clear(r), mpz_clear(s);
 

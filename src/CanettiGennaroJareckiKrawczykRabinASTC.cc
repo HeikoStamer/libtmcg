@@ -2388,6 +2388,100 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	}
 }
 
+bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
+	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
+{
+	std::map<size_t, size_t> id;
+	for (size_t j = 0; j < n; j++)
+		id[j] = j;
+	return Refresh(id, id, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
+}
+
+bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
+	(std::map<size_t, size_t> &idx2dkg,
+	std::map<size_t, size_t> &dkg2idx,
+	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
+{
+	assert(t <= n);
+	assert(i < n);
+	assert(n == rbc->n);
+	assert(n == aiou->n);
+	assert(i == rbc->j);
+	assert(i == aiou->j);
+	err << "CanettiGennaroJareckiKrawczykRabinDKG::Refresh()" << std::endl;
+
+	// checking maximum synchronous t-resilience
+	if ((2 * t) >= n)
+		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;
+
+	// initialize
+	CanettiGennaroJareckiKrawczykRabinZVSS *x_zvss = new CanettiGennaroJareckiKrawczykRabinZVSS(n, t, i, t, p, q, g, h,
+		F_size, G_size, canonical_g, false, "x_zvss");
+	mpz_t foo, bar, lhs, rhs;
+	mpz_t d, r_i, rprime_i;
+	std::vector<mpz_ptr> A_i, B_i, T_i, Tprime_i, z_i, d_i, dprime_i;
+	std::vector<size_t> complaints, complaints_counter, complaints_from, d_complaints;
+	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
+	mpz_init(d), mpz_init(r_i), mpz_init(rprime_i);
+	for (size_t j = 0; j < n; j++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(), tmp4 = new mpz_t();
+		mpz_ptr tmp5 = new mpz_t(), tmp6 = new mpz_t(), tmp7 = new mpz_t();
+		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4);
+		mpz_init(tmp5), mpz_init(tmp6), mpz_init(tmp7);
+		A_i.push_back(tmp1), B_i.push_back(tmp2), T_i.push_back(tmp3), Tprime_i.push_back(tmp4);
+		z_i.push_back(tmp5), d_i.push_back(tmp6), dprime_i.push_back(tmp7);
+	}
+	size_t simulate_faulty_randomizer[10];
+	for (size_t idx = 0; idx < 10; idx++)
+		simulate_faulty_randomizer[idx] = mpz_wrandom_ui() % 2L;
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "CanettiGennaroJareckiKrawczykRabinDKG::Refresh()" << p << q << g << h << n << t << label;
+	rbc->setID(myID.str());
+
+	try
+	{
+		// Players execute Joint-ZVSS(t,n,t)
+		if (!x_zvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail))
+			throw false;
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[0])
+			throw false;
+// TODO
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// unset ID for RBC
+		rbc->unsetID();
+		// release
+		delete x_zvss;
+		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
+		mpz_clear(d), mpz_clear(r_i), mpz_clear(rprime_i);
+		for (size_t j = 0; j < n; j++)
+		{
+			mpz_clear(A_i[j]), mpz_clear(B_i[j]), mpz_clear(T_i[j]), mpz_clear(Tprime_i[j]);
+			mpz_clear(z_i[j]), mpz_clear(d_i[j]), mpz_clear(dprime_i[j]);
+			delete [] A_i[j], delete [] B_i[j], delete [] T_i[j], delete [] Tprime_i[j];
+			delete [] z_i[j], delete [] d_i[j], delete [] dprime_i[j];
+		}
+		A_i.clear(), B_i.clear(), T_i.clear(), Tprime_i.clear();
+		z_i.clear(), d_i.clear(), dprime_i.clear();
+		// return
+		return return_value;
+	}
+}
+
 CanettiGennaroJareckiKrawczykRabinDKG::~CanettiGennaroJareckiKrawczykRabinDKG
 	()
 {
