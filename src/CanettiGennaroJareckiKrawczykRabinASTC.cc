@@ -2389,20 +2389,22 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 }
 
 bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
-	(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	(const size_t n_in, const size_t i_in,
+	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour,
 	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
 	mpz_srcptr ssrandomm_cache_mod,
 	size_t *ssrandomm_cache_avail)
 {
 	std::map<size_t, size_t> id;
-	for (size_t j = 0; j < n; j++)
+	for (size_t j = 0; j < n_in; j++)
 		id[j] = j;
-	return Refresh(id, id, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
+	return Refresh(n_in, i_in, id, id, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
-	(std::map<size_t, size_t> &idx2dkg,
+	(const size_t n_in, const size_t i_in,
+	std::map<size_t, size_t> &idx2dkg,
 	std::map<size_t, size_t> &dkg2idx,
 	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour,
@@ -2412,10 +2414,17 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
 {
 	assert(t <= n);
 	assert(i < n);
-	assert(n == rbc->n);
-	assert(n == aiou->n);
-	assert(i == rbc->j);
-	assert(i == aiou->j);
+	assert(n_in <= n);
+	assert(i_in < n_in);
+	assert(n_in == rbc->n);
+	assert(n_in == aiou->n);
+	assert(i_in == rbc->j);
+	assert(i_in == aiou->j);
+	assert(idx2dkg.size() == n_in);
+	assert(idx2dkg.size() == dkg2idx.size());
+	assert(idx2dkg.count(i_in) == 1);
+	assert(dkg2idx.count(idx2dkg[i_in]) == 1);
+	assert(i_in == dkg2idx[idx2dkg[i_in]]);
 	err << "CanettiGennaroJareckiKrawczykRabinDKG::Refresh()" << std::endl;
 
 	// checking maximum synchronous t-resilience
@@ -2423,40 +2432,60 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
 		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;
 
 	// initialize
-	CanettiGennaroJareckiKrawczykRabinZVSS *x_zvss = new CanettiGennaroJareckiKrawczykRabinZVSS(n, t, i, t, p, q, g, h,
-		F_size, G_size, canonical_g, false, "x_zvss");
-	mpz_t foo, bar, lhs, rhs;
-	mpz_t d, r_i, rprime_i;
-	std::vector<mpz_ptr> A_i, B_i, T_i, Tprime_i, z_i, d_i, dprime_i;
-	std::vector<size_t> complaints, complaints_counter, complaints_from, d_complaints;
-	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
-	mpz_init(d), mpz_init(r_i), mpz_init(rprime_i);
-	for (size_t j = 0; j < n; j++)
-	{
-		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(), tmp4 = new mpz_t();
-		mpz_ptr tmp5 = new mpz_t(), tmp6 = new mpz_t(), tmp7 = new mpz_t();
-		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4);
-		mpz_init(tmp5), mpz_init(tmp6), mpz_init(tmp7);
-		A_i.push_back(tmp1), B_i.push_back(tmp2), T_i.push_back(tmp3), Tprime_i.push_back(tmp4);
-		z_i.push_back(tmp5), d_i.push_back(tmp6), dprime_i.push_back(tmp7);
-	}
+	CanettiGennaroJareckiKrawczykRabinZVSS *x_zvss = new CanettiGennaroJareckiKrawczykRabinZVSS(n_in, t, i_in, t, p, q, g, h,
+		F_size, G_size, canonical_g, use_very_strong_randomness, "x_zvss");
 	size_t simulate_faulty_randomizer[10];
 	for (size_t idx = 0; idx < 10; idx++)
 		simulate_faulty_randomizer[idx] = mpz_wrandom_ui() % 2L;
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "CanettiGennaroJareckiKrawczykRabinDKG::Refresh()" << p << q << g << h << n << t << label;
+	myID << "CanettiGennaroJareckiKrawczykRabinDKG::Refresh()" << p << q << g << h << n << t << n_in << label;
 	rbc->setID(myID.str());
 
 	try
 	{
-		// Players execute Joint-ZVSS(t,n,t)
+		// Players execute Joint-ZVSS(t,n,t) protocol.
 		if (!x_zvss->Share(idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail))
 			throw false;
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[0])
 			throw false;
-// TODO
+
+		// Players add the generated shares to their current share of the private key $x$.
+		mpz_add(x_i, x_i, x_zvss->x_i);
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[1])
+			mpz_add_ui(x_i, x_i, 1L);
+		mpz_mod(x_i, x_i, q);
+		err << "DKG(" << label << "): P_" << idx2dkg[i] << ": refreshed x_i = " << x_i << std::endl;
+		mpz_add(xprime_i, xprime_i, x_zvss->xprime_i);
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer[2])
+			mpz_add_ui(xprime_i, xprime_i, 1L);
+		mpz_mod(xprime_i, xprime_i, q);
+		err << "DKG(" << label << "): P_" << idx2dkg[i] << ": refreshed xprime_i = " << xprime_i << std::endl;
+
+		// Players update the corresponding commitments in current Joint-RVSS instance of $x$.
+		err << "DKG(" << label << "): P_" << idx2dkg[i] << ": update commitments (C_ik's) of { ";
+		for (std::vector<size_t>::iterator it = x_zvss->QUAL.begin(); it != x_zvss->QUAL.end(); ++it)
+		{
+			err << "P_" << *it << " ";
+			assert(*it < n);
+			for (size_t k = 0; k <= x_rvss->t; k++)
+			{
+				mpz_mul(x_rvss->C_ik[*it][k], x_rvss->C_ik[*it][k], x_zvss->C_ik[dkg2idx[*it]][k]);
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer[3])
+					mpz_add_ui(x_rvss->C_ik[*it][k], x_rvss->C_ik[*it][k], 1L);
+				mpz_mod(x_rvss->C_ik[*it][k], x_rvss->C_ik[*it][k], p);
+			}
+		}
+		err << " }" << std::endl;
+
+		// Players update the set of non-disqualified players.
+		QUAL.clear();
+		for (size_t j = 0; j < x_zvss->QUAL.size(); j++)
+			QUAL.push_back(x_zvss->QUAL[j]);
+
+		// Players erase all secret information aside from shares $x_i$ and $x\prime_i$.
+		x_zvss->EraseSecrets();
 
 		throw true;
 	}
@@ -2466,17 +2495,6 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
 		rbc->unsetID();
 		// release
 		delete x_zvss;
-		mpz_clear(foo), mpz_clear(bar), mpz_clear(lhs), mpz_clear(rhs);
-		mpz_clear(d), mpz_clear(r_i), mpz_clear(rprime_i);
-		for (size_t j = 0; j < n; j++)
-		{
-			mpz_clear(A_i[j]), mpz_clear(B_i[j]), mpz_clear(T_i[j]), mpz_clear(Tprime_i[j]);
-			mpz_clear(z_i[j]), mpz_clear(d_i[j]), mpz_clear(dprime_i[j]);
-			delete [] A_i[j], delete [] B_i[j], delete [] T_i[j], delete [] Tprime_i[j];
-			delete [] z_i[j], delete [] d_i[j], delete [] dprime_i[j];
-		}
-		A_i.clear(), B_i.clear(), T_i.clear(), Tprime_i.clear();
-		z_i.clear(), d_i.clear(), dprime_i.clear();
 		// return
 		return return_value;
 	}
@@ -2737,6 +2755,82 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Generate
 
 		// copy the generated $y$, $x_i$, and $x\prime_i$
 		mpz_set(y, dkg->y);
+		mpz_set(x_i, dkg->x_i);
+		mpz_set(xprime_i, dkg->xprime_i);
+
+		// copy the set of non-disqualified players
+		QUAL.clear();
+		for (size_t j = 0; j < dkg->QUAL.size(); j++)
+			QUAL.push_back(dkg->QUAL[j]);
+
+		throw true;
+	}
+	catch (bool return_value)
+	{
+		// unset ID for RBC
+		rbc->unsetID();
+
+		// return
+		return return_value;
+	}
+}
+
+bool CanettiGennaroJareckiKrawczykRabinDSS::Refresh
+	(const size_t n_in, const size_t i_in,
+	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err, const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
+{
+	std::map<size_t, size_t> id;
+	for (size_t j = 0; j < n_in; j++)
+		id[j] = j;
+	return Refresh(n_in, i_in, id, id, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
+}
+
+bool CanettiGennaroJareckiKrawczykRabinDSS::Refresh
+	(const size_t n_in, const size_t i_in,
+	std::map<size_t, size_t> &idx2dkg,
+	std::map<size_t, size_t> &dkg2idx,
+	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	std::ostream &err,
+	const bool simulate_faulty_behaviour,
+	mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
+	mpz_srcptr ssrandomm_cache_mod,
+	size_t *ssrandomm_cache_avail)
+{
+	assert(t <= n);
+	assert(i < n);
+	assert(n_in <= n);
+	assert(i_in < n_in);
+	assert(n_in == rbc->n);
+	assert(n_in == aiou->n);
+	assert(i_in == rbc->j);
+	assert(i_in == aiou->j);
+	assert(idx2dkg.size() == n_in);
+	assert(idx2dkg.size() == dkg2idx.size());
+	assert(idx2dkg.count(i_in) == 1);
+	assert(dkg2idx.count(idx2dkg[i_in]) == 1);
+	assert(i_in == dkg2idx[idx2dkg[i_in]]);
+	err << "CanettiGennaroJareckiKrawczykRabinDSS::Refresh()" << std::endl;
+
+	// checking maximum synchronous t-resilience of DSS
+	if ((2 * t) >= n)
+		err << "WARNING: maximum synchronous t-resilience exceeded" << std::endl;
+
+	// set ID for RBC
+	std::stringstream myID;
+	myID << "CanettiGennaroJareckiKrawczykRabinDSS::Refresh()" << p << q << g << h << n << t << n_in;
+	rbc->setID(myID.str());
+
+	try
+	{
+		// call DKG->Refresh() as subprotocol
+		if (!dkg->Refresh(n_in, i_in, idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail))
+			throw false;
+
+		// copy the refreshed $x_i$ and $x\prime_i$
 		mpz_set(x_i, dkg->x_i);
 		mpz_set(xprime_i, dkg->xprime_i);
 

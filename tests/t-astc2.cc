@@ -182,9 +182,9 @@ void start_instance
 			std::stringstream err_log_refresh;
 			std::cout << "P_" << whoami << ": dkg.Refresh() at " << time(NULL) << std::endl;
 			if (corrupted)
-				dkg->Refresh(aiou, rbc, err_log_refresh, true);
+				dkg->Refresh(N, whoami, aiou, rbc, err_log_refresh, true);
 			else
-				ret = dkg->Refresh(aiou, rbc, err_log_refresh);
+				ret = dkg->Refresh(N, whoami, aiou, rbc, err_log_refresh);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_refresh.str();
@@ -269,6 +269,23 @@ void start_instance
 				rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 4");
 			else
 				rbc->Sync(aiounicast::aio_timeout_middle, "step 4");
+			// refreshing key shares $x_i$ and $x\prime_i$ for all $P_i$
+			std::stringstream err_log_refresh_dss;
+			std::cout << "P_" << whoami << ": dss.Refresh() at " << time(NULL) << std::endl;
+			if (corrupted)
+				dss->Refresh(N, whoami, aiou, rbc, err_log_refresh_dss, true);
+			else
+				ret = dss->Refresh(N, whoami, aiou, rbc, err_log_refresh_dss);
+			stop_clock();
+			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_refresh_dss.str();
+			if (!corrupted)
+				assert(ret);
+			// now: sync for waiting parties
+			if (someone_corrupted)
+				rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 5");
+			else
+				rbc->Sync(aiounicast::aio_timeout_middle, "step 5");
 			// check signing and verifying of a message with N-1 signers = P_1, P_2, ...
 			if (whoami > 0)
 			{
@@ -299,9 +316,9 @@ void start_instance
 					assert(ret);
 				// at the end: sync for waiting parties
 				if (someone_corrupted)
-					rbc_nm1->Sync(aiounicast::aio_timeout_extremely_long, "step 5");
+					rbc_nm1->Sync(aiounicast::aio_timeout_extremely_long, "step 6");
 				else
-					rbc_nm1->Sync(aiounicast::aio_timeout_middle, "step 5");
+					rbc_nm1->Sync(aiounicast::aio_timeout_middle, "step 6");
 			}
 			mpz_clear(m), mpz_clear(r), mpz_clear(s);
 

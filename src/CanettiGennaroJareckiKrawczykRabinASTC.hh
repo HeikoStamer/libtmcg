@@ -249,14 +249,16 @@ class CanettiGennaroJareckiKrawczykRabinDKG
 			mpz_srcptr ssrandomm_cache_mod = NULL,
 			size_t *ssrandomm_cache_avail = NULL);
 		bool Refresh
-			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			(const size_t n_in, const size_t i_in,
+			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false,
 			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
 			mpz_srcptr ssrandomm_cache_mod = NULL,
 			size_t *ssrandomm_cache_avail = NULL);
 		bool Refresh
-			(std::map<size_t, size_t> &idx2dkg,
+			(const size_t n_in, const size_t i_in,
+			std::map<size_t, size_t> &idx2dkg,
 			std::map<size_t, size_t> &dkg2idx,
 			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
@@ -306,6 +308,24 @@ class CanettiGennaroJareckiKrawczykRabinDSS
 			(mpz_srcptr a) const;
 		bool Generate
 			(aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err,
+			const bool simulate_faulty_behaviour = false,
+			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
+			mpz_srcptr ssrandomm_cache_mod = NULL,
+			size_t *ssrandomm_cache_avail = NULL);
+		bool Refresh
+			(const size_t n_in, const size_t i_in,
+			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			std::ostream &err,
+			const bool simulate_faulty_behaviour = false,
+			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
+			mpz_srcptr ssrandomm_cache_mod = NULL,
+			size_t *ssrandomm_cache_avail = NULL);
+		bool Refresh
+			(const size_t n_in, const size_t i_in,
+			std::map<size_t, size_t> &idx2dkg,
+			std::map<size_t, size_t> &dkg2idx,
+			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 			std::ostream &err,
 			const bool simulate_faulty_behaviour = false,
 			mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE] = NULL,
