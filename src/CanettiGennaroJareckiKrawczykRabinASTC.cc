@@ -2477,7 +2477,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
 				mpz_mod(x_rvss->C_ik[*it][k], x_rvss->C_ik[*it][k], p);
 			}
 		}
-		err << " }" << std::endl;
+		err << "}" << std::endl;
 
 		// Players update the set of non-disqualified players.
 		QUAL.clear();

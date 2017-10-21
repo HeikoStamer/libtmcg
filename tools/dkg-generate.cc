@@ -1281,7 +1281,9 @@ int main
 	(int argc, char *const *argv)
 {
 	// setup CRS (common reference string) |p| = 2048 bit, |q| = 256 bit
-	// parameters of the underlying group have been generated with dkg-gencrs
+	// The domain parameters of the underlying fixed group have been generated
+	// by the author. You can run dkg-gencrs and use the option "-g" to
+	// employ your own domain parameter set.
 	static std::string crs = "crs|Ya4kG0PQkxSNfXs0GPvNvrLqeyLc13aypAwaHZ3"
 		"kxi6uYagVELARgiqVBVyBe485oVJmXAVATaJIYpQQhgBawHpzPAOyRICy7hQ"
 		"dBvYtmForYx5MGTK7Uf7PPIgnVDQ7csNgsFfMNkUQVKpiszcb4dVi9sGx4Di"
