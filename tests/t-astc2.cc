@@ -229,7 +229,7 @@ void start_instance
 				rbc->Sync(aiounicast::aio_timeout_middle, "step 3");
 
 			// signing and verifying messages
-			std::stringstream err_log_sign, err_log_sign_nm1;
+			std::stringstream err_log_sign;
 			mpz_t m, r, s;
 			mpz_init(m), mpz_init(r), mpz_init(s);
 			// check signing and verifying of a message with N signers
@@ -292,6 +292,7 @@ void start_instance
 			// check signing and verifying of two messages with N-1 signers = P_1, P_2, ... and key share refresh
 			if (whoami > 0)
 			{
+				std::stringstream err_log_sign_nm1;
 				std::map<size_t, size_t> idx2dkg, dkg2idx;
 				for (size_t i = 0; i < (N-1); i++)
 					idx2dkg[i] = i + 1, dkg2idx[i + 1] = i; // create one-to-one mapping
@@ -323,6 +324,8 @@ void start_instance
 				else
 					rbc_nm1->Sync(aiounicast::aio_timeout_middle, "step 6");
 				// refreshing key shares $x_i$ and $x\prime_i$ for some $P_i$
+std::cerr << "---------> P_" << whoami << ": IDX2DKG.size() = " << idx2dkg.size() << std::endl;
+std::cerr << "---------> P_" << whoami << ": DKG2IDX.size() = " << dkg2idx.size() << std::endl;
 				std::stringstream err_log_refresh_dss2;
 				start_clock();
 				std::cout << "P_" << whoami << ": dss.Refresh() at " << time(NULL) << std::endl;
@@ -340,16 +343,20 @@ void start_instance
 					rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 7");
 				else
 					rbc->Sync(aiounicast::aio_timeout_middle, "step 7");
+				// test signing again
+std::cerr << "=======> P_" << whoami << ": IDX2DKG.size() = " << idx2dkg.size() << std::endl;
+std::cerr << "=======> P_" << whoami << ": DKG2IDX.size() = " << dkg2idx.size() << std::endl;
+				std::stringstream err_log_sign_nm12;
 				mpz_set_ui(m, 77L), mpz_set_ui(r, 0L), mpz_set_ui(s, 0L);
 				start_clock();
 				std::cout << "P_" << whoami << ": dss.Sign(77, ...) at " << time(NULL) << std::endl;
 				if ((corrupted) && (whoami == (N-1)))
-					dss->Sign(N-1, whoami-1, m, r, s, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_sign_nm1, true);
+					dss->Sign(N-1, whoami-1, m, r, s, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_sign_nm12, true);
 				else
-					ret = dss->Sign(N-1, whoami-1, m, r, s, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_sign_nm1);
+					ret = dss->Sign(N-1, whoami-1, m, r, s, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_sign_nm12);
 				stop_clock();
 				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign_nm1.str();
+				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign_nm12.str();
 				if (!corrupted)
 					assert(ret);
 				start_clock();

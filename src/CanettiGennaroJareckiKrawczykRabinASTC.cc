@@ -2456,15 +2456,15 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[1])
 			mpz_add_ui(x_i, x_i, 1L);
 		mpz_mod(x_i, x_i, q);
-		err << "DKG(" << label << "): P_" << idx2dkg[i] << ": refreshed x_i = " << x_i << std::endl;
+		err << "DKG(" << label << "): P_" << idx2dkg[i_in] << ": refreshed x_i = " << x_i << std::endl;
 		mpz_add(xprime_i, xprime_i, x_zvss->xprime_i);
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[2])
 			mpz_add_ui(xprime_i, xprime_i, 1L);
 		mpz_mod(xprime_i, xprime_i, q);
-		err << "DKG(" << label << "): P_" << idx2dkg[i] << ": refreshed xprime_i = " << xprime_i << std::endl;
+		err << "DKG(" << label << "): P_" << idx2dkg[i_in] << ": refreshed xprime_i = " << xprime_i << std::endl;
 
 		// Players update the corresponding commitments in current Joint-RVSS instance of $x$.
-		err << "DKG(" << label << "): P_" << idx2dkg[i] << ": update commitments (C_ik's) of { ";
+		err << "DKG(" << label << "): P_" << idx2dkg[i_in] << ": update commitments (C_ik's) of { ";
 		for (std::vector<size_t>::iterator it = x_zvss->QUAL.begin(); it != x_zvss->QUAL.end(); ++it)
 		{
 			err << "P_" << *it << " ";
