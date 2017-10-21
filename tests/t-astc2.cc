@@ -327,9 +327,9 @@ void start_instance
 				start_clock();
 				std::cout << "P_" << whoami << ": dss.Refresh() at " << time(NULL) << std::endl;
 				if (corrupted)
-					dss->Refresh(N-1, whoami-1, aiou_nm1, rbc_nm1, err_log_refresh_dss2, true);
+					dss->Refresh(N-1, whoami-1, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_refresh_dss2, true);
 				else
-					ret = dss->Refresh(N-1, whoami-1, aiou_nm1, rbc_nm1, err_log_refresh_dss2);
+					ret = dss->Refresh(N-1, whoami-1, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_refresh_dss2);
 				stop_clock();
 				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_refresh_dss2.str();
