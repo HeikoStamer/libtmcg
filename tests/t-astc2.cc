@@ -180,6 +180,7 @@ void start_instance
 
 			// refreshing key shares $x_i$ and $x\prime_i$ for all $P_i$
 			std::stringstream err_log_refresh;
+			start_clock();
 			std::cout << "P_" << whoami << ": dkg.Refresh() at " << time(NULL) << std::endl;
 			if (corrupted)
 				dkg->Refresh(N, whoami, aiou, rbc, err_log_refresh, true);
@@ -254,6 +255,7 @@ void start_instance
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 			if (!corrupted)
 				assert(ret);
+			start_clock();
 			std::cout << "P_" << whoami << ": !dss.Verify(43, ...) at " << time(NULL) << std::endl;
 			mpz_add_ui(m, m, 1L);
 			if (corrupted)
@@ -271,6 +273,7 @@ void start_instance
 				rbc->Sync(aiounicast::aio_timeout_middle, "step 4");
 			// refreshing key shares $x_i$ and $x\prime_i$ for all $P_i$
 			std::stringstream err_log_refresh_dss;
+			start_clock();
 			std::cout << "P_" << whoami << ": dss.Refresh() at " << time(NULL) << std::endl;
 			if (corrupted)
 				dss->Refresh(N, whoami, aiou, rbc, err_log_refresh_dss, true);
@@ -286,7 +289,7 @@ void start_instance
 				rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 5");
 			else
 				rbc->Sync(aiounicast::aio_timeout_middle, "step 5");
-			// check signing and verifying of a message with N-1 signers = P_1, P_2, ...
+			// check signing and verifying of two messages with N-1 signers = P_1, P_2, ... and key share refresh
 			if (whoami > 0)
 			{
 				std::map<size_t, size_t> idx2dkg, dkg2idx;
@@ -319,6 +322,51 @@ void start_instance
 					rbc_nm1->Sync(aiounicast::aio_timeout_extremely_long, "step 6");
 				else
 					rbc_nm1->Sync(aiounicast::aio_timeout_middle, "step 6");
+				// refreshing key shares $x_i$ and $x\prime_i$ for some $P_i$
+				std::stringstream err_log_refresh_dss2;
+				start_clock();
+				std::cout << "P_" << whoami << ": dss.Refresh() at " << time(NULL) << std::endl;
+				if (corrupted)
+					dss->Refresh(N-1, whoami-1, aiou_nm1, rbc_nm1, err_log_refresh_dss2, true);
+				else
+					ret = dss->Refresh(N-1, whoami-1, aiou_nm1, rbc_nm1, err_log_refresh_dss2);
+				stop_clock();
+				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_refresh_dss2.str();
+				if (!corrupted)
+					assert(ret);
+				// now: sync for waiting parties
+				if (someone_corrupted)
+					rbc->Sync(aiounicast::aio_timeout_extremely_long, "step 7");
+				else
+					rbc->Sync(aiounicast::aio_timeout_middle, "step 7");
+				mpz_set_ui(m, 77L), mpz_set_ui(r, 0L), mpz_set_ui(s, 0L);
+				start_clock();
+				std::cout << "P_" << whoami << ": dss.Sign(77, ...) at " << time(NULL) << std::endl;
+				if ((corrupted) && (whoami == (N-1)))
+					dss->Sign(N-1, whoami-1, m, r, s, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_sign_nm1, true);
+				else
+					ret = dss->Sign(N-1, whoami-1, m, r, s, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_sign_nm1);
+				stop_clock();
+				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign_nm1.str();
+				if (!corrupted)
+					assert(ret);
+				start_clock();
+				std::cout << "P_" << whoami << ": dss.Verify(77, ...) at " << time(NULL) << std::endl;
+				if (corrupted)
+					dss->Verify(m, r, s);
+				else
+					ret = dss->Verify(m, r, s);
+				stop_clock();
+				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+				if (!corrupted)
+					assert(ret);
+				// at the end: sync for waiting parties
+				if (someone_corrupted)
+					rbc_nm1->Sync(aiounicast::aio_timeout_extremely_long, "step 8");
+				else
+					rbc_nm1->Sync(aiounicast::aio_timeout_middle, "step 8");
 			}
 			mpz_clear(m), mpz_clear(r), mpz_clear(s);
 
