@@ -69,7 +69,8 @@ void run_instance
 	if (!read_private_key(thispeer + "_dkg-sec.asc", armored_seckey))
 		exit(-1);
 	init_mpis();
-	if (!parse_private_key(armored_seckey))
+	std::vector<std::string> CAPL;
+	if (!parse_private_key(armored_seckey, CAPL))
 	{
 		keyid.clear(), pub.clear(), sub.clear(), uidsig.clear(), subsig.clear();
 		dss_qual.clear(), dss_c_ik.clear();
@@ -77,7 +78,7 @@ void run_instance
 		std::cout << "Please enter the passphrase to unlock your private key: ";
 		std::getline(std::cin, passphrase);
 		std::cin.clear();
-		if (!parse_private_key(armored_seckey))
+		if (!parse_private_key(armored_seckey, CAPL))
 		{
 			std::cerr << "R_" << whoami << ": wrong passphrase to unlock private key" << std::endl;
 			release_mpis();
@@ -171,7 +172,7 @@ void run_instance
 			}
 			else
 			{
-				std::cerr << "R_" << whoami << ": WARNING - no signature creation time received from " << i << std::endl;
+				std::cerr << "R_" << whoami << ": WARNING - no signature creation time stamp received from " << i << std::endl;
 			}
 		}
 	}
@@ -239,7 +240,7 @@ void run_instance
 	CanettiGennaroJareckiKrawczykRabinDSS *dss = new CanettiGennaroJareckiKrawczykRabinDSS(dss_in);
 	if (!dss->CheckGroup())
 	{
-		std::cerr << "R_" << whoami << ": " << "tDSS parameters are not correctly generated!" << std::endl;
+		std::cerr << "R_" << whoami << ": " << "tDSS domain parameters are not correctly generated!" << std::endl;
 		delete dss, delete rbc, delete aiou, delete aiou2;
 		release_mpis();
 		exit(-1);

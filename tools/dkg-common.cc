@@ -80,7 +80,7 @@ void init_mpis
 }
 
 bool parse_private_key
-	(const std::string in)
+	(const std::string in, std::vector<std::string> &capl_out)
 {
 	// parse the private key according to OpenPGP
 	bool secdsa = false, sigdsa = false, ssbelg = false, sigelg = false;
@@ -488,7 +488,7 @@ bool parse_private_key
 								}
 								else
 								{
-									std::cerr << "ERROR: QUAL sizes of tDSS key does not match" << std::endl;
+									std::cerr << "ERROR: QUAL size of tDSS key and CAPL does not match" << std::endl;
 									exit(-1);
 								}
 								break;
@@ -500,6 +500,10 @@ bool parse_private_key
 							exit(-1);
 						}
 					}
+					// copy CAPL information
+					capl_out.clear();
+					for (size_t j = 0; j < capl.size(); j++)
+						capl_out.push_back(capl[j]);
 				}
 				else if ((ctx.pkalgo == 108) && secdsa)
 				{

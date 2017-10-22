@@ -2582,7 +2582,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					capl.push_back(peerid);
 				}
 				if ((get_gcry_mpi_ui(out.n) > 255) || (get_gcry_mpi_ui(out.t) > 128))
-					return 0; // error: too many parties
+					return 0; // error: too many parties or bad threshold
 				c_ik.resize(get_gcry_mpi_ui(out.n));
 				for (size_t j = 0; j < get_gcry_mpi_ui(out.n); j++)
 				{
@@ -2646,7 +2646,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				if ((get_gcry_mpi_ui(out.n) > 255) || (get_gcry_mpi_ui(out.t) > 128))
-					return 0; // error: too many parties
+					return 0; // error: too many parties or bad threshold
 				v_i.resize(get_gcry_mpi_ui(out.n));
 				for (size_t j = 0; j < get_gcry_mpi_ui(out.n); j++)
 				{

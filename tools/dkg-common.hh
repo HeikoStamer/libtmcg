@@ -42,7 +42,7 @@
 	void init_mpis
 		();
 	bool parse_private_key
-		(const std::string in);
+		(const std::string in, std::vector<std::string> &capl_out);
 	void release_mpis
 		();
 
