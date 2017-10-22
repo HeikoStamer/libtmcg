@@ -20,7 +20,7 @@
 AM_CPPFLAGS = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@ @LIBGMP_CFLAGS@ @GNUNET_CFLAGS@
 LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ @LIBGMP_LIBS@ @GNUNET_LIBS@ ../src/libTMCG.la
 
-bin_PROGRAMS = dkg-gencrs dkg-generate dkg-encrypt dkg-decrypt dkg-sign dkg-revoke dkg-keyinfo
+bin_PROGRAMS = dkg-gencrs dkg-generate dkg-encrypt dkg-decrypt dkg-sign dkg-revoke dkg-keyinfo dkg-refresh
 
 dist_man_MANS = dkg-generate.1 dkg-encrypt.1 dkg-decrypt.1 dkg-sign.1 dkg-revoke.1
 
@@ -31,5 +31,6 @@ dkg_decrypt_SOURCES = dkg-builtin-common.hh dkg-builtin-common.cc dkg-gnunet-com
 dkg_sign_SOURCES = dkg-builtin-common.hh dkg-builtin-common.cc dkg-gnunet-common.hh dkg-gnunet-common.cc dkg-common.hh dkg-common.cc dkg-sign.cc
 dkg_revoke_SOURCES = dkg-builtin-common.hh dkg-builtin-common.cc dkg-gnunet-common.hh dkg-gnunet-common.cc dkg-common.hh dkg-common.cc dkg-revoke.cc
 dkg_keyinfo_SOURCES = dkg-common.hh dkg-common.cc dkg-keyinfo.cc
+dkg_refresh_SOURCES = dkg-builtin-common.hh dkg-builtin-common.cc dkg-gnunet-common.hh dkg-gnunet-common.cc dkg-common.hh dkg-common.cc dkg-refresh.cc
 
 
