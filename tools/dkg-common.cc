@@ -44,14 +44,15 @@ bool read_private_key
 	std::ifstream secifs(filename.c_str(), std::ifstream::in);
 	if (!secifs.is_open())
 	{
-		std::cerr << "ERROR: cannot open key file" << std::endl;
+		std::cerr << "ERROR: cannot open private key file" << std::endl;
 		return false;
 	}
 	while (std::getline(secifs, line))
 		dkgseckey << line << std::endl;
 	if (!secifs.eof())
 	{
-		std::cerr << "ERROR: reading until EOF failed" << std::endl;
+		secifs.close();
+		std::cerr << "ERROR: reading private key file until EOF failed" << std::endl;
 		return false;
 	}
 	secifs.close();
@@ -81,7 +82,7 @@ void init_mpis
 bool parse_private_key
 	(const std::string in)
 {
-	// parse the private key
+	// parse the private key according to OpenPGP
 	bool secdsa = false, sigdsa = false, ssbelg = false, sigelg = false;
 	tmcg_byte_t atype = 0, ptag = 0xFF;
 	tmcg_byte_t dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
@@ -107,7 +108,7 @@ bool parse_private_key
 		std::cout << "ArmorDecode() = " << (int)atype << std::endl;
 	if (atype != 5)
 	{
-		std::cerr << "ERROR: wrong type of ASCII Armor" << std::endl;
+		std::cerr << "ERROR: wrong type of ASCII Armor found" << std::endl;
 		exit(-1);
 	}
 	while (pkts.size() && ptag)
