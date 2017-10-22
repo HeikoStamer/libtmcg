@@ -162,12 +162,14 @@ void init_dkg
 	{
 		std::cerr << "ERROR: DKG parameters are not correctly generated!" << std::endl;
 		delete dkg;
+		release_mpis();
 		exit(-1);
 	}
 	if (!dkg->CheckKey())
 	{
 		std::cerr << "ERROR: DKG CheckKey() failed!" << std::endl;
 		delete dkg;
+		release_mpis();
 		exit(-1);
 	}
 }

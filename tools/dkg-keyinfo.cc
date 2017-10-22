@@ -189,6 +189,52 @@ int main
 		exit(-1);
 	}
 
+	GennaroJareckiKrawczykRabinDKG *dkg;
+	if (sub.size())
+	{
+		// create an instance of DKG by stored parameters from private key
+		std::stringstream dkg_in;
+		dkg_in << dkg_p << std::endl << dkg_q << std::endl << dkg_g << std::endl << dkg_h << std::endl;
+		dkg_in << dkg_n << std::endl << dkg_t << std::endl << dkg_i << std::endl;
+		dkg_in << dkg_x_i << std::endl << dkg_xprime_i << std::endl << dkg_y << std::endl;
+		dkg_in << dkg_qual.size() << std::endl;
+		for (size_t i = 0; i < dkg_qual.size(); i++)
+			dkg_in << dkg_qual[i] << std::endl;
+		for (size_t i = 0; i < dkg_n; i++)
+			dkg_in << "1" << std::endl; // y_i not yet stored
+		for (size_t i = 0; i < dkg_n; i++)
+			dkg_in << "0" << std::endl; // z_i not yet stored
+		assert((dkg_v_i.size() == dkg_n));
+		for (size_t i = 0; i < dkg_v_i.size(); i++)
+			dkg_in << dkg_v_i[i] << std::endl;
+		assert((dkg_c_ik.size() == dkg_n));
+		for (size_t i = 0; i < dkg_n; i++)
+		{
+			for (size_t j = 0; j < dkg_n; j++)
+				dkg_in << "0" << std::endl << "0" << std::endl; // s_ij and sprime_ij not yet stored
+			assert((dkg_c_ik[i].size() == (dkg_t + 1)));
+			for (size_t k = 0; k < dkg_c_ik[i].size(); k++)
+				dkg_in << dkg_c_ik[i][k] << std::endl;
+		}
+		if (opt_verbose)
+			std::cout << "GennaroJareckiKrawczykRabinDKG(in, ...)" << std::endl;
+		dkg = new GennaroJareckiKrawczykRabinDKG(dkg_in);
+		if (!dkg->CheckGroup())
+		{
+			std::cerr << "ERROR: DKG domain parameters are not correctly generated!" << std::endl;
+			delete dss, delete dkg;
+			release_mpis();
+			exit(-1);
+		}
+		if (!dkg->CheckKey())
+		{
+			std::cerr << "ERROR: DKG CheckKey() failed!" << std::endl;
+			delete dss, delete dkg;
+			release_mpis();
+			exit(-1);
+		}
+	}
+
 	// show information
 	std::cout << "OpenPGP V4 Key ID of primary key: " << std::endl << std::hex << std::uppercase << "\t";
 	for (size_t i = 0; i < keyid.size(); i++)
@@ -210,7 +256,7 @@ int main
 	std::cout << "|g| = " << mpz_sizeinbase(dss->g, 2L) << " bit, ";
 	std::cout << "|h| = " << mpz_sizeinbase(dss->h, 2L) << " bit" << std::endl;
 	std::cout << "Threshold parameter set of primary key (tDSS): " << std::endl << "\t";
-	std::cout << "n = " << dss->n << ", t = " << dss->t << std::endl;
+	std::cout << "n = " << dss->n << ", s = " << dss->t << std::endl;
 	std::cout << "Set of non-disqualified parties of primary key (tDSS): " << std::endl << "\t" << "QUAL = { ";
 	for (size_t i = 0; i < dss->QUAL.size(); i++)
 		std::cout << "P_" << dss->QUAL[i] << " ";
@@ -234,10 +280,20 @@ int main
 		for (size_t i = 0; i < sub_fpr.size(); i++)
 			std::cout << std::setfill('0') << std::setw(2) << std::right << (int)sub_fpr[i] << " ";
 		std::cout << std::dec << std::endl;
-// TODO: threshold parameters, QUAL, v_i
+		std::cout << "Threshold parameter set of subkey: " << std::endl << "\t";
+		std::cout << "n = " << dkg->n << ", t = " << dkg->t << std::endl;
+		std::cout << "Set of non-disqualified parties of subkey: " << std::endl << "\t" << "QUAL = { ";
+		for (size_t i = 0; i < dkg->QUAL.size(); i++)
+			std::cout << "P_" << dkg->QUAL[i] << " ";
+		std::cout << "}" << std::endl;
+		std::cout << "Public verification keys (v_i): " << std::endl;
+		for (size_t i = 0; i < dkg->v_i.size(); i++)
+			std::cout << "\t" << "P_" << i << "\t" << dkg->v_i[i] << std::endl;
 	}
 
 	// release
+	if (sub.size())
+		delete dkg;
 	delete dss;
 	release_mpis();
 	
