@@ -324,8 +324,6 @@ void start_instance
 				else
 					rbc_nm1->Sync(aiounicast::aio_timeout_middle, "step 6");
 				// refreshing key shares $x_i$ and $x\prime_i$ for some $P_i$
-std::cerr << "---------> P_" << whoami << ": IDX2DKG.size() = " << idx2dkg.size() << std::endl;
-std::cerr << "---------> P_" << whoami << ": DKG2IDX.size() = " << dkg2idx.size() << std::endl;
 				std::stringstream err_log_refresh_dss2;
 				start_clock();
 				std::cout << "P_" << whoami << ": dss.Refresh() at " << time(NULL) << std::endl;
@@ -344,8 +342,6 @@ std::cerr << "---------> P_" << whoami << ": DKG2IDX.size() = " << dkg2idx.size(
 				else
 					rbc->Sync(aiounicast::aio_timeout_middle, "step 7");
 				// test signing again
-std::cerr << "=======> P_" << whoami << ": IDX2DKG.size() = " << idx2dkg.size() << std::endl;
-std::cerr << "=======> P_" << whoami << ": DKG2IDX.size() = " << dkg2idx.size() << std::endl;
 				std::stringstream err_log_sign_nm12;
 				mpz_set_ui(m, 77L), mpz_set_ui(r, 0L), mpz_set_ui(s, 0L);
 				start_clock();
