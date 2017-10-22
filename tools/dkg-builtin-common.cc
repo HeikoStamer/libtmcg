@@ -40,7 +40,6 @@ std::map<size_t, int>	 		builtin_pipe2socket, builtin_broadcast_pipe2socket;
 std::map<size_t, int>	 		builtin_pipe2socket_out, builtin_broadcast_pipe2socket_out;
 std::map<size_t, int>	 		builtin_pipe2socket_in, builtin_broadcast_pipe2socket_in;
 
-
 // This is the signal handler called when receiving SIGINT, SIGQUIT, and SIGTERM, respectively.
 RETSIGTYPE builtin_sig_handler_quit(int sig)
 {
