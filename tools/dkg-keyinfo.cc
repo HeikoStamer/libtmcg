@@ -40,7 +40,7 @@
 std::vector<std::string>		peers;
 
 std::string				passphrase, userid;
-tmcg_octets_t				keyid, pub, sub, uidsig, subsig;
+tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig;
 std::map<size_t, size_t>		idx2dkg, dkg2idx;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 size_t					dss_n, dss_t, dss_i;
@@ -60,7 +60,7 @@ int main
 	(int argc, char *const *argv)
 {
 	static const char *usage = "dkg-keyinfo [OPTIONS] PEER";
-	static const char *about = "show information about private threshold key";
+	static const char *about = "show information about private threshold key share";
 
 	if (argc < 2)
 	{
@@ -222,14 +222,13 @@ int main
 		std::cout << "\t" << "P_" << i << "\t" << CAPL[i] << std::endl;
 	if (sub.size())
 	{
-		tmcg_octets_t sub_hashing, sub_keyid, sub_fpr;
+		std::cout << "OpenPGP V4 Key ID of subkey: " << std::endl << std::hex << std::uppercase << "\t";
+		for (size_t i = 0; i < subkeyid.size(); i++)
+			std::cout << std::setfill('0') << std::setw(2) << std::right << (int)subkeyid[i] << " ";
+		std::cout << std::dec << std::endl;
+		tmcg_octets_t sub_hashing, sub_fpr;
 		for (size_t i = 6; i < sub.size(); i++)
 			sub_hashing.push_back(sub[i]);
-		CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, sub_keyid);
-		std::cout << "OpenPGP V4 Key ID of subkey: " << std::endl << std::hex << std::uppercase << "\t";
-		for (size_t i = 0; i < sub_keyid.size(); i++)
-			std::cout << std::setfill('0') << std::setw(2) << std::right << (int)sub_keyid[i] << " ";
-		std::cout << std::dec << std::endl;
 		CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute(sub_hashing, sub_fpr);
 		std::cout << "OpenPGP V4 fingerprint of subkey: " << std::endl << std::hex << std::uppercase << "\t";
 		for (size_t i = 0; i < sub_fpr.size(); i++)

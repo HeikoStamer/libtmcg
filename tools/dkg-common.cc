@@ -27,7 +27,7 @@
 extern std::vector<std::string>			peers;
 extern int					opt_verbose;
 extern std::string				passphrase, userid;
-extern tmcg_octets_t				keyid, pub, sub, uidsig, subsig;
+extern tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig;
 extern std::map<size_t, size_t>			idx2dkg, dkg2idx;
 extern mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 extern size_t					dss_n, dss_t, dss_i;
@@ -106,7 +106,7 @@ bool parse_private_key
 	tmcg_byte_t dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
 	tmcg_byte_t *key, *iv;
 	tmcg_octets_t pkts;
-	tmcg_octets_t seskey, salt, mpis, hash_input, hash, subkeyid, pub_hashing, sub_hashing, issuer, dsa_hspd, elg_hspd;
+	tmcg_octets_t seskey, salt, mpis, hash_input, hash, pub_hashing, sub_hashing, issuer, dsa_hspd, elg_hspd;
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t erroff, keylen, ivlen, chksum, mlen, chksum2;

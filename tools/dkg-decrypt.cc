@@ -47,7 +47,7 @@ std::vector<std::string>		peers;
 bool					instance_forked = false;
 
 std::string				passphrase, userid, ifilename, ofilename, passwords, hostname, port;
-tmcg_octets_t				keyid, pub, sub, uidsig, subsig;
+tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig;
 std::map<size_t, size_t>		idx2dkg, dkg2idx;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 size_t					dss_n, dss_t, dss_i;
@@ -70,7 +70,7 @@ unsigned long int			opt_p = 55000;
 
 std::string				armored_message, armored_seckey;
 gcry_sexp_t				elgkey;
-tmcg_octets_t				subkeyid, enc;
+tmcg_octets_t				enc;
 bool					have_seipd = false;
 GennaroJareckiKrawczykRabinDKG		*dkg;
 
