@@ -98,6 +98,10 @@ that list. The program binds some TCP ports up from 55000 to listen for
 incoming connections and connects to other peers in that port range.
 Since the communication is not protected by the network itself "-P" is
 a mandatory option in that case.
+.PP
+The included program 
+.BR dkg\-keyinfo
+show some basic information stored inside the private key file.
 
 .SH OPTIONS
 Arguments mandatory for long options are also mandatory for short options.
