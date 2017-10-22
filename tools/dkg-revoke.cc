@@ -66,7 +66,8 @@ void run_instance
 {
 	// read and parse the private key
 	std::string armored_seckey, thispeer = peers[whoami];
-	read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
+	if (!read_private_key(thispeer + "_dkg-sec.asc", armored_seckey))
+		exit(-1);
 	init_mpis();
 	if (!parse_private_key(armored_seckey))
 	{

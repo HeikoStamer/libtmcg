@@ -37,7 +37,7 @@
 	#include <fcntl.h>
 	#include <libTMCG.hh>
 
-	void read_private_key
+	bool read_private_key
 		(const std::string filename, std::string &result);
 	void init_mpis
 		();

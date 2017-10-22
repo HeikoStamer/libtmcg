@@ -66,7 +66,6 @@ unsigned long int			opt_e = 0, opt_p = 55000;
 void write_signature
 	(const std::string filename, const std::string armored_signature)
 {
-
 	// write out the armored signature
 	std::ofstream ofs(filename.c_str(), std::ofstream::out);
 	if (!ofs.good())
@@ -88,7 +87,8 @@ void run_instance
 {
 	// read and parse the private key
 	std::string armored_seckey, thispeer = peers[whoami];
-	read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
+	if (!read_private_key(thispeer + "_dkg-sec.asc", armored_seckey))
+		exit(-1);
 	init_mpis();
 	if (!parse_private_key(armored_seckey))
 	{

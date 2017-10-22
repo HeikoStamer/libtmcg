@@ -35,7 +35,7 @@ extern std::vector<size_t>			dss_qual;
 extern std::vector< std::vector<mpz_ptr> >	dss_c_ik;
 extern gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_g, elg_y;
 
-void read_private_key
+bool read_private_key
 	(const std::string filename, std::string &result)
 {
 	// read the private key from file
@@ -45,17 +45,18 @@ void read_private_key
 	if (!secifs.is_open())
 	{
 		std::cerr << "ERROR: cannot open key file" << std::endl;
-		exit(-1);
+		return false;
 	}
 	while (std::getline(secifs, line))
 		dkgseckey << line << std::endl;
 	if (!secifs.eof())
 	{
 		std::cerr << "ERROR: reading until EOF failed" << std::endl;
-		exit(-1);
+		return false;
 	}
 	secifs.close();
 	result = dkgseckey.str();
+	return true;
 }
 
 void init_mpis
