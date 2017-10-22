@@ -39,24 +39,28 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 
 #include "dkg-builtin-common.hh"
 #include "dkg-gnunet-common.hh"
+#include "dkg-common.hh"
 
 int 					pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 pid_t 					pid[MAX_N];
 std::vector<std::string>		peers;
 bool					instance_forked = false;
 
-std::string				passphrase, armored_message, armored_seckey, ifilename, ofilename, passwords, hostname, port;
-gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_q, elg_g, elg_y, elg_x;
-gcry_mpi_t 				gk, myk;
-gcry_sexp_t				elgkey;
-tmcg_octets_t				subkeyid, enc;
-bool					have_seipd = false;
-GennaroJareckiKrawczykRabinDKG		*dkg;
+std::string				passphrase, userid, ifilename, ofilename, passwords, hostname, port;
+tmcg_octets_t				keyid, pub, sub, uidsig, subsig;
+std::map<size_t, size_t>		idx2dkg, dkg2idx;
+mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
+size_t					dss_n, dss_t, dss_i;
+std::vector<size_t>			dss_qual;
+std::vector< std::vector<mpz_ptr> >	dss_c_ik;
 mpz_t					dkg_p, dkg_q, dkg_g, dkg_h, dkg_x_i, dkg_xprime_i, dkg_y;
 size_t					dkg_n, dkg_t, dkg_i;
 std::vector<size_t>			dkg_qual;
 std::vector<mpz_ptr>			dkg_v_i;
 std::vector< std::vector<mpz_ptr> >	dkg_c_ik;
+gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_q, elg_g, elg_y, elg_x;
+gcry_mpi_t 				gk, myk;
+
 int 					opt_verbose = 0;
 char					*opt_ifilename = NULL;
 char					*opt_ofilename = NULL;
@@ -64,28 +68,11 @@ char					*opt_passwords = NULL;
 char					*opt_hostname = NULL;
 unsigned long int			opt_p = 55000;
 
-void read_private_key
-	(const std::string filename, std::string &result)
-{
-	// read the private key from file
-	std::string line;
-	std::stringstream dkgseckey;
-	std::ifstream secifs(filename.c_str(), std::ifstream::in);
-	if (!secifs.is_open())
-	{
-		std::cerr << "ERROR: cannot open key file" << std::endl;
-		exit(-1);
-	}
-	while (std::getline(secifs, line))
-		dkgseckey << line << std::endl;
-	if (!secifs.eof())
-	{
-		std::cerr << "ERROR: reading until EOF failed" << std::endl;
-		exit(-1);
-	}
-	secifs.close();
-	result = dkgseckey.str();
-}
+std::string				armored_message, armored_seckey;
+gcry_sexp_t				elgkey;
+tmcg_octets_t				subkeyid, enc;
+bool					have_seipd = false;
+GennaroJareckiKrawczykRabinDKG		*dkg;
 
 void read_message
 	(const std::string ifilename, std::string &result)
@@ -141,30 +128,6 @@ void print_message
 		std::cout << msg[i];
 }
 
-void init_mpis
-	()
-{
-	dsa_p = gcry_mpi_new(2048);
-	dsa_q = gcry_mpi_new(2048);
-	dsa_g = gcry_mpi_new(2048);
-	dsa_y = gcry_mpi_new(2048);
-	dsa_x = gcry_mpi_new(2048);
-	elg_p = gcry_mpi_new(2048);
-	elg_q = gcry_mpi_new(2048);
-	elg_g = gcry_mpi_new(2048);
-	elg_y = gcry_mpi_new(2048);
-	elg_x = gcry_mpi_new(2048);
-	gk = gcry_mpi_new(2048);
-	myk = gcry_mpi_new(2048);
-	mpz_init(dkg_p);
-	mpz_init(dkg_q);
-	mpz_init(dkg_g);
-	mpz_init(dkg_h);
-	mpz_init(dkg_x_i);
-	mpz_init(dkg_xprime_i);
-	mpz_init(dkg_y);
-}
-
 void init_dkg
 	()
 {
@@ -209,7 +172,7 @@ void init_dkg
 	}
 }
 
-bool parse_private_key
+bool parse_private_key_dkg
 	(const std::string in)
 {
 	// parse the private key
@@ -1589,30 +1552,6 @@ void decrypt_message
 	}
 }
 
-void release_mpis
-	()
-{
-	gcry_mpi_release(dsa_p);
-	gcry_mpi_release(dsa_q);
-	gcry_mpi_release(dsa_g);
-	gcry_mpi_release(dsa_y);
-	gcry_mpi_release(dsa_x);
-	gcry_mpi_release(elg_p);
-	gcry_mpi_release(elg_q);
-	gcry_mpi_release(elg_g);
-	gcry_mpi_release(elg_y);
-	gcry_mpi_release(elg_x);
-	gcry_mpi_release(gk);
-	gcry_mpi_release(myk);
-	mpz_clear(dkg_p);
-	mpz_clear(dkg_q);
-	mpz_clear(dkg_g);
-	mpz_clear(dkg_h);
-	mpz_clear(dkg_x_i);
-	mpz_clear(dkg_xprime_i);
-	mpz_clear(dkg_y);
-}
-
 void release_keys
 	()
 {
@@ -1630,9 +1569,10 @@ void run_instance
 	(size_t whoami, const size_t num_xtests)
 {
 	std::string thispeer = peers[whoami];
-	read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
+	if (!read_private_key(thispeer + "_dkg-sec.asc", armored_seckey))
+		exit(-1);
 	init_mpis();
-	if (!parse_private_key(armored_seckey))
+	if (!parse_private_key_dkg(armored_seckey))
 	{
 		subkeyid.clear(), enc.clear();
 		dkg_qual.clear(), dkg_v_i.clear(), dkg_c_ik.clear();
@@ -1640,7 +1580,7 @@ void run_instance
 		std::cout << "Please enter the passphrase to unlock your private key: ";
 		std::getline(std::cin, passphrase);
 		std::cin.clear();
-		if (!parse_private_key(armored_seckey))
+		if (!parse_private_key_dkg(armored_seckey))
 		{
 			std::cerr << "ERROR: cannot read encrypted content of private key";
 			exit(-1);
@@ -2214,9 +2154,10 @@ int main
 		std::vector<size_t> interpol_parties;
 		std::vector<mpz_ptr> interpol_shares;
 
-		read_private_key(thispeer + "_dkg-sec.asc", armored_seckey);
+		if (!read_private_key(thispeer + "_dkg-sec.asc", armored_seckey))
+			exit(-1);
 		init_mpis();
-		if (!parse_private_key(armored_seckey))
+		if (!parse_private_key_dkg(armored_seckey))
 		{
 			subkeyid.clear(), enc.clear();
 			dkg_qual.clear(), dkg_v_i.clear(), dkg_c_ik.clear();
@@ -2224,7 +2165,7 @@ int main
 			std::cout << "Please enter the passphrase to unlock your private key: ";
 			std::getline(std::cin, passphrase);
 			std::cin.clear();
-			if (!parse_private_key(armored_seckey))
+			if (!parse_private_key_dkg(armored_seckey))
 				exit(-1);
 		}
 		init_dkg();

@@ -33,14 +33,20 @@ extern mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 extern size_t					dss_n, dss_t, dss_i;
 extern std::vector<size_t>			dss_qual;
 extern std::vector< std::vector<mpz_ptr> >	dss_c_ik;
-extern gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_g, elg_y;
+extern mpz_t					dkg_p, dkg_q, dkg_g, dkg_h, dkg_x_i, dkg_xprime_i, dkg_y;
+extern size_t					dkg_n, dkg_t, dkg_i;
+extern std::vector<size_t>			dkg_qual;
+extern std::vector<mpz_ptr>			dkg_v_i;
+extern std::vector< std::vector<mpz_ptr> >	dkg_c_ik;
+extern gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_q, elg_g, elg_y, elg_x;
+extern gcry_mpi_t 				gk, myk;
 
 bool read_private_key
 	(const std::string filename, std::string &result)
 {
 	// read the private key from file
 	std::string line;
-	std::stringstream dkgseckey;
+	std::stringstream seckey;
 	std::ifstream secifs(filename.c_str(), std::ifstream::in);
 	if (!secifs.is_open())
 	{
@@ -48,7 +54,7 @@ bool read_private_key
 		return false;
 	}
 	while (std::getline(secifs, line))
-		dkgseckey << line << std::endl;
+		seckey << line << std::endl;
 	if (!secifs.eof())
 	{
 		secifs.close();
@@ -56,7 +62,7 @@ bool read_private_key
 		return false;
 	}
 	secifs.close();
-	result = dkgseckey.str();
+	result = seckey.str();
 	return true;
 }
 
@@ -74,9 +80,20 @@ void init_mpis
 	dsa_g = gcry_mpi_new(2048);
 	dsa_y = gcry_mpi_new(2048);
 	dsa_x = gcry_mpi_new(2048);
+	mpz_init(dkg_p);
+	mpz_init(dkg_q);
+	mpz_init(dkg_g);
+	mpz_init(dkg_h);
+	mpz_init(dkg_x_i);
+	mpz_init(dkg_xprime_i);
+	mpz_init(dkg_y);
 	elg_p = gcry_mpi_new(2048);
+	elg_q = gcry_mpi_new(2048);
 	elg_g = gcry_mpi_new(2048);
 	elg_y = gcry_mpi_new(2048);
+	elg_x = gcry_mpi_new(2048);
+	gk = gcry_mpi_new(2048);
+	myk = gcry_mpi_new(2048);
 }
 
 bool parse_private_key
@@ -716,8 +733,21 @@ void release_mpis
 	gcry_mpi_release(dsa_g);
 	gcry_mpi_release(dsa_y);
 	gcry_mpi_release(dsa_x);
+
+
+	mpz_clear(dkg_p);
+	mpz_clear(dkg_q);
+	mpz_clear(dkg_g);
+	mpz_clear(dkg_h);
+	mpz_clear(dkg_x_i);
+	mpz_clear(dkg_xprime_i);
+	mpz_clear(dkg_y);
 	gcry_mpi_release(elg_p);
+	gcry_mpi_release(elg_q);
 	gcry_mpi_release(elg_g);
 	gcry_mpi_release(elg_y);
+	gcry_mpi_release(elg_x);
+	gcry_mpi_release(gk);
+	gcry_mpi_release(myk);
 }
 
