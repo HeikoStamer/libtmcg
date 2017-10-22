@@ -79,6 +79,7 @@ void run_instance
 		std::cin.clear();
 		if (!parse_private_key(armored_seckey))
 		{
+			std::cerr << "R_" << whoami << ": wrong passphrase to unlock private key" << std::endl;
 			release_mpis();
 			exit(-1);
 		}
@@ -96,17 +97,19 @@ void run_instance
 			if (!TMCG_ParseHelper::gs(passwords, '/', pwd))
 			{
 				std::cerr << "R_" << whoami << ": " << "cannot read password for protecting channel to R_" << i << std::endl;
+				release_mpis();
 				exit(-1);
 			}
 			key << pwd;
 			if (((i + 1) < peers.size()) && !TMCG_ParseHelper::nx(passwords, '/'))
 			{
 				std::cerr << "R_" << whoami << ": " << "cannot skip to next password for protecting channel to R_" << (i + 1) << std::endl;
+				release_mpis();
 				exit(-1);
 			}
 		}
 		else
-			key << "dkg-revoke::R_" << (i + whoami); // use simple key -- we assume that GNUnet provides secure channels
+			key << "dkg-revoke::R_" << (i + whoami); // use simple key -- we assume that GNUnet will provide secure channels
 		uP_in.push_back(pipefd[i][whoami][0]);
 		uP_out.push_back(pipefd[whoami][i][1]);
 		uP_key.push_back(key.str());
