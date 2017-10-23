@@ -449,6 +449,8 @@ void run_instance
 					for (size_t jj = 0; jj < c_ik.size(); jj++)
 						for (size_t kk = 0; kk < c_ik[jj].size(); kk++)
 							gcry_mpi_release(c_ik[jj][kk]);
+					gcry_sexp_release(key);
+					delete dkg, delete dss, delete rbc, delete vtmf, delete aiou, delete aiou2;
 					exit(-1); 
 				}
 				c_ik[j].push_back(tmp);

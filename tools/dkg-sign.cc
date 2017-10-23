@@ -48,7 +48,7 @@ std::vector<std::string>		peers;
 bool					instance_forked = false;
 
 std::string				passphrase, userid, ifilename, ofilename, passwords, hostname, port;
-tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig;
+tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig, sec, ssb, uid;
 std::map<size_t, size_t>		idx2dkg, dkg2idx;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 size_t					dss_n, dss_t, dss_i;
@@ -97,7 +97,8 @@ void run_instance
 		exit(-1);
 	init_mpis();
 	std::vector<std::string> CAPL;
-	if (!parse_private_key(armored_seckey, CAPL))
+	time_t ckeytime = 0;
+	if (!parse_private_key(armored_seckey, ckeytime, CAPL))
 	{
 		keyid.clear();
 		dss_qual.clear(), dss_c_ik.clear();
@@ -105,7 +106,7 @@ void run_instance
 		std::cout << "Please enter the passphrase to unlock your private key: ";
 		std::getline(std::cin, passphrase);
 		std::cin.clear();
-		if (!parse_private_key(armored_seckey, CAPL))
+		if (!parse_private_key(armored_seckey, ckeytime, CAPL))
 		{
 			std::cerr << "S_" << whoami << ": wrong passphrase to unlock private key" << std::endl;
 			release_mpis();
@@ -663,9 +664,11 @@ int main
 		for (size_t i = 0; i < peers.size(); i++)
 			std::cout << peers[i] << std::endl;
 	}
+	// initialize return code
+	int ret = 0;
+	// create underlying point-to-point channels, if built-in TCP/IP service requested
 	if (opt_hostname != NULL)
 	{
-		int ret = 0;
 		if (port.length())
 			opt_p = strtoul(port.c_str(), NULL, 10); // get start port from options
 		builtin_init(hostname);
@@ -741,7 +744,7 @@ int main
 		),
 		GNUNET_GETOPT_OPTION_END
 	};
-	int ret = GNUNET_PROGRAM_run(argc, argv, usage, about, myoptions, &gnunet_run, argv[0]);
+	ret = GNUNET_PROGRAM_run(argc, argv, usage, about, myoptions, &gnunet_run, argv[0]);
 	GNUNET_free((void *) argv);
 	if (ret == GNUNET_OK)
 		return 0;

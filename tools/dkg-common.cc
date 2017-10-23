@@ -27,7 +27,7 @@
 extern std::vector<std::string>			peers;
 extern int					opt_verbose;
 extern std::string				passphrase, userid;
-extern tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig;
+extern tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig, sec, ssb, uid;
 extern std::map<size_t, size_t>			idx2dkg, dkg2idx;
 extern mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 extern size_t					dss_n, dss_t, dss_i;
@@ -97,7 +97,7 @@ void init_mpis
 }
 
 bool parse_private_key
-	(const std::string in, std::vector<std::string> &capl_out)
+	(const std::string in, time_t &keycreationtime_out, std::vector<std::string> &capl_out)
 {
 	// parse the private key according to OpenPGP
 	bool secdsa = false, sigdsa = false, ssbelg = false, sigelg = false;
@@ -196,6 +196,8 @@ bool parse_private_key
 						std::cerr << "WARNING: insecure hash algorithm " << (int)dsa_hashalgo << 
 							" used for signatures" << std::endl;
 					sigdsa = true;
+					// store the whole packet
+					uidsig.clear();
 					for (size_t i = 0; i < current_packet.size(); i++)
 						uidsig.push_back(current_packet[i]);
 				}
@@ -240,6 +242,8 @@ bool parse_private_key
 						std::cerr << "WARNING: insecure hash algorithm " << (int)elg_hashalgo << 
 							" used for signatures" << std::endl;
 					sigelg = true;
+					// store the whole packet
+					subsig.clear();
 					for (size_t i = 0; i < current_packet.size(); i++)
 						subsig.push_back(current_packet[i]);
 				}
@@ -248,6 +252,7 @@ bool parse_private_key
 				if ((ctx.pkalgo == 108) && !secdsa)
 				{
 					secdsa = true;
+					keycreationtime_out = ctx.keycreationtime;
 					dsa_p = ctx.p, dsa_q = ctx.q, dsa_g = ctx.g, dsa_y = ctx.y;
 					CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ctx.keycreationtime, 17, // public-key is DSA 
 						dsa_p, dsa_q, dsa_g, dsa_y, pub);
@@ -519,8 +524,12 @@ bool parse_private_key
 					}
 					// copy CAPL information
 					capl_out.clear();
-					for (size_t j = 0; j < capl.size(); j++)
-						capl_out.push_back(capl[j]);
+					for (size_t i = 0; i < capl.size(); i++)
+						capl_out.push_back(capl[i]);
+					// store the whole packet
+					sec.clear();
+					for (size_t i = 0; i < current_packet.size(); i++)
+						sec.push_back(current_packet[i]);
 				}
 				else if ((ctx.pkalgo == 108) && secdsa)
 				{
@@ -528,17 +537,23 @@ bool parse_private_key
 					exit(-1);
 				}
 				else
-					std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
+					std::cerr << "WARNING: public-key algorithm not supported; packet ignored" << std::endl;
 				break;
 			case 13: // User ID Packet
 				if (opt_verbose)
 					std::cout << " uid = " << ctx.uid << std::endl;
 				userid = "";
 				for (size_t i = 0; i < sizeof(ctx.uid); i++)
+				{
 					if (ctx.uid[i])
 						userid += ctx.uid[i];
 					else
 						break;
+				}
+				// store the whole packet
+				uid.clear();
+				for (size_t i = 0; i < current_packet.size(); i++)
+					uid.push_back(current_packet[i]);
 				break;
 			case 7: // Secret-Subkey Packet
 				if ((ctx.pkalgo == 109) && !ssbelg)
@@ -775,11 +790,15 @@ bool parse_private_key
 						std::cerr << "ERROR: S2K format not supported" << std::endl;
 						exit(-1);
 					}
+					// store the whole packet
+					ssb.clear();
+					for (size_t i = 0; i < current_packet.size(); i++)
+						ssb.push_back(current_packet[i]);
 				}
 				else if ((ctx.pkalgo == 109) && ssbelg)
-					std::cerr << "WARNING: ElGamal subkey already found" << std::endl; 
+					std::cerr << "WARNING: ElGamal subkey already found; packet ignored" << std::endl; 
 				else
-					std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
+					std::cerr << "WARNING: public-key algorithm not supported; packet ignored" << std::endl;
 				break;
 		}
 		// cleanup allocated buffers

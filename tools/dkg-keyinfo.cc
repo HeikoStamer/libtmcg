@@ -34,13 +34,14 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <ctime>
 
 #include "dkg-common.hh"
 
 std::vector<std::string>		peers;
 
 std::string				passphrase, userid;
-tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig;
+tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig, sec, ssb, uid;
 std::map<size_t, size_t>		idx2dkg, dkg2idx;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 size_t					dss_n, dss_t, dss_i;
@@ -132,7 +133,8 @@ int main
 		exit(-1);
 	init_mpis();
 	std::vector<std::string> CAPL;
-	if (!parse_private_key(armored_seckey, CAPL))
+	time_t ckeytime = 0;
+	if (!parse_private_key(armored_seckey, ckeytime, CAPL))
 	{
 		keyid.clear(), pub.clear(), sub.clear(), uidsig.clear(), subsig.clear();
 		dss_qual.clear(), dss_c_ik.clear();
@@ -140,7 +142,7 @@ int main
 		std::cout << "Please enter the passphrase to unlock your private key: ";
 		std::getline(std::cin, passphrase);
 		std::cin.clear();
-		if (!parse_private_key(armored_seckey, CAPL))
+		if (!parse_private_key(armored_seckey, ckeytime, CAPL))
 		{
 			std::cerr << "ERROR: wrong passphrase to unlock private key" << std::endl;
 			release_mpis();
@@ -248,6 +250,7 @@ int main
 	for (size_t i = 0; i < fpr.size(); i++)
 		std::cout << std::setfill('0') << std::setw(2) << std::right << (int)fpr[i] << " ";
 	std::cout << std::dec << std::endl;
+	std::cout << "OpenPGP Key Creation Time: " << std::endl << "\t" << ctime(&ckeytime);
 	std::cout << "OpenPGP User ID: " << std::endl << "\t";
 	std::cout << userid << std::endl;
 	std::cout << "Security level of domain parameter set: " << std::endl << "\t"; 

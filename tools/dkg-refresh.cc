@@ -48,7 +48,7 @@ std::vector<std::string>		peers;
 bool					instance_forked = false;
 
 std::string				passphrase, userid, passwords, hostname, port;
-tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig;
+tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig, sec, ssb, uid;
 std::map<size_t, size_t>		idx2dkg, dkg2idx;
 mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
 size_t					dss_n, dss_t, dss_i;
@@ -76,7 +76,8 @@ void run_instance
 		exit(-1);
 	init_mpis();
 	std::vector<std::string> CAPL;
-	if (!parse_private_key(armored_seckey, CAPL))
+	time_t ckeytime = 0;
+	if (!parse_private_key(armored_seckey, ckeytime, CAPL))
 	{
 		keyid.clear(), pub.clear(), sub.clear(), uidsig.clear(), subsig.clear();
 		dss_qual.clear(), dss_c_ik.clear();
@@ -84,7 +85,7 @@ void run_instance
 		std::cout << "Please enter the passphrase to unlock your private key: ";
 		std::getline(std::cin, passphrase);
 		std::cin.clear();
-		if (!parse_private_key(armored_seckey, CAPL))
+		if (!parse_private_key(armored_seckey, ckeytime, CAPL))
 		{
 			std::cerr << "R_" << whoami << ": wrong passphrase to unlock private key" << std::endl;
 			release_mpis();
@@ -197,17 +198,191 @@ void run_instance
 		release_mpis();
 		exit(-1);
 	}
-	
-// TODO
-
+	// update the tDSS keys (proactive security against mobile adversary)
+	std::stringstream err_log;
+	if (opt_verbose)
+		std::cout << "R_" << whoami << ": dss.Refresh()" << std::endl;
+	if (!dss->Refresh(peers.size(), whoami, idx2dkg, dkg2idx, aiou, rbc, err_log, false))
+	{
+		std::cerr << "R_" << whoami << ": " << "tDSS Refresh() failed" << std::endl;
+		std::cerr << "R_" << whoami << ": log follows " << std::endl << err_log.str();
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (opt_verbose > 1)
+		std::cout << "R_" << whoami << ": log follows " << std::endl << err_log.str();
 	// at the end: deliver some more rounds for still waiting parties
 	time_t synctime = aiounicast::aio_timeout_very_long;
 	if (opt_verbose)
 		std::cout << "R_" << whoami << ": waiting " << synctime << " seconds for stalled parties" << std::endl;
 	rbc->Sync(synctime);
-
-	// export updated secret key in OpenPGP armor format
-// TODO
+	// create an OpenPGP DSA-based primary key using refreshed values from tDSS
+	gcry_mpi_t p, q, g, h, y, n, t, i, qualsize, x_i, xprime_i;
+	std::vector<gcry_mpi_t> qual;
+	std::vector< std::vector<gcry_mpi_t> > c_ik;
+	if (!mpz_get_gcry_mpi(&p, dss->p))
+	{
+		std::cerr << "R_" << whoami << ": mpz_get_gcry_mpi() failed for p" << std::endl;
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (!mpz_get_gcry_mpi(&q, dss->q))
+	{
+		std::cerr << "R_" << whoami << ": mpz_get_gcry_mpi() failed for q" << std::endl;
+		gcry_mpi_release(p);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (!mpz_get_gcry_mpi(&g, dss->g))
+	{
+		std::cerr << "R_" << whoami << ": mpz_get_gcry_mpi() failed for g" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (!mpz_get_gcry_mpi(&h, dss->h))
+	{
+		std::cerr << "R_" << whoami << ": mpz_get_gcry_mpi() failed for h" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (!mpz_get_gcry_mpi(&y, dss->y))
+	{
+		std::cerr << "R_" << whoami << ": mpz_get_gcry_mpi() failed for y" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(h);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (!mpz_get_gcry_mpi(&x_i, dss->x_i))
+	{
+		std::cerr << "R_" << whoami << ": mpz_get_gcry_mpi() failed for x_i" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(h);
+		gcry_mpi_release(y);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	if (!mpz_get_gcry_mpi(&xprime_i, dss->xprime_i))
+	{
+		std::cerr << "R_" << whoami << ": mpz_get_gcry_mpi() failed for xprime_i" << std::endl;
+		gcry_mpi_release(p);
+		gcry_mpi_release(q);
+		gcry_mpi_release(g);
+		gcry_mpi_release(h);
+		gcry_mpi_release(y);
+		gcry_mpi_release(x_i);
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	n = gcry_mpi_set_ui(NULL, dss->n);
+	t = gcry_mpi_set_ui(NULL, dss->t);
+	i = gcry_mpi_set_ui(NULL, dss->i);
+	qualsize = gcry_mpi_set_ui(NULL, dss->QUAL.size());
+	for (size_t j = 0; j < dss->QUAL.size(); j++)
+	{
+		gcry_mpi_t tmp = gcry_mpi_set_ui(NULL, dss->QUAL[j]);
+		qual.push_back(tmp);
+	}
+	c_ik.resize(dss->n);
+	for (size_t j = 0; j < c_ik.size(); j++)
+	{
+		for (size_t k = 0; k <= dss->t; k++)
+		{
+			gcry_mpi_t tmp;
+			if (!mpz_get_gcry_mpi(&tmp, dss->dkg->x_rvss->C_ik[j][k]))
+			{
+				std::cerr << "R_" << whoami << ": mpz_get_gcry_mpi() failed for dss->dkg->x_rvss->C_ik[j][k]" << std::endl;
+				gcry_mpi_release(p);
+				gcry_mpi_release(q);
+				gcry_mpi_release(g);
+				gcry_mpi_release(h);
+				gcry_mpi_release(y);
+				gcry_mpi_release(x_i);
+				gcry_mpi_release(xprime_i);
+				gcry_mpi_release(n);
+				gcry_mpi_release(t);
+				gcry_mpi_release(i);
+				gcry_mpi_release(qualsize);
+				for (size_t jj = 0; jj < qual.size(); jj++)
+					gcry_mpi_release(qual[jj]);
+				for (size_t jj = 0; jj < c_ik.size(); jj++)
+					for (size_t kk = 0; kk < c_ik[jj].size(); kk++)
+						gcry_mpi_release(c_ik[jj][kk]);
+				delete dss, delete rbc, delete aiou, delete aiou2;
+				release_mpis();
+				exit(-1); 
+			}
+			c_ik[j].push_back(tmp);
+		}
+	}
+	sec.clear();
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108(ckeytime, p, q, g, h, y, 
+		n, t, i, qualsize, qual, CAPL, c_ik, x_i, xprime_i, passphrase, sec);
+	gcry_mpi_release(p);
+	gcry_mpi_release(q);
+	gcry_mpi_release(g);
+	gcry_mpi_release(h);
+	gcry_mpi_release(y);
+	gcry_mpi_release(x_i);
+	gcry_mpi_release(xprime_i);
+	gcry_mpi_release(n);
+	gcry_mpi_release(t);
+	gcry_mpi_release(i);
+	gcry_mpi_release(qualsize);
+	for (size_t j = 0; j < qual.size(); j++)
+		gcry_mpi_release(qual[j]);
+	for (size_t j = 0; j < c_ik.size(); j++)
+		for (size_t k = 0; k < c_ik[j].size(); k++)
+			gcry_mpi_release(c_ik[j][k]);
+	
+	// export updated private keys in OpenPGP armor format
+	tmcg_octets_t all;
+	std::string armor;
+	std::stringstream secfilename;
+	secfilename << peers[whoami] << "_dkg-sec.asc";
+	armor = "", all.clear();
+	all.insert(all.end(), sec.begin(), sec.end());
+	all.insert(all.end(), uid.begin(), uid.end());
+	all.insert(all.end(), uidsig.begin(), uidsig.end());
+	all.insert(all.end(), ssb.begin(), ssb.end());
+	all.insert(all.end(), subsig.begin(), subsig.end());
+	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(5, all, armor);
+	if (opt_verbose > 1)
+		std::cout << armor << std::endl;
+	std::ofstream secofs((secfilename.str()).c_str(), std::ofstream::out | std::ofstream::trunc);
+	if (!secofs.good())
+	{
+		std::cerr << "R_" << whoami << ": opening private key file failed" << std::endl;
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	secofs << armor;
+	if (!secofs.good())
+	{
+		std::cerr << "R_" << whoami << ": writing private key file failed" << std::endl;
+		delete dss, delete rbc, delete aiou, delete aiou2;
+		release_mpis();
+		exit(-1);
+	}
+	secofs.close();
 
 	// release tDSS
 	delete dss;
@@ -276,7 +451,7 @@ int main
 	(int argc, char *const *argv)
 {
 	static const char *usage = "dkg-refresh [OPTIONS] PEERS";
-	static const char *about = "threshold key refresh for OpenPGP (only tDSS)";
+	static const char *about = "threshold key refresh for OpenPGP (only tDSS key)";
 #ifdef GNUNET
 	char *loglev = NULL;
 	char *logfile = NULL;
@@ -444,9 +619,11 @@ int main
 		for (size_t i = 0; i < peers.size(); i++)
 			std::cout << peers[i] << std::endl;
 	}
+	// initialize return code
+	int ret = 0;
+	// create underlying point-to-point channels, if built-in TCP/IP service requested
 	if (opt_hostname != NULL)
 	{
-		int ret = 0;
 		if (port.length())
 			opt_p = strtoul(port.c_str(), NULL, 10); // get start port from options
 		builtin_init(hostname);
@@ -504,7 +681,7 @@ int main
 		),
 		GNUNET_GETOPT_OPTION_END
 	};
-	int ret = GNUNET_PROGRAM_run(argc, argv, usage, about, myoptions, &gnunet_run, argv[0]);
+	ret = GNUNET_PROGRAM_run(argc, argv, usage, about, myoptions, &gnunet_run, argv[0]);
 	GNUNET_free((void *) argv);
 	if (ret == GNUNET_OK)
 		return 0;

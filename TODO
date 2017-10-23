@@ -9,7 +9,6 @@ in the sources of this package and additionally can be obtained from Internet
 
 
 * dkg-tools: protect h-generation protocol with EDCF to avoid ROM
-* provide proactive security (program dkg-refresh) [HJJKY97]
 
 + provide interactive and distributed (multiparty DZKP) versions for
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
