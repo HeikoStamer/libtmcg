@@ -2787,6 +2787,8 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				size_t ivlen = AlgorithmIVLength(out.symalgo);
 				if (mpis.size() < ivlen)
 					return 0; // error: no IV
+				if (ivlen > sizeof(out.iv))
+					return 0; // error: IV too long
 				for (size_t i = 0; i < ivlen; i++)
 					out.iv[i] = mpis[i];
 				mpis.erase(mpis.begin(), mpis.begin()+ivlen);
