@@ -185,7 +185,7 @@ void builtin_bindports
 		freeaddrinfo(res);
 		if (rp == NULL)
 		{
-			std::cerr << "ERROR: cannot bind TCP/IP port " << port << " to valid IP address of this host" << std::endl;
+			std::cerr << "ERROR: cannot bind TCP/IP port " << port << " for a valid IP address of this host" << std::endl;
 			builtin_close();
 			builtin_done();
 			exit(-1);
@@ -512,7 +512,7 @@ int builtin_io
 				}
 				else if (len == 0)
 				{
-					std::cerr << "ERROR: connection collapsed for P/D/R/S_" << pi->first << std::endl;
+					std::cerr << "WARNING: connection collapsed for P/D/R/S_" << pi->first << std::endl;
 					builtin_pipe2socket_out.erase(pi->first);
 					builtin_pipe2socket_in.erase(pi->first);
 					break;
@@ -577,7 +577,7 @@ int builtin_io
 				}
 				else if (len == 0)
 				{
-					std::cerr << "ERROR: broadcast connection collapsed for P/D/R/S_" << pi->first << std::endl;
+					std::cerr << "WARNING: broadcast connection collapsed for P/D/R/S_" << pi->first << std::endl;
 					builtin_broadcast_pipe2socket_out.erase(pi->first);
 					builtin_broadcast_pipe2socket_in.erase(pi->first);
 					break;
@@ -666,7 +666,7 @@ int builtin_io
 							}
 							else if (errno == ECONNRESET)
 							{
-								std::cerr << "ERROR: connection collapsed for P/D/R/S_" << i << std::endl;
+								std::cerr << "WARNING: connection collapsed for P/D/R/S_" << i << std::endl;
 								builtin_broadcast_pipe2socket_out.erase(i);
 								builtin_broadcast_pipe2socket_in.erase(i);
 								break;
@@ -735,7 +735,7 @@ int builtin_io
 							}
 							else if (errno == ECONNRESET)
 							{
-								std::cerr << "ERROR: broadcast connection collapsed for P/D/R/S_" << i << std::endl;
+								std::cerr << "WARNING: broadcast connection collapsed for P/D/R/S_" << i << std::endl;
 								builtin_broadcast_pipe2socket_out.erase(i);
 								builtin_broadcast_pipe2socket_in.erase(i);
 								break;
