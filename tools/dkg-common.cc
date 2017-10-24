@@ -176,6 +176,7 @@ bool parse_private_key
 					dsa_sigtype = ctx.type;
 					dsa_pkalgo = ctx.pkalgo;
 					dsa_hashalgo = ctx.hashalgo;
+					keyexpirationtime_out = ctx.keyexpirationtime;
 					for (size_t i = 0; i < sizeof(dsa_keyflags); i++)
 						dsa_keyflags[i] = ctx.keyflags[i];
 					for (size_t i = 0; i < sizeof(dsa_psa); i++)
@@ -253,7 +254,7 @@ bool parse_private_key
 				if ((ctx.pkalgo == 108) && !secdsa)
 				{
 					secdsa = true;
-					keycreationtime_out = ctx.keycreationtime, keyexpirationtime_out = ctx.keyexpirationtime;
+					keycreationtime_out = ctx.keycreationtime;
 					dsa_p = ctx.p, dsa_q = ctx.q, dsa_g = ctx.g, dsa_y = ctx.y;
 					CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ctx.keycreationtime, 17, // public-key is DSA 
 						dsa_p, dsa_q, dsa_g, dsa_y, pub);
