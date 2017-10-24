@@ -253,7 +253,7 @@ bool parse_private_key
 				if ((ctx.pkalgo == 108) && !secdsa)
 				{
 					secdsa = true;
-					keycreationtime_out = ctx.keycreationtime;
+					keycreationtime_out = ctx.keycreationtime, keyexpirationtime_out = ctx.keyexpirationtime;
 					dsa_p = ctx.p, dsa_q = ctx.q, dsa_g = ctx.g, dsa_y = ctx.y;
 					CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ctx.keycreationtime, 17, // public-key is DSA 
 						dsa_p, dsa_q, dsa_g, dsa_y, pub);
