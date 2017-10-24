@@ -29,7 +29,7 @@ extern int					opt_verbose;
 extern std::string				passphrase, userid;
 extern tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig, sec, ssb, uid;
 extern std::map<size_t, size_t>			idx2dkg, dkg2idx;
-extern mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
+extern mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i, dss_y;
 extern size_t					dss_n, dss_t, dss_i;
 extern std::vector<size_t>			dss_qual;
 extern std::vector< std::vector<mpz_ptr> >	dss_c_ik;
@@ -75,6 +75,7 @@ void init_mpis
 	mpz_init(dss_h);
 	mpz_init(dss_x_i);
 	mpz_init(dss_xprime_i);
+	mpz_init(dss_y);
 	dsa_p = gcry_mpi_new(2048);
 	dsa_q = gcry_mpi_new(2048);
 	dsa_g = gcry_mpi_new(2048);
@@ -97,7 +98,7 @@ void init_mpis
 }
 
 bool parse_private_key
-	(const std::string in, time_t &keycreationtime_out, std::vector<std::string> &capl_out)
+	(const std::string in, time_t &keycreationtime_out, time_t &keyexpirationtime_out, std::vector<std::string> &capl_out)
 {
 	// parse the private key according to OpenPGP
 	bool secdsa = false, sigdsa = false, ssbelg = false, sigelg = false;
@@ -289,6 +290,11 @@ bool parse_private_key
 					if (!mpz_set_gcry_mpi(ctx.h, dss_h))
 					{
 						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_h" << std::endl;
+						exit(-1);
+					}
+					if (!mpz_set_gcry_mpi(ctx.y, dss_y))
+					{
+						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_y" << std::endl;
 						exit(-1);
 					}
 					dss_n = get_gcry_mpi_ui(ctx.n);
@@ -734,25 +740,23 @@ bool parse_private_key
 							exit(-1);
 						}
 						mpis.erase(mpis.begin(), mpis.begin()+mlen);
-						gcry_mpi_t elg_xprime = gcry_mpi_new(2048);
-						mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, elg_xprime, chksum);
+ 						if (!mpz_set_gcry_mpi(elg_x, dkg_x_i))
+						{
+							std::cerr << "ERROR: converting key component dkg_x_i failed" << std::endl;
+							exit(-1);
+						}
+						mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, elg_x, chksum);
 						if (!mlen || (mlen > mpis.size()))
 						{
 							std::cerr << "ERROR: reading MPI xprime_i failed (bad passphrase)" << std::endl;
 							exit(-1);
 						}
 						mpis.erase(mpis.begin(), mpis.begin()+mlen);
- 						if (!mpz_set_gcry_mpi(elg_x, dkg_x_i))
-						{
-							std::cerr << "ERROR: converting key component dkg_x_i failed" << std::endl;
-							exit(-1);
-						}
-						if (!mpz_set_gcry_mpi(elg_xprime, dkg_xprime_i))
+						if (!mpz_set_gcry_mpi(elg_x, dkg_xprime_i))
 						{
 							std::cerr << "ERROR: converting key component dkg_xprime_i failed" << std::endl;
 							exit(-1);
 						}
-						gcry_mpi_release(elg_xprime);
 						if (ctx.s2kconv == 255)
 						{
 							if (mpis.size() < 2)
@@ -832,7 +836,7 @@ bool parse_private_key
 	tmcg_octets_t dsa_trailer, elg_trailer, dsa_left, elg_left;
 	if (opt_verbose)
 		std::cout << "Primary User ID: " << userid << std::endl;
-	ret = gcry_sexp_build(&dsakey, &erroff, "(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))", dsa_p, dsa_q, dsa_g, dsa_y, dsa_x);
+	ret = gcry_sexp_build(&dsakey, &erroff, "(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", dsa_p, dsa_q, dsa_g, dsa_y);
 	if (ret)
 	{
 		std::cerr << "ERROR: parsing tDSS key material failed" << std::endl;
@@ -952,6 +956,7 @@ void release_mpis
 	mpz_clear(dss_h);
 	mpz_clear(dss_x_i);
 	mpz_clear(dss_xprime_i);
+	mpz_clear(dss_y);
 	for (size_t i = 0; i < dss_c_ik.size(); i++)
 	{
 		for (size_t k = 0; k < dss_c_ik[i].size(); k++)

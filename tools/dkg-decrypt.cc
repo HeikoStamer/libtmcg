@@ -49,7 +49,7 @@ bool					instance_forked = false;
 std::string				passphrase, userid, ifilename, ofilename, passwords, hostname, port;
 tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig, sec, ssb, uid;
 std::map<size_t, size_t>		idx2dkg, dkg2idx;
-mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
+mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i, dss_y;
 size_t					dss_n, dss_t, dss_i;
 std::vector<size_t>			dss_qual;
 std::vector< std::vector<mpz_ptr> >	dss_c_ik;

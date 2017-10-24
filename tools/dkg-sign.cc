@@ -50,7 +50,7 @@ bool					instance_forked = false;
 std::string				passphrase, userid, ifilename, ofilename, passwords, hostname, port;
 tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig, sec, ssb, uid;
 std::map<size_t, size_t>		idx2dkg, dkg2idx;
-mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i;
+mpz_t					dss_p, dss_q, dss_g, dss_h, dss_x_i, dss_xprime_i, dss_y;
 size_t					dss_n, dss_t, dss_i;
 std::vector<size_t>			dss_qual;
 std::vector< std::vector<mpz_ptr> >	dss_c_ik;
@@ -97,8 +97,8 @@ void run_instance
 		exit(-1);
 	init_mpis();
 	std::vector<std::string> CAPL;
-	time_t ckeytime = 0;
-	if (!parse_private_key(armored_seckey, ckeytime, CAPL))
+	time_t ckeytime = 0, ekeytime = 0;
+	if (!parse_private_key(armored_seckey, ckeytime, ekeytime, CAPL))
 	{
 		keyid.clear();
 		dss_qual.clear(), dss_c_ik.clear();
@@ -106,7 +106,7 @@ void run_instance
 		std::cout << "Please enter the passphrase to unlock your private key: ";
 		std::getline(std::cin, passphrase);
 		std::cin.clear();
-		if (!parse_private_key(armored_seckey, ckeytime, CAPL))
+		if (!parse_private_key(armored_seckey, ckeytime, ekeytime, CAPL))
 		{
 			std::cerr << "S_" << whoami << ": wrong passphrase to unlock private key" << std::endl;
 			release_mpis();
@@ -250,13 +250,13 @@ void run_instance
 	std::stringstream dss_in;
 	dss_in << dss_p << std::endl << dss_q << std::endl << dss_g << std::endl << dss_h << std::endl;
 	dss_in << dss_n << std::endl << dss_t << std::endl << dss_i << std::endl;
-	dss_in << dss_x_i << std::endl << dss_xprime_i << std::endl << dsa_y << std::endl;
+	dss_in << dss_x_i << std::endl << dss_xprime_i << std::endl << dss_y << std::endl;
 	dss_in << dss_qual.size() << std::endl;
 	for (size_t i = 0; i < dss_qual.size(); i++)
 		dss_in << dss_qual[i] << std::endl;
 	dss_in << dss_p << std::endl << dss_q << std::endl << dss_g << std::endl << dss_h << std::endl;
 	dss_in << dss_n << std::endl << dss_t << std::endl << dss_i << std::endl;
-	dss_in << dss_x_i << std::endl << dss_xprime_i << std::endl << dsa_y << std::endl;
+	dss_in << dss_x_i << std::endl << dss_xprime_i << std::endl << dss_y << std::endl;
 	dss_in << dss_qual.size() << std::endl;
 	for (size_t i = 0; i < dss_qual.size(); i++)
 		dss_in << dss_qual[i] << std::endl;
