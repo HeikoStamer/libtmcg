@@ -1386,6 +1386,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	assert((qual.size() == get_gcry_mpi_ui(qualsize)));
 	for (size_t j = 0; j < qual.size(); j++)
 		len += 2+((gcry_mpi_get_nbits(qual[j]) + 7) / 8);
+	assert((qual.size() == capl.size()));
 	for (size_t j = 0; j < capl.size(); j++)
 		len += 5+capl[j].length();
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)

@@ -332,9 +332,12 @@ void run_instance
 			c_ik[j].push_back(tmp);
 		}
 	}
+	std::vector<std::string> capl;
+	for (size_t j = 0; j < dss->QUAL.size(); j++)
+		capl.push_back(CAPL[dss->QUAL[j]]);
 	sec.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108(ckeytime, p, q, g, h, y, 
-		n, t, i, qualsize, qual, CAPL, c_ik, x_i, xprime_i, passphrase, sec);
+		n, t, i, qualsize, qual, capl, c_ik, x_i, xprime_i, passphrase, sec);
 	gcry_mpi_release(p);
 	gcry_mpi_release(q);
 	gcry_mpi_release(g);

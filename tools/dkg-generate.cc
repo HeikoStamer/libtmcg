@@ -422,7 +422,8 @@ void run_instance
 		{
 			gcry_mpi_t tmp = gcry_mpi_set_ui(NULL, dss->QUAL[j]);
 			qual.push_back(tmp);
-			capl.push_back(peers[j]);
+			assert(dss->QUAL[j] < peers.size());
+			capl.push_back(peers[dss->QUAL[j]]);
 		}
 		c_ik.resize(dss->n);
 		for (size_t j = 0; j < c_ik.size(); j++)

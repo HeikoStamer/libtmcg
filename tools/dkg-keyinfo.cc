@@ -275,8 +275,9 @@ int main
 	std::cout << "Unique identifier of this party: " << std::endl << "\t";
 	std::cout << "P_" << dss->i << std::endl;
 	std::cout << "Canonicalized peer list (CAPL): " << std::endl;
+	assert(CAPL.size() == dss->QUAL.size());
 	for (size_t i = 0; i < CAPL.size(); i++)
-		std::cout << "\t" << "P_" << i << "\t" << CAPL[i] << std::endl;
+		std::cout << "\t" << "P_" << dss->QUAL[i] << "\t" << CAPL[i] << std::endl;
 	if (sub.size())
 	{
 		std::cout << "OpenPGP V4 Key ID of subkey: " << std::endl << std::hex << std::uppercase << "\t";
