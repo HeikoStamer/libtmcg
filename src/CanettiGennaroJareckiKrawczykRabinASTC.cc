@@ -3324,7 +3324,10 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        of the values committed to in $\alpha_i$ and $\beta_i$. This is done using
 		//        a zero-knowledge proof from [CD98]. This is a 3-move public coin proof and
 		//        it is performed by all players as above.
-		//        (We use the simplified presentation from [BCCG15] called $\Sigma_{prod}$.)
+		//        (We use the simplified presentation from [BCCG15] called $\Sigma_{prod}$.
+		//         Another description of this protocol due to Gennaro, Rabin, and Rabin is
+		//         contained in appendix B of their paper 'Simplified VSS and Fast-track
+		//         Multiparty Computations with Applications to Threshold Cryptography'.)
 		mpz_srandomm(dd, q), mpz_srandomm(ee, q), mpz_srandomm(ss, q), mpz_srandomm(ssprime, q), mpz_srandomm(tt, q);
 		mpz_fspowm(fpowm_table_g, foo, g, dd, p);
 		mpz_fspowm(fpowm_table_h, bar, h, ss, p);
@@ -3535,6 +3538,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
+				// [BCCG15]: $\mathrm{Com}_{ck}(f_1; z_1) = A^x D$
 				mpz_set(ssprime, foo); // save $f_1$ for third ZNPoK
 				mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
 				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
@@ -3572,6 +3576,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
+				// [BCCG15]: $\mathrm{Com}_{ck}(f_2; z_2) = B^x E$
 				mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
 				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				mpz_mul(lhs, lhs, rhs);
@@ -3596,6 +3601,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
+				// [BCCG15]: $\mathrm{Com}_{ck\prime}(f_1; z_3) = C^x D\prime$
 				mpz_powm(rhs, beta_i[j], ssprime, p);
 				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				mpz_mul(lhs, lhs, rhs);
