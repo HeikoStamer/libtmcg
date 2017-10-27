@@ -191,7 +191,7 @@ int main
 		exit(-1);
 	}
 
-	GennaroJareckiKrawczykRabinDKG *dkg;
+	GennaroJareckiKrawczykRabinDKG *dkg = NULL;
 	if (sub.size())
 	{
 		// create an instance of DKG by stored parameters from private key
@@ -280,7 +280,7 @@ int main
 	assert(CAPL.size() == dss->QUAL.size());
 	for (size_t i = 0; i < CAPL.size(); i++)
 		std::cout << "\t" << "P_" << dss->QUAL[i] << "\t" << CAPL[i] << std::endl;
-	if (sub.size())
+	if (sub.size() && (dkg != NULL))
 	{
 		std::cout << "OpenPGP V4 Key ID of subkey: " << std::endl << std::hex << std::uppercase << "\t";
 		for (size_t i = 0; i < subkeyid.size(); i++)
@@ -309,7 +309,7 @@ int main
 	std::cout.copyfmt(oldcoutstate);
 
 	// release
-	if (sub.size())
+	if (sub.size() && (dkg != NULL))
 		delete dkg;
 	delete dss;
 	release_mpis();
