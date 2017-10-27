@@ -256,10 +256,13 @@ bool parse_private_key
 					secdsa = true;
 					keycreationtime_out = ctx.keycreationtime;
 					dsa_p = ctx.p, dsa_q = ctx.q, dsa_g = ctx.g, dsa_y = ctx.y;
+					pub.clear();
 					CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ctx.keycreationtime, 17, // public-key is DSA 
 						dsa_p, dsa_q, dsa_g, dsa_y, pub);
+					pub_hashing.clear();
 					for (size_t i = 6; i < pub.size(); i++)
 						pub_hashing.push_back(pub[i]);
+					keyid.clear();
 					CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
 					if (opt_verbose)
 					{
@@ -517,7 +520,8 @@ bool parse_private_key
 								}
 								else
 								{
-									std::cerr << "ERROR: QUAL size of tDSS key and CAPL does not match" << std::endl;
+									std::cerr << "ERROR: QUAL size of tDSS key and CAPL does not match" <<
+										std::endl;
 									exit(-1);
 								}
 								break;
@@ -525,7 +529,8 @@ bool parse_private_key
 						}
 						if (!found)
 						{
-							std::cerr << "ERROR: peer \"" << peers[i] << "\" not found inside set QUAL of tDSS key" << std::endl;
+							std::cerr << "ERROR: peer \"" << peers[i] <<
+								"\" not found inside set QUAL of tDSS key" << std::endl;
 							exit(-1);
 						}
 					}
@@ -538,7 +543,179 @@ bool parse_private_key
 					for (size_t i = 0; i < current_packet.size(); i++)
 						sec.push_back(current_packet[i]);
 				}
-				else if ((ctx.pkalgo == 108) && secdsa)
+				else if ((ctx.pkalgo == 17) && !secdsa)
+				{
+					secdsa = true;
+					keycreationtime_out = ctx.keycreationtime;
+					dsa_p = ctx.p, dsa_q = ctx.q, dsa_g = ctx.g, dsa_y = ctx.y;
+					pub.clear();
+					CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ctx.keycreationtime, 17, // public-key is DSA 
+						dsa_p, dsa_q, dsa_g, dsa_y, pub);
+					pub_hashing.clear();
+					for (size_t i = 6; i < pub.size(); i++)
+						pub_hashing.push_back(pub[i]);
+					keyid.clear();
+					CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
+					if (opt_verbose)
+					{
+						std::cout << " Key ID of DSA key: " << std::hex;
+						for (size_t i = 0; i < keyid.size(); i++)
+							std::cout << (int)keyid[i] << " ";
+						std::cout << std::dec << std::endl;
+						std::cout << " encdatalen = " << ctx.encdatalen << std::endl;
+						std::cout << " symalgo = " << (int)ctx.symalgo << std::endl;
+						std::cout << " S2K: convention = " << (int)ctx.s2kconv << " type = " << (int)ctx.s2k_type;
+						std::cout << " hashalgo = " << (int)ctx.s2k_hashalgo << " count = " << (int)ctx.s2k_count;
+						std::cout << std::endl;
+					}
+					if (ctx.s2kconv == 0)
+					{
+						dsa_x = ctx.x; // not encrypted
+					}
+					else if ((ctx.s2kconv == 254) || (ctx.s2kconv == 255))
+					{
+						keylen = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength(ctx.symalgo);
+						ivlen = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength(ctx.symalgo);
+						algo = CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmSymGCRY(ctx.symalgo);
+						if (!keylen || !ivlen)
+						{
+							std::cerr << "ERROR: unknown symmetric algorithm" << std::endl;
+							exit(-1);
+						}
+						salt.clear();
+						for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
+							salt.push_back(ctx.s2k_salt[i]);
+						seskey.clear();
+						if (ctx.s2k_type == 0x00)
+						{
+							salt.clear();
+							CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
+								keylen, passphrase, salt, false, ctx.s2k_count, seskey);
+						}
+						else if (ctx.s2k_type == 0x01)
+						{
+							CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
+								keylen, passphrase, salt, false, ctx.s2k_count, seskey);
+						}
+						else if (ctx.s2k_type == 0x03)
+						{
+							CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(ctx.s2k_hashalgo,
+								keylen, passphrase, salt, true, ctx.s2k_count, seskey);
+						}
+						else
+						{
+							std::cerr << "ERROR: unknown S2K specifier" << std::endl;
+							exit(-1);
+						}
+						if (seskey.size() != keylen)
+						{
+							std::cerr << "ERROR: S2K failed" << std::endl;
+							exit(-1);
+						}
+						if (!ctx.encdatalen || !ctx.encdata)
+						{
+							std::cerr << "ERROR: nothing to decrypt" << std::endl;
+							exit(-1);
+						}
+						key = new tmcg_byte_t[keylen], iv = new tmcg_byte_t[ivlen];
+						for (size_t i = 0; i < keylen; i++)
+							key[i] = seskey[i];
+						for (size_t i = 0; i < ivlen; i++)
+							iv[i] = ctx.iv[i];
+						ret = gcry_cipher_open(&hd, algo, GCRY_CIPHER_MODE_CFB, 0);
+						if (ret)
+						{
+							std::cerr << "ERROR: gcry_cipher_open() failed" << std::endl;
+							exit(-1);
+						}
+						ret = gcry_cipher_setkey(hd, key, keylen);
+						if (ret)
+						{
+							std::cerr << "ERROR: gcry_cipher_setkey() failed" << std::endl;
+							exit(-1);
+						}
+						ret = gcry_cipher_setiv(hd, iv, ivlen);
+						if (ret)
+						{
+							std::cerr << "ERROR: gcry_cipher_setiv() failed" << std::endl;
+							exit(-1);
+						}
+						ret = gcry_cipher_decrypt(hd, ctx.encdata, ctx.encdatalen, NULL, 0);
+						if (ret)
+						{
+							std::cerr << "ERROR: gcry_cipher_decrypt() failed" << std::endl;
+							exit(-1);
+						}
+						gcry_cipher_close(hd);
+						delete [] key, delete [] iv;
+						// read MPI x and verify checksum/hash
+						mpis.clear();
+						chksum = 0;
+						for (size_t i = 0; i < ctx.encdatalen; i++)
+							mpis.push_back(ctx.encdata[i]);
+						mlen = CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode(mpis, dsa_x, chksum);
+						if (!mlen || (mlen > mpis.size()))
+						{
+							std::cerr << "ERROR: reading MPI x failed (bad passphrase)" << std::endl;
+							// cleanup
+							if (ctx.hspd != NULL)
+								delete [] ctx.hspd;
+							if (ctx.encdata != NULL)
+								delete [] ctx.encdata;
+							if (ctx.compdata != NULL)
+								delete [] ctx.compdata;
+							if (ctx.data != NULL)
+								delete [] ctx.data;
+							gcry_mpi_release(dsa_r);
+							gcry_mpi_release(dsa_s);
+							gcry_mpi_release(elg_r);
+							gcry_mpi_release(elg_s);
+							return false;
+						}
+						mpis.erase(mpis.begin(), mpis.begin()+mlen);
+						if (ctx.s2kconv == 255)
+						{
+							if (mpis.size() < 2)
+							{
+								std::cerr << "ERROR: no checksum found" << std::endl;
+								exit(-1);
+							}
+							chksum2 = (mpis[0] << 8) + mpis[1];
+							if (chksum != chksum2)
+							{
+								std::cerr << "ERROR: checksum mismatch" << std::endl;
+								exit(-1);
+							}
+						}
+						else
+						{
+							if (mpis.size() != 20)
+							{
+								std::cerr << "ERROR: no SHA-1 hash found" << std::endl;
+								exit(-1);
+							}
+							hash_input.clear(), hash.clear();
+							for (size_t i = 0; i < (ctx.encdatalen - 20); i++)
+								hash_input.push_back(ctx.encdata[i]);
+							CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(2, hash_input, hash);
+							if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(hash, mpis))
+							{
+								std::cerr << "ERROR: SHA-1 hash mismatch" << std::endl;
+								exit(-1);
+							}
+						}
+					}
+					else
+					{
+						std::cerr << "ERROR: S2K format not supported" << std::endl;
+						exit(-1);
+					}
+					// store the whole packet
+					sec.clear();
+					for (size_t i = 0; i < current_packet.size(); i++)
+						sec.push_back(current_packet[i]);
+				}
+				else if (((ctx.pkalgo == 108) || (ctx.pkalgo == 17)) && secdsa)
 				{
 					std::cerr << "ERROR: more than one primary key not supported" << std::endl;
 					exit(-1);
@@ -567,10 +744,13 @@ bool parse_private_key
 				{
 					ssbelg = true;
 					elg_p = ctx.p, elg_q = ctx.q, elg_g = ctx.g, elg_y = ctx.y;
+					sub.clear();
 					CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime, 16, // public-key is ElGamal 
 						elg_p, dsa_q, elg_g, elg_y, sub);
+					sub_hashing.clear();
 					for (size_t i = 6; i < sub.size(); i++)
 						sub_hashing.push_back(sub[i]);
+					subkeyid.clear();
 					CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, subkeyid);
 					if (opt_verbose)
 					{
@@ -818,12 +998,12 @@ bool parse_private_key
 	}
 	if (!secdsa)
 	{
-		std::cerr << "ERROR: no tDSS private key found" << std::endl;
+		std::cerr << "ERROR: no tDSS/DSA private key found" << std::endl;
 		exit(-1);
 	}
 	if (!sigdsa)
 	{
-		std::cerr << "ERROR: no self-signature for tDSS key found" << std::endl;
+		std::cerr << "ERROR: no self-signature for tDSS/DSA key found" << std::endl;
 		exit(-1);
 	}
 	if (ssbelg && !sigelg)
@@ -840,7 +1020,7 @@ bool parse_private_key
 	ret = gcry_sexp_build(&dsakey, &erroff, "(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", dsa_p, dsa_q, dsa_g, dsa_y);
 	if (ret)
 	{
-		std::cerr << "ERROR: parsing tDSS key material failed" << std::endl;
+		std::cerr << "ERROR: parsing tDSS/DSA key material failed" << std::endl;
 		exit(-1);
 	}
 	size_t flags = 0;
@@ -853,7 +1033,7 @@ bool parse_private_key
 	}
 	if (opt_verbose)
 	{
-		std::cout << "tDSS key flags: ";
+		std::cout << "tDSS/DSA key flags: ";
 		if ((flags & 0x01) == 0x01)
 			std::cout << "C"; // The key may be used to certify other keys.
 		if ((flags & 0x02) == 0x02)
@@ -872,7 +1052,7 @@ bool parse_private_key
 	}
 	if ((flags & 0x02) != 0x02)
 	{
-		std::cerr << "ERROR: tDSS primary key cannot used to sign data" << std::endl;
+		std::cerr << "ERROR: tDSS/DSA primary key cannot used to sign data" << std::endl;
 		exit(-1);
 	}
 	dsa_trailer.push_back(4); // only V4 format supported
@@ -887,7 +1067,7 @@ bool parse_private_key
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, dsa_r, dsa_s);
 	if (ret)
 	{
-		std::cerr << "ERROR: verification of tDSS key self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
+		std::cerr << "ERROR: verification of tDSS/DSA key self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
 		exit(-1);
 	}
 	if (ssbelg)
@@ -912,7 +1092,7 @@ bool parse_private_key
 			if ((flags & 0x08) == 0x08)
 				std::cout << "e"; // The key may be used encrypt storage.
 			if ((flags & 0x10) == 0x10)
-				std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
+				std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.
 			if ((flags & 0x20) == 0x20)
 				std::cout << "A"; // The key may be used for authentication.
 			if ((flags & 0x80) == 0x80)
