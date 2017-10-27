@@ -101,7 +101,13 @@ a mandatory option in that case.
 .PP
 The included program 
 .BR dkg\-keyinfo
-show some basic information stored inside the private key file.
+shows some basic information about the private key. Finally, the program
+.BR dkg\-refresh
+updates the individual DSA key shares and thus provides proactive security
+against a so-called mobile adversary, if it is used regularly. It should be
+used very carefully because all parties not involved in the refreshment are
+excluded (disqualified) from all further private key operations of a successful
+majority.
 
 .SH OPTIONS
 Arguments mandatory for long options are also mandatory for short options.
