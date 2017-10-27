@@ -238,6 +238,8 @@ int main
 	}
 
 	// show information
+	std::ios oldcoutstate(NULL);
+	oldcoutstate.copyfmt(std::cout);
 	std::cout << "OpenPGP V4 Key ID of primary key: " << std::endl << std::hex << std::uppercase << "\t";
 	for (size_t i = 0; i < keyid.size(); i++)
 		std::cout << std::setfill('0') << std::setw(2) << std::right << (int)keyid[i] << " ";
@@ -302,6 +304,9 @@ int main
 		for (size_t i = 0; i < dkg->v_i.size(); i++)
 			std::cout << "\t" << "P_" << i << "\t" << dkg->v_i[i] << std::endl;
 	}
+
+	// restore default formatting
+	std::cout.copyfmt(oldcoutstate);
 
 	// release
 	if (sub.size())
