@@ -18,7 +18,8 @@ in the sources of this package and additionally can be obtained from Internet
 + DZKP also called "Simultaneous Zero-Knowledge Proofs of Knowledge" [JL00]
 + DKG, ASTC: transform protocols into variants without aiou->Send() [BH92]
 + move to event-driven architecture and state-based protocol representation
-+ improve oracle function g() by including a second hash function (SHA3)
++ improve oracle function g() by including a second hash function (SHA3) or
+  using additional constructions [LN09]
 + add a generic group abstraction layer, e.g. for future use of ECC groups
 + use secure memory allocation and erasing from libgcrypt
 + provide a byzantine consensus protocol for agreement on values
