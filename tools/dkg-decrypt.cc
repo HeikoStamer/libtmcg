@@ -68,7 +68,7 @@ char					*opt_passwords = NULL;
 char					*opt_hostname = NULL;
 unsigned long int			opt_p = 55000;
 
-std::string				armored_message, armored_seckey;
+std::string				armored_message;
 tmcg_octets_t				enc;
 bool					have_seipd = false;
 GennaroJareckiKrawczykRabinDKG		*dkg;
@@ -89,7 +89,7 @@ void read_message
 		msg << line << std::endl;
 	if (!ifs.eof())
 	{
-		std::cerr << "ERROR: reading until EOF failed" << std::endl;
+		std::cerr << "ERROR: reading from input file until EOF failed" << std::endl;
 		exit(-1);
 	}
 	ifs.close();
@@ -103,7 +103,7 @@ void write_message
 	std::ofstream ofs(filename.c_str(), std::ofstream::out);
 	if (!ofs.good())
 	{
-		std::cerr << "ERROR: opening output file failed" << std::endl;
+		std::cerr << "ERROR: cannot open output file" << std::endl;
 		exit(-1);
 	}
 	for (size_t i = 0; i < msg.size(); i++)
@@ -805,7 +805,7 @@ void done_dkg
 void run_instance
 	(size_t whoami, const size_t num_xtests)
 {
-	std::string thispeer = peers[whoami];
+	std::string armored_seckey, thispeer = peers[whoami];
 	if (!read_key_file(thispeer + "_dkg-sec.asc", armored_seckey))
 		exit(-1);
 	init_mpis();
@@ -1389,7 +1389,7 @@ int main
 	{
 		size_t idx;
 		tmcg_octets_t msg, seskey;
-		std::string dds, thispeer = peers[0];
+		std::string dds, armored_seckey, thispeer = peers[0];
 		mpz_t r_i, c, r;
 		std::vector<size_t> interpol_parties;
 		std::vector<mpz_ptr> interpol_shares;
