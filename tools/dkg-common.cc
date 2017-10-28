@@ -25,7 +25,7 @@
 #include "dkg-common.hh"
 
 extern std::vector<std::string>			peers;
-extern int					opt_verbose;
+
 extern std::string				passphrase, userid;
 extern tmcg_octets_t				keyid, subkeyid, pub, sub, uidsig, subsig, sec, ssb, uid;
 extern std::map<size_t, size_t>			idx2dkg, dkg2idx;
@@ -41,28 +41,30 @@ extern std::vector< std::vector<mpz_ptr> >	dkg_c_ik;
 extern gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_q, elg_g, elg_y, elg_x;
 extern gcry_mpi_t 				gk, myk;
 
-bool read_private_key
+extern int					opt_verbose;
+
+bool read_key_file
 	(const std::string filename, std::string &result)
 {
-	// read the private key from file
+	// read the public/private key from file
 	std::string line;
-	std::stringstream seckey;
-	std::ifstream secifs(filename.c_str(), std::ifstream::in);
-	if (!secifs.is_open())
+	std::stringstream key;
+	std::ifstream ifs(filename.c_str(), std::ifstream::in);
+	if (!ifs.is_open())
 	{
-		std::cerr << "ERROR: cannot open private key file" << std::endl;
+		std::cerr << "ERROR: cannot open public/private key file" << std::endl;
 		return false;
 	}
-	while (std::getline(secifs, line))
-		seckey << line << std::endl;
-	if (!secifs.eof())
+	while (std::getline(ifs, line))
+		key << line << std::endl;
+	if (!ifs.eof())
 	{
-		secifs.close();
+		ifs.close();
 		std::cerr << "ERROR: reading private key file until EOF failed" << std::endl;
 		return false;
 	}
-	secifs.close();
-	result = seckey.str();
+	ifs.close();
+	result = key.str();
 	return true;
 }
 
@@ -95,6 +97,325 @@ void init_mpis
 	elg_x = gcry_mpi_new(2048);
 	gk = gcry_mpi_new(2048);
 	myk = gcry_mpi_new(2048);
+}
+
+bool parse_public_key
+		(const std::string in, time_t &keycreationtime_out, time_t &keyexpirationtime_out)
+{
+	// parse the public key according to OpenPGP
+	bool pubdsa = false, sigdsa = false, subelg = false, sigelg = false;
+	tmcg_byte_t atype = 0, ptag = 0xFF;
+	tmcg_byte_t dsa_sigtype, dsa_pkalgo, dsa_hashalgo, dsa_keyflags[32], elg_sigtype, elg_pkalgo, elg_hashalgo, elg_keyflags[32];
+	tmcg_byte_t dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
+	tmcg_octets_t pkts;
+	tmcg_octets_t pub_hashing, sub_hashing, issuer, dsa_hspd, elg_hspd, hash;
+	gcry_mpi_t dsa_r, dsa_s, elg_r, elg_s;
+	gcry_sexp_t dsakey;
+	gcry_error_t ret;
+	size_t erroff;
+	dsa_r = gcry_mpi_new(2048);
+	dsa_s = gcry_mpi_new(2048);
+	elg_r = gcry_mpi_new(2048);
+	elg_s = gcry_mpi_new(2048);
+	atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(in, pkts);
+	if (opt_verbose)
+		std::cout << "ArmorDecode() = " << (int)atype << std::endl;
+	if (atype != 6)
+	{
+		std::cerr << "ERROR: wrong type of ASCII Armor found (type = " << (int)atype << ")" << std::endl;
+		return false;
+	}
+	while (pkts.size() && ptag)
+	{
+		tmcg_openpgp_packet_ctx ctx;
+		tmcg_octets_t current_packet;
+		std::vector<gcry_mpi_t> qual, v_i;
+		std::vector<std::string> capl;
+		std::vector< std::vector<gcry_mpi_t> > c_ik;
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, capl, v_i, c_ik);
+		if (!ptag)
+		{
+			std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
+			return -2; // parsing error detected
+		}
+		switch (ptag)
+		{
+			case 2: // Signature Packet
+				issuer.clear();
+				for (size_t i = 0; i < sizeof(ctx.issuer); i++)
+					issuer.push_back(ctx.issuer[i]);
+				if (pubdsa && !subelg && (ctx.type >= 0x10) && (ctx.type <= 0x13) && 
+					CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
+				{
+					if (sigdsa)
+						std::cerr << "WARNING: more than one self-signatures; using last signature to check UID" << std::endl;
+					dsa_sigtype = ctx.type;
+					dsa_pkalgo = ctx.pkalgo;
+					dsa_hashalgo = ctx.hashalgo;
+					keyexpirationtime_out = ctx.keyexpirationtime;
+					for (size_t i = 0; i < sizeof(dsa_keyflags); i++)
+						dsa_keyflags[i] = ctx.keyflags[i];
+					for (size_t i = 0; i < sizeof(dsa_psa); i++)
+						dsa_psa[i] = ctx.psa[i];
+					for (size_t i = 0; i < sizeof(dsa_pha); i++)
+						dsa_pha[i] = ctx.pha[i];
+					for (size_t i = 0; i < sizeof(dsa_pca); i++)
+						dsa_pca[i] = ctx.pca[i];
+					dsa_hspd.clear();
+					for (size_t i = 0; i < ctx.hspdlen; i++)
+						dsa_hspd.push_back(ctx.hspd[i]);
+					dsa_r = ctx.r, dsa_s = ctx.s;
+					if (dsa_pkalgo != 17)
+					{
+						std::cerr << "ERROR: public-key signature algorithms other than DSA not supported" << std::endl;
+						return -1;
+					}
+					if ((dsa_hashalgo < 8) || (dsa_hashalgo >= 11))
+						std::cerr << "WARNING: insecure hash algorithm " << (int)dsa_hashalgo << " used for signatures" << std::endl;
+// TODO: Warn, when key is expired
+					sigdsa = true;
+					// store the whole packet
+					uidsig.clear();
+					for (size_t i = 0; i < current_packet.size(); i++)
+						uidsig.push_back(current_packet[i]);
+				}
+				else if (pubdsa && subelg && (ctx.type == 0x18) && 
+					CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
+				{
+					if (sigelg)
+						std::cerr << "WARNING: more than one subkey binding signature; using last signature" << std::endl;
+					elg_sigtype = ctx.type;
+					elg_pkalgo = ctx.pkalgo;
+					elg_hashalgo = ctx.hashalgo;
+					keyexpirationtime_out = ctx.keyexpirationtime;
+					for (size_t i = 0; i < sizeof(elg_keyflags); i++)
+						elg_keyflags[i] = ctx.keyflags[i];
+					for (size_t i = 0; i < sizeof(elg_psa); i++)
+						elg_psa[i] = ctx.psa[i];
+					for (size_t i = 0; i < sizeof(elg_pha); i++)
+						elg_pha[i] = ctx.pha[i];
+					for (size_t i = 0; i < sizeof(elg_pca); i++)
+						elg_pca[i] = ctx.pca[i];
+					elg_hspd.clear();
+					for (size_t i = 0; i < ctx.hspdlen; i++)
+						elg_hspd.push_back(ctx.hspd[i]);
+					elg_r = ctx.r, elg_s = ctx.s;
+					if (elg_pkalgo != 17)
+					{
+						std::cerr << "ERROR: public-key signature algorithms other than DSA not supported" << std::endl;
+						gcry_mpi_release(dsa_r);
+						gcry_mpi_release(dsa_s);
+						gcry_mpi_release(elg_r);
+						gcry_mpi_release(elg_s);
+						return false;
+					}
+					if ((elg_hashalgo < 8) || (elg_hashalgo >= 11))
+						std::cerr << "WARNING: insecure hash algorithm " << (int)elg_hashalgo << " used for signatures" << std::endl;
+// TODO: Warn, when key is expired
+					sigelg = true;
+					// store the whole packet
+					subsig.clear();
+					for (size_t i = 0; i < current_packet.size(); i++)
+						subsig.push_back(current_packet[i]);
+				}
+				else if (pubdsa && !subelg && (ctx.type == 0x20) && // Key revocation signature 
+					CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
+				{
+					std::cerr << "WARNING: key revocation signature on primary key" << std::endl;
+				}
+				else if (pubdsa && subelg && (ctx.type == 0x28) && // Subkey revocation signature 
+					CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
+				{
+					std::cerr << "WARNING: subkey revocation signature on subkey" << std::endl;
+				}
+				break;
+			case 6: // Public-Key Packet
+				if ((ctx.pkalgo == 17) && !pubdsa)
+				{
+					pubdsa = true;
+					dsa_p = ctx.p, dsa_q = ctx.q, dsa_g = ctx.g, dsa_y = ctx.y;
+					keycreationtime_out = ctx.keycreationtime;
+					pub.clear();
+					CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ctx.keycreationtime, ctx.pkalgo,
+						dsa_p, dsa_q, dsa_g, dsa_y, pub);
+					pub_hashing.clear();
+					for (size_t i = 6; i < pub.size(); i++)
+						pub_hashing.push_back(pub[i]);
+					keyid.clear();
+					CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
+				}
+				else if ((ctx.pkalgo == 17) && pubdsa)
+				{
+					std::cerr << "ERROR: more than one primary key not supported" << std::endl;
+					gcry_mpi_release(dsa_r);
+					gcry_mpi_release(dsa_s);
+					gcry_mpi_release(elg_r);
+					gcry_mpi_release(elg_s);
+					return false;
+				}
+				else
+					std::cerr << "WARNING: public-key algorithm " << (int)ctx.pkalgo << " not supported" << std::endl;
+				break;
+			case 13: // User ID Packet
+				userid = "";
+				for (size_t i = 0; i < sizeof(ctx.uid); i++)
+					if (ctx.uid[i])
+						userid += ctx.uid[i];
+					else
+						break;
+				break;
+			case 14: // Public-Subkey Packet
+				if ((ctx.pkalgo == 16) && !subelg)
+				{
+					subelg = true;
+					elg_p = ctx.p, elg_g = ctx.g, elg_y = ctx.y;
+					keycreationtime_out = ctx.keycreationtime;
+					sub.clear();
+					CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime, ctx.pkalgo,
+						elg_p, dsa_q, elg_g, elg_y, sub);
+					sub_hashing.clear();
+					for (size_t i = 6; i < sub.size(); i++)
+						sub_hashing.push_back(sub[i]);
+					subkeyid.clear();
+					CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, subkeyid);
+				}
+				else if ((ctx.pkalgo == 16) && subelg)
+					std::cerr << "WARNING: ElGamal subkey already found; the first one is used" << std::endl; 
+				else
+					std::cerr << "WARNING: public-key algorithm " << (int)ctx.pkalgo << " not supported" << std::endl;
+				break;
+		}
+		// cleanup allocated buffers
+		if (ctx.hspd != NULL)
+			delete [] ctx.hspd;
+		if (ctx.encdata != NULL)
+			delete [] ctx.encdata;
+		if (ctx.compdata != NULL)
+			delete [] ctx.compdata;
+		if (ctx.data != NULL)
+			delete [] ctx.data;
+	}
+	if (!pubdsa)
+	{
+		std::cerr << "ERROR: no DSA key found" << std::endl;
+		gcry_mpi_release(dsa_r);
+		gcry_mpi_release(dsa_s);
+		gcry_mpi_release(elg_r);
+		gcry_mpi_release(elg_s);
+		return false;
+	}
+	if (!subelg)
+	{
+		std::cerr << "ERROR: no ElGamal subkey found" << std::endl;
+		gcry_mpi_release(dsa_r);
+		gcry_mpi_release(dsa_s);
+		gcry_mpi_release(elg_r);
+		gcry_mpi_release(elg_s);
+		return false;
+	}
+	if (!sigdsa)
+	{
+		std::cerr << "ERROR: no self-signature for DSA key found" << std::endl;
+		gcry_mpi_release(dsa_r);
+		gcry_mpi_release(dsa_s);
+		gcry_mpi_release(elg_r);
+		gcry_mpi_release(elg_s);
+		return false;
+	}
+	if (!sigelg)
+	{
+		std::cerr << "ERROR: no self-signature for ElGamal subkey found" << std::endl;
+		gcry_mpi_release(dsa_r);
+		gcry_mpi_release(dsa_s);
+		gcry_mpi_release(elg_r);
+		gcry_mpi_release(elg_s);
+		return false;
+	}
+	
+	// build keys, check key usage and self-signatures
+	tmcg_octets_t dsa_trailer, elg_trailer, dsa_left, elg_left;
+	ret = gcry_sexp_build(&dsakey, &erroff, "(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", dsa_p, dsa_q, dsa_g, dsa_y);
+	if (ret)
+	{
+		std::cerr << "ERROR: parsing DSA key material failed" << std::endl;
+		gcry_mpi_release(dsa_r);
+		gcry_mpi_release(dsa_s);
+		gcry_mpi_release(elg_r);
+		gcry_mpi_release(elg_s);
+		return false;
+	}
+	size_t flags = 0;
+	for (size_t i = 0; i < sizeof(dsa_keyflags); i++)
+	{
+		if (dsa_keyflags[i])	
+			flags = (flags << 8) + dsa_keyflags[i];
+		else
+			break;
+	}
+	dsa_trailer.push_back(4); // only V4 format supported
+	dsa_trailer.push_back(dsa_sigtype);
+	dsa_trailer.push_back(dsa_pkalgo);
+	dsa_trailer.push_back(dsa_hashalgo);
+	dsa_trailer.push_back(dsa_hspd.size() >> 8); // length of hashed subpacket data
+	dsa_trailer.push_back(dsa_hspd.size());
+	dsa_trailer.insert(dsa_trailer.end(), dsa_hspd.begin(), dsa_hspd.end());
+	hash.clear();
+	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, userid, dsa_trailer, dsa_hashalgo, hash, dsa_left);
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, dsa_r, dsa_s);
+	if (ret)
+	{
+		std::cerr << "ERROR: verification of DSA key self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
+		gcry_sexp_release(dsakey);
+		gcry_mpi_release(dsa_r);
+		gcry_mpi_release(dsa_s);
+		gcry_mpi_release(elg_r);
+		gcry_mpi_release(elg_s);
+		return false;
+	}
+	flags = 0;
+	for (size_t i = 0; i < sizeof(elg_keyflags); i++)
+	{
+		if (elg_keyflags[i])
+			flags = (flags << 8) + elg_keyflags[i];
+		else
+			break;
+	}
+	if ((flags & 0x04) != 0x04)
+	{
+		std::cerr << "ERROR: Elgamal subkey cannot used to encrypt communications" << std::endl;
+		gcry_sexp_release(dsakey);
+		gcry_mpi_release(dsa_r);
+		gcry_mpi_release(dsa_s);
+		gcry_mpi_release(elg_r);
+		gcry_mpi_release(elg_s);
+		return false;
+	}
+	elg_trailer.push_back(4); // only V4 format supported
+	elg_trailer.push_back(elg_sigtype);
+	elg_trailer.push_back(elg_pkalgo);
+	elg_trailer.push_back(elg_hashalgo);
+	elg_trailer.push_back(elg_hspd.size() >> 8); // length of hashed subpacket data
+	elg_trailer.push_back(elg_hspd.size());
+	elg_trailer.insert(elg_trailer.end(), elg_hspd.begin(), elg_hspd.end());
+	hash.clear();
+	CallasDonnerhackeFinneyShawThayerRFC4880::SubkeyBindingHash(pub_hashing, sub_hashing, elg_trailer, elg_hashalgo, hash, elg_left);
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, elg_r, elg_s);
+	if (ret)
+	{
+		std::cerr << "ERROR: verification of Elgamal subkey self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
+		gcry_sexp_release(dsakey);
+		gcry_mpi_release(dsa_r);
+		gcry_mpi_release(dsa_s);
+		gcry_mpi_release(elg_r);
+		gcry_mpi_release(elg_s);
+		return false;
+	}
+	gcry_sexp_release(dsakey);
+	gcry_mpi_release(dsa_r);
+	gcry_mpi_release(dsa_s);
+	gcry_mpi_release(elg_r);
+	gcry_mpi_release(elg_s);
+	return true;
 }
 
 bool parse_private_key

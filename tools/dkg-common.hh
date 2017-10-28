@@ -37,10 +37,12 @@
 	#include <fcntl.h>
 	#include <libTMCG.hh>
 
-	bool read_private_key
+	bool read_key_file
 		(const std::string filename, std::string &result);
 	void init_mpis
 		();
+	bool parse_public_key
+		(const std::string in, time_t &keycreationtime_out, time_t &keyexpirationtime_out);
 	bool parse_private_key
 		(const std::string in, time_t &keycreationtime_out, time_t &keyexpirationtime_out, std::vector<std::string> &capl_out);
 	void release_mpis

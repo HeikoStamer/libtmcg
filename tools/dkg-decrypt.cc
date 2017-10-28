@@ -806,7 +806,7 @@ void run_instance
 	(size_t whoami, const size_t num_xtests)
 {
 	std::string thispeer = peers[whoami];
-	if (!read_private_key(thispeer + "_dkg-sec.asc", armored_seckey))
+	if (!read_key_file(thispeer + "_dkg-sec.asc", armored_seckey))
 		exit(-1);
 	init_mpis();
 	std::vector<std::string> CAPL;
@@ -1394,7 +1394,7 @@ int main
 		std::vector<size_t> interpol_parties;
 		std::vector<mpz_ptr> interpol_shares;
 
-		if (!read_private_key(thispeer + "_dkg-sec.asc", armored_seckey))
+		if (!read_key_file(thispeer + "_dkg-sec.asc", armored_seckey))
 			exit(-1);
 		init_mpis();
 		std::vector<std::string> CAPL;

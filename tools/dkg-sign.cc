@@ -93,7 +93,7 @@ void run_instance
 {
 	// read and parse the private key
 	std::string armored_seckey, thispeer = peers[whoami];
-	if (!read_private_key(thispeer + "_dkg-sec.asc", armored_seckey))
+	if (!read_key_file(thispeer + "_dkg-sec.asc", armored_seckey))
 		exit(-1);
 	init_mpis();
 	std::vector<std::string> CAPL;
