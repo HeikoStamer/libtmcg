@@ -59,7 +59,7 @@ std::vector<size_t>			dkg_qual;
 std::vector<mpz_ptr>			dkg_v_i;
 std::vector< std::vector<mpz_ptr> >	dkg_c_ik;
 gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_q, elg_g, elg_y, elg_x;
-gcry_mpi_t 				gk, myk;
+gcry_mpi_t 				gk, myk, sig_r, sig_s;
 
 int 					opt_verbose = 0;
 char					*opt_ifilename = NULL;

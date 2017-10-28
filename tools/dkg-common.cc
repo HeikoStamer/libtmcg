@@ -39,7 +39,7 @@ extern std::vector<size_t>			dkg_qual;
 extern std::vector<mpz_ptr>			dkg_v_i;
 extern std::vector< std::vector<mpz_ptr> >	dkg_c_ik;
 extern gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_q, elg_g, elg_y, elg_x;
-extern gcry_mpi_t 				gk, myk;
+extern gcry_mpi_t 				gk, myk, sig_r, sig_s;
 
 extern int					opt_verbose;
 
@@ -97,10 +97,86 @@ void init_mpis
 	elg_x = gcry_mpi_new(2048);
 	gk = gcry_mpi_new(2048);
 	myk = gcry_mpi_new(2048);
+	sig_r = gcry_mpi_new(2048);
+	sig_s = gcry_mpi_new(2048);
+}
+
+bool parse_signature
+	(const std::string in, tmcg_byte_t stype, time_t &sigcreationtime_out, time_t &sigexpirationtime_out, tmcg_byte_t &hashalgo_out)
+{
+	// parse the signature according to OpenPGP
+	bool sig = false;
+	tmcg_byte_t atype = 0, ptag = 0xFF;
+	tmcg_octets_t pkts;
+	atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(in, pkts);
+	if (opt_verbose)
+		std::cout << "ArmorDecode() = " << (int)atype << std::endl;
+	if (atype != 1)
+	{
+		std::cerr << "ERROR: wrong type of ASCII Armor found (type = " << (int)atype << ")" << std::endl;
+		return false;
+	}
+	while (pkts.size() && ptag)
+	{
+		tmcg_openpgp_packet_ctx ctx;
+		tmcg_octets_t current_packet, issuer;
+		std::vector<gcry_mpi_t> qual, v_i;
+		std::vector<std::string> capl;
+		std::vector< std::vector<gcry_mpi_t> > c_ik;
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, capl, v_i, c_ik);
+		if (!ptag)
+		{
+			std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
+			return false; // parsing error detected
+		}
+		switch (ptag)
+		{
+			case 2: // Signature Packet
+				if (ctx.pkalgo != 17)
+				{
+					std::cerr << "ERROR: public-key signature algorithms other than DSA not supported" << std::endl;
+					return false;
+				}
+				if ((ctx.hashalgo < 8) || (ctx.hashalgo >= 11))
+					std::cerr << "WARNING: insecure hash algorithm " << (int)ctx.hashalgo << " used for signature" << std::endl;
+				issuer.clear();
+				for (size_t i = 0; i < sizeof(ctx.issuer); i++)
+					issuer.push_back(ctx.issuer[i]);
+				if (!sig && (ctx.type == stype) && CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(keyid, issuer))
+				{
+					sigcreationtime_out = ctx.sigcreationtime;
+					sigexpirationtime_out = ctx.sigexpirationtime;
+					hashalgo_out = ctx.hashalgo;
+					sig_r = ctx.r, sig_s = ctx.s;
+					time_t kmax = ctx.sigcreationtime + ctx.sigexpirationtime;
+					if (ctx.sigexpirationtime && (time(NULL) > kmax))
+						std::cerr << "WARNING: DSA signature is expired" << std::endl;
+					sig = true;
+				}
+				else if (sig)
+				{
+					std::cerr << "WARNING: more than one admissible signature; packet ignored" << std::endl;
+				}
+				break;
+		}
+		// cleanup allocated buffers
+		if (ctx.hspd != NULL)
+			delete [] ctx.hspd;
+		if (ctx.encdata != NULL)
+			delete [] ctx.encdata;
+		if (ctx.compdata != NULL)
+			delete [] ctx.compdata;
+		if (ctx.data != NULL)
+			delete [] ctx.data;
+	}
+	if (sig)
+		return true;
+	else
+		return false;
 }
 
 bool parse_public_key
-		(const std::string in, time_t &keycreationtime_out, time_t &keyexpirationtime_out)
+	(const std::string in, time_t &keycreationtime_out, time_t &keyexpirationtime_out)
 {
 	// parse the public key according to OpenPGP
 	bool pubdsa = false, sigdsa = false, subelg = false, sigelg = false;
@@ -124,6 +200,10 @@ bool parse_public_key
 	if (atype != 6)
 	{
 		std::cerr << "ERROR: wrong type of ASCII Armor found (type = " << (int)atype << ")" << std::endl;
+		gcry_mpi_release(dsa_r);
+		gcry_mpi_release(dsa_s);
+		gcry_mpi_release(elg_r);
+		gcry_mpi_release(elg_s);
 		return false;
 	}
 	while (pkts.size() && ptag)
@@ -137,7 +217,11 @@ bool parse_public_key
 		if (!ptag)
 		{
 			std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
-			return -2; // parsing error detected
+			gcry_mpi_release(dsa_r);
+			gcry_mpi_release(dsa_s);
+			gcry_mpi_release(elg_r);
+			gcry_mpi_release(elg_s);
+			return false; // parsing error detected
 		}
 		switch (ptag)
 		{
@@ -169,7 +253,11 @@ bool parse_public_key
 					if (dsa_pkalgo != 17)
 					{
 						std::cerr << "ERROR: public-key signature algorithms other than DSA not supported" << std::endl;
-						return -1;
+						gcry_mpi_release(dsa_r);
+						gcry_mpi_release(dsa_s);
+						gcry_mpi_release(elg_r);
+						gcry_mpi_release(elg_s);
+						return false;
 					}
 					if ((dsa_hashalgo < 8) || (dsa_hashalgo >= 11))
 						std::cerr << "WARNING: insecure hash algorithm " << (int)dsa_hashalgo << " used for signatures" << std::endl;
@@ -1521,5 +1609,7 @@ void release_mpis
 	gcry_mpi_release(elg_x);
 	gcry_mpi_release(gk);
 	gcry_mpi_release(myk);
+	gcry_mpi_release(sig_r);
+	gcry_mpi_release(sig_s);
 }
 

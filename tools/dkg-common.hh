@@ -42,10 +42,17 @@
 		(const std::string filename, std::string &result);
 	void init_mpis
 		();
+	bool parse_signature
+		(const std::string in, tmcg_byte_t stype,
+		time_t &sigcreationtime_out, time_t &sigexpirationtime_out,
+		tmcg_byte_t &hashalgo_out);
 	bool parse_public_key
-		(const std::string in, time_t &keycreationtime_out, time_t &keyexpirationtime_out);
+		(const std::string in,
+		time_t &keycreationtime_out, time_t &keyexpirationtime_out);
 	bool parse_private_key
-		(const std::string in, time_t &keycreationtime_out, time_t &keyexpirationtime_out, std::vector<std::string> &capl_out);
+		(const std::string in,
+		time_t &keycreationtime_out, time_t &keyexpirationtime_out,
+		std::vector<std::string> &capl_out);
 	void release_mpis
 		();
 

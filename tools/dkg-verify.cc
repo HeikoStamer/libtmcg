@@ -45,7 +45,7 @@ std::vector<size_t>			dkg_qual;
 std::vector<mpz_ptr>			dkg_v_i;
 std::vector< std::vector<mpz_ptr> >	dkg_c_ik;
 gcry_mpi_t 				dsa_p, dsa_q, dsa_g, dsa_y, dsa_x, elg_p, elg_q, elg_g, elg_y, elg_x;
-gcry_mpi_t 				gk, myk;
+gcry_mpi_t 				gk, myk, sig_r, sig_s;
 
 int 					opt_verbose = 0;
 char					*opt_ifilename = NULL;
@@ -124,19 +124,21 @@ int main
 	}
 
 	// read the signature from stdin
-	tmcg_octets_t sig;
+	std::string signature;
 	char c;
 	while (std::cin.get(c))
-		sig.push_back(c);
+		signature += c;
 	std::cin.clear();
 
-// TODO: parse the signature and obtain sig_r and sig_s; csigtime, sigexptime, hashalgo
+	// parse the signature
 	tmcg_byte_t hashalgo = 0;
 	time_t csigtime = 0, sigexptime = 0;
-	gcry_mpi_t sig_r, sig_s;
-	sig_r = gcry_mpi_new(2048);
-	sig_s = gcry_mpi_new(2048);
-// TODO
+	if (!parse_signature(signature, 0x00, csigtime, sigexptime, hashalgo))
+	{
+		std::cerr << "ERROR: cannot parse the provided signature" << std::endl;
+		release_mpis();
+		return -1;
+	}
 
 	// compute the hash of the input file
 	if (opt_verbose)
@@ -146,8 +148,6 @@ int main
 	if (!CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash(opt_ifilename, trailer, hashalgo, hash, left))
 	{
 		std::cerr << "ERROR: BinaryDocumentHash() failed; cannot process input file \"" << opt_ifilename << "\"" << std::endl;
-		gcry_mpi_release(sig_r);
-		gcry_mpi_release(sig_s);
 		release_mpis();
 		return -1;
 	}
@@ -160,8 +160,6 @@ int main
 	if (ret)
 	{
 		std::cerr << "ERROR: parsing DSA key material failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
-		gcry_mpi_release(sig_r);
-		gcry_mpi_release(sig_s);
 		release_mpis();
 		return ret;
 	}
@@ -169,16 +167,12 @@ int main
 	if (ret)
 	{
 		std::cerr << "ERROR: AsymmetricVerifyDSA() failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
-		gcry_mpi_release(sig_r);
-		gcry_mpi_release(sig_s);
 		release_mpis();
 		gcry_sexp_release(dsakey);
 		return ret;
 	}
 
 	// release mpis and keys
-	gcry_mpi_release(sig_r);
-	gcry_mpi_release(sig_s);
 	release_mpis();
 	gcry_sexp_release(dsakey);
 	
