@@ -1,7 +1,7 @@
 .TH DKG\-VERIFY "1" "October 2017" "@PACKAGE_NAME@ @PACKAGE_VERSION@" "User Commands"
 
 .SH NAME
-dkg\-verify \- verify a detached signature according to OpenPGP (only DSA/DSS)
+dkg\-verify \- verifies a detached signature according to OpenPGP (only DSA/DSS)
 
 .SH SYNOPSIS
 .B dkg\-verify

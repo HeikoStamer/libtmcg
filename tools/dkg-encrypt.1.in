@@ -1,7 +1,7 @@
 .TH DKG\-ENCRYPT "1" "July 2017" "@PACKAGE_NAME@ @PACKAGE_VERSION@" "User Commands"
 
 .SH NAME
-dkg\-encrypt \- simple encryption with AES\-256 according to OpenPGP
+dkg\-encrypt \- simple message encryption with AES\-256 according to OpenPGP
 
 .SH SYNOPSIS
 .B dkg\-encrypt
