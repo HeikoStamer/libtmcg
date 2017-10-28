@@ -109,6 +109,7 @@ bool parse_public_key
 	tmcg_byte_t dsa_psa[255], dsa_pha[255], dsa_pca[255], elg_psa[255], elg_pha[255], elg_pca[255];
 	tmcg_octets_t pkts;
 	tmcg_octets_t pub_hashing, sub_hashing, issuer, dsa_hspd, elg_hspd, hash;
+	time_t dsa_creation = 0, elg_creation = 0;
 	gcry_mpi_t dsa_r, dsa_s, elg_r, elg_s;
 	gcry_sexp_t dsakey;
 	gcry_error_t ret;
@@ -172,7 +173,9 @@ bool parse_public_key
 					}
 					if ((dsa_hashalgo < 8) || (dsa_hashalgo >= 11))
 						std::cerr << "WARNING: insecure hash algorithm " << (int)dsa_hashalgo << " used for signatures" << std::endl;
-// TODO: Warn, when key is expired
+					time_t kmax = dsa_creation + ctx.keyexpirationtime;
+					if (time(NULL) > kmax)
+						std::cerr << "WARNING: DSA primary key is expired" << std::endl;
 					sigdsa = true;
 					// store the whole packet
 					uidsig.clear();
@@ -211,7 +214,9 @@ bool parse_public_key
 					}
 					if ((elg_hashalgo < 8) || (elg_hashalgo >= 11))
 						std::cerr << "WARNING: insecure hash algorithm " << (int)elg_hashalgo << " used for signatures" << std::endl;
-// TODO: Warn, when key is expired
+					time_t kmax = elg_creation + ctx.keyexpirationtime;
+					if (time(NULL) > kmax)
+						std::cerr << "WARNING: Elgamal subkey is expired" << std::endl;
 					sigelg = true;
 					// store the whole packet
 					subsig.clear();
@@ -234,6 +239,7 @@ bool parse_public_key
 				{
 					pubdsa = true;
 					dsa_p = ctx.p, dsa_q = ctx.q, dsa_g = ctx.g, dsa_y = ctx.y;
+					dsa_creation = ctx.keycreationtime;
 					keycreationtime_out = ctx.keycreationtime;
 					pub.clear();
 					CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(ctx.keycreationtime, ctx.pkalgo,
@@ -269,6 +275,7 @@ bool parse_public_key
 				{
 					subelg = true;
 					elg_p = ctx.p, elg_g = ctx.g, elg_y = ctx.y;
+					elg_creation = ctx.keycreationtime;
 					keycreationtime_out = ctx.keycreationtime;
 					sub.clear();
 					CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(ctx.keycreationtime, ctx.pkalgo,
