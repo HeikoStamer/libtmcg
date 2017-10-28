@@ -32,6 +32,7 @@
 	#include <algorithm>
 	#include <cassert>
 	#include <cstring>
+	#include <ctime>
 	#include <unistd.h>
 	#include <errno.h>
 	#include <fcntl.h>

@@ -53,7 +53,7 @@ char					*opt_ifilename = NULL;
 int main
 	(int argc, char **argv)
 {
-	static const char *usage = "dkg-verify [OPTIONS] KEYFILE";
+	static const char *usage = "dkg-verify [OPTIONS] -i INPUTFILE KEYFILE";
 	static const char *about = "verify a detached signature from STDIN according to OpenPGP (only DSA/DSS)";
 
 	// parse command line arguments
@@ -101,7 +101,7 @@ int main
 	}
 	if ((kfilename.length() == 0) || (ifilename.length() == 0))
 	{
-		std::cerr << "ERROR: some filename is missing; usage: " << usage << std::endl;
+		std::cerr << "ERROR: some filename missing; usage: " << usage << std::endl;
 		return -1;
 	}
 	else if (!init_libTMCG())
