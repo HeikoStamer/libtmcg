@@ -155,7 +155,7 @@ int main
 	if (dss_n == 0L)
 	{
 		// cheat CheckGroup() with $h$ for non-tDSS individual DSA key
-		mpz_powm(dss_h, dss_g, dss_g, dss_p);
+		mpz_set(dss_h, dkg_h);
 	}
 	dss_in << dss_p << std::endl << dss_q << std::endl << dss_g << std::endl << dss_h << std::endl;
 	dss_in << dss_n << std::endl << dss_t << std::endl << dss_i << std::endl;
@@ -196,7 +196,10 @@ int main
 		exit(-1);
 	}
 	if (dss_n == 0)
+	{
 		mpz_set_ui(dss_h, 0L); // restore $h$ for non-tDSS individual DSA key
+		mpz_set_ui(dss->h, 0L);
+	}
 
 	GennaroJareckiKrawczykRabinDKG *dkg = NULL;
 	if (sub.size())
@@ -304,6 +307,11 @@ int main
 		for (size_t i = 0; i < sub_fpr.size(); i++)
 			std::cout << std::setfill('0') << std::setw(2) << std::right << (int)sub_fpr[i] << " ";
 		std::cout << std::dec << std::endl;
+		std::cout << "Security level of domain parameter set: " << std::endl << "\t"; 
+		std::cout << "|p| = " << mpz_sizeinbase(dkg->p, 2L) << " bit, ";
+		std::cout << "|q| = " << mpz_sizeinbase(dkg->q, 2L) << " bit, ";
+		std::cout << "|g| = " << mpz_sizeinbase(dkg->g, 2L) << " bit, ";
+		std::cout << "|h| = " << mpz_sizeinbase(dkg->h, 2L) << " bit" << std::endl;
 		std::cout << "Threshold parameter set of subkey: " << std::endl << "\t";
 		std::cout << "n = " << dkg->n << ", t = " << dkg->t << std::endl;
 		std::cout << "Set of non-disqualified parties of subkey: " << std::endl << "\t" << "QUAL = { ";
