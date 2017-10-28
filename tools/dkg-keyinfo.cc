@@ -155,7 +155,8 @@ int main
 	if (dss_n == 0L)
 	{
 		// cheat CheckGroup() with $h$ for non-tDSS individual DSA key
-		mpz_set(dss_h, dkg_h);
+		mpz_set_ui(dss_h, 42L);
+		mpz_powm(dss_h, dss_g, dss_h, dss_p);
 	}
 	dss_in << dss_p << std::endl << dss_q << std::endl << dss_g << std::endl << dss_h << std::endl;
 	dss_in << dss_n << std::endl << dss_t << std::endl << dss_i << std::endl;
