@@ -45,7 +45,7 @@
 	bool parse_signature
 		(const std::string in, tmcg_byte_t stype,
 		time_t &sigcreationtime_out, time_t &sigexpirationtime_out,
-		tmcg_byte_t &hashalgo_out);
+		tmcg_byte_t &hashalgo_out, tmcg_octets_t &trailer_out);
 	bool parse_public_key
 		(const std::string in,
 		time_t &keycreationtime_out, time_t &keyexpirationtime_out);

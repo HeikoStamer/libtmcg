@@ -131,9 +131,10 @@ int main
 	std::cin.clear();
 
 	// parse the signature
+	tmcg_octets_t trailer;
 	tmcg_byte_t hashalgo = 0;
 	time_t csigtime = 0, sigexptime = 0;
-	if (!parse_signature(signature, 0x00, csigtime, sigexptime, hashalgo))
+	if (!parse_signature(signature, 0x00, csigtime, sigexptime, hashalgo, trailer))
 	{
 		std::cerr << "ERROR: cannot parse the provided signature" << std::endl;
 		release_mpis();
@@ -143,8 +144,7 @@ int main
 	// compute the hash of the input file
 	if (opt_verbose)
 		std::cout << "INFO: hashing the input file \"" << opt_ifilename << "\"" << std::endl;
-	tmcg_octets_t trailer, hash, left;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, hashalgo, csigtime, sigexptime, keyid, trailer);
+	tmcg_octets_t hash, left;
 	if (!CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash(opt_ifilename, trailer, hashalgo, hash, left))
 	{
 		std::cerr << "ERROR: BinaryDocumentHash() failed; cannot process input file \"" << opt_ifilename << "\"" << std::endl;

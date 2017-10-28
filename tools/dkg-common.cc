@@ -102,7 +102,7 @@ void init_mpis
 }
 
 bool parse_signature
-	(const std::string in, tmcg_byte_t stype, time_t &sigcreationtime_out, time_t &sigexpirationtime_out, tmcg_byte_t &hashalgo_out)
+	(const std::string in, tmcg_byte_t stype, time_t &sigcreationtime_out, time_t &sigexpirationtime_out, tmcg_byte_t &hashalgo_out, tmcg_octets_t &trailer_out)
 {
 	// parse the signature according to OpenPGP
 	bool sig = false;
@@ -152,6 +152,16 @@ bool parse_signature
 					if (ctx.sigexpirationtime && (time(NULL) > kmax))
 						std::cerr << "WARNING: DSA signature is expired" << std::endl;
 					sig = true;
+					// construct the V4 trailer
+					trailer_out.clear();
+					trailer_out.push_back(4); // V4 format
+					trailer_out.push_back(ctx.type); // type (e.g. 0x00 Binary Document)
+					trailer_out.push_back(ctx.pkalgo); // public-key algorithm (i.e. DSA)
+					trailer_out.push_back(ctx.hashalgo); // hash algorithm
+					trailer_out.push_back(ctx.hspdlen >> 8); // length of hashed subpacket data
+					trailer_out.push_back(ctx.hspdlen);
+					for (size_t i = 0; i < ctx.hspdlen; i++)
+						trailer_out.push_back(ctx.hspd[i]); // hashed subpacket data
 				}
 				else if (sig)
 				{

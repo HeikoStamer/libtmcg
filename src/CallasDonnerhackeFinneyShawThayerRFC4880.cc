@@ -1094,7 +1094,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 		SubpacketEncode(16, false, issuer, out);
 }
 
-
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature
 	(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, 
 	 const time_t sigtime, const tmcg_byte_t revcode,
