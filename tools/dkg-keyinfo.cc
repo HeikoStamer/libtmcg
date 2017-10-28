@@ -268,18 +268,21 @@ int main
 	std::cout << "|q| = " << mpz_sizeinbase(dss->q, 2L) << " bit, ";
 	std::cout << "|g| = " << mpz_sizeinbase(dss->g, 2L) << " bit, ";
 	std::cout << "|h| = " << mpz_sizeinbase(dss->h, 2L) << " bit" << std::endl;
-	std::cout << "Threshold parameter set of primary key (tDSS): " << std::endl << "\t";
-	std::cout << "n = " << dss->n << ", s = " << dss->t << std::endl;
-	std::cout << "Set of non-disqualified parties of primary key (tDSS): " << std::endl << "\t" << "QUAL = { ";
-	for (size_t i = 0; i < dss->QUAL.size(); i++)
-		std::cout << "P_" << dss->QUAL[i] << " ";
-	std::cout << "}" << std::endl;
-	std::cout << "Unique identifier of this party: " << std::endl << "\t";
-	std::cout << "P_" << dss->i << std::endl;
-	std::cout << "Canonicalized peer list (CAPL): " << std::endl;
-	assert(CAPL.size() == dss->QUAL.size());
-	for (size_t i = 0; i < CAPL.size(); i++)
-		std::cout << "\t" << "P_" << dss->QUAL[i] << "\t" << CAPL[i] << std::endl;
+	if (dss->n != 0)
+	{
+		std::cout << "Threshold parameter set of primary key (tDSS): " << std::endl << "\t";
+		std::cout << "n = " << dss->n << ", s = " << dss->t << std::endl;
+		std::cout << "Set of non-disqualified parties of primary key (tDSS): " << std::endl << "\t" << "QUAL = { ";
+		for (size_t i = 0; i < dss->QUAL.size(); i++)
+			std::cout << "P_" << dss->QUAL[i] << " ";
+		std::cout << "}" << std::endl;
+		std::cout << "Unique identifier of this party: " << std::endl << "\t";
+		std::cout << "P_" << dss->i << std::endl;
+		std::cout << "Canonicalized peer list (CAPL): " << std::endl;
+		assert(CAPL.size() == dss->QUAL.size());
+		for (size_t i = 0; i < CAPL.size(); i++)
+			std::cout << "\t" << "P_" << dss->QUAL[i] << "\t" << CAPL[i] << std::endl;
+	}
 	if (sub.size() && (dkg != NULL))
 	{
 		std::cout << "OpenPGP V4 Key ID of subkey: " << std::endl << std::hex << std::uppercase << "\t";

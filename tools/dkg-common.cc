@@ -568,6 +568,26 @@ bool parse_private_key
 						std::cout << " hashalgo = " << (int)ctx.s2k_hashalgo << " count = " << (int)ctx.s2k_count;
 						std::cout << std::endl;
 					}
+					if (!mpz_set_gcry_mpi(ctx.p, dss_p))
+					{
+						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_p" << std::endl;
+						exit(-1);
+					}
+					if (!mpz_set_gcry_mpi(ctx.q, dss_q))
+					{
+						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_q" << std::endl;
+						exit(-1);
+					}
+					if (!mpz_set_gcry_mpi(ctx.g, dss_g))
+					{
+						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_g" << std::endl;
+						exit(-1);
+					}
+					if (!mpz_set_gcry_mpi(ctx.h, dss_h))
+					{
+						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_h" << std::endl;
+						exit(-1);
+					}
 					if (ctx.s2kconv == 0)
 					{
 						dsa_x = ctx.x; // not encrypted
