@@ -276,8 +276,10 @@ int main
 	std::cout << "Security level of domain parameter set: " << std::endl << "\t"; 
 	std::cout << "|p| = " << mpz_sizeinbase(dss->p, 2L) << " bit, ";
 	std::cout << "|q| = " << mpz_sizeinbase(dss->q, 2L) << " bit, ";
-	std::cout << "|g| = " << mpz_sizeinbase(dss->g, 2L) << " bit, ";
-	std::cout << "|h| = " << mpz_sizeinbase(dss->h, 2L) << " bit" << std::endl;
+	std::cout << "|g| = " << mpz_sizeinbase(dss->g, 2L) << " bit";
+	if (dss_n != 0)
+		std::cout << ", |h| = " << mpz_sizeinbase(dss->h, 2L) << " bit";
+	std::cout << std::endl;
 	if (dss_n != 0)
 	{
 		std::cout << "Threshold parameter set of primary key (tDSS): " << std::endl << "\t";
@@ -286,7 +288,7 @@ int main
 		for (size_t i = 0; i < dss->QUAL.size(); i++)
 			std::cout << "P_" << dss->QUAL[i] << " ";
 		std::cout << "}" << std::endl;
-		std::cout << "Unique identifier of this party: " << std::endl << "\t";
+		std::cout << "Unique identifier of this party (tDSS): " << std::endl << "\t";
 		std::cout << "P_" << dss->i << std::endl;
 		std::cout << "Canonicalized peer list (CAPL): " << std::endl;
 		assert(CAPL.size() == dss->QUAL.size());
@@ -318,9 +320,11 @@ int main
 		for (size_t i = 0; i < dkg->QUAL.size(); i++)
 			std::cout << "P_" << dkg->QUAL[i] << " ";
 		std::cout << "}" << std::endl;
-		std::cout << "Public verification keys (v_i): " << std::endl;
+		std::cout << "Unique identifier of this party (DKG): " << std::endl << "\t";
+		std::cout << "P_" << dkg->i << std::endl;
+		std::cout << "Public verification keys (DKG): " << std::endl;
 		for (size_t i = 0; i < dkg->v_i.size(); i++)
-			std::cout << "\t" << "P_" << i << "\t" << dkg->v_i[i] << std::endl;
+			std::cout << "\t" << "v_" << i << " = " << dkg->v_i[i] << std::endl;
 	}
 
 	// restore default formatting
