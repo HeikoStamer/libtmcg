@@ -315,9 +315,9 @@ int main
 		std::cout << "|q| = " << mpz_sizeinbase(dkg->q, 2L) << " bit, ";
 		std::cout << "|g| = " << mpz_sizeinbase(dkg->g, 2L) << " bit, ";
 		std::cout << "|h| = " << mpz_sizeinbase(dkg->h, 2L) << " bit" << std::endl;
-		std::cout << "Threshold parameter set of subkey: " << std::endl << "\t";
+		std::cout << "Threshold parameter set of subkey (DKG): " << std::endl << "\t";
 		std::cout << "n = " << dkg->n << ", t = " << dkg->t << std::endl;
-		std::cout << "Set of non-disqualified parties of subkey: " << std::endl << "\t" << "QUAL = { ";
+		std::cout << "Set of non-disqualified parties of subkey (DKG): " << std::endl << "\t" << "QUAL = { ";
 		for (size_t i = 0; i < dkg->QUAL.size(); i++)
 			std::cout << "P_" << dkg->QUAL[i] << " ";
 		std::cout << "}" << std::endl;
