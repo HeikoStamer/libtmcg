@@ -152,6 +152,11 @@ int main
 
 	// create an instance of tDSS by stored parameters from private key
 	std::stringstream dss_in;
+	if (dss_n == 0L)
+	{
+		// cheat CheckGroup() with $h$ for non-tDSS individual DSA key
+		mpz_powm(dss_h, dss_g, dss_g, dss_p);
+	}
 	dss_in << dss_p << std::endl << dss_q << std::endl << dss_g << std::endl << dss_h << std::endl;
 	dss_in << dss_n << std::endl << dss_t << std::endl << dss_i << std::endl;
 	dss_in << dss_x_i << std::endl << dss_xprime_i << std::endl << dss_y << std::endl;
@@ -190,6 +195,8 @@ int main
 		release_mpis();
 		exit(-1);
 	}
+	if (dss_n == 0)
+		mpz_set_ui(dss_h, 0L); // restore $h$ for non-tDSS individual DSA key
 
 	GennaroJareckiKrawczykRabinDKG *dkg = NULL;
 	if (sub.size())
@@ -268,7 +275,7 @@ int main
 	std::cout << "|q| = " << mpz_sizeinbase(dss->q, 2L) << " bit, ";
 	std::cout << "|g| = " << mpz_sizeinbase(dss->g, 2L) << " bit, ";
 	std::cout << "|h| = " << mpz_sizeinbase(dss->h, 2L) << " bit" << std::endl;
-	if (dss->n != 0)
+	if (dss_n != 0)
 	{
 		std::cout << "Threshold parameter set of primary key (tDSS): " << std::endl << "\t";
 		std::cout << "n = " << dss->n << ", s = " << dss->t << std::endl;
