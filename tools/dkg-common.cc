@@ -583,11 +583,6 @@ bool parse_private_key
 						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_g" << std::endl;
 						exit(-1);
 					}
-					if (!mpz_set_gcry_mpi(ctx.h, dss_h))
-					{
-						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_h" << std::endl;
-						exit(-1);
-					}
 					if (ctx.s2kconv == 0)
 					{
 						dsa_x = ctx.x; // not encrypted
