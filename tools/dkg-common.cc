@@ -249,33 +249,6 @@ bool parse_public_key
 						pub_hashing.push_back(pub[i]);
 					keyid.clear();
 					CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
-					if (!mpz_set_gcry_mpi(ctx.p, dss_p))
-					{
-						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_p" << std::endl;
-						gcry_mpi_release(dsa_r);
-						gcry_mpi_release(dsa_s);
-						gcry_mpi_release(elg_r);
-						gcry_mpi_release(elg_s);
-						return false;
-					}
-					if (!mpz_set_gcry_mpi(ctx.q, dss_q))
-					{
-						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_q" << std::endl;
-						gcry_mpi_release(dsa_r);
-						gcry_mpi_release(dsa_s);
-						gcry_mpi_release(elg_r);
-						gcry_mpi_release(elg_s);
-						return false;
-					}
-					if (!mpz_set_gcry_mpi(ctx.g, dss_g))
-					{
-						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_g" << std::endl;
-						gcry_mpi_release(dsa_r);
-						gcry_mpi_release(dsa_s);
-						gcry_mpi_release(elg_r);
-						gcry_mpi_release(elg_s);
-						return false;
-					}
 				}
 				else if ((ctx.pkalgo == 17) && pubdsa)
 				{

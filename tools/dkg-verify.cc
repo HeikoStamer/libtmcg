@@ -123,21 +123,6 @@ int main
 		return -1;
 	}
 
-	// select hash algorithm for OpenPGP based on |q| (size in bit)
-	tmcg_byte_t hashalgo = 0;
-	if (mpz_sizeinbase(dss_q, 2L) == 256)
-		hashalgo = 8; // SHA256 (alg 8)
-	else if (mpz_sizeinbase(dss_q, 2L) == 384)
-		hashalgo = 9; // SHA384 (alg 9)
-	else if (mpz_sizeinbase(dss_q, 2L) == 512)
-		hashalgo = 10; // SHA512 (alg 10)
-	else
-	{
-		std::cerr << "ERROR: selecting hash algorithm failed for |q| = " << mpz_sizeinbase(dss_q, 2L) << std::endl;
-		release_mpis();
-		return -1;
-	}
-
 	// read the signature from stdin
 	tmcg_octets_t sig;
 	char c;
@@ -145,7 +130,8 @@ int main
 		sig.push_back(c);
 	std::cin.clear();
 
-// TODO: parse the signature and obtain sig_r and sig_s; csigtime, sigexptime
+// TODO: parse the signature and obtain sig_r and sig_s; csigtime, sigexptime, hashalgo
+	tmcg_byte_t hashalgo = 0;
 	time_t csigtime = 0, sigexptime = 0;
 	gcry_mpi_t sig_r, sig_s;
 	sig_r = gcry_mpi_new(2048);
