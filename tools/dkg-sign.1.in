@@ -132,8 +132,7 @@ in the sources of this package and additionally can be obtained from Internet
 
 .SH "SEE ALSO"
 .BR dkg\-generate (1),
-.BR dkg\-encrypt (1),
-.BR dkg\-decrypt (1),
-.BR dkg\-revoke (1)
+.BR dkg\-revoke (1),
+.BR dkg\-verify (1)
 
 

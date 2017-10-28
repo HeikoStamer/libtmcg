@@ -174,7 +174,7 @@ bool parse_public_key
 					if ((dsa_hashalgo < 8) || (dsa_hashalgo >= 11))
 						std::cerr << "WARNING: insecure hash algorithm " << (int)dsa_hashalgo << " used for signatures" << std::endl;
 					time_t kmax = dsa_creation + ctx.keyexpirationtime;
-					if (time(NULL) > kmax)
+					if (ctx.keyexpirationtime && (time(NULL) > kmax))
 						std::cerr << "WARNING: DSA primary key is expired" << std::endl;
 					sigdsa = true;
 					// store the whole packet
@@ -215,8 +215,8 @@ bool parse_public_key
 					if ((elg_hashalgo < 8) || (elg_hashalgo >= 11))
 						std::cerr << "WARNING: insecure hash algorithm " << (int)elg_hashalgo << " used for signatures" << std::endl;
 					time_t kmax = elg_creation + ctx.keyexpirationtime;
-					if (time(NULL) > kmax)
-						std::cerr << "WARNING: Elgamal subkey is expired" << std::endl;
+					if (ctx.keyexpirationtime && (time(NULL) > kmax))
+						std::cerr << "WARNING: ElGamal subkey is expired" << std::endl;
 					sigelg = true;
 					// store the whole packet
 					subsig.clear();
@@ -249,6 +249,33 @@ bool parse_public_key
 						pub_hashing.push_back(pub[i]);
 					keyid.clear();
 					CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
+					if (!mpz_set_gcry_mpi(ctx.p, dss_p))
+					{
+						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_p" << std::endl;
+						gcry_mpi_release(dsa_r);
+						gcry_mpi_release(dsa_s);
+						gcry_mpi_release(elg_r);
+						gcry_mpi_release(elg_s);
+						return false;
+					}
+					if (!mpz_set_gcry_mpi(ctx.q, dss_q))
+					{
+						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_q" << std::endl;
+						gcry_mpi_release(dsa_r);
+						gcry_mpi_release(dsa_s);
+						gcry_mpi_release(elg_r);
+						gcry_mpi_release(elg_s);
+						return false;
+					}
+					if (!mpz_set_gcry_mpi(ctx.g, dss_g))
+					{
+						std::cerr << "ERROR: mpz_set_gcry_mpi() failed for dss_g" << std::endl;
+						gcry_mpi_release(dsa_r);
+						gcry_mpi_release(dsa_s);
+						gcry_mpi_release(elg_r);
+						gcry_mpi_release(elg_s);
+						return false;
+					}
 				}
 				else if ((ctx.pkalgo == 17) && pubdsa)
 				{
@@ -389,7 +416,7 @@ bool parse_public_key
 	}
 	if ((flags & 0x04) != 0x04)
 	{
-		std::cerr << "ERROR: Elgamal subkey cannot used to encrypt communications" << std::endl;
+		std::cerr << "ERROR: ElGamal subkey cannot used to encrypt communications" << std::endl;
 		gcry_sexp_release(dsakey);
 		gcry_mpi_release(dsa_r);
 		gcry_mpi_release(dsa_s);
@@ -409,7 +436,7 @@ bool parse_public_key
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, elg_r, elg_s);
 	if (ret)
 	{
-		std::cerr << "ERROR: verification of Elgamal subkey self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
+		std::cerr << "ERROR: verification of ElGamal subkey self-signature failed (rc = " << gcry_err_code(ret) << ")" << std::endl;
 		gcry_sexp_release(dsakey);
 		gcry_mpi_release(dsa_r);
 		gcry_mpi_release(dsa_s);
