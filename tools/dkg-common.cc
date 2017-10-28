@@ -111,7 +111,7 @@ bool parse_signature
 	atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(in, pkts);
 	if (opt_verbose)
 		std::cout << "ArmorDecode() = " << (int)atype << std::endl;
-	if (atype != 1)
+	if (atype != 2)
 	{
 		std::cerr << "ERROR: wrong type of ASCII Armor found (type = " << (int)atype << ")" << std::endl;
 		return false;
