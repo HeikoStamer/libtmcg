@@ -125,7 +125,7 @@ void print_message
 }
 
 void init_dkg
-	(GennaroJareckiKrawczykRabinDKG *dkg)
+	(GennaroJareckiKrawczykRabinDKG* &dkg)
 {
 	// create an instance of DKG by stored parameters from private key
 	std::stringstream dkg_in;
