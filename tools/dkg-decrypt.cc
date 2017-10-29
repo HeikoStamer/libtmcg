@@ -581,6 +581,7 @@ void run_instance
 	init_dkg(dkg);
 	if (!parse_message(armored_message, enc, have_seipd))
 	{
+std::cerr << "debug" << std::endl;
 		release_mpis();
 		done_dkg(dkg);
 		exit(-1);
