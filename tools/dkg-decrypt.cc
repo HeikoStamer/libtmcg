@@ -585,7 +585,7 @@ void run_instance
 		done_dkg(dkg);
 		exit(-1);
 	}
-
+std::cerr << "debug1" << std::endl;
 	// create communication handles between all players
 	std::vector<int> uP_in, uP_out, bP_in, bP_out;
 	std::vector<std::string> uP_key, bP_key;
@@ -620,7 +620,7 @@ void run_instance
 		bP_out.push_back(broadcast_pipefd[whoami][i][1]);
 		bP_key.push_back(key.str());
 	}
-
+std::cerr << "debug2" << std::endl;
 	// create asynchronous authenticated unicast channels
 	aiounicast_select *aiou = new aiounicast_select(peers.size(), whoami, uP_in, uP_out, uP_key);
 
@@ -635,7 +635,7 @@ void run_instance
 	size_t T_RBC = (peers.size() - 1) / 3; // assume maximum asynchronous t-resilience for RBC
 	CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(peers.size(), T_RBC, whoami, aiou2);
 	rbc->setID(myID);
-
+std::cerr << "debug3" << std::endl;
 	// perform a simple exchange test with debug output
 	for (size_t i = 0; i < num_xtests; i++)
 	{
@@ -653,7 +653,7 @@ void run_instance
 		std::cout << std::endl;
 		mpz_clear(xtest);
 	}
-
+std::cerr << "debug4" << std::endl;
 	// initialize for interactive part
 	mpz_t crs_p, crs_q, crs_g, crs_k;
 	mpz_init(crs_p), mpz_init(crs_q), mpz_init(crs_g), mpz_init(crs_k);

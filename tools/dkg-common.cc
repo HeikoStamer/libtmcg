@@ -185,7 +185,6 @@ bool parse_message
 					std::cerr << "ERROR: duplicate SEIPD packet found" << std::endl;
 					return false;
 				}
-std::cerr << "debug1" << std::endl;
 				have_seipd_out = true;
 				enc_out.clear();
 				for (size_t i = 0; i < ctx.encdatalen; i++)
@@ -205,7 +204,6 @@ std::cerr << "debug1" << std::endl;
 		if (ctx.data != NULL)
 			delete [] ctx.data;
 	}
-std::cerr << "debug2" << std::endl;
 	if (!have_pkesk)
 	{
 		std::cerr << "ERROR: no public-key encrypted session key found" << std::endl;
@@ -221,7 +219,6 @@ std::cerr << "debug2" << std::endl;
 		std::cerr << "ERROR: multiple types of symmetrically encrypted data found" << std::endl;
 		return false;
 	}
-std::cerr << "debug3" << std::endl;
 	// check whether $0 < g^k < p$.
 	if ((gcry_mpi_cmp_ui(gk, 0L) <= 0) || (gcry_mpi_cmp(gk, elg_p) >= 0))
 	{
@@ -244,7 +241,6 @@ std::cerr << "debug3" << std::endl;
 		return false;
 	}
 	gcry_mpi_release(tmp);
-std::cerr << "debug4" << std::endl;
 	return true;
 }
 
