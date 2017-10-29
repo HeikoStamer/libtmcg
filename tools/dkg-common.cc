@@ -101,6 +101,259 @@ void init_mpis
 	sig_s = gcry_mpi_new(2048);
 }
 
+bool parse_message
+	(const std::string in, tmcg_octets_t &enc_out, bool &have_seipd_out)
+{
+	// parse encrypted message
+	bool have_pkesk = false, have_sed = false;
+	tmcg_byte_t atype = 0, ptag = 0xFF;
+	tmcg_octets_t pkts;
+	atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(in, pkts);
+	if (opt_verbose)
+		std::cout << "ArmorDecode() = " << (int)atype << std::endl;
+	if (atype != 2)
+	{
+		std::cerr << "ERROR: wrong type of ASCII Armor found (type = " << (int)atype << ")" << std::endl;
+		return false;
+	}
+	while (pkts.size() && ptag)
+	{
+		tmcg_octets_t pkesk_keyid;
+		tmcg_openpgp_packet_ctx ctx;
+		tmcg_octets_t current_packet;
+		std::vector<gcry_mpi_t> qual, v_i;
+		std::vector<std::string> capl;
+		std::vector< std::vector<gcry_mpi_t> > c_ik;
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, capl, v_i, c_ik);
+		if (opt_verbose)
+			std::cout << "PacketDecode() = " << (int)ptag;
+		if (!ptag)
+		{
+			std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
+			return false;
+		}
+		if (opt_verbose)
+			std::cout << " tag = " << (int)ptag << " version = " << (int)ctx.version << std::endl;
+		switch (ptag)
+		{
+			case 1: // Public-Key Encrypted Session Key
+				if (opt_verbose)
+					std::cout << " pkalgo = " << (int)ctx.pkalgo << std::endl;
+				if (ctx.pkalgo != 16)
+				{
+					std::cerr << "WARNING: public-key algorithm not supported; packet ignored" << std::endl;
+					break;
+				}
+				if (opt_verbose)
+					std::cout << " keyid = " << std::hex;
+				pkesk_keyid.clear();
+				for (size_t i = 0; i < sizeof(ctx.keyid); i++)
+				{
+					if (opt_verbose)
+						std::cout << (int)ctx.keyid[i] << " ";
+					pkesk_keyid.push_back(ctx.keyid[i]);
+				}
+				if (opt_verbose)
+					std::cout << std::dec << std::endl;
+				if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareZero(pkesk_keyid))
+					std::cerr << "WARNING: PKESK wildcard keyid found; try to decrypt" << std::endl;
+				else if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(pkesk_keyid, subkeyid))
+				{
+					if (opt_verbose)
+						std::cout << "WARNING: PKESK keyid does not match subkey ID" << std::endl;
+					break;
+				}
+				if (have_pkesk)
+					std::cerr << "WARNING: matching PKESK packet already found; g^k and my^k overwritten" << std::endl;
+				gk = ctx.gk, myk = ctx.myk;
+				have_pkesk = true;
+				break;
+			case 9: // Symmetrically Encrypted Data
+				if (have_sed)
+				{
+					std::cerr << "ERROR: duplicate SED packet found" << std::endl;
+					return false;
+				}
+				have_sed = true;
+				enc_out.clear();
+				for (size_t i = 0; i < ctx.encdatalen; i++)
+					enc_out.push_back(ctx.encdata[i]);
+				break;
+			case 18: // Symmetrically Encrypted Integrity Protected Data
+				if (have_seipd_out)
+				{
+					std::cerr << "ERROR: duplicate SEIPD packet found" << std::endl;
+					return false;
+				}
+				have_seipd_out = true;
+				enc_out.clear();
+				for (size_t i = 0; i < ctx.encdatalen; i++)
+					enc_out.push_back(ctx.encdata[i]);
+				break;
+			default:
+				std::cerr << "ERROR: unrecognized OpenPGP packet found" << std::endl;
+				return false;
+		}
+		// cleanup allocated buffers
+		if (ctx.hspd != NULL)
+			delete [] ctx.hspd;
+		if (ctx.encdata != NULL)
+			delete [] ctx.encdata;
+		if (ctx.compdata != NULL)
+			delete [] ctx.compdata;
+		if (ctx.data != NULL)
+			delete [] ctx.data;
+	}
+	if (!have_pkesk)
+	{
+		std::cerr << "ERROR: no public-key encrypted session key found" << std::endl;
+		return false;
+	}
+	if (!have_sed && !have_seipd_out)
+	{
+		std::cerr << "ERROR: no symmetrically encrypted (and integrity protected) data found" << std::endl;
+		return false;
+	}
+	if (have_sed && have_seipd_out)
+	{
+		std::cerr << "ERROR: multiple types of symmetrically encrypted data found" << std::endl;
+		return false;
+	}
+	// check whether $0 < g^k < p$.
+	if ((gcry_mpi_cmp_ui(gk, 0L) <= 0) || (gcry_mpi_cmp(gk, elg_p) >= 0))
+	{
+		std::cerr << "ERROR: 0 < g^k < p not satisfied" << std::endl;
+		return false;
+	}
+	// check whether $0 < my^k < p$.
+	if ((gcry_mpi_cmp_ui(myk, 0L) <= 0) || (gcry_mpi_cmp(myk, elg_p) >= 0))
+	{
+		std::cerr << "ERROR: 0 < my^k < p not satisfied" << std::endl;
+		return false;
+	}
+	// check whether $(g^k)^q \equiv 1 \pmod{p}$.
+	gcry_mpi_t tmp;
+	tmp = gcry_mpi_new(2048);
+	gcry_mpi_powm(tmp, gk, elg_q, elg_p);
+	if (gcry_mpi_cmp_ui(tmp, 1L))
+	{
+		std::cerr << "ERROR: (g^k)^q \equiv 1 mod p not satisfied" << std::endl;
+		return false;
+	}
+	gcry_mpi_release(tmp);
+	return true;
+}
+
+bool decrypt_message
+	(const bool have_seipd, const tmcg_octets_t &in, tmcg_octets_t &key, tmcg_octets_t &out)
+{
+	// decrypt the given message
+	tmcg_byte_t symalgo = 0;
+	gcry_error_t ret;
+	tmcg_octets_t prefix, litmdc;
+	if (opt_verbose)
+		std::cout << "symmetric decryption of message ..." << std::endl;
+	if (key.size() > 0)
+	{
+		symalgo = key[0];
+		if (opt_verbose)
+			std::cout << "symalgo = " << (int)symalgo << std::endl;
+	}
+	else
+	{
+		std::cerr << "ERROR: no session key provided" << std::endl;
+		return false;
+	}
+	if (have_seipd)
+		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt(in, key, prefix, false, symalgo, litmdc);
+	else
+		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt(in, key, prefix, true, symalgo, litmdc);
+	if (ret)
+	{
+		std::cerr << "ERROR: SymmetricDecrypt() failed" << std::endl;
+		return false;
+	}
+	// parse content
+	tmcg_openpgp_packet_ctx ctx;
+	std::vector<gcry_mpi_t> qual, v_i;
+	std::vector<std::string> capl;
+	std::vector< std::vector<gcry_mpi_t> > c_ik;
+	bool have_lit = false, have_mdc = false;
+	tmcg_octets_t lit, mdc_hash;
+	tmcg_byte_t ptag = 0xFF;
+	if (litmdc.size() > (sizeof(ctx.mdc_hash) + 2))
+		lit.insert(lit.end(), litmdc.begin(), litmdc.end() - (sizeof(ctx.mdc_hash) + 2));
+	while (litmdc.size() && ptag)
+	{
+		tmcg_octets_t current_packet;
+		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(litmdc, ctx, current_packet, qual, capl, v_i, c_ik);
+		if (opt_verbose)
+			std::cout << "PacketDecode() = " << (int)ptag;
+		if (!ptag)
+		{
+			std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
+			return false;
+		}
+		if (opt_verbose)
+			std::cout << " tag = " << (int)ptag << " version = " << (int)ctx.version << std::endl;
+		switch (ptag)
+		{
+			case 8: // Compressed Data
+				std::cerr << "WARNING: compressed OpenPGP packet found; not supported" << std::endl;
+				break;
+			case 11: // Literal Data
+				have_lit = true;
+				out.clear();
+				for (size_t i = 0; i < ctx.datalen; i++)
+					out.push_back(ctx.data[i]);
+				break;
+			case 19: // Modification Detection Code
+				have_mdc = true;
+				for (size_t i = 0; i < sizeof(ctx.mdc_hash); i++)
+					mdc_hash.push_back(ctx.mdc_hash[i]);
+				break;
+			default:
+				std::cerr << "ERROR: unrecognized OpenPGP packet found" << std::endl;
+				exit(-1);
+		}
+		// cleanup allocated buffers
+		if (ctx.hspd != NULL)
+			delete [] ctx.hspd;
+		if (ctx.encdata != NULL)
+			delete [] ctx.encdata;
+		if (ctx.compdata != NULL)
+			delete [] ctx.compdata;
+		if (ctx.data != NULL)
+			delete [] ctx.data;
+	}
+	if (!have_lit)
+	{
+		std::cerr << "ERROR: no literal data found" << std::endl;
+		return false;
+	}
+	if (have_seipd && !have_mdc)
+	{
+		std::cerr << "ERROR: no modification detection code found" << std::endl;
+		return false;
+	}
+	tmcg_octets_t mdc_hashing, hash;
+	if (have_mdc)
+	{
+		mdc_hashing.insert(mdc_hashing.end(), prefix.begin(), prefix.end()); // "it includes the prefix data described above" [RFC4880]
+		mdc_hashing.insert(mdc_hashing.end(), lit.begin(), lit.end()); // "it includes all of the plaintext" [RFC4880]
+		mdc_hashing.push_back(0xD3); // "and the also includes two octets of values 0xD3, 0x14" [RFC4880]
+		mdc_hashing.push_back(0x14);
+		hash.clear();
+		CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(2, mdc_hashing, hash); // "passed through the SHA-1 hash function" [RFC4880]
+		if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(mdc_hash, hash))
+		{
+			std::cerr << "ERROR: MDC hash does not match" << std::endl;
+			return false;
+		}
+	}
+	return true;
+}
+
 bool parse_signature
 	(const std::string in, tmcg_byte_t stype, time_t &sigcreationtime_out, time_t &sigexpirationtime_out, tmcg_byte_t &hashalgo_out, tmcg_octets_t &trailer_out)
 {

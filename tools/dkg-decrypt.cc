@@ -69,9 +69,6 @@ char					*opt_hostname = NULL;
 unsigned long int			opt_p = 55000;
 
 std::string				armored_message;
-tmcg_octets_t				enc;
-bool					have_seipd = false;
-GennaroJareckiKrawczykRabinDKG		*dkg;
 
 void read_message
 	(const std::string ifilename, std::string &result)
@@ -128,7 +125,7 @@ void print_message
 }
 
 void init_dkg
-	()
+	(GennaroJareckiKrawczykRabinDKG *dkg)
 {
 	// create an instance of DKG by stored parameters from private key
 	std::stringstream dkg_in;
@@ -173,149 +170,8 @@ void init_dkg
 	}
 }
 
-void parse_message
-	(const std::string in)
-{
-	// parse encrypted message
-	bool have_pkesk = false, have_sed = false;
-	tmcg_octets_t pkts;
-	tmcg_byte_t atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(in, pkts);
-	if (opt_verbose)
-		std::cout << "ArmorDecode() = " << (int)atype << std::endl;
-	if (atype == 1)
-	{	
-		tmcg_byte_t ptag = 0xFF;
-		while (pkts.size() && ptag)
-		{
-			tmcg_octets_t pkesk_keyid;
-			tmcg_openpgp_packet_ctx ctx;
-			tmcg_octets_t current_packet;
-			std::vector<gcry_mpi_t> qual, v_i;
-			std::vector<std::string> capl;
-			std::vector< std::vector<gcry_mpi_t> > c_ik;
-			ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(pkts, ctx, current_packet, qual, capl, v_i, c_ik);
-			if (opt_verbose)
-				std::cout << "PacketDecode() = " << (int)ptag;
-			if (!ptag)
-			{
-				std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
-				exit(-1); // error detected
-			}
-			if (opt_verbose)
-				std::cout << " tag = " << (int)ptag << " version = " << (int)ctx.version << std::endl;
-			switch (ptag)
-			{
-				case 1: // Public-Key Encrypted Session Key
-					if (opt_verbose)
-						std::cout << " pkalgo = " << (int)ctx.pkalgo << std::endl;
-					if (ctx.pkalgo != 16)
-					{
-						std::cerr << "WARNING: public-key algorithm not supported" << std::endl;
-						break;
-					}
-					if (opt_verbose)
-						std::cout << " keyid = " << std::hex;
-					for (size_t i = 0; i < sizeof(ctx.keyid); i++)
-					{
-						if (opt_verbose)
-							std::cout << (int)ctx.keyid[i] << " ";
-						pkesk_keyid.push_back(ctx.keyid[i]);
-					}
-					if (opt_verbose)
-						std::cout << std::dec << std::endl;
-					if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareZero(pkesk_keyid))
-						std::cerr << "WARNING: PKESK wildcard keyid found" << std::endl;
-					else if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(pkesk_keyid, subkeyid))
-					{
-						std::cerr << "WARNING: PKESK keyid does not match subkey ID" << std::endl;
-						break;
-					}
-					if (have_pkesk)
-						std::cerr << "WARNING: matching PKESK packet already found; g^k and my^k overwritten" << std::endl;
-					have_pkesk = true;
-					gk = ctx.gk, myk = ctx.myk;
-					break;
-				case 9: // Symmetrically Encrypted Data
-					if (have_sed)
-					{
-						std::cerr << "ERROR: duplicate SED packet found" << std::endl;
-						exit(-1);
-					}
-					have_sed = true;
-					for (size_t i = 0; i < ctx.encdatalen; i++)
-						enc.push_back(ctx.encdata[i]);
-					break;
-				case 18: // Symmetrically Encrypted Integrity Protected Data
-					if (have_seipd)
-					{
-						std::cerr << "ERROR: duplicate SEIPD packet found" << std::endl;
-						exit(-1);
-					}
-					have_seipd = true;
-					for (size_t i = 0; i < ctx.encdatalen; i++)
-						enc.push_back(ctx.encdata[i]);
-					break;
-				default:
-					std::cerr << "ERROR: unrecognized OpenPGP packet found" << std::endl;
-					exit(-1);
-			}
-			// cleanup allocated buffers
-			if (ctx.hspd != NULL)
-				delete [] ctx.hspd;
-			if (ctx.encdata != NULL)
-				delete [] ctx.encdata;
-			if (ctx.compdata != NULL)
-				delete [] ctx.compdata;
-			if (ctx.data != NULL)
-				delete [] ctx.data;
-		}
-	}
-	else
-	{
-		std::cerr << "ERROR: wrong type of ASCII Armor" << std::endl;
-		exit(-1);
-	}
-	if (!have_pkesk)
-	{
-		std::cerr << "ERROR: no public-key encrypted session key found" << std::endl;
-		exit(-1);
-	}
-	if (!have_sed && !have_seipd)
-	{
-		std::cerr << "ERROR: no symmetrically encrypted (and integrity protected) data found" << std::endl;
-		exit(-1);
-	}
-	if (have_sed && have_seipd)
-	{
-		std::cerr << "ERROR: multiple types of symmetrically encrypted data found" << std::endl;
-		exit(-1);
-	}
-	// check whether $0 < g^k < p$.
-	if ((gcry_mpi_cmp_ui(gk, 0L) <= 0) || (gcry_mpi_cmp(gk, elg_p) >= 0))
-	{
-		std::cerr << "ERROR: 0 < g^k < p not satisfied" << std::endl;
-		exit(-1);
-	}
-	// check whether $0 < my^k < p$.
-	if ((gcry_mpi_cmp_ui(myk, 0L) <= 0) || (gcry_mpi_cmp(myk, elg_p) >= 0))
-	{
-		std::cerr << "ERROR: 0 < my^k < p not satisfied" << std::endl;
-		exit(-1);
-	}
-	// check whether $(g^k)^q \equiv 1 \pmod{p}$.
-	gcry_mpi_t tmp;
-	tmp = gcry_mpi_new(2048);
-	gcry_mpi_powm(tmp, gk, elg_q, elg_p);
-	if (gcry_mpi_cmp_ui(tmp, 1L))
-	{
-		std::cerr << "ERROR: (g^k)^q \equiv 1 mod p not satisfied" << std::endl;
-		exit(-1);
-	}
-	gcry_mpi_release(tmp);
-}
-
 void compute_decryption_share
-	(std::string &result)
+	(GennaroJareckiKrawczykRabinDKG *dkg, std::string &result)
 {
 	// [CGS97] Ronald Cramer, Rosario Gennaro, and Berry Schoenmakers:
 	//  'A Secure and Optimally Efficient Multi-Authority Election Scheme'
@@ -366,7 +222,7 @@ void compute_decryption_share
 }
 
 void prove_decryption_share_interactive_publiccoin
-	(mpz_srcptr r_i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc, JareckiLysyanskayaEDCF *edcf, std::ostream &err)
+	(GennaroJareckiKrawczykRabinDKG *dkg, mpz_srcptr r_i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc, JareckiLysyanskayaEDCF *edcf, std::ostream &err)
 {
 	mpz_t nizk_gk;
 	mpz_init(nizk_gk);
@@ -408,7 +264,7 @@ void prove_decryption_share_interactive_publiccoin
 }
 
 bool verify_decryption_share
-	(std::string in, size_t &idx_dkg, mpz_ptr r_i_out, mpz_ptr c_out, mpz_ptr r_out)
+	(GennaroJareckiKrawczykRabinDKG *dkg, std::string in, size_t &idx_dkg, mpz_ptr r_i_out, mpz_ptr c_out, mpz_ptr r_out)
 {
 	// initialize
 	mpz_t c2, a, b;
@@ -484,7 +340,8 @@ bool verify_decryption_share
 }
 
 bool verify_decryption_share_interactive_publiccoin
-	(const size_t idx_rbc, const size_t idx_dkg, mpz_srcptr r_i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc, JareckiLysyanskayaEDCF *edcf, std::ostream &err)
+	(GennaroJareckiKrawczykRabinDKG *dkg, const size_t idx_rbc, const size_t idx_dkg, mpz_srcptr r_i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+	JareckiLysyanskayaEDCF *edcf, std::ostream &err)
 {
 	// initialize
 	mpz_t a, b, c, r, foo, bar;
@@ -584,7 +441,7 @@ bool verify_decryption_share_interactive_publiccoin
 }
 
 bool combine_decryption_shares
-	(std::vector<size_t> &parties, std::vector<mpz_ptr> &shares)
+	(GennaroJareckiKrawczykRabinDKG *dkg, std::vector<size_t> &parties, std::vector<mpz_ptr> &shares)
 {
 	// initialize
 	mpz_t a, b, c, lambda, R;
@@ -687,116 +544,8 @@ void decrypt_session_key
 	gcry_sexp_release(elgkey);
 }
 
-void decrypt_message
-	(const tmcg_octets_t &in, tmcg_octets_t &key, tmcg_octets_t &out)
-{
-	// decrypt the given message
-	tmcg_byte_t symalgo = 0;
-	gcry_error_t ret;
-	tmcg_octets_t prefix, litmdc;
-	if (opt_verbose)
-		std::cout << "symmetric decryption of message ..." << std::endl;
-	if (key.size() > 0)
-	{
-		symalgo = key[0];
-		if (opt_verbose)
-			std::cout << "symalgo = " << (int)symalgo << std::endl;
-	}
-	else
-	{
-		std::cerr << "ERROR: no session key provided" << std::endl;
-		exit(-1);
-	}
-	if (have_seipd)
-		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt(in, key, prefix, false, symalgo, litmdc);
-	else
-		ret = CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt(in, key, prefix, true, symalgo, litmdc);
-	if (ret)
-	{
-		std::cerr << "ERROR: SymmetricDecrypt() failed" << std::endl;
-		exit(-1);
-	}
-	// parse content
-	tmcg_openpgp_packet_ctx ctx;
-	std::vector<gcry_mpi_t> qual, v_i;
-	std::vector<std::string> capl;
-	std::vector< std::vector<gcry_mpi_t> > c_ik;
-	bool have_lit = false, have_mdc = false;
-	tmcg_octets_t lit, mdc_hash;
-	tmcg_byte_t ptag = 0xFF;
-	if (litmdc.size() > (sizeof(ctx.mdc_hash) + 2))
-		lit.insert(lit.end(), litmdc.begin(), litmdc.end() - (sizeof(ctx.mdc_hash) + 2));
-	while (litmdc.size() && ptag)
-	{
-		tmcg_octets_t current_packet;
-		ptag = CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode(litmdc, ctx, current_packet, qual, capl, v_i, c_ik);
-		if (opt_verbose)
-			std::cout << "PacketDecode() = " << (int)ptag;
-		if (!ptag)
-		{
-			std::cerr << "ERROR: parsing OpenPGP packets failed" << std::endl;
-			exit(-1); // error detected
-		}
-		if (opt_verbose)
-			std::cout << " tag = " << (int)ptag << " version = " << (int)ctx.version << std::endl;
-		switch (ptag)
-		{
-			case 8: // Compressed Data
-				std::cerr << "WARNING: compressed OpenPGP packet found; not supported" << std::endl;
-				break;
-			case 11: // Literal Data
-				have_lit = true;
-				for (size_t i = 0; i < ctx.datalen; i++)
-					out.push_back(ctx.data[i]);
-				break;
-			case 19: // Modification Detection Code
-				have_mdc = true;
-				for (size_t i = 0; i < sizeof(ctx.mdc_hash); i++)
-					mdc_hash.push_back(ctx.mdc_hash[i]);
-				break;
-			default:
-				std::cerr << "ERROR: unrecognized OpenPGP packet found" << std::endl;
-				exit(-1);
-		}
-		// cleanup allocated buffers
-		if (ctx.hspd != NULL)
-			delete [] ctx.hspd;
-		if (ctx.encdata != NULL)
-			delete [] ctx.encdata;
-		if (ctx.compdata != NULL)
-			delete [] ctx.compdata;
-		if (ctx.data != NULL)
-			delete [] ctx.data;
-	}
-	if (!have_lit)
-	{
-		std::cerr << "ERROR: no literal data found" << std::endl;
-		exit(-1);
-	}
-	if (have_seipd && !have_mdc)
-	{
-		std::cerr << "ERROR: no modification detection code found" << std::endl;
-		exit(-1);
-	}
-	tmcg_octets_t mdc_hashing, hash;
-	if (have_mdc)
-	{
-		mdc_hashing.insert(mdc_hashing.end(), prefix.begin(), prefix.end()); // "it includes the prefix data described above" [RFC4880]
-		mdc_hashing.insert(mdc_hashing.end(), lit.begin(), lit.end()); // "it includes all of the plaintext" [RFC4880]
-		mdc_hashing.push_back(0xD3); // "and the also includes two octets of values 0xD3, 0x14" [RFC4880]
-		mdc_hashing.push_back(0x14);
-		hash.clear();
-		CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(2, mdc_hashing, hash); // "passed through the SHA-1 hash function" [RFC4880]
-		if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(mdc_hash, hash))
-		{
-			std::cerr << "ERROR: MDC hash does not match" << std::endl;
-			exit(-1);
-		}
-	}
-}
-
 void done_dkg
-	()
+	(GennaroJareckiKrawczykRabinDKG *dkg)
 {
 	// release DKG
 	delete dkg;
@@ -813,8 +562,7 @@ void run_instance
 	time_t ckeytime = 0, ekeytime = 0;
 	if (!parse_private_key(armored_seckey, ckeytime, ekeytime, CAPL))
 	{
-		keyid.clear(), pub.clear(), sub.clear(), uidsig.clear(), subsig.clear();
-		subkeyid.clear(), enc.clear();
+		keyid.clear(), subkeyid.clear(), pub.clear(), sub.clear(), uidsig.clear(), subsig.clear();
 		dkg_qual.clear(), dkg_v_i.clear(), dkg_c_ik.clear();
 		// protected with password
 		std::cout << "Please enter the passphrase to unlock your private key: ";
@@ -827,8 +575,16 @@ void run_instance
 			exit(-1);
 		}
 	}
-	init_dkg();
-	parse_message(armored_message);
+	tmcg_octets_t enc;
+	bool have_seipd = false;
+	GennaroJareckiKrawczykRabinDKG *dkg = NULL;
+	init_dkg(dkg);
+	if (!parse_message(armored_message, enc, have_seipd))
+	{
+		release_mpis();
+		done_dkg(dkg);
+		exit(-1);
+	}
 
 	// create communication handles between all players
 	std::vector<int> uP_in, uP_out, bP_in, bP_out;
@@ -842,12 +598,16 @@ void run_instance
 			if (!TMCG_ParseHelper::gs(passwords, '/', pwd))
 			{
 				std::cerr << "D_" << whoami << ": " << "cannot read password for protecting channel to D_" << i << std::endl;
+				release_mpis();
+				done_dkg(dkg);
 				exit(-1);
 			}
 			key << pwd;
 			if (((i + 1) < peers.size()) && !TMCG_ParseHelper::nx(passwords, '/'))
 			{
 				std::cerr << "D_" << whoami << ": " << "cannot skip to next password for protecting channel to D_" << (i + 1) << std::endl;
+				release_mpis();
+				done_dkg(dkg);
 				exit(-1);
 			}
 		}
@@ -900,22 +660,38 @@ void run_instance
 	if (!mpz_set_gcry_mpi(dsa_p, crs_p))
 	{
 		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		mpz_clear(crs_p), mpz_clear(crs_q), mpz_clear(crs_g), mpz_clear(crs_k);
+		delete aiou, delete aiou2, delete rbc;
+		release_mpis();
+		done_dkg(dkg);
 		exit(-1);
 	}
 	if (!mpz_set_gcry_mpi(dsa_q, crs_q))
 	{
 		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		mpz_clear(crs_p), mpz_clear(crs_q), mpz_clear(crs_g), mpz_clear(crs_k);
+		delete aiou, delete aiou2, delete rbc;
+		release_mpis();
+		done_dkg(dkg);
 		exit(-1);
 	}
 	if (!mpz_set_gcry_mpi(dsa_g, crs_g))
 	{
 		std::cerr << "ERROR: converting group parameters failed" << std::endl;
+		mpz_clear(crs_p), mpz_clear(crs_q), mpz_clear(crs_g), mpz_clear(crs_k);
+		delete aiou, delete aiou2, delete rbc;
+		release_mpis();
+		done_dkg(dkg);
 		exit(-1);
 	}
 	mpz_sub_ui(crs_k, crs_p, 1L);
 	if (!mpz_cmp_ui(crs_q, 0L))
 	{
-		std::cerr << "ERROR: q must not be zero" << std::endl;
+		std::cerr << "ERROR: group parameter q must not be zero" << std::endl;
+		mpz_clear(crs_p), mpz_clear(crs_q), mpz_clear(crs_g), mpz_clear(crs_k);
+		delete aiou, delete aiou2, delete rbc;
+		release_mpis();
+		done_dkg(dkg);
 		exit(-1);
 	}
 	mpz_div(crs_k, crs_k, crs_q);
@@ -927,6 +703,11 @@ void run_instance
 	if (!vtmf->CheckGroup())
 	{
 		std::cout << "D_" << whoami << ": " << "VTMF: Group G was not correctly generated!" << std::endl;
+		delete vtmf;
+		mpz_clear(crs_p), mpz_clear(crs_q), mpz_clear(crs_g), mpz_clear(crs_k);
+		delete aiou, delete aiou2, delete rbc;
+		release_mpis();
+		done_dkg(dkg);
 		exit(-1);
 	}
 
@@ -984,8 +765,8 @@ void run_instance
 	// compute own decryption share and store it
 	std::string dds;
 	size_t idx_tmp;
-	compute_decryption_share(dds);
-	if (verify_decryption_share(dds, idx_tmp, r_i, c, r))
+	compute_decryption_share(dkg, dds);
+	if (verify_decryption_share(dkg, dds, idx_tmp, r_i, c, r))
 	{
 		assert((idx_tmp == dkg->i));
 		// use this decryption share as first point for Lagrange interpolation
@@ -1020,7 +801,7 @@ void run_instance
 			// verify decryption share interactively
 			std::stringstream err_log;
 			size_t idx_dkg = mpz_get_ui(idx);
-			if (!verify_decryption_share_interactive_publiccoin(i, idx_dkg, r_i, aiou, rbc, edcf, err_log))
+			if (!verify_decryption_share_interactive_publiccoin(dkg, i, idx_dkg, r_i, aiou, rbc, edcf, err_log))
 			{
 				std::cerr << "WARNING: bad decryption share of P_" << idx_dkg << " received from D_" << i << std::endl;
 				if (opt_verbose)
@@ -1042,7 +823,7 @@ void run_instance
 		}
 		else
 		{
-			if (verify_decryption_share(dds, idx_tmp, r_i, c, r))
+			if (verify_decryption_share(dkg, dds, idx_tmp, r_i, c, r))
 				mpz_set_ui(idx, idx_tmp);
 			else
 				mpz_set_ui(idx, dkg->n); // indicates an error
@@ -1051,7 +832,7 @@ void run_instance
 			rbc->Broadcast(r_i);
 			// prove own decryption share interactively
 			std::stringstream err_log;
-			prove_decryption_share_interactive_publiccoin(r_i, aiou, rbc, edcf, err_log);
+			prove_decryption_share_interactive_publiccoin(dkg, r_i, aiou, rbc, edcf, err_log);
 			if (opt_verbose)
 				std::cout << "prove_decryption_share_interactive_publiccoin() finished" << std::endl;
 			if (opt_verbose > 1)
@@ -1060,7 +841,7 @@ void run_instance
 	}
 
 	// Lagrange interpolation
-	bool res = combine_decryption_shares(interpol_parties, interpol_shares);
+	bool res = combine_decryption_shares(dkg, interpol_parties, interpol_shares);
 
 	// release
 	mpz_clear(idx), mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
@@ -1107,7 +888,12 @@ void run_instance
 	if (res)
 	{
 		decrypt_session_key(seskey);
-		decrypt_message(enc, seskey, msg);
+		if (!decrypt_message(have_seipd, enc, seskey, msg))
+		{
+			release_mpis();
+			done_dkg(dkg);
+			exit(-1);
+		}
 		// output result
 		if (opt_ofilename != NULL)
 			write_message(opt_ofilename, msg);
@@ -1117,7 +903,7 @@ void run_instance
 
 	// release
 	release_mpis();
-	done_dkg();
+	done_dkg(dkg);
 }
 
 #ifdef GNUNET
@@ -1395,14 +1181,13 @@ int main
 		std::vector<mpz_ptr> interpol_shares;
 
 		if (!read_key_file(thispeer + "_dkg-sec.asc", armored_seckey))
-			exit(-1);
+			return -1;
 		init_mpis();
 		std::vector<std::string> CAPL;
 		time_t ckeytime = 0, ekeytime = 0;
 		if (!parse_private_key(armored_seckey, ckeytime, ekeytime, CAPL))
 		{
-			keyid.clear(), pub.clear(), sub.clear(), uidsig.clear(), subsig.clear();
-			subkeyid.clear(), enc.clear();
+			keyid.clear(), subkeyid.clear(), pub.clear(), sub.clear(), uidsig.clear(), subsig.clear();
 			dkg_qual.clear(), dkg_v_i.clear(), dkg_c_ik.clear();
 			// protected with password
 			std::cout << "Please enter the passphrase to unlock your private key: ";
@@ -1412,12 +1197,20 @@ int main
 			{
 				std::cerr << "ERROR: wrong passphrase to unlock private key" << std::endl;
 				release_mpis();
-				exit(-1);
+				return -1;
 			}
 		}
-		init_dkg();
-		parse_message(armored_message);
-		compute_decryption_share(dds);
+		tmcg_octets_t enc;
+		bool have_seipd = false;
+		GennaroJareckiKrawczykRabinDKG *dkg = NULL;
+		init_dkg(dkg);
+		if (!parse_message(armored_message, enc, have_seipd))
+		{
+			release_mpis();
+			done_dkg(dkg);
+			return -1;
+		}
+		compute_decryption_share(dkg, dds);
 		tmcg_octets_t dds_input;
 		dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // bluring the decryption share
 		dds_input.push_back((tmcg_byte_t)(mpz_wrandom_ui() % 256)); // make NSA's spying a bit harder
@@ -1430,10 +1223,12 @@ int main
 		CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode(dds_input, dds_radix, false);
 		std::cout << "My decryption share (keep confidential): " << dds_radix << std::endl;
 		mpz_init(r_i), mpz_init(c), mpz_init(r);
-		if (!verify_decryption_share(dds, idx, r_i, c, r))
+		if (!verify_decryption_share(dkg, dds, idx, r_i, c, r))
 		{
-			std::cerr << "ERROR: verification of my decryption share failed" << std::endl;
-			exit(-1);
+			std::cerr << "ERROR: self-verification of decryption share failed" << std::endl;
+			release_mpis();
+			done_dkg(dkg);
+			return -1;
 		}
 		mpz_ptr tmp1 = new mpz_t();
 		mpz_init_set(tmp1, r_i);
@@ -1447,7 +1242,7 @@ int main
 			for (size_t i = 5; i < dds_output.size(); i++)
 				dds += dds_output[i];
 			mpz_set_ui(r_i, 1L), mpz_set_ui(c, 1L), mpz_set_ui(r, 1L);
-			if (verify_decryption_share(dds, idx, r_i, c, r))
+			if (verify_decryption_share(dkg, dds, idx, r_i, c, r))
 			{
 				if (!std::count(interpol_parties.begin(), interpol_parties.end(), idx))
 				{
@@ -1461,7 +1256,7 @@ int main
 			else
 				std::cout << "WARNING: verification of decryption share from P_" << idx << " failed" << std::endl;
 		}
-		bool res = combine_decryption_shares(interpol_parties, interpol_shares);
+		bool res = combine_decryption_shares(dkg, interpol_parties, interpol_shares);
 		mpz_clear(r_i), mpz_clear(c), mpz_clear(r);
 		for (size_t i = 0; i < interpol_shares.size(); i++)
 		{
@@ -1472,10 +1267,15 @@ int main
 		if (res)
 		{
 			decrypt_session_key(seskey);
-			decrypt_message(enc, seskey, msg);
+			if (!decrypt_message(have_seipd, enc, seskey, msg))
+			{
+				release_mpis();
+				done_dkg(dkg);
+				return -1;
+			}
 		}
 		release_mpis();
-		done_dkg();
+		done_dkg(dkg);
 		if (res)
 		{
 			if (opt_ofilename != NULL)

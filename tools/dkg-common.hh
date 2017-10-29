@@ -42,6 +42,12 @@
 		(const std::string filename, std::string &result);
 	void init_mpis
 		();
+	bool parse_message
+		(const std::string in, tmcg_octets_t &enc_out,
+		bool &have_seipd_out);
+	bool decrypt_message
+		(const bool have_seipd, const tmcg_octets_t &in,
+		tmcg_octets_t &key, tmcg_octets_t &out);
 	bool parse_signature
 		(const std::string in, tmcg_byte_t stype,
 		time_t &sigcreationtime_out, time_t &sigexpirationtime_out,
