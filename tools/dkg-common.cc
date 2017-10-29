@@ -111,7 +111,7 @@ bool parse_message
 	atype = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(in, pkts);
 	if (opt_verbose)
 		std::cout << "ArmorDecode() = " << (int)atype << std::endl;
-	if (atype != 2)
+	if (atype != 1)
 	{
 		std::cerr << "ERROR: wrong type of ASCII Armor found (type = " << (int)atype << ")" << std::endl;
 		return false;
@@ -273,7 +273,7 @@ bool decrypt_message
 		std::cerr << "ERROR: SymmetricDecrypt() failed" << std::endl;
 		return false;
 	}
-	// parse content
+	// parse content of decrypted message
 	tmcg_openpgp_packet_ctx ctx;
 	std::vector<gcry_mpi_t> qual, v_i;
 	std::vector<std::string> capl;
