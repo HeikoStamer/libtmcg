@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
-#ifndef INCLUDED_dkg_builtin_common_HH
-	#define INCLUDED_dkg_builtin_common_HH
+#ifndef INCLUDED_dkg_tcpip_common_HH
+	#define INCLUDED_dkg_tcpip_common_HH
 
 	// include headers
 	#include <string>
@@ -47,23 +47,23 @@
 
 	#define MAX_N 32
 
-	RETSIGTYPE builtin_sig_handler_quit
+	RETSIGTYPE tcpip_sig_handler_quit
 		(int sig);
-	void builtin_init
+	void tcpip_init
 		(const std::string &hostname);
-	void builtin_bindports
+	void tcpip_bindports
 		(const uint16_t start, const bool broadcast);
-	size_t builtin_connect
+	size_t tcpip_connect
 		(const uint16_t start, const bool broadcast);
-	void builtin_accept
+	void tcpip_accept
 		();
-	void builtin_fork
+	void tcpip_fork
 		();
-	int builtin_io
+	int tcpip_io
 		();
-	void builtin_close
+	void tcpip_close
 		();
-	void builtin_done
+	void tcpip_done
 		();
 
 #endif

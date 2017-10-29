@@ -22,7 +22,7 @@
 #ifdef HAVE_CONFIG_H
 	#include "libTMCG_config.h"
 #endif
-#include "dkg-builtin-common.hh"
+#include "dkg-tcpip-common.hh"
 
 extern int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 extern pid_t				pid[MAX_N];
@@ -31,41 +31,41 @@ extern bool				instance_forked;
 extern int				opt_verbose;
 extern void				fork_instance(const size_t whoami);
 
-static const size_t			builtin_pipe_buffer_size = 4096;
+static const size_t			tcpip_pipe_buffer_size = 4096;
 
-std::string 				builtin_thispeer;
-std::map<std::string, size_t> 		builtin_peer2pipe;
-std::map<size_t, std::string> 		builtin_pipe2peer;
-std::map<size_t, int>	 		builtin_pipe2socket, builtin_broadcast_pipe2socket;
-std::map<size_t, int>	 		builtin_pipe2socket_out, builtin_broadcast_pipe2socket_out;
-std::map<size_t, int>	 		builtin_pipe2socket_in, builtin_broadcast_pipe2socket_in;
+std::string 				tcpip_thispeer;
+std::map<std::string, size_t> 		tcpip_peer2pipe;
+std::map<size_t, std::string> 		tcpip_pipe2peer;
+std::map<size_t, int>	 		tcpip_pipe2socket, tcpip_broadcast_pipe2socket;
+std::map<size_t, int>	 		tcpip_pipe2socket_out, tcpip_broadcast_pipe2socket_out;
+std::map<size_t, int>	 		tcpip_pipe2socket_in, tcpip_broadcast_pipe2socket_in;
 
 // This is the signal handler called when receiving SIGINT, SIGQUIT, and SIGTERM, respectively.
-RETSIGTYPE builtin_sig_handler_quit(int sig)
+RETSIGTYPE tcpip_sig_handler_quit(int sig)
 {
-	if (instance_forked && (pid[builtin_peer2pipe[builtin_thispeer]] == 0)) // child process?
+	if (instance_forked && (pid[tcpip_peer2pipe[tcpip_thispeer]] == 0)) // child process?
 	{
 		if (opt_verbose)
-			std::cerr << "builtin_sig_handler_quit(): child got signal " << sig << std::endl;
+			std::cerr << "tcpip_sig_handler_quit(): child got signal " << sig << std::endl;
 	}
 	else
 	{
 		if (opt_verbose)
-			std::cerr << "builtin_sig_handler_quit(): got signal " << sig << std::endl;
+			std::cerr << "tcpip_sig_handler_quit(): got signal " << sig << std::endl;
 		signal(SIGINT, SIG_DFL);
 		signal(SIGQUIT, SIG_DFL);
 		signal(SIGTERM, SIG_DFL);
-		builtin_close();
-		builtin_done();
+		tcpip_close();
+		tcpip_done();
 		exit(-1);
 	}
 }
 
-void builtin_init
+void tcpip_init
 	(const std::string &hostname)
 {
 	// initialize peer identity
-	builtin_thispeer = hostname;
+	tcpip_thispeer = hostname;
 	// initialize peer2pipe and pipe2peer mapping
 	if (opt_verbose)
 		std::cout << "INFO: using built-in TCP/IP service for message exchange instead of GNUnet CADET" << std::endl;
@@ -76,8 +76,8 @@ void builtin_init
 	}
 	for (size_t i = 0; i < peers.size(); i++)
 	{
-		builtin_peer2pipe[peers[i]] = i;
-		builtin_pipe2peer[i] = peers[i];
+		tcpip_peer2pipe[peers[i]] = i;
+		tcpip_pipe2peer[i] = peers[i];
 	}
 	// open pipes to communicate with forked instance
 	for (size_t i = 0; i < peers.size(); i++)
@@ -86,12 +86,12 @@ void builtin_init
 		{
 			if (pipe2(pipefd[i][j], O_NONBLOCK) < 0)
 			{
-				perror("dkg-builtin-common (pipe)");
+				perror("dkg-tcpip-common (pipe)");
 				exit(-1);
 			}
 			if (pipe2(broadcast_pipefd[i][j], O_NONBLOCK) < 0)
 			{
-				perror("dkg-builtin-common (pipe)");
+				perror("dkg-tcpip-common (pipe)");
 				exit(-1);
 			}
 		}
@@ -99,28 +99,28 @@ void builtin_init
 	// install our own signal handler
 	struct sigaction act;
 	memset(&act, 0, sizeof(act));
-	act.sa_handler = &builtin_sig_handler_quit;
+	act.sa_handler = &tcpip_sig_handler_quit;
 	if (sigaction(SIGINT, &act, NULL) < 0)
 	{
-		perror("dkg-builtin-common (sigaction)");
+		perror("dkg-tcpip-common (sigaction)");
 		exit(-1);
 	}
 	if (sigaction(SIGQUIT, &act, NULL) < 0)
 	{
-		perror("dkg-builtin-common (sigaction)");
+		perror("dkg-tcpip-common (sigaction)");
 		exit(-1);
 	}
 	if (sigaction(SIGTERM, &act, NULL) < 0)
 	{
-		perror("dkg-builtin-common (sigaction)");
+		perror("dkg-tcpip-common (sigaction)");
 		exit(-1);
 	}
 }
 
-void builtin_bindports
+void tcpip_bindports
 	(const uint16_t start, const bool broadcast)
 {
-	uint16_t local_start = start + (builtin_peer2pipe[builtin_thispeer] * peers.size());
+	uint16_t local_start = start + (tcpip_peer2pipe[tcpip_thispeer] * peers.size());
 	size_t i = 0;
 	if (broadcast)
 		local_start += (peers.size() * peers.size());
@@ -137,19 +137,19 @@ void builtin_bindports
 		{
 			std::cerr << "ERROR: resolving wildcard address failed: ";
 			if (ret == EAI_SYSTEM)
-				perror("dkg-builtin-common (getaddrinfo)");
+				perror("dkg-tcpip-common (getaddrinfo)");
 			else
 				std::cerr << gai_strerror(ret);
 			std::cerr << std::endl;
-			builtin_close();
-			builtin_done();
+			tcpip_close();
+			tcpip_done();
 			exit(-1);
 		}
 		for (rp = res; rp != NULL; rp = rp->ai_next)
 		{
 			if ((sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) < 0)
 			{
-				perror("dkg-builtin-common (socket)");
+				perror("dkg-tcpip-common (socket)");
 				continue; // try next address
 			}
 			char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
@@ -160,24 +160,24 @@ void builtin_bindports
 			{
 				std::cerr << "ERROR: resolving wildcard address failed: ";
 				if (ret == EAI_SYSTEM)
-					perror("dkg-builtin-common (getnameinfo)");
+					perror("dkg-tcpip-common (getnameinfo)");
 				else
 					std::cerr << gai_strerror(ret);
 				std::cerr << std::endl;
 				if (close(sockfd) < 0)
-					perror("dkg-builtin-common (close)");
+					perror("dkg-tcpip-common (close)");
 				freeaddrinfo(res);
-				builtin_close();
-				builtin_done();
+				tcpip_close();
+				tcpip_done();
 				exit(-1);
 			}
 			if (opt_verbose)
 				std::cout << "INFO: bind TCP/IP port " << port << " at address " << hbuf << std::endl;
 			if (bind(sockfd, rp->ai_addr, rp->ai_addrlen) < 0)
 			{
-				perror("dkg-builtin-common (bind)");
+				perror("dkg-tcpip-common (bind)");
 				if (close(sockfd) < 0)
-					perror("dkg-builtin-common (close)");
+					perror("dkg-tcpip-common (close)");
 				continue; // try next address
 			}
 			break; // on success: leave the loop
@@ -186,34 +186,34 @@ void builtin_bindports
 		if (rp == NULL)
 		{
 			std::cerr << "ERROR: cannot bind TCP/IP port " << port << " for a valid IP address of this host" << std::endl;
-			builtin_close();
-			builtin_done();
+			tcpip_close();
+			tcpip_done();
 			exit(-1);
 		}
 		if (listen(sockfd, SOMAXCONN) < 0)
 		{
-			perror("dkg-builtin-common (listen)");
+			perror("dkg-tcpip-common (listen)");
 			if (close(sockfd) < 0)
-				perror("dkg-builtin-common (close)");
-			builtin_close();
-			builtin_done();
+				perror("dkg-tcpip-common (close)");
+			tcpip_close();
+			tcpip_done();
 			exit(-1);
 		}
 		if (broadcast)
-			builtin_broadcast_pipe2socket[i] = sockfd;
+			tcpip_broadcast_pipe2socket[i] = sockfd;
 		else
-			builtin_pipe2socket[i] = sockfd;
+			tcpip_pipe2socket[i] = sockfd;
 	}
 }
 
-size_t builtin_connect
+size_t tcpip_connect
 	(const uint16_t start, const bool broadcast)
 {
 	for (size_t i = 0; i < peers.size(); i++)
 	{
-		if ((broadcast && !builtin_broadcast_pipe2socket_out.count(i)) || (!broadcast && !builtin_pipe2socket_out.count(i)))
+		if ((broadcast && !tcpip_broadcast_pipe2socket_out.count(i)) || (!broadcast && !tcpip_pipe2socket_out.count(i)))
 		{
-			uint16_t port = start + (i * peers.size()) + (uint16_t)builtin_peer2pipe[builtin_thispeer];
+			uint16_t port = start + (i * peers.size()) + (uint16_t)tcpip_peer2pipe[tcpip_thispeer];
 			int sockfd, ret;
 			struct addrinfo hints = { 0 }, *res, *rp;
 			hints.ai_family = AF_INET;
@@ -226,27 +226,27 @@ size_t builtin_connect
 			{
 				std::cerr << "ERROR: resolving hostname \"" << peers[i] << "\" failed: ";
 				if (ret == EAI_SYSTEM)
-					perror("dkg-builtin-common (getaddrinfo)");
+					perror("dkg-tcpip-common (getaddrinfo)");
 				else
 					std::cerr << gai_strerror(ret);
 				std::cerr << std::endl;
-				builtin_close();
-				builtin_done();
+				tcpip_close();
+				tcpip_done();
 				exit(-1);
 			}
 			for (rp = res; rp != NULL; rp = rp->ai_next)
 			{
 				if ((sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) < 0)
 				{
-					perror("dkg-builtin-common (socket)");
+					perror("dkg-tcpip-common (socket)");
 					continue; // try next address
 				}
 				if (connect(sockfd, rp->ai_addr, rp->ai_addrlen) < 0)
 				{
 					if (errno != ECONNREFUSED)
-						perror("dkg-builtin-common (connect)");					
+						perror("dkg-tcpip-common (connect)");					
 					if (close(sockfd) < 0)
-						perror("dkg-builtin-common (close)");
+						perror("dkg-tcpip-common (close)");
 					continue; // try next address
 				}
 				else
@@ -259,15 +259,15 @@ size_t builtin_connect
 					{
 						std::cerr << "ERROR: resolving hostname \"" << peers[i] << "\" failed: ";
 						if (ret == EAI_SYSTEM)
-							perror("dkg-builtin-common (getnameinfo)");
+							perror("dkg-tcpip-common (getnameinfo)");
 						else
 							std::cerr << gai_strerror(ret);
 						std::cerr << std::endl;
 						if (close(sockfd) < 0)
-							perror("dkg-builtin-common (close)");
+							perror("dkg-tcpip-common (close)");
 						freeaddrinfo(res);
-						builtin_close();
-						builtin_done();
+						tcpip_close();
+						tcpip_done();
 						exit(-1);
 					}
 					if (opt_verbose)
@@ -275,9 +275,9 @@ size_t builtin_connect
 					if (opt_verbose)
 						std::cout << "INFO: connected to host \"" << peers[i] << "\" on port " << port << std::endl;
 					if (broadcast)
-						builtin_broadcast_pipe2socket_out[i] = sockfd;
+						tcpip_broadcast_pipe2socket_out[i] = sockfd;
 					else
-						builtin_pipe2socket_out[i] = sockfd;
+						tcpip_pipe2socket_out[i] = sockfd;
 					break; // on success: leave the loop
 				}
 			}
@@ -285,27 +285,27 @@ size_t builtin_connect
 		}
 	}
 	if (broadcast)
-		return builtin_broadcast_pipe2socket_out.size();
+		return tcpip_broadcast_pipe2socket_out.size();
 	else
-		return builtin_pipe2socket_out.size();
+		return tcpip_pipe2socket_out.size();
 }
 
-void builtin_accept
+void tcpip_accept
 	()
 {
-	while ((builtin_pipe2socket_in.size() < peers.size()) || (builtin_broadcast_pipe2socket_in.size() < peers.size()))
+	while ((tcpip_pipe2socket_in.size() < peers.size()) || (tcpip_broadcast_pipe2socket_in.size() < peers.size()))
 	{
 		fd_set rfds;
 		struct timeval tv;
 		int retval, maxfd = 0;
 		FD_ZERO(&rfds);
-		for (std::map<size_t, int>::const_iterator pi = builtin_pipe2socket.begin(); pi != builtin_pipe2socket.end(); ++pi)
+		for (std::map<size_t, int>::const_iterator pi = tcpip_pipe2socket.begin(); pi != tcpip_pipe2socket.end(); ++pi)
 		{
 			FD_SET(pi->second, &rfds);
 			if (pi->second > maxfd)
 				maxfd = pi->second;
 		}
-		for (std::map<size_t, int>::const_iterator pi = builtin_broadcast_pipe2socket.begin(); pi != builtin_broadcast_pipe2socket.end(); ++pi)
+		for (std::map<size_t, int>::const_iterator pi = tcpip_broadcast_pipe2socket.begin(); pi != tcpip_broadcast_pipe2socket.end(); ++pi)
 		{
 			FD_SET(pi->second, &rfds);
 			if (pi->second > maxfd)
@@ -316,14 +316,14 @@ void builtin_accept
 		retval = select((maxfd + 1), &rfds, NULL, NULL, &tv);
 		if (retval < 0)
 		{
-			perror("dkg-builtin-common (select)");
-			builtin_close();
-			builtin_done();
+			perror("dkg-tcpip-common (select)");
+			tcpip_close();
+			tcpip_done();
 			exit(-1);
 		}
 		if (retval == 0)
 			continue; // timeout
-		for (std::map<size_t, int>::const_iterator pi = builtin_pipe2socket.begin(); pi != builtin_pipe2socket.end(); ++pi)
+		for (std::map<size_t, int>::const_iterator pi = tcpip_pipe2socket.begin(); pi != tcpip_pipe2socket.end(); ++pi)
 		{
 			if (FD_ISSET(pi->second, &rfds))
 			{
@@ -332,25 +332,25 @@ void builtin_accept
 				int connfd = accept(pi->second, (struct sockaddr*)&sin, &slen);
 				if (connfd < 0)
 				{
-					perror("dkg-builtin-common (accept)");
-					builtin_close();
-					builtin_done();
+					perror("dkg-tcpip-common (accept)");
+					tcpip_close();
+					tcpip_done();
 					exit(-1);
 				}
-				builtin_pipe2socket_in[pi->first] = connfd;
+				tcpip_pipe2socket_in[pi->first] = connfd;
 				char ipaddr[INET6_ADDRSTRLEN];
 				if (inet_ntop(sin.sin_family, &sin.sin_addr, ipaddr, INET6_ADDRSTRLEN) == NULL)
 				{
-					perror("dkg-builtin-common (inet_ntop)");
-					builtin_close();
-					builtin_done();
+					perror("dkg-tcpip-common (inet_ntop)");
+					tcpip_close();
+					tcpip_done();
 					exit(-1);
 				}
 				if (opt_verbose)
 					std::cout << "INFO: accept connection for P/D/R/S_" << pi->first << " from address " << ipaddr << std::endl;
 			}
 		}
-		for (std::map<size_t, int>::const_iterator pi = builtin_broadcast_pipe2socket.begin(); pi != builtin_broadcast_pipe2socket.end(); ++pi)
+		for (std::map<size_t, int>::const_iterator pi = tcpip_broadcast_pipe2socket.begin(); pi != tcpip_broadcast_pipe2socket.end(); ++pi)
 		{
 			if (FD_ISSET(pi->second, &rfds))
 			{
@@ -359,16 +359,16 @@ void builtin_accept
 				int connfd = accept(pi->second, (struct sockaddr*)&sin, &slen);
 				if (connfd < 0)
 				{
-					perror("dkg-builtin-common (accept)");
+					perror("dkg-tcpip-common (accept)");
 					exit(-1);
 				}
-				builtin_broadcast_pipe2socket_in[pi->first] = connfd;
+				tcpip_broadcast_pipe2socket_in[pi->first] = connfd;
 				char ipaddr[INET6_ADDRSTRLEN];
 				if (inet_ntop(sin.sin_family, &sin.sin_addr, ipaddr, INET6_ADDRSTRLEN) == NULL)
 				{
-					perror("dkg-builtin-common (inet_ntop)");
-					builtin_close();
-					builtin_done();
+					perror("dkg-tcpip-common (inet_ntop)");
+					tcpip_close();
+					tcpip_done();
 					exit(-1);
 				}
 				if (opt_verbose)
@@ -380,26 +380,26 @@ void builtin_accept
 }
 
 
-void builtin_fork
+void tcpip_fork
 	()
 {
-	if ((builtin_pipe2socket_in.size() == peers.size()) && (builtin_broadcast_pipe2socket_in.size() == peers.size()))
+	if ((tcpip_pipe2socket_in.size() == peers.size()) && (tcpip_broadcast_pipe2socket_in.size() == peers.size()))
 	{
 		// fork instance
 		if (opt_verbose)
 			std::cout << "INFO: forking the protocol instance ..." << std::endl;
-		fork_instance(builtin_peer2pipe[builtin_thispeer]);
+		fork_instance(tcpip_peer2pipe[tcpip_thispeer]);
 	}
 	else
 	{
 		std::cerr << "ERROR: not enough connections established" << std::endl;
-		builtin_close();
-		builtin_done();
+		tcpip_close();
+		tcpip_done();
 		exit(-1);
 	}
 }
 
-int builtin_io
+int tcpip_io
 	()
 {
 	while (1)
@@ -408,10 +408,10 @@ int builtin_io
 		{
 			// exit, if forked instance has terminated 
 			int wstatus = 0;
-			int thispid = pid[builtin_peer2pipe[builtin_thispeer]];
+			int thispid = pid[tcpip_peer2pipe[tcpip_thispeer]];
 			int ret = waitpid(thispid, &wstatus, WNOHANG);
 			if (ret < 0)
-				perror("dkg-builtin-common (waitpid)");
+				perror("dkg-tcpip-common (waitpid)");
 			else if (ret == thispid)
 			{
 				instance_forked = false;
@@ -437,18 +437,18 @@ int builtin_io
 		struct timeval tv;
 		int retval, maxfd = 0;
 		FD_ZERO(&rfds);
-		for (std::map<size_t, int>::const_iterator pi = builtin_pipe2socket_in.begin(); pi != builtin_pipe2socket_in.end(); ++pi)
+		for (std::map<size_t, int>::const_iterator pi = tcpip_pipe2socket_in.begin(); pi != tcpip_pipe2socket_in.end(); ++pi)
 		{
-			if (pi->first != builtin_peer2pipe[builtin_thispeer])
+			if (pi->first != tcpip_peer2pipe[tcpip_thispeer])
 			{
 				FD_SET(pi->second, &rfds);
 				if (pi->second > maxfd)
 					maxfd = pi->second;
 			}
 		}
-		for (std::map<size_t, int>::const_iterator pi = builtin_broadcast_pipe2socket_in.begin(); pi != builtin_broadcast_pipe2socket_in.end(); ++pi)
+		for (std::map<size_t, int>::const_iterator pi = tcpip_broadcast_pipe2socket_in.begin(); pi != tcpip_broadcast_pipe2socket_in.end(); ++pi)
 		{
-			if (pi->first != builtin_peer2pipe[builtin_thispeer])
+			if (pi->first != tcpip_peer2pipe[tcpip_thispeer])
 			{
 				FD_SET(pi->second, &rfds);
 				if (pi->second > maxfd)
@@ -457,14 +457,14 @@ int builtin_io
 		}
 		for (size_t i = 0; i < peers.size(); i++)
 		{
-			if (i != builtin_peer2pipe[builtin_thispeer])
+			if (i != tcpip_peer2pipe[tcpip_thispeer])
 			{
-				FD_SET(pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], &rfds);
-				if (pipefd[builtin_peer2pipe[builtin_thispeer]][i][0] > maxfd)
-					maxfd = pipefd[builtin_peer2pipe[builtin_thispeer]][i][0];
-				FD_SET(broadcast_pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], &rfds);
-				if (broadcast_pipefd[builtin_peer2pipe[builtin_thispeer]][i][0] > maxfd)
-					maxfd = broadcast_pipefd[builtin_peer2pipe[builtin_thispeer]][i][0];
+				FD_SET(pipefd[tcpip_peer2pipe[tcpip_thispeer]][i][0], &rfds);
+				if (pipefd[tcpip_peer2pipe[tcpip_thispeer]][i][0] > maxfd)
+					maxfd = pipefd[tcpip_peer2pipe[tcpip_thispeer]][i][0];
+				FD_SET(broadcast_pipefd[tcpip_peer2pipe[tcpip_thispeer]][i][0], &rfds);
+				if (broadcast_pipefd[tcpip_peer2pipe[tcpip_thispeer]][i][0] > maxfd)
+					maxfd = broadcast_pipefd[tcpip_peer2pipe[tcpip_thispeer]][i][0];
 			}
 		}
 		tv.tv_sec = 1;
@@ -475,46 +475,46 @@ int builtin_io
 			if ((errno == EAGAIN) || (errno == EINTR))
 			{
 				if (errno == EAGAIN)
-					perror("dkg-builtin-common (select)");
+					perror("dkg-tcpip-common (select)");
 				continue;
 			}
 			else
 			{
-				perror("dkg-builtin-common (select)");
-				builtin_close();
-				builtin_done();
+				perror("dkg-tcpip-common (select)");
+				tcpip_close();
+				tcpip_done();
 				exit(-1);
 			}
 		}
 		if (retval == 0)
 			continue; // timeout
-		for (std::map<size_t, int>::const_iterator pi = builtin_pipe2socket_in.begin(); pi != builtin_pipe2socket_in.end(); ++pi)
+		for (std::map<size_t, int>::const_iterator pi = tcpip_pipe2socket_in.begin(); pi != tcpip_pipe2socket_in.end(); ++pi)
 		{
-			if ((pi->first != builtin_peer2pipe[builtin_thispeer]) && FD_ISSET(pi->second, &rfds))
+			if ((pi->first != tcpip_peer2pipe[tcpip_thispeer]) && FD_ISSET(pi->second, &rfds))
 			{
-				char buf[builtin_pipe_buffer_size];
+				char buf[tcpip_pipe_buffer_size];
 				ssize_t len = read(pi->second, buf, sizeof(buf));
 				if (len < 0)
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
 						if (errno == EAGAIN)
-							perror("dkg-builtin-common (read)");
+							perror("dkg-tcpip-common (read)");
 						continue;
 					}
 					else
 					{
-						perror("dkg-builtin-common (read)");
-						builtin_close();
-						builtin_done();
+						perror("dkg-tcpip-common (read)");
+						tcpip_close();
+						tcpip_done();
 						exit(-1);
 					}
 				}
 				else if (len == 0)
 				{
 					std::cerr << "WARNING: connection collapsed for P/D/R/S_" << pi->first << std::endl;
-					builtin_pipe2socket_out.erase(pi->first);
-					builtin_pipe2socket_in.erase(pi->first);
+					tcpip_pipe2socket_out.erase(pi->first);
+					tcpip_pipe2socket_in.erase(pi->first);
 					break;
 				}
 				else
@@ -525,14 +525,14 @@ int builtin_io
 					ssize_t wnum = 0;
 					do
 					{
-						ssize_t num = write(pipefd[pi->first][builtin_peer2pipe[builtin_thispeer]][1],
+						ssize_t num = write(pipefd[pi->first][tcpip_peer2pipe[tcpip_thispeer]][1],
 								buf + wnum, len - wnum);
 						if (num < 0)
 						{
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 							{
 								if (errno == EAGAIN)
-									perror("dkg-builtin-common (write)");
+									perror("dkg-tcpip-common (write)");
 								if (opt_verbose)
 									std::cerr << "sleeping for write into pipe ..." << std::endl;
 								sleep(1);
@@ -540,9 +540,9 @@ int builtin_io
 							}
 							else
 							{
-								perror("dkg-builtin-common (write)");
-								builtin_close();
-								builtin_done();
+								perror("dkg-tcpip-common (write)");
+								tcpip_close();
+								tcpip_done();
 								exit(-1);
 							}
 						}
@@ -553,33 +553,33 @@ int builtin_io
 				}
 			}
 		}
-		for (std::map<size_t, int>::const_iterator pi = builtin_broadcast_pipe2socket_in.begin(); pi != builtin_broadcast_pipe2socket_in.end(); ++pi)
+		for (std::map<size_t, int>::const_iterator pi = tcpip_broadcast_pipe2socket_in.begin(); pi != tcpip_broadcast_pipe2socket_in.end(); ++pi)
 		{
-			if ((pi->first != builtin_peer2pipe[builtin_thispeer]) && FD_ISSET(pi->second, &rfds))
+			if ((pi->first != tcpip_peer2pipe[tcpip_thispeer]) && FD_ISSET(pi->second, &rfds))
 			{
-				char buf[builtin_pipe_buffer_size];
+				char buf[tcpip_pipe_buffer_size];
 				ssize_t len = read(pi->second, buf, sizeof(buf));
 				if (len < 0)
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
 						if (errno == EAGAIN)
-							perror("dkg-builtin-common (read)");
+							perror("dkg-tcpip-common (read)");
 						continue;
 					}
 					else
 					{
-						perror("dkg-builtin-common (read)");
-						builtin_close();
-						builtin_done();
+						perror("dkg-tcpip-common (read)");
+						tcpip_close();
+						tcpip_done();
 						exit(-1);
 					}
 				}
 				else if (len == 0)
 				{
 					std::cerr << "WARNING: broadcast connection collapsed for P/D/R/S_" << pi->first << std::endl;
-					builtin_broadcast_pipe2socket_out.erase(pi->first);
-					builtin_broadcast_pipe2socket_in.erase(pi->first);
+					tcpip_broadcast_pipe2socket_out.erase(pi->first);
+					tcpip_broadcast_pipe2socket_in.erase(pi->first);
 					break;
 				}
 				else
@@ -590,14 +590,14 @@ int builtin_io
 					ssize_t wnum = 0;
 					do
 					{
-						ssize_t num = write(broadcast_pipefd[pi->first][builtin_peer2pipe[builtin_thispeer]][1],
+						ssize_t num = write(broadcast_pipefd[pi->first][tcpip_peer2pipe[tcpip_thispeer]][1],
 								buf + wnum, len - wnum);
 						if (num < 0)
 						{
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 							{
 								if (errno == EAGAIN)
-									perror("dkg-builtin-common (write)");
+									perror("dkg-tcpip-common (write)");
 								if (opt_verbose)
 									std::cerr << "sleeping for write into pipe ..." << std::endl;
 								sleep(1);
@@ -605,9 +605,9 @@ int builtin_io
 							}
 							else
 							{
-								perror("dkg-builtin-common (write)");
-								builtin_close();
-								builtin_done();
+								perror("dkg-tcpip-common (write)");
+								tcpip_close();
+								tcpip_done();
 								exit(-1);
 							}
 						}
@@ -620,23 +620,23 @@ int builtin_io
 		}
 		for (size_t i = 0; i < peers.size(); i++)
 		{
-			if ((i != builtin_peer2pipe[builtin_thispeer]) && FD_ISSET(pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], &rfds))
+			if ((i != tcpip_peer2pipe[tcpip_thispeer]) && FD_ISSET(pipefd[tcpip_peer2pipe[tcpip_thispeer]][i][0], &rfds))
 			{
-				char buf[builtin_pipe_buffer_size];
-				ssize_t len = read(pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], buf, sizeof(buf));
+				char buf[tcpip_pipe_buffer_size];
+				ssize_t len = read(pipefd[tcpip_peer2pipe[tcpip_thispeer]][i][0], buf, sizeof(buf));
 				if (len < 0)
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
 						if (errno == EAGAIN)
-							perror("dkg-builtin-common (read)");
+							perror("dkg-tcpip-common (read)");
 						continue;
 					}
 					else
 					{
-						perror("dkg-builtin-common (read)");
-						builtin_close();
-						builtin_done();
+						perror("dkg-tcpip-common (read)");
+						tcpip_close();
+						tcpip_done();
 						exit(-1);
 					}
 				}
@@ -645,20 +645,20 @@ int builtin_io
 					std::cerr << "ERROR: pipe to child collapsed" << std::endl;
 					continue;
 				}
-				else if (builtin_pipe2socket_out.count(i))
+				else if (tcpip_pipe2socket_out.count(i))
 				{
 					if (opt_verbose > 1)
 						std::cout << "INFO: sending " << len << " bytes on connection to P/D/R/S_" << i << std::endl;
 					ssize_t wnum = 0;
 					do
 					{
-						ssize_t num = write(builtin_pipe2socket_out[i], buf + wnum, len - wnum);
+						ssize_t num = write(tcpip_pipe2socket_out[i], buf + wnum, len - wnum);
 						if (num < 0)
 						{
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 							{
 								if (errno == EAGAIN)
-									perror("dkg-builtin-common (write)");
+									perror("dkg-tcpip-common (write)");
 								if (opt_verbose)
 									std::cerr << "sleeping for write into socket ..." << std::endl;
 								sleep(1);
@@ -667,15 +667,15 @@ int builtin_io
 							else if (errno == ECONNRESET)
 							{
 								std::cerr << "WARNING: connection collapsed for P/D/R/S_" << i << std::endl;
-								builtin_broadcast_pipe2socket_out.erase(i);
-								builtin_broadcast_pipe2socket_in.erase(i);
+								tcpip_broadcast_pipe2socket_out.erase(i);
+								tcpip_broadcast_pipe2socket_in.erase(i);
 								break;
 							}
 							else
 							{
-								perror("dkg-builtin-common (write)");
-								builtin_close();
-								builtin_done();
+								perror("dkg-tcpip-common (write)");
+								tcpip_close();
+								tcpip_done();
 								exit(-1);
 							}
 						}
@@ -690,23 +690,23 @@ int builtin_io
 						std::cout << "INFO: discarding " << len << " bytes for P/D/R/S_" << i << std::endl;
 				}
 			}
-			if ((i != builtin_peer2pipe[builtin_thispeer]) && FD_ISSET(broadcast_pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], &rfds))
+			if ((i != tcpip_peer2pipe[tcpip_thispeer]) && FD_ISSET(broadcast_pipefd[tcpip_peer2pipe[tcpip_thispeer]][i][0], &rfds))
 			{
-				char buf[builtin_pipe_buffer_size];
-				ssize_t len = read(broadcast_pipefd[builtin_peer2pipe[builtin_thispeer]][i][0], buf, sizeof(buf));
+				char buf[tcpip_pipe_buffer_size];
+				ssize_t len = read(broadcast_pipefd[tcpip_peer2pipe[tcpip_thispeer]][i][0], buf, sizeof(buf));
 				if (len < 0)
 				{
 					if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 					{
 						if (errno == EAGAIN)
-							perror("dkg-builtin-common (read)");
+							perror("dkg-tcpip-common (read)");
 						continue;
 					}
 					else
 					{
-						perror("dkg-builtin-common (read)");
-						builtin_close();
-						builtin_done();
+						perror("dkg-tcpip-common (read)");
+						tcpip_close();
+						tcpip_done();
 						exit(-1);
 					}
 				}
@@ -714,20 +714,20 @@ int builtin_io
 				{
 					continue;
 				}
-				else if (builtin_broadcast_pipe2socket_out.count(i))
+				else if (tcpip_broadcast_pipe2socket_out.count(i))
 				{
 					if (opt_verbose > 1)
 						std::cout << "INFO: sending " << len << " bytes on broadcast connection to P/D/R/S_" << i << std::endl;
 					ssize_t wnum = 0;
 					do
 					{
-						ssize_t num = write(builtin_broadcast_pipe2socket_out[i], buf + wnum, len - wnum);
+						ssize_t num = write(tcpip_broadcast_pipe2socket_out[i], buf + wnum, len - wnum);
 						if (num < 0)
 						{
 							if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR))
 							{
 								if (errno == EAGAIN)
-									perror("dkg-builtin-common (write)");
+									perror("dkg-tcpip-common (write)");
 								if (opt_verbose)
 									std::cerr << "sleeping for write into socket ..." << std::endl;
 								sleep(1);
@@ -736,15 +736,15 @@ int builtin_io
 							else if (errno == ECONNRESET)
 							{
 								std::cerr << "WARNING: broadcast connection collapsed for P/D/R/S_" << i << std::endl;
-								builtin_broadcast_pipe2socket_out.erase(i);
-								builtin_broadcast_pipe2socket_in.erase(i);
+								tcpip_broadcast_pipe2socket_out.erase(i);
+								tcpip_broadcast_pipe2socket_in.erase(i);
 								break;
 							}
 							else
 							{
-								perror("dkg-builtin-common (write)");
-								builtin_close();
-								builtin_done();
+								perror("dkg-tcpip-common (write)");
+								tcpip_close();
+								tcpip_done();
 								exit(-1);
 							}
 						}
@@ -763,64 +763,64 @@ int builtin_io
 	}
 }
 
-void builtin_close
+void tcpip_close
 	()
 {
-	for (std::map<size_t, int>::const_iterator pi = builtin_pipe2socket_in.begin(); pi != builtin_pipe2socket_in.end(); ++pi)
+	for (std::map<size_t, int>::const_iterator pi = tcpip_pipe2socket_in.begin(); pi != tcpip_pipe2socket_in.end(); ++pi)
 	{
 		if (close(pi->second) < 0)
-			perror("dkg-builtin-common (close)");
+			perror("dkg-tcpip-common (close)");
 	}
-	for (std::map<size_t, int>::const_iterator pi = builtin_pipe2socket_out.begin(); pi != builtin_pipe2socket_out.end(); ++pi)
+	for (std::map<size_t, int>::const_iterator pi = tcpip_pipe2socket_out.begin(); pi != tcpip_pipe2socket_out.end(); ++pi)
 	{
 		if (close(pi->second) < 0)
-			perror("dkg-builtin-common (close)");
+			perror("dkg-tcpip-common (close)");
 	}
-	for (std::map<size_t, int>::const_iterator pi = builtin_broadcast_pipe2socket_in.begin(); pi != builtin_broadcast_pipe2socket_in.end(); ++pi)
+	for (std::map<size_t, int>::const_iterator pi = tcpip_broadcast_pipe2socket_in.begin(); pi != tcpip_broadcast_pipe2socket_in.end(); ++pi)
 	{
 		if (close(pi->second) < 0)
-			perror("dkg-builtin-common (close)");
+			perror("dkg-tcpip-common (close)");
 	}
-	for (std::map<size_t, int>::const_iterator pi = builtin_broadcast_pipe2socket_out.begin(); pi != builtin_broadcast_pipe2socket_out.end(); ++pi)
+	for (std::map<size_t, int>::const_iterator pi = tcpip_broadcast_pipe2socket_out.begin(); pi != tcpip_broadcast_pipe2socket_out.end(); ++pi)
 	{
 		if (close(pi->second) < 0)
-			perror("dkg-builtin-common (close)");
+			perror("dkg-tcpip-common (close)");
 	}
-	for (std::map<size_t, int>::const_iterator pi = builtin_pipe2socket.begin(); pi != builtin_pipe2socket.end(); ++pi)
+	for (std::map<size_t, int>::const_iterator pi = tcpip_pipe2socket.begin(); pi != tcpip_pipe2socket.end(); ++pi)
 	{
 		if (close(pi->second) < 0)
-			perror("dkg-builtin-common (close)");
+			perror("dkg-tcpip-common (close)");
 	}
-	for (std::map<size_t, int>::const_iterator pi = builtin_broadcast_pipe2socket.begin(); pi != builtin_broadcast_pipe2socket.end(); ++pi)
+	for (std::map<size_t, int>::const_iterator pi = tcpip_broadcast_pipe2socket.begin(); pi != tcpip_broadcast_pipe2socket.end(); ++pi)
 	{
 		if (close(pi->second) < 0)
-			perror("dkg-builtin-common (close)");
+			perror("dkg-tcpip-common (close)");
 	}
 }
 
-void builtin_done
+void tcpip_done
 	()
 {
 	if (instance_forked)
 	{
-		int thispid = pid[builtin_peer2pipe[builtin_thispeer]];
+		int thispid = pid[tcpip_peer2pipe[tcpip_thispeer]];
 		if (opt_verbose)
 			std::cout << "kill(" << thispid << ", SIGTERM)" << std::endl;
 		if(kill(thispid, SIGTERM))
-			perror("dkg-builtin-common (kill)");
+			perror("dkg-tcpip-common (kill)");
 		if (opt_verbose)
 			std::cout << "waitpid(" << thispid << ", NULL, 0)" << std::endl;
 		if (waitpid(thispid, NULL, 0) != thispid)
-			perror("dkg-builtin-common (waitpid)");
+			perror("dkg-tcpip-common (waitpid)");
 	}
 	for (size_t i = 0; i < peers.size(); i++)
 	{
 		for (size_t j = 0; j < peers.size(); j++)
 		{
 			if ((close(pipefd[i][j][0]) < 0) || (close(pipefd[i][j][1]) < 0))
-				perror("dkg-builtin-common (close)");
+				perror("dkg-tcpip-common (close)");
 			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
-				perror("dkg-builtin-common (close)");
+				perror("dkg-tcpip-common (close)");
 		}
 	}
 }

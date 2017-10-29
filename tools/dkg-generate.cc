@@ -36,7 +36,7 @@ static const char *version = VERSION; // copy VERSION from LibTMCG before overwr
 #include <sys/wait.h>
 #include <signal.h>
 
-#include "dkg-builtin-common.hh"
+#include "dkg-tcpip-common.hh"
 #include "dkg-gnunet-common.hh"
 
 int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
@@ -1689,18 +1689,18 @@ int main
 	{
 		if (port.length())
 			opt_p = strtoul(port.c_str(), NULL, 10); // get start port from options
-		builtin_init(hostname);
-		builtin_bindports((uint16_t)opt_p, false);
-		builtin_bindports((uint16_t)opt_p, true);
-		while (builtin_connect((uint16_t)opt_p, false) < peers.size())
+		tcpip_init(hostname);
+		tcpip_bindports((uint16_t)opt_p, false);
+		tcpip_bindports((uint16_t)opt_p, true);
+		while (tcpip_connect((uint16_t)opt_p, false) < peers.size())
 			sleep(1);
-		while (builtin_connect((uint16_t)opt_p, true) < peers.size())
+		while (tcpip_connect((uint16_t)opt_p, true) < peers.size())
 			sleep(1);
-		builtin_accept();
-		builtin_fork();
-		ret = builtin_io();
-		builtin_close();
-		builtin_done();
+		tcpip_accept();
+		tcpip_fork();
+		ret = tcpip_io();
+		tcpip_close();
+		tcpip_done();
 		// release cache
 		mpz_ssrandomm_cache_done(cache, cache_mod, &cache_avail);
 		// finish
