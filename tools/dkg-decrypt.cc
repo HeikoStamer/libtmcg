@@ -581,7 +581,6 @@ void run_instance
 	init_dkg(dkg);
 	if (!parse_message(armored_message, enc, have_seipd))
 	{
-std::cerr << "debug" << std::endl;
 		release_mpis();
 		done_dkg(dkg);
 		exit(-1);
@@ -654,7 +653,7 @@ std::cerr << "debug" << std::endl;
 		std::cout << std::endl;
 		mpz_clear(xtest);
 	}
-
+std::cerr << "debug" << std::endl;
 	// initialize for interactive part
 	mpz_t crs_p, crs_q, crs_g, crs_k;
 	mpz_init(crs_p), mpz_init(crs_q), mpz_init(crs_g), mpz_init(crs_k);
