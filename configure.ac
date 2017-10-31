@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20171029])
+AC_REVISION([20171031])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.4.0], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -245,82 +245,6 @@ if test "$use_forking" = yes ; then
 	AC_DEFINE(FORKING, , [Define to enable the forking tests])
 fi
 
-# Checks for dkg-tools
-AC_MSG_CHECKING([whether building dkg-tools is enabled])
-AC_ARG_ENABLE(dkgtools, [AS_HELP_STRING([--disable-dkg-tools],
-	[disable building of dkg-tools])], use_dkgtools=$enableval, use_dkgtools=yes)
-AC_MSG_RESULT($use_dkgtools)
-if test "$use_dkgtools" = yes ; then
-	AC_HEADER_SYS_WAIT
-	AC_TYPE_PID_T
-	AC_TYPE_SIGNAL
-	AC_FUNC_FORK
-	AC_CHECK_HEADERS([unistd.h sys/types.h sys/wait.h signal.h arpa/inet.h\
- netdb.h netinet/in.h sys/socket.h], ,
-		AC_MSG_ERROR([some headers are missing]))
-	AC_CHECK_FUNCS([fork kill pipe pipe2 waitpid getaddrinfo getnameinfo\
- htons htonl socket setsockopt connect bind listen accept signal sigaction\
- gai_strerror freeaddrinfo inet_ntop], , 
-		AC_MSG_ERROR([some functions are missing]))
-	AC_DEFINE(DKGTOOLS, , [Define to enable building of dkg-tools])
-fi
-AM_CONDITIONAL([DKGTOOLS], [test x$use_dkgtools = xyes])
-
-# Checks for GNUnet
-gnunet=0
-lookin=${prefix}
-backup_LDFLAGS="$LDFLAGS"       
-backup_CPPLAGS="$CPPFLAGS"
-GNUNET_LIBS=""
-GNUNET_CFLAGS=""
-AC_MSG_CHECKING([for GNUnet])
-AC_ARG_WITH(gnunet, [AS_HELP_STRING([--with-gnunet=<path>],
-	[prefix of GNUnet installation])], [AC_MSG_RESULT([$with_gnunet])
-	case $with_gnunet in
-		no)
-			lookin=""
-			;;
-		yes)
-			lookin="${prefix}"
-			;;
-		*)
-			lookin="$with_gnunet"
-			;;
-	esac
-	], [AC_MSG_RESULT([--with-gnunet not specified])])
-
-if test "x$gnunet" == "x0" -a ! "x$lookin" == "x"
-then
-	GNUNET_LIBS="-L${lookin}/lib"
-	GNUNET_CFLAGS="-I${lookin}/include"
-	LDFLAGS="$GNUNET_LIBS $backup_LDFLAGS"
-	CPPFLAGS="$GNUNET_CFLAGS $backup_CPPFLAGS"
-	AC_CHECK_HEADERS([gnunet/gnunet_util_lib.h], [gnunet=1], [gnunet=0], [#include <gnunet/platform.h>])
-	AC_CHECK_LIB([gnunetutil], [GNUNET_xfree_], [LIBS=""], [gnunet=0])
-##	AC_CHECK_HEADERS([gnunet/gnunet_peerinfo_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
-##	AC_CHECK_LIB([gnunetpeerinfo], [GNUNET_PEERINFO_connect], [LIBS=""], [gnunet=0])
-	AC_CHECK_HEADERS([gnunet/gnunet_hello_lib.h], , [gnunet=0], [#include <gnunet/platform.h>])
-	AC_CHECK_LIB([gnunethello], [GNUNET_HELLO_get_id], [LIBS=""], [gnunet=0])
-	AC_CHECK_HEADERS([gnunet/gnunet_transport_hello_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
-	AC_CHECK_LIB([gnunettransport], [GNUNET_TRANSPORT_hello_get], [LIBS=""], [gnunet=0])
-	AC_CHECK_HEADERS([gnunet/gnunet_cadet_service.h], , [gnunet=0], [#include <gnunet/platform.h>])
-	AC_CHECK_LIB([gnunetcadet], [GNUNET_CADET_connect], [LIBS=""], [gnunet=0])
-fi
-if test "x$gnunet" == "x1"
-then
-	AC_DEFINE(GNUNET, , [Define to enable the GNUnet-based tools])
-	GNUNET_LIBS="${GNUNET_LIBS} -lgnunetutil -lgnunethello -lgnunettransport -lgnunetcadet"
-fi
-if test "x$gnunet" == "x0"
-then
-	GNUNET_LIBS=""
-	GNUNET_CFLAGS=""
-fi
-AC_SUBST(GNUNET_LIBS)
-AC_SUBST(GNUNET_CFLAGS)
-LDFLAGS="$backup_LDFLAGS"
-CPPFLAGS="$backup_CPPFLAGS"
-
 # Enable all compiler warnings
 CFLAGS="$CFLAGS -Wall"
 CXXFLAGS="$CXXFLAGS -Wall"
@@ -340,9 +264,7 @@ datadir=$datadir
 ]])
 
 # Define output
-AC_CONFIG_FILES([Makefile src/Makefile src/libTMCG-config doc/Makefile tests/Makefile tools/Makefile\
- tools/dkg-generate.1 tools/dkg-encrypt.1 tools/dkg-decrypt.1 tools/dkg-sign.1 tools/dkg-revoke.1\
- tools/dkg-verify.1])
+AC_CONFIG_FILES([Makefile src/Makefile src/libTMCG-config doc/Makefile tests/Makefile])
 AC_OUTPUT
 
 echo "Now type 'make && make install' to build and install LibTMCG."

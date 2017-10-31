@@ -8,8 +8,6 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 
-* dkg-tools: protect h-generation protocol with EDCF to avoid ROM
-
 + provide interactive and distributed (multiparty DZKP) versions for
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
   (for applications that cannot rely on the random oracle assumption or
@@ -24,7 +22,6 @@ in the sources of this package and additionally can be obtained from Internet
 + use secure memory allocation and erasing from libgcrypt
 + provide a byzantine consensus protocol for agreement on values
 + implement asynchronous VSS [CKLS02] for DKG and other applications
-+ dkg-gencrs: use EDCF to generate CRS by coin-flips of all participants
 
 - deterministic DSA for ASTC/DSS: cf. RFC 6979; maybe it's impossible for TC
 - implement the exotic card and stack operations of the toolbox; there are
