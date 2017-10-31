@@ -536,9 +536,9 @@ void gnunet_statistics(void *cls)
 {
 	st = NULL;
 
-	if (gnunet_opt_verbose)
+	if ((gnunet_opt_verbose) && (opt_verbose > 1))
 		std::cout << "INFO: pipe2channel_out.size() = " << pipe2channel_out.size() << ", pipe2channel_in.size() = " << pipe2channel_in.size() << std::endl;
-	if (gnunet_opt_verbose)
+	if ((gnunet_opt_verbose) && (opt_verbose > 1))
 		std::cout << "INFO: send_queue.size() = " << send_queue.size() << ", send_queue_broadcast.size() = " << send_queue_broadcast.size() << std::endl;
 	if (instance_forked)
 	{
