@@ -28,6 +28,7 @@ extern int				pipefd[MAX_N][MAX_N][2], broadcast_pipefd[MAX_N][MAX_N][2];
 extern pid_t				pid[MAX_N];
 extern std::vector<std::string>		peers;
 extern bool				instance_forked;
+extern int				opt_verbose;
 extern void				fork_instance(const size_t whoami);
 
 #ifdef GNUNET
@@ -128,7 +129,7 @@ void handle_gnunet_data_callback(void *cls, const struct GNUNET_MessageHeader *m
 	// initialize variables
 	GNUNET_assert(ntohs(message->size) >= sizeof(*message));
 	uint16_t len = ntohs(message->size) - sizeof(*message);
-	if (gnunet_opt_verbose)
+	if ((gnunet_opt_verbose) && (opt_verbose > 1))
 		GNUNET_log(GNUNET_ERROR_TYPE_MESSAGE, "Got message of type %u from %s with %u bytes\n", ntohs(message->type), peer.c_str(), len);
 	const char *buf = (const char *)&message[1];
 	int fd;
@@ -422,7 +423,7 @@ void gnunet_io(void *cls)
 		struct GNUNET_MessageHeader *msg;
 		if (pipe2channel_in.count(ble.first)) // have input channel to this peer?
 		{
-			if (gnunet_opt_verbose)
+			if ((gnunet_opt_verbose) && (opt_verbose > 1))
 				std::cout << "INFO: try to send " << buf.first << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
 			env = GNUNET_MQ_msg_extra(msg, buf.first, GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_UNICAST);
 			GNUNET_memcpy(&msg[1], buf.second, buf.first);
@@ -442,7 +443,7 @@ void gnunet_io(void *cls)
 		struct GNUNET_MessageHeader *msg;
 		if (pipe2channel_in.count(ble.first)) // have input channel to this peer?
 		{
-			if (gnunet_opt_verbose)
+			if ((gnunet_opt_verbose) && (opt_verbose > 1))
 				std::cout << "INFO: try to broadcast " << buf.first << " bytes on input channel to " << pipe2peer[ble.first] << std::endl;
 			env = GNUNET_MQ_msg_extra(msg, buf.first, GNUNET_MESSAGE_TYPE_TMCG_DKG_PIPE_BROADCAST);
 			GNUNET_memcpy(&msg[1], buf.second, buf.first);
