@@ -107,7 +107,7 @@ void mpz_fhash
 
 void mpz_fhash_ggen
 	(mpz_ptr r, int algo,
-	mpz_srcptr input1, const std::string input2,
+	mpz_srcptr input1, const std::string &input2,
 	mpz_srcptr input3, mpz_srcptr input4)
 {
 	size_t input1_size = ((mpz_sizeinbase(input1, 2L) + 7) / 8);
@@ -141,7 +141,7 @@ void mpz_fhash_ggen
 }
 
 void mpz_shash
-	(mpz_ptr r, const std::string input)
+	(mpz_ptr r, const std::string &input)
 {
 	size_t hash_size = mpz_shash_len();
 	unsigned char *digest = new unsigned char[hash_size];

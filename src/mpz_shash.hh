@@ -54,11 +54,11 @@
 		(mpz_ptr r, int algo, mpz_srcptr input);
 	void mpz_fhash_ggen
 		(mpz_ptr r, int algo,
-		mpz_srcptr input1, const std::string input2,
+		mpz_srcptr input1, const std::string &input2,
 		mpz_srcptr input3, mpz_srcptr input4);
 		
 	void mpz_shash
-		(mpz_ptr r, const std::string input);
+		(mpz_ptr r, const std::string &input);
 	void mpz_shash
 		(mpz_ptr r, size_t n, ...);
 
