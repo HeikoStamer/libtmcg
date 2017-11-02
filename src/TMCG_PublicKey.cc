@@ -553,8 +553,13 @@ bool TMCG_PublicKey::verify
 		
 		bool ok = (memcmp(w, w2, mdsize) == 0) && (memcmp(gamma,
 			g12 + TMCG_PRAB_K0, mnsize - mdsize - TMCG_PRAB_K0) == 0);
-		delete [] yy, delete [] w, delete [] r, delete [] gamma, 
-			delete [] g12, delete [] Mr, delete [] w2;
+		delete [] w;
+		delete [] r;
+		delete [] gamma;
+		delete [] yy;
+		delete [] g12;
+		delete [] Mr;
+		delete [] w2;
 		
 		throw ok;
 	}

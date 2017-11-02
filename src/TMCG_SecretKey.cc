@@ -465,7 +465,7 @@ bool TMCG_SecretKey::decrypt
 		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 			throw false;
 		if ((mpz_set_str(vdata, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
-				throw false;
+			throw false;
 		
 		// decrypt value, i.e., compute the modular square roots
 		if (!mpz_qrmn_p(vdata, p, q, m))
@@ -498,7 +498,10 @@ bool TMCG_SecretKey::decrypt
 	}
 	catch (bool return_value)
 	{
-		delete [] yy, delete [] g12, delete [] Mt, delete [] r;
+		delete [] yy;
+		delete [] r;
+		delete [] Mt;
+		delete [] g12;
 		mpz_clear(vdata), mpz_clear(vroot[0]), mpz_clear(vroot[1]),
 			mpz_clear(vroot[2]), mpz_clear(vroot[3]);
 		return return_value;
