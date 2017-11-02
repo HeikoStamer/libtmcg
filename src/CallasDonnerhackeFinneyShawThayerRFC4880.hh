@@ -213,7 +213,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_byte_t type, const tmcg_octets_t &in,
 			 std::string &out);
 		static tmcg_byte_t ArmorDecode
-			(const std::string in, tmcg_octets_t &out);
+			(const std::string &in, tmcg_octets_t &out);
 		static void FingerprintCompute
 			(const tmcg_octets_t &in, tmcg_octets_t &out); 
 		static void KeyidCompute
@@ -225,11 +225,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_byte_t algo, const size_t cnt,
 			 const tmcg_octets_t &in, tmcg_octets_t &out);
 		static bool HashComputeFile
-			(const tmcg_byte_t algo, const std::string filename,
+			(const tmcg_byte_t algo, const std::string &filename,
 			 const tmcg_octets_t &trailer, tmcg_octets_t &out);
 		static void S2KCompute
 			(const tmcg_byte_t algo, const size_t sklen,
-			 const std::string in, const tmcg_octets_t &salt, 
+			 const std::string &in, const tmcg_octets_t &salt, 
 			 const bool iterated, const tmcg_byte_t octcnt,
 			 tmcg_octets_t &out);
 
@@ -253,7 +253,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static size_t PacketMPIDecode
 			(const tmcg_octets_t &in, gcry_mpi_t &out);
 		static void PacketStringEncode
-			(const std::string in, tmcg_octets_t &out);
+			(const std::string &in, tmcg_octets_t &out);
 		static size_t PacketStringDecode
 			(const tmcg_octets_t &in, std::string &out);
 
@@ -291,7 +291,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const time_t keytime, const tmcg_byte_t algo,
 			 const gcry_mpi_t p, const gcry_mpi_t q,
 			 const gcry_mpi_t g, const gcry_mpi_t y,
-			 const gcry_mpi_t x, const std::string passphrase,
+			 const gcry_mpi_t x, const std::string &passphrase,
 			 tmcg_octets_t &out);
 		static void PacketSecEncodeExperimental108
 			(const time_t keytime, const gcry_mpi_t p,
@@ -303,7 +303,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const std::vector<std::string> &capl,
 			 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 			 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
-			 const std::string passphrase,
+			 const std::string &passphrase,
 			 tmcg_octets_t &out);
 		static void PacketSubEncode
 			(const time_t keytime, const tmcg_byte_t algo,
@@ -314,7 +314,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const time_t keytime, const tmcg_byte_t algo,
 			 const gcry_mpi_t p, const gcry_mpi_t q,
 			 const gcry_mpi_t g, const gcry_mpi_t y, 
-			 const gcry_mpi_t x, const std::string passphrase,
+			 const gcry_mpi_t x, const std::string &passphrase,
 			 tmcg_octets_t &out);
 		static void PacketSsbEncodeExperimental109
 			(const time_t keytime, const gcry_mpi_t p,
@@ -326,14 +326,14 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const std::vector<gcry_mpi_t> &v_i,
 			 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 			 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
-			 const std::string passphrase,
+			 const std::string &passphrase,
 			 tmcg_octets_t &out);
 		static void PacketSedEncode
 			(const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void PacketLitEncode
 			(const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void PacketUidEncode
-			(const std::string uid, tmcg_octets_t &out);
+			(const std::string &uid, tmcg_octets_t &out);
 		static void PacketSeipdEncode
 			(const tmcg_octets_t &in, tmcg_octets_t &out);
 		static void PacketMdcEncode
@@ -350,11 +350,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
 
 		static bool BinaryDocumentHash
-			(const std::string filename,
+			(const std::string &filename,
 			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
 			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static void CertificationHash
-			(const tmcg_octets_t &key, const std::string uid,
+			(const tmcg_octets_t &key, const std::string &uid,
 			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
 			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static void SubkeyBindingHash

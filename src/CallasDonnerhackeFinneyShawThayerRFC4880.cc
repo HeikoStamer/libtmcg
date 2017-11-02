@@ -409,7 +409,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 }
 
 tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
-	(const std::string in, tmcg_octets_t &out)
+	(const std::string &in, tmcg_octets_t &out)
 {
 	tmcg_byte_t type = 0;
 	size_t spos = 0, rpos = 0, rlen = 4, cpos = 0, clen = 3, epos = 0;
@@ -430,7 +430,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 		return 0; // no radix-64 start or checksum found in armor body
 	spos = in.find("-----BEGIN PGP MESSAGE-----");
 	epos = in.find("-----END PGP MESSAGE-----");
-	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
+	if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
 		type = 1;
 	if (!type)
 	{
@@ -556,7 +556,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 }
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
-	(const tmcg_byte_t algo, const std::string filename,
+	(const tmcg_byte_t algo, const std::string &filename,
 	 const tmcg_octets_t &trailer, tmcg_octets_t &out)
 {
 	char c;
@@ -595,7 +595,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
-	(const tmcg_byte_t algo, const size_t sklen, const std::string in, 
+	(const tmcg_byte_t algo, const size_t sklen, const std::string &in, 
 	 const tmcg_octets_t &salt, const bool iterated, const tmcg_byte_t octcnt, 
 	 tmcg_octets_t &out)
 {
@@ -878,7 +878,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketStringEncode
-	(const std::string in, tmcg_octets_t &out)
+	(const std::string &in, tmcg_octets_t &out)
 {
 	PacketLengthEncode(in.length(), out);
 	for (size_t i = 0; i < in.length(); i++)
@@ -1190,7 +1190,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	(const time_t keytime, const tmcg_byte_t algo, const gcry_mpi_t p,
 	 const gcry_mpi_t q, const gcry_mpi_t g, const gcry_mpi_t y,
-	 const gcry_mpi_t x, const std::string passphrase,
+	 const gcry_mpi_t x, const std::string &passphrase,
 	 tmcg_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
@@ -1300,7 +1300,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 		out.push_back(0x03); // Iterated and Salted S2K
 		out.push_back(8); // SHA256
 		tmcg_byte_t rand[8], iv[16], key[32], count;
-		tmcg_octets_t salt, plain, hash, seskey, prefix;
+		tmcg_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
 		count = 0x01;
@@ -1367,7 +1367,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	 const std::vector<std::string> &capl,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
-	 const std::string passphrase,
+	 const std::string &passphrase,
 	 tmcg_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
@@ -1433,7 +1433,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 		out.push_back(0x03); // Iterated and Salted S2K
 		out.push_back(8); // SHA256
 		tmcg_byte_t rand[8], iv[16], key[32], count;
-		tmcg_octets_t salt, plain, hash, seskey, prefix;
+		tmcg_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
 		count = 0x01;
@@ -1544,7 +1544,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	(const time_t keytime, const tmcg_byte_t algo, const gcry_mpi_t p,
 	 const gcry_mpi_t q, const gcry_mpi_t g, const gcry_mpi_t y,
-	 const gcry_mpi_t x, const std::string passphrase,
+	 const gcry_mpi_t x, const std::string &passphrase,
 	 tmcg_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
@@ -1603,7 +1603,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 		out.push_back(0x03); // Iterated and Salted S2K
 		out.push_back(8); // SHA256
 		tmcg_byte_t rand[8], iv[16], key[32], count;
-		tmcg_octets_t salt, plain, hash, seskey, prefix;
+		tmcg_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
 		count = 0x01;
@@ -1670,7 +1670,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 	 const std::vector<gcry_mpi_t> &v_i,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
-	 const std::string passphrase,
+	 const std::string &passphrase,
 	 tmcg_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
@@ -1737,7 +1737,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 		out.push_back(0x03); // Iterated and Salted S2K
 		out.push_back(8); // SHA256
 		tmcg_byte_t rand[8], iv[16], key[32], count;
-		tmcg_octets_t salt, plain, hash, seskey, prefix;
+		tmcg_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
 		count = 0x01;
@@ -1854,7 +1854,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode
-	(const std::string uid, tmcg_octets_t &out)
+	(const std::string &uid, tmcg_octets_t &out)
 {
 	// A User ID packet consists of UTF-8 text that is intended to 
 	// represent the name and email address of the key holder. By
@@ -2247,12 +2247,11 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	// Partial Body Length headers may only be used for the non-final
 	// parts of the packet.
 	tmcg_octets_t pkt;
-	size_t headlen = 0;
 	uint32_t len = 0;
 	bool partlen = true, firstlen = true;
 	while (partlen)
 	{
-		headlen = PacketLengthDecode(in, out.newformat, lentype, len, partlen);
+		size_t headlen = PacketLengthDecode(in, out.newformat, lentype, len, partlen);
 		if (!headlen)
 			return 0; // error: invalid length header
 		if (in.size() < (headlen + len))
@@ -2942,7 +2941,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 // ===========================================================================
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
-	(const std::string filename, const tmcg_octets_t &trailer, 
+	(const std::string &filename, const tmcg_octets_t &trailer, 
 	 const tmcg_byte_t hashalgo, tmcg_octets_t &hash, tmcg_octets_t &left)
 {
 	tmcg_octets_t hash_input;
@@ -2977,7 +2976,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
-	(const tmcg_octets_t &key, const std::string uid, 
+	(const tmcg_octets_t &key, const std::string &uid, 
 	 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
 	 tmcg_octets_t &hash, tmcg_octets_t &left)
 {
