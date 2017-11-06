@@ -238,14 +238,16 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 	// send message to all parties (very short timeout)
 	for (size_t i = 0; i < n; i++)
 	{
-		size_t simulate_faulty_randomizer = mpz_wrandom_ui() % n;
-		if (simulate_faulty_behaviour)
-			mpz_add_ui(modified_message[4], modified_message[4], 1L);
+		size_t simulate_faulty_randomizer = mpz_wrandom_ui() % n; // faultiness with small probability: 1/n
+		size_t simulate_faulty_randomizer1 = mpz_wrandom_ui() % 2;
 		size_t simulate_faulty_randomizer2 = mpz_wrandom_ui() % 2;
-		if (simulate_faulty_behaviour && simulate_faulty_randomizer2)
-			mpz_add_ui(modified_message[2], modified_message[2], mpz_wrandom_ui() % n);
+		size_t simulate_faulty_randomizer3 = mpz_wrandom_ui() % 2;
+		if (simulate_faulty_behaviour && !simulate_faulty_randomizer && simulate_faulty_randomizer1)
+			mpz_add_ui(modified_message[4], modified_message[4], 1L);
+		if (simulate_faulty_behaviour && !simulate_faulty_randomizer && simulate_faulty_randomizer2)
+			mpz_add_ui(modified_message[1], modified_message[1], mpz_wrandom_ui() % n);
 		AssignMessage(message, modified_message); // assign the modified message
-		if (simulate_faulty_behaviour && !simulate_faulty_randomizer)
+		if (simulate_faulty_behaviour && !simulate_faulty_randomizer && simulate_faulty_randomizer3)
 		{
 			if (!aiou->Send(message, mpz_wrandom_ui() % n, aiou->aio_timeout_very_short))
 				std::cerr << "RBC(" << j << "): sending r-send failed for random party" << std::endl;
