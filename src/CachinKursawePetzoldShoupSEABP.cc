@@ -172,6 +172,52 @@ void CachinKursawePetzoldShoupRBC::unsetID
 	}
 }
 
+void CachinKursawePetzoldShoupRBC::InitializeMessage
+	(RBC_Message &message)
+{
+	for (size_t mm = 0; mm < 5; mm++)
+	{
+		mpz_ptr tmp = new mpz_t();
+		mpz_init(tmp);
+		message.push_back(tmp);
+	}
+}
+
+void CachinKursawePetzoldShoupRBC::InitializeMessage
+	(RBC_Message &message, const RBC_ConstMessage &source)
+{
+	InitializeMessage(message);
+	for (size_t mm = 0; mm < 5; mm++)
+		mpz_set(message[mm], source[mm]);
+}
+
+void CachinKursawePetzoldShoupRBC::InitializeMessage
+	(RBC_Message &message, const RBC_Message &source)
+{
+	InitializeMessage(message);
+	for (size_t mm = 0; mm < 5; mm++)
+		mpz_set(message[mm], source[mm]);
+}
+
+void CachinKursawePetzoldShoupRBC::AssignMessage
+	(RBC_ConstMessage &message, const RBC_Message &source)
+{
+	message.clear();
+	for (size_t mm = 0; mm < 5; mm++)
+		message.push_back(source[mm]);
+}
+
+void CachinKursawePetzoldShoupRBC::ReleaseMessage
+	(RBC_Message &message)
+{
+	for (size_t mm = 0; mm < message.size(); mm++)
+	{
+		mpz_clear(message[mm]);
+		delete [] message[mm];
+	}
+	message.clear();
+}
+
 void CachinKursawePetzoldShoupRBC::Broadcast
 	(mpz_srcptr m, const bool simulate_faulty_behaviour)
 {
@@ -185,12 +231,20 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 	message.push_back(r_send);
 	message.push_back(m);
 
+	// initialize and copy the prepared message
+	RBC_Message modified_message;
+	InitializeMessage(modified_message, message);
+
 	// send message to all parties (very short timeout)
 	for (size_t i = 0; i < n; i++)
 	{
 		size_t simulate_faulty_randomizer = mpz_wrandom_ui() % n;
 		if (simulate_faulty_behaviour)
-			mpz_add_ui((mpz_ptr)message[4], (mpz_ptr)message[4], 1L);
+			mpz_add_ui(modified_message[4], modified_message[4], 1L);
+		size_t simulate_faulty_randomizer2 = mpz_wrandom_ui() % 2;
+		if (simulate_faulty_behaviour && simulate_faulty_randomizer2)
+			mpz_add_ui(modified_message[2], modified_message[2], mpz_wrandom_ui() % n);
+		AssignMessage(message, modified_message); // assign the modified message
 		if (simulate_faulty_behaviour && !simulate_faulty_randomizer)
 		{
 			if (!aiou->Send(message, mpz_wrandom_ui() % n, aiou->aio_timeout_very_short))
@@ -204,37 +258,7 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 	}
 
 	// release message
-	message.clear();
-}
-
-void CachinKursawePetzoldShoupRBC::InitializeMessage
-	(RBC_Message &message)
-{
-	for (size_t mm = 0; mm < 5; mm++)
-	{
-		mpz_ptr tmp = new mpz_t();
-		mpz_init(tmp);
-		message.push_back(tmp);
-	}
-}
-
-void CachinKursawePetzoldShoupRBC::InitializeMessage
-	(RBC_Message &message, RBC_Message &source)
-{
-	InitializeMessage(message);
-	for (size_t mm = 0; mm < 5; mm++)
-		mpz_set(message[mm], source[mm]);
-}
-
-void CachinKursawePetzoldShoupRBC::ReleaseMessage
-	(RBC_Message &message)
-{
-	for (size_t mm = 0; mm < message.size(); mm++)
-	{
-		mpz_clear(message[mm]);
-		delete [] message[mm];
-	}
-	message.clear();
+	ReleaseMessage(modified_message);
 }
 
 bool CachinKursawePetzoldShoupRBC::Deliver

@@ -100,14 +100,18 @@ class CachinKursawePetzoldShoupRBC
 			(const std::string ID_in);
 		void unsetID
 			();
-		void Broadcast
-			(mpz_srcptr m, const bool simulate_faulty_behaviour = false);
 		void InitializeMessage
 			(RBC_Message &message);
 		void InitializeMessage
-			(RBC_Message &message, RBC_Message &source);
+			(RBC_Message &message, const RBC_ConstMessage &source);
+		void InitializeMessage
+			(RBC_Message &message, const RBC_Message &source);
+		void AssignMessage
+			(RBC_ConstMessage &message, const RBC_Message &source);
 		void ReleaseMessage
 			(RBC_Message &message);
+		void Broadcast
+			(mpz_srcptr m, const bool simulate_faulty_behaviour = false);
 		bool Deliver
 			(mpz_ptr m, size_t &i_out,
 			size_t scheduler = aiounicast::aio_scheduler_default,
