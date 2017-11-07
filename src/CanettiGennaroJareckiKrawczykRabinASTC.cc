@@ -2487,7 +2487,8 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
 		for (std::vector<size_t>::iterator it = x_zvss->QUAL.begin(); it != x_zvss->QUAL.end(); ++it)
 		{
 			err << "P_" << *it << " ";
-			assert(*it < n);
+			assert((*it < n));
+			assert((x_rvss->t == x_zvss->t));
 			for (size_t k = 0; k <= x_rvss->t; k++)
 			{
 				mpz_mul(x_rvss->C_ik[*it][k], x_rvss->C_ik[*it][k], x_zvss->C_ik[dkg2idx[*it]][k]);
