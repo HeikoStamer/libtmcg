@@ -1949,12 +1949,18 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	mpz_srcptr ssrandomm_cache_mod,
 	size_t *ssrandomm_cache_avail)
 {
+	// entry guards
 	assert(t <= n);
 	assert(i < n);
 	assert(n == rbc->n);
 	assert(n == aiou->n);
 	assert(i == rbc->j);
 	assert(i == aiou->j);
+	assert(idx2dkg.size() == n);
+	assert(idx2dkg.size() == dkg2idx.size());
+	assert(idx2dkg.count(i) == 1);
+	assert(dkg2idx.count(idx2dkg[i]) == 1);
+	assert(i == dkg2idx[idx2dkg[i]]);
 	err << "CanettiGennaroJareckiKrawczykRabinDKG::Generate()" << std::endl;
 
 	// checking maximum synchronous t-resilience
@@ -2383,6 +2389,18 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		}
 		A_i.clear(), B_i.clear(), T_i.clear(), Tprime_i.clear();
 		z_i.clear(), d_i.clear(), dprime_i.clear();
+		// exit guards
+		assert(t <= n);
+		assert(i < n);
+		assert(n == rbc->n);
+		assert(n == aiou->n);
+		assert(i == rbc->j);
+		assert(i == aiou->j);
+		assert(idx2dkg.size() == n);
+		assert(idx2dkg.size() == dkg2idx.size());
+		assert(idx2dkg.count(i) == 1);
+		assert(dkg2idx.count(idx2dkg[i]) == 1);
+		assert(i == dkg2idx[idx2dkg[i]]);
 		// return
 		return return_value;
 	}
@@ -2412,6 +2430,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
 	mpz_srcptr ssrandomm_cache_mod,
 	size_t *ssrandomm_cache_avail)
 {
+	// entry guards
 	assert(t <= n);
 	assert(i < n);
 	assert(n_in <= n);
@@ -2495,6 +2514,20 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
 		rbc->unsetID();
 		// release
 		delete x_zvss;
+		// exit guards
+		assert(t <= n);
+		assert(i < n);
+		assert(n_in <= n);
+		assert(i_in < n_in);
+		assert(n_in == rbc->n);
+		assert(n_in == aiou->n);
+		assert(i_in == rbc->j);
+		assert(i_in == aiou->j);
+		assert(idx2dkg.size() == n_in);
+		assert(idx2dkg.size() == dkg2idx.size());
+		assert(idx2dkg.count(i_in) == 1);
+		assert(dkg2idx.count(idx2dkg[i_in]) == 1);
+		assert(i_in == dkg2idx[idx2dkg[i_in]]);
 		// return
 		return return_value;
 	}
@@ -2730,6 +2763,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Generate
 	mpz_srcptr ssrandomm_cache_mod,
 	size_t *ssrandomm_cache_avail)
 {
+	// entry guards
 	assert(t <= n);
 	assert(i < n);
 	assert(n == rbc->n);
@@ -2769,7 +2803,13 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Generate
 	{
 		// unset ID for RBC
 		rbc->unsetID();
-
+		// exit guards
+		assert(t <= n);
+		assert(i < n);
+		assert(n == rbc->n);
+		assert(n == aiou->n);
+		assert(i == rbc->j);
+		assert(i == aiou->j);
 		// return
 		return return_value;
 	}
@@ -2800,6 +2840,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Refresh
 	mpz_srcptr ssrandomm_cache_mod,
 	size_t *ssrandomm_cache_avail)
 {
+	// entry guards
 	assert(t <= n);
 	assert(i < n);
 	assert(n_in <= n);
@@ -2845,7 +2886,20 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Refresh
 	{
 		// unset ID for RBC
 		rbc->unsetID();
-
+		// exit guards
+		assert(t <= n);
+		assert(i < n);
+		assert(n_in <= n);
+		assert(i_in < n_in);
+		assert(n_in == rbc->n);
+		assert(n_in == aiou->n);
+		assert(i_in == rbc->j);
+		assert(i_in == aiou->j);
+		assert(idx2dkg.size() == n_in);
+		assert(idx2dkg.size() == dkg2idx.size());
+		assert(idx2dkg.count(i_in) == 1);
+		assert(dkg2idx.count(idx2dkg[i_in]) == 1);
+		assert(i_in == dkg2idx[idx2dkg[i_in]]);
 		// return
 		return return_value;
 	}
@@ -2871,6 +2925,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 	aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
 	std::ostream &err, const bool simulate_faulty_behaviour)
 {
+	// entry guards
 	assert(t <= n);
 	assert(i < n);
 	assert(n_in <= n);
@@ -4678,7 +4733,20 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		delete d_rvss, delete dd_rvss, delete ddd_rvss, delete dddd_rvss;
 		delete a_dkg;
 		delete k_rvss;
-
+		// exit guards
+		assert(t <= n);
+		assert(i < n);
+		assert(n_in <= n);
+		assert(i_in < n_in);
+		assert(n_in == rbc->n);
+		assert(n_in == aiou->n);
+		assert(i_in == rbc->j);
+		assert(i_in == aiou->j);
+		assert(idx2dkg.size() == n_in);
+		assert(idx2dkg.size() == dkg2idx.size());
+		assert(idx2dkg.count(i_in) == 1);
+		assert(dkg2idx.count(idx2dkg[i_in]) == 1);
+		assert(i_in == dkg2idx[idx2dkg[i_in]]);
 		// return
 		return return_value;
 	}
