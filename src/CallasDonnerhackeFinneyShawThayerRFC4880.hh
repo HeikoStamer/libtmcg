@@ -145,6 +145,7 @@
 		gcry_mpi_t t;
 		gcry_mpi_t i;
 		gcry_mpi_t qualsize;
+		gcry_mpi_t x_rvss_qualsize;
 		gcry_mpi_t x_i;
 		gcry_mpi_t xprime_i;
 		tmcg_byte_t symalgo;
@@ -305,6 +306,20 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
 			 const std::string &passphrase,
 			 tmcg_octets_t &out);
+		static void PacketSecEncodeExperimental107
+			(const time_t keytime, const gcry_mpi_t p,
+			 const gcry_mpi_t q, const gcry_mpi_t g,
+			 const gcry_mpi_t h, const gcry_mpi_t y,
+			 const gcry_mpi_t n, const gcry_mpi_t t,
+			 const gcry_mpi_t i, const gcry_mpi_t qualsize,
+			 const std::vector<gcry_mpi_t> &qual,
+			 const gcry_mpi_t x_rvss_qualsize,
+			 const std::vector<gcry_mpi_t> &x_rvss_qual,
+			 const std::vector<std::string> &capl,
+			 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
+			 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
+			 const std::string &passphrase,
+			 tmcg_octets_t &out);
 		static void PacketSubEncode
 			(const time_t keytime, const tmcg_byte_t algo,
 			 const gcry_mpi_t p, const gcry_mpi_t q,
@@ -345,6 +360,14 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out,
 			 tmcg_octets_t &current_packet,
 			 std::vector<gcry_mpi_t> &qual,
+			 std::vector<std::string> &capl,
+			 std::vector<gcry_mpi_t> &v_i,
+			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
+		static tmcg_byte_t PacketDecode
+			(tmcg_octets_t &in, tmcg_openpgp_packet_ctx &out,
+			 tmcg_octets_t &current_packet,
+			 std::vector<gcry_mpi_t> &qual,
+			 std::vector<gcry_mpi_t> &x_rvss_qual,
 			 std::vector<std::string> &capl,
 			 std::vector<gcry_mpi_t> &v_i,
 			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
