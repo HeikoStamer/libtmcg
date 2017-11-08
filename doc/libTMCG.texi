@@ -3869,16 +3869,19 @@ threshold DSA/DSS (see Ran Canetti, Rosario Gennaro, Stanislaw Jarecki,
 Hugo Krawczyk, and Tal Rabin: @emph{Adaptive Security for Threshold
 Cryptosystems}, Advances in Cryptology -- Proceedings of CRYPTO '99, Lecture Notes
 in Computer Science 1666, Springer 1999). Robustness and security means that
-up to @math{t \le n/2} parties may act malicious and the protocols still work.
+up to @math{t \le n/2} resp. @math{t \le n/3} parties can act maliciously and
+the protocols still produce some result (e.g. a valid DSA/DSS signature on a
+given hash value).
 
 The current implementation is in @emph{experimental state} and should not be used
 in production environments. Motivation, cryptographical background and some usage
-scenarios have been presented recently at 26th Krypto-Tag and Datengarten/81 (CCCB).
-Please consult the @uref{http://www.nongnu.org/libtmcg/dg81_slides.pdf,,slides} for
-a first overview. 
+scenarios have been presented recently at 26th Krypto-Tag (GI Working Group) and
+Datengarten/81 (CCCB). Please consult the @uref{http://www.nongnu.org/libtmcg/dg81_slides.pdf,,slides}
+for a first overview. The former DKG tools have been removed from this release. These
+programs are continued in a separate package called @emph{Distributed Privacy Guard} (DKGPG).
 
 Please report any bugs to the maintainer of LibTMCG. Every help with development
-or testing of these protocols is very welcome!
+or testing of these DKG protocols and programs is very welcome!
 
 @c **********************************************************
 @c *******************  Appendices  *************************
