@@ -157,7 +157,7 @@ void start_instance
 				ret = edcf->Flip(whoami, a, aiou, rbc, err_log);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str() << std::flush;
 			if (!corrupted)
 				assert(ret);
 
@@ -171,7 +171,7 @@ void start_instance
 			ret = com->SetupGenerators_publiccoin(whoami, aiou, rbc, edcf, err_log2);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str() << std::flush;
 			if (!corrupted)
 				assert(ret);
 			// create messages

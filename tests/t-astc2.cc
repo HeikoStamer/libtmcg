@@ -169,7 +169,7 @@ void start_instance
 				ret = dkg->Generate(aiou, rbc, err_log_generate);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_generate.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_generate.str() << std::flush;
 			if (!corrupted)
 				assert(ret);
 			// now: sync for waiting parties
@@ -188,7 +188,7 @@ void start_instance
 				ret = dkg->Refresh(N, whoami, aiou, rbc, err_log_refresh);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_refresh.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_refresh.str() << std::flush;
 			if (!corrupted)
 				assert(ret);
 			// now: sync for waiting parties
@@ -219,7 +219,7 @@ void start_instance
 				ret = dss->Generate(aiou, rbc, err_log_dss);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_dss.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_dss.str() << std::flush;
 			if (!corrupted)
 				assert(ret);
 			// now: sync for waiting parties
@@ -242,7 +242,7 @@ void start_instance
 				ret = dss->Sign(N, whoami, m, r, s, aiou, rbc, err_log_sign);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign.str() << std::flush;
 			if (!corrupted)
 				assert(ret);
 			start_clock();
@@ -281,7 +281,7 @@ void start_instance
 				ret = dss->Refresh(N, whoami, aiou, rbc, err_log_refresh_dss);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_refresh_dss.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_refresh_dss.str() << std::flush;
 			if (!corrupted)
 				assert(ret);
 			// now: sync for waiting parties
@@ -305,7 +305,7 @@ void start_instance
 					ret = dss->Sign(N-1, whoami-1, m, r, s, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_sign_nm1);
 				stop_clock();
 				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign_nm1.str();
+				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign_nm1.str() << std::flush;
 				if (!corrupted)
 					assert(ret);
 				start_clock();
@@ -333,7 +333,7 @@ void start_instance
 					ret = dss->Refresh(N-1, whoami-1, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_refresh_dss2);
 				stop_clock();
 				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_refresh_dss2.str();
+				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_refresh_dss2.str() << std::flush;
 				if (!corrupted)
 					assert(ret);
 				// now: sync for waiting parties
@@ -352,7 +352,7 @@ void start_instance
 					ret = dss->Sign(N-1, whoami-1, m, r, s, idx2dkg, dkg2idx, aiou_nm1, rbc_nm1, err_log_sign_nm12);
 				stop_clock();
 				std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign_nm12.str();
+				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log_sign_nm12.str() << std::flush;
 				if (!corrupted)
 					assert(ret);
 				start_clock();

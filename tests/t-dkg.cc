@@ -147,7 +147,7 @@ void start_instance
 				ret = dkg->Generate(aiou, rbc, err_log);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str() << std::flush;
 			if (!corrupted)
 				assert(ret);
 
@@ -183,7 +183,7 @@ void start_instance
 				ret = nts->Generate(aiou, rbc, err_log2);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log2.str() << std::flush;
 			if (!corrupted)
 				assert(ret);
 
@@ -202,7 +202,7 @@ void start_instance
 				ret = nts->Sign(m, c, s, aiou, rbc, err_log3);
 			stop_clock();
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str() << std::flush;
 			if (!corrupted)
 				assert(ret);
 
@@ -216,7 +216,7 @@ void start_instance
 			stop_clock();
 			mpz_clear(m), mpz_clear(c), mpz_clear(s);
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str();
+			std::cout << "P_" << whoami << ": log follows " << std::endl << err_log3.str() << std::flush;
 			
 			// release NTS
 			delete nts;
