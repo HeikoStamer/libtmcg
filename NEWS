@@ -8,7 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 1.3.4 The DKG tools have been removed from this release. These programs are
-      continued in a separate package called "Distributed Privacy Guard" (DKGPG).
+      continued in a separate package called Distributed Privacy Guard (DKGPG).
 1.3.3 Small enhancements for DKG tools have been added, e.g., programs for
       basic information about a private threshold key, proactive refresh of
       a shared tDSS key, and verification of a detached signature are now
