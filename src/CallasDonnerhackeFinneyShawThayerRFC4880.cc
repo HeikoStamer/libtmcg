@@ -3713,13 +3713,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	// notes on OpenPGP's use of PKCS#1.
 	for (size_t i = 0; (i < in.size()) && (i < sizeof(buffer)); i++, buflen++)
 		buffer[i] = in[i];
-	v = gcry_mpi_new(2048);
 	ret = gcry_mpi_scan(&v, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	if (ret)
-	{
-		gcry_mpi_release(v);
 		return ret;
-	}
 	ret = gcry_sexp_build(&data, &erroff,
 		"(data (flags pkcs1) (value %M))", v);
 	if (ret)
@@ -3815,13 +3811,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 
 	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer))); i++, buflen++)
 		buffer[i] = in[i];
-	h = gcry_mpi_new(2048);
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	if (ret)
-	{
-		gcry_mpi_release(h);
 		return ret;
-	}
 	ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags raw) (value %M))", h);
 	if (ret)
 	{
@@ -3864,13 +3856,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 
 	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer))); i++, buflen++)
 		buffer[i] = in[i];
-	h = gcry_mpi_new(2048);
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	if (ret)
-	{
-		gcry_mpi_release(h);
 		return ret;
-	}
 	ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags raw) (value %M))", h);
 	if (ret)
 	{
