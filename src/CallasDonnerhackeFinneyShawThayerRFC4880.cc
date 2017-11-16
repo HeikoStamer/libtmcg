@@ -2372,7 +2372,11 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	 std::vector< std::vector<gcry_mpi_t> > &c_ik)
 {
 	std::vector<gcry_mpi_t> x_rvss_qual; // dummy container
-	return PacketDecode(in, out, current_packet, qual, x_rvss_qual, capl, v_i, c_ik);
+	tmcg_byte_t ret = PacketDecode(in, out, current_packet, qual, x_rvss_qual, capl, v_i, c_ik);
+	for (size_t i = 0; i < x_rvss_qual.size(); i++)
+		gcry_mpi_release(x_rvss_qual[i]); // release allocated mpi's
+	x_rvss_qual.clear();
+	return ret;
 }
 
 tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
