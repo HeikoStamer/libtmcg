@@ -3180,6 +3180,8 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.encdata[i] = pkt[1+i];
 			break;
 		case 19: // Modification Detection Code Packet
+			if (!out.newformat)
+				return 0; // error: wrong format of packet tag
 			if (pkt.size() != 20)
 				return 0; // error: incorrect packet body
 			for (size_t i = 0; i < pkt.size(); i++)

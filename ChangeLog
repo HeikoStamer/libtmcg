@@ -7,6 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2017-11-16] RFC4880: added check for correct tag format of MDC packet
 * [2017-11-09] release 1.3.4 of LibTMCG
 * [2017-11-08] RFC4880: added features subpacket for MDC support
 * [2017-11-08] RFC4880: added experimental key type 107 to keep track of x_rvss->QUAL 
