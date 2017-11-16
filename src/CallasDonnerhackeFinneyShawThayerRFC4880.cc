@@ -2384,6 +2384,14 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	 std::vector<gcry_mpi_t> &v_i,
 	 std::vector< std::vector<gcry_mpi_t> > &c_ik)
 {
+	memset(&out, 0, sizeof(out)); // clear output context
+	// Exportable Certification: If this packet is not present, the
+	// certification is exportable; it is equivalent to a flag 
+	// containing a 1.
+	out.exportablecertification = true; 
+	// Revocable: If this packet is not present, the signature is
+	// revocable.
+	out.revocable = true;
 	if (in.size() < 2)
 		return 0; // error: incorrect packet header
 	tmcg_byte_t tag = in[0];
@@ -2438,14 +2446,6 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	tmcg_octets_t hspd, uspd, mpis;
 	size_t mlen = 0;
 	uint32_t hspdlen = 0, uspdlen = 0;
-	memset(&out, 0, sizeof(out)); // clear output context
-	// Exportable Certification: If this packet is not present, the
-	// certification is exportable; it is equivalent to a flag 
-	// containing a 1.
-	out.exportablecertification = true; 
-	// Revocable: If this packet is not present, the signature is
-	// revocable.
-	out.revocable = true;
 	switch (tag)
 	{
 		case 1: // Public-Key Encrypted Session Key Packet
