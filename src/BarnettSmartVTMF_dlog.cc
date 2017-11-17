@@ -1116,6 +1116,7 @@ BarnettSmartVTMF_dlog::~BarnettSmartVTMF_dlog
 {
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(k);
 	mpz_clear(x_i), mpz_clear(h_i), mpz_clear(h), mpz_clear(d);
+	mpz_clear(h_i_fp);
 	for (std::map<std::string, mpz_ptr>::const_iterator
 		j = h_j.begin(); j != h_j.end(); j++)
 	{
