@@ -90,8 +90,6 @@ int main
 	}
 
 	// testing SymmetricEncryptAES256() and SymmetricDecryptAES256()
-	size_t erroff;
-	gcry_mpi_t gk, myk;
 	gcry_sexp_t elgkey, elgparms;
 	tmcg_octets_t lit, seskey, prefix, enc, subkeyid;
 	std::string m = "This is a test message.", armored_message;
@@ -104,16 +102,21 @@ int main
 		seskey, prefix, true, enc);
 	assert(!ret);
 	out.clear();
+	size_t erroff;
 	ret = gcry_sexp_build(&elgparms, &erroff, "(genkey (elg (nbits 4:2048)))");
 	assert(!ret);
 	ret = gcry_pk_genkey(&elgkey, elgparms);
 	assert(!ret);
+	gcry_mpi_t gk, myk;
+	gk = gcry_mpi_new(2048);
+	myk = gcry_mpi_new(2048);
 	std::cout << "AsymmetricEncryptElgamal(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal(seskey, elgkey, gk, myk);
 	assert(!ret);
 	for (size_t i = 0; i < 8; i++)
 		subkeyid.push_back(0x00);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode(subkeyid, gk, myk, out);
+	gcry_mpi_release(gk), gcry_mpi_release(myk);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode(enc, out);
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(1, out, armored_message);
 	std::cout << armored_message << std::endl;
