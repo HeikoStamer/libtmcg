@@ -26,7 +26,7 @@
 
 // get content of mpz_t into gcry_mpi_t
 bool mpz_get_gcry_mpi
-	(gcry_mpi_t *out, mpz_srcptr value)
+	(gcry_mpi_t &out, mpz_srcptr value)
 {
 	size_t size = mpz_sizeinbase(value, 16);
 	size_t bufsize = size + 2; // two extra bytes are for a possible minus sign, and the null-terminator
@@ -34,8 +34,8 @@ bool mpz_get_gcry_mpi
 	memset(buf, 0, bufsize);
 	mpz_get_str(buf, 16, value);
 	size_t erroff;
-	gcry_mpi_release(*out);
-	gcry_error_t ret = gcry_mpi_scan(out, GCRYMPI_FMT_HEX, buf, 0, &erroff);
+	gcry_mpi_release(out);
+	gcry_error_t ret = gcry_mpi_scan(&out, GCRYMPI_FMT_HEX, buf, 0, &erroff);
 	delete [] buf;
 	if (ret)
 		return false;
@@ -45,7 +45,7 @@ bool mpz_get_gcry_mpi
 
 // set content of mpz_t from gcry_mpi_t
 bool mpz_set_gcry_mpi
-	(gcry_mpi_t in, mpz_ptr value)
+	(const gcry_mpi_t in, mpz_ptr value)
 {
 	char *buf = new char[TMCG_MAX_VALUE_CHARS];
 	memset(buf, 0, TMCG_MAX_VALUE_CHARS);
@@ -67,7 +67,7 @@ bool mpz_set_gcry_mpi
 
 // get small values from gcry_mpi_t
 size_t get_gcry_mpi_ui
-	(gcry_mpi_t in)
+	(const gcry_mpi_t in)
 {
 	char *buf = new char[TMCG_MAX_VALUE_CHARS];
 	memset(buf, 0, TMCG_MAX_VALUE_CHARS);

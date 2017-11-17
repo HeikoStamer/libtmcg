@@ -556,7 +556,7 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	std::cout << "mpz_get_gcry_mpi(), mpz_set_gcry_mpi()" << std::endl;
 	gcry_mpi_t a;
 	mpz_wrandomb(foo, 256L);
-	assert(mpz_get_gcry_mpi(&a, foo));
+	assert(mpz_get_gcry_mpi(a, foo));
 	assert(mpz_set_gcry_mpi(a, bar));
 	gcry_mpi_release(a);
 	assert(!mpz_cmp(foo, bar));
