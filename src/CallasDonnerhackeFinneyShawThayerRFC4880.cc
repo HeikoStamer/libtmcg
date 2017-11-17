@@ -862,8 +862,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 		sum += buffer[i];
 		sum %= 65536;
 	}
-	if (out != NULL)
-		gcry_mpi_release(out); // release allocated mpi
+	gcry_mpi_release(out); // release already allocated mpi
 	ret = gcry_mpi_scan(&out, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	delete [] buffer;
 	if (ret)
@@ -3733,7 +3732,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 		gcry_sexp_release(data);
 		return ret;
 	}
-	gcry_mpi_release(gk);
+	gcry_mpi_release(gk); // release already allocated mpi's
 	gcry_mpi_release(myk);
 	ret = gcry_sexp_extract_param(encryption, NULL, "ab", &gk, &myk, NULL);
 	if (ret)
@@ -3833,7 +3832,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 		gcry_sexp_release(sigdata);
 		return ret;
 	}
-	gcry_mpi_release(r);
+	gcry_mpi_release(r); // release already allocated mpi's
 	gcry_mpi_release(s);
 	ret = gcry_sexp_extract_param(signature, NULL, "rs", &r, &s, NULL);
 	if (ret)
