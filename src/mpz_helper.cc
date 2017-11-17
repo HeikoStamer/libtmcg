@@ -34,6 +34,7 @@ bool mpz_get_gcry_mpi
 	memset(buf, 0, bufsize);
 	mpz_get_str(buf, 16, value);
 	size_t erroff;
+	gcry_mpi_release(*out);
 	gcry_error_t ret = gcry_mpi_scan(out, GCRYMPI_FMT_HEX, buf, 0, &erroff);
 	delete [] buf;
 	if (ret)
