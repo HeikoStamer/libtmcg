@@ -862,6 +862,8 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 		sum += buffer[i];
 		sum %= 65536;
 	}
+	if (out != NULL)
+		gcry_mpi_release(out); // release allocated mpi
 	ret = gcry_mpi_scan(&out, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	delete [] buffer;
 	if (ret)
