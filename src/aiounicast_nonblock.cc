@@ -761,7 +761,7 @@ aiounicast_nonblock::~aiounicast_nonblock
 	for (size_t i = 0; i < n; i++)
 	{
 		delete [] buf_in[i];
-		for (size_t mm = 0; mm < buf_mpz[i].size(); mm++)
+		while (buf_mpz[i].size())
 		{
 			mpz_clear(buf_mpz[i].front());
 			delete [] buf_mpz[i].front();
