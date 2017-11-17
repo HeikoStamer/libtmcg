@@ -2989,7 +2989,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		mpz_init(tmp1), mpz_init(tmp2), mpz_init(tmp3), mpz_init(tmp4);
 		mpz_init(tmp5), mpz_init(tmp6), mpz_init(tmp7), mpz_init(tmp8);
 		mpz_init(tmp9), mpz_init(tmp10), mpz_init(tmp11), mpz_init(tmp12);
-		mpz_init(tmp13), mpz_init(tmp13), mpz_init(tmp15), mpz_init(tmp16);
+		mpz_init(tmp13), mpz_init(tmp14), mpz_init(tmp15), mpz_init(tmp16);
 		mpz_init(tmp17);
 		k_i.push_back(tmp1), a_i.push_back(tmp2), alpha_i.push_back(tmp3), beta_i.push_back(tmp4);
 		gamma_i.push_back(tmp5), delta_i.push_back(tmp6), v_i.push_back(tmp7), chi_i.push_back(tmp8);
