@@ -3766,14 +3766,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 	ret = gcry_sexp_build(&data, &erroff,
 		"(enc-val (flags pkcs1) (elg (a %M) (b %M)))", gk, myk);
 	if (ret)
-	{
-		gcry_sexp_release(data);
 		return ret;
-	}
 	ret = gcry_pk_decrypt(&decryption, data, key);
 	if (ret)
 	{
-		gcry_sexp_release(decryption);
 		gcry_sexp_release(data);
 		return ret;
 	}
@@ -3782,22 +3778,17 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 	{
 		gcry_sexp_release(decryption);
 		gcry_sexp_release(data);
-		return ret;
+		return GPG_ERR_NOT_FOUND;
 	}
 	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buffer, sizeof(buffer),
 		&buflen, v);
-	if (ret)
-	{
-		gcry_mpi_release(v);
-		gcry_sexp_release(decryption);
-		gcry_sexp_release(data);
-		return ret;
-	}
-	for (size_t i = 0; (i < buflen) && (i < sizeof(buffer)); i++)
-		out.push_back(buffer[i]);
 	gcry_mpi_release(v);
 	gcry_sexp_release(decryption);
 	gcry_sexp_release(data);
+	if (ret)
+		return ret;
+	for (size_t i = 0; (i < buflen) && (i < sizeof(buffer)); i++)
+		out.push_back(buffer[i]);
 
 	return 0;
 }
