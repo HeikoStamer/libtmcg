@@ -94,6 +94,8 @@ int main
 	gcry_sexp_t elgkey, elgparms;
 	tmcg_octets_t lit, seskey, prefix, enc, subkeyid;
 	std::string m = "This is a test message.", armored_message;
+	for (size_t i = 0; i < 20; i++)
+		subkeyid.push_back(i); // dummy values
 	in.clear();
 	for (size_t i = 0; i < m.length(); i++)
 		in.push_back(m[i]);
@@ -144,6 +146,8 @@ int main
 	gcry_sexp_t dsakey, dsaparms;
 	tmcg_octets_t hash, trailer, left, sig;
 	std::string armored_signature;
+	for (size_t i = 0; i < 2; i++)
+		left.push_back(i); // dummy values
 	CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(8, lit, hash); // SHA256
 	std::cout << "gcry_sexp_build(...)" << std::endl;
 	ret = gcry_sexp_build(&dsaparms, &erroff, "(genkey (dsa (nbits 4:3072)))");
