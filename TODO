@@ -1,4 +1,4 @@
-Copyright (C)  2006, 2007, 2009, 2015, 2016, 2017 Heiko Stamer <HeikoStamer@gmx.net>
+Copyright (C)  2006, 2007, 2009, 2015-2017 Heiko Stamer <HeikoStamer@gmx.net>
 
 Permission is granted to copy, distribute and/or modify this document under
 the terms of the GNU Free Documentation License, Version 1.3 or any later
@@ -7,6 +7,8 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* add a generic group abstraction layer, e.g. for future use of ECC groups
+* use secure memory allocation and erasing from libgcrypt, if requested by app
 
 + provide interactive and distributed (multiparty DZKP) versions for
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
@@ -18,8 +20,6 @@ in the sources of this package and additionally can be obtained from Internet
 + move to event-driven architecture and state-based protocol representation
 + improve oracle function g() by including a second hash function (SHA3) or
   using additional constructions [LN09]
-+ add a generic group abstraction layer, e.g. for future use of ECC groups
-+ use secure memory allocation and erasing from libgcrypt
 + provide a byzantine consensus protocol for agreement on values
 + implement asynchronous VSS [CKLS02] for DKG and other applications
 
