@@ -3812,6 +3812,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
 
+	memset(buffer, 0, sizeof(buffer));
 	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer))); i++, buflen++)
 		buffer[i] = in[i];
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
@@ -3821,14 +3822,12 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	if (ret)
 	{
 		gcry_mpi_release(h);
-		gcry_sexp_release(sigdata);
 		return ret;
 	}
+	gcry_mpi_release(h);
 	ret = gcry_pk_sign(&signature, sigdata, key);
 	if (ret)
 	{
-		gcry_mpi_release(h);
-		gcry_sexp_release(signature);
 		gcry_sexp_release(sigdata);
 		return ret;
 	}
@@ -3837,12 +3836,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	ret = gcry_sexp_extract_param(signature, NULL, "rs", &r, &s, NULL);
 	if (ret)
 	{
-		gcry_mpi_release(h);
 		gcry_sexp_release(signature);
 		gcry_sexp_release(sigdata);
 		return ret;
 	}
-	gcry_mpi_release(h);
 	gcry_sexp_release(signature);
 	gcry_sexp_release(sigdata);
 
@@ -3859,6 +3856,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
 
+	memset(buffer, 0, sizeof(buffer));
 	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer))); i++, buflen++)
 		buffer[i] = in[i];
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
@@ -3868,26 +3866,22 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 	if (ret)
 	{
 		gcry_mpi_release(h);
-		gcry_sexp_release(sigdata);
 		return ret;
 	}
+	gcry_mpi_release(h);
 	ret = gcry_sexp_build(&signature, &erroff, "(sig-val (dsa (r %M) (s %M)))", r, s);
 	if (ret)
 	{
-		gcry_mpi_release(h);
-		gcry_sexp_release(signature);
 		gcry_sexp_release(sigdata);
 		return ret;
 	}
 	ret = gcry_pk_verify(signature, sigdata, key);
 	if (ret)
 	{
-		gcry_mpi_release(h);
 		gcry_sexp_release(signature);
 		gcry_sexp_release(sigdata);
 		return ret;
 	}
-	gcry_mpi_release(h);
 	gcry_sexp_release(signature);
 	gcry_sexp_release(sigdata);
 

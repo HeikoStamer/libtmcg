@@ -104,8 +104,10 @@ int main
 	assert(!ret);
 	out.clear();
 	size_t erroff;
+	std::cout << "gcry_sexp_build(...)" << std::endl;
 	ret = gcry_sexp_build(&elgparms, &erroff, "(genkey (elg (nbits 4:2048)))");
 	assert(!ret);
+	std::cout << "gcry_pk_genkey(...)" << std::endl;
 	ret = gcry_pk_genkey(&elgkey, elgparms);
 	assert(!ret);
 	gcry_mpi_t gk, myk;
@@ -124,6 +126,8 @@ int main
 	std::cout << "AsymmetricDecryptElgamal(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal(gk, myk, elgkey, seskey);
 	assert(!ret);
+	gcry_sexp_release(elgparms);
+	gcry_sexp_release(elgkey);
 	gcry_mpi_release(gk);
 	gcry_mpi_release(myk);
 	std::cout << "SymmetricDecryptAES256(...)" << std::endl;
@@ -135,6 +139,30 @@ int main
 	{
 		assert(lit[i] == out[i]); // check the result
 	}
+
+	// testing AsymmetricSignDSA() and AsymmetricVerifyDSA()
+	gcry_sexp_t dsakey, dsaparms;
+	tmcg_octets_t hash;
+	CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(8, lit, hash); // SHA256
+	std::cout << "gcry_sexp_build(...)" << std::endl;
+	ret = gcry_sexp_build(&dsaparms, &erroff, "(genkey (dsa (nbits 4:3072)))");
+	assert(!ret);
+	std::cout << "gcry_pk_genkey(...)" << std::endl;
+	ret = gcry_pk_genkey(&dsakey, dsaparms);
+	assert(!ret);
+	gcry_mpi_t r, s;
+	r = gcry_mpi_new(2048);
+	s = gcry_mpi_new(2048);
+	std::cout << "AsymmetricSignDSA(...)" << std::endl;
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, dsakey, r, s);
+	assert(!ret);
+	std::cout << "AsymmetricVerifyDSA(...)" << std::endl;
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, r, s);
+	assert(!ret);
+	gcry_sexp_release(dsaparms);
+	gcry_sexp_release(dsakey);
+	gcry_mpi_release(r);
+	gcry_mpi_release(s);
 
 	// testing S2K functions
 	tmcg_byte_t octcnt = 1;
