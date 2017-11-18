@@ -3712,6 +3712,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	// EME-PKCS1-v1_5 in Section 7.2.1 of [RFC3447] to form the "m" value
 	// used in the formulas above. See Section 13.1 of this document for
 	// notes on OpenPGP's use of PKCS#1.
+	memset(buffer, 0, sizeof(buffer));
 	for (size_t i = 0; (i < in.size()) && (i < sizeof(buffer)); i++, buflen++)
 		buffer[i] = in[i];
 	ret = gcry_mpi_scan(&v, GCRYMPI_FMT_USG, buffer, buflen, NULL);
@@ -3719,32 +3720,19 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 		return ret;
 	ret = gcry_sexp_build(&data, &erroff,
 		"(data (flags pkcs1) (value %M))", v);
+	gcry_mpi_release(v);
 	if (ret)
-	{
-		gcry_mpi_release(v);
 		return ret;
-	}
 	ret = gcry_pk_encrypt(&encryption, data, key);
+	gcry_sexp_release(data);
 	if (ret)
-	{
-		gcry_mpi_release(v);
-		gcry_sexp_release(encryption);
-		gcry_sexp_release(data);
 		return ret;
-	}
 	gcry_mpi_release(gk); // release already allocated mpi's
 	gcry_mpi_release(myk);
 	ret = gcry_sexp_extract_param(encryption, NULL, "ab", &gk, &myk, NULL);
-	if (ret)
-	{
-		gcry_mpi_release(v);
-		gcry_sexp_release(encryption);
-		gcry_sexp_release(data);
-		return ret;
-	}
-	gcry_mpi_release(v);
 	gcry_sexp_release(encryption);
-	gcry_sexp_release(data);
+	if (ret)
+		return ret;
 
 	return 0;
 }
@@ -3768,23 +3756,17 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 	if (ret)
 		return ret;
 	ret = gcry_pk_decrypt(&decryption, data, key);
+	gcry_sexp_release(data);
 	if (ret)
-	{
-		gcry_sexp_release(data);
 		return ret;
-	}
 	v = gcry_sexp_nth_mpi(decryption, 1, GCRYMPI_FMT_USG);
+	gcry_sexp_release(decryption);
 	if (v == NULL)
-	{
-		gcry_sexp_release(decryption);
-		gcry_sexp_release(data);
 		return GPG_ERR_NOT_FOUND;
-	}
+	memset(buffer, 0, sizeof(buffer));
 	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buffer, sizeof(buffer),
 		&buflen, v);
 	gcry_mpi_release(v);
-	gcry_sexp_release(decryption);
-	gcry_sexp_release(data);
 	if (ret)
 		return ret;
 	for (size_t i = 0; (i < buflen) && (i < sizeof(buffer)); i++)
@@ -3810,29 +3792,19 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	if (ret)
 		return ret;
 	ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags raw) (value %M))", h);
-	if (ret)
-	{
-		gcry_mpi_release(h);
-		return ret;
-	}
 	gcry_mpi_release(h);
-	ret = gcry_pk_sign(&signature, sigdata, key);
 	if (ret)
-	{
-		gcry_sexp_release(sigdata);
 		return ret;
-	}
+	ret = gcry_pk_sign(&signature, sigdata, key);
+	gcry_sexp_release(sigdata);
+	if (ret)
+		return ret;
 	gcry_mpi_release(r); // release already allocated mpi's
 	gcry_mpi_release(s);
 	ret = gcry_sexp_extract_param(signature, NULL, "rs", &r, &s, NULL);
-	if (ret)
-	{
-		gcry_sexp_release(signature);
-		gcry_sexp_release(sigdata);
-		return ret;
-	}
 	gcry_sexp_release(signature);
-	gcry_sexp_release(sigdata);
+	if (ret)
+		return ret;
 
 	return 0;
 }
@@ -3854,12 +3826,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 	if (ret)
 		return ret;
 	ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags raw) (value %M))", h);
-	if (ret)
-	{
-		gcry_mpi_release(h);
-		return ret;
-	}
 	gcry_mpi_release(h);
+	if (ret)
+		return ret;
 	ret = gcry_sexp_build(&signature, &erroff, "(sig-val (dsa (r %M) (s %M)))", r, s);
 	if (ret)
 	{
@@ -3867,14 +3836,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 		return ret;
 	}
 	ret = gcry_pk_verify(signature, sigdata, key);
-	if (ret)
-	{
-		gcry_sexp_release(signature);
-		gcry_sexp_release(sigdata);
-		return ret;
-	}
 	gcry_sexp_release(signature);
 	gcry_sexp_release(sigdata);
+	if (ret)
+		return ret;
 
 	return 0;
 }
