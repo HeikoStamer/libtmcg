@@ -142,7 +142,8 @@ int main
 
 	// testing AsymmetricSignDSA() and AsymmetricVerifyDSA()
 	gcry_sexp_t dsakey, dsaparms;
-	tmcg_octets_t hash;
+	tmcg_octets_t hash, trailer, left, sig;
+	std::string armored_signature;
 	CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(8, lit, hash); // SHA256
 	std::cout << "gcry_sexp_build(...)" << std::endl;
 	ret = gcry_sexp_build(&dsaparms, &erroff, "(genkey (dsa (nbits 4:3072)))");
@@ -156,6 +157,10 @@ int main
 	std::cout << "AsymmetricSignDSA(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, dsakey, r, s);
 	assert(!ret);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, 8, time(NULL), 60, subkeyid, trailer);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(trailer, left, r, s, sig);
+	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(2, sig, armored_signature);
+	std::cout << armored_signature << std::endl;
 	std::cout << "AsymmetricVerifyDSA(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, r, s);
 	assert(!ret);
