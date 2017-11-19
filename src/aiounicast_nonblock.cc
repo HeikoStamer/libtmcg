@@ -241,7 +241,7 @@ bool aiounicast_nonblock::Send
 	}
 	else
 	{
-		std::cerr << "aiounicast_nonblock: realsize does not fit" << std::endl;
+		std::cerr << "aiounicast_nonblock(" << j << "): realsize does not fit" << std::endl;
 		delete [] buf;
 		return false;
 	}
@@ -285,7 +285,7 @@ bool aiounicast_nonblock::Send
 		}
 		else
 		{
-			std::cerr << "aiounicast_nonblock: realsize does not fit" << std::endl;
+			std::cerr << "aiounicast_nonblock(" << j << "): realsize does not fit" << std::endl;
 			delete [] buf;
 			return false;
 		}
@@ -329,7 +329,7 @@ bool aiounicast_nonblock::Send
 				iv_flag_out[i_in] = true; // IV has been sent
 		}
 	}
-	// calculate the MAC over all data including line delimiter
+	// calculate the MAC over all data including the line delimiter
 	if (aio_is_authenticated)
 	{
 		err = gcry_mac_write(*mac_out[i_in], buf, realsize);
