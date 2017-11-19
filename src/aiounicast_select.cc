@@ -213,7 +213,7 @@ bool aiounicast_select::Send
 	mpz_t tmp;
 	mpz_init_set(tmp, m);
 	if (aio_is_encrypted)
-		mpz_add(tmp, tmp, aio_hide_length);
+		mpz_add(tmp, tmp, aio_hide_length); // add $2^c$ to hide length
 	size_t size = mpz_sizeinbase(tmp, TMCG_MPZ_IO_BASE);
 	if ((size * 2) >= buf_in_size)
 	{
@@ -250,7 +250,7 @@ bool aiounicast_select::Send
 	if (aio_is_encrypted)
 	{
 		memmove(buf + 1, buf, realsize - 1);
-		buf[0] = '+'; // set plus-character als non-zero prefix
+		buf[0] = '+'; // use plus-character as a non-zero prefix
 		err = gcry_cipher_encrypt(*enc_out[i_in], buf + 1, realsize - 1, NULL, 0);
 		if (err)
 		{
