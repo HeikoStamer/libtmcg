@@ -2489,57 +2489,73 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				return 0; // error: unknown public-key algo
 			break;
 		case 2: // Signature Packet
-			if (pkt.size() < 12)
+			if (pkt.size() < 1)
 				return 0; // error: incorrect packet body
 			out.version = pkt[0];
-			if (out.version != 4)
+			if (out.version == 3)
+			{
+				if (pkt.size() < 21)
+					return 0; // error: packet too short
+				if (pkt[1] != 5)
+					return 0; // error: incorrect length of hashed material
+				out.type = pkt[2];
+				out.sigcreationtime = (pkt[3] << 24) + (pkt[4] << 16) + (pkt[5] << 8) + pkt[6];
+				for (size_t i = 0; i < 8; i++)
+					out.issuer[i] = pkt[7+i]; // Key ID of signer
+				out.pkalgo = pkt[15];
+				out.hashalgo = pkt[16];
+				for (size_t i = 0; i < 2; i++)
+					out.left[i] = pkt[17+i]; // left 16 bits of signed hash value
+				mpis.insert(mpis.end(), pkt.begin()+19, pkt.end());
+			}
+			else if (out.version == 4)
+			{
+				if (pkt.size() < 12)
+					return 0; // error: packet too short
+				out.type = pkt[1];
+				out.pkalgo = pkt[2];
+				out.hashalgo = pkt[3];
+				hspdlen = (pkt[4] << 8) + pkt[5];
+				if (pkt.size() < (6 + hspdlen))
+					return 0; // error: packet too short
+				hspd.insert(hspd.end(), pkt.begin()+6, pkt.begin()+6+hspdlen);
+				out.hspdlen = hspdlen;
+				out.hspd = new tmcg_byte_t[out.hspdlen];
+				for (size_t i = 0; i < out.hspdlen; i++)
+					out.hspd[i] = pkt[6+i];
+				while (hspd.size() && sptype)
+                		{
+					sptype = SubpacketDecode(hspd, out);
+					if (sptype == 0)
+						return 0; // error: incorrect subpacket
+				}
+				uspdlen = (pkt[6+hspdlen] << 8) + pkt[7+hspdlen];
+				if (pkt.size() < (8 + hspdlen + uspdlen))
+					return 0; // error: packet too short
+				uspd.insert(uspd.end(), pkt.begin()+8+hspdlen, pkt.begin()+8+hspdlen+uspdlen);
+				// If a subpacket is not hashed, then the information
+				// in it cannot be considered definitive because it 
+				// is not part of the signature proper.
+				tmcg_openpgp_packet_ctx untrusted;
+				while (uspd.size() && sptype)
+                		{
+					sptype = SubpacketDecode(uspd, untrusted);
+					if (sptype == 0)
+						return 0; // error: incorrect subpacket
+					if (sptype == 16) // copy only the Issuer of signature
+					{
+						for (size_t i = 0; i < sizeof(out.issuer); i++)
+							out.issuer[i] = untrusted.issuer[i];
+					}					
+				}
+				if (pkt.size() < (10 + hspdlen + uspdlen))
+					return 0; // error: packet too short
+				for (size_t i = 0; i < 2; i++)
+					out.left[i] = pkt[8+hspdlen+uspdlen+i]; // left 16 bits of signed hash value
+				mpis.insert(mpis.end(), pkt.begin()+10+hspdlen+uspdlen, pkt.end());
+			}
+			else
 				return 0; // error: version not supported
-			out.type = pkt[1];
-			out.pkalgo = pkt[2];
-			out.hashalgo = pkt[3];
-			hspdlen = (pkt[4] << 8) + pkt[5];
-			if (pkt.size() < (6 + hspdlen))
-				return 0; // error: packet too short
-			hspd.insert(hspd.end(), 
-				pkt.begin()+6, pkt.begin()+6+hspdlen);
-			out.hspdlen = hspdlen;
-			out.hspd = new tmcg_byte_t[out.hspdlen];
-			for (size_t i = 0; i < out.hspdlen; i++)
-				out.hspd[i] = pkt[6+i];
-			while (hspd.size() && sptype)
-                	{
-				sptype = SubpacketDecode(hspd, out);
-				if (sptype == 0)
-					return 0; // error: incorrect subpacket
-			}
-			uspdlen = (pkt[6+hspdlen] << 8) + pkt[7+hspdlen];
-			if (pkt.size() < (8 + hspdlen + uspdlen))
-				return 0; // error: packet too short
-			uspd.insert(uspd.end(), pkt.begin()+8+hspdlen,
-					 pkt.begin()+8+hspdlen+uspdlen);
-			// If a subpacket is not hashed, then the information
-			// in it cannot be considered definitive because it 
-			// is not part of the signature proper.
-			tmcg_openpgp_packet_ctx untrusted;
-			while (uspd.size() && sptype)
-                	{
-				sptype = SubpacketDecode(uspd, untrusted);
-				if (sptype == 0)
-					return 0; // error: incorrect subpacket
-				if (sptype == 16) // only copy the Issuer
-				{
-					for (size_t i = 0; 
-					     i < sizeof(out.issuer); i++)
-						out.issuer[i] = 
-						     untrusted.issuer[i];
-				}					
-			}
-			if (pkt.size() < (10 + hspdlen + uspdlen))
-				return 0; // error: packet too short
-			out.left[0] = pkt[8+hspdlen+uspdlen];
-			out.left[1] = pkt[9+hspdlen+uspdlen];
-			mpis.insert(mpis.end(), pkt.begin()+10+hspdlen+uspdlen,
-				pkt.end());
 			if ((out.pkalgo == 1) || (out.pkalgo == 3))
 			{
 				// Algorithm-Specific Fields for RSA 
