@@ -2259,7 +2259,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 		case 16: // Issuer
 			if (pkt.size() != 8)
 				return 0; // error: incorrect subpacket body
-			for (size_t i = 0; i < pkt.size(); i++)
+			for (size_t i = 0; i < 8; i++)
 				out.issuer[i] = pkt[i];
 			break;
 		case 20: // Notation Data -- not implemented; ignore subpacket
@@ -2319,11 +2319,11 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				out.signersuserid[i] = pkt[i]; 
 			break;
 		case 29: // Reason for Revocation
-			if (pkt.size() > sizeof(out.revocationreason) + 1)
+			if (pkt.size() > (sizeof(out.revocationreason) + 1))
 				return 0; // error: too long subpacket body
 			out.revocationcode = pkt[0];
 			for (size_t i = 0; i < (pkt.size() - 1); i++)
-				out.revocationreason[i] = pkt[1+i]; 
+				out.revocationreason[i] = pkt[1+i];
 			break;
 		case 30: // Features
 			if (pkt.size() > sizeof(out.features))
@@ -2332,7 +2332,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				out.features[i] = pkt[i]; 
 			break;
 		case 31: // Signature Target
-			if (pkt.size() > sizeof(out.signaturetarget_hash) + 2)
+			if (pkt.size() > (sizeof(out.signaturetarget_hash) + 2))
 				return 0; // error: too long subpacket body
 			out.signaturetarget_pkalgo = pkt[0];
 			out.signaturetarget_hashalgo = pkt[1];
