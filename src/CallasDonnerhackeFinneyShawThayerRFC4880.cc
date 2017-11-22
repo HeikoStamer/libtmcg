@@ -2253,7 +2253,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				return 0; // error: incorrect subpacket body
 			out.revocationkey_class = pkt[0];
 			out.revocationkey_pkalgo = pkt[1];
-			for (size_t i = 0; i < pkt.size(); i++)
+			for (size_t i = 0; i < 20; i++)
 				out.revocationkey_fingerprint[i] = pkt[2+i]; 
 			break;
 		case 16: // Issuer
