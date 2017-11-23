@@ -107,35 +107,51 @@ void mpz_spowm
 	(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 #ifdef HAVE_POWMSEC
-	mpz_t foo, bar, xx;
+	mpz_t foo, bar, baz, xx;
+	mpz_set_ui(res, 0L); /* indicates an error */
 	if (!mpz_odd_p(p))
-	{
-		mpz_set_ui(res, 0L); /* indicates an error */
 		return;
-	}
-
-	mpz_init(foo), mpz_init(bar), mpz_init_set(xx, x);
-	if (mpz_sgn(x) == -1)
-		mpz_neg(xx, x);
+	mpz_init(foo), mpz_init_set_si(bar, -1L), mpz_init(baz), mpz_init_set(xx, x);
+	int sign = mpz_sgn(x);
+	if (sign == -1)
+		mpz_neg(xx, xx);
+	else if (sign == 1)
+		mpz_neg(bar, xx);
 	else
-		mpz_neg(bar, x);
-	/* compute res = m^x mod p with care */
-	mpz_powm_sec(res, m, xx, p);
-	/* invert the input, if x was negative */
-	if (!mpz_invert(foo, res, p))
+		mpz_neg(xx, bar);
+	/* compute baz = m^x mod p in constant-time */
+	mpz_powm_sec(baz, m, xx, p);
+	/* compute the inverse of result */
+	if (!mpz_invert(foo, baz, p))
 		mpz_set_ui(foo, 0L); /* indicates an error */
-	if (mpz_sgn(x) == -1)
-		mpz_set(res, foo);
+	/* invert the input, if x was negative */
+	if (sign == -1)
+		mpz_add(res, res, foo);
+	else if (sign == 1)
+		mpz_add(res, res, baz);
 	else
-		mpz_set(bar, foo);
+		mpz_add(res, res, xx);
+
 	/* additional dummy to prevent compiler optimizations */
-	if (!mpz_invert(foo, bar, p))
-		mpz_set_ui(foo, 1L), mpz_set_ui(bar, 1L);
-	mpz_mul(res, bar, res); /* res = bar * res * bar^{-1} mod p */
-	mpz_mod(res, res, p);
 	mpz_mul(res, res, foo);
 	mpz_mod(res, res, p);
-	mpz_clear(foo), mpz_clear(bar), mpz_clear(xx);
+	if (!mpz_invert(xx, foo, p))
+		mpz_set_ui(res, 0L); /* indicates an error */
+	mpz_mul(res, res, xx); /* res = res * foo * foo^{-1} mod p */
+	mpz_mod(res, res, p);
+	mpz_mul(res, res, bar);
+	mpz_mod(res, res, p);
+	if (!mpz_invert(xx, bar, p))
+		mpz_set_ui(res, 0L); /* indicates an error */
+	mpz_mul(res, res, xx); /* res = res * bar * bar^{-1} mod p */
+	mpz_mod(res, res, p);
+	mpz_mul(res, res, baz);
+	mpz_mod(res, res, p);
+	if (!mpz_invert(xx, baz, p))
+		mpz_set_ui(res, 0L); /* indicates an error */
+	mpz_mul(res, res, xx); /* res = res * baz * baz^{-1} mod p */
+	mpz_mod(res, res, p);
+	mpz_clear(foo), mpz_clear(bar), mpz_clear(baz), mpz_clear(xx);
 #else
 	mpz_spowm_baseblind(res, m, x, p);
 #endif
