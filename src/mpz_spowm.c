@@ -26,7 +26,6 @@
 #include "mpz_spowm.h"
 
 /* Kocher's efficient blinding technique for modular exponentiation [Ko96] */
-
 mpz_t bvi, bvf, bx, bp;
 
 void mpz_spowm_init
@@ -110,7 +109,10 @@ void mpz_spowm
 #ifdef HAVE_POWMSEC
 	mpz_t foo, bar, xx;
 	if (!mpz_odd_p(p))
-		mpz_set_ui(foo, 0L); /* indicates an error */
+	{
+		mpz_set_ui(res, 0L); /* indicates an error */
+		return;
+	}
 
 	mpz_init(foo), mpz_init(bar), mpz_init_set(xx, x);
 	if (mpz_sgn(x) == -1)
