@@ -2555,7 +2555,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				mpis.insert(mpis.end(), pkt.begin()+10+hspdlen+uspdlen, pkt.end());
 			}
 			else
-				return 0; // error: version not supported
+				return 0xFE; // warning: version not supported
 			if ((out.pkalgo == 1) || (out.pkalgo == 3))
 			{
 				// Algorithm-Specific Fields for RSA 
@@ -2579,7 +2579,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
 			else
-				return 0; // error: unsupported public-key algo
+				return 0xFE; // warning: unsupported public-key algo
 			break;
 		case 3: // Symmetric-Key Encrypted Session Key Packet
 			if (pkt.size() < 4)
