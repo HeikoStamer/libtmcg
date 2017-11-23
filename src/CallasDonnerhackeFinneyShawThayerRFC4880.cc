@@ -2263,8 +2263,20 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				out.issuer[i] = pkt[i];
 			break;
 		case 20: // Notation Data -- not implemented; ignore subpacket
-			if (out.critical)
-				return 0; // error: subpacket can't ignored
+			{
+			bool notation_human_readable = false;
+			if (pkt.size() < 8)
+				return 0; // error: incorrect subpacket body
+			if (pkt[0] == 0x80) // First octet: 0x80=human-readable
+				notation_human_readable = true;
+			else
+				return 0; // error: undefined notation flag
+			size_t notation_name_length = (pkt[4] << 8) + pkt[5];
+			size_t notation_value_length = (pkt[6] << 8) + pkt[7];
+			if (pkt.size() != (notation_name_length+notation_value_length+8))
+				return 0; // error: incorrect length
+			// TODO: store the notation in our subpacket context
+			}
 			break;
 		case 21: // Preferred Hash Algorithms
 			if (pkt.size() > sizeof(out.pha))
