@@ -2541,6 +2541,8 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					if (sptype == 0)
 						return 0; // error: incorrect subpacket
 				}
+				if (pkt.size() < (8 + hspdlen))
+					return 0; // error: packet too short
 				uspdlen = (pkt[6+hspdlen] << 8) + pkt[7+hspdlen];
 				if (pkt.size() < (8 + hspdlen + uspdlen))
 					return 0; // error: packet too short
