@@ -372,12 +372,24 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 std::vector<gcry_mpi_t> &v_i,
 			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
 
+		static bool BinaryDocumentHashV3
+			(const std::string &filename,
+			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
+			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static bool BinaryDocumentHash
 			(const std::string &filename,
 			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
 			 tmcg_octets_t &hash, tmcg_octets_t &left);
+		static void CertificationHashV3
+			(const tmcg_octets_t &key, const std::string &uid,
+			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
+			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static void CertificationHash
 			(const tmcg_octets_t &key, const std::string &uid,
+			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
+			 tmcg_octets_t &hash, tmcg_octets_t &left);
+		static void SubkeyBindingHashV3
+			(const tmcg_octets_t &primary, const tmcg_octets_t &subkey,
 			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
 			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static void SubkeyBindingHash
