@@ -7,6 +7,8 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+1.3.6 Again, this is a maintenance release that fixes some bugs and introduces
+      limited support for OpenPGP V3 signatures (RFC 4880).
 1.3.5 This is a maintenance release fixing some memory leaks found by Valgrind
       and some other minor bugs.
 1.3.4 The DKG tools have been removed from this release. These programs are
