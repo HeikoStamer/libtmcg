@@ -2482,7 +2482,9 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			mpis.insert(mpis.end(), pkt.begin()+10, pkt.end());
 			if ((out.pkalgo == 1) || (out.pkalgo == 2))
 			{
-				// Algorithm-Specific Fields for RSA 
+				// Algorithm-Specific Fields for RSA
+				if (mpis.size() <= 2)
+					return 0; // error: too few mpis
 				mlen = PacketMPIDecode(mpis, out.me);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
@@ -2491,6 +2493,8 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			else if (out.pkalgo == 16)
 			{
 				// Algorithm-Specific Fields for Elgamal
+				if (mpis.size() <= 2)
+					return 0; // error: too few mpis
 				mlen = PacketMPIDecode(mpis, out.gk);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
@@ -2511,7 +2515,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			out.version = pkt[0];
 			if (out.version == 3)
 			{
-				if (pkt.size() < 21)
+				if (pkt.size() < 22)
 					return 0; // error: packet too short
 				if (pkt[1] != 5)
 					return 0; // error: incorrect length of hashed material
@@ -2577,7 +2581,9 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				return 0xFE; // warning: version not supported
 			if ((out.pkalgo == 1) || (out.pkalgo == 3))
 			{
-				// Algorithm-Specific Fields for RSA 
+				// Algorithm-Specific Fields for RSA
+				if (mpis.size() <= 2)
+					return 0; // error: too few mpis
 				mlen = PacketMPIDecode(mpis, out.md);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
@@ -2585,7 +2591,9 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			}
 			else if (out.pkalgo == 17)
 			{
-				// Algorithm-Specific Fields for DSA 
+				// Algorithm-Specific Fields for DSA
+				if (mpis.size() <= 2)
+					return 0; // error: too few mpis
 				mlen = PacketMPIDecode(mpis, out.r);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
