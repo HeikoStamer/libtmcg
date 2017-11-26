@@ -201,6 +201,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 		l[3] = in[i+2] & 0x3F;
 		for (size_t j = 0; j < 4; j++, c++)
 		{
+			assert(l[j] < 64);
 			out += tmcg_tRadix64[l[j]];
 			// The encoded output stream must be represented
 			// in lines of no more than 76 characters each.
@@ -2333,6 +2334,8 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 		case 29: // Reason for Revocation
 			if (pkt.size() > (sizeof(out.revocationreason) + 1))
 				return 0; // error: too long subpacket body
+			if (pkt.size() < 1)
+				return 0; // error: too short subpacket body
 			out.revocationcode = pkt[0];
 			for (size_t i = 0; i < (pkt.size() - 1); i++)
 				out.revocationreason[i] = pkt[1+i];
@@ -2346,10 +2349,12 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 		case 31: // Signature Target
 			if (pkt.size() > (sizeof(out.signaturetarget_hash) + 2))
 				return 0; // error: too long subpacket body
+			if (pkt.size() < 2)
+				return 0; // error: too short subpacket body
 			out.signaturetarget_pkalgo = pkt[0];
 			out.signaturetarget_hashalgo = pkt[1];
 			for (size_t i = 0; i < (pkt.size() - 2); i++)
-				out.signaturetarget_hash[i] = pkt[2+i]; 
+				out.signaturetarget_hash[i] = pkt[2+i];
 			break;
 		case 32: // Embedded Signature
 			if (pkt.size() > sizeof(out.embeddedsignature))
