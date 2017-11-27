@@ -3163,7 +3163,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			out.compalgo = pkt[0];
 			if (out.compalgo > 3)
 				return 0; // error: algorithm not supported
-			out.compdatalen = pkt.size();
+			out.compdatalen = pkt.size() - 1;
 			out.compdata = new tmcg_byte_t[out.compdatalen];
 			for (size_t i = 0; i < out.compdatalen; i++)
 				out.compdata[i] = pkt[1+i];
