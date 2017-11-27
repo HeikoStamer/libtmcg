@@ -3016,7 +3016,8 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 				}
-				else if ((out.pkalgo == 107) || (out.pkalgo == 108) || (out.pkalgo == 109))
+				else if ((out.pkalgo == 107) || (out.pkalgo == 108) ||
+					(out.pkalgo == 109))
 				{
 					// Algorithm-Specific Fields for tDSS/DKG keys
 					mlen = PacketMPIDecode(mpis, out.x_i, 
@@ -3104,7 +3105,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			break;
 		case 6: // Public-Key Packet
 		case 14: // Public-Subkey Packet
-			if (pkt.size() < 14)
+			if (pkt.size() < 10)
 				return 0; // error: incorrect packet body
 			out.version = pkt[0];
 			if (out.version != 4)
@@ -3193,15 +3194,17 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				return 0; // error: incorrect packet body
 			out.dataformat = pkt[0];
 			out.datafilenamelen = pkt[1];
+			if (pkt.size() < (out.datafilenamelen + 2))
+				return 0; // error: packet too short
 			for (size_t i = 0; i < out.datafilenamelen; i++)
 				out.datafilename[i] = pkt[2+i];
-			if (pkt.size() < (6 + out.datafilenamelen + 1))
+			if (pkt.size() < (out.datafilenamelen + 7))
 				return 0; // error: packet too short
 			out.datatime = (pkt[3+out.datafilenamelen] << 24) +
 				(pkt[4+out.datafilenamelen] << 16) +
 				(pkt[5+out.datafilenamelen] << 8) +
 				 pkt[6+out.datafilenamelen];
-			out.datalen = pkt.size() - out.datafilenamelen - 6;
+			out.datalen = pkt.size() - (out.datafilenamelen + 6);
 			out.data = new tmcg_byte_t[out.datalen];
 			for (size_t i = 0; i < out.datalen; i++)
 				out.data[i] = pkt[6+out.datafilenamelen+i];
@@ -3209,7 +3212,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		case 12: // Trust Packet -- not supported, ignore
 			break;
 		case 13: // User ID Packet
-			if (pkt.size() > sizeof(out.uid))
+			if (pkt.size() >= sizeof(out.uid))
 				return 0; // error: packet too long
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.uid[i] = pkt[i];
