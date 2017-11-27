@@ -205,8 +205,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
 			out += tmcg_tRadix64[l[j]];
 			// The encoded output stream must be represented
 			// in lines of no more than 76 characters each.
-			if (((c % TMCG_OPENPGP_RADIX64_MC) == 0) &&
-			    ((len >= 4) || (j < 3)) && linebreaks)
+			if (((c % TMCG_OPENPGP_RADIX64_MC) == 0) && ((len >= 4) || (j < 3)) && linebreaks)
 				out += "\r\n"; // add a line delimiter
 		}
 	}
@@ -266,7 +265,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode
 
 	size_t len = in.size();
 	for (size_t j = 0; j < (4 - (len % 4)); j++)
-		in += "="; // append pad until multiple of four
+		in += "="; // append pad until a multiple of four reached
 	for (size_t i = 0; i < len; i += 4)
 	{
         	tmcg_byte_t l[4];
@@ -277,8 +276,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode
 		t[1] = ((l[1] & 0x0F) << 4) + ((l[2] & 0x3C) >> 2);
 		t[2] = ((l[2] & 0x03) << 6) + (l[3] & 0x3F);
 		for (size_t j = 0; j < 3; j++)
+		{
 			if (l[j+1] != 255)
 				out.push_back(t[j]);
+		}
 	}
 }
 
@@ -490,7 +491,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 	buffer[1] = in.size() >> 8;
 	buffer[2] = in.size();
 	for (size_t i = 0; i < in.size(); i++)
-		buffer[i + 3] = in[i];
+		buffer[3+i] = in[i];
 	gcry_md_hash_buffer(GCRY_MD_SHA1, hash, buffer, in.size() + 3); 
 	for (size_t i = 0; i < 20; i++)
 		out.push_back(hash[i]);
@@ -519,6 +520,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	size_t dlen = gcry_md_get_algo_dlen(a);
 	tmcg_byte_t *buffer = new tmcg_byte_t[in.size()];
 	tmcg_byte_t *hash = new tmcg_byte_t[dlen];
+
 	for (size_t i = 0; i < in.size(); i++)
 		buffer[i] = in[i];
 	gcry_md_hash_buffer(a, hash, buffer, in.size()); 
@@ -532,15 +534,19 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	(const tmcg_byte_t algo, const size_t cnt, const tmcg_octets_t &in,
 	 tmcg_octets_t &out)
 {
+	size_t c = in.size();
 	int a = AlgorithmHashGCRY(algo);
 	gcry_error_t ret;
 	gcry_md_hd_t hd;
+
 	ret = gcry_md_open(&hd, a, 0);
 	if (ret || (hd == NULL))
+	{
+		out.clear(); // indicates an error
 		return;
+	}
 	for (size_t i = 0; i < in.size(); i++)
 		gcry_md_putc(hd, in[i]);
-	size_t c = in.size();
 	while (c < cnt)
 	{
 		for (size_t i = 0; (i < in.size()) && (c < cnt); i++, c++)
@@ -564,6 +570,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
 	int a = AlgorithmHashGCRY(algo);
 	gcry_error_t ret;
 	gcry_md_hd_t hd;
+
 	ret = gcry_md_open(&hd, a, 0);
 	if (ret || (hd == NULL))
 		return false;
@@ -670,7 +677,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 		{
 			tmcg_octets_t hash_in, hash_out;
 			for (size_t i = 0; i < j; i++)
-				hash_in.push_back(0x00); // preload zeros
+				hash_in.push_back(0x00); // preload with zeros
 			hash_in.insert(hash_in.end(), salt.begin(), salt.end());
 			for (size_t i = 0; i < in.length(); i++)
 				hash_in.push_back(in[i]);
@@ -847,6 +854,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 	(const tmcg_octets_t &in, gcry_mpi_t &out, size_t &sum)
 {
 	gcry_error_t ret;
+
 	if (in.size() < 2)
 		return 0; // error: no length given
 	size_t buflen = ((in[0] << 8) + in[1] + 7) / 8;
@@ -859,11 +867,11 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 	tmcg_byte_t *buffer = new tmcg_byte_t[buflen];
 	for (size_t i = 0; i < buflen; i++)
 	{
-		buffer[i] = in[2 + i];
+		buffer[i] = in[2+i];
 		sum += buffer[i];
 		sum %= 65536;
 	}
-	gcry_mpi_release(out); // release already allocated mpi
+	gcry_mpi_release(out); // release an already allocated mpi
 	ret = gcry_mpi_scan(&out, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	delete [] buffer;
 	if (ret)
@@ -893,6 +901,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketStringDecode
 	size_t headlen = 0;
 	uint32_t len = 0;
 	bool partlen = false;
+
 	headlen = PacketLengthDecode(in, true, 0x00, len, partlen);
 	if (!headlen || partlen)
 		return 0; // error: wrong length
@@ -902,7 +911,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketStringDecode
 		return 0; // error: input too short 
 	for (size_t i = 0; i < len; i++)
 		out += in[headlen+i];
-	return len + headlen;
+	return (len + headlen);
 }
 
 // ===========================================================================
@@ -995,7 +1004,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
-	(const tmcg_byte_t type, bool critical, const tmcg_octets_t &in, tmcg_octets_t &out)
+	(const tmcg_byte_t type, bool critical, const tmcg_octets_t &in,
+	 tmcg_octets_t &out)
 {
 	// A subpacket data set consists of zero or more Signature subpackets.
 	// In Signature packets, the subpacket data set is preceded by a two-
@@ -1329,8 +1339,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 			buffer[i] = plain[i];
 		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, 
-			GCRY_CIPHER_MODE_CFB, 0);
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
 		if (ret)
 		{
 			delete [] buffer;
@@ -1395,8 +1404,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	for (size_t j = 0; j < capl.size(); j++)
 		len += 5+capl[j].length();
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	{
 		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
 			len += 2+((gcry_mpi_get_nbits(c_ik[j][k]) + 7) / 8);
+	}
 	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+2+qualsizelen;
 	if (passphrase.length() == 0)
 		len += 1+2+x_ilen+2+xprime_ilen+2; // S2K usage is zero
@@ -1421,8 +1432,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	for (size_t j = 0; j < qual.size(); j++)
 		PacketStringEncode(capl[j], out); // STRING capl[j]
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	{
 		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
 			PacketMPIEncode(c_ik[j][k], out); // MPI c_ik[j][k]
+	}
 	if (passphrase.length() == 0)
 	{
 		size_t chksum = 0;
@@ -1463,8 +1476,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 			buffer[i] = plain[i];
 		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, 
-			GCRY_CIPHER_MODE_CFB, 0);
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
 		if (ret)
 		{
 			delete [] buffer;
@@ -1539,8 +1551,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 	for (size_t j = 0; j < capl.size(); j++)
 		len += 5+capl[j].length();
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	{
 		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
 			len += 2+((gcry_mpi_get_nbits(c_ik[j][k]) + 7) / 8);
+	}
 	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+2+qualsizelen+2+x_rvss_qualsizelen;
 	if (passphrase.length() == 0)
 		len += 1+2+x_ilen+2+xprime_ilen+2; // S2K usage is zero
@@ -1568,8 +1582,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 	for (size_t j = 0; j < capl.size(); j++)
 		PacketStringEncode(capl[j], out); // STRING capl[j]
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	{
 		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
 			PacketMPIEncode(c_ik[j][k], out); // MPI c_ik[j][k]
+	}
 	if (passphrase.length() == 0)
 	{
 		size_t chksum = 0;
@@ -1610,8 +1626,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 			buffer[i] = plain[i];
 		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, 
-			GCRY_CIPHER_MODE_CFB, 0);
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
 		if (ret)
 		{
 			delete [] buffer;
@@ -1779,8 +1794,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 			buffer[i] = plain[i];
 		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, 
-			GCRY_CIPHER_MODE_CFB, 0);
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
 		if (ret)
 		{
 			delete [] buffer;
@@ -1846,8 +1860,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 		len += 2+((gcry_mpi_get_nbits(v_i[j]) + 7) / 8);
 	assert((c_ik.size() == get_gcry_mpi_ui(n)));
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	{
 		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
 			len += 2+((gcry_mpi_get_nbits(c_ik[j][k]) + 7) / 8);
+	}
 	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+2+qualsizelen;
 	if (passphrase.length() == 0)
 		len += 1+2+x_ilen+2+xprime_ilen+2; // S2K usage is zero
@@ -1872,8 +1888,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
 		PacketMPIEncode(v_i[j], out); // MPI v_i[j]
 	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	{
 		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
 			PacketMPIEncode(c_ik[j][k], out); // MPI c_ik[j][k]
+	}
 	if (passphrase.length() == 0)
 	{
 		size_t chksum = 0;
@@ -1914,8 +1932,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 			buffer[i] = plain[i];
 		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, 
-			GCRY_CIPHER_MODE_CFB, 0);
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
 		if (ret)
 		{
 			delete [] buffer;
@@ -2196,14 +2213,12 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 		case 2: // Signature Creation Time 
 			if (pkt.size() != 4)
 				return 0; // error: incorrect subpacket body 
-			out.sigcreationtime = (pkt[0] << 24) +
-				(pkt[1] << 16) + (pkt[2] << 8) + pkt[3];
+			out.sigcreationtime = (pkt[0] << 24) + (pkt[1] << 16) + (pkt[2] << 8) + pkt[3];
 			break;
 		case 3: // Signature Expiration Time
 			if (pkt.size() != 4)
 				return 0; // error: incorrect subpacket body 
-			out.sigexpirationtime = (pkt[0] << 24) + 
-				(pkt[1] << 16) + (pkt[2] << 8) + pkt[3];
+			out.sigexpirationtime = (pkt[0] << 24) + (pkt[1] << 16) + (pkt[2] << 8) + pkt[3];
 			break;
 		case 4: // Exportable Certification
 			if (pkt.size() != 1)
@@ -2222,7 +2237,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			out.trustamount = pkt[1];
 			break;
 		case 6: // Regular Expression
-			if (pkt.size() > sizeof(out.trustregex))
+			if (pkt.size() >= sizeof(out.trustregex))
 				return 0; // error: too long subpacket body
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.trustregex[i] = pkt[i]; 
@@ -2240,8 +2255,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 		case 9: // Key Expiration Time
 			if (pkt.size() != 4)
 				return 0; // error: incorrect subpacket body 
-			out.keyexpirationtime = (pkt[0] << 24) + 
-				(pkt[1] << 16) + (pkt[2] << 8) + pkt[3];
+			out.keyexpirationtime = (pkt[0] << 24) + (pkt[1] << 16) + (pkt[2] << 8) + pkt[3];
 			break;
 		case 11: // Preferred Symmetric Algorithms
 			if (pkt.size() > sizeof(out.psa))
@@ -2274,9 +2288,9 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				return 0; // error: undefined notation flag
 			size_t notation_name_length = (pkt[4] << 8) + pkt[5];
 			size_t notation_value_length = (pkt[6] << 8) + pkt[7];
-			if (pkt.size() != (notation_name_length+notation_value_length+8))
+			if (pkt.size() != (notation_name_length + notation_value_length + 8))
 				return 0; // error: incorrect length
-			// TODO: store the notation in our subpacket context
+			// TODO: store notation in a given container
 			}
 			break;
 		case 21: // Preferred Hash Algorithms
@@ -2292,13 +2306,13 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				out.pca[i] = pkt[i]; 
 			break;
 		case 23: // Key Server Preferences
-			if (pkt.size() > sizeof(out.keyserverpreferences))
+			if (pkt.size() >= sizeof(out.keyserverpreferences))
 				return 0; // error: too long subpacket body
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.keyserverpreferences[i] = pkt[i]; 
 			break;
 		case 24: // Preferred Key Server
-			if (pkt.size() > sizeof(out.preferedkeyserver))
+			if (pkt.size() >= sizeof(out.preferedkeyserver))
 				return 0; // error: too long subpacket body
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.preferedkeyserver[i] = pkt[i]; 
@@ -2314,7 +2328,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				return 0; // error: bad value
 			break;
 		case 26: // Policy URI
-			if (pkt.size() > sizeof(out.policyuri))
+			if (pkt.size() >= sizeof(out.policyuri))
 				return 0; // error: too long subpacket body
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.policyuri[i] = pkt[i]; 
@@ -2347,12 +2361,12 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				out.features[i] = pkt[i]; 
 			break;
 		case 31: // Signature Target
-			if (pkt.size() > (sizeof(out.signaturetarget_hash) + 2))
-				return 0; // error: too long subpacket body
 			if (pkt.size() < 2)
 				return 0; // error: too short subpacket body
 			out.signaturetarget_pkalgo = pkt[0];
 			out.signaturetarget_hashalgo = pkt[1];
+			if (pkt.size() > (sizeof(out.signaturetarget_hash) + 2))
+				return 0; // error: too long subpacket body
 			for (size_t i = 0; i < (pkt.size() - 2); i++)
 				out.signaturetarget_hash[i] = pkt[2+i];
 			break;
@@ -2619,7 +2633,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			out.s2k_hashalgo = pkt[3];
 			if (out.s2k_type == 0x00)
 			{
-				// Simple S2K
+				// Simple S2K -- not permitted by RFC 4880
 				out.encdatalen = pkt.size() - 4;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
@@ -2676,13 +2690,12 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			break;
 		case 5: // Secret-Key Packet
 		case 7: // Secret-Subkey Packet
-			if (pkt.size() < 14)
+			if (pkt.size() < 10)
 				return 0; // error: incorrect packet body
 			out.version = pkt[0];
 			if (out.version != 4)
 				return 0; // error: version not supported
-			out.keycreationtime = (pkt[1] << 24) + (pkt[2] << 16)
-				+ (pkt[3] << 8) + pkt[4];
+			out.keycreationtime = (pkt[1] << 24) + (pkt[2] << 16) + (pkt[3] << 8) + pkt[4];
 			out.pkalgo = pkt[5];
 			mpis.insert(mpis.end(), pkt.begin()+6, pkt.end());
 			if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
@@ -2981,57 +2994,42 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				{
 					// Algorithm-Specific Fields for Elgamal
 					// and DSA keys
-					mlen = PacketMPIDecode(mpis, out.x, 
-						chksum);
+					mlen = PacketMPIDecode(mpis, out.x, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				else if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
 				{
 					// Algorithm-Specific Fields for RSA keys
-					mlen = PacketMPIDecode(mpis, out.d, 
-						chksum);
+					mlen = PacketMPIDecode(mpis, out.d, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis, out.p, 
-						chksum);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis, out.p, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis, out.q, 
-						chksum);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis, out.q, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis, out.u, 
-						chksum);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis, out.u, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
-				else if ((out.pkalgo == 107) || (out.pkalgo == 108) ||
-					(out.pkalgo == 109))
+				else if ((out.pkalgo == 107) || (out.pkalgo == 108) || (out.pkalgo == 109))
 				{
 					// Algorithm-Specific Fields for tDSS/DKG keys
-					mlen = PacketMPIDecode(mpis, out.x_i, 
-						chksum);
+					mlen = PacketMPIDecode(mpis, out.x_i, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis, out.xprime_i, 
-						chksum);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis, out.xprime_i, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				else
 					return 0; // error: algo not supported
@@ -3065,8 +3063,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						return 0; // error: no salt
 					for (size_t i = 0; i < 8; i++)
 						out.s2k_salt[i] = mpis[i];
-					mpis.erase(mpis.begin(), 
-						mpis.begin()+8);
+					mpis.erase(mpis.begin(), mpis.begin()+8);
 				}
 				else if (out.s2k_type == 0x03)
 				{
@@ -3075,13 +3072,11 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						return 0; // error: no salt
 					for (size_t i = 0; i < 8; i++)
 						out.s2k_salt[i] = mpis[i];
-					mpis.erase(mpis.begin(), 
-						mpis.begin()+8);
+					mpis.erase(mpis.begin(), mpis.begin()+8);
 					if (mpis.size() < 1)
 						return 0; // error: no count
 					out.s2k_count = mpis[0];
-					mpis.erase(mpis.begin(), 
-						mpis.begin()+1);
+					mpis.erase(mpis.begin(), mpis.begin()+1);
 				}
 				else
 					return 0; // unknown S2K specifier
@@ -3110,8 +3105,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			out.version = pkt[0];
 			if (out.version != 4)
 				return 0; // error: version not supported
-			out.keycreationtime = (pkt[1] << 24) + (pkt[2] << 16)
-				+ (pkt[3] << 8) + pkt[4];
+			out.keycreationtime = (pkt[1] << 24) + (pkt[2] << 16) + (pkt[3] << 8) + pkt[4];
 			out.pkalgo = pkt[5];
 			mpis.insert(mpis.end(), pkt.begin()+6, pkt.end());
 			if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
@@ -3185,9 +3179,8 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		case 10: // Marker Packet
 			if (pkt.size() != 3)
 				return 0; // error: incorrect packet body
-			if ((pkt[0] != 0x50) || (pkt[1] != 0x47) || 
-				(pkt[3] != 0x50))
-					return 0; // error: bad marker 
+			if ((pkt[0] != 0x50) || (pkt[1] != 0x47) || (pkt[3] != 0x50))
+				return 0; // error: bad marker 
 			break;
 		case 11: // Literal Data Packet
 			if (pkt.size() < 2)
@@ -3200,10 +3193,8 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.datafilename[i] = pkt[2+i];
 			if (pkt.size() < (out.datafilenamelen + 7))
 				return 0; // error: packet too short
-			out.datatime = (pkt[3+out.datafilenamelen] << 24) +
-				(pkt[4+out.datafilenamelen] << 16) +
-				(pkt[5+out.datafilenamelen] << 8) +
-				 pkt[6+out.datafilenamelen];
+			out.datatime = (pkt[3+out.datafilenamelen] << 24) + (pkt[4+out.datafilenamelen] << 16) +
+				(pkt[5+out.datafilenamelen] << 8) + pkt[6+out.datafilenamelen];
 			out.datalen = pkt.size() - (out.datafilenamelen + 6);
 			out.data = new tmcg_byte_t[out.datalen];
 			for (size_t i = 0; i < out.datalen; i++)
@@ -3641,8 +3632,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	// After encrypting the first block-size-plus-two octets, the CFB state
 	// is resynchronized. The last block-size octets of ciphertext are
 	// passed through the cipher and the block boundary is reset.
-	ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB,
-		GCRY_CIPHER_ENABLE_SYNC);
+	ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_ENABLE_SYNC);
 	if (ret)
 	{
 		gcry_cipher_close(hd);
@@ -3774,8 +3764,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	// After encrypting the first block-size-plus-two octets, the CFB state
 	// is resynchronized. The last block-size octets of ciphertext are
 	// passed through the cipher and the block boundary is reset.
-	ret = gcry_cipher_open(&hd, AlgorithmSymGCRY(algo), GCRY_CIPHER_MODE_CFB,
-		GCRY_CIPHER_ENABLE_SYNC);
+	ret = gcry_cipher_open(&hd, AlgorithmSymGCRY(algo), GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_ENABLE_SYNC);
 	if (ret)
 	{
 		gcry_cipher_close(hd);
@@ -3859,8 +3848,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	ret = gcry_mpi_scan(&v, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	if (ret)
 		return ret;
-	ret = gcry_sexp_build(&data, &erroff,
-		"(data (flags pkcs1) (value %M))", v);
+	ret = gcry_sexp_build(&data, &erroff, "(data (flags pkcs1) (value %M))", v);
 	gcry_mpi_release(v);
 	if (ret)
 		return ret;
@@ -3892,8 +3880,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 	// EME-PKCS1-v1_5 in Section 7.2.1 of [RFC3447] to form the "m" value
 	// used in the formulas above. See Section 13.1 of this document for
 	// notes on OpenPGP's use of PKCS#1.
-	ret = gcry_sexp_build(&data, &erroff,
-		"(enc-val (flags pkcs1) (elg (a %M) (b %M)))", gk, myk);
+	ret = gcry_sexp_build(&data, &erroff, "(enc-val (flags pkcs1) (elg (a %M) (b %M)))", gk, myk);
 	if (ret)
 		return ret;
 	ret = gcry_pk_decrypt(&decryption, data, key);
