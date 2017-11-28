@@ -496,19 +496,21 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	assert(bad_cnt < 10);
 	
 	// h, g, mpz_shash
+	size_t dlen = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
 	unsigned char tmp_ar1[1024], tmp_ar2[1024];
 	std::cout << "h()" << std::endl;
-	unsigned char *dig1 = new unsigned char[gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)];
-	unsigned char *dig2 = new unsigned char[gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)];
+	unsigned char *dig1 = new unsigned char[dlen];
+	unsigned char *dig2 = new unsigned char[dlen];
 	for (size_t i = 0; i < 50; i++)
 	{
 		gcry_randomize(&tmp_ar1, sizeof(tmp_ar1), GCRY_STRONG_RANDOM);
+		gcry_randomize(&tmp_ar2, sizeof(tmp_ar2), GCRY_STRONG_RANDOM);
 		h(dig1, tmp_ar1, sizeof(tmp_ar1));
 		h(dig2, tmp_ar2, sizeof(tmp_ar2));
-		assert(memcmp(dig1, dig2, gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)));
+		assert(memcmp(dig1, dig2, dlen));
 		memcpy(tmp_ar2, tmp_ar1, sizeof(tmp_ar1));
 		h(dig2, tmp_ar2, sizeof(tmp_ar2));
-		assert(!memcmp(dig1, dig2, gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)));
+		assert(!memcmp(dig1, dig2, dlen));
 	}
 	delete [] dig1, delete [] dig2;
 	std::cout << "g()" << std::endl;
@@ -518,10 +520,10 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		gcry_randomize(&tmp_ar1, sizeof(tmp_ar1), GCRY_STRONG_RANDOM);
 		g(dig1, 1024, tmp_ar1, sizeof(tmp_ar1));
 		g(dig2, 1024, tmp_ar2, sizeof(tmp_ar2));
-		assert(memcmp(dig1, dig2, gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)));
+		assert(memcmp(dig1, dig2, dlen));
 		memcpy(tmp_ar2, tmp_ar1, sizeof(tmp_ar1));
 		g(dig2, 1024, tmp_ar2, sizeof(tmp_ar2));
-		assert(!memcmp(dig1, dig2, gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO)));
+		assert(!memcmp(dig1, dig2, dlen));
 	}
 	delete [] dig1, delete [] dig2;
 	std::cout << "mpz_shash()" << std::endl;
