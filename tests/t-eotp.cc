@@ -96,7 +96,7 @@ int main
 			for (size_t i = 0; i < N; i++)
 			{
 				mpz_clear(M[i]);
-				delete M[i];
+				delete [] M[i];
 			}
 			M.clear();
 			delete eotp;
