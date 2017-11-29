@@ -100,6 +100,7 @@ void start_instance
 			{
 				std::cout << "P_" << whoami << ": " <<
 					"Group G was not correctly generated!" << std::endl;
+				delete tmcg, delete vtmf;
 				exit(-1);
 			}
 			stop_clock();
@@ -121,6 +122,7 @@ void start_instance
 					{
 						std::cout << "P_" << whoami << ": " << "Public key of P_" <<
 							i << " was not correctly generated!" << std::endl;
+						delete tmcg, delete vtmf;
 						exit(-1);
 					}
 				}
@@ -138,6 +140,7 @@ void start_instance
 			{
 				std::cout << "P_" << whoami << ": " <<
 					"Group G was not correctly generated!" << std::endl;
+				delete tmcg, delete vtmf, delete edcf;
 				exit(-1);
 			}
 			
@@ -153,6 +156,7 @@ void start_instance
 				{
 					std::cout << "P_" << whoami << ": " <<
 						"VSSHE instance was not correctly generated!" << std::endl;
+					delete tmcg, delete vtmf, delete vsshe, delete edcf;
 					exit(-1);
 				}
 				for (size_t i = 1; i < PLAYERS; i++)
@@ -167,22 +171,26 @@ void start_instance
 				{
 					std::cout << "P_" << whoami << ": " <<
 						"VSSHE instance was not correctly generated!" << std::endl;
+					delete tmcg, delete vtmf, delete vsshe, delete edcf;
 					exit(-1);
 				}
 				if (mpz_cmp(vtmf->h, vsshe->com->h))
 				{
 					std::cout << "VSSHE: Common public key does not match!" << std::endl;
+					delete tmcg, delete vtmf, delete vsshe, delete edcf;
 					exit(-1);
 				}
 				if (mpz_cmp(vtmf->q, vsshe->com->q))
 				{
 					std::cout << "VSSHE: Subgroup order does not match!" << std::endl;
+					delete tmcg, delete vtmf, delete vsshe, delete edcf;
 					exit(-1);
 				}
 				if (mpz_cmp(vtmf->p, vsshe->p) || mpz_cmp(vtmf->q, vsshe->q) || 
 					mpz_cmp(vtmf->g, vsshe->g) || mpz_cmp(vtmf->h, vsshe->h))
 				{
 					std::cout << "VSSHE: Encryption scheme does not match!" << std::endl;
+					delete tmcg, delete vtmf, delete vsshe, delete edcf;
 					exit(-1);
 				}
 				stop_clock();
@@ -194,6 +202,7 @@ void start_instance
 			{
 				std::cout << "VSSHE: SetupGenerators_publiccoin() failed!" << std::endl;
 				std::cout << "P_" << whoami << ": log follows " << std::endl << err_log.str();
+				delete tmcg, delete vtmf, delete vsshe, delete edcf;
 				exit(-1);
 			}
 			stop_clock();
@@ -233,12 +242,14 @@ void start_instance
 					if (!P_in[i]->good())
 					{
 						std::cout << "P_" << whoami << ": " << "Read or parse error for P_" << i << std::endl;
+						delete tmcg, delete vtmf, delete vsshe, delete edcf;
 						exit(-1);
 					}
 					if (!tmcg->TMCG_VerifyStackEquality_Groth(s, s2, vtmf, vsshe, 
 						*P_in[i], *P_out[i]))
 					{
 						std::cout << "P_" << whoami << ": " << "Shuffle verification failed for P_" << i << std::endl;
+						delete tmcg, delete vtmf, delete vsshe, delete edcf;
 						exit(-1);
 					}
 				}
@@ -272,6 +283,7 @@ void start_instance
 								*P_in[i2], *P_out[i2]))
 							{
 								std::cout << "P_" << whoami << ": " << "Card verification failed for P_" << i << std::endl;
+								delete tmcg, delete vtmf, delete vsshe, delete edcf;
 								exit(-1);
 							}
 						}
@@ -318,6 +330,7 @@ void start_instance
 								*P_in[i2], *P_out[i2]))
 							{
 								std::cout << "P_" << whoami << ": " << "Card verification failed for P_" << i << std::endl;
+								delete tmcg, delete vtmf, delete vsshe, delete edcf;
 								exit(-1);
 							}
 						}
