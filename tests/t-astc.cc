@@ -197,7 +197,7 @@ void start_instance
 			for (size_t i = 0; i < nn; i++)
 			{
 				mpz_clear(mp[i]);
-				delete mp[i];
+				delete [] mp[i];
 			}
 			mp.clear();
 			delete com;
