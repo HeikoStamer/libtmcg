@@ -185,7 +185,7 @@ int main
 	for (size_t i = 0; i < n; i++)
 	{
 		mpz_clear(mp[i]);
-		delete mp[i];
+		delete [] mp[i];
 	}
 	mp.clear();
 	delete com, delete com2;
@@ -230,7 +230,7 @@ int main
 	assert(com2->Verify(a, b, mp));
 	{
 		mpz_clear(mp[0]);
-		delete mp[0];
+		delete [] mp[0];
 	}
 	mp.clear();
 	delete com, delete com2;
