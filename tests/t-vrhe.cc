@@ -225,11 +225,11 @@ int main
 			for (size_t i = 0; i < n; i++)
 			{
 				mpz_clear(m[i]), mpz_clear(m_pi[i]), mpz_clear(R[i]);
-				delete m[i], delete m_pi[i], delete R[i];
+				delete [] m[i], delete [] m_pi[i], delete [] R[i];
 				mpz_clear(e[i].first), mpz_clear(e[i].second);
-				delete e[i].first, delete e[i].second;
+				delete [] e[i].first, delete [] e[i].second;
 				mpz_clear(E[i].first), mpz_clear(E[i].second);
-				delete E[i].first, delete E[i].second;
+				delete [] E[i].first, delete [] E[i].second;
 			}
 			m.clear(), m_pi.clear(), R.clear(), e.clear(), E.clear();
 			delete edcf, delete vrhe;
@@ -317,9 +317,9 @@ int main
 				mpz_clear(m[i]);
 				mpz_clear(e[i].first), mpz_clear(e[i].second);
 				mpz_clear(E[i].first), mpz_clear(E[i].second);
-				delete m[i];
-				delete e[i].first, delete e[i].second;
-				delete E[i].first, delete E[i].second;
+				delete [] m[i];
+				delete [] e[i].first, delete [] e[i].second;
+				delete [] E[i].first, delete [] E[i].second;
 			}
 			m.clear(), e.clear(), E.clear();
 			delete edcf, delete vrhe;
