@@ -1343,7 +1343,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			mpz_fspowm(fpowm_table_h, bar, h, b_i[k], p);
 			mpz_mul(C_ik[i][k], foo, bar);
 			mpz_mod(C_ik[i][k], C_ik[i][k], p);
-			rbc->Broadcast(C_ik[i][k]);
+			rbc->Broadcast(C_ik[i][k]); // TODO: skip this for optimization, if k = 0
 		}
 		for (size_t j = 0; j < n; j++)
 		{

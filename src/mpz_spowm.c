@@ -246,9 +246,9 @@ void mpz_fspowm
 	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 	size_t i;
-	mpz_t foo, bar, xx;
+	mpz_t foo, bar, baz, xx;
 	
-	mpz_init(foo), mpz_init(bar), mpz_init_set(xx, x);
+	mpz_init(foo), mpz_init(bar), mpz_init(baz), mpz_init_set(xx, x);
 	if (mpz_sgn(x) == -1)
 		mpz_neg(xx, x);
 	else
@@ -268,12 +268,13 @@ void mpz_fspowm
 				mpz_set(bar, foo);
 		}
 		/* invert the input, if x was negative */
+		mpz_set(baz, res);
 		if (!mpz_invert(foo, res, p))
 			mpz_set_ui(foo, 0L); /* indicates an error */
 		if (mpz_sgn(x) == -1)
 			mpz_set(res, foo);
 		else
-			mpz_set(bar, foo);
+			mpz_set(baz, foo);
 		/* additional dummy to prevent compiler optimizations */
 		if (!mpz_invert(foo, bar, p))
 			mpz_set_ui(foo, 1L), mpz_set_ui(bar, 1L);
@@ -281,10 +282,16 @@ void mpz_fspowm
 		mpz_mod(res, res, p);
 		mpz_mul(res, res, foo);
 		mpz_mod(res, res, p);
+		if (!mpz_invert(foo, baz, p))
+			mpz_set_ui(foo, 1L), mpz_set_ui(baz, 1L);
+		mpz_mul(res, baz, res); /* res = baz * res * baz^{-1} mod p */
+		mpz_mod(res, res, p);
+		mpz_mul(res, res, foo);
+		mpz_mod(res, res, p);
 	}
 	else
 		mpz_set_ui(res, 0L); /* indicates an error */
-	mpz_clear(foo), mpz_clear(bar), mpz_clear(xx);
+	mpz_clear(foo), mpz_clear(bar), mpz_clear(baz), mpz_clear(xx);
 }
 
 void mpz_fpowm_done
