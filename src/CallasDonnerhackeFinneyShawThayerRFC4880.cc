@@ -613,7 +613,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 	//     count = ((Int32)16 + (c & 15)) << ((c >> 4) + EXPBIAS);
 	// The above formula is in C, where "Int32" is a type for a 32-bit
 	// integer, and the variable "c" is the coded count, Octet 10.
-	size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6); 
+	size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6);
 	size_t hashlen = AlgorithmHashLength(algo);
 
 	// Simple S2K hashes the passphrase to produce the session key. The
@@ -1319,7 +1319,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 		tmcg_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
-		count = 0x01;
+		count = 0xAC; // set resonable S2K count: 0xAB
 		for (size_t i = 0; i < sizeof(rand); i++)
 		{
 			salt.push_back(rand[i]);
@@ -1455,7 +1455,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 		tmcg_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
-		count = 0x01;
+		count = 0xAC; // set resonable S2K count: 0xAB
 		for (size_t i = 0; i < sizeof(rand); i++)
 		{
 			salt.push_back(rand[i]);
@@ -1605,7 +1605,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 		tmcg_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
-		count = 0x01;
+		count = 0xAC; // set resonable S2K count: 0xAB
 		for (size_t i = 0; i < sizeof(rand); i++)
 		{
 			salt.push_back(rand[i]);
@@ -1774,7 +1774,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 		tmcg_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
-		count = 0x01;
+		count = 0xAC; // set resonable S2K count: 0xAB
 		for (size_t i = 0; i < sizeof(rand); i++)
 		{
 			salt.push_back(rand[i]);
@@ -1911,7 +1911,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 		tmcg_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
-		count = 0x01;
+		count = 0xAC; // set resonable S2K count: 0xAB
 		for (size_t i = 0; i < sizeof(rand); i++)
 		{
 			salt.push_back(rand[i]);
