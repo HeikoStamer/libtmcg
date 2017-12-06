@@ -2290,7 +2290,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			size_t notation_value_length = (pkt[6] << 8) + pkt[7];
 			if (pkt.size() != (notation_name_length + notation_value_length + 8))
 				return 0; // error: incorrect length
-			// TODO: store notation in a given container
+			// TODO: store notation data in a given container
 			}
 			break;
 		case 21: // Preferred Hash Algorithms
@@ -2521,7 +2521,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
 			else
-				return 0; // error: unknown public-key algo
+				return 0xFE; // warning: unsupported public-key algo
 			break;
 		case 2: // Signature Packet
 			if (pkt.size() < 1)
@@ -2981,6 +2981,8 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					}
 				}
 			}
+			else
+				return 0; // error: unsupported public-key algo
 			// secret fields
 			if (mpis.size() < 1)
 				return 0; // error: no S2K convention
@@ -3156,6 +3158,8 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
+			else
+				return 0xFE; // warning: unsupported public-key algo
 			break;
 		case 8: // Compressed Data Packet
 			if (pkt.size() < 2)
@@ -3200,7 +3204,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			for (size_t i = 0; i < out.datalen; i++)
 				out.data[i] = pkt[6+out.datafilenamelen+i];
 			break;
-		case 12: // Trust Packet -- not supported, ignore
+		case 12: // Trust Packet -- not supported, ignore silently
 			break;
 		case 13: // User ID Packet
 			if (pkt.size() >= sizeof(out.uid))
@@ -3208,7 +3212,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.uid[i] = pkt[i];
 			break;
-		case 17: // User Attribute Packet -- not supported, ignore
+		case 17: // User Attribute Packet -- not supported, ignore silently
 			break;
 		case 18: // Sym. Encrypted and Integrity Protected Data Packet
 			if (pkt.size() < 2)
