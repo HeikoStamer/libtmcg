@@ -2157,19 +2157,19 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 	uint32_t len = 0, headlen = 1;
 	if (in[0] < 192)
 	{
-		// A one-octet Body Length header encodes a length of 0 to
-		// 191 octets. This type of length header is recognized
-		// because the one octet value is less than 192.
+		// if the 1st octet <  192, then
+		// lengthOfLength = 1
+		// subpacketLen = 1st_octet
 		headlen += 1;
 		len = in[0];
 	}
-	else if (in[0] < 224)
+	else if (in[0] < 255)
 	{
 		if (in.size() < 3)
 			return 0; // error: too few octets of length encoding
-		// A two-octet Body Length header encodes a length of 192 to
-		// 8383 octets. It is recognized because its first octet is
-		// in the range 192 to 223.
+		// if the 1st octet >= 192 and < 255, then
+		// lengthOfLength = 2
+		// subpacketLen = ((1st_octet - 192) << 8) + (2nd_octet) + 192
 		headlen += 2;
 		len = ((in[0] - 192) << 8) + in[1] + 192;
 	}
@@ -2177,8 +2177,9 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 	{
 		if (in.size() < 6)
 			return 0; // error: too few octets of length encoding
-		// A five-octet Body Length header consists of a single octet
-		// holding the value 255, followed by a four-octet scalar.
+		// if the 1st octet = 255, then
+		// lengthOfLength = 5
+		// subpacket length = [four-octet scalar starting at 2nd_octet]
 		headlen += 5;
 		len = (in[1] << 24) + (in[2] << 16) + (in[3] << 8) + in[4];
 	}
