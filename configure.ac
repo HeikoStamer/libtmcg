@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2006, 2007, 2009, 2015, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2005--2007, 2009, 2015--2018  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -18,20 +18,20 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20171208])
+AC_REVISION([20180109])
 AC_PREREQ(2.61)
 
-AC_INIT([LibTMCG], [1.3.9], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
+AC_INIT([LibTMCG], [1.3.10], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
 
-# The next two paragraphs are copies of libgcrypt behaviour.
+# The next two paragraphs are copies of behaviour from libgcrypt.
 
 # LT Version numbers, remember to change them just *before* a release.
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
 #   (Interfaces added:      CURRENT++, AGE++, REVISION=0)
 #   (No interfaces changed:                   REVISION++)
-LIBTMCG_LT_CURRENT=9
-LIBTMCG_LT_AGE=0
-LIBTMCG_LT_REVISION=3
+LIBTMCG_LT_CURRENT=10
+LIBTMCG_LT_AGE=1
+LIBTMCG_LT_REVISION=0
 
 # If API is changed in an incompatible way: increment the next counter.
 LIBTMCG_CONFIG_API_VERSION=4
