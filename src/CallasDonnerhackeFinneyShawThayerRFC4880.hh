@@ -7,7 +7,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -429,6 +429,12 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static gcry_error_t AsymmetricVerifyDSA
 			(const tmcg_octets_t &in, const gcry_sexp_t key, 
 	 		 const gcry_mpi_t r, const gcry_mpi_t s);
+		static gcry_error_t AsymmetricSignRSA
+			(const tmcg_octets_t &in, const gcry_sexp_t key,
+			 gcry_mpi_t &s);
+		static gcry_error_t AsymmetricVerifyRSA
+			(const tmcg_octets_t &in, const gcry_sexp_t key, 
+	 		 const gcry_mpi_t s);
 };
 
 #endif

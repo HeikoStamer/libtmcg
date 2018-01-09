@@ -7,7 +7,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -3981,6 +3981,80 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 	if (ret)
 		return ret;
 	ret = gcry_sexp_build(&signature, &erroff, "(sig-val (dsa (r %M) (s %M)))", r, s);
+	if (ret)
+	{
+		gcry_sexp_release(sigdata);
+		return ret;
+	}
+	ret = gcry_pk_verify(signature, sigdata, key);
+	gcry_sexp_release(signature);
+	gcry_sexp_release(sigdata);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignRSA
+	(const tmcg_octets_t &in, const gcry_sexp_t key, 
+	 gcry_mpi_t &s)
+{
+	tmcg_byte_t buffer[1024];
+	gcry_sexp_t sigdata, signature;
+	gcry_mpi_t h;
+	gcry_error_t ret;
+	size_t buflen = 0, erroff;
+
+	memset(buffer, 0, sizeof(buffer));
+	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer))); i++, buflen++)
+		buffer[i] = in[i];
+	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
+	if (ret)
+		return ret;
+	ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags pkcs1) (value %M))", h);
+	gcry_mpi_release(h);
+	if (ret)
+		return ret;
+	ret = gcry_pk_sign(&signature, sigdata, key);
+	gcry_sexp_release(sigdata);
+	if (ret)
+		return ret;
+	gcry_mpi_release(s); // release already allocated mpi
+	ret = gcry_sexp_extract_param(signature, NULL, "s", &s, NULL);
+	gcry_sexp_release(signature);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA
+	(const tmcg_octets_t &in, const gcry_sexp_t key, 
+	 const gcry_mpi_t s)
+{
+	tmcg_byte_t buffer[1024];
+	gcry_sexp_t sigdata, signature;
+	gcry_mpi_t h;
+	gcry_error_t ret;
+	size_t buflen = 0, erroff;
+
+	// With RSA signatures, the hash value is encoded using PKCS#1 encoding
+	// type EMSA-PKCS1-v1_5 as described in Section 9.2 of RFC 3447. This
+	// requires inserting the hash value as an octet string into an ASN.1
+	// structure. The object identifier for the type of hash being used is
+	// included in the structure.
+
+	memset(buffer, 0, sizeof(buffer));
+	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer))); i++, buflen++)
+		buffer[i] = in[i];
+	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
+	if (ret)
+		return ret;
+	ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags pkcs1) (value %M))", h);
+	gcry_mpi_release(h);
+	if (ret)
+		return ret;
+	ret = gcry_sexp_build(&signature, &erroff, "(sig-val (rsa (s %M)))", s);
 	if (ret)
 	{
 		gcry_sexp_release(sigdata);
