@@ -161,6 +161,37 @@ int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRY
 	}
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRYName
+	(const tmcg_byte_t algo, std::string &out)
+{
+	switch (algo)
+	{
+		case 1: // MD5
+			out = "md5";
+			break;
+		case 2: // SHA-1
+			out = "sha1";
+			break;
+		case 3: // RIPE-MD/160
+			out = "rmd160";
+			break;
+		case 8: // SHA256
+			out = "sha256";
+			break;
+		case 9: // SHA384
+			out = "sha384";
+			break;
+		case 10: // SHA512
+			out = "sha512";
+			break;
+		case 11: // SHA224
+			out = "sha224";
+			break;
+		default:
+			out = "unknown";
+	}
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare
 	(const tmcg_octets_t &in, const tmcg_octets_t &in2)
 {
@@ -3996,7 +4027,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignRSA
-	(const tmcg_octets_t &in, const gcry_sexp_t key, 
+	(const tmcg_octets_t &in, const gcry_sexp_t key,
+	 const tmcg_byte_t hashalgo,
 	 gcry_mpi_t &s)
 {
 	tmcg_byte_t buffer[1024];
@@ -4004,6 +4036,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignRSA
 	gcry_mpi_t h;
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
+	std::stringstream sexp;
+	std::string hashname;
 
 	memset(buffer, 0, sizeof(buffer));
 	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer))); i++, buflen++)
@@ -4011,7 +4045,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignRSA
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	if (ret)
 		return ret;
-	ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags pkcs1) (value %M))", h);
+	AlgorithmHashGCRYName(hashalgo, hashname);
+	sexp << "(data (flags pkcs1) (hash " << hashname << " %M))";
+	ret = gcry_sexp_build(&sigdata, &erroff, (sexp.str()).c_str(), h);
 	gcry_mpi_release(h);
 	if (ret)
 		return ret;
@@ -4029,7 +4065,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignRSA
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA
-	(const tmcg_octets_t &in, const gcry_sexp_t key, 
+	(const tmcg_octets_t &in, const gcry_sexp_t key,
+	 const tmcg_byte_t hashalgo,
 	 const gcry_mpi_t s)
 {
 	tmcg_byte_t buffer[1024];
@@ -4037,20 +4074,23 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA
 	gcry_mpi_t h;
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
+	std::stringstream sexp;
+	std::string hashname;
 
 	// With RSA signatures, the hash value is encoded using PKCS#1 encoding
 	// type EMSA-PKCS1-v1_5 as described in Section 9.2 of RFC 3447. This
 	// requires inserting the hash value as an octet string into an ASN.1
 	// structure. The object identifier for the type of hash being used is
 	// included in the structure.
-
 	memset(buffer, 0, sizeof(buffer));
 	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer))); i++, buflen++)
 		buffer[i] = in[i];
 	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
 	if (ret)
 		return ret;
-	ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags pkcs1) (value %M))", h);
+	AlgorithmHashGCRYName(hashalgo, hashname);
+	sexp << "(data (flags pkcs1) (hash " << hashname << " %M))";
+	ret = gcry_sexp_build(&sigdata, &erroff, (sexp.str()).c_str(), h);
 	gcry_mpi_release(h);
 	if (ret)
 		return ret;

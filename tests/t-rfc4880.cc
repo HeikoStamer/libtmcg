@@ -173,6 +173,29 @@ int main
 	gcry_mpi_release(r);
 	gcry_mpi_release(s);
 
+	// testing AsymmetricSignRSA() and AsymmetricVerifyRSA()
+	gcry_sexp_t rsakey, rsaparms;
+	hash.clear(), trailer.clear(), left.clear(), sig.clear();
+	for (size_t i = 0; i < 2; i++)
+		left.push_back(i); // dummy values
+	CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(8, lit, hash); // SHA256
+	std::cout << "gcry_sexp_build(...)" << std::endl;
+	ret = gcry_sexp_build(&rsaparms, &erroff, "(genkey (rsa (nbits 4:3072)))");
+	assert(!ret);
+	std::cout << "gcry_pk_genkey(...)" << std::endl;
+	ret = gcry_pk_genkey(&rsakey, rsaparms);
+	assert(!ret);
+	s = gcry_mpi_new(3072);
+	std::cout << "AsymmetricSignRSA(...)" << std::endl;
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignRSA(hash, rsakey, 8, s);
+	assert(!ret);
+	std::cout << "AsymmetricVerifyRSA(...)" << std::endl;
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA(hash, rsakey, 8, s);
+	assert(!ret);
+	gcry_sexp_release(rsaparms);
+	gcry_sexp_release(rsakey);
+	gcry_mpi_release(s);
+
 	// testing S2K functions
 	tmcg_byte_t octcnt = 1;
 	size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6);

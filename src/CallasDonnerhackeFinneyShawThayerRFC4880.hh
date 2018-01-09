@@ -31,6 +31,7 @@
 	#include <vector>
 	#include <string>
 	#include <fstream>
+	#include <sstream>
 	#include <iostream>
 	#include <algorithm>
 	#include <ctime>
@@ -196,6 +197,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_byte_t algo);
 		static int AlgorithmHashGCRY
 			(const tmcg_byte_t algo);
+		static void AlgorithmHashGCRYName
+			(const tmcg_byte_t algo, std::string &out);
 		static bool OctetsCompare
 			(const tmcg_octets_t &in, const tmcg_octets_t &in2);
 		static bool OctetsCompareZero
@@ -431,9 +434,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 	 		 const gcry_mpi_t r, const gcry_mpi_t s);
 		static gcry_error_t AsymmetricSignRSA
 			(const tmcg_octets_t &in, const gcry_sexp_t key,
+			 const tmcg_byte_t hashalgo, 
 			 gcry_mpi_t &s);
 		static gcry_error_t AsymmetricVerifyRSA
-			(const tmcg_octets_t &in, const gcry_sexp_t key, 
+			(const tmcg_octets_t &in, const gcry_sexp_t key,
+			 const tmcg_byte_t hashalgo, 
 	 		 const gcry_mpi_t s);
 };
 
