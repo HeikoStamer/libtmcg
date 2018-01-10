@@ -1182,6 +1182,11 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	size_t len = 1+4+1; // number of octets for version, keytime, and algo
 	switch (algo)
 	{
+		case 1: // public-key algorithm: RSA
+		case 2: // public-key algorithm: RSA
+		case 3: // public-key algorithm: RSA
+			len += 2+plen+2+qlen;
+			break;
 		case 16: // public-key algorithm: Elgamal
 			len += 2+plen+2+glen+2+ylen;
 			break;
@@ -1220,6 +1225,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	out.push_back(algo);
 	switch (algo)
 	{
+		case 1: // public-key algorithm: RSA
+		case 2: // public-key algorithm: RSA
+		case 3: // public-key algorithm: RSA
+			PacketMPIEncode(p, out); // MPI n
+			PacketMPIEncode(q, out); // MPI e
+			break;
 		case 16: // public-key algorithm: Elgamal
 			PacketMPIEncode(p, out); // MPI p
 			PacketMPIEncode(g, out); // MPI g
