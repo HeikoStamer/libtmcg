@@ -286,6 +286,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const time_t sigtime, const tmcg_byte_t revcode,
 			 const std::string &reason, const tmcg_octets_t &issuer, 
 			 tmcg_octets_t &out);
+		static void PacketSigPrepareCertificationSignature
+			(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, 
+			 const time_t sigtime, const time_t sigexptime,
+			 const std::string &policy, const tmcg_octets_t &issuer,
+			 tmcg_octets_t &out);
 		static void PacketPubEncode
 			(const time_t keytime, const tmcg_byte_t algo,
 			 const gcry_mpi_t p, const gcry_mpi_t q,

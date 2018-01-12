@@ -1126,18 +1126,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 	// hashed subpacket area
 	out.push_back(subpktlen >> 8); // length of hashed subpacket data
 	out.push_back(subpktlen);
-		// signature creation time
+		// 1. signature creation time (length = 4)
 		tmcg_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
 		SubpacketEncode(2, false, subpkt_sigtime, out);
-		// signature expiration time
+		// [optional] signature expiration time (length = 4)
 		if (sigexptime != 0)
 		{
 			tmcg_octets_t subpkt_sigexptime;
 			PacketTimeEncode(sigexptime, subpkt_sigexptime);
 			SubpacketEncode(3, false, subpkt_sigexptime, out);
 		}
-		// issuer
+		// 2. issuer (variable length)
 		SubpacketEncode(16, false, issuer, out);
 }
 
@@ -1156,18 +1156,60 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignatu
 	// hashed subpacket area
 	out.push_back(subpktlen >> 8); // length of hashed subpacket data
 	out.push_back(subpktlen);
-		// signature creation time
+		// 1. signature creation time (length = 4)
 		tmcg_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
 		SubpacketEncode(2, false, subpkt_sigtime, out);
-		// issuer
+		// 2. issuer (variable length)
 		SubpacketEncode(16, false, issuer, out);
-		// reason for revocation
+		// 3. reason for revocation (length = 1 + variable length)
 		tmcg_octets_t subpkt_reason;
 		subpkt_reason.push_back(revcode); // machine-readable code
 		for (size_t i = 0; i < reason.length(); i++)
 			subpkt_reason.push_back(reason[i]);
 		SubpacketEncode(29, false, subpkt_reason, out);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSignature
+	(const tmcg_byte_t sigtype, const tmcg_byte_t hashalgo, 
+	 const time_t sigtime, const time_t sigexptime, 
+	 const std::string &policy, const tmcg_octets_t &issuer, 
+	 tmcg_octets_t &out)
+{
+	size_t subpkts = 2;
+	size_t subpktlen = (subpkts * 6) + 4 + issuer.size();
+	if (sigexptime != 0)
+		subpktlen += (6 + 4);
+	if (policy.length())
+		subpktlen += (6 + policy.length());
+	out.push_back(4); // V4 format
+	out.push_back(sigtype); // type (e.g. 0x10 user ID certification)
+	out.push_back(17); // public-key algorithm: DSA
+	out.push_back(hashalgo); // hash algorithm
+	// hashed subpacket area
+	out.push_back(subpktlen >> 8); // length of hashed subpacket data
+	out.push_back(subpktlen);
+		// 1. signature creation time (length = 4)
+		tmcg_octets_t subpkt_sigtime;
+		PacketTimeEncode(sigtime, subpkt_sigtime);
+		SubpacketEncode(2, false, subpkt_sigtime, out);
+		// [optional] signature expiration time (length = 4)
+		if (sigexptime != 0)
+		{
+			tmcg_octets_t subpkt_sigexptime;
+			PacketTimeEncode(sigexptime, subpkt_sigexptime);
+			SubpacketEncode(3, false, subpkt_sigexptime, out);
+		}
+		// 2. issuer (variable length)
+		SubpacketEncode(16, false, issuer, out);
+		// [optional] policy URI (variable length)
+		if (policy.length())
+		{
+			tmcg_octets_t subpkt_policy;
+			for (size_t i = 0; i < policy.length(); i++)
+				subpkt_policy.push_back(policy[i]);
+			SubpacketEncode(26, false, subpkt_policy, out);
+		}
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
