@@ -1076,34 +1076,34 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 	// hashed subpacket area
 	out.push_back(subpktlen >> 8); // length of hashed subpacket data
 	out.push_back(subpktlen);
-		// signature creation time
+		// 1. signature creation time (length = 4)
 		tmcg_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
 		SubpacketEncode(2, false, subpkt_sigtime, out);
-		// key expiration time
+		// [optional] key expiration time (length = 4)
 		if (keyexptime != 0)
 		{
 			tmcg_octets_t subpkt_keyexptime;
 			PacketTimeEncode(keyexptime, subpkt_keyexptime);
 			SubpacketEncode(9, false, subpkt_keyexptime, out);
 		}
-		// preferred symmetric algorithms
+		// 2. preferred symmetric algorithms (length = 1)
 		tmcg_octets_t psa;
 		psa.push_back(9); // AES256
 		SubpacketEncode(11, false, psa, out);
-		// issuer
+		// 3. issuer (variable length)
 		SubpacketEncode(16, false, issuer, out);
-		// preferred hash algorithms
+		// 4. preferred hash algorithms  (length = 1)
 		tmcg_octets_t pha;
 		pha.push_back(8); // SHA256
 		SubpacketEncode(21, false, pha, out);
-		// preferred compression algorithms
+		// 5. preferred compression algorithms  (length = 1)
 		tmcg_octets_t pca;
 		pca.push_back(0); // uncompressed
 		SubpacketEncode(22, false, pca, out);
-		// key flags
+		// 6. key flags (variable length)
 		SubpacketEncode(27, false, flags, out);
-		// features
+		// 7. features (length = 1)
 		tmcg_octets_t features;
 		features.push_back(0x01); // Modification Detection (packets 18 and 19)
 		SubpacketEncode(30, false, features, out);
