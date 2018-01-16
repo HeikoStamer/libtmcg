@@ -464,7 +464,7 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 		rpos = in.find("\n\n");
 		rlen = 2;
 	}
-	cpos = in.find("\r\n="); // FIXME: does not work in all cases (use regex for detecting checksum start)
+	cpos = in.find("\r\n="); // FIXME: use regex for reliable detection of checksum start
 	if (cpos == in.npos)
 	{
 		cpos = in.find("\n=");
@@ -3932,7 +3932,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	(const tmcg_octets_t &in, const gcry_sexp_t key, 
 	 gcry_mpi_t &gk, gcry_mpi_t &myk)
 {
-	tmcg_byte_t buffer[1024];
+	tmcg_byte_t buffer[2048];
 	gcry_sexp_t encryption, data;
 	gcry_mpi_t v;
 	gcry_error_t ret;
@@ -3970,7 +3970,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 	(const gcry_mpi_t gk, const gcry_mpi_t myk, const gcry_sexp_t key, 
 	 tmcg_octets_t &out)
 {
-	tmcg_byte_t buffer[1024];
+	tmcg_byte_t buffer[2048];
 	gcry_sexp_t decryption, data;
 	gcry_mpi_t v;
 	gcry_error_t ret;
@@ -4007,7 +4007,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	(const tmcg_octets_t &in, const gcry_sexp_t key, 
 	 gcry_mpi_t &r, gcry_mpi_t &s)
 {
-	tmcg_byte_t buffer[1024];
+	tmcg_byte_t buffer[2048];
 	gcry_sexp_t sigdata, signature;
 	gcry_mpi_t h;
 	gcry_error_t ret;
@@ -4041,7 +4041,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 	(const tmcg_octets_t &in, const gcry_sexp_t key, 
 	 const gcry_mpi_t r, const gcry_mpi_t s)
 {
-	tmcg_byte_t buffer[1024];
+	tmcg_byte_t buffer[2048];
 	gcry_sexp_t sigdata, signature;
 	gcry_mpi_t q, h;
 	unsigned int qbits = 0;
@@ -4095,7 +4095,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignRSA
 	 const tmcg_byte_t hashalgo,
 	 gcry_mpi_t &s)
 {
-	tmcg_byte_t buffer[1024];
+	tmcg_byte_t buffer[2048];
 	gcry_sexp_t sigdata, signature;
 	gcry_mpi_t h;
 	gcry_error_t ret;
@@ -4133,7 +4133,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA
 	 const tmcg_byte_t hashalgo,
 	 const gcry_mpi_t s)
 {
-	tmcg_byte_t buffer[1024];
+	tmcg_byte_t buffer[2048];
 	gcry_sexp_t sigdata, signature;
 	gcry_mpi_t h;
 	gcry_error_t ret;
