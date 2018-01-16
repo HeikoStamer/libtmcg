@@ -201,6 +201,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_byte_t algo, std::string &out);
 		static bool OctetsCompare
 			(const tmcg_octets_t &in, const tmcg_octets_t &in2);
+		static bool OctetsCompareConstantTime
+			(const tmcg_octets_t &in, const tmcg_octets_t &in2);
 		static bool OctetsCompareZero
 			(const tmcg_octets_t &in);
 

@@ -38,7 +38,23 @@ int main
 	tmcg_octets_t in, out;
 	tmcg_byte_t b;
 
+	// testing OctetsCompare(), OctetsCompareConstantTime(), and OctetsCompareZero()
+	std::cout << "OctetsCompareZero() ";
+	do
+	{
+		in.clear(), out.clear();
+		for (size_t j = 0; j < 6; j++)
+			in.push_back(mpz_wrandom_ui() % 2);
+		for (size_t j = 0; j < 6; j++)
+			out.push_back(mpz_wrandom_ui() % 2);
+		assert((CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(in, out) == CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareConstantTime(out, in)));
+		std::cout << "~";
+	}
+	while (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareZero(in));
+	std::cout << std::endl;
+
 	// testing Radix64Encode() and Radix64Decode()
+	in.clear(), out.clear();
 	for (size_t j = 0; j < 256; j++)
 	{
 		std::string radix;

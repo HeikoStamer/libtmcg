@@ -203,6 +203,17 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareConstantTime
+	(const tmcg_octets_t &in, const tmcg_octets_t &in2)
+{
+	size_t len = (in.size() < in2.size()) ? in.size() : in2.size(); 
+	tmcg_byte_t res = 0;
+
+	for (size_t i = 0; i < len; i++)
+		res |= in[i] ^ in2[i];
+	return (res == 0) ? true : false;
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareZero
 	(const tmcg_octets_t &in)
 {
