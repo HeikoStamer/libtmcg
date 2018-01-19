@@ -93,7 +93,11 @@ Security
   only, where $n$ denotes the total number of parties in the protocol.
   LibTMCG provides a well-known protocol due to Bracha in a slightly optimized
   variant by Cachin, Kursawe, Petzold, and Shoup. It works for $n >= 2$
-  parties, however, t-resilience with $t > 0$ is achieved for $n > 3$ only. 
+  parties, however, t-resilience with $t > 0$ is achieved for $n > 3$ only.
+  This protocol ensures simple reliable broadcast but not the more elaborated
+  Byzantine fault tolerant agreement (or terminating reliable broadcast), i.e.,
+  the adversary can still influence the underlying point-to-point network such
+  that this broadcast protocol does not terminate for some parties.
   Please note that in most cases the application programmer must decide,
   where the use of a broadcast channel is neccesary and appropriate. Thus,
   without reliable broadcast you should take into account that not necessarily
