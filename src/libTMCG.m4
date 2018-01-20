@@ -1,6 +1,6 @@
-dnl Autoconf macros for libTMCG (source adapted from libgcrypt.m4)
+dnl Autoconf macros for LibTMCG (source adapted from libgcrypt.m4)
 dnl       Copyright (C) 2002, 2004  Free Software Foundation, Inc.
-dnl                     2005  Heiko Stamer <stamer@gaos.org>
+dnl                     2005, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 dnl
 dnl This file is free software; as a special exception the author gives
 dnl unlimited permission to copy and/or distribute it, with or without
@@ -18,12 +18,12 @@ dnl MINIMUN-VERSION is a string with the version number optionalliy prefixed
 dnl with the API version to also check the API compatibility. Example:
 dnl a MINIMUN-VERSION of 1:1.2.5 won't pass the test unless the installed
 dnl version of libTMCG is at least 1.2.5 *and* the API number is 1. Using
-dnl this features allows to prevent build against newer versions of libTMCG
+dnl this features allows to prevent build against newer versions of LibTMCG
 dnl with a changed API.
 dnl
 AC_DEFUN([AM_PATH_LIBTMCG],
 [ AC_ARG_WITH(libTMCG-prefix,
-            AC_HELP_STRING([--with-libTMCG-prefix=PFX],
+            AS_HELP_STRING([--with-libTMCG-prefix=<path>s],
                            [prefix where libTMCG is installed (optional)]),
      libtmcg_config_prefix="$withval", libtmcg_config_prefix="")
   if test x$libtmcg_config_prefix != x ; then
@@ -80,7 +80,7 @@ AC_DEFUN([AM_PATH_LIBTMCG],
     AC_MSG_RESULT(no)
   fi
   if test $ok = yes; then
-     # If we have a recent libTMCG, we should also check that the
+     # If we have a recent LibTMCG, we should also check that the
      # API is compatible
      if test "$req_libtmcg_api" -gt 0 ; then
         tmp=`$LIBTMCG_CONFIG --api-version 2>/dev/null || echo 0`
