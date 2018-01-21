@@ -406,8 +406,16 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_octets_t &primary, const tmcg_octets_t &subkey,
 			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
 			 tmcg_octets_t &hash, tmcg_octets_t &left);
+		static void KeyRevocationHashV3
+			(const tmcg_octets_t &key,
+			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
+			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static void KeyRevocationHash
 			(const tmcg_octets_t &key,
+			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
+			 tmcg_octets_t &hash, tmcg_octets_t &left);
+		static void KeyRevocationHashV3
+			(const tmcg_octets_t &primary, const tmcg_octets_t &subkey,
 			 const tmcg_octets_t &trailer, const tmcg_byte_t hashalgo,
 			 tmcg_octets_t &hash, tmcg_octets_t &left);
 		static void KeyRevocationHash
