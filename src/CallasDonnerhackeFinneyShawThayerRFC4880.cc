@@ -4099,7 +4099,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 		return ret;
 	qbits = gcry_mpi_get_nbits(q);
 	gcry_mpi_release(q);
-	if ((in.size() * 8) < qbits)
+	if (((in.size() * 8) < qbits) || (qbits < 160))
 		return GPG_ERR_BAD_PUBKEY;
 	trunclen = in.size();
 	while ((trunclen * 8) > qbits)
@@ -4153,7 +4153,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 		return ret;
 	qbits = gcry_mpi_get_nbits(q);
 	gcry_mpi_release(q);
-	if ((in.size() * 8) < qbits)
+	if (((in.size() * 8) < qbits) || (qbits < 160))
 		return GPG_ERR_BAD_PUBKEY;
 	trunclen = in.size();
 	while ((trunclen * 8) > qbits)
