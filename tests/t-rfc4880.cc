@@ -184,6 +184,14 @@ int main
 	std::cout << "AsymmetricVerifyDSA(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, r, s);
 	assert(!ret);
+	std::cout << "AsymmetricSignDSA(...) with truncated hash" << std::endl;
+	hash.clear();
+	CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(10, lit, hash); // SHA512
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, dsakey, r, s);
+	assert(!ret);
+	std::cout << "AsymmetricVerifyDSA(...) with truncated hash" << std::endl;
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, r, s);
+	assert(!ret);
 	gcry_sexp_release(dsaparms);
 	gcry_sexp_release(dsakey);
 	gcry_mpi_release(r);
