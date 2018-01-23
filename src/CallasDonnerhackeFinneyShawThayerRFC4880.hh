@@ -46,6 +46,17 @@
 	typedef unsigned char tmcg_byte_t;
 	typedef std::vector<tmcg_byte_t> tmcg_octets_t;
 
+	enum tmcg_armor_t
+	{
+		TMCG_OPENPGP_ARMOR_UNKNOWN		= 0,
+		TMCG_OPENPGP_ARMOR_MESSAGE		= 1,
+		TMCG_OPENPGP_ARMOR_SIGNATURE		= 2,
+		TMCG_OPENPGP_ARMOR_MESSAGE_PART_X	= 3,
+		TMCG_OPENPGP_ARMOR_MESSAGE_PART_X_Y	= 4,
+		TMCG_OPENPGP_ARMOR_PRIVATE_KEY_BLOCK	= 5,
+		TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK	= 6
+	};
+
 	// FIXME(C++11): move following definitions into class
 	static const tmcg_byte_t tmcg_fRadix64[] = {
 			255, 255, 255, 255, 255, 255, 255, 255,
@@ -216,9 +227,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void CRC24Encode
 			(const tmcg_octets_t &in, std::string &out);
 		static void ArmorEncode
-			(const tmcg_byte_t type, const tmcg_octets_t &in,
+			(const tmcg_armor_t type, const tmcg_octets_t &in,
 			 std::string &out);
-		static tmcg_byte_t ArmorDecode
+		static tmcg_armor_t ArmorDecode
 			(const std::string &in, tmcg_octets_t &out);
 		static void FingerprintCompute
 			(const tmcg_octets_t &in, tmcg_octets_t &out); 

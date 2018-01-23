@@ -364,7 +364,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Encode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
-	(const tmcg_byte_t type, const tmcg_octets_t &in, std::string &out)
+	(const tmcg_armor_t type, const tmcg_octets_t &in, std::string &out)
 {
 	// Concatenating the following data creates ASCII Armor:
 	//  - An Armor Header Line, appropriate for the type of data
@@ -394,17 +394,19 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 	// Line for the purposes of determining the content they delimit.
 	switch (type)
 	{
-		case 1:
+		case TMCG_OPENPGP_ARMOR_MESSAGE:
 			out += "-----BEGIN PGP MESSAGE-----\r\n";
 			break;
-		case 2:
+		case TMCG_OPENPGP_ARMOR_SIGNATURE:
 			out += "-----BEGIN PGP SIGNATURE-----\r\n";
 			break;
-		case 5:
+		case TMCG_OPENPGP_ARMOR_PRIVATE_KEY_BLOCK:
 			out += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
 			break;
-		case 6:
+		case TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK:
 			out += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
+			break;
+		default:
 			break;
 	}
 
@@ -437,25 +439,27 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 	// "END".
 	switch (type)
 	{
-		case 1:
+		case TMCG_OPENPGP_ARMOR_MESSAGE:
 			out += "-----END PGP MESSAGE-----\r\n";
 			break;
-		case 2:
+		case TMCG_OPENPGP_ARMOR_SIGNATURE:
 			out += "-----END PGP SIGNATURE-----\r\n";
 			break;
-		case 5:
+		case TMCG_OPENPGP_ARMOR_PRIVATE_KEY_BLOCK:
 			out += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
 			break;
-		case 6:
+		case TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK:
 			out += "-----END PGP PUBLIC KEY BLOCK-----\r\n";
+			break;
+		default:
 			break;
 	}
 }
 
-tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
+tmcg_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	(const std::string &in, tmcg_octets_t &out)
 {
-	tmcg_byte_t type = 0;
+	tmcg_armor_t type = TMCG_OPENPGP_ARMOR_UNKNOWN;
 	size_t spos = 0, rpos = 0, rlen = 4, cpos = 0, clen = 3, epos = 0;
 
 	rpos = in.find("\r\n\r\n");
@@ -471,52 +475,52 @@ tmcg_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 		clen = 2;
 	}
 	if ((rpos == in.npos) || (cpos == in.npos))
-		return 0; // no radix-64 start or checksum found in armor body
+		return TMCG_OPENPGP_ARMOR_UNKNOWN; // no radix-64 start or checksum found in armor body
 	spos = in.find("-----BEGIN PGP MESSAGE-----");
 	epos = in.find("-----END PGP MESSAGE-----");
 	if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
-		type = 1;
+		type = TMCG_OPENPGP_ARMOR_MESSAGE;
 	if (!type)
 	{
 		spos = in.find("-----BEGIN PGP SIGNATURE-----");
 		epos = in.find("-----END PGP SIGNATURE-----");
 	}		
 	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
-		type = 2;
+		type = TMCG_OPENPGP_ARMOR_SIGNATURE;
 	if (!type)
 	{
 		spos = in.find("-----BEGIN PGP PRIVATE KEY BLOCK-----");
 		epos = in.find("-----END PGP PRIVATE KEY BLOCK-----");
 	}		
 	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
-		type = 5;
+		type = TMCG_OPENPGP_ARMOR_PRIVATE_KEY_BLOCK;
 	if (!type)
 	{
 		spos = in.find("-----BEGIN PGP PUBLIC KEY BLOCK-----");
 		epos = in.find("-----END PGP PUBLIC KEY BLOCK-----");
 	}
 	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
-		type = 6;
+		type = TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK;
 	if (!type)
-		return 0; // no armor header or trailer line found
+		return TMCG_OPENPGP_ARMOR_UNKNOWN; // no admissible armor header or trailer line found
 	if (((spos + 26) < rpos) && ((rpos + rlen) < cpos) && ((cpos + clen + 4) < epos))
 	{
 		if (in.find("-----", spos + 34) != epos)
-			return 0; // nested armor block detected
+			return TMCG_OPENPGP_ARMOR_UNKNOWN; // nested armor block detected
 		tmcg_octets_t decoded_data;
 		std::string chksum = "";
 		std::string data = in.substr(rpos + rlen, cpos - rpos - rlen);
 		Radix64Decode(data, decoded_data);
 		CRC24Encode(decoded_data, chksum);
 		if (chksum != in.substr(cpos + (clen - 1), 5))
-			return 0; // checksum error detected
+			return TMCG_OPENPGP_ARMOR_UNKNOWN; // checksum error detected
 		out.insert(out.end(), decoded_data.begin(), decoded_data.end());
 		return type;
 	}
 	else
 	{
 		std::cerr << "ERROR: ArmorDecode() spos = " << spos << " rpos = " << rpos << " cpos = " << cpos << " epos = " << epos << std::endl; 
-		return 0;
+		return TMCG_OPENPGP_ARMOR_UNKNOWN;
 	}
 }
 

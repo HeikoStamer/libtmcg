@@ -7,6 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-01-23] RFC4880: introduced new enumeration type tmcg_armor_t
 * [2018-01-22] RFC4880: added hash truncation for AsymmetricSignDSA()
 * [2018-01-21] RFC4880: added KeyRevocationHashV3()
 * [2018-01-16] RFC4880: increased buffer length for very large key sizes
