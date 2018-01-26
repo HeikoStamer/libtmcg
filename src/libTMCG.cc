@@ -49,8 +49,11 @@ bool init_libTMCG
 			TMCG_LIBGCRYPT_VERSION << " needed" << std::endl;
 		return false;
 	}
-	gcry_control(GCRYCTL_DISABLE_SECMEM, 0); // disable secure memory
-	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
+	if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P))
+	{
+		gcry_control(GCRYCTL_DISABLE_SECMEM, 0); // disable secure memory
+		gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
+	}
 	if (gcry_md_test_algo(TMCG_GCRY_MD_ALGO)) // check for digest algorithm
 	{
 		std::cerr << "init_libTMCG(): libgcrypt algorithm " <<
