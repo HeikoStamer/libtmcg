@@ -52,13 +52,14 @@ void g
 	for (size_t i = 0; i < times; i++)
 	{
 		/* construct the expanded input y = x || libTMCG<i> || x */
-		unsigned char *data = new unsigned char[9 + (2 * isize)];
+		size_t dsize = 9 + (2 * isize);
+		unsigned char *data = new unsigned char[dsize + 1];
 		memcpy(data, input, isize);
-		snprintf((char*)data + isize, 9, "libTMCG%02x", (uint8_t)i);
+		snprintf((char*)data + isize, 10, "libTMCG%02x", (uint8_t)i);
 		memcpy(data + isize + 9, input, isize);
 		
 		/* using h(y) "in some nonstandard way" with "output truncated" [BR95] */
-		h(out + (i * (usesize + 2)), data, 9 + (2 * isize));
+		h(out + (i * (usesize + 2)), data, dsize);
 		delete [] data;
 
 		/* using h on parts of the whole result again with "output truncated" */
