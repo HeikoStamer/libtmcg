@@ -6,7 +6,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2003, 2004, 2005, 2006, 2015, 2016, 2017
+ Copyright (C) 2002, 2003, 2004, 2005, 2006, 2015, 2016, 2017, 2018
  					Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
@@ -153,8 +153,8 @@ class SchindelhauerTMCG
 			std::vector<std::pair<mpz_ptr, mpz_ptr> > &E);
 	
 	public:
-		const unsigned long int		TMCG_SecurityLevel;						// # of iterations
-		const size_t							TMCG_Players, TMCG_TypeBits;	// k and w
+		const unsigned long int		TMCG_SecurityLevel;		// # of iterations
+		const size_t			TMCG_Players, TMCG_TypeBits;	// k and w
 		
 		// constructors and destructors
 		SchindelhauerTMCG

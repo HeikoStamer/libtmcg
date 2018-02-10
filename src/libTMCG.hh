@@ -4,7 +4,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 2015, 
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+                           2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -111,7 +111,7 @@
 	
 	#ifndef TMCG_LIBGCRYPT_VERSION
 		/* Define the necessary version number of the GNU gcrypt library */
-		#define TMCG_LIBGCRYPT_VERSION "1.6.0"
+		#define TMCG_LIBGCRYPT_VERSION "1.7.0"
 	#endif
 	
 	#ifndef TMCG_LIBGMP_VERSION

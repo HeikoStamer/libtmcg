@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20180208])
+AC_REVISION([20180210])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.12], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -29,9 +29,9 @@ AC_INIT([LibTMCG], [1.3.12], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongn
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
 #   (Interfaces added:      CURRENT++, AGE++, REVISION=0)
 #   (No interfaces changed:                   REVISION++)
-LIBTMCG_LT_CURRENT=11
+LIBTMCG_LT_CURRENT=12
 LIBTMCG_LT_AGE=0
-LIBTMCG_LT_REVISION=1
+LIBTMCG_LT_REVISION=0
 
 # If API is changed in an incompatible way: increment the next counter.
 LIBTMCG_CONFIG_API_VERSION=5
@@ -58,7 +58,7 @@ LIBTMCG_CONFIG_CFLAGS=""
 
 # Define some security parameters and helping macros
 # (NOTE: Please update also libTMCG.hh, if changed!)
-AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.6.0",
+AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.7.0",
 	[Define the necessary version number of the GNU gcrypt library])
 AC_DEFINE(TMCG_LIBGMP_VERSION, "4.2.0",
 	[Define the necessary version number of the GNU gmp library])
@@ -192,9 +192,9 @@ AC_SUBST(LIBGMP_CFLAGS)
 LDFLAGS="$backup_LDFLAGS"
 CPPFLAGS="$backup_CPPFLAGS"
 
-AM_PATH_LIBGCRYPT("1.6.0")
+AM_PATH_LIBGCRYPT("1.7.0")
 if test "x$LIBGCRYPT_LIBS" = "x"; then
-	AC_MSG_ERROR([libgcrypt >= 1.6.0 is needed])
+	AC_MSG_ERROR([libgcrypt >= 1.7.0 is needed])
 fi
 backup_CPPLAGS="$CPPFLAGS"
 CPPFLAGS="$LIBGCRYPT_CFLAGS $backup_CPPFLAGS"
