@@ -13,7 +13,7 @@
               'Handbook of Applied Cryptography', CRC Press, 1996.
 
  Copyright (C) 2004, 2005, 2006, 
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+                           2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -490,6 +490,43 @@ void mpz_lprime
 		do
 			mpz_wrandomb(k, psize - qsize);
 		while (mpz_sizeinbase(k, 2L) < (psize - qsize));
+		if (mpz_odd_p(k))
+			mpz_add_ui(k, k, 1L);
+		mpz_mul(p, q, k);
+		mpz_add_ui(p, p, 1L);
+		/* Check wether $k$ and $q$ are coprime, i.e. $gcd(k, q) = 1$. */
+		mpz_gcd(foo, k, q);
+	}
+	while (mpz_cmp_ui(foo, 1L) || (mpz_sizeinbase(p, 2L) < psize) || 
+		!mpz_probab_prime_p(p, mr_iterations));
+	mpz_clear(foo);
+		
+	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
+		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); /* indicates an error */
+}
+
+void mpz_lprime_prefix
+	(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
+	const unsigned long int psize,
+	const unsigned long int qsize, 
+	const unsigned long int mr_iterations)
+{
+	mpz_t foo;
+	assert(psize > qsize);
+	
+	mpz_init(foo);
+	do
+	{
+		/* Choose randomly a prime number $q$ of appropriate size.
+		   Primes of this type are only for public usage, because
+		   we use weak random numbers here! */
+		do
+			mpz_wrandomb(q, qsize);
+		while ((mpz_sizeinbase(q, 2L) < qsize) || 
+			!mpz_probab_prime_p(q, mr_iterations));
+		/* Enhance given $k$ by multiples of TMCG_MPZ_IO_BASE. */
+		while (mpz_sizeinbase(k, 2L) < (psize - qsize))
+			mpz_mul_ui(k, k, TMCG_MPZ_IO_BASE);
 		if (mpz_odd_p(k))
 			mpz_add_ui(k, k, 1L);
 		mpz_mul(p, q, k);
