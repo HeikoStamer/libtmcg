@@ -42,13 +42,19 @@ void g
 	(unsigned char *output, const size_t osize,
 	const unsigned char *input, const size_t isize)
 {
+	int second_algo = (TMCG_GCRY_MD_ALGO != GCRY_MD_SHA3_256) ? GCRY_MD_SHA3_256 : GCRY_MD_SHA256;
 	size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
+	size_t mdsize2 = gcry_md_get_algo_dlen(second_algo);
 	// hopefully, size of truncation does not match the border
 	// of chaining variables in the compression function of h
 	size_t usesize = (mdsize / 4) + 1;
+	size_t usesize2 = (mdsize2 / 4) + 1;
 	size_t times = (osize / usesize) + 1;
+	size_t times2 = (osize / usesize2) + 1;
 	unsigned char *out = new unsigned char[(times + 1) * mdsize];
+	unsigned char *out2 = new unsigned char[(times2 + 1) * mdsize2];
 	memset(out, 0, (times + 1) * mdsize);
+	memset(out2, 0, (times2 + 1) * mdsize2);
 	for (size_t i = 0; i < times; i++)
 	{
 		/* construct the expanded input y = x || libTMCG<i> || x */
@@ -60,13 +66,18 @@ void g
 		
 		/* using h(y) "in some nonstandard way" with "output truncated" [BR95] */
 		h(out + (i * (usesize + 2)), data, dsize);
+		h(out2 + (i * (usesize2 + 2)), data, dsize, second_algo);
 		delete [] data;
 
 		/* using h on parts of the whole result again with "output truncated" */
 		h(out + (i * usesize), out, ((i + 1) * (mdsize - 1)));
+		h(out2 + (i * usesize2), out2, ((i + 1) * (mdsize2 - 1)), second_algo);
 	}
-	memcpy(output, out, osize);
+	/* final output is the XOR of both results */
+	for (size_t i = 0; i < osize; i++)
+		output[i] = out[i] ^ out2[i];
 	delete [] out;
+	delete [] out2;
 }
 
 size_t mpz_shash_len
