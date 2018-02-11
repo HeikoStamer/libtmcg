@@ -4638,7 +4638,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					if ((ctx.pkalgo == 1) || (ctx.pkalgo == 3))
 					{
 	 					// public-key algorithm is RSA
-						PacketPubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.n, ctx.e, NULL, NULL, pub);
+						PacketPubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.n, ctx.e, ctx.e, ctx.e, pub);
 						ret = gcry_sexp_build(&pub_ctx.key, &erroff,
 							"(public-key (rsa (n %M) (e %M)))",
 							ctx.n, ctx.e);
@@ -4732,7 +4732,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					if ((ctx.pkalgo == 1) || (ctx.pkalgo == 2) || (ctx.pkalgo == 3))
 					{
 	 					// public-key algorithm is RSA
-						PacketSubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.n, ctx.e, NULL, NULL, sub);
+						PacketSubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.n, ctx.e, ctx.e, ctx.e, sub);
 						ret = gcry_sexp_build(&sub_ctx.key, &erroff,
 							"(public-key (rsa (n %M) (e %M)))",
 							ctx.n, ctx.e);
@@ -4740,7 +4740,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					else if (ctx.pkalgo == 16)
 					{
 						// public-key algorithm is ElGamal
-						PacketSubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.p, NULL, ctx.g, ctx.y, sub);
+						PacketSubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.p, ctx.p, ctx.g, ctx.y, sub);
 						ret = gcry_sexp_build(&sub_ctx.key, &erroff,
 							"(public-key (elg (p %M) (g %M) (y %M)))",
 							ctx.p, ctx.g, ctx.y);
