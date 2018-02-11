@@ -527,6 +527,8 @@ void mpz_lprime_prefix
 		/* Enhance given $k$ by multiples of TMCG_MPZ_IO_BASE. */
 		while (mpz_sizeinbase(k, 2L) < (psize - qsize))
 			mpz_mul_ui(k, k, TMCG_MPZ_IO_BASE);
+		if (mpz_odd_p(k))
+			mpz_add_ui(k, k, 1L);
 		mpz_mul(p, q, k);
 		mpz_add_ui(p, p, 1L);
 		/* Check wether $k$ and $q$ are coprime, i.e. $gcd(k, q) = 1$. */
