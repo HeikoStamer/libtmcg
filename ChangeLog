@@ -7,6 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-02-11] RFC4880: unified name space of some types (e.g. tmcg_byte_t)
 * [2018-02-10] added function mpz_lprime_prefix() for k-prefix tweak
 * [2018-02-10] improved strength of oracle hash function g() by second algo
 * [2018-02-10] raised the requirement of libgcrypt version to >= 1.7.0

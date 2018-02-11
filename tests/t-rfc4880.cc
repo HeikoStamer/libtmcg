@@ -35,7 +35,7 @@ int main
 	(int argc, char **argv)
 {
 	gcry_error_t ret;
-	tmcg_octets_t in, out;
+	tmcg_openpgp_octets_t in, out;
 
 	// testing OctetsCompare(), OctetsCompareConstantTime(), and OctetsCompareZero()
 	std::cout << "OctetsCompareZero() ";
@@ -80,13 +80,13 @@ int main
 	}
 	
 	// testing ArmorEncode() and ArmorDecode()
-	std::vector<tmcg_armor_t> vat;
-	tmcg_armor_t at;
+	std::vector<tmcg_openpgp_armor_t> vat;
+	tmcg_openpgp_armor_t at;
 	vat.push_back(TMCG_OPENPGP_ARMOR_MESSAGE);
 	vat.push_back(TMCG_OPENPGP_ARMOR_SIGNATURE);
 	vat.push_back(TMCG_OPENPGP_ARMOR_PRIVATE_KEY_BLOCK);
 	vat.push_back(TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK);
-	for (std::vector<tmcg_armor_t>::iterator j = vat.begin(); j != vat.end(); ++j)
+	for (std::vector<tmcg_openpgp_armor_t>::iterator j = vat.begin(); j != vat.end(); ++j)
 	{
 		std::string u = "Max Mustermann <max@gaos.org>", armor;
 		in.clear(), out.clear();
@@ -110,7 +110,7 @@ int main
 	// testing SymmetricEncryptAES256() and SymmetricDecryptAES256()
 	// testing AsymmetricEncryptElgamal() and AsymmetricDecryptElgamal()
 	gcry_sexp_t elgkey, elgparms;
-	tmcg_octets_t lit, seskey, prefix, enc, subkeyid;
+	tmcg_openpgp_octets_t lit, seskey, prefix, enc, subkeyid;
 	std::string m = "This is a test message.", armored_message;
 	for (size_t i = 0; i < 20; i++)
 		subkeyid.push_back(i); // dummy values
@@ -162,7 +162,7 @@ int main
 
 	// testing AsymmetricSignDSA() and AsymmetricVerifyDSA()
 	gcry_sexp_t dsakey, dsaparms;
-	tmcg_octets_t hash, trailer, left, sig;
+	tmcg_openpgp_octets_t hash, trailer, left, sig;
 	std::string armored_signature;
 	for (size_t i = 0; i < 2; i++)
 		left.push_back(i); // dummy values
@@ -223,7 +223,7 @@ int main
 	gcry_mpi_release(s);
 
 	// testing S2K functions
-	tmcg_byte_t octcnt = 1;
+	tmcg_openpgp_byte_t octcnt = 1;
 	size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6);
 	size_t keylen = gcry_cipher_get_algo_keylen(TMCG_GCRY_ENC_ALGO);
 	std::string keystr = "Test";
@@ -235,7 +235,7 @@ int main
 	err = gcry_kdf_derive(keystr.c_str(), keystr.length(), GCRY_KDF_ITERSALTED_S2K,
 		TMCG_GCRY_MD_ALGO, salt, sizeof(salt), hashcnt, sizeof(key), key);
 	assert(!err);
-	tmcg_octets_t salt2, out2;
+	tmcg_openpgp_octets_t salt2, out2;
 	out.clear();
 	for (size_t i = 0; i < sizeof(key); i++)
 		out.push_back(key[i]); // copy the result
