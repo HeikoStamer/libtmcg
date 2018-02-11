@@ -2261,7 +2261,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMdcEncode
 // ===========================================================================
 
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
-	(tmcg_openpgp_octets_t &in, tmcg_openpgp_packet_ctx &out)
+	(tmcg_openpgp_octets_t &in, tmcg_openpgp_packet_ctx_t &out)
 {
 	if (in.size() < 2)
 		return 0; // error: incorrect subpacket header
@@ -2516,24 +2516,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 }
 
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
-	(tmcg_openpgp_octets_t &in, tmcg_openpgp_packet_ctx &out,
-	 tmcg_openpgp_octets_t &current_packet,
-	 std::vector<gcry_mpi_t> &qual,
-	 std::vector<std::string> &capl,
-	 std::vector<gcry_mpi_t> &v_i,
-	 std::vector< std::vector<gcry_mpi_t> > &c_ik)
-{
-	std::vector<gcry_mpi_t> x_rvss_qual; // dummy container
-	tmcg_openpgp_byte_t ret = PacketDecode(in, out, current_packet, qual,
-		x_rvss_qual, capl, v_i, c_ik);
-	for (size_t i = 0; i < x_rvss_qual.size(); i++)
-		gcry_mpi_release(x_rvss_qual[i]); // release allocated mpi's
-	x_rvss_qual.clear();
-	return ret;
-}
-
-tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
-	(tmcg_openpgp_octets_t &in, tmcg_openpgp_packet_ctx &out,
+	(tmcg_openpgp_octets_t &in, tmcg_openpgp_packet_ctx_t &out,
 	 tmcg_openpgp_octets_t &current_packet,
 	 std::vector<gcry_mpi_t> &qual,
 	 std::vector<gcry_mpi_t> &x_rvss_qual,
@@ -2698,7 +2681,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				// If a subpacket is not hashed, then the information
 				// in it cannot be considered definitive because it 
 				// is not part of the signature proper.
-				tmcg_openpgp_packet_ctx untrusted;
+				tmcg_openpgp_packet_ctx_t untrusted;
 				while (uspd.size() && sptype)
                 		{
 					sptype = SubpacketDecode(uspd, untrusted);
@@ -3368,6 +3351,52 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			return 0; // error: unknown packet tag
 	}
 	return tag;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
+	(tmcg_openpgp_octets_t &in, tmcg_openpgp_packet_ctx_t &out,
+	 tmcg_openpgp_octets_t &current_packet,
+	 std::vector<gcry_mpi_t> &qual,
+	 std::vector<std::string> &capl,
+	 std::vector<gcry_mpi_t> &v_i,
+	 std::vector< std::vector<gcry_mpi_t> > &c_ik)
+{
+	std::vector<gcry_mpi_t> x_rvss_qual; // dummy container
+	tmcg_openpgp_byte_t ret;
+
+	ret = PacketDecode(in, out, current_packet, qual,
+		x_rvss_qual, capl, v_i, c_ik);
+	for (size_t i = 0; i < x_rvss_qual.size(); i++)
+		gcry_mpi_release(x_rvss_qual[i]); // release allocated mpi's
+	x_rvss_qual.clear();
+	return ret;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
+	(tmcg_openpgp_octets_t &in, tmcg_openpgp_packet_ctx_t &out,
+	 tmcg_openpgp_octets_t &current_packet)
+{
+	std::vector<gcry_mpi_t> qual; // dummy container
+	std::vector<std::string> capl; // dummy container
+	std::vector<gcry_mpi_t> v_i; // dummy container
+	std::vector< std::vector<gcry_mpi_t> > c_ik; // dummy container
+	tmcg_openpgp_byte_t ret;
+
+	ret = PacketDecode(in, out, current_packet, qual, capl, v_i, c_ik);
+	for (size_t i = 0; i < qual.size(); i++)
+		gcry_mpi_release(qual[i]); // release allocated mpi's
+	qual.clear();
+	capl.clear();
+	for (size_t i = 0; i < v_i.size(); i++)
+		gcry_mpi_release(v_i[i]); // release allocated mpi's
+	for (size_t i = 0; i < c_ik.size(); i++)
+	{
+		for (size_t k = 0; k < c_ik[i].size(); k++)
+			gcry_mpi_release(c_ik[i][k]); // release allocated mpi's
+		c_ik[i].clear();
+	}
+	c_ik.clear();
+	return ret;
 }
 
 // ===========================================================================
@@ -4330,5 +4359,606 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA
 		return ret;
 
 	return 0;
+}
+
+// ===========================================================================
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::ReleasePacketContext
+	(tmcg_openpgp_packet_ctx_t &ctx)
+{
+	gcry_mpi_release(ctx.me);
+	gcry_mpi_release(ctx.gk);
+	gcry_mpi_release(ctx.myk);
+	gcry_mpi_release(ctx.md);
+	gcry_mpi_release(ctx.r);
+	gcry_mpi_release(ctx.s);
+	gcry_mpi_release(ctx.n);
+	gcry_mpi_release(ctx.e);
+	gcry_mpi_release(ctx.d);
+	gcry_mpi_release(ctx.p);
+	gcry_mpi_release(ctx.q);
+	gcry_mpi_release(ctx.u);
+	gcry_mpi_release(ctx.g);
+	gcry_mpi_release(ctx.h);
+	gcry_mpi_release(ctx.y);
+	gcry_mpi_release(ctx.x);
+	gcry_mpi_release(ctx.t);
+	gcry_mpi_release(ctx.i);
+	gcry_mpi_release(ctx.qualsize);
+	gcry_mpi_release(ctx.x_rvss_qualsize);
+	gcry_mpi_release(ctx.x_i);
+	gcry_mpi_release(ctx.xprime_i);
+	if (ctx.hspd != NULL)
+		delete [] ctx.hspd;
+	if (ctx.encdata != NULL)
+		delete [] ctx.encdata;
+	if (ctx.compdata != NULL)
+		delete [] ctx.compdata;
+	if (ctx.data != NULL)
+		delete [] ctx.data;
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::ReleaseSignatureContext
+	(tmcg_openpgp_signature_ctx_t &ctx)
+{
+	gcry_sexp_release(ctx.sig);
+	ctx.packet.clear();
+	ctx.hspd.clear();
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::ReleaseUseridContext
+	(tmcg_openpgp_userid_ctx_t &ctx)
+{
+	for (size_t i = 0; i < ctx.selfsigs.size(); i++)
+		ReleaseSignatureContext(ctx.selfsigs[i]);
+	ctx.selfsigs.clear();
+	for (size_t i = 0; i < ctx.revsigs.size(); i++)
+		ReleaseSignatureContext(ctx.revsigs[i]);
+	ctx.revsigs.clear();
+	for (size_t i = 0; i < ctx.certsigs.size(); i++)
+		ReleaseSignatureContext(ctx.certsigs[i]);
+	ctx.certsigs.clear();
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::ReleaseSubkeyContext
+	(tmcg_openpgp_subkey_ctx_t &ctx)
+{
+	gcry_sexp_release(ctx.key);
+	for (size_t i = 0; i < ctx.bindsigs.size(); i++)
+		ReleaseSignatureContext(ctx.bindsigs[i]);
+	ctx.bindsigs.clear();
+	for (size_t i = 0; i < ctx.revsigs.size(); i++)
+		ReleaseSignatureContext(ctx.revsigs[i]);
+	ctx.revsigs.clear();
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::ReleasePublickeyContext
+	(tmcg_openpgp_publickey_ctx_t &ctx)
+{
+	gcry_sexp_release(ctx.key);
+	for (size_t i = 0; i < ctx.userids.size(); i++)
+		ReleaseUseridContext(ctx.userids[i]);
+	ctx.userids.clear();
+	for (size_t i = 0; i < ctx.subkeys.size(); i++)
+		ReleaseSubkeyContext(ctx.subkeys[i]);
+	ctx.subkeys.clear();
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
+	(const std::string &in, const bool verbose,
+	 tmcg_openpgp_publickey_ctx_t &pub_ctx)
+{
+	memset(&pub_ctx, 0, sizeof(pub_ctx)); // clear context
+	// decode ASCII Armor
+	tmcg_openpgp_octets_t pkts;
+	tmcg_openpgp_armor_t atype = ArmorDecode(in, pkts);
+	if (atype != TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK)
+	{
+		if (verbose)
+			std::cerr << "ERROR: wrong type of ASCII Armor found (type = " << (int)atype << ")" << std::endl;
+		return false;
+	}
+	// parse the public key block
+	bool primary = false, subkey = false, uid_flag = false, uat_flag = false;
+	tmcg_openpgp_subkey_ctx_t sub_ctx;
+	tmcg_openpgp_userid_ctx_t uid_ctx;
+	tmcg_openpgp_byte_t ptag = 0xFF;
+	size_t pnum = 0;
+	while (pkts.size() && ptag)
+	{
+		tmcg_openpgp_packet_ctx_t ctx;
+		tmcg_openpgp_octets_t current_packet;
+		ptag = PacketDecode(pkts, ctx, current_packet);
+		++pnum;
+		if (verbose)
+			std::cout << "PacketDecode() = " << (int)ptag << " version = " << (int)ctx.version << std::endl;
+		if (ptag == 0x00)
+		{
+			if (verbose)
+				std::cerr << "ERROR: parsing OpenPGP packets failed at #" << pnum << std::endl;
+			ReleasePacketContext(ctx);
+			ReleasePublickeyContext(pub_ctx);
+			return false;
+		}
+		else if (ptag == 0xFE)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized OpenPGP packet found at #" << pnum << std::endl;
+			ReleasePacketContext(ctx);
+			continue; // ignore packet
+		}
+		tmcg_openpgp_signature_ctx_t sig_ctx;
+		tmcg_openpgp_octets_t issuer;
+		gcry_error_t ret = 1;
+		size_t erroff = 0;
+		switch (ptag)
+		{
+			case 2: // Signature Packet
+				memset(&sig_ctx, 0, sizeof(sig_ctx)); // clear context
+				sig_ctx.type = ctx.type;
+				sig_ctx.pkalgo = ctx.pkalgo;
+				sig_ctx.hashalgo = ctx.hashalgo;
+				sig_ctx.version = ctx.version;
+				sig_ctx.creationtime = ctx.sigcreationtime;
+				sig_ctx.expirationtime = ctx.sigexpirationtime;
+				ret = 1, erroff = 0;
+				if ((ctx.pkalgo == 1) || (ctx.pkalgo == 3))
+				{
+					unsigned int mdbits = 0;
+					mdbits = gcry_mpi_get_nbits(ctx.md);
+					if (verbose)
+						std::cout << "INFO: mdbits = " << mdbits << std::endl;
+					ret = gcry_sexp_build(&sig_ctx.sig, &erroff, "(sig-val (rsa (s %M)))", ctx.md);
+				}
+				else if (ctx.pkalgo == 17)
+				{
+					unsigned int rbits = 0, sbits = 0;
+					rbits = gcry_mpi_get_nbits(ctx.r);
+					sbits = gcry_mpi_get_nbits(ctx.s);
+					if (verbose)
+						std::cout << "INFO: rbits = " << rbits << " sbits = " << sbits << std::endl;
+					ret = gcry_sexp_build(&sig_ctx.sig, &erroff, "(sig-val (dsa (r %M) (s %M)))", ctx.r, ctx.s);
+				}
+				else
+				{
+					if (verbose)
+						std::cerr << "WARNING: public-key signature algorithm " << (int)ctx.pkalgo << " not supported" << std::endl;
+					break;
+				}
+				if (ret)
+				{
+					if (verbose)
+						std::cerr << "ERROR: parsing signature material failed" << std::endl;
+					ReleasePacketContext(ctx);
+					ReleasePublickeyContext(pub_ctx);
+					return false;
+				}
+				sig_ctx.packet.insert(sig_ctx.packet.end(), current_packet.begin(), current_packet.end());
+				for (size_t i = 0; i < ctx.hspdlen; i++)
+					sig_ctx.hspd.push_back(ctx.hspd[i]);
+				// evaluate the content
+				issuer.clear();
+				for (size_t i = 0; i < sizeof(ctx.issuer); i++)
+					issuer.push_back(ctx.issuer[i]);
+				if (subkey)
+				{
+					if (OctetsCompare(pub_ctx.id, issuer))
+					{
+						if ((ctx.type == 0x18) || (ctx.type == 0x19))
+							sub_ctx.bindsigs.push_back(sig_ctx); // Subkey binding signature for this subkey
+						else if (ctx.type == 0x28)
+							sub_ctx.revsigs.push_back(sig_ctx); // Subkey revocation signature for this subkey
+						else if (verbose)
+							std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored" << std::endl;
+					}
+					else
+					{
+						if (verbose)
+							std::cerr << "ERROR: signature not from primary key ignored" << std::endl;
+					}
+					break;
+				}
+				if (!OctetsCompare(pub_ctx.id, issuer))
+				{
+					if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
+						uid_ctx.certsigs.push_back(sig_ctx); // Certification signature for this user ID
+					else if (ctx.type == 0x30)
+						uid_ctx.certsigs.push_back(sig_ctx); // Certification revocation signature for this user ID
+					else if (verbose)
+						std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored" << std::endl;			
+					break;
+				}
+				if (primary && !uid_flag && !uat_flag) 
+				{
+					if (verbose)
+						std::cerr << "ERROR: no uid/uat found for this self-signature" << std::endl;
+					ReleasePacketContext(ctx);
+					ReleasePublickeyContext(pub_ctx);
+					return false;
+				}
+				else if (primary && !uid_flag && uat_flag)
+				{
+					if (verbose)
+						std::cerr << "WARNING: self-signature for a user attribute ignored" << std::endl;
+					break;
+				}
+				else if (primary && uid_flag && !uat_flag)
+				{
+					if (verbose && ((ctx.hashalgo < 8) || (ctx.hashalgo >= 11)))
+					{
+						std::cerr << "WARNING: insecure hash algorithm " << (int)ctx.hashalgo << " used for signatures" << std::endl;
+// TODO: update key strength
+					}
+					if (ctx.type == 0x20)
+					{
+						if (verbose)
+							std::cerr << "WARNING: key revocation signature on primary key" << std::endl;
+						uid_ctx.revsigs.push_back(sig_ctx); // Key revocation signature 
+					}
+					else if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
+					{
+						if (ctx.keyexpirationtime)
+							pub_ctx.expirationtime = ctx.keyexpirationtime;
+// TODO: update key flags
+						time_t kmax = pub_ctx.creationtime + pub_ctx.expirationtime;
+						if (verbose && pub_ctx.expirationtime && (time(NULL) > kmax))
+						{
+							std::cerr << "WARNING: primary key has been expired" << std::endl;
+// TODO: update key strength
+						}
+						uid_ctx.selfsigs.push_back(sig_ctx); // Certification self-signature
+					}
+				}
+				break;
+			case 6: // Public-Key Packet
+				if (ctx.version != 4)
+				{
+					if (verbose)
+						std::cerr << "WARNING: public-key packet version " << (int)ctx.version << " not supported" << std::endl;
+				}
+				else if (!primary)
+				{
+					primary = true;
+					pub_ctx.pkalgo = ctx.pkalgo;
+					pub_ctx.creationtime = ctx.keycreationtime;
+					// evaluate the content
+					tmcg_openpgp_octets_t pub, pub_hashing;
+					ret = 1, erroff = 0;
+					if ((ctx.pkalgo == 1) || (ctx.pkalgo == 3))
+					{
+	 					// public-key algorithm is RSA
+						PacketPubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.n, ctx.e, NULL, NULL, pub);
+						ret = gcry_sexp_build(&pub_ctx.key, &erroff,
+							"(public-key (rsa (n %M) (e %M)))",
+							ctx.n, ctx.e);
+					}
+					else if (ctx.pkalgo == 17)
+					{
+						// public-key algorithm is DSA
+						PacketPubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.p, ctx.q, ctx.g, ctx.y, pub);
+						ret = gcry_sexp_build(&pub_ctx.key, &erroff,
+							"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))",
+							ctx.p, ctx.q, ctx.g, ctx.y);
+					}
+					else
+					{
+						if (verbose)
+							std::cerr << "ERROR: public-key algorithm " << (int)ctx.pkalgo << " not supported" << std::endl;
+						ReleasePacketContext(ctx);
+						ReleasePublickeyContext(pub_ctx);
+						return false;
+					}
+					if (ret)
+					{
+						if (verbose)
+							std::cerr << "ERROR: parsing primary key material failed" << std::endl;
+						ReleasePacketContext(ctx);
+						ReleasePublickeyContext(pub_ctx);
+						return false;
+					}
+					for (size_t i = 6; i < pub.size(); i++)
+						pub_hashing.push_back(pub[i]);
+					pub_ctx.id.clear();
+					KeyidCompute(pub_hashing, pub_ctx.id);
+					if (verbose)
+					{
+						std::cout << "INFO: key ID of primary key: " << std::hex;
+						for (size_t i = 0; i < pub_ctx.id.size(); i++)
+							std::cout << (int)pub_ctx.id[i] << " ";
+						std::cout << std::dec << std::endl;
+					}
+				}
+				else
+				{
+					if (verbose)
+						std::cerr << "ERROR: more than one primary key not supported" << std::endl;
+					ReleasePacketContext(ctx);
+					ReleasePublickeyContext(pub_ctx);
+					return false;
+				}
+				break;
+			case 13: // User ID Packet
+				if (uid_flag)
+				{
+					pub_ctx.userids.push_back(uid_ctx);
+					uid_ctx.userid = "";
+					uid_ctx.selfsigs.clear();
+					uid_ctx.revsigs.clear();
+					uid_ctx.certsigs.clear();
+					memset(&uid_ctx, 0, sizeof(uid_ctx)); // clear context
+				}
+				uid_flag = true, uat_flag = false;
+				// evaluate the content
+				for (size_t i = 0; i < sizeof(ctx.uid); i++)
+				{
+					if (ctx.uid[i])
+						uid_ctx.userid += ctx.uid[i];
+					else
+						break;
+				}
+				break;
+			case 14: // Public-Subkey Packet
+				if (subkey)
+				{
+					pub_ctx.subkeys.push_back(sub_ctx);
+					sub_ctx.bindsigs.clear();
+					sub_ctx.revsigs.clear();
+					memset(&sub_ctx, 0, sizeof(sub_ctx)); // clear context
+				}
+				subkey = true;
+				if (ctx.version != 4)
+				{
+					if (verbose)
+						std::cerr << "WARNING: public-subkey packet version " << (int)ctx.version << " not supported" << std::endl;
+				}
+				else if ((ctx.pkalgo == 1) || (ctx.pkalgo == 2) || (ctx.pkalgo == 3) || (ctx.pkalgo == 16) || (ctx.pkalgo == 17))
+				{
+					sub_ctx.pkalgo = ctx.pkalgo;
+					sub_ctx.creationtime = ctx.keycreationtime;
+					// evaluate the content
+					tmcg_openpgp_octets_t sub, sub_hashing;
+					ret = 1, erroff = 0;
+					if ((ctx.pkalgo == 1) || (ctx.pkalgo == 2) || (ctx.pkalgo == 3))
+					{
+	 					// public-key algorithm is RSA
+						PacketSubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.n, ctx.e, NULL, NULL, sub);
+						ret = gcry_sexp_build(&sub_ctx.key, &erroff,
+							"(public-key (rsa (n %M) (e %M)))",
+							ctx.n, ctx.e);
+					}
+					else if (ctx.pkalgo == 16)
+					{
+						// public-key algorithm is ElGamal
+						PacketSubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.p, NULL, ctx.g, ctx.y, sub);
+						ret = gcry_sexp_build(&sub_ctx.key, &erroff,
+							"(public-key (elg (p %M) (g %M) (y %M)))",
+							ctx.p, ctx.g, ctx.y);
+					}
+					else if (ctx.pkalgo == 17)
+					{
+						// public-key algorithm is DSA
+						PacketSubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.p, ctx.q, ctx.g, ctx.y, sub);
+						ret = gcry_sexp_build(&sub_ctx.key, &erroff,
+							"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))",
+							ctx.p, ctx.q, ctx.g, ctx.y);
+					}
+					if (ret)
+					{
+						if (verbose)
+							std::cerr << "ERROR: parsing subkey material failed" << std::endl;
+						ReleasePacketContext(ctx);
+						ReleasePublickeyContext(pub_ctx);
+						return false;
+					}
+					for (size_t i = 6; i < sub.size(); i++)
+						sub_hashing.push_back(sub[i]);
+					sub_ctx.id.clear();
+					KeyidCompute(sub_hashing, sub_ctx.id);
+					if (verbose)
+					{
+						std::cout << "INFO: key ID of subkey: " << std::hex;
+						for (size_t i = 0; i < sub_ctx.id.size(); i++)
+							std::cout << (int)sub_ctx.id[i] << " ";
+						std::cout << std::dec << std::endl;
+					}
+					if (verbose && OctetsCompare(sub_ctx.id, pub_ctx.id))
+						std::cerr << "WARNING: probably same key material used for subkey" << std::endl;
+				}
+				else
+				{
+					if (verbose)
+						std::cerr << "WARNING: public-key algorithm " << (int)ctx.pkalgo << " for subkey not supported" << std::endl;
+				}
+				break;
+			case 17: // User Attribute Packet
+				if (verbose)
+					std::cerr << "WARNING: user attribute packet found; ignored" << std::endl;
+				if (uid_flag)
+				{
+					pub_ctx.userids.push_back(uid_ctx);
+					uid_ctx.userid = "";
+					uid_ctx.selfsigs.clear();
+					uid_ctx.revsigs.clear();
+					uid_ctx.certsigs.clear();
+				}
+				uid_flag = false, uat_flag = true;
+				break;
+			default:
+				if (verbose)
+					std::cout << "INFO: OpenPGP packet of type " << (int)ptag << " ignored" << std::endl;
+				break;
+		}
+		// cleanup allocated buffers and mpi's
+		ReleasePacketContext(ctx);
+	}
+	if (uid_flag)
+		pub_ctx.userids.push_back(uid_ctx);
+	if (subkey)
+		pub_ctx.subkeys.push_back(sub_ctx);
+	if (!primary)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no primary key found" << std::endl;
+		ReleasePublickeyContext(pub_ctx);
+		return false;
+	}
+	
+	// print key usage and check self-signatures
+	size_t flags = 0;
+	for (size_t i = 0; i < sizeof(pub_ctx.flags); i++)
+	{
+		if (pub_ctx.flags[i])
+			flags = (flags << 8) + pub_ctx.flags[i];
+		else
+			break;
+	}
+	if (verbose)
+	{
+		std::cout << "INFO: key flags on primary key are ";
+		if ((flags & 0x01) == 0x01)
+			std::cout << "C"; // The key may be used to certify other keys.
+		if ((flags & 0x02) == 0x02)
+			std::cout << "S"; // The key may be used to sign data.
+		if ((flags & 0x04) == 0x04)
+			std::cout << "E"; // The key may be used encrypt communications.
+		if ((flags & 0x08) == 0x08)
+			std::cout << "e"; // The key may be used encrypt storage.
+		if ((flags & 0x10) == 0x10)
+			std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
+		if ((flags & 0x20) == 0x20)
+			std::cout << "A"; // The key may be used for authentication.
+		if ((flags & 0x80) == 0x80)
+			std::cout << "M"; // The private component of this key may be in the possession of more than one person.
+		std::cout << std::endl;
+		std::cout << "INFO: number of userids = " << pub_ctx.userids.size() << std::endl;
+		std::cout << "INFO: number of subkeys = " << pub_ctx.subkeys.size() << std::endl;
+	}
+	bool valid_selfsig = false;
+	for (size_t i = 0; i < pub_ctx.userids.size(); i++)
+	{
+		if (verbose)
+		{
+			std::cout << "INFO: userid = \"" << pub_ctx.userids[i].userid << "\"" << std::endl;
+			std::cout << "INFO: number of selfsigs = " << pub_ctx.userids[i].selfsigs.size() << std::endl;
+			std::cout << "INFO: number of revsigs = " << pub_ctx.userids[i].revsigs.size() << std::endl;
+			std::cout << "INFO: number of certsigs = " << pub_ctx.userids[i].certsigs.size() << std::endl;
+		}
+		for (size_t j = 0; j < pub_ctx.userids[i].selfsigs.size(); j++)
+		{	
+			if (verbose)
+				std::cout << "INFO: sigtype = 0x" << std::hex << (int)pub_ctx.userids[i].selfsigs[j].type << std::dec << 
+					" pkalgo = " << (int)pub_ctx.userids[i].selfsigs[j].pkalgo <<
+					" hashalgo = " << (int)pub_ctx.userids[i].selfsigs[j].hashalgo <<
+					" version = " << (int)pub_ctx.userids[i].selfsigs[j].version <<
+					" creationtime = " << pub_ctx.userids[i].selfsigs[j].creationtime <<
+					" expirationtime = " << pub_ctx.userids[i].selfsigs[j].expirationtime <<
+					" hspd.size() = " << pub_ctx.userids[i].selfsigs[j].hspd.size() << std::endl;
+/*
+	tmcg_openpgp_octets_t trailer, left, hash;
+	if (sigV3)
+	{
+		tmcg_openpgp_octets_t sigtime_octets;
+		PacketTimeEncode(sigtime, sigtime_octets);
+		// The concatenation of the data to be signed, the signature type, and
+		// creation time from the Signature packet (5 additional octets) is
+		// hashed. The resulting hash value is used in the signature algorithm.
+		// The high 16 bits (first two octets) of the hash are included in the
+		// Signature packet to provide a quick test to reject some invalid
+		// signatures.
+		// A V3 signature hashes five octets of the packet body, starting from
+		// the signature type field. This data is the signature type, followed
+		// by the four-octet signature time.
+		trailer.push_back(sigtype);
+		trailer.insert(trailer.end(), sigtime_octets.begin(), sigtime_octets.end());
+		CertificationHashV3(pub_hashing, userid, trailer, hashalgo, hash, left);
+	}
+	else
+	{
+		trailer.push_back(4); // only V4 format supported
+		trailer.push_back(sigtype);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back(hspd.size() >> 8); // length of hashed subpacket data
+		trailer.push_back(hspd.size());
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		CertificationHash(pub_hashing, userid, trailer, hashalgo, hash, left);
+	}
+	if (verbose)
+		std::cout << "INFO: left = " << std::hex << (int)left[0] << " " << (int)left[1] << std::dec << std::endl;
+	if ((pkalgo == 1) || (pkalgo == 3))
+		ret = AsymmetricVerifyRSA(hash, primarykey, hashalgo, rsa_md);
+	else if (pkalgo == 17)
+		ret = AsymmetricVerifyDSA(hash, primarykey, dsa_r, dsa_s);
+	if (ret)
+	{
+		if (verbose)
+			std::cerr << "ERROR: verification of primary key self-signature failed (rc = " << gcry_err_code(ret) << ", str = " <<
+				gcry_strerror(ret) << ")" << std::endl;
+		gcry_sexp_release(primarykey);
+		return false;
+	}
+	if (rev)
+	{
+		if (verbose)
+			std::cout << "INFO: rev_sigtype = 0x" << std::hex << (int)rev_sigtype << std::dec << 
+			" rev_pkalgo = " << (int)rev_pkalgo << " rev_hashalgo = " << (int)rev_hashalgo <<
+			" rev_hspd.size() = " << rev_hspd.size() << std::endl;
+		tmcg_openpgp_octets_t rev_trailer, rev_left;
+		hash.clear();
+		if (revV3)
+		{
+			tmcg_openpgp_octets_t rev_sigtime_octets;
+			PacketTimeEncode(rev_sigtime, rev_sigtime_octets);
+			// The concatenation of the data to be signed, the signature type, and
+			// creation time from the Signature packet (5 additional octets) is
+			// hashed. The resulting hash value is used in the signature algorithm.
+			// The high 16 bits (first two octets) of the hash are included in the
+			// Signature packet to provide a quick test to reject some invalid
+			// signatures.
+			// A V3 signature hashes five octets of the packet body, starting from
+			// the signature type field. This data is the signature type, followed
+			// by the four-octet signature time.
+			rev_trailer.push_back(rev_sigtype);
+			rev_trailer.insert(rev_trailer.end(), rev_sigtime_octets.begin(), rev_sigtime_octets.end());
+			KeyRevocationHashV3(pub_hashing, rev_trailer, rev_hashalgo, hash, rev_left);
+		}
+		else
+		{
+			rev_trailer.push_back(4); // only V4 format supported
+			rev_trailer.push_back(rev_sigtype);
+			rev_trailer.push_back(rev_pkalgo);
+			rev_trailer.push_back(rev_hashalgo);
+			rev_trailer.push_back(rev_hspd.size() >> 8); // length of hashed subpacket data
+			rev_trailer.push_back(rev_hspd.size());
+			rev_trailer.insert(rev_trailer.end(), rev_hspd.begin(), rev_hspd.end());
+			KeyRevocationHash(pub_hashing, rev_trailer, rev_hashalgo, hash, rev_left);
+		}
+		if (verbose)
+			std::cout << "INFO: rev_left = " << std::hex << (int)rev_left[0] << " " << (int)rev_left[1] << std::dec << std::endl;
+		if ((pkalgo == 1) || (pkalgo == 3))
+			ret = AsymmetricVerifyRSA(hash, primarykey, rev_hashalgo, revrsa_md);
+		else if (pkalgo == 17)
+			ret = AsymmetricVerifyDSA(hash, primarykey, revdsa_r, revdsa_s);
+		gcry_sexp_release(primarykey);
+		if (ret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: verification of primary key revocation signature failed (rc = " << gcry_err_code(ret) << ", str = " <<
+					gcry_strerror(ret) << ")" << std::endl;
+			return false;
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "ERROR: valid revocation signature on primary key found" << std::endl;
+			return false;
+		}
+	}
+*/
+		}
+	}
+// TODO: evaluate signatures
+
+	return true;
 }
 

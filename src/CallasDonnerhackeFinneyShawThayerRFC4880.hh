@@ -181,7 +181,50 @@
 		size_t datalen;
 		tmcg_openpgp_byte_t uid[2048]; // string
 		tmcg_openpgp_byte_t mdc_hash[20];
-	} tmcg_openpgp_packet_ctx;
+	} tmcg_openpgp_packet_ctx_t;
+
+	typedef struct {
+		tmcg_openpgp_byte_t pkalgo;
+		tmcg_openpgp_byte_t hashalgo;
+		tmcg_openpgp_byte_t type;
+		tmcg_openpgp_byte_t version;
+		time_t creationtime;
+		time_t expirationtime;
+		gcry_sexp_t sig;
+		tmcg_openpgp_octets_t packet;
+		tmcg_openpgp_octets_t hspd;
+	} tmcg_openpgp_signature_ctx_t;
+
+	typedef struct {
+		std::string userid;
+		std::vector<tmcg_openpgp_signature_ctx_t> selfsigs;
+		std::vector<tmcg_openpgp_signature_ctx_t> revsigs;
+		std::vector<tmcg_openpgp_signature_ctx_t> certsigs;
+	} tmcg_openpgp_userid_ctx_t;
+
+	typedef struct {
+		tmcg_openpgp_octets_t id;
+		tmcg_openpgp_byte_t flags;
+		tmcg_openpgp_byte_t pkalgo;
+		time_t creationtime;
+		time_t expirationtime;
+		tmcg_openpgp_byte_t strength;	
+		gcry_sexp_t key;
+		std::vector<tmcg_openpgp_signature_ctx_t> bindsigs;
+		std::vector<tmcg_openpgp_signature_ctx_t> revsigs;		
+	} tmcg_openpgp_subkey_ctx_t;
+
+	typedef struct {
+		tmcg_openpgp_octets_t id;
+		tmcg_openpgp_byte_t flags[32];
+		tmcg_openpgp_byte_t pkalgo;
+		time_t creationtime;
+		time_t expirationtime;
+		tmcg_openpgp_byte_t strength;
+		gcry_sexp_t key;
+		std::vector<tmcg_openpgp_userid_ctx_t> userids;
+		std::vector<tmcg_openpgp_subkey_ctx_t> subkeys;
+	} tmcg_openpgp_publickey_ctx_t;
 
 class CallasDonnerhackeFinneyShawThayerRFC4880
 {
@@ -464,23 +507,28 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 
 		static tmcg_openpgp_byte_t SubpacketDecode
 			(tmcg_openpgp_octets_t &in,
-			 tmcg_openpgp_packet_ctx &out);
+			 tmcg_openpgp_packet_ctx_t &out);
 		static tmcg_openpgp_byte_t PacketDecode
 			(tmcg_openpgp_octets_t &in,
-			 tmcg_openpgp_packet_ctx &out,
-			 tmcg_openpgp_octets_t &current_packet,
-			 std::vector<gcry_mpi_t> &qual,
-			 std::vector<std::string> &capl,
-			 std::vector<gcry_mpi_t> &v_i,
-			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
-		static tmcg_openpgp_byte_t PacketDecode
-			(tmcg_openpgp_octets_t &in, tmcg_openpgp_packet_ctx &out,
+			 tmcg_openpgp_packet_ctx_t &out,
 			 tmcg_openpgp_octets_t &current_packet,
 			 std::vector<gcry_mpi_t> &qual,
 			 std::vector<gcry_mpi_t> &x_rvss_qual,
 			 std::vector<std::string> &capl,
 			 std::vector<gcry_mpi_t> &v_i,
 			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
+		static tmcg_openpgp_byte_t PacketDecode
+			(tmcg_openpgp_octets_t &in,
+			 tmcg_openpgp_packet_ctx_t &out,
+			 tmcg_openpgp_octets_t &current_packet,
+			 std::vector<gcry_mpi_t> &qual,
+			 std::vector<std::string> &capl,
+			 std::vector<gcry_mpi_t> &v_i,
+			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
+		static tmcg_openpgp_byte_t PacketDecode
+			(tmcg_openpgp_octets_t &in,
+			 tmcg_openpgp_packet_ctx_t &out,
+			 tmcg_openpgp_octets_t &current_packet);
 
 		static bool BinaryDocumentHashV3
 			(const std::string &filename,
@@ -598,6 +646,20 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_sexp_t key,
 			 const tmcg_openpgp_byte_t hashalgo, 
 	 		 const gcry_mpi_t s);
+
+		static void ReleasePacketContext
+			(tmcg_openpgp_packet_ctx_t &ctx);
+		static void ReleaseSignatureContext
+			(tmcg_openpgp_signature_ctx_t &ctx);
+		static void ReleaseUseridContext
+			(tmcg_openpgp_userid_ctx_t &ctx);
+		static void ReleaseSubkeyContext
+			(tmcg_openpgp_subkey_ctx_t &ctx);
+		static void ReleasePublickeyContext
+			(tmcg_openpgp_publickey_ctx_t &ctx);
+		static bool ParsePublicKeyBlock
+			(const std::string &in, const bool verbose,
+			 tmcg_openpgp_publickey_ctx_t &pub_ctx);
 };
 
 #endif
