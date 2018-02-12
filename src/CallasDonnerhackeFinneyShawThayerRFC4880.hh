@@ -753,7 +753,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(tmcg_openpgp_packet_ctx_t &ctx);
 		static bool ParsePublicKeyBlock
 			(const std::string &in, const bool verbose,
-			 TMCG_OpenPGP_Pubkey *pub);
+			 TMCG_OpenPGP_Pubkey* &pub);
 };
 
 #endif

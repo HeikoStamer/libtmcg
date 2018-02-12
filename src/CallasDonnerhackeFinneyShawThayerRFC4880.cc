@@ -4667,7 +4667,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ReleasePacketContext
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 	(const std::string &in, const bool verbose,
-	 TMCG_OpenPGP_Pubkey *pub)
+	 TMCG_OpenPGP_Pubkey* &pub)
 {
 	// decode ASCII Armor
 	tmcg_openpgp_octets_t pkts;
