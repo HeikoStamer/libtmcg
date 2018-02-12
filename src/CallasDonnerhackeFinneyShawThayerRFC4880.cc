@@ -30,6 +30,262 @@
 #endif
 #include "CallasDonnerhackeFinneyShawThayerRFC4880.hh"
 
+TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
+	(const tmcg_openpgp_byte_t pkalgo_in,
+	 const tmcg_openpgp_byte_t hashalgo_in,
+	 const tmcg_openpgp_byte_t type_in,
+	 const tmcg_openpgp_byte_t version_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t md,
+	 const tmcg_openpgp_octets_t &packet_in,
+	 const tmcg_openpgp_octets_t &hspd_in):
+		ret(1),
+		erroff(0),
+		pkalgo(pkalgo_in),
+		hashalgo(hashalgo_in),
+		type(type_in),
+		version(version_in),
+		creationtime(creationtime_in),
+		expirationtime(expirationtime_in)
+{
+	ret = gcry_sexp_build(&signature, &erroff,
+		"(sig-val (rsa (s %M)))", md);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+	hspd.insert(hspd.end(), hspd_in.begin(), hspd_in.end());
+}
+
+TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
+	(const tmcg_openpgp_byte_t pkalgo_in,
+	 const tmcg_openpgp_byte_t hashalgo_in,
+	 const tmcg_openpgp_byte_t type_in,
+	 const tmcg_openpgp_byte_t version_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t r,
+	 const gcry_mpi_t s,
+	 const tmcg_openpgp_octets_t &packet_in,
+	 const tmcg_openpgp_octets_t &hspd_in):
+		ret(1),
+		erroff(0),
+		pkalgo(pkalgo_in),
+		hashalgo(hashalgo_in),
+		type(type_in),
+		version(version_in),
+		creationtime(creationtime_in),
+		expirationtime(expirationtime_in)
+{
+	ret = gcry_sexp_build(&signature, &erroff,
+		"(sig-val (dsa (r %M) (s %M)))", r, s);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+	hspd.insert(hspd.end(), hspd_in.begin(), hspd_in.end());
+}
+
+bool TMCG_OpenPGP_Signature::good
+	() const
+{
+	return (ret == 0);
+}
+
+TMCG_OpenPGP_Signature::~TMCG_OpenPGP_Signature
+	()
+{
+	if (!ret)
+		gcry_sexp_release(signature);
+	packet.clear();
+	hspd.clear();
+}
+
+TMCG_OpenPGP_UserID::TMCG_OpenPGP_UserID
+	(const std::string &userid_in,
+	 const tmcg_openpgp_octets_t &packet_in):
+		userid(userid_in)
+{
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+}
+
+TMCG_OpenPGP_UserID::~TMCG_OpenPGP_UserID
+	()
+{
+	packet.clear();
+	for (size_t i = 0; i < selfsigs.size(); i++)
+		delete selfsigs[i];
+	selfsigs.clear();
+	for (size_t i = 0; i < revsigs.size(); i++)
+		delete revsigs[i];
+	revsigs.clear();
+	for (size_t i = 0; i < certsigs.size(); i++)
+		delete certsigs[i];
+	certsigs.clear();
+}
+
+TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
+	(const tmcg_openpgp_byte_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t n,
+	 const gcry_mpi_t e,
+	 const tmcg_openpgp_octets_t &packet_in):
+		ret(1),
+		erroff(0),
+		pkalgo(pkalgo_in),
+		creationtime(creationtime_in),
+		expirationtime(expirationtime_in)
+{
+	// public-key algorithm is RSA
+	ret = gcry_sexp_build(&key, &erroff,
+		"(public-key (rsa (n %M) (e %M)))", n, e);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+	tmcg_openpgp_octets_t sub, sub_hashing;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in, pkalgo_in, n, e, e, e, sub);
+	for (size_t i = 6; i < sub.size(); i++)
+		sub_hashing.push_back(sub[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, id);
+}
+
+TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
+	(const tmcg_openpgp_byte_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t p,
+	 const gcry_mpi_t g,
+	 const gcry_mpi_t y,
+	 const tmcg_openpgp_octets_t &packet_in):
+		ret(1),
+		erroff(0),
+		pkalgo(pkalgo_in),
+		creationtime(creationtime_in),
+		expirationtime(expirationtime_in)
+{
+	// public-key algorithm is ElGamal
+	ret = gcry_sexp_build(&key, &erroff,
+		"(public-key (elg (p %M) (g %M) (y %M)))", p, g, y);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+	tmcg_openpgp_octets_t sub, sub_hashing;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in, pkalgo_in, p, p, g, y, sub);
+	for (size_t i = 6; i < sub.size(); i++)
+		sub_hashing.push_back(sub[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, id);
+}
+
+TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
+	(const tmcg_openpgp_byte_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t p,
+	 const gcry_mpi_t q,
+	 const gcry_mpi_t g,
+	 const gcry_mpi_t y,
+	 const tmcg_openpgp_octets_t &packet_in):
+		ret(1),
+		erroff(0),
+		pkalgo(pkalgo_in),
+		creationtime(creationtime_in),
+		expirationtime(expirationtime_in)
+{
+	// public-key algorithm is DSA
+	ret = gcry_sexp_build(&key, &erroff,
+		"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", p, q, g, y);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+	tmcg_openpgp_octets_t sub, sub_hashing;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in, pkalgo_in, p, q, g, y, sub);
+	for (size_t i = 6; i < sub.size(); i++)
+		sub_hashing.push_back(sub[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, id);
+}
+
+bool TMCG_OpenPGP_Subkey::good
+	() const
+{
+	return (ret == 0);
+}
+
+TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
+	()
+{
+	if (!ret)
+		gcry_sexp_release(key);
+	packet.clear();
+	id.clear();
+	for (size_t i = 0; i < bindsigs.size(); i++)
+		delete bindsigs[i];
+	bindsigs.clear();
+	for (size_t i = 0; i < revsigs.size(); i++)
+		delete revsigs[i];
+	revsigs.clear();
+}
+
+TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
+	(const tmcg_openpgp_byte_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t n,
+	 const gcry_mpi_t e,
+	 const tmcg_openpgp_octets_t &packet_in):
+		ret(1),
+		erroff(0),
+		pkalgo(pkalgo_in),
+		creationtime(creationtime_in),
+		expirationtime(expirationtime_in)
+{
+	// public-key algorithm is RSA
+	ret = gcry_sexp_build(&key, &erroff,
+		"(public-key (rsa (n %M) (e %M)))", n, e);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+	tmcg_openpgp_octets_t pub, pub_hashing;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in, pkalgo_in, n, e, e, e, pub);
+	for (size_t i = 6; i < pub.size(); i++)
+		pub_hashing.push_back(pub[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, id);
+}
+
+TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
+	(const tmcg_openpgp_byte_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t p,
+	 const gcry_mpi_t q,
+	 const gcry_mpi_t g,
+	 const gcry_mpi_t y,
+	 const tmcg_openpgp_octets_t &packet_in):
+		ret(1),
+		erroff(0),
+		pkalgo(pkalgo_in),
+		creationtime(creationtime_in),
+		expirationtime(expirationtime_in)
+{
+	// public-key algorithm is DSA
+	ret = gcry_sexp_build(&key, &erroff,
+		"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", p, q, g, y);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+	tmcg_openpgp_octets_t pub, pub_hashing;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in, pkalgo_in, p, q, g, y, pub);
+	for (size_t i = 6; i < pub.size(); i++)
+		pub_hashing.push_back(pub[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, id);
+}
+
+bool TMCG_OpenPGP_Pubkey::good
+	() const
+{
+	return (ret == 0);
+}
+
+TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
+	()
+{
+	if (!ret)
+		gcry_sexp_release(key);
+	packet.clear();
+	id.clear();
+	for (size_t i = 0; i < userids.size(); i++)
+		delete userids[i];
+	userids.clear();
+	for (size_t i = 0; i < subkeys.size(); i++)
+		delete subkeys[i];
+	subkeys.clear();
+}
+
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength
 	(const tmcg_openpgp_byte_t algo)
 {
@@ -4409,57 +4665,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ReleasePacketContext
 		delete [] ctx.data;
 }
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::ReleaseSignatureContext
-	(tmcg_openpgp_signature_ctx_t &ctx)
-{
-	gcry_sexp_release(ctx.sig);
-	ctx.packet.clear();
-	ctx.hspd.clear();
-}
-
-void CallasDonnerhackeFinneyShawThayerRFC4880::ReleaseUseridContext
-	(tmcg_openpgp_userid_ctx_t &ctx)
-{
-	for (size_t i = 0; i < ctx.selfsigs.size(); i++)
-		ReleaseSignatureContext(ctx.selfsigs[i]);
-	ctx.selfsigs.clear();
-	for (size_t i = 0; i < ctx.revsigs.size(); i++)
-		ReleaseSignatureContext(ctx.revsigs[i]);
-	ctx.revsigs.clear();
-	for (size_t i = 0; i < ctx.certsigs.size(); i++)
-		ReleaseSignatureContext(ctx.certsigs[i]);
-	ctx.certsigs.clear();
-}
-
-void CallasDonnerhackeFinneyShawThayerRFC4880::ReleaseSubkeyContext
-	(tmcg_openpgp_subkey_ctx_t &ctx)
-{
-	gcry_sexp_release(ctx.key);
-	for (size_t i = 0; i < ctx.bindsigs.size(); i++)
-		ReleaseSignatureContext(ctx.bindsigs[i]);
-	ctx.bindsigs.clear();
-	for (size_t i = 0; i < ctx.revsigs.size(); i++)
-		ReleaseSignatureContext(ctx.revsigs[i]);
-	ctx.revsigs.clear();
-}
-
-void CallasDonnerhackeFinneyShawThayerRFC4880::ReleasePublickeyContext
-	(tmcg_openpgp_publickey_ctx_t &ctx)
-{
-	gcry_sexp_release(ctx.key);
-	for (size_t i = 0; i < ctx.userids.size(); i++)
-		ReleaseUseridContext(ctx.userids[i]);
-	ctx.userids.clear();
-	for (size_t i = 0; i < ctx.subkeys.size(); i++)
-		ReleaseSubkeyContext(ctx.subkeys[i]);
-	ctx.subkeys.clear();
-}
-
 bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 	(const std::string &in, const bool verbose,
-	 tmcg_openpgp_publickey_ctx_t &pub_ctx)
+	 TMCG_OpenPGP_Pubkey *pub)
 {
-	memset(&pub_ctx, 0, sizeof(pub_ctx)); // clear context
 	// decode ASCII Armor
 	tmcg_openpgp_octets_t pkts;
 	tmcg_openpgp_armor_t atype = ArmorDecode(in, pkts);
@@ -4469,10 +4678,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 			std::cerr << "ERROR: wrong type of ASCII Armor found (type = " << (int)atype << ")" << std::endl;
 		return false;
 	}
-	// parse the public key block
+	// parse the public key block packet by packet
 	bool primary = false, subkey = false, uid_flag = false, uat_flag = false;
-	tmcg_openpgp_subkey_ctx_t sub_ctx;
-	tmcg_openpgp_userid_ctx_t uid_ctx;
+	TMCG_OpenPGP_Subkey *sub = NULL;
+	TMCG_OpenPGP_UserID *uid = NULL;
 	tmcg_openpgp_byte_t ptag = 0xFF;
 	size_t pnum = 0;
 	while (pkts.size() && ptag)
@@ -4488,7 +4697,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 			if (verbose)
 				std::cerr << "ERROR: parsing OpenPGP packets failed at #" << pnum << std::endl;
 			ReleasePacketContext(ctx);
-			ReleasePublickeyContext(pub_ctx);
+			if (sub)
+				delete sub;
+			if (uid)
+				delete uid;
 			return false;
 		}
 		else if (ptag == 0xFE)
@@ -4498,28 +4710,32 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 			ReleasePacketContext(ctx);
 			continue; // ignore packet
 		}
-		tmcg_openpgp_signature_ctx_t sig_ctx;
-		tmcg_openpgp_octets_t issuer;
-		gcry_error_t ret = 1;
-		size_t erroff = 0;
+		TMCG_OpenPGP_Signature *sig = NULL;
+		std::string userid = "";
+		tmcg_openpgp_octets_t issuer, hspd;
+		for (size_t i = 0; i < sizeof(ctx.uid); i++)
+		{
+			if (ctx.uid[i])
+				userid += ctx.uid[i];
+			else
+				break;
+		}
+		for (size_t i = 0; i < sizeof(ctx.issuer); i++)
+			issuer.push_back(ctx.issuer[i]);
+		for (size_t i = 0; i < ctx.hspdlen; i++)
+			hspd.push_back(ctx.hspd[i]);
 		switch (ptag)
 		{
 			case 2: // Signature Packet
-				memset(&sig_ctx, 0, sizeof(sig_ctx)); // clear context
-				sig_ctx.type = ctx.type;
-				sig_ctx.pkalgo = ctx.pkalgo;
-				sig_ctx.hashalgo = ctx.hashalgo;
-				sig_ctx.version = ctx.version;
-				sig_ctx.creationtime = ctx.sigcreationtime;
-				sig_ctx.expirationtime = ctx.sigexpirationtime;
-				ret = 1, erroff = 0;
 				if ((ctx.pkalgo == 1) || (ctx.pkalgo == 3))
 				{
 					unsigned int mdbits = 0;
 					mdbits = gcry_mpi_get_nbits(ctx.md);
 					if (verbose)
 						std::cout << "INFO: mdbits = " << mdbits << std::endl;
-					ret = gcry_sexp_build(&sig_ctx.sig, &erroff, "(sig-val (rsa (s %M)))", ctx.md);
+					// create a new signature object
+					sig = new TMCG_OpenPGP_Signature(ctx.pkalgo, ctx.hashalgo, ctx.type, ctx.version,
+						ctx.sigcreationtime, ctx.sigexpirationtime, ctx.md, current_packet, hspd);
 				}
 				else if (ctx.pkalgo == 17)
 				{
@@ -4528,7 +4744,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					sbits = gcry_mpi_get_nbits(ctx.s);
 					if (verbose)
 						std::cout << "INFO: rbits = " << rbits << " sbits = " << sbits << std::endl;
-					ret = gcry_sexp_build(&sig_ctx.sig, &erroff, "(sig-val (dsa (r %M) (s %M)))", ctx.r, ctx.s);
+					// create a new signature object
+					sig = new TMCG_OpenPGP_Signature(ctx.pkalgo, ctx.hashalgo, ctx.type, ctx.version,
+						ctx.sigcreationtime, ctx.sigexpirationtime, ctx.r, ctx.s, current_packet, hspd);
 				}
 				else
 				{
@@ -4536,47 +4754,74 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 						std::cerr << "WARNING: public-key signature algorithm " << (int)ctx.pkalgo << " not supported" << std::endl;
 					break;
 				}
-				if (ret)
+				if (!sig->good())
 				{
 					if (verbose)
 						std::cerr << "ERROR: parsing signature material failed" << std::endl;
 					ReleasePacketContext(ctx);
-					ReleasePublickeyContext(pub_ctx);
+					if (sub)
+						delete sub;
+					if (uid)
+						delete uid;
+					delete sig;
 					return false;
 				}
-				sig_ctx.packet.insert(sig_ctx.packet.end(), current_packet.begin(), current_packet.end());
-				for (size_t i = 0; i < ctx.hspdlen; i++)
-					sig_ctx.hspd.push_back(ctx.hspd[i]);
-				// evaluate the content
-				issuer.clear();
-				for (size_t i = 0; i < sizeof(ctx.issuer); i++)
-					issuer.push_back(ctx.issuer[i]);
+				// evaluate the context of the signature
+				if (!primary)
+				{
+					if (verbose)
+						std::cerr << "ERROR: no usable primary key found" << std::endl;
+					ReleasePacketContext(ctx);
+					if (sub)
+						delete sub;
+					if (uid)
+						delete uid;
+					return false;
+				}
 				if (subkey)
 				{
-					if (OctetsCompare(pub_ctx.id, issuer))
+					if (OctetsCompare(pub->id, issuer))
 					{
 						if ((ctx.type == 0x18) || (ctx.type == 0x19))
-							sub_ctx.bindsigs.push_back(sig_ctx); // Subkey binding signature for this subkey
+							sub->bindsigs.push_back(sig); // Subkey binding signature for this subkey
 						else if (ctx.type == 0x28)
-							sub_ctx.revsigs.push_back(sig_ctx); // Subkey revocation signature for this subkey
-						else if (verbose)
-							std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored" << std::endl;
+							sub->revsigs.push_back(sig); // Subkey revocation signature for this subkey
+						else
+						{
+							if (verbose)
+								std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored" << std::endl;
+							delete sig;
+						}
 					}
 					else
 					{
 						if (verbose)
 							std::cerr << "ERROR: signature not from primary key ignored" << std::endl;
+						delete sig;
 					}
 					break;
 				}
-				if (!OctetsCompare(pub_ctx.id, issuer))
+				if (!OctetsCompare(pub->id, issuer))
 				{
-					if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
-						uid_ctx.certsigs.push_back(sig_ctx); // Certification signature for this user ID
-					else if (ctx.type == 0x30)
-						uid_ctx.certsigs.push_back(sig_ctx); // Certification revocation signature for this user ID
-					else if (verbose)
-						std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored" << std::endl;			
+					if (uid_flag)
+					{
+						if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
+							uid->certsigs.push_back(sig); // Certification signature for this user ID
+						else if (ctx.type == 0x30)
+							uid->certsigs.push_back(sig); // Certification revocation signature for this user ID
+						else 
+						{
+							if (verbose)
+								std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored" << std::endl;
+							delete sig;
+						}
+					}
+					else
+					{
+						if (verbose)
+							std::cerr << "WARNING: non-uid signature of type " << (int)ctx.type << " ignored" << std::endl;
+						delete sig;
+					}
 					break;
 				}
 				if (primary && !uid_flag && !uat_flag) 
@@ -4584,13 +4829,18 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					if (verbose)
 						std::cerr << "ERROR: no uid/uat found for this self-signature" << std::endl;
 					ReleasePacketContext(ctx);
-					ReleasePublickeyContext(pub_ctx);
+					if (sub)
+						delete sub;
+					if (uid)
+						delete uid;
+					delete sig;
 					return false;
 				}
 				else if (primary && !uid_flag && uat_flag)
 				{
 					if (verbose)
 						std::cerr << "WARNING: self-signature for a user attribute ignored" << std::endl;
+					delete sig;
 					break;
 				}
 				else if (primary && uid_flag && !uat_flag)
@@ -4604,20 +4854,26 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					{
 						if (verbose)
 							std::cerr << "WARNING: key revocation signature on primary key" << std::endl;
-						uid_ctx.revsigs.push_back(sig_ctx); // Key revocation signature 
+						uid->revsigs.push_back(sig); // Key revocation signature 
 					}
 					else if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
 					{
 						if (ctx.keyexpirationtime)
-							pub_ctx.expirationtime = ctx.keyexpirationtime;
+							pub->expirationtime = ctx.keyexpirationtime; // FIXME: move update to later
 // TODO: update key flags
-						time_t kmax = pub_ctx.creationtime + pub_ctx.expirationtime;
-						if (verbose && pub_ctx.expirationtime && (time(NULL) > kmax))
+						time_t kmax = pub->creationtime + pub->expirationtime;
+						if (verbose && pub->expirationtime && (time(NULL) > kmax))
 						{
 							std::cerr << "WARNING: primary key has been expired" << std::endl;
 // TODO: update key strength
 						}
-						uid_ctx.selfsigs.push_back(sig_ctx); // Certification self-signature
+						uid->selfsigs.push_back(sig); // Certification self-signature
+					}
+					else
+					{
+						if (verbose)
+							std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored" << std::endl;
+						delete sig;
 					}
 				}
 				break;
@@ -4630,52 +4886,44 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 				else if (!primary)
 				{
 					primary = true;
-					pub_ctx.pkalgo = ctx.pkalgo;
-					pub_ctx.creationtime = ctx.keycreationtime;
-					// evaluate the content
-					tmcg_openpgp_octets_t pub, pub_hashing;
-					ret = 1, erroff = 0;
+					// evaluate the context
 					if ((ctx.pkalgo == 1) || (ctx.pkalgo == 3))
 					{
-	 					// public-key algorithm is RSA
-						PacketPubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.n, ctx.e, ctx.e, ctx.e, pub);
-						ret = gcry_sexp_build(&pub_ctx.key, &erroff,
-							"(public-key (rsa (n %M) (e %M)))",
-							ctx.n, ctx.e);
+	 					// public-key algorithm is RSA: create new pubkey object
+						pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.n, ctx.e, current_packet);
 					}
 					else if (ctx.pkalgo == 17)
 					{
-						// public-key algorithm is DSA
-						PacketPubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.p, ctx.q, ctx.g, ctx.y, pub);
-						ret = gcry_sexp_build(&pub_ctx.key, &erroff,
-							"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))",
-							ctx.p, ctx.q, ctx.g, ctx.y);
+						// public-key algorithm is DSA: create new pubkey object
+						pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g, ctx.y, current_packet);
 					}
 					else
 					{
 						if (verbose)
 							std::cerr << "ERROR: public-key algorithm " << (int)ctx.pkalgo << " not supported" << std::endl;
 						ReleasePacketContext(ctx);
-						ReleasePublickeyContext(pub_ctx);
+						if (sub)
+							delete sub;
+						if (uid)
+							delete uid;
 						return false;
 					}
-					if (ret)
+					if (!pub->good())
 					{
 						if (verbose)
 							std::cerr << "ERROR: parsing primary key material failed" << std::endl;
 						ReleasePacketContext(ctx);
-						ReleasePublickeyContext(pub_ctx);
+						if (sub)
+							delete sub;
+						if (uid)
+							delete uid;
 						return false;
 					}
-					for (size_t i = 6; i < pub.size(); i++)
-						pub_hashing.push_back(pub[i]);
-					pub_ctx.id.clear();
-					KeyidCompute(pub_hashing, pub_ctx.id);
 					if (verbose)
 					{
 						std::cout << "INFO: key ID of primary key: " << std::hex;
-						for (size_t i = 0; i < pub_ctx.id.size(); i++)
-							std::cout << (int)pub_ctx.id[i] << " ";
+						for (size_t i = 0; i < pub->id.size(); i++)
+							std::cout << (int)pub->id[i] << " ";
 						std::cout << std::dec << std::endl;
 					}
 				}
@@ -4684,38 +4932,45 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					if (verbose)
 						std::cerr << "ERROR: more than one primary key not supported" << std::endl;
 					ReleasePacketContext(ctx);
-					ReleasePublickeyContext(pub_ctx);
+					if (sub)
+						delete sub;
+					if (uid)
+						delete uid;
 					return false;
 				}
 				break;
 			case 13: // User ID Packet
+				if (!primary)
+				{
+					if (verbose)
+						std::cerr << "ERROR: no usable primary key found" << std::endl;
+					ReleasePacketContext(ctx);
+					if (sub)
+						delete sub;
+					if (uid)
+						delete uid;
+					return false;
+				}
 				if (uid_flag)
-				{
-					pub_ctx.userids.push_back(uid_ctx);
-					uid_ctx.userid = "";
-					uid_ctx.selfsigs.clear();
-					uid_ctx.revsigs.clear();
-					uid_ctx.certsigs.clear();
-					memset(&uid_ctx, 0, sizeof(uid_ctx)); // clear context
-				}
+					pub->userids.push_back(uid);
 				uid_flag = true, uat_flag = false;
-				// evaluate the content
-				for (size_t i = 0; i < sizeof(ctx.uid); i++)
-				{
-					if (ctx.uid[i])
-						uid_ctx.userid += ctx.uid[i];
-					else
-						break;
-				}
+				// create a new user ID object
+				uid = new TMCG_OpenPGP_UserID(userid, current_packet);
 				break;
 			case 14: // Public-Subkey Packet
-				if (subkey)
+				if (!primary)
 				{
-					pub_ctx.subkeys.push_back(sub_ctx);
-					sub_ctx.bindsigs.clear();
-					sub_ctx.revsigs.clear();
-					memset(&sub_ctx, 0, sizeof(sub_ctx)); // clear context
+					if (verbose)
+						std::cerr << "ERROR: no usable primary key found" << std::endl;
+					ReleasePacketContext(ctx);
+					if (sub)
+						delete sub;
+					if (uid)
+						delete uid;
+					return false;
 				}
+				if (subkey)
+					pub->subkeys.push_back(sub);
 				subkey = true;
 				if (ctx.version != 4)
 				{
@@ -4724,55 +4979,41 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 				}
 				else if ((ctx.pkalgo == 1) || (ctx.pkalgo == 2) || (ctx.pkalgo == 3) || (ctx.pkalgo == 16) || (ctx.pkalgo == 17))
 				{
-					sub_ctx.pkalgo = ctx.pkalgo;
-					sub_ctx.creationtime = ctx.keycreationtime;
-					// evaluate the content
-					tmcg_openpgp_octets_t sub, sub_hashing;
-					ret = 1, erroff = 0;
+					// evaluate the context
 					if ((ctx.pkalgo == 1) || (ctx.pkalgo == 2) || (ctx.pkalgo == 3))
 					{
-	 					// public-key algorithm is RSA
-						PacketSubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.n, ctx.e, ctx.e, ctx.e, sub);
-						ret = gcry_sexp_build(&sub_ctx.key, &erroff,
-							"(public-key (rsa (n %M) (e %M)))",
-							ctx.n, ctx.e);
+	 					// public-key algorithm is RSA: create new subkey object
+						sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.n, ctx.e, current_packet);
 					}
 					else if (ctx.pkalgo == 16)
 					{
-						// public-key algorithm is ElGamal
-						PacketSubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.p, ctx.p, ctx.g, ctx.y, sub);
-						ret = gcry_sexp_build(&sub_ctx.key, &erroff,
-							"(public-key (elg (p %M) (g %M) (y %M)))",
-							ctx.p, ctx.g, ctx.y);
+						// public-key algorithm is ElGamal: create new subkey object
+						sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.p, ctx.g, ctx.y, current_packet);
 					}
 					else if (ctx.pkalgo == 17)
 					{
-						// public-key algorithm is DSA
-						PacketSubEncode(ctx.keycreationtime, ctx.pkalgo, ctx.p, ctx.q, ctx.g, ctx.y, sub);
-						ret = gcry_sexp_build(&sub_ctx.key, &erroff,
-							"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))",
-							ctx.p, ctx.q, ctx.g, ctx.y);
+						// public-key algorithm is DSA: create new subkey object
+						sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g, ctx.y, current_packet);
 					}
-					if (ret)
+					if (!sub->good())
 					{
 						if (verbose)
 							std::cerr << "ERROR: parsing subkey material failed" << std::endl;
 						ReleasePacketContext(ctx);
-						ReleasePublickeyContext(pub_ctx);
+						if (sub)
+							delete sub;
+						if (uid)
+							delete uid;
 						return false;
 					}
-					for (size_t i = 6; i < sub.size(); i++)
-						sub_hashing.push_back(sub[i]);
-					sub_ctx.id.clear();
-					KeyidCompute(sub_hashing, sub_ctx.id);
 					if (verbose)
 					{
 						std::cout << "INFO: key ID of subkey: " << std::hex;
-						for (size_t i = 0; i < sub_ctx.id.size(); i++)
-							std::cout << (int)sub_ctx.id[i] << " ";
+						for (size_t i = 0; i < sub->id.size(); i++)
+							std::cout << (int)sub->id[i] << " ";
 						std::cout << std::dec << std::endl;
 					}
-					if (verbose && OctetsCompare(sub_ctx.id, pub_ctx.id))
+					if (verbose && OctetsCompare(sub->id, pub->id))
 						std::cerr << "WARNING: probably same key material used for subkey" << std::endl;
 				}
 				else
@@ -4782,16 +5023,21 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 				}
 				break;
 			case 17: // User Attribute Packet
+				if (!primary)
+				{
+					if (verbose)
+						std::cerr << "ERROR: no usable primary key found" << std::endl;
+					ReleasePacketContext(ctx);
+					if (sub)
+						delete sub;
+					if (uid)
+						delete uid;
+					return false;
+				}
 				if (verbose)
 					std::cerr << "WARNING: user attribute packet found; ignored" << std::endl;
 				if (uid_flag)
-				{
-					pub_ctx.userids.push_back(uid_ctx);
-					uid_ctx.userid = "";
-					uid_ctx.selfsigs.clear();
-					uid_ctx.revsigs.clear();
-					uid_ctx.certsigs.clear();
-				}
+					pub->userids.push_back(uid);
 				uid_flag = false, uat_flag = true;
 				break;
 			default:
@@ -4802,24 +5048,27 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 		// cleanup allocated buffers and mpi's
 		ReleasePacketContext(ctx);
 	}
-	if (uid_flag)
-		pub_ctx.userids.push_back(uid_ctx);
-	if (subkey)
-		pub_ctx.subkeys.push_back(sub_ctx);
 	if (!primary)
 	{
 		if (verbose)
-			std::cerr << "ERROR: no primary key found" << std::endl;
-		ReleasePublickeyContext(pub_ctx);
+			std::cerr << "ERROR: no usable primary key found" << std::endl;
+		if (sub)
+			delete sub;
+		if (uid)
+			delete uid;
 		return false;
 	}
+	if (uid_flag)
+		pub->userids.push_back(uid);
+	if (subkey)
+		pub->subkeys.push_back(sub);
 	
 	// print key usage and check self-signatures
 	size_t flags = 0;
-	for (size_t i = 0; i < sizeof(pub_ctx.flags); i++)
+	for (size_t i = 0; i < sizeof(pub->flags); i++)
 	{
-		if (pub_ctx.flags[i])
-			flags = (flags << 8) + pub_ctx.flags[i];
+		if (pub->flags[i])
+			flags = (flags << 8) + pub->flags[i];
 		else
 			break;
 	}
@@ -4841,29 +5090,30 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 		if ((flags & 0x80) == 0x80)
 			std::cout << "M"; // The private component of this key may be in the possession of more than one person.
 		std::cout << std::endl;
-		std::cout << "INFO: number of userids = " << pub_ctx.userids.size() << std::endl;
-		std::cout << "INFO: number of subkeys = " << pub_ctx.subkeys.size() << std::endl;
+		std::cout << "INFO: number of userids = " << pub->userids.size() << std::endl;
+		std::cout << "INFO: number of subkeys = " << pub->subkeys.size() << std::endl;
 	}
 	bool valid_selfsig = false;
-	for (size_t i = 0; i < pub_ctx.userids.size(); i++)
+	for (size_t i = 0; i < pub->userids.size(); i++)
 	{
 		if (verbose)
 		{
-			std::cout << "INFO: userid = \"" << pub_ctx.userids[i].userid << "\"" << std::endl;
-			std::cout << "INFO: number of selfsigs = " << pub_ctx.userids[i].selfsigs.size() << std::endl;
-			std::cout << "INFO: number of revsigs = " << pub_ctx.userids[i].revsigs.size() << std::endl;
-			std::cout << "INFO: number of certsigs = " << pub_ctx.userids[i].certsigs.size() << std::endl;
+			std::cout << "INFO: userid = \"" << pub->userids[i]->userid << "\"" << std::endl;
+			std::cout << "INFO: number of selfsigs = " << pub->userids[i]->selfsigs.size() << std::endl;
+			std::cout << "INFO: number of revsigs = " << pub->userids[i]->revsigs.size() << std::endl;
+			std::cout << "INFO: number of certsigs = " << pub->userids[i]->certsigs.size() << std::endl;
 		}
-		for (size_t j = 0; j < pub_ctx.userids[i].selfsigs.size(); j++)
+		for (size_t j = 0; j < pub->userids[i]->selfsigs.size(); j++)
 		{	
 			if (verbose)
-				std::cout << "INFO: sigtype = 0x" << std::hex << (int)pub_ctx.userids[i].selfsigs[j].type << std::dec << 
-					" pkalgo = " << (int)pub_ctx.userids[i].selfsigs[j].pkalgo <<
-					" hashalgo = " << (int)pub_ctx.userids[i].selfsigs[j].hashalgo <<
-					" version = " << (int)pub_ctx.userids[i].selfsigs[j].version <<
-					" creationtime = " << pub_ctx.userids[i].selfsigs[j].creationtime <<
-					" expirationtime = " << pub_ctx.userids[i].selfsigs[j].expirationtime <<
-					" hspd.size() = " << pub_ctx.userids[i].selfsigs[j].hspd.size() << std::endl;
+				std::cout << "INFO: sigtype = 0x" << std::hex << (int)pub->userids[i]->selfsigs[j]->type << std::dec << 
+					" pkalgo = " << (int)pub->userids[i]->selfsigs[j]->pkalgo <<
+					" hashalgo = " << (int)pub->userids[i]->selfsigs[j]->hashalgo <<
+					" version = " << (int)pub->userids[i]->selfsigs[j]->version <<
+					" creationtime = " << pub->userids[i]->selfsigs[j]->creationtime <<
+					" expirationtime = " << pub->userids[i]->selfsigs[j]->expirationtime <<
+					" packet.size() = " << pub->userids[i]->selfsigs[j]->packet.size() <<
+					" hspd.size() = " << pub->userids[i]->selfsigs[j]->hspd.size() << std::endl;
 /*
 	tmcg_openpgp_octets_t trailer, left, hash;
 	if (sigV3)

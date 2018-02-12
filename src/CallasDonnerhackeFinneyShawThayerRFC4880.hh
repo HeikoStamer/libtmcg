@@ -183,48 +183,150 @@
 		tmcg_openpgp_byte_t mdc_hash[20];
 	} tmcg_openpgp_packet_ctx_t;
 
-	typedef struct {
+class TMCG_OpenPGP_Signature
+{
+	private:
+		gcry_error_t ret;
+		size_t erroff;
+
+	public:
 		tmcg_openpgp_byte_t pkalgo;
 		tmcg_openpgp_byte_t hashalgo;
 		tmcg_openpgp_byte_t type;
 		tmcg_openpgp_byte_t version;
 		time_t creationtime;
 		time_t expirationtime;
-		gcry_sexp_t sig;
+		gcry_sexp_t signature;
 		tmcg_openpgp_octets_t packet;
 		tmcg_openpgp_octets_t hspd;
-	} tmcg_openpgp_signature_ctx_t;
 
-	typedef struct {
+		TMCG_OpenPGP_Signature
+			(const tmcg_openpgp_byte_t pkalgo_in,
+			 const tmcg_openpgp_byte_t hashalgo_in,
+			 const tmcg_openpgp_byte_t type_in,
+			 const tmcg_openpgp_byte_t version_in,
+			 const time_t creationtime_in,
+			 const time_t expirationtime_in,
+			 const gcry_mpi_t md,
+			 const tmcg_openpgp_octets_t &packet_in,
+			 const tmcg_openpgp_octets_t &hspd_in);
+		TMCG_OpenPGP_Signature
+			(const tmcg_openpgp_byte_t pkalgo_in,
+			 const tmcg_openpgp_byte_t hashalgo_in,
+			 const tmcg_openpgp_byte_t type_in,
+			 const tmcg_openpgp_byte_t version_in,
+			 const time_t creationtime_in,
+			 const time_t expirationtime_in,
+			 const gcry_mpi_t r,
+			 const gcry_mpi_t s,
+			 const tmcg_openpgp_octets_t &packet_in,
+			 const tmcg_openpgp_octets_t &hspd_in);
+		bool good
+			() const;
+		~TMCG_OpenPGP_Signature
+			();
+};
+
+class TMCG_OpenPGP_UserID
+{
+	public:
 		std::string userid;
-		std::vector<tmcg_openpgp_signature_ctx_t> selfsigs;
-		std::vector<tmcg_openpgp_signature_ctx_t> revsigs;
-		std::vector<tmcg_openpgp_signature_ctx_t> certsigs;
-	} tmcg_openpgp_userid_ctx_t;
+		tmcg_openpgp_octets_t packet;
+		std::vector<TMCG_OpenPGP_Signature*> selfsigs;
+		std::vector<TMCG_OpenPGP_Signature*> revsigs;
+		std::vector<TMCG_OpenPGP_Signature*> certsigs;
 
-	typedef struct {
-		tmcg_openpgp_octets_t id;
-		tmcg_openpgp_byte_t flags;
+		TMCG_OpenPGP_UserID
+			(const std::string &userid_in,
+			 const tmcg_openpgp_octets_t &packet_in);
+		~TMCG_OpenPGP_UserID
+			();
+};
+
+class TMCG_OpenPGP_Subkey
+{
+	private:
+		gcry_error_t ret;
+		size_t erroff;
+
+	public:
 		tmcg_openpgp_byte_t pkalgo;
 		time_t creationtime;
 		time_t expirationtime;
-		tmcg_openpgp_byte_t strength;	
 		gcry_sexp_t key;
-		std::vector<tmcg_openpgp_signature_ctx_t> bindsigs;
-		std::vector<tmcg_openpgp_signature_ctx_t> revsigs;		
-	} tmcg_openpgp_subkey_ctx_t;
+		tmcg_openpgp_octets_t packet;
+		tmcg_openpgp_octets_t id;
+		std::vector<TMCG_OpenPGP_Signature*> bindsigs;
+		std::vector<TMCG_OpenPGP_Signature*> revsigs;				
 
-	typedef struct {
+		TMCG_OpenPGP_Subkey
+			(const tmcg_openpgp_byte_t pkalgo_in,
+			 const time_t creationtime_in,
+			 const time_t expirationtime_in,
+			 const gcry_mpi_t n,
+			 const gcry_mpi_t e,
+			 const tmcg_openpgp_octets_t &packet_in);
+		TMCG_OpenPGP_Subkey
+			(const tmcg_openpgp_byte_t pkalgo_in,
+			 const time_t creationtime_in,
+			 const time_t expirationtime_in,
+			 const gcry_mpi_t p,
+			 const gcry_mpi_t g,
+			 const gcry_mpi_t y,
+			 const tmcg_openpgp_octets_t &packet_in);
+		TMCG_OpenPGP_Subkey
+			(const tmcg_openpgp_byte_t pkalgo_in,
+			 const time_t creationtime_in,
+			 const time_t expirationtime_in,
+			 const gcry_mpi_t p,
+			 const gcry_mpi_t q,
+			 const gcry_mpi_t g,
+			 const gcry_mpi_t y,
+			 const tmcg_openpgp_octets_t &packet_in);
+		bool good
+			() const;
+		~TMCG_OpenPGP_Subkey
+			();
+};
+
+class TMCG_OpenPGP_Pubkey
+{
+	private:
+		gcry_error_t ret;
+		size_t erroff;
+
+	public:
+		tmcg_openpgp_byte_t pkalgo;
+		time_t creationtime;
+		time_t expirationtime;
+		gcry_sexp_t key;
+		tmcg_openpgp_octets_t packet;
 		tmcg_openpgp_octets_t id;
 		tmcg_openpgp_byte_t flags[32];
-		tmcg_openpgp_byte_t pkalgo;
-		time_t creationtime;
-		time_t expirationtime;
-		tmcg_openpgp_byte_t strength;
-		gcry_sexp_t key;
-		std::vector<tmcg_openpgp_userid_ctx_t> userids;
-		std::vector<tmcg_openpgp_subkey_ctx_t> subkeys;
-	} tmcg_openpgp_publickey_ctx_t;
+		std::vector<TMCG_OpenPGP_UserID*> userids;
+		std::vector<TMCG_OpenPGP_Subkey*> subkeys;
+
+		TMCG_OpenPGP_Pubkey
+			(const tmcg_openpgp_byte_t pkalgo_in,
+			 const time_t creationtime_in,
+			 const time_t expirationtime_in,
+			 const gcry_mpi_t n,
+			 const gcry_mpi_t e,
+			 const tmcg_openpgp_octets_t &packet_in);
+		TMCG_OpenPGP_Pubkey
+			(const tmcg_openpgp_byte_t pkalgo_in,
+			 const time_t creationtime_in,
+			 const time_t expirationtime_in,
+			 const gcry_mpi_t p,
+			 const gcry_mpi_t q,
+			 const gcry_mpi_t g,
+			 const gcry_mpi_t y,
+			 const tmcg_openpgp_octets_t &packet_in);
+		bool good
+			() const;
+		~TMCG_OpenPGP_Pubkey
+			();
+};
 
 class CallasDonnerhackeFinneyShawThayerRFC4880
 {
@@ -649,17 +751,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 
 		static void ReleasePacketContext
 			(tmcg_openpgp_packet_ctx_t &ctx);
-		static void ReleaseSignatureContext
-			(tmcg_openpgp_signature_ctx_t &ctx);
-		static void ReleaseUseridContext
-			(tmcg_openpgp_userid_ctx_t &ctx);
-		static void ReleaseSubkeyContext
-			(tmcg_openpgp_subkey_ctx_t &ctx);
-		static void ReleasePublickeyContext
-			(tmcg_openpgp_publickey_ctx_t &ctx);
 		static bool ParsePublicKeyBlock
 			(const std::string &in, const bool verbose,
-			 tmcg_openpgp_publickey_ctx_t &pub_ctx);
+			 TMCG_OpenPGP_Pubkey *pub);
 };
 
 #endif
