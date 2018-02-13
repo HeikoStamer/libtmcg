@@ -37,6 +37,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_byte_t version_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
+	 const time_t keyexpirationtime_in,
+	 const tmcg_openpgp_byte_t keyflags_in[32],
 	 const gcry_mpi_t md,
 	 const tmcg_openpgp_octets_t &packet_in,
 	 const tmcg_openpgp_octets_t &hspd_in):
@@ -47,8 +49,15 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		type(type_in),
 		version(version_in),
 		creationtime(creationtime_in),
-		expirationtime(expirationtime_in)
+		expirationtime(expirationtime_in),
+		keyexpirationtime(keyexpirationtime_in)
 {
+	for (size_t i = 0; i < sizeof(keyflags); i++)
+		keyflags[i] = keyflags_in[i];
+	rsa_md = gcry_mpi_new(2048);
+	dsa_r = gcry_mpi_new(2048);
+	dsa_s = gcry_mpi_new(2048);
+	gcry_mpi_set(rsa_md, md);
 	ret = gcry_sexp_build(&signature, &erroff,
 		"(sig-val (rsa (s %M)))", md);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -62,6 +71,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_byte_t version_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
+	 const time_t keyexpirationtime_in,
+	 const tmcg_openpgp_byte_t keyflags_in[32],
 	 const gcry_mpi_t r,
 	 const gcry_mpi_t s,
 	 const tmcg_openpgp_octets_t &packet_in,
@@ -73,8 +84,16 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		type(type_in),
 		version(version_in),
 		creationtime(creationtime_in),
-		expirationtime(expirationtime_in)
+		expirationtime(expirationtime_in),
+		keyexpirationtime(keyexpirationtime_in)
 {
+	for (size_t i = 0; i < sizeof(keyflags); i++)
+		keyflags[i] = keyflags_in[i];
+	rsa_md = gcry_mpi_new(2048);
+	dsa_r = gcry_mpi_new(2048);
+	dsa_s = gcry_mpi_new(2048);
+	gcry_mpi_set(dsa_r, r);
+	gcry_mpi_set(dsa_s, s);
 	ret = gcry_sexp_build(&signature, &erroff,
 		"(sig-val (dsa (r %M) (s %M)))", r, s);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -90,11 +109,16 @@ bool TMCG_OpenPGP_Signature::good
 TMCG_OpenPGP_Signature::~TMCG_OpenPGP_Signature
 	()
 {
+	gcry_mpi_release(rsa_md);
+	gcry_mpi_release(dsa_r);
+	gcry_mpi_release(dsa_s);
 	if (!ret)
 		gcry_sexp_release(signature);
 	packet.clear();
 	hspd.clear();
 }
+
+// ===========================================================================
 
 TMCG_OpenPGP_UserID::TMCG_OpenPGP_UserID
 	(const std::string &userid_in,
@@ -118,6 +142,8 @@ TMCG_OpenPGP_UserID::~TMCG_OpenPGP_UserID
 		delete certsigs[i];
 	certsigs.clear();
 }
+
+// ===========================================================================
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	(const tmcg_openpgp_byte_t pkalgo_in,
@@ -207,6 +233,9 @@ TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
 		gcry_sexp_release(key);
 	packet.clear();
 	id.clear();
+	for (size_t i = 0; i < selfsigs.size(); i++)
+		delete selfsigs[i];
+	selfsigs.clear();
 	for (size_t i = 0; i < bindsigs.size(); i++)
 		delete bindsigs[i];
 	bindsigs.clear();
@@ -214,6 +243,8 @@ TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
 		delete revsigs[i];
 	revsigs.clear();
 }
+
+// ===========================================================================
 
 TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	(const tmcg_openpgp_byte_t pkalgo_in,
@@ -232,11 +263,13 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (rsa (n %M) (e %M)))", n, e);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t pub, pub_hashing;
+	tmcg_openpgp_octets_t pub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in, pkalgo_in, n, e, e, e, pub);
 	for (size_t i = 6; i < pub.size(); i++)
 		pub_hashing.push_back(pub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, id);
+	for (size_t i = 0; i < sizeof(flags); i++)
+		flags[i] = 0;
 }
 
 TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
@@ -258,17 +291,470 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", p, q, g, y);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t pub, pub_hashing;
+	tmcg_openpgp_octets_t pub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in, pkalgo_in, p, q, g, y, pub);
 	for (size_t i = 6; i < pub.size(); i++)
 		pub_hashing.push_back(pub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, id);
+	for (size_t i = 0; i < sizeof(flags); i++)
+		flags[i] = 0;
 }
 
 bool TMCG_OpenPGP_Pubkey::good
 	() const
 {
 	return (ret == 0);
+}
+
+bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
+	(const int verbose)
+{
+	// print key flags and statistics of primary key
+	size_t allflags = 0;
+	for (size_t i = 0; i < sizeof(flags); i++)
+	{
+		if (flags[i])
+			allflags = (allflags << 8) + flags[i];
+		else
+			break;
+	}
+	if (verbose > 1)
+	{
+		std::cout << "INFO: key flags on primary key are ";
+		if ((allflags & 0x01) == 0x01)
+			std::cout << "C"; // The key may be used to certify other keys.
+		if ((allflags & 0x02) == 0x02)
+			std::cout << "S"; // The key may be used to sign data.
+		if ((allflags & 0x04) == 0x04)
+			std::cout << "E"; // The key may be used encrypt communications.
+		if ((allflags & 0x08) == 0x08)
+			std::cout << "e"; // The key may be used encrypt storage.
+		if ((allflags & 0x10) == 0x10)
+			std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
+		if ((allflags & 0x20) == 0x20)
+			std::cout << "A"; // The key may be used for authentication.
+		if ((allflags & 0x80) == 0x80)
+			std::cout << "G"; // The private component of this key may be in the possession of more than one person.
+		std::cout << std::endl;
+		std::cout << "INFO: number of selfsigs = " << selfsigs.size() << std::endl;
+		std::cout << "INFO: number of revsigs = " << revsigs.size() << std::endl;
+		std::cout << "INFO: number of userids = " << userids.size() << std::endl;
+		std::cout << "INFO: number of subkeys = " << subkeys.size() << std::endl;
+	}
+	// check self-signatures and revocation signatures of primary key
+	for (size_t j = 0; j < selfsigs.size(); j++)
+	{
+		if (verbose > 2)
+			std::cout << "INFO: sigtype = 0x" << std::hex << (int)selfsigs[j]->type << std::dec << 
+				" pkalgo = " << (int)selfsigs[j]->pkalgo <<
+				" hashalgo = " << (int)selfsigs[j]->hashalgo <<
+				" version = " << (int)selfsigs[j]->version <<
+				" creationtime = " << selfsigs[j]->creationtime <<
+				" expirationtime = " << selfsigs[j]->expirationtime <<
+				" packet.size() = " << selfsigs[j]->packet.size() <<
+				" hspd.size() = " << selfsigs[j]->hspd.size() << std::endl;
+		// check basic properties of the self-signature
+		time_t smax = selfsigs[j]->creationtime + selfsigs[j]->expirationtime;
+		if (verbose && selfsigs[j]->expirationtime && (time(NULL) > smax))
+		{
+			std::cerr << "WARNING: self-signature has been expired" << std::endl;
+			continue;
+		}
+		if (verbose && (selfsigs[j]->creationtime < creationtime))
+		{
+			std::cerr << "WARNING: self-signature is older than primary key" << std::endl;
+			continue;
+		}
+		if (verbose && ((selfsigs[j]->hashalgo < 8) || (selfsigs[j]->hashalgo >= 11)))
+		{
+			std::cerr << "WARNING: insecure hash algorithm " << (int)selfsigs[j]->hashalgo << " used for self-signature" << std::endl;
+// TODO: update key strength
+		}
+		// check the self-signature cryptographically
+		tmcg_openpgp_octets_t trailer, left, hash;
+		if (selfsigs[j]->version == 3)
+		{
+			tmcg_openpgp_octets_t sigtime_octets;
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode(selfsigs[j]->creationtime, sigtime_octets);
+			// The concatenation of the data to be signed, the signature type, and
+			// creation time from the Signature packet (5 additional octets) is
+			// hashed. The resulting hash value is used in the signature algorithm.
+			// The high 16 bits (first two octets) of the hash are included in the
+			// Signature packet to provide a quick test to reject some invalid
+			// signatures.
+			// A V3 signature hashes five octets of the packet body, starting from
+			// the signature type field. This data is the signature type, followed
+			// by the four-octet signature time.
+			trailer.push_back(selfsigs[j]->type);
+			trailer.insert(trailer.end(), sigtime_octets.begin(), sigtime_octets.end());
+			CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHashV3(pub_hashing,
+				trailer, selfsigs[j]->hashalgo, hash, left);
+		}
+		else if (selfsigs[j]->version == 4)
+		{
+			trailer.push_back(4); // only V4 format supported
+			trailer.push_back(selfsigs[j]->type);
+			trailer.push_back(selfsigs[j]->pkalgo);
+			trailer.push_back(selfsigs[j]->hashalgo);
+			trailer.push_back(selfsigs[j]->hspd.size() >> 8); // length of hashed subpacket data
+			trailer.push_back(selfsigs[j]->hspd.size());
+			trailer.insert(trailer.end(), selfsigs[j]->hspd.begin(), selfsigs[j]->hspd.end());
+			CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash(pub_hashing,
+				trailer, selfsigs[j]->hashalgo, hash, left);
+		}
+		else
+			continue;
+		if (verbose > 2)
+			std::cout << "INFO: left = " << std::hex << (int)left[0] << " " << (int)left[1] << std::dec << std::endl;
+		gcry_error_t vret = 1;
+		if ((pkalgo == 1) || (pkalgo == 3))
+		{
+			vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA(hash, key,
+				selfsigs[j]->hashalgo, selfsigs[j]->rsa_md);
+		}
+		else if (pkalgo == 17)
+		{
+			vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, key,
+				selfsigs[j]->dsa_r, selfsigs[j]->dsa_s);
+		}
+		if (vret)
+		{
+			if (verbose)
+				std::cerr << "WARNING: verification of primary key self-signature failed (rc = " << gcry_err_code(vret) <<
+					", str = " << gcry_strerror(vret) << ")" << std::endl;
+		}
+		else
+		{
+			// update expiration time, key flags, and other infos from hashed subpacket area
+			if (selfsigs[j]->keyexpirationtime > expirationtime)
+				expirationtime = selfsigs[j]->keyexpirationtime;
+			for (size_t ii = 0; (ii < sizeof(flags)) && (ii < sizeof(selfsigs[j]->keyflags)); ii++)
+				flags[ii] |= selfsigs[j]->keyflags[ii];
+		}
+		// check properties based on infos gathered from hashed subpacket area of self-signature
+		time_t kmax = creationtime + expirationtime;
+		if (verbose && expirationtime && (time(NULL) > kmax))
+		{
+			std::cerr << "WARNING: primary key has been expired" << std::endl;
+// TODO: update key strength
+		}
+	}
+	for (size_t j = 0; j < revsigs.size(); j++)
+	{	
+		if (verbose > 2)
+			std::cout << "INFO: sigtype = 0x" << std::hex << (int)revsigs[j]->type << std::dec << 
+				" pkalgo = " << (int)revsigs[j]->pkalgo <<
+				" hashalgo = " << (int)revsigs[j]->hashalgo <<
+				" version = " << (int)revsigs[j]->version <<
+				" creationtime = " << revsigs[j]->creationtime <<
+				" expirationtime = " << revsigs[j]->expirationtime <<
+				" packet.size() = " << revsigs[j]->packet.size() <<
+				" hspd.size() = " << revsigs[j]->hspd.size() << std::endl;
+		// check basic properties of the revocation signature
+		time_t smax = revsigs[j]->creationtime + revsigs[j]->expirationtime;
+		if (verbose && revsigs[j]->expirationtime && (time(NULL) > smax))
+		{
+			std::cerr << "WARNING: revocation signature has been expired" << std::endl;
+			continue;
+		}
+		if (verbose && (revsigs[j]->creationtime < creationtime))
+		{
+			std::cerr << "WARNING: revocation signature is older than primary key" << std::endl;
+			continue;
+		}
+		if (verbose && ((revsigs[j]->hashalgo < 8) || (revsigs[j]->hashalgo >= 11)))
+		{
+			std::cerr << "WARNING: insecure hash algorithm " << (int)revsigs[j]->hashalgo << " used for revocation signature" << std::endl;
+// TODO: update key strength
+		}
+		// check the revocation signature cryptographically
+		tmcg_openpgp_octets_t trailer, left, hash;
+		if (revsigs[j]->version == 3)
+		{
+			tmcg_openpgp_octets_t sigtime_octets;
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode(revsigs[j]->creationtime, sigtime_octets);
+			// The concatenation of the data to be signed, the signature type, and
+			// creation time from the Signature packet (5 additional octets) is
+			// hashed. The resulting hash value is used in the signature algorithm.
+			// The high 16 bits (first two octets) of the hash are included in the
+			// Signature packet to provide a quick test to reject some invalid
+			// signatures.
+			// A V3 signature hashes five octets of the packet body, starting from
+			// the signature type field. This data is the signature type, followed
+			// by the four-octet signature time.
+			trailer.push_back(revsigs[j]->type);
+			trailer.insert(trailer.end(), sigtime_octets.begin(), sigtime_octets.end());
+			CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHashV3(pub_hashing,
+					trailer, revsigs[j]->hashalgo, hash, left);
+		}
+		else if (revsigs[j]->version == 4)
+		{
+			trailer.push_back(4); // only V4 format supported
+			trailer.push_back(revsigs[j]->type);
+			trailer.push_back(revsigs[j]->pkalgo);
+			trailer.push_back(revsigs[j]->hashalgo);
+			trailer.push_back(revsigs[j]->hspd.size() >> 8); // length of hashed subpacket data
+			trailer.push_back(revsigs[j]->hspd.size());
+			trailer.insert(trailer.end(), revsigs[j]->hspd.begin(), revsigs[j]->hspd.end());
+			CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash(pub_hashing,
+				trailer, revsigs[j]->hashalgo, hash, left);
+		}
+		else
+			continue;
+		if (verbose > 2)
+			std::cout << "INFO: left = " << std::hex << (int)left[0] << " " << (int)left[1] << std::dec << std::endl;
+		gcry_error_t vret = 1;
+		if ((pkalgo == 1) || (pkalgo == 3))
+		{
+			vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA(hash, key,
+				revsigs[j]->hashalgo, revsigs[j]->rsa_md);
+		}
+		else if (pkalgo == 17)
+		{
+			vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, key,
+				revsigs[j]->dsa_r, revsigs[j]->dsa_s);
+		}
+		if (vret)
+		{
+			if (verbose)
+				std::cerr << "WARNING: verification of revocation signature failed (rc = " << gcry_err_code(vret) <<
+					", str = " << gcry_strerror(vret) << ")" << std::endl;
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "ERROR: valid revocation signature found for primary key" << std::endl;
+			return false;
+		}
+	}
+	bool one_valid_selfsig = false;
+	for (size_t i = 0; i < userids.size(); i++)
+	{
+		if (verbose > 1)
+		{
+			std::cout << "INFO: userid = \"" << userids[i]->userid << "\"" << std::endl;
+			std::cout << "INFO: number of selfsigs = " << userids[i]->selfsigs.size() << std::endl;
+			std::cout << "INFO: number of revsigs = " << userids[i]->revsigs.size() << std::endl;
+			std::cout << "INFO: number of certsigs = " << userids[i]->certsigs.size() << std::endl;
+		}
+		for (size_t j = 0; j < userids[i]->selfsigs.size(); j++)
+		{	
+			if (verbose > 2)
+				std::cout << "INFO: sigtype = 0x" << std::hex << (int)userids[i]->selfsigs[j]->type << std::dec << 
+					" pkalgo = " << (int)userids[i]->selfsigs[j]->pkalgo <<
+					" hashalgo = " << (int)userids[i]->selfsigs[j]->hashalgo <<
+					" version = " << (int)userids[i]->selfsigs[j]->version <<
+					" creationtime = " << userids[i]->selfsigs[j]->creationtime <<
+					" expirationtime = " << userids[i]->selfsigs[j]->expirationtime <<
+					" packet.size() = " << userids[i]->selfsigs[j]->packet.size() <<
+					" hspd.size() = " << userids[i]->selfsigs[j]->hspd.size() << std::endl;
+			// check basic properties of the self-signature
+			time_t smax = userids[i]->selfsigs[j]->creationtime + userids[i]->selfsigs[j]->expirationtime;
+			if (verbose && userids[i]->selfsigs[j]->expirationtime && (time(NULL) > smax))
+			{
+				std::cerr << "WARNING: self-signature has been expired" << std::endl;
+				continue;
+			}
+			if (verbose && (userids[i]->selfsigs[j]->creationtime < creationtime))
+			{
+				std::cerr << "WARNING: self-signature is older than primary key" << std::endl;
+				continue;
+			}
+			if (verbose && ((userids[i]->selfsigs[j]->hashalgo < 8) || (userids[i]->selfsigs[j]->hashalgo >= 11)))
+			{
+				std::cerr << "WARNING: insecure hash algorithm " << (int)userids[i]->selfsigs[j]->hashalgo << " used for self-signature" << std::endl;
+// TODO: update key strength
+			}
+			// check the self-signature cryptographically
+			tmcg_openpgp_octets_t trailer, left, hash;
+			if (userids[i]->selfsigs[j]->version == 3)
+			{
+				tmcg_openpgp_octets_t sigtime_octets;
+				CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode(userids[i]->selfsigs[j]->creationtime, sigtime_octets);
+				// The concatenation of the data to be signed, the signature type, and
+				// creation time from the Signature packet (5 additional octets) is
+				// hashed. The resulting hash value is used in the signature algorithm.
+				// The high 16 bits (first two octets) of the hash are included in the
+				// Signature packet to provide a quick test to reject some invalid
+				// signatures.
+				// A V3 signature hashes five octets of the packet body, starting from
+				// the signature type field. This data is the signature type, followed
+				// by the four-octet signature time.
+				trailer.push_back(userids[i]->selfsigs[j]->type);
+				trailer.insert(trailer.end(), sigtime_octets.begin(), sigtime_octets.end());
+				CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV3(pub_hashing,
+					userids[i]->userid, trailer, userids[i]->selfsigs[j]->hashalgo, hash, left);
+			}
+			else if (userids[i]->selfsigs[j]->version == 4)
+			{
+				trailer.push_back(4); // only V4 format supported
+				trailer.push_back(userids[i]->selfsigs[j]->type);
+				trailer.push_back(userids[i]->selfsigs[j]->pkalgo);
+				trailer.push_back(userids[i]->selfsigs[j]->hashalgo);
+				trailer.push_back(userids[i]->selfsigs[j]->hspd.size() >> 8); // length of hashed subpacket data
+				trailer.push_back(userids[i]->selfsigs[j]->hspd.size());
+				trailer.insert(trailer.end(), userids[i]->selfsigs[j]->hspd.begin(), userids[i]->selfsigs[j]->hspd.end());
+				CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing,
+					userids[i]->userid, trailer, userids[i]->selfsigs[j]->hashalgo, hash, left);
+			}
+			else
+				continue;
+			if (verbose > 2)
+				std::cout << "INFO: left = " << std::hex << (int)left[0] << " " << (int)left[1] << std::dec << std::endl;
+			gcry_error_t vret = 1;
+			if ((pkalgo == 1) || (pkalgo == 3))
+			{
+				vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA(hash, key,
+					userids[i]->selfsigs[j]->hashalgo, userids[i]->selfsigs[j]->rsa_md);
+			}
+			else if (pkalgo == 17)
+			{
+				vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, key,
+					userids[i]->selfsigs[j]->dsa_r, userids[i]->selfsigs[j]->dsa_s);
+			}
+			if (vret)
+			{
+				if (verbose)
+					std::cerr << "WARNING: verification of primary key self-signature failed (rc = " << gcry_err_code(vret) <<
+					", str = " << gcry_strerror(vret) << ")" << std::endl;
+			}
+			else
+			{
+				one_valid_selfsig = true;
+				// update expiration time, key flags, and other infos from hashed subpacket area
+				if (userids[i]->selfsigs[j]->keyexpirationtime > expirationtime)
+					expirationtime = userids[i]->selfsigs[j]->keyexpirationtime;
+				for (size_t ii = 0; (ii < sizeof(flags)) && (ii < sizeof(userids[i]->selfsigs[j]->keyflags)); ii++)
+					flags[ii] |= userids[i]->selfsigs[j]->keyflags[ii];
+			}
+			// check properties based on infos gathered from hashed subpacket area of self-signature
+			time_t kmax = creationtime + expirationtime;
+			if (verbose && expirationtime && (time(NULL) > kmax))
+			{
+				std::cerr << "WARNING: primary key has been expired" << std::endl;
+// TODO: update key strength
+			}
+		}
+		for (size_t j = 0; j < userids[i]->revsigs.size(); j++)
+		{	
+			if (verbose > 2)
+				std::cout << "INFO: sigtype = 0x" << std::hex << (int)userids[i]->revsigs[j]->type << std::dec << 
+					" pkalgo = " << (int)userids[i]->revsigs[j]->pkalgo <<
+					" hashalgo = " << (int)userids[i]->revsigs[j]->hashalgo <<
+					" version = " << (int)userids[i]->revsigs[j]->version <<
+					" creationtime = " << userids[i]->revsigs[j]->creationtime <<
+					" expirationtime = " << userids[i]->revsigs[j]->expirationtime <<
+					" packet.size() = " << userids[i]->revsigs[j]->packet.size() <<
+					" hspd.size() = " << userids[i]->revsigs[j]->hspd.size() << std::endl;
+			// check basic properties of the revocation signature
+			time_t smax = userids[i]->revsigs[j]->creationtime + userids[i]->revsigs[j]->expirationtime;
+			if (verbose && userids[i]->revsigs[j]->expirationtime && (time(NULL) > smax))
+			{
+				std::cerr << "WARNING: revocation signature has been expired" << std::endl;
+				continue;
+			}
+			if (verbose && (userids[i]->revsigs[j]->creationtime < creationtime))
+			{
+				std::cerr << "WARNING: revocation signature is older than primary key" << std::endl;
+				continue;
+			}
+			if (verbose && ((userids[i]->revsigs[j]->hashalgo < 8) || (userids[i]->revsigs[j]->hashalgo >= 11)))
+			{
+				std::cerr << "WARNING: insecure hash algorithm " << (int)userids[i]->revsigs[j]->hashalgo << " used for revocation signature" << std::endl;
+// TODO: update key strength
+			}
+			// check the revocation signature cryptographically
+			tmcg_openpgp_octets_t trailer, left, hash;
+			if (userids[i]->revsigs[j]->version == 3)
+			{
+				tmcg_openpgp_octets_t sigtime_octets;
+				CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode(userids[i]->revsigs[j]->creationtime, sigtime_octets);
+				// The concatenation of the data to be signed, the signature type, and
+				// creation time from the Signature packet (5 additional octets) is
+				// hashed. The resulting hash value is used in the signature algorithm.
+				// The high 16 bits (first two octets) of the hash are included in the
+				// Signature packet to provide a quick test to reject some invalid
+				// signatures.
+				// A V3 signature hashes five octets of the packet body, starting from
+				// the signature type field. This data is the signature type, followed
+				// by the four-octet signature time.
+				trailer.push_back(userids[i]->revsigs[j]->type);
+				trailer.insert(trailer.end(), sigtime_octets.begin(), sigtime_octets.end());
+				CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV3(pub_hashing,
+					userids[i]->userid, trailer, userids[i]->revsigs[j]->hashalgo, hash, left);
+			}
+			else if (userids[i]->revsigs[j]->version == 4)
+			{
+				trailer.push_back(4); // only V4 format supported
+				trailer.push_back(userids[i]->revsigs[j]->type);
+				trailer.push_back(userids[i]->revsigs[j]->pkalgo);
+				trailer.push_back(userids[i]->revsigs[j]->hashalgo);
+				trailer.push_back(userids[i]->revsigs[j]->hspd.size() >> 8); // length of hashed subpacket data
+				trailer.push_back(userids[i]->revsigs[j]->hspd.size());
+				trailer.insert(trailer.end(), userids[i]->revsigs[j]->hspd.begin(), userids[i]->revsigs[j]->hspd.end());
+				CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing,
+					userids[i]->userid, trailer, userids[i]->revsigs[j]->hashalgo, hash, left);
+			}
+			else
+				continue;
+			if (verbose > 2)
+				std::cout << "INFO: left = " << std::hex << (int)left[0] << " " << (int)left[1] << std::dec << std::endl;
+			gcry_error_t vret = 1;
+			if ((pkalgo == 1) || (pkalgo == 3))
+			{
+				vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA(hash, key,
+					userids[i]->revsigs[j]->hashalgo, userids[i]->revsigs[j]->rsa_md);
+			}
+			else if (pkalgo == 17)
+			{
+				vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, key,
+					userids[i]->revsigs[j]->dsa_r, userids[i]->revsigs[j]->dsa_s);
+			}
+			if (vret)
+			{
+				if (verbose)
+					std::cerr << "WARNING: verification of revocation signature failed (rc = " << gcry_err_code(vret) <<
+					", str = " << gcry_strerror(vret) << ")" << std::endl;
+			}
+			else
+			{
+				one_valid_selfsig = false;
+			}
+		}
+	}
+	// print accumulated key flags of primary key again
+	allflags = 0;
+	for (size_t i = 0; i < sizeof(flags); i++)
+	{
+		if (flags[i])
+			allflags = (allflags << 8) + flags[i];
+		else
+			break;
+	}
+	if (verbose > 1)
+	{
+		std::cout << "INFO: key flags on primary key are ";
+		if ((allflags & 0x01) == 0x01)
+			std::cout << "C"; // The key may be used to certify other keys.
+		if ((allflags & 0x02) == 0x02)
+			std::cout << "S"; // The key may be used to sign data.
+		if ((allflags & 0x04) == 0x04)
+			std::cout << "E"; // The key may be used encrypt communications.
+		if ((allflags & 0x08) == 0x08)
+			std::cout << "e"; // The key may be used encrypt storage.
+		if ((allflags & 0x10) == 0x10)
+			std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
+		if ((allflags & 0x20) == 0x20)
+			std::cout << "A"; // The key may be used for authentication.
+		if ((allflags & 0x80) == 0x80)
+			std::cout << "G"; // The private component of this key may be in the possession of more than one person.
+		std::cout << std::endl;
+	}
+	// return the result
+	if (one_valid_selfsig)
+		return true;
+	else
+		return false;
 }
 
 TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
@@ -278,6 +764,12 @@ TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
 		gcry_sexp_release(key);
 	packet.clear();
 	id.clear();
+	for (size_t i = 0; i < selfsigs.size(); i++)
+		delete selfsigs[i];
+	selfsigs.clear();
+	for (size_t i = 0; i < revsigs.size(); i++)
+		delete revsigs[i];
+	revsigs.clear();
 	for (size_t i = 0; i < userids.size(); i++)
 		delete userids[i];
 	userids.clear();
@@ -285,6 +777,8 @@ TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
 		delete subkeys[i];
 	subkeys.clear();
 }
+
+// ===========================================================================
 
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength
 	(const tmcg_openpgp_byte_t algo)
@@ -3666,6 +4160,41 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	return ret;
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::ReleasePacketContext
+	(tmcg_openpgp_packet_ctx_t &ctx)
+{
+	gcry_mpi_release(ctx.me);
+	gcry_mpi_release(ctx.gk);
+	gcry_mpi_release(ctx.myk);
+	gcry_mpi_release(ctx.md);
+	gcry_mpi_release(ctx.r);
+	gcry_mpi_release(ctx.s);
+	gcry_mpi_release(ctx.n);
+	gcry_mpi_release(ctx.e);
+	gcry_mpi_release(ctx.d);
+	gcry_mpi_release(ctx.p);
+	gcry_mpi_release(ctx.q);
+	gcry_mpi_release(ctx.u);
+	gcry_mpi_release(ctx.g);
+	gcry_mpi_release(ctx.h);
+	gcry_mpi_release(ctx.y);
+	gcry_mpi_release(ctx.x);
+	gcry_mpi_release(ctx.t);
+	gcry_mpi_release(ctx.i);
+	gcry_mpi_release(ctx.qualsize);
+	gcry_mpi_release(ctx.x_rvss_qualsize);
+	gcry_mpi_release(ctx.x_i);
+	gcry_mpi_release(ctx.xprime_i);
+	if (ctx.hspd != NULL)
+		delete [] ctx.hspd;
+	if (ctx.encdata != NULL)
+		delete [] ctx.encdata;
+	if (ctx.compdata != NULL)
+		delete [] ctx.compdata;
+	if (ctx.data != NULL)
+		delete [] ctx.data;
+}
+
 // ===========================================================================
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHashV3
@@ -4630,43 +5159,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA
 
 // ===========================================================================
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::ReleasePacketContext
-	(tmcg_openpgp_packet_ctx_t &ctx)
-{
-	gcry_mpi_release(ctx.me);
-	gcry_mpi_release(ctx.gk);
-	gcry_mpi_release(ctx.myk);
-	gcry_mpi_release(ctx.md);
-	gcry_mpi_release(ctx.r);
-	gcry_mpi_release(ctx.s);
-	gcry_mpi_release(ctx.n);
-	gcry_mpi_release(ctx.e);
-	gcry_mpi_release(ctx.d);
-	gcry_mpi_release(ctx.p);
-	gcry_mpi_release(ctx.q);
-	gcry_mpi_release(ctx.u);
-	gcry_mpi_release(ctx.g);
-	gcry_mpi_release(ctx.h);
-	gcry_mpi_release(ctx.y);
-	gcry_mpi_release(ctx.x);
-	gcry_mpi_release(ctx.t);
-	gcry_mpi_release(ctx.i);
-	gcry_mpi_release(ctx.qualsize);
-	gcry_mpi_release(ctx.x_rvss_qualsize);
-	gcry_mpi_release(ctx.x_i);
-	gcry_mpi_release(ctx.xprime_i);
-	if (ctx.hspd != NULL)
-		delete [] ctx.hspd;
-	if (ctx.encdata != NULL)
-		delete [] ctx.encdata;
-	if (ctx.compdata != NULL)
-		delete [] ctx.compdata;
-	if (ctx.data != NULL)
-		delete [] ctx.data;
-}
-
 bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
-	(const std::string &in, const bool verbose,
+	(const std::string &in, const int verbose,
 	 TMCG_OpenPGP_Pubkey* &pub)
 {
 	// decode ASCII Armor
@@ -4690,8 +5184,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 		tmcg_openpgp_octets_t current_packet;
 		ptag = PacketDecode(pkts, ctx, current_packet);
 		++pnum;
-		if (verbose)
-			std::cout << "PacketDecode() = " << (int)ptag << " version = " << (int)ctx.version << std::endl;
+		if (verbose > 2)
+			std::cout << "INFO: PacketDecode() = " << (int)ptag << " version = " << (int)ctx.version << std::endl;
 		if (ptag == 0x00)
 		{
 			if (verbose)
@@ -4731,22 +5225,24 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 				{
 					unsigned int mdbits = 0;
 					mdbits = gcry_mpi_get_nbits(ctx.md);
-					if (verbose)
+					if (verbose > 2)
 						std::cout << "INFO: mdbits = " << mdbits << std::endl;
 					// create a new signature object
 					sig = new TMCG_OpenPGP_Signature(ctx.pkalgo, ctx.hashalgo, ctx.type, ctx.version,
-						ctx.sigcreationtime, ctx.sigexpirationtime, ctx.md, current_packet, hspd);
+						ctx.sigcreationtime, ctx.sigexpirationtime, ctx.keyexpirationtime, ctx.keyflags,
+						ctx.md, current_packet, hspd);
 				}
 				else if (ctx.pkalgo == 17)
 				{
 					unsigned int rbits = 0, sbits = 0;
 					rbits = gcry_mpi_get_nbits(ctx.r);
 					sbits = gcry_mpi_get_nbits(ctx.s);
-					if (verbose)
+					if (verbose > 2)
 						std::cout << "INFO: rbits = " << rbits << " sbits = " << sbits << std::endl;
 					// create a new signature object
 					sig = new TMCG_OpenPGP_Signature(ctx.pkalgo, ctx.hashalgo, ctx.type, ctx.version,
-						ctx.sigcreationtime, ctx.sigexpirationtime, ctx.r, ctx.s, current_packet, hspd);
+						ctx.sigcreationtime, ctx.sigexpirationtime, ctx.keyexpirationtime, ctx.keyflags,
+						ctx.r, ctx.s, current_packet, hspd);
 				}
 				else
 				{
@@ -4780,12 +5276,18 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 				}
 				if (subkey)
 				{
-					if (OctetsCompare(pub->id, issuer))
+					if (OctetsCompare(pub->id, issuer) || OctetsCompare(sub->id, issuer))
 					{
 						if ((ctx.type == 0x18) || (ctx.type == 0x19))
 							sub->bindsigs.push_back(sig); // Subkey binding signature for this subkey
+						else if (ctx.type == 0x1F)
+							sub->selfsigs.push_back(sig); // Signature directly on a key for this subkey
 						else if (ctx.type == 0x28)
+						{
 							sub->revsigs.push_back(sig); // Subkey revocation signature for this subkey
+							if (verbose)
+								std::cerr << "WARNING: key revocation signature on subkey" << std::endl;
+						}
 						else
 						{
 							if (verbose)
@@ -4796,7 +5298,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					else
 					{
 						if (verbose)
-							std::cerr << "ERROR: signature not from primary key ignored" << std::endl;
+							std::cerr << "ERROR: signature from unknown issuer ignored" << std::endl;
 						delete sig;
 					}
 					break;
@@ -4826,48 +5328,40 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 				}
 				if (primary && !uid_flag && !uat_flag) 
 				{
-					if (verbose)
-						std::cerr << "ERROR: no uid/uat found for this self-signature" << std::endl;
-					ReleasePacketContext(ctx);
-					if (sub)
-						delete sub;
-					if (uid)
-						delete uid;
-					delete sig;
-					return false;
+					if (ctx.type == 0x1F)
+					{
+						pub->selfsigs.push_back(sig); // Direct key signature on primary key
+					}
+					else if (ctx.type == 0x20)
+					{
+						if (verbose)
+							std::cerr << "WARNING: key revocation signature on primary key" << std::endl;
+						pub->revsigs.push_back(sig); // Key revocation signature on primary key
+					}
+					else
+					{
+						if (verbose)
+							std::cerr << "WARNING: non-self-signature on primary key ignored" << std::endl;
+						delete sig;
+					}
 				}
 				else if (primary && !uid_flag && uat_flag)
 				{
 					if (verbose)
 						std::cerr << "WARNING: self-signature for a user attribute ignored" << std::endl;
 					delete sig;
-					break;
 				}
 				else if (primary && uid_flag && !uat_flag)
 				{
-					if (verbose && ((ctx.hashalgo < 8) || (ctx.hashalgo >= 11)))
+					if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
 					{
-						std::cerr << "WARNING: insecure hash algorithm " << (int)ctx.hashalgo << " used for signatures" << std::endl;
-// TODO: update key strength
+						uid->selfsigs.push_back(sig); // Certification self-signature
 					}
-					if (ctx.type == 0x20)
+					else if (ctx.type == 0x30)
 					{
 						if (verbose)
-							std::cerr << "WARNING: key revocation signature on primary key" << std::endl;
-						uid->revsigs.push_back(sig); // Key revocation signature 
-					}
-					else if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
-					{
-						if (ctx.keyexpirationtime)
-							pub->expirationtime = ctx.keyexpirationtime; // FIXME: move update to later
-// TODO: update key flags
-						time_t kmax = pub->creationtime + pub->expirationtime;
-						if (verbose && pub->expirationtime && (time(NULL) > kmax))
-						{
-							std::cerr << "WARNING: primary key has been expired" << std::endl;
-// TODO: update key strength
-						}
-						uid->selfsigs.push_back(sig); // Certification self-signature
+							std::cerr << "WARNING: certification revocation signature on user ID" << std::endl;
+						uid->revsigs.push_back(sig); // Certification revocation signature 
 					}
 					else
 					{
@@ -4919,7 +5413,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 							delete uid;
 						return false;
 					}
-					if (verbose)
+					if (verbose > 1)
 					{
 						std::cout << "INFO: key ID of primary key: " << std::hex;
 						for (size_t i = 0; i < pub->id.size(); i++)
@@ -5006,7 +5500,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 							delete uid;
 						return false;
 					}
-					if (verbose)
+					if (verbose > 1)
 					{
 						std::cout << "INFO: key ID of subkey: " << std::hex;
 						for (size_t i = 0; i < sub->id.size(); i++)
@@ -5014,7 +5508,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 						std::cout << std::dec << std::endl;
 					}
 					if (verbose && OctetsCompare(sub->id, pub->id))
-						std::cerr << "WARNING: probably same key material used for subkey" << std::endl;
+						std::cerr << "WARNING: probably same key material used for primary key and subkey" << std::endl;
 				}
 				else
 				{
@@ -5041,7 +5535,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 				uid_flag = false, uat_flag = true;
 				break;
 			default:
-				if (verbose)
+				if (verbose > 1)
 					std::cout << "INFO: OpenPGP packet of type " << (int)ptag << " ignored" << std::endl;
 				break;
 		}
@@ -5062,164 +5556,5 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 		pub->userids.push_back(uid);
 	if (subkey)
 		pub->subkeys.push_back(sub);
-	
-	// print key usage and check self-signatures
-	size_t flags = 0;
-	for (size_t i = 0; i < sizeof(pub->flags); i++)
-	{
-		if (pub->flags[i])
-			flags = (flags << 8) + pub->flags[i];
-		else
-			break;
-	}
-	if (verbose)
-	{
-		std::cout << "INFO: key flags on primary key are ";
-		if ((flags & 0x01) == 0x01)
-			std::cout << "C"; // The key may be used to certify other keys.
-		if ((flags & 0x02) == 0x02)
-			std::cout << "S"; // The key may be used to sign data.
-		if ((flags & 0x04) == 0x04)
-			std::cout << "E"; // The key may be used encrypt communications.
-		if ((flags & 0x08) == 0x08)
-			std::cout << "e"; // The key may be used encrypt storage.
-		if ((flags & 0x10) == 0x10)
-			std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
-		if ((flags & 0x20) == 0x20)
-			std::cout << "A"; // The key may be used for authentication.
-		if ((flags & 0x80) == 0x80)
-			std::cout << "M"; // The private component of this key may be in the possession of more than one person.
-		std::cout << std::endl;
-		std::cout << "INFO: number of userids = " << pub->userids.size() << std::endl;
-		std::cout << "INFO: number of subkeys = " << pub->subkeys.size() << std::endl;
-	}
-	bool valid_selfsig = false;
-	for (size_t i = 0; i < pub->userids.size(); i++)
-	{
-		if (verbose)
-		{
-			std::cout << "INFO: userid = \"" << pub->userids[i]->userid << "\"" << std::endl;
-			std::cout << "INFO: number of selfsigs = " << pub->userids[i]->selfsigs.size() << std::endl;
-			std::cout << "INFO: number of revsigs = " << pub->userids[i]->revsigs.size() << std::endl;
-			std::cout << "INFO: number of certsigs = " << pub->userids[i]->certsigs.size() << std::endl;
-		}
-		for (size_t j = 0; j < pub->userids[i]->selfsigs.size(); j++)
-		{	
-			if (verbose)
-				std::cout << "INFO: sigtype = 0x" << std::hex << (int)pub->userids[i]->selfsigs[j]->type << std::dec << 
-					" pkalgo = " << (int)pub->userids[i]->selfsigs[j]->pkalgo <<
-					" hashalgo = " << (int)pub->userids[i]->selfsigs[j]->hashalgo <<
-					" version = " << (int)pub->userids[i]->selfsigs[j]->version <<
-					" creationtime = " << pub->userids[i]->selfsigs[j]->creationtime <<
-					" expirationtime = " << pub->userids[i]->selfsigs[j]->expirationtime <<
-					" packet.size() = " << pub->userids[i]->selfsigs[j]->packet.size() <<
-					" hspd.size() = " << pub->userids[i]->selfsigs[j]->hspd.size() << std::endl;
-/*
-	tmcg_openpgp_octets_t trailer, left, hash;
-	if (sigV3)
-	{
-		tmcg_openpgp_octets_t sigtime_octets;
-		PacketTimeEncode(sigtime, sigtime_octets);
-		// The concatenation of the data to be signed, the signature type, and
-		// creation time from the Signature packet (5 additional octets) is
-		// hashed. The resulting hash value is used in the signature algorithm.
-		// The high 16 bits (first two octets) of the hash are included in the
-		// Signature packet to provide a quick test to reject some invalid
-		// signatures.
-		// A V3 signature hashes five octets of the packet body, starting from
-		// the signature type field. This data is the signature type, followed
-		// by the four-octet signature time.
-		trailer.push_back(sigtype);
-		trailer.insert(trailer.end(), sigtime_octets.begin(), sigtime_octets.end());
-		CertificationHashV3(pub_hashing, userid, trailer, hashalgo, hash, left);
-	}
-	else
-	{
-		trailer.push_back(4); // only V4 format supported
-		trailer.push_back(sigtype);
-		trailer.push_back(pkalgo);
-		trailer.push_back(hashalgo);
-		trailer.push_back(hspd.size() >> 8); // length of hashed subpacket data
-		trailer.push_back(hspd.size());
-		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
-		CertificationHash(pub_hashing, userid, trailer, hashalgo, hash, left);
-	}
-	if (verbose)
-		std::cout << "INFO: left = " << std::hex << (int)left[0] << " " << (int)left[1] << std::dec << std::endl;
-	if ((pkalgo == 1) || (pkalgo == 3))
-		ret = AsymmetricVerifyRSA(hash, primarykey, hashalgo, rsa_md);
-	else if (pkalgo == 17)
-		ret = AsymmetricVerifyDSA(hash, primarykey, dsa_r, dsa_s);
-	if (ret)
-	{
-		if (verbose)
-			std::cerr << "ERROR: verification of primary key self-signature failed (rc = " << gcry_err_code(ret) << ", str = " <<
-				gcry_strerror(ret) << ")" << std::endl;
-		gcry_sexp_release(primarykey);
-		return false;
-	}
-	if (rev)
-	{
-		if (verbose)
-			std::cout << "INFO: rev_sigtype = 0x" << std::hex << (int)rev_sigtype << std::dec << 
-			" rev_pkalgo = " << (int)rev_pkalgo << " rev_hashalgo = " << (int)rev_hashalgo <<
-			" rev_hspd.size() = " << rev_hspd.size() << std::endl;
-		tmcg_openpgp_octets_t rev_trailer, rev_left;
-		hash.clear();
-		if (revV3)
-		{
-			tmcg_openpgp_octets_t rev_sigtime_octets;
-			PacketTimeEncode(rev_sigtime, rev_sigtime_octets);
-			// The concatenation of the data to be signed, the signature type, and
-			// creation time from the Signature packet (5 additional octets) is
-			// hashed. The resulting hash value is used in the signature algorithm.
-			// The high 16 bits (first two octets) of the hash are included in the
-			// Signature packet to provide a quick test to reject some invalid
-			// signatures.
-			// A V3 signature hashes five octets of the packet body, starting from
-			// the signature type field. This data is the signature type, followed
-			// by the four-octet signature time.
-			rev_trailer.push_back(rev_sigtype);
-			rev_trailer.insert(rev_trailer.end(), rev_sigtime_octets.begin(), rev_sigtime_octets.end());
-			KeyRevocationHashV3(pub_hashing, rev_trailer, rev_hashalgo, hash, rev_left);
-		}
-		else
-		{
-			rev_trailer.push_back(4); // only V4 format supported
-			rev_trailer.push_back(rev_sigtype);
-			rev_trailer.push_back(rev_pkalgo);
-			rev_trailer.push_back(rev_hashalgo);
-			rev_trailer.push_back(rev_hspd.size() >> 8); // length of hashed subpacket data
-			rev_trailer.push_back(rev_hspd.size());
-			rev_trailer.insert(rev_trailer.end(), rev_hspd.begin(), rev_hspd.end());
-			KeyRevocationHash(pub_hashing, rev_trailer, rev_hashalgo, hash, rev_left);
-		}
-		if (verbose)
-			std::cout << "INFO: rev_left = " << std::hex << (int)rev_left[0] << " " << (int)rev_left[1] << std::dec << std::endl;
-		if ((pkalgo == 1) || (pkalgo == 3))
-			ret = AsymmetricVerifyRSA(hash, primarykey, rev_hashalgo, revrsa_md);
-		else if (pkalgo == 17)
-			ret = AsymmetricVerifyDSA(hash, primarykey, revdsa_r, revdsa_s);
-		gcry_sexp_release(primarykey);
-		if (ret)
-		{
-			if (verbose)
-				std::cerr << "ERROR: verification of primary key revocation signature failed (rc = " << gcry_err_code(ret) << ", str = " <<
-					gcry_strerror(ret) << ")" << std::endl;
-			return false;
-		}
-		else
-		{
-			if (verbose)
-				std::cerr << "ERROR: valid revocation signature on primary key found" << std::endl;
-			return false;
-		}
-	}
-*/
-		}
-	}
-// TODO: evaluate signatures
-
 	return true;
 }
-

@@ -196,7 +196,12 @@ class TMCG_OpenPGP_Signature
 		tmcg_openpgp_byte_t version;
 		time_t creationtime;
 		time_t expirationtime;
+		time_t keyexpirationtime;
+		tmcg_openpgp_byte_t keyflags[32];
 		gcry_sexp_t signature;
+		gcry_mpi_t rsa_md;
+		gcry_mpi_t dsa_r;
+		gcry_mpi_t dsa_s;
 		tmcg_openpgp_octets_t packet;
 		tmcg_openpgp_octets_t hspd;
 
@@ -207,6 +212,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_byte_t version_in,
 			 const time_t creationtime_in,
 			 const time_t expirationtime_in,
+			 const time_t keyexpirationtime_in,
+			 const tmcg_openpgp_byte_t* keyflags_in,
 			 const gcry_mpi_t md,
 			 const tmcg_openpgp_octets_t &packet_in,
 			 const tmcg_openpgp_octets_t &hspd_in);
@@ -217,6 +224,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_byte_t version_in,
 			 const time_t creationtime_in,
 			 const time_t expirationtime_in,
+			 const time_t keyexpirationtime_in,
+			 const tmcg_openpgp_byte_t* keyflags_in,
 			 const gcry_mpi_t r,
 			 const gcry_mpi_t s,
 			 const tmcg_openpgp_octets_t &packet_in,
@@ -256,8 +265,9 @@ class TMCG_OpenPGP_Subkey
 		gcry_sexp_t key;
 		tmcg_openpgp_octets_t packet;
 		tmcg_openpgp_octets_t id;
+		std::vector<TMCG_OpenPGP_Signature*> selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*> bindsigs;
-		std::vector<TMCG_OpenPGP_Signature*> revsigs;				
+		std::vector<TMCG_OpenPGP_Signature*> revsigs;
 
 		TMCG_OpenPGP_Subkey
 			(const tmcg_openpgp_byte_t pkalgo_in,
@@ -301,8 +311,11 @@ class TMCG_OpenPGP_Pubkey
 		time_t expirationtime;
 		gcry_sexp_t key;
 		tmcg_openpgp_octets_t packet;
+		tmcg_openpgp_octets_t pub_hashing;
 		tmcg_openpgp_octets_t id;
 		tmcg_openpgp_byte_t flags[32];
+		std::vector<TMCG_OpenPGP_Signature*> selfsigs;
+		std::vector<TMCG_OpenPGP_Signature*> revsigs;
 		std::vector<TMCG_OpenPGP_UserID*> userids;
 		std::vector<TMCG_OpenPGP_Subkey*> subkeys;
 
@@ -324,6 +337,8 @@ class TMCG_OpenPGP_Pubkey
 			 const tmcg_openpgp_octets_t &packet_in);
 		bool good
 			() const;
+		bool CheckSelfSignatures
+			(const int verbose);
 		~TMCG_OpenPGP_Pubkey
 			();
 };
@@ -631,6 +646,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(tmcg_openpgp_octets_t &in,
 			 tmcg_openpgp_packet_ctx_t &out,
 			 tmcg_openpgp_octets_t &current_packet);
+		static void ReleasePacketContext
+			(tmcg_openpgp_packet_ctx_t &ctx);
 
 		static bool BinaryDocumentHashV3
 			(const std::string &filename,
@@ -749,10 +766,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_byte_t hashalgo, 
 	 		 const gcry_mpi_t s);
 
-		static void ReleasePacketContext
-			(tmcg_openpgp_packet_ctx_t &ctx);
 		static bool ParsePublicKeyBlock
-			(const std::string &in, const bool verbose,
+			(const std::string &in, const int verbose,
 			 TMCG_OpenPGP_Pubkey* &pub);
 };
 
