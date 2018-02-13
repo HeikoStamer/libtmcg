@@ -351,6 +351,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				" version = " << (int)selfsigs[j]->version <<
 				" creationtime = " << selfsigs[j]->creationtime <<
 				" expirationtime = " << selfsigs[j]->expirationtime <<
+				" keyexpirationtime = " << selfsigs[j]->keyexpirationtime <<
 				" packet.size() = " << selfsigs[j]->packet.size() <<
 				" hspd.size() = " << selfsigs[j]->hspd.size() << std::endl;
 		// check basic properties of the self-signature
@@ -448,6 +449,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				" version = " << (int)revsigs[j]->version <<
 				" creationtime = " << revsigs[j]->creationtime <<
 				" expirationtime = " << revsigs[j]->expirationtime <<
+				" keyexpirationtime = " << revsigs[j]->keyexpirationtime <<
 				" packet.size() = " << revsigs[j]->packet.size() <<
 				" hspd.size() = " << revsigs[j]->hspd.size() << std::endl;
 		// check basic properties of the revocation signature
@@ -546,6 +548,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 					" version = " << (int)userids[i]->selfsigs[j]->version <<
 					" creationtime = " << userids[i]->selfsigs[j]->creationtime <<
 					" expirationtime = " << userids[i]->selfsigs[j]->expirationtime <<
+					" keyexpirationtime = " << userids[i]->selfsigs[j]->keyexpirationtime <<
 					" packet.size() = " << userids[i]->selfsigs[j]->packet.size() <<
 					" hspd.size() = " << userids[i]->selfsigs[j]->hspd.size() << std::endl;
 			// check basic properties of the self-signature
@@ -644,6 +647,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 					" version = " << (int)userids[i]->revsigs[j]->version <<
 					" creationtime = " << userids[i]->revsigs[j]->creationtime <<
 					" expirationtime = " << userids[i]->revsigs[j]->expirationtime <<
+					" keyexpirationtime = " << userids[i]->revsigs[j]->keyexpirationtime <<
 					" packet.size() = " << userids[i]->revsigs[j]->packet.size() <<
 					" hspd.size() = " << userids[i]->revsigs[j]->hspd.size() << std::endl;
 			// check basic properties of the revocation signature
@@ -5291,7 +5295,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 						else
 						{
 							if (verbose)
-								std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored" << std::endl;
+								std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored (subkey)" << std::endl;
 							delete sig;
 						}
 					}
@@ -5314,7 +5318,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 						else 
 						{
 							if (verbose)
-								std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored" << std::endl;
+								std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored (non-issuer)" << std::endl;
 							delete sig;
 						}
 					}
@@ -5366,7 +5370,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					else
 					{
 						if (verbose)
-							std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored" << std::endl;
+							std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored (uid_flag)" << std::endl;
 						delete sig;
 					}
 				}
