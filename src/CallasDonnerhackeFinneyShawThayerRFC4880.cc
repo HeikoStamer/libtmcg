@@ -106,6 +106,23 @@ bool TMCG_OpenPGP_Signature::good
 	return (ret == 0);
 }
 
+gcry_error_t TMCG_OpenPGP_Signature::verify
+	(const tmcg_openpgp_octets_t &hash, const gcry_sexp_t key) const
+{
+	if (!good())
+		return GPG_ERR_VALUE_NOT_FOUND;
+	gcry_error_t vret = GPG_ERR_BAD_PUBKEY;
+	if ((pkalgo == 1) || (pkalgo == 3))
+	{
+		vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
+	}
+	else if (pkalgo == 17)
+	{
+		vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
+	}
+	return vret;
+}
+
 TMCG_OpenPGP_Signature::~TMCG_OpenPGP_Signature
 	()
 {
@@ -407,17 +424,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			continue;
 		if (verbose > 2)
 			std::cout << "INFO: left = " << std::hex << (int)left[0] << " " << (int)left[1] << std::dec << std::endl;
-		gcry_error_t vret = 1;
-		if ((pkalgo == 1) || (pkalgo == 3))
-		{
-			vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA(hash, key,
-				selfsigs[j]->hashalgo, selfsigs[j]->rsa_md);
-		}
-		else if (pkalgo == 17)
-		{
-			vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, key,
-				selfsigs[j]->dsa_r, selfsigs[j]->dsa_s);
-		}
+		gcry_error_t vret = selfsigs[j]->verify(hash, key);
 		if (vret)
 		{
 			if (verbose)
@@ -505,17 +512,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			continue;
 		if (verbose > 2)
 			std::cout << "INFO: left = " << std::hex << (int)left[0] << " " << (int)left[1] << std::dec << std::endl;
-		gcry_error_t vret = 1;
-		if ((pkalgo == 1) || (pkalgo == 3))
-		{
-			vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA(hash, key,
-				revsigs[j]->hashalgo, revsigs[j]->rsa_md);
-		}
-		else if (pkalgo == 17)
-		{
-			vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, key,
-				revsigs[j]->dsa_r, revsigs[j]->dsa_s);
-		}
+		gcry_error_t vret = revsigs[j]->verify(hash, key);
 		if (vret)
 		{
 			if (verbose)
@@ -604,17 +601,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				continue;
 			if (verbose > 2)
 				std::cout << "INFO: left = " << std::hex << (int)left[0] << " " << (int)left[1] << std::dec << std::endl;
-			gcry_error_t vret = 1;
-			if ((pkalgo == 1) || (pkalgo == 3))
-			{
-				vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA(hash, key,
-					userids[i]->selfsigs[j]->hashalgo, userids[i]->selfsigs[j]->rsa_md);
-			}
-			else if (pkalgo == 17)
-			{
-				vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, key,
-					userids[i]->selfsigs[j]->dsa_r, userids[i]->selfsigs[j]->dsa_s);
-			}
+			gcry_error_t vret = userids[i]->selfsigs[j]->verify(hash, key);
 			if (vret)
 			{
 				if (verbose)
@@ -703,17 +690,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				continue;
 			if (verbose > 2)
 				std::cout << "INFO: left = " << std::hex << (int)left[0] << " " << (int)left[1] << std::dec << std::endl;
-			gcry_error_t vret = 1;
-			if ((pkalgo == 1) || (pkalgo == 3))
-			{
-				vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA(hash, key,
-					userids[i]->revsigs[j]->hashalgo, userids[i]->revsigs[j]->rsa_md);
-			}
-			else if (pkalgo == 17)
-			{
-				vret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, key,
-					userids[i]->revsigs[j]->dsa_r, userids[i]->revsigs[j]->dsa_s);
-			}
+			gcry_error_t vret = userids[i]->revsigs[j]->verify(hash, key);
 			if (vret)
 			{
 				if (verbose)
@@ -5302,7 +5279,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					else
 					{
 						if (verbose)
-							std::cerr << "ERROR: signature from unknown issuer ignored" << std::endl;
+							std::cerr << "WARNING: signature from unknown issuer ignored" << std::endl;
 						delete sig;
 					}
 					break;

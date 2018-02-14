@@ -232,6 +232,9 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t &hspd_in);
 		bool good
 			() const;
+		gcry_error_t verify
+			(const tmcg_openpgp_octets_t &hash,
+			 const gcry_sexp_t key) const;
 		~TMCG_OpenPGP_Signature
 			();
 };
