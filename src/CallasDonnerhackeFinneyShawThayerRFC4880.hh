@@ -240,8 +240,6 @@ class TMCG_OpenPGP_Signature
 			();
 };
 
-
-
 class TMCG_OpenPGP_UserID
 {
 	public:
@@ -357,7 +355,7 @@ class TMCG_OpenPGP_Pubkey
 			(const int verbose);
 		bool CheckSubkeys
 			(const int verbose);
-		bool Reduce
+		void Reduce
 			();
 		~TMCG_OpenPGP_Pubkey
 			();

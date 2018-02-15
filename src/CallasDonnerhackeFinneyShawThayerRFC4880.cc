@@ -428,7 +428,11 @@ bool TMCG_OpenPGP_Subkey::good
 bool TMCG_OpenPGP_Subkey::Check
 	(const int verbose)
 {
-	// TODO
+	// TODO: check whether all selfsigs are valid
+
+	// TODO: check whether there is (at least one) valid subkey binding sig
+
+	// TODO: check whether there is a valid primary key binding sig, if subkey is a signing key
 	return true;
 }
 
@@ -778,11 +782,13 @@ bool TMCG_OpenPGP_Pubkey::CheckSubkeys
 	return true;
 }
 
-bool TMCG_OpenPGP_Pubkey::Reduce
+void TMCG_OpenPGP_Pubkey::Reduce
 	()
 {
-	// TODO
-	return true;
+	userids.erase(std::remove_if(userids.begin(), userids.end(),
+		[](TMCG_OpenPGP_UserID* uid){ return uid->valid; }), userids.end());
+	subkeys.erase(std::remove_if(subkeys.begin(), subkeys.end(),
+		[](TMCG_OpenPGP_Subkey* sub){ return sub->valid; }), subkeys.end());
 }
 
 TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
