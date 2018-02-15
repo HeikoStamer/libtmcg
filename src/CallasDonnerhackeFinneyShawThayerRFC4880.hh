@@ -190,6 +190,7 @@ class TMCG_OpenPGP_Signature
 		size_t erroff;
 
 	public:
+		bool valid;
 		tmcg_openpgp_byte_t pkalgo;
 		tmcg_openpgp_byte_t hashalgo;
 		tmcg_openpgp_byte_t type;
@@ -234,14 +235,17 @@ class TMCG_OpenPGP_Signature
 			() const;
 		gcry_error_t verify
 			(const tmcg_openpgp_octets_t &hash,
-			 const gcry_sexp_t key) const;
+			 const gcry_sexp_t key);
 		~TMCG_OpenPGP_Signature
 			();
 };
 
+
+
 class TMCG_OpenPGP_UserID
 {
 	public:
+		bool valid;
 		std::string userid;
 		tmcg_openpgp_octets_t packet;
 		std::vector<TMCG_OpenPGP_Signature*> selfsigs;
@@ -251,6 +255,11 @@ class TMCG_OpenPGP_UserID
 		TMCG_OpenPGP_UserID
 			(const std::string &userid_in,
 			 const tmcg_openpgp_octets_t &packet_in);
+		bool Check
+			(const int verbose,
+			 const time_t keycreationtime,
+			 const gcry_sexp_t key,
+			 const tmcg_openpgp_octets_t &pub_hashing);
 		~TMCG_OpenPGP_UserID
 			();
 };
@@ -262,6 +271,7 @@ class TMCG_OpenPGP_Subkey
 		size_t erroff;
 
 	public:
+		bool valid;
 		tmcg_openpgp_byte_t pkalgo;
 		time_t creationtime;
 		time_t expirationtime;
@@ -298,6 +308,8 @@ class TMCG_OpenPGP_Subkey
 			 const tmcg_openpgp_octets_t &packet_in);
 		bool good
 			() const;
+		bool Check
+			(const int verbose);
 		~TMCG_OpenPGP_Subkey
 			();
 };
@@ -309,6 +321,7 @@ class TMCG_OpenPGP_Pubkey
 		size_t erroff;
 
 	public:
+		bool valid;
 		tmcg_openpgp_byte_t pkalgo;
 		time_t creationtime;
 		time_t expirationtime;
@@ -342,6 +355,10 @@ class TMCG_OpenPGP_Pubkey
 			() const;
 		bool CheckSelfSignatures
 			(const int verbose);
+		bool CheckSubkeys
+			(const int verbose);
+		bool Reduce
+			();
 		~TMCG_OpenPGP_Pubkey
 			();
 };
