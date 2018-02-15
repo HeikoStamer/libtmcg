@@ -800,10 +800,32 @@ bool TMCG_OpenPGP_Pubkey::CheckSubkeys
 void TMCG_OpenPGP_Pubkey::Reduce
 	()
 {
-	userids.erase(std::remove_if(userids.begin(), userids.end(),
-		[](TMCG_OpenPGP_UserID* uid){ return uid->valid; }), userids.end());
-	subkeys.erase(std::remove_if(subkeys.begin(), subkeys.end(),
-		[](TMCG_OpenPGP_Subkey* sub){ return sub->valid; }), subkeys.end());
+/*
+	std::vector<TMCG_OpenPGP_UserID*>::iterator ruidx = std::remove_if(userids.begin(), userids.end(), [](TMCG_OpenPGP_UserID* uid){ return !uid->valid; });
+	for (std::vector<TMCG_OpenPGP_UserID*>::iterator ri = ruidx; ri != userids.end(); ++ri)
+		delete *ri; 
+	userids.erase(ruidx, userids.end());
+	std::vector<TMCG_OpenPGP_Subkey*> ::iterator rsidx = std::remove_if(subkeys.begin(), subkeys.end(), [](TMCG_OpenPGP_Subkey* sub){ return !sub->valid; });
+	for (std::vector<TMCG_OpenPGP_Subkey*>::iterator ri = rsidx; ri != subkeys.end(); ++ri)
+		delete *ri; 
+	subkeys.erase(rsidx, subkeys.end());
+*/
+	std::vector<TMCG_OpenPGP_UserID*> valid_userids;
+	for (size_t i = 0; i < userids.size(); i++)
+		if (userids[i]->valid)
+			valid_userids.push_back(userids[i]);
+		else
+			delete userids[i];
+	userids.clear();
+	userids.insert(userids.end(), valid_userids.begin(), valid_userids.end());
+	std::vector<TMCG_OpenPGP_Subkey*> valid_subkeys;
+	for (size_t i = 0; i < subkeys.size(); i++)
+		if (subkeys[i]->valid)
+			valid_subkeys.push_back(subkeys[i]);
+		else
+			delete subkeys[i];
+	subkeys.clear();
+	subkeys.insert(subkeys.end(), valid_subkeys.begin(), valid_subkeys.end());
 }
 
 TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
