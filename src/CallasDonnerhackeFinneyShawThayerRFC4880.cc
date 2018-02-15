@@ -41,7 +41,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_byte_t keyflags_in[32],
 	 const gcry_mpi_t md,
 	 const tmcg_openpgp_octets_t &packet_in,
-	 const tmcg_openpgp_octets_t &hspd_in):
+	 const tmcg_openpgp_octets_t &hspd_in,
+	 const tmcg_openpgp_octets_t &issuer_in):
 		ret(1),
 		erroff(0),
 		valid(false),
@@ -63,6 +64,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		"(sig-val (rsa (s %M)))", md);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	hspd.insert(hspd.end(), hspd_in.begin(), hspd_in.end());
+	issuer.insert(issuer.end(), issuer_in.begin(), issuer_in.end());
 }
 
 TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
@@ -77,7 +79,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const gcry_mpi_t r,
 	 const gcry_mpi_t s,
 	 const tmcg_openpgp_octets_t &packet_in,
-	 const tmcg_openpgp_octets_t &hspd_in):
+	 const tmcg_openpgp_octets_t &hspd_in,
+	 const tmcg_openpgp_octets_t &issuer_in):
 		ret(1),
 		erroff(0),
 		valid(false),
@@ -100,6 +103,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		"(sig-val (dsa (r %M) (s %M)))", r, s);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	hspd.insert(hspd.end(), hspd_in.begin(), hspd_in.end());
+	issuer.insert(issuer.end(), issuer_in.begin(), issuer_in.end());
 }
 
 bool TMCG_OpenPGP_Signature::good
@@ -428,9 +432,17 @@ bool TMCG_OpenPGP_Subkey::good
 bool TMCG_OpenPGP_Subkey::Check
 	(const int verbose)
 {
+	// TODO: check whether a revocation exists
+
 	// TODO: check whether all selfsigs are valid
+	for (size_t i = 0; i < selfsigs.size(); i++)
+	{
+	}
 
 	// TODO: check whether there is (at least one) valid subkey binding sig
+	for (size_t i = 0; i < bindsigs.size(); i++)
+	{
+	}
 
 	// TODO: check whether there is a valid primary key binding sig, if subkey is a signing key
 	return true;
@@ -778,7 +790,10 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 bool TMCG_OpenPGP_Pubkey::CheckSubkeys
 	(const int verbose)
 {
-	// TODO
+	for (size_t i = 0; i < subkeys.size(); i++)
+	{
+		// TODO
+	}
 	return true;
 }
 
@@ -5264,7 +5279,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					// create a new signature object
 					sig = new TMCG_OpenPGP_Signature(ctx.pkalgo, ctx.hashalgo, ctx.type, ctx.version,
 						ctx.sigcreationtime, ctx.sigexpirationtime, ctx.keyexpirationtime, ctx.keyflags,
-						ctx.md, current_packet, hspd);
+						ctx.md, current_packet, hspd, issuer);
 				}
 				else if (ctx.pkalgo == 17)
 				{
@@ -5276,7 +5291,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					// create a new signature object
 					sig = new TMCG_OpenPGP_Signature(ctx.pkalgo, ctx.hashalgo, ctx.type, ctx.version,
 						ctx.sigcreationtime, ctx.sigexpirationtime, ctx.keyexpirationtime, ctx.keyflags,
-						ctx.r, ctx.s, current_packet, hspd);
+						ctx.r, ctx.s, current_packet, hspd, issuer);
 				}
 				else
 				{

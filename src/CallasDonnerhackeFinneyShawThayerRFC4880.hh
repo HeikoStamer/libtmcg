@@ -205,6 +205,7 @@ class TMCG_OpenPGP_Signature
 		gcry_mpi_t dsa_s;
 		tmcg_openpgp_octets_t packet;
 		tmcg_openpgp_octets_t hspd;
+		tmcg_openpgp_octets_t issuer;
 
 		TMCG_OpenPGP_Signature
 			(const tmcg_openpgp_byte_t pkalgo_in,
@@ -217,7 +218,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_byte_t* keyflags_in,
 			 const gcry_mpi_t md,
 			 const tmcg_openpgp_octets_t &packet_in,
-			 const tmcg_openpgp_octets_t &hspd_in);
+			 const tmcg_openpgp_octets_t &hspd_in,
+			 const tmcg_openpgp_octets_t &issuer_in);
 		TMCG_OpenPGP_Signature
 			(const tmcg_openpgp_byte_t pkalgo_in,
 			 const tmcg_openpgp_byte_t hashalgo_in,
@@ -230,7 +232,8 @@ class TMCG_OpenPGP_Signature
 			 const gcry_mpi_t r,
 			 const gcry_mpi_t s,
 			 const tmcg_openpgp_octets_t &packet_in,
-			 const tmcg_openpgp_octets_t &hspd_in);
+			 const tmcg_openpgp_octets_t &hspd_in,
+			 const tmcg_openpgp_octets_t &issuer_in);
 		bool good
 			() const;
 		gcry_error_t verify
