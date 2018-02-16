@@ -5249,14 +5249,25 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 	TMCG_OpenPGP_UserID *uid = NULL;
 	tmcg_openpgp_byte_t ptag = 0xFF;
 	size_t pnum = 0;
+	tmcg_openpgp_octets_t extra_pkt;
 	while (pkts.size() && ptag)
 	{
 		tmcg_openpgp_packet_ctx_t ctx;
 		tmcg_openpgp_octets_t current_packet;
-		ptag = PacketDecode(pkts, ctx, current_packet);
-		++pnum;
-		if (verbose > 2)
-			std::cout << "INFO: PacketDecode() = " << (int)ptag << " version = " << (int)ctx.version << std::endl;
+		if (extra_pkt.size())
+		{
+			ptag = PacketDecode(extra_pkt, ctx, current_packet);
+			if (verbose > 2)
+				std::cout << "INFO: EXTRA PacketDecode() = " << (int)ptag << " version = " << (int)ctx.version << std::endl;
+			extra_pkt.clear();
+		}
+		else
+		{
+			ptag = PacketDecode(pkts, ctx, current_packet);
+			++pnum;
+			if (verbose > 2)
+				std::cout << "INFO: PacketDecode() = " << (int)ptag << " version = " << (int)ctx.version << std::endl;
+		}
 		if (ptag == 0x00)
 		{
 			if (verbose)
@@ -5350,7 +5361,18 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					if (OctetsCompare(pub->id, issuer) || OctetsCompare(sub->id, issuer))
 					{
 						if ((ctx.type == 0x18) || (ctx.type == 0x19))
+						{
 							sub->bindsigs.push_back(sig); // Subkey binding signature for this subkey
+							// A signature that binds a signing subkey MUST have an Embedded
+							// Signature subpacket in this binding signature that contains a
+							// 0x19 signature made by the signing subkey on the primary key
+							// and subkey.
+							if (ctx.embeddedsignature[0])
+							{
+								for (size_t i = 0; i < sizeof(ctx.embeddedsignature); i++)
+									extra_pkt.push_back(ctx.embeddedsignature[i]);
+							}
+						}
 						else if (ctx.type == 0x1F)
 							sub->selfsigs.push_back(sig); // Signature directly on a key for this subkey
 						else if (ctx.type == 0x28)
