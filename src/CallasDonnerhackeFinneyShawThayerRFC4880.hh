@@ -199,7 +199,7 @@ class TMCG_OpenPGP_Signature
 		time_t creationtime;
 		time_t expirationtime;
 		time_t keyexpirationtime;
-		tmcg_openpgp_byte_t keyflags[32];
+		tmcg_openpgp_byte_t keyflags[4];
 		gcry_sexp_t signature;
 		gcry_mpi_t rsa_md;
 		gcry_mpi_t dsa_r;
@@ -280,6 +280,7 @@ class TMCG_OpenPGP_Subkey
 		gcry_sexp_t key;
 		tmcg_openpgp_octets_t packet;
 		tmcg_openpgp_octets_t id;
+		tmcg_openpgp_byte_t flags[4];
 		std::vector<TMCG_OpenPGP_Signature*> selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*> bindsigs;
 		std::vector<TMCG_OpenPGP_Signature*> revsigs;
