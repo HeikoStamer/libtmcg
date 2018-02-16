@@ -3428,7 +3428,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		in.erase(in.begin(), in.begin()+headlen+len); // remove (partial) packet
 		firstlen = false;
 	}
-std::cerr << "tag = " << (int)tag << " len = " << len << std::endl;
+//std::cerr << "tag = " << (int)tag << " len = " << len << std::endl;
 	tmcg_openpgp_byte_t sptype = 0xFF;
 	tmcg_openpgp_octets_t hspd, uspd, mpis;
 	size_t mlen = 0;
@@ -3526,15 +3526,10 @@ std::cerr << "tag = " << (int)tag << " len = " << len << std::endl;
 				// If a subpacket is not hashed, then the information
 				// in it cannot be considered definitive because it 
 				// is not part of the signature proper.
-std::cerr << "U = " << uspd.size() << std::endl;
-for (size_t i = 0; i < uspd.size(); i++)
-std::cerr << (int)uspd[i] << " ";
-std::cerr << std::endl;
 				tmcg_openpgp_packet_ctx_t untrusted;
 				while (uspd.size() && sptype)
                 		{
 					sptype = SubpacketDecode(uspd, untrusted);
-std::cerr << "A5 = " << (int)sptype << std::endl;
 					if (sptype == 0)
 						return 0; // error: incorrect subpacket
 					if (sptype == 16) // copy the issuer of this signature
@@ -3545,13 +3540,8 @@ std::cerr << "A5 = " << (int)sptype << std::endl;
 					if (sptype == 32) // copy an embedded signature packet
 					{
 						out.embeddedsignaturelen = untrusted.embeddedsignaturelen;
-std::cerr << "E = " << untrusted.embeddedsignaturelen << std::endl;
 						for (size_t i = 0; i < untrusted.embeddedsignaturelen; i++)
-{
-std::cerr << (int)untrusted.embeddedsignature[i] << " ";
 							out.embeddedsignature[i] = untrusted.embeddedsignature[i];
-}
-std::cerr << std::endl;
 					}
 				}
 				if (pkt.size() < (10 + hspdlen + uspdlen))
