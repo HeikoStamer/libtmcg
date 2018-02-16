@@ -3381,8 +3381,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	tmcg_openpgp_byte_t tag = in[0];
 	tmcg_openpgp_byte_t lentype = 0x00;
 	current_packet.push_back(tag); // store packet header
-//	if ((tag & 0x80) != 0x80)
-//		return 0; // error: Bit 7 of first octet not set
+	if ((tag & 0x80) != 0x80)
+		return 0; // error: Bit 7 of first octet not set
 	if ((tag & 0x40) == 0x40)
 	{
 		out.newformat = true;
@@ -3393,7 +3393,6 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		out.newformat = false;
 		lentype = tag & 0x03; // Bits 1-0 -- length-type
 		tag = (tag >> 2) & 0x1F; // Bits 5-2 -- packet tag
-std::cerr << "lentype = " << (int)lentype << std::endl;
 	}
 	in.erase(in.begin(), in.begin()+1); // remove first octet
 	// Each Partial Body Length header is followed by a portion of the
@@ -5408,9 +5407,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 							// 0x19 signature made by the signing subkey on the primary key
 							// and subkey.
 std::cerr << "BIND=" << (int)ctx.type << std::endl;
-							if (ctx.embeddedsignature[0])
+							if (ctx.embeddedsignaturelen)
 							{
-std::cerr << "EMB " << ctx.embeddedsignaturelen << std::endl;
+								PacketTagEncode(2, extra_pkt);
+								PacketLengthEncode(ctx.embeddedsignaturelen, extra_pkt);
 								for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
 									extra_pkt.push_back(ctx.embeddedsignature[i]);
 							}
