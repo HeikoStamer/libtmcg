@@ -138,6 +138,7 @@
 		tmcg_openpgp_byte_t signaturetarget_hashalgo; // id of hash algorithm
 		tmcg_openpgp_byte_t signaturetarget_hash[2048]; // n-octets hash
 		tmcg_openpgp_byte_t embeddedsignature[8192]; // signature packet body
+		size_t embeddedsignaturelen;
 		tmcg_openpgp_byte_t left[2];
 		gcry_mpi_t md;
 		gcry_mpi_t r;

@@ -3325,6 +3325,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 		case 32: // Embedded Signature
 			if (pkt.size() > sizeof(out.embeddedsignature))
 				return 0; // error: too long subpacket body
+			out.embeddedsignaturelen = pkt.size();
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.embeddedsignature[i] = pkt[i]; 
 			break;
@@ -3366,11 +3367,22 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	out.revocable = true;
 	if (in.size() < 2)
 		return 0; // error: incorrect packet header
+	// The first octet of the packet header is called the "Packet
+	// Tag". It determines the format of the header and denotes the
+	// packet contents. The remainder of the packet header is the
+	// length of the packet.
+	// Note that the most significant bit is the leftmost bit, called
+	// bit 7. A mask for this bit is 0x80 in hexadecimal.
+	//      +---------------+
+	// PTag |7 6 5 4 3 2 1 0|
+	//      +---------------+
+	// Bit 7 -- Always one
+	// Bit 6 -- New packet format if set
 	tmcg_openpgp_byte_t tag = in[0];
 	tmcg_openpgp_byte_t lentype = 0x00;
 	current_packet.push_back(tag); // store packet header
-	if ((tag & 0x80) != 0x80)
-		return 0; // error: Bit 7 of first octet not set
+//	if ((tag & 0x80) != 0x80)
+//		return 0; // error: Bit 7 of first octet not set
 	if ((tag & 0x40) == 0x40)
 	{
 		out.newformat = true;
@@ -3381,6 +3393,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		out.newformat = false;
 		lentype = tag & 0x03; // Bits 1-0 -- length-type
 		tag = (tag >> 2) & 0x1F; // Bits 5-2 -- packet tag
+std::cerr << "lentype = " << (int)lentype << std::endl;
 	}
 	in.erase(in.begin(), in.begin()+1); // remove first octet
 	// Each Partial Body Length header is followed by a portion of the
@@ -3416,6 +3429,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		in.erase(in.begin(), in.begin()+headlen+len); // remove (partial) packet
 		firstlen = false;
 	}
+std::cerr << "tag = " << (int)tag << " len = " << len << std::endl;
 	tmcg_openpgp_byte_t sptype = 0xFF;
 	tmcg_openpgp_octets_t hspd, uspd, mpis;
 	size_t mlen = 0;
@@ -3513,17 +3527,33 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				// If a subpacket is not hashed, then the information
 				// in it cannot be considered definitive because it 
 				// is not part of the signature proper.
+std::cerr << "U = " << uspd.size() << std::endl;
+for (size_t i = 0; i < uspd.size(); i++)
+std::cerr << (int)uspd[i] << " ";
+std::cerr << std::endl;
 				tmcg_openpgp_packet_ctx_t untrusted;
 				while (uspd.size() && sptype)
                 		{
 					sptype = SubpacketDecode(uspd, untrusted);
+std::cerr << "A5 = " << (int)sptype << std::endl;
 					if (sptype == 0)
 						return 0; // error: incorrect subpacket
-					if (sptype == 16) // copy only the Issuer of signature
+					if (sptype == 16) // copy the issuer of this signature
 					{
 						for (size_t i = 0; i < sizeof(out.issuer); i++)
 							out.issuer[i] = untrusted.issuer[i];
-					}					
+					}
+					if (sptype == 32) // copy an embedded signature packet
+					{
+						out.embeddedsignaturelen = untrusted.embeddedsignaturelen;
+std::cerr << "E = " << untrusted.embeddedsignaturelen << std::endl;
+						for (size_t i = 0; i < untrusted.embeddedsignaturelen; i++)
+{
+std::cerr << (int)untrusted.embeddedsignature[i] << " ";
+							out.embeddedsignature[i] = untrusted.embeddedsignature[i];
+}
+std::cerr << std::endl;
+					}
 				}
 				if (pkt.size() < (10 + hspdlen + uspdlen))
 					return 0; // error: packet too short
@@ -5362,21 +5392,49 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					{
 						if ((ctx.type == 0x18) || (ctx.type == 0x19))
 						{
+							// 0x18: Subkey Binding Signature
+							// This signature is a statement by the top-level signing key that
+							// indicates that it owns the subkey. This signature is calculated
+							// directly on the primary key and subkey, and not on any User ID or
+							// other packets.
+							// 0x19: Primary Key Binding Signature
+							// This signature is a statement by a signing subkey, indicating
+							// that it is owned by the primary key and subkey. This signature
+							// is calculated the same way as a 0x18 signature: directly on the
+							// primary key and subkey, and not on any User ID or other packets.
 							sub->bindsigs.push_back(sig); // Subkey binding signature for this subkey
 							// A signature that binds a signing subkey MUST have an Embedded
 							// Signature subpacket in this binding signature that contains a
 							// 0x19 signature made by the signing subkey on the primary key
 							// and subkey.
+std::cerr << "BIND=" << (int)ctx.type << std::endl;
 							if (ctx.embeddedsignature[0])
 							{
-								for (size_t i = 0; i < sizeof(ctx.embeddedsignature); i++)
+std::cerr << "EMB " << ctx.embeddedsignaturelen << std::endl;
+								for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
 									extra_pkt.push_back(ctx.embeddedsignature[i]);
 							}
 						}
 						else if (ctx.type == 0x1F)
+						{
+							// 0x1F: Signature directly on a key
+							// This signature is calculated directly on a key. It binds the
+							// information in the Signature subpackets to the key, and is
+							// appropriate to be used for subpackets that provide information
+							// about the key, such as the Revocation Key subpacket. It is also
+							// appropriate for statements that non-self certifiers want to make
+							// about the key itself, rather than the binding between a key and a
+							// name.
 							sub->selfsigs.push_back(sig); // Signature directly on a key for this subkey
+						}
 						else if (ctx.type == 0x28)
 						{
+							// 0x28: Subkey revocation signature
+							// The signature is calculated directly on the subkey being revoked.
+							// A revoked subkey is not to be used. Only revocation signatures
+							// by the top-level signature key that is bound to this subkey, or
+							// by an authorized revocation key, should be considered valid
+							// revocation signatures.
 							sub->revsigs.push_back(sig); // Subkey revocation signature for this subkey
 							if (verbose)
 								std::cerr << "WARNING: key revocation signature on subkey" << std::endl;
@@ -5624,7 +5682,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 				if (verbose)
 					std::cerr << "WARNING: user attribute packet found; ignored" << std::endl;
 				if (uid_flag)
+				{
 					pub->userids.push_back(uid);
+					uid = NULL;
+				}
 				uid_flag = false, uat_flag = true;
 				break;
 			default:
