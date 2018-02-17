@@ -441,7 +441,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (elg (p %M) (g %M) (y %M)))", p, g, y);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t sub, sub_hashing;
+	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in, pkalgo_in, p, p, g, y, sub);
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
@@ -468,7 +468,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", p, q, g, y);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t sub, sub_hashing;
+	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in, pkalgo_in, p, q, g, y, sub);
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
@@ -482,10 +482,91 @@ bool TMCG_OpenPGP_Subkey::good
 }
 
 bool TMCG_OpenPGP_Subkey::Check
-	(const int verbose)
+	(const gcry_sexp_t primarykey,
+	 const int verbose)
 {
-	// TODO: check whether a revocation exists
+	// check whether a valid revocation signature exists
 	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
+	for (size_t j = 0; j < revsigs.size(); j++)
+	{	
+		if (verbose > 2)
+			std::cout << "INFO: sigtype = 0x" << std::hex << (int)revsigs[j]->type << std::dec << 
+				" pkalgo = " << (int)revsigs[j]->pkalgo <<
+				" hashalgo = " << (int)revsigs[j]->hashalgo <<
+				" version = " << (int)revsigs[j]->version <<
+				" creationtime = " << revsigs[j]->creationtime <<
+				" expirationtime = " << revsigs[j]->expirationtime <<
+				" keyexpirationtime = " << revsigs[j]->keyexpirationtime <<
+				" packet.size() = " << revsigs[j]->packet.size() <<
+				" hspd.size() = " << revsigs[j]->hspd.size() << std::endl;
+		// check basic properties of the revocation signature
+		time_t smax = revsigs[j]->creationtime + revsigs[j]->expirationtime;
+		if (verbose && revsigs[j]->expirationtime && (time(NULL) > smax))
+		{
+			std::cerr << "WARNING: revocation signature has been expired; ignored" << std::endl;
+			continue;
+		}
+		if (verbose && (revsigs[j]->creationtime < creationtime))
+		{
+			std::cerr << "WARNING: revocation signature is older than subkey; ignored" << std::endl;
+			continue;
+		}
+		if (verbose && ((revsigs[j]->hashalgo < 8) || (revsigs[j]->hashalgo >= 11)))
+		{
+			std::cerr << "WARNING: insecure hash algorithm " << (int)revsigs[j]->hashalgo << " used for revocation signature" << std::endl;
+// TODO: update key strength
+		}
+		// check the revocation signature cryptographically
+		tmcg_openpgp_octets_t trailer, left, hash;
+		if (revsigs[j]->version == 3)
+		{
+			tmcg_openpgp_octets_t sigtime_octets;
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode(revsigs[j]->creationtime, sigtime_octets);
+			// The concatenation of the data to be signed, the signature type, and
+			// creation time from the Signature packet (5 additional octets) is
+			// hashed. The resulting hash value is used in the signature algorithm.
+			// The high 16 bits (first two octets) of the hash are included in the
+			// Signature packet to provide a quick test to reject some invalid
+			// signatures.
+			// A V3 signature hashes five octets of the packet body, starting from
+			// the signature type field. This data is the signature type, followed
+			// by the four-octet signature time.
+			trailer.push_back(revsigs[j]->type);
+			trailer.insert(trailer.end(), sigtime_octets.begin(), sigtime_octets.end());
+			CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHashV3(sub_hashing,
+					trailer, revsigs[j]->hashalgo, hash, left);
+		}
+		else if (revsigs[j]->version == 4)
+		{
+			trailer.push_back(4); // only V4 format supported
+			trailer.push_back(revsigs[j]->type);
+			trailer.push_back(revsigs[j]->pkalgo);
+			trailer.push_back(revsigs[j]->hashalgo);
+			trailer.push_back(revsigs[j]->hspd.size() >> 8); // length of hashed subpacket data
+			trailer.push_back(revsigs[j]->hspd.size());
+			trailer.insert(trailer.end(), revsigs[j]->hspd.begin(), revsigs[j]->hspd.end());
+			CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash(sub_hashing,
+				trailer, revsigs[j]->hashalgo, hash, left);
+		}
+		else
+			continue;
+		if (verbose > 2)
+			std::cout << "INFO: left = " << std::hex << (int)left[0] << " " << (int)left[1] << std::dec << std::endl;
+		gcry_error_t vret = revsigs[j]->verify(hash, primarykey);
+		if (vret)
+		{
+			if (verbose)
+				std::cerr << "WARNING: verification of revocation signature failed (rc = " << gcry_err_code(vret) <<
+					", str = " << gcry_strerror(vret) << ")" << std::endl;
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "ERROR: valid revocation signature found for subkey" << std::endl;
+			valid = false;
+			return false;
+		}
+	}
 
 	// TODO: check whether all selfsigs are valid
 	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
@@ -675,12 +756,12 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		time_t smax = selfsigs[j]->creationtime + selfsigs[j]->expirationtime;
 		if (verbose && selfsigs[j]->expirationtime && (time(NULL) > smax))
 		{
-			std::cerr << "WARNING: self-signature has been expired" << std::endl;
+			std::cerr << "WARNING: self-signature has been expired; ignored" << std::endl;
 			continue;
 		}
 		if (verbose && (selfsigs[j]->creationtime < creationtime))
 		{
-			std::cerr << "WARNING: self-signature is older than primary key" << std::endl;
+			std::cerr << "WARNING: self-signature is older than primary key; ignored" << std::endl;
 			continue;
 		}
 		if (verbose && ((selfsigs[j]->hashalgo < 8) || (selfsigs[j]->hashalgo >= 11)))
@@ -839,7 +920,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		{
 			one_valid_uid = true;
 			if (verbose > 1)
-				std::cout << "INFO: user ID is valid" << std::endl;			
+				std::cout << "INFO: user ID is valid" << std::endl;
 			for (size_t j = 0; j < userids[i]->selfsigs.size(); j++)
 			{
 				if (userids[i]->selfsigs[j]->valid)
@@ -848,7 +929,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 					UpdateProperties(userids[i]->selfsigs[j], verbose);
 				}
 				else
-					std::cerr << "WARNING: self-signature on this user ID is NOT valid" << std::endl;
+					std::cerr << "WARNING: one self-signature on this user ID is NOT valid" << std::endl;
 			}
 		}
 		else if (verbose > 1)
@@ -905,11 +986,54 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 bool TMCG_OpenPGP_Pubkey::CheckSubkeys
 	(const int verbose)
 {
+	bool one_valid_sub = false;
 	for (size_t i = 0; i < subkeys.size(); i++)
 	{
-		// TODO
+		if (verbose > 1)
+		{
+			std::cout << "INFO: key ID of subkey: " << std::hex;
+			for (size_t ii = 0; ii < subkeys[i]->id.size(); ii++)
+				std::cout << (int)subkeys[i]->id[ii] << " ";
+			std::cout << std::dec << std::endl;
+		}
+		if (subkeys[i]->Check(key, verbose))
+		{
+			one_valid_sub = true;
+			if (verbose > 1)
+				std::cout << "INFO: subkey is valid" << std::endl;
+			// print accumulated key flags of the primary key
+			size_t allflags = 0;
+			for (size_t ii = 0; ii < subkeys[i]->flags.size(); ii++)
+			{
+				if (subkeys[i]->flags[ii])
+					allflags = (allflags << 8) + subkeys[i]->flags[ii];
+				else
+					break;
+			}
+			if (verbose > 1)
+			{
+				std::cout << "INFO: key flags on subkey are ";
+				if ((allflags & 0x01) == 0x01)
+					std::cout << "C"; // The key may be used to certify other keys.
+				if ((allflags & 0x02) == 0x02)
+					std::cout << "S"; // The key may be used to sign data.
+				if ((allflags & 0x04) == 0x04)
+					std::cout << "E"; // The key may be used encrypt communications.
+				if ((allflags & 0x08) == 0x08)
+					std::cout << "e"; // The key may be used encrypt storage.
+				if ((allflags & 0x10) == 0x10)
+					std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
+				if ((allflags & 0x20) == 0x20)
+					std::cout << "A"; // The key may be used for authentication.
+				if ((allflags & 0x80) == 0x80)
+					std::cout << "G"; // The private component of this key may be in the possession of more than one person.
+				std::cout << std::endl;
+			}
+		}
+		else if (verbose > 1)
+			std::cout << "INFO: subkey is NOT valid" << std::endl;
 	}
-	return true;
+	return one_valid_sub;
 }
 
 void TMCG_OpenPGP_Pubkey::Reduce

@@ -298,6 +298,7 @@ class TMCG_OpenPGP_Subkey
 		time_t expirationtime;
 		gcry_sexp_t key;
 		tmcg_openpgp_octets_t packet;
+		tmcg_openpgp_octets_t sub_hashing;
 		tmcg_openpgp_octets_t id;
 		tmcg_openpgp_octets_t flags;
 		std::vector<TMCG_OpenPGP_Signature*> selfsigs;
@@ -331,7 +332,8 @@ class TMCG_OpenPGP_Subkey
 		bool good
 			() const;
 		bool Check
-			(const int verbose);
+			(const gcry_sexp_t key,
+			 const int verbose);
 		~TMCG_OpenPGP_Subkey
 			();
 };
