@@ -3343,7 +3343,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			for (size_t i = 0; i < 8; i++)
 				out.issuer[i] = pkt[i];
 			break;
-		case 20: // Notation Data -- not implemented; ignore subpacket
+		case 20: // Notation Data
 			{
 			bool notation_human_readable = false;
 			if (pkt.size() < 8)
@@ -3458,8 +3458,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 		case 108:
 		case 109:
 		case 110:
+			type = 0xFE; // subpacket not recognized
 			break;
 		default: // unknown subpacket type; ignore
+			type = 0xFE; // subpacket not recognized
 			break; 
 	}
 	in.erase(in.begin(), in.begin()+headlen+len); // remove subpacket
@@ -3633,6 +3635,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					sptype = SubpacketDecode(hspd, out);
 					if (sptype == 0)
 						return 0; // error: incorrect subpacket
+					if (out.critical && (sptype == 0xFE))
+						return 0xFE; // warning: critical subpacket
 				}
 				if (pkt.size() < (8 + hspdlen))
 					return 0; // error: packet too short
