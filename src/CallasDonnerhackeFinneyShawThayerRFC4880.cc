@@ -486,7 +486,7 @@ bool TMCG_OpenPGP_Subkey::Check
 	 const tmcg_openpgp_octets_t &pub_hashing,
 	 const int verbose)
 {
-	// check whether a valid revocation signature exists
+	// check whether a valid revocation signature exists for this subkey
 	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < revsigs.size(); j++)
 	{	
@@ -566,12 +566,11 @@ bool TMCG_OpenPGP_Subkey::Check
 		else
 		{
 			if (verbose)
-				std::cerr << "ERROR: valid revocation signature found for subkey" << std::endl;
+				std::cerr << "WARNING: valid revocation signature found for subkey" << std::endl;
 			valid = false;
 			return false;
 		}
 	}
-
 	// TODO: check whether all selfsigs are valid
 	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t i = 0; i < selfsigs.size(); i++)
@@ -738,6 +737,10 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 	// print statistics of primary key
 	if (verbose > 1)
 	{
+		std::cout << "INFO: key ID of primary key: " << std::hex;
+		for (size_t i = 0; i < id.size(); i++)
+			std::cout << (int)id[i] << " ";
+		std::cout << std::dec << std::endl;
 		std::cout << "INFO: number of selfsigs = " << selfsigs.size() << std::endl;
 		std::cout << "INFO: number of revsigs = " << revsigs.size() << std::endl;
 		std::cout << "INFO: number of userids = " << userids.size() << std::endl;
@@ -3474,20 +3477,25 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				out.issuer[i] = pkt[i];
 			break;
 		case 20: // Notation Data
-			{
-			bool notation_human_readable = false;
+			out.notation_human_readable = false;
 			if (pkt.size() < 8)
 				return 0; // error: incorrect subpacket body
 			if (pkt[0] == 0x80) // First octet: 0x80=human-readable
-				notation_human_readable = true;
+				out.notation_human_readable = true;
 			else
 				return 0; // error: undefined notation flag
-			size_t notation_name_length = (pkt[4] << 8) + pkt[5];
-			size_t notation_value_length = (pkt[6] << 8) + pkt[7];
-			if (pkt.size() != (notation_name_length + notation_value_length + 8))
+			out.notation_name_length = (pkt[4] << 8) + pkt[5];
+			out.notation_value_length = (pkt[6] << 8) + pkt[7];
+			if (pkt.size() != (out.notation_name_length + out.notation_value_length + 8))
 				return 0; // error: incorrect length
-			// TODO: store notation data in a given container
-			}
+			if (out.notation_name_length > sizeof(out.notation_name))
+				return 0; // error: too long notation name
+			if (out.notation_value_length > sizeof(out.notation_value))
+				return 0; // error: too long notation name
+			for (size_t i = 0; i < out.notation_name_length; i++)
+				out.notation_name[i] = pkt[8+i];
+			for (size_t i = 0; i < out.notation_value_length; i++)
+				out.notation_value[i] = pkt[8+i+out.notation_name_length];
 			break;
 		case 21: // Preferred Hash Algorithms
 			if (pkt.size() > sizeof(out.pha))

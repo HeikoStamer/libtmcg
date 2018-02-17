@@ -112,6 +112,11 @@
 		bool critical;
 		uint32_t sigcreationtime;
 		tmcg_openpgp_byte_t issuer[8]; // key ID
+		bool notation_human_readable;
+		size_t notation_name_length;
+		tmcg_openpgp_byte_t notation_name[2048];
+		size_t notation_value_length;
+		tmcg_openpgp_byte_t notation_value[2048];
 		uint32_t keyexpirationtime;
 		size_t psalen;
 		tmcg_openpgp_byte_t psa[32]; // array of 1-octet flags
