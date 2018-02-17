@@ -333,6 +333,7 @@ class TMCG_OpenPGP_Subkey
 			() const;
 		bool Check
 			(const gcry_sexp_t key,
+			 const tmcg_openpgp_octets_t &pub_hashing,
 			 const int verbose);
 		~TMCG_OpenPGP_Subkey
 			();

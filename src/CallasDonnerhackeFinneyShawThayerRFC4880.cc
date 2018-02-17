@@ -415,7 +415,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (rsa (n %M) (e %M)))", n, e);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t sub, sub_hashing;
+	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in, pkalgo_in, n, e, e, e, sub);
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
@@ -483,6 +483,7 @@ bool TMCG_OpenPGP_Subkey::good
 
 bool TMCG_OpenPGP_Subkey::Check
 	(const gcry_sexp_t primarykey,
+	 const tmcg_openpgp_octets_t &pub_hashing,
 	 const int verbose)
 {
 	// check whether a valid revocation signature exists
@@ -517,6 +518,9 @@ bool TMCG_OpenPGP_Subkey::Check
 // TODO: update key strength
 		}
 		// check the revocation signature cryptographically
+		// RFC 4880 ERRATA
+		// Subkey revocation signature (type 0x28) hash first the primary key and then the
+		// subkey being revoked.
 		tmcg_openpgp_octets_t trailer, left, hash;
 		if (revsigs[j]->version == 3)
 		{
@@ -533,7 +537,7 @@ bool TMCG_OpenPGP_Subkey::Check
 			// by the four-octet signature time.
 			trailer.push_back(revsigs[j]->type);
 			trailer.insert(trailer.end(), sigtime_octets.begin(), sigtime_octets.end());
-			CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHashV3(sub_hashing,
+			CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHashV3(pub_hashing, sub_hashing,
 					trailer, revsigs[j]->hashalgo, hash, left);
 		}
 		else if (revsigs[j]->version == 4)
@@ -545,7 +549,7 @@ bool TMCG_OpenPGP_Subkey::Check
 			trailer.push_back(revsigs[j]->hspd.size() >> 8); // length of hashed subpacket data
 			trailer.push_back(revsigs[j]->hspd.size());
 			trailer.insert(trailer.end(), revsigs[j]->hspd.begin(), revsigs[j]->hspd.end());
-			CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash(sub_hashing,
+			CallasDonnerhackeFinneyShawThayerRFC4880::KeyRevocationHash(pub_hashing, sub_hashing,
 				trailer, revsigs[j]->hashalgo, hash, left);
 		}
 		else
@@ -590,6 +594,7 @@ TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
 	if (!ret)
 		gcry_sexp_release(key);
 	packet.clear();
+	sub_hashing.clear();
 	id.clear();
 	flags.clear();
 	for (size_t i = 0; i < selfsigs.size(); i++)
@@ -996,7 +1001,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSubkeys
 				std::cout << (int)subkeys[i]->id[ii] << " ";
 			std::cout << std::dec << std::endl;
 		}
-		if (subkeys[i]->Check(key, verbose))
+		if (subkeys[i]->Check(key, pub_hashing, verbose))
 		{
 			one_valid_sub = true;
 			if (verbose > 1)
@@ -1063,6 +1068,7 @@ TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
 	if (!ret)
 		gcry_sexp_release(key);
 	packet.clear();
+	pub_hashing.clear();
 	id.clear();
 	flags.clear();
 	features.clear();
