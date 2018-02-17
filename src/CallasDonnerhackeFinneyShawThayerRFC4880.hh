@@ -113,8 +113,11 @@
 		uint32_t sigcreationtime;
 		tmcg_openpgp_byte_t issuer[8]; // key ID
 		uint32_t keyexpirationtime;
+		size_t psalen;
 		tmcg_openpgp_byte_t psa[32]; // array of 1-octet flags
+		size_t phalen;
 		tmcg_openpgp_byte_t pha[32]; // array of 1-octet flags
+		size_t pcalen;
 		tmcg_openpgp_byte_t pca[32]; // array of 1-octet flags
 		uint32_t sigexpirationtime;
 		bool exportablecertification;
@@ -129,10 +132,12 @@
 		tmcg_openpgp_byte_t preferedkeyserver[2048]; // string
 		bool primaryuserid;
 		tmcg_openpgp_byte_t policyuri[2048]; // string
+		size_t keyflagslen;
 		tmcg_openpgp_byte_t keyflags[32]; // n-octets of flags
 		tmcg_openpgp_byte_t signersuserid[2048]; // string
 		tmcg_openpgp_byte_t revocationcode;
 		tmcg_openpgp_byte_t revocationreason[2048]; // string
+		size_t featureslen;
 		tmcg_openpgp_byte_t features[32]; // n-octets of flags
 		tmcg_openpgp_byte_t signaturetarget_pkalgo; // id of public-key algorithm
 		tmcg_openpgp_byte_t signaturetarget_hashalgo; // id of hash algorithm
@@ -199,7 +204,6 @@ class TMCG_OpenPGP_Signature
 		time_t creationtime;
 		time_t expirationtime;
 		time_t keyexpirationtime;
-		tmcg_openpgp_byte_t keyflags[4];
 		gcry_sexp_t signature;
 		gcry_mpi_t rsa_md;
 		gcry_mpi_t dsa_r;
@@ -207,6 +211,7 @@ class TMCG_OpenPGP_Signature
 		tmcg_openpgp_octets_t packet;
 		tmcg_openpgp_octets_t hspd;
 		tmcg_openpgp_octets_t issuer;
+		tmcg_openpgp_octets_t keyflags;
 		tmcg_openpgp_octets_t keyfeatures;
 		tmcg_openpgp_octets_t keypreferences_psa;
 		tmcg_openpgp_octets_t keypreferences_pha;
@@ -220,11 +225,11 @@ class TMCG_OpenPGP_Signature
 			 const time_t creationtime_in,
 			 const time_t expirationtime_in,
 			 const time_t keyexpirationtime_in,
-			 const tmcg_openpgp_byte_t* keyflags_in,
 			 const gcry_mpi_t md,
 			 const tmcg_openpgp_octets_t &packet_in,
 			 const tmcg_openpgp_octets_t &hspd_in,
 			 const tmcg_openpgp_octets_t &issuer_in,
+			 const tmcg_openpgp_octets_t &keyflags_in,
 			 const tmcg_openpgp_octets_t &keyfeatures_in,
 			 const tmcg_openpgp_octets_t &keypreferences_psa_in,
 			 const tmcg_openpgp_octets_t &keypreferences_pha_in,
@@ -237,12 +242,12 @@ class TMCG_OpenPGP_Signature
 			 const time_t creationtime_in,
 			 const time_t expirationtime_in,
 			 const time_t keyexpirationtime_in,
-			 const tmcg_openpgp_byte_t* keyflags_in,
 			 const gcry_mpi_t r,
 			 const gcry_mpi_t s,
 			 const tmcg_openpgp_octets_t &packet_in,
 			 const tmcg_openpgp_octets_t &hspd_in,
 			 const tmcg_openpgp_octets_t &issuer_in,
+			 const tmcg_openpgp_octets_t &keyflags_in,
 			 const tmcg_openpgp_octets_t &keyfeatures_in,
 			 const tmcg_openpgp_octets_t &keypreferences_psa_in,
 			 const tmcg_openpgp_octets_t &keypreferences_pha_in,
@@ -294,7 +299,7 @@ class TMCG_OpenPGP_Subkey
 		gcry_sexp_t key;
 		tmcg_openpgp_octets_t packet;
 		tmcg_openpgp_octets_t id;
-		tmcg_openpgp_byte_t flags[4];
+		tmcg_openpgp_octets_t flags;
 		std::vector<TMCG_OpenPGP_Signature*> selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*> bindsigs;
 		std::vector<TMCG_OpenPGP_Signature*> revsigs;
@@ -346,7 +351,7 @@ class TMCG_OpenPGP_Pubkey
 		tmcg_openpgp_octets_t packet;
 		tmcg_openpgp_octets_t pub_hashing;
 		tmcg_openpgp_octets_t id;
-		tmcg_openpgp_byte_t flags[32];
+		tmcg_openpgp_octets_t flags;
 		tmcg_openpgp_octets_t features;
 		tmcg_openpgp_octets_t psa;
 		tmcg_openpgp_octets_t pha;
