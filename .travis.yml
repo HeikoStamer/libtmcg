@@ -1,0 +1,14 @@
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y libgcrypt-dev
+  - sudo apt-get install -y libgmp-dev
+  - sudo apt-get install -y autoconf
+  - sudo apt-get install -y automake
+  - sudo apt-get install -y libtool
+  - sudo apt-get install -y texinfo
+language: cpp
+compiler:
+  - clang
+  - gcc
+script: autoreconf -v -i -f && ./configure && make && make check
+
