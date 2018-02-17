@@ -133,6 +133,12 @@ gcry_error_t TMCG_OpenPGP_Signature::verify
 	return vret;
 }
 
+bool TMCG_OpenPGP_Signature::operator <
+	(const TMCG_OpenPGP_Signature &that) const
+{
+	return (creationtime < that.creationtime);
+}
+
 TMCG_OpenPGP_Signature::~TMCG_OpenPGP_Signature
 	()
 {
@@ -143,6 +149,12 @@ TMCG_OpenPGP_Signature::~TMCG_OpenPGP_Signature
 		gcry_sexp_release(signature);
 	packet.clear();
 	hspd.clear();
+}
+
+bool TMCG_OpenPGP_Signature_Compare
+	(TMCG_OpenPGP_Signature *sigf, TMCG_OpenPGP_Signature *sigs)
+{
+	return (*sigf < *sigs);
 }
 
 // ===========================================================================
@@ -163,6 +175,7 @@ bool TMCG_OpenPGP_UserID::Check
 	 const tmcg_openpgp_octets_t &pub_hashing)
 {
 	bool one_valid_selfsig = false;
+	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
 	{	
 		if (verbose > 2)
@@ -249,6 +262,7 @@ bool TMCG_OpenPGP_UserID::Check
 			one_valid_selfsig = true;
 		}
 	}
+	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < revsigs.size(); j++)
 	{
 		if (verbose > 2)
@@ -457,13 +471,16 @@ bool TMCG_OpenPGP_Subkey::Check
 	(const int verbose)
 {
 	// TODO: check whether a revocation exists
+	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
 
 	// TODO: check whether all selfsigs are valid
+	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t i = 0; i < selfsigs.size(); i++)
 	{
 	}
 
 	// TODO: check whether there is (at least one) valid subkey binding sig
+	std::sort(bindsigs.begin(), bindsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t i = 0; i < bindsigs.size(); i++)
 	{
 	}
@@ -566,6 +583,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		std::cout << "INFO: number of subkeys = " << subkeys.size() << std::endl;
 	}
 	// check self-signatures and revocation signatures of primary key
+	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
 	{
 		if (verbose > 2)
@@ -654,6 +672,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 // TODO: update key strength
 		}
 	}
+	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < revsigs.size(); j++)
 	{	
 		if (verbose > 2)
@@ -749,15 +768,24 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			one_valid_uid = true;
 			if (verbose > 1)
 				std::cout << "INFO: user ID is valid" << std::endl;			
-			for (size_t j = 0; j < selfsigs.size(); j++)
+			for (size_t j = 0; j < userids[i]->selfsigs.size(); j++)
 			{
 				if (userids[i]->selfsigs[j]->valid)
 				{
 					// update expiration time, key flags, and other infos from hashed subpacket area
-					if (userids[i]->selfsigs[j]->keyexpirationtime > expirationtime)
-						expirationtime = userids[i]->selfsigs[j]->keyexpirationtime;
+					expirationtime = userids[i]->selfsigs[j]->keyexpirationtime;
+					if (verbose > 1)
+						std::cout << "INFO: update expirationtime to " << expirationtime << std::endl;
+					if (verbose > 1)
+						std::cout << "INFO: update flags to " << std::hex;				
 					for (size_t ii = 0; (ii < sizeof(flags)) && (ii < sizeof(userids[i]->selfsigs[j]->keyflags)); ii++)
-						flags[ii] |= userids[i]->selfsigs[j]->keyflags[ii];
+					{
+						flags[ii] = userids[i]->selfsigs[j]->keyflags[ii];
+						if (verbose > 1)
+							std::cout << (int)flags[ii] << " ";
+					}
+					if (verbose > 1)
+						std::cout << std::dec << std::endl;
 				}
 				else
 					std::cerr << "WARNING: self-signature on this user ID is NOT valid" << std::endl;

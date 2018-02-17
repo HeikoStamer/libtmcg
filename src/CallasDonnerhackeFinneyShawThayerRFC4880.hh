@@ -200,6 +200,7 @@ class TMCG_OpenPGP_Signature
 		time_t expirationtime;
 		time_t keyexpirationtime;
 		tmcg_openpgp_byte_t keyflags[4];
+// TODO: keyfeatures, keypreferences
 		gcry_sexp_t signature;
 		gcry_mpi_t rsa_md;
 		gcry_mpi_t dsa_r;
@@ -240,6 +241,8 @@ class TMCG_OpenPGP_Signature
 		gcry_error_t verify
 			(const tmcg_openpgp_octets_t &hash,
 			 const gcry_sexp_t key);
+		bool operator <
+			(const TMCG_OpenPGP_Signature &that) const;
 		~TMCG_OpenPGP_Signature
 			();
 };
