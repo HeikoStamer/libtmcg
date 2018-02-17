@@ -306,6 +306,10 @@ class TMCG_OpenPGP_Subkey
 		tmcg_openpgp_octets_t sub_hashing;
 		tmcg_openpgp_octets_t id;
 		tmcg_openpgp_octets_t flags;
+		tmcg_openpgp_octets_t features;
+		tmcg_openpgp_octets_t psa;
+		tmcg_openpgp_octets_t pha;
+		tmcg_openpgp_octets_t pca;
 		std::vector<TMCG_OpenPGP_Signature*> selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*> bindsigs;
 		std::vector<TMCG_OpenPGP_Signature*> revsigs;
@@ -336,9 +340,13 @@ class TMCG_OpenPGP_Subkey
 			 const tmcg_openpgp_octets_t &packet_in);
 		bool good
 			() const;
+		void UpdateProperties
+			(const TMCG_OpenPGP_Signature *sig,
+			 const int verbose);
 		bool Check
 			(const gcry_sexp_t key,
 			 const tmcg_openpgp_octets_t &pub_hashing,
+			 const tmcg_openpgp_octets_t &pub_id,
 			 const int verbose);
 		~TMCG_OpenPGP_Subkey
 			();
