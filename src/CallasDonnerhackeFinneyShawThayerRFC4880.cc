@@ -5904,8 +5904,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 						if (verbose)
 							std::cerr << "ERROR: parsing subkey material failed" << std::endl;
 						ReleasePacketContext(ctx);
-						if (sub)
-							delete sub;
+						delete sub;
 						if (uid)
 							delete uid;
 						return false;
