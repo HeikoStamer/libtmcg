@@ -788,18 +788,66 @@ bool TMCG_OpenPGP_Subkey::Check
 		else if (verbose)
 			std::cerr << "WARNING: invalid revocation signature found for subkey" << std::endl;
 	}
-
-
-	// TODO: check whether there is (at least one) valid subkey binding sig
+	// check whether there is (at least one) valid subkey binding signature
+	bool one_valid_bind = false, one_valid_pbind = false;
 	std::sort(bindsigs.begin(), bindsigs.end(), TMCG_OpenPGP_Signature_Compare);
-	for (size_t i = 0; i < bindsigs.size(); i++)
+	for (size_t j = 0; j < bindsigs.size(); j++)
 	{
+		// print and check basic properties of the signature
+		if (verbose > 2)
+			bindsigs[j]->PrintInfo();
+		if (!bindsigs[j]->Check(primarykeycreationtime, verbose))
+			continue;
+		if (!bindsigs[j]->Check(creationtime, verbose))
+			continue;
+		// check the binding signature cryptographically
+		if (bindsigs[j]->type == 0x18)
+		{
+			if (bindsigs[j]->Verify(primarykey,
+				pub_hashing, sub_hashing, verbose))
+					one_valid_bind = true;
+			else if (verbose)
+				std::cerr << "ERROR: signature verification failed" << std::endl;
+		}
+		else if (bindsigs[j]->type == 0x19)
+		{
+			if (bindsigs[j]->Verify(key,
+				pub_hashing, sub_hashing, verbose))
+					one_valid_pbind = true;
+			else if (verbose)
+				std::cerr << "ERROR: signature verification failed" << std::endl;
+		}
+		else if (verbose)
+			std::cerr << "WARNING: unknown binding signature of type " << (int)bindsigs[j]->type << std::endl;
 	}
-
-	// TODO: check whether there is a valid primary key binding sig, if subkey is a signing key
-
-	valid = true;
-	return true;
+	// check whether there is a valid primary key binding signature, if subkey is a signing key
+	// update validity state of this key and return the result
+	if (one_valid_bind)
+	{
+		if ((pkalgo == 1) || (pkalgo == 3) || (pkalgo == 17))
+		{
+			if (one_valid_pbind)
+			{
+				valid = true;
+				return true;
+			}
+			else
+			{
+				valid = false;
+				return false;
+			}
+		}
+		else
+		{
+			valid = true;
+			return true;
+		}
+	}
+	else
+	{
+		valid = false;
+		return false;
+	}
 }
 
 TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
