@@ -146,8 +146,7 @@ void TMCG_OpenPGP_Signature::PrintInfo
 	() const
 {
 	std::cout << "INFO: sigtype = 0x" << std::hex << (int)type <<
-		std::dec << 
-		" pkalgo = " << (int)pkalgo <<
+		std::dec << " pkalgo = " << (int)pkalgo <<
 		" hashalgo = " << (int)hashalgo <<
 		" version = " << (int)version <<
 		" creationtime = " << creationtime <<
@@ -194,7 +193,7 @@ bool TMCG_OpenPGP_Signature::Check
 	return true;
 }
 
-// TODO: description from RFC 4880
+// TODO: insert description from RFC 4880
 
 bool TMCG_OpenPGP_Signature::Verify
 	(const gcry_sexp_t key,
@@ -211,14 +210,13 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (version == 3)
 	{
 		tmcg_openpgp_octets_t sigtime_octets;
-		CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode(
-			creationtime, sigtime_octets);
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			PacketTimeEncode(creationtime, sigtime_octets);
 		trailer.push_back(type);
 		trailer.insert(trailer.end(),
 			sigtime_octets.begin(), sigtime_octets.end());
-		CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV3(
-			hashing, trailer, hashalgo,
-			hash, left);
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			KeyHashV3(hashing, trailer, hashalgo, hash, left);
 	}
 	else if (version == 4)
 	{
@@ -229,9 +227,8 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.push_back(hspd.size() >> 8); // length of hspd
 		trailer.push_back(hspd.size());
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
-		CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash(
-			hashing, trailer, hashalgo,
-			hash, left);
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			KeyHash(hashing, trailer, hashalgo, hash, left);
 	}
 	else
 	{
@@ -265,7 +262,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	{
 		if (verbose)
 			std::cerr << "ERROR: verification of signature " <<
-				" failed (rc = " << gcry_err_code(vret) <<
+				"failed (rc = " << gcry_err_code(vret) <<
 				", str = " << gcry_strerror(vret) << ")" <<
 				std::endl;
 		valid = false;
@@ -291,13 +288,13 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (version == 3)
 	{
 		tmcg_openpgp_octets_t sigtime_octets;
-		CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode(
-			creationtime, sigtime_octets);
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			PacketTimeEncode(creationtime, sigtime_octets);
 		trailer.push_back(type);
 		trailer.insert(trailer.end(),
 			sigtime_octets.begin(), sigtime_octets.end());
-		CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV3(
-			pub_hashing, sub_hashing, trailer, hashalgo,
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			KeyHashV3(pub_hashing, sub_hashing, trailer, hashalgo,
 			hash, left);
 	}
 	else if (version == 4)
@@ -309,8 +306,8 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.push_back(hspd.size() >> 8); // length of hspd
 		trailer.push_back(hspd.size());
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
-		CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash(
-			pub_hashing, sub_hashing, trailer, hashalgo,
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			KeyHash(pub_hashing, sub_hashing, trailer, hashalgo, 
 			hash, left);
 	}
 	else
@@ -345,7 +342,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	{
 		if (verbose)
 			std::cerr << "ERROR: verification of signature " <<
-				" failed (rc = " << gcry_err_code(vret) <<
+				"failed (rc = " << gcry_err_code(vret) <<
 				", str = " << gcry_strerror(vret) << ")" <<
 				std::endl;
 		valid = false;
@@ -371,14 +368,14 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (version == 3)
 	{
 		tmcg_openpgp_octets_t sigtime_octets;
-		CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode(
-			creationtime, sigtime_octets);
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			PacketTimeEncode(creationtime, sigtime_octets);
 		trailer.push_back(type);
 		trailer.insert(trailer.end(),
 			sigtime_octets.begin(), sigtime_octets.end());
-		CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV3(
-			pub_hashing, userid, trailer, hashalgo,
-			hash, left);
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			CertificationHashV3(pub_hashing, userid, trailer,
+			hashalgo, hash, left);
 	}
 	else if (version == 4)
 	{
@@ -389,9 +386,9 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.push_back(hspd.size() >> 8); // length of hspd
 		trailer.push_back(hspd.size());
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
-		CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(
-			pub_hashing, userid, trailer, hashalgo,
-			hash, left);	
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			CertificationHash(pub_hashing, userid, trailer,
+			hashalgo, hash, left);	
 	}
 	else
 	{
@@ -425,7 +422,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	{
 		if (verbose)
 			std::cerr << "ERROR: verification of signature " <<
-				" failed (rc = " << gcry_err_code(vret) <<
+				"failed (rc = " << gcry_err_code(vret) <<
 				", str = " << gcry_strerror(vret) << ")" <<
 				std::endl;
 		valid = false;
