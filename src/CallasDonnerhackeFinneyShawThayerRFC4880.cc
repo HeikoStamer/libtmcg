@@ -5356,9 +5356,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key, 
 	 gcry_mpi_t &gk, gcry_mpi_t &myk)
 {
-	tmcg_openpgp_byte_t buffer[2048];
+	char buffer[2048];
 	gcry_sexp_t encryption, data;
-	gcry_mpi_t v;
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
 
@@ -5369,11 +5368,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	memset(buffer, 0, sizeof(buffer));
 	for (size_t i = 0; (i < in.size()) && (i < sizeof(buffer)); i++, buflen++)
 		buffer[i] = in[i];
-	ret = gcry_mpi_scan(&v, GCRYMPI_FMT_USG, buffer, buflen, NULL);
-	if (ret)
-		return ret;
-	ret = gcry_sexp_build(&data, &erroff, "(data (flags pkcs1) (value %M))", v);
-	gcry_mpi_release(v);
+	ret = gcry_sexp_build(&data, &erroff, "(data (flags pkcs1) (value %b))",
+		(int)buflen, buffer);
 	if (ret)
 		return ret;
 	ret = gcry_pk_encrypt(&encryption, data, key);
@@ -5394,9 +5390,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 	(const gcry_mpi_t gk, const gcry_mpi_t myk, const gcry_sexp_t key, 
 	 tmcg_openpgp_octets_t &out)
 {
-	tmcg_openpgp_byte_t buffer[2048];
+	const char *buffer;
 	gcry_sexp_t decryption, data;
-	gcry_mpi_t v;
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
 
@@ -5412,18 +5407,15 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 	gcry_sexp_release(data);
 	if (ret)
 		return ret;
-	v = gcry_sexp_nth_mpi(decryption, 1, GCRYMPI_FMT_USG);
-	gcry_sexp_release(decryption);
-	if (v == NULL)
+	buffer = gcry_sexp_nth_data(decryption, 1, &buflen);
+	if (buffer == NULL)
+	{
+		gcry_sexp_release(decryption);
 		return GPG_ERR_VALUE_NOT_FOUND;
-	memset(buffer, 0, sizeof(buffer));
-	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buffer, sizeof(buffer),
-		&buflen, v);
-	gcry_mpi_release(v);
-	if (ret)
-		return ret;
-	for (size_t i = 0; (i < buflen) && (i < sizeof(buffer)); i++)
+	}
+	for (size_t i = 0; i < buflen; i++)
 		out.push_back(buffer[i]);
+	gcry_sexp_release(decryption);
 
 	return 0;
 }
@@ -5432,9 +5424,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key, 
 	 gcry_mpi_t &r, gcry_mpi_t &s)
 {
-	tmcg_openpgp_byte_t buffer[2048];
+	char buffer[2048];
 	gcry_sexp_t sigdata, signature;
-	gcry_mpi_t q, h;
+	gcry_mpi_t q;
 	unsigned int qbits = 0;
 	gcry_error_t ret;
 	size_t buflen = 0, erroff, trunclen = 0;
@@ -5459,14 +5451,11 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	if ((trunclen * 8) != qbits)
 		return GPG_ERR_BAD_PUBKEY;
 	memset(buffer, 0, sizeof(buffer));
-	for (size_t i = 0; ((i < in.size()) &&
-	                    (i < sizeof(buffer)) && (i < trunclen)); i++, buflen++)
+	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer)) && 
+	                    (i < trunclen)); i++, buflen++)
 		buffer[i] = in[i];
-	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
-	if (ret)
-		return ret;
-	ret = gcry_sexp_build(&sigdata, &erroff, "(data (flags raw) (value %M))", h);
-	gcry_mpi_release(h);
+	ret = gcry_sexp_build(&sigdata, &erroff,
+		"(data (flags raw) (value %b))", (int)buflen, buffer);
 	if (ret)
 		return ret;
 	ret = gcry_pk_sign(&signature, sigdata, key);
@@ -5487,9 +5476,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key, 
 	 const gcry_mpi_t r, const gcry_mpi_t s)
 {
-	tmcg_openpgp_byte_t buffer[2048];
+	char buffer[2048];
 	gcry_sexp_t sigdata, signature;
-	gcry_mpi_t q, h;
+	gcry_mpi_t q;
 	unsigned int qbits = 0;
 	gcry_error_t ret;
 	size_t buflen = 0, erroff, trunclen = 0;
@@ -5514,15 +5503,11 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 	if ((trunclen * 8) != qbits)
 		return GPG_ERR_BAD_PUBKEY;
 	memset(buffer, 0, sizeof(buffer));
-	for (size_t i = 0; ((i < in.size()) &&
-	                    (i < sizeof(buffer)) && (i < trunclen)); i++, buflen++)
+	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer)) &&
+	                    (i < trunclen)); i++, buflen++)
 		buffer[i] = in[i];
-	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
-	if (ret)
-		return ret;
 	ret = gcry_sexp_build(&sigdata, &erroff,
-		"(data (flags raw) (value %M))", h);
-	gcry_mpi_release(h);
+		"(data (flags raw) (value %b))", (int)buflen, buffer);
 	if (ret)
 		return ret;
 	ret = gcry_sexp_build(&signature, &erroff,
@@ -5545,24 +5530,21 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignRSA
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key,
 	 const tmcg_openpgp_byte_t hashalgo, gcry_mpi_t &s)
 {
-	tmcg_openpgp_byte_t buffer[2048];
+	char buffer[2048];
 	gcry_sexp_t sigdata, signature;
-	gcry_mpi_t h;
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
 	std::stringstream sexp;
 	std::string hashname;
 
 	memset(buffer, 0, sizeof(buffer));
-	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer))); i++, buflen++)
+	for (size_t i = 0; ((i < in.size()) && 
+	                    (i < sizeof(buffer))); i++, buflen++)
 		buffer[i] = in[i];
-	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
-	if (ret)
-		return ret;
 	AlgorithmHashGCRYName(hashalgo, hashname);
-	sexp << "(data (flags pkcs1) (hash " << hashname << " %M))";
-	ret = gcry_sexp_build(&sigdata, &erroff, (sexp.str()).c_str(), h);
-	gcry_mpi_release(h);
+	sexp << "(data (flags pkcs1) (hash " << hashname << " %b))";
+	ret = gcry_sexp_build(&sigdata, &erroff, (sexp.str()).c_str(),
+		(int)buflen, buffer);
 	if (ret)
 		return ret;
 	ret = gcry_pk_sign(&signature, sigdata, key);
@@ -5582,9 +5564,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key,
 	 const tmcg_openpgp_byte_t hashalgo, const gcry_mpi_t s)
 {
-	tmcg_openpgp_byte_t buffer[2048];
+	char buffer[2048];
 	gcry_sexp_t sigdata, signature;
-	gcry_mpi_t h;
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
 	std::stringstream sexp;
@@ -5596,18 +5577,17 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA
 	// structure. The object identifier for the type of hash being used is
 	// included in the structure.
 	memset(buffer, 0, sizeof(buffer));
-	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buffer))); i++, buflen++)
+	for (size_t i = 0; ((i < in.size()) && 
+	                    (i < sizeof(buffer))); i++, buflen++)
 		buffer[i] = in[i];
-	ret = gcry_mpi_scan(&h, GCRYMPI_FMT_USG, buffer, buflen, NULL);
-	if (ret)
-		return ret;
 	AlgorithmHashGCRYName(hashalgo, hashname);
-	sexp << "(data (flags pkcs1) (hash " << hashname << " %M))";
-	ret = gcry_sexp_build(&sigdata, &erroff, (sexp.str()).c_str(), h);
-	gcry_mpi_release(h);
+	sexp << "(data (flags pkcs1) (hash " << hashname << " %b))";
+	ret = gcry_sexp_build(&sigdata, &erroff, (sexp.str()).c_str(),
+		(int)buflen, buffer);
 	if (ret)
 		return ret;
-	ret = gcry_sexp_build(&signature, &erroff, "(sig-val (rsa (s %M)))", s);
+	ret = gcry_sexp_build(&signature, &erroff,
+		"(sig-val (rsa (s %M)))", s);
 	if (ret)
 	{
 		gcry_sexp_release(sigdata);
