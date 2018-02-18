@@ -259,7 +259,12 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t &keypreferences_pca_in);
 		bool good
 			() const;
-		gcry_error_t verify
+		void PrintInfo
+			() const;
+		bool Check
+			(const time_t keycreationtime,
+			 const int verbose) const;
+		gcry_error_t Verify
 			(const tmcg_openpgp_octets_t &hash,
 			 const gcry_sexp_t key);
 		bool operator <
@@ -282,10 +287,10 @@ class TMCG_OpenPGP_UserID
 			(const std::string &userid_in,
 			 const tmcg_openpgp_octets_t &packet_in);
 		bool Check
-			(const int verbose,
-			 const time_t keycreationtime,
+			(const time_t keycreationtime,
 			 const gcry_sexp_t key,
-			 const tmcg_openpgp_octets_t &pub_hashing);
+			 const tmcg_openpgp_octets_t &pub_hashing,
+			 const int verbose);
 		~TMCG_OpenPGP_UserID
 			();
 };
@@ -343,8 +348,11 @@ class TMCG_OpenPGP_Subkey
 		void UpdateProperties
 			(const TMCG_OpenPGP_Signature *sig,
 			 const int verbose);
+		bool CheckProperties
+			(const int verbose) const;
 		bool Check
-			(const gcry_sexp_t key,
+			(const time_t primarykeycreationtime,
+			 const gcry_sexp_t primarykey,
 			 const tmcg_openpgp_octets_t &pub_hashing,
 			 const tmcg_openpgp_octets_t &pub_id,
 			 const int verbose);
@@ -398,6 +406,8 @@ class TMCG_OpenPGP_Pubkey
 		void UpdateProperties
 			(const TMCG_OpenPGP_Signature *sig,
 			 const int verbose);
+		bool CheckProperties
+			(const int verbose) const;
 		bool CheckSelfSignatures
 			(const int verbose);
 		bool CheckSubkeys
