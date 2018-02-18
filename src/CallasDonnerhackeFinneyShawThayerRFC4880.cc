@@ -687,6 +687,7 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 	}
 	if (verbose > 1)
 		std::cout << std::endl;
+// TODO: update revocable flag and external revocation keys
 }
 
 bool TMCG_OpenPGP_Subkey::CheckProperties
@@ -1026,6 +1027,7 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 	}
 	if (verbose > 1)
 		std::cout << std::endl;
+// TODO: update revocable flag and external revocation keys
 }
 
 bool TMCG_OpenPGP_Pubkey::CheckProperties
