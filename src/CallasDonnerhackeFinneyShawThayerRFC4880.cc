@@ -847,6 +847,8 @@ bool TMCG_OpenPGP_Subkey::Check
 		else
 			break;
 	}
+	if ((allflags & 0x01) == 0x01)
+		signing_subkey = true;
 	if ((allflags & 0x02) == 0x02)
 		signing_subkey = true;
 	// update validity state of this key and return the result
