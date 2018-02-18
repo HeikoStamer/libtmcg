@@ -631,9 +631,9 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 {
 	expirationtime = sig->keyexpirationtime;
 	if (verbose > 1)
-		std::cout << "INFO: update expirationtime to " << expirationtime << std::endl;
+		std::cout << "INFO: subkey update expirationtime to " << expirationtime << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: update flags to " << std::hex;
+		std::cout << "INFO: subkey update flags to " << std::hex;
 	flags.clear();			
 	for (size_t i = 0; i < sig->keyflags.size(); i++)
 	{
@@ -644,7 +644,7 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 	if (verbose > 1)
 		std::cout << std::dec << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: update features to " << std::hex;
+		std::cout << "INFO: subkey update features to " << std::hex;
 	features.clear();
 	for (size_t i = 0; i < sig->keyfeatures.size(); i++)
 	{
@@ -655,7 +655,7 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 	if (verbose > 1)
 		std::cout << std::dec << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: update psa to ";
+		std::cout << "INFO: subkey update psa to ";
 	psa.clear();
 	for (size_t i = 0; i < sig->keypreferences_psa.size(); i++)
 	{
@@ -666,7 +666,7 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 	if (verbose > 1)
 		std::cout << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: update pha to ";
+		std::cout << "INFO: subkey update pha to ";
 	pha.clear();
 	for (size_t i = 0; i < sig->keypreferences_pha.size(); i++)
 	{
@@ -677,7 +677,7 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 	if (verbose > 1)
 		std::cout << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: update pca to ";
+		std::cout << "INFO: subkey update pca to ";
 	pca.clear();
 	for (size_t i = 0; i < sig->keypreferences_pca.size(); i++)
 	{
@@ -892,9 +892,9 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 {
 	expirationtime = sig->keyexpirationtime;
 	if (verbose > 1)
-		std::cout << "INFO: update expirationtime to " << expirationtime << std::endl;
+		std::cout << "INFO: primary key update expirationtime to " << expirationtime << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: update flags to " << std::hex;
+		std::cout << "INFO: primary key update flags to " << std::hex;
 	flags.clear();			
 	for (size_t i = 0; i < sig->keyflags.size(); i++)
 	{
@@ -905,7 +905,7 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 	if (verbose > 1)
 		std::cout << std::dec << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: update features to " << std::hex;
+		std::cout << "INFO: primary key update features to " << std::hex;
 	features.clear();
 	for (size_t i = 0; i < sig->keyfeatures.size(); i++)
 	{
@@ -916,7 +916,7 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 	if (verbose > 1)
 		std::cout << std::dec << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: update psa to ";
+		std::cout << "INFO: primary key update psa to ";
 	psa.clear();
 	for (size_t i = 0; i < sig->keypreferences_psa.size(); i++)
 	{
@@ -927,7 +927,7 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 	if (verbose > 1)
 		std::cout << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: update pha to ";
+		std::cout << "INFO: primary key update pha to ";
 	pha.clear();
 	for (size_t i = 0; i < sig->keypreferences_pha.size(); i++)
 	{
@@ -938,7 +938,7 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 	if (verbose > 1)
 		std::cout << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: update pca to ";
+		std::cout << "INFO: primary key update pca to ";
 	pca.clear();
 	for (size_t i = 0; i < sig->keypreferences_pca.size(); i++)
 	{
