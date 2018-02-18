@@ -721,36 +721,85 @@ bool TMCG_OpenPGP_Subkey::Check
 		if (!selfsigs[j]->Check(creationtime, verbose))
 			continue;
 		// check the self-signature cryptographically
-		bool valid_selfsig = false;
 		if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(
 			pub_id, selfsigs[j]->issuer))
 		{
 			if (selfsigs[j]->Verify(primarykey, pub_hashing, verbose))
-				valid_selfsig = true;
-			else if (verbose)
-				std::cerr << "ERROR: signature verification failed" << std::endl;
-
+				UpdateProperties(selfsigs[j], verbose);
+			else
+			{
+				if (verbose)
+					std::cerr << "ERROR: self-signature verification failed" << std::endl;
+				valid = false;
+				return false;
+			}
 		}
 		else if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(
 			id, selfsigs[j]->issuer))
 		{
 			if (selfsigs[j]->Verify(key, sub_hashing, verbose))
-				valid_selfsig = true;
-			else if (verbose)
-				std::cerr << "ERROR: signature verification failed" << std::endl;
-		}
-		// update and check properties gathered from hashed subpackets
-		if (valid_selfsig)
-		{
-			UpdateProperties(selfsigs[j], verbose);
-			if (!CheckProperties(verbose))
+				UpdateProperties(selfsigs[j], verbose);
+			else
 			{
+				if (verbose)
+					std::cerr << "ERROR: signature verification failed" << std::endl;
 				valid = false;
 				return false;
 			}
 		}
 		else if (verbose)
-			std::cerr << "WARNING: invalid self-signature found" << std::endl;
+			std::cerr << "WARNING: unknown issuer of self-signature" << std::endl;
+	}
+	// check properties of subkey
+	if (!CheckProperties(verbose))
+	{
+		valid = false;
+		return false;
+	}
+	// check whether there is (at least one) valid subkey binding signature
+	bool one_valid_bind = false, one_valid_pbind = false;
+	std::sort(bindsigs.begin(), bindsigs.end(), TMCG_OpenPGP_Signature_Compare);
+	for (size_t j = 0; j < bindsigs.size(); j++)
+	{
+		// print and check basic properties of the signature
+		if (verbose > 2)
+			bindsigs[j]->PrintInfo();
+		if (!bindsigs[j]->Check(primarykeycreationtime, verbose))
+			continue;
+		if (!bindsigs[j]->Check(creationtime, verbose))
+			continue;
+		// check the binding signature cryptographically
+		if (bindsigs[j]->type == 0x18)
+		{
+			if (bindsigs[j]->Verify(primarykey,
+				pub_hashing, sub_hashing, verbose))
+			{
+				one_valid_bind = true;
+				UpdateProperties(bindsigs[j], verbose);
+			}
+			else
+			{
+				if (verbose)
+					std::cerr << "ERROR: binding signature verification failed" << std::endl;
+				valid = false;
+				return false;
+			}
+		}
+		else if (bindsigs[j]->type == 0x19)
+		{
+			if (bindsigs[j]->Verify(key,
+				pub_hashing, sub_hashing, verbose))
+					one_valid_pbind = true;
+			else
+			{
+				if (verbose)
+					std::cerr << "ERROR: signature verification failed" << std::endl;
+				valid = false;
+				return false;
+			}
+		}
+		else if (verbose)
+			std::cerr << "WARNING: unknown binding signature of type " << (int)bindsigs[j]->type << std::endl;
 	}
 	// check whether a valid revocation signature exists for this subkey
 	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
@@ -788,43 +837,22 @@ bool TMCG_OpenPGP_Subkey::Check
 		else if (verbose)
 			std::cerr << "WARNING: invalid revocation signature found for subkey" << std::endl;
 	}
-	// check whether there is (at least one) valid subkey binding signature
-	bool one_valid_bind = false, one_valid_pbind = false;
-	std::sort(bindsigs.begin(), bindsigs.end(), TMCG_OpenPGP_Signature_Compare);
-	for (size_t j = 0; j < bindsigs.size(); j++)
-	{
-		// print and check basic properties of the signature
-		if (verbose > 2)
-			bindsigs[j]->PrintInfo();
-		if (!bindsigs[j]->Check(primarykeycreationtime, verbose))
-			continue;
-		if (!bindsigs[j]->Check(creationtime, verbose))
-			continue;
-		// check the binding signature cryptographically
-		if (bindsigs[j]->type == 0x18)
-		{
-			if (bindsigs[j]->Verify(primarykey,
-				pub_hashing, sub_hashing, verbose))
-					one_valid_bind = true;
-			else if (verbose)
-				std::cerr << "ERROR: signature verification failed" << std::endl;
-		}
-		else if (bindsigs[j]->type == 0x19)
-		{
-			if (bindsigs[j]->Verify(key,
-				pub_hashing, sub_hashing, verbose))
-					one_valid_pbind = true;
-			else if (verbose)
-				std::cerr << "ERROR: signature verification failed" << std::endl;
-		}
-		else if (verbose)
-			std::cerr << "WARNING: unknown binding signature of type " << (int)bindsigs[j]->type << std::endl;
-	}
 	// check whether there is a valid primary key binding signature, if subkey is a signing key
+	bool signing_subkey = false;
+	size_t allflags = 0;
+	for (size_t i = 0; i < flags.size(); i++)
+	{
+		if (flags[i])
+			allflags = (allflags << 8) + flags[i];
+		else
+			break;
+	}
+	if ((allflags & 0x02) == 0x02)
+		signing_subkey = true;
 	// update validity state of this key and return the result
 	if (one_valid_bind)
 	{
-		if ((pkalgo == 1) || (pkalgo == 3) || (pkalgo == 17))
+		if (signing_subkey)
 		{
 			if (one_valid_pbind)
 			{
@@ -1026,7 +1054,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		std::cout << "INFO: number of userids = " << userids.size() << std::endl;
 		std::cout << "INFO: number of subkeys = " << subkeys.size() << std::endl;
 	}
-	// check self-signatures and revocation signatures of primary key
+	// check self-signatures of primary key
 	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
 	{
@@ -1038,17 +1066,19 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		// check the self-signature cryptographically
 		if (selfsigs[j]->Verify(key, pub_hashing, verbose))
 		{
-			// update and check further properties
+			// update properties of primary key
 			UpdateProperties(selfsigs[j], verbose);
-			if (!CheckProperties(verbose))
-			{
-				valid = false;
-				return false;
-			}
 		}
 		else if (verbose)
 			std::cerr << "WARNING: invalid self-signature found" << std::endl;
 	}
+	// check properties of primary key
+	if (!CheckProperties(verbose))
+	{
+		valid = false;
+		return false;
+	}
+	// check user IDs of primary key
 	bool one_valid_uid = false;
 	for (size_t i = 0; i < userids.size(); i++)
 	{
@@ -1066,16 +1096,10 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				std::cout << "INFO: user ID is valid" << std::endl;
 			for (size_t j = 0; j < userids[i]->selfsigs.size(); j++)
 			{
+				// update properties of primary key
 				if (userids[i]->selfsigs[j]->valid)
 				{
-					// update expiration time, key flags, and other infos from hashed subpacket area
 					UpdateProperties(userids[i]->selfsigs[j], verbose);
-					// check properties based on infos gathered from hashed subpacket area of self-signature
-					if (!CheckProperties(verbose))
-					{
-						valid = false;
-						return false;
-					}
 				}
 				else
 					std::cerr << "WARNING: one self-signature on this user ID is NOT valid" << std::endl;
@@ -1083,6 +1107,12 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		}
 		else if (verbose > 1)
 				std::cout << "INFO: user ID is NOT valid" << std::endl;
+		// check properties of primary key
+		if (!CheckProperties(verbose))
+		{
+			valid = false;
+			return false;
+		}
 	}
 	// print accumulated key flags of the primary key
 	size_t allflags = 0;
@@ -1112,6 +1142,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			std::cout << "G"; // The private component of this key may be in the possession of more than one person.
 		std::cout << std::endl;
 	}
+	// check revocation signatures of primary key
 	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < revsigs.size(); j++)
 	{
@@ -5612,7 +5643,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 	tmcg_openpgp_byte_t ptag = 0xFF;
 	size_t pnum = 0;
 	tmcg_openpgp_octets_t embedded_pkt;
-	while (pkts.size() && ptag)
+	while (pkts.size() || embedded_pkt.size())
 	{
 		tmcg_openpgp_packet_ctx_t ctx;
 		tmcg_openpgp_octets_t current_packet;
