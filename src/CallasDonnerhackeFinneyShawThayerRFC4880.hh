@@ -264,9 +264,20 @@ class TMCG_OpenPGP_Signature
 		bool Check
 			(const time_t keycreationtime,
 			 const int verbose) const;
-		gcry_error_t Verify
-			(const tmcg_openpgp_octets_t &hash,
-			 const gcry_sexp_t key);
+		bool Verify
+			(const gcry_sexp_t key,
+			 const tmcg_openpgp_octets_t &hashing,
+			 const int verbose);
+		bool Verify
+			(const gcry_sexp_t key,
+			 const tmcg_openpgp_octets_t &pub_hashing,
+			 const tmcg_openpgp_octets_t &sub_hashing,
+			 const int verbose);
+		bool Verify
+			(const gcry_sexp_t key,
+			 const tmcg_openpgp_octets_t &pub_hashing,
+			 const std::string &userid,
+			 const int verbose);
 		bool operator <
 			(const TMCG_OpenPGP_Signature &that) const;
 		~TMCG_OpenPGP_Signature
@@ -750,40 +761,26 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_byte_t hashalgo,
 			 tmcg_openpgp_octets_t &hash,
 			 tmcg_openpgp_octets_t &left);
-		static void SubkeyBindingHashV3
-			(const tmcg_openpgp_octets_t &primary,
-			 const tmcg_openpgp_octets_t &subkey,
-			 const tmcg_openpgp_octets_t &trailer,
-			 const tmcg_openpgp_byte_t hashalgo,
-			 tmcg_openpgp_octets_t &hash,
-			 tmcg_openpgp_octets_t &left);
-		static void SubkeyBindingHash
-			(const tmcg_openpgp_octets_t &primary,
-			 const tmcg_openpgp_octets_t &subkey,
-			 const tmcg_openpgp_octets_t &trailer,
-			 const tmcg_openpgp_byte_t hashalgo,
-			 tmcg_openpgp_octets_t &hash,
-			 tmcg_openpgp_octets_t &left);
-		static void KeyRevocationHashV3
+		static void KeyHashV3
 			(const tmcg_openpgp_octets_t &key,
 			 const tmcg_openpgp_octets_t &trailer,
 			 const tmcg_openpgp_byte_t hashalgo,
 			 tmcg_openpgp_octets_t &hash,
 			 tmcg_openpgp_octets_t &left);
-		static void KeyRevocationHash
+		static void KeyHash
 			(const tmcg_openpgp_octets_t &key,
 			 const tmcg_openpgp_octets_t &trailer,
 			 const tmcg_openpgp_byte_t hashalgo,
 			 tmcg_openpgp_octets_t &hash,
 			 tmcg_openpgp_octets_t &left);
-		static void KeyRevocationHashV3
+		static void KeyHashV3
 			(const tmcg_openpgp_octets_t &primary,
 			 const tmcg_openpgp_octets_t &subkey,
 			 const tmcg_openpgp_octets_t &trailer,
 			 const tmcg_openpgp_byte_t hashalgo,
 			 tmcg_openpgp_octets_t &hash,
 			 tmcg_openpgp_octets_t &left);
-		static void KeyRevocationHash
+		static void KeyHash
 			(const tmcg_openpgp_octets_t &primary,
 			 const tmcg_openpgp_octets_t &subkey,
 			 const tmcg_openpgp_octets_t &trailer,
