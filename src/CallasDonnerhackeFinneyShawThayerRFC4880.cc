@@ -272,7 +272,7 @@ bool TMCG_OpenPGP_Signature::Verify
 		return false;
 	}
 	valid = true;
-	return vret;
+	return true;
 }
 
 bool TMCG_OpenPGP_Signature::Verify
@@ -352,7 +352,7 @@ bool TMCG_OpenPGP_Signature::Verify
 		return false;
 	}
 	valid = true;
-	return vret;
+	return true;
 }
 
 bool TMCG_OpenPGP_Signature::Verify
@@ -432,7 +432,7 @@ bool TMCG_OpenPGP_Signature::Verify
 		return false;
 	}
 	valid = true;
-	return vret;
+	return true;
 }
 
 bool TMCG_OpenPGP_Signature::operator <
@@ -486,7 +486,7 @@ bool TMCG_OpenPGP_UserID::Check
 	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
 	{
-		// print and check basic properties of the self-signature
+		// print and check basic properties of the signature
 		if (verbose > 2)
 			selfsigs[j]->PrintInfo();
 		if (!selfsigs[j]->Check(keycreationtime, verbose))
@@ -494,11 +494,13 @@ bool TMCG_OpenPGP_UserID::Check
 		// check the self-signature cryptographically
 		if (selfsigs[j]->Verify(key, pub_hashing, userid, verbose))
 			one_valid_selfsig = true;
+		else if (verbose)
+			std::cerr << "ERROR: signature verification failed" << std::endl;
 	}
 	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < revsigs.size(); j++)
 	{
-		// print and check basic properties of the self-signature
+		// print and check basic properties of the signature
 		if (verbose > 2)
 			revsigs[j]->PrintInfo();
 		if (!revsigs[j]->Check(keycreationtime, verbose))
@@ -506,6 +508,8 @@ bool TMCG_OpenPGP_UserID::Check
 		// check the revocation signature cryptographically
 		if (selfsigs[j]->Verify(key, pub_hashing, userid, verbose))
 			one_valid_selfsig = false;
+		else if (verbose)
+			std::cerr << "ERROR: signature verification failed" << std::endl;
 	}
 	// update validity state of this user ID and return the result
 	if (one_valid_selfsig)
@@ -709,7 +713,7 @@ bool TMCG_OpenPGP_Subkey::Check
 	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
 	{
-		// print and check basic properties of the self-signature
+		// print and check basic properties of the signature
 		if (verbose > 2)
 			selfsigs[j]->PrintInfo();
 		if (!selfsigs[j]->Check(primarykeycreationtime, verbose))
@@ -723,6 +727,8 @@ bool TMCG_OpenPGP_Subkey::Check
 		{
 			if (selfsigs[j]->Verify(primarykey, pub_hashing, verbose))
 				valid_selfsig = true;
+			else if (verbose)
+				std::cerr << "ERROR: signature verification failed" << std::endl;
 
 		}
 		else if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(
@@ -730,6 +736,8 @@ bool TMCG_OpenPGP_Subkey::Check
 		{
 			if (selfsigs[j]->Verify(key, sub_hashing, verbose))
 				valid_selfsig = true;
+			else if (verbose)
+				std::cerr << "ERROR: signature verification failed" << std::endl;
 		}
 		// update and check properties gathered from hashed subpackets
 		if (valid_selfsig)
@@ -748,7 +756,7 @@ bool TMCG_OpenPGP_Subkey::Check
 	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < revsigs.size(); j++)
 	{
-		// print and check basic properties of the self-signature
+		// print and check basic properties of the signature
 		if (verbose > 2)
 			revsigs[j]->PrintInfo();
 		if (!revsigs[j]->Check(primarykeycreationtime, verbose))
@@ -763,9 +771,12 @@ bool TMCG_OpenPGP_Subkey::Check
 			if (revsigs[j]->Verify(primarykey,
 				pub_hashing, sub_hashing, verbose))
 					valid_revsig = true;
+			else if (verbose)
+				std::cerr << "ERROR: signature verification failed" << std::endl;
 		}
 		else
 		{
+std::cerr << "BUG!" << std::endl;
 			// TODO: check revocation signature from external key
 		}
 		if (valid_revsig)
@@ -775,6 +786,8 @@ bool TMCG_OpenPGP_Subkey::Check
 			valid = false;
 			return false;
 		}
+		else if (verbose)
+			std::cerr << "WARNING: invalid revocation signature found for subkey" << std::endl;
 	}
 
 
@@ -970,7 +983,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
 	{
-		// print and check basic properties of the self-signature
+		// print and check basic properties of the signature
 		if (verbose > 2)
 			selfsigs[j]->PrintInfo();
 		if (!selfsigs[j]->Check(creationtime, verbose))
@@ -992,7 +1005,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < revsigs.size(); j++)
 	{
-		// print and check basic properties of the self-signature
+		// print and check basic properties of the signature
 		if (verbose > 2)
 			revsigs[j]->PrintInfo();
 		if (!revsigs[j]->Check(creationtime, verbose))
@@ -1005,6 +1018,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			valid = false;
 			return false;
 		}
+		else if (verbose)
+			std::cerr << "ERROR: signature verification failed" << std::endl;
 	}
 	bool one_valid_uid = false;
 	for (size_t i = 0; i < userids.size(); i++)
@@ -1100,7 +1115,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSubkeys
 			one_valid_sub = true;
 			if (verbose > 1)
 				std::cout << "INFO: subkey is valid" << std::endl;
-			// print accumulated key flags of the primary key
+			// print accumulated key flags of the subkey
 			size_t allflags = 0;
 			for (size_t ii = 0; ii < subkeys[i]->flags.size(); ii++)
 			{
