@@ -506,7 +506,7 @@ bool TMCG_OpenPGP_UserID::Check
 		if (!revsigs[j]->Check(keycreationtime, verbose))
 			continue;
 		// check the revocation signature cryptographically
-		if (selfsigs[j]->Verify(key, pub_hashing, userid, verbose))
+		if (revsigs[j]->Verify(key, pub_hashing, userid, verbose))
 			one_valid_selfsig = false;
 		else if (verbose)
 			std::cerr << "ERROR: signature verification failed" << std::endl;
@@ -5843,9 +5843,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					if (uid_flag)
 					{
 						if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
+						{
 							uid->certsigs.push_back(sig); // Certification signature for this user ID
+						}
 						else if (ctx.type == 0x30)
+						{
 							uid->certsigs.push_back(sig); // Certification revocation signature for this user ID
+						}
 						else 
 						{
 							if (verbose)
