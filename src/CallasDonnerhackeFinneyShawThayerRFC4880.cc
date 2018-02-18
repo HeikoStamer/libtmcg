@@ -5821,9 +5821,15 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 							delete sig;
 						}
 					}
+					else if (ctx.type == 0x28)
+					{
+						// accumulate key revocation signatures issued by external revocation keys
+						sub->revsigs.push_back(sig); // Subkey revocation signature for this subkey
+						if (verbose)
+							std::cerr << "WARNING: key revocation signature on subkey" << std::endl;
+					}
 					else
 					{
-						// TODO: accumulate key revocation signatures issued by external revocation keys
 						if (verbose)
 							std::cerr << "WARNING: signature from unknown issuer ignored" << std::endl;
 						delete sig;
@@ -5845,16 +5851,22 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 							delete sig;
 						}
 					}
+					else if (ctx.type == 0x20)
+					{
+						// accumulate key revocation signatures issued by external revocation keys
+						if (verbose)
+							std::cerr << "WARNING: key revocation signature on primary key" << std::endl;
+						pub->revsigs.push_back(sig); // Key revocation signature on primary key
+					}
 					else
 					{
-						// TODO: accumulate key revocation signatures issued by external revocation keys
 						if (verbose)
 							std::cerr << "WARNING: non-uid signature of type " << (int)ctx.type << " ignored" << std::endl;
 						delete sig;
 					}
 					break;
 				}
-				if (primary && !uid_flag && !uat_flag) 
+				if (!uid_flag && !uat_flag)
 				{
 					if (ctx.type == 0x1F)
 					{
@@ -5873,13 +5885,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 						delete sig;
 					}
 				}
-				else if (primary && !uid_flag && uat_flag)
+				else if (!uid_flag && uat_flag)
 				{
 					if (verbose)
 						std::cerr << "WARNING: self-signature for a user attribute ignored" << std::endl;
 					delete sig;
 				}
-				else if (primary && uid_flag && !uat_flag)
+				else if (uid_flag && !uat_flag)
 				{
 					if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
 					{
