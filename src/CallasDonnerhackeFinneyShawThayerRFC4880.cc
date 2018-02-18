@@ -1001,38 +1001,6 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		else if (verbose)
 			std::cerr << "WARNING: invalid self-signature found" << std::endl;
 	}
-	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
-	for (size_t j = 0; j < revsigs.size(); j++)
-	{
-		// print and check basic properties of the signature
-		if (verbose > 2)
-			revsigs[j]->PrintInfo();
-		if (!revsigs[j]->Check(creationtime, verbose))
-			continue;
-		// check the revocation signature cryptographically
-		bool valid_revsig = false;
-		if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(id,
-			revsigs[j]->issuer))
-		{
-			if (revsigs[j]->Verify(key, pub_hashing, verbose))
-				valid_revsig = true;
-			else if (verbose)
-				std::cerr << "ERROR: signature verification failed" << std::endl;
-		}
-		else
-		{
-			// TODO: check revocation signature from external key
-		}
-		if (valid_revsig)
-		{
-			if (verbose)
-				std::cerr << "WARNING: valid revocation signature found for primary key" << std::endl;
-			valid = false;
-			return false;
-		}
-		else if (verbose)
-			std::cerr << "WARNING: invalid revocation signature found for subkey" << std::endl;
-	}
 	bool one_valid_uid = false;
 	for (size_t i = 0; i < userids.size(); i++)
 	{
@@ -1095,6 +1063,38 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		if ((allflags & 0x80) == 0x80)
 			std::cout << "G"; // The private component of this key may be in the possession of more than one person.
 		std::cout << std::endl;
+	}
+	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
+	for (size_t j = 0; j < revsigs.size(); j++)
+	{
+		// print and check basic properties of the signature
+		if (verbose > 2)
+			revsigs[j]->PrintInfo();
+		if (!revsigs[j]->Check(creationtime, verbose))
+			continue;
+		// check the revocation signature cryptographically
+		bool valid_revsig = false;
+		if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(id,
+			revsigs[j]->issuer))
+		{
+			if (revsigs[j]->Verify(key, pub_hashing, verbose))
+				valid_revsig = true;
+			else if (verbose)
+				std::cerr << "ERROR: signature verification failed" << std::endl;
+		}
+		else
+		{
+			// TODO: check revocation signature from external key
+		}
+		if (valid_revsig)
+		{
+			if (verbose)
+				std::cerr << "WARNING: valid revocation signature found for primary key" << std::endl;
+			valid = false;
+			return false;
+		}
+		else if (verbose)
+			std::cerr << "WARNING: invalid revocation signature found for subkey" << std::endl;
 	}
 	// update validity state of this key and return the result
 	if (one_valid_uid)
