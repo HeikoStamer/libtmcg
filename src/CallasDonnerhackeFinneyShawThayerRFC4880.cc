@@ -3971,8 +3971,13 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					sptype = SubpacketDecode(hspd, out);
 					if (sptype == 0)
 						return 0; // error: incorrect subpacket
-					if (out.critical && (sptype == 0xFE))
-						return 0xFE; // warning: critical subpacket
+					else if (sptype == 0xFE)
+					{
+						if (out.critical)
+							tag = 0xFA; // critical subpacket
+						else
+							tag = 0xFB; // unrecognized subpacket
+					}
 				}
 				if (pkt.size() < (8 + hspdlen))
 					return 0; // error: packet too short
@@ -4011,7 +4016,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					pkt.begin()+10+hspdlen+uspdlen, pkt.end());
 			}
 			else
-				return 0xFE; // warning: version not supported
+				return 0xFC; // warning: version not supported
 			if ((out.pkalgo == 1) || (out.pkalgo == 3))
 			{
 				// Algorithm-Specific Fields for RSA
@@ -4039,7 +4044,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
 			else
-				return 0xFE; // warning: unsupported public-key algo
+				return 0xFC; // warning: unsupported public-key algo
 			break;
 		case 3: // Symmetric-Key Encrypted Session Key Packet
 			if (pkt.size() < 4)
@@ -4580,7 +4585,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
 			else
-				return 0xFE; // warning: unsupported public-key algo
+				return 0xFD; // warning: unsupported public-key algo
 			break;
 		case 8: // Compressed Data Packet
 			if (pkt.size() < 2)
@@ -4657,7 +4662,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.mdc_hash[i] = pkt[i];
 			break;
 		default:
-			return 0; // error: unknown packet tag
+			return 0xFE; // warning: unknown packet tag
 	}
 	return tag;
 }
@@ -5652,6 +5657,45 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 			if (uid)
 				delete uid;
 			return false;
+		}
+		else if (ptag == 0xFA)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized critical OpenPGP subpacket found at #" << pnum << std::endl;
+			ReleasePacketContext(ctx);
+			continue; // ignore signature with critical subpacket
+		}
+		else if (ptag == 0xFB)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized OpenPGP subpacket found at #" << pnum << std::endl;
+			ptag = 0x02; // process signature
+		}
+		else if (ptag == 0xFC)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized OpenPGP signature packet found at #" << pnum << std::endl;
+			ReleasePacketContext(ctx);
+			continue; // ignore packet
+		}
+		else if (ptag == 0xFD)
+		{
+			ReleasePacketContext(ctx);
+			if (primary)
+			{
+				if (verbose)
+					std::cerr << "WARNING: unrecognized OpenPGP key packet found at #" << pnum << std::endl;
+				if (subkey)
+					pub->subkeys.push_back(sub);
+				subkey = false;
+				continue; // ignore packet
+			}
+			else
+			{
+				if (verbose)
+					std::cerr << "ERROR: no usable primary key found" << std::endl;
+				return false;
+			}
 		}
 		else if (ptag == 0xFE)
 		{
