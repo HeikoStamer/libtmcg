@@ -5623,7 +5623,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 		return false;
 	}
 	// parse the public key block packet by packet
-	bool primary = false, subkey = false, uid_flag = false, uat_flag = false;
+	bool primary = false, subkey = false, uid_flag = false, uat_flag = false, badkey = false;
 	TMCG_OpenPGP_Subkey *sub = NULL;
 	TMCG_OpenPGP_UserID *uid = NULL;
 	tmcg_openpgp_byte_t ptag = 0xFF;
@@ -5680,20 +5680,21 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 		}
 		else if (ptag == 0xFD)
 		{
-			ReleasePacketContext(ctx);
 			if (primary)
 			{
 				if (verbose)
 					std::cerr << "WARNING: unrecognized OpenPGP key packet found at #" << pnum << std::endl;
 				if (subkey)
 					pub->subkeys.push_back(sub);
-				subkey = false;
+				badkey = true;
+				ReleasePacketContext(ctx);
 				continue; // ignore packet
 			}
 			else
 			{
 				if (verbose)
-					std::cerr << "ERROR: no usable primary key found" << std::endl;
+					std::cerr << "ERROR: public-key algorithm " << (int)ctx.pkalgo << " not supported" << std::endl;
+				ReleasePacketContext(ctx);
 				return false;
 			}
 		}
@@ -5783,6 +5784,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 					if (uid)
 						delete uid;
 					return false;
+				}
+				if (badkey)
+				{
+					if (verbose)
+						std::cerr << "WARNING: signature for unrecognized subkey ignored" << std::endl;
+					delete sig;
+					break;
 				}
 				if (subkey)
 				{
@@ -6019,6 +6027,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::ParsePublicKeyBlock
 				uid = new TMCG_OpenPGP_UserID(userid, current_packet);
 				break;
 			case 14: // Public-Subkey Packet
+				badkey = false;
 				if (!primary)
 				{
 					if (verbose)
