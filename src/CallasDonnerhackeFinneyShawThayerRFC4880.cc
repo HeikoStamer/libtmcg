@@ -188,12 +188,26 @@ bool TMCG_OpenPGP_Signature::Check
 			std::cerr << "WARNING: insecure hash algorithm " << 
 				(int)hashalgo << " used for signature" <<
 				std::endl;
-// FIXME: update key strength or return false
 	}
 	return true;
 }
 
-// TODO: insert description from RFC 4880
+// All signatures are formed by producing a hash over the signature
+// data, and then using the resulting hash in the signature algorithm.
+// [...]
+// Once the data body is hashed, then a trailer is hashed. A V3
+// signature hashes five octets of the packet body, starting from the
+// signature type field. This data is the signature type, followed by
+// the four-octet signature time. A V4 signature hashes the packet body
+// starting from its first field, the version number, through the end
+// of the hashed subpacket data. Thus, the fields hashed are the
+// signature version, the signature type, the public-key algorithm, the
+// hash algorithm, the hashed subpacket length, and the hashed
+// subpacket body.
+// [...]
+// After all this has been hashed in a single hash context, the
+// resulting hash field is used in the signature algorithm and placed
+// at the end of the Signature packet.
 
 bool TMCG_OpenPGP_Signature::Verify
 	(const gcry_sexp_t key,
@@ -203,7 +217,8 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature" << std::endl;
+			std::cerr << "ERROR: bad signature material" <<
+				std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -220,11 +235,11 @@ bool TMCG_OpenPGP_Signature::Verify
 	}
 	else if (version == 4)
 	{
-		trailer.push_back(4); // only V4 format supported
+		trailer.push_back(4);
 		trailer.push_back(type);
 		trailer.push_back(pkalgo);
 		trailer.push_back(hashalgo);
-		trailer.push_back((hspd.size() >> 8) & 0xFF); // length of hspd
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
 		trailer.push_back(hspd.size() & 0xFF);
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
 		CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -281,7 +296,8 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature" << std::endl;
+			std::cerr << "ERROR: bad signature material" <<
+				std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -299,11 +315,11 @@ bool TMCG_OpenPGP_Signature::Verify
 	}
 	else if (version == 4)
 	{
-		trailer.push_back(4); // only V4 format supported
+		trailer.push_back(4);
 		trailer.push_back(type);
 		trailer.push_back(pkalgo);
 		trailer.push_back(hashalgo);
-		trailer.push_back((hspd.size() >> 8) & 0xFF); // length of hspd
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
 		trailer.push_back(hspd.size() & 0xFF);
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
 		CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -361,7 +377,8 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature" << std::endl;
+			std::cerr << "ERROR: bad signature material" <<
+				std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -379,11 +396,11 @@ bool TMCG_OpenPGP_Signature::Verify
 	}
 	else if (version == 4)
 	{
-		trailer.push_back(4); // only V4 format supported
+		trailer.push_back(4);
 		trailer.push_back(type);
 		trailer.push_back(pkalgo);
 		trailer.push_back(hashalgo);
-		trailer.push_back((hspd.size() >> 8) & 0xFF); // length of hspd
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
 		trailer.push_back(hspd.size() & 0xFF);
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
 		CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -480,7 +497,8 @@ bool TMCG_OpenPGP_UserID::Check
 	 const int verbose)
 {
 	bool one_valid_selfsig = false;
-	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
+	std::sort(selfsigs.begin(), selfsigs.end(),
+		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
 	{
 		// print and check basic properties of the signature
@@ -492,9 +510,11 @@ bool TMCG_OpenPGP_UserID::Check
 		if (selfsigs[j]->Verify(key, pub_hashing, userid, verbose))
 			one_valid_selfsig = true;
 		else if (verbose)
-			std::cerr << "ERROR: signature verification failed" << std::endl;
+			std::cerr << "ERROR: signature verification failed" <<
+				std::endl;
 	}
-	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
+	std::sort(revsigs.begin(), revsigs.end(),
+		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < revsigs.size(); j++)
 	{
 		// print and check basic properties of the signature
@@ -506,7 +526,8 @@ bool TMCG_OpenPGP_UserID::Check
 		if (revsigs[j]->Verify(key, pub_hashing, userid, verbose))
 			one_valid_selfsig = false;
 		else if (verbose)
-			std::cerr << "ERROR: signature verification failed" << std::endl;
+			std::cerr << "ERROR: signature verification failed" <<
+				std::endl;
 	}
 	// update validity state of this user ID and return the result
 	if (one_valid_selfsig)
@@ -557,10 +578,12 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		"(public-key (rsa (n %M) (e %M)))", n, e);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	tmcg_openpgp_octets_t sub;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in, pkalgo_in, n, e, e, e, sub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketSubEncode(creationtime_in, pkalgo_in, n, e, e, e, sub);
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
-	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		KeyidCompute(sub_hashing, id);
 }
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
@@ -583,10 +606,12 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		"(public-key (elg (p %M) (g %M) (y %M)))", p, g, y);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	tmcg_openpgp_octets_t sub;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in, pkalgo_in, p, p, g, y, sub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketSubEncode(creationtime_in, pkalgo_in, p, p, g, y, sub);
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
-	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		KeyidCompute(sub_hashing, id);
 }
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
@@ -610,10 +635,12 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", p, q, g, y);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	tmcg_openpgp_octets_t sub;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in, pkalgo_in, p, q, g, y, sub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketSubEncode(creationtime_in, pkalgo_in, p, q, g, y, sub);
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
-	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(sub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		KeyidCompute(sub_hashing, id);
 }
 
 bool TMCG_OpenPGP_Subkey::good
@@ -628,7 +655,8 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 {
 	expirationtime = sig->keyexpirationtime;
 	if (verbose > 1)
-		std::cout << "INFO: subkey update expirationtime to " << expirationtime << std::endl;
+		std::cout << "INFO: subkey update expirationtime to " <<
+			expirationtime << std::endl;
 	if (verbose > 1)
 		std::cout << "INFO: subkey update flags to " << std::hex;
 	flags.clear();			
@@ -694,7 +722,8 @@ bool TMCG_OpenPGP_Subkey::CheckProperties
 	if (expirationtime && (time(NULL) > kmax))
 	{
 		if (verbose)
-			std::cerr << "WARNING: subkey has been expired" << std::endl;
+			std::cerr << "WARNING: subkey has been expired" <<
+				std::endl;
 		return false;
 	}
 	return true;
@@ -708,7 +737,8 @@ bool TMCG_OpenPGP_Subkey::Check
 	 const int verbose)
 {
 	// check whether some self-signatures on subkey are valid
-	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
+	std::sort(selfsigs.begin(), selfsigs.end(),
+		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
 	{
 		// print and check basic properties of the signature
@@ -719,34 +749,40 @@ bool TMCG_OpenPGP_Subkey::Check
 		if (!selfsigs[j]->Check(creationtime, verbose))
 			continue;
 		// check the self-signature cryptographically
-		if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(
-			pub_id, selfsigs[j]->issuer))
+		if (CallasDonnerhackeFinneyShawThayerRFC4880::
+			OctetsCompare(pub_id, selfsigs[j]->issuer))
 		{
-			if (selfsigs[j]->Verify(primarykey, pub_hashing, verbose))
+			if (selfsigs[j]->Verify(primarykey, pub_hashing,
+			    verbose))
 				UpdateProperties(selfsigs[j], verbose);
 			else
 			{
 				if (verbose)
-					std::cerr << "ERROR: self-signature verification failed" << std::endl;
+					std::cerr << "ERROR: self-signature" <<
+						" verification failed" <<
+						std::endl;
 				valid = false;
 				return false;
 			}
 		}
-		else if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(
-			id, selfsigs[j]->issuer))
+		else if (CallasDonnerhackeFinneyShawThayerRFC4880::
+			OctetsCompare(id, selfsigs[j]->issuer))
 		{
 			if (selfsigs[j]->Verify(key, sub_hashing, verbose))
 				UpdateProperties(selfsigs[j], verbose);
 			else
 			{
 				if (verbose)
-					std::cerr << "ERROR: signature verification failed" << std::endl;
+					std::cerr << "ERROR: signature " << 
+						"verification failed" <<
+						std::endl;
 				valid = false;
 				return false;
 			}
 		}
 		else if (verbose)
-			std::cerr << "WARNING: unknown issuer of self-signature" << std::endl;
+			std::cerr << "WARNING: unknown issuer of " <<
+				"self-signature" << std::endl;
 	}
 	// check properties of subkey
 	if (!CheckProperties(verbose))
@@ -756,7 +792,8 @@ bool TMCG_OpenPGP_Subkey::Check
 	}
 	// check whether there is (at least one) valid subkey binding signature
 	bool one_valid_bind = false, one_valid_pbind = false;
-	std::sort(bindsigs.begin(), bindsigs.end(), TMCG_OpenPGP_Signature_Compare);
+	std::sort(bindsigs.begin(), bindsigs.end(),
+		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < bindsigs.size(); j++)
 	{
 		// print and check basic properties of the signature
@@ -778,7 +815,9 @@ bool TMCG_OpenPGP_Subkey::Check
 			else
 			{
 				if (verbose)
-					std::cerr << "ERROR: binding signature verification failed" << std::endl;
+					std::cerr << "ERROR: binding " <<
+						"signature verification " <<
+						"failed" << std::endl;
 				valid = false;
 				return false;
 			}
@@ -791,16 +830,21 @@ bool TMCG_OpenPGP_Subkey::Check
 			else
 			{
 				if (verbose)
-					std::cerr << "ERROR: signature verification failed" << std::endl;
+					std::cerr << "ERROR: signature " <<
+						"verification failed" <<
+						std::endl;
 				valid = false;
 				return false;
 			}
 		}
 		else if (verbose)
-			std::cerr << "WARNING: unknown binding signature of type " << (int)bindsigs[j]->type << std::endl;
+			std::cerr << "WARNING: unknown binding signature " <<
+				"of type " << (int)bindsigs[j]->type <<
+				std::endl;
 	}
 	// check whether a valid revocation signature exists for this subkey
-	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
+	std::sort(revsigs.begin(), revsigs.end(),
+		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < revsigs.size(); j++)
 	{
 		// print and check basic properties of the signature
@@ -819,7 +863,8 @@ bool TMCG_OpenPGP_Subkey::Check
 				pub_hashing, sub_hashing, verbose))
 					valid_revsig = true;
 			else if (verbose)
-				std::cerr << "ERROR: signature verification failed" << std::endl;
+				std::cerr << "ERROR: signature verification" <<
+					" failed" << std::endl;
 		}
 		else
 		{
@@ -828,14 +873,18 @@ bool TMCG_OpenPGP_Subkey::Check
 		if (valid_revsig)
 		{
 			if (verbose)
-				std::cerr << "WARNING: valid revocation signature found for subkey" << std::endl;
+				std::cerr << "WARNING: valid revocation " <<
+					"signature found for subkey" <<
+					std::endl;
 			valid = false;
 			return false;
 		}
 		else if (verbose)
-			std::cerr << "WARNING: invalid revocation signature found for subkey" << std::endl;
+			std::cerr << "WARNING: invalid revocation signature" <<
+				" found for subkey" << std::endl;
 	}
-	// check whether there is a valid primary key binding signature, if subkey is a signing key
+	// check whether there is a valid primary key binding signature, if 
+	// subkey is a signing key
 	bool signing_subkey = false;
 	size_t allflags = 0;
 	for (size_t i = 0; i < flags.size(); i++)
@@ -923,10 +972,12 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		"(public-key (rsa (n %M) (e %M)))", n, e);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	tmcg_openpgp_octets_t pub;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in, pkalgo_in, n, e, e, e, pub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketPubEncode(creationtime_in, pkalgo_in, n, e, e, e, pub);
 	for (size_t i = 6; i < pub.size(); i++)
 		pub_hashing.push_back(pub[i]);
-	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		KeyidCompute(pub_hashing, id);
 }
 
 TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
@@ -950,10 +1001,12 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", p, q, g, y);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	tmcg_openpgp_octets_t pub;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in, pkalgo_in, p, q, g, y, pub);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketSubEncode(creationtime_in, pkalgo_in, p, q, g, y, pub);
 	for (size_t i = 6; i < pub.size(); i++)
 		pub_hashing.push_back(pub[i]);
-	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		KeyidCompute(pub_hashing, id);
 }
 
 bool TMCG_OpenPGP_Pubkey::good
@@ -968,7 +1021,8 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 {
 	expirationtime = sig->keyexpirationtime;
 	if (verbose > 1)
-		std::cout << "INFO: primary key update expirationtime to " << expirationtime << std::endl;
+		std::cout << "INFO: primary key update expirationtime to " <<
+			expirationtime << std::endl;
 	if (verbose > 1)
 		std::cout << "INFO: primary key update flags to " << std::hex;
 	flags.clear();			
@@ -981,7 +1035,8 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 	if (verbose > 1)
 		std::cout << std::dec << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: primary key update features to " << std::hex;
+		std::cout << "INFO: primary key update features to " <<
+			std::hex;
 	features.clear();
 	for (size_t i = 0; i < sig->keyfeatures.size(); i++)
 	{
@@ -1034,7 +1089,8 @@ bool TMCG_OpenPGP_Pubkey::CheckProperties
 	if (expirationtime && (time(NULL) > kmax))
 	{
 		if (verbose)
-			std::cerr << "WARNING: primary key has been expired" << std::endl;
+			std::cerr << "WARNING: primary key has been " <<
+				"expired" << std::endl;
 		return false;
 	}
 	return true;
@@ -1050,13 +1106,18 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		for (size_t i = 0; i < id.size(); i++)
 			std::cout << (int)id[i] << " ";
 		std::cout << std::dec << std::endl;
-		std::cout << "INFO: number of selfsigs = " << selfsigs.size() << std::endl;
-		std::cout << "INFO: number of revsigs = " << revsigs.size() << std::endl;
-		std::cout << "INFO: number of userids = " << userids.size() << std::endl;
-		std::cout << "INFO: number of subkeys = " << subkeys.size() << std::endl;
+		std::cout << "INFO: number of selfsigs = " << 
+			selfsigs.size() << std::endl;
+		std::cout << "INFO: number of revsigs = " <<
+			revsigs.size() << std::endl;
+		std::cout << "INFO: number of userids = " <<
+			userids.size() << std::endl;
+		std::cout << "INFO: number of subkeys = " <<
+			subkeys.size() << std::endl;
 	}
 	// check self-signatures of primary key
-	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
+	std::sort(selfsigs.begin(), selfsigs.end(),
+		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
 	{
 		// print and check basic properties of the signature
@@ -1071,7 +1132,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			UpdateProperties(selfsigs[j], verbose);
 		}
 		else if (verbose)
-			std::cerr << "WARNING: invalid self-signature found" << std::endl;
+			std::cerr << "WARNING: invalid self-signature " <<
+				"found" << std::endl;
 	}
 	// check properties of primary key
 	if (!CheckProperties(verbose))
@@ -1085,29 +1147,38 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 	{
 		if (verbose > 1)
 		{
-			std::cout << "INFO: userid = \"" << userids[i]->userid << "\"" << std::endl;
-			std::cout << "INFO: number of selfsigs = " << userids[i]->selfsigs.size() << std::endl;
-			std::cout << "INFO: number of revsigs = " << userids[i]->revsigs.size() << std::endl;
-			std::cout << "INFO: number of certsigs = " << userids[i]->certsigs.size() << std::endl;
+			std::cout << "INFO: userid = \"" <<
+				userids[i]->userid << "\"" << std::endl;
+			std::cout << "INFO: number of selfsigs = " <<
+				userids[i]->selfsigs.size() << std::endl;
+			std::cout << "INFO: number of revsigs = " <<
+				userids[i]->revsigs.size() << std::endl;
+			std::cout << "INFO: number of certsigs = " <<
+				userids[i]->certsigs.size() << std::endl;
 		}
 		if (userids[i]->Check(creationtime, key, pub_hashing, verbose))
 		{
 			one_valid_uid = true;
 			if (verbose > 1)
-				std::cout << "INFO: user ID is valid" << std::endl;
+				std::cout << "INFO: user ID is valid" <<
+					std::endl;
 			for (size_t j = 0; j < userids[i]->selfsigs.size(); j++)
 			{
 				// update properties of primary key
 				if (userids[i]->selfsigs[j]->valid)
 				{
-					UpdateProperties(userids[i]->selfsigs[j], verbose);
+					UpdateProperties(userids[i]->selfsigs[j],
+						verbose);
 				}
 				else
-					std::cerr << "WARNING: one self-signature on this user ID is NOT valid" << std::endl;
+					std::cerr << "WARNING: one " <<
+						"self-signature on this " <<
+						"user ID is NOT valid" <<
+						std::endl;
 			}
 		}
 		else if (verbose > 1)
-				std::cout << "INFO: user ID is NOT valid" << std::endl;
+			std::cout << "INFO: user ID is NOT valid" << std::endl;
 		// check properties of primary key
 		if (!CheckProperties(verbose))
 		{
@@ -1127,24 +1198,34 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 	if (verbose > 1)
 	{
 		std::cout << "INFO: key flags on primary key are ";
+ 		// The key may be used to certify other keys.
 		if ((allflags & 0x01) == 0x01)
-			std::cout << "C"; // The key may be used to certify other keys.
+			std::cout << "C";
+		// The key may be used to sign data.
 		if ((allflags & 0x02) == 0x02)
-			std::cout << "S"; // The key may be used to sign data.
+			std::cout << "S";
+		// The key may be used encrypt communications.
 		if ((allflags & 0x04) == 0x04)
-			std::cout << "E"; // The key may be used encrypt communications.
+			std::cout << "E";
+		// The key may be used encrypt storage.
 		if ((allflags & 0x08) == 0x08)
-			std::cout << "e"; // The key may be used encrypt storage.
+			std::cout << "e";
+		// The private component of this key may have
+		// been split by a secret-sharing mechanism.
 		if ((allflags & 0x10) == 0x10)
-			std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
+			std::cout << "D";
+		// The key may be used for authentication.
 		if ((allflags & 0x20) == 0x20)
-			std::cout << "A"; // The key may be used for authentication.
+			std::cout << "A";
+		// The private component of this key may be
+		// in the possession of more than one person.
 		if ((allflags & 0x80) == 0x80)
-			std::cout << "G"; // The private component of this key may be in the possession of more than one person.
+			std::cout << "G";
 		std::cout << std::endl;
 	}
 	// check revocation signatures of primary key
-	std::sort(revsigs.begin(), revsigs.end(), TMCG_OpenPGP_Signature_Compare);
+	std::sort(revsigs.begin(), revsigs.end(),
+		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < revsigs.size(); j++)
 	{
 		// print and check basic properties of the signature
@@ -1154,13 +1235,14 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			continue;
 		// check the revocation signature cryptographically
 		bool valid_revsig = false;
-		if (CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(id,
-			revsigs[j]->issuer))
+		if (CallasDonnerhackeFinneyShawThayerRFC4880::
+			OctetsCompare(id, revsigs[j]->issuer))
 		{
 			if (revsigs[j]->Verify(key, pub_hashing, verbose))
 				valid_revsig = true;
 			else if (verbose)
-				std::cerr << "ERROR: signature verification failed" << std::endl;
+				std::cerr << "ERROR: signature verification" <<
+					" failed" << std::endl;
 		}
 		else
 		{
@@ -1169,12 +1251,15 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		if (valid_revsig)
 		{
 			if (verbose)
-				std::cerr << "WARNING: valid revocation signature found for primary key" << std::endl;
+				std::cerr << "WARNING: valid revocation " <<
+					"signature found for primary key" <<
+					std::endl;
 			valid = false;
 			return false;
 		}
 		else if (verbose)
-			std::cerr << "WARNING: invalid revocation signature found for subkey" << std::endl;
+			std::cerr << "WARNING: invalid revocation " <<
+				"signature found for subkey" << std::endl;
 	}
 	// update validity state of this key and return the result
 	if (one_valid_uid)
@@ -1202,37 +1287,49 @@ bool TMCG_OpenPGP_Pubkey::CheckSubkeys
 				std::cout << (int)subkeys[i]->id[ii] << " ";
 			std::cout << std::dec << std::endl;
 		}
-		if (subkeys[i]->Check(creationtime, key, pub_hashing, id, verbose))
+		if (subkeys[i]->Check(creationtime, key, pub_hashing, id,
+			verbose))
 		{
 			one_valid_sub = true;
 			if (verbose > 1)
-				std::cout << "INFO: subkey is valid" << std::endl;
+				std::cout << "INFO: subkey is valid" << 
+					std::endl;
 			// print accumulated key flags of the subkey
 			size_t allflags = 0;
 			for (size_t ii = 0; ii < subkeys[i]->flags.size(); ii++)
 			{
 				if (subkeys[i]->flags[ii])
-					allflags = (allflags << 8) + subkeys[i]->flags[ii];
+					allflags = (allflags << 8) +
+						subkeys[i]->flags[ii];
 				else
 					break;
 			}
 			if (verbose > 1)
 			{
 				std::cout << "INFO: key flags on subkey are ";
+				// The key may be used to certify other keys.
 				if ((allflags & 0x01) == 0x01)
-					std::cout << "C"; // The key may be used to certify other keys.
+					std::cout << "C";
+				// The key may be used to sign data.
 				if ((allflags & 0x02) == 0x02)
-					std::cout << "S"; // The key may be used to sign data.
+					std::cout << "S";
+				// The key may be used encrypt communications.
 				if ((allflags & 0x04) == 0x04)
-					std::cout << "E"; // The key may be used encrypt communications.
+					std::cout << "E";
+				// The key may be used encrypt storage.
 				if ((allflags & 0x08) == 0x08)
-					std::cout << "e"; // The key may be used encrypt storage.
+					std::cout << "e";
+				// The private component of this key may have
+				// been split by a secret-sharing mechanism.
 				if ((allflags & 0x10) == 0x10)
-					std::cout << "D"; // The private component of this key may have been split by a secret-sharing mechanism.		
+					std::cout << "D";
+				// The key may be used for authentication.
 				if ((allflags & 0x20) == 0x20)
-					std::cout << "A"; // The key may be used for authentication.
+					std::cout << "A";
+				// The private component of this key may be
+				// in the possession of more than one person.
 				if ((allflags & 0x80) == 0x80)
-					std::cout << "G"; // The private component of this key may be in the possession of more than one person.
+					std::cout << "G";
 				std::cout << std::endl;
 			}
 		}
@@ -1252,7 +1349,8 @@ void TMCG_OpenPGP_Pubkey::Reduce
 		else
 			delete userids[i];
 	userids.clear();
-	userids.insert(userids.end(), valid_userids.begin(), valid_userids.end());
+	userids.insert(userids.end(),
+		valid_userids.begin(), valid_userids.end());
 	std::vector<TMCG_OpenPGP_Subkey*> valid_subkeys;
 	for (size_t i = 0; i < subkeys.size(); i++)
 		if (subkeys[i]->valid)
@@ -1260,7 +1358,8 @@ void TMCG_OpenPGP_Pubkey::Reduce
 		else
 			delete subkeys[i];
 	subkeys.clear();
-	subkeys.insert(subkeys.end(), valid_subkeys.begin(), valid_subkeys.end());
+	subkeys.insert(subkeys.end(),
+		valid_subkeys.begin(), valid_subkeys.end());
 }
 
 TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
@@ -2361,7 +2460,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 	 const tmcg_openpgp_octets_t &issuer, tmcg_openpgp_octets_t &out)
 {
 	size_t subpkts = 7;
-	size_t subpktlen = (subpkts * 6) + 4 + 1 + issuer.size() + 1 + 1 + flags.size() + 1;
+	size_t subpktlen = (subpkts * 6) + 4 + 1 + issuer.size() + 1 + 1 + 
+		flags.size() + 1;
 	if (keyexptime != 0)
 		subpktlen += (6 + 4);
 	out.push_back(4); // V4 format
@@ -2714,13 +2814,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 			key[i] = seskey[i];
 		PacketMPIEncode(x, plain); // MPI x
 		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
-		plain.insert(plain.end(), hash.begin(), hash.end()); // append hash
-		tmcg_openpgp_byte_t *buffer = new tmcg_openpgp_byte_t[plain.size()];
+		plain.insert(plain.end(), hash.begin(), hash.end()); // + hash
+		tmcg_openpgp_byte_t *buffer = 
+			new tmcg_openpgp_byte_t[plain.size()];
 		for (size_t i = 0; i < plain.size(); i++)
 			buffer[i] = plain[i];
 		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
+		ret = gcry_cipher_open(&hd,
+			GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
 		if (ret)
 		{
 			delete [] buffer;
@@ -2789,7 +2891,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
 			len += 2+((gcry_mpi_get_nbits(c_ik[j][k]) + 7) / 8);
 	}
-	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+2+qualsizelen;
+	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+
+	       2+qualsizelen;
 	if (passphrase.length() == 0)
 		len += 1+2+x_ilen+2+xprime_ilen+2; // S2K usage is zero
 	else
@@ -2851,13 +2954,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 		PacketMPIEncode(x_i, plain); // MPI x_i
 		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
 		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
-		plain.insert(plain.end(), hash.begin(), hash.end()); // append hash
-		tmcg_openpgp_byte_t *buffer = new tmcg_openpgp_byte_t[plain.size()];
+		plain.insert(plain.end(), hash.begin(), hash.end()); // + hash
+		tmcg_openpgp_byte_t *buffer = 
+			new tmcg_openpgp_byte_t[plain.size()];
 		for (size_t i = 0; i < plain.size(); i++)
 			buffer[i] = plain[i];
 		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
+		ret = gcry_cipher_open(&hd,
+			GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
 		if (ret)
 		{
 			delete [] buffer;
@@ -2936,7 +3041,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
 			len += 2+((gcry_mpi_get_nbits(c_ik[j][k]) + 7) / 8);
 	}
-	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+2+qualsizelen+2+x_rvss_qualsizelen;
+	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+
+	       2+qualsizelen+2+x_rvss_qualsizelen;
 	if (passphrase.length() == 0)
 		len += 1+2+x_ilen+2+xprime_ilen+2; // S2K usage is zero
 	else
@@ -3001,13 +3107,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 		PacketMPIEncode(x_i, plain); // MPI x_i
 		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
 		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
-		plain.insert(plain.end(), hash.begin(), hash.end()); // append hash
-		tmcg_openpgp_byte_t *buffer = new tmcg_openpgp_byte_t[plain.size()];
+		plain.insert(plain.end(), hash.begin(), hash.end()); // + hash
+		tmcg_openpgp_byte_t *buffer = 
+			new tmcg_openpgp_byte_t[plain.size()];
 		for (size_t i = 0; i < plain.size(); i++)
 			buffer[i] = plain[i];
 		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
+		ret = gcry_cipher_open(&hd,
+			GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
 		if (ret)
 		{
 			delete [] buffer;
@@ -3186,7 +3294,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 			buffer[i] = plain[i];
 		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
+		ret = gcry_cipher_open(&hd,
+			GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
 		if (ret)
 		{
 			delete [] buffer;
@@ -3318,13 +3427,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 		PacketMPIEncode(x_i, plain); // MPI x_i
 		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
 		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
-		plain.insert(plain.end(), hash.begin(), hash.end()); // append hash
-		tmcg_openpgp_byte_t *buffer = new tmcg_openpgp_byte_t[plain.size()];
+		plain.insert(plain.end(), hash.begin(), hash.end()); // + hash
+		tmcg_openpgp_byte_t *buffer =
+			new tmcg_openpgp_byte_t[plain.size()];
 		for (size_t i = 0; i < plain.size(); i++)
 			buffer[i] = plain[i];
 		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
+		ret = gcry_cipher_open(&hd,
+			GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
 		if (ret)
 		{
 			delete [] buffer;
@@ -3684,7 +3795,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				return 0; // error: undefined notation flag
 			out.notation_name_length = (pkt[4] << 8) + pkt[5];
 			out.notation_value_length = (pkt[6] << 8) + pkt[7];
-			if (pkt.size() != (out.notation_name_length + out.notation_value_length + 8))
+			if (pkt.size() != (out.notation_name_length +
+			                   out.notation_value_length + 8))
 				return 0; // error: incorrect length
 			if (out.notation_name_length > sizeof(out.notation_name))
 				return 0; // error: too long notation name
@@ -3693,7 +3805,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			for (size_t i = 0; i < out.notation_name_length; i++)
 				out.notation_name[i] = pkt[8+i];
 			for (size_t i = 0; i < out.notation_value_length; i++)
-				out.notation_value[i] = pkt[8+i+out.notation_name_length];
+				out.notation_value[i] =
+					pkt[8+i+out.notation_name_length];
 			break;
 		case 21: // Preferred Hash Algorithms
 			if (pkt.size() > sizeof(out.pha))
@@ -3998,13 +4111,17 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					if (sptype == 16) // copy the issuer of this signature
 					{
 						for (size_t i = 0; i < sizeof(out.issuer); i++)
-							out.issuer[i] = untrusted.issuer[i];
+							out.issuer[i] =
+								untrusted.issuer[i];
 					}
 					if (sptype == 32) // copy an embedded signature packet
 					{
-						out.embeddedsignaturelen = untrusted.embeddedsignaturelen;
-						for (size_t i = 0; i < untrusted.embeddedsignaturelen; i++)
-							out.embeddedsignature[i] = untrusted.embeddedsignature[i];
+						out.embeddedsignaturelen =
+							untrusted.embeddedsignaturelen;
+						for (size_t i = 0;
+						     i < untrusted.embeddedsignaturelen; i++)
+							out.embeddedsignature[i] =
+								untrusted.embeddedsignature[i];
 					}
 				}
 				if (pkt.size() < (10 + hspdlen + uspdlen))
@@ -4234,9 +4351,11 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						return 0; // error: bad or zero mpi
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
-				if ((get_gcry_mpi_ui(out.n) > 255) || (get_gcry_mpi_ui(out.t) > 128)
-					|| (get_gcry_mpi_ui(out.i) >= get_gcry_mpi_ui(out.n)))
-					return 0; // error: too many parties, bad threshold or bad index
+				if ((get_gcry_mpi_ui(out.n) > 255) ||
+				    (get_gcry_mpi_ui(out.t) > 128) ||
+				    (get_gcry_mpi_ui(out.i) >= get_gcry_mpi_ui(out.n)))
+					return 0; // error: too many parties, 
+					          //        bad threshold or bad index
 				capl.clear();
 				for (size_t j = 0; j < get_gcry_mpi_ui(out.n); j++)
 				{
@@ -4319,7 +4438,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 					capl.push_back(peerid);
 				}
-				if ((get_gcry_mpi_ui(out.n) > 255) || (get_gcry_mpi_ui(out.t) > 128))
+				if ((get_gcry_mpi_ui(out.n) > 255) ||
+				    (get_gcry_mpi_ui(out.t) > 128))
 					return 0; // error: too many parties or bad threshold
 				c_ik.resize(get_gcry_mpi_ui(out.n));
 				for (size_t j = 0; j < get_gcry_mpi_ui(out.n); j++)
@@ -4383,7 +4503,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						return 0; // error: bad or zero mpi
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
-				if ((get_gcry_mpi_ui(out.n) > 255) || (get_gcry_mpi_ui(out.t) > 128))
+				if ((get_gcry_mpi_ui(out.n) > 255) ||
+				    (get_gcry_mpi_ui(out.t) > 128))
 					return 0; // error: too many parties or bad threshold
 				v_i.resize(get_gcry_mpi_ui(out.n));
 				for (size_t j = 0; j < get_gcry_mpi_ui(out.n); j++)
@@ -4446,7 +4567,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						return 0; // error: bad mpi
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
-				else if ((out.pkalgo == 107) || (out.pkalgo == 108) || (out.pkalgo == 109))
+				else if ((out.pkalgo == 107) ||
+					(out.pkalgo == 108) || (out.pkalgo == 109))
 				{
 					// Algorithm-Specific Fields for tDSS/DKG keys
 					mlen = PacketMPIDecode(mpis, out.x_i, chksum);
