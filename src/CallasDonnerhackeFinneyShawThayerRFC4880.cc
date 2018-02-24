@@ -224,8 +224,8 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.push_back(type);
 		trailer.push_back(pkalgo);
 		trailer.push_back(hashalgo);
-		trailer.push_back(hspd.size() >> 8); // length of hspd
-		trailer.push_back(hspd.size());
+		trailer.push_back((hspd.size() >> 8) & 0xFF); // length of hspd
+		trailer.push_back(hspd.size() & 0xFF);
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			KeyHash(hashing, trailer, hashalgo, hash, left);
@@ -303,8 +303,8 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.push_back(type);
 		trailer.push_back(pkalgo);
 		trailer.push_back(hashalgo);
-		trailer.push_back(hspd.size() >> 8); // length of hspd
-		trailer.push_back(hspd.size());
+		trailer.push_back((hspd.size() >> 8) & 0xFF); // length of hspd
+		trailer.push_back(hspd.size() & 0xFF);
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			KeyHash(pub_hashing, sub_hashing, trailer, hashalgo, 
@@ -383,8 +383,8 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.push_back(type);
 		trailer.push_back(pkalgo);
 		trailer.push_back(hashalgo);
-		trailer.push_back(hspd.size() >> 8); // length of hspd
-		trailer.push_back(hspd.size());
+		trailer.push_back((hspd.size() >> 8) & 0xFF); // length of hspd
+		trailer.push_back(hspd.size() & 0xFF);
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			CertificationHash(pub_hashing, userid, trailer,
@@ -1608,9 +1608,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Compute
 		}
 	}
 	crc &= 0xFFFFFF;
-	out.push_back(crc >> 16);
-	out.push_back(crc >> 8);
-	out.push_back(crc);
+	out.push_back((crc >> 16) & 0xFF);
+	out.push_back((crc >> 8) & 0xFF);
+	out.push_back(crc & 0xFF);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Encode
@@ -1801,8 +1801,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 	// followed by the two-octet packet length, followed by the entire
 	// Public-Key packet starting with the version field.
 	buffer[0] = 0x99;
-	buffer[1] = in.size() >> 8;
-	buffer[2] = in.size();
+	buffer[1] = (in.size() >> 8) & 0xFF;
+	buffer[2] = in.size() & 0xFF;
 	for (size_t i = 0; i < in.size(); i++)
 		buffer[3+i] = in[i];
 	gcry_md_hash_buffer(GCRY_MD_SHA1, hash, buffer, in.size() + 3);
@@ -1833,7 +1833,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	int a = AlgorithmHashGCRY(algo);
 	size_t dlen = gcry_md_get_algo_dlen(a);
 
-	if (!dlen)
+	if (!dlen || !in.size())
 	{
 		out.clear(); // indicates an error
 		return;
@@ -1860,7 +1860,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	gcry_md_hd_t hd;
 
 	ret = gcry_md_open(&hd, a, 0);
-	if (ret || (hd == NULL) || !dlen)
+	if (ret || (hd == NULL) || !dlen || !in.size())
 	{
 		out.clear(); // indicates an error
 		return;
@@ -2030,10 +2030,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthEncode
 {
 	// use scalar length format
 	out.push_back(0xFF);
-	out.push_back(len >> 24);
-	out.push_back(len >> 16);
-	out.push_back(len >> 8);
-	out.push_back(len);
+	out.push_back((len >> 24) & 0xFF);
+	out.push_back((len >> 16) & 0xFF);
+	out.push_back((len >> 8) & 0xFF);
+	out.push_back(len & 0xFF);
 }
 
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthDecode
@@ -2128,10 +2128,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode
 {
 	// A time field is an unsigned four-octet number containing the number
 	// of seconds elapsed since midnight, 1 January 1970 UTC.
-	out.push_back(in >> 24);
-	out.push_back(in >> 16);
-	out.push_back(in >> 8);
-	out.push_back(in);
+	out.push_back((in >> 24) & 0xFF);
+	out.push_back((in >> 16) & 0xFF);
+	out.push_back((in >> 8) & 0xFF);
+	out.push_back(in & 0xFF);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode
@@ -2320,8 +2320,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
 	// hashed area including subpackets
 	out.insert(out.end(), hashing.begin(), hashing.end());
 	// unhashed subpacket area
-	out.push_back(0 >> 8); // length of unhashed subpacket data
-	out.push_back(0);
+	out.push_back((0 >> 8) & 0xFF); // length of unhashed subpacket data
+	out.push_back(0 & 0xFF);
 	// signature data
 	out.insert(out.end(), left.begin(), left.end()); // 16 bits of hash
 	PacketMPIEncode(r, out); // signature - MPI r
@@ -2369,8 +2369,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 	out.push_back(17); // public-key algorithm: DSA
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
-	out.push_back(subpktlen >> 8); // length of hashed subpacket data
-	out.push_back(subpktlen);
+	out.push_back((subpktlen >> 8) & 0xFF); // length of hashed subpacket data
+	out.push_back(subpktlen & 0xFF);
 		// 1. signature creation time (length = 4)
 		tmcg_openpgp_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
@@ -2419,8 +2419,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 	out.push_back(17); // public-key algorithm: DSA
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
-	out.push_back(subpktlen >> 8); // length of hashed subpacket data
-	out.push_back(subpktlen);
+	out.push_back((subpktlen >> 8) & 0xFF); // length of hashed subpacket data
+	out.push_back(subpktlen & 0xFF);
 		// 1. signature creation time (length = 4)
 		tmcg_openpgp_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
@@ -2450,8 +2450,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignatu
 	out.push_back(17); // public-key algorithm: DSA
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
-	out.push_back(subpktlen >> 8); // length of hashed subpacket data
-	out.push_back(subpktlen);
+	out.push_back((subpktlen >> 8) & 0xFF); // length of hashed subpacket data
+	out.push_back(subpktlen & 0xFF);
 		// 1. signature creation time (length = 4)
 		tmcg_openpgp_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
@@ -2484,8 +2484,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSign
 	out.push_back(17); // public-key algorithm: DSA
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
-	out.push_back(subpktlen >> 8); // length of hashed subpacket data
-	out.push_back(subpktlen);
+	out.push_back((subpktlen >> 8) & 0xFF); // length of hashed subpacket data
+	out.push_back(subpktlen & 0xFF);
 		// 1. signature creation time (length = 4)
 		tmcg_openpgp_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
@@ -2687,8 +2687,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 		size_t chksum = 0;
 		out.push_back(0); // S2K convention: no encryption
 		PacketMPIEncode(x, out, chksum); // MPI x
-		out.push_back(chksum >> 8); // two-octet checksum
-		out.push_back(chksum);
+		out.push_back((chksum >> 8) & 0xFF); // two-octet checksum
+		out.push_back(chksum & 0xFF);
 	}
 	else
 	{
@@ -2823,8 +2823,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 		out.push_back(0); // S2K convention: no encryption
 		PacketMPIEncode(x_i, out, chksum); // MPI x_i
 		PacketMPIEncode(xprime_i, out, chksum); // MPI xprime_i
-		out.push_back(chksum >> 8); // two-octet checksum
-		out.push_back(chksum);
+		out.push_back((chksum >> 8) & 0xFF); // two-octet checksum
+		out.push_back(chksum & 0xFF);
 	}
 	else
 	{
@@ -2973,8 +2973,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 		out.push_back(0); // S2K convention: no encryption
 		PacketMPIEncode(x_i, out, chksum); // MPI x_i
 		PacketMPIEncode(xprime_i, out, chksum); // MPI xprime_i
-		out.push_back(chksum >> 8); // two-octet checksum
-		out.push_back(chksum);
+		out.push_back((chksum >> 8) & 0xFF); // two-octet checksum
+		out.push_back(chksum & 0xFF);
 	}
 	else
 	{
@@ -3153,8 +3153,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 		size_t chksum = 0;
 		out.push_back(0); // S2K convention: no encryption
 		PacketMPIEncode(x, out, chksum); // MPI x
-		out.push_back(chksum >> 8); // two-octet checksum
-		out.push_back(chksum);
+		out.push_back((chksum >> 8) & 0xFF); // two-octet checksum
+		out.push_back(chksum & 0xFF);
 	}
 	else
 	{
@@ -3290,8 +3290,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 		out.push_back(0); // S2K convention: no encryption
 		PacketMPIEncode(x_i, out, chksum); // MPI x_i
 		PacketMPIEncode(xprime_i, out, chksum); // MPI xprime_i
-		out.push_back(chksum >> 8); // two-octet checksum
-		out.push_back(chksum);
+		out.push_back((chksum >> 8) & 0xFF); // two-octet checksum
+		out.push_back(chksum & 0xFF);
 	}
 	else
 	{
@@ -4826,8 +4826,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV3
 	// of the key packet. (Note that this is an old-style packet header for
 	// a key packet with two-octet length.)
 	hash_input.push_back(0x99);
-	hash_input.push_back(key.size() >> 8);
-	hash_input.push_back(key.size());
+	hash_input.push_back((key.size() >> 8) & 0xFF);
+	hash_input.push_back(key.size() & 0xFF);
 	hash_input.insert(hash_input.end(), key.begin(), key.end());
 	// A certification signature (type 0x10 through 0x13) hashes the User
 	// ID being bound to the key into the hash context after the above
@@ -4862,8 +4862,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	// of the key packet. (Note that this is an old-style packet header for
 	// a key packet with two-octet length.)
 	hash_input.push_back(0x99);
-	hash_input.push_back(key.size() >> 8);
-	hash_input.push_back(key.size());
+	hash_input.push_back((key.size() >> 8) & 0xFF);
+	hash_input.push_back(key.size() & 0xFF);
 	hash_input.insert(hash_input.end(), key.begin(), key.end());
 	// A certification signature (type 0x10 through 0x13) hashes the User
 	// ID being bound to the key into the hash context after the above
@@ -4873,10 +4873,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	// of the User ID or User Attribute data, and then the User ID or 
 	// User Attribute data. 
 	hash_input.push_back(0xB4);
-	hash_input.push_back(uidlen >> 24);
-	hash_input.push_back(uidlen >> 16);
-	hash_input.push_back(uidlen >> 8);
-	hash_input.push_back(uidlen);
+	hash_input.push_back((uidlen >> 24) & 0xFF);
+	hash_input.push_back((uidlen >> 16) & 0xFF);
+	hash_input.push_back((uidlen >> 8) & 0xFF);
+	hash_input.push_back(uidlen & 0xFF);
 	for (size_t i = 0; i < uidlen; i++)
 		hash_input.push_back(uid[i]);
 	// Once the data body is hashed, then a trailer is hashed. [...]
@@ -4921,8 +4921,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV3
 	// the key being revoked. Subkey revocation signature (type 0x28) hash
 	// first the primary key and then the subkey being revoked.
 	hash_input.push_back(0x99);
-	hash_input.push_back(key.size() >> 8);
-	hash_input.push_back(key.size());
+	hash_input.push_back((key.size() >> 8) & 0xFF);
+	hash_input.push_back(key.size() & 0xFF);
 	hash_input.insert(hash_input.end(), key.begin(), key.end());
 	// Once the data body is hashed, then a trailer is hashed. A V3
 	// signature hashes five octets of the packet body, starting from the
@@ -4957,8 +4957,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 	// the key being revoked. Subkey revocation signature (type 0x28) hash
 	// first the primary key and then the subkey being revoked.
 	hash_input.push_back(0x99);
-	hash_input.push_back(key.size() >> 8);
-	hash_input.push_back(key.size());
+	hash_input.push_back((key.size() >> 8) & 0xFF);
+	hash_input.push_back(key.size() & 0xFF);
 	hash_input.insert(hash_input.end(), key.begin(), key.end());
 	// Once the data body is hashed, then a trailer is hashed. [...]
 	// A V4 signature hashes the packet body starting from its first
@@ -5002,12 +5002,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV3
 	// the key being revoked. Subkey revocation signature (type 0x28) hash
 	// first the primary key and then the subkey being revoked.
 	hash_input.push_back(0x99);
-	hash_input.push_back(primary.size() >> 8);
-	hash_input.push_back(primary.size());
+	hash_input.push_back((primary.size() >> 8) & 0xFF);
+	hash_input.push_back(primary.size() & 0xFF);
 	hash_input.insert(hash_input.end(), primary.begin(), primary.end());
 	hash_input.push_back(0x99);
-	hash_input.push_back(subkey.size() >> 8);
-	hash_input.push_back(subkey.size());
+	hash_input.push_back((subkey.size() >> 8) & 0xFF);
+	hash_input.push_back(subkey.size() & 0xFF);
 	hash_input.insert(hash_input.end(), subkey.begin(), subkey.end());
 	// Once the data body is hashed, then a trailer is hashed. A V3
 	// signature hashes five octets of the packet body, starting from the
@@ -5042,12 +5042,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 	// the key being revoked. Subkey revocation signature (type 0x28) hash
 	// first the primary key and then the subkey being revoked.
 	hash_input.push_back(0x99);
-	hash_input.push_back(primary.size() >> 8);
-	hash_input.push_back(primary.size());
+	hash_input.push_back((primary.size() >> 8) & 0xFF);
+	hash_input.push_back(primary.size() & 0xFF);
 	hash_input.insert(hash_input.end(), primary.begin(), primary.end());
 	hash_input.push_back(0x99);
-	hash_input.push_back(subkey.size() >> 8);
-	hash_input.push_back(subkey.size());
+	hash_input.push_back((subkey.size() >> 8) & 0xFF);
+	hash_input.push_back(subkey.size() & 0xFF);
 	hash_input.insert(hash_input.end(), subkey.begin(), subkey.end());
 	// Once the data body is hashed, then a trailer is hashed. [...]
 	// A V4 signature hashes the packet body starting from its first
@@ -5121,8 +5121,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 			chksum += key[i];
 		}
 		chksum %= 65536;
-		seskey.push_back(chksum >> 8); // checksum
-		seskey.push_back(chksum);
+		seskey.push_back((chksum >> 8) & 0xFF); // checksum
+		seskey.push_back(chksum & 0xFF);
 	}
 	else
 	{
@@ -5136,8 +5136,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 			chksum += key[i];
 		}
 		chksum %= 65536;
-		seskey.push_back(chksum >> 8); // checksum
-		seskey.push_back(chksum);
+		seskey.push_back((chksum >> 8) & 0xFF); // checksum
+		seskey.push_back(chksum & 0xFF);
 	}
 	// The data is encrypted in CFB mode, with a CFB shift size equal to
 	// the cipher’s block size. The Initial Vector (IV) is specified as
@@ -5268,8 +5268,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 			chksum += key[i];
 		}
 		chksum %= 65536;
-		seskey.push_back(chksum >> 8); // checksum
-		seskey.push_back(chksum);
+		seskey.push_back((chksum >> 8) & 0xFF); // checksum
+		seskey.push_back(chksum & 0xFF);
 	}
 	else
 		return -1; // error: bad session key provided
