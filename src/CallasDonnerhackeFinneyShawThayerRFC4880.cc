@@ -1170,7 +1170,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 					UpdateProperties(userids[i]->selfsigs[j],
 						verbose);
 				}
-				else
+				else if (verbose > 1)
 					std::cerr << "WARNING: one " <<
 						"self-signature on this " <<
 						"user ID is NOT valid" <<
