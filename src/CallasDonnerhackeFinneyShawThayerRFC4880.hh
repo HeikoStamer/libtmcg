@@ -318,6 +318,9 @@ class TMCG_OpenPGP_Subkey
 		time_t creationtime;
 		time_t expirationtime;
 		gcry_sexp_t key;
+		gcry_mpi_t rsa_n, rsa_e;
+		gcry_mpi_t elg_p, elg_g, elg_y;
+		gcry_mpi_t dsa_p, dsa_q, dsa_g, dsa_y;
 		tmcg_openpgp_octets_t packet;
 		tmcg_openpgp_octets_t sub_hashing;
 		tmcg_openpgp_octets_t id;
@@ -383,6 +386,8 @@ class TMCG_OpenPGP_Pubkey
 		time_t creationtime;
 		time_t expirationtime;
 		gcry_sexp_t key;
+		gcry_mpi_t rsa_n, rsa_e;
+		gcry_mpi_t dsa_p, dsa_q, dsa_g, dsa_y;
 		tmcg_openpgp_octets_t packet;
 		tmcg_openpgp_octets_t pub_hashing;
 		tmcg_openpgp_octets_t id;

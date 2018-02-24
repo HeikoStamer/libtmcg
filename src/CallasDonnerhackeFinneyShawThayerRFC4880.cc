@@ -573,7 +573,18 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in)
 {
+	rsa_n = gcry_mpi_new(2048);
+	rsa_e = gcry_mpi_new(2048);
+	elg_p = gcry_mpi_new(2048);
+	elg_g = gcry_mpi_new(2048);
+	elg_y = gcry_mpi_new(2048);
+	dsa_p = gcry_mpi_new(2048);
+	dsa_q = gcry_mpi_new(2048);
+	dsa_g = gcry_mpi_new(2048);
+	dsa_y = gcry_mpi_new(2048);
 	// public-key algorithm is RSA
+	gcry_mpi_set(rsa_n, n);
+	gcry_mpi_set(rsa_e, e);
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (rsa (n %M) (e %M)))", n, e);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -601,7 +612,19 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in)
 {
+	rsa_n = gcry_mpi_new(2048);
+	rsa_e = gcry_mpi_new(2048);
+	elg_p = gcry_mpi_new(2048);
+	elg_g = gcry_mpi_new(2048);
+	elg_y = gcry_mpi_new(2048);
+	dsa_p = gcry_mpi_new(2048);
+	dsa_q = gcry_mpi_new(2048);
+	dsa_g = gcry_mpi_new(2048);
+	dsa_y = gcry_mpi_new(2048);
 	// public-key algorithm is ElGamal
+	gcry_mpi_set(elg_p, p);
+	gcry_mpi_set(elg_g, g);
+	gcry_mpi_set(elg_y, y);
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (elg (p %M) (g %M) (y %M)))", p, g, y);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -630,7 +653,20 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in)
 {
+	rsa_n = gcry_mpi_new(2048);
+	rsa_e = gcry_mpi_new(2048);
+	elg_p = gcry_mpi_new(2048);
+	elg_g = gcry_mpi_new(2048);
+	elg_y = gcry_mpi_new(2048);
+	dsa_p = gcry_mpi_new(2048);
+	dsa_q = gcry_mpi_new(2048);
+	dsa_g = gcry_mpi_new(2048);
+	dsa_y = gcry_mpi_new(2048);
 	// public-key algorithm is DSA
+	gcry_mpi_set(dsa_p, p);
+	gcry_mpi_set(dsa_q, q);
+	gcry_mpi_set(dsa_g, g);
+	gcry_mpi_set(dsa_y, y);
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", p, q, g, y);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -930,6 +966,15 @@ bool TMCG_OpenPGP_Subkey::Check
 TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
 	()
 {
+	gcry_mpi_release(rsa_n);
+	gcry_mpi_release(rsa_e);
+	gcry_mpi_release(elg_p);
+	gcry_mpi_release(elg_g);
+	gcry_mpi_release(elg_y);
+	gcry_mpi_release(dsa_p);
+	gcry_mpi_release(dsa_q);
+	gcry_mpi_release(dsa_g);
+	gcry_mpi_release(dsa_y);
 	if (!ret)
 		gcry_sexp_release(key);
 	packet.clear();
@@ -967,7 +1012,15 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in)
 {
+	rsa_n = gcry_mpi_new(2048);
+	rsa_e = gcry_mpi_new(2048);
+	dsa_p = gcry_mpi_new(2048);
+	dsa_q = gcry_mpi_new(2048);
+	dsa_g = gcry_mpi_new(2048);
+	dsa_y = gcry_mpi_new(2048);
 	// public-key algorithm is RSA
+	gcry_mpi_set(rsa_n, n);
+	gcry_mpi_set(rsa_e, e);
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (rsa (n %M) (e %M)))", n, e);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -996,7 +1049,17 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in)
 {
+	rsa_n = gcry_mpi_new(2048);
+	rsa_e = gcry_mpi_new(2048);
+	dsa_p = gcry_mpi_new(2048);
+	dsa_q = gcry_mpi_new(2048);
+	dsa_g = gcry_mpi_new(2048);
+	dsa_y = gcry_mpi_new(2048);
 	// public-key algorithm is DSA
+	gcry_mpi_set(dsa_p, p);
+	gcry_mpi_set(dsa_q, q);
+	gcry_mpi_set(dsa_g, g);
+	gcry_mpi_set(dsa_y, y);
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", p, q, g, y);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -1365,6 +1428,12 @@ void TMCG_OpenPGP_Pubkey::Reduce
 TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
 	()
 {
+	gcry_mpi_release(rsa_n);
+	gcry_mpi_release(rsa_e);
+	gcry_mpi_release(dsa_p);
+	gcry_mpi_release(dsa_q);
+	gcry_mpi_release(dsa_g);
+	gcry_mpi_release(dsa_y);
 	if (!ret)
 		gcry_sexp_release(key);
 	packet.clear();
