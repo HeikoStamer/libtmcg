@@ -716,6 +716,12 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static tmcg_openpgp_byte_t SubpacketDecode
 			(tmcg_openpgp_octets_t &in,
 			 tmcg_openpgp_packet_ctx_t &out);
+		static tmcg_openpgp_byte_t SubpacketParse
+			(tmcg_openpgp_octets_t &spd,
+			 tmcg_openpgp_packet_ctx_t &out);
+		static void PacketContextEvaluate
+			(const tmcg_openpgp_packet_ctx_t &in,
+			 tmcg_openpgp_packet_ctx_t &out);
 		static tmcg_openpgp_byte_t PacketDecode
 			(tmcg_openpgp_octets_t &in,
 			 tmcg_openpgp_packet_ctx_t &out,
@@ -737,7 +743,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(tmcg_openpgp_octets_t &in,
 			 tmcg_openpgp_packet_ctx_t &out,
 			 tmcg_openpgp_octets_t &current_packet);
-		static void ReleasePacketContext
+		static void PacketContextRelease
 			(tmcg_openpgp_packet_ctx_t &ctx);
 
 		static bool BinaryDocumentHashV3
@@ -843,7 +849,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_byte_t hashalgo, 
 	 		 const gcry_mpi_t s);
 
-		static bool ParsePublicKeyBlock
+		static bool PublicKeyBlockParse
 			(const std::string &in, const int verbose,
 			 TMCG_OpenPGP_Pubkey* &pub);
 };

@@ -12,6 +12,7 @@ in the sources of this package and additionally can be obtained from Internet
 * add a generic group abstraction layer, e.g. for future use of ECC groups
 * add generic broadcast channel abstraction layer, e.g. AbstractBroadcastChannel
 * use secure memory allocation and erasing from libgcrypt, if requested by app
+* RFC4880: implement recognition of external revocation keys
 
 + provide interactive and distributed (multiparty DZKP) versions for
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
