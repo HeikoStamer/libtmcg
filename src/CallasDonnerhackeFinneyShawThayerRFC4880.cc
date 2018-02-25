@@ -3999,14 +3999,15 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 }
 
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
-	(tmcg_openpgp_octets_t &spd, tmcg_openpgp_packet_ctx_t &out)
+	(tmcg_openpgp_octets_t &in, const int verbose,
+	 tmcg_openpgp_packet_ctx_t &out)
 {
 	tmcg_openpgp_byte_t tag = 0x02; // only signature subpackets
-	while (spd.size())
+	while (in.size())
 	{
-		tmcg_openpgp_byte_t sptype = SubpacketDecode(spd, out);
+		tmcg_openpgp_byte_t sptype = SubpacketDecode(in, out);
 		if (sptype == 0)
-			return 0; // error: incorrect subpacket
+			return 0x00; // error: incorrect subpacket
 		else if (sptype == 0xFE)
 		{
 			 // critical subpacket?
@@ -4014,6 +4015,11 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 				tag = 0xFA;
 			else
 				tag = 0xFB;
+		}
+		else if (verbose > 2)
+		{
+			std::cout << "INFO: subpacket type = " <<
+				(int)sptype << " found" << std::endl;
 		}
 	}
 	return tag;
@@ -4025,8 +4031,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextEvaluate
 	// copy the issuer, if not already set
 	bool copy = true;
 	for (size_t i = 0; i < sizeof(out.issuer); i++)
+	{
 		if (out.issuer[i])
 			copy = false;
+	}
 	for (size_t i = 0; (copy && (i < sizeof(out.issuer))); i++)
 		out.issuer[i] = in.issuer[i];
 	// copy embedded sig, if not already set
@@ -4039,7 +4047,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextEvaluate
 }
 
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
-	(tmcg_openpgp_octets_t &in, tmcg_openpgp_packet_ctx_t &out,
+	(tmcg_openpgp_octets_t &in, const int verbose,
+	 tmcg_openpgp_packet_ctx_t &out,
 	 tmcg_openpgp_octets_t &current_packet,
 	 std::vector<gcry_mpi_t> &qual,
 	 std::vector<gcry_mpi_t> &x_rvss_qual,
@@ -4205,7 +4214,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					new tmcg_openpgp_byte_t[out.hspdlen];
 				for (size_t i = 0; i < out.hspdlen; i++)
 					out.hspd[i] = pkt[6+i];
-				tag = SubpacketParse(hspd, out);
+				tag = SubpacketParse(hspd, verbose, out);
 				if (tag == 0x00)
 					return 0; // error: incorrect subpacket
 				if (pkt.size() < (8 + hspdlen))
@@ -4222,7 +4231,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				// definitive because it is not part of the
 				// signature proper.
 				tmcg_openpgp_packet_ctx_t untrusted;
-				tag = SubpacketParse(uspd, untrusted);
+				tag = SubpacketParse(uspd, verbose, untrusted);
 				if (tag == 0x00)
 					return 0; // error: incorrect subpacket
 				PacketContextEvaluate(untrusted, out);
@@ -4925,7 +4934,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 }
 
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
-	(tmcg_openpgp_octets_t &in, tmcg_openpgp_packet_ctx_t &out,
+	(tmcg_openpgp_octets_t &in, const int verbose,
+	 tmcg_openpgp_packet_ctx_t &out,
 	 tmcg_openpgp_octets_t &current_packet,
 	 std::vector<gcry_mpi_t> &qual,
 	 std::vector<std::string> &capl,
@@ -4935,16 +4945,17 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	std::vector<gcry_mpi_t> x_rvss_qual; // dummy container
 	tmcg_openpgp_byte_t ret;
 
-	ret = PacketDecode(in, out, current_packet, qual,
+	ret = PacketDecode(in, verbose, out, current_packet, qual,
 		x_rvss_qual, capl, v_i, c_ik);
 	for (size_t i = 0; i < x_rvss_qual.size(); i++)
-		gcry_mpi_release(x_rvss_qual[i]); // release allocated mpi's
+		gcry_mpi_release(x_rvss_qual[i]); // release allocated mpi
 	x_rvss_qual.clear();
 	return ret;
 }
 
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
-	(tmcg_openpgp_octets_t &in, tmcg_openpgp_packet_ctx_t &out,
+	(tmcg_openpgp_octets_t &in, const int verbose,
+	 tmcg_openpgp_packet_ctx_t &out,
 	 tmcg_openpgp_octets_t &current_packet)
 {
 	std::vector<gcry_mpi_t> qual; // dummy container
@@ -4953,17 +4964,18 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	std::vector< std::vector<gcry_mpi_t> > c_ik; // dummy container
 	tmcg_openpgp_byte_t ret;
 
-	ret = PacketDecode(in, out, current_packet, qual, capl, v_i, c_ik);
+	ret = PacketDecode(in, verbose, out, current_packet,
+		qual, capl, v_i, c_ik);
 	for (size_t i = 0; i < qual.size(); i++)
-		gcry_mpi_release(qual[i]); // release allocated mpi's
+		gcry_mpi_release(qual[i]); // release allocated mpi
 	qual.clear();
 	capl.clear();
 	for (size_t i = 0; i < v_i.size(); i++)
-		gcry_mpi_release(v_i[i]); // release allocated mpi's
+		gcry_mpi_release(v_i[i]); // release allocated mpi
 	for (size_t i = 0; i < c_ik.size(); i++)
 	{
 		for (size_t k = 0; k < c_ik[i].size(); k++)
-			gcry_mpi_release(c_ik[i][k]); // release allocated mpi's
+			gcry_mpi_release(c_ik[i][k]); // release allocated mpi
 		c_ik[i].clear();
 	}
 	c_ik.clear();
@@ -5892,14 +5904,14 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		tmcg_openpgp_octets_t current_packet;
 		if (embedded_pkt.size())
 		{
-			ptag = PacketDecode(embedded_pkt, ctx, current_packet);
+			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet);
 			if (verbose > 2)
 				std::cout << "INFO: [EMBEDDED] PacketDecode() = " << (int)ptag << " version = " << (int)ctx.version << std::endl;
 			embedded_pkt.clear();
 		}
 		else
 		{
-			ptag = PacketDecode(pkts, ctx, current_packet);
+			ptag = PacketDecode(pkts, verbose, ctx, current_packet);
 			++pnum;
 			if (verbose > 2)
 				std::cout << "INFO: PacketDecode() = " << (int)ptag << " version = " << (int)ctx.version << std::endl;

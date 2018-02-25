@@ -717,13 +717,15 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(tmcg_openpgp_octets_t &in,
 			 tmcg_openpgp_packet_ctx_t &out);
 		static tmcg_openpgp_byte_t SubpacketParse
-			(tmcg_openpgp_octets_t &spd,
+			(tmcg_openpgp_octets_t &in,
+			 const int verbose,
 			 tmcg_openpgp_packet_ctx_t &out);
 		static void PacketContextEvaluate
 			(const tmcg_openpgp_packet_ctx_t &in,
 			 tmcg_openpgp_packet_ctx_t &out);
 		static tmcg_openpgp_byte_t PacketDecode
 			(tmcg_openpgp_octets_t &in,
+			 const int verbose,
 			 tmcg_openpgp_packet_ctx_t &out,
 			 tmcg_openpgp_octets_t &current_packet,
 			 std::vector<gcry_mpi_t> &qual,
@@ -733,6 +735,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
 		static tmcg_openpgp_byte_t PacketDecode
 			(tmcg_openpgp_octets_t &in,
+			 const int verbose,
 			 tmcg_openpgp_packet_ctx_t &out,
 			 tmcg_openpgp_octets_t &current_packet,
 			 std::vector<gcry_mpi_t> &qual,
@@ -741,6 +744,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 std::vector< std::vector<gcry_mpi_t> > &c_ik);
 		static tmcg_openpgp_byte_t PacketDecode
 			(tmcg_openpgp_octets_t &in,
+			 const int verbose,
 			 tmcg_openpgp_packet_ctx_t &out,
 			 tmcg_openpgp_octets_t &current_packet);
 		static void PacketContextRelease
