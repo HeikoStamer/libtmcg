@@ -5984,20 +5984,26 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		else if (ptag == 0xFA)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized critical OpenPGP subpacket found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized " <<
+					"critical OpenPGP subpacket " <<
+					"found at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore signature with critical subpacket
 		}
 		else if (ptag == 0xFB)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized OpenPGP subpacket found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized " <<
+					"OpenPGP subpacket found at #" << 
+					pnum << std::endl;
 			ptag = 0x02; // process signature
 		}
 		else if (ptag == 0xFC)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized OpenPGP signature packet found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized " <<
+					"OpenPGP signature packet found " <<
+					"at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
@@ -6006,7 +6012,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			if (primary)
 			{
 				if (verbose)
-					std::cerr << "WARNING: unrecognized OpenPGP key packet found at #" << pnum << std::endl;
+					std::cerr << "WARNING: unrecognized" <<
+						" OpenPGP key packet found " <<
+						"at #" << pnum << std::endl;
 				if (subkey)
 					pub->subkeys.push_back(sub);
 				badkey = true;
@@ -6016,7 +6024,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			else
 			{
 				if (verbose)
-					std::cerr << "ERROR: public-key algorithm " << (int)ctx.pkalgo << " not supported" << std::endl;
+					std::cerr << "ERROR: public-key " <<
+						"algorithm " <<
+						(int)ctx.pkalgo << 
+						" not supported" << std::endl;
 				PacketContextRelease(ctx);
 				return false;
 			}
@@ -6024,13 +6035,16 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		else if (ptag == 0xFE)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized OpenPGP packet found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized " <<
+					"OpenPGP packet found at #" << pnum <<
+					std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
 		TMCG_OpenPGP_Signature *sig = NULL;
 		std::string userid = "";
-		tmcg_openpgp_octets_t issuer, hspd, keyflags, features, psa, pha, pca;
+		tmcg_openpgp_octets_t issuer, hspd, keyflags;
+		tmcg_openpgp_octets_t features, psa, pha, pca;
 		for (size_t i = 0; i < sizeof(ctx.uid); i++)
 		{
 			if (ctx.uid[i])
