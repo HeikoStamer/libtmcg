@@ -772,6 +772,20 @@ bool TMCG_OpenPGP_Subkey::Check
 	 const tmcg_openpgp_octets_t &pub_id,
 	 const int verbose)
 {
+	// print statistics of subkey
+	if (verbose > 1)
+	{
+		std::cout << "INFO: key ID of subkey: " << std::hex;
+		for (size_t i = 0; i < id.size(); i++)
+			std::cout << (int)id[i] << " ";
+		std::cout << std::dec << std::endl;
+		std::cout << "INFO: number of selfsigs = " << 
+			selfsigs.size() << std::endl;
+		std::cout << "INFO: number of bindsigs = " << 
+			bindsigs.size() << std::endl;
+		std::cout << "INFO: number of revsigs = " <<
+			revsigs.size() << std::endl;
+	}
 	// check whether some self-signatures on subkey are valid
 	std::sort(selfsigs.begin(), selfsigs.end(),
 		TMCG_OpenPGP_Signature_Compare);
@@ -1343,13 +1357,6 @@ bool TMCG_OpenPGP_Pubkey::CheckSubkeys
 	bool one_valid_sub = false;
 	for (size_t i = 0; i < subkeys.size(); i++)
 	{
-		if (verbose > 1)
-		{
-			std::cout << "INFO: key ID of subkey: " << std::hex;
-			for (size_t ii = 0; ii < subkeys[i]->id.size(); ii++)
-				std::cout << (int)subkeys[i]->id[ii] << " ";
-			std::cout << std::dec << std::endl;
-		}
 		if (subkeys[i]->Check(creationtime, key, pub_hashing, id,
 			verbose))
 		{
