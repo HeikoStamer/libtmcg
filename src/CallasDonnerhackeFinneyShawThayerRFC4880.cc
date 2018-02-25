@@ -4232,7 +4232,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				for (size_t i = 0; i < 2; i++)
 					out.left[i] = pkt[8+hspdlen+uspdlen+i];
 				mpis.insert(mpis.end(),
-					pkt.begin()+10+hspdlen+uspdlen, pkt.end());
+					pkt.begin()+10+hspdlen+uspdlen,
+					pkt.end());
 			}
 			else
 				return 0xFC; // warning: version not supported
@@ -4263,7 +4264,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
 			else
-				return 0xFC; // warning: unsupported public-key algo
+				return 0xFC; // warning: unsupported algo
 			break;
 		case 3: // Symmetric-Key Encrypted Session Key Packet
 			if (pkt.size() < 4)
@@ -4280,7 +4281,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.encdatalen = pkt.size() - 4;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
-				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+				out.encdata =
+					new tmcg_openpgp_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = pkt[4+i];
 			}
@@ -4294,7 +4296,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.encdatalen = pkt.size() - 12;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
-				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+				out.encdata =
+					new tmcg_openpgp_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = pkt[12+i];
 			}
@@ -4311,7 +4314,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.encdatalen = pkt.size() - 13;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
-				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+				out.encdata =
+					new tmcg_openpgp_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = pkt[13+i];
 			}
@@ -4429,35 +4433,43 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				if (get_gcry_mpi_ui(out.qualsize) > 255)
+				size_t qs = get_gcry_mpi_ui(out.qualsize);
+				if (qs > 255)
 					return 0; // error: too many parties
-				qual.resize(get_gcry_mpi_ui(out.qualsize));
-				for (size_t j = 0; j < get_gcry_mpi_ui(out.qualsize); j++)
+				qual.resize(qs);
+				for (size_t j = 0; j < qs; j++)
 				{
 					mlen = PacketMPIDecode(mpis, qual[j]);
 					if (!mlen || (mlen > mpis.size()))
-						return 0; // error: bad or zero mpi
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+						return 0; // error: bad mpi
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
 				}
-				mlen = PacketMPIDecode(mpis, out.x_rvss_qualsize);
+				mlen = PacketMPIDecode(mpis,
+					out.x_rvss_qualsize);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				if (get_gcry_mpi_ui(out.x_rvss_qualsize) > 255)
+				size_t xqs =
+					get_gcry_mpi_ui(out.x_rvss_qualsize);
+				if (xqs > 255)
 					return 0; // error: too many parties
-				x_rvss_qual.resize(get_gcry_mpi_ui(out.x_rvss_qualsize));
-				for (size_t j = 0; j < get_gcry_mpi_ui(out.x_rvss_qualsize); j++)
+				x_rvss_qual.resize(xqs);
+				for (size_t j = 0; j < xqs; j++)
 				{
-					mlen = PacketMPIDecode(mpis, x_rvss_qual[j]);
+					mlen = PacketMPIDecode(mpis,
+						x_rvss_qual[j]);
 					if (!mlen || (mlen > mpis.size()))
-						return 0; // error: bad or zero mpi
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+						return 0; // error: bad mpi
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
 				}
 				if ((get_gcry_mpi_ui(out.n) > 255) ||
 				    (get_gcry_mpi_ui(out.t) > 128) ||
-				    (get_gcry_mpi_ui(out.i) >= get_gcry_mpi_ui(out.n)))
+				    (get_gcry_mpi_ui(out.i) >=
+				                       get_gcry_mpi_ui(out.n)))
 					return 0; // error: too many parties, 
-					          //        bad threshold or bad index
+					          //        bad threshold/index
 				capl.clear();
 				for (size_t j = 0; j < get_gcry_mpi_ui(out.n); j++)
 				{
@@ -4643,44 +4655,59 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if ((out.pkalgo == 16) || (out.pkalgo == 17))
 				{
 					// Algorithm-Specific Fields for Elgamal
-					// and DSA keys
-					mlen = PacketMPIDecode(mpis, out.x, chksum);
+					// Algorithm-Specific Fields for DSA
+					mlen = PacketMPIDecode(mpis,
+						out.x, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
 				}
 				else if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
 				{
-					// Algorithm-Specific Fields for RSA keys
-					mlen = PacketMPIDecode(mpis, out.d, chksum);
+					// Algorithm-Specific Fields for RSA
+					mlen = PacketMPIDecode(mpis,
+						out.d, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis, out.p, chksum);
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis,
+						out.p, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis, out.q, chksum);
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis,
+						out.q, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis, out.u, chksum);
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis,
+						out.u, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
 				}
 				else if ((out.pkalgo == 107) ||
-					(out.pkalgo == 108) || (out.pkalgo == 109))
+				         (out.pkalgo == 108) ||
+				         (out.pkalgo == 109))
 				{
-					// Algorithm-Specific Fields for tDSS/DKG keys
-					mlen = PacketMPIDecode(mpis, out.x_i, chksum);
+					// Algorithm-Specific Fields for tDSS/DKG
+					mlen = PacketMPIDecode(mpis,
+						out.x_i, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis, out.xprime_i, chksum);
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis,
+						out.xprime_i, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					mpis.erase(mpis.begin(),
+						mpis.begin()+mlen);
 				}
 				else
 					return 0; // error: algo not supported
@@ -4714,7 +4741,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						return 0; // error: no salt
 					for (size_t i = 0; i < 8; i++)
 						out.s2k_salt[i] = mpis[i];
-					mpis.erase(mpis.begin(), mpis.begin()+8);
+					mpis.erase(mpis.begin(),
+						mpis.begin()+8);
 				}
 				else if (out.s2k_type == 0x03)
 				{
@@ -4723,11 +4751,13 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						return 0; // error: no salt
 					for (size_t i = 0; i < 8; i++)
 						out.s2k_salt[i] = mpis[i];
-					mpis.erase(mpis.begin(), mpis.begin()+8);
+					mpis.erase(mpis.begin(),
+						mpis.begin()+8);
 					if (mpis.size() < 1)
 						return 0; // error: no count
 					out.s2k_count = mpis[0];
-					mpis.erase(mpis.begin(), mpis.begin()+1);
+					mpis.erase(mpis.begin(),
+						mpis.begin()+1);
 				}
 				else
 					return 0; // unknown S2K specifier
@@ -4742,7 +4772,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if (mpis.size() < 4)
 					return 0; // error: bad encrypted data
 				out.encdatalen = mpis.size();
-				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+				out.encdata =
+					new tmcg_openpgp_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = mpis[i];
 			}
@@ -4809,7 +4840,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
 			else
-				return 0xFD; // warning: unsupported public-key algo
+				return 0xFD; // warning: unsupported algo
 			break;
 		case 8: // Compressed Data Packet
 			if (pkt.size() < 2)
@@ -4818,7 +4849,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (out.compalgo > 3)
 				return 0; // error: algorithm not supported
 			out.compdatalen = pkt.size() - 1;
-			out.compdata = new tmcg_openpgp_byte_t[out.compdatalen];
+			out.compdata =
+				new tmcg_openpgp_byte_t[out.compdatalen];
 			for (size_t i = 0; i < out.compdatalen; i++)
 				out.compdata[i] = pkt[1+i];
 			break;
@@ -4833,7 +4865,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		case 10: // Marker Packet
 			if (pkt.size() != 3)
 				return 0; // error: incorrect packet body
-			if ((pkt[0] != 0x50) || (pkt[1] != 0x47) || (pkt[3] != 0x50))
+			if ((pkt[0] != 0x50) || (pkt[1] != 0x47) || 
+			    (pkt[3] != 0x50))
 				return 0; // error: bad marker 
 			break;
 		case 11: // Literal Data Packet
@@ -4864,7 +4897,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.uid[i] = pkt[i];
 			break;
-		case 17: // User Attribute Packet -- not supported, ignore silently
+		case 17: // User Attribute Packet -- not supported, ignore
 			break;
 		case 18: // Sym. Encrypted and Integrity Protected Data Packet
 			if (pkt.size() < 2)
