@@ -3723,7 +3723,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMdcEncode
 // ===========================================================================
 
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
-	(tmcg_openpgp_octets_t &in, tmcg_openpgp_packet_ctx_t &out)
+	(tmcg_openpgp_octets_t &in, const int verbose,
+	 tmcg_openpgp_packet_ctx_t &out)
 {
 	if (in.size() < 2)
 		return 0; // error: incorrect subpacket header
@@ -3974,10 +3975,13 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			if (pkt.size() > sizeof(out.embeddedsignature))
 				return 0; // error: too long subpacket body
 			out.embeddedsignaturelen = pkt.size();
+			if (verbose > 2)
+				std::cout << "INFO: embeddedsignaturelen = " <<
+					out.embeddedsignaturelen << std::endl;
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.embeddedsignature[i] = pkt[i];
 			break;
-		case 100: // Private or experimental -- not yet impl.; ignore
+		case 100: // Private or experimental -- not implemented; ignore
 		case 101:
 		case 102:
 		case 103:
@@ -4005,9 +4009,18 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 	tmcg_openpgp_byte_t tag = 0x02; // only signature subpackets
 	while (in.size())
 	{
-		tmcg_openpgp_byte_t sptype = SubpacketDecode(in, out);
+		tmcg_openpgp_byte_t sptype = SubpacketDecode(in, verbose, out);
 		if (sptype == 0)
+		{
+			if (verbose > 2)
+			{
+				std::cout << "INFO: incorrect ";
+				if (out.critical)
+					std::cout << "critical ";
+				std::cout << "subpacket" << std::endl;
+			}
 			return 0x00; // error: incorrect subpacket
+		}
 		else if (sptype == 0xFE)
 		{
 			 // critical subpacket?
@@ -4015,6 +4028,13 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 				tag = 0xFA;
 			else
 				tag = 0xFB;
+			if (verbose > 2)
+			{
+				std::cout << "INFO: unrecognized ";
+				if (out.critical)
+					std::cout << "critical ";
+				std::cout << "subpacket" << std::endl;
+			}
 		}
 		else if (verbose > 2)
 		{
@@ -4231,6 +4251,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				// definitive because it is not part of the
 				// signature proper.
 				tmcg_openpgp_packet_ctx_t untrusted;
+				memset(&untrusted, 0, sizeof(untrusted));
 				tag = SubpacketParse(uspd, verbose, untrusted);
 				if (tag == 0x00)
 					return 0; // error: incorrect subpacket

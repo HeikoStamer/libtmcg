@@ -715,6 +715,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 
 		static tmcg_openpgp_byte_t SubpacketDecode
 			(tmcg_openpgp_octets_t &in,
+			 const int verbose,
 			 tmcg_openpgp_packet_ctx_t &out);
 		static tmcg_openpgp_byte_t SubpacketParse
 			(tmcg_openpgp_octets_t &in,
