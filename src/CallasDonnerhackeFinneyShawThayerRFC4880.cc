@@ -6022,7 +6022,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 					std::cerr << "WARNING: unrecognized" <<
 						" OpenPGP key packet found " <<
 						"at #" << pnum << std::endl;
-				if (subkey)
+				if (!badkey && subkey)
 					pub->subkeys.push_back(sub);
 				badkey = true;
 				PacketContextRelease(ctx);
@@ -6384,12 +6384,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				}
 				if (!badkey && subkey)
 					pub->subkeys.push_back(sub);
-				subkey = true;
-				badkey = false;
+				sub = NULL, subkey = true, badkey = false;
 				if (ctx.version != 4)
 				{
 					if (verbose)
 						std::cerr << "WARNING: public-subkey packet version " << (int)ctx.version << " not supported" << std::endl;
+					badkey = true;
 				}
 				else if ((ctx.pkalgo == 1) || (ctx.pkalgo == 2) || (ctx.pkalgo == 3) || (ctx.pkalgo == 16) || (ctx.pkalgo == 17))
 				{
@@ -6477,7 +6477,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	}
 	if (uid_flag)
 		pub->userids.push_back(uid);
-	if (subkey)
+	if (!badkey && subkey)
 		pub->subkeys.push_back(sub);
 	return true;
 }
