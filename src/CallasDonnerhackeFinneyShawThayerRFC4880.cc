@@ -6371,7 +6371,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				uid = new TMCG_OpenPGP_UserID(userid, current_packet);
 				break;
 			case 14: // Public-Subkey Packet
-				badkey = false;
 				if (!primary)
 				{
 					if (verbose)
@@ -6383,9 +6382,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 						delete uid;
 					return false;
 				}
-				if (subkey)
+				if (!badkey && subkey)
 					pub->subkeys.push_back(sub);
 				subkey = true;
+				badkey = false;
 				if (ctx.version != 4)
 				{
 					if (verbose)
@@ -6433,6 +6433,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				{
 					if (verbose)
 						std::cerr << "WARNING: public-key algorithm " << (int)ctx.pkalgo << " for subkey not supported" << std::endl;
+					badkey = true;
 				}
 				break;
 			case 17: // User Attribute Packet
