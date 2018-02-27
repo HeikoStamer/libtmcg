@@ -244,6 +244,72 @@ int main
 	std::cout << "S2KCompute(...)" << std::endl;
 	CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(8, keylen, keystr, salt2, true, octcnt, out2);
 	assert(CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(out, out2));
+
+	// testing PublicKeyBlockParse()
+	tmcg_openpgp_octets_t all, pub, uid, uidsig, sub, subsig, pubflags, subflags, keyid, pub_hashing, uidsig_hashing, uidsig_left, sub_hashing, subsig_hashing, subsig_left;
+	std::string armored_pubkeyblock;
+	time_t creation = time(NULL);
+	std::cout << "gcry_sexp_build(...)" << std::endl;
+	ret = gcry_sexp_build(&dsaparms, &erroff, "(genkey (dsa (nbits 4:3072)))");
+	assert(!ret);
+	std::cout << "gcry_pk_genkey(...)" << std::endl;
+	ret = gcry_pk_genkey(&dsakey, dsaparms);
+	assert(!ret);
+	gcry_mpi_t p, q, g, y;
+	std::cout << "gcry_sexp_extract_param(...)" << std::endl;
+	ret = gcry_sexp_extract_param (dsakey, NULL, "pqgy", &p, &q, &g, &y, NULL);
+	assert(!ret);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creation, 17, p, q, g, y, pub);
+	for (size_t i = 6; i < pub.size(); i++)
+		pub_hashing.push_back(pub[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(keystr, uid);
+	pubflags.push_back(0x01 | 0x02); // key may be used to certify other keys and to sign data
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature(0x13, 8, time(NULL), 1000, pubflags, keyid, uidsig_hashing); 
+	hash.clear();
+	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing, keystr, uidsig_hashing, 8, hash, uidsig_left);
+	r = gcry_mpi_new(2048);
+	s = gcry_mpi_new(2048);
+	std::cout << "AsymmetricSignDSA()" << std::endl;
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, dsakey, r, s);
+	assert(!ret);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(uidsig_hashing, uidsig_left, r, s, uidsig);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creation, 16, p, q, g, y, sub);
+	subflags.push_back(0x04 | 0x08); // key may be used to encrypt communications and storage
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature(0x18, 8, time(NULL), 1000, subflags, keyid, subsig_hashing);
+	for (size_t i = 6; i < sub.size(); i++)
+		sub_hashing.push_back(sub[i]);
+	hash.clear();
+	CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash(pub_hashing, sub_hashing, subsig_hashing, 8, hash, subsig_left);
+	std::cout << "AsymmetricSignDSA()" << std::endl;
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, dsakey, r, s);
+	assert(!ret);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(subsig_hashing, subsig_left, r, s, subsig);
+	all.insert(all.end(), pub.begin(), pub.end());
+	all.insert(all.end(), uid.begin(), uid.end());
+	all.insert(all.end(), uidsig.begin(), uidsig.end());
+	all.insert(all.end(), sub.begin(), sub.end());
+	all.insert(all.end(), subsig.begin(), subsig.end());
+	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK, all, armored_pubkeyblock);
+	TMCG_OpenPGP_Pubkey *primary = NULL;
+	std::cout << "PublicKeyBlockParse()" << std::endl;
+	bool parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse(armored_pubkeyblock, 3, primary);
+	assert(parse_ok);
+	std::cout << "CheckSelfSignatures()" << std::endl;
+	parse_ok = primary->CheckSelfSignatures(3);
+	assert(parse_ok);
+	std::cout << "CheckSubkeys()" << std::endl;
+	parse_ok = primary->CheckSubkeys(3);
+	assert(parse_ok);
+	delete primary;
+	gcry_sexp_release(dsaparms);
+	gcry_sexp_release(dsakey);
+	gcry_mpi_release(p);
+	gcry_mpi_release(q);
+	gcry_mpi_release(g);
+	gcry_mpi_release(y);
+	gcry_mpi_release(r);
+	gcry_mpi_release(s);
 	
 	return 0;
 }
