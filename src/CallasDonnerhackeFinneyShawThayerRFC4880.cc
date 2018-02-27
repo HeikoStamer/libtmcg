@@ -6324,7 +6324,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 					if (!pub->good())
 					{
 						if (verbose)
-							std::cerr << "ERROR: parsing primary key material failed" << std::endl;
+							std::cerr << "ERROR: reading primary key material failed" << std::endl;
 						PacketContextRelease(ctx);
 						if (sub)
 							delete sub;
@@ -6343,7 +6343,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				else
 				{
 					if (verbose)
-						std::cerr << "ERROR: more than one primary key not supported" << std::endl;
+						std::cerr << "ERROR: more than one primary key not allowed" << std::endl;
 					PacketContextRelease(ctx);
 					if (sub)
 						delete sub;
