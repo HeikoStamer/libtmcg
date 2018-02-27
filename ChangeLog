@@ -7,6 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-02-27] RFC4880: added no-modify key server preferences for self-sigs
 * [2018-02-25] RFC4880: fixes uninitialized context for unhashed subpackets
 * [2018-02-18] RFC4880: fixes format from "%M" to "%b" in gcry_sexp_build()
 * [2018-02-11] RFC4880: added PacketContextRelease() and PublicKeyBlockParse()

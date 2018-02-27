@@ -2535,9 +2535,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 	 const tmcg_openpgp_octets_t &flags,
 	 const tmcg_openpgp_octets_t &issuer, tmcg_openpgp_octets_t &out)
 {
-	size_t subpkts = 7;
+	size_t subpkts = 8;
 	size_t subpktlen = (subpkts * 6) + 4 + 1 + issuer.size() + 1 + 1 + 
-		flags.size() + 1;
+		1 + flags.size() + 1;
 	if (keyexptime != 0)
 		subpktlen += (6 + 4);
 	out.push_back(4); // V4 format
@@ -2572,9 +2572,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		tmcg_openpgp_octets_t pca;
 		pca.push_back(0); // uncompressed
 		SubpacketEncode(22, false, pca, out);
-		// 6. key flags (variable length)
+		// 6. key server preferences (length = 1)
+		tmcg_openpgp_octets_t ksp;
+		ksp.push_back(0x80); // no-modify
+		SubpacketEncode(23, false, ksp, out);
+		// 7. key flags (variable length)
 		SubpacketEncode(27, false, flags, out);
-		// 7. features (length = 1)
+		// 8. features (length = 1)
 		tmcg_openpgp_octets_t features;
 		features.push_back(0x01); // Modification Detection (tags 18, 19)
 		SubpacketEncode(30, false, features, out);
