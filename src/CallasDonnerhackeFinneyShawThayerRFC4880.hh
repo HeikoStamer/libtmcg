@@ -202,6 +202,7 @@ class TMCG_OpenPGP_Signature
 
 	public:
 		bool valid;
+		bool revocable;
 		tmcg_openpgp_byte_t pkalgo;
 		tmcg_openpgp_byte_t hashalgo;
 		tmcg_openpgp_byte_t type;
@@ -223,7 +224,8 @@ class TMCG_OpenPGP_Signature
 		tmcg_openpgp_octets_t keypreferences_pca;
 
 		TMCG_OpenPGP_Signature
-			(const tmcg_openpgp_byte_t pkalgo_in,
+			(const bool revocable_in,
+			 const tmcg_openpgp_byte_t pkalgo_in,
 			 const tmcg_openpgp_byte_t hashalgo_in,
 			 const tmcg_openpgp_byte_t type_in,
 			 const tmcg_openpgp_byte_t version_in,
@@ -240,7 +242,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t &keypreferences_pha_in,
 			 const tmcg_openpgp_octets_t &keypreferences_pca_in);
 		TMCG_OpenPGP_Signature
-			(const tmcg_openpgp_byte_t pkalgo_in,
+			(const bool revocable_in,
+			 const tmcg_openpgp_byte_t pkalgo_in,
 			 const tmcg_openpgp_byte_t hashalgo_in,
 			 const tmcg_openpgp_byte_t type_in,
 			 const tmcg_openpgp_byte_t version_in,

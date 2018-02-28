@@ -31,7 +31,8 @@
 #include "CallasDonnerhackeFinneyShawThayerRFC4880.hh"
 
 TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
-	(const tmcg_openpgp_byte_t pkalgo_in,
+	(const bool revocable_in,
+	 const tmcg_openpgp_byte_t pkalgo_in,
 	 const tmcg_openpgp_byte_t hashalgo_in,
 	 const tmcg_openpgp_byte_t type_in,
 	 const tmcg_openpgp_byte_t version_in,
@@ -50,6 +51,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		ret(1),
 		erroff(0),
 		valid(false),
+		revocable(revocable_in),
 		pkalgo(pkalgo_in),
 		hashalgo(hashalgo_in),
 		type(type_in),
@@ -83,7 +85,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 }
 
 TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
-	(const tmcg_openpgp_byte_t pkalgo_in,
+	(const bool revocable_in,
+	 const tmcg_openpgp_byte_t pkalgo_in,
 	 const tmcg_openpgp_byte_t hashalgo_in,
 	 const tmcg_openpgp_byte_t type_in,
 	 const tmcg_openpgp_byte_t version_in,
@@ -103,6 +106,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		ret(1),
 		erroff(0),
 		valid(false),
+		revocable(revocable_in),
 		pkalgo(pkalgo_in),
 		hashalgo(hashalgo_in),
 		type(type_in),
@@ -148,6 +152,7 @@ void TMCG_OpenPGP_Signature::PrintInfo
 	std::cout << "INFO: sigtype = 0x" << std::hex << (int)type <<
 		std::dec << " pkalgo = " << (int)pkalgo <<
 		" hashalgo = " << (int)hashalgo <<
+		" revocable = " << (revocable ? "true" : "false") <<
 		" version = " << (int)version <<
 		" creationtime = " << creationtime <<
 		" expirationtime = " << expirationtime <<
@@ -6085,11 +6090,20 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 					unsigned int mdbits = 0;
 					mdbits = gcry_mpi_get_nbits(ctx.md);
 					if (verbose > 2)
-						std::cout << "INFO: mdbits = " << mdbits << std::endl;
+						std::cout << "INFO: " << 
+							"mdbits = " <<
+							mdbits << std::endl;
 					// create a new signature object
-					sig = new TMCG_OpenPGP_Signature(ctx.pkalgo, ctx.hashalgo, ctx.type, ctx.version,
-						ctx.sigcreationtime, ctx.sigexpirationtime, ctx.keyexpirationtime, ctx.md,
-						current_packet, hspd, issuer, keyflags, features, psa, pha, pca);
+					sig = new TMCG_OpenPGP_Signature(
+						ctx.revocable, ctx.pkalgo,
+						ctx.hashalgo, ctx.type,
+						ctx.version,
+						ctx.sigcreationtime,
+						ctx.sigexpirationtime,
+						ctx.keyexpirationtime, ctx.md,
+						current_packet, hspd, issuer,
+						keyflags, features, psa, pha,
+						pca);
 				}
 				else if (ctx.pkalgo == 17)
 				{
@@ -6097,11 +6111,21 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 					rbits = gcry_mpi_get_nbits(ctx.r);
 					sbits = gcry_mpi_get_nbits(ctx.s);
 					if (verbose > 2)
-						std::cout << "INFO: rbits = " << rbits << " sbits = " << sbits << std::endl;
+						std::cout << "INFO: " <<
+							"rbits = " << rbits <<
+							" sbits = " << sbits <<
+							std::endl;
 					// create a new signature object
-					sig = new TMCG_OpenPGP_Signature(ctx.pkalgo, ctx.hashalgo, ctx.type, ctx.version,
-						ctx.sigcreationtime, ctx.sigexpirationtime, ctx.keyexpirationtime,
-						ctx.r, ctx.s, current_packet, hspd, issuer, keyflags, features, psa, pha, pca);
+					sig = new TMCG_OpenPGP_Signature(
+						ctx.revocable, ctx.pkalgo,
+						ctx.hashalgo, ctx.type,
+						ctx.version,
+						ctx.sigcreationtime,
+						ctx.sigexpirationtime,
+						ctx.keyexpirationtime,
+						ctx.r, ctx.s, current_packet,
+						hspd, issuer, keyflags,
+						features, psa, pha, pca);
 				}
 				else
 				{
