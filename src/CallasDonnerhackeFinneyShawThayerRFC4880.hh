@@ -362,6 +362,8 @@ class TMCG_OpenPGP_Subkey
 			 const tmcg_openpgp_octets_t &packet_in);
 		bool good
 			() const;
+		bool weak
+			(const int verbose) const;
 		void UpdateProperties
 			(const TMCG_OpenPGP_Signature *sig,
 			 const int verbose);
@@ -422,6 +424,8 @@ class TMCG_OpenPGP_Pubkey
 			 const tmcg_openpgp_octets_t &packet_in);
 		bool good
 			() const;
+		bool weak
+			(const int verbose) const;
 		void UpdateProperties
 			(const TMCG_OpenPGP_Signature *sig,
 			 const int verbose);

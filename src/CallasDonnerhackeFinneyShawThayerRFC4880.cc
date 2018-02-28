@@ -690,6 +690,56 @@ bool TMCG_OpenPGP_Subkey::good
 	return (ret == 0);
 }
 
+bool TMCG_OpenPGP_Subkey::weak
+	(const int verbose) const
+{
+	if ((pkalgo >= 1) && (pkalgo <= 3))
+	{
+		unsigned int nbits = 0, ebits = 0;
+		nbits = gcry_mpi_get_nbits(rsa_n);
+		ebits = gcry_mpi_get_nbits(rsa_e);
+		if (verbose > 1)
+			std::cout << "INFO: subkey public-key " << 
+				"algorithm is RSA with |n| = " << nbits << 
+				" bits, |e| = " << ebits << " bits" <<
+				std::endl;
+		if ((nbits < 2048) || (ebits < 6))
+			return true; // weak key
+		gcry_error_t wret = gcry_prime_check(rsa_e, 0);
+		if (wret)
+			return true; // e is not a prime
+	}
+	else if (pkalgo == 16)
+	{
+		unsigned int pbits = 0, gbits = 0, ybits = 0;
+		pbits = gcry_mpi_get_nbits(dsa_p);
+		gbits = gcry_mpi_get_nbits(dsa_g);
+		ybits = gcry_mpi_get_nbits(dsa_y);
+		if (verbose > 1)
+			std::cout << "INFO: subkey public-key " <<
+				"algorithm is ElGamal with |p| = " <<
+				pbits << " bits" << std::endl;
+		if ((pbits < 2048) || (gbits < 2) || (ybits < 2))
+			return true; // weak key
+	}
+	else if (pkalgo == 17)
+	{
+		unsigned int pbits = 0, qbits = 0, gbits = 0, ybits = 0;
+		pbits = gcry_mpi_get_nbits(dsa_p);
+		qbits = gcry_mpi_get_nbits(dsa_q);
+		gbits = gcry_mpi_get_nbits(dsa_g);
+		ybits = gcry_mpi_get_nbits(dsa_y);
+		if (verbose > 1)
+			std::cout << "INFO: subkey public-key " <<
+				"algorithm is DSA with |p| = " << pbits <<
+				" bits, |q| = " << qbits << " bits" << 
+				std::endl;
+		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2))
+			return true; // weak key
+	}
+	return false;
+}
+
 void TMCG_OpenPGP_Subkey::UpdateProperties
 	(const TMCG_OpenPGP_Signature *sig,
 	 const int verbose)
@@ -1095,6 +1145,43 @@ bool TMCG_OpenPGP_Pubkey::good
 	() const
 {
 	return (ret == 0);
+}
+
+bool TMCG_OpenPGP_Pubkey::weak
+	(const int verbose) const
+{
+	if ((pkalgo >= 1) && (pkalgo <= 3))
+	{
+		unsigned int nbits = 0, ebits = 0;
+		nbits = gcry_mpi_get_nbits(rsa_n);
+		ebits = gcry_mpi_get_nbits(rsa_e);
+		if (verbose > 1)
+			std::cout << "INFO: primary public-key " <<
+				"algorithm is RSA with |n| = " << nbits <<
+				" bits, |e| = " << ebits << " bits" <<
+				std::endl;
+		if ((nbits < 2048) || (ebits < 6))
+			return true; // weak key
+		gcry_error_t wret = gcry_prime_check(rsa_e, 0);
+		if (wret)
+			return true; // e is not a prime
+	}
+	else if (pkalgo == 17)
+	{
+		unsigned int pbits = 0, qbits = 0, gbits = 0, ybits = 0;
+		pbits = gcry_mpi_get_nbits(dsa_p);
+		qbits = gcry_mpi_get_nbits(dsa_q);
+		gbits = gcry_mpi_get_nbits(dsa_g);
+		ybits = gcry_mpi_get_nbits(dsa_y);
+		if (verbose > 1)
+			std::cout << "INFO: primary public-key " <<
+				"algorithm is DSA with |p| = " << pbits <<
+				" bits, |q| = " << qbits << " bits" <<
+				std::endl;
+		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2))
+			return true; // weak key
+	}
+	return false;
 }
 
 void TMCG_OpenPGP_Pubkey::UpdateProperties
