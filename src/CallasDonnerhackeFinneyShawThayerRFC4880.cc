@@ -738,7 +738,8 @@ bool TMCG_OpenPGP_Subkey::weak
 				"algorithm is DSA with |p| = " << pbits <<
 				" bits, |q| = " << qbits << " bits" << 
 				std::endl;
-		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2))
+		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) ||
+		    (ybits < 2))
 			return true; // weak key
 		wret = gcry_prime_check(dsa_p, 0);
 		if (wret)
@@ -1189,7 +1190,8 @@ bool TMCG_OpenPGP_Pubkey::weak
 				"algorithm is DSA with |p| = " << pbits <<
 				" bits, |q| = " << qbits << " bits" <<
 				std::endl;
-		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2))
+		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) ||
+		    (ybits < 2))
 			return true; // weak key
 		wret = gcry_prime_check(dsa_p, 0);
 		if (wret)
