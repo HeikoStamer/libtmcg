@@ -693,6 +693,7 @@ bool TMCG_OpenPGP_Subkey::good
 bool TMCG_OpenPGP_Subkey::weak
 	(const int verbose) const
 {
+	gcry_error_t wret;
 	if ((pkalgo >= 1) && (pkalgo <= 3))
 	{
 		unsigned int nbits = 0, ebits = 0;
@@ -705,22 +706,25 @@ bool TMCG_OpenPGP_Subkey::weak
 				std::endl;
 		if ((nbits < 2048) || (ebits < 6))
 			return true; // weak key
-		gcry_error_t wret = gcry_prime_check(rsa_e, 0);
+		wret = gcry_prime_check(rsa_e, 0);
 		if (wret)
 			return true; // e is not a prime
 	}
 	else if (pkalgo == 16)
 	{
 		unsigned int pbits = 0, gbits = 0, ybits = 0;
-		pbits = gcry_mpi_get_nbits(dsa_p);
-		gbits = gcry_mpi_get_nbits(dsa_g);
-		ybits = gcry_mpi_get_nbits(dsa_y);
+		pbits = gcry_mpi_get_nbits(elg_p);
+		gbits = gcry_mpi_get_nbits(elg_g);
+		ybits = gcry_mpi_get_nbits(elg_y);
 		if (verbose > 1)
 			std::cout << "INFO: subkey public-key " <<
 				"algorithm is ElGamal with |p| = " <<
 				pbits << " bits" << std::endl;
 		if ((pbits < 2048) || (gbits < 2) || (ybits < 2))
 			return true; // weak key
+		wret = gcry_prime_check(elg_p, 0);
+		if (wret)
+			return true; // p is not a prime
 	}
 	else if (pkalgo == 17)
 	{
@@ -736,6 +740,12 @@ bool TMCG_OpenPGP_Subkey::weak
 				std::endl;
 		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2))
 			return true; // weak key
+		wret = gcry_prime_check(dsa_p, 0);
+		if (wret)
+			return true; // p is not a prime
+		wret = gcry_prime_check(dsa_q, 0);
+		if (wret)
+			return true; // q is not a prime
 	}
 	return false;
 }
@@ -1150,6 +1160,7 @@ bool TMCG_OpenPGP_Pubkey::good
 bool TMCG_OpenPGP_Pubkey::weak
 	(const int verbose) const
 {
+	gcry_error_t wret;
 	if ((pkalgo >= 1) && (pkalgo <= 3))
 	{
 		unsigned int nbits = 0, ebits = 0;
@@ -1162,7 +1173,7 @@ bool TMCG_OpenPGP_Pubkey::weak
 				std::endl;
 		if ((nbits < 2048) || (ebits < 6))
 			return true; // weak key
-		gcry_error_t wret = gcry_prime_check(rsa_e, 0);
+		wret = gcry_prime_check(rsa_e, 0);
 		if (wret)
 			return true; // e is not a prime
 	}
@@ -1180,6 +1191,12 @@ bool TMCG_OpenPGP_Pubkey::weak
 				std::endl;
 		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2))
 			return true; // weak key
+		wret = gcry_prime_check(dsa_p, 0);
+		if (wret)
+			return true; // p is not a prime
+		wret = gcry_prime_check(dsa_q, 0);
+		if (wret)
+			return true; // q is not a prime
 	}
 	return false;
 }
