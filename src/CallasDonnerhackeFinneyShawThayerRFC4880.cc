@@ -2647,7 +2647,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 	 const tmcg_openpgp_octets_t &issuer, tmcg_openpgp_octets_t &out)
 {
 	size_t subpkts = 8;
-	size_t subpktlen = (subpkts * 6) + 4 + 1 + issuer.size() + 1 + 1 + 
+	size_t subpktlen = (subpkts * 6) + 4 + 2 + issuer.size() + 3 + 1 + 
 		1 + flags.size() + 1;
 	if (keyexptime != 0)
 		subpktlen += (6 + 4);
@@ -2669,15 +2669,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 			PacketTimeEncode(keyexptime, subpkt_keyexptime);
 			SubpacketEncode(9, false, subpkt_keyexptime, out);
 		}
-		// 2. preferred symmetric algorithms (length = 1)
+		// 2. preferred symmetric algorithms (length = 2)
 		tmcg_openpgp_octets_t psa;
 		psa.push_back(9); // AES256
+		psa.push_back(10); // Twofish
 		SubpacketEncode(11, false, psa, out);
 		// 3. issuer (variable length)
 		SubpacketEncode(16, false, issuer, out);
-		// 4. preferred hash algorithms  (length = 1)
+		// 4. preferred hash algorithms  (length = 3)
 		tmcg_openpgp_octets_t pha;
 		pha.push_back(8); // SHA256
+		pha.push_back(9); // SHA384
+		pha.push_back(10); // SHA512
 		SubpacketEncode(21, false, pha, out);
 		// 5. preferred compression algorithms  (length = 1)
 		tmcg_openpgp_octets_t pca;
