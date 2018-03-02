@@ -574,6 +574,10 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t gk,
 			 const gcry_mpi_t myk,
 			 tmcg_openpgp_octets_t &out);
+		static void PacketPkeskEncode
+			(const tmcg_openpgp_octets_t &keyid,
+			 const gcry_mpi_t me,
+			 tmcg_openpgp_octets_t &out);
 		static void PacketSigEncode
 			(const tmcg_openpgp_octets_t &hashing,
 			 const tmcg_openpgp_octets_t &left,

@@ -218,9 +218,29 @@ int main
 	std::cout << "AsymmetricVerifyRSA(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA(hash, rsakey, 8, s);
 	assert(!ret);
+	// testing AsymmetricEncryptRSA() and AsymmetricDecryptRSA()
+	gcry_mpi_t me;
+	me = gcry_mpi_new(2048);
+	armored_message = "";
+	std::cout << "AsymmetricEncryptRSA(...)" << std::endl;
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptRSA(seskey, rsakey, me);
+	assert(!ret);
+	subkeyid.clear(), out.clear(), enc.clear();
+	for (size_t i = 0; i < 8; i++)
+		subkeyid.push_back(0x00);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode(subkeyid, me, out);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode(enc, out);
+	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(TMCG_OPENPGP_ARMOR_MESSAGE, out, armored_message);
+	std::cout << armored_message << std::endl;
+	std::cout << "AsymmetricDecryptRSA(...)" << std::endl;
+	tmcg_openpgp_octets_t seskey2;
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptRSA(me, rsakey, seskey2);
+	assert(!ret);
+	assert(CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(seskey, seskey2));
 	gcry_sexp_release(rsaparms);
 	gcry_sexp_release(rsakey);
 	gcry_mpi_release(s);
+	gcry_mpi_release(me);
 
 	// testing S2K functions
 	tmcg_openpgp_byte_t octcnt = 1;
