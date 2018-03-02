@@ -751,6 +751,20 @@ bool TMCG_OpenPGP_Subkey::weak
 	return false;
 }
 
+size_t TMCG_OpenPGP_Subkey::AccumulateFlags
+	() const
+{
+	size_t allflags = 0;
+	for (size_t i = 0; i < flags.size(); i++)
+	{
+		if (flags[i])
+			allflags = (allflags << 8) + flags[i];
+		else
+			break;
+	}
+	return allflags;
+}
+
 void TMCG_OpenPGP_Subkey::UpdateProperties
 	(const TMCG_OpenPGP_Signature *sig,
 	 const int verbose)
@@ -1002,14 +1016,7 @@ bool TMCG_OpenPGP_Subkey::Check
 	// check whether there is a valid primary key binding signature, if 
 	// subkey is a signing key
 	bool signing_subkey = false;
-	size_t allflags = 0;
-	for (size_t i = 0; i < flags.size(); i++)
-	{
-		if (flags[i])
-			allflags = (allflags << 8) + flags[i];
-		else
-			break;
-	}
+	size_t allflags = AccumulateFlags();
 	if ((allflags & 0x01) == 0x01)
 		signing_subkey = true;
 	if ((allflags & 0x02) == 0x02)
@@ -1203,6 +1210,20 @@ bool TMCG_OpenPGP_Pubkey::weak
 	return false;
 }
 
+size_t TMCG_OpenPGP_Pubkey::AccumulateFlags
+	() const
+{
+	size_t allflags = 0;
+	for (size_t i = 0; i < flags.size(); i++)
+	{
+		if (flags[i])
+			allflags = (allflags << 8) + flags[i];
+		else
+			break;
+	}
+	return allflags;
+}
+
 void TMCG_OpenPGP_Pubkey::UpdateProperties
 	(const TMCG_OpenPGP_Signature *sig,
 	 const int verbose)
@@ -1375,14 +1396,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		}
 	}
 	// print accumulated key flags of the primary key
-	size_t allflags = 0;
-	for (size_t i = 0; i < flags.size(); i++)
-	{
-		if (flags[i])
-			allflags = (allflags << 8) + flags[i];
-		else
-			break;
-	}
+	size_t allflags = AccumulateFlags();
 	if (verbose > 1)
 	{
 		std::cout << "INFO: key flags on primary key are ";
@@ -1476,15 +1490,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSubkeys
 				std::cout << "INFO: subkey is valid" << 
 					std::endl;
 			// print accumulated key flags of the subkey
-			size_t allflags = 0;
-			for (size_t ii = 0; ii < subkeys[i]->flags.size(); ii++)
-			{
-				if (subkeys[i]->flags[ii])
-					allflags = (allflags << 8) +
-						subkeys[i]->flags[ii];
-				else
-					break;
-			}
+			size_t allflags = subkeys[i]->AccumulateFlags();
 			if (verbose > 1)
 			{
 				std::cout << "INFO: key flags on subkey are ";

@@ -364,6 +364,8 @@ class TMCG_OpenPGP_Subkey
 			() const;
 		bool weak
 			(const int verbose) const;
+		size_t AccumulateFlags
+			() const;
 		void UpdateProperties
 			(const TMCG_OpenPGP_Signature *sig,
 			 const int verbose);
@@ -426,6 +428,8 @@ class TMCG_OpenPGP_Pubkey
 			() const;
 		bool weak
 			(const int verbose) const;
+		size_t AccumulateFlags
+			() const;
 		void UpdateProperties
 			(const TMCG_OpenPGP_Signature *sig,
 			 const int verbose);
