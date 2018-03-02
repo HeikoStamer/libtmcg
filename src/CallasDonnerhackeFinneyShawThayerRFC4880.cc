@@ -6751,3 +6751,4 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		pub->subkeys.push_back(sub);
 	return true;
 }
+
