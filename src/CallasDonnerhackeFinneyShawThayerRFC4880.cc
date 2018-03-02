@@ -3978,6 +3978,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 		case 12: // Revocation Key
 			if (pkt.size() != 22)
 				return 0; // error: incorrect subpacket body
+			// Class octet must have bit 0x80 set.
+			if ((pkt[0] & 0x80) != 0x80)
+				return 0; // error: bad class
 			out.revocationkey_class = pkt[0];
 			out.revocationkey_pkalgo = pkt[1];
 			for (size_t i = 0; i < 20; i++)
