@@ -6341,7 +6341,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 						// accumulate key revocation signatures issued by external revocation keys
 						sub->revsigs.push_back(sig); // Subkey revocation signature for this subkey
 						if (verbose)
-							std::cerr << "WARNING: key revocation signature on subkey" << std::endl;
+							std::cerr << "WARNING: key revocation signature on subkey (external)" << std::endl;
 					}
 					else
 					{
@@ -6374,7 +6374,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 					{
 						// accumulate key revocation signatures issued by external revocation keys
 						if (verbose)
-							std::cerr << "WARNING: key revocation signature on primary key" << std::endl;
+							std::cerr << "WARNING: key revocation signature on primary key (external)" << std::endl;
 						pub->revsigs.push_back(sig); // Key revocation signature on primary key
 					}
 					else
