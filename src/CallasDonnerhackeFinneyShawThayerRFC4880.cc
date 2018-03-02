@@ -5870,6 +5870,73 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 	return 0;
 }
 
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptRSA
+	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key,
+	 gcry_mpi_t &me)
+{
+	char buf[2048];
+	gcry_sexp_t encryption, data;
+	gcry_error_t ret;
+	size_t buflen = 0, erroff;
+
+	// This value is then encoded as described in PKCS#1 block encoding
+	// EME-PKCS1-v1_5 in Section 7.2.1 of [RFC3447] to form the "m" value
+	// used in the formulas above. See Section 13.1 of this document for
+	// notes on OpenPGP's use of PKCS#1.
+	memset(buf, 0, sizeof(buf));
+	for (size_t i = 0; (i < in.size()) && (i < sizeof(buf)); i++, buflen++)
+		buf[i] = in[i];
+	ret = gcry_sexp_build(&data, &erroff, "(data (flags pkcs1) (value %b))",
+		(int)buflen, buf);
+	if (ret)
+		return ret;
+	ret = gcry_pk_encrypt(&encryption, data, key);
+	gcry_sexp_release(data);
+	if (ret)
+		return ret;
+	gcry_mpi_release(me); // release already allocated mpi's
+	ret = gcry_sexp_extract_param(encryption, NULL, "a", &me, NULL);
+	gcry_sexp_release(encryption);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptRSA
+	(const gcry_mpi_t me, const gcry_sexp_t key, 
+	 tmcg_openpgp_octets_t &out)
+{
+	const char *buf;
+	gcry_sexp_t decryption, data;
+	gcry_error_t ret;
+	size_t buflen = 0, erroff;
+
+	// This value is then encoded as described in PKCS#1 block encoding
+	// EME-PKCS1-v1_5 in Section 7.2.1 of [RFC3447] to form the "m" value
+	// used in the formulas above. See Section 13.1 of this document for
+	// notes on OpenPGP's use of PKCS#1.
+	ret = gcry_sexp_build(&data, &erroff,
+		"(enc-val (flags pkcs1) (rsa (a %M)))", me);
+	if (ret)
+		return ret;
+	ret = gcry_pk_decrypt(&decryption, data, key);
+	gcry_sexp_release(data);
+	if (ret)
+		return ret;
+	buf = gcry_sexp_nth_data(decryption, 1, &buflen);
+	if (buf == NULL)
+	{
+		gcry_sexp_release(decryption);
+		return GPG_ERR_VALUE_NOT_FOUND;
+	}
+	for (size_t i = 0; i < buflen; i++)
+		out.push_back(buf[i]);
+	gcry_sexp_release(decryption);
+
+	return 0;
+}
+
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key, 
 	 gcry_mpi_t &r, gcry_mpi_t &s)
