@@ -6780,3 +6780,168 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
+	(const std::string &in, const int verbose,
+	 TMCG_OpenPGP_Signature* &sig)
+{
+	// decode ASCII Armor
+	tmcg_openpgp_octets_t pkts;
+	tmcg_openpgp_armor_t atype = ArmorDecode(in, pkts);
+	if (atype != TMCG_OPENPGP_ARMOR_SIGNATURE)
+	{
+		if (verbose)
+			std::cerr << "ERROR: wrong type of ASCII Armor " <<
+				"found (type = " << (int)atype << ")" <<
+				std::endl;
+		return false;
+	}
+
+	// parse single signature packet
+	tmcg_openpgp_packet_ctx_t ctx;
+	tmcg_openpgp_octets_t current_packet;
+	tmcg_openpgp_byte_t ptag = PacketDecode(pkts, verbose, ctx,
+		current_packet);
+	if (verbose > 2)
+		std::cerr << "INFO: PacketDecode() = " << (int)ptag << 
+			" version = " << (int)ctx.version << std::endl;
+	if (ptag == 0x00)
+	{
+		if (verbose)
+			std::cerr << "ERROR: parsing OpenPGP packets " <<
+				"failed" << std::endl;
+		PacketContextRelease(ctx);
+		return false;
+	}
+	else if (ptag == 0xFA)
+	{
+		if (verbose)
+			std::cerr << "ERROR: unrecognized critical " <<
+				"OpenPGP subpacket found" << std::endl;
+		PacketContextRelease(ctx);
+		return false;
+	}
+	else if (ptag == 0xFB)
+	{
+		if (verbose)
+			std::cerr << "WARNING: unrecognized OpenPGP " <<
+				"subpacket found" << std::endl;
+		ptag = 0x02; // process signature
+	}
+	else if (ptag == 0xFC)
+	{
+		if (verbose)
+			std::cerr << "ERROR: unrecognized OpenPGP " <<
+				"signature packet found " << std::endl;
+		PacketContextRelease(ctx);
+		return false;
+	}
+	else if (ptag == 0xFD)
+	{
+		if (verbose)
+			std::cerr << "ERROR: unrecognized OpenPGP " <<
+				"key packet found" << std::endl;
+		PacketContextRelease(ctx);
+		return false;
+	}
+	else if (ptag == 0xFE)
+	{
+		if (verbose)
+			std::cerr << "ERROR: unrecognized OpenPGP " << 
+				"packet found" << std::endl;
+		PacketContextRelease(ctx);
+		return false;
+	}
+	tmcg_openpgp_octets_t issuer, hspd, keyflags;
+	tmcg_openpgp_octets_t features, psa, pha, pca;
+	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
+		issuer.push_back(ctx.issuer[i]);
+	for (size_t i = 0; i < ctx.hspdlen; i++)
+		hspd.push_back(ctx.hspd[i]);
+	for (size_t i = 0; i < ctx.keyflagslen; i++)
+		keyflags.push_back(ctx.keyflags[i]);
+	for (size_t i = 0; i < ctx.featureslen; i++)
+		features.push_back(ctx.features[i]);
+	for (size_t i = 0; i < ctx.psalen; i++)
+		psa.push_back(ctx.psa[i]);
+	for (size_t i = 0; i < ctx.phalen; i++)
+		pha.push_back(ctx.pha[i]);
+	for (size_t i = 0; i < ctx.pcalen; i++)
+		pca.push_back(ctx.pca[i]);
+	switch (ptag)
+	{
+		case 2: // Signature Packet
+			if ((ctx.pkalgo == 1) || (ctx.pkalgo == 3))
+			{
+				unsigned int mdbits = 0;
+				mdbits = gcry_mpi_get_nbits(ctx.md);
+				if (verbose > 2)
+					std::cerr << "INFO: " << 
+						"mdbits = " <<
+						mdbits << std::endl;
+				// create a new signature object
+				sig = new TMCG_OpenPGP_Signature(
+					ctx.revocable, ctx.pkalgo,
+					ctx.hashalgo, ctx.type,
+					ctx.version,
+					ctx.sigcreationtime,
+					ctx.sigexpirationtime,
+					ctx.keyexpirationtime, ctx.md,
+					current_packet, hspd, issuer,
+					keyflags, features, psa, pha,
+					pca);
+			}
+			else if (ctx.pkalgo == 17)
+			{
+				unsigned int rbits = 0, sbits = 0;
+				rbits = gcry_mpi_get_nbits(ctx.r);
+				sbits = gcry_mpi_get_nbits(ctx.s);
+				if (verbose > 2)
+					std::cerr << "INFO: rbits = " << 
+						rbits << " sbits = " <<
+						sbits << std::endl;
+				// create a new signature object
+				sig = new TMCG_OpenPGP_Signature(
+					ctx.revocable, ctx.pkalgo,
+					ctx.hashalgo, ctx.type,
+					ctx.version,
+					ctx.sigcreationtime,
+					ctx.sigexpirationtime,
+					ctx.keyexpirationtime,
+					ctx.r, ctx.s, current_packet,
+					hspd, issuer, keyflags,
+					features, psa, pha, pca);
+			}
+			else
+			{
+				if (verbose)
+					std::cerr << "ERROR: public-key " <<
+						"signature algorithm " <<
+						(int)ctx.pkalgo << " not " <<
+						"supported" << std::endl;
+				PacketContextRelease(ctx);
+				return false;
+				break;
+			}
+			if (!sig->good())
+			{
+				if (verbose)
+					std::cerr << "ERROR: parsing " << 
+						"signature material failed" <<
+						std::endl;
+				PacketContextRelease(ctx);
+				delete sig;
+				return false;
+			}
+			break;
+		default:
+			if (verbose)
+				std::cerr << "ERROR: wrong OpenPGP packet " <<
+					"of type " << (int)ptag << std::endl;
+			PacketContextRelease(ctx);
+			return false;
+			break;
+	}
+	// cleanup allocated buffers and mpi's
+	PacketContextRelease(ctx);
+	return true;
+}

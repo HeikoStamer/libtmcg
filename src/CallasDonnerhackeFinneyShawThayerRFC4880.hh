@@ -884,6 +884,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static bool PublicKeyBlockParse
 			(const std::string &in, const int verbose,
 			 TMCG_OpenPGP_Pubkey* &pub);
+		static bool SignatureParse
+			(const std::string &in, const int verbose,
+			 TMCG_OpenPGP_Signature* &sig);
 };
 
 #endif
