@@ -765,6 +765,20 @@ size_t TMCG_OpenPGP_Subkey::AccumulateFlags
 	return allflags;
 }
 
+size_t TMCG_OpenPGP_Subkey::AccumulateFeatures
+	() const
+{
+	size_t allfeatures = 0;
+	for (size_t i = 0; i < features.size(); i++)
+	{
+		if (features[i])
+			allfeatures = (allfeatures << 8) + features[i];
+		else
+			break;
+	}
+	return allfeatures;
+}
+
 void TMCG_OpenPGP_Subkey::UpdateProperties
 	(const TMCG_OpenPGP_Signature *sig,
 	 const int verbose)
@@ -1222,6 +1236,20 @@ size_t TMCG_OpenPGP_Pubkey::AccumulateFlags
 			break;
 	}
 	return allflags;
+}
+
+size_t TMCG_OpenPGP_Pubkey::AccumulateFeatures
+	() const
+{
+	size_t allfeatures = 0;
+	for (size_t i = 0; i < features.size(); i++)
+	{
+		if (features[i])
+			allfeatures = (allfeatures << 8) + features[i];
+		else
+			break;
+	}
+	return allfeatures;
 }
 
 void TMCG_OpenPGP_Pubkey::UpdateProperties
