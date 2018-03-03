@@ -269,6 +269,10 @@ class TMCG_OpenPGP_Signature
 			 const int verbose) const;
 		bool Verify
 			(const gcry_sexp_t key,
+			 const std::string &filename,
+			 const int verbose);
+		bool Verify
+			(const gcry_sexp_t key,
 			 const tmcg_openpgp_octets_t &hashing,
 			 const int verbose);
 		bool Verify

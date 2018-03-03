@@ -216,6 +216,99 @@ bool TMCG_OpenPGP_Signature::Check
 
 bool TMCG_OpenPGP_Signature::Verify
 	(const gcry_sexp_t key,
+	 const std::string &filename,
+	 const int verbose)
+{
+	if (!good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: bad signature material" <<
+				std::endl;
+		return false;
+	}
+	tmcg_openpgp_octets_t trailer, left, hash;
+	if (version == 3)
+	{
+		tmcg_openpgp_octets_t sigtime_octets;
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			PacketTimeEncode(creationtime, sigtime_octets);
+		trailer.push_back(type);
+		trailer.insert(trailer.end(),
+			sigtime_octets.begin(), sigtime_octets.end());
+		if (!CallasDonnerhackeFinneyShawThayerRFC4880::
+			BinaryDocumentHashV3(filename, trailer, hashalgo, hash, left))
+		{
+			if (verbose)
+				std::cerr << "ERROR: cannot process input " <<
+					"file \"" << filename << "\"" <<
+				std::endl;
+			return false;
+		}
+	}
+	else if (version == 4)
+	{
+		trailer.push_back(4);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		if (!CallasDonnerhackeFinneyShawThayerRFC4880::
+			BinaryDocumentHash(filename, trailer, hashalgo, hash, left))
+		{
+			if (verbose)
+				std::cerr << "ERROR: cannot process input " <<
+					"file \"" << filename << "\"" <<
+				std::endl;
+			return false;
+		}
+
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: signature version " <<
+				"not supported" << std::endl;
+		return false;
+	}
+	if (verbose > 2)
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
+			" " << (int)left[1] << std::dec << std::endl;
+	gcry_error_t vret;
+	if ((pkalgo == 1) || (pkalgo == 3))
+	{
+		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
+	}
+	else if (pkalgo == 17)
+	{
+		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: signature algorithm " <<
+				"not supported" << std::endl;	
+		return false;
+	}
+	if (vret)
+	{
+		if (verbose)
+			std::cerr << "ERROR: verification of signature " <<
+				"failed (rc = " << gcry_err_code(vret) <<
+				", str = " << gcry_strerror(vret) << ")" <<
+				std::endl;
+		valid = false;
+		return false;
+	}
+	valid = true;
+	return true;
+}
+
+bool TMCG_OpenPGP_Signature::Verify
+	(const gcry_sexp_t key,
 	 const tmcg_openpgp_octets_t &hashing,
 	 const int verbose)
 {
