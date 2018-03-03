@@ -6885,10 +6885,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 					ctx.version,
 					ctx.sigcreationtime,
 					ctx.sigexpirationtime,
-					ctx.keyexpirationtime, ctx.md,
-					current_packet, hspd, issuer,
-					keyflags, features, psa, pha,
-					pca);
+					0, ctx.md, current_packet,
+					hspd, issuer, keyflags,
+					features, psa, pha, pca);
 			}
 			else if (ctx.pkalgo == 17)
 			{
@@ -6906,8 +6905,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 					ctx.version,
 					ctx.sigcreationtime,
 					ctx.sigexpirationtime,
-					ctx.keyexpirationtime,
-					ctx.r, ctx.s, current_packet,
+					0, ctx.r, ctx.s, current_packet,
 					hspd, issuer, keyflags,
 					features, psa, pha, pca);
 			}
