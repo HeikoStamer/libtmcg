@@ -149,7 +149,7 @@ bool TMCG_OpenPGP_Signature::good
 void TMCG_OpenPGP_Signature::PrintInfo
 	() const
 {
-	std::cout << "INFO: sigtype = 0x" << std::hex << (int)type <<
+	std::cerr << "INFO: sigtype = 0x" << std::hex << (int)type <<
 		std::dec << " pkalgo = " << (int)pkalgo <<
 		" hashalgo = " << (int)hashalgo <<
 		" revocable = " << (revocable ? "true" : "false") <<
@@ -161,11 +161,11 @@ void TMCG_OpenPGP_Signature::PrintInfo
 		" hspd.size() = " << hspd.size() <<
 		" issuer = " << std::hex;
 		for (size_t i = 0; i < issuer.size(); i++)
-			std::cout << (int)issuer[i] << " ";
-		std::cout << " keyflags = ";
+			std::cerr << (int)issuer[i] << " ";
+		std::cerr << " keyflags = ";
 		for (size_t i = 0; i < keyflags.size(); i++)
-			std::cout << (int)keyflags[i] << " ";
-		std::cout << std::dec << std::endl;
+			std::cerr << (int)keyflags[i] << " ";
+		std::cerr << std::dec << std::endl;
 }
 
 bool TMCG_OpenPGP_Signature::Check
@@ -258,7 +258,7 @@ bool TMCG_OpenPGP_Signature::Verify
 		return false;
 	}
 	if (verbose > 2)
-		std::cout << "INFO: left = " << std::hex << (int)left[0] <<
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
 	gcry_error_t vret;
 	if ((pkalgo == 1) || (pkalgo == 3))
@@ -339,7 +339,7 @@ bool TMCG_OpenPGP_Signature::Verify
 		return false;
 	}
 	if (verbose > 2)
-		std::cout << "INFO: left = " << std::hex << (int)left[0] <<
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
 	gcry_error_t vret;
 	if ((pkalgo == 1) || (pkalgo == 3))
@@ -420,7 +420,7 @@ bool TMCG_OpenPGP_Signature::Verify
 		return false;
 	}
 	if (verbose > 2)
-		std::cout << "INFO: left = " << std::hex << (int)left[0] <<
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
 	gcry_error_t vret;
 	if ((pkalgo == 1) || (pkalgo == 3))
@@ -700,7 +700,7 @@ bool TMCG_OpenPGP_Subkey::weak
 		nbits = gcry_mpi_get_nbits(rsa_n);
 		ebits = gcry_mpi_get_nbits(rsa_e);
 		if (verbose > 1)
-			std::cout << "INFO: subkey public-key " << 
+			std::cerr << "INFO: subkey public-key " << 
 				"algorithm is RSA with |n| = " << nbits << 
 				" bits, |e| = " << ebits << " bits" <<
 				std::endl;
@@ -717,7 +717,7 @@ bool TMCG_OpenPGP_Subkey::weak
 		gbits = gcry_mpi_get_nbits(elg_g);
 		ybits = gcry_mpi_get_nbits(elg_y);
 		if (verbose > 1)
-			std::cout << "INFO: subkey public-key " <<
+			std::cerr << "INFO: subkey public-key " <<
 				"algorithm is ElGamal with |p| = " <<
 				pbits << " bits" << std::endl;
 		if ((pbits < 2048) || (gbits < 2) || (ybits < 2))
@@ -734,7 +734,7 @@ bool TMCG_OpenPGP_Subkey::weak
 		gbits = gcry_mpi_get_nbits(dsa_g);
 		ybits = gcry_mpi_get_nbits(dsa_y);
 		if (verbose > 1)
-			std::cout << "INFO: subkey public-key " <<
+			std::cerr << "INFO: subkey public-key " <<
 				"algorithm is DSA with |p| = " << pbits <<
 				" bits, |q| = " << qbits << " bits" << 
 				std::endl;
@@ -785,63 +785,63 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 {
 	expirationtime = sig->keyexpirationtime;
 	if (verbose > 1)
-		std::cout << "INFO: subkey update expirationtime to " <<
+		std::cerr << "INFO: subkey update expirationtime to " <<
 			expirationtime << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: subkey update flags to " << std::hex;
+		std::cerr << "INFO: subkey update flags to " << std::hex;
 	flags.clear();			
 	for (size_t i = 0; i < sig->keyflags.size(); i++)
 	{
 		flags.push_back(sig->keyflags[i]);
 		if (verbose > 1)
-			std::cout << (int)sig->keyflags[i] << " ";
+			std::cerr << (int)sig->keyflags[i] << " ";
 	}
 	if (verbose > 1)
-		std::cout << std::dec << std::endl;
+		std::cerr << std::dec << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: subkey update features to " << std::hex;
+		std::cerr << "INFO: subkey update features to " << std::hex;
 	features.clear();
 	for (size_t i = 0; i < sig->keyfeatures.size(); i++)
 	{
 		features.push_back(sig->keyfeatures[i]);
 		if (verbose > 1)
-			std::cout << (int)sig->keyfeatures[i] << " ";
+			std::cerr << (int)sig->keyfeatures[i] << " ";
 	}
 	if (verbose > 1)
-		std::cout << std::dec << std::endl;
+		std::cerr << std::dec << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: subkey update psa to ";
+		std::cerr << "INFO: subkey update psa to ";
 	psa.clear();
 	for (size_t i = 0; i < sig->keypreferences_psa.size(); i++)
 	{
 		psa.push_back(sig->keypreferences_psa[i]);
 		if (verbose > 1)
-			std::cout << (int)sig->keypreferences_psa[i] << " ";
+			std::cerr << (int)sig->keypreferences_psa[i] << " ";
 	}
 	if (verbose > 1)
-		std::cout << std::endl;
+		std::cerr << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: subkey update pha to ";
+		std::cerr << "INFO: subkey update pha to ";
 	pha.clear();
 	for (size_t i = 0; i < sig->keypreferences_pha.size(); i++)
 	{
 		pha.push_back(sig->keypreferences_pha[i]);
 		if (verbose > 1)
-			std::cout << (int)sig->keypreferences_pha[i] << " ";
+			std::cerr << (int)sig->keypreferences_pha[i] << " ";
 	}
 	if (verbose > 1)
-		std::cout << std::endl;
+		std::cerr << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: subkey update pca to ";
+		std::cerr << "INFO: subkey update pca to ";
 	pca.clear();
 	for (size_t i = 0; i < sig->keypreferences_pca.size(); i++)
 	{
 		pca.push_back(sig->keypreferences_pca[i]);
 		if (verbose > 1)
-			std::cout << (int)sig->keypreferences_pca[i] << " ";
+			std::cerr << (int)sig->keypreferences_pca[i] << " ";
 	}
 	if (verbose > 1)
-		std::cout << std::endl;
+		std::cerr << std::endl;
 // TODO: update revocable flag and external revocation keys
 }
 
@@ -869,15 +869,15 @@ bool TMCG_OpenPGP_Subkey::Check
 	// print statistics of subkey
 	if (verbose > 1)
 	{
-		std::cout << "INFO: key ID of subkey: " << std::hex;
+		std::cerr << "INFO: key ID of subkey: " << std::hex;
 		for (size_t i = 0; i < id.size(); i++)
-			std::cout << (int)id[i] << " ";
-		std::cout << std::dec << std::endl;
-		std::cout << "INFO: number of selfsigs = " << 
+			std::cerr << (int)id[i] << " ";
+		std::cerr << std::dec << std::endl;
+		std::cerr << "INFO: number of selfsigs = " << 
 			selfsigs.size() << std::endl;
-		std::cout << "INFO: number of bindsigs = " << 
+		std::cerr << "INFO: number of bindsigs = " << 
 			bindsigs.size() << std::endl;
-		std::cout << "INFO: number of revsigs = " <<
+		std::cerr << "INFO: number of revsigs = " <<
 			revsigs.size() << std::endl;
 	}
 	// check whether some self-signatures on subkey are valid
@@ -1189,7 +1189,7 @@ bool TMCG_OpenPGP_Pubkey::weak
 		nbits = gcry_mpi_get_nbits(rsa_n);
 		ebits = gcry_mpi_get_nbits(rsa_e);
 		if (verbose > 1)
-			std::cout << "INFO: primary public-key " <<
+			std::cerr << "INFO: primary public-key " <<
 				"algorithm is RSA with |n| = " << nbits <<
 				" bits, |e| = " << ebits << " bits" <<
 				std::endl;
@@ -1207,7 +1207,7 @@ bool TMCG_OpenPGP_Pubkey::weak
 		gbits = gcry_mpi_get_nbits(dsa_g);
 		ybits = gcry_mpi_get_nbits(dsa_y);
 		if (verbose > 1)
-			std::cout << "INFO: primary public-key " <<
+			std::cerr << "INFO: primary public-key " <<
 				"algorithm is DSA with |p| = " << pbits <<
 				" bits, |q| = " << qbits << " bits" <<
 				std::endl;
@@ -1258,64 +1258,64 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 {
 	expirationtime = sig->keyexpirationtime;
 	if (verbose > 1)
-		std::cout << "INFO: primary key update expirationtime to " <<
+		std::cerr << "INFO: primary key update expirationtime to " <<
 			expirationtime << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: primary key update flags to " << std::hex;
+		std::cerr << "INFO: primary key update flags to " << std::hex;
 	flags.clear();			
 	for (size_t i = 0; i < sig->keyflags.size(); i++)
 	{
 		flags.push_back(sig->keyflags[i]);
 		if (verbose > 1)
-			std::cout << (int)sig->keyflags[i] << " ";
+			std::cerr << (int)sig->keyflags[i] << " ";
 	}
 	if (verbose > 1)
-		std::cout << std::dec << std::endl;
+		std::cerr << std::dec << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: primary key update features to " <<
+		std::cerr << "INFO: primary key update features to " <<
 			std::hex;
 	features.clear();
 	for (size_t i = 0; i < sig->keyfeatures.size(); i++)
 	{
 		features.push_back(sig->keyfeatures[i]);
 		if (verbose > 1)
-			std::cout << (int)sig->keyfeatures[i] << " ";
+			std::cerr << (int)sig->keyfeatures[i] << " ";
 	}
 	if (verbose > 1)
-		std::cout << std::dec << std::endl;
+		std::cerr << std::dec << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: primary key update psa to ";
+		std::cerr << "INFO: primary key update psa to ";
 	psa.clear();
 	for (size_t i = 0; i < sig->keypreferences_psa.size(); i++)
 	{
 		psa.push_back(sig->keypreferences_psa[i]);
 		if (verbose > 1)
-			std::cout << (int)sig->keypreferences_psa[i] << " ";
+			std::cerr << (int)sig->keypreferences_psa[i] << " ";
 	}
 	if (verbose > 1)
-		std::cout << std::endl;
+		std::cerr << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: primary key update pha to ";
+		std::cerr << "INFO: primary key update pha to ";
 	pha.clear();
 	for (size_t i = 0; i < sig->keypreferences_pha.size(); i++)
 	{
 		pha.push_back(sig->keypreferences_pha[i]);
 		if (verbose > 1)
-			std::cout << (int)sig->keypreferences_pha[i] << " ";
+			std::cerr << (int)sig->keypreferences_pha[i] << " ";
 	}
 	if (verbose > 1)
-		std::cout << std::endl;
+		std::cerr << std::endl;
 	if (verbose > 1)
-		std::cout << "INFO: primary key update pca to ";
+		std::cerr << "INFO: primary key update pca to ";
 	pca.clear();
 	for (size_t i = 0; i < sig->keypreferences_pca.size(); i++)
 	{
 		pca.push_back(sig->keypreferences_pca[i]);
 		if (verbose > 1)
-			std::cout << (int)sig->keypreferences_pca[i] << " ";
+			std::cerr << (int)sig->keypreferences_pca[i] << " ";
 	}
 	if (verbose > 1)
-		std::cout << std::endl;
+		std::cerr << std::endl;
 // TODO: update revocable flag and external revocation keys
 }
 
@@ -1339,17 +1339,17 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 	// print statistics of primary key
 	if (verbose > 1)
 	{
-		std::cout << "INFO: key ID of primary key: " << std::hex;
+		std::cerr << "INFO: key ID of primary key: " << std::hex;
 		for (size_t i = 0; i < id.size(); i++)
-			std::cout << (int)id[i] << " ";
-		std::cout << std::dec << std::endl;
-		std::cout << "INFO: number of selfsigs = " << 
+			std::cerr << (int)id[i] << " ";
+		std::cerr << std::dec << std::endl;
+		std::cerr << "INFO: number of selfsigs = " << 
 			selfsigs.size() << std::endl;
-		std::cout << "INFO: number of revsigs = " <<
+		std::cerr << "INFO: number of revsigs = " <<
 			revsigs.size() << std::endl;
-		std::cout << "INFO: number of userids = " <<
+		std::cerr << "INFO: number of userids = " <<
 			userids.size() << std::endl;
-		std::cout << "INFO: number of subkeys = " <<
+		std::cerr << "INFO: number of subkeys = " <<
 			subkeys.size() << std::endl;
 	}
 	// check self-signatures of primary key
@@ -1384,20 +1384,20 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 	{
 		if (verbose > 1)
 		{
-			std::cout << "INFO: userid = \"" <<
+			std::cerr << "INFO: userid = \"" <<
 				userids[i]->userid << "\"" << std::endl;
-			std::cout << "INFO: number of selfsigs = " <<
+			std::cerr << "INFO: number of selfsigs = " <<
 				userids[i]->selfsigs.size() << std::endl;
-			std::cout << "INFO: number of revsigs = " <<
+			std::cerr << "INFO: number of revsigs = " <<
 				userids[i]->revsigs.size() << std::endl;
-			std::cout << "INFO: number of certsigs = " <<
+			std::cerr << "INFO: number of certsigs = " <<
 				userids[i]->certsigs.size() << std::endl;
 		}
 		if (userids[i]->Check(creationtime, key, pub_hashing, verbose))
 		{
 			one_valid_uid = true;
 			if (verbose > 1)
-				std::cout << "INFO: user ID is valid" <<
+				std::cerr << "INFO: user ID is valid" <<
 					std::endl;
 			for (size_t j = 0; j < userids[i]->selfsigs.size(); j++)
 			{
@@ -1415,7 +1415,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			}
 		}
 		else if (verbose > 1)
-			std::cout << "INFO: user ID is NOT valid" << std::endl;
+			std::cerr << "INFO: user ID is NOT valid" << std::endl;
 		// check properties of primary key
 		if (!CheckProperties(verbose))
 		{
@@ -1427,31 +1427,31 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 	size_t allflags = AccumulateFlags();
 	if (verbose > 1)
 	{
-		std::cout << "INFO: key flags on primary key are ";
+		std::cerr << "INFO: key flags on primary key are ";
  		// The key may be used to certify other keys.
 		if ((allflags & 0x01) == 0x01)
-			std::cout << "C";
+			std::cerr << "C";
 		// The key may be used to sign data.
 		if ((allflags & 0x02) == 0x02)
-			std::cout << "S";
+			std::cerr << "S";
 		// The key may be used encrypt communications.
 		if ((allflags & 0x04) == 0x04)
-			std::cout << "E";
+			std::cerr << "E";
 		// The key may be used encrypt storage.
 		if ((allflags & 0x08) == 0x08)
-			std::cout << "e";
+			std::cerr << "e";
 		// The private component of this key may have
 		// been split by a secret-sharing mechanism.
 		if ((allflags & 0x10) == 0x10)
-			std::cout << "D";
+			std::cerr << "D";
 		// The key may be used for authentication.
 		if ((allflags & 0x20) == 0x20)
-			std::cout << "A";
+			std::cerr << "A";
 		// The private component of this key may be
 		// in the possession of more than one person.
 		if ((allflags & 0x80) == 0x80)
-			std::cout << "G";
-		std::cout << std::endl;
+			std::cerr << "G";
+		std::cerr << std::endl;
 	}
 	// check revocation signatures of primary key
 	std::sort(revsigs.begin(), revsigs.end(),
@@ -1515,41 +1515,41 @@ bool TMCG_OpenPGP_Pubkey::CheckSubkeys
 		{
 			one_valid_sub = true;
 			if (verbose > 1)
-				std::cout << "INFO: subkey is valid" << 
+				std::cerr << "INFO: subkey is valid" << 
 					std::endl;
 			// print accumulated key flags of the subkey
 			size_t allflags = subkeys[i]->AccumulateFlags();
 			if (verbose > 1)
 			{
-				std::cout << "INFO: key flags on subkey are ";
+				std::cerr << "INFO: key flags on subkey are ";
 				// The key may be used to certify other keys.
 				if ((allflags & 0x01) == 0x01)
-					std::cout << "C";
+					std::cerr << "C";
 				// The key may be used to sign data.
 				if ((allflags & 0x02) == 0x02)
-					std::cout << "S";
+					std::cerr << "S";
 				// The key may be used encrypt communications.
 				if ((allflags & 0x04) == 0x04)
-					std::cout << "E";
+					std::cerr << "E";
 				// The key may be used encrypt storage.
 				if ((allflags & 0x08) == 0x08)
-					std::cout << "e";
+					std::cerr << "e";
 				// The private component of this key may have
 				// been split by a secret-sharing mechanism.
 				if ((allflags & 0x10) == 0x10)
-					std::cout << "D";
+					std::cerr << "D";
 				// The key may be used for authentication.
 				if ((allflags & 0x20) == 0x20)
-					std::cout << "A";
+					std::cerr << "A";
 				// The private component of this key may be
 				// in the possession of more than one person.
 				if ((allflags & 0x80) == 0x80)
-					std::cout << "G";
-				std::cout << std::endl;
+					std::cerr << "G";
+				std::cerr << std::endl;
 			}
 		}
 		else if (verbose > 1)
-			std::cout << "INFO: subkey is NOT valid" << std::endl;
+			std::cerr << "INFO: subkey is NOT valid" << std::endl;
 	}
 	return one_valid_sub;
 }
@@ -4195,7 +4195,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				return 0; // error: too long subpacket body
 			out.embeddedsignaturelen = pkt.size();
 			if (verbose > 2)
-				std::cout << "INFO: embeddedsignaturelen = " <<
+				std::cerr << "INFO: embeddedsignaturelen = " <<
 					out.embeddedsignaturelen << std::endl;
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.embeddedsignature[i] = pkt[i];
@@ -4233,10 +4233,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 		{
 			if (verbose > 2)
 			{
-				std::cout << "INFO: incorrect ";
+				std::cerr << "INFO: incorrect ";
 				if (out.critical)
-					std::cout << "critical ";
-				std::cout << "subpacket" << std::endl;
+					std::cerr << "critical ";
+				std::cerr << "subpacket" << std::endl;
 			}
 			return 0x00; // error: incorrect subpacket
 		}
@@ -4249,15 +4249,15 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 				tag = 0xFB;
 			if (verbose > 2)
 			{
-				std::cout << "INFO: unrecognized ";
+				std::cerr << "INFO: unrecognized ";
 				if (out.critical)
-					std::cout << "critical ";
-				std::cout << "subpacket" << std::endl;
+					std::cerr << "critical ";
+				std::cerr << "subpacket" << std::endl;
 			}
 		}
 		else if (verbose > 2)
 		{
-			std::cout << "INFO: subpacket type = " <<
+			std::cerr << "INFO: subpacket type = " <<
 				(int)sptype << " found" << std::endl;
 		}
 	}
@@ -6238,7 +6238,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			ptag = PacketDecode(embedded_pkt, verbose,
 				ctx, current_packet);
 			if (verbose > 2)
-				std::cout << "INFO: [EMBEDDED] " <<
+				std::cerr << "INFO: [EMBEDDED] " <<
 					"PacketDecode() = " << (int)ptag << 
 					" version = " << (int)ctx.version <<
 					std::endl;
@@ -6250,7 +6250,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				ctx, current_packet);
 			++pnum;
 			if (verbose > 2)
-				std::cout << "INFO: PacketDecode() = " <<
+				std::cerr << "INFO: PacketDecode() = " <<
 					(int)ptag << " version = " <<
 					(int)ctx.version << std::endl;
 		}
@@ -6360,7 +6360,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 					unsigned int mdbits = 0;
 					mdbits = gcry_mpi_get_nbits(ctx.md);
 					if (verbose > 2)
-						std::cout << "INFO: " << 
+						std::cerr << "INFO: " << 
 							"mdbits = " <<
 							mdbits << std::endl;
 					// create a new signature object
@@ -6381,7 +6381,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 					rbits = gcry_mpi_get_nbits(ctx.r);
 					sbits = gcry_mpi_get_nbits(ctx.s);
 					if (verbose > 2)
-						std::cout << "INFO: " <<
+						std::cerr << "INFO: " <<
 							"rbits = " << rbits <<
 							" sbits = " << sbits <<
 							std::endl;
@@ -6632,10 +6632,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 					}
 					if (verbose > 1)
 					{
-						std::cout << "INFO: key ID of primary key: " << std::hex;
+						std::cerr << "INFO: key ID of primary key: " << std::hex;
 						for (size_t i = 0; i < pub->id.size(); i++)
-							std::cout << (int)pub->id[i] << " ";
-						std::cout << std::dec << std::endl;
+							std::cerr << (int)pub->id[i] << " ";
+						std::cerr << std::dec << std::endl;
 					}
 				}
 				else
@@ -6719,10 +6719,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 					}
 					if (verbose > 1)
 					{
-						std::cout << "INFO: key ID of subkey: " << std::hex;
+						std::cerr << "INFO: key ID of subkey: " << std::hex;
 						for (size_t i = 0; i < sub->id.size(); i++)
-							std::cout << (int)sub->id[i] << " ";
-						std::cout << std::dec << std::endl;
+							std::cerr << (int)sub->id[i] << " ";
+						std::cerr << std::dec << std::endl;
 					}
 					if (verbose && OctetsCompare(sub->id, pub->id))
 						std::cerr << "WARNING: probably same key material used for primary key and subkey" << std::endl;
@@ -6757,7 +6757,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				break;
 			default:
 				if (verbose > 1)
-					std::cout << "INFO: OpenPGP packet of type " << (int)ptag << " ignored" << std::endl;
+					std::cerr << "INFO: OpenPGP packet of type " << (int)ptag << " ignored" << std::endl;
 				break;
 		}
 		// cleanup allocated buffers and mpi's
