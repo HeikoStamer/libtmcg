@@ -338,7 +338,8 @@ class TMCG_OpenPGP_Subkey
 		tmcg_openpgp_octets_t pca;
 		std::vector<TMCG_OpenPGP_Signature*> selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*> bindsigs;
-		std::vector<TMCG_OpenPGP_Signature*> revsigs;
+		std::vector<TMCG_OpenPGP_Signature*> keyrevsigs;
+		std::vector<TMCG_OpenPGP_Signature*> certrevsigs;
 
 		TMCG_OpenPGP_Subkey
 			(const tmcg_openpgp_byte_t pkalgo_in,
@@ -410,7 +411,8 @@ class TMCG_OpenPGP_Pubkey
 		tmcg_openpgp_octets_t pha;
 		tmcg_openpgp_octets_t pca;
 		std::vector<TMCG_OpenPGP_Signature*> selfsigs;
-		std::vector<TMCG_OpenPGP_Signature*> revsigs;
+		std::vector<TMCG_OpenPGP_Signature*> keyrevsigs;
+		std::vector<TMCG_OpenPGP_Signature*> certrevsigs;
 		std::vector<TMCG_OpenPGP_UserID*> userids;
 		std::vector<TMCG_OpenPGP_Subkey*> subkeys;
 
