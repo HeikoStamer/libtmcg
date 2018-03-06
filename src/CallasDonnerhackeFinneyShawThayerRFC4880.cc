@@ -32,8 +32,8 @@
 
 TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	(const bool revocable_in,
-	 const tmcg_openpgp_byte_t pkalgo_in,
-	 const tmcg_openpgp_byte_t hashalgo_in,
+	 const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const tmcg_openpgp_hashalgo_t hashalgo_in,
 	 const tmcg_openpgp_byte_t type_in,
 	 const tmcg_openpgp_byte_t version_in,
 	 const time_t creationtime_in,
@@ -86,8 +86,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 
 TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	(const bool revocable_in,
-	 const tmcg_openpgp_byte_t pkalgo_in,
-	 const tmcg_openpgp_byte_t hashalgo_in,
+	 const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const tmcg_openpgp_hashalgo_t hashalgo_in,
 	 const tmcg_openpgp_byte_t type_in,
 	 const tmcg_openpgp_byte_t version_in,
 	 const time_t creationtime_in,
@@ -187,7 +187,9 @@ bool TMCG_OpenPGP_Signature::Check
 				"older than corresponding key" << std::endl;
 		return false;
 	}
-	if ((hashalgo < 8) || (hashalgo >= 11))
+	if ((hashalgo != TMCG_OPENPGP_HASHALGO_SHA256) &&
+	    (hashalgo != TMCG_OPENPGP_HASHALGO_SHA384) &&
+	    (hashalgo != TMCG_OPENPGP_HASHALGO_SHA512))
 	{
 		if (verbose)
 			std::cerr << "WARNING: insecure hash algorithm " << 
@@ -276,12 +278,13 @@ bool TMCG_OpenPGP_Signature::Verify
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
 	gcry_error_t vret;
-	if ((pkalgo == 1) || (pkalgo == 3))
+	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 	{
 		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
 	}
-	else if (pkalgo == 17)
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
 		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
@@ -354,12 +357,13 @@ bool TMCG_OpenPGP_Signature::Verify
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
 	gcry_error_t vret;
-	if ((pkalgo == 1) || (pkalgo == 3))
+	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 	{
 		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
 	}
-	else if (pkalgo == 17)
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
 		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
@@ -435,12 +439,13 @@ bool TMCG_OpenPGP_Signature::Verify
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
 	gcry_error_t vret;
-	if ((pkalgo == 1) || (pkalgo == 3))
+	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 	{
 		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
 	}
-	else if (pkalgo == 17)
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
 		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
@@ -516,12 +521,13 @@ bool TMCG_OpenPGP_Signature::Verify
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
 	gcry_error_t vret;
-	if ((pkalgo == 1) || (pkalgo == 3))
+	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 	{
 		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
 	}
-	else if (pkalgo == 17)
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
 		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
@@ -658,7 +664,7 @@ TMCG_OpenPGP_UserID::~TMCG_OpenPGP_UserID
 // ===========================================================================
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
-	(const tmcg_openpgp_byte_t pkalgo_in,
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
 	 const gcry_mpi_t n,
@@ -696,7 +702,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 }
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
-	(const tmcg_openpgp_byte_t pkalgo_in,
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
 	 const gcry_mpi_t p,
@@ -736,7 +742,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 }
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
-	(const tmcg_openpgp_byte_t pkalgo_in,
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
 	 const gcry_mpi_t p,
@@ -787,7 +793,9 @@ bool TMCG_OpenPGP_Subkey::weak
 	(const int verbose) const
 {
 	gcry_error_t wret;
-	if ((pkalgo >= 1) && (pkalgo <= 3))
+	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 	{
 		unsigned int nbits = 0, ebits = 0;
 		nbits = gcry_mpi_get_nbits(rsa_n);
@@ -803,7 +811,7 @@ bool TMCG_OpenPGP_Subkey::weak
 		if (wret)
 			return true; // e is not a prime
 	}
-	else if (pkalgo == 16)
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
 	{
 		unsigned int pbits = 0, gbits = 0, ybits = 0;
 		pbits = gcry_mpi_get_nbits(elg_p);
@@ -819,7 +827,7 @@ bool TMCG_OpenPGP_Subkey::weak
 		if (wret)
 			return true; // p is not a prime
 	}
-	else if (pkalgo == 17)
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
 		unsigned int pbits = 0, qbits = 0, gbits = 0, ybits = 0;
 		pbits = gcry_mpi_get_nbits(dsa_p);
@@ -841,6 +849,8 @@ bool TMCG_OpenPGP_Subkey::weak
 		if (wret)
 			return true; // q is not a prime
 	}
+	else
+		return true; // unknown public-key algorithm
 	return false;
 }
 
@@ -1204,7 +1214,7 @@ TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
 // ===========================================================================
 
 TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
-	(const tmcg_openpgp_byte_t pkalgo_in,
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
 	 const gcry_mpi_t n,
@@ -1239,7 +1249,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 }
 
 TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
-	(const tmcg_openpgp_byte_t pkalgo_in,
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
 	 const gcry_mpi_t p,
@@ -1287,7 +1297,8 @@ bool TMCG_OpenPGP_Pubkey::weak
 	(const int verbose) const
 {
 	gcry_error_t wret;
-	if ((pkalgo >= 1) && (pkalgo <= 3))
+	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 	{
 		unsigned int nbits = 0, ebits = 0;
 		nbits = gcry_mpi_get_nbits(rsa_n);
@@ -1303,7 +1314,7 @@ bool TMCG_OpenPGP_Pubkey::weak
 		if (wret)
 			return true; // e is not a prime
 	}
-	else if (pkalgo == 17)
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
 		unsigned int pbits = 0, qbits = 0, gbits = 0, ybits = 0;
 		pbits = gcry_mpi_get_nbits(dsa_p);
@@ -1325,6 +1336,8 @@ bool TMCG_OpenPGP_Pubkey::weak
 		if (wret)
 			return true; // q is not a prime
 	}
+	else
+		return true; // unknown public-key algorithm
 	return false;
 }
 
@@ -1722,35 +1735,35 @@ TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
 // ===========================================================================
 
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength
-	(const tmcg_openpgp_byte_t algo)
+	(const tmcg_openpgp_skalgo_t algo)
 {
 	switch (algo)
 	{
-		case 0: // Plaintext or unencrypted data
-			return 0;
-		case 1: // IDEA
-			return 16;
-		case 2: // TripleDES (DES-EDE, 168 bit key derived from 192)
-			return 24;
-		case 3: // CAST5 (128 bit key, as per [RFC2144])
-			return 16;
-		case 4: // Blowfish (128 bit key, 16 rounds)
-			return 16;
-		case 7: // AES with 128-bit key
-			return 16;
-		case 8: // AES with 192-bit key
-			return 24;
-		case 9: // AES with 256-bit key
-			return 32;
-		case 10: // Twofish with 256-bit key
-			return 32;
+		case TMCG_OPENPGP_SKALGO_PLAINTEXT:
+			return 0; // Plaintext or unencrypted data
+		case TMCG_OPENPGP_SKALGO_IDEA: 
+			return 16; // IDEA
+		case TMCG_OPENPGP_SKALGO_3DES: 
+			return 24; // TripleDES (168 bit key derived from 192)
+		case TMCG_OPENPGP_SKALGO_CAST5:
+			return 16; // CAST5 (128 bit key, as per [RFC2144])
+		case TMCG_OPENPGP_SKALGO_BLOWFISH:
+			return 16; // Blowfish (128 bit key, 16 rounds)
+		case TMCG_OPENPGP_SKALGO_AES128:
+			return 16; // AES with 128-bit key
+		case TMCG_OPENPGP_SKALGO_AES192:
+			return 24; // AES with 192-bit key
+		case TMCG_OPENPGP_SKALGO_AES256:
+			return 32; // AES with 256-bit key
+		case TMCG_OPENPGP_SKALGO_TWOFISH:
+			return 32; // Twofish with 256-bit key
 		default:
 			return 0;
 	}
 }
 
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength
-	(const tmcg_openpgp_byte_t algo)
+	(const tmcg_openpgp_skalgo_t algo)
 {
 	// Most ciphers have a block size of 8 octets. The AES and
 	// Twofish have a block size of 16 octets.
@@ -1760,45 +1773,54 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength
 	// cipher’s block size.
 	switch (algo)
 	{
-		case 0: // Plaintext or unencrypted data
-			return 0;
-		case 1: // IDEA
-		case 2: // TripleDES
-		case 3: // CAST5
-		case 4: // Blowfish
-			return 8;
-		case 7: // AES with 128-bit key
-		case 8: // AES with 192-bit key
-		case 9: // AES with 256-bit key
-		case 10: // Twofish with 256-bit key
-			return 16;
+		case TMCG_OPENPGP_SKALGO_PLAINTEXT: 
+			return 0; // Plaintext or unencrypted data
+		case TMCG_OPENPGP_SKALGO_IDEA:
+		case TMCG_OPENPGP_SKALGO_3DES:
+		case TMCG_OPENPGP_SKALGO_CAST5:
+		case TMCG_OPENPGP_SKALGO_BLOWFISH:
+			return 8; // IDEA, TripleDES, CAST5, Blowfish
+		case TMCG_OPENPGP_SKALGO_AES128:
+		case TMCG_OPENPGP_SKALGO_AES192:
+		case TMCG_OPENPGP_SKALGO_AES256:
+		case TMCG_OPENPGP_SKALGO_TWOFISH:
+			return 16; // AES128, AES192, AES256, Twofish
 		default:
 			return 0;
 	}
 }
 
 int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmSymGCRY
-	(const tmcg_openpgp_byte_t algo)
+	(const tmcg_openpgp_skalgo_t algo)
 {
 	switch (algo)
 	{
-		case 0: // Plaintext or unencrypted data
+		// Plaintext or unencrypted data
+		case TMCG_OPENPGP_SKALGO_PLAINTEXT:
 			return GCRY_CIPHER_NONE;
-		case 1: // IDEA
+		// IDEA
+		case TMCG_OPENPGP_SKALGO_IDEA:
 			return GCRY_CIPHER_IDEA;
-		case 2: // TripleDES (DES-EDE, 168 bit key derived from 192)
+		// TripleDES (DES-EDE, 168 bit key derived from 192)
+		case TMCG_OPENPGP_SKALGO_3DES:
 			return GCRY_CIPHER_3DES;
-		case 3: // CAST5 (128 bit key, as per [RFC2144])
+		// CAST5 (128 bit key, as per [RFC2144])
+		case TMCG_OPENPGP_SKALGO_CAST5:
 			return GCRY_CIPHER_CAST5;
-		case 4: // Blowfish (128 bit key, 16 rounds)
+		// Blowfish (128 bit key, 16 rounds)
+		case TMCG_OPENPGP_SKALGO_BLOWFISH:
 			return GCRY_CIPHER_BLOWFISH;
-		case 7: // AES with 128-bit key
+		// AES with 128-bit key
+		case TMCG_OPENPGP_SKALGO_AES128:
 			return GCRY_CIPHER_AES;
-		case 8: // AES with 192-bit key
+		// AES with 192-bit key
+		case TMCG_OPENPGP_SKALGO_AES192:
 			return GCRY_CIPHER_AES192;
-		case 9: // AES with 256-bit key
+		// AES with 256-bit key
+		case TMCG_OPENPGP_SKALGO_AES256:
 			return GCRY_CIPHER_AES256;
-		case 10: // Twofish with 256-bit key
+		// Twofish with 256-bit key
+		case TMCG_OPENPGP_SKALGO_TWOFISH:
 			return GCRY_CIPHER_TWOFISH;
 		default:
 			return 0;
@@ -1806,46 +1828,46 @@ int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmSymGCRY
 }
 
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashLength
-	(const tmcg_openpgp_byte_t algo)
+	(const tmcg_openpgp_hashalgo_t algo)
 {
 	switch (algo)
 	{
-		case 1: // MD5
-			return 16;
-		case 2: // SHA-1
-		case 3: // RIPE-MD/160
-			return 20;
-		case 8: // SHA256
-			return 32;
-		case 9: // SHA384
-			return 48;
-		case 10: // SHA512
-			return 64;
-		case 11: // SHA224
-			return 28;
+		case TMCG_OPENPGP_HASHALGO_MD5:
+			return 16; // MD5
+		case TMCG_OPENPGP_HASHALGO_SHA1:
+		case TMCG_OPENPGP_HASHALGO_RMD160:
+			return 20; // SHA-1, RIPE-MD/160
+		case TMCG_OPENPGP_HASHALGO_SHA256:
+			return 32; // SHA256
+		case TMCG_OPENPGP_HASHALGO_SHA384:
+			return 48; // SHA384
+		case TMCG_OPENPGP_HASHALGO_SHA512:
+			return 64; // SHA512
+		case TMCG_OPENPGP_HASHALGO_SHA224:
+			return 28; // SHA224
 		default:
 			return 0;
 	}
 }
 
 int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRY
-	(const tmcg_openpgp_byte_t algo)
+	(const tmcg_openpgp_hashalgo_t algo)
 {
 	switch (algo)
 	{
-		case 1: // MD5
+		case TMCG_OPENPGP_HASHALGO_MD5:
 			return GCRY_MD_MD5;
-		case 2: // SHA-1
+		case TMCG_OPENPGP_HASHALGO_SHA1:
 			return GCRY_MD_SHA1;
-		case 3: // RIPE-MD/160
+		case TMCG_OPENPGP_HASHALGO_RMD160:
 			return GCRY_MD_RMD160;
-		case 8: // SHA256
+		case TMCG_OPENPGP_HASHALGO_SHA256:
 			return GCRY_MD_SHA256;
-		case 9: // SHA384
+		case TMCG_OPENPGP_HASHALGO_SHA384:
 			return GCRY_MD_SHA384;
-		case 10: // SHA512
+		case TMCG_OPENPGP_HASHALGO_SHA512:
 			return GCRY_MD_SHA512;
-		case 11: // SHA224
+		case TMCG_OPENPGP_HASHALGO_SHA224:
 			return GCRY_MD_SHA224;
 		default:
 			return 0;
@@ -1853,29 +1875,29 @@ int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRY
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRYName
-	(const tmcg_openpgp_byte_t algo, std::string &out)
+	(const tmcg_openpgp_hashalgo_t algo, std::string &out)
 {
 	switch (algo)
 	{
-		case 1: // MD5
+		case TMCG_OPENPGP_HASHALGO_MD5:
 			out = "md5";
 			break;
-		case 2: // SHA-1
+		case TMCG_OPENPGP_HASHALGO_SHA1:
 			out = "sha1";
 			break;
-		case 3: // RIPE-MD/160
+		case TMCG_OPENPGP_HASHALGO_RMD160:
 			out = "rmd160";
 			break;
-		case 8: // SHA256
+		case TMCG_OPENPGP_HASHALGO_SHA256:
 			out = "sha256";
 			break;
-		case 9: // SHA384
+		case TMCG_OPENPGP_HASHALGO_SHA384:
 			out = "sha384";
 			break;
-		case 10: // SHA512
+		case TMCG_OPENPGP_HASHALGO_SHA512:
 			out = "sha512";
 			break;
-		case 11: // SHA224
+		case TMCG_OPENPGP_HASHALGO_SHA224:
 			out = "sha224";
 			break;
 		default:
@@ -2256,7 +2278,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
-	(const tmcg_openpgp_byte_t algo, const tmcg_openpgp_octets_t &in,
+	(const tmcg_openpgp_hashalgo_t algo, const tmcg_openpgp_octets_t &in,
 	 tmcg_openpgp_octets_t &out)
 {
 	int a = AlgorithmHashGCRY(algo);
@@ -2279,7 +2301,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
-	(const tmcg_openpgp_byte_t algo, const size_t cnt,
+	(const tmcg_openpgp_hashalgo_t algo, const size_t cnt,
 	 const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &out)
 {
 	size_t c = in.size();
@@ -2313,7 +2335,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 }
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
-	(const tmcg_openpgp_byte_t algo, const std::string &filename,
+	(const tmcg_openpgp_hashalgo_t algo, const std::string &filename,
 	 const tmcg_openpgp_octets_t &trailer, tmcg_openpgp_octets_t &out)
 {
 	char c;
@@ -2355,7 +2377,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
-	(const tmcg_openpgp_byte_t algo, const size_t sklen,
+	(const tmcg_openpgp_hashalgo_t algo, const size_t sklen,
 	 const std::string &in, const tmcg_openpgp_octets_t &salt,
 	 const bool iterated, const tmcg_openpgp_byte_t octcnt, 
 	 tmcg_openpgp_octets_t &out)
@@ -2724,7 +2746,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode
 	PacketLengthEncode(1+keyid.size()+1+2+gklen+2+myklen, out);
 	out.push_back(3); // V3 format
 	out.insert(out.end(), keyid.begin(), keyid.end()); // Key ID
-	out.push_back(16); // public-key algorithm: Elgamal
+	out.push_back(TMCG_OPENPGP_PKALGO_ELGAMAL); // public-key algorithm
 	PacketMPIEncode(gk, out); // MPI g**k mod p
 	PacketMPIEncode(myk, out); // MPI m * y**k mod p
 }
@@ -2782,7 +2804,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode
 	PacketLengthEncode(1+keyid.size()+1+2+melen, out);
 	out.push_back(3); // V3 format
 	out.insert(out.end(), keyid.begin(), keyid.end()); // Key ID
-	out.push_back(1); // public-key algorithm: RSA
+	out.push_back(TMCG_OPENPGP_PKALGO_RSA); // public-key algorithm
 	PacketMPIEncode(me, out); // MPI m**e mod n
 }
 
@@ -2841,7 +2863,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 	(const tmcg_openpgp_byte_t sigtype,
-	 const tmcg_openpgp_byte_t hashalgo,
+	 const tmcg_openpgp_hashalgo_t hashalgo,
 	 const time_t sigtime, const time_t keyexptime, 
 	 const tmcg_openpgp_octets_t &flags,
 	 const tmcg_openpgp_octets_t &issuer, tmcg_openpgp_octets_t &out)
@@ -2853,7 +2875,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		subpktlen += (6 + 4);
 	out.push_back(4); // V4 format
 	out.push_back(sigtype); // type (e.g. 0x10-0x13 UID certification)
-	out.push_back(17); // public-key algorithm: DSA
+	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
 	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
@@ -2871,16 +2893,16 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		}
 		// 2. preferred symmetric algorithms (length = 2)
 		tmcg_openpgp_octets_t psa;
-		psa.push_back(9); // AES256
-		psa.push_back(10); // Twofish
+		psa.push_back(TMCG_OPENPGP_SKALGO_AES256); // AES256
+		psa.push_back(TMCG_OPENPGP_SKALGO_TWOFISH); // Twofish
 		SubpacketEncode(11, false, psa, out);
 		// 3. issuer (variable length)
 		SubpacketEncode(16, false, issuer, out);
 		// 4. preferred hash algorithms  (length = 3)
 		tmcg_openpgp_octets_t pha;
-		pha.push_back(8); // SHA256
-		pha.push_back(9); // SHA384
-		pha.push_back(10); // SHA512
+		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // SHA256
+		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA384); // SHA384
+		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA512); // SHA512
 		SubpacketEncode(21, false, pha, out);
 		// 5. preferred compression algorithms  (length = 1)
 		tmcg_openpgp_octets_t pca;
@@ -2900,7 +2922,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 	(const tmcg_openpgp_byte_t sigtype,
-	 const tmcg_openpgp_byte_t hashalgo, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, 
 	 const time_t sigtime, const time_t sigexptime, 
 	 const tmcg_openpgp_octets_t &issuer, tmcg_openpgp_octets_t &out)
 {
@@ -2910,7 +2932,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 		subpktlen += (6 + 4);
 	out.push_back(4); // V4 format
 	out.push_back(sigtype); // type (e.g. 0x00 Binary Document)
-	out.push_back(17); // public-key algorithm: DSA
+	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
 	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
@@ -2932,7 +2954,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature
 	(const tmcg_openpgp_byte_t sigtype,
-	 const tmcg_openpgp_byte_t hashalgo, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, 
 	 const time_t sigtime, const tmcg_openpgp_byte_t revcode,
 	 const std::string &reason, const tmcg_openpgp_octets_t &issuer, 
 	 tmcg_openpgp_octets_t &out)
@@ -2942,7 +2964,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignatu
 		1 + reason.length();
 	out.push_back(4); // V4 format
 	out.push_back(sigtype); // type (e.g. 0x20/0x28 key/subkey revocation)
-	out.push_back(17); // public-key algorithm: DSA
+	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
 	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
@@ -2963,7 +2985,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignatu
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSignature
 	(const tmcg_openpgp_byte_t sigtype,
-	 const tmcg_openpgp_byte_t hashalgo, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, 
 	 const time_t sigtime, const time_t sigexptime, 
 	 const std::string &policy, const tmcg_openpgp_octets_t &issuer, 
 	 tmcg_openpgp_octets_t &out)
@@ -2976,7 +2998,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSign
 		subpktlen += (6 + policy.length());
 	out.push_back(4); // V4 format
 	out.push_back(sigtype); // type (e.g. 0x10 user ID certification)
-	out.push_back(17); // public-key algorithm: DSA
+	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
 	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
@@ -3005,7 +3027,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSign
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
-	(const time_t keytime, const tmcg_openpgp_byte_t algo,
+	(const time_t keytime, const tmcg_openpgp_pkalgo_t algo,
 	 const gcry_mpi_t p, const gcry_mpi_t q, const gcry_mpi_t g,
 	 const gcry_mpi_t y, tmcg_openpgp_octets_t &out)
 {
@@ -3016,15 +3038,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	size_t len = 1+4+1; // number of octets for version, keytime, and algo
 	switch (algo)
 	{
-		case 1: // public-key algorithm: RSA
-		case 2: // public-key algorithm: RSA
-		case 3: // public-key algorithm: RSA
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY:
+		case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
 			len += 2+plen+2+qlen;
 			break;
-		case 16: // public-key algorithm: Elgamal
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
 			len += 2+plen+2+glen+2+ylen;
 			break;
-		case 17: // public-key algorithm: DSA
+		case TMCG_OPENPGP_PKALGO_DSA:
 			len += 2+plen+2+qlen+2+glen+2+ylen;
 			break;
 	}
@@ -3059,18 +3081,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	out.push_back(algo);
 	switch (algo)
 	{
-		case 1: // public-key algorithm: RSA
-		case 2: // public-key algorithm: RSA
-		case 3: // public-key algorithm: RSA
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY:
+		case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
 			PacketMPIEncode(p, out); // MPI n
 			PacketMPIEncode(q, out); // MPI e
 			break;
-		case 16: // public-key algorithm: Elgamal
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
 			PacketMPIEncode(p, out); // MPI p
 			PacketMPIEncode(g, out); // MPI g
 			PacketMPIEncode(y, out); // MPI y
 			break;
-		case 17: // public-key algorithm: DSA
+		case TMCG_OPENPGP_PKALGO_DSA:
 			PacketMPIEncode(p, out); // MPI p
 			PacketMPIEncode(q, out); // MPI q
 			PacketMPIEncode(g, out); // MPI g
@@ -3080,7 +3102,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
-	(const time_t keytime, const tmcg_openpgp_byte_t algo,
+	(const time_t keytime, const tmcg_openpgp_pkalgo_t algo,
 	 const gcry_mpi_t p, const gcry_mpi_t q, const gcry_mpi_t g,
 	 const gcry_mpi_t y, const gcry_mpi_t x,
 	 const std::string &passphrase, tmcg_openpgp_octets_t &out)
@@ -3093,12 +3115,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	size_t len = 1+4+1; // number of octets for version, keytime, and algo
 	switch (algo)
 	{
-		case 16: // public-key algorithm: Elgamal
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
 			len += 2+plen+2+glen+2+ylen;
 			break;
-		case 17: // public-key algorithm: DSA
+		case TMCG_OPENPGP_PKALGO_DSA:
 			len += 2+plen+2+qlen+2+glen+2+ylen;
 			break;
+		default:
+			return; // not supported			
 	}
 	if (passphrase.length() == 0)
 		len += 1+2+xlen+2; // S2K usage is zero
@@ -3140,17 +3164,19 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	out.push_back(algo);
 	switch (algo)
 	{
-		case 16: // public-key algorithm: Elgamal
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
 			PacketMPIEncode(p, out); // MPI p
 			PacketMPIEncode(g, out); // MPI g
 			PacketMPIEncode(y, out); // MPI y
 			break;
-		case 17: // public-key algorithm: DSA
+		case TMCG_OPENPGP_PKALGO_DSA:
 			PacketMPIEncode(p, out); // MPI p
 			PacketMPIEncode(q, out); // MPI q
 			PacketMPIEncode(g, out); // MPI g
 			PacketMPIEncode(y, out); // MPI y
 			break;
+		default:
+			return; // not supported
 	}
 
 	// Secret MPI values can be encrypted using a passphrase. If a string-
@@ -3188,9 +3214,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	else
 	{
 		out.push_back(254); // S2K convention: specifier and SHA-1 hash
-		out.push_back(9); // AES256
+		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
 		out.push_back(0x03); // Iterated and Salted S2K
-		out.push_back(8); // SHA256
+		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
 		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
 		tmcg_openpgp_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
@@ -3204,12 +3230,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 		out.push_back(count); // count, a one-octet, coded value
 		for (size_t i = 0; i < sizeof(iv); i++)
 			out.push_back(iv[i]); // IV
-		S2KCompute(8, sizeof(key), passphrase, salt, true, 
-			count, seskey);
+		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, sizeof(key),
+			passphrase, salt, true, count, seskey);
 		for (size_t i = 0; i < sizeof(key); i++)
 			key[i] = seskey[i];
 		PacketMPIEncode(x, plain); // MPI x
-		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
+		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
 		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
 		tmcg_openpgp_byte_t *buffer = 
 			new tmcg_openpgp_byte_t[plain.size()];
@@ -3328,9 +3354,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	else
 	{
 		out.push_back(254); // S2K convention: specifier and SHA-1 hash
-		out.push_back(9); // AES256
+		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
 		out.push_back(0x03); // Iterated and Salted S2K
-		out.push_back(8); // SHA256
+		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
 		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
 		tmcg_openpgp_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
@@ -3344,13 +3370,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 		out.push_back(count); // count, a one-octet, coded value
 		for (size_t i = 0; i < sizeof(iv); i++)
 			out.push_back(iv[i]); // IV
-		S2KCompute(8, sizeof(key), passphrase, salt, true,
-			count, seskey);
+		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, sizeof(key),
+			passphrase, salt, true, count, seskey);
 		for (size_t i = 0; i < sizeof(key); i++)
 			key[i] = seskey[i];
 		PacketMPIEncode(x_i, plain); // MPI x_i
 		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
-		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
+		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
 		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
 		tmcg_openpgp_byte_t *buffer = 
 			new tmcg_openpgp_byte_t[plain.size()];
@@ -3483,9 +3509,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 	else
 	{
 		out.push_back(254); // S2K convention: specifier and SHA-1 hash
-		out.push_back(9); // AES256
+		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
 		out.push_back(0x03); // Iterated and Salted S2K
-		out.push_back(8); // SHA256
+		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
 		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
 		tmcg_openpgp_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
@@ -3499,13 +3525,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 		out.push_back(count); // count, a one-octet, coded value
 		for (size_t i = 0; i < sizeof(iv); i++)
 			out.push_back(iv[i]); // IV
-		S2KCompute(8, sizeof(key), passphrase, salt, true,
-			count, seskey);
+		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, sizeof(key),
+			passphrase, salt, true, count, seskey);
 		for (size_t i = 0; i < sizeof(key); i++)
 			key[i] = seskey[i];
 		PacketMPIEncode(x_i, plain); // MPI x_i
 		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
-		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
+		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
 		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
 		tmcg_openpgp_byte_t *buffer = 
 			new tmcg_openpgp_byte_t[plain.size()];
@@ -3550,7 +3576,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
-	(const time_t keytime, const tmcg_openpgp_byte_t algo,
+	(const time_t keytime, const tmcg_openpgp_pkalgo_t algo,
 	 const gcry_mpi_t p, const gcry_mpi_t q, const gcry_mpi_t g,
 	 const gcry_mpi_t y, tmcg_openpgp_octets_t &out)
 {
@@ -3561,15 +3587,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 	size_t len = 1+4+1; // number of octets for version, keytime, and algo
 	switch (algo)
 	{
-		case 1: // public-key algorithm: RSA
-		case 2: // public-key algorithm: RSA
-		case 3: // public-key algorithm: RSA
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY:
+		case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
 			len += 2+plen+2+qlen;
 			break;
-		case 16: // public-key algorithm: Elgamal
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
 			len += 2+plen+2+glen+2+ylen;
 			break;
-		case 17: // public-key algorithm: DSA
+		case TMCG_OPENPGP_PKALGO_DSA:
 			len += 2+plen+2+qlen+2+glen+2+ylen;
 			break;
 	}
@@ -3588,18 +3614,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 	out.push_back(algo);
 	switch (algo)
 	{
-		case 1: // public-key algorithm: RSA
-		case 2: // public-key algorithm: RSA
-		case 3: // public-key algorithm: RSA
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY:
+		case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
 			PacketMPIEncode(p, out); // MPI n
 			PacketMPIEncode(q, out); // MPI e
 			break;
-		case 16: // public-key algorithm: Elgamal
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
 			PacketMPIEncode(p, out); // MPI p
 			PacketMPIEncode(g, out); // MPI g
 			PacketMPIEncode(y, out); // MPI y
 			break;
-		case 17: // public-key algorithm: DSA
+		case TMCG_OPENPGP_PKALGO_DSA:
 			PacketMPIEncode(p, out); // MPI p
 			PacketMPIEncode(q, out); // MPI q
 			PacketMPIEncode(g, out); // MPI g
@@ -3609,7 +3635,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
-	(const time_t keytime, const tmcg_openpgp_byte_t algo,
+	(const time_t keytime, const tmcg_openpgp_pkalgo_t algo,
 	 const gcry_mpi_t p, const gcry_mpi_t q, const gcry_mpi_t g,
 	 const gcry_mpi_t y, const gcry_mpi_t x,
 	 const std::string &passphrase, tmcg_openpgp_octets_t &out)
@@ -3622,12 +3648,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	size_t len = 1+4+1; // number of octets for version, keytime, and algo
 	switch (algo)
 	{
-		case 16: // public-key algorithm: Elgamal
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
 			len += 2+plen+2+glen+2+ylen;
 			break;
-		case 17: // public-key algorithm: DSA
+		case TMCG_OPENPGP_PKALGO_DSA:
 			len += 2+plen+2+qlen+2+glen+2+ylen;
 			break;
+		default:
+			return; // not supported
 	}
 	if (passphrase.length() == 0)
 		len += 1+2+xlen+2; // S2K usage is zero
@@ -3643,17 +3671,19 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	out.push_back(algo);
 	switch (algo)
 	{
-		case 16: // public-key algorithm: Elgamal
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
 			PacketMPIEncode(p, out); // MPI p
 			PacketMPIEncode(g, out); // MPI g
 			PacketMPIEncode(y, out); // MPI y
 			break;
-		case 17: // public-key algorithm: DSA
+		case TMCG_OPENPGP_PKALGO_DSA:
 			PacketMPIEncode(p, out); // MPI p
 			PacketMPIEncode(q, out); // MPI q
 			PacketMPIEncode(g, out); // MPI g
 			PacketMPIEncode(y, out); // MPI y
 			break;
+		default:
+			return; // not supported
 	}
 	if (passphrase.length() == 0)
 	{
@@ -3666,9 +3696,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	else
 	{
 		out.push_back(254); // S2K convention: specifier and SHA-1 hash
-		out.push_back(9); // AES256
+		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
 		out.push_back(0x03); // Iterated and Salted S2K
-		out.push_back(8); // SHA256
+		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
 		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
 		tmcg_openpgp_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
@@ -3682,12 +3712,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 		out.push_back(count); // count, a one-octet, coded value
 		for (size_t i = 0; i < sizeof(iv); i++)
 			out.push_back(iv[i]); // IV
-		S2KCompute(8, sizeof(key), passphrase, salt, true,
-			count, seskey);
+		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, sizeof(key),
+			passphrase, salt, true, count, seskey);
 		for (size_t i = 0; i < sizeof(key); i++)
 			key[i] = seskey[i];
 		PacketMPIEncode(x, plain); // MPI x
-		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
+		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
 		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
 		tmcg_openpgp_byte_t *buffer =
 			new tmcg_openpgp_byte_t[plain.size()];
@@ -3807,9 +3837,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 	else
 	{
 		out.push_back(254); // S2K convention: specifier and SHA-1 hash
-		out.push_back(9); // AES256
+		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
 		out.push_back(0x03); // Iterated and Salted S2K
-		out.push_back(8); // SHA256
+		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
 		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
 		tmcg_openpgp_octets_t salt, plain, hash, seskey;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
@@ -3823,13 +3853,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 		out.push_back(count); // count, a one-octet, coded value
 		for (size_t i = 0; i < sizeof(iv); i++)
 			out.push_back(iv[i]); // IV
-		S2KCompute(8, sizeof(key), passphrase, salt, true, 
-			count, seskey);
+		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, sizeof(key),
+			passphrase, salt, true, count, seskey);
 		for (size_t i = 0; i < sizeof(key); i++)
 			key[i] = seskey[i];
 		PacketMPIEncode(x_i, plain); // MPI x_i
 		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
-		HashCompute(2, plain, hash); // compute 20-octet SHA-1 hash
+		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
 		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
 		tmcg_openpgp_byte_t *buffer =
 			new tmcg_openpgp_byte_t[plain.size()];
@@ -4182,7 +4212,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			if ((pkt[0] & 0x80) != 0x80)
 				return 0; // error: bad class
 			out.revocationkey_class = pkt[0];
-			out.revocationkey_pkalgo = pkt[1];
+			out.revocationkey_pkalgo = (tmcg_openpgp_pkalgo_t)pkt[1];
 			for (size_t i = 0; i < 20; i++)
 				out.revocationkey_fingerprint[i] = pkt[2+i];
 			break;
@@ -4291,8 +4321,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 		case 31: // Signature Target
 			if (pkt.size() < 2)
 				return 0; // error: too short subpacket body
-			out.signaturetarget_pkalgo = pkt[0];
-			out.signaturetarget_hashalgo = pkt[1];
+			out.signaturetarget_pkalgo = (tmcg_openpgp_pkalgo_t)pkt[0];
+			out.signaturetarget_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[1];
 			if (pkt.size() > 
 			    (sizeof(out.signaturetarget_hash) + 2))
 				return 0; // error: too long subpacket body
@@ -4490,9 +4520,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				return 0; // error: version not supported
 			for (size_t i = 0; i < 8; i++)
 				out.keyid[i] = pkt[1+i];
-			out.pkalgo = pkt[9];
+			out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[9];
 			mpis.insert(mpis.end(), pkt.begin()+10, pkt.end());
-			if ((out.pkalgo == 1) || (out.pkalgo == 2))
+			if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY))
 			{
 				// Algorithm-Specific Fields for RSA
 				if (mpis.size() <= 2)
@@ -4502,7 +4533,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
-			else if (out.pkalgo == 16)
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
 			{
 				// Algorithm-Specific Fields for Elgamal
 				if (mpis.size() <= 2)
@@ -4537,8 +4568,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					pkt[6];
 				for (size_t i = 0; i < 8; i++)
 					out.issuer[i] = pkt[7+i];
-				out.pkalgo = pkt[15];
-				out.hashalgo = pkt[16];
+				out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[15];
+				out.hashalgo = (tmcg_openpgp_hashalgo_t)pkt[16];
 				// left 16 bits of signed hash value
 				for (size_t i = 0; i < 2; i++)
 					out.left[i] = pkt[17+i];
@@ -4550,8 +4581,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if (pkt.size() < 12)
 					return 0; // error: packet too short
 				out.type = pkt[1];
-				out.pkalgo = pkt[2];
-				out.hashalgo = pkt[3];
+				out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[2];
+				out.hashalgo = (tmcg_openpgp_hashalgo_t)pkt[3];
 				hspdlen = (pkt[4] << 8) + pkt[5];
 				if (pkt.size() < (6 + hspdlen))
 					return 0; // error: packet too short
@@ -4595,7 +4626,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			}
 			else
 				return 0xFC; // warning: version not supported
-			if ((out.pkalgo == 1) || (out.pkalgo == 3))
+			if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 			{
 				// Algorithm-Specific Fields for RSA
 				if (mpis.size() <= 2)
@@ -4605,7 +4637,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
-			else if (out.pkalgo == 17)
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 			{
 				// Algorithm-Specific Fields for DSA
 				if (mpis.size() <= 2)
@@ -4630,9 +4662,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			out.version = pkt[0];
 			if (out.version != 4)
 				return 0; // error: version not supported
-			out.symalgo = pkt[1];
+			out.symalgo = (tmcg_openpgp_skalgo_t)pkt[1];
 			out.s2k_type = pkt[2];
-			out.s2k_hashalgo = pkt[3];
+			out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[3];
 			if (out.s2k_type == 0x00)
 			{
 				// Simple S2K -- not permitted by RFC 4880
@@ -4687,8 +4719,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (out.version != 3)
 				return 0; // error: version not supported
 			out.type = pkt[1];
-			out.hashalgo = pkt[2];
-			out.pkalgo = pkt[3];
+			out.hashalgo = (tmcg_openpgp_hashalgo_t)pkt[2];
+			out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[3];
 			for (size_t i = 0; i < 8; i++)
 				out.signingkeyid[i] = pkt[4+i];
 			out.nestedsignature = pkt[12];
@@ -4702,9 +4734,11 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				return 0; // error: version not supported
 			out.keycreationtime = (pkt[1] << 24) +
 				(pkt[2] << 16) + (pkt[3] << 8) + pkt[4];
-			out.pkalgo = pkt[5];
+			out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[5];
 			mpis.insert(mpis.end(), pkt.begin()+6, pkt.end());
-			if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
+			if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 			{
 				// Algorithm-Specific Fields for RSA keys
 				mlen = PacketMPIDecode(mpis, out.n);
@@ -4716,7 +4750,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
-			else if (out.pkalgo == 16)
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
 			{
 				// Algorithm-Specific Fields for Elgamal keys
 				mlen = PacketMPIDecode(mpis, out.p);
@@ -4732,7 +4766,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
-			else if (out.pkalgo == 17)
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 			{
 				// Algorithm-Specific Fields for DSA keys
 				mlen = PacketMPIDecode(mpis, out.p);
@@ -5030,7 +5064,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			{
 				// not encrypted + checksum
 				size_t chksum = 0;
-				if ((out.pkalgo == 16) || (out.pkalgo == 17))
+				if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
+				    (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA))
 				{
 					// Algorithm-Specific Fields for Elgamal
 					// Algorithm-Specific Fields for DSA
@@ -5041,8 +5076,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 				}
-				else if ((out.pkalgo >= 1) &&
-				         (out.pkalgo <= 3))
+				else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+				         (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+				         (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 				{
 					// Algorithm-Specific Fields for RSA
 					mlen = PacketMPIDecode(mpis,
@@ -5102,12 +5138,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				// encrypted + SHA-1 hash or checksum
 				if (mpis.size() < 1)
 					return 0; // error: no sym. algorithm
-				out.symalgo = mpis[0];
+				out.symalgo = (tmcg_openpgp_skalgo_t)mpis[0];
 				mpis.erase(mpis.begin(), mpis.begin()+1);
 				if (mpis.size() < 2)
 					return 0; // error: bad S2K specifier
 				out.s2k_type = mpis[0];
-				out.s2k_hashalgo = mpis[1];
+				out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)mpis[1];
 				mpis.erase(mpis.begin(), mpis.begin()+2);
 				if (out.s2k_type == 0x00)
 				{
@@ -5168,9 +5204,11 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				return 0; // error: version not supported
 			out.keycreationtime = (pkt[1] << 24) +
 				(pkt[2] << 16) + (pkt[3] << 8) + pkt[4];
-			out.pkalgo = pkt[5];
+			out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[5];
 			mpis.insert(mpis.end(), pkt.begin()+6, pkt.end());
-			if ((out.pkalgo >= 1) && (out.pkalgo <= 3))
+			if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 			{
 				// Algorithm-Specific Fields for RSA keys
 				mlen = PacketMPIDecode(mpis, out.n);
@@ -5182,7 +5220,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
-			else if (out.pkalgo == 16)
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
 			{
 				// Algorithm-Specific Fields for Elgamal keys
 				mlen = PacketMPIDecode(mpis, out.p);
@@ -5198,7 +5236,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
-			else if (out.pkalgo == 17)
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 			{
 				// Algorithm-Specific Fields for DSA keys
 				mlen = PacketMPIDecode(mpis, out.p);
@@ -5391,7 +5429,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextRelease
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHashV3
 	(const std::string &filename, const tmcg_openpgp_octets_t &trailer, 
-	 const tmcg_openpgp_byte_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
 	 tmcg_openpgp_octets_t &left)
 {
 	tmcg_openpgp_octets_t hash_input;
@@ -5418,7 +5456,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHashV3
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 	(const std::string &filename, const tmcg_openpgp_octets_t &trailer, 
-	 const tmcg_openpgp_byte_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
 	 tmcg_openpgp_octets_t &left)
 {
 	tmcg_openpgp_octets_t hash_input;
@@ -5455,7 +5493,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV3
 	(const tmcg_openpgp_octets_t &key, const std::string &uid, 
 	 const tmcg_openpgp_octets_t &trailer,
-	 const tmcg_openpgp_byte_t hashalgo,
+	 const tmcg_openpgp_hashalgo_t hashalgo,
 	 tmcg_openpgp_octets_t &hash, tmcg_openpgp_octets_t &left)
 {
 	tmcg_openpgp_octets_t hash_input;
@@ -5490,7 +5528,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV3
 void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	(const tmcg_openpgp_octets_t &key, const std::string &uid, 
 	 const tmcg_openpgp_octets_t &trailer,
-	 const tmcg_openpgp_byte_t hashalgo,
+	 const tmcg_openpgp_hashalgo_t hashalgo,
 	 tmcg_openpgp_octets_t &hash, tmcg_openpgp_octets_t &left)
 {
 	tmcg_openpgp_octets_t hash_input;
@@ -5543,7 +5581,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV3
 	(const tmcg_openpgp_octets_t &key,
 	 const tmcg_openpgp_octets_t &trailer,
-	 const tmcg_openpgp_byte_t hashalgo, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, 
 	 tmcg_openpgp_octets_t &hash, tmcg_openpgp_octets_t &left)
 {
 	tmcg_openpgp_octets_t hash_input;
@@ -5579,7 +5617,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV3
 void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 	(const tmcg_openpgp_octets_t &key,
 	 const tmcg_openpgp_octets_t &trailer,
-	 const tmcg_openpgp_byte_t hashalgo, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, 
 	 tmcg_openpgp_octets_t &hash, tmcg_openpgp_octets_t &left)
 {
 	tmcg_openpgp_octets_t hash_input;
@@ -5625,7 +5663,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV3
 	(const tmcg_openpgp_octets_t &primary,
 	 const tmcg_openpgp_octets_t &subkey,
 	 const tmcg_openpgp_octets_t &trailer,
-	 const tmcg_openpgp_byte_t hashalgo, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, 
 	 tmcg_openpgp_octets_t &hash, tmcg_openpgp_octets_t &left)
 {
 	tmcg_openpgp_octets_t hash_input;
@@ -5665,7 +5703,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 	(const tmcg_openpgp_octets_t &primary,
 	 const tmcg_openpgp_octets_t &subkey,
 	 const tmcg_openpgp_octets_t &trailer,
-	 const tmcg_openpgp_byte_t hashalgo, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, 
 	 tmcg_openpgp_octets_t &hash, tmcg_openpgp_octets_t &left)
 {
 	tmcg_openpgp_octets_t hash_input;
@@ -5720,8 +5758,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
 	size_t chksum = 0;
-	size_t bs = AlgorithmIVLength(9); // get block size of AES256
-	size_t ks = AlgorithmKeyLength(9); // get key size of AES256
+	// get block size of AES256
+	size_t bs = AlgorithmIVLength(TMCG_OPENPGP_SKALGO_AES256);
+	// get key size of AES256
+	size_t ks = AlgorithmKeyLength(TMCG_OPENPGP_SKALGO_AES256);
 	tmcg_openpgp_byte_t key[ks], pre[bs+2], b;
 
 	// The symmetric cipher used may be specified in a Public-Key or
@@ -5738,7 +5778,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	if (seskey.size() == (sizeof(key) + 3))
 	{
 		// reuse the provided session key and calculate checksum
-		if (seskey[0] != 9)
+		if (seskey[0] != TMCG_OPENPGP_SKALGO_AES256)
 			return -1; // error: algorithm is not AES256
 		for (size_t i = 0; i < sizeof(key); i++)
 		{
@@ -5753,7 +5793,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	else if (seskey.size() == sizeof(key))
 	{
 		// use the provided session key and append checksum
-		seskey.insert(seskey.begin(), 9); // constant for AES256
+		seskey.insert(seskey.begin(), TMCG_OPENPGP_SKALGO_AES256);
 		for (size_t i = 0; i < sizeof(key); i++)
 		{
 			key[i] = seskey[1+i]; // copy the session key
@@ -5768,7 +5808,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 		// generate a random session key and the OpenPGP checksum
 		gcry_randomize(key, sizeof(key), GCRY_STRONG_RANDOM);
 		seskey.clear();
-		seskey.push_back(9); // constant for AES256
+		seskey.push_back(TMCG_OPENPGP_SKALGO_AES256);
 		for (size_t i = 0; i < sizeof(key); i++)
 		{
 			seskey.push_back(key[i]);
@@ -5862,7 +5902,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &seskey,
 	 tmcg_openpgp_octets_t &prefix, const bool resync,
-	 const tmcg_openpgp_byte_t algo, tmcg_openpgp_octets_t &out)
+	 const tmcg_openpgp_skalgo_t algo, tmcg_openpgp_octets_t &out)
 {
 	gcry_cipher_hd_t hd;
 	gcry_error_t ret;
@@ -5993,7 +6033,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
 	 tmcg_openpgp_octets_t &out)
 {
 	return CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt(in, 
-		seskey, prefix, resync, 9, out);
+		seskey, prefix, resync, TMCG_OPENPGP_SKALGO_AES256, out);
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
@@ -6239,7 +6279,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignRSA
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key,
-	 const tmcg_openpgp_byte_t hashalgo, gcry_mpi_t &s)
+	 const tmcg_openpgp_hashalgo_t hashalgo, gcry_mpi_t &s)
 {
 	char buf[2048];
 	gcry_sexp_t sigdata, signature;
@@ -6273,7 +6313,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignRSA
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key,
-	 const tmcg_openpgp_byte_t hashalgo, const gcry_mpi_t s)
+	 const tmcg_openpgp_hashalgo_t hashalgo, const gcry_mpi_t s)
 {
 	char buf[2048];
 	gcry_sexp_t sigdata, signature;
@@ -6464,7 +6504,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		switch (ptag)
 		{
 			case 2: // Signature Packet
-				if ((ctx.pkalgo == 1) || (ctx.pkalgo == 3))
+				if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+				    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 				{
 					unsigned int mdbits = 0;
 					mdbits = gcry_mpi_get_nbits(ctx.md);
@@ -6484,7 +6525,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 						keyflags, features, psa, pha,
 						pca);
 				}
-				else if (ctx.pkalgo == 17)
+				else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 				{
 					unsigned int rbits = 0, sbits = 0;
 					rbits = gcry_mpi_get_nbits(ctx.r);
@@ -6719,12 +6760,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				{
 					primary = true;
 					// evaluate the context
-					if ((ctx.pkalgo == 1) || (ctx.pkalgo == 3))
+					if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+					    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 					{
 	 					// public-key algorithm is RSA: create new pubkey object
 						pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.n, ctx.e, current_packet);
 					}
-					else if (ctx.pkalgo == 17)
+					else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 					{
 						// public-key algorithm is DSA: create new pubkey object
 						pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g, ctx.y, current_packet);
@@ -6810,20 +6852,26 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 						std::cerr << "WARNING: public-subkey packet version " << (int)ctx.version << " not supported" << std::endl;
 					badkey = true;
 				}
-				else if ((ctx.pkalgo == 1) || (ctx.pkalgo == 2) || (ctx.pkalgo == 3) || (ctx.pkalgo == 16) || (ctx.pkalgo == 17))
+				else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+				         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+				         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
+				         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
+				         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA))
 				{
 					// evaluate the context
-					if ((ctx.pkalgo == 1) || (ctx.pkalgo == 2) || (ctx.pkalgo == 3))
+					if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) || 
+					    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+					    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 					{
 	 					// public-key algorithm is RSA: create new subkey object
 						sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.n, ctx.e, current_packet);
 					}
-					else if (ctx.pkalgo == 16)
+					else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
 					{
 						// public-key algorithm is ElGamal: create new subkey object
 						sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.p, ctx.g, ctx.y, current_packet);
 					}
-					else if (ctx.pkalgo == 17)
+					else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 					{
 						// public-key algorithm is DSA: create new subkey object
 						sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g, ctx.y, current_packet);
@@ -6991,7 +7039,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	switch (ptag)
 	{
 		case 2: // Signature Packet
-			if ((ctx.pkalgo == 1) || (ctx.pkalgo == 3))
+			if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+			    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 			{
 				unsigned int mdbits = 0;
 				mdbits = gcry_mpi_get_nbits(ctx.md);
@@ -7010,7 +7059,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 					hspd, issuer, keyflags,
 					features, psa, pha, pca);
 			}
-			else if (ctx.pkalgo == 17)
+			else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 			{
 				unsigned int rbits = 0, sbits = 0;
 				rbits = gcry_mpi_get_nbits(ctx.r);
