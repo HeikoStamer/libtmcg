@@ -1088,7 +1088,8 @@ bool TMCG_OpenPGP_Subkey::Check
 		}
 		else if (verbose)
 			std::cerr << "WARNING: unknown binding signature " <<
-				"of type " << (int)bindsigs[j]->type <<
+				"of type 0x" << std::hex <<
+				(int)bindsigs[j]->type << std::dec <<
 				std::endl;
 	}
 	// check properties of subkey again
@@ -6647,7 +6648,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 						else
 						{
 							if (verbose)
-								std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored (subkey)" << std::endl;
+								std::cerr << "WARNING: signature of type 0x" << std::hex << (int)ctx.type <<
+									std::dec << " ignored (subkey)" << std::endl;
 							delete sig;
 						}
 					}
@@ -6681,7 +6683,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 						else 
 						{
 							if (verbose)
-								std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored (non-issuer)" << std::endl;
+								std::cerr << "WARNING: signature of type 0x" << std::hex << (int)ctx.type <<
+									std::dec << " ignored (non-issuer)" << std::endl;
 							delete sig;
 						}
 					}
@@ -6695,7 +6698,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 					else
 					{
 						if (verbose)
-							std::cerr << "WARNING: non-uid signature of type " << (int)ctx.type << " ignored" << std::endl;
+							std::cerr << "WARNING: non-uid signature of type 0x" << std::hex << (int)ctx.type <<
+								std::dec << " ignored" << std::endl;
 						delete sig;
 					}
 					break;
@@ -6746,7 +6750,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 					else
 					{
 						if (verbose)
-							std::cerr << "WARNING: signature of type " << (int)ctx.type << " ignored (uid_flag)" << std::endl;
+							std::cerr << "WARNING: signature of type 0x" << std::hex << (int)ctx.type <<
+								std::dec << " ignored (uid_flag)" << std::endl;
 						delete sig;
 					}
 				}
@@ -6927,7 +6932,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				break;
 			default:
 				if (verbose > 1)
-					std::cerr << "INFO: OpenPGP packet of type " << (int)ptag << " ignored" << std::endl;
+					std::cerr << "INFO: OpenPGP packet of tag " << (int)ptag << " ignored" << std::endl;
 				break;
 		}
 		// cleanup allocated buffers and mpi's
@@ -7105,7 +7110,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		default:
 			if (verbose)
 				std::cerr << "ERROR: wrong OpenPGP packet " <<
-					"of type " << (int)ptag << std::endl;
+					"of tag " << (int)ptag << std::endl;
 			PacketContextRelease(ctx);
 			return false;
 			break;
