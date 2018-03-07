@@ -1298,6 +1298,7 @@ bool TMCG_OpenPGP_Pubkey::weak
 {
 	gcry_error_t wret;
 	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
 	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 	{
 		unsigned int nbits = 0, ebits = 0;
