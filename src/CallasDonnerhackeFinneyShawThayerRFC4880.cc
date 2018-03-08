@@ -6366,6 +6366,58 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	 TMCG_OpenPGP_Pubkey* &pub,
 	 TMCG_OpenPGP_Subkey* &sub, TMCG_OpenPGP_UserID* &uid)
 {
+	// 0x10: Generic certification of a User ID and Public-Key packet.
+	// The issuer of this certification does not make any particular
+	// assertion as to how well the certifier has checked that the owner
+	// of the key is in fact the person described by the User ID.
+	// 0x11: Persona certification of a User ID and Public-Key packet.
+	// The issuer of this certification has not done any verification of
+	// the claim that the owner of this key is the User ID specified.
+	// 0x12: Casual certification of a User ID and Public-Key packet.
+	// The issuer of this certification has done some casual verification
+	// of the claim of identity.
+	// 0x13: Positive certification of a User ID and Public-Key packet.
+	// The issuer of this certification has done substantial verification
+	// of the claim of identity.
+	// Most OpenPGP implementations make their "key signatures" as 0x10
+	// certifications. Some implementations can issue 0x11-0x13
+	// certifications, but few differentiate between the types.
+	// 0x18: Subkey Binding Signature
+	// This signature is a statement by the top-level signing key that
+	// indicates that it owns the subkey. This signature is calculated
+	// directly on the primary key and subkey, and not on any User ID or
+	// other packets. [...]
+	// 0x19: Primary Key Binding Signature
+	// This signature is a statement by a signing subkey, indicating that
+	// it is owned by the primary key and subkey. This signature is
+	// calculated the same way as a 0x18 signature: directly on the primary
+	// key and subkey, and not on any User ID or other packets.
+	// 0x1F: Signature directly on a key
+	// This signature is calculated directly on a key. It binds the
+	// information in the Signature subpackets to the key, and is
+	// appropriate to be used for subpackets that provide information about
+	// the key, such as the Revocation Key subpacket. It is also
+	// appropriate for statements that non-self certifiers want to make
+	// about the key itself, rather than the binding between a key and a
+	// name.
+	// 0x20: Key revocation signature
+	// The signature is calculated directly on the key being revoked. A
+	// revoked key is not to be used. Only revocation signatures by the
+	// key being revoked, or by an authorized revocation key, should be
+	// considered valid revocation signatures.
+	// 0x28: Subkey revocation signature
+	// The signature is calculated directly on the subkey being revoked.
+	// A revoked subkey is not to be used. Only revocation signatures by
+	// the top-level signature key that is bound to this subkey, or by
+	// an authorized revocation key, should be considered valid revocation
+	// signatures.
+	// 0x30: Certification revocation signature
+	// This signature revokes an earlier User ID certification signature
+	// (signature class 0x10 through 0x13) or direct-key signature (0x1F).
+	// It should be issued by the same key that issued the revoked
+	// signature or an authorized revocation key. The signature is
+	// computed over the same data as the certificate that it revokes,
+	// and should have a later creation date than that certificate.
 	TMCG_OpenPGP_Signature *sig = NULL;
 	tmcg_openpgp_octets_t issuer, hspd, keyflags;
 	tmcg_openpgp_octets_t features, psa, pha, pca;
@@ -6433,8 +6485,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	if (!primary)
 	{
 		if (verbose)
-			std::cerr << "ERROR: no usable primary " <<
-				"key found" << std::endl;
+			std::cerr << "ERROR: no usable primary key found" <<
+				std::endl;
 		return false;
 	}
 	if (badkey)
@@ -6450,18 +6502,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		if (OctetsCompare(pub->id, issuer) ||
 		    OctetsCompare(sub->id, issuer))
 		{
-			// 0x18: Subkey Binding Signature
-			// This signature is a statement by the top-level
-			// signing key that indicates that it owns the subkey.
-			// This signature is calculated directly on the
-			// primary key and subkey, and not on any User ID or
-			// other packets.
-			// 0x19: Primary Key Binding Signature
-			// This signature is a statement by a signing subkey,
-			// indicating that it is owned by the primary key and
-			// subkey. This signature is calculated the same way
-			// as a 0x18 signature: directly on the primary key
-			// and subkey, and not on any User ID or other packets.
 			if ((ctx.type == 0x18) || (ctx.type == 0x19))
 			{
 				sub->bindsigs.push_back(sig);
@@ -6481,56 +6521,30 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 						embedded_pkt.push_back(
 						    ctx.embeddedsignature[i]);
 				}
-				return true;
 			}
-			// 0x1F: Signature directly on a key
-			// This signature is calculated directly on a key. It
-			// binds the information in the Signature subpackets to
-			// the key, and is appropriate to be used for
-			// subpackets that provide information about the key,
-			// such as the Revocation Key subpacket. It is also
-			// appropriate for statements that non-self certifiers
-			// want to make about the key itself, rather than the
-			// binding between a key and a name.			
-			if (ctx.type == 0x1F)
+			else if (ctx.type == 0x1F)
 			{
+				// Direct key signature on subkey
 				sub->selfsigs.push_back(sig);
-				return true;
 			}
-			// 0x28: Subkey revocation signature
-			// The signature is calculated directly on the subkey
-			// being revoked. A revoked subkey is not to be used.
-			// Only revocation signatures by the top-level
-			// signature key that is bound to this subkey, or by
-			// an authorized revocation key, should be considered
-			// valid revocation signatures.			
-			if (ctx.type == 0x28)
+			else if (ctx.type == 0x28)
 			{
+				// Key revocation signature on subkey
 				sub->keyrevsigs.push_back(sig);
 				if (verbose)
 					std::cerr << "WARNING: key " <<
 						"revocation signature on " <<
 						"subkey" << std::endl;
-				return true;
 			}
-			// 0x30: Certification revocation signature
-			// This signature revokes an earlier User ID
-			// certification signature (signature class 0x10
-			// through 0x13) or direct-key signature (0x1F). It
-			// should be issued by the same key that issued the
-			// revoked signature or an authorized revocation key.
-			// The signature is computed over the same data as the
-			// certificate that it revokes, and should have a later
-			// creation date than that certificate.
-			if (ctx.type == 0x30)
+			else if (ctx.type == 0x30)
 			{
+				// Certification revocation signature on subkey
 				if (verbose)
 					std::cerr << "WARNING: " <<
 						"certification revocation " <<
 						"signature on subkey" <<
 						std::endl;
 				sub->certrevsigs.push_back(sig);
-				return true;
 			}
 			else
 			{
@@ -6541,7 +6555,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 						" ignored (subkey)" <<
 						std::endl;
 				delete sig;
-				return true;
 			}
 		}
 		else if (ctx.type == 0x28)
@@ -6553,7 +6566,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				std::cerr << "WARNING: key revocation " <<
 					"signature on subkey (external)" <<
 					std::endl;
-			return true;
 		}
 		else
 		{
@@ -6561,20 +6573,22 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				std::cerr << "WARNING: signature from " <<
 					"unknown issuer ignored" << std::endl;
 			delete sig;
-			return true;
 		}
+		return true;
 	}
-	// non-self issuer?
+	// non-self issuer found?
 	if (!OctetsCompare(pub->id, issuer))
 	{
 		if (uid_flag)
 		{
 			if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
 			{
+				// Certification signature
 				uid->certsigs.push_back(sig);
 			}
 			else if (ctx.type == 0x30)
 			{
+				// Certification revocation signature
 				uid->certsigs.push_back(sig);
 			}
 			else 
@@ -6583,7 +6597,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 					std::cerr << "WARNING: signature " <<
 						"of type 0x" << std::hex <<
 						(int)ctx.type << std::dec <<
-						" ignored (non-issuer)" <<
+						" ignored (non-self)" <<
 						std::endl;
 				delete sig;
 			}
