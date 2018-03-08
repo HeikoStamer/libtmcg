@@ -6357,6 +6357,530 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA
 
 // ===========================================================================
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const bool primary, const bool subkey, const bool badkey,
+	 const bool uid_flag, const bool uat_flag,
+	 const tmcg_openpgp_octets_t &current_packet,
+	 tmcg_openpgp_octets_t &embedded_pkt,
+	 TMCG_OpenPGP_Pubkey* &pub,
+	 TMCG_OpenPGP_Subkey* &sub, TMCG_OpenPGP_UserID* &uid)
+{
+	TMCG_OpenPGP_Signature *sig = NULL;
+	tmcg_openpgp_octets_t issuer, hspd, keyflags;
+	tmcg_openpgp_octets_t features, psa, pha, pca;
+	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
+		issuer.push_back(ctx.issuer[i]);
+	for (size_t i = 0; i < ctx.hspdlen; i++)
+		hspd.push_back(ctx.hspd[i]);
+	for (size_t i = 0; i < ctx.keyflagslen; i++)
+		keyflags.push_back(ctx.keyflags[i]);
+	for (size_t i = 0; i < ctx.featureslen; i++)
+		features.push_back(ctx.features[i]);
+	for (size_t i = 0; i < ctx.psalen; i++)
+		psa.push_back(ctx.psa[i]);
+	for (size_t i = 0; i < ctx.phalen; i++)
+		pha.push_back(ctx.pha[i]);
+	for (size_t i = 0; i < ctx.pcalen; i++)
+		pca.push_back(ctx.pca[i]);
+	if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	{
+		unsigned int mdbits = 0;
+		mdbits = gcry_mpi_get_nbits(ctx.md);
+		if (verbose > 2)
+			std::cerr << "INFO: mdbits = " << mdbits << std::endl;
+		// create a new signature object
+		sig = new TMCG_OpenPGP_Signature(ctx.revocable, ctx.pkalgo,
+			ctx.hashalgo, ctx.type,	ctx.version,
+			ctx.sigcreationtime, ctx.sigexpirationtime,
+			ctx.keyexpirationtime, ctx.md, current_packet, hspd,
+			issuer, keyflags, features, psa, pha, pca);
+	}
+	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+	{
+		unsigned int rbits = 0, sbits = 0;
+		rbits = gcry_mpi_get_nbits(ctx.r);
+		sbits = gcry_mpi_get_nbits(ctx.s);
+		if (verbose > 2)
+			std::cerr << "INFO: rbits = " << rbits <<
+				" sbits = " << sbits <<	std::endl;
+		// create a new signature object
+		sig = new TMCG_OpenPGP_Signature(ctx.revocable, ctx.pkalgo,
+			ctx.hashalgo, ctx.type, ctx.version,
+			ctx.sigcreationtime, ctx.sigexpirationtime,
+			ctx.keyexpirationtime, ctx.r, ctx.s, current_packet,
+			hspd, issuer, keyflags,	features, psa, pha, pca);
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "WARNING: public-key signature " <<
+				"algorithm " << (int)ctx.pkalgo <<
+				" not supported" << std::endl;
+		return true;
+	}
+	if (!sig->good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: parsing signature " <<
+				"material failed" << std::endl;
+
+		delete sig;
+		return false;
+	}
+	// evaluate the context of the signature
+	if (!primary)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no usable primary " <<
+				"key found" << std::endl;
+		return false;
+	}
+	if (badkey)
+	{
+		if (verbose)
+			std::cerr << "WARNING: signature for unrecognized " <<
+				"subkey ignored" << std::endl;
+		delete sig;
+		return true;
+	}
+	if (subkey)
+	{
+		if (OctetsCompare(pub->id, issuer) ||
+		    OctetsCompare(sub->id, issuer))
+		{
+			// 0x18: Subkey Binding Signature
+			// This signature is a statement by the top-level
+			// signing key that indicates that it owns the subkey.
+			// This signature is calculated directly on the
+			// primary key and subkey, and not on any User ID or
+			// other packets.
+			// 0x19: Primary Key Binding Signature
+			// This signature is a statement by a signing subkey,
+			// indicating that it is owned by the primary key and
+			// subkey. This signature is calculated the same way
+			// as a 0x18 signature: directly on the primary key
+			// and subkey, and not on any User ID or other packets.
+			if ((ctx.type == 0x18) || (ctx.type == 0x19))
+			{
+				sub->bindsigs.push_back(sig);
+				// A signature that binds a signing subkey
+				// MUST have an Embedded Signature subpacket
+				// in this binding signature that contains a
+				// 0x19 signature made by the signing subkey
+				// on the primary key and subkey.
+				if (ctx.embeddedsignaturelen)
+				{
+					PacketTagEncode(2, embedded_pkt);
+					PacketLengthEncode(
+						ctx.embeddedsignaturelen,
+						embedded_pkt);
+					for (size_t i = 0;
+					     i < ctx.embeddedsignaturelen; i++)
+						embedded_pkt.push_back(
+						    ctx.embeddedsignature[i]);
+				}
+				return true;
+			}
+			// 0x1F: Signature directly on a key
+			// This signature is calculated directly on a key. It
+			// binds the information in the Signature subpackets to
+			// the key, and is appropriate to be used for
+			// subpackets that provide information about the key,
+			// such as the Revocation Key subpacket. It is also
+			// appropriate for statements that non-self certifiers
+			// want to make about the key itself, rather than the
+			// binding between a key and a name.			
+			if (ctx.type == 0x1F)
+			{
+				sub->selfsigs.push_back(sig);
+				return true;
+			}
+			// 0x28: Subkey revocation signature
+			// The signature is calculated directly on the subkey
+			// being revoked. A revoked subkey is not to be used.
+			// Only revocation signatures by the top-level
+			// signature key that is bound to this subkey, or by
+			// an authorized revocation key, should be considered
+			// valid revocation signatures.			
+			if (ctx.type == 0x28)
+			{
+				sub->keyrevsigs.push_back(sig);
+				if (verbose)
+					std::cerr << "WARNING: key " <<
+						"revocation signature on " <<
+						"subkey" << std::endl;
+				return true;
+			}
+			// 0x30: Certification revocation signature
+			// This signature revokes an earlier User ID
+			// certification signature (signature class 0x10
+			// through 0x13) or direct-key signature (0x1F). It
+			// should be issued by the same key that issued the
+			// revoked signature or an authorized revocation key.
+			// The signature is computed over the same data as the
+			// certificate that it revokes, and should have a later
+			// creation date than that certificate.
+			if (ctx.type == 0x30)
+			{
+				if (verbose)
+					std::cerr << "WARNING: " <<
+						"certification revocation " <<
+						"signature on subkey" <<
+						std::endl;
+				sub->certrevsigs.push_back(sig);
+				return true;
+			}
+			else
+			{
+				if (verbose)
+					std::cerr << "WARNING: signature " <<
+						"of type 0x" << std::hex <<
+						(int)ctx.type << std::dec <<
+						" ignored (subkey)" <<
+						std::endl;
+				delete sig;
+				return true;
+			}
+		}
+		else if (ctx.type == 0x28)
+		{
+			// accumulate key revocation signatures
+			// issued by external revocation keys
+			sub->keyrevsigs.push_back(sig);
+			if (verbose)
+				std::cerr << "WARNING: key revocation " <<
+					"signature on subkey (external)" <<
+					std::endl;
+			return true;
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "WARNING: signature from " <<
+					"unknown issuer ignored" << std::endl;
+			delete sig;
+			return true;
+		}
+	}
+	// non-self issuer?
+	if (!OctetsCompare(pub->id, issuer))
+	{
+		if (uid_flag)
+		{
+			if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
+			{
+				uid->certsigs.push_back(sig);
+			}
+			else if (ctx.type == 0x30)
+			{
+				uid->certsigs.push_back(sig);
+			}
+			else 
+			{
+				if (verbose)
+					std::cerr << "WARNING: signature " <<
+						"of type 0x" << std::hex <<
+						(int)ctx.type << std::dec <<
+						" ignored (non-issuer)" <<
+						std::endl;
+				delete sig;
+			}
+		}
+		else if (ctx.type == 0x20)
+		{
+			// accumulate key revocation signatures
+			// issued by external revocation keys
+			if (verbose)
+				std::cerr << "WARNING: key revocation " <<
+					"signature on primary key " <<
+					"(external)" << std::endl;
+			pub->keyrevsigs.push_back(sig);
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "WARNING: non-uid signature " <<
+					"of type 0x" << std::hex <<
+					(int)ctx.type << std::dec <<
+					" ignored" << std::endl;
+			delete sig;
+		}
+		return true;
+	}
+	if (!uid_flag && !uat_flag)
+	{
+		if (ctx.type == 0x1F)
+		{
+			// Direct key signature on primary key
+			pub->selfsigs.push_back(sig);
+		}
+		else if (ctx.type == 0x20)
+		{
+			// Key revocation signature on primary key
+			if (verbose)
+				std::cerr << "WARNING: key revocation " <<
+					"signature on primary key" <<
+					std::endl;
+			pub->keyrevsigs.push_back(sig);
+		}
+		else if (ctx.type == 0x30)
+		{
+			// Certification revocation signature on primary key
+			if (verbose)
+				std::cerr << "WARNING: certification " <<
+					"revocation signature on primary " <<
+					"key" << std::endl;
+			pub->certrevsigs.push_back(sig);
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "WARNING: non-self-signature " <<
+					"on primary key ignored" << std::endl;
+			delete sig;
+		}
+	}
+	else if (!uid_flag && uat_flag)
+	{
+		if (verbose)
+			std::cerr << "WARNING: self-signature for a user " <<
+				"attribute ignored" << std::endl;
+		delete sig;
+	}
+	else if (uid_flag && !uat_flag)
+	{
+		if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
+		{
+			// Certification self-signature
+			uid->selfsigs.push_back(sig);
+		}
+		else if (ctx.type == 0x30)
+		{
+			// Certification revocation signature
+			if (verbose)
+				std::cerr << "WARNING: certification " <<
+					"revocation signature on user ID" <<
+					std::endl;
+			uid->revsigs.push_back(sig);
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "WARNING: signature of type " <<
+					"0x" << std::hex << (int)ctx.type <<
+					std::dec << " ignored (uid_flag)" <<
+					std::endl;
+			delete sig;
+		}
+	}
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag6
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const tmcg_openpgp_octets_t &current_packet,
+	 bool &primary, TMCG_OpenPGP_Pubkey* &pub)
+{
+	if (ctx.version != 4)
+	{
+		if (verbose)
+			std::cerr << "WARNING: public-key packet version " <<
+				(int)ctx.version << " not supported" <<
+				std::endl;
+	}
+	else if (!primary)
+	{
+		primary = true;
+		// evaluate the context
+		if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+		    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+		{
+			// public-key algorithm is RSA: create new pubkey
+			pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.n, ctx.e,
+				current_packet);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+		{
+			// public-key algorithm is DSA: create new pubkey
+			pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g,
+				ctx.y, current_packet);
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "ERROR: public-key algorithm " <<
+					(int)ctx.pkalgo << " not supported" <<
+					std::endl;
+			return false;
+		}
+		if (!pub->good())
+		{
+			if (verbose)
+				std::cerr << "ERROR: reading primary key " <<
+					"material failed" << std::endl;
+			return false;
+		}
+		if (verbose > 1)
+		{
+			std::cerr << "INFO: key ID of primary key: " << std::hex;
+			for (size_t i = 0; i < pub->id.size(); i++)
+				std::cerr << (int)pub->id[i] << " ";
+			std::cerr << std::dec << std::endl;
+		}
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: more than one primary key " <<
+				"not allowed" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag13
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const bool primary, const tmcg_openpgp_octets_t &current_packet,
+	 bool &uid_flag, bool &uat_flag, TMCG_OpenPGP_Pubkey* &pub,
+	 TMCG_OpenPGP_UserID* &uid)
+{
+	std::string userid = "";
+	for (size_t i = 0; i < sizeof(ctx.uid); i++)
+	{
+		if (ctx.uid[i])
+			userid += ctx.uid[i];
+		else
+			break;
+	}
+	if (!primary)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no usable primary key found" <<
+				std::endl;
+		return false;
+	}
+	if (uid_flag)
+		pub->userids.push_back(uid);
+	uid_flag = true, uat_flag = false;
+	// create a new user ID object
+	uid = new TMCG_OpenPGP_UserID(userid, current_packet);
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag14
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const bool primary, const tmcg_openpgp_octets_t &current_packet,
+	 bool &subkey, bool &badkey, TMCG_OpenPGP_Pubkey* &pub,
+	 TMCG_OpenPGP_Subkey* &sub)
+{
+	if (!primary)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no usable primary key found" <<
+				std::endl;
+		return false;
+	}
+	if (!badkey && subkey)
+		pub->subkeys.push_back(sub);
+	sub = NULL, subkey = true, badkey = false;
+	if (ctx.version != 4)
+	{
+		if (verbose)
+			std::cerr << "WARNING: public-subkey packet " <<
+				"version " << (int)ctx.version <<
+				" not supported" << std::endl;
+		badkey = true;
+	}
+	else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
+	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
+	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA))
+	{
+		// evaluate the context
+		if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) || 
+		    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+		    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+		{
+			// public-key algorithm is RSA: create new subkey
+			sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.n, ctx.e,
+				current_packet);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
+		{
+			// public-key algorithm is ElGamal: create new subkey
+			sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.p, ctx.g,
+				ctx.y, current_packet);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+		{
+			// public-key algorithm is DSA: create new subkey
+			sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g, 
+				ctx.y, current_packet);
+		}
+		if (!sub->good())
+		{
+			if (verbose)
+				std::cerr << "ERROR: parsing subkey " <<
+					"material failed" << std::endl;
+			delete sub;
+			sub = NULL;
+			return false;
+		}
+		if (verbose > 1)
+		{
+			std::cerr << "INFO: key ID of subkey: " << std::hex;
+			for (size_t i = 0; i < sub->id.size(); i++)
+				std::cerr << (int)sub->id[i] << " ";
+			std::cerr << std::dec << std::endl;
+		}
+		if (verbose && OctetsCompare(sub->id, pub->id))
+			std::cerr << "WARNING: probably same key material " <<
+				"used for primary key and subkey" << std::endl;
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "WARNING: public-key algorithm " <<
+				(int)ctx.pkalgo << " for subkey not " <<
+				"supported" << std::endl;
+		badkey = true;
+	}
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag17
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const bool primary, const tmcg_openpgp_octets_t &current_packet,
+	 bool &uid_flag, bool &uat_flag, TMCG_OpenPGP_Pubkey* &pub,
+	 TMCG_OpenPGP_UserID* &uid)
+{
+	if (!primary)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no usable primary key found" <<
+				std::endl;
+		return false;
+	}
+	if (verbose)
+		std::cerr << "WARNING: user attribute packet found; ignored" <<
+			std::endl;
+	if (uid_flag)
+	{
+		pub->userids.push_back(uid);
+		uid = NULL;
+	}
+	uid_flag = false, uat_flag = true;
+	return true;
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	(const std::string &in, const int verbose,
 	 TMCG_OpenPGP_Pubkey* &pub)
@@ -6374,7 +6898,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	}
 	// parse the public key block packet by packet
 	bool primary = false, subkey = false, badkey = false;
-	bool uid_flag = false, uat_flag = false;
+	bool uid_flag = false, uat_flag = false, ret = true;
 	TMCG_OpenPGP_Subkey *sub = NULL;
 	TMCG_OpenPGP_UserID *uid = NULL;
 	tmcg_openpgp_byte_t ptag = 0xFF;
@@ -6478,486 +7002,57 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
-		TMCG_OpenPGP_Signature *sig = NULL;
-		std::string userid = "";
-		tmcg_openpgp_octets_t issuer, hspd, keyflags;
-		tmcg_openpgp_octets_t features, psa, pha, pca;
-		for (size_t i = 0; i < sizeof(ctx.uid); i++)
-		{
-			if (ctx.uid[i])
-				userid += ctx.uid[i];
-			else
-				break;
-		}
-		for (size_t i = 0; i < sizeof(ctx.issuer); i++)
-			issuer.push_back(ctx.issuer[i]);
-		for (size_t i = 0; i < ctx.hspdlen; i++)
-			hspd.push_back(ctx.hspd[i]);
-		for (size_t i = 0; i < ctx.keyflagslen; i++)
-			keyflags.push_back(ctx.keyflags[i]);
-		for (size_t i = 0; i < ctx.featureslen; i++)
-			features.push_back(ctx.features[i]);
-		for (size_t i = 0; i < ctx.psalen; i++)
-			psa.push_back(ctx.psa[i]);
-		for (size_t i = 0; i < ctx.phalen; i++)
-			pha.push_back(ctx.pha[i]);
-		for (size_t i = 0; i < ctx.pcalen; i++)
-			pca.push_back(ctx.pca[i]);
 		switch (ptag)
 		{
 			case 2: // Signature Packet
-				if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-				    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
-				{
-					unsigned int mdbits = 0;
-					mdbits = gcry_mpi_get_nbits(ctx.md);
-					if (verbose > 2)
-						std::cerr << "INFO: " << 
-							"mdbits = " <<
-							mdbits << std::endl;
-					// create a new signature object
-					sig = new TMCG_OpenPGP_Signature(
-						ctx.revocable, ctx.pkalgo,
-						ctx.hashalgo, ctx.type,
-						ctx.version,
-						ctx.sigcreationtime,
-						ctx.sigexpirationtime,
-						ctx.keyexpirationtime, ctx.md,
-						current_packet, hspd, issuer,
-						keyflags, features, psa, pha,
-						pca);
-				}
-				else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
-				{
-					unsigned int rbits = 0, sbits = 0;
-					rbits = gcry_mpi_get_nbits(ctx.r);
-					sbits = gcry_mpi_get_nbits(ctx.s);
-					if (verbose > 2)
-						std::cerr << "INFO: " <<
-							"rbits = " << rbits <<
-							" sbits = " << sbits <<
-							std::endl;
-					// create a new signature object
-					sig = new TMCG_OpenPGP_Signature(
-						ctx.revocable, ctx.pkalgo,
-						ctx.hashalgo, ctx.type,
-						ctx.version,
-						ctx.sigcreationtime,
-						ctx.sigexpirationtime,
-						ctx.keyexpirationtime,
-						ctx.r, ctx.s, current_packet,
-						hspd, issuer, keyflags,
-						features, psa, pha, pca);
-				}
-				else
-				{
-					if (verbose)
-						std::cerr << "WARNING: " <<
-							"public-key " <<
-							"signature " <<
-							"algorithm " << 
-							(int)ctx.pkalgo <<
-							" not supported" <<
-							std::endl;
-					break;
-				}
-				if (!sig->good())
-				{
-					if (verbose)
-						std::cerr << "ERROR: " << 
-							"parsing signature" <<
-							" material failed" <<
-							std::endl;
-					PacketContextRelease(ctx);
-					if (sub)
-						delete sub;
-					if (uid)
-						delete uid;
-					delete sig;
-					return false;
-				}
-				// evaluate the context of the signature
-				if (!primary)
-				{
-					if (verbose)
-						std::cerr << "ERROR: no " <<
-							"usable primary " <<
-							"key found" <<
-							std::endl;
-					PacketContextRelease(ctx);
-					if (sub)
-						delete sub;
-					if (uid)
-						delete uid;
-					return false;
-				}
-				if (badkey)
-				{
-					if (verbose)
-						std::cerr << "WARNING: " <<
-							"signature for " <<
-							"unrecognized " <<
-							"subkey ignored" <<
-							std::endl;
-					delete sig;
-					break;
-				}
-				if (subkey)
-				{
-					if (OctetsCompare(pub->id, issuer) || OctetsCompare(sub->id, issuer))
-					{
-						if ((ctx.type == 0x18) || (ctx.type == 0x19))
-						{
-							// 0x18: Subkey Binding Signature
-							// This signature is a statement by the top-level signing key that
-							// indicates that it owns the subkey. This signature is calculated
-							// directly on the primary key and subkey, and not on any User ID or
-							// other packets.
-							// 0x19: Primary Key Binding Signature
-							// This signature is a statement by a signing subkey, indicating
-							// that it is owned by the primary key and subkey. This signature
-							// is calculated the same way as a 0x18 signature: directly on the
-							// primary key and subkey, and not on any User ID or other packets.
-							sub->bindsigs.push_back(sig); // Subkey binding signature for this subkey
-							// A signature that binds a signing subkey MUST have an Embedded
-							// Signature subpacket in this binding signature that contains a
-							// 0x19 signature made by the signing subkey on the primary key
-							// and subkey.
-							if (ctx.embeddedsignaturelen)
-							{
-								PacketTagEncode(2, embedded_pkt);
-								PacketLengthEncode(ctx.embeddedsignaturelen, embedded_pkt);
-								for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
-									embedded_pkt.push_back(ctx.embeddedsignature[i]);
-							}
-						}
-						else if (ctx.type == 0x1F)
-						{
-							// 0x1F: Signature directly on a key
-							// This signature is calculated directly on a key. It binds the
-							// information in the Signature subpackets to the key, and is
-							// appropriate to be used for subpackets that provide information
-							// about the key, such as the Revocation Key subpacket. It is also
-							// appropriate for statements that non-self certifiers want to make
-							// about the key itself, rather than the binding between a key and a
-							// name.
-							sub->selfsigs.push_back(sig); // Signature directly on a key for this subkey
-						}
-						else if (ctx.type == 0x28)
-						{
-							// 0x28: Subkey revocation signature
-							// The signature is calculated directly on the subkey being revoked.
-							// A revoked subkey is not to be used. Only revocation signatures
-							// by the top-level signature key that is bound to this subkey, or
-							// by an authorized revocation key, should be considered valid
-							// revocation signatures.
-							sub->keyrevsigs.push_back(sig); // Subkey revocation signature for this subkey
-							if (verbose)
-								std::cerr << "WARNING: key revocation signature on subkey" << std::endl;
-						}
-						else if (ctx.type == 0x30)
-						{
-							if (verbose)
-								std::cerr << "WARNING: certification revocation signature on subkey" << std::endl;
-							sub->certrevsigs.push_back(sig); // Certification revocation signature for this subkey
-						}
-						else
-						{
-							if (verbose)
-								std::cerr << "WARNING: signature of type 0x" << std::hex << (int)ctx.type <<
-									std::dec << " ignored (subkey)" << std::endl;
-							delete sig;
-						}
-					}
-					else if (ctx.type == 0x28)
-					{
-						// accumulate key revocation signatures issued by external revocation keys
-						sub->keyrevsigs.push_back(sig); // Subkey revocation signature for this subkey
-						if (verbose)
-							std::cerr << "WARNING: key revocation signature on subkey (external)" << std::endl;
-					}
-					else
-					{
-						if (verbose)
-							std::cerr << "WARNING: signature from unknown issuer ignored" << std::endl;
-						delete sig;
-					}
-					break;
-				}
-				if (!OctetsCompare(pub->id, issuer))
-				{
-					if (uid_flag)
-					{
-						if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
-						{
-							uid->certsigs.push_back(sig); // Certification signature for this user ID
-						}
-						else if (ctx.type == 0x30)
-						{
-							uid->certsigs.push_back(sig); // Certification revocation signature for this user ID
-						}
-						else 
-						{
-							if (verbose)
-								std::cerr << "WARNING: signature of type 0x" << std::hex << (int)ctx.type <<
-									std::dec << " ignored (non-issuer)" << std::endl;
-							delete sig;
-						}
-					}
-					else if (ctx.type == 0x20)
-					{
-						// accumulate key revocation signatures issued by external revocation keys
-						if (verbose)
-							std::cerr << "WARNING: key revocation signature on primary key (external)" << std::endl;
-						pub->keyrevsigs.push_back(sig); // Key revocation signature on primary key
-					}
-					else
-					{
-						if (verbose)
-							std::cerr << "WARNING: non-uid signature of type 0x" << std::hex << (int)ctx.type <<
-								std::dec << " ignored" << std::endl;
-						delete sig;
-					}
-					break;
-				}
-				if (!uid_flag && !uat_flag)
-				{
-					if (ctx.type == 0x1F)
-					{
-						pub->selfsigs.push_back(sig); // Direct key signature on primary key
-					}
-					else if (ctx.type == 0x20)
-					{
-						if (verbose)
-							std::cerr << "WARNING: key revocation signature on primary key" << std::endl;
-						pub->keyrevsigs.push_back(sig); // Key revocation signature on primary key
-					}
-					else if (ctx.type == 0x30)
-					{
-						if (verbose)
-							std::cerr << "WARNING: certification revocation signature on primary key" << std::endl;
-						pub->certrevsigs.push_back(sig); // Certification revocation signature on primary key
-					}
-					else
-					{
-						if (verbose)
-							std::cerr << "WARNING: non-self-signature on primary key ignored" << std::endl;
-						delete sig;
-					}
-				}
-				else if (!uid_flag && uat_flag)
-				{
-					if (verbose)
-						std::cerr << "WARNING: self-signature for a user attribute ignored" << std::endl;
-					delete sig;
-				}
-				else if (uid_flag && !uat_flag)
-				{
-					if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
-					{
-						uid->selfsigs.push_back(sig); // Certification self-signature
-					}
-					else if (ctx.type == 0x30)
-					{
-						if (verbose)
-							std::cerr << "WARNING: certification revocation signature on user ID" << std::endl;
-						uid->revsigs.push_back(sig); // Certification revocation signature 
-					}
-					else
-					{
-						if (verbose)
-							std::cerr << "WARNING: signature of type 0x" << std::hex << (int)ctx.type <<
-								std::dec << " ignored (uid_flag)" << std::endl;
-						delete sig;
-					}
-				}
+				ret = PublicKeyBlockParse_Tag2(ctx,
+					verbose, primary, subkey, badkey,
+					uid_flag, uat_flag, current_packet, 
+					embedded_pkt, pub, sub, uid);
 				break;
 			case 6: // Public-Key Packet
-				if (ctx.version != 4)
-				{
-					if (verbose)
-						std::cerr << "WARNING: public-key packet version " << (int)ctx.version << " not supported" << std::endl;
-				}
-				else if (!primary)
-				{
-					primary = true;
-					// evaluate the context
-					if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-					    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
-					{
-	 					// public-key algorithm is RSA: create new pubkey object
-						pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.n, ctx.e, current_packet);
-					}
-					else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
-					{
-						// public-key algorithm is DSA: create new pubkey object
-						pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g, ctx.y, current_packet);
-					}
-					else
-					{
-						if (verbose)
-							std::cerr << "ERROR: public-key algorithm " << (int)ctx.pkalgo << " not supported" << std::endl;
-						PacketContextRelease(ctx);
-						if (sub)
-							delete sub;
-						if (uid)
-							delete uid;
-						return false;
-					}
-					if (!pub->good())
-					{
-						if (verbose)
-							std::cerr << "ERROR: reading primary key material failed" << std::endl;
-						PacketContextRelease(ctx);
-						if (sub)
-							delete sub;
-						if (uid)
-							delete uid;
-						return false;
-					}
-					if (verbose > 1)
-					{
-						std::cerr << "INFO: key ID of primary key: " << std::hex;
-						for (size_t i = 0; i < pub->id.size(); i++)
-							std::cerr << (int)pub->id[i] << " ";
-						std::cerr << std::dec << std::endl;
-					}
-				}
-				else
-				{
-					if (verbose)
-						std::cerr << "ERROR: more than one primary key not allowed" << std::endl;
-					PacketContextRelease(ctx);
-					if (sub)
-						delete sub;
-					if (uid)
-						delete uid;
-					return false;
-				}
+				ret = PublicKeyBlockParse_Tag6(ctx,
+					verbose, current_packet,
+					primary, pub);
 				break;
 			case 13: // User ID Packet
-				if (!primary)
-				{
-					if (verbose)
-						std::cerr << "ERROR: no usable primary key found" << std::endl;
-					PacketContextRelease(ctx);
-					if (sub)
-						delete sub;
-					if (uid)
-						delete uid;
-					return false;
-				}
-				if (uid_flag)
-					pub->userids.push_back(uid);
-				uid_flag = true, uat_flag = false;
-				// create a new user ID object
-				uid = new TMCG_OpenPGP_UserID(userid, current_packet);
+				ret = PublicKeyBlockParse_Tag13(ctx,
+					verbose, primary, current_packet,
+					uid_flag, uat_flag, pub, uid);
 				break;
 			case 14: // Public-Subkey Packet
-				if (!primary)
-				{
-					if (verbose)
-						std::cerr << "ERROR: no usable primary key found" << std::endl;
-					PacketContextRelease(ctx);
-					if (sub)
-						delete sub;
-					if (uid)
-						delete uid;
-					return false;
-				}
-				if (!badkey && subkey)
-					pub->subkeys.push_back(sub);
-				sub = NULL, subkey = true, badkey = false;
-				if (ctx.version != 4)
-				{
-					if (verbose)
-						std::cerr << "WARNING: public-subkey packet version " << (int)ctx.version << " not supported" << std::endl;
-					badkey = true;
-				}
-				else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-				         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
-				         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
-				         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
-				         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA))
-				{
-					// evaluate the context
-					if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) || 
-					    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
-					    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
-					{
-	 					// public-key algorithm is RSA: create new subkey object
-						sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.n, ctx.e, current_packet);
-					}
-					else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
-					{
-						// public-key algorithm is ElGamal: create new subkey object
-						sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.p, ctx.g, ctx.y, current_packet);
-					}
-					else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
-					{
-						// public-key algorithm is DSA: create new subkey object
-						sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo, ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g, ctx.y, current_packet);
-					}
-					if (!sub->good())
-					{
-						if (verbose)
-							std::cerr << "ERROR: parsing subkey material failed" << std::endl;
-						PacketContextRelease(ctx);
-						delete sub;
-						if (uid)
-							delete uid;
-						return false;
-					}
-					if (verbose > 1)
-					{
-						std::cerr << "INFO: key ID of subkey: " << std::hex;
-						for (size_t i = 0; i < sub->id.size(); i++)
-							std::cerr << (int)sub->id[i] << " ";
-						std::cerr << std::dec << std::endl;
-					}
-					if (verbose && OctetsCompare(sub->id, pub->id))
-						std::cerr << "WARNING: probably same key material used for primary key and subkey" << std::endl;
-				}
-				else
-				{
-					if (verbose)
-						std::cerr << "WARNING: public-key algorithm " << (int)ctx.pkalgo << " for subkey not supported" << std::endl;
-					badkey = true;
-				}
+				ret = PublicKeyBlockParse_Tag14(ctx,
+					verbose, primary, current_packet,
+					subkey, badkey, pub, sub);
 				break;
 			case 17: // User Attribute Packet
-				if (!primary)
-				{
-					if (verbose)
-						std::cerr << "ERROR: no usable primary key found" << std::endl;
-					PacketContextRelease(ctx);
-					if (sub)
-						delete sub;
-					if (uid)
-						delete uid;
-					return false;
-				}
-				if (verbose)
-					std::cerr << "WARNING: user attribute packet found; ignored" << std::endl;
-				if (uid_flag)
-				{
-					pub->userids.push_back(uid);
-					uid = NULL;
-				}
-				uid_flag = false, uat_flag = true;
+				ret = PublicKeyBlockParse_Tag17(ctx,
+					verbose, primary, current_packet,
+					uid_flag, uat_flag, pub, uid);
 				break;
 			default:
 				if (verbose > 1)
-					std::cerr << "INFO: OpenPGP packet of tag " << (int)ptag << " ignored" << std::endl;
+					std::cerr << "INFO: OpenPGP packet" <<
+						" of tag " << (int)ptag <<
+						" ignored" << std::endl;
 				break;
 		}
 		// cleanup allocated buffers and mpi's
 		PacketContextRelease(ctx);
+		if (!ret)
+		{
+			if (sub)
+				delete sub;
+			if (uid)
+				delete uid;
+			return false;
+		}
 	}
 	if (!primary)
 	{
 		if (verbose)
-			std::cerr << "ERROR: no usable primary key found" << std::endl;
+			std::cerr << "ERROR: no usable primary key found" <<
+				std::endl;
 		if (sub)
 			delete sub;
 		if (uid)

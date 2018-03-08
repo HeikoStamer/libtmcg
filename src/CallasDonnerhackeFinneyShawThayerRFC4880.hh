@@ -511,6 +511,52 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 				return true;
 			}
 		};
+		static bool PublicKeyBlockParse_Tag2
+			(const tmcg_openpgp_packet_ctx_t &ctx,
+			 const int verbose,
+			 const bool primary,
+			 const bool subkey,
+			 const bool badkey,
+			 const bool uid_flag,
+			 const bool uat_flag,
+			 const tmcg_openpgp_octets_t &current_packet,
+			 tmcg_openpgp_octets_t &embedded_pkt,
+			 TMCG_OpenPGP_Pubkey* &pub,
+			 TMCG_OpenPGP_Subkey* &sub,
+			 TMCG_OpenPGP_UserID* &uid);
+		static bool PublicKeyBlockParse_Tag6
+			(const tmcg_openpgp_packet_ctx_t &ctx,
+			 const int verbose,
+			 const tmcg_openpgp_octets_t &current_packet,
+			 bool &primary,
+			 TMCG_OpenPGP_Pubkey* &pub);
+		static bool PublicKeyBlockParse_Tag13
+			(const tmcg_openpgp_packet_ctx_t &ctx,
+			 const int verbose,
+			 const bool primary,
+			 const tmcg_openpgp_octets_t &current_packet,
+			 bool &uid_flag,
+			 bool &uat_flag,
+			 TMCG_OpenPGP_Pubkey* &pub,
+			 TMCG_OpenPGP_UserID* &uid);
+		static bool PublicKeyBlockParse_Tag14
+			(const tmcg_openpgp_packet_ctx_t &ctx,
+			 const int verbose,
+			 const bool primary,
+			 const tmcg_openpgp_octets_t &current_packet,
+			 bool &subkey,
+			 bool &badkey,
+			 TMCG_OpenPGP_Pubkey* &pub,
+			 TMCG_OpenPGP_Subkey* &sub);
+		static bool PublicKeyBlockParse_Tag17
+			(const tmcg_openpgp_packet_ctx_t &ctx,
+			 const int verbose,
+			 const bool primary,
+			 const tmcg_openpgp_octets_t &current_packet,
+			 bool &uid_flag,
+			 bool &uat_flag,
+			 TMCG_OpenPGP_Pubkey* &pub,
+			 TMCG_OpenPGP_UserID* &uid);
 
 	public:
 		static size_t AlgorithmKeyLength
