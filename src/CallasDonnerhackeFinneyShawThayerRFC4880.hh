@@ -79,6 +79,14 @@
 		TMCG_OPENPGP_SKALGO_TWOFISH		= 10
 	};
 
+	enum tmcg_openpgp_comalgo_t
+	{
+		TMCG_OPENPGP_COMPALGO_UNCOMPRESSED	= 0,
+		TMCG_OPENPGP_COMPALGO_ZIP		= 1,
+		TMCG_OPENPGP_COMPALGO_ZLIB		= 2,
+		TMCG_OPENPGP_COMPALGO_BZIP2		= 3
+	};
+
 	enum tmcg_openpgp_hashalgo_t
 	{
 		TMCG_OPENPGP_HASHALGO_UNKNOWN		= 0,
@@ -215,7 +223,7 @@
 		tmcg_openpgp_byte_t iv[32];
 		tmcg_openpgp_byte_t *encdata; // allocated buffer with data
 		size_t encdatalen;
-		tmcg_openpgp_byte_t compalgo;
+		tmcg_openpgp_comalgo_t compalgo;
 		tmcg_openpgp_byte_t *compdata; // allocated buffer with data
 		size_t compdatalen;
 		tmcg_openpgp_byte_t dataformat;

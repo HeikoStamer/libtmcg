@@ -5264,7 +5264,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		case 8: // Compressed Data Packet
 			if (pkt.size() < 2)
 				return 0; // error: incorrect packet body
-			out.compalgo = pkt[0];
+			out.compalgo = (tmcg_openpgp_comalgo_t)pkt[0];
 			if (out.compalgo > 3)
 				return 0; // error: algorithm not supported
 			out.compdatalen = pkt.size() - 1;
@@ -6552,13 +6552,22 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				else
 				{
 					if (verbose)
-						std::cerr << "WARNING: public-key signature algorithm " << (int)ctx.pkalgo << " not supported" << std::endl;
+						std::cerr << "WARNING: " <<
+							"public-key " <<
+							"signature " <<
+							"algorithm " << 
+							(int)ctx.pkalgo <<
+							" not supported" <<
+							std::endl;
 					break;
 				}
 				if (!sig->good())
 				{
 					if (verbose)
-						std::cerr << "ERROR: parsing signature material failed" << std::endl;
+						std::cerr << "ERROR: " << 
+							"parsing signature" <<
+							" material failed" <<
+							std::endl;
 					PacketContextRelease(ctx);
 					if (sub)
 						delete sub;
@@ -6571,7 +6580,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				if (!primary)
 				{
 					if (verbose)
-						std::cerr << "ERROR: no usable primary key found" << std::endl;
+						std::cerr << "ERROR: no " <<
+							"usable primary " <<
+							"key found" <<
+							std::endl;
 					PacketContextRelease(ctx);
 					if (sub)
 						delete sub;
@@ -6582,7 +6594,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				if (badkey)
 				{
 					if (verbose)
-						std::cerr << "WARNING: signature for unrecognized subkey ignored" << std::endl;
+						std::cerr << "WARNING: " <<
+							"signature for " <<
+							"unrecognized " <<
+							"subkey ignored" <<
+							std::endl;
 					delete sig;
 					break;
 				}
