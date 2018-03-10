@@ -195,6 +195,7 @@ bool TMCG_OpenPGP_Signature::Check
 			std::cerr << "WARNING: insecure hash algorithm " << 
 				(int)hashalgo << " used for signature" <<
 				std::endl;
+		// return false;
 	}
 	return true;
 }
@@ -609,7 +610,7 @@ bool TMCG_OpenPGP_UserID::Check
 		if (verbose > 2)
 			selfsigs[j]->PrintInfo();
 		if (!selfsigs[j]->Check(keycreationtime, verbose))
-			continue;
+			continue; // ignore expired signatures
 		// check the self-signature cryptographically
 		if (selfsigs[j]->Verify(key, pub_hashing, userid, verbose))
 			one_valid_selfsig = true;
@@ -617,6 +618,8 @@ bool TMCG_OpenPGP_UserID::Check
 			std::cerr << "ERROR: signature verification failed" <<
 				std::endl;
 	}
+	// Note that one valid certification revocation signature makes
+	// the whole user ID invalid. I guess this is widely-used practice.
 	std::sort(revsigs.begin(), revsigs.end(),
 		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < revsigs.size(); j++)
@@ -625,7 +628,7 @@ bool TMCG_OpenPGP_UserID::Check
 		if (verbose > 2)
 			revsigs[j]->PrintInfo();
 		if (!revsigs[j]->Check(keycreationtime, verbose))
-			continue;
+			continue; // ignore expired signatures
 		// check the revocation signature cryptographically
 		if (revsigs[j]->Verify(key, pub_hashing, userid, verbose))
 			one_valid_selfsig = false;
@@ -985,7 +988,50 @@ bool TMCG_OpenPGP_Subkey::Check
 		std::cerr << "INFO: number of certrevsigs = " <<
 			certrevsigs.size() << std::endl;
 	}
-	// check whether some self-signatures on subkey are valid FIXME: Update only, if not revoked in certrevsigs
+	// check whether there are valid revocation signatures for 0x1f sigs
+	for (size_t j = 0; j < certrevsigs.size(); j++)
+	{
+		// print and check basic properties of the signature
+		if (verbose > 2)
+			certrevsigs[j]->PrintInfo();
+		if (!certrevsigs[j]->Check(primarykeycreationtime, verbose))
+			continue;
+		if (!certrevsigs[j]->Check(creationtime, verbose))
+			continue;
+		// check the revocation signature cryptographically
+		bool valid_revsig = false;
+		if (CallasDonnerhackeFinneyShawThayerRFC4880::
+			OctetsCompare(pub_id, certrevsigs[j]->issuer))
+		{
+			if (certrevsigs[j]->Verify(primarykey,
+			    sub_hashing, verbose))
+				valid_revsig = true;
+			else if (verbose)
+				std::cerr << "ERROR: signature verification" <<
+					" failed" << std::endl;
+		}
+		else
+		{
+			// TODO: check revocation signature from external key
+		}
+		if (valid_revsig)
+		{
+			if (verbose)
+				std::cerr << "WARNING: valid certification " <<
+					"revocation signature found for " <<
+					"subkey" << std::endl;
+			// TODO: check certrevsig.creationtime > selfsig.creation time
+			// TODO: check selfsig.hspd \subseteq certrevsig.hspd
+			// TODO: remove corresponding 0x1f sig from selfsigs
+		}
+		else if (verbose)
+			std::cerr << "WARNING: invalid certification " <<
+				"revocation signature found for subkey" <<
+				std::endl;
+	}
+
+	// check whether some self-signatures (0x1f) on subkey are valid
+	// FIXME: Update only, if not revoked in certrevsigs
 	std::sort(selfsigs.begin(), selfsigs.end(),
 		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
@@ -1001,32 +1047,34 @@ bool TMCG_OpenPGP_Subkey::Check
 		if (CallasDonnerhackeFinneyShawThayerRFC4880::
 			OctetsCompare(pub_id, selfsigs[j]->issuer))
 		{
-			if (selfsigs[j]->Verify(primarykey, pub_hashing,
+			if (selfsigs[j]->Verify(primarykey, sub_hashing,
 			    verbose))
+			{
 				UpdateProperties(selfsigs[j], verbose);
+			}
 			else
 			{
 				if (verbose)
-					std::cerr << "ERROR: self-signature" <<
-						" verification failed" <<
+					std::cerr << "WARNING: " <<
+						"self-signature " <<
+						"verification failed" <<
 						std::endl;
-				valid = false;
-				return false;
 			}
 		}
 		else if (CallasDonnerhackeFinneyShawThayerRFC4880::
 			OctetsCompare(id, selfsigs[j]->issuer))
 		{
 			if (selfsigs[j]->Verify(key, sub_hashing, verbose))
+			{
 				UpdateProperties(selfsigs[j], verbose);
+			}
 			else
 			{
 				if (verbose)
-					std::cerr << "ERROR: signature " << 
+					std::cerr << "WARNING: " <<
+						"self-signature " << 
 						"verification failed" <<
 						std::endl;
-				valid = false;
-				return false;
 			}
 		}
 		else if (verbose)
@@ -1056,7 +1104,7 @@ bool TMCG_OpenPGP_Subkey::Check
 		if (bindsigs[j]->type == 0x18)
 		{
 			if (bindsigs[j]->Verify(primarykey,
-				pub_hashing, sub_hashing, verbose))
+			    pub_hashing, sub_hashing, verbose))
 			{
 				one_valid_bind = true;
 				UpdateProperties(bindsigs[j], verbose);
@@ -1064,26 +1112,24 @@ bool TMCG_OpenPGP_Subkey::Check
 			else
 			{
 				if (verbose)
-					std::cerr << "ERROR: binding " <<
+					std::cerr << "WARNING: binding " <<
 						"signature verification " <<
 						"failed" << std::endl;
-				valid = false;
-				return false;
 			}
 		}
 		else if (bindsigs[j]->type == 0x19)
 		{
 			if (bindsigs[j]->Verify(key,
-				pub_hashing, sub_hashing, verbose))
-					one_valid_pbind = true;
+			    pub_hashing, sub_hashing, verbose))
+			{
+				one_valid_pbind = true;
+			}
 			else
 			{
 				if (verbose)
-					std::cerr << "ERROR: signature " <<
-						"verification failed" <<
-						std::endl;
-				valid = false;
-				return false;
+					std::cerr << "WARNING: rebinding " <<
+						"signature verification " <<
+						"failed" << std::endl;
 			}
 		}
 		else if (verbose)
@@ -1116,8 +1162,8 @@ bool TMCG_OpenPGP_Subkey::Check
 			OctetsCompare(pub_id, keyrevsigs[j]->issuer))
 		{
 			if (keyrevsigs[j]->Verify(primarykey,
-				pub_hashing, sub_hashing, verbose))
-					valid_revsig = true;
+			    pub_hashing, sub_hashing, verbose))
+				valid_revsig = true;
 			else if (verbose)
 				std::cerr << "ERROR: signature verification" <<
 					" failed" << std::endl;
@@ -1139,8 +1185,9 @@ bool TMCG_OpenPGP_Subkey::Check
 			std::cerr << "WARNING: invalid revocation signature" <<
 				" found for subkey" << std::endl;
 	}
-	// last but not least, check whether there is a valid primary key
-	// binding signature, if subkey is a signing key
+	// last but not least, check whether there is a valid subkey binding
+	// signature and a valid primary key binding signature, if subkey is
+	// a signing key
 	bool signing_subkey = false;
 	size_t allflags = AccumulateFlags();
 	if ((allflags & 0x01) == 0x01)
