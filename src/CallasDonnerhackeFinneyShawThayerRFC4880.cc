@@ -1520,7 +1520,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		std::cerr << "INFO: number of subkeys = " <<
 			subkeys.size() << std::endl;
 	}
-	// check self-signatures of primary key FIXME: check for revoked sigs in certrevsig
+	// check self-signatures (0x1f) of primary key
+	// FIXME: check for revoked sigs in certrevsigs
 	std::sort(selfsigs.begin(), selfsigs.end(),
 		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
@@ -6517,7 +6518,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			std::cerr << "WARNING: public-key signature " <<
 				"algorithm " << (int)ctx.pkalgo <<
 				" not supported" << std::endl;
-		return true;
+		return true; // continue loop through packets
 	}
 	if (!sig->good())
 	{
@@ -6534,6 +6535,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		if (verbose)
 			std::cerr << "ERROR: no usable primary key found" <<
 				std::endl;
+		delete sig;
 		return false;
 	}
 	if (badkey)
@@ -6542,7 +6544,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			std::cerr << "WARNING: signature for unrecognized " <<
 				"subkey ignored" << std::endl;
 		delete sig;
-		return true;
+		return true; // continue loop through packets
 	}
 	if (subkey)
 	{
@@ -6599,7 +6601,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 					std::cerr << "WARNING: signature " <<
 						"of type 0x" << std::hex <<
 						(int)ctx.type << std::dec <<
-						" ignored (subkey)" <<
+						" on subkey ignored" <<
 						std::endl;
 				delete sig;
 			}
@@ -6617,11 +6619,14 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		else
 		{
 			if (verbose)
-				std::cerr << "WARNING: signature from " <<
-					"unknown issuer ignored" << std::endl;
+				std::cerr << "WARNING: signature " <<
+					"of type 0x" << std::hex <<
+					(int)ctx.type << std::dec <<
+					" on subkey from unknown issuer " <<
+					"ignored" << std::endl;
 			delete sig;
 		}
-		return true;
+		return true; // continue loop through packets
 	}
 	// non-self issuer found?
 	if (!OctetsCompare(pub->id, issuer))
@@ -6630,12 +6635,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		{
 			if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
 			{
-				// Certification signature
+				// Certification signature on user ID
 				uid->certsigs.push_back(sig);
 			}
 			else if (ctx.type == 0x30)
 			{
-				// Certification revocation signature
+				// Certification revocation signature (user ID)
 				uid->certsigs.push_back(sig);
 			}
 			else 
@@ -6665,10 +6670,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				std::cerr << "WARNING: non-uid signature " <<
 					"of type 0x" << std::hex <<
 					(int)ctx.type << std::dec <<
-					" ignored" << std::endl;
+					" on primary key ignored" << std::endl;
 			delete sig;
 		}
-		return true;
+		return true; // continue loop through packets
 	}
 	if (!uid_flag && !uat_flag)
 	{
@@ -6698,7 +6703,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		else
 		{
 			if (verbose)
-				std::cerr << "WARNING: non-self-signature " <<
+				std::cerr << "WARNING: non-self signature " <<
+					"of type 0x" << std::hex <<
+					(int)ctx.type << std::dec <<
 					"on primary key ignored" << std::endl;
 			delete sig;
 		}
@@ -6714,12 +6721,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	{
 		if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
 		{
-			// Certification self-signature
+			// Certification self-signature on user ID
 			uid->selfsigs.push_back(sig);
 		}
 		else if (ctx.type == 0x30)
 		{
-			// Certification revocation signature
+			// Certification revocation signature on user ID
 			if (verbose)
 				std::cerr << "WARNING: certification " <<
 					"revocation signature on user ID" <<
@@ -6736,7 +6743,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			delete sig;
 		}
 	}
-	return true;
+	return true; // continue loop through packets
 }
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag6
