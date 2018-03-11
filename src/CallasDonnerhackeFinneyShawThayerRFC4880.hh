@@ -244,6 +244,7 @@ class TMCG_OpenPGP_Signature
 
 	public:
 		bool valid;
+		bool revoked;
 		bool revocable;
 		tmcg_openpgp_pkalgo_t pkalgo;
 		tmcg_openpgp_hashalgo_t hashalgo;

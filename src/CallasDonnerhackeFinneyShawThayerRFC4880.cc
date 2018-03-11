@@ -51,6 +51,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		ret(1),
 		erroff(0),
 		valid(false),
+		revoked(false),
 		revocable(revocable_in),
 		pkalgo(pkalgo_in),
 		hashalgo(hashalgo_in),
@@ -106,6 +107,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		ret(1),
 		erroff(0),
 		valid(false),
+		revoked(false),
 		revocable(revocable_in),
 		pkalgo(pkalgo_in),
 		hashalgo(hashalgo_in),
@@ -620,6 +622,7 @@ bool TMCG_OpenPGP_UserID::Check
 	}
 	// Note that one valid certification revocation signature makes
 	// the whole user ID invalid. I guess this is widely-used practice.
+// TODO: mark all selfsigs as revoked (move block up), if revocable
 	std::sort(revsigs.begin(), revsigs.end(),
 		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < revsigs.size(); j++)
@@ -1022,16 +1025,14 @@ bool TMCG_OpenPGP_Subkey::Check
 					"subkey" << std::endl;
 			// TODO: check certrevsig.creationtime > selfsig.creation time
 			// TODO: check selfsig.hspd \subseteq certrevsig.hspd
-			// TODO: remove corresponding 0x1f sig from selfsigs
+			// TODO: mark corresponding 0x1f sig from selfsigs as revoked, if revocable
 		}
 		else if (verbose)
 			std::cerr << "WARNING: invalid certification " <<
 				"revocation signature found for subkey" <<
 				std::endl;
 	}
-
-	// check whether some self-signatures (0x1f) on subkey are valid
-	// FIXME: Update only, if not revoked in certrevsigs
+	// check whether some remaining self-signatures (0x1f) on subkey are valid
 	std::sort(selfsigs.begin(), selfsigs.end(),
 		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
@@ -1127,7 +1128,7 @@ bool TMCG_OpenPGP_Subkey::Check
 			else
 			{
 				if (verbose)
-					std::cerr << "WARNING: rebinding " <<
+					std::cerr << "WARNING: pbinding " <<
 						"signature verification " <<
 						"failed" << std::endl;
 			}
@@ -1156,6 +1157,7 @@ bool TMCG_OpenPGP_Subkey::Check
 			continue;
 		if (!keyrevsigs[j]->Check(creationtime, verbose))
 			continue;
+// TODO: creationtime should be later than latest binding signature
 		// check the revocation signature cryptographically
 		bool valid_revsig = false;
 		if (CallasDonnerhackeFinneyShawThayerRFC4880::
