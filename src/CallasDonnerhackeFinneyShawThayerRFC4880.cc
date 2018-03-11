@@ -170,7 +170,7 @@ void TMCG_OpenPGP_Signature::PrintInfo
 		std::cerr << std::dec << std::endl;
 }
 
-bool TMCG_OpenPGP_Signature::Check
+bool TMCG_OpenPGP_Signature::CheckValidity
 	(const time_t keycreationtime,
 	 const int verbose) const
 {
@@ -611,7 +611,7 @@ bool TMCG_OpenPGP_UserID::Check
 		// print and check basic properties of the signature
 		if (verbose > 2)
 			selfsigs[j]->PrintInfo();
-		if (!selfsigs[j]->Check(keycreationtime, verbose))
+		if (!selfsigs[j]->CheckValidity(keycreationtime, verbose))
 			continue; // ignore expired signatures
 		// check the self-signature cryptographically
 		if (selfsigs[j]->Verify(key, pub_hashing, userid, verbose))
@@ -630,7 +630,7 @@ bool TMCG_OpenPGP_UserID::Check
 		// print and check basic properties of the signature
 		if (verbose > 2)
 			revsigs[j]->PrintInfo();
-		if (!revsigs[j]->Check(keycreationtime, verbose))
+		if (!revsigs[j]->CheckValidity(keycreationtime, verbose))
 			continue; // ignore expired signatures
 		// check the revocation signature cryptographically
 		if (revsigs[j]->Verify(key, pub_hashing, userid, verbose))
@@ -997,9 +997,10 @@ bool TMCG_OpenPGP_Subkey::Check
 		// print and check basic properties of the signature
 		if (verbose > 2)
 			certrevsigs[j]->PrintInfo();
-		if (!certrevsigs[j]->Check(primarykeycreationtime, verbose))
+		if (!certrevsigs[j]->CheckValidity(primarykeycreationtime,
+		    verbose))
 			continue;
-		if (!certrevsigs[j]->Check(creationtime, verbose))
+		if (!certrevsigs[j]->CheckValidity(creationtime, verbose))
 			continue;
 		// check the revocation signature cryptographically
 		bool valid_revsig = false;
@@ -1040,9 +1041,10 @@ bool TMCG_OpenPGP_Subkey::Check
 		// print and check basic properties of the signature
 		if (verbose > 2)
 			selfsigs[j]->PrintInfo();
-		if (!selfsigs[j]->Check(primarykeycreationtime, verbose))
+		if (!selfsigs[j]->CheckValidity(primarykeycreationtime,
+		    verbose))
 			continue;
-		if (!selfsigs[j]->Check(creationtime, verbose))
+		if (!selfsigs[j]->CheckValidity(creationtime, verbose))
 			continue;
 		// check the self-signature cryptographically
 		if (CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -1097,9 +1099,10 @@ bool TMCG_OpenPGP_Subkey::Check
 		// print and check basic properties of the signature
 		if (verbose > 2)
 			bindsigs[j]->PrintInfo();
-		if (!bindsigs[j]->Check(primarykeycreationtime, verbose))
+		if (!bindsigs[j]->CheckValidity(primarykeycreationtime,
+		    verbose))
 			continue;
-		if (!bindsigs[j]->Check(creationtime, verbose))
+		if (!bindsigs[j]->CheckValidity(creationtime, verbose))
 			continue;
 		// check the binding signature cryptographically
 		if (bindsigs[j]->type == 0x18)
@@ -1153,9 +1156,10 @@ bool TMCG_OpenPGP_Subkey::Check
 		// print and check basic properties of the signature
 		if (verbose > 2)
 			keyrevsigs[j]->PrintInfo();
-		if (!keyrevsigs[j]->Check(primarykeycreationtime, verbose))
+		if (!keyrevsigs[j]->CheckValidity(primarykeycreationtime,
+		    verbose))
 			continue;
-		if (!keyrevsigs[j]->Check(creationtime, verbose))
+		if (!keyrevsigs[j]->CheckValidity(creationtime, verbose))
 			continue;
 // TODO: creationtime should be later than latest binding signature
 		// check the revocation signature cryptographically
@@ -1531,7 +1535,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		// print and check basic properties of the signature
 		if (verbose > 2)
 			selfsigs[j]->PrintInfo();
-		if (!selfsigs[j]->Check(creationtime, verbose))
+		if (!selfsigs[j]->CheckValidity(creationtime, verbose))
 			continue;
 		// check the self-signature cryptographically
 		if (selfsigs[j]->Verify(key, pub_hashing, verbose))
@@ -1632,7 +1636,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		// print and check basic properties of the signature
 		if (verbose > 2)
 			keyrevsigs[j]->PrintInfo();
-		if (!keyrevsigs[j]->Check(creationtime, verbose))
+		if (!keyrevsigs[j]->CheckValidity(creationtime, verbose))
 			continue;
 		// check the revocation signature cryptographically
 		bool valid_revsig = false;

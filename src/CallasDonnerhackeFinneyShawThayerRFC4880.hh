@@ -307,7 +307,7 @@ class TMCG_OpenPGP_Signature
 			() const;
 		void PrintInfo
 			() const;
-		bool Check
+		bool CheckValidity
 			(const time_t keycreationtime,
 			 const int verbose) const;
 		bool Verify
