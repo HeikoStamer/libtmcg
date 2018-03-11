@@ -381,6 +381,7 @@ class TMCG_OpenPGP_Subkey
 		tmcg_openpgp_octets_t pca;
 		std::vector<TMCG_OpenPGP_Signature*> selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*> bindsigs;
+		std::vector<TMCG_OpenPGP_Signature*> pbindsigs;
 		std::vector<TMCG_OpenPGP_Signature*> keyrevsigs;
 		std::vector<TMCG_OpenPGP_Signature*> certrevsigs;
 
@@ -419,7 +420,7 @@ class TMCG_OpenPGP_Subkey
 		void UpdateProperties
 			(const TMCG_OpenPGP_Signature *sig,
 			 const int verbose);
-		bool CheckProperties
+		bool CheckValidity
 			(const int verbose) const;
 		bool Check
 			(const time_t primarykeycreationtime,
@@ -486,7 +487,7 @@ class TMCG_OpenPGP_Pubkey
 		void UpdateProperties
 			(const TMCG_OpenPGP_Signature *sig,
 			 const int verbose);
-		bool CheckProperties
+		bool CheckValidity
 			(const int verbose) const;
 		bool CheckSelfSignatures
 			(const int verbose);

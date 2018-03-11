@@ -603,6 +603,31 @@ bool TMCG_OpenPGP_UserID::Check
 	 const tmcg_openpgp_octets_t &pub_hashing,
 	 const int verbose)
 {
+	// Note that one valid certification revocation signature makes
+	// the whole user ID invalid. I guess this is widely-used practice.
+	for (size_t j = 0; j < revsigs.size(); j++)
+	{
+		// print and check basic properties of the signature
+		if (verbose > 2)
+			revsigs[j]->PrintInfo();
+		if (!revsigs[j]->CheckValidity(keycreationtime, verbose))
+			continue; // ignore an expired signature
+		if (revsigs[j]->revoked)
+			continue; // ignore a revoked signature
+		// check the revocation signature cryptographically
+		if (revsigs[j]->Verify(key, pub_hashing, userid, verbose))
+		{
+			// set the revoked flag for all self-signatures
+			for (size_t i = 0; i < selfsigs.size(); i++)
+			{
+				if (selfsigs[i]->revocable)
+					selfsigs[i]->revoked = true;
+			}
+		}
+		else if (verbose)
+			std::cerr << "ERROR: signature verification failed" <<
+				std::endl;
+	}
 	bool one_valid_selfsig = false;
 	std::sort(selfsigs.begin(), selfsigs.end(),
 		TMCG_OpenPGP_Signature_Compare);
@@ -612,29 +637,12 @@ bool TMCG_OpenPGP_UserID::Check
 		if (verbose > 2)
 			selfsigs[j]->PrintInfo();
 		if (!selfsigs[j]->CheckValidity(keycreationtime, verbose))
-			continue; // ignore expired signatures
+			continue; // ignore an expired signature
+		if (selfsigs[j]->revoked)
+			continue; // ignore a revoked signature
 		// check the self-signature cryptographically
 		if (selfsigs[j]->Verify(key, pub_hashing, userid, verbose))
 			one_valid_selfsig = true;
-		else if (verbose)
-			std::cerr << "ERROR: signature verification failed" <<
-				std::endl;
-	}
-	// Note that one valid certification revocation signature makes
-	// the whole user ID invalid. I guess this is widely-used practice.
-// TODO: mark all selfsigs as revoked (move block up), if revocable
-	std::sort(revsigs.begin(), revsigs.end(),
-		TMCG_OpenPGP_Signature_Compare);
-	for (size_t j = 0; j < revsigs.size(); j++)
-	{
-		// print and check basic properties of the signature
-		if (verbose > 2)
-			revsigs[j]->PrintInfo();
-		if (!revsigs[j]->CheckValidity(keycreationtime, verbose))
-			continue; // ignore expired signatures
-		// check the revocation signature cryptographically
-		if (revsigs[j]->Verify(key, pub_hashing, userid, verbose))
-			one_valid_selfsig = false;
 		else if (verbose)
 			std::cerr << "ERROR: signature verification failed" <<
 				std::endl;
@@ -951,10 +959,10 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 	}
 	if (verbose > 1)
 		std::cerr << std::endl;
-// TODO: update revocable flag and external revocation keys
+// TODO: update allowed external revocation keys for this key
 }
 
-bool TMCG_OpenPGP_Subkey::CheckProperties
+bool TMCG_OpenPGP_Subkey::CheckValidity
 	(const int verbose) const
 {	
 	time_t kmax = creationtime + expirationtime;
@@ -986,6 +994,8 @@ bool TMCG_OpenPGP_Subkey::Check
 			selfsigs.size() << std::endl;
 		std::cerr << "INFO: number of bindsigs = " << 
 			bindsigs.size() << std::endl;
+		std::cerr << "INFO: number of pbindsigs = " << 
+			pbindsigs.size() << std::endl;
 		std::cerr << "INFO: number of keyrevsigs = " <<
 			keyrevsigs.size() << std::endl;
 		std::cerr << "INFO: number of certrevsigs = " <<
@@ -999,16 +1009,27 @@ bool TMCG_OpenPGP_Subkey::Check
 			certrevsigs[j]->PrintInfo();
 		if (!certrevsigs[j]->CheckValidity(primarykeycreationtime,
 		    verbose))
-			continue;
+			continue; // ignore an expired signature
 		if (!certrevsigs[j]->CheckValidity(creationtime, verbose))
-			continue;
+			continue; // ignore an expired signature
+		if (certrevsigs[j]->revoked)
+			continue; // ignore a revoked signature
 		// check the revocation signature cryptographically
 		bool valid_revsig = false;
 		if (CallasDonnerhackeFinneyShawThayerRFC4880::
 			OctetsCompare(pub_id, certrevsigs[j]->issuer))
 		{
-			if (certrevsigs[j]->Verify(primarykey,
-			    sub_hashing, verbose))
+			if (certrevsigs[j]->Verify(primarykey, sub_hashing,
+			    verbose))
+				valid_revsig = true;
+			else if (verbose)
+				std::cerr << "ERROR: signature verification" <<
+					" failed" << std::endl;
+		}
+		else if (CallasDonnerhackeFinneyShawThayerRFC4880::
+			OctetsCompare(id, certrevsigs[j]->issuer))
+		{
+			if (certrevsigs[j]->Verify(key, sub_hashing, verbose))
 				valid_revsig = true;
 			else if (verbose)
 				std::cerr << "ERROR: signature verification" <<
@@ -1023,17 +1044,23 @@ bool TMCG_OpenPGP_Subkey::Check
 			if (verbose)
 				std::cerr << "WARNING: valid certification " <<
 					"revocation signature found for " <<
-					"subkey" << std::endl;
+					"subkey" << std::endl;			
 			// TODO: check certrevsig.creationtime > selfsig.creation time
-			// TODO: check selfsig.hspd \subseteq certrevsig.hspd
-			// TODO: mark corresponding 0x1f sig from selfsigs as revoked, if revocable
+			// TODO: mark ONLY corresponding 0x1f sig from selfsigs as revoked
+			// TODO: evaluate signature target subpacket, if available
+			// set the revoked flag for all self-signatures
+			for (size_t i = 0; i < selfsigs.size(); i++)
+			{
+				if (selfsigs[i]->revocable)
+					selfsigs[i]->revoked = true;
+			}
 		}
 		else if (verbose)
 			std::cerr << "WARNING: invalid certification " <<
 				"revocation signature found for subkey" <<
 				std::endl;
 	}
-	// check whether some remaining self-signatures (0x1f) on subkey are valid
+	// check whether some self-signatures (0x1f) on subkey are valid
 	std::sort(selfsigs.begin(), selfsigs.end(),
 		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
@@ -1043,9 +1070,11 @@ bool TMCG_OpenPGP_Subkey::Check
 			selfsigs[j]->PrintInfo();
 		if (!selfsigs[j]->CheckValidity(primarykeycreationtime,
 		    verbose))
-			continue;
+			continue; // ignore an expired signature
 		if (!selfsigs[j]->CheckValidity(creationtime, verbose))
-			continue;
+			continue; // ignore an expired signature
+		if (selfsigs[j]->revoked)
+			continue; // ignore a revoked signature
 		// check the self-signature cryptographically
 		if (CallasDonnerhackeFinneyShawThayerRFC4880::
 			OctetsCompare(pub_id, selfsigs[j]->issuer))
@@ -1084,14 +1113,14 @@ bool TMCG_OpenPGP_Subkey::Check
 			std::cerr << "WARNING: unknown issuer of " <<
 				"self-signature" << std::endl;
 	}
-	// check properties of subkey
-	if (!CheckProperties(verbose))
+	// check validity of subkey
+	if (!CheckValidity(verbose))
 	{
 		valid = false;
 		return false;
 	}
-	// check whether there is (at least one) valid subkey binding signature
-	bool one_valid_bind = false, one_valid_pbind = false;
+	// check whether there is at least one valid subkey binding signature
+	bool one_valid_bind = false;
 	std::sort(bindsigs.begin(), bindsigs.end(),
 		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < bindsigs.size(); j++)
@@ -1101,9 +1130,11 @@ bool TMCG_OpenPGP_Subkey::Check
 			bindsigs[j]->PrintInfo();
 		if (!bindsigs[j]->CheckValidity(primarykeycreationtime,
 		    verbose))
-			continue;
+			continue; // ignore an expired signature
 		if (!bindsigs[j]->CheckValidity(creationtime, verbose))
-			continue;
+			continue; // ignore an expired signature
+		if (bindsigs[j]->revoked)
+			continue; // ignore a revoked signature
 		// check the binding signature cryptographically
 		if (bindsigs[j]->type == 0x18)
 		{
@@ -1121,29 +1152,14 @@ bool TMCG_OpenPGP_Subkey::Check
 						"failed" << std::endl;
 			}
 		}
-		else if (bindsigs[j]->type == 0x19)
-		{
-			if (bindsigs[j]->Verify(key,
-			    pub_hashing, sub_hashing, verbose))
-			{
-				one_valid_pbind = true;
-			}
-			else
-			{
-				if (verbose)
-					std::cerr << "WARNING: pbinding " <<
-						"signature verification " <<
-						"failed" << std::endl;
-			}
-		}
 		else if (verbose)
 			std::cerr << "WARNING: unknown binding signature " <<
 				"of type 0x" << std::hex <<
 				(int)bindsigs[j]->type << std::dec <<
 				std::endl;
 	}
-	// check properties of subkey again
-	if (!CheckProperties(verbose))
+	// check validity of subkey again
+	if (!CheckValidity(verbose))
 	{
 		valid = false;
 		return false;
@@ -1158,10 +1174,11 @@ bool TMCG_OpenPGP_Subkey::Check
 			keyrevsigs[j]->PrintInfo();
 		if (!keyrevsigs[j]->CheckValidity(primarykeycreationtime,
 		    verbose))
-			continue;
+			continue; // ignore an expired signature
 		if (!keyrevsigs[j]->CheckValidity(creationtime, verbose))
-			continue;
-// TODO: creationtime should be later than latest binding signature
+			continue; // ignore an expired signature
+		if (keyrevsigs[j]->revoked)
+			continue; // ignore a revoked signature
 		// check the revocation signature cryptographically
 		bool valid_revsig = false;
 		if (CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -1194,6 +1211,43 @@ bool TMCG_OpenPGP_Subkey::Check
 	// last but not least, check whether there is a valid subkey binding
 	// signature and a valid primary key binding signature, if subkey is
 	// a signing key
+	bool one_valid_pbind = false;
+	std::sort(pbindsigs.begin(), pbindsigs.end(),
+		TMCG_OpenPGP_Signature_Compare);
+	for (size_t j = 0; j < pbindsigs.size(); j++)
+	{
+		// print and check basic properties of the signature
+		if (verbose > 2)
+			pbindsigs[j]->PrintInfo();
+		if (!pbindsigs[j]->CheckValidity(primarykeycreationtime,
+		    verbose))
+			continue; // ignore an expired signature
+		if (!pbindsigs[j]->CheckValidity(creationtime, verbose))
+			continue; // ignore an expired signature
+		if (pbindsigs[j]->revoked)
+			continue; // ignore a revoked signature
+		// check the binding signature cryptographically
+		if (pbindsigs[j]->type == 0x19)
+		{
+			if (pbindsigs[j]->Verify(key,
+			    pub_hashing, sub_hashing, verbose))
+			{
+				one_valid_pbind = true;
+			}
+			else
+			{
+				if (verbose)
+					std::cerr << "WARNING: pbinding " <<
+						"signature verification " <<
+						"failed" << std::endl;
+			}
+		}
+		else if (verbose)
+			std::cerr << "WARNING: unknown pbinding signature " <<
+				"of type 0x" << std::hex <<
+				(int)pbindsigs[j]->type << std::dec <<
+				std::endl;
+	}
 	bool signing_subkey = false;
 	size_t allflags = AccumulateFlags();
 	if ((allflags & 0x01) == 0x01)
@@ -1257,6 +1311,9 @@ TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
 	for (size_t i = 0; i < bindsigs.size(); i++)
 		delete bindsigs[i];
 	bindsigs.clear();
+	for (size_t i = 0; i < pbindsigs.size(); i++)
+		delete pbindsigs[i];
+	pbindsigs.clear();
 	for (size_t i = 0; i < keyrevsigs.size(); i++)
 		delete keyrevsigs[i];
 	keyrevsigs.clear();
@@ -1488,10 +1545,10 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 	}
 	if (verbose > 1)
 		std::cerr << std::endl;
-// TODO: update revocable flag and external revocation keys
+// TODO: update allowed external revocation keys for this key
 }
 
-bool TMCG_OpenPGP_Pubkey::CheckProperties
+bool TMCG_OpenPGP_Pubkey::CheckValidity
 	(const int verbose) const
 {	
 	time_t kmax = creationtime + expirationtime;
@@ -1526,8 +1583,53 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		std::cerr << "INFO: number of subkeys = " <<
 			subkeys.size() << std::endl;
 	}
-	// check self-signatures (0x1f) of primary key
-	// FIXME: check for revoked sigs in certrevsigs
+	// check whether there are valid revocation signatures for 0x1f sigs
+	for (size_t j = 0; j < certrevsigs.size(); j++)
+	{
+		// print and check basic properties of the signature
+		if (verbose > 2)
+			certrevsigs[j]->PrintInfo();
+		if (!certrevsigs[j]->CheckValidity(creationtime, verbose))
+			continue; // ignore an expired signature
+		if (certrevsigs[j]->revoked)
+			continue; // ignore a revoked signature
+		// check the revocation signature cryptographically
+		bool valid_revsig = false;
+		if (CallasDonnerhackeFinneyShawThayerRFC4880::
+			OctetsCompare(id, certrevsigs[j]->issuer))
+		{
+			if (certrevsigs[j]->Verify(key, pub_hashing, verbose))
+				valid_revsig = true;
+			else if (verbose)
+				std::cerr << "ERROR: signature verification" <<
+					" failed" << std::endl;
+		}
+		else
+		{
+			// TODO: check revocation signature from external key
+		}
+		if (valid_revsig)
+		{
+			if (verbose)
+				std::cerr << "WARNING: valid certification " <<
+					"revocation signature found for " <<
+					"primary key" << std::endl;			
+			// TODO: check certrevsig.creationtime > selfsig.creation time
+			// TODO: mark ONLY corresponding 0x1f sig from selfsigs as revoked
+			// TODO: evaluate signature target subpacket, if available
+			// set the revoked flag for all self-signatures
+			for (size_t i = 0; i < selfsigs.size(); i++)
+			{
+				if (selfsigs[i]->revocable)
+					selfsigs[i]->revoked = true;
+			}
+		}
+		else if (verbose)
+			std::cerr << "WARNING: invalid certification " <<
+				"revocation signature found for subkey" <<
+				std::endl;
+	}
+	// check whether some self-signatures (0x1f) on subkey are valid
 	std::sort(selfsigs.begin(), selfsigs.end(),
 		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
@@ -1536,7 +1638,9 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		if (verbose > 2)
 			selfsigs[j]->PrintInfo();
 		if (!selfsigs[j]->CheckValidity(creationtime, verbose))
-			continue;
+			continue; // ignore an expired signature
+		if (selfsigs[j]->revoked)
+			continue; // ignore a revoked signature
 		// check the self-signature cryptographically
 		if (selfsigs[j]->Verify(key, pub_hashing, verbose))
 		{
@@ -1547,8 +1651,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			std::cerr << "WARNING: invalid self-signature " <<
 				"found" << std::endl;
 	}
-	// check properties of primary key
-	if (!CheckProperties(verbose))
+	// check validity of primary key
+	if (!CheckValidity(verbose))
 	{
 		valid = false;
 		return false;
@@ -1591,8 +1695,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		}
 		else if (verbose > 1)
 			std::cerr << "INFO: user ID is NOT valid" << std::endl;
-		// check properties of primary key again
-		if (!CheckProperties(verbose))
+		// check validity of primary key again
+		if (!CheckValidity(verbose))
 		{
 			valid = false;
 			return false;
@@ -1637,7 +1741,9 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		if (verbose > 2)
 			keyrevsigs[j]->PrintInfo();
 		if (!keyrevsigs[j]->CheckValidity(creationtime, verbose))
-			continue;
+			continue; // ignore an expired signature
+		if (keyrevsigs[j]->revoked)
+			continue; // ignore a revoked signature
 		// check the revocation signature cryptographically
 		bool valid_revsig = false;
 		if (CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -6554,10 +6660,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	}
 	if (subkey)
 	{
-		if (OctetsCompare(pub->id, issuer) ||
-		    OctetsCompare(sub->id, issuer))
+		if (OctetsCompare(pub->id, issuer))
 		{
-			if ((ctx.type == 0x18) || (ctx.type == 0x19))
+			if (ctx.type == 0x18)
 			{
 				sub->bindsigs.push_back(sig);
 				// A signature that binds a signing subkey
@@ -6590,6 +6695,39 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 					std::cerr << "WARNING: key " <<
 						"revocation signature on " <<
 						"subkey" << std::endl;
+			}
+			else if (ctx.type == 0x30)
+			{
+				// Certification revocation signature on subkey
+				if (verbose)
+					std::cerr << "WARNING: " <<
+						"certification revocation " <<
+						"signature on subkey" <<
+						std::endl;
+				sub->certrevsigs.push_back(sig);
+			}
+			else
+			{
+				if (verbose)
+					std::cerr << "WARNING: signature " <<
+						"of type 0x" << std::hex <<
+						(int)ctx.type << std::dec <<
+						" on subkey ignored" <<
+						std::endl;
+				delete sig;
+			}
+		}
+		else if (OctetsCompare(sub->id, issuer))
+		{
+			if (ctx.type == 0x19)
+			{
+				// Primary key binding signature on subkey
+				sub->pbindsigs.push_back(sig);
+			}
+			else if (ctx.type == 0x1F)
+			{
+				// Direct key signature on subkey
+				sub->selfsigs.push_back(sig);
 			}
 			else if (ctx.type == 0x30)
 			{
