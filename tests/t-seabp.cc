@@ -79,12 +79,12 @@ void start_instance
 				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
 			rbc->setID(myID);
 			
-			// broadcast
+			// round 1 -- broadcast
 			mpz_t a;
 			mpz_init_set_ui(a, whoami);
 			rbc->Broadcast(a, corrupted);
 
-			// deliver
+			// round 1 -- deliver
 			start_clock();
 			std::cout << "P_" << whoami << ": rbc.DeliverFrom()" << std::endl;
 			for (size_t i = 0; i < n; i++)
@@ -94,7 +94,10 @@ void start_instance
 					if (rbc->DeliverFrom(a, i))
 					{
 						std::cout << "P_" << whoami << ": a = " << a << " from " << i << std::endl;
-						assert(!mpz_cmp_ui(a, i));
+						if (i < (n - t))
+							assert(!mpz_cmp_ui(a, i));
+						else if (mpz_cmp_ui(a, i))
+							std::cout << "P_" << whoami << ": got wrong value from " << i << std::endl;
 					}
 					else
 					{
@@ -116,11 +119,11 @@ void start_instance
 			myID = "t-seabp::subprotocol";
 			rbc->setID(myID);
 			
-			// broadcast again
+			// round 1a -- broadcast again
 			mpz_init_set_ui(a, whoami);
 			rbc->Broadcast(a, corrupted);
 
-			// deliver again
+			// round 1a -- deliver again
 			start_clock();
 			std::cout << "P_" << whoami << ": rbc.DeliverFrom() inside subprotocol" << std::endl;
 			for (size_t i = 0; i < n; i++)
@@ -130,7 +133,10 @@ void start_instance
 					if (rbc->DeliverFrom(a, i))
 					{
 						std::cout << "P_" << whoami << ": a = " << a << " from " << i << " inside subprotocol" << std::endl;
-						assert(!mpz_cmp_ui(a, i));
+						if (i < (n - t))
+							assert(!mpz_cmp_ui(a, i));
+						else if (mpz_cmp_ui(a, i))
+							std::cout << "P_" << whoami << ": got wrong value from " << i << std::endl;
 					}
 					else
 					{
@@ -148,7 +154,7 @@ void start_instance
 			mpz_clear(a);
 			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
 
-			// broadcast again
+			// round 1b -- broadcast again
 			mpz_init_set_ui(a, 42 * whoami);
 			rbc->Broadcast(a, corrupted);
 
@@ -156,7 +162,7 @@ void start_instance
 			myID = "t-seabp::subprotocol::subprotocol";
 			rbc->setID(myID);
 
-			// deliver nothing
+			// round 1b(i) -- deliver nothing
 			std::cout << "P_" << whoami << ": !rbc.DeliverFrom() inside further subprotocol" << std::endl;
 			for (size_t i = 0; i < n; i++)
 			{
@@ -176,7 +182,7 @@ void start_instance
 			// switch back to subprotocol
 			rbc->unsetID();
 
-			// deliver again
+			// round 1b -- deliver again
 			start_clock();
 			std::cout << "P_" << whoami << ": rbc.DeliverFrom() inside subprotocol" << std::endl;
 			for (size_t i = 0; i < n; i++)
@@ -186,7 +192,10 @@ void start_instance
 					if (rbc->DeliverFrom(a, i))
 					{
 						std::cout << "P_" << whoami << ": a = " << a << " from " << i << " inside subprotocol" << std::endl;
-						assert(!mpz_cmp_ui(a, 42 * i));
+						if (i < (n - t))
+							assert(!mpz_cmp_ui(a, 42 * i));
+						else if (mpz_cmp_ui(a, 42 * i))
+							std::cout << "P_" << whoami << ": got wrong value from " << i << std::endl;
 					}
 					else
 					{
@@ -207,11 +216,11 @@ void start_instance
 			// switch back to main protocol
 			rbc->unsetID();
 			
-			// broadcast again
+			// round 2 -- broadcast again
 			mpz_init_set_ui(a, whoami);
 			rbc->Broadcast(a, corrupted);
 
-			// deliver again
+			// round 2 -- deliver again
 			start_clock();
 			std::cout << "P_" << whoami << ": rbc.DeliverFrom()" << std::endl;
 			for (size_t i = 0; i < n; i++)
@@ -221,7 +230,10 @@ void start_instance
 					if (rbc->DeliverFrom(a, i))
 					{
 						std::cout << "P_" << whoami << ": a = " << a << " from " << i << std::endl;
-						assert(!mpz_cmp_ui(a, i));
+						if (i < (n - t))
+							assert(!mpz_cmp_ui(a, i));
+						else if (mpz_cmp_ui(a, i))
+							std::cout << "P_" << whoami << ": got wrong value from " << i << std::endl;
 					}
 					else
 					{
@@ -318,6 +330,7 @@ int main
 	assert(N_MIN <= N);
 
 	// test case #1: n = N_MIN, t = 0
+	std::cout << "test case #1" << std::endl;
 	init(N_MIN);
 	for (size_t i = 0; i < N_MIN; i++)
 		start_instance(N_MIN, 0, i, false, false);
@@ -325,6 +338,7 @@ int main
 		return 1;
 
 	// test case #2: n = 3, t = 0
+	std::cout << "test case #2" << std::endl;
 	init(3);
 	for (size_t i = 0; i < 3; i++)
 		start_instance(3, 0, i, false, false);
@@ -332,6 +346,7 @@ int main
 		return 1;
 	
 	// test case #3: all correct
+	std::cout << "test case #3" << std::endl;
 	init(N);
 	for (size_t i = 0; i < N; i++)
 		start_instance(N, T, i, false, false);
@@ -339,6 +354,7 @@ int main
 		return 1;
 		
 	// test case #4: two corrupted parties
+	std::cout << "test case #4" << std::endl;
 	init(N);
 	for (size_t i = 0; i < N; i++)
 	{
