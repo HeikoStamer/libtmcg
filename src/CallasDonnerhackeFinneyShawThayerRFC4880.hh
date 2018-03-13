@@ -702,6 +702,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_hashalgo_t hashalgo, 
 			 const time_t sigtime,
 			 const time_t sigexptime,
+			 const std::string &policy,
 			 const tmcg_openpgp_octets_t &issuer, 
 			 tmcg_openpgp_octets_t &out);
 		static void PacketSigPrepareRevocationSignature

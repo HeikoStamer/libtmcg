@@ -179,7 +179,7 @@ int main
 	std::cout << "AsymmetricSignDSA(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, dsakey, r, s);
 	assert(!ret);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 60, subkeyid, trailer);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 60, "", subkeyid, trailer);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(trailer, left, r, s, sig);
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(TMCG_OPENPGP_ARMOR_SIGNATURE, sig, armored_signature);
 	std::cout << armored_signature << std::endl;

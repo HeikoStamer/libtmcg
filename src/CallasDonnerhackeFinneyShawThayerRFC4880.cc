@@ -3084,14 +3084,17 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 	(const tmcg_openpgp_byte_t sigtype,
-	 const tmcg_openpgp_hashalgo_t hashalgo, 
-	 const time_t sigtime, const time_t sigexptime, 
-	 const tmcg_openpgp_octets_t &issuer, tmcg_openpgp_octets_t &out)
+	 const tmcg_openpgp_hashalgo_t hashalgo,
+	 const time_t sigtime, const time_t sigexptime,
+	 const std::string &policy, const tmcg_openpgp_octets_t &issuer,
+	 tmcg_openpgp_octets_t &out)
 {
 	size_t subpkts = 2;
 	size_t subpktlen = (subpkts * 6) + 4 + issuer.size();
 	if (sigexptime != 0)
 		subpktlen += (6 + 4);
+	if (policy.length())
+		subpktlen += (6 + policy.length());
 	out.push_back(4); // V4 format
 	out.push_back(sigtype); // type (e.g. 0x00 Binary Document)
 	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
@@ -3112,6 +3115,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 		}
 		// 2. issuer (variable length)
 		SubpacketEncode(16, false, issuer, out);
+		// [optional] policy URI (variable length)
+		if (policy.length())
+		{
+			tmcg_openpgp_octets_t subpkt_policy;
+			for (size_t i = 0; i < policy.length(); i++)
+				subpkt_policy.push_back(policy[i]);
+			SubpacketEncode(26, false, subpkt_policy, out);
+		}
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature

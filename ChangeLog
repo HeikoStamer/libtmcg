@@ -7,6 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-03-13] RFC4880: changed interface PacketSigPrepareDetachedSignature()
 * [2018-03-03] RFC4880: added SignatureParse()
 * [2018-03-02] RFC4880: added AsymmetricEncryptRSA() and AsymmetricDecryptRSA()
 * [2018-03-01] RFC4880: added Twofish, SHA384, and SHA512 to prefered algos
