@@ -112,8 +112,6 @@ int main
 	gcry_sexp_t elgkey, elgparms;
 	tmcg_openpgp_octets_t lit, seskey, prefix, enc, subkeyid;
 	std::string m = "This is a test message.", armored_message;
-	for (size_t i = 0; i < 20; i++)
-		subkeyid.push_back(i); // dummy values
 	in.clear();
 	for (size_t i = 0; i < m.length(); i++)
 		in.push_back(m[i]);
@@ -160,13 +158,18 @@ int main
 		assert(lit[i] == out[i]); // check the result
 	}
 
+	// testing BinaryDocumentHash()
+	tmcg_openpgp_octets_t hash, trailer, left;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 360, "", subkeyid, trailer);
+	std::cout << "BinaryDocumentHash(\"ChangeLog\", ...)" << std::endl;
+	bool hash_ok = CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash("ChangeLog", trailer, TMCG_OPENPGP_HASHALGO_SHA256, hash, left);
+	assert(hash_ok);
+
 	// testing AsymmetricSignDSA() and AsymmetricVerifyDSA()
+	time_t creation = time(NULL);
 	gcry_sexp_t dsakey, dsaparms;
-	tmcg_openpgp_octets_t hash, trailer, left, sig;
+	tmcg_openpgp_octets_t sig;
 	std::string armored_signature;
-	for (size_t i = 0; i < 2; i++)
-		left.push_back(i); // dummy values
-	CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(TMCG_OPENPGP_HASHALGO_SHA256, lit, hash); // SHA256
 	std::cout << "gcry_sexp_build(...)" << std::endl;
 	ret = gcry_sexp_build(&dsaparms, &erroff, "(genkey (dsa (nbits 4:3072)))");
 	assert(!ret);
@@ -179,23 +182,21 @@ int main
 	std::cout << "AsymmetricSignDSA(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, dsakey, r, s);
 	assert(!ret);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 60, "", subkeyid, trailer);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(trailer, left, r, s, sig);
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(TMCG_OPENPGP_ARMOR_SIGNATURE, sig, armored_signature);
 	std::cout << armored_signature << std::endl;
 	std::cout << "AsymmetricVerifyDSA(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, r, s);
 	assert(!ret);
+	tmcg_openpgp_octets_t hash2;
+	CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(TMCG_OPENPGP_HASHALGO_SHA512, lit, hash2); // SHA512
 	std::cout << "AsymmetricSignDSA(...) with truncated hash" << std::endl;
-	hash.clear();
-	CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute(TMCG_OPENPGP_HASHALGO_SHA512, lit, hash); // SHA512
-	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash, dsakey, r, s);
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash2, dsakey, r, s);
 	assert(!ret);
 	std::cout << "AsymmetricVerifyDSA(...) with truncated hash" << std::endl;
-	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash, dsakey, r, s);
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash2, dsakey, r, s);
 	assert(!ret);
 	gcry_sexp_release(dsaparms);
-	gcry_sexp_release(dsakey);
 	gcry_mpi_release(r);
 	gcry_mpi_release(s);
 
@@ -268,16 +269,9 @@ int main
 	// testing PublicKeyBlockParse()
 	tmcg_openpgp_octets_t all, pub, uid, uidsig, sub, subsig, pubflags, subflags, keyid, pub_hashing, uidsig_hashing, uidsig_left, sub_hashing, subsig_hashing, subsig_left;
 	std::string armored_pubkeyblock;
-	time_t creation = time(NULL);
-	std::cout << "gcry_sexp_build(...)" << std::endl;
-	ret = gcry_sexp_build(&dsaparms, &erroff, "(genkey (dsa (nbits 4:3072)))");
-	assert(!ret);
-	std::cout << "gcry_pk_genkey(...)" << std::endl;
-	ret = gcry_pk_genkey(&dsakey, dsaparms);
-	assert(!ret);
 	gcry_mpi_t p, q, g, y;
 	std::cout << "gcry_sexp_extract_param(...)" << std::endl;
-	ret = gcry_sexp_extract_param (dsakey, NULL, "pqgy", &p, &q, &g, &y, NULL);
+	ret = gcry_sexp_extract_param(dsakey, NULL, "pqgy", &p, &q, &g, &y, NULL);
 	assert(!ret);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creation, TMCG_OPENPGP_PKALGO_DSA, p, q, g, y, pub);
 	for (size_t i = 6; i < pub.size(); i++)
@@ -322,14 +316,32 @@ int main
 	parse_ok = primary->CheckSubkeys(3);
 	assert(parse_ok);
 	delete primary;
-	gcry_sexp_release(dsaparms);
-	gcry_sexp_release(dsakey);
 	gcry_mpi_release(p);
 	gcry_mpi_release(q);
 	gcry_mpi_release(g);
 	gcry_mpi_release(y);
 	gcry_mpi_release(r);
 	gcry_mpi_release(s);
+
+	// testing SignatureParse()
+	TMCG_OpenPGP_Signature *signature = NULL;
+	std::cout << "SignatureParse()" << std::endl;
+	parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse(armored_signature, 3, signature);
+	assert(parse_ok);
+	assert(signature->good());
+	std::cout << "PrintInfo()" << std::endl;
+	signature->PrintInfo();
+	std::cout << "CheckValidity()" << std::endl;
+	parse_ok = signature->CheckValidity(creation, 3);
+	assert(parse_ok);
+	std::cout << "!CheckValidity()" << std::endl;
+	parse_ok = signature->CheckValidity(time(NULL), 3);
+	assert(!parse_ok);
+	std::cout << "Verify()" << std::endl;
+	parse_ok = signature->Verify(dsakey, "ChangeLog", 3);
+	assert(parse_ok);
+	delete signature;
+	gcry_sexp_release(dsakey);
 	
 	return 0;
 }
