@@ -277,7 +277,7 @@ int main
 	CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, keylen, keystr, salt2, true, octcnt, out2);
 	assert(CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(out, out2));
 
-	// testing PublicKeyBlockParse()
+	// testing PublicKeyBlockParse(), FingerprintCompute(), KeyidCompute()
 	tmcg_openpgp_octets_t all, pub, uid, uidsig, sub, subsig, pubflags, subflags, keyid, pub_hashing, uidsig_hashing, uidsig_left, sub_hashing, subsig_hashing, subsig_left;
 	std::string armored_pubkeyblock;
 	gcry_mpi_t p, q, g, y;
@@ -316,6 +316,7 @@ int main
 	all.insert(all.end(), sub.begin(), sub.end());
 	all.insert(all.end(), subsig.begin(), subsig.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK, all, armored_pubkeyblock);
+	std::cout << armored_pubkeyblock << std::endl;
 	TMCG_OpenPGP_Pubkey *primary = NULL;
 	std::cout << "PublicKeyBlockParse()" << std::endl;
 	bool parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse(armored_pubkeyblock, 3, primary);
@@ -326,6 +327,13 @@ int main
 	std::cout << "CheckSubkeys()" << std::endl;
 	parse_ok = primary->CheckSubkeys(3);
 	assert(parse_ok);
+	std::string fpr, kid;
+	std::cout << "FingerprintCompute()" << std::endl;
+	CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute(primary->pub_hashing, fpr);
+	std::cout << fpr << std::endl;
+	std::cout << "KeyidCompute()" << std::endl;
+	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(primary->pub_hashing, kid);
+	std::cout << kid << std::endl;
 	delete primary;
 	gcry_mpi_release(p);
 	gcry_mpi_release(q);

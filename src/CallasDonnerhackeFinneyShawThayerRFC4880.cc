@@ -2430,6 +2430,20 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 	delete [] hash;
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
+	(const tmcg_openpgp_octets_t &in, std::string &out)
+{
+	tmcg_openpgp_octets_t fpr;
+	FingerprintCompute(in, fpr);
+	char *hex_digest = new char[(3 * fpr.size()) + 1];
+	memset(hex_digest, 0, (3 * fpr.size()) + 1);
+	for (size_t i = 0; i < (fpr.size() / 2); i++)
+		snprintf(hex_digest + (5 * i), 6, "%02X%02X ",
+			fpr[2*i], fpr[(2*i)+1]);
+	out = hex_digest;
+	delete [] hex_digest;
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &out)
 {
@@ -2442,6 +2456,19 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 	FingerprintCompute(in, fpr);
 	for (size_t i = 12; i < 20; i++)
 		out.push_back(fpr[i]);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
+	(const tmcg_openpgp_octets_t &in, std::string &out)
+{
+	tmcg_openpgp_octets_t kid;
+	KeyidCompute(in, kid);
+	char *hex_digest = new char[(2 * kid.size()) + 1];
+	memset(hex_digest, 0, (2 * kid.size()) + 1);
+	for (size_t i = 0; i < kid.size(); i++)
+		snprintf(hex_digest + (2 * i), 3, "%02X", kid[i]);
+	out = hex_digest;
+	delete [] hex_digest;
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute

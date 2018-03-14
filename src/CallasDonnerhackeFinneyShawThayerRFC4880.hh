@@ -608,10 +608,16 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_octets_t &out);
 		static void FingerprintCompute
 			(const tmcg_openpgp_octets_t &in,
-			 tmcg_openpgp_octets_t &out); 
+			 tmcg_openpgp_octets_t &out);
+		static void FingerprintCompute
+			(const tmcg_openpgp_octets_t &in,
+			 std::string &out);
 		static void KeyidCompute
 			(const tmcg_openpgp_octets_t &in,
 			 tmcg_openpgp_octets_t &out);
+		static void KeyidCompute
+			(const tmcg_openpgp_octets_t &in,
+			 std::string &out);
 		static void HashCompute
 			(const tmcg_openpgp_hashalgo_t algo,
 			 const tmcg_openpgp_octets_t &in,
