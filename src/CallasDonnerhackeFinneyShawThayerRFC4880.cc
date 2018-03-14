@@ -179,8 +179,10 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 	(const time_t keycreationtime,
 	 const int verbose) const
 {
-	time_t smax = creationtime + expirationtime;
-	if (expirationtime && (time(NULL) > smax))
+	time_t current = time(NULL);
+	time_t fmax = 60 * 60 * 24 * 7;
+	time_t vmax = creationtime + expirationtime;
+	if (expirationtime && (current > vmax))
 	{
 		if (verbose)
 			std::cerr << "WARNING: signature has " <<
@@ -192,6 +194,13 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 		if (verbose)
 			std::cerr << "WARNING: signature is " <<
 				"older than corresponding key" << std::endl;
+		return false;
+	}
+	if (creationtime > (current + fmax))
+	{
+		if (verbose)
+			std::cerr << "WARNING: creation time of " <<
+				"signature is in far future" << std::endl;
 		return false;
 	}
 	if ((hashalgo != TMCG_OPENPGP_HASHALGO_SHA256) &&
@@ -969,13 +978,22 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 
 bool TMCG_OpenPGP_Subkey::CheckValidity
 	(const int verbose) const
-{	
+{
+	time_t current = time(NULL);
+	time_t fmax = 60 * 60 * 24 * 7;
 	time_t kmax = creationtime + expirationtime;
-	if (expirationtime && (time(NULL) > kmax))
+	if (expirationtime && (current > kmax))
 	{
 		if (verbose)
 			std::cerr << "WARNING: subkey has been expired" <<
 				std::endl;
+		return false;
+	}
+	if (creationtime > (current + fmax))
+	{
+		if (verbose)
+			std::cerr << "WARNING: subkey has been created " <<
+				"in far future" << std::endl;
 		return false;
 	}
 	return true;
@@ -1163,7 +1181,7 @@ bool TMCG_OpenPGP_Subkey::Check
 				(int)bindsigs[j]->type << std::dec <<
 				std::endl;
 	}
-	// check validity of subkey again
+	// check validity again because property updates has been applied
 	if (!CheckValidity(verbose))
 	{
 		valid = false;
@@ -1555,13 +1573,22 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 
 bool TMCG_OpenPGP_Pubkey::CheckValidity
 	(const int verbose) const
-{	
+{
+	time_t current = time(NULL);
+	time_t fmax = 60 * 60 * 24 * 7;
 	time_t kmax = creationtime + expirationtime;
-	if (expirationtime && (time(NULL) > kmax))
+	if (expirationtime && (current > kmax))
 	{
 		if (verbose)
 			std::cerr << "WARNING: primary key has been " <<
 				"expired" << std::endl;
+		return false;
+	}
+	if (creationtime > (current + fmax))
+	{
+		if (verbose)
+			std::cerr << "WARNING: primary key has been " <<
+				"created in far future" << std::endl;
 		return false;
 	}
 	return true;
@@ -1700,7 +1727,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		}
 		else if (verbose > 1)
 			std::cerr << "INFO: user ID is NOT valid" << std::endl;
-		// check validity of primary key again
+		// check validity of primary key again due to property updates
 		if (!CheckValidity(verbose))
 		{
 			valid = false;
