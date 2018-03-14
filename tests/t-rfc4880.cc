@@ -19,7 +19,11 @@
 *******************************************************************************/
 
 #include <iostream>
+#include <fstream>
 #include <cassert>
+#include <ctime>
+#include <cstdio>
+#include <unistd.h>
 
 // include headers
 #ifdef HAVE_CONFIG_H
@@ -159,10 +163,17 @@ int main
 	}
 
 	// testing BinaryDocumentHash()
+	std::string filename = "t-rfc4880.tmp";
+	time_t filecreation = time(NULL);
+	std::ofstream ofs(filename.c_str(), std::ofstream::out);
+	assert(ofs.good());
+	ofs << "This is a simple test file createt at " << ctime(&filecreation) << std::endl;
+	assert(ofs.good());
+	ofs.close();
 	tmcg_openpgp_octets_t hash, trailer, left;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature(0x00, TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 360, "", subkeyid, trailer);
-	std::cout << "BinaryDocumentHash(\"ChangeLog\", ...)" << std::endl;
-	bool hash_ok = CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash("ChangeLog", trailer, TMCG_OPENPGP_HASHALGO_SHA256, hash, left);
+	std::cout << "BinaryDocumentHash(\"" << filename << "\", ...)" << std::endl;
+	bool hash_ok = CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash(filename, trailer, TMCG_OPENPGP_HASHALGO_SHA256, hash, left);
 	assert(hash_ok);
 
 	// testing AsymmetricSignDSA() and AsymmetricVerifyDSA()
@@ -324,6 +335,7 @@ int main
 	gcry_mpi_release(s);
 
 	// testing SignatureParse()
+	sleep(1);
 	TMCG_OpenPGP_Signature *signature = NULL;
 	std::cout << "SignatureParse()" << std::endl;
 	parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse(armored_signature, 3, signature);
@@ -337,11 +349,12 @@ int main
 	std::cout << "!CheckValidity()" << std::endl;
 	parse_ok = signature->CheckValidity(time(NULL), 3);
 	assert(!parse_ok);
-	std::cout << "Verify()" << std::endl;
-	parse_ok = signature->Verify(dsakey, "ChangeLog", 3);
+	std::cout << "Verify(..., \"" << filename << "\", ...)" << std::endl;
+	parse_ok = signature->Verify(dsakey, filename, 3);
 	assert(parse_ok);
 	delete signature;
 	gcry_sexp_release(dsakey);
+	remove(filename.c_str());
 	
 	return 0;
 }
