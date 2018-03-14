@@ -32,6 +32,7 @@
 
 TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	(const bool revocable_in,
+	 const bool exportable_in,
 	 const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const tmcg_openpgp_hashalgo_t hashalgo_in,
 	 const tmcg_openpgp_byte_t type_in,
@@ -53,6 +54,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		valid(false),
 		revoked(false),
 		revocable(revocable_in),
+		exportable(exportable_in),
 		pkalgo(pkalgo_in),
 		hashalgo(hashalgo_in),
 		type(type_in),
@@ -87,6 +89,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 
 TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	(const bool revocable_in,
+	 const bool exportable_in,
 	 const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const tmcg_openpgp_hashalgo_t hashalgo_in,
 	 const tmcg_openpgp_byte_t type_in,
@@ -109,6 +112,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		valid(false),
 		revoked(false),
 		revocable(revocable_in),
+		exportable(exportable_in),
 		pkalgo(pkalgo_in),
 		hashalgo(hashalgo_in),
 		type(type_in),
@@ -155,6 +159,7 @@ void TMCG_OpenPGP_Signature::PrintInfo
 		std::dec << " pkalgo = " << (int)pkalgo <<
 		" hashalgo = " << (int)hashalgo <<
 		" revocable = " << (revocable ? "true" : "false") <<
+		" exportable = " << (exportable ? "true" : "false") <<
 		" version = " << (int)version <<
 		" creationtime = " << creationtime <<
 		" expirationtime = " << expirationtime <<
@@ -4611,7 +4616,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	// Exportable Certification: If this packet is not present, the
 	// certification is exportable; it is equivalent to a flag 
 	// containing a 1.
-	out.exportablecertification = true; 
+	out.exportablecertification = true;
 	// Revocable: If this packet is not present, the signature is
 	// revocable.
 	out.revocable = true;
@@ -6614,7 +6619,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		if (verbose > 2)
 			std::cerr << "INFO: mdbits = " << mdbits << std::endl;
 		// create a new signature object
-		sig = new TMCG_OpenPGP_Signature(ctx.revocable, ctx.pkalgo,
+		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
+			ctx.exportablecertification, ctx.pkalgo,
 			ctx.hashalgo, ctx.type,	ctx.version,
 			ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.md, current_packet, hspd,
@@ -6629,7 +6635,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			std::cerr << "INFO: rbits = " << rbits <<
 				" sbits = " << sbits <<	std::endl;
 		// create a new signature object
-		sig = new TMCG_OpenPGP_Signature(ctx.revocable, ctx.pkalgo,
+		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
+			ctx.exportablecertification, ctx.pkalgo,
 			ctx.hashalgo, ctx.type, ctx.version,
 			ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.r, ctx.s, current_packet,
@@ -7390,9 +7397,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 						mdbits << std::endl;
 				// create a new signature object
 				sig = new TMCG_OpenPGP_Signature(
-					ctx.revocable, ctx.pkalgo,
-					ctx.hashalgo, ctx.type,
-					ctx.version,
+					ctx.revocable,
+					ctx.exportablecertification,
+					ctx.pkalgo, ctx.hashalgo,
+					ctx.type, ctx.version,
 					ctx.sigcreationtime,
 					ctx.sigexpirationtime,
 					0, ctx.md, current_packet,
@@ -7410,9 +7418,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 						sbits << std::endl;
 				// create a new signature object
 				sig = new TMCG_OpenPGP_Signature(
-					ctx.revocable, ctx.pkalgo,
-					ctx.hashalgo, ctx.type,
-					ctx.version,
+					ctx.revocable,
+					ctx.exportablecertification,
+					ctx.pkalgo, ctx.hashalgo,
+					ctx.type, ctx.version,
 					ctx.sigcreationtime,
 					ctx.sigexpirationtime,
 					0, ctx.r, ctx.s, current_packet,
