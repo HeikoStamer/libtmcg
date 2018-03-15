@@ -172,7 +172,8 @@ void TMCG_OpenPGP_Signature::PrintInfo
 		std::cerr << " keyflags = ";
 		for (size_t i = 0; i < keyflags.size(); i++)
 			std::cerr << (int)keyflags[i] << " ";
-		std::cerr << std::dec << std::endl;
+		std::cerr << std::dec << 
+		" revkeys.size() = " << revkeys.size() << std::endl;
 }
 
 bool TMCG_OpenPGP_Signature::CheckValidity
@@ -592,6 +593,7 @@ TMCG_OpenPGP_Signature::~TMCG_OpenPGP_Signature
 	keypreferences_psa.clear();
 	keypreferences_pha.clear();
 	keypreferences_pca.clear();
+	revkeys.clear();
 }
 
 bool TMCG_OpenPGP_Signature_Compare
@@ -973,7 +975,7 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 	}
 	if (verbose > 1)
 		std::cerr << std::endl;
-// TODO: update allowed external revocation keys for this key
+// TODO: update allowed external revocation keys for this subkey
 }
 
 bool TMCG_OpenPGP_Subkey::CheckValidity
@@ -1023,6 +1025,8 @@ bool TMCG_OpenPGP_Subkey::Check
 			keyrevsigs.size() << std::endl;
 		std::cerr << "INFO: number of certrevsigs = " <<
 			certrevsigs.size() << std::endl;
+		std::cerr << "INFO: number of revkeys = " <<
+			revkeys.size() << std::endl;
 	}
 	// check whether there are valid revocation signatures for 0x1f sigs
 	for (size_t j = 0; j < certrevsigs.size(); j++)
@@ -1343,6 +1347,7 @@ TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
 	for (size_t i = 0; i < certrevsigs.size(); i++)
 		delete certrevsigs[i];
 	certrevsigs.clear();
+	revkeys.clear();
 }
 
 // ===========================================================================
@@ -1614,6 +1619,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			userids.size() << std::endl;
 		std::cerr << "INFO: number of subkeys = " <<
 			subkeys.size() << std::endl;
+		std::cerr << "INFO: number of revkeys = " <<
+			revkeys.size() << std::endl;
 	}
 	// check whether there are valid revocation signatures for 0x1f sigs
 	for (size_t j = 0; j < certrevsigs.size(); j++)
@@ -1924,6 +1931,7 @@ TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
 	for (size_t i = 0; i < subkeys.size(); i++)
 		delete subkeys[i];
 	subkeys.clear();
+	revkeys.clear();
 }
 
 // ===========================================================================
@@ -4444,8 +4452,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			if ((pkt[0] & 0x80) != 0x80)
 				return 0; // error: bad class
 			out.revocationkey_class = pkt[0];
-			out.revocationkey_pkalgo = (tmcg_openpgp_pkalgo_t)pkt[1];
-			for (size_t i = 0; i < 20; i++)
+			out.revocationkey_pkalgo =
+				(tmcg_openpgp_pkalgo_t)pkt[1];
+			for (size_t i = 0;
+			     i < sizeof(out.revocationkey_fingerprint); i++)
 				out.revocationkey_fingerprint[i] = pkt[2+i];
 			break;
 		case 16: // Issuer
@@ -6625,8 +6635,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	// 0x1F: Signature directly on a key
 	// This signature is calculated directly on a key. It binds the
 	// information in the Signature subpackets to the key, and is
-	// appropriate to be used for subpackets that provide information about
-	// the key, such as the Revocation Key subpacket. It is also
+	// appropriate to be used for subpackets that provide information
+	// about the key, such as the Revocation Key subpacket. It is also
 	// appropriate for statements that non-self certifiers want to make
 	// about the key itself, rather than the binding between a key and a
 	// name.
@@ -6736,6 +6746,25 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		{
 			if (ctx.type == 0x18)
 			{
+				// Authorizes the specified key to issue
+				// revocation signatures for this key. Class
+				// octet must have bit 0x80 set. If the bit
+				// 0x40 is set, then this means that the
+				// revocation information is sensitive. Other
+				// bits are for future expansion to other kinds
+				// of authorizations. This is found on a
+				// self-signature.
+				if ((ctx.revocationkey_class & 0x80) == 0x80)
+				{
+					tmcg_openpgp_revkey_t rk;
+					rk.key_class = ctx.revocationkey_class;
+					rk.key_pkalgo =
+						ctx.revocationkey_pkalgo;
+					memcpy(rk.key_fingerprint, 
+						ctx.revocationkey_fingerprint,
+						sizeof(rk.key_fingerprint));
+					sig->revkeys.push_back(rk);
+				}
 				sub->bindsigs.push_back(sig);
 				// A signature that binds a signing subkey
 				// MUST have an Embedded Signature subpacket
@@ -6756,6 +6785,25 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			}
 			else if (ctx.type == 0x1F)
 			{
+				// Authorizes the specified key to issue
+				// revocation signatures for this key. Class
+				// octet must have bit 0x80 set. If the bit
+				// 0x40 is set, then this means that the
+				// revocation information is sensitive. Other
+				// bits are for future expansion to other kinds
+				// of authorizations. This is found on a
+				// self-signature.
+				if ((ctx.revocationkey_class & 0x80) == 0x80)
+				{
+					tmcg_openpgp_revkey_t rk;
+					rk.key_class = ctx.revocationkey_class;
+					rk.key_pkalgo =
+						ctx.revocationkey_pkalgo;
+					memcpy(rk.key_fingerprint, 
+						ctx.revocationkey_fingerprint,
+						sizeof(rk.key_fingerprint));
+					sig->revkeys.push_back(rk);
+				}
 				// Direct key signature on subkey
 				sub->selfsigs.push_back(sig);
 			}
@@ -6798,6 +6846,25 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			}
 			else if (ctx.type == 0x1F)
 			{
+				// Authorizes the specified key to issue
+				// revocation signatures for this key. Class
+				// octet must have bit 0x80 set. If the bit
+				// 0x40 is set, then this means that the
+				// revocation information is sensitive. Other
+				// bits are for future expansion to other kinds
+				// of authorizations. This is found on a
+				// self-signature.
+				if ((ctx.revocationkey_class & 0x80) == 0x80)
+				{
+					tmcg_openpgp_revkey_t rk;
+					rk.key_class = ctx.revocationkey_class;
+					rk.key_pkalgo =
+						ctx.revocationkey_pkalgo;
+					memcpy(rk.key_fingerprint, 
+						ctx.revocationkey_fingerprint,
+						sizeof(rk.key_fingerprint));
+					sig->revkeys.push_back(rk);
+				}
 				// Direct key signature on subkey
 				sub->selfsigs.push_back(sig);
 			}
@@ -6895,6 +6962,22 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	{
 		if (ctx.type == 0x1F)
 		{
+			// Authorizes the specified key to issue revocation
+			// signatures for this key. Class octet must have bit
+			// 0x80 set. If the bit 0x40 is set, then this means
+			// that the revocation information is sensitive. Other
+			// bits are for future expansion to other kinds of
+			// authorizations. This is found on a self-signature.
+			if ((ctx.revocationkey_class & 0x80) == 0x80)
+			{
+				tmcg_openpgp_revkey_t rk;
+				rk.key_class = ctx.revocationkey_class;
+				rk.key_pkalgo =	ctx.revocationkey_pkalgo;
+				memcpy(rk.key_fingerprint, 
+					ctx.revocationkey_fingerprint,
+					sizeof(rk.key_fingerprint));
+				sig->revkeys.push_back(rk);
+			}
 			// Direct key signature on primary key
 			pub->selfsigs.push_back(sig);
 		}
@@ -6937,6 +7020,22 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	{
 		if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
 		{
+			// Authorizes the specified key to issue revocation
+			// signatures for this key. Class octet must have bit
+			// 0x80 set. If the bit 0x40 is set, then this means
+			// that the revocation information is sensitive. Other
+			// bits are for future expansion to other kinds of
+			// authorizations. This is found on a self-signature.
+			if ((ctx.revocationkey_class & 0x80) == 0x80)
+			{
+				tmcg_openpgp_revkey_t rk;
+				rk.key_class = ctx.revocationkey_class;
+				rk.key_pkalgo =	ctx.revocationkey_pkalgo;
+				memcpy(rk.key_fingerprint, 
+					ctx.revocationkey_fingerprint,
+					sizeof(rk.key_fingerprint));
+				sig->revkeys.push_back(rk);
+			}
 			// Certification self-signature on user ID
 			uid->selfsigs.push_back(sig);
 		}
