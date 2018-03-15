@@ -985,8 +985,8 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 		{
 			std::string fpr_str;
 			tmcg_openpgp_octets_t fpr
-				(std::begin(rk.key_fingerprint),
-				 std::end(rk.key_fingerprint));
+				(std::begin(rk.key_fingerprint), // C++11
+				 std::end(rk.key_fingerprint)); // C++11
 			CallasDonnerhackeFinneyShawThayerRFC4880::
 				FingerprintConvert(fpr, fpr_str);
 			std::cerr << "[" << fpr_str << "]";
@@ -1599,8 +1599,8 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 		{
 			std::string fpr_str;
 			tmcg_openpgp_octets_t fpr
-				(std::begin(rk.key_fingerprint),
-				 std::end(rk.key_fingerprint));
+				(std::begin(rk.key_fingerprint), // C++11
+				 std::end(rk.key_fingerprint)); // C++11
 			CallasDonnerhackeFinneyShawThayerRFC4880::
 				FingerprintConvert(fpr, fpr_str);
 			std::cerr << "[" << fpr_str << "]";
