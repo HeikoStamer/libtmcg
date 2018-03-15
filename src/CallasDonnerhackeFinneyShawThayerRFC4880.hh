@@ -629,6 +629,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void FingerprintCompute
 			(const tmcg_openpgp_octets_t &in,
 			 tmcg_openpgp_octets_t &out);
+		static void FingerprintConvert
+			(const tmcg_openpgp_octets_t &in,
+			 std::string &out);
 		static void FingerprintCompute
 			(const tmcg_openpgp_octets_t &in,
 			 std::string &out);

@@ -975,7 +975,25 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 	}
 	if (verbose > 1)
 		std::cerr << std::endl;
-// TODO: update allowed external revocation keys for this subkey
+	if (verbose > 1)
+		std::cerr << "INFO: subkey update revkeys with added ";
+	for (size_t i = 0; i < sig->revkeys.size(); i++)
+	{
+		tmcg_openpgp_revkey_t rk = sig->revkeys[i];
+		revkeys.push_back(rk);
+		if (verbose > 1)
+		{
+			std::string fpr_str;
+			tmcg_openpgp_octets_t fpr
+				(std::begin(rk.key_fingerprint),
+				 std::end(rk.key_fingerprint));
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintConvert(fpr, fpr_str);
+			std::cerr << "[" << fpr_str << "]";
+		}
+	}
+	if (verbose > 1)
+		std::cerr << std::endl;
 }
 
 bool TMCG_OpenPGP_Subkey::CheckValidity
@@ -1571,7 +1589,25 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 	}
 	if (verbose > 1)
 		std::cerr << std::endl;
-// TODO: update allowed external revocation keys for this key
+	if (verbose > 1)
+		std::cerr << "INFO: primary key update revkeys with added ";
+	for (size_t i = 0; i < sig->revkeys.size(); i++)
+	{
+		tmcg_openpgp_revkey_t rk = sig->revkeys[i];
+		revkeys.push_back(rk);
+		if (verbose > 1)
+		{
+			std::string fpr_str;
+			tmcg_openpgp_octets_t fpr
+				(std::begin(rk.key_fingerprint),
+				 std::end(rk.key_fingerprint));
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintConvert(fpr, fpr_str);
+			std::cerr << "[" << fpr_str << "]";
+		}
+	}
+	if (verbose > 1)
+		std::cerr << std::endl;
 }
 
 bool TMCG_OpenPGP_Pubkey::CheckValidity
@@ -1664,7 +1700,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			std::cerr << "WARNING: invalid certification revocation " <<
 				"signature found for subkey" << std::endl;
 	}
-	// check whether some self-signatures (0x1f) on subkey are valid
+	// check whether some self-signatures (0x1f) on primary key are valid
 	std::sort(selfsigs.begin(), selfsigs.end(),
 		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
@@ -2456,18 +2492,24 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 	delete [] hash;
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintConvert
+	(const tmcg_openpgp_octets_t &in, std::string &out)
+{
+	char *hex_digest = new char[(3 * in.size()) + 1];
+	memset(hex_digest, 0, (3 * in.size()) + 1);
+	for (size_t i = 0; i < (in.size() / 2); i++)
+		snprintf(hex_digest + (5 * i), 6, "%02X%02X ",
+			in[2*i], in[(2*i)+1]);
+	out = hex_digest;
+	delete [] hex_digest;
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 	(const tmcg_openpgp_octets_t &in, std::string &out)
 {
 	tmcg_openpgp_octets_t fpr;
 	FingerprintCompute(in, fpr);
-	char *hex_digest = new char[(3 * fpr.size()) + 1];
-	memset(hex_digest, 0, (3 * fpr.size()) + 1);
-	for (size_t i = 0; i < (fpr.size() / 2); i++)
-		snprintf(hex_digest + (5 * i), 6, "%02X%02X ",
-			fpr[2*i], fpr[(2*i)+1]);
-	out = hex_digest;
-	delete [] hex_digest;
+	FingerprintConvert(fpr, out);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
