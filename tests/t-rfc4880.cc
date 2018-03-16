@@ -318,14 +318,15 @@ int main
 	CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK, all, armored_pubkeyblock);
 	std::cout << armored_pubkeyblock << std::endl;
 	TMCG_OpenPGP_Pubkey *primary = NULL;
+	TMCG_OpenPGP_Keyring *ring = new TMCG_OpenPGP_Keyring();
 	std::cout << "PublicKeyBlockParse()" << std::endl;
 	bool parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse(armored_pubkeyblock, 3, primary);
 	assert(parse_ok);
 	std::cout << "CheckSelfSignatures()" << std::endl;
-	parse_ok = primary->CheckSelfSignatures(3);
+	parse_ok = primary->CheckSelfSignatures(ring, 3);
 	assert(parse_ok);
 	std::cout << "CheckSubkeys()" << std::endl;
-	parse_ok = primary->CheckSubkeys(3);
+	parse_ok = primary->CheckSubkeys(ring, 3);
 	assert(parse_ok);
 	std::string fpr, kid;
 	std::cout << "FingerprintCompute()" << std::endl;
@@ -335,6 +336,7 @@ int main
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(primary->pub_hashing, kid);
 	std::cout << kid << std::endl;
 	delete primary;
+	delete ring;
 	gcry_mpi_release(p);
 	gcry_mpi_release(q);
 	gcry_mpi_release(g);

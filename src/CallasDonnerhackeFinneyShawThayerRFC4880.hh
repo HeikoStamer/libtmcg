@@ -29,6 +29,7 @@
 	
 	// C and STL header
 	#include <vector>
+	#include <map>
 	#include <string>
 	#include <fstream>
 	#include <sstream>
@@ -367,6 +368,8 @@ class TMCG_OpenPGP_UserID
 			();
 };
 
+class TMCG_OpenPGP_Keyring; // forward declaration
+
 class TMCG_OpenPGP_Subkey
 {
 	private:
@@ -442,6 +445,7 @@ class TMCG_OpenPGP_Subkey
 			(const int verbose) const;
 		bool Check
 			(const TMCG_OpenPGP_Pubkey *primary,
+			 const TMCG_OpenPGP_Keyring *ring,
 			 const int verbose);
 		~TMCG_OpenPGP_Subkey
 			();
@@ -510,12 +514,30 @@ class TMCG_OpenPGP_Pubkey
 		bool CheckValidity
 			(const int verbose) const;
 		bool CheckSelfSignatures
-			(const int verbose);
+			(const TMCG_OpenPGP_Keyring *ring,
+			 const int verbose);
 		bool CheckSubkeys
-			(const int verbose);
+			(const TMCG_OpenPGP_Keyring *ring,
+			 const int verbose);
 		void Reduce
 			();
 		~TMCG_OpenPGP_Pubkey
+			();
+};
+
+class TMCG_OpenPGP_Keyring
+{
+	private:
+		std::map<std::string, const TMCG_OpenPGP_Pubkey*>	keys;
+
+	public:
+		TMCG_OpenPGP_Keyring
+			();
+		bool add
+			(const TMCG_OpenPGP_Pubkey *key);
+		const TMCG_OpenPGP_Pubkey* find
+			(const std::string &fingerprint) const;
+		~TMCG_OpenPGP_Keyring
 			();
 };
 
