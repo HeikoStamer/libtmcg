@@ -345,6 +345,8 @@ class TMCG_OpenPGP_Signature
 			();
 };
 
+class TMCG_OpenPGP_Pubkey; // forward declaration
+
 class TMCG_OpenPGP_UserID
 {
 	public:
@@ -359,9 +361,7 @@ class TMCG_OpenPGP_UserID
 			(const std::string &userid_in,
 			 const tmcg_openpgp_octets_t &packet_in);
 		bool Check
-			(const time_t keycreationtime,
-			 const gcry_sexp_t key,
-			 const tmcg_openpgp_octets_t &pub_hashing,
+			(const TMCG_OpenPGP_Pubkey *primary,
 			 const int verbose);
 		~TMCG_OpenPGP_UserID
 			();
@@ -441,10 +441,7 @@ class TMCG_OpenPGP_Subkey
 		bool CheckValidity
 			(const int verbose) const;
 		bool Check
-			(const time_t primarykeycreationtime,
-			 const gcry_sexp_t primarykey,
-			 const tmcg_openpgp_octets_t &pub_hashing,
-			 const tmcg_openpgp_octets_t &pub_id,
+			(const TMCG_OpenPGP_Pubkey *primary,
 			 const int verbose);
 		~TMCG_OpenPGP_Subkey
 			();
