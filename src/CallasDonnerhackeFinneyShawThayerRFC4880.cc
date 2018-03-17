@@ -2270,7 +2270,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareZero
 // ===========================================================================
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode
-	(const tmcg_openpgp_octets_t &in, std::string &out, bool linebreaks)
+	(const tmcg_openpgp_octets_t &in, std::string &out, const bool linebreaks)
 {
 	size_t len = in.size();
 	size_t i = 0, c = 1;

@@ -629,7 +629,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void Radix64Encode
 			(const tmcg_openpgp_octets_t					&in,
 			 std::string									&out,
-			 bool											linebreaks = true);
+			 const bool										linebreaks = true);
 		static void Radix64Decode
 			(std::string									in,
 			 tmcg_openpgp_octets_t							&out);
