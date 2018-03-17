@@ -2562,7 +2562,7 @@ tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 		rpos = in.find("\n\n", spos);
 		rlen = 2;
 	}
-	cpos = in.find("\r\n="); // FIXME: use regex for reliable checksum detection
+	cpos = in.find("\r\n="); // TODO: use regex for reliable checksum detection
 	if (cpos == in.npos)
 	{
 		cpos = in.find("\n=");
