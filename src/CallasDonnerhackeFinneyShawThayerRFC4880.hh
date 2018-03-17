@@ -644,7 +644,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_octets_t					&in,
 			 std::string									&out);
 		static tmcg_openpgp_armor_t ArmorDecode
-			(const std::string								&in,
+			(std::string									in,
 			 tmcg_openpgp_octets_t							&out);
 		static void FingerprintCompute
 			(const tmcg_openpgp_octets_t					&in,

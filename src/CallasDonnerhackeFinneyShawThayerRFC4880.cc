@@ -2503,25 +2503,11 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 }
 
 tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
-	(const std::string &in, tmcg_openpgp_octets_t &out)
+	(std::string in, tmcg_openpgp_octets_t &out)
 {
 	tmcg_openpgp_armor_t type = TMCG_OPENPGP_ARMOR_UNKNOWN;
-	size_t spos = 0, rpos = 0, rlen = 4, cpos = 0, clen = 3, epos = 0;
+	size_t spos = 0, epos = 0, rpos = 0, rlen = 4, cpos = 0, clen = 3;
 
-	rpos = in.find("\r\n\r\n");
-	if (rpos == in.npos)
-	{
-		rpos = in.find("\n\n");
-		rlen = 2;
-	}
-	cpos = in.find("\r\n="); // FIXME: use regex for reliable detection
-	if (cpos == in.npos)
-	{
-		cpos = in.find("\n=");
-		clen = 2;
-	}
-	if ((rpos == in.npos) || (cpos == in.npos))
-		return TMCG_OPENPGP_ARMOR_UNKNOWN; // wrong radix64 encoding
 	spos = in.find("-----BEGIN PGP MESSAGE-----");
 	epos = in.find("-----END PGP MESSAGE-----");
 	if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
@@ -2547,12 +2533,47 @@ tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	}
 	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
 		type = TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK;
-	if (!type)
-		return TMCG_OPENPGP_ARMOR_UNKNOWN; // no header/trailer found
-	if (((spos + 26) < rpos) && ((rpos + rlen) < cpos) &&
+	in.erase(std::remove(in.begin(), in.end(), ' '), in.end());
+	in.erase(std::remove(in.begin(), in.end(), '\t'), in.end());
+	switch (type)
+	{
+		case TMCG_OPENPGP_ARMOR_MESSAGE:
+			spos = in.find("-----BEGINPGPMESSAGE-----");
+			epos = in.find("-----ENDPGPMESSAGE-----");
+			break;
+		case TMCG_OPENPGP_ARMOR_SIGNATURE:
+			spos = in.find("-----BEGINPGPSIGNATURE-----");
+			epos = in.find("-----ENDPGPSIGNATURE-----");
+			break;
+		case TMCG_OPENPGP_ARMOR_PRIVATE_KEY_BLOCK:
+			spos = in.find("-----BEGINPGPPRIVATEKEYBLOCK-----");
+			epos = in.find("-----ENDPGPPRIVATEKEYBLOCK-----");
+			break;
+		case TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK:
+			spos = in.find("-----BEGINPGPPUBLICKEYBLOCK-----");
+			epos = in.find("-----ENDPGPPUBLICKEYBLOCK-----");
+			break;
+		default:
+			return TMCG_OPENPGP_ARMOR_UNKNOWN; // header and trailer not found
+	}
+	rpos = in.find("\r\n\r\n", spos);
+	if (rpos == in.npos)
+	{
+		rpos = in.find("\n\n", spos);
+		rlen = 2;
+	}
+	cpos = in.find("\r\n="); // FIXME: use regex for reliable checksum detection
+	if (cpos == in.npos)
+	{
+		cpos = in.find("\n=");
+		clen = 2;
+	}
+	if ((rpos == in.npos) || (cpos == in.npos))
+		return TMCG_OPENPGP_ARMOR_UNKNOWN; // wrong radix64 encoding
+	if (((spos + 24) < rpos) && ((rpos + rlen) < cpos) &&
 	    ((cpos + clen + 4) < epos))
 	{
-		if (in.find("-----", spos + 34) != epos)
+		if (in.find("-----", spos + 33) != epos)
 			return TMCG_OPENPGP_ARMOR_UNKNOWN; // nested armor block
 		tmcg_openpgp_octets_t decoded_data;
 		std::string chksum = "";
