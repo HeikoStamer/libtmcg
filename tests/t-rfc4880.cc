@@ -92,22 +92,27 @@ int main
 	vat.push_back(TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK);
 	for (std::vector<tmcg_openpgp_armor_t>::iterator j = vat.begin(); j != vat.end(); ++j)
 	{
-		std::string u = "Max Mustermann <max@gaos.org>", armor;
-		in.clear(), out.clear();
-		std::cout << "PackedUidEncode(\"" << u << "\", in)" << std::endl;
-		CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, in);
-		std::cout << "ArmorEncode(" << *j << ", in, armor)" << std::endl;
-		CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(*j, in, armor);
-		std::cout << armor << std::endl;
-
-		std::cout << "ArmorDecode(armor, out) = ";
-		at = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(armor, out);
-		std::cout << (int)at << std::endl;
-		assert(at == *j);
-		assert(in.size() == out.size());
-		for (size_t i = 0; i < in.size(); i++)
+		std::string u = "Max Mustermann <max@gaos.org>";
+		for (size_t k = 0; k < 256; k++)
 		{
-			assert(in[i] == out[i]);
+			std::string armor;
+			in.clear(), out.clear();
+			std::cout << "PackedUidEncode(\"" << u << "\", in)" << std::endl;
+			CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(u, in);
+			std::cout << "ArmorEncode(" << *j << ", in, armor)" << std::endl;
+			CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode(*j, in, armor);
+			std::cout << armor << std::endl;
+			std::cout << "ArmorDecode(armor, out) = ";
+			at = CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode(armor, out);
+			std::cout << (int)at << std::endl;
+			assert(at == *j);
+			assert(in.size() == out.size());
+			for (size_t i = 0; i < in.size(); i++)
+			{
+				assert(in[i] == out[i]);
+			}
+			size_t cpos = armor.find("\r\n=");
+			u += armor[cpos+3]; // append a single character
 		}
 	}
 
