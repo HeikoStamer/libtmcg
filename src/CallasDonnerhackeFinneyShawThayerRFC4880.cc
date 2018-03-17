@@ -39,16 +39,16 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_byte_t version_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
-	 const time_t keyexpirationtime_in,
+	 const time_t keyexptime_in,
 	 const gcry_mpi_t md,
 	 const tmcg_openpgp_octets_t &packet_in,
 	 const tmcg_openpgp_octets_t &hspd_in,
 	 const tmcg_openpgp_octets_t &issuer_in,
 	 const tmcg_openpgp_octets_t &keyflags_in,
 	 const tmcg_openpgp_octets_t &keyfeatures_in,
-	 const tmcg_openpgp_octets_t &keypreferences_psa_in,
-	 const tmcg_openpgp_octets_t &keypreferences_pha_in,
-	 const tmcg_openpgp_octets_t &keypreferences_pca_in):
+	 const tmcg_openpgp_octets_t &keyprefs_psa_in,
+	 const tmcg_openpgp_octets_t &keyprefs_pha_in,
+	 const tmcg_openpgp_octets_t &keyprefs_pca_in):
 		ret(1),
 		erroff(0),
 		valid(false),
@@ -61,7 +61,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		version(version_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
-		keyexpirationtime(keyexpirationtime_in)
+		keyexpirationtime(keyexptime_in)
 {
 	rsa_md = gcry_mpi_new(2048);
 	dsa_r = gcry_mpi_new(2048);
@@ -77,14 +77,14 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		issuer_in.begin(), issuer_in.end());
 	keyflags.insert(keyflags.end(),
 		keyflags_in.begin(), keyflags_in.end());
-	keyfeatures.insert(keyfeatures.end(),
+	keyfeatures.insert(keyfeatures.end(), 
 		keyfeatures_in.begin(), keyfeatures_in.end());
-	keypreferences_psa.insert(keypreferences_psa.end(),
-		keypreferences_psa_in.begin(), keypreferences_psa_in.end());
-	keypreferences_pha.insert(keypreferences_pha.end(),
-		keypreferences_pha_in.begin(), keypreferences_pha_in.end());
-	keypreferences_pca.insert(keypreferences_pca.end(),
-		keypreferences_pca_in.begin(), keypreferences_pca_in.end());
+	keyprefs_psa.insert(keyprefs_psa.end(),
+		keyprefs_psa_in.begin(), keyprefs_psa_in.end());
+	keyprefs_pha.insert(keyprefs_pha.end(),
+		keyprefs_pha_in.begin(), keyprefs_pha_in.end());
+	keyprefs_pca.insert(keyprefs_pca.end(),
+		keyprefs_pca_in.begin(), keyprefs_pca_in.end());
 }
 
 TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
@@ -96,7 +96,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_byte_t version_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
-	 const time_t keyexpirationtime_in,
+	 const time_t keyexptime_in,
 	 const gcry_mpi_t r,
 	 const gcry_mpi_t s,
 	 const tmcg_openpgp_octets_t &packet_in,
@@ -104,9 +104,9 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &issuer_in,
 	 const tmcg_openpgp_octets_t &keyflags_in,
 	 const tmcg_openpgp_octets_t &keyfeatures_in,
-	 const tmcg_openpgp_octets_t &keypreferences_psa_in,
-	 const tmcg_openpgp_octets_t &keypreferences_pha_in,
-	 const tmcg_openpgp_octets_t &keypreferences_pca_in):
+	 const tmcg_openpgp_octets_t &keyprefs_psa_in,
+	 const tmcg_openpgp_octets_t &keyprefs_pha_in,
+	 const tmcg_openpgp_octets_t &keyprefs_pca_in):
 		ret(1),
 		erroff(0),
 		valid(false),
@@ -119,7 +119,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		version(version_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
-		keyexpirationtime(keyexpirationtime_in)
+		keyexpirationtime(keyexptime_in)
 {
 	rsa_md = gcry_mpi_new(2048);
 	dsa_r = gcry_mpi_new(2048);
@@ -138,12 +138,12 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		keyflags_in.begin(), keyflags_in.end());
 	keyfeatures.insert(keyfeatures.end(),
 		keyfeatures_in.begin(), keyfeatures_in.end());
-	keypreferences_psa.insert(keypreferences_psa.end(),
-		keypreferences_psa_in.begin(), keypreferences_psa_in.end());
-	keypreferences_pha.insert(keypreferences_pha.end(),
-		keypreferences_pha_in.begin(), keypreferences_pha_in.end());
-	keypreferences_pca.insert(keypreferences_pca.end(),
-		keypreferences_pca_in.begin(), keypreferences_pca_in.end());
+	keyprefs_psa.insert(keyprefs_psa.end(),
+		keyprefs_psa_in.begin(), keyprefs_psa_in.end());
+	keyprefs_pha.insert(keyprefs_pha.end(),
+		keyprefs_pha_in.begin(), keyprefs_pha_in.end());
+	keyprefs_pca.insert(keyprefs_pca.end(),
+		keyprefs_pca_in.begin(), keyprefs_pca_in.end());
 }
 
 bool TMCG_OpenPGP_Signature::good
@@ -186,8 +186,7 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 	if (expirationtime && (current > vmax))
 	{
 		if (verbose)
-			std::cerr << "WARNING: signature has " <<
-				"been expired" << std::endl;
+			std::cerr << "WARNING: signature has been expired" << std::endl;
 		return false;
 	}
 	if (creationtime < keycreationtime)
@@ -210,8 +209,7 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 	{
 		if (verbose)
 			std::cerr << "WARNING: insecure hash algorithm " << 
-				(int)hashalgo << " used for signature" <<
-				std::endl;
+				(int)hashalgo << " used for signature" << std::endl;
 		// return false;
 	}
 	return true;
@@ -242,8 +240,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature material" <<
-				std::endl;
+			std::cerr << "ERROR: bad signature material" <<	std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -336,8 +333,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature material" <<
-				std::endl;
+			std::cerr << "ERROR: bad signature material" <<	std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -416,8 +412,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature material" <<
-				std::endl;
+			std::cerr << "ERROR: bad signature material" <<	std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -498,8 +493,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature material" <<
-				std::endl;
+			std::cerr << "ERROR: bad signature material" <<	std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -590,9 +584,9 @@ TMCG_OpenPGP_Signature::~TMCG_OpenPGP_Signature
 	issuer.clear();
 	keyflags.clear();
 	keyfeatures.clear();
-	keypreferences_psa.clear();
-	keypreferences_pha.clear();
-	keypreferences_pca.clear();
+	keyprefs_psa.clear();
+	keyprefs_pha.clear();
+	keyprefs_pca.clear();
 	revkeys.clear();
 }
 
@@ -640,8 +634,7 @@ bool TMCG_OpenPGP_UserID::Check
 			}
 		}
 		else if (verbose)
-			std::cerr << "ERROR: signature verification failed" <<
-				std::endl;
+			std::cerr << "ERROR: signature verification failed" << std::endl;
 	}
 	bool one_valid_selfsig = false;
 	std::sort(selfsigs.begin(), selfsigs.end(),
@@ -662,8 +655,7 @@ bool TMCG_OpenPGP_UserID::Check
 			one_valid_selfsig = true;
 		}
 		else if (verbose)
-			std::cerr << "ERROR: signature verification failed" <<
-				std::endl;
+			std::cerr << "ERROR: signature verification failed" << std::endl;
 	}
 	// update validity state of this user ID and return the result
 	if (one_valid_selfsig)
@@ -947,33 +939,33 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 	if (verbose > 1)
 		std::cerr << "INFO: subkey update psa to ";
 	psa.clear();
-	for (size_t i = 0; i < sig->keypreferences_psa.size(); i++)
+	for (size_t i = 0; i < sig->keyprefs_psa.size(); i++)
 	{
-		psa.push_back(sig->keypreferences_psa[i]);
+		psa.push_back(sig->keyprefs_psa[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keypreferences_psa[i] << " ";
+			std::cerr << (int)sig->keyprefs_psa[i] << " ";
 	}
 	if (verbose > 1)
 		std::cerr << std::endl;
 	if (verbose > 1)
 		std::cerr << "INFO: subkey update pha to ";
 	pha.clear();
-	for (size_t i = 0; i < sig->keypreferences_pha.size(); i++)
+	for (size_t i = 0; i < sig->keyprefs_pha.size(); i++)
 	{
-		pha.push_back(sig->keypreferences_pha[i]);
+		pha.push_back(sig->keyprefs_pha[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keypreferences_pha[i] << " ";
+			std::cerr << (int)sig->keyprefs_pha[i] << " ";
 	}
 	if (verbose > 1)
 		std::cerr << std::endl;
 	if (verbose > 1)
 		std::cerr << "INFO: subkey update pca to ";
 	pca.clear();
-	for (size_t i = 0; i < sig->keypreferences_pca.size(); i++)
+	for (size_t i = 0; i < sig->keyprefs_pca.size(); i++)
 	{
-		pca.push_back(sig->keypreferences_pca[i]);
+		pca.push_back(sig->keyprefs_pca[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keypreferences_pca[i] << " ";
+			std::cerr << (int)sig->keyprefs_pca[i] << " ";
 	}
 	if (verbose > 1)
 		std::cerr << std::endl;
@@ -1596,33 +1588,33 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 	if (verbose > 1)
 		std::cerr << "INFO: primary key update psa to ";
 	psa.clear();
-	for (size_t i = 0; i < sig->keypreferences_psa.size(); i++)
+	for (size_t i = 0; i < sig->keyprefs_psa.size(); i++)
 	{
-		psa.push_back(sig->keypreferences_psa[i]);
+		psa.push_back(sig->keyprefs_psa[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keypreferences_psa[i] << " ";
+			std::cerr << (int)sig->keyprefs_psa[i] << " ";
 	}
 	if (verbose > 1)
 		std::cerr << std::endl;
 	if (verbose > 1)
 		std::cerr << "INFO: primary key update pha to ";
 	pha.clear();
-	for (size_t i = 0; i < sig->keypreferences_pha.size(); i++)
+	for (size_t i = 0; i < sig->keyprefs_pha.size(); i++)
 	{
-		pha.push_back(sig->keypreferences_pha[i]);
+		pha.push_back(sig->keyprefs_pha[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keypreferences_pha[i] << " ";
+			std::cerr << (int)sig->keyprefs_pha[i] << " ";
 	}
 	if (verbose > 1)
 		std::cerr << std::endl;
 	if (verbose > 1)
 		std::cerr << "INFO: primary key update pca to ";
 	pca.clear();
-	for (size_t i = 0; i < sig->keypreferences_pca.size(); i++)
+	for (size_t i = 0; i < sig->keyprefs_pca.size(); i++)
 	{
-		pca.push_back(sig->keypreferences_pca[i]);
+		pca.push_back(sig->keyprefs_pca[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keypreferences_pca[i] << " ";
+			std::cerr << (int)sig->keyprefs_pca[i] << " ";
 	}
 	if (verbose > 1)
 		std::cerr << std::endl;
@@ -3209,7 +3201,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
-	(const tmcg_openpgp_byte_t type, bool critical,
+	(const tmcg_openpgp_byte_t type, const bool critical,
 	 const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &out)
 {
 	// A subpacket data set consists of zero or more Signature subpackets.
