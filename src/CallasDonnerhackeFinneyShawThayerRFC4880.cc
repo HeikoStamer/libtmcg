@@ -1083,7 +1083,8 @@ bool TMCG_OpenPGP_Subkey::Check
 		{
 			std::string fpr_str;
 			CallasDonnerhackeFinneyShawThayerRFC4880::
-				FingerprintConvert(certrevsigs[j]->issuer, fpr_str);
+				FingerprintConvert(certrevsigs[j]->issuer,
+				                   fpr_str);
 			const TMCG_OpenPGP_Pubkey *revkey = ring->find(fpr_str);
 			if (revkey != NULL)
 			{
@@ -1256,7 +1257,8 @@ bool TMCG_OpenPGP_Subkey::Check
 		{
 			std::string fpr_str;
 			CallasDonnerhackeFinneyShawThayerRFC4880::
-				FingerprintConvert(keyrevsigs[j]->issuer, fpr_str);
+				FingerprintConvert(keyrevsigs[j]->issuer,
+				                   fpr_str);
 			const TMCG_OpenPGP_Pubkey *revkey = ring->find(fpr_str);
 			if (revkey != NULL)
 			{
@@ -1315,13 +1317,15 @@ bool TMCG_OpenPGP_Subkey::Check
 			else
 			{
 				if (verbose)
-					std::cerr << "WARNING: pbinding signature verification " <<
+					std::cerr << "WARNING: pbinding " <<
+						"signature verification " <<
 						"failed" << std::endl;
 			}
 		}
 		else if (verbose)
-			std::cerr << "WARNING: unknown pbinding signature of type " <<
-				"0x" << std::hex << (int)pbindsigs[j]->type << std::dec <<
+			std::cerr << "WARNING: unknown pbinding signature " <<
+				"of type 0x" << std::hex <<
+				(int)pbindsigs[j]->type << std::dec <<
 				std::endl;
 	}
 	bool signing_subkey = false;
