@@ -7470,6 +7470,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 					"at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore packet
+// FIXME: must return false, because pkts is not updated
 		}
 		else if (ptag == 0xFA)
 		{
@@ -7787,6 +7788,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 					"at key #" << knum << " and packet #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore packet
+// FIXME: must return false, because pkts is not updated
 		}
 		else if (ptag == 0xFA)
 		{
