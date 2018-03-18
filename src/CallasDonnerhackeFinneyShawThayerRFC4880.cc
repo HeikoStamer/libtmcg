@@ -7404,8 +7404,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag17
 	if (!primary)
 	{
 		if (verbose)
-			std::cerr << "ERROR: no usable primary key found" <<
-				std::endl;
+			std::cerr << "ERROR: no usable primary key found" << std::endl;
 		return false;
 	}
 	if (verbose)
@@ -7431,8 +7430,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	{
 		if (verbose)
 			std::cerr << "ERROR: wrong type of ASCII Armor " <<
-				"found (type = " << (int)atype << ")" <<
-				std::endl;
+				"found (type = " << (int)atype << ")" << std::endl;
 		return false;
 	}
 	// parse the public key block packet by packet
@@ -7452,10 +7450,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			ptag = PacketDecode(embedded_pkt, verbose,
 				ctx, current_packet);
 			if (verbose > 2)
-				std::cerr << "INFO: [EMBEDDED] " <<
-					"PacketDecode() = " << (int)ptag << 
-					" version = " << (int)ctx.version <<
-					std::endl;
+				std::cerr << "INFO: [EMBEDDED] PacketDecode() = " <<
+					(int)ptag << " version = " << (int)ctx.version << std::endl;
 			embedded_pkt.clear();
 		}
 		else
@@ -7465,45 +7461,36 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			++pnum;
 			if (verbose > 2)
 				std::cerr << "INFO: PacketDecode() = " <<
-					(int)ptag << " version = " <<
-					(int)ctx.version << std::endl;
+					(int)ptag << " version = " << (int)ctx.version << std::endl;
 		}
 		if (ptag == 0x00)
 		{
 			if (verbose)
-				std::cerr << "ERROR: parsing OpenPGP " <<
-					"packets failed at #" << pnum <<
-					std::endl;
+				std::cerr << "WARNING: decoding OpenPGP packets failed " <<
+					"at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
-			if (sub)
-				delete sub;
-			if (uid)
-				delete uid;
-			return false;
+			continue; // ignore packet
 		}
 		else if (ptag == 0xFA)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized " <<
-					"critical OpenPGP subpacket " <<
-					"found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized critical OpenPGP " <<
+					"subpacket found at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore signature with critical subpacket
 		}
 		else if (ptag == 0xFB)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized " <<
-					"OpenPGP subpacket found at #" << 
-					pnum << std::endl;
+				std::cerr << "WARNING: unrecognized OpenPGP subpacket " <<
+					"found at #" << pnum << std::endl;
 			ptag = 0x02; // process signature
 		}
 		else if (ptag == 0xFC)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized " <<
-					"OpenPGP signature packet found " <<
-					"at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized OpenPGP signature " <<
+					"packet found at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
@@ -7512,11 +7499,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			if (primary)
 			{
 				if (verbose)
-					std::cerr << "WARNING: unrecognized" <<
-						" OpenPGP key packet found " <<
-						"at #" << pnum << std::endl;
+					std::cerr << "WARNING: unrecognized OpenPGP key packet " <<
+						"found at #" << pnum << std::endl;
 				if (!badkey && subkey)
+				{
 					pub->subkeys.push_back(sub);
+					sub = NULL;
+				}
 				badkey = true;
 				PacketContextRelease(ctx);
 				continue; // ignore packet
@@ -7524,10 +7513,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			else
 			{
 				if (verbose)
-					std::cerr << "ERROR: public-key " <<
-						"algorithm " <<
-						(int)ctx.pkalgo << 
-						" not supported" << std::endl;
+					std::cerr << "ERROR: public-key algorithm " <<
+						(int)ctx.pkalgo << " not supported" << std::endl;
 				PacketContextRelease(ctx);
 				return false;
 			}
@@ -7535,45 +7522,38 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		else if (ptag == 0xFE)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized " <<
-					"OpenPGP packet found at #" << pnum <<
-					std::endl;
+				std::cerr << "WARNING: unrecognized OpenPGP packet " <<
+					"found at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
 		switch (ptag)
 		{
 			case 2: // Signature Packet
-				ret = PublicKeyBlockParse_Tag2(ctx,
-					verbose, primary, subkey, badkey,
-					uid_flag, uat_flag, current_packet, 
-					embedded_pkt, pub, sub, uid);
+				ret = PublicKeyBlockParse_Tag2(ctx, verbose, primary,
+					subkey, badkey, uid_flag, uat_flag,
+					current_packet, embedded_pkt, pub, sub, uid);
 				break;
 			case 6: // Public-Key Packet
-				ret = PublicKeyBlockParse_Tag6(ctx,
-					verbose, current_packet,
-					primary, pub);
+				ret = PublicKeyBlockParse_Tag6(ctx, verbose,
+					current_packet, primary, pub);
 				break;
 			case 13: // User ID Packet
-				ret = PublicKeyBlockParse_Tag13(ctx,
-					verbose, primary, current_packet,
-					uid_flag, uat_flag, pub, uid);
+				ret = PublicKeyBlockParse_Tag13(ctx, verbose, primary,
+					current_packet, uid_flag, uat_flag, pub, uid);
 				break;
 			case 14: // Public-Subkey Packet
-				ret = PublicKeyBlockParse_Tag14(ctx,
-					verbose, primary, current_packet,
-					subkey, badkey, pub, sub);
+				ret = PublicKeyBlockParse_Tag14(ctx, verbose, primary,
+					current_packet, subkey, badkey, pub, sub);
 				break;
 			case 17: // User Attribute Packet
-				ret = PublicKeyBlockParse_Tag17(ctx,
-					verbose, primary, current_packet,
-					uid_flag, uat_flag, pub, uid);
+				ret = PublicKeyBlockParse_Tag17(ctx, verbose, primary,
+					current_packet, uid_flag, uat_flag, pub, uid);
 				break;
 			default:
 				if (verbose > 1)
-					std::cerr << "INFO: OpenPGP packet" <<
-						" of tag " << (int)ptag <<
-						" ignored" << std::endl;
+					std::cerr << "INFO: OpenPGP packet of tag " <<
+						(int)ptag << " ignored" << std::endl;
 				break;
 		}
 		// cleanup allocated buffers and mpi's
@@ -7590,8 +7570,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	if (!primary)
 	{
 		if (verbose)
-			std::cerr << "ERROR: no usable primary key found" <<
-				std::endl;
+			std::cerr << "ERROR: no usable primary key found" << std::endl;
 		if (sub)
 			delete sub;
 		if (uid)
@@ -7616,8 +7595,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	{
 		if (verbose)
 			std::cerr << "ERROR: wrong type of ASCII Armor " <<
-				"found (type = " << (int)atype << ")" <<
-				std::endl;
+				"found (type = " << (int)atype << ")" << std::endl;
 		return false;
 	}
 
@@ -7632,16 +7610,15 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	if (ptag == 0x00)
 	{
 		if (verbose)
-			std::cerr << "ERROR: parsing OpenPGP packets " <<
-				"failed" << std::endl;
+			std::cerr << "ERROR: decoding OpenPGP packet failed" << std::endl;
 		PacketContextRelease(ctx);
 		return false;
 	}
 	else if (ptag == 0xFA)
 	{
 		if (verbose)
-			std::cerr << "ERROR: unrecognized critical " <<
-				"OpenPGP subpacket found" << std::endl;
+			std::cerr << "ERROR: unrecognized critical OpenPGP " <<
+				"signature subpacket found" << std::endl;
 		PacketContextRelease(ctx);
 		return false;
 	}
@@ -7649,8 +7626,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	{
 		if (verbose)
 			std::cerr << "WARNING: unrecognized OpenPGP " <<
-				"subpacket found" << std::endl;
-		ptag = 0x02; // process signature
+				"signature subpacket found" << std::endl;
+		ptag = 0x02; // process signature anyway
 	}
 	else if (ptag == 0xFC)
 	{
@@ -7701,20 +7678,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 				unsigned int mdbits = 0;
 				mdbits = gcry_mpi_get_nbits(ctx.md);
 				if (verbose > 2)
-					std::cerr << "INFO: " << 
-						"mdbits = " <<
-						mdbits << std::endl;
+					std::cerr << "INFO: mdbits = " << mdbits << std::endl;
 				// create a new signature object
-				sig = new TMCG_OpenPGP_Signature(
-					ctx.revocable,
-					ctx.exportablecertification,
-					ctx.pkalgo, ctx.hashalgo,
-					ctx.type, ctx.version,
-					ctx.sigcreationtime,
-					ctx.sigexpirationtime,
-					0, ctx.md, current_packet,
-					hspd, issuer, keyflags,
-					features, psa, pha, pca);
+				sig = new TMCG_OpenPGP_Signature(ctx.revocable,
+					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
+					ctx.type, ctx.version, ctx.sigcreationtime,
+					ctx.sigexpirationtime, 0, ctx.md, current_packet,
+					hspd, issuer, keyflags, features, psa, pha, pca);
 			}
 			else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 			{
@@ -7722,28 +7692,20 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 				rbits = gcry_mpi_get_nbits(ctx.r);
 				sbits = gcry_mpi_get_nbits(ctx.s);
 				if (verbose > 2)
-					std::cerr << "INFO: rbits = " << 
-						rbits << " sbits = " <<
-						sbits << std::endl;
+					std::cerr << "INFO: rbits = " << rbits <<
+						" sbits = " << sbits << std::endl;
 				// create a new signature object
-				sig = new TMCG_OpenPGP_Signature(
-					ctx.revocable,
-					ctx.exportablecertification,
-					ctx.pkalgo, ctx.hashalgo,
-					ctx.type, ctx.version,
-					ctx.sigcreationtime,
-					ctx.sigexpirationtime,
-					0, ctx.r, ctx.s, current_packet,
-					hspd, issuer, keyflags,
-					features, psa, pha, pca);
+				sig = new TMCG_OpenPGP_Signature(ctx.revocable,
+					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
+					ctx.type, ctx.version, ctx.sigcreationtime,
+					ctx.sigexpirationtime, 0, ctx.r, ctx.s, current_packet,
+					hspd, issuer, keyflags,	features, psa, pha, pca);
 			}
 			else
 			{
 				if (verbose)
-					std::cerr << "ERROR: public-key " <<
-						"signature algorithm " <<
-						(int)ctx.pkalgo << " not " <<
-						"supported" << std::endl;
+					std::cerr << "ERROR: public-key signature algorithm " <<
+						(int)ctx.pkalgo << " not supported" << std::endl;
 				PacketContextRelease(ctx);
 				return false;
 				break;
@@ -7751,8 +7713,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 			if (!sig->good())
 			{
 				if (verbose)
-					std::cerr << "ERROR: parsing " << 
-						"signature material failed" <<
+					std::cerr << "ERROR: parsing signature material failed" <<
 						std::endl;
 				PacketContextRelease(ctx);
 				delete sig;
@@ -7761,13 +7722,200 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 			break;
 		default:
 			if (verbose)
-				std::cerr << "ERROR: wrong OpenPGP packet " <<
-					"of tag " << (int)ptag << std::endl;
+				std::cerr << "ERROR: wrong OpenPGP packet of tag " << 
+					(int)ptag << std::endl;
 			PacketContextRelease(ctx);
 			return false;
 			break;
 	}
 	// cleanup allocated buffers and mpi's
 	PacketContextRelease(ctx);
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
+	(const std::string &in, const int verbose,
+	 TMCG_OpenPGP_Keyring* &ring)
+{
+	// decode ASCII Armor
+	tmcg_openpgp_octets_t pkts;
+	tmcg_openpgp_armor_t atype = ArmorDecode(in, pkts);
+	if (atype != TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK)
+	{
+		if (verbose)
+			std::cerr << "ERROR: wrong type of ASCII Armor " <<
+				"found (type = " << (int)atype << ")" <<
+				std::endl;
+		return false;
+	}
+	// parse the public key ring packet by packet
+	ring = new TMCG_OpenPGP_Keyring();
+	bool primary = false, subkey = false, badkey = false;
+	bool uid_flag = false, uat_flag = false, ret = true;
+	TMCG_OpenPGP_Pubkey *pub = NULL;
+	TMCG_OpenPGP_Subkey *sub = NULL;
+	TMCG_OpenPGP_UserID *uid = NULL;
+	tmcg_openpgp_byte_t ptag = 0xFF;
+	size_t knum = 0, pnum = 0;
+	tmcg_openpgp_octets_t embedded_pkt;
+	while (pkts.size() || embedded_pkt.size())
+	{
+		tmcg_openpgp_packet_ctx_t ctx;
+		tmcg_openpgp_octets_t current_packet;
+		if (embedded_pkt.size())
+		{
+			ptag = PacketDecode(embedded_pkt, verbose,
+				ctx, current_packet);
+			if (verbose > 2)
+				std::cerr << "INFO: [EMBEDDED] PacketDecode() = " <<
+					(int)ptag << " version = " << (int)ctx.version << std::endl;
+			embedded_pkt.clear();
+		}
+		else
+		{
+			ptag = PacketDecode(pkts, verbose,
+				ctx, current_packet);
+			++pnum;
+			if (verbose > 2)
+				std::cerr << "INFO: PacketDecode() = " <<
+					(int)ptag << " version = " << (int)ctx.version << std::endl;
+		}
+		if (ptag == 0x00)
+		{
+			if (verbose)
+				std::cerr << "WARNING: decoding OpenPGP packets failed " <<
+					"at key #" << knum << " and packet #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		else if (ptag == 0xFA)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized critical subpacket " <<
+					"at key #" << knum << " and packet #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			continue; // ignore signature with critical subpacket
+		}
+		else if (ptag == 0xFB)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized subpacket found " <<
+					"at key #" << knum << " and packet #" << pnum << std::endl;
+			ptag = 0x02; // process signature anyway
+		}
+		else if (ptag == 0xFC)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized signature packet found " <<
+					"at key #" << knum << " and packet #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		else if (ptag == 0xFD)
+		{
+			if (primary)
+			{
+				if (verbose)
+					std::cerr << "WARNING: unrecognized key packet found " <<
+						"at key #" << knum << " and packet #" << pnum <<
+						std::endl;
+				if (!badkey && subkey)
+				{
+					pub->subkeys.push_back(sub);
+					sub = NULL;
+				}
+				badkey = true;
+				PacketContextRelease(ctx);
+				continue; // ignore packet
+			}
+			else
+			{
+				if (verbose)
+					std::cerr << "ERROR: public-key algorithm " <<
+						(int)ctx.pkalgo << " not supported" << std::endl;
+				PacketContextRelease(ctx);
+				continue; // ignore whole key
+			}
+		}
+		else if (ptag == 0xFE)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized OpenPGP packet found " <<
+					"at key #" << knum << " and packet #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		switch (ptag)
+		{
+			case 2: // Signature Packet
+				ret = PublicKeyBlockParse_Tag2(ctx, verbose, primary,
+					subkey, badkey, uid_flag, uat_flag,
+					current_packet, embedded_pkt, pub, sub, uid);
+				break;
+			case 6: // Public-Key Packet
+				if (primary)
+				{
+					if (uid_flag)
+						pub->userids.push_back(uid);
+					if (!badkey && subkey)
+						pub->subkeys.push_back(sub);
+					ring->add(pub); // add key to ring
+					pub = NULL, sub = NULL, uid = NULL;
+					primary = false, subkey = false, badkey = false;
+					uid_flag = false, uat_flag = false;
+				}
+				++knum;
+				ret = PublicKeyBlockParse_Tag6(ctx, verbose,
+					current_packet, primary, pub);
+				break;
+			case 13: // User ID Packet
+				ret = PublicKeyBlockParse_Tag13(ctx, verbose, primary,
+					current_packet, uid_flag, uat_flag, pub, uid);
+				break;
+			case 14: // Public-Subkey Packet
+				ret = PublicKeyBlockParse_Tag14(ctx, verbose, primary,
+					current_packet, subkey, badkey, pub, sub);
+				break;
+			case 17: // User Attribute Packet
+				ret = PublicKeyBlockParse_Tag17(ctx, verbose, primary,
+					current_packet, uid_flag, uat_flag, pub, uid);
+				break;
+			default:
+				if (verbose > 1)
+					std::cerr << "INFO: OpenPGP packet of tag " << (int)ptag <<
+						" ignored" << std::endl;
+				break;
+		}
+		// cleanup allocated buffers and mpi's
+		PacketContextRelease(ctx);
+		if (!ret)
+		{
+			if (pub)
+				delete pub;
+			if (sub)
+				delete sub;
+			if (uid)
+				delete uid;
+			delete ring;
+			return false;
+		}
+	}
+	if (primary)
+	{
+		if (uid_flag)
+			pub->userids.push_back(uid);
+		if (!badkey && subkey)
+			pub->subkeys.push_back(sub);
+		ring->add(pub); // add key to ring
+		pub = NULL, sub = NULL, uid = NULL;
+	}
+	else
+	{
+		if (sub)
+			delete sub;
+		if (uid)
+			delete uid;
+	}
+	
 	return true;
 }

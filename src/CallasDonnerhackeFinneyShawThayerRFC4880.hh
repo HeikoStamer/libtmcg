@@ -1039,6 +1039,10 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const std::string								&in,
 			 const int										verbose,
 			 TMCG_OpenPGP_Signature*						&sig);
+		static bool PublicKeyringParse
+			(const std::string								&in,
+			 const int										verbose,
+			 TMCG_OpenPGP_Keyring*							&ring);
 };
 
 #endif
