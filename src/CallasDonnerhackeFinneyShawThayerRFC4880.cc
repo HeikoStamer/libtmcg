@@ -4768,12 +4768,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 		tmcg_openpgp_byte_t sptype = SubpacketDecode(in, verbose, out);
 		if (sptype == 0)
 		{
-			if (verbose > 2)
+			if (verbose)
 			{
-				std::cerr << "INFO: incorrect ";
+				std::cerr << "ERROR: incorrect ";
 				if (out.critical)
 					std::cerr << "critical ";
-				std::cerr << "subpacket" << std::endl;
+				std::cerr << "subpacket found" << std::endl;
 			}
 			return 0x00; // error: incorrect subpacket
 		}
@@ -4789,7 +4789,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 				std::cerr << "INFO: unrecognized ";
 				if (out.critical)
 					std::cerr << "critical ";
-				std::cerr << "subpacket" << std::endl;
+				std::cerr << "subpacket found" << std::endl;
 			}
 		}
 		else if (verbose > 2)
@@ -4840,8 +4840,6 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	// Revocable: If this packet is not present, the signature is
 	// revocable.
 	out.revocable = true;
-	if (in.size() < 2)
-		return 0; // error: incorrect packet header
 	// The first octet of the packet header is called the "Packet
 	// Tag". It determines the format of the header and denotes the
 	// packet contents. The remainder of the packet header is the
@@ -4853,9 +4851,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	//      +---------------+
 	// Bit 7 -- Always one
 	// Bit 6 -- New packet format if set
+	if (in.size() < 1)
+		return 0; // error: no first octet of packet header
 	tmcg_openpgp_byte_t tag = in[0];
 	tmcg_openpgp_byte_t lentype = 0x00;
 	current_packet.push_back(tag); // store packet header
+	in.erase(in.begin(), in.begin()+1); // remove first octet
 	if ((tag & 0x80) != 0x80)
 		return 0; // error: Bit 7 of first octet not set
 	if ((tag & 0x40) == 0x40)
@@ -4869,7 +4870,6 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		lentype = tag & 0x03; // Bits 1-0 -- length-type
 		tag = (tag >> 2) & 0x1F; // Bits 5-2 -- packet tag
 	}
-	in.erase(in.begin(), in.begin()+1); // remove first octet
 	// Each Partial Body Length header is followed by a portion of the
 	// packet body data. The Partial Body Length header specifies this
 	// portion's length. Another length header (one octet, two-octet,
@@ -7466,11 +7466,14 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		if (ptag == 0x00)
 		{
 			if (verbose)
-				std::cerr << "WARNING: decoding OpenPGP packets failed " <<
+				std::cerr << "ERROR: decoding OpenPGP packets failed " <<
 					"at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
-			continue; // ignore packet
-// FIXME: must return false, because pkts is not updated
+			if (sub)
+				delete sub;
+			if (uid)
+				delete uid;
+			return false;
 		}
 		else if (ptag == 0xFA)
 		{
@@ -7788,7 +7791,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 					"at key #" << knum << " and packet #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore packet
-// FIXME: must return false, because pkts is not updated
 		}
 		else if (ptag == 0xFA)
 		{
