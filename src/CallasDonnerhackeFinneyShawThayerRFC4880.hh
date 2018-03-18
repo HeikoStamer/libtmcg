@@ -444,6 +444,10 @@ class TMCG_OpenPGP_Subkey
 			 const int										verbose);
 		bool CheckValidity
 			(const int										verbose) const;
+		bool CheckExternalRevocation
+			(TMCG_OpenPGP_Signature*						sig,
+			 const TMCG_OpenPGP_Keyring*					ring,
+			 const int										verbose);
 		bool Check
 			(const TMCG_OpenPGP_Pubkey*						primary,
 			 const TMCG_OpenPGP_Keyring*					ring,
@@ -514,6 +518,10 @@ class TMCG_OpenPGP_Pubkey
 			 const int										verbose);
 		bool CheckValidity
 			(const int										verbose) const;
+		bool CheckExternalRevocation
+			(TMCG_OpenPGP_Signature*						sig,
+			 const TMCG_OpenPGP_Keyring*					ring,
+			 const int										verbose);
 		bool CheckSelfSignatures
 			(const TMCG_OpenPGP_Keyring*					ring,
 			 const int										verbose);
@@ -538,6 +546,8 @@ class TMCG_OpenPGP_Keyring
 			(const TMCG_OpenPGP_Pubkey*						key);
 		const TMCG_OpenPGP_Pubkey* find
 			(const std::string								&fingerprint) const;
+		size_t size
+			() const;
 		~TMCG_OpenPGP_Keyring
 			();
 };
