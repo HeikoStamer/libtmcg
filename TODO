@@ -7,12 +7,12 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
-! add a constant-time function for modular multiplication mpz_smulm()
 
 * add a generic group abstraction layer, e.g. for future use of ECC groups
+* add a constant-time function for modular multiplication mpz_smulm()
 * add generic broadcast channel abstraction layer, e.g. AbstractBroadcastChannel
 * use secure memory allocation and erasing from libgcrypt, if requested by app
-* RFC4880: implement recognition of external revocation keys
+* RBC: stabilize behaviour of deliver() by asynchronous IO of C++14/17 
 
 + provide interactive and distributed (multiparty DZKP) versions for
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
@@ -22,14 +22,12 @@ in the sources of this package and additionally can be obtained from Internet
 + DZKP also called "Simultaneous Zero-Knowledge Proofs of Knowledge" [JL00]
 + DKG, ASTC: transform protocols into variants without aiou->Send() [BH92]
 + move to event-driven architecture and state-based protocol representation
-+ improve oracle function g() by including a second hash function (SHA3) or
-  using additional constructions [LN09]
 + provide a byzantine consensus protocol for agreement on values
 + implement asynchronous VSS [CKLS02] for DKG and other applications
 
 - deterministic DSA for ASTC/DSS: cf. RFC 6979; maybe it's impossible for TC
 - implement the exotic card and stack operations of the toolbox; there are
   some obstacles, e.g. that the prover does not know all used randomizers,
-  for the subset and superset protocols; general protocols for private
-  set operations are also not useful, because they do not provide the link
+  for the subset and superset protocols; general protocols for private set
+  operations (PSI) are also not useful, because they do not provide the link
   from the shuffled deck to individual set operations on private cards

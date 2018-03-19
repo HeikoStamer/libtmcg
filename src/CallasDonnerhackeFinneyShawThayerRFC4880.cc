@@ -1101,7 +1101,8 @@ bool TMCG_OpenPGP_Subkey::Check
 				verbose);
 			if (!valid_revsig && verbose)
 				std::cerr << "WARNING: cannot verify revocation " <<
-					"signature of an external key" << std::endl;
+					"signature of an external key due to missing " <<
+					"public key" << std::endl;
 		}
 		if (valid_revsig)
 		{
@@ -1120,9 +1121,8 @@ bool TMCG_OpenPGP_Subkey::Check
 			}
 		}
 		else if (verbose)
-			std::cerr << "WARNING: invalid certification " <<
-				"revocation signature found for subkey" <<
-				std::endl;
+			std::cerr << "WARNING: invalid certification revocation " <<
+				"signature found for subkey" << std::endl;
 	}
 	// check whether some self-signatures (0x1f) on subkey are valid
 	std::sort(selfsigs.begin(), selfsigs.end(),
@@ -1167,15 +1167,13 @@ bool TMCG_OpenPGP_Subkey::Check
 			else
 			{
 				if (verbose)
-					std::cerr << "WARNING: " <<
-						"self-signature " << 
-						"verification failed" <<
-						std::endl;
+					std::cerr << "WARNING: self-signature verification " <<
+						"failed" << std::endl;
 			}
 		}
 		else if (verbose)
-			std::cerr << "WARNING: unknown issuer of " <<
-				"self-signature" << std::endl;
+			std::cerr << "WARNING: unknown issuer of self-signature" <<
+				std::endl;
 	}
 	// check validity of subkey
 	if (!CheckValidity(verbose))
@@ -1248,8 +1246,8 @@ bool TMCG_OpenPGP_Subkey::Check
 			    sub_hashing, verbose))
 				valid_revsig = true;
 			else if (verbose)
-				std::cerr << "ERROR: signature verification" <<
-					" failed" << std::endl;
+				std::cerr << "ERROR: signature verification failed" <<
+					std::endl;
 		}
 		else
 		{
@@ -1257,7 +1255,8 @@ bool TMCG_OpenPGP_Subkey::Check
 				verbose);
 			if (!valid_revsig && verbose)
 				std::cerr << "WARNING: cannot verify revocation " <<
-					"signature of an external key" << std::endl;
+					"signature of an external key due to missing " <<
+					"public key" << std::endl;
 		}
 		if (valid_revsig)
 		{
@@ -1723,8 +1722,9 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				valid_revsig = CheckExternalRevocation(certrevsigs[j], ring,
 					verbose);
 				if (!valid_revsig && verbose)
-						std::cerr << "WARNING: cannot verify revocation " <<
-							"signature of an external key" << std::endl;
+					std::cerr << "WARNING: cannot verify revocation " <<
+						"signature of an external key due to missing " <<
+						"public key" << std::endl;
 		}
 		if (valid_revsig)
 		{
@@ -1871,8 +1871,9 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				valid_revsig = CheckExternalRevocation(keyrevsigs[j], ring,
 					verbose);
 				if (!valid_revsig && verbose)
-						std::cerr << "WARNING: cannot verify revocation " <<
-							"signature of an external key" << std::endl;
+					std::cerr << "WARNING: cannot verify revocation " <<
+						"signature of an external key due to missing " <<
+						"public key" << std::endl;
 		}
 		if (valid_revsig)
 		{
@@ -3297,6 +3298,68 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		SubpacketEncode(30, false, features, out);
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
+	(const tmcg_openpgp_hashalgo_t hashalgo, const time_t sigtime, 
+	 const tmcg_openpgp_octets_t &flags, const tmcg_openpgp_octets_t &issuer,
+	 const tmcg_openpgp_pkalgo_t pkalgo, const tmcg_openpgp_octets_t &revoker,
+	 tmcg_openpgp_octets_t &out)
+{
+	size_t subpkts = 8;
+	size_t subpktlen = (subpkts * 6) + 4 + 2 + issuer.size() + 3 + 1 + 
+		1 + flags.size() + 1;
+	if (revoker.size())
+		subpktlen += 22;
+	out.push_back(4); // V4 format
+	out.push_back(0x1F); // type (i.e. signature directly on a key)
+	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
+	out.push_back(hashalgo); // hash algorithm
+	// hashed subpacket area
+	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
+	out.push_back(subpktlen & 0xFF);
+		// 1. signature creation time (length = 4)
+		tmcg_openpgp_octets_t subpkt_sigtime;
+		PacketTimeEncode(sigtime, subpkt_sigtime);
+		SubpacketEncode(2, false, subpkt_sigtime, out);
+		// 2. preferred symmetric algorithms (length = 2)
+		tmcg_openpgp_octets_t psa;
+		psa.push_back(TMCG_OPENPGP_SKALGO_AES256); // AES256
+		psa.push_back(TMCG_OPENPGP_SKALGO_TWOFISH); // Twofish
+		SubpacketEncode(11, false, psa, out);
+		// [optional] revocation key (length = 22)
+		if (revoker.size())
+		{
+			tmcg_openpgp_octets_t rk;
+			rk.push_back(0x80); // class octet (non-sensitive relationship)
+			rk.push_back(pkalgo); // public-key algorithm
+			assert((revoker.size() == 20));
+			for (size_t i = 0; i < 20; i++)
+				rk.push_back(revoker[i]); // SHA-1 fingerprint
+			SubpacketEncode(12, true, rk, out); // critical bit set
+		}
+		// 3. issuer (variable length)
+		SubpacketEncode(16, false, issuer, out);
+		// 4. preferred hash algorithms  (length = 3)
+		tmcg_openpgp_octets_t pha;
+		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // SHA256
+		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA384); // SHA384
+		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA512); // SHA512
+		SubpacketEncode(21, false, pha, out);
+		// 5. preferred compression algorithms  (length = 1)
+		tmcg_openpgp_octets_t pca;
+		pca.push_back(0); // uncompressed
+		SubpacketEncode(22, false, pca, out);
+		// 6. key server preferences (length = 1)
+		tmcg_openpgp_octets_t ksp;
+		ksp.push_back(0x80); // no-modify
+		SubpacketEncode(23, false, ksp, out);
+		// 7. key flags (variable length)
+		SubpacketEncode(27, false, flags, out);
+		// 8. features (length = 1)
+		tmcg_openpgp_octets_t features;
+		features.push_back(0x01); // Modification Detection (tags 18, 19)
+		SubpacketEncode(30, false, features, out);
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 	(const tmcg_openpgp_byte_t sigtype,
 	 const tmcg_openpgp_hashalgo_t hashalgo,
@@ -3437,6 +3500,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 		case TMCG_OPENPGP_PKALGO_DSA:
 			len += 2+plen+2+qlen+2+glen+2+ylen;
 			break;
+		default:
+			return;  // not supported
 	}
 
 	// A Public-Key packet starts a series of packets that forms an
@@ -3486,6 +3551,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 			PacketMPIEncode(g, out); // MPI g
 			PacketMPIEncode(y, out); // MPI y
 			break;
+		default:
+			return; // not supported
 	}
 }
 
@@ -3986,6 +4053,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 		case TMCG_OPENPGP_PKALGO_DSA:
 			len += 2+plen+2+qlen+2+glen+2+ylen;
 			break;
+		default:
+			return; // not supported
 	}
 
 	// A Public-Subkey packet (tag 14) has exactly the same format as a
@@ -4019,6 +4088,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 			PacketMPIEncode(g, out); // MPI g
 			PacketMPIEncode(y, out); // MPI y
 			break;
+		default:
+			return; // not supported
 	}
 }
 
@@ -6832,9 +6903,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			std::cerr << "INFO: mdbits = " << mdbits << std::endl;
 		// create a new signature object
 		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
-			ctx.exportablecertification, ctx.pkalgo,
-			ctx.hashalgo, ctx.type,	ctx.version,
-			ctx.sigcreationtime, ctx.sigexpirationtime,
+			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
+			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.md, current_packet, hspd,
 			issuer, keyflags, features, psa, pha, pca);
 	}
@@ -6848,18 +6918,16 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				" sbits = " << sbits <<	std::endl;
 		// create a new signature object
 		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
-			ctx.exportablecertification, ctx.pkalgo,
-			ctx.hashalgo, ctx.type, ctx.version,
-			ctx.sigcreationtime, ctx.sigexpirationtime,
+			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
+			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.r, ctx.s, current_packet,
 			hspd, issuer, keyflags,	features, psa, pha, pca);
 	}
 	else
 	{
 		if (verbose)
-			std::cerr << "WARNING: public-key signature " <<
-				"algorithm " << (int)ctx.pkalgo <<
-				" not supported" << std::endl;
+			std::cerr << "WARNING: public-key signature algorithm " <<
+				(int)ctx.pkalgo << " not supported" << std::endl;
 		return true; // continue loop through packets
 	}
 	if (!sig->good())
@@ -6875,8 +6943,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	if (!primary)
 	{
 		if (verbose)
-			std::cerr << "ERROR: no usable primary key found" <<
-				std::endl;
+			std::cerr << "ERROR: no usable primary key found" << std::endl;
 		delete sig;
 		return false;
 	}
@@ -6894,63 +6961,51 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		{
 			if (ctx.type == 0x18)
 			{
-				// Authorizes the specified key to issue
-				// revocation signatures for this key. Class
-				// octet must have bit 0x80 set. If the bit
-				// 0x40 is set, then this means that the
-				// revocation information is sensitive. Other
-				// bits are for future expansion to other kinds
-				// of authorizations. This is found on a
-				// self-signature.
+				// Authorizes the specified key to issue revocation signatures
+				// for this key. Class octet must have bit 0x80 set. If the bit
+				// 0x40 is set, then this means that the revocation information
+				// is sensitive. Other bits are for future expansion to other
+				// kinds of authorizations. This is found on a self-signature.
 				if ((ctx.revocationkey_class & 0x80) == 0x80)
 				{
-					tmcg_openpgp_revkey_t rk;
-					rk.key_class = ctx.revocationkey_class;
-					rk.key_pkalgo =
-						ctx.revocationkey_pkalgo;
-					memcpy(rk.key_fingerprint, 
+					tmcg_openpgp_revkey_t revkey;
+					revkey.key_class = ctx.revocationkey_class;
+					revkey.key_pkalgo =	ctx.revocationkey_pkalgo;
+					memcpy(revkey.key_fingerprint,
 						ctx.revocationkey_fingerprint,
-						sizeof(rk.key_fingerprint));
-					sig->revkeys.push_back(rk);
+						sizeof(revkey.key_fingerprint));
+					sig->revkeys.push_back(revkey);
 				}
-				sub->bindsigs.push_back(sig);
-				// A signature that binds a signing subkey
-				// MUST have an Embedded Signature subpacket
-				// in this binding signature that contains a
-				// 0x19 signature made by the signing subkey
-				// on the primary key and subkey.
+				// A signature that binds a signing subkey MUST have an
+				// Embedded Signature subpacket in this binding signature that
+				// contains a 0x19 signature made by the signing subkey on the
+				// primary key and subkey.
 				if (ctx.embeddedsignaturelen)
 				{
 					PacketTagEncode(2, embedded_pkt);
-					PacketLengthEncode(
-						ctx.embeddedsignaturelen,
-						embedded_pkt);
-					for (size_t i = 0;
-					     i < ctx.embeddedsignaturelen; i++)
-						embedded_pkt.push_back(
-						    ctx.embeddedsignature[i]);
+					PacketLengthEncode(ctx.embeddedsignaturelen, embedded_pkt);
+					for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
+						embedded_pkt.push_back(ctx.embeddedsignature[i]);
 				}
+				// Subkey binding signature
+				sub->bindsigs.push_back(sig);
 			}
 			else if (ctx.type == 0x1F)
 			{
-				// Authorizes the specified key to issue
-				// revocation signatures for this key. Class
-				// octet must have bit 0x80 set. If the bit
-				// 0x40 is set, then this means that the
-				// revocation information is sensitive. Other
-				// bits are for future expansion to other kinds
-				// of authorizations. This is found on a
-				// self-signature.
+				// Authorizes the specified key to issue revocation signatures
+				// for this key. Class octet must have bit 0x80 set. If the bit
+				// 0x40 is set, then this means that the revocation information
+				// is sensitive. Other bits are for future expansion to other
+				// kinds of authorizations. This is found on a self-signature.
 				if ((ctx.revocationkey_class & 0x80) == 0x80)
 				{
-					tmcg_openpgp_revkey_t rk;
-					rk.key_class = ctx.revocationkey_class;
-					rk.key_pkalgo =
-						ctx.revocationkey_pkalgo;
-					memcpy(rk.key_fingerprint, 
+					tmcg_openpgp_revkey_t revkey;
+					revkey.key_class = ctx.revocationkey_class;
+					revkey.key_pkalgo = ctx.revocationkey_pkalgo;
+					memcpy(revkey.key_fingerprint, 
 						ctx.revocationkey_fingerprint,
-						sizeof(rk.key_fingerprint));
-					sig->revkeys.push_back(rk);
+						sizeof(revkey.key_fingerprint));
+					sig->revkeys.push_back(revkey);
 				}
 				// Direct key signature on subkey
 				sub->selfsigs.push_back(sig);
@@ -6960,29 +7015,24 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				// Key revocation signature on subkey
 				sub->keyrevsigs.push_back(sig);
 				if (verbose)
-					std::cerr << "WARNING: key " <<
-						"revocation signature on " <<
-						"subkey" << std::endl;
+					std::cerr << "WARNING: key revocation signature on " <<
+						"subkey found" << std::endl;
 			}
 			else if (ctx.type == 0x30)
 			{
 				// Certification revocation signature on subkey
-				if (verbose)
-					std::cerr << "WARNING: " <<
-						"certification revocation " <<
-						"signature on subkey" <<
-						std::endl;
 				sub->certrevsigs.push_back(sig);
+				if (verbose)
+					std::cerr << "WARNING: certification revocation " <<
+						"signature on subkey found" << std::endl;
 			}
 			else
 			{
-				if (verbose)
-					std::cerr << "WARNING: signature " <<
-						"of type 0x" << std::hex <<
-						(int)ctx.type << std::dec <<
-						" on subkey ignored" <<
-						std::endl;
 				delete sig;
+				if (verbose)
+					std::cerr << "WARNING: signature of type 0x" << std::hex <<
+						(int)ctx.type << std::dec << " on subkey ignored" <<
+						std::endl;
 			}
 		}
 		else if (OctetsCompare(sub->id, issuer))
@@ -6994,24 +7044,20 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			}
 			else if (ctx.type == 0x1F)
 			{
-				// Authorizes the specified key to issue
-				// revocation signatures for this key. Class
-				// octet must have bit 0x80 set. If the bit
-				// 0x40 is set, then this means that the
-				// revocation information is sensitive. Other
-				// bits are for future expansion to other kinds
-				// of authorizations. This is found on a
-				// self-signature.
+				// Authorizes the specified key to issue revocation signatures
+				// for this key. Class octet must have bit 0x80 set. If the bit
+				// 0x40 is set, then this means that the revocation information
+				// is sensitive. Other bits are for future expansion to other
+				// kinds of authorizations. This is found on a self-signature.
 				if ((ctx.revocationkey_class & 0x80) == 0x80)
 				{
-					tmcg_openpgp_revkey_t rk;
-					rk.key_class = ctx.revocationkey_class;
-					rk.key_pkalgo =
-						ctx.revocationkey_pkalgo;
-					memcpy(rk.key_fingerprint, 
+					tmcg_openpgp_revkey_t revkey;
+					revkey.key_class = ctx.revocationkey_class;
+					revkey.key_pkalgo = ctx.revocationkey_pkalgo;
+					memcpy(revkey.key_fingerprint, 
 						ctx.revocationkey_fingerprint,
-						sizeof(rk.key_fingerprint));
-					sig->revkeys.push_back(rk);
+						sizeof(revkey.key_fingerprint));
+					sig->revkeys.push_back(revkey);
 				}
 				// Direct key signature on subkey
 				sub->selfsigs.push_back(sig);
@@ -7019,22 +7065,18 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			else if (ctx.type == 0x30)
 			{
 				// Certification revocation signature on subkey
-				if (verbose)
-					std::cerr << "WARNING: " <<
-						"certification revocation " <<
-						"signature on subkey" <<
-						std::endl;
 				sub->certrevsigs.push_back(sig);
+				if (verbose)
+					std::cerr << "WARNING: certification revocation " <<
+						"signature on subkey found" << std::endl;
 			}
 			else
 			{
-				if (verbose)
-					std::cerr << "WARNING: signature " <<
-						"of type 0x" << std::hex <<
-						(int)ctx.type << std::dec <<
-						" on subkey ignored" <<
-						std::endl;
 				delete sig;
+				if (verbose)
+					std::cerr << "WARNING: signature of type 0x" << std::hex <<
+						(int)ctx.type << std::dec << " on subkey ignored" <<
+						std::endl;
 			}
 		}
 		else if (ctx.type == 0x28)
@@ -7043,19 +7085,16 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			// issued by external revocation keys
 			sub->keyrevsigs.push_back(sig);
 			if (verbose)
-				std::cerr << "WARNING: key revocation " <<
-					"signature on subkey (external)" <<
-					std::endl;
+				std::cerr << "WARNING: sub-level key revocation signature " <<
+					"on subkey found " << std::endl;
 		}
 		else
 		{
-			if (verbose)
-				std::cerr << "WARNING: signature " <<
-					"of type 0x" << std::hex <<
-					(int)ctx.type << std::dec <<
-					" on subkey from unknown issuer " <<
-					"ignored" << std::endl;
 			delete sig;
+			if (verbose)
+				std::cerr << "WARNING: signature of type 0x" << std::hex <<
+					(int)ctx.type << std::dec << " on subkey from unknown " <<
+					"issuer ignored" << std::endl;
 		}
 		return true; // continue loop through packets
 	}
@@ -7076,33 +7115,29 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			}
 			else 
 			{
-				if (verbose)
-					std::cerr << "WARNING: signature " <<
-						"of type 0x" << std::hex <<
-						(int)ctx.type << std::dec <<
-						" ignored (non-self)" <<
-						std::endl;
 				delete sig;
+				if (verbose)
+					std::cerr << "WARNING: signature of type 0x" << std::hex <<
+						(int)ctx.type << std::dec << " ignored (non-self)" <<
+						std::endl;
 			}
 		}
 		else if (ctx.type == 0x20)
 		{
 			// accumulate key revocation signatures
 			// issued by external revocation keys
-			if (verbose)
-				std::cerr << "WARNING: key revocation " <<
-					"signature on primary key " <<
-					"(external)" << std::endl;
 			pub->keyrevsigs.push_back(sig);
+			if (verbose)
+				std::cerr << "WARNING: external key revocation signature " <<
+					"on primary key found" << std::endl;
 		}
 		else
 		{
-			if (verbose)
-				std::cerr << "WARNING: non-uid signature " <<
-					"of type 0x" << std::hex <<
-					(int)ctx.type << std::dec <<
-					" on primary key ignored" << std::endl;
 			delete sig;
+			if (verbose)
+				std::cerr << "WARNING: non-uid signature of type 0x" <<
+					std::hex << (int)ctx.type << std::dec <<
+					" on primary key ignored" << std::endl;
 		}
 		return true; // continue loop through packets
 	}
@@ -7110,21 +7145,20 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	{
 		if (ctx.type == 0x1F)
 		{
-			// Authorizes the specified key to issue revocation
-			// signatures for this key. Class octet must have bit
-			// 0x80 set. If the bit 0x40 is set, then this means
-			// that the revocation information is sensitive. Other
-			// bits are for future expansion to other kinds of
-			// authorizations. This is found on a self-signature.
+			// Authorizes the specified key to issue revocation signatures
+			// for this key. Class octet must have bit 0x80 set. If the bit
+			// 0x40 is set, then this means that the revocation information
+			// is sensitive. Other bits are for future expansion to other
+			// kinds of authorizations. This is found on a self-signature.
 			if ((ctx.revocationkey_class & 0x80) == 0x80)
 			{
-				tmcg_openpgp_revkey_t rk;
-				rk.key_class = ctx.revocationkey_class;
-				rk.key_pkalgo =	ctx.revocationkey_pkalgo;
-				memcpy(rk.key_fingerprint, 
+				tmcg_openpgp_revkey_t revkey;
+				revkey.key_class = ctx.revocationkey_class;
+				revkey.key_pkalgo =	ctx.revocationkey_pkalgo;
+				memcpy(revkey.key_fingerprint, 
 					ctx.revocationkey_fingerprint,
-					sizeof(rk.key_fingerprint));
-				sig->revkeys.push_back(rk);
+					sizeof(revkey.key_fingerprint));
+				sig->revkeys.push_back(revkey);
 			}
 			// Direct key signature on primary key
 			pub->selfsigs.push_back(sig);
@@ -7132,57 +7166,55 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		else if (ctx.type == 0x20)
 		{
 			// Key revocation signature on primary key
-			if (verbose)
-				std::cerr << "WARNING: key revocation " <<
-					"signature on primary key" <<
-					std::endl;
 			pub->keyrevsigs.push_back(sig);
+			if (verbose)
+				std::cerr << "WARNING: key revocation signature on primary " <<
+					"key found" << std::endl;
 		}
 		else if (ctx.type == 0x30)
 		{
 			// Certification revocation signature on primary key
-			if (verbose)
-				std::cerr << "WARNING: certification " <<
-					"revocation signature on primary " <<
-					"key" << std::endl;
 			pub->certrevsigs.push_back(sig);
+			if (verbose)
+				std::cerr << "WARNING: certification revocation signature " <<
+					"on primary key" << std::endl;
 		}
 		else
 		{
-			if (verbose)
-				std::cerr << "WARNING: non-self signature " <<
-					"of type 0x" << std::hex <<
-					(int)ctx.type << std::dec <<
-					"on primary key ignored" << std::endl;
 			delete sig;
+			if (verbose)
+				std::cerr << "WARNING: non-self signature of type 0x" <<
+					std::hex << (int)ctx.type << std::dec <<
+					"on primary key ignored" << std::endl;
 		}
+		return true; // continue loop through packets
 	}
 	else if (!uid_flag && uat_flag)
 	{
-		if (verbose)
-			std::cerr << "WARNING: self-signature for a user " <<
-				"attribute ignored" << std::endl;
 		delete sig;
+		if (verbose)
+			std::cerr << "WARNING: self-signature for a user attribute " <<
+				"ignored" << std::endl;
+		return true; // continue loop through packets
 	}
 	else if (uid_flag && !uat_flag)
 	{
 		if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
 		{
-			// Authorizes the specified key to issue revocation
-			// signatures for this key. Class octet must have bit
-			// 0x80 set. If the bit 0x40 is set, then this means
-			// that the revocation information is sensitive. Other
-			// bits are for future expansion to other kinds of
-			// authorizations. This is found on a self-signature.
+			// Authorizes the specified key to issue revocation signatures
+			// for this key. Class octet must have bit 0x80 set. If the bit
+			// 0x40 is set, then this means that the revocation information
+			// is sensitive. Other bits are for future expansion to other
+			// kinds of authorizations. This is found on a self-signature.
 			if ((ctx.revocationkey_class & 0x80) == 0x80)
 			{
-				tmcg_openpgp_revkey_t rk;
-				rk.key_class = ctx.revocationkey_class;
-				rk.key_pkalgo =	ctx.revocationkey_pkalgo;
-				memcpy(rk.key_fingerprint, 
+				tmcg_openpgp_revkey_t revkey;
+				revkey.key_class = ctx.revocationkey_class;
+				revkey.key_pkalgo =	ctx.revocationkey_pkalgo;
+				memcpy(revkey.key_fingerprint, 
 					ctx.revocationkey_fingerprint,
-					sizeof(rk.key_fingerprint));
-				sig->revkeys.push_back(rk);
+					sizeof(revkey.key_fingerprint));
+				sig->revkeys.push_back(revkey);
 			}
 			// Certification self-signature on user ID
 			uid->selfsigs.push_back(sig);
@@ -7190,22 +7222,23 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		else if (ctx.type == 0x30)
 		{
 			// Certification revocation signature on user ID
-			if (verbose)
-				std::cerr << "WARNING: certification " <<
-					"revocation signature on user ID" <<
-					std::endl;
 			uid->revsigs.push_back(sig);
+			if (verbose)
+				std::cerr << "WARNING: certification revocation signature " <<
+					"on user ID" << std::endl;
 		}
 		else
 		{
-			if (verbose)
-				std::cerr << "WARNING: signature of type " <<
-					"0x" << std::hex << (int)ctx.type <<
-					std::dec << " ignored (uid_flag)" <<
-					std::endl;
 			delete sig;
+			if (verbose)
+				std::cerr << "WARNING: signature of type 0x" << std::hex <<
+					(int)ctx.type << std::dec << " ignored (uid_flag)" <<
+					std::endl;
 		}
+		return true; // continue loop through packets
 	}
+	// should never reach, however, it's here to make static analyzers happy
+	delete sig;
 	return true; // continue loop through packets
 }
 
@@ -7218,8 +7251,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag6
 	{
 		if (verbose)
 			std::cerr << "WARNING: public-key packet version " <<
-				(int)ctx.version << " not supported" <<
-				std::endl;
+				(int)ctx.version << " not supported" << std::endl;
 	}
 	else if (!primary)
 	{
@@ -7229,16 +7261,14 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag6
 		    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 		{
 			// public-key algorithm is RSA: create new pubkey
-			pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo,
-				ctx.keycreationtime, 0, ctx.n, ctx.e,
-				current_packet);
+			pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo, ctx.keycreationtime, 0,
+				ctx.n, ctx.e, current_packet);
 		}
 		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 		{
 			// public-key algorithm is DSA: create new pubkey
-			pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo,
-				ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g,
-				ctx.y, current_packet);
+			pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo, ctx.keycreationtime, 0,
+				ctx.p, ctx.q, ctx.g, ctx.y, current_packet);
 		}
 		else
 		{
@@ -7266,8 +7296,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag6
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: more than one primary key " <<
-				"not allowed" << std::endl;
+			std::cerr << "ERROR: more than one primary key not allowed" <<
+				std::endl;
 		return false;
 	}
 	return true;
@@ -7290,13 +7320,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag13
 	if (!primary)
 	{
 		if (verbose)
-			std::cerr << "ERROR: no usable primary key found" <<
-				std::endl;
+			std::cerr << "ERROR: no usable primary key found" << std::endl;
 		return false;
 	}
 	if (uid_flag)
 		pub->userids.push_back(uid);
-	uid_flag = true, uat_flag = false;
+	uid = NULL, uid_flag = true, uat_flag = false;
 	// create a new user ID object
 	uid = new TMCG_OpenPGP_UserID(userid, current_packet);
 	return true;
@@ -7311,8 +7340,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag14
 	if (!primary)
 	{
 		if (verbose)
-			std::cerr << "ERROR: no usable primary key found" <<
-				std::endl;
+			std::cerr << "ERROR: no usable primary key found" << std::endl;
 		return false;
 	}
 	if (!badkey && subkey)
@@ -7403,11 +7431,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag17
 		std::cerr << "WARNING: user attribute packet found; ignored" <<
 			std::endl;
 	if (uid_flag)
-	{
 		pub->userids.push_back(uid);
-		uid = NULL;
-	}
-	uid_flag = false, uat_flag = true;
+	uid = NULL, uid_flag = false, uat_flag = true;
 	return true;
 }
 
@@ -7912,7 +7937,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 		if (uid)
 			delete uid;
 	}
-
-std::cerr << "ring.size() = " << ring->size() << std::endl;	
+	if (verbose > 1)
+		std::cerr << "INFO: ring.size() = " << ring->size() << std::endl;	
 	return true;
 }

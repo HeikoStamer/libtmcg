@@ -7,7 +7,11 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
-* [2018-03-17] RFC4880: improved position detection of ArmorDecode()
+* [2018-03-20] release 1.3.12 of LibTMCG
+* [2018-03-19] RFC4880: added PacketSigPrepareDesignatedRevoker()
+* [2018-03-18] RFC4880: added TMCG_OpenPGP_Keyring
+* [2018-03-17] RFC4880: increased robustness of rpos-detection in ArmorDecode()
+* [2018-03-15] RFC4880: added new type tmcg_openpgp_revkey_t
 * [2018-03-13] RFC4880: changed interface PacketSigPrepareDetachedSignature()
 * [2018-03-03] RFC4880: added SignatureParse()
 * [2018-03-02] RFC4880: added AsymmetricEncryptRSA() and AsymmetricDecryptRSA()
