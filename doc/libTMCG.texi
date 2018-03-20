@@ -19,9 +19,9 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20170805.
+Revision 20180320.
 
-Copyright @copyright{} 2005, 2006, 2007, 2009, 2015, 2016, 2017 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
+Copyright @copyright{} 2005, 2006, 2007, 2009, 2015, 2016, 2017, 2018 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -512,10 +512,10 @@ of the used features and specifies the required versions:
 		reasonable performance.
 		
 	@item GNU Crypto Library (@file{libgcrypt}),
-		Version@tie{}@math{\ge}@tie{}1.6.0
+		Version@tie{}@math{\ge}@tie{}1.7.0
 		
 		The library provides some basic cryptographic algorithms
-		(e.g. SHA-256, AES256, RIPEMD-160, ElGamal, DSA)
+		(e.g. SHA-256, AES256, SHA-3, ElGamal, DSA, RSA)
 		and an easily accessible interface for cryptographically
 		strong pseudo random numbers.
 	
