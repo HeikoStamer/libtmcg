@@ -694,7 +694,7 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 		// check size of $r$
 		if (mpz_cmpabs(r, q) >= 0)
 			throw false;
-		
+
 		// verify the proof of knowledge (equality of discrete logarithms) [CaS97]
 		if (fpowm_usage)
 		{
@@ -845,7 +845,7 @@ bool BarnettSmartVTMF_dlog::OR_Verify
 		// $c_1 + c_2 \stackrel{?}{=} 
 		//                   \mathcal{H}(g_1, y_1, g_2, y_2, t_1, t_2)$
 		// additionally, we hash the group parameters
-		mpz_add(tmp, c_1, c_2), mpz_mod(c, c, q);
+		mpz_add(tmp, c_1, c_2), mpz_mod(tmp, tmp, q);
 		mpz_shash(c, 10, p, q, g, h, g_1, y_1, g_2, y_2, t_1, t_2);
 		mpz_mod(c, c, q);
 		if (mpz_cmp(tmp, c))

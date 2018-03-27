@@ -270,14 +270,14 @@ int main
 {
 	std::stringstream oak, lej, lej2, foo, foo2, bar;
 	std::string v;
-	mpz_t fooo, barr;
+	mpz_t fooo, barr, lejj;
 	
 	assert(init_libTMCG());
 	
 	BarnettSmartVTMF_dlog *vtmf, *vtmf2;
 	BarnettSmartVTMF_dlog_GroupQR *vtmf_qr, *vtmf2_qr;
 
-	// create and check the common instance <2048-bit MODP Group [RFC3526]>
+	// create and check a common instance <2048-bit MODP Group [RFC3526]>
 	mpz_init(barr);
 	mpz_set_str(barr, "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1\
 29024E088A67CC74020BBEA63B139B22514A08798E3404DD\
@@ -302,7 +302,7 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 	delete vtmf_qr;
 	mpz_clear(barr);
 	
-	// create and check the instance
+	// create and check a random QR-instance
 	std::cout << "BarnettSmartVTMF_dlog_GroupQR()" << std::endl;
 	vtmf_qr = new BarnettSmartVTMF_dlog_GroupQR();
 	std::cout << "vtmf_qr.CheckGroup()" << std::endl;
@@ -332,8 +332,8 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 	
 	// release the instances
 	delete vtmf_qr, delete vtmf2_qr;
-	
-	// create and check the instance
+
+	// create and check a random instance
 	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
 	vtmf = new BarnettSmartVTMF_dlog();
 	std::cout << "vtmf.CheckGroup()" << std::endl;
@@ -349,7 +349,52 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 	assert(!vtmf->CheckGroup());
 	mpz_set(vtmf->g, fooo);
 	mpz_clear(fooo);
-	
+
+	// check basic protocols (CP and OR)
+	std::stringstream cp_ack, cp_nak, or_ack1, or_ack2, or_nak;
+	mpz_init(fooo), mpz_init(barr), mpz_init(lejj);
+	mpz_srandomm(fooo, vtmf->q); 
+	mpz_spowm(vtmf->h, vtmf->g, fooo, vtmf->p);
+	std::cout << "CP protocol" << std::endl;
+	mpz_wrandomm(fooo, vtmf->q);
+	mpz_powm(barr, vtmf->g, fooo, vtmf->p);
+	mpz_powm(lejj, vtmf->h, fooo, vtmf->p); 
+	vtmf->CP_Prove(barr, lejj, vtmf->g, vtmf->h, fooo, cp_ack);
+	std::cout << "CP_Verify(g^z, h^z, ...)" << std::endl;
+	std::cout << cp_ack.str() << std::endl;
+	assert(vtmf->CP_Verify(barr, lejj, vtmf->g, vtmf->h, cp_ack));
+	mpz_add_ui(fooo, fooo, 1L); // z' = z + 1
+	mpz_powm(lejj, vtmf->h, fooo, vtmf->p); 
+	vtmf->CP_Prove(barr, lejj, vtmf->g, vtmf->h, fooo, cp_nak);
+	std::cout << "!CP_Verify(g^z, h^z', ...)" << std::endl;
+	std::cout << cp_nak.str() << std::endl;
+	assert(!vtmf->CP_Verify(barr, lejj, vtmf->g, vtmf->h, cp_nak));
+	std::cout << "OR protocol" << std::endl;
+	mpz_wrandomm(fooo, vtmf->q);
+	mpz_powm(barr, vtmf->g, fooo, vtmf->p);
+	mpz_powm_ui(lejj, vtmf->h, 42L, vtmf->p);
+	std::cout << "OR_ProveFirst(...)" << std::endl;
+	vtmf->OR_ProveFirst(barr, lejj, vtmf->g, vtmf->h, fooo, or_ack1);
+	std::cout << "OR_Verify(...)" << std::endl;
+	std::cout << or_ack1.str() << std::endl;
+	assert(vtmf->OR_Verify(barr, lejj, vtmf->g, vtmf->h, or_ack1));
+	mpz_wrandomm(fooo, vtmf->q);
+	mpz_powm_ui(barr, vtmf->g, 42L, vtmf->p);
+	mpz_powm(lejj, vtmf->h, fooo, vtmf->p);
+	std::cout << "OR_ProveSecond(...)" << std::endl;
+	vtmf->OR_ProveSecond(barr, lejj, vtmf->g, vtmf->h, fooo, or_ack2);
+	std::cout << "OR_Verify(...)" << std::endl;
+	std::cout << or_ack2.str() << std::endl;
+	assert(vtmf->OR_Verify(barr, lejj, vtmf->g, vtmf->h, or_ack2));
+	mpz_wrandomm(fooo, vtmf->q);
+	mpz_powm_ui(barr, vtmf->g, 42L, vtmf->p);
+	mpz_powm_ui(lejj, vtmf->h, 42L, vtmf->p);
+	vtmf->OR_ProveFirst(barr, lejj, vtmf->g, vtmf->h, fooo, or_nak);
+	std::cout << "!OR_Verify(...)" << std::endl;
+	std::cout << or_nak.str() << std::endl;
+	assert(!vtmf->OR_Verify(barr, lejj, vtmf->g, vtmf->h, or_nak));
+	mpz_clear(fooo), mpz_clear(barr), mpz_clear(lejj);
+
 	// publish the instance
 	std::cout << "vtmf.PublishGroup(lej)" << std::endl;
 	vtmf->PublishGroup(lej);
@@ -375,7 +420,7 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 	// release the instances
 	delete vtmf, delete vtmf2;
 
-	// create and check the instance
+	// create and check an instance with canonical generator
 	std::cout << "BarnettSmartVTMF_dlog(canonical_g == true)" << std::endl;
 	vtmf = new BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
 	std::cout << "vtmf.CheckGroup()" << std::endl;
