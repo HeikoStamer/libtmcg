@@ -65,7 +65,7 @@ GolleDCPG_elgamal::GolleDCPG_elgamal
 	// players precompute and store in memory the following $k-1$ ElGamal
 	// ciphertexts: $D^i = E(g^{52i}) for $i = 0, \ldots, k-1$.
 	// Let $S = \{D_0, \ldots, D_{k-1}\}$.
-	k = vtmf->KeyGenerationProtocol_NumberOfKeys();	
+	k = vtmf->KeyGenerationProtocol_NumberOfKeys() + 1;	
 // TODO
 }
 
