@@ -66,11 +66,13 @@ class GolleDCPG_elgamal
 		size_t							DCPG_MaxCardType;
 		mpz_t							*encoded_cards;
 		size_t							k;
+		mpz_t							*D;
 	
 	public:
 		
 		GolleDCPG_elgamal
-			(BarnettSmartVTMF_dlog *vtmf_in);
+			(BarnettSmartVTMF_dlog *vtmf_in,
+			 size_t maxcardtype_in = 0);
 		~GolleDCPG_elgamal
 			();
 };

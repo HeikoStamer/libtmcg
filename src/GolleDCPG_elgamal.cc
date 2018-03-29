@@ -38,24 +38,36 @@
 #include "GolleDCPG_elgamal.hh"
 
 GolleDCPG_elgamal::GolleDCPG_elgamal
-	(BarnettSmartVTMF_dlog *vtmf_in)
+	(BarnettSmartVTMF_dlog *vtmf_in, size_t maxcardtype_in)
 {
+	// [Go05] Group establishment
 	// [Go05] The players use Pedersen’s protocol to generate a distributed
 	// ElGamal public/private key pair. (==> KeyGenerationProtocol of VTMF)
 
 	// Initialize members of the class
 	vtmf = vtmf_in;
 
+	// [Go05] Every pair or players ($P_i$, $P_j$) establishes a secret key
+	// $k_{i,j}$ for a symmetric cipher such as DES or AES. These keys allow
+	// any two players to communicate privately. (==> aiounicast)
+
+	// [Go05] The players precompute and store in memory the values
+	// $g^0, g^1, \ldots, g^51 \in G$. These values encode the 52 cards.
+
 	// Initialize array of encoded cards
-	DCPG_MaxCardType = 1;
-	for (size_t i = 0; i < TMCG_MAX_TYPEBITS; i++)
-		DCPG_MaxCardType *= 2; // DCPG_MaxCardType = 2^{TMCG_MAX_TYPEBITS}
+	if (maxcardtype_in)
+	{
+		DCPG_MaxCardType = maxcardtype_in;
+	}
+	else
+	{
+		DCPG_MaxCardType = 1;
+		for (size_t i = 0; i < TMCG_MAX_TYPEBITS; i++)
+			DCPG_MaxCardType *= 2; // DCPG_MaxCardType = 2^{TMCG_MAX_TYPEBITS}
+	}
 	encoded_cards = new mpz_t[DCPG_MaxCardType]();
 	for (size_t i = 0; i < DCPG_MaxCardType; i++)
 		mpz_init(encoded_cards[i]);
-	
-	// [Go05] The players precompute and store in memory the values
-	// $g^0, g^1, \ldots, g^51 \in G$. These values encode the 52 cards.
 
 	// Precompute $g^i \bmod p$ for all $0 \le i \le 2^{TMCG_MAX_TYPEBITS}$
 	for (size_t i = 0; i < DCPG_MaxCardType; i++)
@@ -65,8 +77,13 @@ GolleDCPG_elgamal::GolleDCPG_elgamal
 	// players precompute and store in memory the following $k-1$ ElGamal
 	// ciphertexts: $D^i = E(g^{52i}) for $i = 0, \ldots, k-1$.
 	// Let $S = \{D_0, \ldots, D_{k-1}\}$.
-	k = vtmf->KeyGenerationProtocol_NumberOfKeys() + 1;	
-// TODO
+	k = vtmf->KeyGenerationProtocol_NumberOfKeys() + 1;
+	D = new	mpz_t[k]();
+	for (size_t i = 0; i < k; i++)
+	{
+		mpz_init(D[i]);
+		vtmf->IndexElement(D[i], DCPG_MaxCardType * i);
+	}
 }
 
 GolleDCPG_elgamal::~GolleDCPG_elgamal
@@ -75,4 +92,7 @@ GolleDCPG_elgamal::~GolleDCPG_elgamal
 	for (size_t i = 0; i < DCPG_MaxCardType; i++)
 		mpz_clear(encoded_cards[i]);
 	delete [] encoded_cards;
+	for (size_t i = 0; i < k; i++)
+		mpz_clear(D[i]);
+	delete [] D;
 }
