@@ -56,31 +56,21 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
+	// dlog-based VTMF [BS03] compatible with ElGamal variant
+	#include "BarnettSmartVTMF_dlog.hh"
+
 class GolleDCPG_elgamal
 {
 	private:
-		mpz_t							x_i, d, h_i_fp;
-		std::map<std::string, mpz_ptr>	h_j;
-	
-	protected:
-		const unsigned long int			F_size, G_size;
-		const bool						canonical_g;
-		mpz_t							*fpowm_table_g, *fpowm_table_h;
+		BarnettSmartVTMF_dlog			*vtmf;
+		size_t							DCPG_MaxCardType;
+		mpz_t							*encoded_cards;
+		size_t							k;
 	
 	public:
-		mpz_t							p, q, g, k, h, h_i;
 		
 		GolleDCPG_elgamal
-			(const unsigned long int fieldsize = TMCG_DDH_SIZE,
-			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			const bool canonical_g_usage = false,
-			const bool initialize_group = true);
-		GolleDCPG_elgamal
-			(std::istream& in,
-			const unsigned long int fieldsize = TMCG_DDH_SIZE,
-			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			const bool canonical_g_usage = false,
-			const bool precompute = true);
+			(BarnettSmartVTMF_dlog *vtmf_in);
 		~GolleDCPG_elgamal
 			();
 };

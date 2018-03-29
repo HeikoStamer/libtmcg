@@ -14,7 +14,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 2009,
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+                           2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -630,6 +630,12 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_Finalize
 {
 	// Precompute the values $h^{2^i} \bmod p$ for all $0 \le i \le |q|$.
 	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+}
+
+size_t BarnettSmartVTMF_dlog::KeyGenerationProtocol_NumberOfKeys
+	()
+{
+	return h_j.size();
 }
 
 void BarnettSmartVTMF_dlog::CP_Prove

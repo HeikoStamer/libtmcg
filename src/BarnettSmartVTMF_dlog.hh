@@ -14,7 +14,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+                           2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -117,6 +117,8 @@ class BarnettSmartVTMF_dlog
 			(mpz_srcptr key, JareckiLysyanskayaEDCF *edcf,
 			std::istream& in, std::ostream& out);
 		void KeyGenerationProtocol_Finalize
+			();
+		size_t KeyGenerationProtocol_NumberOfKeys
 			();
 		void CP_Prove
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg,

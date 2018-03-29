@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2005, 2006, 2007, 2009,
-               2015, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+               2015, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -95,6 +95,7 @@ void check
 			vtmf2->KeyGenerationProtocol_PublishKey(*pipe_out);
 			assert(vtmf2->KeyGenerationProtocol_UpdateKey(*pipe_in));
 			vtmf2->KeyGenerationProtocol_Finalize();
+			assert((vtmf2->KeyGenerationProtocol_NumberOfKeys() == 1));
 			*pipe_out << vtmf2->h_i << std::endl;
 			assert(vtmf2->KeyGenerationProtocol_ProveKey_interactive(*pipe_in, *pipe_out));
 			JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,	vtmf2->p, vtmf2->q, vtmf2->g, vtmf2->h);
@@ -138,7 +139,7 @@ void check
 			
 			delete tmcg;
 			
-			// key generation protocol
+			// key generation protocol: test remove key
 			vtmf2->KeyGenerationProtocol_PublishKey(*pipe_out);
 			
 			delete pipe_in, delete pipe_out;
@@ -160,6 +161,8 @@ void check
 			assert(vtmf->KeyGenerationProtocol_UpdateKey(*pipe_in));
 			std::cout << "*.KeyGenerationProtocol_Finalize()" << std::endl;
 			vtmf->KeyGenerationProtocol_Finalize();
+			std::cout << "*.KeyGenerationProtocol_NumberOf Keys()" << std::endl;
+			assert((vtmf->KeyGenerationProtocol_NumberOfKeys() == 1));
 			std::cout << "*.KeyGenerationProtocol_VerifyKey_interactive()" << std::endl;
 			mpz_t h_j;
 			mpz_init(h_j);
@@ -252,9 +255,11 @@ void check
 			
 			delete tmcg;
 			
-			// key generation protocol
+			// key generation protocol: test remove key
 			std::cout << "*.KeyGenerationProtocol_RemoveKey()" << std::endl;
 			assert(vtmf->KeyGenerationProtocol_RemoveKey(*pipe_in));
+			std::cout << "*.KeyGenerationProtocol_NumberOf Keys()" << std::endl;
+			assert((vtmf->KeyGenerationProtocol_NumberOfKeys() == 0));
 			
 			delete pipe_in, delete pipe_out;
 		}

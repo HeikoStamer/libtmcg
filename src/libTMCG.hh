@@ -231,6 +231,7 @@
 	#include <TMCG_Stack.hh>
 	#include <TMCG_OpenStack.hh>
 	#include <TMCG_StackSecret.hh>
+	#include <GolleDCPG_elgamal.hh>
 	#include <SchindelhauerTMCG.hh>
 	
 	// cryptographic protocols not directly related to mental poker	
