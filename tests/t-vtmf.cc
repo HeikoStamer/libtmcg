@@ -161,7 +161,7 @@ void check
 			assert(vtmf->KeyGenerationProtocol_UpdateKey(*pipe_in));
 			std::cout << "*.KeyGenerationProtocol_Finalize()" << std::endl;
 			vtmf->KeyGenerationProtocol_Finalize();
-			std::cout << "*.KeyGenerationProtocol_NumberOf Keys()" << std::endl;
+			std::cout << "*.KeyGenerationProtocol_NumberOfKeys()" << std::endl;
 			assert((vtmf->KeyGenerationProtocol_NumberOfKeys() == 1));
 			std::cout << "*.KeyGenerationProtocol_VerifyKey_interactive()" << std::endl;
 			mpz_t h_j;
@@ -258,7 +258,7 @@ void check
 			// key generation protocol: test remove key
 			std::cout << "*.KeyGenerationProtocol_RemoveKey()" << std::endl;
 			assert(vtmf->KeyGenerationProtocol_RemoveKey(*pipe_in));
-			std::cout << "*.KeyGenerationProtocol_NumberOf Keys()" << std::endl;
+			std::cout << "*.KeyGenerationProtocol_NumberOfKeys()" << std::endl;
 			assert((vtmf->KeyGenerationProtocol_NumberOfKeys() == 0));
 			
 			delete pipe_in, delete pipe_out;
