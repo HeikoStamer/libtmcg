@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2009, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2005, 2009, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -35,6 +35,7 @@ include_HEADERS = mpz_srandom.h mpz_sqrtm.h mpz_spowm.h mpz_sprime.h\
 	CanettiGennaroJareckiKrawczykRabinASTC.hh\
 	JareckiLysyanskayaASTC.hh\
 	CallasDonnerhackeFinneyShawThayerRFC4880.hh\
+	GolleDCPG_elgamal.hh\
 	SchindelhauerTMCG.hh\
 	VTMF_Card.hh VTMF_CardSecret.hh\
 	TMCG_Card.hh TMCG_CardSecret.hh\
@@ -58,7 +59,8 @@ libTMCG_la_SOURCES = mpz_srandom.c mpz_srandom.h\
 	BarnettSmartVTMF_dlog_GroupQR.cc BarnettSmartVTMF_dlog_GroupQR.hh\
 	PedersenCOM.cc PedersenCOM.hh\
 	GrothVSSHE.cc GrothVSSHE.hh\
-	HooghSchoenmakersSkoricVillegasVRHE.cc HooghSchoenmakersSkoricVillegasVRHE.hh\
+	HooghSchoenmakersSkoricVillegasVRHE.cc\
+	HooghSchoenmakersSkoricVillegasVRHE.hh\
 	NaorPinkasEOTP.cc NaorPinkasEOTP.hh\
 	aiounicast.hh\
 	aiounicast_nonblock.cc aiounicast_nonblock.hh\
@@ -66,10 +68,13 @@ libTMCG_la_SOURCES = mpz_srandom.c mpz_srandom.h\
 	CachinKursawePetzoldShoupSEABP.cc CachinKursawePetzoldShoupSEABP.hh\
 	GennaroJareckiKrawczykRabinDKG.cc GennaroJareckiKrawczykRabinDKG.hh\
 	PedersenVSS.cc PedersenVSS.hh\
-	CanettiGennaroJareckiKrawczykRabinASTC.cc CanettiGennaroJareckiKrawczykRabinASTC.hh\
+	CanettiGennaroJareckiKrawczykRabinASTC.cc\
+	CanettiGennaroJareckiKrawczykRabinASTC.hh\
 	JareckiLysyanskayaASTC.cc JareckiLysyanskayaASTC.hh\
-	CallasDonnerhackeFinneyShawThayerRFC4880.cc CallasDonnerhackeFinneyShawThayerRFC4880.hh\
+	CallasDonnerhackeFinneyShawThayerRFC4880.cc\
+	CallasDonnerhackeFinneyShawThayerRFC4880.hh\
 	SchindelhauerTMCG.cc SchindelhauerTMCG.hh\
+	GolleDCPG_elgamal.cc GolleDCPG_elgamal.hh\
 	VTMF_Card.cc VTMF_Card.hh\
 	VTMF_CardSecret.cc VTMF_CardSecret.hh\
 	TMCG_Card.cc TMCG_Card.hh\
