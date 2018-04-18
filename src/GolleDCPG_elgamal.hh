@@ -56,7 +56,7 @@
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
 
-	// dlog-based VTMF [BS03] compatible with ElGamal variant
+	// dlog-based VTMF [BS03] compatible with Golle's ElGamal variant
 	#include "BarnettSmartVTMF_dlog.hh"
 
 class GolleDCPG_elgamal
