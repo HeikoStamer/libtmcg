@@ -220,6 +220,12 @@
 		#define TMCG_OPENPGP_RADIX64_MC 64
 	#endif
 
+	// definition of some common types (TODO: implement by abstraction layer)
+	#include <gmp.h>
+	#include <vector>
+	typedef std::vector<mpz_ptr>					tmcg_mpz_vector_t;
+	typedef std::vector< std::vector<mpz_ptr> >		tmcg_mpz_matrix_t;
+
 	// data structures and protocols for mental poker
 	#include <TMCG_SecretKey.hh>
 	#include <TMCG_PublicKey.hh>
