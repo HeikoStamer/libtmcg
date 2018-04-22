@@ -74,7 +74,8 @@
 	#endif
 
 	#ifndef TMCG_GCRY_MAC_ALGO
-		/* Define the message authentication algorithm for authenticated channels */
+		/* Define the message authentication algorithm for authenticated
+		   channels */
 		#define TMCG_GCRY_MAC_ALGO GCRY_MAC_HMAC_SHA256
 	#endif
 
@@ -89,23 +90,23 @@
 	#endif
 	
 	#ifndef TMCG_KEY_NIZK_STAGE1
-		/* Define the maximum soundness error probability of the TMCG public key;
-		   NIZK proof (Gennaro, Micciancio, Rabin), Stage 1: m is square free;
-		   d^{-TMCG_KEY_NIZK_STAGE1} with d = ... */
+		/* Define the maximum soundness error probability of the TMCG public
+		   key; NIZK proof (Gennaro, Micciancio, Rabin), Stage 1: m is square
+		   free; soundness error is d^{-TMCG_KEY_NIZK_STAGE1} with d = ... */
 		#define TMCG_KEY_NIZK_STAGE1 16
 	#endif
 	
 	#ifndef TMCG_KEY_NIZK_STAGE2
-		/* Define the maximum soundness error probability of the TMCG public key;
-		   NIZK proof (Gennaro, Micciancio, Rabin), Stage 2: m is prime power product;
-		   2^{-TMCG_KEY_NIZK_STAGE2} */
+		/* Define the maximum soundness error probability of the TMCG public
+		   key; NIZK proof (Gennaro, Micciancio, Rabin), Stage 2: m is prime
+		   power product; soundness error is 2^{-TMCG_KEY_NIZK_STAGE2} */
 		#define TMCG_KEY_NIZK_STAGE2 128
 	#endif
 	
 	#ifndef TMCG_KEY_NIZK_STAGE3
-		/* Define the maximum soundness error probability for the TMCG public key;
-		   NIZK proof (Goldwasser, Micali); Stage 3: y \in NQR^\circ_m;
-		   2^{-TMCG_KEY_NIZK_STAGE3} */
+		/* Define the maximum soundness error probability for the TMCG public
+		   key; NIZK proof (Goldwasser, Micali); Stage 3: y \in NQR^\circ_m;
+		   soundness error is 2^{-TMCG_KEY_NIZK_STAGE3} */
 		#define TMCG_KEY_NIZK_STAGE3 128
 	#endif
 	
@@ -126,16 +127,19 @@
 	
 	#ifndef TMCG_MAX_CARD_CHARS
 		/* Define a helping macro */
-		#define TMCG_MAX_CARD_CHARS (TMCG_MAX_PLAYERS * TMCG_MAX_TYPEBITS * TMCG_MAX_VALUE_CHARS)
+		#define TMCG_MAX_CARD_CHARS \
+			(TMCG_MAX_PLAYERS * TMCG_MAX_TYPEBITS * TMCG_MAX_VALUE_CHARS)
 	#endif
 	
 	#ifndef TMCG_MAX_KEYBITS
 		/* Define a helping macro */
-		#define TMCG_MAX_KEYBITS ((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? (4 * TMCG_DDH_SIZE) : (4 * TMCG_QRA_SIZE))
+		#define TMCG_MAX_KEYBITS \
+			((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? \
+				(4 * TMCG_DDH_SIZE) : (4 * TMCG_QRA_SIZE))
 	#endif
 	
 	#ifndef TMCG_MAX_PLAYERS
-		/* Define the maximum number of players in the scheme of Schindelhauer */
+		/* Define the maximum number of players for scheme of Schindelhauer */
 		#define TMCG_MAX_PLAYERS 32
 	#endif
 	
@@ -146,8 +150,8 @@
 	
 	#ifndef TMCG_MAX_TYPEBITS
 		/* Define the number of bits which represents the maximum number of
-		   different card types in the scheme of Schindelhauer and the maximum
-		   size of the message space in the scheme of Barnett and Smart */
+		   different card types for the scheme of Schindelhauer and the maximum
+		   size of the message space for the scheme of Barnett and Smart */
 		#define TMCG_MAX_TYPEBITS 10
 	#endif
 	
@@ -243,7 +247,7 @@
 	#include <GolleDCPG_elgamal.hh>
 	#include <SchindelhauerTMCG.hh>
 	
-	// cryptographic protocols not directly related to mental poker	
+	// cryptographic protocols that are not directly related to mental poker	
 	#include <NaorPinkasEOTP.hh>
 	#include <CachinKursawePetzoldShoupSEABP.hh>
 	#include <PedersenVSS.hh>
