@@ -35,7 +35,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const bool exportable_in,
 	 const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const tmcg_openpgp_hashalgo_t hashalgo_in,
-	 const tmcg_openpgp_byte_t type_in,
+	 const tmcg_openpgp_signature_t type_in,
 	 const tmcg_openpgp_byte_t version_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
@@ -92,7 +92,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const bool exportable_in,
 	 const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const tmcg_openpgp_hashalgo_t hashalgo_in,
-	 const tmcg_openpgp_byte_t type_in,
+	 const tmcg_openpgp_signature_t type_in,
 	 const tmcg_openpgp_byte_t version_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
@@ -155,7 +155,7 @@ bool TMCG_OpenPGP_Signature::good
 void TMCG_OpenPGP_Signature::PrintInfo
 	() const
 {
-	std::cerr << "INFO: sigtype = 0x" << std::hex << (int)type <<
+	std::cerr << "INFO: type = 0x" << std::hex << (int)type <<
 		std::dec << " pkalgo = " << (int)pkalgo <<
 		" hashalgo = " << (int)hashalgo <<
 		" revocable = " << (revocable ? "true" : "false") <<
@@ -1197,7 +1197,7 @@ bool TMCG_OpenPGP_Subkey::Check
 		if (bindsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the binding signature cryptographically
-		if (bindsigs[j]->type == 0x18)
+		if (bindsigs[j]->type == TMCG_OPENPGP_SIGNATURE_SUBKEY_BINDING)
 		{
 			if (bindsigs[j]->Verify(primary->key,
 			    primary->pub_hashing, sub_hashing, verbose))
@@ -1288,7 +1288,7 @@ bool TMCG_OpenPGP_Subkey::Check
 		if (pbindsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the binding signature cryptographically
-		if (pbindsigs[j]->type == 0x19)
+		if (pbindsigs[j]->type == TMCG_OPENPGP_SIGNATURE_PRIMARY_KEY_BINDING)
 		{
 			if (pbindsigs[j]->Verify(key, primary->pub_hashing, sub_hashing,
 			    verbose))
@@ -3240,7 +3240,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
-	(const tmcg_openpgp_byte_t sigtype,
+	(const tmcg_openpgp_signature_t type,
 	 const tmcg_openpgp_hashalgo_t hashalgo,
 	 const time_t sigtime, const time_t keyexptime, 
 	 const tmcg_openpgp_octets_t &flags,
@@ -3252,7 +3252,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 	if (keyexptime != 0)
 		subpktlen += (6 + 4);
 	out.push_back(4); // V4 format
-	out.push_back(sigtype); // type (e.g. 0x10-0x13 UID certification)
+	out.push_back(type); // type (e.g. 0x10-0x13 for UID certification)
 	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
@@ -3310,7 +3310,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 	if (revoker.size())
 		subpktlen += 22;
 	out.push_back(4); // V4 format
-	out.push_back(0x1F); // type (i.e. signature directly on a key)
+	out.push_back(TMCG_OPENPGP_SIGNATURE_DIRECTLY_ON_A_KEY); // type
 	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
@@ -3361,7 +3361,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
-	(const tmcg_openpgp_byte_t sigtype,
+	(const tmcg_openpgp_signature_t type,
 	 const tmcg_openpgp_hashalgo_t hashalgo,
 	 const time_t sigtime, const time_t sigexptime,
 	 const std::string &policy, const tmcg_openpgp_octets_t &issuer,
@@ -3374,7 +3374,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 	if (policy.length())
 		subpktlen += (6 + policy.length());
 	out.push_back(4); // V4 format
-	out.push_back(sigtype); // type (e.g. 0x00 Binary Document)
+	out.push_back(type); // type (e.g. 0x00 for signature on a binary document)
 	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
@@ -3404,7 +3404,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature
-	(const tmcg_openpgp_byte_t sigtype,
+	(const tmcg_openpgp_signature_t type,
 	 const tmcg_openpgp_hashalgo_t hashalgo, 
 	 const time_t sigtime, const tmcg_openpgp_byte_t revcode,
 	 const std::string &reason, const tmcg_openpgp_octets_t &issuer, 
@@ -3414,7 +3414,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignatu
 	size_t subpktlen = (subpkts * 6) + 4 + issuer.size() + 
 		1 + reason.length();
 	out.push_back(4); // V4 format
-	out.push_back(sigtype); // type (e.g. 0x20/0x28 key/subkey revocation)
+	out.push_back(type); // type (e.g. 0x20/0x28 for key/subkey revocation)
 	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
@@ -3435,7 +3435,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignatu
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSignature
-	(const tmcg_openpgp_byte_t sigtype,
+	(const tmcg_openpgp_signature_t type,
 	 const tmcg_openpgp_hashalgo_t hashalgo, 
 	 const time_t sigtime, const time_t sigexptime, 
 	 const std::string &policy, const tmcg_openpgp_octets_t &issuer, 
@@ -3448,7 +3448,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSign
 	if (policy.length())
 		subpktlen += (6 + policy.length());
 	out.push_back(4); // V4 format
-	out.push_back(sigtype); // type (e.g. 0x10 user ID certification)
+	out.push_back(type); // type (e.g. 0x10 for user ID certification)
 	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
@@ -5023,7 +5023,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: packet too short
 				if (pkt[1] != 5)
 					return 0; // error: incorrect length
-				out.type = pkt[2];
+				out.type = (tmcg_openpgp_signature_t)pkt[2];
 				out.sigcreationtime = (pkt[3] << 24) +
 					(pkt[4] << 16) + (pkt[5] << 8) + 
 					pkt[6];
@@ -5041,7 +5041,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			{
 				if (pkt.size() < 12)
 					return 0; // error: packet too short
-				out.type = pkt[1];
+				out.type = (tmcg_openpgp_signature_t)pkt[1];
 				out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[2];
 				out.hashalgo = (tmcg_openpgp_hashalgo_t)pkt[3];
 				hspdlen = (pkt[4] << 8) + pkt[5];
@@ -5179,7 +5179,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			out.version = pkt[0];
 			if (out.version != 3)
 				return 0; // error: version not supported
-			out.type = pkt[1];
+			out.type = (tmcg_openpgp_signature_t)pkt[1];
 			out.hashalgo = (tmcg_openpgp_hashalgo_t)pkt[2];
 			out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[3];
 			for (size_t i = 0; i < 8; i++)
@@ -5353,7 +5353,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			}
 			else if (out.pkalgo == 108)
 			{
-				// Algorithm-Specific Fields for tDSS keys
+				// Algorithm-Specific Fields for old tDSS keys
 				mlen = PacketMPIDecode(mpis, out.p);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
@@ -6959,7 +6959,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	{
 		if (OctetsCompare(pub->id, issuer))
 		{
-			if (ctx.type == 0x18)
+			if (ctx.type == TMCG_OPENPGP_SIGNATURE_SUBKEY_BINDING)
 			{
 				// Authorizes the specified key to issue revocation signatures
 				// for this key. Class octet must have bit 0x80 set. If the bit
@@ -6990,7 +6990,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				// Subkey binding signature
 				sub->bindsigs.push_back(sig);
 			}
-			else if (ctx.type == 0x1F)
+			else if (ctx.type == TMCG_OPENPGP_SIGNATURE_DIRECTLY_ON_A_KEY)
 			{
 				// Authorizes the specified key to issue revocation signatures
 				// for this key. Class octet must have bit 0x80 set. If the bit
@@ -7010,7 +7010,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				// Direct key signature on subkey
 				sub->selfsigs.push_back(sig);
 			}
-			else if (ctx.type == 0x28)
+			else if (ctx.type == TMCG_OPENPGP_SIGNATURE_SUBKEY_REVOCATION)
 			{
 				// Key revocation signature on subkey
 				sub->keyrevsigs.push_back(sig);
@@ -7018,7 +7018,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 					std::cerr << "WARNING: key revocation signature on " <<
 						"subkey found" << std::endl;
 			}
-			else if (ctx.type == 0x30)
+			else if (ctx.type == TMCG_OPENPGP_SIGNATURE_CERTIFICATION_REVOCATION)
 			{
 				// Certification revocation signature on subkey
 				sub->certrevsigs.push_back(sig);
@@ -7037,12 +7037,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		}
 		else if (OctetsCompare(sub->id, issuer))
 		{
-			if (ctx.type == 0x19)
+			if (ctx.type == TMCG_OPENPGP_SIGNATURE_PRIMARY_KEY_BINDING)
 			{
 				// Primary key binding signature on subkey
 				sub->pbindsigs.push_back(sig);
 			}
-			else if (ctx.type == 0x1F)
+			else if (ctx.type == TMCG_OPENPGP_SIGNATURE_DIRECTLY_ON_A_KEY)
 			{
 				// Authorizes the specified key to issue revocation signatures
 				// for this key. Class octet must have bit 0x80 set. If the bit
@@ -7062,7 +7062,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				// Direct key signature on subkey
 				sub->selfsigs.push_back(sig);
 			}
-			else if (ctx.type == 0x30)
+			else if (ctx.type == TMCG_OPENPGP_SIGNATURE_CERTIFICATION_REVOCATION)
 			{
 				// Certification revocation signature on subkey
 				sub->certrevsigs.push_back(sig);
@@ -7079,7 +7079,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 						std::endl;
 			}
 		}
-		else if (ctx.type == 0x28)
+		else if (ctx.type == TMCG_OPENPGP_SIGNATURE_SUBKEY_REVOCATION)
 		{
 			// accumulate key revocation signatures
 			// issued by external revocation keys
@@ -7103,12 +7103,15 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	{
 		if (uid_flag)
 		{
-			if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
+			if ((ctx.type == TMCG_OPENPGP_SIGNATURE_GENERIC_CERTIFICATION) ||
+				(ctx.type == TMCG_OPENPGP_SIGNATURE_PERSONA_CERTIFICATION) ||
+				(ctx.type == TMCG_OPENPGP_SIGNATURE_CASUAL_CERTIFICATION) ||
+				(ctx.type == TMCG_OPENPGP_SIGNATURE_POSITIVE_CERTIFICATION))
 			{
 				// Certification signature on user ID
 				uid->certsigs.push_back(sig);
 			}
-			else if (ctx.type == 0x30)
+			else if (ctx.type == TMCG_OPENPGP_SIGNATURE_CERTIFICATION_REVOCATION)
 			{
 				// Certification revocation signature (user ID)
 				uid->certsigs.push_back(sig);
@@ -7122,7 +7125,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 						std::endl;
 			}
 		}
-		else if (ctx.type == 0x20)
+		else if (ctx.type == TMCG_OPENPGP_SIGNATURE_KEY_REVOCATION)
 		{
 			// accumulate key revocation signatures
 			// issued by external revocation keys
@@ -7143,7 +7146,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	}
 	if (!uid_flag && !uat_flag)
 	{
-		if (ctx.type == 0x1F)
+		if (ctx.type == TMCG_OPENPGP_SIGNATURE_DIRECTLY_ON_A_KEY)
 		{
 			// Authorizes the specified key to issue revocation signatures
 			// for this key. Class octet must have bit 0x80 set. If the bit
@@ -7163,7 +7166,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			// Direct key signature on primary key
 			pub->selfsigs.push_back(sig);
 		}
-		else if (ctx.type == 0x20)
+		else if (ctx.type == TMCG_OPENPGP_SIGNATURE_KEY_REVOCATION)
 		{
 			// Key revocation signature on primary key
 			pub->keyrevsigs.push_back(sig);
@@ -7171,7 +7174,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				std::cerr << "WARNING: key revocation signature on primary " <<
 					"key found" << std::endl;
 		}
-		else if (ctx.type == 0x30)
+		else if (ctx.type == TMCG_OPENPGP_SIGNATURE_CERTIFICATION_REVOCATION)
 		{
 			// Certification revocation signature on primary key
 			pub->certrevsigs.push_back(sig);
@@ -7199,7 +7202,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	}
 	else if (uid_flag && !uat_flag)
 	{
-		if ((ctx.type >= 0x10) && (ctx.type <= 0x13))
+		if ((ctx.type == TMCG_OPENPGP_SIGNATURE_GENERIC_CERTIFICATION) ||
+			(ctx.type == TMCG_OPENPGP_SIGNATURE_PERSONA_CERTIFICATION) ||
+			(ctx.type == TMCG_OPENPGP_SIGNATURE_CASUAL_CERTIFICATION) ||
+			(ctx.type == TMCG_OPENPGP_SIGNATURE_POSITIVE_CERTIFICATION))
 		{
 			// Authorizes the specified key to issue revocation signatures
 			// for this key. Class octet must have bit 0x80 set. If the bit
@@ -7219,7 +7225,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			// Certification self-signature on user ID
 			uid->selfsigs.push_back(sig);
 		}
-		else if (ctx.type == 0x30)
+		else if (ctx.type == TMCG_OPENPGP_SIGNATURE_CERTIFICATION_REVOCATION)
 		{
 			// Certification revocation signature on user ID
 			uid->revsigs.push_back(sig);
@@ -7442,12 +7448,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 {
 	// decode ASCII Armor
 	tmcg_openpgp_octets_t pkts;
-	tmcg_openpgp_armor_t atype = ArmorDecode(in, pkts);
-	if (atype != TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK)
+	tmcg_openpgp_armor_t type = ArmorDecode(in, pkts);
+	if (type != TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK)
 	{
 		if (verbose)
 			std::cerr << "ERROR: wrong type of ASCII Armor " <<
-				"found (type = " << (int)atype << ")" << std::endl;
+				"found (type = " << (int)type << ")" << std::endl;
 		return false;
 	}
 	// parse the public key block packet by packet
@@ -7611,12 +7617,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 {
 	// decode ASCII Armor
 	tmcg_openpgp_octets_t pkts;
-	tmcg_openpgp_armor_t atype = ArmorDecode(in, pkts);
-	if (atype != TMCG_OPENPGP_ARMOR_SIGNATURE)
+	tmcg_openpgp_armor_t type = ArmorDecode(in, pkts);
+	if (type != TMCG_OPENPGP_ARMOR_SIGNATURE)
 	{
 		if (verbose)
 			std::cerr << "ERROR: wrong type of ASCII Armor " <<
-				"found (type = " << (int)atype << ")" << std::endl;
+				"found (type = " << (int)type << ")" << std::endl;
 		return false;
 	}
 
@@ -7760,12 +7766,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 {
 	// decode ASCII Armor
 	tmcg_openpgp_octets_t pkts;
-	tmcg_openpgp_armor_t atype = ArmorDecode(in, pkts);
-	if (atype != TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK)
+	tmcg_openpgp_armor_t type = ArmorDecode(in, pkts);
+	if (type != TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK)
 	{
 		if (verbose)
 			std::cerr << "ERROR: wrong type of ASCII Armor " <<
-				"found (type = " << (int)atype << ")" <<
+				"found (type = " << (int)type << ")" <<
 				std::endl;
 		return false;
 	}

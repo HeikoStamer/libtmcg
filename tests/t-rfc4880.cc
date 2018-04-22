@@ -230,8 +230,8 @@ int main
 	ofs.close();
 	tmcg_openpgp_octets_t hash, trailer, left;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketSigPrepareDetachedSignature(0x00, TMCG_OPENPGP_HASHALGO_SHA256,
-		time(NULL), 360, "", subkeyid, trailer);
+		PacketSigPrepareDetachedSignature(TMCG_OPENPGP_SIGNATURE_BINARY_DOCUMENT,
+		TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 360, "", subkeyid, trailer);
 	std::cout << "BinaryDocumentHash(\"" << filename << "\", ...)" << std::endl;
 	bool hash_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 		BinaryDocumentHash(filename, trailer, TMCG_OPENPGP_HASHALGO_SHA256,
@@ -298,7 +298,7 @@ int main
 	assert(!ret);
 	subkeyid.clear(), out.clear(), enc.clear();
 	for (size_t i = 0; i < 8; i++)
-		subkeyid.push_back(0x00);
+		subkeyid.push_back(0x00); // set OpenPGP wildcard key ID 
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode(subkeyid, me,
 		out);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode(enc, out);
@@ -331,8 +331,9 @@ int main
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(keystr, uid);
 	pubflags.push_back(0x01 | 0x02);  // certify other keys and sign data
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketSigPrepareSelfSignature(0x13, TMCG_OPENPGP_HASHALGO_SHA256,
-		time(NULL), 1000, pubflags, keyid, uidsig_hashing); 
+		PacketSigPrepareSelfSignature(TMCG_OPENPGP_SIGNATURE_POSITIVE_CERTIFICATION,
+			TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 1000, pubflags, keyid,
+			uidsig_hashing); 
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing,
 		keystr, uidsig_hashing, TMCG_OPENPGP_HASHALGO_SHA256, hash,
@@ -349,8 +350,9 @@ int main
 		TMCG_OPENPGP_PKALGO_ELGAMAL, p, q, g, y, sub);
 	subflags.push_back(0x04 | 0x08); // encrypt communications and storage
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketSigPrepareSelfSignature(0x18, TMCG_OPENPGP_HASHALGO_SHA256,
-		time(NULL), 1000, subflags, keyid, subsig_hashing);
+		PacketSigPrepareSelfSignature(TMCG_OPENPGP_SIGNATURE_SUBKEY_BINDING,
+			TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 1000, subflags, keyid,
+			subsig_hashing);
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
 	hash.clear();
