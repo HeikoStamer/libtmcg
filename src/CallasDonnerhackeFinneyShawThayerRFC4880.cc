@@ -2081,6 +2081,12 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength
 			return 32; // AES with 256-bit key
 		case TMCG_OPENPGP_SKALGO_TWOFISH:
 			return 32; // Twofish with 256-bit key
+		case TMCG_OPENPGP_SKALGO_CAMELLIA128:
+			return 16; // Camellia with 128-bit key (cf. [RFC3713, RFC5581]) 
+		case TMCG_OPENPGP_SKALGO_CAMELLIA192:
+			return 24; // Camellia with 192-bit key (cf. [RFC3713, RFC5581])
+		case TMCG_OPENPGP_SKALGO_CAMELLIA256:
+			return 32; // Camellia with 256-bit key (cf. [RFC3713, RFC5581])
 		default:
 			return 0;
 	}
@@ -2109,6 +2115,10 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength
 		case TMCG_OPENPGP_SKALGO_AES256:
 		case TMCG_OPENPGP_SKALGO_TWOFISH:
 			return 16; // AES128, AES192, AES256, Twofish
+		case TMCG_OPENPGP_SKALGO_CAMELLIA128:
+		case TMCG_OPENPGP_SKALGO_CAMELLIA192:
+		case TMCG_OPENPGP_SKALGO_CAMELLIA256:
+			return 16; // Camellia (cf. [RFC3713, RFC5581])
 		default:
 			return 0;
 	}
@@ -2146,6 +2156,15 @@ int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmSymGCRY
 		// Twofish with 256-bit key
 		case TMCG_OPENPGP_SKALGO_TWOFISH:
 			return GCRY_CIPHER_TWOFISH;
+		// Camellia with 128-bit key (cf. [RFC3713])
+		case TMCG_OPENPGP_SKALGO_CAMELLIA128:
+			return GCRY_CIPHER_CAMELLIA128;
+		// Camellia with 192-bit key (cf. [RFC3713])
+		case TMCG_OPENPGP_SKALGO_CAMELLIA192:
+			return GCRY_CIPHER_CAMELLIA192;
+		// Camellia with 256-bit key (cf. [RFC3713])
+		case TMCG_OPENPGP_SKALGO_CAMELLIA256:
+			return GCRY_CIPHER_CAMELLIA256;
 		default:
 			return 0;
 	}
