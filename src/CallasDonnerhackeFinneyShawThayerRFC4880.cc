@@ -7489,8 +7489,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		tmcg_openpgp_octets_t current_packet;
 		if (embedded_pkt.size())
 		{
-			ptag = PacketDecode(embedded_pkt, verbose,
-				ctx, current_packet);
+			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet);
 			if (verbose > 2)
 				std::cerr << "INFO: [EMBEDDED] PacketDecode() = " <<
 					(int)ptag << " version = " << (int)ctx.version << std::endl;
@@ -7498,8 +7497,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		}
 		else
 		{
-			ptag = PacketDecode(pkts, verbose,
-				ctx, current_packet);
+			ptag = PacketDecode(pkts, verbose, ctx, current_packet);
 			++pnum;
 			if (verbose > 2)
 				std::cerr << "INFO: PacketDecode() = " <<
@@ -7648,8 +7646,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	// parse single signature packet
 	tmcg_openpgp_packet_ctx_t ctx;
 	tmcg_openpgp_octets_t current_packet;
-	tmcg_openpgp_byte_t ptag = PacketDecode(pkts, verbose, ctx,
-		current_packet);
+	tmcg_openpgp_byte_t ptag = PacketDecode(pkts, verbose, ctx, current_packet);
 	if (verbose > 2)
 		std::cerr << "INFO: PacketDecode() = " << (int)ptag << 
 			" version = " << (int)ctx.version << std::endl;
@@ -7810,8 +7807,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 		tmcg_openpgp_octets_t current_packet;
 		if (embedded_pkt.size())
 		{
-			ptag = PacketDecode(embedded_pkt, verbose,
-				ctx, current_packet);
+			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet);
 			if (verbose > 2)
 				std::cerr << "INFO: [EMBEDDED] PacketDecode() = " <<
 					(int)ptag << " version = " << (int)ctx.version << std::endl;
@@ -7819,8 +7815,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 		}
 		else
 		{
-			ptag = PacketDecode(pkts, verbose,
-				ctx, current_packet);
+			ptag = PacketDecode(pkts, verbose, ctx, current_packet);
 			++pnum;
 			if (verbose > 2)
 				std::cerr << "INFO: PacketDecode() = " <<
