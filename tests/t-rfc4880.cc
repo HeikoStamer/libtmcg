@@ -122,9 +122,60 @@ int main
 		}
 	}
 
+	// testing S2K functions
+	tmcg_openpgp_byte_t octcnt = 1;
+	size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6);
+	size_t keylen = gcry_cipher_get_algo_keylen(TMCG_GCRY_ENC_ALGO);
+	std::string keystr = "Test";
+	char salt[8];
+	char key[keylen];
+	gcry_error_t err;
+	gcry_create_nonce(salt, sizeof(salt));
+	std::cout << "gcry_kdf_derive(..., GCRY_KDF_ITERSALTED_S2K, " <<
+		"TMCG_GCRY_MD_ALGO, ..., " << hashcnt << ", ...)" << std::endl;
+	err = gcry_kdf_derive(keystr.c_str(), keystr.length(),
+		GCRY_KDF_ITERSALTED_S2K, TMCG_GCRY_MD_ALGO, salt, sizeof(salt),
+		hashcnt, sizeof(key), key);
+	assert(!err);
+	tmcg_openpgp_octets_t salt2, out2;
+	out.clear();
+	for (size_t i = 0; i < sizeof(key); i++)
+		out.push_back(key[i]); // copy the result
+	for (size_t i = 0; i < sizeof(salt); i++)
+		salt2.push_back(salt[i]); // copy the salt
+	std::cout << "S2KCompute(...)" << std::endl;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, keylen, keystr, salt2, true,
+		octcnt, out2);
+	assert(CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(out, out2));
+
+	// create different asymmetric keys by using libgcrypt
+	size_t erroff = 0;
+	gcry_sexp_t elgkey, elgparms;
+	std::cout << "gcry_sexp_build(...)" << std::endl;
+	ret = gcry_sexp_build(&elgparms, &erroff, "(genkey (elg (nbits 4:2048)))");
+	assert(!ret);
+	std::cout << "gcry_pk_genkey(..., [elg])" << std::endl;
+	ret = gcry_pk_genkey(&elgkey, elgparms);
+	assert(!ret);
+	gcry_sexp_t dsakey, dsaparms;
+	std::cout << "gcry_sexp_build(...)" << std::endl;
+	ret = gcry_sexp_build(&dsaparms, &erroff, "(genkey (dsa (nbits 4:3072)))");
+	assert(!ret);
+	std::cout << "gcry_pk_genkey(..., [dsa])" << std::endl;
+	ret = gcry_pk_genkey(&dsakey, dsaparms);
+	assert(!ret);
+	gcry_sexp_t rsakey, rsaparms;
+	std::cout << "gcry_sexp_build(...)" << std::endl;
+	ret = gcry_sexp_build(&rsaparms, &erroff, "(genkey (rsa (nbits 4:3072)))");
+	assert(!ret);
+	std::cout << "gcry_pk_genkey(..., [rsa])" << std::endl;
+	ret = gcry_pk_genkey(&rsakey, rsaparms);
+	assert(!ret);
+	time_t creation = time(NULL); // set OpenPGP creation time
+
 	// testing SymmetricEncryptAES256() and SymmetricDecryptAES256()
 	// testing AsymmetricEncryptElgamal() and AsymmetricDecryptElgamal()
-	gcry_sexp_t elgkey, elgparms;
 	tmcg_openpgp_octets_t lit, seskey, prefix, enc, subkeyid;
 	std::string m = "This is a test message.", armored_message;
 	in.clear();
@@ -136,13 +187,6 @@ int main
 		seskey, prefix, true, enc);
 	assert(!ret);
 	out.clear();
-	size_t erroff;
-	std::cout << "gcry_sexp_build(...)" << std::endl;
-	ret = gcry_sexp_build(&elgparms, &erroff, "(genkey (elg (nbits 4:2048)))");
-	assert(!ret);
-	std::cout << "gcry_pk_genkey(...)" << std::endl;
-	ret = gcry_pk_genkey(&elgkey, elgparms);
-	assert(!ret);
 	gcry_mpi_t gk, myk;
 	gk = gcry_mpi_new(2048);
 	myk = gcry_mpi_new(2048);
@@ -151,7 +195,7 @@ int main
 		AsymmetricEncryptElgamal(seskey, elgkey, gk, myk);
 	assert(!ret);
 	for (size_t i = 0; i < 8; i++)
-		subkeyid.push_back(0x00);
+		subkeyid.push_back(0x00); // set OpenPGP wildcard key ID 
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketPkeskEncode(subkeyid, gk, myk, out);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode(enc, out);
@@ -163,8 +207,6 @@ int main
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::
 		AsymmetricDecryptElgamal(gk, myk, elgkey, seskey);
 	assert(!ret);
-	gcry_sexp_release(elgparms);
-	gcry_sexp_release(elgkey);
 	gcry_mpi_release(gk);
 	gcry_mpi_release(myk);
 	std::cout << "SymmetricDecryptAES256(...)" << std::endl;
@@ -197,16 +239,8 @@ int main
 	assert(hash_ok);
 
 	// testing AsymmetricSignDSA() and AsymmetricVerifyDSA()
-	time_t creation = time(NULL);
-	gcry_sexp_t dsakey, dsaparms;
 	tmcg_openpgp_octets_t sig;
 	std::string armored_signature;
-	std::cout << "gcry_sexp_build(...)" << std::endl;
-	ret = gcry_sexp_build(&dsaparms, &erroff, "(genkey (dsa (nbits 4:3072)))");
-	assert(!ret);
-	std::cout << "gcry_pk_genkey(...)" << std::endl;
-	ret = gcry_pk_genkey(&dsakey, dsaparms);
-	assert(!ret);
 	gcry_mpi_t r, s;
 	r = gcry_mpi_new(2048);
 	s = gcry_mpi_new(2048);
@@ -234,23 +268,15 @@ int main
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash2,
 		dsakey, r, s);
 	assert(!ret);
-	gcry_sexp_release(dsaparms);
 	gcry_mpi_release(r);
 	gcry_mpi_release(s);
 
 	// testing AsymmetricSignRSA() and AsymmetricVerifyRSA()
-	gcry_sexp_t rsakey, rsaparms;
 	hash.clear(), trailer.clear(), left.clear(), sig.clear();
 	for (size_t i = 0; i < 2; i++)
 		left.push_back(i); // dummy values
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		HashCompute(TMCG_OPENPGP_HASHALGO_SHA256, lit, hash); // SHA256
-	std::cout << "gcry_sexp_build(...)" << std::endl;
-	ret = gcry_sexp_build(&rsaparms, &erroff, "(genkey (rsa (nbits 4:3072)))");
-	assert(!ret);
-	std::cout << "gcry_pk_genkey(...)" << std::endl;
-	ret = gcry_pk_genkey(&rsakey, rsaparms);
-	assert(!ret);
 	s = gcry_mpi_new(3072);
 	std::cout << "AsymmetricSignRSA(...)" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignRSA(hash,
@@ -260,6 +286,8 @@ int main
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA(hash,
 		rsakey, TMCG_OPENPGP_HASHALGO_SHA256, s);
 	assert(!ret);
+	gcry_mpi_release(s);
+
 	// testing AsymmetricEncryptRSA() and AsymmetricDecryptRSA()
 	gcry_mpi_t me;
 	me = gcry_mpi_new(2048);
@@ -284,37 +312,7 @@ int main
 	assert(!ret);
 	assert(CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(seskey,
 		seskey2));
-	gcry_sexp_release(rsaparms);
-	gcry_sexp_release(rsakey);
-	gcry_mpi_release(s);
 	gcry_mpi_release(me);
-
-	// testing S2K functions
-	tmcg_openpgp_byte_t octcnt = 1;
-	size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6);
-	size_t keylen = gcry_cipher_get_algo_keylen(TMCG_GCRY_ENC_ALGO);
-	std::string keystr = "Test";
-	char salt[8];
-	char key[keylen];
-	gcry_error_t err;
-	gcry_create_nonce(salt, sizeof(salt));
-	std::cout << "gcry_kdf_derive(..., GCRY_KDF_ITERSALTED_S2K, " <<
-		"TMCG_GCRY_MD_ALGO, ..., " << hashcnt << ", ...)" << std::endl;
-	err = gcry_kdf_derive(keystr.c_str(), keystr.length(),
-		GCRY_KDF_ITERSALTED_S2K, TMCG_GCRY_MD_ALGO, salt, sizeof(salt),
-		hashcnt, sizeof(key), key);
-	assert(!err);
-	tmcg_openpgp_octets_t salt2, out2;
-	out.clear();
-	for (size_t i = 0; i < sizeof(key); i++)
-		out.push_back(key[i]); // copy the result
-	for (size_t i = 0; i < sizeof(salt); i++)
-		salt2.push_back(salt[i]); // copy the salt
-	std::cout << "S2KCompute(...)" << std::endl;
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, keylen, keystr, salt2, true,
-		octcnt, out2);
-	assert(CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(out, out2));
 
 	// testing PublicKeyBlockParse(), FingerprintCompute(), KeyidCompute()
 	tmcg_openpgp_octets_t all, pub, uid, uidsig, sub, subsig, pubflags;
@@ -334,7 +332,7 @@ int main
 	pubflags.push_back(0x01 | 0x02);  // certify other keys and sign data
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketSigPrepareSelfSignature(0x13, TMCG_OPENPGP_HASHALGO_SHA256,
-		time(NULL), 6000, pubflags, keyid, uidsig_hashing); 
+		time(NULL), 1000, pubflags, keyid, uidsig_hashing); 
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing,
 		keystr, uidsig_hashing, TMCG_OPENPGP_HASHALGO_SHA256, hash,
@@ -352,7 +350,7 @@ int main
 	subflags.push_back(0x04 | 0x08); // encrypt communications and storage
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketSigPrepareSelfSignature(0x18, TMCG_OPENPGP_HASHALGO_SHA256,
-		time(NULL), 6000, subflags, keyid, subsig_hashing);
+		time(NULL), 1000, subflags, keyid, subsig_hashing);
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
 	hash.clear();
@@ -423,8 +421,15 @@ int main
 	parse_ok = signature->Verify(dsakey, filename, 3);
 	assert(parse_ok);
 	delete signature;
-	gcry_sexp_release(dsakey);
 	remove(filename.c_str());
+
+	// release keys generated by using libgcrypt
+	gcry_sexp_release(elgparms);
+	gcry_sexp_release(elgkey);
+	gcry_sexp_release(dsaparms);
+	gcry_sexp_release(dsakey);
+	gcry_sexp_release(rsaparms);
+	gcry_sexp_release(rsakey);
 	
 	return 0;
 }
