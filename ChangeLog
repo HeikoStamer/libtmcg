@@ -7,6 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-04-22] added abstraction types tmcg_mpi_vector_t and tmcg_mpi_matrix_t
 * [2018-04-22] added abstraction types tmcg_mpz_vector_t and tmcg_mpz_matrix_t
 * [2018-03-29] VTMF: added KeyGenerationProtocol_NumberOfKeys()
 * [2018-03-20] release 1.3.12 of LibTMCG

@@ -221,10 +221,13 @@
 	#endif
 
 	// definition of some common types (TODO: implement by abstraction layer)
-	#include <gmp.h>
 	#include <vector>
+	#include <gmp.h>
 	typedef std::vector<mpz_ptr>					tmcg_mpz_vector_t;
 	typedef std::vector< std::vector<mpz_ptr> >		tmcg_mpz_matrix_t;
+	#include <gcrypt.h>
+	typedef std::vector<gcry_mpi_t>					tmcg_mpi_vector_t;
+	typedef std::vector< std::vector<gcry_mpi_t> >	tmcg_mpi_matrix_t;
 
 	// data structures and protocols for mental poker
 	#include <TMCG_SecretKey.hh>
