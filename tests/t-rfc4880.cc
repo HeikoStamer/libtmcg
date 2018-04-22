@@ -197,7 +197,6 @@ int main
 	assert(hash_ok);
 
 	// testing AsymmetricSignDSA() and AsymmetricVerifyDSA()
-	time_t creation = time(NULL);
 	gcry_sexp_t dsakey, dsaparms;
 	tmcg_openpgp_octets_t sig;
 	std::string armored_signature;
@@ -317,6 +316,7 @@ int main
 	assert(CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(out, out2));
 
 	// testing PublicKeyBlockParse(), FingerprintCompute(), KeyidCompute()
+	time_t creation = time(NULL);
 	tmcg_openpgp_octets_t all, pub, uid, uidsig, sub, subsig, pubflags;
 	tmcg_openpgp_octets_t subflags, keyid, pub_hashing, uidsig_hashing;
 	tmcg_openpgp_octets_t uidsig_left, sub_hashing, subsig_hashing, subsig_left;
@@ -325,6 +325,7 @@ int main
 	std::cout << "gcry_sexp_extract_param(...)" << std::endl;
 	ret = gcry_sexp_extract_param(dsakey, NULL, "pqgy", &p, &q, &g, &y, NULL);
 	assert(!ret);
+	sleep(42); // wait some seconds to get different timestamps
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creation,
 		TMCG_OPENPGP_PKALGO_DSA, p, q, g, y, pub);
 	for (size_t i = 6; i < pub.size(); i++)
