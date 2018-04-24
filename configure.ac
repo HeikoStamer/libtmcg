@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20180320])
+AC_REVISION([20180424])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.13], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -84,6 +84,8 @@ AC_DEFINE(TMCG_OPENPGP_CRC24_POLY, 0x1864CFB,
 	[Define the generator for OPENPGP CRC24 algorithm])
 AC_DEFINE(TMCG_OPENPGP_RADIX64_MC, 64,
 	[Define the maximum number of characters in a single line of Radix-64 encoding])
+AC_DEFINE(TMCG_OPENPGP_MAX_ALLOC, 2147483648,
+	[Define the maximum number of memory to allocate for OPENPGP packet context structures])
 
 AC_DEFINE(TMCG_MR_ITERATIONS, 64,
 	[Define the number of iterations for the Miller-Rabin primality test.

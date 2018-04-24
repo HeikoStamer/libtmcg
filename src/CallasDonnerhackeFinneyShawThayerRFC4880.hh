@@ -621,6 +621,7 @@ class TMCG_OpenPGP_Keyring
 class CallasDonnerhackeFinneyShawThayerRFC4880
 {
 	private:
+		static size_t tmcg_openpgp_mem_alloc; // memory guard of this class
 		struct notRadix64 {
 			bool operator() (const char c)
 			{
@@ -680,6 +681,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 TMCG_OpenPGP_UserID*							&uid);
 
 	public:
+		static void MemoryGuardReset
+			();
+		static size_t MemoryGuardInfo
+			();
+
 		static size_t AlgorithmKeyLength
 			(const tmcg_openpgp_skalgo_t					algo);
 		static size_t AlgorithmIVLength

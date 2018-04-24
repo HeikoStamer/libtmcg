@@ -2058,6 +2058,22 @@ TMCG_OpenPGP_Keyring::~TMCG_OpenPGP_Keyring
 
 // ===========================================================================
 
+size_t CallasDonnerhackeFinneyShawThayerRFC4880::tmcg_openpgp_mem_alloc = 0;
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::MemoryGuardReset
+	()
+{
+	tmcg_openpgp_mem_alloc = 0;
+}
+
+size_t CallasDonnerhackeFinneyShawThayerRFC4880::MemoryGuardInfo
+	()
+{
+	return tmcg_openpgp_mem_alloc;
+}
+
+// ===========================================================================
+
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmKeyLength
 	(const tmcg_openpgp_skalgo_t algo)
 {
@@ -5069,6 +5085,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				hspd.insert(hspd.end(),
 					pkt.begin()+6, pkt.begin()+6+hspdlen);
 				out.hspdlen = hspdlen;
+				tmcg_openpgp_mem_alloc += out.hspdlen;
+				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+				{
+					tmcg_openpgp_mem_alloc -= out.hspdlen;
+					return 0; // error: memory limit exceeded
+				}
 				out.hspd =
 					new tmcg_openpgp_byte_t[out.hspdlen];
 				for (size_t i = 0; i < out.hspdlen; i++)
@@ -5151,6 +5173,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.encdatalen = pkt.size() - 4;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
+				tmcg_openpgp_mem_alloc += out.encdatalen;
+				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+				{
+					tmcg_openpgp_mem_alloc -= out.encdatalen;
+					return 0; // error: memory limit exceeded
+				}
 				out.encdata =
 					new tmcg_openpgp_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
@@ -5166,6 +5194,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.encdatalen = pkt.size() - 12;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
+				tmcg_openpgp_mem_alloc += out.encdatalen;
+				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+				{
+					tmcg_openpgp_mem_alloc -= out.encdatalen;
+					return 0; // error: memory limit exceeded
+				}
 				out.encdata =
 					new tmcg_openpgp_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
@@ -5184,6 +5218,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.encdatalen = pkt.size() - 13;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
+				tmcg_openpgp_mem_alloc += out.encdatalen;
+				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+				{
+					tmcg_openpgp_mem_alloc -= out.encdatalen;
+					return 0; // error: memory limit exceeded
+				}
 				out.encdata =
 					new tmcg_openpgp_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
@@ -5667,6 +5707,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if (mpis.size() < 4)
 					return 0; // error: bad encrypted data
 				out.encdatalen = mpis.size();
+				tmcg_openpgp_mem_alloc += out.encdatalen;
+				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+				{
+					tmcg_openpgp_mem_alloc -= out.encdatalen;
+					return 0; // error: memory limit exceeded
+				}
 				out.encdata =
 					new tmcg_openpgp_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
@@ -5746,6 +5792,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (out.compalgo > 3)
 				return 0; // error: algorithm not supported
 			out.compdatalen = pkt.size() - 1;
+			tmcg_openpgp_mem_alloc += out.compdatalen;
+			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+			{
+				tmcg_openpgp_mem_alloc -= out.compdatalen;
+				return 0; // error: memory limit exceeded
+			}
 			out.compdata =
 				new tmcg_openpgp_byte_t[out.compdatalen];
 			for (size_t i = 0; i < out.compdatalen; i++)
@@ -5755,6 +5807,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (pkt.size() == 0)
 				return 0; // error: empty packet body
 			out.encdatalen = pkt.size();
+			tmcg_openpgp_mem_alloc += out.encdatalen;
+			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+			{
+				tmcg_openpgp_mem_alloc -= out.encdatalen;
+				return 0; // error: memory limit exceeded
+			}
 			out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
 			for (size_t i = 0; i < out.encdatalen; i++)
 				out.encdata[i] = pkt[i];
@@ -5782,6 +5840,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				(pkt[5+out.datafilenamelen] << 8) +
 				pkt[6+out.datafilenamelen];
 			out.datalen = pkt.size() - (out.datafilenamelen + 6);
+			tmcg_openpgp_mem_alloc += out.datalen;
+			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+			{
+				tmcg_openpgp_mem_alloc -= out.datalen;
+				return 0; // error: memory limit exceeded
+			}
 			out.data = new tmcg_openpgp_byte_t[out.datalen];
 			for (size_t i = 0; i < out.datalen; i++)
 				out.data[i] = pkt[6+out.datafilenamelen+i];
@@ -5803,6 +5867,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (out.version != 1)
 				return 0; // error: version not supported
 			out.encdatalen = pkt.size() - 1;
+			tmcg_openpgp_mem_alloc += out.encdatalen;
+			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+			{
+				tmcg_openpgp_mem_alloc -= out.encdatalen;
+				return 0; // error: memory limit exceeded
+			}
 			out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
 			for (size_t i = 0; i < out.encdatalen; i++)
 				out.encdata[i] = pkt[1+i];
@@ -5896,13 +5966,29 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextRelease
 	gcry_mpi_release(ctx.x_i);
 	gcry_mpi_release(ctx.xprime_i);
 	if (ctx.hspd != NULL)
+	{
 		delete [] ctx.hspd;
+		if (tmcg_openpgp_mem_alloc >= ctx.hspdlen)
+			tmcg_openpgp_mem_alloc -= ctx.hspdlen;
+	}
 	if (ctx.encdata != NULL)
+	{
 		delete [] ctx.encdata;
+		if (tmcg_openpgp_mem_alloc >= ctx.encdatalen)
+			tmcg_openpgp_mem_alloc -= ctx.encdatalen;
+	}
 	if (ctx.compdata != NULL)
+	{
 		delete [] ctx.compdata;
+		if (tmcg_openpgp_mem_alloc >= ctx.compdatalen)
+			tmcg_openpgp_mem_alloc -= ctx.compdatalen;
+	}
 	if (ctx.data != NULL)
+	{
 		delete [] ctx.data;
+		if (tmcg_openpgp_mem_alloc >= ctx.datalen)
+			tmcg_openpgp_mem_alloc -= ctx.datalen;
+	}
 }
 
 // ===========================================================================

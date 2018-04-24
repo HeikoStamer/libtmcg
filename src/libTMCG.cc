@@ -34,6 +34,9 @@ static const std::string LibTMCG_ID =
 bool init_libTMCG
 	()
 {
+	// initialize memory guards
+	CallasDonnerhackeFinneyShawThayerRFC4880::MemoryGuardReset();
+
 	// initialize libgmp
 	if (strcmp(gmp_version, TMCG_LIBGMP_VERSION) < 0)
 	{
