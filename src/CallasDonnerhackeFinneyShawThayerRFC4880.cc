@@ -511,6 +511,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	}
 	else if (version == 4)
 	{
+		tmcg_openpgp_octets_t empty;
 		trailer.push_back(4);
 		trailer.push_back(type);
 		trailer.push_back(pkalgo);
@@ -519,7 +520,77 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.push_back(hspd.size() & 0xFF);
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
 		CallasDonnerhackeFinneyShawThayerRFC4880::
-			CertificationHash(pub_hashing, userid, trailer,
+			CertificationHash(pub_hashing, userid, empty, trailer,
+			hashalgo, hash, left);	
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: signature version " <<
+				"not supported" << std::endl;
+		return false;
+	}
+	if (verbose > 2)
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
+			" " << (int)left[1] << std::dec << std::endl;
+	gcry_error_t vret;
+	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	{
+		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+	{
+		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: signature algorithm " <<
+				"not supported" << std::endl;	
+		return false;
+	}
+	if (vret)
+	{
+		if (verbose)
+			std::cerr << "ERROR: verification of signature " <<
+				"failed (rc = " << gcry_err_code(vret) <<
+				", str = " << gcry_strerror(vret) << ")" <<
+				std::endl;
+		valid = false;
+		return false;
+	}
+	valid = true;
+	return true;
+}
+
+bool TMCG_OpenPGP_Signature::Verify
+	(const gcry_sexp_t key,
+	 const tmcg_openpgp_octets_t &pub_hashing,
+	 const tmcg_openpgp_octets_t &userattribute,
+	 const int dummy,
+	 const int verbose)
+{
+	if (!good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: bad signature material" <<	std::endl;
+		return false;
+	}
+	tmcg_openpgp_octets_t trailer, left, hash;
+	if (version == 4)
+	{
+		trailer.push_back(4);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			CertificationHash(pub_hashing, "", userattribute, trailer,
 			hashalgo, hash, left);	
 	}
 	else
@@ -4871,7 +4942,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 				std::cerr << "ERROR: incorrect ";
 				if (out.critical)
 					std::cerr << "critical ";
-				std::cerr << "subpacket found" << std::endl;
+				std::cerr << "signature subpacket found" << std::endl;
 			}
 			return 0x00; // error: incorrect subpacket
 		}
@@ -4887,12 +4958,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 				std::cerr << "INFO: unrecognized ";
 				if (out.critical)
 					std::cerr << "critical ";
-				std::cerr << "subpacket found" << std::endl;
+				std::cerr << "signature subpacket found" << std::endl;
 			}
 		}
 		else if (verbose > 2)
 		{
-			std::cerr << "INFO: subpacket type = " <<
+			std::cerr << "INFO: signature subpacket type = " <<
 				(int)sptype << " found" << std::endl;
 		}
 	}
@@ -6093,7 +6164,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV3
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	(const tmcg_openpgp_octets_t &key, const std::string &uid, 
-	 const tmcg_openpgp_octets_t &trailer,
+	 const tmcg_openpgp_octets_t &uat, const tmcg_openpgp_octets_t &trailer,
 	 const tmcg_openpgp_hashalgo_t hashalgo,
 	 tmcg_openpgp_octets_t &hash, tmcg_openpgp_octets_t &left)
 {
@@ -6114,14 +6185,27 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	// ID certifications or the constant 0xD1 for User Attribute
 	// certifications, followed by a four-octet number giving the length
 	// of the User ID or User Attribute data, and then the User ID or 
-	// User Attribute data. 
-	hash_input.push_back(0xB4);
-	hash_input.push_back((uidlen >> 24) & 0xFF);
-	hash_input.push_back((uidlen >> 16) & 0xFF);
-	hash_input.push_back((uidlen >> 8) & 0xFF);
-	hash_input.push_back(uidlen & 0xFF);
-	for (size_t i = 0; i < uidlen; i++)
-		hash_input.push_back(uid[i]);
+	// User Attribute data.
+	if (uidlen)
+	{
+		hash_input.push_back(0xB4);
+		hash_input.push_back((uidlen >> 24) & 0xFF);
+		hash_input.push_back((uidlen >> 16) & 0xFF);
+		hash_input.push_back((uidlen >> 8) & 0xFF);
+		hash_input.push_back(uidlen & 0xFF);
+		for (size_t i = 0; i < uidlen; i++)
+			hash_input.push_back(uid[i]);
+	}
+	else
+	{
+		hash_input.push_back(0xD1);
+		hash_input.push_back((uat.size() >> 24) & 0xFF);
+		hash_input.push_back((uat.size() >> 16) & 0xFF);
+		hash_input.push_back((uat.size() >> 8) & 0xFF);
+		hash_input.push_back(uat.size() & 0xFF);
+		for (size_t i = 0; i < uat.size(); i++)
+			hash_input.push_back(uat[i]);
+	}
 	// Once the data body is hashed, then a trailer is hashed. [...]
 	// A V4 signature hashes the packet body starting from its first
 	// field, the version number, through the end of the hashed subpacket

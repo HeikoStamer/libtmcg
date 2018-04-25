@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20180424])
+AC_REVISION([20180425])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.13], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
@@ -29,9 +29,9 @@ AC_INIT([LibTMCG], [1.3.13], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongn
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
 #   (Interfaces added:      CURRENT++, AGE++, REVISION=0)
 #   (No interfaces changed:                   REVISION++)
-LIBTMCG_LT_CURRENT=12
+LIBTMCG_LT_CURRENT=13
 LIBTMCG_LT_AGE=0
-LIBTMCG_LT_REVISION=1
+LIBTMCG_LT_REVISION=0
 
 # If API is changed in an incompatible way: increment the next counter.
 LIBTMCG_CONFIG_API_VERSION=5

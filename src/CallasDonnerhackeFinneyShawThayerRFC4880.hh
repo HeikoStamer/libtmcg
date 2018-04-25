@@ -407,6 +407,12 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&pub_hashing,
 			 const std::string								&userid,
 			 const int										verbose);
+		bool Verify
+			(const gcry_sexp_t								key,
+			 const tmcg_openpgp_octets_t					&pub_hashing,
+			 const tmcg_openpgp_octets_t					&userattribute,
+			 const int										dummy,
+			 const int										verbose);
 		bool operator <
 			(const TMCG_OpenPGP_Signature					&that) const;
 		~TMCG_OpenPGP_Signature
@@ -1032,6 +1038,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void CertificationHash
 			(const tmcg_openpgp_octets_t					&key,
 			 const std::string								&uid,
+			 const tmcg_openpgp_octets_t					&uat,
 			 const tmcg_openpgp_octets_t					&trailer,
 			 const tmcg_openpgp_hashalgo_t					hashalgo,
 			 tmcg_openpgp_octets_t							&hash,

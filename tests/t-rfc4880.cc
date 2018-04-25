@@ -315,7 +315,7 @@ int main
 	gcry_mpi_release(me);
 
 	// testing PublicKeyBlockParse(), FingerprintCompute(), KeyidCompute()
-	tmcg_openpgp_octets_t all, pub, uid, uidsig, sub, subsig, pubflags;
+	tmcg_openpgp_octets_t all, pub, uid, uidsig, sub, subsig, pubflags, empty;
 	tmcg_openpgp_octets_t subflags, keyid, pub_hashing, uidsig_hashing;
 	tmcg_openpgp_octets_t uidsig_left, sub_hashing, subsig_hashing, subsig_left;
 	std::string armored_pubkeyblock;
@@ -336,7 +336,7 @@ int main
 			uidsig_hashing); 
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing,
-		keystr, uidsig_hashing, TMCG_OPENPGP_HASHALGO_SHA256, hash,
+		keystr, empty, uidsig_hashing, TMCG_OPENPGP_HASHALGO_SHA256, hash,
 		uidsig_left);
 	r = gcry_mpi_new(2048);
 	s = gcry_mpi_new(2048);
