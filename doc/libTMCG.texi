@@ -19,7 +19,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20180320.
+Revision 20180425.
 
 Copyright @copyright{} 2005--2007, 2009, 2015--2018 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
@@ -692,7 +692,7 @@ probability @math{{} \le 4^{-64}}.
 Defines the maximum number of iterations for the prover in cut-and-choose
 style zero-knowledge protocols of Schindelhauer's toolbox.
 The default value is @code{80} which limits the soundness error
-probability to @math{{} \ge 2^{-80}}, however, it avoids some obvious
+probability to @math{{} \ge 2^{-80}}, however, it protects against some obvious
 denial-of-service attacks from a malicious verifier.
 @end defmac
 

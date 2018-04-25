@@ -758,6 +758,96 @@ TMCG_OpenPGP_UserID::~TMCG_OpenPGP_UserID
 
 // ===========================================================================
 
+TMCG_OpenPGP_UserAttribute::TMCG_OpenPGP_UserAttribute
+	(const tmcg_openpgp_octets_t &userattribute_in,
+	 const tmcg_openpgp_octets_t &packet_in):
+		valid(false)
+{
+	userattribute.insert(userattribute.end(),
+		userattribute_in.begin(), userattribute_in.end());
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+}
+
+bool TMCG_OpenPGP_UserAttribute::Check
+	(const TMCG_OpenPGP_Pubkey *primary,
+	 const int verbose)
+{
+	// Note that one valid certification revocation signature makes
+	// the whole user attribute invalid. I guess this is widely-used practice.
+	for (size_t j = 0; j < revsigs.size(); j++)
+	{
+		// print and check basic properties of the signature
+		if (verbose > 2)
+			revsigs[j]->PrintInfo();
+		if (!revsigs[j]->CheckValidity(primary->creationtime, verbose))
+			continue; // ignore an expired signature
+		if (revsigs[j]->revoked)
+			continue; // ignore a revoked signature
+		// check the revocation signature cryptographically
+		if (revsigs[j]->Verify(primary->key, primary->pub_hashing,
+		                       userattribute, 0, verbose))
+		{
+			// set the revoked flag for all self-signatures
+			for (size_t i = 0; i < selfsigs.size(); i++)
+			{
+				if (selfsigs[i]->revocable)
+					selfsigs[i]->revoked = true;
+			}
+		}
+		else if (verbose)
+			std::cerr << "ERROR: signature verification failed" << std::endl;
+	}
+	bool one_valid_selfsig = false;
+	std::sort(selfsigs.begin(), selfsigs.end(),
+		TMCG_OpenPGP_Signature_Compare);
+	for (size_t j = 0; j < selfsigs.size(); j++)
+	{
+		// print and check basic properties of the signature
+		if (verbose > 2)
+			selfsigs[j]->PrintInfo();
+		if (!selfsigs[j]->CheckValidity(primary->creationtime, verbose))
+			continue; // ignore an expired signature
+		if (selfsigs[j]->revoked)
+			continue; // ignore a revoked signature
+		// check the self-signature cryptographically
+		if (selfsigs[j]->Verify(primary->key, primary->pub_hashing,
+		                        userattribute, 0, verbose))
+		{
+			one_valid_selfsig = true;
+		}
+		else if (verbose)
+			std::cerr << "ERROR: signature verification failed" << std::endl;
+	}
+	// update validity state of this user attribute and return the result
+	if (one_valid_selfsig)
+	{
+		valid = true;
+		return true;
+	}
+	else
+	{
+		valid = false;
+		return false;
+	}
+}
+
+TMCG_OpenPGP_UserAttribute::~TMCG_OpenPGP_UserAttribute
+	()
+{
+	userattribute.clear();
+	packet.clear();
+	for (size_t i = 0; i < selfsigs.size(); i++)
+		delete selfsigs[i];
+	selfsigs.clear();
+	for (size_t i = 0; i < revsigs.size(); i++)
+		delete revsigs[i];
+	revsigs.clear();
+	for (size_t i = 0; i < certsigs.size(); i++)
+		delete certsigs[i];
+	certsigs.clear();
+}
+// ===========================================================================
+
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
@@ -1762,6 +1852,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			certrevsigs.size() << std::endl;
 		std::cerr << "INFO: number of userids = " <<
 			userids.size() << std::endl;
+		std::cerr << "INFO: number of userattributes = " <<
+			userattributes.size() << std::endl;
 		std::cerr << "INFO: number of subkeys = " <<
 			subkeys.size() << std::endl;
 		std::cerr << "INFO: number of revkeys = " <<
@@ -1877,7 +1969,47 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		}
 		else if (verbose > 1)
 			std::cerr << "INFO: user ID is NOT valid" << std::endl;
-		// check validity of primary key again due to property updates
+		// check validity of primary key again due to possible property updates
+		if (!CheckValidity(verbose))
+		{
+			valid = false;
+			return false;
+		}
+	}
+	// check user attributes of primary key
+	for (size_t i = 0; i < userattributes.size(); i++)
+	{
+		if (verbose > 1)
+		{
+			std::cerr << "INFO: userattribute #" << i << " with opaque" <<
+				" content of " << (userattributes[i]->userattribute).size() <<
+				" bytes" << std::endl;
+			std::cerr << "INFO: number of selfsigs = " <<
+				userattributes[i]->selfsigs.size() << std::endl;
+			std::cerr << "INFO: number of revsigs = " <<
+				userattributes[i]->revsigs.size() << std::endl;
+			std::cerr << "INFO: number of certsigs = " <<
+				userattributes[i]->certsigs.size() << std::endl;
+		}
+		if (userattributes[i]->Check(this, verbose))
+		{
+			if (verbose > 1)
+				std::cerr << "INFO: user attribute is valid" << std::endl;
+			for (size_t j = 0; j < userattributes[i]->selfsigs.size(); j++)
+			{
+				// update properties of primary key
+				if (userattributes[i]->selfsigs[j]->valid)
+				{
+					UpdateProperties(userattributes[i]->selfsigs[j], verbose);
+				}
+				else if (verbose > 1)
+					std::cerr << "WARNING: one self-signature on this " <<
+						"user attribute is NOT valid" << std::endl;
+			}
+		}
+		else if (verbose > 1)
+			std::cerr << "INFO: user attribute is NOT valid" << std::endl;
+		// check validity of primary key again due to possible property updates
 		if (!CheckValidity(verbose))
 		{
 			valid = false;
@@ -2032,6 +2164,15 @@ void TMCG_OpenPGP_Pubkey::Reduce
 	userids.clear();
 	userids.insert(userids.end(),
 		valid_userids.begin(), valid_userids.end());
+	std::vector<TMCG_OpenPGP_UserAttribute*> valid_userattributes;
+	for (size_t i = 0; i < userattributes.size(); i++)
+		if (userattributes[i]->valid)
+			valid_userattributes.push_back(userattributes[i]);
+		else
+			delete userattributes[i];
+	userattributes.clear();
+	userattributes.insert(userattributes.end(),
+		valid_userattributes.begin(), valid_userattributes.end());
 	std::vector<TMCG_OpenPGP_Subkey*> valid_subkeys;
 	for (size_t i = 0; i < subkeys.size(); i++)
 		if (subkeys[i]->valid)
@@ -2074,6 +2215,9 @@ TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
 	for (size_t i = 0; i < userids.size(); i++)
 		delete userids[i];
 	userids.clear();
+	for (size_t i = 0; i < userattributes.size(); i++)
+		delete userattributes[i];
+	userattributes.clear();
 	for (size_t i = 0; i < subkeys.size(); i++)
 		delete subkeys[i];
 	subkeys.clear();
@@ -5929,7 +6073,19 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.uid[i] = pkt[i];
 			break;
-		case 17: // User Attribute Packet -- not supported, ignore
+		case 17: // User Attribute Packet
+			if (pkt.size() < 2)
+				return 0; // error: incorrect packet body
+			out.uatdatalen = pkt.size();
+			tmcg_openpgp_mem_alloc += out.uatdatalen;
+			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+			{
+				tmcg_openpgp_mem_alloc -= out.uatdatalen;
+				return 0; // error: memory limit exceeded
+			}
+			out.uatdata = new tmcg_openpgp_byte_t[out.uatdatalen];
+			for (size_t i = 0; i < out.uatdatalen; i++)
+				out.uatdata[i] = pkt[i];
 			break;
 		case 18: // Sym. Encrypted and Integrity Protected Data Packet
 			if (pkt.size() < 2)
@@ -6059,6 +6215,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextRelease
 		delete [] ctx.data;
 		if (tmcg_openpgp_mem_alloc >= ctx.datalen)
 			tmcg_openpgp_mem_alloc -= ctx.datalen;
+	}
+	if (ctx.uatdata != NULL)
+	{
+		delete [] ctx.uatdata;
+		if (tmcg_openpgp_mem_alloc >= ctx.uatdatalen)
+			tmcg_openpgp_mem_alloc -= ctx.uatdatalen;
 	}
 }
 
@@ -7011,8 +7173,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	 const bool uid_flag, const bool uat_flag,
 	 const tmcg_openpgp_octets_t &current_packet,
 	 tmcg_openpgp_octets_t &embedded_pkt,
-	 TMCG_OpenPGP_Pubkey* &pub,
-	 TMCG_OpenPGP_Subkey* &sub, TMCG_OpenPGP_UserID* &uid)
+	 TMCG_OpenPGP_Pubkey* &pub, TMCG_OpenPGP_Subkey* &sub,
+	 TMCG_OpenPGP_UserID* &uid, TMCG_OpenPGP_UserAttribute* &uat)
 {
 	// 0x10: Generic certification of a User ID and Public-Key packet.
 	// The issuer of this certification does not make any particular
@@ -7314,6 +7476,30 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 						std::endl;
 			}
 		}
+		else if (uat_flag)
+		{
+			if ((ctx.type == TMCG_OPENPGP_SIGNATURE_GENERIC_CERTIFICATION) ||
+				(ctx.type == TMCG_OPENPGP_SIGNATURE_PERSONA_CERTIFICATION) ||
+				(ctx.type == TMCG_OPENPGP_SIGNATURE_CASUAL_CERTIFICATION) ||
+				(ctx.type == TMCG_OPENPGP_SIGNATURE_POSITIVE_CERTIFICATION))
+			{
+				// Certification signature on user attribute
+				uat->certsigs.push_back(sig);
+			}
+			else if (ctx.type == TMCG_OPENPGP_SIGNATURE_CERTIFICATION_REVOCATION)
+			{
+				// Certification revocation signature (user attribute)
+				uat->certsigs.push_back(sig);
+			}
+			else 
+			{
+				delete sig;
+				if (verbose)
+					std::cerr << "WARNING: signature of type 0x" << std::hex <<
+						(int)ctx.type << std::dec << " ignored (non-self)" <<
+						std::endl;
+			}
+		}
 		else if (ctx.type == TMCG_OPENPGP_SIGNATURE_KEY_REVOCATION)
 		{
 			// accumulate key revocation signatures
@@ -7327,7 +7513,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		{
 			delete sig;
 			if (verbose)
-				std::cerr << "WARNING: non-uid signature of type 0x" <<
+				std::cerr << "WARNING: non-uid/uat signature of type 0x" <<
 					std::hex << (int)ctx.type << std::dec <<
 					" on primary key ignored" << std::endl;
 		}
@@ -7383,10 +7569,45 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	}
 	else if (!uid_flag && uat_flag)
 	{
-		delete sig;
-		if (verbose)
-			std::cerr << "WARNING: self-signature for a user attribute " <<
-				"ignored" << std::endl;
+		if ((ctx.type == TMCG_OPENPGP_SIGNATURE_GENERIC_CERTIFICATION) ||
+			(ctx.type == TMCG_OPENPGP_SIGNATURE_PERSONA_CERTIFICATION) ||
+			(ctx.type == TMCG_OPENPGP_SIGNATURE_CASUAL_CERTIFICATION) ||
+			(ctx.type == TMCG_OPENPGP_SIGNATURE_POSITIVE_CERTIFICATION))
+		{
+			// Authorizes the specified key to issue revocation signatures
+			// for this key. Class octet must have bit 0x80 set. If the bit
+			// 0x40 is set, then this means that the revocation information
+			// is sensitive. Other bits are for future expansion to other
+			// kinds of authorizations. This is found on a self-signature.
+			if ((ctx.revocationkey_class & 0x80) == 0x80)
+			{
+				tmcg_openpgp_revkey_t revkey;
+				revkey.key_class = ctx.revocationkey_class;
+				revkey.key_pkalgo =	ctx.revocationkey_pkalgo;
+				memcpy(revkey.key_fingerprint, 
+					ctx.revocationkey_fingerprint,
+					sizeof(revkey.key_fingerprint));
+				sig->revkeys.push_back(revkey);
+			}
+			// Certification self-signature on user attribute
+			uat->selfsigs.push_back(sig);
+		}
+		else if (ctx.type == TMCG_OPENPGP_SIGNATURE_CERTIFICATION_REVOCATION)
+		{
+			// Certification revocation signature on user attribute
+			uat->revsigs.push_back(sig);
+			if (verbose)
+				std::cerr << "WARNING: certification revocation signature " <<
+					"on user attribute" << std::endl;
+		}
+		else
+		{
+			delete sig;
+			if (verbose)
+				std::cerr << "WARNING: signature of type 0x" << std::hex <<
+					(int)ctx.type << std::dec << " ignored (uat_flag)" <<
+					std::endl;
+		}
 		return true; // continue loop through packets
 	}
 	else if (uid_flag && !uat_flag)
@@ -7502,7 +7723,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag13
 	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
 	 const bool primary, const tmcg_openpgp_octets_t &current_packet,
 	 bool &uid_flag, bool &uat_flag, TMCG_OpenPGP_Pubkey* &pub,
-	 TMCG_OpenPGP_UserID* &uid)
+	 TMCG_OpenPGP_UserID* &uid, TMCG_OpenPGP_UserAttribute* &uat)
 {
 	std::string userid = "";
 	for (size_t i = 0; i < sizeof(ctx.uid); i++)
@@ -7520,7 +7741,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag13
 	}
 	if (uid_flag)
 		pub->userids.push_back(uid);
-	uid = NULL, uid_flag = true, uat_flag = false;
+	if (uat_flag)
+		pub->userattributes.push_back(uat);
+	uid = NULL, uat = NULL, uid_flag = true, uat_flag = false;
 	// create a new user ID object
 	uid = new TMCG_OpenPGP_UserID(userid, current_packet);
 	return true;
@@ -7614,20 +7837,24 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag17
 	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
 	 const bool primary, const tmcg_openpgp_octets_t &current_packet,
 	 bool &uid_flag, bool &uat_flag, TMCG_OpenPGP_Pubkey* &pub,
-	 TMCG_OpenPGP_UserID* &uid)
+	 TMCG_OpenPGP_UserID* &uid, TMCG_OpenPGP_UserAttribute* &uat)
 {
+	tmcg_openpgp_octets_t userattribute;
+	for (size_t i = 0; i < ctx.uatdatalen; i++)
+		userattribute.push_back(ctx.uatdata[i]);
 	if (!primary)
 	{
 		if (verbose)
 			std::cerr << "ERROR: no usable primary key found" << std::endl;
 		return false;
 	}
-	if (verbose)
-		std::cerr << "WARNING: user attribute packet found; ignored" <<
-			std::endl;
 	if (uid_flag)
 		pub->userids.push_back(uid);
-	uid = NULL, uid_flag = false, uat_flag = true;
+	if (uat_flag)
+		pub->userattributes.push_back(uat);
+	uid = NULL, uat = NULL, uid_flag = false, uat_flag = true;
+	// create a new user attribute object
+	uat = new TMCG_OpenPGP_UserAttribute(userattribute, current_packet);
 	return true;
 }
 
@@ -7650,6 +7877,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	bool uid_flag = false, uat_flag = false, ret = true;
 	TMCG_OpenPGP_Subkey *sub = NULL;
 	TMCG_OpenPGP_UserID *uid = NULL;
+	TMCG_OpenPGP_UserAttribute *uat = NULL;
 	tmcg_openpgp_byte_t ptag = 0xFF;
 	size_t pnum = 0;
 	tmcg_openpgp_octets_t embedded_pkt;
@@ -7683,6 +7911,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				delete sub;
 			if (uid)
 				delete uid;
+			if (uat)
+				delete uat;
 			return false;
 		}
 		else if (ptag == 0xFA)
@@ -7746,7 +7976,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			case 2: // Signature Packet
 				ret = PublicKeyBlockParse_Tag2(ctx, verbose, primary,
 					subkey, badkey, uid_flag, uat_flag,
-					current_packet, embedded_pkt, pub, sub, uid);
+					current_packet, embedded_pkt, pub, sub, uid, uat);
 				break;
 			case 6: // Public-Key Packet
 				ret = PublicKeyBlockParse_Tag6(ctx, verbose,
@@ -7754,7 +7984,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				break;
 			case 13: // User ID Packet
 				ret = PublicKeyBlockParse_Tag13(ctx, verbose, primary,
-					current_packet, uid_flag, uat_flag, pub, uid);
+					current_packet, uid_flag, uat_flag, pub, uid, uat);
 				break;
 			case 14: // Public-Subkey Packet
 				ret = PublicKeyBlockParse_Tag14(ctx, verbose, primary,
@@ -7762,7 +7992,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				break;
 			case 17: // User Attribute Packet
 				ret = PublicKeyBlockParse_Tag17(ctx, verbose, primary,
-					current_packet, uid_flag, uat_flag, pub, uid);
+					current_packet, uid_flag, uat_flag, pub, uid, uat);
 				break;
 			default:
 				if (verbose > 1)
@@ -7778,6 +8008,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				delete sub;
 			if (uid)
 				delete uid;
+			if (uat)
+				delete uat;
 			return false;
 		}
 	}
@@ -7789,10 +8021,14 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			delete sub;
 		if (uid)
 			delete uid;
+		if (uat)
+			delete uat;
 		return false;
 	}
 	if (uid_flag)
 		pub->userids.push_back(uid);
+	if (uat_flag)
+		pub->userattributes.push_back(uat);
 	if (!badkey && subkey)
 		pub->subkeys.push_back(sub);
 	return true;
@@ -7968,6 +8204,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 	TMCG_OpenPGP_Pubkey *pub = NULL;
 	TMCG_OpenPGP_Subkey *sub = NULL;
 	TMCG_OpenPGP_UserID *uid = NULL;
+	TMCG_OpenPGP_UserAttribute *uat = NULL;
 	tmcg_openpgp_byte_t ptag = 0xFF;
 	size_t knum = 0, pnum = 0;
 	tmcg_openpgp_octets_t embedded_pkt;
@@ -8061,17 +8298,19 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 			case 2: // Signature Packet
 				ret = PublicKeyBlockParse_Tag2(ctx, verbose, primary,
 					subkey, badkey, uid_flag, uat_flag,
-					current_packet, embedded_pkt, pub, sub, uid);
+					current_packet, embedded_pkt, pub, sub, uid, uat);
 				break;
 			case 6: // Public-Key Packet
 				if (primary)
 				{
 					if (uid_flag)
 						pub->userids.push_back(uid);
+					if (uat_flag)
+						pub->userattributes.push_back(uat);
 					if (!badkey && subkey)
 						pub->subkeys.push_back(sub);
 					ring->add(pub); // add key to ring
-					pub = NULL, sub = NULL, uid = NULL;
+					pub = NULL, sub = NULL, uid = NULL, uat = NULL;
 					primary = false, subkey = false, badkey = false;
 					uid_flag = false, uat_flag = false;
 				}
@@ -8081,7 +8320,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 				break;
 			case 13: // User ID Packet
 				ret = PublicKeyBlockParse_Tag13(ctx, verbose, primary,
-					current_packet, uid_flag, uat_flag, pub, uid);
+					current_packet, uid_flag, uat_flag, pub, uid, uat);
 				break;
 			case 14: // Public-Subkey Packet
 				ret = PublicKeyBlockParse_Tag14(ctx, verbose, primary,
@@ -8089,7 +8328,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 				break;
 			case 17: // User Attribute Packet
 				ret = PublicKeyBlockParse_Tag17(ctx, verbose, primary,
-					current_packet, uid_flag, uat_flag, pub, uid);
+					current_packet, uid_flag, uat_flag, pub, uid, uat);
 				break;
 			default:
 				if (verbose > 1)
@@ -8107,6 +8346,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 				delete sub;
 			if (uid)
 				delete uid;
+			if (uat)
+				delete uat;
 			delete ring;
 			return false;
 		}
@@ -8115,10 +8356,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 	{
 		if (uid_flag)
 			pub->userids.push_back(uid);
+		if (uat_flag)
+			pub->userattributes.push_back(uat);
 		if (!badkey && subkey)
 			pub->subkeys.push_back(sub);
 		ring->add(pub); // add key to ring
-		pub = NULL, sub = NULL, uid = NULL;
+		pub = NULL, sub = NULL, uid = NULL, uat = NULL;
 	}
 	else
 	{
@@ -8126,6 +8369,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 			delete sub;
 		if (uid)
 			delete uid;
+		if (uat)
+			delete uat;
 	}
 	if (verbose > 1)
 		std::cerr << "INFO: ring.size() = " << ring->size() << std::endl;	

@@ -301,6 +301,8 @@ typedef struct
 	size_t						datalen;
 	tmcg_openpgp_byte_t			uid[2048]; // string
 	tmcg_openpgp_byte_t			mdc_hash[20]; // SHA-1
+	tmcg_openpgp_byte_t*		uatdata; // allocated buffer with data
+	size_t						uatdatalen;
 } tmcg_openpgp_packet_ctx_t;
 
 typedef struct
@@ -441,6 +443,26 @@ class TMCG_OpenPGP_UserID
 			();
 };
 
+class TMCG_OpenPGP_UserAttribute
+{
+	public:
+		bool												valid;
+		tmcg_openpgp_octets_t								userattribute;
+		tmcg_openpgp_octets_t								packet;
+		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
+		std::vector<TMCG_OpenPGP_Signature*>				revsigs;
+		std::vector<TMCG_OpenPGP_Signature*>				certsigs;
+
+		TMCG_OpenPGP_UserAttribute
+			(const tmcg_openpgp_octets_t					&userattribute_in,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		bool Check
+			(const TMCG_OpenPGP_Pubkey*						primary,
+			 const int										verbose);
+		~TMCG_OpenPGP_UserAttribute
+			();
+};
+
 class TMCG_OpenPGP_Keyring; // forward declaration
 
 class TMCG_OpenPGP_Subkey
@@ -558,6 +580,7 @@ class TMCG_OpenPGP_Pubkey
 		std::vector<TMCG_OpenPGP_Signature*>				keyrevsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				certrevsigs;
 		std::vector<TMCG_OpenPGP_UserID*>					userids;
+		std::vector<TMCG_OpenPGP_UserAttribute*>			userattributes;
 		std::vector<TMCG_OpenPGP_Subkey*>					subkeys;
 		std::vector<tmcg_openpgp_revkey_t>					revkeys;
 
@@ -651,7 +674,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_octets_t							&embedded_pkt,
 			 TMCG_OpenPGP_Pubkey*							&pub,
 			 TMCG_OpenPGP_Subkey*							&sub,
-			 TMCG_OpenPGP_UserID*							&uid);
+			 TMCG_OpenPGP_UserID*							&uid,
+			 TMCG_OpenPGP_UserAttribute*					&uat);
 		static bool PublicKeyBlockParse_Tag6
 			(const tmcg_openpgp_packet_ctx_t				&ctx,
 			 const int										verbose,
@@ -666,7 +690,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 bool											&uid_flag,
 			 bool											&uat_flag,
 			 TMCG_OpenPGP_Pubkey*							&pub,
-			 TMCG_OpenPGP_UserID*							&uid);
+			 TMCG_OpenPGP_UserID*							&uid,
+			 TMCG_OpenPGP_UserAttribute*					&uat);
 		static bool PublicKeyBlockParse_Tag14
 			(const tmcg_openpgp_packet_ctx_t				&ctx,
 			 const int										verbose,
@@ -684,7 +709,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 bool											&uid_flag,
 			 bool											&uat_flag,
 			 TMCG_OpenPGP_Pubkey*							&pub,
-			 TMCG_OpenPGP_UserID*							&uid);
+			 TMCG_OpenPGP_UserID*							&uid,
+			 TMCG_OpenPGP_UserAttribute*					&uat);
 
 	public:
 		static void MemoryGuardReset

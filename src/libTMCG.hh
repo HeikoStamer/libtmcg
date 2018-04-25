@@ -35,7 +35,7 @@
 		   cut-and-choose style zero-knowledge protocols of 
 		   Schindelhauer's toolbox. This limits the soundness error
 		   probability to 2^{-TMCG_MAX_ZNP_ITERATIONS}, however, it
-		   avoids some obvious denial-of-service attacks. */  
+		   protects against some obvious denial-of-service attacks. */  
 		#define TMCG_MAX_ZNP_ITERATIONS 80
 	#endif
 

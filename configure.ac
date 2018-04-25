@@ -94,7 +94,7 @@ AC_DEFINE(TMCG_MAX_ZNP_ITERATIONS, 80,
 	[Define the maximum number of iterations for the prover in cut-and-choose
 	style zero-knowledge protocols of Schindelhauer's toolbox. This limits the
 	soundness error probability to 2^{-TMCG_MAX_ZNP_ITERATIONS}, however, it
-	avoids some obvious denial-of-service attacks.])
+	protects against some obvious denial-of-service attacks.])
 AC_DEFINE(TMCG_MAX_DKG_PLAYERS, 256,
 	[Define the maximum number of parties for DKG protocols.])
 AC_DEFINE(TMCG_GROTH_L_E, 80,
