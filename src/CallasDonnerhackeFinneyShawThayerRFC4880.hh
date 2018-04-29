@@ -684,7 +684,7 @@ class TMCG_OpenPGP_Seckey : public TMCG_OpenPGP_Pubkey
 		gcry_mpi_t											rsa_u;
 		gcry_mpi_t											rsa_d;
 		gcry_mpi_t											dsa_x;
-		std::vector<TMCG_OpenPGP_Subkey*>					secret_subkeys;
+		std::vector<TMCG_OpenPGP_SecretSubkey*>				secret_subkeys;
 
 		TMCG_OpenPGP_Seckey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
