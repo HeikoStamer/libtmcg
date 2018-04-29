@@ -394,6 +394,9 @@ int main
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(primary->pub_hashing, kid);
 	std::cout << kid << std::endl;
+	std::cout << "!primary->weak()" << std::endl;
+	bool check_ok = primary->weak(3);
+	assert(!check_ok);
 	delete primary;
 	delete ring;
 	gcry_mpi_release(p);

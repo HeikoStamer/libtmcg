@@ -846,6 +846,7 @@ TMCG_OpenPGP_UserAttribute::~TMCG_OpenPGP_UserAttribute
 		delete certsigs[i];
 	certsigs.clear();
 }
+
 // ===========================================================================
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
@@ -986,10 +987,9 @@ bool TMCG_OpenPGP_Subkey::weak
 		nbits = gcry_mpi_get_nbits(rsa_n);
 		ebits = gcry_mpi_get_nbits(rsa_e);
 		if (verbose > 1)
-			std::cerr << "INFO: subkey public-key " << 
-				"algorithm is RSA with |n| = " << nbits << 
-				" bits, |e| = " << ebits << " bits" <<
-				std::endl;
+			std::cerr << "INFO: RSA with |n| = " <<
+				nbits << " bits, |e| = " <<
+				ebits << " bits" << std::endl;
 		if ((nbits < 2048) || (ebits < 6))
 			return true; // weak key
 		wret = gcry_prime_check(rsa_e, 0);
@@ -1003,9 +1003,10 @@ bool TMCG_OpenPGP_Subkey::weak
 		gbits = gcry_mpi_get_nbits(elg_g);
 		ybits = gcry_mpi_get_nbits(elg_y);
 		if (verbose > 1)
-			std::cerr << "INFO: subkey public-key " <<
-				"algorithm is ElGamal with |p| = " <<
-				pbits << " bits" << std::endl;
+			std::cerr << "INFO: ElGamal with |p| = " <<
+				pbits << " bits, |g| = " <<
+				gbits << " bits, |y| = " <<
+				ybits << " bits" << std::endl;
 		if ((pbits < 2048) || (gbits < 2) || (ybits < 2))
 			return true; // weak key
 		wret = gcry_prime_check(elg_p, 0);
@@ -1020,12 +1021,12 @@ bool TMCG_OpenPGP_Subkey::weak
 		gbits = gcry_mpi_get_nbits(dsa_g);
 		ybits = gcry_mpi_get_nbits(dsa_y);
 		if (verbose > 1)
-			std::cerr << "INFO: subkey public-key " <<
-				"algorithm is DSA with |p| = " << pbits <<
-				" bits, |q| = " << qbits << " bits" << 
-				std::endl;
-		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) ||
-		    (ybits < 2))
+			std::cerr << "INFO: DSA with |p| = " <<
+				pbits << " bits, |q| = " <<
+				qbits << " bits, |g| = " <<
+				gbits << " bits, |y| = " <<
+				ybits << " bits" <<	std::endl;
+		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2))
 			return true; // weak key
 		wret = gcry_prime_check(dsa_p, 0);
 		if (wret)
@@ -1545,6 +1546,198 @@ TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
 
 // ===========================================================================
 
+TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t n,
+	 const gcry_mpi_t e,
+	 const gcry_mpi_t p,
+	 const tmcg_openpgp_octets_t &packet_in):
+		TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
+			n, e, packet_in)
+{
+	rsa_p = gcry_mpi_snew(2048);
+	rsa_q = gcry_mpi_snew(2048);
+	rsa_u = gcry_mpi_snew(2048);
+	rsa_d = gcry_mpi_snew(2048);
+	elg_x = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(2048);
+	// public-key algorithm is RSA
+	gcry_mpi_set(rsa_p, p);
+	gcry_mpi_div(rsa_q, NULL, rsa_n, rsa_p, 0);
+	gcry_mpi_invm(rsa_u, rsa_p, rsa_q);
+	// compute $d = e^{-1} \bmod \varphi(n)$
+	gcry_mpi_t tmp1, tmp2, tmp3, tmp4, tmp5;
+	tmp1 = gcry_mpi_snew(2048);
+	tmp2 = gcry_mpi_snew(2048);
+	tmp3 = gcry_mpi_snew(2048);
+	tmp4 = gcry_mpi_snew(2048);
+	tmp5 = gcry_mpi_snew(2048);
+	gcry_mpi_sub_ui(tmp1, rsa_p, 1);
+	gcry_mpi_sub_ui(tmp2, rsa_q, 1);
+	gcry_mpi_mul(tmp3, tmp1, tmp2);
+	gcry_mpi_gcd(tmp4, tmp1, tmp2);
+	gcry_mpi_div(tmp5, NULL, tmp3, tmp4, -1);
+	gcry_mpi_invm(rsa_d, rsa_e, tmp5);
+	gcry_mpi_release(tmp1);
+	gcry_mpi_release(tmp2);
+	gcry_mpi_release(tmp3);
+	gcry_mpi_release(tmp4);
+	gcry_mpi_release(tmp5);
+	ret = gcry_sexp_build(&secret_key, &erroff,
+		"(private-key (rsa (n %M) (e %M) (d %M) (p %M) (q %M) (u %M)))",
+		n, e, rsa_d, p, rsa_q, rsa_u);
+}
+
+TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t p,
+	 const gcry_mpi_t g,
+	 const gcry_mpi_t y,
+	 const gcry_mpi_t x,
+	 const tmcg_openpgp_octets_t &packet_in):
+		TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
+			p, g, y, packet_in)
+{
+	rsa_p = gcry_mpi_snew(2048);
+	rsa_q = gcry_mpi_snew(2048);
+	rsa_u = gcry_mpi_snew(2048);
+	rsa_d = gcry_mpi_snew(2048);
+	elg_x = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(2048);
+	// public-key algorithm is ElGamal
+	gcry_mpi_set(elg_x, x);
+	ret = gcry_sexp_build(&secret_key, &erroff,
+		"(private-key (elg (p %M) (g %M) (y %M) (x %M)))", p, g, y, x);
+}
+
+TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t p,
+	 const gcry_mpi_t q,
+	 const gcry_mpi_t g,
+	 const gcry_mpi_t y,
+	 const gcry_mpi_t x,
+	 const tmcg_openpgp_octets_t &packet_in):
+		TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
+			p, q, g, y, packet_in)
+{
+	rsa_p = gcry_mpi_snew(2048);
+	rsa_q = gcry_mpi_snew(2048);
+	rsa_u = gcry_mpi_snew(2048);
+	rsa_d = gcry_mpi_snew(2048);
+	elg_x = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(2048);
+	// public-key algorithm is DSA
+	gcry_mpi_set(dsa_x, x);
+	ret = gcry_sexp_build(&secret_key, &erroff,
+		"(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))",
+		p, q, g, y, x);
+}
+
+bool TMCG_OpenPGP_SecretSubkey::good
+	() const
+{
+	return (ret == 0);
+}
+
+bool TMCG_OpenPGP_SecretSubkey::weak
+	(const int verbose) const
+{
+	gcry_error_t wret;
+	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	{
+		unsigned int nbits = 0, ebits = 0, pbits = 0, qbits = 0;
+		nbits = gcry_mpi_get_nbits(rsa_n);
+		ebits = gcry_mpi_get_nbits(rsa_e);
+		pbits = gcry_mpi_get_nbits(rsa_p);
+		qbits = gcry_mpi_get_nbits(rsa_q);
+		if (verbose > 1)
+			std::cerr << "INFO: RSA with |n| = " << nbits << 
+				" bits, |e| = " << ebits <<
+				" bits, |p| = " << pbits <<
+				" bits, |q| = " << qbits << " bits" << std::endl;
+		if ((nbits < 2048) || (ebits < 6) || (pbits < 1024) || (qbits < 1024))
+			return true; // weak key
+		wret = gcry_prime_check(rsa_e, 0);
+		if (wret)
+			return true; // e is not a prime
+		wret = gcry_prime_check(rsa_p, 0);
+		if (wret)
+			return true; // p is not a prime
+		wret = gcry_prime_check(rsa_q, 0);
+		if (wret)
+			return true; // q is not a prime
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
+	{
+		unsigned int pbits = 0, gbits = 0, ybits = 0, xbits = 0;
+		pbits = gcry_mpi_get_nbits(elg_p);
+		gbits = gcry_mpi_get_nbits(elg_g);
+		ybits = gcry_mpi_get_nbits(elg_y);
+		xbits = gcry_mpi_get_nbits(elg_x);
+		if (verbose > 1)
+			std::cerr << "INFO: ElGamal with |p| = " << pbits <<
+				" bits, |g| = " << gbits <<
+				" bits, |y| = " << ybits <<
+				" bits, |x| = " << xbits << " bits" << std::endl;
+		if ((pbits < 2048) || (gbits < 2) || (ybits < 2) || (xbits < 256))
+			return true; // weak key
+		wret = gcry_prime_check(elg_p, 0);
+		if (wret)
+			return true; // p is not a prime
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+	{
+		unsigned int pbits = 0, qbits = 0, gbits = 0, ybits = 0, xbits = 0;
+		pbits = gcry_mpi_get_nbits(dsa_p);
+		qbits = gcry_mpi_get_nbits(dsa_q);
+		gbits = gcry_mpi_get_nbits(dsa_g);
+		ybits = gcry_mpi_get_nbits(dsa_y);
+		xbits = gcry_mpi_get_nbits(dsa_x);
+		if (verbose > 1)
+			std::cerr << "INFO: DSA with |p| = " << pbits <<
+				" bits, |q| = " << qbits <<
+				" bits, |g| = " << gbits <<
+				" bits, |y| = " << ybits <<
+				" bits, |x| = " << xbits << " bits" << std::endl; 
+		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2) ||
+			(xbits < 256))
+			return true; // weak key
+		wret = gcry_prime_check(dsa_p, 0);
+		if (wret)
+			return true; // p is not a prime
+		wret = gcry_prime_check(dsa_q, 0);
+		if (wret)
+			return true; // q is not a prime
+	}
+	else
+		return true; // unknown public-key algorithm
+	return false;
+}
+
+TMCG_OpenPGP_SecretSubkey::~TMCG_OpenPGP_SecretSubkey
+	()
+{
+	gcry_mpi_release(rsa_p);
+	gcry_mpi_release(rsa_q);
+	gcry_mpi_release(rsa_u);
+	gcry_mpi_release(rsa_d);
+	gcry_mpi_release(elg_x);
+	gcry_mpi_release(dsa_x);
+	if (!ret)
+		gcry_sexp_release(secret_key);
+}
+
+// ===========================================================================
+
 TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
@@ -1637,10 +1830,9 @@ bool TMCG_OpenPGP_Pubkey::weak
 		nbits = gcry_mpi_get_nbits(rsa_n);
 		ebits = gcry_mpi_get_nbits(rsa_e);
 		if (verbose > 1)
-			std::cerr << "INFO: primary public-key " <<
-				"algorithm is RSA with |n| = " << nbits <<
-				" bits, |e| = " << ebits << " bits" <<
-				std::endl;
+			std::cerr << "INFO: RSA with |n| = " <<
+				nbits << " bits, |e| = " <<
+				ebits << " bits" << std::endl;
 		if ((nbits < 2048) || (ebits < 6))
 			return true; // weak key
 		wret = gcry_prime_check(rsa_e, 0);
@@ -1655,12 +1847,12 @@ bool TMCG_OpenPGP_Pubkey::weak
 		gbits = gcry_mpi_get_nbits(dsa_g);
 		ybits = gcry_mpi_get_nbits(dsa_y);
 		if (verbose > 1)
-			std::cerr << "INFO: primary public-key " <<
-				"algorithm is DSA with |p| = " << pbits <<
-				" bits, |q| = " << qbits << " bits" <<
-				std::endl;
-		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) ||
-		    (ybits < 2))
+			std::cerr << "INFO: DSA with |p| = " <<
+				pbits << " bits, |q| = " <<
+				qbits << " bits, |g| = " <<
+				gbits << " bits, |y| = " <<
+				ybits << " bits" <<	std::endl;
+		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2))
 			return true; // weak key
 		wret = gcry_prime_check(dsa_p, 0);
 		if (wret)
@@ -2222,6 +2414,156 @@ TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
 		delete subkeys[i];
 	subkeys.clear();
 	revkeys.clear();
+}
+
+// ===========================================================================
+
+TMCG_OpenPGP_Seckey::TMCG_OpenPGP_Seckey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t n,
+	 const gcry_mpi_t e,
+	 const gcry_mpi_t p,
+	 const tmcg_openpgp_octets_t &packet_in):
+		TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
+			n, e, packet_in)
+{
+	rsa_p = gcry_mpi_snew(2048);
+	rsa_q = gcry_mpi_snew(2048);
+	rsa_u = gcry_mpi_snew(2048);
+	rsa_d = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(2048);
+	// public-key algorithm is RSA
+	gcry_mpi_set(rsa_p, p);
+	gcry_mpi_div(rsa_q, NULL, rsa_n, rsa_p, 0);
+	gcry_mpi_invm(rsa_u, rsa_p, rsa_q);
+	// compute $d = e^{-1} \bmod \varphi(n)$
+	gcry_mpi_t tmp1, tmp2, tmp3, tmp4, tmp5;
+	tmp1 = gcry_mpi_snew(2048);
+	tmp2 = gcry_mpi_snew(2048);
+	tmp3 = gcry_mpi_snew(2048);
+	tmp4 = gcry_mpi_snew(2048);
+	tmp5 = gcry_mpi_snew(2048);
+	gcry_mpi_sub_ui(tmp1, rsa_p, 1);
+	gcry_mpi_sub_ui(tmp2, rsa_q, 1);
+	gcry_mpi_mul(tmp3, tmp1, tmp2);
+	gcry_mpi_gcd(tmp4, tmp1, tmp2);
+	gcry_mpi_div(tmp5, NULL, tmp3, tmp4, -1);
+	gcry_mpi_invm(rsa_d, rsa_e, tmp5);
+	gcry_mpi_release(tmp1);
+	gcry_mpi_release(tmp2);
+	gcry_mpi_release(tmp3);
+	gcry_mpi_release(tmp4);
+	gcry_mpi_release(tmp5);
+	ret = gcry_sexp_build(&secret_key, &erroff,
+		"(private-key (rsa (n %M) (e %M) (d %M) (p %M) (q %M) (u %M)))",
+		n, e, rsa_d, p, rsa_q, rsa_u);
+}
+
+TMCG_OpenPGP_Seckey::TMCG_OpenPGP_Seckey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t p,
+	 const gcry_mpi_t q,
+	 const gcry_mpi_t g,
+	 const gcry_mpi_t y,
+	 const gcry_mpi_t x,
+	 const tmcg_openpgp_octets_t &packet_in):
+		TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
+			p, q, g, y, packet_in)
+{
+	rsa_p = gcry_mpi_snew(2048);
+	rsa_q = gcry_mpi_snew(2048);
+	rsa_u = gcry_mpi_snew(2048);
+	rsa_d = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(2048);
+	// public-key algorithm is DSA
+	gcry_mpi_set(dsa_x, x);
+	ret = gcry_sexp_build(&secret_key, &erroff,
+		"(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))",
+		p, q, g, y, x);
+}
+
+bool TMCG_OpenPGP_Seckey::good
+	() const
+{
+	return (ret == 0);
+}
+
+bool TMCG_OpenPGP_Seckey::weak
+	(const int verbose) const
+{
+	gcry_error_t wret;
+	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	{
+		unsigned int nbits = 0, ebits = 0, pbits = 0, qbits = 0;
+		nbits = gcry_mpi_get_nbits(rsa_n);
+		ebits = gcry_mpi_get_nbits(rsa_e);
+		pbits = gcry_mpi_get_nbits(rsa_p);
+		qbits = gcry_mpi_get_nbits(rsa_q);
+		if (verbose > 1)
+			std::cerr << "INFO: RSA with |n| = " << nbits << 
+				" bits, |e| = " << ebits <<
+				" bits, |p| = " << pbits <<
+				" bits, |q| = " << qbits << " bits" << std::endl;
+		if ((nbits < 2048) || (ebits < 6) || (pbits < 1024) || (qbits < 1024))
+			return true; // weak key
+		wret = gcry_prime_check(rsa_e, 0);
+		if (wret)
+			return true; // e is not a prime
+		wret = gcry_prime_check(rsa_p, 0);
+		if (wret)
+			return true; // p is not a prime
+		wret = gcry_prime_check(rsa_q, 0);
+		if (wret)
+			return true; // q is not a prime
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+	{
+		unsigned int pbits = 0, qbits = 0, gbits = 0, ybits = 0, xbits = 0;
+		pbits = gcry_mpi_get_nbits(dsa_p);
+		qbits = gcry_mpi_get_nbits(dsa_q);
+		gbits = gcry_mpi_get_nbits(dsa_g);
+		ybits = gcry_mpi_get_nbits(dsa_y);
+		xbits = gcry_mpi_get_nbits(dsa_x);
+		if (verbose > 1)
+			std::cerr << "INFO: DSA with |p| = " << pbits <<
+				" bits, |q| = " << qbits <<
+				" bits, |g| = " << gbits <<
+				" bits, |y| = " << ybits <<
+				" bits, |x| = " << xbits << " bits" << std::endl; 
+		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2) ||
+			(xbits < 256))
+			return true; // weak key
+		wret = gcry_prime_check(dsa_p, 0);
+		if (wret)
+			return true; // p is not a prime
+		wret = gcry_prime_check(dsa_q, 0);
+		if (wret)
+			return true; // q is not a prime
+	}
+	else
+		return true; // unknown public-key algorithm
+	return false;
+}
+
+TMCG_OpenPGP_Seckey::~TMCG_OpenPGP_Seckey
+	()
+{
+	gcry_mpi_release(rsa_p);
+	gcry_mpi_release(rsa_q);
+	gcry_mpi_release(rsa_u);
+	gcry_mpi_release(rsa_d);
+	gcry_mpi_release(dsa_x);
+	if (!ret)
+		gcry_sexp_release(secret_key);
+	for (size_t i = 0; i < secret_subkeys.size(); i++)
+		delete secret_subkeys[i];
+	secret_subkeys.clear();
 }
 
 // ===========================================================================

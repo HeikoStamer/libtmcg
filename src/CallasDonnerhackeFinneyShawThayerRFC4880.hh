@@ -467,7 +467,7 @@ class TMCG_OpenPGP_Keyring; // forward declaration
 
 class TMCG_OpenPGP_Subkey
 {
-	private:
+	protected:
 		gcry_error_t										ret;
 		size_t												erroff;
 
@@ -550,9 +550,55 @@ class TMCG_OpenPGP_Subkey
 			();
 };
 
+class TMCG_OpenPGP_SecretSubkey : public TMCG_OpenPGP_Subkey
+{
+	public:
+		gcry_sexp_t											secret_key;
+		gcry_mpi_t											rsa_p;
+		gcry_mpi_t											rsa_q;
+		gcry_mpi_t											rsa_u;
+		gcry_mpi_t											rsa_d;
+		gcry_mpi_t											elg_x;
+		gcry_mpi_t											dsa_x;
+
+		TMCG_OpenPGP_SecretSubkey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const gcry_mpi_t								n,
+			 const gcry_mpi_t								e,
+			 const gcry_mpi_t								p,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		TMCG_OpenPGP_SecretSubkey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const gcry_mpi_t								p,
+			 const gcry_mpi_t								g,
+			 const gcry_mpi_t								y,
+			 const gcry_mpi_t								x,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		TMCG_OpenPGP_SecretSubkey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const gcry_mpi_t								p,
+			 const gcry_mpi_t								q,
+			 const gcry_mpi_t								g,
+			 const gcry_mpi_t								y,
+			 const gcry_mpi_t								x,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		virtual bool good
+			() const;
+		virtual bool weak
+			(const int										verbose) const;
+		virtual ~TMCG_OpenPGP_SecretSubkey
+			();
+};
+
 class TMCG_OpenPGP_Pubkey
 {
-	private:
+	protected:
 		gcry_error_t										ret;
 		size_t												erroff;
 
@@ -626,6 +672,43 @@ class TMCG_OpenPGP_Pubkey
 		void Reduce
 			();
 		~TMCG_OpenPGP_Pubkey
+			();
+};
+
+class TMCG_OpenPGP_Seckey : public TMCG_OpenPGP_Pubkey
+{
+	public:
+		gcry_sexp_t											secret_key;
+		gcry_mpi_t											rsa_p;
+		gcry_mpi_t											rsa_q;
+		gcry_mpi_t											rsa_u;
+		gcry_mpi_t											rsa_d;
+		gcry_mpi_t											dsa_x;
+		std::vector<TMCG_OpenPGP_Subkey*>					secret_subkeys;
+
+		TMCG_OpenPGP_Seckey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const gcry_mpi_t								n,
+			 const gcry_mpi_t								e,
+			 const gcry_mpi_t								p,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		TMCG_OpenPGP_Seckey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const gcry_mpi_t								p,
+			 const gcry_mpi_t								q,
+			 const gcry_mpi_t								g,
+			 const gcry_mpi_t								y,
+			 const gcry_mpi_t								x,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		virtual bool good
+			() const;
+		virtual bool weak
+			(const int										verbose) const;
+		virtual ~TMCG_OpenPGP_Seckey
 			();
 };
 
