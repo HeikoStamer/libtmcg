@@ -3167,7 +3167,7 @@ tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 		CRC24Encode(decoded_data, chksum);
 		if (chksum != in.substr(cpos + (clen - 1), 5))
 		{
-			std::cerr << "ERROR: bad checksum in ArmorDecode()" << std::endl;
+			std::cerr << "ERROR: wrong checksum in ArmorDecode()" << std::endl;
 			return TMCG_OPENPGP_ARMOR_UNKNOWN; // checksum error
 		}
 		out.insert(out.end(), decoded_data.begin(), decoded_data.end());
