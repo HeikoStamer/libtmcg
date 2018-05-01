@@ -1546,7 +1546,7 @@ TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
 
 // ===========================================================================
 
-TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
+TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
@@ -1554,9 +1554,10 @@ TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
 	 const gcry_mpi_t e,
 	 const gcry_mpi_t p,
 	 const tmcg_openpgp_octets_t &packet_in):
-		TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
-			n, e, packet_in)
+		pkalgo(pkalgo_in)
 {
+	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
+		n, e, packet_in);
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -1565,7 +1566,7 @@ TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
 	dsa_x = gcry_mpi_snew(2048);
 	// public-key algorithm is RSA
 	gcry_mpi_set(rsa_p, p);
-	gcry_mpi_div(rsa_q, NULL, rsa_n, rsa_p, 0);
+	gcry_mpi_div(rsa_q, NULL, n, rsa_p, 0);
 	gcry_mpi_invm(rsa_u, rsa_p, rsa_q);
 	// compute $d = e^{-1} \bmod \varphi(n)$
 	gcry_mpi_t tmp1, tmp2, tmp3, tmp4, tmp5;
@@ -1579,18 +1580,18 @@ TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
 	gcry_mpi_mul(tmp3, tmp1, tmp2);
 	gcry_mpi_gcd(tmp4, tmp1, tmp2);
 	gcry_mpi_div(tmp5, NULL, tmp3, tmp4, -1);
-	gcry_mpi_invm(rsa_d, rsa_e, tmp5);
+	gcry_mpi_invm(rsa_d, e, tmp5);
 	gcry_mpi_release(tmp1);
 	gcry_mpi_release(tmp2);
 	gcry_mpi_release(tmp3);
 	gcry_mpi_release(tmp4);
 	gcry_mpi_release(tmp5);
-	ret = gcry_sexp_build(&secret_key, &erroff,
+	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (rsa (n %M) (e %M) (d %M) (p %M) (q %M) (u %M)))",
 		n, e, rsa_d, p, rsa_q, rsa_u);
 }
 
-TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
+TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
@@ -1599,9 +1600,10 @@ TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
-			p, g, y, packet_in)
+		pkalgo(pkalgo_in)
 {
+	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
+		p, g, y, packet_in);
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -1610,11 +1612,11 @@ TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
 	dsa_x = gcry_mpi_snew(2048);
 	// public-key algorithm is ElGamal
 	gcry_mpi_set(elg_x, x);
-	ret = gcry_sexp_build(&secret_key, &erroff,
+	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (elg (p %M) (g %M) (y %M) (x %M)))", p, g, y, x);
 }
 
-TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
+TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
@@ -1624,9 +1626,10 @@ TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
-			p, q, g, y, packet_in)
+		pkalgo(pkalgo_in)
 {
+	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
+		p, q, g, y, packet_in);
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -1635,97 +1638,65 @@ TMCG_OpenPGP_SecretSubkey::TMCG_OpenPGP_SecretSubkey
 	dsa_x = gcry_mpi_snew(2048);
 	// public-key algorithm is DSA
 	gcry_mpi_set(dsa_x, x);
-	ret = gcry_sexp_build(&secret_key, &erroff,
+	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))",
 		p, q, g, y, x);
 }
 
-bool TMCG_OpenPGP_SecretSubkey::good
+bool TMCG_OpenPGP_PrivateSubkey::good
 	() const
 {
-	return (ret == 0);
+	return ((ret == 0) && pub->good());
 }
 
-bool TMCG_OpenPGP_SecretSubkey::weak
+bool TMCG_OpenPGP_PrivateSubkey::weak
 	(const int verbose) const
 {
-	gcry_error_t wret;
 	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
 	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 	{
-		unsigned int nbits = 0, ebits = 0, pbits = 0, qbits = 0;
-		nbits = gcry_mpi_get_nbits(rsa_n);
-		ebits = gcry_mpi_get_nbits(rsa_e);
+		unsigned int pbits = 0, qbits = 0;
 		pbits = gcry_mpi_get_nbits(rsa_p);
 		qbits = gcry_mpi_get_nbits(rsa_q);
 		if (verbose > 1)
-			std::cerr << "INFO: RSA with |n| = " << nbits << 
-				" bits, |e| = " << ebits <<
-				" bits, |p| = " << pbits <<
+			std::cerr << "INFO: RSA with |p| = " << pbits <<
 				" bits, |q| = " << qbits << " bits" << std::endl;
-		if ((nbits < 2048) || (ebits < 6) || (pbits < 1024) || (qbits < 1024))
+		if ((pbits < 1024) || (qbits < 1024))
 			return true; // weak key
-		wret = gcry_prime_check(rsa_e, 0);
-		if (wret)
-			return true; // e is not a prime
-		wret = gcry_prime_check(rsa_p, 0);
-		if (wret)
-			return true; // p is not a prime
-		wret = gcry_prime_check(rsa_q, 0);
-		if (wret)
-			return true; // q is not a prime
+		return pub->weak(verbose);
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
 	{
-		unsigned int pbits = 0, gbits = 0, ybits = 0, xbits = 0;
-		pbits = gcry_mpi_get_nbits(elg_p);
-		gbits = gcry_mpi_get_nbits(elg_g);
-		ybits = gcry_mpi_get_nbits(elg_y);
+		unsigned int xbits = 0;
 		xbits = gcry_mpi_get_nbits(elg_x);
 		if (verbose > 1)
-			std::cerr << "INFO: ElGamal with |p| = " << pbits <<
-				" bits, |g| = " << gbits <<
-				" bits, |y| = " << ybits <<
-				" bits, |x| = " << xbits << " bits" << std::endl;
-		if ((pbits < 2048) || (gbits < 2) || (ybits < 2) || (xbits < 256))
+			std::cerr << "INFO: ElGamal with |x| = " <<
+				xbits << " bits" << std::endl;
+		if (xbits < 256)
 			return true; // weak key
-		wret = gcry_prime_check(elg_p, 0);
-		if (wret)
-			return true; // p is not a prime
+		return pub->weak(verbose);
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
-		unsigned int pbits = 0, qbits = 0, gbits = 0, ybits = 0, xbits = 0;
-		pbits = gcry_mpi_get_nbits(dsa_p);
-		qbits = gcry_mpi_get_nbits(dsa_q);
-		gbits = gcry_mpi_get_nbits(dsa_g);
-		ybits = gcry_mpi_get_nbits(dsa_y);
+		unsigned int xbits = 0;
 		xbits = gcry_mpi_get_nbits(dsa_x);
 		if (verbose > 1)
-			std::cerr << "INFO: DSA with |p| = " << pbits <<
-				" bits, |q| = " << qbits <<
-				" bits, |g| = " << gbits <<
-				" bits, |y| = " << ybits <<
-				" bits, |x| = " << xbits << " bits" << std::endl; 
-		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2) ||
-			(xbits < 256))
+			std::cerr << "INFO: DSA with |x| = " <<
+				xbits << " bits" << std::endl; 
+		if (xbits < 256)
 			return true; // weak key
-		wret = gcry_prime_check(dsa_p, 0);
-		if (wret)
-			return true; // p is not a prime
-		wret = gcry_prime_check(dsa_q, 0);
-		if (wret)
-			return true; // q is not a prime
+		return pub->weak(verbose);
 	}
 	else
 		return true; // unknown public-key algorithm
 	return false;
 }
 
-TMCG_OpenPGP_SecretSubkey::~TMCG_OpenPGP_SecretSubkey
+TMCG_OpenPGP_PrivateSubkey::~TMCG_OpenPGP_PrivateSubkey
 	()
 {
+	delete pub;
 	gcry_mpi_release(rsa_p);
 	gcry_mpi_release(rsa_q);
 	gcry_mpi_release(rsa_u);
@@ -1733,7 +1704,7 @@ TMCG_OpenPGP_SecretSubkey::~TMCG_OpenPGP_SecretSubkey
 	gcry_mpi_release(elg_x);
 	gcry_mpi_release(dsa_x);
 	if (!ret)
-		gcry_sexp_release(secret_key);
+		gcry_sexp_release(private_key);
 }
 
 // ===========================================================================
@@ -2418,7 +2389,7 @@ TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
 
 // ===========================================================================
 
-TMCG_OpenPGP_Seckey::TMCG_OpenPGP_Seckey
+TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
@@ -2426,9 +2397,10 @@ TMCG_OpenPGP_Seckey::TMCG_OpenPGP_Seckey
 	 const gcry_mpi_t e,
 	 const gcry_mpi_t p,
 	 const tmcg_openpgp_octets_t &packet_in):
-		TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
-			n, e, packet_in)
+		pkalgo(pkalgo_in)
 {
+	pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
+		n, e, packet_in);
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -2436,7 +2408,7 @@ TMCG_OpenPGP_Seckey::TMCG_OpenPGP_Seckey
 	dsa_x = gcry_mpi_snew(2048);
 	// public-key algorithm is RSA
 	gcry_mpi_set(rsa_p, p);
-	gcry_mpi_div(rsa_q, NULL, rsa_n, rsa_p, 0);
+	gcry_mpi_div(rsa_q, NULL, n, rsa_p, 0);
 	gcry_mpi_invm(rsa_u, rsa_p, rsa_q);
 	// compute $d = e^{-1} \bmod \varphi(n)$
 	gcry_mpi_t tmp1, tmp2, tmp3, tmp4, tmp5;
@@ -2450,18 +2422,18 @@ TMCG_OpenPGP_Seckey::TMCG_OpenPGP_Seckey
 	gcry_mpi_mul(tmp3, tmp1, tmp2);
 	gcry_mpi_gcd(tmp4, tmp1, tmp2);
 	gcry_mpi_div(tmp5, NULL, tmp3, tmp4, -1);
-	gcry_mpi_invm(rsa_d, rsa_e, tmp5);
+	gcry_mpi_invm(rsa_d, e, tmp5);
 	gcry_mpi_release(tmp1);
 	gcry_mpi_release(tmp2);
 	gcry_mpi_release(tmp3);
 	gcry_mpi_release(tmp4);
 	gcry_mpi_release(tmp5);
-	ret = gcry_sexp_build(&secret_key, &erroff,
+	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (rsa (n %M) (e %M) (d %M) (p %M) (q %M) (u %M)))",
 		n, e, rsa_d, p, rsa_q, rsa_u);
 }
 
-TMCG_OpenPGP_Seckey::TMCG_OpenPGP_Seckey
+TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
@@ -2471,9 +2443,10 @@ TMCG_OpenPGP_Seckey::TMCG_OpenPGP_Seckey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
-			p, q, g, y, packet_in)
+		pkalgo(pkalgo_in)
 {
+	pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
+		p, q, g, y, packet_in);
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -2481,89 +2454,64 @@ TMCG_OpenPGP_Seckey::TMCG_OpenPGP_Seckey
 	dsa_x = gcry_mpi_snew(2048);
 	// public-key algorithm is DSA
 	gcry_mpi_set(dsa_x, x);
-	ret = gcry_sexp_build(&secret_key, &erroff,
+	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))",
 		p, q, g, y, x);
 }
 
-bool TMCG_OpenPGP_Seckey::good
+bool TMCG_OpenPGP_Prvkey::good
 	() const
 {
-	return (ret == 0);
+	return ((ret == 0) && pub->good());
 }
 
-bool TMCG_OpenPGP_Seckey::weak
+bool TMCG_OpenPGP_Prvkey::weak
 	(const int verbose) const
 {
-	gcry_error_t wret;
 	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
 	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 	{
-		unsigned int nbits = 0, ebits = 0, pbits = 0, qbits = 0;
-		nbits = gcry_mpi_get_nbits(rsa_n);
-		ebits = gcry_mpi_get_nbits(rsa_e);
+		unsigned int pbits = 0, qbits = 0;
 		pbits = gcry_mpi_get_nbits(rsa_p);
 		qbits = gcry_mpi_get_nbits(rsa_q);
 		if (verbose > 1)
-			std::cerr << "INFO: RSA with |n| = " << nbits << 
-				" bits, |e| = " << ebits <<
-				" bits, |p| = " << pbits <<
+			std::cerr << "INFO: RSA with |p| = " << pbits <<
 				" bits, |q| = " << qbits << " bits" << std::endl;
-		if ((nbits < 2048) || (ebits < 6) || (pbits < 1024) || (qbits < 1024))
+		if ((pbits < 1024) || (qbits < 1024))
 			return true; // weak key
-		wret = gcry_prime_check(rsa_e, 0);
-		if (wret)
-			return true; // e is not a prime
-		wret = gcry_prime_check(rsa_p, 0);
-		if (wret)
-			return true; // p is not a prime
-		wret = gcry_prime_check(rsa_q, 0);
-		if (wret)
-			return true; // q is not a prime
+		return pub->weak(verbose);
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
-		unsigned int pbits = 0, qbits = 0, gbits = 0, ybits = 0, xbits = 0;
-		pbits = gcry_mpi_get_nbits(dsa_p);
-		qbits = gcry_mpi_get_nbits(dsa_q);
-		gbits = gcry_mpi_get_nbits(dsa_g);
-		ybits = gcry_mpi_get_nbits(dsa_y);
+		unsigned int xbits = 0;
 		xbits = gcry_mpi_get_nbits(dsa_x);
 		if (verbose > 1)
-			std::cerr << "INFO: DSA with |p| = " << pbits <<
-				" bits, |q| = " << qbits <<
-				" bits, |g| = " << gbits <<
-				" bits, |y| = " << ybits <<
-				" bits, |x| = " << xbits << " bits" << std::endl; 
-		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2) ||
-			(xbits < 256))
+			std::cerr << "INFO: DSA with |x| = " <<
+				xbits << " bits" << std::endl; 
+		if (xbits < 256)
 			return true; // weak key
-		wret = gcry_prime_check(dsa_p, 0);
-		if (wret)
-			return true; // p is not a prime
-		wret = gcry_prime_check(dsa_q, 0);
-		if (wret)
-			return true; // q is not a prime
+		return pub->weak(verbose);
 	}
 	else
 		return true; // unknown public-key algorithm
 	return false;
 }
 
-TMCG_OpenPGP_Seckey::~TMCG_OpenPGP_Seckey
+TMCG_OpenPGP_Prvkey::~TMCG_OpenPGP_Prvkey
 	()
 {
+	delete pub;
 	gcry_mpi_release(rsa_p);
 	gcry_mpi_release(rsa_q);
 	gcry_mpi_release(rsa_u);
 	gcry_mpi_release(rsa_d);
 	gcry_mpi_release(dsa_x);
 	if (!ret)
-		gcry_sexp_release(secret_key);
-	for (size_t i = 0; i < secret_subkeys.size(); i++)
-		delete secret_subkeys[i];
-	secret_subkeys.clear();
+		gcry_sexp_release(private_key);
+	for (size_t i = 0; i < private_subkeys.size(); i++)
+		delete private_subkeys[i];
+	private_subkeys.clear();
 }
 
 // ===========================================================================
@@ -8203,6 +8151,151 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag17
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const tmcg_openpgp_octets_t &current_packet,
+	 bool &primary, TMCG_OpenPGP_Prvkey* &prv)
+{
+	if (ctx.version != 4)
+	{
+		if (verbose)
+			std::cerr << "WARNING: secret-key packet version " <<
+				(int)ctx.version << " not supported" << std::endl;
+	}
+	else if (!primary)
+	{
+		primary = true;
+		// evaluate the context
+		if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+		    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+		{
+			// public-key algorithm is RSA: create new prvkey
+			prv = new TMCG_OpenPGP_Prvkey(ctx.pkalgo, ctx.keycreationtime, 0,
+				ctx.n, ctx.e, ctx.p, current_packet);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+		{
+			// public-key algorithm is DSA: create new prvkey
+			prv = new TMCG_OpenPGP_Prvkey(ctx.pkalgo, ctx.keycreationtime, 0,
+				ctx.p, ctx.q, ctx.g, ctx.y, ctx.x, current_packet);
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "ERROR: public-key algorithm " <<
+					(int)ctx.pkalgo << " not supported" <<
+					std::endl;
+			return false;
+		}
+		if (!prv->good())
+		{
+			if (verbose)
+				std::cerr << "ERROR: reading primary key " <<
+					"material failed" << std::endl;
+			return false;
+		}
+		if (verbose > 1)
+		{
+			std::cerr << "INFO: key ID of private primary key: " << std::hex;
+			for (size_t i = 0; i < prv->pub->id.size(); i++)
+				std::cerr << (int)prv->pub->id[i] << " ";
+			std::cerr << std::dec << std::endl;
+		}
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: more than one primary key not allowed" <<
+				std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const bool primary, const tmcg_openpgp_octets_t &current_packet,
+	 bool &subkey, bool &badkey, TMCG_OpenPGP_Prvkey* &prv,
+	 TMCG_OpenPGP_PrivateSubkey* &sub)
+{
+	if (!primary)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no usable primary key found" << std::endl;
+		return false;
+	}
+	if (!badkey && subkey)
+		prv->private_subkeys.push_back(sub);
+	sub = NULL, subkey = true, badkey = false;
+	if (ctx.version != 4)
+	{
+		if (verbose)
+			std::cerr << "WARNING: secret-subkey packet " <<
+				"version " << (int)ctx.version <<
+				" not supported" << std::endl;
+		badkey = true;
+	}
+	else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
+	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
+	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA))
+	{
+		// evaluate the context
+		if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) || 
+		    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+		    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+		{
+			// public-key algorithm is RSA: create new private subkey
+			sub = new TMCG_OpenPGP_PrivateSubkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.n, ctx.e, ctx.p,
+				current_packet);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
+		{
+			// public-key algorithm is ElGamal: create new private subkey
+			sub = new TMCG_OpenPGP_PrivateSubkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.p, ctx.g, ctx.y, ctx.x,
+				current_packet);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+		{
+			// public-key algorithm is DSA: create new private subkey
+			sub = new TMCG_OpenPGP_PrivateSubkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g, ctx.y, ctx.x,
+				current_packet);
+		}
+		if (!sub->good())
+		{
+			if (verbose)
+				std::cerr << "ERROR: parsing subkey " <<
+					"material failed" << std::endl;
+			delete sub;
+			sub = NULL;
+			return false;
+		}
+		if (verbose > 1)
+		{
+			std::cerr << "INFO: key ID of private subkey: " << std::hex;
+			for (size_t i = 0; i < sub->pub->id.size(); i++)
+				std::cerr << (int)sub->pub->id[i] << " ";
+			std::cerr << std::dec << std::endl;
+		}
+		if (verbose && OctetsCompare(sub->pub->id, prv->pub->id))
+			std::cerr << "WARNING: probably same key material " <<
+				"used for primary key and subkey" << std::endl;
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "WARNING: public-key algorithm " <<
+				(int)ctx.pkalgo << " for subkey not " <<
+				"supported" << std::endl;
+		badkey = true;
+	}
+	return true;
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	(const std::string &in, const int verbose,
 	 TMCG_OpenPGP_Pubkey* &pub)
@@ -8721,3 +8814,180 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 		std::cerr << "INFO: ring.size() = " << ring->size() << std::endl;	
 	return true;
 }
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
+	(const std::string &in, const int verbose,
+	 TMCG_OpenPGP_Prvkey* &prv)
+{
+	// decode ASCII Armor
+	tmcg_openpgp_octets_t pkts;
+	tmcg_openpgp_armor_t type = ArmorDecode(in, pkts);
+	if (type != TMCG_OPENPGP_ARMOR_PRIVATE_KEY_BLOCK)
+	{
+		if (verbose)
+			std::cerr << "ERROR: wrong type of ASCII Armor " <<
+				"found (type = " << (int)type << ")" << std::endl;
+		return false;
+	}
+	// parse the private key block packet by packet
+	bool primary = false, subkey = false, badkey = false;
+	bool uid_flag = false, uat_flag = false, ret = true;
+	TMCG_OpenPGP_PrivateSubkey *sub = NULL;
+	TMCG_OpenPGP_UserID *uid = NULL;
+	TMCG_OpenPGP_UserAttribute *uat = NULL;
+	tmcg_openpgp_byte_t ptag = 0xFF;
+	size_t pnum = 0;
+	tmcg_openpgp_octets_t embedded_pkt;
+	while (pkts.size() || embedded_pkt.size())
+	{
+		tmcg_openpgp_packet_ctx_t ctx;
+		tmcg_openpgp_octets_t current_packet;
+		if (embedded_pkt.size())
+		{
+			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet);
+			if (verbose > 2)
+				std::cerr << "INFO: [EMBEDDED] PacketDecode() = " <<
+					(int)ptag << " version = " << (int)ctx.version << std::endl;
+			embedded_pkt.clear();
+		}
+		else
+		{
+			ptag = PacketDecode(pkts, verbose, ctx, current_packet);
+			++pnum;
+			if (verbose > 2)
+				std::cerr << "INFO: PacketDecode() = " <<
+					(int)ptag << " version = " << (int)ctx.version << std::endl;
+		}
+		if (ptag == 0x00)
+		{
+			if (verbose)
+				std::cerr << "ERROR: decoding OpenPGP packets failed " <<
+					"at #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			if (sub)
+				delete sub;
+			if (uid)
+				delete uid;
+			if (uat)
+				delete uat;
+			return false;
+		}
+		else if (ptag == 0xFA)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized critical OpenPGP " <<
+					"subpacket found at #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			continue; // ignore signature with critical subpacket
+		}
+		else if (ptag == 0xFB)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized OpenPGP subpacket " <<
+					"found at #" << pnum << std::endl;
+			ptag = 0x02; // process signature
+		}
+		else if (ptag == 0xFC)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized OpenPGP signature " <<
+					"packet found at #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		else if (ptag == 0xFD)
+		{
+			if (primary)
+			{
+				if (verbose)
+					std::cerr << "WARNING: unrecognized OpenPGP key packet " <<
+						"found at #" << pnum << std::endl;
+				if (!badkey && subkey)
+				{
+					prv->private_subkeys.push_back(sub);
+					sub = NULL;
+				}
+				badkey = true;
+				PacketContextRelease(ctx);
+				continue; // ignore packet
+			}
+			else
+			{
+				if (verbose)
+					std::cerr << "ERROR: public-key algorithm " <<
+						(int)ctx.pkalgo << " not supported" << std::endl;
+				PacketContextRelease(ctx);
+				return false;
+			}
+		}
+		else if (ptag == 0xFE)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized OpenPGP packet " <<
+					"found at #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		switch (ptag)
+		{
+			case 2: // Signature Packet
+				ret = PublicKeyBlockParse_Tag2(ctx, verbose, primary,
+					subkey, badkey, uid_flag, uat_flag,	current_packet,
+					embedded_pkt, prv->pub, sub->pub, uid, uat);
+				break;
+			case 5: // Secret-Key Packet
+				ret = PrivateKeyBlockParse_Tag5(ctx, verbose,
+					current_packet, primary, prv);
+				break;
+			case 7: // Secret-Subkey Packet
+				ret = PrivateKeyBlockParse_Tag7(ctx, verbose, primary,
+					current_packet, subkey, badkey, prv, sub);
+				break;
+			case 13: // User ID Packet
+				ret = PublicKeyBlockParse_Tag13(ctx, verbose, primary,
+					current_packet, uid_flag, uat_flag, prv->pub, uid, uat);
+				break;
+			case 17: // User Attribute Packet
+				ret = PublicKeyBlockParse_Tag17(ctx, verbose, primary,
+					current_packet, uid_flag, uat_flag, prv->pub, uid, uat);
+				break;
+			default:
+				if (verbose > 1)
+					std::cerr << "INFO: OpenPGP packet of tag " <<
+						(int)ptag << " ignored" << std::endl;
+				break;
+		}
+		// cleanup allocated buffers and mpi's
+		PacketContextRelease(ctx);
+		if (!ret)
+		{
+			if (sub)
+				delete sub;
+			if (uid)
+				delete uid;
+			if (uat)
+				delete uat;
+			return false;
+		}
+	}
+	if (!primary)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no usable primary key found" << std::endl;
+		if (sub)
+			delete sub;
+		if (uid)
+			delete uid;
+		if (uat)
+			delete uat;
+		return false;
+	}
+	if (uid_flag)
+		prv->pub->userids.push_back(uid);
+	if (uat_flag)
+		prv->pub->userattributes.push_back(uat);
+	if (!badkey && subkey)
+		prv->private_subkeys.push_back(sub);
+	return true;
+}
+

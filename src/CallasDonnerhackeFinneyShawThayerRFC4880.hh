@@ -467,7 +467,7 @@ class TMCG_OpenPGP_Keyring; // forward declaration
 
 class TMCG_OpenPGP_Subkey
 {
-	protected:
+	private:
 		gcry_error_t										ret;
 		size_t												erroff;
 
@@ -550,10 +550,16 @@ class TMCG_OpenPGP_Subkey
 			();
 };
 
-class TMCG_OpenPGP_SecretSubkey : public TMCG_OpenPGP_Subkey
+class TMCG_OpenPGP_PrivateSubkey
 {
+	private:
+		gcry_error_t										ret;
+		size_t												erroff;
+
 	public:
-		gcry_sexp_t											secret_key;
+		tmcg_openpgp_pkalgo_t								pkalgo;
+		TMCG_OpenPGP_Subkey*								pub;
+		gcry_sexp_t											private_key;
 		gcry_mpi_t											rsa_p;
 		gcry_mpi_t											rsa_q;
 		gcry_mpi_t											rsa_u;
@@ -561,7 +567,7 @@ class TMCG_OpenPGP_SecretSubkey : public TMCG_OpenPGP_Subkey
 		gcry_mpi_t											elg_x;
 		gcry_mpi_t											dsa_x;
 
-		TMCG_OpenPGP_SecretSubkey
+		TMCG_OpenPGP_PrivateSubkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
 			 const time_t									creationtime_in,
 			 const time_t									expirationtime_in,
@@ -569,7 +575,7 @@ class TMCG_OpenPGP_SecretSubkey : public TMCG_OpenPGP_Subkey
 			 const gcry_mpi_t								e,
 			 const gcry_mpi_t								p,
 			 const tmcg_openpgp_octets_t					&packet_in);
-		TMCG_OpenPGP_SecretSubkey
+		TMCG_OpenPGP_PrivateSubkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
 			 const time_t									creationtime_in,
 			 const time_t									expirationtime_in,
@@ -578,7 +584,7 @@ class TMCG_OpenPGP_SecretSubkey : public TMCG_OpenPGP_Subkey
 			 const gcry_mpi_t								y,
 			 const gcry_mpi_t								x,
 			 const tmcg_openpgp_octets_t					&packet_in);
-		TMCG_OpenPGP_SecretSubkey
+		TMCG_OpenPGP_PrivateSubkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
 			 const time_t									creationtime_in,
 			 const time_t									expirationtime_in,
@@ -592,13 +598,13 @@ class TMCG_OpenPGP_SecretSubkey : public TMCG_OpenPGP_Subkey
 			() const;
 		virtual bool weak
 			(const int										verbose) const;
-		virtual ~TMCG_OpenPGP_SecretSubkey
+		virtual ~TMCG_OpenPGP_PrivateSubkey
 			();
 };
 
 class TMCG_OpenPGP_Pubkey
 {
-	protected:
+	private:
 		gcry_error_t										ret;
 		size_t												erroff;
 
@@ -675,18 +681,24 @@ class TMCG_OpenPGP_Pubkey
 			();
 };
 
-class TMCG_OpenPGP_Seckey : public TMCG_OpenPGP_Pubkey
+class TMCG_OpenPGP_Prvkey
 {
+	private:
+		gcry_error_t										ret;
+		size_t												erroff;
+
 	public:
-		gcry_sexp_t											secret_key;
+		tmcg_openpgp_pkalgo_t								pkalgo;
+		TMCG_OpenPGP_Pubkey*								pub;
+		gcry_sexp_t											private_key;
 		gcry_mpi_t											rsa_p;
 		gcry_mpi_t											rsa_q;
 		gcry_mpi_t											rsa_u;
 		gcry_mpi_t											rsa_d;
 		gcry_mpi_t											dsa_x;
-		std::vector<TMCG_OpenPGP_SecretSubkey*>				secret_subkeys;
+		std::vector<TMCG_OpenPGP_PrivateSubkey*>			private_subkeys;
 
-		TMCG_OpenPGP_Seckey
+		TMCG_OpenPGP_Prvkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
 			 const time_t									creationtime_in,
 			 const time_t									expirationtime_in,
@@ -694,7 +706,7 @@ class TMCG_OpenPGP_Seckey : public TMCG_OpenPGP_Pubkey
 			 const gcry_mpi_t								e,
 			 const gcry_mpi_t								p,
 			 const tmcg_openpgp_octets_t					&packet_in);
-		TMCG_OpenPGP_Seckey
+		TMCG_OpenPGP_Prvkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
 			 const time_t									creationtime_in,
 			 const time_t									expirationtime_in,
@@ -708,7 +720,7 @@ class TMCG_OpenPGP_Seckey : public TMCG_OpenPGP_Pubkey
 			() const;
 		virtual bool weak
 			(const int										verbose) const;
-		virtual ~TMCG_OpenPGP_Seckey
+		virtual ~TMCG_OpenPGP_Prvkey
 			();
 };
 
@@ -794,6 +806,21 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 TMCG_OpenPGP_Pubkey*							&pub,
 			 TMCG_OpenPGP_UserID*							&uid,
 			 TMCG_OpenPGP_UserAttribute*					&uat);
+		static bool PrivateKeyBlockParse_Tag5
+			(const tmcg_openpgp_packet_ctx_t				&ctx,
+			 const int										verbose,
+			 const tmcg_openpgp_octets_t					&current_packet,
+			 bool											&primary,
+			 TMCG_OpenPGP_Prvkey*							&prv);
+		static bool PrivateKeyBlockParse_Tag7
+			(const tmcg_openpgp_packet_ctx_t				&ctx,
+			 const int										verbose,
+			 const bool										primary,
+			 const tmcg_openpgp_octets_t					&current_packet,
+			 bool											&subkey,
+			 bool											&badkey,
+			 TMCG_OpenPGP_Prvkey*							&prv,
+			 TMCG_OpenPGP_PrivateSubkey*					&sub);
 
 	public:
 		static void MemoryGuardReset
@@ -1249,6 +1276,10 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const std::string								&in,
 			 const int										verbose,
 			 TMCG_OpenPGP_Keyring*							&ring);
+		static bool PrivateKeyBlockParse
+			(const std::string								&in,
+			 const int										verbose,
+			 TMCG_OpenPGP_Prvkey*							&prv);
 };
 
 #endif
