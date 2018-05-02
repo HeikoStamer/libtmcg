@@ -1313,10 +1313,8 @@ bool TMCG_OpenPGP_Subkey::Check
 			else
 			{
 				if (verbose)
-					std::cerr << "WARNING: " <<
-						"self-signature " <<
-						"verification failed" <<
-						std::endl;
+					std::cerr << "WARNING: self-signature verification" <<
+						" failed" << std::endl;
 			}
 		}
 		else if (CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -1329,8 +1327,8 @@ bool TMCG_OpenPGP_Subkey::Check
 			else
 			{
 				if (verbose)
-					std::cerr << "WARNING: self-signature verification " <<
-						"failed" << std::endl;
+					std::cerr << "WARNING: self-signature verification" <<
+						" failed" << std::endl;
 			}
 		}
 		else if (verbose)
@@ -1553,6 +1551,9 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t n,
 	 const gcry_mpi_t e,
 	 const gcry_mpi_t p,
+	 const gcry_mpi_t q,
+	 const gcry_mpi_t u,
+	 const gcry_mpi_t d,
 	 const tmcg_openpgp_octets_t &packet_in):
 		pkalgo(pkalgo_in)
 {
@@ -1566,29 +1567,12 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	dsa_x = gcry_mpi_snew(2048);
 	// public-key algorithm is RSA
 	gcry_mpi_set(rsa_p, p);
-	gcry_mpi_div(rsa_q, NULL, n, rsa_p, 0);
-	gcry_mpi_invm(rsa_u, rsa_p, rsa_q);
-	// compute $d = e^{-1} \bmod \varphi(n)$
-	gcry_mpi_t tmp1, tmp2, tmp3, tmp4, tmp5;
-	tmp1 = gcry_mpi_snew(2048);
-	tmp2 = gcry_mpi_snew(2048);
-	tmp3 = gcry_mpi_snew(2048);
-	tmp4 = gcry_mpi_snew(2048);
-	tmp5 = gcry_mpi_snew(2048);
-	gcry_mpi_sub_ui(tmp1, rsa_p, 1);
-	gcry_mpi_sub_ui(tmp2, rsa_q, 1);
-	gcry_mpi_mul(tmp3, tmp1, tmp2);
-	gcry_mpi_gcd(tmp4, tmp1, tmp2);
-	gcry_mpi_div(tmp5, NULL, tmp3, tmp4, -1);
-	gcry_mpi_invm(rsa_d, e, tmp5);
-	gcry_mpi_release(tmp1);
-	gcry_mpi_release(tmp2);
-	gcry_mpi_release(tmp3);
-	gcry_mpi_release(tmp4);
-	gcry_mpi_release(tmp5);
+	gcry_mpi_set(rsa_q, q);
+	gcry_mpi_set(rsa_u, u);
+	gcry_mpi_set(rsa_d, d);
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (rsa (n %M) (e %M) (d %M) (p %M) (q %M) (u %M)))",
-		n, e, rsa_d, p, rsa_q, rsa_u);
+		n, e, d, p, q, u);
 }
 
 TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
@@ -2396,6 +2380,9 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t n,
 	 const gcry_mpi_t e,
 	 const gcry_mpi_t p,
+	 const gcry_mpi_t q,
+	 const gcry_mpi_t u,
+	 const gcry_mpi_t d,
 	 const tmcg_openpgp_octets_t &packet_in):
 		pkalgo(pkalgo_in)
 {
@@ -2408,29 +2395,12 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	dsa_x = gcry_mpi_snew(2048);
 	// public-key algorithm is RSA
 	gcry_mpi_set(rsa_p, p);
-	gcry_mpi_div(rsa_q, NULL, n, rsa_p, 0);
-	gcry_mpi_invm(rsa_u, rsa_p, rsa_q);
-	// compute $d = e^{-1} \bmod \varphi(n)$
-	gcry_mpi_t tmp1, tmp2, tmp3, tmp4, tmp5;
-	tmp1 = gcry_mpi_snew(2048);
-	tmp2 = gcry_mpi_snew(2048);
-	tmp3 = gcry_mpi_snew(2048);
-	tmp4 = gcry_mpi_snew(2048);
-	tmp5 = gcry_mpi_snew(2048);
-	gcry_mpi_sub_ui(tmp1, rsa_p, 1);
-	gcry_mpi_sub_ui(tmp2, rsa_q, 1);
-	gcry_mpi_mul(tmp3, tmp1, tmp2);
-	gcry_mpi_gcd(tmp4, tmp1, tmp2);
-	gcry_mpi_div(tmp5, NULL, tmp3, tmp4, -1);
-	gcry_mpi_invm(rsa_d, e, tmp5);
-	gcry_mpi_release(tmp1);
-	gcry_mpi_release(tmp2);
-	gcry_mpi_release(tmp3);
-	gcry_mpi_release(tmp4);
-	gcry_mpi_release(tmp5);
+	gcry_mpi_set(rsa_q, q);
+	gcry_mpi_set(rsa_u, u);
+	gcry_mpi_set(rsa_d, d);
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (rsa (n %M) (e %M) (d %M) (p %M) (q %M) (u %M)))",
-		n, e, rsa_d, p, rsa_q, rsa_u);
+		n, e, d, p, q, u);
 }
 
 TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
@@ -8171,7 +8141,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
 		{
 			// public-key algorithm is RSA: create new prvkey
 			prv = new TMCG_OpenPGP_Prvkey(ctx.pkalgo, ctx.keycreationtime, 0,
-				ctx.n, ctx.e, ctx.p, current_packet);
+				ctx.n, ctx.e, ctx.p, ctx.q, ctx.u, ctx.d, current_packet);
 		}
 		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 		{
@@ -8248,8 +8218,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
 		{
 			// public-key algorithm is RSA: create new private subkey
 			sub = new TMCG_OpenPGP_PrivateSubkey(ctx.pkalgo,
-				ctx.keycreationtime, 0, ctx.n, ctx.e, ctx.p,
-				current_packet);
+				ctx.keycreationtime, 0, ctx.n, ctx.e, ctx.p, ctx.q,
+				ctx.u, ctx.d, current_packet);
 		}
 		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
 		{

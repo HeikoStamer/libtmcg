@@ -574,6 +574,9 @@ class TMCG_OpenPGP_PrivateSubkey
 			 const gcry_mpi_t								n,
 			 const gcry_mpi_t								e,
 			 const gcry_mpi_t								p,
+			 const gcry_mpi_t								q,
+			 const gcry_mpi_t								u,
+			 const gcry_mpi_t								d,
 			 const tmcg_openpgp_octets_t					&packet_in);
 		TMCG_OpenPGP_PrivateSubkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
@@ -705,6 +708,9 @@ class TMCG_OpenPGP_Prvkey
 			 const gcry_mpi_t								n,
 			 const gcry_mpi_t								e,
 			 const gcry_mpi_t								p,
+			 const gcry_mpi_t								q,
+			 const gcry_mpi_t								u,
+			 const gcry_mpi_t								d,
 			 const tmcg_openpgp_octets_t					&packet_in);
 		TMCG_OpenPGP_Prvkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
