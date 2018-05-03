@@ -2533,6 +2533,84 @@ TMCG_OpenPGP_Keyring::~TMCG_OpenPGP_Keyring
 
 // ===========================================================================
 
+TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const tmcg_openpgp_octets_t &keyid_in,
+	 const gcry_mpi_t me_in,
+	 const tmcg_openpgp_octets_t &packet_in):
+		pkalgo(pkalgo_in)
+{
+	keyid.insert(keyid.end(), keyid_in.begin(), keyid_in.end());
+	me = gcry_mpi_new(2048);
+	gk = gcry_mpi_new(2048);
+	myk = gcry_mpi_new(2048);
+	// public-key algorithm is RSA
+	gcry_mpi_set(me, me_in);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+}
+
+TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const tmcg_openpgp_octets_t &keyid_in,
+	 const gcry_mpi_t gk_in,
+	 const gcry_mpi_t myk_in,
+	 const tmcg_openpgp_octets_t &packet_in):
+		pkalgo(pkalgo_in)
+{
+	keyid.insert(keyid.end(), keyid_in.begin(), keyid_in.end());
+	me = gcry_mpi_new(2048);
+	gk = gcry_mpi_new(2048);
+	myk = gcry_mpi_new(2048);
+	// public-key algorithm is ElGamal
+	gcry_mpi_set(gk, gk_in);
+	gcry_mpi_set(myk, myk_in);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+}
+
+TMCG_OpenPGP_PKESK::~TMCG_OpenPGP_PKESK
+	()
+{
+	keyid.clear();
+	gcry_mpi_release(me);
+	gcry_mpi_release(gk);
+	gcry_mpi_release(myk);
+	packet.clear();
+}
+
+// ===========================================================================
+
+TMCG_OpenPGP_SKESK::TMCG_OpenPGP_SKESK
+	()
+{
+}
+
+TMCG_OpenPGP_SKESK::~TMCG_OpenPGP_SKESK
+	()
+{
+}
+
+// ===========================================================================
+
+TMCG_OpenPGP_Message::TMCG_OpenPGP_Message
+	():
+		have_sed(false),
+		have_seipd(false)
+{
+}
+
+TMCG_OpenPGP_Message::~TMCG_OpenPGP_Message
+	()
+{
+	for (size_t i = 0; i < pkesks.size(); i++)
+		delete pkesks[i];
+	pkesks.clear();
+	for (size_t i = 0; i < skesks.size(); i++)
+		delete skesks[i];
+	skesks.clear();
+}
+
+// ===========================================================================
+
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::tmcg_openpgp_mem_alloc = 0;
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::MemoryGuardReset
@@ -6071,6 +6149,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						out.x, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
+					gcry_mpi_set_flag(out.x, GCRYMPI_FLAG_SECURE);
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 				}
@@ -6083,24 +6162,28 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						out.d, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
+					gcry_mpi_set_flag(out.d, GCRYMPI_FLAG_SECURE);
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 					mlen = PacketMPIDecode(mpis,
 						out.p, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
+					gcry_mpi_set_flag(out.p, GCRYMPI_FLAG_SECURE);
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 					mlen = PacketMPIDecode(mpis,
 						out.q, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
+					gcry_mpi_set_flag(out.q, GCRYMPI_FLAG_SECURE);
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 					mlen = PacketMPIDecode(mpis,
 						out.u, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
+					gcry_mpi_set_flag(out.u, GCRYMPI_FLAG_SECURE);
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 				}
@@ -6113,12 +6196,14 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						out.x_i, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
+					gcry_mpi_set_flag(out.x_i, GCRYMPI_FLAG_SECURE);
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 					mlen = PacketMPIDecode(mpis,
 						out.xprime_i, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
+					gcry_mpi_set_flag(out.xprime_i, GCRYMPI_FLAG_SECURE);
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 				}
@@ -8266,6 +8351,62 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag1
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const tmcg_openpgp_octets_t &current_packet,
+	 TMCG_OpenPGP_Message* &msg)
+{
+	TMCG_OpenPGP_PKESK *pkesk = NULL;
+	if (verbose > 1)
+		std::cerr << "INFO: ESK pkalgo = " << (int)ctx.pkalgo << std::endl;
+	tmcg_openpgp_octets_t keyid;
+	if (verbose > 1)
+		std::cerr << "INFO: ESK keyid = " << std::hex;
+	for (size_t i = 0; i < sizeof(ctx.keyid); i++)
+	{
+		if (verbose > 1)
+			std::cerr << (int)ctx.keyid[i] << " ";
+		keyid.push_back(ctx.keyid[i]);
+	}
+	if (verbose > 1)
+		std::cerr << std::dec << std::endl;
+	switch (ctx.pkalgo)
+	{
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY:
+			pkesk = new TMCG_OpenPGP_PKESK(ctx.pkalgo, keyid, ctx.me,
+				current_packet);
+			(msg->pkesks).push_back(pkesk);
+			break;
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
+			pkesk = new TMCG_OpenPGP_PKESK(ctx.pkalgo, keyid, ctx.gk, ctx.myk,
+				current_packet);
+			(msg->pkesks).push_back(pkesk);
+			break;
+		default:
+			break; // ignore not supported public-key algorithms
+	}
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag9
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const tmcg_openpgp_octets_t &current_packet,
+	 TMCG_OpenPGP_Message* &msg)
+{
+// TODO
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag18
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const tmcg_openpgp_octets_t &current_packet,
+	 TMCG_OpenPGP_Message* &msg)
+{
+// TODO
+	return true;
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	(const std::string &in, const int verbose,
 	 TMCG_OpenPGP_Pubkey* &pub)
@@ -8958,6 +9099,135 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		prv->pub->userattributes.push_back(uat);
 	if (!badkey && subkey)
 		prv->private_subkeys.push_back(sub);
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
+	(const std::string &in, const int verbose,
+	 TMCG_OpenPGP_Message* &msg)
+{
+	// create a new message object, if none is supplied
+	if (msg == NULL)
+		msg = new TMCG_OpenPGP_Message();
+	// decode ASCII Armor
+	tmcg_openpgp_octets_t pkts;
+	tmcg_openpgp_armor_t type = ArmorDecode(in, pkts);
+	if (type != TMCG_OPENPGP_ARMOR_MESSAGE)
+	{
+		if (verbose)
+			std::cerr << "ERROR: wrong type of ASCII Armor " <<
+				"found (type = " << (int)type << ")" << std::endl;
+		return false;
+	}
+	// parse the message packet by packet as long as no Encrypted Data found
+	bool have_sed = false, have_seipd = false;
+	tmcg_openpgp_byte_t ptag = 0xFF;
+	size_t pnum = 0;
+	while (pkts.size() && !have_sed && !have_seipd)
+	{
+		bool ret = true;
+		tmcg_openpgp_packet_ctx_t ctx;
+		tmcg_openpgp_octets_t current_packet;
+		ptag = PacketDecode(pkts, verbose, ctx, current_packet);
+		++pnum;
+		if (verbose > 2)
+			std::cerr << "INFO: PacketDecode() = " <<
+				(int)ptag << " version = " << (int)ctx.version << std::endl;
+		if (ptag == 0x00)
+		{
+			if (verbose)
+				std::cerr << "ERROR: decoding OpenPGP packets failed " <<
+					"at #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			return false;
+		}
+		else if (ptag == 0xFA)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized critical OpenPGP " <<
+					"subpacket found at #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			continue; // ignore signature with critical subpacket
+		}
+		else if (ptag == 0xFB)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized OpenPGP subpacket " <<
+					"found at #" << pnum << std::endl;
+			ptag = 0x02; // process signature
+		}
+		else if (ptag == 0xFC)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized OpenPGP signature " <<
+					"packet found at #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		else if (ptag == 0xFD)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized OpenPGP key packet " <<
+					"found at #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		else if (ptag == 0xFE)
+		{
+			if (verbose)
+				std::cerr << "WARNING: unrecognized OpenPGP packet " <<
+					"found at #" << pnum << std::endl;
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		switch (ptag)
+		{
+			case 1: // Public-Key Encrypted Session Key
+				ret = MessageParse_Tag1(ctx, verbose, current_packet, msg);
+				break;
+			case 9: // Symmetrically Encrypted Data
+				ret = MessageParse_Tag9(ctx, verbose, current_packet, msg);
+				if (ret)
+					have_sed = true;
+				break;
+			case 18: // Symmetrically Encrypted Integrity Protected Data
+				ret = MessageParse_Tag18(ctx, verbose, current_packet, msg);
+				if (ret)
+					have_seipd = true;
+				break;
+// TODO: parse further packet types
+			default:
+				if (verbose > 1)
+					std::cerr << "INFO: OpenPGP packet of tag " <<
+						(int)ptag << " ignored" << std::endl;
+				break;
+		}
+		// cleanup allocated buffers and mpi's
+		PacketContextRelease(ctx);
+		if (!ret)
+			return false;
+	}
+/*
+	if (!have_pkesk)
+	{
+		std::cerr << "ERROR: no public-key encrypted session key found" <<
+			std::endl;
+		return false;
+	}
+	if (!have_sed && !have_seipd)
+	{
+		std::cerr << "ERROR: no symmetrically encrypted (and integrity" <<
+			" protected) data found" << std::endl;
+		return false;
+	}
+	if (have_sed && have_seipd)
+	{
+		std::cerr << "ERROR: multiple types of symmetrically encrypted data" <<
+			" found" << std::endl;
+		return false;
+	}
+*/
+// TODO
 	return true;
 }
 

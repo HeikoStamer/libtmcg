@@ -7,6 +7,9 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-05-03] RFC4880: use secure memory for some of tmcg_openpgp_packet_ctx_t
+* [2018-05-03] RFC4880: added TMCG_OpenPGP_PKESK and TMCG_OpenPGP_SKESK
+* [2018-05-03] RFC4880: added TMCG_OpenPGP_Message and MessageParse()
 * [2018-05-01] RFC4880: added PrivateKeyBlockParse()
 * [2018-04-29] RFC4880: added TMCG_OpenPGP_PrivateSubKey, TMCG_OpenPGP_Prvkey
 * [2018-04-25] RFC4880: added TMCG_OpenPGP_UserAttribute (with opaque content)

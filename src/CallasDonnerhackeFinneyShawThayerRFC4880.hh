@@ -597,11 +597,11 @@ class TMCG_OpenPGP_PrivateSubkey
 			 const gcry_mpi_t								y,
 			 const gcry_mpi_t								x,
 			 const tmcg_openpgp_octets_t					&packet_in);
-		virtual bool good
+		bool good
 			() const;
-		virtual bool weak
+		bool weak
 			(const int										verbose) const;
-		virtual ~TMCG_OpenPGP_PrivateSubkey
+		~TMCG_OpenPGP_PrivateSubkey
 			();
 };
 
@@ -722,11 +722,11 @@ class TMCG_OpenPGP_Prvkey
 			 const gcry_mpi_t								y,
 			 const gcry_mpi_t								x,
 			 const tmcg_openpgp_octets_t					&packet_in);
-		virtual bool good
+		bool good
 			() const;
-		virtual bool weak
+		bool weak
 			(const int										verbose) const;
-		virtual ~TMCG_OpenPGP_Prvkey
+		~TMCG_OpenPGP_Prvkey
 			();
 };
 
@@ -745,6 +745,53 @@ class TMCG_OpenPGP_Keyring
 		size_t size
 			() const;
 		~TMCG_OpenPGP_Keyring
+			();
+};
+
+class TMCG_OpenPGP_PKESK
+{
+	public:
+		tmcg_openpgp_pkalgo_t								pkalgo;
+		tmcg_openpgp_octets_t								keyid;
+		gcry_mpi_t											me;
+		gcry_mpi_t											gk;
+		gcry_mpi_t											myk;
+		tmcg_openpgp_octets_t								packet;
+
+		TMCG_OpenPGP_PKESK
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const tmcg_openpgp_octets_t					&keyid_in,
+			 const gcry_mpi_t								me_in,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		TMCG_OpenPGP_PKESK
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const tmcg_openpgp_octets_t					&keyid_in,
+			 const gcry_mpi_t								gk_in,
+			 const gcry_mpi_t								myk_in,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		~TMCG_OpenPGP_PKESK
+			();
+};
+
+class TMCG_OpenPGP_SKESK
+{
+	public:
+		TMCG_OpenPGP_SKESK
+			();
+		~TMCG_OpenPGP_SKESK
+			();
+};
+
+class TMCG_OpenPGP_Message
+{
+	public:
+		bool have_sed;
+		bool have_seipd;
+		std::vector<TMCG_OpenPGP_PKESK*> pkesks;
+		std::vector<TMCG_OpenPGP_SKESK*> skesks;
+		TMCG_OpenPGP_Message
+			();
+		~TMCG_OpenPGP_Message
 			();
 };
 
@@ -827,6 +874,21 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 bool											&badkey,
 			 TMCG_OpenPGP_Prvkey*							&prv,
 			 TMCG_OpenPGP_PrivateSubkey*					&sub);
+		static bool MessageParse_Tag1
+			(const tmcg_openpgp_packet_ctx_t				&ctx,
+			 const int										verbose,
+			 const tmcg_openpgp_octets_t					&current_packet,
+			 TMCG_OpenPGP_Message*							&msg);
+		static bool MessageParse_Tag9
+			(const tmcg_openpgp_packet_ctx_t				&ctx,
+			 const int										verbose,
+			 const tmcg_openpgp_octets_t					&current_packet,
+			 TMCG_OpenPGP_Message*							&msg);
+		static bool MessageParse_Tag18
+			(const tmcg_openpgp_packet_ctx_t				&ctx,
+			 const int										verbose,
+			 const tmcg_openpgp_octets_t					&current_packet,
+			 TMCG_OpenPGP_Message*							&msg);
 
 	public:
 		static void MemoryGuardReset
@@ -1286,6 +1348,10 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const std::string								&in,
 			 const int										verbose,
 			 TMCG_OpenPGP_Prvkey*							&prv);
+		static bool MessageParse
+			(const std::string								&in,
+			 const int										verbose,
+			 TMCG_OpenPGP_Message*							&msg);
 };
 
 #endif
