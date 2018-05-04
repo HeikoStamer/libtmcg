@@ -550,6 +550,8 @@ class TMCG_OpenPGP_Subkey
 			();
 };
 
+class TMCG_OpenPGP_PKESK; // forward declaration
+
 class TMCG_OpenPGP_PrivateSubkey
 {
 	private:
@@ -601,6 +603,10 @@ class TMCG_OpenPGP_PrivateSubkey
 			() const;
 		bool weak
 			(const int										verbose) const;
+		bool Decrypt
+			(const TMCG_OpenPGP_PKESK*						&esk,
+			 const int										verbose,
+			 tmcg_openpgp_octets_t							&out) const;
 		~TMCG_OpenPGP_PrivateSubkey
 			();
 };
@@ -726,6 +732,10 @@ class TMCG_OpenPGP_Prvkey
 			() const;
 		bool weak
 			(const int										verbose) const;
+		bool Decrypt
+			(const TMCG_OpenPGP_PKESK*						&esk,
+			 const int										verbose,
+			 tmcg_openpgp_octets_t							&out) const;
 		~TMCG_OpenPGP_Prvkey
 			();
 };

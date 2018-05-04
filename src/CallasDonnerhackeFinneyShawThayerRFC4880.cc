@@ -1677,6 +1677,79 @@ bool TMCG_OpenPGP_PrivateSubkey::weak
 	return false;
 }
 
+bool TMCG_OpenPGP_PrivateSubkey::Decrypt
+	(const TMCG_OpenPGP_PKESK* &esk, const int verbose,
+	 tmcg_openpgp_octets_t &out) const
+{
+	if (CallasDonnerhackeFinneyShawThayerRFC4880::
+		OctetsCompare(esk->keyid, pub->id) ||
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+		OctetsCompareZero(esk->keyid))
+	{
+		if ((esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+			(esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY))
+		{
+			gcry_error_t dret;
+			dret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				AsymmetricDecryptRSA(esk->me, private_key, out);
+			if (dret)
+			{
+				if (verbose)
+					std::cerr << "ERROR: AsymmetricDecryptRSA() failed" <<
+						" with rc = " << gcry_err_code(ret) << std::endl;
+				return false;
+			}
+			return true;
+		}
+		else if (esk->pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
+		{
+			// check whether $0 < g^k < p$.
+			if ((gcry_mpi_cmp_ui(esk->gk, 0L) <= 0) ||
+				(gcry_mpi_cmp(esk->gk, pub->elg_p) >= 0))
+			{
+				if (verbose)
+					std::cerr << "ERROR: 0 < g^k < p not satisfied" << 
+						std::endl;
+				return false;
+			}
+			// check whether $0 < my^k < p$.
+			if ((gcry_mpi_cmp_ui(esk->myk, 0L) <= 0) ||
+				(gcry_mpi_cmp(esk->myk, pub->elg_p) >= 0))
+			{
+				if (verbose)
+					std::cerr << "ERROR: 0 < my^k < p not satisfied" <<
+						std::endl;
+				return false;
+			}
+			gcry_error_t dret;
+			dret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				AsymmetricDecryptElgamal(esk->gk, esk->myk, private_key, out);
+			if (dret)
+			{
+				if (verbose)
+					std::cerr << "ERROR: AsymmetricDecryptElgamal() failed" <<
+						" with rc = " << gcry_err_code(ret) << std::endl;
+				return false;
+			}
+			return true;
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "ERROR: public-key algorithm not supported" <<
+					std::endl;
+			return false;
+		}
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: PKESK keyid does not match subkey ID" <<
+				std::endl;
+		return false;
+	}
+}
+
 TMCG_OpenPGP_PrivateSubkey::~TMCG_OpenPGP_PrivateSubkey
 	()
 {
@@ -2466,6 +2539,47 @@ bool TMCG_OpenPGP_Prvkey::weak
 	else
 		return true; // unknown public-key algorithm
 	return false;
+}
+
+bool TMCG_OpenPGP_Prvkey::Decrypt
+	(const TMCG_OpenPGP_PKESK* &esk, const int verbose,
+	 tmcg_openpgp_octets_t &out) const
+{
+	if (CallasDonnerhackeFinneyShawThayerRFC4880::
+		OctetsCompare(esk->keyid, pub->id) ||
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+		OctetsCompareZero(esk->keyid))
+	{
+		if ((esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+			(esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY))
+		{
+			gcry_error_t dret;
+			dret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				AsymmetricDecryptRSA(esk->me, private_key, out);
+			if (dret)
+			{
+				if (verbose)
+					std::cerr << "ERROR: AsymmetricDecryptRSA() failed" <<
+						" with rc = " << gcry_err_code(ret) << std::endl;
+				return false;
+			}
+			return true;
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "ERROR: public-key algorithm not supported" <<
+					std::endl;
+			return false;
+		}
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: PKESK keyid does not match key ID" <<
+				std::endl;
+		return false;
+	}
 }
 
 TMCG_OpenPGP_Prvkey::~TMCG_OpenPGP_Prvkey
