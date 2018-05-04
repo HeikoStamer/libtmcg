@@ -2580,7 +2580,8 @@ TMCG_OpenPGP_PKESK::~TMCG_OpenPGP_PKESK
 // ===========================================================================
 
 TMCG_OpenPGP_SKESK::TMCG_OpenPGP_SKESK
-	()
+	(const tmcg_openpgp_skalgo_t skalgo_in):
+		skalgo(skalgo_in)
 {
 }
 
@@ -2601,12 +2602,13 @@ TMCG_OpenPGP_Message::TMCG_OpenPGP_Message
 TMCG_OpenPGP_Message::~TMCG_OpenPGP_Message
 	()
 {
-	for (size_t i = 0; i < pkesks.size(); i++)
-		delete pkesks[i];
-	pkesks.clear();
-	for (size_t i = 0; i < skesks.size(); i++)
-		delete skesks[i];
-	skesks.clear();
+	for (size_t i = 0; i < PKESKs.size(); i++)
+		delete PKESKs[i];
+	PKESKs.clear();
+	for (size_t i = 0; i < SKESKs.size(); i++)
+		delete SKESKs[i];
+	SKESKs.clear();
+	encrypted_data.clear();
 }
 
 // ===========================================================================
@@ -5720,7 +5722,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			out.version = pkt[0];
 			if (out.version != 4)
 				return 0; // error: version not supported
-			out.symalgo = (tmcg_openpgp_skalgo_t)pkt[1];
+			out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
 			out.s2k_type = pkt[2];
 			out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[3];
 			if (out.s2k_type == 0x00)
@@ -6221,7 +6223,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				// encrypted + SHA-1 hash or checksum
 				if (mpis.size() < 1)
 					return 0; // error: no sym. algorithm
-				out.symalgo = (tmcg_openpgp_skalgo_t)mpis[0];
+				out.skalgo = (tmcg_openpgp_skalgo_t)mpis[0];
 				mpis.erase(mpis.begin(), mpis.begin()+1);
 				if (mpis.size() < 2)
 					return 0; // error: bad S2K specifier
@@ -6259,7 +6261,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				}
 				else
 					return 0; // unknown S2K specifier
-				size_t ivlen = AlgorithmIVLength(out.symalgo);
+				size_t ivlen = AlgorithmIVLength(out.skalgo);
 				if (mpis.size() < ivlen)
 					return 0; // error: no IV
 				if (ivlen > sizeof(out.iv))
@@ -8356,7 +8358,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag1
 	 const tmcg_openpgp_octets_t &current_packet,
 	 TMCG_OpenPGP_Message* &msg)
 {
-	TMCG_OpenPGP_PKESK *pkesk = NULL;
+	TMCG_OpenPGP_PKESK *esk = NULL;
 	if (verbose > 1)
 		std::cerr << "INFO: ESK pkalgo = " << (int)ctx.pkalgo << std::endl;
 	tmcg_openpgp_octets_t keyid;
@@ -8374,18 +8376,30 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag1
 	{
 		case TMCG_OPENPGP_PKALGO_RSA:
 		case TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY:
-			pkesk = new TMCG_OpenPGP_PKESK(ctx.pkalgo, keyid, ctx.me,
+			esk = new TMCG_OpenPGP_PKESK(ctx.pkalgo, keyid, ctx.me,
 				current_packet);
-			(msg->pkesks).push_back(pkesk);
+			(msg->PKESKs).push_back(esk);
 			break;
 		case TMCG_OPENPGP_PKALGO_ELGAMAL:
-			pkesk = new TMCG_OpenPGP_PKESK(ctx.pkalgo, keyid, ctx.gk, ctx.myk,
+			esk = new TMCG_OpenPGP_PKESK(ctx.pkalgo, keyid, ctx.gk, ctx.myk,
 				current_packet);
-			(msg->pkesks).push_back(pkesk);
+			(msg->PKESKs).push_back(esk);
 			break;
 		default:
 			break; // ignore not supported public-key algorithms
 	}
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag3
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const tmcg_openpgp_octets_t &current_packet,
+	 TMCG_OpenPGP_Message* &msg)
+{
+	if (verbose > 1)
+		std::cerr << "INFO: ESK skalgo = " << (int)ctx.skalgo << std::endl;
+	TMCG_OpenPGP_SKESK *esk = new TMCG_OpenPGP_SKESK(ctx.skalgo);
+	(msg->SKESKs).push_back(esk);
 	return true;
 }
 
@@ -8394,7 +8408,21 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag9
 	 const tmcg_openpgp_octets_t &current_packet,
 	 TMCG_OpenPGP_Message* &msg)
 {
-// TODO
+	if (verbose > 1)
+		std::cerr << "INFO: SED length = " << ctx.encdatalen << std::endl;
+	if ((!msg->have_sed) && (!msg->have_seipd))
+	{
+		msg->have_sed = true;
+		(msg->encrypted_data).clear();
+		for (size_t i = 0; i < ctx.encdatalen; i++)
+			(msg->encrypted_data).push_back(ctx.encdata[i]);
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: duplicate SED/SEIPD packet found" << std::endl;
+		return false;
+	}
 	return true;
 }
 
@@ -8403,7 +8431,21 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag18
 	 const tmcg_openpgp_octets_t &current_packet,
 	 TMCG_OpenPGP_Message* &msg)
 {
-// TODO
+	if (verbose > 1)
+		std::cerr << "INFO: SEIPD length = " << ctx.encdatalen << std::endl;
+	if ((!msg->have_sed) && (!msg->have_seipd))
+	{
+		msg->have_seipd = true;
+		(msg->encrypted_data).clear();
+		for (size_t i = 0; i < ctx.encdatalen; i++)
+			(msg->encrypted_data).push_back(ctx.encdata[i]);
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: duplicate SED/SEIPD packet found" << std::endl;
+		return false;
+	}
 	return true;
 }
 
@@ -9185,6 +9227,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 			case 1: // Public-Key Encrypted Session Key
 				ret = MessageParse_Tag1(ctx, verbose, current_packet, msg);
 				break;
+			case 3: // Symmetric-Key Encrypted Session Key
+				ret = MessageParse_Tag3(ctx, verbose, current_packet, msg);
+				break;
 			case 9: // Symmetrically Encrypted Data
 				ret = MessageParse_Tag9(ctx, verbose, current_packet, msg);
 				if (ret)
@@ -9195,7 +9240,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				if (ret)
 					have_seipd = true;
 				break;
-// TODO: parse further packet types
+// TODO: parse further packet types: LIT and MDC
 			default:
 				if (verbose > 1)
 					std::cerr << "INFO: OpenPGP packet of tag " <<
@@ -9207,27 +9252,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 		if (!ret)
 			return false;
 	}
-/*
-	if (!have_pkesk)
-	{
-		std::cerr << "ERROR: no public-key encrypted session key found" <<
-			std::endl;
-		return false;
-	}
-	if (!have_sed && !have_seipd)
-	{
-		std::cerr << "ERROR: no symmetrically encrypted (and integrity" <<
-			" protected) data found" << std::endl;
-		return false;
-	}
-	if (have_sed && have_seipd)
-	{
-		std::cerr << "ERROR: multiple types of symmetrically encrypted data" <<
-			" found" << std::endl;
-		return false;
-	}
-*/
-// TODO
 	return true;
 }
 

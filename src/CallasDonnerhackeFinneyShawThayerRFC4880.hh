@@ -281,7 +281,7 @@ typedef struct
 	gcry_mpi_t					x_rvss_qualsize;
 	gcry_mpi_t					x_i;
 	gcry_mpi_t					xprime_i;
-	tmcg_openpgp_skalgo_t		symalgo;
+	tmcg_openpgp_skalgo_t		skalgo;
 	tmcg_openpgp_byte_t			s2kconv;
 	tmcg_openpgp_byte_t			s2k_type;
 	tmcg_openpgp_hashalgo_t		s2k_hashalgo;
@@ -776,8 +776,10 @@ class TMCG_OpenPGP_PKESK
 class TMCG_OpenPGP_SKESK
 {
 	public:
+		tmcg_openpgp_skalgo_t								skalgo;
+
 		TMCG_OpenPGP_SKESK
-			();
+			(const tmcg_openpgp_skalgo_t skalgo_in);
 		~TMCG_OpenPGP_SKESK
 			();
 };
@@ -787,8 +789,10 @@ class TMCG_OpenPGP_Message
 	public:
 		bool have_sed;
 		bool have_seipd;
-		std::vector<TMCG_OpenPGP_PKESK*> pkesks;
-		std::vector<TMCG_OpenPGP_SKESK*> skesks;
+		std::vector<TMCG_OpenPGP_PKESK*> PKESKs;
+		std::vector<TMCG_OpenPGP_SKESK*> SKESKs;
+		tmcg_openpgp_octets_t encrypted_data;
+
 		TMCG_OpenPGP_Message
 			();
 		~TMCG_OpenPGP_Message
@@ -875,6 +879,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 TMCG_OpenPGP_Prvkey*							&prv,
 			 TMCG_OpenPGP_PrivateSubkey*					&sub);
 		static bool MessageParse_Tag1
+			(const tmcg_openpgp_packet_ctx_t				&ctx,
+			 const int										verbose,
+			 const tmcg_openpgp_octets_t					&current_packet,
+			 TMCG_OpenPGP_Message*							&msg);
+		static bool MessageParse_Tag3
 			(const tmcg_openpgp_packet_ctx_t				&ctx,
 			 const int										verbose,
 			 const tmcg_openpgp_octets_t					&current_packet,
