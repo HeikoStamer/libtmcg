@@ -789,7 +789,7 @@ class TMCG_OpenPGP_SKESK
 		tmcg_openpgp_skalgo_t								skalgo;
 
 		TMCG_OpenPGP_SKESK
-			(const tmcg_openpgp_skalgo_t skalgo_in);
+			(const tmcg_openpgp_skalgo_t					skalgo_in);
 		~TMCG_OpenPGP_SKESK
 			();
 };
@@ -797,14 +797,18 @@ class TMCG_OpenPGP_SKESK
 class TMCG_OpenPGP_Message
 {
 	public:
-		bool have_sed;
-		bool have_seipd;
-		std::vector<TMCG_OpenPGP_PKESK*> PKESKs;
-		std::vector<TMCG_OpenPGP_SKESK*> SKESKs;
-		tmcg_openpgp_octets_t encrypted_data;
+		bool												have_sed;
+		bool												have_seipd;
+		std::vector<TMCG_OpenPGP_PKESK*>					PKESKs;
+		std::vector<TMCG_OpenPGP_SKESK*>					SKESKs;
+		tmcg_openpgp_octets_t								encrypted_message;
 
 		TMCG_OpenPGP_Message
 			();
+		bool Decrypt
+			(const tmcg_openpgp_octets_t					&key,
+			 const int										verbose,
+			 tmcg_openpgp_octets_t							&out) const;
 		~TMCG_OpenPGP_Message
 			();
 };

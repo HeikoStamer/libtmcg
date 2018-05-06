@@ -2713,6 +2713,53 @@ TMCG_OpenPGP_Message::TMCG_OpenPGP_Message
 {
 }
 
+bool TMCG_OpenPGP_Message::Decrypt
+	(const tmcg_openpgp_octets_t &key, const int verbose,
+	 tmcg_openpgp_octets_t &out) const
+{
+	if (verbose > 1)
+		std::cerr << "INFO: symmetric decryption of message ..." << std::endl;
+	if (!encrypted_message.size())
+	{
+		if (verbose)
+			std::cerr << "ERROR: nothing to decrypt" << std::endl;
+		return false;
+	}
+	tmcg_openpgp_skalgo_t skalgo = TMCG_OPENPGP_SKALGO_PLAINTEXT;
+	tmcg_openpgp_octets_t sk;
+	if (key.size() > 0)
+	{
+		skalgo = (tmcg_openpgp_skalgo_t)key[0];
+		if (verbose > 1)
+			std::cerr << "INFO: skalgo = " << (int)skalgo << std::endl;
+		for (size_t i = 0; i < key.size(); i++)
+			sk.push_back(key[i]);
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: no session key provided" << std::endl;
+		return false;
+	}
+	if (!have_seipd)
+	{
+		if (verbose)
+			std::cerr << "WARNING: encrypted message was not integrity" <<
+				" protected" << std::endl;
+	}
+	tmcg_openpgp_octets_t pfx;
+	gcry_error_t ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+		SymmetricDecrypt(encrypted_message, sk, pfx, false, skalgo, out);
+	if (ret)
+	{
+		if (verbose)
+			std::cerr << "ERROR: SymmetricDecrypt() failed" <<
+				" with rc = " << gcry_err_code(ret) << std::endl;
+		return false;
+	}
+	return true;
+}
+
 TMCG_OpenPGP_Message::~TMCG_OpenPGP_Message
 	()
 {
@@ -2722,7 +2769,7 @@ TMCG_OpenPGP_Message::~TMCG_OpenPGP_Message
 	for (size_t i = 0; i < SKESKs.size(); i++)
 		delete SKESKs[i];
 	SKESKs.clear();
-	encrypted_data.clear();
+	encrypted_message.clear();
 }
 
 // ===========================================================================
@@ -7050,12 +7097,12 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	// sum of the preceding session key octets, not including the
 	// algorithm identifier, modulo 65536.
 	if (!bs || !ks)
-		return -1; // error: bad algorithm
+		return GPG_ERR_CIPHER_ALGO; // error: bad algorithm
 	if (seskey.size() == (sizeof(key) + 3))
 	{
 		// reuse the provided session key and calculate checksum
 		if (seskey[0] != TMCG_OPENPGP_SKALGO_AES256)
-			return -1; // error: algorithm is not AES256
+			return GPG_ERR_CIPHER_ALGO; // error: algorithm is not AES256
 		for (size_t i = 0; i < sizeof(key); i++)
 		{
 			key[i] = seskey[1+i]; // copy the session key
@@ -7064,7 +7111,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 		chksum %= 65536;
 		size_t key_chksum = (seskey[33] << 8) + seskey[34];
 		if (chksum != key_chksum)
-			return -1; // error: checksum does not match
+			return GPG_ERR_CHECKSUM; // error: checksum does not match
 	}
 	else if (seskey.size() == sizeof(key))
 	{
@@ -7197,9 +7244,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	// sum of the preceding session key octets, not including the
 	// algorithm identifier, modulo 65536.
 	if (!bs || !ks)
-		return -1; // error: bad algorithm
+		return GPG_ERR_CIPHER_ALGO; // error: bad algorithm
 	if (seskey.size() == 0)
-		return -1; // error: no session key provided
+		return GPG_ERR_INV_SESSION_KEY; // error: no session key provided
 	else if (seskey.size() == (sizeof(key) + 3))
 	{
 		// use the provided session key and calculate checksum
@@ -7211,7 +7258,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 		chksum %= 65536;
 		size_t key_chksum = (seskey[33] << 8) + seskey[34];
 		if (chksum != key_chksum)
-			return -1; // error: checksum does not match
+			return GPG_ERR_CHECKSUM; // error: checksum does not match
 	}
 	else if (seskey.size() == sizeof(key))
 	{
@@ -7227,9 +7274,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 		seskey.push_back(chksum & 0xFF);
 	}
 	else
-		return -1; // error: bad session key provided
+		return GPG_ERR_BAD_KEY; // error: bad session key provided
 	if (in.size() < (bs + 2))
-		return -1; // error: input too short (no encrypted prefix)
+		return GPG_ERR_TOO_SHORT; // error: input too short (no encrypt. prefix)
 	// The data is encrypted in CFB mode, with a CFB shift size equal to
 	// the cipher’s block size. The Initial Vector (IV) is specified as
 	// all zeros. Instead of using an IV, OpenPGP prefixes a string of
@@ -7277,7 +7324,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	if ((prefix[bs] != prefix[bs-2]) || (prefix[bs+1] != prefix[bs-1]))
 	{
 		gcry_cipher_close(hd);
-		return -1; // error: prefix corrupt
+		return GPG_ERR_INV_SESSION_KEY; // error: prefix corrupt
 	}
 	if (resync)
 	{  	
@@ -8527,9 +8574,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag9
 	if ((!msg->have_sed) && (!msg->have_seipd))
 	{
 		msg->have_sed = true;
-		(msg->encrypted_data).clear();
+		(msg->encrypted_message).clear(); // clear internal buffer
 		for (size_t i = 0; i < ctx.encdatalen; i++)
-			(msg->encrypted_data).push_back(ctx.encdata[i]);
+			(msg->encrypted_message).push_back(ctx.encdata[i]);
 	}
 	else
 	{
@@ -8550,9 +8597,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag18
 	if ((!msg->have_sed) && (!msg->have_seipd))
 	{
 		msg->have_seipd = true;
-		(msg->encrypted_data).clear();
+		(msg->encrypted_message).clear(); // clear internal buffer
 		for (size_t i = 0; i < ctx.encdatalen; i++)
-			(msg->encrypted_data).push_back(ctx.encdata[i]);
+			(msg->encrypted_message).push_back(ctx.encdata[i]);
 	}
 	else
 	{
