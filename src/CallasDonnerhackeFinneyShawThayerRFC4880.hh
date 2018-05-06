@@ -573,11 +573,6 @@ class TMCG_OpenPGP_PrivateSubkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
 			 const time_t									creationtime_in,
 			 const time_t									expirationtime_in,
-			 const size_t									keysize_in);
-		TMCG_OpenPGP_PrivateSubkey
-			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
-			 const time_t									creationtime_in,
-			 const time_t									expirationtime_in,
 			 const gcry_mpi_t								n,
 			 const gcry_mpi_t								e,
 			 const gcry_mpi_t								p,
@@ -712,11 +707,6 @@ class TMCG_OpenPGP_Prvkey
 		gcry_mpi_t											dsa_x;
 		std::vector<TMCG_OpenPGP_PrivateSubkey*>			private_subkeys;
 
-		TMCG_OpenPGP_Prvkey
-			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
-			 const time_t									creationtime_in,
-			 const time_t									expirationtime_in,
-			 const size_t									keysize_in);
 		TMCG_OpenPGP_Prvkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
 			 const time_t									creationtime_in,
