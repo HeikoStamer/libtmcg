@@ -1548,6 +1548,23 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
+	 const size_t keysize_in):
+		pkalgo(pkalgo_in)
+{
+// TODO
+	rsa_p = gcry_mpi_snew(2048);
+	rsa_q = gcry_mpi_snew(2048);
+	rsa_u = gcry_mpi_snew(2048);
+	rsa_d = gcry_mpi_snew(2048);
+	elg_x = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(2048);
+// TODO
+}
+
+TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
 	 const gcry_mpi_t n,
 	 const gcry_mpi_t e,
 	 const gcry_mpi_t p,
@@ -2445,6 +2462,38 @@ TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
 }
 
 // ===========================================================================
+
+TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const size_t keysize_in):
+		pkalgo(pkalgo_in)
+{
+// TODO
+	rsa_p = gcry_mpi_snew(2048);
+	rsa_q = gcry_mpi_snew(2048);
+	rsa_u = gcry_mpi_snew(2048);
+	rsa_d = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(2048);
+/*
+	switch (pkalgo_in)
+	{
+		case :
+
+			pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in,
+				expirationtime_in, n, e, packet_in);
+			break;
+		default:
+			break;
+	}
+	char *buffer = new char[TMCG_MAX_KEY_CHARS];
+	size_t buflen = gcry_sexp_sprint(private_key_in, GCRYSEXP_FMT_CANON,
+		buffer, TMCG_MAX_KEY_CHARS);
+	ret = gcry_sexp_new(&private_key, buffer, buflen, 0);
+	delete [] buffer;
+*/
+}
 
 TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	(const tmcg_openpgp_pkalgo_t pkalgo_in,

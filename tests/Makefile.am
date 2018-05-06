@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2007, 2009, 2015, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2005, 2007, 2009, 2015--2018  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -16,12 +16,14 @@
 #   along with LibTMCG; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
+TESTS = t-mpz t-rfc4880 t-aio t-vtmf t-vsshe t-vrhe t-eotp t-mpc t-key t-poker\
+ t-poker-cutnchoose t-poker-rot t-votc t-poker-noninteractive\
+ t-poker-rot-noninteractive t-poker-aiou t-seabp t-astc t-vss t-astc2 t-dkg
 
-
-TESTS = t-mpz t-rfc4880 t-aio t-vtmf t-vsshe t-vrhe t-eotp t-mpc t-key t-poker t-poker-cutnchoose t-poker-rot t-votc t-poker-noninteractive t-poker-rot-noninteractive t-poker-aiou t-seabp t-astc t-vss t-astc2 t-dkg
-
-AM_CPPFLAGS = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@ @LIBGMP_CFLAGS@
-LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ @LIBGMP_LIBS@ ../src/libTMCG.la
+AM_CPPFLAGS = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@\
+ @LIBGMP_CFLAGS@ @BOTAN_CFLAGS@
+LDADD = @LIBGCRYPT_LIBS@ @GPG_ERROR_LIBS@ @LIBGMP_LIBS@ @BOTAN_LIBS@\
+ ../src/libTMCG.la
 
 EXTRA_PROGRAMS = SchwarzerPeterAlice SchwarzerPeterBob
 noinst_PROGRAMS = $(TESTS)
@@ -44,10 +46,13 @@ t_seabp_SOURCES = pipestream.hh test_helper.c test_helper.h t-seabp.cc
 t_mpc_SOURCES = StiglicMPC.cc StiglicMPC.hh test_helper.c test_helper.h t-mpc.cc
 t_key_SOURCES = t-key.cc
 t_poker_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker.cc
-t_poker_cutnchoose_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker-cutnchoose.cc
+t_poker_cutnchoose_SOURCES = pipestream.hh test_helper.c test_helper.h\
+ t-poker-cutnchoose.cc
 t_poker_rot_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker-rot.cc
 t_votc_SOURCES = pipestream.hh test_helper.c test_helper.h t-votc.cc
-t_poker_noninteractive_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker-noninteractive.cc
-t_poker_rot_noninteractive_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker-rot-noninteractive.cc
+t_poker_noninteractive_SOURCES = pipestream.hh test_helper.c test_helper.h\
+ t-poker-noninteractive.cc
+t_poker_rot_noninteractive_SOURCES = pipestream.hh test_helper.c test_helper.h\
+ t-poker-rot-noninteractive.cc
 t_poker_aiou_SOURCES = pipestream.hh test_helper.c test_helper.h t-poker-aiou.cc
 

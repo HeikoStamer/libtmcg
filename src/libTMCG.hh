@@ -266,6 +266,10 @@
 	
 	#include <cstring>
 	#include <string>
+
+#ifdef BOTAN
+	#include <botan/version.h>
+#endif
 	
 	// Initialization of LibTMCG
 	bool init_libTMCG

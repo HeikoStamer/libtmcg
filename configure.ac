@@ -18,10 +18,11 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20180425])
+AC_REVISION([20180506])
 AC_PREREQ(2.61)
 
-AC_INIT([LibTMCG], [1.3.13], [HeikoStamer@gmx.net], [libTMCG], [http://www.nongnu.org/libtmcg/])
+AC_INIT([LibTMCG], [1.3.13], [HeikoStamer@gmx.net], [libTMCG],
+	[http://www.nongnu.org/libtmcg/])
 
 # The next two paragraphs are copies of behaviour from libgcrypt.
 
@@ -83,9 +84,11 @@ AC_DEFINE(TMCG_OPENPGP_CRC24_INIT, 0xB704CE,
 AC_DEFINE(TMCG_OPENPGP_CRC24_POLY, 0x1864CFB,
 	[Define the generator for OPENPGP CRC24 algorithm])
 AC_DEFINE(TMCG_OPENPGP_RADIX64_MC, 64,
-	[Define the maximum number of characters in a single line of Radix-64 encoding])
+	[Define the maximum number of characters in a single line of Radix-64\
+ encoding])
 AC_DEFINE(TMCG_OPENPGP_MAX_ALLOC, 2147483648,
-	[Define the maximum number of memory to allocate for OPENPGP packet context structures])
+	[Define the maximum number of memory to allocate for OPENPGP packet\
+ context structures])
 
 AC_DEFINE(TMCG_MR_ITERATIONS, 64,
 	[Define the number of iterations for the Miller-Rabin primality test.
@@ -119,7 +122,8 @@ AC_DEFINE(TMCG_HASH_COMMITMENT, true,
 AC_DEFINE(TMCG_SAEP_S0, 20,
 	[Define the security parameter for the encryption with Rabin/SAEP])
 AC_DEFINE(TMCG_PRAB_K0, 20,
-	[Define the security parameter for the signature generation with Rabin/PRab])
+	[Define the security parameter for the signature generation with\
+ Rabin/PRab])
 AC_DEFINE(TMCG_KEY_NIZK_STAGE1, 16,
 	[Define the maximum soundness error probability of the TMCG public key;
 	NIZK proof (Gennaro, Micciancio, Rabin), Stage 1: m is square free;
@@ -143,7 +147,8 @@ AC_DEFINE(TMCG_MAX_TYPEBITS, 10,
 	size of the message space in the scheme of Barnett and Smart])
 	
 AC_DEFINE(TMCG_MAX_KEYBITS,
-	[((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? (4 * TMCG_DDH_SIZE) : (4 * TMCG_QRA_SIZE))],
+	[((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? (4 * TMCG_DDH_SIZE) :\
+ (4 * TMCG_QRA_SIZE))],
 	[Define a helping macro])
 AC_DEFINE(TMCG_MAX_VALUE_CHARS,
 	[(TMCG_MAX_KEYBITS / 2L)],
@@ -174,12 +179,20 @@ AC_PROG_MKDIR_P
 # Checks for libraries
 backup_LDFLAGS="$LDFLAGS"
 backup_CPPLAGS="$CPPFLAGS"
-AC_ARG_WITH(gmp, [AS_HELP_STRING([--with-gmp=<path>], [prefix of libgmp installation e.g. /usr/local])],\
- [GMP_PREFIX="$with_gmp" LDFLAGS="-L${with_gmp}/lib $backup_LDFLAGS" CPPFLAGS="-I${with_gmp}/include $backup_CPPFLAGS"],\
- [AC_CHECK_LIB(gmp, __gmpz_init, [LIBS=""], AC_MSG_ERROR([libgmp is needed; maybe you want call configure with the --with-gmp=<path> option]))])
-AC_CHECK_LIB(gmp, __gmpz_import, [LIBS=""], AC_MSG_ERROR([libgmp >= 4.2 is needed]))
-AC_CHECK_LIB(gmp, __gmpz_export, [LIBS=""], AC_MSG_ERROR([libgmp >= 4.2 is needed]))
-AC_CHECK_LIB(gmp, __gmpz_powm_sec, AC_DEFINE(HAVE_POWMSEC, , [Defined if your libgmp have the mpz_powm_sec() function]), AC_MSG_WARN([libgmp >= 5.0.3 is recommended]))
+AC_ARG_WITH(gmp, [AS_HELP_STRING([--with-gmp=<prefix>],
+ [prefix of GMP installation path, e.g. /usr/local])],
+ [GMP_PREFIX="$with_gmp" LDFLAGS="-L${with_gmp}/lib $backup_LDFLAGS"\
+ CPPFLAGS="-I${with_gmp}/include $backup_CPPFLAGS"],
+ [AC_CHECK_LIB(gmp, __gmpz_init, [LIBS=""],
+   AC_MSG_ERROR([libgmp is needed; maybe you want call configure with\
+ the --with-gmp=<path> option]))])
+AC_CHECK_LIB(gmp, __gmpz_import, [LIBS=""],
+ AC_MSG_ERROR([libgmp >= 4.2 is needed]))
+AC_CHECK_LIB(gmp, __gmpz_export, [LIBS=""],
+ AC_MSG_ERROR([libgmp >= 4.2 is needed]))
+AC_CHECK_LIB(gmp, __gmpz_powm_sec,
+ AC_DEFINE(HAVE_POWMSEC, , [Defined if libgmp have mpz_powm_sec() function]),
+ AC_MSG_WARN([libgmp >= 5.0.3 is recommended]))
 AC_CHECK_HEADERS([gmp.h], , AC_MSG_ERROR([libgmp headers are missing]))
 if test "x$GMP_PREFIX" != x ; then
 	LIBGMP_LIBS=" -L${GMP_PREFIX}/lib"
@@ -188,7 +201,7 @@ else
 	LIBGMP_LIBS=""
 	LIBGMP_CFLAGS=""
 fi
-LIBGMP_LIBS="${GMP_LIBS} -lgmp"
+LIBGMP_LIBS="${LIBGMP_LIBS} -lgmp"
 AC_SUBST(LIBGMP_LIBS)
 AC_SUBST(LIBGMP_CFLAGS)
 LDFLAGS="$backup_LDFLAGS"
@@ -208,7 +221,41 @@ if test "x$GPG_ERROR_LIBS" = "x"; then
 	AC_MSG_ERROR([libgpg-error >= 1.12 is needed])
 fi
 
+backup_LDFLAGS="$LDFLAGS"
+backup_CPPFLAGS="$CPPFLAGS"
+AC_ARG_WITH(botan,
+ [AS_HELP_STRING([--with-botan=<prefix>], [optionally use the cryptographic\
+ library Botan with prefix of its installation path, e.g. /usr/local])],
+ [BOTAN_PREFIX="$withval"],
+ [])
+if test "x$with_botan" != x ; then
+	AC_MSG_CHECKING([for Botan])
+	if test "x$BOTAN_PREFIX" == xyes ; then
+		BOTAN_PREFIX="/usr"
+	fi
+	AC_MSG_RESULT([in $BOTAN_PREFIX])
+	LDFLAGS="-L${BOTAN_PREFIX}/lib $backup_LDFLAGS"
+	CPPFLAGS="-I${BOTAN_PREFIX}/include/botan-2 $backup_CPPFLAGS"
+	AC_CHECK_LIB(botan-2, botan_rng_init, [LIBS=""],
+	 AC_MSG_ERROR([botan-2 library not found;\
+ call --with-botan with install prefix]))
+	AC_CHECK_HEADERS([botan/rng.h botan/version.h], ,
+	 AC_MSG_ERROR([some botan-2 headers not found;\
+ call --with-botan with install prefix]))
+	BOTAN_LIBS="-lbotan-2 -L${BOTAN_PREFIX}/lib"
+	BOTAN_CFLAGS="-I${BOTAN_PREFIX}/include/botan-2"
+	AC_DEFINE(BOTAN, , [Define to enable optional Botan support])
+else
+	BOTAN_LIBS=""
+	BOTAN_CFLAGS=""
+fi
+AC_SUBST(BOTAN_LIBS)
+AC_SUBST(BOTAN_CFLAGS)
+LDFLAGS="$backup_LDFLAGS"
+CPPFLAGS="$backup_CPPFLAGS"
+
 # Checks for header files
+AC_HEADER_ASSERT
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\

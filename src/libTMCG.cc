@@ -154,6 +154,17 @@ bool init_libTMCG
 			"] not available" << std::endl;
 		return false;
 	}
+#ifdef BOTAN
+	// initialize libbotan-2
+	std::string botan_rvc = Botan::runtime_version_check(BOTAN_VERSION_MAJOR,
+		BOTAN_VERSION_MINOR, BOTAN_VERSION_PATCH);
+	if (botan_rvc != "")
+	{
+		std::cerr << "init_libTMCG(): libbotan-2 runtime version check" <<
+			" failed with \"" << botan_rvc << "\"" << std::endl;
+		return false;
+	}
+#endif
 	return true;
 }
 

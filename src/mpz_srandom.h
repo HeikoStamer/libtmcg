@@ -32,7 +32,7 @@
 	
 	/* GNU multiple precision library */
 	#include <gmp.h>
-	
+
 	#if defined (__cplusplus)
 		extern "C"
 		{
