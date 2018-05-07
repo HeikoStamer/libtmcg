@@ -802,6 +802,9 @@ class TMCG_OpenPGP_Message
 		std::vector<TMCG_OpenPGP_PKESK*>					PKESKs;
 		std::vector<TMCG_OpenPGP_SKESK*>					SKESKs;
 		tmcg_openpgp_octets_t								encrypted_message;
+		tmcg_openpgp_octets_t								signed_message;
+		tmcg_openpgp_octets_t								compressed_message;
+		tmcg_openpgp_octets_t								literal_message;
 
 		TMCG_OpenPGP_Message
 			();
@@ -1356,21 +1359,41 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 	 		 const gcry_mpi_t								s);
 
 		static bool PublicKeyBlockParse
+			(const tmcg_openpgp_octets_t					&in,
+			 const int										verbose,
+			 TMCG_OpenPGP_Pubkey*							&pub);
+		static bool PublicKeyBlockParse
 			(const std::string								&in,
 			 const int										verbose,
 			 TMCG_OpenPGP_Pubkey*							&pub);
+		static bool SignatureParse
+			(const tmcg_openpgp_octets_t					&in,
+			 const int										verbose,
+			 TMCG_OpenPGP_Signature*						&sig);
 		static bool SignatureParse
 			(const std::string								&in,
 			 const int										verbose,
 			 TMCG_OpenPGP_Signature*						&sig);
 		static bool PublicKeyringParse
+			(const tmcg_openpgp_octets_t					&in,
+			 const int										verbose,
+			 TMCG_OpenPGP_Keyring*							&ring);
+		static bool PublicKeyringParse
 			(const std::string								&in,
 			 const int										verbose,
 			 TMCG_OpenPGP_Keyring*							&ring);
 		static bool PrivateKeyBlockParse
+			(const tmcg_openpgp_octets_t					&in,
+			 const int										verbose,
+			 TMCG_OpenPGP_Prvkey*							&prv);
+		static bool PrivateKeyBlockParse
 			(const std::string								&in,
 			 const int										verbose,
 			 TMCG_OpenPGP_Prvkey*							&prv);
+		static bool MessageParse
+			(const tmcg_openpgp_octets_t					&in,
+			 const int										verbose,
+			 TMCG_OpenPGP_Message*							&msg);
 		static bool MessageParse
 			(const std::string								&in,
 			 const int										verbose,

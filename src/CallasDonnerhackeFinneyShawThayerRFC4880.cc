@@ -2770,6 +2770,9 @@ TMCG_OpenPGP_Message::~TMCG_OpenPGP_Message
 		delete SKESKs[i];
 	SKESKs.clear();
 	encrypted_message.clear();
+	signed_message.clear();
+	compressed_message.clear();
+	literal_message.clear();
 }
 
 // ===========================================================================
@@ -8611,19 +8614,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag18
 }
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
-	(const std::string &in, const int verbose,
+	(const tmcg_openpgp_octets_t &in, const int verbose,
 	 TMCG_OpenPGP_Pubkey* &pub)
 {
-	// decode ASCII Armor
+	pub = NULL;
+	// copy the message for processing
 	tmcg_openpgp_octets_t pkts;
-	tmcg_openpgp_armor_t type = ArmorDecode(in, pkts);
-	if (type != TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK)
-	{
-		if (verbose)
-			std::cerr << "ERROR: wrong type of ASCII Armor " <<
-				"found (type = " << (int)type << ")" << std::endl;
-		return false;
-	}
+	pkts.insert(pkts.end(), in.begin(), in.end());
 	// parse the public key block packet by packet
 	bool primary = false, subkey = false, badkey = false;
 	bool uid_flag = false, uat_flag = false, ret = true;
@@ -8659,6 +8656,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				std::cerr << "ERROR: decoding OpenPGP packets failed " <<
 					"at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
+			if (pub)
+				delete pub;
 			if (sub)
 				delete sub;
 			if (uid)
@@ -8756,6 +8755,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		PacketContextRelease(ctx);
 		if (!ret)
 		{
+			if (pub)
+				delete pub;
 			if (sub)
 				delete sub;
 			if (uid)
@@ -8769,6 +8770,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	{
 		if (verbose)
 			std::cerr << "ERROR: no usable primary key found" << std::endl;
+		if (pub)
+			delete pub;
 		if (sub)
 			delete sub;
 		if (uid)
@@ -8786,22 +8789,32 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	return true;
 }
 
-bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	(const std::string &in, const int verbose,
-	 TMCG_OpenPGP_Signature* &sig)
+	 TMCG_OpenPGP_Pubkey* &pub)
 {
 	// decode ASCII Armor
 	tmcg_openpgp_octets_t pkts;
 	tmcg_openpgp_armor_t type = ArmorDecode(in, pkts);
-	if (type != TMCG_OPENPGP_ARMOR_SIGNATURE)
+	if (type != TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK)
 	{
 		if (verbose)
-			std::cerr << "ERROR: wrong type of ASCII Armor " <<
-				"found (type = " << (int)type << ")" << std::endl;
+			std::cerr << "ERROR: wrong type of ASCII Armor found" <<
+				" (type = " << (int)type << ")" << std::endl;
 		return false;
 	}
+	return PublicKeyBlockParse(pkts, verbose, pub);
+}
 
-	// parse single signature packet
+bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
+	(const tmcg_openpgp_octets_t &in, const int verbose,
+	 TMCG_OpenPGP_Signature* &sig)
+{
+	sig = NULL;
+	// copy the message for processing
+	tmcg_openpgp_octets_t pkts;
+	pkts.insert(pkts.end(), in.begin(), in.end());
+	// parse a single signature packet
 	tmcg_openpgp_packet_ctx_t ctx;
 	tmcg_openpgp_octets_t current_packet;
 	tmcg_openpgp_byte_t ptag = PacketDecode(pkts, verbose, ctx, current_packet);
@@ -8909,7 +8922,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 						(int)ctx.pkalgo << " not supported" << std::endl;
 				PacketContextRelease(ctx);
 				return false;
-				break;
 			}
 			if (!sig->good())
 			{
@@ -8934,23 +8946,34 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	return true;
 }
 
-bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
+bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	(const std::string &in, const int verbose,
-	 TMCG_OpenPGP_Keyring* &ring)
+	 TMCG_OpenPGP_Signature* &sig)
 {
 	// decode ASCII Armor
 	tmcg_openpgp_octets_t pkts;
 	tmcg_openpgp_armor_t type = ArmorDecode(in, pkts);
-	if (type != TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK)
+	if (type != TMCG_OPENPGP_ARMOR_SIGNATURE)
 	{
 		if (verbose)
-			std::cerr << "ERROR: wrong type of ASCII Armor " <<
-				"found (type = " << (int)type << ")" <<
-				std::endl;
+			std::cerr << "ERROR: wrong type of ASCII Armor found" <<
+				" (type = " << (int)type << ")" << std::endl;
 		return false;
 	}
+	return SignatureParse(pkts, verbose, sig);
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
+	(const tmcg_openpgp_octets_t &in, const int verbose,
+	 TMCG_OpenPGP_Keyring* &ring)
+{
+	// create a new keyring object, if none is supplied by caller
+	if (ring == NULL)
+		ring = new TMCG_OpenPGP_Keyring();
+	// copy the message for processing
+	tmcg_openpgp_octets_t pkts;
+	pkts.insert(pkts.end(), in.begin(), in.end());
 	// parse the public key ring packet by packet
-	ring = new TMCG_OpenPGP_Keyring();
 	bool primary = false, subkey = false, badkey = false;
 	bool uid_flag = false, uat_flag = false, ret = true;
 	TMCG_OpenPGP_Pubkey *pub = NULL;
@@ -9061,7 +9084,14 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 						pub->userattributes.push_back(uat);
 					if (!badkey && subkey)
 						pub->subkeys.push_back(sub);
-					ring->add(pub); // add key to ring
+					// add key to ring
+					if (!ring->add(pub))
+					{
+						if (verbose)
+							std::cerr << "WARNING: keyring already contains" <<
+								" this key; duplicate key ignored" << std::endl;
+						delete pub;
+					}
 					pub = NULL, sub = NULL, uid = NULL, uat = NULL;
 					primary = false, subkey = false, badkey = false;
 					uid_flag = false, uat_flag = false;
@@ -9112,11 +9142,20 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 			pub->userattributes.push_back(uat);
 		if (!badkey && subkey)
 			pub->subkeys.push_back(sub);
-		ring->add(pub); // add key to ring
+		// add key to ring
+		if (!ring->add(pub))
+		{
+			if (verbose)
+				std::cerr << "WARNING: keyring already contains" <<
+					" this key; duplicate key ignored" << std::endl;
+			delete pub;
+		}
 		pub = NULL, sub = NULL, uid = NULL, uat = NULL;
 	}
 	else
 	{
+		if (pub)
+			delete pub;
 		if (sub)
 			delete sub;
 		if (uid)
@@ -9129,20 +9168,31 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 	return true;
 }
 
-bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 	(const std::string &in, const int verbose,
-	 TMCG_OpenPGP_Prvkey* &prv)
+	 TMCG_OpenPGP_Keyring* &ring)
 {
 	// decode ASCII Armor
 	tmcg_openpgp_octets_t pkts;
 	tmcg_openpgp_armor_t type = ArmorDecode(in, pkts);
-	if (type != TMCG_OPENPGP_ARMOR_PRIVATE_KEY_BLOCK)
+	if (type != TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK)
 	{
 		if (verbose)
-			std::cerr << "ERROR: wrong type of ASCII Armor " <<
-				"found (type = " << (int)type << ")" << std::endl;
+			std::cerr << "ERROR: wrong type of ASCII Armor found" <<
+				" (type = " << (int)type << ")" << std::endl;
 		return false;
 	}
+	return PublicKeyringParse(pkts, verbose, ring);
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
+	(const tmcg_openpgp_octets_t &in, const int verbose,
+	 TMCG_OpenPGP_Prvkey* &prv)
+{
+	prv = NULL;
+	// copy the message for processing
+	tmcg_openpgp_octets_t pkts;
+	pkts.insert(pkts.end(), in.begin(), in.end());
 	// parse the private key block packet by packet
 	bool primary = false, subkey = false, badkey = false;
 	bool uid_flag = false, uat_flag = false, ret = true;
@@ -9178,6 +9228,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 				std::cerr << "ERROR: decoding OpenPGP packets failed " <<
 					"at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
+			if (prv)
+				delete prv;
 			if (sub)
 				delete sub;
 			if (uid)
@@ -9275,6 +9327,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		PacketContextRelease(ctx);
 		if (!ret)
 		{
+			if (prv)
+				delete prv;
 			if (sub)
 				delete sub;
 			if (uid)
@@ -9288,6 +9342,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 	{
 		if (verbose)
 			std::cerr << "ERROR: no usable primary key found" << std::endl;
+		if (prv)
+			delete prv;
 		if (sub)
 			delete sub;
 		if (uid)
@@ -9305,23 +9361,33 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 	return true;
 }
 
-bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 	(const std::string &in, const int verbose,
-	 TMCG_OpenPGP_Message* &msg)
+	 TMCG_OpenPGP_Prvkey* &prv)
 {
-	// create a new message object, if none is supplied
-	if (msg == NULL)
-		msg = new TMCG_OpenPGP_Message();
 	// decode ASCII Armor
 	tmcg_openpgp_octets_t pkts;
 	tmcg_openpgp_armor_t type = ArmorDecode(in, pkts);
-	if (type != TMCG_OPENPGP_ARMOR_MESSAGE)
+	if (type != TMCG_OPENPGP_ARMOR_PRIVATE_KEY_BLOCK)
 	{
 		if (verbose)
-			std::cerr << "ERROR: wrong type of ASCII Armor " <<
-				"found (type = " << (int)type << ")" << std::endl;
+			std::cerr << "ERROR: wrong type of ASCII Armor found" <<
+				" (type = " << (int)type << ")" << std::endl;
 		return false;
 	}
+	return PrivateKeyBlockParse(pkts, verbose, prv);
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
+	(const tmcg_openpgp_octets_t &in, const int verbose,
+	 TMCG_OpenPGP_Message* &msg)
+{
+	// create a new message object, if none is supplied by caller
+	if (msg == NULL)
+		msg = new TMCG_OpenPGP_Message();
+	// copy the message for processing
+	tmcg_openpgp_octets_t pkts;
+	pkts.insert(pkts.end(), in.begin(), in.end());
 	// parse the message packet by packet as long as no Encrypted Data found
 	bool have_sed = false, have_seipd = false;
 	tmcg_openpgp_byte_t ptag = 0xFF;
@@ -9401,7 +9467,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				if (ret)
 					have_seipd = true;
 				break;
-// TODO: parse further packet types: LIT and MDC
+// TODO: parse further packet types: LIT and MDC; warn for COMPRESSED
 			default:
 				if (verbose > 1)
 					std::cerr << "INFO: OpenPGP packet of tag " <<
@@ -9414,5 +9480,22 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 			return false;
 	}
 	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
+	(const std::string &in, const int verbose,
+	 TMCG_OpenPGP_Message* &msg)
+{
+	// decode ASCII Armor
+	tmcg_openpgp_octets_t pkts;
+	tmcg_openpgp_armor_t type = ArmorDecode(in, pkts);
+	if (type != TMCG_OPENPGP_ARMOR_MESSAGE)
+	{
+		if (verbose)
+			std::cerr << "ERROR: wrong type of ASCII Armor " <<
+				"found (type = " << (int)type << ")" << std::endl;
+		return false;
+	}
+	return MessageParse(pkts, verbose, msg);
 }
 
