@@ -125,7 +125,7 @@ enum tmcg_openpgp_skalgo_t
 	TMCG_OPENPGP_SKALGO_EXPERIMENTAL10		= 110
 };
 
-enum tmcg_openpgp_comalgo_t
+enum tmcg_openpgp_compalgo_t
 {
 	TMCG_OPENPGP_COMPALGO_UNCOMPRESSED		= 0,
 	TMCG_OPENPGP_COMPALGO_ZIP				= 1,
@@ -290,7 +290,7 @@ typedef struct
 	tmcg_openpgp_byte_t			iv[32];
 	tmcg_openpgp_byte_t*		encdata; // allocated buffer with data
 	size_t						encdatalen;
-	tmcg_openpgp_comalgo_t		compalgo;
+	tmcg_openpgp_compalgo_t		compalgo;
 	tmcg_openpgp_byte_t*		compdata; // allocated buffer with data
 	size_t						compdatalen;
 	tmcg_openpgp_byte_t			dataformat;
@@ -799,19 +799,28 @@ class TMCG_OpenPGP_Message
 	public:
 		bool												have_sed;
 		bool												have_seipd;
+		tmcg_openpgp_compalgo_t								compalgo;
+		tmcg_openpgp_byte_t									format;
+		std::string											filename;
+		time_t												timestamp;
 		std::vector<TMCG_OpenPGP_PKESK*>					PKESKs;
 		std::vector<TMCG_OpenPGP_SKESK*>					SKESKs;
 		tmcg_openpgp_octets_t								encrypted_message;
 		tmcg_openpgp_octets_t								signed_message;
 		tmcg_openpgp_octets_t								compressed_message;
 		tmcg_openpgp_octets_t								literal_message;
+		tmcg_openpgp_octets_t								literal_data;
+		tmcg_openpgp_octets_t								prefix;
+		tmcg_openpgp_octets_t								mdc;
 
 		TMCG_OpenPGP_Message
 			();
 		bool Decrypt
 			(const tmcg_openpgp_octets_t					&key,
 			 const int										verbose,
-			 tmcg_openpgp_octets_t							&out) const;
+			 tmcg_openpgp_octets_t							&out);
+		bool CheckMDC
+			(const int										verbose) const;
 		~TMCG_OpenPGP_Message
 			();
 };
@@ -905,12 +914,27 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const int										verbose,
 			 const tmcg_openpgp_octets_t					&current_packet,
 			 TMCG_OpenPGP_Message*							&msg);
+		static bool MessageParse_Tag8
+			(const tmcg_openpgp_packet_ctx_t				&ctx,
+			 const int										verbose,
+			 const tmcg_openpgp_octets_t					&current_packet,
+			 TMCG_OpenPGP_Message*							&msg);
 		static bool MessageParse_Tag9
 			(const tmcg_openpgp_packet_ctx_t				&ctx,
 			 const int										verbose,
 			 const tmcg_openpgp_octets_t					&current_packet,
 			 TMCG_OpenPGP_Message*							&msg);
+		static bool MessageParse_Tag11
+			(const tmcg_openpgp_packet_ctx_t				&ctx,
+			 const int										verbose,
+			 const tmcg_openpgp_octets_t					&current_packet,
+			 TMCG_OpenPGP_Message*							&msg);
 		static bool MessageParse_Tag18
+			(const tmcg_openpgp_packet_ctx_t				&ctx,
+			 const int										verbose,
+			 const tmcg_openpgp_octets_t					&current_packet,
+			 TMCG_OpenPGP_Message*							&msg);
+		static bool MessageParse_Tag19
 			(const tmcg_openpgp_packet_ctx_t				&ctx,
 			 const int										verbose,
 			 const tmcg_openpgp_octets_t					&current_packet,

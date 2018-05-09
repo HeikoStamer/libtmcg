@@ -2709,13 +2709,17 @@ TMCG_OpenPGP_SKESK::~TMCG_OpenPGP_SKESK
 TMCG_OpenPGP_Message::TMCG_OpenPGP_Message
 	():
 		have_sed(false),
-		have_seipd(false)
+		have_seipd(false),
+		compalgo(TMCG_OPENPGP_COMPALGO_UNCOMPRESSED),
+		format(0x00),
+		filename(""),
+		timestamp(0)
 {
 }
 
 bool TMCG_OpenPGP_Message::Decrypt
 	(const tmcg_openpgp_octets_t &key, const int verbose,
-	 tmcg_openpgp_octets_t &out) const
+	 tmcg_openpgp_octets_t &out)
 {
 	if (verbose > 1)
 		std::cerr << "INFO: symmetric decryption of message ..." << std::endl;
@@ -2747,14 +2751,39 @@ bool TMCG_OpenPGP_Message::Decrypt
 			std::cerr << "WARNING: encrypted message was not integrity" <<
 				" protected" << std::endl;
 	}
-	tmcg_openpgp_octets_t pfx;
+	prefix.clear(); // clear the encryption prefix that is included in MDC
 	gcry_error_t ret = CallasDonnerhackeFinneyShawThayerRFC4880::
-		SymmetricDecrypt(encrypted_message, sk, pfx, false, skalgo, out);
+		SymmetricDecrypt(encrypted_message, sk, prefix, false, skalgo, out);
 	if (ret)
 	{
 		if (verbose)
 			std::cerr << "ERROR: SymmetricDecrypt() failed" <<
 				" with rc = " << gcry_err_code(ret) << std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool TMCG_OpenPGP_Message::CheckMDC
+	(const int verbose) const
+{
+	tmcg_openpgp_octets_t mdc_hashing, hash;
+	// "it includes the prefix data described above" [RFC4880]
+	mdc_hashing.insert(mdc_hashing.end(), prefix.begin(), prefix.end());
+	// "it includes all of the plaintext" [RFC4880]
+	mdc_hashing.insert(mdc_hashing.end(),
+		literal_message.begin(), literal_message.end());
+	// "and the also includes two octets of values 0xD3, 0x14" [RFC4880]
+	mdc_hashing.push_back(0xD3);
+	mdc_hashing.push_back(0x14);
+	// "passed through the SHA-1 hash function" [RFC4880]
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, mdc_hashing, hash);
+	if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(mdc, hash))
+	{
+		if (verbose)
+			std::cerr << "ERROR: MDC does not match (security issue)" <<
+				std::endl;
 		return false;
 	}
 	return true;
@@ -2773,6 +2802,9 @@ TMCG_OpenPGP_Message::~TMCG_OpenPGP_Message
 	signed_message.clear();
 	compressed_message.clear();
 	literal_message.clear();
+	literal_data.clear();
+	prefix.clear();
+	mdc.clear();
 }
 
 // ===========================================================================
@@ -6517,7 +6549,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		case 8: // Compressed Data Packet
 			if (pkt.size() < 2)
 				return 0; // error: incorrect packet body
-			out.compalgo = (tmcg_openpgp_comalgo_t)pkt[0];
+			out.compalgo = (tmcg_openpgp_compalgo_t)pkt[0];
 			if (out.compalgo > 3)
 				return 0; // error: algorithm not supported
 			out.compdatalen = pkt.size() - 1;
@@ -8567,6 +8599,28 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag3
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag8
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const tmcg_openpgp_octets_t &current_packet,
+	 TMCG_OpenPGP_Message* &msg)
+{
+	if (verbose > 1)
+		std::cerr << "INFO: COMP length = " << ctx.compdatalen << std::endl;
+	if ((msg->compressed_message).size() == 0)
+	{
+		msg->compalgo = ctx.compalgo;
+		for (size_t i = 0; i < ctx.compdatalen; i++)
+			(msg->compressed_message).push_back(ctx.compdata[i]);
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: duplicate COMP packet found" << std::endl;
+		return false;
+	}
+	return true;
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag9
 	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
 	 const tmcg_openpgp_octets_t &current_packet,
@@ -8577,7 +8631,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag9
 	if ((!msg->have_sed) && (!msg->have_seipd))
 	{
 		msg->have_sed = true;
-		(msg->encrypted_message).clear(); // clear internal buffer
 		for (size_t i = 0; i < ctx.encdatalen; i++)
 			(msg->encrypted_message).push_back(ctx.encdata[i]);
 	}
@@ -8585,6 +8638,33 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag9
 	{
 		if (verbose)
 			std::cerr << "ERROR: duplicate SED/SEIPD packet found" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag11
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const tmcg_openpgp_octets_t &current_packet,
+	 TMCG_OpenPGP_Message* &msg)
+{
+	if (verbose > 1)
+		std::cerr << "INFO: LIT length = " << ctx.datalen << std::endl;
+	if ((msg->literal_message).size() == 0)
+	{
+		(msg->literal_message).insert((msg->literal_message).end(),
+			current_packet.begin(), current_packet.end());
+		msg->format = ctx.dataformat;
+		for (size_t i = 0; i < ctx.datafilenamelen; i++)
+			msg->filename += ctx.datafilename[i];
+		msg->timestamp = ctx.datatime;
+		for (size_t i = 0; i < ctx.datalen; i++)
+			(msg->literal_data).push_back(ctx.data[i]);
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: duplicate LIT packet found" << std::endl;
 		return false;
 	}
 	return true;
@@ -8600,7 +8680,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag18
 	if ((!msg->have_sed) && (!msg->have_seipd))
 	{
 		msg->have_seipd = true;
-		(msg->encrypted_message).clear(); // clear internal buffer
 		for (size_t i = 0; i < ctx.encdatalen; i++)
 			(msg->encrypted_message).push_back(ctx.encdata[i]);
 	}
@@ -8608,6 +8687,27 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag18
 	{
 		if (verbose)
 			std::cerr << "ERROR: duplicate SED/SEIPD packet found" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag19
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const tmcg_openpgp_octets_t &current_packet,
+	 TMCG_OpenPGP_Message* &msg)
+{
+	if (verbose > 1)
+		std::cerr << "INFO: MDC length = " << sizeof(ctx.mdc_hash) << std::endl;
+	if ((msg->mdc).size() == 0)
+	{
+		for (size_t i = 0; i < sizeof(ctx.mdc_hash); i++)
+			(msg->mdc).push_back(ctx.mdc_hash[i]);
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: duplicate MDC packet found" << std::endl;
 		return false;
 	}
 	return true;
@@ -9454,20 +9554,38 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 			case 1: // Public-Key Encrypted Session Key
 				ret = MessageParse_Tag1(ctx, verbose, current_packet, msg);
 				break;
+			case 2: // Signature
+				if (verbose)
+					std::cerr << "WARNING: signature OpenPGP packet found;" <<
+						" not supported and ignored" << std::endl;
+				break;
 			case 3: // Symmetric-Key Encrypted Session Key
 				ret = MessageParse_Tag3(ctx, verbose, current_packet, msg);
+				break;
+			case 4: // One-Pass Signature
+				if (verbose)
+					std::cerr << "WARNING: one-pass signature OpenPGP packet" <<
+						" found; not supported and ignored" << std::endl;
+				break;
+			case 8: // Compressed Data
+				ret = MessageParse_Tag8(ctx, verbose, current_packet, msg);
 				break;
 			case 9: // Symmetrically Encrypted Data
 				ret = MessageParse_Tag9(ctx, verbose, current_packet, msg);
 				if (ret)
 					have_sed = true;
 				break;
+			case 11: // Literal Data
+				ret = MessageParse_Tag11(ctx, verbose, current_packet, msg);
+				break;
 			case 18: // Symmetrically Encrypted Integrity Protected Data
 				ret = MessageParse_Tag18(ctx, verbose, current_packet, msg);
 				if (ret)
 					have_seipd = true;
 				break;
-// TODO: parse further packet types: LIT and MDC; warn for COMPRESSED
+			case 19: // Modification Detection Code
+				ret = MessageParse_Tag19(ctx, verbose, current_packet, msg);
+				break;
 			default:
 				if (verbose > 1)
 					std::cerr << "INFO: OpenPGP packet of tag " <<
