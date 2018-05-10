@@ -889,6 +889,10 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 TMCG_OpenPGP_Pubkey*							&pub,
 			 TMCG_OpenPGP_UserID*							&uid,
 			 TMCG_OpenPGP_UserAttribute*					&uat);
+		static bool PrivateKeyBlockParse_Decrypt
+			(tmcg_openpgp_packet_ctx_t						&ctx,
+			 const int										verbose,
+			 const std::string								&passphrase);
 		static bool PrivateKeyBlockParse_Tag5
 			(const tmcg_openpgp_packet_ctx_t				&ctx,
 			 const int										verbose,
@@ -1409,10 +1413,12 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static bool PrivateKeyBlockParse
 			(const tmcg_openpgp_octets_t					&in,
 			 const int										verbose,
+			 const std::string								&passphrase,
 			 TMCG_OpenPGP_Prvkey*							&prv);
 		static bool PrivateKeyBlockParse
 			(const std::string								&in,
 			 const int										verbose,
+			 const std::string								&passphrase,
 			 TMCG_OpenPGP_Prvkey*							&prv);
 		static bool MessageParse
 			(const tmcg_openpgp_octets_t					&in,

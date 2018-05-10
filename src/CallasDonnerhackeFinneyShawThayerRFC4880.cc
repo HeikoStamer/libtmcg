@@ -8404,6 +8404,226 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag17
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
+	(tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const std::string &passphrase)
+{
+	if (verbose > 1)
+	{
+		std::cerr << "INFO: encdatalen = " << ctx.encdatalen << std::endl;
+		std::cerr << "INFO: skalgo = " << (int)ctx.skalgo << std::endl;
+		std::cerr << "INFO: s2kconv = " << (int)ctx.s2kconv << std::endl;
+		std::cerr << "INFO: s2k_type = " << (int)ctx.s2k_type <<
+			" s2k_hashalgo = " << (int)ctx.s2k_hashalgo <<
+			" s2k_count = " << (int)ctx.s2k_count << std::endl;
+	}
+	if ((ctx.s2kconv == 254) || (ctx.s2kconv == 255))
+	{
+		// decrypt the secret parameters
+		size_t keylen = AlgorithmKeyLength(ctx.skalgo);
+		size_t ivlen = AlgorithmIVLength(ctx.skalgo);
+		int	algo = AlgorithmSymGCRY(ctx.skalgo);
+		if (!keylen || !ivlen)
+		{
+			if (verbose)
+				std::cerr << "ERROR: algorithm not supported" << std::endl;
+			return false;
+		}
+		tmcg_openpgp_octets_t salt, skey;
+		for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
+			salt.push_back(ctx.s2k_salt[i]);
+		if (ctx.s2k_type == 0x00)
+		{
+			salt.clear();
+			S2KCompute(ctx.s2k_hashalgo, keylen, passphrase, salt, false,
+				ctx.s2k_count, skey);
+		}
+		else if (ctx.s2k_type == 0x01)
+		{
+			S2KCompute(ctx.s2k_hashalgo, keylen, passphrase, salt, false,
+				ctx.s2k_count, skey);
+		}
+		else if (ctx.s2k_type == 0x03)
+		{
+			S2KCompute(ctx.s2k_hashalgo, keylen, passphrase, salt, true,
+				ctx.s2k_count, skey);
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "ERROR: unknown S2K specifier" << std::endl;
+			return false;
+		}
+		if (skey.size() != keylen)
+		{
+			if (verbose)
+				std::cerr << "ERROR: S2K failed" << std::endl;
+			return false;
+		}
+		if (!ctx.encdatalen || !ctx.encdata)
+		{
+			if (verbose)
+				std::cerr << "ERROR: no keydata to decrypt" << std::endl;
+			return false;
+		}
+		tmcg_openpgp_byte_t *key = new tmcg_openpgp_byte_t[keylen];
+		for (size_t i = 0; i < keylen; i++)
+			key[i] = skey[i];
+		tmcg_openpgp_byte_t *iv = new tmcg_openpgp_byte_t[ivlen];
+		for (size_t i = 0; i < ivlen; i++)
+			iv[i] = ctx.iv[i];
+		gcry_cipher_hd_t hd;
+		gcry_error_t dret;
+		dret = gcry_cipher_open(&hd, algo, GCRY_CIPHER_MODE_CFB, 0);
+		if (dret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: gcry_cipher_open() failed" << std::endl;
+			delete [] key;
+			delete [] iv;
+			return false;
+		}
+		dret = gcry_cipher_setkey(hd, key, keylen);
+		if (dret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: gcry_cipher_setkey() failed" << std::endl;
+			gcry_cipher_close(hd);
+			delete [] key;
+			delete [] iv;
+			return false;
+		}
+		dret = gcry_cipher_setiv(hd, iv, ivlen);
+		if (dret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: gcry_cipher_setiv() failed" << std::endl;
+			gcry_cipher_close(hd);
+			delete [] key;
+			delete [] iv;
+			return false;
+		}
+		dret = gcry_cipher_decrypt(hd, ctx.encdata, ctx.encdatalen, NULL, 0);
+		if (dret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: gcry_cipher_decrypt() failed" << std::endl;
+			gcry_cipher_close(hd);
+			delete [] key;
+			delete [] iv;
+			return false;
+		}
+		gcry_cipher_close(hd);
+		delete [] key;
+		delete [] iv;
+		tmcg_openpgp_octets_t mpis;
+		for (size_t i = 0; i < ctx.encdatalen; i++)
+			mpis.push_back(ctx.encdata[i]);
+		size_t chksum = 0, mlen;
+		if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) || 
+		    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+		    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+		{
+			mlen = PacketMPIDecode(mpis, ctx.d, chksum);
+			if (!mlen || (mlen > mpis.size()))
+			{
+				std::cerr << "ERROR: reading MPI d failed" <<
+					" (bad passphrase)" << std::endl;
+				return false;
+			}
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			mlen = PacketMPIDecode(mpis, ctx.p, chksum);
+			if (!mlen || (mlen > mpis.size()))
+			{
+				std::cerr << "ERROR: reading MPI p failed" <<
+					" (bad passphrase)" << std::endl;
+				return false;
+			}
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			mlen = PacketMPIDecode(mpis, ctx.q, chksum);
+			if (!mlen || (mlen > mpis.size()))
+			{
+				std::cerr << "ERROR: reading MPI q failed" <<
+					" (bad passphrase)" << std::endl;
+				return false;
+			}
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			mlen = PacketMPIDecode(mpis, ctx.u, chksum);
+			if (!mlen || (mlen > mpis.size()))
+			{
+				std::cerr << "ERROR: reading MPI u failed" <<
+					" (bad passphrase)" << std::endl;
+				return false;
+			}
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
+		{
+			mlen = PacketMPIDecode(mpis, ctx.x, chksum);
+			if (!mlen || (mlen > mpis.size()))
+			{
+				std::cerr << "ERROR: reading MPI x failed" <<
+					" (bad passphrase)" << std::endl;
+				return false;
+			}
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+		{
+			mlen = PacketMPIDecode(mpis, ctx.x, chksum);
+			if (!mlen || (mlen > mpis.size()))
+			{
+				std::cerr << "ERROR: reading MPI x failed" <<
+					" (bad passphrase)" << std::endl;
+				return false;
+			}
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "ERROR: algorithm not supported" << std::endl;
+			return false;
+		}
+		if (ctx.s2kconv == 255)
+		{
+			if (mpis.size() < 2)
+			{
+				if (verbose)
+					std::cerr << "ERROR: no checksum found" << std::endl;
+				return false;
+			}
+			size_t chksum2 = (mpis[0] << 8) + mpis[1];
+			if (chksum != chksum2)
+			{
+				if (verbose)
+					std::cerr << "ERROR: checksum mismatch" << std::endl;
+				return false;
+			}
+		}
+		else
+		{
+			if ((mpis.size() != 20) || (ctx.encdatalen < 20))
+			{
+				if (verbose)
+					std::cerr << "ERROR: no SHA-1 hash found" << std::endl;
+				return false;
+			}
+			tmcg_openpgp_octets_t hash_input, hash;
+			for (size_t i = 0; i < (ctx.encdatalen - 20); i++)
+				hash_input.push_back(ctx.encdata[i]);
+			HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, hash_input, hash);
+			if (!OctetsCompare(hash, mpis))
+			{
+				if (verbose)
+					std::cerr << "ERROR: SHA-1 hash mismatch" << std::endl;
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
 	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
 	 const tmcg_openpgp_octets_t &current_packet,
@@ -8468,8 +8688,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
 	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
 	 const bool primary, const tmcg_openpgp_octets_t &current_packet,
-	 bool &subkey, bool &badkey, TMCG_OpenPGP_Prvkey* &prv,
-	 TMCG_OpenPGP_PrivateSubkey* &sub)
+	 bool &subkey, bool &badkey,
+	 TMCG_OpenPGP_Prvkey* &prv, TMCG_OpenPGP_PrivateSubkey* &sub)
 {
 	if (!primary)
 	{
@@ -9287,6 +9507,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 	(const tmcg_openpgp_octets_t &in, const int verbose,
+	 const std::string &passphrase,
 	 TMCG_OpenPGP_Prvkey* &prv)
 {
 	prv = NULL;
@@ -9402,12 +9623,26 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 					embedded_pkt, prv->pub, sub->pub, uid, uat);
 				break;
 			case 5: // Secret-Key Packet
-				ret = PrivateKeyBlockParse_Tag5(ctx, verbose,
-					current_packet, primary, prv);
+				if (!PrivateKeyBlockParse_Decrypt(ctx, verbose, passphrase))
+				{
+					ret = false;
+				}
+				else
+				{
+					ret = PrivateKeyBlockParse_Tag5(ctx, verbose,
+						current_packet, primary, prv);
+				}
 				break;
 			case 7: // Secret-Subkey Packet
-				ret = PrivateKeyBlockParse_Tag7(ctx, verbose, primary,
-					current_packet, subkey, badkey, prv, sub);
+				if (!PrivateKeyBlockParse_Decrypt(ctx, verbose, passphrase))
+				{
+					ret = false;
+				}
+				else
+				{
+					ret = PrivateKeyBlockParse_Tag7(ctx, verbose, primary,
+						current_packet, subkey, badkey, prv, sub);
+				}
 				break;
 			case 13: // User ID Packet
 				ret = PublicKeyBlockParse_Tag13(ctx, verbose, primary,
@@ -9463,6 +9698,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 	(const std::string &in, const int verbose,
+	 const std::string &passphrase,
 	 TMCG_OpenPGP_Prvkey* &prv)
 {
 	// decode ASCII Armor
@@ -9475,7 +9711,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 				" (type = " << (int)type << ")" << std::endl;
 		return false;
 	}
-	return PrivateKeyBlockParse(pkts, verbose, prv);
+	return PrivateKeyBlockParse(pkts, verbose, passphrase, prv);
 }
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
