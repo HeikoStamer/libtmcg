@@ -9625,7 +9625,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 			case 5: // Secret-Key Packet
 				if (!PrivateKeyBlockParse_Decrypt(ctx, verbose, passphrase))
 				{
-					ret = false;
+					ret = false; // wrong passphrase
 				}
 				else
 				{
@@ -9636,7 +9636,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 			case 7: // Secret-Subkey Packet
 				if (!PrivateKeyBlockParse_Decrypt(ctx, verbose, passphrase))
 				{
-					ret = false;
+					ret = false; // wrong passphrase
 				}
 				else
 				{
