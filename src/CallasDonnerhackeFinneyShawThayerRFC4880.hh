@@ -803,8 +803,8 @@ class TMCG_OpenPGP_Message
 		tmcg_openpgp_byte_t									format;
 		std::string											filename;
 		time_t												timestamp;
-		std::vector<TMCG_OpenPGP_PKESK*>					PKESKs;
-		std::vector<TMCG_OpenPGP_SKESK*>					SKESKs;
+		std::vector<const TMCG_OpenPGP_PKESK*>				PKESKs;
+		std::vector<const TMCG_OpenPGP_SKESK*>				SKESKs;
 		tmcg_openpgp_octets_t								encrypted_message;
 		tmcg_openpgp_octets_t								signed_message;
 		tmcg_openpgp_octets_t								compressed_message;

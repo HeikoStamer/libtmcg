@@ -540,6 +540,10 @@ int main
 		armored_prvkey_dsa);
 	std::cout << armored_prvkey_dsa << std::endl;
 	TMCG_OpenPGP_Prvkey *dsa = NULL;
+	std::cout << "!PrivateKeyBlockParse(..., dsa)" << std::endl;
+	parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
+		PrivateKeyBlockParse(armored_prvkey_dsa, 3, "wrong password", dsa);
+	assert(!parse_ok);
 	std::cout << "PrivateKeyBlockParse(..., dsa)" << std::endl;
 	parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 		PrivateKeyBlockParse(armored_prvkey_dsa, 3, passphrase, dsa);
@@ -600,7 +604,24 @@ int main
 	parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 		MessageParse(armored_message, 3, msg);
 	assert(parse_ok);
-// TODO: reconstruct seskey by decrypting pkesk 
+	seskey.clear();
+	for (size_t i = 0; i < (msg->PKESKs).size(); i++)
+	{
+		const TMCG_OpenPGP_PKESK *esk = (msg->PKESKs)[i];
+		if (dsa->Decrypt(esk, 3, seskey))
+			break;
+		bool decrypt_ok = false;
+		for (size_t j = 0; j < (dsa->private_subkeys).size(); j++)
+		{
+			if ((dsa->private_subkeys)[j]->Decrypt(esk, 3, seskey))
+			{
+				decrypt_ok = true;
+				break;
+			}
+		}
+		if (decrypt_ok)
+			break;
+	}
 	tmcg_openpgp_octets_t dec;	
 	std::cout << "Decrypt()" << std::endl;
 	parse_ok = msg->Decrypt(seskey, 3, dec);
