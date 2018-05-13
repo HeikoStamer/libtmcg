@@ -608,19 +608,20 @@ int main
 	for (size_t i = 0; i < (msg->PKESKs).size(); i++)
 	{
 		const TMCG_OpenPGP_PKESK *esk = (msg->PKESKs)[i];
-		if (dsa->Decrypt(esk, 3, seskey))
-			break;
-		bool decrypt_ok = false;
-		for (size_t j = 0; j < (dsa->private_subkeys).size(); j++)
+		if (esk->pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
 		{
-			if ((dsa->private_subkeys)[j]->Decrypt(esk, 3, seskey))
+			bool decrypt_ok = false;
+			for (size_t j = 0; j < (dsa->private_subkeys).size(); j++)
 			{
-				decrypt_ok = true;
-				break;
+				if ((dsa->private_subkeys)[j]->Decrypt(esk, 3, seskey))
+				{
+					decrypt_ok = true;
+					break;
+				}
 			}
+			if (decrypt_ok)
+				break;
 		}
-		if (decrypt_ok)
-			break;
 	}
 	tmcg_openpgp_octets_t dec;	
 	std::cout << "Decrypt()" << std::endl;
