@@ -9806,11 +9806,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 			case 8: // Compressed Data
 				ret = MessageParse_Tag8(ctx, verbose, current_packet, msg);
 				break;
+/* parsing of not integrity protected data removed due to #efail considerations
 			case 9: // Symmetrically Encrypted Data
 				ret = MessageParse_Tag9(ctx, verbose, current_packet, msg);
 				if (ret)
 					have_sed = true;
 				break;
+*/
 			case 11: // Literal Data
 				ret = MessageParse_Tag11(ctx, verbose, current_packet, msg);
 				break;
