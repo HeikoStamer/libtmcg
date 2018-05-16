@@ -1689,6 +1689,15 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		if ((esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 			(esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY))
 		{
+			// check whether $0 < m^e < n$.
+			if ((gcry_mpi_cmp_ui(esk->me, 0L) <= 0) ||
+				(gcry_mpi_cmp(esk->me, pub->rsa_n) >= 0))
+			{
+				if (verbose)
+					std::cerr << "ERROR: 0 < m^e < n not satisfied" << 
+						std::endl;
+				return false;
+			}
 			gcry_error_t dret;
 			dret = CallasDonnerhackeFinneyShawThayerRFC4880::
 				AsymmetricDecryptRSA(esk->me, private_key, out);
@@ -1744,8 +1753,8 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: PKESK keyid does not match subkey ID" <<
-				std::endl;
+			std::cerr << "ERROR: PKESK keyid does not match subkey ID or" <<
+				" wildcard pattern" << std::endl;
 		return false;
 	}
 }
@@ -2553,6 +2562,15 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 		if ((esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 			(esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY))
 		{
+			// check whether $0 < m^e < n$.
+			if ((gcry_mpi_cmp_ui(esk->me, 0L) <= 0) ||
+				(gcry_mpi_cmp(esk->me, pub->rsa_n) >= 0))
+			{
+				if (verbose)
+					std::cerr << "ERROR: 0 < m^e < n not satisfied" << 
+						std::endl;
+				return false;
+			}
 			gcry_error_t dret;
 			dret = CallasDonnerhackeFinneyShawThayerRFC4880::
 				AsymmetricDecryptRSA(esk->me, private_key, out);
@@ -2576,8 +2594,8 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: PKESK keyid does not match key ID" <<
-				std::endl;
+			std::cerr << "ERROR: PKESK keyid does not match key ID or" <<
+				" wildcard pattern" << std::endl;
 		return false;
 	}
 }
