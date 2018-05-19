@@ -155,7 +155,7 @@ bool TMCG_OpenPGP_Signature::good
 void TMCG_OpenPGP_Signature::PrintInfo
 	() const
 {
-	std::cerr << "INFO: type = 0x" << std::hex << (int)type <<
+	std::cerr << "INFO: sig type = 0x" << std::hex << (int)type <<
 		std::dec << " pkalgo = " << (int)pkalgo <<
 		" hashalgo = " << (int)hashalgo <<
 		" revocable = " << (revocable ? "true" : "false") <<
@@ -181,7 +181,7 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 	 const int verbose) const
 {
 	time_t current = time(NULL);
-	time_t fmax = 60 * 60 * 24 * 7;
+	time_t fmax = 60 * 60 * 24 * 7; // deviation time: one week
 	time_t vmax = creationtime + expirationtime;
 	if (expirationtime && (current > vmax))
 	{
@@ -1155,7 +1155,7 @@ bool TMCG_OpenPGP_Subkey::CheckValidity
 	(const int verbose) const
 {
 	time_t current = time(NULL);
-	time_t fmax = 60 * 60 * 24 * 7;
+	time_t fmax = 60 * 60 * 24 * 7; // deviation time: one week
 	time_t kmax = creationtime + expirationtime;
 	if (expirationtime && (current > kmax))
 	{
@@ -1746,7 +1746,7 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		{
 			if (verbose)
 				std::cerr << "ERROR: public-key algorithm not supported" <<
-					std::endl;
+					" for decryption" << std::endl;
 			return false;
 		}
 	}
@@ -2019,7 +2019,7 @@ bool TMCG_OpenPGP_Pubkey::CheckValidity
 	(const int verbose) const
 {
 	time_t current = time(NULL);
-	time_t fmax = 60 * 60 * 24 * 7;
+	time_t fmax = 60 * 60 * 24 * 7; // deviation time: one week
 	time_t kmax = creationtime + expirationtime;
 	if (expirationtime && (current > kmax))
 	{
@@ -2342,8 +2342,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSubkeys
 		{
 			one_valid_sub = true;
 			if (verbose > 1)
-				std::cerr << "INFO: subkey is valid" << 
-					std::endl;
+				std::cerr << "INFO: subkey is valid" << std::endl;
 			// print accumulated key flags of the subkey
 			size_t allflags = subkeys[i]->AccumulateFlags();
 			if (verbose > 1)
@@ -2587,7 +2586,7 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 		{
 			if (verbose)
 				std::cerr << "ERROR: public-key algorithm not supported" <<
-					std::endl;
+					" for decryption" << std::endl;
 			return false;
 		}
 	}
