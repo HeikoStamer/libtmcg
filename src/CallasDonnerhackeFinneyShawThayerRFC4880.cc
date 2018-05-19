@@ -2784,6 +2784,18 @@ bool TMCG_OpenPGP_Message::Decrypt
 bool TMCG_OpenPGP_Message::CheckMDC
 	(const int verbose) const
 {
+	if (!mdc.size())
+	{
+		if (verbose)
+			std::cerr << "ERROR: no MDC found" << std::endl;
+		return false;
+	}
+	if (!prefix.size())
+	{
+		if (verbose)
+			std::cerr << "ERROR: no prefix found" << std::endl;
+		return false;
+	}
 	tmcg_openpgp_octets_t mdc_hashing, hash;
 	// "it includes the prefix data described above" [RFC4880]
 	mdc_hashing.insert(mdc_hashing.end(), prefix.begin(), prefix.end());
