@@ -2768,7 +2768,7 @@ bool TMCG_OpenPGP_Message::Decrypt
 			std::cerr << "WARNING: encrypted message was not integrity" <<
 				" protected" << std::endl;
 	}
-	prefix.clear(); // clear the encryption prefix that is included in MDC
+	prefix.clear(); // clear any previous encryption prefix
 	gcry_error_t ret = CallasDonnerhackeFinneyShawThayerRFC4880::
 		SymmetricDecrypt(encrypted_message, sk, prefix, false, skalgo, out);
 	if (ret)
