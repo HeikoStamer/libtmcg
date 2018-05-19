@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -48,7 +48,8 @@ int pipefd[N][N][2];
 pid_t pid[N];
 
 void start_instance_nonblock
-	(const size_t whoami, const bool corrupted, const bool authenticated, const bool encrypted)
+	(const size_t whoami, const bool corrupted, const bool authenticated,
+	 const bool encrypted)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("t-aio (fork)");
@@ -71,8 +72,9 @@ void start_instance_nonblock
 			}
 
 			// create asynchronous authenticated and encrypted unicast channels
-			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami, uP_in, uP_out, uP_key,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short, authenticated, encrypted);
+			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami,
+				uP_in, uP_out, uP_key, aiounicast::aio_scheduler_roundrobin,
+				aiounicast::aio_timeout_short, authenticated, encrypted);
 
 			// send a simple message
 			bool ret = false;
@@ -100,10 +102,12 @@ void start_instance_nonblock
 					if (ipos != froms.end())
 						froms.erase(ipos);
 					else
-						std::cout << "P_" << whoami << ": entry not found for " << i << std::endl;
+						std::cout << "P_" << whoami <<
+							": entry not found for " << i << std::endl;
 				}
 				else
-					std::cout << "P_" << whoami << ": timeout of " << i << std::endl;
+					std::cout << "P_" << whoami <<
+						": timeout of " << i << std::endl;
 			}
 			assert(froms.size() <= T); // at most T messages not received
 			for (size_t i = 0; i < froms.size(); i++)
@@ -132,11 +136,13 @@ void start_instance_nonblock
 			size_t num = 0, from = 0;
 			do
 			{
-				ret = aiou->Receive(mm, from, aiounicast::aio_scheduler_roundrobin);
+				ret = aiou->Receive(mm, from,
+					aiounicast::aio_scheduler_roundrobin);
 				if (num < (N - T))
 					assert(ret);
 				if (ret)
-					std::cout << "P_" << whoami << ": received array from P_" << from << std::endl;
+					std::cout << "P_" << whoami <<
+						": received array from P_" << from << std::endl;
 				for (size_t k = 0; ret && (k < mm.size()); k++)
 				{
 					assert(mpz_divisible_ui_p(mm[k], (whoami + k + 1)));
@@ -156,12 +162,9 @@ void start_instance_nonblock
 
 			// release handles (unicast channel)
 			uP_in.clear(), uP_out.clear(), uP_key.clear();
-			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
-				" aiou.numWrite = " << aiou->numWrite << std::endl;
-			std::cout << "P_" << whoami << ": aiou.numDecrypted = " << aiou->numDecrypted <<
-				" aiou.numEncrypted = " << aiou->numEncrypted << std::endl;
-			std::cout << "P_" << whoami << ": aiou.numAuthenticated = " <<
-				aiou->numAuthenticated << std::endl;
+			std::cout << "P_" << whoami << ":";
+			aiou->PrintStatistics(std::cout);
+			std::cout << std::endl;
 
 			// release asynchronous unicast channels
 			delete aiou;
@@ -176,7 +179,8 @@ void start_instance_nonblock
 }
 
 void start_instance_select
-	(const size_t whoami, const bool corrupted, const bool authenticated, const bool encrypted)
+	(const size_t whoami, const bool corrupted, const bool authenticated,
+	 const bool encrypted)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("t-aio (fork)");
@@ -199,8 +203,9 @@ void start_instance_select
 			}
 
 			// create asynchronous authenticated and encrypted unicast channels
-			aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short, authenticated, encrypted);
+			aiounicast_select *aiou = new aiounicast_select(N, whoami,
+				uP_in, uP_out, uP_key, aiounicast::aio_scheduler_roundrobin,
+				aiounicast::aio_timeout_short, authenticated, encrypted);
 
 			// send a simple message
 			bool ret = false;
@@ -228,10 +233,12 @@ void start_instance_select
 					if (ipos != froms.end())
 						froms.erase(ipos);
 					else
-						std::cout << "P_" << whoami << ": entry not found for " << i << std::endl;
+						std::cout << "P_" << whoami <<
+							": entry not found for " << i << std::endl;
 				}
 				else
-					std::cout << "P_" << whoami << ": timeout of " << i << std::endl;
+					std::cout << "P_" << whoami <<
+						": timeout of " << i << std::endl;
 			}
 			assert(froms.size() <= T); // at most T messages not received
 			for (size_t i = 0; i < froms.size(); i++)
@@ -260,11 +267,13 @@ void start_instance_select
 			size_t num = 0, from = 0;
 			do
 			{
-				ret = aiou->Receive(mm, from, aiounicast::aio_scheduler_roundrobin);
+				ret = aiou->Receive(mm, from,
+					aiounicast::aio_scheduler_roundrobin);
 				if (num < (N - T))
 					assert(ret);
 				if (ret)
-					std::cout << "P_" << whoami << ": received array from P_" << from << std::endl;
+					std::cout << "P_" << whoami <<
+						": received array from P_" << from << std::endl;
 				for (size_t k = 0; ret && (k < mm.size()); k++)
 				{
 					assert(mpz_divisible_ui_p(mm[k], (whoami + k + 1)));
@@ -284,12 +293,9 @@ void start_instance_select
 
 			// release handles (unicast channel)
 			uP_in.clear(), uP_out.clear(), uP_key.clear();
-			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
-				" aiou.numWrite = " << aiou->numWrite << std::endl;
-			std::cout << "P_" << whoami << ": aiou.numDecrypted = " << aiou->numDecrypted <<
-				" aiou.numEncrypted = " << aiou->numEncrypted << std::endl;
-			std::cout << "P_" << whoami << ": aiou.numAuthenticated = " <<
-				aiou->numAuthenticated << std::endl;
+			std::cout << "P_" << whoami << ":";
+			aiou->PrintStatistics(std::cout);
+			std::cout << std::endl;
 
 			// release asynchronous unicast channels
 			delete aiou;
@@ -346,7 +352,8 @@ bool done
 		{
 			std::cerr << "ERROR: ";
 			if (WIFSIGNALED(wstatus))
-				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
+				std::cerr << pid[i] << " terminated by signal " <<
+					WTERMSIG(wstatus) << std::endl;
 			if (WCOREDUMP(wstatus))
 				std::cerr << pid[i] << " dumped core" << std::endl;
 			result = false;

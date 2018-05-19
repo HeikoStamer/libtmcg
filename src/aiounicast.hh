@@ -30,6 +30,7 @@
 	#include <cassert>
 	#include <string>
 	#include <vector>
+	#include <iostream>
 
 	// GNU multiple precision library
 	#include <gmp.h>
@@ -37,30 +38,36 @@
 class aiounicast
 {
 	protected:
-		const size_t		aio_default_scheduler;
-		const time_t		aio_default_timeout;
-		const bool		aio_is_authenticated;
-		const bool		aio_is_encrypted;
-		bool			aio_is_initialized;
-		mpz_t			aio_hide_length;
-	public:
-		static const time_t	aio_timeout_none		= 0;
-		static const time_t	aio_timeout_extremely_short	= 1;
-		static const time_t	aio_timeout_very_short		= 5;
-		static const time_t	aio_timeout_short		= 15;
-		static const time_t	aio_timeout_middle		= 30;
-		static const time_t	aio_timeout_long		= 90;
-		static const time_t	aio_timeout_very_long		= 180;
-		static const time_t	aio_timeout_extremely_long	= 300;
-		static const time_t	aio_timeout_default		= 42424242;
-		static const size_t	aio_scheduler_none		= 0;
-		static const size_t	aio_scheduler_roundrobin	= 1;
-		static const size_t	aio_scheduler_random		= 2;
-		static const size_t	aio_scheduler_direct		= 3;
-		static const size_t	aio_scheduler_default		= 42424242;
+		const size_t				aio_default_scheduler;
+		const time_t				aio_default_timeout;
+		const bool					aio_is_authenticated;
+		const bool					aio_is_encrypted;
+		bool						aio_is_initialized;
+		mpz_t						aio_hide_length;
 
-		const size_t		n;
-		const size_t		j;
+	public:
+		static const time_t			aio_timeout_none			= 0;
+		static const time_t			aio_timeout_extremely_short	= 1;
+		static const time_t			aio_timeout_very_short		= 5;
+		static const time_t			aio_timeout_short			= 15;
+		static const time_t			aio_timeout_middle			= 30;
+		static const time_t			aio_timeout_long			= 90;
+		static const time_t			aio_timeout_very_long		= 180;
+		static const time_t			aio_timeout_extremely_long	= 300;
+		static const time_t			aio_timeout_default			= 42424242;
+		static const size_t			aio_scheduler_none			= 0;
+		static const size_t			aio_scheduler_roundrobin	= 1;
+		static const size_t			aio_scheduler_random		= 2;
+		static const size_t			aio_scheduler_direct		= 3;
+		static const size_t			aio_scheduler_default		= 42424242;
+
+		const size_t				n;
+		const size_t				j;
+
+		std::map<size_t, int>		fd_in, fd_out;
+		size_t						numWrite, numRead;
+		size_t						numEncrypted, numDecrypted;
+		size_t						numAuthenticated;
 
 		aiounicast
 			(const size_t n_in, const size_t j_in,
@@ -73,7 +80,8 @@ class aiounicast
 				aio_is_authenticated(aio_is_authenticated_in),
 				aio_is_encrypted(aio_is_encrypted_in),
 				aio_is_initialized(true),
-				n(n_in), j(j_in)
+				n(n_in), j(j_in), numWrite(0), numRead(0), numEncrypted(0),
+				numDecrypted(0), numAuthenticated(0)
 		{
 			mpz_init_set_ui(aio_hide_length, 1L);
 			mpz_mul_2exp(aio_hide_length, aio_hide_length, TMCG_AIO_HIDE_SIZE);
@@ -93,6 +101,15 @@ class aiounicast
 			(std::vector<mpz_ptr> &m, size_t &i_out,
 			const size_t scheduler = aio_scheduler_default,
 			const time_t timeout = aio_timeout_default) = 0;
+
+		void PrintStatistics
+			(std::ostream &ost)
+		{
+			ost << " numRead = " << numRead << " numWrite = " << numWrite <<
+				" numEncrypted = " << numEncrypted <<
+				" numDecrypted = " << numDecrypted <<
+				" numAuthenticated = " << numAuthenticated;
+		}
 
 		virtual ~aiounicast
 			()

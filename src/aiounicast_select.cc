@@ -35,7 +35,8 @@ aiounicast_select::aiounicast_select
 	const time_t aio_default_timeout_in,
 	const bool aio_is_authenticated_in,
 	const bool aio_is_encrypted_in):
-		aiounicast(n_in, j_in, aio_default_scheduler_in, aio_default_timeout_in, aio_is_authenticated_in, aio_is_encrypted_in)
+		aiounicast(n_in, j_in, aio_default_scheduler_in, aio_default_timeout_in,
+			aio_is_authenticated_in, aio_is_encrypted_in)
 {
 	assert(j_in < n_in);
 	assert(n_in == fd_in_in.size());
@@ -57,9 +58,6 @@ aiounicast_select::aiounicast_select
 
 	// initialize ordered buffer for receiving mpz_t
 	buf_mpz.resize(n);
-
-	// initialize character counters
-	numWrite = 0, numRead = 0, numEncrypted = 0, numDecrypted = 0, numAuthenticated = 0;
 
 	// initialize MACs
 	if (aio_is_authenticated)

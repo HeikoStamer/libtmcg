@@ -54,22 +54,18 @@
 class aiounicast_select : public aiounicast
 {
 	private:
-		size_t					aio_schedule_current;
-		size_t					aio_schedule_buffer;
-		size_t					buf_in_size;
-		std::vector<unsigned char*>		buf_in, iv_out;
-		std::vector<size_t>			buf_ptr;
-		std::vector<bool>			buf_flag, iv_flag_out, iv_flag_in;
+		size_t								aio_schedule_current;
+		size_t								aio_schedule_buffer;
+		size_t								buf_in_size;
+		std::vector<unsigned char*>			buf_in, iv_out;
+		std::vector<size_t>					buf_ptr;
+		std::vector<bool>					buf_flag, iv_flag_out, iv_flag_in;
 		std::vector< std::list<mpz_ptr> >	buf_mpz;
-		size_t					maclen, keylen, blklen;
-		std::vector<gcry_mac_hd_t*>		mac_in, mac_out;
+		size_t								maclen, keylen, blklen;
+		std::vector<gcry_mac_hd_t*>			mac_in, mac_out;
 		std::vector<gcry_cipher_hd_t*>		enc_in, enc_out;
-	public:
-		std::map<size_t, int>			fd_in, fd_out;
-		size_t					numWrite, numRead;
-		size_t					numEncrypted, numDecrypted;
-		size_t					numAuthenticated;
 
+	public:
 		aiounicast_select
 			(const size_t n_in, const size_t j_in,
 			const std::vector<int> &fd_in_in,

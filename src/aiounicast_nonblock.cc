@@ -64,9 +64,6 @@ aiounicast_nonblock::aiounicast_nonblock
 	// initialize ordered buffer for receiving mpz_t
 	buf_mpz.resize(n);
 
-	// initialize character counters
-	numWrite = 0, numRead = 0, numEncrypted = 0, numDecrypted = 0, numAuthenticated = 0;
-
 	// initialize MACs
 	if (aio_is_authenticated)
 	{

@@ -7,6 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-05-19] aiounicast: added PrintStatistics()
 * [2018-05-06] added autoconf feature (--with-botan) for optional Botan support
 * [2018-05-03] RFC4880: use secure memory for some of tmcg_openpgp_packet_ctx_t
 * [2018-05-03] RFC4880: added TMCG_OpenPGP_PKESK and TMCG_OpenPGP_SKESK
