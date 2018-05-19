@@ -19,7 +19,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20180425.
+Revision 20180519.
 
 Copyright @copyright{} 2005--2007, 2009, 2015--2018 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
@@ -1904,15 +1904,15 @@ communication interface for asynchronous point-to-point communication channels.
 They can be used to transfer data of type @code{mpz_t} (big integers, see
 @code{libgmp} for explanation of this data type) between up to @math{n} parties.
 
-Moreover, the channels can be authenticated by
-a message authentication code and encrypted by a symmetric cipher. The deployed
-algorithms are defined by global symbols (@code{TMCG_GCRY_MAC_ALGO} and
-@code{TMCG_GCRY_ENC_ALGO}, respectively) and fixed at compile time of LibTMCG.
+Moreover, the channels can be authenticated by a message authentication code
+and encrypted by a symmetric cipher. The deployed algorithms are defined by
+global symbols (@code{TMCG_GCRY_MAC_ALGO} and @code{TMCG_GCRY_ENC_ALGO},
+respectively) and fixed at compile time of LibTMCG.
 
 @deftp {Class} aiounicast
-	This class is only an abstract interface and cannot be instantiated directly.
-	We explain some basic class members that are useful for an application
-	programmer. 
+	This class is only an abstract interface and cannot be instantiated
+	directly. We explain some basic class members that are useful for an
+	application programmer. 
 
 	@deftypecv {Member} aiounicast {static const time_t} aio_timeout_very_short
 		This constant defines a very short time interval of only one second.
@@ -1949,14 +1949,6 @@ algorithms are defined by global symbols (@code{TMCG_GCRY_MAC_ALGO} and
 	@deftypecv {Member} aiounicast {const size_t} j
 		This is an uniqe index of the party running this instance.
 	@end deftypecv
-@end deftp
-Note that either @code{aiounicast_nonblock.hh} or @code{aiounicast_select.hh} must be
-included in addition to @code{libTMCG.hh}. Then the following classes can be instantiated
-by your application.
-@deftp {Class} aiounicast_nonblock
-	This class only works with non-blocking file descriptors, i.e., the pipes or sockets
-	have to be opened with @code{O_NONBLOCK} flag. It uses continiuous polling on the
-	descriptors to achieve asynchronous I/O that results in exorbitant CPU load.
 
 	@deftypecv {Member} aiounicast_nonblock {std::map<size_t, int>} fd_in
 		The input file descriptors of point-to-point links to all parties.
@@ -1973,6 +1965,29 @@ by your application.
 	@deftypecv {Member} aiounicast_nonblock {size_t} numRead
 		The total number of bytes read from point-to-point links.
 	@end deftypecv
+
+	@deftypecv {Member} aiounicast_nonblock {size_t} numEncrypted
+		The total number of bytes that have been encrypted yet.
+	@end deftypecv
+
+	@deftypecv {Member} aiounicast_nonblock {size_t} numDecrypted
+		The total number of bytes that have been decrypted yet.
+	@end deftypecv
+
+	@deftypecv {Member} aiounicast_nonblock {size_t} numAuthenticated
+		The total number of bytes that have been authenticated yet.
+	@end deftypecv
+@end deftp
+Note that headers @code{aiounicast_nonblock.hh} or @code{aiounicast_select.hh}
+must be included in addition to @code{libTMCG.hh}, however,
+@code{aiounicast_select} is strongly recommended. Then the following classes
+can be instantiated by your application.
+@deftp {Class} aiounicast_nonblock
+	This class works with non-blocking file descriptors, i.e., the pipes or
+	sockets have to be opened with the @code{O_NONBLOCK} flag. The methods use
+	continiuous polling on the descriptors to achieve asynchronous I/O that
+	results in exorbitant CPU load. The class should be used only, if no
+	select system call is available or appropriate for the application.
 
 	@defop {Constructor} aiounicast_nonblock aiounicast_nonblock (@code{const size_t} n_in, @code{const size_t} j_in, @code{const std::vector<int>& } fd_in_in, @code{const std::vector<int>& } fd_out_in, @code{const std::vector<std::string>& } key_in, @code{const size_t} aio_default_scheduler_in @code{=aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aio_timeout_long}, @code{const bool} aio_is_authenticated_in @code{=true}, @code{const bool} aio_is_encrypted_in @code{=true})
 		The constructor initializes internal queues and data structures
@@ -2031,22 +2046,6 @@ by your application.
 	interface of the operation system with negligible timeout of 1000us
 	to achieve asynchronous I/O. This results in a reasonable CPU load in
 	comparison with @code{aiounicast_nonblock}.
-
-	@deftypecv {Member} aiounicast_select {std::map<size_t, int>} fd_in
-		The input file descriptors of point-to-point links to all parties.
-	@end deftypecv
-
-	@deftypecv {Member} aiounicast_select {std::map<size_t, int>} fd_out
-		The ouput file descriptors of point-to-point links to all parties.
-	@end deftypecv
-
-	@deftypecv {Member} aiounicast_select {size_t} numWrite
-		The total number of bytes written to point-to-point links.
-	@end deftypecv
-
-	@deftypecv {Member} aiounicast_select {size_t} numRead
-		The total number of bytes read from point-to-point links.
-	@end deftypecv
 
 	@defop {Constructor} aiounicast_select aiounicast_select (@code{const size_t} n_in, @code{const size_t} j_in, @code{const std::vector<int>& } fd_in_in, @code{const std::vector<int>& } fd_out_in, @code{const std::vector<std::string>& } key_in, @code{const size_t} aio_default_scheduler_in @code{=aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aio_timeout_long}, @code{const bool} aio_is_authenticated_in @code{=true}, @code{const bool} aio_is_encrypted_in @code{=true})
 		The constructor initializes internal queues and data structures
