@@ -4596,7 +4596,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	PacketLengthEncode(len, out);
 	out.push_back(4); // V4 format
 	PacketTimeEncode(keytime, out);
-	out.push_back(108); // public-key algo: ID 108 (private/experimental) 
+	out.push_back(TMCG_OPENPGP_PKALGO_EXPERIMENTAL8); // public-key algo 
 	PacketMPIEncode(p, out); // MPI p
 	PacketMPIEncode(q, out); // MPI q
 	PacketMPIEncode(g, out); // MPI g
@@ -4748,7 +4748,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 	PacketLengthEncode(len, out);
 	out.push_back(4); // V4 format
 	PacketTimeEncode(keytime, out);
-	out.push_back(107); // public-key algo: ID 107 (private/experimental) 
+	out.push_back(TMCG_OPENPGP_PKALGO_EXPERIMENTAL7); // public-key algo
 	PacketMPIEncode(p, out); // MPI p
 	PacketMPIEncode(q, out); // MPI q
 	PacketMPIEncode(g, out); // MPI g
@@ -5083,7 +5083,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 	PacketLengthEncode(len, out);
 	out.push_back(4); // V4 format
 	PacketTimeEncode(keytime, out);
-	out.push_back(109); // public-key algo: ID 109 (private/experimental) 
+	out.push_back(TMCG_OPENPGP_PKALGO_EXPERIMENTAL9); // public-key algo
 	PacketMPIEncode(p, out); // MPI p
 	PacketMPIEncode(q, out); // MPI q
 	PacketMPIEncode(g, out); // MPI g
@@ -6089,7 +6089,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
-			else if (out.pkalgo == 107)
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7)
 			{
 				// Algorithm-Specific Fields for new tDSS keys
 				mlen = PacketMPIDecode(mpis, out.p);
@@ -6193,7 +6193,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					}
 				}
 			}
-			else if (out.pkalgo == 108)
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL8)
 			{
 				// Algorithm-Specific Fields for old tDSS keys
 				mlen = PacketMPIDecode(mpis, out.p);
@@ -6276,7 +6276,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					}
 				}
 			}
-			else if (out.pkalgo == 109)
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9)
 			{
 				// Algorithm-Specific Fields for DKG keys
 				mlen = PacketMPIDecode(mpis, out.p);
@@ -6414,9 +6414,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 				}
-				else if ((out.pkalgo == 107) ||
-				         (out.pkalgo == 108) ||
-				         (out.pkalgo == 109))
+				else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7) ||
+				         (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL8) ||
+				         (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9))
 				{
 					// Algorithm-Specific Fields tDSS/DKG
 					mlen = PacketMPIDecode(mpis,
