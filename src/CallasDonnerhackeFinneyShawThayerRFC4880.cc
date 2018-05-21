@@ -2510,6 +2510,45 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		p, q, g, y, x);
 }
 
+TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t p,
+	 const gcry_mpi_t q,
+	 const gcry_mpi_t g,
+	 const gcry_mpi_t h,
+	 const gcry_mpi_t y,
+	 const gcry_mpi_t x_i,
+	 const gcry_mpi_t xprime_i,
+	 const gcry_mpi_t n_in,
+	 const gcry_mpi_t t_in,
+	 const gcry_mpi_t i_in,
+	 const std::vector<std::string> &capl,
+	 const std::vector<gcry_mpi_t> &qual,
+	 const std::vector<gcry_mpi_t> &v_i,
+	 const std::vector<gcry_mpi_t> &x_rvss_qual,
+	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
+	 const tmcg_openpgp_octets_t &packet_in):
+		pkalgo(pkalgo_in)
+{
+	pub = new TMCG_OpenPGP_Pubkey(TMCG_OPENPGP_PKALGO_DSA, creationtime_in,
+		expirationtime_in, p, q, g, y, packet_in);
+	rsa_p = gcry_mpi_snew(2048);
+	rsa_q = gcry_mpi_snew(2048);
+	rsa_u = gcry_mpi_snew(2048);
+	rsa_d = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(2048);
+	// public-key algorithm is tDSS/DSA
+	gcry_mpi_set(dsa_x, x_i);
+	ret = gcry_sexp_build(&private_key, &erroff,
+		"(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))",
+		p, q, g, y, x_i);
+// TODO: store xprime_i
+// TODO: store and handle other public parameters: h, n, t, i,
+//       capl, qual, v_i, x_rvss_qual, c_ik
+}
+
 bool TMCG_OpenPGP_Prvkey::good
 	() const
 {
@@ -2539,6 +2578,17 @@ bool TMCG_OpenPGP_Prvkey::weak
 		xbits = gcry_mpi_get_nbits(dsa_x);
 		if (verbose > 1)
 			std::cerr << "INFO: DSA with |x| = " <<
+				xbits << " bits" << std::endl; 
+		if (xbits < 256)
+			return true; // weak key
+		return pub->weak(verbose);
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7)
+	{
+		unsigned int xbits = 0;
+		xbits = gcry_mpi_get_nbits(dsa_x);
+		if (verbose > 1)
+			std::cerr << "INFO: tDSS/DSA with |x| = " <<
 				xbits << " bits" << std::endl; 
 		if (xbits < 256)
 			return true; // weak key
@@ -7742,6 +7792,29 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA
 
 // ===========================================================================
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::Release
+	(std::vector<gcry_mpi_t> &qual, std::vector<gcry_mpi_t> &v_i, 
+	 std::vector<gcry_mpi_t> &x_rvss_qual,
+	 std::vector< std::vector<gcry_mpi_t> > &c_ik)
+{
+	for (size_t i = 0; i < qual.size(); i++)
+		gcry_mpi_release(qual[i]);
+	qual.clear();
+	for (size_t i = 0; i < v_i.size(); i++)
+		gcry_mpi_release(v_i[i]);
+	v_i.clear();
+	for (size_t i = 0; i < x_rvss_qual.size(); i++)
+		gcry_mpi_release(x_rvss_qual[i]);
+	x_rvss_qual.clear();
+	for (size_t i = 0; i < c_ik.size(); i++)
+	{
+		for (size_t k = 0; k < c_ik[i].size(); k++)
+			gcry_mpi_release(c_ik[i][k]);
+		c_ik[i].clear();
+	}
+	c_ik.clear();
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
 	 const bool primary, const bool subkey, const bool badkey,
@@ -8492,7 +8565,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 		if (!ctx.encdatalen || !ctx.encdata)
 		{
 			if (verbose)
-				std::cerr << "ERROR: no keydata to decrypt" << std::endl;
+				std::cerr << "ERROR: no data to decrypt" << std::endl;
 			return false;
 		}
 		tmcg_openpgp_byte_t *key = new tmcg_openpgp_byte_t[keylen];
@@ -8608,6 +8681,27 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			}
 			mpis.erase(mpis.begin(), mpis.begin()+mlen);
 		}
+		else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL8) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9))
+		{
+			mlen = PacketMPIDecode(mpis, ctx.x_i, chksum);
+			if (!mlen || (mlen > mpis.size()))
+			{
+				std::cerr << "ERROR: reading MPI x_i failed" <<
+					" (bad passphrase)" << std::endl;
+				return false;
+			}
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			mlen = PacketMPIDecode(mpis, ctx.xprime_i, chksum);
+			if (!mlen || (mlen > mpis.size()))
+			{
+				std::cerr << "ERROR: reading MPI xprime_i failed" <<
+					" (bad passphrase)" << std::endl;
+				return false;
+			}
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
 		else
 		{
 			if (verbose)
@@ -8680,6 +8774,35 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
 			// public-key algorithm is DSA: create new prvkey
 			prv = new TMCG_OpenPGP_Prvkey(ctx.pkalgo, ctx.keycreationtime, 0,
 				ctx.p, ctx.q, ctx.g, ctx.y, ctx.x, current_packet);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7)
+		{
+			std::vector<std::string> capl;
+			std::vector<gcry_mpi_t> qual, v_i, x_rvss_qual;
+			std::vector< std::vector<gcry_mpi_t> > c_ik;
+			tmcg_openpgp_octets_t pcur, pkts;
+			tmcg_openpgp_packet_ctx_t pctx;
+			tmcg_openpgp_byte_t ptag = 0xFF;
+			pkts.insert(pkts.end(),
+				current_packet.begin(), current_packet.end());
+			ptag = PacketDecode(pkts, verbose, pctx, pcur,
+				qual, x_rvss_qual, capl, v_i, c_ik);
+			if (ptag != 5)
+			{
+				if (verbose)
+					std::cerr << "ERROR: decoding tDSS/DSA key failed" <<
+						std::endl;
+				PacketContextRelease(pctx);
+				Release(qual, v_i, x_rvss_qual, c_ik);
+				return false;
+			}
+			// public-key algorithm is tDSS/DSA: create new prvkey
+			prv = new TMCG_OpenPGP_Prvkey(ctx.pkalgo, ctx.keycreationtime, 0,
+				ctx.p, ctx.q, ctx.g, ctx.h, ctx.y, ctx.x_i, ctx.xprime_i,
+				ctx.n, ctx.t, ctx.i, capl, qual, v_i, x_rvss_qual, c_ik,
+				current_packet);
+			PacketContextRelease(pctx);
+			Release(qual, v_i, x_rvss_qual, c_ik);
 		}
 		else
 		{

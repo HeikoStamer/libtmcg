@@ -728,6 +728,26 @@ class TMCG_OpenPGP_Prvkey
 			 const gcry_mpi_t								y,
 			 const gcry_mpi_t								x,
 			 const tmcg_openpgp_octets_t					&packet_in);
+		TMCG_OpenPGP_Prvkey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const gcry_mpi_t								p,
+			 const gcry_mpi_t								q,
+			 const gcry_mpi_t								g,
+			 const gcry_mpi_t								h,
+			 const gcry_mpi_t								y,
+			 const gcry_mpi_t								x_i,
+			 const gcry_mpi_t								xprime_i,
+			 const gcry_mpi_t								n_in,
+			 const gcry_mpi_t								t_in,
+			 const gcry_mpi_t								i_in,
+			 const std::vector<std::string>					&capl,
+			 const std::vector<gcry_mpi_t>					&qual,
+			 const std::vector<gcry_mpi_t>					&v_i,
+			 const std::vector<gcry_mpi_t>					&x_rvss_qual,
+			 const std::vector< std::vector<gcry_mpi_t> >	&c_ik,
+			 const tmcg_openpgp_octets_t					&packet_in);
 		bool good
 			() const;
 		bool weak
@@ -840,6 +860,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 				return true;
 			}
 		};
+		static void Release
+			(std::vector<gcry_mpi_t>						&qual,
+			 std::vector<gcry_mpi_t>						&v_i,
+			 std::vector<gcry_mpi_t>						&x_rvss_qual,
+			 std::vector< std::vector<gcry_mpi_t> >			&c_ik);
 		static bool PublicKeyBlockParse_Tag2
 			(const tmcg_openpgp_packet_ctx_t				&ctx,
 			 const int										verbose,
