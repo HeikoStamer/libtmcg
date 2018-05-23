@@ -850,6 +850,23 @@ TMCG_OpenPGP_UserAttribute::~TMCG_OpenPGP_UserAttribute
 // ===========================================================================
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
+	():
+		ret(1),
+		valid(false)
+{
+	// this is a dummy constructor used for simple relinking
+	rsa_n = gcry_mpi_new(2048);
+	rsa_e = gcry_mpi_new(2048);
+	elg_p = gcry_mpi_new(2048);
+	elg_g = gcry_mpi_new(2048);
+	elg_y = gcry_mpi_new(2048);
+	dsa_p = gcry_mpi_new(2048);
+	dsa_q = gcry_mpi_new(2048);
+	dsa_g = gcry_mpi_new(2048);
+	dsa_y = gcry_mpi_new(2048);
+}
+
+TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	(const tmcg_openpgp_pkalgo_t pkalgo_in,
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
@@ -1514,7 +1531,7 @@ TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
 	gcry_mpi_release(dsa_q);
 	gcry_mpi_release(dsa_g);
 	gcry_mpi_release(dsa_y);
-	if (!ret)
+	if (ret == 0)
 		gcry_sexp_release(key);
 	packet.clear();
 	sub_hashing.clear();
@@ -1565,6 +1582,10 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_d = gcry_mpi_snew(2048);
 	elg_x = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	telg_q = gcry_mpi_new(2048);
+	telg_h = gcry_mpi_new(2048);
+	telg_x_i = gcry_mpi_snew(2048);
+	telg_xprime_i = gcry_mpi_snew(2048);
 	// public-key algorithm is RSA
 	gcry_mpi_set(rsa_p, p);
 	gcry_mpi_set(rsa_q, q);
@@ -1594,6 +1615,10 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_d = gcry_mpi_snew(2048);
 	elg_x = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	telg_q = gcry_mpi_new(2048);
+	telg_h = gcry_mpi_new(2048);
+	telg_x_i = gcry_mpi_snew(2048);
+	telg_xprime_i = gcry_mpi_snew(2048);
 	// public-key algorithm is ElGamal
 	gcry_mpi_set(elg_x, x);
 	ret = gcry_sexp_build(&private_key, &erroff,
@@ -1620,11 +1645,91 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_d = gcry_mpi_snew(2048);
 	elg_x = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	telg_q = gcry_mpi_new(2048);
+	telg_h = gcry_mpi_new(2048);
+	telg_x_i = gcry_mpi_snew(2048);
+	telg_xprime_i = gcry_mpi_snew(2048);
 	// public-key algorithm is DSA
 	gcry_mpi_set(dsa_x, x);
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))",
 		p, q, g, y, x);
+}
+
+TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const gcry_mpi_t p,
+	 const gcry_mpi_t q,
+	 const gcry_mpi_t g,
+	 const gcry_mpi_t h,
+	 const gcry_mpi_t y,
+	 const gcry_mpi_t x_i,
+	 const gcry_mpi_t xprime_i,
+	 const gcry_mpi_t n_in,
+	 const gcry_mpi_t t_in,
+	 const gcry_mpi_t i_in,
+	 const std::vector<gcry_mpi_t> &qual,
+	 const std::vector<gcry_mpi_t> &v_i,
+	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
+	 const tmcg_openpgp_octets_t &packet_in):
+		pkalgo(pkalgo_in)
+{
+	pub = new TMCG_OpenPGP_Subkey(TMCG_OPENPGP_PKALGO_ELGAMAL, creationtime_in,
+		expirationtime_in, p, g, y, packet_in);
+	rsa_p = gcry_mpi_snew(2048);
+	rsa_q = gcry_mpi_snew(2048);
+	rsa_u = gcry_mpi_snew(2048);
+	rsa_d = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(2048);
+	telg_q = gcry_mpi_new(2048);
+	telg_h = gcry_mpi_new(2048);
+	telg_x_i = gcry_mpi_snew(2048);
+	telg_xprime_i = gcry_mpi_snew(2048);
+	// public-key algorithm is tElG (threshold ElGamal)
+	ret = gcry_sexp_build(&private_key, &erroff,
+		"(private-key (elg (p %M) (g %M) (y %M) (x %M)))",
+		p, g, y, h); // NOTE: this is only a dummy private key
+	gcry_mpi_set(telg_q, q);
+	gcry_mpi_set(telg_h, h);
+	gcry_mpi_set(telg_x_i, x_i);
+	gcry_mpi_set(telg_xprime_i, xprime_i);
+	telg_n = get_gcry_mpi_ui(n_in);
+	telg_t = get_gcry_mpi_ui(t_in);
+	telg_i = get_gcry_mpi_ui(i_in);
+	for (size_t i = 0; i < qual.size(); i++)
+		telg_qual.push_back(get_gcry_mpi_ui(qual[i]));
+	for (size_t i = 0; i < v_i.size(); i++)
+	{
+			mpz_ptr tmp = new mpz_t();
+			mpz_init(tmp);
+			if (!mpz_set_gcry_mpi(v_i[i], tmp))
+			{
+				std::cerr << "ERROR: mpz_set_gcry_mpi() failed" << std::endl;
+				if (ret == 0)
+					gcry_sexp_release(private_key);	
+				ret = GPG_ERR_BAD_KEY;
+			}
+			telg_v_i.push_back(tmp);
+	}
+	telg_c_ik.resize(c_ik.size());
+	for (size_t i = 0; i < c_ik.size(); i++)
+	{
+		for (size_t k = 0; k < c_ik[i].size(); k++)
+		{
+			mpz_ptr tmp = new mpz_t();
+			mpz_init(tmp);
+			if (!mpz_set_gcry_mpi(c_ik[i][k], tmp))
+			{
+				std::cerr << "ERROR: mpz_set_gcry_mpi() failed" << std::endl;
+				if (ret == 0)
+					gcry_sexp_release(private_key);	
+				ret = GPG_ERR_BAD_KEY;
+			}
+			telg_c_ik[i].push_back(tmp);
+		}
+	}
 }
 
 bool TMCG_OpenPGP_PrivateSubkey::good
@@ -1669,6 +1774,21 @@ bool TMCG_OpenPGP_PrivateSubkey::weak
 			std::cerr << "INFO: DSA with |x| = " <<
 				xbits << " bits" << std::endl; 
 		if (xbits < 256)
+			return true; // weak key
+		return pub->weak(verbose);
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9)
+	{
+		unsigned int qbits = 0, xibits = 0, xprimeibits = 0;
+		qbits = gcry_mpi_get_nbits(telg_q);
+		xibits = gcry_mpi_get_nbits(telg_x_i);
+		xprimeibits = gcry_mpi_get_nbits(telg_xprime_i);
+		if (verbose > 1)
+			std::cerr << "INFO: tElG with |q| = " <<
+				qbits << " bits, |x_i| = " <<
+				xibits << " bits, |xprime_i| = " <<
+				xprimeibits << " bits" << std::endl; 
+		if ((qbits < 256) || (xibits < 256) || (xprimeibits < 256))
 			return true; // weak key
 		return pub->weak(verbose);
 	}
@@ -1763,14 +1883,35 @@ TMCG_OpenPGP_PrivateSubkey::~TMCG_OpenPGP_PrivateSubkey
 	()
 {
 	delete pub;
+	if (ret == 0)
+		gcry_sexp_release(private_key);
 	gcry_mpi_release(rsa_p);
 	gcry_mpi_release(rsa_q);
 	gcry_mpi_release(rsa_u);
 	gcry_mpi_release(rsa_d);
 	gcry_mpi_release(elg_x);
 	gcry_mpi_release(dsa_x);
-	if (!ret)
-		gcry_sexp_release(private_key);
+	gcry_mpi_release(telg_q);
+	gcry_mpi_release(telg_h);
+	gcry_mpi_release(telg_x_i);
+	gcry_mpi_release(telg_xprime_i);
+	telg_qual.clear();
+	for (size_t i = 0; i < telg_v_i.size(); i++)
+	{
+			mpz_clear(telg_v_i[i]);
+			delete [] telg_v_i[i];
+	}
+	telg_v_i.clear();
+	for (size_t i = 0; i < telg_c_ik.size(); i++)
+	{
+		for (size_t k = 0; k < telg_c_ik[i].size(); k++)
+		{
+			mpz_clear(telg_c_ik[i][k]);
+			delete [] telg_c_ik[i][k];
+		}
+		telg_c_ik[i].clear();
+	}
+	telg_c_ik.clear();
 }
 
 // ===========================================================================
@@ -2421,7 +2562,7 @@ TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
 	gcry_mpi_release(dsa_q);
 	gcry_mpi_release(dsa_g);
 	gcry_mpi_release(dsa_y);
-	if (!ret)
+	if (ret == 0)
 		gcry_sexp_release(key);
 	packet.clear();
 	pub_hashing.clear();
@@ -2474,6 +2615,9 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	rsa_u = gcry_mpi_snew(2048);
 	rsa_d = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	tdss_h = gcry_mpi_new(2048);
+	tdss_x_i = gcry_mpi_snew(2048);
+	tdss_xprime_i = gcry_mpi_snew(2048);
 	// public-key algorithm is RSA
 	gcry_mpi_set(rsa_p, p);
 	gcry_mpi_set(rsa_q, q);
@@ -2503,6 +2647,9 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	rsa_u = gcry_mpi_snew(2048);
 	rsa_d = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	tdss_h = gcry_mpi_new(2048);
+	tdss_x_i = gcry_mpi_snew(2048);
+	tdss_xprime_i = gcry_mpi_snew(2048);
 	// public-key algorithm is DSA
 	gcry_mpi_set(dsa_x, x);
 	ret = gcry_sexp_build(&private_key, &erroff,
@@ -2526,7 +2673,6 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t i_in,
 	 const std::vector<std::string> &capl,
 	 const std::vector<gcry_mpi_t> &qual,
-	 const std::vector<gcry_mpi_t> &v_i,
 	 const std::vector<gcry_mpi_t> &x_rvss_qual,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const tmcg_openpgp_octets_t &packet_in):
@@ -2539,14 +2685,49 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	rsa_u = gcry_mpi_snew(2048);
 	rsa_d = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	tdss_h = gcry_mpi_new(2048);
+	tdss_x_i = gcry_mpi_snew(2048);
+	tdss_xprime_i = gcry_mpi_snew(2048);
 	// public-key algorithm is tDSS/DSA
-	gcry_mpi_set(dsa_x, x_i);
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))",
-		p, q, g, y, x_i);
-// TODO: store xprime_i
-// TODO: store and handle other public parameters: h, n, t, i,
-//       capl, qual, v_i, x_rvss_qual, c_ik
+		p, q, g, y, h); // NOTE: this is only a dummy private key
+	gcry_mpi_set(tdss_h, h);
+	gcry_mpi_set(tdss_x_i, x_i);
+	gcry_mpi_set(tdss_xprime_i, xprime_i);
+	tdss_n = get_gcry_mpi_ui(n_in);
+	tdss_t = get_gcry_mpi_ui(t_in);
+	tdss_i = get_gcry_mpi_ui(i_in);
+	for (size_t i = 0; i < capl.size(); i++)
+		tdss_capl.push_back(capl[i]);
+	for (size_t i = 0; i < qual.size(); i++)
+		tdss_qual.push_back(get_gcry_mpi_ui(qual[i]));
+	for (size_t i = 0; i < x_rvss_qual.size(); i++)
+		tdss_x_rvss_qual.push_back(get_gcry_mpi_ui(x_rvss_qual[i]));
+	tdss_c_ik.resize(c_ik.size());
+	for (size_t i = 0; i < c_ik.size(); i++)
+	{
+		for (size_t k = 0; k < c_ik[i].size(); k++)
+		{
+			mpz_ptr tmp = new mpz_t();
+			mpz_init(tmp);
+			if (!mpz_set_gcry_mpi(c_ik[i][k], tmp))
+			{
+				std::cerr << "ERROR: mpz_set_gcry_mpi() failed" << std::endl;
+				if (ret == 0)
+					gcry_sexp_release(private_key);	
+				ret = GPG_ERR_BAD_KEY;
+			}
+			tdss_c_ik[i].push_back(tmp);
+		}
+	}
+	if (tdss_capl.size() != tdss_n)
+	{
+		std::cerr << "ERROR: tDSS/DSA parameter mismatch" << std::endl;
+		if (ret == 0)
+			gcry_sexp_release(private_key);	
+		ret = GPG_ERR_BAD_KEY;
+	}
 }
 
 bool TMCG_OpenPGP_Prvkey::good
@@ -2585,12 +2766,14 @@ bool TMCG_OpenPGP_Prvkey::weak
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7)
 	{
-		unsigned int xbits = 0;
-		xbits = gcry_mpi_get_nbits(dsa_x);
+		unsigned int xibits = 0, xprimeibits = 0;
+		xibits = gcry_mpi_get_nbits(tdss_x_i);
+		xprimeibits = gcry_mpi_get_nbits(tdss_xprime_i);
 		if (verbose > 1)
-			std::cerr << "INFO: tDSS/DSA with |x| = " <<
-				xbits << " bits" << std::endl; 
-		if (xbits < 256)
+			std::cerr << "INFO: tDSS/DSA with |x_i| = " <<
+				xibits << " bits, |xprime_i| = " <<
+				xprimeibits << " bits" << std::endl; 
+		if ((xibits < 256) || (xprimeibits < 256))
 			return true; // weak key
 		return pub->weak(verbose);
 	}
@@ -2649,20 +2832,84 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 	}
 }
 
+void TMCG_OpenPGP_Prvkey::RelinkPublicSubkeys
+	()
+{
+	// relink the public subkeys within private key structures
+	for (size_t i = 0; i < private_subkeys.size(); i++)
+	{
+		(pub->subkeys).push_back(private_subkeys[i]->pub);
+		private_subkeys[i]->pub = new TMCG_OpenPGP_Subkey(); // dummy
+	}
+}
+
+bool TMCG_OpenPGP_Prvkey::tDSS_CreateMapping
+	(const std::vector<std::string> &peers, const int verbose)
+{
+	// create one-to-one mapping based on the stored canonicalized peer list
+	tdss_idx2dkg.clear();
+	tdss_dkg2idx.clear();
+	for (size_t i = 0; i < peers.size(); i++)
+	{
+		bool found = false;
+		for (size_t j = 0; j < tdss_capl.size(); j++)
+		{
+			if (peers[i] == tdss_capl[j])
+			{
+				found = true;
+				tdss_idx2dkg[i] = j;
+				tdss_dkg2idx[j] = i;
+				if (verbose > 2)
+					std::cerr << "INFO: mapping " << i << " -> " <<
+						"P_" << j << std::endl; 
+				break;
+			}
+		}
+		if (!found)
+		{
+			tdss_idx2dkg.clear();
+			tdss_dkg2idx.clear();
+			if (verbose)
+				std::cerr << "ERROR: peer \"" << peers[i] << "\" not" <<
+					" found inside CAPL from tDSS/DSA key" << std::endl;
+			return false;
+		}
+	}
+	return true;
+}
+
 TMCG_OpenPGP_Prvkey::~TMCG_OpenPGP_Prvkey
 	()
 {
 	delete pub;
+	if (ret == 0)
+		gcry_sexp_release(private_key);
+	for (size_t i = 0; i < private_subkeys.size(); i++)
+		delete private_subkeys[i];
+	private_subkeys.clear();
 	gcry_mpi_release(rsa_p);
 	gcry_mpi_release(rsa_q);
 	gcry_mpi_release(rsa_u);
 	gcry_mpi_release(rsa_d);
 	gcry_mpi_release(dsa_x);
-	if (!ret)
-		gcry_sexp_release(private_key);
-	for (size_t i = 0; i < private_subkeys.size(); i++)
-		delete private_subkeys[i];
-	private_subkeys.clear();
+	gcry_mpi_release(tdss_h);
+	gcry_mpi_release(tdss_x_i);
+	gcry_mpi_release(tdss_xprime_i);
+	tdss_capl.clear();
+	tdss_qual.clear();
+	tdss_x_rvss_qual.clear();
+	for (size_t i = 0; i < tdss_c_ik.size(); i++)
+	{
+		for (size_t k = 0; k < tdss_c_ik[i].size(); k++)
+		{
+			mpz_clear(tdss_c_ik[i][k]);
+			delete [] tdss_c_ik[i][k];
+		}
+		tdss_c_ik[i].clear();
+	}
+	tdss_c_ik.clear();
+	tdss_idx2dkg.clear();
+	tdss_dkg2idx.clear();
 }
 
 // ===========================================================================
@@ -6141,7 +6388,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			}
 			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7)
 			{
-				// Algorithm-Specific Fields for new tDSS keys
+				// Algorithm-Specific Fields for new tDSS/DSA keys
 				mlen = PacketMPIDecode(mpis, out.p);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
@@ -6245,7 +6492,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			}
 			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL8)
 			{
-				// Algorithm-Specific Fields for old tDSS keys
+				// Algorithm-Specific Fields for old tDSS/DSA keys
 				mlen = PacketMPIDecode(mpis, out.p);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
@@ -6328,7 +6575,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			}
 			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9)
 			{
-				// Algorithm-Specific Fields for DKG keys
+				// Algorithm-Specific Fields for tElG keys
 				mlen = PacketMPIDecode(mpis, out.p);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
@@ -8799,7 +9046,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
 			// public-key algorithm is tDSS/DSA: create new prvkey
 			prv = new TMCG_OpenPGP_Prvkey(ctx.pkalgo, ctx.keycreationtime, 0,
 				ctx.p, ctx.q, ctx.g, ctx.h, ctx.y, ctx.x_i, ctx.xprime_i,
-				ctx.n, ctx.t, ctx.i, capl, qual, v_i, x_rvss_qual, c_ik,
+				ctx.n, ctx.t, ctx.i, capl, qual, x_rvss_qual, c_ik,
 				current_packet);
 			PacketContextRelease(pctx);
 			Release(qual, v_i, x_rvss_qual, c_ik);
@@ -8864,7 +9111,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
 	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
 	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
 	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
-	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA))
+	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
+			 (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9))
 	{
 		// evaluate the context
 		if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) || 
@@ -8889,6 +9137,34 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
 			sub = new TMCG_OpenPGP_PrivateSubkey(ctx.pkalgo,
 				ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g, ctx.y, ctx.x,
 				current_packet);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9)
+		{
+			std::vector<std::string> capl;
+			std::vector<gcry_mpi_t> qual, v_i, x_rvss_qual;
+			std::vector< std::vector<gcry_mpi_t> > c_ik;
+			tmcg_openpgp_octets_t pcur, pkts;
+			tmcg_openpgp_packet_ctx_t pctx;
+			tmcg_openpgp_byte_t ptag = 0xFF;
+			pkts.insert(pkts.end(),
+				current_packet.begin(), current_packet.end());
+			ptag = PacketDecode(pkts, verbose, pctx, pcur,
+				qual, x_rvss_qual, capl, v_i, c_ik);
+			if (ptag != 7)
+			{
+				if (verbose)
+					std::cerr << "ERROR: decoding tElG key failed" << std::endl;
+				PacketContextRelease(pctx);
+				Release(qual, v_i, x_rvss_qual, c_ik);
+				return false;
+			}
+			// public-key algorithm is tElG: create new private subkey
+			sub = new TMCG_OpenPGP_PrivateSubkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g, ctx.h, ctx.y,
+				ctx.x_i, ctx.xprime_i, ctx.n, ctx.t, ctx.i, qual, v_i, c_ik,
+				current_packet);
+			PacketContextRelease(pctx);
+			Release(qual, v_i, x_rvss_qual, c_ik);
 		}
 		if (!sub->good())
 		{
@@ -8999,7 +9275,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag9
 	 TMCG_OpenPGP_Message* &msg)
 {
 	if (verbose > 1)
-		std::cerr << "INFO: SED length = " << ctx.encdatalen << std::endl;
+		std::cerr << "INFO: SE length = " << ctx.encdatalen << std::endl;
 	if ((!msg->have_sed) && (!msg->have_seipd))
 	{
 		msg->have_sed = true;
@@ -9009,7 +9285,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag9
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: duplicate SED/SEIPD packet found" << std::endl;
+			std::cerr << "ERROR: duplicate SE/SEIP packet found" << std::endl;
 		return false;
 	}
 	return true;
@@ -9048,7 +9324,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag18
 	 TMCG_OpenPGP_Message* &msg)
 {
 	if (verbose > 1)
-		std::cerr << "INFO: SEIPD length = " << ctx.encdatalen << std::endl;
+		std::cerr << "INFO: SEIP length = " << ctx.encdatalen << std::endl;
 	if ((!msg->have_sed) && (!msg->have_seipd))
 	{
 		msg->have_seipd = true;
@@ -9058,7 +9334,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag18
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: duplicate SED/SEIPD packet found" << std::endl;
+			std::cerr << "ERROR: duplicate SE/SEIP packet found" << std::endl;
 		return false;
 	}
 	return true;

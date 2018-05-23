@@ -92,9 +92,9 @@ enum tmcg_openpgp_pkalgo_t
 	TMCG_OPENPGP_PKALGO_EXPERIMENTAL4		= 104,
 	TMCG_OPENPGP_PKALGO_EXPERIMENTAL5		= 105,
 	TMCG_OPENPGP_PKALGO_EXPERIMENTAL6		= 106,
-	TMCG_OPENPGP_PKALGO_EXPERIMENTAL7		= 107,
-	TMCG_OPENPGP_PKALGO_EXPERIMENTAL8		= 108,
-	TMCG_OPENPGP_PKALGO_EXPERIMENTAL9		= 109,
+	TMCG_OPENPGP_PKALGO_EXPERIMENTAL7		= 107, // tDSS/DSA in LibTMCG
+	TMCG_OPENPGP_PKALGO_EXPERIMENTAL8		= 108, // (tDSS/DSA old format)
+	TMCG_OPENPGP_PKALGO_EXPERIMENTAL9		= 109, // tElG in LibTMCG
 	TMCG_OPENPGP_PKALGO_EXPERIMENTAL10		= 110
 };
 
@@ -502,6 +502,8 @@ class TMCG_OpenPGP_Subkey
 		std::vector<tmcg_openpgp_revkey_t>					revkeys;
 
 		TMCG_OpenPGP_Subkey
+			(); // this is a dummy constructor used for simple relinking
+		TMCG_OpenPGP_Subkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
 			 const time_t									creationtime_in,
 			 const time_t									expirationtime_in,
@@ -568,6 +570,16 @@ class TMCG_OpenPGP_PrivateSubkey
 		gcry_mpi_t											rsa_d;
 		gcry_mpi_t											elg_x;
 		gcry_mpi_t											dsa_x;
+		size_t												telg_n;
+		size_t												telg_t;
+		size_t												telg_i;
+		gcry_mpi_t											telg_q;
+		gcry_mpi_t											telg_h;
+		gcry_mpi_t											telg_x_i;
+		gcry_mpi_t											telg_xprime_i;
+		std::vector<size_t>									telg_qual;
+		std::vector<mpz_ptr>								telg_v_i;
+		std::vector< std::vector<mpz_ptr> >					telg_c_ik;
 
 		TMCG_OpenPGP_PrivateSubkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
@@ -598,6 +610,24 @@ class TMCG_OpenPGP_PrivateSubkey
 			 const gcry_mpi_t								g,
 			 const gcry_mpi_t								y,
 			 const gcry_mpi_t								x,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		TMCG_OpenPGP_PrivateSubkey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const gcry_mpi_t								p,
+			 const gcry_mpi_t								q,
+			 const gcry_mpi_t								g,
+			 const gcry_mpi_t								h,
+			 const gcry_mpi_t								y,
+			 const gcry_mpi_t								x_i,
+			 const gcry_mpi_t								xprime_i,
+			 const gcry_mpi_t								n_in,
+			 const gcry_mpi_t								t_in,
+			 const gcry_mpi_t								i_in,
+			 const std::vector<gcry_mpi_t>					&qual,
+			 const std::vector<gcry_mpi_t>					&v_i,
+			 const std::vector< std::vector<gcry_mpi_t> >	&c_ik,
 			 const tmcg_openpgp_octets_t					&packet_in);
 		bool good
 			() const;
@@ -700,12 +730,24 @@ class TMCG_OpenPGP_Prvkey
 		tmcg_openpgp_pkalgo_t								pkalgo;
 		TMCG_OpenPGP_Pubkey*								pub;
 		gcry_sexp_t											private_key;
+		std::vector<TMCG_OpenPGP_PrivateSubkey*>			private_subkeys;
 		gcry_mpi_t											rsa_p;
 		gcry_mpi_t											rsa_q;
 		gcry_mpi_t											rsa_u;
 		gcry_mpi_t											rsa_d;
 		gcry_mpi_t											dsa_x;
-		std::vector<TMCG_OpenPGP_PrivateSubkey*>			private_subkeys;
+		size_t												tdss_n;
+		size_t												tdss_t;
+		size_t												tdss_i;
+		gcry_mpi_t											tdss_h;
+		gcry_mpi_t											tdss_x_i;
+		gcry_mpi_t											tdss_xprime_i;
+		std::vector<std::string>							tdss_capl;
+		std::vector<size_t>									tdss_qual;
+		std::vector<size_t>									tdss_x_rvss_qual;
+		std::vector< std::vector<mpz_ptr> >					tdss_c_ik;
+		std::map<size_t, size_t>							tdss_idx2dkg;
+		std::map<size_t, size_t>							tdss_dkg2idx;
 
 		TMCG_OpenPGP_Prvkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
@@ -744,7 +786,6 @@ class TMCG_OpenPGP_Prvkey
 			 const gcry_mpi_t								i_in,
 			 const std::vector<std::string>					&capl,
 			 const std::vector<gcry_mpi_t>					&qual,
-			 const std::vector<gcry_mpi_t>					&v_i,
 			 const std::vector<gcry_mpi_t>					&x_rvss_qual,
 			 const std::vector< std::vector<gcry_mpi_t> >	&c_ik,
 			 const tmcg_openpgp_octets_t					&packet_in);
@@ -756,6 +797,11 @@ class TMCG_OpenPGP_Prvkey
 			(const TMCG_OpenPGP_PKESK*						&esk,
 			 const int										verbose,
 			 tmcg_openpgp_octets_t							&out) const;
+		void RelinkPublicSubkeys
+			();
+		bool tDSS_CreateMapping
+			(const std::vector<std::string>					&peers,
+			 const int										verbose);
 		~TMCG_OpenPGP_Prvkey
 			();
 };
