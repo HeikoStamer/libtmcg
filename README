@@ -89,7 +89,7 @@ Security
   for creating such a channel, however, only under the additional condition
   that the number of parties $t$ who act faulty or even malicious is
   reasonable small. In almost full asynchronous environments like the
-  Internet resilience (somtimes called robustness) is achievable for $t < n/3$
+  Internet resilience (sometimes called robustness) is achievable for $t < n/3$
   only, where $n$ denotes the total number of parties in the protocol.
   LibTMCG provides a well-known protocol due to Bracha in a slightly optimized
   variant by Cachin, Kursawe, Petzold, and Shoup. It works for $n >= 2$
