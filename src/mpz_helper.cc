@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@
 bool mpz_get_gcry_mpi
 	(gcry_mpi_t &out, mpz_srcptr value)
 {
-	size_t size = mpz_sizeinbase(value, 16);
-	size_t bufsize = size + 2; // two extra bytes are for a possible minus sign, and the null-terminator
+	// two extra bytes are for a possible minus sign, and the null-terminator
+	size_t bufsize = mpz_sizeinbase(value, 16) + 2;
 	char *buf = new char[bufsize];
 	memset(buf, 0, bufsize);
 	mpz_get_str(buf, 16, value);
@@ -50,7 +50,8 @@ bool mpz_set_gcry_mpi
 	char *buf = new char[TMCG_MAX_VALUE_CHARS];
 	memset(buf, 0, TMCG_MAX_VALUE_CHARS);
 	size_t buflen;
-	gcry_error_t ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buf, TMCG_MAX_VALUE_CHARS - 1, &buflen, in);
+	gcry_error_t ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buf,
+		TMCG_MAX_VALUE_CHARS - 1, &buflen, in);
 	if (ret)
 	{
 		mpz_set_ui(value, 0L); // indicates an error
@@ -74,7 +75,8 @@ size_t get_gcry_mpi_ui
 	size_t buflen, result;
 	mpz_t value;
 	mpz_init(value);
-	gcry_error_t ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buf, TMCG_MAX_VALUE_CHARS - 1, &buflen, in);
+	gcry_error_t ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buf,
+		TMCG_MAX_VALUE_CHARS - 1, &buflen, in);
 	if (ret)
 		mpz_set_ui(value, 0L); // indicates an error
 	else
@@ -89,8 +91,8 @@ size_t get_gcry_mpi_ui
 std::ostream& operator <<
 	(std::ostream &out, mpz_srcptr value)
 {
-	size_t size = mpz_sizeinbase(value, TMCG_MPZ_IO_BASE);
-	size_t bufsize = size + 2; // two extra bytes are for a possible minus sign, and the null-terminator
+	// two extra bytes are for a possible minus sign, and the null-terminator
+	size_t bufsize = mpz_sizeinbase(value, TMCG_MPZ_IO_BASE) + 2;
 	char *buf = new char[bufsize];
 	memset(buf, 0, bufsize);
 	out << mpz_get_str(buf, TMCG_MPZ_IO_BASE, value);
@@ -112,13 +114,31 @@ std::istream& operator >>
 	return in;
 }
 
-/* The algorithm for polynomial interpolation is adapted from Victor Shoup's NTL 10.3.0. */
+// iostream operators for gcry_mpi_t
+std::ostream& operator <<
+	(std::ostream &out, const gcry_mpi_t value)
+{
+	mpz_t tmp;
+	mpz_init(tmp);
+	if (mpz_set_gcry_mpi(value, tmp))
+	{
+		out << tmp;
+	}
+	else
+	{
+		out.setstate(std::ostream::iostate(std::ostream::failbit));
+	}
+	mpz_clear(tmp);
+	return out;
+}
+
+// algorithm for polynomial interpolation adapted from Victor Shoup's NTL 10.3.0
 bool interpolate_polynom
 	(const std::vector<mpz_ptr> &a, const std::vector<mpz_ptr> &b,
 	mpz_srcptr q, std::vector<mpz_ptr> &f)
 {
 	size_t m = a.size();
-	if ((b.size() != m) || (m == 0) || (f.size() != m)) 
+	if ((b.size() != m) || (m == 0) || (f.size() != m) || !mpz_cmp_ui(q, 0L)) 
 		return false;
 	std::vector<mpz_ptr> prod, res;
 	for (size_t k = 0; k < m; k++)

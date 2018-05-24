@@ -255,6 +255,8 @@ int main
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA(hash,
 		dsakey, r, s);
 	assert(!ret);
+	std::cout << "r = " << r << std::endl;
+	std::cout << "s = " << s << std::endl;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode(trailer, left,
 		r, s, sig);
 	CallasDonnerhackeFinneyShawThayerRFC4880::

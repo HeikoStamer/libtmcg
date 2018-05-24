@@ -7,7 +7,9 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
-* [2018-05-??] RFC4880: added support for tDSS/DSA in PrivateKeyBlockParse()
+* [2018-05-24] mpz_helper: added iostream operator << for gcry_mpi_t
+* [2018-05-23] RFC4880: added support for tElG in PrivateKeyBlockParse()
+* [2018-05-23] RFC4880: added support for tDSS/DSA in PrivateKeyBlockParse()
 * [2018-05-19] aiounicast: added PrintStatistics()
 * [2018-05-06] added autoconf feature (--with-botan) for optional Botan support
 * [2018-05-03] RFC4880: use secure memory for some of tmcg_openpgp_packet_ctx_t
@@ -19,8 +21,8 @@ in the sources of this package and additionally can be obtained from Internet
 * [2018-04-25] RFC4880: changed CertificationHash() to support user attributes
 * [2018-04-24] RFC4880: added limit TMCG_OPENPGP_MAX_ALLOC for memory allocation
 * [2018-04-22] RFC4880: added support for Camellia cipher (cf. RFC 5581)
-* [2018-04-22] added abstraction types tmcg_mpi_vector_t and tmcg_mpi_matrix_t
-* [2018-04-22] added abstraction types tmcg_mpz_vector_t and tmcg_mpz_matrix_t
+* [2018-04-22] added abstract types tmcg_mpi_vector_t and tmcg_mpi_matrix_t
+* [2018-04-22] added abstract types tmcg_mpz_vector_t and tmcg_mpz_matrix_t
 * [2018-03-29] VTMF: added KeyGenerationProtocol_NumberOfKeys()
 * [2018-03-20] release 1.3.12 of LibTMCG
 * [2018-03-19] RFC4880: added PacketSigPrepareDesignatedRevoker()

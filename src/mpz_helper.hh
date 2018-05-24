@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -48,7 +48,11 @@
 	std::istream& operator >>
 		(std::istream &in, mpz_ptr value);
 
-	// polynomial interpolation
+	// iostream operators for gcry_mpi_t
+	std::ostream& operator <<
+		(std::ostream &out, const gcry_mpi_t value);
+
+	// polynomial interpolation modulo q
 	bool interpolate_polynom
 		(const std::vector<mpz_ptr> &a, const std::vector<mpz_ptr> &b,
 		mpz_srcptr q, std::vector<mpz_ptr> &f);
