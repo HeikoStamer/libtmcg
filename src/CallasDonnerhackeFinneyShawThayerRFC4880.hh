@@ -799,6 +799,8 @@ class TMCG_OpenPGP_Prvkey
 			 tmcg_openpgp_octets_t							&out) const;
 		void RelinkPublicSubkeys
 			();
+		void RelinkPrivateSubkeys
+			();
 		bool tDSS_CreateMapping
 			(const std::vector<std::string>					&peers,
 			 const int										verbose);

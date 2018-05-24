@@ -2835,12 +2835,26 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 void TMCG_OpenPGP_Prvkey::RelinkPublicSubkeys
 	()
 {
+	assert((pub->subkeys).size() == 0);
 	// relink the public subkeys within private key structures
 	for (size_t i = 0; i < private_subkeys.size(); i++)
 	{
 		(pub->subkeys).push_back(private_subkeys[i]->pub);
-		private_subkeys[i]->pub = new TMCG_OpenPGP_Subkey(); // dummy
+		private_subkeys[i]->pub = new TMCG_OpenPGP_Subkey(); // create dummy
 	}
+}
+
+void TMCG_OpenPGP_Prvkey::RelinkPrivateSubkeys
+	()
+{
+	for (size_t i = 0; i < private_subkeys.size(); i++)
+		delete private_subkeys[i]->pub; // release dummy
+	// relink the private subkeys within private key structures
+	for (size_t i = 0; i < private_subkeys.size(); i++)
+	{
+		private_subkeys[i]->pub = pub->subkeys[i];
+	}
+	(pub->subkeys).clear();
 }
 
 bool TMCG_OpenPGP_Prvkey::tDSS_CreateMapping
