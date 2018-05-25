@@ -1682,6 +1682,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
 	rsa_d = gcry_mpi_snew(2048);
+	elg_x = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
 	telg_q = gcry_mpi_new(2048);
 	telg_h = gcry_mpi_new(2048);
