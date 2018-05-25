@@ -1703,15 +1703,9 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		telg_qual.push_back(get_gcry_mpi_ui(qual[i]));
 	for (size_t i = 0; i < v_i.size(); i++)
 	{
-			mpz_ptr tmp = new mpz_t();
-			mpz_init(tmp);
-			if (!mpz_set_gcry_mpi(v_i[i], tmp))
-			{
-				std::cerr << "ERROR: mpz_set_gcry_mpi() failed" << std::endl;
-				if (ret == 0)
-					gcry_sexp_release(private_key);	
-				ret = GPG_ERR_BAD_KEY;
-			}
+			gcry_mpi_t tmp;
+			tmp = gcry_mpi_new(2048);
+			gcry_mpi_set(tmp, v_i[i]);
 			telg_v_i.push_back(tmp);
 	}
 	telg_c_ik.resize(c_ik.size());
@@ -1719,15 +1713,9 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	{
 		for (size_t k = 0; k < c_ik[i].size(); k++)
 		{
-			mpz_ptr tmp = new mpz_t();
-			mpz_init(tmp);
-			if (!mpz_set_gcry_mpi(c_ik[i][k], tmp))
-			{
-				std::cerr << "ERROR: mpz_set_gcry_mpi() failed" << std::endl;
-				if (ret == 0)
-					gcry_sexp_release(private_key);	
-				ret = GPG_ERR_BAD_KEY;
-			}
+			gcry_mpi_t tmp;
+			tmp = gcry_mpi_new(2048);
+			gcry_mpi_set(tmp, c_ik[i][k]);
 			telg_c_ik[i].push_back(tmp);
 		}
 	}
@@ -1898,18 +1886,12 @@ TMCG_OpenPGP_PrivateSubkey::~TMCG_OpenPGP_PrivateSubkey
 	gcry_mpi_release(telg_xprime_i);
 	telg_qual.clear();
 	for (size_t i = 0; i < telg_v_i.size(); i++)
-	{
-			mpz_clear(telg_v_i[i]);
-			delete [] telg_v_i[i];
-	}
+		gcry_mpi_release(telg_v_i[i]);
 	telg_v_i.clear();
 	for (size_t i = 0; i < telg_c_ik.size(); i++)
 	{
 		for (size_t k = 0; k < telg_c_ik[i].size(); k++)
-		{
-			mpz_clear(telg_c_ik[i][k]);
-			delete [] telg_c_ik[i][k];
-		}
+			gcry_mpi_release(telg_c_ik[i][k]);
 		telg_c_ik[i].clear();
 	}
 	telg_c_ik.clear();
@@ -2710,15 +2692,9 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	{
 		for (size_t k = 0; k < c_ik[i].size(); k++)
 		{
-			mpz_ptr tmp = new mpz_t();
-			mpz_init(tmp);
-			if (!mpz_set_gcry_mpi(c_ik[i][k], tmp))
-			{
-				std::cerr << "ERROR: mpz_set_gcry_mpi() failed" << std::endl;
-				if (ret == 0)
-					gcry_sexp_release(private_key);	
-				ret = GPG_ERR_BAD_KEY;
-			}
+			gcry_mpi_t tmp;
+			tmp = gcry_mpi_new(2048);
+			gcry_mpi_set(tmp, c_ik[i][k]);
 			tdss_c_ik[i].push_back(tmp);
 		}
 	}
@@ -2916,10 +2892,7 @@ TMCG_OpenPGP_Prvkey::~TMCG_OpenPGP_Prvkey
 	for (size_t i = 0; i < tdss_c_ik.size(); i++)
 	{
 		for (size_t k = 0; k < tdss_c_ik[i].size(); k++)
-		{
-			mpz_clear(tdss_c_ik[i][k]);
-			delete [] tdss_c_ik[i][k];
-		}
+			gcry_mpi_release(tdss_c_ik[i][k]);
 		tdss_c_ik[i].clear();
 	}
 	tdss_c_ik.clear();
