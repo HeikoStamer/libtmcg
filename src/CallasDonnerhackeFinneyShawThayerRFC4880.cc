@@ -1574,8 +1574,11 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const tmcg_openpgp_octets_t &packet_in):
 		pkalgo(pkalgo_in)
 {
+	tmcg_openpgp_octets_t sub;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
+		pkalgo_in, n, e, e, e, sub);
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
-		n, e, packet_in); // FIXME: packet_in is not a public subkey
+		n, e, sub);
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -1608,8 +1611,11 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const tmcg_openpgp_octets_t &packet_in):
 		pkalgo(pkalgo_in)
 {
+	tmcg_openpgp_octets_t sub;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
+		pkalgo_in, p, p, g, y, sub);
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
-		p, g, y, packet_in); // FIXME: packet_in is not a public subkey
+		p, g, y, sub);
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -1639,8 +1645,11 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const tmcg_openpgp_octets_t &packet_in):
 		pkalgo(pkalgo_in)
 {
+	tmcg_openpgp_octets_t sub;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
+		pkalgo_in, p, q, g, y, sub);
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
-		p, q, g, y, packet_in); // FIXME: packet_in is not a public subkey
+		p, q, g, y, sub);
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -1679,8 +1688,11 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const tmcg_openpgp_octets_t &packet_in):
 		pkalgo(pkalgo_in)
 {
+	tmcg_openpgp_octets_t sub;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
+		TMCG_OPENPGP_PKALGO_ELGAMAL, p, p, g, y, sub);
 	pub = new TMCG_OpenPGP_Subkey(TMCG_OPENPGP_PKALGO_ELGAMAL, creationtime_in,
-		expirationtime_in, p, g, y, packet_in); // FIXME: packet_in is not a public subkey
+		expirationtime_in, p, g, y, sub);
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -2596,8 +2608,11 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const tmcg_openpgp_octets_t &packet_in):
 		pkalgo(pkalgo_in)
 {
+	tmcg_openpgp_octets_t pkt;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in,
+		pkalgo_in, n, e, e, e, pkt);
 	pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
-		n, e, packet_in); // FIXME: packet_in is not a public key
+		n, e, pkt);
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -2629,8 +2644,11 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const tmcg_openpgp_octets_t &packet_in):
 		pkalgo(pkalgo_in)
 {
+	tmcg_openpgp_octets_t pkt;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in,
+		pkalgo_in, p, q, g, y, pkt);
 	pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
-		p, q, g, y, packet_in); // FIXME: packet_in is not a public key
+		p, q, g, y, pkt);
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -2668,8 +2686,11 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const tmcg_openpgp_octets_t &packet_in):
 		pkalgo(pkalgo_in)
 {
+	tmcg_openpgp_octets_t pkt;
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in,
+		TMCG_OPENPGP_PKALGO_DSA, p, q, g, y, pkt);
 	pub = new TMCG_OpenPGP_Pubkey(TMCG_OPENPGP_PKALGO_DSA, creationtime_in,
-		expirationtime_in, p, q, g, y, packet_in); // FIXME: packet_in is not a public key
+		expirationtime_in, p, q, g, y, pkt);
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
