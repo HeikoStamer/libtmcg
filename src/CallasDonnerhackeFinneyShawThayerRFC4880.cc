@@ -1575,7 +1575,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		pkalgo(pkalgo_in)
 {
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
-		n, e, packet_in);
+		n, e, packet_in); // FIXME: packet_in is not a public subkey
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -1594,6 +1594,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (rsa (n %M) (e %M) (d %M) (p %M) (q %M) (u %M)))",
 		n, e, d, p, q, u);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
 TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
@@ -1608,7 +1609,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		pkalgo(pkalgo_in)
 {
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
-		p, g, y, packet_in);
+		p, g, y, packet_in); // FIXME: packet_in is not a public subkey
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -1623,6 +1624,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	gcry_mpi_set(elg_x, x);
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (elg (p %M) (g %M) (y %M) (x %M)))", p, g, y, x);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
 TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
@@ -1638,7 +1640,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		pkalgo(pkalgo_in)
 {
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
-		p, q, g, y, packet_in);
+		p, q, g, y, packet_in); // FIXME: packet_in is not a public subkey
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -1654,6 +1656,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))",
 		p, q, g, y, x);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
 TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
@@ -1677,7 +1680,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		pkalgo(pkalgo_in)
 {
 	pub = new TMCG_OpenPGP_Subkey(TMCG_OPENPGP_PKALGO_ELGAMAL, creationtime_in,
-		expirationtime_in, p, g, y, packet_in);
+		expirationtime_in, p, g, y, packet_in); // FIXME: packet_in is not a public subkey
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -1692,6 +1695,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (elg (p %M) (g %M) (y %M) (x %M)))",
 		p, g, y, h); // NOTE: this is only a dummy private key
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	gcry_mpi_set(telg_q, q);
 	gcry_mpi_set(telg_h, h);
 	gcry_mpi_set(telg_x_i, x_i);
@@ -1895,6 +1899,7 @@ TMCG_OpenPGP_PrivateSubkey::~TMCG_OpenPGP_PrivateSubkey
 		telg_c_ik[i].clear();
 	}
 	telg_c_ik.clear();
+	packet.clear();
 }
 
 // ===========================================================================
@@ -2592,7 +2597,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		pkalgo(pkalgo_in)
 {
 	pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
-		n, e, packet_in);
+		n, e, packet_in); // FIXME: packet_in is not a public key
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -2609,6 +2614,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (rsa (n %M) (e %M) (d %M) (p %M) (q %M) (u %M)))",
 		n, e, d, p, q, u);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
 TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
@@ -2624,7 +2630,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		pkalgo(pkalgo_in)
 {
 	pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
-		p, q, g, y, packet_in);
+		p, q, g, y, packet_in); // FIXME: packet_in is not a public key
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -2638,6 +2644,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))",
 		p, q, g, y, x);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
 TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
@@ -2662,7 +2669,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		pkalgo(pkalgo_in)
 {
 	pub = new TMCG_OpenPGP_Pubkey(TMCG_OPENPGP_PKALGO_DSA, creationtime_in,
-		expirationtime_in, p, q, g, y, packet_in);
+		expirationtime_in, p, q, g, y, packet_in); // FIXME: packet_in is not a public key
 	rsa_p = gcry_mpi_snew(2048);
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
@@ -2675,6 +2682,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))",
 		p, q, g, y, h); // NOTE: this is only a dummy private key
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	gcry_mpi_set(tdss_h, h);
 	gcry_mpi_set(tdss_x_i, x_i);
 	gcry_mpi_set(tdss_xprime_i, xprime_i);
@@ -2898,6 +2906,7 @@ TMCG_OpenPGP_Prvkey::~TMCG_OpenPGP_Prvkey
 	tdss_c_ik.clear();
 	tdss_idx2dkg.clear();
 	tdss_dkg2idx.clear();
+	packet.clear();
 }
 
 // ===========================================================================

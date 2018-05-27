@@ -580,6 +580,7 @@ class TMCG_OpenPGP_PrivateSubkey
 		std::vector<size_t>									telg_qual;
 		std::vector<gcry_mpi_t>								telg_v_i;
 		std::vector< std::vector<gcry_mpi_t> >				telg_c_ik;
+		tmcg_openpgp_octets_t								packet;
 
 		TMCG_OpenPGP_PrivateSubkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
@@ -748,6 +749,7 @@ class TMCG_OpenPGP_Prvkey
 		std::vector< std::vector<gcry_mpi_t> >				tdss_c_ik;
 		std::map<size_t, size_t>							tdss_idx2dkg;
 		std::map<size_t, size_t>							tdss_dkg2idx;
+		tmcg_openpgp_octets_t								packet;
 
 		TMCG_OpenPGP_Prvkey
 			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
