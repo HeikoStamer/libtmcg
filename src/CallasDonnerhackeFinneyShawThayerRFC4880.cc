@@ -867,7 +867,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	dsa_y = gcry_mpi_new(2048);
 	gcry_mpi_set_ui(rsa_n, 437);
 	gcry_mpi_set_ui(rsa_e, 41);
-	gcry_sexp_build(&key, &erroff,
+	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (rsa (n %M) (e %M)))", rsa_n, rsa_e);
 }
 
