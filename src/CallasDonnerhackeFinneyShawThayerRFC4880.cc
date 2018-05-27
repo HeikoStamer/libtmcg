@@ -1572,7 +1572,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t u,
 	 const gcry_mpi_t d,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in)
+		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0)
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
@@ -1609,7 +1609,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in)
+		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0)
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
@@ -1643,7 +1643,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in)
+		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0)
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
@@ -2606,7 +2606,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t u,
 	 const gcry_mpi_t d,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in)
+		pkalgo(pkalgo_in), tdss_n(0), tdss_t(0), tdss_i(0)
 {
 	tmcg_openpgp_octets_t pkt;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in,
@@ -2642,7 +2642,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in)
+		pkalgo(pkalgo_in), tdss_n(0), tdss_t(0), tdss_i(0)
 {
 	tmcg_openpgp_octets_t pkt;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in,
