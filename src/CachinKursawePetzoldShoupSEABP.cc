@@ -799,9 +799,9 @@ bool CachinKursawePetzoldShoupRBC::Sync
 //std::cerr << "RBC(" << j << "): synchronized median_timeout = " << median_timeout << std::endl;
 			long int diff = median_timeout - (timeout - (slice_entry_time - entry_time));
 			last_diff = diff;
-if (abs(diff) > 0)
-std::cerr << "RBC(" << j << "): sync diff = " << diff << std::endl;
-			if (abs(diff) <= max_timeout) 
+			if (std::abs(diff) > 0)
+				std::cerr << "RBC(" << j << "): sync diff = " << diff << std::endl;
+			if (std::abs(diff) <= max_timeout) 
 				timeout += diff;
 			else
 				std::cerr << "RBC(" << j << "): time jump detected with diff = " << diff << std::endl;
@@ -811,7 +811,7 @@ std::cerr << "RBC(" << j << "): sync diff = " << diff << std::endl;
 	// release
 	mpz_clear(mtv);
 	unsetID();
-	if (abs(last_diff) <= slice_timeout)
+	if (std::abs(last_diff) <= slice_timeout)
 		return true;
 	else
 	{
