@@ -512,12 +512,13 @@ of the used features and specifies the required versions:
 		reasonable performance.
 		
 	@item GNU Crypto Library (@file{libgcrypt}),
-		Version@tie{}@math{\ge}@tie{}1.7.0
+		Version@tie{}@math{\ge}@tie{}1.6.0
 		
 		The library provides some basic cryptographic algorithms
-		(e.g. SHA-256, AES256, SHA-3, ElGamal, DSA, RSA)
-		and an easily accessible interface for cryptographically
-		strong pseudo random numbers.
+		(e.g. SHA-256, AES256, ElGamal, DSA, RSA) and an easily
+		accessible interface for cryptographically strong pseudo
+		random numbers. If a version @tie{}@math{\ge}@tie{}1.7.0
+		is found, then also the hash function SHA-3 will be used.
 	
 	@item GNU Privacy Guard Error Code Library (@file{libgpg-error}),
 		Version@tie{}@math{\ge}@tie{}1.12
@@ -807,7 +808,7 @@ Schindelhauer.
 
 @defmac TMCG_LIBGCRYPT_VERSION
 Defines the required minimum version number of the GNU Crypto Library.
-The default value is @code{"1.7.0"}. During the initialization of
+The default value is @code{"1.6.0"}. During the initialization of
 LibTMCG (see @code{init_libTMCG}) it is checked, whether the
 version number of the linked shared object fulfills this condition.
 @end defmac

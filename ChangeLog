@@ -7,6 +7,8 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-06-01] fall the requirement of libgcrypt version to >= 1.6.0
+* [2018-06-01] mpz_shash: emulate SHA3-256, if not available by libgcrypt
 * [2018-05-24] mpz_helper: added iostream operator << for gcry_mpi_t
 * [2018-05-23] RFC4880: added support for tElG in PrivateKeyBlockParse()
 * [2018-05-23] RFC4880: added support for tDSS/DSA in PrivateKeyBlockParse()
