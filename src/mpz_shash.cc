@@ -37,37 +37,33 @@ void sha3
 {
 	sha3_context c;
 	const uint8_t *hash;
-	size_t hashsize = 0;
 
 	switch (algo)
 	{
 		case GCRY_MD_SHA256:
-			hashsize = 0;
 			gcry_md_hash_buffer(algo, output, input, size);
 			break;
 		case 313: // SHA-3 256 bit output
-			hashsize = 32;
 			sha3_Init256(&c);
 			sha3_Update(&c, input, size);
 			hash = sha3_Finalize(&c);
+			memcpy(output, hash, 32);
 			break;
 		case 314: // SHA-3 384 bit output
-			hashsize = 48;
 			sha3_Init384(&c);
 			sha3_Update(&c, input, size);
 			hash = sha3_Finalize(&c);
+			memcpy(output, hash, 48);
 			break;
 		case 315: // SHA-3 512 bit output
-			hashsize = 64;
 			sha3_Init512(&c);
 			sha3_Update(&c, input, size);
 			hash = sha3_Finalize(&c);
+			memcpy(output, hash, 64);
 			break;
 		default:
-			hashsize = 0;
 			break;
 	}
-	memcpy(output, hash, hashsize);
 }
 
 /* hash function h() (assumption: collision-resistant cryptographic hash) */
