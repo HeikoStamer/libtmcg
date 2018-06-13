@@ -2884,7 +2884,7 @@ bool TMCG_OpenPGP_Prvkey::tDSS_CreateMapping
 				found = true;
 				tdss_idx2dkg[i] = j;
 				tdss_dkg2idx[j] = i;
-				if (verbose > 2)
+				if (verbose > 1)
 					std::cerr << "INFO: mapping " << i << " -> " <<
 						"P_" << j << std::endl; 
 				break;
