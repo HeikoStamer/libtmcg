@@ -67,7 +67,7 @@ void sha3
 }
 
 /* hash function h() (assumption: collision-resistant cryptographic hash) */
-void h
+void tmcg_h
 	(unsigned char *output,
 	const unsigned char *input, const size_t size, int algo)
 {
@@ -75,7 +75,7 @@ void h
 }
 
 /* hash function g() (The design is based on ideas from [BR95].) */
-void g
+void tmcg_g
 	(unsigned char *output, const size_t osize,
 	const unsigned char *input, const size_t isize)
 {
@@ -105,20 +105,20 @@ void g
 		memcpy(data + isize + 9, input, isize);
 		
 		// using h(y) "in some nonstandard way" with "output truncated" [BR95]
-		h(out + (i * (usesize + 2)), data, dsize);
+		tmcg_h(out + (i * (usesize + 2)), data, dsize);
 		if (emulate)
 			sha3(out2 + (i * (usesize2 + 2)), data, dsize, second_algo);
 		else
-			h(out2 + (i * (usesize2 + 2)), data, dsize, second_algo);
+			tmcg_h(out2 + (i * (usesize2 + 2)), data, dsize, second_algo);
 		delete [] data;
 
 		// using h on parts of the whole result again with "output truncated"
 		size_t psize2 = ((i + 1) * (mdsize2 - 1));
-		h(out + (i * usesize), out, ((i + 1) * (mdsize - 1)));
+		tmcg_h(out + (i * usesize), out, ((i + 1) * (mdsize - 1)));
 		if (emulate)
 			sha3(out2 + (i * usesize2), out2, psize2, second_algo);
 		else
-			h(out2 + (i * usesize2), out2, psize2, second_algo);
+			tmcg_h(out2 + (i * usesize2), out2, psize2, second_algo);
 	}
 	// final output is the XOR of both results
 	for (size_t i = 0; i < osize; i++)
@@ -127,23 +127,23 @@ void g
 	delete [] out2;
 }
 
-size_t mpz_shash_len
+size_t tmcg_mpz_shash_len
 	()
 {
 	return gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
 }
 
-size_t mpz_fhash_len
+size_t tmcg_mpz_fhash_len
 	(int algo)
 {
 	return gcry_md_get_algo_dlen(algo);
 }
 
-void mpz_fhash
+void tmcg_mpz_fhash
 	(mpz_ptr r, int algo, mpz_srcptr input)
 {
 	size_t input_size = (mpz_sizeinbase(input, 2L) + 7) / 8;
-	size_t hash_size = mpz_fhash_len(algo);
+	size_t hash_size = tmcg_mpz_fhash_len(algo);
 	unsigned char *buffer = new unsigned char[input_size];
 	unsigned char *digest = new unsigned char[hash_size];
 	char *hex_digest = new char[(2 * hash_size) + 1];
@@ -151,7 +151,7 @@ void mpz_fhash
 	/* construct and hash the input with default hash function */
 	memset(buffer, 0, input_size);
 	mpz_export(buffer, NULL, 1, 1, 1, 0, input);
-	h(digest, buffer, input_size, algo);
+	tmcg_h(digest, buffer, input_size, algo);
 	
 	/* convert the digest to a hexadecimal encoded string */
 	for (size_t i = 0; i < hash_size; i++)
@@ -164,7 +164,7 @@ void mpz_fhash
 	delete [] buffer, delete [] digest, delete [] hex_digest;
 }
 
-void mpz_fhash_ggen
+void tmcg_mpz_fhash_ggen
 	(mpz_ptr r, int algo,
 	mpz_srcptr input1, const std::string &input2,
 	mpz_srcptr input3, mpz_srcptr input4)
@@ -175,7 +175,7 @@ void mpz_fhash_ggen
 	size_t input123_size = input12_size + input3_size;
 	size_t input4_size = ((mpz_sizeinbase(input4, 2L) + 7) / 8);
 	size_t input_size = input123_size + input4_size;
-	size_t hash_size = mpz_fhash_len(algo);
+	size_t hash_size = tmcg_mpz_fhash_len(algo);
 	unsigned char *buffer = new unsigned char[input_size];
 	unsigned char *digest = new unsigned char[hash_size];
 	char *hex_digest = new char[(2 * hash_size) + 1];
@@ -186,7 +186,7 @@ void mpz_fhash_ggen
 	memcpy(buffer + input1_size, input2.c_str(), input2.length());
 	mpz_export(buffer + input12_size, NULL, 1, 1, 1, 0, input3);
 	mpz_export(buffer + input123_size, NULL, 1, 1, 1, 0, input4);
-	h(digest, buffer, input_size, algo);
+	tmcg_h(digest, buffer, input_size, algo);
 	
 	/* convert the digest to a hexadecimal encoded string */
 	for (size_t i = 0; i < hash_size; i++)
@@ -199,15 +199,15 @@ void mpz_fhash_ggen
 	delete [] buffer, delete [] digest, delete [] hex_digest;
 }
 
-void mpz_shash
+void tmcg_mpz_shash
 	(mpz_ptr r, const std::string &input)
 {
-	size_t hash_size = mpz_shash_len();
+	size_t hash_size = tmcg_mpz_shash_len();
 	unsigned char *digest = new unsigned char[hash_size];
 	char *hex_digest = new char[(2 * hash_size) + 1];
 	
 	/* hash the input */
-	g(digest, hash_size, (unsigned char*)input.c_str(), input.length());
+	tmcg_g(digest, hash_size, (unsigned char*)input.c_str(), input.length());
 	
 	/* convert the digest to a hexadecimal encoded string */
 	for (size_t i = 0; i < hash_size; i++)
@@ -222,7 +222,7 @@ void mpz_shash
 
 /* Hashing of the public inputs (aka Fiat-Shamir heuristic) with g(),
    e.g. to make some proofs of knowledge (PoK) non-interactive (NIZK). */
-void mpz_shash
+void tmcg_mpz_shash
 	(mpz_ptr r, size_t n, ...)
 {
 	va_list ap;
@@ -243,10 +243,10 @@ void mpz_shash
 	va_end(ap);
 	
 	/* hash arguments */
-	mpz_shash(r, acc);
+	tmcg_mpz_shash(r, acc);
 }
 
-void mpz_shash_1vec
+void tmcg_mpz_shash_1vec
 	(mpz_ptr r, const std::vector<mpz_ptr>& v, size_t n, ...)
 {
 	va_list ap;
@@ -275,10 +275,10 @@ void mpz_shash_1vec
 	va_end(ap);
 	
 	/* hash arguments */
-	mpz_shash(r, acc);
+	tmcg_mpz_shash(r, acc);
 }
 
-void mpz_shash_2vec
+void tmcg_mpz_shash_2vec
 	(mpz_ptr r, const std::vector<mpz_ptr>& v,
 	const std::vector<mpz_ptr>& w, size_t n, ...)
 {
@@ -315,10 +315,10 @@ void mpz_shash_2vec
 	va_end(ap);
 	
 	/* hash arguments */
-	mpz_shash(r, acc);
+	tmcg_mpz_shash(r, acc);
 }
 
-void mpz_shash_4vec
+void tmcg_mpz_shash_4vec
 	(mpz_ptr r, const std::vector<mpz_ptr>& v,
 	const std::vector<mpz_ptr>& w, const std::vector<mpz_ptr>& x,
 	const std::vector<mpz_ptr>& y, size_t n, ...)
@@ -370,10 +370,10 @@ void mpz_shash_4vec
 	va_end(ap);
 	
 	/* hash arguments */
-	mpz_shash(r, acc);
+	tmcg_mpz_shash(r, acc);
 }
 
-void mpz_shash_2pairvec
+void tmcg_mpz_shash_2pairvec
 	(mpz_ptr r, const std::vector<std::pair<mpz_ptr, mpz_ptr> >& vp,
 	const std::vector<std::pair<mpz_ptr, mpz_ptr> >& wp, size_t n, ...)
 {
@@ -419,10 +419,10 @@ void mpz_shash_2pairvec
 	va_end(ap);
 	
 	/* hash arguments */
-	mpz_shash(r, acc);
+	tmcg_mpz_shash(r, acc);
 }
 
-void mpz_shash_2pairvec2vec
+void tmcg_mpz_shash_2pairvec2vec
 	(mpz_ptr r, const std::vector<std::pair<mpz_ptr, mpz_ptr> >& vp,
 	const std::vector<std::pair<mpz_ptr, mpz_ptr> >& wp,
 	const std::vector<mpz_ptr>& v, const std::vector<mpz_ptr>& w,
@@ -486,10 +486,10 @@ void mpz_shash_2pairvec2vec
 	va_end(ap);
 	
 	/* hash arguments */
-	mpz_shash(r, acc);
+	tmcg_mpz_shash(r, acc);
 }
 
-void mpz_shash_4pairvec2vec
+void tmcg_mpz_shash_4pairvec2vec
 	(mpz_ptr r, const std::vector<std::pair<mpz_ptr, mpz_ptr> >& vp,
 	const std::vector<std::pair<mpz_ptr, mpz_ptr> >& wp,
 	const std::vector<std::pair<mpz_ptr, mpz_ptr> >& xp,
@@ -578,5 +578,6 @@ void mpz_shash_4pairvec2vec
 	va_end(ap);
 	
 	/* hash arguments */
-	mpz_shash(r, acc);
+	tmcg_mpz_shash(r, acc);
 }
+

@@ -119,7 +119,7 @@ void CachinKursawePetzoldShoupRBC::setID
 	std::stringstream myID;
 	myID << "CachinKursawePetzoldShoupRBC called from [" << ID_in <<
 		"] with last ID = " << ID;
-	mpz_shash(ID, myID.str());
+	tmcg_mpz_shash(ID, myID.str());
 
 	// reset sequence counter
 	mpz_set_ui(s, 0L);
@@ -242,10 +242,10 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 	const time_t timeout = aiou->aio_timeout_very_short;
 	for (size_t i = 0; i < n; i++)
 	{
-		size_t simulate_faulty_randomizer = mpz_wrandom_ui() % n; // prob. 1/n
-		size_t simulate_faulty_randomizer1 = mpz_wrandom_ui() % 2;
-		size_t simulate_faulty_randomizer2 = mpz_wrandom_ui() % 2;
-		size_t simulate_faulty_randomizer3 = mpz_wrandom_ui() % 2;
+		size_t simulate_faulty_randomizer = tmcg_mpz_wrandom_ui() % n; // prob. 1/n
+		size_t simulate_faulty_randomizer1 = tmcg_mpz_wrandom_ui() % 2;
+		size_t simulate_faulty_randomizer2 = tmcg_mpz_wrandom_ui() % 2;
+		size_t simulate_faulty_randomizer3 = tmcg_mpz_wrandom_ui() % 2;
 		if (simulate_faulty_behaviour && !simulate_faulty_randomizer &&
 			simulate_faulty_randomizer1)
 		{
@@ -256,13 +256,13 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 			simulate_faulty_randomizer2)
 		{
 			mpz_add_ui(modified_message[1], modified_message[1],
-				mpz_wrandom_ui() % n); // modify the sender
+				tmcg_mpz_wrandom_ui() % n); // modify the sender
 		}
 		AssignMessage(message, modified_message); // assign the modified message
 		if (simulate_faulty_behaviour && !simulate_faulty_randomizer &&
 			simulate_faulty_randomizer3)
 		{
-			if (!aiou->Send(message, mpz_wrandom_ui() % n, timeout))
+			if (!aiou->Send(message, tmcg_mpz_wrandom_ui() % n, timeout))
 				std::cerr << "RBC(" << j << "): sending r-send failed for " <<
 					"random party" << std::endl;
 		}
@@ -303,7 +303,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			lit != deliver_buf.end(); ++lit)
 		{
 			// compute hash of identifying tag $ID.j.s$
-			mpz_shash(tag, 3, (*lit)[0], (*lit)[1], (*lit)[2]);
+			tmcg_mpz_shash(tag, 3, (*lit)[0], (*lit)[1], (*lit)[2]);
 			std::stringstream tag_ss;
 			tag_ss << tag;
 			std::string tag_string = tag_ss.str();
@@ -354,7 +354,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			}
 		}
 		// compute hash of identifying tag $ID.j.s$
-		mpz_shash(tag, 3, message[0], message[1], message[2]);
+		tmcg_mpz_shash(tag, 3, message[0], message[1], message[2]);
 		std::stringstream tag_ss;
 		tag_ss << tag;
 		std::string tag_string = tag_ss.str();
@@ -402,7 +402,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				message2.push_back(message[1]);
 				message2.push_back(message[2]);
 				message2.push_back(r_echo);
-				mpz_shash(message[4], 1, message[4]);
+				tmcg_mpz_shash(message[4], 1, message[4]);
 				message2.push_back(message[4]);
 				// send to all parties by unicast transmission (very short timeout)
 				for (size_t i = 0; i < n; i++)
@@ -527,7 +527,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				mpz_init_set(tmp, message[4]); // $\bar{d} \gets d$
 				dbar.insert(std::pair<std::string, mpz_ptr>(tag_string, tmp));
 				if (mbar.count(tag_string) > 0)
-					mpz_shash(foo, 1, mbar[tag_string]);
+					tmcg_mpz_shash(foo, 1, mbar[tag_string]);
 				else
 				{
 					mpz_set_ui(foo, 0L);
@@ -614,7 +614,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				std::cerr << "RBC(" << j << "): no request for r-answer from " << l << std::endl;
 				continue;
 			}
-			mpz_shash(foo, 1, message[4]); // compute $H(m)$
+			tmcg_mpz_shash(foo, 1, message[4]); // compute $H(m)$
 			if (!mpz_cmp(foo, dbar[tag_string]))
 			{
 //std::cerr << "RBC: r-answer from " << l2 << " for " << j << " with m = " << message3[4] << std::endl;

@@ -30,11 +30,11 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
-/* include headers */
+// include headers
 #ifdef HAVE_CONFIG_H
 	#include "libTMCG_config.h"
 #endif
-#include "mpz_sprime.h"
+#include "mpz_sprime.hh"
 
 #define PRIMES_SIZE 668
 #define SIEVE_SIZE 8
@@ -216,7 +216,7 @@ int test3mod4
                 compositness of @a n.
     @returns 0, otherwise. */
 
-int mpz_mr_witness
+int tmcg_mpz_mr_witness
 	(mpz_srcptr n, mpz_srcptr base)
 {
 	int result = 1;
@@ -264,7 +264,7 @@ int mpz_mr_witness
 /** The fast generation of safe primes is implemented according to [CS00]
     and M.J. Wiener's "Safe Prime Generation with a Combined Sieve". */
 
-void mpz_sprime_test
+void tmcg_mpz_sprime_test
 	(mpz_ptr p, mpz_ptr q,
 	const unsigned long int qsize,
 	int (*test)(mpz_ptr, mpz_ptr),
@@ -278,7 +278,7 @@ void mpz_sprime_test
 	
 	/* Step 1. [CS00]: choose randomly an odd number $q$ of appropriate size */
 	do
-		mpz_srandomb(q, qsize);
+		tmcg_mpz_srandomb(q, qsize);
 	while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
 	
 	/* Compute $p = 2q + 1$. */
@@ -350,7 +350,7 @@ void mpz_sprime_test
 		
 		/* Step 3. [CS00]: Test whether 2 is not a Miller-Rabin witness to the
 		   compositeness of $q$. */
-		if (mpz_mr_witness(q, a))
+		if (tmcg_mpz_mr_witness(q, a))
 			continue;
 		
 		/* Step 4. [CS00]: Test whether $2^q \equiv \pm 1 \pmod{p}$. */
@@ -372,7 +372,7 @@ void mpz_sprime_test
 
 /** A naive generator for safe primes (slow for $\log_2 p \ge 1024$). */
 
-void mpz_sprime_test_naive
+void tmcg_mpz_sprime_test_naive
 	(mpz_ptr p, mpz_ptr q,
 	const unsigned long int qsize,
 	int (*test)(mpz_ptr, mpz_ptr),
@@ -382,7 +382,7 @@ void mpz_sprime_test_naive
 	
 	/* Choose randomly an odd number $q$ of appropriate size. */
 	do
-		mpz_srandomb(q, qsize);
+		tmcg_mpz_srandomb(q, qsize);
 	while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
 	
 	while (1)
@@ -424,23 +424,23 @@ void mpz_sprime_test_naive
 		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); /* indicates an error */
 }
 
-void mpz_sprime
+void tmcg_mpz_sprime
 	(mpz_ptr p, mpz_ptr q,
 	const unsigned long int qsize, 
 	const unsigned long int mr_iterations)
 {
-	mpz_sprime_test(p, q, qsize, notest, mr_iterations);
+	tmcg_mpz_sprime_test(p, q, qsize, notest, mr_iterations);
 }
 
-void mpz_sprime_naive
+void tmcg_mpz_sprime_naive
 	(mpz_ptr p, mpz_ptr q,
 	const unsigned long int qsize, 
 	const unsigned long int mr_iterations)
 {
-	mpz_sprime_test_naive(p, q, qsize, notest, mr_iterations);
+	tmcg_mpz_sprime_test_naive(p, q, qsize, notest, mr_iterations);
 }
 
-void mpz_sprime2g
+void tmcg_mpz_sprime2g
 	(mpz_ptr p, mpz_ptr q,
 	const unsigned long int qsize, 
 	const unsigned long int mr_iterations)
@@ -449,10 +449,10 @@ void mpz_sprime2g
 	   of $\mathbb{QR}_p$. If $p$ is congruent 7 modulo 8, then 2 is a
 	   quadratic residue and hence it will generate the cyclic subgroup
 	   of prime order $q = (p-1)/2$. [RS00] */
-	mpz_sprime_test(p, q, qsize, test7mod8, mr_iterations);
+	tmcg_mpz_sprime_test(p, q, qsize, test7mod8, mr_iterations);
 }
 
-void mpz_sprime3mod4
+void tmcg_mpz_sprime3mod4
 	(mpz_ptr p,
 	const unsigned long int psize,
 	const unsigned long int mr_iterations)
@@ -462,11 +462,11 @@ void mpz_sprime3mod4
 	/* This test is necessary, if we want to construct a Blum integer $n$,
 	   i.e. a number where both factors are primes congruent 3 modulo 4. */
 	mpz_init(q);
-	mpz_sprime_test(p, q, psize - 1L, test3mod4, mr_iterations);
+	tmcg_mpz_sprime_test(p, q, psize - 1L, test3mod4, mr_iterations);
 	mpz_clear(q);
 }
 
-void mpz_lprime
+void tmcg_mpz_lprime
 	(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
 	const unsigned long int psize,
 	const unsigned long int qsize, 
@@ -479,7 +479,7 @@ void mpz_lprime
 	   Primes of this type are only for public usage, because
 	   we use weak random numbers here! */
 	do
-		mpz_wrandomb(q, qsize);
+		tmcg_mpz_wrandomb(q, qsize);
 	while ((mpz_sizeinbase(q, 2L) < qsize) || 
 		!mpz_probab_prime_p(q, mr_iterations));
 	
@@ -488,7 +488,7 @@ void mpz_lprime
 	{
 		/* Choose randomly an even number $k$ and compute $p:= qk + 1$. */
 		do
-			mpz_wrandomb(k, psize - qsize);
+			tmcg_mpz_wrandomb(k, psize - qsize);
 		while (mpz_sizeinbase(k, 2L) < (psize - qsize));
 		if (mpz_odd_p(k))
 			mpz_add_ui(k, k, 1L);
@@ -505,7 +505,7 @@ void mpz_lprime
 		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); /* indicates an error */
 }
 
-void mpz_lprime_prefix
+void tmcg_mpz_lprime_prefix
 	(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
 	const unsigned long int psize,
 	const unsigned long int qsize, 
@@ -521,7 +521,7 @@ void mpz_lprime_prefix
 		   Primes of this type are only for public usage, because
 		   we use weak random numbers here! */
 		do
-			mpz_wrandomb(q, qsize);
+			tmcg_mpz_wrandomb(q, qsize);
 		while ((mpz_sizeinbase(q, 2L) < qsize) || 
 			!mpz_probab_prime_p(q, mr_iterations));
 		/* Enhance given $k$ by multiples of TMCG_MPZ_IO_BASE. */
@@ -542,17 +542,18 @@ void mpz_lprime_prefix
 		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); /* indicates an error */
 }
 
-void mpz_oprime
+void tmcg_mpz_oprime
 	(mpz_ptr p,
 	const unsigned long int psize,
 	const unsigned long int mr_iterations)
 {
 	/* Choose randomly an odd number $p$ of appropriate size. */
 	do
-		mpz_srandomb(p, psize);
+		tmcg_mpz_srandomb(p, psize);
 	while ((mpz_sizeinbase(p, 2L) < psize) || (mpz_even_p(p)));
 	
 	/* Add two as long as $p$ is not probable prime. */
 	while (!mpz_probab_prime_p(p, mr_iterations))
 		mpz_add_ui(p, p, 2L);
 }
+

@@ -8,7 +8,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2009, 2015, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2009, 2015, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -40,9 +40,9 @@ HooghSchoenmakersSkoricVillegasPUBROTZK::HooghSchoenmakersSkoricVillegasPUBROTZK
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 bool HooghSchoenmakersSkoricVillegasPUBROTZK::CheckElement
@@ -106,7 +106,7 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive
 
 	// prover: second move
 	// Note that we throughout assume that $h = \tilde{h}$ holds.
-	mpz_srandomm(u, q);
+	tmcg_mpz_srandomm(u, q);
 	// compute $G$
 	mpz_set_ui(G, 1L);
 	for (size_t j = 0; j < c.size(); j++) {
@@ -118,8 +118,8 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive
 	{
 		if (j != r)
 		{
-			mpz_srandomm(lambdak[j], q);
-			mpz_srandomm(tk[j], q);
+			tmcg_mpz_srandomm(lambdak[j], q);
+			tmcg_mpz_srandomm(tk[j], q);
 
 			// compute $\gamma_j = \sum_i \alpha_{i-j}\beta_i
 			mpz_set_ui(bar, 0L);
@@ -134,18 +134,18 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive
 			// compute $f_j = g^{\lambda_j \gamma_j} \tilde{h}^{t_j} G^{-\lambda_j}$
 			mpz_mul(foo, lambdak[j], bar);
 			mpz_mod(foo, foo, q);
-			mpz_fspowm(fpowm_table_g, f[j], g, foo, p);
-			mpz_fspowm(fpowm_table_h, bar, h, tk[j], p);
+			tmcg_mpz_fspowm(fpowm_table_g, f[j], g, foo, p);
+			tmcg_mpz_fspowm(fpowm_table_h, bar, h, tk[j], p);
 			mpz_mul(f[j], f[j], bar);
 			mpz_mod(f[j], f[j], p);
-			mpz_spowm(foo, G, lambdak[j], p);
+			tmcg_mpz_spowm(foo, G, lambdak[j], p);
 			if (!mpz_invert(bar, foo, p))
 				mpz_set_ui(bar, 0L); // indicates an error
 			mpz_mul(f[j], f[j], bar);
 			mpz_mod(f[j], f[j], p);
 		}
 	}
-	mpz_fspowm(fpowm_table_h, f[r], h, u, p);
+	tmcg_mpz_fspowm(fpowm_table_h, f[r], h, u, p);
 	for (size_t i = 0; i < f.size(); i++)
 		out << f[i] << std::endl;
 
@@ -234,7 +234,7 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive_publiccoin
 
 	// prover: second move
 	// Note that we throughout assume that $h = \tilde{h}$ holds.
-	mpz_srandomm(u, q);
+	tmcg_mpz_srandomm(u, q);
 	// compute $G$
 	mpz_set_ui(G, 1L);
 	for (size_t j = 0; j < c.size(); j++) {
@@ -246,8 +246,8 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive_publiccoin
 	{
 		if (j != r)
 		{
-			mpz_srandomm(lambdak[j], q);
-			mpz_srandomm(tk[j], q);
+			tmcg_mpz_srandomm(lambdak[j], q);
+			tmcg_mpz_srandomm(tk[j], q);
 
 			// compute $\gamma_j = \sum_i \alpha_{i-j}\beta_i
 			mpz_set_ui(bar, 0L);
@@ -262,18 +262,18 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_interactive_publiccoin
 			// compute $f_j = g^{\lambda_j \gamma_j} \tilde{h}^{t_j} G^{-\lambda_j}$
 			mpz_mul(foo, lambdak[j], bar);
 			mpz_mod(foo, foo, q);
-			mpz_fspowm(fpowm_table_g, f[j], g, foo, p);
-			mpz_fspowm(fpowm_table_h, bar, h, tk[j], p);
+			tmcg_mpz_fspowm(fpowm_table_g, f[j], g, foo, p);
+			tmcg_mpz_fspowm(fpowm_table_h, bar, h, tk[j], p);
 			mpz_mul(f[j], f[j], bar);
 			mpz_mod(f[j], f[j], p);
-			mpz_spowm(foo, G, lambdak[j], p);
+			tmcg_mpz_spowm(foo, G, lambdak[j], p);
 			if (!mpz_invert(bar, foo, p))
 				mpz_set_ui(bar, 0L); // indicates an error
 			mpz_mul(f[j], f[j], bar);
 			mpz_mod(f[j], f[j], p);
 		}
 	}
-	mpz_fspowm(fpowm_table_h, f[r], h, u, p);
+	tmcg_mpz_fspowm(fpowm_table_h, f[r], h, u, p);
 	for (size_t i = 0; i < f.size(); i++)
 		out << f[i] << std::endl;
 
@@ -359,14 +359,14 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_noninteractive
 		if (i > 0)
 			mpz_set(foo, beta[i-1]); // make a link to previous element
 		// get $\beta_i$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		mpz_shash_2vec(beta[i], alpha, c, 6, p, q, g, h, foo, bar);
+		tmcg_mpz_shash_2vec(beta[i], alpha, c, 6, p, q, g, h, foo, bar);
 		// reduce $\beta_i$'s modulo $q$
 		mpz_mod(beta[i], beta[i], q);
 	}
 
 	// prover: second move
 	// Note that we throughout assume that $h = \tilde{h}$ holds.
-	mpz_srandomm(u, q);
+	tmcg_mpz_srandomm(u, q);
 	// compute $G$
 	mpz_set_ui(G, 1L);
 	for (size_t j = 0; j < c.size(); j++) {
@@ -378,8 +378,8 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_noninteractive
 	{
 		if (j != r)
 		{
-			mpz_srandomm(lambdak[j], q);
-			mpz_srandomm(tk[j], q);
+			tmcg_mpz_srandomm(lambdak[j], q);
+			tmcg_mpz_srandomm(tk[j], q);
 
 			// compute $\gamma_j = \sum_i \alpha_{i-j}\beta_i
 			mpz_set_ui(bar, 0L);
@@ -394,24 +394,24 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_noninteractive
 			// compute $f_j = g^{\lambda_j \gamma_j} \tilde{h}^{t_j} G^{-\lambda_j}$
 			mpz_mul(foo, lambdak[j], bar);
 			mpz_mod(foo, foo, q);
-			mpz_fspowm(fpowm_table_g, f[j], g, foo, p);
-			mpz_fspowm(fpowm_table_h, bar, h, tk[j], p);
+			tmcg_mpz_fspowm(fpowm_table_g, f[j], g, foo, p);
+			tmcg_mpz_fspowm(fpowm_table_h, bar, h, tk[j], p);
 			mpz_mul(f[j], f[j], bar);
 			mpz_mod(f[j], f[j], p);
-			mpz_spowm(foo, G, lambdak[j], p);
+			tmcg_mpz_spowm(foo, G, lambdak[j], p);
 			if (!mpz_invert(bar, foo, p))
 				mpz_set_ui(bar, 0L); // indicates an error
 			mpz_mul(f[j], f[j], bar);
 			mpz_mod(f[j], f[j], p);
 		}
 	}
-	mpz_fspowm(fpowm_table_h, f[r], h, u, p);
+	tmcg_mpz_fspowm(fpowm_table_h, f[r], h, u, p);
 	for (size_t i = 0; i < f.size(); i++)
 		out << f[i] << std::endl;
 
 	// prover: third move
 		// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		mpz_shash_4vec(lambda, alpha, c, f, beta, 4, p, q, g, h);
+		tmcg_mpz_shash_4vec(lambda, alpha, c, f, beta, 4, p, q, g, h);
 		// reduce $\lambda$ modulo $q$
 		mpz_mod(lambda, lambda, q);
 
@@ -486,7 +486,7 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 		// verifier: first move
 		for (size_t i = 0; i < beta.size(); i++)
 		{
-			mpz_srandomm(beta[i], q);
+			tmcg_mpz_srandomm(beta[i], q);
 			out << beta[i] << std::endl;
 		}
 		
@@ -499,7 +499,7 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 		}
 		if (!in.good())
 			throw false;
-		mpz_srandomm(lambda, q);
+		tmcg_mpz_srandomm(lambda, q);
 		out << lambda << std::endl;
 		
 		// verifier: third move
@@ -551,10 +551,10 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive
 			}
 
 			// compute the left hand side $\tilde{h}^{t_k}$
-			mpz_fpowm(fpowm_table_h, lhs, h, tk[k], p);
+			tmcg_mpz_fpowm(fpowm_table_h, lhs, h, tk[k], p);
 
 			// compute the right hand side $a_k(G/g^{\gamma_k})^{\lambda_k}$
-			mpz_fpowm(fpowm_table_g, foo, g, bar, p);
+			tmcg_mpz_fpowm(fpowm_table_g, foo, g, bar, p);
 			if (!mpz_invert(foo, foo, p))
 				throw false;
 			mpz_mul(foo, foo, G);
@@ -686,10 +686,10 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive_publiccoin
 			}
 
 			// compute the left hand side $\tilde{h}^{t_k}$
-			mpz_fpowm(fpowm_table_h, lhs, h, tk[k], p);
+			tmcg_mpz_fpowm(fpowm_table_h, lhs, h, tk[k], p);
 
 			// compute the right hand side $a_k(G/g^{\gamma_k})^{\lambda_k}$
-			mpz_fpowm(fpowm_table_g, foo, g, bar, p);
+			tmcg_mpz_fpowm(fpowm_table_g, foo, g, bar, p);
 			if (!mpz_invert(foo, foo, p))
 				throw false;
 			mpz_mul(foo, foo, G);
@@ -754,7 +754,7 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_noninteractive
 			if (i > 0)
 				mpz_set(foo, beta[i-1]); // make a link to previous element
 			// get $\beta_i$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			mpz_shash_2vec(beta[i], alpha, c, 6, p, q, g, h, foo, bar);
+			tmcg_mpz_shash_2vec(beta[i], alpha, c, 6, p, q, g, h, foo, bar);
 			// reduce $\beta_i$'s modulo $q$
 			mpz_mod(beta[i], beta[i], q);
 		}
@@ -769,7 +769,7 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_noninteractive
 		if (!in.good())
 			throw false;
 		// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		mpz_shash_4vec(lambda, alpha, c, f, beta, 4, p, q, g, h);
+		tmcg_mpz_shash_4vec(lambda, alpha, c, f, beta, 4, p, q, g, h);
 		// reduce $\lambda$ modulo $q$
 		mpz_mod(lambda, lambda, q);
 		
@@ -801,7 +801,8 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_noninteractive
 
 		// compute $G$
 		mpz_set_ui(G, 1L);
-		for (size_t j = 0; j < c.size(); j++) {
+		for (size_t j = 0; j < c.size(); j++)
+		{
 			mpz_powm(foo, c[j], beta[j], p);
 			mpz_mul(G, G, foo);
 			mpz_mod(G, G, p);
@@ -822,10 +823,10 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_noninteractive
 			}
 
 			// compute the left hand side $\tilde{h}^{t_k}$
-			mpz_fpowm(fpowm_table_h, lhs, h, tk[k], p);
+			tmcg_mpz_fpowm(fpowm_table_h, lhs, h, tk[k], p);
 
 			// compute the right hand side $a_k(G/g^{\gamma_k})^{\lambda_k}$
-			mpz_fpowm(fpowm_table_g, foo, g, bar, p);
+			tmcg_mpz_fpowm(fpowm_table_g, foo, g, bar, p);
 			if (!mpz_invert(foo, foo, p))
 				throw false;
 			mpz_mul(foo, foo, G);
@@ -863,7 +864,7 @@ HooghSchoenmakersSkoricVillegasPUBROTZK::~HooghSchoenmakersSkoricVillegasPUBROTZ
 {
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
 	
-	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	tmcg_mpz_fpowm_done(fpowm_table_g), tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
 
@@ -878,13 +879,13 @@ HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
 	// Initialize and choose the parameters of the scheme.
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(h);
 	mpz_init(k);
-	mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
+	tmcg_mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
 	mpz_init(foo);
 	mpz_sub_ui(foo, p, 1L); // compute $p-1$
 	// choose uniformly at random the element $g$ of order $q$
 	do
 	{
-		mpz_wrandomm(g, p);
+		tmcg_mpz_wrandomm(g, p);
 		mpz_powm(g, g, k, p);
 	}
 	while (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
@@ -892,7 +893,7 @@ HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
 	// choose uniformly at random the element $h$ of order $q$
 	do
 	{
-		mpz_wrandomm(h, p);
+		tmcg_mpz_wrandomm(h, p);
 		mpz_powm(h, h, k, p);
 	}
 	while (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L) || 
@@ -906,9 +907,9 @@ HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
@@ -925,9 +926,9 @@ HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
@@ -946,9 +947,9 @@ HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 bool HooghSchoenmakersSkoricVillegasVRHE::CheckGroup
@@ -989,10 +990,10 @@ bool HooghSchoenmakersSkoricVillegasVRHE::CheckGroup
 			throw false;
 		
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 		
@@ -1108,20 +1109,20 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive
 		size_t kr = (i >= r) ? i-r : s.size() - (r-i) ; // compute $k - r (mod n)$
 		
 		// $u_k, t_k \in_R \mathbb{Z}_q$
-		mpz_srandomm(uk[i], q), mpz_srandomm(tk[i], q);
+		tmcg_mpz_srandomm(uk[i], q), tmcg_mpz_srandomm(tk[i], q);
 		// compute $h_k = g^{\alpha_{k-r}} h^{u_k}$
-		mpz_fspowm(fpowm_table_g, foo, g, alpha[kr], p);
-		mpz_fspowm(fpowm_table_h, bar, h, uk[i], p);
+		tmcg_mpz_fspowm(fpowm_table_g, foo, g, alpha[kr], p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, uk[i], p);
 		mpz_mul(hk[i], foo, bar);
 		mpz_mod(hk[i], hk[i], p);
 		// compute $A_k = (d_k^{\alpha_{k-r}}, e_k^{\alpha_{k-r}})
 		//                (g^{t_k},h^{t_k})$
-		mpz_spowm(foo, Y[i].first, alpha[kr], p);
-		mpz_fspowm(fpowm_table_g, bar, g, tk[i], p);
+		tmcg_mpz_spowm(foo, Y[i].first, alpha[kr], p);
+		tmcg_mpz_fspowm(fpowm_table_g, bar, g, tk[i], p);
 		mpz_mul(Ak[i].first, foo, bar);
 		mpz_mod(Ak[i].first, Ak[i].first, p);
-		mpz_spowm(foo, Y[i].second, alpha[kr], p);
-		mpz_fspowm(fpowm_table_h, bar, h, tk[i], p);
+		tmcg_mpz_spowm(foo, Y[i].second, alpha[kr], p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, tk[i], p);
 		mpz_mul(Ak[i].second, foo, bar);
 		mpz_mod(Ak[i].second, Ak[i].second, p);
 		// compute $v = \sum_{k=0}^{n-1} (\alpha_{k-r} s_k + t_k)$
@@ -1142,19 +1143,21 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive
 	for (size_t i = 0; i < fk.size(); i++)
 	{	
 		// $o_k, p_k, m_k \in_R \mathbb{Z}_q$
-		mpz_srandomm(ok[i], q), mpz_srandomm(pk[i], q), mpz_srandomm(mk[i], q);
+		tmcg_mpz_srandomm(ok[i], q);
+		tmcg_mpz_srandomm(pk[i], q);
+		tmcg_mpz_srandomm(mk[i], q);
 		// compute $f_k = g^{o_k} h^{p_k}$
-		mpz_fspowm(fpowm_table_g, foo, g, ok[i], p);
-		mpz_fspowm(fpowm_table_h, bar, h, pk[i], p);
+		tmcg_mpz_fspowm(fpowm_table_g, foo, g, ok[i], p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, pk[i], p);
 		mpz_mul(fk[i], foo, bar);
 		mpz_mod(fk[i], fk[i], p);
 		// compute $F_k = (d_k^{o_k}, e_k^{o_k})(g^{m_k}, h^{m_k})$
-		mpz_spowm(foo, Y[i].first, ok[i], p);
-		mpz_fspowm(fpowm_table_g, bar, g, mk[i], p);
+		tmcg_mpz_spowm(foo, Y[i].first, ok[i], p);
+		tmcg_mpz_fspowm(fpowm_table_g, bar, g, mk[i], p);
 		mpz_mul(Fk[i].first, foo, bar);
 		mpz_mod(Fk[i].first, Fk[i].first, p);
-		mpz_spowm(foo, Y[i].second, ok[i], p);
-		mpz_fspowm(fpowm_table_h, bar, h, mk[i], p);
+		tmcg_mpz_spowm(foo, Y[i].second, ok[i], p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, mk[i], p);
 		mpz_mul(Fk[i].second, foo, bar);
 		mpz_mod(Fk[i].second, Fk[i].second, p);
 	}
@@ -1287,20 +1290,21 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive_publiccoin
 		size_t kr = (i >= r) ? i-r : s.size() - (r-i) ; // compute $k - r (mod n)$
 		
 		// $u_k, t_k \in_R \mathbb{Z}_q$
-		mpz_srandomm(uk[i], q), mpz_srandomm(tk[i], q);
+		tmcg_mpz_srandomm(uk[i], q);
+		tmcg_mpz_srandomm(tk[i], q);
 		// compute $h_k = g^{\alpha_{k-r}} h^{u_k}$
-		mpz_fspowm(fpowm_table_g, foo, g, alpha[kr], p);
-		mpz_fspowm(fpowm_table_h, bar, h, uk[i], p);
+		tmcg_mpz_fspowm(fpowm_table_g, foo, g, alpha[kr], p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, uk[i], p);
 		mpz_mul(hk[i], foo, bar);
 		mpz_mod(hk[i], hk[i], p);
 		// compute $A_k = (d_k^{\alpha_{k-r}}, e_k^{\alpha_{k-r}})
 		//                (g^{t_k},h^{t_k})$
-		mpz_spowm(foo, Y[i].first, alpha[kr], p);
-		mpz_fspowm(fpowm_table_g, bar, g, tk[i], p);
+		tmcg_mpz_spowm(foo, Y[i].first, alpha[kr], p);
+		tmcg_mpz_fspowm(fpowm_table_g, bar, g, tk[i], p);
 		mpz_mul(Ak[i].first, foo, bar);
 		mpz_mod(Ak[i].first, Ak[i].first, p);
-		mpz_spowm(foo, Y[i].second, alpha[kr], p);
-		mpz_fspowm(fpowm_table_h, bar, h, tk[i], p);
+		tmcg_mpz_spowm(foo, Y[i].second, alpha[kr], p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, tk[i], p);
 		mpz_mul(Ak[i].second, foo, bar);
 		mpz_mod(Ak[i].second, Ak[i].second, p);
 		// compute $v = \sum_{k=0}^{n-1} (\alpha_{k-r} s_k + t_k)$
@@ -1321,19 +1325,21 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive_publiccoin
 	for (size_t i = 0; i < fk.size(); i++)
 	{	
 		// $o_k, p_k, m_k \in_R \mathbb{Z}_q$
-		mpz_srandomm(ok[i], q), mpz_srandomm(pk[i], q), mpz_srandomm(mk[i], q);
+		tmcg_mpz_srandomm(ok[i], q);
+		tmcg_mpz_srandomm(pk[i], q);
+		tmcg_mpz_srandomm(mk[i], q);
 		// compute $f_k = g^{o_k} h^{p_k}$
-		mpz_fspowm(fpowm_table_g, foo, g, ok[i], p);
-		mpz_fspowm(fpowm_table_h, bar, h, pk[i], p);
+		tmcg_mpz_fspowm(fpowm_table_g, foo, g, ok[i], p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, pk[i], p);
 		mpz_mul(fk[i], foo, bar);
 		mpz_mod(fk[i], fk[i], p);
 		// compute $F_k = (d_k^{o_k}, e_k^{o_k})(g^{m_k}, h^{m_k})$
-		mpz_spowm(foo, Y[i].first, ok[i], p);
-		mpz_fspowm(fpowm_table_g, bar, g, mk[i], p);
+		tmcg_mpz_spowm(foo, Y[i].first, ok[i], p);
+		tmcg_mpz_fspowm(fpowm_table_g, bar, g, mk[i], p);
 		mpz_mul(Fk[i].first, foo, bar);
 		mpz_mod(Fk[i].first, Fk[i].first, p);
-		mpz_spowm(foo, Y[i].second, ok[i], p);
-		mpz_fspowm(fpowm_table_h, bar, h, mk[i], p);
+		tmcg_mpz_spowm(foo, Y[i].second, ok[i], p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, mk[i], p);
 		mpz_mul(Fk[i].second, foo, bar);
 		mpz_mod(Fk[i].second, Fk[i].second, p);
 	}
@@ -1456,7 +1462,7 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_noninteractive
 		if (i > 0)
 			mpz_set(foo, alpha[i-1]); // make a link to previous element
 		// get $\alpha_i$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		mpz_shash_2pairvec(alpha[i], X, Y, 6, p, q, g, h, foo, bar);		
+		tmcg_mpz_shash_2pairvec(alpha[i], X, Y, 6, p, q, g, h, foo, bar);		
 		// reduce $\alpha_i$ modulo $q$
 		mpz_mod(alpha[i], alpha[i], q);
 	}
@@ -1470,20 +1476,21 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_noninteractive
 		size_t kr = (i >= r) ? i-r : s.size() - (r-i) ; // compute $k - r (mod n)$
 		
 		// $u_k, t_k \in_R \mathbb{Z}_q$
-		mpz_srandomm(uk[i], q), mpz_srandomm(tk[i], q);
+		tmcg_mpz_srandomm(uk[i], q);
+		tmcg_mpz_srandomm(tk[i], q);
 		// compute $h_k = g^{\alpha_{k-r}} h^{u_k}$
-		mpz_fspowm(fpowm_table_g, foo, g, alpha[kr], p);
-		mpz_fspowm(fpowm_table_h, bar, h, uk[i], p);
+		tmcg_mpz_fspowm(fpowm_table_g, foo, g, alpha[kr], p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, uk[i], p);
 		mpz_mul(hk[i], foo, bar);
 		mpz_mod(hk[i], hk[i], p);
 		// compute $A_k = (d_k^{\alpha_{k-r}}, e_k^{\alpha_{k-r}})
 		//                (g^{t_k},h^{t_k})$
-		mpz_spowm(foo, Y[i].first, alpha[kr], p);
-		mpz_fspowm(fpowm_table_g, bar, g, tk[i], p);
+		tmcg_mpz_spowm(foo, Y[i].first, alpha[kr], p);
+		tmcg_mpz_fspowm(fpowm_table_g, bar, g, tk[i], p);
 		mpz_mul(Ak[i].first, foo, bar);
 		mpz_mod(Ak[i].first, Ak[i].first, p);
-		mpz_spowm(foo, Y[i].second, alpha[kr], p);
-		mpz_fspowm(fpowm_table_h, bar, h, tk[i], p);
+		tmcg_mpz_spowm(foo, Y[i].second, alpha[kr], p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, tk[i], p);
 		mpz_mul(Ak[i].second, foo, bar);
 		mpz_mod(Ak[i].second, Ak[i].second, p);
 		// compute $v = \sum_{k=0}^{n-1} (\alpha_{k-r} s_k + t_k)$
@@ -1504,19 +1511,21 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_noninteractive
 	for (size_t i = 0; i < fk.size(); i++)
 	{	
 		// $o_k, p_k, m_k \in_R \mathbb{Z}_q$
-		mpz_srandomm(ok[i], q), mpz_srandomm(pk[i], q), mpz_srandomm(mk[i], q);
+		tmcg_mpz_srandomm(ok[i], q);
+		tmcg_mpz_srandomm(pk[i], q);
+		tmcg_mpz_srandomm(mk[i], q);
 		// compute $f_k = g^{o_k} h^{p_k}$
-		mpz_fspowm(fpowm_table_g, foo, g, ok[i], p);
-		mpz_fspowm(fpowm_table_h, bar, h, pk[i], p);
+		tmcg_mpz_fspowm(fpowm_table_g, foo, g, ok[i], p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, pk[i], p);
 		mpz_mul(fk[i], foo, bar);
 		mpz_mod(fk[i], fk[i], p);
 		// compute $F_k = (d_k^{o_k}, e_k^{o_k})(g^{m_k}, h^{m_k})$
-		mpz_spowm(foo, Y[i].first, ok[i], p);
-		mpz_fspowm(fpowm_table_g, bar, g, mk[i], p);
+		tmcg_mpz_spowm(foo, Y[i].first, ok[i], p);
+		tmcg_mpz_fspowm(fpowm_table_g, bar, g, mk[i], p);
 		mpz_mul(Fk[i].first, foo, bar);
 		mpz_mod(Fk[i].first, Fk[i].first, p);
-		mpz_spowm(foo, Y[i].second, ok[i], p);
-		mpz_fspowm(fpowm_table_h, bar, h, mk[i], p);
+		tmcg_mpz_spowm(foo, Y[i].second, ok[i], p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, mk[i], p);
 		mpz_mul(Fk[i].second, foo, bar);
 		mpz_mod(Fk[i].second, Fk[i].second, p);
 	}
@@ -1526,10 +1535,10 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_noninteractive
 		out << Fk[i].first << std::endl << Fk[i].second << std::endl;
 
 	// prover: third move (second move of EXP-ZK)
-		// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		mpz_shash_4pairvec2vec(lambda, X, Y, Ak, Fk, hk, fk, 5, p, q, g, h, v);		
-		// reduce $\lambda$ modulo $q$
-		mpz_mod(lambda, lambda, q);
+	// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
+	tmcg_mpz_shash_4pairvec2vec(lambda, X, Y, Ak, Fk, hk, fk, 5, p, q, g, h, v);		
+	// reduce $\lambda$ modulo $q$
+	mpz_mod(lambda, lambda, q);
 
 	// prover: fourth move (third move of EXP-ZK)
 	for (size_t i = 0; i < tau.size(); i++)
@@ -1628,7 +1637,7 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 		// verifier: first move
 		for (size_t i = 0; i < alpha.size(); i++)
 		{
-			mpz_srandomm(alpha[i], q);
+			tmcg_mpz_srandomm(alpha[i], q);
 			out << alpha[i] << std::endl;
 		}
 
@@ -1668,7 +1677,7 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 			throw false;
 
 		// verifier: third move (second move of EXP-ZK)
-		mpz_srandomm(lambda, q);
+		tmcg_mpz_srandomm(lambda, q);
 		out << lambda << std::endl;
 
 		// verifier: fourth move (third move of EXP-ZK)
@@ -1698,8 +1707,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 		for (size_t i = 0; i < tau.size(); i++)
 		{
 			// LHS i.e. $g^{\tau_k} h^{\rho_k}$
-			mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
-			mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
+			tmcg_mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
+			tmcg_mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
 			mpz_mul(lhs, foo, bar);
 			mpz_mod(lhs, lhs, p);
 			// RHS i.e. $f_k h_k^{\lambda}$
@@ -1717,11 +1726,11 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 		{
 			// LHS i.e. $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k})$
 			mpz_powm(foo, Y[i].first, tau[i], p);
-			mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
+			tmcg_mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
 			mpz_mul(LHS.first, foo, bar);
 			mpz_mod(LHS.first, LHS.first, p);
 			mpz_powm(foo, Y[i].second, tau[i], p);
-			mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
+			tmcg_mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
 			mpz_mul(LHS.second, foo, bar);
 			mpz_mod(LHS.second, LHS.second, p);
 			// RHS i.e. $F_k A_k^{\lambda}$
@@ -1763,8 +1772,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 				mpz_mod(LHS.second, LHS.second, p);
 			}
 			// RHS i.e. $(g^v, h^v)$
-			mpz_fpowm(fpowm_table_g, RHS.first, g, v, p);
-			mpz_fpowm(fpowm_table_h, RHS.second, h, v, p);
+			tmcg_mpz_fpowm(fpowm_table_g, RHS.first, g, v, p);
+			tmcg_mpz_fpowm(fpowm_table_h, RHS.second, h, v, p);
 			// compare LHS and RHS (both components)
 			if (mpz_cmp(LHS.first, RHS.first) || mpz_cmp(LHS.second, RHS.second))
 				throw false;
@@ -1778,7 +1787,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive
 			mpz_clear(lhs), mpz_clear(rhs);
 		mpz_clear(LHS.first), mpz_clear(LHS.second),
 			mpz_clear(RHS.first), mpz_clear(RHS.second);
-		delete [] LHS.first, delete [] LHS.second, delete [] RHS.first, delete [] RHS.second;
+		delete [] LHS.first, delete [] LHS.second;
+		delete [] RHS.first, delete [] RHS.second;
 		for (size_t i = 0; i < X.size(); i++)
 		{
 			mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
@@ -1914,8 +1924,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 		for (size_t i = 0; i < tau.size(); i++)
 		{
 			// LHS i.e. $g^{\tau_k} h^{\rho_k}$
-			mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
-			mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
+			tmcg_mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
+			tmcg_mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
 			mpz_mul(lhs, foo, bar);
 			mpz_mod(lhs, lhs, p);
 			// RHS i.e. $f_k h_k^{\lambda}$
@@ -1933,11 +1943,11 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 		{
 			// LHS i.e. $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k})$
 			mpz_powm(foo, Y[i].first, tau[i], p);
-			mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
+			tmcg_mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
 			mpz_mul(LHS.first, foo, bar);
 			mpz_mod(LHS.first, LHS.first, p);
 			mpz_powm(foo, Y[i].second, tau[i], p);
-			mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
+			tmcg_mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
 			mpz_mul(LHS.second, foo, bar);
 			mpz_mod(LHS.second, LHS.second, p);
 			// RHS i.e. $F_k A_k^{\lambda}$
@@ -1979,8 +1989,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 				mpz_mod(LHS.second, LHS.second, p);
 			}
 			// RHS i.e. $(g^v, h^v)$
-			mpz_fpowm(fpowm_table_g, RHS.first, g, v, p);
-			mpz_fpowm(fpowm_table_h, RHS.second, h, v, p);
+			tmcg_mpz_fpowm(fpowm_table_g, RHS.first, g, v, p);
+			tmcg_mpz_fpowm(fpowm_table_h, RHS.second, h, v, p);
 			// compare LHS and RHS (both components)
 			if (mpz_cmp(LHS.first, RHS.first) || mpz_cmp(LHS.second, RHS.second))
 				throw false;
@@ -1994,7 +2004,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 			mpz_clear(lhs), mpz_clear(rhs);
 		mpz_clear(LHS.first), mpz_clear(LHS.second),
 			mpz_clear(RHS.first), mpz_clear(RHS.second);
-		delete [] LHS.first, delete [] LHS.second, delete [] RHS.first, delete [] RHS.second;
+		delete [] LHS.first, delete [] LHS.second;
+		delete [] RHS.first, delete [] RHS.second;
 		for (size_t i = 0; i < X.size(); i++)
 		{
 			mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
@@ -2058,7 +2069,7 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 			if (i > 0)
 				mpz_set(foo, alpha[i-1]); // make a link to previous element
 			// get $\alpha_i$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			mpz_shash_2pairvec(alpha[i], X, Y, 6, p, q, g, h, foo, bar);		
+			tmcg_mpz_shash_2pairvec(alpha[i], X, Y, 6, p, q, g, h, foo, bar);		
 			// reduce $\alpha_i$ modulo $q$
 			mpz_mod(alpha[i], alpha[i], q);
 		}
@@ -2099,10 +2110,10 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 			throw false;
 
 		// verifier: third move (second move of EXP-ZK)
-			// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			mpz_shash_4pairvec2vec(lambda, X, Y, Ak, Fk, hk, fk, 5, p, q, g, h, v);		
-			// reduce $\lambda$ modulo $q$
-			mpz_mod(lambda, lambda, q);
+		// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
+		tmcg_mpz_shash_4pairvec2vec(lambda, X, Y, Ak, Fk, hk, fk, 5, p, q, g, h, v);		
+		// reduce $\lambda$ modulo $q$
+		mpz_mod(lambda, lambda, q);
 
 		// verifier: fourth move (third move of EXP-ZK)
 		for (size_t i = 0; i < tau.size(); i++)
@@ -2131,8 +2142,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 		for (size_t i = 0; i < tau.size(); i++)
 		{
 			// LHS i.e. $g^{\tau_k} h^{\rho_k}$
-			mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
-			mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
+			tmcg_mpz_fpowm(fpowm_table_g, foo, g, tau[i], p);
+			tmcg_mpz_fpowm(fpowm_table_h, bar, h, rho[i], p);
 			mpz_mul(lhs, foo, bar);
 			mpz_mod(lhs, lhs, p);
 			// RHS i.e. $f_k h_k^{\lambda}$
@@ -2150,11 +2161,11 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 		{
 			// LHS i.e. $(d_k^{\tau_k}, e_k^{\tau_k})(g^{\mu_k}, h^{\mu_k})$
 			mpz_powm(foo, Y[i].first, tau[i], p);
-			mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
+			tmcg_mpz_fpowm(fpowm_table_g, bar, g, mu[i], p);
 			mpz_mul(LHS.first, foo, bar);
 			mpz_mod(LHS.first, LHS.first, p);
 			mpz_powm(foo, Y[i].second, tau[i], p);
-			mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
+			tmcg_mpz_fpowm(fpowm_table_h, bar, h, mu[i], p);
 			mpz_mul(LHS.second, foo, bar);
 			mpz_mod(LHS.second, LHS.second, p);
 			// RHS i.e. $F_k A_k^{\lambda}$
@@ -2196,8 +2207,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 				mpz_mod(LHS.second, LHS.second, p);
 			}
 			// RHS i.e. $(g^v, h^v)$
-			mpz_fpowm(fpowm_table_g, RHS.first, g, v, p);
-			mpz_fpowm(fpowm_table_h, RHS.second, h, v, p);
+			tmcg_mpz_fpowm(fpowm_table_g, RHS.first, g, v, p);
+			tmcg_mpz_fpowm(fpowm_table_h, RHS.second, h, v, p);
 			// compare LHS and RHS (both components)
 			if (mpz_cmp(LHS.first, RHS.first) || mpz_cmp(LHS.second, RHS.second))
 				throw false;
@@ -2236,6 +2247,6 @@ HooghSchoenmakersSkoricVillegasVRHE::~HooghSchoenmakersSkoricVillegasVRHE
 	mpz_clear(p), mpz_clear(q), mpz_clear(g), mpz_clear(h);
 	delete pub_rot_zk;
 	
-	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	tmcg_mpz_fpowm_done(fpowm_table_g), tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }

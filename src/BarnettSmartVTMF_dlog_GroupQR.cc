@@ -15,8 +15,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2016, 
-                                 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2007, 
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	// such that $p = 2q + 1$ and $p$, $q$ are both prime.
 	// The integer 2 is a generator of $\mathbb{QR}_p$ since
 	// we choose $p \equiv 7 \pmod{8}$. [Bo98, RS00]
-	mpz_sprime2g(p, q, fieldsize - 1L, TMCG_MR_ITERATIONS);
+	tmcg_mpz_sprime2g(p, q, fieldsize - 1L, TMCG_MR_ITERATIONS);
 	mpz_set_ui(g, 2L), mpz_set_ui(k, 2L);
 	
 	// We shift the generator (according to [KK04]) to allow
@@ -68,7 +68,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 		mpz_set(g, 0L); // indicates an error
 	
 	// Precompute the $g$-table for the fast exponentiation.
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
 BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
@@ -95,7 +95,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 		mpz_set(g, 0L); // indicates an error
 
 	// Precompute the $g$-table for the fast exponentiation.
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
 bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
@@ -177,7 +177,7 @@ void BarnettSmartVTMF_dlog_GroupQR::RandomElement
 	// Choose randomly and uniformly an element from 
 	// $\mathbb{Z}_p \setminus \{ 0 \}$.
 	do
-		mpz_srandomm(a, p);
+		tmcg_mpz_srandomm(a, p);
 	while (!mpz_cmp_ui(a, 0L));
 	
 	// Square $a$ to obtain a quadratic residue from $\mathbb{QR}_p$.
@@ -193,7 +193,7 @@ void BarnettSmartVTMF_dlog_GroupQR::MaskingValue
 	if (mpz_sizeinbase(p, 2L) <= E_size)
 	{
 		do
-			mpz_srandomm(r, q);
+			tmcg_mpz_srandomm(r, q);
 		while (!mpz_cmp_ui(r, 0L) || !mpz_cmp_ui(r, 1L));
 	}
 	else
@@ -201,7 +201,7 @@ void BarnettSmartVTMF_dlog_GroupQR::MaskingValue
 		// Under the additional DLSE assumption we can reduce the size of
 		// the exponent. Note that generator $g$ must be shifted [KK04].
 		do
-			mpz_srandomb(r, E_size);
+			tmcg_mpz_srandomb(r, E_size);
 		while (!mpz_cmp_ui(r, 0L) || !mpz_cmp_ui(r, 1L));
 	}
 }

@@ -41,7 +41,7 @@
 // GNU crypto library
 #include <gcrypt.h>
 
-#include "mpz_srandom.h"
+#include "mpz_srandom.hh"
 #include "mpz_helper.hh"
 
 // definition of types and constants for OpenPGP structures

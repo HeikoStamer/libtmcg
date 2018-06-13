@@ -126,7 +126,7 @@ void start_instance_nonblock
 			{
 				for (size_t k = 0; !corrupted && (k < K); k++)
 				{
-					mpz_wrandomb(m, TMCG_DDH_SIZE);
+					tmcg_mpz_wrandomb(m, TMCG_DDH_SIZE);
 					mpz_mul_ui(m, m, (i + k + 1));
 					ret = aiou->Send(m, i);
 					assert(ret);
@@ -257,7 +257,7 @@ void start_instance_select
 			{
 				for (size_t k = 0; !corrupted && (k < K); k++)
 				{
-					mpz_wrandomb(m, TMCG_DDH_SIZE);
+					tmcg_mpz_wrandomb(m, TMCG_DDH_SIZE);
 					mpz_mul_ui(m, m, (i + k + 1));
 					ret = aiou->Send(m, i);
 					assert(ret);

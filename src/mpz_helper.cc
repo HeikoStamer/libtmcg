@@ -25,7 +25,7 @@
 #include "mpz_helper.hh"
 
 // get content of mpz_t into gcry_mpi_t
-bool mpz_get_gcry_mpi
+bool tmcg_mpz_get_gcry_mpi
 	(gcry_mpi_t &out, mpz_srcptr value)
 {
 	// two extra bytes are for a possible minus sign, and the null-terminator
@@ -44,7 +44,7 @@ bool mpz_get_gcry_mpi
 }
 
 // set content of mpz_t from gcry_mpi_t
-bool mpz_set_gcry_mpi
+bool tmcg_mpz_set_gcry_mpi
 	(const gcry_mpi_t in, mpz_ptr value)
 {
 	char *buf = new char[TMCG_MAX_VALUE_CHARS];
@@ -67,7 +67,7 @@ bool mpz_set_gcry_mpi
 }
 
 // get small values from gcry_mpi_t
-size_t get_gcry_mpi_ui
+size_t tmcg_get_gcry_mpi_ui
 	(const gcry_mpi_t in)
 {
 	char *buf = new char[TMCG_MAX_VALUE_CHARS];
@@ -120,7 +120,7 @@ std::ostream& operator <<
 {
 	mpz_t tmp;
 	mpz_init(tmp);
-	if (mpz_set_gcry_mpi(value, tmp))
+	if (tmcg_mpz_set_gcry_mpi(value, tmp))
 	{
 		out << tmp;
 	}
@@ -133,7 +133,7 @@ std::ostream& operator <<
 }
 
 // algorithm for polynomial interpolation adapted from Victor Shoup's NTL 10.3.0
-bool interpolate_polynom
+bool tmcg_interpolate_polynom
 	(const std::vector<mpz_ptr> &a, const std::vector<mpz_ptr> &b,
 	mpz_srcptr q, std::vector<mpz_ptr> &f)
 {
@@ -227,3 +227,4 @@ bool interpolate_polynom
 		return return_value;
 	}
 }
+

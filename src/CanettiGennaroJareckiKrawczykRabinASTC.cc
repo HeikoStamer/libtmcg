@@ -84,9 +84,9 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
@@ -173,9 +173,9 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 void CanettiGennaroJareckiKrawczykRabinRVSS::PublishState
@@ -259,10 +259,10 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::CheckGroup
 			throw false;
 
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 
@@ -285,7 +285,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::CheckGroup
 			mpz_sub_ui(bar, p, 1L); // compute $p-1$
 			do
 			{
-				mpz_shash(foo, U.str());
+				tmcg_mpz_shash(foo, U.str());
 				mpz_powm(g2, foo, k, p);
 				U << g2 << "|";
 				mpz_powm(foo, g2, q, p);
@@ -380,7 +380,7 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		mpz_init(tmp1), mpz_init(tmp2);
 		a_i.push_back(tmp1), b_i.push_back(tmp2);
 	}
-	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+	size_t simulate_faulty_randomizer = tmcg_mpz_wrandom_ui() % 2L;
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -400,19 +400,19 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 				if ((ssrandomm_cache != NULL) && (ssrandomm_cache_mod != NULL) && (ssrandomm_cache_avail != NULL))
 				{
 					err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": using very strong randomness from cache" << std::endl;
-					mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, a_i[k], q);
-					mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, b_i[k], q);
+					tmcg_mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, a_i[k], q);
+					tmcg_mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, b_i[k], q);
 				}
 				else
 				{
-					mpz_ssrandomm(a_i[k], q);
-					mpz_ssrandomm(b_i[k], q);
+					tmcg_mpz_ssrandomm(a_i[k], q);
+					tmcg_mpz_ssrandomm(b_i[k], q);
 				}
 			}
 			else
 			{
-				mpz_srandomm(a_i[k], q);
-				mpz_srandomm(b_i[k], q);
+				tmcg_mpz_srandomm(a_i[k], q);
+				tmcg_mpz_srandomm(b_i[k], q);
 			}
 		}
 		//     Let $z_i = a_{i0} = f_i(0)$.
@@ -421,8 +421,8 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		//     $P_i$ broadcasts $C_{ik} = g^{a_{ik}} h^{b_{ik}} \bmod p$ for $k = 0, \ldots, t\prime$.
 		for (size_t k = 0; k <= tprime; k++)
 		{
-			mpz_fspowm(fpowm_table_g, foo, g, a_i[k], p);
-			mpz_fspowm(fpowm_table_h, bar, h, b_i[k], p);
+			tmcg_mpz_fspowm(fpowm_table_g, foo, g, a_i[k], p);
+			tmcg_mpz_fspowm(fpowm_table_h, bar, h, b_i[k], p);
 			mpz_mul(C_ik[i][k], foo, bar);
 			mpz_mod(C_ik[i][k], C_ik[i][k], p);
 			rbc->Broadcast(C_ik[i][k]);
@@ -521,8 +521,8 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		for (size_t j = 0; j < n; j++)
 		{
 			// compute LHS for the check
-			mpz_fspowm(fpowm_table_g, foo, g, s_ji[j][i], p);
-			mpz_fspowm(fpowm_table_h, bar, h, sprime_ji[j][i], p);
+			tmcg_mpz_fspowm(fpowm_table_g, foo, g, s_ji[j][i], p);
+			tmcg_mpz_fspowm(fpowm_table_h, bar, h, sprime_ji[j][i], p);
 			mpz_mul(lhs, foo, bar);
 			mpz_mod(lhs, lhs, p);
 			// compute RHS for the check
@@ -661,8 +661,8 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 					mpz_t s, sprime;
 					mpz_init_set(s, foo), mpz_init_set(sprime, bar); // save shares
 					// compute LHS for the check
-					mpz_fpowm(fpowm_table_g, foo, g, foo, p);
-					mpz_fpowm(fpowm_table_h, bar, h, bar, p);
+					tmcg_mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+					tmcg_mpz_fpowm(fpowm_table_h, bar, h, bar, p);
 					mpz_mul(lhs, foo, bar);
 					mpz_mod(lhs, lhs, p);
 					// compute RHS for the check
@@ -822,8 +822,8 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Reconstruct
 						{
 							mpz_set(shares[dkg2idx[*jt]], foo); // store the received share for interpolation
 							// compute LHS for the check
-							mpz_fpowm(fpowm_table_g, foo, g, foo, p);
-							mpz_fpowm(fpowm_table_h, bar, h, bar, p);
+							tmcg_mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+							tmcg_mpz_fpowm(fpowm_table_h, bar, h, bar, p);
 							mpz_mul(lhs, foo, bar);
 							mpz_mod(lhs, lhs, p);
 							// compute RHS for the check
@@ -950,7 +950,7 @@ CanettiGennaroJareckiKrawczykRabinRVSS::~CanettiGennaroJareckiKrawczykRabinRVSS
 		C_ik[ii].clear();
 	}
 	C_ik.clear();
-	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	tmcg_mpz_fpowm_done(fpowm_table_g), tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
 
@@ -999,9 +999,9 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
@@ -1086,9 +1086,9 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 void CanettiGennaroJareckiKrawczykRabinZVSS::PublishState
@@ -1170,10 +1170,10 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::CheckGroup
 			throw false;
 
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 
@@ -1196,7 +1196,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::CheckGroup
 			mpz_sub_ui(bar, p, 1L); // compute $p-1$
 			do
 			{
-				mpz_shash(foo, U.str());
+				tmcg_mpz_shash(foo, U.str());
 				mpz_powm(g2, foo, k, p);
 				U << g2 << "|";
 				mpz_powm(foo, g2, q, p);
@@ -1291,7 +1291,7 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		mpz_init(tmp1), mpz_init(tmp2);
 		a_i.push_back(tmp1), b_i.push_back(tmp2);
 	}
-	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+	size_t simulate_faulty_randomizer = tmcg_mpz_wrandom_ui() % 2L;
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -1319,19 +1319,19 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 				if ((ssrandomm_cache != NULL) && (ssrandomm_cache_mod != NULL) && (ssrandomm_cache_avail != NULL))
 				{
 					err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": using very strong randomness from cache" << std::endl;
-					mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, a_i[k], q);
-					mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, b_i[k], q);
+					tmcg_mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, a_i[k], q);
+					tmcg_mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, b_i[k], q);
 				}
 				else
 				{
-					mpz_ssrandomm(a_i[k], q);
-					mpz_ssrandomm(b_i[k], q);
+					tmcg_mpz_ssrandomm(a_i[k], q);
+					tmcg_mpz_ssrandomm(b_i[k], q);
 				}
 			}
 			else
 			{
-				mpz_srandomm(a_i[k], q);
-				mpz_srandomm(b_i[k], q);
+				tmcg_mpz_srandomm(a_i[k], q);
+				tmcg_mpz_srandomm(b_i[k], q);
 			}
 		}
 		// Let $z_i = a_{i0} = f_i(0)$.
@@ -1339,8 +1339,8 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		// for $k = 0, \ldots, t\prime$.
 		for (size_t k = 0; k <= tprime; k++)
 		{
-			mpz_fspowm(fpowm_table_g, foo, g, a_i[k], p);
-			mpz_fspowm(fpowm_table_h, bar, h, b_i[k], p);
+			tmcg_mpz_fspowm(fpowm_table_g, foo, g, a_i[k], p);
+			tmcg_mpz_fspowm(fpowm_table_h, bar, h, b_i[k], p);
 			mpz_mul(C_ik[i][k], foo, bar);
 			mpz_mod(C_ik[i][k], C_ik[i][k], p);
 			rbc->Broadcast(C_ik[i][k]); // TODO: skip this for optimization, if k = 0
@@ -1442,8 +1442,8 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 		for (size_t j = 0; j < n; j++)
 		{
 			// compute LHS for the check
-			mpz_fspowm(fpowm_table_g, foo, g, s_ji[j][i], p);
-			mpz_fspowm(fpowm_table_h, bar, h, sprime_ji[j][i], p);
+			tmcg_mpz_fspowm(fpowm_table_g, foo, g, s_ji[j][i], p);
+			tmcg_mpz_fspowm(fpowm_table_h, bar, h, sprime_ji[j][i], p);
 			mpz_mul(lhs, foo, bar);
 			mpz_mod(lhs, lhs, p);
 			// compute RHS for the check
@@ -1590,8 +1590,8 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 					mpz_t s, sprime;
 					mpz_init_set(s, foo), mpz_init_set(sprime, bar); // save shares
 					// compute LHS for the check
-					mpz_fpowm(fpowm_table_g, foo, g, foo, p);
-					mpz_fpowm(fpowm_table_h, bar, h, bar, p);
+					tmcg_mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+					tmcg_mpz_fpowm(fpowm_table_h, bar, h, bar, p);
 					mpz_mul(lhs, foo, bar);
 					mpz_mod(lhs, lhs, p);
 					// compute RHS for the check
@@ -1712,7 +1712,7 @@ CanettiGennaroJareckiKrawczykRabinZVSS::~CanettiGennaroJareckiKrawczykRabinZVSS
 		C_ik[ii].clear();
 	}
 	C_ik.clear();
-	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	tmcg_mpz_fpowm_done(fpowm_table_g), tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
 
@@ -1741,9 +1741,9 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
@@ -1793,9 +1793,9 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 void CanettiGennaroJareckiKrawczykRabinDKG::PublishState
@@ -1848,10 +1848,10 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
 			throw false;
 
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 
@@ -1874,7 +1874,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
 			mpz_sub_ui(bar, p, 1L); // compute $p-1$
 			do
 			{
-				mpz_shash(foo, U.str());
+				tmcg_mpz_shash(foo, U.str());
 				mpz_powm(g2, foo, k, p);
 				U << g2 << "|";
 				mpz_powm(foo, g2, q, p);
@@ -1987,7 +1987,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	}
 	size_t simulate_faulty_randomizer[10];
 	for (size_t idx = 0; idx < 10; idx++)
-		simulate_faulty_randomizer[idx] = mpz_wrandom_ui() % 2L;
+		simulate_faulty_randomizer[idx] = tmcg_mpz_wrandom_ui() % 2L;
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -2018,14 +2018,14 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		// 2. Each player $P_i$, $i \in QUAL$, broadcasts $A_i = g^{f_i(0)} = g^{z_i} \bmod p$ and
 		//    $B_i = h^{f\prime_i(0)} \bmod p$, s.t. $C_{i0} = A_i B_i$. $P_i$ also chooses random
 		//    values $r_i$ and $r\prime_i$ and broadcasts $T_i = g^{r_i}, T\prime_i = h^{r\prime_i} \bmod p$.
-		mpz_fspowm(fpowm_table_g, A_i[i], g, x_rvss->z_i, p);
+		tmcg_mpz_fspowm(fpowm_table_g, A_i[i], g, x_rvss->z_i, p);
 		if (simulate_faulty_behaviour && simulate_faulty_randomizer[1])
 			mpz_add_ui(A_i[i], A_i[i], 1L);
-		mpz_fspowm(fpowm_table_h, B_i[i], h, x_rvss->zprime_i, p);
-		mpz_srandomm(r_i, q);
-		mpz_srandomm(rprime_i, q);
-		mpz_fspowm(fpowm_table_g, T_i[i], g, r_i, p);
-		mpz_fspowm(fpowm_table_h, Tprime_i[i], h, rprime_i, p);
+		tmcg_mpz_fspowm(fpowm_table_h, B_i[i], h, x_rvss->zprime_i, p);
+		tmcg_mpz_srandomm(r_i, q);
+		tmcg_mpz_srandomm(rprime_i, q);
+		tmcg_mpz_fspowm(fpowm_table_g, T_i[i], g, r_i, p);
+		tmcg_mpz_fspowm(fpowm_table_h, Tprime_i[i], h, rprime_i, p);
 		for (size_t j = 0; j < n; j++)
 		{
 			if ((j == i) && (std::find(QUAL.begin(), QUAL.end(), idx2dkg[j]) != QUAL.end()))
@@ -2157,8 +2157,8 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 				// Pedersen verification equation (Eq. (1)) if the players submit the associated
 				// random values generated by Joint-RVSS together with there shares. Therefore
 				// the players must no longer erase these values as in the current Step 3.
-				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
-				mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
+				tmcg_mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
+				tmcg_mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
 				mpz_mul(lhs, foo, bar);
 				mpz_mod(lhs, lhs, p);
 				mpz_set_ui(rhs, 1L);
@@ -2242,7 +2242,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
-				mpz_fpowm(fpowm_table_g, lhs, g, foo, p);
+				tmcg_mpz_fpowm(fpowm_table_g, lhs, g, foo, p);
 				mpz_powm(rhs, A_i[j], d, p);
 				mpz_mul(rhs, rhs, T_i[j]);
 				mpz_mod(rhs, rhs, p);
@@ -2252,7 +2252,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 					complaints.push_back(idx2dkg[j]);
 					continue;
 				}
-				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				tmcg_mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				mpz_powm(rhs, B_i[j], d, p);
 				mpz_mul(rhs, rhs, Tprime_i[j]);
 				mpz_mod(rhs, rhs, p);
@@ -2353,7 +2353,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 		}
 		// Set $A_j = g^{z_j}$, for every failed player $P_j$.
 		for (std::vector<size_t>::iterator it = complaints.begin(); it != complaints.end(); ++it)
-			mpz_fpowm(fpowm_table_g, A_i[dkg2idx[*it]], g, z_i[dkg2idx[*it]], p);
+			tmcg_mpz_fpowm(fpowm_table_g, A_i[dkg2idx[*it]], g, z_i[dkg2idx[*it]], p);
 		// 8. The public value $y$ is set to $y = \prod_{i \in QUAL} A_i \bmod p$.
 		err << "DKG(" << label << "): P_" << idx2dkg[i] << ": QUAL = { ";
 		for (std::vector<size_t>::iterator it = QUAL.begin(); it != QUAL.end(); ++it)
@@ -2455,7 +2455,7 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
 		F_size, G_size, canonical_g, use_very_strong_randomness, "x_zvss");
 	size_t simulate_faulty_randomizer[10];
 	for (size_t idx = 0; idx < 10; idx++)
-		simulate_faulty_randomizer[idx] = mpz_wrandom_ui() % 2L;
+		simulate_faulty_randomizer[idx] = tmcg_mpz_wrandom_ui() % 2L;
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -2544,7 +2544,7 @@ CanettiGennaroJareckiKrawczykRabinDKG::~CanettiGennaroJareckiKrawczykRabinDKG
 	// release subprotocol
 	delete x_rvss;
 
-	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	tmcg_mpz_fpowm_done(fpowm_table_g), tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
 
@@ -2572,9 +2572,9 @@ CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
@@ -2623,9 +2623,9 @@ CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 void CanettiGennaroJareckiKrawczykRabinDSS::PublishState
@@ -2678,10 +2678,10 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::CheckGroup
 			throw false;
 
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 
@@ -2704,7 +2704,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::CheckGroup
 			mpz_sub_ui(bar, p, 1L); // compute $p-1$
 			do
 			{
-				mpz_shash(foo, U.str());
+				tmcg_mpz_shash(foo, U.str());
 				mpz_powm(g2, foo, k, p);
 				U << g2 << "|";
 				mpz_powm(foo, g2, q, p);
@@ -2999,7 +2999,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 	}
 	size_t simulate_faulty_randomizer[50];
 	for (size_t idx = 0; idx < 50; idx++)
-		simulate_faulty_randomizer[idx] = mpz_wrandom_ui() % 2L;
+		simulate_faulty_randomizer[idx] = tmcg_mpz_wrandom_ui() % 2L;
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -3134,9 +3134,9 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        Then we show in parallel, that commitment $\alpha_i \gamma_i^{-1}$ resp. $\beta_i \delta_i^{-1}$
 		//        equals zero, i.e., the former commitment was made to the same value $k_i$ resp. $a_i$. This works
 		//        since Pedersen commitments have homomorphic properties.
-		mpz_srandomm(r_k_i, q), mpz_srandomm(r_a_i, q);
-		mpz_fspowm(fpowm_table_h, Tk_i[i_in], h, r_k_i, p);
-		mpz_fspowm(fpowm_table_h, Ta_i[i_in], h, r_a_i, p);
+		tmcg_mpz_srandomm(r_k_i, q), tmcg_mpz_srandomm(r_a_i, q);
+		tmcg_mpz_fspowm(fpowm_table_h, Tk_i[i_in], h, r_k_i, p);
+		tmcg_mpz_fspowm(fpowm_table_h, Ta_i[i_in], h, r_a_i, p);
 		for (size_t j = 0; j < n_in; j++)
 		{
 			if ((j == i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
@@ -3216,8 +3216,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(dprime_i[j], 0L); // indicates an error
 				}
-				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
-				mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
+				tmcg_mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
+				tmcg_mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
 				mpz_mul(lhs, foo, bar);
 				mpz_mod(lhs, lhs, p);
 				mpz_set_ui(rhs, 1L);
@@ -3310,7 +3310,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_powm(rhs, rhs, d, p);
 				mpz_mul(rhs, rhs, Tk_i[j]);
 				mpz_mod(rhs, rhs, p);
-				mpz_fpowm(fpowm_table_h, lhs, h, foo, p);
+				tmcg_mpz_fpowm(fpowm_table_h, lhs, h, foo, p);
 				if (mpz_cmp(lhs, rhs))
 				{
 					err << "P_" << idx2dkg[i_in] << ": ZNPoK for k_i in Step 1c failed for P_" << idx2dkg[j] << std::endl;
@@ -3328,7 +3328,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_powm(rhs, rhs, d, p);
 				mpz_mul(rhs, rhs, Ta_i[j]);
 				mpz_mod(rhs, rhs, p);
-				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				tmcg_mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				if (mpz_cmp(lhs, rhs))
 				{
 					err << "P_" << idx2dkg[i_in] << ": ZNPoK for a_i in Step 1c failed for P_" << idx2dkg[j] << std::endl;
@@ -3384,17 +3384,21 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//         Another description of this protocol due to Gennaro, Rabin, and Rabin is
 		//         contained in appendix B of their paper 'Simplified VSS and Fast-track
 		//         Multiparty Computations with Applications to Threshold Cryptography'.)
-		mpz_srandomm(dd, q), mpz_srandomm(ee, q), mpz_srandomm(ss, q), mpz_srandomm(ssprime, q), mpz_srandomm(tt, q);
-		mpz_fspowm(fpowm_table_g, foo, g, dd, p);
-		mpz_fspowm(fpowm_table_h, bar, h, ss, p);
+		tmcg_mpz_srandomm(dd, q);
+		tmcg_mpz_srandomm(ee, q);
+		tmcg_mpz_srandomm(ss, q);
+		tmcg_mpz_srandomm(ssprime, q);
+		tmcg_mpz_srandomm(tt, q);
+		tmcg_mpz_fspowm(fpowm_table_g, foo, g, dd, p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, ss, p);
 		mpz_mul(DD[i_in], foo, bar);
 		mpz_mod(DD[i_in], DD[i_in], p);
-		mpz_spowm(foo, beta_i[i_in], dd, p);
-		mpz_fspowm(fpowm_table_h, bar, h, ssprime, p);
+		tmcg_mpz_spowm(foo, beta_i[i_in], dd, p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, ssprime, p);
 		mpz_mul(DDprime[i_in], foo, bar);
 		mpz_mod(DDprime[i_in], DDprime[i_in], p);
-		mpz_fspowm(fpowm_table_g, foo, g, ee, p);
-		mpz_fspowm(fpowm_table_h, bar, h, tt, p);
+		tmcg_mpz_fspowm(fpowm_table_g, foo, g, ee, p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, tt, p);
 		mpz_mul(EE[i_in], foo, bar);
 		mpz_mod(EE[i_in], EE[i_in], p);
 		for (size_t j = 0; j < n_in; j++)
@@ -3492,8 +3496,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(dprime_i[j], 0L); // indicates an error
 				}
-				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
-				mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
+				tmcg_mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
+				tmcg_mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
 				mpz_mul(lhs, foo, bar);
 				mpz_mod(lhs, lhs, p);
 				mpz_set_ui(rhs, 1L);
@@ -3596,8 +3600,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				}
 				// [BCCG15]: $\mathrm{Com}_{ck}(f_1; z_1) = A^x D$
 				mpz_set(ssprime, foo); // save $f_1$ for third ZNPoK
-				mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
-				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				tmcg_mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
+				tmcg_mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				mpz_mul(lhs, lhs, rhs);
 				mpz_mod(lhs, lhs, p);
 				mpz_powm(rhs, alpha_i[j], d, p);
@@ -3633,8 +3637,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				// [BCCG15]: $\mathrm{Com}_{ck}(f_2; z_2) = B^x E$
-				mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
-				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				tmcg_mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
+				tmcg_mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				mpz_mul(lhs, lhs, rhs);
 				mpz_mod(lhs, lhs, p);
 				mpz_powm(rhs, beta_i[j], d, p);
@@ -3659,7 +3663,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				}
 				// [BCCG15]: $\mathrm{Com}_{ck\prime}(f_1; z_3) = C^x D\prime$
 				mpz_powm(rhs, beta_i[j], ssprime, p);
-				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				tmcg_mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				mpz_mul(lhs, lhs, rhs);
 				mpz_mod(lhs, lhs, p);
 				mpz_powm(rhs, chi_i[j], d, p);
@@ -3815,8 +3819,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				}
 				mpz_set(shares[j], foo); // save the share for later following reconstruction
 				// compute LHS for the check
-				mpz_fpowm(fpowm_table_g, foo, g, foo, p);
-				mpz_fpowm(fpowm_table_h, bar, h, bar, p);
+				tmcg_mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+				tmcg_mpz_fpowm(fpowm_table_h, bar, h, bar, p);
 				mpz_mul(lhs, foo, bar);
 				mpz_mod(lhs, lhs, p);
 				// compute RHS for the check
@@ -3836,7 +3840,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					}
 					else
 					{
-						mpz_fpowm(fpowm_table_g, bar, g, v_i[dkg2idx[*jt]], p);
+						tmcg_mpz_fpowm(fpowm_table_g, bar, g, v_i[dkg2idx[*jt]], p);
 					}
 					mpz_powm(bar, bar, lambda_j[dkg2idx[*jt]], p); // include Lagrange multipliers
 					mpz_mul(rhs, rhs, bar);
@@ -3933,8 +3937,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				}
 			}
 			mpz_powm(beta_i[j], beta_i[j], r, p);
-			mpz_fpowm(fpowm_table_g, foo, g, m, p);
-			mpz_fpowm(fpowm_table_h, bar, h, m, p);
+			tmcg_mpz_fpowm(fpowm_table_g, foo, g, m, p);
+			tmcg_mpz_fpowm(fpowm_table_h, bar, h, m, p);
 			mpz_mul(beta_i[j], beta_i[j], foo);
 			mpz_mod(beta_i[j], beta_i[j], p);
 			mpz_mul(beta_i[j], beta_i[j], bar);
@@ -3985,8 +3989,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        from [BCCG15]). Then we show in parallel, that commitment $\beta_i \delta_i^{-1}$ equals
 		//        zero, i.e., the former commitment was made to the same value $a_i$. This works since
 		//        Pedersen commitments have homomorphic properties.
-		mpz_srandomm(r_a_i, q);
-		mpz_fspowm(fpowm_table_h, Ta_i[i_in], h, r_a_i, p);
+		tmcg_mpz_srandomm(r_a_i, q);
+		tmcg_mpz_fspowm(fpowm_table_h, Ta_i[i_in], h, r_a_i, p);
 		for (size_t j = 0; j < n_in; j++)
 		{
 			if ((j == i_in) && (std::find(joinedQUAL.begin(), joinedQUAL.end(), idx2dkg[j]) != joinedQUAL.end()))
@@ -4054,8 +4058,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(dprime_i[j], 0L); // indicates an error
 				}
-				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
-				mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
+				tmcg_mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
+				tmcg_mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
 				mpz_mul(lhs, foo, bar);
 				mpz_mod(lhs, lhs, p);
 				mpz_set_ui(rhs, 1L);
@@ -4128,7 +4132,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				mpz_powm(rhs, rhs, d, p);
 				mpz_mul(rhs, rhs, Ta_i[j]);
 				mpz_mod(rhs, rhs, p);
-				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				tmcg_mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				if (mpz_cmp(lhs, rhs))
 				{
 					err << "P_" << idx2dkg[i_in] << ": ZNPoK for a_i in Step 2c failed for P_" << idx2dkg[j] << std::endl;
@@ -4181,17 +4185,21 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 		//        a zero-knowledge proof from [CD98]. This is a 3-move public coin proof and
 		//        it is performed by all players as above.
 		//        (We use the simplified presentation from [BCCG15] called $\Sigma_{prod}$.)
-		mpz_srandomm(dd, q), mpz_srandomm(ee, q), mpz_srandomm(ss, q), mpz_srandomm(ssprime, q), mpz_srandomm(tt, q);
-		mpz_fspowm(fpowm_table_g, foo, g, dd, p);
-		mpz_fspowm(fpowm_table_h, bar, h, ss, p);
+		tmcg_mpz_srandomm(dd, q);
+		tmcg_mpz_srandomm(ee, q);
+		tmcg_mpz_srandomm(ss, q);
+		tmcg_mpz_srandomm(ssprime, q);
+		tmcg_mpz_srandomm(tt, q);
+		tmcg_mpz_fspowm(fpowm_table_g, foo, g, dd, p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, ss, p);
 		mpz_mul(DD[i_in], foo, bar);
 		mpz_mod(DD[i_in], DD[i_in], p);
-		mpz_spowm(foo, beta_i[i_in], dd, p);
-		mpz_fspowm(fpowm_table_h, bar, h, ssprime, p);
+		tmcg_mpz_spowm(foo, beta_i[i_in], dd, p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, ssprime, p);
 		mpz_mul(DDprime[i_in], foo, bar);
 		mpz_mod(DDprime[i_in], DDprime[i_in], p);
-		mpz_fspowm(fpowm_table_g, foo, g, ee, p);
-		mpz_fspowm(fpowm_table_h, bar, h, tt, p);
+		tmcg_mpz_fspowm(fpowm_table_g, foo, g, ee, p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, tt, p);
 		mpz_mul(EE[i_in], foo, bar);
 		mpz_mod(EE[i_in], EE[i_in], p);
 		for (size_t j = 0; j < n_in; j++)
@@ -4289,8 +4297,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					d_complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(dprime_i[j], 0L); // indicates an error
 				}
-				mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
-				mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
+				tmcg_mpz_fpowm(fpowm_table_g, foo, g, d_i[j], p);
+				tmcg_mpz_fpowm(fpowm_table_h, bar, h, dprime_i[j], p);
 				mpz_mul(lhs, foo, bar);
 				mpz_mod(lhs, lhs, p);
 				mpz_set_ui(rhs, 1L);
@@ -4392,8 +4400,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				mpz_set(ssprime, foo); // save $f_1$ for third ZNPoK
-				mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
-				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				tmcg_mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
+				tmcg_mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				mpz_mul(lhs, lhs, rhs);
 				mpz_mod(lhs, lhs, p);
 				mpz_powm(rhs, alpha_i[j], d, p);
@@ -4428,8 +4436,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					complaints.push_back(idx2dkg[j]);
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
-				mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
-				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				tmcg_mpz_fpowm(fpowm_table_g, rhs, g, foo, p);
+				tmcg_mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				mpz_mul(lhs, lhs, rhs);
 				mpz_mod(lhs, lhs, p);
 				mpz_powm(rhs, beta_i[j], d, p);
@@ -4453,7 +4461,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					mpz_set_ui(foo, 0L); // indicates an error
 				}
 				mpz_powm(rhs, beta_i[j], ssprime, p);
-				mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
+				tmcg_mpz_fpowm(fpowm_table_h, lhs, h, bar, p);
 				mpz_mul(lhs, lhs, rhs);
 				mpz_mod(lhs, lhs, p);
 				mpz_powm(rhs, chi_i[j], d, p);
@@ -4609,8 +4617,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				}
 				mpz_set(shares[j], foo); // save the share for later following reconstruction
 				// compute LHS for the check
-				mpz_fpowm(fpowm_table_g, foo, g, foo, p);
-				mpz_fpowm(fpowm_table_h, bar, h, bar, p);
+				tmcg_mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+				tmcg_mpz_fpowm(fpowm_table_h, bar, h, bar, p);
 				mpz_mul(lhs, foo, bar);
 				mpz_mod(lhs, lhs, p);
 				// compute RHS for the check
@@ -4630,7 +4638,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 					}
 					else
 					{
-						mpz_fpowm(fpowm_table_g, bar, g, v_i[dkg2idx[*jt]], p);
+						tmcg_mpz_fpowm(fpowm_table_g, bar, g, v_i[dkg2idx[*jt]], p);
 					}
 					mpz_powm(bar, bar, lambda_j[dkg2idx[*jt]], p); // include Lagrange multipliers
 					mpz_mul(rhs, rhs, bar);
@@ -4773,7 +4781,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Verify
 			throw false;
 		mpz_mul(bar, m, foo);
 		mpz_mod(bar, bar, q);
-		mpz_fpowm(fpowm_table_g, rprime, g, bar, p);
+		tmcg_mpz_fpowm(fpowm_table_g, rprime, g, bar, p);
 		mpz_mul(bar, r, foo);
 		mpz_mod(bar, bar, q);
 		mpz_powm(foo, y, bar, p);
@@ -4805,7 +4813,7 @@ CanettiGennaroJareckiKrawczykRabinDSS::~CanettiGennaroJareckiKrawczykRabinDSS
 	// release subprotocol
 	delete dkg;
 
-	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	tmcg_mpz_fpowm_done(fpowm_table_g), tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
 

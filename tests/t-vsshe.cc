@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2005, 2006, 2007, 2009, 
-                     2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+                     2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ void random_permutation
 		do
 		{
 			ok = true;
-			pi[i] = mpz_srandom_mod(n);
+			pi[i] = tmcg_mpz_srandom_mod(n);
 			for (size_t j = 0; j < i; j++)
 			{
 				if (pi[i] == pi[j])
@@ -75,7 +75,7 @@ void random_permutation_fast
 	
 	for (size_t i = 0; i < (n - 1); i++)
 	{
-		size_t tmp = pi[i], rnd = i + mpz_srandom_mod(n - i);
+		size_t tmp = pi[i], rnd = i + tmcg_mpz_srandom_mod(n - i);
 		pi[i] = pi[rnd];
 		pi[rnd] = tmp;
 	}
@@ -196,7 +196,7 @@ int main
 	com = new PedersenCommitmentScheme(1);
 	std::cout << "*.CheckGroup()" << std::endl;
 	assert(com->CheckGroup());
-	mpz_wrandomm(bb, com->q);
+	tmcg_mpz_wrandomm(bb, com->q);
 	mpz_powm(b, com->h, bb, com->p);
 	bar << com->p << std::endl << com->q << std::endl << com->k << std::endl << com->h << std::endl;
 	bar << b << std::endl;
@@ -208,7 +208,7 @@ int main
 		mpz_init_set_ui(tmp, 42L);
 		mp.push_back(tmp);
 	}
-	mpz_wrandomm(aa, com->q);
+	tmcg_mpz_wrandomm(aa, com->q);
 	mpz_powm(a, com2->h, aa, com2->p);
 	std::cout << "c = " << a << std::endl;
 	std::cout << "*.TestMembership(c)" << std::endl;
@@ -364,7 +364,7 @@ int main
 			for (size_t i = 0; i < n; i++)
 			{
 				// create E[i]
-				mpz_srandomm(R[i], com->q);
+				tmcg_mpz_srandomm(R[i], com->q);
 				mpz_powm(E[i].first, com->g[0], R[i], com->p);
 				mpz_mul(E[i].first, E[i].first, e[pi[i]].first);
 				mpz_mod(E[i].first, E[i].first, com->p);

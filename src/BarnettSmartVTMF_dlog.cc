@@ -14,7 +14,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 2009,
-                           2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	// We use the unique subgroup of prime order $q$ where $p = kq + 1$.
 	// Sometimes such groups are called Schnorr groups. [Bo98]	
 	if (initialize_group)
-		mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
+		tmcg_mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
 	
 	// Choose the generator $g$ of the group $G$. 
 	if (initialize_group)
@@ -69,7 +69,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 			U << "LibTMCG|" << p << "|" << q << "|ggen|";
 			do
 			{
-				mpz_shash(bar, U.str());
+				tmcg_mpz_shash(bar, U.str());
 				mpz_powm(g, bar, k, p); // $g := [bar]^k \bmod p$
 				U << g << "|";
 				mpz_powm(bar, g, q, p);
@@ -85,7 +85,7 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 			mpz_sub_ui(foo, p, 1L); // compute $p-1$
 			do
 			{
-				mpz_wrandomm(bar, p); // choose [bar] randomly
+				tmcg_mpz_wrandomm(bar, p); // choose [bar] randomly
 				mpz_powm(g, bar, k, p); // $g := [bar]^k \bmod p$
 			}
 			while (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
@@ -99,11 +99,11 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	// Initialize the tables for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
 	
 	// Precompute the values $g^{2^i} \bmod p$ for all $0 \le i \le |q|$.
 	if (initialize_group)
-		mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+		tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
@@ -124,11 +124,11 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	// Initialize the tables for the fast exponentiation
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
 	
 	// Precompute the values $g^{2^i} \bmod p$ for all $0 \le i \le |q|$
 	if (precompute)
-		mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+		tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
 bool BarnettSmartVTMF_dlog::CheckGroup
@@ -167,7 +167,7 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 		// which means that the order of $g$ is $q$. Of course, we must
 		// ensure that $g$ is not trivial, i.e., $1 < g < p-1$.
 		mpz_sub_ui(bar, p, 1L);
-		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
 		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, bar) >= 0) || 
 			mpz_cmp_ui(foo, 1L))
 				throw false;
@@ -181,7 +181,7 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 			U << "LibTMCG|" << p << "|" << q << "|ggen|";
 			do
 			{
-				mpz_shash(foo, U.str());
+				tmcg_mpz_shash(foo, U.str());
 				mpz_powm(g2, foo, k, p);
 				U << g2 << "|";
 				mpz_powm(foo, g2, q, p);
@@ -245,11 +245,11 @@ void BarnettSmartVTMF_dlog::RandomElement
 	// Choose randomly and uniformly an element $b$ from
 	// $\mathbb{Z}_q \setminus \{ 0 \}$.
 	do
-		mpz_srandomm(b, q);
+		tmcg_mpz_srandomm(b, q);
 	while (!mpz_cmp_ui(b, 0L));
 	
 	// Compute $a := g^b \bmod p$.
-	mpz_fspowm(fpowm_table_g, a, g, b, p);
+	tmcg_mpz_fspowm(fpowm_table_g, a, g, b, p);
 
 	mpz_clear(b);
 }
@@ -258,20 +258,20 @@ void BarnettSmartVTMF_dlog::IndexElement
 	(mpz_ptr a, size_t index) const
 {
 	// Simply compute $a := g^i \bmod p$.
-	mpz_fpowm_ui(fpowm_table_g, a, g, index, p);
+	tmcg_mpz_fpowm_ui(fpowm_table_g, a, g, index, p);
 }
 
 void BarnettSmartVTMF_dlog::KeyGenerationProtocol_GenerateKey
 	()
 {
 	// generate the private key $x_i \in \mathbb{Z}_q$ randomly
-	mpz_srandomm(x_i, q);
+	tmcg_mpz_srandomm(x_i, q);
 	
 	// compute $h_i = g^{x_i} \bmod p$ (with timing attack protection)
-	mpz_fspowm(fpowm_table_g, h_i, g, x_i, p);
+	tmcg_mpz_fspowm(fpowm_table_g, h_i, g, x_i, p);
 	
 	// compute the fingerprint of the public key $h_i$
-	mpz_shash(h_i_fp, 1, h_i);
+	tmcg_mpz_shash(h_i_fp, 1, h_i);
 	
 	// set the initial value of the common public key $h$
 	mpz_set(h, h_i);
@@ -286,14 +286,14 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_ComputeNIZK
 	// proof of knowledge $(c, r)$ [CaS97] for the private key $x_i$
 	
 		// commitment $t = g^v \bmod p$
-		mpz_srandomm(v, q);
-		mpz_fspowm(fpowm_table_g, t, g, v, p);
+		tmcg_mpz_srandomm(v, q);
+		tmcg_mpz_fspowm(fpowm_table_g, t, g, v, p);
 		// challenge $c = h(p || q || g || k || h_i || t)$
 		// Here we use the well-known "Fiat-Shamir heuristic" to make
 		// the PoK non-interactive, i.e. we turn it into a statistically
 		// zero-knowledge (Schnorr signature scheme style) proof
 		// of knowledge (SPK) in the random oracle model.
-		mpz_shash(c, 5, p, q, g, h_i, t);
+		tmcg_mpz_shash(c, 5, p, q, g, h_i, t);
 		// response $r = v - c x_i \bmod q$
 		mpz_mul(r, c, x_i);
 		mpz_neg(r, r);
@@ -329,7 +329,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyNIZK
 			throw false;
 
 		// check size of $c$
-		if ((mpz_sizeinbase(c, 2L) / 8L) > mpz_shash_len())
+		if (mpz_sizeinbase(c, 2L) > (tmcg_mpz_shash_len() * 8))
 			throw false;
 
 		// check size of $r$
@@ -337,11 +337,11 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyNIZK
 			throw false;
 
 		// verify the proof of knowledge [CaS97]
-		mpz_fpowm(fpowm_table_g, t2, g, r, p);
+		tmcg_mpz_fpowm(fpowm_table_g, t2, g, r, p);
 		mpz_powm(c2, foo, c, p);
 		mpz_mul(t2, t2, c2);
 		mpz_mod(t2, t2, p);
-		mpz_shash(c2, 5, p, q, g, foo, t2);
+		tmcg_mpz_shash(c2, 5, p, q, g, foo, t2);
 		if (mpz_cmp(c, c2))
 			throw false;
 
@@ -380,7 +380,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_UpdateKey
 		mpz_ptr tmp = new mpz_t();
 		std::ostringstream fp;
 		mpz_init_set(tmp, foo);
-		mpz_shash(c, 1, foo);
+		tmcg_mpz_shash(c, 1, foo);
 		fp << c;
 		h_j[fp.str()] = tmp;
 		
@@ -407,7 +407,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_RemoveKey
 			throw false;
 		
 		// compute the fingerprint of $h_j$
-		mpz_shash(bar, 1, foo);
+		tmcg_mpz_shash(bar, 1, foo);
 		std::ostringstream fp;
 		fp << bar;
 		std::string fpstr = fp.str();
@@ -448,8 +448,8 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_ProveKey_interactive
 	try
 	{
 		// compute and send commitment $m_1 = g^r \bmod p$
-		mpz_srandomm(r, q);
-		mpz_fspowm(fpowm_table_g, m, g, r, p);
+		tmcg_mpz_srandomm(r, q);
+		tmcg_mpz_fspowm(fpowm_table_g, m, g, r, p);
 		out << m << std::endl;
 
 		// receive challenge $c$
@@ -489,8 +489,8 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_ProveKey_interactive_publiccoi
 	try
 	{
 		// compute and send commitment $m_1 = g^r \bmod p$
-		mpz_srandomm(r, q);
-		mpz_fspowm(fpowm_table_g, m, g, r, p);
+		tmcg_mpz_srandomm(r, q);
+		tmcg_mpz_fspowm(fpowm_table_g, m, g, r, p);
 		out << m << std::endl;
 
 		// flip coins with verifier to get $c \in \mathbb{Z}_q$
@@ -540,7 +540,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey_interactive
 			throw false;
 
 		// choose challenge $c$ randomly
-		mpz_srandomm(c, q);
+		tmcg_mpz_srandomm(c, q);
 
 		// send challenge $c$ and receive response $m_2$ 
 		out << c << std::endl;
@@ -553,7 +553,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey_interactive
 			throw false;
 
 		// compute verify $m_1 = g^{m_2} \cdot key^{-c}$
-		mpz_fpowm(fpowm_table_g, m_2, g, m_2, p);
+		tmcg_mpz_fpowm(fpowm_table_g, m_2, g, m_2, p);
 		mpz_powm(c, key, c, p);
 		if (!mpz_invert(c, c, p))
 			throw false;
@@ -606,7 +606,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey_interactive_publicco
 			throw false;
 
 		// compute verify $m_1 = g^{m_2} \cdot key^{-c}$
-		mpz_fpowm(fpowm_table_g, m_2, g, m_2, p);
+		tmcg_mpz_fpowm(fpowm_table_g, m_2, g, m_2, p);
 		mpz_powm(c, key, c, p);
 		if (!mpz_invert(c, c, p))
 			throw false;
@@ -629,7 +629,7 @@ void BarnettSmartVTMF_dlog::KeyGenerationProtocol_Finalize
 	()
 {
 	// Precompute the values $h^{2^i} \bmod p$ for all $0 \le i \le |q|$.
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 size_t BarnettSmartVTMF_dlog::KeyGenerationProtocol_NumberOfKeys
@@ -650,24 +650,24 @@ void BarnettSmartVTMF_dlog::CP_Prove
 	// David Chaum and Torben Pryds Pedersen: 'Wallet Databases with Observers'
 	// Advances in Cryptology - CRYPTO'92, LNCS 740, pp. 89--105, 1992.
 	// 1. commitment
-	mpz_srandomm(omega, q);
+	tmcg_mpz_srandomm(omega, q);
 	if (fpowm_usage)
 	{
 		assert(!mpz_cmp(g, gg) && !mpz_cmp(h, hh));
-		mpz_fspowm(fpowm_table_g, a, gg, omega, p);
-		mpz_fspowm(fpowm_table_h, b, hh, omega, p);
+		tmcg_mpz_fspowm(fpowm_table_g, a, gg, omega, p);
+		tmcg_mpz_fspowm(fpowm_table_h, b, hh, omega, p);
 	}
 	else
 	{
-		mpz_spowm(a, gg, omega, p);
-		mpz_spowm(b, hh, omega, p);
+		tmcg_mpz_spowm(a, gg, omega, p);
+		tmcg_mpz_spowm(b, hh, omega, p);
 	}
 	// 2. challenge
 	// Here we use the well-known "Fiat-Shamir heuristic" to make
 	// the PoK non-interactive, i.e. we turn it into a statistically
 	// zero-knowledge (Schnorr signature scheme style) proof of
 	// knowledge (SPK) in the random oracle model.
-	mpz_shash(c, 10, p, q, g, h, a, b, x, y, gg, hh);
+	tmcg_mpz_shash(c, 10, p, q, g, h, a, b, x, y, gg, hh);
 	// 3. response
 	mpz_mul(r, c, alpha);
 	mpz_neg(r, r);
@@ -694,7 +694,7 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 			throw false;
 
 		// check size of $c$
-		if ((mpz_sizeinbase(c, 2L) / 8L) > mpz_shash_len())
+		if (mpz_sizeinbase(c, 2L) > (tmcg_mpz_shash_len() * 8))
 			throw false;
 
 		// check size of $r$
@@ -706,7 +706,7 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 		{
 			if (!mpz_cmp(g, gg))
 				throw false;
-			mpz_fpowm(fpowm_table_g, a, gg, r, p);
+			tmcg_mpz_fpowm(fpowm_table_g, a, gg, r, p);
 		}
 		else
 			mpz_powm(a, gg, r, p);
@@ -717,14 +717,14 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 		{
 			if (!mpz_cmp(h, hh))
 				throw false;
-			mpz_fpowm(fpowm_table_h, b, hh, r, p);
+			tmcg_mpz_fpowm(fpowm_table_h, b, hh, r, p);
 		}
 		else
 			mpz_powm(b, hh, r, p);
 		mpz_powm(r, y, c, p);
 		mpz_mul(b, b, r);
 		mpz_mod(b, b, p);
-		mpz_shash(r, 10, p, q, g, h, a, b, x, y, gg, hh);
+		tmcg_mpz_shash(r, 10, p, q, g, h, a, b, x, y, gg, hh);
 		if (mpz_cmp(r, c))
 			throw false;
 		
@@ -751,15 +751,17 @@ void BarnettSmartVTMF_dlog::OR_ProveFirst
 	
 		// 1. choose $v_1, v_2$ and $w\in_R\mathbb{Z}_q$ and compute
 		//    $t_2 = y_2^w g_2^{v_2}$ and $t_1 = g_1^{v_1}$ 
-		mpz_srandomm(v_1, q), mpz_srandomm(v_2, q), mpz_srandomm(w, q);
-		mpz_spowm(t_2, y_2, w, p);
-		mpz_spowm(tmp, g_2, v_2, p);
+		tmcg_mpz_srandomm(v_1, q);
+		tmcg_mpz_srandomm(v_2, q);
+		tmcg_mpz_srandomm(w, q);
+		tmcg_mpz_spowm(t_2, y_2, w, p);
+		tmcg_mpz_spowm(tmp, g_2, v_2, p);
 		mpz_mul(t_2, t_2, tmp), mpz_mod(t_2, t_2, p);
-		mpz_spowm(t_1, g_1, v_1, p);
+		tmcg_mpz_spowm(t_1, g_1, v_1, p);
 		
 		// 2. compute $c = \mathcal{H}(g_1, y_1, g_2, y_2, t_1, t_2)$
 		// additionally, we hash the group parameters
-		mpz_shash(c, 10, p, q, g, h, g_1, y_1, g_2, y_2, t_1, t_2);
+		tmcg_mpz_shash(c, 10, p, q, g, h, g_1, y_1, g_2, y_2, t_1, t_2);
 		mpz_mod(c, c, q);
 		
 		// 3. split the challenge: $c_2 = w$ and $c_1 = c - c_2$
@@ -792,15 +794,17 @@ void BarnettSmartVTMF_dlog::OR_ProveSecond
 
 		// 1. choose $v_1, v_2$ and $w\in_R\mathbb{Z}_q$ and compute
 		//    $t_1 = y_1^w g_1^{v_1}$ and $t_2 = g_2^{v_2}$
-		mpz_srandomm(v_1, q), mpz_srandomm(v_2, q), mpz_srandomm(w, q);
-		mpz_spowm(t_1, y_1, w, p);
-		mpz_spowm(tmp, g_1, v_1, p);
+		tmcg_mpz_srandomm(v_1, q);
+		tmcg_mpz_srandomm(v_2, q);
+		tmcg_mpz_srandomm(w, q);
+		tmcg_mpz_spowm(t_1, y_1, w, p);
+		tmcg_mpz_spowm(tmp, g_1, v_1, p);
 		mpz_mul(t_1, t_1, tmp), mpz_mod(t_1, t_1, p);
-		mpz_spowm(t_2, g_2, v_2, p);
+		tmcg_mpz_spowm(t_2, g_2, v_2, p);
 		
 		// 2. compute $c = \mathcal{H}(g_1, y_1, g_2, y_2, t_1, t_2)$
 		// additionally, we hash the group parameters
-		mpz_shash(c, 10, p, q, g, h, g_1, y_1, g_2, y_2, t_1, t_2);
+		tmcg_mpz_shash(c, 10, p, q, g, h, g_1, y_1, g_2, y_2, t_1, t_2);
 		mpz_mod(c, c, q);
 		
 		// 3. split the challenge: $c_1 = w$ and $c_2 = c - c_1$
@@ -852,7 +856,7 @@ bool BarnettSmartVTMF_dlog::OR_Verify
 		//                   \mathcal{H}(g_1, y_1, g_2, y_2, t_1, t_2)$
 		// additionally, we hash the group parameters
 		mpz_add(tmp, c_1, c_2), mpz_mod(tmp, tmp, q);
-		mpz_shash(c, 10, p, q, g, h, g_1, y_1, g_2, y_2, t_1, t_2);
+		tmcg_mpz_shash(c, 10, p, q, g, h, g_1, y_1, g_2, y_2, t_1, t_2);
 		mpz_mod(c, c, q);
 		if (mpz_cmp(tmp, c))
 			throw false;
@@ -874,7 +878,7 @@ void BarnettSmartVTMF_dlog::MaskingValue
 	// Choose randomly and uniformly an element from
 	// $\mathbb{Z}_q \setminus \{0, 1\}$.
 	do
-		mpz_srandomm(r, q);
+		tmcg_mpz_srandomm(r, q);
 	while (!mpz_cmp_ui(r, 0L) || !mpz_cmp_ui(r, 1L));
 }
 
@@ -885,10 +889,10 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
 	MaskingValue(r);
 	
 	// compute $c_1 = g^r \bmod p$
-	mpz_fspowm(fpowm_table_g, c_1, g, r, p);
+	tmcg_mpz_fspowm(fpowm_table_g, c_1, g, r, p);
 	
 	// compute $c_2 = m \cdot h^r \bmod p$
-	mpz_fspowm(fpowm_table_h, c_2, h, r, p);
+	tmcg_mpz_fspowm(fpowm_table_h, c_2, h, r, p);
 	mpz_mul(c_2, c_2, m);
 	mpz_mod(c_2, c_2, p);
 }
@@ -949,12 +953,12 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 	MaskingValue(r);
 	
 	// compute $c'_1 = c_1 \cdot g^r \bmod p$
-	mpz_fspowm(fpowm_table_g, c__1, g, r, p);
+	tmcg_mpz_fspowm(fpowm_table_g, c__1, g, r, p);
 	mpz_mul(c__1, c__1, c_1);
 	mpz_mod(c__1, c__1, p);
 	
 	// compute $c'_2 = c_2 \cdot h^r \bmod p$
-	mpz_fspowm(fpowm_table_h, c__2, h, r, p);
+	tmcg_mpz_fspowm(fpowm_table_h, c__2, h, r, p);
 	mpz_mul(c__2, c__2, c_2);
 	mpz_mod(c__2, c__2, p);
 }
@@ -965,17 +969,17 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 {
 	// compute $c'_1 = c_1 \cdot g^r \bmod p$
 	if (TimingAttackProtection)
-		mpz_fspowm(fpowm_table_g, c__1, g, r, p);
+		tmcg_mpz_fspowm(fpowm_table_g, c__1, g, r, p);
 	else
-		mpz_fpowm(fpowm_table_g, c__1, g, r, p);
+		tmcg_mpz_fpowm(fpowm_table_g, c__1, g, r, p);
 	mpz_mul(c__1, c__1, c_1);
 	mpz_mod(c__1, c__1, p);
 	
 	// compute $c'_2 = c_2 \cdot h^r \bmod p$
 	if (TimingAttackProtection)
-		mpz_fspowm(fpowm_table_h, c__2, h, r, p);
+		tmcg_mpz_fspowm(fpowm_table_h, c__2, h, r, p);
 	else
-		mpz_fpowm(fpowm_table_h, c__2, h, r, p);
+		tmcg_mpz_fpowm(fpowm_table_h, c__2, h, r, p);
 	mpz_mul(c__2, c__2, c_2);
 	mpz_mod(c__2, c__2, p);
 }
@@ -1046,7 +1050,7 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Prove
 	assert(CheckElement(c_1));
 	
 	// compute $d_i = {c_1}^{x_i} \bmod p$
-	mpz_spowm(d_i, c_1, x_i, p);
+	tmcg_mpz_spowm(d_i, c_1, x_i, p);
 	out << d_i << std::endl << h_i_fp << std::endl;
 	
 	// invoke CP(d_i, h_i, c_1, g; x_i) as prover
@@ -1061,7 +1065,7 @@ void BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Initialize
 	assert(CheckElement(c_1));
 
 	// compute $d = d_i = {c_1}^{x_i} \bmod p$
-	mpz_spowm(d, c_1, x_i, p);
+	tmcg_mpz_spowm(d, c_1, x_i, p);
 }
 
 bool BarnettSmartVTMF_dlog::VerifiableDecryptionProtocol_Verify_Update
@@ -1131,6 +1135,6 @@ BarnettSmartVTMF_dlog::~BarnettSmartVTMF_dlog
 	}
 	h_j.clear();
 	
-	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	tmcg_mpz_fpowm_done(fpowm_table_g), tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }

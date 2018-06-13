@@ -7,7 +7,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -39,13 +39,13 @@ NaorPinkasEOTP::NaorPinkasEOTP
 	// Initialize and choose the parameters of the scheme.
 	mpz_init(p), mpz_init(q), mpz_init(g);
 	mpz_init(k);
-	mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
+	tmcg_mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
 	mpz_init(foo);
 	mpz_sub_ui(foo, p, 1L); // compute $p-1$
 	// choose uniformly at random the element $g$ of order $q$
 	do
 	{
-		mpz_wrandomm(g, p);
+		tmcg_mpz_wrandomm(g, p);
 		mpz_powm(g, g, k, p);
 	}
 	while (!mpz_cmp_ui(g, 0L) || !mpz_cmp_ui(g, 1L) || 
@@ -55,8 +55,8 @@ NaorPinkasEOTP::NaorPinkasEOTP
 	
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
 NaorPinkasEOTP::NaorPinkasEOTP
@@ -68,8 +68,8 @@ NaorPinkasEOTP::NaorPinkasEOTP
 		
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
 NaorPinkasEOTP::NaorPinkasEOTP
@@ -84,8 +84,8 @@ NaorPinkasEOTP::NaorPinkasEOTP
 	
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
 }
 
 bool NaorPinkasEOTP::CheckGroup
@@ -126,7 +126,7 @@ bool NaorPinkasEOTP::CheckGroup
 			throw false;
 		
 		// Check whether $g$ are of order $q$.
-		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 		
@@ -204,29 +204,29 @@ bool NaorPinkasEOTP::Send_interactive_OneOutOfTwo
 		if (!mpz_cmp(z0, z1))
 			throw false;
 		// generate random $(r_0, s_0)$ and $(r_1, s_1)$
-		mpz_srandomm(r0, q), mpz_srandomm(s0, q);
-		mpz_srandomm(r1, q), mpz_srandomm(s1, q);
+		tmcg_mpz_srandomm(r0, q), tmcg_mpz_srandomm(s0, q);
+		tmcg_mpz_srandomm(r1, q), tmcg_mpz_srandomm(s1, q);
 		// (a) compute $w_0 = x^{s_0} \cdot g^{r_0}$
-		mpz_spowm(foo, x, s0, p);
-		mpz_fspowm(fpowm_table_g, bar, g, r0, p);
+		tmcg_mpz_spowm(foo, x, s0, p);
+		tmcg_mpz_fspowm(fpowm_table_g, bar, g, r0, p);
 		mpz_mul(w0, foo, bar);
 		mpz_mod(w0, w0, p);
 		// (a) encrypt $M_0$ using key $z_0^{s_0} \cdot y^{r_0}$
-		mpz_spowm(foo, z0, s0, p);
-		mpz_spowm(bar, y, r0, p);
+		tmcg_mpz_spowm(foo, z0, s0, p);
+		tmcg_mpz_spowm(bar, y, r0, p);
 		mpz_mul(foo, foo, bar);
 		mpz_mod(foo, foo, p);
 		mpz_mul(foo, foo, M0);
 		mpz_mod(foo, foo, p);		
 		out << w0 << std::endl << foo << std::endl;
 		// (b) compute $w_1 = x^{s_1} \cdot g^{r_1}$
-		mpz_spowm(foo, x, s1, p);
-		mpz_fspowm(fpowm_table_g, bar, g, r1, p);
+		tmcg_mpz_spowm(foo, x, s1, p);
+		tmcg_mpz_fspowm(fpowm_table_g, bar, g, r1, p);
 		mpz_mul(w1, foo, bar);
 		mpz_mod(w1, w1, p);
 		// (b) encrypt $M_1$ using key $z_1^{s_1} \cdot y^{r_1}$
-		mpz_spowm(foo, z1, s1, p);
-		mpz_spowm(bar, y, r1, p);
+		tmcg_mpz_spowm(foo, z1, s1, p);
+		tmcg_mpz_spowm(bar, y, r1, p);
 		mpz_mul(foo, foo, bar);
 		mpz_mod(foo, foo, p);
 		mpz_mul(foo, foo, M1);
@@ -263,23 +263,24 @@ bool NaorPinkasEOTP::Choose_interactive_OneOutOfTwo
 	try
 	{	
 		// receiver: first move
-		mpz_srandomm(a, q);
-		mpz_fspowm(fpowm_table_g, x, g, a, p);
-		mpz_srandomm(b, q);
-		mpz_fspowm(fpowm_table_g, y, g, b, p);
+		tmcg_mpz_srandomm(a, q);
+		tmcg_mpz_fspowm(fpowm_table_g, x, g, a, p);
+		tmcg_mpz_srandomm(b, q);
+		tmcg_mpz_fspowm(fpowm_table_g, y, g, b, p);
 		if (sigma == 0)
 		{
-			mpz_srandomm(c1, q);
+			tmcg_mpz_srandomm(c1, q);
 			mpz_mul(c0, a, b);
 			mpz_mod(c0, c0, q);
 		}
-		else if (sigma == 1) {
-			mpz_srandomm(c0, q);
+		else if (sigma == 1)
+		{
+			tmcg_mpz_srandomm(c0, q);
 			mpz_mul(c1, a, b);
 			mpz_mod(c1, c1, q);
 		}
-		mpz_fspowm(fpowm_table_g, z0, g, c0, p);
-		mpz_fspowm(fpowm_table_g, z1, g, c1, p);
+		tmcg_mpz_fspowm(fpowm_table_g, z0, g, c0, p);
+		tmcg_mpz_fspowm(fpowm_table_g, z1, g, c1, p);
 		out << x << std::endl << y << std::endl;
 		out << z0 << std::endl << z1 << std::endl;
 	
@@ -363,16 +364,16 @@ bool NaorPinkasEOTP::Send_interactive_OneOutOfN
 		for (size_t i = 0; i < M.size(); i++)
 		{
 			// choose random $(r_i, s_i)$
-			mpz_srandomm(s[i], q);
-			mpz_srandomm(r[i], q);
+			tmcg_mpz_srandomm(s[i], q);
+			tmcg_mpz_srandomm(r[i], q);
 			// compute $w_i = x^{s_i} \cdot g^{r_i}$
-			mpz_spowm(foo, x, s[i], p);
-			mpz_fspowm(fpowm_table_g, bar, g, r[i], p);
+			tmcg_mpz_spowm(foo, x, s[i], p);
+			tmcg_mpz_fspowm(fpowm_table_g, bar, g, r[i], p);
 			mpz_mul(w[i], foo, bar);
 			mpz_mod(w[i], w[i], p);
 			// encrypt $M_i$ using key $z_i^{s_i} \cdot y^{r_i}$
-			mpz_spowm(foo, z[i], s[i], p);
-			mpz_spowm(bar, y, r[i], p);
+			tmcg_mpz_spowm(foo, z[i], s[i], p);
+			tmcg_mpz_spowm(bar, y, r[i], p);
 			mpz_mul(ENC[i], foo, bar);
 			mpz_mod(ENC[i], ENC[i], p);
 			mpz_mul(ENC[i], ENC[i], M[i]);
@@ -425,19 +426,19 @@ bool NaorPinkasEOTP::Choose_interactive_OneOutOfN
 	try
 	{	
 		// receiver: first move
-		mpz_srandomm(a, q);
-		mpz_fspowm(fpowm_table_g, x, g, a, p);
-		mpz_srandomm(b, q);
-		mpz_fspowm(fpowm_table_g, y, g, b, p);
+		tmcg_mpz_srandomm(a, q);
+		tmcg_mpz_fspowm(fpowm_table_g, x, g, a, p);
+		tmcg_mpz_srandomm(b, q);
+		tmcg_mpz_fspowm(fpowm_table_g, y, g, b, p);
 		for (size_t i = 0; i < z.size(); i++)
 		{
-			mpz_srandomm(c, q);
+			tmcg_mpz_srandomm(c, q);
 			if (i == sigma)
 			{
 				mpz_mul(c, a, b);
 				mpz_mod(c, c, q);
 			}
-			mpz_fspowm(fpowm_table_g, z[i], g, c, p);
+			tmcg_mpz_fspowm(fpowm_table_g, z[i], g, c, p);
 		}
 		out << x << std::endl << y << std::endl;
 		for (size_t i = 0; i < z.size(); i++)
@@ -511,11 +512,11 @@ bool NaorPinkasEOTP::Send_interactive_OneOutOfN_optimized
 		for (size_t i = 0; i < M.size(); i++)
 		{
 			// choose random $(r_i, s_i)$
-			mpz_srandomm(s[i], q);
-			mpz_srandomm(r[i], q);
+			tmcg_mpz_srandomm(s[i], q);
+			tmcg_mpz_srandomm(r[i], q);
 			// compute $w_i = x^{s_i} \cdot g^{r_i}$
-			mpz_spowm(foo, x, s[i], p);
-			mpz_fspowm(fpowm_table_g, bar, g, r[i], p);
+			tmcg_mpz_spowm(foo, x, s[i], p);
+			tmcg_mpz_fspowm(fpowm_table_g, bar, g, r[i], p);
 			mpz_mul(w[i], foo, bar);
 			mpz_mod(w[i], w[i], p);
 			// encrypt $M_i$ using key $z_i^{s_i} \cdot y^{r_i}$
@@ -524,8 +525,8 @@ bool NaorPinkasEOTP::Send_interactive_OneOutOfN_optimized
 				mpz_mul(z0, z0, g); // $z_i = z_0 \cdot g^i$
 				mpz_mod(z0, z0, p);
 			}			
-			mpz_spowm(foo, z0, s[i], p);
-			mpz_spowm(bar, y, r[i], p);
+			tmcg_mpz_spowm(foo, z0, s[i], p);
+			tmcg_mpz_spowm(bar, y, r[i], p);
 			mpz_mul(ENC[i], foo, bar);
 			mpz_mod(ENC[i], ENC[i], p);
 			mpz_mul(ENC[i], ENC[i], M[i]);
@@ -578,15 +579,15 @@ bool NaorPinkasEOTP::Choose_interactive_OneOutOfN_optimized
 	try
 	{	
 		// receiver: first move
-		mpz_srandomm(a, q);
-		mpz_fspowm(fpowm_table_g, x, g, a, p);
-		mpz_srandomm(b, q);
-		mpz_fspowm(fpowm_table_g, y, g, b, p);
+		tmcg_mpz_srandomm(a, q);
+		tmcg_mpz_fspowm(fpowm_table_g, x, g, a, p);
+		tmcg_mpz_srandomm(b, q);
+		tmcg_mpz_fspowm(fpowm_table_g, y, g, b, p);
 		mpz_mul(c, a, b);
 		mpz_mod(c, c, q);
-		mpz_fspowm(fpowm_table_g, z0, g, c, p);
+		tmcg_mpz_fspowm(fpowm_table_g, z0, g, c, p);
 		mpz_set_ui(foo, sigma);
-		mpz_fspowm(fpowm_table_g, bar, g, foo, p);
+		tmcg_mpz_fspowm(fpowm_table_g, bar, g, foo, p);
 		assert(mpz_invert(foo, bar, p));
 		mpz_mul(z0, z0, foo); // $z_0 = g^c / g^i$
 		mpz_mod(z0, z0, p);
@@ -629,6 +630,6 @@ NaorPinkasEOTP::~NaorPinkasEOTP
 {
 	mpz_clear(p), mpz_clear(q), mpz_clear(g);
 	
-	mpz_fpowm_done(fpowm_table_g);
+	tmcg_mpz_fpowm_done(fpowm_table_g);
 	delete [] fpowm_table_g;
 }

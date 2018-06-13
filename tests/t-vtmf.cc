@@ -358,10 +358,10 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 	// check basic protocols (CP and OR)
 	std::stringstream cp_ack, cp_nak, or_ack1, or_ack2, or_nak;
 	mpz_init(fooo), mpz_init(barr), mpz_init(lejj);
-	mpz_srandomm(fooo, vtmf->q); 
-	mpz_spowm(vtmf->h, vtmf->g, fooo, vtmf->p);
+	tmcg_mpz_srandomm(fooo, vtmf->q); 
+	tmcg_mpz_spowm(vtmf->h, vtmf->g, fooo, vtmf->p);
 	std::cout << "CP protocol" << std::endl;
-	mpz_wrandomm(fooo, vtmf->q);
+	tmcg_mpz_wrandomm(fooo, vtmf->q);
 	mpz_powm(barr, vtmf->g, fooo, vtmf->p);
 	mpz_powm(lejj, vtmf->h, fooo, vtmf->p); 
 	vtmf->CP_Prove(barr, lejj, vtmf->g, vtmf->h, fooo, cp_ack);
@@ -375,7 +375,7 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 	std::cout << cp_nak.str() << std::endl;
 	assert(!vtmf->CP_Verify(barr, lejj, vtmf->g, vtmf->h, cp_nak));
 	std::cout << "OR protocol" << std::endl;
-	mpz_wrandomm(fooo, vtmf->q);
+	tmcg_mpz_wrandomm(fooo, vtmf->q);
 	mpz_powm(barr, vtmf->g, fooo, vtmf->p);
 	mpz_powm_ui(lejj, vtmf->h, 42L, vtmf->p);
 	std::cout << "OR_ProveFirst(...)" << std::endl;
@@ -383,7 +383,7 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 	std::cout << "OR_Verify(...)" << std::endl;
 	std::cout << or_ack1.str() << std::endl;
 	assert(vtmf->OR_Verify(barr, lejj, vtmf->g, vtmf->h, or_ack1));
-	mpz_wrandomm(fooo, vtmf->q);
+	tmcg_mpz_wrandomm(fooo, vtmf->q);
 	mpz_powm_ui(barr, vtmf->g, 42L, vtmf->p);
 	mpz_powm(lejj, vtmf->h, fooo, vtmf->p);
 	std::cout << "OR_ProveSecond(...)" << std::endl;
@@ -391,7 +391,7 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 	std::cout << "OR_Verify(...)" << std::endl;
 	std::cout << or_ack2.str() << std::endl;
 	assert(vtmf->OR_Verify(barr, lejj, vtmf->g, vtmf->h, or_ack2));
-	mpz_wrandomm(fooo, vtmf->q);
+	tmcg_mpz_wrandomm(fooo, vtmf->q);
 	mpz_powm_ui(barr, vtmf->g, 42L, vtmf->p);
 	mpz_powm_ui(lejj, vtmf->h, 42L, vtmf->p);
 	vtmf->OR_ProveFirst(barr, lejj, vtmf->g, vtmf->h, fooo, or_nak);
@@ -434,7 +434,7 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 	// large generator check
 	mpz_init(fooo), mpz_init(barr);
 	mpz_set(fooo, vtmf->g);
-	mpz_wrandomm(barr, vtmf->p);
+	tmcg_mpz_wrandomm(barr, vtmf->p);
 	mpz_powm(vtmf->g, barr, vtmf->k, vtmf->p);
 	assert(!vtmf->CheckGroup());
 	mpz_set(vtmf->g, fooo);

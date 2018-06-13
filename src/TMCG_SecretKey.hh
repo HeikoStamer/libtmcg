@@ -17,7 +17,7 @@
      Proceedings of CRYPTO 2001, LNCS 2139, pp. 275--291, 2001.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -48,9 +48,9 @@
 	// GNU multiple precision library
 	#include <gmp.h>
 	
-	#include "mpz_srandom.h"
-	#include "mpz_sprime.h"
-	#include "mpz_sqrtm.h"
+	#include "mpz_srandom.hh"
+	#include "mpz_sprime.hh"
+	#include "mpz_sqrtm.hh"
 	#include "mpz_helper.hh"
 	#include "parse_helper.hh"
 	#include "mpz_shash.hh"

@@ -10,7 +10,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2009, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2005, 2009
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -43,7 +44,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	
 	// Initialize and choose the parameters of the commitment scheme.
 	mpz_init(p), mpz_init(q), mpz_init(k), mpz_init_set_ui(h, 1L);
-	mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
+	tmcg_mpz_lprime(p, q, k, fieldsize, subgroupsize, TMCG_MR_ITERATIONS);
 	
 	mpz_init(foo);
 	mpz_sub_ui(foo, p, 1L); // compute $p-1$
@@ -55,7 +56,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 		// choose uniformly at random an element of order $q$
 		do
 		{
-			mpz_wrandomm(tmp, p);
+			tmcg_mpz_wrandomm(tmp, p);
 			mpz_powm(tmp, tmp, k, p);
 		}
 		while (!mpz_cmp_ui(tmp, 0L) || !mpz_cmp_ui(tmp, 1L) || 
@@ -82,13 +83,13 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	for (size_t i = 0; i < g.size() && i < TMCG_MAX_FPOWM_N; i++)
 	{
 		mpz_t *tmp = new mpz_t[TMCG_MAX_FPOWM_T]();
-		mpz_fpowm_init(tmp);
-		mpz_fpowm_precompute(tmp, g[i], p, mpz_sizeinbase(q, 2L));
+		tmcg_mpz_fpowm_init(tmp);
+		tmcg_mpz_fpowm_precompute(tmp, g[i], p, mpz_sizeinbase(q, 2L));
 		fpowm_table_g.push_back(tmp);
 	}
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 PedersenCommitmentScheme::PedersenCommitmentScheme
@@ -114,7 +115,7 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 		// choose uniformly at random an element of order $q$
 		do
 		{
-			mpz_wrandomm(tmp, p);
+			tmcg_mpz_wrandomm(tmp, p);
 			mpz_powm(tmp, tmp, k, p);
 		}
 		while (!mpz_cmp_ui(tmp, 0L) || !mpz_cmp_ui(tmp, 1L) || 
@@ -129,13 +130,13 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	for (size_t i = 0; i < g.size() && i < TMCG_MAX_FPOWM_N; i++)
 	{
 		mpz_t *tmp = new mpz_t[TMCG_MAX_FPOWM_T]();
-		mpz_fpowm_init(tmp);
-		mpz_fpowm_precompute(tmp, g[i], p, mpz_sizeinbase(q, 2L));
+		tmcg_mpz_fpowm_init(tmp);
+		tmcg_mpz_fpowm_precompute(tmp, g[i], p, mpz_sizeinbase(q, 2L));
 		fpowm_table_g.push_back(tmp);
 	}
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 PedersenCommitmentScheme::PedersenCommitmentScheme
@@ -160,13 +161,13 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 	for (size_t i = 0; (i < g.size()) && (i < TMCG_MAX_FPOWM_N); i++)
 	{
 		mpz_t *tmp = new mpz_t[TMCG_MAX_FPOWM_T]();
-		mpz_fpowm_init(tmp);
-		mpz_fpowm_precompute(tmp, g[i], p, mpz_sizeinbase(q, 2L));
+		tmcg_mpz_fpowm_init(tmp);
+		tmcg_mpz_fpowm_precompute(tmp, g[i], p, mpz_sizeinbase(q, 2L));
 		fpowm_table_g.push_back(tmp);
 	}
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 void PedersenCommitmentScheme::SetupGenerators_publiccoin
@@ -186,13 +187,13 @@ void PedersenCommitmentScheme::SetupGenerators_publiccoin
 	{
 		do
 		{
-			mpz_shash(a, U.str());
+			tmcg_mpz_shash(a, U.str());
 			mpz_powm(h, a, k, p);
 			U << h << "|";
 		}
 		while (!mpz_cmp_ui(h, 0L) || !mpz_cmp_ui(h, 1L) || 
 			!mpz_cmp(h, foo)); // check $1 < h < p-1$
-		mpz_fpowm_precompute(fpowm_table_h, h, p, 
+		tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, 
 			mpz_sizeinbase(q, 2L));
 	}
 
@@ -201,14 +202,14 @@ void PedersenCommitmentScheme::SetupGenerators_publiccoin
 	{
 		do
 		{
-			mpz_shash(a, U.str());
+			tmcg_mpz_shash(a, U.str());
 			mpz_powm(g[i], a, k, p);
 			U << g[i] << "|";
 		}
 		while (!mpz_cmp_ui(g[i], 0L) || !mpz_cmp_ui(g[i], 1L) ||
 			!mpz_cmp(g[i], foo)); // check $1 < g_i < p-1$
 		if (i < TMCG_MAX_FPOWM_N)
-			mpz_fpowm_precompute(fpowm_table_g[i], g[i], p,
+			tmcg_mpz_fpowm_precompute(fpowm_table_g[i], g[i], p,
 				mpz_sizeinbase(q, 2L));
 	}
 
@@ -292,14 +293,14 @@ bool PedersenCommitmentScheme::CheckGroup
 		
 		// Check whether the elements $h, g_1, \ldots, g_n$ are of 
 		// order $q$.
-		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 		for (size_t i = 0; i < g.size(); i++)
 		{
 			if (i < TMCG_MAX_FPOWM_N)
 			{
-				mpz_fpowm(fpowm_table_g[i], foo, g[i], q, p);
+				tmcg_mpz_fpowm(fpowm_table_g[i], foo, g[i], q, p);
 			}
 			else
 			{
@@ -351,21 +352,21 @@ void PedersenCommitmentScheme::Commit
 	assert(m.size() <= g.size());
 	
 	// Choose a randomizer from $\mathbb{Z}_q$
-	mpz_srandomm(r, q);
+	tmcg_mpz_srandomm(r, q);
 	
 	// Compute the commitment $c := g_1^{m_1} \cdots g_n^{m_n} h^r \bmod p$
 	mpz_t tmp, tmp2;
 	mpz_init(tmp), mpz_init(tmp2);
-	mpz_fspowm(fpowm_table_h, c, h, r, p);
+	tmcg_mpz_fspowm(fpowm_table_h, c, h, r, p);
 	for (size_t i = 0; i < m.size(); i++)
 	{
 		if (i < TMCG_MAX_FPOWM_N)
 		{
-			mpz_fspowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+			tmcg_mpz_fspowm(fpowm_table_g[i], tmp, g[i], m[i], p);
 		}
 		else
 		{
-			mpz_spowm(tmp, g[i], m[i], p);
+			tmcg_mpz_spowm(tmp, g[i], m[i], p);
 		}
 		mpz_mul(c, c, tmp);
 		mpz_mod(c, c, p);
@@ -384,22 +385,22 @@ void PedersenCommitmentScheme::CommitBy
 	mpz_t tmp;
 	mpz_init(tmp);
 	if (TimingAttackProtection)
-		mpz_fspowm(fpowm_table_h, c, h, r, p);
+		tmcg_mpz_fspowm(fpowm_table_h, c, h, r, p);
 	else
-		mpz_fpowm(fpowm_table_h, c, h, r, p);
+		tmcg_mpz_fpowm(fpowm_table_h, c, h, r, p);
 	for (size_t i = 0; i < m.size(); i++)
 	{
 		if (i < TMCG_MAX_FPOWM_N)
 		{
 			if (TimingAttackProtection)
-				mpz_fspowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+				tmcg_mpz_fspowm(fpowm_table_g[i], tmp, g[i], m[i], p);
 			else
-				mpz_fpowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+				tmcg_mpz_fpowm(fpowm_table_g[i], tmp, g[i], m[i], p);
 		}
 		else
 		{
 			if (TimingAttackProtection)
-				mpz_spowm(tmp, g[i], m[i], p);
+				tmcg_mpz_spowm(tmp, g[i], m[i], p);
 			else
 				mpz_powm(tmp, g[i], m[i], p);
 		}
@@ -433,12 +434,12 @@ bool PedersenCommitmentScheme::Verify
 
 		// Compute the commitment for verification
 		// $c' := g_1^{m_1} \cdots g_n^{m_n} h^r \bmod p$
-		mpz_fpowm(fpowm_table_h, c2, h, r, p);
+		tmcg_mpz_fpowm(fpowm_table_h, c2, h, r, p);
 		for (size_t i = 0; i < m.size(); i++)
 		{
 			if (i < TMCG_MAX_FPOWM_N)
 			{
-				mpz_fpowm(fpowm_table_g[i], tmp, g[i], m[i], p);
+				tmcg_mpz_fpowm(fpowm_table_g[i], tmp, g[i], m[i], p);
 			}
 			else
 			{
@@ -477,10 +478,10 @@ PedersenCommitmentScheme::~PedersenCommitmentScheme
 	
 	for (size_t i = 0; i < fpowm_table_g.size(); i++)
 	{
-		mpz_fpowm_done(fpowm_table_g[i]);
+		tmcg_mpz_fpowm_done(fpowm_table_g[i]);
 		delete [] fpowm_table_g[i];
 	}
 	fpowm_table_g.clear();
-	mpz_fpowm_done(fpowm_table_h);
+	tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_h;
 }

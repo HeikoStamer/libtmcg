@@ -17,7 +17,7 @@
      Proceedings of CRYPTO 2001, LNCS 2139, pp. 275--291, 2001.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -104,7 +104,7 @@ bool TMCG_PublicKey::check
 		
 		// sanity check, whether m \not\in P (prime)
 		// (here is a very small probability of false-negative behaviour,
-		// FIXME: give a short witness for compositeness in public key)
+		// TODO: give a short witness for compositeness in public key)
 		if (mpz_probab_prime_p(m, 500))
 			throw false;
 		
@@ -173,7 +173,7 @@ bool TMCG_PublicKey::check
 			// common random number foo \in Z^*_m (build from hash function g)
 			do
 			{
-				g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
+				tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
 				mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 				mpz_mod(foo, foo, m);
 				mpz_gcd(bar, foo, m);
@@ -211,7 +211,7 @@ bool TMCG_PublicKey::check
 			// common random number foo \in Z^*_m (build from hash function g)
 			do
 			{
-				g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
+				tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
 				mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 				mpz_mod(foo, foo, m);
 				mpz_gcd(bar, foo, m);
@@ -262,7 +262,7 @@ bool TMCG_PublicKey::check
 			// common random number foo \in Z^\circ_m (build from hash function g)
 			do
 			{
-				g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
+				tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
 				mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 				mpz_mod(foo, foo, m);
 				input << foo;
@@ -310,7 +310,7 @@ std::string TMCG_PublicKey::fingerprint
 	// compute the digest
 	data << "pub|" << name << "|" << email << "|" << type << 
 		"|" << m << "|" << y << "|" << nizk << "|" << sig;
-	h(digest, (unsigned char*)(data.str()).c_str(), (data.str()).length());
+	tmcg_h(digest, (unsigned char*)(data.str()).c_str(), (data.str()).length());
 	// convert the digest to a hexadecimal encoded string
 	for (size_t i = 0; i < (hash_size / 2); i++)
 		snprintf(hex_digest + (5 * i), 6, "%02X%02X ", digest[2 * i], digest[(2 * i) + 1]);
@@ -469,7 +469,7 @@ std::string TMCG_PublicKey::encrypt
 	unsigned char *g12 = new unsigned char[rabin_s2];
 	memcpy(Mt, value, TMCG_SAEP_S0);
 	memset(Mt + TMCG_SAEP_S0, 0, TMCG_SAEP_S0);
-	g(g12, rabin_s2, r, rabin_s1);
+	tmcg_g(g12, rabin_s2, r, rabin_s1);
 	
 	for (size_t i = 0; i < rabin_s2; i++)
 		Mt[i] ^= g12[i];
@@ -539,7 +539,7 @@ bool TMCG_PublicKey::verify
 			mnsize - mdsize - TMCG_PRAB_K0);
 		
 		unsigned char *g12 = new unsigned char[mnsize];
-		g(g12, mnsize - mdsize, w, mdsize);
+		tmcg_g(g12, mnsize - mdsize, w, mdsize);
 		
 		for (size_t i = 0; i < TMCG_PRAB_K0; i++)
 			r[i] ^= g12[i];
@@ -549,7 +549,7 @@ bool TMCG_PublicKey::verify
 		memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
 		
 		unsigned char *w2 = new unsigned char[mdsize];
-		h(w2, Mr, data.length() + TMCG_PRAB_K0);
+		tmcg_h(w2, Mr, data.length() + TMCG_PRAB_K0);
 		
 		bool ok = (memcmp(w, w2, mdsize) == 0) && (memcmp(gamma,
 			g12 + TMCG_PRAB_K0, mnsize - mdsize - TMCG_PRAB_K0) == 0);

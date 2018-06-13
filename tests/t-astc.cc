@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -119,7 +119,7 @@ void start_instance
 			tcom = new PedersenTrapdoorCommitmentScheme(vtmf->p, vtmf->q, vtmf->k, vtmf->g);
 			assert(tcom->CheckGroup());
 			mpz_init(c), mpz_init(r), mpz_init(m);
-			mpz_wrandomm(m, vtmf->p);
+			tmcg_mpz_wrandomm(m, vtmf->p);
 			tcom->Commit(c, r, m);
 			assert(tcom->Verify(c, r, m));
 			delete tcom;

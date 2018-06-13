@@ -91,28 +91,28 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	assert(mpz_probab_prime_p(foo, 500));
 	
 	// mpz_wrandom_ui vs. mpz_wrandom_mod
-	std::cout << "mpz_wrandom_ui() uniformity check / modulo bias" << std::endl;
+	std::cout << "tmcg_mpz_wrandom_ui() uniformity check / modulo bias" << std::endl;
 	for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
 	    cnt[i] = 0;
 	start_clock();
 	for (size_t j = 0; j < 10; j++)
 	{
 	    for (size_t i = 0; i < (1000000 * MOD_BIAS_WIDTH); i++)
-		cnt[mpz_wrandom_ui() % MOD_BIAS_WIDTH]++;
+		cnt[tmcg_mpz_wrandom_ui() % MOD_BIAS_WIDTH]++;
 	    for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
 		std::cout << cnt[i] << " ";
 	    std::cout << std::endl;
 	}
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
-	std::cout << "mpz_wrandom_mod() uniformity check / modulo bias" << std::endl;
+	std::cout << "tmcg_mpz_wrandom_mod() uniformity check / modulo bias" << std::endl;
 	for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
 	    cnt[i] = 0;
 	start_clock();
 	for (size_t j = 0; j < 10; j++)
 	{
 	    for (size_t i = 0; i < (1000000 * MOD_BIAS_WIDTH); i++)
-		cnt[mpz_wrandom_mod(MOD_BIAS_WIDTH)]++;
+		cnt[tmcg_mpz_wrandom_mod(MOD_BIAS_WIDTH)]++;
 	    for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
 		std::cout << cnt[i] << " ";
 	    std::cout << std::endl;
@@ -120,38 +120,38 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	
-	// mpz_*random_ui, mpz_*randomb, mpz_*randomm
-	std::cout << "mpz_wrandom_ui()" << std::endl;
+	// tmcg_mpz_*random_ui, tmcg_mpz_*randomb, tmcg_mpz_*randomm
+	std::cout << "tmcg_mpz_wrandom_ui()" << std::endl;
 	for (size_t i = 0; i < 25; i++)
 	{
-		tmp_ui = mpz_wrandom_ui();
+		tmp_ui = tmcg_mpz_wrandom_ui();
 		mpz_set_ui(foo, tmp_ui);
 		assert(mpz_get_ui(foo) == tmp_ui);
-		assert(tmp_ui != mpz_wrandom_ui());
+		assert(tmp_ui != tmcg_mpz_wrandom_ui());
 	}
-	std::cout << "mpz_srandom_ui()" << std::endl;
+	std::cout << "tmcg_mpz_srandom_ui()" << std::endl;
 	for (size_t i = 0; i < 25; i++)
 	{
-		tmp_ui = mpz_srandom_ui();
+		tmp_ui = tmcg_mpz_srandom_ui();
 		mpz_set_ui(foo, tmp_ui);
 		assert(mpz_get_ui(foo) == tmp_ui);
-		assert(tmp_ui != mpz_wrandom_ui());
+		assert(tmp_ui != tmcg_mpz_wrandom_ui());
 	}
 #ifdef TEST_SSRANDOM
-	std::cout << "mpz_ssrandom_ui()" << std::endl;
+	std::cout << "tmcg_mpz_ssrandom_ui()" << std::endl;
 	for (size_t i = 0; i < 3; i++)
 	{
-		tmp_ui = mpz_ssrandom_ui();
+		tmp_ui = tmcg_mpz_ssrandom_ui();
 		mpz_set_ui(foo, tmp_ui);
 		assert(mpz_get_ui(foo) == tmp_ui);
-		assert(tmp_ui != mpz_wrandom_ui());
+		assert(tmp_ui != tmcg_mpz_wrandom_ui());
 	}
 #endif
-	std::cout << "mpz_wrandomb(..., 1L)" << std::endl;
+	std::cout << "tmcg_mpz_wrandomb(..., 1L)" << std::endl;
 	cnt_zero = 0, cnt_one = 0;
 	for (size_t i = 0; i < 25; i++)
 	{
-		mpz_wrandomb(foo, 1L), mpz_set_ui(bar, 0L);
+		tmcg_mpz_wrandomb(foo, 1L), mpz_set_ui(bar, 0L);
 		assert((mpz_sizeinbase(foo, 2L) == 1L));
 		lej << foo << std::endl, lej >> bar;
 		assert(!mpz_cmp(foo, bar));
@@ -162,22 +162,22 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	}
 	assert(cnt_zero > 0);
 	assert(cnt_one > 0);
-	std::cout << "mpz_wrandomb()" << std::endl;
+	std::cout << "tmcg_mpz_wrandomb()" << std::endl;
 	for (size_t i = 0; i < 25; i++)
 	{
 		mpz_set(foo2, foo);
-		mpz_wrandomb(foo, 1024L), mpz_set_ui(bar, 0L);
+		tmcg_mpz_wrandomb(foo, 1024L), mpz_set_ui(bar, 0L);
 		assert((mpz_sizeinbase(foo, 2L) >= 1008L) &&
 			(mpz_sizeinbase(foo, 2L) <= 1024L));
 		lej << foo << std::endl, lej >> bar;
 		assert(!mpz_cmp(foo, bar));
 		assert(mpz_cmp(foo, foo2));
 	}
-	std::cout << "mpz_srandomb(..., 1L)" << std::endl;
+	std::cout << "tmcg_mpz_srandomb(..., 1L)" << std::endl;
 	cnt_zero = 0, cnt_one = 0;
 	for (size_t i = 0; i < 25; i++)
 	{
-		mpz_srandomb(foo, 1L), mpz_set_ui(bar, 0L);
+		tmcg_mpz_srandomb(foo, 1L), mpz_set_ui(bar, 0L);
 		assert((mpz_sizeinbase(foo, 2L) == 1L));
 		lej << foo << std::endl, lej >> bar;
 		assert(!mpz_cmp(foo, bar));
@@ -188,11 +188,11 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	}
 	assert(cnt_zero > 0);
 	assert(cnt_one > 0);
-	std::cout << "mpz_srandomb()" << std::endl;
+	std::cout << "tmcg_mpz_srandomb()" << std::endl;
 	for (size_t i = 0; i < 25; i++)
 	{
 		mpz_set(foo2, foo);
-		mpz_srandomb(foo, 1024L), mpz_set_ui(bar, 0L);
+		tmcg_mpz_srandomb(foo, 1024L), mpz_set_ui(bar, 0L);
 		assert((mpz_sizeinbase(foo, 2L) >= 1008L) &&
 			(mpz_sizeinbase(foo, 2L) <= 1024L));
 		lej << foo << std::endl, lej >> bar;
@@ -200,11 +200,11 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		assert(mpz_cmp(foo, foo2));
 	}
 #ifdef TEST_SSRANDOM
-	std::cout << "mpz_ssrandomb()" << std::endl;
+	std::cout << "tmcg_mpz_ssrandomb()" << std::endl;
 	for (size_t i = 0; i < 3; i++)
 	{
 		mpz_set(foo2, foo);
-		mpz_ssrandomb(foo, 1024L), mpz_set_ui(bar, 0L);
+		tmcg_mpz_ssrandomb(foo, 1024L), mpz_set_ui(bar, 0L);
 		assert((mpz_sizeinbase(foo, 2L) >= 1008L) &&
 			(mpz_sizeinbase(foo, 2L) <= 1024L));
 		lej << foo << std::endl, lej >> bar;
@@ -213,28 +213,28 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	}
 #endif
 	std::cout << "bar = " << bar << std::endl;
-	std::cout << "mpz_wrandomm()" << std::endl;
+	std::cout << "tmcg_mpz_wrandomm()" << std::endl;
 	for (size_t i = 0; i < 25; i++)
 	{
 		mpz_set(foo2, foo);
-		mpz_wrandomm(foo, bar);
+		tmcg_mpz_wrandomm(foo, bar);
 		assert(mpz_cmp(foo, bar) < 0);
 		assert(mpz_cmp(foo, foo2));
 	}
-	std::cout << "mpz_srandomm()" << std::endl;
+	std::cout << "tmcg_mpz_srandomm()" << std::endl;
 	for (size_t i = 0; i < 25; i++)
 	{
 		mpz_set(foo2, foo);
-		mpz_srandomm(foo, bar);
+		tmcg_mpz_srandomm(foo, bar);
 		assert(mpz_cmp(foo, bar) < 0);
 		assert(mpz_cmp(foo, foo2));
 	}
 #ifdef TEST_SSRANDOM
-	std::cout << "mpz_ssrandomm()" << std::endl;
+	std::cout << "tmcg_mpz_ssrandomm()" << std::endl;
 	for (size_t i = 0; i < 3; i++)
 	{
 		mpz_set(foo2, foo);
-		mpz_ssrandomm(foo, bar);
+		tmcg_mpz_ssrandomm(foo, bar);
 		assert(mpz_cmp(foo, bar) < 0);
 		assert(mpz_cmp(foo, foo2));
 	}
@@ -245,51 +245,51 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	mpz_t cache_mod;
 	size_t cache_avail = 0, cache_n = 25;
 #ifdef TEST_SSRANDOM
-	std::cout << "mpz_ssrandomm_cache_init()" << std::endl;
-	mpz_ssrandomm_cache_init(cache, cache_mod, &cache_avail, cache_n, bar);
+	std::cout << "tmcg_mpz_ssrandomm_cache_init()" << std::endl;
+	tmcg_mpz_ssrandomm_cache_init(cache, cache_mod, &cache_avail, cache_n, bar);
 	assert(cache_avail == cache_n);
-	std::cout << "mpz_ssrandomm_cache()" << std::endl;
+	std::cout << "tmcg_mpz_ssrandomm_cache()" << std::endl;
 	for (size_t i = 0; i < cache_n; i++)
 	{
-		mpz_ssrandomm_cache(cache, cache_mod, &cache_avail, foo, bar);
+		tmcg_mpz_ssrandomm_cache(cache, cache_mod, &cache_avail, foo, bar);
 		assert(mpz_cmp(foo, bar) < 0);
 		std::cout << foo << " (cached)" << std::endl;
 	}
 	assert(!cache_avail);
-	mpz_ssrandomm_cache(cache, cache_mod, &cache_avail, foo, bar);
+	tmcg_mpz_ssrandomm_cache(cache, cache_mod, &cache_avail, foo, bar);
 	assert(mpz_cmp(foo, bar) < 0);
 	std::cout << foo << " (not cached)" << std::endl;
-	std::cout << "mpz_ssrandomm_cache_done()" << std::endl;
-	mpz_ssrandomm_cache_done(cache, cache_mod, &cache_avail);
+	std::cout << "tmcg_mpz_ssrandomm_cache_done()" << std::endl;
+	tmcg_mpz_ssrandomm_cache_done(cache, cache_mod, &cache_avail);
 	assert(!cache_avail);
 #endif
 	
-	// mpz_sprime, mpz_sprime2g, mpz_sprime3mod4
-	std::cout << "mpz_sprime(), mpz_sprime2g(), mpz_sprime3mod4()" << std::endl;
+	// tmcg_mpz_sprime, tmcg_mpz_sprime2g, tmcg_mpz_sprime3mod4
+	std::cout << "tmcg_mpz_sprime(), tmcg_mpz_sprime2g(), tmcg_mpz_sprime3mod4()" << std::endl;
 	for (size_t i = 0; i < 2; i++)
 	{
-		mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
+		tmcg_mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_probab_prime_p(bar, 64));
 		mpz_mul_2exp(foo2, bar, 1L);
 		mpz_add_ui(foo2, foo2, 1L);
 		assert(!mpz_cmp(foo, foo2));
 		
-		mpz_sprime2g(foo, bar, 1024, TMCG_MR_ITERATIONS);
+		tmcg_mpz_sprime2g(foo, bar, 1024, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_probab_prime_p(bar, 64) &&
 			mpz_congruent_ui_p(foo, 7L, 8L));
 		mpz_mul_2exp(foo2, bar, 1L);
 		mpz_add_ui(foo2, foo2, 1L);
 		assert(!mpz_cmp(foo, foo2));
 		
-		mpz_sprime3mod4(foo, 1024, TMCG_MR_ITERATIONS);
+		tmcg_mpz_sprime3mod4(foo, 1024, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_congruent_ui_p(foo, 3L, 4L));
 	}
 	
-	// mpz_lprime
-	std::cout << "mpz_lprime()" << std::endl;
+	// tmcg_mpz_lprime
+	std::cout << "tmcg_mpz_lprime()" << std::endl;
 	for (size_t i = 0; i < 5; i++)
 	{
-		mpz_lprime(foo, bar, bar2, 1024, 160, TMCG_MR_ITERATIONS);
+		tmcg_mpz_lprime(foo, bar, bar2, 1024, 160, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_probab_prime_p(bar, 64));
 		mpz_mul(foo2, bar, bar2);
 		mpz_add_ui(foo2, foo2, 1L);
@@ -298,165 +298,165 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		assert(!mpz_cmp_ui(foo2, 1L));
 	}
 	
-	// mpz_oprime
-	std::cout << "mpz_oprime()" << std::endl;
+	// tmcg_mpz_oprime
+	std::cout << "tmcg_mpz_oprime()" << std::endl;
 	for (size_t i = 0; i < 5; i++)
 	{
-		mpz_oprime(foo, 1024, TMCG_MR_ITERATIONS);
+		tmcg_mpz_oprime(foo, 1024, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64));
 	}
 	
-	// mpz_sprime vs. mpz_sprime_naive benchmark
-	std::cout << "mpz_sprime() benchmark" << std::endl;
+	// tmcg_mpz_sprime vs. tmcg_mpz_sprime_naive benchmark
+	std::cout << "tmcg_mpz_sprime() benchmark" << std::endl;
 	start_clock();
 	for (size_t i = 0; i < 50; i++)
-		mpz_sprime(foo, bar, 512, TMCG_MR_ITERATIONS);
+		tmcg_mpz_sprime(foo, bar, 512, TMCG_MR_ITERATIONS);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
-	std::cout << "mpz_sprime_naive() benchmark" << std::endl;
+	std::cout << "tmcg_mpz_sprime_naive() benchmark" << std::endl;
 	start_clock();
 	for (size_t i = 0; i < 50; i++)
-		mpz_sprime_naive(foo, bar, 512, TMCG_MR_ITERATIONS);
+		tmcg_mpz_sprime_naive(foo, bar, 512, TMCG_MR_ITERATIONS);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	
-	// mpz_sqrtmp_r vs. mpz_sqrtmp benchmark
+	// tmcg_mpz_sqrtmp_r vs. tmcg_mpz_sqrtmp benchmark
 	do
-		mpz_oprime(foo, 512, TMCG_MR_ITERATIONS);
+		tmcg_mpz_oprime(foo, 512, TMCG_MR_ITERATIONS);
 	while (!mpz_congruent_ui_p(foo, 1L, 8L));
-	mpz_wrandomb(bar, 512);
+	tmcg_mpz_wrandomb(bar, 512);
 	mpz_mod(bar, bar, foo);
-	std::cout << "mpz_sqrtmp_r() benchmark" << std::endl;
+	std::cout << "tmcg_mpz_sqrtmp_r() benchmark" << std::endl;
 	start_clock();
 	mpz_set(bar2, bar);
 	for (size_t i = 0; i < 1000; i++)
 	{
 		if (mpz_jacobi(bar2, foo) == 1)
-			mpz_sqrtmp_r(foo2, bar2, foo);
+			tmcg_mpz_sqrtmp_r(foo2, bar2, foo);
 		mpz_add_ui(bar2, bar2, 1L);
 	}
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
-	std::cout << "mpz_sqrtmp() benchmark" << std::endl;
+	std::cout << "tmcg_mpz_sqrtmp() benchmark" << std::endl;
 	start_clock();
 	mpz_set(bar2, bar);
 	for (size_t i = 0; i < 1000; i++)
 	{
 		if (mpz_jacobi(bar2, foo) == 1)
-			mpz_sqrtmp(foo2, bar2, foo);
+			tmcg_mpz_sqrtmp(foo2, bar2, foo);
 		mpz_add_ui(bar2, bar2, 1L);
 	}
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	
-	// mpz_spowm, mpz_spowm_baseblind, mpz_spowm_init, mpz_spowm_calc, mpz_spowm_clear
-	std::cout << "mpz_spowm()" << std::endl;
-	mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
+	// tmcg_mpz_spowm, tmcg_mpz_spowm_baseblind, tmcg_mpz_spowm_init, tmcg_mpz_spowm_calc, tmcg_mpz_spowm_clear
+	std::cout << "tmcg_mpz_spowm()" << std::endl;
+	tmcg_mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	for (size_t i = 0; i < 500; i++)
 	{
-		mpz_srandomm(bar, foo), mpz_srandomm(bar2, foo);
-		mpz_spowm(foo2, bar, bar2, foo);
+		tmcg_mpz_srandomm(bar, foo), tmcg_mpz_srandomm(bar2, foo);
+		tmcg_mpz_spowm(foo2, bar, bar2, foo);
 		mpz_powm(bar, bar, bar2, foo);
 		assert(!mpz_cmp(foo2, bar));
 	}
 	for (size_t i = 0; i < 500; i++)
 	{
 		// test negative exponents
-		mpz_srandomm(bar, foo), mpz_srandomm(bar2, foo);
+		tmcg_mpz_srandomm(bar, foo), tmcg_mpz_srandomm(bar2, foo);
 		mpz_neg(bar2, bar2);
-		mpz_spowm(foo2, bar, bar2, foo);
+		tmcg_mpz_spowm(foo2, bar, bar2, foo);
 		mpz_powm(bar, bar, bar2, foo);
 		assert(!mpz_cmp(foo2, bar));
 	}
-	std::cout << "mpz_spowm_baseblind()" << std::endl;
-	mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
+	std::cout << "tmcg_mpz_spowm_baseblind()" << std::endl;
+	tmcg_mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	for (size_t i = 0; i < 500; i++)
 	{
-		mpz_srandomm(bar, foo), mpz_srandomm(bar2, foo);
-		mpz_spowm_baseblind(foo2, bar, bar2, foo);
+		tmcg_mpz_srandomm(bar, foo), tmcg_mpz_srandomm(bar2, foo);
+		tmcg_mpz_spowm_baseblind(foo2, bar, bar2, foo);
 		mpz_powm(bar, bar, bar2, foo);
 		assert(!mpz_cmp(foo2, bar));
 	}
 	for (size_t i = 0; i < 500; i++)
 	{
 		// test negative exponents
-		mpz_srandomm(bar, foo), mpz_srandomm(bar2, foo);
+		tmcg_mpz_srandomm(bar, foo), tmcg_mpz_srandomm(bar2, foo);
 		mpz_neg(bar2, bar2);
-		mpz_spowm_baseblind(foo2, bar, bar2, foo);
+		tmcg_mpz_spowm_baseblind(foo2, bar, bar2, foo);
 		mpz_powm(bar, bar, bar2, foo);
 		assert(!mpz_cmp(foo2, bar));
 	}
-	std::cout << "mpz_spowm_init(), mpz_spowm_calc(), mpz_spowm_done()" <<
+	std::cout << "tmcg_mpz_spowm_init(), tmcg_mpz_spowm_calc(), tmcg_mpz_spowm_done()" <<
 		std::endl;
 	for (size_t i = 0; i < 50; i++)
 	{
-		mpz_srandomm(bar2, foo);
-		mpz_spowm_init(bar2, foo);
+		tmcg_mpz_srandomm(bar2, foo);
+		tmcg_mpz_spowm_init(bar2, foo);
 		for (size_t j = 0; j < 50; j++)
 		{
-			mpz_srandomm(bar, foo);
-			mpz_spowm_calc(foo2, bar);
+			tmcg_mpz_srandomm(bar, foo);
+			tmcg_mpz_spowm_calc(foo2, bar);
 			mpz_powm(bar, bar, bar2, foo);
 			assert(!mpz_cmp(foo2, bar));
 		}
-		mpz_spowm_clear();
+		tmcg_mpz_spowm_clear();
 	}
 	
-	// mpz_fpowm_init, mpz_fpowm_precompute, mpz_f(s)powm, mpz_fpowm_done
-	std::cout << "mpz_fpowm_init()" << std::endl;
-	mpz_fpowm_init(fpowm_table_1), mpz_fpowm_init(fpowm_table_2);
-	std::cout << "mpz_fpowm_precompute()" << std::endl;
+	// tmcg_mpz_fpowm_init, tmcg_mpz_fpowm_precompute, tmcg_mpz_f(s)powm, tmcg_mpz_fpowm_done
+	std::cout << "tmcg_mpz_fpowm_init()" << std::endl;
+	tmcg_mpz_fpowm_init(fpowm_table_1), tmcg_mpz_fpowm_init(fpowm_table_2);
+	std::cout << "tmcg_mpz_fpowm_precompute()" << std::endl;
 	mpz_set_ui(bar, 2L);
-	mpz_fpowm_precompute(fpowm_table_1, bar, foo, 1024);
-	mpz_srandomb(bar2, 1024);
-	mpz_fpowm_precompute(fpowm_table_2, bar2, foo, 1024);
-	std::cout << "mpz_fpowm(), mpz_fspowm()" << std::endl;
+	tmcg_mpz_fpowm_precompute(fpowm_table_1, bar, foo, 1024);
+	tmcg_mpz_srandomb(bar2, 1024);
+	tmcg_mpz_fpowm_precompute(fpowm_table_2, bar2, foo, 1024);
+	std::cout << "tmcg_mpz_fpowm(), tmcg_mpz_fspowm()" << std::endl;
 	for (size_t i = 0; i < 150; i++)
 	{
-		mpz_srandomb(foo2, 1024);
+		tmcg_mpz_srandomb(foo2, 1024);
 		mpz_powm(t1, bar, foo2, foo);
-		mpz_fpowm(fpowm_table_1, t2, bar, foo2, foo);
-		mpz_fspowm(fpowm_table_1, root, bar, foo2, foo);
+		tmcg_mpz_fpowm(fpowm_table_1, t2, bar, foo2, foo);
+		tmcg_mpz_fspowm(fpowm_table_1, root, bar, foo2, foo);
 		assert(!mpz_cmp(t1, t2) && !mpz_cmp(t1, root));
 		mpz_powm(t1, bar2, foo2, foo);
-		mpz_fpowm(fpowm_table_2, t2, bar2, foo2, foo);
-		mpz_fspowm(fpowm_table_2, root, bar2, foo2, foo);
+		tmcg_mpz_fpowm(fpowm_table_2, t2, bar2, foo2, foo);
+		tmcg_mpz_fspowm(fpowm_table_2, root, bar2, foo2, foo);
 		assert(!mpz_cmp(t1, t2) && !mpz_cmp(t1, root));
 	}
 	for (size_t i = 0; i < 150; i++)
 	{
 		// test negative exponents
-		mpz_srandomb(foo2, 1024);
+		tmcg_mpz_srandomb(foo2, 1024);
 		mpz_neg(foo2, foo2);
 		mpz_powm(t1, bar, foo2, foo);
-		mpz_fpowm(fpowm_table_1, t2, bar, foo2, foo);
-		mpz_fspowm(fpowm_table_1, root, bar, foo2, foo);
+		tmcg_mpz_fpowm(fpowm_table_1, t2, bar, foo2, foo);
+		tmcg_mpz_fspowm(fpowm_table_1, root, bar, foo2, foo);
 		assert(!mpz_cmp(t1, t2) && !mpz_cmp(t1, root));
 		mpz_powm(t1, bar2, foo2, foo);
-		mpz_fpowm(fpowm_table_2, t2, bar2, foo2, foo);
-		mpz_fspowm(fpowm_table_2, root, bar2, foo2, foo);
+		tmcg_mpz_fpowm(fpowm_table_2, t2, bar2, foo2, foo);
+		tmcg_mpz_fspowm(fpowm_table_2, root, bar2, foo2, foo);
 		assert(!mpz_cmp(t1, t2) && !mpz_cmp(t1, root));
 	}
-	std::cout << "mpz_fpowm_done()" << std::endl;
-	mpz_fpowm_done(fpowm_table_1), mpz_fpowm_done(fpowm_table_2);
+	std::cout << "tmcg_mpz_fpowm_done()" << std::endl;
+	tmcg_mpz_fpowm_done(fpowm_table_1), tmcg_mpz_fpowm_done(fpowm_table_2);
 
 	// mpz_powm vs. mpz_spowm vs. mpz_fpowm vs. mpz_fspowm benchmark
 	std::cout << "mpz_powm() benchmark" << std::endl;
 	start_clock();
 	for (size_t i = 0; i < 10000; i++)
 	{
-		mpz_srandomb(foo2, 160);
+		tmcg_mpz_srandomb(foo2, 160);
 		mpz_powm(t1, bar, foo2, foo);
 	}
 	stop_clock();
 	save_clock();
 	std::cout << elapsed_time() << std::endl;
-	std::cout << "mpz_spowm() benchmark" << std::endl;
+	std::cout << "tmcg_mpz_spowm() benchmark" << std::endl;
 	start_clock();
 	for (size_t i = 0; i < 10000; i++)
 	{
-		mpz_srandomb(foo2, 160);
-		mpz_spowm(t1, bar, foo2, foo);
+		tmcg_mpz_srandomb(foo2, 160);
+		tmcg_mpz_spowm(t1, bar, foo2, foo);
 	}
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
@@ -464,16 +464,16 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	// check whether spowm() is slower than powm()
 	assert((compare_elapsed_time_saved(0) < 0));
 	size_t bad_cnt = 0; 
-	std::cout << "mpz_fpowm() vs. mpz_fspowm() benchmark" << std::endl;
+	std::cout << "tmcg_mpz_fpowm() vs. tmcg_mpz_fspowm() benchmark" << std::endl;
 	for (size_t j = 0; j < 30; j++)
 	{
-		mpz_fpowm_init(fpowm_table_1);
-		mpz_fpowm_precompute(fpowm_table_1, bar, foo, 160);
+		tmcg_mpz_fpowm_init(fpowm_table_1);
+		tmcg_mpz_fpowm_precompute(fpowm_table_1, bar, foo, 160);
 		start_clock();
 		for (size_t i = 0; i < 10000; i++)
 		{
-			mpz_srandomb(foo2, 160);
-			mpz_fpowm(fpowm_table_1, t2, bar, foo2, foo);
+			tmcg_mpz_srandomb(foo2, 160);
+			tmcg_mpz_fpowm(fpowm_table_1, t2, bar, foo2, foo);
 		}
 		stop_clock();
 		save_clock();
@@ -481,11 +481,11 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		start_clock();
 		for (size_t i = 0; i < 10000; i++)
 		{
-			mpz_srandomb(foo2, 160);
-			mpz_fspowm(fpowm_table_1, root, bar, foo2, foo);
+			tmcg_mpz_srandomb(foo2, 160);
+			tmcg_mpz_fspowm(fpowm_table_1, root, bar, foo2, foo);
 		}
 		stop_clock();
-		mpz_fpowm_done(fpowm_table_1);
+		tmcg_mpz_fpowm_done(fpowm_table_1);
 		std::cout << elapsed_time() << std::endl;
 		if (compare_elapsed_time_saved(0) >= 0)
 		{
@@ -496,71 +496,71 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	// check whether fspowm() is slower than fpowm() for at least 2/3 of runs
 	assert(bad_cnt < 10);
 	
-	// h, g, mpz_shash
+	// tmcg_h, tmcg_g, tmcg_mpz_shash
 	size_t dlen = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
 	unsigned char tmp_ar1[1024], tmp_ar2[1024];
-	std::cout << "h()" << std::endl;
+	std::cout << "tmcg_h()" << std::endl;
 	unsigned char *dig1 = new unsigned char[dlen];
 	unsigned char *dig2 = new unsigned char[dlen];
 	for (size_t i = 0; i < 50; i++)
 	{
 		gcry_randomize(&tmp_ar1, sizeof(tmp_ar1), GCRY_STRONG_RANDOM);
 		gcry_randomize(&tmp_ar2, sizeof(tmp_ar2), GCRY_STRONG_RANDOM);
-		h(dig1, tmp_ar1, sizeof(tmp_ar1));
-		h(dig2, tmp_ar2, sizeof(tmp_ar2));
+		tmcg_h(dig1, tmp_ar1, sizeof(tmp_ar1));
+		tmcg_h(dig2, tmp_ar2, sizeof(tmp_ar2));
 		assert(memcmp(dig1, dig2, dlen));
 		memcpy(tmp_ar2, tmp_ar1, sizeof(tmp_ar1));
-		h(dig2, tmp_ar2, sizeof(tmp_ar2));
+		tmcg_h(dig2, tmp_ar2, sizeof(tmp_ar2));
 		assert(!memcmp(dig1, dig2, dlen));
 	}
 	delete [] dig1, delete [] dig2;
-	std::cout << "g()" << std::endl;
+	std::cout << "tmcg_g()" << std::endl;
 	dig1 = new unsigned char[1024], dig2 = new unsigned char[1024];
 	for (size_t i = 0; i < 50; i++)
 	{
 		gcry_randomize(&tmp_ar1, sizeof(tmp_ar1), GCRY_STRONG_RANDOM);
-		g(dig1, 1024, tmp_ar1, sizeof(tmp_ar1));
-		g(dig2, 1024, tmp_ar2, sizeof(tmp_ar2));
+		tmcg_g(dig1, 1024, tmp_ar1, sizeof(tmp_ar1));
+		tmcg_g(dig2, 1024, tmp_ar2, sizeof(tmp_ar2));
 		assert(memcmp(dig1, dig2, dlen));
 		memcpy(tmp_ar2, tmp_ar1, sizeof(tmp_ar1));
-		g(dig2, 1024, tmp_ar2, sizeof(tmp_ar2));
+		tmcg_g(dig2, 1024, tmp_ar2, sizeof(tmp_ar2));
 		assert(!memcmp(dig1, dig2, dlen));
 	}
 	delete [] dig1, delete [] dig2;
-	std::cout << "mpz_shash()" << std::endl;
+	std::cout << "tmcg_mpz_shash()" << std::endl;
 	mpz_set_str(bar, "KlGMM70snzDNYXwufIkOkLZzs91jPNPe7QYT9Agfeg0", TMCG_MPZ_IO_BASE);
 	mpz_set_ui(foo2, 23L), mpz_set_ui(bar2, 42L);
-	mpz_shash(foo, 2, foo2, bar2);
+	tmcg_mpz_shash(foo, 2, foo2, bar2);
 	assert(!mpz_cmp(foo, bar));
 	mpz_set_str(bar, "caQFcUSBfXMGxXaZMMXp26QwN1vGcBYkhOz2DPgN6S8", TMCG_MPZ_IO_BASE);
 	s = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	mpz_shash(foo, s);
+	tmcg_mpz_shash(foo, s);
 	assert(!mpz_cmp(foo, bar));
 	
-	// mpz_qrmn_p, mpz_sqrtmn_r, mpz_sqrtmn
-	std::cout << "mpz_qrmn_p(), mpz_sqrtmn_r(), mpz_sqrtmn()" << std::endl;
-	mpz_sprime(foo, bar, 512, TMCG_MR_ITERATIONS);
-	mpz_sprime(foo2, bar2, 512, TMCG_MR_ITERATIONS);
+	// tmcg_mpz_qrmn_p, tmcg_mpz_sqrtmn_r, tmcg_mpz_sqrtmn
+	std::cout << "tmcg_mpz_qrmn_p(), tmcg_mpz_sqrtmn_r(), tmcg_mpz_sqrtmn()" << std::endl;
+	tmcg_mpz_sprime(foo, bar, 512, TMCG_MR_ITERATIONS);
+	tmcg_mpz_sprime(foo2, bar2, 512, TMCG_MR_ITERATIONS);
 	mpz_mul(bar, foo, foo2);
 	for (size_t i = 0; i < 50; i++)
 	{
 		do
-			mpz_srandomm(bar2, bar);
-		while (!mpz_qrmn_p(bar2, foo, foo2, bar));
-		mpz_sqrtmn_r(root, bar2, foo, foo2, bar);
+			tmcg_mpz_srandomm(bar2, bar);
+		while (!tmcg_mpz_qrmn_p(bar2, foo, foo2, bar));
+		tmcg_mpz_sqrtmn_r(root, bar2, foo, foo2, bar);
 		mpz_powm_ui(root, root, 2L, bar);
 		assert(!mpz_cmp(root, bar2));
-		mpz_sqrtmn(root, bar2, foo, foo2, bar);
+		tmcg_mpz_sqrtmn(root, bar2, foo, foo2, bar);
 		mpz_powm_ui(root, root, 2L, bar);
 		assert(!mpz_cmp(root, bar2));
 	}
 
-	// mpz_get_gcry_mpi, mpz_set_gcry_mpi
-	std::cout << "mpz_get_gcry_mpi(), mpz_set_gcry_mpi()" << std::endl;
+	// tmcg_mpz_get_gcry_mpi, tmcg_mpz_set_gcry_mpi
+	std::cout << "tmcg_mpz_get_gcry_mpi(), tmcg_mpz_set_gcry_mpi()" << std::endl;
 	gcry_mpi_t a = gcry_mpi_new(256);
-	mpz_wrandomb(foo, 256L);
-	assert(mpz_get_gcry_mpi(a, foo));
-	assert(mpz_set_gcry_mpi(a, bar));
+	tmcg_mpz_wrandomb(foo, 256L);
+	assert(tmcg_mpz_get_gcry_mpi(a, foo));
+	assert(tmcg_mpz_set_gcry_mpi(a, bar));
 	gcry_mpi_release(a);
 	assert(!mpz_cmp(foo, bar));
 	
@@ -569,3 +569,4 @@ yTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	
 	return 0;
 }
+

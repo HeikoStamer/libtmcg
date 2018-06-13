@@ -30,52 +30,48 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
-#ifndef INCLUDED_mpz_sprime_H
-	#define INCLUDED_mpz_sprime_H
+#ifndef INCLUDED_mpz_sprime_HH
+	#define INCLUDED_mpz_sprime_HH
+
+	// C and STL header	
+	#include <cstdio>
+	#include <cassert>
+	#include <iostream>
 	
-	#include <stdio.h>
-	#include <assert.h>
-	
-	/* GNU multiple precision library */
+	// GNU multiple precision library
 	#include <gmp.h>
 	
-	#include "mpz_srandom.h"
+	#include "mpz_srandom.hh"
 	
-	#if defined (__cplusplus)
-		extern "C"
-		{
-	#endif
-			void mpz_sprime
-				(mpz_ptr p, mpz_ptr q,
-				const unsigned long int qsize, 
-				const unsigned long int mr_iterations);
-			void mpz_sprime_naive
-				(mpz_ptr p, mpz_ptr q,
-				const unsigned long int qsize, 
-				const unsigned long int mr_iterations);
-			void mpz_sprime2g
-				(mpz_ptr p, mpz_ptr q,
-				const unsigned long int qsize, 
-				const unsigned long int mr_iterations);
-			void mpz_sprime3mod4
-				(mpz_ptr p,
-				const unsigned long int psize, 
-				const unsigned long int mr_iterations);
-			void mpz_lprime
-				(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
-				const unsigned long int psize,
-				const unsigned long int qsize, 
-				const unsigned long int mr_iterations);
-			void mpz_lprime_prefix
-				(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
-				const unsigned long int psize,
-				const unsigned long int qsize, 
-				const unsigned long int mr_iterations);
-			void mpz_oprime
-				(mpz_ptr p,
-				const unsigned long int psize, 
-				const unsigned long int mr_iterations);
-	#if defined(__cplusplus)
-		}
-	#endif
+	void tmcg_mpz_sprime
+		(mpz_ptr p, mpz_ptr q,
+		const unsigned long int qsize, 
+		const unsigned long int mr_iterations);
+	void tmcg_mpz_sprime_naive
+		(mpz_ptr p, mpz_ptr q,
+		const unsigned long int qsize, 
+		const unsigned long int mr_iterations);
+	void tmcg_mpz_sprime2g
+		(mpz_ptr p, mpz_ptr q,
+		const unsigned long int qsize, 
+		const unsigned long int mr_iterations);
+	void tmcg_mpz_sprime3mod4
+		(mpz_ptr p,
+		const unsigned long int psize, 
+		const unsigned long int mr_iterations);
+	void tmcg_mpz_lprime
+		(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
+		const unsigned long int psize,
+		const unsigned long int qsize, 
+		const unsigned long int mr_iterations);
+	void tmcg_mpz_lprime_prefix
+		(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
+		const unsigned long int psize,
+		const unsigned long int qsize, 
+		const unsigned long int mr_iterations);
+	void tmcg_mpz_oprime
+		(mpz_ptr p,
+		const unsigned long int psize, 
+		const unsigned long int mr_iterations);
 #endif
+

@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2015, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2015, 2016, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@
 size_t random_rotation
 	(const size_t n, std::vector<size_t> &pi)
 {
-	size_t r = mpz_srandom_mod(n);
+	size_t r = tmcg_mpz_srandom_mod(n);
 	pi.clear();
 	for (size_t i = 0; i < n; i++)
 		pi.push_back((r + i) % n);
@@ -164,7 +164,7 @@ int main
 			for (size_t i = 0; i < n; i++)
 			{
 				// create E[i]
-				mpz_srandomm(R[i], vrhe->q);
+				tmcg_mpz_srandomm(R[i], vrhe->q);
 				mpz_powm(E[i].first, vrhe->g, R[i], vrhe->p);
 				mpz_mul(E[i].first, E[i].first, e[pi[i]].first);
 				mpz_mod(E[i].first, E[i].first, vrhe->p);

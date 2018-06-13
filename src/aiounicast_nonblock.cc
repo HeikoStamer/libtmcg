@@ -3,7 +3,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -35,7 +35,8 @@ aiounicast_nonblock::aiounicast_nonblock
 	const time_t aio_default_timeout_in,
 	const bool aio_is_authenticated_in,
 	const bool aio_is_encrypted_in):
-		aiounicast(n_in, j_in, aio_default_scheduler_in, aio_default_timeout_in, aio_is_authenticated_in, aio_is_encrypted_in)
+		aiounicast(n_in, j_in, aio_default_scheduler_in, aio_default_timeout_in,
+			aio_is_authenticated_in, aio_is_encrypted_in)
 {
 	assert(j_in < n_in);
 	assert(n_in == fd_in_in.size());
@@ -470,7 +471,7 @@ bool aiounicast_nonblock::Receive
 						aio_schedule_current = 0;
 					break;
 				case aio_scheduler_random:
-					i_out = mpz_wrandom_mod(n);
+					i_out = tmcg_mpz_wrandom_mod(n);
 					break;
 				case aio_scheduler_direct:
 					if (i_out >= n)
@@ -701,7 +702,7 @@ bool aiounicast_nonblock::Receive
 					aio_schedule_buffer = 0;
 				break;
 			case aio_scheduler_random:
-				i_out = mpz_wrandom_mod(n);
+				i_out = tmcg_mpz_wrandom_mod(n);
 				break;
 			case aio_scheduler_direct:
 				if (i_out >= n)

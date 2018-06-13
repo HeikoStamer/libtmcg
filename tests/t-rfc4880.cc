@@ -47,9 +47,9 @@ int main
 	{
 		in.clear(), out.clear();
 		for (size_t j = 0; j < 6; j++)
-			in.push_back(mpz_wrandom_ui() % 2);
+			in.push_back(tmcg_mpz_wrandom_ui() % 2);
 		for (size_t j = 0; j < 6; j++)
-			out.push_back(mpz_wrandom_ui() % 2);
+			out.push_back(tmcg_mpz_wrandom_ui() % 2);
 		assert((CallasDonnerhackeFinneyShawThayerRFC4880::
 			OctetsCompare(in, out) == CallasDonnerhackeFinneyShawThayerRFC4880::
 			OctetsCompareConstantTime(out, in)));
@@ -64,7 +64,7 @@ int main
 	{
 		std::string radix;
 		in.push_back(j);
-		if (mpz_wrandom_ui() % 2)
+		if (tmcg_mpz_wrandom_ui() % 2)
 		{
 			std::cout << "Radix64Encode(in, radix, false) = " << std::endl;
 			CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Encode(in, radix,

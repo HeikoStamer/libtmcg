@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2002, 2004, 2005, 2007, 
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,13 +19,13 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
-/* include headers */
+// include headers
 #ifdef HAVE_CONFIG_H
 	#include "libTMCG_config.h"
 #endif
-#include "mpz_srandom.h"
+#include "mpz_srandom.hh"
 
-unsigned long int mpz_grandom_ui
+unsigned long int tmcg_mpz_grandom_ui
 	(enum gcry_random_level level)
 {
 	unsigned long int tmp = 0;
@@ -36,65 +36,65 @@ unsigned long int mpz_grandom_ui
 	return tmp;
 }
 
-unsigned long int mpz_grandom_ui_nomodbias
+unsigned long int tmcg_mpz_grandom_ui_nomodbias
 	(enum gcry_random_level level, const unsigned long int modulo)
 {
 	unsigned long int div, max, rnd = 0;
 	
 	if ((modulo == 0) || (modulo == 1))
-	    return 0; /* indicates an error */
+	    return 0; // indicates an error
 	
-	/* Remove ``modulo bias'' by limiting the return values */
+	// Remove ``modulo bias'' by limiting the return values
 	div = (ULONG_MAX - modulo + 1) / modulo;
 	max = ((div + 1) * modulo) - 1;
 	do
-		rnd = mpz_grandom_ui(level);
+		rnd = tmcg_mpz_grandom_ui(level);
 	while (rnd > max);
 
 	return rnd;
 }
 
-unsigned long int mpz_ssrandom_ui
+unsigned long int tmcg_mpz_ssrandom_ui
 	()
 {
-	return mpz_grandom_ui(GCRY_VERY_STRONG_RANDOM);
+	return tmcg_mpz_grandom_ui(GCRY_VERY_STRONG_RANDOM);
 }
 
-unsigned long int mpz_srandom_ui
+unsigned long int tmcg_mpz_srandom_ui
 	()
 {
-	return mpz_grandom_ui(GCRY_STRONG_RANDOM);
+	return tmcg_mpz_grandom_ui(GCRY_STRONG_RANDOM);
 }
 
-unsigned long int mpz_wrandom_ui
+unsigned long int tmcg_mpz_wrandom_ui
 	()
 {
-	return mpz_grandom_ui(GCRY_WEAK_RANDOM);
+	return tmcg_mpz_grandom_ui(GCRY_WEAK_RANDOM);
 }
 
-unsigned long int mpz_ssrandom_mod
+unsigned long int tmcg_mpz_ssrandom_mod
 	(const unsigned long int modulo)
 {
-	return mpz_grandom_ui_nomodbias(GCRY_VERY_STRONG_RANDOM, modulo) % modulo;
+	return tmcg_mpz_grandom_ui_nomodbias(GCRY_VERY_STRONG_RANDOM, modulo) % modulo;
 }
 
-unsigned long int mpz_srandom_mod
+unsigned long int tmcg_mpz_srandom_mod
 	(const unsigned long int modulo)
 {
-	return mpz_grandom_ui_nomodbias(GCRY_STRONG_RANDOM, modulo) % modulo;
+	return tmcg_mpz_grandom_ui_nomodbias(GCRY_STRONG_RANDOM, modulo) % modulo;
 }
 
-unsigned long int mpz_wrandom_mod
+unsigned long int tmcg_mpz_wrandom_mod
 	(const unsigned long int modulo)
 {
-	return mpz_grandom_ui_nomodbias(GCRY_WEAK_RANDOM, modulo) % modulo;
+	return tmcg_mpz_grandom_ui_nomodbias(GCRY_WEAK_RANDOM, modulo) % modulo;
 }
 
-void mpz_grandomb
+void tmcg_mpz_grandomb
 	(mpz_ptr r, const unsigned long int size, enum gcry_random_level level)
 {
 	unsigned char *rtmp;
-	char htmp[size + 3]; /* at least two characters + delimiter */
+	char htmp[size + 3]; // at least two characters + delimiter
 	size_t hlen;
 	gcry_mpi_t rr;
 	gcry_error_t ret;
@@ -105,8 +105,8 @@ void mpz_grandomb
 	ret = gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
 	if (ret)
 	{
-		fprintf(stderr, "mpz_grandomb(): gcry_mpi_aprint() failed: %s\n", gcry_strerror(ret));
-		mpz_set_ui(r, 0L); /* indicates an error */
+		fprintf(stderr, "tmcg_mpz_grandomb(): gcry_mpi_aprint() failed: %s\n", gcry_strerror(ret));
+		mpz_set_ui(r, 0L); // indicates an error
 	}
 	else
 	{
@@ -114,12 +114,12 @@ void mpz_grandomb
 		memcpy(htmp, rtmp, hlen);
 		gcry_free(rtmp);
 		mpz_set_str(r, htmp, 16);
-		mpz_tdiv_r_2exp(r, r, size); /* r mod 2^size, i.e. shift right and bit mask */
+		mpz_tdiv_r_2exp(r, r, size); // r mod 2^size, i.e. shift right and bit mask
 	}
 	gcry_mpi_release(rr);
 }
 
-void mpz_ssrandomb
+void tmcg_mpz_ssrandomb
 	(mpz_ptr r, const unsigned long int size)
 {
 	FILE *fhd = fopen("/proc/sys/kernel/random/entropy_avail", "r");
@@ -130,29 +130,29 @@ void mpz_ssrandomb
 			entropy_avail = 0;
 		fclose(fhd);
 		if (entropy_avail < size)
-			fprintf(stderr, "mpz_ssrandomb(): too few entropy (%lu bits) available; blocking\n", entropy_avail);
+			fprintf(stderr, "tmcg_mpz_ssrandomb(): too few entropy (%lu bits) available; blocking\n", entropy_avail);
 	}
-	mpz_grandomb(r, size, GCRY_VERY_STRONG_RANDOM);
+	tmcg_mpz_grandomb(r, size, GCRY_VERY_STRONG_RANDOM);
 }
 
-void mpz_srandomb
+void tmcg_mpz_srandomb
 	(mpz_ptr r, const unsigned long int size)
 {
-	mpz_grandomb(r, size, GCRY_STRONG_RANDOM);
+	tmcg_mpz_grandomb(r, size, GCRY_STRONG_RANDOM);
 }
 
-void mpz_wrandomb
+void tmcg_mpz_wrandomb
 	(mpz_ptr r, const unsigned long int size)
 {
-	mpz_grandomb(r, size, GCRY_WEAK_RANDOM);
+	tmcg_mpz_grandomb(r, size, GCRY_WEAK_RANDOM);
 }
 
-void mpz_grandomm
+void tmcg_mpz_grandomm
 	(mpz_ptr r, mpz_srcptr m, enum gcry_random_level level)
 {
-	unsigned long int size = mpz_sizeinbase(m, 2L) + 64; /* cf. BSI TR-02102-1, B.4 Verfahren 2 */
+	unsigned long int size = mpz_sizeinbase(m, 2L) + 64; // cf. BSI TR-02102-1, B.4 Verfahren 2
 	unsigned char *rtmp;
-	char htmp[size + 3]; /* at least two characters + delimiter */
+	char htmp[size + 3]; // at least two characters + delimiter
 	size_t hlen;
 	gcry_mpi_t rr;
 	gcry_error_t ret;
@@ -163,8 +163,8 @@ void mpz_grandomm
 	ret = gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
 	if (ret)
 	{
-		fprintf(stderr, "mpz_grandomm(): gcry_mpi_aprint() failed: %s\n", gcry_strerror(ret));
-		mpz_set_ui(r, 0L); /* indicates an error */
+		fprintf(stderr, "tmcg_mpz_grandomm(): gcry_mpi_aprint() failed: %s\n", gcry_strerror(ret));
+		mpz_set_ui(r, 0L); // indicates an error
 	}
 	else
 	{
@@ -172,12 +172,12 @@ void mpz_grandomm
 		memcpy(htmp, rtmp, hlen);
 		gcry_free(rtmp);
 		mpz_set_str(r, htmp, 16);
-		mpz_mod(r, r, m); /* modulo bias is negligible here */
+		mpz_mod(r, r, m); // modulo bias is negligible here
 	}
 	gcry_mpi_release(rr);
 }
 
-void mpz_ssrandomm
+void tmcg_mpz_ssrandomm
 	(mpz_ptr r, mpz_srcptr m)
 {
 	FILE *fhd = fopen("/proc/sys/kernel/random/entropy_avail", "r");
@@ -188,24 +188,24 @@ void mpz_ssrandomm
 			entropy_avail = 0;
 		fclose(fhd);
 		if (entropy_avail < mpz_sizeinbase(m, 2L))
-			fprintf(stderr, "mpz_ssrandomm(): too few entropy (%lu bits) available; blocking\n", entropy_avail);
+			fprintf(stderr, "tmcg_mpz_ssrandomm(): too few entropy (%lu bits) available; blocking\n", entropy_avail);
 	}
-	mpz_grandomm(r, m, GCRY_VERY_STRONG_RANDOM);
+	tmcg_mpz_grandomm(r, m, GCRY_VERY_STRONG_RANDOM);
 }
 
-void mpz_srandomm
+void tmcg_mpz_srandomm
 	(mpz_ptr r, mpz_srcptr m)
 {
-	mpz_grandomm(r, m, GCRY_STRONG_RANDOM);
+	tmcg_mpz_grandomm(r, m, GCRY_STRONG_RANDOM);
 }
 
-void mpz_wrandomm
+void tmcg_mpz_wrandomm
 	(mpz_ptr r, mpz_srcptr m)
 {
-	mpz_grandomm(r, m, GCRY_WEAK_RANDOM);
+	tmcg_mpz_grandomm(r, m, GCRY_WEAK_RANDOM);
 }
 
-void mpz_ssrandomm_cache_init
+void tmcg_mpz_ssrandomm_cache_init
 	(mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
 	mpz_ptr ssrandomm_cache_mod,
 	size_t *ssrandomm_cache_avail,
@@ -217,12 +217,12 @@ void mpz_ssrandomm_cache_init
 	for (i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
 		mpz_init(ssrandomm_cache[i]);	
 	for (i = 0; i < n; i++)
-		mpz_ssrandomm(ssrandomm_cache[i], m);
+		tmcg_mpz_ssrandomm(ssrandomm_cache[i], m);
 	mpz_init_set(ssrandomm_cache_mod, m);
 	*ssrandomm_cache_avail = n;
 }
 
-void mpz_ssrandomm_cache
+void tmcg_mpz_ssrandomm_cache
 	(mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
 	mpz_srcptr ssrandomm_cache_mod,
 	size_t *ssrandomm_cache_avail,
@@ -234,10 +234,10 @@ void mpz_ssrandomm_cache
 		mpz_set(r, ssrandomm_cache[*ssrandomm_cache_avail]);
 	}
 	else
-		mpz_ssrandomm(r, m);
+		tmcg_mpz_ssrandomm(r, m);
 }
 
-void mpz_ssrandomm_cache_done
+void tmcg_mpz_ssrandomm_cache_done
 	(mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
 	mpz_ptr ssrandomm_cache_mod,
 	size_t *ssrandomm_cache_avail)

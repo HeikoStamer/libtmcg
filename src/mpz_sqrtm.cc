@@ -1,7 +1,8 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2004, 2007, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2002, 2004, 2007, 2016, 2017,
+                           2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,44 +18,44 @@
    along with LibTMCG; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-    (mpz_sqrtmp_r)     1. square roots mod p, with p prime
+    (tmcg_mpz_sqrtmp_r)     1. square roots mod p, with p prime
                           [algorithm of Adleman, Manders, and Miller, 1977]
 
-    (mpz_sqrtmp)       1a. square roots mod p, like 1. but non-randomized
+    (tmcg_mpz_sqrtmp)       1a. square roots mod p, like 1. but non-randomized
 
-    (mpz_sqrtmp_fast)     faster version, needed some pre-computations
+    (tmcg_mpz_sqrtmp_fast)     faster version, needed some pre-computations
 
-    (mpz_sqrtmn_r)     2. square roots mod n, with n = p * q (distinct primes)
+    (tmcg_mpz_sqrtmn_r)     2. square roots mod n, with n = p * q (distinct primes)
 
-    (mpz_sqrtmn)       2a. square roots mod n, like 2. but non-randomized
+    (tmcg_mpz_sqrtmn)       2a. square roots mod n, like 2. but non-randomized
 
-    (mpz_sqrtmn_r_all)    get all four square roots
+    (tmcg_mpz_sqrtmn_r_all)    get all four square roots
 
-    (mpz_sqrtmn_all)      get all four square roots (non-randomized variant)
+    (tmcg_mpz_sqrtmn_all)      get all four square roots (non-randomized variant)
 
-    (mpz_sqrtmn_fast)     faster version, needed some pre-computations
+    (tmcg_mpz_sqrtmn_fast)     faster version, needed some pre-computations
                           ONLY FOR p, q \cong 3 (mod 4) [n is Blum Integer]
 
-    (mpz_sqrtmn_fast_all) faster version, get all four square roots
+    (tmcg_mpz_sqrtmn_fast_all) faster version, get all four square roots
                           ONLY FOR p, q \cong 3 (mod 4) [n is Blum Integer]
 
-    (mpz_qrmn_p)       3. quadratic residiosity mod n, with n = p * q
+    (tmcg_mpz_qrmn_p)       3. quadratic residiosity mod n, with n = p * q
 
 *******************************************************************************/
 
-/* include headers */
+// include headers
 #ifdef HAVE_CONFIG_H
 	#include "libTMCG_config.h"
 #endif
-#include "mpz_sqrtm.h"
+#include "mpz_sqrtm.hh"
 
-int mpz_qrmn_p
+int tmcg_mpz_qrmn_p
 	(mpz_srcptr a, mpz_srcptr p, mpz_srcptr q, mpz_srcptr n)
 {
 	return ((mpz_jacobi(a, p) == 1) && (mpz_jacobi(a, q) == 1));
 }
 
-void mpz_sqrtmp_r
+void tmcg_mpz_sqrtmp_r
 	(mpz_ptr root, mpz_srcptr a, mpz_srcptr p)
 {
 	/* ? a \neq 0 */
@@ -98,7 +99,7 @@ void mpz_sqrtmp_r
 				{
 					/* a^{(p-1)/4} = -1 (mod p) */
 					do
-						mpz_wrandomm(b, p);
+						tmcg_mpz_wrandomm(b, p);
 					while (mpz_jacobi(b, p) != -1);
 					mpz_powm(b, b, s, p);
 					mpz_mul(root, root, b);
@@ -135,7 +136,7 @@ void mpz_sqrtmp_r
 				/* a^s = -1 (mod p) */
 				mpz_init(b);
 				do
-					mpz_wrandomm(b, p);
+					tmcg_mpz_wrandomm(b, p);
 				while (mpz_jacobi(b, p) != -1);
 				mpz_init_set(t, p);
 				mpz_sub_ui(t, t, 1L);
@@ -176,7 +177,7 @@ void mpz_sqrtmp_r
 	mpz_set_ui(root, 0L);
 }
 
-void mpz_sqrtmp
+void tmcg_mpz_sqrtmp
 	(mpz_ptr root, mpz_srcptr a, mpz_srcptr p)
 {
 	/* ? a \neq 0 */
@@ -297,7 +298,7 @@ void mpz_sqrtmp
 	mpz_set_ui(root, 0L);
 }
 
-void mpz_sqrtmp_fast
+void tmcg_mpz_sqrtmp_fast
 	(mpz_ptr root, mpz_srcptr a, mpz_srcptr p, mpz_srcptr nqr,
 	mpz_srcptr pa1d4, mpz_srcptr ps1d4, mpz_srcptr pa3d8,
 	mpz_srcptr nqr_ps1d4)
@@ -406,13 +407,13 @@ void mpz_sqrtmp_fast
 	mpz_set_ui(root, 0L);
 }
 
-void mpz_sqrtmn_2
+void tmcg_mpz_sqrtmn_2
 	(mpz_ptr root2, mpz_srcptr root, mpz_srcptr n)
 {
 	mpz_sub(root2, n, root);
 }
 
-void mpz_sqrtmn_r
+void tmcg_mpz_sqrtmn_r
 	(mpz_ptr root, mpz_srcptr a, 
 	mpz_srcptr p, mpz_srcptr q, mpz_srcptr n)
 {
@@ -424,8 +425,8 @@ void mpz_sqrtmn_r
 		mpz_t root_p, root_q, root1, root2, root3, root4;
 		/* single square roots */
 		mpz_init(root_p), mpz_init(root_q);
-		mpz_sqrtmp_r(root_p, a, p);
-		mpz_sqrtmp_r(root_q, a, q);
+		tmcg_mpz_sqrtmp_r(root_p, a, p);
+		tmcg_mpz_sqrtmp_r(root_q, a, q);
 		/* construct common square root */
 		mpz_init_set(root1, root_q);
 		mpz_init_set(root2, root_p);
@@ -437,7 +438,7 @@ void mpz_sqrtmn_r
 		mpz_mul(root2, root2, q);
 		mpz_add(root1, root1, root2);
 		mpz_mod(root1, root1, n);
-		mpz_sqrtmn_2(root2, root1, n);
+		tmcg_mpz_sqrtmn_2(root2, root1, n);
 		mpz_neg(root3, root3);
 		mpz_mul(root3, root3, u);
 		mpz_mul(root3, root3, p);
@@ -445,7 +446,7 @@ void mpz_sqrtmn_r
 		mpz_mul(root4, root4, q);
 		mpz_add(root3, root3, root4);
 		mpz_mod(root3, root3, n);
-		mpz_sqrtmn_2 (root4, root3, n);
+		tmcg_mpz_sqrtmn_2 (root4, root3, n);
 		/* choose smallest root */
 		mpz_set(root, root1);
 		if (mpz_cmpabs(root2, root) < 0)
@@ -465,7 +466,7 @@ void mpz_sqrtmn_r
 	mpz_set_ui(root, 0L);
 }
 
-void mpz_sqrtmn
+void tmcg_mpz_sqrtmn
 	(mpz_ptr root, mpz_srcptr a, 
 	mpz_srcptr p, mpz_srcptr q, mpz_srcptr n)
 {
@@ -477,8 +478,8 @@ void mpz_sqrtmn
 		mpz_t root_p, root_q, root1, root2, root3, root4;
 		/* single square roots */
 		mpz_init(root_p), mpz_init(root_q);
-		mpz_sqrtmp(root_p, a, p);
-		mpz_sqrtmp(root_q, a, q);
+		tmcg_mpz_sqrtmp(root_p, a, p);
+		tmcg_mpz_sqrtmp(root_q, a, q);
 		/* construct common square root */
 		mpz_init_set(root1, root_q);
 		mpz_init_set(root2, root_p);
@@ -490,7 +491,7 @@ void mpz_sqrtmn
 		mpz_mul(root2, root2, q);
 		mpz_add(root1, root1, root2);
 		mpz_mod(root1, root1, n);
-		mpz_sqrtmn_2(root2, root1, n);
+		tmcg_mpz_sqrtmn_2(root2, root1, n);
 		mpz_neg(root3, root3);
 		mpz_mul(root3, root3, u);
 		mpz_mul(root3, root3, p);
@@ -498,7 +499,7 @@ void mpz_sqrtmn
 		mpz_mul(root4, root4, q);
 		mpz_add(root3, root3, root4);
 		mpz_mod(root3, root3, n);
-		mpz_sqrtmn_2 (root4, root3, n);
+		tmcg_mpz_sqrtmn_2 (root4, root3, n);
 		/* choose smallest root */
 		mpz_set(root, root1);
 		if (mpz_cmpabs(root2, root) < 0)
@@ -518,7 +519,7 @@ void mpz_sqrtmn
 	mpz_set_ui(root, 0L);
 }
 
-void mpz_sqrtmn_r_all
+void tmcg_mpz_sqrtmn_r_all
 	(mpz_ptr root1, mpz_ptr root2, mpz_ptr root3, mpz_ptr root4,
 	mpz_srcptr a, mpz_srcptr p, mpz_srcptr q, mpz_srcptr n)
 {
@@ -531,8 +532,8 @@ void mpz_sqrtmn_r_all
 		mpz_t root_p, root_q;
 		/* single square roots */
 		mpz_init(root_p), mpz_init(root_q);
-		mpz_sqrtmp_r(root_p, a, p);
-		mpz_sqrtmp_r(root_q, a, q);
+		tmcg_mpz_sqrtmp_r(root_p, a, p);
+		tmcg_mpz_sqrtmp_r(root_q, a, q);
 		/* construct common square root */
 		mpz_set(root1, root_q);
 		mpz_set(root2, root_p);
@@ -544,7 +545,7 @@ void mpz_sqrtmn_r_all
 		mpz_mul(root2, root2, q);
 		mpz_add(root1, root1, root2);
 		mpz_mod(root1, root1, n);
-		mpz_sqrtmn_2(root2, root1, n);
+		tmcg_mpz_sqrtmn_2(root2, root1, n);
 		mpz_neg(root3, root3);
 		mpz_mul(root3, root3, u);
 		mpz_mul(root3, root3, p);
@@ -552,7 +553,7 @@ void mpz_sqrtmn_r_all
 		mpz_mul(root4, root4, q);
 		mpz_add(root3, root3, root4);
 		mpz_mod(root3, root3, n);
-		mpz_sqrtmn_2(root4, root3, n);
+		tmcg_mpz_sqrtmn_2(root4, root3, n);
 		mpz_clear(root_p), mpz_clear(root_q);
 		mpz_clear(g), mpz_clear(u), mpz_clear(v);
 		return;
@@ -566,7 +567,7 @@ void mpz_sqrtmn_r_all
 	return;
 }
 
-void mpz_sqrtmn_all
+void tmcg_mpz_sqrtmn_all
 	(mpz_ptr root1, mpz_ptr root2, mpz_ptr root3, mpz_ptr root4,
 	mpz_srcptr a, mpz_srcptr p, mpz_srcptr q, mpz_srcptr n)
 {
@@ -579,8 +580,8 @@ void mpz_sqrtmn_all
 		mpz_t root_p, root_q;
 		/* single square roots */
 		mpz_init(root_p), mpz_init(root_q);
-		mpz_sqrtmp(root_p, a, p);
-		mpz_sqrtmp(root_q, a, q);
+		tmcg_mpz_sqrtmp(root_p, a, p);
+		tmcg_mpz_sqrtmp(root_q, a, q);
 		/* construct common square root */
 		mpz_set(root1, root_q);
 		mpz_set(root2, root_p);
@@ -592,7 +593,7 @@ void mpz_sqrtmn_all
 		mpz_mul(root2, root2, q);
 		mpz_add(root1, root1, root2);
 		mpz_mod(root1, root1, n);
-		mpz_sqrtmn_2(root2, root1, n);
+		tmcg_mpz_sqrtmn_2(root2, root1, n);
 		mpz_neg(root3, root3);
 		mpz_mul(root3, root3, u);
 		mpz_mul(root3, root3, p);
@@ -600,7 +601,7 @@ void mpz_sqrtmn_all
 		mpz_mul(root4, root4, q);
 		mpz_add(root3, root3, root4);
 		mpz_mod(root3, root3, n);
-		mpz_sqrtmn_2(root4, root3, n);
+		tmcg_mpz_sqrtmn_2(root4, root3, n);
 		mpz_clear(root_p), mpz_clear(root_q);
 		mpz_clear(g), mpz_clear(u), mpz_clear(v);
 		return;
@@ -614,7 +615,7 @@ void mpz_sqrtmn_all
 	return;
 }
 
-void mpz_sqrtmn_fast
+void tmcg_mpz_sqrtmn_fast
 	(mpz_ptr root, mpz_srcptr a,
 	mpz_srcptr p, mpz_srcptr q, mpz_srcptr n,
 	mpz_srcptr up, mpz_srcptr vq, mpz_srcptr pa1d4, mpz_srcptr qa1d4)
@@ -634,7 +635,7 @@ void mpz_sqrtmn_fast
 	mpz_clear(root_p), mpz_clear(root_q);
 }
 
-void mpz_sqrtmn_fast_all
+void tmcg_mpz_sqrtmn_fast_all
 	(mpz_ptr root1, mpz_ptr root2, mpz_ptr root3, mpz_ptr root4,
 	mpz_srcptr a, mpz_srcptr p, mpz_srcptr q, mpz_srcptr n,
 	mpz_srcptr up, mpz_srcptr vq, mpz_srcptr pa1d4, mpz_srcptr qa1d4)
@@ -664,3 +665,4 @@ void mpz_sqrtmn_fast_all
 	mpz_sub(root4, n, root3);
 	mpz_clear(root_p), mpz_clear(root_q);
 }
+

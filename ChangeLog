@@ -7,6 +7,12 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-06-13] VTMF: incomplete comparison in "check size of $c$" fixed 
+* [2018-06-13] mpz_*: added prefix "tmcg_" to exported library functions
+* [2018-06-13] mpz_sqrtm: migrate source to C++ for using Botan interfaces
+* [2018-06-13] mpz_sprime: migrate source to C++ for using Botan interfaces
+* [2018-06-13] mpz_spowm: migrate source to C++ for using Botan interfaces
+* [2018-06-13] mpz_srandom: migrate source to C++ for using Botan interfaces
 * [2018-06-01] fell the requirement of libgcrypt version to >= 1.6.0
 * [2018-06-01] mpz_shash: emulate SHA3-256, if not available by libgcrypt
 * [2018-05-24] mpz_helper: added iostream operator << for gcry_mpi_t

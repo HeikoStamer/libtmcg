@@ -3,7 +3,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -529,7 +529,7 @@ bool aiounicast_select::Receive
 						aio_schedule_current = 0;
 					break;
 				case aio_scheduler_random:
-					i_out = mpz_wrandom_mod(n);
+					i_out = tmcg_mpz_wrandom_mod(n);
 					break;
 				case aio_scheduler_direct:
 					if (i_out >= n)
@@ -773,7 +773,7 @@ bool aiounicast_select::Receive
 					aio_schedule_buffer = 0;
 				break;
 			case aio_scheduler_random:
-				i_out = mpz_wrandom_mod(n);
+				i_out = tmcg_mpz_wrandom_mod(n);
 				break;
 			case aio_scheduler_direct:
 				if (i_out >= n)

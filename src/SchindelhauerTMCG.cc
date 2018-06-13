@@ -6,8 +6,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2015, 2016, 2017 
-               Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007,
+               2015, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -60,8 +60,8 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 	mpz_init(foo), mpz_init(bar), mpz_init(lej), mpz_init(t_sqrt);
 	
 	// compute mpz_sqrtmn (modular square root) of t
-	assert(mpz_qrmn_p(t, key.p, key.q, key.m));
-	mpz_sqrtmn_fast(t_sqrt, t, key.p, key.q, key.m,
+	assert(tmcg_mpz_qrmn_p(t, key.p, key.q, key.m));
+	tmcg_mpz_sqrtmn_fast(t_sqrt, t, key.p, key.q, key.m,
 		key.gcdext_up, key.gcdext_vq, key.pa1d4, key.qa1d4);
 	
 	// phase (P2)
@@ -73,7 +73,7 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 		// choose uniformly at random a number $r \in Z^*_m$
 		do
 		{
-			mpz_srandomm(r, key.m);
+			tmcg_mpz_srandomm(r, key.m);
 			mpz_gcd(lej, r, key.m);
 		}
 		while (mpz_cmp_ui(lej, 1L) || !mpz_cmp_ui(r, 1L));
@@ -158,7 +158,7 @@ bool SchindelhauerTMCG::TMCG_VerifyQuadraticResidue
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
 		{
 			// send R/S-question to the prover
-			mpz_srandomb(foo, 1L);
+			tmcg_mpz_srandomb(foo, 1L);
 			out << foo << std::endl;
 			
 			// receive the proof
@@ -300,10 +300,10 @@ void SchindelhauerTMCG::TMCG_ProveMaskValue
 			mpz_init(r2), mpz_init(b2);
 			
 			// choose uniformly at random a number r_i \in Z^*_m and b_i \in {0,1}
-			mpz_srandomb(b2, 1L);
+			tmcg_mpz_srandomb(b2, 1L);
 			do
 			{
-				mpz_srandomm(r2, key.m);
+				tmcg_mpz_srandomm(r2, key.m);
 				mpz_gcd(bar, r2, key.m);
 			}
 			while (mpz_cmp_ui(bar, 1L) || !mpz_cmp_ui(r2, 1L));
@@ -405,7 +405,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskValue
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
 		{
 			// send Z/Z'-question to prover
-			mpz_srandomb(foo, 1L);
+			tmcg_mpz_srandomb(foo, 1L);
 			out << foo << std::endl;
 			
 			// receive proof (r, b)
@@ -456,10 +456,10 @@ void SchindelhauerTMCG::TMCG_ProveMaskOne
 		mpz_init(r3), mpz_init(s), mpz_init(b3), mpz_init(c);
 		
 		// choose uniformly at random a number r_i \in Z*m and b \in {0,1}
-		mpz_srandomb(b3, 1L);
+		tmcg_mpz_srandomb(b3, 1L);
 		do
 		{
-			mpz_srandomm(r3, key.m);
+			tmcg_mpz_srandomm(r3, key.m);
 			mpz_gcd(foo, r3, key.m);
 		}
 		while (mpz_cmp_ui(foo, 1L) || !mpz_cmp_ui(r3, 1L));
@@ -603,7 +603,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskOne
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
 		{
 			// send R/S-question to prover
-			mpz_srandomb(foo, 1L);
+			tmcg_mpz_srandomb(foo, 1L);
 			out << foo << std::endl;
 			
 			// receive proof (r, b)
@@ -658,7 +658,7 @@ void SchindelhauerTMCG::TMCG_ProveNonQuadraticResidue_PerfectZeroKnowledge
 			// verify proof of mask knowledge 1->foo
 			if (TMCG_VerifyMaskOne(key2, foo, in, out))
 			{
-				if (mpz_qrmn_p(foo, key.p, key.q, key.m))
+				if (tmcg_mpz_qrmn_p(foo, key.p, key.q, key.m))
 					mpz_set_ui(bar, 1L);
 				else
 					mpz_set_ui(bar, 0L);
@@ -695,10 +695,10 @@ bool SchindelhauerTMCG::TMCG_VerifyNonQuadraticResidue_PerfectZeroKnowledge
 		for (unsigned long int i = 0; i < TMCG_SecurityLevel; i++)
 		{
 			// choose uniformly at random a number r \in Z*m and b \in {0,1}
-			mpz_srandomb(b, 1L);
+			tmcg_mpz_srandomb(b, 1L);
 			do
 			{
-				mpz_srandomm(r, key.m);
+				tmcg_mpz_srandomm(r, key.m);
 				mpz_gcd(foo, r, key.m);
 			}
 			while (mpz_cmp_ui(foo, 1L));
@@ -803,7 +803,7 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 			// choose uniformly at random a number r \in Z^*_m
 			do
 			{
-				mpz_srandomm(&cs.r[k][w], ring.keys[k].m);
+				tmcg_mpz_srandomm(&cs.r[k][w], ring.keys[k].m);
 				mpz_gcd(foo, &cs.r[k][w], ring.keys[k].m);
 			}
 			while (mpz_cmp_ui(foo, 1L));
@@ -811,7 +811,7 @@ void SchindelhauerTMCG::TMCG_CreateCardSecret
 			// choose uniformly at random a bit b \in {0, 1}
 			// or set it initially to zero in the index-th row
 			if (k != index)
-				mpz_srandomb(&cs.b[k][w], 1L);
+				tmcg_mpz_srandomb(&cs.b[k][w], 1L);
 			else
 				mpz_set_ui(&cs.b[index][w], 0L);
 		}
@@ -991,7 +991,7 @@ void SchindelhauerTMCG::TMCG_ProveCardSecret
 	
 	for (size_t w = 0; w < c.z[0].size(); w++)
 	{
-		if (mpz_qrmn_p(&c.z[index][w], key.p, key.q, key.m))
+		if (tmcg_mpz_qrmn_p(&c.z[index][w], key.p, key.q, key.m))
 		{
 			out << "0" << std::endl;
 			TMCG_ProveQuadraticResidue(key, &c.z[index][w], in, out);
@@ -1068,7 +1068,7 @@ void SchindelhauerTMCG::TMCG_SelfCardSecret
 	for (size_t w = 0; w < c.z[0].size(); w++)
 	{
 		mpz_set_ui(&cs.r[index][w], 0L);
-		if (mpz_qrmn_p(&c.z[index][w], key.p, key.q, key.m))
+		if (tmcg_mpz_qrmn_p(&c.z[index][w], key.p, key.q, key.m))
 			mpz_set_ui(&cs.b[index][w], 0L);
 		else
 			mpz_set_ui(&cs.b[index][w], 1L);
@@ -1140,7 +1140,7 @@ void random_permutation_fast
 	
 	for (size_t i = 0; i < (n - 1); i++)
 	{
-		size_t tmp = pi[i], rnd = i + (size_t)mpz_srandom_mod(n - i);
+		size_t tmp = pi[i], rnd = i + (size_t)tmcg_mpz_srandom_mod(n - i);
 		pi[i] = pi[rnd];
 		pi[rnd] = tmp;
 	}
@@ -1150,7 +1150,7 @@ void random_permutation_fast
 size_t random_rotation
 	(size_t n, std::vector<size_t> &pi)
 {
-	size_t r = (size_t)mpz_srandom_mod(n);
+	size_t r = (size_t)tmcg_mpz_srandom_mod(n);
 	pi.clear();
 	for (size_t i = 0; i < n; i++)
 		pi.push_back((r + i) % n);
@@ -1396,7 +1396,7 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 			// send only the hash value (instead of the whole stack)
 			std::ostringstream ost;
 			ost << s3 << std::endl;
-			mpz_shash(foo, ost.str());
+			tmcg_mpz_shash(foo, ost.str());
 			out << foo << std::endl;
 		}
 		else
@@ -1442,7 +1442,7 @@ void SchindelhauerTMCG::TMCG_ProveStackEquality
 			// send hash value (instead of the whole stack)
 			std::ostringstream ost;
 			ost << s3 << std::endl;
-			mpz_shash(foo, ost.str());
+			tmcg_mpz_shash(foo, ost.str());
 			out << foo << std::endl;
 		}
 		else
@@ -1683,7 +1683,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 		{
 			TMCG_Stack<TMCG_Card> s3, s4;
 			TMCG_StackSecret<TMCG_CardSecret> ss;
-			mpz_srandomb(foo, 1L);
+			tmcg_mpz_srandomb(foo, 1L);
 			
 			if (TMCG_HASH_COMMITMENT)
 			{
@@ -1715,7 +1715,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			{
 				std::ostringstream ost;
 				ost << s4 << std::endl;
-				mpz_shash(foo, ost.str());
+				tmcg_mpz_shash(foo, ost.str());
 				if (mpz_cmp(foo, bar))
 					throw false;
 			}
@@ -1770,7 +1770,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 		{
 			TMCG_Stack<VTMF_Card> s3, s4;
 			TMCG_StackSecret<VTMF_CardSecret> ss;
-			mpz_srandomb(foo, 1L);
+			tmcg_mpz_srandomb(foo, 1L);
 			
 			if (TMCG_HASH_COMMITMENT)
 			{
@@ -1802,7 +1802,7 @@ bool SchindelhauerTMCG::TMCG_VerifyStackEquality
 			{
 				std::ostringstream ost;
 				ost << s4 << std::endl;
-				mpz_shash(foo, ost.str());
+				tmcg_mpz_shash(foo, ost.str());
 				if (mpz_cmp(foo, bar))
 					throw false;
 			}
@@ -2005,3 +2005,4 @@ SchindelhauerTMCG::~SchindelhauerTMCG
 		mpz_clear(message_space[i]);
 	delete [] message_space;
 }
+

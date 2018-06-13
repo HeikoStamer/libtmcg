@@ -20,7 +20,7 @@ EXTRA_DIST = libTMCG-config.in libTMCG.m4
 
 bin_SCRIPTS = libTMCG-config
 
-include_HEADERS = mpz_srandom.h mpz_sqrtm.h mpz_spowm.h mpz_sprime.h\
+include_HEADERS = mpz_srandom.hh mpz_sqrtm.hh mpz_spowm.hh mpz_sprime.hh\
 	mpz_shash.hh parse_helper.hh mpz_helper.hh\
 	BarnettSmartVTMF_dlog.hh BarnettSmartVTMF_dlog_GroupQR.hh\
 	PedersenCOM.hh\
@@ -47,10 +47,10 @@ m4data_DATA = libTMCG.m4
 
 lib_LTLIBRARIES = libTMCG.la
 
-libTMCG_la_SOURCES = mpz_srandom.c mpz_srandom.h\
-	mpz_sqrtm.c mpz_sqrtm.h\
-	mpz_spowm.c mpz_spowm.h\
-	mpz_sprime.c mpz_sprime.h\
+libTMCG_la_SOURCES = mpz_srandom.cc mpz_srandom.hh\
+	mpz_sqrtm.cc mpz_sqrtm.hh\
+	mpz_spowm.cc mpz_spowm.hh\
+	mpz_sprime.cc mpz_sprime.hh\
 	mpz_shash.cc mpz_shash.hh\
 	parse_helper.cc parse_helper.hh\
 	mpz_helper.cc mpz_helper.hh\

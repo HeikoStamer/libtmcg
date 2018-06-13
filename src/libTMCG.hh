@@ -261,9 +261,10 @@
 	#include <CanettiGennaroJareckiKrawczykRabinASTC.hh>
 	#include <JareckiLysyanskayaASTC.hh>
 
-	// miscellaneous stuff
+	// miscellaneous stuff (e.g. OpenPGP interface)
 	#include <CallasDonnerhackeFinneyShawThayerRFC4880.hh>
 	
+	// additional C and STL header
 	#include <cstring>
 	#include <string>
 

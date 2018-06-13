@@ -48,9 +48,9 @@
 // GNU multiple precision library
 #include <gmp.h>
 	
-#include "mpz_srandom.h"
-#include "mpz_spowm.h"
-#include "mpz_sprime.h"
+#include "mpz_srandom.hh"
+#include "mpz_spowm.hh"
+#include "mpz_sprime.hh"
 #include "mpz_helper.hh"
 #include "mpz_shash.hh"
 #include "aiounicast.hh"

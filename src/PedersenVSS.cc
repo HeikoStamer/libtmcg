@@ -12,7 +12,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -58,9 +58,9 @@ PedersenVSS::PedersenVSS
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 PedersenVSS::PedersenVSS
@@ -107,9 +107,9 @@ PedersenVSS::PedersenVSS
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 void PedersenVSS::PublishState
@@ -171,10 +171,10 @@ bool PedersenVSS::CheckGroup
 			throw false;
 
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 
@@ -195,7 +195,7 @@ bool PedersenVSS::CheckGroup
 		mpz_sub_ui(bar, p, 1L); // compute $p-1$
 		do
 		{
-			mpz_shash(foo, U.str());
+			tmcg_mpz_shash(foo, U.str());
 			mpz_powm(g2, foo, k, p);
 			U << g2 << "|";
 			mpz_powm(foo, g2, q, p);
@@ -277,8 +277,8 @@ bool PedersenVSS::Share
 	size_t complaints_counter = 0;
 	std::vector<size_t> complaints_from;
 	mpz_init(foo), mpz_init(bar);
-	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
-	size_t simulate_faulty_randomizer2 = mpz_wrandom_ui() % 2L;
+	size_t simulate_faulty_randomizer = tmcg_mpz_wrandom_ui() % 2L;
+	size_t simulate_faulty_randomizer2 = tmcg_mpz_wrandom_ui() % 2L;
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -300,19 +300,19 @@ bool PedersenVSS::Share
 				if (j == 0)
 					mpz_set(a_j[j], sigma);
 				else
-					mpz_ssrandomm(a_j[j], q);
-				mpz_ssrandomm(b_j[j], q);
+					tmcg_mpz_ssrandomm(a_j[j], q);
+				tmcg_mpz_ssrandomm(b_j[j], q);
 			}
 			else
 			{
 				if (j == 0)
 					mpz_set(a_j[j], sigma);
 				else
-					mpz_srandomm(a_j[j], q);
-				mpz_srandomm(b_j[j], q);
+					tmcg_mpz_srandomm(a_j[j], q);
+				tmcg_mpz_srandomm(b_j[j], q);
 			}
-			mpz_fspowm(fpowm_table_g, foo, g, a_j[j], p);
-			mpz_fspowm(fpowm_table_h, bar, h, b_j[j], p);
+			tmcg_mpz_fspowm(fpowm_table_g, foo, g, a_j[j], p);
+			tmcg_mpz_fspowm(fpowm_table_h, bar, h, b_j[j], p);
 			mpz_mul(A_j[j], foo, bar);
 			mpz_mod(A_j[j], A_j[j], p);
 			rbc->Broadcast(A_j[j]);
@@ -336,7 +336,7 @@ bool PedersenVSS::Share
 					mpz_add(tau_i, tau_i, bar);
 					mpz_mod(tau_i, tau_i, q);
 				}
-				if (simulate_faulty_behaviour && simulate_faulty_randomizer && (mpz_wrandom_ui() % 2L))
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer && (tmcg_mpz_wrandom_ui() % 2L))
 					mpz_add_ui(sigma_i, sigma_i, 1L);
 				if (!aiou->Send(sigma_i, j, aiou->aio_timeout_very_short))
 				{
@@ -397,7 +397,7 @@ bool PedersenVSS::Share
 				mpz_set_ui(foo, *it); // who?
 				rbc->Broadcast(foo);
 				mpz_set_ui(sigma_i, 0L);
-				if (simulate_faulty_behaviour && simulate_faulty_randomizer2 && (mpz_wrandom_ui() % 2L))
+				if (simulate_faulty_behaviour && simulate_faulty_randomizer2 && (tmcg_mpz_wrandom_ui() % 2L))
 					mpz_add_ui(sigma_i, sigma_i, 1L);
 				mpz_set_ui(tau_i, 0L);
 				for (size_t k = 0; k <= t; k++)
@@ -480,7 +480,7 @@ bool PedersenVSS::Share
 	std::vector<size_t> complaints, complaints_from;
 	size_t complaints_counter = 0;
 	mpz_init(foo), mpz_init(bar), mpz_init(lhs), mpz_init(rhs);
-	size_t simulate_faulty_randomizer = mpz_wrandom_ui() % 2L;
+	size_t simulate_faulty_randomizer = tmcg_mpz_wrandom_ui() % 2L;
 
 	// set ID for RBC
 	std::stringstream myID;
@@ -525,8 +525,8 @@ bool PedersenVSS::Share
 			mpz_set_ui(tau_i, 0L); // indicates an error
 		}
 		// compute LHS for the check
-		mpz_fspowm(fpowm_table_g, foo, g, sigma_i, p);
-		mpz_fspowm(fpowm_table_h, bar, h, tau_i, p);
+		tmcg_mpz_fspowm(fpowm_table_g, foo, g, sigma_i, p);
+		tmcg_mpz_fspowm(fpowm_table_h, bar, h, tau_i, p);
 		mpz_mul(lhs, foo, bar);
 		mpz_mod(lhs, lhs, p);
 		// compute RHS for the check
@@ -659,8 +659,8 @@ bool PedersenVSS::Share
 				mpz_t s, sprime;
 				mpz_init_set(s, foo), mpz_init_set(sprime, bar);
 				// compute LHS for the check
-				mpz_fpowm(fpowm_table_g, foo, g, foo, p);
-				mpz_fpowm(fpowm_table_h, bar, h, bar, p);
+				tmcg_mpz_fpowm(fpowm_table_g, foo, g, foo, p);
+				tmcg_mpz_fpowm(fpowm_table_h, bar, h, bar, p);
 				mpz_mul(lhs, foo, bar);
 				mpz_mod(lhs, lhs, p);
 				// compute RHS for the check
@@ -771,8 +771,8 @@ bool PedersenVSS::Reconstruct
 					else
 					{
 						// compute LHS for the check
-						mpz_fpowm(fpowm_table_g, foo, g, shares[j], p);
-						mpz_fpowm(fpowm_table_h, bar, h, bar, p);
+						tmcg_mpz_fpowm(fpowm_table_g, foo, g, shares[j], p);
+						tmcg_mpz_fpowm(fpowm_table_h, bar, h, bar, p);
 						mpz_mul(lhs, foo, bar);
 						mpz_mod(lhs, lhs, p);
 						// compute RHS for the check
@@ -886,7 +886,7 @@ PedersenVSS::~PedersenVSS
 		delete [] A_j[j];
 	}
 	A_j.clear();
-	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	tmcg_mpz_fpowm_done(fpowm_table_g), tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
 

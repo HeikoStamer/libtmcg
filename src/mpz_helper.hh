@@ -31,15 +31,15 @@
 	#include <gmp.h>
 
 	// get content of mpz_t into gcry_mpi_t
-	bool mpz_get_gcry_mpi
+	bool tmcg_mpz_get_gcry_mpi
 		(gcry_mpi_t &out, mpz_srcptr value);
 
 	// set content of mpz_t from gcry_mpi_t
-	bool mpz_set_gcry_mpi
+	bool tmcg_mpz_set_gcry_mpi
 		(const gcry_mpi_t in, mpz_ptr value);
 
 	// get small values from gcry_mpi_t
-	size_t get_gcry_mpi_ui
+	size_t tmcg_get_gcry_mpi_ui
 		(const gcry_mpi_t in);
 	
 	// iostream operators for mpz_t
@@ -53,7 +53,7 @@
 		(std::ostream &out, const gcry_mpi_t value);
 
 	// polynomial interpolation modulo q
-	bool interpolate_polynom
+	bool tmcg_interpolate_polynom
 		(const std::vector<mpz_ptr> &a, const std::vector<mpz_ptr> &b,
 		mpz_srcptr q, std::vector<mpz_ptr> &f);
 #endif

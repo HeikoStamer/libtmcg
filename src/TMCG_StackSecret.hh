@@ -31,7 +31,6 @@
 	#include <algorithm>
 	#include <functional>
 	
-	#include "mpz_srandom.h"
 	#include "parse_helper.hh"
 
 /** @brief Data structure for the secrets of a stack of cards.
@@ -149,7 +148,6 @@ template <typename CardSecretType> struct TMCG_StackSecret
 		(std::string s)
 	{
 
-		
 		try
 		{
 			// check magic

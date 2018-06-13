@@ -87,7 +87,7 @@ void TMCG_Card::resize
 {
 	assert((k > 0) && (w > 0));
 	
-	// FIXME: should be done more efficiently
+	// FIXME: reallocation should be done more efficiently
 	for (size_t i = 0; i < z.size(); i++)
 	{
 		for (size_t j = 0; j < z[i].size(); j++)

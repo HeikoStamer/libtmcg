@@ -93,3 +93,4 @@ std::ostream& operator <<
 std::istream& operator >>
 	(std::istream& in, VTMF_Card& card);
 #endif
+

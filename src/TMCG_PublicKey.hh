@@ -15,7 +15,7 @@
      Dan Boneh: 'Simplified OAEP for the RSA and Rabin Functions', 2002
 
  Copyright (C) 2004, 2005, 2006, 
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -47,8 +47,7 @@
 	// GNU multiple precision library
 	#include <gmp.h>
 	
-	#include "mpz_srandom.h"
-	#include "mpz_sqrtm.h"
+	#include "mpz_sqrtm.hh"
 	#include "mpz_helper.hh"
 	#include "parse_helper.hh"
 	#include "mpz_shash.hh"

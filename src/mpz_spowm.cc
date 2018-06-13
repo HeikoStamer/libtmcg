@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+                           2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,16 +19,16 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
-/* include headers */
+// include headers
 #ifdef HAVE_CONFIG_H
 	#include "libTMCG_config.h"
 #endif
-#include "mpz_spowm.h"
+#include "mpz_spowm.hh"
 
 /* Kocher's efficient blinding technique for modular exponentiation [Ko96] */
 mpz_t bvi, bvf, bx, bp;
 
-void mpz_spowm_init
+void tmcg_mpz_spowm_init
 	(mpz_srcptr x, mpz_srcptr p)
 {
 	int ret;
@@ -39,14 +39,14 @@ void mpz_spowm_init
 	/* choose a random blinding value and compute the seed */
 	do
 	{
-		mpz_srandomm(bvi, bp);
+		tmcg_mpz_srandomm(bvi, bp);
 		ret = mpz_invert(bvf, bvi, bp);
 	}
 	while (!ret);
 	mpz_powm(bvf, bvf, bx, bp);
 }
 
-void mpz_spowm_calc
+void tmcg_mpz_spowm_calc
 	(mpz_ptr res, mpz_srcptr m)
 {
 	/* modular exponentiation (res = m^x mod p) */
@@ -61,14 +61,14 @@ void mpz_spowm_calc
 	mpz_powm_ui(bvf, bvf, 2L, bp);
 }
 
-void mpz_spowm_clear
+void tmcg_mpz_spowm_clear
 	()
 {
 	mpz_clear(bvi), mpz_clear(bvf), mpz_clear(bx), mpz_clear(bp);
 }
 
 /* Chaum's blinding technique for modular exponentiation */
-void mpz_spowm_baseblind
+void tmcg_mpz_spowm_baseblind
 	(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 	int ret;
@@ -79,7 +79,7 @@ void mpz_spowm_baseblind
 	/* choose random blinding value */
 	do
 	{
-		mpz_srandomm(r, p);
+		tmcg_mpz_srandomm(r, p);
 		ret = mpz_invert(r1, r, p);
 	}
 	while (!ret);
@@ -103,7 +103,7 @@ void mpz_spowm_baseblind
    Otherwise Chaum's blinding technique for modular exponentiation is 
    applied. */
 
-void mpz_spowm
+void tmcg_mpz_spowm
 	(mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 #ifdef HAVE_POWMSEC
@@ -159,7 +159,7 @@ void mpz_spowm
 
 /* Fast modular exponentiation using precomputed tables */
 
-void mpz_fpowm_init
+void tmcg_mpz_fpowm_init
 	(mpz_t fpowm_table[])
 {
 	size_t i;
@@ -168,7 +168,7 @@ void mpz_fpowm_init
 		mpz_init(fpowm_table[i]);
 }
 
-void mpz_fpowm_precompute
+void tmcg_mpz_fpowm_precompute
 	(mpz_t fpowm_table[],
 	mpz_srcptr m, mpz_srcptr p, const size_t t)
 {
@@ -182,7 +182,7 @@ void mpz_fpowm_precompute
 	}
 }
 
-void mpz_fpowm
+void tmcg_mpz_fpowm
 	(mpz_t fpowm_table[],
 	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
@@ -216,7 +216,7 @@ void mpz_fpowm
 	mpz_clear(xx);
 }
 
-void mpz_fpowm_ui
+void tmcg_mpz_fpowm_ui
 	(mpz_t fpowm_table[],
 	mpz_ptr res, mpz_srcptr m, const unsigned long int x_ui, mpz_srcptr p)
 {
@@ -241,7 +241,7 @@ void mpz_fpowm_ui
 	mpz_clear(x);
 }
 
-void mpz_fspowm
+void tmcg_mpz_fspowm
 	(mpz_t fpowm_table[],
 	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
@@ -294,7 +294,7 @@ void mpz_fspowm
 	mpz_clear(foo), mpz_clear(bar), mpz_clear(baz), mpz_clear(xx);
 }
 
-void mpz_fpowm_done
+void tmcg_mpz_fpowm_done
 	(mpz_t fpowm_table[])
 {
 	size_t i;

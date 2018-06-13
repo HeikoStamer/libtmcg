@@ -17,7 +17,7 @@
      Proceedings of CRYPTO 2001, LNCS 2139, pp. 275--291, 2001.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -118,7 +118,7 @@ void TMCG_SecretKey::generate
 	do
 	{
 		// choose a random safe prime p, but with fixed size (n/2 + 1) bit
-		mpz_sprime3mod4(p, (keysize / 2L) + 1L, TMCG_MR_ITERATIONS);
+		tmcg_mpz_sprime3mod4(p, (keysize / 2L) + 1L, TMCG_MR_ITERATIONS);
 		assert(!mpz_congruent_ui_p(p, 1L, 8L));
 		
 		// choose a random safe prime q, but with fixed size (n/2 + 1) bit
@@ -126,7 +126,7 @@ void TMCG_SecretKey::generate
 		mpz_set_ui(foo, 8L);
 		do
 		{
-			mpz_sprime3mod4(q, (keysize / 2L) + 1L, TMCG_MR_ITERATIONS);
+			tmcg_mpz_sprime3mod4(q, (keysize / 2L) + 1L, TMCG_MR_ITERATIONS);
 		}
 		while (mpz_congruent_p(p, q, foo));
 		assert(!mpz_congruent_ui_p(q, 1L, 8L));
@@ -149,7 +149,7 @@ void TMCG_SecretKey::generate
 	{
 		mpz_add_ui(y, y, 1L);
 	}
-	while ((mpz_jacobi(y, m) != 1) || mpz_qrmn_p(y, p, q, m));
+	while ((mpz_jacobi(y, m) != 1) || tmcg_mpz_qrmn_p(y, p, q, m));
 	
 	// pre-compute non-persistent values
 	bool ret = precompute();
@@ -176,7 +176,7 @@ void TMCG_SecretKey::generate
 		// common random number foo \in Z^*_m (build from hash function g)
 		do
 		{
-			g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
+			tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
 			mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 			mpz_mod(foo, foo, m);
 			mpz_gcd(bar, foo, m);
@@ -199,7 +199,7 @@ void TMCG_SecretKey::generate
 		// common random number foo \in Z^*_m (build from hash function g)
 		do
 		{
-			g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
+			tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
 			mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 			mpz_mod(foo, foo, m);
 			mpz_gcd(bar, foo, m);
@@ -208,23 +208,29 @@ void TMCG_SecretKey::generate
 		while (mpz_cmp_ui(bar, 1L));
 		
 		// compute square root of +-foo or +-2foo mod m
-		if (mpz_qrmn_p(foo, p, q, m))
-			mpz_sqrtmn_r(bar, foo, p, q, m);
+		if (tmcg_mpz_qrmn_p(foo, p, q, m))
+		{
+			tmcg_mpz_sqrtmn_r(bar, foo, p, q, m);
+		}
 		else
 		{
 			mpz_neg(foo, foo);
-			if (mpz_qrmn_p(foo, p, q, m))
-				mpz_sqrtmn_r(bar, foo, p, q, m);
+			if (tmcg_mpz_qrmn_p(foo, p, q, m))
+			{
+				tmcg_mpz_sqrtmn_r(bar, foo, p, q, m);
+			}
 			else
 			{
 				mpz_mul_2exp(foo, foo, 1L);
-				if (mpz_qrmn_p(foo, p, q, m))
-					mpz_sqrtmn_r(bar, foo, p, q, m);
+				if (tmcg_mpz_qrmn_p(foo, p, q, m))
+				{
+					tmcg_mpz_sqrtmn_r(bar, foo, p, q, m);
+				}
 				else
 				{
 					mpz_neg(foo, foo);
-					if (mpz_qrmn_p(foo, p, q, m))
-						mpz_sqrtmn_r(bar, foo, p, q, m);
+					if (tmcg_mpz_qrmn_p(foo, p, q, m))
+						tmcg_mpz_sqrtmn_r(bar, foo, p, q, m);
 					else
 						mpz_set_ui(bar, 0L);
 				}
@@ -243,7 +249,7 @@ void TMCG_SecretKey::generate
 		// common random number foo \in Z^\circ_m (build from hash function g)
 		do
 		{
-			g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
+			tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
 			mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 			mpz_mod(foo, foo, m);
 			input << foo;
@@ -251,12 +257,12 @@ void TMCG_SecretKey::generate
 		while (mpz_jacobi(foo, m) != 1);
 		
 		// compute square root
-		if (!mpz_qrmn_p(foo, p, q, m))
+		if (!tmcg_mpz_qrmn_p(foo, p, q, m))
 		{
 			mpz_mul(foo, foo, y);
 			mpz_mod(foo, foo, m);
 		}
-		mpz_sqrtmn_r(bar, foo, p, q, m);
+		tmcg_mpz_sqrtmn_r(bar, foo, p, q, m);
 		
 		// update NIZK-proof stream
 		nizk2 << bar << "^";
@@ -468,9 +474,9 @@ bool TMCG_SecretKey::decrypt
 			throw false;
 		
 		// decrypt value, i.e., compute the modular square roots
-		if (!mpz_qrmn_p(vdata, p, q, m))
+		if (!tmcg_mpz_qrmn_p(vdata, p, q, m))
 			throw false;
-		mpz_sqrtmn_fast_all(vroot[0], vroot[1], vroot[2], vroot[3], vdata,
+		tmcg_mpz_sqrtmn_fast_all(vroot[0], vroot[1], vroot[2], vroot[3], vdata,
 			p, q, m, gcdext_up, gcdext_vq, pa1d4, qa1d4);
 		// check all four square roots
 		for (size_t k = 0; k < 4; k++)
@@ -481,7 +487,7 @@ bool TMCG_SecretKey::decrypt
 				mpz_export(yy, &cnt, -1, rabin_s2 + rabin_s1, 1, 0, vroot[k]);
 				memcpy(Mt, yy, rabin_s2);
 				memcpy(r, yy + rabin_s2, rabin_s1);
-				g(g12, rabin_s2, r, rabin_s1);
+				tmcg_g(g12, rabin_s2, r, rabin_s1);
 				
 				for (size_t i = 0; i < rabin_s2; i++)
 					Mt[i] ^= g12[i];
@@ -534,10 +540,10 @@ std::string TMCG_SecretKey::sign
 		memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
 		
 		unsigned char *w = new unsigned char[mdsize];
-		h(w, Mr, data.length() + TMCG_PRAB_K0);
+		tmcg_h(w, Mr, data.length() + TMCG_PRAB_K0);
 		
 		unsigned char *g12 = new unsigned char[mnsize];
-		g(g12, mnsize - mdsize, w, mdsize);
+		tmcg_g(g12, mnsize - mdsize, w, mdsize);
 		
 		for (size_t i = 0; i < TMCG_PRAB_K0; i++)
 			r[i] ^= g12[i];
@@ -551,13 +557,13 @@ std::string TMCG_SecretKey::sign
 		
 		delete [] yy, delete [] g12, delete [] w, delete [] Mr, delete [] r;
 	}
-	while (!mpz_qrmn_p(foo, p, q, m));
-	mpz_sqrtmn_fast_all(foo_sqrt[0], foo_sqrt[1], foo_sqrt[2], foo_sqrt[3], foo,
-		p, q, m, gcdext_up, gcdext_vq, pa1d4, qa1d4);
+	while (!tmcg_mpz_qrmn_p(foo, p, q, m));
+	tmcg_mpz_sqrtmn_fast_all(foo_sqrt[0], foo_sqrt[1], foo_sqrt[2], foo_sqrt[3],
+		foo, p, q, m, gcdext_up, gcdext_vq, pa1d4, qa1d4);
 	
 	// choose a square root randomly (one out-of four)
 	std::ostringstream ost;
-	ost << "sig|" << keyid() << "|" << foo_sqrt[mpz_srandom_mod(4)] << "|";
+	ost << "sig|" << keyid() << "|" << foo_sqrt[tmcg_mpz_srandom_mod(4)] << "|";
 	mpz_clear(foo), mpz_clear(foo_sqrt[0]), mpz_clear(foo_sqrt[1]),
 		mpz_clear(foo_sqrt[2]), mpz_clear(foo_sqrt[3]);
 	
@@ -605,3 +611,4 @@ std::istream& operator >>
 	delete [] tmp;
 	return in;
 }
+

@@ -7,7 +7,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -42,12 +42,11 @@
 	// GNU multiple precision library
 	#include <gmp.h>
 	
-	#include "mpz_srandom.h"
-	#include "mpz_spowm.h"
-	#include "mpz_sprime.h"
+	#include "mpz_srandom.hh"
+	#include "mpz_spowm.hh"
+	#include "mpz_sprime.hh"
 	#include "mpz_helper.hh"
 	#include "mpz_shash.hh"
-
 
 class NaorPinkasEOTP
 {

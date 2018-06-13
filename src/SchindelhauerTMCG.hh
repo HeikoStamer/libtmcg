@@ -6,8 +6,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2003, 2004, 2005, 2006, 2015, 2016, 2017, 2018
- 					Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2002, 2003, 2004, 2005, 2006,
+               2015, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #ifndef INCLUDED_SchindelhauerTMCG_HH
 	#define INCLUDED_SchindelhauerTMCG_HH
 	
-	// C++/STL header
+	// C and STL header
 	#include <cstdio>
 	#include <cstdlib>
 	#include <cassert>
@@ -57,8 +57,8 @@
 	#include "BarnettSmartVTMF_dlog_GroupQR.hh"
 	#include "GrothVSSHE.hh"
 	#include "HooghSchoenmakersSkoricVillegasVRHE.hh"
-	#include "mpz_srandom.h"
-	#include "mpz_sqrtm.h"
+	#include "mpz_srandom.hh"
+	#include "mpz_sqrtm.hh"
 
 class SchindelhauerTMCG
 {

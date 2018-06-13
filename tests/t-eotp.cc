@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -119,7 +119,7 @@ int main
 			eotp->PublishGroup(*pipe_out);
 
 			// start (1-out-of-2) oblivious transfer protocol
-			size_t sigma = mpz_srandom_mod(2);
+			size_t sigma = tmcg_mpz_srandom_mod(2);
 			std::cout << "sigma = " << sigma << std::endl;
 			start_clock();
 			std::cout << "R: eotp.Choose_interactive_OneOutOfTwo(...)" << std::endl;
@@ -130,7 +130,7 @@ int main
 			assert(!mpz_cmp_ui(M, sigma));
 
 			// start (1-out-of-N) oblivious transfer protocol
-			sigma = mpz_srandom_mod(N);
+			sigma = tmcg_mpz_srandom_mod(N);
 			std::cout << "sigma = " << sigma << std::endl;
 			start_clock();
 			std::cout << "R: eotp.Choose_interactive_OneOutOfN(...)" << std::endl;
@@ -141,7 +141,7 @@ int main
 			assert(!mpz_cmp_ui(M, sigma));
 
 			// start optimized (1-out-of-N) oblivious transfer protocol
-			sigma = mpz_srandom_mod(N);
+			sigma = tmcg_mpz_srandom_mod(N);
 			std::cout << "sigma = " << sigma << std::endl;
 			start_clock();
 			std::cout << "R: eotp.Choose_interactive_OneOutOfN_optimized(...)" << std::endl;

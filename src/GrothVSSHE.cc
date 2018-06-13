@@ -7,7 +7,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2005, 2006, 2007, 2009, 
-                     2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -106,13 +106,13 @@ void GrothSKC::Prove_interactive
 	mpz_tdiv_r_2exp(x, x, l_e);
 	
 	// prover: second move
-	mpz_srandomm(r_d, com->q); // $r_d \gets \mathbb{Z}_q$
-	mpz_srandomm(r_Delta, com->q); // $r_{\Delta} \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(r_d, com->q); // $r_d \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(r_Delta, com->q); // $r_{\Delta} \gets \mathbb{Z}_q$
 	for (size_t i = 0; i < d.size(); i++)
-		mpz_srandomm(d[i], com->q); // $d_1,\ldots,d_n \gets \mathbb{Z}_q$
+		tmcg_mpz_srandomm(d[i], com->q); // $d_1,\ldots,d_n \gets \mathbb{Z}_q$
 	mpz_set(Delta[0], d[0]); // $\Delta_1 := d_1$
 	for (size_t i = 1; i < (Delta.size() - 1); i++)
-		mpz_srandomm(Delta[i], com->q);	// $\Delta_2,\ldots,\Delta_{n-1}
+		tmcg_mpz_srandomm(Delta[i], com->q);	// $\Delta_2,\ldots,\Delta_{n-1}
 						//           \gets \mathbb{Z}_q$
 	mpz_set_ui(Delta[Delta.size() - 1], 0L); // $\Delta_n := 0$
 	for (size_t i = 0; i < a.size(); i++)
@@ -127,7 +127,7 @@ void GrothSKC::Prove_interactive
 			mpz_mod(a[i], a[i], com->q);
 		}
 	}
-	mpz_srandomm(r_a, com->q); // $r_a \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(r_a, com->q); // $r_a \gets \mathbb{Z}_q$
 	// $c_d = \mathrm{com}_{ck}(d_1,\ldots,d_n;r_d)$
 	com->CommitBy(c_d, r_d, d);
 	for (size_t i = 0; i < lej.size(); i++)
@@ -276,13 +276,13 @@ void GrothSKC::Prove_interactive_publiccoin
 	mpz_tdiv_r_2exp(x, x, l_e);
 	
 	// prover: second move
-	mpz_srandomm(r_d, com->q); // $r_d \gets \mathbb{Z}_q$
-	mpz_srandomm(r_Delta, com->q); // $r_{\Delta} \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(r_d, com->q); // $r_d \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(r_Delta, com->q); // $r_{\Delta} \gets \mathbb{Z}_q$
 	for (size_t i = 0; i < d.size(); i++)
-		mpz_srandomm(d[i], com->q); // $d_1,\ldots,d_n \gets \mathbb{Z}_q$
+		tmcg_mpz_srandomm(d[i], com->q); // $d_1,\ldots,d_n \gets \mathbb{Z}_q$
 	mpz_set(Delta[0], d[0]); // $\Delta_1 := d_1$
 	for (size_t i = 1; i < (Delta.size() - 1); i++)
-		mpz_srandomm(Delta[i], com->q);	// $\Delta_2,\ldots,\Delta_{n-1}
+		tmcg_mpz_srandomm(Delta[i], com->q);	// $\Delta_2,\ldots,\Delta_{n-1}
 						//           \gets \mathbb{Z}_q$
 	mpz_set_ui(Delta[Delta.size() - 1], 0L); // $\Delta_n := 0$
 	for (size_t i = 0; i < a.size(); i++)
@@ -297,7 +297,7 @@ void GrothSKC::Prove_interactive_publiccoin
 			mpz_mod(a[i], a[i], com->q);
 		}
 	}
-	mpz_srandomm(r_a, com->q); // $r_a \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(r_a, com->q); // $r_a \gets \mathbb{Z}_q$
 	// $c_d = \mathrm{com}_{ck}(d_1,\ldots,d_n;r_d)$
 	com->CommitBy(c_d, r_d, d);
 	for (size_t i = 0; i < lej.size(); i++)
@@ -439,21 +439,21 @@ void GrothSKC::Prove_noninteractive
 	
 	// prover: first move
 		// get $x$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		mpz_shash_2vec(x, com->g, m, 3, com->p, com->q, com->h);
+		tmcg_mpz_shash_2vec(x, com->g, m, 3, com->p, com->q, com->h);
 		// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
 		// note that we follow the advice of section 2.5 [Gr05] by increasing the
 		// value of $\ell_e$ for the non-interactive protocol version
 		mpz_tdiv_r_2exp(x, x, l_e_nizk);
 	
 	// prover: second move
-	mpz_srandomm(r_d, com->q); // $r_d \gets \mathbb{Z}_q$
-	mpz_srandomm(r_Delta, com->q); // $r_{\Delta} \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(r_d, com->q); // $r_d \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(r_Delta, com->q); // $r_{\Delta} \gets \mathbb{Z}_q$
 	for (size_t i = 0; i < d.size(); i++)
-		mpz_srandomm(d[i], com->q); // $d_1,\ldots,d_n \gets \mathbb{Z}_q$
+		tmcg_mpz_srandomm(d[i], com->q); // $d_1,\ldots,d_n \gets \mathbb{Z}_q$
 	mpz_set(Delta[0], d[0]); // $\Delta_1 := d_1$
 	for (size_t i = 1; i < (Delta.size() - 1); i++)
-		mpz_srandomm(Delta[i], com->q);	// $\Delta_2,\ldots,\Delta_{n-1}
-						//           \gets \mathbb{Z}_q$
+		tmcg_mpz_srandomm(Delta[i], com->q);	// $\Delta_2,\ldots,\Delta_{n-1}
+												//           \gets \mathbb{Z}_q$
 	mpz_set_ui(Delta[Delta.size() - 1], 0L); // $\Delta_n := 0$
 	for (size_t i = 0; i < a.size(); i++)
 	{
@@ -467,7 +467,7 @@ void GrothSKC::Prove_noninteractive
 			mpz_mod(a[i], a[i], com->q);
 		}
 	}
-	mpz_srandomm(r_a, com->q); // $r_a \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(r_a, com->q); // $r_a \gets \mathbb{Z}_q$
 	// $c_d = \mathrm{com}_{ck}(d_1,\ldots,d_n;r_d)$
 	com->CommitBy(c_d, r_d, d);
 	for (size_t i = 0; i < lej.size(); i++)
@@ -514,7 +514,7 @@ void GrothSKC::Prove_noninteractive
 	
 	// prover: third move
 		// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
+		tmcg_mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
 		// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
 		// note that we follow the advice of section 2.5 [Gr05] by increasing the
 		// value of $\ell_e$ for the non-interactive protocol version
@@ -609,7 +609,7 @@ bool GrothSKC::Verify_interactive
 	try
 	{
 		// verifier: first move
-		mpz_srandomb(x, l_e);
+		tmcg_mpz_srandomb(x, l_e);
 		out << x << std::endl; // send $x\in\{0,1\}^{\ell_e}$ to the prover
 		
 		// verifier: second move
@@ -620,7 +620,7 @@ bool GrothSKC::Verify_interactive
 		// verifier: third move
 		do
 		{
-			mpz_srandomb(e, l_e);
+			tmcg_mpz_srandomb(e, l_e);
 		}
 		while (!mpz_cmp_ui(e, 0L)); // ensure that $e$ is invertable mod $q$
 		out << e << std::endl; // send $e\in\{0,1\}^{\ell_e}$ to prover
@@ -667,7 +667,7 @@ bool GrothSKC::Verify_interactive
 			mpz_t alpha;
 			mpz_init(alpha);
 			// pick $\alpha\in_R\{0, 1\}^{\ell_e}$ at random
-			mpz_srandomb(alpha, l_e);
+			tmcg_mpz_srandomb(alpha, l_e);
 			// compute $(c^e c_d)^{\alpha}$
 			mpz_powm(foo, c, e, com->p);
 			mpz_mul(foo, foo, c_d);
@@ -853,7 +853,7 @@ bool GrothSKC::Verify_interactive_publiccoin
 			mpz_t alpha;
 			mpz_init(alpha);
 			// pick $\alpha\in_R\{0, 1\}^{\ell_e}$ at random
-			mpz_srandomb(alpha, l_e);
+			tmcg_mpz_srandomb(alpha, l_e);
 			// compute $(c^e c_d)^{\alpha}$
 			mpz_powm(foo, c, e, com->p);
 			mpz_mul(foo, foo, c_d);
@@ -981,7 +981,7 @@ bool GrothSKC::Verify_noninteractive
 	{
 		// verifier: first move
 			// get $x$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			mpz_shash_2vec(x, com->g, m, 3, com->p, com->q, com->h);
+			tmcg_mpz_shash_2vec(x, com->g, m, 3, com->p, com->q, com->h);
 			// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
 			// note that we follow the advice of section 2.5 [Gr05] by increasing the
 			// value of $\ell_e$ for the non-interactive protocol version
@@ -994,7 +994,7 @@ bool GrothSKC::Verify_noninteractive
 		
 		// verifier: third move
 			// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
+			tmcg_mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
 			// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
 			// note that we follow the advice of section 2.5 [Gr05] by increasing the
 			// value of $\ell_e$ for the non-interactive protocol version
@@ -1042,7 +1042,7 @@ bool GrothSKC::Verify_noninteractive
 			mpz_t alpha;
 			mpz_init(alpha);
 			// pick $\alpha\in_R\{0, 1\}^{\ell_e}$ at random
-			mpz_srandomb(alpha, l_e);
+			tmcg_mpz_srandomb(alpha, l_e);
 			// compute $(c^e c_d)^{\alpha}$
 			mpz_powm(foo, c, e, com->p);
 			mpz_mul(foo, foo, c_d);
@@ -1172,7 +1172,7 @@ bool GrothSKC::Verify_interactive
 	try
 	{
 		// verifier: first move
-		mpz_srandomb(x, l_e);
+		tmcg_mpz_srandomb(x, l_e);
 		out << x << std::endl;
 		
 		// verifier: second move
@@ -1183,7 +1183,7 @@ bool GrothSKC::Verify_interactive
 		// verifier: third move
 		do
 		{
-			mpz_srandomb(e, l_e);
+			tmcg_mpz_srandomb(e, l_e);
 		}
 		while (!mpz_cmp_ui(e, 0L)); // ensure that $e$ is invertable mod $q$
 		out << e << std::endl;
@@ -1229,7 +1229,7 @@ bool GrothSKC::Verify_interactive
 			mpz_t alpha;
 			mpz_init(alpha);
 			// pick $\alpha\in_R\{0, 1\}^{\ell_e}$ at random
-			mpz_srandomb(alpha, l_e);
+			tmcg_mpz_srandomb(alpha, l_e);
 			// compute $(c^e c_d)^{\alpha}$
 			mpz_powm(foo, c, e, com->p);
 			mpz_mul(foo, foo, c_d);
@@ -1438,7 +1438,7 @@ bool GrothSKC::Verify_interactive_publiccoin
 			mpz_t alpha;
 			mpz_init(alpha);
 			// pick $\alpha\in_R\{0, 1\}^{\ell_e}$ at random
-			mpz_srandomb(alpha, l_e);
+			tmcg_mpz_srandomb(alpha, l_e);
 			// compute $(c^e c_d)^{\alpha}$
 			mpz_powm(foo, c, e, com->p);
 			mpz_mul(foo, foo, c_d);
@@ -1589,7 +1589,7 @@ bool GrothSKC::Verify_noninteractive
 	{
 		// verifier: first move
 			// get $x$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			mpz_shash_2vec(x, com->g, m, 3, com->p, com->q, com->h);
+			tmcg_mpz_shash_2vec(x, com->g, m, 3, com->p, com->q, com->h);
 			// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
 			// note that we follow the advice of section 2.5 [Gr05] by increasing the
 			// value of $\ell_e$ for the non-interactive protocol version
@@ -1602,7 +1602,7 @@ bool GrothSKC::Verify_noninteractive
 		
 		// verifier: third move
 			// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
+			tmcg_mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
 			// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
 			// note that we follow the advice of section 2.5 [Gr05] by increasing the
 			// value of $\ell_e$ for the non-interactive protocol version
@@ -1649,7 +1649,7 @@ bool GrothSKC::Verify_noninteractive
 			mpz_t alpha;
 			mpz_init(alpha);
 			// pick $\alpha\in_R\{0, 1\}^{\ell_e}$ at random
-			mpz_srandomb(alpha, l_e_nizk);
+			tmcg_mpz_srandomb(alpha, l_e_nizk);
 			// compute $(c^e c_d)^{\alpha}$
 			mpz_powm(foo, c, e, com->p);
 			mpz_mul(foo, foo, c_d);
@@ -1802,9 +1802,9 @@ GrothVSSHE::GrothVSSHE
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 GrothVSSHE::GrothVSSHE
@@ -1826,9 +1826,9 @@ GrothVSSHE::GrothVSSHE
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
 	fpowm_table_h = new mpz_t[TMCG_MAX_FPOWM_T]();
-	mpz_fpowm_init(fpowm_table_g), mpz_fpowm_init(fpowm_table_h);
-	mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
-	mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_init(fpowm_table_g), tmcg_mpz_fpowm_init(fpowm_table_h);
+	tmcg_mpz_fpowm_precompute(fpowm_table_g, g, p, mpz_sizeinbase(q, 2L));
+	tmcg_mpz_fpowm_precompute(fpowm_table_h, h, p, mpz_sizeinbase(q, 2L));
 }
 
 void GrothVSSHE::SetupGenerators_publiccoin
@@ -1905,16 +1905,16 @@ void GrothVSSHE::Prove_interactive
 	}
 	
 	// prover: first move
-	mpz_srandomm(r, com->q);	// $r \gets \mathbb{Z}_q$
-	mpz_srandomm(R_d, q);		// $R_d \gets \mathcal{R}_{pk}
+	tmcg_mpz_srandomm(r, com->q);	// $r \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(R_d, q);		// $R_d \gets \mathcal{R}_{pk}
 	for (size_t i = 0; i < d.size(); i++)
 	{
 		// see note in [Gr05] for omitting $\ell_s$ here
-		mpz_srandomm(d[i], com->q);
+		tmcg_mpz_srandomm(d[i], com->q);
 		// store $d_i$ as negative value for convenience
 		mpz_neg(d[i], d[i]);
 	}
-	mpz_srandomm(r_d, com->q);	// $r_d \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(r_d, com->q);	// $r_d \gets \mathbb{Z}_q$
 	for (size_t i = 0; i < m.size(); i++)
 		mpz_set_ui(m[i], pi[i] + 1L); // adjust shifted index
 	com->CommitBy(c, r, m);
@@ -1923,18 +1923,18 @@ void GrothVSSHE::Prove_interactive
 	for (size_t i = 0; i < d.size(); i++)
 	{
 		// Compute and multiply $E_i^{-d_i}$
-		mpz_spowm(foo, E[i].first, d[i], p);
+		tmcg_mpz_spowm(foo, E[i].first, d[i], p);
 		mpz_mul(E_d.first, E_d.first, foo);
 		mpz_mod(E_d.first, E_d.first, p);
-		mpz_spowm(bar, E[i].second, d[i], p);
+		tmcg_mpz_spowm(bar, E[i].second, d[i], p);
 		mpz_mul(E_d.second, E_d.second, bar);
 		mpz_mod(E_d.second, E_d.second, p);
 	}
 	// Compute and multiply $E(1;R_d)$
-	mpz_fspowm(fpowm_table_g, foo, g, R_d, p);
+	tmcg_mpz_fspowm(fpowm_table_g, foo, g, R_d, p);
 	mpz_mul(E_d.first, E_d.first, foo);
 	mpz_mod(E_d.first, E_d.first, p);
-	mpz_fspowm(fpowm_table_h, bar, h, R_d, p);
+	tmcg_mpz_fspowm(fpowm_table_h, bar, h, R_d, p);
 	mpz_mul(E_d.second, E_d.second, bar);
 	mpz_mod(E_d.second, E_d.second, p);
 
@@ -2049,16 +2049,16 @@ void GrothVSSHE::Prove_interactive_publiccoin
 	}
 	
 	// prover: first move
-	mpz_srandomm(r, com->q);	// $r \gets \mathbb{Z}_q$
-	mpz_srandomm(R_d, q);		// $R_d \gets \mathcal{R}_{pk}
+	tmcg_mpz_srandomm(r, com->q);	// $r \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(R_d, q);		// $R_d \gets \mathcal{R}_{pk}
 	for (size_t i = 0; i < d.size(); i++)
 	{
 		// see note in [Gr05] for omitting $\ell_s$ here
-		mpz_srandomm(d[i], com->q);
+		tmcg_mpz_srandomm(d[i], com->q);
 		// store $d_i$ as negative value for convenience
 		mpz_neg(d[i], d[i]);
 	}
-	mpz_srandomm(r_d, com->q);	// $r_d \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(r_d, com->q);	// $r_d \gets \mathbb{Z}_q$
 	for (size_t i = 0; i < m.size(); i++)
 		mpz_set_ui(m[i], pi[i] + 1L); // adjust shifted index
 	com->CommitBy(c, r, m);
@@ -2067,18 +2067,18 @@ void GrothVSSHE::Prove_interactive_publiccoin
 	for (size_t i = 0; i < d.size(); i++)
 	{
 		// Compute and multiply $E_i^{-d_i}$
-		mpz_spowm(foo, E[i].first, d[i], p);
+		tmcg_mpz_spowm(foo, E[i].first, d[i], p);
 		mpz_mul(E_d.first, E_d.first, foo);
 		mpz_mod(E_d.first, E_d.first, p);
-		mpz_spowm(bar, E[i].second, d[i], p);
+		tmcg_mpz_spowm(bar, E[i].second, d[i], p);
 		mpz_mul(E_d.second, E_d.second, bar);
 		mpz_mod(E_d.second, E_d.second, p);
 	}
 	// Compute and multiply $E(1;R_d)$
-	mpz_fspowm(fpowm_table_g, foo, g, R_d, p);
+	tmcg_mpz_fspowm(fpowm_table_g, foo, g, R_d, p);
 	mpz_mul(E_d.first, E_d.first, foo);
 	mpz_mod(E_d.first, E_d.first, p);
-	mpz_fspowm(fpowm_table_h, bar, h, R_d, p);
+	tmcg_mpz_fspowm(fpowm_table_h, bar, h, R_d, p);
 	mpz_mul(E_d.second, E_d.second, bar);
 	mpz_mod(E_d.second, E_d.second, p);
 	
@@ -2193,16 +2193,16 @@ void GrothVSSHE::Prove_noninteractive
 	}
 	
 	// prover: first move
-	mpz_srandomm(r, com->q);	// $r \gets \mathbb{Z}_q$
-	mpz_srandomm(R_d, q);		// $R_d \gets \mathcal{R}_{pk}
+	tmcg_mpz_srandomm(r, com->q);	// $r \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(R_d, q);		// $R_d \gets \mathcal{R}_{pk}
 	for (size_t i = 0; i < d.size(); i++)
 	{
 		// see note in [Gr05] for omitting $\ell_s$ here
-		mpz_srandomm(d[i], com->q);
+		tmcg_mpz_srandomm(d[i], com->q);
 		// store $d_i$ as negative value for convenience
 		mpz_neg(d[i], d[i]);
 	}
-	mpz_srandomm(r_d, com->q);	// $r_d \gets \mathbb{Z}_q$
+	tmcg_mpz_srandomm(r_d, com->q);	// $r_d \gets \mathbb{Z}_q$
 	for (size_t i = 0; i < m.size(); i++)
 		mpz_set_ui(m[i], pi[i] + 1L); // adjust shifted index
 	com->CommitBy(c, r, m);
@@ -2211,18 +2211,18 @@ void GrothVSSHE::Prove_noninteractive
 	for (size_t i = 0; i < d.size(); i++)
 	{
 		// Compute and multiply $E_i^{-d_i}$
-		mpz_spowm(foo, E[i].first, d[i], p);
+		tmcg_mpz_spowm(foo, E[i].first, d[i], p);
 		mpz_mul(E_d.first, E_d.first, foo);
 		mpz_mod(E_d.first, E_d.first, p);
-		mpz_spowm(bar, E[i].second, d[i], p);
+		tmcg_mpz_spowm(bar, E[i].second, d[i], p);
 		mpz_mul(E_d.second, E_d.second, bar);
 		mpz_mod(E_d.second, E_d.second, p);
 	}
 	// Compute and multiply $E(1;R_d)$
-	mpz_fspowm(fpowm_table_g, foo, g, R_d, p);
+	tmcg_mpz_fspowm(fpowm_table_g, foo, g, R_d, p);
 	mpz_mul(E_d.first, E_d.first, foo);
 	mpz_mod(E_d.first, E_d.first, p);
-	mpz_fspowm(fpowm_table_h, bar, h, R_d, p);
+	tmcg_mpz_fspowm(fpowm_table_h, bar, h, R_d, p);
 	mpz_mul(E_d.second, E_d.second, bar);
 	mpz_mod(E_d.second, E_d.second, p);
 	
@@ -2237,7 +2237,7 @@ void GrothVSSHE::Prove_noninteractive
 		if (i > 0)
 			mpz_set(foo, t[i-1]); // make a link to previous element
 		// get $t_i$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		mpz_shash_2pairvec(t[i], e, E, 14, p, q, g, h, com->p, com->q,
+		tmcg_mpz_shash_2pairvec(t[i], e, E, 14, p, q, g, h, com->p, com->q,
 			com->g[i], com->h, c, c_d, E_d.first, E_d.second, foo, bar);
 		// reduce such that $t_i$'s are from $\{0, 1\}^{\ell_e}$
 		// note that we follow the advice of section 2.5 [Gr05] by increasing the
@@ -2269,7 +2269,7 @@ void GrothVSSHE::Prove_noninteractive
 	
 	// prover: fourth move
 		// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		mpz_shash_2pairvec2vec(lambda, e, E, t, f, 5, g, h, com->q, q, Z);
+		tmcg_mpz_shash_2pairvec2vec(lambda, e, E, t, f, 5, g, h, com->q, q, Z);
 		// reduce such that $\lambda$ is from $\{0, 1\}^{\ell_e}$
 		// note that we follow the advice of section 2.5 [Gr05] by increasing the
 		// value of $\ell_e$ for the non-interactive protocol version
@@ -2353,7 +2353,7 @@ bool GrothVSSHE::Verify_interactive
 		// verifier: second move
 		for (size_t i = 0; i < t.size(); i++)
 		{
-			mpz_srandomb(t[i], l_e);
+			tmcg_mpz_srandomb(t[i], l_e);
 			out << t[i] << std::endl;
 		}
 		
@@ -2365,7 +2365,7 @@ bool GrothVSSHE::Verify_interactive
 			throw false;
 		
 		// verifier: fourth move
-		mpz_srandomb(lambda, l_e);
+		tmcg_mpz_srandomb(lambda, l_e);
 		out << lambda << std::endl;
 		
 		// verifier: fifth to seventh move (Shuffle of Known Content)
@@ -2374,8 +2374,8 @@ bool GrothVSSHE::Verify_interactive
 			throw false;
 	
 		// check whether $E_d\in\mathcal{C}_{pk}$
-		mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
-		mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
+		tmcg_mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
+		tmcg_mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
 		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
 			throw false;
 	
@@ -2454,8 +2454,8 @@ bool GrothVSSHE::Verify_interactive
 		mpz_mod(foo3, foo3, p);
 		mpz_mul(bar3, bar3, bar2); // LHS, second component
 		mpz_mod(bar3, bar3, p);
-		mpz_fpowm(fpowm_table_g, foo, g, Z, p); // RHS, first component
-		mpz_fpowm(fpowm_table_h, bar, h, Z, p); // RHS, second component
+		tmcg_mpz_fpowm(fpowm_table_g, foo, g, Z, p); // RHS, first component
+		tmcg_mpz_fpowm(fpowm_table_h, bar, h, Z, p); // RHS, second component
 		if (mpz_cmp(foo3, foo) || mpz_cmp(bar3, bar))
 			throw false;
 		
@@ -2542,8 +2542,8 @@ bool GrothVSSHE::Verify_interactive_publiccoin
 			throw false;
 	
 		// check whether $E_d\in\mathcal{C}_{pk}$
-		mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
-		mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
+		tmcg_mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
+		tmcg_mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
 		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
 			throw false;
 	
@@ -2622,8 +2622,8 @@ bool GrothVSSHE::Verify_interactive_publiccoin
 		mpz_mod(foo3, foo3, p);
 		mpz_mul(bar3, bar3, bar2); // LHS, second component
 		mpz_mod(bar3, bar3, p);
-		mpz_fpowm(fpowm_table_g, foo, g, Z, p); // RHS, first component
-		mpz_fpowm(fpowm_table_h, bar, h, Z, p); // RHS, second component
+		tmcg_mpz_fpowm(fpowm_table_g, foo, g, Z, p); // RHS, first component
+		tmcg_mpz_fpowm(fpowm_table_h, bar, h, Z, p); // RHS, second component
 		if (mpz_cmp(foo3, foo) || mpz_cmp(bar3, bar))
 			throw false;
 		
@@ -2688,7 +2688,7 @@ bool GrothVSSHE::Verify_noninteractive
 			if (i > 0)
 				mpz_set(foo, t[i-1]);
 			// get $t_i$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			mpz_shash_2pairvec(t[i], e, E, 14, p, q, g, h, com->p, com->q,
+			tmcg_mpz_shash_2pairvec(t[i], e, E, 14, p, q, g, h, com->p, com->q,
 				com->g[i], com->h, c, c_d, E_d.first, E_d.second, foo, bar);
 			// reduce such that $t_i$'s are from $\{0, 1\}^{\ell_e}$
 			// note that we follow the advice of section 2.5 [Gr05] by increasing the
@@ -2705,7 +2705,7 @@ bool GrothVSSHE::Verify_noninteractive
 		
 		// verifier: fourth move
 			// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			mpz_shash_2pairvec2vec(lambda, e, E, t, f, 5, g, h, com->q, q, Z);
+			tmcg_mpz_shash_2pairvec2vec(lambda, e, E, t, f, 5, g, h, com->q, q, Z);
 			// reduce such that $\lambda$ is from $\{0, 1\}^{\ell_e}$
 			// note that we follow the advice of section 2.5 [Gr05] by increasing the
 			// value of $\ell_e$ for the non-interactive protocol version
@@ -2717,8 +2717,8 @@ bool GrothVSSHE::Verify_noninteractive
 			throw false;
 	
 		// check whether $E_d\in\mathcal{C}_{pk}$
-		mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
-		mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
+		tmcg_mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
+		tmcg_mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
 		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
 			throw false;
 	
@@ -2797,8 +2797,8 @@ bool GrothVSSHE::Verify_noninteractive
 		mpz_mod(foo3, foo3, p);
 		mpz_mul(bar3, bar3, bar2); // LHS, second component
 		mpz_mod(bar3, bar3, p);
-		mpz_fpowm(fpowm_table_g, foo, g, Z, p); // RHS, first component
-		mpz_fpowm(fpowm_table_h, bar, h, Z, p); // RHS, second component
+		tmcg_mpz_fpowm(fpowm_table_g, foo, g, Z, p); // RHS, first component
+		tmcg_mpz_fpowm(fpowm_table_h, bar, h, Z, p); // RHS, second component
 		if (mpz_cmp(foo3, foo) || mpz_cmp(bar3, bar))
 			throw false;
 		
@@ -2830,6 +2830,6 @@ GrothVSSHE::~GrothVSSHE
 	delete com;
 	delete skc;
 	
-	mpz_fpowm_done(fpowm_table_g), mpz_fpowm_done(fpowm_table_h);
+	tmcg_mpz_fpowm_done(fpowm_table_g), tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }

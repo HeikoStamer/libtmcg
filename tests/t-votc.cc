@@ -10,7 +10,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ void random_permutation_fast
 	
 	for (size_t i = 0; i < (n - 1); i++)
 	{
-		size_t tmp = pi[i], rnd = i + (size_t)mpz_srandom_mod(n - i);
+		size_t tmp = pi[i], rnd = i + (size_t)tmcg_mpz_srandom_mod(n - i);
 		pi[i] = pi[rnd];
 		pi[rnd] = tmp;
 	}
@@ -161,14 +161,14 @@ void start_instance_sender
 				// proof of knowledge [CaS97] for a discrete logarithm
 				mpz_init(v), mpz_init(t), mpz_init(c), mpz_init(r);	
 				// commitment
-				mpz_srandomm(v, vtmf->q);
-				mpz_spowm(t, vtmf->g, v, vtmf->p);
+				tmcg_mpz_srandomm(v, vtmf->q);
+				tmcg_mpz_spowm(t, vtmf->g, v, vtmf->p);
 				// challenge
 				// Here we use the well-known "Fiat-Shamir heuristic" to make
 				// the PoK non-interactive, i.e. we turn it into a statistically
 				// zero-knowledge (Schnorr signature scheme style) proof of
 				// knowledge (SPK) in the random oracle model.
-				mpz_shash(c, 3, vtmf->g, s[i].c_1, t);	// $c_1 = g^{\hat{r}}$
+				tmcg_mpz_shash(c, 3, vtmf->g, s[i].c_1, t);	// $c_1 = g^{\hat{r}}$
 				// response
 				mpz_mul(r, c, ss[i].second.r); // multiply with secret value
 				mpz_neg(r, r);
@@ -315,7 +315,7 @@ void start_instance_receiver
 				mpz_powm(r, s[i].c_1, c, vtmf->p);
 				mpz_mul(t, t, r);
 				mpz_mod(t, t, vtmf->p);
-				mpz_shash(r, 3, vtmf->g, s[i].c_1, t);
+				tmcg_mpz_shash(r, 3, vtmf->g, s[i].c_1, t);
 				if (mpz_cmp(c, r))
 				{
 					std::cout << "R: SPK for $\\hat{r}$ failed" << std::endl;
@@ -411,7 +411,7 @@ int main
 		size_t c = 0;
 		do
 		{
-			c = mpz_srandom_mod(N);
+			c = tmcg_mpz_srandom_mod(N);
 		}
 		while (std::find(sigma.begin(), sigma.end(), c) != sigma.end());
 		sigma.push_back(c);

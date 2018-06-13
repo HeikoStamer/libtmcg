@@ -1717,11 +1717,11 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	gcry_mpi_set(telg_h, h);
 	gcry_mpi_set(telg_x_i, x_i);
 	gcry_mpi_set(telg_xprime_i, xprime_i);
-	telg_n = get_gcry_mpi_ui(n_in);
-	telg_t = get_gcry_mpi_ui(t_in);
-	telg_i = get_gcry_mpi_ui(i_in);
+	telg_n = tmcg_get_gcry_mpi_ui(n_in);
+	telg_t = tmcg_get_gcry_mpi_ui(t_in);
+	telg_i = tmcg_get_gcry_mpi_ui(i_in);
 	for (size_t i = 0; i < qual.size(); i++)
-		telg_qual.push_back(get_gcry_mpi_ui(qual[i]));
+		telg_qual.push_back(tmcg_get_gcry_mpi_ui(qual[i]));
 	for (size_t i = 0; i < v_i.size(); i++)
 	{
 			gcry_mpi_t tmp;
@@ -2712,15 +2712,15 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	gcry_mpi_set(tdss_h, h);
 	gcry_mpi_set(tdss_x_i, x_i);
 	gcry_mpi_set(tdss_xprime_i, xprime_i);
-	tdss_n = get_gcry_mpi_ui(n_in);
-	tdss_t = get_gcry_mpi_ui(t_in);
-	tdss_i = get_gcry_mpi_ui(i_in);
+	tdss_n = tmcg_get_gcry_mpi_ui(n_in);
+	tdss_t = tmcg_get_gcry_mpi_ui(t_in);
+	tdss_i = tmcg_get_gcry_mpi_ui(i_in);
 	for (size_t i = 0; i < capl.size(); i++)
 		tdss_capl.push_back(capl[i]);
 	for (size_t i = 0; i < qual.size(); i++)
-		tdss_qual.push_back(get_gcry_mpi_ui(qual[i]));
+		tdss_qual.push_back(tmcg_get_gcry_mpi_ui(qual[i]));
 	for (size_t i = 0; i < x_rvss_qual.size(); i++)
-		tdss_x_rvss_qual.push_back(get_gcry_mpi_ui(x_rvss_qual[i]));
+		tdss_x_rvss_qual.push_back(tmcg_get_gcry_mpi_ui(x_rvss_qual[i]));
 	tdss_c_ik.resize(c_ik.size());
 	for (size_t i = 0; i < c_ik.size(); i++)
 	{
@@ -4895,15 +4895,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	size_t x_ilen = (gcry_mpi_get_nbits(x_i) + 7) / 8;
 	size_t xprime_ilen = (gcry_mpi_get_nbits(xprime_i) + 7) / 8;
 	size_t len = 1+4+1; // number of octets for version, keytime, and algo
-	assert((qual.size() == get_gcry_mpi_ui(qualsize)));
+	assert((qual.size() == tmcg_get_gcry_mpi_ui(qualsize)));
 	for (size_t j = 0; j < qual.size(); j++)
 		len += 2+((gcry_mpi_get_nbits(qual[j]) + 7) / 8);
 	assert((qual.size() == capl.size()));
 	for (size_t j = 0; j < capl.size(); j++)
 		len += 5+capl[j].length();
-	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	for (size_t j = 0; j < tmcg_get_gcry_mpi_ui(n); j++)
 	{
-		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
+		for (size_t k = 0; k <= tmcg_get_gcry_mpi_ui(t); k++)
 			len += 2+((gcry_mpi_get_nbits(c_ik[j][k]) + 7) / 8);
 	}
 	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+
@@ -4930,9 +4930,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 		PacketMPIEncode(qual[j], out); // MPI qual[j]
 	for (size_t j = 0; j < qual.size(); j++)
 		PacketStringEncode(capl[j], out); // STRING capl[j]
-	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	for (size_t j = 0; j < tmcg_get_gcry_mpi_ui(n); j++)
 	{
-		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
+		for (size_t k = 0; k <= tmcg_get_gcry_mpi_ui(t); k++)
 			PacketMPIEncode(c_ik[j][k], out); // MPI c_ik[j][k]
 	}
 	if (passphrase.length() == 0)
@@ -5042,20 +5042,20 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 	size_t x_ilen = (gcry_mpi_get_nbits(x_i) + 7) / 8;
 	size_t xprime_ilen = (gcry_mpi_get_nbits(xprime_i) + 7) / 8;
 	size_t len = 1+4+1; // number of octets for version, keytime, and algo
-	assert((qual.size() == get_gcry_mpi_ui(qualsize)));
+	assert((qual.size() == tmcg_get_gcry_mpi_ui(qualsize)));
 	for (size_t j = 0; j < qual.size(); j++)
 		len += 2+((gcry_mpi_get_nbits(qual[j]) + 7) / 8);
-	assert((x_rvss_qual.size() == get_gcry_mpi_ui(x_rvss_qualsize)));
+	assert((x_rvss_qual.size() == tmcg_get_gcry_mpi_ui(x_rvss_qualsize)));
 	for (size_t j = 0; j < x_rvss_qual.size(); j++)
 		len += 2+((gcry_mpi_get_nbits(x_rvss_qual[j]) + 7) / 8);
-	assert((capl.size() == get_gcry_mpi_ui(n)));
+	assert((capl.size() == tmcg_get_gcry_mpi_ui(n)));
 	assert((qual.size() <= capl.size()));
 	assert((x_rvss_qual.size() <= capl.size()));
 	for (size_t j = 0; j < capl.size(); j++)
 		len += 5+capl[j].length();
-	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	for (size_t j = 0; j < tmcg_get_gcry_mpi_ui(n); j++)
 	{
-		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
+		for (size_t k = 0; k <= tmcg_get_gcry_mpi_ui(t); k++)
 			len += 2+((gcry_mpi_get_nbits(c_ik[j][k]) + 7) / 8);
 	}
 	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+
@@ -5085,9 +5085,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 		PacketMPIEncode(x_rvss_qual[j], out); // MPI x_rvss_qual[j]
 	for (size_t j = 0; j < capl.size(); j++)
 		PacketStringEncode(capl[j], out); // STRING capl[j]
-	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	for (size_t j = 0; j < tmcg_get_gcry_mpi_ui(n); j++)
 	{
-		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
+		for (size_t k = 0; k <= tmcg_get_gcry_mpi_ui(t); k++)
 			PacketMPIEncode(c_ik[j][k], out); // MPI c_ik[j][k]
 	}
 	if (passphrase.length() == 0)
@@ -5381,16 +5381,16 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 	size_t x_ilen = (gcry_mpi_get_nbits(x_i) + 7) / 8;
 	size_t xprime_ilen = (gcry_mpi_get_nbits(xprime_i) + 7) / 8;
 	size_t len = 1+4+1; // number of octets for version, keytime, and algo
-	assert((qual.size() == get_gcry_mpi_ui(qualsize)));
+	assert((qual.size() == tmcg_get_gcry_mpi_ui(qualsize)));
 	for (size_t j = 0; j < qual.size(); j++)
 		len += 2+((gcry_mpi_get_nbits(qual[j]) + 7) / 8);
-	assert((v_i.size() == get_gcry_mpi_ui(n)));
-	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	assert((v_i.size() == tmcg_get_gcry_mpi_ui(n)));
+	for (size_t j = 0; j < tmcg_get_gcry_mpi_ui(n); j++)
 		len += 2+((gcry_mpi_get_nbits(v_i[j]) + 7) / 8);
-	assert((c_ik.size() == get_gcry_mpi_ui(n)));
-	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	assert((c_ik.size() == tmcg_get_gcry_mpi_ui(n)));
+	for (size_t j = 0; j < tmcg_get_gcry_mpi_ui(n); j++)
 	{
-		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
+		for (size_t k = 0; k <= tmcg_get_gcry_mpi_ui(t); k++)
 			len += 2+((gcry_mpi_get_nbits(c_ik[j][k]) + 7) / 8);
 	}
 	len += 2+plen+2+qlen+2+glen+2+hlen+2+ylen+2+nlen+2+tlen+2+ilen+
@@ -5415,11 +5415,11 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 	PacketMPIEncode(qualsize, out); // MPI qualsize
 	for (size_t j = 0; j < qual.size(); j++)
 		PacketMPIEncode(qual[j], out); // MPI qual[j]
-	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	for (size_t j = 0; j < tmcg_get_gcry_mpi_ui(n); j++)
 		PacketMPIEncode(v_i[j], out); // MPI v_i[j]
-	for (size_t j = 0; j < get_gcry_mpi_ui(n); j++)
+	for (size_t j = 0; j < tmcg_get_gcry_mpi_ui(n); j++)
 	{
-		for (size_t k = 0; k <= get_gcry_mpi_ui(t); k++)
+		for (size_t k = 0; k <= tmcg_get_gcry_mpi_ui(t); k++)
 			PacketMPIEncode(c_ik[j][k], out); // MPI c_ik[j][k]
 	}
 	if (passphrase.length() == 0)
@@ -6448,7 +6448,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				size_t qs = get_gcry_mpi_ui(out.qualsize);
+				size_t qs = tmcg_get_gcry_mpi_ui(out.qualsize);
 				if (qs > 255)
 					return 0; // error: too many parties
 				qual.resize(qs);
@@ -6466,7 +6466,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				size_t xqs =
-					get_gcry_mpi_ui(out.x_rvss_qualsize);
+					tmcg_get_gcry_mpi_ui(out.x_rvss_qualsize);
 				if (xqs > 255)
 					return 0; // error: too many parties
 				x_rvss_qual.resize(xqs);
@@ -6479,12 +6479,14 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 				}
-				size_t n = get_gcry_mpi_ui(out.n);
-				size_t t = get_gcry_mpi_ui(out.t);
+				size_t n = tmcg_get_gcry_mpi_ui(out.n);
+				size_t t = tmcg_get_gcry_mpi_ui(out.t);
 				if ((n > 255) || (t > 128) ||
-				    (get_gcry_mpi_ui(out.i) >= n))
+				    (tmcg_get_gcry_mpi_ui(out.i) >= n))
+				{
 					return 0; // error: too many parties, 
 					          //        bad threshold/index
+				}
 				capl.clear();
 				for (size_t j = 0; j < n; j++)
 				{
@@ -6552,7 +6554,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				size_t qs = get_gcry_mpi_ui(out.qualsize);
+				size_t qs = tmcg_get_gcry_mpi_ui(out.qualsize);
 				if (qs > 255)
 					return 0; // error: too many parties
 				qual.resize(qs);
@@ -6576,8 +6578,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						mpis.begin()+mlen);
 					capl.push_back(peerid);
 				}
-				size_t n = get_gcry_mpi_ui(out.n);
-				size_t t = get_gcry_mpi_ui(out.t);
+				size_t n = tmcg_get_gcry_mpi_ui(out.n);
+				size_t t = tmcg_get_gcry_mpi_ui(out.t);
 				if ((n > 255) || (t > 128))
 					return 0; // error: too many parties
 				c_ik.resize(n);
@@ -6635,7 +6637,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				size_t qs = get_gcry_mpi_ui(out.qualsize);
+				size_t qs = tmcg_get_gcry_mpi_ui(out.qualsize);
 				if (qs > 255)
 					return 0; // error: too many parties
 				qual.resize(qs);
@@ -6647,8 +6649,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mpis.erase(mpis.begin(),
 						mpis.begin()+mlen);
 				}
-				size_t n = get_gcry_mpi_ui(out.n);
-				size_t t = get_gcry_mpi_ui(out.t);
+				size_t n = tmcg_get_gcry_mpi_ui(out.n);
+				size_t t = tmcg_get_gcry_mpi_ui(out.t);
 				if ((n > 255) || (t > 128))
 					return 0; // error: too many parties
 				v_i.resize(n);
