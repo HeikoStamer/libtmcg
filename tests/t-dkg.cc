@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -360,7 +360,7 @@ int main
 		start_instance(crs, i, false);
 	if (!done())
 		return 1;
-		
+/*		
 	// test case #2: two corrupted parties
 	init();
 	for (size_t i = 0; i < N; i++)
@@ -372,7 +372,7 @@ int main
 	}
 	if (!done())
 		return 1;
-	
+*/	
 	// release VTMF instance
 	delete vtmf;
 	
