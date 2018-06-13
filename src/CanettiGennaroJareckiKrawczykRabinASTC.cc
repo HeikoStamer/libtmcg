@@ -4136,6 +4136,7 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 				if (mpz_cmp(lhs, rhs))
 				{
 					err << "P_" << idx2dkg[i_in] << ": ZNPoK for a_i in Step 2c failed for P_" << idx2dkg[j] << std::endl;
+					err << "lhs = " << lhs << " rhs = " << rhs << std::endl;
 					ignore.push_back(idx2dkg[j]);
 					continue;
 				}
