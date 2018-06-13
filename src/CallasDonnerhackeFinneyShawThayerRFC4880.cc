@@ -1798,7 +1798,7 @@ bool TMCG_OpenPGP_PrivateSubkey::weak
 				qbits << " bits, |x_i| = " <<
 				xibits << " bits, |xprime_i| = " <<
 				xprimeibits << " bits" << std::endl; 
-		if ((qbits < 250) || (xibits < 250) || (xprimeibits < 250))
+		if ((qbits < 256) || (xibits < 245) || (xprimeibits < 245))
 			return true; // weak key
 		return pub->weak(verbose);
 	}
@@ -2784,7 +2784,7 @@ bool TMCG_OpenPGP_Prvkey::weak
 			std::cerr << "INFO: tDSS/DSA with |x_i| = " <<
 				xibits << " bits, |xprime_i| = " <<
 				xprimeibits << " bits" << std::endl; 
-		if ((xibits < 250) || (xprimeibits < 250))
+		if ((xibits < 245) || (xprimeibits < 245))
 			return true; // weak key
 		return pub->weak(verbose);
 	}
