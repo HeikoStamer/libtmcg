@@ -9426,39 +9426,31 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		if (ptag == 0x00)
 		{
 			if (verbose)
-				std::cerr << "ERROR: decoding OpenPGP packets failed " <<
-					"at #" << pnum << std::endl;
+				std::cerr << "WARNING: decoding OpenPGP packets failed " <<
+					"at packet #" << pnum << std::endl;
 			PacketContextRelease(ctx);
-			if (pub)
-				delete pub;
-			if (sub)
-				delete sub;
-			if (uid)
-				delete uid;
-			if (uat)
-				delete uat;
-			return false;
+			continue; // ignore packet
 		}
 		else if (ptag == 0xFA)
 		{
 			if (verbose)
 				std::cerr << "WARNING: unrecognized critical OpenPGP " <<
-					"subpacket found at #" << pnum << std::endl;
+					"subpacket found at packet #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore signature with critical subpacket
 		}
 		else if (ptag == 0xFB)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized OpenPGP subpacket " <<
-					"found at #" << pnum << std::endl;
-			ptag = 0x02; // process signature
+				std::cerr << "WARNING: unrecognized OpenPGP " <<
+					" subpacket found at packet #" << pnum << std::endl;
+			ptag = 0x02; // try to process signature anyway
 		}
 		else if (ptag == 0xFC)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized OpenPGP signature " <<
-					"packet found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized OpenPGP " <<
+					"signature packet found at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
@@ -9467,8 +9459,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			if (primary)
 			{
 				if (verbose)
-					std::cerr << "WARNING: unrecognized OpenPGP key packet " <<
-						"found at #" << pnum << std::endl;
+					std::cerr << "WARNING: unrecognized OpenPGP " <<
+						"key packet found at #" << pnum << std::endl;
 				if (!badkey && subkey)
 				{
 					pub->subkeys.push_back(sub);
@@ -9490,8 +9482,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		else if (ptag == 0xFE)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized OpenPGP packet " <<
-					"found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized OpenPGP " <<
+					"packet found at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
@@ -9520,7 +9512,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 				break;
 			default:
 				if (verbose > 1)
-					std::cerr << "INFO: OpenPGP packet of tag " <<
+					std::cerr << "INFO: OpenPGP packet with tag " <<
 						(int)ptag << " ignored" << std::endl;
 				break;
 		}
@@ -9708,7 +9700,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 			break;
 		default:
 			if (verbose)
-				std::cerr << "ERROR: wrong OpenPGP packet of tag " << 
+				std::cerr << "ERROR: wrong OpenPGP packet with tag " << 
 					(int)ptag << std::endl;
 			PacketContextRelease(ctx);
 			return false;
@@ -9887,8 +9879,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 				break;
 			default:
 				if (verbose > 1)
-					std::cerr << "INFO: OpenPGP packet of tag " << (int)ptag <<
-						" ignored" << std::endl;
+					std::cerr << "INFO: OpenPGP packet with tag " <<
+						(int)ptag << " ignored" << std::endl;
 				break;
 		}
 		// cleanup allocated buffers and mpi's
@@ -10000,7 +9992,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		{
 			if (verbose)
 				std::cerr << "ERROR: decoding OpenPGP packets failed " <<
-					"at #" << pnum << std::endl;
+					"at packet #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			if (prv)
 				delete prv;
@@ -10107,7 +10099,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 				break;
 			default:
 				if (verbose > 1)
-					std::cerr << "INFO: OpenPGP packet of tag " <<
+					std::cerr << "INFO: OpenPGP packet with tag " <<
 						(int)ptag << " ignored" << std::endl;
 				break;
 		}
@@ -10195,7 +10187,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 		{
 			if (verbose)
 				std::cerr << "ERROR: decoding OpenPGP packets failed " <<
-					"at #" << pnum << std::endl;
+					"at packet #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			return false;
 		}
@@ -10279,7 +10271,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				break;
 			default:
 				if (verbose > 1)
-					std::cerr << "INFO: OpenPGP packet of tag " <<
+					std::cerr << "INFO: OpenPGP packet with tag " <<
 						(int)ptag << " ignored" << std::endl;
 				break;
 		}
