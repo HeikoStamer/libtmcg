@@ -316,32 +316,32 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		tmcg_mpz_oprime_noninc(foo, 1024, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64));
 	}
-	
+
 	// tmcg_mpz_sprime vs. tmcg_mpz_sprime_naive vs. tmcg_mpz_sprime_noninc
 	std::cout << "tmcg_mpz_sprime() benchmark" << std::endl;
 	start_clock();
-	for (size_t i = 0; i < 50; i++)
-		tmcg_mpz_sprime(foo, bar, 512, TMCG_MR_ITERATIONS);
+	for (size_t i = 0; i < 5; i++)
+		tmcg_mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	std::cout << "tmcg_mpz_sprime_naive() benchmark" << std::endl;
 	start_clock();
-	for (size_t i = 0; i < 50; i++)
-		tmcg_mpz_sprime_naive(foo, bar, 512, TMCG_MR_ITERATIONS);
+	for (size_t i = 0; i < 5; i++)
+		tmcg_mpz_sprime_naive(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	std::cout << "tmcg_mpz_sprime_noninc() benchmark" << std::endl;
 	start_clock();
-	for (size_t i = 0; i < 50; i++)
-		tmcg_mpz_sprime_noninc(foo, bar, 512, TMCG_MR_ITERATIONS);
+	for (size_t i = 0; i < 5; i++)
+		tmcg_mpz_sprime_noninc(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	
 	// tmcg_mpz_sqrtmp_r vs. tmcg_mpz_sqrtmp benchmark
 	do
-		tmcg_mpz_oprime(foo, 512, TMCG_MR_ITERATIONS);
+		tmcg_mpz_oprime(foo, 1024, TMCG_MR_ITERATIONS);
 	while (!mpz_congruent_ui_p(foo, 1L, 8L));
-	tmcg_mpz_wrandomb(bar, 512);
+	tmcg_mpz_wrandomb(bar, 1024);
 	mpz_mod(bar, bar, foo);
 	std::cout << "tmcg_mpz_sqrtmp_r() benchmark" << std::endl;
 	start_clock();
@@ -556,8 +556,8 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	
 	// tmcg_mpz_qrmn_p, tmcg_mpz_sqrtmn_r, tmcg_mpz_sqrtmn
 	std::cout << "tmcg_mpz_qrmn_p(), tmcg_mpz_sqrtmn_r(), tmcg_mpz_sqrtmn()" << std::endl;
-	tmcg_mpz_sprime(foo, bar, 512, TMCG_MR_ITERATIONS);
-	tmcg_mpz_sprime(foo2, bar2, 512, TMCG_MR_ITERATIONS);
+	tmcg_mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
+	tmcg_mpz_sprime(foo2, bar2, 1024, TMCG_MR_ITERATIONS);
 	mpz_mul(bar, foo, foo2);
 	for (size_t i = 0; i < 50; i++)
 	{

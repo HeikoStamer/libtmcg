@@ -276,7 +276,7 @@ void tmcg_mpz_sprime_test
 	/* Step 1. [CS00]: choose randomly an odd number $q$ of appropriate size */
 	do
 		tmcg_mpz_srandomb(q, qsize);
-	while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
+	while ((mpz_sizeinbase(q, 2L) < qsize) || mpz_even_p(q));
 	
 	/* Compute $p = 2q + 1$. */
 	mpz_mul_2exp(pm1, q, 1L), mpz_add_ui(p, pm1, 1L);
@@ -389,7 +389,7 @@ void tmcg_mpz_sprime_test_naive
 	/* Choose randomly an odd number $q$ of appropriate size. */
 	do
 		tmcg_mpz_srandomb(q, qsize);
-	while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
+	while ((mpz_sizeinbase(q, 2L) < qsize) || mpz_even_p(q));
 	
 	while (1)
 	{
@@ -450,8 +450,8 @@ void tmcg_mpz_sprime_test_noninc
 		/* Choose randomly an odd number $q$ of appropriate size. */
 		do
 			tmcg_mpz_srandomb(q, qsize);
-		while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
-
+		while ((mpz_sizeinbase(q, 2L) < qsize) || mpz_even_p(q));
+ 
 		/* Compute $p = 2q + 1$. */
 		mpz_mul_2exp(p, q, 1L);
 		mpz_add_ui(p, p, 1L);
