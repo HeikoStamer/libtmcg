@@ -403,8 +403,65 @@ void tmcg_mpz_sprime_test_naive
 		if (!test(p, q))
 			continue;
 		
-		/* Check whether either $q$ or $p$ are not divisable by any primes up to
-		   some bound $B$. (We use the bound $B = 5000$ here.) */
+		/* Check whether either $q$ or $p$ are not divisable by any primes up
+		   to some bound $B$. (We use the bound $B = 5000$ here.) */
+		bool fail = false;
+		for (size_t i = 0; i < PRIMES_SIZE; i++)
+		{
+			if (mpz_congruent_ui_p(q, primes_m1d2[i], primes[i]) ||
+				mpz_congruent_ui_p(p, primes_m1d2[i], primes[i]) ||
+				mpz_congruent_ui_p(q, 0L, primes[i]) ||
+				mpz_congruent_ui_p(p, 0L, primes[i]))
+			{
+				fail = true;
+				break;
+			}
+		}
+		if (fail)
+			continue;
+		
+		if (!mpz_probab_prime_p(p, 1))
+			continue;
+		
+		if (!mpz_probab_prime_p(q, mr_iterations))
+			continue;
+		
+		if (mpz_probab_prime_p(p, mr_iterations - 1))
+			break;
+	}
+	
+	if (!mpz_probab_prime_p(p, mr_iterations) ||
+		!mpz_probab_prime_p(q, mr_iterations))
+	{
+		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); /* indicates an error */
+	}
+}
+
+// A non-incremental generator for safe primes (slow for $\log_2 p \ge 1024$)
+
+void tmcg_mpz_sprime_test_noninc
+	(mpz_ptr p, mpz_ptr q,
+	 const unsigned long int qsize,
+	 int (*test)(mpz_ptr, mpz_ptr),
+	 const unsigned long int mr_iterations)
+{
+	while (1)
+	{
+		/* Choose randomly an odd number $q$ of appropriate size. */
+		do
+			tmcg_mpz_srandomb(q, qsize);
+		while ((mpz_sizeinbase(q, 2L) < qsize) || (mpz_even_p(q)));
+
+		/* Compute $p = 2q + 1$. */
+		mpz_mul_2exp(p, q, 1L);
+		mpz_add_ui(p, p, 1L);
+		
+		/* Additional tests? */
+		if (!test(p, q))
+			continue;
+		
+		/* Check whether either $q$ or $p$ are not divisable by any primes up
+		   to some bound $B$. (We use the bound $B = 5000$ here.) */
 		bool fail = false;
 		for (size_t i = 0; i < PRIMES_SIZE; i++)
 		{
@@ -453,13 +510,21 @@ void tmcg_mpz_sprime_naive
 	tmcg_mpz_sprime_test_naive(p, q, qsize, notest, mr_iterations);
 }
 
+void tmcg_mpz_sprime_noninc
+	(mpz_ptr p, mpz_ptr q,
+	 const unsigned long int qsize, 
+	 const unsigned long int mr_iterations)
+{
+	tmcg_mpz_sprime_test_noninc(p, q, qsize, notest, mr_iterations);
+}
+
 void tmcg_mpz_sprime2g
 	(mpz_ptr p, mpz_ptr q,
 	 const unsigned long int qsize, 
 	 const unsigned long int mr_iterations)
 {
-	/* The additional test is e.g. necessary, if we want 2 as generator
-	   of $\mathbb{QR}_p$. If $p$ is congruent 7 modulo 8, then 2 is a
+	/* The additional test is required, if we want 2 as generator of
+	   $\mathbb{QR}_p$. If $p$ is congruent 7 modulo 8, then 2 is a
 	   quadratic residue and hence it will generate the cyclic subgroup
 	   of prime order $q = (p-1)/2$. [RS00] */
 	tmcg_mpz_sprime_test(p, q, qsize, test7mod8, mr_iterations);
@@ -472,7 +537,7 @@ void tmcg_mpz_sprime3mod4
 {
 	mpz_t q;
 
-	/* This test is necessary, if we want to construct a Blum integer $n$,
+	/* This test is required, if we want to construct a Blum integer $n$,
 	   i.e. a number where both factors are primes congruent 3 modulo 4. */
 	mpz_init(q);
 	tmcg_mpz_sprime_test(p, q, psize - 1L, test3mod4, mr_iterations);
@@ -574,5 +639,20 @@ void tmcg_mpz_oprime
 	/* Add two as long as $p$ is not probable prime. */
 	while (!mpz_probab_prime_p(p, mr_iterations))
 		mpz_add_ui(p, p, 2L);
+}
+
+void tmcg_mpz_oprime_noninc
+	(mpz_ptr p,
+	const unsigned long int psize,
+	const unsigned long int mr_iterations)
+{
+	do
+	{
+		/* Choose randomly an odd number $p$ of appropriate size. */
+		do
+			tmcg_mpz_srandomb(p, psize);
+		while ((mpz_sizeinbase(p, 2L) < psize) || (mpz_even_p(p)));
+	}
+	while (!mpz_probab_prime_p(p, mr_iterations));
 }
 

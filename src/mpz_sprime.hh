@@ -13,7 +13,7 @@
               'Handbook of Applied Cryptography', CRC Press, 1996.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                           2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -45,33 +45,41 @@
 	
 	void tmcg_mpz_sprime
 		(mpz_ptr p, mpz_ptr q,
-		const unsigned long int qsize, 
-		const unsigned long int mr_iterations);
+		 const unsigned long int qsize, 
+		 const unsigned long int mr_iterations);
 	void tmcg_mpz_sprime_naive
 		(mpz_ptr p, mpz_ptr q,
-		const unsigned long int qsize, 
-		const unsigned long int mr_iterations);
+		 const unsigned long int qsize, 
+		 const unsigned long int mr_iterations);
+	void tmcg_mpz_sprime_noninc
+		(mpz_ptr p, mpz_ptr q,
+		 const unsigned long int qsize, 
+		 const unsigned long int mr_iterations);
 	void tmcg_mpz_sprime2g
 		(mpz_ptr p, mpz_ptr q,
-		const unsigned long int qsize, 
-		const unsigned long int mr_iterations);
+		 const unsigned long int qsize, 
+		 const unsigned long int mr_iterations);
 	void tmcg_mpz_sprime3mod4
 		(mpz_ptr p,
-		const unsigned long int psize, 
-		const unsigned long int mr_iterations);
+		 const unsigned long int psize, 
+		 const unsigned long int mr_iterations);
 	void tmcg_mpz_lprime
 		(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
-		const unsigned long int psize,
-		const unsigned long int qsize, 
-		const unsigned long int mr_iterations);
+		 const unsigned long int psize,
+		 const unsigned long int qsize, 
+		 const unsigned long int mr_iterations);
 	void tmcg_mpz_lprime_prefix
 		(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
-		const unsigned long int psize,
-		const unsigned long int qsize, 
-		const unsigned long int mr_iterations);
+		 const unsigned long int psize,
+		 const unsigned long int qsize, 
+		 const unsigned long int mr_iterations);
 	void tmcg_mpz_oprime
 		(mpz_ptr p,
-		const unsigned long int psize, 
-		const unsigned long int mr_iterations);
+		 const unsigned long int psize, 
+		 const unsigned long int mr_iterations);
+	void tmcg_mpz_oprime_noninc
+		(mpz_ptr p,
+		 const unsigned long int psize, 
+		 const unsigned long int mr_iterations);
 #endif
 
