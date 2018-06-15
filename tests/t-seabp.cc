@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -50,234 +50,249 @@ void start_instance
 	(size_t n, size_t t, size_t whoami, bool corrupted, bool someone_corrupted)
 {
 	if ((pid[whoami] = fork()) < 0)
-		perror("t-seabp (fork)");
-	else
 	{
-		if (pid[whoami] == 0)
+		perror("t-seabp (fork)");
+		return;
+	}
+	if (pid[whoami] != 0)
+	{
+		std::cout << "fork() = " << pid[whoami] << std::endl;
+		return;
+	}
+	/* BEGIN child code: participant P_i */
+			
+	// create pipe streams and handles between all players
+	std::vector<int> bP_in, bP_out;
+	std::vector<std::string> bP_key;
+	for (size_t i = 0; i < n; i++)
+	{
+		std::stringstream key;
+		key << "t-seabp::P_" << (i + whoami);
+		bP_in.push_back(broadcast_pipefd[i][whoami][0]);
+		bP_out.push_back(broadcast_pipefd[whoami][i][1]);
+		bP_key.push_back(key.str());
+	}	
+
+	// create asynchronous authenticated broadcast channels
+	aiounicast_select *aiou = new aiounicast_select(n, whoami,
+		bP_in, bP_out, bP_key,
+		aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+			
+	// create an instance of a reliable broadcast protocol (RBC)
+	std::string myID = "t-seabp";
+	CachinKursawePetzoldShoupRBC *rbc =	new CachinKursawePetzoldShoupRBC(n, t,
+		whoami, aiou,
+		aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+	rbc->setID(myID);
+			
+	// round 1 -- broadcast
+	mpz_t a;
+	mpz_init_set_ui(a, whoami);
+	rbc->Broadcast(a, corrupted);
+
+	// round 1 -- deliver
+	start_clock();
+	std::cout << "P_" << whoami << ": rbc.DeliverFrom()" << std::endl;
+	for (size_t i = 0; i < n; i++)
+	{
+		if (someone_corrupted)
 		{
-			/* BEGIN child code: participant P_i */
-			
-			// create pipe streams and handles between all players
-			std::vector<int> bP_in, bP_out;
-			std::vector<std::string> bP_key;
-			for (size_t i = 0; i < n; i++)
+			if (rbc->DeliverFrom(a, i))
 			{
-				std::stringstream key;
-				key << "t-seabp::P_" << (i + whoami);
-				bP_in.push_back(broadcast_pipefd[i][whoami][0]);
-				bP_out.push_back(broadcast_pipefd[whoami][i][1]);
-				bP_key.push_back(key.str());
-			}	
-
-			// create asynchronous authenticated broadcast channels
-			aiounicast_select *aiou = new aiounicast_select(n, whoami, bP_in, bP_out, bP_key,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
-			
-			// create an instance of a reliable broadcast protocol (RBC)
-			std::string myID = "t-seabp";
-			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(n, t, whoami, aiou,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
-			rbc->setID(myID);
-			
-			// round 1 -- broadcast
-			mpz_t a;
-			mpz_init_set_ui(a, whoami);
-			rbc->Broadcast(a, corrupted);
-
-			// round 1 -- deliver
-			start_clock();
-			std::cout << "P_" << whoami << ": rbc.DeliverFrom()" << std::endl;
-			for (size_t i = 0; i < n; i++)
-			{
-				if (someone_corrupted)
-				{
-					if (rbc->DeliverFrom(a, i))
-					{
-						std::cout << "P_" << whoami << ": a = " << a << " from " << i << std::endl;
-						if (i < (n - t))
-							assert(!mpz_cmp_ui(a, i));
-						else if (mpz_cmp_ui(a, i))
-							std::cout << "P_" << whoami << ": got wrong value from " << i << std::endl;
-					}
-					else
-					{
-						std::cout << "P_" << whoami << ": got nothing from " << i << std::endl;
-						assert(i >= (n - t));
-					}
-				}
-				else
-				{
-					assert(rbc->DeliverFrom(a, i));
+				std::cout << "P_" << whoami << ": a = " << a << " from " <<
+					i << std::endl;
+				if (i < (n - t))
 					assert(!mpz_cmp_ui(a, i));
-				}
+				else if (mpz_cmp_ui(a, i))
+					std::cout << "P_" << whoami << ": got wrong value from " <<
+						i << std::endl;
 			}
-			stop_clock();
-			mpz_clear(a);
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-
-			// switch to subprotocol
-			myID = "t-seabp::subprotocol";
-			rbc->setID(myID);
-			
-			// round 1a -- broadcast again
-			mpz_init_set_ui(a, whoami);
-			rbc->Broadcast(a, corrupted);
-
-			// round 1a -- deliver again
-			start_clock();
-			std::cout << "P_" << whoami << ": rbc.DeliverFrom() inside subprotocol" << std::endl;
-			for (size_t i = 0; i < n; i++)
-			{
-				if (someone_corrupted)
-				{
-					if (rbc->DeliverFrom(a, i))
-					{
-						std::cout << "P_" << whoami << ": a = " << a << " from " << i << " inside subprotocol" << std::endl;
-						if (i < (n - t))
-							assert(!mpz_cmp_ui(a, i));
-						else if (mpz_cmp_ui(a, i))
-							std::cout << "P_" << whoami << ": got wrong value from " << i << std::endl;
-					}
-					else
-					{
-						std::cout << "P_" << whoami << ": got nothing from " << i << " inside subprotocol" << std::endl;
-						assert(i >= (n - t));
-					}
-				}
-				else
-				{
-					assert(rbc->DeliverFrom(a, i));
-					assert(!mpz_cmp_ui(a, i));
-				}
-			}
-			stop_clock();
-			mpz_clear(a);
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-
-			// round 1b -- broadcast again
-			mpz_init_set_ui(a, 42 * whoami);
-			rbc->Broadcast(a, corrupted);
-
-			// switch to further subprotocol
-			myID = "t-seabp::subprotocol::subprotocol";
-			rbc->setID(myID);
-
-			// round 1b(i) -- deliver nothing
-			std::cout << "P_" << whoami << ": !rbc.DeliverFrom() inside further subprotocol" << std::endl;
-			for (size_t i = 0; i < n; i++)
-			{
-				if (someone_corrupted)
-				{
-					if (rbc->DeliverFrom(a, i))
-					{
-						std::cout << "P_" << whoami << ": a = " << a << " from " << i <<
-							" inside further subprotocol" << std::endl;
-						assert(i >= (n - t));
-					}
-				}
-				else
-					assert(!rbc->DeliverFrom(a, i));
-			}
-
-			// switch back to subprotocol
-			rbc->unsetID();
-
-			// round 1b -- deliver again
-			start_clock();
-			std::cout << "P_" << whoami << ": rbc.DeliverFrom() inside subprotocol" << std::endl;
-			for (size_t i = 0; i < n; i++)
-			{
-				if (someone_corrupted)
-				{
-					if (rbc->DeliverFrom(a, i))
-					{
-						std::cout << "P_" << whoami << ": a = " << a << " from " << i << " inside subprotocol" << std::endl;
-						if (i < (n - t))
-							assert(!mpz_cmp_ui(a, 42 * i));
-						else if (mpz_cmp_ui(a, 42 * i))
-							std::cout << "P_" << whoami << ": got wrong value from " << i << std::endl;
-					}
-					else
-					{
-						std::cout << "P_" << whoami << ": got nothing from " << i << " inside subprotocol" << std::endl;
-						assert(i >= (n - t));
-					}
-				}
-				else
-				{
-					assert(rbc->DeliverFrom(a, i));
-					assert(!mpz_cmp_ui(a, 42 * i));
-				}
-			}
-			stop_clock();
-			mpz_clear(a);
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-
-			// switch back to main protocol
-			rbc->unsetID();
-			
-			// round 2 -- broadcast again
-			mpz_init_set_ui(a, whoami);
-			rbc->Broadcast(a, corrupted);
-
-			// round 2 -- deliver again
-			start_clock();
-			std::cout << "P_" << whoami << ": rbc.DeliverFrom()" << std::endl;
-			for (size_t i = 0; i < n; i++)
-			{
-				if (someone_corrupted)
-				{
-					if (rbc->DeliverFrom(a, i))
-					{
-						std::cout << "P_" << whoami << ": a = " << a << " from " << i << std::endl;
-						if (i < (n - t))
-							assert(!mpz_cmp_ui(a, i));
-						else if (mpz_cmp_ui(a, i))
-							std::cout << "P_" << whoami << ": got wrong value from " << i << std::endl;
-					}
-					else
-					{
-						std::cout << "P_" << whoami << ": got nothing from " << i << std::endl;
-						assert(i >= (n - t));
-					}
-				}
-				else
-				{
-					assert(rbc->DeliverFrom(a, i));
-					assert(!mpz_cmp_ui(a, i));
-				}
-			}
-			stop_clock();
-			mpz_clear(a);
-			std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			
-			// at the end: test sync for waiting parties
-			std::cout << "P_" << whoami << ": sleeping " << whoami << " seconds ..." << std::endl;
-			sleep(whoami);
-			std::cout << "P_" << whoami << ": synchronizing ..." << std::endl;
-			if (!corrupted)
-				assert(rbc->Sync());
 			else
-				rbc->Sync();
-			
-			// release RBC			
-			delete rbc;
-
-			// release handles (broadcast channel)
-			bP_in.clear(), bP_out.clear(), bP_key.clear();
-			std::cout << "P_" << whoami << ": aiou.numRead = " << aiou->numRead <<
-				" aiou.numWrite = " << aiou->numWrite << std::endl;
-
-			// release asynchronous broadcast
-			delete aiou;
-			
-			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
-			exit(0);
-			/* END child code: participant P_i */
+			{
+				std::cout << "P_" << whoami << ": got nothing from " <<	
+					i << std::endl;
+				assert(i >= (n - t));
+			}
 		}
 		else
-			std::cout << "fork() = " << pid[whoami] << std::endl;
+		{
+			assert(rbc->DeliverFrom(a, i));
+			assert(!mpz_cmp_ui(a, i));
+		}
 	}
+	stop_clock();
+	mpz_clear(a);
+	std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+
+	// switch to subprotocol
+	myID = "t-seabp::subprotocol";
+	rbc->setID(myID);
+			
+	// round 1a -- broadcast again
+	mpz_init_set_ui(a, whoami);
+	rbc->Broadcast(a, corrupted);
+
+	// round 1a -- deliver again
+	start_clock();
+	std::cout << "P_" << whoami << ": rbc.DeliverFrom() inside subprotocol" <<
+		std::endl;
+	for (size_t i = 0; i < n; i++)
+	{
+		if (someone_corrupted)
+		{
+			if (rbc->DeliverFrom(a, i))
+			{
+				std::cout << "P_" << whoami << ": a = " << a << " from " <<
+					i << " inside subprotocol" << std::endl;
+				if (i < (n - t))
+					assert(!mpz_cmp_ui(a, i));
+				else if (mpz_cmp_ui(a, i))
+					std::cout << "P_" << whoami << ": got wrong value from " <<
+						i << std::endl;
+			}
+			else
+			{
+				std::cout << "P_" << whoami << ": got nothing from " <<
+					i << " inside subprotocol" << std::endl;
+				assert(i >= (n - t));
+			}
+		}
+		else
+		{
+			assert(rbc->DeliverFrom(a, i));
+			assert(!mpz_cmp_ui(a, i));
+		}
+	}
+	stop_clock();
+	mpz_clear(a);
+	std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+
+	// round 1b -- broadcast again
+	mpz_init_set_ui(a, 42 * whoami);
+	rbc->Broadcast(a, corrupted);
+
+	// switch to further subprotocol
+	myID = "t-seabp::subprotocol::subprotocol";
+	rbc->setID(myID);
+
+	// round 1b(i) -- deliver nothing
+	std::cout << "P_" << whoami << ": !rbc.DeliverFrom() inside further" <<
+		" subprotocol" << std::endl;
+	for (size_t i = 0; i < n; i++)
+	{
+		if (someone_corrupted)
+		{
+			if (rbc->DeliverFrom(a, i))
+			{
+				std::cout << "P_" << whoami << ": a = " << a << " from " <<
+					i << " inside further subprotocol" << std::endl;
+				assert(i >= (n - t));
+			}
+		}
+		else
+			assert(!rbc->DeliverFrom(a, i));
+	}
+
+	// switch back to subprotocol
+	rbc->unsetID();
+
+	// round 1b -- deliver again
+	start_clock();
+	std::cout << "P_" << whoami << ": rbc.DeliverFrom() inside subprotocol" <<
+		std::endl;
+	for (size_t i = 0; i < n; i++)
+	{
+		if (someone_corrupted)
+		{
+			if (rbc->DeliverFrom(a, i))
+			{
+				std::cout << "P_" << whoami << ": a = " << a << " from " <<
+					i << " inside subprotocol" << std::endl;
+				if (i < (n - t))
+					assert(!mpz_cmp_ui(a, 42 * i));
+				else if (mpz_cmp_ui(a, 42 * i))
+					std::cout << "P_" << whoami << ": got wrong value from " <<
+						i << std::endl;
+			}
+			else
+			{
+				std::cout << "P_" << whoami << ": got nothing from " <<
+					i << " inside subprotocol" << std::endl;
+				assert(i >= (n - t));
+			}
+		}
+		else
+		{
+			assert(rbc->DeliverFrom(a, i));
+			assert(!mpz_cmp_ui(a, 42 * i));
+		}
+	}
+	stop_clock();
+	mpz_clear(a);
+	std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+
+	// switch back to main protocol
+	rbc->unsetID();
+			
+	// round 2 -- broadcast again
+	mpz_init_set_ui(a, whoami);
+	rbc->Broadcast(a, corrupted);
+
+	// round 2 -- deliver again
+	start_clock();
+	std::cout << "P_" << whoami << ": rbc.DeliverFrom()" << std::endl;
+	for (size_t i = 0; i < n; i++)
+	{
+		if (someone_corrupted)
+		{
+			if (rbc->DeliverFrom(a, i))
+			{
+				std::cout << "P_" << whoami << ": a = " << a << " from " <<
+					i << std::endl;
+				if (i < (n - t))
+					assert(!mpz_cmp_ui(a, i));
+				else if (mpz_cmp_ui(a, i))
+					std::cout << "P_" << whoami << ": got wrong value from " <<
+						i << std::endl;
+			}
+			else
+			{
+				std::cout << "P_" << whoami << ": got nothing from " <<
+					i << std::endl;
+				assert(i >= (n - t));
+			}
+		}
+		else
+		{
+			assert(rbc->DeliverFrom(a, i));
+			assert(!mpz_cmp_ui(a, i));
+		}
+	}
+	stop_clock();
+	mpz_clear(a);
+	std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+			
+	// at the end: test sync for waiting parties
+	std::cout << "P_" << whoami << ": sleeping " << whoami << " seconds ..." <<
+		std::endl;
+	sleep(whoami);
+	std::cout << "P_" << whoami << ": synchronizing ..." << std::endl;
+	if (!corrupted)
+		assert(rbc->Sync());
+	else
+		rbc->Sync();
+			
+	// release RBC			
+	delete rbc;
+
+	// release handles and asynchronous broadcast channels
+	bP_in.clear(), bP_out.clear(), bP_key.clear();
+	aiou->PrintStatistics(std::cout);
+	delete aiou;
+			
+	std::cout << "P_" << whoami << ": exit(0)" << std::endl;
+	exit(0);
+	/* END child code: participant P_i */
 }
 
 void init
@@ -309,15 +324,19 @@ bool done
 		{
 			std::cerr << "ERROR: ";
 			if (WIFSIGNALED(wstatus))
-				std::cerr << pid[i] << " terminated by signal " << WTERMSIG(wstatus) << std::endl;
+				std::cerr << pid[i] << " terminated by signal " <<
+					WTERMSIG(wstatus) << std::endl;
 			if (WCOREDUMP(wstatus))
 				std::cerr << pid[i] << " dumped core" << std::endl;
 			result = false;
 		}
 		for (size_t j = 0; j < num; j++)
 		{
-			if ((close(broadcast_pipefd[i][j][0]) < 0) || (close(broadcast_pipefd[i][j][1]) < 0))
+			if ((close(broadcast_pipefd[i][j][0]) < 0) ||
+				(close(broadcast_pipefd[i][j][1]) < 0))
+			{
 				perror("t-seabp (close)");
+			}
 		}
 	}
 	return result;
