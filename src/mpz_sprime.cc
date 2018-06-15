@@ -310,7 +310,7 @@ void tmcg_mpz_sprime_test
 			/* Check whether R_q[i] or R_p[i] is zero. We cannot break this
 			   loop, because we have to update the sieves completely for the
 			   next round. */
-			if (!(R_q[i] && R_p[i]))
+			if ((R_q[i] == 0) || (R_p[i] == 0))
 				fail = true;
 		}
 		if (fail)
