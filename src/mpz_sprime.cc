@@ -13,7 +13,7 @@
               'Handbook of Applied Cryptography', CRC Press, 1996.
 
  Copyright (C) 2004, 2005, 2006, 
-                           2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -221,25 +221,23 @@ int tmcg_mpz_mr_witness
 {
 	int result = 1;
 	mpz_t y, r, nm1;
-	unsigned long int s;
-	
+
 	mpz_init(y), mpz_init(nm1), mpz_init(r);
 	
-	/* 1. Write $\mathtt{n} - 1 = 2^s r$ such that $r$ is odd. */
+	// 1. Write $\mathtt{n} - 1 = 2^s r$ such that $r$ is odd.
 	mpz_sub_ui(nm1, n, 1L);
-	s = mpz_scan1(nm1, 0L);
+	unsigned long int s = mpz_scan1(nm1, 0L);
 	mpz_tdiv_q_2exp(r, nm1, s);
 	if (mpz_odd_p(r))
 	{
-		/* 2.2 Compute $y = \mathtt{base}^r \bmod \mathtt{n}$. */
+		// 2.2 Compute $y = \mathtt{base}^r \bmod \mathtt{n}$.
 		mpz_powm(y, base, r, n);
 		result = 0;
 		
-		/* 2.3 If $y \neq 1$ and $y \neq \mathtt{n} - 1$ then do the following: */
+		// 2.3 If $y \neq 1$ and $y \neq \mathtt{n} - 1$ then do the following:
 		if ((mpz_cmp_ui(y, 1L) != 0) && (mpz_cmp(y, nm1) != 0))
 		{
-			unsigned long int j;
-			for (j = 1; j < s; j++)
+			for (unsigned long int j = 1; j < s; j++)
 			{
 				mpz_mul(y, y, y);
 				mpz_mod(y, y, n);
@@ -251,7 +249,7 @@ int tmcg_mpz_mr_witness
 				if (mpz_cmp(y, nm1) == 0)
 					break;
 			}
-			/* strong witness? */
+			// strong witness?
 			if (mpz_cmp(y, nm1) != 0)
 				result = 1;
 		}
@@ -266,12 +264,11 @@ int tmcg_mpz_mr_witness
 
 void tmcg_mpz_sprime_test
 	(mpz_ptr p, mpz_ptr q,
-	const unsigned long int qsize,
-	int (*test)(mpz_ptr, mpz_ptr),
-	const unsigned long int mr_iterations)
+	 const unsigned long int qsize,
+	 int (*test)(mpz_ptr, mpz_ptr),
+	 const unsigned long int mr_iterations)
 {
 	unsigned long int R_q[SIEVE_SIZE], R_p[SIEVE_SIZE];
-	size_t i = 0, fail = 0;
 	mpz_t tmp, y, pm1, a;
 	
 	mpz_init(tmp), mpz_init(y), mpz_init(pm1), mpz_init_set_ui(a, 2L);
@@ -285,7 +282,7 @@ void tmcg_mpz_sprime_test
 	mpz_mul_2exp(pm1, q, 1L), mpz_add_ui(p, pm1, 1L);
 	
 	/* Initalize the sieves for testing divisability by small primes. */
-	for (i = 0; i < SIEVE_SIZE; i++)
+	for (size_t i = 0; i < SIEVE_SIZE; i++)
 	{
 		mpz_set_ui(tmp, primes[i]);
 		/* R_q[i] = q mod primes[i] */
@@ -305,14 +302,16 @@ void tmcg_mpz_sprime_test
 		mpz_add_ui(p, p, 4L), mpz_add_ui(pm1, pm1, 4L);
 		
 		/* Use the sieve optimization procedure of Note 4.51(ii) [HAC]. */
-		for (i = 0, fail = 0; i < SIEVE_SIZE; i++)
+		bool fail = false;
+		for (size_t i = 0; i < SIEVE_SIZE; i++)
 		{
 			/* Update the sieves. */
 			R_q[i] += 2, R_q[i] %= primes[i], R_p[i] += 4, R_p[i] %= primes[i];
-			/* Check whether R_q[i] or R_p[i] is zero. We cannot break this loop,
-			   because we have to update our sieves completely for the next try. */
+			/* Check whether R_q[i] or R_p[i] is zero. We cannot break this
+			   loop, because we have to update the sieves completely for the
+			   next round. */
 			if (!(R_q[i] && R_p[i]))
-				fail = 1;
+				fail = true;
 		}
 		if (fail)
 			continue;
@@ -322,18 +321,24 @@ void tmcg_mpz_sprime_test
 			continue;
 		
 		/* Step 2. [CS00]: M.J. Wiener's "Combined Sieve"
-		   Test whether either $q$ or $p$ are not divisable by any primes up to
-		   some bound $B$. (We use the bound $B = 5000$ here.) */
-		for (i = 0; i < PRIMES_SIZE; i++)
+		   Test whether either $q$ or $p$ are not divisable by any primes up
+		   to some bound $B$. (We use the bound $B = 5000$ here.) */
+		for (size_t i = 0; i < PRIMES_SIZE; i++)
 		{
 			if (mpz_congruent_ui_p(q, primes_m1d2[i], primes[i]) ||
 				mpz_congruent_ui_p(p, primes_m1d2[i], primes[i]))
-					break;
+			{
+				fail = true;
+				break;
+			}
 			if (i >= SIEVE_SIZE)
 			{
 				if (mpz_congruent_ui_p(q, 0L, primes[i]) ||
 					mpz_congruent_ui_p(p, 0L, primes[i]))
-						break;
+				{
+					fail = true;
+					break;
+				}
 			}
 			else
 			{
@@ -341,7 +346,7 @@ void tmcg_mpz_sprime_test
 				assert(!mpz_congruent_ui_p(p, 0L, primes[i]));
 			}
 		}
-		if (i < PRIMES_SIZE)
+		if (fail)
 			continue;
 		
 		/* Optimization: do a single test for $q$ first */
@@ -366,20 +371,21 @@ void tmcg_mpz_sprime_test
 	}
 	mpz_clear(tmp), mpz_clear(y), mpz_clear(pm1), mpz_clear(a);
 	
-	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
+	if (!mpz_probab_prime_p(p, mr_iterations) ||
+		!mpz_probab_prime_p(q, mr_iterations))
+	{
 		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); /* indicates an error */
+	}
 }
 
 /** A naive generator for safe primes (slow for $\log_2 p \ge 1024$). */
 
 void tmcg_mpz_sprime_test_naive
 	(mpz_ptr p, mpz_ptr q,
-	const unsigned long int qsize,
-	int (*test)(mpz_ptr, mpz_ptr),
-	const unsigned long int mr_iterations)
+	 const unsigned long int qsize,
+	 int (*test)(mpz_ptr, mpz_ptr),
+	 const unsigned long int mr_iterations)
 {
-	size_t i = 0;
-	
 	/* Choose randomly an odd number $q$ of appropriate size. */
 	do
 		tmcg_mpz_srandomb(q, qsize);
@@ -399,15 +405,19 @@ void tmcg_mpz_sprime_test_naive
 		
 		/* Check whether either $q$ or $p$ are not divisable by any primes up to
 		   some bound $B$. (We use the bound $B = 5000$ here.) */
-		for (i = 0; i < PRIMES_SIZE; i++)
+		bool fail = false;
+		for (size_t i = 0; i < PRIMES_SIZE; i++)
 		{
 			if (mpz_congruent_ui_p(q, primes_m1d2[i], primes[i]) ||
 				mpz_congruent_ui_p(p, primes_m1d2[i], primes[i]) ||
 				mpz_congruent_ui_p(q, 0L, primes[i]) ||
 				mpz_congruent_ui_p(p, 0L, primes[i]))
-					break;
+			{
+				fail = true;
+				break;
+			}
 		}
-		if (i < PRIMES_SIZE)
+		if (fail)
 			continue;
 		
 		if (!mpz_probab_prime_p(p, 1))
@@ -420,30 +430,33 @@ void tmcg_mpz_sprime_test_naive
 			break;
 	}
 	
-	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
+	if (!mpz_probab_prime_p(p, mr_iterations) ||
+		!mpz_probab_prime_p(q, mr_iterations))
+	{
 		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); /* indicates an error */
+	}
 }
 
 void tmcg_mpz_sprime
 	(mpz_ptr p, mpz_ptr q,
-	const unsigned long int qsize, 
-	const unsigned long int mr_iterations)
+	 const unsigned long int qsize, 
+	 const unsigned long int mr_iterations)
 {
 	tmcg_mpz_sprime_test(p, q, qsize, notest, mr_iterations);
 }
 
 void tmcg_mpz_sprime_naive
 	(mpz_ptr p, mpz_ptr q,
-	const unsigned long int qsize, 
-	const unsigned long int mr_iterations)
+	 const unsigned long int qsize, 
+	 const unsigned long int mr_iterations)
 {
 	tmcg_mpz_sprime_test_naive(p, q, qsize, notest, mr_iterations);
 }
 
 void tmcg_mpz_sprime2g
 	(mpz_ptr p, mpz_ptr q,
-	const unsigned long int qsize, 
-	const unsigned long int mr_iterations)
+	 const unsigned long int qsize, 
+	 const unsigned long int mr_iterations)
 {
 	/* The additional test is e.g. necessary, if we want 2 as generator
 	   of $\mathbb{QR}_p$. If $p$ is congruent 7 modulo 8, then 2 is a
@@ -454,8 +467,8 @@ void tmcg_mpz_sprime2g
 
 void tmcg_mpz_sprime3mod4
 	(mpz_ptr p,
-	const unsigned long int psize,
-	const unsigned long int mr_iterations)
+	 const unsigned long int psize,
+	 const unsigned long int mr_iterations)
 {
 	mpz_t q;
 
@@ -468,9 +481,9 @@ void tmcg_mpz_sprime3mod4
 
 void tmcg_mpz_lprime
 	(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
-	const unsigned long int psize,
-	const unsigned long int qsize, 
-	const unsigned long int mr_iterations)
+	 const unsigned long int psize,
+	 const unsigned long int qsize, 
+	 const unsigned long int mr_iterations)
 {
 	mpz_t foo;
 	assert(psize > qsize);
@@ -501,15 +514,18 @@ void tmcg_mpz_lprime
 		!mpz_probab_prime_p(p, mr_iterations));
 	mpz_clear(foo);
 		
-	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
+	if (!mpz_probab_prime_p(p, mr_iterations) ||
+		!mpz_probab_prime_p(q, mr_iterations))
+	{
 		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); /* indicates an error */
+	}
 }
 
 void tmcg_mpz_lprime_prefix
 	(mpz_ptr p, mpz_ptr q, mpz_ptr k, 
-	const unsigned long int psize,
-	const unsigned long int qsize, 
-	const unsigned long int mr_iterations)
+	 const unsigned long int psize,
+	 const unsigned long int qsize, 
+	 const unsigned long int mr_iterations)
 {
 	mpz_t foo;
 	assert(psize > qsize);
@@ -538,8 +554,11 @@ void tmcg_mpz_lprime_prefix
 		!mpz_probab_prime_p(p, mr_iterations));
 	mpz_clear(foo);
 		
-	if (!mpz_probab_prime_p(p, mr_iterations) || !mpz_probab_prime_p(q, mr_iterations))
+	if (!mpz_probab_prime_p(p, mr_iterations) ||
+		!mpz_probab_prime_p(q, mr_iterations))
+	{
 		mpz_set_ui(p, 0L), mpz_set_ui(q, 0L); /* indicates an error */
+	}
 }
 
 void tmcg_mpz_oprime
