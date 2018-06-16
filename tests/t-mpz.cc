@@ -292,7 +292,7 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	std::cout << "tmcg_mpz_lprime()" << std::endl;
 	for (size_t i = 0; i < 5; i++)
 	{
-		tmcg_mpz_lprime(foo, bar, bar2, 1024, 160, TMCG_MR_ITERATIONS);
+		tmcg_mpz_lprime(foo, bar, bar2, 2048, 256, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64) && mpz_probab_prime_p(bar, 64));
 		mpz_mul(foo2, bar, bar2);
 		mpz_add_ui(foo2, foo2, 1L);
@@ -320,23 +320,23 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	// tmcg_mpz_sprime vs. tmcg_mpz_sprime_naive vs. tmcg_mpz_sprime_noninc
 	std::cout << "tmcg_mpz_sprime() benchmark" << std::endl;
 	start_clock();
-	for (size_t i = 0; i < 5; i++)
+	for (size_t i = 0; i < 25; i++)
 		tmcg_mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	std::cout << "tmcg_mpz_sprime_naive() benchmark" << std::endl;
 	start_clock();
-	for (size_t i = 0; i < 5; i++)
+	for (size_t i = 0; i < 25; i++)
 		tmcg_mpz_sprime_naive(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	std::cout << "tmcg_mpz_sprime_noninc() benchmark" << std::endl;
 	start_clock();
-	for (size_t i = 0; i < 5; i++)
+	for (size_t i = 0; i < 25; i++)
 		tmcg_mpz_sprime_noninc(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
-	
+
 	// tmcg_mpz_sqrtmp_r vs. tmcg_mpz_sqrtmp benchmark
 	do
 		tmcg_mpz_oprime(foo, 1024, TMCG_MR_ITERATIONS);
