@@ -1,8 +1,8 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2004, 2007, 2016, 2017,
-                           2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2002, 2004, 2007,
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,28 +18,28 @@
    along with LibTMCG; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-    (tmcg_mpz_sqrtmp_r)     1. square roots mod p, with p prime
+    (tmcg_mpz_sqrtmp_r)  1. square roots mod p, with p prime (randomized)
                           [algorithm of Adleman, Manders, and Miller, 1977]
 
-    (tmcg_mpz_sqrtmp)       1a. square roots mod p, like 1. but non-randomized
+    (tmcg_mpz_sqrtmp)    1a. square roots mod p, like 1. but non-randomized
 
-    (tmcg_mpz_sqrtmp_fast)     faster version, needed some pre-computations
+    (tmcg_mpz_sqrtmp_fast)   faster version, needs some pre-computations
 
-    (tmcg_mpz_sqrtmn_r)     2. square roots mod n, with n = p * q (distinct primes)
+    (tmcg_mpz_sqrtmn_r)  2. square roots mod n, with n = p * q (distinct primes)
 
-    (tmcg_mpz_sqrtmn)       2a. square roots mod n, like 2. but non-randomized
+    (tmcg_mpz_sqrtmn)    2a. square roots mod n, like 2. but non-randomized
 
-    (tmcg_mpz_sqrtmn_r_all)    get all four square roots
+    (tmcg_mpz_sqrtmn_r_all)  get all four square roots (randomized variant)
 
-    (tmcg_mpz_sqrtmn_all)      get all four square roots (non-randomized variant)
+    (tmcg_mpz_sqrtmn_all)    get all four square roots (non-randomized)
 
-    (tmcg_mpz_sqrtmn_fast)     faster version, needed some pre-computations
+    (tmcg_mpz_sqrtmn_fast)   faster version, needed some pre-computations
                           ONLY FOR p, q \cong 3 (mod 4) [n is Blum Integer]
 
     (tmcg_mpz_sqrtmn_fast_all) faster version, get all four square roots
                           ONLY FOR p, q \cong 3 (mod 4) [n is Blum Integer]
 
-    (tmcg_mpz_qrmn_p)       3. quadratic residiosity mod n, with n = p * q
+    (tmcg_mpz_qrmn_p)    3. test quadratic residiosity mod n, with n = p * q
 
 *******************************************************************************/
 
@@ -500,7 +500,7 @@ void tmcg_mpz_sqrtmn
 		mpz_add(root3, root3, root4);
 		mpz_mod(root3, root3, n);
 		tmcg_mpz_sqrtmn_2 (root4, root3, n);
-		/* choose smallest root */
+		/* choose smallest root as result */
 		mpz_set(root, root1);
 		if (mpz_cmpabs(root2, root) < 0)
 			mpz_set(root, root2);
