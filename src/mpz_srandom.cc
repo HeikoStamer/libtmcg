@@ -33,6 +33,14 @@ unsigned long int tmcg_mpz_grandom_ui
 		gcry_create_nonce((unsigned char*)&tmp, sizeof(tmp));
 	else
 		gcry_randomize((unsigned char*)&tmp, sizeof(tmp), level);
+#ifdef BOTAN
+	std::unique_ptr<Botan::RandomNumberGenerator>
+		rng(new Botan::AutoSeeded_RNG);
+	unsigned long int botan_tmp = 0;
+	rng->randomize((uint8_t*)&botan_tmp, sizeof(botan_tmp));
+	if (tmp != botan_tmp)
+		tmp ^= botan_tmp; // XOR both random sources
+#endif
 	return tmp;
 }
 
@@ -75,7 +83,9 @@ unsigned long int tmcg_mpz_wrandom_ui
 unsigned long int tmcg_mpz_ssrandom_mod
 	(const unsigned long int modulo)
 {
-	return tmcg_mpz_grandom_ui_nomodbias(GCRY_VERY_STRONG_RANDOM, modulo) % modulo;
+	unsigned long int t = 0;
+	t = tmcg_mpz_grandom_ui_nomodbias(GCRY_VERY_STRONG_RANDOM, modulo) % modulo;
+	return t;
 }
 
 unsigned long int tmcg_mpz_srandom_mod
@@ -95,7 +105,7 @@ void tmcg_mpz_grandomb
 {
 	unsigned char *rtmp;
 	char htmp[size + 3]; // at least two characters + delimiter
-	size_t hlen;
+	size_t hlen = 0;
 	gcry_mpi_t rr;
 	gcry_error_t ret;
 	assert(size <= UINT_MAX);
@@ -105,7 +115,8 @@ void tmcg_mpz_grandomb
 	ret = gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
 	if (ret)
 	{
-		fprintf(stderr, "tmcg_mpz_grandomb(): gcry_mpi_aprint() failed: %s\n", gcry_strerror(ret));
+		std::cerr << "tmcg_mpz_grandomb(): gcry_mpi_aprint() failed: " <<
+			gcry_strerror(ret) << std::endl;
 		mpz_set_ui(r, 0L); // indicates an error
 	}
 	else
@@ -114,7 +125,58 @@ void tmcg_mpz_grandomb
 		memcpy(htmp, rtmp, hlen);
 		gcry_free(rtmp);
 		mpz_set_str(r, htmp, 16);
-		mpz_tdiv_r_2exp(r, r, size); // r mod 2^size, i.e. shift right and bit mask
+#ifdef BOTAN
+		memset(htmp, 0, size + 3);
+		std::unique_ptr<Botan::RandomNumberGenerator>
+			rng(new Botan::AutoSeeded_RNG);
+		for (size_t i = 0; i < hlen; i++)
+		{
+			uint8_t botan_tmp = 0;
+			rng->randomize((uint8_t*)&botan_tmp, sizeof(botan_tmp));
+			switch (botan_tmp % 16)
+			{
+				case 0:
+					htmp[i] = '0';
+				case 1:
+					htmp[i] = '1';
+				case 2:
+					htmp[i] = '2';
+				case 3:
+					htmp[i] = '3';
+				case 4:
+					htmp[i] = '4';
+				case 5:
+					htmp[i] = '5';
+				case 6:
+					htmp[i] = '6';
+				case 7:
+					htmp[i] = '7';
+				case 8:
+					htmp[i] = '8';
+				case 9:
+					htmp[i] = '9';
+				case 10:
+					htmp[i] = 'a';
+				case 11:
+					htmp[i] = 'b';
+				case 12:
+					htmp[i] = 'c';
+				case 13:
+					htmp[i] = 'd';
+				case 14:
+					htmp[i] = 'e';
+				case 15:
+					htmp[i] = 'f';
+			}
+		}
+		mpz_t rrr;
+		mpz_init(rrr);
+		mpz_set_str(rrr, htmp, 16);
+		mpz_add(r, r, rrr); // ADD number from other random source
+		mpz_clear(rrr);
+#endif
+		// r mod 2^size, i.e. shift right and bit mask
+		mpz_tdiv_r_2exp(r, r, size);
 	}
 	gcry_mpi_release(rr);
 }
@@ -130,7 +192,10 @@ void tmcg_mpz_ssrandomb
 			entropy_avail = 0;
 		fclose(fhd);
 		if (entropy_avail < size)
-			fprintf(stderr, "tmcg_mpz_ssrandomb(): too few entropy (%lu bits) available; blocking\n", entropy_avail);
+		{
+			std::cerr << "tmcg_mpz_ssrandomb(): too few entropy (" <<
+				entropy_avail << " bits) available; blocking" << std::endl;
+		}
 	}
 	tmcg_mpz_grandomb(r, size, GCRY_VERY_STRONG_RANDOM);
 }
@@ -163,7 +228,8 @@ void tmcg_mpz_grandomm
 	ret = gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
 	if (ret)
 	{
-		fprintf(stderr, "tmcg_mpz_grandomm(): gcry_mpi_aprint() failed: %s\n", gcry_strerror(ret));
+		std::cerr << "tmcg_mpz_grandomm(): gcry_mpi_aprint() failed: " <<
+			gcry_strerror(ret) << std::endl;
 		mpz_set_ui(r, 0L); // indicates an error
 	}
 	else
@@ -172,7 +238,57 @@ void tmcg_mpz_grandomm
 		memcpy(htmp, rtmp, hlen);
 		gcry_free(rtmp);
 		mpz_set_str(r, htmp, 16);
-		mpz_mod(r, r, m); // modulo bias is negligible here
+#ifdef BOTAN
+		memset(htmp, 0, size + 3);
+		std::unique_ptr<Botan::RandomNumberGenerator>
+			rng(new Botan::AutoSeeded_RNG);
+		for (size_t i = 0; i < hlen; i++)
+		{
+			uint8_t botan_tmp = 0;
+			rng->randomize((uint8_t*)&botan_tmp, sizeof(botan_tmp));
+			switch (botan_tmp % 16)
+			{
+				case 0:
+					htmp[i] = '0';
+				case 1:
+					htmp[i] = '1';
+				case 2:
+					htmp[i] = '2';
+				case 3:
+					htmp[i] = '3';
+				case 4:
+					htmp[i] = '4';
+				case 5:
+					htmp[i] = '5';
+				case 6:
+					htmp[i] = '6';
+				case 7:
+					htmp[i] = '7';
+				case 8:
+					htmp[i] = '8';
+				case 9:
+					htmp[i] = '9';
+				case 10:
+					htmp[i] = 'a';
+				case 11:
+					htmp[i] = 'b';
+				case 12:
+					htmp[i] = 'c';
+				case 13:
+					htmp[i] = 'd';
+				case 14:
+					htmp[i] = 'e';
+				case 15:
+					htmp[i] = 'f';
+			}
+		}
+		mpz_t rrr;
+		mpz_init(rrr);
+		mpz_set_str(rrr, htmp, 16);
+		mpz_add(r, r, rrr); // ADD number from other random source
+		mpz_clear(rrr);
+#endif
+		mpz_mod(r, r, m); // modulo bias is negligible due to increased size
 	}
 	gcry_mpi_release(rr);
 }
@@ -188,7 +304,10 @@ void tmcg_mpz_ssrandomm
 			entropy_avail = 0;
 		fclose(fhd);
 		if (entropy_avail < mpz_sizeinbase(m, 2L))
-			fprintf(stderr, "tmcg_mpz_ssrandomm(): too few entropy (%lu bits) available; blocking\n", entropy_avail);
+		{
+			std::cerr << "tmcg_mpz_ssrandomm(): too few entropy (" <<
+				entropy_avail << " bits) available; blocking" << std::endl;
+		}
 	}
 	tmcg_mpz_grandomm(r, m, GCRY_VERY_STRONG_RANDOM);
 }

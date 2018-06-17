@@ -17,7 +17,7 @@
      Proceedings of CRYPTO 2001, LNCS 2139, pp. 275--291, 2001.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-               2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -132,7 +132,8 @@ bool TMCG_PublicKey::check
 				if (!mpz_cmp_ui(m, 5L))
 					throw false;
 				
-				// check, whether 5^{2^(k/2)} \equiv -1 (mod m) [Pepin's prime test]
+				// check, whether 5^{2^(k/2)} \equiv -1 (mod m)
+				// [Pepin's prime test]
 				mpz_ui_pow_ui(foo, 2L, (k / 2));
 				mpz_set_ui(bar, 5L);
 				mpz_powm(foo, bar, foo, m);
@@ -160,8 +161,11 @@ bool TMCG_PublicKey::check
 			throw false;
 		char *ec;
 		stage1_size = std::strtoul(size_str.c_str(), &ec, 10);
-		if ((*ec != '\0') || (stage1_size <= 0) || !TMCG_ParseHelper::nx(s, '^'))
+		if ((*ec != '\0') || (stage1_size <= 0) ||
+			!TMCG_ParseHelper::nx(s, '^'))
+		{
 			throw false;
+		}
 		
 		// check security constraint of STAGE1
 		if (stage1_size < TMCG_KEY_NIZK_STAGE1)
@@ -170,10 +174,11 @@ bool TMCG_PublicKey::check
 		// STAGE1: m is Square Free
 		for (size_t i = 0; i < stage1_size; i++)
 		{
-			// common random number foo \in Z^*_m (build from hash function g)
+			// common random number foo \in Z^*_m (from hash function g)
 			do
 			{
-				tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
+				tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(),
+					(input.str()).length());
 				mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 				mpz_mod(foo, foo, m);
 				mpz_gcd(bar, foo, m);
@@ -185,8 +190,11 @@ bool TMCG_PublicKey::check
 			std::string mpz_str;
 			if (!TMCG_ParseHelper::gs(s, '^', mpz_str))
 				throw false;
-			if ((mpz_set_str(bar, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '^'))
+			if ((mpz_set_str(bar, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+				!TMCG_ParseHelper::nx(s, '^'))
+			{
 				throw false;
+			}
 			
 			// check, whether bar^m mod m is equal to foo
 			mpz_powm(bar, bar, m, m);
@@ -198,8 +206,11 @@ bool TMCG_PublicKey::check
 		if (!TMCG_ParseHelper::gs(s, '^', size_str))
 			throw false;
 		stage2_size = std::strtoul(size_str.c_str(), &ec, 10);
-		if ((*ec != '\0') || (stage2_size <= 0) || !TMCG_ParseHelper::nx(s, '^'))
+		if ((*ec != '\0') || (stage2_size <= 0) ||
+			!TMCG_ParseHelper::nx(s, '^'))
+		{
 			throw false;
+		}
 		
 		// check security constraint of STAGE2
 		if (stage2_size < TMCG_KEY_NIZK_STAGE2)
@@ -208,10 +219,11 @@ bool TMCG_PublicKey::check
 		// STAGE2: m is Prime Power Product
 		for (size_t i = 0; i < stage2_size; i++)
 		{
-			// common random number foo \in Z^*_m (build from hash function g)
+			// common random number foo \in Z^*_m (from hash function g)
 			do
 			{
-				tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
+				tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(),
+					(input.str()).length());
 				mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 				mpz_mod(foo, foo, m);
 				mpz_gcd(bar, foo, m);
@@ -223,8 +235,11 @@ bool TMCG_PublicKey::check
 			std::string mpz_str;
 			if (!TMCG_ParseHelper::gs(s, '^', mpz_str))
 				throw false;
-			if ((mpz_set_str(bar, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '^'))
-					throw false;
+			if ((mpz_set_str(bar, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+				!TMCG_ParseHelper::nx(s, '^'))
+			{
+				throw false;
+			}
 			
 			// check, whether bar^2 \equiv +-foo or \equiv +-2foo (mod m)
 			mpz_mul(bar, bar, bar);
@@ -249,8 +264,11 @@ bool TMCG_PublicKey::check
 		if (!TMCG_ParseHelper::gs(s, '^', size_str))
 			throw false;
 		stage3_size = std::strtoul(size_str.c_str(), &ec, 10);
-		if ((*ec != '\0') || (stage3_size <= 0) || !TMCG_ParseHelper::nx(s, '^'))
+		if ((*ec != '\0') || (stage3_size <= 0) ||
+			!TMCG_ParseHelper::nx(s, '^'))
+		{
 			throw false;
+		}
 		
 		// check security constraint of STAGE3
 		if (stage3_size < TMCG_KEY_NIZK_STAGE3)
@@ -259,10 +277,11 @@ bool TMCG_PublicKey::check
 		// STAGE3: y \in NQR^\circ_m
 		for (size_t i = 0; i < stage3_size; i++)
 		{
-			// common random number foo \in Z^\circ_m (build from hash function g)
+			// common random number foo \in Z^\circ_m (from hash function g)
 			do
 			{
-				tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
+				tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(),
+					(input.str()).length());
 				mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 				mpz_mod(foo, foo, m);
 				input << foo;
@@ -273,8 +292,11 @@ bool TMCG_PublicKey::check
 			std::string mpz_str;
 			if (!TMCG_ParseHelper::gs(s, '^', mpz_str))
 				throw false;
-			if ((mpz_set_str(bar, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '^'))
+			if ((mpz_set_str(bar, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+				!TMCG_ParseHelper::nx(s, '^'))
+			{
 				throw false;
+			}
 			
 			// check congruence [Goldwasser-Micali NIZK proof for NQR]
 			mpz_mul(bar, bar, bar);
@@ -313,7 +335,10 @@ std::string TMCG_PublicKey::fingerprint
 	tmcg_h(digest, (unsigned char*)(data.str()).c_str(), (data.str()).length());
 	// convert the digest to a hexadecimal encoded string
 	for (size_t i = 0; i < (hash_size / 2); i++)
-		snprintf(hex_digest + (5 * i), 6, "%02X%02X ", digest[2 * i], digest[(2 * i) + 1]);
+	{
+		snprintf(hex_digest + (5 * i), 6, "%02X%02X ",
+			digest[2 * i], digest[(2 * i) + 1]);
+	}
 	std::string fp_str = hex_digest;
 	// release resources
 	delete [] digest, delete [] hex_digest;
@@ -424,14 +449,20 @@ bool TMCG_PublicKey::import
 		// m
 		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 			throw false;
-		if ((mpz_set_str(m, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((mpz_set_str(m, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		
 		// y
 		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 			throw false;
-		if ((mpz_set_str(y, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((mpz_set_str(y, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		
 		// NIZK
 		if (!TMCG_ParseHelper::gs(s, '|', nizk))
@@ -515,8 +546,11 @@ bool TMCG_PublicKey::verify
 		std::string mpz_str;
 		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 			throw false;
-		if ((mpz_set_str(foo, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((mpz_set_str(foo, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		
 		// verify signature (see PRab [BR96])
 		size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
@@ -529,8 +563,8 @@ bool TMCG_PublicKey::verify
 		mpz_mod(foo, foo, m);
 		unsigned char *w = new unsigned char[mdsize];
 		unsigned char *r = new unsigned char[TMCG_PRAB_K0];
-		unsigned char *gamma = new unsigned char[mnsize - mdsize - TMCG_PRAB_K0];
-		unsigned char *yy = new unsigned char[mnsize + 1024];
+		unsigned char *gamma = new unsigned char[mnsize-mdsize-TMCG_PRAB_K0];
+		unsigned char *yy = new unsigned char[mnsize+1024];
 		size_t cnt = 1;
 		mpz_export(yy, &cnt, -1, mnsize, 1, 0, foo);
 		memcpy(w, yy, mdsize);

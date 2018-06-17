@@ -7,6 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-06-17] mpz_srandom: use additional Botan RNG, if --with-botan given
 * [2018-06-15] mpz_sprime: added non-incremental generator for (safe) primes
 * [2018-06-13] VTMF: incomplete comparison in "check size of $c$" fixed 
 * [2018-06-13] mpz_*: added prefix "tmcg_" to exported library functions

@@ -51,6 +51,10 @@ int main
 	std::cout << "identifier_libTMCG() = " << identifier_libTMCG() << std::endl;
 	std::cout << "gmp_version = " << gmp_version << ", " << 
 		"gcry_check_version() = " << gcry_check_version("0.0.0") << std::endl;
+#ifdef BOTAN
+	std::cout << "Botan::version_string() = " << Botan::version_string() <<
+		std::endl;
+#endif
 	
 	mpz_init(foo), mpz_init(bar), mpz_init(foo2), mpz_init(bar2),
 		mpz_init(root), mpz_init(t1), mpz_init(t2);
@@ -316,7 +320,7 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		tmcg_mpz_oprime_noninc(foo, 1024, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64));
 	}
-
+/*
 	// tmcg_mpz_sprime vs. tmcg_mpz_sprime_naive vs. tmcg_mpz_sprime_noninc
 	std::cout << "tmcg_mpz_sprime() benchmark" << std::endl;
 	start_clock();
@@ -336,7 +340,7 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		tmcg_mpz_sprime_noninc(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
-
+*/
 	// tmcg_mpz_sqrtmp_r vs. tmcg_mpz_sqrtmp benchmark
 	do
 		tmcg_mpz_oprime(foo, 1024, TMCG_MR_ITERATIONS);
@@ -366,7 +370,8 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
 	
-	// tmcg_mpz_spowm, tmcg_mpz_spowm_baseblind, tmcg_mpz_spowm_init, tmcg_mpz_spowm_calc, tmcg_mpz_spowm_clear
+	// tmcg_mpz_spowm, tmcg_mpz_spowm_baseblind,
+	// tmcg_mpz_spowm_init, tmcg_mpz_spowm_calc, tmcg_mpz_spowm_clear
 	std::cout << "tmcg_mpz_spowm()" << std::endl;
 	tmcg_mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	for (size_t i = 0; i < 500; i++)
@@ -403,8 +408,8 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		mpz_powm(bar, bar, bar2, foo);
 		assert(!mpz_cmp(foo2, bar));
 	}
-	std::cout << "tmcg_mpz_spowm_init(), tmcg_mpz_spowm_calc(), tmcg_mpz_spowm_done()" <<
-		std::endl;
+	std::cout << "tmcg_mpz_spowm_init(), tmcg_mpz_spowm_calc()," <<
+		" tmcg_mpz_spowm_done()" << std::endl;
 	for (size_t i = 0; i < 50; i++)
 	{
 		tmcg_mpz_srandomm(bar2, foo);
@@ -419,7 +424,8 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		tmcg_mpz_spowm_clear();
 	}
 	
-	// tmcg_mpz_fpowm_init, tmcg_mpz_fpowm_precompute, tmcg_mpz_f(s)powm, tmcg_mpz_fpowm_done
+	// tmcg_mpz_fpowm_init, tmcg_mpz_fpowm_precompute, tmcg_mpz_f(s)powm,
+	// tmcg_mpz_fpowm_done
 	std::cout << "tmcg_mpz_fpowm_init()" << std::endl;
 	tmcg_mpz_fpowm_init(fpowm_table_1), tmcg_mpz_fpowm_init(fpowm_table_2);
 	std::cout << "tmcg_mpz_fpowm_precompute()" << std::endl;
@@ -573,7 +579,8 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	}
 
 	// tmcg_mpz_get_gcry_mpi, tmcg_mpz_set_gcry_mpi
-	std::cout << "tmcg_mpz_get_gcry_mpi(), tmcg_mpz_set_gcry_mpi()" << std::endl;
+	std::cout << "tmcg_mpz_get_gcry_mpi(), tmcg_mpz_set_gcry_mpi()" <<
+		std::endl;
 	gcry_mpi_t a = gcry_mpi_new(256);
 	tmcg_mpz_wrandomb(foo, 256L);
 	assert(tmcg_mpz_get_gcry_mpi(a, foo));

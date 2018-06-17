@@ -35,6 +35,12 @@
 	// GNU multiple precision library
 	#include <gmp.h>
 
+#ifdef BOTAN
+	// Random number generators from Botan cryptographic library
+	#include <botan/auto_rng.h>
+	#include <botan/rng.h>
+#endif
+
 	unsigned long int tmcg_mpz_ssrandom_ui
 		();
 	unsigned long int tmcg_mpz_srandom_ui

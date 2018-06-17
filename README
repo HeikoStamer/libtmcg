@@ -141,6 +141,12 @@ Requirements
   * GNU info program and utilities (texinfo), version >= 6.0
     https://www.gnu.org/software/texinfo/
 
+  The following libraries are optional (e.g. in order to prevent single
+  point of failures in random number generation or MPI processing):
+
+  * Botan: Crypto and TLS for C++11, version >= 2.x
+    https://botan.randombit.net/
+
   The library was tested (++ successful, -- erroneous) on the following
   platforms with the given compilers, respectively:
 
@@ -160,13 +166,13 @@ Build & Install
     2. make
     3. make install
 
-Bugs, Contribution, GIT
------------------------
+Bugs, Contribution, Source code
+-------------------------------
   Please send detailed bug reports to Heiko Stamer <HeikoStamer@gmx.net>.
   You can get the latest sources from the source repository by using the
   command
 
-    git clone git://git.savannah.nongnu.org/libtmcg.git
+    git clone https://git.savannah.gnu.org/git/libtmcg
 
   The GNU C++ compiler from GCC and the GNU Make program is required.
   Additionally you will need the following free software packages:
