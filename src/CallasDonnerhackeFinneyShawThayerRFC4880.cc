@@ -675,6 +675,9 @@ TMCG_OpenPGP_UserID::TMCG_OpenPGP_UserID
 		valid(false),
 		userid(userid_in)
 {
+	userid_sanitized.resize(userid.size());
+	std::transform(userid.begin(), userid.end(),
+		userid_sanitized.begin(), ClearForbiddenCharacter);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
@@ -2317,7 +2320,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		if (verbose > 1)
 		{
 			std::cerr << "INFO: userid = \"" <<
-				userids[i]->userid << "\"" << std::endl;
+				userids[i]->userid_sanitized << "\"" << std::endl;
 			std::cerr << "INFO: number of selfsigs = " <<
 				userids[i]->selfsigs.size() << std::endl;
 			std::cerr << "INFO: number of revsigs = " <<
@@ -3476,7 +3479,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::Radix64Decode
 	(std::string in, tmcg_openpgp_octets_t &out)
 {
 	// remove all whitespaces, delimiters and other non-radix64 characters
-	in.erase(std::remove_if(in.begin(), in.end(), notRadix64()), in.end());
+	in.erase(std::remove_if(in.begin(), in.end(), NotRadix64), in.end());
 
 	size_t len = in.size();
 	for (size_t j = 0; j < (4 - (len % 4)); j++)

@@ -425,9 +425,19 @@ class TMCG_OpenPGP_Pubkey; // forward declaration
 
 class TMCG_OpenPGP_UserID
 {
+	private:
+		static char ClearForbiddenCharacter
+			(const char c)
+		{
+			if ((c < 0x20) || (c == 0x7F))
+				return ' ';
+			else
+				return c;
+		};
 	public:
 		bool												valid;
 		std::string											userid;
+		std::string											userid_sanitized;
 		tmcg_openpgp_octets_t								packet;
 		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				revsigs;
@@ -899,16 +909,15 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 {
 	private:
 		static size_t tmcg_openpgp_mem_alloc; // memory guard of this class
-		struct notRadix64 {
-			bool operator() (const char c)
+		static bool NotRadix64
+			(const char c)
+		{
+			for (size_t i = 0; i < sizeof(tmcg_openpgp_tRadix64); i++)
 			{
-				for (size_t i = 0; i < sizeof(tmcg_openpgp_tRadix64); i++)
-				{
-					if (c == tmcg_openpgp_tRadix64[i])
-						return false;
-				}
-				return true;
+				if (c == tmcg_openpgp_tRadix64[i])
+					return false;
 			}
+			return true;
 		};
 		static void Release
 			(std::vector<gcry_mpi_t>						&qual,

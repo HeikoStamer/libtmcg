@@ -54,7 +54,8 @@
 	#include "TMCG_SecretKey.hh"
 
 	// FIXME(C++11): move following definitions into class
-	static const std::string tmcg_SELFSIG = "SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG-SELFSIG";
+	static const std::string tmcg_SELFSIG = "SELFSIG-SELFSIG-SELFSIG-SELFSIG-"
+		"SELFSIG-SELFSIG";
 	static const std::string tmcg_ERROR = "ERROR";
 
 struct TMCG_PublicKey
