@@ -320,7 +320,7 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		tmcg_mpz_oprime_noninc(foo, 1024, TMCG_MR_ITERATIONS);
 		assert(mpz_probab_prime_p(foo, 64));
 	}
-/*
+
 	// tmcg_mpz_sprime vs. tmcg_mpz_sprime_naive vs. tmcg_mpz_sprime_noninc
 	std::cout << "tmcg_mpz_sprime() benchmark" << std::endl;
 	start_clock();
@@ -340,7 +340,7 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		tmcg_mpz_sprime_noninc(foo, bar, 1024, TMCG_MR_ITERATIONS);
 	stop_clock();
 	std::cout << elapsed_time() << std::endl;
-*/
+
 	// tmcg_mpz_sqrtmp_r vs. tmcg_mpz_sqrtmp benchmark
 	do
 		tmcg_mpz_oprime(foo, 1024, TMCG_MR_ITERATIONS);

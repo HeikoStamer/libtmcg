@@ -141,8 +141,8 @@ Requirements
   * GNU info program and utilities (texinfo), version >= 6.0
     https://www.gnu.org/software/texinfo/
 
-  The following libraries are optional (e.g. in order to prevent single
-  point of failures in random number generation or MPI processing):
+  The following libraries are optional (however, they are helpful in order to
+  prevent single point of failures e.g. in random number generation):
 
   * Botan: Crypto and TLS for C++11, version >= 2.x
     https://botan.randombit.net/
