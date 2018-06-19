@@ -307,8 +307,8 @@ int main
 {
 	assert(init_libTMCG());
 
-	BarnettSmartVTMF_dlog 	*vtmf;
-	std::stringstream 	crs;
+	BarnettSmartVTMF_dlog *vtmf;
+	std::stringstream crs;
 
 	// create and check VTMF instance
 	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
@@ -322,6 +322,9 @@ int main
 	// publish VTMF instance as string stream (common reference string)
 	std::cout << "vtmf.PublishGroup(crs)" << std::endl;
 	vtmf->PublishGroup(crs);
+
+	// release VTMF instance
+	delete vtmf;
 	
 	// test case #1: all correct
 	init();
@@ -329,7 +332,7 @@ int main
 		start_instance(crs, i, false);
 	if (!done())
 		return 1;
-	
+/*	
 	// test case #2: two corrupted parties
 	init();
 	for (size_t i = 0; i < N; i++)
@@ -341,9 +344,7 @@ int main
 	}
 	if (!done())
 		return 1;
-	
-	// release VTMF instance
-	delete vtmf;
+*/
 	
 	return 0;
 }
