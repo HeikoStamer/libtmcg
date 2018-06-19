@@ -1103,6 +1103,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static bool HashComputeFile
 			(const tmcg_openpgp_hashalgo_t					algo,
 			 const std::string								&filename,
+			 const bool										text,
 			 const tmcg_openpgp_octets_t					&trailer,
 			 tmcg_openpgp_octets_t							&out);
 		static void S2KCompute
@@ -1365,6 +1366,18 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_octets_t							&hash,
 			 tmcg_openpgp_octets_t							&left);
 		static bool BinaryDocumentHash
+			(const std::string								&filename,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
+		static bool TextDocumentHashV3
+			(const std::string								&filename,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
+		static bool TextDocumentHash
 			(const std::string								&filename,
 			 const tmcg_openpgp_octets_t					&trailer,
 			 const tmcg_openpgp_hashalgo_t					hashalgo,
