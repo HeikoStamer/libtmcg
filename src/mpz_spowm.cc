@@ -111,7 +111,8 @@ void tmcg_mpz_spowm
 	mpz_set_ui(res, 0L); /* indicates an error */
 	if (!mpz_odd_p(p))
 		return;
-	mpz_init(foo), mpz_init_set_si(bar, -1L), mpz_init(baz), mpz_init_set(xx, x);
+	mpz_init(foo), mpz_init_set_si(bar, -1L), mpz_init(baz);
+	mpz_init_set(xx, x);
 	int sign = mpz_sgn(x);
 	if (sign == -1)
 		mpz_neg(xx, xx);
@@ -123,7 +124,10 @@ void tmcg_mpz_spowm
 	mpz_powm_sec(baz, m, xx, p);
 	/* compute the inverse of result */
 	if (!mpz_invert(foo, baz, p))
+	{
 		mpz_set_ui(foo, 0L); /* indicates an error */
+		// FIXME: throw an exception
+	}
 	/* invert the input, if x was negative */
 	if (sign == -1)
 		mpz_add(res, res, foo);
@@ -136,19 +140,28 @@ void tmcg_mpz_spowm
 	mpz_mul(res, res, foo);
 	mpz_mod(res, res, p);
 	if (!mpz_invert(xx, foo, p))
+	{
 		mpz_set_ui(res, 0L); /* indicates an error */
+		// FIXME: throw an exception
+	}
 	mpz_mul(res, res, xx); /* res = res * foo * foo^{-1} mod p */
 	mpz_mod(res, res, p);
 	mpz_mul(res, res, bar);
 	mpz_mod(res, res, p);
 	if (!mpz_invert(xx, bar, p))
+	{
 		mpz_set_ui(res, 0L); /* indicates an error */
+		// FIXME: throw an exception
+	}
 	mpz_mul(res, res, xx); /* res = res * bar * bar^{-1} mod p */
 	mpz_mod(res, res, p);
 	mpz_mul(res, res, baz);
 	mpz_mod(res, res, p);
 	if (!mpz_invert(xx, baz, p))
+	{
 		mpz_set_ui(res, 0L); /* indicates an error */
+		// FIXME: throw an exception
+	}
 	mpz_mul(res, res, xx); /* res = res * baz * baz^{-1} mod p */
 	mpz_mod(res, res, p);
 	mpz_clear(foo), mpz_clear(bar), mpz_clear(baz), mpz_clear(xx);
@@ -203,11 +216,19 @@ void tmcg_mpz_fpowm
 		if (mpz_sgn(x) == -1)
 		{
 			if (!mpz_invert(res, res, p))
+			{
 				mpz_set_ui(res, 0L); /* indicates an error */
+			// FIXME: throw an exception
+			}
 		}
 	}
 	else
+	{
+		std::cerr << "ERROR: exponent too large in tmcg_mpz_fpowm()" <<
+			std::endl;
 		mpz_set_ui(res, 0L); /* indicates an error */
+		// FIXME: throw an exception
+	}
 	mpz_clear(xx);
 }
 
@@ -231,7 +252,12 @@ void tmcg_mpz_fpowm_ui
 		}
 	}
 	else
+	{
+		std::cerr << "ERROR: exponent too large in tmcg_mpz_fpowm_ui()" <<
+			std::endl;
 		mpz_set_ui(res, 0L); /* indicates an error */
+		// FIXME: throw an exception
+	}
 	mpz_clear(x);
 }
 
@@ -246,6 +272,8 @@ void tmcg_mpz_fspowm
 		mpz_neg(xx, x);
 	else
 		mpz_neg(bar, x);
+
+	size_t
 	if (mpz_sizeinbase(xx, 2L) <= TMCG_MAX_FPOWM_T)
 	{
 		/* compute result by multiplying precomputed values */
@@ -263,7 +291,10 @@ void tmcg_mpz_fspowm
 		/* invert the input, if x was negative */
 		mpz_set(baz, res);
 		if (!mpz_invert(foo, res, p))
+		{
 			mpz_set_ui(foo, 0L); /* indicates an error */
+			// FIXME: throw an exception
+		}
 		if (mpz_sgn(x) == -1)
 			mpz_set(res, foo);
 		else
@@ -283,7 +314,12 @@ void tmcg_mpz_fspowm
 		mpz_mod(res, res, p);
 	}
 	else
+	{
+		std::cerr << "ERROR: exponent too large in tmcg_mpz_fspowm()" <<
+			std::endl;
 		mpz_set_ui(res, 0L); /* indicates an error */
+		// FIXME: throw an exception
+	}
 	mpz_clear(foo), mpz_clear(bar), mpz_clear(baz), mpz_clear(xx);
 }
 
