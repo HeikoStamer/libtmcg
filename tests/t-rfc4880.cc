@@ -226,13 +226,18 @@ int main
 		assert(lit[i] == out[i]); // check the result
 	}
 
-	// testing BinaryDocumentHash()
+	// testing BinaryDocumentHash(), DashEscapeFile()
 	std::string filename = "t-rfc4880.tmp";
 	time_t filecreation = time(NULL);
 	std::ofstream ofs(filename.c_str(), std::ofstream::out);
 	assert(ofs.good());
-	ofs << "This is a simple test file createt at " <<
-		ctime(&filecreation) << std::endl;
+	ofs << "This is a simple test file createt at " << ctime(&filecreation);
+	assert(ofs.good());
+	ofs << "--- The second line begins with some dashes." << std::endl;
+	assert(ofs.good());
+	ofs << "From Edward Snowden" << std::endl;
+	assert(ofs.good());
+	ofs << "The third line should also be dash-escaped." << std::endl;
 	assert(ofs.good());
 	ofs.close();
 	tmcg_openpgp_octets_t hash, trailer, left;
@@ -244,6 +249,14 @@ int main
 		BinaryDocumentHash(filename, trailer, TMCG_OPENPGP_HASHALGO_SHA256,
 		hash, left);
 	assert(hash_ok);
+	std::cout << "DashEscapeFile(\"" << filename << "\", ...)" << std::endl;
+	std::string dash_escaped;
+	bool dash_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
+		DashEscapeFile(filename, dash_escaped);
+	assert(dash_ok);
+	std::cout << dash_escaped << std::endl;
+	assert((dash_escaped.find("- ---") != dash_escaped.npos));
+	assert((dash_escaped.find("- From") != dash_escaped.npos));
 
 	// testing AsymmetricSignDSA() and AsymmetricVerifyDSA()
 	tmcg_openpgp_octets_t sig;

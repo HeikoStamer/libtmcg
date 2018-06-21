@@ -3759,6 +3759,37 @@ tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	}
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::DashEscapeFile
+	(const std::string &filename, std::string &out)
+{
+	std::ifstream ifs(filename.c_str(), std::ifstream::in);
+	if (!ifs.is_open())
+		return false;
+	// Dash-escaped cleartext is the ordinary cleartext where every line
+	// starting with a dash ’-’ (0x2D) is prefixed by the sequence dash ’-’
+	// (0x2D) and space ’ ’ (0x20). This prevents the parser from
+	// recognizing armor headers of the cleartext itself. An implementation
+	// MAY dash-escape any line, SHOULD dash-escape lines commencing "From"
+	// followed by a space, and MUST dash-escape any line commencing in a
+	// dash. The message digest is computed using the cleartext itself, not
+	// the dash-escaped form.
+	char line[1024];
+	while (ifs.getline(line, sizeof(line)))
+	{
+		std::string line_str(line);
+		if ((line_str.find("-") == 0) || (line_str.find("From ") == 0))
+			line_str = "- " + line_str;
+		out += line_str + "\r\n";
+	}
+	if (!ifs.eof())
+	{
+		ifs.close();
+		return false;
+	}
+	ifs.close();
+	return true;
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &out)
 {

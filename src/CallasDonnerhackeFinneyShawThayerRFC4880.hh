@@ -1079,6 +1079,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static tmcg_openpgp_armor_t ArmorDecode
 			(std::string									in,
 			 tmcg_openpgp_octets_t							&out);
+		static bool DashEscapeFile
+			(const std::string								&filename,
+			 std::string									&out);
 		static void FingerprintCompute
 			(const tmcg_openpgp_octets_t					&in,
 			 tmcg_openpgp_octets_t							&out);
