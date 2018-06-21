@@ -3367,6 +3367,37 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRYName
 	}
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashTextName
+	(const tmcg_openpgp_hashalgo_t algo, std::string &out)
+{
+	switch (algo)
+	{
+		case TMCG_OPENPGP_HASHALGO_MD5:
+			out = "MD5";
+			break;
+		case TMCG_OPENPGP_HASHALGO_SHA1:
+			out = "SHA1";
+			break;
+		case TMCG_OPENPGP_HASHALGO_RMD160:
+			out = "RIPEMD160";
+			break;
+		case TMCG_OPENPGP_HASHALGO_SHA256:
+			out = "SHA256";
+			break;
+		case TMCG_OPENPGP_HASHALGO_SHA384:
+			out = "SHA384";
+			break;
+		case TMCG_OPENPGP_HASHALGO_SHA512:
+			out = "SHA512";
+			break;
+		case TMCG_OPENPGP_HASHALGO_SHA224:
+			out = "SHA224";
+			break;
+		default:
+			out = "unknown";
+	}
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare
 	(const tmcg_openpgp_octets_t &in, const tmcg_openpgp_octets_t &in2)
 {

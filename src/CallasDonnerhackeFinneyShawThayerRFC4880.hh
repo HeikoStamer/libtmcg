@@ -1047,6 +1047,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void AlgorithmHashGCRYName
 			(const tmcg_openpgp_hashalgo_t					algo,
 			 std::string									&out);
+		static void AlgorithmHashTextName
+			(const tmcg_openpgp_hashalgo_t					algo,
+			 std::string									&out);
 		static bool OctetsCompare
 			(const tmcg_openpgp_octets_t					&in,
 			 const tmcg_openpgp_octets_t					&in2);
