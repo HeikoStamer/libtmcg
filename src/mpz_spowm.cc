@@ -272,8 +272,6 @@ void tmcg_mpz_fspowm
 		mpz_neg(xx, x);
 	else
 		mpz_neg(bar, x);
-
-	size_t
 	if (mpz_sizeinbase(xx, 2L) <= TMCG_MAX_FPOWM_T)
 	{
 		/* compute result by multiplying precomputed values */
