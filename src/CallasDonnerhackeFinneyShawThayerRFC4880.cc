@@ -856,7 +856,10 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	():
 		ret(1),
 		erroff(0),
-		valid(false)
+		valid(false),
+		pkalgo(TMCG_OPENPGP_PKALGO_RSA),
+		creationtime(0),
+		expirationtime(0)
 {
 	// this is a dummy constructor used for simple relinking
 	rsa_n = gcry_mpi_new(2048);
