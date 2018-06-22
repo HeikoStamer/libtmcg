@@ -6338,9 +6338,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (out.version != 4)
 				return 0; // error: version not supported
 			out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
-			out.s2k_type = pkt[2];
+			out.s2k_type = (tmcg_openpgp_stringtokey_t)pkt[2];
 			out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[3];
-			if (out.s2k_type == 0x00)
+			if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
 			{
 				// Simple S2K -- not permitted by RFC 4880
 				out.encdatalen = pkt.size() - 4;
@@ -6357,7 +6357,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = pkt[4+i];
 			}
-			else if (out.s2k_type == 0x01)
+			else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SALTED)
 			{
 				// Salted S2K
 				if (pkt.size() < 12)
@@ -6378,7 +6378,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = pkt[12+i];
 			}
-			else if (out.s2k_type == 0x03)
+			else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
 			{
 				// Iterated and Salted S2K
 				if (pkt.size() < 12)
@@ -6844,14 +6844,14 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				mpis.erase(mpis.begin(), mpis.begin()+1);
 				if (mpis.size() < 2)
 					return 0; // error: bad S2K specifier
-				out.s2k_type = mpis[0];
+				out.s2k_type = (tmcg_openpgp_stringtokey_t)mpis[0];
 				out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)mpis[1];
 				mpis.erase(mpis.begin(), mpis.begin()+2);
-				if (out.s2k_type == 0x00)
+				if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
 				{
 					// Simple S2K
 				}
-				else if (out.s2k_type == 0x01)
+				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SALTED)
 				{
 					// Salted S2K
 					if (mpis.size() < 8)
@@ -6861,7 +6861,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mpis.erase(mpis.begin(),
 						mpis.begin()+8);
 				}
-				else if (out.s2k_type == 0x03)
+				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
 				{
 					// Iterated and Salted S2K
 					if (mpis.size() < 8)
@@ -8941,18 +8941,18 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 		tmcg_openpgp_octets_t salt, skey;
 		for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
 			salt.push_back(ctx.s2k_salt[i]);
-		if (ctx.s2k_type == 0x00)
+		if (ctx.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
 		{
 			salt.clear();
 			S2KCompute(ctx.s2k_hashalgo, keylen, passphrase, salt, false,
 				ctx.s2k_count, skey);
 		}
-		else if (ctx.s2k_type == 0x01)
+		else if (ctx.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SALTED)
 		{
 			S2KCompute(ctx.s2k_hashalgo, keylen, passphrase, salt, false,
 				ctx.s2k_count, skey);
 		}
-		else if (ctx.s2k_type == 0x03)
+		else if (ctx.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
 		{
 			S2KCompute(ctx.s2k_hashalgo, keylen, passphrase, salt, true,
 				ctx.s2k_count, skey);

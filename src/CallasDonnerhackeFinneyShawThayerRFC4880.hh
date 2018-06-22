@@ -78,6 +78,24 @@ enum tmcg_openpgp_armor_t
 	TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK		= 6
 };
 
+enum tmcg_openpgp_stringtokey_t
+{
+	TMCG_OPENPGP_STRINGTOKEY_SIMPLE			= 0,
+	TMCG_OPENPGP_STRINGTOKEY_SALTED			= 1,
+	TMCG_OPENPGP_STRINGTOKEY_ITERATED		= 3,
+	TMCG_OPENPGP_STRINGTOKEY_EXPERIMENTAL0	= 100,
+	TMCG_OPENPGP_STRINGTOKEY_EXPERIMENTAL1	= 101,
+	TMCG_OPENPGP_STRINGTOKEY_EXPERIMENTAL2	= 102,
+	TMCG_OPENPGP_STRINGTOKEY_EXPERIMENTAL3	= 103,
+	TMCG_OPENPGP_STRINGTOKEY_EXPERIMENTAL4	= 104,
+	TMCG_OPENPGP_STRINGTOKEY_EXPERIMENTAL5	= 105,
+	TMCG_OPENPGP_STRINGTOKEY_EXPERIMENTAL6	= 106,
+	TMCG_OPENPGP_STRINGTOKEY_EXPERIMENTAL7	= 107,
+	TMCG_OPENPGP_STRINGTOKEY_EXPERIMENTAL8	= 108,
+	TMCG_OPENPGP_STRINGTOKEY_EXPERIMENTAL9	= 109,
+	TMCG_OPENPGP_STRINGTOKEY_EXPERIMENTAL10	= 110
+};
+
 enum tmcg_openpgp_pkalgo_t
 {
 	TMCG_OPENPGP_PKALGO_RSA					= 1,
@@ -283,7 +301,7 @@ typedef struct
 	gcry_mpi_t					xprime_i;
 	tmcg_openpgp_skalgo_t		skalgo;
 	tmcg_openpgp_byte_t			s2kconv;
-	tmcg_openpgp_byte_t			s2k_type;
+	tmcg_openpgp_stringtokey_t	s2k_type;
 	tmcg_openpgp_hashalgo_t		s2k_hashalgo;
 	tmcg_openpgp_byte_t			s2k_salt[8];
 	tmcg_openpgp_byte_t			s2k_count;
