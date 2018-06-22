@@ -3034,14 +3034,30 @@ TMCG_OpenPGP_PKESK::~TMCG_OpenPGP_PKESK
 // ===========================================================================
 
 TMCG_OpenPGP_SKESK::TMCG_OpenPGP_SKESK
-	(const tmcg_openpgp_skalgo_t skalgo_in):
-		skalgo(skalgo_in)
+	(const tmcg_openpgp_skalgo_t skalgo_in,
+	 const tmcg_openpgp_stringtokey_t s2k_type_in,
+	 const tmcg_openpgp_hashalgo_t s2k_hashalgo_in,
+	 const tmcg_openpgp_octets_t &s2k_salt_in,
+	 const tmcg_openpgp_byte_t s2k_count_in,
+	 const tmcg_openpgp_octets_t &encrypted_key_in,
+	 const tmcg_openpgp_octets_t &packet_in):
+		skalgo(skalgo_in),
+		s2k_type(s2k_type_in),
+		s2k_hashalgo(s2k_hashalgo_in),
+		s2k_count(s2k_count_in)
 {
+	s2k_salt.insert(s2k_salt.end(), s2k_salt_in.begin(), s2k_salt_in.end());
+	encrypted_key.insert(encrypted_key.end(),
+		encrypted_key_in.begin(), encrypted_key_in.end());
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
 TMCG_OpenPGP_SKESK::~TMCG_OpenPGP_SKESK
 	()
 {
+	s2k_salt.clear();
+	encrypted_key.clear();
+	packet.clear();
 }
 
 // ===========================================================================
@@ -6342,7 +6358,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[3];
 			if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
 			{
-				// Simple S2K -- not permitted by RFC 4880
+				// Simple S2K -- forbidden by RFC 4880 (only for completeness)
 				out.encdatalen = pkt.size() - 4;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
@@ -9401,8 +9417,16 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag3
 	 TMCG_OpenPGP_Message* &msg)
 {
 	if (verbose > 1)
-		std::cerr << "INFO: ESK skalgo = " << (int)ctx.skalgo << std::endl;
-	TMCG_OpenPGP_SKESK *esk = new TMCG_OpenPGP_SKESK(ctx.skalgo);
+		std::cerr << "INFO: ESK skalgo = " << (int)ctx.skalgo <<
+			"s2k_type = " << (int)ctx.s2k_type << 
+			"encdatalen = " << ctx.encdatalen << std::endl;
+	tmcg_openpgp_octets_t salt, enckey;
+	for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
+		salt.push_back(ctx.s2k_salt[i]);
+	for (size_t i = 0; i < ctx.encdatalen; i++)
+		enckey.push_back(ctx.encdata[i]);
+	TMCG_OpenPGP_SKESK *esk = new TMCG_OpenPGP_SKESK(ctx.skalgo, ctx.s2k_type,
+		ctx.s2k_hashalgo, salt, ctx.s2k_count, enckey, current_packet);
 	(msg->SKESKs).push_back(esk);
 	return true;
 }

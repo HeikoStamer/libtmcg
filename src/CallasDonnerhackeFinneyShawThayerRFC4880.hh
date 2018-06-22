@@ -885,9 +885,21 @@ class TMCG_OpenPGP_SKESK
 {
 	public:
 		tmcg_openpgp_skalgo_t								skalgo;
+		tmcg_openpgp_stringtokey_t							s2k_type;
+		tmcg_openpgp_hashalgo_t								s2k_hashalgo;
+		tmcg_openpgp_octets_t								s2k_salt;
+		tmcg_openpgp_byte_t									s2k_count;
+		tmcg_openpgp_octets_t								encrypted_key;
+		tmcg_openpgp_octets_t								packet;
 
 		TMCG_OpenPGP_SKESK
-			(const tmcg_openpgp_skalgo_t					skalgo_in);
+			(const tmcg_openpgp_skalgo_t					skalgo_in,
+			 const tmcg_openpgp_stringtokey_t				s2k_type_in,
+			 const tmcg_openpgp_hashalgo_t					s2k_hashalgo_in,
+			 const tmcg_openpgp_octets_t					&s2k_salt_in,
+			 const tmcg_openpgp_byte_t						s2k_count_in,
+			 const tmcg_openpgp_octets_t					&encrypted_key_in,
+			 const tmcg_openpgp_octets_t					&packet_in);
 		~TMCG_OpenPGP_SKESK
 			();
 };
