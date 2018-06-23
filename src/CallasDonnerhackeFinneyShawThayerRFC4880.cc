@@ -3798,7 +3798,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::DashEscapeFile
 		std::string line_str(line);
 		if ((line_str.find("-") == 0) || (line_str.find("From ") == 0))
 			line_str = "- " + line_str;
-		out += line_str + "\r\n";
+		std::string delim = "\n";
+		size_t line_len = line_str.length();
+		if ((line_len > 0) && (line_str[line_len-1] != '\r'))
+			delim = "\r" + delim;
+		out += line_str + delim;
 	}
 	if (!ifs.eof())
 	{

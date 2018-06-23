@@ -308,7 +308,9 @@ void tmcg_mpz_sprime_test
 	/* Step 1. [CS00]: choose randomly an odd number $q$ of appropriate size */
 	do
 		tmcg_mpz_srandomb(q, qsize);
-	while ((mpz_sizeinbase(q, 2L) < qsize) || mpz_even_p(q));
+	while (mpz_sizeinbase(q, 2L) < qsize);
+	if (mpz_even_p(q))
+		mpz_add_ui(q, q, 1L);
 	
 	/* Compute $p = 2q + 1$. */
 	mpz_mul_2exp(pm1, q, 1L), mpz_add_ui(p, pm1, 1L);
@@ -407,7 +409,9 @@ void tmcg_mpz_sprime_test_naive
 	/* Choose randomly an odd number $q$ of appropriate size. */
 	do
 		tmcg_mpz_srandomb(q, qsize);
-	while ((mpz_sizeinbase(q, 2L) < qsize) || mpz_even_p(q));
+	while (mpz_sizeinbase(q, 2L) < qsize);
+	if (mpz_even_p(q))
+		mpz_add_ui(q, q, 1L);
 	
 	while (1)
 	{
@@ -462,7 +466,9 @@ void tmcg_mpz_sprime_test_noninc
 		/* Choose randomly an odd number $q$ of appropriate size. */
 		do
 			tmcg_mpz_srandomb(q, qsize);
-		while ((mpz_sizeinbase(q, 2L) < qsize) || mpz_even_p(q));
+		while (mpz_sizeinbase(q, 2L) < qsize);
+		if (mpz_even_p(q))
+			mpz_add_ui(q, q, 1L);
  
 		/* Compute $p = 2q + 1$. */
 		mpz_mul_2exp(p, q, 1L);
@@ -628,7 +634,9 @@ void tmcg_mpz_oprime
 	/* Choose randomly an odd number $p$ of appropriate size. */
 	do
 		tmcg_mpz_srandomb(p, psize);
-	while ((mpz_sizeinbase(p, 2L) < psize) || (mpz_even_p(p)));
+	while (mpz_sizeinbase(p, 2L) < psize);
+	if (mpz_even_p(p))
+		mpz_add_ui(p, p, 1L);
 	
 	/* Add two as long as $p$ is not probable prime. */
 	while (!mpz_probab_prime_p(p, mr_iterations))
@@ -645,7 +653,9 @@ void tmcg_mpz_oprime_noninc
 		/* Choose randomly an odd number $p$ of appropriate size. */
 		do
 			tmcg_mpz_srandomb(p, psize);
-		while ((mpz_sizeinbase(p, 2L) < psize) || (mpz_even_p(p)));
+		while (mpz_sizeinbase(p, 2L) < psize);
+		if (mpz_even_p(p))
+			mpz_add_ui(p, p, 1L);
 		/* Check whether this number is probably prime. */
 	}
 	while (!mpz_probab_prime_p(p, mr_iterations));
