@@ -51,7 +51,7 @@ libTMCG_la_SOURCES = mpz_srandom.cc mpz_srandom.hh\
 	mpz_sqrtm.cc mpz_sqrtm.hh\
 	mpz_spowm.cc mpz_spowm.hh\
 	mpz_sprime.cc mpz_sprime.hh\
-	mpz_shash.cc mpz_shash.hh\
+	mpz_shash.cc mpz_shash.hh sha3.c\
 	parse_helper.cc parse_helper.hh\
 	mpz_helper.cc mpz_helper.hh\
 	BarnettSmartVTMF_dlog.cc BarnettSmartVTMF_dlog.hh\

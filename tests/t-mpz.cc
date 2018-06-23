@@ -337,9 +337,12 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	std::cout << "tmcg_mpz_sprime_noninc() benchmark" << std::endl;
 	start_clock();
 	for (size_t i = 0; i < 25; i++)
+	{
 		tmcg_mpz_sprime_noninc(foo, bar, 1024, TMCG_MR_ITERATIONS);
+		std::cout << ".";
+	}
 	stop_clock();
-	std::cout << elapsed_time() << std::endl;
+	std::cout << std::endl << elapsed_time() << std::endl;
 
 	// tmcg_mpz_sqrtmp_r vs. tmcg_mpz_sqrtmp benchmark
 	do
