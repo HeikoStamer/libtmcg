@@ -339,7 +339,7 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	for (size_t i = 0; i < 25; i++)
 	{
 		tmcg_mpz_sprime_noninc(foo, bar, 1024, TMCG_MR_ITERATIONS);
-		std::cout << ".";
+		std::cout << "." << std::flush;
 	}
 	stop_clock();
 	std::cout << std::endl << elapsed_time() << std::endl;
