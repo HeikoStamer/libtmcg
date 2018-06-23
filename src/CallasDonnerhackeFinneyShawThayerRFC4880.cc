@@ -3943,7 +3943,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
 	 const bool text, const tmcg_openpgp_octets_t &trailer,
 	 tmcg_openpgp_octets_t &out)
 {
-	char c;
+	char c, last = '\000';
 	int a = AlgorithmHashGCRY(algo);
 	size_t dlen = gcry_md_get_algo_dlen(a);
 	gcry_error_t ret;
@@ -3960,9 +3960,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
 	}
 	while (ifs.get(c))
 	{
-		if (text && (c == '\n'))
+		if (text && (c == '\n') && (last != '\r'))
 			gcry_md_putc(hd, '\r'); // convert line ending to <CR><LF>
 		gcry_md_putc(hd, c);
+		last = c;
 	}
 	if (!ifs.eof())
 	{
