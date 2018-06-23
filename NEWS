@@ -13,8 +13,8 @@ Internet <https://www.gnu.org/licenses>.
        like public keys or signatures. The PRNG from Botan is used for as an 
        additional source of randomness, if LibTMCG is configured and built with
        the new option --with-botan. This reduces the impact of possible hidden
-       bugs in libgcrypt. Moreover, the hash funtion SHA3 is emulated, if the
-       built-time version of libgcrypt is too old to support it natively.
+       bugs in libgcrypt. Moreover, the hash function family SHA3 is emulated,
+       if the built-time version of libgcrypt is too old to support it natively.
 1.3.12 Major improvements for OpenPGP interfaces have been achieved. Notable are
        the new classes for processing public key structures. Moreover, a second
        indepent hash algorithm (SHA3) has been included for computing the oracle
