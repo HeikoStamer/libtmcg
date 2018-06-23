@@ -16,7 +16,7 @@
 #   along with LibTMCG; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-EXTRA_DIST = libTMCG-config.in libTMCG.m4
+EXTRA_DIST = libTMCG-config.in libTMCG.m4 sha3.c
 
 bin_SCRIPTS = libTMCG-config
 
@@ -51,7 +51,7 @@ libTMCG_la_SOURCES = mpz_srandom.cc mpz_srandom.hh\
 	mpz_sqrtm.cc mpz_sqrtm.hh\
 	mpz_spowm.cc mpz_spowm.hh\
 	mpz_sprime.cc mpz_sprime.hh\
-	mpz_shash.cc mpz_shash.hh sha3.c\
+	mpz_shash.cc mpz_shash.hh\
 	parse_helper.cc parse_helper.hh\
 	mpz_helper.cc mpz_helper.hh\
 	BarnettSmartVTMF_dlog.cc BarnettSmartVTMF_dlog.hh\
