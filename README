@@ -111,12 +111,14 @@ Security
   avoid parallel protocol sessions. It is a challenging research project to
   create a protocol suite whose security can be proven in the UC-framework
   of Canetti. Furthermore, the protocols should employ so-called concurrent
-  zero-knowledge proofs.
+  zero-knowledge proofs to cover such issues.
 
   LibTMCG was carefully implemented with respect to timing attacks.
   Therefore we loose much efficiency, e.g., during modular exponentiations.
   However, it is strongly recommended to leave the timing attack protection
-  turned on unless you know exactly where it is not needed.
+  turned on unless you know exactly where it is not needed. Please note,
+  there are other side-channel attacks (e.g. cache access) that have not
+  been considered yet.
 
   SECURITY ADVICE: We have implemented all cryptographic primitives according
   to the cited research papers and to the best of our knowledge. However, we

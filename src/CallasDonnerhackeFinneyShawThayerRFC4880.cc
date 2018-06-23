@@ -4897,7 +4897,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	{
 		out.push_back(254); // S2K convention: specifier and SHA-1 hash
 		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
-		out.push_back(0x03); // Iterated and Salted S2K
+		out.push_back(TMCG_OPENPGP_STRINGTOKEY_ITERATED); // Iterated + Salted
 		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
 		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
 		tmcg_openpgp_octets_t salt, plain, hash, seskey;
@@ -5037,7 +5037,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	{
 		out.push_back(254); // S2K convention: specifier and SHA-1 hash
 		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
-		out.push_back(0x03); // Iterated and Salted S2K
+		out.push_back(TMCG_OPENPGP_STRINGTOKEY_ITERATED); // Iterated + Salted
 		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
 		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
 		tmcg_openpgp_octets_t salt, plain, hash, seskey;
@@ -5192,7 +5192,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 	{
 		out.push_back(254); // S2K convention: specifier and SHA-1 hash
 		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
-		out.push_back(0x03); // Iterated and Salted S2K
+		out.push_back(TMCG_OPENPGP_STRINGTOKEY_ITERATED); // Iterated + Salted
 		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
 		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
 		tmcg_openpgp_octets_t salt, plain, hash, seskey;
@@ -5383,7 +5383,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	{
 		out.push_back(254); // S2K convention: specifier and SHA-1 hash
 		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
-		out.push_back(0x03); // Iterated and Salted S2K
+		out.push_back(TMCG_OPENPGP_STRINGTOKEY_ITERATED); // Iterated + Salted
 		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
 		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
 		tmcg_openpgp_octets_t salt, plain, hash, seskey;
@@ -5524,7 +5524,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 	{
 		out.push_back(254); // S2K convention: specifier and SHA-1 hash
 		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
-		out.push_back(0x03); // Iterated and Salted S2K
+		out.push_back(TMCG_OPENPGP_STRINGTOKEY_ITERATED); // Iterated + Salted
 		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
 		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
 		tmcg_openpgp_octets_t salt, plain, hash, seskey;
