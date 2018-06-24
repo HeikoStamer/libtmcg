@@ -50,7 +50,7 @@ unsigned long int tmcg_mpz_grandom_ui_nomodbias
 	unsigned long int div, max, rnd = 0;
 	
 	if ((modulo == 0) || (modulo == 1))
-	    return 0; // indicates an error
+	    return 0; // indicates an error FIXME: throw an exception
 	
 	// Remove ``modulo bias'' by limiting the return values
 	div = (ULONG_MAX - modulo + 1) / modulo;
@@ -104,23 +104,25 @@ void tmcg_mpz_grandomb
 	(mpz_ptr r, const unsigned long int size, enum gcry_random_level level)
 {
 	unsigned char *rtmp;
-	char htmp[size + 3]; // at least two characters + delimiter
 	size_t hlen = 0;
 	gcry_mpi_t rr;
 	gcry_error_t ret;
 	assert(size <= UINT_MAX);
-	
+
 	rr = gcry_mpi_new((unsigned int)size);
 	gcry_mpi_randomize(rr, (unsigned int)size, level);
 	ret = gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
-	if (ret)
+	gcry_mpi_release(rr);
+	if (ret || (hlen == 0))
 	{
 		std::cerr << "tmcg_mpz_grandomb(): gcry_mpi_aprint() failed: " <<
 			gcry_strerror(ret) << std::endl;
 		mpz_set_ui(r, 0L); // indicates an error
+		// FIXME: throw an exception
 	}
 	else
 	{
+		char htmp[size + 3]; // at least two characters + delimiter
 		memset(htmp, 0, size + 3);
 		memcpy(htmp, rtmp, hlen);
 		gcry_free(rtmp);
@@ -129,11 +131,11 @@ void tmcg_mpz_grandomb
 		memset(htmp, 0, size + 3);
 		std::unique_ptr<Botan::RandomNumberGenerator>
 			rng(new Botan::AutoSeeded_RNG);
+		uint8_t botan_tmp[hlen];
+		rng->randomize((uint8_t*)&botan_tmp, sizeof(botan_tmp));
 		for (size_t i = 0; i < hlen; i++)
 		{
-			uint8_t botan_tmp = 0;
-			rng->randomize((uint8_t*)&botan_tmp, sizeof(botan_tmp));
-			switch (botan_tmp % 16)
+			switch (botan_tmp[i] % 16)
 			{
 				case 0:
 					htmp[i] = '0';
@@ -178,7 +180,6 @@ void tmcg_mpz_grandomb
 		// r mod 2^size, i.e. shift right and bit mask
 		mpz_tdiv_r_2exp(r, r, size);
 	}
-	gcry_mpi_release(rr);
 }
 
 void tmcg_mpz_ssrandomb
@@ -215,10 +216,11 @@ void tmcg_mpz_wrandomb
 void tmcg_mpz_grandomm
 	(mpz_ptr r, mpz_srcptr m, enum gcry_random_level level)
 {
-	unsigned long int size = mpz_sizeinbase(m, 2L) + 64; // cf. BSI TR-02102-1, B.4 Verfahren 2
+	// make bias negligible cf. BSI TR-02102-1, B.4 Verfahren 2
+	unsigned long int size = mpz_sizeinbase(m, 2L) + 64;
 	unsigned char *rtmp;
 	char htmp[size + 3]; // at least two characters + delimiter
-	size_t hlen;
+	size_t hlen = 0;
 	gcry_mpi_t rr;
 	gcry_error_t ret;
 	assert(size <= UINT_MAX);
@@ -226,11 +228,13 @@ void tmcg_mpz_grandomm
 	rr = gcry_mpi_new((unsigned int)size);
 	gcry_mpi_randomize(rr, (unsigned int)size, level);
 	ret = gcry_mpi_aprint(GCRYMPI_FMT_HEX, &rtmp, &hlen, rr);
-	if (ret)
+	gcry_mpi_release(rr);
+	if (ret || (hlen == 0))
 	{
 		std::cerr << "tmcg_mpz_grandomm(): gcry_mpi_aprint() failed: " <<
 			gcry_strerror(ret) << std::endl;
 		mpz_set_ui(r, 0L); // indicates an error
+		// FIXME: throw an exception
 	}
 	else
 	{
@@ -242,11 +246,11 @@ void tmcg_mpz_grandomm
 		memset(htmp, 0, size + 3);
 		std::unique_ptr<Botan::RandomNumberGenerator>
 			rng(new Botan::AutoSeeded_RNG);
+		uint8_t botan_tmp[hlen];
+		rng->randomize((uint8_t*)&botan_tmp, sizeof(botan_tmp));
 		for (size_t i = 0; i < hlen; i++)
 		{
-			uint8_t botan_tmp = 0;
-			rng->randomize((uint8_t*)&botan_tmp, sizeof(botan_tmp));
-			switch (botan_tmp % 16)
+			switch (botan_tmp[i] % 16)
 			{
 				case 0:
 					htmp[i] = '0';
@@ -288,9 +292,8 @@ void tmcg_mpz_grandomm
 		mpz_add(r, r, rrr); // ADD number from other random source
 		mpz_clear(rrr);
 #endif
-		mpz_mod(r, r, m); // modulo bias is negligible due to increased size
+		mpz_mod(r, r, m); // bias is negligible due to increased size of r
 	}
-	gcry_mpi_release(rr);
 }
 
 void tmcg_mpz_ssrandomm
@@ -332,7 +335,7 @@ void tmcg_mpz_ssrandomm_cache_init
 {
 	size_t i = 0;
 	if ((n == 0) || (n > TMCG_MAX_SSRANDOMM_CACHE))
-		return;
+		return; // FIXME: throw an exception
 	for (i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
 		mpz_init(ssrandomm_cache[i]);	
 	for (i = 0; i < n; i++)

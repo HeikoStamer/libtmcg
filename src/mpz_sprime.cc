@@ -495,12 +495,11 @@ void tmcg_mpz_sprime_test_noninc
 		if (fail)
 			continue;
 		
+		// Check that $p$ and $q$ are probable prime.
 		if (!mpz_probab_prime_p(p, 1))
 			continue;
-		
 		if (!mpz_probab_prime_p(q, mr_iterations))
 			continue;
-		
 		if (mpz_probab_prime_p(p, mr_iterations - 1))
 			break;
 	}

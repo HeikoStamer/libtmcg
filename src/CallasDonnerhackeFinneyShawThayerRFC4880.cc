@@ -3792,17 +3792,29 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::DashEscapeFile
 	// followed by a space, and MUST dash-escape any line commencing in a
 	// dash. The message digest is computed using the cleartext itself, not
 	// the dash-escaped form.
-	char line[1024];
+	// As with binary signatures on text documents, a cleartext signature is
+	// calculated on the text using canonical <CR><LF> line endings. The
+	// line ending (i.e., the <CR><LF>) before the ’-----BEGIN PGP
+	// SIGNATURE-----’ line that terminates the signed text is not
+	// considered part of the signed text.
+	// [...]
+	// Also, any trailing whitespace -- spaces (0x20) and tabs (0x09) -- at
+	// the end of any line is removed when the cleartext signature is
+	// generated.
+	char line[19995]; // we use the constant from GnuPG for maximum line chars
 	while (ifs.getline(line, sizeof(line)))
 	{
 		std::string line_str(line);
 		if ((line_str.find("-") == 0) || (line_str.find("From ") == 0))
 			line_str = "- " + line_str;
-		std::string delim = "\n";
 		size_t line_len = line_str.length();
-		if ((line_len > 0) && (line_str[line_len-1] != '\r'))
-			delim = "\r" + delim;
-		out += line_str + delim;
+		while ((line_len > 0) && ((line_str[line_len-1] == ' ') ||
+			(line_str[line_len-1] == '\t') || (line_str[line_len-1] == '\r')))
+		{
+			line_len--;
+		}
+		line_str = line_str.substr(0, line_len);
+		out += line_str + "\r\n";
 	}
 	if (!ifs.eof())
 	{
