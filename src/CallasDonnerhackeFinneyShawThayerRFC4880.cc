@@ -3955,7 +3955,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
 	 const bool text, const tmcg_openpgp_octets_t &trailer,
 	 tmcg_openpgp_octets_t &out)
 {
-	char c, last = '\000';
 	int a = AlgorithmHashGCRY(algo);
 	size_t dlen = gcry_md_get_algo_dlen(a);
 	gcry_error_t ret;
@@ -3970,12 +3969,34 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
 		gcry_md_close(hd);
 		return false;
 	}
-	while (ifs.get(c))
+	if (text)
 	{
-		if (text && (c == '\n') && (last != '\r'))
-			gcry_md_putc(hd, '\r'); // convert line ending to <CR><LF>
-		gcry_md_putc(hd, c);
-		last = c;
+		char line[19995]; // constant from GnuPG for maximum chars of a line
+		while (ifs.getline(line, sizeof(line)))
+		{
+			std::string line_str(line);
+			size_t line_len = line_str.length();
+			while ((line_len > 0) && ((line_str[line_len-1] == ' ') ||
+				(line_str[line_len-1] == '\t') ||
+				(line_str[line_len-1] == '\r')))
+			{
+				line_len--;
+			}
+			line_str = line_str.substr(0, line_len);
+			for (size_t i = 0; i < line_str.length(); i++)
+				gcry_md_putc(hd, line_str[i]);
+			if (!ifs.eof())
+			{
+				gcry_md_putc(hd, '\r'); // convert line ending to <CR><LF>
+				gcry_md_putc(hd, '\n');
+			}
+		}
+	}
+	else
+	{
+		char c;
+		while (ifs.get(c))
+			gcry_md_putc(hd, c);
 	}
 	if (!ifs.eof())
 	{
