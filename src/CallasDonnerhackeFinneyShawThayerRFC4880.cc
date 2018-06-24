@@ -3814,7 +3814,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::DashEscapeFile
 			line_len--;
 		}
 		line_str = line_str.substr(0, line_len);
-		out += line_str + "\r\n";
+		if (!ifs.eof())
+			out += line_str + "\r\n";
+		else
+			out += line_str;
 	}
 	if (!ifs.eof())
 	{
