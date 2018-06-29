@@ -2362,7 +2362,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 	{
 		if (verbose > 1)
 		{
-			std::cerr << "INFO: userattribute #" << i << " with opaque" <<
+			std::cerr << "INFO: userattribute #" << (i+1) << " with opaque" <<
 				" content of " << (userattributes[i]->userattribute).size() <<
 				" bytes" << std::endl;
 			std::cerr << "INFO: number of selfsigs = " <<
