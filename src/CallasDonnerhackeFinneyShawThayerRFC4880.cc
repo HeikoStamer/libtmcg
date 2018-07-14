@@ -6278,6 +6278,18 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
+			{
+				// Algorithm-Specific Fields for ECDH keys [RFC 6637]
+				if (mpis.size() <= 2)
+					return 0; // error: too few mpis
+				mlen = PacketMPIDecode(mpis, out.ecepk);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+// TODO: a one-octet size, followed by a symmetric key encoded using the
+//       method described in Section 8 [RFC 6637]
+			}
 			else
 				return 0xFE; // warning: unsupported algo
 			break;
@@ -6375,6 +6387,22 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 			{
 				// Algorithm-Specific Fields for DSA
+				if (mpis.size() <= 2)
+					return 0; // error: too few mpis
+				mlen = PacketMPIDecode(mpis, out.r);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				if (mpis.size() <= 2)
+					return 0; // error: too few mpis
+				mlen = PacketMPIDecode(mpis, out.s);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			}
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+			{
+				// Algorithm-Specific Fields for ECDSA
 				if (mpis.size() <= 2)
 					return 0; // error: too few mpis
 				mlen = PacketMPIDecode(mpis, out.r);
@@ -7020,6 +7048,43 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				mlen = PacketMPIDecode(mpis, out.y);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			}
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
+			{
+				// Algorithm-Specific Fields for ECDH keys [RFC 6637]
+				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[6];
+				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
+					return 0; // error: values reserved for future extensions
+				if (pkt.size() < (8 + out.curveoidlen))
+					return 0; // error: OID too long
+				for (size_t i = 0; i < out.curveoidlen; i++)
+					out.curveoid[i] = pkt[7+i];
+				mpis.clear();
+				mpis.insert(mpis.end(),
+					pkt.begin()+6+out.curveoidlen, pkt.end());
+				mlen = PacketMPIDecode(mpis, out.ecpk);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+// TODO: KDF
+			}
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+			{
+				// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
+				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[6];
+				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
+					return 0; // error: values reserved for future extensions
+				if (pkt.size() < (8 + out.curveoidlen))
+					return 0; // error: OID too long
+				for (size_t i = 0; i < out.curveoidlen; i++)
+					out.curveoid[i] = pkt[7+i];
+				mpis.clear();
+				mpis.insert(mpis.end(),
+					pkt.begin()+6+out.curveoidlen, pkt.end());
+				mlen = PacketMPIDecode(mpis, out.ecpk);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);

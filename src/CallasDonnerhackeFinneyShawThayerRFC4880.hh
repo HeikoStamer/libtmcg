@@ -103,6 +103,8 @@ enum tmcg_openpgp_pkalgo_t
 	TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY		= 3,
 	TMCG_OPENPGP_PKALGO_ELGAMAL				= 16,
 	TMCG_OPENPGP_PKALGO_DSA					= 17,
+	TMCG_OPENPGP_PKALGO_ECDH				= 18, // added by RFC 6637
+	TMCG_OPENPGP_PKALGO_ECDSA				= 19, // added by RFC 6637
 	TMCG_OPENPGP_PKALGO_EXPERIMENTAL0		= 100,
 	TMCG_OPENPGP_PKALGO_EXPERIMENTAL1		= 101,
 	TMCG_OPENPGP_PKALGO_EXPERIMENTAL2		= 102,
@@ -283,6 +285,11 @@ typedef struct
 	tmcg_openpgp_byte_t			signingkeyid[8]; // key ID
 	tmcg_openpgp_byte_t			nestedsignature;
 	uint32_t					keycreationtime;
+	tmcg_openpgp_byte_t			curveoid[256];
+	size_t						curveoidlen;
+	gcry_mpi_t					ecpk;
+	gcry_mpi_t					ecsk;
+	gcry_mpi_t					ecepk;
 	gcry_mpi_t					n;
 	gcry_mpi_t					e;
 	gcry_mpi_t					d;
