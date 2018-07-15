@@ -227,6 +227,44 @@ static const tmcg_openpgp_byte_t tmcg_openpgp_tRadix64[] =
 
 typedef struct
 {
+	const char					*name;
+	const tmcg_openpgp_byte_t	*oid;
+} tmcg_openpgp_oid_t;
+// OID for NIST curve P-256 [RFC 6637]
+static const tmcg_openpgp_byte_t tmcg_openpgp_oid_nistp256[] =
+	{ 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07 };
+// OID for NIST curve P-384 [RFC 6637]
+static const tmcg_openpgp_byte_t tmcg_openpgp_oid_nistp384[] =
+	{ 0x05, 0x2b, 0x81, 0x04, 0x00, 0x22 };
+// OID for NIST curve P-521 [RFC 6637]
+static const tmcg_openpgp_byte_t tmcg_openpgp_oid_nistp521[] =
+	{ 0x05, 0x2b, 0x81, 0x04, 0x00, 0x23 };
+// OID for Brainpool curve P256r1
+static const tmcg_openpgp_byte_t tmcg_openpgp_oid_brainpoolp256r1[] =
+	{ 0x09, 0x2b, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07 };
+// OID for Brainpool curve P512r1
+static const tmcg_openpgp_byte_t tmcg_openpgp_oid_brainpoolp512r1[] =
+	{ 0x09, 0x2b, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0d };
+// OID for curve Ed25519
+static const tmcg_openpgp_byte_t tmcg_openpgp_oid_ed25519[] =
+	{ 0x09, 0x2b, 0x06, 0x01, 0x04, 0x01, 0xda, 0x47, 0x0f, 0x01 };
+// OID for Curve25519
+static const tmcg_openpgp_byte_t tmcg_openpgp_oid_cv25519[] =
+	{ 0x0a, 0x2b, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01 };
+static const tmcg_openpgp_oid_t tmcg_openpgp_oidtable[] =
+{
+	{ "NIST P-256", tmcg_openpgp_oid_nistp256 },
+	{ "NIST P-384", tmcg_openpgp_oid_nistp384 },
+	{ "NIST P-521", tmcg_openpgp_oid_nistp521 },
+	{ "brainpoolP256r1", tmcg_openpgp_oid_brainpoolp256r1 },
+	{ "brainpoolP512r1", tmcg_openpgp_oid_brainpoolp512r1 },
+	{ "Ed25519", tmcg_openpgp_oid_ed25519 },
+	{ "Curve25519", tmcg_openpgp_oid_cv25519 },
+	{ NULL, NULL }
+};
+
+typedef struct
+{
 	bool						newformat;
 	tmcg_openpgp_byte_t			version;
 	tmcg_openpgp_byte_t			keyid[8]; // key ID
@@ -287,6 +325,8 @@ typedef struct
 	uint32_t					keycreationtime;
 	tmcg_openpgp_byte_t			curveoid[256];
 	size_t						curveoidlen;
+	tmcg_openpgp_hashalgo_t		kdf_hashalgo;
+	tmcg_openpgp_skalgo_t		kdf_skalgo;
 	gcry_mpi_t					ecpk;
 	gcry_mpi_t					ecsk;
 	gcry_mpi_t					ecepk;
@@ -521,6 +561,7 @@ class TMCG_OpenPGP_Subkey
 		gcry_mpi_t											dsa_q;
 		gcry_mpi_t											dsa_g;
 		gcry_mpi_t											dsa_y;
+		gcry_mpi_t											ec_pk;
 		tmcg_openpgp_octets_t								packet;
 		tmcg_openpgp_octets_t								sub_hashing;
 		tmcg_openpgp_octets_t								id;
@@ -561,6 +602,14 @@ class TMCG_OpenPGP_Subkey
 			 const gcry_mpi_t								q,
 			 const gcry_mpi_t								g,
 			 const gcry_mpi_t								y,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		TMCG_OpenPGP_Subkey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const size_t									oidlen,
+			 const tmcg_openpgp_byte_t*						oid,
+			 const gcry_mpi_t								ecpk,
 			 const tmcg_openpgp_octets_t					&packet_in);
 		bool good
 			() const;
@@ -695,6 +744,7 @@ class TMCG_OpenPGP_Pubkey
 		gcry_mpi_t											dsa_q;
 		gcry_mpi_t											dsa_g;
 		gcry_mpi_t											dsa_y;
+		gcry_mpi_t											ec_pk;
 		tmcg_openpgp_octets_t								packet;
 		tmcg_openpgp_octets_t								pub_hashing;
 		tmcg_openpgp_octets_t								id;
@@ -726,6 +776,14 @@ class TMCG_OpenPGP_Pubkey
 			 const gcry_mpi_t								q,
 			 const gcry_mpi_t								g,
 			 const gcry_mpi_t								y,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		TMCG_OpenPGP_Pubkey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const size_t									oidlen,
+			 const tmcg_openpgp_byte_t*						oid,
+			 const gcry_mpi_t								ecpk,
 			 const tmcg_openpgp_octets_t					&packet_in);
 		bool good
 			() const;
@@ -1264,6 +1322,15 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t								g,
 			 const gcry_mpi_t								y,
 			 tmcg_openpgp_octets_t							&out);
+		static void PacketPubEncode
+			(const time_t									keytime,
+			 const tmcg_openpgp_pkalgo_t					algo,
+			 const size_t									oidlen,
+			 const tmcg_openpgp_byte_t*						oid,
+			 const gcry_mpi_t								ecpk,
+			 const tmcg_openpgp_hashalgo_t					kdf_hashalgo,
+			 const tmcg_openpgp_skalgo_t					kdf_skalgo,
+			 tmcg_openpgp_octets_t							&out);
 		static void PacketSecEncode
 			(const time_t									keytime,
 			 const tmcg_openpgp_pkalgo_t					algo,
@@ -1319,6 +1386,15 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t								q,
 			 const gcry_mpi_t								g,
 			 const gcry_mpi_t								y,
+			 tmcg_openpgp_octets_t							&out);
+		static void PacketSubEncode
+			(const time_t									keytime,
+			 const tmcg_openpgp_pkalgo_t					algo,
+			 const size_t									oidlen,
+			 const tmcg_openpgp_byte_t*						oid,
+			 const gcry_mpi_t								ecpk,
+			 const tmcg_openpgp_hashalgo_t					kdf_hashalgo,
+			 const tmcg_openpgp_skalgo_t					kdf_skalgo,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSsbEncode
 			(const time_t									keytime,
@@ -1511,6 +1587,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 gcry_mpi_t										&r,
 			 gcry_mpi_t										&s);
 		static gcry_error_t AsymmetricVerifyDSA
+			(const tmcg_openpgp_octets_t					&in,
+			 const gcry_sexp_t								key,
+	 		 const gcry_mpi_t								r,
+			 const gcry_mpi_t								s);
+		static gcry_error_t AsymmetricVerifyECDSA
 			(const tmcg_openpgp_octets_t					&in,
 			 const gcry_sexp_t								key,
 	 		 const gcry_mpi_t								r,
