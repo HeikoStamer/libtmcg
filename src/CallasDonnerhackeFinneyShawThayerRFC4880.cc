@@ -2,8 +2,14 @@
   CallasDonnerhackeFinneyShawThayerRFC4880.cc, OpenPGP Message Format
 
      J. Callas, L. Donnerhacke, H. Finney, D. Shaw, R. Thayer:
-	'OpenPGP Message Format',
-     Network Working Group, Request for Comments: 4880, November 2007. 
+	 'OpenPGP Message Format',
+     Network Working Group, Request for Comments: 4880,
+     November 2007.
+
+     A. Jivsov:
+     'Elliptic Curve Cryptography (ECC) in OpenPGP',
+     Internet Engineering Task Force (IETF), Request for Comments: 6637,
+     June 2012.
 
    This file is part of LibTMCG.
 
@@ -132,6 +138,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 		ret = gcry_sexp_build(&signature, &erroff,
 			"(sig-val (ecdsa (r %M) (s %M)))", r, s);
+	else
+		signature = NULL;
 	packet.insert(packet.end(),
 		packet_in.begin(), packet_in.end());
 	hspd.insert(hspd.end(),
@@ -219,6 +227,46 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 	return true;
 }
 
+bool TMCG_OpenPGP_Signature::Check
+	(const gcry_sexp_t key,
+	 const tmcg_openpgp_octets_t &hash,
+	 const int verbose) const
+{
+	gcry_error_t vret;
+	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	{
+		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+	{
+		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+	{
+		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			AsymmetricVerifyECDSA(hash, key, dsa_r, dsa_s);
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: signature algorithm " <<
+				"not supported" << std::endl;
+		return false;
+	}
+	if (vret)
+	{
+		if (verbose)
+			std::cerr << "ERROR: verification of signature " <<
+				"failed (rc = " << gcry_err_code(vret) <<
+				", str = " << gcry_strerror(vret) << ")" << std::endl;
+		return false;
+	}
+	return true;
+}
+
 // All signatures are formed by producing a hash over the signature
 // data, and then using the resulting hash in the signature algorithm.
 // [...]
@@ -296,42 +344,13 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (verbose > 2)
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
-	gcry_error_t vret;
-	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	if (Check(key, hash, verbose))
 	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
+		valid = true;
+		return true;
 	}
-	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
-	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
-	}
-	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
-	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyECDSA(hash, key, dsa_r, dsa_s);
-	}
-	else
-	{
-		if (verbose)
-			std::cerr << "ERROR: signature algorithm " <<
-				"not supported" << std::endl;	
-		return false;
-	}
-	if (vret)
-	{
-		if (verbose)
-			std::cerr << "ERROR: verification of signature " <<
-				"failed (rc = " << gcry_err_code(vret) <<
-				", str = " << gcry_strerror(vret) << ")" <<
-				std::endl;
-		valid = false;
-		return false;
-	}
-	valid = true;
-	return true;
+	valid = false;
+	return false;
 }
 
 bool TMCG_OpenPGP_Signature::Verify
@@ -379,42 +398,13 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (verbose > 2)
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
-	gcry_error_t vret;
-	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	if (Check(key, hash, verbose))
 	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
+		valid = true;
+		return true;
 	}
-	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
-	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
-	}
-	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
-	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyECDSA(hash, key, dsa_r, dsa_s);
-	}
-	else
-	{
-		if (verbose)
-			std::cerr << "ERROR: signature algorithm " <<
-				"not supported" << std::endl;	
-		return false;
-	}
-	if (vret)
-	{
-		if (verbose)
-			std::cerr << "ERROR: verification of signature " <<
-				"failed (rc = " << gcry_err_code(vret) <<
-				", str = " << gcry_strerror(vret) << ")" <<
-				std::endl;
-		valid = false;
-		return false;
-	}
-	valid = true;
-	return true;
+	valid = false;
+	return false;
 }
 
 bool TMCG_OpenPGP_Signature::Verify
@@ -439,8 +429,7 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.insert(trailer.end(),
 			sigtime_octets.begin(), sigtime_octets.end());
 		CallasDonnerhackeFinneyShawThayerRFC4880::
-			KeyHashV3(pub_hashing, sub_hashing, trailer, hashalgo,
-			hash, left);
+			KeyHashV3(pub_hashing, sub_hashing, trailer, hashalgo, hash, left);
 	}
 	else if (version == 4)
 	{
@@ -452,8 +441,7 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.push_back(hspd.size() & 0xFF);
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
 		CallasDonnerhackeFinneyShawThayerRFC4880::
-			KeyHash(pub_hashing, sub_hashing, trailer, hashalgo, 
-			hash, left);
+			KeyHash(pub_hashing, sub_hashing, trailer, hashalgo, hash, left);
 	}
 	else
 	{
@@ -465,42 +453,13 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (verbose > 2)
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
-	gcry_error_t vret;
-	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	if (Check(key, hash, verbose))
 	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
+		valid = true;
+		return true;
 	}
-	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
-	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
-	}
-	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
-	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyECDSA(hash, key, dsa_r, dsa_s);
-	}
-	else
-	{
-		if (verbose)
-			std::cerr << "ERROR: signature algorithm " <<
-				"not supported" << std::endl;	
-		return false;
-	}
-	if (vret)
-	{
-		if (verbose)
-			std::cerr << "ERROR: verification of signature " <<
-				"failed (rc = " << gcry_err_code(vret) <<
-				", str = " << gcry_strerror(vret) << ")" <<
-				std::endl;
-		valid = false;
-		return false;
-	}
-	valid = true;
-	return true;
+	valid = false;
+	return false;
 }
 
 bool TMCG_OpenPGP_Signature::Verify
@@ -552,42 +511,13 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (verbose > 2)
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
-	gcry_error_t vret;
-	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	if (Check(key, hash, verbose))
 	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
+		valid = true;
+		return true;
 	}
-	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
-	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
-	}
-	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
-	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyECDSA(hash, key, dsa_r, dsa_s);
-	}
-	else
-	{
-		if (verbose)
-			std::cerr << "ERROR: signature algorithm " <<
-				"not supported" << std::endl;	
-		return false;
-	}
-	if (vret)
-	{
-		if (verbose)
-			std::cerr << "ERROR: verification of signature " <<
-				"failed (rc = " << gcry_err_code(vret) <<
-				", str = " << gcry_strerror(vret) << ")" <<
-				std::endl;
-		valid = false;
-		return false;
-	}
-	valid = true;
-	return true;
+	valid = false;
+	return false;
 }
 
 bool TMCG_OpenPGP_Signature::Verify
@@ -627,42 +557,13 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (verbose > 2)
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
-	gcry_error_t vret;
-	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-	    (pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	if (Check(key, hash, verbose))
 	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyRSA(hash, key, hashalgo, rsa_md);
+		valid = true;
+		return true;
 	}
-	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
-	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyDSA(hash, key, dsa_r, dsa_s);
-	}
-	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
-	{
-		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricVerifyECDSA(hash, key, dsa_r, dsa_s);
-	}
-	else
-	{
-		if (verbose)
-			std::cerr << "ERROR: signature algorithm " <<
-				"not supported" << std::endl;	
-		return false;
-	}
-	if (vret)
-	{
-		if (verbose)
-			std::cerr << "ERROR: verification of signature " <<
-				"failed (rc = " << gcry_err_code(vret) <<
-				", str = " << gcry_strerror(vret) << ")" <<
-				std::endl;
-		valid = false;
-		return false;
-	}
-	valid = true;
-	return true;
+	valid = false;
+	return false;
 }
 
 bool TMCG_OpenPGP_Signature::operator <
@@ -677,7 +578,7 @@ TMCG_OpenPGP_Signature::~TMCG_OpenPGP_Signature
 	gcry_mpi_release(rsa_md);
 	gcry_mpi_release(dsa_r);
 	gcry_mpi_release(dsa_s);
-	if (!ret)
+	if (!ret && (signature != NULL))
 		gcry_sexp_release(signature);
 	packet.clear();
 	hspd.clear();

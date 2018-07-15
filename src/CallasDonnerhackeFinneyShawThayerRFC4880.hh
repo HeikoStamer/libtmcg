@@ -456,6 +456,10 @@ class TMCG_OpenPGP_Signature
 		bool CheckValidity
 			(const time_t									keycreationtime,
 			 const int										verbose) const;
+		bool Check
+			(const gcry_sexp_t								key,
+			 const tmcg_openpgp_octets_t					&hash,
+	 		 const int 										verbose) const;
 		bool Verify
 			(const gcry_sexp_t								key,
 			 const std::string								&filename,
