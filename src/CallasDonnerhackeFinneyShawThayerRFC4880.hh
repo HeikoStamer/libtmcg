@@ -272,6 +272,8 @@ typedef struct
 	gcry_mpi_t					me;
 	gcry_mpi_t					gk;
 	gcry_mpi_t					myk;
+	size_t						rkwlen;
+	tmcg_openpgp_byte_t			rkw[256];
 	tmcg_openpgp_signature_t	type;
 	tmcg_openpgp_hashalgo_t		hashalgo;
 	tmcg_openpgp_byte_t*		hspd; // allocated buffer with data
@@ -614,6 +616,16 @@ class TMCG_OpenPGP_Subkey
 			 const size_t									oidlen,
 			 const tmcg_openpgp_byte_t*						oid,
 			 const gcry_mpi_t								ecpk,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		TMCG_OpenPGP_Subkey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const size_t									oidlen,
+			 const tmcg_openpgp_byte_t*						oid,
+			 const gcry_mpi_t								ecpk,
+			 const tmcg_openpgp_hashalgo_t					kdf_hashalgo_in,
+			 const tmcg_openpgp_skalgo_t					kdf_skalgo_in,
 			 const tmcg_openpgp_octets_t					&packet_in);
 		bool good
 			() const;

@@ -986,6 +986,63 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		KeyidCompute(sub_hashing, id);
 }
 
+TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const size_t oidlen,
+	 const tmcg_openpgp_byte_t* oid,
+	 const gcry_mpi_t ecpk,
+	 const tmcg_openpgp_hashalgo_t kdf_hashalgo_in,
+	 const tmcg_openpgp_skalgo_t kdf_skalgo_in,
+	 const tmcg_openpgp_octets_t &packet_in):
+		ret(1),
+		erroff(0),
+		valid(false),
+		pkalgo(pkalgo_in),
+		creationtime(creationtime_in),
+		expirationtime(expirationtime_in)
+{
+	rsa_n = gcry_mpi_new(2048);
+	rsa_e = gcry_mpi_new(2048);
+	elg_p = gcry_mpi_new(2048);
+	elg_g = gcry_mpi_new(2048);
+	elg_y = gcry_mpi_new(2048);
+	dsa_p = gcry_mpi_new(2048);
+	dsa_q = gcry_mpi_new(2048);
+	dsa_g = gcry_mpi_new(2048);
+	dsa_y = gcry_mpi_new(2048);
+	ec_pk = gcry_mpi_new(1024);
+	// public-key algorithm is ECDH
+	gcry_mpi_set(ec_pk, ecpk);
+	const char *curve = NULL;
+	for (size_t idx = 0; (tmcg_openpgp_oidtable[idx].name != NULL); idx++)
+	{
+		if (oidlen == tmcg_openpgp_oidtable[idx].oid[0])
+		{
+			bool cmp = true;
+			for (size_t i = 0; i < oidlen; i++)
+			{
+				if (oid[i] != tmcg_openpgp_oidtable[idx].oid[1+i])
+				cmp = false;
+			}
+			if (cmp)
+				curve = tmcg_openpgp_oidtable[idx].name;
+		}
+	}
+	ret = gcry_sexp_build(&key, &erroff,
+		"(public-key (ecdh (curve %s) (q %m)))", curve, ecpk);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+	tmcg_openpgp_octets_t sub;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketSubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
+		kdf_hashalgo_in, kdf_skalgo_in, sub);
+	for (size_t i = 6; i < sub.size(); i++)
+		sub_hashing.push_back(sub[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		KeyidCompute(sub_hashing, id);
+}
+
 bool TMCG_OpenPGP_Subkey::good
 	() const
 {
@@ -1051,6 +1108,25 @@ bool TMCG_OpenPGP_Subkey::weak
 		wret = gcry_prime_check(dsa_q, 0);
 		if (wret)
 			return true; // q is not a prime
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
+	{
+		unsigned int curvebits = 0;
+		const char *curvename = gcry_pk_get_curve(key, 0, &curvebits);
+		if (curvename != NULL)
+		{
+			if (verbose > 1)
+				std::cerr << "INFO: ECDH with curve \"" << curvename <<
+					"\" and " << curvebits << " bits" << std::endl;
+			if (curvebits < 256)
+				return true; // weak key
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "WARNING: ECDH with unknown curve" << std::endl;
+			return true; // unknown curve
+		}
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 	{
@@ -6528,8 +6604,18 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-// TODO: a one-octet size, followed by a symmetric key encoded using the
-//       method described in Section 8 [RFC 6637]
+				// a one-octet size, followed by a symmetric key encoded
+				// using the method described in Section 8 [RFC 6637]
+				if (mpis.size() <= 2)
+					return 0; // error: result of key wrapping too short
+				out.rkwlen = mpis[0];
+				if ((out.rkwlen == 0) || (out.rkwlen == 255))
+					return 0; // error: bad result of key wrapping
+				if (mpis.size() < (out.rkwlen + 1))
+					return 0; // error: result of key wrapping too short
+				for (size_t i = 0; i < out.rkwlen; i++)
+					out.rkw[i] = mpis[1+i];
+				mpis.erase(mpis.begin(), mpis.begin()+out.rkwlen+1);
 			}
 			else
 				return 0xFE; // warning: unsupported algo
@@ -9171,8 +9257,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag6
 		{
 			if (verbose)
 				std::cerr << "ERROR: public-key algorithm " <<
-					(int)ctx.pkalgo << " not supported" <<
-					std::endl;
+					(int)ctx.pkalgo << " not supported" << std::endl;
 			return false;
 		}
 		if (!pub->good())
@@ -9248,9 +9333,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag14
 	if (ctx.version != 4)
 	{
 		if (verbose)
-			std::cerr << "WARNING: public-subkey packet " <<
-				"version " << (int)ctx.version <<
-				" not supported" << std::endl;
+			std::cerr << "WARNING: public-subkey packet version " <<
+				(int)ctx.version << " not supported" << std::endl;
 		badkey = true;
 	}
 	else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
@@ -9258,6 +9342,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag14
 	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
 	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
 	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
+             (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
 	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
 	{
 		// evaluate the context
@@ -9283,6 +9368,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag14
 			sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo,
 				ctx.keycreationtime, 0, ctx.p, ctx.q, ctx.g, 
 				ctx.y, current_packet);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
+		{
+			// public-key algorithm is ECDH: create new subkey
+			sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.curveoidlen, ctx.curveoid, 
+				ctx.ecpk, ctx.kdf_hashalgo, ctx.kdf_skalgo, current_packet);
 		}
 		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 		{
@@ -9822,6 +9914,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag1
 			esk = new TMCG_OpenPGP_PKESK(ctx.pkalgo, keyid, ctx.gk, ctx.myk,
 				current_packet);
 			(msg->PKESKs).push_back(esk);
+			break;
+		case TMCG_OPENPGP_PKALGO_ECDH:
+// TODO
 			break;
 		default:
 			break; // ignore not supported public-key algorithms
