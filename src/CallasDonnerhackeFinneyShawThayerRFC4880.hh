@@ -576,6 +576,8 @@ class TMCG_OpenPGP_Subkey
 		tmcg_openpgp_octets_t								psa;
 		tmcg_openpgp_octets_t								pha;
 		tmcg_openpgp_octets_t								pca;
+		tmcg_openpgp_hashalgo_t								kdf_hashalgo;
+		tmcg_openpgp_skalgo_t								kdf_skalgo;
 		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				bindsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				pbindsigs;

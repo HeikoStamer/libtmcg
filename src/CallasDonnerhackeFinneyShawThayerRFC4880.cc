@@ -789,7 +789,9 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		valid(false),
 		pkalgo(TMCG_OPENPGP_PKALGO_RSA),
 		creationtime(0),
-		expirationtime(0)
+		expirationtime(0),
+		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
+		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
 	// this is a dummy constructor used for simple relinking
 	rsa_n = gcry_mpi_new(2048);
@@ -820,7 +822,9 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		valid(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
-		expirationtime(expirationtime_in)
+		expirationtime(expirationtime_in),
+		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
+		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
 	rsa_n = gcry_mpi_new(2048);
 	rsa_e = gcry_mpi_new(2048);
@@ -860,7 +864,9 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		valid(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
-		expirationtime(expirationtime_in)
+		expirationtime(expirationtime_in),
+		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
+		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
 	rsa_n = gcry_mpi_new(2048);
 	rsa_e = gcry_mpi_new(2048);
@@ -902,7 +908,9 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		valid(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
-		expirationtime(expirationtime_in)
+		expirationtime(expirationtime_in),
+		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
+		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
 	rsa_n = gcry_mpi_new(2048);
 	rsa_e = gcry_mpi_new(2048);
@@ -944,7 +952,9 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		valid(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
-		expirationtime(expirationtime_in)
+		expirationtime(expirationtime_in),
+		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
+		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
 	rsa_n = gcry_mpi_new(2048);
 	rsa_e = gcry_mpi_new(2048);
@@ -1001,7 +1011,9 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		valid(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
-		expirationtime(expirationtime_in)
+		expirationtime(expirationtime_in),
+		kdf_hashalgo(kdf_hashalgo_in),
+		kdf_skalgo(kdf_skalgo_in)
 {
 	rsa_n = gcry_mpi_new(2048);
 	rsa_e = gcry_mpi_new(2048);
