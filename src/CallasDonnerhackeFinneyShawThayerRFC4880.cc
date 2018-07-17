@@ -1128,10 +1128,20 @@ bool TMCG_OpenPGP_Subkey::weak
 		if (curvename != NULL)
 		{
 			if (verbose > 1)
+			{
 				std::cerr << "INFO: ECDH with curve \"" << curvename <<
 					"\" and " << curvebits << " bits" << std::endl;
+				std::cerr << "INFO: ECDH with KDF hashalgo = " <<
+					(int)kdf_hashalgo << std::endl;
+			}
 			if (curvebits < 256)
 				return true; // weak key
+			if ((kdf_hashalgo != TMCG_OPENPGP_HASHALGO_SHA256) &&
+			    (kdf_hashalgo != TMCG_OPENPGP_HASHALGO_SHA384) &&
+				(kdf_hashalgo != TMCG_OPENPGP_HASHALGO_SHA512))
+			{
+				return true; // weak KDF hash algorithm
+			}
 		}
 		else
 		{
