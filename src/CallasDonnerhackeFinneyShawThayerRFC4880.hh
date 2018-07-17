@@ -272,6 +272,7 @@ typedef struct
 	gcry_mpi_t					me;
 	gcry_mpi_t					gk;
 	gcry_mpi_t					myk;
+	gcry_mpi_t					ecepk;
 	size_t						rkwlen;
 	tmcg_openpgp_byte_t			rkw[256];
 	tmcg_openpgp_signature_t	type;
@@ -331,7 +332,6 @@ typedef struct
 	tmcg_openpgp_skalgo_t		kdf_skalgo;
 	gcry_mpi_t					ecpk;
 	gcry_mpi_t					ecsk;
-	gcry_mpi_t					ecepk;
 	gcry_mpi_t					n;
 	gcry_mpi_t					e;
 	gcry_mpi_t					d;
@@ -672,6 +672,7 @@ class TMCG_OpenPGP_PrivateSubkey
 		gcry_mpi_t											rsa_d;
 		gcry_mpi_t											elg_x;
 		gcry_mpi_t											dsa_x;
+		gcry_mpi_t											ec_sk;
 		size_t												telg_n;
 		size_t												telg_t;
 		size_t												telg_i;
@@ -731,6 +732,26 @@ class TMCG_OpenPGP_PrivateSubkey
 			 const std::vector<gcry_mpi_t>					&qual,
 			 const std::vector<gcry_mpi_t>					&v_i,
 			 const std::vector< std::vector<gcry_mpi_t> >	&c_ik,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		TMCG_OpenPGP_PrivateSubkey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const size_t									oidlen,
+			 const tmcg_openpgp_byte_t*						oid,
+			 const gcry_mpi_t								ecpk,
+			 const gcry_mpi_t								ecsk,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		TMCG_OpenPGP_PrivateSubkey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const size_t									oidlen,
+			 const tmcg_openpgp_byte_t*						oid,
+			 const gcry_mpi_t								ecpk,
+			 const gcry_mpi_t								ecsk,
+			 const tmcg_openpgp_hashalgo_t					kdf_hashalgo_in,
+			 const tmcg_openpgp_skalgo_t					kdf_skalgo_in,
 			 const tmcg_openpgp_octets_t					&packet_in);
 		bool good
 			() const;
@@ -848,6 +869,7 @@ class TMCG_OpenPGP_Prvkey
 		gcry_mpi_t											rsa_u;
 		gcry_mpi_t											rsa_d;
 		gcry_mpi_t											dsa_x;
+		gcry_mpi_t											ec_sk;
 		size_t												tdss_n;
 		size_t												tdss_t;
 		size_t												tdss_i;
@@ -902,6 +924,15 @@ class TMCG_OpenPGP_Prvkey
 			 const std::vector<gcry_mpi_t>					&x_rvss_qual,
 			 const std::vector< std::vector<gcry_mpi_t> >	&c_ik,
 			 const tmcg_openpgp_octets_t					&packet_in);
+	TMCG_OpenPGP_Prvkey
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const time_t									creationtime_in,
+			 const time_t									expirationtime_in,
+			 const size_t									oidlen,
+			 const tmcg_openpgp_byte_t*						oid,
+			 const gcry_mpi_t								ecpk,
+			 const gcry_mpi_t								ecsk,
+			 const tmcg_openpgp_octets_t					&packet_in);
 		bool good
 			() const;
 		bool weak
@@ -947,6 +978,9 @@ class TMCG_OpenPGP_PKESK
 		gcry_mpi_t											me;
 		gcry_mpi_t											gk;
 		gcry_mpi_t											myk;
+		gcry_mpi_t											ecepk;
+		size_t												rkwlen;
+		tmcg_openpgp_byte_t									rkw[256];
 		tmcg_openpgp_octets_t								packet;
 
 		TMCG_OpenPGP_PKESK
@@ -959,6 +993,13 @@ class TMCG_OpenPGP_PKESK
 			 const tmcg_openpgp_octets_t					&keyid_in,
 			 const gcry_mpi_t								gk_in,
 			 const gcry_mpi_t								myk_in,
+			 const tmcg_openpgp_octets_t					&packet_in);
+		TMCG_OpenPGP_PKESK
+			(const tmcg_openpgp_pkalgo_t					pkalgo_in,
+			 const tmcg_openpgp_octets_t					&keyid_in,
+			 const gcry_mpi_t								ecepk_in,
+			 const size_t									rkwlen_in,
+			 const tmcg_openpgp_byte_t*						rkw_in,
 			 const tmcg_openpgp_octets_t					&packet_in);
 		~TMCG_OpenPGP_PKESK
 			();

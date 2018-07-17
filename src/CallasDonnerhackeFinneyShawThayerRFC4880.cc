@@ -1693,6 +1693,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_d = gcry_mpi_snew(2048);
 	elg_x = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	ec_sk = gcry_mpi_snew(1024);
 	telg_q = gcry_mpi_new(2048);
 	telg_h = gcry_mpi_new(2048);
 	telg_x_i = gcry_mpi_snew(2048);
@@ -1730,6 +1731,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_d = gcry_mpi_snew(2048);
 	elg_x = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	ec_sk = gcry_mpi_snew(1024);
 	telg_q = gcry_mpi_new(2048);
 	telg_h = gcry_mpi_new(2048);
 	telg_x_i = gcry_mpi_snew(2048);
@@ -1764,6 +1766,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_d = gcry_mpi_snew(2048);
 	elg_x = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	ec_sk = gcry_mpi_snew(1024);
 	telg_q = gcry_mpi_new(2048);
 	telg_h = gcry_mpi_new(2048);
 	telg_x_i = gcry_mpi_snew(2048);
@@ -1807,6 +1810,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_d = gcry_mpi_snew(2048);
 	elg_x = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	ec_sk = gcry_mpi_snew(1024);
 	telg_q = gcry_mpi_new(2048);
 	telg_h = gcry_mpi_new(2048);
 	telg_x_i = gcry_mpi_snew(2048);
@@ -1843,6 +1847,108 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 			telg_c_ik[i].push_back(tmp);
 		}
 	}
+}
+
+TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const size_t oidlen,
+	 const tmcg_openpgp_byte_t* oid,
+	 const gcry_mpi_t ecpk,
+	 const gcry_mpi_t ecsk,
+	 const tmcg_openpgp_octets_t &packet_in):
+		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0)
+{
+	tmcg_openpgp_octets_t sub;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketSubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
+		TMCG_OPENPGP_HASHALGO_UNKNOWN, TMCG_OPENPGP_SKALGO_PLAINTEXT, sub);
+	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
+		oidlen, oid, ecpk, sub);
+	rsa_p = gcry_mpi_snew(2048);
+	rsa_q = gcry_mpi_snew(2048);
+	rsa_u = gcry_mpi_snew(2048);
+	rsa_d = gcry_mpi_snew(2048);
+	elg_x = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(2048);
+	ec_sk = gcry_mpi_snew(1024);
+	telg_q = gcry_mpi_new(2048);
+	telg_h = gcry_mpi_new(2048);
+	telg_x_i = gcry_mpi_snew(2048);
+	telg_xprime_i = gcry_mpi_snew(2048);
+	// public-key algorithm is ECDSA
+	gcry_mpi_set(ec_sk, ecsk);
+	const char *curve = NULL;
+	for (size_t idx = 0; (tmcg_openpgp_oidtable[idx].name != NULL); idx++)
+	{
+		if (oidlen == tmcg_openpgp_oidtable[idx].oid[0])
+		{
+			bool cmp = true;
+			for (size_t i = 0; i < oidlen; i++)
+			{
+				if (oid[i] != tmcg_openpgp_oidtable[idx].oid[1+i])
+				cmp = false;
+			}
+			if (cmp)
+				curve = tmcg_openpgp_oidtable[idx].name;
+		}
+	}
+	ret = gcry_sexp_build(&private_key, &erroff,
+		"(private-key (ecdsa (curve %s) (q %m) (d %m)))", curve, ecpk, ecsk);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+}
+
+TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const size_t oidlen,
+	 const tmcg_openpgp_byte_t* oid,
+	 const gcry_mpi_t ecpk,
+	 const gcry_mpi_t ecsk,
+	 const tmcg_openpgp_hashalgo_t kdf_hashalgo_in,
+	 const tmcg_openpgp_skalgo_t kdf_skalgo_in,
+	 const tmcg_openpgp_octets_t &packet_in):
+		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0)
+{
+	tmcg_openpgp_octets_t sub;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketSubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
+		kdf_hashalgo_in, kdf_skalgo_in, sub);
+	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
+		oidlen, oid, ecpk, kdf_hashalgo_in, kdf_skalgo_in, sub);
+	rsa_p = gcry_mpi_snew(2048);
+	rsa_q = gcry_mpi_snew(2048);
+	rsa_u = gcry_mpi_snew(2048);
+	rsa_d = gcry_mpi_snew(2048);
+	elg_x = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(2048);
+	ec_sk = gcry_mpi_snew(1024);
+	telg_q = gcry_mpi_new(2048);
+	telg_h = gcry_mpi_new(2048);
+	telg_x_i = gcry_mpi_snew(2048);
+	telg_xprime_i = gcry_mpi_snew(2048);
+	// public-key algorithm is ECDH
+	gcry_mpi_set(ec_sk, ecsk);
+	const char *curve = NULL;
+	for (size_t idx = 0; (tmcg_openpgp_oidtable[idx].name != NULL); idx++)
+	{
+		if (oidlen == tmcg_openpgp_oidtable[idx].oid[0])
+		{
+			bool cmp = true;
+			for (size_t i = 0; i < oidlen; i++)
+			{
+				if (oid[i] != tmcg_openpgp_oidtable[idx].oid[1+i])
+				cmp = false;
+			}
+			if (cmp)
+				curve = tmcg_openpgp_oidtable[idx].name;
+		}
+	}
+	ret = gcry_sexp_build(&private_key, &erroff,
+		"(private-key (ecdh (curve %s) (q %m) (d %m)))", curve, ecpk, ecsk);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
 bool TMCG_OpenPGP_PrivateSubkey::good
@@ -1903,6 +2009,12 @@ bool TMCG_OpenPGP_PrivateSubkey::weak
 				xprimeibits << " bits" << std::endl; 
 		if ((qbits < 256) || (xibits < 245) || (xprimeibits < 245))
 			return true; // weak key
+		return pub->weak(verbose);
+	}
+	else if ((pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+		(pkalgo == TMCG_OPENPGP_PKALGO_ECDH))
+	{
+		// TODO: check, whether ec_sk is the scalar of the public EC point
 		return pub->weak(verbose);
 	}
 	else
@@ -1975,6 +2087,11 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			}
 			return true;
 		}
+		else if (esk->pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
+		{
+// TODO [RFC 6637]
+			return true;
+		}
 		else
 		{
 			if (verbose)
@@ -2004,6 +2121,7 @@ TMCG_OpenPGP_PrivateSubkey::~TMCG_OpenPGP_PrivateSubkey
 	gcry_mpi_release(rsa_d);
 	gcry_mpi_release(elg_x);
 	gcry_mpi_release(dsa_x);
+	gcry_mpi_release(ec_sk);
 	gcry_mpi_release(telg_q);
 	gcry_mpi_release(telg_h);
 	gcry_mpi_release(telg_x_i);
@@ -2800,6 +2918,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	rsa_u = gcry_mpi_snew(2048);
 	rsa_d = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	ec_sk = gcry_mpi_snew(1024);
 	tdss_h = gcry_mpi_new(2048);
 	tdss_x_i = gcry_mpi_snew(2048);
 	tdss_xprime_i = gcry_mpi_snew(2048);
@@ -2836,6 +2955,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	rsa_u = gcry_mpi_snew(2048);
 	rsa_d = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	ec_sk = gcry_mpi_snew(1024);
 	tdss_h = gcry_mpi_new(2048);
 	tdss_x_i = gcry_mpi_snew(2048);
 	tdss_xprime_i = gcry_mpi_snew(2048);
@@ -2878,6 +2998,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	rsa_u = gcry_mpi_snew(2048);
 	rsa_d = gcry_mpi_snew(2048);
 	dsa_x = gcry_mpi_snew(2048);
+	ec_sk = gcry_mpi_snew(1024);
 	tdss_h = gcry_mpi_new(2048);
 	tdss_x_i = gcry_mpi_snew(2048);
 	tdss_xprime_i = gcry_mpi_snew(2048);
@@ -2916,6 +3037,54 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 			gcry_sexp_release(private_key);	
 		ret = GPG_ERR_BAD_KEY;
 	}
+}
+
+TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const time_t creationtime_in,
+	 const time_t expirationtime_in,
+	 const size_t oidlen,
+	 const tmcg_openpgp_byte_t* oid,
+	 const gcry_mpi_t ecpk,
+	 const gcry_mpi_t ecsk,
+	 const tmcg_openpgp_octets_t &packet_in):
+		pkalgo(pkalgo_in),  tdss_n(0), tdss_t(0), tdss_i(0)
+{
+	tmcg_openpgp_octets_t pkt;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketPubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
+		TMCG_OPENPGP_HASHALGO_UNKNOWN, TMCG_OPENPGP_SKALGO_PLAINTEXT, pkt);
+	pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
+		oidlen, oid, ecpk, pkt);
+	rsa_p = gcry_mpi_snew(2048);
+	rsa_q = gcry_mpi_snew(2048);
+	rsa_u = gcry_mpi_snew(2048);
+	rsa_d = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(2048);
+	ec_sk = gcry_mpi_snew(1024);
+	tdss_h = gcry_mpi_new(2048);
+	tdss_x_i = gcry_mpi_snew(2048);
+	tdss_xprime_i = gcry_mpi_snew(2048);
+	// public-key algorithm is ECDSA
+	gcry_mpi_set(ec_sk, ecsk);
+	const char *curve = NULL;
+	for (size_t idx = 0; (tmcg_openpgp_oidtable[idx].name != NULL); idx++)
+	{
+		if (oidlen == tmcg_openpgp_oidtable[idx].oid[0])
+		{
+			bool cmp = true;
+			for (size_t i = 0; i < oidlen; i++)
+			{
+				if (oid[i] != tmcg_openpgp_oidtable[idx].oid[1+i])
+				cmp = false;
+			}
+			if (cmp)
+				curve = tmcg_openpgp_oidtable[idx].name;
+		}
+	}
+	ret = gcry_sexp_build(&private_key, &erroff,
+		"(private-key (ecdsa (curve %s) (q %m) (d %m)))", curve, ecpk, ecsk);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
 bool TMCG_OpenPGP_Prvkey::good
@@ -2963,6 +3132,11 @@ bool TMCG_OpenPGP_Prvkey::weak
 				xprimeibits << " bits" << std::endl; 
 		if ((xibits < 245) || (xprimeibits < 245))
 			return true; // weak key
+		return pub->weak(verbose);
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+	{
+		// TODO: check secret EC scalar
 		return pub->weak(verbose);
 	}
 	else
@@ -3094,6 +3268,7 @@ TMCG_OpenPGP_Prvkey::~TMCG_OpenPGP_Prvkey
 	gcry_mpi_release(rsa_u);
 	gcry_mpi_release(rsa_d);
 	gcry_mpi_release(dsa_x);
+	gcry_mpi_release(ec_sk);
 	gcry_mpi_release(tdss_h);
 	gcry_mpi_release(tdss_x_i);
 	gcry_mpi_release(tdss_xprime_i);
@@ -3166,12 +3341,13 @@ TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
 	 const tmcg_openpgp_octets_t &keyid_in,
 	 const gcry_mpi_t me_in,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in)
+		pkalgo(pkalgo_in), rkwlen(0)
 {
 	keyid.insert(keyid.end(), keyid_in.begin(), keyid_in.end());
 	me = gcry_mpi_new(2048);
 	gk = gcry_mpi_new(2048);
 	myk = gcry_mpi_new(2048);
+	ecepk = gcry_mpi_new(1024);
 	// public-key algorithm is RSA
 	gcry_mpi_set(me, me_in);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -3183,15 +3359,38 @@ TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
 	 const gcry_mpi_t gk_in,
 	 const gcry_mpi_t myk_in,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in)
+		pkalgo(pkalgo_in), rkwlen(0)
 {
 	keyid.insert(keyid.end(), keyid_in.begin(), keyid_in.end());
 	me = gcry_mpi_new(2048);
 	gk = gcry_mpi_new(2048);
 	myk = gcry_mpi_new(2048);
+	ecepk = gcry_mpi_new(1024);
 	// public-key algorithm is ElGamal
 	gcry_mpi_set(gk, gk_in);
 	gcry_mpi_set(myk, myk_in);
+	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
+}
+
+TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
+	(const tmcg_openpgp_pkalgo_t pkalgo_in,
+	 const tmcg_openpgp_octets_t &keyid_in,
+	 const gcry_mpi_t ecepk_in,
+	 const size_t rkwlen_in,
+	 const tmcg_openpgp_byte_t* rkw_in,
+	 const tmcg_openpgp_octets_t &packet_in):
+		pkalgo(pkalgo_in), rkwlen(rkwlen_in)
+{
+	keyid.insert(keyid.end(), keyid_in.begin(), keyid_in.end());
+	me = gcry_mpi_new(2048);
+	gk = gcry_mpi_new(2048);
+	myk = gcry_mpi_new(2048);
+	ecepk = gcry_mpi_new(1024);
+	// public-key algorithm is ECDH
+	gcry_mpi_set(ecepk, ecepk_in);
+	memset(rkw, 0, sizeof(rkw));
+	for (size_t i = 0; ((i < rkwlen) && (i < sizeof(rkw))); i++)
+		rkw[i] = rkw_in[i];
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
@@ -3202,6 +3401,8 @@ TMCG_OpenPGP_PKESK::~TMCG_OpenPGP_PKESK
 	gcry_mpi_release(me);
 	gcry_mpi_release(gk);
 	gcry_mpi_release(myk);
+	gcry_mpi_release(ecepk);
+	memset(rkw, 0, sizeof(rkw));
 	packet.clear();
 }
 
@@ -6906,6 +7107,50 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
+			{
+				// Algorithm-Specific Fields for ECDH keys [RFC 6637]
+				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[6];
+				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
+					return 0; // error: values reserved for future extensions
+				if (pkt.size() < (7 + out.curveoidlen))
+					return 0; // error: OID too short
+				for (size_t i = 0; i < out.curveoidlen; i++)
+					out.curveoid[i] = pkt[7+i];
+				mpis.clear();
+				mpis.insert(mpis.end(),
+					pkt.begin()+7+out.curveoidlen, pkt.end());
+				mlen = PacketMPIDecode(mpis, out.ecpk);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				if (mpis.size() != 4)
+					return 0; // error: bad KDF params size
+				if (mpis[0] != 0x03)
+					return 0; // error: bad KDF size
+				if (mpis[1] != 0x01)
+					return 0; // error: bad KDF extensions
+				out.kdf_hashalgo = (tmcg_openpgp_hashalgo_t)mpis[2];
+				out.kdf_skalgo = (tmcg_openpgp_skalgo_t)mpis[3];
+			}
+			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+			{
+				// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
+				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[6];
+				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
+					return 0; // error: values reserved for future extensions
+				if (pkt.size() < (7 + out.curveoidlen))
+					return 0; // error: OID too short
+				for (size_t i = 0; i < out.curveoidlen; i++)
+					out.curveoid[i] = pkt[7+i];
+				mpis.clear();
+				mpis.insert(mpis.end(),
+					pkt.begin()+7+out.curveoidlen, pkt.end());
+				mlen = PacketMPIDecode(mpis, out.ecpk);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error: bad or zero mpi
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			}
 			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7)
 			{
 				// Algorithm-Specific Fields for new tDSS/DSA keys
@@ -7191,67 +7436,64 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				{
 					// Algorithm-Specific Fields for Elgamal
 					// Algorithm-Specific Fields for DSA
-					mlen = PacketMPIDecode(mpis,
-						out.x, chksum);
+					mlen = PacketMPIDecode(mpis, out.x, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
 					gcry_mpi_set_flag(out.x, GCRYMPI_FLAG_SECURE);
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 				         (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
 				         (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 				{
 					// Algorithm-Specific Fields for RSA
-					mlen = PacketMPIDecode(mpis,
-						out.d, chksum);
+					mlen = PacketMPIDecode(mpis, out.d, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
 					gcry_mpi_set_flag(out.d, GCRYMPI_FLAG_SECURE);
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis,
-						out.p, chksum);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis, out.p, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
 					gcry_mpi_set_flag(out.p, GCRYMPI_FLAG_SECURE);
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis,
-						out.q, chksum);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis, out.q, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
 					gcry_mpi_set_flag(out.q, GCRYMPI_FLAG_SECURE);
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis,
-						out.u, chksum);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis, out.u, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
 					gcry_mpi_set_flag(out.u, GCRYMPI_FLAG_SECURE);
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+				}
+				else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
+				         (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
+				{
+					// Algorithm-Specific Fields for ECDH keys [RFC 6637]
+					// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
+					mlen = PacketMPIDecode(mpis, out.ecsk, chksum);
+					if (!mlen || (mlen > mpis.size()))
+						return 0; // error: bad mpi
+					gcry_mpi_set_flag(out.ecsk, GCRYMPI_FLAG_SECURE);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7) ||
 				         (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL8) ||
 				         (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9))
 				{
 					// Algorithm-Specific Fields tDSS/DKG
-					mlen = PacketMPIDecode(mpis,
-						out.x_i, chksum);
+					mlen = PacketMPIDecode(mpis, out.x_i, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
 					gcry_mpi_set_flag(out.x_i, GCRYMPI_FLAG_SECURE);
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis,
-						out.xprime_i, chksum);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
+					mlen = PacketMPIDecode(mpis, out.xprime_i, chksum);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
 					gcry_mpi_set_flag(out.xprime_i, GCRYMPI_FLAG_SECURE);
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				else
 					return 0; // error: algo not supported
@@ -7285,8 +7527,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						return 0; // error: no salt
 					for (size_t i = 0; i < 8; i++)
 						out.s2k_salt[i] = mpis[i];
-					mpis.erase(mpis.begin(),
-						mpis.begin()+8);
+					mpis.erase(mpis.begin(), mpis.begin()+8);
 				}
 				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
 				{
@@ -7295,13 +7536,11 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 						return 0; // error: no salt
 					for (size_t i = 0; i < 8; i++)
 						out.s2k_salt[i] = mpis[i];
-					mpis.erase(mpis.begin(),
-						mpis.begin()+8);
+					mpis.erase(mpis.begin(), mpis.begin()+8);
 					if (mpis.size() < 1)
 						return 0; // error: no count
 					out.s2k_count = mpis[0];
-					mpis.erase(mpis.begin(),
-						mpis.begin()+1);
+					mpis.erase(mpis.begin(), mpis.begin()+1);
 				}
 				else
 					return 0; // unknown S2K specifier
@@ -9626,9 +9865,21 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			}
 			mpis.erase(mpis.begin(), mpis.begin()+mlen);
 		}
+		else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
+		         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
+		{
+			mlen = PacketMPIDecode(mpis, ctx.ecsk, chksum);
+			if (!mlen || (mlen > mpis.size()))
+			{
+				std::cerr << "ERROR: reading MPI ecsk failed" <<
+					" (bad passphrase)" << std::endl;
+				return false;
+			}
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
 		else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7) ||
-			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL8) ||
-			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9))
+		         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL8) ||
+		         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9))
 		{
 			mlen = PacketMPIDecode(mpis, ctx.x_i, chksum);
 			if (!mlen || (mlen > mpis.size()))
@@ -9720,6 +9971,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
 			prv = new TMCG_OpenPGP_Prvkey(ctx.pkalgo, ctx.keycreationtime, 0,
 				ctx.p, ctx.q, ctx.g, ctx.y, ctx.x, current_packet);
 		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+		{
+			// public-key algorithm is ECDSA: create new prvkey
+			prv = new TMCG_OpenPGP_Prvkey(ctx.pkalgo, ctx.keycreationtime, 0,
+				ctx.curveoidlen, ctx.curveoid, ctx.ecpk, ctx.ecsk,
+				current_packet);
+		}
 		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7)
 		{
 			std::vector<std::string> capl;
@@ -9753,8 +10011,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
 		{
 			if (verbose)
 				std::cerr << "ERROR: public-key algorithm " <<
-					(int)ctx.pkalgo << " not supported" <<
-					std::endl;
+					(int)ctx.pkalgo << " not supported" << std::endl;
 			return false;
 		}
 		if (!prv->good())
@@ -9810,6 +10067,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
 	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
 	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
 	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
+	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
 			 (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9))
 	{
 		// evaluate the context
@@ -9863,6 +10122,21 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
 				current_packet);
 			PacketContextRelease(pctx);
 			Release(qual, v_i, x_rvss_qual, c_ik);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+		{
+			// public-key algorithm is ECDSA: create new private subkey
+			sub = new TMCG_OpenPGP_PrivateSubkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.curveoidlen, ctx.curveoid,
+				ctx.ecpk, ctx.ecsk, current_packet);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
+		{
+			// public-key algorithm is ECDSA: create new private subkey
+			sub = new TMCG_OpenPGP_PrivateSubkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.curveoidlen, ctx.curveoid,
+				ctx.ecpk, ctx.ecsk, ctx.kdf_hashalgo, ctx.kdf_skalgo,
+				current_packet);
 		}
 		if (!sub->good())
 		{
@@ -9928,7 +10202,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag1
 			(msg->PKESKs).push_back(esk);
 			break;
 		case TMCG_OPENPGP_PKALGO_ECDH:
-// TODO
+			esk = new TMCG_OpenPGP_PKESK(ctx.pkalgo, keyid, ctx.ecepk,
+				ctx.rkwlen, ctx.rkw, current_packet);
+			(msg->PKESKs).push_back(esk);
 			break;
 		default:
 			break; // ignore not supported public-key algorithms
