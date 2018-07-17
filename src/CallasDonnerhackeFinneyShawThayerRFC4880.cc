@@ -7124,7 +7124,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				if (mpis.size() != 4)
+				if (mpis.size() < 4)
 					return 0; // error: bad KDF params size
 				if (mpis[0] != 0x03)
 					return 0; // error: bad KDF size
@@ -7132,6 +7132,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad KDF extensions
 				out.kdf_hashalgo = (tmcg_openpgp_hashalgo_t)mpis[2];
 				out.kdf_skalgo = (tmcg_openpgp_skalgo_t)mpis[3];
+				mpis.erase(mpis.begin(), mpis.begin()+4);
 			}
 			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 			{
