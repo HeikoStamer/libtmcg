@@ -2104,7 +2104,7 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			}
 			return true;
 		}
-		else if (esk->pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
+		else if (esk->pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
 		{
 // TODO [RFC 6637]
 			return true;
