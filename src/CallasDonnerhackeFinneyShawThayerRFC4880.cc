@@ -4871,6 +4871,32 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
 	PacketMPIEncode(s, out); // signature - MPI s
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
+	(const tmcg_openpgp_octets_t &hashing,
+	 const tmcg_openpgp_octets_t &left,
+	 const gcry_mpi_t s, tmcg_openpgp_octets_t &out)
+{
+	size_t slen = (gcry_mpi_get_nbits(s) + 7) / 8;
+
+	// A Signature packet describes a binding between some public key and
+	// some data. The most common signatures are a signature of a file or a
+	// block of text, and a signature that is a certification of a User ID.
+	// Two versions of Signature packets are defined. Version 3 provides
+	// basic signature information, while version 4 provides an expandable
+	// format with subpackets that can specify more information about the
+	// signature.
+	PacketTagEncode(2, out);
+	PacketLengthEncode(hashing.size()+2+0+left.size()+2+slen, out);
+	// hashed area including subpackets
+	out.insert(out.end(), hashing.begin(), hashing.end());
+	// unhashed subpacket area
+	out.push_back((0 >> 8) & 0xFF); // length of unhashed subpacket data
+	out.push_back(0 & 0xFF);
+	// signature data
+	out.insert(out.end(), left.begin(), left.end()); // 16 bits of hash
+	PacketMPIEncode(s, out); // signature - MPI s
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
 	(const tmcg_openpgp_byte_t type, const bool critical,
 	 const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &out)

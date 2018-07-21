@@ -1328,6 +1328,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t								r,
 			 const gcry_mpi_t								s,
 			 tmcg_openpgp_octets_t							&out);
+		static void PacketSigEncode
+			(const tmcg_openpgp_octets_t					&hashing,
+			 const tmcg_openpgp_octets_t					&left,
+			 const gcry_mpi_t								s,
+			 tmcg_openpgp_octets_t							&out);
 		static void SubpacketEncode
 			(const tmcg_openpgp_byte_t						type,
 			 const bool										critical,
