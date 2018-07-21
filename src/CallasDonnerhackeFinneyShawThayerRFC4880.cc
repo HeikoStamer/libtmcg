@@ -8798,6 +8798,36 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	return 0;
 }
 
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignECDSA
+	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key, 
+	 gcry_mpi_t &r, gcry_mpi_t &s)
+{
+	char buf[2048];
+	gcry_sexp_t sigdata, signature;
+	gcry_error_t ret;
+	size_t buflen = 0, erroff;
+
+	memset(buf, 0, sizeof(buf));
+	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buf))); i++, buflen++)
+		buf[i] = in[i];
+	ret = gcry_sexp_build(&sigdata, &erroff,
+		"(data (flags raw) (value %b))", (int)buflen, buf);
+	if (ret)
+		return ret;
+	ret = gcry_pk_sign(&signature, sigdata, key);
+	gcry_sexp_release(sigdata);
+	if (ret)
+		return ret;
+	gcry_mpi_release(r); // release already allocated mpi's
+	gcry_mpi_release(s);
+	ret = gcry_sexp_extract_param(signature, NULL, "rs", &r, &s, NULL);
+	gcry_sexp_release(signature);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key, 
 	 const gcry_mpi_t r, const gcry_mpi_t s)

@@ -165,6 +165,13 @@ int main
 	std::cout << "gcry_pk_genkey(..., [dsa])" << std::endl;
 	ret = gcry_pk_genkey(&dsakey, dsaparms);
 	assert(!ret);
+	gcry_sexp_t ecdsakey, ecdsaparms;
+	std::cout << "gcry_sexp_build(...)" << std::endl;
+	ret = gcry_sexp_build(&ecdsaparms, &erroff, "(genkey (ecdsa (curve secp384r1)))");
+	assert(!ret);
+	std::cout << "gcry_pk_genkey(..., [ecdsa])" << std::endl;
+	ret = gcry_pk_genkey(&ecdsakey, ecdsaparms);
+	assert(!ret);
 	gcry_sexp_t dsakey2, dsaparms2;
 	std::cout << "gcry_sexp_build(...)" << std::endl;
 	ret = gcry_sexp_build(&dsaparms2, &erroff, "(genkey (dsa (nbits 4:2048)))");
@@ -289,6 +296,23 @@ int main
 	std::cout << "AsymmetricVerifyDSA(...) with truncated hash" << std::endl;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA(hash2,
 		dsakey, r, s);
+	assert(!ret);
+	gcry_mpi_release(r);
+	gcry_mpi_release(s);
+
+	// testing AsymmetricSignECDSA() and AsymmetricVerifyECDSA()
+	hash.clear(), trailer.clear(), left.clear(), sig.clear();
+	r = gcry_mpi_new(1024);
+	s = gcry_mpi_new(1024);
+	std::cout << "AsymmetricSignECDSA(...)" << std::endl;
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignECDSA(hash,
+		ecdsakey, r, s);
+	assert(!ret);
+	std::cout << "r = " << r << std::endl;
+	std::cout << "s = " << s << std::endl;
+	std::cout << "AsymmetricVerifyECDSA(...)" << std::endl;
+	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyECDSA(hash,
+		ecdsakey, r, s);
 	assert(!ret);
 	gcry_mpi_release(r);
 	gcry_mpi_release(s);
@@ -661,6 +685,8 @@ int main
 	gcry_sexp_release(elgkey);
 	gcry_sexp_release(dsaparms);
 	gcry_sexp_release(dsakey);
+	gcry_sexp_release(ecdsaparms);
+	gcry_sexp_release(ecdsakey);
 	gcry_sexp_release(dsaparms2);
 	gcry_sexp_release(dsakey2);
 	gcry_sexp_release(rsaparms);

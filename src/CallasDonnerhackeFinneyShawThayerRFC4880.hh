@@ -1645,6 +1645,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_sexp_t								key,
 			 gcry_mpi_t										&r,
 			 gcry_mpi_t										&s);
+		static gcry_error_t AsymmetricSignECDSA
+			(const tmcg_openpgp_octets_t					&in,
+			 const gcry_sexp_t								key,
+			 gcry_mpi_t										&r,
+			 gcry_mpi_t										&s);
 		static gcry_error_t AsymmetricVerifyDSA
 			(const tmcg_openpgp_octets_t					&in,
 			 const gcry_sexp_t								key,
