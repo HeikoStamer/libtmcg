@@ -2,8 +2,14 @@
   CallasDonnerhackeFinneyShawThayerRFC4880.hh, OpenPGP Message Format
 
      J. Callas, L. Donnerhacke, H. Finney, D. Shaw, R. Thayer:
-	'OpenPGP Message Format',
-     Network Working Group, Request for Comments: 4880, November 2007. 
+	 'OpenPGP Message Format',
+     Network Working Group, Request for Comments: 4880,
+     November 2007.
+
+     A. Jivsov:
+     'Elliptic Curve Cryptography (ECC) in OpenPGP',
+     Internet Engineering Task Force (IETF), Request for Comments: 6637,
+     June 2012.
 
    This file is part of LibTMCG.
 
