@@ -4929,6 +4929,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 	 const tmcg_openpgp_octets_t &flags,
 	 const tmcg_openpgp_octets_t &issuer, tmcg_openpgp_octets_t &out)
 {
+	PacketSigPrepareSelfSignature(type, TMCG_OPENPGP_PKALGO_DSA, hashalgo,
+		sigtime, keyexptime, flags, issuer, out);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
+	(const tmcg_openpgp_signature_t type,
+	 const tmcg_openpgp_pkalgo_t pkalgo,
+	 const tmcg_openpgp_hashalgo_t hashalgo,
+	 const time_t sigtime, const time_t keyexptime, 
+	 const tmcg_openpgp_octets_t &flags,
+	 const tmcg_openpgp_octets_t &issuer, tmcg_openpgp_octets_t &out)
+{
 	size_t subpkts = 8;
 	size_t subpktlen = (subpkts * 6) + 4 + 2 + issuer.size() + 3 + 1 + 
 		1 + flags.size() + 1;
@@ -4936,7 +4948,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		subpktlen += (6 + 4);
 	out.push_back(4); // V4 format
 	out.push_back(type); // type (e.g. 0x10-0x13 for UID certification)
-	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
+	out.push_back(pkalgo); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
 	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
@@ -4984,7 +4996,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 	(const tmcg_openpgp_hashalgo_t hashalgo, const time_t sigtime, 
 	 const tmcg_openpgp_octets_t &flags, const tmcg_openpgp_octets_t &issuer,
-	 const tmcg_openpgp_pkalgo_t pkalgo, const tmcg_openpgp_octets_t &revoker,
+	 const tmcg_openpgp_pkalgo_t pkalgo2, const tmcg_openpgp_octets_t &revoker,
+	 tmcg_openpgp_octets_t &out)
+{
+	PacketSigPrepareDesignatedRevoker(TMCG_OPENPGP_PKALGO_DSA, hashalgo,
+		sigtime, flags, issuer, pkalgo2, revoker, out);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
+	(const tmcg_openpgp_pkalgo_t pkalgo,
+	 const tmcg_openpgp_hashalgo_t hashalgo, const time_t sigtime,
+	 const tmcg_openpgp_octets_t &flags, const tmcg_openpgp_octets_t &issuer,
+	 const tmcg_openpgp_pkalgo_t pkalgo2, const tmcg_openpgp_octets_t &revoker,
 	 tmcg_openpgp_octets_t &out)
 {
 	size_t subpkts = 8;
@@ -4994,7 +5017,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 		subpktlen += 22;
 	out.push_back(4); // V4 format
 	out.push_back(TMCG_OPENPGP_SIGNATURE_DIRECTLY_ON_A_KEY); // type
-	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
+	out.push_back(pkalgo); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
 	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
@@ -5013,7 +5036,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 		{
 			tmcg_openpgp_octets_t rk;
 			rk.push_back(0x80); // class octet (non-sensitive relationship)
-			rk.push_back(pkalgo); // public-key algorithm
+			rk.push_back(pkalgo2); // public-key algorithm
 			assert((revoker.size() == 20));
 			for (size_t i = 0; i < 20; i++)
 				rk.push_back(revoker[i]); // SHA-1 fingerprint
@@ -5050,6 +5073,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 	 const std::string &policy, const tmcg_openpgp_octets_t &issuer,
 	 tmcg_openpgp_octets_t &out)
 {
+	PacketSigPrepareDetachedSignature(type, TMCG_OPENPGP_PKALGO_DSA, hashalgo,
+		sigtime, sigexptime, policy, issuer, out);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
+	(const tmcg_openpgp_signature_t type,
+	 const tmcg_openpgp_pkalgo_t pkalgo,
+	 const tmcg_openpgp_hashalgo_t hashalgo,
+	 const time_t sigtime, const time_t sigexptime,
+	 const std::string &policy, const tmcg_openpgp_octets_t &issuer,
+	 tmcg_openpgp_octets_t &out)
+{
 	size_t subpkts = 2;
 	size_t subpktlen = (subpkts * 6) + 4 + issuer.size();
 	if (sigexptime != 0)
@@ -5058,7 +5093,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 		subpktlen += (6 + policy.length());
 	out.push_back(4); // V4 format
 	out.push_back(type); // type (e.g. 0x00 for signature on a binary document)
-	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
+	out.push_back(pkalgo); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
 	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
@@ -5093,12 +5128,24 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignatu
 	 const std::string &reason, const tmcg_openpgp_octets_t &issuer, 
 	 tmcg_openpgp_octets_t &out)
 {
+	PacketSigPrepareRevocationSignature(type, TMCG_OPENPGP_PKALGO_DSA, hashalgo,
+		sigtime, revcode, reason, issuer, out);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature
+	(const tmcg_openpgp_signature_t type,
+	 const tmcg_openpgp_pkalgo_t pkalgo,
+	 const tmcg_openpgp_hashalgo_t hashalgo, 
+	 const time_t sigtime, const tmcg_openpgp_byte_t revcode,
+	 const std::string &reason, const tmcg_openpgp_octets_t &issuer, 
+	 tmcg_openpgp_octets_t &out)
+{
 	size_t subpkts = 3;
 	size_t subpktlen = (subpkts * 6) + 4 + issuer.size() + 
 		1 + reason.length();
 	out.push_back(4); // V4 format
 	out.push_back(type); // type (e.g. 0x20/0x28 for key/subkey revocation)
-	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
+	out.push_back(pkalgo); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
 	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
@@ -5124,6 +5171,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSign
 	 const std::string &policy, const tmcg_openpgp_octets_t &issuer, 
 	 tmcg_openpgp_octets_t &out)
 {
+	PacketSigPrepareCertificationSignature(type, TMCG_OPENPGP_PKALGO_DSA,
+		hashalgo, sigtime, sigexptime, policy, issuer, out);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSignature
+	(const tmcg_openpgp_signature_t type,
+	 const tmcg_openpgp_pkalgo_t pkalgo,
+	 const tmcg_openpgp_hashalgo_t hashalgo, 
+	 const time_t sigtime, const time_t sigexptime, 
+	 const std::string &policy, const tmcg_openpgp_octets_t &issuer, 
+	 tmcg_openpgp_octets_t &out)
+{
 	size_t subpkts = 2;
 	size_t subpktlen = (subpkts * 6) + 4 + issuer.size();
 	if (sigexptime != 0)
@@ -5132,7 +5191,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSign
 		subpktlen += (6 + policy.length());
 	out.push_back(4); // V4 format
 	out.push_back(type); // type (e.g. 0x10 for user ID certification)
-	out.push_back(TMCG_OPENPGP_PKALGO_DSA); // public-key algorithm
+	out.push_back(pkalgo); // public-key algorithm
 	out.push_back(hashalgo); // hash algorithm
 	// hashed subpacket area
 	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
