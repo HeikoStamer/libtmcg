@@ -8031,7 +8031,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHashV3
 	// at the end of the Signature packet.
 	if (!HashComputeFile(hashalgo, filename, false, hash_input, hash))
 		return false;
-	for (size_t i = 0; i < 2; i++)
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 	return true;
 }
@@ -8067,7 +8067,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 	// at the end of the Signature packet.
 	if (!HashComputeFile(hashalgo, filename, false, hash_input, hash))
 		return false;
-	for (size_t i = 0; i < 2; i++)
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 	return true;
 }
@@ -8095,7 +8095,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHashV3
 	// at the end of the Signature packet.
 	if (!HashComputeFile(hashalgo, filename, true, hash_input, hash))
 		return false;
-	for (size_t i = 0; i < 2; i++)
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 	return true;
 }
@@ -8132,7 +8132,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHash
 	// at the end of the Signature packet.
 	if (!HashComputeFile(hashalgo, filename, true, hash_input, hash))
 		return false;
-	for (size_t i = 0; i < 2; i++)
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 	return true;
 }
@@ -8168,7 +8168,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV3
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
 	HashCompute(hashalgo, hash_input, hash);
-	for (size_t i = 0; i < 2; i++)
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 }
 
@@ -8234,7 +8234,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
 	HashCompute(hashalgo, hash_input, hash);
-	for (size_t i = 0; i < 2; i++)
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 }
 
@@ -8270,7 +8270,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV3
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
 	HashCompute(hashalgo, hash_input, hash);
-	for (size_t i = 0; i < 2; i++)
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 }
 
@@ -8315,7 +8315,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
 	HashCompute(hashalgo, hash_input, hash);
-	for (size_t i = 0; i < 2; i++)
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 }
 
@@ -8355,7 +8355,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV3
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
 	HashCompute(hashalgo, hash_input, hash);
-	for (size_t i = 0; i < 2; i++)
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 }
 
@@ -8404,7 +8404,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
 	HashCompute(hashalgo, hash_input, hash);
-	for (size_t i = 0; i < 2; i++)
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 }
 
