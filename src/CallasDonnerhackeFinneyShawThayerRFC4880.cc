@@ -4718,10 +4718,8 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketStringDecode
 	bool partlen = false;
 
 	headlen = PacketLengthDecode(in, true, 0x00, len, partlen);
-	if (!headlen || partlen)
+	if (!headlen || partlen || (headlen == 42))
 		return 0; // error: wrong length
-	if (headlen == 42)
-		headlen = 0; // special case: indeterminate length
 	if (!len)
 		return 0; // error: string of zero length
 	if (in.size() < (len + headlen))
