@@ -11273,9 +11273,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 	tmcg_openpgp_octets_t pkts;
 	pkts.insert(pkts.end(), in.begin(), in.end());
 	// parse the message packet by packet
+	bool stop = false, kseq = false;
 	tmcg_openpgp_byte_t ptag = 0xFF;
 	size_t pnum = 0;
-	while (pkts.size())
+	while (pkts.size() && !stop)
 	{
 		bool ret = true;
 		tmcg_openpgp_packet_ctx_t ctx;
@@ -11336,6 +11337,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 		{
 			case 1: // Public-Key Encrypted Session Key
 				ret = MessageParse_Tag1(ctx, verbose, current_packet, msg);
+				kseq = true;
 				break;
 			case 2: // Signature
 				if (verbose)
@@ -11344,6 +11346,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				break;
 			case 3: // Symmetric-Key Encrypted Session Key
 				ret = MessageParse_Tag3(ctx, verbose, current_packet, msg);
+				kseq = true;
 				break;
 			case 4: // One-Pass Signature
 				if (verbose)
@@ -11352,18 +11355,28 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				break;
 			case 8: // Compressed Data
 				ret = MessageParse_Tag8(ctx, verbose, current_packet, msg);
+				stop = true; // ensures well-formedness of an OpenPGP message
+				if (kseq)
+					ret = false; // ESK sequence detected
 				break;
 			case 9: // Symmetrically Encrypted Data
 				ret = MessageParse_Tag9(ctx, verbose, current_packet, msg);
+				stop = true; // ensures well-formedness of an OpenPGP message
 				break;
 			case 11: // Literal Data
 				ret = MessageParse_Tag11(ctx, verbose, current_packet, msg);
+				stop = true; // ensures well-formedness of an OpenPGP message
+				if (kseq)
+					ret = false; // ESK sequence detected
 				break;
 			case 18: // Symmetrically Encrypted Integrity Protected Data
 				ret = MessageParse_Tag18(ctx, verbose, current_packet, msg);
+				stop = true; // ensures well-formedness of an OpenPGP message
 				break;
 			case 19: // Modification Detection Code
 				ret = MessageParse_Tag19(ctx, verbose, current_packet, msg);
+				if (kseq)
+					ret = false; // ESK sequence detected
 				break;
 			default:
 				if (verbose > 1)
