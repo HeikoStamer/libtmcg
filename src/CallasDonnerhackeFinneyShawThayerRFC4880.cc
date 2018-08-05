@@ -3531,8 +3531,22 @@ bool TMCG_OpenPGP_Message::CheckMDC
 	// "it includes the prefix data described above" [RFC4880]
 	mdc_hashing.insert(mdc_hashing.end(), prefix.begin(), prefix.end());
 	// "it includes all of the plaintext" [RFC4880]
-	mdc_hashing.insert(mdc_hashing.end(),
-		literal_message.begin(), literal_message.end());
+	if (compressed_message.size() != 0)
+	{
+		if (verbose > 1)
+			std::cerr << "INFO: using COMP packet for computing MDC" <<
+				std::endl;
+		mdc_hashing.insert(mdc_hashing.end(),
+			compressed_message.begin(), compressed_message.end());
+	}
+	else
+	{
+		if (verbose > 1)
+			std::cerr << "INFO: using LIT packet for computing MDC" <<
+				std::endl;
+		mdc_hashing.insert(mdc_hashing.end(),
+			literal_message.begin(), literal_message.end());
+	}
 	// "and the also includes two octets of values 0xD3, 0x14" [RFC4880]
 	mdc_hashing.push_back(0xD3);
 	mdc_hashing.push_back(0x14);
@@ -3561,6 +3575,7 @@ TMCG_OpenPGP_Message::~TMCG_OpenPGP_Message
 	encrypted_message.clear();
 	signed_message.clear();
 	compressed_message.clear();
+	compressed_data.clear();
 	literal_message.clear();
 	literal_data.clear();
 	prefix.clear();
@@ -10392,9 +10407,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag8
 	}
 	else
 	{
+		(msg->compressed_message).insert((msg->compressed_message).end(),
+			current_packet.begin(), current_packet.end());
 		msg->compalgo = ctx.compalgo;
 		for (size_t i = 0; i < ctx.compdatalen; i++)
-			(msg->compressed_message).push_back(ctx.compdata[i]);
+			(msg->compressed_data).push_back(ctx.compdata[i]);
 	}
 	return true;
 }
@@ -11366,7 +11383,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 							" packet (indeterminate length)" << std::endl;
 					ctx.compdatalen -= 22;
 					for (size_t i = 0; i < 22; i++)
+					{
 						pkts.push_back(ctx.compdata[ctx.compdatalen+i]);
+						current_packet.pop_back();
+					}
 				}
 				ret = MessageParse_Tag8(ctx, verbose, current_packet, msg);
 				if (kseq)
@@ -11386,7 +11406,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 							" packet (indeterminate length)" << std::endl;
 					ctx.datalen -= 22;
 					for (size_t i = 0; i < 22; i++)
+					{
 						pkts.push_back(ctx.data[ctx.datalen+i]);
+						current_packet.pop_back();
+					}
 				}
 				ret = MessageParse_Tag11(ctx, verbose, current_packet, msg);
 				if (kseq)

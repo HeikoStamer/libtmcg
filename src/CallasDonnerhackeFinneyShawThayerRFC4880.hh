@@ -1049,6 +1049,7 @@ class TMCG_OpenPGP_Message
 		tmcg_openpgp_octets_t								encrypted_message;
 		tmcg_openpgp_octets_t								signed_message;
 		tmcg_openpgp_octets_t								compressed_message;
+		tmcg_openpgp_octets_t								compressed_data;
 		tmcg_openpgp_octets_t								literal_message;
 		tmcg_openpgp_octets_t								literal_data;
 		tmcg_openpgp_octets_t								prefix;
