@@ -11363,7 +11363,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 					// handle MDC, if COMP packet has indeterminate length
 					if (verbose)
 						std::cerr << "WARNING: assume MDC at the end of COMP" <<
-							" packet" << std::endl;
+							" packet (indeterminate length)" << std::endl;
 					ctx.compdatalen -= 22;
 					for (size_t i = 0; i < 22; i++)
 						pkts.push_back(ctx.compdata[ctx.compdatalen+i]);
@@ -11383,7 +11383,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 					// handle MDC, if LIT packet has indeterminate length
 					if (verbose)
 						std::cerr << "WARNING: assume MDC at the end of LIT" <<
-							" packet" << std::endl;
+							" packet (indeterminate length)" << std::endl;
 					ctx.datalen -= 22;
 					for (size_t i = 0; i < 22; i++)
 						pkts.push_back(ctx.data[ctx.datalen+i]);
