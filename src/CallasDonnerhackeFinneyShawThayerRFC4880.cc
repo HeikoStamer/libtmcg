@@ -11272,11 +11272,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 	// copy the message for processing
 	tmcg_openpgp_octets_t pkts;
 	pkts.insert(pkts.end(), in.begin(), in.end());
-	// parse the message packet by packet as long as no Encrypted Data found
-	bool have_sed = false, have_seipd = false;
+	// parse the message packet by packet
 	tmcg_openpgp_byte_t ptag = 0xFF;
 	size_t pnum = 0;
-	while (pkts.size() && !have_sed && !have_seipd)
+	while (pkts.size())
 	{
 		bool ret = true;
 		tmcg_openpgp_packet_ctx_t ctx;
@@ -11354,20 +11353,14 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 			case 8: // Compressed Data
 				ret = MessageParse_Tag8(ctx, verbose, current_packet, msg);
 				break;
-/* parsing of not integrity protected data removed due to #efail considerations
 			case 9: // Symmetrically Encrypted Data
 				ret = MessageParse_Tag9(ctx, verbose, current_packet, msg);
-				if (ret)
-					have_sed = true;
 				break;
-*/
 			case 11: // Literal Data
 				ret = MessageParse_Tag11(ctx, verbose, current_packet, msg);
 				break;
 			case 18: // Symmetrically Encrypted Integrity Protected Data
 				ret = MessageParse_Tag18(ctx, verbose, current_packet, msg);
-				if (ret)
-					have_seipd = true;
 				break;
 			case 19: // Modification Detection Code
 				ret = MessageParse_Tag19(ctx, verbose, current_packet, msg);
