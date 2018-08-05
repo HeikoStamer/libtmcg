@@ -11355,7 +11355,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				break;
 			case 8: // Compressed Data
 				ret = MessageParse_Tag8(ctx, verbose, current_packet, msg);
-				stop = true; // ensures well-formedness of an OpenPGP message
 				if (kseq)
 					ret = false; // ESK sequence detected
 				break;
@@ -11365,7 +11364,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				break;
 			case 11: // Literal Data
 				ret = MessageParse_Tag11(ctx, verbose, current_packet, msg);
-				stop = true; // ensures well-formedness of an OpenPGP message
 				if (kseq)
 					ret = false; // ESK sequence detected
 				break;
@@ -11375,6 +11373,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				break;
 			case 19: // Modification Detection Code
 				ret = MessageParse_Tag19(ctx, verbose, current_packet, msg);
+				stop = true; // ensures well-formedness of an OpenPGP message
 				if (kseq)
 					ret = false; // ESK sequence detected
 				break;
