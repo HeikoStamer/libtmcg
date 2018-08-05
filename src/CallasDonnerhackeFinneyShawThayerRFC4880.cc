@@ -4603,7 +4603,12 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthDecode
 	}
 	else if (!newformat && (lentype == 0x03))
 	{
-		return 0; // error: indeterminate length is not supported
+		// The packet is of indeterminate length. The header is 1 octet
+		// long, and the implementation must determine how long the packet
+		// is. If the packet is in a file, this means that the packet
+		// extends until the end of the file.
+		len = in.size();
+		return 42;
 	}
 	else
 		return 0; // error: unknown length type 
@@ -4715,6 +4720,8 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketStringDecode
 	headlen = PacketLengthDecode(in, true, 0x00, len, partlen);
 	if (!headlen || partlen)
 		return 0; // error: wrong length
+	if (headlen == 42)
+		headlen = 0; // special case: indeterminate length
 	if (!len)
 		return 0; // error: string of zero length
 	if (in.size() < (len + headlen))
@@ -6849,6 +6856,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			lentype, len, partlen);
 		if (!headlen)
 			return 0; // error: invalid length header
+		if (headlen == 42)
+			headlen = 0; // special case: indeterminate length
 		if (in.size() < (headlen + len))
 			return 0; // error: packet too short
 		// An implementation MAY use Partial Body Lengths for data
@@ -6860,7 +6869,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			return 0; // error: first partial less than 512 octets
 		if (partlen && (tag != 8) && (tag != 9) && (tag != 11) && 
 		    (tag != 18))
+		{
 			return 0; // error: no literal, compressed, ... allowed
+		}
 		current_packet.insert(current_packet.end(), // copy packet
 			in.begin(), in.begin()+headlen+len);
 		pkt.insert(pkt.end(),
