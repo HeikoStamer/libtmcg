@@ -6855,7 +6855,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		if (!headlen)
 			return 0; // error: invalid length header
 		if (headlen == 42)
+		{
 			headlen = 0; // special case: indeterminate length
+			out.indetlen = true;
+		}
 		if (in.size() < (headlen + len))
 			return 0; // error: packet too short
 		// An implementation MAY use Partial Body Lengths for data
@@ -10381,17 +10384,17 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag8
 {
 	if (verbose > 1)
 		std::cerr << "INFO: COMP length = " << ctx.compdatalen << std::endl;
-	if ((msg->compressed_message).size() == 0)
-	{
-		msg->compalgo = ctx.compalgo;
-		for (size_t i = 0; i < ctx.compdatalen; i++)
-			(msg->compressed_message).push_back(ctx.compdata[i]);
-	}
-	else
+	if ((msg->compressed_message).size() != 0)
 	{
 		if (verbose)
 			std::cerr << "ERROR: duplicate COMP packet found" << std::endl;
 		return false;
+	}
+	else
+	{
+		msg->compalgo = ctx.compalgo;
+		for (size_t i = 0; i < ctx.compdatalen; i++)
+			(msg->compressed_message).push_back(ctx.compdata[i]);
 	}
 	return true;
 }
@@ -10403,17 +10406,17 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag9
 {
 	if (verbose > 1)
 		std::cerr << "INFO: SE length = " << ctx.encdatalen << std::endl;
-	if ((!msg->have_sed) && (!msg->have_seipd))
-	{
-		msg->have_sed = true;
-		for (size_t i = 0; i < ctx.encdatalen; i++)
-			(msg->encrypted_message).push_back(ctx.encdata[i]);
-	}
-	else
+	if (msg->have_sed || msg->have_seipd)
 	{
 		if (verbose)
 			std::cerr << "ERROR: duplicate SE/SEIP packet found" << std::endl;
 		return false;
+	}
+	else
+	{
+		msg->have_sed = true;
+		for (size_t i = 0; i < ctx.encdatalen; i++)
+			(msg->encrypted_message).push_back(ctx.encdata[i]);
 	}
 	return true;
 }
@@ -10425,7 +10428,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag11
 {
 	if (verbose > 1)
 		std::cerr << "INFO: LIT length = " << ctx.datalen << std::endl;
-	if ((msg->literal_message).size() == 0)
+	if ((msg->literal_message).size() != 0)
+	{
+		if (verbose)
+			std::cerr << "ERROR: duplicate LIT packet found" << std::endl;
+		return false;
+	}
+	else
 	{
 		(msg->literal_message).insert((msg->literal_message).end(),
 			current_packet.begin(), current_packet.end());
@@ -10435,12 +10444,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag11
 		msg->timestamp = ctx.datatime;
 		for (size_t i = 0; i < ctx.datalen; i++)
 			(msg->literal_data).push_back(ctx.data[i]);
-	}
-	else
-	{
-		if (verbose)
-			std::cerr << "ERROR: duplicate LIT packet found" << std::endl;
-		return false;
 	}
 	return true;
 }
@@ -10452,17 +10455,17 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag18
 {
 	if (verbose > 1)
 		std::cerr << "INFO: SEIP length = " << ctx.encdatalen << std::endl;
-	if ((!msg->have_sed) && (!msg->have_seipd))
-	{
-		msg->have_seipd = true;
-		for (size_t i = 0; i < ctx.encdatalen; i++)
-			(msg->encrypted_message).push_back(ctx.encdata[i]);
-	}
-	else
+	if (msg->have_sed || msg->have_seipd)
 	{
 		if (verbose)
 			std::cerr << "ERROR: duplicate SE/SEIP packet found" << std::endl;
 		return false;
+	}
+	else
+	{
+		msg->have_seipd = true;
+		for (size_t i = 0; i < ctx.encdatalen; i++)
+			(msg->encrypted_message).push_back(ctx.encdata[i]);
 	}
 	return true;
 }
@@ -10474,16 +10477,16 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag19
 {
 	if (verbose > 1)
 		std::cerr << "INFO: MDC length = " << sizeof(ctx.mdc_hash) << std::endl;
-	if ((msg->mdc).size() == 0)
-	{
-		for (size_t i = 0; i < sizeof(ctx.mdc_hash); i++)
-			(msg->mdc).push_back(ctx.mdc_hash[i]);
-	}
-	else
+	if ((msg->mdc).size() != 0)
 	{
 		if (verbose)
 			std::cerr << "ERROR: duplicate MDC packet found" << std::endl;
 		return false;
+	}
+	else
+	{
+		for (size_t i = 0; i < sizeof(ctx.mdc_hash); i++)
+			(msg->mdc).push_back(ctx.mdc_hash[i]);
 	}
 	return true;
 }
@@ -11354,6 +11357,17 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 						" found; not supported and ignored" << std::endl;
 				break;
 			case 8: // Compressed Data
+				if (ctx.indetlen && msg->have_seipd &&
+					((msg->mdc).size() == 0) && (ctx.compdatalen > 22))
+				{
+					// handle MDC, if COMP packet has indeterminate length
+					if (verbose)
+						std::cerr << "WARNING: assume MDC at the end of COMP" <<
+							" packet" << std::endl;
+					ctx.compdatalen -= 22;
+					for (size_t i = 0; i < 22; i++)
+						pkts.push_back(ctx.compdata[ctx.compdatalen+i]);
+				}
 				ret = MessageParse_Tag8(ctx, verbose, current_packet, msg);
 				if (kseq)
 					ret = false; // ESK sequence detected
@@ -11363,6 +11377,17 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				stop = true; // ensures well-formedness of an OpenPGP message
 				break;
 			case 11: // Literal Data
+				if (ctx.indetlen && msg->have_seipd &&
+					((msg->mdc).size() == 0) && (ctx.datalen > 22))
+				{
+					// handle MDC, if LIT packet has indeterminate length
+					if (verbose)
+						std::cerr << "WARNING: assume MDC at the end of LIT" <<
+							" packet" << std::endl;
+					ctx.datalen -= 22;
+					for (size_t i = 0; i < 22; i++)
+						pkts.push_back(ctx.data[ctx.datalen+i]);
+				}
 				ret = MessageParse_Tag11(ctx, verbose, current_packet, msg);
 				if (kseq)
 					ret = false; // ESK sequence detected

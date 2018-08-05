@@ -272,6 +272,7 @@ static const tmcg_openpgp_oid_t tmcg_openpgp_oidtable[] =
 typedef struct
 {
 	bool						newformat;
+	bool						indetlen;
 	tmcg_openpgp_byte_t			version;
 	tmcg_openpgp_byte_t			keyid[8]; // key ID
 	tmcg_openpgp_pkalgo_t		pkalgo;
