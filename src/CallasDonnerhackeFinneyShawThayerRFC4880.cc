@@ -4132,7 +4132,7 @@ tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 		rpos = in.find("\n\n", spos);
 		rlen = 2;
 	}
-	cpos = in.find("\r\n="); // TODO: use regex for reliable checksum detection
+	cpos = in.find("\r\n=", spos); // TODO: use regex for reliable detection
 	if (cpos == in.npos)
 	{
 		cpos = in.find("\n=");
@@ -4162,7 +4162,7 @@ tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	{
 		std::cerr << "ERROR: ArmorDecode() spos = " << spos <<
 			" rpos = " << rpos << " cpos = " << cpos <<
-			" epos = " << epos << std::endl; 
+			" epos = " << epos << " rlen = " << rlen << std::endl; 
 		return TMCG_OPENPGP_ARMOR_UNKNOWN;
 	}
 }
