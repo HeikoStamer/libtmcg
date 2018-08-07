@@ -76,13 +76,13 @@ void start_instance
 	// create asynchronous authenticated broadcast channels
 	aiounicast_select *aiou = new aiounicast_select(n, whoami,
 		bP_in, bP_out, bP_key,
-		aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+		aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 			
 	// create an instance of a reliable broadcast protocol (RBC)
 	std::string myID = "t-seabp";
 	CachinKursawePetzoldShoupRBC *rbc =	new CachinKursawePetzoldShoupRBC(n, t,
 		whoami, aiou,
-		aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+		aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 	rbc->setID(myID);
 			
 	// round 1 -- broadcast

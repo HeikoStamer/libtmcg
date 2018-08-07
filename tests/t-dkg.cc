@@ -124,16 +124,16 @@ void start_instance
 
 			// create asynchronous authenticated unicast channels
 			aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 
 			// create asynchronous authenticated broadcast channels
 			aiounicast_select *aiou2 = new aiounicast_select(N, whoami, bP_in, bP_out, bP_key,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_middle);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 			
 			// create an instance of a reliable broadcast protocol (RBC)
 			std::string myID = "t-dkg";
 			CachinKursawePetzoldShoupRBC *rbc = new CachinKursawePetzoldShoupRBC(N, T, whoami, aiou2,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_middle);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 			rbc->setID(myID);
 			
 			// generating $x$ and extracting $y = g^x \bmod p$

@@ -132,9 +132,9 @@ void start_instance
 
 			// create asynchronous authenticated unicast channels
 			aiounicast_select *aiou = new aiounicast_select(N, whoami, uP_in, uP_out, uP_key,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 			aiounicast_select *aiou_nm1 = new aiounicast_select(N-1, (whoami==0)?0:whoami-1, uP_in_nm1, uP_out_nm1, uP_key_nm1,
-				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_short);
+				aiounicast::aio_scheduler_roundrobin, aiounicast::aio_timeout_long);
 
 			// create asynchronous authenticated broadcast channels
 			aiounicast_select *aiou2 = new aiounicast_select(N, whoami, bP_in, bP_out, bP_key,
