@@ -465,7 +465,7 @@ class TMCG_OpenPGP_Signature
 		bool CheckValidity
 			(const time_t									keycreationtime,
 			 const int										verbose) const;
-		bool Check
+		bool CheckIntegrity
 			(const gcry_sexp_t								key,
 			 const tmcg_openpgp_octets_t					&hash,
 	 		 const int 										verbose) const;
@@ -1247,10 +1247,16 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void FingerprintCompute
 			(const tmcg_openpgp_octets_t					&in,
 			 tmcg_openpgp_octets_t							&out);
-		static void FingerprintConvert
+		static void FingerprintConvertPlain
+			(const tmcg_openpgp_octets_t					&in,
+			 std::string									&out);
+		static void FingerprintConvertPretty
 			(const tmcg_openpgp_octets_t					&in,
 			 std::string									&out);
 		static void FingerprintCompute
+			(const tmcg_openpgp_octets_t					&in,
+			 std::string									&out);
+		static void FingerprintComputePretty
 			(const tmcg_openpgp_octets_t					&in,
 			 std::string									&out);
 		static void KeyidCompute

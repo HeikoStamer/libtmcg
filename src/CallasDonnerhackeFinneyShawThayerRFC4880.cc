@@ -227,7 +227,7 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 	return true;
 }
 
-bool TMCG_OpenPGP_Signature::Check
+bool TMCG_OpenPGP_Signature::CheckIntegrity
 	(const gcry_sexp_t key,
 	 const tmcg_openpgp_octets_t &hash,
 	 const int verbose) const
@@ -344,7 +344,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (verbose > 2)
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
-	if (Check(key, hash, verbose))
+	if (CheckIntegrity(key, hash, verbose))
 	{
 		valid = true;
 		return true;
@@ -398,7 +398,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (verbose > 2)
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
-	if (Check(key, hash, verbose))
+	if (CheckIntegrity(key, hash, verbose))
 	{
 		valid = true;
 		return true;
@@ -453,7 +453,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (verbose > 2)
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
-	if (Check(key, hash, verbose))
+	if (CheckIntegrity(key, hash, verbose))
 	{
 		valid = true;
 		return true;
@@ -511,7 +511,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (verbose > 2)
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
-	if (Check(key, hash, verbose))
+	if (CheckIntegrity(key, hash, verbose))
 	{
 		valid = true;
 		return true;
@@ -557,7 +557,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (verbose > 2)
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
 			" " << (int)left[1] << std::dec << std::endl;
-	if (Check(key, hash, verbose))
+	if (CheckIntegrity(key, hash, verbose))
 	{
 		valid = true;
 		return true;
@@ -1284,7 +1284,7 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 			tmcg_openpgp_octets_t fpr(rk.key_fingerprint,
 				 rk.key_fingerprint+sizeof(rk.key_fingerprint));
 			CallasDonnerhackeFinneyShawThayerRFC4880::
-				FingerprintConvert(fpr, fpr_str);
+				FingerprintConvertPretty(fpr, fpr_str);
 			std::cerr << "[" << fpr_str << "]";
 		}
 	}
@@ -1326,7 +1326,7 @@ bool TMCG_OpenPGP_Subkey::CheckExternalRevocation
 				revkeys[k].key_fingerprint+sizeof(revkeys[k].key_fingerprint));
 			std::string fprstr;
 			CallasDonnerhackeFinneyShawThayerRFC4880::
-				FingerprintConvert(fpr, fprstr);
+				FingerprintConvertPlain(fpr, fprstr);
 			if (verbose > 2)
 				std::cerr << "INFO: looking for external revocation " <<
 					"key with fingerprint " << fprstr << std::endl;
@@ -2106,6 +2106,7 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		}
 		else if (esk->pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
 		{
+return false;
 // TODO [RFC 6637]
 			return true;
 		}
@@ -2464,7 +2465,7 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 			tmcg_openpgp_octets_t fpr(rk.key_fingerprint,
 				 rk.key_fingerprint+sizeof(rk.key_fingerprint));
 			CallasDonnerhackeFinneyShawThayerRFC4880::
-				FingerprintConvert(fpr, fpr_str);
+				FingerprintConvertPretty(fpr, fpr_str);
 			std::cerr << "[" << fpr_str << "]";
 		}
 	}
@@ -2506,7 +2507,7 @@ bool TMCG_OpenPGP_Pubkey::CheckExternalRevocation
 				revkeys[k].key_fingerprint+sizeof(revkeys[k].key_fingerprint));
 			std::string fprstr;
 			CallasDonnerhackeFinneyShawThayerRFC4880::
-				FingerprintConvert(fpr, fprstr);
+				FingerprintConvertPlain(fpr, fprstr);
 			if (verbose > 2)
 				std::cerr << "INFO: looking for external revocation " <<
 					"key with fingerprint " << fprstr << std::endl;
@@ -4253,14 +4254,24 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 	delete [] hash;
 }
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintConvert
+void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintConvertPlain
+	(const tmcg_openpgp_octets_t &in, std::string &out)
+{
+	char *hex_digest = new char[(2 * in.size()) + 1];
+	memset(hex_digest, 0, (2 * in.size()) + 1);
+	for (size_t i = 0; i < in.size(); i++)
+		snprintf(hex_digest + (2 * i), 3, "%02X", in[i]);
+	out = hex_digest;
+	delete [] hex_digest;
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintConvertPretty
 	(const tmcg_openpgp_octets_t &in, std::string &out)
 {
 	char *hex_digest = new char[(3 * in.size()) + 1];
 	memset(hex_digest, 0, (3 * in.size()) + 1);
 	for (size_t i = 0; i < (in.size() / 2); i++)
-		snprintf(hex_digest + (5 * i), 6, "%02X%02X ",
-			in[2*i], in[(2*i)+1]);
+		snprintf(hex_digest + (5 * i), 6, "%02X%02X ", in[2*i], in[(2*i)+1]);
 	out = hex_digest;
 	delete [] hex_digest;
 }
@@ -4270,7 +4281,15 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 {
 	tmcg_openpgp_octets_t fpr;
 	FingerprintCompute(in, fpr);
-	FingerprintConvert(fpr, out);
+	FingerprintConvertPlain(fpr, out);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintComputePretty
+	(const tmcg_openpgp_octets_t &in, std::string &out)
+{
+	tmcg_openpgp_octets_t fpr;
+	FingerprintCompute(in, fpr);
+	FingerprintConvertPretty(fpr, out);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
