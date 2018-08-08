@@ -1328,8 +1328,8 @@ bool TMCG_OpenPGP_Subkey::CheckExternalRevocation
 			CallasDonnerhackeFinneyShawThayerRFC4880::
 				FingerprintConvertPlain(fpr, fprstr);
 			if (verbose > 2)
-				std::cerr << "INFO: looking for external revocation " <<
-					"key with fingerprint " << fprstr << std::endl;
+				std::cerr << "INFO: looking for external revocation" <<
+					" key with fingerprint " << fprstr << std::endl;
 			const TMCG_OpenPGP_Pubkey *revkey = ring->find(fprstr);
 			if (revkey != NULL)
 			{
