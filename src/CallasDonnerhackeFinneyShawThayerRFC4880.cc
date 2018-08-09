@@ -3315,12 +3315,16 @@ TMCG_OpenPGP_Keyring::TMCG_OpenPGP_Keyring
 bool TMCG_OpenPGP_Keyring::add
 	(const TMCG_OpenPGP_Pubkey *key)
 {
-	std::string fpr_str;
+	std::string fpr_str, kid_str;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		FingerprintCompute(key->pub_hashing, fpr_str);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		KeyidCompute(key->pub_hashing, kid_str);
 	if (keys.count(fpr_str))
 		return false; // key is already there
 	keys[fpr_str] = key;
+	if (!keys_by_keyid.count(kid_str))
+		keys_by_keyid[kid_str] = key;
 	return true;
 }
 
@@ -3331,6 +3335,19 @@ const TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::find
 	{
 		std::map<std::string, const TMCG_OpenPGP_Pubkey*>::const_iterator
 			it = keys.find(fingerprint);
+		return it->second;
+	}
+	else
+		return NULL; // key not found
+}
+
+const TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::find_by_keyid
+	(const std::string &keyid) const
+{
+	if (keys_by_keyid.count(keyid))
+	{
+		std::map<std::string, const TMCG_OpenPGP_Pubkey*>::const_iterator
+			it = keys_by_keyid.find(keyid);
 		return it->second;
 	}
 	else
@@ -3350,6 +3367,7 @@ TMCG_OpenPGP_Keyring::~TMCG_OpenPGP_Keyring
 	     it = keys.begin(); it != keys.end(); ++it)
 		delete it->second;
 	keys.clear();
+	keys_by_keyid.clear();
 }
 
 // ===========================================================================
@@ -4306,17 +4324,23 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 		out.push_back(fpr[i]);
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidConvert
+	(const tmcg_openpgp_octets_t &in, std::string &out)
+{
+	char *hex_digest = new char[(2 * in.size()) + 1];
+	memset(hex_digest, 0, (2 * in.size()) + 1);
+	for (size_t i = 0; i < in.size(); i++)
+		snprintf(hex_digest + (2 * i), 3, "%02X", in[i]);
+	out = hex_digest;
+	delete [] hex_digest;
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 	(const tmcg_openpgp_octets_t &in, std::string &out)
 {
 	tmcg_openpgp_octets_t kid;
 	KeyidCompute(in, kid);
-	char *hex_digest = new char[(2 * kid.size()) + 1];
-	memset(hex_digest, 0, (2 * kid.size()) + 1);
-	for (size_t i = 0; i < kid.size(); i++)
-		snprintf(hex_digest + (2 * i), 3, "%02X", kid[i]);
-	out = hex_digest;
-	delete [] hex_digest;
+	KeyidConvert(kid, out);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
@@ -7830,8 +7854,6 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (pkt.size() < 2)
 				return 0; // error: incorrect packet body
 			out.compalgo = (tmcg_openpgp_compalgo_t)pkt[0];
-			if (out.compalgo > 3)
-				return 0; // error: algorithm not supported
 			out.compdatalen = pkt.size() - 1;
 			tmcg_openpgp_mem_alloc += out.compdatalen;
 			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
