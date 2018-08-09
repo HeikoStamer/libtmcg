@@ -326,6 +326,8 @@ typedef struct
 	tmcg_openpgp_byte_t			signaturetarget_hash[2048];
 	tmcg_openpgp_byte_t			embeddedsignature[8192]; // packet body
 	size_t						embeddedsignaturelen;
+	tmcg_openpgp_byte_t			issuerkeyversion;
+	tmcg_openpgp_byte_t			issuerfingerprint[32]; // SHA-1 or SHA256
 	tmcg_openpgp_byte_t			left[2];
 	gcry_mpi_t					md;
 	gcry_mpi_t					r;
@@ -412,6 +414,7 @@ class TMCG_OpenPGP_Signature
 		tmcg_openpgp_octets_t								packet;
 		tmcg_openpgp_octets_t								hspd;
 		tmcg_openpgp_octets_t								issuer;
+		tmcg_openpgp_octets_t								issuerfpr;
 		tmcg_openpgp_octets_t								keyflags;
 		tmcg_openpgp_octets_t								keyfeatures;
 		tmcg_openpgp_octets_t								keyprefs_psa;
@@ -433,6 +436,7 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&packet_in,
 			 const tmcg_openpgp_octets_t					&hspd_in,
 			 const tmcg_openpgp_octets_t					&issuer_in,
+			 const tmcg_openpgp_octets_t					&issuerfpr_in,
 			 const tmcg_openpgp_octets_t					&keyflags_in,
 			 const tmcg_openpgp_octets_t					&keyfeatures_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_psa_in,
@@ -453,6 +457,7 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&packet_in,
 			 const tmcg_openpgp_octets_t					&hspd_in,
 			 const tmcg_openpgp_octets_t					&issuer_in,
+			 const tmcg_openpgp_octets_t					&issuerfpr_in,
 			 const tmcg_openpgp_octets_t					&keyflags_in,
 			 const tmcg_openpgp_octets_t					&keyfeatures_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_psa_in,

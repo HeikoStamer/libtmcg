@@ -50,6 +50,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &packet_in,
 	 const tmcg_openpgp_octets_t &hspd_in,
 	 const tmcg_openpgp_octets_t &issuer_in,
+	 const tmcg_openpgp_octets_t &issuerfpr_in,
 	 const tmcg_openpgp_octets_t &keyflags_in,
 	 const tmcg_openpgp_octets_t &keyfeatures_in,
 	 const tmcg_openpgp_octets_t &keyprefs_psa_in,
@@ -81,6 +82,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		hspd_in.begin(), hspd_in.end());
 	issuer.insert(issuer.end(),
 		issuer_in.begin(), issuer_in.end());
+	issuerfpr.insert(issuerfpr.end(),
+		issuerfpr_in.begin(), issuerfpr_in.end());
 	keyflags.insert(keyflags.end(),
 		keyflags_in.begin(), keyflags_in.end());
 	keyfeatures.insert(keyfeatures.end(), 
@@ -108,6 +111,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &packet_in,
 	 const tmcg_openpgp_octets_t &hspd_in,
 	 const tmcg_openpgp_octets_t &issuer_in,
+	 const tmcg_openpgp_octets_t &issuerfpr_in,
 	 const tmcg_openpgp_octets_t &keyflags_in,
 	 const tmcg_openpgp_octets_t &keyfeatures_in,
 	 const tmcg_openpgp_octets_t &keyprefs_psa_in,
@@ -146,6 +150,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		hspd_in.begin(), hspd_in.end());
 	issuer.insert(issuer.end(),
 		issuer_in.begin(), issuer_in.end());
+	issuerfpr.insert(issuerfpr.end(),
+		issuerfpr_in.begin(), issuerfpr_in.end());
 	keyflags.insert(keyflags.end(),
 		keyflags_in.begin(), keyflags_in.end());
 	keyfeatures.insert(keyfeatures.end(),
@@ -181,6 +187,9 @@ void TMCG_OpenPGP_Signature::PrintInfo
 		" issuer = " << std::hex;
 		for (size_t i = 0; i < issuer.size(); i++)
 			std::cerr << (int)issuer[i] << " ";
+		std::cerr << " issuerfpr = ";
+		for (size_t i = 0; i < issuerfpr.size(); i++)
+			std::cerr << (int)issuerfpr[i] << " ";
 		std::cerr << " keyflags = ";
 		for (size_t i = 0; i < keyflags.size(); i++)
 			std::cerr << (int)keyflags[i] << " ";
@@ -583,6 +592,7 @@ TMCG_OpenPGP_Signature::~TMCG_OpenPGP_Signature
 	packet.clear();
 	hspd.clear();
 	issuer.clear();
+	issuerfpr.clear();
 	keyflags.clear();
 	keyfeatures.clear();
 	keyprefs_psa.clear();
@@ -6786,6 +6796,29 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.embeddedsignature[i] = pkt[i];
 			break;
+		case 33: // Issuer Fingerprint [RFC4880bis-04]
+			if (pkt.size() < 2)
+				return 0; // error: too short subpacket body
+			out.issuerkeyversion = pkt[0];
+			switch (out.issuerkeyversion)
+			{
+				case 0x04:
+					if (pkt.size() != 21)
+						return 0; // error: incorrect subpacket body
+					for (size_t i = 0; i < 20; i++)
+						out.issuerfingerprint[i] = pkt[1+i];
+					break;
+				case 0x05:
+					if (pkt.size() != 33)
+						return 0; // error: incorrect subpacket body
+					for (size_t i = 0; i < 32; i++)
+						out.issuerfingerprint[i] = pkt[1+i];
+					break;
+				default:
+					type = 0xFE; // subpacket not recognized
+					break;
+			}
+			break;
 		case 100: // Private or experimental -- not implemented; ignore
 		case 101:
 		case 102:
@@ -6853,7 +6886,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextEvaluate
 	(const tmcg_openpgp_packet_ctx_t &in, tmcg_openpgp_packet_ctx_t &out)
 {
-	// copy the issuer, if not already set
+	// copy Issuer, if not already set
 	bool copy = true;
 	for (size_t i = 0; i < sizeof(out.issuer); i++)
 	{
@@ -6862,12 +6895,25 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextEvaluate
 	}
 	for (size_t i = 0; (copy && (i < sizeof(out.issuer))); i++)
 		out.issuer[i] = in.issuer[i];
-	// copy embedded sig, if not already set
+	// copy Embedded Signature, if not already set
 	if (out.embeddedsignaturelen == 0)
 	{
 		out.embeddedsignaturelen = in.embeddedsignaturelen;
 		for (size_t i = 0; i < in.embeddedsignaturelen; i++)
 			out.embeddedsignature[i] = in.embeddedsignature[i];
+	}
+	// copy Issuer Fingerprint, if not already set
+	copy = true;
+	for (size_t i = 0; i < sizeof(out.issuerfingerprint); i++)
+	{
+		if (out.issuerfingerprint[i])
+			copy = false;
+	}
+	if (copy)
+	{
+		out.issuerkeyversion = in.issuerkeyversion;
+		for (size_t i = 0; i < sizeof(out.issuerfingerprint); i++)
+			out.issuerfingerprint[i] = in.issuerfingerprint[i];
 	}
 }
 
@@ -9250,10 +9296,21 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	// computed over the same data as the certificate that it revokes,
 	// and should have a later creation date than that certificate.
 	TMCG_OpenPGP_Signature *sig = NULL;
-	tmcg_openpgp_octets_t issuer, hspd, keyflags;
+	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, keyflags;
 	tmcg_openpgp_octets_t features, psa, pha, pca;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
+	switch (ctx.issuerkeyversion)
+	{
+		case 0x04: // V4 keys use SHA-1
+			for (size_t i = 0; i < 20; i++)
+				issuerfpr.push_back(ctx.issuerfingerprint[i]);
+			break;
+		case 0x05: // V5 keys use SHA256
+			for (size_t i = 0; i < 32; i++)
+				issuerfpr.push_back(ctx.issuerfingerprint[i]);
+			break;
+	}
 	for (size_t i = 0; i < ctx.hspdlen; i++)
 		hspd.push_back(ctx.hspd[i]);
 	for (size_t i = 0; i < ctx.keyflagslen; i++)
@@ -9278,7 +9335,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.md, current_packet, hspd,
-			issuer, keyflags, features, psa, pha, pca);
+			issuer, issuerfpr, keyflags, features, psa, pha, pca);
 	}
 	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
@@ -9293,7 +9350,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.r, ctx.s, current_packet,
-			hspd, issuer, keyflags,	features, psa, pha, pca);
+			hspd, issuer, issuerfpr, keyflags, features, psa, pha, pca);
 	}
 	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 	{
@@ -9308,7 +9365,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.r, ctx.s, current_packet,
-			hspd, issuer, keyflags,	features, psa, pha, pca);
+			hspd, issuer, issuerfpr, keyflags, features, psa, pha, pca);
 	}
 	else
 	{
@@ -10818,10 +10875,21 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		PacketContextRelease(ctx);
 		return false;
 	}
-	tmcg_openpgp_octets_t issuer, hspd, keyflags;
+	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, keyflags;
 	tmcg_openpgp_octets_t features, psa, pha, pca;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
+	switch (ctx.issuerkeyversion)
+	{
+		case 0x04: // V4 keys use SHA-1
+			for (size_t i = 0; i < 20; i++)
+				issuerfpr.push_back(ctx.issuerfingerprint[i]);
+			break;
+		case 0x05: // V5 keys use SHA256
+			for (size_t i = 0; i < 32; i++)
+				issuerfpr.push_back(ctx.issuerfingerprint[i]);
+			break;
+	}
 	for (size_t i = 0; i < ctx.hspdlen; i++)
 		hspd.push_back(ctx.hspd[i]);
 	for (size_t i = 0; i < ctx.keyflagslen; i++)
@@ -10849,7 +10917,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
 					ctx.type, ctx.version, ctx.sigcreationtime,
 					ctx.sigexpirationtime, 0, ctx.md, current_packet,
-					hspd, issuer, keyflags, features, psa, pha, pca);
+					hspd, issuer, issuerfpr, keyflags, features, psa, pha, pca);
 			}
 			else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
 				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
@@ -10865,7 +10933,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
 					ctx.type, ctx.version, ctx.sigcreationtime,
 					ctx.sigexpirationtime, 0, ctx.r, ctx.s, current_packet,
-					hspd, issuer, keyflags,	features, psa, pha, pca);
+					hspd, issuer, issuerfpr, keyflags, features, psa, pha, pca);
 			}
 			else
 			{
