@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2018-08-09] RFC4880: added Issuer Fingerprint from RFC 4880bis-04
+* [2018-08-09] RFC4880: added Export() for TMCG_OpenPGP_Pubkey
 * [2018-08-09] RFC4880: added new interfaces for TMCG_OpenPGP_Keyring
 * [2018-08-05] RFC4880: changed parsing strategy in MessageParse()
 * [2018-08-05] RFC4880: small fixes in ArmorDecode() and PacketLengthDecode()

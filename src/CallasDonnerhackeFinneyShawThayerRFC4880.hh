@@ -861,6 +861,8 @@ class TMCG_OpenPGP_Pubkey
 			 const int										verbose);
 		void Reduce
 			();
+		void Export
+			(tmcg_openpgp_octets_t							&out) const;
 		~TMCG_OpenPGP_Pubkey
 			();
 };
