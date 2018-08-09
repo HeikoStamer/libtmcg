@@ -3315,16 +3315,39 @@ TMCG_OpenPGP_Keyring::TMCG_OpenPGP_Keyring
 bool TMCG_OpenPGP_Keyring::add
 	(const TMCG_OpenPGP_Pubkey *key)
 {
-	std::string fpr_str, kid_str;
+	std::string fpr_str;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		FingerprintCompute(key->pub_hashing, fpr_str);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		KeyidCompute(key->pub_hashing, kid_str);
 	if (keys.count(fpr_str))
 		return false; // key is already there
 	keys[fpr_str] = key;
+	// register several key IDs of primary key and subkeys
+	std::string kid_str;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		KeyidCompute(key->pub_hashing, kid_str);
 	if (!keys_by_keyid.count(kid_str))
 		keys_by_keyid[kid_str] = key;
+	else
+		return false; // dup key ID
+	if (!keys_by_keyid.count(fpr_str))
+		keys_by_keyid[fpr_str] = key;
+	else
+		return false; // dup key ID (full fingerprint)
+	for (size_t i = 0; i < (key->subkeys).size(); i++)
+	{
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			FingerprintCompute(key->subkeys[i]->sub_hashing, fpr_str);
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			KeyidCompute(key->subkeys[i]->sub_hashing, kid_str);
+		if (!keys_by_keyid.count(kid_str))
+			keys_by_keyid[kid_str] = key;
+		else
+			return false; // dup key ID
+		if (!keys_by_keyid.count(fpr_str))
+			keys_by_keyid[fpr_str] = key;
+		else
+			return false; // dup key ID (full fingerprint)
+	}	
 	return true;
 }
 
