@@ -648,7 +648,8 @@ bool TMCG_OpenPGP_UserID::Check
 			}
 		}
 		else if (verbose)
-			std::cerr << "ERROR: signature verification failed" << std::endl;
+			std::cerr << "WARNING: revocation signature" <<
+				"verification failed" << std::endl;
 	}
 	bool one_valid_selfsig = false;
 	std::sort(selfsigs.begin(), selfsigs.end(),
@@ -669,7 +670,8 @@ bool TMCG_OpenPGP_UserID::Check
 			one_valid_selfsig = true;
 		}
 		else if (verbose)
-			std::cerr << "ERROR: signature verification failed" << std::endl;
+			std::cerr << "WARNING: self-signature verification" <<
+				" failed" << std::endl;
 	}
 	// update validity state of this user ID and return the result
 	if (one_valid_selfsig)
@@ -738,7 +740,8 @@ bool TMCG_OpenPGP_UserAttribute::Check
 			}
 		}
 		else if (verbose)
-			std::cerr << "ERROR: signature verification failed" << std::endl;
+			std::cerr << "WARNING: revocation signature" <<
+				" verification failed" << std::endl;
 	}
 	bool one_valid_selfsig = false;
 	std::sort(selfsigs.begin(), selfsigs.end(),
@@ -759,7 +762,8 @@ bool TMCG_OpenPGP_UserAttribute::Check
 			one_valid_selfsig = true;
 		}
 		else if (verbose)
-			std::cerr << "ERROR: signature verification failed" << std::endl;
+			std::cerr << "WARNING: self-signature verification" <<
+				" failed" << std::endl;
 	}
 	// update validity state of this user attribute and return the result
 	if (one_valid_selfsig)
@@ -2923,6 +2927,8 @@ void TMCG_OpenPGP_Pubkey::Export
 		}
 		for (size_t i = 0; i < (userids[j]->certsigs).size(); i++)
 		{
+			if (!userids[j]->certsigs[i]->exportable)
+				continue;
 			out.insert(out.end(),
 				(userids[j]->certsigs[i]->packet).begin(),
 				(userids[j]->certsigs[i]->packet).end());
@@ -2947,6 +2953,8 @@ void TMCG_OpenPGP_Pubkey::Export
 		}
 		for (size_t i = 0; i < (userattributes[j]->certsigs).size(); i++)
 		{
+			if (!userattributes[j]->certsigs[i]->exportable)
+				continue;
 			out.insert(out.end(),
 				(userattributes[j]->certsigs[i]->packet).begin(),
 				(userattributes[j]->certsigs[i]->packet).end());
