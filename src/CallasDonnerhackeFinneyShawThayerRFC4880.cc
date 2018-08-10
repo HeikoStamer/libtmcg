@@ -3454,11 +3454,17 @@ bool TMCG_OpenPGP_Keyring::add
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(key->pub_hashing, kid_str);
 	if (!keys_by_keyid.count(kid_str))
+	{
 		keys_by_keyid[kid_str] = key;
+		keys_by_keyid["0x"+kid_str] = key;
+	}
 	else
 		return false; // dup key ID
 	if (!keys_by_keyid.count(fpr_str))
+	{
 		keys_by_keyid[fpr_str] = key;
+		keys_by_keyid["0x"+fpr_str] = key;
+	}
 	else
 		return false; // dup key ID (full fingerprint)
 	for (size_t i = 0; i < (key->subkeys).size(); i++)
@@ -3468,11 +3474,17 @@ bool TMCG_OpenPGP_Keyring::add
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			KeyidCompute(key->subkeys[i]->sub_hashing, kid_str);
 		if (!keys_by_keyid.count(kid_str))
+		{
 			keys_by_keyid[kid_str] = key;
+			keys_by_keyid["0x"+kid_str] = key;
+		}
 		else
 			return false; // dup key ID
 		if (!keys_by_keyid.count(fpr_str))
+		{
 			keys_by_keyid[fpr_str] = key;
+			keys_by_keyid["0x"+fpr_str] = key;
+		}
 		else
 			return false; // dup key ID (full fingerprint)
 	}	
