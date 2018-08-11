@@ -313,8 +313,25 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.push_back(type);
 		trailer.insert(trailer.end(),
 			sigtime_octets.begin(), sigtime_octets.end());
-		if (!CallasDonnerhackeFinneyShawThayerRFC4880::
-			BinaryDocumentHashV3(filename, trailer, hashalgo, hash, left))
+		bool hret;
+		switch (type)
+		{
+			case TMCG_OPENPGP_SIGNATURE_BINARY_DOCUMENT:
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					BinaryDocumentHashV3(filename, trailer, hashalgo, hash, left);
+				break;
+			case TMCG_OPENPGP_SIGNATURE_CANONICAL_TEXT_DOCUMENT:
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					TextDocumentHashV3(filename, trailer, hashalgo, hash, left);
+				break;
+			default:
+				if (verbose)
+					std::cerr << "ERROR: signature type not supported " <<
+						std::endl;
+				return false;
+				break;
+		}
+		if (!hret)
 		{
 			if (verbose)
 				std::cerr << "ERROR: cannot process input " <<
@@ -332,8 +349,25 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.push_back((hspd.size() >> 8) & 0xFF);
 		trailer.push_back(hspd.size() & 0xFF);
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
-		if (!CallasDonnerhackeFinneyShawThayerRFC4880::
-			BinaryDocumentHash(filename, trailer, hashalgo, hash, left))
+		bool hret;
+		switch (type)
+		{
+			case TMCG_OPENPGP_SIGNATURE_BINARY_DOCUMENT:
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					BinaryDocumentHash(filename, trailer, hashalgo, hash, left);
+				break;
+			case TMCG_OPENPGP_SIGNATURE_CANONICAL_TEXT_DOCUMENT:
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					TextDocumentHash(filename, trailer, hashalgo, hash, left);
+				break;
+			default:
+				if (verbose)
+					std::cerr << "ERROR: signature type not supported " <<
+						std::endl;
+				return false;
+				break;
+		}
+		if (!hret)
 		{
 			if (verbose)
 				std::cerr << "ERROR: cannot process input " <<
@@ -341,7 +375,6 @@ bool TMCG_OpenPGP_Signature::Verify
 				std::endl;
 			return false;
 		}
-
 	}
 	else
 	{
