@@ -3693,14 +3693,32 @@ bool TMCG_OpenPGP_Message::Decrypt
 		return false;
 	}
 	tmcg_openpgp_skalgo_t skalgo = TMCG_OPENPGP_SKALGO_PLAINTEXT;
+	size_t sklen;
 	tmcg_openpgp_octets_t sk;
 	if (key.size() > 0)
 	{
 		skalgo = (tmcg_openpgp_skalgo_t)key[0];
 		if (verbose > 1)
 			std::cerr << "INFO: skalgo = " << (int)skalgo << std::endl;
-		for (size_t i = 0; i < key.size(); i++)
-			sk.push_back(key[i]);
+		sklen = CallasDonnerhackeFinneyShawThayerRFC4880::
+			AlgorithmKeyLength(skalgo);
+		if (key.size() == (sklen + 3))
+		{
+			for (size_t i = 0; i < key.size(); i++)
+				sk.push_back(key[i]);
+		}
+		else if (key.size() == (sklen + 1))
+		{
+			for (size_t i = 0; i < sklen; i++)
+				sk.push_back(key[1+i]);
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "ERROR: wrong length of " << key.size() <<
+					" for session key found" << std::endl;
+			return false;
+		}
 	}
 	else
 	{
@@ -10663,8 +10681,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag3
 {
 	if (verbose > 1)
 		std::cerr << "INFO: ESK skalgo = " << (int)ctx.skalgo <<
-			"s2k_type = " << (int)ctx.s2k_type << 
-			"encdatalen = " << ctx.encdatalen << std::endl;
+			" s2k_type = " << (int)ctx.s2k_type << 
+			" s2k_hashalgo = " << (int)ctx.s2k_hashalgo <<
+			" s2k_count = " << (int)ctx.s2k_count <<  
+			" encdatalen = " << ctx.encdatalen << std::endl;
 	tmcg_openpgp_octets_t salt, enckey;
 	for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
 		salt.push_back(ctx.s2k_salt[i]);
@@ -10682,7 +10702,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag8
 	 TMCG_OpenPGP_Message* &msg)
 {
 	if (verbose > 1)
-		std::cerr << "INFO: COMP length = " << ctx.compdatalen << std::endl;
+		std::cerr << "INFO: COMP length = " << ctx.compdatalen <<
+			" compalgo = " << (int)ctx.compalgo << std::endl;
 	if ((msg->compressed_message).size() != 0)
 	{
 		if (verbose)
