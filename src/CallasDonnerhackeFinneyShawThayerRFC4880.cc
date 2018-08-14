@@ -2234,8 +2234,13 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			return false;
 		}
 		// decrypt session key
+		tmcg_openpgp_octets_t rcpfpr;
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			FingerprintCompute(pub->sub_hashing, rcpfpr);
 		dret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AsymmetricDecryptECDH(esk->ecepk, private_key, out);
+			AsymmetricDecryptECDH(esk->ecepk, private_key, esk->rkwlen,
+				esk->rkw, pub->kdf_hashalgo, pub->kdf_skalgo, ec_curve,
+				rcpfpr, out);
 		if (dret)
 		{
 			if (verbose)
@@ -9234,11 +9239,14 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptRSA
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
-	(const gcry_mpi_t ecepk, const gcry_sexp_t key, 
-	 tmcg_openpgp_octets_t &out)
+	(const gcry_mpi_t ecepk, const gcry_sexp_t key, const size_t rkwlen,
+	 const tmcg_openpgp_byte_t rkw[256], const tmcg_openpgp_hashalgo_t hashalgo,
+	 const tmcg_openpgp_skalgo_t skalgo, const std::string &curve,
+	 const tmcg_openpgp_octets_t &rcpfpr, tmcg_openpgp_octets_t &out)
 {
-	const char *buf;
+	unsigned char buf[1024]; // FIXME: allocate as secure memory
 	gcry_sexp_t decryption, data;
+	gcry_mpi_t S;
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
 
@@ -9251,17 +9259,119 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 	gcry_sexp_release(data);
 	if (ret)
 		return ret;
-	buf = gcry_sexp_nth_data(decryption, 1, &buflen);
-	if (buf == NULL)
-	{
-		gcry_sexp_release(decryption);
-		return GPG_ERR_VALUE_NOT_FOUND;
-	}
-	// compute wrapping-key Z = KDF(S, Z_len, Param) [RFC 6637]
-	
-
-// TODO
+	S = gcry_mpi_snew(1024);
+	ret = gcry_sexp_extract_param(decryption, NULL, "'value'", &S, NULL);
 	gcry_sexp_release(decryption);
+	if (ret)
+	{
+		gcry_mpi_release(S);
+		return ret;
+	}
+std::cerr << "S = " << S << std::endl;
+	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buf, sizeof(buf), &buflen, S);
+	gcry_mpi_release(S);
+	if (ret)
+		return ret;
+	// compute wrapping-key Z = KDF(S, Z_len, Param) [RFC 6637]
+	tmcg_openpgp_octets_t kdf_buffer, kdf_out;
+	kdf_buffer.push_back(0x00);
+	kdf_buffer.push_back(0x00);
+	kdf_buffer.push_back(0x00);
+	kdf_buffer.push_back(0x01);
+std::cerr << "buflen of S = " << buflen << std::endl;
+	if (buf[0] == 0x04)
+	{
+std::cerr << "encoding 0x04" << std::endl;
+		for (size_t i = 0; i < ((buflen - 1) / 2); i++)
+			kdf_buffer.push_back(buf[1+i]);
+	}
+	else if (buf[0] == 0x40)
+	{
+std::cerr << "encoding 0x40" << std::endl;
+		for (size_t i = 0; i < (buflen - 1); i++)
+			kdf_buffer.push_back(buf[1+i]);
+	}
+	else
+		return GPG_ERR_BAD_DATA;
+std::cerr << "curve = " << curve << std::endl;
+	bool curve_found = false;
+	for (size_t idx = 0; (tmcg_openpgp_oidtable[idx].name != NULL); idx++)
+	{
+		if (curve == tmcg_openpgp_oidtable[idx].name)
+		{
+			curve_found = true;
+			for (size_t i = 0; i < tmcg_openpgp_oidtable[idx].oid[0]; i++)
+				kdf_buffer.push_back(tmcg_openpgp_oidtable[idx].oid[1+i]);
+			break;
+		}
+	}
+	if (!curve_found)
+		return GPG_ERR_BAD_DATA;
+	kdf_buffer.push_back(18); // ECDH public key algorithm [RFC 6637]
+	kdf_buffer.push_back(0x03); // length of KDF parameters
+	kdf_buffer.push_back(0x01);
+	kdf_buffer.push_back(hashalgo);
+	kdf_buffer.push_back(skalgo);
+	kdf_buffer.push_back(0x41); // UTF-8 encoding of "Anonymous Sender    "
+	kdf_buffer.push_back(0x6E);
+	kdf_buffer.push_back(0x6F);
+	kdf_buffer.push_back(0x6E);
+	kdf_buffer.push_back(0x79);
+	kdf_buffer.push_back(0x6D);
+	kdf_buffer.push_back(0x6F);
+	kdf_buffer.push_back(0x75);
+	kdf_buffer.push_back(0x73);
+	kdf_buffer.push_back(0x20);
+	kdf_buffer.push_back(0x53);
+	kdf_buffer.push_back(0x65);
+	kdf_buffer.push_back(0x6E);
+	kdf_buffer.push_back(0x64);
+	kdf_buffer.push_back(0x65);
+	kdf_buffer.push_back(0x72);
+	kdf_buffer.push_back(0x20);
+	kdf_buffer.push_back(0x20);
+	kdf_buffer.push_back(0x20);
+	kdf_buffer.push_back(0x20);
+	for (size_t i = 0; i < rcpfpr.size(); i++)
+		kdf_buffer.push_back(rcpfpr[i]);
+	HashCompute(hashalgo, kdf_buffer, kdf_out);
+std::cerr << "KDF = " << kdf_out.size() << std::endl;
+	memset(buf, 0, sizeof(buf));
+	for (size_t i = 0; ((i < kdf_out.size()) && (i < sizeof(buf))); i++)
+		buf[i] = kdf_out[i];
+	// compute inverse of C = AESKeyWrap(Z, m) as per [RFC 3394]
+	if (kdf_out.size() < AlgorithmHashLength(hashalgo))
+		return GPG_ERR_BAD_DATA;
+	if (kdf_out.size() < gcry_cipher_get_algo_keylen(skalgo))
+		return GPG_ERR_BAD_DATA;
+// TODO: check whether skalgo is AES and matches hashalgo
+	gcry_cipher_hd_t hd;
+	ret = gcry_cipher_open(&hd, skalgo, GCRY_CIPHER_MODE_AESWRAP,
+		GCRY_CIPHER_SECURE);
+	if (ret)
+		return ret;
+	ret = gcry_cipher_setkey(hd, buf, gcry_cipher_get_algo_keylen(skalgo));
+	if (ret)
+	{
+		gcry_cipher_close(hd);
+		return ret;
+	}
+std::cerr << "decrypt rkwlen = " << rkwlen << std::endl;
+	if ((rkwlen % 8) || (rkwlen < 32))
+	{
+		gcry_cipher_close(hd);
+		return GPG_ERR_BAD_DATA;
+	}
+	ret = gcry_cipher_decrypt(hd, buf, sizeof(buf), rkw, rkwlen);
+	if (ret)
+	{
+		gcry_cipher_close(hd);
+		return ret;
+	}
+	gcry_cipher_close(hd);
+	// check and extract session key
+// TODO
+
 	return -1;
 }
 

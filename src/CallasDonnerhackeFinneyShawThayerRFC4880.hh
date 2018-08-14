@@ -588,7 +588,7 @@ class TMCG_OpenPGP_Subkey
 		tmcg_openpgp_octets_t								psa;
 		tmcg_openpgp_octets_t								pha;
 		tmcg_openpgp_octets_t								pca;
-		std::string									ec_curve;
+		std::string											ec_curve;
 		tmcg_openpgp_hashalgo_t								kdf_hashalgo;
 		tmcg_openpgp_skalgo_t								kdf_skalgo;
 		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
@@ -695,8 +695,8 @@ class TMCG_OpenPGP_PrivateSubkey
 		gcry_mpi_t											telg_xprime_i;
 		std::vector<size_t>									telg_qual;
 		std::vector<gcry_mpi_t>								telg_v_i;
-		std::vector< std::vector<gcry_mpi_t> >						telg_c_ik;
-		std::string									ec_curve;
+		std::vector< std::vector<gcry_mpi_t> >				telg_c_ik;
+		std::string											ec_curve;
 		tmcg_openpgp_octets_t								packet;
 
 		TMCG_OpenPGP_PrivateSubkey
@@ -806,7 +806,7 @@ class TMCG_OpenPGP_Pubkey
 		tmcg_openpgp_octets_t								psa;
 		tmcg_openpgp_octets_t								pha;
 		tmcg_openpgp_octets_t								pca;
-		std::string									ec_curve;
+		std::string											ec_curve;
 		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				keyrevsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				certrevsigs;
@@ -899,7 +899,7 @@ class TMCG_OpenPGP_Prvkey
 		std::vector< std::vector<gcry_mpi_t> >				tdss_c_ik;
 		std::map<size_t, size_t>							tdss_idx2dkg;
 		std::map<size_t, size_t>							tdss_dkg2idx;
-		std::string									ec_curve;
+		std::string											ec_curve;
 		tmcg_openpgp_octets_t								packet;
 
 		TMCG_OpenPGP_Prvkey
@@ -1724,6 +1724,12 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static gcry_error_t AsymmetricDecryptECDH
 			(const gcry_mpi_t								ecepk,
 			 const gcry_sexp_t								key,
+			 const size_t									rkwlen,
+			 const tmcg_openpgp_byte_t						rkw[256],
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 const tmcg_openpgp_skalgo_t					skalgo,
+			 const std::string								&curve,
+			 const tmcg_openpgp_octets_t					&rcpfpr,
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t AsymmetricSignDSA
 			(const tmcg_openpgp_octets_t					&in,
