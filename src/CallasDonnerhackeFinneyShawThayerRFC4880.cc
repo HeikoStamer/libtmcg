@@ -9300,14 +9300,14 @@ std::cerr << "curve = " << curve << std::endl;
 		if (curve == tmcg_openpgp_oidtable[idx].name)
 		{
 			curve_found = true;
-			for (size_t i = 0; i < tmcg_openpgp_oidtable[idx].oid[0]; i++)
-				kdf_buffer.push_back(tmcg_openpgp_oidtable[idx].oid[1+i]);
+			for (size_t i = 0; i <= tmcg_openpgp_oidtable[idx].oid[0]; i++)
+				kdf_buffer.push_back(tmcg_openpgp_oidtable[idx].oid[i]);
 			break;
 		}
 	}
 	if (!curve_found)
 		return GPG_ERR_BAD_DATA;
-	kdf_buffer.push_back(18); // ECDH public key algorithm [RFC 6637]
+	kdf_buffer.push_back(TMCG_OPENPGP_PKALGO_ECDH); // cf. [RFC 6637]
 	kdf_buffer.push_back(0x03); // length of KDF parameters
 	kdf_buffer.push_back(0x01);
 	kdf_buffer.push_back(hashalgo);
@@ -9335,10 +9335,14 @@ std::cerr << "curve = " << curve << std::endl;
 	for (size_t i = 0; i < rcpfpr.size(); i++)
 		kdf_buffer.push_back(rcpfpr[i]);
 	HashCompute(hashalgo, kdf_buffer, kdf_out);
-std::cerr << "KDF = " << kdf_out.size() << std::endl;
+std::cerr << "KDF = " << kdf_out.size() << std::endl << " KEK = " << std::hex;
 	memset(buf, 0, sizeof(buf));
 	for (size_t i = 0; ((i < kdf_out.size()) && (i < sizeof(buf))); i++)
+	{
 		buf[i] = kdf_out[i];
+std::cerr << (int)buf[i] << " ";
+	}
+std::cerr << std::dec << std::endl;
 	// compute inverse of C = AESKeyWrap(Z, m) as per [RFC 3394]
 	if (kdf_out.size() < AlgorithmHashLength(hashalgo))
 		return GPG_ERR_BAD_DATA;
