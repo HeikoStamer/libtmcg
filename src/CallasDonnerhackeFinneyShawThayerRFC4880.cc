@@ -837,6 +837,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(TMCG_OPENPGP_PKALGO_RSA),
 		creationtime(0),
 		expirationtime(0),
+		ec_curve(""),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
@@ -870,6 +871,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		ec_curve(""),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
@@ -912,6 +914,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		ec_curve(""),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
@@ -956,6 +959,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		ec_curve(""),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
@@ -1030,6 +1034,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 				curve = tmcg_openpgp_oidtable[idx].name;
 		}
 	}
+	if (curve != NULL)
+		ec_curve = curve;
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (ecdsa (curve %s) (q %m)))", curve, ecpk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -1089,6 +1095,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 				curve = tmcg_openpgp_oidtable[idx].name;
 		}
 	}
+	if (curve != NULL)
+		ec_curve = curve;
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (ecdh (curve %s) (q %m)))", curve, ecpk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -1744,7 +1752,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t u,
 	 const gcry_mpi_t d,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0)
+		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0), ec_curve("")
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
@@ -1782,7 +1790,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0)
+		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0), ec_curve("")
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
@@ -1817,7 +1825,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0)
+		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0), ec_curve("")
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
@@ -1861,7 +1869,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const std::vector<gcry_mpi_t> &v_i,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in)
+		pkalgo(pkalgo_in), ec_curve("")
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
@@ -1958,6 +1966,8 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 				curve = tmcg_openpgp_oidtable[idx].name;
 		}
 	}
+	if (curve != NULL)
+		ec_curve = curve;
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (ecdsa (curve %s) (q %m) (d %m)))", curve, ecpk, ecsk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -2010,6 +2020,8 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 				curve = tmcg_openpgp_oidtable[idx].name;
 		}
 	}
+	if (curve != NULL)
+		ec_curve = curve;
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (ecdh (curve %s) (q %m) (d %m)))", curve, ecpk, ecsk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -2078,7 +2090,13 @@ bool TMCG_OpenPGP_PrivateSubkey::weak
 	else if ((pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
 		(pkalgo == TMCG_OPENPGP_PKALGO_ECDH))
 	{
-		// TODO: check, whether ec_sk is the scalar of the public EC point
+		unsigned int skbits = 0;
+		skbits = gcry_mpi_get_nbits(ec_sk);
+		if (verbose > 1)
+			std::cerr << "INFO: ECC with |x| = " <<
+				skbits << " bits" << std::endl;
+		if (skbits < 250)
+			return true; // weak key
 		return pub->weak(verbose);
 	}
 	else
@@ -2090,86 +2108,148 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 	(const TMCG_OpenPGP_PKESK* &esk, const int verbose,
 	 tmcg_openpgp_octets_t &out) const
 {
-	if (CallasDonnerhackeFinneyShawThayerRFC4880::
-		OctetsCompare(esk->keyid, pub->id) ||
-		CallasDonnerhackeFinneyShawThayerRFC4880::
-		OctetsCompareZero(esk->keyid))
+	if (pub->AccumulateFlags() &&
+		((pub->AccumulateFlags() & 0x04) != 0x04) &&
+		((pub->AccumulateFlags() & 0x08) != 0x08))
 	{
-		if ((esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-			(esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY))
-		{
-			// check whether $0 < m^e < n$.
-			if ((gcry_mpi_cmp_ui(esk->me, 0L) <= 0) ||
-				(gcry_mpi_cmp(esk->me, pub->rsa_n) >= 0))
-			{
-				if (verbose)
-					std::cerr << "ERROR: 0 < m^e < n not satisfied" << 
-						std::endl;
-				return false;
-			}
-			gcry_error_t dret;
-			dret = CallasDonnerhackeFinneyShawThayerRFC4880::
-				AsymmetricDecryptRSA(esk->me, private_key, out);
-			if (dret)
-			{
-				if (verbose)
-					std::cerr << "ERROR: AsymmetricDecryptRSA() failed" <<
-						" with rc = " << gcry_err_code(ret) << std::endl;
-				return false;
-			}
-			return true;
-		}
-		else if (esk->pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
-		{
-			// check whether $0 < g^k < p$.
-			if ((gcry_mpi_cmp_ui(esk->gk, 0L) <= 0) ||
-				(gcry_mpi_cmp(esk->gk, pub->elg_p) >= 0))
-			{
-				if (verbose)
-					std::cerr << "ERROR: 0 < g^k < p not satisfied" << 
-						std::endl;
-				return false;
-			}
-			// check whether $0 < my^k < p$.
-			if ((gcry_mpi_cmp_ui(esk->myk, 0L) <= 0) ||
-				(gcry_mpi_cmp(esk->myk, pub->elg_p) >= 0))
-			{
-				if (verbose)
-					std::cerr << "ERROR: 0 < my^k < p not satisfied" <<
-						std::endl;
-				return false;
-			}
-			gcry_error_t dret;
-			dret = CallasDonnerhackeFinneyShawThayerRFC4880::
-				AsymmetricDecryptElgamal(esk->gk, esk->myk, private_key, out);
-			if (dret)
-			{
-				if (verbose)
-					std::cerr << "ERROR: AsymmetricDecryptElgamal() failed" <<
-						" with rc = " << gcry_err_code(ret) << std::endl;
-				return false;
-			}
-			return true;
-		}
-		else if (esk->pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
-		{
-return false;
-// TODO [RFC 6637]
-			return true;
-		}
-		else
-		{
-			if (verbose)
-				std::cerr << "ERROR: public-key algorithm not supported" <<
-					" for decryption" << std::endl;
-			return false;
-		}
+		if (verbose)
+			std::cerr << "ERROR: subkey is not capable of encryption" <<
+				std::endl;
+		return false;
 	}
-	else
+	if (esk->pkalgo != pub->pkalgo)
+	{
+		if (verbose)
+			std::cerr << "ERROR: PKESK pkalgo does not match public-key" <<
+				" algorithm of subkey" << std::endl;
+		return false;
+
+	}
+	if (!CallasDonnerhackeFinneyShawThayerRFC4880::
+		OctetsCompare(esk->keyid, pub->id) &&
+		!CallasDonnerhackeFinneyShawThayerRFC4880::
+		OctetsCompareZero(esk->keyid))
 	{
 		if (verbose)
 			std::cerr << "ERROR: PKESK keyid does not match subkey ID or" <<
 				" wildcard pattern" << std::endl;
+		return false;
+	}
+	if ((esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+		(esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY))
+	{
+		// check whether $0 < m^e < n$.
+		if ((gcry_mpi_cmp_ui(esk->me, 0L) <= 0) ||
+			(gcry_mpi_cmp(esk->me, pub->rsa_n) >= 0))
+		{
+			if (verbose)
+				std::cerr << "ERROR: 0 < m^e < n not satisfied" << 
+					std::endl;
+			return false;
+		}
+		gcry_error_t dret;
+		dret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			AsymmetricDecryptRSA(esk->me, private_key, out);
+		if (dret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: AsymmetricDecryptRSA() failed" <<
+					" with rc = " << gcry_err_code(dret) << std::endl;
+			return false;
+		}
+		return true;
+	}
+	else if (esk->pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
+	{
+		// check whether $0 < g^k < p$.
+		if ((gcry_mpi_cmp_ui(esk->gk, 0L) <= 0) ||
+			(gcry_mpi_cmp(esk->gk, pub->elg_p) >= 0))
+		{
+			if (verbose)
+				std::cerr << "ERROR: 0 < g^k < p not satisfied" << 
+					std::endl;
+			return false;
+		}
+		// check whether $0 < my^k < p$.
+		if ((gcry_mpi_cmp_ui(esk->myk, 0L) <= 0) ||
+			(gcry_mpi_cmp(esk->myk, pub->elg_p) >= 0))
+		{
+			if (verbose)
+				std::cerr << "ERROR: 0 < my^k < p not satisfied" <<
+					std::endl;
+			return false;
+		}
+		gcry_error_t dret;
+		dret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			AsymmetricDecryptElgamal(esk->gk, esk->myk, private_key, out);
+		if (dret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: AsymmetricDecryptElgamal() failed" <<
+					" with rc = " << gcry_err_code(dret) << std::endl;
+			return false;
+		}
+		return true;
+	}
+	else if (esk->pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
+	{
+		// check whether esk->ecepk is point on curve of this key
+		gcry_error_t dret;
+		gcry_mpi_point_t tmp;
+		gcry_ctx_t ec;
+		dret = gcry_mpi_ec_new(&ec, NULL, ec_curve.c_str());
+		if (dret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: gcry_mpi_ec_new() failed" <<
+					" with rc = " << gcry_err_code(dret) << std::endl;
+			return false;
+		}
+		dret = gcry_mpi_ec_set_mpi("q", esk->ecepk, ec);
+		if (dret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: gcry_mpi_ec_set_mpi() failed" <<
+					" with rc = " << gcry_err_code(dret) << std::endl;
+			gcry_ctx_release(ec);
+			return false;
+		}
+		tmp = gcry_mpi_ec_get_point("q", ec, 0);
+		if (tmp == NULL)
+		{
+			if (verbose)
+				std::cerr << "ERROR: gcry_mpi_ec_curve_point() failed" <<
+					std::endl;
+			gcry_ctx_release(ec);
+			return false;
+		}
+		int ok = gcry_mpi_ec_curve_point(tmp, ec);
+		gcry_mpi_point_release(tmp);
+		gcry_ctx_release(ec);
+		if (!ok)
+		{
+			if (verbose)
+				std::cerr << "ERROR: gcry_mpi_ec_curve_point() failed" <<
+					std::endl;
+			return false;
+		}
+		// decrypt session key
+		dret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			AsymmetricDecryptECDH(esk->ecepk, private_key, out);
+		if (dret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: AsymmetricDecryptECDH() failed" <<
+					" with rc = " << gcry_err_code(dret) << std::endl;
+			return false;
+		}
+		return true;
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: public-key algorithm " << (int)esk->pkalgo <<
+				" not supported for decryption" << std::endl;
 		return false;
 	}
 }
@@ -2219,7 +2299,8 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		valid(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
-		expirationtime(expirationtime_in)
+		expirationtime(expirationtime_in),
+		ec_curve("")
 {
 	rsa_n = gcry_mpi_new(2048);
 	rsa_e = gcry_mpi_new(2048);
@@ -2257,7 +2338,8 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		valid(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
-		expirationtime(expirationtime_in)
+		expirationtime(expirationtime_in),
+		ec_curve("")
 {
 	rsa_n = gcry_mpi_new(2048);
 	rsa_e = gcry_mpi_new(2048);
@@ -2322,6 +2404,8 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 				curve = tmcg_openpgp_oidtable[idx].name;
 		}
 	}
+	if (curve != NULL)
+		ec_curve = curve;
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (ecdsa (curve %s) (q %m)))", curve, ecpk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -9147,6 +9231,38 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptRSA
 	gcry_sexp_release(decryption);
 
 	return 0;
+}
+
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
+	(const gcry_mpi_t ecepk, const gcry_sexp_t key, 
+	 tmcg_openpgp_octets_t &out)
+{
+	const char *buf;
+	gcry_sexp_t decryption, data;
+	gcry_error_t ret;
+	size_t buflen = 0, erroff;
+
+	// compute shared secret S = rV, where V is the ephemeral public key
+	ret = gcry_sexp_build(&data, &erroff,
+		"(enc-val (ecdh (e %m)))", ecepk);
+	if (ret)
+		return ret;
+	ret = gcry_pk_decrypt(&decryption, data, key);
+	gcry_sexp_release(data);
+	if (ret)
+		return ret;
+	buf = gcry_sexp_nth_data(decryption, 1, &buflen);
+	if (buf == NULL)
+	{
+		gcry_sexp_release(decryption);
+		return GPG_ERR_VALUE_NOT_FOUND;
+	}
+	// compute wrapping-key Z = KDF(S, Z_len, Param) [RFC 6637]
+	
+
+// TODO
+	gcry_sexp_release(decryption);
+	return -1;
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
