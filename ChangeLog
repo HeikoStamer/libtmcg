@@ -7,9 +7,9 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
-* [2018-08-??] RFC4880: added AsymmetricDecryptECDH() from RFC 6637
+* [2018-08-15] RFC4880: added Asymmetric[De|En]cryptECDH() from RFC 6637
 * [2018-08-11] RFC4880: added support for verifying text document signatures
-* [2018-08-09] RFC4880: added Issuer Fingerprint from RFC 4880bis-04
+* [2018-08-09] RFC4880: added Issuer Fingerprint subpacket from RFC 4880bis-04
 * [2018-08-09] RFC4880: added Export() for TMCG_OpenPGP_Pubkey
 * [2018-08-09] RFC4880: added new interfaces for TMCG_OpenPGP_Keyring
 * [2018-08-05] RFC4880: changed parsing strategy in MessageParse()

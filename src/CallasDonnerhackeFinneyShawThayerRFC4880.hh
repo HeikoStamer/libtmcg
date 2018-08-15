@@ -1305,6 +1305,13 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const bool										iterated,
 			 const tmcg_openpgp_byte_t						octcnt,
 			 tmcg_openpgp_octets_t							&out);
+		static void KDFCompute
+			(const tmcg_openpgp_hashalgo_t					hashalgo,
+			 const tmcg_openpgp_skalgo_t					skalgo,
+			 const tmcg_openpgp_octets_t					&ZB,
+			 const std::string								&curve,
+			 const tmcg_openpgp_octets_t					&rcpfpr,
+			 tmcg_openpgp_octets_t							&MB);
 
 		static void PacketTagEncode
 			(const tmcg_openpgp_byte_t						tag,
@@ -1352,6 +1359,12 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void PacketPkeskEncode
 			(const tmcg_openpgp_octets_t					&keyid,
 			 const gcry_mpi_t								me,
+			 tmcg_openpgp_octets_t							&out);
+		static void PacketPkeskEncode
+			(const tmcg_openpgp_octets_t					&keyid,
+			 const gcry_mpi_t 								ecepk,
+	 		 const size_t									rkwlen,
+			 const tmcg_openpgp_byte_t						rkw[256],
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSigEncode
 			(const tmcg_openpgp_octets_t					&hashing,
@@ -1721,6 +1734,16 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const gcry_mpi_t								me,
 			 const gcry_sexp_t								key,
 			 tmcg_openpgp_octets_t							&out);
+		static gcry_error_t AsymmetricEncryptECDH
+			(const tmcg_openpgp_octets_t					&in,
+			 const gcry_sexp_t								key,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 const tmcg_openpgp_skalgo_t					skalgo,
+			 const std::string								&curve,
+			 const tmcg_openpgp_octets_t					&rcpfpr,
+			 gcry_mpi_t										&ecepk,
+	 		 size_t											&rkwlen,
+			 tmcg_openpgp_byte_t							rkw[256]);
 		static gcry_error_t AsymmetricDecryptECDH
 			(const gcry_mpi_t								ecepk,
 			 const gcry_sexp_t								key,
