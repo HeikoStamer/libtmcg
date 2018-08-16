@@ -30,21 +30,25 @@
 static const std::string LibTMCG_ID = 
     "LibTMCG " VERSION "  (C) Heiko Stamer, License: GNU GPL version 2";
 
+// LibTMCG helper functions
+void* tmcg_realloc
+	(void* ptr, size_t old_size, size_t new_size)
+{
+	return gcry_realloc(ptr, new_size);
+}
+void tmcg_free
+	(void* ptr, size_t size)
+{
+	gcry_free(ptr);
+}
+
 // LibTMCG general functions
 bool init_libTMCG
-	()
+	(const bool use_secmem)
 {
 	// initialize memory guards
 	CallasDonnerhackeFinneyShawThayerRFC4880::MemoryGuardReset();
 
-	// initialize libgmp
-	if (strcmp(gmp_version, TMCG_LIBGMP_VERSION) < 0)
-	{
-		std::cerr << "init_libTMCG(): libgmp version >= " <<
-			TMCG_LIBGMP_VERSION << " needed" << std::endl;
-		return false;
-	}
-	
 	// initialize libgcrypt
 	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
 	{
@@ -54,7 +58,15 @@ bool init_libTMCG
 	}
 	if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P))
 	{
-		gcry_control(GCRYCTL_DISABLE_SECMEM, 0); // disable secure memory
+		if (use_secmem)
+		{
+			gcry_control(GCRYCTL_SUSPEND_SECMEM_WARN);
+			gcry_control(GCRYCTL_USE_SECURE_RNDPOOL);
+			gcry_control(GCRYCTL_INIT_SECMEM, 16384, 0);
+			gcry_control(GCRYCTL_RESUME_SECMEM_WARN);
+		}
+		else
+			gcry_control(GCRYCTL_DISABLE_SECMEM, 0); // disable secure memory
 		gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 	}
 	// check libgcrypt
@@ -146,6 +158,17 @@ bool init_libTMCG
 			"] not available" << std::endl;
 		return false;
 	}
+
+	// initialize libgmp
+	if (strcmp(gmp_version, TMCG_LIBGMP_VERSION) < 0)
+	{
+		std::cerr << "init_libTMCG(): libgmp version >= " <<
+			TMCG_LIBGMP_VERSION << " needed" << std::endl;
+		return false;
+	}
+	if (use_secmem)
+		mp_set_memory_functions(gcry_malloc_secure, tmcg_realloc, tmcg_free);
+
 #ifdef BOTAN
 	// initialize libbotan-2
 	std::string botan_rvc = Botan::runtime_version_check(BOTAN_VERSION_MAJOR,

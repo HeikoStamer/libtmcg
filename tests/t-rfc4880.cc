@@ -41,6 +41,8 @@ int main
 	gcry_error_t ret;
 	tmcg_openpgp_octets_t in, out;
 
+	assert(init_libTMCG(true)); // enable libgcrypt's secure memory
+
 	// testing OctetsCompare(), OctetsCompareConstantTime(), OctetsCompareZero()
 	std::cout << "OctetsCompareZero() ";
 	do

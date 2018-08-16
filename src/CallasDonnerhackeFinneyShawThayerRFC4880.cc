@@ -842,16 +842,16 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
 	// this is a dummy constructor used for simple relinking
-	rsa_n = gcry_mpi_new(2048);
-	rsa_e = gcry_mpi_new(2048);
-	elg_p = gcry_mpi_new(2048);
-	elg_g = gcry_mpi_new(2048);
-	elg_y = gcry_mpi_new(2048);
-	dsa_p = gcry_mpi_new(2048);
-	dsa_q = gcry_mpi_new(2048);
-	dsa_g = gcry_mpi_new(2048);
-	dsa_y = gcry_mpi_new(2048);
-	ec_pk = gcry_mpi_new(1024);
+	rsa_n = gcry_mpi_new(8);
+	rsa_e = gcry_mpi_new(8);
+	elg_p = gcry_mpi_new(8);
+	elg_g = gcry_mpi_new(8);
+	elg_y = gcry_mpi_new(8);
+	dsa_p = gcry_mpi_new(8);
+	dsa_q = gcry_mpi_new(8);
+	dsa_g = gcry_mpi_new(8);
+	dsa_y = gcry_mpi_new(8);
+	ec_pk = gcry_mpi_new(8);
 	gcry_mpi_set_ui(rsa_n, 437);
 	gcry_mpi_set_ui(rsa_e, 41);
 	ret = gcry_sexp_build(&key, &erroff,
@@ -876,15 +876,15 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
 	rsa_n = gcry_mpi_new(2048);
-	rsa_e = gcry_mpi_new(2048);
-	elg_p = gcry_mpi_new(2048);
-	elg_g = gcry_mpi_new(2048);
-	elg_y = gcry_mpi_new(2048);
-	dsa_p = gcry_mpi_new(2048);
-	dsa_q = gcry_mpi_new(2048);
-	dsa_g = gcry_mpi_new(2048);
-	dsa_y = gcry_mpi_new(2048);
-	ec_pk = gcry_mpi_new(1024);
+	rsa_e = gcry_mpi_new(256);
+	elg_p = gcry_mpi_new(8);
+	elg_g = gcry_mpi_new(8);
+	elg_y = gcry_mpi_new(8);
+	dsa_p = gcry_mpi_new(8);
+	dsa_q = gcry_mpi_new(8);
+	dsa_g = gcry_mpi_new(8);
+	dsa_y = gcry_mpi_new(8);
+	ec_pk = gcry_mpi_new(8);
 	// public-key algorithm is RSA
 	gcry_mpi_set(rsa_n, n);
 	gcry_mpi_set(rsa_e, e);
@@ -918,16 +918,16 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
-	rsa_n = gcry_mpi_new(2048);
-	rsa_e = gcry_mpi_new(2048);
+	rsa_n = gcry_mpi_new(8);
+	rsa_e = gcry_mpi_new(8);
 	elg_p = gcry_mpi_new(2048);
 	elg_g = gcry_mpi_new(2048);
 	elg_y = gcry_mpi_new(2048);
-	dsa_p = gcry_mpi_new(2048);
-	dsa_q = gcry_mpi_new(2048);
-	dsa_g = gcry_mpi_new(2048);
-	dsa_y = gcry_mpi_new(2048);
-	ec_pk = gcry_mpi_new(1024);
+	dsa_p = gcry_mpi_new(8);
+	dsa_q = gcry_mpi_new(8);
+	dsa_g = gcry_mpi_new(8);
+	dsa_y = gcry_mpi_new(8);
+	ec_pk = gcry_mpi_new(8);
 	// public-key algorithm is ElGamal
 	gcry_mpi_set(elg_p, p);
 	gcry_mpi_set(elg_g, g);
@@ -963,16 +963,16 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
-	rsa_n = gcry_mpi_new(2048);
-	rsa_e = gcry_mpi_new(2048);
-	elg_p = gcry_mpi_new(2048);
-	elg_g = gcry_mpi_new(2048);
-	elg_y = gcry_mpi_new(2048);
+	rsa_n = gcry_mpi_new(8);
+	rsa_e = gcry_mpi_new(8);
+	elg_p = gcry_mpi_new(8);
+	elg_g = gcry_mpi_new(8);
+	elg_y = gcry_mpi_new(8);
 	dsa_p = gcry_mpi_new(2048);
-	dsa_q = gcry_mpi_new(2048);
+	dsa_q = gcry_mpi_new(512);
 	dsa_g = gcry_mpi_new(2048);
 	dsa_y = gcry_mpi_new(2048);
-	ec_pk = gcry_mpi_new(1024);
+	ec_pk = gcry_mpi_new(8);
 	// public-key algorithm is DSA
 	gcry_mpi_set(dsa_p, p);
 	gcry_mpi_set(dsa_q, q);
@@ -1007,15 +1007,15 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
-	rsa_n = gcry_mpi_new(2048);
-	rsa_e = gcry_mpi_new(2048);
-	elg_p = gcry_mpi_new(2048);
-	elg_g = gcry_mpi_new(2048);
-	elg_y = gcry_mpi_new(2048);
-	dsa_p = gcry_mpi_new(2048);
-	dsa_q = gcry_mpi_new(2048);
-	dsa_g = gcry_mpi_new(2048);
-	dsa_y = gcry_mpi_new(2048);
+	rsa_n = gcry_mpi_new(8);
+	rsa_e = gcry_mpi_new(8);
+	elg_p = gcry_mpi_new(8);
+	elg_g = gcry_mpi_new(8);
+	elg_y = gcry_mpi_new(8);
+	dsa_p = gcry_mpi_new(8);
+	dsa_q = gcry_mpi_new(8);
+	dsa_g = gcry_mpi_new(8);
+	dsa_y = gcry_mpi_new(8);
 	ec_pk = gcry_mpi_new(1024);
 	// public-key algorithm is ECDSA
 	gcry_mpi_set(ec_pk, ecpk);
@@ -1068,15 +1068,15 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		kdf_hashalgo(kdf_hashalgo_in),
 		kdf_skalgo(kdf_skalgo_in)
 {
-	rsa_n = gcry_mpi_new(2048);
-	rsa_e = gcry_mpi_new(2048);
-	elg_p = gcry_mpi_new(2048);
-	elg_g = gcry_mpi_new(2048);
-	elg_y = gcry_mpi_new(2048);
-	dsa_p = gcry_mpi_new(2048);
-	dsa_q = gcry_mpi_new(2048);
-	dsa_g = gcry_mpi_new(2048);
-	dsa_y = gcry_mpi_new(2048);
+	rsa_n = gcry_mpi_new(8);
+	rsa_e = gcry_mpi_new(8);
+	elg_p = gcry_mpi_new(8);
+	elg_g = gcry_mpi_new(8);
+	elg_y = gcry_mpi_new(8);
+	dsa_p = gcry_mpi_new(8);
+	dsa_q = gcry_mpi_new(8);
+	dsa_g = gcry_mpi_new(8);
+	dsa_y = gcry_mpi_new(8);
 	ec_pk = gcry_mpi_new(1024);
 	// public-key algorithm is ECDH
 	gcry_mpi_set(ec_pk, ecpk);
@@ -1763,13 +1763,13 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
 	rsa_d = gcry_mpi_snew(2048);
-	elg_x = gcry_mpi_snew(2048);
-	dsa_x = gcry_mpi_snew(2048);
-	ec_sk = gcry_mpi_snew(1024);
-	telg_q = gcry_mpi_new(2048);
-	telg_h = gcry_mpi_new(2048);
-	telg_x_i = gcry_mpi_snew(2048);
-	telg_xprime_i = gcry_mpi_snew(2048);
+	elg_x = gcry_mpi_snew(8);
+	dsa_x = gcry_mpi_snew(8);
+	ec_sk = gcry_mpi_snew(8);
+	telg_q = gcry_mpi_new(8);
+	telg_h = gcry_mpi_new(8);
+	telg_x_i = gcry_mpi_snew(8);
+	telg_xprime_i = gcry_mpi_snew(8);
 	// public-key algorithm is RSA
 	gcry_mpi_set(rsa_p, p);
 	gcry_mpi_set(rsa_q, q);
@@ -1797,17 +1797,17 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		pkalgo_in, p, p, g, y, sub);
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
 		p, g, y, sub);
-	rsa_p = gcry_mpi_snew(2048);
-	rsa_q = gcry_mpi_snew(2048);
-	rsa_u = gcry_mpi_snew(2048);
-	rsa_d = gcry_mpi_snew(2048);
+	rsa_p = gcry_mpi_snew(8);
+	rsa_q = gcry_mpi_snew(8);
+	rsa_u = gcry_mpi_snew(8);
+	rsa_d = gcry_mpi_snew(8);
 	elg_x = gcry_mpi_snew(2048);
-	dsa_x = gcry_mpi_snew(2048);
-	ec_sk = gcry_mpi_snew(1024);
-	telg_q = gcry_mpi_new(2048);
-	telg_h = gcry_mpi_new(2048);
-	telg_x_i = gcry_mpi_snew(2048);
-	telg_xprime_i = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(8);
+	ec_sk = gcry_mpi_snew(8);
+	telg_q = gcry_mpi_new(8);
+	telg_h = gcry_mpi_new(8);
+	telg_x_i = gcry_mpi_snew(8);
+	telg_xprime_i = gcry_mpi_snew(8);
 	// public-key algorithm is ElGamal
 	gcry_mpi_set(elg_x, x);
 	ret = gcry_sexp_build(&private_key, &erroff,
@@ -1832,17 +1832,17 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		pkalgo_in, p, q, g, y, sub);
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
 		p, q, g, y, sub);
-	rsa_p = gcry_mpi_snew(2048);
-	rsa_q = gcry_mpi_snew(2048);
-	rsa_u = gcry_mpi_snew(2048);
-	rsa_d = gcry_mpi_snew(2048);
-	elg_x = gcry_mpi_snew(2048);
+	rsa_p = gcry_mpi_snew(8);
+	rsa_q = gcry_mpi_snew(8);
+	rsa_u = gcry_mpi_snew(8);
+	rsa_d = gcry_mpi_snew(8);
+	elg_x = gcry_mpi_snew(8);
 	dsa_x = gcry_mpi_snew(2048);
-	ec_sk = gcry_mpi_snew(1024);
-	telg_q = gcry_mpi_new(2048);
-	telg_h = gcry_mpi_new(2048);
-	telg_x_i = gcry_mpi_snew(2048);
-	telg_xprime_i = gcry_mpi_snew(2048);
+	ec_sk = gcry_mpi_snew(8);
+	telg_q = gcry_mpi_new(8);
+	telg_h = gcry_mpi_new(8);
+	telg_x_i = gcry_mpi_snew(8);
+	telg_xprime_i = gcry_mpi_snew(8);
 	// public-key algorithm is DSA
 	gcry_mpi_set(dsa_x, x);
 	ret = gcry_sexp_build(&private_key, &erroff,
@@ -1876,13 +1876,13 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		TMCG_OPENPGP_PKALGO_ELGAMAL, p, p, g, y, sub);
 	pub = new TMCG_OpenPGP_Subkey(TMCG_OPENPGP_PKALGO_ELGAMAL, creationtime_in,
 		expirationtime_in, p, g, y, sub);
-	rsa_p = gcry_mpi_snew(2048);
-	rsa_q = gcry_mpi_snew(2048);
-	rsa_u = gcry_mpi_snew(2048);
-	rsa_d = gcry_mpi_snew(2048);
-	elg_x = gcry_mpi_snew(2048);
-	dsa_x = gcry_mpi_snew(2048);
-	ec_sk = gcry_mpi_snew(1024);
+	rsa_p = gcry_mpi_snew(8);
+	rsa_q = gcry_mpi_snew(8);
+	rsa_u = gcry_mpi_snew(8);
+	rsa_d = gcry_mpi_snew(8);
+	elg_x = gcry_mpi_snew(8);
+	dsa_x = gcry_mpi_snew(8);
+	ec_sk = gcry_mpi_snew(8);
 	telg_q = gcry_mpi_new(2048);
 	telg_h = gcry_mpi_new(2048);
 	telg_x_i = gcry_mpi_snew(2048);
@@ -1938,17 +1938,17 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		TMCG_OPENPGP_HASHALGO_UNKNOWN, TMCG_OPENPGP_SKALGO_PLAINTEXT, sub);
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
 		oidlen, oid, ecpk, sub);
-	rsa_p = gcry_mpi_snew(2048);
-	rsa_q = gcry_mpi_snew(2048);
-	rsa_u = gcry_mpi_snew(2048);
-	rsa_d = gcry_mpi_snew(2048);
-	elg_x = gcry_mpi_snew(2048);
-	dsa_x = gcry_mpi_snew(2048);
+	rsa_p = gcry_mpi_snew(8);
+	rsa_q = gcry_mpi_snew(8);
+	rsa_u = gcry_mpi_snew(8);
+	rsa_d = gcry_mpi_snew(8);
+	elg_x = gcry_mpi_snew(8);
+	dsa_x = gcry_mpi_snew(8);
 	ec_sk = gcry_mpi_snew(1024);
-	telg_q = gcry_mpi_new(2048);
-	telg_h = gcry_mpi_new(2048);
-	telg_x_i = gcry_mpi_snew(2048);
-	telg_xprime_i = gcry_mpi_snew(2048);
+	telg_q = gcry_mpi_new(8);
+	telg_h = gcry_mpi_new(8);
+	telg_x_i = gcry_mpi_snew(8);
+	telg_xprime_i = gcry_mpi_snew(8);
 	// public-key algorithm is ECDSA
 	gcry_mpi_set(ec_sk, ecsk);
 	const char *curve = NULL;
@@ -1992,17 +1992,17 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		kdf_hashalgo_in, kdf_skalgo_in, sub);
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
 		oidlen, oid, ecpk, kdf_hashalgo_in, kdf_skalgo_in, sub);
-	rsa_p = gcry_mpi_snew(2048);
-	rsa_q = gcry_mpi_snew(2048);
-	rsa_u = gcry_mpi_snew(2048);
-	rsa_d = gcry_mpi_snew(2048);
-	elg_x = gcry_mpi_snew(2048);
-	dsa_x = gcry_mpi_snew(2048);
+	rsa_p = gcry_mpi_snew(8);
+	rsa_q = gcry_mpi_snew(8);
+	rsa_u = gcry_mpi_snew(8);
+	rsa_d = gcry_mpi_snew(8);
+	elg_x = gcry_mpi_snew(8);
+	dsa_x = gcry_mpi_snew(8);
 	ec_sk = gcry_mpi_snew(1024);
-	telg_q = gcry_mpi_new(2048);
-	telg_h = gcry_mpi_new(2048);
-	telg_x_i = gcry_mpi_snew(2048);
-	telg_xprime_i = gcry_mpi_snew(2048);
+	telg_q = gcry_mpi_new(8);
+	telg_h = gcry_mpi_new(8);
+	telg_x_i = gcry_mpi_snew(8);
+	telg_xprime_i = gcry_mpi_snew(8);
 	// public-key algorithm is ECDH
 	gcry_mpi_set(ec_sk, ecsk);
 	const char *curve = NULL;
@@ -2308,12 +2308,12 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		ec_curve("")
 {
 	rsa_n = gcry_mpi_new(2048);
-	rsa_e = gcry_mpi_new(2048);
-	dsa_p = gcry_mpi_new(2048);
-	dsa_q = gcry_mpi_new(2048);
-	dsa_g = gcry_mpi_new(2048);
-	dsa_y = gcry_mpi_new(2048);
-	ec_pk = gcry_mpi_new(1024);
+	rsa_e = gcry_mpi_new(256);
+	dsa_p = gcry_mpi_new(8);
+	dsa_q = gcry_mpi_new(8);
+	dsa_g = gcry_mpi_new(8);
+	dsa_y = gcry_mpi_new(8);
+	ec_pk = gcry_mpi_new(8);
 	// public-key algorithm is RSA
 	gcry_mpi_set(rsa_n, n);
 	gcry_mpi_set(rsa_e, e);
@@ -2346,13 +2346,13 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		expirationtime(expirationtime_in),
 		ec_curve("")
 {
-	rsa_n = gcry_mpi_new(2048);
-	rsa_e = gcry_mpi_new(2048);
+	rsa_n = gcry_mpi_new(8);
+	rsa_e = gcry_mpi_new(8);
 	dsa_p = gcry_mpi_new(2048);
-	dsa_q = gcry_mpi_new(2048);
+	dsa_q = gcry_mpi_new(512);
 	dsa_g = gcry_mpi_new(2048);
 	dsa_y = gcry_mpi_new(2048);
-	ec_pk = gcry_mpi_new(1024);
+	ec_pk = gcry_mpi_new(8);
 	// public-key algorithm is DSA
 	gcry_mpi_set(dsa_p, p);
 	gcry_mpi_set(dsa_q, q);
@@ -2385,12 +2385,12 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in)
 {
-	rsa_n = gcry_mpi_new(2048);
-	rsa_e = gcry_mpi_new(2048);
-	dsa_p = gcry_mpi_new(2048);
-	dsa_q = gcry_mpi_new(2048);
-	dsa_g = gcry_mpi_new(2048);
-	dsa_y = gcry_mpi_new(2048);
+	rsa_n = gcry_mpi_new(8);
+	rsa_e = gcry_mpi_new(8);
+	dsa_p = gcry_mpi_new(8);
+	dsa_q = gcry_mpi_new(8);
+	dsa_g = gcry_mpi_new(8);
+	dsa_y = gcry_mpi_new(8);
 	ec_pk = gcry_mpi_new(1024);
 	// public-key algorithm is ECDSA
 	gcry_mpi_set(ec_pk, ecpk);
@@ -3185,11 +3185,11 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	rsa_q = gcry_mpi_snew(2048);
 	rsa_u = gcry_mpi_snew(2048);
 	rsa_d = gcry_mpi_snew(2048);
-	dsa_x = gcry_mpi_snew(2048);
-	ec_sk = gcry_mpi_snew(1024);
-	tdss_h = gcry_mpi_new(2048);
-	tdss_x_i = gcry_mpi_snew(2048);
-	tdss_xprime_i = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(8);
+	ec_sk = gcry_mpi_snew(8);
+	tdss_h = gcry_mpi_new(8);
+	tdss_x_i = gcry_mpi_snew(8);
+	tdss_xprime_i = gcry_mpi_snew(8);
 	// public-key algorithm is RSA
 	gcry_mpi_set(rsa_p, p);
 	gcry_mpi_set(rsa_q, q);
@@ -3218,15 +3218,15 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		pkalgo_in, p, q, g, y, pkt);
 	pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
 		p, q, g, y, pkt);
-	rsa_p = gcry_mpi_snew(2048);
-	rsa_q = gcry_mpi_snew(2048);
-	rsa_u = gcry_mpi_snew(2048);
-	rsa_d = gcry_mpi_snew(2048);
+	rsa_p = gcry_mpi_snew(8);
+	rsa_q = gcry_mpi_snew(8);
+	rsa_u = gcry_mpi_snew(8);
+	rsa_d = gcry_mpi_snew(8);
 	dsa_x = gcry_mpi_snew(2048);
-	ec_sk = gcry_mpi_snew(1024);
-	tdss_h = gcry_mpi_new(2048);
-	tdss_x_i = gcry_mpi_snew(2048);
-	tdss_xprime_i = gcry_mpi_snew(2048);
+	ec_sk = gcry_mpi_snew(8);
+	tdss_h = gcry_mpi_new(8);
+	tdss_x_i = gcry_mpi_snew(8);
+	tdss_xprime_i = gcry_mpi_snew(8);
 	// public-key algorithm is DSA
 	gcry_mpi_set(dsa_x, x);
 	ret = gcry_sexp_build(&private_key, &erroff,
@@ -3261,12 +3261,12 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		TMCG_OPENPGP_PKALGO_DSA, p, q, g, y, pkt);
 	pub = new TMCG_OpenPGP_Pubkey(TMCG_OPENPGP_PKALGO_DSA, creationtime_in,
 		expirationtime_in, p, q, g, y, pkt);
-	rsa_p = gcry_mpi_snew(2048);
-	rsa_q = gcry_mpi_snew(2048);
-	rsa_u = gcry_mpi_snew(2048);
-	rsa_d = gcry_mpi_snew(2048);
-	dsa_x = gcry_mpi_snew(2048);
-	ec_sk = gcry_mpi_snew(1024);
+	rsa_p = gcry_mpi_snew(8);
+	rsa_q = gcry_mpi_snew(8);
+	rsa_u = gcry_mpi_snew(8);
+	rsa_d = gcry_mpi_snew(8);
+	dsa_x = gcry_mpi_snew(8);
+	ec_sk = gcry_mpi_snew(8);
 	tdss_h = gcry_mpi_new(2048);
 	tdss_x_i = gcry_mpi_snew(2048);
 	tdss_xprime_i = gcry_mpi_snew(2048);
@@ -3324,15 +3324,15 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		TMCG_OPENPGP_HASHALGO_UNKNOWN, TMCG_OPENPGP_SKALGO_PLAINTEXT, pkt);
 	pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
 		oidlen, oid, ecpk, pkt);
-	rsa_p = gcry_mpi_snew(2048);
-	rsa_q = gcry_mpi_snew(2048);
-	rsa_u = gcry_mpi_snew(2048);
-	rsa_d = gcry_mpi_snew(2048);
-	dsa_x = gcry_mpi_snew(2048);
+	rsa_p = gcry_mpi_snew(8);
+	rsa_q = gcry_mpi_snew(8);
+	rsa_u = gcry_mpi_snew(8);
+	rsa_d = gcry_mpi_snew(8);
+	dsa_x = gcry_mpi_snew(8);
 	ec_sk = gcry_mpi_snew(1024);
-	tdss_h = gcry_mpi_new(2048);
-	tdss_x_i = gcry_mpi_snew(2048);
-	tdss_xprime_i = gcry_mpi_snew(2048);
+	tdss_h = gcry_mpi_new(8);
+	tdss_x_i = gcry_mpi_snew(8);
+	tdss_xprime_i = gcry_mpi_snew(8);
 	// public-key algorithm is ECDSA
 	gcry_mpi_set(ec_sk, ecsk);
 	const char *curve = NULL;
