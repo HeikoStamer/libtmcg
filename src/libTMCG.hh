@@ -274,7 +274,7 @@
 	
 	// Initialization of LibTMCG
 	bool init_libTMCG
-		(const bool use_secmem = false);
+		(const bool force_secmem = false);
 	
 	// Returns the version of LibTMCG
 	const std::string version_libTMCG

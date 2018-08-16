@@ -50,9 +50,82 @@
 #include "mpz_srandom.hh"
 #include "mpz_helper.hh"
 
+// additional STL-compliant allocator using libgcrypt's secure memory
+template<class T> class TMCG_SecureAlloc
+{
+	public:
+		typedef T		value_type;
+		typedef size_t		size_type;
+		typedef ptrdiff_t	difference_type;
+		typedef T*		pointer;
+		typedef const T*	const_pointer;
+		typedef T&		reference;
+		typedef const T&	const_reference;
+		pointer 		address
+			(reference r) const
+		{
+			return &r;
+		}
+		const_pointer		address
+			(const_reference r) const
+		{
+			return &r;
+		}
+		TMCG_SecureAlloc
+			() throw()
+		{
+		}
+		template<class U> TMCG_SecureAlloc
+			(const TMCG_SecureAlloc<U>&) throw();
+		pointer			allocate
+			(size_type n, const void* hint = 0)
+		{
+			return static_cast<pointer>(gcry_malloc_secure(n));
+		}
+		void			deallocate
+			(pointer p, size_type n)
+		{
+			gcry_free(p);
+		}
+		void			construct
+			(pointer p, const T& value)
+		{
+			new (p) T(value);
+		}
+		void			destroy
+			(pointer p)
+		{
+			p->~T();
+		}
+		size_type		max_size
+			() const throw()
+		{
+			return 1024;
+		}
+		template<class U> struct rebind
+		{
+			typedef TMCG_SecureAlloc<U> other;
+		};
+		~TMCG_SecureAlloc
+			() throw()
+		{
+		}
+};
+template<class T> bool operator==
+	(const TMCG_SecureAlloc<T>&, const TMCG_SecureAlloc<T>&) throw()
+{
+	return true;
+};
+template<class T> bool operator!=
+	(const TMCG_SecureAlloc<T>&, const TMCG_SecureAlloc<T>&) throw()
+{
+	return false;
+};
+
 // definition of types and constants for OpenPGP structures
 typedef unsigned char tmcg_openpgp_byte_t;
 typedef std::vector<tmcg_openpgp_byte_t> tmcg_openpgp_octets_t;
+typedef std::vector<tmcg_openpgp_byte_t, TMCG_SecureAlloc<tmcg_openpgp_byte_t> > tmcg_openpgp_secure_octets_t;
 
 enum tmcg_openpgp_signature_t
 {
@@ -1286,6 +1359,10 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_openpgp_hashalgo_t					algo,
 			 const tmcg_openpgp_octets_t					&in,
 			 tmcg_openpgp_octets_t							&out);
+		static gcry_error_t HashCompute
+			(const tmcg_openpgp_hashalgo_t					algo,
+			 const tmcg_openpgp_secure_octets_t					&in,
+			 tmcg_openpgp_secure_octets_t							&out);
 		static void HashCompute
 			(const tmcg_openpgp_hashalgo_t					algo,
 			 const size_t									cnt,
@@ -1305,13 +1382,13 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const bool										iterated,
 			 const tmcg_openpgp_byte_t						octcnt,
 			 tmcg_openpgp_octets_t							&out);
-		static void KDFCompute
+		static gcry_error_t KDFCompute
 			(const tmcg_openpgp_hashalgo_t					hashalgo,
 			 const tmcg_openpgp_skalgo_t					skalgo,
-			 const tmcg_openpgp_octets_t					&ZB,
+			 const tmcg_openpgp_secure_octets_t					&ZB,
 			 const std::string								&curve,
 			 const tmcg_openpgp_octets_t					&rcpfpr,
-			 tmcg_openpgp_octets_t							&MB);
+			 tmcg_openpgp_secure_octets_t							&MB);
 
 		static void PacketTagEncode
 			(const tmcg_openpgp_byte_t						tag,

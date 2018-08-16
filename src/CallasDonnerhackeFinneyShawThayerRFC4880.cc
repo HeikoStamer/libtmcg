@@ -4669,6 +4669,34 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	delete [] hash;
 }
 
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
+	(const tmcg_openpgp_hashalgo_t algo,
+	 const tmcg_openpgp_secure_octets_t &in,
+	 tmcg_openpgp_secure_octets_t &out)
+{
+	int a = AlgorithmHashGCRY(algo);
+	size_t dlen = gcry_md_get_algo_dlen(a);
+	gcry_error_t ret;
+	gcry_md_hd_t hd;
+
+	ret = gcry_md_open(&hd, a, GCRY_MD_FLAG_SECURE);
+	if (ret)
+		return ret;
+	for (size_t i = 0; i < in.size(); i++)
+		gcry_md_putc(hd, in[i]);
+	gcry_md_final(hd);
+	tmcg_openpgp_byte_t *buf = gcry_md_read(hd, a);
+	if (buf == NULL)
+	{	
+		gcry_md_close(hd);
+		return GPG_ERR_DIGEST_ALGO;
+	}
+	for (size_t i = 0; i < dlen; i++)
+		out.push_back(buf[i]);
+	gcry_md_close(hd);
+	return 0;
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	(const tmcg_openpgp_hashalgo_t algo, const size_t cnt,
 	 const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &out)
@@ -4767,7 +4795,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
 			out.push_back(hash[i]);
 	}
 	else
+	{
+		gcry_md_close(hd);
 		return false;
+	}
 	gcry_md_close(hd);
 	return true;
 }
@@ -4863,16 +4894,16 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 	}
 }
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::KDFCompute
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::KDFCompute
 	(const tmcg_openpgp_hashalgo_t hashalgo,
 	 const tmcg_openpgp_skalgo_t skalgo,
-	 const tmcg_openpgp_octets_t &ZB,
+	 const tmcg_openpgp_secure_octets_t &ZB,
 	 const std::string &curve,
 	 const tmcg_openpgp_octets_t &rcpfpr,
-	 tmcg_openpgp_octets_t &MB)
+	 tmcg_openpgp_secure_octets_t &MB)
 {
 	// compute Key Derivation Function (KDF) for ECDH [RFC 6637]
-	tmcg_openpgp_octets_t kdf_buffer;
+	tmcg_openpgp_secure_octets_t kdf_buffer;
 	kdf_buffer.push_back(0x00);
 	kdf_buffer.push_back(0x00);
 	kdf_buffer.push_back(0x00);
@@ -4915,7 +4946,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KDFCompute
 	kdf_buffer.push_back(0x20);
 	for (size_t i = 0; i < rcpfpr.size(); i++)
 		kdf_buffer.push_back(rcpfpr[i]); // fingerprint of recipient's key
-	HashCompute(hashalgo, kdf_buffer, MB);
+	return HashCompute(hashalgo, kdf_buffer, MB);
 }
 
 // ===========================================================================
@@ -8903,7 +8934,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	size_t bs = AlgorithmIVLength(TMCG_OPENPGP_SKALGO_AES256);
 	// get key size of AES256
 	size_t ks = AlgorithmKeyLength(TMCG_OPENPGP_SKALGO_AES256);
-	tmcg_openpgp_byte_t key[ks], pre[bs+2], b;
+	tmcg_openpgp_byte_t pre[bs+2];
+	unsigned char *buf = (unsigned char*)gcry_malloc_secure(ks);
+	if (buf == NULL)
+		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
 
 	// The symmetric cipher used may be specified in a Public-Key or
 	// Symmetric-Key Encrypted Session Key packet that precedes the
@@ -8914,31 +8948,40 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	// Then a two-octet checksum is appended, which is equal to the
 	// sum of the preceding session key octets, not including the
 	// algorithm identifier, modulo 65536.
-	if (!bs || !ks)
+	if ((bs == 0) || (ks == 0))
+	{
+		gcry_free(buf);
 		return GPG_ERR_CIPHER_ALGO; // error: bad algorithm
-	if (seskey.size() == (sizeof(key) + 3))
+	}
+	if (seskey.size() == (ks + 3))
 	{
 		// reuse the provided session key and calculate checksum
 		if (seskey[0] != TMCG_OPENPGP_SKALGO_AES256)
-			return GPG_ERR_CIPHER_ALGO; // error: algorithm is not AES256
-		for (size_t i = 0; i < sizeof(key); i++)
 		{
-			key[i] = seskey[1+i]; // copy the session key
-			chksum += key[i];
+			gcry_free(buf);
+			return GPG_ERR_CIPHER_ALGO; // error: algorithm is not AES256
+		}
+		for (size_t i = 0; i < ks; i++)
+		{
+			buf[i] = seskey[1+i]; // copy the session key
+			chksum += buf[i];
 		}
 		chksum %= 65536;
 		size_t key_chksum = (seskey[33] << 8) + seskey[34];
 		if (chksum != key_chksum)
+		{
+			gcry_free(buf);
 			return GPG_ERR_CHECKSUM; // error: checksum does not match
+		}
 	}
-	else if (seskey.size() == sizeof(key))
+	else if (seskey.size() == ks)
 	{
 		// use the provided session key and append checksum
 		seskey.insert(seskey.begin(), TMCG_OPENPGP_SKALGO_AES256);
-		for (size_t i = 0; i < sizeof(key); i++)
+		for (size_t i = 0; i < ks; i++)
 		{
-			key[i] = seskey[1+i]; // copy the session key
-			chksum += key[i];
+			buf[i] = seskey[1+i]; // copy the session key
+			chksum += buf[i];
 		}
 		chksum %= 65536;
 		seskey.push_back((chksum >> 8) & 0xFF); // checksum
@@ -8947,13 +8990,13 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	else
 	{
 		// generate a random session key and the OpenPGP checksum
-		gcry_randomize(key, sizeof(key), GCRY_STRONG_RANDOM);
+		gcry_randomize(buf, ks, GCRY_STRONG_RANDOM);
 		seskey.clear();
 		seskey.push_back(TMCG_OPENPGP_SKALGO_AES256);
-		for (size_t i = 0; i < sizeof(key); i++)
+		for (size_t i = 0; i < ks; i++)
 		{
-			seskey.push_back(key[i]);
-			chksum += key[i];
+			seskey.push_back(buf[i]);
+			chksum += buf[i];
 		}
 		chksum %= 65536;
 		seskey.push_back((chksum >> 8) & 0xFF); // checksum
@@ -8975,21 +9018,23 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	// is resynchronized. The last block-size octets of ciphertext are
 	// passed through the cipher and the block boundary is reset.
 	ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB,
-		GCRY_CIPHER_ENABLE_SYNC);
+		GCRY_CIPHER_ENABLE_SYNC | GCRY_CIPHER_SECURE);
 	if (ret)
 	{
-		gcry_cipher_close(hd);
+		gcry_free(buf);
 		return ret;
 	}
-	ret = gcry_cipher_setkey(hd, key, sizeof(key));
+	ret = gcry_cipher_setkey(hd, buf, ks);
 	if (ret)
 	{
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 		return ret;
 	}
 	ret = gcry_cipher_setiv(hd, NULL, 0);
 	if (ret)
 	{
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 		return ret;
 	}
@@ -9011,6 +9056,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	ret = gcry_cipher_encrypt(hd, pre, sizeof(pre), NULL, 0);
 	if (ret)
 	{
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 		return ret;
 	}
@@ -9019,6 +9065,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 		ret = gcry_cipher_sync(hd);
 		if (ret)
 		{
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return ret;
 		}
@@ -9027,17 +9074,19 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 		out.push_back(pre[i]); // encrypted prefix
 	for (size_t i = 0; i < in.size(); i++)
 	{
-		ret = gcry_cipher_encrypt(hd, &b, 1, &in[i], 1);
+		ret = gcry_cipher_encrypt(hd, buf, 1, &in[i], 1);
 		if (ret)
 		{
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return ret;
 		}
-		out.push_back(b); // encrypted input
+		out.push_back(buf[0]); // encrypted input
 	}
+	gcry_free(buf);
 	gcry_cipher_close(hd);
 
-	return ret;
+	return 0;
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
@@ -9050,7 +9099,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	size_t chksum = 0;
 	size_t bs = AlgorithmIVLength(algo); // get block size of algorithm
 	size_t ks = AlgorithmKeyLength(algo); // get key size of algorithm
-	tmcg_openpgp_byte_t key[ks], b;
+	unsigned char *buf = (unsigned char*)gcry_malloc_secure(ks);
+	if (buf == NULL)
+		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
 
 	// The symmetric cipher used may be specified in a Public-Key or
 	// Symmetric-Key Encrypted Session Key packet that precedes the
@@ -9061,40 +9112,55 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	// Then a two-octet checksum is appended, which is equal to the
 	// sum of the preceding session key octets, not including the
 	// algorithm identifier, modulo 65536.
-	if (!bs || !ks)
+	if ((bs == 0) || (ks == 0))
+	{
+		gcry_free(buf);
 		return GPG_ERR_CIPHER_ALGO; // error: bad algorithm
+	}
 	if (seskey.size() == 0)
+	{
+		gcry_free(buf);
 		return GPG_ERR_INV_SESSION_KEY; // error: no session key provided
-	else if (seskey.size() == (sizeof(key) + 3))
+	}
+	else if (seskey.size() == (ks + 3))
 	{
 		// use the provided session key and calculate checksum
-		for (size_t i = 0; i < sizeof(key); i++)
+		for (size_t i = 0; i < ks; i++)
 		{
-			key[i] = seskey[1+i]; // copy the session key
-			chksum += key[i];
+			buf[i] = seskey[1+i]; // copy the session key
+			chksum += buf[i];
 		}
 		chksum %= 65536;
 		size_t key_chksum = (seskey[33] << 8) + seskey[34];
 		if (chksum != key_chksum)
+		{
+			gcry_free(buf);
 			return GPG_ERR_CHECKSUM; // error: checksum does not match
+		}
 	}
-	else if (seskey.size() == sizeof(key))
+	else if (seskey.size() == ks)
 	{
 		// use the provided session key and append checksum
 		seskey.insert(seskey.begin(), algo); // specified algorithm
-		for (size_t i = 0; i < sizeof(key); i++)
+		for (size_t i = 0; i < ks; i++)
 		{
-			key[i] = seskey[1+i]; // copy the session key
-			chksum += key[i];
+			buf[i] = seskey[1+i]; // copy the session key
+			chksum += buf[i];
 		}
 		chksum %= 65536;
 		seskey.push_back((chksum >> 8) & 0xFF); // checksum
 		seskey.push_back(chksum & 0xFF);
 	}
 	else
+	{
+		gcry_free(buf);
 		return GPG_ERR_BAD_KEY; // error: bad session key provided
+	}
 	if (in.size() < (bs + 2))
+	{
+		gcry_free(buf);
 		return GPG_ERR_TOO_SHORT; // error: input too short (no encrypt. prefix)
+	}
 	// The data is encrypted in CFB mode, with a CFB shift size equal to
 	// the cipher’s block size. The Initial Vector (IV) is specified as
 	// all zeros. Instead of using an IV, OpenPGP prefixes a string of
@@ -9110,37 +9176,41 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	// After encrypting the first block-size-plus-two octets, the CFB state
 	// is resynchronized. The last block-size octets of ciphertext are
 	// passed through the cipher and the block boundary is reset.
-	ret = gcry_cipher_open(&hd, AlgorithmSymGCRY(algo),
-		GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_ENABLE_SYNC);
+	ret = gcry_cipher_open(&hd, AlgorithmSymGCRY(algo), GCRY_CIPHER_MODE_CFB,
+		GCRY_CIPHER_ENABLE_SYNC | GCRY_CIPHER_SECURE);
 	if (ret)
 	{
-		gcry_cipher_close(hd);
+		gcry_free(buf);
 		return ret;
 	}
-	ret = gcry_cipher_setkey(hd, key, sizeof(key));
+	ret = gcry_cipher_setkey(hd, buf, ks);
 	if (ret)
 	{
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 		return ret;
 	}
 	ret = gcry_cipher_setiv(hd, NULL, 0);
 	if (ret)
 	{
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 		return ret;
 	}
 	for (size_t i = 0; i < (bs + 2); i++)
 	{
-		ret = gcry_cipher_decrypt(hd, &b, 1, &in[i], 1);
+		ret = gcry_cipher_decrypt(hd, buf, 1, &in[i], 1);
 		if (ret)
 		{
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return ret;
 		}
-		prefix.push_back(b); // decrypted prefix
+		prefix.push_back(buf[0]); // decrypted prefix
 	}
 	if ((prefix[bs] != prefix[bs-2]) || (prefix[bs+1] != prefix[bs-1]))
 	{
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 		return GPG_ERR_INV_SESSION_KEY; // error: prefix corrupt
 	}
@@ -9149,23 +9219,26 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 		ret = gcry_cipher_sync(hd);
 		if (ret)
 		{
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return ret;
 		}
 	}
 	for (size_t i = 0; i < (in.size() - (bs + 2)); i++)
 	{
-		ret = gcry_cipher_decrypt(hd, &b, 1, &in[bs+2+i], 1);
+		ret = gcry_cipher_decrypt(hd, buf, 1, &in[bs+2+i], 1);
 		if (ret)
 		{
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return ret;
 		}
-		out.push_back(b); // decrypted input
+		out.push_back(buf[0]); // decrypted input
 	}
+	gcry_free(buf);
 	gcry_cipher_close(hd);
 
-	return ret;
+	return 0;
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
@@ -9181,20 +9254,23 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key, 
 	 gcry_mpi_t &gk, gcry_mpi_t &myk)
 {
-	char buf[2048];
 	gcry_sexp_t encryption, data;
 	gcry_error_t ret;
-	size_t buflen = 0, erroff;
+	size_t bufsize = 2048, buflen = 0, erroff;
+	unsigned char *buf = (unsigned char*)gcry_malloc_secure(bufsize);
+	if (buf == NULL)
+		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
 
 	// This value is then encoded as described in PKCS#1 block encoding
 	// EME-PKCS1-v1_5 in Section 7.2.1 of [RFC3447] to form the "m" value
 	// used in the formulas above. See Section 13.1 of this document for
 	// notes on OpenPGP's use of PKCS#1.
-	memset(buf, 0, sizeof(buf));
-	for (size_t i = 0; (i < in.size()) && (i < sizeof(buf)); i++, buflen++)
+	memset(buf, 0, bufsize);
+	for (size_t i = 0; ((i < in.size()) && (i < bufsize)); i++, buflen++)
 		buf[i] = in[i];
 	ret = gcry_sexp_build(&data, &erroff, "(data (flags pkcs1) (value %b))",
 		(int)buflen, buf);
+	gcry_free(buf);
 	if (ret)
 		return ret;
 	ret = gcry_pk_encrypt(&encryption, data, key);
@@ -9249,20 +9325,23 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptRSA
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key,
 	 gcry_mpi_t &me)
 {
-	char buf[2048];
 	gcry_sexp_t encryption, data;
 	gcry_error_t ret;
-	size_t buflen = 0, erroff;
+	size_t bufsize = 2048, buflen = 0, erroff;
+	unsigned char *buf = (unsigned char*)gcry_malloc_secure(bufsize);
+	if (buf == NULL)
+		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
 
 	// This value is then encoded as described in PKCS#1 block encoding
 	// EME-PKCS1-v1_5 in Section 7.2.1 of [RFC3447] to form the "m" value
 	// used in the formulas above. See Section 13.1 of this document for
 	// notes on OpenPGP's use of PKCS#1.
-	memset(buf, 0, sizeof(buf));
-	for (size_t i = 0; (i < in.size()) && (i < sizeof(buf)); i++, buflen++)
+	memset(buf, 0, bufsize);
+	for (size_t i = 0; ((i < in.size()) && (i < bufsize)); i++, buflen++)
 		buf[i] = in[i];
 	ret = gcry_sexp_build(&data, &erroff, "(data (flags pkcs1) (value %b))",
 		(int)buflen, buf);
+	gcry_free(buf);
 	if (ret)
 		return ret;
 	ret = gcry_pk_encrypt(&encryption, data, key);
@@ -9354,14 +9433,20 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 		gcry_mpi_release(S);
 		return ret;
 	}
-	unsigned char buf[1024]; // FIXME: allocate as secure memory
-	size_t buflen = 0;
-	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buf, sizeof(buf), &buflen, S);
+
+	size_t bufsize = 1024, buflen = 0;
+	unsigned char *buf = (unsigned char*)gcry_malloc_secure(bufsize);
+	if (buf == NULL)
+		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buf, bufsize, &buflen, S);
 	gcry_mpi_release(S);
 	if (ret)
+	{
+		gcry_free(buf);
 		return ret;
+	}
 	// compute Z = KDF(S, Z_len, Param) [RFC 6637]
-	tmcg_openpgp_octets_t ZB, Z; // FIXME: allocate as secure memory
+	tmcg_openpgp_secure_octets_t ZB, Z;
 	if (buf[0] == 0x04)
 	{
 		for (size_t i = 0; i < ((buflen - 1) / 2); i++)
@@ -9373,37 +9458,61 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 			ZB.push_back(buf[1+i]);
 	}
 	else
+	{
+		gcry_free(buf);
 		return GPG_ERR_BAD_DATA;
-	KDFCompute(hashalgo, skalgo, ZB, curve, rcpfpr, Z);
-	memset(buf, 0, sizeof(buf));
-	for (size_t i = 0; ((i < Z.size()) && (i < sizeof(buf))); i++)
+	}
+	ret = KDFCompute(hashalgo, skalgo, ZB, curve, rcpfpr, Z);
+	if (ret)
+	{
+		gcry_free(buf);
+		return ret;
+	}
+	memset(buf, 0, bufsize);
+	for (size_t i = 0; ((i < Z.size()) && (i < bufsize)); i++)
 		buf[i] = Z[i];
 	// compute of C = AESKeyWrap(Z, m) as per [RFC 3394]
 	if (Z.size() < AlgorithmHashLength(hashalgo))
+	{
+		gcry_free(buf);
 		return GPG_ERR_BAD_DATA;
+	}
 	if (Z.size() < gcry_cipher_get_algo_keylen(skalgo))
+	{
+		gcry_free(buf);
 		return GPG_ERR_BAD_DATA;
+	}
 	if ((hashalgo != TMCG_OPENPGP_HASHALGO_SHA256) &&
 		(hashalgo != TMCG_OPENPGP_HASHALGO_SHA384) &&
 		(hashalgo != TMCG_OPENPGP_HASHALGO_SHA512))
+	{
+		gcry_free(buf);
 		return GPG_ERR_BAD_PUBKEY;
+	}
 	if ((skalgo != TMCG_OPENPGP_SKALGO_AES128) &&
 		(skalgo != TMCG_OPENPGP_SKALGO_AES192) &&
 		(skalgo != TMCG_OPENPGP_SKALGO_AES256))
+	{
+		gcry_free(buf);
 		return GPG_ERR_BAD_PUBKEY;
+	}
 	gcry_cipher_hd_t hd;
 	ret = gcry_cipher_open(&hd, skalgo, GCRY_CIPHER_MODE_AESWRAP,
 		GCRY_CIPHER_SECURE);
 	if (ret)
+	{
+		gcry_free(buf);
 		return ret;
+	}
 	ret = gcry_cipher_setkey(hd, buf, gcry_cipher_get_algo_keylen(skalgo));
 	if (ret)
 	{
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 		return ret;
 	}
-	memset(buf, 0, sizeof(buf));
-	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buf))); i++)
+	memset(buf, 0, bufsize);
+	for (size_t i = 0; ((i < in.size()) && (i < bufsize)); i++)
 		buf[i] = in[i];
 	tmcg_openpgp_skalgo_t symm_alg_ID = (tmcg_openpgp_skalgo_t)buf[0];
 	size_t pkcs5_padding_off = AlgorithmKeyLength(symm_alg_ID) + 3;
@@ -9420,12 +9529,12 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 	rkwlen = in.size() + pkcs5_padding_len;
 	ret = gcry_cipher_encrypt(hd, rkw, rkwlen+8, buf, rkwlen);
 	gcry_cipher_close(hd);
+	gcry_free(buf);
 	if (ret)
 		return ret;
 	rkwlen += 8;
 	return 0;
 }
-
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 	(const gcry_mpi_t ecepk, const gcry_sexp_t key, const size_t rkwlen,
@@ -9433,11 +9542,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 	 const tmcg_openpgp_skalgo_t skalgo, const std::string &curve,
 	 const tmcg_openpgp_octets_t &rcpfpr, tmcg_openpgp_octets_t &out)
 {
-	unsigned char buf[1024]; // FIXME: allocate as secure memory
 	gcry_sexp_t decryption, data;
 	gcry_mpi_t S;
 	gcry_error_t ret;
-	size_t buflen = 0, erroff;
+	size_t bufsize = 1024, buflen = 0, erroff;
 
 	// compute shared secret S = rV, where V is the ephemeral key [RFC 6637]
 	ret = gcry_sexp_build(&data, &erroff,
@@ -9456,12 +9564,18 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 		gcry_mpi_release(S);
 		return ret;
 	}
-	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buf, sizeof(buf), &buflen, S);
+	unsigned char *buf = (unsigned char*)gcry_malloc_secure(bufsize);
+	if (buf == NULL)
+		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buf, bufsize, &buflen, S);
 	gcry_mpi_release(S);
 	if (ret)
+	{
+		gcry_free(buf);
 		return ret;
+	}
 	// compute Z = KDF(S, Z_len, Param) [RFC 6637]
-	tmcg_openpgp_octets_t ZB, Z; // FIXME: allocate as secure memory
+	tmcg_openpgp_secure_octets_t ZB, Z;
 	if (buf[0] == 0x04)
 	{
 		for (size_t i = 0; i < ((buflen - 1) / 2); i++)
@@ -9473,51 +9587,83 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 			ZB.push_back(buf[1+i]);
 	}
 	else
+	{
+		gcry_free(buf);
 		return GPG_ERR_BAD_DATA;
-	KDFCompute(hashalgo, skalgo, ZB, curve, rcpfpr, Z);
-	memset(buf, 0, sizeof(buf));
-	for (size_t i = 0; ((i < Z.size()) && (i < sizeof(buf))); i++)
+	}
+	ret = KDFCompute(hashalgo, skalgo, ZB, curve, rcpfpr, Z);
+	if (ret)
+	{
+		gcry_free(buf);
+		return ret;
+	}
+	memset(buf, 0, bufsize);
+	for (size_t i = 0; ((i < Z.size()) && (i < bufsize)); i++)
 		buf[i] = Z[i];
 	// compute m by inverse operation of C = AESKeyWrap(Z, m)
 	if (Z.size() < AlgorithmHashLength(hashalgo))
+	{
+		gcry_free(buf);
 		return GPG_ERR_BAD_DATA;
+	}
 	if (Z.size() < gcry_cipher_get_algo_keylen(skalgo))
+	{
+		gcry_free(buf);
 		return GPG_ERR_BAD_DATA;
+	}
 	if ((hashalgo != TMCG_OPENPGP_HASHALGO_SHA256) &&
 		(hashalgo != TMCG_OPENPGP_HASHALGO_SHA384) &&
 		(hashalgo != TMCG_OPENPGP_HASHALGO_SHA512))
+	{
+		gcry_free(buf);
 		return GPG_ERR_BAD_PUBKEY;
+	}
 	if ((skalgo != TMCG_OPENPGP_SKALGO_AES128) &&
 		(skalgo != TMCG_OPENPGP_SKALGO_AES192) &&
 		(skalgo != TMCG_OPENPGP_SKALGO_AES256))
+	{
+		gcry_free(buf);
 		return GPG_ERR_BAD_PUBKEY;
+	}
 	gcry_cipher_hd_t hd;
 	ret = gcry_cipher_open(&hd, skalgo, GCRY_CIPHER_MODE_AESWRAP,
 		GCRY_CIPHER_SECURE);
 	if (ret)
+	{
+		gcry_free(buf);
 		return ret;
+	}
 	ret = gcry_cipher_setkey(hd, buf, gcry_cipher_get_algo_keylen(skalgo));
 	if (ret)
 	{
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 		return ret;
 	}
 	if ((rkwlen % 8) || (rkwlen < 32))
 	{
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 		return GPG_ERR_BAD_DATA;
 	}
-	ret = gcry_cipher_decrypt(hd, buf, sizeof(buf), rkw, rkwlen);
+	ret = gcry_cipher_decrypt(hd, buf, bufsize, rkw, rkwlen);
 	gcry_cipher_close(hd);
 	if (ret)
+	{
+		gcry_free(buf);
 		return ret;
+	}
 	// check and extract the padded session key
 	tmcg_openpgp_skalgo_t symm_alg_ID = (tmcg_openpgp_skalgo_t)buf[0];
 	size_t symm_alg_keylen = AlgorithmKeyLength(symm_alg_ID);
 	if ((symm_alg_keylen == 0) || ((rkwlen - 8) < symm_alg_keylen))
+	{
+		gcry_free(buf);
 		return GPG_ERR_BAD_DATA;
-	for (size_t i = 0; i <= symm_alg_keylen; i++)
+	}
+	for (size_t i = 0; ((i <= symm_alg_keylen) && (i < bufsize)); i++)
 		out.push_back(buf[i]);
+	gcry_free(buf);
 	return 0;
 }
 
