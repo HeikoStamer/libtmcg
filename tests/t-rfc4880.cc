@@ -40,6 +40,7 @@ int main
 {
 	gcry_error_t ret;
 	tmcg_openpgp_octets_t in, out;
+	tmcg_openpgp_secure_octets_t ins, outs;
 
 	assert(init_libTMCG(true)); // enable libgcrypt's secure memory
 
@@ -47,14 +48,18 @@ int main
 	std::cout << "OctetsCompareZero() ";
 	do
 	{
-		in.clear(), out.clear();
+		in.clear(), out.clear(), ins.clear(), outs.clear();
 		for (size_t j = 0; j < 6; j++)
 			in.push_back(tmcg_mpz_wrandom_ui() % 2);
 		for (size_t j = 0; j < 6; j++)
 			out.push_back(tmcg_mpz_wrandom_ui() % 2);
+		for (size_t j = 0; j < in.size(); j++)
+			ins.push_back(in[j]);
+		for (size_t j = 0; j < out.size(); j++)
+			outs.push_back(out[j]);
 		assert((CallasDonnerhackeFinneyShawThayerRFC4880::
 			OctetsCompare(in, out) == CallasDonnerhackeFinneyShawThayerRFC4880::
-			OctetsCompareConstantTime(out, in)));
+			OctetsCompareConstantTime(outs, ins)));
 		std::cout << "~";
 	}
 	while (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareZero(in));
@@ -139,17 +144,18 @@ int main
 		GCRY_KDF_ITERSALTED_S2K, TMCG_GCRY_MD_ALGO, salt, sizeof(salt),
 		hashcnt, sizeof(key), key);
 	assert(!err);
-	tmcg_openpgp_octets_t salt2, out2;
-	out.clear();
+	tmcg_openpgp_octets_t salt2;
+	tmcg_openpgp_secure_octets_t outs2;
+	outs.clear();
 	for (size_t i = 0; i < sizeof(key); i++)
-		out.push_back(key[i]); // copy the result
+		outs.push_back(key[i]); // copy the result
 	for (size_t i = 0; i < sizeof(salt); i++)
 		salt2.push_back(salt[i]); // copy the salt
 	std::cout << "S2KCompute(...)" << std::endl;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, keylen, keystr, salt2, true,
-		octcnt, out2);
-	assert(CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(out, out2));
+		octcnt, outs2);
+	assert(CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareConstantTime(outs, outs2));
 
 	// create different asymmetric keys by using libgcrypt
 	size_t erroff = 0;
@@ -192,7 +198,8 @@ int main
 
 	// testing SymmetricEncryptAES256() and SymmetricDecryptAES256()
 	// testing AsymmetricEncryptElgamal() and AsymmetricDecryptElgamal()
-	tmcg_openpgp_octets_t lit, seskey, prefix, enc, subkeyid;
+	tmcg_openpgp_octets_t lit, prefix, enc, subkeyid;
+	tmcg_openpgp_secure_octets_t seskey;
 	std::string m = "This is a test message.", armored_message;
 	in.clear();
 	for (size_t i = 0; i < m.length(); i++)
@@ -354,11 +361,11 @@ int main
 		ArmorEncode(TMCG_OPENPGP_ARMOR_MESSAGE, out, armored_message);
 	std::cout << armored_message << std::endl;
 	std::cout << "AsymmetricDecryptRSA(...)" << std::endl;
-	tmcg_openpgp_octets_t seskey2;
+	tmcg_openpgp_secure_octets_t seskey2;
 	ret = CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptRSA(me,
 		rsakey, seskey2);
 	assert(!ret);
-	assert(CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(seskey,
+	assert(CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareConstantTime(seskey,
 		seskey2));
 	gcry_mpi_release(me);
 

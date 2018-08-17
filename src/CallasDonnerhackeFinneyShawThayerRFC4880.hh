@@ -847,7 +847,7 @@ class TMCG_OpenPGP_PrivateSubkey
 		bool Decrypt
 			(const TMCG_OpenPGP_PKESK*						&esk,
 			 const int										verbose,
-			 tmcg_openpgp_octets_t							&out) const;
+			 tmcg_openpgp_secure_octets_t							&out) const;
 		~TMCG_OpenPGP_PrivateSubkey
 			();
 };
@@ -1031,7 +1031,7 @@ class TMCG_OpenPGP_Prvkey
 		bool Decrypt
 			(const TMCG_OpenPGP_PKESK*						&esk,
 			 const int										verbose,
-			 tmcg_openpgp_octets_t							&out) const;
+			 tmcg_openpgp_secure_octets_t							&out) const;
 		void RelinkPublicSubkeys
 			();
 		void RelinkPrivateSubkeys
@@ -1145,7 +1145,7 @@ class TMCG_OpenPGP_Message
 		TMCG_OpenPGP_Message
 			();
 		bool Decrypt
-			(const tmcg_openpgp_octets_t					&key,
+			(const tmcg_openpgp_secure_octets_t					&key,
 			 const int										verbose,
 			 tmcg_openpgp_octets_t							&out);
 		bool CheckMDC
@@ -1303,8 +1303,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_openpgp_octets_t					&in,
 			 const tmcg_openpgp_octets_t					&in2);
 		static bool OctetsCompareConstantTime
-			(const tmcg_openpgp_octets_t					&in,
-			 const tmcg_openpgp_octets_t					&in2);
+			(const tmcg_openpgp_secure_octets_t					&in,
+			 const tmcg_openpgp_secure_octets_t					&in2);
 		static bool OctetsCompareZero
 			(const tmcg_openpgp_octets_t					&in);
 
@@ -1381,7 +1381,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_octets_t					&salt, 
 			 const bool										iterated,
 			 const tmcg_openpgp_byte_t						octcnt,
-			 tmcg_openpgp_octets_t							&out);
+			 tmcg_openpgp_secure_octets_t							&out);
 		static gcry_error_t KDFCompute
 			(const tmcg_openpgp_hashalgo_t					hashalgo,
 			 const tmcg_openpgp_skalgo_t					skalgo,
@@ -1413,13 +1413,27 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 size_t											&sum);
 		static void PacketMPIEncode
 			(const gcry_mpi_t								in,
+			 tmcg_openpgp_secure_octets_t							&out,
+			 size_t											&sum);
+		static void PacketMPIEncode
+			(const gcry_mpi_t								in,
 			 tmcg_openpgp_octets_t							&out);
+		static void PacketMPIEncode
+			(const gcry_mpi_t								in,
+			 tmcg_openpgp_secure_octets_t							&out);
 		static size_t PacketMPIDecode
 			(const tmcg_openpgp_octets_t					&in,
 			 gcry_mpi_t										&out,
 			 size_t											&sum);
 		static size_t PacketMPIDecode
+			(const tmcg_openpgp_secure_octets_t					&in,
+			 gcry_mpi_t										&out,
+			 size_t											&sum);
+		static size_t PacketMPIDecode
 			(const tmcg_openpgp_octets_t					&in,
+			 gcry_mpi_t										&out);
+		static size_t PacketMPIDecode
+			(const tmcg_openpgp_secure_octets_t					&in,
 			 gcry_mpi_t										&out);
 		static void PacketStringEncode
 			(const std::string								&in,
@@ -1776,25 +1790,25 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 
 		static gcry_error_t SymmetricEncryptAES256
 			(const tmcg_openpgp_octets_t					&in,
-			 tmcg_openpgp_octets_t							&seskey,
+			 tmcg_openpgp_secure_octets_t							&seskey,
 			 tmcg_openpgp_octets_t							&prefix,
 			 const bool										resync,
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t SymmetricDecrypt
 			(const tmcg_openpgp_octets_t					&in,
-			 tmcg_openpgp_octets_t							&seskey,
+			 tmcg_openpgp_secure_octets_t							&seskey,
 			 tmcg_openpgp_octets_t							&prefix,
 			 const bool										resync,
 			 const tmcg_openpgp_skalgo_t					algo,
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t SymmetricDecryptAES256
 			(const tmcg_openpgp_octets_t					&in,
-			 tmcg_openpgp_octets_t							&seskey,
+			 tmcg_openpgp_secure_octets_t							&seskey,
 			 tmcg_openpgp_octets_t							&prefix,
 			 const bool										resync,
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t AsymmetricEncryptElgamal
-			(const tmcg_openpgp_octets_t					&in,
+			(const tmcg_openpgp_secure_octets_t					&in,
 			 const gcry_sexp_t								key, 
 			 gcry_mpi_t										&gk,
 			 gcry_mpi_t										&myk);
@@ -1802,17 +1816,17 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const gcry_mpi_t								gk,
 			 const gcry_mpi_t								myk,
 			 const gcry_sexp_t								key,
-			 tmcg_openpgp_octets_t							&out);
+			 tmcg_openpgp_secure_octets_t							&out);
 		static gcry_error_t AsymmetricEncryptRSA
-			(const tmcg_openpgp_octets_t					&in,
+			(const tmcg_openpgp_secure_octets_t					&in,
 			 const gcry_sexp_t								key,
 			 gcry_mpi_t										&me);
 		static gcry_error_t AsymmetricDecryptRSA
 			(const gcry_mpi_t								me,
 			 const gcry_sexp_t								key,
-			 tmcg_openpgp_octets_t							&out);
+			 tmcg_openpgp_secure_octets_t							&out);
 		static gcry_error_t AsymmetricEncryptECDH
-			(const tmcg_openpgp_octets_t					&in,
+			(const tmcg_openpgp_secure_octets_t					&in,
 			 const gcry_sexp_t								key,
 			 const tmcg_openpgp_hashalgo_t					hashalgo,
 			 const tmcg_openpgp_skalgo_t					skalgo,
@@ -1830,7 +1844,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_skalgo_t					skalgo,
 			 const std::string								&curve,
 			 const tmcg_openpgp_octets_t					&rcpfpr,
-			 tmcg_openpgp_octets_t							&out);
+			 tmcg_openpgp_secure_octets_t							&out);
 		static gcry_error_t AsymmetricSignDSA
 			(const tmcg_openpgp_octets_t					&in,
 			 const gcry_sexp_t								key,

@@ -2106,7 +2106,7 @@ bool TMCG_OpenPGP_PrivateSubkey::weak
 
 bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 	(const TMCG_OpenPGP_PKESK* &esk, const int verbose,
-	 tmcg_openpgp_octets_t &out) const
+	 tmcg_openpgp_secure_octets_t &out) const
 {
 	if (pub->AccumulateFlags() &&
 		((pub->AccumulateFlags() & 0x04) != 0x04) &&
@@ -3414,7 +3414,7 @@ bool TMCG_OpenPGP_Prvkey::weak
 
 bool TMCG_OpenPGP_Prvkey::Decrypt
 	(const TMCG_OpenPGP_PKESK* &esk, const int verbose,
-	 tmcg_openpgp_octets_t &out) const
+	 tmcg_openpgp_secure_octets_t &out) const
 {
 	if (CallasDonnerhackeFinneyShawThayerRFC4880::
 		OctetsCompare(esk->keyid, pub->id) ||
@@ -3666,9 +3666,9 @@ TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
 {
 	keyid.insert(keyid.end(), keyid_in.begin(), keyid_in.end());
 	me = gcry_mpi_new(2048);
-	gk = gcry_mpi_new(2048);
-	myk = gcry_mpi_new(2048);
-	ecepk = gcry_mpi_new(1024);
+	gk = gcry_mpi_new(8);
+	myk = gcry_mpi_new(8);
+	ecepk = gcry_mpi_new(8);
 	// public-key algorithm is RSA
 	gcry_mpi_set(me, me_in);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -3683,10 +3683,10 @@ TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
 		pkalgo(pkalgo_in), rkwlen(0)
 {
 	keyid.insert(keyid.end(), keyid_in.begin(), keyid_in.end());
-	me = gcry_mpi_new(2048);
+	me = gcry_mpi_new(8);
 	gk = gcry_mpi_new(2048);
 	myk = gcry_mpi_new(2048);
-	ecepk = gcry_mpi_new(1024);
+	ecepk = gcry_mpi_new(8);
 	// public-key algorithm is ElGamal
 	gcry_mpi_set(gk, gk_in);
 	gcry_mpi_set(myk, myk_in);
@@ -3703,9 +3703,9 @@ TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
 		pkalgo(pkalgo_in), rkwlen(rkwlen_in)
 {
 	keyid.insert(keyid.end(), keyid_in.begin(), keyid_in.end());
-	me = gcry_mpi_new(2048);
-	gk = gcry_mpi_new(2048);
-	myk = gcry_mpi_new(2048);
+	me = gcry_mpi_new(8);
+	gk = gcry_mpi_new(8);
+	myk = gcry_mpi_new(8);
 	ecepk = gcry_mpi_new(1024);
 	// public-key algorithm is ECDH
 	gcry_mpi_set(ecepk, ecepk_in);
@@ -3770,7 +3770,7 @@ TMCG_OpenPGP_Message::TMCG_OpenPGP_Message
 }
 
 bool TMCG_OpenPGP_Message::Decrypt
-	(const tmcg_openpgp_octets_t &key, const int verbose,
+	(const tmcg_openpgp_secure_octets_t &key, const int verbose,
 	 tmcg_openpgp_octets_t &out)
 {
 	if (verbose > 1)
@@ -3783,7 +3783,7 @@ bool TMCG_OpenPGP_Message::Decrypt
 	}
 	tmcg_openpgp_skalgo_t skalgo = TMCG_OPENPGP_SKALGO_PLAINTEXT;
 	size_t sklen;
-	tmcg_openpgp_octets_t sk;
+	tmcg_openpgp_secure_octets_t sk;
 	if (key.size() > 0)
 	{
 		skalgo = (tmcg_openpgp_skalgo_t)key[0];
@@ -4155,7 +4155,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare
 }
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareConstantTime
-	(const tmcg_openpgp_octets_t &in, const tmcg_openpgp_octets_t &in2)
+	(const tmcg_openpgp_secure_octets_t &in, const tmcg_openpgp_secure_octets_t &in2)
 {
 	size_t len = (in.size() < in2.size()) ? in.size() : in2.size(); 
 	tmcg_openpgp_byte_t res = 0;
@@ -4807,7 +4807,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 	(const tmcg_openpgp_hashalgo_t algo, const size_t sklen,
 	 const std::string &in, const tmcg_openpgp_octets_t &salt,
 	 const bool iterated, const tmcg_openpgp_byte_t octcnt, 
-	 tmcg_openpgp_octets_t &out)
+	 tmcg_openpgp_secure_octets_t &out)
 {
 	// The count is coded into a one-octet number using the following
 	// formula:
@@ -5106,7 +5106,43 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
+	(const gcry_mpi_t in, tmcg_openpgp_secure_octets_t &out, size_t &sum)
+{
+	gcry_error_t ret;
+	size_t bitlen = gcry_mpi_get_nbits(in);
+	size_t buflen = ((bitlen + 7) / 8) + 2;
+	unsigned char *buffer = (unsigned char*)gcry_malloc_secure(buflen);
+	if (buffer == NULL)
+		return; // cannot allocate secure memory
+
+	// Multiprecision integers (also called MPIs) are unsigned integers
+	// used to hold large integers such as the ones used in cryptographic
+	// calculations.
+	// An MPI consists of two pieces: a two-octet scalar that is the length
+	// of the MPI in bits followed by a string of octets that contain the
+	// actual integer.
+	// These octets form a big-endian number; a big-endian number can be
+	// made into an MPI by prefixing it with the appropriate length.
+	ret = gcry_mpi_print(GCRYMPI_FMT_PGP, buffer, buflen, &buflen, in);
+	for (size_t i = 0; ((!ret) && (i < buflen)); i++)
+	{
+		out.push_back(buffer[i]);
+		sum += buffer[i];
+		sum %= 65536;
+	}
+	gcry_free(buffer);
+}
+
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
 	(const gcry_mpi_t in, tmcg_openpgp_octets_t &out)
+{
+	size_t sum = 0;
+	PacketMPIEncode(in, out, sum);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
+	(const gcry_mpi_t in, tmcg_openpgp_secure_octets_t &out)
 {
 	size_t sum = 0;
 	PacketMPIEncode(in, out, sum);
@@ -5143,7 +5179,46 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 }
 
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
+	(const tmcg_openpgp_secure_octets_t &in, gcry_mpi_t &out, size_t &sum)
+{
+	gcry_error_t ret;
+
+	if (in.size() < 2)
+		return 0; // error: no length given
+	size_t buflen = ((in[0] << 8) + in[1] + 7) / 8;
+	sum += in[0];
+	sum %= 65536;
+	sum += in[1];
+	sum %= 65536;
+	if (in.size() < (2 + buflen))
+		return 0; // error: mpi too short
+	unsigned char *buffer = (unsigned char*)gcry_malloc_secure(buflen);
+	if (buffer == NULL)
+		return 0; // error: cannot allocate secure memory
+	for (size_t i = 0; i < buflen; i++)
+	{
+		buffer[i] = in[2+i];
+		sum += buffer[i];
+		sum %= 65536;
+	}
+	gcry_mpi_release(out); // release an already allocated mpi
+	ret = gcry_mpi_scan(&out, GCRYMPI_FMT_USG, buffer, buflen, NULL);
+	gcry_free(buffer);
+	if (ret)
+		return 0; // error: could not read/parse mpi
+	else
+		return (2 + buflen);
+}
+
+size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 	(const tmcg_openpgp_octets_t &in, gcry_mpi_t &out)
+{
+	size_t sum = 0;
+	return PacketMPIDecode(in, out, sum);
+}
+
+size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
+	(const tmcg_openpgp_secure_octets_t &in, gcry_mpi_t &out)
 {
 	size_t sum = 0;
 	return PacketMPIDecode(in, out, sum);
@@ -5964,8 +6039,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
 		out.push_back(TMCG_OPENPGP_STRINGTOKEY_ITERATED); // Iterated + Salted
 		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
-		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
-		tmcg_openpgp_octets_t salt, plain, hash, seskey;
+		tmcg_openpgp_byte_t rand[8], iv[16], count;
+		tmcg_openpgp_octets_t salt;
+		tmcg_openpgp_secure_octets_t plain, seskey, hash;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
 		count = 0xAC; // set resonable S2K count: 0xAB
@@ -5977,51 +6053,54 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 		out.push_back(count); // count, a one-octet, coded value
 		for (size_t i = 0; i < sizeof(iv); i++)
 			out.push_back(iv[i]); // IV
-		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, sizeof(key),
-			passphrase, salt, true, count, seskey);
-		for (size_t i = 0; i < sizeof(key); i++)
-			key[i] = seskey[i];
 		PacketMPIEncode(x, plain); // MPI x
-		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
-		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
-		tmcg_openpgp_byte_t *buffer = 
-			new tmcg_openpgp_byte_t[plain.size()];
-		for (size_t i = 0; i < plain.size(); i++)
-			buffer[i] = plain[i];
-		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd,
-			GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
+		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
+		if (ret)
+			return;
+		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
+		unsigned char *buf = (unsigned char*)gcry_malloc_secure(plain.size());
+		if (buf == NULL)
+			return; // cannot allocate secure memory
+		gcry_cipher_hd_t hd;
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256,
+			GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
 		if (ret)
 		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
-		ret = gcry_cipher_setkey(hd, key, sizeof(key));
+		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, 32,
+			passphrase, salt, true, count, seskey);
+		for (size_t i = 0; i < 32; i++)
+			buf[i] = seskey[i];
+		ret = gcry_cipher_setkey(hd, buf, 32);
 		if (ret)
 		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
 		ret = gcry_cipher_setiv(hd, iv, sizeof(iv));
 		if (ret)
 		{
-			delete [] buffer;
-			gcry_cipher_close(hd);
-			return;
-		}
-		ret = gcry_cipher_encrypt(hd, buffer, plain.size(), NULL, 0);
-		if (ret)
-		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
 		for (size_t i = 0; i < plain.size(); i++)
-			out.push_back(buffer[i]);
-		delete [] buffer;
+			buf[i] = plain[i];
+		ret = gcry_cipher_encrypt(hd, buf, plain.size(), NULL, 0);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return;
+		}
+		for (size_t i = 0; i < plain.size(); i++)
+			out.push_back(buf[i]);
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 	}
 }
@@ -6104,8 +6183,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
 		out.push_back(TMCG_OPENPGP_STRINGTOKEY_ITERATED); // Iterated + Salted
 		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
-		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
-		tmcg_openpgp_octets_t salt, plain, hash, seskey;
+		tmcg_openpgp_byte_t rand[8], iv[16], count;
+		tmcg_openpgp_octets_t salt;
+		tmcg_openpgp_secure_octets_t plain, seskey, hash;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
 		count = 0xAC; // set resonable S2K count: 0xAB
@@ -6117,52 +6197,55 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 		out.push_back(count); // count, a one-octet, coded value
 		for (size_t i = 0; i < sizeof(iv); i++)
 			out.push_back(iv[i]); // IV
-		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, sizeof(key),
-			passphrase, salt, true, count, seskey);
-		for (size_t i = 0; i < sizeof(key); i++)
-			key[i] = seskey[i];
 		PacketMPIEncode(x_i, plain); // MPI x_i
 		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
-		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
-		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
-		tmcg_openpgp_byte_t *buffer = 
-			new tmcg_openpgp_byte_t[plain.size()];
-		for (size_t i = 0; i < plain.size(); i++)
-			buffer[i] = plain[i];
-		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd,
-			GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
+		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
+		if (ret)
+			return;
+		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
+		unsigned char *buf = (unsigned char*)gcry_malloc_secure(plain.size());
+		if (buf == NULL)
+			return; // cannot allocate secure memory
+		gcry_cipher_hd_t hd;
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256,
+			GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
 		if (ret)
 		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
-		ret = gcry_cipher_setkey(hd, key, sizeof(key));
+		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, 32,
+			passphrase, salt, true, count, seskey);
+		for (size_t i = 0; i < 32; i++)
+			buf[i] = seskey[i];
+		ret = gcry_cipher_setkey(hd, buf, 32);
 		if (ret)
 		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
 		ret = gcry_cipher_setiv(hd, iv, sizeof(iv));
 		if (ret)
 		{
-			delete [] buffer;
-			gcry_cipher_close(hd);
-			return;
-		}
-		ret = gcry_cipher_encrypt(hd, buffer, plain.size(), NULL, 0);
-		if (ret)
-		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
 		for (size_t i = 0; i < plain.size(); i++)
-			out.push_back(buffer[i]);
-		delete [] buffer;
+			buf[i] = plain[i];
+		ret = gcry_cipher_encrypt(hd, buf, plain.size(), NULL, 0);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return;
+		}
+		for (size_t i = 0; i < plain.size(); i++)
+			out.push_back(buf[i]);
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 	}
 }
@@ -6259,8 +6342,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
 		out.push_back(TMCG_OPENPGP_STRINGTOKEY_ITERATED); // Iterated + Salted
 		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
-		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
-		tmcg_openpgp_octets_t salt, plain, hash, seskey;
+		tmcg_openpgp_byte_t rand[8], iv[16], count;
+		tmcg_openpgp_octets_t salt;
+		tmcg_openpgp_secure_octets_t plain, seskey, hash;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
 		count = 0xAC; // set resonable S2K count: 0xAB
@@ -6272,52 +6356,55 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 		out.push_back(count); // count, a one-octet, coded value
 		for (size_t i = 0; i < sizeof(iv); i++)
 			out.push_back(iv[i]); // IV
-		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, sizeof(key),
-			passphrase, salt, true, count, seskey);
-		for (size_t i = 0; i < sizeof(key); i++)
-			key[i] = seskey[i];
 		PacketMPIEncode(x_i, plain); // MPI x_i
 		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
-		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
-		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
-		tmcg_openpgp_byte_t *buffer = 
-			new tmcg_openpgp_byte_t[plain.size()];
-		for (size_t i = 0; i < plain.size(); i++)
-			buffer[i] = plain[i];
-		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd,
-			GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
+		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
+		if (ret)
+			return;
+		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
+		unsigned char *buf = (unsigned char*)gcry_malloc_secure(plain.size());
+		if (buf == NULL)
+			return; // cannot allocate secure memory
+		gcry_cipher_hd_t hd;
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256,
+			GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
 		if (ret)
 		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
-		ret = gcry_cipher_setkey(hd, key, sizeof(key));
+		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, 32,
+			passphrase, salt, true, count, seskey);
+		for (size_t i = 0; i < 32; i++)
+			buf[i] = seskey[i];
+		ret = gcry_cipher_setkey(hd, buf, 32);
 		if (ret)
 		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
 		ret = gcry_cipher_setiv(hd, iv, sizeof(iv));
 		if (ret)
 		{
-			delete [] buffer;
-			gcry_cipher_close(hd);
-			return;
-		}
-		ret = gcry_cipher_encrypt(hd, buffer, plain.size(), NULL, 0);
-		if (ret)
-		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
 		for (size_t i = 0; i < plain.size(); i++)
-			out.push_back(buffer[i]);
-		delete [] buffer;
+			buf[i] = plain[i];
+		ret = gcry_cipher_encrypt(hd, buf, plain.size(), NULL, 0);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return;
+		}
+		for (size_t i = 0; i < plain.size(); i++)
+			out.push_back(buf[i]);
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 	}
 }
@@ -6529,8 +6616,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
 		out.push_back(TMCG_OPENPGP_STRINGTOKEY_ITERATED); // Iterated + Salted
 		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
-		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
-		tmcg_openpgp_octets_t salt, plain, hash, seskey;
+		tmcg_openpgp_byte_t rand[8], iv[16], count;
+		tmcg_openpgp_octets_t salt;
+		tmcg_openpgp_secure_octets_t plain, seskey, hash;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
 		count = 0xAC; // set resonable S2K count: 0xAB
@@ -6542,51 +6630,54 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 		out.push_back(count); // count, a one-octet, coded value
 		for (size_t i = 0; i < sizeof(iv); i++)
 			out.push_back(iv[i]); // IV
-		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, sizeof(key),
-			passphrase, salt, true, count, seskey);
-		for (size_t i = 0; i < sizeof(key); i++)
-			key[i] = seskey[i];
 		PacketMPIEncode(x, plain); // MPI x
-		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
-		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
-		tmcg_openpgp_byte_t *buffer =
-			new tmcg_openpgp_byte_t[plain.size()];
-		for (size_t i = 0; i < plain.size(); i++)
-			buffer[i] = plain[i];
-		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd,
-			GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
+		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
+		if (ret)
+			return;
+		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
+		unsigned char *buf = (unsigned char*)gcry_malloc_secure(plain.size());
+		if (buf == NULL)
+			return; // cannot allocate secure memory
+		gcry_cipher_hd_t hd;
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256,
+			GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
 		if (ret)
 		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
-		ret = gcry_cipher_setkey(hd, key, sizeof(key));
+		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, 32,
+			passphrase, salt, true, count, seskey);
+		for (size_t i = 0; i < 32; i++)
+			buf[i] = seskey[i];
+		ret = gcry_cipher_setkey(hd, buf, 32);
 		if (ret)
 		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
 		ret = gcry_cipher_setiv(hd, iv, sizeof(iv));
 		if (ret)
 		{
-			delete [] buffer;
-			gcry_cipher_close(hd);
-			return;
-		}
-		ret = gcry_cipher_encrypt(hd, buffer, plain.size(), NULL, 0);
-		if (ret)
-		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
 		for (size_t i = 0; i < plain.size(); i++)
-			out.push_back(buffer[i]);
-		delete [] buffer;
+			buf[i] = plain[i];
+		ret = gcry_cipher_encrypt(hd, buf, plain.size(), NULL, 0);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return;
+		}
+		for (size_t i = 0; i < plain.size(); i++)
+			out.push_back(buf[i]);
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 	}
 }
@@ -6670,8 +6761,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 		out.push_back(TMCG_OPENPGP_SKALGO_AES256); // encryption algo
 		out.push_back(TMCG_OPENPGP_STRINGTOKEY_ITERATED); // Iterated + Salted
 		out.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // hash algo
-		tmcg_openpgp_byte_t rand[8], iv[16], key[32], count;
-		tmcg_openpgp_octets_t salt, plain, hash, seskey;
+		tmcg_openpgp_byte_t rand[8], iv[16], count;
+		tmcg_openpgp_octets_t salt;
+		tmcg_openpgp_secure_octets_t plain, seskey, hash;
 		gcry_randomize(rand, sizeof(rand), GCRY_STRONG_RANDOM);
 		gcry_randomize(iv, sizeof(iv), GCRY_STRONG_RANDOM);
 		count = 0xAC; // set resonable S2K count: 0xAB
@@ -6683,52 +6775,55 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 		out.push_back(count); // count, a one-octet, coded value
 		for (size_t i = 0; i < sizeof(iv); i++)
 			out.push_back(iv[i]); // IV
-		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, sizeof(key),
-			passphrase, salt, true, count, seskey);
-		for (size_t i = 0; i < sizeof(key); i++)
-			key[i] = seskey[i];
 		PacketMPIEncode(x_i, plain); // MPI x_i
 		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
-		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
-		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
-		tmcg_openpgp_byte_t *buffer =
-			new tmcg_openpgp_byte_t[plain.size()];
-		for (size_t i = 0; i < plain.size(); i++)
-			buffer[i] = plain[i];
-		gcry_cipher_hd_t hd;
 		gcry_error_t ret;
-		ret = gcry_cipher_open(&hd,
-			GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB, 0);
+		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
+		if (ret)
+			return;
+		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
+		unsigned char *buf = (unsigned char*)gcry_malloc_secure(plain.size());
+		if (buf == NULL)
+			return; // cannot allocate secure memory
+		gcry_cipher_hd_t hd;
+		ret = gcry_cipher_open(&hd, GCRY_CIPHER_AES256,
+			GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
 		if (ret)
 		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
-		ret = gcry_cipher_setkey(hd, key, sizeof(key));
+		S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, 32,
+			passphrase, salt, true, count, seskey);
+		for (size_t i = 0; i < 32; i++)
+			buf[i] = seskey[i];
+		ret = gcry_cipher_setkey(hd, buf, 32);
 		if (ret)
 		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
 		ret = gcry_cipher_setiv(hd, iv, sizeof(iv));
 		if (ret)
 		{
-			delete [] buffer;
-			gcry_cipher_close(hd);
-			return;
-		}
-		ret = gcry_cipher_encrypt(hd, buffer, plain.size(), NULL, 0);
-		if (ret)
-		{
-			delete [] buffer;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return;
 		}
 		for (size_t i = 0; i < plain.size(); i++)
-			out.push_back(buffer[i]);
-		delete [] buffer;
+			buf[i] = plain[i];
+		ret = gcry_cipher_encrypt(hd, buf, plain.size(), NULL, 0);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return;
+		}
+		for (size_t i = 0; i < plain.size(); i++)
+			out.push_back(buf[i]);
+		gcry_free(buf);
 		gcry_cipher_close(hd);
 	}
 }
@@ -8046,6 +8141,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			mpis.erase(mpis.begin(), mpis.begin()+1);
 			if (out.s2kconv == 0)
 			{
+				tmcg_openpgp_secure_octets_t smpis;
+				for (size_t i = 0; i < mpis.size(); i++)
+					smpis.push_back(mpis[i]); // copy
 				// not encrypted + checksum
 				size_t chksum = 0;
 				if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
@@ -8053,10 +8151,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				{
 					// Algorithm-Specific Fields for Elgamal
 					// Algorithm-Specific Fields for DSA
-					mlen = PacketMPIDecode(mpis, out.x, chksum);
-					if (!mlen || (mlen > mpis.size()))
+					mlen = PacketMPIDecode(smpis, out.x, chksum);
+					if (!mlen || (mlen > smpis.size()))
 						return 0; // error: bad mpi
-					gcry_mpi_set_flag(out.x, GCRYMPI_FLAG_SECURE);
+					smpis.erase(smpis.begin(), smpis.begin()+mlen);
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
@@ -8064,25 +8162,25 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				         (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 				{
 					// Algorithm-Specific Fields for RSA
-					mlen = PacketMPIDecode(mpis, out.d, chksum);
-					if (!mlen || (mlen > mpis.size()))
+					mlen = PacketMPIDecode(smpis, out.d, chksum);
+					if (!mlen || (mlen > smpis.size()))
 						return 0; // error: bad mpi
-					gcry_mpi_set_flag(out.d, GCRYMPI_FLAG_SECURE);
+					smpis.erase(smpis.begin(), smpis.begin()+mlen);
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis, out.p, chksum);
-					if (!mlen || (mlen > mpis.size()))
+					mlen = PacketMPIDecode(smpis, out.p, chksum);
+					if (!mlen || (mlen > smpis.size()))
 						return 0; // error: bad mpi
-					gcry_mpi_set_flag(out.p, GCRYMPI_FLAG_SECURE);
+					smpis.erase(smpis.begin(), smpis.begin()+mlen);
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis, out.q, chksum);
-					if (!mlen || (mlen > mpis.size()))
+					mlen = PacketMPIDecode(smpis, out.q, chksum);
+					if (!mlen || (mlen > smpis.size()))
 						return 0; // error: bad mpi
-					gcry_mpi_set_flag(out.q, GCRYMPI_FLAG_SECURE);
+					smpis.erase(smpis.begin(), smpis.begin()+mlen);
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis, out.u, chksum);
-					if (!mlen || (mlen > mpis.size()))
+					mlen = PacketMPIDecode(smpis, out.u, chksum);
+					if (!mlen || (mlen > smpis.size()))
 						return 0; // error: bad mpi
-					gcry_mpi_set_flag(out.u, GCRYMPI_FLAG_SECURE);
+					smpis.erase(smpis.begin(), smpis.begin()+mlen);
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
@@ -8090,10 +8188,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				{
 					// Algorithm-Specific Fields for ECDH keys [RFC 6637]
 					// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
-					mlen = PacketMPIDecode(mpis, out.ecsk, chksum);
-					if (!mlen || (mlen > mpis.size()))
+					mlen = PacketMPIDecode(smpis, out.ecsk, chksum);
+					if (!mlen || (mlen > smpis.size()))
 						return 0; // error: bad mpi
-					gcry_mpi_set_flag(out.ecsk, GCRYMPI_FLAG_SECURE);
+					smpis.erase(smpis.begin(), smpis.begin()+mlen);
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7) ||
@@ -8101,15 +8199,15 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				         (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9))
 				{
 					// Algorithm-Specific Fields tDSS/DKG
-					mlen = PacketMPIDecode(mpis, out.x_i, chksum);
-					if (!mlen || (mlen > mpis.size()))
+					mlen = PacketMPIDecode(smpis, out.x_i, chksum);
+					if (!mlen || (mlen > smpis.size()))
 						return 0; // error: bad mpi
-					gcry_mpi_set_flag(out.x_i, GCRYMPI_FLAG_SECURE);
+					smpis.erase(smpis.begin(), smpis.begin()+mlen);
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					mlen = PacketMPIDecode(mpis, out.xprime_i, chksum);
-					if (!mlen || (mlen > mpis.size()))
+					mlen = PacketMPIDecode(smpis, out.xprime_i, chksum);
+					if (!mlen || (mlen > smpis.size()))
 						return 0; // error: bad mpi
-					gcry_mpi_set_flag(out.xprime_i, GCRYMPI_FLAG_SECURE);
+					smpis.erase(smpis.begin(), smpis.begin()+mlen);
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				else
@@ -8923,7 +9021,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 // ===========================================================================
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
-	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &seskey,
+	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_secure_octets_t &seskey,
 	 tmcg_openpgp_octets_t &prefix, const bool resync,
 	 tmcg_openpgp_octets_t &out)
 {
@@ -9090,7 +9188,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
-	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &seskey,
+	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_secure_octets_t &seskey,
 	 tmcg_openpgp_octets_t &prefix, const bool resync,
 	 const tmcg_openpgp_skalgo_t algo, tmcg_openpgp_octets_t &out)
 {
@@ -9242,7 +9340,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
-	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &seskey,
+	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_secure_octets_t &seskey,
 	 tmcg_openpgp_octets_t &prefix, const bool resync,
 	 tmcg_openpgp_octets_t &out)
 {
@@ -9251,7 +9349,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
-	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key, 
+	(const tmcg_openpgp_secure_octets_t &in, const gcry_sexp_t key, 
 	 gcry_mpi_t &gk, gcry_mpi_t &myk)
 {
 	gcry_sexp_t encryption, data;
@@ -9289,7 +9387,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 	(const gcry_mpi_t gk, const gcry_mpi_t myk, const gcry_sexp_t key, 
-	 tmcg_openpgp_octets_t &out)
+	 tmcg_openpgp_secure_octets_t &out)
 {
 	const char *buf;
 	gcry_sexp_t decryption, data;
@@ -9322,7 +9420,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptRSA
-	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key,
+	(const tmcg_openpgp_secure_octets_t &in, const gcry_sexp_t key,
 	 gcry_mpi_t &me)
 {
 	gcry_sexp_t encryption, data;
@@ -9359,7 +9457,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptRSA
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptRSA
 	(const gcry_mpi_t me, const gcry_sexp_t key, 
-	 tmcg_openpgp_octets_t &out)
+	 tmcg_openpgp_secure_octets_t &out)
 {
 	const char *buf;
 	gcry_sexp_t decryption, data;
@@ -9392,7 +9490,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptRSA
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
-	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key,
+	(const tmcg_openpgp_secure_octets_t &in, const gcry_sexp_t key,
 	 const tmcg_openpgp_hashalgo_t hashalgo,
 	 const tmcg_openpgp_skalgo_t skalgo, const std::string &curve,
 	 const tmcg_openpgp_octets_t &rcpfpr, gcry_mpi_t &ecepk,
@@ -9540,7 +9638,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 	(const gcry_mpi_t ecepk, const gcry_sexp_t key, const size_t rkwlen,
 	 const tmcg_openpgp_byte_t rkw[256], const tmcg_openpgp_hashalgo_t hashalgo,
 	 const tmcg_openpgp_skalgo_t skalgo, const std::string &curve,
-	 const tmcg_openpgp_octets_t &rcpfpr, tmcg_openpgp_octets_t &out)
+	 const tmcg_openpgp_octets_t &rcpfpr, tmcg_openpgp_secure_octets_t &out)
 {
 	gcry_sexp_t decryption, data;
 	gcry_mpi_t S;
@@ -10695,9 +10793,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 				std::cerr << "ERROR: algorithm not supported" << std::endl;
 			return false;
 		}
-		tmcg_openpgp_octets_t salt, skey;
+		tmcg_openpgp_octets_t salt;
 		for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
 			salt.push_back(ctx.s2k_salt[i]);
+		tmcg_openpgp_secure_octets_t skey;
 		if (ctx.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
 		{
 			salt.clear();
@@ -10720,7 +10819,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 				std::cerr << "ERROR: unknown S2K specifier" << std::endl;
 			return false;
 		}
-		if (skey.size() != keylen)
+		if ((skey.size() != keylen) || (keylen > ctx.encdatalen))
 		{
 			if (verbose)
 				std::cerr << "ERROR: S2K failed" << std::endl;
@@ -10732,59 +10831,66 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 				std::cerr << "ERROR: no data to decrypt" << std::endl;
 			return false;
 		}
-		tmcg_openpgp_byte_t *key = new tmcg_openpgp_byte_t[keylen];
-		for (size_t i = 0; i < keylen; i++)
-			key[i] = skey[i];
 		tmcg_openpgp_byte_t *iv = new tmcg_openpgp_byte_t[ivlen];
 		for (size_t i = 0; i < ivlen; i++)
 			iv[i] = ctx.iv[i];
+		unsigned char *buf = (unsigned char*)gcry_malloc_secure(ctx.encdatalen);
+		if (buf == NULL)
+		{
+			delete [] iv;
+			return false; // cannot allocate secure memory
+		}
 		gcry_cipher_hd_t hd;
-		gcry_error_t dret;
-		dret = gcry_cipher_open(&hd, algo, GCRY_CIPHER_MODE_CFB, 0);
-		if (dret)
+		gcry_error_t ret;
+		ret = gcry_cipher_open(&hd, algo, GCRY_CIPHER_MODE_CFB,
+			GCRY_CIPHER_SECURE);
+		if (ret)
 		{
 			if (verbose)
 				std::cerr << "ERROR: gcry_cipher_open() failed" << std::endl;
-			delete [] key;
 			delete [] iv;
+			gcry_free(buf);
+			gcry_cipher_close(hd);
 			return false;
 		}
-		dret = gcry_cipher_setkey(hd, key, keylen);
-		if (dret)
+		for (size_t i = 0; i < keylen; i++)
+			buf[i] = skey[i];
+		ret = gcry_cipher_setkey(hd, buf, keylen);
+		if (ret)
 		{
 			if (verbose)
 				std::cerr << "ERROR: gcry_cipher_setkey() failed" << std::endl;
-			gcry_cipher_close(hd);
-			delete [] key;
 			delete [] iv;
+			gcry_free(buf);
+			gcry_cipher_close(hd);
 			return false;
 		}
-		dret = gcry_cipher_setiv(hd, iv, ivlen);
-		if (dret)
+		ret = gcry_cipher_setiv(hd, iv, ivlen);
+		if (ret)
 		{
 			if (verbose)
 				std::cerr << "ERROR: gcry_cipher_setiv() failed" << std::endl;
-			gcry_cipher_close(hd);
-			delete [] key;
 			delete [] iv;
+			gcry_free(buf);
+			gcry_cipher_close(hd);
 			return false;
 		}
-		dret = gcry_cipher_decrypt(hd, ctx.encdata, ctx.encdatalen, NULL, 0);
-		if (dret)
+		delete [] iv;
+		for (size_t i = 0; i < ctx.encdatalen; i++)
+			buf[i] = ctx.encdata[i];
+		ret = gcry_cipher_decrypt(hd, buf, ctx.encdatalen, NULL, 0);
+		if (ret)
 		{
 			if (verbose)
 				std::cerr << "ERROR: gcry_cipher_decrypt() failed" << std::endl;
+			gcry_free(buf);
 			gcry_cipher_close(hd);
-			delete [] key;
-			delete [] iv;
 			return false;
 		}
 		gcry_cipher_close(hd);
-		delete [] key;
-		delete [] iv;
-		tmcg_openpgp_octets_t mpis;
+		tmcg_openpgp_secure_octets_t mpis;
 		for (size_t i = 0; i < ctx.encdatalen; i++)
-			mpis.push_back(ctx.encdata[i]);
+			mpis.push_back(buf[i]);
 		size_t chksum = 0, mlen;
 		if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) || 
 		    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
@@ -10795,6 +10901,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			{
 				std::cerr << "ERROR: reading MPI d failed" <<
 					" (bad passphrase)" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
 			mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -10803,6 +10910,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			{
 				std::cerr << "ERROR: reading MPI p failed" <<
 					" (bad passphrase)" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
 			mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -10811,6 +10919,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			{
 				std::cerr << "ERROR: reading MPI q failed" <<
 					" (bad passphrase)" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
 			mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -10819,6 +10928,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			{
 				std::cerr << "ERROR: reading MPI u failed" <<
 					" (bad passphrase)" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
 			mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -10830,6 +10940,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			{
 				std::cerr << "ERROR: reading MPI x failed" <<
 					" (bad passphrase)" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
 			mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -10841,6 +10952,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			{
 				std::cerr << "ERROR: reading MPI x failed" <<
 					" (bad passphrase)" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
 			mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -10853,6 +10965,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			{
 				std::cerr << "ERROR: reading MPI ecsk failed" <<
 					" (bad passphrase)" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
 			mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -10866,6 +10979,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			{
 				std::cerr << "ERROR: reading MPI x_i failed" <<
 					" (bad passphrase)" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
 			mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -10874,6 +10988,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			{
 				std::cerr << "ERROR: reading MPI xprime_i failed" <<
 					" (bad passphrase)" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
 			mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -10882,6 +10997,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 		{
 			if (verbose)
 				std::cerr << "ERROR: algorithm not supported" << std::endl;
+			gcry_free(buf);
 			return false;
 		}
 		if (ctx.s2kconv == 255)
@@ -10890,6 +11006,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			{
 				if (verbose)
 					std::cerr << "ERROR: no checksum found" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
 			size_t chksum2 = (mpis[0] << 8) + mpis[1];
@@ -10897,6 +11014,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			{
 				if (verbose)
 					std::cerr << "ERROR: checksum mismatch" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
 		}
@@ -10906,19 +11024,29 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			{
 				if (verbose)
 					std::cerr << "ERROR: no SHA-1 hash found" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
-			tmcg_openpgp_octets_t hash_input, hash;
+			tmcg_openpgp_secure_octets_t hash_input, hash;
 			for (size_t i = 0; i < (ctx.encdatalen - 20); i++)
-				hash_input.push_back(ctx.encdata[i]);
-			HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, hash_input, hash);
-			if (!OctetsCompare(hash, mpis))
+				hash_input.push_back(buf[i]);
+			ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, hash_input, hash);
+			if (ret)
+			{
+				if (verbose)
+					std::cerr << "ERROR: HashCompute() failed" << std::endl;
+				gcry_free(buf);
+				return false;
+			}
+			if (!OctetsCompareConstantTime(hash, mpis))
 			{
 				if (verbose)
 					std::cerr << "ERROR: SHA-1 hash mismatch" << std::endl;
+				gcry_free(buf);
 				return false;
 			}
 		}
+		gcry_free(buf);
 	}
 	return true;
 }
