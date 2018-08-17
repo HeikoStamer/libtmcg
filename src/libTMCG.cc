@@ -62,7 +62,7 @@ bool init_libTMCG
 		{
 			gcry_control(GCRYCTL_SUSPEND_SECMEM_WARN);
 			gcry_control(GCRYCTL_USE_SECURE_RNDPOOL);
-			gcry_control(GCRYCTL_INIT_SECMEM, 16384, 0);
+			gcry_control(GCRYCTL_INIT_SECMEM, 24000, 0);
 			gcry_control(GCRYCTL_RESUME_SECMEM_WARN);
 		}
 		else
