@@ -12,7 +12,6 @@ in the sources of this package and additionally can be obtained from Internet
 * add a generic group abstraction layer, e.g. for future use of ECC groups
 * add a constant-time implementation for modular multiplication mpz_smulm()
 * add generic broadcast channel abstraction layer, e.g. AbstractBroadcastChannel
-* use secure memory allocation and erasing from libgcrypt, if requested by app
 * RBC: stabilize behaviour of deliver() by asynchronous IO of C++14/17 
 
 + provide interactive and distributed (multiparty DZKP) versions for
