@@ -44,7 +44,7 @@ void tmcg_free
 
 // LibTMCG general functions
 bool init_libTMCG
-	(const bool force_secmem)
+	(const bool force_secmem, const bool gmp_secmem)
 {
 	// initialize memory guards
 	CallasDonnerhackeFinneyShawThayerRFC4880::MemoryGuardReset();
@@ -62,7 +62,7 @@ bool init_libTMCG
 		{
 			gcry_control(GCRYCTL_SUSPEND_SECMEM_WARN);
 			gcry_control(GCRYCTL_USE_SECURE_RNDPOOL);
-			gcry_control(GCRYCTL_INIT_SECMEM, 24000, 0);
+			gcry_control(GCRYCTL_INIT_SECMEM, 32768, 0);
 			gcry_control(GCRYCTL_RESUME_SECMEM_WARN);
 		}
 		else
@@ -166,7 +166,7 @@ bool init_libTMCG
 			TMCG_LIBGMP_VERSION << " needed" << std::endl;
 		return false;
 	}
-	if (force_secmem)
+	if (gmp_secmem)
 		mp_set_memory_functions(gcry_malloc_secure, tmcg_realloc, tmcg_free);
 
 #ifdef BOTAN

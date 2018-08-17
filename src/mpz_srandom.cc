@@ -337,7 +337,7 @@ void tmcg_mpz_ssrandomm_cache_init
 	if ((n == 0) || (n > TMCG_MAX_SSRANDOMM_CACHE))
 		return; // FIXME: throw an exception
 	for (i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
-		mpz_init(ssrandomm_cache[i]);	
+		mpz_init(ssrandomm_cache[i]);
 	for (i = 0; i < n; i++)
 		tmcg_mpz_ssrandomm(ssrandomm_cache[i], m);
 	mpz_init_set(ssrandomm_cache_mod, m);
