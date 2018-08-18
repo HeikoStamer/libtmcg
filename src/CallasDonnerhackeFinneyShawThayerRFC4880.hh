@@ -1060,6 +1060,8 @@ class TMCG_OpenPGP_Keyring
 			(const std::string								&keyid) const;
 		size_t size
 			() const;
+		size_t list
+			(const std::string								&userid) const;
 		~TMCG_OpenPGP_Keyring
 			();
 };
