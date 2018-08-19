@@ -567,6 +567,7 @@ int main
 		PublicKeyringParse(armored_pubkeyringblock, 3, ring);
 	assert(parse_ok);
 	assert((ring->size() == 2));
+	assert((ring->list("") == 2));
 	delete ring;
 	gcry_mpi_release(p);
 	gcry_mpi_release(q);

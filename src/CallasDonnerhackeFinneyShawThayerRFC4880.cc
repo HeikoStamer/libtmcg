@@ -3725,6 +3725,19 @@ size_t TMCG_OpenPGP_Keyring::list
 				std::cout << "e";
 			if ((allflags & 0x20) == 0x20)
 				std::cout << "a";
+			if (allflags == 0)
+			{
+				if ((pub->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+					(pub->pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+					(pub->pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
+					(pub->pkalgo == TMCG_OPENPGP_PKALGO_ECDH))
+						std::cout << "e";
+				if ((pub->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+					(pub->pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
+					(pub->pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
+					(pub->pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
+						std::cout << "s";
+			}
 			std::cout << ":";
 // TODO
 			std::cout << std::endl;
@@ -3820,11 +3833,23 @@ size_t TMCG_OpenPGP_Keyring::list
 					std::cout << "c";
 				if ((allflags & 0x02) == 0x02)
 					std::cout << "s";
-				if (((allflags & 0x04) == 0x04) || ((allflags & 0x08) == 0x08)
-					|| (sub->pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)) // FIXME
+				if (((allflags & 0x04) == 0x04) || ((allflags & 0x08) == 0x08))
 					std::cout << "e";
 				if ((allflags & 0x20) == 0x20)
 					std::cout << "a";
+				if (allflags == 0)
+				{
+					if ((sub->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+						(sub->pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+						(sub->pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
+						(sub->pkalgo == TMCG_OPENPGP_PKALGO_ECDH))
+							std::cout << "e";
+					if ((sub->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+						(sub->pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
+						(sub->pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
+						(sub->pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
+							std::cout << "s";
+				}
 				std::cout << ":";
 // TODO
 				std::cout << std::endl;
