@@ -3741,6 +3741,20 @@ size_t TMCG_OpenPGP_Keyring::list
 			std::cout << ":";
 // TODO
 			std::cout << std::endl;
+			for (size_t i = 0; i < pub->revkeys.size(); i++)
+			{
+				tmcg_openpgp_revkey_t rvk = pub->revkeys[i]; 
+				std::cout << "rvk:::";
+				std::cout << (int)rvk.key_pkalgo << "::::::";
+				for (size_t j = 0; j < sizeof(rvk.key_fingerprint); j++)
+					fprintf(stdout, "%02X", rvk.key_fingerprint[j]);
+				fprintf(stdout, ":%02x", rvk.key_class);
+				if ((rvk.key_class & 0x40) == 0x40)
+					std::cout << "l";
+				else
+					std::cout << "x";
+				std::cout << ":" << std::endl;
+			}
 			std::string pub_fpr;
 			CallasDonnerhackeFinneyShawThayerRFC4880::
 				FingerprintCompute(pub->pub_hashing, pub_fpr);
@@ -3764,7 +3778,17 @@ size_t TMCG_OpenPGP_Keyring::list
 					FingerprintCompute(uid->userid, uid_fpr);
 				std::cout << uid_fpr << ":";
 				std::cout << ":";
-				std::cout << uid->userid_sanitized << ":";
+				for (size_t j = 0; j < uid->userid.length(); j++)
+				{
+					char c = uid->userid[j];
+					if (c == ':')
+						std::cout << "=\x3a=";
+					else if ((c < 0x20) || (c == 0x7F))
+						std::cout << " ";
+					else
+						std::cout << c;
+				}
+				std::cout << ":";
 // TODO
 				std::cout << std::endl;
 			}
