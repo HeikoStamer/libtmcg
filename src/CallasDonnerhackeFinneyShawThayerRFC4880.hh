@@ -1046,17 +1046,17 @@ class TMCG_OpenPGP_Prvkey
 class TMCG_OpenPGP_Keyring
 {
 	private:
-		std::map<std::string, const TMCG_OpenPGP_Pubkey*>	keys;
-		std::map<std::string, const TMCG_OpenPGP_Pubkey*>	keys_by_keyid;
+		std::map<std::string, TMCG_OpenPGP_Pubkey*>	keys;
+		std::map<std::string, TMCG_OpenPGP_Pubkey*>	keys_by_keyid;
 
 	public:
 		TMCG_OpenPGP_Keyring
 			();
 		bool add
-			(const TMCG_OpenPGP_Pubkey*						key);
-		const TMCG_OpenPGP_Pubkey* find
+			(TMCG_OpenPGP_Pubkey*						key);
+		TMCG_OpenPGP_Pubkey* find
 			(const std::string								&fingerprint) const;
-		const TMCG_OpenPGP_Pubkey* find_by_keyid
+		TMCG_OpenPGP_Pubkey* find_by_keyid
 			(const std::string								&keyid) const;
 		size_t size
 			() const;
@@ -1344,6 +1344,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 std::string									&out);
 		static void FingerprintCompute
 			(const tmcg_openpgp_octets_t					&in,
+			 std::string									&out);
+		static void FingerprintCompute
+			(const std::string								&in,
 			 std::string									&out);
 		static void FingerprintComputePretty
 			(const tmcg_openpgp_octets_t					&in,

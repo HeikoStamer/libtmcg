@@ -3404,7 +3404,13 @@ bool TMCG_OpenPGP_Prvkey::weak
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 	{
-		// TODO: check secret EC scalar
+		unsigned int skbits = 0;
+		skbits = gcry_mpi_get_nbits(ec_sk);
+		if (verbose > 1)
+			std::cerr << "INFO: ECDSA with |x| = " <<
+				skbits << " bits" << std::endl;
+		if (skbits < 250)
+			return true; // weak key
 		return pub->weak(verbose);
 	}
 	else
@@ -3563,7 +3569,7 @@ TMCG_OpenPGP_Keyring::TMCG_OpenPGP_Keyring
 }
 
 bool TMCG_OpenPGP_Keyring::add
-	(const TMCG_OpenPGP_Pubkey *key)
+	(TMCG_OpenPGP_Pubkey *key)
 {
 	std::string fpr_str;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -3613,12 +3619,12 @@ bool TMCG_OpenPGP_Keyring::add
 	return true;
 }
 
-const TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::find
+TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::find
 	(const std::string &fingerprint) const
 {
 	if (keys.count(fingerprint))
 	{
-		std::map<std::string, const TMCG_OpenPGP_Pubkey*>::const_iterator
+		std::map<std::string, TMCG_OpenPGP_Pubkey*>::const_iterator
 			it = keys.find(fingerprint);
 		return it->second;
 	}
@@ -3626,12 +3632,12 @@ const TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::find
 		return NULL; // key not found
 }
 
-const TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::find_by_keyid
+TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::find_by_keyid
 	(const std::string &keyid) const
 {
 	if (keys_by_keyid.count(keyid))
 	{
-		std::map<std::string, const TMCG_OpenPGP_Pubkey*>::const_iterator
+		std::map<std::string, TMCG_OpenPGP_Pubkey*>::const_iterator
 			it = keys_by_keyid.find(keyid);
 		return it->second;
 	}
@@ -3649,19 +3655,19 @@ size_t TMCG_OpenPGP_Keyring::list
 	(const std::string &userid) const
 {
 	size_t selected = 0;
-	for (std::map<std::string, const TMCG_OpenPGP_Pubkey*>::const_iterator
+	for (std::map<std::string, TMCG_OpenPGP_Pubkey*>::const_iterator
 	     it = keys.begin(); it != keys.end(); ++it)
 	{
-		const TMCG_OpenPGP_Pubkey *pub = it->second;
+		const TMCG_OpenPGP_Pubkey *p = it->second;
 		bool select = false;
 		if (userid.length() == 0)
 			select = true;
 		else
 		{
-			for (size_t i = 0; i < pub->userids.size(); i++)
+			for (size_t i = 0; i < p->userids.size(); i++)
 			{
-				if (((pub->userids[i])->userid_sanitized).find(userid) !=
-					((pub->userids[i])->userid_sanitized).npos)
+				if (((p->userids[i])->userid_sanitized).find(userid) !=
+					((p->userids[i])->userid_sanitized).npos)
 				{
 					select = true;
 				}
@@ -3669,12 +3675,17 @@ size_t TMCG_OpenPGP_Keyring::list
 		}
 		if (select)
 		{
+			TMCG_OpenPGP_Pubkey *pub = it->second;
 			unsigned int curvebits = 0;
 			std::string pub_kid;
 			CallasDonnerhackeFinneyShawThayerRFC4880::
 				KeyidCompute(pub->pub_hashing, pub_kid);
 			selected++;
-			std::cout << "pub:-:";
+			std::cout << "pub:";
+			if (pub->CheckSelfSignatures(this, 0))
+				std::cout << "f:";
+			else
+				std::cout << "i:";
 			switch (pub->pkalgo)
 			{
 				case TMCG_OPENPGP_PKALGO_RSA:
@@ -3704,6 +3715,16 @@ size_t TMCG_OpenPGP_Keyring::list
 				time_t exp_date = pub->creationtime + pub->expirationtime;
 				std::cout << (long int)exp_date;
 			}
+			std::cout << ":::::";
+			size_t allflags = pub->AccumulateFlags();
+			if ((allflags & 0x01) == 0x01)
+				std::cout << "c";
+			if ((allflags & 0x02) == 0x02)
+				std::cout << "s";
+			if (((allflags & 0x04) == 0x04) || ((allflags & 0x08) == 0x08))
+				std::cout << "e";
+			if ((allflags & 0x20) == 0x20)
+				std::cout << "a";
 			std::cout << ":";
 // TODO
 			std::cout << std::endl;
@@ -3713,23 +3734,54 @@ size_t TMCG_OpenPGP_Keyring::list
 			std::cout << "fpr:::::::::" << pub_fpr << ":" << std::endl;
 			for (size_t i = 0; i < pub->userids.size(); i++)
 			{
-				std::cout << "uid:-::::";
+				TMCG_OpenPGP_UserID *uid = pub->userids[i];
+				std::cout << "uid:";
+				if (uid->Check(pub, 0))
+					std::cout << "f:";
+				else
+					std::cout << "i:";
+				std::cout << ":::";
+				if (uid->selfsigs.size())
+					std::cout << (long int)uid->selfsigs[0]->creationtime << ":";
+				else
+					std::cout << ":";
+				std::cout << ":";
+				std::string uid_fpr;
+				CallasDonnerhackeFinneyShawThayerRFC4880::
+					FingerprintCompute(uid->userid, uid_fpr);
+				std::cout << uid_fpr << ":";
+				std::cout << ":";
+				std::cout << uid->userid_sanitized << ":";
 // TODO
 				std::cout << std::endl;
 			}
 			for (size_t i = 0; i < pub->userattributes.size(); i++)
 			{
-				std::cout << "uat:-::::";
+				TMCG_OpenPGP_UserAttribute *uat = pub->userattributes[i];
+				std::cout << "uat:";
+				if (uat->Check(pub, 0))
+					std::cout << "f:";
+				else
+					std::cout << "i:";
+				std::cout << ":::";
+				if (uat->selfsigs.size())
+					std::cout << (long int)uat->selfsigs[0]->creationtime << ":";
+				else
+					std::cout << ":";
 // TODO
 				std::cout << std::endl;
 			}
 			for (size_t i = 0; i < pub->subkeys.size(); i++)
 			{
-				const TMCG_OpenPGP_Subkey *sub = pub->subkeys[i];
+				TMCG_OpenPGP_Subkey *sub = pub->subkeys[i];
 				std::string sub_kid;
 				CallasDonnerhackeFinneyShawThayerRFC4880::
 					KeyidCompute(sub->sub_hashing, sub_kid);
-				std::cout << "sub:-:";
+				std::cout << "sub:";
+				if (pub->subkeys[i]->Check(pub, this, 0))
+					std::cout << "f:";
+				else
+					std::cout << "i:";
 				switch (sub->pkalgo)
 				{
 					case TMCG_OPENPGP_PKALGO_RSA:
@@ -3762,6 +3814,17 @@ size_t TMCG_OpenPGP_Keyring::list
 					time_t exp_date = sub->creationtime + sub->expirationtime;
 					std::cout << (long int)exp_date;
 				}
+				std::cout << ":::::";
+				size_t allflags = sub->AccumulateFlags();
+				if ((allflags & 0x01) == 0x01)
+					std::cout << "c";
+				if ((allflags & 0x02) == 0x02)
+					std::cout << "s";
+				if (((allflags & 0x04) == 0x04) || ((allflags & 0x08) == 0x08)
+					|| (sub->pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)) // FIXME
+					std::cout << "e";
+				if ((allflags & 0x20) == 0x20)
+					std::cout << "a";
 				std::cout << ":";
 // TODO
 				std::cout << std::endl;
@@ -3778,7 +3841,7 @@ size_t TMCG_OpenPGP_Keyring::list
 TMCG_OpenPGP_Keyring::~TMCG_OpenPGP_Keyring
 	()
 {
-	for (std::map<std::string, const TMCG_OpenPGP_Pubkey*>::const_iterator
+	for (std::map<std::string, TMCG_OpenPGP_Pubkey*>::const_iterator
 	     it = keys.begin(); it != keys.end(); ++it)
 		delete it->second;
 	keys.clear();
@@ -4732,6 +4795,16 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 {
 	tmcg_openpgp_octets_t fpr;
 	FingerprintCompute(in, fpr);
+	FingerprintConvertPlain(fpr, out);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
+	(const std::string &in, std::string &out)
+{
+	tmcg_openpgp_octets_t input, fpr;
+	for (size_t i = 0; i < in.length(); i++)
+		input.push_back(in[i]);
+	FingerprintCompute(input, fpr);
 	FingerprintConvertPlain(fpr, out);
 }
 
