@@ -345,6 +345,7 @@ static const tmcg_openpgp_oid_t tmcg_openpgp_oidtable[] =
 typedef struct
 {
 	bool						newformat;
+	tmcg_openpgp_byte_t				tag;
 	bool						indetlen;
 	tmcg_openpgp_byte_t			version;
 	tmcg_openpgp_byte_t			keyid[8]; // key ID
@@ -448,7 +449,8 @@ typedef struct
 	uint32_t					datatime;
 	tmcg_openpgp_byte_t*		data; // allocated buffer with data
 	size_t						datalen;
-	tmcg_openpgp_byte_t			uid[2048]; // string
+	tmcg_openpgp_byte_t*		uiddata; // allocated buffer with data
+	size_t				uiddatalen;
 	tmcg_openpgp_byte_t			mdc_hash[20]; // SHA-1
 	tmcg_openpgp_byte_t*		uatdata; // allocated buffer with data
 	size_t						uatdatalen;
