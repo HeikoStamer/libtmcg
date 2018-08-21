@@ -646,6 +646,7 @@ TMCG_OpenPGP_UserID::TMCG_OpenPGP_UserID
 	(const std::string &userid_in,
 	 const tmcg_openpgp_octets_t &packet_in):
 		valid(false),
+		revoked(false),
 		userid(userid_in)
 {
 	userid_sanitized.resize(userid.size());
@@ -679,6 +680,7 @@ bool TMCG_OpenPGP_UserID::Check
 				if (selfsigs[i]->revocable)
 					selfsigs[i]->revoked = true;
 			}
+			revoked = true;
 		}
 		else if (verbose)
 			std::cerr << "WARNING: revocation signature" <<
@@ -739,7 +741,8 @@ TMCG_OpenPGP_UserID::~TMCG_OpenPGP_UserID
 TMCG_OpenPGP_UserAttribute::TMCG_OpenPGP_UserAttribute
 	(const tmcg_openpgp_octets_t &userattribute_in,
 	 const tmcg_openpgp_octets_t &packet_in):
-		valid(false)
+		valid(false),
+		revoked(false)
 {
 	userattribute.insert(userattribute.end(),
 		userattribute_in.begin(), userattribute_in.end());
@@ -771,6 +774,7 @@ bool TMCG_OpenPGP_UserAttribute::Check
 				if (selfsigs[i]->revocable)
 					selfsigs[i]->revoked = true;
 			}
+			revoked = true;
 		}
 		else if (verbose)
 			std::cerr << "WARNING: revocation signature" <<
@@ -3785,6 +3789,8 @@ size_t TMCG_OpenPGP_Keyring::list
 				std::cout << "uid:";
 				if (uid->Check(pub, 0))
 					std::cout << "f:";
+				else if (uid->revoked)
+					std::cout << "r:";
 				else
 					std::cout << "i:";
 				std::cout << ":::";
@@ -3819,6 +3825,8 @@ size_t TMCG_OpenPGP_Keyring::list
 				std::cout << "uat:";
 				if (uat->Check(pub, 0))
 					std::cout << "f:";
+				else if (uat->revoked)
+					std::cout << "r:";
 				else
 					std::cout << "i:";
 				std::cout << ":::";

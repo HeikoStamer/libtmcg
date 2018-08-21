@@ -345,7 +345,7 @@ static const tmcg_openpgp_oid_t tmcg_openpgp_oidtable[] =
 typedef struct
 {
 	bool						newformat;
-	tmcg_openpgp_byte_t				tag;
+	tmcg_openpgp_byte_t			tag;
 	bool						indetlen;
 	tmcg_openpgp_byte_t			version;
 	tmcg_openpgp_byte_t			keyid[8]; // key ID
@@ -450,7 +450,7 @@ typedef struct
 	tmcg_openpgp_byte_t*		data; // allocated buffer with data
 	size_t						datalen;
 	tmcg_openpgp_byte_t*		uiddata; // allocated buffer with data
-	size_t				uiddatalen;
+	size_t						uiddatalen;
 	tmcg_openpgp_byte_t			mdc_hash[20]; // SHA-1
 	tmcg_openpgp_byte_t*		uatdata; // allocated buffer with data
 	size_t						uatdatalen;
@@ -594,6 +594,7 @@ class TMCG_OpenPGP_UserID
 		};
 	public:
 		bool												valid;
+		bool												revoked;
 		std::string											userid;
 		std::string											userid_sanitized;
 		tmcg_openpgp_octets_t								packet;
@@ -615,6 +616,7 @@ class TMCG_OpenPGP_UserAttribute
 {
 	public:
 		bool												valid;
+		bool												revoked;
 		tmcg_openpgp_octets_t								userattribute;
 		tmcg_openpgp_octets_t								packet;
 		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
