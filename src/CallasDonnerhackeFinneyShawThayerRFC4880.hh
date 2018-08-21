@@ -1057,7 +1057,7 @@ class TMCG_OpenPGP_Keyring
 		TMCG_OpenPGP_Keyring
 			();
 		bool add
-			(TMCG_OpenPGP_Pubkey*						key);
+			(TMCG_OpenPGP_Pubkey*							key);
 		TMCG_OpenPGP_Pubkey* find
 			(const std::string								&fingerprint) const;
 		TMCG_OpenPGP_Pubkey* find_by_keyid
@@ -1282,6 +1282,18 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const int										verbose,
 			 const tmcg_openpgp_octets_t					&current_packet,
 			 TMCG_OpenPGP_Message*							&msg);
+		static void PublicKeyringParse_Add
+			(const int										verbose,
+			 bool											&primary,
+			 bool											&subkey,
+			 bool											&badkey,
+	 		 bool											&uid_flag,
+			 bool											&uat_flag,
+	 		 TMCG_OpenPGP_Pubkey*							&pub,
+			 TMCG_OpenPGP_Subkey*							&sub,
+	 		 TMCG_OpenPGP_UserID*							&uid,
+			 TMCG_OpenPGP_UserAttribute*					&uat,
+	 		 TMCG_OpenPGP_Keyring*							&ring);
 
 	public:
 		static void MemoryGuardReset
@@ -1370,8 +1382,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t HashCompute
 			(const tmcg_openpgp_hashalgo_t					algo,
-			 const tmcg_openpgp_secure_octets_t					&in,
-			 tmcg_openpgp_secure_octets_t							&out);
+			 const tmcg_openpgp_secure_octets_t				&in,
+			 tmcg_openpgp_secure_octets_t					&out);
 		static void HashCompute
 			(const tmcg_openpgp_hashalgo_t					algo,
 			 const size_t									cnt,
@@ -1390,14 +1402,14 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_octets_t					&salt, 
 			 const bool										iterated,
 			 const tmcg_openpgp_byte_t						octcnt,
-			 tmcg_openpgp_secure_octets_t							&out);
+			 tmcg_openpgp_secure_octets_t					&out);
 		static gcry_error_t KDFCompute
 			(const tmcg_openpgp_hashalgo_t					hashalgo,
 			 const tmcg_openpgp_skalgo_t					skalgo,
-			 const tmcg_openpgp_secure_octets_t					&ZB,
+			 const tmcg_openpgp_secure_octets_t				&ZB,
 			 const std::string								&curve,
 			 const tmcg_openpgp_octets_t					&rcpfpr,
-			 tmcg_openpgp_secure_octets_t							&MB);
+			 tmcg_openpgp_secure_octets_t					&MB);
 
 		static void PacketTagEncode
 			(const tmcg_openpgp_byte_t						tag,
@@ -1422,14 +1434,14 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 size_t											&sum);
 		static void PacketMPIEncode
 			(const gcry_mpi_t								in,
-			 tmcg_openpgp_secure_octets_t							&out,
+			 tmcg_openpgp_secure_octets_t					&out,
 			 size_t											&sum);
 		static void PacketMPIEncode
 			(const gcry_mpi_t								in,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketMPIEncode
 			(const gcry_mpi_t								in,
-			 tmcg_openpgp_secure_octets_t							&out);
+			 tmcg_openpgp_secure_octets_t					&out);
 		static size_t PacketMPIDecode
 			(const tmcg_openpgp_octets_t					&in,
 			 gcry_mpi_t										&out,

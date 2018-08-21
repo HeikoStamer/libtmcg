@@ -11757,6 +11757,37 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag19
 	return true;
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse_Add
+	(const int verbose, bool &primary, bool &subkey, bool &badkey,
+	 bool &uid_flag, bool &uat_flag,
+	 TMCG_OpenPGP_Pubkey* &pub, TMCG_OpenPGP_Subkey* &sub,
+	 TMCG_OpenPGP_UserID* &uid, TMCG_OpenPGP_UserAttribute* &uat,
+	 TMCG_OpenPGP_Keyring* &ring)
+{
+	if (primary)
+	{
+		if (uid_flag)
+			pub->userids.push_back(uid);
+		if (uat_flag)
+			pub->userattributes.push_back(uat);
+		if (!badkey && subkey)
+			pub->subkeys.push_back(sub);
+		// add key to ring
+		if (!ring->add(pub))
+		{
+			if (verbose)
+				std::cerr << "WARNING: keyring already contains" <<
+					" this key; duplicate key ignored" << std::endl;
+			delete pub;
+		}
+		pub = NULL, sub = NULL, uid = NULL, uat = NULL;
+		primary = false, subkey = false, badkey = false;
+		uid_flag = false, uat_flag = false;
+	}
+	else if (verbose)
+		std::cerr << "WARNING: cannot add nothing to keyring" << std::endl;
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 	(const tmcg_openpgp_octets_t &in, const int verbose,
 	 TMCG_OpenPGP_Pubkey* &pub)
@@ -12202,26 +12233,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 			}
 			else if ((ctx.tag == 6) || (ctx.tag == 5))
 			{
-				if (primary)
-				{
-					if (uid_flag)
-						pub->userids.push_back(uid);
-					if (uat_flag)
-						pub->userattributes.push_back(uat);
-					if (!badkey && subkey)
-						pub->subkeys.push_back(sub);
-					// add key to ring
-					if (!ring->add(pub))
-					{
-						if (verbose)
-							std::cerr << "WARNING: keyring already contains" <<
-								" this key; duplicate key ignored" << std::endl;
-						delete pub;
-					}
-					pub = NULL, sub = NULL, uid = NULL, uat = NULL;
-					primary = false, subkey = false, badkey = false;
-					uid_flag = false, uat_flag = false;
-				}
+				PublicKeyringParse_Add(verbose, primary, subkey, badkey,
+					uid_flag, uat_flag, pub, sub, uid, uat, ring);
 				ignore = true; // ignore all following packets of this key block
 			}
 			PacketContextRelease(ctx);
@@ -12250,26 +12263,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 					current_packet, embedded_pkt, pub, sub, uid, uat);
 				break;
 			case 6: // Public-Key Packet
-				if (primary)
-				{
-					if (uid_flag)
-						pub->userids.push_back(uid);
-					if (uat_flag)
-						pub->userattributes.push_back(uat);
-					if (!badkey && subkey)
-						pub->subkeys.push_back(sub);
-					// add key to ring
-					if (!ring->add(pub))
-					{
-						if (verbose)
-							std::cerr << "WARNING: keyring already contains" <<
-								" this key; duplicate key ignored" << std::endl;
-						delete pub;
-					}
-					pub = NULL, sub = NULL, uid = NULL, uat = NULL;
-					primary = false, subkey = false, badkey = false;
-					uid_flag = false, uat_flag = false;
-				}
+				PublicKeyringParse_Add(verbose, primary, subkey, badkey,
+					uid_flag, uat_flag, pub, sub, uid, uat, ring);
 				ret = PublicKeyBlockParse_Tag6(ctx, verbose,
 					current_packet, primary, pub);
 				break;
@@ -12309,21 +12304,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 	}
 	if (primary)
 	{
-		if (uid_flag)
-			pub->userids.push_back(uid);
-		if (uat_flag)
-			pub->userattributes.push_back(uat);
-		if (!badkey && subkey)
-			pub->subkeys.push_back(sub);
-		// add key to ring
-		if (!ring->add(pub))
-		{
-			if (verbose)
-				std::cerr << "WARNING: keyring already contains" <<
-					" this key; duplicate key ignored" << std::endl;
-			delete pub;
-		}
-		pub = NULL, sub = NULL, uid = NULL, uat = NULL;
+		PublicKeyringParse_Add(verbose, primary, subkey, badkey, uid_flag,
+			uat_flag, pub, sub, uid, uat, ring);
 	}
 	else
 	{
