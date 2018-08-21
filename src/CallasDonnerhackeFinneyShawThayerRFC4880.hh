@@ -100,7 +100,7 @@ template<class T> class TMCG_SecureAlloc
 		size_type		max_size
 			() const throw()
 		{
-			return 1024;
+			return 16384;
 		}
 		template<class U> struct rebind
 		{
