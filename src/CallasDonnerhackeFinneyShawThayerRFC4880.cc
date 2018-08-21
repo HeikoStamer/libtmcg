@@ -1020,6 +1020,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	// public-key algorithm is ECDSA
 	gcry_mpi_set(ec_pk, ecpk);
 	const char *curve = NULL;
+	std::string ec_unknown = "unknown";
 	for (size_t idx = 0; (tmcg_openpgp_oidtable[idx].name != NULL); idx++)
 	{
 		if (oidlen == tmcg_openpgp_oidtable[idx].oid[0])
@@ -1036,6 +1037,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	}
 	if (curve != NULL)
 		ec_curve = curve;
+	else
+		curve = ec_unknown.c_str();
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (ecdsa (curve %s) (q %m)))", curve, ecpk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -1081,6 +1084,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	// public-key algorithm is ECDH
 	gcry_mpi_set(ec_pk, ecpk);
 	const char *curve = NULL;
+	std::string ec_unknown = "unknown";
 	for (size_t idx = 0; (tmcg_openpgp_oidtable[idx].name != NULL); idx++)
 	{
 		if (oidlen == tmcg_openpgp_oidtable[idx].oid[0])
@@ -1097,6 +1101,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	}
 	if (curve != NULL)
 		ec_curve = curve;
+	else
+		curve = ec_unknown.c_str();
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (ecdh (curve %s) (q %m)))", curve, ecpk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -1952,6 +1958,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	// public-key algorithm is ECDSA
 	gcry_mpi_set(ec_sk, ecsk);
 	const char *curve = NULL;
+	std::string ec_unknown = "unknown";
 	for (size_t idx = 0; (tmcg_openpgp_oidtable[idx].name != NULL); idx++)
 	{
 		if (oidlen == tmcg_openpgp_oidtable[idx].oid[0])
@@ -1968,6 +1975,8 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	}
 	if (curve != NULL)
 		ec_curve = curve;
+	else
+		curve = ec_unknown.c_str();
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (ecdsa (curve %s) (q %m) (d %m)))", curve, ecpk, ecsk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -2006,6 +2015,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	// public-key algorithm is ECDH
 	gcry_mpi_set(ec_sk, ecsk);
 	const char *curve = NULL;
+	std::string ec_unknown = "unknown";
 	for (size_t idx = 0; (tmcg_openpgp_oidtable[idx].name != NULL); idx++)
 	{
 		if (oidlen == tmcg_openpgp_oidtable[idx].oid[0])
@@ -2022,6 +2032,8 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	}
 	if (curve != NULL)
 		ec_curve = curve;
+	else
+		curve = ec_unknown.c_str();
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (ecdh (curve %s) (q %m) (d %m)))", curve, ecpk, ecsk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -2395,6 +2407,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	// public-key algorithm is ECDSA
 	gcry_mpi_set(ec_pk, ecpk);
 	const char *curve = NULL;
+	std::string ec_unknown = "unknown";
 	for (size_t idx = 0; (tmcg_openpgp_oidtable[idx].name != NULL); idx++)
 	{
 		if (oidlen == tmcg_openpgp_oidtable[idx].oid[0])
@@ -2411,6 +2424,8 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	}
 	if (curve != NULL)
 		ec_curve = curve;
+	else
+		curve = ec_unknown.c_str();
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (ecdsa (curve %s) (q %m)))", curve, ecpk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -3336,6 +3351,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	// public-key algorithm is ECDSA
 	gcry_mpi_set(ec_sk, ecsk);
 	const char *curve = NULL;
+	std::string ec_unknown = "unknown";
 	for (size_t idx = 0; (tmcg_openpgp_oidtable[idx].name != NULL); idx++)
 	{
 		if (oidlen == tmcg_openpgp_oidtable[idx].oid[0])
@@ -3350,6 +3366,10 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 				curve = tmcg_openpgp_oidtable[idx].name;
 		}
 	}
+	if (curve != NULL)
+		ec_curve = curve;
+	else
+		curve = ec_unknown.c_str();
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (ecdsa (curve %s) (q %m) (d %m)))", curve, ecpk, ecsk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -3781,10 +3801,11 @@ size_t TMCG_OpenPGP_Keyring::list
 				for (size_t j = 0; j < uid->userid.length(); j++)
 				{
 					char c = uid->userid[j];
-					if (c == ':')
-						std::cout << "=\x3a=";
-					else if ((c < 0x20) || (c == 0x7F))
-						std::cout << " ";
+					char chex[3];
+					memset(chex, 0, sizeof(chex));
+					snprintf(chex, sizeof(chex), "%02x", c);
+					if ((c < 0x20) || (c == 0x7F) || (c == ':'))
+						std::cout << "\\x" << chex;
 					else
 						std::cout << c;
 				}
