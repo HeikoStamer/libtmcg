@@ -371,7 +371,7 @@ int main
 
 	// testing PublicKeyBlockParse(), FingerprintCompute(), KeyidCompute()
 	tmcg_openpgp_octets_t all, pub, uid, uidsig, sub, subsig, pubflags, empty;
-	tmcg_openpgp_octets_t subflags, keyid, pub_hashing, uidsig_hashing;
+	tmcg_openpgp_octets_t subflags, keyid, pub_hashing, uidsig_hashing, issuer;
 	tmcg_openpgp_octets_t uidsig_left, sub_hashing, subsig_hashing, subsig_left;
 	tmcg_openpgp_octets_t sec, subsec;
 	std::string armored_pubkeyblock, passphrase = "FCK!NSA";
@@ -389,6 +389,7 @@ int main
 	for (size_t i = 6; i < pub.size(); i++)
 		pub_hashing.push_back(pub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
+	CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute(pub_hashing, issuer);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(keystr, uid);
 	pubflags.push_back(0x01 | 0x02);  // certify other keys and sign data
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -421,7 +422,7 @@ int main
 	subflags.push_back(0x04 | 0x08); // encrypt communications and storage
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketSigPrepareSelfSignature(TMCG_OPENPGP_SIGNATURE_SUBKEY_BINDING,
-			TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 1000, subflags, keyid,
+			TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 1000, subflags, issuer,
 			subsig_hashing);
 	for (size_t i = 6; i < sub.size(); i++)
 		sub_hashing.push_back(sub[i]);
