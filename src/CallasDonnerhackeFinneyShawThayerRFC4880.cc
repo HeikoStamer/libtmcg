@@ -6170,6 +6170,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSign
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignature
 	(const tmcg_openpgp_hashalgo_t hashalgo, const time_t sigtime,
+	 const std::string &policy,
 	 const tmcg_openpgp_octets_t &issuer,
 	 const tmcg_openpgp_pkalgo_t target_pkalgo,
 	 const tmcg_openpgp_hashalgo_t target_hashalgo,
@@ -6177,13 +6178,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 	 tmcg_openpgp_octets_t &out)
 {
 	PacketSigPrepareTimestampSignature(TMCG_OPENPGP_PKALGO_DSA, hashalgo,
-		sigtime, issuer, target_pkalgo, target_hashalgo, target_hash,
+		sigtime, policy, issuer, target_pkalgo, target_hashalgo, target_hash,
 		out);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignature
 	(const tmcg_openpgp_pkalgo_t pkalgo,
 	 const tmcg_openpgp_hashalgo_t hashalgo, const time_t sigtime,
+	 const std::string &policy,
 	 const tmcg_openpgp_octets_t &issuer,
 	 const tmcg_openpgp_pkalgo_t target_pkalgo,
 	 const tmcg_openpgp_hashalgo_t target_hashalgo,
@@ -6199,6 +6201,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 	}
 	else
 		subpktlen += issuer.size();
+	if (policy.length())
+		subpktlen += (6 + policy.length());
 	out.push_back(4); // V4 format
 	out.push_back(TMCG_OPENPGP_SIGNATURE_TIMESTAMP); // type
 	out.push_back(pkalgo); // public-key algorithm
@@ -6225,6 +6229,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 		}
 		else
 			SubpacketEncode(16, true, issuer, out);
+		// [optional] policy URI (variable length)
+		if (policy.length())
+		{
+			tmcg_openpgp_octets_t subpkt_policy;
+			for (size_t i = 0; i < policy.length(); i++)
+				subpkt_policy.push_back(policy[i]);
+			SubpacketEncode(26, false, subpkt_policy, out);
+		}
 		// 4. signature target (variable length)
 		tmcg_openpgp_octets_t target;
 		target.push_back(target_pkalgo); // public-key algorithm
