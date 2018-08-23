@@ -1580,7 +1580,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_octets_t					&issuer,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSigPrepareTimestampSignature
-			(const tmcg_openpgp_hashalgo_t					hashalgo,
+			(const tmcg_openpgp_pkalgo_t					pkalgo,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
 			 const time_t									sigtime,
 			 const std::string								&policy,
 			 const tmcg_openpgp_octets_t					&issuer,
@@ -1594,9 +1595,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const time_t									sigtime,
 			 const std::string								&policy,
 			 const tmcg_openpgp_octets_t					&issuer,
-			 const tmcg_openpgp_pkalgo_t					target_pkalgo,
-			 const tmcg_openpgp_hashalgo_t					target_hashalgo,
-			 const tmcg_openpgp_octets_t					&target_hash,
+			 const tmcg_openpgp_octets_t					&target_signature,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketPubEncode
 			(const time_t									keytime,
