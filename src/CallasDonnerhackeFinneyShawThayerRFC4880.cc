@@ -7843,7 +7843,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 		case 110:
 			type = 0xFE; // subpacket not recognized
 			break;
-		default: // unknown subpacket type; ignore
+		default: // unknown subpacket type; ignore, if not critical
 			type = 0xFE; // subpacket not recognized
 			break; 
 	}
@@ -7855,7 +7855,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 	(tmcg_openpgp_octets_t &in, const int verbose,
 	 tmcg_openpgp_packet_ctx_t &out)
 {
-	tmcg_openpgp_byte_t tag = 0x02; // only signature subpackets
+	tmcg_openpgp_byte_t tag = 0x02; // signature subpackets only
 	while (in.size())
 	{
 		tmcg_openpgp_byte_t sptype = SubpacketDecode(in, verbose, out);
@@ -7879,7 +7879,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 				tag = 0xFB;
 			if (verbose > 2)
 			{
-				std::cerr << "INFO: unrecognized ";
+				std::cerr << "WARNING: unrecognized ";
 				if (out.critical)
 					std::cerr << "critical ";
 				std::cerr << "signature subpacket found" << std::endl;
