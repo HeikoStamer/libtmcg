@@ -397,6 +397,59 @@ bool TMCG_OpenPGP_Signature::Verify
 
 bool TMCG_OpenPGP_Signature::Verify
 	(const gcry_sexp_t key,
+	 const int verbose)
+{
+	if (!good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: bad signature material" <<	std::endl;
+		return false;
+	}
+	tmcg_openpgp_octets_t trailer, left, hash;
+	if (version == 3)
+	{
+		tmcg_openpgp_octets_t sigtime_octets;
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			PacketTimeEncode(creationtime, sigtime_octets);
+		trailer.push_back(type);
+		trailer.insert(trailer.end(),
+			sigtime_octets.begin(), sigtime_octets.end());
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			StandaloneHashV3(trailer, hashalgo, hash, left);
+	}
+	else if (version == 4)
+	{
+		trailer.push_back(4);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			StandaloneHash(trailer, hashalgo, hash, left);
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: signature version " <<
+				"not supported" << std::endl;
+		return false;
+	}
+	if (verbose > 2)
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
+			" " << (int)left[1] << std::dec << std::endl;
+	if (CheckIntegrity(key, hash, verbose))
+	{
+		valid = true;
+		return true;
+	}
+	valid = false;
+	return false;
+}
+
+bool TMCG_OpenPGP_Signature::Verify
+	(const gcry_sexp_t key,
 	 const tmcg_openpgp_octets_t &hashing,
 	 const int verbose)
 {
@@ -9298,6 +9351,66 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHash
 	// at the end of the Signature packet.
 	if (!HashComputeFile(hashalgo, filename, true, hash_input, hash))
 		return false;
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::StandaloneHashV3
+	(const tmcg_openpgp_octets_t &trailer, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 tmcg_openpgp_octets_t &left)
+{
+	// All signatures are formed by producing a hash over the signature
+	// data, and then using the resulting hash in the signature algorithm.
+	// [...] This signature is a signature of only its own subpacket contents.
+	// It is calculated identically to a signature over a zero-length binary
+	// document.
+	// [...]
+	// Once the data body is hashed, then a trailer is hashed. A V3
+	// signature hashes five octets of the packet body, starting from the
+	// signature type field. This data is the signature type, followed by
+	// the four-octet signature time.
+	HashCompute(hashalgo, trailer, hash);
+	// After all this has been hashed in a single hash context, the
+	// resulting hash field is used in the signature algorithm and placed
+	// at the end of the Signature packet.
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::StandaloneHash
+	(const tmcg_openpgp_octets_t &trailer, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+
+	// All signatures are formed by producing a hash over the signature
+	// data, and then using the resulting hash in the signature algorithm.
+	// [...] This signature is a signature of only its own subpacket contents.
+	// It is calculated identically to a signature over a zero-length binary
+	// document.
+	// [...]
+	// Once the data body is hashed, then a trailer is hashed. [...]
+	// A V4 signature hashes the packet body starting from its first
+	// field, the version number, through the end of the hashed subpacket
+	// data. Thus, the fields hashed are the signature version, the
+	// signature type, the public-key algorithm, the hash algorithm,
+	// the hashed subpacket length, and the hashed subpacket body.
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// V4 signatures also hash in a final trailer of six octets: the
+	// version of the Signature packet, i.e., 0x04; 0xFF; and a four-octet,
+	// big-endian number that is the length of the hashed data from the
+	// Signature packet (note that this number does not include these final
+	// six octets).
+	hash_input.push_back(0x04);
+	PacketLengthEncode(trailer.size(), hash_input);
+	HashCompute(hashalgo, hash_input, hash);
+	// After all this has been hashed in a single hash context, the
+	// resulting hash field is used in the signature algorithm and placed
+	// at the end of the Signature packet.
 	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 	return true;

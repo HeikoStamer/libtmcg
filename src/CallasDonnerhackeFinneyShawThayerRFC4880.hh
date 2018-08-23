@@ -555,6 +555,9 @@ class TMCG_OpenPGP_Signature
 			 const int										verbose);
 		bool Verify
 			(const gcry_sexp_t								key,
+			 const int										verbose);
+		bool Verify
+			(const gcry_sexp_t								key,
 			 const tmcg_openpgp_octets_t					&hashing,
 			 const int										verbose);
 		bool Verify
@@ -851,7 +854,7 @@ class TMCG_OpenPGP_PrivateSubkey
 		bool Decrypt
 			(const TMCG_OpenPGP_PKESK*						&esk,
 			 const int										verbose,
-			 tmcg_openpgp_secure_octets_t							&out) const;
+			 tmcg_openpgp_secure_octets_t					&out) const;
 		~TMCG_OpenPGP_PrivateSubkey
 			();
 };
@@ -1782,6 +1785,16 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static bool TextDocumentHash
 			(const std::string								&filename,
 			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
+		static bool StandaloneHashV3
+			(const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
+		static bool StandaloneHash
+			(const tmcg_openpgp_octets_t					&trailer,
 			 const tmcg_openpgp_hashalgo_t					hashalgo,
 			 tmcg_openpgp_octets_t							&hash,
 			 tmcg_openpgp_octets_t							&left);
