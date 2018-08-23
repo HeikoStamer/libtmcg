@@ -7981,6 +7981,80 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextEvaluate
 	}
 }
 
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract
+	(tmcg_openpgp_octets_t &in, const int verbose,
+	 tmcg_openpgp_octets_t &out)
+{
+	bool newformat;
+	// The first octet of the packet header is called the "Packet
+	// Tag". It determines the format of the header and denotes the
+	// packet contents. The remainder of the packet header is the
+	// length of the packet.
+	// Note that the most significant bit is the leftmost bit, called
+	// bit 7. A mask for this bit is 0x80 in hexadecimal.
+	//      +---------------+
+	// PTag |7 6 5 4 3 2 1 0|
+	//      +---------------+
+	// Bit 7 -- Always one
+	// Bit 6 -- New packet format if set
+	if (in.size() < 1)
+		return 0; // error: no first octet of packet header
+	tmcg_openpgp_byte_t tag = in[0];
+	tmcg_openpgp_byte_t lentype = 0x00;
+	in.erase(in.begin(), in.begin()+1); // remove first octet
+	if ((tag & 0x80) != 0x80)
+		return 0; // error: Bit 7 of first octet not set
+	if ((tag & 0x40) == 0x40)
+	{
+		newformat = true;
+		tag -= (0x80 + 0x40); // Bits 5-0 -- packet tag
+	}
+	else
+	{
+		newformat = false;
+		lentype = tag & 0x03; // Bits 1-0 -- length-type
+		tag = (tag >> 2) & 0x1F; // Bits 5-2 -- packet tag
+	}
+	// Each Partial Body Length header is followed by a portion of the
+	// packet body data. The Partial Body Length header specifies this
+	// portion's length. Another length header (one octet, two-octet,
+	// five-octet, or partial) follows that portion. The last length
+	// header in the packet MUST NOT be a Partial Body Length header.
+	// Partial Body Length headers may only be used for the non-final
+	// parts of the packet.
+	tmcg_openpgp_octets_t pkt;
+	uint32_t len = 0;
+	bool partlen = true, firstlen = true;
+	while (partlen)
+	{
+		size_t headlen = PacketLengthDecode(in, newformat,
+			lentype, len, partlen);
+		if (!headlen)
+			return 0; // error: invalid length header
+		if (headlen == 42)
+			headlen = 0; // special case: indeterminate length
+		if (in.size() < (headlen + len))
+			return 0; // error: packet too short
+		// An implementation MAY use Partial Body Lengths for data
+		// packets, be they literal, compressed, or encrypted. The
+		// first partial length MUST be at least 512 octets long.
+		// Partial Body Lengths MUST NOT be used for any other packet
+		// types.
+		if (partlen && firstlen && (len < 512))
+			return 0; // error: first partial less than 512 octets
+		if (partlen && (tag != 8) && (tag != 9) && (tag != 11) && 
+		    (tag != 18))
+		{
+			return 0; // error: no literal, compressed, ... allowed
+		}
+		out.insert(out.end(),
+			in.begin()+headlen, in.begin()+headlen+len);
+		in.erase(in.begin(), in.begin()+headlen+len); // remove packet
+		firstlen = false;
+	}
+	return tag;
+}
+
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	(tmcg_openpgp_octets_t &in, const int verbose,
 	 tmcg_openpgp_packet_ctx_t &out,
