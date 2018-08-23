@@ -7792,8 +7792,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				return 0; // error: too short subpacket body
 			out.signaturetarget_pkalgo = (tmcg_openpgp_pkalgo_t)pkt[0];
 			out.signaturetarget_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[1];
-			if (pkt.size() > 
-			    (sizeof(out.signaturetarget_hash) + 2))
+			if (pkt.size() > (sizeof(out.signaturetarget_hash) + 2))
 				return 0; // error: too long subpacket body
 			for (size_t i = 0; i < (pkt.size() - 2); i++)
 				out.signaturetarget_hash[i] = pkt[2+i];
@@ -7808,7 +7807,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.embeddedsignature[i] = pkt[i];
 			break;
-		case 33: // Issuer Fingerprint [RFC4880bis-04]
+		case 33: // Issuer Fingerprint [Draft-RFC 4880bis-04]
 			if (pkt.size() < 2)
 				return 0; // error: too short subpacket body
 			out.issuerkeyversion = pkt[0];
