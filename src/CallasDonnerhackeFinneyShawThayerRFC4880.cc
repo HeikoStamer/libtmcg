@@ -6244,7 +6244,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 	if (policy.length())
 		subpktlen += (6 + policy.length());
 	for (size_t i = 0; i < notations.size(); i++)
-		subpktlen += (8 + notations[i].first.size() + notations[i].second.size());	
+		subpktlen += (6 + 8 + notations[i].first.size() +
+			notations[i].second.size());	
 	out.push_back(4); // V4 format
 	out.push_back(TMCG_OPENPGP_SIGNATURE_TIMESTAMP); // type
 	out.push_back(pkalgo); // public-key algorithm
@@ -6336,7 +6337,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 	if (policy.length())
 		subpktlen += (6 + policy.length());
 	for (size_t i = 0; i < notations.size(); i++)
-		subpktlen += (8 + notations[i].first.size() + notations[i].second.size());	
+		subpktlen += (6 + 8 + notations[i].first.size() +
+			notations[i].second.size());	
 	out.push_back(4); // V4 format
 	out.push_back(TMCG_OPENPGP_SIGNATURE_TIMESTAMP); // type
 	out.push_back(pkalgo); // public-key algorithm
