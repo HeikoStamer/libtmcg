@@ -36,6 +36,7 @@
 // C and STL header
 #include <vector>
 #include <map>
+#include <utility>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -126,6 +127,8 @@ template<class T> bool operator!=
 typedef unsigned char tmcg_openpgp_byte_t;
 typedef std::vector<tmcg_openpgp_byte_t> tmcg_openpgp_octets_t;
 typedef std::vector<tmcg_openpgp_byte_t, TMCG_SecureAlloc<tmcg_openpgp_byte_t> > tmcg_openpgp_secure_octets_t;
+typedef std::pair<tmcg_openpgp_octets_t, tmcg_openpgp_octets_t> tmcg_openpgp_notation_t;
+typedef std::vector<tmcg_openpgp_notation_t> tmcg_openpgp_notations_t;
 
 enum tmcg_openpgp_signature_t
 {
@@ -1591,6 +1594,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_pkalgo_t					target_pkalgo,
 			 const tmcg_openpgp_hashalgo_t					target_hashalgo,
 			 const tmcg_openpgp_octets_t					&target_hash,
+			 const tmcg_openpgp_notations_t					&notations,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSigPrepareTimestampSignature
 			(const tmcg_openpgp_pkalgo_t					pkalgo,
@@ -1599,6 +1603,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const std::string								&policy,
 			 const tmcg_openpgp_octets_t					&issuer,
 			 const tmcg_openpgp_octets_t					&target_signature,
+			 const tmcg_openpgp_notations_t					&notations,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketPubEncode
 			(const time_t									keytime,
@@ -1733,7 +1738,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static tmcg_openpgp_byte_t SubpacketParse
 			(tmcg_openpgp_octets_t							&in,
 			 const int										verbose,
-			 tmcg_openpgp_packet_ctx_t						&out);
+			 tmcg_openpgp_packet_ctx_t						&out,
+			 tmcg_openpgp_notations_t						&notations);
 		static void PacketContextEvaluate
 			(const tmcg_openpgp_packet_ctx_t				&in,
 			 tmcg_openpgp_packet_ctx_t						&out);
@@ -1750,7 +1756,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 std::vector<gcry_mpi_t>						&x_rvss_qual,
 			 std::vector<std::string>						&capl,
 			 std::vector<gcry_mpi_t>						&v_i,
-			 std::vector< std::vector<gcry_mpi_t> >			&c_ik);
+			 std::vector< std::vector<gcry_mpi_t> >			&c_ik,
+			 tmcg_openpgp_notations_t						&notations);
 		static tmcg_openpgp_byte_t PacketDecode
 			(tmcg_openpgp_octets_t							&in,
 			 const int										verbose,
@@ -1759,12 +1766,14 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 std::vector<gcry_mpi_t>						&qual,
 			 std::vector<std::string>						&capl,
 			 std::vector<gcry_mpi_t>						&v_i,
-			 std::vector< std::vector<gcry_mpi_t> >			&c_ik);
+			 std::vector< std::vector<gcry_mpi_t> >			&c_ik,
+			 tmcg_openpgp_notations_t						&notations);
 		static tmcg_openpgp_byte_t PacketDecode
 			(tmcg_openpgp_octets_t							&in,
 			 const int										verbose,
 			 tmcg_openpgp_packet_ctx_t						&out,
-			 tmcg_openpgp_octets_t							&current_packet);
+			 tmcg_openpgp_octets_t							&current_packet,
+			 tmcg_openpgp_notations_t						&notations);
 		static void PacketContextRelease
 			(tmcg_openpgp_packet_ctx_t						&ctx);
 
