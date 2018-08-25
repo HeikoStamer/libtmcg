@@ -897,6 +897,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		ret(1),
 		erroff(0),
 		valid(false),
+		revoked(false),
 		pkalgo(TMCG_OPENPGP_PKALGO_RSA),
 		creationtime(0),
 		expirationtime(0),
@@ -931,6 +932,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		ret(1),
 		erroff(0),
 		valid(false),
+		revoked(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -974,6 +976,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		ret(1),
 		erroff(0),
 		valid(false),
+		revoked(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -1019,6 +1022,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		ret(1),
 		erroff(0),
 		valid(false),
+		revoked(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -1064,6 +1068,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		ret(1),
 		erroff(0),
 		valid(false),
+		revoked(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -1128,6 +1133,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		ret(1),
 		erroff(0),
 		valid(false),
+		revoked(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -1689,6 +1695,7 @@ bool TMCG_OpenPGP_Subkey::Check
 				std::cerr << "WARNING: valid revocation signature found " <<
 					"for subkey" << std::endl;
 			valid = false;
+			revoked = true;
 			return false;
 		}
 		else if (verbose)
@@ -2377,6 +2384,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		ret(1),
 		erroff(0),
 		valid(false),
+		revoked(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -2416,6 +2424,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		ret(1),
 		erroff(0),
 		valid(false),
+		revoked(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -2456,6 +2465,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		ret(1),
 		erroff(0),
 		valid(false),
+		revoked(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in)
@@ -2985,6 +2995,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				std::cerr << "WARNING: valid revocation signature found " <<
 					"for primary key" << std::endl;
 			valid = false;
+			revoked = true;
 			return false;
 		}
 		else if (verbose)
@@ -3767,6 +3778,8 @@ size_t TMCG_OpenPGP_Keyring::list
 			std::cout << "pub:";
 			if (pub->CheckSelfSignatures(this, 0))
 				std::cout << "f:";
+			else if (pub->revoked)
+				std::cout << "r:";
 			else
 				std::cout << "i:";
 			switch (pub->pkalgo)
@@ -3905,6 +3918,8 @@ size_t TMCG_OpenPGP_Keyring::list
 				std::cout << "sub:";
 				if (pub->subkeys[i]->Check(pub, this, 0))
 					std::cout << "f:";
+				else if (pub->subkeys[i]->revoked)
+					std::cout << "r:";
 				else
 					std::cout << "i:";
 				switch (sub->pkalgo)

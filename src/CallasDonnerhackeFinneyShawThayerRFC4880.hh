@@ -651,7 +651,8 @@ class TMCG_OpenPGP_Subkey
 		size_t												erroff;
 
 	public:
-		bool valid;
+		bool												valid;
+		bool												revoked;
 		tmcg_openpgp_pkalgo_t								pkalgo;
 		time_t												creationtime;
 		time_t												expirationtime;
@@ -873,6 +874,7 @@ class TMCG_OpenPGP_Pubkey
 
 	public:
 		bool												valid;
+		bool												revoked;
 		tmcg_openpgp_pkalgo_t								pkalgo;
 		time_t												creationtime;
 		time_t												expirationtime;
