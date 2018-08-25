@@ -55,7 +55,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &keyfeatures_in,
 	 const tmcg_openpgp_octets_t &keyprefs_psa_in,
 	 const tmcg_openpgp_octets_t &keyprefs_pha_in,
-	 const tmcg_openpgp_octets_t &keyprefs_pca_in):
+	 const tmcg_openpgp_octets_t &keyprefs_pca_in,
+	 const tmcg_openpgp_octets_t &embeddedsig_in):
 		ret(1),
 		erroff(0),
 		valid(false),
@@ -94,6 +95,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		keyprefs_pha_in.begin(), keyprefs_pha_in.end());
 	keyprefs_pca.insert(keyprefs_pca.end(),
 		keyprefs_pca_in.begin(), keyprefs_pca_in.end());
+	embeddedsig.insert(embeddedsig.end(),
+		embeddedsig_in.begin(), embeddedsig_in.end());
 }
 
 TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
@@ -116,7 +119,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &keyfeatures_in,
 	 const tmcg_openpgp_octets_t &keyprefs_psa_in,
 	 const tmcg_openpgp_octets_t &keyprefs_pha_in,
-	 const tmcg_openpgp_octets_t &keyprefs_pca_in):
+	 const tmcg_openpgp_octets_t &keyprefs_pca_in,
+	 const tmcg_openpgp_octets_t &embeddedsig_in):
 		ret(1),
 		erroff(0),
 		valid(false),
@@ -162,6 +166,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		keyprefs_pha_in.begin(), keyprefs_pha_in.end());
 	keyprefs_pca.insert(keyprefs_pca.end(),
 		keyprefs_pca_in.begin(), keyprefs_pca_in.end());
+	embeddedsig.insert(embeddedsig.end(),
+		embeddedsig_in.begin(), embeddedsig_in.end());
 }
 
 bool TMCG_OpenPGP_Signature::good
@@ -3816,7 +3822,7 @@ size_t TMCG_OpenPGP_Keyring::list
 						std::cout << "s";
 			}
 			std::cout << ":";
-// TODO
+			// TODO: implement other fields
 			std::cout << std::endl;
 			for (size_t i = 0; i < pub->revkeys.size(); i++)
 			{
@@ -3869,7 +3875,7 @@ size_t TMCG_OpenPGP_Keyring::list
 						std::cout << c;
 				}
 				std::cout << ":";
-// TODO
+				// TODO: implement other fields
 				std::cout << std::endl;
 			}
 			for (size_t i = 0; i < pub->userattributes.size(); i++)
@@ -3887,7 +3893,7 @@ size_t TMCG_OpenPGP_Keyring::list
 					std::cout << (long int)uat->selfsigs[0]->creationtime << ":";
 				else
 					std::cout << ":";
-// TODO
+				// TODO: implement other fields
 				std::cout << std::endl;
 			}
 			for (size_t i = 0; i < pub->subkeys.size(); i++)
@@ -3957,7 +3963,7 @@ size_t TMCG_OpenPGP_Keyring::list
 							std::cout << "s";
 				}
 				std::cout << ":";
-// TODO
+				// TODO: implement other fields
 				std::cout << std::endl;
 				std::string sub_fpr;
 				CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -7894,12 +7900,26 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				out.signaturetarget_hash[i] = pkt[2+i];
 			break;
 		case 32: // Embedded Signature
-			if (pkt.size() > sizeof(out.embeddedsignature))
-				return 0; // error: too long subpacket body
+			if (out.embeddedsignaturelen != 0)
+			{
+				if (verbose)
+					std::cerr << "WARNING: more than one embedded signature" <<
+						" found" << std::endl;
+				delete [] out.embeddedsignature;
+			}
 			out.embeddedsignaturelen = pkt.size();
 			if (verbose > 2)
 				std::cerr << "INFO: embeddedsignaturelen = " <<
 					out.embeddedsignaturelen << std::endl;
+			tmcg_openpgp_mem_alloc += out.embeddedsignaturelen;
+			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+			{
+				tmcg_openpgp_mem_alloc -= out.embeddedsignaturelen;
+				out.embeddedsignaturelen = 0;
+				return 0; // error: memory limit exceeded
+			}
+			out.embeddedsignature =
+				new tmcg_openpgp_byte_t[out.embeddedsignaturelen];	
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.embeddedsignature[i] = pkt[i];
 			break;
@@ -8023,6 +8043,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextEvaluate
 	if (out.embeddedsignaturelen == 0)
 	{
 		out.embeddedsignaturelen = in.embeddedsignaturelen;
+		out.embeddedsignature =
+			new tmcg_openpgp_byte_t[out.embeddedsignaturelen];	
 		for (size_t i = 0; i < in.embeddedsignaturelen; i++)
 			out.embeddedsignature[i] = in.embeddedsignature[i];
 	}
@@ -8177,8 +8199,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	bool partlen = true, firstlen = true;
 	while (partlen)
 	{
-		size_t headlen = PacketLengthDecode(in, out.newformat,
-			lentype, len, partlen);
+		size_t headlen = PacketLengthDecode(in, out.newformat, lentype, len,
+			partlen);
 		if (!headlen)
 			return 0; // error: invalid length header
 		if (headlen == 42)
@@ -8195,8 +8217,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		// types.
 		if (partlen && firstlen && (len < 512))
 			return 0; // error: first partial less than 512 octets
-		if (partlen && (tag != 8) && (tag != 9) && (tag != 11) && 
-		    (tag != 18))
+		if (partlen && (tag != 8) && (tag != 9) && (tag != 11) && (tag != 18))
 		{
 			return 0; // error: no literal, compressed, ... allowed
 		}
@@ -8285,9 +8306,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if (pkt[1] != 5)
 					return 0; // error: incorrect length
 				out.type = (tmcg_openpgp_signature_t)pkt[2];
-				out.sigcreationtime = (pkt[3] << 24) +
-					(pkt[4] << 16) + (pkt[5] << 8) + 
-					pkt[6];
+				out.sigcreationtime = (pkt[3] << 24) + (pkt[4] << 16) +
+					(pkt[5] << 8) + pkt[6];
 				for (size_t i = 0; i < 8; i++)
 					out.issuer[i] = pkt[7+i];
 				out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[15];
@@ -8295,8 +8315,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				// left 16 bits of signed hash value
 				for (size_t i = 0; i < 2; i++)
 					out.left[i] = pkt[17+i];
-				mpis.insert(mpis.end(),
-					pkt.begin()+19, pkt.end());
+				mpis.insert(mpis.end(), pkt.begin()+19, pkt.end());
 			}
 			else if (out.version == 4)
 			{
@@ -8317,23 +8336,19 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					tmcg_openpgp_mem_alloc -= out.hspdlen;
 					return 0; // error: memory limit exceeded
 				}
-				out.hspd =
-					new tmcg_openpgp_byte_t[out.hspdlen];
+				out.hspd = new tmcg_openpgp_byte_t[out.hspdlen];
 				for (size_t i = 0; i < out.hspdlen; i++)
 					out.hspd[i] = pkt[6+i];
-				tag = SubpacketParse(hspd, verbose, out,
-					notations);
+				tag = SubpacketParse(hspd, verbose, out, notations);
 				if (tag == 0x00)
 					return 0; // error: incorrect subpacket
 				if (pkt.size() < (8 + hspdlen))
 					return 0; // error: packet too short
-				uspdlen = (pkt[6+hspdlen] << 8) + 
-					pkt[7+hspdlen];
+				uspdlen = (pkt[6+hspdlen] << 8) + pkt[7+hspdlen];
 				if (pkt.size() < (8 + hspdlen + uspdlen))
 					return 0; // error: packet too short
 				uspd.insert(uspd.end(),
-					pkt.begin()+8+hspdlen,
-					pkt.begin()+8+hspdlen+uspdlen);
+					pkt.begin()+8+hspdlen, pkt.begin()+8+hspdlen+uspdlen);
 				// If a subpacket is not hashed, then the
 				// information in it cannot be considered
 				// definitive because it is not part of the
@@ -8341,19 +8356,18 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				tmcg_openpgp_packet_ctx_t untrusted;
 				tmcg_openpgp_notations_t unotations;
 				memset(&untrusted, 0, sizeof(untrusted));
-				tag = SubpacketParse(uspd, verbose, untrusted,
-					unotations);
+				tag = SubpacketParse(uspd, verbose, untrusted, unotations);
 				if (tag == 0x00)
 					return 0; // error: incorrect subpacket
 				PacketContextEvaluate(untrusted, out);
+				PacketContextRelease(untrusted);
 				if (pkt.size() < (10 + hspdlen + uspdlen))
 					return 0; // error: packet too short
 				 // left 16 bits of signed hash value
 				for (size_t i = 0; i < 2; i++)
 					out.left[i] = pkt[8+hspdlen+uspdlen+i];
 				mpis.insert(mpis.end(),
-					pkt.begin()+10+hspdlen+uspdlen,
-					pkt.end());
+					pkt.begin()+10+hspdlen+uspdlen, pkt.end());
 			}
 			else
 				return 0xFC; // warning: version not supported
@@ -8415,17 +8429,18 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
 			{
 				// Simple S2K -- forbidden by RFC 4880 (only for completeness)
+				if (out.encdatalen != 0)
+					return 0; // error: already seen within context
+				tmcg_openpgp_mem_alloc += (pkt.size() - 4);
+				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+				{
+					tmcg_openpgp_mem_alloc -= (pkt.size() - 4);
+					return 0; // error: memory limit exceeded
+				}
 				out.encdatalen = pkt.size() - 4;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
-				tmcg_openpgp_mem_alloc += out.encdatalen;
-				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-				{
-					tmcg_openpgp_mem_alloc -= out.encdatalen;
-					return 0; // error: memory limit exceeded
-				}
-				out.encdata =
-					new tmcg_openpgp_byte_t[out.encdatalen];
+				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = pkt[4+i];
 			}
@@ -8436,17 +8451,18 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: no salt
 				for (size_t i = 0; i < 8; i++)
 					out.s2k_salt[i] = pkt[4+i];
+				if (out.encdatalen != 0)
+					return 0; // error: already seen within context
+				tmcg_openpgp_mem_alloc += (pkt.size() - 12);
+				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+				{
+					tmcg_openpgp_mem_alloc -= (pkt.size() - 12);
+					return 0; // error: memory limit exceeded
+				}
 				out.encdatalen = pkt.size() - 12;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
-				tmcg_openpgp_mem_alloc += out.encdatalen;
-				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-				{
-					tmcg_openpgp_mem_alloc -= out.encdatalen;
-					return 0; // error: memory limit exceeded
-				}
-				out.encdata =
-					new tmcg_openpgp_byte_t[out.encdatalen];
+				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = pkt[12+i];
 			}
@@ -8460,17 +8476,18 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				if (pkt.size() < 13)
 					return 0; // error: no count
 				out.s2k_count = pkt[12];
+				if (out.encdatalen != 0)
+					return 0; // error: already seen within context
+				tmcg_openpgp_mem_alloc += (pkt.size() - 13);
+				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+				{
+					tmcg_openpgp_mem_alloc -= (pkt.size() - 13);
+					return 0; // error: memory limit exceeded
+				}
 				out.encdatalen = pkt.size() - 13;
 				if (out.encdatalen == 0)
 					break; // no encrypted session key
-				tmcg_openpgp_mem_alloc += out.encdatalen;
-				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-				{
-					tmcg_openpgp_mem_alloc -= out.encdatalen;
-					return 0; // error: memory limit exceeded
-				}
-				out.encdata =
-					new tmcg_openpgp_byte_t[out.encdatalen];
+				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = pkt[13+i];
 			}
@@ -8644,11 +8661,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mlen = PacketMPIDecode(mpis, qual[j]);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
-				mlen = PacketMPIDecode(mpis,
-					out.x_rvss_qualsize);
+				mlen = PacketMPIDecode(mpis, out.x_rvss_qualsize);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
@@ -8659,12 +8674,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				x_rvss_qual.resize(xqs);
 				for (size_t j = 0; j < xqs; j++)
 				{
-					mlen = PacketMPIDecode(mpis,
-						x_rvss_qual[j]);
+					mlen = PacketMPIDecode(mpis, x_rvss_qual[j]);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				size_t n = tmcg_get_gcry_mpi_ui(out.n);
 				size_t t = tmcg_get_gcry_mpi_ui(out.t);
@@ -8678,12 +8691,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				for (size_t j = 0; j < n; j++)
 				{
 					std::string peerid;
-					mlen = PacketStringDecode(mpis,
-						peerid);
+					mlen = PacketStringDecode(mpis, peerid);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 					capl.push_back(peerid);
 				}
 				c_ik.resize(n);
@@ -8692,13 +8703,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					c_ik[j].resize(t + 1);
 					for (size_t k = 0; k <= t; k++)
 					{
-						mlen = PacketMPIDecode(mpis,
-							c_ik[j][k]);
-						if (!mlen ||
-						    (mlen > mpis.size()))
+						mlen = PacketMPIDecode(mpis, c_ik[j][k]);
+						if (!mlen || (mlen > mpis.size()))
 							return 0; // error
-						mpis.erase(mpis.begin(),
-							mpis.begin()+mlen);
+						mpis.erase(mpis.begin(), mpis.begin()+mlen);
 					}
 				}
 			}
@@ -8750,19 +8758,16 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mlen = PacketMPIDecode(mpis, qual[j]);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				capl.clear();
 				for (size_t j = 0; j < qs; j++)
 				{
 					std::string peerid;
-					mlen = PacketStringDecode(mpis,
-						peerid);
+					mlen = PacketStringDecode(mpis, peerid);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 					capl.push_back(peerid);
 				}
 				size_t n = tmcg_get_gcry_mpi_ui(out.n);
@@ -8775,13 +8780,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					c_ik[j].resize(t + 1);
 					for (size_t k = 0; k <= t; k++)
 					{
-						mlen = PacketMPIDecode(mpis,
-							c_ik[j][k]);
-						if (!mlen || 
-						    (mlen > mpis.size()))
+						mlen = PacketMPIDecode(mpis, c_ik[j][k]);
+						if (!mlen || (mlen > mpis.size()))
 							return 0; // error
-						mpis.erase(mpis.begin(),
-							mpis.begin()+mlen);
+						mpis.erase(mpis.begin(), mpis.begin()+mlen);
 					}
 				}
 			}
@@ -8833,8 +8835,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mlen = PacketMPIDecode(mpis, qual[j]);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				size_t n = tmcg_get_gcry_mpi_ui(out.n);
 				size_t t = tmcg_get_gcry_mpi_ui(out.t);
@@ -8846,8 +8847,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mlen = PacketMPIDecode(mpis, v_i[j]);
 					if (!mlen || (mlen > mpis.size()))
 						return 0; // error
-					mpis.erase(mpis.begin(),
-						mpis.begin()+mlen);
+					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				c_ik.resize(n);
 				for (size_t j = 0; j < n; j++)
@@ -8855,13 +8855,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					c_ik[j].resize(t + 1);
 					for (size_t k = 0; k <= t; k++)
 					{
-						mlen = PacketMPIDecode(mpis,
-							c_ik[j][k]);
-						if (!mlen ||
-						    (mlen > mpis.size()))
+						mlen = PacketMPIDecode(mpis, c_ik[j][k]);
+						if (!mlen || (mlen > mpis.size()))
 							return 0; // error
-						mpis.erase(mpis.begin(),
-							mpis.begin()+mlen);
+						mpis.erase(mpis.begin(), mpis.begin()+mlen);
 					}
 				}
 			}
@@ -9002,15 +8999,16 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				mpis.erase(mpis.begin(), mpis.begin()+ivlen);
 				if (mpis.size() < 4)
 					return 0; // error: bad encrypted data
-				out.encdatalen = mpis.size();
-				tmcg_openpgp_mem_alloc += out.encdatalen;
+				if (out.encdatalen != 0)
+					return 0; // already seen within context
+				tmcg_openpgp_mem_alloc += mpis.size();
 				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
 				{
-					tmcg_openpgp_mem_alloc -= out.encdatalen;
+					tmcg_openpgp_mem_alloc -= mpis.size();
 					return 0; // error: memory limit exceeded
 				}
-				out.encdata =
-					new tmcg_openpgp_byte_t[out.encdatalen];
+				out.encdatalen = mpis.size();
+				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
 				for (size_t i = 0; i < out.encdatalen; i++)
 					out.encdata[i] = mpis[i];
 			}
@@ -9129,28 +9127,31 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (pkt.size() < 2)
 				return 0; // error: incorrect packet body
 			out.compalgo = (tmcg_openpgp_compalgo_t)pkt[0];
-			out.compdatalen = pkt.size() - 1;
-			tmcg_openpgp_mem_alloc += out.compdatalen;
+			if (out.compdatalen != 0)
+				return 0; // error: already seen within context
+			tmcg_openpgp_mem_alloc += (pkt.size() - 1);
 			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
 			{
-				tmcg_openpgp_mem_alloc -= out.compdatalen;
+				tmcg_openpgp_mem_alloc -= (pkt.size() - 1);
 				return 0; // error: memory limit exceeded
 			}
-			out.compdata =
-				new tmcg_openpgp_byte_t[out.compdatalen];
+			out.compdatalen = pkt.size() - 1;
+			out.compdata = new tmcg_openpgp_byte_t[out.compdatalen];
 			for (size_t i = 0; i < out.compdatalen; i++)
 				out.compdata[i] = pkt[1+i];
 			break;
 		case 9: // Symmetrically Encrypted Data Packet
 			if (pkt.size() == 0)
 				return 0; // error: empty packet body
-			out.encdatalen = pkt.size();
-			tmcg_openpgp_mem_alloc += out.encdatalen;
+			if (out.encdatalen != 0)
+				return 0; // error: already seen within context
+			tmcg_openpgp_mem_alloc += pkt.size();
 			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
 			{
-				tmcg_openpgp_mem_alloc -= out.encdatalen;
+				tmcg_openpgp_mem_alloc -= pkt.size();
 				return 0; // error: memory limit exceeded
 			}
+			out.encdatalen = pkt.size();
 			out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
 			for (size_t i = 0; i < out.encdatalen; i++)
 				out.encdata[i] = pkt[i];
@@ -9177,13 +9178,15 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				(pkt[4+out.datafilenamelen] << 16) +
 				(pkt[5+out.datafilenamelen] << 8) +
 				pkt[6+out.datafilenamelen];
-			out.datalen = pkt.size() - (out.datafilenamelen + 6);
-			tmcg_openpgp_mem_alloc += out.datalen;
+			if (out.datalen != 0)
+				return 0; // error: already seen within context
+			tmcg_openpgp_mem_alloc += (pkt.size() - (out.datafilenamelen + 6));
 			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
 			{
-				tmcg_openpgp_mem_alloc -= out.datalen;
+				tmcg_openpgp_mem_alloc -= (pkt.size()-(out.datafilenamelen+6));
 				return 0; // error: memory limit exceeded
 			}
+			out.datalen = pkt.size() - (out.datafilenamelen + 6);
 			out.data = new tmcg_openpgp_byte_t[out.datalen];
 			for (size_t i = 0; i < out.datalen; i++)
 				out.data[i] = pkt[6+out.datafilenamelen+i];
@@ -9193,13 +9196,15 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		case 13: // User ID Packet
 			if (pkt.size() < 1)
 				return 0; // error: incorrect packet body
-			out.uiddatalen = pkt.size();
-			tmcg_openpgp_mem_alloc += out.uiddatalen;
+			if (out.uiddatalen != 0)
+				return 0; // error: already seen within context
+			tmcg_openpgp_mem_alloc += pkt.size();
 			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
 			{
-				tmcg_openpgp_mem_alloc -= out.uiddatalen;
+				tmcg_openpgp_mem_alloc -= pkt.size();
 				return 0; // error: memory limit exceeded
 			}
+			out.uiddatalen = pkt.size();
 			out.uiddata = new tmcg_openpgp_byte_t[out.uiddatalen];
 			for (size_t i = 0; i < out.uiddatalen; i++)
 				out.uiddata[i] = pkt[i];
@@ -9207,13 +9212,15 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		case 17: // User Attribute Packet
 			if (pkt.size() < 2)
 				return 0; // error: incorrect packet body
-			out.uatdatalen = pkt.size();
-			tmcg_openpgp_mem_alloc += out.uatdatalen;
+			if (out.uatdatalen != 0)
+				return 0; // error: already seen within context
+			tmcg_openpgp_mem_alloc += pkt.size();
 			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
 			{
-				tmcg_openpgp_mem_alloc -= out.uatdatalen;
+				tmcg_openpgp_mem_alloc -= pkt.size();
 				return 0; // error: memory limit exceeded
 			}
+			out.uatdatalen = pkt.size();
 			out.uatdata = new tmcg_openpgp_byte_t[out.uatdatalen];
 			for (size_t i = 0; i < out.uatdatalen; i++)
 				out.uatdata[i] = pkt[i];
@@ -9224,13 +9231,15 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			out.version = pkt[0];
 			if (out.version != 1)
 				return 0; // error: version not supported
-			out.encdatalen = pkt.size() - 1;
-			tmcg_openpgp_mem_alloc += out.encdatalen;
+			if (out.encdatalen != 0)
+				return 0; // error: already seen within context
+			tmcg_openpgp_mem_alloc += (pkt.size() - 1);
 			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
 			{
-				tmcg_openpgp_mem_alloc -= out.encdatalen;
+				tmcg_openpgp_mem_alloc -= (pkt.size() - 1);
 				return 0; // error: memory limit exceeded
 			}
+			out.encdatalen = pkt.size() - 1;
 			out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
 			for (size_t i = 0; i < out.encdatalen; i++)
 				out.encdata[i] = pkt[1+i];
@@ -9363,6 +9372,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextRelease
 		delete [] ctx.uatdata;
 		if (tmcg_openpgp_mem_alloc >= ctx.uatdatalen)
 			tmcg_openpgp_mem_alloc -= ctx.uatdatalen;
+	}
+	if (ctx.embeddedsignature != NULL)
+	{
+		delete [] ctx.embeddedsignature;
+		if (tmcg_openpgp_mem_alloc >= ctx.embeddedsignaturelen)
+			tmcg_openpgp_mem_alloc -= ctx.embeddedsignaturelen;
 	}
 }
 
@@ -10903,7 +10918,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	// and should have a later creation date than that certificate.
 	TMCG_OpenPGP_Signature *sig = NULL;
 	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, keyflags;
-	tmcg_openpgp_octets_t features, psa, pha, pca;
+	tmcg_openpgp_octets_t features, psa, pha, pca, embeddedsig;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
 	switch (ctx.issuerkeyversion)
@@ -10929,6 +10944,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		pha.push_back(ctx.pha[i]);
 	for (size_t i = 0; i < ctx.pcalen; i++)
 		pca.push_back(ctx.pca[i]);
+	for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
+		embeddedsig.push_back(ctx.embeddedsignature[i]);
 	if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 	    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 	{
@@ -10941,7 +10958,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.md, current_packet, hspd,
-			issuer, issuerfpr, keyflags, features, psa, pha, pca);
+			issuer, issuerfpr, keyflags, features, psa, pha, pca, embeddedsig);
 	}
 	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
@@ -10955,8 +10972,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
-			ctx.keyexpirationtime, ctx.r, ctx.s, current_packet,
-			hspd, issuer, issuerfpr, keyflags, features, psa, pha, pca);
+			ctx.keyexpirationtime, ctx.r, ctx.s, current_packet, hspd,
+			issuer, issuerfpr, keyflags, features, psa, pha, pca, embeddedsig);
 	}
 	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 	{
@@ -10970,8 +10987,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
-			ctx.keyexpirationtime, ctx.r, ctx.s, current_packet,
-			hspd, issuer, issuerfpr, keyflags, features, psa, pha, pca);
+			ctx.keyexpirationtime, ctx.r, ctx.s, current_packet, hspd,
+			issuer, issuerfpr, keyflags, features, psa, pha, pca, embeddedsig);
 	}
 	else
 	{
@@ -11030,7 +11047,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				// Embedded Signature subpacket in this binding signature that
 				// contains a 0x19 signature made by the signing subkey on the
 				// primary key and subkey.
-				if (ctx.embeddedsignaturelen)
+				if (ctx.embeddedsignaturelen != 0)
 				{
 					PacketTagEncode(2, embedded_pkt);
 					PacketLengthEncode(ctx.embeddedsignaturelen, embedded_pkt);
@@ -12553,7 +12570,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		return false;
 	}
 	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, keyflags;
-	tmcg_openpgp_octets_t features, psa, pha, pca;
+	tmcg_openpgp_octets_t features, psa, pha, pca, embeddedsig;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
 	switch (ctx.issuerkeyversion)
@@ -12579,6 +12596,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		pha.push_back(ctx.pha[i]);
 	for (size_t i = 0; i < ctx.pcalen; i++)
 		pca.push_back(ctx.pca[i]);
+	for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
+		embeddedsig.push_back(ctx.embeddedsignature[i]);
 	switch (ptag)
 	{
 		case 2: // Signature Packet
@@ -12594,7 +12613,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
 					ctx.type, ctx.version, ctx.sigcreationtime,
 					ctx.sigexpirationtime, 0, ctx.md, current_packet,
-					hspd, issuer, issuerfpr, keyflags, features, psa, pha, pca);
+					hspd, issuer, issuerfpr, keyflags, features, psa, pha, pca,
+					embeddedsig);
 			}
 			else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
 				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
@@ -12610,7 +12630,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
 					ctx.type, ctx.version, ctx.sigcreationtime,
 					ctx.sigexpirationtime, 0, ctx.r, ctx.s, current_packet,
-					hspd, issuer, issuerfpr, keyflags, features, psa, pha, pca);
+					hspd, issuer, issuerfpr, keyflags, features, psa, pha, pca,
+					embeddedsig);
 			}
 			else
 			{

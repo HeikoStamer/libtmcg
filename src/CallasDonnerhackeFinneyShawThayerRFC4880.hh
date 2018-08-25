@@ -401,7 +401,7 @@ typedef struct
 	tmcg_openpgp_pkalgo_t		signaturetarget_pkalgo;
 	tmcg_openpgp_hashalgo_t 	signaturetarget_hashalgo;
 	tmcg_openpgp_byte_t			signaturetarget_hash[2048];
-	tmcg_openpgp_byte_t			embeddedsignature[8192]; // packet body
+	tmcg_openpgp_byte_t*		embeddedsignature; // allocated buffer with data
 	size_t						embeddedsignaturelen;
 	tmcg_openpgp_byte_t			issuerkeyversion;
 	tmcg_openpgp_byte_t			issuerfingerprint[32]; // SHA-1 or SHA256
@@ -499,6 +499,7 @@ class TMCG_OpenPGP_Signature
 		tmcg_openpgp_octets_t								keyprefs_pha;
 		tmcg_openpgp_octets_t								keyprefs_pca;
 		std::vector<tmcg_openpgp_revkey_t>					revkeys;
+		tmcg_openpgp_octets_t								embeddedsig;
 
 		TMCG_OpenPGP_Signature
 			(const bool										revocable_in,
@@ -519,7 +520,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&keyfeatures_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_psa_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
-			 const tmcg_openpgp_octets_t					&keyprefs_pca_in);
+			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
+			 const tmcg_openpgp_octets_t					&embeddedsig_in);
 		TMCG_OpenPGP_Signature
 			(const bool										revocable_in,
 			 const bool										exportable_in,
@@ -540,7 +542,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&keyfeatures_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_psa_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
-			 const tmcg_openpgp_octets_t					&keyprefs_pca_in);
+			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
+			 const tmcg_openpgp_octets_t					&embeddedsig_in);
 		bool good
 			() const;
 		void PrintInfo
