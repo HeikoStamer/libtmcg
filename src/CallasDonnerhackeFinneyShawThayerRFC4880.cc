@@ -963,6 +963,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		sub_hashing.push_back(sub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(sub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		FingerprintCompute(sub_hashing, fingerprint);
 }
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
@@ -1008,6 +1010,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		sub_hashing.push_back(sub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(sub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		FingerprintCompute(sub_hashing, fingerprint);
 }
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
@@ -1055,6 +1059,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		sub_hashing.push_back(sub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(sub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		FingerprintCompute(sub_hashing, fingerprint);
 }
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
@@ -1118,6 +1124,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		sub_hashing.push_back(sub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(sub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		FingerprintCompute(sub_hashing, fingerprint);
 }
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
@@ -1183,6 +1191,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		sub_hashing.push_back(sub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(sub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		FingerprintCompute(sub_hashing, fingerprint);
 }
 
 bool TMCG_OpenPGP_Subkey::good
@@ -1481,6 +1491,10 @@ bool TMCG_OpenPGP_Subkey::Check
 		std::cerr << "INFO: key ID of subkey: " << std::hex;
 		for (size_t i = 0; i < id.size(); i++)
 			std::cerr << (int)id[i] << " ";
+		std::cerr << std::dec << std::endl;
+		std::cerr << "INFO: fingerprint of subkey: " << std::hex;
+		for (size_t i = 0; i < fingerprint.size(); i++)
+			std::cerr << (int)fingerprint[i] << " ";
 		std::cerr << std::dec << std::endl;
 		std::cerr << "INFO: number of selfsigs = " << 
 			selfsigs.size() << std::endl;
@@ -2410,6 +2424,8 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		pub_hashing.push_back(pub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(pub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		FingerprintCompute(pub_hashing, fingerprint);
 }
 
 TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
@@ -2452,6 +2468,8 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		pub_hashing.push_back(pub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(pub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		FingerprintCompute(pub_hashing, fingerprint);
 }
 
 TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
@@ -2510,6 +2528,8 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		pub_hashing.push_back(pub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(pub_hashing, id);
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		FingerprintCompute(pub_hashing, fingerprint);
 }
 
 bool TMCG_OpenPGP_Pubkey::good
@@ -2754,6 +2774,10 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		std::cerr << "INFO: key ID of primary key: " << std::hex;
 		for (size_t i = 0; i < id.size(); i++)
 			std::cerr << (int)id[i] << " ";
+		std::cerr << std::dec << std::endl;
+		std::cerr << "INFO: fingerprint of primary key: " << std::hex;
+		for (size_t i = 0; i < fingerprint.size(); i++)
+			std::cerr << (int)fingerprint[i] << " ";
 		std::cerr << std::dec << std::endl;
 		std::cerr << "INFO: number of selfsigs = " << 
 			selfsigs.size() << std::endl;

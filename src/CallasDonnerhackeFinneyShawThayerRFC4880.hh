@@ -670,6 +670,7 @@ class TMCG_OpenPGP_Subkey
 		tmcg_openpgp_octets_t								packet;
 		tmcg_openpgp_octets_t								sub_hashing;
 		tmcg_openpgp_octets_t								id;
+		tmcg_openpgp_octets_t								fingerprint;
 		tmcg_openpgp_octets_t								flags;
 		tmcg_openpgp_octets_t								features;
 		tmcg_openpgp_octets_t								psa;
@@ -889,6 +890,7 @@ class TMCG_OpenPGP_Pubkey
 		tmcg_openpgp_octets_t								packet;
 		tmcg_openpgp_octets_t								pub_hashing;
 		tmcg_openpgp_octets_t								id;
+		tmcg_openpgp_octets_t								fingerprint;
 		tmcg_openpgp_octets_t								flags;
 		tmcg_openpgp_octets_t								features;
 		tmcg_openpgp_octets_t								psa;
