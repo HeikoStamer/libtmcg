@@ -19,7 +19,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20180519.
+Revision 20180826.
 
 Copyright @copyright{} 2005--2007, 2009, 2015--2018 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
@@ -638,12 +638,25 @@ The first step is the initialization of LibTMCG. The following
 function must be invoked early in your program, i.e., before
 you make use of any other capability of LibTMCG.
 
-@deftypefun bool init_libTMCG ()
+@deftypefun bool init_libTMCG (@code{const bool} force_secmem @code{=false}, @code{const bool} gmp_secmem @code{=false})
 The function checks whether the installed third-party libraries
 match their required versions. Further it initializes them
 and returns @code{true}, if everything was sound. Otherwise
 @code{false} is returned and an appropriate error message
 is sent to @code{std::cerr}.
+
+The two optional arguments define the behaviour concerning the allocation
+of secure memory (i.e. memory that is not paged out to disk and that is
+overwritten by zeros before released) from libgcrypt. If @code{force_secmem}
+is true, than those parts of LibTMCG that use the GNU Crypto Library will
+allocate and use secure memory for private keys or other secrets. However,
+the most classes, algorithms, and protocols of LibTMCG does not respect this
+option yet, because they store their secrets with the GNU Multiple Precision
+Arithmetic Library. With the second option @code{gmp_secmem} the default
+memory allocator of this library is replaced to use secure memory. Unfortunately,
+there is no way to specify whether a big integer needs secure memory and thus
+all memory is allocated in this fashion. This may lead to out of memory aborts,
+because the allocated secure memory is limited (currently 32kB).
 @end deftypefun
 
 Additionally, the function @code{version_libTMCG} returns a string
