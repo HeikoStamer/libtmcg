@@ -55,19 +55,19 @@
 template<class T> class TMCG_SecureAlloc
 {
 	public:
-		typedef T		value_type;
+		typedef T			value_type;
 		typedef size_t		size_type;
 		typedef ptrdiff_t	difference_type;
-		typedef T*		pointer;
+		typedef T*			pointer;
 		typedef const T*	const_pointer;
-		typedef T&		reference;
+		typedef T&			reference;
 		typedef const T&	const_reference;
-		pointer 		address
+		pointer address
 			(reference r) const
 		{
 			return &r;
 		}
-		const_pointer		address
+		const_pointer address
 			(const_reference r) const
 		{
 			return &r;
@@ -78,27 +78,27 @@ template<class T> class TMCG_SecureAlloc
 		}
 		template<class U> TMCG_SecureAlloc
 			(const TMCG_SecureAlloc<U>&) throw();
-		pointer			allocate
+		pointer allocate
 			(size_type n, const void* hint = 0)
 		{
 			return static_cast<pointer>(gcry_malloc_secure(n));
 		}
-		void			deallocate
+		void deallocate
 			(pointer p, size_type n)
 		{
 			gcry_free(p);
 		}
-		void			construct
+		void construct
 			(pointer p, const T& value)
 		{
 			new (p) T(value);
 		}
-		void			destroy
+		void destroy
 			(pointer p)
 		{
 			p->~T();
 		}
-		size_type		max_size
+		size_type max_size
 			() const throw()
 		{
 			return 16384;
