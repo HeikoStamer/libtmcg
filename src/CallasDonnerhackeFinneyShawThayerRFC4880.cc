@@ -12408,23 +12408,23 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		else if (ptag == 0xFA)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized critical OpenPGP " <<
-					"subpacket found at packet #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized critical OpenPGP" <<
+					" subpacket found at packet #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore signature with critical subpacket
 		}
 		else if (ptag == 0xFB)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized OpenPGP " <<
+				std::cerr << "WARNING: unrecognized OpenPGP" <<
 					" subpacket found at packet #" << pnum << std::endl;
 			ptag = 0x02; // try to process signature anyway
 		}
 		else if (ptag == 0xFC)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized OpenPGP " <<
-					"signature packet found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized OpenPGP" <<
+					" signature packet found at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
@@ -12572,39 +12572,39 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	else if (ptag == 0xFA)
 	{
 		if (verbose)
-			std::cerr << "ERROR: unrecognized critical OpenPGP " <<
-				"signature subpacket found" << std::endl;
+			std::cerr << "ERROR: unrecognized critical OpenPGP" <<
+				" signature subpacket found" << std::endl;
 		PacketContextRelease(ctx);
 		return false;
 	}
 	else if (ptag == 0xFB)
 	{
 		if (verbose)
-			std::cerr << "WARNING: unrecognized OpenPGP " <<
-				"signature subpacket found" << std::endl;
+			std::cerr << "WARNING: unrecognized OpenPGP" <<
+				" signature subpacket found" << std::endl;
 		ptag = 0x02; // process signature anyway
 	}
 	else if (ptag == 0xFC)
 	{
 		if (verbose)
-			std::cerr << "ERROR: unrecognized OpenPGP " <<
-				"signature packet found " << std::endl;
+			std::cerr << "ERROR: unrecognized OpenPGP" <<
+				" signature packet found " << std::endl;
 		PacketContextRelease(ctx);
 		return false;
 	}
 	else if (ptag == 0xFD)
 	{
 		if (verbose)
-			std::cerr << "ERROR: unrecognized OpenPGP " <<
-				"key packet found" << std::endl;
+			std::cerr << "ERROR: unrecognized OpenPGP" <<
+				" key packet found" << std::endl;
 		PacketContextRelease(ctx);
 		return false;
 	}
 	else if (ptag == 0xFE)
 	{
 		if (verbose)
-			std::cerr << "ERROR: unrecognized OpenPGP " << 
-				"packet found" << std::endl;
+			std::cerr << "ERROR: unrecognized OpenPGP" << 
+				" packet found" << std::endl;
 		PacketContextRelease(ctx);
 		return false;
 	}
@@ -13002,8 +13002,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 			if (primary)
 			{
 				if (verbose)
-					std::cerr << "WARNING: unrecognized OpenPGP key packet " <<
-						"found at #" << pnum << std::endl;
+					std::cerr << "WARNING: unrecognized OpenPGP key packet" <<
+						" found at #" << pnum << std::endl;
 				if (!badkey && subkey)
 				{
 					prv->private_subkeys.push_back(sub);
@@ -13025,8 +13025,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		else if (ptag == 0xFE)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized OpenPGP packet " <<
-					"found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized OpenPGP packet" <<
+					" found at #" << pnum << std::endl;
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
