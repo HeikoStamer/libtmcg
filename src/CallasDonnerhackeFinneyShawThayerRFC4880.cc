@@ -1455,6 +1455,27 @@ bool TMCG_OpenPGP_Subkey::CheckValidity
 	return true;
 }
 
+bool TMCG_OpenPGP_Subkey::CheckValidityPeriod
+	(const time_t at, const int verbose) const
+{
+	time_t kmax = creationtime + expirationtime;
+	if (expirationtime && (at > kmax))
+	{
+		if (verbose)
+			std::cerr << "WARNING: not in validity period of subkey" <<
+				std::endl;
+		return false;
+	}
+	if (creationtime > at)
+	{
+		if (verbose)
+			std::cerr << "WARNING: not in validity period of subkey" <<
+				std::endl;
+		return false;
+	}
+	return true;
+}
+
 bool TMCG_OpenPGP_Subkey::CheckExternalRevocation
 	(TMCG_OpenPGP_Signature* sig, const TMCG_OpenPGP_Keyring* ring,
 	 const int verbose)
@@ -2735,6 +2756,27 @@ bool TMCG_OpenPGP_Pubkey::CheckValidity
 		if (verbose)
 			std::cerr << "WARNING: primary key has been " <<
 				"created in far future" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool TMCG_OpenPGP_Pubkey::CheckValidityPeriod
+	(const time_t at, const int verbose) const
+{
+	time_t kmax = creationtime + expirationtime;
+	if (expirationtime && (at > kmax))
+	{
+		if (verbose)
+			std::cerr << "WARNING: not in validity period of primary key" <<
+				std::endl;
+		return false;
+	}
+	if (creationtime > at)
+	{
+		if (verbose)
+			std::cerr << "WARNING: not in validity period of primary key" <<
+				std::endl;
 		return false;
 	}
 	return true;

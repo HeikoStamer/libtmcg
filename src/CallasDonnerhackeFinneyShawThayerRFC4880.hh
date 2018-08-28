@@ -743,6 +743,9 @@ class TMCG_OpenPGP_Subkey
 			 const int										verbose);
 		bool CheckValidity
 			(const int										verbose) const;
+		bool CheckValidityPeriod
+			(const time_t									at,
+			 const int										verbose) const;
 		bool CheckExternalRevocation
 			(TMCG_OpenPGP_Signature*						sig,
 			 const TMCG_OpenPGP_Keyring*					ring,
@@ -942,6 +945,9 @@ class TMCG_OpenPGP_Pubkey
 			 const int										verbose);
 		bool CheckValidity
 			(const int										verbose) const;
+		bool CheckValidityPeriod
+			(const time_t									at,
+			 const int										verbose) const;
 		bool CheckExternalRevocation
 			(TMCG_OpenPGP_Signature*						sig,
 			 const TMCG_OpenPGP_Keyring*					ring,
