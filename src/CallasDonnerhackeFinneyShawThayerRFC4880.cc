@@ -46,6 +46,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
 	 const time_t keyexptime_in,
+	 const tmcg_openpgp_revcode_t revcode_in,
 	 const gcry_mpi_t md,
 	 const tmcg_openpgp_octets_t &packet_in,
 	 const tmcg_openpgp_octets_t &hspd_in,
@@ -69,7 +70,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		version(version_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
-		keyexpirationtime(keyexptime_in)
+		keyexpirationtime(keyexptime_in),
+		revcode(revcode_in)
 {
 	rsa_md = gcry_mpi_new(2048);
 	dsa_r = gcry_mpi_new(2048);
@@ -109,6 +111,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const time_t creationtime_in,
 	 const time_t expirationtime_in,
 	 const time_t keyexptime_in,
+	 const tmcg_openpgp_revcode_t revcode_in,
 	 const gcry_mpi_t r,
 	 const gcry_mpi_t s,
 	 const tmcg_openpgp_octets_t &packet_in,
@@ -133,7 +136,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		version(version_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
-		keyexpirationtime(keyexptime_in)
+		keyexpirationtime(keyexptime_in),
+		revcode(revcode_in)
 {
 	rsa_md = gcry_mpi_new(2048);
 	dsa_r = gcry_mpi_new(2048);
@@ -188,6 +192,7 @@ void TMCG_OpenPGP_Signature::PrintInfo
 		" creationtime = " << creationtime <<
 		" expirationtime = " << expirationtime <<
 		" keyexpirationtime = " << keyexpirationtime <<
+		" revcode = " << (int)revcode <<
 		" packet.size() = " << packet.size() <<
 		" hspd.size() = " << hspd.size() <<
 		" issuer = " << std::hex;
@@ -7959,7 +7964,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				return 0; // error: too long subpacket body
 			if (pkt.size() < 1)
 				return 0; // error: too short subpacket body
-			out.revocationcode = pkt[0];
+			out.revocationcode = (tmcg_openpgp_revcode_t)pkt[0];
 			for (size_t i = 0; i < (pkt.size() - 1); i++)
 				out.revocationreason[i] = pkt[1+i];
 			break;
@@ -11038,8 +11043,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
-			ctx.keyexpirationtime, ctx.md, current_packet, hspd,
-			issuer, issuerfpr, keyflags, features, psa, pha, pca, embeddedsig);
+			ctx.keyexpirationtime, ctx.revocationcode, ctx.md,
+			current_packet, hspd, issuer, issuerfpr, keyflags, features,
+			psa, pha, pca, embeddedsig);
 	}
 	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
@@ -11053,8 +11059,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
-			ctx.keyexpirationtime, ctx.r, ctx.s, current_packet, hspd,
-			issuer, issuerfpr, keyflags, features, psa, pha, pca, embeddedsig);
+			ctx.keyexpirationtime, ctx.revocationcode, ctx.r, ctx.s,
+			current_packet, hspd, issuer, issuerfpr, keyflags, features,
+			psa, pha, pca, embeddedsig);
 	}
 	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 	{
@@ -11068,8 +11075,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
-			ctx.keyexpirationtime, ctx.r, ctx.s, current_packet, hspd,
-			issuer, issuerfpr, keyflags, features, psa, pha, pca, embeddedsig);
+			ctx.keyexpirationtime, ctx.revocationcode, ctx.r, ctx.s,
+			current_packet, hspd, issuer, issuerfpr, keyflags, features,
+			psa, pha, pca, embeddedsig);
 	}
 	else
 	{
@@ -12693,9 +12701,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 				sig = new TMCG_OpenPGP_Signature(ctx.revocable,
 					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
 					ctx.type, ctx.version, ctx.sigcreationtime,
-					ctx.sigexpirationtime, 0, ctx.md, current_packet,
-					hspd, issuer, issuerfpr, keyflags, features, psa, pha, pca,
-					embeddedsig);
+					ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.md,
+					current_packet, hspd, issuer, issuerfpr, keyflags, features,
+					psa, pha, pca, embeddedsig);
 			}
 			else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
 				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
@@ -12710,9 +12718,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 				sig = new TMCG_OpenPGP_Signature(ctx.revocable,
 					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
 					ctx.type, ctx.version, ctx.sigcreationtime,
-					ctx.sigexpirationtime, 0, ctx.r, ctx.s, current_packet,
-					hspd, issuer, issuerfpr, keyflags, features, psa, pha, pca,
-					embeddedsig);
+					ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.r, ctx.s,
+					current_packet, hspd, issuer, issuerfpr, keyflags, features,
+					psa, pha, pca, embeddedsig);
 			}
 			else
 			{

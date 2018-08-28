@@ -149,6 +149,26 @@ enum tmcg_openpgp_signature_t
 	TMCG_OPENPGP_SIGNATURE_THIRD_PARTY_CONFIRMATION	= 0x50
 };
 
+enum tmcg_openpgp_revcode_t
+{
+	TMCG_OPENPGP_REVCODE_NO_REASON_SPECIFIED		= 0,
+	TMCG_OPENPGP_REVCODE_KEY_SUPERSEDED				= 1,
+	TMCG_OPENPGP_REVCODE_KEY_COMPROMISED			= 2,
+	TMCG_OPENPGP_REVCODE_KEY_RETIRED				= 3,
+	TMCG_OPENPGP_REVCODE_UID_NO_LONGER_VALID		= 32,
+	TMCG_OPENPGP_REVCODE_EXPERIMENTAL0				= 100,
+	TMCG_OPENPGP_REVCODE_EXPERIMENTAL1				= 101,
+	TMCG_OPENPGP_REVCODE_EXPERIMENTAL2				= 102,
+	TMCG_OPENPGP_REVCODE_EXPERIMENTAL3				= 103,
+	TMCG_OPENPGP_REVCODE_EXPERIMENTAL4				= 104,
+	TMCG_OPENPGP_REVCODE_EXPERIMENTAL5				= 105,
+	TMCG_OPENPGP_REVCODE_EXPERIMENTAL6				= 106,
+	TMCG_OPENPGP_REVCODE_EXPERIMENTAL7				= 107,
+	TMCG_OPENPGP_REVCODE_EXPERIMENTAL8				= 108,
+	TMCG_OPENPGP_REVCODE_EXPERIMENTAL9				= 109,
+	TMCG_OPENPGP_REVCODE_EXPERIMENTAL10				= 110
+};
+
 enum tmcg_openpgp_armor_t
 {
 	TMCG_OPENPGP_ARMOR_UNKNOWN				= 0,
@@ -394,7 +414,7 @@ typedef struct
 	size_t						keyflagslen;
 	tmcg_openpgp_byte_t			keyflags[32]; // n-octets of flags
 	tmcg_openpgp_byte_t			signersuserid[2048]; // string
-	tmcg_openpgp_byte_t			revocationcode;
+	tmcg_openpgp_revcode_t		revocationcode;
 	tmcg_openpgp_byte_t			revocationreason[2048]; // string
 	size_t						featureslen;
 	tmcg_openpgp_byte_t			features[32]; // n-octets of flags
@@ -485,6 +505,7 @@ class TMCG_OpenPGP_Signature
 		time_t												creationtime;
 		time_t												expirationtime;
 		time_t												keyexpirationtime;
+		tmcg_openpgp_revcode_t								revcode;
 		gcry_sexp_t											signature;
 		gcry_mpi_t											rsa_md;
 		gcry_mpi_t											dsa_r;
@@ -511,6 +532,7 @@ class TMCG_OpenPGP_Signature
 			 const time_t									creationtime_in,
 			 const time_t									expirationtime_in,
 			 const time_t									keyexptime_in,
+			 const tmcg_openpgp_revcode_t					revcode_in,
 			 const gcry_mpi_t								md,
 			 const tmcg_openpgp_octets_t					&packet_in,
 			 const tmcg_openpgp_octets_t					&hspd_in,
@@ -532,6 +554,7 @@ class TMCG_OpenPGP_Signature
 			 const time_t									creationtime_in,
 			 const time_t									expirationtime_in,
 			 const time_t									keyexptime_in,
+			 const tmcg_openpgp_revcode_t					revcode_in,
 			 const gcry_mpi_t								r,
 			 const gcry_mpi_t								s,
 			 const tmcg_openpgp_octets_t					&packet_in,
