@@ -1354,6 +1354,21 @@ size_t TMCG_OpenPGP_Subkey::AccumulateFeatures
 	return allfeatures;
 }
 
+tmcg_openpgp_revcode_t TMCG_OpenPGP_Subkey::AccumulateRevocationCodes
+	() const
+{
+	tmcg_openpgp_revcode_t revcode = TMCG_OPENPGP_REVCODE_NO_REASON_SPECIFIED;
+	for (size_t j = 0; j < keyrevsigs.size(); j++)
+	{
+		if ((revcode == TMCG_OPENPGP_REVCODE_NO_REASON_SPECIFIED) ||
+			(revcode == TMCG_OPENPGP_REVCODE_KEY_COMPROMISED))
+		{
+			revcode = keyrevsigs[j]->revcode;
+		}
+	}
+	return revcode;
+}
+
 void TMCG_OpenPGP_Subkey::UpdateProperties
 	(const TMCG_OpenPGP_Signature *sig,
 	 const int verbose)
@@ -1488,20 +1503,20 @@ bool TMCG_OpenPGP_Subkey::CheckExternalRevocation
 	bool valid_revsig = false;
 	for (size_t k = 0; k < revkeys.size(); k++)
 	{
-			tmcg_openpgp_octets_t fpr(revkeys[k].key_fingerprint,
-				revkeys[k].key_fingerprint+sizeof(revkeys[k].key_fingerprint));
-			std::string fprstr;
-			CallasDonnerhackeFinneyShawThayerRFC4880::
-				FingerprintConvertPlain(fpr, fprstr);
-			if (verbose > 2)
-				std::cerr << "INFO: looking for external revocation" <<
-					" key with fingerprint " << fprstr << std::endl;
-			const TMCG_OpenPGP_Pubkey *revkey = ring->find(fprstr);
-			if (revkey != NULL)
-			{
-				if (sig->Verify(revkey->key, sub_hashing, verbose))
-					valid_revsig = true;
-			}
+		tmcg_openpgp_octets_t fpr(revkeys[k].key_fingerprint,
+			revkeys[k].key_fingerprint+sizeof(revkeys[k].key_fingerprint));
+		std::string fprstr;
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			FingerprintConvertPlain(fpr, fprstr);
+		if (verbose > 2)
+			std::cerr << "INFO: looking for external revocation" <<
+				" key with fingerprint " << fprstr << std::endl;
+		const TMCG_OpenPGP_Pubkey *revkey = ring->find(fprstr);
+		if (revkey != NULL)
+		{
+			if (sig->Verify(revkey->key, sub_hashing, verbose))
+				valid_revsig = true;
+		}
 	}
 	return valid_revsig;
 }
@@ -2643,6 +2658,21 @@ size_t TMCG_OpenPGP_Pubkey::AccumulateFlags
 			break;
 	}
 	return allflags;
+}
+
+tmcg_openpgp_revcode_t TMCG_OpenPGP_Pubkey::AccumulateRevocationCodes
+	() const
+{
+	tmcg_openpgp_revcode_t revcode = TMCG_OPENPGP_REVCODE_NO_REASON_SPECIFIED;
+	for (size_t j = 0; j < keyrevsigs.size(); j++)
+	{
+		if ((revcode == TMCG_OPENPGP_REVCODE_NO_REASON_SPECIFIED) ||
+			(revcode == TMCG_OPENPGP_REVCODE_KEY_COMPROMISED))
+		{
+			revcode = keyrevsigs[j]->revcode;
+		}
+	}
+	return revcode;
 }
 
 size_t TMCG_OpenPGP_Pubkey::AccumulateFeatures

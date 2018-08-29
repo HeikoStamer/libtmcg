@@ -761,6 +761,8 @@ class TMCG_OpenPGP_Subkey
 			() const;
 		size_t AccumulateFeatures
 			() const;
+		tmcg_openpgp_revcode_t AccumulateRevocationCodes
+			() const;
 		void UpdateProperties
 			(const TMCG_OpenPGP_Signature*					sig,
 			 const int										verbose);
@@ -962,6 +964,8 @@ class TMCG_OpenPGP_Pubkey
 		size_t AccumulateFlags
 			() const;
 		size_t AccumulateFeatures
+			() const;
+		tmcg_openpgp_revcode_t AccumulateRevocationCodes
 			() const;
 		void UpdateProperties
 			(const TMCG_OpenPGP_Signature*					sig,
