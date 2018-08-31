@@ -10,5 +10,6 @@ in the sources of this package and additionally can be obtained from Internet
 
 OpenBSD: some test programs may fail due to restrictive rlimits (kern.maxfiles)
 All: t-seabp, t-dkg, t-astc2 may fail due to timeouts (missing synchronization)
+All: EdDSA is only supported by recent versions of libgcrypt (>= 1.7.0)
 
 No further bugs are known. Please report!

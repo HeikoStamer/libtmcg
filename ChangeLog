@@ -7,6 +7,8 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-08-31] RFC4880: added support for EdDSA (algorithm 22) from RFC 4880bis
+* [2018-08-28] RFC4880: added AccumulateRevocationCodes()
 * [2018-08-28] RFC4880: added tmcg_openpgp_revcode_t
 * [2018-08-24] RFC4880: added types and parameters for Notation Data
 * [2018-08-23] RFC4880: added StandaloneHash[V3]() and PacketBodyExtract()

@@ -150,6 +150,9 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 		ret = gcry_sexp_build(&signature, &erroff,
 			"(sig-val (ecdsa (r %M) (s %M)))", r, s);
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+		ret = gcry_sexp_build(&signature, &erroff,
+			"(sig-val (eddsa (r %M) (s %M)))", r, s);
 	else
 		signature = NULL;
 	packet.insert(packet.end(),
@@ -268,6 +271,11 @@ bool TMCG_OpenPGP_Signature::CheckIntegrity
 	{
 		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			AsymmetricVerifyECDSA(hash, key, dsa_r, dsa_s);
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+	{
+		vret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			AsymmetricVerifyEdDSA(hash, key, dsa_r, dsa_s);
 	}
 	else
 	{
@@ -1096,7 +1104,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	dsa_g = gcry_mpi_new(8);
 	dsa_y = gcry_mpi_new(8);
 	ec_pk = gcry_mpi_new(1024);
-	// public-key algorithm is ECDSA
+	// public-key algorithm is ECDSA/EdDSA
 	gcry_mpi_set(ec_pk, ecpk);
 	const char *curve = NULL;
 	std::string ec_unknown = "unknown";
@@ -1118,8 +1126,12 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		ec_curve = curve;
 	else
 		curve = ec_unknown.c_str();
-	ret = gcry_sexp_build(&key, &erroff,
-		"(public-key (ecdsa (curve %s) (q %m)))", curve, ecpk);
+	if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) 
+		ret = gcry_sexp_build(&key, &erroff,
+			"(public-key (ecdsa (curve %s) (q %m)))", curve, ecpk);
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+		ret = gcry_sexp_build(&key, &erroff,
+			"(public-key (ecc (curve %s) (flags eddsa) (q %m)))", curve, ecpk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -1318,6 +1330,25 @@ bool TMCG_OpenPGP_Subkey::weak
 		{
 			if (verbose)
 				std::cerr << "WARNING: ECDSA with unknown curve" << std::endl;
+			return true; // unknown curve
+		}
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+	{
+		unsigned int curvebits = 0;
+		const char *curvename = gcry_pk_get_curve(key, 0, &curvebits);
+		if (curvename != NULL)
+		{
+			if (verbose > 1)
+				std::cerr << "INFO: EdDSA with curve \"" << curvename <<
+					"\" and " << curvebits << " bits" << std::endl;
+			if (curvebits < 256)
+				return true; // weak key
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "WARNING: EdDSA with unknown curve" << std::endl;
 			return true; // unknown curve
 		}
 	}
@@ -2080,7 +2111,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	telg_h = gcry_mpi_new(8);
 	telg_x_i = gcry_mpi_snew(8);
 	telg_xprime_i = gcry_mpi_snew(8);
-	// public-key algorithm is ECDSA
+	// public-key algorithm is ECDSA/EdDSA
 	gcry_mpi_set(ec_sk, ecsk);
 	const char *curve = NULL;
 	std::string ec_unknown = "unknown";
@@ -2102,8 +2133,14 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		ec_curve = curve;
 	else
 		curve = ec_unknown.c_str();
-	ret = gcry_sexp_build(&private_key, &erroff,
-		"(private-key (ecdsa (curve %s) (q %m) (d %m)))", curve, ecpk, ecsk);
+	if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+		ret = gcry_sexp_build(&private_key, &erroff,
+			"(private-key (ecdsa (curve %s) (q %m) (d %m)))",
+			curve, ecpk, ecsk);
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+		ret = gcry_sexp_build(&private_key, &erroff,
+			"(private-key (ecc (curve %s) (flags eddsa) (q %m) (d %m)))",
+			curve, ecpk, ecsk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
@@ -2225,6 +2262,7 @@ bool TMCG_OpenPGP_PrivateSubkey::weak
 		return pub->weak(verbose);
 	}
 	else if ((pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+		(pkalgo == TMCG_OPENPGP_PKALGO_EDDSA) ||
 		(pkalgo == TMCG_OPENPGP_PKALGO_ECDH))
 	{
 		unsigned int skbits = 0;
@@ -2536,7 +2574,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	dsa_g = gcry_mpi_new(8);
 	dsa_y = gcry_mpi_new(8);
 	ec_pk = gcry_mpi_new(1024);
-	// public-key algorithm is ECDSA
+	// public-key algorithm is ECDSA/EdDSA
 	gcry_mpi_set(ec_pk, ecpk);
 	const char *curve = NULL;
 	std::string ec_unknown = "unknown";
@@ -2558,8 +2596,12 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		ec_curve = curve;
 	else
 		curve = ec_unknown.c_str();
-	ret = gcry_sexp_build(&key, &erroff,
-		"(public-key (ecdsa (curve %s) (q %m)))", curve, ecpk);
+	if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+		ret = gcry_sexp_build(&key, &erroff,
+			"(public-key (ecdsa (curve %s) (q %m)))", curve, ecpk);
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+		ret = gcry_sexp_build(&key, &erroff,
+			"(public-key (ecc (curve %s) (flags eddsa) (q %m)))", curve, ecpk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	tmcg_openpgp_octets_t pub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -2638,6 +2680,25 @@ bool TMCG_OpenPGP_Pubkey::weak
 		{
 			if (verbose)
 				std::cerr << "WARNING: ECDSA with unknown curve" << std::endl;
+			return true; // unknown curve
+		}
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+	{
+		unsigned int curvebits = 0;
+		const char *curvename = gcry_pk_get_curve(key, 0, &curvebits);
+		if (curvename != NULL)
+		{
+			if (verbose > 1)
+				std::cerr << "INFO: EdDSA with curve \"" << curvename <<
+					"\" and " << curvebits << " bits" << std::endl;
+			if (curvebits < 256)
+				return true; // weak key
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "WARNING: EdDSA with unknown curve" << std::endl;
 			return true; // unknown curve
 		}
 	}
@@ -3523,7 +3584,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	tdss_h = gcry_mpi_new(8);
 	tdss_x_i = gcry_mpi_snew(8);
 	tdss_xprime_i = gcry_mpi_snew(8);
-	// public-key algorithm is ECDSA
+	// public-key algorithm is ECDSA/EdDSA
 	gcry_mpi_set(ec_sk, ecsk);
 	const char *curve = NULL;
 	std::string ec_unknown = "unknown";
@@ -3545,8 +3606,14 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		ec_curve = curve;
 	else
 		curve = ec_unknown.c_str();
-	ret = gcry_sexp_build(&private_key, &erroff,
-		"(private-key (ecdsa (curve %s) (q %m) (d %m)))", curve, ecpk, ecsk);
+	if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+		ret = gcry_sexp_build(&private_key, &erroff,
+			"(private-key (ecdsa (curve %s) (q %m) (d %m)))",
+			curve, ecpk, ecsk);
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+		ret = gcry_sexp_build(&private_key, &erroff,
+			"(private-key (ecc (curve %s) (flags eddsa) (q %m) (d %m)))",
+			curve, ecpk, ecsk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
@@ -3603,6 +3670,17 @@ bool TMCG_OpenPGP_Prvkey::weak
 		skbits = gcry_mpi_get_nbits(ec_sk);
 		if (verbose > 1)
 			std::cerr << "INFO: ECDSA with |x| = " <<
+				skbits << " bits" << std::endl;
+		if (skbits < 250)
+			return true; // weak key
+		return pub->weak(verbose);
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+	{
+		unsigned int skbits = 0;
+		skbits = gcry_mpi_get_nbits(ec_sk);
+		if (verbose > 1)
+			std::cerr << "INFO: EdDSA with |x| = " <<
 				skbits << " bits" << std::endl;
 		if (skbits < 250)
 			return true; // weak key
@@ -3895,6 +3973,7 @@ size_t TMCG_OpenPGP_Keyring::list
 					break;
 				case TMCG_OPENPGP_PKALGO_ECDH:
 				case TMCG_OPENPGP_PKALGO_ECDSA:
+				case TMCG_OPENPGP_PKALGO_EDDSA:
 					if (gcry_pk_get_curve(pub->key, 0, &curvebits) != NULL)
 						std::cout << curvebits << ":";
 					else
@@ -3932,7 +4011,8 @@ size_t TMCG_OpenPGP_Keyring::list
 				if ((pub->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 					(pub->pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
 					(pub->pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
-					(pub->pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
+					(pub->pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+					(pub->pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
 						std::cout << "s";
 			}
 			std::cout << ":";
@@ -4038,6 +4118,7 @@ size_t TMCG_OpenPGP_Keyring::list
 						break;
 					case TMCG_OPENPGP_PKALGO_ECDH:
 					case TMCG_OPENPGP_PKALGO_ECDSA:
+					case TMCG_OPENPGP_PKALGO_EDDSA:
 						if (gcry_pk_get_curve(sub->key, 0, &curvebits) != NULL)
 							std::cout << curvebits << ":";
 						else
@@ -4075,7 +4156,8 @@ size_t TMCG_OpenPGP_Keyring::list
 					if ((sub->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 						(sub->pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
 						(sub->pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
-						(sub->pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
+						(sub->pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+						(sub->pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
 							std::cout << "s";
 				}
 				std::cout << ":";
@@ -6616,6 +6698,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	switch (algo)
 	{
 		case TMCG_OPENPGP_PKALGO_ECDSA:
+		case TMCG_OPENPGP_PKALGO_EDDSA:
 			len += 1+oidlen+2+ecpklen;
 			break;
 		case TMCG_OPENPGP_PKALGO_ECDH:
@@ -6664,6 +6747,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	switch (algo)
 	{
 		case TMCG_OPENPGP_PKALGO_ECDSA:
+		case TMCG_OPENPGP_PKALGO_EDDSA:
 			out.push_back(oidlen);
 			for (size_t i = 0; i < oidlen; i++)
 				out.push_back(oid[i]);
@@ -7244,6 +7328,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 	switch (algo)
 	{
 		case TMCG_OPENPGP_PKALGO_ECDSA:
+		case TMCG_OPENPGP_PKALGO_EDDSA:
 			len += 1+oidlen+2+ecpklen;
 			break;
 		case TMCG_OPENPGP_PKALGO_ECDH:
@@ -7292,6 +7377,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 	switch (algo)
 	{
 		case TMCG_OPENPGP_PKALGO_ECDSA:
+		case TMCG_OPENPGP_PKALGO_EDDSA:
 			out.push_back(oidlen);
 			for (size_t i = 0; i < oidlen; i++)
 				out.push_back(oid[i]);
@@ -8514,9 +8600,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: bad or zero mpi
 				mpis.erase(mpis.begin(), mpis.begin()+mlen);
 			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+			else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+				(out.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
 			{
-				// Algorithm-Specific Fields for ECDSA
+				// Algorithm-Specific Fields for ECDSA/EdDSA
 				if (mpis.size() <= 2)
 					return 0; // error: too few mpis
 				mlen = PacketMPIDecode(mpis, out.r);
@@ -8711,9 +8798,11 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.kdf_skalgo = (tmcg_openpgp_skalgo_t)mpis[3];
 				mpis.erase(mpis.begin(), mpis.begin()+4);
 			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+			else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+				(out.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
 			{
 				// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
+				// Algorithm-Specific Fields for EdDSA keys [draft RFC 4880bis]
 				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[6];
 				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
 					return 0; // error: values reserved for future extensions
@@ -9030,10 +9119,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					mpis.erase(mpis.begin(), mpis.begin()+mlen);
 				}
 				else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
-				         (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
+					(out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+					(out.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
 				{
 					// Algorithm-Specific Fields for ECDH keys [RFC 6637]
 					// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
+					// Algorithm-Specific Fields for EdDSA [draft RFC 4880bis]
 					mlen = PacketMPIDecode(smpis, out.ecsk, chksum);
 					if (!mlen || (mlen > smpis.size()))
 						return 0; // error: bad mpi
@@ -9218,9 +9309,11 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				out.kdf_hashalgo = (tmcg_openpgp_hashalgo_t)mpis[2];
 				out.kdf_skalgo = (tmcg_openpgp_skalgo_t)mpis[3];
 			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+			else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+				(out.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
 			{
 				// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
+				// Algorithm-Specific Fields for EdDSA keys [draft RFC 4880bis]
 				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[6];
 				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
 					return 0; // error: values reserved for future extensions
@@ -10787,6 +10880,36 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignECDSA
 	return 0;
 }
 
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignEdDSA
+	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key, 
+	 gcry_mpi_t &r, gcry_mpi_t &s)
+{
+	char buf[2048];
+	gcry_sexp_t sigdata, signature;
+	gcry_error_t ret;
+	size_t buflen = 0, erroff;
+
+	memset(buf, 0, sizeof(buf));
+	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buf))); i++, buflen++)
+		buf[i] = in[i];
+	ret = gcry_sexp_build(&sigdata, &erroff,
+		"(data (flags eddsa) (hash-algo sha512) (value %b))", (int)buflen, buf);
+	if (ret)
+		return ret;
+	ret = gcry_pk_sign(&signature, sigdata, key);
+	gcry_sexp_release(sigdata);
+	if (ret)
+		return ret;
+	gcry_mpi_release(r); // release already allocated mpi's
+	gcry_mpi_release(s);
+	ret = gcry_sexp_extract_param(signature, NULL, "rs", &r, &s, NULL);
+	gcry_sexp_release(signature);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key, 
 	 const gcry_mpi_t r, const gcry_mpi_t s)
@@ -10858,6 +10981,37 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyECDSA
 		return ret;
 	ret = gcry_sexp_build(&signature, &erroff,
 		"(sig-val (ecdsa (r %M) (s %M)))", r, s);
+	if (ret)
+	{
+		gcry_sexp_release(sigdata);
+		return ret;
+	}
+	ret = gcry_pk_verify(signature, sigdata, key);
+	gcry_sexp_release(signature);
+	gcry_sexp_release(sigdata);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyEdDSA
+	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key, 
+	 const gcry_mpi_t r, const gcry_mpi_t s)
+{
+	char buf[2048];
+	gcry_sexp_t sigdata, signature;
+	gcry_error_t ret;
+	size_t buflen = 0, erroff;
+	memset(buf, 0, sizeof(buf));
+	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buf))); i++, buflen++)
+		buf[i] = in[i];
+	ret = gcry_sexp_build(&sigdata, &erroff,
+		"(data (flags eddsa) (hash-algo sha512) (value %b))", (int)buflen, buf);
+	if (ret)
+		return ret;
+	ret = gcry_sexp_build(&signature, &erroff,
+		"(sig-val (eddsa (r %M) (s %M)))", r, s);
 	if (ret)
 	{
 		gcry_sexp_release(sigdata);
@@ -11100,6 +11254,22 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		sbits = gcry_mpi_get_nbits(ctx.s);
 		if (verbose > 2)
 			std::cerr << "INFO: ECDSA rbits = " << rbits <<
+				" sbits = " << sbits <<	std::endl;
+		// create a new signature object
+		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
+			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
+			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
+			ctx.keyexpirationtime, ctx.revocationcode, ctx.r, ctx.s,
+			current_packet, hspd, issuer, issuerfpr, keyflags, features,
+			psa, pha, pca, embeddedsig);
+	}
+	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+	{
+		unsigned int rbits = 0, sbits = 0;
+		rbits = gcry_mpi_get_nbits(ctx.r);
+		sbits = gcry_mpi_get_nbits(ctx.s);
+		if (verbose > 2)
+			std::cerr << "INFO: EdDSA rbits = " << rbits <<
 				" sbits = " << sbits <<	std::endl;
 		// create a new signature object
 		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
@@ -11527,6 +11697,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag6
 			pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo, ctx.keycreationtime, 0,
 				ctx.curveoidlen, ctx.curveoid, ctx.ecpk, current_packet);
 		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+		{
+			// public-key algorithm is EdDSA: create new pubkey
+			pub = new TMCG_OpenPGP_Pubkey(ctx.pkalgo, ctx.keycreationtime, 0,
+				ctx.curveoidlen, ctx.curveoid, ctx.ecpk, current_packet);
+		}
 		else
 		{
 			primary = false;
@@ -11613,12 +11789,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag14
 		badkey = true;
 	}
 	else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
-	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
-	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
-	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
-             (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
-	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
 	{
 		// evaluate the context
 		if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) || 
@@ -11654,6 +11831,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag14
 		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 		{
 			// public-key algorithm is ECDSA: create new subkey
+			sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.curveoidlen, ctx.curveoid, 
+				ctx.ecpk, current_packet);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+		{
+			// public-key algorithm is EdDSA: create new subkey
 			sub = new TMCG_OpenPGP_Subkey(ctx.pkalgo,
 				ctx.keycreationtime, 0, ctx.curveoidlen, ctx.curveoid, 
 				ctx.ecpk, current_packet);
@@ -11904,7 +12088,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			mpis.erase(mpis.begin(), mpis.begin()+mlen);
 		}
 		else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
-		         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
+				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
 		{
 			mlen = PacketMPIDecode(mpis, ctx.ecsk, chksum);
 			if (!mlen || (mlen > mpis.size()))
@@ -12032,6 +12217,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
 				ctx.curveoidlen, ctx.curveoid, ctx.ecpk, ctx.ecsk,
 				current_packet);
 		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+		{
+			// public-key algorithm is EdDSA: create new prvkey
+			prv = new TMCG_OpenPGP_Prvkey(ctx.pkalgo, ctx.keycreationtime, 0,
+				ctx.curveoidlen, ctx.curveoid, ctx.ecpk, ctx.ecsk,
+				current_packet);
+		}
 		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7)
 		{
 			std::vector<std::string> capl;
@@ -12119,13 +12311,14 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
 		badkey = true;
 	}
 	else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
-	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
-	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
-	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
-	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
-	         (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
-			 (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9))
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
+			(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9))
 	{
 		// evaluate the context
 		if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) || 
@@ -12183,6 +12376,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
 		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 		{
 			// public-key algorithm is ECDSA: create new private subkey
+			sub = new TMCG_OpenPGP_PrivateSubkey(ctx.pkalgo,
+				ctx.keycreationtime, 0, ctx.curveoidlen, ctx.curveoid,
+				ctx.ecpk, ctx.ecsk, current_packet);
+		}
+		else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+		{
+			// public-key algorithm is EdDSA: create new private subkey
 			sub = new TMCG_OpenPGP_PrivateSubkey(ctx.pkalgo,
 				ctx.keycreationtime, 0, ctx.curveoidlen, ctx.curveoid,
 				ctx.ecpk, ctx.ecsk, current_packet);
@@ -12736,7 +12936,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 					psa, pha, pca, embeddedsig);
 			}
 			else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
-				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA))
+				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
 			{
 				unsigned int rbits = 0, sbits = 0;
 				rbits = gcry_mpi_get_nbits(ctx.r);
