@@ -659,13 +659,13 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			CertificationHash(pub_hashing, "", userattribute, trailer,
-			hashalgo, hash, left);	
+			hashalgo, hash, left);
 	}
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: signature version " <<
-				"not supported" << std::endl;
+			std::cerr << "ERROR: signature version" <<
+				" not supported" << std::endl;
 		return false;
 	}
 	if (verbose > 2)
@@ -9412,8 +9412,6 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		case 12: // Trust Packet -- not supported, ignore silently
 			break;
 		case 13: // User ID Packet
-			if (pkt.size() < 1)
-				return 0; // error: incorrect packet body
 			if (out.uiddatalen != 0)
 				return 0; // error: already seen within context
 			tmcg_openpgp_mem_alloc += pkt.size();
@@ -9423,9 +9421,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				return 0; // error: memory limit exceeded
 			}
 			out.uiddatalen = pkt.size();
-			out.uiddata = new tmcg_openpgp_byte_t[out.uiddatalen];
-			for (size_t i = 0; i < out.uiddatalen; i++)
-				out.uiddata[i] = pkt[i];
+			if (pkt.size() > 0)
+			{
+				out.uiddata = new tmcg_openpgp_byte_t[out.uiddatalen];
+				for (size_t i = 0; i < out.uiddatalen; i++)
+					out.uiddata[i] = pkt[i];
+			}
 			break;
 		case 17: // User Attribute Packet
 			if (pkt.size() < 2)
@@ -9848,7 +9849,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	// certifications, followed by a four-octet number giving the length
 	// of the User ID or User Attribute data, and then the User ID or 
 	// User Attribute data.
-	if (uidlen)
+	if (uat.size() == 0)
 	{
 		hash_input.push_back(0xB4);
 		hash_input.push_back((uidlen >> 24) & 0xFF);
