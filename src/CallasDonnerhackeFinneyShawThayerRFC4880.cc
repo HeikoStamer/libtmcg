@@ -11298,8 +11298,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	if (!sig->good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: parsing signature " <<
-				"material failed" << std::endl;
+			std::cerr << "ERROR: parsing signature" <<
+				" material failed" << std::endl;
 
 		delete sig;
 		return false;
@@ -11315,8 +11315,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	if (badkey)
 	{
 		if (verbose)
-			std::cerr << "WARNING: signature for unrecognized " <<
-				"subkey ignored" << std::endl;
+			std::cerr << "WARNING: signature for unrecognized" <<
+				" subkey ignored" << std::endl;
 		delete sig;
 		return true; // continue loop through packets
 	}
@@ -11380,16 +11380,16 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				// Key revocation signature on subkey
 				sub->keyrevsigs.push_back(sig);
 				if (verbose)
-					std::cerr << "WARNING: key revocation signature on " <<
-						"subkey found" << std::endl;
+					std::cerr << "WARNING: key revocation signature on" <<
+						" subkey found" << std::endl;
 			}
 			else if (ctx.type == TMCG_OPENPGP_SIGNATURE_CERTIFICATION_REVOCATION)
 			{
 				// Certification revocation signature on subkey
 				sub->certrevsigs.push_back(sig);
 				if (verbose)
-					std::cerr << "WARNING: certification revocation " <<
-						"signature on subkey found" << std::endl;
+					std::cerr << "WARNING: certification revocation" <<
+						" signature on subkey found" << std::endl;
 			}
 			else
 			{
@@ -11432,8 +11432,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				// Certification revocation signature on subkey
 				sub->certrevsigs.push_back(sig);
 				if (verbose)
-					std::cerr << "WARNING: certification revocation " <<
-						"signature on subkey found" << std::endl;
+					std::cerr << "WARNING: certification revocation" <<
+						" signature on subkey found" << std::endl;
 			}
 			else
 			{
@@ -11450,16 +11450,16 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			// issued by external revocation keys
 			sub->keyrevsigs.push_back(sig);
 			if (verbose)
-				std::cerr << "WARNING: sub-level key revocation signature " <<
-					"on subkey found " << std::endl;
+				std::cerr << "WARNING: sub-level key revocation signature" <<
+					" on subkey found " << std::endl;
 		}
 		else
 		{
 			delete sig;
 			if (verbose)
 				std::cerr << "WARNING: signature of type 0x" << std::hex <<
-					(int)ctx.type << std::dec << " on subkey from unknown " <<
-					"issuer ignored" << std::endl;
+					(int)ctx.type << std::dec << " on subkey from unknown" <<
+					" issuer ignored" << std::endl;
 		}
 		return true; // continue loop through packets
 	}
@@ -11520,8 +11520,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			// issued by external revocation keys
 			pub->keyrevsigs.push_back(sig);
 			if (verbose)
-				std::cerr << "WARNING: external key revocation signature " <<
-					"on primary key found" << std::endl;
+				std::cerr << "WARNING: external key revocation signature" <<
+					" on primary key found" << std::endl;
 		}
 		else
 		{
@@ -11560,16 +11560,16 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			// Key revocation signature on primary key
 			pub->keyrevsigs.push_back(sig);
 			if (verbose)
-				std::cerr << "WARNING: key revocation signature on primary " <<
-					"key found" << std::endl;
+				std::cerr << "WARNING: key revocation signature on primary" <<
+					" key found" << std::endl;
 		}
 		else if (ctx.type == TMCG_OPENPGP_SIGNATURE_CERTIFICATION_REVOCATION)
 		{
 			// Certification revocation signature on primary key
 			pub->certrevsigs.push_back(sig);
 			if (verbose)
-				std::cerr << "WARNING: certification revocation signature " <<
-					"on primary key" << std::endl;
+				std::cerr << "WARNING: certification revocation signature" <<
+					" on primary key" << std::endl;
 		}
 		else
 		{
@@ -11577,7 +11577,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			if (verbose)
 				std::cerr << "WARNING: non-self signature of type 0x" <<
 					std::hex << (int)ctx.type << std::dec <<
-					"on primary key ignored" << std::endl;
+					" on primary key ignored" << std::endl;
 		}
 		return true; // continue loop through packets
 	}
@@ -11611,8 +11611,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			// Certification revocation signature on user attribute
 			uat->revsigs.push_back(sig);
 			if (verbose)
-				std::cerr << "WARNING: certification revocation signature " <<
-					"on user attribute" << std::endl;
+				std::cerr << "WARNING: certification revocation signature" <<
+					" on user attribute" << std::endl;
 		}
 		else
 		{
@@ -11654,8 +11654,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			// Certification revocation signature on user ID
 			uid->revsigs.push_back(sig);
 			if (verbose)
-				std::cerr << "WARNING: certification revocation signature " <<
-					"on user ID" << std::endl;
+				std::cerr << "WARNING: certification revocation signature" <<
+					" on user ID" << std::endl;
 		}
 		else
 		{
@@ -11723,8 +11723,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag6
 		if (!pub->good())
 		{
 			if (verbose)
-				std::cerr << "ERROR: reading primary key " <<
-					"material failed" << std::endl;
+				std::cerr << "ERROR: reading primary key" <<
+					" material failed" << std::endl;
 			return false;
 		}
 		if (verbose > 1)
@@ -11854,8 +11854,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag14
 		if (!sub->good())
 		{
 			if (verbose)
-				std::cerr << "ERROR: parsing subkey " <<
-					"material failed" << std::endl;
+				std::cerr << "ERROR: parsing subkey" <<
+					" material failed" << std::endl;
 			delete sub;
 			sub = NULL;
 			return false;
@@ -11868,15 +11868,14 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag14
 			std::cerr << std::dec << std::endl;
 		}
 		if (verbose && OctetsCompare(sub->id, pub->id))
-			std::cerr << "WARNING: probably same key material " <<
-				"used for primary key and subkey" << std::endl;
+			std::cerr << "WARNING: probably same key material" <<
+				" used for primary key and subkey" << std::endl;
 	}
 	else
 	{
 		if (verbose)
 			std::cerr << "WARNING: public-key algorithm " <<
-				(int)ctx.pkalgo << " for subkey not " <<
-				"supported" << std::endl;
+				(int)ctx.pkalgo << " for subkey not supported" << std::endl;
 		badkey = true;
 	}
 	return true;
