@@ -58,7 +58,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &keyprefs_pha_in,
 	 const tmcg_openpgp_octets_t &keyprefs_pca_in,
 	 const tmcg_openpgp_octets_t &embeddedsig_in):
-		ret(1),
+		ret(GPG_ERR_BAD_SIGNATURE),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -74,8 +74,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		revcode(revcode_in)
 {
 	rsa_md = gcry_mpi_new(2048);
-	dsa_r = gcry_mpi_new(2048);
-	dsa_s = gcry_mpi_new(2048);
+	dsa_r = gcry_mpi_new(8);
+	dsa_s = gcry_mpi_new(8);
 	gcry_mpi_set(rsa_md, md);
 	ret = gcry_sexp_build(&signature, &erroff,
 		"(sig-val (rsa (s %M)))", md);
@@ -124,7 +124,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &keyprefs_pha_in,
 	 const tmcg_openpgp_octets_t &keyprefs_pca_in,
 	 const tmcg_openpgp_octets_t &embeddedsig_in):
-		ret(1),
+		ret(GPG_ERR_BAD_SIGNATURE),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -139,7 +139,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		keyexpirationtime(keyexptime_in),
 		revcode(revcode_in)
 {
-	rsa_md = gcry_mpi_new(2048);
+	rsa_md = gcry_mpi_new(8);
 	dsa_r = gcry_mpi_new(2048);
 	dsa_s = gcry_mpi_new(2048);
 	gcry_mpi_set(dsa_r, r);
@@ -907,7 +907,7 @@ TMCG_OpenPGP_UserAttribute::~TMCG_OpenPGP_UserAttribute
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	():
-		ret(1),
+		ret(GPG_ERR_BAD_PUBKEY),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -943,7 +943,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	 const gcry_mpi_t n,
 	 const gcry_mpi_t e,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(1),
+		ret(GPG_ERR_BAD_PUBKEY),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -990,7 +990,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	 const gcry_mpi_t g,
 	 const gcry_mpi_t y,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(1),
+		ret(GPG_ERR_BAD_PUBKEY),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -1039,7 +1039,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	 const gcry_mpi_t g,
 	 const gcry_mpi_t y,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(1),
+		ret(GPG_ERR_BAD_PUBKEY),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -1088,7 +1088,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	 const tmcg_openpgp_byte_t* oid,
 	 const gcry_mpi_t ecpk,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(1),
+		ret(GPG_ERR_BAD_PUBKEY),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -1131,12 +1131,16 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		ec_curve = curve;
 	else
 		curve = ec_unknown.c_str();
-	if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) 
+	if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+	{ 
 		ret = gcry_sexp_build(&key, &erroff,
 			"(public-key (ecdsa (curve %s) (q %m)))", curve, ecpk);
+	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+	{
 		ret = gcry_sexp_build(&key, &erroff,
 			"(public-key (ecc (curve %s) (flags eddsa) (q %m)))", curve, ecpk);
+	}
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -1160,7 +1164,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	 const tmcg_openpgp_hashalgo_t kdf_hashalgo_in,
 	 const tmcg_openpgp_skalgo_t kdf_skalgo_in,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(1),
+		ret(GPG_ERR_BAD_PUBKEY),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -1920,6 +1924,8 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t u,
 	 const gcry_mpi_t d,
 	 const tmcg_openpgp_octets_t &packet_in):
+		ret(GPG_ERR_BAD_SECKEY),
+		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
 		telg_n(0),
@@ -1963,6 +1969,8 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
+		ret(GPG_ERR_BAD_SECKEY),
+		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
 		telg_n(0),
@@ -2003,6 +2011,8 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
+		ret(GPG_ERR_BAD_SECKEY),
+		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
 		telg_n(0),
@@ -2052,6 +2062,8 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const std::vector<gcry_mpi_t> &v_i,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const tmcg_openpgp_octets_t &packet_in):
+		ret(GPG_ERR_BAD_SECKEY),
+		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
 		ec_curve("")
@@ -2115,6 +2127,8 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t ecpk,
 	 const gcry_mpi_t ecsk,
 	 const tmcg_openpgp_octets_t &packet_in):
+		ret(GPG_ERR_BAD_SECKEY),
+		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
 		telg_n(0),
@@ -2161,13 +2175,17 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	else
 		curve = ec_unknown.c_str();
 	if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+	{
 		ret = gcry_sexp_build(&private_key, &erroff,
 			"(private-key (ecdsa (curve %s) (q %m) (d %m)))",
 			curve, ecpk, ecsk);
+	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+	{
 		ret = gcry_sexp_build(&private_key, &erroff,
 			"(private-key (ecc (curve %s) (flags eddsa) (q %m) (d %m)))",
 			curve, ecpk, ecsk);
+	}
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
@@ -2182,6 +2200,8 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const tmcg_openpgp_hashalgo_t kdf_hashalgo_in,
 	 const tmcg_openpgp_skalgo_t kdf_skalgo_in,
 	 const tmcg_openpgp_octets_t &packet_in):
+		ret(GPG_ERR_BAD_SECKEY),
+		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
 		telg_n(0),
@@ -2514,7 +2534,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	 const gcry_mpi_t n,
 	 const gcry_mpi_t e,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(1),
+		ret(GPG_ERR_BAD_PUBKEY),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -2557,7 +2577,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	 const gcry_mpi_t g,
 	 const gcry_mpi_t y,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(1),
+		ret(GPG_ERR_BAD_PUBKEY),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -2601,7 +2621,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	 const tmcg_openpgp_byte_t* oid,
 	 const gcry_mpi_t ecpk,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(1),
+		ret(GPG_ERR_BAD_PUBKEY),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -2641,11 +2661,15 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	else
 		curve = ec_unknown.c_str();
 	if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+	{
 		ret = gcry_sexp_build(&key, &erroff,
 			"(public-key (ecdsa (curve %s) (q %m)))", curve, ecpk);
+	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+	{
 		ret = gcry_sexp_build(&key, &erroff,
 			"(public-key (ecc (curve %s) (flags eddsa) (q %m)))", curve, ecpk);
+	}
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	tmcg_openpgp_octets_t pub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -3469,6 +3493,8 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t u,
 	 const gcry_mpi_t d,
 	 const tmcg_openpgp_octets_t &packet_in):
+		ret(GPG_ERR_BAD_SECKEY),
+		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
 		tdss_n(0),
@@ -3510,6 +3536,8 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
+		ret(GPG_ERR_BAD_SECKEY),
+		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
 		tdss_n(0),
@@ -3557,6 +3585,8 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const std::vector<gcry_mpi_t> &x_rvss_qual,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const tmcg_openpgp_octets_t &packet_in):
+		ret(GPG_ERR_BAD_SECKEY),
+		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL)
 {
@@ -3620,6 +3650,8 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t ecpk,
 	 const gcry_mpi_t ecsk,
 	 const tmcg_openpgp_octets_t &packet_in):
+		ret(GPG_ERR_BAD_SECKEY),
+		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
 		tdss_n(0),
@@ -3664,13 +3696,17 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	else
 		curve = ec_unknown.c_str();
 	if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+	{
 		ret = gcry_sexp_build(&private_key, &erroff,
 			"(private-key (ecdsa (curve %s) (q %m) (d %m)))",
 			curve, ecpk, ecsk);
+	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+	{
 		ret = gcry_sexp_build(&private_key, &erroff,
 			"(private-key (ecc (curve %s) (flags eddsa) (q %m) (d %m)))",
 			curve, ecpk, ecsk);
+	}
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
