@@ -216,7 +216,7 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 	 const int verbose) const
 {
 	time_t current = time(NULL);
-	time_t fmax = 60 * 60 * 24 * 7; // deviation time: one week
+	time_t fmax = 60 * 60 * 25; // deviation time: 25 hours
 	time_t vmax = creationtime + expirationtime;
 	if (expirationtime && (current > vmax))
 	{
@@ -1487,7 +1487,7 @@ bool TMCG_OpenPGP_Subkey::CheckValidity
 	(const int verbose) const
 {
 	time_t current = time(NULL);
-	time_t fmax = 60 * 60 * 24 * 7; // deviation time: one week
+	time_t fmax = 60 * 60 * 25; // deviation time: 25 hours
 	time_t kmax = creationtime + expirationtime;
 	if (expirationtime && (current > kmax))
 	{
@@ -2847,7 +2847,7 @@ bool TMCG_OpenPGP_Pubkey::CheckValidity
 	(const int verbose) const
 {
 	time_t current = time(NULL);
-	time_t fmax = 60 * 60 * 24 * 7; // deviation time: one week
+	time_t fmax = 60 * 60 * 25; // deviation time: 25 hours
 	time_t kmax = creationtime + expirationtime;
 	if (expirationtime && (current > kmax))
 	{
