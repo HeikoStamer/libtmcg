@@ -2196,8 +2196,14 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		ec_curve = curve;
 	else
 		curve = ec_unknown.c_str();
-	ret = gcry_sexp_build(&private_key, &erroff,
-		"(private-key (ecdh (curve %s) (q %m) (d %m)))", curve, ecpk, ecsk);
+	if (ec_curve == "Curve25519")
+		ret = gcry_sexp_build(&private_key, &erroff,
+			"(private-key (ecc (curve %s) (flags djb-tweak) (q %m) (d %m)))",
+			curve, ecpk, ecsk);
+	else
+		ret = gcry_sexp_build(&private_key, &erroff,
+			"(private-key (ecdh (curve %s) (q %m) (d %m)))",
+			curve, ecpk, ecsk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
@@ -2368,45 +2374,48 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 	}
 	else if (esk->pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
 	{
-		// check whether esk->ecepk is point on curve of this key
 		gcry_error_t dret;
-		gcry_mpi_point_t tmp;
-		gcry_ctx_t ec;
-		dret = gcry_mpi_ec_new(&ec, NULL, ec_curve.c_str());
-		if (dret)
+		if (ec_curve != "Curve25519")
 		{
-			if (verbose)
-				std::cerr << "ERROR: gcry_mpi_ec_new() failed" <<
-					" with rc = " << gcry_err_code(dret) << std::endl;
-			return false;
-		}
-		dret = gcry_mpi_ec_set_mpi("q", esk->ecepk, ec);
-		if (dret)
-		{
-			if (verbose)
-				std::cerr << "ERROR: gcry_mpi_ec_set_mpi() failed" <<
-					" with rc = " << gcry_err_code(dret) << std::endl;
+			// check whether esk->ecepk is point on curve of this key
+			gcry_mpi_point_t tmp;
+			gcry_ctx_t ec;
+			dret = gcry_mpi_ec_new(&ec, NULL, ec_curve.c_str());
+			if (dret)
+			{
+				if (verbose)
+					std::cerr << "ERROR: gcry_mpi_ec_new() failed" <<
+						" with rc = " << gcry_err_code(dret) << std::endl;
+				return false;
+			}
+			dret = gcry_mpi_ec_set_mpi("q", esk->ecepk, ec);
+			if (dret)
+			{
+				if (verbose)
+					std::cerr << "ERROR: gcry_mpi_ec_set_mpi() failed" <<
+						" with rc = " << gcry_err_code(dret) << std::endl;
+				gcry_ctx_release(ec);
+				return false;
+			}
+			tmp = gcry_mpi_ec_get_point("q", ec, 0);
+			if (tmp == NULL)
+			{
+				if (verbose)
+					std::cerr << "ERROR: gcry_mpi_ec_curve_point() failed" <<
+						std::endl;
+				gcry_ctx_release(ec);
+				return false;
+			}
+			int ok = gcry_mpi_ec_curve_point(tmp, ec);
+			gcry_mpi_point_release(tmp);
 			gcry_ctx_release(ec);
-			return false;
-		}
-		tmp = gcry_mpi_ec_get_point("q", ec, 0);
-		if (tmp == NULL)
-		{
-			if (verbose)
-				std::cerr << "ERROR: gcry_mpi_ec_curve_point() failed" <<
-					std::endl;
-			gcry_ctx_release(ec);
-			return false;
-		}
-		int ok = gcry_mpi_ec_curve_point(tmp, ec);
-		gcry_mpi_point_release(tmp);
-		gcry_ctx_release(ec);
-		if (!ok)
-		{
-			if (verbose)
-				std::cerr << "ERROR: gcry_mpi_ec_curve_point() failed" <<
-					std::endl;
-			return false;
+			if (!ok)
+			{
+				if (verbose)
+					std::cerr << "ERROR: gcry_mpi_ec_curve_point() failed" <<
+						std::endl;
+				return false;
+			}
 		}
 		// decrypt session key
 		tmcg_openpgp_octets_t rcpfpr;
