@@ -914,6 +914,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(TMCG_OPENPGP_PKALGO_RSA),
 		creationtime(0),
 		expirationtime(0),
+		key(NULL),
 		ec_curve(""),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
@@ -949,6 +950,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		key(NULL),
 		ec_curve(""),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
@@ -995,6 +997,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		key(NULL),
 		ec_curve(""),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
@@ -1043,6 +1046,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		key(NULL),
 		ec_curve(""),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
@@ -1091,6 +1095,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		key(NULL),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
@@ -1162,6 +1167,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		key(NULL),
 		kdf_hashalgo(kdf_hashalgo_in),
 		kdf_skalgo(kdf_skalgo_in)
 {
@@ -1914,7 +1920,12 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t u,
 	 const gcry_mpi_t d,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0), ec_curve("")
+		pkalgo(pkalgo_in),
+		private_key(NULL),
+		telg_n(0),
+		telg_t(0),
+		telg_i(0),
+		ec_curve("")
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
@@ -1952,7 +1963,12 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0), ec_curve("")
+		pkalgo(pkalgo_in),
+		private_key(NULL),
+		telg_n(0),
+		telg_t(0),
+		telg_i(0),
+		ec_curve("")
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
@@ -1987,7 +2003,12 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0), ec_curve("")
+		pkalgo(pkalgo_in),
+		private_key(NULL),
+		telg_n(0),
+		telg_t(0),
+		telg_i(0),
+		ec_curve("")
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
@@ -2031,7 +2052,9 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const std::vector<gcry_mpi_t> &v_i,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in), ec_curve("")
+		pkalgo(pkalgo_in),
+		private_key(NULL),
+		ec_curve("")
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
@@ -2092,7 +2115,11 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t ecpk,
 	 const gcry_mpi_t ecsk,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0)
+		pkalgo(pkalgo_in),
+		private_key(NULL),
+		telg_n(0),
+		telg_t(0),
+		telg_i(0)
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -2155,7 +2182,11 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const tmcg_openpgp_hashalgo_t kdf_hashalgo_in,
 	 const tmcg_openpgp_skalgo_t kdf_skalgo_in,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in), telg_n(0), telg_t(0), telg_i(0)
+		pkalgo(pkalgo_in),
+		private_key(NULL),
+		telg_n(0),
+		telg_t(0),
+		telg_i(0)
 {
 	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -2490,6 +2521,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		key(NULL),
 		ec_curve("")
 {
 	rsa_n = gcry_mpi_new(2048);
@@ -2532,6 +2564,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		key(NULL),
 		ec_curve("")
 {
 	rsa_n = gcry_mpi_new(8);
@@ -2574,7 +2607,9 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		revoked(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
-		expirationtime(expirationtime_in)
+		expirationtime(expirationtime_in),
+		key(NULL),
+		ec_curve("")
 {
 	rsa_n = gcry_mpi_new(8);
 	rsa_e = gcry_mpi_new(8);
@@ -3434,7 +3469,11 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t u,
 	 const gcry_mpi_t d,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in), tdss_n(0), tdss_t(0), tdss_i(0)
+		pkalgo(pkalgo_in),
+		private_key(NULL),
+		tdss_n(0),
+		tdss_t(0),
+		tdss_i(0)
 {
 	tmcg_openpgp_octets_t pkt;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in,
@@ -3471,7 +3510,11 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in), tdss_n(0), tdss_t(0), tdss_i(0)
+		pkalgo(pkalgo_in),
+		private_key(NULL),
+		tdss_n(0),
+		tdss_t(0),
+		tdss_i(0)
 {
 	tmcg_openpgp_octets_t pkt;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in,
@@ -3514,7 +3557,8 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const std::vector<gcry_mpi_t> &x_rvss_qual,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in)
+		pkalgo(pkalgo_in),
+		private_key(NULL)
 {
 	tmcg_openpgp_octets_t pkt;
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in,
@@ -3576,7 +3620,11 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t ecpk,
 	 const gcry_mpi_t ecsk,
 	 const tmcg_openpgp_octets_t &packet_in):
-		pkalgo(pkalgo_in),  tdss_n(0), tdss_t(0), tdss_i(0)
+		pkalgo(pkalgo_in),
+		private_key(NULL),
+		tdss_n(0),
+		tdss_t(0),
+		tdss_i(0)
 {
 	tmcg_openpgp_octets_t pkt;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
