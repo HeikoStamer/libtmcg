@@ -10643,7 +10643,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 	gcry_sexp_release(data);
 	if (ret)
 		return ret;
-	S = gcry_mpi_snew(1024);
 	ret = gcry_sexp_extract_param(encryption, NULL, "s", &S, NULL);
 	if (ret)
 	{
@@ -10651,6 +10650,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 		gcry_mpi_release(S);
 		return ret;
 	}
+	gcry_mpi_release(ecepk); // release already allocated mpi
 	ret = gcry_sexp_extract_param(encryption, NULL, "e", &ecepk, NULL);
 	gcry_sexp_release(encryption);
 	if (ret)
@@ -10662,7 +10662,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 	size_t bufsize = 1024, buflen = 0;
 	unsigned char *buf = (unsigned char*)gcry_malloc_secure(bufsize);
 	if (buf == NULL)
+	{
+		gcry_mpi_release(S);
 		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+	}
 	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buf, bufsize, &buflen, S);
 	gcry_mpi_release(S);
 	if (ret)
@@ -10781,7 +10784,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 	gcry_sexp_release(data);
 	if (ret)
 		return ret;
-	S = gcry_mpi_snew(1024);
 	ret = gcry_sexp_extract_param(decryption, NULL, "'value'", &S, NULL);
 	gcry_sexp_release(decryption);
 	if (ret)
@@ -10791,7 +10793,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 	}
 	unsigned char *buf = (unsigned char*)gcry_malloc_secure(bufsize);
 	if (buf == NULL)
+	{
+		gcry_mpi_release(S);
 		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+	}
 	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buf, bufsize, &buflen, S);
 	gcry_mpi_release(S);
 	if (ret)
