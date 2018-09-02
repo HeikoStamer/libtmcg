@@ -10647,7 +10647,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 	if (ret)
 	{
 		gcry_sexp_release(encryption);
-		gcry_mpi_release(S);
 		return ret;
 	}
 	gcry_mpi_release(ecepk); // release already allocated mpi
@@ -10787,10 +10786,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 	ret = gcry_sexp_extract_param(decryption, NULL, "'value'", &S, NULL);
 	gcry_sexp_release(decryption);
 	if (ret)
-	{
-		gcry_mpi_release(S);
 		return ret;
-	}
 	unsigned char *buf = (unsigned char*)gcry_malloc_secure(bufsize);
 	if (buf == NULL)
 	{
