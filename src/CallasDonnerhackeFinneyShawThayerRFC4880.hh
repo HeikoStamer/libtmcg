@@ -1464,6 +1464,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void PacketLengthEncode
 			(const size_t									len,
 			 tmcg_openpgp_octets_t							&out);
+		static void FixedLengthEncode
+			(const size_t									len,
+			 tmcg_openpgp_octets_t							&out);
 		static size_t PacketLengthDecode
 			(const tmcg_openpgp_octets_t					&in,
 			 const bool										newformat,

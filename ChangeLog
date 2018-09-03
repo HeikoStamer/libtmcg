@@ -7,6 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-09-03] RFC4880: added 1-/2-octet length format in PacketLengthEncode()
 * [2018-08-31] RFC4880: added support for EdDSA (algorithm 22) from RFC 4880bis
 * [2018-08-28] RFC4880: added AccumulateRevocationCodes()
 * [2018-08-28] RFC4880: added tmcg_openpgp_revcode_t

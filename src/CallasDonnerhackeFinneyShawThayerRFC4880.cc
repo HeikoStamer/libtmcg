@@ -5592,7 +5592,33 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTagEncode
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthEncode
 	(const size_t len, tmcg_openpgp_octets_t &out)
 {
-	// use scalar length format
+	if (len < 192)
+	{
+		// one-octet length format
+		out.push_back(len);
+	}
+	else if (len < 8384)
+	{
+		size_t tlen = (len - 192) + (192 << 8);
+		// two-octet length format
+		out.push_back((tlen >> 8) & 0xFF);
+		out.push_back(tlen & 0xFF);
+	}
+	else
+	{
+		// four-octet length format
+		out.push_back(0xFF);
+		out.push_back((len >> 24) & 0xFF);
+		out.push_back((len >> 16) & 0xFF);
+		out.push_back((len >> 8) & 0xFF);
+		out.push_back(len & 0xFF);
+	}
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::FixedLengthEncode
+	(const size_t len, tmcg_openpgp_octets_t &out)
+{
+	// four-octet length format
 	out.push_back(0xFF);
 	out.push_back((len >> 24) & 0xFF);
 	out.push_back((len >> 16) & 0xFF);
@@ -5858,7 +5884,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketStringEncode
 	(const std::string &in, tmcg_openpgp_octets_t &out)
 {
-	PacketLengthEncode(in.length(), out);
+	FixedLengthEncode(in.length(), out);
 	for (size_t i = 0; i < in.length(); i++)
 		out.push_back(in[i]);
 }
@@ -6091,7 +6117,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
 	// The length includes the type octet but not this length. Its format
 	// is similar to the "new" format packet header lengths, but cannot
 	// have Partial Body Lengths.
-	PacketLengthEncode(in.size() + 1, out);
+	FixedLengthEncode(in.size() + 1, out);
 	if (critical)
 		out.push_back(type | 0x80);
 	else
