@@ -133,7 +133,7 @@ int main
 	tmcg_openpgp_byte_t octcnt = 1;
 	size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6);
 	size_t keylen = gcry_cipher_get_algo_keylen(TMCG_GCRY_ENC_ALGO);
-	std::string keystr = "Test";
+	tmcg_openpgp_secure_string_t keystr = "Test";
 	char salt[8];
 	char key[keylen];
 	gcry_error_t err;
@@ -374,7 +374,8 @@ int main
 	tmcg_openpgp_octets_t subflags, keyid, pub_hashing, uidsig_hashing, issuer;
 	tmcg_openpgp_octets_t uidsig_left, sub_hashing, subsig_hashing, subsig_left;
 	tmcg_openpgp_octets_t sec, subsec;
-	std::string armored_pubkeyblock, passphrase = "FCK!NSA";
+	std::string armored_pubkeyblock, username = "Test";
+	tmcg_openpgp_secure_string_t passphrase = "FCK!NSA";
 	gcry_mpi_t p, q, g, y, x;
 	std::cout << "gcry_sexp_extract_param(...)" << std::endl;
 	ret = gcry_sexp_extract_param(dsakey, NULL, "pqgy", &p, &q, &g, &y, NULL);
@@ -390,7 +391,7 @@ int main
 		pub_hashing.push_back(pub[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
 	CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute(pub_hashing, issuer);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(keystr, uid);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(username, uid);
 	pubflags.push_back(0x01 | 0x02);  // certify other keys and sign data
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketSigPrepareSelfSignature(TMCG_OPENPGP_SIGNATURE_POSITIVE_CERTIFICATION,
@@ -398,7 +399,7 @@ int main
 			uidsig_hashing); 
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing,
-		keystr, empty, uidsig_hashing, TMCG_OPENPGP_HASHALGO_SHA256, hash,
+		username, empty, uidsig_hashing, TMCG_OPENPGP_HASHALGO_SHA256, hash,
 		uidsig_left);
 	r = gcry_mpi_new(2048);
 	s = gcry_mpi_new(2048);
@@ -519,14 +520,14 @@ int main
 		pub_hashing2.push_back(pub2[i]);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(pub_hashing2, keyid2);
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(keystr, uid2);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(username, uid2);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketSigPrepareSelfSignature(TMCG_OPENPGP_SIGNATURE_POSITIVE_CERTIFICATION,
 			TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 1000, pubflags, keyid2,
 			uidsig_hashing2);
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash(pub_hashing2,
-		keystr, empty, uidsig_hashing2, TMCG_OPENPGP_HASHALGO_SHA256, hash,
+		username, empty, uidsig_hashing2, TMCG_OPENPGP_HASHALGO_SHA256, hash,
 		uidsig_left2);
 	r = gcry_mpi_new(2048);
 	s = gcry_mpi_new(2048);

@@ -129,6 +129,7 @@ typedef std::vector<tmcg_openpgp_byte_t> tmcg_openpgp_octets_t;
 typedef std::vector<tmcg_openpgp_byte_t, TMCG_SecureAlloc<tmcg_openpgp_byte_t> > tmcg_openpgp_secure_octets_t;
 typedef std::pair<tmcg_openpgp_octets_t, tmcg_openpgp_octets_t> tmcg_openpgp_notation_t;
 typedef std::vector<tmcg_openpgp_notation_t> tmcg_openpgp_notations_t;
+typedef std::basic_string<char, std::char_traits<char>, TMCG_SecureAlloc<char> > tmcg_openpgp_secure_string_t;
 
 enum tmcg_openpgp_signature_t
 {
@@ -1278,7 +1279,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static bool PrivateKeyBlockParse_Decrypt
 			(tmcg_openpgp_packet_ctx_t						&ctx,
 			 const int										verbose,
-			 const std::string								&passphrase);
+			 const tmcg_openpgp_secure_string_t				&passphrase);
 		static bool PrivateKeyBlockParse_Tag5
 			(const tmcg_openpgp_packet_ctx_t				&ctx,
 			 const int										verbose,
@@ -1445,7 +1446,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void S2KCompute
 			(const tmcg_openpgp_hashalgo_t					algo,
 			 const size_t									sklen,
-			 const std::string								&in,
+			 const tmcg_openpgp_secure_string_t				&in,
 			 const tmcg_openpgp_octets_t					&salt, 
 			 const bool										iterated,
 			 const tmcg_openpgp_byte_t						octcnt,
@@ -1674,7 +1675,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t								g,
 			 const gcry_mpi_t								y,
 			 const gcry_mpi_t								x,
-			 const std::string								&passphrase,
+			 const tmcg_openpgp_secure_string_t				&passphrase,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSecEncodeExperimental108
 			(const time_t									keytime,
@@ -1692,7 +1693,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const std::vector< std::vector<gcry_mpi_t> >	&c_ik,
 			 const gcry_mpi_t								x_i,
 			 const gcry_mpi_t								xprime_i,
-			 const std::string								&passphrase,
+			 const tmcg_openpgp_secure_string_t				&passphrase,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSecEncodeExperimental107
 			(const time_t									keytime,
@@ -1712,7 +1713,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const std::vector< std::vector<gcry_mpi_t> >	&c_ik,
 			 const gcry_mpi_t								x_i,
 			 const gcry_mpi_t								xprime_i,
-			 const std::string								&passphrase,
+			 const tmcg_openpgp_secure_string_t				&passphrase,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSubEncode
 			(const time_t									keytime,
@@ -1739,7 +1740,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t								g,
 			 const gcry_mpi_t								y, 
 			 const gcry_mpi_t								x,
-			 const std::string								&passphrase,
+			 const tmcg_openpgp_secure_string_t				&passphrase,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSsbEncodeExperimental109
 			(const time_t									keytime,
@@ -1757,7 +1758,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const std::vector< std::vector<gcry_mpi_t> >	&c_ik,
 			 const gcry_mpi_t								x_i,
 			 const gcry_mpi_t								xprime_i,
-			 const std::string								&passphrase,
+			 const tmcg_openpgp_secure_string_t				&passphrase,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSedEncode
 			(const tmcg_openpgp_octets_t					&in,
@@ -2022,12 +2023,12 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static bool PrivateKeyBlockParse
 			(const tmcg_openpgp_octets_t					&in,
 			 const int										verbose,
-			 const std::string								&passphrase,
+			 const tmcg_openpgp_secure_string_t				&passphrase,
 			 TMCG_OpenPGP_Prvkey*							&prv);
 		static bool PrivateKeyBlockParse
 			(const std::string								&in,
 			 const int										verbose,
-			 const std::string								&passphrase,
+			 const tmcg_openpgp_secure_string_t				&passphrase,
 			 TMCG_OpenPGP_Prvkey*							&prv);
 		static bool MessageParse
 			(const tmcg_openpgp_octets_t					&in,

@@ -5436,7 +5436,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 	(const tmcg_openpgp_hashalgo_t algo, const size_t sklen,
-	 const std::string &in, const tmcg_openpgp_octets_t &salt,
+	 const tmcg_openpgp_secure_string_t &in, const tmcg_openpgp_octets_t &salt,
 	 const bool iterated, const tmcg_openpgp_byte_t octcnt, 
 	 tmcg_openpgp_secure_octets_t &out)
 {
@@ -6891,7 +6891,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	(const time_t keytime, const tmcg_openpgp_pkalgo_t algo,
 	 const gcry_mpi_t p, const gcry_mpi_t q, const gcry_mpi_t g,
 	 const gcry_mpi_t y, const gcry_mpi_t x,
-	 const std::string &passphrase, tmcg_openpgp_octets_t &out)
+	 const tmcg_openpgp_secure_string_t &passphrase,
+	 tmcg_openpgp_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
 	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
@@ -7077,7 +7078,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	 const std::vector<std::string> &capl,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
-	 const std::string &passphrase,
+	 const tmcg_openpgp_secure_string_t &passphrase,
 	 tmcg_openpgp_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
@@ -7226,7 +7227,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 	 const std::vector<std::string> &capl,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
-	 const std::string &passphrase,
+	 const tmcg_openpgp_secure_string_t &passphrase,
 	 tmcg_openpgp_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
@@ -7521,7 +7522,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 	(const time_t keytime, const tmcg_openpgp_pkalgo_t algo,
 	 const gcry_mpi_t p, const gcry_mpi_t q, const gcry_mpi_t g,
 	 const gcry_mpi_t y, const gcry_mpi_t x,
-	 const std::string &passphrase, tmcg_openpgp_octets_t &out)
+	 const tmcg_openpgp_secure_string_t &passphrase,
+	 tmcg_openpgp_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
 	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
@@ -7656,7 +7658,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 	 const std::vector<gcry_mpi_t> &v_i,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const gcry_mpi_t x_i, const gcry_mpi_t xprime_i,
-	 const std::string &passphrase,
+	 const tmcg_openpgp_secure_string_t &passphrase,
 	 tmcg_openpgp_octets_t &out)
 {
 	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
@@ -12020,7 +12022,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag17
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 	(tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
-	 const std::string &passphrase)
+	 const tmcg_openpgp_secure_string_t &passphrase)
 {
 	if (verbose > 1)
 	{
@@ -13322,7 +13324,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 	(const tmcg_openpgp_octets_t &in, const int verbose,
-	 const std::string &passphrase,
+	 const tmcg_openpgp_secure_string_t &passphrase,
 	 TMCG_OpenPGP_Prvkey* &prv)
 {
 	prv = NULL;
@@ -13514,7 +13516,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 	(const std::string &in, const int verbose,
-	 const std::string &passphrase,
+	 const tmcg_openpgp_secure_string_t &passphrase,
 	 TMCG_OpenPGP_Prvkey* &prv)
 {
 	// decode ASCII Armor
