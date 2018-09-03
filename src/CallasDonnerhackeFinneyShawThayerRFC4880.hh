@@ -130,6 +130,7 @@ typedef std::vector<tmcg_openpgp_byte_t, TMCG_SecureAlloc<tmcg_openpgp_byte_t> >
 typedef std::pair<tmcg_openpgp_octets_t, tmcg_openpgp_octets_t> tmcg_openpgp_notation_t;
 typedef std::vector<tmcg_openpgp_notation_t> tmcg_openpgp_notations_t;
 typedef std::basic_string<char, std::char_traits<char>, TMCG_SecureAlloc<char> > tmcg_openpgp_secure_string_t;
+typedef std::basic_stringstream<char, std::char_traits<char>, TMCG_SecureAlloc<char> > tmcg_openpgp_secure_stringstream_t;
 
 enum tmcg_openpgp_signature_t
 {
