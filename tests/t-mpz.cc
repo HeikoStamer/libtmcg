@@ -591,6 +591,29 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	gcry_mpi_release(a);
 	assert(!mpz_cmp(foo, bar));
 	
+	// tmcg_interpolate_polynom
+	std::cout << "tmcg_interpolate_polynom()" << std::endl;
+	std::vector<mpz_ptr> aa, bb, ff;
+	for (size_t k = 0; k < 8; k++)
+	{
+		mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
+		mpz_init_set_ui(tmp1, k+5), mpz_init_set_ui(tmp2, (2*k)+3), mpz_init(tmp3);
+		aa.push_back(tmp1), bb.push_back(tmp2), ff.push_back(tmp3);
+	}
+	mpz_set_ui(foo, 257L);
+	mpz_set_str(bar, "42", TMCG_MPZ_IO_BASE);
+	assert(tmcg_interpolate_polynom(aa, bb, foo, ff));
+	for (size_t k = 0; k < ff.size(); k++)
+		std::cout << "ff[" << k <<"]=" << ff[k] << " ";
+	std::cout << std::endl;
+	assert(!mpz_cmp(ff[0], bar));
+	for (size_t k = 0; k < 8; k++)
+	{
+		mpz_clear(aa[k]), mpz_clear(bb[k]), mpz_clear(ff[k]);
+		delete [] aa[k], delete [] bb[k], delete [] ff[k];
+	}
+
+	// release
 	mpz_clear(foo), mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2),
 		mpz_clear(root), mpz_clear(t1), mpz_clear(t2);
 	

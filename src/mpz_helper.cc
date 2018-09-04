@@ -150,18 +150,17 @@ bool tmcg_interpolate_polynom
 	}
 	for (size_t k = 0; k < m; k++)
 		mpz_set(prod[k], a[k]), mpz_set_ui(res[k], 0L);
-	mpz_t t1, t2, aa;
-	mpz_init(t1), mpz_init(t2), mpz_init(aa);
+	mpz_t t1, t2;
+	mpz_init(t1), mpz_init(t2);
 
 	try
 	{
 		for (size_t k = 0; k < m; k++)
 		{
-			mpz_set(aa, a[k]);
 			mpz_set_ui(t1, 1L);
 			for (long i = k-1; i >= 0; i--)
 			{
-				mpz_mul(t1, t1, aa);
+				mpz_mul(t1, t1, a[k]);
 				mpz_mod(t1, t1, q);
 				mpz_add(t1, t1, prod[i]);
 				mpz_mod(t1, t1, q);
@@ -169,7 +168,7 @@ bool tmcg_interpolate_polynom
 			mpz_set_ui(t2, 0L);
 			for (long i = k-1; i >= 0; i--)
 			{
-				mpz_mul(t2, t2, aa);
+				mpz_mul(t2, t2, a[k]);
 				mpz_mod(t2, t2, q);
 				mpz_add(t2, t2, res[i]);
 				mpz_mod(t2, t2, q);
@@ -223,7 +222,7 @@ bool tmcg_interpolate_polynom
 			delete [] prod[k], delete [] res[k];
 		}
 		prod.clear(), res.clear();
-		mpz_clear(t1), mpz_clear(t2), mpz_clear(aa);
+		mpz_clear(t1), mpz_clear(t2);
 		// return
 		return return_value;
 	}
