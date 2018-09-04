@@ -51,7 +51,7 @@
 #include "mpz_srandom.hh"
 #include "mpz_helper.hh"
 
-// additional STL-compliant allocator using libgcrypt's secure memory
+// STL-compliant allocator using libgcrypt's secure memory
 template<class T> class TMCG_SecureAlloc
 {
 	public:
@@ -82,13 +82,13 @@ template<class T> class TMCG_SecureAlloc
 			(size_type n, const void* hint = 0)
 		{
 			pointer adr = static_cast<pointer>(gcry_malloc_secure(n));
-//std::cerr << "TMCG_SecureAlloc::allocate(" << n << ") at " << (long int)adr << std::endl;
+//std::cerr << "TMCG_SecureAlloc::allocate(" << n << ") at 0x" << std::hex << (long int)adr << std::dec << std::endl;
 			return adr;
 		}
 		void deallocate
 			(pointer p, size_type n)
 		{
-//std::cerr << "TMCG_SecureAlloc::deallocate(" << n << ") at " << (long int)p << std::endl;
+//std::cerr << "TMCG_SecureAlloc::deallocate(" << n << ") at 0x" << std::hex << (long int)p << std::dec << std::endl;
 			gcry_free(p);
 		}
 		void construct
@@ -1102,8 +1102,8 @@ class TMCG_OpenPGP_Prvkey
 class TMCG_OpenPGP_Keyring
 {
 	private:
-		std::map<std::string, TMCG_OpenPGP_Pubkey*>	keys;
-		std::map<std::string, TMCG_OpenPGP_Pubkey*>	keys_by_keyid;
+		std::map<std::string, TMCG_OpenPGP_Pubkey*>			keys;
+		std::map<std::string, TMCG_OpenPGP_Pubkey*>			keys_by_keyid;
 
 	public:
 		TMCG_OpenPGP_Keyring
