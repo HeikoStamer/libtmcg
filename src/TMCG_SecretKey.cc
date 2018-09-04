@@ -17,7 +17,7 @@
      Proceedings of CRYPTO 2001, LNCS 2139, pp. 275--291, 2001.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-               2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -40,6 +40,13 @@
 #endif
 #include "TMCG_SecretKey.hh"
 #include "TMCG_PublicKey.hh"
+
+#include "mpz_srandom.hh"
+#include "mpz_sprime.hh"
+#include "mpz_sqrtm.hh"
+#include "mpz_helper.hh"
+#include "parse_helper.hh"
+#include "mpz_shash.hh"
 
 TMCG_SecretKey::TMCG_SecretKey
 	()
@@ -176,7 +183,8 @@ void TMCG_SecretKey::generate
 		// common random number foo \in Z^*_m (build from hash function g)
 		do
 		{
-			tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
+			tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(),
+				(input.str()).length());
 			mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 			mpz_mod(foo, foo, m);
 			mpz_gcd(bar, foo, m);
@@ -199,7 +207,8 @@ void TMCG_SecretKey::generate
 		// common random number foo \in Z^*_m (build from hash function g)
 		do
 		{
-			tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
+			tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(),
+				(input.str()).length());
 			mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 			mpz_mod(foo, foo, m);
 			mpz_gcd(bar, foo, m);
@@ -249,7 +258,8 @@ void TMCG_SecretKey::generate
 		// common random number foo \in Z^\circ_m (build from hash function g)
 		do
 		{
-			tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(), (input.str()).length());
+			tmcg_g(mn, mnsize, (unsigned char*)(input.str()).c_str(),
+				(input.str()).length());
 			mpz_import(foo, 1, -1, mnsize, 1, 0, mn);
 			mpz_mod(foo, foo, m);
 			input << foo;
@@ -391,26 +401,38 @@ bool TMCG_SecretKey::import
 		// m
 		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 			throw false;
-		if ((mpz_set_str(m, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((mpz_set_str(m, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		
 		// y
 		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 			throw false;
-		if ((mpz_set_str(y, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((mpz_set_str(y, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		
 		// p
 		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 			throw false;
-		if ((mpz_set_str(p, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((mpz_set_str(p, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		
 		// q
 		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 			throw false;
-		if ((mpz_set_str(q, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((mpz_set_str(q, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		
 		// NIZK
 		if (!TMCG_ParseHelper::gs(s, '|', nizk))
@@ -470,8 +492,11 @@ bool TMCG_SecretKey::decrypt
 		std::string mpz_str;
 		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 			throw false;
-		if ((mpz_set_str(vdata, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((mpz_set_str(vdata, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		
 		// decrypt value, i.e., compute the modular square roots
 		if (!tmcg_mpz_qrmn_p(vdata, p, q, m))

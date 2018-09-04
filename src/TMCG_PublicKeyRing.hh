@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of libTMCG.
 
- Copyright (C) 2004, 2006, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2006, 2016, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    libTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@
 #ifndef INCLUDED_TMCG_PublicKeyRing_HH
 	#define INCLUDED_TMCG_PublicKeyRing_HH
 	
-	// C++/STL header
-	#include <cassert>
-	#include <vector>
+// C++/STL header
+#include <cassert>
+#include <vector>
 
 struct TMCG_PublicKeyRing
 {

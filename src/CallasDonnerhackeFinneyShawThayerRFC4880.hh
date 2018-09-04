@@ -1087,7 +1087,7 @@ class TMCG_OpenPGP_Prvkey
 		bool Decrypt
 			(const TMCG_OpenPGP_PKESK*						&esk,
 			 const int										verbose,
-			 tmcg_openpgp_secure_octets_t							&out) const;
+			 tmcg_openpgp_secure_octets_t					&out) const;
 		void RelinkPublicSubkeys
 			();
 		void RelinkPrivateSubkeys
@@ -1203,7 +1203,7 @@ class TMCG_OpenPGP_Message
 		TMCG_OpenPGP_Message
 			();
 		bool Decrypt
-			(const tmcg_openpgp_secure_octets_t					&key,
+			(const tmcg_openpgp_secure_octets_t				&key,
 			 const int										verbose,
 			 tmcg_openpgp_octets_t							&out);
 		bool CheckMDC

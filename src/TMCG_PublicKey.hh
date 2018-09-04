@@ -35,28 +35,19 @@
 #ifndef INCLUDED_TMCG_PublicKey_HH
 	#define INCLUDED_TMCG_PublicKey_HH
 	
-	// C++/STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <sstream>
-	#include <iostream>
-	#include <vector>
+// C++/STL header
+#include <cstdio>
+#include <cstdlib>
+#include <cassert>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <vector>
 	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_sqrtm.hh"
-	#include "mpz_helper.hh"
-	#include "parse_helper.hh"
-	#include "mpz_shash.hh"
-	#include "TMCG_SecretKey.hh"
+// GNU multiple precision library
+#include <gmp.h>
 
-	// FIXME(C++11): move following definitions into class
-	static const std::string tmcg_SELFSIG = "SELFSIG-SELFSIG-SELFSIG-SELFSIG-"
-		"SELFSIG-SELFSIG";
-	static const std::string tmcg_ERROR = "ERROR";
+#include "TMCG_SecretKey.hh"
 
 struct TMCG_PublicKey
 {
