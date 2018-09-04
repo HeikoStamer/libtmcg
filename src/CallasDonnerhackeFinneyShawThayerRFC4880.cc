@@ -5351,6 +5351,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 		for (size_t i = 0; (i < in.size()) && (c < cnt); i++, c++)
 			gcry_md_putc(hd, in[i]);
 	}
+	gcry_md_final(hd);
 	tmcg_openpgp_byte_t *hash = gcry_md_read(hd, a);
 	if (hash != NULL)
 	{
@@ -5360,6 +5361,40 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	else
 		out.clear(); // indicates an error
 	gcry_md_close(hd);
+}
+
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
+	(const tmcg_openpgp_hashalgo_t algo, const size_t cnt,
+	 const tmcg_openpgp_secure_octets_t &in,
+	 tmcg_openpgp_secure_octets_t &out)
+{
+	size_t c = in.size();
+	int a = AlgorithmHashGCRY(algo);
+	size_t dlen = gcry_md_get_algo_dlen(a);
+	gcry_error_t ret;
+	gcry_md_hd_t hd;
+
+	ret = gcry_md_open(&hd, a, GCRY_MD_FLAG_SECURE);
+	if (ret)
+		return ret;
+	for (size_t i = 0; i < in.size(); i++)
+		gcry_md_putc(hd, in[i]);
+	while (c < cnt)
+	{
+		for (size_t i = 0; (i < in.size()) && (c < cnt); i++, c++)
+			gcry_md_putc(hd, in[i]);
+	}
+	gcry_md_final(hd);
+	tmcg_openpgp_byte_t *buf = gcry_md_read(hd, a);
+	if (buf == NULL)
+	{	
+		gcry_md_close(hd);
+		return GPG_ERR_DIGEST_ALGO;
+	}
+	for (size_t i = 0; i < dlen; i++)
+		out.push_back(buf[i]);
+	gcry_md_close(hd);
+	return 0;
 }
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
@@ -5491,7 +5526,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 	// context(s) as with the other S2K algorithms.
 	if (hashlen >= sklen)
 	{
-		tmcg_openpgp_octets_t hash_in, hash_out;
+		tmcg_openpgp_secure_octets_t hash_in, hash_out;
 		hash_in.insert(hash_in.end(), salt.begin(), salt.end());
 		for (size_t i = 0; i < in.length(); i++)
 			hash_in.push_back(in[i]);
@@ -5508,7 +5543,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 		size_t skcnt = 0;
 		for (size_t j = 0; j < instances; j++)
 		{
-			tmcg_openpgp_octets_t hash_in, hash_out;
+			tmcg_openpgp_secure_octets_t hash_in, hash_out;
 			for (size_t i = 0; i < j; i++)
 				hash_in.push_back(0x00); // preload with zeros
 			hash_in.insert(hash_in.end(), salt.begin(), salt.end());

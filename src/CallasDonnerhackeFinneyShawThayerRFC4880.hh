@@ -81,11 +81,14 @@ template<class T> class TMCG_SecureAlloc
 		pointer allocate
 			(size_type n, const void* hint = 0)
 		{
-			return static_cast<pointer>(gcry_malloc_secure(n));
+			pointer adr = static_cast<pointer>(gcry_malloc_secure(n));
+//std::cerr << "TMCG_SecureAlloc::allocate(" << n << ") at " << (long int)adr << std::endl;
+			return adr;
 		}
 		void deallocate
 			(pointer p, size_type n)
 		{
+//std::cerr << "TMCG_SecureAlloc::deallocate(" << n << ") at " << (long int)p << std::endl;
 			gcry_free(p);
 		}
 		void construct
@@ -1438,6 +1441,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const size_t									cnt,
 			 const tmcg_openpgp_octets_t					&in,
 			 tmcg_openpgp_octets_t							&out);
+		static gcry_error_t HashCompute
+			(const tmcg_openpgp_hashalgo_t					algo,
+			 const size_t									cnt,
+			 const tmcg_openpgp_secure_octets_t				&in,
+			 tmcg_openpgp_secure_octets_t					&out);
 		static bool HashComputeFile
 			(const tmcg_openpgp_hashalgo_t					algo,
 			 const std::string								&filename,
