@@ -140,8 +140,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		revcode(revcode_in)
 {
 	rsa_md = gcry_mpi_new(8);
-	dsa_r = gcry_mpi_new(2048);
-	dsa_s = gcry_mpi_new(2048);
+	dsa_r = gcry_mpi_new(256);
+	dsa_s = gcry_mpi_new(256);
 	gcry_mpi_set(dsa_r, r);
 	gcry_mpi_set(dsa_s, s);
 	if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
@@ -971,11 +971,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (rsa (n %M) (e %M)))", n, e);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketSubEncode(creationtime_in, pkalgo_in, n, e, e, e, sub);
-	for (size_t i = 6; i < sub.size(); i++)
-		sub_hashing.push_back(sub[i]);
+		PacketBodyExtract(packet, 0, sub_hashing);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(sub_hashing, id);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -1019,11 +1016,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (elg (p %M) (g %M) (y %M)))", p, g, y);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketSubEncode(creationtime_in, pkalgo_in, p, p, g, y, sub);
-	for (size_t i = 6; i < sub.size(); i++)
-		sub_hashing.push_back(sub[i]);
+		PacketBodyExtract(packet, 0, sub_hashing);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(sub_hashing, id);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -1069,11 +1063,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", p, q, g, y);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketSubEncode(creationtime_in, pkalgo_in, p, q, g, y, sub);
-	for (size_t i = 6; i < sub.size(); i++)
-		sub_hashing.push_back(sub[i]);
+		PacketBodyExtract(packet, 0, sub_hashing);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(sub_hashing, id);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -1142,12 +1133,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 			"(public-key (ecc (curve %s) (flags eddsa) (q %m)))", curve, ecpk);
 	}
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketSubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
-		TMCG_OPENPGP_HASHALGO_UNKNOWN, TMCG_OPENPGP_SKALGO_PLAINTEXT, sub);
-	for (size_t i = 6; i < sub.size(); i++)
-		sub_hashing.push_back(sub[i]);
+		PacketBodyExtract(packet, 0, sub_hashing);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(sub_hashing, id);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -1210,12 +1197,8 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (ecdh (curve %s) (q %m)))", curve, ecpk);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketSubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
-		kdf_hashalgo_in, kdf_skalgo_in, sub);
-	for (size_t i = 6; i < sub.size(); i++)
-		sub_hashing.push_back(sub[i]);
+		PacketBodyExtract(packet, 0, sub_hashing);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(sub_hashing, id);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -1987,7 +1970,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_q = gcry_mpi_snew(8);
 	rsa_u = gcry_mpi_snew(8);
 	rsa_d = gcry_mpi_snew(8);
-	elg_x = gcry_mpi_snew(2048);
+	elg_x = gcry_mpi_snew(256);
 	dsa_x = gcry_mpi_snew(8);
 	ec_sk = gcry_mpi_snew(8);
 	telg_q = gcry_mpi_new(8);
@@ -2030,7 +2013,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_u = gcry_mpi_snew(8);
 	rsa_d = gcry_mpi_snew(8);
 	elg_x = gcry_mpi_snew(8);
-	dsa_x = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(256);
 	ec_sk = gcry_mpi_snew(8);
 	telg_q = gcry_mpi_new(8);
 	telg_h = gcry_mpi_new(8);
@@ -2082,8 +2065,8 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	ec_sk = gcry_mpi_snew(8);
 	telg_q = gcry_mpi_new(2048);
 	telg_h = gcry_mpi_new(2048);
-	telg_x_i = gcry_mpi_snew(2048);
-	telg_xprime_i = gcry_mpi_snew(2048);
+	telg_x_i = gcry_mpi_snew(256);
+	telg_xprime_i = gcry_mpi_snew(256);
 	// public-key algorithm is tElG (threshold ElGamal)
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (elg (p %M) (g %M) (y %M) (x %M)))",
@@ -2147,7 +2130,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_d = gcry_mpi_snew(8);
 	elg_x = gcry_mpi_snew(8);
 	dsa_x = gcry_mpi_snew(8);
-	ec_sk = gcry_mpi_snew(1024);
+	ec_sk = gcry_mpi_snew(256);
 	telg_q = gcry_mpi_new(8);
 	telg_h = gcry_mpi_new(8);
 	telg_x_i = gcry_mpi_snew(8);
@@ -2220,7 +2203,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	rsa_d = gcry_mpi_snew(8);
 	elg_x = gcry_mpi_snew(8);
 	dsa_x = gcry_mpi_snew(8);
-	ec_sk = gcry_mpi_snew(1024);
+	ec_sk = gcry_mpi_snew(256);
 	telg_q = gcry_mpi_new(8);
 	telg_h = gcry_mpi_new(8);
 	telg_x_i = gcry_mpi_snew(8);
@@ -2557,11 +2540,8 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (rsa (n %M) (e %M)))", n, e);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t pub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketPubEncode(creationtime_in, pkalgo_in, n, e, e, e, pub);
-	for (size_t i = 6; i < pub.size(); i++)
-		pub_hashing.push_back(pub[i]);
+		PacketBodyExtract(packet, 0, pub_hashing);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(pub_hashing, id);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -2602,11 +2582,8 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	ret = gcry_sexp_build(&key, &erroff,
 		"(public-key (dsa (p %M) (q %M) (g %M) (y %M)))", p, q, g, y);
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t pub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketSubEncode(creationtime_in, pkalgo_in, p, q, g, y, pub);
-	for (size_t i = 6; i < pub.size(); i++)
-		pub_hashing.push_back(pub[i]);
+		PacketBodyExtract(packet, 0, pub_hashing);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(pub_hashing, id);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -2671,12 +2648,8 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 			"(public-key (ecc (curve %s) (flags eddsa) (q %m)))", curve, ecpk);
 	}
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
-	tmcg_openpgp_octets_t pub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketPubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
-		TMCG_OPENPGP_HASHALGO_UNKNOWN, TMCG_OPENPGP_SKALGO_PLAINTEXT, pub);
-	for (size_t i = 6; i < pub.size(); i++)
-		pub_hashing.push_back(pub[i]);
+		PacketBodyExtract(packet, 0, pub_hashing);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(pub_hashing, id);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -3553,7 +3526,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	rsa_q = gcry_mpi_snew(8);
 	rsa_u = gcry_mpi_snew(8);
 	rsa_d = gcry_mpi_snew(8);
-	dsa_x = gcry_mpi_snew(2048);
+	dsa_x = gcry_mpi_snew(256);
 	ec_sk = gcry_mpi_snew(8);
 	tdss_h = gcry_mpi_new(8);
 	tdss_x_i = gcry_mpi_snew(8);
@@ -3602,8 +3575,8 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	dsa_x = gcry_mpi_snew(8);
 	ec_sk = gcry_mpi_snew(8);
 	tdss_h = gcry_mpi_new(2048);
-	tdss_x_i = gcry_mpi_snew(2048);
-	tdss_xprime_i = gcry_mpi_snew(2048);
+	tdss_x_i = gcry_mpi_snew(256);
+	tdss_xprime_i = gcry_mpi_snew(256);
 	// public-key algorithm is tDSS/DSA
 	ret = gcry_sexp_build(&private_key, &erroff,
 		"(private-key (dsa (p %M) (q %M) (g %M) (y %M) (x %M)))",
@@ -3669,7 +3642,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	rsa_u = gcry_mpi_snew(8);
 	rsa_d = gcry_mpi_snew(8);
 	dsa_x = gcry_mpi_snew(8);
-	ec_sk = gcry_mpi_snew(1024);
+	ec_sk = gcry_mpi_snew(256);
 	tdss_h = gcry_mpi_new(8);
 	tdss_x_i = gcry_mpi_snew(8);
 	tdss_xprime_i = gcry_mpi_snew(8);
@@ -5620,7 +5593,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::KDFCompute
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTagEncode
 	(const tmcg_openpgp_byte_t tag, tmcg_openpgp_octets_t &out)
 {
-	// use V4 packet format
+	// always use V4 (new) packet format
 	out.push_back(tag | 0x80 | 0x40);
 }
 
@@ -5641,7 +5614,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthEncode
 	}
 	else
 	{
-		// four-octet length format
+		// four-octet length format with 0xFF prefix
 		out.push_back(0xFF);
 		out.push_back((len >> 24) & 0xFF);
 		out.push_back((len >> 16) & 0xFF);
@@ -5653,7 +5626,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthEncode
 void CallasDonnerhackeFinneyShawThayerRFC4880::FixedLengthEncode
 	(const size_t len, tmcg_openpgp_octets_t &out)
 {
-	// four-octet length format
+	// four-octet length format with 0xFF prefix
 	out.push_back(0xFF);
 	out.push_back((len >> 24) & 0xFF);
 	out.push_back((len >> 16) & 0xFF);
@@ -8422,7 +8395,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextEvaluate
 }
 
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract
-	(tmcg_openpgp_octets_t &in, const int verbose,
+	(const tmcg_openpgp_octets_t &in, const int verbose,
 	 tmcg_openpgp_octets_t &out)
 {
 	bool newformat;
@@ -8437,11 +8410,13 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract
 	//      +---------------+
 	// Bit 7 -- Always one
 	// Bit 6 -- New packet format if set
-	if (in.size() < 1)
+	tmcg_openpgp_octets_t work;
+	work.insert(work.end(), in.begin(), in.end());
+	if (work.size() < 1)
 		return 0; // error: no first octet of packet header
-	tmcg_openpgp_byte_t tag = in[0];
+	tmcg_openpgp_byte_t tag = work[0];
 	tmcg_openpgp_byte_t lentype = 0x00;
-	in.erase(in.begin(), in.begin()+1); // remove first octet
+	work.erase(work.begin(), work.begin()+1); // remove first octet
 	if ((tag & 0x80) != 0x80)
 		return 0; // error: Bit 7 of first octet not set
 	if ((tag & 0x40) == 0x40)
@@ -8462,18 +8437,17 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract
 	// header in the packet MUST NOT be a Partial Body Length header.
 	// Partial Body Length headers may only be used for the non-final
 	// parts of the packet.
-	tmcg_openpgp_octets_t pkt;
 	uint32_t len = 0;
 	bool partlen = true, firstlen = true;
 	while (partlen)
 	{
-		size_t headlen = PacketLengthDecode(in, newformat,
+		size_t headlen = PacketLengthDecode(work, newformat,
 			lentype, len, partlen);
 		if (!headlen)
 			return 0; // error: invalid length header
 		if (headlen == 42)
 			headlen = 0; // special case: indeterminate length
-		if (in.size() < (headlen + len))
+		if (work.size() < (headlen + len))
 			return 0; // error: packet too short
 		// An implementation MAY use Partial Body Lengths for data
 		// packets, be they literal, compressed, or encrypted. The
@@ -8488,8 +8462,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract
 			return 0; // error: no literal, compressed, ... allowed
 		}
 		out.insert(out.end(),
-			in.begin()+headlen, in.begin()+headlen+len);
-		in.erase(in.begin(), in.begin()+headlen+len); // remove packet
+			work.begin()+headlen, work.begin()+headlen+len);
+		work.erase(work.begin(), work.begin()+headlen+len); // remove chunck
 		firstlen = false;
 	}
 	return tag;
@@ -8552,7 +8526,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	// header in the packet MUST NOT be a Partial Body Length header.
 	// Partial Body Length headers may only be used for the non-final
 	// parts of the packet.
-	tmcg_openpgp_octets_t pkt;
+	tmcg_openpgp_octets_t pkt; // only the packet body
 	uint32_t len = 0;
 	bool partlen = true, firstlen = true;
 	while (partlen)
@@ -8579,11 +8553,11 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		{
 			return 0; // error: no literal, compressed, ... allowed
 		}
-		current_packet.insert(current_packet.end(), // copy packet
+		current_packet.insert(current_packet.end(), // copy packet data
 			in.begin(), in.begin()+headlen+len);
 		pkt.insert(pkt.end(),
 			in.begin()+headlen, in.begin()+headlen+len);
-		in.erase(in.begin(), in.begin()+headlen+len); // remove packet
+		in.erase(in.begin(), in.begin()+headlen+len); // remove chunck
 		firstlen = false;
 	}
 	tmcg_openpgp_octets_t hspd, uspd, mpis;
@@ -9801,7 +9775,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	PacketLengthEncode(trailer.size(), hash_input);
+	FixedLengthEncode(trailer.size(), hash_input);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
@@ -9866,7 +9840,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	PacketLengthEncode(trailer.size(), hash_input);
+	FixedLengthEncode(trailer.size(), hash_input);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
@@ -9927,7 +9901,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::StandaloneHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	PacketLengthEncode(trailer.size(), hash_input);
+	FixedLengthEncode(trailer.size(), hash_input);
 	HashCompute(hashalgo, hash_input, hash);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
@@ -10029,7 +10003,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	PacketLengthEncode(trailer.size(), hash_input);
+	FixedLengthEncode(trailer.size(), hash_input);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
@@ -10110,7 +10084,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	PacketLengthEncode(trailer.size(), hash_input);
+	FixedLengthEncode(trailer.size(), hash_input);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
@@ -10199,7 +10173,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	PacketLengthEncode(trailer.size(), hash_input);
+	FixedLengthEncode(trailer.size(), hash_input);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.

@@ -1798,7 +1798,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_openpgp_packet_ctx_t				&in,
 			 tmcg_openpgp_packet_ctx_t						&out);
 		static tmcg_openpgp_byte_t PacketBodyExtract
-			(tmcg_openpgp_octets_t							&in,
+			(const tmcg_openpgp_octets_t						&in,
 			 const int										verbose,
 			 tmcg_openpgp_octets_t							&out);
 		static tmcg_openpgp_byte_t PacketDecode

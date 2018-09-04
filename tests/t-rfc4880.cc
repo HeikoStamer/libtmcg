@@ -387,8 +387,7 @@ int main
 		TMCG_OPENPGP_PKALGO_DSA, p, q, g, y, pub);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode(creation,
 		TMCG_OPENPGP_PKALGO_DSA, p, q, g, y, x, passphrase, sec);
-	for (size_t i = 6; i < pub.size(); i++)
-		pub_hashing.push_back(pub[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract(pub, 3, pub_hashing);
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute(pub_hashing, keyid);
 	CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute(pub_hashing, issuer);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(username, uid);
@@ -425,8 +424,7 @@ int main
 		PacketSigPrepareSelfSignature(TMCG_OPENPGP_SIGNATURE_SUBKEY_BINDING,
 			TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 1000, subflags, issuer,
 			subsig_hashing);
-	for (size_t i = 6; i < sub.size(); i++)
-		sub_hashing.push_back(sub[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract(sub, 3, sub_hashing);
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash(pub_hashing, sub_hashing,
 		subsig_hashing, TMCG_OPENPGP_HASHALGO_SHA256, hash, subsig_left);
@@ -516,8 +514,7 @@ int main
 	assert(!ret);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creation,
 		TMCG_OPENPGP_PKALGO_DSA, p, q, g, y, pub2);
-	for (size_t i = 6; i < pub2.size(); i++)
-		pub_hashing2.push_back(pub2[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract(pub2, 3, pub_hashing2);
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(pub_hashing2, keyid2);
 	CallasDonnerhackeFinneyShawThayerRFC4880::PacketUidEncode(username, uid2);
@@ -543,8 +540,7 @@ int main
 		PacketSigPrepareSelfSignature(TMCG_OPENPGP_SIGNATURE_SUBKEY_BINDING,
 			TMCG_OPENPGP_HASHALGO_SHA256, time(NULL), 1000, subflags, keyid2,
 			subsig_hashing2);
-	for (size_t i = 6; i < sub2.size(); i++)
-		sub_hashing2.push_back(sub2[i]);
+	CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract(sub2, 3, sub_hashing2);
 	hash.clear();
 	CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash(pub_hashing2, sub_hashing2,
 		subsig_hashing2, TMCG_OPENPGP_HASHALGO_SHA256, hash, subsig_left2);
@@ -703,6 +699,38 @@ int main
 	gcry_sexp_release(dsakey2);
 	gcry_sexp_release(rsaparms);
 	gcry_sexp_release(rsakey);
+
+	// test externally generated public key
+	std::string mallory_armored =
+"-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n\r\n"
+"mDMEW3P+yxYJKwYBBAHaRw8BAQdAFWO/NfdgP1sX27GUdaporGJkMhCNfr/ZlyMm\r\n"
+"6i8vwD20B01hbGxvcnmIkAQTFggAOBYhBOOe9Pt+rWYkOw5dGnchfMwJwVMrBQJb\r\n"
+"c/7LAhsDBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEHchfMwJwVMrrYYBAKEK\r\n"
+"Y0uKnES/YPmXB6Jj5qmK82MX+mJx8hccHPdsJb/nAQDusYVS/4Xx+uWK9/zntrDq\r\n"
+"Jf1hYsjSxe/03+cT2ze/A7g4BFtz/ssSCisGAQQBl1UBBQEBB0BaH+8/c76A3gPe\r\n"
+"a631zMYQou+bF7l9x25iPrWrivoCNgMBCAeIeAQYFggAIBYhBOOe9Pt+rWYkOw5d\r\n"
+"GnchfMwJwVMrBQJbc/7LAhsMAAoJEHchfMwJwVMrsVoA/09EgCBkINfruB0MomXK\r\n"
+"KiG6cUjGtAO0aURabyiKWiS1AP97KMY0ixHTQIV0sCR3LGIIu3ojnNtapLuqzqJt\r\n"
+"uO6+DQ==\r\n"
+"=VqXx\r\n"
+"-----END PGP PUBLIC KEY BLOCK-----\r\n";
+	TMCG_OpenPGP_Pubkey *mallory = NULL;
+	ring = new TMCG_OpenPGP_Keyring();
+	std::cout << "PublicKeyBlockParse(mallory_armored, 3, mallory)" << std::endl;
+	parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
+		PublicKeyBlockParse(mallory_armored, 3, mallory);
+	assert(parse_ok);
+	std::cout << "CheckSelfSignatures()" << std::endl;
+	parse_ok = mallory->CheckSelfSignatures(ring, 3);
+	assert(parse_ok);
+	std::cout << "CheckSubkeys()" << std::endl;
+	parse_ok = mallory->CheckSubkeys(ring, 3);
+	assert(parse_ok);
+	std::cout << "!primary->weak()" << std::endl;
+	check_ok = mallory->weak(3);
+	assert(!check_ok);
+	delete mallory;
+	delete ring;
 	
 	return 0;
 }
