@@ -40,12 +40,18 @@
 #endif
 #include "TMCG_PublicKey.hh"
 
+// additional headers
+#include <cstdio>
+#include <cstdlib>
+#include <cassert>
+#include <sstream>
+#include <vector>
 #include "mpz_sqrtm.hh"
 #include "mpz_helper.hh"
 #include "parse_helper.hh"
 #include "mpz_shash.hh"
 
-// FIXME(C++11): move following definitions into class
+// FIXME(C++11): move following static definitions into class
 static const std::string tmcg_SELFSIG = "SELFSIG-SELFSIG-SELFSIG-SELFSIG-"
 	"SELFSIG-SELFSIG";
 static const std::string tmcg_ERROR = "ERROR";

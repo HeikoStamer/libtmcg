@@ -1,8 +1,8 @@
 /*******************************************************************************
    Data structure for the secrets of a card. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2007, 2010, 2016,
-                           2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2007, 2010,
+                           2016, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,18 +22,13 @@
 #ifndef INCLUDED_TMCG_CardSecret_HH
 	#define INCLUDED_TMCG_CardSecret_HH
 	
-	// C++/STL header
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <vector>
+// C++/STL header
+#include <string>
+#include <iostream>
+#include <vector>
 	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_helper.hh"
-	#include "parse_helper.hh"
+// GNU multiple precision library
+#include <gmp.h>
 
 /** @brief Data structure for secrets of the masking operation.
     

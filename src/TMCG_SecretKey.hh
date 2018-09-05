@@ -38,11 +38,7 @@
 	#define INCLUDED_TMCG_SecretKey_HH
 	
 // C++/STL header
-#include <cstdio>
-#include <cstdlib>
-#include <cassert>
 #include <string>
-#include <sstream>
 #include <iostream>
 	
 // GNU multiple precision library
@@ -61,8 +57,8 @@ struct TMCG_SecretKey
 	
 	TMCG_SecretKey
 		(const std::string& n, const std::string& e,
-		const unsigned long int keysize = TMCG_QRA_SIZE, 
-		const bool nizk_key = true);
+		 const unsigned long int keysize = TMCG_QRA_SIZE, 
+		 const bool nizk_key = true);
 	
 	TMCG_SecretKey
 		(const std::string& s);

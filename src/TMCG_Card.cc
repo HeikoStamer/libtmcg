@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+                     2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,6 +24,12 @@
 	#include "libTMCG_config.h"
 #endif
 #include "TMCG_Card.hh"
+
+// additional headers
+#include <cstdlib>
+#include <cassert>
+#include "mpz_helper.hh"
+#include "parse_helper.hh"
 
 TMCG_Card::TMCG_Card
 	()
@@ -70,9 +76,13 @@ bool TMCG_Card::operator ==
 	if ((z.size() != that.z.size()) || (z[0].size() != that.z[0].size()))
 		return false;
 	for (size_t k = 0; k < z.size(); k++)
+	{
 		for (size_t w = 0; w < z[k].size(); w++)
+		{
 			if (mpz_cmp(&z[k][w], &that.z[k][w]))
 				return false;
+		}
+	}
 	return true;
 }
 
@@ -87,7 +97,7 @@ void TMCG_Card::resize
 {
 	assert((k > 0) && (w > 0));
 	
-	// FIXME: reallocation should be done more efficiently
+	// TODO: reallocation should be done more efficiently
 	for (size_t i = 0; i < z.size(); i++)
 	{
 		for (size_t j = 0; j < z[i].size(); j++)
@@ -99,8 +109,10 @@ void TMCG_Card::resize
 	for (size_t i = 0; i < k; i++)
 		z.push_back(std::vector<MP_INT>(w));
 	for (size_t i = 0; i < z.size(); i++)
+	{
 		for (size_t j = 0; j < z[i].size(); j++)
 			mpz_init(&z[i][j]);
+	}
 }
 
 bool TMCG_Card::import
@@ -118,13 +130,19 @@ bool TMCG_Card::import
 			throw false;
 		char *ec;
 		size_t k = std::strtoul(k_str.c_str(), &ec, 10);
-		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		if (!TMCG_ParseHelper::gs(s, '|', w_str))
 			throw false;
 		size_t w = std::strtoul(w_str.c_str(), &ec, 10);
-		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 				throw false;
+		}
 		
 		// resize this
 		resize(k, w);
@@ -138,10 +156,15 @@ bool TMCG_Card::import
 				// z_ij
 				if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 					throw false;
-				if ((mpz_set_str(&z[i][j], mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+				if ((mpz_set_str(&z[i][j], mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+					!TMCG_ParseHelper::nx(s, '|'))
+				{
 					throw false;
+				}
 			}
 		}
+
+		// finish
 		throw true;
 	}
 	catch (bool return_value)
@@ -154,8 +177,10 @@ TMCG_Card::~TMCG_Card
 	()
 {
 	for (size_t k = 0; k < z.size(); k++)
+	{
 		for (size_t w = 0; w < z[k].size(); w++)
 			mpz_clear(&z[k][w]);
+	}
 }
 
 std::ostream& operator <<
@@ -163,8 +188,10 @@ std::ostream& operator <<
 {
 	out << "crd|" << card.z.size() << "|" << card.z[0].size() << "|";
 	for (size_t k = 0; k < card.z.size(); k++)
+	{
 		for (size_t w = 0; w < card.z[k].size(); w++)
 			out << &card.z[k][w] << "|";
+	}
 	return out;
 }
 

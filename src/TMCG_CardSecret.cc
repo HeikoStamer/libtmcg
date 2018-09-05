@@ -1,7 +1,8 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006,
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,11 +25,19 @@
 #endif
 #include "TMCG_CardSecret.hh"
 
+// additional headers
+#include <cstdlib>
+#include <cassert>
+#include "mpz_helper.hh"
+#include "parse_helper.hh"
+
 TMCG_CardSecret::TMCG_CardSecret
 	()
 {
-	r.push_back(std::vector<MP_INT>(1)), b.push_back(std::vector<MP_INT>(1));
-	mpz_init(&r[0][0]), mpz_init(&b[0][0]);
+	r.push_back(std::vector<MP_INT>(1));
+	b.push_back(std::vector<MP_INT>(1));
+	mpz_init(&r[0][0]);
+	mpz_init(&b[0][0]);
 }
 
 TMCG_CardSecret::TMCG_CardSecret
@@ -37,23 +46,36 @@ TMCG_CardSecret::TMCG_CardSecret
 	assert((k > 0) && (w > 0));
 	
 	for (size_t i = 0; i < k; i++)
-		r.push_back(std::vector<MP_INT>(w)), b.push_back(std::vector<MP_INT>(w));
+	{
+		r.push_back(std::vector<MP_INT>(w));
+		b.push_back(std::vector<MP_INT>(w));
+	}
 	for (size_t i = 0; i < r.size(); i++)
+	{
 		for (size_t j = 0; j < r[i].size(); j++)
-			mpz_init(&r[i][j]),
+		{
+			mpz_init(&r[i][j]);
 			mpz_init(&b[i][j]);
+		}
+	}
 }
 
 TMCG_CardSecret::TMCG_CardSecret
 	(const TMCG_CardSecret& that)
 {
 	for (size_t k = 0; k < that.r.size(); k++)
-		r.push_back(std::vector<MP_INT>(that.r[k].size())),
+	{
+		r.push_back(std::vector<MP_INT>(that.r[k].size()));
 		b.push_back(std::vector<MP_INT>(that.b[k].size()));
+	}
 	for (size_t k = 0; k < r.size(); k++)
+	{
 		for (size_t w = 0; w < r[k].size(); w++)
-			mpz_init_set(&r[k][w], &that.r[k][w]),
+		{
+			mpz_init_set(&r[k][w], &that.r[k][w]);
 			mpz_init_set(&b[k][w], &that.b[k][w]);
+		}
+	}
 }
 
 TMCG_CardSecret& TMCG_CardSecret::operator =
@@ -61,9 +83,13 @@ TMCG_CardSecret& TMCG_CardSecret::operator =
 {
 	resize(that.r.size(), that.r[0].size());
 	for (size_t k = 0; k < r.size(); k++)
+	{
 		for (size_t w = 0; w < r[k].size(); w++)
-			mpz_set(&r[k][w], &that.r[k][w]),
+		{
+			mpz_set(&r[k][w], &that.r[k][w]);
 			mpz_set(&b[k][w], &that.b[k][w]);
+		}
+	}
 	return *this;
 }
 
@@ -76,18 +102,29 @@ void TMCG_CardSecret::resize
 	for (size_t i = 0; i < r.size(); i++)
 	{
 		for (size_t j = 0; j < r[i].size(); j++)
-			mpz_clear(&r[i][j]),
+		{
+			mpz_clear(&r[i][j]);
 			mpz_clear(&b[i][j]);
-		r[i].clear(), b[i].clear();
+		}
+		r[i].clear();
+		b[i].clear();
 	}
-	r.clear(), b.clear();
+	r.clear();
+	b.clear();
 	
 	for (size_t i = 0; i < k; i++)
-		r.push_back(std::vector<MP_INT>(w)), b.push_back(std::vector<MP_INT>(w));
+	{
+		r.push_back(std::vector<MP_INT>(w));
+		b.push_back(std::vector<MP_INT>(w));
+	}
 	for (size_t i = 0; i < r.size(); i++)
+	{
 		for (size_t j = 0; j < r[i].size(); j++)
-			mpz_init(&r[i][j]),
+		{
+			mpz_init(&r[i][j]);
 			mpz_init(&b[i][j]);
+		}
+	}
 }
 
 bool TMCG_CardSecret::import
@@ -105,13 +142,19 @@ bool TMCG_CardSecret::import
 			throw false;
 		char *ec;
 		size_t k = std::strtoul(k_str.c_str(), &ec, 10);
-		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		if (!TMCG_ParseHelper::gs(s, '|', w_str))
 			throw false;
 		size_t w = std::strtoul(w_str.c_str(), &ec, 10);
-		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		
 		// resize this
 		resize(k, w);
@@ -125,17 +168,24 @@ bool TMCG_CardSecret::import
 				// r_ij
 				if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 					throw false;
-				if ((mpz_set_str(&r[i][j], mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+				if ((mpz_set_str(&r[i][j], mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+					!TMCG_ParseHelper::nx(s, '|'))
+				{
 					throw false;
+				}
 						
 				// b_ij
 				if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 					throw false;
-				if ((mpz_set_str(&b[i][j], mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+				if ((mpz_set_str(&b[i][j], mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+					!TMCG_ParseHelper::nx(s, '|'))
+				{
 					throw false;
+				}
 			}
 		}
-		
+
+		// finish
 		throw true;
 	}
 	catch (bool return_value)
@@ -148,18 +198,28 @@ TMCG_CardSecret::~TMCG_CardSecret
 	()
 {
 	for (size_t k = 0; k < r.size(); k++)
+	{
 		for (size_t w = 0; w < r[k].size(); w++)
-			mpz_clear(&r[k][w]),
+		{
+			mpz_clear(&r[k][w]);
 			mpz_clear(&b[k][w]);
+		}
+	}
 }
 
 std::ostream& operator <<
 	(std::ostream& out, const TMCG_CardSecret& cardsecret)
 {
-	out << "crs|" << cardsecret.r.size() << "|" << cardsecret.r[0].size() << "|";
+	out << "crs|" << cardsecret.r.size() << "|";
+	out << cardsecret.r[0].size() << "|";
 	for (size_t k = 0; k < cardsecret.r.size(); k++)
+	{
 		for (size_t w = 0; w < cardsecret.r[k].size(); w++)
-			out << &cardsecret.r[k][w] << "|" << &cardsecret.b[k][w] << "|";
+		{
+			out << &cardsecret.r[k][w] << "|";
+			out << &cardsecret.b[k][w] << "|";
+		}
+	}
 	return out;
 }
 

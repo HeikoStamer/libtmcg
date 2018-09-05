@@ -41,6 +41,11 @@
 #include "TMCG_SecretKey.hh"
 #include "TMCG_PublicKey.hh"
 
+// additional headers
+#include <cstdio>
+#include <cstdlib>
+#include <cassert>
+#include <sstream>
 #include "mpz_srandom.hh"
 #include "mpz_sprime.hh"
 #include "mpz_sqrtm.hh"

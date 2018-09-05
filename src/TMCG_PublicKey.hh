@@ -36,17 +36,13 @@
 	#define INCLUDED_TMCG_PublicKey_HH
 	
 // C++/STL header
-#include <cstdio>
-#include <cstdlib>
-#include <cassert>
 #include <string>
-#include <sstream>
 #include <iostream>
-#include <vector>
 	
 // GNU multiple precision library
 #include <gmp.h>
 
+// additional headers
 #include "TMCG_SecretKey.hh"
 
 struct TMCG_PublicKey
@@ -70,7 +66,7 @@ struct TMCG_PublicKey
 		(const std::string& s);
 	
 	TMCG_PublicKey& operator =
-	(const TMCG_PublicKey& that);
+		(const TMCG_PublicKey& that);
 	
 	bool check
 		();
