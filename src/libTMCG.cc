@@ -44,7 +44,7 @@ void tmcg_free
 
 // LibTMCG general functions
 bool init_libTMCG
-	(const bool force_secmem, const bool gmp_secmem)
+	(const bool force_secmem, const bool gmp_secmem, const size_t max_secmem)
 {
 	// initialize memory guards
 	CallasDonnerhackeFinneyShawThayerRFC4880::MemoryGuardReset();
@@ -62,7 +62,7 @@ bool init_libTMCG
 		{
 			gcry_control(GCRYCTL_SUSPEND_SECMEM_WARN);
 			gcry_control(GCRYCTL_USE_SECURE_RNDPOOL);
-			gcry_control(GCRYCTL_INIT_SECMEM, 32768, 0);
+			gcry_control(GCRYCTL_INIT_SECMEM, max_secmem, 0);
 			gcry_control(GCRYCTL_RESUME_SECMEM_WARN);
 		}
 		else
@@ -194,3 +194,5 @@ const std::string identifier_libTMCG
 {
 	return LibTMCG_ID;
 }
+
+
