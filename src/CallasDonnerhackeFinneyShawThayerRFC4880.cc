@@ -1535,9 +1535,20 @@ bool TMCG_OpenPGP_Subkey::CheckExternalRevocation
 		if (verbose > 2)
 			std::cerr << "INFO: looking for external revocation" <<
 				" key with fingerprint " << fprstr << std::endl;
-		const TMCG_OpenPGP_Pubkey *revkey = ring->find(fprstr);
+		TMCG_OpenPGP_Pubkey *revkey = ring->Find(fprstr);
 		if (revkey != NULL)
 		{
+			if (!revkey->valid)
+			{
+				// disable external revocations to avoid recursion
+				if (!revkey->CheckSelfSignatures(ring, verbose, false))
+				{
+					if (verbose)
+						std::cerr << "WARNING: revocation" <<
+							" key is not valid" << std::endl;
+					continue;
+				}
+			}
 			if (sig->Verify(revkey->key, sub_hashing, verbose))
 				valid_revsig = true;
 		}
@@ -2926,26 +2937,38 @@ bool TMCG_OpenPGP_Pubkey::CheckExternalRevocation
 	bool valid_revsig = false;
 	for (size_t k = 0; k < revkeys.size(); k++)
 	{
-			tmcg_openpgp_octets_t fpr(revkeys[k].key_fingerprint,
-				revkeys[k].key_fingerprint+sizeof(revkeys[k].key_fingerprint));
-			std::string fprstr;
-			CallasDonnerhackeFinneyShawThayerRFC4880::
-				FingerprintConvertPlain(fpr, fprstr);
-			if (verbose > 2)
-				std::cerr << "INFO: looking for external revocation " <<
-					"key with fingerprint " << fprstr << std::endl;
-			const TMCG_OpenPGP_Pubkey *revkey = ring->find(fprstr);
-			if (revkey != NULL)
+		tmcg_openpgp_octets_t fpr(revkeys[k].key_fingerprint,
+			revkeys[k].key_fingerprint+sizeof(revkeys[k].key_fingerprint));
+		std::string fprstr;
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			FingerprintConvertPlain(fpr, fprstr);
+		if (verbose > 2)
+			std::cerr << "INFO: looking for external revocation" <<
+				" key with fingerprint " << fprstr << std::endl;
+		TMCG_OpenPGP_Pubkey *revkey = ring->Find(fprstr);
+		if (revkey != NULL)
+		{
+			if (!revkey->valid)
 			{
-				if (sig->Verify(revkey->key, pub_hashing, verbose))
-					valid_revsig = true;
+				// disable external revocations to avoid recursion
+				if (!revkey->CheckSelfSignatures(ring, verbose, false))
+				{
+					if (verbose)
+						std::cerr << "WARNING: revocation" <<
+							" key is not valid" << std::endl;
+					continue;
+				}
 			}
+			if (sig->Verify(revkey->key, pub_hashing, verbose))
+				valid_revsig = true;
+		}
 	}
 	return valid_revsig;
 }
 
 bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
-	(const TMCG_OpenPGP_Keyring *ring, const int verbose)
+	(const TMCG_OpenPGP_Keyring *ring, const int verbose,
+	 const bool external)
 {
 	// print statistics of primary key
 	if (verbose > 1)
@@ -2994,7 +3017,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				std::cerr << "ERROR: signature verification failed" <<
 					std::endl;
 		}
-		else
+		else if (external)
 		{
 				valid_revsig = CheckExternalRevocation(certrevsigs[j], ring,
 					verbose);
@@ -3002,6 +3025,13 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 					std::cerr << "WARNING: cannot verify revocation " <<
 						"signature of an external key due to missing " <<
 						"public key" << std::endl;
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "WARNING: check of external revocation disabled" <<
+					std::endl;
+			valid_revsig = false;
 		}
 		if (valid_revsig)
 		{
@@ -3183,7 +3213,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				std::cerr << "ERROR: signature verification failed" <<
 					std::endl;
 		}
-		else
+		else if (external)
 		{
 				valid_revsig = CheckExternalRevocation(keyrevsigs[j], ring,
 					verbose);
@@ -3191,6 +3221,13 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 					std::cerr << "WARNING: cannot verify revocation " <<
 						"signature of an external key due to missing " <<
 						"public key" << std::endl;
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "WARNING: check of external revocation disabled" <<
+					std::endl;
+			valid_revsig = false;
 		}
 		if (valid_revsig)
 		{
@@ -3907,7 +3944,7 @@ TMCG_OpenPGP_Keyring::TMCG_OpenPGP_Keyring
 {
 }
 
-bool TMCG_OpenPGP_Keyring::add
+bool TMCG_OpenPGP_Keyring::Add
 	(TMCG_OpenPGP_Pubkey *key)
 {
 	std::string fpr_str;
@@ -3958,7 +3995,7 @@ bool TMCG_OpenPGP_Keyring::add
 	return true;
 }
 
-TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::find
+TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::Find
 	(const std::string &fingerprint) const
 {
 	if (keys.count(fingerprint))
@@ -3971,7 +4008,7 @@ TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::find
 		return NULL; // key not found
 }
 
-TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::find_by_keyid
+TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::FindByKeyid
 	(const std::string &keyid) const
 {
 	if (keys_by_keyid.count(keyid))
@@ -3984,13 +4021,13 @@ TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::find_by_keyid
 		return NULL; // key not found
 }
 
-size_t TMCG_OpenPGP_Keyring::size
+size_t TMCG_OpenPGP_Keyring::Size
 	() const
 {
 	return keys.size();
 }
 
-size_t TMCG_OpenPGP_Keyring::list
+size_t TMCG_OpenPGP_Keyring::List
 	(const std::string &userid) const
 {
 	size_t selected = 0;
@@ -4238,6 +4275,63 @@ size_t TMCG_OpenPGP_Keyring::list
 	}
 	return selected;
 }
+
+size_t TMCG_OpenPGP_Keyring::Check
+	(const int verbose) const
+{
+	size_t valid_keys = 0;
+	for (std::map<std::string, TMCG_OpenPGP_Pubkey*>::const_iterator
+	     it = keys.begin(); it != keys.end(); ++it)
+	{
+		TMCG_OpenPGP_Pubkey *pub = it->second;
+		if (pub->CheckSelfSignatures(this, verbose))
+			valid_keys++;
+		pub->CheckSubkeys(this, verbose);
+	}
+	return valid_keys;
+}
+
+void TMCG_OpenPGP_Keyring::Reduce
+	()
+{
+	std::vector<std::string> rmv;
+	for (std::map<std::string, TMCG_OpenPGP_Pubkey*>::const_iterator
+	     it = keys.begin(); it != keys.end(); ++it)
+	{
+		// reduce primary key (e.g. remove invalid user IDs)
+		TMCG_OpenPGP_Pubkey *pub = it->second;
+		pub->Reduce();
+		if (!pub->valid)
+			rmv.push_back(it->first);
+	}
+	for (size_t i = 0; i < rmv.size(); i++)
+	{
+		// remove invalid primary keys
+		std::string fpr_str = rmv[i];
+		std::string kid_str;
+		const TMCG_OpenPGP_Pubkey *key = keys[fpr_str];
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			KeyidCompute(key->pub_hashing, kid_str);
+		keys_by_keyid.erase(fpr_str);
+		keys_by_keyid.erase("0x"+fpr_str);
+		keys_by_keyid.erase(kid_str);
+		keys_by_keyid.erase("0x"+kid_str);
+		for (size_t j = 0; j < (key->subkeys).size(); j++)
+		{
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintCompute(key->subkeys[j]->sub_hashing, fpr_str);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidCompute(key->subkeys[j]->sub_hashing, kid_str);
+			keys_by_keyid.erase(fpr_str);
+			keys_by_keyid.erase("0x"+fpr_str);
+			keys_by_keyid.erase(kid_str);
+			keys_by_keyid.erase("0x"+kid_str);
+		}	
+		delete key;
+		keys.erase(fpr_str);
+	}
+}
+
 
 TMCG_OpenPGP_Keyring::~TMCG_OpenPGP_Keyring
 	()
@@ -12755,7 +12849,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse_Add
 		if (!badkey && subkey)
 			pub->subkeys.push_back(sub);
 		// add key to ring
-		if (!ring->add(pub))
+		if (!ring->Add(pub))
 		{
 			if (verbose)
 				std::cerr << "WARNING: keyring already contains" <<
@@ -13310,7 +13404,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 			delete uat;
 	}
 	if (verbose > 1)
-		std::cerr << "INFO: ring.size() = " << ring->size() << std::endl;	
+		std::cerr << "INFO: ring.Size() = " << ring->Size() << std::endl;	
 	return true;
 }
 

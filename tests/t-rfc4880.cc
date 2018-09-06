@@ -564,8 +564,11 @@ int main
 	parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 		PublicKeyringParse(armored_pubkeyringblock, 3, ring);
 	assert(parse_ok);
-	assert((ring->size() == 2));
-	assert((ring->list("") == 2));
+	assert((ring->Size() == 2));
+	assert((ring->List("") == 2));
+	assert((ring->Check(0) == 2));
+	ring->Reduce();
+	assert((ring->Size() == 2));
 	delete ring;
 	gcry_mpi_release(p);
 	gcry_mpi_release(q);

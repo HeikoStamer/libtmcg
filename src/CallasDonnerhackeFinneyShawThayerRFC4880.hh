@@ -987,7 +987,8 @@ class TMCG_OpenPGP_Pubkey
 			 const int										verbose);
 		bool CheckSelfSignatures
 			(const TMCG_OpenPGP_Keyring*					ring,
-			 const int										verbose);
+			 const int										verbose,
+			 const bool external = true);
 		bool CheckSubkeys
 			(const TMCG_OpenPGP_Keyring*					ring,
 			 const int										verbose);
@@ -1108,16 +1109,20 @@ class TMCG_OpenPGP_Keyring
 	public:
 		TMCG_OpenPGP_Keyring
 			();
-		bool add
+		bool Add
 			(TMCG_OpenPGP_Pubkey*							key);
-		TMCG_OpenPGP_Pubkey* find
+		TMCG_OpenPGP_Pubkey* Find
 			(const std::string								&fingerprint) const;
-		TMCG_OpenPGP_Pubkey* find_by_keyid
+		TMCG_OpenPGP_Pubkey* FindByKeyid
 			(const std::string								&keyid) const;
-		size_t size
+		size_t Size
 			() const;
-		size_t list
+		size_t List
 			(const std::string								&userid) const;
+		size_t Check
+			(const int verbose) const;
+		void Reduce
+			();
 		~TMCG_OpenPGP_Keyring
 			();
 };
