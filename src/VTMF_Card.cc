@@ -1,7 +1,8 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006,
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,6 +24,11 @@
 	#include "libTMCG_config.h"
 #endif
 #include "VTMF_Card.hh"
+
+// additional headers
+#include <cassert>
+#include "mpz_helper.hh"
+#include "parse_helper.hh"
 
 VTMF_Card::VTMF_Card
 	()
@@ -70,13 +76,20 @@ bool VTMF_Card::import
 		std::string mpz_str;
 		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 			throw false;
-		if ((mpz_set_str(c_1, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((mpz_set_str(c_1, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 			throw false;
-		if ((mpz_set_str(c_2, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
+		if ((mpz_set_str(c_2, mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+			!TMCG_ParseHelper::nx(s, '|'))
+		{
 			throw false;
+		}
 		
+		// finish
 		throw true;
 	}
 	catch (bool return_value)
