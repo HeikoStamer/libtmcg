@@ -27,47 +27,36 @@
 #ifndef INCLUDED_NaorPinkasEOTP_HH
 	#define INCLUDED_NaorPinkasEOTP_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <sstream>
-	#include <vector>
+// C and STL header
+#include <cstdlib>
+#include <iostream>
+#include <vector>
 
-	// GNU crypto library
-	#include <gcrypt.h>
-	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
-	#include "mpz_spowm.hh"
-	#include "mpz_sprime.hh"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
+// GNU multiple precision library
+#include <gmp.h>
 
 class NaorPinkasEOTP
 {
 	private:
-		mpz_t				*fpowm_table_g;
-		const unsigned long int		F_size, G_size;
+		mpz_t							*fpowm_table_g;
+		const unsigned long int			F_size, G_size;
 	
 	public:
-		mpz_t				p, q, g;
+		mpz_t							p, q, g;
 		
 		NaorPinkasEOTP
 			(unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			 unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		NaorPinkasEOTP
-			(mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			(mpz_srcptr p_ENC,
+			 mpz_srcptr q_ENC,
+			 mpz_srcptr g_ENC,
+			 unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		NaorPinkasEOTP
 			(std::istream &in,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			 unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
 			() const;
 		void PublishGroup
@@ -75,23 +64,35 @@ class NaorPinkasEOTP
 		bool CheckElement
 			(mpz_srcptr a) const;
 		bool Send_interactive_OneOutOfTwo
-			(mpz_srcptr M0, mpz_srcptr M1,
-			std::istream &in, std::ostream &out) const;
+			(mpz_srcptr M0,
+			 mpz_srcptr M1,
+			 std::istream &in,
+			 std::ostream &out) const;
 		bool Choose_interactive_OneOutOfTwo
-			(size_t sigma, mpz_ptr M,
-			std::istream &in, std::ostream &out) const;
+			(const size_t sigma,
+			 mpz_ptr M,
+			 std::istream &in,
+			 std::ostream &out) const;
 		bool Send_interactive_OneOutOfN
 			(const std::vector<mpz_ptr> &M,
-			std::istream &in, std::ostream &out) const;
+			 std::istream &in,
+			 std::ostream &out) const;
 		bool Choose_interactive_OneOutOfN
-			(size_t sigma, size_t N, mpz_ptr M,
-			std::istream &in, std::ostream &out) const;
+			(const size_t sigma,
+			 const size_t N,
+			 mpz_ptr M,
+			 std::istream &in,
+			 std::ostream &out) const;
 		bool Send_interactive_OneOutOfN_optimized
 			(const std::vector<mpz_ptr> &M,
-			std::istream &in, std::ostream &out) const;
+			 std::istream &in,
+			 std::ostream &out) const;
 		bool Choose_interactive_OneOutOfN_optimized
-			(size_t sigma, size_t N, mpz_ptr M,
-			std::istream &in, std::ostream &out) const;
+			(size_t sigma,
+			 size_t N,
+			 mpz_ptr M,
+			 std::istream &in,
+			 std::ostream &out) const;
 		~NaorPinkasEOTP
 			();
 };

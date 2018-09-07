@@ -34,9 +34,20 @@
 #endif
 #include "PedersenCOM.hh"
 
+// additional headers
+#include <cassert>
+
+#include "mpz_srandom.hh"
+#include "mpz_spowm.hh"
+#include "mpz_sprime.hh"
+#include "mpz_helper.hh"
+#include "mpz_shash.hh"
+
 /* This variation of the Pedersen commitment scheme is due to Groth [Gr05]. */
 PedersenCommitmentScheme::PedersenCommitmentScheme
-	(size_t n, unsigned long int fieldsize, unsigned long int subgroupsize):
+	(const size_t n,
+	 const unsigned long int fieldsize,
+	 const unsigned long int subgroupsize):
 		F_size(fieldsize), G_size(subgroupsize)
 {
 	mpz_t foo;
@@ -93,9 +104,13 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 }
 
 PedersenCommitmentScheme::PedersenCommitmentScheme
-	(size_t n, mpz_srcptr p_ENC, mpz_srcptr q_ENC, 
-	mpz_srcptr k_ENC, mpz_srcptr h_ENC, 
-	unsigned long int fieldsize, unsigned long int subgroupsize):
+	(const size_t n,
+	 mpz_srcptr p_ENC,
+	 mpz_srcptr q_ENC, 
+	 mpz_srcptr k_ENC,
+	 mpz_srcptr h_ENC, 
+	 const unsigned long int fieldsize,
+	 const unsigned long int subgroupsize):
 		F_size(fieldsize), G_size(subgroupsize)
 {
 	mpz_t foo;
@@ -140,8 +155,10 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 }
 
 PedersenCommitmentScheme::PedersenCommitmentScheme
-	(size_t n, std::istream &in,
-	unsigned long int fieldsize, unsigned long int subgroupsize):
+	(const size_t n,
+	 std::istream &in,
+	 const unsigned long int fieldsize,
+	 const unsigned long int subgroupsize):
 		F_size(fieldsize), G_size(subgroupsize)
 {
 	assert(n >= 1);
@@ -171,7 +188,8 @@ PedersenCommitmentScheme::PedersenCommitmentScheme
 }
 
 void PedersenCommitmentScheme::SetupGenerators_publiccoin
-	(mpz_srcptr a_in, bool without_h)
+	(mpz_srcptr a_in,
+	 const bool without_h)
 {
 	// initialize
 	mpz_t a, foo;
@@ -218,10 +236,12 @@ void PedersenCommitmentScheme::SetupGenerators_publiccoin
 }
 
 bool PedersenCommitmentScheme::SetupGenerators_publiccoin
-	(const size_t whoami, aiounicast *aiou, 
-	CachinKursawePetzoldShoupRBC *rbc,
-	JareckiLysyanskayaEDCF *edcf, std::ostream &err,
-	bool without_h)
+	(const size_t whoami,
+	 aiounicast *aiou, 
+	 CachinKursawePetzoldShoupRBC *rbc,
+	 JareckiLysyanskayaEDCF *edcf,
+	 std::ostream &err,
+	 const bool without_h)
 {
 	// initialize
 	mpz_t a;
@@ -347,7 +367,9 @@ void PedersenCommitmentScheme::PublishGroup
 }
 
 void PedersenCommitmentScheme::Commit
-	(mpz_ptr c, mpz_ptr r, const std::vector<mpz_ptr> &m) const
+	(mpz_ptr c,
+	 mpz_ptr r,
+	 const std::vector<mpz_ptr> &m) const
 {
 	assert(m.size() <= g.size());
 	
@@ -375,8 +397,10 @@ void PedersenCommitmentScheme::Commit
 }
 
 void PedersenCommitmentScheme::CommitBy
-	(mpz_ptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m,
-	bool TimingAttackProtection) const
+	(mpz_ptr c,
+	 mpz_srcptr r,
+	 const std::vector<mpz_ptr> &m,
+	 const bool TimingAttackProtection) const
 {
 	assert(m.size() <= g.size());
 	assert(mpz_cmp(r, q) < 0);
@@ -420,7 +444,9 @@ bool PedersenCommitmentScheme::TestMembership
 }
 
 bool PedersenCommitmentScheme::Verify
-	(mpz_srcptr c, mpz_srcptr r, const std::vector<mpz_ptr> &m) const
+	(mpz_srcptr c,
+	 mpz_srcptr r,
+	 const std::vector<mpz_ptr> &m) const
 {
 	assert(m.size() <= g.size());
 	

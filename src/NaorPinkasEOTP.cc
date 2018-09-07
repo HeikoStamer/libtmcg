@@ -30,8 +30,18 @@
 #endif
 #include "NaorPinkasEOTP.hh"
 
+// additional headers
+#include <cassert>
+#include <sstream>
+#include "mpz_srandom.hh"
+#include "mpz_spowm.hh"
+#include "mpz_sprime.hh"
+#include "mpz_helper.hh"
+#include "mpz_shash.hh"
+
 NaorPinkasEOTP::NaorPinkasEOTP
-	(unsigned long int fieldsize, unsigned long int subgroupsize):
+	(unsigned long int fieldsize,
+	 unsigned long int subgroupsize):
 			F_size(fieldsize), G_size(subgroupsize)
 {
 	mpz_t k, foo;
@@ -60,8 +70,11 @@ NaorPinkasEOTP::NaorPinkasEOTP
 }
 
 NaorPinkasEOTP::NaorPinkasEOTP
-	(mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC,
-	unsigned long int fieldsize, unsigned long int subgroupsize):
+	(mpz_srcptr p_ENC,
+	 mpz_srcptr q_ENC,
+	 mpz_srcptr g_ENC,
+	 unsigned long int fieldsize,
+	 unsigned long int subgroupsize):
 			F_size(fieldsize), G_size(subgroupsize)
 {
 	mpz_init_set(p, p_ENC), mpz_init_set(q, q_ENC), mpz_init_set(g, g_ENC);
@@ -74,7 +87,8 @@ NaorPinkasEOTP::NaorPinkasEOTP
 
 NaorPinkasEOTP::NaorPinkasEOTP
 	(std::istream &in,
-	unsigned long int fieldsize, unsigned long int subgroupsize):
+	 unsigned long int fieldsize,
+	 unsigned long int subgroupsize):
 			F_size(fieldsize), G_size(subgroupsize)
 {
 	std::stringstream lej;
@@ -179,8 +193,10 @@ bool NaorPinkasEOTP::CheckElement
 
 /* Sender; see Protocol 4.1 of [NP01] */
 bool NaorPinkasEOTP::Send_interactive_OneOutOfTwo
-	(mpz_srcptr M0, mpz_srcptr M1,
-	std::istream &in, std::ostream &out) const
+	(mpz_srcptr M0,
+	 mpz_srcptr M1,
+	 std::istream &in,
+	 std::ostream &out) const
 {
 	// initialize
 	mpz_t x, y, foo, bar, z0, z1, s0, s1, r0, r1, w0, w1;
@@ -248,8 +264,10 @@ bool NaorPinkasEOTP::Send_interactive_OneOutOfTwo
 
 /* Receiver; see Protocol 4.1 of [NP01] */
 bool NaorPinkasEOTP::Choose_interactive_OneOutOfTwo
-	(size_t sigma, mpz_ptr M,
-	std::istream &in, std::ostream &out) const
+	(const size_t sigma,
+	 mpz_ptr M,
+	 std::istream &in,
+	 std::ostream &out) const
 {
 	assert(sigma < 2);
 	
@@ -321,7 +339,8 @@ bool NaorPinkasEOTP::Choose_interactive_OneOutOfTwo
 /* Sender; see Protocol 4.1 of [NP01] with remarks in section 4.1 */
 bool NaorPinkasEOTP::Send_interactive_OneOutOfN
 	(const std::vector<mpz_ptr> &M,
-	std::istream &in, std::ostream &out) const
+	 std::istream &in,
+	 std::ostream &out) const
 {
 	assert(M.size() >= 2);
 	
@@ -403,8 +422,11 @@ bool NaorPinkasEOTP::Send_interactive_OneOutOfN
 
 /* Receiver; see Protocol 4.1 of [NP01] with remarks in section 4.1 */
 bool NaorPinkasEOTP::Choose_interactive_OneOutOfN
-	(size_t sigma, size_t N, mpz_ptr M,
-	std::istream &in, std::ostream &out) const
+	(const size_t sigma,
+	 const size_t N,
+	 mpz_ptr M,
+	 std::istream &in,
+	 std::ostream &out) const
 {
 	assert(N >= 2);
 	assert(sigma < N);
@@ -479,7 +501,8 @@ bool NaorPinkasEOTP::Choose_interactive_OneOutOfN
 /* Sender; see Protocol 4.1 of [NP01] with remarks in section 4.1 */
 bool NaorPinkasEOTP::Send_interactive_OneOutOfN_optimized
 	(const std::vector<mpz_ptr> &M,
-	std::istream &in, std::ostream &out) const
+	 std::istream &in,
+	 std::ostream &out) const
 {
 	assert(M.size() >= 2);
 	
@@ -557,8 +580,11 @@ bool NaorPinkasEOTP::Send_interactive_OneOutOfN_optimized
 
 /* Receiver; see Protocol 4.1 of [NP01] with remarks in section 4.1 */
 bool NaorPinkasEOTP::Choose_interactive_OneOutOfN_optimized
-	(size_t sigma, size_t N, mpz_ptr M,
-	std::istream &in, std::ostream &out) const
+	(const size_t sigma,
+	 const size_t N,
+	 mpz_ptr M,
+	 std::istream &in,
+	 std::ostream &out) const
 {
 	assert(N >= 2);
 	assert(sigma < N);

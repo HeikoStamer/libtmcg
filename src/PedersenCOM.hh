@@ -31,78 +31,79 @@
 #ifndef INCLUDED_PedersenCOM_HH
 	#define INCLUDED_PedersenCOM_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <sstream>
-	#include <vector>
+// C and STL header
+#include <cstdio>
+#include <cstdlib>
+#include <cassert>
+#include <string>
+#include <iostream>
+#include <sstream>
+#include <vector>
 
-	// GNU crypto library
-	#include <gcrypt.h>
-	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
-	#include "mpz_spowm.hh"
-	#include "mpz_sprime.hh"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
+// GNU multiple precision library
+#include <gmp.h>
 
-	// erasure-free distributed coinflip protocol
-	#include "JareckiLysyanskayaASTC.hh"
+// erasure-free distributed coinflip protocol
+#include "JareckiLysyanskayaASTC.hh"
 
 /* This variation of the Pedersen commitment scheme is due to Groth [Gr05]. */
 class PedersenCommitmentScheme
 {
 	private:
-		mpz_t					*fpowm_table_h;
-		std::vector<mpz_t*>			fpowm_table_g;
+		mpz_t							*fpowm_table_h;
+		std::vector<mpz_t*>				fpowm_table_g;
 		const unsigned long int			F_size, G_size;
 	
 	public:
-		mpz_t					p, q, k, h;
+		mpz_t							p, q, k, h;
 		std::vector<mpz_ptr>			g;
 		
 		PedersenCommitmentScheme
-			(size_t n,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			(const size_t n,
+			 const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		PedersenCommitmentScheme
-			(size_t n, mpz_srcptr p_ENC, mpz_srcptr q_ENC,
-			mpz_srcptr k_ENC, mpz_srcptr h_ENC,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			(const size_t n,
+			 mpz_srcptr p_ENC,
+			 mpz_srcptr q_ENC,
+			 mpz_srcptr k_ENC,
+			 mpz_srcptr h_ENC,
+			 const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		PedersenCommitmentScheme
-			(size_t n, std::istream &in,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			(const size_t n,
+			 std::istream &in,
+			 const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		void SetupGenerators_publiccoin
-			(mpz_srcptr a_in, bool without_h = true);
+			(mpz_srcptr a_in,
+			 const bool without_h = true);
 		bool SetupGenerators_publiccoin
-			(const size_t whoami, aiounicast *aiou,
-			CachinKursawePetzoldShoupRBC *rbc,
-			JareckiLysyanskayaEDCF *edcf, std::ostream &err,
-			bool without_h = true);
+			(const size_t whoami,
+			 aiounicast *aiou,
+			 CachinKursawePetzoldShoupRBC *rbc,
+			 JareckiLysyanskayaEDCF *edcf,
+			 std::ostream &err,
+			 const bool without_h = true);
 		bool CheckGroup
 			() const;
 		void PublishGroup
 			(std::ostream &out) const;
 		void Commit
-			(mpz_ptr c, mpz_ptr r, 
-			const std::vector<mpz_ptr> &m) const;
+			(mpz_ptr c,
+			 mpz_ptr r, 
+			 const std::vector<mpz_ptr> &m) const;
 		void CommitBy
-			(mpz_ptr c, mpz_srcptr r, 
-			const std::vector<mpz_ptr> &m,
-			bool TimingAttackProtection = true) const;
+			(mpz_ptr c,
+			 mpz_srcptr r, 
+			 const std::vector<mpz_ptr> &m,
+			 const bool TimingAttackProtection = true) const;
 		bool TestMembership
 			(mpz_srcptr c) const;
 		bool Verify
-			(mpz_srcptr c, mpz_srcptr r,
-			const std::vector<mpz_ptr> &m) const;
+			(mpz_srcptr c,
+			 mpz_srcptr r,
+			 const std::vector<mpz_ptr> &m) const;
 		~PedersenCommitmentScheme
 			();
 };

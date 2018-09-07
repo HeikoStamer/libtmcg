@@ -32,60 +32,52 @@
 #ifndef INCLUDED_PedersenVSS_HH
 	#define INCLUDED_PedersenVSS_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <sstream>
-	#include <vector>
-	#include <algorithm>
-	#include <map>
+// C and STL header
+#include <cstdlib>
+#include <string>
+#include <iostream>
+#include <vector>
+#include <map>
 
-	// GNU crypto library
-	#include <gcrypt.h>
-	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
-	#include "mpz_spowm.hh"
-	#include "mpz_sprime.hh"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
+// GNU multiple precision library
+#include <gmp.h>
 
-	#include "aiounicast.hh"
-	#include "CachinKursawePetzoldShoupSEABP.hh"
+#include "aiounicast.hh"
+#include "CachinKursawePetzoldShoupSEABP.hh"
 
-/* This protocol is implemented according to the description as Uncond-Secure-VSS in [GJKR01]. */
+/* This protocol by [Pe92] is called Uncond-Secure-VSS in [GJKR01]. */
 class PedersenVSS
 {
 	private:
-		mpz_t					*fpowm_table_g, *fpowm_table_h;
-		const unsigned long int			F_size, G_size;
-		const bool				use_very_strong_randomness;
+		mpz_t						*fpowm_table_g, *fpowm_table_h;
+		const unsigned long int		F_size, G_size;
+		const bool					use_very_strong_randomness;
 		const std::string			label;
 	
 	public:
-		mpz_t					p, q, g, h;
-		size_t					n, t, i;
-		mpz_t					sigma_i, tau_i;
-		std::vector<mpz_ptr> 			a_j, b_j, A_j;
+		mpz_t						p, q, g, h;
+		size_t						n, t, i;
+		mpz_t						sigma_i, tau_i;
+		std::vector<mpz_ptr> 		a_j, b_j, A_j;
 		
 		PedersenVSS
-			(const size_t n_in, const size_t t_in, const size_t i_in,
-			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
-			const unsigned long int fieldsize = TMCG_DDH_SIZE,
-			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			const bool use_very_strong_randomness_in = true,
-			const std::string label_in = "");
+			(const size_t n_in,
+			 const size_t t_in,
+			 const size_t i_in,
+			 mpz_srcptr p_CRS,
+			 mpz_srcptr q_CRS,
+			 mpz_srcptr g_CRS,
+			 mpz_srcptr h_CRS,
+			 const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			 const bool use_very_strong_randomness_in = true,
+			 const std::string label_in = "");
 		PedersenVSS
 			(std::istream &in,
-			const unsigned long int fieldsize = TMCG_DDH_SIZE,
-			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			const bool use_very_strong_randomness_in = true,
-			const std::string label_in = "");
+			 const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			 const bool use_very_strong_randomness_in = true,
+			 const std::string label_in = "");
 		void PublishState
 			(std::ostream &out) const;
 		std::string Label
@@ -96,33 +88,41 @@ class PedersenVSS
 			(mpz_srcptr a) const;
 		bool Share
 			(mpz_srcptr sigma,
-			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			 aiounicast *aiou,
+			 CachinKursawePetzoldShoupRBC *rbc,
+			 std::ostream &err,
+			 const bool simulate_faulty_behaviour = false);
 		bool Share
 			(mpz_srcptr sigma,
-			std::map<size_t, size_t> &idx2dkg,
-			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			 std::map<size_t, size_t> &idx2dkg,
+			 aiounicast *aiou,
+			 CachinKursawePetzoldShoupRBC *rbc,
+			 std::ostream &err,
+			 const bool simulate_faulty_behaviour = false);
 		bool Share
 			(size_t dealer,
-			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			 aiounicast *aiou,
+			 CachinKursawePetzoldShoupRBC *rbc,
+			 std::ostream &err,
+			 const bool simulate_faulty_behaviour = false);
 		bool Share
 			(size_t dealer,
-			std::map<size_t, size_t> &idx2dkg,
-			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-			std::ostream &err,
-			const bool simulate_faulty_behaviour = false);
+			 std::map<size_t, size_t> &idx2dkg,
+			 aiounicast *aiou,
+			 CachinKursawePetzoldShoupRBC *rbc,
+			 std::ostream &err,
+			 const bool simulate_faulty_behaviour = false);
 		bool Reconstruct
-			(const size_t dealer, mpz_ptr sigma,
-			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
+			(const size_t dealer,
+			 mpz_ptr sigma,
+			 CachinKursawePetzoldShoupRBC *rbc,
+			 std::ostream &err);
 		bool Reconstruct
-			(const size_t dealer, mpz_ptr sigma,
-			std::map<size_t, size_t> &idx2dkg,
-			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
+			(const size_t dealer,
+			 mpz_ptr sigma,
+			 std::map<size_t, size_t> &idx2dkg,
+			 CachinKursawePetzoldShoupRBC *rbc,
+			 std::ostream &err);
 		~PedersenVSS
 			();
 };
