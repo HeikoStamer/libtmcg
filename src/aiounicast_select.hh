@@ -23,33 +23,20 @@
 #ifndef INCLUDED_aiounicast_select_HH
 	#define INCLUDED_aiounicast_select_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <ctime>
-	#include <cassert>
-	#include <string>
-	#include <vector>
-	#include <list>
-	#include <map>
-	#include <iostream>
+// C and STL header
+#include <cstdlib>
+#include <ctime>
+#include <vector>
+#include <list>
 
-	// C header for (asynchronous) I/O
-	#include <sys/select.h>
-	#include <unistd.h>
-	#include <errno.h>
-	#include <string.h>
-	
-	// GNU multiple precision library
-	#include <gmp.h>
+// GNU multiple precision library
+#include <gmp.h>
 
-	// GNU crypto library
-	#include <gcrypt.h>
+// GNU crypto library
+#include <gcrypt.h>
 
-	// abstract base class
-	#include "aiounicast.hh"
-
-	#include "mpz_srandom.hh"
+// abstract base class
+#include "aiounicast.hh"
 
 class aiounicast_select : public aiounicast
 {
@@ -67,28 +54,33 @@ class aiounicast_select : public aiounicast
 
 	public:
 		aiounicast_select
-			(const size_t n_in, const size_t j_in,
-			const std::vector<int> &fd_in_in,
-			const std::vector<int> &fd_out_in,
-			const std::vector<std::string> &key_in,
-			const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
-			const time_t aio_default_timeout_in = aio_timeout_very_long,
-			const bool aio_is_authenticated_in = true,
-			const bool aio_is_encrypted_in = true);
+			(const size_t n_in,
+			 const size_t j_in,
+			 const std::vector<int> &fd_in_in,
+			 const std::vector<int> &fd_out_in,
+			 const std::vector<std::string> &key_in,
+			 const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
+			 const time_t aio_default_timeout_in = aio_timeout_very_long,
+			 const bool aio_is_authenticated_in = true,
+			 const bool aio_is_encrypted_in = true);
 		bool Send
-			(mpz_srcptr m, const size_t i_in,
-			time_t timeout = aio_timeout_default);
+			(mpz_srcptr m,
+			 const size_t i_in,
+			 time_t timeout = aio_timeout_default);
 		bool Send
-			(const std::vector<mpz_srcptr> &m, const size_t i_in,
-			time_t timeout = aio_timeout_default);
+			(const std::vector<mpz_srcptr> &m,
+			 const size_t i_in,
+			 time_t timeout = aio_timeout_default);
 		bool Receive
-			(mpz_ptr m, size_t &i_out,
-			size_t scheduler = aio_scheduler_default,
-			time_t timeout = aio_timeout_default);
+			(mpz_ptr m,
+			 size_t &i_out,
+			 size_t scheduler = aio_scheduler_default,
+			 time_t timeout = aio_timeout_default);
 		bool Receive
-			(std::vector<mpz_ptr> &m, size_t &i_out,
-			size_t scheduler = aio_scheduler_default,
-			time_t timeout = aio_timeout_default);
+			(std::vector<mpz_ptr> &m,
+			 size_t &i_out,
+			 size_t scheduler = aio_scheduler_default,
+			 time_t timeout = aio_timeout_default);
 		~aiounicast_select
 			();
 };

@@ -3,7 +3,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,17 +23,15 @@
 #ifndef INCLUDED_aiounicast_HH
 	#define INCLUDED_aiounicast_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <ctime>
-	#include <cassert>
-	#include <string>
-	#include <vector>
-	#include <iostream>
+// C and STL header
+#include <cstdlib>
+#include <ctime>
+#include <vector>
+#include <map>
+#include <iostream>
 
-	// GNU multiple precision library
-	#include <gmp.h>
+// GNU multiple precision library
+#include <gmp.h>
 
 class aiounicast
 {
@@ -70,11 +68,12 @@ class aiounicast
 		size_t						numAuthenticated;
 
 		aiounicast
-			(const size_t n_in, const size_t j_in,
-			const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
-			const time_t aio_default_timeout_in = aio_timeout_very_long,
-			const bool aio_is_authenticated_in = true,
-			const bool aio_is_encrypted_in = true):
+			(const size_t n_in,
+			 const size_t j_in,
+			 const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
+			 const time_t aio_default_timeout_in = aio_timeout_very_long,
+			 const bool aio_is_authenticated_in = true,
+			 const bool aio_is_encrypted_in = true):
 				aio_default_scheduler(aio_default_scheduler_in),
 				aio_default_timeout(aio_default_timeout_in),
 				aio_is_authenticated(aio_is_authenticated_in),
@@ -88,19 +87,23 @@ class aiounicast
 		}
 
 		virtual bool Send
-			(mpz_srcptr m, const size_t i_in,
-			const time_t timeout = aio_timeout_default) = 0;
+			(mpz_srcptr m,
+			 const size_t i_in,
+			 const time_t timeout = aio_timeout_default) = 0;
 		virtual bool Send
-			(const std::vector<mpz_srcptr> &m, const size_t i_in,
-			const time_t timeout = aio_timeout_default) = 0;
+			(const std::vector<mpz_srcptr> &m,
+			 const size_t i_in,
+			 const time_t timeout = aio_timeout_default) = 0;
 		virtual bool Receive
-			(mpz_ptr m, size_t &i_out,
-			const size_t scheduler = aio_scheduler_default,
-			const time_t timeout = aio_timeout_default) = 0;
+			(mpz_ptr m,
+			 size_t &i_out,
+			 const size_t scheduler = aio_scheduler_default,
+			 const time_t timeout = aio_timeout_default) = 0;
 		virtual bool Receive
-			(std::vector<mpz_ptr> &m, size_t &i_out,
-			const size_t scheduler = aio_scheduler_default,
-			const time_t timeout = aio_timeout_default) = 0;
+			(std::vector<mpz_ptr> &m,
+			 size_t &i_out,
+			 const size_t scheduler = aio_scheduler_default,
+			 const time_t timeout = aio_timeout_default) = 0;
 
 		void PrintStatistics
 			(std::ostream &ost)

@@ -14,7 +14,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 2009,
-               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+                           2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,9 +37,21 @@
 #endif
 #include "BarnettSmartVTMF_dlog.hh"
 
+// additional headers
+#include <cstdio>
+#include <cassert>
+#include <string>
+#include <sstream>
+#include <vector>
+#include "mpz_srandom.hh"
+#include "mpz_spowm.hh"
+#include "mpz_sprime.hh"
+#include "mpz_helper.hh"
+#include "mpz_shash.hh"
+
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	(const unsigned long int fieldsize, const unsigned long int subgroupsize,
-	const bool canonical_g_usage, const bool initialize_group):
+	 const bool canonical_g_usage, const bool initialize_group):
 		F_size(fieldsize), G_size(subgroupsize), 
 		canonical_g(canonical_g_usage)
 {
@@ -108,8 +120,8 @@ BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 
 BarnettSmartVTMF_dlog::BarnettSmartVTMF_dlog
 	(std::istream& in, 
-	const unsigned long int fieldsize, const unsigned long int subgroupsize,
-	const bool canonical_g_usage, const bool precompute):
+	 const unsigned long int fieldsize, const unsigned long int subgroupsize,
+	 const bool canonical_g_usage, const bool precompute):
 		F_size(fieldsize), G_size(subgroupsize),
 		canonical_g(canonical_g_usage)
 {
@@ -255,7 +267,7 @@ void BarnettSmartVTMF_dlog::RandomElement
 }
 
 void BarnettSmartVTMF_dlog::IndexElement
-	(mpz_ptr a, size_t index) const
+	(mpz_ptr a, const size_t index) const
 {
 	// Simply compute $a := g^i \bmod p$.
 	tmcg_mpz_fpowm_ui(fpowm_table_g, a, g, index, p);
@@ -574,7 +586,7 @@ bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey_interactive
 
 bool BarnettSmartVTMF_dlog::KeyGenerationProtocol_VerifyKey_interactive_publiccoin
 	(mpz_srcptr key, JareckiLysyanskayaEDCF *edcf, 
-	std::istream& in, std::ostream& out)
+	 std::istream& in, std::ostream& out)
 {
 	mpz_t c, m_1, m_2;
 	mpz_init(c), mpz_init(m_1), mpz_init(m_2);
@@ -640,7 +652,7 @@ size_t BarnettSmartVTMF_dlog::KeyGenerationProtocol_NumberOfKeys
 
 void BarnettSmartVTMF_dlog::CP_Prove
 	(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh, mpz_srcptr alpha,
-	std::ostream& out, bool fpowm_usage) const
+	 std::ostream& out, const bool fpowm_usage) const
 {
 	mpz_t a, b, omega, c, r;
 	mpz_init(c), mpz_init(r), mpz_init(a), mpz_init(b), mpz_init(omega);
@@ -682,7 +694,7 @@ void BarnettSmartVTMF_dlog::CP_Prove
 
 bool BarnettSmartVTMF_dlog::CP_Verify
 	(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg, mpz_srcptr hh,
-	std::istream& in, bool fpowm_usage) const
+	 std::istream& in, const bool fpowm_usage) const
 {
 	mpz_t a, b, c, r;	
 	mpz_init(a), mpz_init(b), mpz_init(c), mpz_init(r);
@@ -740,7 +752,7 @@ bool BarnettSmartVTMF_dlog::CP_Verify
 
 void BarnettSmartVTMF_dlog::OR_ProveFirst
 	(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
-		mpz_srcptr alpha, std::ostream& out) const
+	 mpz_srcptr alpha, std::ostream& out) const
 {
 	mpz_t v_1, v_2, w, t_1, t_2, c_1, c_2, r_1, r_2, c, tmp;
 	mpz_init(v_1), mpz_init(v_2), mpz_init(w), mpz_init(t_1), mpz_init(t_2);
@@ -783,7 +795,7 @@ void BarnettSmartVTMF_dlog::OR_ProveFirst
 
 void BarnettSmartVTMF_dlog::OR_ProveSecond
 	(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
-		mpz_srcptr alpha, std::ostream& out) const
+	 mpz_srcptr alpha, std::ostream& out) const
 {
 	mpz_t v_1, v_2, w, t_1, t_2, c_1, c_2, r_1, r_2, c, tmp;
 	mpz_init(v_1), mpz_init(v_2), mpz_init(w), mpz_init(t_1), mpz_init(t_2);
@@ -826,7 +838,7 @@ void BarnettSmartVTMF_dlog::OR_ProveSecond
 
 bool BarnettSmartVTMF_dlog::OR_Verify
 	(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1, mpz_srcptr g_2,
-		std::istream& in) const
+	 std::istream& in) const
 {
 	mpz_t c_1, c_2, r_1, r_2, t_1, t_2, c, tmp;
 	mpz_init(c_1), mpz_init(c_2), mpz_init(r_1), mpz_init(r_2);
@@ -899,7 +911,7 @@ void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Mask
 
 void BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Prove
 	(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr r,
-	std::ostream& out) const
+	 std::ostream& out) const
 {
 	mpz_t foo;
 	mpz_init(foo);
@@ -948,7 +960,7 @@ bool BarnettSmartVTMF_dlog::VerifiableMaskingProtocol_Verify
 // again this is basically an ElGamal encryption of 1 using public key $h$
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2, 
-	mpz_ptr r) const
+	 mpz_ptr r) const
 {
 	MaskingValue(r);
 	
@@ -965,7 +977,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Mask
 
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1, mpz_ptr c__2,
-	mpz_srcptr r, bool TimingAttackProtection) const
+	 mpz_srcptr r, const bool TimingAttackProtection) const
 {
 	// compute $c'_1 = c_1 \cdot g^r \bmod p$
 	if (TimingAttackProtection)
@@ -986,7 +998,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Remask
 
 void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Prove
 	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr c__1, mpz_srcptr c__2,
-	mpz_srcptr r, std::ostream& out) const
+	 mpz_srcptr r, std::ostream& out) const
 {
 	mpz_t foo, bar;
 	mpz_init(foo), mpz_init(bar);
@@ -1009,7 +1021,7 @@ void BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Prove
 
 bool BarnettSmartVTMF_dlog::VerifiableRemaskingProtocol_Verify
 	(mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr c__1, mpz_srcptr c__2,
-	std::istream& in) const
+	 std::istream& in) const
 {
 	mpz_t foo, bar;
 	mpz_init(foo), mpz_init_set_ui(bar, 1L);

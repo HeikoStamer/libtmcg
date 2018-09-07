@@ -15,7 +15,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006,
+               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -35,29 +36,13 @@
 #ifndef INCLUDED_BarnettSmartVTMF_dlog_GroupQR_HH
 	#define INCLUDED_BarnettSmartVTMF_dlog_GroupQR_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <sstream>
-	#include <vector>
-	#include <map>
+// C and STL header
+#include <iostream>
 
-	// GNU crypto library
-	#include <gcrypt.h>
+// GNU multiple precision library
+#include <gmp.h>
 	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
-	#include "mpz_spowm.hh"
-	#include "mpz_sprime.hh"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
-	
-	#include "BarnettSmartVTMF_dlog.hh"
+#include "BarnettSmartVTMF_dlog.hh"
 
 class BarnettSmartVTMF_dlog_GroupQR : public BarnettSmartVTMF_dlog
 {
@@ -67,11 +52,11 @@ class BarnettSmartVTMF_dlog_GroupQR : public BarnettSmartVTMF_dlog
 	public:
 		BarnettSmartVTMF_dlog_GroupQR
 			(const unsigned long int fieldsize = TMCG_DDH_SIZE,
-			const unsigned long int exponentsize = TMCG_DLSE_SIZE);
+			 const unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		BarnettSmartVTMF_dlog_GroupQR
 			(std::istream &in,
-			const unsigned long int fieldsize = TMCG_DDH_SIZE,
-			const unsigned long int exponentsize = TMCG_DLSE_SIZE);
+			 const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 const unsigned long int exponentsize = TMCG_DLSE_SIZE);
 		virtual bool CheckGroup
 			() const;
 		virtual bool CheckElement

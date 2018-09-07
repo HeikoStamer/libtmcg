@@ -14,7 +14,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                           2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+                     2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,56 +34,42 @@
 #ifndef INCLUDED_BarnettSmartVTMF_dlog_HH
 	#define INCLUDED_BarnettSmartVTMF_dlog_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <sstream>
-	#include <vector>
-	#include <map>
+// C and STL header
+#include <cstdlib>
+#include <iostream>
+#include <map>
 
-	// GNU crypto library
-	#include <gcrypt.h>
+// GNU multiple precision library
+#include <gmp.h>
 	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
-	#include "mpz_spowm.hh"
-	#include "mpz_sprime.hh"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
-
-	// erasure-free distributed coinflip protocol [JL00]
-	#include "JareckiLysyanskayaASTC.hh"
+// erasure-free distributed coinflip protocol [JL00]
+#include "JareckiLysyanskayaASTC.hh"
 
 class BarnettSmartVTMF_dlog
 {
 	private:
-		mpz_t				x_i, d, h_i_fp;
+		mpz_t							x_i, d, h_i_fp;
 		std::map<std::string, mpz_ptr>	h_j;
 	
 	protected:
-		const unsigned long int		F_size, G_size;
-		const bool			canonical_g;
-		mpz_t				*fpowm_table_g, *fpowm_table_h;
+		const unsigned long int			F_size, G_size;
+		const bool						canonical_g;
+		mpz_t							*fpowm_table_g, *fpowm_table_h;
 	
 	public:
-		mpz_t				p, q, g, k, h, h_i;
+		mpz_t							p, q, g, k, h, h_i;
 		
 		BarnettSmartVTMF_dlog
 			(const unsigned long int fieldsize = TMCG_DDH_SIZE,
-			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			const bool canonical_g_usage = false,
-			const bool initialize_group = true);
+			 const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			 const bool canonical_g_usage = false,
+			 const bool initialize_group = true);
 		BarnettSmartVTMF_dlog
 			(std::istream& in,
-			const unsigned long int fieldsize = TMCG_DDH_SIZE,
-			const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
-			const bool canonical_g_usage = false,
-			const bool precompute = true);
+			 const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 const unsigned long int subgroupsize = TMCG_DLSE_SIZE,
+			 const bool canonical_g_usage = false,
+			 const bool precompute = true);
 		virtual bool CheckGroup
 			() const;
 		void PublishGroup
@@ -93,7 +79,7 @@ class BarnettSmartVTMF_dlog
 		virtual void RandomElement
 			(mpz_ptr a) const;
 		void IndexElement
-			(mpz_ptr a, size_t index) const;
+			(mpz_ptr a, const size_t index) const;
 		void KeyGenerationProtocol_GenerateKey
 			();
 		void KeyGenerationProtocol_ComputeNIZK
@@ -110,60 +96,60 @@ class BarnettSmartVTMF_dlog
 			(std::istream& in, std::ostream& out);
 		bool KeyGenerationProtocol_ProveKey_interactive_publiccoin
 			(JareckiLysyanskayaEDCF *edcf,
-			std::istream& in, std::ostream& out);
+			 std::istream& in, std::ostream& out);
 		bool KeyGenerationProtocol_VerifyKey_interactive
 			(mpz_srcptr key, std::istream& in, std::ostream& out);
 		bool KeyGenerationProtocol_VerifyKey_interactive_publiccoin
 			(mpz_srcptr key, JareckiLysyanskayaEDCF *edcf,
-			std::istream& in, std::ostream& out);
+			 std::istream& in, std::ostream& out);
 		void KeyGenerationProtocol_Finalize
 			();
 		size_t KeyGenerationProtocol_NumberOfKeys
 			();
 		void CP_Prove
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg,
-			mpz_srcptr hh, mpz_srcptr alpha, std::ostream& out,
-			bool fpowm_usage = false) const;
+			 mpz_srcptr hh, mpz_srcptr alpha, std::ostream& out,
+			 const bool fpowm_usage = false) const;
 		bool CP_Verify
 			(mpz_srcptr x, mpz_srcptr y, mpz_srcptr gg,
-			mpz_srcptr hh, std::istream& in,
-			bool fpowm_usage = false) const;
+			 mpz_srcptr hh, std::istream& in,
+			 const bool fpowm_usage = false) const;
 		void OR_ProveFirst
 			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1,
-			mpz_srcptr g_2, mpz_srcptr alpha,
-			std::ostream& out) const;
+			 mpz_srcptr g_2, mpz_srcptr alpha,
+			 std::ostream& out) const;
 		void OR_ProveSecond
 			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1,
-			mpz_srcptr g_2, mpz_srcptr alpha,
-			std::ostream& out) const;
+			 mpz_srcptr g_2, mpz_srcptr alpha,
+			 std::ostream& out) const;
 		bool OR_Verify
 			(mpz_srcptr y_1, mpz_srcptr y_2, mpz_srcptr g_1,
-			mpz_srcptr g_2, std::istream& in) const;
+			 mpz_srcptr g_2, std::istream& in) const;
 		virtual void MaskingValue
 			(mpz_ptr r) const;
 		void VerifiableMaskingProtocol_Mask
 			(mpz_srcptr m, mpz_ptr c_1, mpz_ptr c_2,
-			mpz_ptr r) const;
+			 mpz_ptr r) const;
 		void VerifiableMaskingProtocol_Prove
 			(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2,
-			mpz_srcptr r, std::ostream& out) const;
+			 mpz_srcptr r, std::ostream& out) const;
 		bool VerifiableMaskingProtocol_Verify
 			(mpz_srcptr m, mpz_srcptr c_1, mpz_srcptr c_2, 
-			std::istream& in) const;
+			 std::istream& in) const;
 		void VerifiableRemaskingProtocol_Mask
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1,
-			mpz_ptr c__2, mpz_ptr r) const;
+			 mpz_ptr c__2, mpz_ptr r) const;
 		void VerifiableRemaskingProtocol_Remask
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_ptr c__1,
-			mpz_ptr c__2, mpz_srcptr r, 
-			bool TimingAttackProtection = true) const;
+			 mpz_ptr c__2, mpz_srcptr r, 
+			 const bool TimingAttackProtection = true) const;
 		void VerifiableRemaskingProtocol_Prove
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr c__1,
-			mpz_srcptr c__2, mpz_srcptr r,
-			std::ostream& out) const;
+			 mpz_srcptr c__2, mpz_srcptr r,
+			 std::ostream& out) const;
 		bool VerifiableRemaskingProtocol_Verify
 			(mpz_srcptr c_1, mpz_srcptr c_2, mpz_srcptr c__1,
-			mpz_srcptr c__2, std::istream& in) const;
+			 mpz_srcptr c__2, std::istream& in) const;
 		void VerifiableDecryptionProtocol_Prove
 			(mpz_srcptr c_1, std::ostream& out) const;
 		void VerifiableDecryptionProtocol_Verify_Initialize

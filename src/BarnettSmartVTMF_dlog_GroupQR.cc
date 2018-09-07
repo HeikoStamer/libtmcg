@@ -16,7 +16,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+                     2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -38,6 +38,11 @@
 	#include "libTMCG_config.h"
 #endif
 #include "BarnettSmartVTMF_dlog_GroupQR.hh"
+
+// additional headers
+#include "mpz_srandom.hh"
+#include "mpz_sprime.hh"
+#include "mpz_helper.hh"
 
 BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	(const unsigned long int fieldsize, const unsigned long int exponentsize):
@@ -73,7 +78,7 @@ BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 
 BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR
 	(std::istream& in,
-	const unsigned long int fieldsize, const unsigned long int exponentsize):
+	 const unsigned long int fieldsize, const unsigned long int exponentsize):
 		BarnettSmartVTMF_dlog(in, fieldsize, fieldsize - 1L, true, false),
 		E_size(exponentsize)
 {
