@@ -27,38 +27,29 @@
 #ifndef INCLUDED_SchindelhauerTMCG_HH
 	#define INCLUDED_SchindelhauerTMCG_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <sstream>
-	#include <iostream>
-	#include <vector>
+// C and STL header
+#include <cstdlib>
+#include <string>
+#include <iostream>
+#include <vector>
+#include <utility>
 	
-	// GNU crypto library
-	#include <gcrypt.h>
+// GNU multiple precision library
+#include <gmp.h>
 	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "TMCG_SecretKey.hh"
-	#include "TMCG_PublicKey.hh"
-	#include "TMCG_PublicKeyRing.hh"
-	#include "VTMF_Card.hh"
-	#include "VTMF_CardSecret.hh"
-	#include "TMCG_Card.hh"
-	#include "TMCG_CardSecret.hh"
-	#include "TMCG_Stack.hh"
-	#include "TMCG_OpenStack.hh"
-	#include "TMCG_StackSecret.hh"
-	
-	#include "BarnettSmartVTMF_dlog.hh"
-	#include "BarnettSmartVTMF_dlog_GroupQR.hh"
-	#include "GrothVSSHE.hh"
-	#include "HooghSchoenmakersSkoricVillegasVRHE.hh"
-	#include "mpz_srandom.hh"
-	#include "mpz_sqrtm.hh"
+#include "TMCG_SecretKey.hh"
+#include "TMCG_PublicKey.hh"
+#include "TMCG_PublicKeyRing.hh"
+#include "VTMF_Card.hh"
+#include "VTMF_CardSecret.hh"
+#include "TMCG_Card.hh"
+#include "TMCG_CardSecret.hh"
+#include "TMCG_Stack.hh"
+#include "TMCG_OpenStack.hh"
+#include "TMCG_StackSecret.hh"
+#include "BarnettSmartVTMF_dlog.hh"
+#include "GrothVSSHE.hh"
+#include "HooghSchoenmakersSkoricVillegasVRHE.hh"
 
 class SchindelhauerTMCG
 {
@@ -99,7 +90,7 @@ class SchindelhauerTMCG
 		// private and obsolete operations on values, cards, and stacks
 		void TMCG_MaskValue
 			(const TMCG_PublicKey &key, mpz_srcptr z, mpz_ptr zz,
-			mpz_srcptr r, mpz_srcptr b, bool TimingAttackProtection = true);
+			mpz_srcptr r, mpz_srcptr b, const bool TimingAttackProtection = true);
 		void TMCG_ProvePrivateCard
 			(const TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
 			std::istream &in, std::ostream &out);
@@ -158,58 +149,59 @@ class SchindelhauerTMCG
 		
 		// constructors and destructors
 		SchindelhauerTMCG
-			(unsigned long int security, size_t k, size_t w);
+			(const unsigned long int security, const size_t k, const size_t w);
 		~SchindelhauerTMCG
 			();
 		
 		// operations and proofs on cards
 		void TMCG_CreateOpenCard
-			(TMCG_Card &c, const TMCG_PublicKeyRing &ring, size_t type);
+			(TMCG_Card &c, const TMCG_PublicKeyRing &ring, const size_t type);
 		void TMCG_CreateOpenCard
-			(VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf, size_t type);
+			(VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf, const size_t type);
 		void TMCG_CreatePrivateCard
 			(TMCG_Card &c, TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
-			size_t index, size_t type);
+			 const size_t index, const size_t type);
 		void TMCG_CreatePrivateCard
 			(VTMF_Card &c, VTMF_CardSecret &cs, BarnettSmartVTMF_dlog *vtmf,
-			size_t type);
+			 const size_t type);
 		void TMCG_CreateCardSecret
-			(TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring, size_t index);
+			(TMCG_CardSecret &cs, const TMCG_PublicKeyRing &ring,
+			 const size_t index);
 		void TMCG_CreateCardSecret
 			(VTMF_CardSecret &cs, BarnettSmartVTMF_dlog *vtmf);
 		void TMCG_MaskCard
 			(const TMCG_Card &c, TMCG_Card &cc, const TMCG_CardSecret &cs,
-			const TMCG_PublicKeyRing &ring, bool TimingAttackProtection = true);
+			 const TMCG_PublicKeyRing &ring, const bool TimingAttackProtection = true);
 		void TMCG_MaskCard
 			(const VTMF_Card &c, VTMF_Card &cc, const VTMF_CardSecret &cs,
-			BarnettSmartVTMF_dlog *vtmf, bool TimingAttackProtection = true);
+			 BarnettSmartVTMF_dlog *vtmf, const bool TimingAttackProtection = true);
 		void TMCG_ProveMaskCard
 			(const TMCG_Card &c, const TMCG_Card &cc, const TMCG_CardSecret &cs,
-			const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out);
+			 const TMCG_PublicKeyRing &ring, std::istream &in, std::ostream &out);
 		void TMCG_ProveMaskCard
 			(const VTMF_Card &c, const VTMF_Card &cc, const VTMF_CardSecret &cs,
-			BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out);
+			 BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out);
 		bool TMCG_VerifyMaskCard
 			(const TMCG_Card &c, const TMCG_Card &cc, const TMCG_PublicKeyRing &ring,
-			std::istream &in, std::ostream &out);
+			 std::istream &in, std::ostream &out);
 		bool TMCG_VerifyMaskCard
 			(const VTMF_Card &c, const VTMF_Card &cc, BarnettSmartVTMF_dlog *vtmf,
-			std::istream &in, std::ostream &out);
+			 std::istream &in, std::ostream &out);
 		void TMCG_ProveCardSecret
-			(const TMCG_Card &c, const TMCG_SecretKey &key, size_t index,
-			std::istream &in, std::ostream &out);
+			(const TMCG_Card &c, const TMCG_SecretKey &key, const size_t index,
+			 std::istream &in, std::ostream &out);
 		void TMCG_ProveCardSecret
 			(const VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf,
-			std::istream &in, std::ostream &out);
+			 std::istream &in, std::ostream &out);
 		bool TMCG_VerifyCardSecret
 			(const TMCG_Card &c, TMCG_CardSecret &cs, const TMCG_PublicKey &key,
-			size_t index, std::istream &in, std::ostream &out);
+			 const size_t index, std::istream &in, std::ostream &out);
 		bool TMCG_VerifyCardSecret
 			(const VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf,
 			std::istream &in, std::ostream &out);
 		void TMCG_SelfCardSecret
 			(const TMCG_Card &c, TMCG_CardSecret &cs, const TMCG_SecretKey &key,
-			size_t index);
+			 const size_t index);
 		void TMCG_SelfCardSecret
 			(const VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf);
 		size_t TMCG_TypeOfCard
@@ -219,78 +211,83 @@ class SchindelhauerTMCG
 		
 		// operations and proofs on stacks
 		size_t TMCG_CreateStackSecret
-			(TMCG_StackSecret<TMCG_CardSecret> &ss, bool cyclic,
-			const TMCG_PublicKeyRing &ring, size_t index, size_t size);
+			(TMCG_StackSecret<TMCG_CardSecret> &ss, const bool cyclic,
+			 const TMCG_PublicKeyRing &ring, const size_t index,
+			 const size_t size);
 		size_t TMCG_CreateStackSecret
-			(TMCG_StackSecret<VTMF_CardSecret> &ss, bool cyclic, size_t size,
-			BarnettSmartVTMF_dlog *vtmf);
+			(TMCG_StackSecret<VTMF_CardSecret> &ss, const bool cyclic,
+			 const size_t size, BarnettSmartVTMF_dlog *vtmf);
 		void TMCG_CreateStackSecret
-			(TMCG_StackSecret<TMCG_CardSecret> &ss, const std::vector<size_t> &pi,
-			const TMCG_PublicKeyRing &ring, size_t index, size_t size);
+			(TMCG_StackSecret<TMCG_CardSecret> &ss,
+			 const std::vector<size_t> &pi, const TMCG_PublicKeyRing &ring,
+			 const size_t index, const size_t size);
 		void TMCG_CreateStackSecret
-			(TMCG_StackSecret<VTMF_CardSecret> &ss, const std::vector<size_t> &pi,
-			size_t size, BarnettSmartVTMF_dlog *vtmf);
+			(TMCG_StackSecret<VTMF_CardSecret> &ss,
+			 const std::vector<size_t> &pi, const size_t size,
+			 BarnettSmartVTMF_dlog *vtmf);
 		void TMCG_MixStack
 			(const TMCG_Stack<TMCG_Card> &s, TMCG_Stack<TMCG_Card> &s2,
-			const TMCG_StackSecret<TMCG_CardSecret> &ss,
-			const TMCG_PublicKeyRing &ring, bool TimingAttackProtection = true);
+			 const TMCG_StackSecret<TMCG_CardSecret> &ss,
+			 const TMCG_PublicKeyRing &ring,
+			 const bool TimingAttackProtection = true);
 		void TMCG_MixStack
 			(const TMCG_Stack<VTMF_Card> &s, TMCG_Stack<VTMF_Card> &s2,
-			const TMCG_StackSecret<VTMF_CardSecret> &ss,
-			BarnettSmartVTMF_dlog *vtmf, bool TimingAttackProtection = true);
+			 const TMCG_StackSecret<VTMF_CardSecret> &ss,
+			 BarnettSmartVTMF_dlog *vtmf,
+			 const bool TimingAttackProtection = true);
 		void TMCG_ProveStackEquality
 			(const TMCG_Stack<TMCG_Card> &s, const TMCG_Stack<TMCG_Card> &s2,
-			const TMCG_StackSecret<TMCG_CardSecret> &ss, bool cyclic,
-			const TMCG_PublicKeyRing &ring, size_t index, 
-			std::istream &in, std::ostream &out);
+			 const TMCG_StackSecret<TMCG_CardSecret> &ss, const bool cyclic,
+			 const TMCG_PublicKeyRing &ring, const size_t index, 
+			 std::istream &in, std::ostream &out);
 		void TMCG_ProveStackEquality
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
-			const TMCG_StackSecret<VTMF_CardSecret> &ss, bool cyclic,
-			BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out);
+			 const TMCG_StackSecret<VTMF_CardSecret> &ss, const bool cyclic,
+			 BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out);
 		void TMCG_ProveStackEquality_Groth
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
-			const TMCG_StackSecret<VTMF_CardSecret> &ss,
-			BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
-			std::istream &in, std::ostream &out);
+			 const TMCG_StackSecret<VTMF_CardSecret> &ss,
+			 BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
+			 std::istream &in, std::ostream &out);
 		void TMCG_ProveStackEquality_Groth_noninteractive
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
-			const TMCG_StackSecret<VTMF_CardSecret> &ss,
-			BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
-			std::ostream &out);
+			 const TMCG_StackSecret<VTMF_CardSecret> &ss,
+			 BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
+			 std::ostream &out);
 		void TMCG_ProveStackEquality_Hoogh
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
-			const TMCG_StackSecret<VTMF_CardSecret> &ss,
-			BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
-			std::istream &in, std::ostream &out);
+			 const TMCG_StackSecret<VTMF_CardSecret> &ss,
+			 BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
+			 std::istream &in, std::ostream &out);
 		void TMCG_ProveStackEquality_Hoogh_noninteractive
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
-			const TMCG_StackSecret<VTMF_CardSecret> &ss,
-			BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
-			std::ostream &out);
+			 const TMCG_StackSecret<VTMF_CardSecret> &ss,
+			 BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
+			 std::ostream &out);
 		bool TMCG_VerifyStackEquality
 			(const TMCG_Stack<TMCG_Card> &s, const TMCG_Stack<TMCG_Card> &s2, 
-			bool cyclic, const TMCG_PublicKeyRing &ring, 
-			std::istream &in, std::ostream &out);
+			 const bool cyclic, const TMCG_PublicKeyRing &ring, 
+			 std::istream &in, std::ostream &out);
 		bool TMCG_VerifyStackEquality
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2, 
-			bool cyclic, BarnettSmartVTMF_dlog *vtmf, 
-			std::istream &in, std::ostream &out);
+			 const bool cyclic, BarnettSmartVTMF_dlog *vtmf, 
+			 std::istream &in, std::ostream &out);
 		bool TMCG_VerifyStackEquality_Groth
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2, 
-			BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
-			std::istream &in, std::ostream &out);
+			 BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
+			 std::istream &in, std::ostream &out);
 		bool TMCG_VerifyStackEquality_Groth_noninteractive
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2, 
-			BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
-			std::istream &in);
+			 BarnettSmartVTMF_dlog *vtmf, GrothVSSHE *vsshe,
+			 std::istream &in);
 		bool TMCG_VerifyStackEquality_Hoogh
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
-			BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
-			std::istream &in, std::ostream &out);
+			 BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
+			 std::istream &in, std::ostream &out);
 		bool TMCG_VerifyStackEquality_Hoogh_noninteractive
 			(const TMCG_Stack<VTMF_Card> &s, const TMCG_Stack<VTMF_Card> &s2,
-			BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
-			std::istream &in);
+			 BarnettSmartVTMF_dlog *vtmf, HooghSchoenmakersSkoricVillegasVRHE *vrhe,
+			 std::istream &in);
 };
 
 #endif

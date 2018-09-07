@@ -19,7 +19,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20180905.
+Revision 20180907.
 
 Copyright @copyright{} 2005--2007, 2009, 2015--2018 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
@@ -1303,12 +1303,12 @@ There is no error reported, if this limit is exceeded.
 		not equal.
 	@end deftypeop
 	
-	@deftypeop {Operator} TMCG_Stack {const @var{CardType}&} [] (@code{size_t} n)
+	@deftypeop {Operator} TMCG_Stack {const @var{CardType}&} [] (@code{const size_t} n)
 		This operator provides read-only random access to the contained cards.
 		It returns a const-reference to the @var{n}th card from the top of the stack.
 	@end deftypeop
 	
-	@deftypeop {Operator} TMCG_Stack {@var{CardType}&} [] (@code{size_t} n)
+	@deftypeop {Operator} TMCG_Stack {@var{CardType}&} [] (@code{const size_t} n)
 		This operator provides random access to the contained cards.
 		It returns a reference to the @var{n}th card from the top of the stack.
 	@end deftypeop
@@ -1412,12 +1412,12 @@ There is no error reported, if this limit is exceeded.
 		are not equal.
 	@end deftypeop
 	
-	@deftypeop {Operator} TMCG_OpenStack {const std::pair<size_t, @var{CardType}>&} [] (@code{size_t} n)
+	@deftypeop {Operator} TMCG_OpenStack {const std::pair<size_t, @var{CardType}>&} [] (@code{const size_t} n)
 		This operator provides read-only random access to the contained pairs.
 		It returns a const-reference to the @var{n}th pair from the top of the stack.
 	@end deftypeop
 	
-	@deftypeop {Operator} TMCG_OpenStack {std::pair<size_t, @var{CardType}>&} [] (@code{size_t} n)
+	@deftypeop {Operator} TMCG_OpenStack {std::pair<size_t, @var{CardType}>&} [] (@code{const size_t} n)
 		This operator provides random access to the contained pairs.
 		It returns a reference to the @var{n}th pair from the top of the stack.
 	@end deftypeop
@@ -1432,7 +1432,7 @@ There is no error reported, if this limit is exceeded.
 		representation.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_OpenStack void push (@code{size_t} type, @code{const @var{CardType}&} c)
+	@deftypemethod TMCG_OpenStack void push (@code{const size_t} type, @code{const @var{CardType}&} c)
 		This method pushes a pair to the back of the stack. The parameter @var{type}
 		is the card type and @var{c} is the corresponding card representation.
 	@end deftypemethod
@@ -1456,22 +1456,22 @@ There is no error reported, if this limit is exceeded.
 		This method clears the stack, i.e., it removes all pairs.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_OpenStack bool find (@code{size_t} type)
+	@deftypemethod TMCG_OpenStack bool find (@code{const size_t} type)
 		This method returns @code{true}, if a pair with the first component @var{type} was
 		found in the stack.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_OpenStack bool remove (@code{size_t} type)
+	@deftypemethod TMCG_OpenStack bool remove (@code{const size_t} type)
 		This method removes the top-most pair with the first component @var{type} from the
 		stack. It returns @code{true}, if such a pair was found and successfully removed.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_OpenStack size_t removeAll (@code{size_t} type)
+	@deftypemethod TMCG_OpenStack size_t removeAll (@code{const size_t} type)
 		This method removes every pair from the stack whose first component is equal to
 		@var{type}. Further it returns the number of removed pairs.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_OpenStack bool move (@code{size_t} type, @code{TMCG_Stack<@var{CardType}>&} s)
+	@deftypemethod TMCG_OpenStack bool move (@code{const size_t} type, @code{TMCG_Stack<@var{CardType}>&} s)
 	This method moves the top-most card representation of the given @var{type} to another
 	stack @var{s}. It returns @code{true}, if such a pair was found and successfully moved.
 	@end deftypemethod
@@ -1505,12 +1505,12 @@ There is no error reported, if this limit is exceeded.
 		stack secret to be assigned.
 	@end deftypeop
 	
-	@deftypeop {Operator} TMCG_StackSecret {const std::pair<size_t, @var{CardSecretType}>&} [] (@code{size_t} n)
+	@deftypeop {Operator} TMCG_StackSecret {const std::pair<size_t, @var{CardSecretType}>&} [] (@code{const size_t} n)
 		This operator provides read-only random access to the contained pairs.
 		It returns a const-reference to the @var{n}th pair from the top of the stack secret.
 	@end deftypeop
 	
-	@deftypeop {Operator} TMCG_StackSecret {std::pair<size_t, @var{CardSecretType}>&} [] (@code{size_t} n)
+	@deftypeop {Operator} TMCG_StackSecret {std::pair<size_t, @var{CardSecretType}>&} [] (@code{const size_t} n)
 		This operator provides random access to the contained pairs.
 		It returns a reference to the @var{n}th pair from the top of the stack secret.
 	@end deftypeop
@@ -1519,7 +1519,7 @@ There is no error reported, if this limit is exceeded.
 		This method returns the size of the stack secret.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_StackSecret void push (@code{size_t} index, @code{const @var{CardSecretType}&} cs)
+	@deftypemethod TMCG_StackSecret void push (@code{const size_t} index, @code{const @var{CardSecretType}&} cs)
 		This method pushes a pair to the back of the stack secret. The parameter @var{index}
 		is the permutation index and @var{cs} is the corresponding card secret.
 	@end deftypemethod
@@ -1528,7 +1528,7 @@ There is no error reported, if this limit is exceeded.
 		This method clears the stack secret, i.e., it removes all pairs.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_StackSecret size_t find_position (@code{size_t} index)
+	@deftypemethod TMCG_StackSecret size_t find_position (@code{const size_t} index)
 		This method searches for a given permutation index in the stack secret.
 		It returns the corresponding position@footnote{According to the behavior
 		of the @code{[]}-operator, the zero denotes always the top-most position.} in
@@ -1537,7 +1537,7 @@ There is no error reported, if this limit is exceeded.
 		value is not a valid position for an access to the stack secret.
 	@end deftypemethod
 	
-	@deftypemethod TMCG_StackSecret bool find (@code{size_t} index)
+	@deftypemethod TMCG_StackSecret bool find (@code{const size_t} index)
 		This method searches for a given permutation index in the stack secret.
 		It returns @code{true}, if such an @var{index} was found.
 	@end deftypemethod
@@ -2853,7 +2853,7 @@ or stack operations.
 		given as an argument to the constructor of this class.
 	@end deftypecv
 	
-	@deftypeop {Constructor} SchindelhauerTMCG {} SchindelhauerTMCG (@code{unsigned long int} security, @code{size_t} k, @code{size_t} w)
+	@deftypeop {Constructor} SchindelhauerTMCG {} SchindelhauerTMCG (@code{const unsigned long int} security, @code{const size_t} k, @code{const size_t} w)
 		This constructor creates an instance, where @var{security} is a nonnegative
 		integer that represents the security parameter @math{\kappa}. The parameter
 		@var{k} is the number of players and @var{w} is the number of bits which are
@@ -2885,7 +2885,7 @@ or stack operations.
 		@code{TMCG_MAX_PLAYERS} and @code{TMCG_MAX_TYPEBITS}, respectively.
 	@end deftypeop
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_CreateOpenCard (@code{TMCG_Card&} c, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} type)
+	@deftypemethod SchindelhauerTMCG void TMCG_CreateOpenCard (@code{TMCG_Card&} c, @code{const TMCG_PublicKeyRing&} ring, @code{const size_t} type)
 		This method initializes the open card @var{c} with the given @var{type}
 		using the encoding scheme of Schindelhauer. The @var{type} MUST be an
 		integer from the interval @math{[0, 2^{w} - 1]}, where @math{w} is the
@@ -2896,7 +2896,7 @@ or stack operations.
 		The @math{k} MUST be the same number as used at the creation of @var{c}.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_CreateOpenCard (@code{VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf, @code{size_t} type)
+	@deftypemethod SchindelhauerTMCG void TMCG_CreateOpenCard (@code{VTMF_Card&} c, @code{BarnettSmartVTMF_dlog*} vtmf, @code{const size_t} type)
 		This method initializes the open card @var{c} with the given @var{type}
 		using the encoding scheme of Barnett and Smart. The @var{type} MUST be an
 		integer from the interval @math{[0, 2^{w} - 1]}, where @math{w} is the
@@ -2906,7 +2906,7 @@ or stack operations.
 		and @code{BarnettSmartVTMF_dlog_GroupQR}, respectively).
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_CreateCardSecret (@code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index)
+	@deftypemethod SchindelhauerTMCG void TMCG_CreateCardSecret (@code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{const size_t} index)
 		This method initializes the card secret @var{cs} with random values
 		which is necessary to perform later a masking operation on a card.
 		The parameter @var{ring} is a container with exactly @math{k} public
@@ -2925,7 +2925,7 @@ or stack operations.
 		(@pxref{BarnettSmartVTMF}).
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_CreatePrivateCard (@code{TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{size_t} type)
+	@deftypemethod SchindelhauerTMCG void TMCG_CreatePrivateCard (@code{TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{const size_t} index, @code{const size_t} type)
 		This method initializes a masked card @var{c} with the given @var{type} and
 		a corresponding card secret @var{cs} using the encoding scheme of
 		Schindelhauer.
@@ -2947,7 +2947,7 @@ or stack operations.
 		@end enumerate
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_CreatePrivateCard (@code{VTMF_Card&} c, @code{VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{size_t} type)
+	@deftypemethod SchindelhauerTMCG void TMCG_CreatePrivateCard (@code{VTMF_Card&} c, @code{VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{const size_t} type)
 		This method initializes a masked card @var{c} with the given @var{type} and
 		a corresponding card secret @var{cs} using the encoding scheme of Barnett and
 		Smart. The @var{type} MUST be an integer from the interval
@@ -2958,7 +2958,7 @@ or stack operations.
 		executes the masking operation of the verifiable masking protocol.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_MaskCard (@code{const TMCG_Card&} c, @code{TMCG_Card&} cc, @code{const TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{bool} TimingAttackProtection @code{=true})
+	@deftypemethod SchindelhauerTMCG void TMCG_MaskCard (@code{const TMCG_Card&} c, @code{TMCG_Card&} cc, @code{const TMCG_CardSecret&} cs, @code{const TMCG_PublicKeyRing&} ring, @code{const bool} TimingAttackProtection @code{=true})
 		This method performs a masking operation on the open or already masked card
 		@var{c} using the encoding scheme of Schindelhauer. Finally it returns the
 		result in @var{cc}.
@@ -2972,7 +2972,7 @@ or stack operations.
 		@var{TimingAttackProtection} is set to @code{true}.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_MaskCard (@code{const VTMF_Card&} c, @code{VTMF_Card&} cc, @code{const VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{bool} TimingAttackProtection @code{=true})
+	@deftypemethod SchindelhauerTMCG void TMCG_MaskCard (@code{const VTMF_Card&} c, @code{VTMF_Card&} cc, @code{const VTMF_CardSecret&} cs, @code{BarnettSmartVTMF_dlog*} vtmf, @code{const bool} TimingAttackProtection @code{=true})
 		This method performs a masking operation on the open or already masked card
 		@var{c} using the encoding scheme of Barnett and Smart. Finally it returns the
 		result in @var{cc}. Specifically, @code{TMCG_MaskCard} directly executes
@@ -3035,7 +3035,7 @@ or stack operations.
 		The method returns @code{true}, if everything was sound.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_ProveCardSecret (@code{const TMCG_Card&} c, @code{const TMCG_SecretKey&} key, @code{size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveCardSecret (@code{const TMCG_Card&} c, @code{const TMCG_SecretKey&} key, @code{const size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
 		This method is used to reveal the card type of @var{c} to a verifier.
 		Every player must execute this method as prover.
 		The card @var{c} MUST be created such that its @math{k} resp. @math{w}
@@ -3059,7 +3059,7 @@ or stack operations.
 		transmitted on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyCardSecret (@code{const TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKey&} key, @code{size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyCardSecret (@code{const TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_PublicKey&} key, @code{const size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
 		This method is used to verify and accumulate card type information regarding
 		@var{c} that are supplied by a prover. It is the opposite method of 
 		@code{TMCG_ProveCardSecret} and must be executed by the player who wants to
@@ -3090,7 +3090,7 @@ or stack operations.
 		transmitted on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_SelfCardSecret (@code{const TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_SecretKey&} key, @code{size_t} index)
+	@deftypemethod SchindelhauerTMCG void TMCG_SelfCardSecret (@code{const TMCG_Card&} c, @code{TMCG_CardSecret&} cs, @code{const TMCG_SecretKey&} key, @code{const size_t} index)
 		This method is used to compute and accumulate card type information regarding
 		@var{c}. Analogously to @code{TMCG_VerifyCardSecret} it must be executed by the
 		player who wants to know the type of @var{c}. The information is accumulated in
@@ -3135,7 +3135,7 @@ or stack operations.
 		i.e. the key generation protocol MUST be successfully finished.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG size_t TMCG_CreateStackSecret (@code{TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{size_t} size)
+	@deftypemethod SchindelhauerTMCG size_t TMCG_CreateStackSecret (@code{TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{const bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{const size_t} index, @code{const size_t} size)
 		This method initializes the stack secret @var{ss} with a randomly and
 		uniformly chosen permutation (using the algorithm of Knuth) and fresh card secrets. Later this stack
 		secret can be used to perform a secret shuffle operation on a stack.
@@ -3153,7 +3153,7 @@ or stack operations.
 		to @code{true}. Otherwise, the value @code{0} is returned.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG size_t TMCG_CreateStackSecret (@code{TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{bool} cyclic, @code{size_t} size, @code{BarnettSmartVTMF_dlog*} vtmf)
+	@deftypemethod SchindelhauerTMCG size_t TMCG_CreateStackSecret (@code{TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{const bool} cyclic, @code{const size_t} size, @code{BarnettSmartVTMF_dlog*} vtmf)
 		This method initializes the stack secret @var{ss} with a randomly and
 		uniformly chosen permutation (using the algorithm of Knuth) and fresh
 		card secrets. Later this stack
@@ -3170,7 +3170,7 @@ or stack operations.
 		to @code{true}. Otherwise, the value @code{0} is returned.
 	@end deftypemethod
 
-	@deftypemethod SchindelhauerTMCG void TMCG_CreateStackSecret (@code{TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{const std::vector<size_t>&} pi, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{size_t} size)
+	@deftypemethod SchindelhauerTMCG void TMCG_CreateStackSecret (@code{TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{const std::vector<size_t>&} pi, @code{const TMCG_PublicKeyRing&} ring, @code{const size_t} index, @code{const size_t} size)
 		This method initializes the stack secret @var{ss} with a given
 		permutation @var{pi} and fresh card secrets. Later this stack
 		secret can be used to perform a secret shuffle operation on a stack.
@@ -3183,7 +3183,7 @@ or stack operations.
 		@var{size} is upper-bounded by @code{TMCG_MAX_CARDS}.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_CreateStackSecret (@code{TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{const std::vector<size_t>&} pi, @code{size_t} size, @code{BarnettSmartVTMF_dlog*} vtmf)
+	@deftypemethod SchindelhauerTMCG void TMCG_CreateStackSecret (@code{TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{const std::vector<size_t>&} pi, @code{const size_t} size, @code{BarnettSmartVTMF_dlog*} vtmf)
 		This method initializes the stack secret @var{ss} with a given
 		permutation @var{pi} and fresh card secrets. Later this stack
 		secret can be used to perform a secret shuffle operation on a stack.
@@ -3194,7 +3194,7 @@ or stack operations.
 		i.e. the key generation protocol MUST be successfully finished.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_MixStack (@code{const TMCG_Stack<TMCG_Card>&} s, @code{TMCG_Stack<TMCG_Card>&} s2, @code{const TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{const TMCG_PublicKeyRing&} ring, @code{bool} TimingAttackProtection @code{=true})
+	@deftypemethod SchindelhauerTMCG void TMCG_MixStack (@code{const TMCG_Stack<TMCG_Card>&} s, @code{TMCG_Stack<TMCG_Card>&} s2, @code{const TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{const TMCG_PublicKeyRing&} ring, @code{const bool} TimingAttackProtection @code{=true})
 		This method shuffles a given stack @var{s} according to the previously
 		created stack secret @var{ss} (@pxref{Data Types}). The
 		result of the shuffle is returned in @var{s2}.
@@ -3207,7 +3207,7 @@ or stack operations.
 		@var{TimingAttackProtection} is set to @code{true}.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_MixStack (@code{const TMCG_Stack<VTMF_Card>&} s, @code{TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf, @code{bool} TimingAttackProtection @code{=true})
+	@deftypemethod SchindelhauerTMCG void TMCG_MixStack (@code{const TMCG_Stack<VTMF_Card>&} s, @code{TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{BarnettSmartVTMF_dlog*} vtmf, @code{const bool} TimingAttackProtection @code{=true})
 		This method shuffles a given stack @var{s} according to the previously
 		created stack secret @var{ss} (@pxref{Data Types}). The
 		result of the shuffle is returned in @var{s2}.
@@ -3220,7 +3220,7 @@ or stack operations.
 		@var{TimingAttackProtection} is set to @code{true}.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality (@code{const TMCG_Stack<TMCG_Card>&} s, @code{const TMCG_Stack<TMCG_Card>&} s2, @code{const TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality (@code{const TMCG_Stack<TMCG_Card>&} s, @code{const TMCG_Stack<TMCG_Card>&} s2, @code{const TMCG_StackSecret<TMCG_CardSecret>&} ss, @code{const bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{const size_t} index, @code{std::istream&} in, @code{std::ostream&} out)
 		This method should be called by the prover after @code{TMCG_MixStack} to show
 		that he performed the shuffle operation correctly. The parameters @var{s},
 		@var{s2}, and @var{ss} are the input, the result, and the used stack secret
@@ -3236,7 +3236,7 @@ or stack operations.
 		transmitted on the streams @var{in} and @var{out}, respectively.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{bool} cyclic, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
+	@deftypemethod SchindelhauerTMCG void TMCG_ProveStackEquality (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{const TMCG_StackSecret<VTMF_CardSecret>&} ss, @code{const bool} cyclic, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
 		This method should be called by the prover after @code{TMCG_MixStack} to show
 		that he performed the shuffle operation correctly. The parameters @var{s},
 		@var{s2}, and @var{ss} are the input, the result, and the used stack secret
@@ -3282,7 +3282,7 @@ or stack operations.
 		The rest of the arguments are the same.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality (@code{const TMCG_Stack<TMCG_Card>&} s, @code{const TMCG_Stack<TMCG_Card>&} s2, @code{bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{std::istream&} in, @code{std::ostream&} out)
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality (@code{const TMCG_Stack<TMCG_Card>&} s, @code{const TMCG_Stack<TMCG_Card>&} s2, @code{const bool} cyclic, @code{const TMCG_PublicKeyRing&} ring, @code{std::istream&} in, @code{std::ostream&} out)
 		This method should be executed by the verifier to check whether or not a
 		shuffle operation was performed correctly. The parameters @var{s} and
 		@var{s2} are the input and the result of @code{TMCG_MixStack}, respectively.
@@ -3296,7 +3296,7 @@ or stack operations.
 		This method returns @code{true}, if the shuffle operation was successfully verified.
 	@end deftypemethod
 	
-	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{bool} cyclic, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
+	@deftypemethod SchindelhauerTMCG bool TMCG_VerifyStackEquality (@code{const TMCG_Stack<VTMF_Card>&} s, @code{const TMCG_Stack<VTMF_Card>&} s2, @code{const bool} cyclic, @code{BarnettSmartVTMF_dlog*} vtmf, @code{std::istream&} in, @code{std::ostream&} out)
 		This method should be executed by the verifier to check whether or not a
 		shuffle operation was performed correctly. The parameters @var{s} and
 		@var{s2} are the input and the result of @code{TMCG_MixStack}, respectively.

@@ -2,7 +2,7 @@
   Data structure for the secrets of a stack. This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+                     2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,16 +22,16 @@
 #ifndef INCLUDED_TMCG_StackSecret_HH
 	#define INCLUDED_TMCG_StackSecret_HH
 	
-	// C++/STL header
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <vector>
-	#include <algorithm>
-	#include <functional>
+// C++/STL header
+#include <cstdlib>
+#include <string>
+#include <iostream>
+#include <vector>
+#include <utility>
+#include <algorithm>
+#include <functional>
 	
-	#include "parse_helper.hh"
+#include "parse_helper.hh"
 
 /** @brief Data structure for the secrets of a stack of cards.
     
@@ -82,7 +82,7 @@ template <typename CardSecretType> struct TMCG_StackSecret
 	/** This operator provides random access to the pairs of the stack secret.
 	    @returns The @a n th pair from the top of the stack secret. */
 	const std::pair<size_t, CardSecretType>& operator []
-		(size_t n) const
+		(const size_t n) const
 	{
 		return stack[n];
 	}
@@ -90,7 +90,7 @@ template <typename CardSecretType> struct TMCG_StackSecret
 	/** This operator provides random access to the pairs of the stack secret.
 	    @returns The @a n th pair from the top of the stack secret. */
 	std::pair<size_t, CardSecretType>& operator []
-		(size_t n)
+		(const size_t n)
 	{
 		return stack[n];
 	}
@@ -106,7 +106,7 @@ template <typename CardSecretType> struct TMCG_StackSecret
 	    @param index is the permutation index (first component) to be pushed.
 	    @param cs is the card secret (second component) to be pushed. */
 	void push
-		(size_t index, const CardSecretType& cs)
+		(const size_t index, const CardSecretType& cs)
 	{
 		if (stack.size() < TMCG_MAX_CARDS)
 			stack.push_back(std::pair<size_t, CardSecretType>(index, cs));
@@ -124,7 +124,7 @@ template <typename CardSecretType> struct TMCG_StackSecret
 	    @returns The position in the stack secret, if @a index was found.
 	    Otherwise, it returns the size of the stack secret. */
 	size_t find_position
-		(size_t index) const
+		(const size_t index) const
 	{
 		return distance(stack.begin(),
 			std::find_if(stack.begin(), stack.end(),
@@ -136,7 +136,7 @@ template <typename CardSecretType> struct TMCG_StackSecret
 	    @param index is the permutation index to be found.
 	    @returns True, if @a index was found. */
 	bool find
-		(size_t index) const
+		(const size_t index) const
 	{
 		return (find_position(index) == stack.size() ? false : true);
 	}
@@ -160,8 +160,11 @@ template <typename CardSecretType> struct TMCG_StackSecret
 				throw false;
 			char *ec;
 			size_t size = std::strtoul(size_str.c_str(), &ec, 10);
-			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) || !TMCG_ParseHelper::nx(s, '^'))
+			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) ||
+				!TMCG_ParseHelper::nx(s, '^'))
+			{
 				throw false;
+			}
 			
 			// cards on stack
 			for (size_t i = 0; i < size; i++)
@@ -173,8 +176,11 @@ template <typename CardSecretType> struct TMCG_StackSecret
 				if (!TMCG_ParseHelper::gs(s, '^', pi_str))
 					throw false;
 				lej.first = std::strtoul(pi_str.c_str(), &ec, 10);
-				if ((*ec != '\0') || (lej.first < 0) || (lej.first >= size) || !TMCG_ParseHelper::nx(s, '^'))
+				if ((*ec != '\0') || (lej.first < 0) || (lej.first >= size) ||
+					!TMCG_ParseHelper::nx(s, '^'))
+				{
 					throw false;
+				}
 				
 				// card secret
 				if (!TMCG_ParseHelper::gs(s, '^', cs_str))
@@ -193,6 +199,7 @@ template <typename CardSecretType> struct TMCG_StackSecret
 					throw false;
 			}
 			
+			// finish
 			throw true;
 		}
 		catch (bool return_value)

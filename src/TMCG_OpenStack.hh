@@ -1,7 +1,8 @@
 /*******************************************************************************
   Data structure for a stack of open cards. This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2006, 2007, 2016  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005, 2006, 2007, 
+                           2016, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,14 +22,14 @@
 #ifndef INCLUDED_TMCG_OpenStack_HH
 	#define INCLUDED_TMCG_OpenStack_HH
 	
-	// C++/STL header
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <vector>
-	#include <algorithm>
-	#include <functional>
+// C++/STL header
+#include <cstdlib>
+#include <string>
+#include <iostream>
+#include <vector>
+#include <utility>
+#include <algorithm>
+#include <functional>
 
 /** @brief Data structure for a stack of open cards.
     
@@ -94,7 +95,7 @@ template <typename CardType> struct TMCG_OpenStack
 	/** This operator provides random access to the pairs of the open stack.
 	    @returns The @a n th pair from the top of the open stack. */
 	const std::pair<size_t, CardType>& operator []
-		(size_t n) const
+		(const size_t n) const
 	{
 		return stack[n];
 	}
@@ -102,7 +103,7 @@ template <typename CardType> struct TMCG_OpenStack
 	/** This operator provides random access to the pairs of the open stack.
 	    @returns The @a n th pair from the top of the open stack. */
 	std::pair<size_t, CardType>& operator []
-		(size_t n)
+		(const size_t n)
 	{
 		return stack[n];
 	}
@@ -127,7 +128,7 @@ template <typename CardType> struct TMCG_OpenStack
 	    @param type is the type of the card (first component) to be pushed.
 	    @param c is the card (second component) to be pushed. */
 	void push
-		(size_t type, const CardType& c)
+		(const size_t type, const CardType& c)
 	{
 		if (stack.size() < TMCG_MAX_CARDS)
 			stack.push_back(std::pair<size_t, CardType>(type, c));
@@ -174,7 +175,7 @@ template <typename CardType> struct TMCG_OpenStack
 	
 	/** @returns True, if the @a type was found in the open stack. */
 	bool find
-		(size_t type) const
+		(const size_t type) const
 	{
 		return (std::find_if(stack.begin(), stack.end(),
 			std::bind2nd(eq_first_component(), std::pair<size_t, CardType>
@@ -186,7 +187,7 @@ template <typename CardType> struct TMCG_OpenStack
 	    @param type will be removed.
 	    @returns True, if the pair was successful removed. */
 	bool remove
-		(size_t type)
+		(const size_t type)
 	{
 		typename std::vector<std::pair<size_t, CardType> >::iterator si =
 			std::find_if(stack.begin(), stack.end(),
@@ -205,7 +206,7 @@ template <typename CardType> struct TMCG_OpenStack
 	    @param type will be removed.
 	    @returns The number of removed pairs. */
 	size_t removeAll
-		(size_t type)
+		(const size_t type)
 	{
 		size_t counter = 0;
 		while (remove(type))
@@ -219,7 +220,7 @@ template <typename CardType> struct TMCG_OpenStack
 	    @param s is the stack where the card is moved to.
 	    @returns True, if a card was moved. */
 	bool move
-		(size_t type, TMCG_Stack<CardType>& s)
+		(const size_t type, TMCG_Stack<CardType>& s)
 	{
 		typename std::vector<std::pair<size_t, CardType> >::iterator si =
 			std::find_if(stack.begin(), stack.end(),

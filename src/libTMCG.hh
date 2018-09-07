@@ -238,6 +238,9 @@
 	#include <gcrypt.h>
 	typedef std::vector<gcry_mpi_t>					tmcg_mpi_vector_t;
 	typedef std::vector< std::vector<gcry_mpi_t> >	tmcg_mpi_matrix_t;
+	#include <mpz_srandom.hh>
+	#include <mpz_sqrtm.hh>
+	#include <mpz_helper.hh>
 
 	// data structures and protocols for mental poker
 	#include <TMCG_SecretKey.hh>
@@ -250,10 +253,14 @@
 	#include <TMCG_Stack.hh>
 	#include <TMCG_OpenStack.hh>
 	#include <TMCG_StackSecret.hh>
+	#include <BarnettSmartVTMF_dlog.hh>
+	#include <BarnettSmartVTMF_dlog_GroupQR.hh>
 	#include <GolleDCPG_elgamal.hh>
 	#include <SchindelhauerTMCG.hh>
 	
-	// cryptographic protocols that are not directly related to mental poker	
+	// cryptographic protocols that are not directly related to mental poker
+	#include <GrothVSSHE.hh>
+	#include <HooghSchoenmakersSkoricVillegasVRHE.hh>	
 	#include <NaorPinkasEOTP.hh>
 	#include <CachinKursawePetzoldShoupSEABP.hh>
 	#include <PedersenVSS.hh>
@@ -262,6 +269,7 @@
 	#include <JareckiLysyanskayaASTC.hh>
 
 	// miscellaneous stuff (e.g. OpenPGP interface)
+	#include <parse_helper.hh>
 	#include <CallasDonnerhackeFinneyShawThayerRFC4880.hh>
 	
 	// additional C and STL header

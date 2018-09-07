@@ -2,7 +2,7 @@
   Data structure for a stack of cards. This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                           2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+                     2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,16 +22,15 @@
 #ifndef INCLUDED_TMCG_Stack_HH
 	#define INCLUDED_TMCG_Stack_HH
 	
-	// C++/STL header
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <vector>
-	#include <algorithm>
-	#include <functional>
+// C++/STL header
+#include <cstdlib>
+#include <string>
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <functional>
 	
-	#include "parse_helper.hh"
+#include "parse_helper.hh"
 
 template <typename CardType> struct TMCG_OpenStack;		// forward declaration
 
@@ -84,7 +83,7 @@ template <typename CardType> struct TMCG_Stack
 	/** This operator provides random access to the cards of the stack.
 	    @returns The @a n th card from the top of the stack. */
 	const CardType& operator []
-		(size_t n) const
+		(const size_t n) const
 	{
 		return stack[n];
 	}
@@ -92,7 +91,7 @@ template <typename CardType> struct TMCG_Stack
 	/** This operator provides random access to the cards of the stack.
 	    @returns The @a n th card from the top of the stack. */
 	CardType& operator []
-		(size_t n)
+		(const size_t n)
 	{
 		return stack[n];
 	}
@@ -178,7 +177,8 @@ template <typename CardType> struct TMCG_Stack
 	bool remove
 		(const CardType& c)
 	{
-		typename std::vector<CardType>::iterator si = std::find(stack.begin(), stack.end(), c);
+		typename std::vector<CardType>::iterator si =
+			std::find(stack.begin(), stack.end(), c);
 		
 		if (si != stack.end())
 		{
@@ -218,8 +218,11 @@ template <typename CardType> struct TMCG_Stack
 				throw false;
 			char *ec;
 			size_t size = std::strtoul(size_str.c_str(), &ec, 10);
-			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) || !TMCG_ParseHelper::nx(s, '^'))
+			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) ||
+				!TMCG_ParseHelper::nx(s, '^'))
+			{
 				throw false;
+			}
 			
 			// cards on stack
 			for (size_t i = 0; i < size; i++)
@@ -234,6 +237,7 @@ template <typename CardType> struct TMCG_Stack
 				stack.push_back(c);
 			}
 			
+			// finish
 			throw true;
 		}
 		catch (bool return_value)
