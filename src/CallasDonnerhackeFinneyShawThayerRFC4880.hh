@@ -573,7 +573,7 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
 			 const tmcg_openpgp_octets_t					&embeddedsig_in);
-		bool good
+		bool Good
 			() const;
 		void PrintInfo
 			() const;
@@ -759,9 +759,9 @@ class TMCG_OpenPGP_Subkey
 			 const tmcg_openpgp_hashalgo_t					kdf_hashalgo_in,
 			 const tmcg_openpgp_skalgo_t					kdf_skalgo_in,
 			 const tmcg_openpgp_octets_t					&packet_in);
-		bool good
+		bool Good
 			() const;
-		bool weak
+		bool Weak
 			(const int										verbose) const;
 		size_t AccumulateFlags
 			() const;
@@ -889,9 +889,9 @@ class TMCG_OpenPGP_PrivateSubkey
 			 const tmcg_openpgp_hashalgo_t					kdf_hashalgo_in,
 			 const tmcg_openpgp_skalgo_t					kdf_skalgo_in,
 			 const tmcg_openpgp_octets_t					&packet_in);
-		bool good
+		bool Good
 			() const;
-		bool weak
+		bool Weak
 			(const int										verbose) const;
 		bool Decrypt
 			(const TMCG_OpenPGP_PKESK*						&esk,
@@ -963,9 +963,9 @@ class TMCG_OpenPGP_Pubkey
 			 const tmcg_openpgp_byte_t*						oid,
 			 const gcry_mpi_t								ecpk,
 			 const tmcg_openpgp_octets_t					&packet_in);
-		bool good
+		bool Good
 			() const;
-		bool weak
+		bool Weak
 			(const int										verbose) const;
 		size_t AccumulateFlags
 			() const;
@@ -1081,9 +1081,9 @@ class TMCG_OpenPGP_Prvkey
 			 const gcry_mpi_t								ecpk,
 			 const gcry_mpi_t								ecsk,
 			 const tmcg_openpgp_octets_t					&packet_in);
-		bool good
+		bool Good
 			() const;
-		bool weak
+		bool Weak
 			(const int										verbose) const;
 		bool Decrypt
 			(const TMCG_OpenPGP_PKESK*						&esk,

@@ -464,8 +464,8 @@ int main
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidCompute(primary->pub_hashing, kid);
 	std::cout << kid << std::endl;
-	std::cout << "!primary->weak()" << std::endl;
-	bool check_ok = primary->weak(3);
+	std::cout << "!primary->Weak()" << std::endl;
+	bool check_ok = primary->Weak(3);
 	assert(!check_ok);
 	delete primary;
 	delete ring;
@@ -484,7 +484,7 @@ int main
 	parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 		SignatureParse(armored_signature, 3, signature);
 	assert(parse_ok);
-	assert(signature->good());
+	assert(signature->Good());
 	std::cout << "PrintInfo()" << std::endl;
 	signature->PrintInfo();
 	std::cout << "CheckValidity()" << std::endl;
@@ -729,8 +729,8 @@ int main
 	std::cout << "CheckSubkeys()" << std::endl;
 	parse_ok = mallory->CheckSubkeys(ring, 3);
 	assert(parse_ok);
-	std::cout << "!primary->weak()" << std::endl;
-	check_ok = mallory->weak(3);
+	std::cout << "!primary->Weak()" << std::endl;
+	check_ok = mallory->Weak(3);
 	assert(!check_ok);
 	delete mallory;
 	delete ring;

@@ -177,7 +177,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		embeddedsig_in.begin(), embeddedsig_in.end());
 }
 
-bool TMCG_OpenPGP_Signature::good
+bool TMCG_OpenPGP_Signature::Good
 	() const
 {
 	return (ret == 0);
@@ -317,7 +317,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	 const std::string &filename,
 	 const int verbose)
 {
-	if (!good())
+	if (!Good())
 	{
 		if (verbose)
 			std::cerr << "ERROR: bad signature material" <<	std::endl;
@@ -418,7 +418,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	(const gcry_sexp_t key,
 	 const int verbose)
 {
-	if (!good())
+	if (!Good())
 	{
 		if (verbose)
 			std::cerr << "ERROR: bad signature material" <<	std::endl;
@@ -472,7 +472,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	 const tmcg_openpgp_octets_t &hashing,
 	 const int verbose)
 {
-	if (!good())
+	if (!Good())
 	{
 		if (verbose)
 			std::cerr << "ERROR: bad signature material" <<	std::endl;
@@ -527,7 +527,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	 const tmcg_openpgp_octets_t &sub_hashing,
 	 const int verbose)
 {
-	if (!good())
+	if (!Good())
 	{
 		if (verbose)
 			std::cerr << "ERROR: bad signature material" <<	std::endl;
@@ -582,7 +582,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	 const std::string &userid,
 	 const int verbose)
 {
-	if (!good())
+	if (!Good())
 	{
 		if (verbose)
 			std::cerr << "ERROR: bad signature material" <<	std::endl;
@@ -641,7 +641,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	 const int dummy,
 	 const int verbose)
 {
-	if (!good())
+	if (!Good())
 	{
 		if (verbose)
 			std::cerr << "ERROR: bad signature material" <<	std::endl;
@@ -1205,13 +1205,13 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		FingerprintCompute(sub_hashing, fingerprint);
 }
 
-bool TMCG_OpenPGP_Subkey::good
+bool TMCG_OpenPGP_Subkey::Good
 	() const
 {
 	return (ret == 0);
 }
 
-bool TMCG_OpenPGP_Subkey::weak
+bool TMCG_OpenPGP_Subkey::Weak
 	(const int verbose) const
 {
 	gcry_error_t wret;
@@ -1562,6 +1562,12 @@ bool TMCG_OpenPGP_Subkey::Check
 	 const TMCG_OpenPGP_Keyring *ring,
 	 const int verbose)
 {
+	if (!Good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: bad key material" << std::endl;
+		return false;
+	}
 	// print statistics of subkey
 	if (verbose > 1)
 	{
@@ -2253,13 +2259,13 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
-bool TMCG_OpenPGP_PrivateSubkey::good
+bool TMCG_OpenPGP_PrivateSubkey::Good
 	() const
 {
-	return ((ret == 0) && pub->good());
+	return ((ret == 0) && pub->Good());
 }
 
-bool TMCG_OpenPGP_PrivateSubkey::weak
+bool TMCG_OpenPGP_PrivateSubkey::Weak
 	(const int verbose) const
 {
 	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
@@ -2274,7 +2280,7 @@ bool TMCG_OpenPGP_PrivateSubkey::weak
 				" bits, |q| = " << qbits << " bits" << std::endl;
 		if ((pbits < 1024) || (qbits < 1024))
 			return true; // weak key
-		return pub->weak(verbose);
+		return pub->Weak(verbose);
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
 	{
@@ -2285,7 +2291,7 @@ bool TMCG_OpenPGP_PrivateSubkey::weak
 				xbits << " bits" << std::endl;
 		if (xbits < 250)
 			return true; // weak key
-		return pub->weak(verbose);
+		return pub->Weak(verbose);
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
@@ -2296,7 +2302,7 @@ bool TMCG_OpenPGP_PrivateSubkey::weak
 				xbits << " bits" << std::endl; 
 		if (xbits < 250)
 			return true; // weak key
-		return pub->weak(verbose);
+		return pub->Weak(verbose);
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9)
 	{
@@ -2311,7 +2317,7 @@ bool TMCG_OpenPGP_PrivateSubkey::weak
 				xprimeibits << " bits" << std::endl; 
 		if ((qbits < 256) || (xibits < 245) || (xprimeibits < 245))
 			return true; // weak key
-		return pub->weak(verbose);
+		return pub->Weak(verbose);
 	}
 	else if ((pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
 		(pkalgo == TMCG_OPENPGP_PKALGO_EDDSA) ||
@@ -2324,7 +2330,7 @@ bool TMCG_OpenPGP_PrivateSubkey::weak
 				skbits << " bits" << std::endl;
 		if (skbits < 250)
 			return true; // weak key
-		return pub->weak(verbose);
+		return pub->Weak(verbose);
 	}
 	else
 		return true; // unknown public-key algorithm
@@ -2335,6 +2341,12 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 	(const TMCG_OpenPGP_PKESK* &esk, const int verbose,
 	 tmcg_openpgp_secure_octets_t &out) const
 {
+	if (!Good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: bad key material" << std::endl;
+		return false;
+	}
 	if (pub->AccumulateFlags() &&
 		((pub->AccumulateFlags() & 0x04) != 0x04) &&
 		((pub->AccumulateFlags() & 0x08) != 0x08))
@@ -2668,13 +2680,13 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		FingerprintCompute(pub_hashing, fingerprint);
 }
 
-bool TMCG_OpenPGP_Pubkey::good
+bool TMCG_OpenPGP_Pubkey::Good
 	() const
 {
 	return (ret == 0);
 }
 
-bool TMCG_OpenPGP_Pubkey::weak
+bool TMCG_OpenPGP_Pubkey::Weak
 	(const int verbose) const
 {
 	gcry_error_t wret;
@@ -2972,6 +2984,12 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 	(const TMCG_OpenPGP_Keyring *ring, const int verbose,
 	 const bool external)
 {
+	if (!Good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: bad key material" << std::endl;
+		return false;
+	}
 	// print statistics of primary key
 	if (verbose > 1)
 	{
@@ -3722,13 +3740,13 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
-bool TMCG_OpenPGP_Prvkey::good
+bool TMCG_OpenPGP_Prvkey::Good
 	() const
 {
-	return ((ret == 0) && pub->good());
+	return ((ret == 0) && pub->Good());
 }
 
-bool TMCG_OpenPGP_Prvkey::weak
+bool TMCG_OpenPGP_Prvkey::Weak
 	(const int verbose) const
 {
 	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
@@ -3743,7 +3761,7 @@ bool TMCG_OpenPGP_Prvkey::weak
 				" bits, |q| = " << qbits << " bits" << std::endl;
 		if ((pbits < 1024) || (qbits < 1024))
 			return true; // weak key
-		return pub->weak(verbose);
+		return pub->Weak(verbose);
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
@@ -3754,7 +3772,7 @@ bool TMCG_OpenPGP_Prvkey::weak
 				xbits << " bits" << std::endl; 
 		if (xbits < 250)
 			return true; // weak key
-		return pub->weak(verbose);
+		return pub->Weak(verbose);
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7)
 	{
@@ -3767,7 +3785,7 @@ bool TMCG_OpenPGP_Prvkey::weak
 				xprimeibits << " bits" << std::endl; 
 		if ((xibits < 245) || (xprimeibits < 245))
 			return true; // weak key
-		return pub->weak(verbose);
+		return pub->Weak(verbose);
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 	{
@@ -3778,7 +3796,7 @@ bool TMCG_OpenPGP_Prvkey::weak
 				skbits << " bits" << std::endl;
 		if (skbits < 250)
 			return true; // weak key
-		return pub->weak(verbose);
+		return pub->Weak(verbose);
 	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
 	{
@@ -3789,7 +3807,7 @@ bool TMCG_OpenPGP_Prvkey::weak
 				skbits << " bits" << std::endl;
 		if (skbits < 250)
 			return true; // weak key
-		return pub->weak(verbose);
+		return pub->Weak(verbose);
 	}
 	else
 		return true; // unknown public-key algorithm
@@ -3800,6 +3818,12 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 	(const TMCG_OpenPGP_PKESK* &esk, const int verbose,
 	 tmcg_openpgp_secure_octets_t &out) const
 {
+	if (!Good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: bad key material" << std::endl;
+		return false;
+	}
 	if (CallasDonnerhackeFinneyShawThayerRFC4880::
 		OctetsCompare(esk->keyid, pub->id) ||
 		CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -11518,7 +11542,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				(int)ctx.pkalgo << " not supported" << std::endl;
 		return true; // continue loop through packets
 	}
-	if (!sig->good())
+	if (!sig->Good())
 	{
 		if (verbose)
 			std::cerr << "ERROR: parsing signature" <<
@@ -11943,7 +11967,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag6
 					(int)ctx.pkalgo << " not supported" << std::endl;
 			return false;
 		}
-		if (!pub->good())
+		if (!pub->Good())
 		{
 			if (verbose)
 				std::cerr << "ERROR: reading primary key" <<
@@ -12074,7 +12098,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag14
 				ctx.keycreationtime, 0, ctx.curveoidlen, ctx.curveoid, 
 				ctx.ecpk, current_packet);
 		}
-		if (!sub->good())
+		if (!sub->Good())
 		{
 			if (verbose)
 				std::cerr << "ERROR: parsing subkey" <<
@@ -12493,7 +12517,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
 					(int)ctx.pkalgo << " not supported" << std::endl;
 			return false;
 		}
-		if (!prv->good())
+		if (!prv->Good())
 		{
 			if (verbose)
 				std::cerr << "ERROR: reading primary key " <<
@@ -12626,7 +12650,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
 				ctx.ecpk, ctx.ecsk, ctx.kdf_hashalgo, ctx.kdf_skalgo,
 				current_packet);
 		}
-		if (!sub->good())
+		if (!sub->Good())
 		{
 			if (verbose)
 				std::cerr << "ERROR: parsing subkey " <<
@@ -13192,7 +13216,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 				PacketContextRelease(ctx);
 				return false;
 			}
-			if (!sig->good())
+			if (!sig->Good())
 			{
 				if (verbose)
 					std::cerr << "ERROR: parsing signature material failed" <<
