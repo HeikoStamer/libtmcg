@@ -240,6 +240,9 @@
 	typedef std::vector< std::vector<gcry_mpi_t> >	tmcg_mpi_matrix_t;
 	#include <mpz_srandom.hh>
 	#include <mpz_sqrtm.hh>
+	#include <mpz_sprime.hh>
+	#include <mpz_spowm.hh>
+	#include <mpz_shash.hh>
 	#include <mpz_helper.hh>
 
 	// data structures and protocols for mental poker

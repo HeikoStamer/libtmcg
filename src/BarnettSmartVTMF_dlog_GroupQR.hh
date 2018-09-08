@@ -41,7 +41,8 @@
 
 // GNU multiple precision library
 #include <gmp.h>
-	
+
+// base class
 #include "BarnettSmartVTMF_dlog.hh"
 
 class BarnettSmartVTMF_dlog_GroupQR : public BarnettSmartVTMF_dlog

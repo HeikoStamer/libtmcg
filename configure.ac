@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20180624])
+AC_REVISION([20180908])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.14], [HeikoStamer@gmx.net], [libTMCG],
@@ -259,7 +259,7 @@ AC_HEADER_ASSERT
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
- ctime errno.h fcntl.h fstream functional inttypes.h iomanip iostream\
+ ctime cstddef errno.h fcntl.h fstream functional inttypes.h iomanip iostream\
  limits.h list map sstream stdint.h stdio.h string string.h sys/select.h\
  time.h unistd.h utility vector], , 
 	AC_MSG_ERROR([some headers are missing]))

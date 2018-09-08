@@ -31,6 +31,16 @@
 #endif
 #include "HooghSchoenmakersSkoricVillegasVRHE.hh"
 
+// additional headers
+#include <cassert>
+#include <string>
+#include <sstream>
+#include "mpz_srandom.hh"
+#include "mpz_spowm.hh"
+#include "mpz_sprime.hh"
+#include "mpz_helper.hh"
+#include "mpz_shash.hh"
+
 HooghSchoenmakersSkoricVillegasPUBROTZK::HooghSchoenmakersSkoricVillegasPUBROTZK
 	(mpz_srcptr p_ENC, mpz_srcptr q_ENC, mpz_srcptr g_ENC, mpz_srcptr h_ENC)
 {

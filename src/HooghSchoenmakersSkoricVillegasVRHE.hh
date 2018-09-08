@@ -28,29 +28,16 @@
 #ifndef INCLUDED_HooghSchoenmakersSkoricVillegasVRHE_HH
 	#define INCLUDED_HooghSchoenmakersSkoricVillegasVRHE_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <sstream>
-	#include <vector>
+// C and STL header
+#include <cstdlib>
+#include <iostream>
+#include <vector>
 
-	// GNU crypto library
-	#include <gcrypt.h>
+// GNU multiple precision library
+#include <gmp.h>
 	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
-	#include "mpz_spowm.hh"
-	#include "mpz_sprime.hh"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
-
-	// erasure-free distributed coinflip protocol
-	#include "JareckiLysyanskayaASTC.hh"	
+// erasure-free distributed coinflip protocol
+#include "JareckiLysyanskayaASTC.hh"	
 
 class HooghSchoenmakersSkoricVillegasPUBROTZK
 {

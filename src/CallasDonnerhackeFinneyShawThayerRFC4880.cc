@@ -36,6 +36,14 @@
 #endif
 #include "CallasDonnerhackeFinneyShawThayerRFC4880.hh"
 
+// additional headers
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <algorithm>
+#include "mpz_srandom.hh"
+#include "mpz_helper.hh"
+
 TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	(const bool revocable_in,
 	 const bool exportable_in,

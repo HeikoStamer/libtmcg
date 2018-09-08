@@ -27,32 +27,20 @@
 #ifndef INCLUDED_GrothVSSHE_HH
 	#define INCLUDED_GrothVSSHE_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <sstream>
-	#include <vector>
+// C and STL header
+#include <cstdlib>
+#include <iostream>
+#include <vector>
 
-	// GNU crypto library
-	#include <gcrypt.h>
+// GNU multiple precision library
+#include <gmp.h>
 	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
-	#include "mpz_spowm.hh"
-	#include "mpz_sprime.hh"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
-
-	// generalized Pedersen commitment scheme
-	#include "PedersenCOM.hh"
-
-	// erasure-free distributed coinflip protocol [JL00]
-	#include "JareckiLysyanskayaASTC.hh"
+// generalized Pedersen commitment scheme
+#include "PedersenCOM.hh"
+// asynchronous unicast transmission of mpz_t
+#include "aiounicast.hh"
+// erasure-free distributed coinflip protocol [JL00]
+#include "JareckiLysyanskayaASTC.hh"
 
 class GrothSKC
 {
@@ -127,11 +115,11 @@ class GrothVSSHE
 	private:
 		const unsigned long int			l_e, l_e_nizk;
 		const unsigned long int			F_size, G_size;
-		mpz_t					*fpowm_table_g, *fpowm_table_h;
-		GrothSKC				*skc;
+		mpz_t							*fpowm_table_g, *fpowm_table_h;
+		GrothSKC						*skc;
 	
 	public:
-		mpz_t					p, q, g, h;
+		mpz_t							p, q, g, h;
 		PedersenCommitmentScheme		*com;
 
 		GrothVSSHE

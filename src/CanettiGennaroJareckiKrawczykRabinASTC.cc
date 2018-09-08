@@ -40,6 +40,16 @@
 #endif
 #include "CanettiGennaroJareckiKrawczykRabinASTC.hh"
 
+// additional headers
+#include <cassert>
+#include <sstream>
+#include <algorithm>
+#include "mpz_srandom.hh"
+#include "mpz_spowm.hh"
+#include "mpz_sprime.hh"
+#include "mpz_helper.hh"
+#include "mpz_shash.hh"
+
 CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	(const size_t n_in, const size_t t_in, const size_t i_in, const size_t tprime_in,
 	mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,

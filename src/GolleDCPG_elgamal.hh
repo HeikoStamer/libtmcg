@@ -34,30 +34,14 @@
 #ifndef INCLUDED_GolleDCPG_elgamal_HH
 	#define INCLUDED_GolleDCPG_elgamal_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <sstream>
-	#include <vector>
-	#include <map>
+// C and STL header
+#include <cstdlib>
 
-	// GNU crypto library
-	#include <gcrypt.h>
-	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
-	#include "mpz_spowm.hh"
-	#include "mpz_sprime.hh"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
+// GNU multiple precision library
+#include <gmp.h>
 
-	// dlog-based VTMF [BS03] compatible with Golle's ElGamal variant
-	#include "BarnettSmartVTMF_dlog.hh"
+// dlog-based VTMF [BS03] compatible with Golle's ElGamal variant
+#include "BarnettSmartVTMF_dlog.hh"
 
 class GolleDCPG_elgamal
 {

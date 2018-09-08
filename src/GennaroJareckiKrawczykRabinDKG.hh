@@ -28,31 +28,17 @@
 #ifndef INCLUDED_GennaroJareckiKrawczykRabinDKG_HH
 	#define INCLUDED_GennaroJareckiKrawczykRabinDKG_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <sstream>
-	#include <vector>
-	#include <algorithm>
-	#include <map>
-
-	// GNU crypto library
-	#include <gcrypt.h>
+// C and STL header
+#include <cstdlib>
+#include <string>
+#include <iostream>
+#include <vector>
 	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
-	#include "mpz_spowm.hh"
-	#include "mpz_sprime.hh"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
+// GNU multiple precision library
+#include <gmp.h>
 
-	#include "aiounicast.hh"
-	#include "CachinKursawePetzoldShoupSEABP.hh"
+#include "aiounicast.hh"
+#include "CachinKursawePetzoldShoupSEABP.hh"
 
 /* This protocol for dlog-based distributed key generation is called New-DKG in [GJKR07]. */
 /* $v_i$ is an array of public verification keys (see p. 64 [GJKR07], proof of Theorem 1) */

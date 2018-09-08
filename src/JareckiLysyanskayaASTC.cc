@@ -9,7 +9,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -32,9 +32,19 @@
 #endif
 #include "JareckiLysyanskayaASTC.hh"
 
+// additional headers
+#include <cassert>
+#include <string>
+#include <sstream>
+#include "mpz_srandom.hh"
+#include "mpz_spowm.hh"
+#include "mpz_sprime.hh"
+#include "mpz_helper.hh"
+#include "mpz_shash.hh"
+
 /* This is a trapdoor commitment [JL00] based on Pedersen's scheme [Pe92]. */
 PedersenTrapdoorCommitmentScheme::PedersenTrapdoorCommitmentScheme
-	(unsigned long int fieldsize, unsigned long int subgroupsize):
+	(const unsigned long int fieldsize, const unsigned long int subgroupsize):
 		F_size(fieldsize), G_size(subgroupsize)
 {
 	// Initialize and choose the parameters of the commitment scheme.
@@ -71,8 +81,8 @@ PedersenTrapdoorCommitmentScheme::PedersenTrapdoorCommitmentScheme
 
 PedersenTrapdoorCommitmentScheme::PedersenTrapdoorCommitmentScheme
 	(mpz_srcptr p_ENC, mpz_srcptr q_ENC, 
-	mpz_srcptr k_ENC, mpz_srcptr g_ENC, 
-	unsigned long int fieldsize, unsigned long int subgroupsize):
+	 mpz_srcptr k_ENC, mpz_srcptr g_ENC, 
+	 const unsigned long int fieldsize, const unsigned long int subgroupsize):
 		F_size(fieldsize), G_size(subgroupsize)
 {
 	// Initialize and choose the parameters of the commitment scheme.
@@ -97,7 +107,7 @@ PedersenTrapdoorCommitmentScheme::PedersenTrapdoorCommitmentScheme
 
 PedersenTrapdoorCommitmentScheme::PedersenTrapdoorCommitmentScheme
 	(std::istream &in,
-	unsigned long int fieldsize, unsigned long int subgroupsize):
+	 const unsigned long int fieldsize, const unsigned long int subgroupsize):
 		F_size(fieldsize), G_size(subgroupsize)
 {
 	// Initialize the parameters of the commitment scheme.
@@ -202,7 +212,7 @@ void PedersenTrapdoorCommitmentScheme::Commit
 
 void PedersenTrapdoorCommitmentScheme::CommitBy
 	(mpz_ptr c, mpz_srcptr r, mpz_srcptr m,
-	bool TimingAttackProtection) const
+	 const bool TimingAttackProtection) const
 {
 	assert(mpz_cmp(r, q) < 0);
 	

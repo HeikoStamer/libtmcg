@@ -30,29 +30,17 @@
 	#define INCLUDED_CachinKursawePetzoldShoupSEABP_HH
 	
 // C and STL header
-#include <cstdio>
 #include <cstdlib>
-#include <cassert>
+#include <ctime>
 #include <string>
-#include <iostream>
-#include <sstream>
 #include <vector>
 #include <map>
 #include <list>
-#include <algorithm>
-#include <unistd.h>
 
-// GNU crypto library
-#include <gcrypt.h>
-	
 // GNU multiple precision library
 #include <gmp.h>
 	
-#include "mpz_srandom.hh"
-#include "mpz_spowm.hh"
-#include "mpz_sprime.hh"
-#include "mpz_helper.hh"
-#include "mpz_shash.hh"
+// asynchronous unicast transmission of mpz_t
 #include "aiounicast.hh"
 
 // define some internal types for convenience

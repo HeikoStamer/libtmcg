@@ -28,32 +28,19 @@
 #ifndef INCLUDED_CanettiGennaroJareckiKrawczykRabinASTC_HH
 	#define INCLUDED_CanettiGennaroJareckiKrawczykRabinASTC_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <sstream>
-	#include <vector>
-	#include <algorithm>
-	#include <map>
+// C and STL header
+#include <cstdlib>
+#include <string>
+#include <iostream>
+#include <vector>
+#include <map>
 
-	// GNU crypto library
-	#include <gcrypt.h>
+// GNU multiple precision library
+#include <gmp.h>
 	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
-	#include "mpz_spowm.hh"
-	#include "mpz_sprime.hh"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
-
-	#include "aiounicast.hh"
-	#include "CachinKursawePetzoldShoupSEABP.hh"
-	#include "PedersenVSS.hh"
+#include "aiounicast.hh"
+#include "CachinKursawePetzoldShoupSEABP.hh"
+#include "PedersenVSS.hh"
 
 /* This protocol is called Joint-RVSS in [CGJKR99]. It is basically a joint
    Pedersen VSS of a random value. A slightly corrected version was pusblished

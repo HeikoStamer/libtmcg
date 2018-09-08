@@ -37,6 +37,13 @@
 #endif
 #include "GolleDCPG_elgamal.hh"
 
+// additional headers
+#include "mpz_srandom.hh"
+#include "mpz_spowm.hh"
+#include "mpz_sprime.hh"
+#include "mpz_helper.hh"
+#include "mpz_shash.hh"
+
 GolleDCPG_elgamal::GolleDCPG_elgamal
 	(BarnettSmartVTMF_dlog *vtmf_in, size_t maxcardtype_in)
 {

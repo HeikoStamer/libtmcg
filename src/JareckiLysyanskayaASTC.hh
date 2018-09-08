@@ -29,31 +29,16 @@
 #ifndef INCLUDED_JareckiLysyanskayaASTC_HH
 	#define INCLUDED_JareckiLysyanskayaASTC_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstdlib>
-	#include <cassert>
-	#include <string>
-	#include <iostream>
-	#include <sstream>
-	#include <vector>
-	#include <algorithm>
-	#include <map>
+// C and STL header
+#include <cstdlib>
+#include <iostream>
+#include <vector>
 
-	// GNU crypto library
-	#include <gcrypt.h>
-	
-	// GNU multiple precision library
-	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
-	#include "mpz_spowm.hh"
-	#include "mpz_sprime.hh"
-	#include "mpz_helper.hh"
-	#include "mpz_shash.hh"
+// GNU multiple precision library
+#include <gmp.h>
 
-	#include "aiounicast.hh"
-	#include "CachinKursawePetzoldShoupSEABP.hh"
+#include "aiounicast.hh"
+#include "CachinKursawePetzoldShoupSEABP.hh"
 
 /* This is a trapdoor commitment [JL00] based on Pedersen's scheme [Pe92]. */
 class PedersenTrapdoorCommitmentScheme
@@ -68,17 +53,17 @@ class PedersenTrapdoorCommitmentScheme
 		mpz_t					sigma;
 		
 		PedersenTrapdoorCommitmentScheme
-			(unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			(const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		PedersenTrapdoorCommitmentScheme
 			(mpz_srcptr p_ENC, mpz_srcptr q_ENC,
-			mpz_srcptr k_ENC, mpz_srcptr g_ENC,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			 mpz_srcptr k_ENC, mpz_srcptr g_ENC,
+			 const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		PedersenTrapdoorCommitmentScheme
 			(std::istream &in,
-			unsigned long int fieldsize = TMCG_DDH_SIZE,
-			unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			 const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
 			() const;
 		void PublishGroup
@@ -87,7 +72,7 @@ class PedersenTrapdoorCommitmentScheme
 			(mpz_ptr c, mpz_ptr r, mpz_srcptr m) const;
 		void CommitBy
 			(mpz_ptr c, mpz_srcptr r, mpz_srcptr m,
-			bool TimingAttackProtection = true) const;
+			 const bool TimingAttackProtection = true) const;
 		bool Verify
 			(mpz_srcptr c, mpz_srcptr r, mpz_srcptr m) const;
 		~PedersenTrapdoorCommitmentScheme
@@ -115,23 +100,23 @@ class JareckiLysyanskayaRVSS
 		
 		JareckiLysyanskayaRVSS
 			(const size_t n_in, const size_t t_in,
-			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
-			const unsigned long int fieldsize = TMCG_DDH_SIZE,
-			const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			 mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
+			 const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
 			() const;
 		bool CheckElement
 			(mpz_srcptr a) const;
 		bool Share
 			(const size_t i, aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-			std::ostream &err, const bool simulate_faulty_behaviour = false);
+			 std::ostream &err, const bool simulate_faulty_behaviour = false);
 		bool Share_twoparty
 			(const size_t i, std::istream &in, std::ostream &out,
-			std::ostream &err, const bool simulate_faulty_behaviour = false);
+			 std::ostream &err, const bool simulate_faulty_behaviour = false);
 		bool Reconstruct
 			(const size_t i, const std::vector<size_t> &complaints,
-			std::vector<mpz_ptr> &a_i_in,
-			CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
+			 std::vector<mpz_ptr> &a_i_in,
+			 CachinKursawePetzoldShoupRBC *rbc, std::ostream &err);
 		~JareckiLysyanskayaRVSS
 			();
 };
@@ -150,18 +135,18 @@ class JareckiLysyanskayaEDCF
 		
 		JareckiLysyanskayaEDCF
 			(const size_t n_in, const size_t t_in,
-			mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
-			const unsigned long int fieldsize = TMCG_DDH_SIZE,
-			const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
+			 mpz_srcptr p_CRS, mpz_srcptr q_CRS, mpz_srcptr g_CRS, mpz_srcptr h_CRS,
+			 const unsigned long int fieldsize = TMCG_DDH_SIZE,
+			 const unsigned long int subgroupsize = TMCG_DLSE_SIZE);
 		bool CheckGroup
 			() const;
 		bool Flip
 			(const size_t i, mpz_ptr a,
-			aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
-			std::ostream &err, const bool simulate_faulty_behaviour = false);
+			 aiounicast *aiou, CachinKursawePetzoldShoupRBC *rbc,
+			 std::ostream &err, const bool simulate_faulty_behaviour = false);
 		bool Flip_twoparty
 			(const size_t i, mpz_ptr a, std::istream &in, std::ostream &out,
-			std::ostream &err, const bool simulate_faulty_behaviour = false);
+			 std::ostream &err, const bool simulate_faulty_behaviour = false);
 		~JareckiLysyanskayaEDCF
 			();
 };

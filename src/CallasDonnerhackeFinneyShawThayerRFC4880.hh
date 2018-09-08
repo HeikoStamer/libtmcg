@@ -34,22 +34,16 @@
 	#define INCLUDED_CallasDonnerhackeFinneyShawThayerRFC4880_HH
 	
 // C and STL header
+#include <cstddef>
+#include <ctime>
+#include <inttypes.h>
 #include <vector>
 #include <map>
 #include <utility>
 #include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <algorithm>
-#include <ctime>
-#include <inttypes.h>
 
 // GNU crypto library
 #include <gcrypt.h>
-
-#include "mpz_srandom.hh"
-#include "mpz_helper.hh"
 
 // STL-compliant allocator using libgcrypt's secure memory
 template<class T> class TMCG_SecureAlloc

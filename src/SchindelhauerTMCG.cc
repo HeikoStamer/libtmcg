@@ -37,6 +37,7 @@
 #include <sstream>
 #include "mpz_srandom.hh"
 #include "mpz_sqrtm.hh"
+#include "mpz_shash.hh"
 
 SchindelhauerTMCG::SchindelhauerTMCG
 	(const unsigned long int security, const size_t k, const size_t w):

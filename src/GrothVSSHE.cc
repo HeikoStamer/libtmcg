@@ -30,6 +30,16 @@
 #endif
 #include "GrothVSSHE.hh"
 
+// additional headers
+#include <cassert>
+#include <string>
+#include <sstream>
+#include "mpz_srandom.hh"
+#include "mpz_spowm.hh"
+#include "mpz_sprime.hh"
+#include "mpz_helper.hh"
+#include "mpz_shash.hh"
+
 GrothSKC::GrothSKC
 	(size_t n,
 	unsigned long int ell_e, unsigned long int fieldsize,

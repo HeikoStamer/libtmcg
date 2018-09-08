@@ -42,6 +42,7 @@
 // additional headers
 #include "mpz_srandom.hh"
 #include "mpz_sprime.hh"
+#include "mpz_spowm.hh"
 #include "mpz_helper.hh"
 
 BarnettSmartVTMF_dlog_GroupQR::BarnettSmartVTMF_dlog_GroupQR

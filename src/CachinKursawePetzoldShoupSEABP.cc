@@ -32,6 +32,20 @@
 #endif
 #include "CachinKursawePetzoldShoupSEABP.hh"
 
+// additional headers
+#include <cassert>
+#include <iostream>
+#include <sstream>
+#include <utility>
+#include <algorithm>
+//#include <unistd.h>
+#include "mpz_srandom.hh"
+#include "mpz_spowm.hh"
+#include "mpz_sprime.hh"
+#include "mpz_helper.hh"
+#include "mpz_shash.hh"
+#include "aiounicast.hh"
+
 CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	(const size_t n_in, const size_t t_in, const size_t j_in,
 	aiounicast *aiou_in, const size_t scheduler_in,
