@@ -4052,13 +4052,14 @@ size_t TMCG_OpenPGP_Keyring::List
 		if (select)
 		{
 			TMCG_OpenPGP_Pubkey *pub = it->second;
+			pub->CheckSelfSignatures(this, 0); // check validity
 			unsigned int curvebits = 0;
 			std::string pub_kid;
 			CallasDonnerhackeFinneyShawThayerRFC4880::
 				KeyidCompute(pub->pub_hashing, pub_kid);
 			selected++;
 			std::cout << "pub:";
-			if (pub->CheckSelfSignatures(this, 0))
+			if (pub->valid)
 				std::cout << "f:";
 			else if (pub->revoked)
 				std::cout << "r:";
@@ -4142,8 +4143,9 @@ size_t TMCG_OpenPGP_Keyring::List
 			for (size_t i = 0; i < pub->userids.size(); i++)
 			{
 				TMCG_OpenPGP_UserID *uid = pub->userids[i];
+				uid->Check(pub, 0); // check validity
 				std::cout << "uid:";
-				if (uid->Check(pub, 0))
+				if (uid->valid)
 					std::cout << "f:";
 				else if (uid->revoked)
 					std::cout << "r:";
@@ -4178,8 +4180,9 @@ size_t TMCG_OpenPGP_Keyring::List
 			for (size_t i = 0; i < pub->userattributes.size(); i++)
 			{
 				TMCG_OpenPGP_UserAttribute *uat = pub->userattributes[i];
+				uat->Check(pub, 0); // check validity
 				std::cout << "uat:";
-				if (uat->Check(pub, 0))
+				if (uat->valid)
 					std::cout << "f:";
 				else if (uat->revoked)
 					std::cout << "r:";
@@ -4196,11 +4199,12 @@ size_t TMCG_OpenPGP_Keyring::List
 			for (size_t i = 0; i < pub->subkeys.size(); i++)
 			{
 				TMCG_OpenPGP_Subkey *sub = pub->subkeys[i];
+				pub->subkeys[i]->Check(pub, this, 0);
 				std::string sub_kid;
 				CallasDonnerhackeFinneyShawThayerRFC4880::
 					KeyidCompute(sub->sub_hashing, sub_kid);
 				std::cout << "sub:";
-				if (pub->subkeys[i]->Check(pub, this, 0))
+				if (pub->subkeys[i]->valid)
 					std::cout << "f:";
 				else if (pub->subkeys[i]->revoked)
 					std::cout << "r:";
