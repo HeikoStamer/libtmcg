@@ -1538,16 +1538,17 @@ bool TMCG_OpenPGP_Subkey::CheckExternalRevocation
 		TMCG_OpenPGP_Pubkey *revkey = ring->Find(fprstr);
 		if (revkey != NULL)
 		{
-			if (!revkey->valid)
+			if (!revkey->valid && !revkey->revoked)
 			{
 				// disable external revocations to avoid recursion
-				if (!revkey->CheckSelfSignatures(ring, verbose, false))
-				{
-					if (verbose)
-						std::cerr << "WARNING: revocation" <<
-							" key is not valid" << std::endl;
-					continue;
-				}
+				revkey->CheckSelfSignatures(ring, verbose, false);
+			}
+			if (!revkey->valid)
+			{
+				if (verbose)
+					std::cerr << "WARNING: revocation key is not valid" <<
+						std::endl;
+				continue;
 			}
 			if (sig->Verify(revkey->key, sub_hashing, verbose))
 				valid_revsig = true;
@@ -2948,16 +2949,17 @@ bool TMCG_OpenPGP_Pubkey::CheckExternalRevocation
 		TMCG_OpenPGP_Pubkey *revkey = ring->Find(fprstr);
 		if (revkey != NULL)
 		{
-			if (!revkey->valid)
+			if (!revkey->valid && !revkey->revoked)
 			{
 				// disable external revocations to avoid recursion
-				if (!revkey->CheckSelfSignatures(ring, verbose, false))
-				{
-					if (verbose)
-						std::cerr << "WARNING: revocation" <<
-							" key is not valid" << std::endl;
-					continue;
-				}
+				revkey->CheckSelfSignatures(ring, verbose, false);
+			}
+			if (!revkey->valid)
+			{
+				if (verbose)
+					std::cerr << "WARNING: revocation key is not valid" <<
+						std::endl;
+				continue;
 			}
 			if (sig->Verify(revkey->key, pub_hashing, verbose))
 				valid_revsig = true;
