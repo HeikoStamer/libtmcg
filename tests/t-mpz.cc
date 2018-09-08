@@ -31,6 +31,10 @@
 #endif
 #include <libTMCG.hh>
 
+#ifdef BOTAN
+	#include <botan/version.h>
+#endif
+
 #undef NDEBUG
 
 #define MOD_BIAS_WIDTH 3

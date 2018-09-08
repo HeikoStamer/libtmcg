@@ -25,6 +25,11 @@
 #endif
 #include "mpz_spowm.hh"
 
+// additional headers
+#include <cassert>
+#include <iostream>
+#include "mpz_srandom.hh"
+
 /* Kocher's efficient blinding technique for modular exponentiation [Ko96] */
 mpz_t bvi, bvf, bx, bp;
 

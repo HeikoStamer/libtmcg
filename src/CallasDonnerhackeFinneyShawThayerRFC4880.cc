@@ -37,6 +37,7 @@
 #include "CallasDonnerhackeFinneyShawThayerRFC4880.hh"
 
 // additional headers
+#include <cassert>
 #include <fstream>
 #include <sstream>
 #include <iostream>

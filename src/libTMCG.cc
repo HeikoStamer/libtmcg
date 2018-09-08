@@ -26,6 +26,10 @@
 #endif
 #include "libTMCG.hh"
 
+#ifdef BOTAN
+	#include <botan/version.h>
+#endif
+
 // LibTMCG identifier
 static const std::string LibTMCG_ID = 
     "LibTMCG " VERSION "  (C) Heiko Stamer, License: GNU GPL version 2";

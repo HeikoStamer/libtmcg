@@ -49,6 +49,9 @@
 #endif
 #include "mpz_sqrtm.hh"
 
+// additional headers
+#include "mpz_srandom.hh"
+
 int tmcg_mpz_qrmn_p
 	(mpz_srcptr a, mpz_srcptr p, mpz_srcptr q, mpz_srcptr n)
 {

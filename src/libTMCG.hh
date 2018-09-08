@@ -279,10 +279,6 @@
 	#include <cstring>
 	#include <string>
 
-#ifdef BOTAN
-	#include <botan/version.h>
-#endif
-
 	// Initialization of LibTMCG
 	bool init_libTMCG
 		(const bool force_secmem = false, const bool gmp_secmem = false,

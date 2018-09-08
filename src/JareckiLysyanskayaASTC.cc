@@ -36,6 +36,7 @@
 #include <cassert>
 #include <string>
 #include <sstream>
+#include <algorithm>
 #include "mpz_srandom.hh"
 #include "mpz_spowm.hh"
 #include "mpz_sprime.hh"

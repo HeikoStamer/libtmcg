@@ -36,6 +36,12 @@
 #endif
 #include "mpz_sprime.hh"
 
+// additional headers
+#include <cstdio>
+#include <cassert>
+#include <iostream>
+#include "mpz_srandom.hh"
+
 #define PRIMES_SIZE 668
 #define SIEVE_SIZE 16
 unsigned long int primes[] = {

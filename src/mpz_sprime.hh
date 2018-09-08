@@ -32,16 +32,9 @@
 
 #ifndef INCLUDED_mpz_sprime_HH
 	#define INCLUDED_mpz_sprime_HH
-
-	// C and STL header	
-	#include <cstdio>
-	#include <cassert>
-	#include <iostream>
 	
 	// GNU multiple precision library
 	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
 	
 	void tmcg_mpz_sprime
 		(mpz_ptr p, mpz_ptr q,

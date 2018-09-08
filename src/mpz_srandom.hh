@@ -22,24 +22,11 @@
 #ifndef INCLUDED_mpz_srandom_HH
 	#define INCLUDED_mpz_srandom_HH
 	
-	// C and STL header
-	#include <cstdio>
-	#include <cstring>
-	#include <cassert>
-	#include <climits>
-	#include <iostream>
-	
-	// GNU crypto library
-	#include <gcrypt.h>
+	// C and STL headers
+	#include <cstdlib>	
 	
 	// GNU multiple precision library
 	#include <gmp.h>
-
-#ifdef BOTAN
-	// Random number generators from Botan cryptographic library
-	#include <botan/auto_rng.h>
-	#include <botan/rng.h>
-#endif
 
 	unsigned long int tmcg_mpz_ssrandom_ui
 		();

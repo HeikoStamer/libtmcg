@@ -24,13 +24,9 @@
 
 	// C and STL header
 	#include <cstdio>
-	#include <cassert>
-	#include <iostream>
 	
 	// GNU multiple precision library
 	#include <gmp.h>
-	
-	#include "mpz_srandom.hh"
 	
 	/* Kocher's efficient blinding technique for modular exponentiation [Ko96] 
        -- cf. scientific discussion e.g. https://eprint.iacr.org/2013/447 

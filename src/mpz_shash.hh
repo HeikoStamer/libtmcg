@@ -29,7 +29,7 @@
 	
 	// variable argument lists
 	#include <cstdarg>
-	
+
 	// GNU crypto library
 	#include <gcrypt.h>
 	
