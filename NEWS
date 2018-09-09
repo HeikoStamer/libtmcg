@@ -8,7 +8,10 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is
 included in the sources of this package and additionally can be obtained from
 Internet <https://www.gnu.org/licenses>.
 
-1.3.14
+1.3.14 With this release three additional parameters for the control of secure
+       memory allocation have been added to init_libTMCG(). They are explained
+       in the reference manual. Moreover, the OpenPGP interface has been
+       enhanced in several way, e.g., ECDH, ECDSA and EdDSA are supported now.
 1.3.13 This release contains again a lot of major improvements for the still
        undocumented OpenPGP interface, e.g. C++ classes for basic structures
        like public keys or signatures. The PRNG from Botan is used for as an 
