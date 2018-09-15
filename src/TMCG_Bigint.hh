@@ -80,6 +80,22 @@ struct TMCG_Bigint
 		(const unsigned long int that) const;
 	bool operator !=
 		(const signed long int that) const;
+	bool operator >
+		(const TMCG_Bigint& that) const;
+	bool operator >
+		(const unsigned long int that) const;
+	bool operator <
+		(const TMCG_Bigint& that) const;
+	bool operator <
+		(const unsigned long int that) const;
+	bool operator >=
+		(const TMCG_Bigint& that) const;
+	bool operator >=
+		(const unsigned long int that) const;
+	bool operator <=
+		(const TMCG_Bigint& that) const;
+	bool operator <=
+		(const unsigned long int that) const;
 	
 	// Other functions
 	void abs
@@ -88,6 +104,14 @@ struct TMCG_Bigint
 		(const std::string& that, const size_t base);
 	bool probab_prime
 		(const size_t reps);
+	void mul2exp
+		(const size_t exp);
+	void div2exp
+		(const size_t exp);
+	unsigned long int get_ui
+		();
+	size_t size
+		(const size_t base = TMCG_MPZ_IO_BASE);
 
 	// Destructors
 	~TMCG_Bigint

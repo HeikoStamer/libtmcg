@@ -75,6 +75,22 @@ int main
 	assert((foo != bar) && !(foo != baz));
 	std::cout << " ::operator != (sigend long int)" << std::endl;
 	assert((bar != 42L) && (baz != -42L));
+	std::cout << " ::operator >" << std::endl;
+	assert ((foo > bar));
+	std::cout << " ::operator > (unsigned long int)" << std::endl;
+	assert ((foo > 41UL) && !(foo > 42UL));
+	std::cout << " ::operator <" << std::endl;
+	assert ((bar < foo));
+	std::cout << " ::operator < (unsigned long int)" << std::endl;
+	assert ((foo < 43UL) && !(foo < 42UL));
+	std::cout << " ::operator >=" << std::endl;
+	assert ((foo >= bar));
+	std::cout << " ::operator >= (unsigned long int)" << std::endl;
+	assert ((foo >= 42UL) && !(foo >= 43UL));
+	std::cout << " ::operator <=" << std::endl;
+	assert ((bar <= foo));
+	std::cout << " ::operator <= (unsigned long int)" << std::endl;
+	assert ((foo <= 42UL) && !(foo <= 41UL));
 	std::cout << " ::operator +=" << std::endl;
 	baz += bar;
 	assert((baz == 0L));
@@ -87,14 +103,35 @@ int main
 	std::cout << " ::operator -= (unsigned long int)" << std::endl;
 	foo -= 1UL;
 	assert((foo == 83L));
+	std::cout << " ::operator *=" << std::endl;
+	baz *= foo;
+	assert((baz == 581L));
+	std::cout << " ::operator *= (unsigned long int)" << std::endl;
+	baz *= 3UL;
+	assert((baz == 1743L));
+	std::cout << " ::operator /=" << std::endl;
+	bar = 83UL;
+	baz /= bar;
+	assert((baz == 21L));
+	baz = 1743UL;
+	std::cout << " ::operator /= (unsigned long int)" << std::endl;
+	baz /= 7UL;
+	assert((baz == 249L));
 	std::cout << " ::operator - (negation)" << std::endl;
 	-foo;
 	assert((foo == -83L));
 	std::cout << " ::abs()" << std::endl;
 	foo.abs();
 	assert((foo == 83L));
+	std::cout << " ::mul2exp()" << std::endl;
+	foo.mul2exp(2UL);
+	assert((foo == 332L));
+	std::cout << " ::get_ui()" << std::endl;
+	assert((foo.get_ui() == 332));
+	std::cout << " ::size(10)" << std::endl;
+	assert((foo.size(10) == 3));
 	// convert (prime p of the Oakley Group 2) and check q = (p - 1) / 2;
-	std::cout << " ::set_str(), ::probab_prime()" << std::endl;
+	std::cout << " ::set_str(), ::probab_prime(), ::div2exp()" << std::endl;
 	foo.set_str("FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E08\
 8A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F1437\
 4FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB\
@@ -110,7 +147,7 @@ int main
 5jzlgnlg0brgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9\
 623r7y6j0m4yj3304o731yt2xooyxw5npftk5yn9fj3m26mjjku1mbn3405h45cz8etbz", 36);
 	foo -= 1UL;
-	foo /= 2UL; // FIXME: repleace by foo.div2exp(1UL)
+	foo.div2exp(1UL);
 	assert((foo == bar));
 	bar.set_str("SUR8tvw7NPjVX77MA4wyYQcCRKLZetHWGRakKjG235flbyeV3obS6ZdAl\
 iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\

@@ -253,7 +253,7 @@ bool TMCG_Bigint::operator ==
 	if (secret)
 	{
 		if (that.secret)
-			return (!gcry_mpi_cmp(secret_bigint, that.secret_bigint));
+			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) == 0);
 		else
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
 	}
@@ -262,7 +262,7 @@ bool TMCG_Bigint::operator ==
 		if (that.secret)
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
 		else
-			return (!mpz_cmp(bigint, that.bigint));
+			return (mpz_cmp(bigint, that.bigint) == 0);
 	}
 }
 
@@ -272,7 +272,7 @@ bool TMCG_Bigint::operator ==
 	if (secret)
 		throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
 	else
-		return (!mpz_cmp_ui(bigint, that));
+		return (mpz_cmp_ui(bigint, that) == 0);
 }
 
 bool TMCG_Bigint::operator ==
@@ -281,7 +281,7 @@ bool TMCG_Bigint::operator ==
 	if (secret)
 		throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
 	else
-		return (!mpz_cmp_si(bigint, that));
+		return (mpz_cmp_si(bigint, that) == 0);
 }
 
 bool TMCG_Bigint::operator !=
@@ -300,6 +300,118 @@ bool TMCG_Bigint::operator !=
 	(const signed long int that) const
 {
 	return (!(*this == that));
+}
+
+bool TMCG_Bigint::operator >
+	(const TMCG_Bigint& that) const
+{
+	if (secret)
+	{
+		if (that.secret)
+			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) > 0);
+		else
+			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
+	}
+	else
+	{
+		if (that.secret)
+			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
+		else
+			return (mpz_cmp(bigint, that.bigint) > 0);
+	}
+}
+
+bool TMCG_Bigint::operator >
+	(const unsigned long int that) const
+{
+	if (secret)
+		return (gcry_mpi_cmp_ui(secret_bigint, that) > 0);
+	else
+		return (mpz_cmp_ui(bigint, that) > 0);
+}
+
+bool TMCG_Bigint::operator <
+	(const TMCG_Bigint& that) const
+{
+	if (secret)
+	{
+		if (that.secret)
+			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) < 0);
+		else
+			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
+	}
+	else
+	{
+		if (that.secret)
+			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
+		else
+			return (mpz_cmp(bigint, that.bigint) < 0);
+	}
+}
+
+bool TMCG_Bigint::operator <
+	(const unsigned long int that) const
+{
+	if (secret)
+		return (gcry_mpi_cmp_ui(secret_bigint, that) < 0);
+	else
+		return (mpz_cmp_ui(bigint, that) < 0);
+}
+
+bool TMCG_Bigint::operator >=
+	(const TMCG_Bigint& that) const
+{
+	if (secret)
+	{
+		if (that.secret)
+			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) >= 0);
+		else
+			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
+	}
+	else
+	{
+		if (that.secret)
+			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
+		else
+			return (mpz_cmp(bigint, that.bigint) >= 0);
+	}
+}
+
+bool TMCG_Bigint::operator >=
+	(const unsigned long int that) const
+{
+	if (secret)
+		return (gcry_mpi_cmp_ui(secret_bigint, that) >= 0);
+	else
+		return (mpz_cmp_ui(bigint, that) >= 0);
+}
+
+bool TMCG_Bigint::operator <=
+	(const TMCG_Bigint& that) const
+{
+	if (secret)
+	{
+		if (that.secret)
+			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) <= 0);
+		else
+			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
+	}
+	else
+	{
+		if (that.secret)
+			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
+		else
+			return (mpz_cmp(bigint, that.bigint) <= 0);
+	}
+}
+
+bool TMCG_Bigint::operator <=
+	(const unsigned long int that) const
+{
+	if (secret)
+		return (gcry_mpi_cmp_ui(secret_bigint, that) <= 0);
+	else
+		return (mpz_cmp_ui(bigint, that) <= 0);
 }
 
 void TMCG_Bigint::abs
@@ -340,6 +452,42 @@ bool TMCG_Bigint::probab_prime
 	}
 	else
 		return mpz_probab_prime_p(bigint, reps);
+}
+
+void TMCG_Bigint::mul2exp
+	(const size_t exp)
+{
+	if (secret)
+		gcry_mpi_mul_2exp(secret_bigint, secret_bigint, exp);
+	else
+		mpz_mul_2exp(bigint, bigint, exp);
+}
+
+void TMCG_Bigint::div2exp
+	(const size_t exp)
+{
+	if (secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+		mpz_tdiv_q_2exp(bigint, bigint, exp);
+}
+
+unsigned long int TMCG_Bigint::get_ui
+	()
+{
+	if (secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+		return mpz_get_ui(bigint);
+}
+
+size_t TMCG_Bigint::size
+	(const size_t base)
+{
+	if (secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+		return mpz_sizeinbase(bigint, base);
 }
 
 TMCG_Bigint::~TMCG_Bigint
