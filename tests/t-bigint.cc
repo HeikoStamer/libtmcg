@@ -174,6 +174,122 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	assert((sfoo != sbaz) && !(sfoo != sbar));
 	// TODO
 
+	// tmcg_mpz_*random_ui, tmcg_mpz_*randomb, tmcg_mpz_*randomm
+	std::cout << "TMCG_Bigint()" << std::endl;
+	unsigned long int tmp_ui = 0UL;
+	size_t cnt_zero = 0, cnt_one = 0;
+	std::cout << " ::wrandomb(32)" << std::endl;
+	for (size_t i = 0; i < 25; i++)
+	{
+		foo.wrandomb(32);
+		assert((tmp_ui != foo.get_ui()));
+		tmp_ui = foo.get_ui();
+	}
+	std::cout << " ::srandomb(32)" << std::endl;
+	for (size_t i = 0; i < 25; i++)
+	{
+		foo.srandomb(32);
+		assert((tmp_ui != foo.get_ui()));
+		tmp_ui = foo.get_ui();
+	}
+#ifdef TEST_SSRANDOM
+	std::cout << " ::ssrandomb(32)" << std::endl;
+	for (size_t i = 0; i < 3; i++)
+	{
+		foo.ssrandomb(32);
+		assert((tmp_ui != foo.get_ui()));
+		tmp_ui = foo.get_ui();
+	}
+#endif
+	std::cout << " ::wrandomb(1)" << std::endl;
+	cnt_zero = 0, cnt_one = 0;
+	for (size_t i = 0; i < 25; i++)
+	{
+		foo.wrandomb(1), bar = 0UL;
+		assert((foo.size(2) == 1));
+		lej << foo << std::endl, lej >> bar;
+		assert((foo == bar));
+		if (foo == 0L)
+			cnt_zero++;
+		if (foo == 1L)
+			cnt_one++;
+	}
+	assert((cnt_zero > 0));
+	assert((cnt_one > 0));
+	std::cout << " ::wrandomb(1024)" << std::endl;
+	for (size_t i = 0; i < 25; i++)
+	{
+		baz = foo;
+		foo.wrandomb(1024), bar = 0UL;
+		assert((foo.size(2) >= 1008) && (foo.size(2) <= 1024));
+		lej << foo << std::endl, lej >> bar;
+		assert((foo == bar));
+		assert((foo != baz));
+	}
+	std::cout << " ::srandomb(1)" << std::endl;
+	cnt_zero = 0, cnt_one = 0;
+	for (size_t i = 0; i < 25; i++)
+	{
+		foo.srandomb(1), bar = 0UL;
+		assert((foo.size(2) == 1));
+		lej << foo << std::endl, lej >> bar;
+		assert((foo == bar));
+		if (foo == 0L)
+			cnt_zero++;
+		if (foo == 1L)
+			cnt_one++;
+	}
+	assert((cnt_zero > 0));
+	assert((cnt_one > 0));
+	std::cout << " ::srandomb(1024)" << std::endl;
+	for (size_t i = 0; i < 25; i++)
+	{
+		baz = foo;
+		foo.srandomb(1024), bar = 0UL;
+		assert((foo.size(2) >= 1008) && (foo.size(2) <= 1024));
+		lej << foo << std::endl, lej >> bar;
+		assert((foo == bar));
+		assert((foo != baz));
+	}
+#ifdef TEST_SSRANDOM
+	std::cout << " ::ssrandomb(1024)" << std::endl;
+	for (size_t i = 0; i < 3; i++)
+	{
+		baz = foo;
+		foo.ssrandomb(1024), bar = 0UL;
+		assert((foo.size(2) >= 1008) && (foo.size(2) <= 1024));
+		lej << foo << std::endl, lej >> bar;
+		assert((foo == bar));
+		assert((foo != baz));
+	}
+#endif
+	std::cout << " ::wrandomm(bar)" << std::endl;
+	for (size_t i = 0; i < 25; i++)
+	{
+		baz = foo;
+		foo.wrandomm(bar);
+		assert((foo < bar));
+		assert((foo != baz));
+	}
+	std::cout << " ::srandomm(bar)" << std::endl;
+	for (size_t i = 0; i < 25; i++)
+	{
+		baz = foo;
+		foo.srandomm(bar);
+		assert((foo < bar));
+		assert((foo != baz));
+	}
+#ifdef TEST_SSRANDOM
+	std::cout << " ::ssrandomm(bar)" << std::endl;
+	for (size_t i = 0; i < 3; i++)
+	{
+		baz = foo;
+		foo.ssrandomm(bar);
+		assert((foo < bar));
+		assert((foo != baz));
+	}
+#endif
+
 /*
 	mpz_t foo, bar, foo2, bar2, root, t1, t2;
 	mpz_t fpowm_table_1[TMCG_MAX_FPOWM_T], fpowm_table_2[TMCG_MAX_FPOWM_T];
@@ -181,157 +297,6 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	size_t cnt_zero = 0, cnt_one = 0;
 	std::string s;
 	
-	// mpz_wrandom_ui vs. mpz_wrandom_mod
-	std::cout << "tmcg_mpz_wrandom_ui() uniformity check / modulo bias" <<
-		std::endl;
-	for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
-	    cnt[i] = 0;
-	start_clock();
-	for (size_t j = 0; j < 10; j++)
-	{
-	    for (size_t i = 0; i < (1000000 * MOD_BIAS_WIDTH); i++)
-		cnt[tmcg_mpz_wrandom_ui() % MOD_BIAS_WIDTH]++;
-	    for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
-		std::cout << cnt[i] << " ";
-	    std::cout << std::endl;
-	}
-	stop_clock();
-	std::cout << elapsed_time() << std::endl;
-	std::cout << "tmcg_mpz_wrandom_mod() uniformity check / modulo bias" <<
-		std::endl;
-	for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
-	    cnt[i] = 0;
-	start_clock();
-	for (size_t j = 0; j < 10; j++)
-	{
-	    for (size_t i = 0; i < (1000000 * MOD_BIAS_WIDTH); i++)
-		cnt[tmcg_mpz_wrandom_mod(MOD_BIAS_WIDTH)]++;
-	    for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
-		std::cout << cnt[i] << " ";
-	    std::cout << std::endl;
-	}
-	stop_clock();
-	std::cout << elapsed_time() << std::endl;
-	
-	// tmcg_mpz_*random_ui, tmcg_mpz_*randomb, tmcg_mpz_*randomm
-	std::cout << "tmcg_mpz_wrandom_ui()" << std::endl;
-	for (size_t i = 0; i < 25; i++)
-	{
-		tmp_ui = tmcg_mpz_wrandom_ui();
-		mpz_set_ui(foo, tmp_ui);
-		assert(mpz_get_ui(foo) == tmp_ui);
-		assert(tmp_ui != tmcg_mpz_wrandom_ui());
-	}
-	std::cout << "tmcg_mpz_srandom_ui()" << std::endl;
-	for (size_t i = 0; i < 25; i++)
-	{
-		tmp_ui = tmcg_mpz_srandom_ui();
-		mpz_set_ui(foo, tmp_ui);
-		assert(mpz_get_ui(foo) == tmp_ui);
-		assert(tmp_ui != tmcg_mpz_wrandom_ui());
-	}
-#ifdef TEST_SSRANDOM
-	std::cout << "tmcg_mpz_ssrandom_ui()" << std::endl;
-	for (size_t i = 0; i < 3; i++)
-	{
-		tmp_ui = tmcg_mpz_ssrandom_ui();
-		mpz_set_ui(foo, tmp_ui);
-		assert(mpz_get_ui(foo) == tmp_ui);
-		assert(tmp_ui != tmcg_mpz_wrandom_ui());
-	}
-#endif
-	std::cout << "tmcg_mpz_wrandomb(..., 1L)" << std::endl;
-	cnt_zero = 0, cnt_one = 0;
-	for (size_t i = 0; i < 25; i++)
-	{
-		tmcg_mpz_wrandomb(foo, 1L), mpz_set_ui(bar, 0L);
-		assert((mpz_sizeinbase(foo, 2L) == 1L));
-		lej << foo << std::endl, lej >> bar;
-		assert(!mpz_cmp(foo, bar));
-		if (!mpz_cmp_ui(foo, 0L))
-			cnt_zero++;
-		if (!mpz_cmp_ui(foo, 1L))
-			cnt_one++;
-	}
-	assert(cnt_zero > 0);
-	assert(cnt_one > 0);
-	std::cout << "tmcg_mpz_wrandomb()" << std::endl;
-	for (size_t i = 0; i < 25; i++)
-	{
-		mpz_set(foo2, foo);
-		tmcg_mpz_wrandomb(foo, 1024L), mpz_set_ui(bar, 0L);
-		assert((mpz_sizeinbase(foo, 2L) >= 1008L) &&
-			(mpz_sizeinbase(foo, 2L) <= 1024L));
-		lej << foo << std::endl, lej >> bar;
-		assert(!mpz_cmp(foo, bar));
-		assert(mpz_cmp(foo, foo2));
-	}
-	std::cout << "tmcg_mpz_srandomb(..., 1L)" << std::endl;
-	cnt_zero = 0, cnt_one = 0;
-	for (size_t i = 0; i < 25; i++)
-	{
-		tmcg_mpz_srandomb(foo, 1L), mpz_set_ui(bar, 0L);
-		assert((mpz_sizeinbase(foo, 2L) == 1L));
-		lej << foo << std::endl, lej >> bar;
-		assert(!mpz_cmp(foo, bar));
-		if (!mpz_cmp_ui(foo, 0L))
-			cnt_zero++;
-		if (!mpz_cmp_ui(foo, 1L))
-			cnt_one++;
-	}
-	assert(cnt_zero > 0);
-	assert(cnt_one > 0);
-	std::cout << "tmcg_mpz_srandomb()" << std::endl;
-	for (size_t i = 0; i < 25; i++)
-	{
-		mpz_set(foo2, foo);
-		tmcg_mpz_srandomb(foo, 1024L), mpz_set_ui(bar, 0L);
-		assert((mpz_sizeinbase(foo, 2L) >= 1008L) &&
-			(mpz_sizeinbase(foo, 2L) <= 1024L));
-		lej << foo << std::endl, lej >> bar;
-		assert(!mpz_cmp(foo, bar));
-		assert(mpz_cmp(foo, foo2));
-	}
-#ifdef TEST_SSRANDOM
-	std::cout << "tmcg_mpz_ssrandomb()" << std::endl;
-	for (size_t i = 0; i < 3; i++)
-	{
-		mpz_set(foo2, foo);
-		tmcg_mpz_ssrandomb(foo, 1024L), mpz_set_ui(bar, 0L);
-		assert((mpz_sizeinbase(foo, 2L) >= 1008L) &&
-			(mpz_sizeinbase(foo, 2L) <= 1024L));
-		lej << foo << std::endl, lej >> bar;
-		assert(!mpz_cmp(foo, bar));
-		assert(mpz_cmp(foo, foo2));
-	}
-#endif
-	std::cout << "bar = " << bar << std::endl;
-	std::cout << "tmcg_mpz_wrandomm()" << std::endl;
-	for (size_t i = 0; i < 25; i++)
-	{
-		mpz_set(foo2, foo);
-		tmcg_mpz_wrandomm(foo, bar);
-		assert(mpz_cmp(foo, bar) < 0);
-		assert(mpz_cmp(foo, foo2));
-	}
-	std::cout << "tmcg_mpz_srandomm()" << std::endl;
-	for (size_t i = 0; i < 25; i++)
-	{
-		mpz_set(foo2, foo);
-		tmcg_mpz_srandomm(foo, bar);
-		assert(mpz_cmp(foo, bar) < 0);
-		assert(mpz_cmp(foo, foo2));
-	}
-#ifdef TEST_SSRANDOM
-	std::cout << "tmcg_mpz_ssrandomm()" << std::endl;
-	for (size_t i = 0; i < 3; i++)
-	{
-		mpz_set(foo2, foo);
-		tmcg_mpz_ssrandomm(foo, bar);
-		assert(mpz_cmp(foo, bar) < 0);
-		assert(mpz_cmp(foo, foo2));
-	}
-#endif
 
 	// mpz_ssrandomm_cache_init, mpz_ssrandomm_cache, mpz_ssrandomm_cache_done
 	mpz_t cache[TMCG_MAX_SSRANDOMM_CACHE];

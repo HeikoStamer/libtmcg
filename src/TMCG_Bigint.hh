@@ -116,6 +116,18 @@ struct TMCG_Bigint
 		();
 	size_t size
 		(const size_t base = TMCG_MPZ_IO_BASE);
+	void wrandomb
+		(const size_t bits);
+	void srandomb
+		(const size_t bits);
+	void ssrandomb
+		(const size_t bits);
+	void wrandomm
+		(const TMCG_Bigint& mod);
+	void srandomm
+		(const TMCG_Bigint& mod);
+	void ssrandomm
+		(const TMCG_Bigint& mod);
 
 	// Destructors
 	~TMCG_Bigint

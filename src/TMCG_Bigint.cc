@@ -31,6 +31,7 @@
 #include <exception>
 #include <stdexcept>
 #include "mpz_helper.hh"
+#include "mpz_srandom.hh"
 
 TMCG_Bigint::TMCG_Bigint
 	(const bool secret_in):
@@ -541,6 +542,75 @@ size_t TMCG_Bigint::size
 		throw std::invalid_argument("TMCG_Bigint::operation not supported");
 	else
 		return mpz_sizeinbase(bigint, base);
+}
+
+void TMCG_Bigint::wrandomb
+	(const size_t bits)
+{
+	if (secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+		tmcg_mpz_wrandomb(bigint, bits);
+}
+
+void TMCG_Bigint::srandomb
+	(const size_t bits)
+{
+	if (secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+		tmcg_mpz_srandomb(bigint, bits);
+}
+
+void TMCG_Bigint::ssrandomb
+	(const size_t bits)
+{
+	if (secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+		tmcg_mpz_ssrandomb(bigint, bits);
+}
+
+void TMCG_Bigint::wrandomm
+	(const TMCG_Bigint& mod)
+{
+	if (secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+	{
+		if (mod.secret)
+			throw std::invalid_argument("TMCG_Bigint::operation not supported");
+		else
+			tmcg_mpz_wrandomm(bigint, mod.bigint);
+	}
+}
+
+void TMCG_Bigint::srandomm
+	(const TMCG_Bigint& mod)
+{
+	if (secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+	{
+		if (mod.secret)
+			throw std::invalid_argument("TMCG_Bigint::operation not supported");
+		else
+			tmcg_mpz_srandomm(bigint, mod.bigint);
+	}
+}
+
+void TMCG_Bigint::ssrandomm
+	(const TMCG_Bigint& mod)
+{
+	if (secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+	{
+		if (mod.secret)
+			throw std::invalid_argument("TMCG_Bigint::operation not supported");
+		else
+			tmcg_mpz_ssrandomm(bigint, mod.bigint);
+	}
 }
 
 TMCG_Bigint::~TMCG_Bigint
