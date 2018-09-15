@@ -259,9 +259,9 @@ AC_HEADER_ASSERT
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
- ctime cstddef errno.h fcntl.h fstream functional inttypes.h iomanip iostream\
- limits.h list map sstream stdint.h stdio.h string string.h sys/select.h\
- time.h unistd.h utility vector], , 
+ ctime cstddef errno.h exception fcntl.h fstream functional inttypes.h iomanip\
+ iostream limits.h list map sstream stdexcept stdint.h stdio.h string string.h\
+ sys/select.h time.h unistd.h utility vector], , 
 	AC_MSG_ERROR([some headers are missing]))
 
 # Checks for typedefs, structures, and compiler characteristics

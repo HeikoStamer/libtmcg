@@ -245,6 +245,9 @@
 	#include <mpz_shash.hh>
 	#include <mpz_helper.hh>
 
+	// general data structures
+	#include <TMCG_Bigint.hh>
+
 	// data structures and protocols for mental poker
 	#include <TMCG_SecretKey.hh>
 	#include <TMCG_PublicKey.hh>

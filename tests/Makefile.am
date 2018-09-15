@@ -16,9 +16,10 @@
 #   along with LibTMCG; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-TESTS = t-mpz t-rfc4880 t-aio t-vtmf t-vsshe t-vrhe t-eotp t-mpc t-key t-poker\
- t-poker-cutnchoose t-poker-rot t-votc t-poker-noninteractive\
- t-poker-rot-noninteractive t-poker-aiou t-seabp t-astc t-vss t-astc2 t-dkg
+TESTS = t-bigint t-mpz t-rfc4880 t-aio t-vtmf t-vsshe t-vrhe t-eotp t-mpc t-key\
+ t-poker t-poker-cutnchoose t-poker-rot t-votc t-poker-noninteractive\
+ t-poker-rot-noninteractive t-poker-aiou\
+ t-seabp t-astc t-vss t-astc2 t-dkg
 
 AM_CPPFLAGS = -I$(top_srcdir)/src @LIBGCRYPT_CFLAGS@ @GPG_ERROR_CFLAGS@\
  @LIBGMP_CFLAGS@ @BOTAN_CFLAGS@
@@ -31,6 +32,7 @@ noinst_PROGRAMS = $(TESTS)
 SchwarzerPeterAlice_SOURCES = SchwarzerPeterAlice.cc
 SchwarzerPeterBob_SOURCES = SchwarzerPeterBob.cc
 
+t_bigint_SOURCES = test_helper.c test_helper.h t-bigint.cc
 t_mpz_SOURCES = test_helper.c test_helper.h t-mpz.cc
 t_rfc4880_SOURCES = test_helper.c test_helper.h t-rfc4880.cc
 t_aio_SOURCES = test_helper.c test_helper.h t-aio.cc

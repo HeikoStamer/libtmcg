@@ -25,6 +25,9 @@
 #endif
 #include "mpz_helper.hh"
 
+// additional headers
+#include <cstring>
+
 // get content of mpz_t into gcry_mpi_t
 bool tmcg_mpz_get_gcry_mpi
 	(gcry_mpi_t &out, mpz_srcptr value)
