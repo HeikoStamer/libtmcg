@@ -84,7 +84,7 @@ TMCG_Bigint& TMCG_Bigint::operator =
 	(const unsigned long int that)
 {
 	if (secret)
-		throw std::invalid_argument("TMCG_Bigint::assignment not allowed");
+		gcry_mpi_set_ui(secret_bigint, that);
 	else
 		mpz_set_ui(bigint, that);
 	return *this;
@@ -539,7 +539,12 @@ size_t TMCG_Bigint::size
 	(const size_t base)
 {
 	if (secret)
-		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	{
+		if (base == 2)
+			return gcry_mpi_get_nbits(secret_bigint); // Note: 0, if value==0
+		else
+			throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	}
 	else
 		return mpz_sizeinbase(bigint, base);
 }
@@ -548,27 +553,36 @@ void TMCG_Bigint::wrandomb
 	(const size_t bits)
 {
 	if (secret)
-		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	{
+		gcry_mpi_randomize(secret_bigint, bits, GCRY_WEAK_RANDOM);
+		gcry_mpi_clear_highbit(secret_bigint, bits);
+	}
 	else
-		tmcg_mpz_wrandomb(bigint, bits);
+		tmcg_mpz_wrandomb(bigint, bits); // FIXME: replace
 }
 
 void TMCG_Bigint::srandomb
 	(const size_t bits)
 {
 	if (secret)
-		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	{
+		gcry_mpi_randomize(secret_bigint, bits, GCRY_STRONG_RANDOM); // FIXME: Botan
+		gcry_mpi_clear_highbit(secret_bigint, bits);
+	}
 	else
-		tmcg_mpz_srandomb(bigint, bits);
+		tmcg_mpz_srandomb(bigint, bits); // FIXME: replace
 }
 
 void TMCG_Bigint::ssrandomb
 	(const size_t bits)
 {
 	if (secret)
-		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	{
+		gcry_mpi_randomize(secret_bigint, bits, GCRY_VERY_STRONG_RANDOM); // FIXME: Botan
+		gcry_mpi_clear_highbit(secret_bigint, bits);
+	}
 	else
-		tmcg_mpz_ssrandomb(bigint, bits);
+		tmcg_mpz_ssrandomb(bigint, bits); // FIXME: replace
 }
 
 void TMCG_Bigint::wrandomm
@@ -581,7 +595,7 @@ void TMCG_Bigint::wrandomm
 		if (mod.secret)
 			throw std::invalid_argument("TMCG_Bigint::operation not supported");
 		else
-			tmcg_mpz_wrandomm(bigint, mod.bigint);
+			tmcg_mpz_wrandomm(bigint, mod.bigint); // FIXME: replace
 	}
 }
 
@@ -595,7 +609,7 @@ void TMCG_Bigint::srandomm
 		if (mod.secret)
 			throw std::invalid_argument("TMCG_Bigint::operation not supported");
 		else
-			tmcg_mpz_srandomm(bigint, mod.bigint);
+			tmcg_mpz_srandomm(bigint, mod.bigint); // FIXME: replace
 	}
 }
 
@@ -609,7 +623,7 @@ void TMCG_Bigint::ssrandomm
 		if (mod.secret)
 			throw std::invalid_argument("TMCG_Bigint::operation not supported");
 		else
-			tmcg_mpz_ssrandomm(bigint, mod.bigint);
+			tmcg_mpz_ssrandomm(bigint, mod.bigint); // FIXME: replace
 	}
 }
 

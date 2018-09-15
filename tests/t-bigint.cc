@@ -174,7 +174,7 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	assert((sfoo != sbaz) && !(sfoo != sbar));
 	// TODO
 
-	// tmcg_mpz_*random_ui, tmcg_mpz_*randomb, tmcg_mpz_*randomm
+	// tmcg_mpz_*randomb, tmcg_mpz_*randomm
 	std::cout << "TMCG_Bigint()" << std::endl;
 	unsigned long int tmp_ui = 0UL;
 	size_t cnt_zero = 0, cnt_one = 0;
@@ -287,6 +287,96 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		foo.ssrandomm(bar);
 		assert((foo < bar));
 		assert((foo != baz));
+	}
+#endif
+	std::cout << "TMCG_Bigint(true)" << std::endl;
+	std::cout << " ::wrandomb(32)" << std::endl;
+	for (size_t i = 0; i < 25; i++)
+	{
+		sfoo.wrandomb(32);
+		sbar.wrandomb(32);
+		assert((sfoo != sbar));
+	}
+	std::cout << " ::srandomb(32)" << std::endl;
+	for (size_t i = 0; i < 25; i++)
+	{
+		sfoo.srandomb(32);
+		sbar.srandomb(32);
+		assert((sfoo != sbar));
+	}
+#ifdef TEST_SSRANDOM
+	std::cout << " ::ssrandomb(32)" << std::endl;
+	for (size_t i = 0; i < 3; i++)
+	{
+		sfoo.ssrandomb(32);
+		sbar.ssrandomb(32);
+		assert((sfoo != sbar));
+	}
+#endif
+	std::cout << " ::wrandomb(1)" << std::endl;
+	sbaz = 0UL;
+	for (size_t i = 0; i < 25; i++)
+	{
+		sfoo.wrandomb(1);
+		assert((sfoo.size(2) < 2));
+		sbaz += sfoo;
+	}
+	assert((sbaz > 0UL));
+	assert((sbaz < 25UL));
+	std::cout << " ::wrandomb(1024)" << std::endl;
+	for (size_t i = 0; i < 25; i++)
+	{
+		sfoo.wrandomb(1024);
+		assert((sfoo.size(2) >= 1008) && (sfoo.size(2) <= 1024));
+	}
+	std::cout << " ::srandomb(1)" << std::endl;
+	sbaz = 0UL;
+	for (size_t i = 0; i < 25; i++)
+	{
+		sfoo.srandomb(1);
+		assert((sfoo.size(2) < 2));
+		sbaz += sfoo;
+	}
+	assert((sbaz > 0UL));
+	assert((sbaz < 25UL));
+	std::cout << " ::srandomb(1024)" << std::endl;
+	for (size_t i = 0; i < 25; i++)
+	{
+		sfoo.srandomb(1024);
+		assert((sfoo.size(2) >= 1008) && (sfoo.size(2) <= 1024));
+	}
+#ifdef TEST_SSRANDOM
+	std::cout << " ::ssrandomb(1024)" << std::endl;
+	for (size_t i = 0; i < 3; i++)
+	{
+		sfoo.ssrandomb(1024);
+		assert((sfoo.size(2) >= 1008) && (sfoo.size(2) <= 1024));
+	}
+#endif
+	std::cout << " ::wrandomm(bar)" << std::endl;
+	for (size_t i = 0; i < 25; i++)
+	{
+		sfoo.wrandomm(bar);
+		sbar.wrandomm(bar);
+		assert((sfoo < bar) && (sbar < bar));
+		assert((sfoo != sbar));
+	}
+	std::cout << " ::srandomm(bar)" << std::endl;
+	for (size_t i = 0; i < 25; i++)
+	{
+		sfoo.srandomm(bar);
+		sbar.srandomm(bar);
+		assert((sfoo < bar) && (sbar < bar));
+		assert((sfoo != sbar));
+	}
+#ifdef TEST_SSRANDOM
+	std::cout << " ::ssrandomm(bar)" << std::endl;
+	for (size_t i = 0; i < 3; i++)
+	{
+		sfoo.ssrandomm(bar);
+		sbar.ssrandomm(bar);
+		assert((sfoo < bar) && (sbar < bar));
+		assert((sfoo != sbar));
 	}
 #endif
 
@@ -665,9 +755,6 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		delete [] aa[k], delete [] bb[k], delete [] ff[k];
 	}
 
-	// release
-	mpz_clear(foo), mpz_clear(bar), mpz_clear(foo2), mpz_clear(bar2),
-		mpz_clear(root), mpz_clear(t1), mpz_clear(t2);
 */	
 	return 0;
 }
