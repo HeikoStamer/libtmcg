@@ -66,6 +66,10 @@ struct TMCG_Bigint
 		(const TMCG_Bigint& that);
 	TMCG_Bigint& operator /=
 		(const unsigned long int that);
+	TMCG_Bigint& operator %=
+		(const TMCG_Bigint& that);
+	TMCG_Bigint& operator %=
+		(const unsigned long int that);
 
 	// Comparison operators/relational operators
 	bool operator ==

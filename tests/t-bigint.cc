@@ -117,6 +117,14 @@ int main
 	std::cout << " ::operator /= (unsigned long int)" << std::endl;
 	baz /= 7UL;
 	assert((baz == 249L));
+	std::cout << " ::operator %=" << std::endl;
+	bar = 248L;
+	baz %= bar;
+	assert((baz == 1L));
+	std::cout << " ::operator %= (unsigned long int)" << std::endl;
+	baz = 1743UL;
+	baz %= 42UL;
+	assert((baz == 21L));
 	std::cout << " ::operator - (negation)" << std::endl;
 	-foo;
 	assert((foo == -83L));
@@ -159,10 +167,11 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	TMCG_Bigint sfoo(true), sbar(true), sbaz(true);
 	std::cout << "TMCG_Bigint(true)" << std::endl;
 	sbar = sfoo;
+	sbaz += 42UL;
 	std::cout << " ::operator ==" << std::endl;
-	assert((sfoo == sbar));
+	assert((sfoo == sbar) && !(sfoo == sbaz));
 	std::cout << " ::operator !=" << std::endl;
-	assert(!(sfoo != sbar));
+	assert((sfoo != sbaz) && !(sfoo != sbar));
 	// TODO
 
 /*

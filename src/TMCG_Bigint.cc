@@ -30,6 +30,7 @@
 #include <cstring>
 #include <exception>
 #include <stdexcept>
+#include "mpz_helper.hh"
 
 TMCG_Bigint::TMCG_Bigint
 	(const bool secret_in):
@@ -63,8 +64,10 @@ TMCG_Bigint& TMCG_Bigint::operator =
 			gcry_mpi_set(secret_bigint, that.secret_bigint);
 		else
 		{
-			throw std::invalid_argument("TMCG_Bigint::assignment not allowed");
-// TODO: convert from non-secret bigint
+			gcry_mpi_t tmp;
+			tmcg_mpz_get_gcry_mpi(tmp, that.bigint);
+			gcry_mpi_set(secret_bigint, tmp);
+			gcry_mpi_release(tmp);
 		}
 	}
 	else
@@ -105,8 +108,10 @@ TMCG_Bigint& TMCG_Bigint::operator +=
 			gcry_mpi_add(secret_bigint, secret_bigint, that.secret_bigint);
 		else
 		{
-			throw std::invalid_argument("TMCG_Bigint::operation not allowed");
-// TODO: convert from non-secret bigint
+			gcry_mpi_t tmp;
+			tmcg_mpz_get_gcry_mpi(tmp, that.bigint);
+			gcry_mpi_add(secret_bigint, secret_bigint, tmp);
+			gcry_mpi_release(tmp);
 		}
 	}
 	else
@@ -148,8 +153,10 @@ TMCG_Bigint& TMCG_Bigint::operator -=
 			gcry_mpi_sub(secret_bigint, secret_bigint, that.secret_bigint);
 		else
 		{
-			throw std::invalid_argument("TMCG_Bigint::operation not allowed");
-// TODO: convert from non-secret bigint
+			gcry_mpi_t tmp;
+			tmcg_mpz_get_gcry_mpi(tmp, that.bigint);
+			gcry_mpi_sub(secret_bigint, secret_bigint, tmp);
+			gcry_mpi_release(tmp);
 		}
 	}
 	else
@@ -181,8 +188,10 @@ TMCG_Bigint& TMCG_Bigint::operator *=
 			gcry_mpi_mul(secret_bigint, secret_bigint, that.secret_bigint);
 		else
 		{
-			throw std::invalid_argument("TMCG_Bigint::operation not allowed");
-// TODO: convert from non-secret bigint
+			gcry_mpi_t tmp;
+			tmcg_mpz_get_gcry_mpi(tmp, that.bigint);
+			gcry_mpi_mul(secret_bigint, secret_bigint, tmp);
+			gcry_mpi_release(tmp);
 		}
 	}
 	else
@@ -217,8 +226,10 @@ TMCG_Bigint& TMCG_Bigint::operator /=
 		}
 		else
 		{
-			throw std::invalid_argument("TMCG_Bigint::operation not allowed");
-// TODO: convert from non-secret bigint
+			gcry_mpi_t tmp;
+			tmcg_mpz_get_gcry_mpi(tmp, that.bigint);
+			gcry_mpi_div(secret_bigint, NULL, secret_bigint, tmp, 0);
+			gcry_mpi_release(tmp);
 		}
 	}
 	else
@@ -244,6 +255,48 @@ TMCG_Bigint& TMCG_Bigint::operator /=
 		assert(mpz_divisible_ui_p(bigint, that));
 		mpz_divexact_ui(bigint, bigint, that);
 	}
+	return *this;
+}
+
+TMCG_Bigint& TMCG_Bigint::operator %=
+	(const TMCG_Bigint& that)
+{
+	if (secret)
+	{
+		if (that.secret)
+		{
+			gcry_mpi_mod(secret_bigint, secret_bigint, that.secret_bigint);
+		}
+		else
+		{
+			gcry_mpi_t divisor;
+			tmcg_mpz_get_gcry_mpi(divisor, that.bigint);
+			gcry_mpi_mod(secret_bigint, secret_bigint, divisor);
+			gcry_mpi_release(divisor);
+		}
+	}
+	else
+	{
+		if (that.secret)
+			throw std::invalid_argument("TMCG_Bigint::operation not allowed");
+		else
+			mpz_mod(bigint, bigint, that.bigint);
+	}
+	return *this;
+}
+
+TMCG_Bigint& TMCG_Bigint::operator %=
+	(const unsigned long int that)
+{
+	if (secret)
+	{
+		gcry_mpi_t divisor = gcry_mpi_new(8);
+		gcry_mpi_set_ui(divisor, that);
+		gcry_mpi_mod(secret_bigint, secret_bigint, divisor);
+		gcry_mpi_release(divisor);
+	}
+	else
+		mpz_mod_ui(bigint, bigint, that);
 	return *this;
 }
 
