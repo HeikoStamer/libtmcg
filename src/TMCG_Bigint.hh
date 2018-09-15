@@ -36,17 +36,38 @@ struct TMCG_Bigint
 	mpz_t bigint;
 	gcry_mpi_t secret_bigint;
 
+	// Constructors
 	TMCG_Bigint
 		(const bool secret_in = false);
 	TMCG_Bigint
 		(const TMCG_Bigint& that);
-
+	// Arithmetic operators
 	TMCG_Bigint& operator =
 		(const TMCG_Bigint& that);
 	TMCG_Bigint& operator =
 		(const unsigned long int that);
 	TMCG_Bigint& operator =
 		(const signed long int that);
+	TMCG_Bigint& operator +=
+		(const TMCG_Bigint& that);
+	TMCG_Bigint& operator +=
+		(const unsigned long int that);
+	TMCG_Bigint& operator -
+		();
+	TMCG_Bigint& operator -=
+		(const TMCG_Bigint& that);
+	TMCG_Bigint& operator -=
+		(const unsigned long int that);
+	TMCG_Bigint& operator *=
+		(const TMCG_Bigint& that);
+	TMCG_Bigint& operator *=
+		(const unsigned long int that);
+	TMCG_Bigint& operator /=
+		(const TMCG_Bigint& that);
+	TMCG_Bigint& operator /=
+		(const unsigned long int that);
+
+	// Comparison operators/relational operators
 	bool operator ==
 		(const TMCG_Bigint& that) const;
 	bool operator ==
@@ -59,8 +80,16 @@ struct TMCG_Bigint
 		(const unsigned long int that) const;
 	bool operator !=
 		(const signed long int that) const;
+	
+	// Other functions
+	void abs
+		();
+	void set_str
+		(const std::string& that, const size_t base);
+	bool probab_prime
+		(const size_t reps);
 
-
+	// Destructors
 	~TMCG_Bigint
 		();
 };

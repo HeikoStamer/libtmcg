@@ -58,9 +58,10 @@ int main
 	std::cout << "TMCG_GCRY_MD_ALGO = " << TMCG_GCRY_MD_ALGO <<
 		" [" << gcry_md_algo_name(TMCG_GCRY_MD_ALGO) << "]" << std::endl;
 
+	// test basic operators of TMCG_Bigint()
 	TMCG_Bigint foo, bar, baz;
 	std::stringstream lej;
-	std::cout << "TMCG_Bitint()" << std::endl;
+	std::cout << "TMCG_Bigint()" << std::endl;
 	foo = 42UL, bar = -42L;
 	std::cout << " ::operator <<" << std::endl;
 	lej << foo << std::endl, lej >> baz;
@@ -74,14 +75,58 @@ int main
 	assert((foo != bar) && !(foo != baz));
 	std::cout << " ::operator != (sigend long int)" << std::endl;
 	assert((bar != 42L) && (baz != -42L));
+	std::cout << " ::operator +=" << std::endl;
+	baz += bar;
+	assert((baz == 0L));
+	std::cout << " ::operator += (unsigned long int)" << std::endl;
+	baz += 7UL;
+	assert((baz == 7L));
+	std::cout << " ::operator -=" << std::endl;
+	foo -= bar;
+	assert((foo == 84L));
+	std::cout << " ::operator -= (unsigned long int)" << std::endl;
+	foo -= 1UL;
+	assert((foo == 83L));
+	std::cout << " ::operator - (negation)" << std::endl;
+	-foo;
+	assert((foo == -83L));
+	std::cout << " ::abs()" << std::endl;
+	foo.abs();
+	assert((foo == 83L));
+	// convert (prime p of the Oakley Group 2) and check q = (p - 1) / 2;
+	std::cout << " ::set_str(), ::probab_prime()" << std::endl;
+	foo.set_str("FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E08\
+8A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F1437\
+4FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB\
+5A899FA5AE9F24117C4B1FE649286651ECE65381FFFFFFFFFFFFFFFF", 16);
+	bar.set_str("179769313486231590770839156793787453197860296048756011706\
+444423684197180216158519368947833795864925541502180565485980503646440548\
+199239100050792877003355816639229553136239076508735759914822574862575007\
+425302077447712589550957937778424442426617334727629299387668709205606050\
+270810842907692932019128194467627007", 10);
+	assert((foo == bar));
+	assert(foo.probab_prime(500));
+	bar.set_str("n0p2ftq59aofqlrjexdmhww37nsdo5636jq09opxoq8amvlodjflhsspl\
+5jzlgnlg0brgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9\
+623r7y6j0m4yj3304o731yt2xooyxw5npftk5yn9fj3m26mjjku1mbn3405h45cz8etbz", 36);
+	foo -= 1UL;
+	foo /= 2UL; // FIXME: repleace by foo.div2exp(1UL)
+	assert((foo == bar));
+	bar.set_str("SUR8tvw7NPjVX77MA4wyYQcCRKLZetHWGRakKjG235flbyeV3obS6ZdAl\
+iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
+9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
+	assert((foo == bar));
+	assert(foo.probab_prime(500));
 
+	// test basic operators of TMCG_Bigint(true)
 	TMCG_Bigint sfoo(true), sbar(true), sbaz(true);
-	std::cout << "TMCG_Bitint(true)" << std::endl;
+	std::cout << "TMCG_Bigint(true)" << std::endl;
 	sbar = sfoo;
 	std::cout << " ::operator ==" << std::endl;
 	assert((sfoo == sbar));
 	std::cout << " ::operator !=" << std::endl;
 	assert(!(sfoo != sbar));
+	// TODO
 
 /*
 	mpz_t foo, bar, foo2, bar2, root, t1, t2;
@@ -89,37 +134,6 @@ int main
 	unsigned long int tmp_ui = 0L, cnt[MOD_BIAS_WIDTH];
 	size_t cnt_zero = 0, cnt_one = 0;
 	std::string s;
-
-	mpz_init(foo), mpz_init(bar), mpz_init(foo2), mpz_init(bar2),
-		mpz_init(root), mpz_init(t1), mpz_init(t2);
-	mpz_set_ui(foo, 42L), mpz_set_ui(bar, 0L);
-	assert(!mpz_cmp_ui(foo, 42L) && !mpz_cmp_ui(bar, 0L));
-	lej << foo << std::endl, lej >> bar;
-	assert(!mpz_cmp_ui(foo, 42L) && !mpz_cmp_ui(bar, 42L));
-	
-	// convert (prime p of the Oakley Group 2) and check q = (p - 1) / 2;
-	mpz_set_str(foo, "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E08\
-8A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F1437\
-4FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB\
-5A899FA5AE9F24117C4B1FE649286651ECE65381FFFFFFFFFFFFFFFF", 16);
-	mpz_set_str(bar, "179769313486231590770839156793787453197860296048756011706\
-444423684197180216158519368947833795864925541502180565485980503646440548\
-199239100050792877003355816639229553136239076508735759914822574862575007\
-425302077447712589550957937778424442426617334727629299387668709205606050\
-270810842907692932019128194467627007", 10);
-	assert(!mpz_cmp(foo, bar));
-	assert(mpz_probab_prime_p(foo, 500));
-	mpz_set_str(bar, "n0p2ftq59aofqlrjexdmhww37nsdo5636jq09opxoq8amvlodjflhsspl\
-5jzlgnlg0brgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9\
-623r7y6j0m4yj3304o731yt2xooyxw5npftk5yn9fj3m26mjjku1mbn3405h45cz8etbz", 36);
-	mpz_sub_ui(foo, foo, 1L);
-	mpz_fdiv_q_2exp(foo, foo, 1L);
-	assert(!mpz_cmp(foo, bar));
-	mpz_set_str(bar, "SUR8tvw7NPjVX77MA4wyYQcCRKLZetHWGRakKjG235flbyeV3obS6ZdAl\
-iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
-9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
-	assert(!mpz_cmp(foo, bar));
-	assert(mpz_probab_prime_p(foo, 500));
 	
 	// mpz_wrandom_ui vs. mpz_wrandom_mod
 	std::cout << "tmcg_mpz_wrandom_ui() uniformity check / modulo bias" <<
