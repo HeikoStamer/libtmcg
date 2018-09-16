@@ -112,6 +112,17 @@ struct TMCG_Bigint
 		(const size_t exp);
 	void div2exp
 		(const size_t exp);
+	void ui_pow_ui
+		(const unsigned long int base, const unsigned long int exp);
+	void powm
+		(const TMCG_Bigint& base, const TMCG_Bigint& exp,
+		 const TMCG_Bigint& mod);
+	void spowm
+		(const TMCG_Bigint& base, const TMCG_Bigint& exp,
+		 const TMCG_Bigint& mod);
+	void powm_ui
+		(const TMCG_Bigint& base, const unsigned long int exp,
+		 const TMCG_Bigint& mod);
 	unsigned long int get_ui
 		();
 	size_t size

@@ -32,6 +32,7 @@
 #include <stdexcept>
 #include "mpz_helper.hh"
 #include "mpz_srandom.hh"
+#include "mpz_spowm.hh"
 
 TMCG_Bigint::TMCG_Bigint
 	(const bool secret_in):
@@ -526,6 +527,51 @@ void TMCG_Bigint::div2exp
 		mpz_tdiv_q_2exp(bigint, bigint, exp);
 }
 
+void TMCG_Bigint::ui_pow_ui
+	(const unsigned long int base, const unsigned long int exp)
+{
+	if (secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+		mpz_ui_pow_ui(bigint, base, exp); 
+}
+
+void TMCG_Bigint::powm
+	(const TMCG_Bigint& base, const TMCG_Bigint& exp, const TMCG_Bigint& mod)
+{
+	if (secret)
+	{
+		if (!base.secret || !exp.secret || !mod.secret)
+			throw std::invalid_argument("TMCG_Bigint::operation not supported");
+		gcry_mpi_powm(secret_bigint, base.secret_bigint, exp.secret_bigint,
+			mod.secret_bigint);
+	}
+	else
+	{
+		if (base.secret || exp.secret || mod.secret)
+			throw std::invalid_argument("TMCG_Bigint::operation not supported");
+		mpz_powm(bigint, base.bigint, exp.bigint, mod.bigint);
+	}
+}
+
+void TMCG_Bigint::spowm
+	(const TMCG_Bigint& base, const TMCG_Bigint& exp, const TMCG_Bigint& mod)
+{
+	if (secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+		tmcg_mpz_spowm(bigint, base.bigint, exp.bigint, mod.bigint); // FIXME: replace
+}
+
+void TMCG_Bigint::powm_ui
+	(const TMCG_Bigint& base, const unsigned long int exp, const TMCG_Bigint& mod)
+{
+	if (secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+		mpz_powm_ui(bigint, base.bigint, exp, mod.bigint); 
+}
+
 unsigned long int TMCG_Bigint::get_ui
 	()
 {
@@ -668,6 +714,7 @@ std::istream& operator >>
 		in.getline(buf, TMCG_MAX_VALUE_CHARS - 1);
 		if (mpz_set_str(that.bigint, buf, TMCG_MPZ_IO_BASE) < 0)
 		{
+			delete [] buf;
 			in.setstate(std::istream::iostate(std::istream::failbit));
 			throw std::invalid_argument("TMCG_Bigint::mpz_set_str failed");
 		}
