@@ -49,7 +49,8 @@
 #endif
 #include "mpz_sqrtm.hh"
 
-// additional headers
+/// additional headers
+#include <stdexcept>
 #include "mpz_srandom.hh"
 
 int tmcg_mpz_qrmn_p
@@ -62,15 +63,15 @@ void tmcg_mpz_sqrtmp_r
 	(mpz_ptr root, mpz_srcptr a, mpz_srcptr p)
 {
 	/* ? a \neq 0 */
-	if (mpz_get_ui(a) != 0)
+	if (mpz_cmp_ui(a, 0UL))
 	{
-		if (mpz_congruent_ui_p(p, 3L, 4L))
+		if (mpz_congruent_ui_p(p, 3UL, 4UL))
 		{
 			/* p = 3 (mod 4) */
 			mpz_t foo;
 			mpz_init_set(foo, p);
-			mpz_add_ui(foo, foo, 1L);
-			mpz_fdiv_q_2exp(foo, foo, 2L);
+			mpz_add_ui(foo, foo, 1UL);
+			mpz_fdiv_q_2exp(foo, foo, 2UL);
 			mpz_powm(root, a, foo, p);
 			mpz_clear(foo);
 			return;
@@ -80,19 +81,19 @@ void tmcg_mpz_sqrtmp_r
 			/* p = 1 (mod 4) */
 			mpz_t s;
 			mpz_init_set(s, p);
-			mpz_sub_ui(s, s, 1L);
-			mpz_fdiv_q_2exp(s, s, 2L); /* s = (p-1)/4 */
-			if (mpz_congruent_ui_p(p, 5L, 8L))
+			mpz_sub_ui(s, s, 1UL);
+			mpz_fdiv_q_2exp(s, s, 2UL); /* s = (p-1)/4 */
+			if (mpz_congruent_ui_p(p, 5UL, 8UL))
 			{
 				/* p = 5 (mod 8) */
 				mpz_t foo, b;
 				mpz_init(foo);
 				mpz_powm(foo, a, s, p);
 				mpz_init_set(b, p);
-				mpz_add_ui(b, b, 3L);
-				mpz_fdiv_q_2exp(b, b, 3L);
+				mpz_add_ui(b, b, 3UL);
+				mpz_fdiv_q_2exp(b, b, 3UL);
 				mpz_powm(root, a, b, p);
-				if (mpz_cmp_ui(foo, 1L) == 0)
+				if (mpz_cmp_ui(foo, 1UL) == 0)
 				{
 					/* a^{(p-1)/4} = 1 (mod p) */
 					mpz_clear(foo), mpz_clear(s), mpz_clear(b);
@@ -118,13 +119,13 @@ void tmcg_mpz_sqrtmp_r
 				mpz_init(foo), mpz_init(bar);
 				mpz_powm(foo, a, s, p);
 				/* while a^s = 1 (mod p) */
-				while (mpz_cmp_ui(foo, 1L) == 0)
+				while (mpz_cmp_ui(foo, 1UL) == 0)
 				{
 					if (mpz_odd_p(s))
 					{
 						/* s is odd */
-						mpz_add_ui(s, s, 1L);
-						mpz_fdiv_q_2exp(s, s, 1L);
+						mpz_add_ui(s, s, 1UL);
+						mpz_fdiv_q_2exp(s, s, 1UL);
 						mpz_powm(root, a, s, p);
 						mpz_clear(foo), mpz_clear(bar), mpz_clear(s);
 						return;
@@ -132,7 +133,7 @@ void tmcg_mpz_sqrtmp_r
 					else
 					{
 						/* s is even */
-						mpz_fdiv_q_2exp(s, s, 1L);
+						mpz_fdiv_q_2exp(s, s, 1UL);
 					}
 					mpz_powm(foo, a, s, p);
 				}
@@ -142,13 +143,13 @@ void tmcg_mpz_sqrtmp_r
 					tmcg_mpz_wrandomm(b, p);
 				while (mpz_jacobi(b, p) != -1);
 				mpz_init_set(t, p);
-				mpz_sub_ui(t, t, 1L);
-				mpz_fdiv_q_2exp(t, t, 1L);
+				mpz_sub_ui(t, t, 1UL);
+				mpz_fdiv_q_2exp(t, t, 1UL);
 				/* while s even */
 				while (mpz_even_p(s))
 				{
-					mpz_fdiv_q_2exp(s, s, 1L);
-					mpz_fdiv_q_2exp(t, t, 1L);
+					mpz_fdiv_q_2exp(s, s, 1UL);
+					mpz_fdiv_q_2exp(t, t, 1UL);
 					mpz_powm(foo, a, s, p);
 					mpz_powm(bar, b, t, p);
 					mpz_mul(foo, foo, bar);
@@ -158,14 +159,14 @@ void tmcg_mpz_sqrtmp_r
 					{
 						/* a^s * b^t = -1 (mod p) */
 						mpz_set(bar, p);
-						mpz_sub_ui(bar, bar, 1L);
-						mpz_fdiv_q_2exp(bar, bar, 1L);
+						mpz_sub_ui(bar, bar, 1UL);
+						mpz_fdiv_q_2exp(bar, bar, 1UL);
 						mpz_add(t, t, bar);
 					}
 				}
-				mpz_add_ui(s, s, 1L);
-				mpz_fdiv_q_2exp(s, s, 1L);
-				mpz_fdiv_q_2exp(t, t, 1L);
+				mpz_add_ui(s, s, 1UL);
+				mpz_fdiv_q_2exp(s, s, 1UL);
+				mpz_fdiv_q_2exp(t, t, 1UL);
 				mpz_powm(foo, a, s, p);
 				mpz_powm(bar, b, t, p);
 				mpz_mul(root, foo, bar);
@@ -176,23 +177,23 @@ void tmcg_mpz_sqrtmp_r
 			}
 		}
 	}
-	/* error, return zero as indicator */
-	mpz_set_ui(root, 0L);
+	else
+		throw std::invalid_argument("tmcg_mpz_sqrtmp_r: a is zero");
 }
 
 void tmcg_mpz_sqrtmp
 	(mpz_ptr root, mpz_srcptr a, mpz_srcptr p)
 {
 	/* ? a \neq 0 */
-	if (mpz_get_ui(a) != 0)
+	if (mpz_cmp_ui(a, 0UL))
 	{
-		if (mpz_congruent_ui_p(p, 3L, 4L))
+		if (mpz_congruent_ui_p(p, 3UL, 4UL))
 		{
 			/* p = 3 (mod 4) */
 			mpz_t foo;
 			mpz_init_set(foo, p);
-			mpz_add_ui(foo, foo, 1L);
-			mpz_fdiv_q_2exp(foo, foo, 2L);
+			mpz_add_ui(foo, foo, 1UL);
+			mpz_fdiv_q_2exp(foo, foo, 2UL);
 			mpz_powm(root, a, foo, p);
 			mpz_clear(foo);
 			return;
@@ -202,19 +203,19 @@ void tmcg_mpz_sqrtmp
 			/* p = 1 (mod 4) */
 			mpz_t s;
 			mpz_init_set(s, p);
-			mpz_sub_ui(s, s, 1L);
-			mpz_fdiv_q_2exp(s, s, 2L); /* s = (p-1)/4 */
-			if (mpz_congruent_ui_p(p, 5L, 8L))
+			mpz_sub_ui(s, s, 1UL);
+			mpz_fdiv_q_2exp(s, s, 2UL); /* s = (p-1)/4 */
+			if (mpz_congruent_ui_p(p, 5UL, 8UL))
 			{
 				/* p = 5 (mod 8) */
 				mpz_t foo, b;
 				mpz_init(foo);
 				mpz_powm(foo, a, s, p);
 				mpz_init_set(b, p);
-				mpz_add_ui(b, b, 3L);
-				mpz_fdiv_q_2exp(b, b, 3L);
+				mpz_add_ui(b, b, 3UL);
+				mpz_fdiv_q_2exp(b, b, 3UL);
 				mpz_powm(root, a, b, p);
-				if (mpz_cmp_ui(foo, 1L) == 0)
+				if (mpz_cmp_ui(foo, 1UL) == 0)
 				{
 					/* a^{(p-1)/4} = 1 (mod p) */
 					mpz_clear(foo), mpz_clear(s), mpz_clear(b);
@@ -223,9 +224,9 @@ void tmcg_mpz_sqrtmp
 				else
 				{
 					/* a^{(p-1)/4} = -1 (mod p) */
-					mpz_set_ui(b, 2L);
+					mpz_set_ui(b, 2UL);
 					while (mpz_jacobi(b, p) != -1)
-						mpz_add_ui(b, b, 1L);
+						mpz_add_ui(b, b, 1UL);
 					mpz_powm(b, b, s, p);
 					mpz_mul(root, root, b);
 					mpz_mod(root, root, p);
@@ -240,13 +241,13 @@ void tmcg_mpz_sqrtmp
 				mpz_init(foo), mpz_init(bar);
 				mpz_powm(foo, a, s, p);
 				/* while a^s = 1 (mod p) */
-				while (mpz_cmp_ui(foo, 1L) == 0)
+				while (mpz_cmp_ui(foo, 1UL) == 0)
 				{
 					if (mpz_odd_p(s))
 					{
 						/* s is odd */
-						mpz_add_ui(s, s, 1L);
-						mpz_fdiv_q_2exp(s, s, 1L);
+						mpz_add_ui(s, s, 1UL);
+						mpz_fdiv_q_2exp(s, s, 1UL);
 						mpz_powm(root, a, s, p);
 						mpz_clear(foo), mpz_clear(bar), mpz_clear(s);
 						return;
@@ -254,22 +255,22 @@ void tmcg_mpz_sqrtmp
 					else
 					{
 						/* s is even */
-						mpz_fdiv_q_2exp(s, s, 1L);
+						mpz_fdiv_q_2exp(s, s, 1UL);
 					}
 					mpz_powm(foo, a, s, p);
 				}
 				/* a^s = -1 (mod p) */
-				mpz_init_set_ui(b, 2L);
+				mpz_init_set_ui(b, 2UL);
 				while (mpz_jacobi(b, p) != -1)
-					mpz_add_ui(b, b, 1L);
+					mpz_add_ui(b, b, 1UL);
 				mpz_init_set(t, p);
-				mpz_sub_ui(t, t, 1L);
-				mpz_fdiv_q_2exp(t, t, 1L);
+				mpz_sub_ui(t, t, 1UL);
+				mpz_fdiv_q_2exp(t, t, 1UL);
 				/* while s even */
 				while (mpz_even_p(s))
 				{
-					mpz_fdiv_q_2exp(s, s, 1L);
-					mpz_fdiv_q_2exp(t, t, 1L);
+					mpz_fdiv_q_2exp(s, s, 1UL);
+					mpz_fdiv_q_2exp(t, t, 1UL);
 					mpz_powm(foo, a, s, p);
 					mpz_powm(bar, b, t, p);
 					mpz_mul(foo, foo, bar);
@@ -279,14 +280,14 @@ void tmcg_mpz_sqrtmp
 					{
 						/* a^s * b^t = -1 (mod p) */
 						mpz_set(bar, p);
-						mpz_sub_ui(bar, bar, 1L);
-						mpz_fdiv_q_2exp(bar, bar, 1L);
+						mpz_sub_ui(bar, bar, 1UL);
+						mpz_fdiv_q_2exp(bar, bar, 1UL);
 						mpz_add(t, t, bar);
 					}
 				}
-				mpz_add_ui(s, s, 1L);
-				mpz_fdiv_q_2exp(s, s, 1L);
-				mpz_fdiv_q_2exp(t, t, 1L);
+				mpz_add_ui(s, s, 1UL);
+				mpz_fdiv_q_2exp(s, s, 1UL);
+				mpz_fdiv_q_2exp(t, t, 1UL);
 				mpz_powm(foo, a, s, p);
 				mpz_powm(bar, b, t, p);
 				mpz_mul(root, foo, bar);
@@ -297,8 +298,8 @@ void tmcg_mpz_sqrtmp
 			}
 		}
 	}
-	/* error, return zero as indicator */
-	mpz_set_ui(root, 0L);
+	else
+		throw std::invalid_argument("tmcg_mpz_sqrtmp: a is zero");
 }
 
 void tmcg_mpz_sqrtmp_fast
@@ -307,9 +308,9 @@ void tmcg_mpz_sqrtmp_fast
 	mpz_srcptr nqr_ps1d4)
 {
 	/* ? a \neq 0 */
-	if (mpz_get_ui(a) != 0)
+	if (mpz_cmp_ui(a, 0UL))
 	{
-		if (mpz_congruent_ui_p(p, 3L, 4L))
+		if (mpz_congruent_ui_p(p, 3UL, 4UL))
 		{
 			/* p = 3 (mod 4) */
 			mpz_powm(root, a, pa1d4, p);
@@ -320,14 +321,14 @@ void tmcg_mpz_sqrtmp_fast
 			/* p = 1 (mod 4) */
 			mpz_t s;
 			mpz_init_set(s, ps1d4); /* s = (p-1)/4 */
-			if (mpz_congruent_ui_p(p, 5L, 8L))
+			if (mpz_congruent_ui_p(p, 5UL, 8UL))
 			{
 				/* p = 5 (mod 8) */
 				mpz_t foo;
 				mpz_init(foo);
 				mpz_powm(foo, a, s, p);
 				mpz_powm(root, a, pa3d8, p);
-				if (mpz_cmp_ui(foo, 1L) == 0)
+				if (mpz_cmp_ui(foo, 1UL) == 0)
 				{
 					/* a^{(p-1)/4} = 1 (mod p) */
 					mpz_clear(foo), mpz_clear(s);
@@ -349,13 +350,13 @@ void tmcg_mpz_sqrtmp_fast
 				mpz_init(foo), mpz_init(bar);
 				mpz_powm(foo, a, s, p);
 				/* while a^s = 1 (mod p) */
-				while (mpz_cmp_ui(foo, 1L) == 0)
+				while (mpz_cmp_ui(foo, 1UL) == 0)
 				{
 					if (mpz_odd_p(s))
 					{
 						/* s is odd */
-						mpz_add_ui(s, s, 1L);
-						mpz_fdiv_q_2exp(s, s, 1L);
+						mpz_add_ui(s, s, 1UL);
+						mpz_fdiv_q_2exp(s, s, 1UL);
 						mpz_powm(root, a, s, p);
 						mpz_clear(foo);
 						mpz_clear(bar);
@@ -365,20 +366,20 @@ void tmcg_mpz_sqrtmp_fast
 					else
 					{
 						/* s is even */
-						mpz_fdiv_q_2exp(s, s, 1L);
+						mpz_fdiv_q_2exp(s, s, 1UL);
 					}
 					mpz_powm(foo, a, s, p);
 				}
 				/* a^s = -1 (mod p) */
 				mpz_init_set(b, nqr);
 				mpz_init_set(t, p);
-				mpz_sub_ui(t, t, 1L);
-				mpz_fdiv_q_2exp(t, t, 1L);
+				mpz_sub_ui(t, t, 1UL);
+				mpz_fdiv_q_2exp(t, t, 1UL);
 				/* while s even */
 				while (mpz_even_p(s))
 				{
-					mpz_fdiv_q_2exp(s, s, 1L);
-					mpz_fdiv_q_2exp(t, t, 1L);
+					mpz_fdiv_q_2exp(s, s, 1UL);
+					mpz_fdiv_q_2exp(t, t, 1UL);
 					mpz_powm(foo, a, s, p);
 					mpz_powm(bar, b, t, p);
 					mpz_mul(foo, foo, bar);
@@ -388,14 +389,14 @@ void tmcg_mpz_sqrtmp_fast
 					{
 						/* a^s * b^t = -1 (mod p) */
 						mpz_set(bar, p);
-						mpz_sub_ui(bar, bar, 1L);
-						mpz_fdiv_q_2exp(bar, bar, 1L);
+						mpz_sub_ui(bar, bar, 1UL);
+						mpz_fdiv_q_2exp(bar, bar, 1UL);
 						mpz_add(t, t, bar);
 					}
 				}
-				mpz_add_ui(s, s, 1L);
-				mpz_fdiv_q_2exp(s, s, 1L);
-				mpz_fdiv_q_2exp(t, t, 1L);
+				mpz_add_ui(s, s, 1UL);
+				mpz_fdiv_q_2exp(s, s, 1UL);
+				mpz_fdiv_q_2exp(t, t, 1UL);
 				mpz_powm(foo, a, s, p);
 				mpz_powm(bar, b, t, p);
 				mpz_mul(root, foo, bar);
@@ -406,8 +407,8 @@ void tmcg_mpz_sqrtmp_fast
 			}
 		}
 	}
-	/* error, return zero as indicator */
-	mpz_set_ui(root, 0L);
+	else
+		throw std::invalid_argument("tmcg_mpz_sqrtmp_fast: a is zero");
 }
 
 void tmcg_mpz_sqrtmn_2
@@ -423,7 +424,7 @@ void tmcg_mpz_sqrtmn_r
 	mpz_t g, u, v;
 	mpz_init(g), mpz_init(u), mpz_init(v);
 	mpz_gcdext(g, u, v, p, q);
-	if (mpz_cmp_ui(g, 1L) == 0)
+	if (mpz_cmp_ui(g, 1UL) == 0)
 	{
 		mpz_t root_p, root_q, root1, root2, root3, root4;
 		/* single square roots */
@@ -465,8 +466,7 @@ void tmcg_mpz_sqrtmn_r
 		return;
 	}
 	mpz_clear(g), mpz_clear(u), mpz_clear(v);
-	/* error, return zero root */
-	mpz_set_ui(root, 0L);
+	throw std::runtime_error("tmcg_mpz_sqrtmn_r: gcd(p,q) not equal 1");
 }
 
 void tmcg_mpz_sqrtmn
@@ -476,7 +476,7 @@ void tmcg_mpz_sqrtmn
 	mpz_t g, u, v;
 	mpz_init(g), mpz_init(u), mpz_init(v);
 	mpz_gcdext(g, u, v, p, q);
-	if (mpz_cmp_ui(g, 1L) == 0)
+	if (mpz_cmp_ui(g, 1UL) == 0)
 	{
 		mpz_t root_p, root_q, root1, root2, root3, root4;
 		/* single square roots */
@@ -518,8 +518,7 @@ void tmcg_mpz_sqrtmn
 		return;
 	}
 	mpz_clear(g), mpz_clear(u), mpz_clear(v);
-	/* error, return zero root */
-	mpz_set_ui(root, 0L);
+	throw std::runtime_error("tmcg_mpz_sqrtmn: gcd(p,q) not equal 1");
 }
 
 void tmcg_mpz_sqrtmn_r_all
@@ -530,7 +529,7 @@ void tmcg_mpz_sqrtmn_r_all
 	
 	mpz_init(g), mpz_init(u), mpz_init(v);
 	mpz_gcdext(g, u, v, p, q);
-	if (mpz_cmp_ui(g, 1L) == 0)
+	if (mpz_cmp_ui(g, 1UL) == 0)
 	{
 		mpz_t root_p, root_q;
 		/* single square roots */
@@ -562,12 +561,7 @@ void tmcg_mpz_sqrtmn_r_all
 		return;
 	}
 	mpz_clear(g), mpz_clear(u), mpz_clear(v);
-	/* error, return zero roots */
-	mpz_set_ui(root1, 0L);
-	mpz_set_ui(root2, 0L);
-	mpz_set_ui(root3, 0L);
-	mpz_set_ui(root4, 0L);
-	return;
+	throw std::runtime_error("tmcg_mpz_sqrtmn_r_all: gcd(p,q) not equal 1");
 }
 
 void tmcg_mpz_sqrtmn_all
@@ -578,7 +572,7 @@ void tmcg_mpz_sqrtmn_all
 	
 	mpz_init(g), mpz_init(u), mpz_init(v);
 	mpz_gcdext(g, u, v, p, q);
-	if (mpz_cmp_ui(g, 1L) == 0)
+	if (mpz_cmp_ui(g, 1UL) == 0)
 	{
 		mpz_t root_p, root_q;
 		/* single square roots */
@@ -610,12 +604,7 @@ void tmcg_mpz_sqrtmn_all
 		return;
 	}
 	mpz_clear(g), mpz_clear(u), mpz_clear(v);
-	/* error, return zero roots */
-	mpz_set_ui(root1, 0L);
-	mpz_set_ui(root2, 0L);
-	mpz_set_ui(root3, 0L);
-	mpz_set_ui(root4, 0L);
-	return;
+	throw std::runtime_error("tmcg_mpz_sqrtmn_all: gcd(p,q) not equal 1");
 }
 
 void tmcg_mpz_sqrtmn_fast

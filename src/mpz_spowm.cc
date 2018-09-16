@@ -63,8 +63,8 @@ void tmcg_mpz_spowm_calc
 	mpz_mod(res, res, bp);
 	
 	/* compute the new seed */
-	mpz_powm_ui(bvi, bvi, 2L, bp);
-	mpz_powm_ui(bvf, bvf, 2L, bp);
+	mpz_powm_ui(bvi, bvi, 2UL, bp);
+	mpz_powm_ui(bvf, bvf, 2UL, bp);
 }
 
 void tmcg_mpz_spowm_clear
@@ -114,7 +114,7 @@ void tmcg_mpz_spowm
 {
 #ifdef HAVE_POWMSEC
 	mpz_t foo, bar, baz, xx;
-	mpz_set_ui(res, 0L); /* indicates an error */
+	mpz_set_ui(res, 0UL);
 	if (!mpz_odd_p(p))
 		throw std::invalid_argument("tmcg_mpz_spowm: p is even");
 	mpz_init(foo), mpz_init_set_si(bar, -1L), mpz_init(baz);
@@ -207,10 +207,10 @@ void tmcg_mpz_fpowm
 	if (mpz_sgn(x) == -1)
 		mpz_neg(xx, x);
 	
-	if (mpz_sizeinbase(xx, 2L) <= TMCG_MAX_FPOWM_T)
+	if (mpz_sizeinbase(xx, 2UL) <= TMCG_MAX_FPOWM_T)
 	{
-		mpz_set_ui(res, 1L);
-		for (size_t i = 0; i < mpz_sizeinbase(xx, 2L); i++)
+		mpz_set_ui(res, 1UL);
+		for (size_t i = 0; i < mpz_sizeinbase(xx, 2UL); i++)
 		{
 			if (mpz_tstbit(xx, i))
 			{
@@ -243,10 +243,10 @@ void tmcg_mpz_fpowm_ui
 	mpz_t x;
 	
 	mpz_init_set_ui(x, x_ui);
-	if (mpz_sizeinbase(x, 2L) <= TMCG_MAX_FPOWM_T)
+	if (mpz_sizeinbase(x, 2UL) <= TMCG_MAX_FPOWM_T)
 	{
-		mpz_set_ui(res, 1L);
-		for (size_t i = 0; i < mpz_sizeinbase(x, 2L); i++)
+		mpz_set_ui(res, 1UL);
+		for (size_t i = 0; i < mpz_sizeinbase(x, 2UL); i++)
 		{
 			if (mpz_tstbit(x, i))
 			{
@@ -274,11 +274,11 @@ void tmcg_mpz_fspowm
 		mpz_neg(xx, x);
 	else
 		mpz_neg(bar, x);
-	if (mpz_sizeinbase(xx, 2L) <= TMCG_MAX_FPOWM_T)
+	if (mpz_sizeinbase(xx, 2UL) <= TMCG_MAX_FPOWM_T)
 	{
 		/* compute result by multiplying precomputed values */
-		mpz_set_ui(res, 1L);
-		for (size_t i = 0; i < mpz_sizeinbase(xx, 2L); i++)
+		mpz_set_ui(res, 1UL);
+		for (size_t i = 0; i < mpz_sizeinbase(xx, 2UL); i++)
 		{
 			mpz_mul(foo, res, fpowm_table[i]);
 			mpz_mod(foo, foo, p);
@@ -301,13 +301,13 @@ void tmcg_mpz_fspowm
 			mpz_set(baz, foo);
 		/* additional dummy to prevent compiler optimizations */
 		if (!mpz_invert(foo, bar, p))
-			mpz_set_ui(foo, 1L), mpz_set_ui(bar, 1L);
+			mpz_set_ui(foo, 1UL), mpz_set_ui(bar, 1UL);
 		mpz_mul(res, bar, res); /* res = bar * res * bar^{-1} mod p */
 		mpz_mod(res, res, p);
 		mpz_mul(res, res, foo);
 		mpz_mod(res, res, p);
 		if (!mpz_invert(foo, baz, p))
-			mpz_set_ui(foo, 1L), mpz_set_ui(baz, 1L);
+			mpz_set_ui(foo, 1UL), mpz_set_ui(baz, 1UL);
 		mpz_mul(res, baz, res); /* res = baz * res * baz^{-1} mod p */
 		mpz_mod(res, res, p);
 		mpz_mul(res, res, foo);

@@ -233,7 +233,7 @@ void tmcg_mpz_grandomm
 	(mpz_ptr r, mpz_srcptr m, enum gcry_random_level level)
 {
 	// make bias negligible cf. BSI TR-02102-1, B.4 Verfahren 2
-	unsigned long int size = mpz_sizeinbase(m, 2L) + 64;
+	unsigned long int size = mpz_sizeinbase(m, 2UL) + 64;
 	unsigned char *rtmp;
 	char htmp[size + 3]; // at least two characters + delimiter
 	size_t hlen = 0;
@@ -321,7 +321,7 @@ void tmcg_mpz_ssrandomm
 		if (fscanf(fhd, "%lu", &entropy_avail) != 1)
 			entropy_avail = 0;
 		fclose(fhd);
-		if (entropy_avail < mpz_sizeinbase(m, 2L))
+		if (entropy_avail < mpz_sizeinbase(m, 2UL))
 		{
 			std::cerr << "tmcg_mpz_ssrandomm(): too few entropy (" <<
 				entropy_avail << " bits) available; blocking" << std::endl;
