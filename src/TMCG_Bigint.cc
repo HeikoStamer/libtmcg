@@ -560,7 +560,11 @@ void TMCG_Bigint::spowm
 	if (secret)
 		throw std::invalid_argument("TMCG_Bigint::operation not supported");
 	else
+	{
+		if (base.secret || exp.secret || mod.secret)
+			throw std::invalid_argument("TMCG_Bigint::operation not supported");
 		tmcg_mpz_spowm(bigint, base.bigint, exp.bigint, mod.bigint); // FIXME: replace
+	}
 }
 
 void TMCG_Bigint::powm_ui
@@ -569,7 +573,11 @@ void TMCG_Bigint::powm_ui
 	if (secret)
 		throw std::invalid_argument("TMCG_Bigint::operation not supported");
 	else
-		mpz_powm_ui(bigint, base.bigint, exp, mod.bigint); 
+	{
+		if (base.secret || mod.secret)
+			throw std::invalid_argument("TMCG_Bigint::operation not supported");
+		mpz_powm_ui(bigint, base.bigint, exp, mod.bigint);
+	}
 }
 
 unsigned long int TMCG_Bigint::get_ui
