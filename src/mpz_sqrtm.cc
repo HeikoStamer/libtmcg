@@ -49,7 +49,7 @@
 #endif
 #include "mpz_sqrtm.hh"
 
-/// additional headers
+// additional headers
 #include <stdexcept>
 #include "mpz_srandom.hh"
 
