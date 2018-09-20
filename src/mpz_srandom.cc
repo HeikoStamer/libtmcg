@@ -30,6 +30,7 @@
 #include <cassert>
 #include <climits>
 #include <iostream>
+#include <stdexcept>
 
 // GNU crypto library
 #include <gcrypt.h>
@@ -66,7 +67,7 @@ unsigned long int tmcg_mpz_grandom_ui_nomodbias
 	unsigned long int div, max, rnd = 0;
 	
 	if ((modulo == 0) || (modulo == 1))
-	    return 0; // indicates an error FIXME: throw an exception
+		throw std::invalid_argument("tmcg_mpz_grandom_ui_nomodbias: bad modulo");
 	
 	// Remove ``modulo bias'' by limiting the return values
 	div = (ULONG_MAX - modulo + 1) / modulo;
@@ -133,8 +134,7 @@ void tmcg_mpz_grandomb
 	{
 		std::cerr << "tmcg_mpz_grandomb(): gcry_mpi_aprint() failed: " <<
 			gcry_strerror(ret) << std::endl;
-		mpz_set_ui(r, 0L); // indicates an error
-		// FIXME: throw an exception
+		throw std::invalid_argument("gcry_mpi_aprint() failed");
 	}
 	else
 	{
@@ -233,7 +233,7 @@ void tmcg_mpz_grandomm
 	(mpz_ptr r, mpz_srcptr m, enum gcry_random_level level)
 {
 	// make bias negligible cf. BSI TR-02102-1, B.4 Verfahren 2
-	unsigned long int size = mpz_sizeinbase(m, 2L) + 64;
+	unsigned long int size = mpz_sizeinbase(m, 2UL) + 64;
 	unsigned char *rtmp;
 	char htmp[size + 3]; // at least two characters + delimiter
 	size_t hlen = 0;
@@ -249,8 +249,7 @@ void tmcg_mpz_grandomm
 	{
 		std::cerr << "tmcg_mpz_grandomm(): gcry_mpi_aprint() failed: " <<
 			gcry_strerror(ret) << std::endl;
-		mpz_set_ui(r, 0L); // indicates an error
-		// FIXME: throw an exception
+		throw std::invalid_argument("gcry_mpi_aprint() failed");
 	}
 	else
 	{
@@ -322,7 +321,7 @@ void tmcg_mpz_ssrandomm
 		if (fscanf(fhd, "%lu", &entropy_avail) != 1)
 			entropy_avail = 0;
 		fclose(fhd);
-		if (entropy_avail < mpz_sizeinbase(m, 2L))
+		if (entropy_avail < mpz_sizeinbase(m, 2UL))
 		{
 			std::cerr << "tmcg_mpz_ssrandomm(): too few entropy (" <<
 				entropy_avail << " bits) available; blocking" << std::endl;
@@ -351,7 +350,7 @@ void tmcg_mpz_ssrandomm_cache_init
 {
 	size_t i = 0;
 	if ((n == 0) || (n > TMCG_MAX_SSRANDOMM_CACHE))
-		return; // FIXME: throw an exception
+		throw std::invalid_argument("tmcg_mpz_ssrandomm_cache_init: bad n");
 	for (i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
 		mpz_init(ssrandomm_cache[i]);
 	for (i = 0; i < n; i++)

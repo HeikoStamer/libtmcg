@@ -27,6 +27,7 @@
 
 // additional headers
 #include <cstring>
+#include <stdexcept>
 
 // get content of mpz_t into gcry_mpi_t
 bool tmcg_mpz_get_gcry_mpi
@@ -58,7 +59,7 @@ bool tmcg_mpz_set_gcry_mpi
 		TMCG_MAX_VALUE_CHARS - 1, &buflen, in);
 	if (ret)
 	{
-		mpz_set_ui(value, 0L); // indicates an error
+		mpz_set_ui(value, 0L);
 		delete [] buf;
 		return false;
 	}
@@ -82,7 +83,7 @@ size_t tmcg_get_gcry_mpi_ui
 	gcry_error_t ret = gcry_mpi_print(GCRYMPI_FMT_HEX, (unsigned char*)buf,
 		TMCG_MAX_VALUE_CHARS - 1, &buflen, in);
 	if (ret)
-		mpz_set_ui(value, 0L); // indicates an error
+		mpz_set_ui(value, 0L);
 	else
 		mpz_set_str(value, buf, 16);
 	result = mpz_get_ui(value);
@@ -111,8 +112,10 @@ std::istream& operator >>
 	in.getline(buf, TMCG_MAX_VALUE_CHARS - 1);
 	if (mpz_set_str(value, buf, TMCG_MPZ_IO_BASE) < 0)
 	{
-		mpz_set_ui(value, 0L); // indicates an error
+		mpz_set_ui(value, 0L);
+		delete [] buf;
 		in.setstate(std::istream::iostate(std::istream::failbit));
+		throw std::runtime_error("operator >>: mpz_set_str failed");
 	}
 	delete [] buf;
 	return in;
@@ -130,7 +133,9 @@ std::ostream& operator <<
 	}
 	else
 	{
+		mpz_clear(tmp);
 		out.setstate(std::ostream::iostate(std::ostream::failbit));
+		throw std::runtime_error("operator <<: tmcg_mpz_set_gcry_mpi failed");
 	}
 	mpz_clear(tmp);
 	return out;
@@ -142,8 +147,8 @@ bool tmcg_interpolate_polynom
 	mpz_srcptr q, std::vector<mpz_ptr> &f)
 {
 	size_t m = a.size();
-	if ((b.size() != m) || (m == 0) || (f.size() != m) || !mpz_cmp_ui(q, 0L)) 
-		return false;
+	if ((b.size() != m) || (m == 0) || (f.size() != m) || !mpz_cmp_ui(q, 0UL))
+		throw std::invalid_argument("tmcg_interpolate_polynom: bad m or q");
 	std::vector<mpz_ptr> prod, res;
 	for (size_t k = 0; k < m; k++)
 	{

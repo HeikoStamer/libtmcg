@@ -8,6 +8,10 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2018-09-] added data structure TMCG_Bigint
+* [2018-09-16] mpz_helper: used some standard exceptions for error handling
+* [2018-09-16] mpz_sqrtm: used some standard exceptions for error handling
+* [2018-09-16] mpz_spowm: used some standard exceptions for error handling
+* [2018-09-16] mpz_srandom: used some standard exceptions for error handling
 * [2018-09-09] release 1.3.14 of LibTMCG
 * [2018-09-06] RFC4880: added Check() and Reduce() for TMCG_OpenPGP_Keyring
 * [2018-09-03] RFC4880: added tmcg_openpgp_secure_string[stream]_t

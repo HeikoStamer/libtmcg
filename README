@@ -19,44 +19,43 @@ Introduction
   because the applied protocols provide a basic level of confidentiality
   and verifiability by itself. Consequently, the library is well-suited
   for peer-to-peer (P2P) environments where no TTP is available.
-  Of course, we cannot avoid that malicious players share information
-  about their private cards, but the protocols ensure that the shuffle
-  of the deck is performed randomly (presumed that at least one player
-  is honest) and thus the cards will be distributed uniformly among the
-  players. Further, no coalition can learn the private cards of a player
-  against his will (except for trivial conclusions). The corresponding
-  cryptographic problem, actually called ``Mental Poker'', has been
-  studied since 1979 (Shamir, Rivest, and Adleman) by many authors.
-  LibTMCG provides the first practical implementation of such protocols.
+  Of course, we cannot avoid that malicious players share information about
+  their private cards, but the protocols ensure that the shuffle of the deck
+  is performed randomly (presumed that at least one player is honest) and
+  thus the cards will be distributed uniformly among the players. Further,
+  no coalition can learn the private cards of a player against his will
+  (except for trivial conclusions). The corresponding cryptographic problem,
+  actually called ``Mental Poker'', has been studied since 1979 (Shamir,
+  Rivest, and Adleman) by many authors. LibTMCG provides the first practical
+  implementation of such protocols.
 
   The implementation relies on advanced cryptographic techniques---the
-  so-called zero-knowledge proofs. Using these `building blocks' the
-  high-level protocols minimize the effect of coalitions and preserve
-  the confidentiality of the players' strategy, i.e., the players are
-  not required to reveal their cards at the end of the game to show
-  that they did not cheat. For many operations of Schindelhauer's
-  toolbox the library provides optimized protocols based on standard
-  cryptographic assumptions like Decisional Diffie Hellman (DDH).
-  Therefore a reasonable level of performance is obtained.
+  so-called `zero-knowledge proofs'. Using these building blocks the
+  high-level protocols minimize the effect of coalitions and preserve the
+  confidentiality of the players' strategy, i.e., the participants are not
+  required to reveal their cards at the end of the game to show that they
+  did not cheat. For many operations of Schindelhauer's toolbox the library
+  provides optimized protocols based on standard cryptographic assumptions,
+  e.g. Decisional Diffie Hellman (DDH) in groups of prime-order over a
+  finite field. Therefore a reasonable level of performance is obtained.
 
-  LibTMCG is Free Software according to the definition of the Free
-  Software Foundation. The source code is released under the GNU
-  General Public License.
+  LibTMCG is Free Software according to the definition of the Free Software
+  Foundation. The source code is released under the GNU General Public License.
 
 Security
 --------
-  ``Mental Poker'' solutions cannot prevent that malicious players
-  exchange private information, for example, by telephone or IRC.
+  ``Mental Poker'' solutions cannot prevent that malicious players exchange
+  private information, for example, by telephone or electronic devices.
   Cryptographic protocols can only minimize the effect of such colluding
-  parties and should try to protect the confidentiality for honest
-  players. But even this protection often relies on number-theoretical
-  hardness assumptions which are only believed to be true, e.g. problems
-  like factoring products of large prime numbers or computing discrete
-  logarithms. That means, strict mathematical proofs for the hardness
-  of these problems are not known, and it is not very likely that such
-  proofs will ever be found. However, almost all public key cryptosystems
-  rely on such assumptions and therefore you should not worry about
-  this issue, as long as reasonable security parameters are chosen.
+  parties and try to protect the confidentiality or integrity of a card
+  operation for honest players. But even this protection often relies on
+  number-theoretical hardness assumptions which are believed to be true,
+  e.g. problems like factoring products of large prime numbers or computing
+  discrete logarithms in some mathematical structures. That means, strict
+  proofs for the hardness of these problems are not known, and it is not very
+  likely that such proofs will ever be found. However, almost all public key
+  cryptosystems rely on such assumptions and therefore you should not worry
+  about this issue as long as reasonable security parameters are chosen.
  
   LibTMCG was originally designed to provide security in the so-called
   ``honest-but-curious'' (aka ``semi-honest'' or passive) adversary model.
@@ -83,38 +82,40 @@ Security
   of this protocols was proved in the so-called random oracle model (ROM).
 
   Unfortunately, in practice there is another substantial problem with the
-  detection of cheaters. It requires that an authenticated broadcast channel
-  has been set up, where all players have read/write access. There exist
-  protocols (so-called ``reliable broadcast'' or even ``atomic broadcast'')
-  for creating such a channel, however, only under the additional condition
-  that the number of parties $t$ who act faulty or even malicious is
-  reasonable small. In almost full asynchronous environments like the
-  Internet resilience (sometimes called robustness) is achievable for $t < n/3$
-  only, where $n$ denotes the total number of parties in the protocol.
-  LibTMCG provides a well-known protocol due to Bracha in a slightly optimized
-  variant by Cachin, Kursawe, Petzold, and Shoup. It works for $n >= 2$
-  parties, however, t-resilience with $t > 0$ is achieved for $n > 3$ only.
-  This protocol ensures simple reliable broadcast but not the more elaborated
-  Byzantine fault tolerant agreement (or terminating reliable broadcast), i.e.,
-  the adversary can still influence the underlying point-to-point network such
-  that this broadcast protocol does not terminate for some parties.
-  Please note that in most cases the application programmer must decide,
-  where the use of a broadcast channel is neccesary and appropriate. Thus,
+  detection of cheaters: it requires that an authenticated broadcast channel
+  has been set up, where all players have read/write access in order to perform
+  a complaint resolution within the game session. There exist protocols
+  (so-called ``reliable broadcast'' or even better ``atomic broadcast'')
+  for creating such a broadcast primitive, however, only under the additional
+  condition that the number of parties $t$ who act faulty or even malicious is
+  reasonable small. In almost full asynchronous environments like the Internet
+  resilience (sometimes called robustness) is achievable for $t < n/3$ only,
+  where $n$ denotes the total number of parties engaged in the protocol.
+  LibTMCG provides a well-known protocol for reliable broadcast due to Bracha
+  in a slightly optimized variant by Cachin, Kursawe, Petzold, and Shoup. It
+  works for $n >= 2$ parties, however, t-resilience with $t > 0$ is achieved
+  for $n > 3$ only. This protocol ensures simple reliable broadcast but not
+  the more elaborated Byzantine fault tolerant agreement (or the equivalent
+  terminating reliable broadcast), i.e., the adversary can still influence the
+  underlying point-to-point network such that this broadcast protocol does not
+  terminate for some parties.
+  Please note that the application programmer must decide, where the use of
+  such a limited broadcast channel is neccesary and appropriate. However,
   without reliable broadcast you should take into account that not necessarily
   the player acting as prover is the source of evil, if a verification
   procedure fails. This level of uncertainty is the main reason for our still
   limited adversary model.
   
-  Note that it is not known, whether the used protocols retain their
-  zero-knowledge property, when they are composed and executed in a
-  concurrent setting. Thus the application programmer should be careful and
-  avoid parallel protocol sessions. It is a challenging research project to
-  create a protocol suite whose security can be proven in the UC-framework
-  of Canetti. Furthermore, the protocols should employ so-called concurrent
-  zero-knowledge proofs to cover such issues.
+  Note that it is not known, whether the used protocols retain their important
+  zero-knowledge property, when they are composed and executed in a concurrent
+  setting. Thus the application programmer should be careful and avoid parallel
+  protocol sessions. It is a challenging research project to create a protocol
+  suite whose security can be proven in the UC-framework of Canetti.
+  Furthermore, those protocols should employ so-called concurrent zero-knowledge
+  proofs to cover such issues and environments.
 
-  LibTMCG was carefully implemented with respect to timing attacks.
-  Therefore we loose much efficiency, e.g., during modular exponentiations.
+  LibTMCG was carefully implemented with respect to simple timing attacks.
+  Therefore we loose some efficiency, e.g., during modular exponentiations.
   However, it is strongly recommended to leave the timing attack protection
   turned on unless you know exactly where it is not needed. Please note,
   there are other side-channel attacks (e.g. cache access) that have not
