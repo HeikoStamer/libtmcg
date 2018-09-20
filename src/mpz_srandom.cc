@@ -148,43 +148,59 @@ void tmcg_mpz_grandomb
 		std::unique_ptr<Botan::RandomNumberGenerator>
 			rng(new Botan::AutoSeeded_RNG);
 		uint8_t botan_tmp[hlen];
-		rng->randomize((uint8_t*)&botan_tmp, sizeof(botan_tmp));
+		rng->randomize(botan_tmp, sizeof(botan_tmp));
 		for (size_t i = 0; i < hlen; i++)
 		{
 			switch (botan_tmp[i] % 16)
 			{
 				case 0:
 					htmp[i] = '0';
+					break;
 				case 1:
 					htmp[i] = '1';
+					break;
 				case 2:
 					htmp[i] = '2';
+					break;
 				case 3:
 					htmp[i] = '3';
+					break;
 				case 4:
 					htmp[i] = '4';
+					break;
 				case 5:
 					htmp[i] = '5';
+					break;
 				case 6:
 					htmp[i] = '6';
+					break;
 				case 7:
 					htmp[i] = '7';
+					break;
 				case 8:
 					htmp[i] = '8';
+					break;
 				case 9:
 					htmp[i] = '9';
+					break;
 				case 10:
 					htmp[i] = 'a';
+					break;
 				case 11:
 					htmp[i] = 'b';
+					break;
 				case 12:
 					htmp[i] = 'c';
+					break;
 				case 13:
 					htmp[i] = 'd';
+					break;
 				case 14:
 					htmp[i] = 'e';
+					break;
 				case 15:
 					htmp[i] = 'f';
+					break;
 			}
 		}
 		mpz_t rrr;
@@ -262,43 +278,59 @@ void tmcg_mpz_grandomm
 		std::unique_ptr<Botan::RandomNumberGenerator>
 			rng(new Botan::AutoSeeded_RNG);
 		uint8_t botan_tmp[hlen];
-		rng->randomize((uint8_t*)&botan_tmp, sizeof(botan_tmp));
+		rng->randomize(botan_tmp, sizeof(botan_tmp));
 		for (size_t i = 0; i < hlen; i++)
 		{
 			switch (botan_tmp[i] % 16)
 			{
 				case 0:
 					htmp[i] = '0';
+					break;
 				case 1:
 					htmp[i] = '1';
+					break;
 				case 2:
 					htmp[i] = '2';
+					break;
 				case 3:
 					htmp[i] = '3';
+					break;
 				case 4:
 					htmp[i] = '4';
+					break;
 				case 5:
 					htmp[i] = '5';
+					break;
 				case 6:
 					htmp[i] = '6';
+					break;
 				case 7:
 					htmp[i] = '7';
+					break;
 				case 8:
 					htmp[i] = '8';
+					break;
 				case 9:
 					htmp[i] = '9';
+					break;
 				case 10:
 					htmp[i] = 'a';
+					break;
 				case 11:
 					htmp[i] = 'b';
+					break;
 				case 12:
 					htmp[i] = 'c';
+					break;
 				case 13:
 					htmp[i] = 'd';
+					break;
 				case 14:
 					htmp[i] = 'e';
+					break;
 				case 15:
 					htmp[i] = 'f';
+					break;
 			}
 		}
 		mpz_t rrr;
