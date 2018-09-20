@@ -126,7 +126,7 @@ struct TMCG_Bigint
 	unsigned long int get_ui
 		();
 	size_t size
-		(const size_t base = TMCG_MPZ_IO_BASE);
+		(const size_t base = TMCG_MPZ_IO_BASE) const;
 	void wrandomb
 		(const size_t bits);
 	void srandomb

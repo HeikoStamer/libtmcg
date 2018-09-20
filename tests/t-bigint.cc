@@ -353,12 +353,13 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		assert((sfoo.size(2) >= 1008) && (sfoo.size(2) <= 1024));
 	}
 #endif
+	sbaz = bar;
 	std::cout << " ::wrandomm(bar)" << std::endl;
 	for (size_t i = 0; i < 25; i++)
 	{
-		sfoo.wrandomm(bar);
-		sbar.wrandomm(bar);
-		assert((sfoo < bar) && (sbar < bar));
+		sfoo.wrandomm(sbaz);
+		sbar.wrandomm(sbaz);
+		assert((sfoo < sbaz) && (sbar < sbaz));
 		assert((sfoo != sbar));
 	}
 	std::cout << " ::srandomm(bar)" << std::endl;
