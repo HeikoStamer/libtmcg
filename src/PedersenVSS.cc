@@ -39,6 +39,7 @@
 #include <cassert>
 #include <sstream>
 #include <algorithm>
+#include <stdexcept>
 #include "mpz_srandom.hh"
 #include "mpz_spowm.hh"
 #include "mpz_sprime.hh"
@@ -90,15 +91,15 @@ PedersenVSS::PedersenVSS
 	std::getline(in, value);
 	std::stringstream(value) >> n;
 	if (n > TMCG_MAX_DKG_PLAYERS)
-		n = TMCG_MAX_DKG_PLAYERS;
+		throw std::invalid_argument("PedersenVSS: n > TMCG_MAX_DKG_PLAYERS");
 	std::getline(in, value);
 	std::stringstream(value) >> t;
 	if (t > n)
-		t = n;
+		throw std::invalid_argument("PedersenVSS: t > n");
 	std::getline(in, value);
 	std::stringstream(value) >> i;
 	if (i >= n)
-		i = 0;
+		throw std::invalid_argument("PedersenVSS: i >= n");
 	mpz_init(sigma_i), mpz_init(tau_i);
 	in >> sigma_i >> tau_i;
 	for (size_t j = 0; j <= t; j++)
