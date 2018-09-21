@@ -121,7 +121,6 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	std::stringstream(value) >> n;
 	if (n > TMCG_MAX_DKG_PLAYERS)
 		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinRVSS: n > TMCG_MAX_DKG_PLAYERS");
-		n = TMCG_MAX_DKG_PLAYERS;
 	std::getline(in, value);
 	std::stringstream(value) >> t;
 	if (t > n)
