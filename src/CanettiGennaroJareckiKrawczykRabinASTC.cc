@@ -17,7 +17,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2017  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@
 #include <cassert>
 #include <sstream>
 #include <algorithm>
+#include <stdexcept>
 #include "mpz_srandom.hh"
 #include "mpz_spowm.hh"
 #include "mpz_sprime.hh"
@@ -63,7 +64,8 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 			label(label_in),
 			n(n_in), t(t_in), i(i_in), tprime(tprime_in)
 {
-	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
+	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
+		mpz_init_set(h, h_CRS);
 	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L);
 	mpz_init_set_ui(z_i, 0L), mpz_init_set_ui(zprime_i, 0L);
 	s_ji.resize(n);
@@ -118,19 +120,20 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	std::getline(in, value);
 	std::stringstream(value) >> n;
 	if (n > TMCG_MAX_DKG_PLAYERS)
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinRVSS: n > TMCG_MAX_DKG_PLAYERS");
 		n = TMCG_MAX_DKG_PLAYERS;
 	std::getline(in, value);
 	std::stringstream(value) >> t;
 	if (t > n)
-		t = n;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinRVSS: t > n");
 	std::getline(in, value);
 	std::stringstream(value) >> i;
 	if (i >= n)
-		i = 0;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinRVSS: i >= n");
 	std::getline(in, value);
 	std::stringstream(value) >> tprime;
 	if (tprime > n)
-		tprime = n;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinRVSS: tprime > n");
 	mpz_init(x_i), mpz_init(xprime_i);
 	in >> x_i >> xprime_i;
 	mpz_init(z_i), mpz_init(zprime_i);
@@ -138,11 +141,15 @@ CanettiGennaroJareckiKrawczykRabinRVSS::CanettiGennaroJareckiKrawczykRabinRVSS
 	size_t qual_size = 0;
 	std::getline(in, value);
 	std::stringstream(value) >> qual_size;
+	if (qual_size > n)
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinRVSS: |QUAL| > n");
 	for (size_t j = 0; (j < qual_size) && (j < n); j++)
 	{
 		size_t who;
 		std::getline(in, value);
 		std::stringstream(value) >> who;
+		if (who >= n)
+			throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinRVSS: who >= n");
 		QUAL.push_back(who);
 	}
 	s_ji.resize(n);
@@ -354,7 +361,8 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 	std::map<size_t, size_t> id;
 	for (size_t j = 0; j < n; j++)
 		id[j] = j;
-	return Share(id, id, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
+	return Share(id, id, aiou, rbc, err, simulate_faulty_behaviour,
+		ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
@@ -394,7 +402,8 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "CanettiGennaroJareckiKrawczykRabinRVSS::Share()" << p << q << g << h << n << t << tprime << label;
+	myID << "CanettiGennaroJareckiKrawczykRabinRVSS::Share()" <<
+		p << q << g << h << n << t << tprime << label;
 	rbc->setID(myID.str());
 
 	try
@@ -964,7 +973,7 @@ CanettiGennaroJareckiKrawczykRabinRVSS::~CanettiGennaroJareckiKrawczykRabinRVSS
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
 
-// ===================================================================================================================================
+// ============================================================================
 
 CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	(const size_t n_in, const size_t t_in, const size_t i_in, const size_t tprime_in,
@@ -979,7 +988,8 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 			label(label_in),
 			n(n_in), t(t_in), i(i_in), tprime(tprime_in)
 {
-	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
+	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
+		mpz_init_set(h, h_CRS);
 	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L);
 	s_ji.resize(n);
 	sprime_ji.resize(n);
@@ -1033,29 +1043,33 @@ CanettiGennaroJareckiKrawczykRabinZVSS::CanettiGennaroJareckiKrawczykRabinZVSS
 	std::getline(in, value);
 	std::stringstream(value) >> n;
 	if (n > TMCG_MAX_DKG_PLAYERS)
-		n = TMCG_MAX_DKG_PLAYERS;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinZVSS: n > TMCG_MAX_DKG_PLAYERS");
 	std::getline(in, value);
 	std::stringstream(value) >> t;
 	if (t > n)
-		t = n;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinZVSS: t > n");
 	std::getline(in, value);
 	std::stringstream(value) >> i;
 	if (i >= n)
-		i = 0;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinZVSS: i >= n");
 	std::getline(in, value);
 	std::stringstream(value) >> tprime;
 	if (tprime > n)
-		tprime = n;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinZVSS: tprime > n");
 	mpz_init(x_i), mpz_init(xprime_i);
 	in >> x_i >> xprime_i;
 	size_t qual_size = 0;
 	std::getline(in, value);
 	std::stringstream(value) >> qual_size;
+	if (qual_size > n)
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinZVSS: |QUAL| > n");
 	for (size_t j = 0; (j < qual_size) && (j < n); j++)
 	{
 		size_t who;
 		std::getline(in, value);
 		std::stringstream(value) >> who;
+		if (who >= n)
+			throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinZVSS: who >= n");
 		QUAL.push_back(who);
 	}
 	s_ji.resize(n);
@@ -1265,7 +1279,8 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 	std::map<size_t, size_t> id;
 	for (size_t j = 0; j < n; j++)
 		id[j] = j;
-	return Share(id, id, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
+	return Share(id, id, aiou, rbc, err, simulate_faulty_behaviour,
+		ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
@@ -1305,7 +1320,8 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "CanettiGennaroJareckiKrawczykRabinZVSS::Share()" << p << q << g << h << n << t << tprime << label;
+	myID << "CanettiGennaroJareckiKrawczykRabinZVSS::Share()" <<
+		p << q << g << h << n << t << tprime << label;
 	rbc->setID(myID.str());
 
 	try
@@ -1726,7 +1742,7 @@ CanettiGennaroJareckiKrawczykRabinZVSS::~CanettiGennaroJareckiKrawczykRabinZVSS
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
 
-// ===================================================================================================================================
+// ============================================================================
 
 CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 	(const size_t n_in, const size_t t_in, const size_t i_in,
@@ -1741,8 +1757,10 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 			label(label_in),
 			n(n_in), t(t_in), i(i_in)
 {
-	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
-	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L), mpz_init_set_ui(y, 1L);
+	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
+		mpz_init_set(h, h_CRS);
+	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L),
+		mpz_init_set_ui(y, 1L);
 
 	// initialize required subprotocol
 	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(n, t, i, t, p, q, g, h,
@@ -1775,30 +1793,35 @@ CanettiGennaroJareckiKrawczykRabinDKG::CanettiGennaroJareckiKrawczykRabinDKG
 	std::getline(in, value);
 	std::stringstream(value) >> n;
 	if (n > TMCG_MAX_DKG_PLAYERS)
-		n = TMCG_MAX_DKG_PLAYERS;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinDKG: n > TMCG_MAX_DKG_PLAYERS");
 	std::getline(in, value);
 	std::stringstream(value) >> t;
 	if (t > n)
-		t = n;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinDKG: t > n");
 	std::getline(in, value);
 	std::stringstream(value) >> i;
 	if (i >= n)
-		i = 0;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinDKG: i >= n");
 	mpz_init(x_i), mpz_init(xprime_i), mpz_init(y);
 	in >> x_i >> xprime_i >> y;
 	size_t qual_size = 0;
 	std::getline(in, value);
 	std::stringstream(value) >> qual_size;
+	if (qual_size > n)
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinDKG: |QUAL| > n");
 	for (size_t j = 0; (j < qual_size) && (j < n); j++)
 	{
 		size_t who;
 		std::getline(in, value);
 		std::stringstream(value) >> who;
+		if (who >= n)
+			throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinDKG: who >= n");
 		QUAL.push_back(who);
 	}
 
 	// initialize required subprotocol from istream in
-	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(in, F_size, G_size, canonical_g, use_very_strong_randomness, "x_rvss");
+	x_rvss = new CanettiGennaroJareckiKrawczykRabinRVSS(in, F_size, G_size,
+		canonical_g, use_very_strong_randomness, "x_rvss");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1947,7 +1970,8 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
 	std::map<size_t, size_t> id;
 	for (size_t j = 0; j < n; j++)
 		id[j] = j;
-	return Generate(id, id, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
+	return Generate(id, id, aiou, rbc, err, simulate_faulty_behaviour,
+		ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinDKG::Generate
@@ -2427,7 +2451,8 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
 	std::map<size_t, size_t> id;
 	for (size_t j = 0; j < n_in; j++)
 		id[j] = j;
-	return Refresh(n_in, i_in, id, id, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
+	return Refresh(n_in, i_in, id, id, aiou, rbc, err, simulate_faulty_behaviour,
+		ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinDKG::Refresh
@@ -2558,7 +2583,7 @@ CanettiGennaroJareckiKrawczykRabinDKG::~CanettiGennaroJareckiKrawczykRabinDKG
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
 
-// ===================================================================================================================================
+// ============================================================================
 
 CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
 	(const size_t n_in, const size_t t_in, const size_t i_in,
@@ -2572,8 +2597,10 @@ CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
 			use_very_strong_randomness(use_very_strong_randomness_in),
 			n(n_in), t(t_in), i(i_in)
 {
-	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
-	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L), mpz_init_set_ui(y, 1L);
+	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
+		mpz_init_set(h, h_CRS);
+	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L),
+		mpz_init_set_ui(y, 1L);
 
 	// initialize required subprotocol
 	dkg = new CanettiGennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h,
@@ -2605,30 +2632,35 @@ CanettiGennaroJareckiKrawczykRabinDSS::CanettiGennaroJareckiKrawczykRabinDSS
 	std::getline(in, value);
 	std::stringstream(value) >> n;
 	if (n > TMCG_MAX_DKG_PLAYERS)
-		n = TMCG_MAX_DKG_PLAYERS;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinDSS: n > TMCG_MAX_DKG_PLAYERS");
 	std::getline(in, value);
 	std::stringstream(value) >> t;
 	if (t > n)
-		t = n;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinDSS: t > n");
 	std::getline(in, value);
 	std::stringstream(value) >> i;
 	if (i >= n)
-		i = 0;
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinDSS: i >= n");
 	mpz_init(x_i), mpz_init(xprime_i), mpz_init(y);
 	in >> x_i >> xprime_i >> y;
 	size_t qual_size = 0;
 	std::getline(in, value);
 	std::stringstream(value) >> qual_size;
+	if (qual_size > n)
+		throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinDSS: |QUAL| > n");
 	for (size_t j = 0; (j < qual_size) && (j < n); j++)
 	{
 		size_t who;
 		std::getline(in, value);
 		std::stringstream(value) >> who;
+		if (who >= n)
+			throw std::invalid_argument("CanettiGennaroJareckiKrawczykRabinDSS: who >= n");
 		QUAL.push_back(who);
 	}
 
 	// initialize required subprotocol from istream in
-	dkg = new CanettiGennaroJareckiKrawczykRabinDKG(in, F_size, G_size, canonical_g, use_very_strong_randomness, "dkg");
+	dkg = new CanettiGennaroJareckiKrawczykRabinDKG(in, F_size, G_size,
+		canonical_g, use_very_strong_randomness, "dkg");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -2789,14 +2821,18 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Generate
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "CanettiGennaroJareckiKrawczykRabinDSS::Generate()" << p << q << g << h << n << t;
+	myID << "CanettiGennaroJareckiKrawczykRabinDSS::Generate()" <<
+		p << q << g << h << n << t;
 	rbc->setID(myID.str());
 
 	try
 	{
 		// call DKG as subprotocol
-		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail))
+		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour,
+			ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail))
+		{
 			throw false;
+		}
 
 		// copy the generated $y$, $x_i$, and $x\prime_i$
 		mpz_set(y, dkg->y);
@@ -2837,7 +2873,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Refresh
 	std::map<size_t, size_t> id;
 	for (size_t j = 0; j < n_in; j++)
 		id[j] = j;
-	return Refresh(n_in, i_in, id, id, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
+	return Refresh(n_in, i_in, id, id, aiou, rbc, err, simulate_faulty_behaviour,
+		ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinDSS::Refresh
@@ -2873,14 +2910,19 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Refresh
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "CanettiGennaroJareckiKrawczykRabinDSS::Refresh()" << p << q << g << h << n << t << n_in;
+	myID << "CanettiGennaroJareckiKrawczykRabinDSS::Refresh()" <<
+		p << q << g << h << n << t << n_in;
 	rbc->setID(myID.str());
 
 	try
 	{
 		// call DKG->Refresh() as subprotocol
-		if (!dkg->Refresh(n_in, i_in, idx2dkg, dkg2idx, aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail))
+		if (!dkg->Refresh(n_in, i_in, idx2dkg, dkg2idx, aiou, rbc, err,
+			simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod,
+			ssrandomm_cache_avail))
+		{
 			throw false;
+		}
 
 		// copy the refreshed $x_i$ and $x\prime_i$
 		mpz_set(x_i, dkg->x_i);
@@ -2925,7 +2967,8 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
 	std::map<size_t, size_t> id;
 	for (size_t j = 0; j < n_in; j++)
 		id[j] = j;
-	return Sign(n_in, i_in, m, r, s, id, id, aiou, rbc, err, simulate_faulty_behaviour);
+	return Sign(n_in, i_in, m, r, s, id, id, aiou, rbc, err,
+		simulate_faulty_behaviour);
 }
 
 bool CanettiGennaroJareckiKrawczykRabinDSS::Sign
