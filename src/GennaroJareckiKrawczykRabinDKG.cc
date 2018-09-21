@@ -36,6 +36,7 @@
 #include <sstream>
 #include <algorithm>
 #include <map>
+#include <stdexcept>
 #include "mpz_srandom.hh"
 #include "mpz_spowm.hh"
 #include "mpz_sprime.hh"
@@ -55,7 +56,8 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 			label(label_in),
 			n(n_in), t(t_in), i(i_in)
 {
-	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
+	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
+		mpz_init_set(h, h_CRS);
 	mpz_init_set_ui(x_i, 0L), mpz_init_set_ui(xprime_i, 0L), mpz_init_set_ui(y, 1L);
 	s_ij.resize(n);
 	sprime_ij.resize(n);
@@ -112,25 +114,29 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 	std::getline(in, value);
 	std::stringstream(value) >> n;
 	if (n > TMCG_MAX_DKG_PLAYERS)
-		n = TMCG_MAX_DKG_PLAYERS;
+		throw std::invalid_argument("GennaroJareckiKrawczykRabinDKG: n > TMCG_MAX_DKG_PLAYERS");
 	std::getline(in, value);
 	std::stringstream(value) >> t;
 	if (t > n)
-		t = n;
+		throw std::invalid_argument("GennaroJareckiKrawczykRabinDKG: t > n");
 	std::getline(in, value);
 	std::stringstream(value) >> i;
 	if (i >= n)
-		i = 0;
+		throw std::invalid_argument("GennaroJareckiKrawczykRabinDKG: i >= n");
 	mpz_init(x_i), mpz_init(xprime_i), mpz_init(y);
 	in >> x_i >> xprime_i >> y;
 	size_t qual_size = 0;
 	std::getline(in, value);
 	std::stringstream(value) >> qual_size;
+	if (qual_size > n)
+		throw std::invalid_argument("GennaroJareckiKrawczykRabinDKG: |QUAL| > n");
 	for (size_t i = 0; (i < qual_size) && (i < n); i++)
 	{
 		size_t who;
 		std::getline(in, value);
 		std::stringstream(value) >> who;
+		if (who >= n)
+			throw std::invalid_argument("GennaroJareckiKrawczykRabinDKG: who >= n");
 		QUAL.push_back(who);
 	}
 	s_ij.resize(n);
@@ -413,7 +419,8 @@ bool GennaroJareckiKrawczykRabinDKG::Generate
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "GennaroJareckiKrawczykRabinDKG::Generate()" << p << q << g << h << n << t << label;
+	myID << "GennaroJareckiKrawczykRabinDKG::Generate()" <<
+		p << q << g << h << n << t << label;
 	rbc->setID(myID.str());
 
 	try
@@ -1329,7 +1336,7 @@ GennaroJareckiKrawczykRabinDKG::~GennaroJareckiKrawczykRabinDKG
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
 
-// ===================================================================================================================================
+// ============================================================================
 
 GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
 	(const size_t n_in, const size_t t_in, const size_t i_in,
@@ -1342,7 +1349,8 @@ GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
 			use_very_strong_randomness(use_very_strong_randomness_in),
 			n(n_in), t(t_in), i(i_in)
 {
-	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS), mpz_init_set(h, h_CRS);
+	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),
+		mpz_init_set(h, h_CRS);
 	mpz_init_set_ui(z_i, 0L), mpz_init_set_ui(y, 0L);
 	for (size_t i2 = 0; i2 < n; i2++)
 	{
@@ -1352,8 +1360,8 @@ GennaroJareckiKrawczykRabinNTS::GennaroJareckiKrawczykRabinNTS
 	}
 	
 	// initialize required subprotocols
-	dkg = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h,
-		fieldsize, subgroupsize, canonical_g_usage, use_very_strong_randomness_in, "dkg");
+	dkg = new GennaroJareckiKrawczykRabinDKG(n, t, i, p, q, g, h, fieldsize,
+		subgroupsize, canonical_g_usage, use_very_strong_randomness_in, "dkg");
 
 	// Do the precomputation for the fast exponentiation.
 	fpowm_table_g = new mpz_t[TMCG_MAX_FPOWM_T]();
@@ -1475,7 +1483,8 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "GennaroJareckiKrawczykRabinNTS::Generate()" << p << q << g << h << n << t;
+	myID << "GennaroJareckiKrawczykRabinNTS::Generate()" <<
+		p << q << g << h << n << t;
 	rbc->setID(myID.str());
 
 	try
@@ -1483,8 +1492,11 @@ bool GennaroJareckiKrawczykRabinNTS::Generate
 		// call of the protocol New-DKG for generating an additive
 		// share $z_i$ of a common secret $x$ and the public parameters
 		// $y = g^x$ and $y_i = g^{z_i}$ for every $P_i$
-		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour, ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail))
+		if (!dkg->Generate(aiou, rbc, err, simulate_faulty_behaviour,
+			ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail))
+		{
 			throw false;
+		}
 		// set the public variables of the class by results of New-DKG
 		mpz_set(z_i, dkg->z_i[i]);
 		for (size_t j = 0; j < y_i.size(); j++)
@@ -1552,7 +1564,8 @@ bool GennaroJareckiKrawczykRabinNTS::Sign
 
 	// set ID for RBC
 	std::stringstream myID;
-	myID << "GennaroJareckiKrawczykRabinNTS::Sign()" << p << q << g << h << n << t << m;
+	myID << "GennaroJareckiKrawczykRabinNTS::Sign()" <<
+		p << q << g << h << n << t << m;
 	rbc->setID(myID.str());
 
 	try
@@ -1767,3 +1780,4 @@ GennaroJareckiKrawczykRabinNTS::~GennaroJareckiKrawczykRabinNTS
 	tmcg_mpz_fpowm_done(fpowm_table_g), tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
+
