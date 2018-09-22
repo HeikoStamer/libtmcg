@@ -167,7 +167,7 @@ GennaroJareckiKrawczykRabinDKG::GennaroJareckiKrawczykRabinDKG
 		}
 	}
 	for (size_t i = 0; i < n; i++)
-		in >> y_i[i];	
+		in >> y_i[i];
 	for (size_t i = 0; i < n; i++)
 		in >> z_i[i];
 	for (size_t i = 0; i < n; i++)
