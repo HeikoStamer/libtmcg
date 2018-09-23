@@ -347,48 +347,56 @@ bool done
 int main
 	(int argc, char **argv)
 {
-	assert(init_libTMCG());
-
-	BarnettSmartVTMF_dlog *vtmf;
-	std::stringstream crs;
-
-	// create and check VTMF instance
-	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
-	vtmf = new BarnettSmartVTMF_dlog();
-	std::cout << "vtmf.CheckGroup()" << std::endl;
-	start_clock();
-	assert(vtmf->CheckGroup());
-	stop_clock();
-	std::cout << elapsed_time() << std::endl;
-	
-	// publish VTMF instance as string stream (common reference string)
-	std::cout << "vtmf.PublishGroup(crs)" << std::endl;
-	vtmf->PublishGroup(crs);
-
-	// release VTMF instance
-	delete vtmf;
-	
-	// test case #1: all correct
-	init();
-	for (size_t i = 0; i < N; i++)
-		start_instance(crs, i, false);
-	if (!done())
-		return 1;
-/*	
-	// test case #2: two corrupted parties
-	init();
-	for (size_t i = 0; i < N; i++)
+	try
 	{
-		if ((i == (N - 1)) || (i == (N - 2)))
-			start_instance(crs, i, true); // corrupted
-		else
+		assert(init_libTMCG());
+
+		BarnettSmartVTMF_dlog *vtmf;
+		std::stringstream crs;
+
+		// create and check VTMF instance
+		std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
+		vtmf = new BarnettSmartVTMF_dlog();
+		std::cout << "vtmf.CheckGroup()" << std::endl;
+		start_clock();
+		assert(vtmf->CheckGroup());
+		stop_clock();
+		std::cout << elapsed_time() << std::endl;
+	
+		// publish VTMF instance as string stream (common reference string)
+		std::cout << "vtmf.PublishGroup(crs)" << std::endl;
+		vtmf->PublishGroup(crs);
+
+		// release VTMF instance
+		delete vtmf;
+	
+		// test case #1: all correct
+		init();
+		for (size_t i = 0; i < N; i++)
 			start_instance(crs, i, false);
-	}
-	if (!done())
-		return 1;
+		if (!done())
+			return 1;
+/*	
+		// test case #2: two corrupted parties
+		init();
+		for (size_t i = 0; i < N; i++)
+		{
+			if ((i == (N - 1)) || (i == (N - 2)))
+				start_instance(crs, i, true); // corrupted
+			else
+				start_instance(crs, i, false);
+		}
+		if (!done())
+			return 1;
 */
 	
-	return 0;
+		return 0;
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << "exception catched with what = " << e.what() << std::endl;
+		return -1;
+	}
 }
 
 #else
