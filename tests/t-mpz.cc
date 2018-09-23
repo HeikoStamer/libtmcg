@@ -19,18 +19,17 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
-#include <string>
-#include <sstream>
-#include <cassert>
-
-#include "test_helper.h"
-
 // include headers
 #ifdef HAVE_CONFIG_H
 	#include "libTMCG_config.h"
 #endif
 #include <libTMCG.hh>
+#include <string>
+#include <sstream>
+#include <cassert>
 #include <exception>
+
+#include "test_helper.h"
 
 #ifdef BOTAN
 	#include <botan/version.h>
@@ -630,7 +629,7 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	}
 	catch (std::exception& e)
 	{
-		std::cerr << "t-mpz: exception catched with what = " << e.what() <<
+		std::cerr << "exception catched with what = " << e.what() <<
 			std::endl;
 		return -1;
 	}
