@@ -24,10 +24,11 @@
 	#include "libTMCG_config.h"
 #endif
 #include <libTMCG.hh>
+
+#include <exception>
 #include <string>
 #include <sstream>
 #include <cassert>
-#include <exception>
 
 #include "test_helper.h"
 

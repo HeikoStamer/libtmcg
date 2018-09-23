@@ -28,6 +28,7 @@
 
 #ifdef FORKING
 
+#include <exception>
 #include <sstream>
 #include <vector>
 #include <algorithm>
@@ -57,121 +58,130 @@ void start_instance_nonblock
 	{
 		if (pid[whoami] == 0)
 		{
-			/* BEGIN child code: participant P_i */
+			try
+			{
+				/* BEGIN child code: participant P_i */
 			
-			// create keys and handles between all players
-			std::vector<int> uP_in, uP_out;
-			std::vector<std::string> uP_key;
-			for (size_t i = 0; i < N; i++)
-			{
-				std::stringstream key;
-				key << "t-aio::P_" << (i + whoami);
-				uP_in.push_back(pipefd[i][whoami][0]);
-				uP_out.push_back(pipefd[whoami][i][1]);
-				uP_key.push_back(key.str());
-			}
-
-			// create asynchronous authenticated and encrypted unicast channels
-			aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami,
-				uP_in, uP_out, uP_key, aiounicast::aio_scheduler_roundrobin,
-				aiounicast::aio_timeout_short, authenticated, encrypted);
-
-			// send a simple message
-			bool ret = false;
-			std::vector<size_t> froms;
-			std::vector<size_t>::iterator ipos;
-			mpz_t m;
-			mpz_init_set_ui(m, whoami);
-			for (size_t i = 0; i < N; i++)
-			{
-				if (!corrupted)
+				// create keys and handles between all players
+				std::vector<int> uP_in, uP_out;
+				std::vector<std::string> uP_key;
+				for (size_t i = 0; i < N; i++)
 				{
-					ret = aiou->Send(m, i);
-					assert(ret);
+					std::stringstream key;
+					key << "t-aio::P_" << (i + whoami);
+					uP_in.push_back(pipefd[i][whoami][0]);
+					uP_out.push_back(pipefd[whoami][i][1]);
+					uP_key.push_back(key.str());
 				}
-				froms.push_back(i);
-			}
-			// receive messages from parties
-			for (size_t i = 0; i < N; i++)
-			{
-				ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
-				if (ret)
+
+				// create asynchronous authenticated and encrypted unicast channels
+				aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami,
+					uP_in, uP_out, uP_key, aiounicast::aio_scheduler_roundrobin,
+					aiounicast::aio_timeout_short, authenticated, encrypted);
+
+				// send a simple message
+				bool ret = false;
+				std::vector<size_t> froms;
+				std::vector<size_t>::iterator ipos;
+				mpz_t m;
+				mpz_init_set_ui(m, whoami);
+				for (size_t i = 0; i < N; i++)
 				{
-					assert(!mpz_cmp_ui(m, i)); // data should be always correct
-					ipos = std::find(froms.begin(), froms.end(), i);
-					if (ipos != froms.end())
-						froms.erase(ipos);
+					if (!corrupted)
+					{
+						ret = aiou->Send(m, i);
+						assert(ret);
+					}
+					froms.push_back(i);
+				}
+				// receive messages from parties
+				for (size_t i = 0; i < N; i++)
+				{
+					ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
+					if (ret)
+					{
+						assert(!mpz_cmp_ui(m, i)); // data should be always correct
+						ipos = std::find(froms.begin(), froms.end(), i);
+						if (ipos != froms.end())
+							froms.erase(ipos);
+						else
+							std::cout << "P_" << whoami <<
+								": entry not found for " << i << std::endl;
+					}
 					else
 						std::cout << "P_" << whoami <<
-							": entry not found for " << i << std::endl;
+							": timeout of " << i << std::endl;
 				}
-				else
-					std::cout << "P_" << whoami <<
-						": timeout of " << i << std::endl;
-			}
-			assert(froms.size() <= T); // at most T messages not received
-			for (size_t i = 0; i < froms.size(); i++)
-			{
-				assert(froms[i] < T); // only corrupted parties should fail
-			}
-			// send array of K big random numbers
-			std::vector<mpz_ptr> mm;
-			for (size_t k = 0; k < K; k++)
-			{
-				mpz_ptr tmp = new mpz_t();
-				mpz_init(tmp);
-				mm.push_back(tmp);
-			}
-			for (size_t i = 0; i < N; i++)
-			{
-				for (size_t k = 0; !corrupted && (k < K); k++)
+				assert(froms.size() <= T); // at most T messages not received
+				for (size_t i = 0; i < froms.size(); i++)
 				{
-					tmcg_mpz_wrandomb(m, TMCG_DDH_SIZE);
-					mpz_mul_ui(m, m, (i + k + 1));
-					ret = aiou->Send(m, i);
-					assert(ret);
+					assert(froms[i] < T); // only corrupted parties should fail
 				}
-			}
-			// receive array of big random numbers with round-robin scheduler
-			size_t num = 0, from = 0;
-			do
-			{
-				ret = aiou->Receive(mm, from,
-					aiounicast::aio_scheduler_roundrobin);
-				if (num < (N - T))
-					assert(ret);
-				if (ret)
-					std::cout << "P_" << whoami <<
-						": received array from P_" << from << std::endl;
-				for (size_t k = 0; ret && (k < mm.size()); k++)
+				// send array of K big random numbers
+				std::vector<mpz_ptr> mm;
+				for (size_t k = 0; k < K; k++)
 				{
-					assert(mpz_divisible_ui_p(mm[k], (whoami + k + 1)));
+					mpz_ptr tmp = new mpz_t();
+					mpz_init(tmp);
+					mm.push_back(tmp);
 				}
-				num++;
-			}
-			while (num < N);
+				for (size_t i = 0; i < N; i++)
+				{
+					for (size_t k = 0; !corrupted && (k < K); k++)
+					{
+						tmcg_mpz_wrandomb(m, TMCG_DDH_SIZE);
+						mpz_mul_ui(m, m, (i + k + 1));
+						ret = aiou->Send(m, i);
+						assert(ret);
+					}
+				}
+				// receive array of big random numbers with round-robin scheduler
+				size_t num = 0, from = 0;
+				do
+				{
+					ret = aiou->Receive(mm, from,
+						aiounicast::aio_scheduler_roundrobin);
+					if (num < (N - T))
+						assert(ret);
+					if (ret)
+						std::cout << "P_" << whoami <<
+							": received array from P_" << from << std::endl;
+					for (size_t k = 0; ret && (k < mm.size()); k++)
+					{
+						assert(mpz_divisible_ui_p(mm[k], (whoami + k + 1)));
+					}
+					num++;
+				}
+				while (num < N);
 
-			// release
-			mpz_clear(m);
-			for (size_t k = 0; k < mm.size(); k++)
-			{
-				mpz_clear(mm[k]);
-				delete [] mm[k];
-			}
-			mm.clear();
+				// release
+				mpz_clear(m);
+				for (size_t k = 0; k < mm.size(); k++)
+				{
+					mpz_clear(mm[k]);
+					delete [] mm[k];
+				}
+				mm.clear();
 
-			// release handles (unicast channel)
-			uP_in.clear(), uP_out.clear(), uP_key.clear();
-			std::cout << "P_" << whoami << ":";
-			aiou->PrintStatistics(std::cout);
-			std::cout << std::endl;
+				// release handles (unicast channel)
+				uP_in.clear(), uP_out.clear(), uP_key.clear();
+				std::cout << "P_" << whoami << ":";
+				aiou->PrintStatistics(std::cout);
+				std::cout << std::endl;
 
-			// release asynchronous unicast channels
-			delete aiou;
+				// release asynchronous unicast channels
+				delete aiou;
 			
-			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
-			exit(0);
-			/* END child code: participant P_i */
+				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
+				exit(0);
+				/* END child code: participant P_i */
+			}
+			catch (std::exception& e)
+			{
+				std::cerr << "exception catched with what = " << e.what() <<
+					std::endl;
+				exit(-1);
+			}
 		}
 		else
 			std::cout << "fork() = " << pid[whoami] << std::endl;
@@ -188,121 +198,130 @@ void start_instance_select
 	{
 		if (pid[whoami] == 0)
 		{
-			/* BEGIN child code: participant P_i */
+			try
+			{
+				/* BEGIN child code: participant P_i */
 			
-			// create keys and handles between all players
-			std::vector<int> uP_in, uP_out;
-			std::vector<std::string> uP_key;
-			for (size_t i = 0; i < N; i++)
-			{
-				std::stringstream key;
-				key << "t-aio::P_" << (i + whoami);
-				uP_in.push_back(pipefd[i][whoami][0]);
-				uP_out.push_back(pipefd[whoami][i][1]);
-				uP_key.push_back(key.str());
-			}
-
-			// create asynchronous authenticated and encrypted unicast channels
-			aiounicast_select *aiou = new aiounicast_select(N, whoami,
-				uP_in, uP_out, uP_key, aiounicast::aio_scheduler_roundrobin,
-				aiounicast::aio_timeout_short, authenticated, encrypted);
-
-			// send a simple message
-			bool ret = false;
-			std::vector<size_t> froms;
-			std::vector<size_t>::iterator ipos;
-			mpz_t m;
-			mpz_init_set_ui(m, whoami);
-			for (size_t i = 0; i < N; i++)
-			{
-				if (!corrupted)
+				// create keys and handles between all players
+				std::vector<int> uP_in, uP_out;
+				std::vector<std::string> uP_key;
+				for (size_t i = 0; i < N; i++)
 				{
-					ret = aiou->Send(m, i);
-					assert(ret);
+					std::stringstream key;
+					key << "t-aio::P_" << (i + whoami);
+					uP_in.push_back(pipefd[i][whoami][0]);
+					uP_out.push_back(pipefd[whoami][i][1]);
+					uP_key.push_back(key.str());
 				}
-				froms.push_back(i);
-			}
-			// receive messages from parties
-			for (size_t i = 0; i < N; i++)
-			{
-				ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
-				if (ret)
+
+				// create asynchronous authenticated and encrypted unicast channels
+				aiounicast_select *aiou = new aiounicast_select(N, whoami,
+					uP_in, uP_out, uP_key, aiounicast::aio_scheduler_roundrobin,
+					aiounicast::aio_timeout_short, authenticated, encrypted);
+
+				// send a simple message
+				bool ret = false;
+				std::vector<size_t> froms;
+				std::vector<size_t>::iterator ipos;
+				mpz_t m;
+				mpz_init_set_ui(m, whoami);
+				for (size_t i = 0; i < N; i++)
 				{
-					assert(!mpz_cmp_ui(m, i)); // data should be always correct
-					ipos = std::find(froms.begin(), froms.end(), i);
-					if (ipos != froms.end())
-						froms.erase(ipos);
+					if (!corrupted)
+					{
+						ret = aiou->Send(m, i);
+						assert(ret);
+					}
+					froms.push_back(i);
+				}
+				// receive messages from parties
+				for (size_t i = 0; i < N; i++)
+				{
+					ret = aiou->Receive(m, i, aiounicast::aio_scheduler_direct);
+					if (ret)
+					{
+						assert(!mpz_cmp_ui(m, i)); // data should be always correct
+						ipos = std::find(froms.begin(), froms.end(), i);
+						if (ipos != froms.end())
+							froms.erase(ipos);
+						else
+							std::cout << "P_" << whoami <<
+								": entry not found for " << i << std::endl;
+					}
 					else
 						std::cout << "P_" << whoami <<
-							": entry not found for " << i << std::endl;
+							": timeout of " << i << std::endl;
 				}
-				else
-					std::cout << "P_" << whoami <<
-						": timeout of " << i << std::endl;
-			}
-			assert(froms.size() <= T); // at most T messages not received
-			for (size_t i = 0; i < froms.size(); i++)
-			{
-				assert(froms[i] < T); // only corrupted parties should fail
-			}
-			// send array of K big random numbers
-			std::vector<mpz_ptr> mm;
-			for (size_t k = 0; k < K; k++)
-			{
-				mpz_ptr tmp = new mpz_t();
-				mpz_init(tmp);
-				mm.push_back(tmp);
-			}
-			for (size_t i = 0; i < N; i++)
-			{
-				for (size_t k = 0; !corrupted && (k < K); k++)
+				assert(froms.size() <= T); // at most T messages not received
+				for (size_t i = 0; i < froms.size(); i++)
 				{
-					tmcg_mpz_wrandomb(m, TMCG_DDH_SIZE);
-					mpz_mul_ui(m, m, (i + k + 1));
-					ret = aiou->Send(m, i);
-					assert(ret);
+					assert(froms[i] < T); // only corrupted parties should fail
 				}
-			}
-			// receive array of big random numbers with round-robin scheduler
-			size_t num = 0, from = 0;
-			do
-			{
-				ret = aiou->Receive(mm, from,
-					aiounicast::aio_scheduler_roundrobin);
-				if (num < (N - T))
-					assert(ret);
-				if (ret)
-					std::cout << "P_" << whoami <<
-						": received array from P_" << from << std::endl;
-				for (size_t k = 0; ret && (k < mm.size()); k++)
+				// send array of K big random numbers
+				std::vector<mpz_ptr> mm;
+				for (size_t k = 0; k < K; k++)
 				{
-					assert(mpz_divisible_ui_p(mm[k], (whoami + k + 1)));
+					mpz_ptr tmp = new mpz_t();
+					mpz_init(tmp);
+					mm.push_back(tmp);
 				}
-				num++;
-			}
-			while (num < N);
+				for (size_t i = 0; i < N; i++)
+				{
+					for (size_t k = 0; !corrupted && (k < K); k++)
+					{
+						tmcg_mpz_wrandomb(m, TMCG_DDH_SIZE);
+						mpz_mul_ui(m, m, (i + k + 1));
+						ret = aiou->Send(m, i);
+						assert(ret);
+					}
+				}
+				// receive array of big random numbers with round-robin scheduler
+				size_t num = 0, from = 0;
+				do
+				{
+					ret = aiou->Receive(mm, from,
+						aiounicast::aio_scheduler_roundrobin);
+					if (num < (N - T))
+						assert(ret);
+					if (ret)
+						std::cout << "P_" << whoami <<
+							": received array from P_" << from << std::endl;
+					for (size_t k = 0; ret && (k < mm.size()); k++)
+					{
+						assert(mpz_divisible_ui_p(mm[k], (whoami + k + 1)));
+					}
+					num++;
+				}
+				while (num < N);
 
-			// release
-			mpz_clear(m);
-			for (size_t k = 0; k < mm.size(); k++)
-			{
-				mpz_clear(mm[k]);
-				delete [] mm[k];
-			}
-			mm.clear();
+				// release
+				mpz_clear(m);
+				for (size_t k = 0; k < mm.size(); k++)
+				{
+					mpz_clear(mm[k]);
+					delete [] mm[k];
+				}
+				mm.clear();
 
-			// release handles (unicast channel)
-			uP_in.clear(), uP_out.clear(), uP_key.clear();
-			std::cout << "P_" << whoami << ":";
-			aiou->PrintStatistics(std::cout);
-			std::cout << std::endl;
+				// release handles (unicast channel)
+				uP_in.clear(), uP_out.clear(), uP_key.clear();
+				std::cout << "P_" << whoami << ":";
+				aiou->PrintStatistics(std::cout);
+				std::cout << std::endl;
 
-			// release asynchronous unicast channels
-			delete aiou;
+				// release asynchronous unicast channels
+				delete aiou;
 			
-			std::cout << "P_" << whoami << ": exit(0)" << std::endl;
-			exit(0);
-			/* END child code: participant P_i */
+				std::cout << "P_" << whoami << ": exit(0)" << std::endl;
+				exit(0);
+				/* END child code: participant P_i */
+			}
+			catch (std::exception& e)
+			{
+				std::cerr << "exception catched with what = " << e.what() <<
+					std::endl;
+				exit(-1);
+			}
 		}
 		else
 			std::cout << "fork() = " << pid[whoami] << std::endl;
@@ -459,3 +478,4 @@ int main
 }
 
 #endif
+
