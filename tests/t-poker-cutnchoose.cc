@@ -294,8 +294,8 @@ int main
 
 	try
 	{
-		BarnettSmartVTMF_dlog 	*vtmf;
-		std::stringstream 	vtmf_str;
+		BarnettSmartVTMF_dlog *vtmf;
+		std::stringstream vtmf_str;
 
 		// create and check VTMF instance (CRS)
 		std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
