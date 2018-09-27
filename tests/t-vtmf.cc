@@ -27,6 +27,7 @@
 
 #ifdef FORKING
 
+#include <exception>
 #include <sstream>
 #include <vector>
 #include <algorithm>
@@ -86,65 +87,80 @@ void check
 	{
 		if (pid == 0)
 		{
-			/* BEGIN child code: participant B */
-			ipipestream *pipe_in = new ipipestream(pipe1fd[0]);
-			opipestream *pipe_out = new opipestream(pipe2fd[1]);
-			
-			// key generation protocol
-			vtmf2->KeyGenerationProtocol_GenerateKey();
-			vtmf2->KeyGenerationProtocol_PublishKey(*pipe_out);
-			assert(vtmf2->KeyGenerationProtocol_UpdateKey(*pipe_in));
-			vtmf2->KeyGenerationProtocol_Finalize();
-			assert((vtmf2->KeyGenerationProtocol_NumberOfKeys() == 1));
-			*pipe_out << vtmf2->h_i << std::endl;
-			assert(vtmf2->KeyGenerationProtocol_ProveKey_interactive(*pipe_in, *pipe_out));
-			JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,	vtmf2->p, vtmf2->q, vtmf2->g, vtmf2->h);
-			assert(vtmf2->KeyGenerationProtocol_ProveKey_interactive_publiccoin(edcf, *pipe_in, *pipe_out));
-			delete edcf;
-			
-			SchindelhauerTMCG *tmcg = 
-				new SchindelhauerTMCG(16, 2, TMCG_MAX_TYPEBITS);
-			TMCG_OpenStack<VTMF_Card> os;
-			TMCG_Stack<VTMF_Card> sA, sAB, sB;
-			TMCG_StackSecret<VTMF_CardSecret> ssB;
-			for (size_t i = 0; i < TMCG_MAX_CARDS; i++)
+			try
 			{
-				VTMF_Card c;
-				tmcg->TMCG_CreateOpenCard(c, vtmf2, i);
-				os.push(i, c);
+				/* BEGIN child code: participant B */
+				ipipestream *pipe_in = new ipipestream(pipe1fd[0]);
+				opipestream *pipe_out = new opipestream(pipe2fd[1]);
+			
+				// key generation protocol
+				vtmf2->KeyGenerationProtocol_GenerateKey();
+				vtmf2->KeyGenerationProtocol_PublishKey(*pipe_out);
+				assert(vtmf2->KeyGenerationProtocol_UpdateKey(*pipe_in));
+				vtmf2->KeyGenerationProtocol_Finalize();
+				assert((vtmf2->KeyGenerationProtocol_NumberOfKeys() == 1));
+				*pipe_out << vtmf2->h_i << std::endl;
+				assert(vtmf2->KeyGenerationProtocol_ProveKey_interactive(
+					*pipe_in, *pipe_out));
+				JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,
+					vtmf2->p, vtmf2->q, vtmf2->g, vtmf2->h);
+				assert(vtmf2->KeyGenerationProtocol_ProveKey_interactive_publiccoin(
+					edcf, *pipe_in, *pipe_out));
+				delete edcf;
+			
+				SchindelhauerTMCG *tmcg = 
+					new SchindelhauerTMCG(16, 2, TMCG_MAX_TYPEBITS);
+				TMCG_OpenStack<VTMF_Card> os;
+				TMCG_Stack<VTMF_Card> sA, sAB, sB;
+				TMCG_StackSecret<VTMF_CardSecret> ssB;
+				for (size_t i = 0; i < TMCG_MAX_CARDS; i++)
+				{
+					VTMF_Card c;
+					tmcg->TMCG_CreateOpenCard(c, vtmf2, i);
+					os.push(i, c);
+				}
+				sA.push(os);
+				for (size_t i = 0; i < sA.size(); i++)
+				{
+					assert(sA[i] == os[i].second);
+				}
+			
+				*pipe_in >> sAB;
+				assert(pipe_in->good());
+				std::cout << "B: VerifyStackEquality()" << std::endl;
+				assert(tmcg->TMCG_VerifyStackEquality(sA, sAB, false, vtmf2,
+					*pipe_in, *pipe_out));
+			
+				std::cout << "B: MixStack()" << std::endl;
+				tmcg->TMCG_CreateStackSecret(ssB, false, sAB.size(), vtmf2);
+				tmcg->TMCG_MixStack(sAB, sB, ssB, vtmf2);
+				*pipe_out << sB << std::endl;
+			
+				std::cout << "B: ProveStackEquality()" << std::endl;
+				tmcg->TMCG_ProveStackEquality(sAB, sB, ssB, false, vtmf2,
+					*pipe_in, *pipe_out);
+			
+				for (size_t i = 0; i < sB.size(); i++)
+				{
+					tmcg->TMCG_ProveCardSecret(sB[i], vtmf2,
+						*pipe_in, *pipe_out);
+				}
+			
+				delete tmcg;
+			
+				// key generation protocol: test remove key
+				vtmf2->KeyGenerationProtocol_PublishKey(*pipe_out);
+			
+				delete pipe_in, delete pipe_out;
+				exit(0);
+				/* END child code: participant B */
 			}
-			sA.push(os);
-			for (size_t i = 0; i < sA.size(); i++)
+			catch (std::exception& e)
 			{
-				assert(sA[i] == os[i].second);
+				std::cerr << "exception catched with what = " << e.what() <<
+					std::endl;
+				exit(-1);
 			}
-			
-			*pipe_in >> sAB;
-			assert(pipe_in->good());
-			std::cout << "B: VerifyStackEquality()" << std::endl;
-			assert(tmcg->TMCG_VerifyStackEquality(sA, sAB, false, vtmf2,
-				*pipe_in, *pipe_out));
-			
-			std::cout << "B: MixStack()" << std::endl;
-			tmcg->TMCG_CreateStackSecret(ssB, false, sAB.size(), vtmf2);
-			tmcg->TMCG_MixStack(sAB, sB, ssB, vtmf2);
-			*pipe_out << sB << std::endl;
-			
-			std::cout << "B: ProveStackEquality()" << std::endl;
-			tmcg->TMCG_ProveStackEquality(sAB, sB, ssB, false, vtmf2,
-				*pipe_in, *pipe_out);
-			
-			for (size_t i = 0; i < sB.size(); i++)
-				tmcg->TMCG_ProveCardSecret(sB[i], vtmf2, *pipe_in, *pipe_out);
-			
-			delete tmcg;
-			
-			// key generation protocol: test remove key
-			vtmf2->KeyGenerationProtocol_PublishKey(*pipe_out);
-			
-			delete pipe_in, delete pipe_out;
-			exit(0);
-			/* END child code: participant B */
 		}
 		else
 		{
@@ -168,15 +184,20 @@ void check
 			mpz_init(h_j);
 			*pipe_in >> h_j;
 			std::cout << "h_j = " << h_j << std::endl;
-			assert(vtmf->KeyGenerationProtocol_VerifyKey_interactive(h_j, *pipe_in, *pipe_out));
-			JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,	vtmf->p, vtmf->q, vtmf->g, vtmf->h);
-			std::cout << "*.KeyGenerationProtocol_VerifyKey_interactive_publiccoin()" << std::endl;
-			assert(vtmf->KeyGenerationProtocol_VerifyKey_interactive_publiccoin(h_j, edcf, *pipe_in, *pipe_out));
+			assert(vtmf->KeyGenerationProtocol_VerifyKey_interactive(h_j,
+				*pipe_in, *pipe_out));
+			JareckiLysyanskayaEDCF *edcf = new JareckiLysyanskayaEDCF(2, 0,
+				vtmf->p, vtmf->q, vtmf->g, vtmf->h);
+			std::cout << "*.KeyGenerationProtocol_VerifyKey_interactive" <<
+				"_publiccoin()" << std::endl;
+			assert(vtmf->KeyGenerationProtocol_VerifyKey_interactive_publiccoin(
+				h_j, edcf, *pipe_in, *pipe_out));
 			delete edcf;
 			mpz_clear(h_j);
 			
 			// TMCG/VTMF
-			std::cout << "TMCG/VTMF Encryption and decryption of cards" << std::endl;
+			std::cout << "TMCG/VTMF Encryption and decryption of cards" <<
+				std::endl;
 			SchindelhauerTMCG *tmcg = 
 				new SchindelhauerTMCG(16, 2, TMCG_MAX_TYPEBITS);
 			
@@ -242,13 +263,15 @@ void check
 				size_t typeA = TMCG_MAX_CARDS;
 				
 				tmcg->TMCG_SelfCardSecret(sB[i], vtmf);
-				assert(tmcg->TMCG_VerifyCardSecret(sB[i], vtmf, *pipe_in, *pipe_out));
+				assert(tmcg->TMCG_VerifyCardSecret(sB[i], vtmf,
+					*pipe_in, *pipe_out));
 				typeA = tmcg->TMCG_TypeOfCard(sB[i], vtmf);
 				
 				std::cout << typeA << " " << std::flush;
 				assert((typeA >= 0) && (typeA < TMCG_MAX_CARDS));
 				
-				assert(std::find(typesA.begin(), typesA.end(), typeA) == typesA.end());
+				assert(std::find(typesA.begin(), typesA.end(), typeA)
+					== typesA.end());
 				typesA.push_back(typeA);
 			}
 			std::cout << std::endl;
@@ -273,18 +296,18 @@ void check
 int main
 	(int argc, char **argv)
 {
-	std::stringstream oak, lej, lej2, foo, foo2, bar;
-	std::string v;
-	mpz_t fooo, barr, lejj;
-	
 	assert(init_libTMCG());
-	
-	BarnettSmartVTMF_dlog *vtmf, *vtmf2;
-	BarnettSmartVTMF_dlog_GroupQR *vtmf_qr, *vtmf2_qr;
+	try
+	{
+		std::stringstream oak, lej, lej2, foo, foo2, bar;
+		std::string v;
+		mpz_t fooo, barr, lejj;
+		BarnettSmartVTMF_dlog *vtmf, *vtmf2;
+		BarnettSmartVTMF_dlog_GroupQR *vtmf_qr, *vtmf2_qr;
 
-	// create and check a common instance <2048-bit MODP Group [RFC3526]>
-	mpz_init(barr);
-	mpz_set_str(barr, "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1\
+		// create and check a common instance <2048-bit MODP Group [RFC3526]>
+		mpz_init(barr);
+		mpz_set_str(barr, "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1\
 29024E088A67CC74020BBEA63B139B22514A08798E3404DD\
 EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245\
 E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED\
@@ -295,177 +318,184 @@ C2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F\
 E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9\
 DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 15728E5A8AACAA68FFFFFFFFFFFFFFFF", 16);
-	oak << barr << std::endl; // p
-	mpz_sub_ui(barr, barr, 1L);
-	mpz_fdiv_q_2exp(barr, barr, 1L);
-	oak << barr << std::endl; // q
-	oak << "2" << std::endl << "2" << std::endl; // g and k
-	std::cout << "BarnettSmartVTMF_dlog_GroupQR(<2048-bit MODP Group [RFC3526]>)" << std::endl;
-	vtmf_qr = new BarnettSmartVTMF_dlog_GroupQR(oak);
-	std::cout << "vtmf_qr.CheckGroup()" << std::endl;
-	assert(vtmf_qr->CheckGroup());
-	delete vtmf_qr;
-	mpz_clear(barr);
+		oak << barr << std::endl; // p
+		mpz_sub_ui(barr, barr, 1L);
+		mpz_fdiv_q_2exp(barr, barr, 1L);
+		oak << barr << std::endl; // q
+		oak << "2" << std::endl << "2" << std::endl; // g and k
+		std::cout << "BarnettSmartVTMF_dlog_GroupQR(<2048-bit MODP" <<
+			" Group [RFC3526]>)" << std::endl;
+		vtmf_qr = new BarnettSmartVTMF_dlog_GroupQR(oak);
+		std::cout << "vtmf_qr.CheckGroup()" << std::endl;
+		assert(vtmf_qr->CheckGroup());
+		delete vtmf_qr;
+		mpz_clear(barr);
 	
-	// create and check a random QR-instance
-	std::cout << "BarnettSmartVTMF_dlog_GroupQR()" << std::endl;
-	vtmf_qr = new BarnettSmartVTMF_dlog_GroupQR();
-	std::cout << "vtmf_qr.CheckGroup()" << std::endl;
-	assert(vtmf_qr->CheckGroup());
+		// create and check a random QR-instance
+		std::cout << "BarnettSmartVTMF_dlog_GroupQR()" << std::endl;
+		vtmf_qr = new BarnettSmartVTMF_dlog_GroupQR();
+		std::cout << "vtmf_qr.CheckGroup()" << std::endl;
+		assert(vtmf_qr->CheckGroup());
 	
-	// publish the instance
-	std::cout << "vtmf_qr.PublishGroup(foo)" << std::endl;
-	vtmf_qr->PublishGroup(foo);
+		// publish the instance
+		std::cout << "vtmf_qr.PublishGroup(foo)" << std::endl;
+		vtmf_qr->PublishGroup(foo);
 	
-	// create a clone of the instance
-	std::cout << "BarnettSmartVTMF_dlog_GroupQR(foo)" << std::endl;
-	vtmf2_qr = new BarnettSmartVTMF_dlog_GroupQR(foo);
+		// create a clone of the instance
+		std::cout << "BarnettSmartVTMF_dlog_GroupQR(foo)" << std::endl;
+		vtmf2_qr = new BarnettSmartVTMF_dlog_GroupQR(foo);
 	
-	// publish the cloned instance
-	std::cout << "vtmf2_qr.PublishGroup(foo2)" << std::endl;
-	vtmf2_qr->PublishGroup(foo2);
-	std::cout << foo.str() << std::endl;
-	std::cout << "versus" << std::endl;
-	std::cout << foo2.str() << std::endl;
-	assert(foo.str() == foo2.str());
+		// publish the cloned instance
+		std::cout << "vtmf2_qr.PublishGroup(foo2)" << std::endl;
+		vtmf2_qr->PublishGroup(foo2);
+		std::cout << foo.str() << std::endl;
+		std::cout << "versus" << std::endl;
+		std::cout << foo2.str() << std::endl;
+		assert(foo.str() == foo2.str());
 	
-	// check the instances
-	start_clock();
-	check(vtmf_qr, vtmf2_qr);
-	stop_clock();
-	std::cout << elapsed_time() << std::endl;
+		// check the instances
+		start_clock();
+		check(vtmf_qr, vtmf2_qr);
+		stop_clock();
+		std::cout << elapsed_time() << std::endl;
 	
-	// release the instances
-	delete vtmf_qr, delete vtmf2_qr;
+		// release the instances
+		delete vtmf_qr, delete vtmf2_qr;
 
-	// create and check a random instance
-	std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
-	vtmf = new BarnettSmartVTMF_dlog();
-	std::cout << "vtmf.CheckGroup()" << std::endl;
-	assert(vtmf->CheckGroup());
+		// create and check a random instance
+		std::cout << "BarnettSmartVTMF_dlog()" << std::endl;
+		vtmf = new BarnettSmartVTMF_dlog();
+		std::cout << "vtmf.CheckGroup()" << std::endl;
+		assert(vtmf->CheckGroup());
 	
-	// trivial generator attack
-	mpz_init(fooo);
-	mpz_set(fooo, vtmf->g);
-	mpz_set_ui(vtmf->g, 1L);
-	assert(!vtmf->CheckGroup());
-	mpz_set(vtmf->g, vtmf->p);
-	mpz_add_ui(vtmf->g, vtmf->g, 1L);
-	assert(!vtmf->CheckGroup());
-	mpz_set(vtmf->g, fooo);
-	mpz_clear(fooo);
+		// trivial generator attack, i.e., g = 1
+		mpz_init(fooo);
+		mpz_set(fooo, vtmf->g);
+		mpz_set_ui(vtmf->g, 1L);
+		assert(!vtmf->CheckGroup());
+		mpz_set(vtmf->g, vtmf->p);
+		mpz_add_ui(vtmf->g, vtmf->g, 1L);
+		assert(!vtmf->CheckGroup());
+		mpz_set(vtmf->g, fooo);
+		mpz_clear(fooo);
 
-	// check basic protocols (CP and OR)
-	std::stringstream cp_ack, cp_nak, or_ack1, or_ack2, or_nak;
-	mpz_init(fooo), mpz_init(barr), mpz_init(lejj);
-	tmcg_mpz_srandomm(fooo, vtmf->q); 
-	tmcg_mpz_spowm(vtmf->h, vtmf->g, fooo, vtmf->p);
-	std::cout << "CP protocol" << std::endl;
-	tmcg_mpz_wrandomm(fooo, vtmf->q);
-	mpz_powm(barr, vtmf->g, fooo, vtmf->p);
-	mpz_powm(lejj, vtmf->h, fooo, vtmf->p); 
-	vtmf->CP_Prove(barr, lejj, vtmf->g, vtmf->h, fooo, cp_ack);
-	std::cout << "CP_Verify(g^z, h^z, ...)" << std::endl;
-	std::cout << cp_ack.str() << std::endl;
-	assert(vtmf->CP_Verify(barr, lejj, vtmf->g, vtmf->h, cp_ack));
-	mpz_add_ui(fooo, fooo, 1L); // z' = z + 1
-	mpz_powm(lejj, vtmf->h, fooo, vtmf->p); 
-	vtmf->CP_Prove(barr, lejj, vtmf->g, vtmf->h, fooo, cp_nak);
-	std::cout << "!CP_Verify(g^z, h^z', ...)" << std::endl;
-	std::cout << cp_nak.str() << std::endl;
-	assert(!vtmf->CP_Verify(barr, lejj, vtmf->g, vtmf->h, cp_nak));
-	std::cout << "OR protocol" << std::endl;
-	tmcg_mpz_wrandomm(fooo, vtmf->q);
-	mpz_powm(barr, vtmf->g, fooo, vtmf->p);
-	mpz_powm_ui(lejj, vtmf->h, 42L, vtmf->p);
-	std::cout << "OR_ProveFirst(...)" << std::endl;
-	vtmf->OR_ProveFirst(barr, lejj, vtmf->g, vtmf->h, fooo, or_ack1);
-	std::cout << "OR_Verify(...)" << std::endl;
-	std::cout << or_ack1.str() << std::endl;
-	assert(vtmf->OR_Verify(barr, lejj, vtmf->g, vtmf->h, or_ack1));
-	tmcg_mpz_wrandomm(fooo, vtmf->q);
-	mpz_powm_ui(barr, vtmf->g, 42L, vtmf->p);
-	mpz_powm(lejj, vtmf->h, fooo, vtmf->p);
-	std::cout << "OR_ProveSecond(...)" << std::endl;
-	vtmf->OR_ProveSecond(barr, lejj, vtmf->g, vtmf->h, fooo, or_ack2);
-	std::cout << "OR_Verify(...)" << std::endl;
-	std::cout << or_ack2.str() << std::endl;
-	assert(vtmf->OR_Verify(barr, lejj, vtmf->g, vtmf->h, or_ack2));
-	tmcg_mpz_wrandomm(fooo, vtmf->q);
-	mpz_powm_ui(barr, vtmf->g, 42L, vtmf->p);
-	mpz_powm_ui(lejj, vtmf->h, 42L, vtmf->p);
-	vtmf->OR_ProveFirst(barr, lejj, vtmf->g, vtmf->h, fooo, or_nak);
-	std::cout << "!OR_Verify(...)" << std::endl;
-	std::cout << or_nak.str() << std::endl;
-	assert(!vtmf->OR_Verify(barr, lejj, vtmf->g, vtmf->h, or_nak));
-	mpz_clear(fooo), mpz_clear(barr), mpz_clear(lejj);
+		// check basic protocols (CP and OR)
+		std::stringstream cp_ack, cp_nak, or_ack1, or_ack2, or_nak;
+		mpz_init(fooo), mpz_init(barr), mpz_init(lejj);
+		tmcg_mpz_srandomm(fooo, vtmf->q); 
+		tmcg_mpz_spowm(vtmf->h, vtmf->g, fooo, vtmf->p);
+		std::cout << "CP protocol" << std::endl;
+		tmcg_mpz_wrandomm(fooo, vtmf->q);
+		mpz_powm(barr, vtmf->g, fooo, vtmf->p);
+		mpz_powm(lejj, vtmf->h, fooo, vtmf->p); 
+		vtmf->CP_Prove(barr, lejj, vtmf->g, vtmf->h, fooo, cp_ack);
+		std::cout << "CP_Verify(g^z, h^z, ...)" << std::endl;
+		std::cout << cp_ack.str() << std::endl;
+		assert(vtmf->CP_Verify(barr, lejj, vtmf->g, vtmf->h, cp_ack));
+		mpz_add_ui(fooo, fooo, 1L); // z' = z + 1
+		mpz_powm(lejj, vtmf->h, fooo, vtmf->p); 
+		vtmf->CP_Prove(barr, lejj, vtmf->g, vtmf->h, fooo, cp_nak);
+		std::cout << "!CP_Verify(g^z, h^z', ...)" << std::endl;
+		std::cout << cp_nak.str() << std::endl;
+		assert(!vtmf->CP_Verify(barr, lejj, vtmf->g, vtmf->h, cp_nak));
+		std::cout << "OR protocol" << std::endl;
+		tmcg_mpz_wrandomm(fooo, vtmf->q);
+		mpz_powm(barr, vtmf->g, fooo, vtmf->p);
+		mpz_powm_ui(lejj, vtmf->h, 42L, vtmf->p);
+		std::cout << "OR_ProveFirst(...)" << std::endl;
+		vtmf->OR_ProveFirst(barr, lejj, vtmf->g, vtmf->h, fooo, or_ack1);
+		std::cout << "OR_Verify(...)" << std::endl;
+		std::cout << or_ack1.str() << std::endl;
+		assert(vtmf->OR_Verify(barr, lejj, vtmf->g, vtmf->h, or_ack1));
+		tmcg_mpz_wrandomm(fooo, vtmf->q);
+		mpz_powm_ui(barr, vtmf->g, 42L, vtmf->p);
+		mpz_powm(lejj, vtmf->h, fooo, vtmf->p);
+		std::cout << "OR_ProveSecond(...)" << std::endl;
+		vtmf->OR_ProveSecond(barr, lejj, vtmf->g, vtmf->h, fooo, or_ack2);
+		std::cout << "OR_Verify(...)" << std::endl;
+		std::cout << or_ack2.str() << std::endl;
+		assert(vtmf->OR_Verify(barr, lejj, vtmf->g, vtmf->h, or_ack2));
+		tmcg_mpz_wrandomm(fooo, vtmf->q);
+		mpz_powm_ui(barr, vtmf->g, 42L, vtmf->p);
+		mpz_powm_ui(lejj, vtmf->h, 42L, vtmf->p);
+		vtmf->OR_ProveFirst(barr, lejj, vtmf->g, vtmf->h, fooo, or_nak);
+		std::cout << "!OR_Verify(...)" << std::endl;
+		std::cout << or_nak.str() << std::endl;
+		assert(!vtmf->OR_Verify(barr, lejj, vtmf->g, vtmf->h, or_nak));
+		mpz_clear(fooo), mpz_clear(barr), mpz_clear(lejj);
 
-	// publish the instance
-	std::cout << "vtmf.PublishGroup(lej)" << std::endl;
-	vtmf->PublishGroup(lej);
+		// publish the instance
+		std::cout << "vtmf.PublishGroup(lej)" << std::endl;
+		vtmf->PublishGroup(lej);
 	
-	// create a clone of the instance
-	std::cout << "BarnettSmartVTMF_dlog(lej)" << std::endl;
-	vtmf2 = new BarnettSmartVTMF_dlog(lej);
+		// create a clone of the instance
+		std::cout << "BarnettSmartVTMF_dlog(lej)" << std::endl;
+		vtmf2 = new BarnettSmartVTMF_dlog(lej);
 	
-	// publish the cloned instance
-	std::cout << "vtmf2.PublishGroup(lej2)" << std::endl;
-	vtmf2->PublishGroup(lej2);
-	std::cout << lej.str() << std::endl;
-	std::cout << "versus" << std::endl;
-	std::cout << lej2.str() << std::endl;
-	assert(lej.str() == lej2.str());
+		// publish the cloned instance
+		std::cout << "vtmf2.PublishGroup(lej2)" << std::endl;
+		vtmf2->PublishGroup(lej2);
+		std::cout << lej.str() << std::endl;
+		std::cout << "versus" << std::endl;
+		std::cout << lej2.str() << std::endl;
+		assert(lej.str() == lej2.str());
 	
-	// check the instances
-	start_clock();
-	check(vtmf, vtmf2);
-	stop_clock();
-	std::cout << elapsed_time() << std::endl;
+		// check the instances
+		start_clock();
+		check(vtmf, vtmf2);
+		stop_clock();
+		std::cout << elapsed_time() << std::endl;
 	
-	// release the instances
-	delete vtmf, delete vtmf2;
+		// release the instances
+		delete vtmf, delete vtmf2;
 
-	// create and check an instance with canonical generator
-	std::cout << "BarnettSmartVTMF_dlog(canonical_g == true)" << std::endl;
-	vtmf = new BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
-	std::cout << "vtmf.CheckGroup()" << std::endl;
-	assert(vtmf->CheckGroup());
+		// create and check an instance with canonical generator
+		std::cout << "BarnettSmartVTMF_dlog(canonical_g == true)" << std::endl;
+		vtmf = new BarnettSmartVTMF_dlog(TMCG_DDH_SIZE, TMCG_DLSE_SIZE, true);
+		std::cout << "vtmf.CheckGroup()" << std::endl;
+		assert(vtmf->CheckGroup());
 	
-	// large generator check
-	mpz_init(fooo), mpz_init(barr);
-	mpz_set(fooo, vtmf->g);
-	tmcg_mpz_wrandomm(barr, vtmf->p);
-	mpz_powm(vtmf->g, barr, vtmf->k, vtmf->p);
-	assert(!vtmf->CheckGroup());
-	mpz_set(vtmf->g, fooo);
-	mpz_clear(fooo), mpz_clear(barr);
+		// large generator check
+		mpz_init(fooo), mpz_init(barr);
+		mpz_set(fooo, vtmf->g);
+		tmcg_mpz_wrandomm(barr, vtmf->p);
+		mpz_powm(vtmf->g, barr, vtmf->k, vtmf->p);
+		assert(!vtmf->CheckGroup());
+		mpz_set(vtmf->g, fooo);
+		mpz_clear(fooo), mpz_clear(barr);
 	
-	// publish the instance
-	std::cout << "vtmf.PublishGroup(lej)" << std::endl;
-	vtmf->PublishGroup(lej);
+		// publish the instance
+		std::cout << "vtmf.PublishGroup(lej)" << std::endl;
+		vtmf->PublishGroup(lej);
 	
-	// create a clone of the instance
-	std::cout << "BarnettSmartVTMF_dlog(lej)" << std::endl;
-	vtmf2 = new BarnettSmartVTMF_dlog(lej);
+		// create a clone of the instance
+		std::cout << "BarnettSmartVTMF_dlog(lej)" << std::endl;
+		vtmf2 = new BarnettSmartVTMF_dlog(lej);
 	
-	// publish the cloned instance
-	std::cout << "vtmf2.PublishGroup(lej2)" << std::endl;
-	vtmf2->PublishGroup(lej2);
-	std::cout << lej.str() << std::endl;
-	std::cout << "versus" << std::endl;
-	std::cout << lej2.str() << std::endl;
-	assert(lej.str() == lej2.str());
+		// publish the cloned instance
+		std::cout << "vtmf2.PublishGroup(lej2)" << std::endl;
+		vtmf2->PublishGroup(lej2);
+		std::cout << lej.str() << std::endl;
+		std::cout << "versus" << std::endl;
+		std::cout << lej2.str() << std::endl;
+		assert(lej.str() == lej2.str());
 	
-	// check the instances
-	start_clock();
-	check(vtmf, vtmf2);
-	stop_clock();
-	std::cout << elapsed_time() << std::endl;
+		// check the instances
+		start_clock();
+		check(vtmf, vtmf2);
+		stop_clock();
+		std::cout << elapsed_time() << std::endl;
 	
-	// release the instances
-	delete vtmf, delete vtmf2;
+		// release the instances
+		delete vtmf, delete vtmf2;
 	
-	return 0;
+		return 0;
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << "exception catched with what = " << e.what() << std::endl;
+		return -1;
+	}
 }
 
 #else
@@ -478,3 +508,4 @@ int main
 }
 
 #endif
+
