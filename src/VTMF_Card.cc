@@ -26,7 +26,6 @@
 #include "VTMF_Card.hh"
 
 // additional headers
-#include <cassert>
 #include "mpz_helper.hh"
 #include "parse_helper.hh"
 
@@ -123,3 +122,4 @@ std::istream& operator >>
 	delete [] tmp;
 	return in;
 }
+
