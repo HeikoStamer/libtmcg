@@ -47,9 +47,9 @@ aiounicast_select::aiounicast_select
 		aiounicast(n_in, j_in, aio_default_scheduler_in, aio_default_timeout_in,
 			aio_is_authenticated_in, aio_is_encrypted_in)
 {
-	assert(j_in < n_in);
-	assert(n_in == fd_in_in.size());
-	assert(fd_in_in.size() == fd_out_in.size());
+	assert(j_in < n_in); // FIXME: thow exception
+	assert(n_in == fd_in_in.size()); // FIXME: thow exception
+	assert(fd_in_in.size() == fd_out_in.size()); // FIXME: thow exception
 
 	// initialize scheduler
 	aio_schedule_current = 0, aio_schedule_buffer = 0;
@@ -75,7 +75,7 @@ aiounicast_select::aiounicast_select
 		if (maclen == 0)
 		{
 			aio_is_initialized = false;
-			std::cerr << "aiounicast_select: gcry_mac_get_algo_maclen() failed" << std::endl;
+			std::cerr << "aiounicast_select: gcry_mac_get_algo_maclen() failed" << std::endl; // FIXME: thow exception
 		}
 	}
 	else
@@ -93,7 +93,7 @@ aiounicast_select::aiounicast_select
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_select: gcry_mac_open() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << gcry_strerror(err) << std::endl; // FIXME: thow exception
 		}
 		memset(salt, 0, sizeof(salt));
 		err = gcry_kdf_derive(key_in[i].c_str(), key_in[i].length(), GCRY_KDF_PBKDF2, 
@@ -102,28 +102,28 @@ aiounicast_select::aiounicast_select
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_select: gcry_kdf_derive() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << gcry_strerror(err) << std::endl; // FIXME: thow exception
 		}
 		err = gcry_mac_setkey(*mac_in[i], key, sizeof(key));
 		if (err)
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_select: gcry_mac_setkey() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << gcry_strerror(err) << std::endl; // FIXME: thow exception
 		}
 		err = gcry_mac_open(mac_out[i], TMCG_GCRY_MAC_ALGO, 0, NULL); 				
 		if (err)
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_select: gcry_mac_open() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << gcry_strerror(err) << std::endl; // FIXME: thow exception
 		}
 		err = gcry_mac_setkey(*mac_out[i], key, sizeof(key));
 		if (err)
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_select: gcry_mac_setkey() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << gcry_strerror(err) << std::endl; // FIXME: thow exception
 		}
 	}
 
@@ -134,13 +134,13 @@ aiounicast_select::aiounicast_select
 		if (keylen == 0)
 		{
 			aio_is_initialized = false;
-			std::cerr << "aiounicast_select: gcry_cipher_get_algo_keylen() failed" << std::endl;
+			std::cerr << "aiounicast_select: gcry_cipher_get_algo_keylen() failed" << std::endl; // FIXME: thow exception
 		}
 		blklen = gcry_cipher_get_algo_blklen(TMCG_GCRY_ENC_ALGO);
 		if (blklen == 0)
 		{
 			aio_is_initialized = false;
-			std::cerr << "aiounicast_select: gcry_cipher_get_algo_blklen() failed" << std::endl;
+			std::cerr << "aiounicast_select: gcry_cipher_get_algo_blklen() failed" << std::endl; // FIXME: thow exception
 		}
 	}
 	else
@@ -159,7 +159,7 @@ aiounicast_select::aiounicast_select
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_select: gcry_cipher_open() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << gcry_strerror(err) << std::endl; // FIXME: thow exception
 		}
 		memset(salt, 1, sizeof(salt)); // use a different salt to derive encryption key
 		err = gcry_kdf_derive(key_in[i].c_str(), key_in[i].length(), GCRY_KDF_PBKDF2, 
@@ -168,14 +168,14 @@ aiounicast_select::aiounicast_select
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_select: gcry_kdf_derive() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << gcry_strerror(err) << std::endl; // FIXME: thow exception
 		}
 		err = gcry_cipher_setkey(*enc_in[i], key, sizeof(key));
 		if (err)
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_select: gcry_cipher_setkey() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << gcry_strerror(err) << std::endl; // FIXME: thow exception
 		}
 		iv_flag_in.push_back(false); // flag means: IV not yet received
 		err = gcry_cipher_open(enc_out[i], TMCG_GCRY_ENC_ALGO, GCRY_CIPHER_MODE_CFB, 0); 				
@@ -183,14 +183,14 @@ aiounicast_select::aiounicast_select
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_select: gcry_cipher_open() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << gcry_strerror(err) << std::endl; // FIXME: thow exception
 		}
 		err = gcry_cipher_setkey(*enc_out[i], key, sizeof(key));
 		if (err)
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_select: gcry_cipher_setkey() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << gcry_strerror(err) << std::endl; // FIXME: thow exception
 		}
 		gcry_create_nonce(iv, blklen); // unpredictable IV is sufficient
 		err = gcry_cipher_setiv(*enc_out[i], iv, sizeof(iv));
@@ -198,7 +198,7 @@ aiounicast_select::aiounicast_select
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_select: gcry_cipher_setiv() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << gcry_strerror(err) << std::endl; // FIXME: thow exception
 		}
 		iv_flag_out.push_back(false); // flag means: IV not yet sent
 		unsigned char *ivcopy = new unsigned char[blklen];

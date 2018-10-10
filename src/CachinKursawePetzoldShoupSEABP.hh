@@ -48,20 +48,23 @@ typedef std::map<std::string, bool>			RBC_TagCheck;
 typedef std::map<std::string, size_t>		RBC_TagCount;
 typedef std::map<std::string, mpz_ptr>		RBC_TagMpz;
 typedef std::list<mpz_ptr>					RBC_BufferList;
-typedef std::list< std::vector<mpz_ptr> >	RBC_VectorList;
 typedef std::vector<mpz_ptr>				RBC_Message;
 typedef std::vector<mpz_srcptr>				RBC_ConstMessage;
+typedef std::list< RBC_Message >			RBC_VectorList;
 
 /* The following class implements an optimized version of Bracha's protocol 
    described in [CKPS01]. Additionally, a FIFO-order deliver mechanism based on
    sequence numbers has been implemented. Original paper cited: G. Bracha: 'An
    asynchronous [(n-1)/3]-resilient consensus protocol', Proc. 3rd ACM Symposium
-   on Principles of Distributed Computing (PODC), pp. 154–162, 1984. */
+   on Principles of Distributed Computing (PODC), pp. 154–162, 1984.
+
+   Note that Bracha's consensus algorithm is not implemented yet.*/
 class CachinKursawePetzoldShoupRBC
 {
 	private:
 		size_t									aio_default_scheduler;
 		time_t									aio_default_timeout;
+		const time_t							aio_timeout_vs;
 		mpz_t									ID, whoami, s;
 		RBC_BufferList							last_IDs, last_s;
 		RBC_VectorList							last_deliver_s;
@@ -77,6 +80,23 @@ class CachinKursawePetzoldShoupRBC
 		std::vector<mpz_ptr>					deliver_s;
 		aiounicast*								aiou;
 		static const size_t						sync_slices = 10;
+
+		void InitializeMessage
+			(RBC_Message &message);
+		void InitializeMessage
+			(RBC_Message &message,
+			 const RBC_ConstMessage &source);
+		void InitializeMessage
+			(RBC_Message &message,
+			 const RBC_Message &source);
+		void AssignMessage
+			(RBC_ConstMessage &message,
+			 const RBC_Message &source);
+		void TagMessage
+			(std::string &tag,
+			 const RBC_Message &message);
+		void ReleaseMessage
+			(RBC_Message &message);
 	
 	public:
 		size_t									n, t, j;
@@ -92,19 +112,6 @@ class CachinKursawePetzoldShoupRBC
 			(const std::string ID_in);
 		void unsetID
 			();
-		void InitializeMessage
-			(RBC_Message &message);
-		void InitializeMessage
-			(RBC_Message &message,
-			 const RBC_ConstMessage &source);
-		void InitializeMessage
-			(RBC_Message &message,
-			 const RBC_Message &source);
-		void AssignMessage
-			(RBC_ConstMessage &message,
-			 const RBC_Message &source);
-		void ReleaseMessage
-			(RBC_Message &message);
 		void Broadcast
 			(mpz_srcptr m,
 			 const bool simulate_faulty_behaviour = false);
@@ -126,3 +133,4 @@ class CachinKursawePetzoldShoupRBC
 };
 
 #endif
+
