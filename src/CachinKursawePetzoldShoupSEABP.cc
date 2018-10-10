@@ -39,8 +39,6 @@
 #include <algorithm>
 #include <stdexcept>
 #include "mpz_srandom.hh"
-#include "mpz_spowm.hh"
-#include "mpz_sprime.hh"
 #include "mpz_helper.hh"
 #include "mpz_shash.hh"
 #include "aiounicast.hh"
