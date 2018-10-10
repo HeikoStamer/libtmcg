@@ -27,7 +27,6 @@
 #include "aiounicast_nonblock.hh"
 
 // additional headers
-#include <cassert>
 #include <stdexcept>
 #include <fcntl.h>
 #include <unistd.h>
@@ -110,8 +109,7 @@ aiounicast_nonblock::aiounicast_nonblock
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_nonblock: gcry_mac_open() failed" <<
-				std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
 		memset(salt, 0, sizeof(salt));
@@ -121,32 +119,32 @@ aiounicast_nonblock::aiounicast_nonblock
 		if (err)
 		{
 			aio_is_initialized = false;
-			std::cerr << "aiounicast_nonblock: gcry_kdf_derive() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << "aiounicast_nonblock: gcry_kdf_derive() failed" <<
+				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
 		err = gcry_mac_setkey(*mac_in[i], key, sizeof(key));
 		if (err)
 		{
 			aio_is_initialized = false;
-			std::cerr << "aiounicast_nonblock: gcry_mac_setkey() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << "aiounicast_nonblock: gcry_mac_setkey() failed" <<
+				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
 		err = gcry_mac_open(mac_out[i], TMCG_GCRY_MAC_ALGO, 0, NULL); 				
 		if (err)
 		{
 			aio_is_initialized = false;
-			std::cerr << "aiounicast_nonblock: gcry_mac_open() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << "aiounicast_nonblock: gcry_mac_open() failed" <<
+				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
 		err = gcry_mac_setkey(*mac_out[i], key, sizeof(key));
 		if (err)
 		{
 			aio_is_initialized = false;
-			std::cerr << "aiounicast_nonblock: gcry_mac_setkey() failed" << std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+			std::cerr << "aiounicast_nonblock: gcry_mac_setkey() failed" <<
+				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
 	}
@@ -188,8 +186,7 @@ aiounicast_nonblock::aiounicast_nonblock
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_nonblock: gcry_cipher_open() failed" <<
-				std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
 		// use a different salt to derive encryption key
@@ -201,8 +198,7 @@ aiounicast_nonblock::aiounicast_nonblock
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_nonblock: gcry_kdf_derive() failed" <<
-				std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
 		err = gcry_cipher_setkey(*enc_in[i], key, sizeof(key));
@@ -210,8 +206,7 @@ aiounicast_nonblock::aiounicast_nonblock
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_nonblock: gcry_cipher_setkey() failed" <<
-				std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
 		iv_flag_in.push_back(false); // flag means: IV not yet received
@@ -221,8 +216,7 @@ aiounicast_nonblock::aiounicast_nonblock
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_nonblock: gcry_cipher_open() failed" <<
-				std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
 		err = gcry_cipher_setkey(*enc_out[i], key, sizeof(key));
@@ -230,8 +224,7 @@ aiounicast_nonblock::aiounicast_nonblock
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_nonblock: gcry_cipher_setkey() failed" <<
-				std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
 		gcry_create_nonce(iv, blklen); // unpredictable IV is sufficient
@@ -240,8 +233,7 @@ aiounicast_nonblock::aiounicast_nonblock
 		{
 			aio_is_initialized = false;
 			std::cerr << "aiounicast_nonblock: gcry_cipher_setiv() failed" <<
-				std::endl;
-			std::cerr << gcry_strerror(err) << std::endl;
+				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
 		iv_flag_out.push_back(false); // flag means: IV not yet sent
@@ -337,8 +329,8 @@ bool aiounicast_nonblock::Send
 		}
 		else
 		{
-			std::cerr << "aiounicast_nonblock(" << j <<
-				"): realsize does not fit" << std::endl;
+			std::cerr << "aiounicast_nonblock(" << j << "):" <<
+				" realsize does not fit" << std::endl;
 			delete [] buf;
 			return false;
 		}
@@ -485,8 +477,8 @@ bool aiounicast_nonblock::Send
 		// timeout occurred?
 		if (realnum < macbuflen)
 		{
-			std::cerr << "aiounicast_nonblock(" << j <<
-				"): MAC send timeout for " << i_in << std::endl;
+			std::cerr << "aiounicast_nonblock(" << j <<	"):" <<
+				" MAC send timeout for " << i_in << std::endl;
 			return false;
 		}
 	}
