@@ -26,8 +26,6 @@
 #include "mpz_spowm.hh"
 
 // additional headers
-#include <cassert>
-#include <iostream>
 #include <stdexcept>
 #include "mpz_srandom.hh"
 
