@@ -28,6 +28,7 @@
 
 // additional headers
 #include <cassert>
+#include <stdexcept>
 #include <sys/select.h>
 #include <unistd.h>
 #include <errno.h>
