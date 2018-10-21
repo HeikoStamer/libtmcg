@@ -145,7 +145,8 @@ void start_instance_nonblock
 						assert(ret);
 					if (ret)
 						std::cout << "P_" << whoami <<
-							": received array from P_" << from << std::endl;
+							": received array[" << mm.size() << "] from P_" <<
+							from << std::endl;
 					for (size_t k = 0; ret && (k < mm.size()); k++)
 					{
 						assert(mpz_divisible_ui_p(mm[k], (whoami + k + 1)));
@@ -285,7 +286,8 @@ void start_instance_select
 						assert(ret);
 					if (ret)
 						std::cout << "P_" << whoami <<
-							": received array from P_" << from << std::endl;
+							": received array[" << mm.size() << "] from P_" <<
+							from << std::endl;
 					for (size_t k = 0; ret && (k < mm.size()); k++)
 					{
 						assert(mpz_divisible_ui_p(mm[k], (whoami + k + 1)));
