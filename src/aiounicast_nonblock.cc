@@ -170,7 +170,9 @@ aiounicast_nonblock::aiounicast_nonblock
 		}
 	}
 	else
+	{
 		keylen = 0, blklen = 0;
+	}
 	for (size_t i = 0; aio_is_encrypted && (i < n_in); i++)
 	{
 		unsigned char salt[keylen];
@@ -281,8 +283,8 @@ bool aiounicast_nonblock::Send
 	}
 	else
 	{
-		std::cerr << "aiounicast_nonblock(" << j <<
-			"): realsize does not fit" << std::endl;
+		std::cerr << "aiounicast_nonblock(" << j <<	"):" <<
+			" realsize does not fit" << std::endl;
 		delete [] buf;
 		return false;
 	}
@@ -420,8 +422,8 @@ bool aiounicast_nonblock::Send
 	// timeout occurred?
 	if (realnum < realsize)
 	{
-		std::cerr << "aiounicast_nonblock(" << j << "): send timeout for " <<
-			i_in << std::endl;
+		std::cerr << "aiounicast_nonblock(" << j << "):" <<
+			" send timeout for " << i_in << std::endl;
 		return false;
 	}
 	if (aio_is_authenticated)
@@ -557,7 +559,7 @@ bool aiounicast_nonblock::Receive
 				if (newline_found &&
 					((buf_ptr[i_out] - newline_ptr - 1) >= maclen))
 				{
-					 // allocate at least one char
+					// allocate at least one char
 					size_t tmplen = newline_ptr + 1;
 					char *tmp = new char[tmplen];
 					// allocate at least one char, even if maclen == 0
@@ -708,8 +710,8 @@ bool aiounicast_nonblock::Receive
 				if (num == 0)
 				{
 					// got EOF
-					std::cerr << "aiounicast_nonblock(" << j << "): got EOF" <<
-						" for " << i_out << std::endl;
+					std::cerr << "aiounicast_nonblock(" << j << "):" <<
+						" got EOF for " << i_out << std::endl;
 					fd_in.erase(i_out); // erase corresponding file descriptor
 					fd_out.erase(i_out); // erase corresponding file descriptor
 					continue;
@@ -718,7 +720,7 @@ bool aiounicast_nonblock::Receive
 				numRead += num;
 				if (aio_is_encrypted)
 				{
-					// take the first blklen bytes from sender as IV for cipher
+					// take first blklen bytes from sender as IV for cipher
 					if (!iv_flag_in[i_out] && (buf_ptr[i_out] >= blklen))
 					{
 						gcry_error_t err;							
@@ -755,8 +757,8 @@ bool aiounicast_nonblock::Receive
 		i_out = n; // timeout for some (unknown) parties
 	else
 	{
-		std::cerr << "aiounicast_nonblock(" << j << "): receive timeout for " <<
-			i_out << std::endl;
+		std::cerr << "aiounicast_nonblock(" << j << "):" <<
+			" receive timeout for " << i_out << std::endl;
 	}
 	return false;
 }
