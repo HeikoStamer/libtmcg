@@ -7,7 +7,8 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
-* [2018-09-] added data structure TMCG_Bigint
+* [2018-] added data structure TMCG_Bigint
+* [2018-10-21] t-rfc4880: check libgcrypt version before testing Ed25519 key
 * [2018-10-10] RBC: used some standard exceptions for error handling
 * [2018-09-21] DKG, ASTC, VSS: used some standard exceptions for error handling
 * [2018-09-20] mpz_srandom: important bugfix for use of additional Botan RNG

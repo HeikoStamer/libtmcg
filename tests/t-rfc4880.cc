@@ -730,7 +730,7 @@ int main
 		gcry_sexp_release(rsaparms);
 		gcry_sexp_release(rsakey);
 
-		// test externally generated public key
+		// test externally generated Ed25519 public key
 		std::string mallory_armored =
 "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n\r\n"
 "mDMEW3P+yxYJKwYBBAHaRw8BAQdAFWO/NfdgP1sX27GUdaporGJkMhCNfr/ZlyMm\r\n"
@@ -751,15 +751,18 @@ int main
 		parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 			PublicKeyBlockParse(mallory_armored, 3, mallory);
 		assert(parse_ok);
-		std::cout << "CheckSelfSignatures()" << std::endl;
-		parse_ok = mallory->CheckSelfSignatures(ring, 3);
-		assert(parse_ok);
-		std::cout << "CheckSubkeys()" << std::endl;
-		parse_ok = mallory->CheckSubkeys(ring, 3);
-		assert(parse_ok);
-		std::cout << "!primary->Weak()" << std::endl;
-		check_ok = mallory->Weak(3);
-		assert(!check_ok);
+		if (gcry_check_version("1.7.0"))
+		{
+			std::cout << "CheckSelfSignatures()" << std::endl;
+			parse_ok = mallory->CheckSelfSignatures(ring, 3);
+			assert(parse_ok);
+			std::cout << "CheckSubkeys()" << std::endl;
+			parse_ok = mallory->CheckSubkeys(ring, 3);
+			assert(parse_ok);
+			std::cout << "!primary->Weak()" << std::endl;
+			check_ok = mallory->Weak(3);
+			assert(!check_ok);
+		}
 		delete mallory;
 		delete ring;
 	
