@@ -344,9 +344,16 @@ bool aiounicast_select::Send
 				retval = select((fd_out[i_in] + 1), NULL, &wfds, NULL, &tv);
 				if (retval < 0)
 				{
-					perror("aiounicast_select (select)");
-					delete [] buf;
-					return false;
+					if (errno == EINTR)
+					{
+						continue;
+					}
+					else
+					{
+						perror("aiounicast_select (select)");
+						delete [] buf;
+						return false;
+					}
 				}
 				if (retval == 0)
 					continue;
@@ -421,9 +428,16 @@ bool aiounicast_select::Send
 		retval = select((fd_out[i_in] + 1), NULL, &wfds, NULL, &tv);
 		if (retval < 0)
 		{
-			perror("aiounicast_select (select)");
-			delete [] buf;
-			return false;
+			if (errno == EINTR)
+			{
+				continue;
+			}
+			else
+			{
+				perror("aiounicast_select (select)");
+				delete [] buf;
+				return false;
+			}
 		}
 		if (retval == 0)
 			continue;
@@ -501,9 +515,16 @@ bool aiounicast_select::Send
 			retval = select((fd_out[i_in] + 1), NULL, &wfds, NULL, &tv);
 			if (retval < 0)
 			{
-				perror("aiounicast_select (select)");
-				delete [] macbuf;
-				return false;
+				if (errno == EINTR)
+				{
+					continue;
+				}
+				else
+				{
+					perror("aiounicast_select (select)");
+					delete [] macbuf;
+					return false;
+				}
 			}
 			if (retval == 0)
 				continue;
@@ -764,8 +785,15 @@ bool aiounicast_select::Receive
 				retval = select((fd_in[i_out] + 1), &rfds, NULL, NULL, &tv);
 				if (retval < 0)
 				{
-					perror("aiounicast_select (select)");
-					return false;
+					if (errno == EINTR)
+					{
+						continue;
+					}
+					else
+					{
+						perror("aiounicast_select (select)");
+						return false;
+					}
 				}
 				if (retval == 0)
 					continue;
