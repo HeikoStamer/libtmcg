@@ -11,6 +11,11 @@
      Internet Engineering Task Force (IETF), Request for Comments: 6637,
      June 2012.
 
+     W. Koch:
+     'OpenPGP Message Format draft-ietf-openpgp-rfc4880bis-04',
+     Network Working Group, Internet-Draft,
+     January 2018.
+
    This file is part of LibTMCG.
 
  Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>

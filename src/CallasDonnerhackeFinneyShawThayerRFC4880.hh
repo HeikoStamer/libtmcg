@@ -11,6 +11,11 @@
      Internet Engineering Task Force (IETF), Request for Comments: 6637,
      June 2012.
 
+     W. Koch:
+     'OpenPGP Message Format draft-ietf-openpgp-rfc4880bis-04',
+     Network Working Group, Internet-Draft,
+     January 2018.
+
    This file is part of LibTMCG.
 
  Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
@@ -76,13 +81,15 @@ template<class T> class TMCG_SecureAlloc
 			(size_type n, const void* hint = 0)
 		{
 			pointer adr = static_cast<pointer>(gcry_malloc_secure(n));
-//std::cerr << "TMCG_SecureAlloc::allocate(" << n << ") at 0x" << std::hex << (long int)adr << std::dec << std::endl;
+//std::cerr << "TMCG_SecureAlloc::allocate(" << n << ") at 0x" << std::hex <<
+// (long int)adr << std::dec << std::endl;
 			return adr;
 		}
 		void deallocate
 			(pointer p, size_type n)
 		{
-//std::cerr << "TMCG_SecureAlloc::deallocate(" << n << ") at 0x" << std::hex << (long int)p << std::dec << std::endl;
+//std::cerr << "TMCG_SecureAlloc::deallocate(" << n << ") at 0x" << std::hex <<
+// (long int)p << std::dec << std::endl;
 			gcry_free(p);
 		}
 		void construct
@@ -121,13 +128,20 @@ template<class T> bool operator!=
 };
 
 // definition of types and constants for OpenPGP structures
-typedef unsigned char tmcg_openpgp_byte_t;
-typedef std::vector<tmcg_openpgp_byte_t> tmcg_openpgp_octets_t;
-typedef std::vector<tmcg_openpgp_byte_t, TMCG_SecureAlloc<tmcg_openpgp_byte_t> > tmcg_openpgp_secure_octets_t;
-typedef std::pair<tmcg_openpgp_octets_t, tmcg_openpgp_octets_t> tmcg_openpgp_notation_t;
-typedef std::vector<tmcg_openpgp_notation_t> tmcg_openpgp_notations_t;
-typedef std::basic_string<char, std::char_traits<char>, TMCG_SecureAlloc<char> > tmcg_openpgp_secure_string_t;
-typedef std::basic_stringstream<char, std::char_traits<char>, TMCG_SecureAlloc<char> > tmcg_openpgp_secure_stringstream_t;
+typedef unsigned char
+	tmcg_openpgp_byte_t;
+typedef std::vector<tmcg_openpgp_byte_t>
+	tmcg_openpgp_octets_t;
+typedef std::vector<tmcg_openpgp_byte_t, TMCG_SecureAlloc<tmcg_openpgp_byte_t> >
+	tmcg_openpgp_secure_octets_t;
+typedef std::pair<tmcg_openpgp_octets_t, tmcg_openpgp_octets_t>
+	tmcg_openpgp_notation_t;
+typedef std::vector<tmcg_openpgp_notation_t>
+	tmcg_openpgp_notations_t;
+typedef std::basic_string<char, std::char_traits<char>, TMCG_SecureAlloc<char> >
+	tmcg_openpgp_secure_string_t;
+typedef std::basic_stringstream<char, std::char_traits<char>, TMCG_SecureAlloc<char> >
+	tmcg_openpgp_secure_stringstream_t;
 
 enum tmcg_openpgp_signature_t
 {
@@ -276,6 +290,8 @@ enum tmcg_openpgp_hashalgo_t
 	TMCG_OPENPGP_HASHALGO_SHA384			= 9,
 	TMCG_OPENPGP_HASHALGO_SHA512			= 10,
 	TMCG_OPENPGP_HASHALGO_SHA224			= 11,
+	TMCG_OPENPGP_HASHALGO_SHA3_256			= 12, // added by draft RFC 4880bis
+	TMCG_OPENPGP_HASHALGO_SHA3_512			= 14, // added by draft RFC 4880bis
 	TMCG_OPENPGP_HASHALGO_EXPERIMENTAL0		= 100,
 	TMCG_OPENPGP_HASHALGO_EXPERIMENTAL1		= 101,
 	TMCG_OPENPGP_HASHALGO_EXPERIMENTAL2		= 102,
@@ -287,6 +303,23 @@ enum tmcg_openpgp_hashalgo_t
 	TMCG_OPENPGP_HASHALGO_EXPERIMENTAL8		= 108,
 	TMCG_OPENPGP_HASHALGO_EXPERIMENTAL9		= 109,
 	TMCG_OPENPGP_HASHALGO_EXPERIMENTAL10	= 110
+};
+
+enum tmcg_openpgp_aeadalgo_t
+{
+	TMCG_OPENPGP_AEADALGO_EAX				= 1,  // added by draft RFC 4880bis
+	TMCG_OPENPGP_AEADALGO_OCB				= 2,  // added by draft RFC 4880bis
+	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL0		= 100,
+	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL1		= 101,
+	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL2		= 102,
+	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL3		= 103,
+	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL4		= 104,
+	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL5		= 105,
+	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL6		= 106,
+	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL7		= 107,
+	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL8		= 108,
+	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL9		= 109,
+	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL10	= 110
 };
 
 static const tmcg_openpgp_byte_t tmcg_openpgp_fRadix64[] = {
@@ -341,16 +374,16 @@ static const tmcg_openpgp_byte_t tmcg_openpgp_oid_nistp384[] =
 // OID for NIST curve P-521 [RFC 6637]
 static const tmcg_openpgp_byte_t tmcg_openpgp_oid_nistp521[] =
 	{ 0x05, 0x2b, 0x81, 0x04, 0x00, 0x23 };
-// OID for Brainpool curve P256r1
+// OID for Brainpool curve P256r1 [draft RFC 4880bis]
 static const tmcg_openpgp_byte_t tmcg_openpgp_oid_brainpoolp256r1[] =
 	{ 0x09, 0x2b, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07 };
-// OID for Brainpool curve P512r1
+// OID for Brainpool curve P512r1 [draft RFC 4880bis]
 static const tmcg_openpgp_byte_t tmcg_openpgp_oid_brainpoolp512r1[] =
 	{ 0x09, 0x2b, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0d };
-// OID for curve Ed25519
+// OID for curve Ed25519 [draft RFC 4880bis]
 static const tmcg_openpgp_byte_t tmcg_openpgp_oid_ed25519[] =
 	{ 0x09, 0x2b, 0x06, 0x01, 0x04, 0x01, 0xda, 0x47, 0x0f, 0x01 };
-// OID for Curve25519
+// OID for Curve25519 [draft RFC 4880bis]
 static const tmcg_openpgp_byte_t tmcg_openpgp_oid_cv25519[] =
 	{ 0x0a, 0x2b, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01 };
 static const tmcg_openpgp_oid_t tmcg_openpgp_oidtable[] =
