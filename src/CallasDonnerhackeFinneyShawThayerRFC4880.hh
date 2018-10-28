@@ -1231,6 +1231,7 @@ class TMCG_OpenPGP_Message
 		tmcg_openpgp_octets_t								literal_data;
 		tmcg_openpgp_octets_t								prefix;
 		tmcg_openpgp_octets_t								mdc;
+		tmcg_openpgp_octets_t								mdc_message;
 
 		TMCG_OpenPGP_Message
 			();

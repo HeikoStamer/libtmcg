@@ -7,6 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-10-28] RFC4880: fixes the selected data/packets for computing the MDC
 * [2018-10-25] aiounicast_select: handle error EINTR during call of select
 * [2018-10-21] t-rfc4880: check libgcrypt version before testing Ed25519 key
 * [2018-10-10] RBC: used some standard exceptions for error handling
