@@ -4507,7 +4507,7 @@ bool TMCG_OpenPGP_Message::Decrypt
 {
 	if (verbose > 1)
 		std::cerr << "INFO: symmetric decryption of message ..." << std::endl;
-	if (!encrypted_message.size())
+	if (encrypted_message.size() == 0)
 	{
 		if (verbose)
 			std::cerr << "ERROR: nothing to decrypt" << std::endl;
@@ -4536,8 +4536,8 @@ bool TMCG_OpenPGP_Message::Decrypt
 		else
 		{
 			if (verbose)
-				std::cerr << "ERROR: wrong length of " << key.size() <<
-					" for session key found" << std::endl;
+				std::cerr << "ERROR: wrong length (" << key.size() <<
+					" bytes) for session key found" << std::endl;
 			return false;
 		}
 	}
@@ -4546,12 +4546,6 @@ bool TMCG_OpenPGP_Message::Decrypt
 		if (verbose)
 			std::cerr << "ERROR: no session key provided" << std::endl;
 		return false;
-	}
-	if (!have_seipd)
-	{
-		if (verbose)
-			std::cerr << "WARNING: encrypted message was not integrity" <<
-				" protected" << std::endl;
 	}
 	prefix.clear(); // clear any previously used prefix
 	gcry_error_t ret = CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -4588,7 +4582,15 @@ bool TMCG_OpenPGP_Message::Decrypt
 			mdc_message.clear();
 			mdc_message.insert(mdc_message.end(), out.begin(), out.end());
 			mdc_message.resize(out.size() - 22); // chop MDC packet
+			if (!CheckMDC(verbose))
+				return false;
 		}
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "WARNING: encrypted message was not integrity" <<
+				" protected" << std::endl;
 	}
 	return true;
 }
