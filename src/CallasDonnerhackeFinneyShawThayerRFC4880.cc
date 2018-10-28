@@ -4564,13 +4564,31 @@ bool TMCG_OpenPGP_Message::Decrypt
 		return false;
 	}
 	// copy the decryption result for computing the MDC
-	if (out.size() >= 22)
+	if (have_seipd)
 	{
-		if (verbose > 1)
-			std::cerr << "INFO: copy decrypted result for MDC ..." << std::endl;
-		mdc_message.clear();
-		mdc_message.insert(mdc_message.end(), out.begin(), out.end());
-		mdc_message.resize(out.size() - 22); // chop MDC packet
+		if (out.size() < 22)
+		{
+			if (verbose)
+				std::cerr << "ERROR: decrypted result too short" << std::endl;
+			return false;
+		}
+		else if ((out[out.size() - 22] != 0xD3) ||
+			(out[out.size() - 21] != 0x14))
+		{
+			if (verbose)
+				std::cerr << "ERROR: no MDC packet found" << std::endl;
+			return false;
+		}
+		else		
+		{
+			mdc.clear();
+			mdc.insert(mdc.end(), out.end() - 20, out.end());
+			if (verbose > 1)
+				std::cerr << "INFO: copy the message for MDC ..." << std::endl;
+			mdc_message.clear();
+			mdc_message.insert(mdc_message.end(), out.begin(), out.end());
+			mdc_message.resize(out.size() - 22); // chop MDC packet
+		}
 	}
 	return true;
 }
@@ -4578,6 +4596,12 @@ bool TMCG_OpenPGP_Message::Decrypt
 bool TMCG_OpenPGP_Message::CheckMDC
 	(const int verbose) const
 {
+	if (!have_seipd)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no SEIPD packet found" << std::endl;
+		return false;
+	}
 	if (mdc.size() == 0)
 	{
 		if (verbose)
@@ -12865,17 +12889,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag19
 {
 	if (verbose > 1)
 		std::cerr << "INFO: MDC length = " << sizeof(ctx.mdc_hash) << std::endl;
-	if ((msg->mdc).size() != 0)
-	{
-		if (verbose)
-			std::cerr << "ERROR: duplicate MDC packet found" << std::endl;
-		return false;
-	}
-	else
-	{
-		for (size_t i = 0; i < sizeof(ctx.mdc_hash); i++)
-			(msg->mdc).push_back(ctx.mdc_hash[i]);
-	}
+	(msg->mdc).clear();
+	for (size_t i = 0; i < sizeof(ctx.mdc_hash); i++)
+		(msg->mdc).push_back(ctx.mdc_hash[i]);
 	return true;
 }
 
