@@ -4553,7 +4553,7 @@ bool TMCG_OpenPGP_Message::Decrypt
 			std::cerr << "WARNING: encrypted message was not integrity" <<
 				" protected" << std::endl;
 	}
-	prefix.clear(); // clear any previous encryption prefix
+	prefix.clear(); // clear any previously used prefix
 	gcry_error_t ret = CallasDonnerhackeFinneyShawThayerRFC4880::
 		SymmetricDecrypt(encrypted_message, sk, prefix, false, skalgo, out);
 	if (ret)
@@ -4563,44 +4563,45 @@ bool TMCG_OpenPGP_Message::Decrypt
 				" with rc = " << gcry_err_code(ret) << std::endl;
 		return false;
 	}
+	// copy the decryption result for computing the MDC
+	if (out.size() >= 22)
+	{
+		if (verbose > 1)
+			std::cerr << "INFO: copy decrypted result for MDC ..." << std::endl;
+		mdc_message.clear();
+		mdc_message.insert(mdc_message.end(), out.begin(), out.end());
+		mdc_message.resize(out.size() - 22); // chop MDC packet
+	}
 	return true;
 }
 
 bool TMCG_OpenPGP_Message::CheckMDC
 	(const int verbose) const
 {
-	if (!mdc.size())
+	if (mdc.size() == 0)
 	{
 		if (verbose)
 			std::cerr << "ERROR: no MDC found" << std::endl;
 		return false;
 	}
-	if (!prefix.size())
+	if (prefix.size() == 0)
 	{
 		if (verbose)
 			std::cerr << "ERROR: no prefix found" << std::endl;
+		return false;
+	}
+	if (mdc_message.size() == 0)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no data found" << std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t mdc_hashing, hash;
 	// "it includes the prefix data described above" [RFC4880]
 	mdc_hashing.insert(mdc_hashing.end(), prefix.begin(), prefix.end());
 	// "it includes all of the plaintext" [RFC4880]
-	if (compressed_message.size() != 0)
-	{
-		if (verbose > 1)
-			std::cerr << "INFO: using COMP packet for computing MDC" <<
-				std::endl;
-		mdc_hashing.insert(mdc_hashing.end(),
-			compressed_message.begin(), compressed_message.end());
-	}
-	else
-	{
-		if (verbose > 1)
-			std::cerr << "INFO: using LIT packet for computing MDC" <<
-				std::endl;
-		mdc_hashing.insert(mdc_hashing.end(),
-			literal_message.begin(), literal_message.end());
-	}
+	mdc_hashing.insert(mdc_hashing.end(),
+		mdc_message.begin(), mdc_message.end());
 	// "and the also includes two octets of values 0xD3, 0x14" [RFC4880]
 	mdc_hashing.push_back(0xD3);
 	mdc_hashing.push_back(0x14);
@@ -4634,6 +4635,7 @@ TMCG_OpenPGP_Message::~TMCG_OpenPGP_Message
 	literal_data.clear();
 	prefix.clear();
 	mdc.clear();
+	mdc_message.clear();
 }
 
 // ===========================================================================
