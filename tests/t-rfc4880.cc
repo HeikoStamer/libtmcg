@@ -704,9 +704,6 @@ int main
 		std::cout << "Decrypt()" << std::endl;
 		parse_ok = msg->Decrypt(seskey, 3, dec);
 		assert(parse_ok);
-		std::cout << "CheckMDC()" << std::endl;
-		parse_ok = msg->CheckMDC(3);
-		assert(parse_ok);
 		std::cout << "MessageParse(dec)" << std::endl;
 		parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 			MessageParse(dec, 3, msg);

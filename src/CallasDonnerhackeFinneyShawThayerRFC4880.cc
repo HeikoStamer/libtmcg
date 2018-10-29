@@ -4501,6 +4501,55 @@ TMCG_OpenPGP_Message::TMCG_OpenPGP_Message
 {
 }
 
+bool TMCG_OpenPGP_Message::CheckMDC
+	(const int verbose) const
+{
+	if (!have_seipd)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no SEIPD packet found" << std::endl;
+		return false;
+	}
+	if (mdc.size() == 0)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no MDC found" << std::endl;
+		return false;
+	}
+	if (prefix.size() == 0)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no prefix found" << std::endl;
+		return false;
+	}
+	if (mdc_message.size() == 0)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no data found" << std::endl;
+		return false;
+	}
+	tmcg_openpgp_octets_t mdc_hashing, hash;
+	// "it includes the prefix data described above" [RFC4880]
+	mdc_hashing.insert(mdc_hashing.end(), prefix.begin(), prefix.end());
+	// "it includes all of the plaintext" [RFC4880]
+	mdc_hashing.insert(mdc_hashing.end(),
+		mdc_message.begin(), mdc_message.end());
+	// "and the also includes two octets of values 0xD3, 0x14" [RFC4880]
+	mdc_hashing.push_back(0xD3);
+	mdc_hashing.push_back(0x14);
+	// "passed through the SHA-1 hash function" [RFC4880]
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, mdc_hashing, hash);
+	if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(mdc, hash))
+	{
+		if (verbose)
+			std::cerr << "ERROR: MDC does not match (security issue)" <<
+				std::endl;
+		return false;
+	}
+	return true;
+}
+
 bool TMCG_OpenPGP_Message::Decrypt
 	(const tmcg_openpgp_secure_octets_t &key, const int verbose,
 	 tmcg_openpgp_octets_t &out)
@@ -4591,55 +4640,6 @@ bool TMCG_OpenPGP_Message::Decrypt
 		if (verbose)
 			std::cerr << "WARNING: encrypted message was not integrity" <<
 				" protected" << std::endl;
-	}
-	return true;
-}
-
-bool TMCG_OpenPGP_Message::CheckMDC
-	(const int verbose) const
-{
-	if (!have_seipd)
-	{
-		if (verbose)
-			std::cerr << "ERROR: no SEIPD packet found" << std::endl;
-		return false;
-	}
-	if (mdc.size() == 0)
-	{
-		if (verbose)
-			std::cerr << "ERROR: no MDC found" << std::endl;
-		return false;
-	}
-	if (prefix.size() == 0)
-	{
-		if (verbose)
-			std::cerr << "ERROR: no prefix found" << std::endl;
-		return false;
-	}
-	if (mdc_message.size() == 0)
-	{
-		if (verbose)
-			std::cerr << "ERROR: no data found" << std::endl;
-		return false;
-	}
-	tmcg_openpgp_octets_t mdc_hashing, hash;
-	// "it includes the prefix data described above" [RFC4880]
-	mdc_hashing.insert(mdc_hashing.end(), prefix.begin(), prefix.end());
-	// "it includes all of the plaintext" [RFC4880]
-	mdc_hashing.insert(mdc_hashing.end(),
-		mdc_message.begin(), mdc_message.end());
-	// "and the also includes two octets of values 0xD3, 0x14" [RFC4880]
-	mdc_hashing.push_back(0xD3);
-	mdc_hashing.push_back(0x14);
-	// "passed through the SHA-1 hash function" [RFC4880]
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, mdc_hashing, hash);
-	if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(mdc, hash))
-	{
-		if (verbose)
-			std::cerr << "ERROR: MDC does not match (security issue)" <<
-				std::endl;
-		return false;
 	}
 	return true;
 }

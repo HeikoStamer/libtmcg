@@ -1214,6 +1214,10 @@ class TMCG_OpenPGP_SKESK
 
 class TMCG_OpenPGP_Message
 {
+	private:
+		bool CheckMDC
+			(const int										verbose) const;
+
 	public:
 		bool												have_sed;
 		bool												have_seipd;
@@ -1239,8 +1243,6 @@ class TMCG_OpenPGP_Message
 			(const tmcg_openpgp_secure_octets_t				&key,
 			 const int										verbose,
 			 tmcg_openpgp_octets_t							&out);
-		bool CheckMDC
-			(const int										verbose) const;
 		~TMCG_OpenPGP_Message
 			();
 };
@@ -1406,8 +1408,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_openpgp_octets_t					&in,
 			 const tmcg_openpgp_octets_t					&in2);
 		static bool OctetsCompareConstantTime
-			(const tmcg_openpgp_secure_octets_t					&in,
-			 const tmcg_openpgp_secure_octets_t					&in2);
+			(const tmcg_openpgp_secure_octets_t				&in,
+			 const tmcg_openpgp_secure_octets_t				&in2);
 		static bool OctetsCompareZero
 			(const tmcg_openpgp_octets_t					&in);
 
@@ -1540,14 +1542,14 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 gcry_mpi_t										&out,
 			 size_t											&sum);
 		static size_t PacketMPIDecode
-			(const tmcg_openpgp_secure_octets_t					&in,
+			(const tmcg_openpgp_secure_octets_t				&in,
 			 gcry_mpi_t										&out,
 			 size_t											&sum);
 		static size_t PacketMPIDecode
 			(const tmcg_openpgp_octets_t					&in,
 			 gcry_mpi_t										&out);
 		static size_t PacketMPIDecode
-			(const tmcg_openpgp_secure_octets_t					&in,
+			(const tmcg_openpgp_secure_octets_t				&in,
 			 gcry_mpi_t										&out);
 		static void PacketStringEncode
 			(const std::string								&in,
@@ -1831,7 +1833,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_openpgp_packet_ctx_t				&in,
 			 tmcg_openpgp_packet_ctx_t						&out);
 		static tmcg_openpgp_byte_t PacketBodyExtract
-			(const tmcg_openpgp_octets_t						&in,
+			(const tmcg_openpgp_octets_t					&in,
 			 const int										verbose,
 			 tmcg_openpgp_octets_t							&out);
 		static tmcg_openpgp_byte_t PacketDecode
