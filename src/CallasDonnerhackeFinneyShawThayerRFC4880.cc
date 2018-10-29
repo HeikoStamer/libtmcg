@@ -4503,7 +4503,10 @@ TMCG_OpenPGP_Message::TMCG_OpenPGP_Message
 }
 
 bool TMCG_OpenPGP_Message::CheckMDC
-	(const int verbose) const
+	(const tmcg_openpgp_octets_t &prefix,
+	 const tmcg_openpgp_octets_t &mdc,
+	 const tmcg_openpgp_octets_t &mdc_message,
+	 const int verbose) const
 {
 	if (!have_seipd)
 	{
@@ -4511,16 +4514,16 @@ bool TMCG_OpenPGP_Message::CheckMDC
 			std::cerr << "ERROR: no SEIPD packet found" << std::endl;
 		return false;
 	}
-	if (mdc.size() == 0)
-	{
-		if (verbose)
-			std::cerr << "ERROR: no MDC found" << std::endl;
-		return false;
-	}
 	if (prefix.size() == 0)
 	{
 		if (verbose)
 			std::cerr << "ERROR: no prefix found" << std::endl;
+		return false;
+	}
+	if (mdc.size() == 0)
+	{
+		if (verbose)
+			std::cerr << "ERROR: no MDC found" << std::endl;
 		return false;
 	}
 	if (mdc_message.size() == 0)
@@ -4553,7 +4556,7 @@ bool TMCG_OpenPGP_Message::CheckMDC
 
 bool TMCG_OpenPGP_Message::Decrypt
 	(const tmcg_openpgp_secure_octets_t &key, const int verbose,
-	 tmcg_openpgp_octets_t &out)
+	 tmcg_openpgp_octets_t &out) const
 {
 	if (verbose > 1)
 		std::cerr << "INFO: symmetric decryption of message ..." << std::endl;
@@ -4587,7 +4590,7 @@ bool TMCG_OpenPGP_Message::Decrypt
 		{
 			if (verbose)
 				std::cerr << "ERROR: wrong length (" << key.size() <<
-					" bytes) for session key found" << std::endl;
+					" bytes) of session key found" << std::endl;
 			return false;
 		}
 	}
@@ -4597,7 +4600,7 @@ bool TMCG_OpenPGP_Message::Decrypt
 			std::cerr << "ERROR: no session key provided" << std::endl;
 		return false;
 	}
-	prefix.clear(); // clear any previously used prefix
+	tmcg_openpgp_octets_t prefix;
 	gcry_error_t ret = CallasDonnerhackeFinneyShawThayerRFC4880::
 		SymmetricDecrypt(encrypted_message, sk, prefix, false, skalgo, out);
 	if (ret)
@@ -4625,14 +4628,13 @@ bool TMCG_OpenPGP_Message::Decrypt
 		}
 		else		
 		{
-			mdc.clear();
+			tmcg_openpgp_octets_t mdc, mdc_message;
 			mdc.insert(mdc.end(), out.end() - 20, out.end());
 			if (verbose > 1)
 				std::cerr << "INFO: copy the message for MDC ..." << std::endl;
-			mdc_message.clear();
 			mdc_message.insert(mdc_message.end(), out.begin(), out.end());
-			mdc_message.resize(out.size() - 22); // chop MDC packet
-			if (!CheckMDC(verbose))
+			mdc_message.resize(out.size() - 22); // remove MDC packet
+			if (!CheckMDC(prefix, mdc, mdc_message, verbose))
 				return false;
 		}
 	}
@@ -4664,9 +4666,7 @@ TMCG_OpenPGP_Message::~TMCG_OpenPGP_Message
 	compressed_data.clear();
 	literal_message.clear();
 	literal_data.clear();
-	prefix.clear();
 	mdc.clear();
-	mdc_message.clear();
 	for (size_t i = 0; i < signatures.size(); i++)
 		delete signatures[i];
 }

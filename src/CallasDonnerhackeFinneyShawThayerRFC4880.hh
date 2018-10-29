@@ -1216,7 +1216,10 @@ class TMCG_OpenPGP_Message
 {
 	private:
 		bool CheckMDC
-			(const int										verbose) const;
+			(const tmcg_openpgp_octets_t					&prefix,
+			 const tmcg_openpgp_octets_t					&mdc,
+			 const tmcg_openpgp_octets_t					&mdc_message,
+			 const int										verbose) const;
 
 	public:
 		bool												have_sed;
@@ -1234,9 +1237,7 @@ class TMCG_OpenPGP_Message
 		tmcg_openpgp_octets_t								compressed_data;
 		tmcg_openpgp_octets_t								literal_message;
 		tmcg_openpgp_octets_t								literal_data;
-		tmcg_openpgp_octets_t								prefix;
-		tmcg_openpgp_octets_t								mdc;
-		tmcg_openpgp_octets_t								mdc_message;
+		tmcg_openpgp_octets_t								mdc;	
 		std::vector<const TMCG_OpenPGP_Signature*>			signatures;
 
 		TMCG_OpenPGP_Message
@@ -1244,7 +1245,7 @@ class TMCG_OpenPGP_Message
 		bool Decrypt
 			(const tmcg_openpgp_secure_octets_t				&key,
 			 const int										verbose,
-			 tmcg_openpgp_octets_t							&out);
+			 tmcg_openpgp_octets_t							&out) const;
 		~TMCG_OpenPGP_Message
 			();
 };
