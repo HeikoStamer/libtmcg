@@ -1221,6 +1221,7 @@ class TMCG_OpenPGP_Message
 	public:
 		bool												have_sed;
 		bool												have_seipd;
+		bool												have_aead;
 		tmcg_openpgp_compalgo_t								compalgo;
 		tmcg_openpgp_byte_t									format;
 		std::string											filename;
@@ -1236,6 +1237,7 @@ class TMCG_OpenPGP_Message
 		tmcg_openpgp_octets_t								prefix;
 		tmcg_openpgp_octets_t								mdc;
 		tmcg_openpgp_octets_t								mdc_message;
+		std::vector<const TMCG_OpenPGP_Signature*>			signatures;
 
 		TMCG_OpenPGP_Message
 			();
@@ -1335,6 +1337,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 TMCG_OpenPGP_Prvkey*							&prv,
 			 TMCG_OpenPGP_PrivateSubkey*					&sub);
 		static bool MessageParse_Tag1
+			(const tmcg_openpgp_packet_ctx_t				&ctx,
+			 const int										verbose,
+			 const tmcg_openpgp_octets_t					&current_packet,
+			 TMCG_OpenPGP_Message*							&msg);
+		static bool MessageParse_Tag2
 			(const tmcg_openpgp_packet_ctx_t				&ctx,
 			 const int										verbose,
 			 const tmcg_openpgp_octets_t					&current_packet,
