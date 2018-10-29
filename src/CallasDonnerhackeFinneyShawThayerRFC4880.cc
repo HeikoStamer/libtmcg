@@ -4494,6 +4494,7 @@ TMCG_OpenPGP_Message::TMCG_OpenPGP_Message
 	():
 		have_sed(false),
 		have_seipd(false),
+		have_aead(false),
 		compalgo(TMCG_OPENPGP_COMPALGO_UNCOMPRESSED),
 		format(0x00),
 		filename(""),
@@ -4635,6 +4636,10 @@ bool TMCG_OpenPGP_Message::Decrypt
 				return false;
 		}
 	}
+	else if (have_aead)
+	{
+// TODO
+	}
 	else
 	{
 		if (verbose)
@@ -4662,6 +4667,8 @@ TMCG_OpenPGP_Message::~TMCG_OpenPGP_Message
 	prefix.clear();
 	mdc.clear();
 	mdc_message.clear();
+	for (size_t i = 0; i < signatures.size(); i++)
+		delete signatures[i];
 }
 
 // ===========================================================================
@@ -12766,6 +12773,95 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag1
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const tmcg_openpgp_octets_t &current_packet,
+	 TMCG_OpenPGP_Message* &msg)
+{
+	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, keyflags;
+	tmcg_openpgp_octets_t features, psa, pha, pca, embeddedsig;
+	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
+		issuer.push_back(ctx.issuer[i]);
+	switch (ctx.issuerkeyversion)
+	{
+		case 0x04: // V4 keys use SHA-1
+			for (size_t i = 0; i < 20; i++)
+				issuerfpr.push_back(ctx.issuerfingerprint[i]);
+			break;
+		case 0x05: // V5 keys use SHA256
+			for (size_t i = 0; i < 32; i++)
+				issuerfpr.push_back(ctx.issuerfingerprint[i]);
+			break;
+	}
+	for (size_t i = 0; i < ctx.hspdlen; i++)
+		hspd.push_back(ctx.hspd[i]);
+	for (size_t i = 0; i < ctx.keyflagslen; i++)
+		keyflags.push_back(ctx.keyflags[i]);
+	for (size_t i = 0; i < ctx.featureslen; i++)
+		features.push_back(ctx.features[i]);
+	for (size_t i = 0; i < ctx.psalen; i++)
+		psa.push_back(ctx.psa[i]);
+	for (size_t i = 0; i < ctx.phalen; i++)
+		pha.push_back(ctx.pha[i]);
+	for (size_t i = 0; i < ctx.pcalen; i++)
+		pca.push_back(ctx.pca[i]);
+	for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
+		embeddedsig.push_back(ctx.embeddedsignature[i]);
+	TMCG_OpenPGP_Signature *sig = NULL;
+	if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	{
+		unsigned int mdbits = 0;
+		mdbits = gcry_mpi_get_nbits(ctx.md);
+		if (verbose > 2)
+			std::cerr << "INFO: mdbits = " << mdbits << std::endl;
+		// create a new signature object
+		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
+			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
+			ctx.type, ctx.version, ctx.sigcreationtime,
+			ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.md,
+			current_packet, hspd, issuer, issuerfpr, keyflags, features,
+			psa, pha, pca, embeddedsig);
+	}
+	else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
+		(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+		(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
+	{
+		unsigned int rbits = 0, sbits = 0;
+		rbits = gcry_mpi_get_nbits(ctx.r);
+		sbits = gcry_mpi_get_nbits(ctx.s);
+		if (verbose > 2)
+			std::cerr << "INFO: rbits = " << rbits <<
+				" sbits = " << sbits << std::endl;
+		// create a new signature object
+		sig = new TMCG_OpenPGP_Signature(ctx.revocable,
+			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
+			ctx.type, ctx.version, ctx.sigcreationtime,
+			ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.r, ctx.s,
+			current_packet, hspd, issuer, issuerfpr, keyflags, features,
+			psa, pha, pca, embeddedsig);
+	}
+	else
+	{
+		if (verbose)
+		{
+			std::cerr << "WARNING: public-key signature algorithm " <<
+				(int)ctx.pkalgo << " not supported" << std::endl;
+		}
+		return true;
+	}
+	if (!sig->Good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: parsing signature material failed" << std::endl;
+		delete sig;
+		return false;
+	}
+	else
+		(msg->signatures).push_back(sig);
+	return true;
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag3
 	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
 	 const tmcg_openpgp_octets_t &current_packet,
@@ -12820,10 +12916,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag9
 {
 	if (verbose > 1)
 		std::cerr << "INFO: SE length = " << ctx.encdatalen << std::endl;
-	if (msg->have_sed || msg->have_seipd)
+	if (msg->have_sed || msg->have_seipd || msg->have_aead)
 	{
 		if (verbose)
-			std::cerr << "ERROR: duplicate SE/SEIP packet found" << std::endl;
+		{
+			std::cerr << "ERROR: duplicate SE/SEIP/AEAD packet found" <<
+				std::endl;
+		}
 		return false;
 	}
 	else
@@ -12869,10 +12968,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag18
 {
 	if (verbose > 1)
 		std::cerr << "INFO: SEIP length = " << ctx.encdatalen << std::endl;
-	if (msg->have_sed || msg->have_seipd)
+	if (msg->have_sed || msg->have_seipd || msg->have_aead)
 	{
 		if (verbose)
-			std::cerr << "ERROR: duplicate SE/SEIP packet found" << std::endl;
+		{
+			std::cerr << "ERROR: duplicate SE/SEIP/AEAD packet found" <<
+				std::endl;
+		}
 		return false;
 	}
 	else
@@ -12952,7 +13054,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		tmcg_openpgp_notations_t notations;
 		if (embedded_pkt.size())
 		{
-			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet, notations);
+			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet,
+				notations);
 			if (verbose > 2)
 				std::cerr << "INFO: [EMBEDDED] PacketDecode() = " <<
 					(int)ptag << " version = " << (int)ctx.version << std::endl;
@@ -13318,7 +13421,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 		tmcg_openpgp_notations_t notations;
 		if (embedded_pkt.size())
 		{
-			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet, notations);
+			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet,
+				notations);
 			if (verbose > 2)
 				std::cerr << "INFO: [EMBEDDED] PacketDecode() = " <<
 					(int)ptag << " version = " << (int)ctx.version << std::endl;
@@ -13514,7 +13618,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		tmcg_openpgp_notations_t notations;
 		if (embedded_pkt.size())
 		{
-			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet, notations);
+			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet,
+				notations);
 			if (verbose > 2)
 				std::cerr << "INFO: [EMBEDDED] PacketDecode() = " <<
 					(int)ptag << " version = " << (int)ctx.version << std::endl;
@@ -13778,9 +13883,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				kseq = true;
 				break;
 			case 2: // Signature
-				if (verbose)
-					std::cerr << "WARNING: signature OpenPGP packet found;" <<
-						" not supported and ignored" << std::endl;
+				ret = MessageParse_Tag2(ctx, verbose, current_packet, msg);
+				if (kseq)
+					ret = false; // ESK sequence detected
 				break;
 			case 3: // Symmetric-Key Encrypted Session Key
 				ret = MessageParse_Tag3(ctx, verbose, current_packet, msg);
