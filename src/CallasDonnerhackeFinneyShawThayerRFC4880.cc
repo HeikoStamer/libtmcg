@@ -10155,11 +10155,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHashV3
 	// [...] For text document signatures (type 0x01), the document is
 	// canonicalized by converting line endings to <CR><LF>, and the
 	// resulting data is hashed.
+	tmcg_openpgp_byte_t last = '!';
 	for (size_t i = 0; i < data.size(); i++)
 	{
-		if (data[i] == '\n')
+		if ((data[i] == '\n') && (last != '\r'))
 			hash_input.push_back('\r');
 		hash_input.push_back(data[i]);
+		last = data[i];
 	}
 	// [...]
 	// Once the data body is hashed, then a trailer is hashed. A V3
@@ -10225,11 +10227,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHash
 	// [...] For text document signatures (type 0x01), the document is
 	// canonicalized by converting line endings to <CR><LF>, and the
 	// resulting data is hashed.
+	tmcg_openpgp_byte_t last = '!';
 	for (size_t i = 0; i < data.size(); i++)
 	{
-		if (data[i] == '\n')
+		if ((data[i] == '\n') && (last != '\r'))
 			hash_input.push_back('\r');
 		hash_input.push_back(data[i]);
+		last = data[i];
 	}
 	// [...]
 	// Once the data body is hashed, then a trailer is hashed. [...]
