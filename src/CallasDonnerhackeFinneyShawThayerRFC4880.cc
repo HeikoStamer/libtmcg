@@ -326,6 +326,99 @@ bool TMCG_OpenPGP_Signature::CheckIntegrity
 // resulting hash field is used in the signature algorithm and placed
 // at the end of the Signature packet.
 
+bool TMCG_OpenPGP_Signature::VerifyData
+	(const gcry_sexp_t key,
+	 const tmcg_openpgp_octets_t &data,
+	 const int verbose) const
+{
+	if (!Good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: bad signature material" <<	std::endl;
+		return false;
+	}
+	tmcg_openpgp_octets_t trailer, left, hash;
+	if (version == 3)
+	{
+		tmcg_openpgp_octets_t sigtime_octets;
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			PacketTimeEncode(creationtime, sigtime_octets);
+		trailer.push_back(type);
+		trailer.insert(trailer.end(),
+			sigtime_octets.begin(), sigtime_octets.end());
+		bool hret;
+		switch (type)
+		{
+			case TMCG_OPENPGP_SIGNATURE_BINARY_DOCUMENT:
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					BinaryDocumentHashV3(data, trailer, hashalgo, hash, left);
+				break;
+			case TMCG_OPENPGP_SIGNATURE_CANONICAL_TEXT_DOCUMENT:
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					TextDocumentHashV3(data, trailer, hashalgo, hash, left);
+				break;
+			default:
+				if (verbose)
+					std::cerr << "ERROR: signature type not supported " <<
+						std::endl;
+				return false;
+				break;
+		}
+		if (!hret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: cannot process input data" << std::endl;
+			return false;
+		}
+	}
+	else if (version == 4)
+	{
+		trailer.push_back(4);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		bool hret;
+		switch (type)
+		{
+			case TMCG_OPENPGP_SIGNATURE_BINARY_DOCUMENT:
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					BinaryDocumentHash(data, trailer, hashalgo, hash, left);
+				break;
+			case TMCG_OPENPGP_SIGNATURE_CANONICAL_TEXT_DOCUMENT:
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					TextDocumentHash(data, trailer, hashalgo, hash, left);
+				break;
+			default:
+				if (verbose)
+					std::cerr << "ERROR: signature type not supported " <<
+						std::endl;
+				return false;
+				break;
+		}
+		if (!hret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: cannot process input data" << std::endl;
+			return false;
+		}
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: signature version not supported" << std::endl;
+		return false;
+	}
+	if (verbose > 2)
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
+			" " << (int)left[1] << std::dec << std::endl;
+	if (CheckIntegrity(key, hash, verbose))
+		return true;
+	return false;
+}
+
 bool TMCG_OpenPGP_Signature::Verify
 	(const gcry_sexp_t key,
 	 const std::string &filename,
@@ -9923,6 +10016,33 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHashV3
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHashV3
+	(const tmcg_openpgp_octets_t &data, const tmcg_openpgp_octets_t &trailer, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+
+	// All signatures are formed by producing a hash over the signature
+	// data, and then using the resulting hash in the signature algorithm.
+	// For binary document signatures (type 0x00), the document data is
+	// hashed directly.
+	hash_input.insert(hash_input.end(), data.begin(), data.end());
+	// [...]
+	// Once the data body is hashed, then a trailer is hashed. A V3
+	// signature hashes five octets of the packet body, starting from the
+	// signature type field. This data is the signature type, followed by
+	// the four-octet signature time.
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// After all this has been hashed in a single hash context, the
+	// resulting hash field is used in the signature algorithm and placed
+	// at the end of the Signature packet.
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+	return true;
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 	(const std::string &filename, const tmcg_openpgp_octets_t &trailer, 
 	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
@@ -9959,6 +10079,42 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
+	(const tmcg_openpgp_octets_t &data, const tmcg_openpgp_octets_t &trailer, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+
+	// All signatures are formed by producing a hash over the signature
+	// data, and then using the resulting hash in the signature algorithm.
+	// For binary document signatures (type 0x00), the document data is
+	// hashed directly.
+	hash_input.insert(hash_input.end(), data.begin(), data.end());
+	// [...]
+	// Once the data body is hashed, then a trailer is hashed. [...]
+	// A V4 signature hashes the packet body starting from its first
+	// field, the version number, through the end of the hashed subpacket
+	// data. Thus, the fields hashed are the signature version, the
+	// signature type, the public-key algorithm, the hash algorithm,
+	// the hashed subpacket length, and the hashed subpacket body.
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// V4 signatures also hash in a final trailer of six octets: the
+	// version of the Signature packet, i.e., 0x04; 0xFF; and a four-octet,
+	// big-endian number that is the length of the hashed data from the
+	// Signature packet (note that this number does not include these final
+	// six octets).
+	hash_input.push_back(0x04);
+	FixedLengthEncode(trailer.size(), hash_input);
+	// After all this has been hashed in a single hash context, the
+	// resulting hash field is used in the signature algorithm and placed
+	// at the end of the Signature packet.
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+	return true;
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHashV3
 	(const std::string &filename, const tmcg_openpgp_octets_t &trailer, 
 	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
@@ -9982,6 +10138,39 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHashV3
 	// at the end of the Signature packet.
 	if (!HashComputeFile(hashalgo, filename, true, hash_input, hash))
 		return false;
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHashV3
+	(const tmcg_openpgp_octets_t &data, const tmcg_openpgp_octets_t &trailer, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+
+	// All signatures are formed by producing a hash over the signature
+	// data, and then using the resulting hash in the signature algorithm.
+	// [...] For text document signatures (type 0x01), the document is
+	// canonicalized by converting line endings to <CR><LF>, and the
+	// resulting data is hashed.
+	for (size_t i = 0; i < data.size(); i++)
+	{
+		if (data[i] == '\n')
+			hash_input.push_back('\r');
+		hash_input.push_back(data[i]);
+	}
+	// [...]
+	// Once the data body is hashed, then a trailer is hashed. A V3
+	// signature hashes five octets of the packet body, starting from the
+	// signature type field. This data is the signature type, followed by
+	// the four-octet signature time.
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// After all this has been hashed in a single hash context, the
+	// resulting hash field is used in the signature algorithm and placed
+	// at the end of the Signature packet.
+	HashCompute(hashalgo, hash_input, hash);
 	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 	return true;
@@ -10019,6 +10208,48 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHash
 	// at the end of the Signature packet.
 	if (!HashComputeFile(hashalgo, filename, true, hash_input, hash))
 		return false;
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHash
+	(const tmcg_openpgp_octets_t &data, const tmcg_openpgp_octets_t &trailer, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+
+	// All signatures are formed by producing a hash over the signature
+	// data, and then using the resulting hash in the signature algorithm.
+	// [...] For text document signatures (type 0x01), the document is
+	// canonicalized by converting line endings to <CR><LF>, and the
+	// resulting data is hashed.
+	for (size_t i = 0; i < data.size(); i++)
+	{
+		if (data[i] == '\n')
+			hash_input.push_back('\r');
+		hash_input.push_back(data[i]);
+	}
+	// [...]
+	// Once the data body is hashed, then a trailer is hashed. [...]
+	// A V4 signature hashes the packet body starting from its first
+	// field, the version number, through the end of the hashed subpacket
+	// data. Thus, the fields hashed are the signature version, the
+	// signature type, the public-key algorithm, the hash algorithm,
+	// the hashed subpacket length, and the hashed subpacket body.
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// V4 signatures also hash in a final trailer of six octets: the
+	// version of the Signature packet, i.e., 0x04; 0xFF; and a four-octet,
+	// big-endian number that is the length of the hashed data from the
+	// Signature packet (note that this number does not include these final
+	// six octets).
+	hash_input.push_back(0x04);
+	FixedLengthEncode(trailer.size(), hash_input);
+	// After all this has been hashed in a single hash context, the
+	// resulting hash field is used in the signature algorithm and placed
+	// at the end of the Signature packet.
+	HashCompute(hashalgo, hash_input, hash);
 	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
 	return true;

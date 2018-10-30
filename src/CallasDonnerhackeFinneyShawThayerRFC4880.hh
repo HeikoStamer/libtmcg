@@ -611,6 +611,10 @@ class TMCG_OpenPGP_Signature
 			(const gcry_sexp_t								key,
 			 const tmcg_openpgp_octets_t					&hash,
 	 		 const int 										verbose) const;
+		bool VerifyData
+			(const gcry_sexp_t								key,
+			 const tmcg_openpgp_octets_t					&data,
+	 		 const int 										verbose) const;		
 		bool Verify
 			(const gcry_sexp_t								key,
 			 const std::string								&filename,
@@ -1880,8 +1884,20 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_hashalgo_t					hashalgo,
 			 tmcg_openpgp_octets_t							&hash,
 			 tmcg_openpgp_octets_t							&left);
+		static bool BinaryDocumentHashV3
+			(const tmcg_openpgp_octets_t					&data,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
 		static bool BinaryDocumentHash
 			(const std::string								&filename,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
+		static bool BinaryDocumentHash
+			(const tmcg_openpgp_octets_t					&data,
 			 const tmcg_openpgp_octets_t					&trailer,
 			 const tmcg_openpgp_hashalgo_t					hashalgo,
 			 tmcg_openpgp_octets_t							&hash,
@@ -1892,8 +1908,20 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_hashalgo_t					hashalgo,
 			 tmcg_openpgp_octets_t							&hash,
 			 tmcg_openpgp_octets_t							&left);
+		static bool TextDocumentHashV3
+			(const tmcg_openpgp_octets_t					&data,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
 		static bool TextDocumentHash
 			(const std::string								&filename,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
+		static bool TextDocumentHash
+			(const tmcg_openpgp_octets_t					&data,
 			 const tmcg_openpgp_octets_t					&trailer,
 			 const tmcg_openpgp_hashalgo_t					hashalgo,
 			 tmcg_openpgp_octets_t							&hash,
