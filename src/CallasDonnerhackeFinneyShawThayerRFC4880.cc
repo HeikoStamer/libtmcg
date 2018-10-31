@@ -3505,7 +3505,7 @@ void TMCG_OpenPGP_Pubkey::Export
 		}
 		for (size_t i = 0; i < (userids[j]->certsigs).size(); i++)
 		{
-			if (!userids[j]->certsigs[i]->exportable)
+			if (userids[j]->certsigs[i]->exportable == false)
 				continue;
 			out.insert(out.end(),
 				(userids[j]->certsigs[i]->packet).begin(),
@@ -3531,7 +3531,7 @@ void TMCG_OpenPGP_Pubkey::Export
 		}
 		for (size_t i = 0; i < (userattributes[j]->certsigs).size(); i++)
 		{
-			if (!userattributes[j]->certsigs[i]->exportable)
+			if (userattributes[j]->certsigs[i]->exportable == false)
 				continue;
 			out.insert(out.end(),
 				(userattributes[j]->certsigs[i]->packet).begin(),
