@@ -4037,6 +4037,116 @@ bool TMCG_OpenPGP_Prvkey::tDSS_CreateMapping
 	return true;
 }
 
+void TMCG_OpenPGP_Prvkey::Export
+	(tmcg_openpgp_octets_t &out) const
+{
+	out.insert(out.end(),
+		packet.begin(),
+		packet.end());
+	for (size_t i = 0; i < pub->keyrevsigs.size(); i++)
+	{
+		out.insert(out.end(),
+			(pub->keyrevsigs[i]->packet).begin(),
+			(pub->keyrevsigs[i]->packet).end());
+	}
+	for (size_t i = 0; i < pub->selfsigs.size(); i++)
+	{
+		out.insert(out.end(),
+			(pub->selfsigs[i]->packet).begin(),
+			(pub->selfsigs[i]->packet).end());
+	}
+	for (size_t i = 0; i < pub->certrevsigs.size(); i++)
+	{
+		out.insert(out.end(),
+			(pub->certrevsigs[i]->packet).begin(),
+			(pub->certrevsigs[i]->packet).end());
+	}
+	for (size_t j = 0; j < pub->userids.size(); j++)
+	{
+		out.insert(out.end(),
+			(pub->userids[j]->packet).begin(),
+			(pub->userids[j]->packet).end());
+		for (size_t i = 0; i < (pub->userids[j]->selfsigs).size(); i++)
+		{
+			out.insert(out.end(),
+				(pub->userids[j]->selfsigs[i]->packet).begin(),
+				(pub->userids[j]->selfsigs[i]->packet).end());
+		}
+		for (size_t i = 0; i < (pub->userids[j]->revsigs).size(); i++)
+		{
+			out.insert(out.end(),
+				(pub->userids[j]->revsigs[i]->packet).begin(),
+				(pub->userids[j]->revsigs[i]->packet).end());
+		}
+		for (size_t i = 0; i < (pub->userids[j]->certsigs).size(); i++)
+		{
+			out.insert(out.end(),
+				(pub->userids[j]->certsigs[i]->packet).begin(),
+				(pub->userids[j]->certsigs[i]->packet).end());
+		}
+	}
+	for (size_t j = 0; j < pub->userattributes.size(); j++)
+	{
+		out.insert(out.end(),
+			(pub->userattributes[j]->packet).begin(),
+			(pub->userattributes[j]->packet).end());
+		for (size_t i = 0; i < (pub->userattributes[j]->selfsigs).size(); i++)
+		{
+			out.insert(out.end(),
+				(pub->userattributes[j]->selfsigs[i]->packet).begin(),
+				(pub->userattributes[j]->selfsigs[i]->packet).end());
+		}
+		for (size_t i = 0; i < (pub->userattributes[j]->revsigs).size(); i++)
+		{
+			out.insert(out.end(),
+				(pub->userattributes[j]->revsigs[i]->packet).begin(),
+				(pub->userattributes[j]->revsigs[i]->packet).end());
+		}
+		for (size_t i = 0; i < (pub->userattributes[j]->certsigs).size(); i++)
+		{
+			out.insert(out.end(),
+				(pub->userattributes[j]->certsigs[i]->packet).begin(),
+				(pub->userattributes[j]->certsigs[i]->packet).end());
+		}
+	}
+	for (size_t j = 0; j < private_subkeys.size(); j++)
+	{
+		out.insert(out.end(),
+			(private_subkeys[j]->packet).begin(),
+			(private_subkeys[j]->packet).end());
+		for (size_t i = 0; i < (private_subkeys[j]->pub->keyrevsigs).size(); i++)
+		{
+			out.insert(out.end(),
+				(private_subkeys[j]->pub->keyrevsigs[i]->packet).begin(),
+				(private_subkeys[j]->pub->keyrevsigs[i]->packet).end());
+		}
+		for (size_t i = 0; i < (private_subkeys[j]->pub->bindsigs).size(); i++)
+		{
+			out.insert(out.end(),
+				(private_subkeys[j]->pub->bindsigs[i]->packet).begin(),
+				(private_subkeys[j]->pub->bindsigs[i]->packet).end());
+		}
+		for (size_t i = 0; i < (private_subkeys[j]->pub->pbindsigs).size(); i++)
+		{
+			out.insert(out.end(),
+				(private_subkeys[j]->pub->pbindsigs[i]->packet).begin(),
+				(private_subkeys[j]->pub->pbindsigs[i]->packet).end());
+		}
+		for (size_t i = 0; i < (private_subkeys[j]->pub->selfsigs).size(); i++)
+		{
+			out.insert(out.end(),
+				(private_subkeys[j]->pub->selfsigs[i]->packet).begin(),
+				(private_subkeys[j]->pub->selfsigs[i]->packet).end());
+		}
+		for (size_t i = 0; i < (private_subkeys[j]->pub->certrevsigs).size(); i++)
+		{
+			out.insert(out.end(),
+				(private_subkeys[j]->pub->certrevsigs[i]->packet).begin(),
+				(private_subkeys[j]->pub->certrevsigs[i]->packet).end());
+		}
+	}
+}
+
 TMCG_OpenPGP_Prvkey::~TMCG_OpenPGP_Prvkey
 	()
 {

@@ -1127,6 +1127,8 @@ class TMCG_OpenPGP_Prvkey
 		bool tDSS_CreateMapping
 			(const std::vector<std::string>					&peers,
 			 const int										verbose);
+		void Export
+			(tmcg_openpgp_octets_t							&out) const;
 		~TMCG_OpenPGP_Prvkey
 			();
 };
