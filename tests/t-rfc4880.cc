@@ -470,6 +470,11 @@ int main
 		bool parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 			PublicKeyBlockParse(armored_pubkeyblock, 3, primary);
 		assert(parse_ok);
+		tmcg_openpgp_octets_t expub;
+		std::cout << "Export()" << std::endl;
+		primary->Export(expub);
+		assert((CallasDonnerhackeFinneyShawThayerRFC4880::
+			OctetsCompare(all, expub)));
 		std::cout << "CheckSelfSignatures()" << std::endl;
 		parse_ok = primary->CheckSelfSignatures(ring, 3);
 		assert(parse_ok);
@@ -625,6 +630,11 @@ int main
 		parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 			PrivateKeyBlockParse(armored_prvkey_dsa, 3, passphrase, dsa);
 		assert(parse_ok);
+		tmcg_openpgp_octets_t exsec;
+		std::cout << "Export()" << std::endl;
+		dsa->Export(exsec);
+		assert((CallasDonnerhackeFinneyShawThayerRFC4880::
+			OctetsCompare(all, exsec)));
 
 		// testing MessageParse()
 		all.clear(), seskey.clear(), prefix.clear(), enc.clear(), hash.clear();
