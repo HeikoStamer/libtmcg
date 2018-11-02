@@ -73,35 +73,53 @@ int main
 		lej << foo << std::endl, lej >> bar;
 		assert(!mpz_cmp_ui(foo, 42L) && !mpz_cmp_ui(bar, 42L));
 	
-		std::cout << "TMCG_LIBGMP_VERSION = " << TMCG_LIBGMP_VERSION << std::endl;
+		std::cout << "TMCG_LIBGMP_VERSION = " << TMCG_LIBGMP_VERSION <<
+			std::endl;
 		std::cout << "TMCG_LIBGCRYPT_VERSION = " <<
 			TMCG_LIBGCRYPT_VERSION << std::endl;
 		std::cout << "TMCG_GCRY_MD_ALGO = " << TMCG_GCRY_MD_ALGO <<
 			" [" << gcry_md_algo_name(TMCG_GCRY_MD_ALGO) << "]" << std::endl;
 	
 		// convert (prime p of the Oakley Group 2) and check q = (p - 1) / 2;
-		mpz_set_str(foo, "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E08\
-8A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F1437\
-4FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB\
-5A899FA5AE9F24117C4B1FE649286651ECE65381FFFFFFFFFFFFFFFF", 16);
-		mpz_set_str(bar, "179769313486231590770839156793787453197860296048756011706\
-444423684197180216158519368947833795864925541502180565485980503646440548\
-199239100050792877003355816639229553136239076508735759914822574862575007\
-425302077447712589550957937778424442426617334727629299387668709205606050\
-270810842907692932019128194467627007", 10);
+		mpz_set_str(foo, "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1C\
+D129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A\
+6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7\
+EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE65381FFFFFFFFFFFFFFFF", 16);
+		mpz_set_str(bar, "1797693134862315907708391567937874531978602960\
+487560117064444236841971802161585193689478337958649255415021805654859805\
+036464405481992391000507928770033558166392295531362390765087357599148225\
+748625750074253020774477125895509579377784244424266173347276292993876687\
+09205606050270810842907692932019128194467627007", 10);
 		assert(!mpz_cmp(foo, bar));
 		assert(mpz_probab_prime_p(foo, 500));
-		mpz_set_str(bar, "n0p2ftq59aofqlrjexdmhww37nsdo5636jq09opxoq8amvlodjflhsspl\
-5jzlgnlg0brgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9\
-623r7y6j0m4yj3304o731yt2xooyxw5npftk5yn9fj3m26mjjku1mbn3405h45cz8etbz", 36);
+		mpz_set_str(bar, "n0p2ftq59aofqlrjexdmhww37nsdo5636jq09opxoq8amv\
+lodjflhsspl5jzlgnlg0brgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi\
+6c4ohsg0lk9623r7y6j0m4yj3304o731yt2xooyxw5npftk5yn9fj3m26mjjku1mbn3405h4\
+5cz8etbz", 36);
 		mpz_sub_ui(foo, foo, 1L);
 		mpz_fdiv_q_2exp(foo, foo, 1L);
 		assert(!mpz_cmp(foo, bar));
-		mpz_set_str(bar, "SUR8tvw7NPjVX77MA4wyYQcCRKLZetHWGRakKjG235flbyeV3obS6ZdAl\
-iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
-9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
+		mpz_set_str(bar, "SUR8tvw7NPjVX77MA4wyYQcCRKLZetHWGRakKjG235flby\
+eV3obS6ZdAliyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3\
+soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 		assert(!mpz_cmp(foo, bar));
 		assert(mpz_probab_prime_p(foo, 500));
+
+		// check the diff bias within mpz_srandomm
+		size_t diffcnt[mpz_sizeinbase(bar, 2UL)];
+		for (size_t i = 0; i < mpz_sizeinbase(bar, 2UL); i++)
+			diffcnt[i] = 0;
+		for (size_t i = 0; i < 100000; i++)
+		{
+			size_t diffbf = 0;
+			tmcg_mpz_srandomm(foo, bar);
+			diffbf = mpz_sizeinbase(bar, 2UL) - mpz_sizeinbase(foo, 2UL);
+			diffcnt[diffbf]++;
+		}
+		std::cout << "tmcg_mpz_srandomm diffcnt = |";
+		for (size_t i = 0; i < mpz_sizeinbase(bar, 2UL); i++)
+			std::cout << diffcnt[i] << "|";
+		std::cout << std::endl;
 	
 		// mpz_wrandom_ui vs. mpz_wrandom_mod
 		std::cout << "tmcg_mpz_wrandom_ui() uniformity check / modulo bias" <<
@@ -499,7 +517,8 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		// check whether spowm() is slower than powm()
 		assert((compare_elapsed_time_saved(0) < 0));
 		size_t bad_cnt = 0; 
-		std::cout << "tmcg_mpz_fpowm() vs. tmcg_mpz_fspowm() benchmark" << std::endl;
+		std::cout << "tmcg_mpz_fpowm() vs. tmcg_mpz_fspowm() benchmark" <<
+			std::endl;
 		for (size_t j = 0; j < 30; j++)
 		{
 			tmcg_mpz_fpowm_init(fpowm_table_1);
@@ -528,7 +547,7 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 				std::cout << "bad run - fspowm() is faster!" << std::endl;
 			} 
 		}
-		// check whether fspowm() is slower than fpowm() for at least 2/3 of runs
+		// check whether fspowm() is slower than fpowm() for at least 2/3 runs
 		assert(bad_cnt < 10);
 	
 		// tmcg_h, tmcg_g, tmcg_mpz_shash
@@ -563,17 +582,20 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		}
 		delete [] dig1, delete [] dig2;
 		std::cout << "tmcg_mpz_shash()" << std::endl;
-		mpz_set_str(bar, "KlGMM70snzDNYXwufIkOkLZzs91jPNPe7QYT9Agfeg0", TMCG_MPZ_IO_BASE);
+		mpz_set_str(bar, "KlGMM70snzDNYXwufIkOkLZzs91jPNPe7QYT9Agfeg0",
+			TMCG_MPZ_IO_BASE);
 		mpz_set_ui(foo2, 23L), mpz_set_ui(bar2, 42L);
 		tmcg_mpz_shash(foo, 2, foo2, bar2);
 		assert(!mpz_cmp(foo, bar));
-		mpz_set_str(bar, "caQFcUSBfXMGxXaZMMXp26QwN1vGcBYkhOz2DPgN6S8", TMCG_MPZ_IO_BASE);
+		mpz_set_str(bar, "caQFcUSBfXMGxXaZMMXp26QwN1vGcBYkhOz2DPgN6S8",
+			TMCG_MPZ_IO_BASE);
 		s = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		tmcg_mpz_shash(foo, s);
 		assert(!mpz_cmp(foo, bar));
 	
 		// tmcg_mpz_qrmn_p, tmcg_mpz_sqrtmn_r, tmcg_mpz_sqrtmn
-		std::cout << "tmcg_mpz_qrmn_p(), tmcg_mpz_sqrtmn_r(), tmcg_mpz_sqrtmn()" << std::endl;
+		std::cout << "tmcg_mpz_qrmn_p(), tmcg_mpz_sqrtmn_r()," <<
+			" tmcg_mpz_sqrtmn()" << std::endl;
 		tmcg_mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
 		tmcg_mpz_sprime(foo2, bar2, 1024, TMCG_MR_ITERATIONS);
 		mpz_mul(bar, foo, foo2);
@@ -606,7 +628,8 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		for (size_t k = 0; k < 8; k++)
 		{
 			mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
-			mpz_init_set_ui(tmp1, k+5), mpz_init_set_ui(tmp2, (2*k)+3), mpz_init(tmp3);
+			mpz_init_set_ui(tmp1, k+5), mpz_init_set_ui(tmp2, (2*k)+3);
+			mpz_init(tmp3);
 			aa.push_back(tmp1), bb.push_back(tmp2), ff.push_back(tmp3);
 		}
 		mpz_set_ui(foo, 257L);
