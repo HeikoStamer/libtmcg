@@ -120,16 +120,16 @@ unsigned long int tmcg_mpz_wrandom_mod
 void tmcg_mpz_grandomb
 	(mpz_ptr r, const unsigned long int size, enum gcry_random_level level)
 {
-	uint8_t tmp[(size+7)/8];
-	gcry_randomize((unsigned char*)&tmp, (size+7)/8, level);
-	mpz_import(r, (size+7)/8, 1, 1, 1, 0, (const void *)tmp);
+	unsigned char tmp[(size+7)/8];
+	gcry_randomize(tmp, (size+7)/8, level);
+	mpz_import(r, (size+7)/8, 1, 1, 1, 0, (const void*)tmp);
 #ifdef BOTAN
 	std::unique_ptr<Botan::RandomNumberGenerator>
 		rng(new Botan::AutoSeeded_RNG);
-	rng->randomize(tmp, (size+7)/8);
+	rng->randomize((uint8_t*)tmp, (size+7)/8);
 	mpz_t rrr;
 	mpz_init(rrr);
-	mpz_import(rrr, size, 1, 1, 1, 0, (const void *)tmp);
+	mpz_import(rrr, size, 1, 1, 1, 0, (const void*)tmp);
 	mpz_add(r, r, rrr); // ADD number from other random source
 	mpz_clear(rrr);
 #endif
@@ -172,17 +172,17 @@ void tmcg_mpz_grandomm
 	(mpz_ptr r, mpz_srcptr m, enum gcry_random_level level)
 {
 	// make bias negligible cf. BSI TR-02102-1, B.4 Verfahren 2
-	unsigned long int size = (mpz_sizeinbase(m, 2UL) + 64 + 7) / 8;
-	uint8_t tmp[size];
-	gcry_randomize((unsigned char*)&tmp, size, level);
-	mpz_import(r, size, 1, 1, 1, 0, (const void *)tmp);
+	unsigned long int nbytes = (mpz_sizeinbase(m, 2UL) + 64 + 7) / 8;
+	unsigned char tmp[nbytes];
+	gcry_randomize(tmp, nbytes, level);
+	mpz_import(r, nbytes, 1, 1, 1, 0, (const void*)tmp);
 #ifdef BOTAN
 	std::unique_ptr<Botan::RandomNumberGenerator>
 		rng(new Botan::AutoSeeded_RNG);
-	rng->randomize(tmp, size);
+	rng->randomize((uint8_t*)tmp, nbytes);
 	mpz_t rrr;
 	mpz_init(rrr);
-	mpz_import(rrr, size, 1, 1, 1, 0, (const void *)tmp);
+	mpz_import(rrr, nbytes, 1, 1, 1, 0, (const void*)tmp);
 	mpz_add(r, r, rrr); // ADD number from other random source
 	mpz_clear(rrr);
 #endif
