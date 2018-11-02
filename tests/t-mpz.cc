@@ -261,21 +261,21 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 		size_t cache_avail = 0, cache_n = 25;
 #ifdef TEST_SSRANDOM
 		std::cout << "tmcg_mpz_ssrandomm_cache_init()" << std::endl;
-		tmcg_mpz_ssrandomm_cache_init(cache, cache_mod, &cache_avail, cache_n, bar);
+		tmcg_mpz_ssrandomm_cache_init(cache, cache_mod, cache_avail, cache_n, bar);
 		assert(cache_avail == cache_n);
 		std::cout << "tmcg_mpz_ssrandomm_cache()" << std::endl;
 		for (size_t i = 0; i < cache_n; i++)
 		{
-			tmcg_mpz_ssrandomm_cache(cache, cache_mod, &cache_avail, foo, bar);
+			tmcg_mpz_ssrandomm_cache(cache, cache_mod, cache_avail, foo, bar);
 			assert(mpz_cmp(foo, bar) < 0);
 			std::cout << foo << " (cached)" << std::endl;
 		}
 		assert(!cache_avail);
-		tmcg_mpz_ssrandomm_cache(cache, cache_mod, &cache_avail, foo, bar);
+		tmcg_mpz_ssrandomm_cache(cache, cache_mod, cache_avail, foo, bar);
 		assert(mpz_cmp(foo, bar) < 0);
 		std::cout << foo << " (not cached)" << std::endl;
 		std::cout << "tmcg_mpz_ssrandomm_cache_done()" << std::endl;
-		tmcg_mpz_ssrandomm_cache_done(cache, cache_mod, &cache_avail);
+		tmcg_mpz_ssrandomm_cache_done(cache, cache_mod, cache_avail);
 		assert(!cache_avail);
 #endif
 	
