@@ -57,15 +57,18 @@
 	void tmcg_mpz_ssrandomm_cache_init
 		(mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
 		 mpz_ptr ssrandomm_cache_mod,
-		 size_t *ssrandomm_cache_avail,
-		 size_t n, mpz_srcptr m);
+		 size_t &ssrandomm_cache_avail,
+		 const size_t n,
+		 mpz_srcptr m);
 	void tmcg_mpz_ssrandomm_cache
 		(mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
 		 mpz_srcptr ssrandomm_cache_mod,
-		 size_t *ssrandomm_cache_avail,
-		 mpz_ptr r, mpz_srcptr m);
+		 size_t &ssrandomm_cache_avail,
+		 mpz_ptr r,
+		 mpz_srcptr m);
 	void tmcg_mpz_ssrandomm_cache_done
 		(mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
 		 mpz_ptr ssrandomm_cache_mod,
-		 size_t *ssrandomm_cache_avail);
+		 size_t &ssrandomm_cache_avail);
 #endif
+

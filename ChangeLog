@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2018-] added data structure TMCG_Bigint
+* [2018-11-02] mpz_srandom: changed interface of tmcg_mpz_ssrandomm_cache()
 * [2018-11-01] RFC4880: added Export() for TMCG_OpenPGP_Prvkey
 * [2018-10-30] RFC4880: added generic VerifyData() for TMCG_OpenPGP_Signature
 * [2018-10-29] RFC4880: store included signatures within TMCG_OpenPGP_Message

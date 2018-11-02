@@ -376,9 +376,10 @@ void tmcg_mpz_wrandomm
 
 void tmcg_mpz_ssrandomm_cache_init
 	(mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
-	mpz_ptr ssrandomm_cache_mod,
-	size_t *ssrandomm_cache_avail,
-	size_t n, mpz_srcptr m)
+	 mpz_ptr ssrandomm_cache_mod,
+	 size_t &ssrandomm_cache_avail,
+	 const size_t n,
+	 mpz_srcptr m)
 {
 	size_t i = 0;
 	if ((n == 0) || (n > TMCG_MAX_SSRANDOMM_CACHE))
@@ -388,19 +389,20 @@ void tmcg_mpz_ssrandomm_cache_init
 	for (i = 0; i < n; i++)
 		tmcg_mpz_ssrandomm(ssrandomm_cache[i], m);
 	mpz_init_set(ssrandomm_cache_mod, m);
-	*ssrandomm_cache_avail = n;
+	ssrandomm_cache_avail = n;
 }
 
 void tmcg_mpz_ssrandomm_cache
 	(mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
-	mpz_srcptr ssrandomm_cache_mod,
-	size_t *ssrandomm_cache_avail,
-	mpz_ptr r, mpz_srcptr m)
+	 mpz_srcptr ssrandomm_cache_mod,
+	 size_t &ssrandomm_cache_avail,
+	 mpz_ptr r,
+	 mpz_srcptr m)
 {
-	if (!mpz_cmp(m, ssrandomm_cache_mod) && *ssrandomm_cache_avail)
+	if (!mpz_cmp(m, ssrandomm_cache_mod) && (ssrandomm_cache_avail > 0))
 	{
-		(*ssrandomm_cache_avail)--; // next cached random value
-		mpz_set(r, ssrandomm_cache[*ssrandomm_cache_avail]);
+		ssrandomm_cache_avail--; // next cached random value
+		mpz_set(r, ssrandomm_cache[ssrandomm_cache_avail]);
 	}
 	else
 		tmcg_mpz_ssrandomm(r, m);
@@ -408,11 +410,11 @@ void tmcg_mpz_ssrandomm_cache
 
 void tmcg_mpz_ssrandomm_cache_done
 	(mpz_t ssrandomm_cache[TMCG_MAX_SSRANDOMM_CACHE],
-	mpz_ptr ssrandomm_cache_mod,
-	size_t *ssrandomm_cache_avail)
+	 mpz_ptr ssrandomm_cache_mod,
+	 size_t &ssrandomm_cache_avail)
 {
 	size_t i = 0;
-	*ssrandomm_cache_avail = 0;
+	ssrandomm_cache_avail = 0;
 	mpz_clear(ssrandomm_cache_mod);
 	for (i = 0; i < TMCG_MAX_SSRANDOMM_CACHE; i++)
 		mpz_clear(ssrandomm_cache[i]);

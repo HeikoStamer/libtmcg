@@ -415,11 +415,12 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::Share
 		{
 			if (use_very_strong_randomness)
 			{
-				if ((ssrandomm_cache != NULL) && (ssrandomm_cache_mod != NULL) && (ssrandomm_cache_avail != NULL))
+				if ((ssrandomm_cache != NULL) && (ssrandomm_cache_mod != NULL) &&
+					(ssrandomm_cache_avail != NULL))
 				{
 					err << "RVSS(" << label << "): P_" << idx2dkg[i] << ": using very strong randomness from cache" << std::endl;
-					tmcg_mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, a_i[k], q);
-					tmcg_mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, b_i[k], q);
+					tmcg_mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, *ssrandomm_cache_avail, a_i[k], q);
+					tmcg_mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, *ssrandomm_cache_avail, b_i[k], q);
 				}
 				else
 				{
@@ -1341,11 +1342,12 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::Share
 			}
 			else if (use_very_strong_randomness)
 			{
-				if ((ssrandomm_cache != NULL) && (ssrandomm_cache_mod != NULL) && (ssrandomm_cache_avail != NULL))
+				if ((ssrandomm_cache != NULL) && (ssrandomm_cache_mod != NULL) &&
+					(ssrandomm_cache_avail != NULL))
 				{
 					err << "ZVSS(" << label << "): P_" << idx2dkg[i] << ": using very strong randomness from cache" << std::endl;
-					tmcg_mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, a_i[k], q);
-					tmcg_mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, ssrandomm_cache_avail, b_i[k], q);
+					tmcg_mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, *ssrandomm_cache_avail, a_i[k], q);
+					tmcg_mpz_ssrandomm_cache(ssrandomm_cache, ssrandomm_cache_mod, *ssrandomm_cache_avail, b_i[k], q);
 				}
 				else
 				{
