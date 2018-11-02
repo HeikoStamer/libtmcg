@@ -517,7 +517,8 @@ soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 		// check whether spowm() is slower than powm()
 		assert((compare_elapsed_time_saved(0) < 0));
 		size_t bad_cnt = 0; 
-		std::cout << "tmcg_mpz_fpowm() vs. tmcg_mpz_fspowm() benchmark" << std::endl;
+		std::cout << "tmcg_mpz_fpowm() vs. tmcg_mpz_fspowm() benchmark" <<
+			std::endl;
 		for (size_t j = 0; j < 30; j++)
 		{
 			tmcg_mpz_fpowm_init(fpowm_table_1);
@@ -546,7 +547,7 @@ soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 				std::cout << "bad run - fspowm() is faster!" << std::endl;
 			} 
 		}
-		// check whether fspowm() is slower than fpowm() for at least 2/3 of runs
+		// check whether fspowm() is slower than fpowm() for at least 2/3 runs
 		assert(bad_cnt < 10);
 	
 		// tmcg_h, tmcg_g, tmcg_mpz_shash
@@ -581,17 +582,20 @@ soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 		}
 		delete [] dig1, delete [] dig2;
 		std::cout << "tmcg_mpz_shash()" << std::endl;
-		mpz_set_str(bar, "KlGMM70snzDNYXwufIkOkLZzs91jPNPe7QYT9Agfeg0", TMCG_MPZ_IO_BASE);
+		mpz_set_str(bar, "KlGMM70snzDNYXwufIkOkLZzs91jPNPe7QYT9Agfeg0",
+			TMCG_MPZ_IO_BASE);
 		mpz_set_ui(foo2, 23L), mpz_set_ui(bar2, 42L);
 		tmcg_mpz_shash(foo, 2, foo2, bar2);
 		assert(!mpz_cmp(foo, bar));
-		mpz_set_str(bar, "caQFcUSBfXMGxXaZMMXp26QwN1vGcBYkhOz2DPgN6S8", TMCG_MPZ_IO_BASE);
+		mpz_set_str(bar, "caQFcUSBfXMGxXaZMMXp26QwN1vGcBYkhOz2DPgN6S8",
+			TMCG_MPZ_IO_BASE);
 		s = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		tmcg_mpz_shash(foo, s);
 		assert(!mpz_cmp(foo, bar));
 	
 		// tmcg_mpz_qrmn_p, tmcg_mpz_sqrtmn_r, tmcg_mpz_sqrtmn
-		std::cout << "tmcg_mpz_qrmn_p(), tmcg_mpz_sqrtmn_r(), tmcg_mpz_sqrtmn()" << std::endl;
+		std::cout << "tmcg_mpz_qrmn_p(), tmcg_mpz_sqrtmn_r()," <<
+			" tmcg_mpz_sqrtmn()" << std::endl;
 		tmcg_mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
 		tmcg_mpz_sprime(foo2, bar2, 1024, TMCG_MR_ITERATIONS);
 		mpz_mul(bar, foo, foo2);
@@ -624,7 +628,8 @@ soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 		for (size_t k = 0; k < 8; k++)
 		{
 			mpz_ptr tmp1 = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t();
-			mpz_init_set_ui(tmp1, k+5), mpz_init_set_ui(tmp2, (2*k)+3), mpz_init(tmp3);
+			mpz_init_set_ui(tmp1, k+5), mpz_init_set_ui(tmp2, (2*k)+3);
+			mpz_init(tmp3);
 			aa.push_back(tmp1), bb.push_back(tmp2), ff.push_back(tmp3);
 		}
 		mpz_set_ui(foo, 257L);
