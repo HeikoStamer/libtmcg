@@ -105,20 +105,30 @@ soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 		assert(!mpz_cmp(foo, bar));
 		assert(mpz_probab_prime_p(foo, 500));
 
-		// check the diff bias within mpz_srandomm
+		// print the diff and the LSB bias within mpz_srandomm
 		size_t diffcnt[mpz_sizeinbase(bar, 2UL)];
+		size_t lsbcnt[mpz_sizeinbase(bar, 2UL)];
 		for (size_t i = 0; i < mpz_sizeinbase(bar, 2UL); i++)
-			diffcnt[i] = 0;
+			diffcnt[i] = 0, lsbcnt[i] = 0;
 		for (size_t i = 0; i < 100000; i++)
 		{
 			size_t diffbf = 0;
 			tmcg_mpz_srandomm(foo, bar);
 			diffbf = mpz_sizeinbase(bar, 2UL) - mpz_sizeinbase(foo, 2UL);
 			diffcnt[diffbf]++;
+			for (size_t j = 0; j < mpz_sizeinbase(bar, 2UL); j++)
+			{
+				if (mpz_tstbit(foo, j))
+					lsbcnt[j]++;
+			}
 		}
 		std::cout << "tmcg_mpz_srandomm diffcnt = |";
 		for (size_t i = 0; i < mpz_sizeinbase(bar, 2UL); i++)
 			std::cout << diffcnt[i] << "|";
+		std::cout << std::endl;
+		std::cout << "tmcg_mpz_srandomm lsbcnt = |";
+		for (size_t i = 0; i < mpz_sizeinbase(bar, 2UL); i++)
+			std::cout << lsbcnt[i] << "|";
 		std::cout << std::endl;
 	
 		// mpz_wrandom_ui vs. mpz_wrandom_mod
