@@ -4697,18 +4697,22 @@ TMCG_OpenPGP_PKESK::~TMCG_OpenPGP_PKESK
 
 TMCG_OpenPGP_SKESK::TMCG_OpenPGP_SKESK
 	(const tmcg_openpgp_skalgo_t skalgo_in,
+	 const tmcg_openpgp_aeadalgo_t aeadalgo_in,
 	 const tmcg_openpgp_stringtokey_t s2k_type_in,
 	 const tmcg_openpgp_hashalgo_t s2k_hashalgo_in,
 	 const tmcg_openpgp_octets_t &s2k_salt_in,
 	 const tmcg_openpgp_byte_t s2k_count_in,
+	 const tmcg_openpgp_octets_t &iv_in,
 	 const tmcg_openpgp_octets_t &encrypted_key_in,
 	 const tmcg_openpgp_octets_t &packet_in):
 		skalgo(skalgo_in),
+		aeadalgo(aeadalgo_in),
 		s2k_type(s2k_type_in),
 		s2k_hashalgo(s2k_hashalgo_in),
 		s2k_count(s2k_count_in)
 {
 	s2k_salt.insert(s2k_salt.end(), s2k_salt_in.begin(), s2k_salt_in.end());
+	iv.insert(iv.end(), iv_in.begin(), iv_in.end());
 	encrypted_key.insert(encrypted_key.end(),
 		encrypted_key_in.begin(), encrypted_key_in.end());
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
@@ -4718,6 +4722,7 @@ TMCG_OpenPGP_SKESK::~TMCG_OpenPGP_SKESK
 	()
 {
 	s2k_salt.clear();
+	iv.clear();
 	encrypted_key.clear();
 	packet.clear();
 }
@@ -13429,13 +13434,17 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag3
 			" s2k_hashalgo = " << (int)ctx.s2k_hashalgo <<
 			" s2k_count = " << (int)ctx.s2k_count <<  
 			" encdatalen = " << ctx.encdatalen << std::endl;
-	tmcg_openpgp_octets_t salt, enckey;
+	tmcg_openpgp_octets_t salt, iv, enckey;
 	for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
 		salt.push_back(ctx.s2k_salt[i]);
+	size_t ivlen = AlgorithmIVLength(ctx.aeadalgo);
+	for (size_t i = 0; i < ivlen; i++)
+		iv.push_back(ctx.iv[i]);
 	for (size_t i = 0; i < ctx.encdatalen; i++)
 		enckey.push_back(ctx.encdata[i]);
-	TMCG_OpenPGP_SKESK *esk = new TMCG_OpenPGP_SKESK(ctx.skalgo, ctx.s2k_type,
-		ctx.s2k_hashalgo, salt, ctx.s2k_count, enckey, current_packet);
+	TMCG_OpenPGP_SKESK *esk = new TMCG_OpenPGP_SKESK(ctx.skalgo, ctx.aeadalgo,
+		ctx.s2k_type, ctx.s2k_hashalgo, salt, ctx.s2k_count, iv, enckey,
+		current_packet);
 	(msg->SKESKs).push_back(esk);
 	return true;
 }
