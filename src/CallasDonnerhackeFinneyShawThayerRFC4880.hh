@@ -1208,6 +1208,7 @@ class TMCG_OpenPGP_PKESK
 class TMCG_OpenPGP_SKESK
 {
 	public:
+		tmcg_openpgp_byte_t									version;
 		tmcg_openpgp_skalgo_t								skalgo;
 		tmcg_openpgp_aeadalgo_t								aeadalgo;
 		tmcg_openpgp_stringtokey_t							s2k_type;
@@ -1219,7 +1220,8 @@ class TMCG_OpenPGP_SKESK
 		tmcg_openpgp_octets_t								packet;
 
 		TMCG_OpenPGP_SKESK
-			(const tmcg_openpgp_skalgo_t					skalgo_in,
+			(const tmcg_openpgp_byte_t						version_in,
+			 const tmcg_openpgp_skalgo_t					skalgo_in,
 			 const tmcg_openpgp_aeadalgo_t					aeadalgo_in,
 			 const tmcg_openpgp_stringtokey_t				s2k_type_in,
 			 const tmcg_openpgp_hashalgo_t					s2k_hashalgo_in,
@@ -2023,6 +2025,15 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_secure_octets_t					&seskey,
 			 tmcg_openpgp_octets_t							&prefix,
 			 const bool										resync,
+			 tmcg_openpgp_octets_t							&out);
+		static gcry_error_t SymmetricDecryptAEAD
+			(const tmcg_openpgp_octets_t					&in,
+			 tmcg_openpgp_secure_octets_t					&seskey,
+			 const tmcg_openpgp_skalgo_t					skalgo,
+			 const tmcg_openpgp_aeadalgo_t					aeadalgo,
+			 const tmcg_openpgp_byte_t						chunksize,
+			 const tmcg_openpgp_octets_t					&iv,
+			 const tmcg_openpgp_octets_t					&ad,
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t AsymmetricEncryptElgamal
 			(const tmcg_openpgp_secure_octets_t				&in,

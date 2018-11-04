@@ -4696,7 +4696,8 @@ TMCG_OpenPGP_PKESK::~TMCG_OpenPGP_PKESK
 // ===========================================================================
 
 TMCG_OpenPGP_SKESK::TMCG_OpenPGP_SKESK
-	(const tmcg_openpgp_skalgo_t skalgo_in,
+	(const tmcg_openpgp_byte_t version_in,
+	 const tmcg_openpgp_skalgo_t skalgo_in,
 	 const tmcg_openpgp_aeadalgo_t aeadalgo_in,
 	 const tmcg_openpgp_stringtokey_t s2k_type_in,
 	 const tmcg_openpgp_hashalgo_t s2k_hashalgo_in,
@@ -4705,6 +4706,7 @@ TMCG_OpenPGP_SKESK::TMCG_OpenPGP_SKESK
 	 const tmcg_openpgp_octets_t &iv_in,
 	 const tmcg_openpgp_octets_t &encrypted_key_in,
 	 const tmcg_openpgp_octets_t &packet_in):
+		version(version_in),
 		skalgo(skalgo_in),
 		aeadalgo(aeadalgo_in),
 		s2k_type(s2k_type_in),
@@ -11093,6 +11095,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	size_t chksum = 0;
 	size_t bs = AlgorithmIVLength(algo); // get block size of algorithm
 	size_t ks = AlgorithmKeyLength(algo); // get key size of algorithm
+	if ((bs == 0) || (ks == 0))
+		return GPG_ERR_CIPHER_ALGO; // error: bad algorithm
+	if (seskey.size() == 0)
+		return GPG_ERR_INV_SESSION_KEY; // error: no session key provided
 	unsigned char *buf = (unsigned char*)gcry_malloc_secure(ks);
 	if (buf == NULL)
 		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
@@ -11106,19 +11112,10 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	// Then a two-octet checksum is appended, which is equal to the
 	// sum of the preceding session key octets, not including the
 	// algorithm identifier, modulo 65536.
-	if ((bs == 0) || (ks == 0))
+
+	if (seskey.size() == (ks + 3))
 	{
-		gcry_free(buf);
-		return GPG_ERR_CIPHER_ALGO; // error: bad algorithm
-	}
-	if (seskey.size() == 0)
-	{
-		gcry_free(buf);
-		return GPG_ERR_INV_SESSION_KEY; // error: no session key provided
-	}
-	else if (seskey.size() == (ks + 3))
-	{
-		// use the provided session key and calculate checksum
+		// use the provided session key and calculate the checksum
 		for (size_t i = 0; i < ks; i++)
 		{
 			buf[i] = seskey[1+i]; // copy the session key
@@ -11134,7 +11131,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	}
 	else if (seskey.size() == ks)
 	{
-		// use the provided session key and append checksum
+		// use the provided session key and append the checksum
 		seskey.insert(seskey.begin(), algo); // specified algorithm
 		for (size_t i = 0; i < ks; i++)
 		{
@@ -11148,7 +11145,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	else
 	{
 		gcry_free(buf);
-		return GPG_ERR_BAD_KEY; // error: bad session key provided
+		return GPG_ERR_INV_SESSION_KEY; // error: bad session key provided
 	}
 	if (in.size() < (bs + 2))
 	{
@@ -11242,6 +11239,127 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAES256
 {
 	return CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt(in, 
 		seskey, prefix, resync, TMCG_OPENPGP_SKALGO_AES256, out);
+}
+
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
+	(const tmcg_openpgp_octets_t &in,
+	 tmcg_openpgp_secure_octets_t &seskey,
+	 const tmcg_openpgp_skalgo_t skalgo,
+	 const tmcg_openpgp_aeadalgo_t aeadalgo,
+	 const tmcg_openpgp_byte_t chunksize,
+	 const tmcg_openpgp_octets_t &iv,
+	 const tmcg_openpgp_octets_t &ad,
+	 tmcg_openpgp_octets_t &out)
+{
+	enum gcry_cipher_modes cm;
+	gcry_cipher_hd_t hd;
+	gcry_error_t ret;
+	switch (aeadalgo)
+	{
+		case TMCG_OPENPGP_AEADALGO_EAX:
+			cm = (enum gcry_cipher_modes)14; // FIXME: remove, if supported by libgcrypt
+			// cm = GCRY_CIPHER_MODE_EAX;
+			break;
+		case TMCG_OPENPGP_AEADALGO_OCB:
+			cm = GCRY_CIPHER_MODE_OCB;
+			break;
+		default:
+			return GPG_ERR_INV_CIPHER_MODE; // error: bad AEAD algorithm
+	}
+	size_t chksum = 0;
+	size_t bs = AlgorithmIVLength(skalgo); // get block size of algorithm
+	size_t ks = AlgorithmKeyLength(skalgo); // get key size of algorithm
+	size_t is = AlgorithmIVLength(aeadalgo); // get IV length of AEAD algorithm
+	if ((bs == 0) || (ks == 0))
+		return GPG_ERR_CIPHER_ALGO; // error: bad algorithm
+	if (seskey.size() == 0)
+		return GPG_ERR_INV_SESSION_KEY; // error: no session key provided
+	if (bs != 16)
+		return GPG_ERR_CIPHER_ALGO; // error: other sizes are not supported
+	if ((is == 0) || (is > iv.size()))
+		return GPG_ERR_INV_PACKET; // error: bad algorithm or IV too short
+	if (chunksize > 56)
+		return GPG_ERR_INV_PACKET; // error: chunk size out of specification
+	if (chunksize > 24)
+		return GPG_ERR_NOT_SUPPORTED; // error: large sizes are not supported 
+	unsigned char *buf = (unsigned char*)gcry_malloc_secure(ks);
+	if (buf == NULL)
+		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+
+	// The symmetric cipher used may be specified in a Public-Key or
+	// Symmetric-Key Encrypted Session Key packet that precedes the
+	// Symmetrically Encrypted Data packet. In that case, the cipher
+	// algorithm octet is prefixed to the session key before it is
+	// encrypted.
+	// [...]
+	// Then a two-octet checksum is appended, which is equal to the
+	// sum of the preceding session key octets, not including the
+	// algorithm identifier, modulo 65536.
+
+	if (seskey.size() == (ks + 3))
+	{
+		// use the provided session key and calculate the checksum
+		for (size_t i = 0; i < ks; i++)
+		{
+			buf[i] = seskey[1+i]; // copy the session key
+			chksum += buf[i];
+		}
+		chksum %= 65536;
+		size_t key_chksum = (seskey[33] << 8) + seskey[34];
+		if (chksum != key_chksum)
+		{
+			gcry_free(buf);
+			return GPG_ERR_CHECKSUM; // error: checksum does not match
+		}
+	}
+	else if (seskey.size() == ks)
+	{
+		// use the provided session key and append the checksum
+		seskey.insert(seskey.begin(), skalgo); // specified algorithm
+		for (size_t i = 0; i < ks; i++)
+		{
+			buf[i] = seskey[1+i]; // copy the session key
+			chksum += buf[i];
+		}
+		chksum %= 65536;
+		seskey.push_back((chksum >> 8) & 0xFF); // checksum
+		seskey.push_back(chksum & 0xFF);
+	}
+	else
+	{
+		gcry_free(buf);
+		return GPG_ERR_INV_SESSION_KEY; // error: bad session key provided
+	}
+	if (in.size() < (bs + 2))
+	{
+		gcry_free(buf);
+		return GPG_ERR_TOO_SHORT; // error: input too short (no encrypt. prefix)
+	}
+
+	size_t chunkdim = (size_t)1 << (chunksize + 6);
+	// TODO
+std::cerr << "chunkdim = " << chunkdim << std::endl;
+
+	ret = gcry_cipher_open(&hd, AlgorithmSymGCRY(skalgo), cm, GCRY_CIPHER_SECURE);
+	if (ret)
+	{
+		gcry_free(buf);
+		return ret;
+	}
+	ret = gcry_cipher_setkey(hd, buf, ks);
+	if (ret)
+	{
+		gcry_free(buf);
+		gcry_cipher_close(hd);
+		return ret;
+	}
+
+// TODO: set IV and loop through encrypted data (incl. check auth tag)
+
+	gcry_free(buf);
+	gcry_cipher_close(hd);
+
+	return 0;
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
@@ -13446,9 +13564,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag3
 		iv.push_back(ctx.iv[i]);
 	for (size_t i = 0; i < ctx.encdatalen; i++)
 		enckey.push_back(ctx.encdata[i]);
-	TMCG_OpenPGP_SKESK *esk = new TMCG_OpenPGP_SKESK(ctx.skalgo, ctx.aeadalgo,
-		ctx.s2k_type, ctx.s2k_hashalgo, salt, ctx.s2k_count, iv, enckey,
-		current_packet);
+	TMCG_OpenPGP_SKESK *esk = new TMCG_OpenPGP_SKESK(ctx.version, ctx.skalgo,
+		ctx.aeadalgo, ctx.s2k_type, ctx.s2k_hashalgo, salt, ctx.s2k_count, iv,
+		enckey, current_packet);
 	(msg->SKESKs).push_back(esk);
 	return true;
 }
