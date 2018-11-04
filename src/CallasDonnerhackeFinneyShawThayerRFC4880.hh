@@ -1250,6 +1250,7 @@ class TMCG_OpenPGP_Message
 		time_t												timestamp;
 		std::vector<const TMCG_OpenPGP_PKESK*>				PKESKs;
 		std::vector<const TMCG_OpenPGP_SKESK*>				SKESKs;
+		tmcg_openpgp_byte_t									chunksize;
 		tmcg_openpgp_octets_t								encrypted_message;
 		tmcg_openpgp_octets_t								signed_message;
 		tmcg_openpgp_octets_t								compressed_message;

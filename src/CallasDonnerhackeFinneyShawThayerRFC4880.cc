@@ -13570,7 +13570,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag20
 	 TMCG_OpenPGP_Message* &msg)
 {
 	if (verbose > 1)
+	{
 		std::cerr << "INFO: AEAD length = " << ctx.encdatalen << std::endl;
+		std::cerr << "INFO: AEAD chunksize = " << (int)ctx.chunksize <<
+			std::endl;
+	}
 	if (msg->have_sed || msg->have_seipd || msg->have_aead)
 	{
 		if (verbose)
@@ -13583,6 +13587,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag20
 	else
 	{
 		msg->have_aead = true;
+		msg->chunksize = ctx.chunksize;
 		for (size_t i = 0; i < ctx.encdatalen; i++)
 			(msg->encrypted_message).push_back(ctx.encdata[i]);
 	}
