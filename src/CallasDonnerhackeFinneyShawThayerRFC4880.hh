@@ -426,11 +426,13 @@ typedef struct
 	tmcg_openpgp_byte_t			notation_value[2048];
 	uint32_t					keyexpirationtime;
 	size_t						psalen;
-	tmcg_openpgp_byte_t			psa[32]; // array of 1-octet flags
+	tmcg_openpgp_byte_t			psa[32]; // array of 1-octet values
 	size_t						phalen;
-	tmcg_openpgp_byte_t			pha[32]; // array of 1-octet flags
+	tmcg_openpgp_byte_t			pha[32]; // array of 1-octet values
 	size_t						pcalen;
-	tmcg_openpgp_byte_t			pca[32]; // array of 1-octet flags
+	tmcg_openpgp_byte_t			pca[32]; // array of 1-octet values
+	size_t						paalen;
+	tmcg_openpgp_byte_t			paa[32]; // array of 1-octet values
 	uint32_t					sigexpirationtime;
 	bool						exportablecertification;
 	bool						revocable;
@@ -445,12 +447,12 @@ typedef struct
 	bool						primaryuserid;
 	tmcg_openpgp_byte_t			policyuri[2048]; // string
 	size_t						keyflagslen;
-	tmcg_openpgp_byte_t			keyflags[32]; // n-octets of flags
+	tmcg_openpgp_byte_t			keyflags[32]; // N octets of flags
 	tmcg_openpgp_byte_t			signersuserid[2048]; // string
 	tmcg_openpgp_revcode_t		revocationcode;
 	tmcg_openpgp_byte_t			revocationreason[2048]; // string
 	size_t						featureslen;
-	tmcg_openpgp_byte_t			features[32]; // n-octets of flags
+	tmcg_openpgp_byte_t			features[32]; // N octets of flags
 	tmcg_openpgp_pkalgo_t		signaturetarget_pkalgo;
 	tmcg_openpgp_hashalgo_t 	signaturetarget_hashalgo;
 	tmcg_openpgp_byte_t			signaturetarget_hash[2048];
@@ -552,6 +554,7 @@ class TMCG_OpenPGP_Signature
 		tmcg_openpgp_octets_t								keyprefs_psa;
 		tmcg_openpgp_octets_t								keyprefs_pha;
 		tmcg_openpgp_octets_t								keyprefs_pca;
+		tmcg_openpgp_octets_t								keyprefs_paa;
 		std::vector<tmcg_openpgp_revkey_t>					revkeys;
 		tmcg_openpgp_octets_t								embeddedsig;
 
@@ -576,6 +579,7 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&keyprefs_psa_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
+			 const tmcg_openpgp_octets_t					&keyprefs_paa_in,
 			 const tmcg_openpgp_octets_t					&embeddedsig_in);
 		TMCG_OpenPGP_Signature
 			(const bool										revocable_in,
@@ -599,6 +603,7 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&keyprefs_psa_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
+			 const tmcg_openpgp_octets_t					&keyprefs_paa_in,
 			 const tmcg_openpgp_octets_t					&embeddedsig_in);
 		bool Good
 			() const;
@@ -736,6 +741,7 @@ class TMCG_OpenPGP_Subkey
 		tmcg_openpgp_octets_t								psa;
 		tmcg_openpgp_octets_t								pha;
 		tmcg_openpgp_octets_t								pca;
+		tmcg_openpgp_octets_t								paa;
 		std::string											ec_curve;
 		tmcg_openpgp_hashalgo_t								kdf_hashalgo;
 		tmcg_openpgp_skalgo_t								kdf_skalgo;
@@ -961,6 +967,7 @@ class TMCG_OpenPGP_Pubkey
 		tmcg_openpgp_octets_t								psa;
 		tmcg_openpgp_octets_t								pha;
 		tmcg_openpgp_octets_t								pca;
+		tmcg_openpgp_octets_t								paa;
 		std::string											ec_curve;
 		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				keyrevsigs;

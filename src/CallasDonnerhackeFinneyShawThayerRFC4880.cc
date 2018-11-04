@@ -71,6 +71,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &keyprefs_psa_in,
 	 const tmcg_openpgp_octets_t &keyprefs_pha_in,
 	 const tmcg_openpgp_octets_t &keyprefs_pca_in,
+	 const tmcg_openpgp_octets_t &keyprefs_paa_in,
 	 const tmcg_openpgp_octets_t &embeddedsig_in):
 		ret(GPG_ERR_BAD_SIGNATURE),
 		erroff(0),
@@ -111,6 +112,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		keyprefs_pha_in.begin(), keyprefs_pha_in.end());
 	keyprefs_pca.insert(keyprefs_pca.end(),
 		keyprefs_pca_in.begin(), keyprefs_pca_in.end());
+	keyprefs_paa.insert(keyprefs_paa.end(),
+		keyprefs_paa_in.begin(), keyprefs_paa_in.end());
 	embeddedsig.insert(embeddedsig.end(),
 		embeddedsig_in.begin(), embeddedsig_in.end());
 }
@@ -137,6 +140,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &keyprefs_psa_in,
 	 const tmcg_openpgp_octets_t &keyprefs_pha_in,
 	 const tmcg_openpgp_octets_t &keyprefs_pca_in,
+	 const tmcg_openpgp_octets_t &keyprefs_paa_in,
 	 const tmcg_openpgp_octets_t &embeddedsig_in):
 		ret(GPG_ERR_BAD_SIGNATURE),
 		erroff(0),
@@ -187,6 +191,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		keyprefs_pha_in.begin(), keyprefs_pha_in.end());
 	keyprefs_pca.insert(keyprefs_pca.end(),
 		keyprefs_pca_in.begin(), keyprefs_pca_in.end());
+	keyprefs_paa.insert(keyprefs_paa.end(),
+		keyprefs_paa_in.begin(), keyprefs_paa_in.end());
 	embeddedsig.insert(embeddedsig.end(),
 		embeddedsig_in.begin(), embeddedsig_in.end());
 }
@@ -810,6 +816,7 @@ TMCG_OpenPGP_Signature::~TMCG_OpenPGP_Signature
 	keyprefs_psa.clear();
 	keyprefs_pha.clear();
 	keyprefs_pca.clear();
+	keyprefs_paa.clear();
 	revkeys.clear();
 }
 
@@ -1564,6 +1571,17 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 	if (verbose > 1)
 		std::cerr << std::endl;
 	if (verbose > 1)
+		std::cerr << "INFO: subkey update paa to ";
+	paa.clear();
+	for (size_t i = 0; i < sig->keyprefs_paa.size(); i++)
+	{
+		paa.push_back(sig->keyprefs_paa[i]);
+		if (verbose > 1)
+			std::cerr << (int)sig->keyprefs_paa[i] << " ";
+	}
+	if (verbose > 1)
+		std::cerr << std::endl;
+	if (verbose > 1)
 		std::cerr << "INFO: subkey update revkeys with added ";
 	for (size_t i = 0; i < sig->revkeys.size(); i++)
 	{
@@ -2001,6 +2019,7 @@ TMCG_OpenPGP_Subkey::~TMCG_OpenPGP_Subkey
 	psa.clear();
 	pha.clear();
 	pca.clear();
+	paa.clear();
 	for (size_t i = 0; i < selfsigs.size(); i++)
 		delete selfsigs[i];
 	selfsigs.clear();
@@ -2987,6 +3006,17 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 	if (verbose > 1)
 		std::cerr << std::endl;
 	if (verbose > 1)
+		std::cerr << "INFO: primary key update paa to ";
+	paa.clear();
+	for (size_t i = 0; i < sig->keyprefs_paa.size(); i++)
+	{
+		paa.push_back(sig->keyprefs_paa[i]);
+		if (verbose > 1)
+			std::cerr << (int)sig->keyprefs_paa[i] << " ";
+	}
+	if (verbose > 1)
+		std::cerr << std::endl;
+	if (verbose > 1)
 		std::cerr << "INFO: primary key update revkeys with added ";
 	for (size_t i = 0; i < sig->revkeys.size(); i++)
 	{
@@ -3596,6 +3626,7 @@ TMCG_OpenPGP_Pubkey::~TMCG_OpenPGP_Pubkey
 	psa.clear();
 	pha.clear();
 	pca.clear();
+	paa.clear();
 	for (size_t i = 0; i < selfsigs.size(); i++)
 		delete selfsigs[i];
 	selfsigs.clear();
@@ -8630,7 +8661,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.embeddedsignature[i] = pkt[i];
 			break;
-		case 33: // Issuer Fingerprint [Draft-RFC 4880bis-04]
+		case 33: // Issuer Fingerprint [draft RFC 4880bis]
 			if (pkt.size() < 2)
 				return 0; // error: too short subpacket body
 			out.issuerkeyversion = pkt[0];
@@ -8652,6 +8683,13 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 					type = 0xFE; // subpacket not recognized
 					break;
 			}
+			break;
+		case 34: // Preferred AEAD Algorithms [draft RFC 4880bis]
+			if (pkt.size() > sizeof(out.paa))
+				return 0; // error: too long subpacket body
+			out.paalen = pkt.size();
+			for (size_t i = 0; i < pkt.size(); i++)
+				out.paa[i] = pkt[i];
 			break;
 		case 100: // Private or experimental -- not implemented; ignore
 		case 101:
@@ -11838,7 +11876,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	// and should have a later creation date than that certificate.
 	TMCG_OpenPGP_Signature *sig = NULL;
 	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, keyflags;
-	tmcg_openpgp_octets_t features, psa, pha, pca, embeddedsig;
+	tmcg_openpgp_octets_t features, psa, pha, pca, paa, embeddedsig;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
 	switch (ctx.issuerkeyversion)
@@ -11864,6 +11902,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		pha.push_back(ctx.pha[i]);
 	for (size_t i = 0; i < ctx.pcalen; i++)
 		pca.push_back(ctx.pca[i]);
+	for (size_t i = 0; i < ctx.paalen; i++)
+		paa.push_back(ctx.paa[i]);
 	for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
 		embeddedsig.push_back(ctx.embeddedsignature[i]);
 	if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
@@ -11879,7 +11919,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.revocationcode, ctx.md,
 			current_packet, hspd, issuer, issuerfpr, keyflags, features,
-			psa, pha, pca, embeddedsig);
+			psa, pha, pca, paa, embeddedsig);
 	}
 	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
@@ -11895,7 +11935,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.revocationcode, ctx.r, ctx.s,
 			current_packet, hspd, issuer, issuerfpr, keyflags, features,
-			psa, pha, pca, embeddedsig);
+			psa, pha, pca, paa, embeddedsig);
 	}
 	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 	{
@@ -11911,7 +11951,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.revocationcode, ctx.r, ctx.s,
 			current_packet, hspd, issuer, issuerfpr, keyflags, features,
-			psa, pha, pca, embeddedsig);
+			psa, pha, pca, paa, embeddedsig);
 	}
 	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
 	{
@@ -11927,7 +11967,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.revocationcode, ctx.r, ctx.s,
 			current_packet, hspd, issuer, issuerfpr, keyflags, features,
-			psa, pha, pca, embeddedsig);
+			psa, pha, pca, paa, embeddedsig);
 	}
 	else
 	{
@@ -13124,7 +13164,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 	 TMCG_OpenPGP_Message* &msg)
 {
 	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, keyflags;
-	tmcg_openpgp_octets_t features, psa, pha, pca, embeddedsig;
+	tmcg_openpgp_octets_t features, psa, pha, pca, paa, embeddedsig;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
 	switch (ctx.issuerkeyversion)
@@ -13150,6 +13190,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 		pha.push_back(ctx.pha[i]);
 	for (size_t i = 0; i < ctx.pcalen; i++)
 		pca.push_back(ctx.pca[i]);
+	for (size_t i = 0; i < ctx.paalen; i++)
+		paa.push_back(ctx.paa[i]);
 	for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
 		embeddedsig.push_back(ctx.embeddedsignature[i]);
 	TMCG_OpenPGP_Signature *sig = NULL;
@@ -13166,7 +13208,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 			ctx.type, ctx.version, ctx.sigcreationtime,
 			ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.md,
 			current_packet, hspd, issuer, issuerfpr, keyflags, features,
-			psa, pha, pca, embeddedsig);
+			psa, pha, pca, paa, embeddedsig);
 	}
 	else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
 		(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
@@ -13184,7 +13226,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 			ctx.type, ctx.version, ctx.sigcreationtime,
 			ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.r, ctx.s,
 			current_packet, hspd, issuer, issuerfpr, keyflags, features,
-			psa, pha, pca, embeddedsig);
+			psa, pha, pca, paa, embeddedsig);
 	}
 	else
 	{
@@ -13626,7 +13668,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		return false;
 	}
 	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, keyflags;
-	tmcg_openpgp_octets_t features, psa, pha, pca, embeddedsig;
+	tmcg_openpgp_octets_t features, psa, pha, pca, paa, embeddedsig;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
 	switch (ctx.issuerkeyversion)
@@ -13652,6 +13694,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		pha.push_back(ctx.pha[i]);
 	for (size_t i = 0; i < ctx.pcalen; i++)
 		pca.push_back(ctx.pca[i]);
+	for (size_t i = 0; i < ctx.paalen; i++)
+		paa.push_back(ctx.paa[i]);
 	for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
 		embeddedsig.push_back(ctx.embeddedsignature[i]);
 	switch (ptag)
@@ -13670,7 +13714,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 					ctx.type, ctx.version, ctx.sigcreationtime,
 					ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.md,
 					current_packet, hspd, issuer, issuerfpr, keyflags, features,
-					psa, pha, pca, embeddedsig);
+					psa, pha, pca, paa, embeddedsig);
 			}
 			else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
 				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
@@ -13688,7 +13732,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 					ctx.type, ctx.version, ctx.sigcreationtime,
 					ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.r, ctx.s,
 					current_packet, hspd, issuer, issuerfpr, keyflags, features,
-					psa, pha, pca, embeddedsig);
+					psa, pha, pca, paa, embeddedsig);
 			}
 			else
 			{
