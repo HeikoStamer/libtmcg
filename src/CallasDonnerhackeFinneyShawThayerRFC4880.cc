@@ -13564,6 +13564,31 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag19
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag20
+	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
+	 const tmcg_openpgp_octets_t &current_packet,
+	 TMCG_OpenPGP_Message* &msg)
+{
+	if (verbose > 1)
+		std::cerr << "INFO: AEAD length = " << ctx.encdatalen << std::endl;
+	if (msg->have_sed || msg->have_seipd || msg->have_aead)
+	{
+		if (verbose)
+		{
+			std::cerr << "ERROR: duplicate SE/SEIP/AEAD packet found" <<
+				std::endl;
+		}
+		return false;
+	}
+	else
+	{
+		msg->have_aead = true;
+		for (size_t i = 0; i < ctx.encdatalen; i++)
+			(msg->encrypted_message).push_back(ctx.encdata[i]);
+	}
+	return true;
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse_Add
 	(const int verbose, bool &primary, bool &subkey, bool &badkey,
 	 bool &uid_flag, bool &uat_flag,
@@ -14514,6 +14539,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				stop = true; // ensures well-formedness of an OpenPGP message
 				if (kseq)
 					ret = false; // ESK sequence detected
+				break;
+			case 20: // AEAD Encrypted Data [draft RFC 4880bis]
+				ret = MessageParse_Tag20(ctx, verbose, current_packet, msg);
+				stop = true; // ensures well-formedness of an OpenPGP message
 				break;
 			default:
 				if (verbose > 1)

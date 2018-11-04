@@ -1396,6 +1396,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const int										verbose,
 			 const tmcg_openpgp_octets_t					&current_packet,
 			 TMCG_OpenPGP_Message*							&msg);
+		static bool MessageParse_Tag20
+			(const tmcg_openpgp_packet_ctx_t				&ctx,
+			 const int										verbose,
+			 const tmcg_openpgp_octets_t					&current_packet,
+			 TMCG_OpenPGP_Message*							&msg);
 		static void PublicKeyringParse_Add
 			(const int										verbose,
 			 bool											&primary,
