@@ -307,6 +307,7 @@ enum tmcg_openpgp_hashalgo_t
 
 enum tmcg_openpgp_aeadalgo_t
 {
+	TMCG_OPENPGP_AEADALGO_UNKNOWN			= 0,
 	TMCG_OPENPGP_AEADALGO_EAX				= 1,  // added by draft RFC 4880bis
 	TMCG_OPENPGP_AEADALGO_OCB				= 2,  // added by draft RFC 4880bis
 	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL0		= 100,
@@ -426,11 +427,13 @@ typedef struct
 	tmcg_openpgp_byte_t			notation_value[2048];
 	uint32_t					keyexpirationtime;
 	size_t						psalen;
-	tmcg_openpgp_byte_t			psa[32]; // array of 1-octet flags
+	tmcg_openpgp_byte_t			psa[32]; // array of 1-octet values
 	size_t						phalen;
-	tmcg_openpgp_byte_t			pha[32]; // array of 1-octet flags
+	tmcg_openpgp_byte_t			pha[32]; // array of 1-octet values
 	size_t						pcalen;
-	tmcg_openpgp_byte_t			pca[32]; // array of 1-octet flags
+	tmcg_openpgp_byte_t			pca[32]; // array of 1-octet values
+	size_t						paalen;
+	tmcg_openpgp_byte_t			paa[32]; // array of 1-octet values
 	uint32_t					sigexpirationtime;
 	bool						exportablecertification;
 	bool						revocable;
@@ -445,12 +448,12 @@ typedef struct
 	bool						primaryuserid;
 	tmcg_openpgp_byte_t			policyuri[2048]; // string
 	size_t						keyflagslen;
-	tmcg_openpgp_byte_t			keyflags[32]; // n-octets of flags
+	tmcg_openpgp_byte_t			keyflags[32]; // N octets of flags
 	tmcg_openpgp_byte_t			signersuserid[2048]; // string
 	tmcg_openpgp_revcode_t		revocationcode;
 	tmcg_openpgp_byte_t			revocationreason[2048]; // string
 	size_t						featureslen;
-	tmcg_openpgp_byte_t			features[32]; // n-octets of flags
+	tmcg_openpgp_byte_t			features[32]; // N octets of flags
 	tmcg_openpgp_pkalgo_t		signaturetarget_pkalgo;
 	tmcg_openpgp_hashalgo_t 	signaturetarget_hashalgo;
 	tmcg_openpgp_byte_t			signaturetarget_hash[2048];
@@ -488,6 +491,7 @@ typedef struct
 	gcry_mpi_t					x_i;
 	gcry_mpi_t					xprime_i;
 	tmcg_openpgp_skalgo_t		skalgo;
+	tmcg_openpgp_aeadalgo_t		aeadalgo;
 	tmcg_openpgp_byte_t			s2kconv;
 	tmcg_openpgp_stringtokey_t	s2k_type;
 	tmcg_openpgp_hashalgo_t		s2k_hashalgo;
@@ -510,6 +514,7 @@ typedef struct
 	tmcg_openpgp_byte_t			mdc_hash[20]; // SHA-1
 	tmcg_openpgp_byte_t*		uatdata; // allocated buffer with data
 	size_t						uatdatalen;
+	tmcg_openpgp_byte_t			chunksize;
 } tmcg_openpgp_packet_ctx_t;
 
 typedef struct
@@ -552,6 +557,7 @@ class TMCG_OpenPGP_Signature
 		tmcg_openpgp_octets_t								keyprefs_psa;
 		tmcg_openpgp_octets_t								keyprefs_pha;
 		tmcg_openpgp_octets_t								keyprefs_pca;
+		tmcg_openpgp_octets_t								keyprefs_paa;
 		std::vector<tmcg_openpgp_revkey_t>					revkeys;
 		tmcg_openpgp_octets_t								embeddedsig;
 
@@ -576,6 +582,7 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&keyprefs_psa_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
+			 const tmcg_openpgp_octets_t					&keyprefs_paa_in,
 			 const tmcg_openpgp_octets_t					&embeddedsig_in);
 		TMCG_OpenPGP_Signature
 			(const bool										revocable_in,
@@ -599,6 +606,7 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&keyprefs_psa_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
+			 const tmcg_openpgp_octets_t					&keyprefs_paa_in,
 			 const tmcg_openpgp_octets_t					&embeddedsig_in);
 		bool Good
 			() const;
@@ -736,6 +744,7 @@ class TMCG_OpenPGP_Subkey
 		tmcg_openpgp_octets_t								psa;
 		tmcg_openpgp_octets_t								pha;
 		tmcg_openpgp_octets_t								pca;
+		tmcg_openpgp_octets_t								paa;
 		std::string											ec_curve;
 		tmcg_openpgp_hashalgo_t								kdf_hashalgo;
 		tmcg_openpgp_skalgo_t								kdf_skalgo;
@@ -961,6 +970,7 @@ class TMCG_OpenPGP_Pubkey
 		tmcg_openpgp_octets_t								psa;
 		tmcg_openpgp_octets_t								pha;
 		tmcg_openpgp_octets_t								pca;
+		tmcg_openpgp_octets_t								paa;
 		std::string											ec_curve;
 		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				keyrevsigs;
@@ -1198,20 +1208,26 @@ class TMCG_OpenPGP_PKESK
 class TMCG_OpenPGP_SKESK
 {
 	public:
+		tmcg_openpgp_byte_t									version;
 		tmcg_openpgp_skalgo_t								skalgo;
+		tmcg_openpgp_aeadalgo_t								aeadalgo;
 		tmcg_openpgp_stringtokey_t							s2k_type;
 		tmcg_openpgp_hashalgo_t								s2k_hashalgo;
 		tmcg_openpgp_octets_t								s2k_salt;
 		tmcg_openpgp_byte_t									s2k_count;
+		tmcg_openpgp_octets_t								iv;
 		tmcg_openpgp_octets_t								encrypted_key;
 		tmcg_openpgp_octets_t								packet;
 
 		TMCG_OpenPGP_SKESK
-			(const tmcg_openpgp_skalgo_t					skalgo_in,
+			(const tmcg_openpgp_byte_t						version_in,
+			 const tmcg_openpgp_skalgo_t					skalgo_in,
+			 const tmcg_openpgp_aeadalgo_t					aeadalgo_in,
 			 const tmcg_openpgp_stringtokey_t				s2k_type_in,
 			 const tmcg_openpgp_hashalgo_t					s2k_hashalgo_in,
 			 const tmcg_openpgp_octets_t					&s2k_salt_in,
 			 const tmcg_openpgp_byte_t						s2k_count_in,
+			 const tmcg_openpgp_octets_t					&iv_in,
 			 const tmcg_openpgp_octets_t					&encrypted_key_in,
 			 const tmcg_openpgp_octets_t					&packet_in);
 		~TMCG_OpenPGP_SKESK
@@ -1235,6 +1251,10 @@ class TMCG_OpenPGP_Message
 		tmcg_openpgp_byte_t									format;
 		std::string											filename;
 		time_t												timestamp;
+		tmcg_openpgp_skalgo_t								skalgo;
+		tmcg_openpgp_aeadalgo_t								aeadalgo;
+		tmcg_openpgp_byte_t									chunksize;
+		tmcg_openpgp_octets_t								iv;
 		std::vector<const TMCG_OpenPGP_PKESK*>				PKESKs;
 		std::vector<const TMCG_OpenPGP_SKESK*>				SKESKs;
 		tmcg_openpgp_octets_t								encrypted_message;
@@ -1383,6 +1403,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const int										verbose,
 			 const tmcg_openpgp_octets_t					&current_packet,
 			 TMCG_OpenPGP_Message*							&msg);
+		static bool MessageParse_Tag20
+			(const tmcg_openpgp_packet_ctx_t				&ctx,
+			 const int										verbose,
+			 const tmcg_openpgp_octets_t					&current_packet,
+			 TMCG_OpenPGP_Message*							&msg);
 		static void PublicKeyringParse_Add
 			(const int										verbose,
 			 bool											&primary,
@@ -1406,6 +1431,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_openpgp_skalgo_t					algo);
 		static size_t AlgorithmIVLength
 			(const tmcg_openpgp_skalgo_t					algo);
+		static size_t AlgorithmIVLength
+			(const tmcg_openpgp_aeadalgo_t					algo);
 		static int AlgorithmSymGCRY
 			(const tmcg_openpgp_skalgo_t					algo);
 		static size_t AlgorithmHashLength
@@ -1998,6 +2025,15 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_secure_octets_t					&seskey,
 			 tmcg_openpgp_octets_t							&prefix,
 			 const bool										resync,
+			 tmcg_openpgp_octets_t							&out);
+		static gcry_error_t SymmetricDecryptAEAD
+			(const tmcg_openpgp_octets_t					&in,
+			 tmcg_openpgp_secure_octets_t					&seskey,
+			 const tmcg_openpgp_skalgo_t					skalgo,
+			 const tmcg_openpgp_aeadalgo_t					aeadalgo,
+			 const tmcg_openpgp_byte_t						chunksize,
+			 const tmcg_openpgp_octets_t					&iv,
+			 const tmcg_openpgp_octets_t					&ad,
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t AsymmetricEncryptElgamal
 			(const tmcg_openpgp_secure_octets_t				&in,
