@@ -4875,6 +4875,7 @@ bool TMCG_OpenPGP_Message::Decrypt
 	else if (have_aead)
 	{
 // TODO
+return false;
 	}
 	else
 	{
@@ -4968,7 +4969,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength
 	// cipher’s block size.
 	switch (algo)
 	{
-		case TMCG_OPENPGP_SKALGO_PLAINTEXT: 
+		case TMCG_OPENPGP_SKALGO_PLAINTEXT:
 			return 0; // Plaintext or unencrypted data
 		case TMCG_OPENPGP_SKALGO_IDEA:
 		case TMCG_OPENPGP_SKALGO_3DES:
@@ -4984,6 +4985,35 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength
 		case TMCG_OPENPGP_SKALGO_CAMELLIA192:
 		case TMCG_OPENPGP_SKALGO_CAMELLIA256:
 			return 16; // Camellia (cf. [RFC3713, RFC5581])
+		default:
+			return 0;
+	}
+}
+
+size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmIVLength
+	(const tmcg_openpgp_aeadalgo_t algo)
+{
+	// The EAX algorithm can only use block ciphers with 16-octet blocks.
+	// The starting initialization vector and authentication tag are both 16
+	// octets long.
+	// [...]
+	// OCB usage requires specification of the following parameters:
+	//  o  a blockcipher that operate on 128-bit (16-octet) blocks
+	//  o  an authentication tag length of 16 octets
+	//  o  a nonce of 15 octets long (which is the longest nonce allowed
+	//     specified by [RFC7253])
+	//  o  an initialization vector of at least 15 octets long
+	//
+	//  In the case that the initialization vector is longer than 15 octets
+	//  (such as in Section {5.5.3} Secret-Key Packet Formats), only the 15
+	//  leftmost octets are used in calculations; the remaining octets MUST
+	//  be considered as zero.
+	switch (algo)
+	{
+		case TMCG_OPENPGP_AEADALGO_EAX:
+			return 16;
+		case TMCG_OPENPGP_AEADALGO_OCB:
+			return 15;
 		default:
 			return 0;
 	}
@@ -9165,81 +9195,183 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				return 0xFC; // warning: unsupported algo
 			break;
 		case 3: // Symmetric-Key Encrypted Session Key Packet
-			if (pkt.size() < 4)
-				return 0; // error: incorrect packet body
+			if (pkt.size() < 1)
+				return 0; // error: packet too short
 			out.version = pkt[0];
-			if (out.version != 4)
-				return 0; // error: version not supported
-			out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
-			out.s2k_type = (tmcg_openpgp_stringtokey_t)pkt[2];
-			out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[3];
-			if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
+			if (out.version == 4)
 			{
-				// Simple S2K -- forbidden by RFC 4880 (only for completeness)
-				if (out.encdatalen != 0)
-					return 0; // error: already seen within context
-				tmcg_openpgp_mem_alloc += (pkt.size() - 4);
-				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+				if (pkt.size() < 4)
+					return 0; // error: packet too short
+				out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
+				out.s2k_type = (tmcg_openpgp_stringtokey_t)pkt[2];
+				out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[3];
+				if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
 				{
-					tmcg_openpgp_mem_alloc -= (pkt.size() - 4);
-					return 0; // error: memory limit exceeded
+					// Simple S2K -- forbidden by RFC 4880 (only for completeness)
+					if (out.encdatalen != 0)
+						return 0; // error: already seen within context
+					tmcg_openpgp_mem_alloc += (pkt.size() - 4);
+					if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+					{
+						tmcg_openpgp_mem_alloc -= (pkt.size() - 4);
+						return 0; // error: memory limit exceeded
+					}
+					out.encdatalen = pkt.size() - 4;
+					if (out.encdatalen == 0)
+						break; // no encrypted session key
+					out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+					for (size_t i = 0; i < out.encdatalen; i++)
+						out.encdata[i] = pkt[4+i];
 				}
-				out.encdatalen = pkt.size() - 4;
-				if (out.encdatalen == 0)
-					break; // no encrypted session key
-				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-				for (size_t i = 0; i < out.encdatalen; i++)
-					out.encdata[i] = pkt[4+i];
+				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SALTED)
+				{
+					// Salted S2K
+					if (pkt.size() < 12)
+						return 0; // error: no salt
+					for (size_t i = 0; i < 8; i++)
+						out.s2k_salt[i] = pkt[4+i];
+					if (out.encdatalen != 0)
+						return 0; // error: already seen within context
+					tmcg_openpgp_mem_alloc += (pkt.size() - 12);
+					if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+					{
+						tmcg_openpgp_mem_alloc -= (pkt.size() - 12);
+						return 0; // error: memory limit exceeded
+					}
+					out.encdatalen = pkt.size() - 12;
+					if (out.encdatalen == 0)
+						break; // no encrypted session key
+					out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+					for (size_t i = 0; i < out.encdatalen; i++)
+						out.encdata[i] = pkt[12+i];
+				}
+				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
+				{
+					// Iterated and Salted S2K
+					if (pkt.size() < 12)
+						return 0; // error: no salt
+					for (size_t i = 0; i < 8; i++)
+						out.s2k_salt[i] = pkt[4+i];
+					if (pkt.size() < 13)
+						return 0; // error: no count
+					out.s2k_count = pkt[12];
+					if (out.encdatalen != 0)
+						return 0; // error: already seen within context
+					tmcg_openpgp_mem_alloc += (pkt.size() - 13);
+					if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+					{
+						tmcg_openpgp_mem_alloc -= (pkt.size() - 13);
+						return 0; // error: memory limit exceeded
+					}
+					out.encdatalen = pkt.size() - 13;
+					if (out.encdatalen == 0)
+						break; // no encrypted session key
+					out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+					for (size_t i = 0; i < out.encdatalen; i++)
+						out.encdata[i] = pkt[13+i];
+				}
+				else
+					return 0; // unknown S2K specifier
 			}
-			else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SALTED)
+			else if (out.version == 5)
 			{
-				// Salted S2K
-				if (pkt.size() < 12)
-					return 0; // error: no salt
-				for (size_t i = 0; i < 8; i++)
-					out.s2k_salt[i] = pkt[4+i];
-				if (out.encdatalen != 0)
-					return 0; // error: already seen within context
-				tmcg_openpgp_mem_alloc += (pkt.size() - 12);
-				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+				if (pkt.size() < 5)
+					return 0; // error: packet too short
+				out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
+				out.aeadalgo = (tmcg_openpgp_aeadalgo_t)pkt[2];
+				out.s2k_type = (tmcg_openpgp_stringtokey_t)pkt[3];
+				out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[4];
+				if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
 				{
-					tmcg_openpgp_mem_alloc -= (pkt.size() - 12);
-					return 0; // error: memory limit exceeded
+					// Simple S2K -- forbidden by RFC 4880 (only for completeness)
+					size_t ivlen = AlgorithmIVLength(out.aeadalgo);
+					if (pkt.size() < (5 + ivlen))
+						return 0; // error: no IV
+					if (ivlen > sizeof(out.iv))
+						return 0; // error: IV too long
+					for (size_t i = 0; i < ivlen; i++)
+						out.iv[i] = pkt[5+i];
+					if (out.encdatalen != 0)
+						return 0; // error: already seen within context
+					tmcg_openpgp_mem_alloc += (pkt.size() - 5 - ivlen);
+					if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+					{
+						tmcg_openpgp_mem_alloc -= (pkt.size() - 5 - ivlen);
+						return 0; // error: memory limit exceeded
+					}
+					out.encdatalen = pkt.size() - 5 - ivlen;
+					if (out.encdatalen == 0)
+						return 0; // error: no encrypted session key
+					out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+					for (size_t i = 0; i < out.encdatalen; i++)
+						out.encdata[i] = pkt[5+ivlen+i];
 				}
-				out.encdatalen = pkt.size() - 12;
-				if (out.encdatalen == 0)
-					break; // no encrypted session key
-				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-				for (size_t i = 0; i < out.encdatalen; i++)
-					out.encdata[i] = pkt[12+i];
-			}
-			else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
-			{
-				// Iterated and Salted S2K
-				if (pkt.size() < 12)
-					return 0; // error: no salt
-				for (size_t i = 0; i < 8; i++)
-					out.s2k_salt[i] = pkt[4+i];
-				if (pkt.size() < 13)
-					return 0; // error: no count
-				out.s2k_count = pkt[12];
-				if (out.encdatalen != 0)
-					return 0; // error: already seen within context
-				tmcg_openpgp_mem_alloc += (pkt.size() - 13);
-				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SALTED)
 				{
-					tmcg_openpgp_mem_alloc -= (pkt.size() - 13);
-					return 0; // error: memory limit exceeded
+					// Salted S2K
+					if (pkt.size() < 13)
+						return 0; // error: no salt
+					for (size_t i = 0; i < 8; i++)
+						out.s2k_salt[i] = pkt[5+i];
+					size_t ivlen = AlgorithmIVLength(out.aeadalgo);
+					if (pkt.size() < (13 + ivlen))
+						return 0; // error: no IV
+					if (ivlen > sizeof(out.iv))
+						return 0; // error: IV too long
+					for (size_t i = 0; i < ivlen; i++)
+						out.iv[i] = pkt[13+i];
+					if (out.encdatalen != 0)
+						return 0; // error: already seen within context
+					tmcg_openpgp_mem_alloc += (pkt.size() - 13 - ivlen);
+					if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+					{
+						tmcg_openpgp_mem_alloc -= (pkt.size() - 13 - ivlen);
+						return 0; // error: memory limit exceeded
+					}
+					out.encdatalen = pkt.size() - 13 - ivlen;
+					if (out.encdatalen == 0)
+						return 0; // error: no encrypted session key
+					out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+					for (size_t i = 0; i < out.encdatalen; i++)
+						out.encdata[i] = pkt[13+ivlen+i];
 				}
-				out.encdatalen = pkt.size() - 13;
-				if (out.encdatalen == 0)
-					break; // no encrypted session key
-				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-				for (size_t i = 0; i < out.encdatalen; i++)
-					out.encdata[i] = pkt[13+i];
+				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
+				{
+					// Iterated and Salted S2K
+					if (pkt.size() < 13)
+						return 0; // error: no salt
+					for (size_t i = 0; i < 8; i++)
+						out.s2k_salt[i] = pkt[5+i];
+					if (pkt.size() < 14)
+						return 0; // error: no count
+					out.s2k_count = pkt[13];
+					size_t ivlen = AlgorithmIVLength(out.aeadalgo);
+					if (pkt.size() < (14 + ivlen))
+						return 0; // error: no IV
+					if (ivlen > sizeof(out.iv))
+						return 0; // error: IV too long
+					for (size_t i = 0; i < ivlen; i++)
+						out.iv[i] = pkt[14+i];
+					if (out.encdatalen != 0)
+						return 0; // error: already seen within context
+					tmcg_openpgp_mem_alloc += (pkt.size() - 14 - ivlen);
+					if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+					{
+						tmcg_openpgp_mem_alloc -= (pkt.size() - 14 - ivlen);
+						return 0; // error: memory limit exceeded
+					}
+					out.encdatalen = pkt.size() - 14 - ivlen;
+					if (out.encdatalen == 0)
+						return 0; // error: no encrypted session key
+					out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+					for (size_t i = 0; i < out.encdatalen; i++)
+						out.encdata[i] = pkt[14+ivlen+i];
+				}
+				else
+					return 0; // unknown S2K specifier	
 			}
 			else
-				return 0; // unknown S2K specifier
+				return 0; // error: version not supported
 			break;
 		case 4: // One-Pass Signature Packet
 			if (pkt.size() != 13)

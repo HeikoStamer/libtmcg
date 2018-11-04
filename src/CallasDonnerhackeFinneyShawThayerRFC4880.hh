@@ -490,6 +490,7 @@ typedef struct
 	gcry_mpi_t					x_i;
 	gcry_mpi_t					xprime_i;
 	tmcg_openpgp_skalgo_t		skalgo;
+	tmcg_openpgp_aeadalgo_t		aeadalgo;
 	tmcg_openpgp_byte_t			s2kconv;
 	tmcg_openpgp_stringtokey_t	s2k_type;
 	tmcg_openpgp_hashalgo_t		s2k_hashalgo;
@@ -1413,6 +1414,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_openpgp_skalgo_t					algo);
 		static size_t AlgorithmIVLength
 			(const tmcg_openpgp_skalgo_t					algo);
+		static size_t AlgorithmIVLength
+			(const tmcg_openpgp_aeadalgo_t					algo);
 		static int AlgorithmSymGCRY
 			(const tmcg_openpgp_skalgo_t					algo);
 		static size_t AlgorithmHashLength
