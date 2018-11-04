@@ -11261,7 +11261,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 			// cm = GCRY_CIPHER_MODE_EAX;
 			break;
 		case TMCG_OPENPGP_AEADALGO_OCB:
-			cm = GCRY_CIPHER_MODE_OCB;
+			cm = (enum gcry_cipher_modes)13; // FIXME: remove, if supported by libgcrypt
+			// cm = GCRY_CIPHER_MODE_OCB;
 			break;
 		default:
 			return GPG_ERR_INV_CIPHER_MODE; // error: bad AEAD algorithm
