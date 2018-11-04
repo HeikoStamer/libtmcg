@@ -1658,7 +1658,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_openpgp_signature_t					type,
 			 const tmcg_openpgp_hashalgo_t					hashalgo, 
 			 const time_t									sigtime,
-			 const tmcg_openpgp_byte_t						revcode,
+			 const tmcg_openpgp_revcode_t					revcode,
 			 const std::string								&reason,
 			 const tmcg_openpgp_octets_t					&issuer, 
 			 tmcg_openpgp_octets_t							&out);
@@ -1667,7 +1667,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_pkalgo_t					pkalgo,
 			 const tmcg_openpgp_hashalgo_t					hashalgo, 
 			 const time_t									sigtime,
-			 const tmcg_openpgp_byte_t						revcode,
+			 const tmcg_openpgp_revcode_t					revcode,
 			 const std::string								&reason,
 			 const tmcg_openpgp_octets_t					&issuer, 
 			 tmcg_openpgp_octets_t							&out);
