@@ -513,6 +513,7 @@ typedef struct
 	tmcg_openpgp_byte_t			mdc_hash[20]; // SHA-1
 	tmcg_openpgp_byte_t*		uatdata; // allocated buffer with data
 	size_t						uatdatalen;
+	tmcg_openpgp_byte_t			chunksize;
 } tmcg_openpgp_packet_ctx_t;
 
 typedef struct

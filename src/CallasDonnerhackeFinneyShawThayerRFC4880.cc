@@ -9275,6 +9275,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			}
 			else if (out.version == 5)
 			{
+				// AEAD SKESK [draft RFC 4880bis]
 				if (pkt.size() < 5)
 					return 0; // error: packet too short
 				out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
@@ -10137,6 +10138,40 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				return 0; // error: incorrect packet body
 			for (size_t i = 0; i < pkt.size(); i++)
 				out.mdc_hash[i] = pkt[i];
+			break;
+		case 20: // AEAD Encrypted Data Packet [draft RFC 4880bis]
+			if (pkt.size() < 4)
+				return 0; // error: packet too short
+			out.version = pkt[0];
+			out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
+			out.aeadalgo = (tmcg_openpgp_aeadalgo_t)pkt[2];
+			out.chunksize = pkt[3];
+			if (out.version == 1)
+			{
+				size_t ivlen = AlgorithmIVLength(out.aeadalgo);
+				if (pkt.size() < (4 + ivlen))
+					return 0; // error: no IV
+				if (ivlen > sizeof(out.iv))
+					return 0; // error: IV too long
+				for (size_t i = 0; i < ivlen; i++)
+					out.iv[i] = pkt[4+i];
+				if (out.encdatalen != 0)
+					return 0; // error: already seen within context
+				tmcg_openpgp_mem_alloc += (pkt.size() - 4 - ivlen);
+				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+				{
+					tmcg_openpgp_mem_alloc -= (pkt.size() - 4 - ivlen);
+					return 0; // error: memory limit exceeded
+				}
+				out.encdatalen = pkt.size() - 4 - ivlen;
+				if (out.encdatalen == 0)
+					return 0; // error: no encrypted session key
+				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+				for (size_t i = 0; i < out.encdatalen; i++)
+					out.encdata[i] = pkt[4+ivlen+i];
+			}
+			else
+				return 0; // error: version not supported
 			break;
 		default:
 			return 0xFE; // warning: unknown packet tag
@@ -12727,6 +12762,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 	{
 		std::cerr << "INFO: encdatalen = " << ctx.encdatalen << std::endl;
 		std::cerr << "INFO: skalgo = " << (int)ctx.skalgo << std::endl;
+		std::cerr << "INFO: aeadalgo = " << (int)ctx.aeadalgo << std::endl;
 		std::cerr << "INFO: s2kconv = " << (int)ctx.s2kconv << std::endl;
 		std::cerr << "INFO: s2k_type = " << (int)ctx.s2k_type <<
 			" s2k_hashalgo = " << (int)ctx.s2k_hashalgo <<
@@ -13388,6 +13424,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag3
 {
 	if (verbose > 1)
 		std::cerr << "INFO: ESK skalgo = " << (int)ctx.skalgo <<
+			" aeadalgo = " << (int)ctx.aeadalgo <<
 			" s2k_type = " << (int)ctx.s2k_type << 
 			" s2k_hashalgo = " << (int)ctx.s2k_hashalgo <<
 			" s2k_count = " << (int)ctx.s2k_count <<  
