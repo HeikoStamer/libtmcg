@@ -307,6 +307,7 @@ enum tmcg_openpgp_hashalgo_t
 
 enum tmcg_openpgp_aeadalgo_t
 {
+	TMCG_OPENPGP_AEADALGO_UNKNOWN			= 0,
 	TMCG_OPENPGP_AEADALGO_EAX				= 1,  // added by draft RFC 4880bis
 	TMCG_OPENPGP_AEADALGO_OCB				= 2,  // added by draft RFC 4880bis
 	TMCG_OPENPGP_AEADALGO_EXPERIMENTAL0		= 100,
@@ -1248,9 +1249,12 @@ class TMCG_OpenPGP_Message
 		tmcg_openpgp_byte_t									format;
 		std::string											filename;
 		time_t												timestamp;
+		tmcg_openpgp_skalgo_t								skalgo;
+		tmcg_openpgp_aeadalgo_t								aeadalgo;
+		tmcg_openpgp_byte_t									chunksize;
+		tmcg_openpgp_octets_t								iv;
 		std::vector<const TMCG_OpenPGP_PKESK*>				PKESKs;
 		std::vector<const TMCG_OpenPGP_SKESK*>				SKESKs;
-		tmcg_openpgp_byte_t									chunksize;
 		tmcg_openpgp_octets_t								encrypted_message;
 		tmcg_openpgp_octets_t								signed_message;
 		tmcg_openpgp_octets_t								compressed_message;

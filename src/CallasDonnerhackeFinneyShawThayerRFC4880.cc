@@ -4737,7 +4737,10 @@ TMCG_OpenPGP_Message::TMCG_OpenPGP_Message
 		compalgo(TMCG_OPENPGP_COMPALGO_UNCOMPRESSED),
 		format(0x00),
 		filename(""),
-		timestamp(0)
+		timestamp(0),
+		skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT),
+		aeadalgo(TMCG_OPENPGP_AEADALGO_UNKNOWN),
+		chunksize(0)
 {
 }
 
@@ -4894,6 +4897,7 @@ return false;
 TMCG_OpenPGP_Message::~TMCG_OpenPGP_Message
 	()
 {
+	iv.clear();
 	for (size_t i = 0; i < PKESKs.size(); i++)
 		delete PKESKs[i];
 	PKESKs.clear();
@@ -13572,6 +13576,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag20
 	if (verbose > 1)
 	{
 		std::cerr << "INFO: AEAD length = " << ctx.encdatalen << std::endl;
+		std::cerr << "INFO: AEAD skalgo = " << (int)ctx.skalgo << std::endl;
+		std::cerr << "INFO: AEAD aeadalgo = " << (int)ctx.aeadalgo << std::endl;
 		std::cerr << "INFO: AEAD chunksize = " << (int)ctx.chunksize <<
 			std::endl;
 	}
@@ -13587,7 +13593,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag20
 	else
 	{
 		msg->have_aead = true;
+		msg->skalgo = ctx.skalgo;
+		msg->aeadalgo = ctx.aeadalgo;
 		msg->chunksize = ctx.chunksize;
+		size_t ivlen = AlgorithmIVLength(msg->aeadalgo);
+		for (size_t i = 0; i < ivlen; i++)
+			msg->iv.push_back(ctx.iv[i]);
 		for (size_t i = 0; i < ctx.encdatalen; i++)
 			(msg->encrypted_message).push_back(ctx.encdata[i]);
 	}
