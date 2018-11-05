@@ -6855,7 +6855,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature
 	(const tmcg_openpgp_signature_t type,
-	 const tmcg_openpgp_hashalgo_t hashalgo, 
+	 const tmcg_openpgp_hashalgo_t hashalgo,
 	 const time_t sigtime, const tmcg_openpgp_revcode_t revcode,
 	 const std::string &reason, const tmcg_openpgp_octets_t &issuer, 
 	 tmcg_openpgp_octets_t &out)
