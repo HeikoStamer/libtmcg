@@ -1585,9 +1585,27 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 		revkeys.push_back(rk);
 		if (verbose > 1)
 		{
-			std::string fpr_str;
+			size_t fprlen = 0;
+			if ((rk.key_fingerprint[20] == 0x00) &&
+				(rk.key_fingerprint[21] == 0x00) &&
+				(rk.key_fingerprint[22] == 0x00) &&
+				(rk.key_fingerprint[23] == 0x00) &&
+				(rk.key_fingerprint[24] == 0x00) &&
+				(rk.key_fingerprint[25] == 0x00) &&
+				(rk.key_fingerprint[26] == 0x00) &&
+				(rk.key_fingerprint[27] == 0x00) &&
+				(rk.key_fingerprint[28] == 0x00) &&
+				(rk.key_fingerprint[29] == 0x00) &&
+				(rk.key_fingerprint[30] == 0x00) &&
+				(rk.key_fingerprint[31] == 0x00))
+			{
+				fprlen = 20; // V4 key
+			}
+			else
+				fprlen = 32; // V5 key			
 			tmcg_openpgp_octets_t fpr(rk.key_fingerprint,
-				 rk.key_fingerprint+sizeof(rk.key_fingerprint));
+				 rk.key_fingerprint+fprlen);
+			std::string fpr_str;
 			CallasDonnerhackeFinneyShawThayerRFC4880::
 				FingerprintConvertPretty(fpr, fpr_str);
 			std::cerr << "[" << fpr_str << "]";
@@ -8619,7 +8637,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				out.psa[i] = pkt[i];
 			break;
 		case 12: // Revocation Key (cf. changes from [draft RFC 4880bis])
-			if ((pkt.size() != 22) || (pkt.size() != 34))
+			if ((pkt.size() != 22) && (pkt.size() != 34))
 				return 0; // error: incorrect subpacket body
 			// Class octet must have bit 0x80 set.
 			if ((pkt[0] & 0x80) != 0x80)
