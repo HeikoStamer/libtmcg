@@ -442,7 +442,7 @@ typedef struct
 	tmcg_openpgp_byte_t			trustregex[2048]; // string
 	tmcg_openpgp_byte_t			revocationkey_class;
 	tmcg_openpgp_pkalgo_t		revocationkey_pkalgo;
-	tmcg_openpgp_byte_t			revocationkey_fingerprint[20]; // SHA-1
+	tmcg_openpgp_byte_t			revocationkey_fingerprint[32]; // SHA-1, SHA256
 	tmcg_openpgp_byte_t			keyserverpreferences[2048]; // array
 	tmcg_openpgp_byte_t			preferedkeyserver[2048]; // string
 	bool						primaryuserid;
@@ -521,7 +521,7 @@ typedef struct
 {
 	tmcg_openpgp_byte_t			key_class;
 	tmcg_openpgp_pkalgo_t		key_pkalgo;
-	tmcg_openpgp_byte_t			key_fingerprint[20]; // SHA-1
+	tmcg_openpgp_byte_t			key_fingerprint[32]; // SHA-1 or SHA256
 } tmcg_openpgp_revkey_t;
 
 // definition of own classes
