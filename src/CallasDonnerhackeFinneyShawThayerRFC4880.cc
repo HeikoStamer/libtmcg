@@ -1471,9 +1471,7 @@ size_t TMCG_OpenPGP_Subkey::AccumulateFlags
 	for (size_t i = 0; i < flags.size(); i++)
 	{
 		if (flags[i])
-			allflags = (allflags << 8) + flags[i];
-		else
-			break;
+			allflags += (flags[i] << (8 * i));
 	}
 	return allflags;
 }
@@ -1485,9 +1483,7 @@ size_t TMCG_OpenPGP_Subkey::AccumulateFeatures
 	for (size_t i = 0; i < features.size(); i++)
 	{
 		if (features[i])
-			allfeatures = (allfeatures << 8) + features[i];
-		else
-			break;
+			allfeatures += (features[i] << (8 * i));
 	}
 	return allfeatures;
 }
@@ -2905,9 +2901,7 @@ size_t TMCG_OpenPGP_Pubkey::AccumulateFlags
 	for (size_t i = 0; i < flags.size(); i++)
 	{
 		if (flags[i])
-			allflags = (allflags << 8) + flags[i];
-		else
-			break;
+			allflags += (flags[i] << (8 * i));
 	}
 	return allflags;
 }
@@ -2934,9 +2928,7 @@ size_t TMCG_OpenPGP_Pubkey::AccumulateFeatures
 	for (size_t i = 0; i < features.size(); i++)
 	{
 		if (features[i])
-			allfeatures = (allfeatures << 8) + features[i];
-		else
-			break;
+			allfeatures += (features[i] << (8 * i));
 	}
 	return allfeatures;
 }

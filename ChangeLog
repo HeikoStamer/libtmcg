@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2018-] added data structure TMCG_Bigint
+* [2018-11-10] RFC4880: fixes accumulation of key flags and features
 * [2018-11-02] RFC4880: decreased lower bound for x to 245 bits in Weak()
 * [2018-11-02] mpz_srandom: cleaned tmcg_mpz_grandomm() and tmcg_mpz_grandomb()
 * [2018-11-02] mpz_srandom: changed interface of tmcg_mpz_ssrandomm_cache()
