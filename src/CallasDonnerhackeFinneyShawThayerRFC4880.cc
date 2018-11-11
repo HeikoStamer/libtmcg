@@ -1470,8 +1470,8 @@ size_t TMCG_OpenPGP_Subkey::AccumulateFlags
 	size_t allflags = 0;
 	for (size_t i = 0; i < flags.size(); i++)
 	{
-		if (flags[i])
-			allflags += (flags[i] << (8 * i));
+		if (flags[i] && (i < 3)) // FIXME: only 3 octets of flags allowed
+			allflags += ((size_t)flags[i] << (8 * i));
 	}
 	return allflags;
 }
@@ -1482,8 +1482,8 @@ size_t TMCG_OpenPGP_Subkey::AccumulateFeatures
 	size_t allfeatures = 0;
 	for (size_t i = 0; i < features.size(); i++)
 	{
-		if (features[i])
-			allfeatures += (features[i] << (8 * i));
+		if (features[i] && (i < 3)) // FIXME: only 3 octets of flags allowed
+			allfeatures += ((size_t)features[i] << (8 * i));
 	}
 	return allfeatures;
 }
@@ -2936,10 +2936,22 @@ size_t TMCG_OpenPGP_Pubkey::AccumulateFlags
 	size_t allflags = 0;
 	for (size_t i = 0; i < flags.size(); i++)
 	{
-		if (flags[i])
-			allflags += (flags[i] << (8 * i));
+		if (flags[i] && (i < 3))  // FIXME: only 3 octets of flags allowed
+			allflags += ((size_t)flags[i] << (8 * i));
 	}
 	return allflags;
+}
+
+size_t TMCG_OpenPGP_Pubkey::AccumulateFeatures
+	() const
+{
+	size_t allfeatures = 0;
+	for (size_t i = 0; i < features.size(); i++)
+	{
+		if (features[i] && (i < 3)) // FIXME: only 3 octets of flags allowed
+			allfeatures += ((size_t)features[i] << (8 * i));
+	}
+	return allfeatures;
 }
 
 tmcg_openpgp_revcode_t TMCG_OpenPGP_Pubkey::AccumulateRevocationCodes
@@ -2955,18 +2967,6 @@ tmcg_openpgp_revcode_t TMCG_OpenPGP_Pubkey::AccumulateRevocationCodes
 		}
 	}
 	return revcode;
-}
-
-size_t TMCG_OpenPGP_Pubkey::AccumulateFeatures
-	() const
-{
-	size_t allfeatures = 0;
-	for (size_t i = 0; i < features.size(); i++)
-	{
-		if (features[i])
-			allfeatures += (features[i] << (8 * i));
-	}
-	return allfeatures;
 }
 
 void TMCG_OpenPGP_Pubkey::UpdateProperties
