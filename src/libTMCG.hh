@@ -135,7 +135,7 @@
 		/* Define a helping macro */
 		#define TMCG_MAX_KEYBITS \
 			((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? \
-				(4 * TMCG_DDH_SIZE) : (4 * TMCG_QRA_SIZE))
+				(8UL * TMCG_DDH_SIZE) : (8UL * TMCG_QRA_SIZE))
 	#endif
 	
 	#ifndef TMCG_MAX_PLAYERS
@@ -157,12 +157,12 @@
 	
 	#ifndef TMCG_MAX_VALUE_CHARS
 		/* Define a helping macro */
-		#define TMCG_MAX_VALUE_CHARS (TMCG_MAX_KEYBITS / 2L)
+		#define TMCG_MAX_VALUE_CHARS (TMCG_MAX_KEYBITS / 2UL)
 	#endif
 	
 	#ifndef TMCG_MAX_KEY_CHARS
 		/* Define a helping macro */
-		#define TMCG_MAX_KEY_CHARS (TMCG_MAX_KEYBITS * 1024L)
+		#define TMCG_MAX_KEY_CHARS (TMCG_MAX_KEYBITS * 1024UL)
 	#endif
 	
 	#ifndef TMCG_MPZ_IO_BASE
