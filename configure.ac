@@ -18,11 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-<<<<<<< HEAD
-AC_REVISION([20180914])
-=======
-AC_REVISION([20181029])
->>>>>>> master
+AC_REVISION([20181112])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.4.0], [HeikoStamer@gmx.net], [libTMCG],
@@ -34,7 +30,7 @@ AC_INIT([LibTMCG], [1.4.0], [HeikoStamer@gmx.net], [libTMCG],
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
 #   (Interfaces added:      CURRENT++, AGE++, REVISION=0)
 #   (No interfaces changed:                   REVISION++)
-LIBTMCG_LT_CURRENT=15
+LIBTMCG_LT_CURRENT=16
 LIBTMCG_LT_AGE=0
 LIBTMCG_LT_REVISION=0
 
