@@ -147,11 +147,11 @@ AC_DEFINE(TMCG_MAX_TYPEBITS, 10,
 	size of the message space in the scheme of Barnett and Smart])
 	
 AC_DEFINE(TMCG_MAX_KEYBITS,
-	[((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? (4 * TMCG_DDH_SIZE) :\
- (4 * TMCG_QRA_SIZE))],
+	[((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? (8UL * TMCG_DDH_SIZE) :\
+ (8UL * TMCG_QRA_SIZE))],
 	[Define a helping macro])
 AC_DEFINE(TMCG_MAX_VALUE_CHARS,
-	[(TMCG_MAX_KEYBITS / 2L)],
+	[(TMCG_MAX_KEYBITS / 2UL)],
 	[Define a helping macro])
 AC_DEFINE(TMCG_MAX_CARD_CHARS,
 	[(TMCG_MAX_PLAYERS * TMCG_MAX_TYPEBITS * TMCG_MAX_VALUE_CHARS)],
@@ -160,7 +160,7 @@ AC_DEFINE(TMCG_MAX_STACK_CHARS,
 	[(TMCG_MAX_CARDS * TMCG_MAX_CARD_CHARS)],
 	[Define a helping macro])
 AC_DEFINE(TMCG_MAX_KEY_CHARS,
-	[(TMCG_MAX_KEYBITS * 1024L)],
+	[(TMCG_MAX_KEYBITS * 1024UL)],
 	[Define a helping macro])
 
 # Checks for Libtool

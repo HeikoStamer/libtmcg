@@ -124,28 +124,10 @@
 		/* Define the maximum number of stackable cards */
 		#define TMCG_MAX_CARDS 1024
 	#endif
-	
-	#ifndef TMCG_MAX_CARD_CHARS
-		/* Define a helping macro */
-		#define TMCG_MAX_CARD_CHARS \
-			(TMCG_MAX_PLAYERS * TMCG_MAX_TYPEBITS * TMCG_MAX_VALUE_CHARS)
-	#endif
-	
-	#ifndef TMCG_MAX_KEYBITS
-		/* Define a helping macro */
-		#define TMCG_MAX_KEYBITS \
-			((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? \
-				(4 * TMCG_DDH_SIZE) : (4 * TMCG_QRA_SIZE))
-	#endif
-	
+		
 	#ifndef TMCG_MAX_PLAYERS
 		/* Define the maximum number of players for scheme of Schindelhauer */
 		#define TMCG_MAX_PLAYERS 32
-	#endif
-	
-	#ifndef TMCG_MAX_STACK_CHARS
-		/* Define a helping macro */
-		#define TMCG_MAX_STACK_CHARS (TMCG_MAX_CARDS * TMCG_MAX_CARD_CHARS)
 	#endif
 	
 	#ifndef TMCG_MAX_TYPEBITS
@@ -153,16 +135,6 @@
 		   different card types for the scheme of Schindelhauer and the maximum
 		   size of the message space for the scheme of Barnett and Smart */
 		#define TMCG_MAX_TYPEBITS 10
-	#endif
-	
-	#ifndef TMCG_MAX_VALUE_CHARS
-		/* Define a helping macro */
-		#define TMCG_MAX_VALUE_CHARS (TMCG_MAX_KEYBITS / 2L)
-	#endif
-	
-	#ifndef TMCG_MAX_KEY_CHARS
-		/* Define a helping macro */
-		#define TMCG_MAX_KEY_CHARS (TMCG_MAX_KEYBITS * 1024L)
 	#endif
 	
 	#ifndef TMCG_MPZ_IO_BASE
@@ -206,6 +178,34 @@
 	#ifndef TMCG_MAX_SSRANDOMM_CACHE
 		/* Define the maximum size of mpz_ssrandomm_cache */
 		#define TMCG_MAX_SSRANDOMM_CACHE 256
+	#endif
+
+	#ifndef TMCG_MAX_CARD_CHARS
+		/* Define a helping macro */
+		#define TMCG_MAX_CARD_CHARS \
+			(TMCG_MAX_PLAYERS * TMCG_MAX_TYPEBITS * TMCG_MAX_VALUE_CHARS)
+	#endif
+
+	#ifndef TMCG_MAX_STACK_CHARS
+		/* Define a helping macro */
+		#define TMCG_MAX_STACK_CHARS (TMCG_MAX_CARDS * TMCG_MAX_CARD_CHARS)
+	#endif
+	
+	#ifndef TMCG_MAX_KEYBITS
+		/* Define a helping macro */
+		#define TMCG_MAX_KEYBITS \
+			((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? \
+				(8UL * TMCG_DDH_SIZE) : (8UL * TMCG_QRA_SIZE))
+	#endif
+
+	#ifndef TMCG_MAX_VALUE_CHARS
+		/* Define a helping macro */
+		#define TMCG_MAX_VALUE_CHARS (TMCG_MAX_KEYBITS / 2UL)
+	#endif
+	
+	#ifndef TMCG_MAX_KEY_CHARS
+		/* Define a helping macro */
+		#define TMCG_MAX_KEY_CHARS (TMCG_MAX_KEYBITS * 1024UL)
 	#endif
 
 	#ifndef TMCG_OPENPGP_CRC24_INIT
