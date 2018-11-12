@@ -129,7 +129,7 @@ void tmcg_mpz_grandomb
 	rng->randomize((uint8_t*)tmp, (size+7)/8);
 	mpz_t rrr;
 	mpz_init(rrr);
-	mpz_import(rrr, size, 1, 1, 1, 0, (const void*)tmp);
+	mpz_import(rrr, (size+7)/8, 1, 1, 1, 0, (const void*)tmp);
 	mpz_add(r, r, rrr); // ADD number from other random source
 	mpz_clear(rrr);
 #endif

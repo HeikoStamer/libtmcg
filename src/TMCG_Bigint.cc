@@ -110,7 +110,7 @@ TMCG_Bigint& TMCG_Bigint::operator +=
 			gcry_mpi_add(secret_bigint, secret_bigint, that.secret_bigint);
 		else
 		{
-			gcry_mpi_t tmp;
+			gcry_mpi_t tmp = gcry_mpi_new(that.size(2));
 			tmcg_mpz_get_gcry_mpi(tmp, that.bigint);
 			gcry_mpi_add(secret_bigint, secret_bigint, tmp);
 			gcry_mpi_release(tmp);
@@ -155,7 +155,7 @@ TMCG_Bigint& TMCG_Bigint::operator -=
 			gcry_mpi_sub(secret_bigint, secret_bigint, that.secret_bigint);
 		else
 		{
-			gcry_mpi_t tmp;
+			gcry_mpi_t tmp = gcry_mpi_new(that.size(2));
 			tmcg_mpz_get_gcry_mpi(tmp, that.bigint);
 			gcry_mpi_sub(secret_bigint, secret_bigint, tmp);
 			gcry_mpi_release(tmp);
@@ -190,7 +190,7 @@ TMCG_Bigint& TMCG_Bigint::operator *=
 			gcry_mpi_mul(secret_bigint, secret_bigint, that.secret_bigint);
 		else
 		{
-			gcry_mpi_t tmp;
+			gcry_mpi_t tmp = gcry_mpi_new(that.size(2));
 			tmcg_mpz_get_gcry_mpi(tmp, that.bigint);
 			gcry_mpi_mul(secret_bigint, secret_bigint, tmp);
 			gcry_mpi_release(tmp);
@@ -228,7 +228,7 @@ TMCG_Bigint& TMCG_Bigint::operator /=
 		}
 		else
 		{
-			gcry_mpi_t tmp;
+			gcry_mpi_t tmp = gcry_mpi_new(that.size(2));
 			tmcg_mpz_get_gcry_mpi(tmp, that.bigint);
 			gcry_mpi_div(secret_bigint, NULL, secret_bigint, tmp, 0);
 			gcry_mpi_release(tmp);
@@ -271,7 +271,7 @@ TMCG_Bigint& TMCG_Bigint::operator %=
 		}
 		else
 		{
-			gcry_mpi_t divisor;
+			gcry_mpi_t divisor = gcry_mpi_new(that.size(2));
 			tmcg_mpz_get_gcry_mpi(divisor, that.bigint);
 			gcry_mpi_mod(secret_bigint, secret_bigint, divisor);
 			gcry_mpi_release(divisor);
@@ -307,7 +307,7 @@ bool TMCG_Bigint::operator ==
 {
 	if (secret)
 	{
-		if (that.secret)
+		if (that.secret) // TODO: use constant-time comparison strategy 
 			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) == 0);
 		else
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
@@ -362,7 +362,7 @@ bool TMCG_Bigint::operator >
 {
 	if (secret)
 	{
-		if (that.secret)
+		if (that.secret) // TODO: use constant-time comparison strategy
 			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) > 0);
 		else
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
@@ -379,7 +379,7 @@ bool TMCG_Bigint::operator >
 bool TMCG_Bigint::operator >
 	(const unsigned long int that) const
 {
-	if (secret)
+	if (secret) // TODO: use constant-time comparison strategy
 		return (gcry_mpi_cmp_ui(secret_bigint, that) > 0);
 	else
 		return (mpz_cmp_ui(bigint, that) > 0);
@@ -390,7 +390,7 @@ bool TMCG_Bigint::operator <
 {
 	if (secret)
 	{
-		if (that.secret)
+		if (that.secret) // TODO: use constant-time comparison strategy
 			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) < 0);
 		else
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
@@ -407,7 +407,7 @@ bool TMCG_Bigint::operator <
 bool TMCG_Bigint::operator <
 	(const unsigned long int that) const
 {
-	if (secret)
+	if (secret) // TODO: use constant-time comparison strategy
 		return (gcry_mpi_cmp_ui(secret_bigint, that) < 0);
 	else
 		return (mpz_cmp_ui(bigint, that) < 0);
@@ -418,7 +418,7 @@ bool TMCG_Bigint::operator >=
 {
 	if (secret)
 	{
-		if (that.secret)
+		if (that.secret) // TODO: use constant-time comparison strategy
 			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) >= 0);
 		else
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
@@ -435,7 +435,7 @@ bool TMCG_Bigint::operator >=
 bool TMCG_Bigint::operator >=
 	(const unsigned long int that) const
 {
-	if (secret)
+	if (secret) // TODO: use constant-time comparison strategy
 		return (gcry_mpi_cmp_ui(secret_bigint, that) >= 0);
 	else
 		return (mpz_cmp_ui(bigint, that) >= 0);
@@ -446,14 +446,14 @@ bool TMCG_Bigint::operator <=
 {
 	if (secret)
 	{
-		if (that.secret)
+		if (that.secret) // TODO: use constant-time comparison strategy
 			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) <= 0);
 		else
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
 	}
 	else
 	{
-		if (that.secret)
+		if (that.secret) // TODO: use constant-time comparison strategy
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
 		else
 			return (mpz_cmp(bigint, that.bigint) <= 0);
@@ -463,7 +463,7 @@ bool TMCG_Bigint::operator <=
 bool TMCG_Bigint::operator <=
 	(const unsigned long int that) const
 {
-	if (secret)
+	if (secret) // TODO: use constant-time comparison strategy
 		return (gcry_mpi_cmp_ui(secret_bigint, that) <= 0);
 	else
 		return (mpz_cmp_ui(bigint, that) <= 0);
@@ -472,7 +472,7 @@ bool TMCG_Bigint::operator <=
 void TMCG_Bigint::abs
 	()
 {
-	if (secret)
+	if (secret) // TODO: use constant-time function
 		gcry_mpi_abs(secret_bigint);
 	else
 		mpz_abs(bigint, bigint);
@@ -495,7 +495,7 @@ void TMCG_Bigint::set_str
 bool TMCG_Bigint::probab_prime
 	(const size_t reps)
 {
-	if (secret)
+	if (secret) // TODO: use constant-time function
 	{
 		gcry_error_t ret = gcry_prime_check(secret_bigint, 0);
 		if (ret == 0)
@@ -512,7 +512,7 @@ bool TMCG_Bigint::probab_prime
 void TMCG_Bigint::mul2exp
 	(const size_t exp)
 {
-	if (secret)
+	if (secret) // TODO: use constant-time function
 		gcry_mpi_mul_2exp(secret_bigint, secret_bigint, exp);
 	else
 		mpz_mul_2exp(bigint, bigint, exp);
@@ -539,7 +539,7 @@ void TMCG_Bigint::ui_pow_ui
 void TMCG_Bigint::powm
 	(const TMCG_Bigint& base, const TMCG_Bigint& exp, const TMCG_Bigint& mod)
 {
-	if (secret)
+	if (secret) // TODO: use constant-time function
 	{
 		if (!base.secret || !exp.secret || !mod.secret)
 			throw std::invalid_argument("TMCG_Bigint::operation not supported");
@@ -563,15 +563,20 @@ void TMCG_Bigint::spowm
 	{
 		if (base.secret || exp.secret || mod.secret)
 			throw std::invalid_argument("TMCG_Bigint::operation not supported");
-		tmcg_mpz_spowm(bigint, base.bigint, exp.bigint, mod.bigint); // FIXME: replace
+		tmcg_mpz_spowm(bigint, base.bigint, exp.bigint, mod.bigint);
 	}
 }
 
 void TMCG_Bigint::powm_ui
 	(const TMCG_Bigint& base, const unsigned long int exp, const TMCG_Bigint& mod)
 {
-	if (secret)
-		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	if (secret) // TODO: use constant-time function
+	{
+		gcry_mpi_t e = gcry_mpi_new(8);
+		gcry_mpi_set_ui(e, exp);
+		gcry_mpi_powm(secret_bigint, base.secret_bigint, e,	mod.secret_bigint);
+		gcry_mpi_release(e);
+	}
 	else
 	{
 		if (base.secret || mod.secret)
@@ -584,7 +589,7 @@ unsigned long int TMCG_Bigint::get_ui
 	()
 {
 	if (secret)
-		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+		return tmcg_get_gcry_mpi_ui(secret_bigint); // FIXME: replace later
 	else
 		return mpz_get_ui(bigint);
 }
@@ -670,7 +675,24 @@ void TMCG_Bigint::srandomm
 	(const TMCG_Bigint& mod)
 {
 	if (secret)
-		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	{
+		const size_t bits = mod.size(2);
+		if (mod.secret)
+		{
+			do
+				gcry_mpi_randomize(secret_bigint, bits, GCRY_STRONG_RANDOM);
+			while (gcry_mpi_cmp(secret_bigint, mod.secret_bigint) >= 0);
+		}
+		else
+		{
+			gcry_mpi_t m = gcry_mpi_new(bits);
+			tmcg_mpz_get_gcry_mpi(m, mod.bigint);
+			do
+				gcry_mpi_randomize(secret_bigint, bits, GCRY_STRONG_RANDOM);
+			while (gcry_mpi_cmp(secret_bigint, m) >= 0);
+			gcry_mpi_release(m);
+		}
+	}
 	else
 	{
 		if (mod.secret)
@@ -684,7 +706,24 @@ void TMCG_Bigint::ssrandomm
 	(const TMCG_Bigint& mod)
 {
 	if (secret)
-		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	{
+		const size_t bits = mod.size(2);
+		if (mod.secret)
+		{
+			do
+				gcry_mpi_randomize(secret_bigint, bits, GCRY_VERY_STRONG_RANDOM);
+			while (gcry_mpi_cmp(secret_bigint, mod.secret_bigint) >= 0);
+		}
+		else
+		{
+			gcry_mpi_t m = gcry_mpi_new(bits);
+			tmcg_mpz_get_gcry_mpi(m, mod.bigint);
+			do
+				gcry_mpi_randomize(secret_bigint, bits, GCRY_VERY_STRONG_RANDOM);
+			while (gcry_mpi_cmp(secret_bigint, m) >= 0);
+			gcry_mpi_release(m);
+		}
+	}
 	else
 	{
 		if (mod.secret)

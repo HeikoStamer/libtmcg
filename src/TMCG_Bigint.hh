@@ -41,6 +41,7 @@ struct TMCG_Bigint
 		(const bool secret_in = false);
 	TMCG_Bigint
 		(const TMCG_Bigint& that);
+
 	// Arithmetic operators
 	TMCG_Bigint& operator =
 		(const TMCG_Bigint& that);

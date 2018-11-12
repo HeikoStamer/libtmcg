@@ -367,7 +367,7 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	{
 		sfoo.srandomm(bar);
 		sbar.srandomm(bar);
-		assert((sfoo < bar) && (sbar < bar));
+		assert((sfoo < sbaz) && (sbar < sbaz));
 		assert((sfoo != sbar));
 	}
 #ifdef TEST_SSRANDOM
@@ -376,7 +376,7 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	{
 		sfoo.ssrandomm(bar);
 		sbar.ssrandomm(bar);
-		assert((sfoo < bar) && (sbar < bar));
+		assert((sfoo < sbaz) && (sbar < sbaz));
 		assert((sfoo != sbar));
 	}
 #endif
