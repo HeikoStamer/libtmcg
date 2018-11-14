@@ -4893,9 +4893,9 @@ bool TMCG_OpenPGP_Message::Decrypt
 		return false;
 	}
 	tmcg_openpgp_skalgo_t skalgo = TMCG_OPENPGP_SKALGO_PLAINTEXT;
-	size_t sklen;
+	size_t sklen = 0;
 	tmcg_openpgp_secure_octets_t sk;
-	if (key.size() > 0)
+	if (key.size() > 0) // FIXME: AEAD-encrypted SKESK does NOT have first octet = skalgo
 	{
 		skalgo = (tmcg_openpgp_skalgo_t)key[0];
 		if (verbose > 1)
@@ -4926,54 +4926,85 @@ bool TMCG_OpenPGP_Message::Decrypt
 			std::cerr << "ERROR: no session key provided" << std::endl;
 		return false;
 	}
-	tmcg_openpgp_octets_t prefix;
-	gcry_error_t ret = CallasDonnerhackeFinneyShawThayerRFC4880::
-		SymmetricDecrypt(encrypted_message, sk, prefix, false, skalgo, out);
-	if (ret)
+	if (have_aead)
 	{
-		if (verbose)
-			std::cerr << "ERROR: SymmetricDecrypt() failed" <<
-				" with rc = " << gcry_err_code(ret) << std::endl;
-		return false;
-	}
-	// copy the decryption result for computing the MDC
-	if (have_seipd)
-	{
-		if (out.size() < 22)
+		tmcg_openpgp_octets_t ad; // additional data
+		ad.push_back(0xD4); // packet tag in new format
+		ad.push_back(0x01); // packet version number FIXME: read packet version from stored data
+		ad.push_back(skalgo); // cipher algorithm octet
+		ad.push_back(aeadalgo); // AEAD algorithm octet
+		ad.push_back(chunksize); // chunk size octet
+		for (size_t i = 0; i < 8; i++)
+			ad.push_back(0x00); // initial eight-octet big-endian chunk index
+		gcry_error_t ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			SymmetricDecryptAEAD(encrypted_message, sk, skalgo, aeadalgo,
+				chunksize, iv, ad, out);
+		if (ret)
 		{
 			if (verbose)
-				std::cerr << "ERROR: decrypted result too short" << std::endl;
+			{
+				std::cerr << "ERROR: SymmetricDecryptAEAD() failed" <<
+					" with rc = " << gcry_err_code(ret) << 
+					" str = " << gcry_strerror(ret) << std::endl;
+			}
 			return false;
 		}
-		else if ((out[out.size() - 22] != 0xD3) ||
-			(out[out.size() - 21] != 0x14))
-		{
-			if (verbose)
-				std::cerr << "ERROR: no MDC packet found" << std::endl;
-			return false;
-		}
-		else		
-		{
-			tmcg_openpgp_octets_t mdc, mdc_message;
-			mdc.insert(mdc.end(), out.end() - 20, out.end());
-			if (verbose > 1)
-				std::cerr << "INFO: copy the message for MDC ..." << std::endl;
-			mdc_message.insert(mdc_message.end(), out.begin(), out.end());
-			mdc_message.resize(out.size() - 22); // remove MDC packet
-			if (!CheckMDC(prefix, mdc, mdc_message, verbose))
-				return false;
-		}
-	}
-	else if (have_aead)
-	{
-// TODO
-return false;
 	}
 	else
 	{
-		if (verbose)
-			std::cerr << "WARNING: encrypted message was not integrity" <<
-				" protected" << std::endl;
+		tmcg_openpgp_octets_t prefix;
+		gcry_error_t ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			SymmetricDecrypt(encrypted_message, sk, prefix, false, skalgo, out);
+		if (ret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: SymmetricDecrypt() failed" <<
+					" with rc = " << gcry_err_code(ret) << std::endl;
+			return false;
+		}
+		// copy the decryption result for computing the MDC
+		if (have_seipd)
+		{
+			if (out.size() < 22)
+			{
+				if (verbose)
+				{
+					std::cerr << "ERROR: decrypted result too short" <<
+						std::endl;
+				}
+				return false;
+			}
+			else if ((out[out.size() - 22] != 0xD3) ||
+				(out[out.size() - 21] != 0x14))
+			{
+				if (verbose)
+				{
+					std::cerr << "ERROR: no appended MDC packet found" <<
+						std::endl;
+				}
+				return false;
+			}
+			else		
+			{
+				tmcg_openpgp_octets_t mdc, mdc_message;
+				mdc.insert(mdc.end(), out.end() - 20, out.end());
+				if (verbose > 1)
+				{
+					std::cerr << "INFO: copy the message for MDC ..." <<
+						std::endl;
+				}
+				mdc_message.insert(mdc_message.end(), out.begin(), out.end());
+				mdc_message.resize(out.size() - 22); // remove MDC packet
+				if (!CheckMDC(prefix, mdc, mdc_message, verbose))
+					return false;
+			}
+		}
+		else
+		{
+			if (verbose)
+				std::cerr << "WARNING: encrypted message was not integrity" <<
+					" protected" << std::endl;
+		}
 	}
 	return true;
 }
@@ -11219,7 +11250,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 			chksum += buf[i];
 		}
 		chksum %= 65536;
-		seskey.push_back((chksum >> 8) & 0xFF); // checksum
+		seskey.push_back((chksum >> 8) & 0xFF); // append checksum
 		seskey.push_back(chksum & 0xFF);
 	}
 	else
@@ -11337,17 +11368,16 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 	switch (aeadalgo)
 	{
 		case TMCG_OPENPGP_AEADALGO_EAX:
-			cm = (enum gcry_cipher_modes)14; // FIXME: remove, if supported by libgcrypt
+			cm = (enum gcry_cipher_modes)14; // FIXME: remove, if supported by libgcrypt > 1.9.0
 			// cm = GCRY_CIPHER_MODE_EAX;
 			break;
 		case TMCG_OPENPGP_AEADALGO_OCB:
-			cm = (enum gcry_cipher_modes)13; // FIXME: remove, if supported by libgcrypt
+			cm = (enum gcry_cipher_modes)11; // FIXME: remove, if supported by libgcrypt > 1.8.0
 			// cm = GCRY_CIPHER_MODE_OCB;
 			break;
 		default:
 			return GPG_ERR_INV_CIPHER_MODE; // error: bad AEAD algorithm
 	}
-	size_t chksum = 0;
 	size_t bs = AlgorithmIVLength(skalgo); // get block size of algorithm
 	size_t ks = AlgorithmKeyLength(skalgo); // get key size of algorithm
 	size_t is = AlgorithmIVLength(aeadalgo); // get IV length of AEAD algorithm
@@ -11356,12 +11386,12 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 	if (seskey.size() == 0)
 		return GPG_ERR_INV_SESSION_KEY; // error: no session key provided
 	if (bs != 16)
-		return GPG_ERR_CIPHER_ALGO; // error: other sizes are not supported
+		return GPG_ERR_CIPHER_ALGO; // error: other block sizes are not permitted
 	if ((is == 0) || (is > iv.size()))
 		return GPG_ERR_INV_PACKET; // error: bad algorithm or IV too short
 	if (chunksize > 56)
 		return GPG_ERR_INV_PACKET; // error: chunk size out of specification
-	if (chunksize > 24)
+	if (chunksize > 21)
 		return GPG_ERR_NOT_SUPPORTED; // error: large sizes are not supported 
 	unsigned char *buf = (unsigned char*)gcry_malloc_secure(ks);
 	if (buf == NULL)
@@ -11376,7 +11406,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 	// Then a two-octet checksum is appended, which is equal to the
 	// sum of the preceding session key octets, not including the
 	// algorithm identifier, modulo 65536.
-
+	size_t chksum = 0;
 	if (seskey.size() == (ks + 3))
 	{
 		// use the provided session key and calculate the checksum
@@ -11401,9 +11431,11 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 		{
 			buf[i] = seskey[1+i]; // copy the session key
 			chksum += buf[i];
+std::cerr << std::hex << (int)buf[i] << " ";
 		}
+std::cerr << std::dec << std::endl;
 		chksum %= 65536;
-		seskey.push_back((chksum >> 8) & 0xFF); // checksum
+		seskey.push_back((chksum >> 8) & 0xFF); // append checksum
 		seskey.push_back(chksum & 0xFF);
 	}
 	else
@@ -11411,22 +11443,16 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 		gcry_free(buf);
 		return GPG_ERR_INV_SESSION_KEY; // error: bad session key provided
 	}
-	if (in.size() < (bs + 2))
-	{
-		gcry_free(buf);
-		return GPG_ERR_TOO_SHORT; // error: input too short (no encrypt. prefix)
-	}
 
-	size_t chunkdim = (size_t)1 << (chunksize + 6);
-	// TODO
-std::cerr << "chunkdim = " << chunkdim << std::endl;
-
+	// TODO: insert text block from [draft RFC 4880bis]
+std::cerr << "skalgo = " << (int)skalgo << " cm = " << (int)cm << std::endl;
 	ret = gcry_cipher_open(&hd, AlgorithmSymGCRY(skalgo), cm, GCRY_CIPHER_SECURE);
 	if (ret)
 	{
 		gcry_free(buf);
 		return ret;
 	}
+std::cerr << "ks = " << ks << std::endl;
 	ret = gcry_cipher_setkey(hd, buf, ks);
 	if (ret)
 	{
@@ -11434,8 +11460,116 @@ std::cerr << "chunkdim = " << chunkdim << std::endl;
 		gcry_cipher_close(hd);
 		return ret;
 	}
+	size_t taglen = 0;
+	ret = gcry_cipher_info(hd, GCRYCTL_GET_TAGLEN, NULL, &taglen);
+	if (ret)
+	{
+		gcry_free(buf);
+		gcry_cipher_close(hd);
+		return ret;
+	}
+std::cerr << "taglen = " << taglen << std::endl;
+	if (taglen != 16)
+	{
+		gcry_free(buf);
+		gcry_cipher_close(hd);
+		return GPG_ERR_CIPHER_ALGO; // error: tag length is out of specification
+	}
+std::cerr << "in.size() = " << in.size() << std::endl;
+std::cerr << "is = " << is << std::endl;
+std::cerr << "ad.size() = " << ad.size() << std::endl;
+	if (ad.size() == 4) // AEAD-encrypted SKESK packet (version 5)
+	{
+		if (in.size() < (bs + taglen))
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return GPG_ERR_TOO_SHORT; // error: input too short
+		}
+		unsigned char ivbuf[is];
+		for (size_t i = 0; i < is; i++)
+		{
+			ivbuf[i] = iv[i]; // initially set the nonce by copy the starting IV
+std::cerr << std::hex << (int)ivbuf[i] << " ";
+		}
+std::cerr << std::dec << std::endl;
+		ret = gcry_cipher_setiv(hd, ivbuf, is);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		unsigned char adbuf[4];
+		for (size_t i = 0; i < ad.size(); i++)
+		{
+			adbuf[i] = ad[i]; // set additional data
+std::cerr << std::hex << (int)ad[i] << " ";
+		}
+std::cerr << std::dec << std::endl;
+		ret = gcry_cipher_authenticate(hd, adbuf, ad.size());
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		ret = gcry_cipher_final(hd); // tell decrypt that it's the final call
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		size_t len = in.size() - taglen;
+		unsigned char inbuf[len], outbuf[len], tag[taglen];
+		for (size_t i = 0; i < len; i++)
+		{
+			inbuf[i] = in[i];
+std::cerr << std::hex << (int)inbuf[i] << " ";
+		}
+std::cerr << std::dec << std::endl;
+		for (size_t i = 0; i < taglen; i++)
+		{
+			tag[i] = in[len+i];
+std::cerr << std::hex << (int)tag[i] << " ";
+		}
+std::cerr << std::dec << std::endl;
+		ret = gcry_cipher_decrypt(hd, outbuf, len, inbuf, len);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+for (size_t i = 0; i < len; i++)
+std::cerr << std::hex << (int)outbuf[i] << " ";
+std::cerr << std::dec << std::endl;
+		ret = gcry_cipher_checktag(hd, tag, taglen);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		for (size_t i = 0; i < len; i++)
+			out.push_back(outbuf[i]);
+	}
+	else
+	{
+		if (in.size() < (bs + taglen + taglen))
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return GPG_ERR_TOO_SHORT; // error: input too short
+		}
+		uint64_t chunkdim = ((uint64_t)1 << (chunksize + 6));
+std::cerr << "chunkdim = " << chunkdim << std::endl;
+		uint64_t chunks = ((uint64_t)in.size() - taglen) / (chunkdim + taglen);
+std::cerr << "chunks = " << chunks << std::endl;
 
 // TODO: set IV and loop through encrypted data (incl. check auth tag)
+	}
 
 	gcry_free(buf);
 	gcry_cipher_close(hd);
