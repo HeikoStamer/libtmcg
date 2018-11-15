@@ -11365,12 +11365,18 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 	switch (aeadalgo)
 	{
 		case TMCG_OPENPGP_AEADALGO_EAX:
-			cm = (enum gcry_cipher_modes)14; // FIXME: remove, if supported by libgcrypt > 1.9.0
-			// cm = GCRY_CIPHER_MODE_EAX;
+#if GCRYPT_VERSION_NUMBER < 0x010900
+			cm = (enum gcry_cipher_modes)14; // FIXME: remove, if libgcrypt >= 1.9.0 required
+#else
+			cm = GCRY_CIPHER_MODE_EAX;
+#endif
 			break;
 		case TMCG_OPENPGP_AEADALGO_OCB:
-			cm = (enum gcry_cipher_modes)11; // FIXME: remove, if supported by libgcrypt > 1.8.0
-			// cm = GCRY_CIPHER_MODE_OCB;
+#if GCRYPT_VERSION_NUMBER < 0x010700
+			cm = (enum gcry_cipher_modes)11; // FIXME: remove, if libgcrypt >= 1.7.0 required
+#else
+			cm = GCRY_CIPHER_MODE_OCB;
+#endif
 			break;
 		default:
 			return GPG_ERR_INV_CIPHER_MODE; // error: bad AEAD algorithm
@@ -11458,6 +11464,9 @@ std::cerr << "ks = " << ks << std::endl;
 		return ret;
 	}
 	size_t taglen = 0;
+#if GCRYPT_VERSION_NUMBER < 0x010700
+	taglen = 16; // FIXME: remove, if libgcrypt >= 1.7.0 required
+#else
 	ret = gcry_cipher_info(hd, GCRYCTL_GET_TAGLEN, NULL, &taglen);
 	if (ret)
 	{
@@ -11465,6 +11474,7 @@ std::cerr << "ks = " << ks << std::endl;
 		gcry_cipher_close(hd);
 		return ret;
 	}
+#endif
 std::cerr << "taglen = " << taglen << std::endl;
 	if (taglen != 16)
 	{
@@ -11511,6 +11521,9 @@ std::cerr << std::dec << std::endl;
 			gcry_cipher_close(hd);
 			return ret;
 		}
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required
+#else
 		ret = gcry_cipher_final(hd); // tell decrypt that it's the final call
 		if (ret)
 		{
@@ -11518,6 +11531,7 @@ std::cerr << std::dec << std::endl;
 			gcry_cipher_close(hd);
 			return ret;
 		}
+#endif
 		size_t len = in.size() - taglen;
 		unsigned char inbuf[len], outbuf[len], tag[taglen];
 		for (size_t i = 0; i < len; i++)
