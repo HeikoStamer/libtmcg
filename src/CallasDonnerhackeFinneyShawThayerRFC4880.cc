@@ -11487,12 +11487,6 @@ std::cerr << "is = " << is << std::endl;
 std::cerr << "ad.size() = " << ad.size() << std::endl;
 	if (ad.size() == 4) // AEAD-encrypted SKESK packet (version 5)
 	{
-		if (in.size() < (bs + taglen))
-		{
-			gcry_free(buf);
-			gcry_cipher_close(hd);
-			return GPG_ERR_TOO_SHORT; // error: input too short
-		}
 		unsigned char ivbuf[is];
 		for (size_t i = 0; i < is; i++)
 		{
@@ -11532,6 +11526,12 @@ std::cerr << std::dec << std::endl;
 			return ret;
 		}
 #endif
+		if (in.size() < (bs + taglen))
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return GPG_ERR_TOO_SHORT; // error: input too short
+		}
 		size_t len = in.size() - taglen;
 		unsigned char inbuf[len], outbuf[len], tag[taglen];
 		for (size_t i = 0; i < len; i++)
@@ -11578,8 +11578,206 @@ std::cerr << std::dec << std::endl;
 std::cerr << "chunkdim = " << chunkdim << std::endl;
 		uint64_t chunks = ((uint64_t)in.size() - taglen) / (chunkdim + taglen);
 std::cerr << "chunks = " << chunks << std::endl;
+		unsigned char ivbuf[16];
+		memset(ivbuf, 0, sizeof(ivbuf));
+		for (size_t i = 0; ((i < is) && (i < sizeof(ivbuf))); i++)
+		{
+			ivbuf[i] = iv[i]; // initially set the nonce by copy the starting IV
+std::cerr << std::hex << (int)ivbuf[i] << " ";
+		}
+std::cerr << std::dec << std::endl;
+		unsigned char adbuf[13];
+		memset(adbuf, 0, sizeof(adbuf));
+		for (size_t i = 0; i < ad.size(); i++)
+		{
+			adbuf[i] = ad[i]; // initially set additional data
+std::cerr << std::hex << (int)ad[i] << " ";
+		}
+std::cerr << std::dec << std::endl;
+		uint64_t chunkidx = 0, nbytes = 0;
+		for (uint64_t c = 0; c < chunks; c++, chunkidx++)
+		{
+std::cerr << "chunk #" << chunkidx << std::endl;
+			switch (aeadalgo)
+			{
+				case TMCG_OPENPGP_AEADALGO_EAX:
+					ivbuf[8] ^= ((chunkidx >> 56) & 0xFF);
+					ivbuf[9] ^= ((chunkidx >> 48) & 0xFF);
+ 					ivbuf[10] ^= ((chunkidx >> 40) & 0xFF);
+					ivbuf[11] ^= ((chunkidx >> 32) & 0xFF);
+					ivbuf[12] ^= ((chunkidx >> 24) & 0xFF);
+					ivbuf[13] ^= ((chunkidx >> 16) & 0xFF);
+					ivbuf[14] ^= ((chunkidx >> 8) & 0xFF);
+					ivbuf[15] ^= (chunkidx & 0xFF);
+					break;
+				case TMCG_OPENPGP_AEADALGO_OCB:
+					ivbuf[7] ^= ((chunkidx >> 56) & 0xFF);
+					ivbuf[8] ^= ((chunkidx >> 48) & 0xFF);
+ 					ivbuf[9] ^= ((chunkidx >> 40) & 0xFF);
+					ivbuf[10] ^= ((chunkidx >> 32) & 0xFF);
+					ivbuf[11] ^= ((chunkidx >> 24) & 0xFF);
+					ivbuf[12] ^= ((chunkidx >> 16) & 0xFF);
+					ivbuf[13] ^= ((chunkidx >> 8) & 0xFF);
+					ivbuf[14] ^= (chunkidx & 0xFF);
+					break;
+				default:
+					break; // should never happen
+			}
+			ret = gcry_cipher_setiv(hd, ivbuf, is);
+			if (ret)
+			{
+				gcry_free(buf);
+				gcry_cipher_close(hd);
+				return ret;
+			}
+			adbuf[5] = ((chunkidx >> 56) & 0xFF);
+			adbuf[6] = ((chunkidx >> 48) & 0xFF);
+ 			adbuf[7] = ((chunkidx >> 40) & 0xFF);
+			adbuf[8] = ((chunkidx >> 32) & 0xFF);
+			adbuf[9] = ((chunkidx >> 24) & 0xFF);
+			adbuf[10] = ((chunkidx >> 16) & 0xFF);
+			adbuf[11] = ((chunkidx >> 8) & 0xFF);
+			adbuf[12] = (chunkidx & 0xFF);
+			ret = gcry_cipher_authenticate(hd, adbuf, sizeof(adbuf));
+			if (ret)
+			{
+				gcry_free(buf);
+				gcry_cipher_close(hd);
+				return ret;
+			}
+			if (in.size() < (nbytes + chunkdim + taglen))
+			{
+				gcry_free(buf);
+				gcry_cipher_close(hd);
+				return GPG_ERR_TOO_SHORT; // error: input too short
+			}
+			unsigned char inbuf[chunkdim], outbuf[chunkdim], tag[taglen];
+			for (uint64_t i = 0; i < chunkdim; i++)
+				inbuf[i] = in[nbytes+i];
+			for (size_t i = 0; i < taglen; i++)
+				tag[i] = in[nbytes+chunkdim+i];
+			ret = gcry_cipher_decrypt(hd, outbuf, chunkdim, inbuf, chunkdim);
+			if (ret)
+			{
+				gcry_free(buf);
+				gcry_cipher_close(hd);
+				return ret;
+			}
+			ret = gcry_cipher_checktag(hd, tag, taglen);
+			if (ret)
+			{
+				gcry_free(buf);
+				gcry_cipher_close(hd);
+				return ret;
+			}
+			for (size_t i = 0; i < chunkdim; i++)
+				out.push_back(outbuf[i]);
+			nbytes += (chunkdim + taglen);
+		}
+std::cerr << "final chunk #" << chunkidx << std::endl;
+		switch (aeadalgo)
+		{
+			case TMCG_OPENPGP_AEADALGO_EAX:
+				ivbuf[8] ^= ((chunkidx >> 56) & 0xFF);
+				ivbuf[9] ^= ((chunkidx >> 48) & 0xFF);
+				ivbuf[10] ^= ((chunkidx >> 40) & 0xFF);
+				ivbuf[11] ^= ((chunkidx >> 32) & 0xFF);
+				ivbuf[12] ^= ((chunkidx >> 24) & 0xFF);
+				ivbuf[13] ^= ((chunkidx >> 16) & 0xFF);
+				ivbuf[14] ^= ((chunkidx >> 8) & 0xFF);
+				ivbuf[15] ^= (chunkidx & 0xFF);
+				break;
+			case TMCG_OPENPGP_AEADALGO_OCB:
+				ivbuf[7] ^= ((chunkidx >> 56) & 0xFF);
+				ivbuf[8] ^= ((chunkidx >> 48) & 0xFF);
+				ivbuf[9] ^= ((chunkidx >> 40) & 0xFF);
+				ivbuf[10] ^= ((chunkidx >> 32) & 0xFF);
+				ivbuf[11] ^= ((chunkidx >> 24) & 0xFF);
+				ivbuf[12] ^= ((chunkidx >> 16) & 0xFF);
+				ivbuf[13] ^= ((chunkidx >> 8) & 0xFF);
+				ivbuf[14] ^= (chunkidx & 0xFF);
+				break;
+			default:
+				break; // should never happen
+		}
+		ret = gcry_cipher_setiv(hd, ivbuf, is);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		adbuf[5] = ((chunkidx >> 56) & 0xFF);
+		adbuf[6] = ((chunkidx >> 48) & 0xFF);
+		adbuf[7] = ((chunkidx >> 40) & 0xFF);
+		adbuf[8] = ((chunkidx >> 32) & 0xFF);
+		adbuf[9] = ((chunkidx >> 24) & 0xFF);
+		adbuf[10] = ((chunkidx >> 16) & 0xFF);
+		adbuf[11] = ((chunkidx >> 8) & 0xFF);
+		adbuf[12] = (chunkidx & 0xFF);
+		ret = gcry_cipher_authenticate(hd, adbuf, sizeof(adbuf));
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required
+#else
+		ret = gcry_cipher_final(hd); // tell decrypt that it's the final call
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+#endif
+		if (in.size() < (nbytes + taglen + taglen))
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return GPG_ERR_TOO_SHORT; // error: input too short
+		}
+		size_t len = in.size() - (nbytes + taglen + taglen);
+std::cerr << "len = " << len << std::endl;
+		unsigned char inbuf[len], outbuf[len], tag[taglen];
+		for (size_t i = 0; i < len; i++)
+		{
+			inbuf[i] = in[i];
+std::cerr << std::hex << (int)inbuf[i] << " ";
+		}
+std::cerr << std::dec << std::endl;
+		for (size_t i = 0; i < taglen; i++)
+		{
+			tag[i] = in[len+i];
+std::cerr << std::hex << (int)tag[i] << " ";
+		}
+std::cerr << std::dec << std::endl;
+		ret = gcry_cipher_decrypt(hd, outbuf, len, inbuf, len);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+std::cerr << "failed (rc = " << gcry_err_code(ret) << ", str = " << gcry_strerror(ret) << ")" << std::endl;
+			return ret;
+		}
+for (size_t i = 0; i < len; i++)
+std::cerr << std::hex << (int)outbuf[i] << " ";
+std::cerr << std::dec << std::endl;
+		ret = gcry_cipher_checktag(hd, tag, taglen);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		for (size_t i = 0; i < len; i++)
+			out.push_back(outbuf[i]);
+		nbytes += (len + taglen);
 
-// TODO: set IV and loop through encrypted data (incl. check auth tag)
+
+// TODO: check the final tag
 	}
 
 	gcry_free(buf);
