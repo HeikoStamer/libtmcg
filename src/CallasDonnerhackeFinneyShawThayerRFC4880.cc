@@ -4892,38 +4892,34 @@ bool TMCG_OpenPGP_Message::Decrypt
 			std::cerr << "ERROR: nothing to decrypt" << std::endl;
 		return false;
 	}
-	tmcg_openpgp_skalgo_t skalgo = TMCG_OPENPGP_SKALGO_PLAINTEXT;
-	size_t sklen = 0;
+	tmcg_openpgp_skalgo_t msg_skalgo = skalgo;
+	if ((key.size() > 0) && (!have_aead))
+		msg_skalgo = (tmcg_openpgp_skalgo_t)key[0];
+	if (verbose > 1)
+		std::cerr << "INFO: msg_skalgo = " << (int)msg_skalgo << std::endl;
+	size_t sklen = CallasDonnerhackeFinneyShawThayerRFC4880::
+		AlgorithmKeyLength(msg_skalgo);
 	tmcg_openpgp_secure_octets_t sk;
-	if (key.size() > 0) // FIXME: AEAD-encrypted SKESK does NOT have first octet = skalgo
+	if (key.size() == (sklen + 3))
 	{
-		skalgo = (tmcg_openpgp_skalgo_t)key[0];
-		if (verbose > 1)
-			std::cerr << "INFO: skalgo = " << (int)skalgo << std::endl;
-		sklen = CallasDonnerhackeFinneyShawThayerRFC4880::
-			AlgorithmKeyLength(skalgo);
-		if (key.size() == (sklen + 3))
-		{
-			for (size_t i = 0; i < key.size(); i++)
-				sk.push_back(key[i]);
-		}
-		else if (key.size() == (sklen + 1))
-		{
-			for (size_t i = 0; i < sklen; i++)
-				sk.push_back(key[1+i]);
-		}
-		else
-		{
-			if (verbose)
-				std::cerr << "ERROR: wrong length (" << key.size() <<
-					" bytes) of session key found" << std::endl;
-			return false;
-		}
+		for (size_t i = 0; i < key.size(); i++)
+			sk.push_back(key[i]);
+	}
+	else if (key.size() == (sklen + 1))
+	{
+		for (size_t i = 0; i < sklen; i++)
+			sk.push_back(key[1+i]);
+	}
+	else if (key.size() == sklen)
+	{
+		for (size_t i = 0; i < sklen; i++)
+			sk.push_back(key[i]);
 	}
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: no session key provided" << std::endl;
+			std::cerr << "ERROR: wrong length (" << key.size() <<
+				" bytes) of session key found" << std::endl;
 		return false;
 	}
 	if (have_aead)
@@ -4931,13 +4927,13 @@ bool TMCG_OpenPGP_Message::Decrypt
 		tmcg_openpgp_octets_t ad; // additional data
 		ad.push_back(0xD4); // packet tag in new format
 		ad.push_back(0x01); // packet version number FIXME: read packet version from stored data
-		ad.push_back(skalgo); // cipher algorithm octet
+		ad.push_back(msg_skalgo); // cipher algorithm octet
 		ad.push_back(aeadalgo); // AEAD algorithm octet
 		ad.push_back(chunksize); // chunk size octet
 		for (size_t i = 0; i < 8; i++)
 			ad.push_back(0x00); // initial eight-octet big-endian chunk index
 		gcry_error_t ret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			SymmetricDecryptAEAD(encrypted_message, sk, skalgo, aeadalgo,
+			SymmetricDecryptAEAD(encrypted_message, sk, msg_skalgo, aeadalgo,
 				chunksize, iv, ad, out);
 		if (ret)
 		{
@@ -4954,7 +4950,8 @@ bool TMCG_OpenPGP_Message::Decrypt
 	{
 		tmcg_openpgp_octets_t prefix;
 		gcry_error_t ret = CallasDonnerhackeFinneyShawThayerRFC4880::
-			SymmetricDecrypt(encrypted_message, sk, prefix, false, skalgo, out);
+			SymmetricDecrypt(encrypted_message, sk, prefix, false, msg_skalgo,
+				out);
 		if (ret)
 		{
 			if (verbose)
