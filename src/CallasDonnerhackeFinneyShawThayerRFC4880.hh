@@ -2028,12 +2028,13 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t SymmetricDecryptAEAD
 			(const tmcg_openpgp_octets_t					&in,
-			 tmcg_openpgp_secure_octets_t					&seskey,
+			 const tmcg_openpgp_secure_octets_t				&seskey,
 			 const tmcg_openpgp_skalgo_t					skalgo,
 			 const tmcg_openpgp_aeadalgo_t					aeadalgo,
 			 const tmcg_openpgp_byte_t						chunksize,
 			 const tmcg_openpgp_octets_t					&iv,
 			 const tmcg_openpgp_octets_t					&ad,
+			 const int										verbose,
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t AsymmetricEncryptElgamal
 			(const tmcg_openpgp_secure_octets_t				&in,
