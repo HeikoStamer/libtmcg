@@ -1470,7 +1470,7 @@ size_t TMCG_OpenPGP_Subkey::AccumulateFlags
 	size_t allflags = 0;
 	for (size_t i = 0; i < flags.size(); i++)
 	{
-		if (flags[i] && (i < 3)) // FIXME: only 3 octets of flags allowed
+		if (flags[i] && (i < 3)) // FIXME: only 3 octets of flags recognized
 			allflags += ((size_t)flags[i] << (8 * i));
 	}
 	return allflags;
@@ -1482,7 +1482,7 @@ size_t TMCG_OpenPGP_Subkey::AccumulateFeatures
 	size_t allfeatures = 0;
 	for (size_t i = 0; i < features.size(); i++)
 	{
-		if (features[i] && (i < 3)) // FIXME: only 3 octets of flags allowed
+		if (features[i] && (i < 3)) // FIXME: only 3 octets of flags recognized
 			allfeatures += ((size_t)features[i] << (8 * i));
 	}
 	return allfeatures;
@@ -2936,7 +2936,7 @@ size_t TMCG_OpenPGP_Pubkey::AccumulateFlags
 	size_t allflags = 0;
 	for (size_t i = 0; i < flags.size(); i++)
 	{
-		if (flags[i] && (i < 3))  // FIXME: only 3 octets of flags allowed
+		if (flags[i] && (i < 3))  // FIXME: only 3 octets of flags recognized
 			allflags += ((size_t)flags[i] << (8 * i));
 	}
 	return allflags;
@@ -2948,7 +2948,7 @@ size_t TMCG_OpenPGP_Pubkey::AccumulateFeatures
 	size_t allfeatures = 0;
 	for (size_t i = 0; i < features.size(); i++)
 	{
-		if (features[i] && (i < 3)) // FIXME: only 3 octets of flags allowed
+		if (features[i] && (i < 3)) // FIXME: only 3 octets of flags recognized
 			allfeatures += ((size_t)features[i] << (8 * i));
 	}
 	return allfeatures;
@@ -6774,6 +6774,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		// 8. features (length = 1)
 		tmcg_openpgp_octets_t features;
 		features.push_back(0x01); // Modification Detection (tags 18, 19)
+		// AEAD Encrypted Data Packet (packet 20) and version 5 Symmetric-Key
+		// Encrypted Session Key Packets (packet 3)
+		features[0] |= 0x02;
 		SubpacketEncode(30, false, features, out);
 		// [optional] issuer fingerprint
 		if (issuer.size() == 20)
@@ -6871,6 +6874,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 		// 8. features (length = 1)
 		tmcg_openpgp_octets_t features;
 		features.push_back(0x01); // Modification Detection (tags 18, 19)
+		// AEAD Encrypted Data Packet (packet 20) and version 5 Symmetric-Key
+		// Encrypted Session Key Packets (packet 3)
+		features[0] |= 0x02;
 		SubpacketEncode(30, false, features, out);
 		// [optional] issuer fingerprint
 		if (issuer.size() == 20)
