@@ -159,7 +159,7 @@ Requirements
   ++ GNU/Linux (Arch Linux)      x86_64    gcc 7.2.0 (details omitted)
   ++ GNU/Linux (Trisquel Linux)  x86_64    gcc 4.8.4 (details omitted)
   ++ OpenBSD 6.1                 amd64     gcc 4.2.1 (details omitted)
-  ++ FreeBSD 11.1                amd64     gcc 6.4.0 (details omitted)
+  ++ FreeBSD 11.1                amd64     gcc 7.3.0 (details omitted)
 
 Build & Install
 ---------------
