@@ -11575,6 +11575,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 				gcry_cipher_close(hd);
 				return ret;
 			}
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
 			ret = gcry_cipher_final(hd);
 			if (ret)
 			{
@@ -11582,6 +11585,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 				gcry_cipher_close(hd);
 				return ret;
 			}
+#endif
 			if (in.size() < (nbytes + chunkdim))
 			{
 				gcry_free(buf);
@@ -12403,6 +12407,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 				gcry_cipher_close(hd);
 				return ret;
 			}
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
 			ret = gcry_cipher_final(hd);
 			if (ret)
 			{
@@ -12410,6 +12417,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 				gcry_cipher_close(hd);
 				return ret;
 			}
+#endif
 			if (in.size() < (nbytes + chunkdim + taglen))
 			{
 				gcry_free(buf);
