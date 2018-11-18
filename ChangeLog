@@ -7,7 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
-* [2018-11-18] RFC4880: added PacketAEADEncode()
+* [2018-11-18] RFC4880: added PacketAeadEncode() [RFC 4880bis]
 * [2018-11-18] RFC4880: added SymmetricDecryptAEAD() and SymmetricEncryptAEAD()
 * [2018-11-12] changed formula for TMCG_MAX_KEYBITS (increased by factor 2)
 * [2018-11-12] mpz_srandom: bugfix in Botan code branch of mpz_grandomb()
