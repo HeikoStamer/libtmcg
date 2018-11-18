@@ -1860,6 +1860,13 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void PacketMdcEncode
 			(const tmcg_openpgp_octets_t					&in,
 			 tmcg_openpgp_octets_t							&out);
+		static void PacketAEADEncode
+			(const tmcg_openpgp_skalgo_t					skalgo,
+			 const tmcg_openpgp_aeadalgo_t					aeadalgo,
+			 const tmcg_openpgp_byte_t						chunksize,
+			 const tmcg_openpgp_octets_t					&iv,
+			 const tmcg_openpgp_octets_t					&in,
+			 tmcg_openpgp_octets_t							&out);
 
 		static tmcg_openpgp_byte_t SubpacketDecode
 			(tmcg_openpgp_octets_t							&in,

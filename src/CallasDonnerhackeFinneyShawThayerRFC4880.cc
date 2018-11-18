@@ -8540,6 +8540,45 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMdcEncode
 	out.insert(out.end(), in.begin(), in.end());
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketAEADEncode
+	(const tmcg_openpgp_skalgo_t skalgo,
+	 const tmcg_openpgp_aeadalgo_t aeadalgo,
+	 const tmcg_openpgp_byte_t chunksize,
+	 const tmcg_openpgp_octets_t &iv,
+	 const tmcg_openpgp_octets_t &in,
+	 tmcg_openpgp_octets_t &out)
+{
+	// This packet contains data encrypted with an authenticated encryption
+	// and additional data (AEAD) construction.  When it has been decrypted,
+	// it will typically contain other packets (often a Literal Data packet
+	// or Compressed Data packet).
+	//
+	// The body of this packet consists of:
+	//
+	//  o  A one-octet version number.  The only currently defined value is 1.
+	//
+	//  o  A one-octet cipher algorithm.
+	//
+	//  o  A one-octet AEAD algorithm.
+	//
+	//  o  A one-octet chunk size.
+	//
+	//  o  A starting initialization vector of size specified by the AEAD
+	//     algorithm.
+	//
+	//  o  Encrypted data, the output of the selected symmetric-key cipher
+	//     operating in the given AEAD mode.
+	//
+	//  o  A final, summary authentication tag for the AEAD mode.
+	PacketTagEncode(20, out);
+	out.push_back(1); // one-octet version number
+	out.push_back(skalgo); // one-octet cipher algorithm
+	out.push_back(aeadalgo); // one-octet AEAD algorithm
+	out.push_back(chunksize); // one-octet chunk size
+	out.insert(out.end(), iv.begin(), iv.end()); // starting IV
+	out.insert(out.end(), in.begin(), in.end());
+}
+
 // ===========================================================================
 
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
