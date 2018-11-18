@@ -8540,7 +8540,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMdcEncode
 	out.insert(out.end(), in.begin(), in.end());
 }
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::PacketAEADEncode
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketAeadEncode
 	(const tmcg_openpgp_skalgo_t skalgo,
 	 const tmcg_openpgp_aeadalgo_t aeadalgo,
 	 const tmcg_openpgp_byte_t chunksize,
