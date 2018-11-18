@@ -259,8 +259,37 @@ int main
 			assert(lit[i] == out[i]); // check the result
 		}
 
-		// testing SymmetricEncryptAEAD(), SymmetricDecryptAEAD() with |ad| = 13
+		// testing SymmetricEncryptAEAD(), SymmetricDecryptAEAD() with |ad| = 4
 		tmcg_openpgp_octets_t ad, iv, aeadin;
+		ad.push_back(0xC3); // packet tag in new format
+		ad.push_back(0x05); // packet version number
+		ad.push_back(TMCG_OPENPGP_SKALGO_AES256); // cipher algorithm octet
+		ad.push_back(TMCG_OPENPGP_AEADALGO_OCB); // AEAD algorithm octet
+		for (size_t i = 0; i < 8; i++)
+			aeadin.push_back(0xAD); // SKESK input
+		enc.clear(), out.clear(), iv.clear();
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
+		std::cout << "SymmetricEncryptAEAD(...)" << std::endl;
+		ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			SymmetricEncryptAEAD(aeadin, seskey, TMCG_OPENPGP_SKALGO_AES256,
+				TMCG_OPENPGP_AEADALGO_OCB, 0, ad, 3, iv, enc);
+		assert(!ret);
+		std::cout << "SymmetricDecryptAEAD(...)" << std::endl;
+		ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+			SymmetricDecryptAEAD(enc, seskey, TMCG_OPENPGP_SKALGO_AES256,
+				TMCG_OPENPGP_AEADALGO_OCB, 0, iv, ad, 3, out);
+		assert(!ret);
+		assert(aeadin.size() == out.size());
+		for (size_t i = 0; i < aeadin.size(); i++)
+		{
+			assert(aeadin[i] == out[i]); // check the result
+		}
+#endif
+
+		// testing SymmetricEncryptAEAD(), SymmetricDecryptAEAD() with |ad| = 13
+		ad.clear(), aeadin.clear();
 		ad.push_back(0xD4); // packet tag in new format
 		ad.push_back(0x01); // packet version number
 		ad.push_back(TMCG_OPENPGP_SKALGO_AES256); // cipher algorithm octet
@@ -272,6 +301,9 @@ int main
 		{
 			aeadin.push_back(0xAE);
 			enc.clear(), out.clear(), iv.clear();
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
 			std::cout << "SymmetricEncryptAEAD(...)" << std::endl;
 			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
 				SymmetricEncryptAEAD(aeadin, seskey, TMCG_OPENPGP_SKALGO_AES256,
@@ -287,6 +319,7 @@ int main
 			{
 				assert(aeadin[i] == out[i]); // check the result
 			}
+#endif
 		}
 
 		// testing BinaryDocumentHash(), DashEscapeFile()
