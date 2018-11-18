@@ -208,15 +208,19 @@ int main
 		assert(!ret);
 		time_t creation = time(NULL); // set OpenPGP creation time
 
-		// testing SymmetricEncryptAES256() and SymmetricDecryptAES256()
-		// testing AsymmetricEncryptElgamal() and AsymmetricDecryptElgamal()
-		tmcg_openpgp_octets_t lit, prefix, enc, subkeyid;
-		tmcg_openpgp_secure_octets_t seskey;
-		std::string m = "This is a test message.", armored_message;
+		// create a literal data packet
+		tmcg_openpgp_octets_t lit;
+		std::string m = "This is a simple test message. Okay, let's start."
+			" Finally one, two, three, and more bytes to proceed ...";
 		in.clear();
 		for (size_t i = 0; i < m.length(); i++)
 			in.push_back(m[i]);
 		CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode(in, lit);
+
+		// testing SymmetricEncryptAES256() and SymmetricDecryptAES256()
+		// testing AsymmetricEncryptElgamal() and AsymmetricDecryptElgamal()
+		tmcg_openpgp_octets_t prefix, enc, subkeyid;
+		tmcg_openpgp_secure_octets_t seskey;
 		std::cout << "SymmetricEncryptAES256(...)" << std::endl;
 		ret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			SymmetricEncryptAES256(lit, seskey, prefix, true, enc);
@@ -234,6 +238,7 @@ int main
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			PacketPkeskEncode(subkeyid, gk, myk, out);
 		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode(enc, out);
+		std::string armored_message;
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			ArmorEncode(TMCG_OPENPGP_ARMOR_MESSAGE, out, armored_message);
 		std::cout << armored_message << std::endl;
@@ -252,6 +257,36 @@ int main
 		for (size_t i = 0; i < lit.size(); i++)
 		{
 			assert(lit[i] == out[i]); // check the result
+		}
+
+		// testing SymmetricEncryptAEAD(), SymmetricDecryptAEAD() with |ad| = 13
+		tmcg_openpgp_octets_t ad, iv, aeadin;
+		ad.push_back(0xD4); // packet tag in new format
+		ad.push_back(0x01); // packet version number
+		ad.push_back(TMCG_OPENPGP_SKALGO_AES256); // cipher algorithm octet
+		ad.push_back(TMCG_OPENPGP_AEADALGO_OCB); // AEAD algorithm octet
+		ad.push_back(0); // chunk size octet (= 64 byte chunks)
+		for (size_t i = 0; i < 8; i++)
+			ad.push_back(0x00); // initial eight-octet big-endian chunk index
+		for (size_t j = 0; j < 1024; j++)
+		{
+			aeadin.push_back(0xAE);
+			enc.clear(), out.clear(), iv.clear();
+			std::cout << "SymmetricEncryptAEAD(...)" << std::endl;
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				SymmetricEncryptAEAD(aeadin, seskey, TMCG_OPENPGP_SKALGO_AES256,
+					TMCG_OPENPGP_AEADALGO_OCB, 0, ad, 3, iv, enc);
+			assert(!ret);
+			std::cout << "SymmetricDecryptAEAD(...)" << std::endl;
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				SymmetricDecryptAEAD(enc, seskey, TMCG_OPENPGP_SKALGO_AES256,
+					TMCG_OPENPGP_AEADALGO_OCB, 0, iv, ad, 3, out);
+			assert(!ret);
+			assert(aeadin.size() == out.size());
+			for (size_t i = 0; i < aeadin.size(); i++)
+			{
+				assert(aeadin[i] == out[i]); // check the result
+			}
 		}
 
 		// testing BinaryDocumentHash(), DashEscapeFile()

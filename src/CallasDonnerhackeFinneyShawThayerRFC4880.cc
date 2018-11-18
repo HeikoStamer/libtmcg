@@ -11199,6 +11199,690 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	return 0;
 }
 
+gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
+	(const tmcg_openpgp_octets_t &in,
+	 tmcg_openpgp_secure_octets_t &seskey,
+	 const tmcg_openpgp_skalgo_t skalgo,
+	 const tmcg_openpgp_aeadalgo_t aeadalgo,
+	 const tmcg_openpgp_byte_t chunksize,
+	 const tmcg_openpgp_octets_t &ad,
+	 const int verbose,
+	 tmcg_openpgp_octets_t &iv,
+	 tmcg_openpgp_octets_t &out)
+{
+	// An AEAD encrypted data packet consists of one or more chunks of data.
+	// The plaintext of each chunk is of a size specified using the chunk
+	// size octet using the method specified below.
+	//
+	// The encrypted data consists of the encryption of each chunk of
+	// plaintext, followed immediately by the relevant authentication tag.
+	// If the last chunk of plaintext is smaller than the chunk size, the
+	// ciphertext for that data may be shorter; it is nevertheless followed
+	// by a full authentication tag.
+	//
+	// For each chunk, the AEAD construction is given the Packet Tag in new
+	// format encoding (bits 7 and 6 set, bits 5-0 carry the packet tag),
+	// version number, cipher algorithm octet, AEAD algorithm octet, chunk
+	// size octet, and an eight-octet, big-endian chunk index as additional
+	// data. The index of the first chunk is zero. For example, the
+	// additional data of the first chunk using EAX and AES-128 with a chunk
+	// size of 64 kiByte consists of the octets 0xD4, 0x01, 0x07, 0x01,
+	// 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, and 0x00.
+	//
+	// After the final chunk, the AEAD algorithm is used to produce a final
+	// authentication tag encrypting the empty string. This AEAD instance
+	// is given the additional data specified above, plus an eight-octet,
+	// big-endian value specifying the total number of plaintext octets
+	// encrypted. This allows detection of a truncated ciphertext.
+	//
+	// The chunk size octet specifies the size of chunks using the following
+	// formula (in C), where c is the chunk size octet:
+	//
+	//    chunk_size = ((uint64_t)1 << (c + 6))
+	//
+	// An implementation MUST support chunk size octets with values from 0
+	// to 56. Chunk size octets with other values are reserved for future
+	// extensions. Implementations SHOULD NOT create data with a chunk size
+	// octet value larger than 21 (128 MiB chunks) to facilitate buffering
+	// of not yet authenticated plaintext.
+	//
+	// A new random initialization vector MUST be used for each message.
+	// Failure to do so for each message will lead to a catastrophic failure
+	// depending on the used AEAD mode.
+	size_t bs = AlgorithmIVLength(skalgo); // get block size of algorithm
+	size_t ks = AlgorithmKeyLength(skalgo); // get key size of algorithm
+	size_t is = AlgorithmIVLength(aeadalgo); // get IV length of AEAD algorithm
+	if ((bs == 0) || (ks == 0) || (is == 0))
+		return GPG_ERR_CIPHER_ALGO; // error: bad algorithm
+	if (bs != 16)
+		return GPG_ERR_NOT_SUPPORTED; // error: other sizes are not supported
+	if (chunksize > 21)
+		return GPG_ERR_NOT_SUPPORTED; // error: other sizes are not supported 
+
+	// The symmetric cipher used may be specified in a Public-Key or
+	// Symmetric-Key Encrypted Session Key packet that precedes the
+	// Symmetrically Encrypted Data packet. In that case, the cipher
+	// algorithm octet is prefixed to the session key before it is
+	// encrypted.
+	// [...]
+	// Then a two-octet checksum is appended, which is equal to the
+	// sum of the preceding session key octets, not including the
+	// algorithm identifier, modulo 65536.
+	unsigned char *buf = (unsigned char*)gcry_malloc_secure(ks);
+	if (buf == NULL)
+		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+	size_t chksum = 0;
+	if (seskey.size() == (ks + 3))
+	{
+		// use the provided session key and calculate the checksum
+		for (size_t i = 0; i < ks; i++)
+		{
+			buf[i] = seskey[1+i]; // copy the session key
+			chksum += buf[i];
+		}
+		chksum %= 65536;
+		size_t key_chksum = (seskey[33] << 8) + seskey[34];
+		if (chksum != key_chksum)
+		{
+			gcry_free(buf);
+			return GPG_ERR_CHECKSUM; // error: checksum does not match
+		}
+	}
+	else if (seskey.size() == ks)
+	{
+		// use the provided session key without calculating the checksum
+		for (size_t i = 0; i < ks; i++)
+			buf[i] = seskey[i]; // copy the session key
+	}
+	else if (seskey.size() == 0)
+	{
+		// generate a random session key
+		gcry_randomize(buf, ks, GCRY_STRONG_RANDOM);
+		for (size_t i = 0; i < ks; i++)
+			seskey.push_back(buf[i]);
+	}
+	else
+	{
+		gcry_free(buf);
+		return GPG_ERR_INV_SESSION_KEY; // error: bad session key provided
+	}
+
+	enum gcry_cipher_modes ciphermode;
+	switch (aeadalgo)
+	{
+		case TMCG_OPENPGP_AEADALGO_EAX:
+#if GCRYPT_VERSION_NUMBER < 0x010900
+			// FIXME: remove, if libgcrypt >= 1.9.0 required by configure.ac
+			ciphermode = (enum gcry_cipher_modes)14;
+#else
+			ciphermode = GCRY_CIPHER_MODE_EAX;
+#endif
+			break;
+		case TMCG_OPENPGP_AEADALGO_OCB:
+#if GCRYPT_VERSION_NUMBER < 0x010700
+			// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+			ciphermode = (enum gcry_cipher_modes)11;
+#else
+			ciphermode = GCRY_CIPHER_MODE_OCB;
+#endif
+			break;
+		default:
+			return GPG_ERR_INV_CIPHER_MODE; // error: bad AEAD algorithm
+	}
+	if (verbose > 1)
+	{
+		std::cerr << "INFO: SymmetricEncryptAEAD called with skalgo = " <<
+			(int)skalgo << " cipher mode = " << (int)ciphermode << std::endl;
+	}
+	gcry_cipher_hd_t hd;
+	gcry_error_t ret;
+	ret = gcry_cipher_open(&hd, AlgorithmSymGCRY(skalgo), ciphermode,
+		GCRY_CIPHER_SECURE);
+	if (ret)
+	{
+		gcry_free(buf);
+		return ret;
+	}
+	ret = gcry_cipher_setkey(hd, buf, ks);
+	if (ret)
+	{
+		gcry_free(buf);
+		gcry_cipher_close(hd);
+		return ret;
+	}
+	size_t taglen = 0;
+#if GCRYPT_VERSION_NUMBER < 0x010700
+	// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+	taglen = 16;
+#else
+	ret = gcry_cipher_info(hd, GCRYCTL_GET_TAGLEN, NULL, &taglen);
+	if (ret)
+	{
+		gcry_free(buf);
+		gcry_cipher_close(hd);
+		return ret;
+	}
+#endif
+	if (taglen != 16)
+	{
+		gcry_free(buf);
+		gcry_cipher_close(hd);
+		return GPG_ERR_INV_CIPHER_MODE; // error: length is out of specification
+	}
+	if (verbose > 1)
+	{
+		std::cerr << "INFO: SymmetricEncryptAEAD |in| = " << in.size() <<
+			" and |ad| = " << ad.size() << std::endl;
+	}
+	// initially set nonce (starting IV) for AEAD algorithm
+	unsigned char ivbuf[16];
+	memset(ivbuf, 0, sizeof(ivbuf));
+	gcry_randomize(ivbuf, is, GCRY_STRONG_RANDOM);
+	if (verbose > 2)
+		std::cerr << "INFO: SymmetricEncryptAEAD nonce = " << std::hex;
+	for (size_t i = 0; ((i < is) && (i < sizeof(ivbuf))); i++)
+	{
+		iv.push_back(ivbuf[i]);
+		if (verbose > 2)
+			std::cerr << (int)ivbuf[i] << " ";
+	}
+	if (verbose > 2)
+		std::cerr << std::dec << std::endl;
+	if (ad.size() == 4) // identifies an AEAD-encrypted SKESK packet (version 5)
+	{
+		ret = gcry_cipher_setiv(hd, ivbuf, is);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		unsigned char adbuf[4];
+		if (verbose > 2)
+			std::cerr << "INFO: SymmetricEncryptAEAD ad = " << std::hex;
+		for (size_t i = 0; i < ad.size(); i++)
+		{
+			adbuf[i] = ad[i]; // set additional data
+			if (verbose > 2)
+				std::cerr << (int)ad[i] << " ";
+		}
+		if (verbose > 2)
+			std::cerr << std::dec << std::endl;
+		ret = gcry_cipher_authenticate(hd, adbuf, ad.size());
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
+		ret = gcry_cipher_final(hd);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+#endif
+		if (in.size() < 0)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return GPG_ERR_TOO_SHORT; // error: input too short
+		}
+		size_t len = in.size();
+		unsigned char inbuf[len], outbuf[len], tag[taglen];
+		if (verbose > 2)
+			std::cerr << "INFO: SymmetricEncryptAEAD in = " << std::hex;
+		for (size_t i = 0; i < len; i++)
+		{
+			inbuf[i] = in[i];
+			if (verbose > 2)
+				std::cerr << (int)inbuf[i] << " ";
+		}
+		if (verbose > 2)
+			std::cerr << std::dec << std::endl;
+		ret = gcry_cipher_encrypt(hd, outbuf, len, inbuf, len);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			if (verbose > 2)
+			{
+				std::cerr << "ERROR: gcry_cipher_encrypt() failed" <<
+					" (rc = " << gcry_err_code(ret) <<
+					", str = " << gcry_strerror(ret) << ")" << std::endl;
+			}
+			return ret;
+		}
+		if (verbose > 2)
+			std::cerr << "INFO: SymmetricEncryptAEAD out = " << std::hex;
+		for (size_t i = 0; i < len; i++)
+		{
+			out.push_back(outbuf[i]);
+			if (verbose > 2)
+				std::cerr << (int)outbuf[i] << " ";
+		}
+		if (verbose > 2)
+			std::cerr << std::dec << std::endl;
+		ret = gcry_cipher_gettag(hd, tag, taglen);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			if (verbose > 2)
+			{
+				std::cerr << "ERROR: gcry_cipher_gettag() failed" <<
+					" (rc = " << gcry_err_code(ret) <<
+					", str = " << gcry_strerror(ret) << ")" << std::endl;
+			}
+			return ret;
+		}
+		if (verbose > 2)
+			std::cerr << "INFO: SymmetricEncryptAEAD tag = " << std::hex;
+		for (size_t i = 0; i < taglen; i++)
+		{
+			if (verbose > 2)
+				std::cerr << (int)tag[i] << " ";
+		}
+		if (verbose > 2)
+			std::cerr << std::dec << std::endl;
+		for (size_t i = 0; i < taglen; i++)
+			out.push_back(tag[i]);
+	}
+	else
+	{
+		uint64_t chunkdim = ((uint64_t)1 << (chunksize + 6));
+		uint64_t chunks = (((uint64_t)in.size() - 1) / chunkdim);
+		if (verbose > 1)
+		{
+			std::cerr << "INFO: SymmetricEncryptAEAD chunkdim = " << chunkdim <<
+				" and chunks = " << chunks << std::endl;
+		}
+		unsigned char adbuf[21];
+		memset(adbuf, 0, sizeof(adbuf));
+		if (verbose > 2)
+			std::cerr << "INFO: SymmetricEncryptAEAD ad = " << std::hex;
+		for (size_t i = 0; i < ad.size(); i++)
+		{
+			adbuf[i] = ad[i]; // initially set additional data
+			if (verbose > 2)
+				std::cerr << (int)ad[i] << " ";
+		}
+		if (verbose > 2)
+			std::cerr << std::dec << std::endl;
+		uint64_t chunkidx = 0, nbytes = 0;
+		for (uint64_t c = 0; c < chunks; c++, chunkidx++)
+		{
+			if (verbose > 2)
+			{
+				std::cerr << "INFO: SymmetricEncryptAEAD on chunk #" <<
+					chunkidx << " with nbytes = " << nbytes << std::endl;
+			}
+			switch (aeadalgo)
+			{
+				// The nonce for EAX mode is computed by treating the starting
+				// initialization vector as a 16-octet, big-endian value and
+				// exclusive-oring the low eight octets of it with the chunk
+				// index.
+				case TMCG_OPENPGP_AEADALGO_EAX:
+					ivbuf[8] ^= ((chunkidx >> 56) & 0xFF);
+					ivbuf[9] ^= ((chunkidx >> 48) & 0xFF);
+ 					ivbuf[10] ^= ((chunkidx >> 40) & 0xFF);
+					ivbuf[11] ^= ((chunkidx >> 32) & 0xFF);
+					ivbuf[12] ^= ((chunkidx >> 24) & 0xFF);
+					ivbuf[13] ^= ((chunkidx >> 16) & 0xFF);
+					ivbuf[14] ^= ((chunkidx >> 8) & 0xFF);
+					ivbuf[15] ^= (chunkidx & 0xFF);
+					break;
+				// The nonce for OCB mode is computed by the exclusive-oring
+				// of the initialization vector as a 15-octet, big endian value,
+				// against the chunk index.
+				case TMCG_OPENPGP_AEADALGO_OCB:
+					ivbuf[7] ^= ((chunkidx >> 56) & 0xFF);
+					ivbuf[8] ^= ((chunkidx >> 48) & 0xFF);
+ 					ivbuf[9] ^= ((chunkidx >> 40) & 0xFF);
+					ivbuf[10] ^= ((chunkidx >> 32) & 0xFF);
+					ivbuf[11] ^= ((chunkidx >> 24) & 0xFF);
+					ivbuf[12] ^= ((chunkidx >> 16) & 0xFF);
+					ivbuf[13] ^= ((chunkidx >> 8) & 0xFF);
+					ivbuf[14] ^= (chunkidx & 0xFF);
+					break;
+				default:
+					break; // should never happen
+			}
+			ret = gcry_cipher_setiv(hd, ivbuf, is);
+			if (ret)
+			{
+				gcry_free(buf);
+				gcry_cipher_close(hd);
+				return ret;
+			}
+			adbuf[5] = ((chunkidx >> 56) & 0xFF);
+			adbuf[6] = ((chunkidx >> 48) & 0xFF);
+ 			adbuf[7] = ((chunkidx >> 40) & 0xFF);
+			adbuf[8] = ((chunkidx >> 32) & 0xFF);
+			adbuf[9] = ((chunkidx >> 24) & 0xFF);
+			adbuf[10] = ((chunkidx >> 16) & 0xFF);
+			adbuf[11] = ((chunkidx >> 8) & 0xFF);
+			adbuf[12] = (chunkidx & 0xFF);
+			ret = gcry_cipher_authenticate(hd, adbuf, 13);
+			if (ret)
+			{
+				gcry_free(buf);
+				gcry_cipher_close(hd);
+				return ret;
+			}
+			ret = gcry_cipher_final(hd);
+			if (ret)
+			{
+				gcry_free(buf);
+				gcry_cipher_close(hd);
+				return ret;
+			}
+			if (in.size() < (nbytes + chunkdim))
+			{
+				gcry_free(buf);
+				gcry_cipher_close(hd);
+				return GPG_ERR_TOO_SHORT; // error: input too short
+			}
+			unsigned char inbuf[chunkdim], outbuf[chunkdim], tag[taglen];
+			for (uint64_t i = 0; i < chunkdim; i++)
+				inbuf[i] = in[nbytes+i];
+			ret = gcry_cipher_encrypt(hd, outbuf, chunkdim, inbuf, chunkdim);
+			if (ret)
+			{
+				gcry_free(buf);
+				gcry_cipher_close(hd);
+				if (verbose > 2)
+				{
+					std::cerr << "ERROR: gcry_cipher_encrypt() failed" <<
+						" (rc = " << gcry_err_code(ret) <<
+						", str = " << gcry_strerror(ret) << ")" << std::endl;
+				}
+				return ret;
+			}
+			if (verbose > 2)
+				std::cerr << "INFO: SymmetricEncryptAEAD out = " << std::hex;
+			for (size_t i = 0; i < chunkdim; i++)
+			{
+				out.push_back(outbuf[i]);
+				if (verbose > 2)
+					std::cerr << (int)outbuf[i] << " ";
+			}
+			if (verbose > 2)
+				std::cerr << std::dec << std::endl;
+			ret = gcry_cipher_gettag(hd, tag, taglen);
+			if (ret)
+			{
+				gcry_free(buf);
+				gcry_cipher_close(hd);
+				if (verbose > 2)
+				{
+					std::cerr << "ERROR: gcry_cipher_gettag() failed" <<
+						" (rc = " << gcry_err_code(ret) <<
+						", str = " << gcry_strerror(ret) << ")" << std::endl;
+				}
+				return ret;
+			}
+			if (verbose > 2)
+				std::cerr << "INFO: SymmetricEncryptAEAD tag = " << std::hex;
+			for (size_t i = 0; i < taglen; i++)
+			{
+				out.push_back(tag[i]);
+				if (verbose > 2)
+					std::cerr << (int)tag[i] << " ";
+			}
+			if (verbose > 2)
+				std::cerr << std::dec << std::endl;
+			nbytes += chunkdim;
+		}
+		if (verbose > 2)
+		{
+			std::cerr << "INFO: SymmetricEncryptAEAD on final chunk #" <<
+				chunkidx << " with nbytes = " << nbytes << std::endl;
+		}
+		switch (aeadalgo)
+		{
+			case TMCG_OPENPGP_AEADALGO_EAX:
+				ivbuf[8] ^= ((chunkidx >> 56) & 0xFF);
+				ivbuf[9] ^= ((chunkidx >> 48) & 0xFF);
+				ivbuf[10] ^= ((chunkidx >> 40) & 0xFF);
+				ivbuf[11] ^= ((chunkidx >> 32) & 0xFF);
+				ivbuf[12] ^= ((chunkidx >> 24) & 0xFF);
+				ivbuf[13] ^= ((chunkidx >> 16) & 0xFF);
+				ivbuf[14] ^= ((chunkidx >> 8) & 0xFF);
+				ivbuf[15] ^= (chunkidx & 0xFF);
+				break;
+			case TMCG_OPENPGP_AEADALGO_OCB:
+				ivbuf[7] ^= ((chunkidx >> 56) & 0xFF);
+				ivbuf[8] ^= ((chunkidx >> 48) & 0xFF);
+				ivbuf[9] ^= ((chunkidx >> 40) & 0xFF);
+				ivbuf[10] ^= ((chunkidx >> 32) & 0xFF);
+				ivbuf[11] ^= ((chunkidx >> 24) & 0xFF);
+				ivbuf[12] ^= ((chunkidx >> 16) & 0xFF);
+				ivbuf[13] ^= ((chunkidx >> 8) & 0xFF);
+				ivbuf[14] ^= (chunkidx & 0xFF);
+				break;
+			default:
+				break; // should never happen
+		}
+		ret = gcry_cipher_setiv(hd, ivbuf, is);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		adbuf[5] = ((chunkidx >> 56) & 0xFF);
+		adbuf[6] = ((chunkidx >> 48) & 0xFF);
+		adbuf[7] = ((chunkidx >> 40) & 0xFF);
+		adbuf[8] = ((chunkidx >> 32) & 0xFF);
+		adbuf[9] = ((chunkidx >> 24) & 0xFF);
+		adbuf[10] = ((chunkidx >> 16) & 0xFF);
+		adbuf[11] = ((chunkidx >> 8) & 0xFF);
+		adbuf[12] = (chunkidx & 0xFF);
+		ret = gcry_cipher_authenticate(hd, adbuf, 13);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
+		ret = gcry_cipher_final(hd);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+#endif
+		if (in.size() <= nbytes)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return GPG_ERR_TOO_SHORT; // error: input too short
+		}
+		size_t len = in.size() - nbytes;
+		if (verbose > 2)
+		{
+			std::cerr << "INFO: SymmetricEncryptAEAD len = " << len <<
+				std::endl;
+		}
+		unsigned char inbuf[len], outbuf[len], tag[taglen];
+		if (verbose > 2)
+			std::cerr << "INFO: SymmetricEncryptAEAD in = " << std::hex;
+		for (size_t i = 0; i < len; i++)
+		{
+			inbuf[i] = in[nbytes+i];
+			if (verbose > 2)
+				std::cerr << (int)inbuf[i] << " ";
+		}
+		if (verbose > 2)
+			std::cerr << std::dec << std::endl;
+		ret = gcry_cipher_encrypt(hd, outbuf, len, inbuf, len);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			if (verbose > 2)
+			{
+				std::cerr << "ERROR: gcry_cipher_encrypt() failed" <<
+					" (rc = " << gcry_err_code(ret) <<
+					", str = " << gcry_strerror(ret) << ")" << std::endl;
+			}
+			return ret;
+		}
+		if (verbose > 2)
+			std::cerr << "INFO: SymmetricEncryptAEAD out = " << std::hex;
+		for (size_t i = 0; i < len; i++)
+		{
+			out.push_back(outbuf[i]);
+			if (verbose > 2)
+				std::cerr << (int)outbuf[i] << " ";
+		}
+		if (verbose > 2)
+			std::cerr << std::dec << std::endl;
+		ret = gcry_cipher_gettag(hd, tag, taglen);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			if (verbose > 2)
+			{
+				std::cerr << "ERROR: gcry_cipher_gettag() failed" <<
+					" (rc = " << gcry_err_code(ret) <<
+					", str = " << gcry_strerror(ret) << ")" << std::endl;
+			}
+			return ret;
+		}
+		if (verbose > 2)
+			std::cerr << "INFO: SymmetricEncryptAEAD tag = " << std::hex;
+		for (size_t i = 0; i < taglen; i++)
+		{
+			out.push_back(tag[i]);
+			if (verbose > 2)
+				std::cerr << (int)tag[i] << " ";
+		}
+		if (verbose > 2)
+			std::cerr << std::dec << std::endl;
+		nbytes += len;
+
+		// now create the final authentication tag
+		uint64_t totalbytes = (chunks * chunkdim) + len;
+		if (verbose > 2)
+		{
+			std::cerr << "INFO: SymmetricEncryptAEAD totalbytes = " <<
+				totalbytes << std::endl;
+		}
+		chunkidx++;
+		switch (aeadalgo)
+		{
+			case TMCG_OPENPGP_AEADALGO_EAX:
+				ivbuf[8] ^= ((chunkidx >> 56) & 0xFF);
+				ivbuf[9] ^= ((chunkidx >> 48) & 0xFF);
+				ivbuf[10] ^= ((chunkidx >> 40) & 0xFF);
+				ivbuf[11] ^= ((chunkidx >> 32) & 0xFF);
+				ivbuf[12] ^= ((chunkidx >> 24) & 0xFF);
+				ivbuf[13] ^= ((chunkidx >> 16) & 0xFF);
+				ivbuf[14] ^= ((chunkidx >> 8) & 0xFF);
+				ivbuf[15] ^= (chunkidx & 0xFF);
+				break;
+			case TMCG_OPENPGP_AEADALGO_OCB:
+				ivbuf[7] ^= ((chunkidx >> 56) & 0xFF);
+				ivbuf[8] ^= ((chunkidx >> 48) & 0xFF);
+				ivbuf[9] ^= ((chunkidx >> 40) & 0xFF);
+				ivbuf[10] ^= ((chunkidx >> 32) & 0xFF);
+				ivbuf[11] ^= ((chunkidx >> 24) & 0xFF);
+				ivbuf[12] ^= ((chunkidx >> 16) & 0xFF);
+				ivbuf[13] ^= ((chunkidx >> 8) & 0xFF);
+				ivbuf[14] ^= (chunkidx & 0xFF);
+				break;
+			default:
+				break; // should never happen
+		}
+		ret = gcry_cipher_setiv(hd, ivbuf, is);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		adbuf[5] = ((chunkidx >> 56) & 0xFF);
+		adbuf[6] = ((chunkidx >> 48) & 0xFF);
+		adbuf[7] = ((chunkidx >> 40) & 0xFF);
+		adbuf[8] = ((chunkidx >> 32) & 0xFF);
+		adbuf[9] = ((chunkidx >> 24) & 0xFF);
+		adbuf[10] = ((chunkidx >> 16) & 0xFF);
+		adbuf[11] = ((chunkidx >> 8) & 0xFF);
+		adbuf[12] = (chunkidx & 0xFF);
+		adbuf[13] = ((totalbytes >> 56) & 0xFF);
+		adbuf[14] = ((totalbytes >> 48) & 0xFF);
+		adbuf[15] = ((totalbytes >> 40) & 0xFF);
+		adbuf[16] = ((totalbytes >> 32) & 0xFF);
+		adbuf[17] = ((totalbytes >> 24) & 0xFF);
+		adbuf[18] = ((totalbytes >> 16) & 0xFF);
+		adbuf[19] = ((totalbytes >> 8) & 0xFF);
+		adbuf[20] = (totalbytes & 0xFF);
+		ret = gcry_cipher_authenticate(hd, adbuf, sizeof(adbuf));
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
+		ret = gcry_cipher_final(hd); // tell decrypt that it's the final call
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+#endif
+		ret = gcry_cipher_encrypt(hd, outbuf, 0, NULL, 0); // empty string
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			if (verbose > 2)
+			{
+				std::cerr << "ERROR: gcry_cipher_encrypt() failed" <<
+					" (rc = " << gcry_err_code(ret) <<
+					", str = " << gcry_strerror(ret) << ")" << std::endl;
+			}
+			return ret;
+		}
+		ret = gcry_cipher_gettag(hd, tag, taglen);
+		if (ret)
+		{
+			gcry_free(buf);
+			gcry_cipher_close(hd);
+			return ret;
+		}
+		if (verbose > 2)
+			std::cerr << "INFO: SymmetricEncryptAEAD final tag = " << std::hex;
+		for (size_t i = 0; i < taglen; i++)
+		{
+			out.push_back(tag[i]);
+			if (verbose > 2)
+				std::cerr << (int)tag[i] << " ";
+		}
+		if (verbose > 2)
+			std::cerr << std::dec << std::endl;
+	}
+	gcry_free(buf);
+	gcry_cipher_close(hd);
+	return 0;
+}
+
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_secure_octets_t &seskey,
 	 tmcg_openpgp_octets_t &prefix, const bool resync,
@@ -11342,7 +12026,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	}
 	gcry_free(buf);
 	gcry_cipher_close(hd);
-
 	return 0;
 }
 
@@ -11415,7 +12098,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 	if (chunksize > 56)
 		return GPG_ERR_INV_PACKET; // error: chunk size out of specification
 	if (chunksize > 21)
-		return GPG_ERR_NOT_SUPPORTED; // error: large sizes are not supported 
+		return GPG_ERR_NOT_SUPPORTED; // error: other sizes are not supported 
 
 	// The symmetric cipher used may be specified in a Public-Key or
 	// Symmetric-Key Encrypted Session Key packet that precedes the
@@ -11566,7 +12249,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 #if GCRYPT_VERSION_NUMBER < 0x010700
 		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
 #else
-		ret = gcry_cipher_final(hd); // tell decrypt that it's the final call
+		ret = gcry_cipher_final(hd);
 		if (ret)
 		{
 			gcry_free(buf);
@@ -11621,14 +12304,14 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 	}
 	else
 	{
-		if (in.size() < (bs + taglen + taglen))
+		if (in.size() < (1 + taglen + taglen))
 		{
 			gcry_free(buf);
 			gcry_cipher_close(hd);
 			return GPG_ERR_TOO_SHORT; // error: input too short
 		}
 		uint64_t chunkdim = ((uint64_t)1 << (chunksize + 6));
-		uint64_t chunks = ((uint64_t)in.size() - taglen) / (chunkdim + taglen);
+		uint64_t chunks = ((uint64_t)in.size()-1-taglen) / (chunkdim + taglen);
 		if (verbose > 1)
 		{
 			std::cerr << "INFO: SymmetricDecryptAEAD chunkdim = " << chunkdim <<
@@ -11720,6 +12403,13 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 				gcry_cipher_close(hd);
 				return ret;
 			}
+			ret = gcry_cipher_final(hd);
+			if (ret)
+			{
+				gcry_free(buf);
+				gcry_cipher_close(hd);
+				return ret;
+			}
 			if (in.size() < (nbytes + chunkdim + taglen))
 			{
 				gcry_free(buf);
@@ -11804,7 +12494,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 #if GCRYPT_VERSION_NUMBER < 0x010700
 		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
 #else
-		ret = gcry_cipher_final(hd); // tell decrypt that it's the final call
+		ret = gcry_cipher_final(hd);
 		if (ret)
 		{
 			gcry_free(buf);
@@ -11980,10 +12670,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 			return ret;
 		}
 	}
-
 	gcry_free(buf);
 	gcry_cipher_close(hd);
-
 	return 0;
 }
 
@@ -12020,7 +12708,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	gcry_sexp_release(encryption);
 	if (ret)
 		return ret;
-
 	return 0;
 }
 
@@ -12054,7 +12741,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 	for (size_t i = 0; i < buflen; i++)
 		out.push_back(buf[i]);
 	gcry_sexp_release(decryption);
-
 	return 0;
 }
 
@@ -12090,7 +12776,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptRSA
 	gcry_sexp_release(encryption);
 	if (ret)
 		return ret;
-
 	return 0;
 }
 
@@ -12124,7 +12809,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptRSA
 	for (size_t i = 0; i < buflen; i++)
 		out.push_back(buf[i]);
 	gcry_sexp_release(decryption);
-
 	return 0;
 }
 
@@ -12453,7 +13137,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	gcry_sexp_release(signature);
 	if (ret)
 		return ret;
-
 	return 0;
 }
 
@@ -12483,7 +13166,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignECDSA
 	gcry_sexp_release(signature);
 	if (ret)
 		return ret;
-
 	return 0;
 }
 
@@ -12513,7 +13195,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignEdDSA
 	gcry_sexp_release(signature);
 	if (ret)
 		return ret;
-
 	return 0;
 }
 
@@ -12567,7 +13248,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 	gcry_sexp_release(sigdata);
 	if (ret)
 		return ret;
-
 	return 0;
 }
 
@@ -12598,7 +13278,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyECDSA
 	gcry_sexp_release(sigdata);
 	if (ret)
 		return ret;
-
 	return 0;
 }
 
@@ -12629,7 +13308,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyEdDSA
 	gcry_sexp_release(sigdata);
 	if (ret)
 		return ret;
-
 	return 0;
 }
 
@@ -12662,7 +13340,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignRSA
 	gcry_sexp_release(signature);
 	if (ret)
 		return ret;
-
 	return 0;
 }
 
@@ -12703,7 +13380,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyRSA
 	gcry_sexp_release(sigdata);
 	if (ret)
 		return ret;
-
 	return 0;
 }
 
