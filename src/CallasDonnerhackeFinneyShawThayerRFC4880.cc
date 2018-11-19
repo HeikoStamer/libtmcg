@@ -8507,7 +8507,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSeipdEncode
 	// packet, upon decryption, is compared with the result of the SHA-1
 	// hash.
 	PacketTagEncode(18, out);
-	PacketLengthEncode(in.size() + 1, out);
+	PacketLengthEncode(1+in.size(), out);
 	out.push_back(1); // version
 	out.insert(out.end(), in.begin(), in.end());
 }
@@ -8571,6 +8571,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketAeadEncode
 	//
 	//  o  A final, summary authentication tag for the AEAD mode.
 	PacketTagEncode(20, out);
+	PacketLengthEncode(4+iv.size()+in.size(), out);
 	out.push_back(1); // one-octet version number
 	out.push_back(skalgo); // one-octet cipher algorithm
 	out.push_back(aeadalgo); // one-octet AEAD algorithm
