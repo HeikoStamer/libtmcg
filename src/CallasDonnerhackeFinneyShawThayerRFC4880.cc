@@ -11466,7 +11466,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 			return ret;
 		}
 #endif
-		if (in.size() < 0)
+		if (in.size() < 1)
 		{
 			gcry_free(buf);
 			gcry_cipher_close(hd);
