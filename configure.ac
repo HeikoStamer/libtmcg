@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20181116])
+AC_REVISION([20181121])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.16], [HeikoStamer@gmx.net], [libTMCG],
@@ -269,6 +269,11 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
+AC_TYPE_UINT8_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for library functions
 AC_FUNC_MALLOC

@@ -128,7 +128,7 @@ template<class T> bool operator!=
 };
 
 // definition of types and constants for OpenPGP structures
-typedef unsigned char
+typedef uint8_t
 	tmcg_openpgp_byte_t;
 typedef std::vector<tmcg_openpgp_byte_t>
 	tmcg_openpgp_octets_t;
