@@ -3409,6 +3409,9 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		// in the possession of more than one person.
 		if ((allflags & 0x80) == 0x80)
 			std::cerr << "G";
+		// This key may be used for timestamping. [draft RFC 4880bis]
+		if ((allflags & 0x0800) == 0x0800)
+			std::cerr << "T";
 		std::cerr << std::endl;
 	}
 	// check key revocation signatures of primary key
@@ -3515,6 +3518,9 @@ bool TMCG_OpenPGP_Pubkey::CheckSubkeys
 				// in the possession of more than one person.
 				if ((allflags & 0x80) == 0x80)
 					std::cerr << "G";
+				// This key may be used for timestamping. [draft RFC 4880bis]
+				if ((allflags & 0x0800) == 0x0800)
+					std::cerr << "T";
 				std::cerr << std::endl;
 			}
 		}
@@ -12874,7 +12880,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 		return GPG_ERR_BAD_DATA;
 	gcry_mpi_t v;
 	v = gcry_mpi_snew(1024);
-	gcry_mpi_randomize(v, curvebits-1, GCRY_STRONG_RANDOM);
+	gcry_mpi_randomize(v, curvebits - 1, GCRY_STRONG_RANDOM);
 	// compute V = vG and the shared point S = vR [RFC 6637]
 	gcry_sexp_t encryption, data;
 	gcry_mpi_t S;

@@ -7,6 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-11-23] RFC4880: added output for key usage "timestamping" [RFC 4880bis]
 * [2018-11-21] RFC4880: changed tmcg_openpgp_byte_t: unsigned char -> uint8_t
 * [2018-11-18] RFC4880: added PacketAeadEncode() [RFC 4880bis]
 * [2018-11-18] RFC4880: added SymmetricDecryptAEAD() and SymmetricEncryptAEAD()
