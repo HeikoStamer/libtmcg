@@ -6727,6 +6727,16 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		subpktlen += issuer.size();
 	if (keyexptime != 0)
 		subpktlen += (6 + 4);
+#if GCRYPT_VERSION_NUMBER < 0x010700
+	// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
+	subpktlen += (6 + 1);
+#if GCRYPT_VERSION_NUMBER < 0x010900
+	// FIXME: remove, if libgcrypt >= 1.9.0 required by configure.ac
+#else
+	subpktlen += 1;
+#endif
+#endif
 	out.push_back(4); // V4 format
 	out.push_back(type); // type (e.g. 0x10-0x13 for UID certification)
 	out.push_back(pkalgo); // public-key algorithm
@@ -6747,8 +6757,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		}
 		// 2. preferred symmetric algorithms (length = 2)
 		tmcg_openpgp_octets_t psa;
-		psa.push_back(TMCG_OPENPGP_SKALGO_AES256); // AES256
-		psa.push_back(TMCG_OPENPGP_SKALGO_TWOFISH); // Twofish
+		psa.push_back(TMCG_OPENPGP_SKALGO_AES256);
+		psa.push_back(TMCG_OPENPGP_SKALGO_TWOFISH);
 		SubpacketEncode(11, false, psa, out);
 		// 3. issuer (variable length)
 		if (issuer.size() == 20)
@@ -6763,9 +6773,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 			SubpacketEncode(16, false, issuer, out);
 		// 4. preferred hash algorithms  (length = 3)
 		tmcg_openpgp_octets_t pha;
-		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA512); // SHA512
-		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA384); // SHA384
-		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // SHA256
+		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA512);
+		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA384);
+		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA256);
 		SubpacketEncode(21, false, pha, out);
 		// 5. preferred compression algorithms  (length = 1)
 		tmcg_openpgp_octets_t pca;
@@ -6780,9 +6790,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		// 8. features (length = 1)
 		tmcg_openpgp_octets_t features;
 		features.push_back(0x01); // Modification Detection (tags 18, 19)
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
 		// AEAD Encrypted Data Packet (packet 20) and version 5 Symmetric-Key
 		// Encrypted Session Key Packets (packet 3)
 		features[0] |= 0x02;
+#endif
 		SubpacketEncode(30, false, features, out);
 		// [optional] issuer fingerprint
 		if (issuer.size() == 20)
@@ -6793,6 +6807,19 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 				issuer.begin(), issuer.end());			
 			SubpacketEncode(33, false, issuerfpr, out);
 		}
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
+		// [optional] preferred AEAD algorithms  (variable length)
+		tmcg_openpgp_octets_t paa;
+#if GCRYPT_VERSION_NUMBER < 0x010900
+		// FIXME: remove, if libgcrypt >= 1.9.0 required by configure.ac
+#else
+		paa.push_back(TMCG_OPENPGP_AEADALGO_EAX);
+#endif
+		paa.push_back(TMCG_OPENPGP_AEADALGO_OCB);
+		SubpacketEncode(34, false, paa, out);
+#endif
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
@@ -6823,6 +6850,16 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 		subpktlen += issuer.size();
 	if (revoker.size())
 		subpktlen += (6 + 22); // size of Revocation Key subpacket
+#if GCRYPT_VERSION_NUMBER < 0x010700
+	// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
+	subpktlen += (6 + 1);
+#if GCRYPT_VERSION_NUMBER < 0x010900
+	// FIXME: remove, if libgcrypt >= 1.9.0 required by configure.ac
+#else
+	subpktlen += 1;
+#endif
+#endif
 	out.push_back(4); // V4 format
 	out.push_back(TMCG_OPENPGP_SIGNATURE_DIRECTLY_ON_A_KEY); // type
 	out.push_back(pkalgo); // public-key algorithm
@@ -6880,9 +6917,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 		// 8. features (length = 1)
 		tmcg_openpgp_octets_t features;
 		features.push_back(0x01); // Modification Detection (tags 18, 19)
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
 		// AEAD Encrypted Data Packet (packet 20) and version 5 Symmetric-Key
 		// Encrypted Session Key Packets (packet 3)
 		features[0] |= 0x02;
+#endif
 		SubpacketEncode(30, false, features, out);
 		// [optional] issuer fingerprint
 		if (issuer.size() == 20)
@@ -6893,6 +6934,19 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 				issuer.begin(), issuer.end());			
 			SubpacketEncode(33, false, issuerfpr, out);
 		}
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
+		// [optional] preferred AEAD algorithms  (variable length)
+		tmcg_openpgp_octets_t paa;
+#if GCRYPT_VERSION_NUMBER < 0x010900
+		// FIXME: remove, if libgcrypt >= 1.9.0 required by configure.ac
+#else
+		paa.push_back(TMCG_OPENPGP_AEADALGO_EAX);
+#endif
+		paa.push_back(TMCG_OPENPGP_AEADALGO_OCB);
+		SubpacketEncode(34, false, paa, out);
+#endif
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
@@ -12258,19 +12312,21 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 		std::cerr << "INFO: SymmetricDecryptAEAD |in| = " << in.size() <<
 			" and |ad| = " << ad.size() << std::endl;
 	}
+	// initially set nonce (starting IV) for AEAD algorithm
+	unsigned char ivbuf[16];
+	memset(ivbuf, 0, sizeof(ivbuf));
+	if (verbose > 2)
+		std::cerr << "INFO: SymmetricDecryptAEAD nonce = " << std::hex;
+	for (size_t i = 0; ((i < is) && (i < sizeof(ivbuf))); i++)
+	{
+		ivbuf[i] = iv[i];
+		if (verbose > 2)
+			std::cerr << (int)ivbuf[i] << " ";
+	}
+	if (verbose > 2)
+		std::cerr << std::dec << std::endl;
 	if (ad.size() == 4) // identifies an AEAD-encrypted SKESK packet (version 5)
 	{
-		unsigned char ivbuf[is];
-		if (verbose > 2)
-			std::cerr << "INFO: SymmetricDecryptAEAD nonce = " << std::hex;
-		for (size_t i = 0; i < is; i++)
-		{
-			ivbuf[i] = iv[i]; // initially set nonce by a copy of starting IV
-			if (verbose > 2)
-				std::cerr << (int)ivbuf[i] << " ";
-		}
-		if (verbose > 2)
-			std::cerr << std::dec << std::endl;
 		ret = gcry_cipher_setiv(hd, ivbuf, is);
 		if (ret)
 		{
@@ -12367,18 +12423,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 			std::cerr << "INFO: SymmetricDecryptAEAD chunkdim = " << chunkdim <<
 				" and chunks = " << chunks << std::endl;
 		}
-		unsigned char ivbuf[16];
-		memset(ivbuf, 0, sizeof(ivbuf));
-		if (verbose > 2)
-			std::cerr << "INFO: SymmetricDecryptAEAD nonce = " << std::hex;
-		for (size_t i = 0; ((i < is) && (i < sizeof(ivbuf))); i++)
-		{
-			ivbuf[i] = iv[i]; // initially set nonce by a copy of starting IV
-			if (verbose > 2)
-				std::cerr << (int)ivbuf[i] << " ";
-		}
-		if (verbose > 2)
-			std::cerr << std::dec << std::endl;
 		unsigned char adbuf[21];
 		memset(adbuf, 0, sizeof(adbuf));
 		if (verbose > 2)
