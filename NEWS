@@ -8,6 +8,9 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is
 included in the sources of this package and additionally can be obtained from
 Internet <https://www.gnu.org/licenses>.
 
+1.3.16 In this release AEAD support has been added to the OpenPGP interface.
+       Please note that this feature is specified by working draft only and was
+       not part of the aged RFC 4880. Moreover, some bugs have been fixed.
 1.3.15 This is a maintenance release that fixes some bugs, e.g. in the Botan
        support of functions from module mpz_srandom. Moreover, some interfaces
        of the OpenPGP implemenation have been added and removed. For some
