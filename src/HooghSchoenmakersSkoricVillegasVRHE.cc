@@ -946,8 +946,6 @@ HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
 	unsigned long int fieldsize, unsigned long int subgroupsize):
 			F_size(fieldsize), G_size(subgroupsize)
 {
-	std::stringstream lej;
-	
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(h);
 	in >> p >> q >> g >> h;
 

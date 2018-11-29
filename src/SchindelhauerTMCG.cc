@@ -126,9 +126,9 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 	}
 	
 	mpz_clear(foo), mpz_clear(bar), mpz_clear(lej), mpz_clear(t_sqrt);
-	for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ri++)
+	for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ++ri)
 		mpz_clear(*ri), delete [] *ri;
-	for (std::vector<mpz_ptr>::iterator si = ss.begin(); si != ss.end(); si++)
+	for (std::vector<mpz_ptr>::iterator si = ss.begin(); si != ss.end(); ++si)
 		mpz_clear(*si), delete [] *si;
 }
 
@@ -190,9 +190,9 @@ bool SchindelhauerTMCG::TMCG_VerifyQuadraticResidue
 	catch (bool return_value)
 	{
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
-		for (std::vector<mpz_ptr>::iterator ri = RR.begin(); ri != RR.end(); ri++)
+		for (std::vector<mpz_ptr>::iterator ri = RR.begin(); ri != RR.end(); ++ri)
 			mpz_clear(*ri), delete [] *ri;
-		for (std::vector<mpz_ptr>::iterator si = SS.begin(); si != SS.end(); si++)
+		for (std::vector<mpz_ptr>::iterator si = SS.begin(); si != SS.end(); ++si)
 			mpz_clear(*si), delete [] *si;
 		return return_value;
 	}
@@ -378,9 +378,9 @@ void SchindelhauerTMCG::TMCG_ProveMaskValue
 	catch (bool excpetion)
 	{
 		mpz_clear(foo), mpz_clear(bar);
-		for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ri++)
+		for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ++ri)
 			mpz_clear(*ri), delete [] *ri;
-		for (std::vector<mpz_ptr>::iterator bi = bb.begin(); bi != bb.end(); bi++)
+		for (std::vector<mpz_ptr>::iterator bi = bb.begin(); bi != bb.end(); ++bi)
 			mpz_clear(*bi), delete [] *bi;
 		return;
 	}
@@ -435,7 +435,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskValue
 	catch (bool return_value)
 	{
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
-		for (std::vector<mpz_ptr>::iterator ti = T.begin(); ti != T.end(); ti++)
+		for (std::vector<mpz_ptr>::iterator ti = T.begin(); ti != T.end(); ++ti)
 			mpz_clear(*ti), delete [] *ti;
 		return return_value;
 	}
@@ -569,13 +569,13 @@ void SchindelhauerTMCG::TMCG_ProveMaskOne
 	}
 	
 	mpz_clear(y1m), mpz_clear(foo), mpz_clear(bar), mpz_clear(tim);
-	for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ri++)
+	for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ++ri)
 		mpz_clear(*ri), delete [] *ri;
-	for (std::vector<mpz_ptr>::iterator bi = bb.begin(); bi != bb.end(); bi++)
+	for (std::vector<mpz_ptr>::iterator bi = bb.begin(); bi != bb.end(); ++bi)
 		mpz_clear(*bi), delete [] *bi;
-	for (std::vector<mpz_ptr>::iterator si = ss.begin(); si != ss.end(); si++)
+	for (std::vector<mpz_ptr>::iterator si = ss.begin(); si != ss.end(); ++si)
 		mpz_clear(*si), delete [] *si;
-	for (std::vector<mpz_ptr>::iterator ci = cc.begin(); ci != cc.end(); ci++)
+	for (std::vector<mpz_ptr>::iterator ci = cc.begin(); ci != cc.end(); ++ci)
 		mpz_clear(*ci), delete [] *ci;
 }
 
@@ -639,9 +639,9 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskOne
 	catch (bool return_value)
 	{	
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
-		for (std::vector<mpz_ptr>::iterator ri = RR.begin(); ri != RR.end(); ri++)
+		for (std::vector<mpz_ptr>::iterator ri = RR.begin(); ri != RR.end(); ++ri)
 			mpz_clear(*ri), delete [] *ri;
-		for (std::vector<mpz_ptr>::iterator si = SS.begin(); si != SS.end(); si++)
+		for (std::vector<mpz_ptr>::iterator si = SS.begin(); si != SS.end(); ++si)
 			mpz_clear(*si), delete [] *si;
 		return return_value;
 	}

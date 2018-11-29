@@ -4725,6 +4725,7 @@ TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
 	ecepk = gcry_mpi_new(8);
 	// public-key algorithm is RSA
 	gcry_mpi_set(me, me_in);
+	memset(rkw, 0 , sizeof(rkw));
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
@@ -4744,6 +4745,7 @@ TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
 	// public-key algorithm is ElGamal
 	gcry_mpi_set(gk, gk_in);
 	gcry_mpi_set(myk, myk_in);
+	memset(rkw, 0 , sizeof(rkw));
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 }
 
