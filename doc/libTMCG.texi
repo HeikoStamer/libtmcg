@@ -19,7 +19,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20181129.
+Revision 20181201.
 
 Copyright @copyright{} 2005--2007, 2009, 2015--2018 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
@@ -3903,6 +3903,14 @@ programs are continued in a separate package called @emph{Distributed Privacy Gu
 
 Please report any bugs to the maintainer of LibTMCG. Every help with development
 or testing of these DKG protocols and programs is very welcome!
+
+@section Oblivious Transfer Protocols
+We have implemented two basic variants for oblivous transfer (see Moni Naor
+and Benny Pinkas: @emph{Efficient Oblivious Transfer Protocols}, Proceedings of
+the Symposium on Discrete Algorithms (SODA), ACM/SIAM 2001) in the class
+@code{NaorPinkasEOTP}: a 1-out-of-2 transfer and a 1-out-of-N transfer.
+The chooser's security is based on the DDH assumption and the sender's security
+is information-theoretic.
 
 @c **********************************************************
 @c *******************  Appendices  *************************
