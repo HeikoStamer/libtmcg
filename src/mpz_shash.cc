@@ -142,7 +142,7 @@ size_t tmcg_mpz_fhash_len
 void tmcg_mpz_fhash
 	(mpz_ptr r, int algo, mpz_srcptr input)
 {
-	size_t input_size = (mpz_sizeinbase(input, 2L) + 7) / 8;
+	size_t input_size = (mpz_sizeinbase(input, 2UL) + 7) / 8;
 	size_t hash_size = tmcg_mpz_fhash_len(algo);
 	unsigned char *buffer = new unsigned char[input_size];
 	unsigned char *digest = new unsigned char[hash_size];
@@ -169,11 +169,11 @@ void tmcg_mpz_fhash_ggen
 	mpz_srcptr input1, const std::string &input2,
 	mpz_srcptr input3, mpz_srcptr input4)
 {
-	size_t input1_size = ((mpz_sizeinbase(input1, 2L) + 7) / 8);
+	size_t input1_size = ((mpz_sizeinbase(input1, 2UL) + 7) / 8);
 	size_t input12_size = input1_size + input2.length();
-	size_t input3_size = ((mpz_sizeinbase(input3, 2L) + 7) / 8);
+	size_t input3_size = ((mpz_sizeinbase(input3, 2UL) + 7) / 8);
 	size_t input123_size = input12_size + input3_size;
-	size_t input4_size = ((mpz_sizeinbase(input4, 2L) + 7) / 8);
+	size_t input4_size = ((mpz_sizeinbase(input4, 2UL) + 7) / 8);
 	size_t input_size = input123_size + input4_size;
 	size_t hash_size = tmcg_mpz_fhash_len(algo);
 	unsigned char *buffer = new unsigned char[input_size];

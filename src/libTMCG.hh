@@ -62,6 +62,12 @@
 		#define TMCG_DLSE_SIZE 256
 	#endif
 
+	#ifndef TMCG_QRA_SIZE
+		/* Define the security parameter of the TMCG public key;
+		   Underlying assumptions: QRA, FACTOR */
+		#define TMCG_QRA_SIZE 2048
+	#endif
+
 	#ifndef TMCG_AIO_HIDE_SIZE
 		/* Define the security parameter for hiding the length of integers. */
 		#define TMCG_AIO_HIDE_SIZE 256
@@ -125,27 +131,9 @@
 		#define TMCG_MAX_CARDS 1024
 	#endif
 	
-	#ifndef TMCG_MAX_CARD_CHARS
-		/* Define a helping macro */
-		#define TMCG_MAX_CARD_CHARS \
-			(TMCG_MAX_PLAYERS * TMCG_MAX_TYPEBITS * TMCG_MAX_VALUE_CHARS)
-	#endif
-	
-	#ifndef TMCG_MAX_KEYBITS
-		/* Define a helping macro */
-		#define TMCG_MAX_KEYBITS \
-			((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? \
-				(8UL * TMCG_DDH_SIZE) : (8UL * TMCG_QRA_SIZE))
-	#endif
-	
 	#ifndef TMCG_MAX_PLAYERS
 		/* Define the maximum number of players for scheme of Schindelhauer */
 		#define TMCG_MAX_PLAYERS 32
-	#endif
-	
-	#ifndef TMCG_MAX_STACK_CHARS
-		/* Define a helping macro */
-		#define TMCG_MAX_STACK_CHARS (TMCG_MAX_CARDS * TMCG_MAX_CARD_CHARS)
 	#endif
 	
 	#ifndef TMCG_MAX_TYPEBITS
@@ -153,6 +141,13 @@
 		   different card types for the scheme of Schindelhauer and the maximum
 		   size of the message space for the scheme of Barnett and Smart */
 		#define TMCG_MAX_TYPEBITS 10
+	#endif
+
+	#ifndef TMCG_MAX_KEYBITS
+		/* Define a helping macro */
+		#define TMCG_MAX_KEYBITS \
+			((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? \
+				(8UL * TMCG_DDH_SIZE) : (8UL * TMCG_QRA_SIZE))
 	#endif
 	
 	#ifndef TMCG_MAX_VALUE_CHARS
@@ -164,6 +159,17 @@
 		/* Define a helping macro */
 		#define TMCG_MAX_KEY_CHARS (TMCG_MAX_KEYBITS * 1024UL)
 	#endif
+
+	#ifndef TMCG_MAX_CARD_CHARS
+		/* Define a helping macro */
+		#define TMCG_MAX_CARD_CHARS \
+			(TMCG_MAX_PLAYERS * TMCG_MAX_TYPEBITS * TMCG_MAX_VALUE_CHARS)
+	#endif
+
+	#ifndef TMCG_MAX_STACK_CHARS
+		/* Define a helping macro */
+		#define TMCG_MAX_STACK_CHARS (TMCG_MAX_CARDS * TMCG_MAX_CARD_CHARS)
+	#endif
 	
 	#ifndef TMCG_MPZ_IO_BASE
 		/* Define the input/ouput base encoding of the iostream operators */
@@ -174,12 +180,6 @@
 		/* Define the security parameter for the signature generation
 		   with Rabin/PRab */
 		#define TMCG_PRAB_K0 20
-	#endif
-	
-	#ifndef TMCG_QRA_SIZE
-		/* Define the security parameter of the TMCG public key;
-		   Underlying assumptions: QRA, FACTOR */
-		#define TMCG_QRA_SIZE 2048
 	#endif
 	
 	#ifndef TMCG_SAEP_S0
