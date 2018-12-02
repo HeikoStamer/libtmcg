@@ -177,7 +177,7 @@ void TMCG_SecretKey::generate
 	// STAGE3: y \in NQR^\circ_m [Sc98]
 	std::ostringstream nizk2, input;
 	input << m << "^" << y, nizk2 << "nzk^";
-	size_t mnsize = mpz_sizeinbase(m, 2L) / 8;
+	size_t mnsize = (mpz_sizeinbase(m, 2UL) + 7) / 8;
 	unsigned char *mn = new unsigned char[mnsize];
 	
 	// STAGE1: m Square Free
@@ -465,13 +465,13 @@ bool TMCG_SecretKey::decrypt
 {
 	mpz_t vdata, vroot[4];
 	size_t rabin_s2 = 2 * TMCG_SAEP_S0;
-	size_t rabin_s1 = (mpz_sizeinbase(m, 2L) / 8) - rabin_s2;
+	size_t rabin_s1 = ((mpz_sizeinbase(m, 2UL) + 7) / 8) - rabin_s2;
 	
-	if (rabin_s2 >= (mpz_sizeinbase(m, 2L) / 16))
+	if (rabin_s2 >= ((mpz_sizeinbase(m, 2UL) + 7) / 16))
 		return false;
 	if (rabin_s2 >= rabin_s1)
 		return false;
-	if (TMCG_SAEP_S0 >= (mpz_sizeinbase(m, 2L) / 32))
+	if (TMCG_SAEP_S0 >= ((mpz_sizeinbase(m, 2UL) + 7) / 32))
 		return false;
 	
 	unsigned char *yy = new unsigned char[rabin_s2 + rabin_s1 + 1024];
@@ -511,7 +511,7 @@ bool TMCG_SecretKey::decrypt
 		// check all four square roots
 		for (size_t k = 0; k < 4; k++)
 		{
-			if ((mpz_sizeinbase(vroot[k], 2L) / 8) <= (rabin_s1 + rabin_s2))
+			if (((mpz_sizeinbase(vroot[k], 2UL) + 7) / 8) <= (rabin_s1 + rabin_s2))
 			{
 				size_t cnt = 1;
 				mpz_export(yy, &cnt, -1, rabin_s2 + rabin_s1, 1, 0, vroot[k]);
@@ -548,12 +548,12 @@ std::string TMCG_SecretKey::sign
 	(const std::string& data) const
 {
 	size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
-	size_t mnsize = mpz_sizeinbase(m, 2L) / 8;
+	size_t mnsize = (mpz_sizeinbase(m, 2UL) + 7) / 8;
 	mpz_t foo, foo_sqrt[4];
 	mpz_init(foo), mpz_init(foo_sqrt[0]), mpz_init(foo_sqrt[1]),
 		mpz_init(foo_sqrt[2]), mpz_init(foo_sqrt[3]);
 	
-	assert(mpz_sizeinbase(m, 2L) > (mnsize * 8));
+	assert(mpz_sizeinbase(m, 2UL) > (mnsize * 8));
 	assert(mnsize > (mdsize + TMCG_PRAB_K0));
 	assert((mnsize - mdsize) >= TMCG_PRAB_K0);
 	

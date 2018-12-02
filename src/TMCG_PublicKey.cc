@@ -104,7 +104,7 @@ bool TMCG_PublicKey::check
 	mpz_t foo, bar;
 	std::string s = nizk;
 	size_t stage1_size = 0, stage2_size = 0, stage3_size = 0;
-	size_t mnsize = mpz_sizeinbase(m, 2L) / 8;
+	size_t mnsize = (mpz_sizeinbase(m, 2UL) + 7) / 8;
 	unsigned char *mn = new unsigned char[mnsize];
 	
 	mpz_init(foo), mpz_init(bar);
@@ -134,13 +134,13 @@ bool TMCG_PublicKey::check
 		// check, whether m \not\in FP (fermat primes: m = 2^k + 1)
 		mpz_set(foo, m);
 		mpz_sub_ui(foo, foo, 1L);
-		unsigned long int k = mpz_sizeinbase(m, 2L);
+		unsigned long int k = mpz_sizeinbase(m, 2UL);
 		mpz_ui_pow_ui(bar, 2L, k);
 		if (!mpz_cmp(foo, bar))
 		{
 			// check, whether k is power of two
 			mpz_set_ui(foo, k);
-			unsigned long int l = mpz_sizeinbase(foo, 2L);
+			unsigned long int l = mpz_sizeinbase(foo, 2UL);
 			mpz_ui_pow_ui(bar, 2L, l);
 			if (!mpz_cmp(foo, bar))
 			{
@@ -502,11 +502,11 @@ std::string TMCG_PublicKey::encrypt
 {
 	mpz_t vdata;
 	size_t rabin_s2 = 2 * TMCG_SAEP_S0;
-	size_t rabin_s1 = (mpz_sizeinbase(m, 2L) / 8) - rabin_s2;
+	size_t rabin_s1 = ((mpz_sizeinbase(m, 2UL) + 7) / 8) - rabin_s2;
 	
-	assert(rabin_s2 < (mpz_sizeinbase(m, 2L) / 16));
+	assert(rabin_s2 < ((mpz_sizeinbase(m, 2UL) + 7) / 16));
 	assert(rabin_s2 < rabin_s1);
-	assert(TMCG_SAEP_S0 < (mpz_sizeinbase(m, 2L) / 32));
+	assert(TMCG_SAEP_S0 < ((mpz_sizeinbase(m, 2UL) + 7) / 32));
 	
 	// use simplified OAEP = SAEP [Bo01]
 	unsigned char *r = new unsigned char[rabin_s1];
@@ -570,8 +570,8 @@ bool TMCG_PublicKey::verify
 		
 		// verify signature (see PRab [BR96])
 		size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
-		size_t mnsize = mpz_sizeinbase(m, 2L) / 8;
-		if (mpz_sizeinbase(m, 2L) <= (mnsize * 8))
+		size_t mnsize = (mpz_sizeinbase(m, 2UL) + 7) / 8;
+		if (mpz_sizeinbase(m, 2UL) <= (mnsize * 8))
 			throw false;
 		if (mnsize <= (mdsize + TMCG_PRAB_K0))
 			throw false;
