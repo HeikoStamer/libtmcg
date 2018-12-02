@@ -128,7 +128,7 @@
 	
 	#ifndef TMCG_MAX_CARDS
 		/* Define the maximum number of stackable cards */
-		#define TMCG_MAX_CARDS 1024
+		#define TMCG_MAX_CARDS 512
 	#endif
 	
 	#ifndef TMCG_MAX_PLAYERS
@@ -152,12 +152,12 @@
 	
 	#ifndef TMCG_MAX_VALUE_CHARS
 		/* Define a helping macro */
-		#define TMCG_MAX_VALUE_CHARS (TMCG_MAX_KEYBITS / 2UL)
+		#define TMCG_MAX_VALUE_CHARS (TMCG_MAX_KEYBITS / 4UL)
 	#endif
 	
 	#ifndef TMCG_MAX_KEY_CHARS
 		/* Define a helping macro */
-		#define TMCG_MAX_KEY_CHARS (TMCG_MAX_KEYBITS * 1024UL)
+		#define TMCG_MAX_KEY_CHARS (TMCG_MAX_VALUE_CHARS * 1024UL)
 	#endif
 
 	#ifndef TMCG_MAX_CARD_CHARS

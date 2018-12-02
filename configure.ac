@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20181121])
+AC_REVISION([20181202])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.16], [HeikoStamer@gmx.net], [libTMCG],
@@ -139,7 +139,7 @@ AC_DEFINE(TMCG_KEY_NIZK_STAGE3, 128,
 	
 AC_DEFINE(TMCG_MAX_PLAYERS, 32,
 	[Define the maximum number of players in the scheme of Schindelhauer])
-AC_DEFINE(TMCG_MAX_CARDS, 1024,
+AC_DEFINE(TMCG_MAX_CARDS, 512,
 	[Define the maximum number of stackable cards])
 AC_DEFINE(TMCG_MAX_TYPEBITS, 10,
 	[Define the number of bits which represents the maximum number of
@@ -151,16 +151,16 @@ AC_DEFINE(TMCG_MAX_KEYBITS,
  (8UL * TMCG_QRA_SIZE))],
 	[Define a helping macro])
 AC_DEFINE(TMCG_MAX_VALUE_CHARS,
-	[(TMCG_MAX_KEYBITS / 2UL)],
+	[(TMCG_MAX_KEYBITS / 4UL)],
+	[Define a helping macro])
+AC_DEFINE(TMCG_MAX_KEY_CHARS,
+	[(TMCG_MAX_VALUE_CHARS * 1024UL)],
 	[Define a helping macro])
 AC_DEFINE(TMCG_MAX_CARD_CHARS,
 	[(TMCG_MAX_PLAYERS * TMCG_MAX_TYPEBITS * TMCG_MAX_VALUE_CHARS)],
 	[Define a helping macro])
 AC_DEFINE(TMCG_MAX_STACK_CHARS,
 	[(TMCG_MAX_CARDS * TMCG_MAX_CARD_CHARS)],
-	[Define a helping macro])
-AC_DEFINE(TMCG_MAX_KEY_CHARS,
-	[(TMCG_MAX_KEYBITS * 1024UL)],
 	[Define a helping macro])
 
 # Checks for Libtool
