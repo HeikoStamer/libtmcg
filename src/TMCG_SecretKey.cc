@@ -127,6 +127,10 @@ void TMCG_SecretKey::generate
 	type = t.str();
 	
 	// generate appropriate primes for RABIN encryption with SAEP [Bo01]
+	mpz_set_ui(foo, 1UL);
+	mpz_mul_2exp(foo, foo, keysize);
+	mpz_mul_2exp(bar, foo, 1UL);
+	mpz_add(bar, bar, foo); // upper bound for SAEP, i.e. 2^{n+1} + 2^n
 	do
 	{
 		// choose a random safe prime p, but with fixed size (n/2 + 1) bit
@@ -146,12 +150,6 @@ void TMCG_SecretKey::generate
 		
 		// compute modulus: m = p \cdot q
 		mpz_mul(m, p, q);
-		
-		// compute upper bound for SAEP, i.e. 2^{n+1} + 2^n
-		mpz_set_ui(foo, 1UL);
-		mpz_mul_2exp(foo, foo, keysize);
-		mpz_mul_2exp(bar, foo, 1UL);
-		mpz_add(bar, bar, foo);
 	}
 	while ((mpz_sizeinbase(m, 2UL) < (keysize + 1UL)) || (mpz_cmp(m, bar) >= 0));
 	
@@ -177,7 +175,7 @@ void TMCG_SecretKey::generate
 	// STAGE3: y \in NQR^\circ_m [Sc98]
 	std::ostringstream nizk2, input;
 	input << m << "^" << y, nizk2 << "nzk^";
-	size_t mnsize = (mpz_sizeinbase(m, 2UL) + 7) / 8;
+	size_t mnsize = mpz_sizeinbase(m, 2UL) / 8;
 	unsigned char *mn = new unsigned char[mnsize];
 	
 	// STAGE1: m Square Free
@@ -465,16 +463,17 @@ bool TMCG_SecretKey::decrypt
 {
 	mpz_t vdata, vroot[4];
 	size_t rabin_s2 = 2 * TMCG_SAEP_S0;
-	size_t rabin_s1 = ((mpz_sizeinbase(m, 2UL) + 7) / 8) - rabin_s2;
+	size_t rabin_s1 = (mpz_sizeinbase(m, 2UL) / 8) - rabin_s2;
+	size_t rabin_s = rabin_s1 + rabin_s2;
 	
-	if (rabin_s2 >= ((mpz_sizeinbase(m, 2UL) + 7) / 16))
+	if (rabin_s2 >= (mpz_sizeinbase(m, 2UL) / 16))
 		return false;
 	if (rabin_s2 >= rabin_s1)
 		return false;
-	if (TMCG_SAEP_S0 >= ((mpz_sizeinbase(m, 2UL) + 7) / 32))
+	if (TMCG_SAEP_S0 >= (mpz_sizeinbase(m, 2UL) / 32))
 		return false;
 	
-	unsigned char *yy = new unsigned char[rabin_s2 + rabin_s1 + 1024];
+	unsigned char *yy = new unsigned char[rabin_s+1024];
 	unsigned char *r = new unsigned char[rabin_s1];
 	unsigned char *Mt = new unsigned char[rabin_s2];
 	unsigned char *g12 = new unsigned char[rabin_s2];
@@ -503,18 +502,19 @@ bool TMCG_SecretKey::decrypt
 			throw false;
 		}
 		
-		// decrypt value, i.e., compute the modular square roots
+		// check whether input is a valid square modulo m = p * q
 		if (!tmcg_mpz_qrmn_p(vdata, p, q, m))
 			throw false;
+		// decrypt value, i.e., compute the square roots modulo m
 		tmcg_mpz_sqrtmn_fast_all(vroot[0], vroot[1], vroot[2], vroot[3], vdata,
 			p, q, m, gcdext_up, gcdext_vq, pa1d4, qa1d4);
-		// check all four square roots
+		// test all four square roots
 		for (size_t k = 0; k < 4; k++)
 		{
-			if (((mpz_sizeinbase(vroot[k], 2UL) + 7) / 8) <= (rabin_s1 + rabin_s2))
+			if ((mpz_sizeinbase(vroot[k], 2UL) / 8) <= rabin_s)
 			{
 				size_t cnt = 1;
-				mpz_export(yy, &cnt, -1, rabin_s2 + rabin_s1, 1, 0, vroot[k]);
+				mpz_export(yy, &cnt, -1, rabin_s, 1, 0, vroot[k]);
 				memcpy(Mt, yy, rabin_s2);
 				memcpy(r, yy + rabin_s2, rabin_s1);
 				tmcg_g(g12, rabin_s2, r, rabin_s1);
@@ -548,50 +548,44 @@ std::string TMCG_SecretKey::sign
 	(const std::string& data) const
 {
 	size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
-	size_t mnsize = (mpz_sizeinbase(m, 2UL) + 7) / 8;
+	size_t mnsize = mpz_sizeinbase(m, 2UL) / 8;
 	mpz_t foo, foo_sqrt[4];
 	mpz_init(foo), mpz_init(foo_sqrt[0]), mpz_init(foo_sqrt[1]),
 		mpz_init(foo_sqrt[2]), mpz_init(foo_sqrt[3]);
-	
 	assert(mpz_sizeinbase(m, 2UL) > (mnsize * 8));
 	assert(mnsize > (mdsize + TMCG_PRAB_K0));
 	assert((mnsize - mdsize) >= TMCG_PRAB_K0);
 	
-	// WARNING: This is only a probabilistic algorithm (Rabin's signature scheme),
-	// however, it should work with only a few iterations. Additionally the scheme
-	// PRab [BR96] was implemented to increase the security of digital signatures.
+	// Note that this is a probabilistic algorithm (Rabin's signature scheme),
+	// however, it should work with only a few iterations in expected time O(1).
+	// Additionally, the padding scheme PRab [BR96] was implemented to increase
+	// security of the produced digital signatures.
 	do
 	{
 		unsigned char *r = new unsigned char[TMCG_PRAB_K0];
 		gcry_randomize(r, TMCG_PRAB_K0, GCRY_STRONG_RANDOM);
-		
 		unsigned char *Mr = new unsigned char[data.length() + TMCG_PRAB_K0];
 		memcpy(Mr, data.c_str(), data.length());
 		memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
-		
 		unsigned char *w = new unsigned char[mdsize];
 		tmcg_h(w, Mr, data.length() + TMCG_PRAB_K0);
-		
 		unsigned char *g12 = new unsigned char[mnsize];
 		tmcg_g(g12, mnsize - mdsize, w, mdsize);
-		
 		for (size_t i = 0; i < TMCG_PRAB_K0; i++)
 			r[i] ^= g12[i];
-		
 		unsigned char *yy = new unsigned char[mnsize];
 		memcpy(yy, w, mdsize);
 		memcpy(yy + mdsize, r, TMCG_PRAB_K0);
 		memcpy(yy + mdsize + TMCG_PRAB_K0, g12 + TMCG_PRAB_K0,
 			mnsize - mdsize - TMCG_PRAB_K0);
 		mpz_import(foo, 1, -1, mnsize, 1, 0, yy);
-		
 		delete [] yy, delete [] g12, delete [] w, delete [] Mr, delete [] r;
 	}
 	while (!tmcg_mpz_qrmn_p(foo, p, q, m));
 	tmcg_mpz_sqrtmn_fast_all(foo_sqrt[0], foo_sqrt[1], foo_sqrt[2], foo_sqrt[3],
 		foo, p, q, m, gcdext_up, gcdext_vq, pa1d4, qa1d4);
 	
-	// choose a square root randomly (one out-of four)
+	// choose a single square root randomly (see [BR96], one out of four)
 	std::ostringstream ost;
 	ost << "sig|" << keyid() << "|" << foo_sqrt[tmcg_mpz_srandom_mod(4)] << "|";
 	mpz_clear(foo), mpz_clear(foo_sqrt[0]), mpz_clear(foo_sqrt[1]),

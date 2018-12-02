@@ -104,7 +104,7 @@ bool TMCG_PublicKey::check
 	mpz_t foo, bar;
 	std::string s = nizk;
 	size_t stage1_size = 0, stage2_size = 0, stage3_size = 0;
-	size_t mnsize = (mpz_sizeinbase(m, 2UL) + 7) / 8;
+	size_t mnsize = mpz_sizeinbase(m, 2UL) / 8;
 	unsigned char *mn = new unsigned char[mnsize];
 	
 	mpz_init(foo), mpz_init(bar);
@@ -502,18 +502,18 @@ std::string TMCG_PublicKey::encrypt
 {
 	mpz_t vdata;
 	size_t rabin_s2 = 2 * TMCG_SAEP_S0;
-	size_t rabin_s1 = ((mpz_sizeinbase(m, 2UL) + 7) / 8) - rabin_s2;
+	size_t rabin_s1 = (mpz_sizeinbase(m, 2UL) / 8) - rabin_s2;
+	size_t rabin_s = rabin_s1 + rabin_s2;
 	
-	assert(rabin_s2 < ((mpz_sizeinbase(m, 2UL) + 7) / 16));
+	assert(rabin_s2 < (mpz_sizeinbase(m, 2UL) / 16));
 	assert(rabin_s2 < rabin_s1);
-	assert(TMCG_SAEP_S0 < ((mpz_sizeinbase(m, 2UL) + 7) / 32));
+	assert(TMCG_SAEP_S0 < (mpz_sizeinbase(m, 2UL) / 32));
 	
 	// use simplified OAEP = SAEP [Bo01]
 	unsigned char *r = new unsigned char[rabin_s1];
-	gcry_randomize(r, rabin_s1, GCRY_STRONG_RANDOM);
-	
 	unsigned char *Mt = new unsigned char[rabin_s2];
 	unsigned char *g12 = new unsigned char[rabin_s2];
+	gcry_randomize(r, rabin_s1, GCRY_STRONG_RANDOM);
 	memcpy(Mt, value, TMCG_SAEP_S0);
 	memset(Mt + TMCG_SAEP_S0, 0, TMCG_SAEP_S0);
 	tmcg_g(g12, rabin_s2, r, rabin_s1);
@@ -521,11 +521,11 @@ std::string TMCG_PublicKey::encrypt
 	for (size_t i = 0; i < rabin_s2; i++)
 		Mt[i] ^= g12[i];
 	
-	unsigned char *yy = new unsigned char[rabin_s2 + rabin_s1];
+	unsigned char *yy = new unsigned char[rabin_s];
 	memcpy(yy, Mt, rabin_s2);
 	memcpy(yy + rabin_s2, r, rabin_s1);
 	mpz_init(vdata);
-	mpz_import(vdata, 1, -1, rabin_s2 + rabin_s1, 1, 0, yy);
+	mpz_import(vdata, 1, -1, rabin_s, 1, 0, yy);
 	delete [] yy, delete [] g12, delete [] Mt, delete [] r;
 	
 	// apply Rabin's encryption function, i.e., vdata = vdata^2 mod m
@@ -568,41 +568,36 @@ bool TMCG_PublicKey::verify
 			throw false;
 		}
 		
-		// verify signature (see PRab [BR96])
+		// verify signature (see PRab [BR96] for details)
 		size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
-		size_t mnsize = (mpz_sizeinbase(m, 2UL) + 7) / 8;
+		size_t mnsize = mpz_sizeinbase(m, 2UL) / 8;
 		if (mpz_sizeinbase(m, 2UL) <= (mnsize * 8))
 			throw false;
 		if (mnsize <= (mdsize + TMCG_PRAB_K0))
 			throw false;
 		mpz_mul(foo, foo, foo); // apply Rabin's verification function
 		mpz_mod(foo, foo, m);
+		size_t gsize = mnsize - mdsize - TMCG_PRAB_K0;
 		unsigned char *w = new unsigned char[mdsize];
 		unsigned char *r = new unsigned char[TMCG_PRAB_K0];
-		unsigned char *gamma = new unsigned char[mnsize-mdsize-TMCG_PRAB_K0];
+		unsigned char *gamma = new unsigned char[gsize];
 		unsigned char *yy = new unsigned char[mnsize+1024];
 		size_t cnt = 1;
 		mpz_export(yy, &cnt, -1, mnsize, 1, 0, foo);
 		memcpy(w, yy, mdsize);
 		memcpy(r, yy + mdsize, TMCG_PRAB_K0);
-		memcpy(gamma, yy + mdsize + TMCG_PRAB_K0,
-			mnsize - mdsize - TMCG_PRAB_K0);
-		
+		memcpy(gamma, yy + mdsize + TMCG_PRAB_K0, gsize);
 		unsigned char *g12 = new unsigned char[mnsize];
 		tmcg_g(g12, mnsize - mdsize, w, mdsize);
-		
 		for (size_t i = 0; i < TMCG_PRAB_K0; i++)
 			r[i] ^= g12[i];
-		
 		unsigned char *Mr = new unsigned char[data.length() + TMCG_PRAB_K0];
 		memcpy(Mr, data.c_str(), data.length());
 		memcpy(Mr + data.length(), r, TMCG_PRAB_K0);
-		
 		unsigned char *w2 = new unsigned char[mdsize];
 		tmcg_h(w2, Mr, data.length() + TMCG_PRAB_K0);
-		
-		bool ok = (memcmp(w, w2, mdsize) == 0) && (memcmp(gamma,
-			g12 + TMCG_PRAB_K0, mnsize - mdsize - TMCG_PRAB_K0) == 0);
+		bool ok = (memcmp(w, w2, mdsize) == 0) &&
+			(memcmp(gamma, g12 + TMCG_PRAB_K0, gsize) == 0);
 		delete [] w;
 		delete [] r;
 		delete [] gamma;
@@ -643,3 +638,4 @@ std::istream& operator >>
 	delete [] tmp;
 	return in;
 }
+
