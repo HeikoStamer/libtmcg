@@ -133,25 +133,25 @@ bool TMCG_PublicKey::check
 		
 		// check, whether m \not\in FP (fermat primes: m = 2^k + 1)
 		mpz_set(foo, m);
-		mpz_sub_ui(foo, foo, 1L);
+		mpz_sub_ui(foo, foo, 1UL);
 		unsigned long int k = mpz_sizeinbase(m, 2UL);
-		mpz_ui_pow_ui(bar, 2L, k);
+		mpz_ui_pow_ui(bar, 2UL, k);
 		if (!mpz_cmp(foo, bar))
 		{
 			// check, whether k is power of two
 			mpz_set_ui(foo, k);
 			unsigned long int l = mpz_sizeinbase(foo, 2UL);
-			mpz_ui_pow_ui(bar, 2L, l);
+			mpz_ui_pow_ui(bar, 2UL, l);
 			if (!mpz_cmp(foo, bar))
 			{
 				// check, whether m is not equal to 5L
-				if (!mpz_cmp_ui(m, 5L))
+				if (!mpz_cmp_ui(m, 5UL))
 					throw false;
 				
 				// check, whether 5^{2^(k/2)} \equiv -1 (mod m)
 				// [Pepin's prime test]
-				mpz_ui_pow_ui(foo, 2L, (k / 2));
-				mpz_set_ui(bar, 5L);
+				mpz_ui_pow_ui(foo, 2UL, (k / 2));
+				mpz_set_ui(bar, 5UL);
 				mpz_powm(foo, bar, foo, m);
 				mpz_set_si(bar, -1L);
 				if (mpz_congruent_p(foo, bar, m))
@@ -200,7 +200,7 @@ bool TMCG_PublicKey::check
 				mpz_gcd(bar, foo, m);
 				input << foo;
 			}
-			while (mpz_cmp_ui(bar, 1L));
+			while (mpz_cmp_ui(bar, 1UL));
 			
 			// read NIZK proof
 			std::string mpz_str;
@@ -265,7 +265,7 @@ bool TMCG_PublicKey::check
 				mpz_neg(foo, foo);
 				if (!mpz_congruent_p(bar, foo, m))
 				{
-					mpz_mul_2exp(foo, foo, 1L);
+					mpz_mul_2exp(foo, foo, 1UL);
 					if (!mpz_congruent_p(bar, foo, m))
 					{
 						mpz_neg(foo, foo);

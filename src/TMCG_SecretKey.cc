@@ -130,36 +130,36 @@ void TMCG_SecretKey::generate
 	do
 	{
 		// choose a random safe prime p, but with fixed size (n/2 + 1) bit
-		tmcg_mpz_sprime3mod4(p, (keysize / 2L) + 1L, TMCG_MR_ITERATIONS);
-		assert(!mpz_congruent_ui_p(p, 1L, 8L));
+		tmcg_mpz_sprime3mod4(p, (keysize / 2UL) + 1UL, TMCG_MR_ITERATIONS);
+		assert(!mpz_congruent_ui_p(p, 1UL, 8UL));
 		
 		// choose a random safe prime q, but with fixed size (n/2 + 1) bit
 		// and p \not\equiv q (mod 8)
-		mpz_set_ui(foo, 8L);
+		mpz_set_ui(foo, 8UL);
 		do
 		{
-			tmcg_mpz_sprime3mod4(q, (keysize / 2L) + 1L, TMCG_MR_ITERATIONS);
+			tmcg_mpz_sprime3mod4(q, (keysize / 2UL) + 1UL, TMCG_MR_ITERATIONS);
 		}
 		while (mpz_congruent_p(p, q, foo));
-		assert(!mpz_congruent_ui_p(q, 1L, 8L));
+		assert(!mpz_congruent_ui_p(q, 1UL, 8UL));
 		assert(!mpz_congruent_p(p, q, foo));
 		
 		// compute modulus: m = p \cdot q
 		mpz_mul(m, p, q);
 		
 		// compute upper bound for SAEP, i.e. 2^{n+1} + 2^n
-		mpz_set_ui(foo, 1L);
+		mpz_set_ui(foo, 1UL);
 		mpz_mul_2exp(foo, foo, keysize);
-		mpz_mul_2exp(bar, foo, 1L);
+		mpz_mul_2exp(bar, foo, 1UL);
 		mpz_add(bar, bar, foo);
 	}
-	while ((mpz_sizeinbase(m, 2L) < (keysize + 1L)) || (mpz_cmp(m, bar) >= 0));
+	while ((mpz_sizeinbase(m, 2UL) < (keysize + 1UL)) || (mpz_cmp(m, bar) >= 0));
 	
 	// choose a small $y \in NQR^\circ_m$ for fast TMCG encoding
-	mpz_set_ui(y, 1L);
+	mpz_set_ui(y, 1UL);
 	do
 	{
-		mpz_add_ui(y, y, 1L);
+		mpz_add_ui(y, y, 1UL);
 	}
 	while ((mpz_jacobi(y, m) != 1) || tmcg_mpz_qrmn_p(y, p, q, m));
 	
@@ -195,7 +195,7 @@ void TMCG_SecretKey::generate
 			mpz_gcd(bar, foo, m);
 			input << foo;
 		}
-		while (mpz_cmp_ui(bar, 1L));
+		while (mpz_cmp_ui(bar, 1UL));
 		
 		// compute bar = foo^{m^{-1} mod \phi(m)} mod m
 		mpz_powm(bar, foo, m1pq, m);
@@ -219,7 +219,7 @@ void TMCG_SecretKey::generate
 			mpz_gcd(bar, foo, m);
 			input << foo;
 		}
-		while (mpz_cmp_ui(bar, 1L));
+		while (mpz_cmp_ui(bar, 1UL));
 		
 		// compute square root of +-foo or +-2foo mod m
 		if (tmcg_mpz_qrmn_p(foo, p, q, m))
@@ -235,7 +235,7 @@ void TMCG_SecretKey::generate
 			}
 			else
 			{
-				mpz_mul_2exp(foo, foo, 1L);
+				mpz_mul_2exp(foo, foo, 1UL);
 				if (tmcg_mpz_qrmn_p(foo, p, q, m))
 				{
 					tmcg_mpz_sqrtmn_r(bar, foo, p, q, m);
@@ -246,7 +246,7 @@ void TMCG_SecretKey::generate
 					if (tmcg_mpz_qrmn_p(foo, p, q, m))
 						tmcg_mpz_sqrtmn_r(bar, foo, p, q, m);
 					else
-						mpz_set_ui(bar, 0L);
+						mpz_set_ui(bar, 0UL);
 				}
 			}
 		}
@@ -310,19 +310,19 @@ bool TMCG_SecretKey::precompute
 			throw false;
 		mpz_sub(foo, m, p);
 		mpz_sub(foo, foo, q);
-		mpz_add_ui(foo, foo, 1L);
+		mpz_add_ui(foo, foo, 1UL);
 		if (!mpz_invert(m1pq, m, foo))
 			throw false;
 		mpz_gcdext(foo, gcdext_up, gcdext_vq, p, q);
-		if (mpz_cmp_ui(foo, 1L))
+		if (mpz_cmp_ui(foo, 1UL))
 			throw false;
 		mpz_mul(gcdext_up, gcdext_up, p);
 		mpz_mul(gcdext_vq, gcdext_vq, q);
 		mpz_set(pa1d4, p), mpz_set(qa1d4, q);
-		mpz_add_ui(pa1d4, pa1d4, 1L);
-		mpz_add_ui(qa1d4, qa1d4, 1L);
-		mpz_fdiv_q_2exp(pa1d4, pa1d4, 2L);
-		mpz_fdiv_q_2exp(qa1d4, qa1d4, 2L);
+		mpz_add_ui(pa1d4, pa1d4, 1UL);
+		mpz_add_ui(qa1d4, qa1d4, 1UL);
+		mpz_fdiv_q_2exp(pa1d4, pa1d4, 2UL);
+		mpz_fdiv_q_2exp(qa1d4, qa1d4, 2UL);
 
 		throw true;
 	}
