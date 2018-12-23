@@ -7,6 +7,7 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2018-12-23] RFC4880: changed type of tmcg_openpgp_mem_alloc to unsigned long
 * [2018-12-02] release 1.3.16 of LibTMCG
 * [2018-12-02] changed constant TMCG_MAX_CARDS (decreased by factor 2)
 * [2018-12-02] changed formulas for TMCG_MAX_VALUE_CHARS and TMCG_MAX_KEY_CHARS

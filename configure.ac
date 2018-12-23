@@ -86,7 +86,7 @@ AC_DEFINE(TMCG_OPENPGP_CRC24_POLY, 0x1864CFB,
 AC_DEFINE(TMCG_OPENPGP_RADIX64_MC, 64,
 	[Define the maximum number of characters in a single line of Radix-64\
  encoding])
-AC_DEFINE(TMCG_OPENPGP_MAX_ALLOC, 2147483648,
+AC_DEFINE(TMCG_OPENPGP_MAX_ALLOC, 2147483645UL,
 	[Define the maximum number of memory to allocate for OPENPGP packet\
  context structures])
 

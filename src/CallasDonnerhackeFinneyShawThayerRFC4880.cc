@@ -5037,7 +5037,7 @@ TMCG_OpenPGP_Message::~TMCG_OpenPGP_Message
 
 // ===========================================================================
 
-size_t CallasDonnerhackeFinneyShawThayerRFC4880::tmcg_openpgp_mem_alloc = 0;
+unsigned long int CallasDonnerhackeFinneyShawThayerRFC4880::tmcg_openpgp_mem_alloc = 0;
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::MemoryGuardReset
 	()
@@ -5045,7 +5045,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::MemoryGuardReset
 	tmcg_openpgp_mem_alloc = 0;
 }
 
-size_t CallasDonnerhackeFinneyShawThayerRFC4880::MemoryGuardInfo
+unsigned long int CallasDonnerhackeFinneyShawThayerRFC4880::MemoryGuardInfo
 	()
 {
 	return tmcg_openpgp_mem_alloc;

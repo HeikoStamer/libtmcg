@@ -1279,7 +1279,7 @@ class TMCG_OpenPGP_Message
 class CallasDonnerhackeFinneyShawThayerRFC4880
 {
 	private:
-		static size_t tmcg_openpgp_mem_alloc; // memory guard of this class
+		static unsigned long int tmcg_openpgp_mem_alloc; // memory guard accum.
 		static bool NotRadix64
 			(const char c)
 		{
@@ -1424,7 +1424,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 	public:
 		static void MemoryGuardReset
 			();
-		static size_t MemoryGuardInfo
+		static unsigned long int MemoryGuardInfo
 			();
 
 		static size_t AlgorithmKeyLength

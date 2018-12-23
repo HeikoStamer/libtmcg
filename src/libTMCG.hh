@@ -227,7 +227,7 @@
 	#ifndef TMCG_OPENPGP_MAX_ALLOC
 		/* Define the maximum number of memory to allocate for OPENPGP packet
 		   context structures */
-		#define TMCG_OPENPGP_MAX_ALLOC 2147483648
+		#define TMCG_OPENPGP_MAX_ALLOC 2147483645UL
 	#endif
 
 	// definition of some common types (TODO: implement by abstraction layer)
