@@ -1,4 +1,4 @@
-Copyright (C)  2005, 2006, 2007, 2009, 2015, 2016, 2017, 2018
+Copyright (C)  2005, 2006, 2007, 2009, 2015, 2016, 2017, 2018, 2019
                Heiko Stamer <HeikoStamer@gmx.net>
   Permission is granted to copy, distribute and/or modify this document
   under the terms of the GNU Free Documentation License, Version 1.3
@@ -154,7 +154,7 @@ Requirements
   platforms with the given compilers, respectively:
 
   ++ GNU/Linux (Gentoo Linux)    x86_64    gcc 8.2.0 (details omitted)
-  ++ GNU/Linux (Gentoo Linux)    x86_64  clang 7.0.0 (details omitted)
+  ++ GNU/Linux (Gentoo Linux)    x86_64  clang 7.0.1 (details omitted)
   ++ GNU/Linux (Debian Linux)    x86_64    gcc 6.3.0 (details omitted)
   ++ GNU/Linux (Arch Linux)      x86_64    gcc 7.2.0 (details omitted)
   ++ GNU/Linux (Trisquel Linux)  x86_64    gcc 4.8.4 (details omitted)
@@ -188,7 +188,7 @@ Bugs, Contribution, Source code
 Copyright and License of this software
 --------------------------------------
   (C) 2005, 2006, 2007, 2009, 
-      2015, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+      2015, 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
         GNU General Public License version 2
 
   Please have a look at file 'COPYING' and https://www.fsf.org/.
