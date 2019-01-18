@@ -18,7 +18,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -773,6 +773,8 @@ bool TMCG_OpenPGP_Signature::Verify
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			CertificationHash(pub_hashing, "", userattribute, trailer,
 			hashalgo, hash, left);
+		if (dummy)
+			trailer.clear();
 	}
 	else
 	{
@@ -9130,6 +9132,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract
 		if (partlen && (tag != 8) && (tag != 9) && (tag != 11) && 
 		    (tag != 18))
 		{
+			if (verbose > 1)
+				std::cerr << "WARNING: tag not allowed by spec" << std::endl;
 			return 0; // error: no literal, compressed, ... allowed
 		}
 		out.insert(out.end(),
@@ -14819,6 +14823,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag1
 	TMCG_OpenPGP_PKESK *esk = NULL;
 	if (verbose > 1)
 		std::cerr << "INFO: ESK pkalgo = " << (int)ctx.pkalgo << std::endl;
+	if (verbose > 2)
+	{
+		std::cerr << "INFO: packet length = " << current_packet.size() <<
+			std::endl;
+	}
 	tmcg_openpgp_octets_t keyid;
 	if (verbose > 1)
 		std::cerr << "INFO: ESK keyid = " << std::hex;
@@ -14859,6 +14868,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 	 const tmcg_openpgp_octets_t &current_packet,
 	 TMCG_OpenPGP_Message* &msg)
 {
+	if (verbose > 2)
+	{
+		std::cerr << "INFO: packet length = " << current_packet.size() <<
+			std::endl;
+	}
 	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, keyflags;
 	tmcg_openpgp_octets_t features, psa, pha, pca, paa, embeddedsig;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
@@ -14957,6 +14971,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag3
 			" s2k_hashalgo = " << (int)ctx.s2k_hashalgo <<
 			" s2k_count = " << (int)ctx.s2k_count <<  
 			" encdatalen = " << ctx.encdatalen << std::endl;
+	if (verbose > 2)
+	{
+		std::cerr << "INFO: packet length = " << current_packet.size() <<
+			std::endl;
+	}
 	tmcg_openpgp_octets_t salt, iv, enckey;
 	for (size_t i = 0; i < sizeof(ctx.s2k_salt); i++)
 		salt.push_back(ctx.s2k_salt[i]);
@@ -14980,6 +14999,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag8
 	if (verbose > 1)
 		std::cerr << "INFO: COMP length = " << ctx.compdatalen <<
 			" compalgo = " << (int)ctx.compalgo << std::endl;
+	if (verbose > 2)
+	{
+		std::cerr << "INFO: packet length = " << current_packet.size() <<
+			std::endl;
+	}
 	if ((msg->compressed_message).size() != 0)
 	{
 		if (verbose)
@@ -15004,6 +15028,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag9
 {
 	if (verbose > 1)
 		std::cerr << "INFO: SE length = " << ctx.encdatalen << std::endl;
+	if (verbose > 2)
+	{
+		std::cerr << "INFO: packet length = " << current_packet.size() <<
+			std::endl;
+	}
 	if (msg->have_sed || msg->have_seipd || msg->have_aead)
 	{
 		if (verbose)
@@ -15029,6 +15058,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag11
 {
 	if (verbose > 1)
 		std::cerr << "INFO: LIT length = " << ctx.datalen << std::endl;
+	if (verbose > 2)
+	{
+		std::cerr << "INFO: packet length = " << current_packet.size() <<
+			std::endl;
+	}
 	if ((msg->literal_message).size() != 0)
 	{
 		if (verbose)
@@ -15056,6 +15090,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag18
 {
 	if (verbose > 1)
 		std::cerr << "INFO: SEIP length = " << ctx.encdatalen << std::endl;
+	if (verbose > 2)
+	{
+		std::cerr << "INFO: packet length = " << current_packet.size() <<
+			std::endl;
+	}
 	if (msg->have_sed || msg->have_seipd || msg->have_aead)
 	{
 		if (verbose)
@@ -15081,6 +15120,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag19
 {
 	if (verbose > 1)
 		std::cerr << "INFO: MDC length = " << sizeof(ctx.mdc_hash) << std::endl;
+	if (verbose > 2)
+	{
+		std::cerr << "INFO: packet length = " << current_packet.size() <<
+			std::endl;
+	}
 	(msg->mdc).clear();
 	for (size_t i = 0; i < sizeof(ctx.mdc_hash); i++)
 		(msg->mdc).push_back(ctx.mdc_hash[i]);
@@ -15098,6 +15142,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag20
 		std::cerr << "INFO: AEAD skalgo = " << (int)ctx.skalgo << std::endl;
 		std::cerr << "INFO: AEAD aeadalgo = " << (int)ctx.aeadalgo << std::endl;
 		std::cerr << "INFO: AEAD chunksize = " << (int)ctx.chunksize <<
+			std::endl;
+	}
+	if (verbose > 2)
+	{
+		std::cerr << "INFO: packet length = " << current_packet.size() <<
 			std::endl;
 	}
 	if (msg->have_sed || msg->have_seipd || msg->have_aead)

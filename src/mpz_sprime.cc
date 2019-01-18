@@ -2016,18 +2016,21 @@ unsigned long int primes_m1d2[] = {
 int notest
 	(mpz_ptr p, mpz_ptr q)
 {
+	assert((p == q) || (p != q)); // dummy to supress compiler warning
 	return 1;
 }
 
 int test7mod8
 	(mpz_ptr p, mpz_ptr q)
 {
+	assert((p == q) || (p != q)); // dummy to supress compiler warning
 	return mpz_congruent_ui_p(p, 7L, 8L);
 }
 
 int test3mod4
 	(mpz_ptr p, mpz_ptr q)
 {
+	assert((p == q) || (p != q)); // dummy to supress compiler warning
 	return mpz_congruent_ui_p(p, 3L, 4L);
 }
 

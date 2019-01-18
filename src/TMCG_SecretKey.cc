@@ -17,7 +17,7 @@
      Proceedings of CRYPTO 2001, LNCS 2139, pp. 275--291, 2001.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -159,7 +159,7 @@ void TMCG_SecretKey::generate
 	{
 		mpz_add_ui(y, y, 1UL);
 	}
-	while ((mpz_jacobi(y, m) != 1) || tmcg_mpz_qrmn_p(y, p, q, m));
+	while ((mpz_jacobi(y, m) != 1) || tmcg_mpz_qrmn_p(y, p, q));
 	
 	// pre-compute non-persistent values
 	bool ret = precompute();
@@ -220,28 +220,28 @@ void TMCG_SecretKey::generate
 		while (mpz_cmp_ui(bar, 1UL));
 		
 		// compute square root of +-foo or +-2foo mod m
-		if (tmcg_mpz_qrmn_p(foo, p, q, m))
+		if (tmcg_mpz_qrmn_p(foo, p, q))
 		{
 			tmcg_mpz_sqrtmn_r(bar, foo, p, q, m);
 		}
 		else
 		{
 			mpz_neg(foo, foo);
-			if (tmcg_mpz_qrmn_p(foo, p, q, m))
+			if (tmcg_mpz_qrmn_p(foo, p, q))
 			{
 				tmcg_mpz_sqrtmn_r(bar, foo, p, q, m);
 			}
 			else
 			{
 				mpz_mul_2exp(foo, foo, 1UL);
-				if (tmcg_mpz_qrmn_p(foo, p, q, m))
+				if (tmcg_mpz_qrmn_p(foo, p, q))
 				{
 					tmcg_mpz_sqrtmn_r(bar, foo, p, q, m);
 				}
 				else
 				{
 					mpz_neg(foo, foo);
-					if (tmcg_mpz_qrmn_p(foo, p, q, m))
+					if (tmcg_mpz_qrmn_p(foo, p, q))
 						tmcg_mpz_sqrtmn_r(bar, foo, p, q, m);
 					else
 						mpz_set_ui(bar, 0UL);
@@ -270,7 +270,7 @@ void TMCG_SecretKey::generate
 		while (mpz_jacobi(foo, m) != 1);
 		
 		// compute square root
-		if (!tmcg_mpz_qrmn_p(foo, p, q, m))
+		if (!tmcg_mpz_qrmn_p(foo, p, q))
 		{
 			mpz_mul(foo, foo, y);
 			mpz_mod(foo, foo, m);
@@ -503,7 +503,7 @@ bool TMCG_SecretKey::decrypt
 		}
 		
 		// check whether input is a valid square modulo m = p * q
-		if (!tmcg_mpz_qrmn_p(vdata, p, q, m))
+		if (!tmcg_mpz_qrmn_p(vdata, p, q))
 			throw false;
 		// decrypt value, i.e., compute the square roots modulo m
 		tmcg_mpz_sqrtmn_fast_all(vroot[0], vroot[1], vroot[2], vroot[3], vdata,
@@ -581,7 +581,7 @@ std::string TMCG_SecretKey::sign
 		mpz_import(foo, 1, -1, mnsize, 1, 0, yy);
 		delete [] yy, delete [] g12, delete [] w, delete [] Mr, delete [] r;
 	}
-	while (!tmcg_mpz_qrmn_p(foo, p, q, m));
+	while (!tmcg_mpz_qrmn_p(foo, p, q));
 	tmcg_mpz_sqrtmn_fast_all(foo_sqrt[0], foo_sqrt[1], foo_sqrt[2], foo_sqrt[3],
 		foo, p, q, m, gcdext_up, gcdext_vq, pa1d4, qa1d4);
 	

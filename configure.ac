@@ -1,4 +1,4 @@
-# Copyright (C) 2005--2007, 2009, 2015--2018  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2005--2007, 2009, 2015--2019  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20181203])
+AC_REVISION([20190118])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.17], [HeikoStamer@gmx.net], [libTMCG],
@@ -299,9 +299,9 @@ if test "$use_forking" = yes ; then
 	AC_DEFINE(FORKING, , [Define to enable the forking tests])
 fi
 
-# Enable all compiler warnings
-CFLAGS="$CFLAGS -Wall"
-CXXFLAGS="$CXXFLAGS -Wall"
+# Enable all compiler warnings and some more
+CFLAGS="$CFLAGS -Wall -Wextra"
+CXXFLAGS="$CXXFLAGS -Wall -Wextra"
 
 # Initialize libTMCG-config script
 AC_SUBST(LIBTMCG_CONFIG_API_VERSION)

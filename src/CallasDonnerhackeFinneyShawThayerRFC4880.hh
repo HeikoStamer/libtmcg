@@ -18,7 +18,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -80,6 +80,8 @@ template<class T> class TMCG_SecureAlloc
 		pointer allocate
 			(size_type n, const void* hint = 0)
 		{
+			if (hint)
+				hint = 0; // dummy to supress compiler warning
 			pointer adr = static_cast<pointer>(gcry_malloc_secure(n));
 //std::cerr << "TMCG_SecureAlloc::allocate(" << n << ") at 0x" << std::hex <<
 // (long int)adr << std::dec << std::endl;
@@ -90,7 +92,8 @@ template<class T> class TMCG_SecureAlloc
 		{
 //std::cerr << "TMCG_SecureAlloc::deallocate(" << n << ") at 0x" << std::hex <<
 // (long int)p << std::dec << std::endl;
-			gcry_free(p);
+			if (n > 0)
+				gcry_free(p);
 		}
 		void construct
 			(pointer p, const T& value)

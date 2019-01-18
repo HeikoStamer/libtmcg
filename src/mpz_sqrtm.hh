@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2002, 2004, 2016, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2002, 2004, 2016, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 	#include <gmp.h>
 	
 	int tmcg_mpz_qrmn_p
-		(mpz_srcptr a, mpz_srcptr p, mpz_srcptr q, mpz_srcptr n);
+		(mpz_srcptr a, mpz_srcptr p, mpz_srcptr q);
 
 	void tmcg_mpz_sqrtmp_r
 		(mpz_ptr root, mpz_srcptr a, mpz_srcptr p);

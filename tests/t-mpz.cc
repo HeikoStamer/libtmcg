@@ -619,7 +619,7 @@ soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 		{
 			do
 				tmcg_mpz_srandomm(bar2, bar);
-			while (!tmcg_mpz_qrmn_p(bar2, foo, foo2, bar));
+			while (!tmcg_mpz_qrmn_p(bar2, foo, foo2));
 			tmcg_mpz_sqrtmn_r(root, bar2, foo, foo2, bar);
 			mpz_powm_ui(root, root, 2L, bar);
 			assert(!mpz_cmp(root, bar2));

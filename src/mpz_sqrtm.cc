@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2002, 2004, 2007,
-               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@
 #include "mpz_srandom.hh"
 
 int tmcg_mpz_qrmn_p
-	(mpz_srcptr a, mpz_srcptr p, mpz_srcptr q, mpz_srcptr n)
+	(mpz_srcptr a, mpz_srcptr p, mpz_srcptr q)
 {
 	return ((mpz_jacobi(a, p) == 1) && (mpz_jacobi(a, q) == 1));
 }
