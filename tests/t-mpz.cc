@@ -44,6 +44,7 @@
 int main
 	(int argc, char **argv)
 {
+	assert(((argc > 0) && (argv != NULL)));
 	try
 	{
 		mpz_t foo, bar, foo2, bar2, root, t1, t2;
