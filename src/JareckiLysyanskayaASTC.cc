@@ -159,10 +159,10 @@ bool PedersenTrapdoorCommitmentScheme::CheckGroup
 			throw false;
 		
 		// Check whether the elements $g$ and $h$ are of order $q$.
-		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		mpz_powm(foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		mpz_powm(foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 		
@@ -370,10 +370,10 @@ bool JareckiLysyanskayaRVSS::CheckGroup
 			throw false;
 
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		mpz_powm(foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		mpz_powm(foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 

@@ -185,7 +185,7 @@ void tmcg_mpz_fpowm_init
 
 void tmcg_mpz_fpowm_precompute
 	(mpz_t fpowm_table[],
-	mpz_srcptr m, mpz_srcptr p, const size_t t)
+	 mpz_srcptr m, mpz_srcptr p, const size_t t)
 {
 	mpz_set(fpowm_table[0], m);
 	for (size_t i = 1; ((i < t) && (i < TMCG_MAX_FPOWM_T)); i++)
@@ -197,7 +197,7 @@ void tmcg_mpz_fpowm_precompute
 
 void tmcg_mpz_fpowm
 	(mpz_t fpowm_table[],
-	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
+	 mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 	mpz_t xx;
 
@@ -272,7 +272,7 @@ void tmcg_mpz_fspowm
 	mpz_t foo, bar, baz, xx;
 
 	if (mpz_cmp(m, fpowm_table[0]))
-		throw std::invalid_argument("tmcg_mpz_fpowm_ui: wrong base");
+		throw std::invalid_argument("tmcg_mpz_fspowm: wrong base");
 	mpz_init(foo), mpz_init(bar), mpz_init(baz), mpz_init_set(xx, x);
 	if (mpz_sgn(x) == -1)
 		mpz_neg(xx, x);

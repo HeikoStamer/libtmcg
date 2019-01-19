@@ -17,7 +17,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -275,10 +275,10 @@ bool CanettiGennaroJareckiKrawczykRabinRVSS::CheckGroup
 			throw false;
 
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		mpz_powm(foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		mpz_powm(foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 
@@ -1194,10 +1194,10 @@ bool CanettiGennaroJareckiKrawczykRabinZVSS::CheckGroup
 			throw false;
 
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		mpz_powm(foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		mpz_powm(foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 
@@ -1882,10 +1882,10 @@ bool CanettiGennaroJareckiKrawczykRabinDKG::CheckGroup
 			throw false;
 
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		mpz_powm(foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		mpz_powm(foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 
@@ -2721,10 +2721,10 @@ bool CanettiGennaroJareckiKrawczykRabinDSS::CheckGroup
 			throw false;
 
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		mpz_powm(foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		mpz_powm(foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 

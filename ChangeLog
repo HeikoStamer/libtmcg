@@ -7,6 +7,8 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2019-01-19] VTMF,ASTC,DKG,VRHE,EOTP,COM,VSS: make CheckGroup() more robust
+* [2019-01-19] VSSHE: security bugfix for Verify_[non]interactive_[_publiccoin]
 * [2019-01-16] mpz_spowm: added check for correct base in fast exponentiation
 * [2019-01-16] mpz_sqrtm: remove unused parameter in tmcg_mpz_qrmn_p()
 * [2019-01-16] configure.ac: added compiler option "-Wextra"

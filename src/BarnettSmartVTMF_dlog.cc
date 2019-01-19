@@ -14,7 +14,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 2009,
-                           2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -179,10 +179,11 @@ bool BarnettSmartVTMF_dlog::CheckGroup
 		// which means that the order of $g$ is $q$. Of course, we must
 		// ensure that $g$ is not trivial, i.e., $1 < g < p-1$.
 		mpz_sub_ui(bar, p, 1L);
-		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
-		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, bar) >= 0) || 
-			mpz_cmp_ui(foo, 1L))
-				throw false;
+		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, bar) >= 0))
+			throw false;
+		mpz_powm(foo, g, q, p);
+		if (mpz_cmp_ui(foo, 1L))
+			throw false;
 
 		// If we use a canonical value for $g$, further checks are needed.
 		if (canonical_g)
