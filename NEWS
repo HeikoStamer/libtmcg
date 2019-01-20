@@ -8,14 +8,17 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is
 included in the sources of this package and additionally can be obtained from
 Internet <https://www.gnu.org/licenses>.
 
-1.3.17 This is a maintenance release that fixes a security relevant bug in the
-       VSSHE module (Groth's shuffle protocol). The verification of shuffle
-       inputs with respect to membership in the underlying group was done by a
-       fast exponentiation functions with fixed generators. Unfortunately, as
-       the inputs are not these generators the verification is always passed.
-       The vulnerability has only an impact on the optimized shuffle interfaces
-       (e.g. TMCG_VerifyStackEquality_Groth) of LibTMCG. Moreover, some other
-       minor improvments are included in this release.
+1.3.17 This is a maintenance release that fixes a major bug in the VSSHE module
+       (Groth's shuffle protocol). The verification of the special component E_d
+       with respect to membership in the underlying commitment group has been
+       done wrongly by a fast exponentiation function with fixed bases. Hence
+       the check of membership for this component is always bypassed and thus
+       a malicious prover may disturb the shuffle process by supplying a bad
+       value. However, it is extremely difficult to bypass the other checks, if
+       E_d is tampered (e.g. set to zero).
+       Please note that the vulnerability has only an impact on the optimized
+       shuffle interfaces (e.g. TMCG_VerifyStackEquality_Groth) of LibTMCG.
+       Moreover, some other minor improvements are included in this release.
 1.3.16 In this release AEAD support has been added to the OpenPGP interface.
        Please note that this feature is specified by working draft only and was
        not part of the aged RFC 4880. Moreover, some bugs have been fixed and
