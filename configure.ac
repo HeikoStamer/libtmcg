@@ -18,10 +18,10 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20190118])
+AC_REVISION([20190122])
 AC_PREREQ(2.61)
 
-AC_INIT([LibTMCG], [1.3.17], [HeikoStamer@gmx.net], [libTMCG],
+AC_INIT([LibTMCG], [1.3.18], [HeikoStamer@gmx.net], [libTMCG],
 	[http://www.nongnu.org/libtmcg/])
 
 # The next two paragraphs are copies of behaviour from libgcrypt.
@@ -32,7 +32,7 @@ AC_INIT([LibTMCG], [1.3.17], [HeikoStamer@gmx.net], [libTMCG],
 #   (No interfaces changed:                   REVISION++)
 LIBTMCG_LT_CURRENT=16
 LIBTMCG_LT_AGE=0
-LIBTMCG_LT_REVISION=1
+LIBTMCG_LT_REVISION=2
 
 # If API is changed in an incompatible way: increment the next counter.
 LIBTMCG_CONFIG_API_VERSION=6
