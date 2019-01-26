@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2005, 2006, 2007, 2009,
-               2015, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2015, 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -268,7 +268,7 @@ void check
 				typeA = tmcg->TMCG_TypeOfCard(sB[i], vtmf);
 				
 				std::cout << typeA << " " << std::flush;
-				assert((typeA >= 0) && (typeA < TMCG_MAX_CARDS));
+				assert((typeA < TMCG_MAX_CARDS));
 				
 				assert(std::find(typesA.begin(), typesA.end(), typeA)
 					== typesA.end());
@@ -296,6 +296,7 @@ void check
 int main
 	(int argc, char **argv)
 {
+	assert(((argc > 0) && (argv != NULL)));
 	assert(init_libTMCG());
 	try
 	{
@@ -503,6 +504,7 @@ DE2BCBF6955817183995497CEA956AE515D2261898FA0510\
 int main
 	(int argc, char **argv)
 {
+	assert(((argc > 0) && (argv != NULL)));
 	std::cout << "test skipped" << std::endl;
 	return 77;
 }

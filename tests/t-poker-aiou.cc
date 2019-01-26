@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -443,6 +443,7 @@ void start_instance
 int main
 	(int argc, char **argv)
 {
+	assert(((argc > 0) && (argv != NULL)));
 	assert(init_libTMCG());
 	
 	try
@@ -534,6 +535,7 @@ int main
 int main
 	(int argc, char **argv)
 {
+	assert(((argc > 0) && (argv != NULL)));
 	std::cout << "test skipped" << std::endl;
 	return 77;
 }

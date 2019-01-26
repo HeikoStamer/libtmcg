@@ -9,7 +9,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -159,10 +159,10 @@ bool PedersenTrapdoorCommitmentScheme::CheckGroup
 			throw false;
 		
 		// Check whether the elements $g$ and $h$ are of order $q$.
-		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		mpz_powm(foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		mpz_powm(foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 		
@@ -294,7 +294,8 @@ JareckiLysyanskayaRVSS::JareckiLysyanskayaRVSS
 			F_size(fieldsize), G_size(subgroupsize),
 			n(n_in), t(t_in)
 {
-	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS),	mpz_init_set(h, h_CRS);
+	mpz_init_set(p, p_CRS), mpz_init_set(q, q_CRS), mpz_init_set(g, g_CRS);
+	mpz_init_set(h, h_CRS);
 
 	mpz_init_set_ui(a_i, 0L), mpz_init_set_ui(hata_i, 0L);
 	mpz_init_set_ui(alpha_i, 0L), mpz_init_set_ui(hatalpha_i, 0L);
@@ -369,10 +370,10 @@ bool JareckiLysyanskayaRVSS::CheckGroup
 			throw false;
 
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		mpz_powm(foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		mpz_powm(foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 
@@ -833,6 +834,8 @@ bool JareckiLysyanskayaRVSS::Share_twoparty
 		tmcg_mpz_fspowm(fpowm_table_h, bar, h, hatc_i, p);
 		mpz_mul(C_ik[i][0], foo, bar);
 		mpz_mod(C_ik[i][0], C_ik[i][0], p);
+		if (simulate_faulty_behaviour)
+			mpz_add_ui(C_ik[i][0], C_ik[i][0], 1UL);
 		out << C_ik[i][0] << std::endl;
 		// (in a two-party protocol this reduces simply to receiving)
 		for (size_t j = 0; j < n; j++)

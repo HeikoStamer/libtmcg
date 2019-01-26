@@ -8,7 +8,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2009, 2015, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2009,
+               2015, 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -946,8 +947,6 @@ HooghSchoenmakersSkoricVillegasVRHE::HooghSchoenmakersSkoricVillegasVRHE
 	unsigned long int fieldsize, unsigned long int subgroupsize):
 			F_size(fieldsize), G_size(subgroupsize)
 {
-	std::stringstream lej;
-	
 	mpz_init(p), mpz_init(q), mpz_init(g), mpz_init(h);
 	in >> p >> q >> g >> h;
 
@@ -1000,10 +999,10 @@ bool HooghSchoenmakersSkoricVillegasVRHE::CheckGroup
 			throw false;
 		
 		// Check whether the elements $h$ and $g$ are of order $q$.
-		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		mpz_powm(foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
-		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		mpz_powm(foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 		

@@ -10,8 +10,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2005, 2009
-               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2005, 2009,
+               2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -313,19 +313,12 @@ bool PedersenCommitmentScheme::CheckGroup
 		
 		// Check whether the elements $h, g_1, \ldots, g_n$ are of 
 		// order $q$.
-		tmcg_mpz_fpowm(fpowm_table_h, foo, h, q, p);
+		mpz_powm(foo, h, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 		for (size_t i = 0; i < g.size(); i++)
 		{
-			if (i < TMCG_MAX_FPOWM_N)
-			{
-				tmcg_mpz_fpowm(fpowm_table_g[i], foo, g[i], q, p);
-			}
-			else
-			{
-				mpz_powm(foo, g[i], q, p);
-			}
+			mpz_powm(foo, g[i], q, p);
 			if (mpz_cmp_ui(foo, 1L))
 				throw false;
 		}

@@ -1,4 +1,4 @@
-# Copyright (C) 2005--2007, 2009, 2015--2018  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2005--2007, 2009, 2015--2019  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20181112])
+AC_REVISION([20190126])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.4.0], [HeikoStamer@gmx.net], [libTMCG],
@@ -30,7 +30,7 @@ AC_INIT([LibTMCG], [1.4.0], [HeikoStamer@gmx.net], [libTMCG],
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
 #   (Interfaces added:      CURRENT++, AGE++, REVISION=0)
 #   (No interfaces changed:                   REVISION++)
-LIBTMCG_LT_CURRENT=16
+LIBTMCG_LT_CURRENT=20
 LIBTMCG_LT_AGE=0
 LIBTMCG_LT_REVISION=0
 
@@ -86,7 +86,7 @@ AC_DEFINE(TMCG_OPENPGP_CRC24_POLY, 0x1864CFB,
 AC_DEFINE(TMCG_OPENPGP_RADIX64_MC, 64,
 	[Define the maximum number of characters in a single line of Radix-64\
  encoding])
-AC_DEFINE(TMCG_OPENPGP_MAX_ALLOC, 2147483648,
+AC_DEFINE(TMCG_OPENPGP_MAX_ALLOC, 2147483645UL,
 	[Define the maximum number of memory to allocate for OPENPGP packet\
  context structures])
 
@@ -139,7 +139,7 @@ AC_DEFINE(TMCG_KEY_NIZK_STAGE3, 128,
 	
 AC_DEFINE(TMCG_MAX_PLAYERS, 32,
 	[Define the maximum number of players in the scheme of Schindelhauer])
-AC_DEFINE(TMCG_MAX_CARDS, 1024,
+AC_DEFINE(TMCG_MAX_CARDS, 512,
 	[Define the maximum number of stackable cards])
 AC_DEFINE(TMCG_MAX_TYPEBITS, 10,
 	[Define the number of bits which represents the maximum number of
@@ -151,16 +151,16 @@ AC_DEFINE(TMCG_MAX_KEYBITS,
  (8UL * TMCG_QRA_SIZE))],
 	[Define a helping macro])
 AC_DEFINE(TMCG_MAX_VALUE_CHARS,
-	[(TMCG_MAX_KEYBITS / 2UL)],
+	[(TMCG_MAX_KEYBITS / 4UL)],
+	[Define a helping macro])
+AC_DEFINE(TMCG_MAX_KEY_CHARS,
+	[(TMCG_MAX_VALUE_CHARS * 1024UL)],
 	[Define a helping macro])
 AC_DEFINE(TMCG_MAX_CARD_CHARS,
 	[(TMCG_MAX_PLAYERS * TMCG_MAX_TYPEBITS * TMCG_MAX_VALUE_CHARS)],
 	[Define a helping macro])
 AC_DEFINE(TMCG_MAX_STACK_CHARS,
 	[(TMCG_MAX_CARDS * TMCG_MAX_CARD_CHARS)],
-	[Define a helping macro])
-AC_DEFINE(TMCG_MAX_KEY_CHARS,
-	[(TMCG_MAX_KEYBITS * 1024UL)],
 	[Define a helping macro])
 
 # Checks for Libtool
@@ -269,6 +269,11 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
+AC_TYPE_UINT8_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for library functions
 AC_FUNC_MALLOC
@@ -294,9 +299,9 @@ if test "$use_forking" = yes ; then
 	AC_DEFINE(FORKING, , [Define to enable the forking tests])
 fi
 
-# Enable all compiler warnings
-CFLAGS="$CFLAGS -Wall"
-CXXFLAGS="$CXXFLAGS -Wall"
+# Enable all compiler warnings and some more
+CFLAGS="$CFLAGS -Wall -Wextra"
+CXXFLAGS="$CXXFLAGS -Wall -Wextra"
 
 # Initialize libTMCG-config script
 AC_SUBST(LIBTMCG_CONFIG_API_VERSION)

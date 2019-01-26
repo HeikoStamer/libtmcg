@@ -4,7 +4,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-               2015, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2015, 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -60,6 +60,12 @@
 		/* Define the security parameter of the used exponents (subgroup size);
 		   Underlying assumptions: DLSE (related to DDH), DLOG */
 		#define TMCG_DLSE_SIZE 256
+	#endif
+
+	#ifndef TMCG_QRA_SIZE
+		/* Define the security parameter of the TMCG public key;
+		   Underlying assumptions: QRA, FACTOR */
+		#define TMCG_QRA_SIZE 2048
 	#endif
 
 	#ifndef TMCG_AIO_HIDE_SIZE
@@ -122,9 +128,9 @@
 	
 	#ifndef TMCG_MAX_CARDS
 		/* Define the maximum number of stackable cards */
-		#define TMCG_MAX_CARDS 1024
+		#define TMCG_MAX_CARDS 512
 	#endif
-		
+	
 	#ifndef TMCG_MAX_PLAYERS
 		/* Define the maximum number of players for scheme of Schindelhauer */
 		#define TMCG_MAX_PLAYERS 32
@@ -136,6 +142,34 @@
 		   size of the message space for the scheme of Barnett and Smart */
 		#define TMCG_MAX_TYPEBITS 10
 	#endif
+
+	#ifndef TMCG_MAX_KEYBITS
+		/* Define a helping macro */
+		#define TMCG_MAX_KEYBITS \
+			((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? \
+				(8UL * TMCG_DDH_SIZE) : (8UL * TMCG_QRA_SIZE))
+	#endif
+	
+	#ifndef TMCG_MAX_VALUE_CHARS
+		/* Define a helping macro */
+		#define TMCG_MAX_VALUE_CHARS (TMCG_MAX_KEYBITS / 4UL)
+	#endif
+	
+	#ifndef TMCG_MAX_KEY_CHARS
+		/* Define a helping macro */
+		#define TMCG_MAX_KEY_CHARS (TMCG_MAX_VALUE_CHARS * 1024UL)
+	#endif
+
+	#ifndef TMCG_MAX_CARD_CHARS
+		/* Define a helping macro */
+		#define TMCG_MAX_CARD_CHARS \
+			(TMCG_MAX_PLAYERS * TMCG_MAX_TYPEBITS * TMCG_MAX_VALUE_CHARS)
+	#endif
+
+	#ifndef TMCG_MAX_STACK_CHARS
+		/* Define a helping macro */
+		#define TMCG_MAX_STACK_CHARS (TMCG_MAX_CARDS * TMCG_MAX_CARD_CHARS)
+	#endif
 	
 	#ifndef TMCG_MPZ_IO_BASE
 		/* Define the input/ouput base encoding of the iostream operators */
@@ -146,12 +180,6 @@
 		/* Define the security parameter for the signature generation
 		   with Rabin/PRab */
 		#define TMCG_PRAB_K0 20
-	#endif
-	
-	#ifndef TMCG_QRA_SIZE
-		/* Define the security parameter of the TMCG public key;
-		   Underlying assumptions: QRA, FACTOR */
-		#define TMCG_QRA_SIZE 2048
 	#endif
 	
 	#ifndef TMCG_SAEP_S0
@@ -180,34 +208,6 @@
 		#define TMCG_MAX_SSRANDOMM_CACHE 256
 	#endif
 
-	#ifndef TMCG_MAX_CARD_CHARS
-		/* Define a helping macro */
-		#define TMCG_MAX_CARD_CHARS \
-			(TMCG_MAX_PLAYERS * TMCG_MAX_TYPEBITS * TMCG_MAX_VALUE_CHARS)
-	#endif
-
-	#ifndef TMCG_MAX_STACK_CHARS
-		/* Define a helping macro */
-		#define TMCG_MAX_STACK_CHARS (TMCG_MAX_CARDS * TMCG_MAX_CARD_CHARS)
-	#endif
-	
-	#ifndef TMCG_MAX_KEYBITS
-		/* Define a helping macro */
-		#define TMCG_MAX_KEYBITS \
-			((TMCG_DDH_SIZE > TMCG_QRA_SIZE) ? \
-				(8UL * TMCG_DDH_SIZE) : (8UL * TMCG_QRA_SIZE))
-	#endif
-
-	#ifndef TMCG_MAX_VALUE_CHARS
-		/* Define a helping macro */
-		#define TMCG_MAX_VALUE_CHARS (TMCG_MAX_KEYBITS / 2UL)
-	#endif
-	
-	#ifndef TMCG_MAX_KEY_CHARS
-		/* Define a helping macro */
-		#define TMCG_MAX_KEY_CHARS (TMCG_MAX_KEYBITS * 1024UL)
-	#endif
-
 	#ifndef TMCG_OPENPGP_CRC24_INIT
 		/* Define the initial value for OPENPGP CRC24 algorithm */
 		#define TMCG_OPENPGP_CRC24_INIT 0xB704CE
@@ -227,7 +227,7 @@
 	#ifndef TMCG_OPENPGP_MAX_ALLOC
 		/* Define the maximum number of memory to allocate for OPENPGP packet
 		   context structures */
-		#define TMCG_OPENPGP_MAX_ALLOC 2147483648
+		#define TMCG_OPENPGP_MAX_ALLOC 2147483645UL
 	#endif
 
 	// definition of some common types (TODO: implement by abstraction layer)

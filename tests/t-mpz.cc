@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2005, 2006, 2007, 
-               2015, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2015, 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@
 int main
 	(int argc, char **argv)
 {
+	assert(((argc > 0) && (argv != NULL)));
 	try
 	{
 		mpz_t foo, bar, foo2, bar2, root, t1, t2;
@@ -358,11 +359,17 @@ soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 			assert(mpz_probab_prime_p(foo, 64));
 		}
 
-		// tmcg_mpz_sprime vs. tmcg_mpz_sprime_naive vs. tmcg_mpz_sprime_noninc
+		// tmcg_mpz_s[m]prime[_naive|noninc] benchmark
 		std::cout << "tmcg_mpz_sprime() benchmark" << std::endl;
 		start_clock();
 		for (size_t i = 0; i < 25; i++)
 			tmcg_mpz_sprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
+		stop_clock();
+		std::cout << elapsed_time() << std::endl;
+		std::cout << "tmcg_mpz_smprime() benchmark" << std::endl;
+		start_clock();
+		for (size_t i = 0; i < 25; i++)
+			tmcg_mpz_smprime(foo, bar, 1024, TMCG_MR_ITERATIONS);
 		stop_clock();
 		std::cout << elapsed_time() << std::endl;
 		std::cout << "tmcg_mpz_sprime_naive() benchmark" << std::endl;
@@ -613,7 +620,7 @@ soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 		{
 			do
 				tmcg_mpz_srandomm(bar2, bar);
-			while (!tmcg_mpz_qrmn_p(bar2, foo, foo2, bar));
+			while (!tmcg_mpz_qrmn_p(bar2, foo, foo2));
 			tmcg_mpz_sqrtmn_r(root, bar2, foo, foo2, bar);
 			mpz_powm_ui(root, root, 2L, bar);
 			assert(!mpz_cmp(root, bar2));

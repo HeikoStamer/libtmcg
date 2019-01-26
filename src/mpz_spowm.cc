@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -185,7 +185,7 @@ void tmcg_mpz_fpowm_init
 
 void tmcg_mpz_fpowm_precompute
 	(mpz_t fpowm_table[],
-	mpz_srcptr m, mpz_srcptr p, const size_t t)
+	 mpz_srcptr m, mpz_srcptr p, const size_t t)
 {
 	mpz_set(fpowm_table[0], m);
 	for (size_t i = 1; ((i < t) && (i < TMCG_MAX_FPOWM_T)); i++)
@@ -197,10 +197,12 @@ void tmcg_mpz_fpowm_precompute
 
 void tmcg_mpz_fpowm
 	(mpz_t fpowm_table[],
-	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
+	 mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 	mpz_t xx;
-	
+
+	if (mpz_cmp(m, fpowm_table[0]))
+		throw std::invalid_argument("tmcg_mpz_fpowm: wrong base");
 	mpz_init_set(xx, x);
 	if (mpz_sgn(x) == -1)
 		mpz_neg(xx, x);
@@ -239,7 +241,9 @@ void tmcg_mpz_fpowm_ui
 	mpz_ptr res, mpz_srcptr m, const unsigned long int x_ui, mpz_srcptr p)
 {
 	mpz_t x;
-	
+
+	if (mpz_cmp(m, fpowm_table[0]))
+		throw std::invalid_argument("tmcg_mpz_fpowm_ui: wrong base");
 	mpz_init_set_ui(x, x_ui);
 	if (mpz_sizeinbase(x, 2UL) <= TMCG_MAX_FPOWM_T)
 	{
@@ -266,7 +270,9 @@ void tmcg_mpz_fspowm
 	mpz_ptr res, mpz_srcptr m, mpz_srcptr x, mpz_srcptr p)
 {
 	mpz_t foo, bar, baz, xx;
-	
+
+	if (mpz_cmp(m, fpowm_table[0]))
+		throw std::invalid_argument("tmcg_mpz_fspowm: wrong base");
 	mpz_init(foo), mpz_init(bar), mpz_init(baz), mpz_init_set(xx, x);
 	if (mpz_sgn(x) == -1)
 		mpz_neg(xx, x);
@@ -325,4 +331,5 @@ void tmcg_mpz_fpowm_done
 	for (size_t i = 0; i < TMCG_MAX_FPOWM_T; i++)
 		mpz_clear(fpowm_table[i]);
 }
+
 

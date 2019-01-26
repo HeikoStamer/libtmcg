@@ -7,7 +7,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007,
-               2015, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2015, 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 	mpz_init(foo), mpz_init(bar), mpz_init(lej), mpz_init(t_sqrt);
 	
 	// compute mpz_sqrtmn (modular square root) of t
-	assert(tmcg_mpz_qrmn_p(t, key.p, key.q, key.m));
+	assert(tmcg_mpz_qrmn_p(t, key.p, key.q));
 	tmcg_mpz_sqrtmn_fast(t_sqrt, t, key.p, key.q, key.m,
 		key.gcdext_up, key.gcdext_vq, key.pa1d4, key.qa1d4);
 	
@@ -126,9 +126,9 @@ void SchindelhauerTMCG::TMCG_ProveQuadraticResidue
 	}
 	
 	mpz_clear(foo), mpz_clear(bar), mpz_clear(lej), mpz_clear(t_sqrt);
-	for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ri++)
+	for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ++ri)
 		mpz_clear(*ri), delete [] *ri;
-	for (std::vector<mpz_ptr>::iterator si = ss.begin(); si != ss.end(); si++)
+	for (std::vector<mpz_ptr>::iterator si = ss.begin(); si != ss.end(); ++si)
 		mpz_clear(*si), delete [] *si;
 }
 
@@ -190,9 +190,9 @@ bool SchindelhauerTMCG::TMCG_VerifyQuadraticResidue
 	catch (bool return_value)
 	{
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
-		for (std::vector<mpz_ptr>::iterator ri = RR.begin(); ri != RR.end(); ri++)
+		for (std::vector<mpz_ptr>::iterator ri = RR.begin(); ri != RR.end(); ++ri)
 			mpz_clear(*ri), delete [] *ri;
-		for (std::vector<mpz_ptr>::iterator si = SS.begin(); si != SS.end(); si++)
+		for (std::vector<mpz_ptr>::iterator si = SS.begin(); si != SS.end(); ++si)
 			mpz_clear(*si), delete [] *si;
 		return return_value;
 	}
@@ -292,12 +292,13 @@ void SchindelhauerTMCG::TMCG_MaskValue
 
 void SchindelhauerTMCG::TMCG_ProveMaskValue
 	(const TMCG_PublicKey &key, mpz_srcptr z, mpz_srcptr zz,
-		mpz_srcptr r, mpz_srcptr b, std::istream &in, std::ostream &out)
+	 mpz_srcptr r, mpz_srcptr b, std::istream &in, std::ostream &out)
 {
 	std::vector<mpz_ptr> rr, bb;
 	mpz_t foo, bar;
 	unsigned long int security_desire = 0;
 	in >> security_desire, in.ignore(1, '\n');
+	assert(mpz_cmp(z, zz));
 	
 	mpz_init(foo), mpz_init(bar);
 	try
@@ -378,9 +379,9 @@ void SchindelhauerTMCG::TMCG_ProveMaskValue
 	catch (bool excpetion)
 	{
 		mpz_clear(foo), mpz_clear(bar);
-		for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ri++)
+		for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ++ri)
 			mpz_clear(*ri), delete [] *ri;
-		for (std::vector<mpz_ptr>::iterator bi = bb.begin(); bi != bb.end(); bi++)
+		for (std::vector<mpz_ptr>::iterator bi = bb.begin(); bi != bb.end(); ++bi)
 			mpz_clear(*bi), delete [] *bi;
 		return;
 	}
@@ -435,7 +436,7 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskValue
 	catch (bool return_value)
 	{
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
-		for (std::vector<mpz_ptr>::iterator ti = T.begin(); ti != T.end(); ti++)
+		for (std::vector<mpz_ptr>::iterator ti = T.begin(); ti != T.end(); ++ti)
 			mpz_clear(*ti), delete [] *ti;
 		return return_value;
 	}
@@ -569,13 +570,13 @@ void SchindelhauerTMCG::TMCG_ProveMaskOne
 	}
 	
 	mpz_clear(y1m), mpz_clear(foo), mpz_clear(bar), mpz_clear(tim);
-	for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ri++)
+	for (std::vector<mpz_ptr>::iterator ri = rr.begin(); ri != rr.end(); ++ri)
 		mpz_clear(*ri), delete [] *ri;
-	for (std::vector<mpz_ptr>::iterator bi = bb.begin(); bi != bb.end(); bi++)
+	for (std::vector<mpz_ptr>::iterator bi = bb.begin(); bi != bb.end(); ++bi)
 		mpz_clear(*bi), delete [] *bi;
-	for (std::vector<mpz_ptr>::iterator si = ss.begin(); si != ss.end(); si++)
+	for (std::vector<mpz_ptr>::iterator si = ss.begin(); si != ss.end(); ++si)
 		mpz_clear(*si), delete [] *si;
-	for (std::vector<mpz_ptr>::iterator ci = cc.begin(); ci != cc.end(); ci++)
+	for (std::vector<mpz_ptr>::iterator ci = cc.begin(); ci != cc.end(); ++ci)
 		mpz_clear(*ci), delete [] *ci;
 }
 
@@ -639,9 +640,9 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskOne
 	catch (bool return_value)
 	{	
 		mpz_clear(foo), mpz_clear(bar), mpz_clear(lej);
-		for (std::vector<mpz_ptr>::iterator ri = RR.begin(); ri != RR.end(); ri++)
+		for (std::vector<mpz_ptr>::iterator ri = RR.begin(); ri != RR.end(); ++ri)
 			mpz_clear(*ri), delete [] *ri;
-		for (std::vector<mpz_ptr>::iterator si = SS.begin(); si != SS.end(); si++)
+		for (std::vector<mpz_ptr>::iterator si = SS.begin(); si != SS.end(); ++si)
 			mpz_clear(*si), delete [] *si;
 		return return_value;
 	}
@@ -667,7 +668,7 @@ void SchindelhauerTMCG::TMCG_ProveNonQuadraticResidue_PerfectZeroKnowledge
 			// verify proof of mask knowledge 1->foo
 			if (TMCG_VerifyMaskOne(key2, foo, in, out))
 			{
-				if (tmcg_mpz_qrmn_p(foo, key.p, key.q, key.m))
+				if (tmcg_mpz_qrmn_p(foo, key.p, key.q))
 					mpz_set_ui(bar, 1L);
 				else
 					mpz_set_ui(bar, 0L);
@@ -933,6 +934,8 @@ void SchindelhauerTMCG::TMCG_ProveMaskCard
 	(const VTMF_Card &c, const VTMF_Card &cc, const VTMF_CardSecret &cs,
 	 BarnettSmartVTMF_dlog *vtmf, std::istream &in, std::ostream &out)
 {
+	assert(in.good());
+
 	vtmf->VerifiableRemaskingProtocol_Prove(c.c_1, c.c_2, cc.c_1, cc.c_2,
 		cs.r, out);
 }
@@ -962,9 +965,13 @@ bool SchindelhauerTMCG::TMCG_VerifyMaskCard
 	(const VTMF_Card &c, const VTMF_Card &cc, BarnettSmartVTMF_dlog *vtmf,
 	 std::istream &in, std::ostream &out)
 {
-	if (!vtmf->VerifiableRemaskingProtocol_Verify(c.c_1, c.c_2, cc.c_1,
-		cc.c_2, in))
+	if (!out.good())
+		return false;
+	if (!vtmf->VerifiableRemaskingProtocol_Verify(c.c_1, c.c_2, cc.c_1, cc.c_2,
+		in))
+	{
 			return false;
+	}
 	return true;
 }
 
@@ -1006,7 +1013,7 @@ void SchindelhauerTMCG::TMCG_ProveCardSecret
 	
 	for (size_t w = 0; w < c.z[0].size(); w++)
 	{
-		if (tmcg_mpz_qrmn_p(&c.z[index][w], key.p, key.q, key.m))
+		if (tmcg_mpz_qrmn_p(&c.z[index][w], key.p, key.q))
 		{
 			out << "0" << std::endl;
 			TMCG_ProveQuadraticResidue(key, &c.z[index][w], in, out);
@@ -1023,6 +1030,8 @@ void SchindelhauerTMCG::TMCG_ProveCardSecret
 	(const VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf,
 	 std::istream &in, std::ostream &out)
 {
+	assert(in.good());
+
 	vtmf->VerifiableDecryptionProtocol_Prove(c.c_1, out);
 }
 
@@ -1066,6 +1075,8 @@ bool SchindelhauerTMCG::TMCG_VerifyCardSecret
 	(const VTMF_Card &c, BarnettSmartVTMF_dlog *vtmf,
 	 std::istream &in, std::ostream &out)
 {
+	if (!out.good())
+		return false;
 	if (!vtmf->VerifiableDecryptionProtocol_Verify_Update(c.c_1, in))
 		return false;
 	return true;
@@ -1083,7 +1094,7 @@ void SchindelhauerTMCG::TMCG_SelfCardSecret
 	for (size_t w = 0; w < c.z[0].size(); w++)
 	{
 		mpz_set_ui(&cs.r[index][w], 0L);
-		if (tmcg_mpz_qrmn_p(&c.z[index][w], key.p, key.q, key.m))
+		if (tmcg_mpz_qrmn_p(&c.z[index][w], key.p, key.q))
 			mpz_set_ui(&cs.b[index][w], 0L);
 		else
 			mpz_set_ui(&cs.b[index][w], 1L);

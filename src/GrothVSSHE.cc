@@ -7,7 +7,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2005, 2006, 2007, 2009, 
-               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -2384,8 +2384,8 @@ bool GrothVSSHE::Verify_interactive
 			throw false;
 	
 		// check whether $E_d\in\mathcal{C}_{pk}$
-		tmcg_mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
-		tmcg_mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
+		mpz_powm(foo, E_d.first, q, p);
+		mpz_powm(bar, E_d.second, q, p);
 		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
 			throw false;
 	
@@ -2552,8 +2552,8 @@ bool GrothVSSHE::Verify_interactive_publiccoin
 			throw false;
 	
 		// check whether $E_d\in\mathcal{C}_{pk}$
-		tmcg_mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
-		tmcg_mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
+		mpz_powm(foo, E_d.first, q, p);
+		mpz_powm(bar, E_d.second, q, p);
 		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
 			throw false;
 	
@@ -2727,8 +2727,8 @@ bool GrothVSSHE::Verify_noninteractive
 			throw false;
 	
 		// check whether $E_d\in\mathcal{C}_{pk}$
-		tmcg_mpz_fpowm(fpowm_table_g, foo, E_d.first, q, p);
-		tmcg_mpz_fpowm(fpowm_table_h, bar, E_d.second, q, p);
+		mpz_powm(foo, E_d.first, q, p);
+		mpz_powm(bar, E_d.second, q, p);
 		if (mpz_cmp_ui(foo, 1L) || mpz_cmp_ui(bar, 1L))
 			throw false;
 	

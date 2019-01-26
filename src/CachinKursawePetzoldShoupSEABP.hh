@@ -109,7 +109,7 @@ class CachinKursawePetzoldShoupRBC
 			 const size_t scheduler_in = aiounicast::aio_scheduler_roundrobin,
 			 const time_t timeout_in = aiounicast::aio_timeout_extremely_long);
 		void setID
-			(const std::string ID_in);
+			(const std::string &ID_in);
 		void unsetID
 			();
 		void Broadcast

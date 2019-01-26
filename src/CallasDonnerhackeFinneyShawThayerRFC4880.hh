@@ -11,14 +11,14 @@
      Internet Engineering Task Force (IETF), Request for Comments: 6637,
      June 2012.
 
-     W. Koch:
-     'OpenPGP Message Format draft-ietf-openpgp-rfc4880bis-04',
+     W. Koch et al.:
+     'OpenPGP Message Format draft-ietf-openpgp-rfc4880bis-06',
      Network Working Group, Internet-Draft,
-     January 2018.
+     November 2018.
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -80,6 +80,8 @@ template<class T> class TMCG_SecureAlloc
 		pointer allocate
 			(size_type n, const void* hint = 0)
 		{
+			if (hint)
+				hint = 0; // dummy to supress compiler warning
 			pointer adr = static_cast<pointer>(gcry_malloc_secure(n));
 //std::cerr << "TMCG_SecureAlloc::allocate(" << n << ") at 0x" << std::hex <<
 // (long int)adr << std::dec << std::endl;
@@ -90,7 +92,8 @@ template<class T> class TMCG_SecureAlloc
 		{
 //std::cerr << "TMCG_SecureAlloc::deallocate(" << n << ") at 0x" << std::hex <<
 // (long int)p << std::dec << std::endl;
-			gcry_free(p);
+			if (n > 0)
+				gcry_free(p);
 		}
 		void construct
 			(pointer p, const T& value)
@@ -128,7 +131,7 @@ template<class T> bool operator!=
 };
 
 // definition of types and constants for OpenPGP structures
-typedef unsigned char
+typedef uint8_t
 	tmcg_openpgp_byte_t;
 typedef std::vector<tmcg_openpgp_byte_t>
 	tmcg_openpgp_octets_t;
@@ -1279,7 +1282,7 @@ class TMCG_OpenPGP_Message
 class CallasDonnerhackeFinneyShawThayerRFC4880
 {
 	private:
-		static size_t tmcg_openpgp_mem_alloc; // memory guard of this class
+		static unsigned long int tmcg_openpgp_mem_alloc; // memory guard accum.
 		static bool NotRadix64
 			(const char c)
 		{
@@ -1424,7 +1427,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 	public:
 		static void MemoryGuardReset
 			();
-		static size_t MemoryGuardInfo
+		static unsigned long int MemoryGuardInfo
 			();
 
 		static size_t AlgorithmKeyLength
@@ -1860,6 +1863,13 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void PacketMdcEncode
 			(const tmcg_openpgp_octets_t					&in,
 			 tmcg_openpgp_octets_t							&out);
+		static void PacketAeadEncode
+			(const tmcg_openpgp_skalgo_t					skalgo,
+			 const tmcg_openpgp_aeadalgo_t					aeadalgo,
+			 const tmcg_openpgp_byte_t						chunksize,
+			 const tmcg_openpgp_octets_t					&iv,
+			 const tmcg_openpgp_octets_t					&in,
+			 tmcg_openpgp_octets_t							&out);
 
 		static tmcg_openpgp_byte_t SubpacketDecode
 			(tmcg_openpgp_octets_t							&in,
@@ -2013,6 +2023,16 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_octets_t							&prefix,
 			 const bool										resync,
 			 tmcg_openpgp_octets_t							&out);
+		static gcry_error_t SymmetricEncryptAEAD
+			(const tmcg_openpgp_octets_t					&in,
+			 tmcg_openpgp_secure_octets_t					&seskey,
+			 const tmcg_openpgp_skalgo_t					skalgo,
+			 const tmcg_openpgp_aeadalgo_t					aeadalgo,
+			 const tmcg_openpgp_byte_t						chunksize,
+			 const tmcg_openpgp_octets_t					&ad,
+			 const int										verbose,
+			 tmcg_openpgp_octets_t							&iv,
+			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t SymmetricDecrypt
 			(const tmcg_openpgp_octets_t					&in,
 			 tmcg_openpgp_secure_octets_t					&seskey,
@@ -2028,12 +2048,13 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t SymmetricDecryptAEAD
 			(const tmcg_openpgp_octets_t					&in,
-			 tmcg_openpgp_secure_octets_t					&seskey,
+			 const tmcg_openpgp_secure_octets_t				&seskey,
 			 const tmcg_openpgp_skalgo_t					skalgo,
 			 const tmcg_openpgp_aeadalgo_t					aeadalgo,
 			 const tmcg_openpgp_byte_t						chunksize,
 			 const tmcg_openpgp_octets_t					&iv,
 			 const tmcg_openpgp_octets_t					&ad,
+			 const int										verbose,
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t AsymmetricEncryptElgamal
 			(const tmcg_openpgp_secure_octets_t				&in,

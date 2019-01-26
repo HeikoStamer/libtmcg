@@ -113,7 +113,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 }
 
 void CachinKursawePetzoldShoupRBC::setID
-	(const std::string ID_in)
+	(const std::string &ID_in)
 {
 	// save the last ID
 	mpz_ptr tmp1 = new mpz_t();
@@ -152,7 +152,7 @@ void CachinKursawePetzoldShoupRBC::unsetID
 	()
 {
 	// set last ID
-	if (last_IDs.size() > 0)
+	if (!last_IDs.empty())
 	{
 		mpz_ptr tmp = last_IDs.back();
 		mpz_set(ID, tmp);
@@ -164,7 +164,7 @@ void CachinKursawePetzoldShoupRBC::unsetID
 		mpz_set_ui(ID, 0L);
 
 	// set last sequence counter
-	if (last_s.size() > 0)
+	if (!last_s.empty())
 	{
 		mpz_ptr tmp = last_s.back();
 		mpz_set(s, tmp);
@@ -176,7 +176,7 @@ void CachinKursawePetzoldShoupRBC::unsetID
 		mpz_set_ui(s, 0L);
 
 	// set last deliver sequence counters
-	if (last_deliver_s.size() > 0)
+	if (!last_deliver_s.empty())
 	{
 		std::vector<mpz_ptr> vtmp = last_deliver_s.back();
 		for (size_t i = 0; i < n; i++)

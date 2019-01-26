@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@
 int main
 	(int argc, char **argv)
 {
+	assert(((argc > 0) && (argv != NULL)));
 	try
 	{
 		gcry_error_t ret;
@@ -208,15 +209,19 @@ int main
 		assert(!ret);
 		time_t creation = time(NULL); // set OpenPGP creation time
 
-		// testing SymmetricEncryptAES256() and SymmetricDecryptAES256()
-		// testing AsymmetricEncryptElgamal() and AsymmetricDecryptElgamal()
-		tmcg_openpgp_octets_t lit, prefix, enc, subkeyid;
-		tmcg_openpgp_secure_octets_t seskey;
-		std::string m = "This is a test message.", armored_message;
+		// create a literal data packet
+		tmcg_openpgp_octets_t lit;
+		std::string m = "This is a simple test message. Okay, let's start."
+			" Finally one, two, three, and more bytes to proceed ...";
 		in.clear();
 		for (size_t i = 0; i < m.length(); i++)
 			in.push_back(m[i]);
 		CallasDonnerhackeFinneyShawThayerRFC4880::PacketLitEncode(in, lit);
+
+		// testing SymmetricEncryptAES256() and SymmetricDecryptAES256()
+		// testing AsymmetricEncryptElgamal() and AsymmetricDecryptElgamal()
+		tmcg_openpgp_octets_t prefix, enc, subkeyid;
+		tmcg_openpgp_secure_octets_t seskey;
 		std::cout << "SymmetricEncryptAES256(...)" << std::endl;
 		ret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			SymmetricEncryptAES256(lit, seskey, prefix, true, enc);
@@ -234,6 +239,7 @@ int main
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			PacketPkeskEncode(subkeyid, gk, myk, out);
 		CallasDonnerhackeFinneyShawThayerRFC4880::PacketSedEncode(enc, out);
+		std::string armored_message;
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			ArmorEncode(TMCG_OPENPGP_ARMOR_MESSAGE, out, armored_message);
 		std::cout << armored_message << std::endl;
@@ -252,6 +258,76 @@ int main
 		for (size_t i = 0; i < lit.size(); i++)
 		{
 			assert(lit[i] == out[i]); // check the result
+		}
+
+		// testing SymmetricEncryptAEAD(), SymmetricDecryptAEAD() with |ad| = 4
+		tmcg_openpgp_octets_t ad, iv, aeadin;
+		ad.push_back(0xC3); // packet tag in new format
+		ad.push_back(0x05); // packet version number
+		ad.push_back(TMCG_OPENPGP_SKALGO_AES256); // cipher algorithm octet
+		ad.push_back(TMCG_OPENPGP_AEADALGO_OCB); // AEAD algorithm octet
+		for (size_t j = 0; j < 32; j++)
+		{
+			aeadin.push_back(0xAD);
+			enc.clear(), out.clear(), iv.clear();
+#if GCRYPT_VERSION_NUMBER < 0x010700
+			// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
+			std::cout << "SymmetricEncryptAEAD(...)" << std::endl;
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				SymmetricEncryptAEAD(aeadin, seskey, TMCG_OPENPGP_SKALGO_AES256,
+					TMCG_OPENPGP_AEADALGO_OCB, 0, ad, 3, iv, enc);
+			assert(!ret);
+			std::cout << "SymmetricDecryptAEAD(...)" << std::endl;
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				SymmetricDecryptAEAD(enc, seskey, TMCG_OPENPGP_SKALGO_AES256,
+					TMCG_OPENPGP_AEADALGO_OCB, 0, iv, ad, 3, out);
+			assert(!ret);
+			assert(aeadin.size() == out.size());
+			for (size_t i = 0; i < aeadin.size(); i++)
+			{
+				assert(aeadin[i] == out[i]); // check the result
+			}
+#endif
+		}
+
+		// testing SymmetricEncryptAEAD(), SymmetricDecryptAEAD() with |ad| = 13
+		for (tmcg_openpgp_byte_t c = 0; c < 3; c++)
+		{
+			ad.clear(), aeadin.clear();
+			ad.push_back(0xD4); // packet tag in new format
+			ad.push_back(0x01); // packet version number
+			ad.push_back(TMCG_OPENPGP_SKALGO_AES256); // cipher algorithm octet
+			ad.push_back(TMCG_OPENPGP_AEADALGO_OCB); // AEAD algorithm octet
+			ad.push_back(c); // chunk size octet
+			for (size_t i = 0; i < 8; i++)
+				ad.push_back(0x00); // initial eight-octet big-endian chunk index
+			for (size_t j = 0; j < 1024; j++)
+			{
+				aeadin.push_back(0xAE);
+				enc.clear(), out.clear(), iv.clear();
+#if GCRYPT_VERSION_NUMBER < 0x010700
+			// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
+				std::cout << "SymmetricEncryptAEAD(...)" << std::endl;
+				ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					SymmetricEncryptAEAD(aeadin, seskey,
+						TMCG_OPENPGP_SKALGO_AES256,	TMCG_OPENPGP_AEADALGO_OCB,
+						c, ad, 3, iv, enc);
+				assert(!ret);
+				std::cout << "SymmetricDecryptAEAD(...)" << std::endl;
+				ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					SymmetricDecryptAEAD(enc, seskey,
+						TMCG_OPENPGP_SKALGO_AES256, TMCG_OPENPGP_AEADALGO_OCB,
+						c, iv, ad, 3, out);
+				assert(!ret);
+				assert(aeadin.size() == out.size());
+				for (size_t i = 0; i < aeadin.size(); i++)
+				{
+					assert(aeadin[i] == out[i]); // check the result
+				}
+#endif
+			}
 		}
 
 		// testing BinaryDocumentHash(), DashEscapeFile()

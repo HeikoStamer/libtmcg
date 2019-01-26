@@ -16,7 +16,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                     2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -140,9 +140,10 @@ bool BarnettSmartVTMF_dlog_GroupQR::CheckGroup
 		// Of course, we must also ensure that $g$ is not trivial, i.e.,
 		// $1 < g < p-1$.
 		mpz_sub_ui(foo, p, 1L);
-		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, foo) >= 0) || 
-			(mpz_jacobi(g, p) != 1L))
-				throw false;
+		if ((mpz_cmp_ui(g, 1L) <= 0) || (mpz_cmp(g, foo) >= 0))
+			throw false;
+		if (mpz_jacobi(g, p) != 1L)
+			throw false;
 
 		// If we use a canonical value for $g$, further checks are needed.
 		if (canonical_g)

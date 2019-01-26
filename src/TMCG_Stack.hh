@@ -130,7 +130,7 @@ template <typename CardType> struct TMCG_Stack
 		if ((stack.size() + s.stack.size()) <= TMCG_MAX_CARDS)
 		{
 			for (typename std::vector<std::pair<size_t, CardType> >::const_iterator
-				si = s.stack.begin(); si != s.stack.end(); si++)
+				si = s.stack.begin(); si != s.stack.end(); ++si)
 					stack.push_back(si->second);
 		}
 	}

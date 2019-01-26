@@ -7,7 +7,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -140,7 +140,7 @@ bool NaorPinkasEOTP::CheckGroup
 			throw false;
 		
 		// Check whether $g$ are of order $q$.
-		tmcg_mpz_fpowm(fpowm_table_g, foo, g, q, p);
+		mpz_powm(foo, g, q, p);
 		if (mpz_cmp_ui(foo, 1L))
 			throw false;
 		
@@ -372,14 +372,20 @@ bool NaorPinkasEOTP::Send_interactive_OneOutOfN
 		if (!CheckElement(x) || !CheckElement(y))
 			throw false;
 		for (size_t i = 0; i < z.size(); i++)
+		{
 			if (!CheckElement(z[i]))
 				throw false;
+		}
 	
 		// sender: second move
 		for (size_t i = 0; i < z.size(); i++)
+		{
 			for (size_t j = 0; j < i; j++)
+			{
 				if (!mpz_cmp(z[i], z[j]))
 					throw false;
+			}
+		}
 		for (size_t i = 0; i < M.size(); i++)
 		{
 			// choose random $(r_i, s_i)$
@@ -470,8 +476,10 @@ bool NaorPinkasEOTP::Choose_interactive_OneOutOfN
 		for (size_t i = 0; i < N; i++)
 			in >> w[i] >> ENC[i];
 		for (size_t i = 0; i < N; i++)
+		{
 			if (!CheckElement(w[i]))
 				throw false;	// check in-subgroup property
+		}
 		mpz_powm(foo, w[sigma], b, p);
 		if (!mpz_invert(bar, foo, p))
 			throw false;
@@ -623,8 +631,10 @@ bool NaorPinkasEOTP::Choose_interactive_OneOutOfN_optimized
 		for (size_t i = 0; i < N; i++)
 			in >> w[i] >> ENC[i];
 		for (size_t i = 0; i < N; i++)
+		{
 			if (!CheckElement(w[i]))
 				throw false;	// check in-subgroup property
+		}
 		mpz_powm(foo, w[sigma], b, p);
 		if (!mpz_invert(bar, foo, p))
 			throw false;
@@ -659,3 +669,4 @@ NaorPinkasEOTP::~NaorPinkasEOTP
 	tmcg_mpz_fpowm_done(fpowm_table_g);
 	delete [] fpowm_table_g;
 }
+

@@ -13,7 +13,7 @@
               'Handbook of Applied Cryptography', CRC Press, 1996.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,6 +37,10 @@
 	#include <gmp.h>
 	
 	void tmcg_mpz_sprime
+		(mpz_ptr p, mpz_ptr q,
+		 const unsigned long int qsize, 
+		 const unsigned long int mr_iterations);
+	void tmcg_mpz_smprime
 		(mpz_ptr p, mpz_ptr q,
 		 const unsigned long int qsize, 
 		 const unsigned long int mr_iterations);
