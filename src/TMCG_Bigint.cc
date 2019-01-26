@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -307,7 +307,7 @@ bool TMCG_Bigint::operator ==
 {
 	if (secret)
 	{
-		if (that.secret) // TODO: use constant-time comparison strategy 
+		if (that.secret) // TODO: use constant-time compare strategy 
 			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) == 0);
 		else
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
@@ -362,7 +362,7 @@ bool TMCG_Bigint::operator >
 {
 	if (secret)
 	{
-		if (that.secret) // TODO: use constant-time comparison strategy
+		if (that.secret) // TODO: use constant-time compare strategy
 			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) > 0);
 		else
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
@@ -379,7 +379,7 @@ bool TMCG_Bigint::operator >
 bool TMCG_Bigint::operator >
 	(const unsigned long int that) const
 {
-	if (secret) // TODO: use constant-time comparison strategy
+	if (secret) // TODO: use constant-time compare strategy
 		return (gcry_mpi_cmp_ui(secret_bigint, that) > 0);
 	else
 		return (mpz_cmp_ui(bigint, that) > 0);
@@ -390,7 +390,7 @@ bool TMCG_Bigint::operator <
 {
 	if (secret)
 	{
-		if (that.secret) // TODO: use constant-time comparison strategy
+		if (that.secret) // TODO: use constant-time compare strategy
 			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) < 0);
 		else
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
@@ -407,7 +407,7 @@ bool TMCG_Bigint::operator <
 bool TMCG_Bigint::operator <
 	(const unsigned long int that) const
 {
-	if (secret) // TODO: use constant-time comparison strategy
+	if (secret) // TODO: use constant-time compare strategy
 		return (gcry_mpi_cmp_ui(secret_bigint, that) < 0);
 	else
 		return (mpz_cmp_ui(bigint, that) < 0);
@@ -418,7 +418,7 @@ bool TMCG_Bigint::operator >=
 {
 	if (secret)
 	{
-		if (that.secret) // TODO: use constant-time comparison strategy
+		if (that.secret) // TODO: use constant-time compare strategy
 			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) >= 0);
 		else
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
@@ -435,7 +435,7 @@ bool TMCG_Bigint::operator >=
 bool TMCG_Bigint::operator >=
 	(const unsigned long int that) const
 {
-	if (secret) // TODO: use constant-time comparison strategy
+	if (secret) // TODO: use constant-time compare strategy
 		return (gcry_mpi_cmp_ui(secret_bigint, that) >= 0);
 	else
 		return (mpz_cmp_ui(bigint, that) >= 0);
@@ -446,14 +446,14 @@ bool TMCG_Bigint::operator <=
 {
 	if (secret)
 	{
-		if (that.secret) // TODO: use constant-time comparison strategy
+		if (that.secret) // TODO: use constant-time compare strategy
 			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) <= 0);
 		else
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
 	}
 	else
 	{
-		if (that.secret) // TODO: use constant-time comparison strategy
+		if (that.secret) // TODO: use constant-time compare strategy
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
 		else
 			return (mpz_cmp(bigint, that.bigint) <= 0);
@@ -463,7 +463,7 @@ bool TMCG_Bigint::operator <=
 bool TMCG_Bigint::operator <=
 	(const unsigned long int that) const
 {
-	if (secret) // TODO: use constant-time comparison strategy
+	if (secret) // TODO: use constant-time compare strategy
 		return (gcry_mpi_cmp_ui(secret_bigint, that) <= 0);
 	else
 		return (mpz_cmp_ui(bigint, that) <= 0);

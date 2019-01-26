@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@
 int main
 	(int argc, char **argv)
 {
+	assert(((argc > 0) && (argv != NULL)));
 	assert(init_libTMCG(true));
 	std::cout << "version_libTMCG() = " << version_libTMCG() << std::endl;
 	std::cout << "identifier_libTMCG() = " << identifier_libTMCG() << std::endl;
@@ -166,13 +167,22 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	// test basic operators of TMCG_Bigint(true)
 	TMCG_Bigint sfoo(true), sbar(true), sbaz(true);
 	std::cout << "TMCG_Bigint(true)" << std::endl;
-	sbar = sfoo;
+	sbar = sfoo; // == 0
 	sbaz += 42UL;
 	std::cout << " ::operator ==" << std::endl;
 	assert((sfoo == sbar) && !(sfoo == sbaz));
 	std::cout << " ::operator !=" << std::endl;
 	assert((sfoo != sbaz) && !(sfoo != sbar));
-	// TODO
+	std::cout << " ::operator >" << std::endl;
+	assert((sbaz > sfoo) && !(sfoo > sbar));
+	std::cout << " ::operator <" << std::endl;
+	assert((sfoo < sbaz) && !(sfoo < sbar));
+	std::cout << " ::operator >=" << std::endl;
+	assert((sbaz >= sfoo) && (sfoo >= sbar) && !(sfoo >= sbaz));
+	std::cout << " ::operator <=" << std::endl;
+	assert((sfoo <= sbaz) && (sfoo <= sbar) && !(sbaz <= sfoo));
+
+	// TODO: check more operators
 
 	// tmcg_mpz_*randomb, tmcg_mpz_*randomm
 	std::cout << "TMCG_Bigint()" << std::endl;
