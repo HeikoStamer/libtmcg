@@ -73,7 +73,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &keyprefs_pca_in,
 	 const tmcg_openpgp_octets_t &keyprefs_paa_in,
 	 const tmcg_openpgp_octets_t &embeddedsig_in):
-		ret(GPG_ERR_BAD_SIGNATURE),
+		ret(gcry_error(GPG_ERR_BAD_SIGNATURE)),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -142,7 +142,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &keyprefs_pca_in,
 	 const tmcg_openpgp_octets_t &keyprefs_paa_in,
 	 const tmcg_openpgp_octets_t &embeddedsig_in):
-		ret(GPG_ERR_BAD_SIGNATURE),
+		ret(gcry_error(GPG_ERR_BAD_SIGNATURE)),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -1023,7 +1023,7 @@ TMCG_OpenPGP_UserAttribute::~TMCG_OpenPGP_UserAttribute
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	():
-		ret(GPG_ERR_BAD_PUBKEY),
+		ret(gcry_error(GPG_ERR_BAD_PUBKEY)),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -1059,7 +1059,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	 const gcry_mpi_t n,
 	 const gcry_mpi_t e,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_PUBKEY),
+		ret(gcry_error(GPG_ERR_BAD_PUBKEY)),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -1103,7 +1103,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	 const gcry_mpi_t g,
 	 const gcry_mpi_t y,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_PUBKEY),
+		ret(gcry_error(GPG_ERR_BAD_PUBKEY)),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -1149,7 +1149,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	 const gcry_mpi_t g,
 	 const gcry_mpi_t y,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_PUBKEY),
+		ret(gcry_error(GPG_ERR_BAD_PUBKEY)),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -1195,7 +1195,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	 const tmcg_openpgp_byte_t* oid,
 	 const gcry_mpi_t ecpk,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_PUBKEY),
+		ret(gcry_error(GPG_ERR_BAD_PUBKEY)),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -1267,7 +1267,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	 const tmcg_openpgp_hashalgo_t kdf_hashalgo_in,
 	 const tmcg_openpgp_skalgo_t kdf_skalgo_in,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_PUBKEY),
+		ret(gcry_error(GPG_ERR_BAD_PUBKEY)),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -2085,7 +2085,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t u,
 	 const gcry_mpi_t d,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_SECKEY),
+		ret(gcry_error(GPG_ERR_BAD_SECKEY)),
 		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
@@ -2130,7 +2130,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_SECKEY),
+		ret(gcry_error(GPG_ERR_BAD_SECKEY)),
 		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
@@ -2172,7 +2172,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_SECKEY),
+		ret(gcry_error(GPG_ERR_BAD_SECKEY)),
 		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
@@ -2223,7 +2223,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const std::vector<gcry_mpi_t> &v_i,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_SECKEY),
+		ret(gcry_error(GPG_ERR_BAD_SECKEY)),
 		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
@@ -2288,7 +2288,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const gcry_mpi_t ecpk,
 	 const gcry_mpi_t ecsk,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_SECKEY),
+		ret(gcry_error(GPG_ERR_BAD_SECKEY)),
 		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
@@ -2361,7 +2361,7 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 	 const tmcg_openpgp_hashalgo_t kdf_hashalgo_in,
 	 const tmcg_openpgp_skalgo_t kdf_skalgo_in,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_SECKEY),
+		ret(gcry_error(GPG_ERR_BAD_SECKEY)),
 		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
@@ -2701,7 +2701,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	 const gcry_mpi_t n,
 	 const gcry_mpi_t e,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_PUBKEY),
+		ret(gcry_error(GPG_ERR_BAD_PUBKEY)),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -2741,7 +2741,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	 const gcry_mpi_t g,
 	 const gcry_mpi_t y,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_PUBKEY),
+		ret(gcry_error(GPG_ERR_BAD_PUBKEY)),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -2782,7 +2782,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	 const tmcg_openpgp_byte_t* oid,
 	 const gcry_mpi_t ecpk,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_PUBKEY),
+		ret(gcry_error(GPG_ERR_BAD_PUBKEY)),
 		erroff(0),
 		valid(false),
 		revoked(false),
@@ -3733,7 +3733,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t u,
 	 const gcry_mpi_t d,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_SECKEY),
+		ret(gcry_error(GPG_ERR_BAD_SECKEY)),
 		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
@@ -3776,7 +3776,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t y,
 	 const gcry_mpi_t x,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_SECKEY),
+		ret(gcry_error(GPG_ERR_BAD_SECKEY)),
 		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
@@ -3825,7 +3825,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const std::vector<gcry_mpi_t> &x_rvss_qual,
 	 const std::vector< std::vector<gcry_mpi_t> > &c_ik,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_SECKEY),
+		ret(gcry_error(GPG_ERR_BAD_SECKEY)),
 		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL)
@@ -3877,7 +3877,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		std::cerr << "ERROR: tDSS/DSA parameter mismatch" << std::endl;
 		if (ret == 0)
 			gcry_sexp_release(private_key);	
-		ret = GPG_ERR_BAD_KEY;
+		ret = gcry_error(GPG_ERR_BAD_KEY);
 	}
 }
 
@@ -3890,7 +3890,7 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 	 const gcry_mpi_t ecpk,
 	 const gcry_mpi_t ecsk,
 	 const tmcg_openpgp_octets_t &packet_in):
-		ret(GPG_ERR_BAD_SECKEY),
+		ret(gcry_error(GPG_ERR_BAD_SECKEY)),
 		erroff(0),
 		pkalgo(pkalgo_in),
 		private_key(NULL),
@@ -5861,7 +5861,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	if (buf == NULL)
 	{	
 		gcry_md_close(hd);
-		return GPG_ERR_DIGEST_ALGO;
+		return gcry_error(GPG_ERR_DIGEST_ALGO);
 	}
 	for (size_t i = 0; i < dlen; i++)
 		out.push_back(buf[i]);
@@ -5930,7 +5930,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	if (buf == NULL)
 	{	
 		gcry_md_close(hd);
-		return GPG_ERR_DIGEST_ALGO;
+		return gcry_error(GPG_ERR_DIGEST_ALGO);
 	}
 	for (size_t i = 0; i < dlen; i++)
 		out.push_back(buf[i]);
@@ -11153,7 +11153,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	tmcg_openpgp_byte_t pre[bs+2];
 	unsigned char *buf = (unsigned char*)gcry_malloc_secure(ks);
 	if (buf == NULL)
-		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+		return gcry_error(GPG_ERR_RESOURCE_LIMIT); // cannot alloc secure memory
 
 	// The symmetric cipher used may be specified in a Public-Key or
 	// Symmetric-Key Encrypted Session Key packet that precedes the
@@ -11167,7 +11167,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 	if ((bs == 0) || (ks == 0))
 	{
 		gcry_free(buf);
-		return GPG_ERR_CIPHER_ALGO; // error: bad algorithm
+		return gcry_error(GPG_ERR_CIPHER_ALGO); // error: bad algorithm
 	}
 	if (seskey.size() == (ks + 3))
 	{
@@ -11175,7 +11175,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 		if (seskey[0] != TMCG_OPENPGP_SKALGO_AES256)
 		{
 			gcry_free(buf);
-			return GPG_ERR_CIPHER_ALGO; // error: algorithm is not AES256
+			return gcry_error(GPG_ERR_CIPHER_ALGO); // error: wrong algorithm
 		}
 		for (size_t i = 0; i < ks; i++)
 		{
@@ -11187,7 +11187,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 		if (chksum != key_chksum)
 		{
 			gcry_free(buf);
-			return GPG_ERR_CHECKSUM; // error: checksum does not match
+			return gcry_error(GPG_ERR_CHECKSUM); // error: checksum mismatch
 		}
 	}
 	else if (seskey.size() == ks)
@@ -11359,11 +11359,11 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 	size_t ks = AlgorithmKeyLength(skalgo); // get key size of algorithm
 	size_t is = AlgorithmIVLength(aeadalgo); // get IV length of AEAD algorithm
 	if ((bs == 0) || (ks == 0) || (is == 0))
-		return GPG_ERR_CIPHER_ALGO; // error: bad algorithm
+		return gcry_error(GPG_ERR_CIPHER_ALGO); // error: bad algorithm
 	if (bs != 16)
-		return GPG_ERR_NOT_SUPPORTED; // error: other sizes are not supported
+		return gcry_error(GPG_ERR_NOT_SUPPORTED); // error: size not supported
 	if (chunksize > 21)
-		return GPG_ERR_NOT_SUPPORTED; // error: other sizes are not supported 
+		return gcry_error(GPG_ERR_NOT_SUPPORTED); // error: size not supported 
 
 	// The symmetric cipher used may be specified in a Public-Key or
 	// Symmetric-Key Encrypted Session Key packet that precedes the
@@ -11376,7 +11376,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 	// algorithm identifier, modulo 65536.
 	unsigned char *buf = (unsigned char*)gcry_malloc_secure(ks);
 	if (buf == NULL)
-		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+		return gcry_error(GPG_ERR_RESOURCE_LIMIT); // cannot alloc secure memory
 	size_t chksum = 0;
 	if (seskey.size() == (ks + 3))
 	{
@@ -11391,7 +11391,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 		if (chksum != key_chksum)
 		{
 			gcry_free(buf);
-			return GPG_ERR_CHECKSUM; // error: checksum does not match
+			return gcry_error(GPG_ERR_CHECKSUM); // error: checksum mismatch
 		}
 	}
 	else if (seskey.size() == ks)
@@ -11410,7 +11410,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 	else
 	{
 		gcry_free(buf);
-		return GPG_ERR_INV_SESSION_KEY; // error: bad session key provided
+		return gcry_error(GPG_ERR_INV_SESSION_KEY); // error: bad session key
 	}
 
 	enum gcry_cipher_modes ciphermode;
@@ -11433,7 +11433,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 #endif
 			break;
 		default:
-			return GPG_ERR_INV_CIPHER_MODE; // error: bad AEAD algorithm
+			return gcry_error(GPG_ERR_INV_CIPHER_MODE); // error: bad algorithm
 	}
 	if (verbose > 1)
 	{
@@ -11473,7 +11473,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 	{
 		gcry_free(buf);
 		gcry_cipher_close(hd);
-		return GPG_ERR_INV_CIPHER_MODE; // error: length is out of specification
+		return gcry_error(GPG_ERR_INV_CIPHER_MODE); // error: length out of spec
 	}
 	if (verbose > 1)
 	{
@@ -11536,7 +11536,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 		{
 			gcry_free(buf);
 			gcry_cipher_close(hd);
-			return GPG_ERR_TOO_SHORT; // error: input too short
+			return gcry_error(GPG_ERR_TOO_SHORT); // error: input too short
 		}
 		size_t len = in.size();
 		unsigned char inbuf[len], outbuf[len], tag[taglen];
@@ -11696,7 +11696,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 			{
 				gcry_free(buf);
 				gcry_cipher_close(hd);
-				return GPG_ERR_TOO_SHORT; // error: input too short
+				return gcry_error(GPG_ERR_TOO_SHORT); // error: input too short
 			}
 			unsigned char inbuf[chunkdim], outbuf[chunkdim], tag[taglen];
 			for (uint64_t i = 0; i < chunkdim; i++)
@@ -11816,7 +11816,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 		{
 			gcry_free(buf);
 			gcry_cipher_close(hd);
-			return GPG_ERR_TOO_SHORT; // error: input too short
+			return gcry_error(GPG_ERR_TOO_SHORT); // error: input too short
 		}
 		size_t len = in.size() - nbytes;
 		if (verbose > 2)
@@ -12004,12 +12004,12 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	size_t bs = AlgorithmIVLength(algo); // get block size of algorithm
 	size_t ks = AlgorithmKeyLength(algo); // get key size of algorithm
 	if ((bs == 0) || (ks == 0))
-		return GPG_ERR_CIPHER_ALGO; // error: bad algorithm
+		return gcry_error(GPG_ERR_CIPHER_ALGO); // error: bad algorithm
 	if (seskey.size() == 0)
-		return GPG_ERR_INV_SESSION_KEY; // error: no session key provided
+		return gcry_error(GPG_ERR_INV_SESSION_KEY); // error: no session key
 	unsigned char *buf = (unsigned char*)gcry_malloc_secure(ks);
 	if (buf == NULL)
-		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+		return gcry_error(GPG_ERR_RESOURCE_LIMIT); // cannot alloc secure memory
 
 	// The symmetric cipher used may be specified in a Public-Key or
 	// Symmetric-Key Encrypted Session Key packet that precedes the
@@ -12034,7 +12034,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 		if (chksum != key_chksum)
 		{
 			gcry_free(buf);
-			return GPG_ERR_CHECKSUM; // error: checksum does not match
+			return gcry_error(GPG_ERR_CHECKSUM); // error: checksum mismatch
 		}
 	}
 	else if (seskey.size() == ks)
@@ -12053,12 +12053,12 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 	else
 	{
 		gcry_free(buf);
-		return GPG_ERR_INV_SESSION_KEY; // error: bad session key provided
+		return gcry_error(GPG_ERR_INV_SESSION_KEY); // error: bad session key
 	}
 	if (in.size() < (bs + 2))
 	{
 		gcry_free(buf);
-		return GPG_ERR_TOO_SHORT; // error: input too short (no encrypt. prefix)
+		return gcry_error(GPG_ERR_TOO_SHORT); // error: input too short (no pfx)
 	}
 	// The data is encrypted in CFB mode, with a CFB shift size equal to
 	// the cipher’s block size. The Initial Vector (IV) is specified as
@@ -12105,13 +12105,13 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 			gcry_cipher_close(hd);
 			return ret;
 		}
-		prefix.push_back(buf[0]); // decrypted prefix
+		prefix.push_back(buf[0]); // decrypted prefix (pfx)
 	}
 	if ((prefix[bs] != prefix[bs-2]) || (prefix[bs+1] != prefix[bs-1]))
 	{
 		gcry_free(buf);
 		gcry_cipher_close(hd);
-		return GPG_ERR_INV_SESSION_KEY; // error: prefix corrupt
+		return gcry_error(GPG_ERR_INV_SESSION_KEY); // error: prefix corrupt
 	}
 	if (resync)
 	{  	
@@ -12198,17 +12198,17 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 	size_t ks = AlgorithmKeyLength(skalgo); // get key size of algorithm
 	size_t is = AlgorithmIVLength(aeadalgo); // get IV length of AEAD algorithm
 	if ((bs == 0) || (ks == 0))
-		return GPG_ERR_CIPHER_ALGO; // error: bad algorithm
+		return gcry_error(GPG_ERR_CIPHER_ALGO); // error: bad algorithm
 	if (seskey.size() == 0)
-		return GPG_ERR_INV_SESSION_KEY; // error: no session key provided
+		return gcry_error(GPG_ERR_INV_SESSION_KEY); // error: no session key
 	if (bs != 16)
-		return GPG_ERR_CIPHER_ALGO; // error: other block sizes are not permitted
+		return gcry_error(GPG_ERR_CIPHER_ALGO); // error: size not permitted
 	if ((is == 0) || (is > iv.size()))
-		return GPG_ERR_INV_PACKET; // error: bad algorithm or IV too short
+		return gcry_error(GPG_ERR_INV_PACKET); // error: IV too short
 	if (chunksize > 56)
-		return GPG_ERR_INV_PACKET; // error: chunk size out of specification
+		return gcry_error(GPG_ERR_INV_PACKET); // error: chunk size out of spec
 	if (chunksize > 21)
-		return GPG_ERR_NOT_SUPPORTED; // error: other sizes are not supported 
+		return gcry_error(GPG_ERR_NOT_SUPPORTED); // error: size not supported 
 
 	// The symmetric cipher used may be specified in a Public-Key or
 	// Symmetric-Key Encrypted Session Key packet that precedes the
@@ -12221,7 +12221,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 	// algorithm identifier, modulo 65536.
 	unsigned char *buf = (unsigned char*)gcry_malloc_secure(ks);
 	if (buf == NULL)
-		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+		return gcry_error(GPG_ERR_RESOURCE_LIMIT); // cannot alloc secure memory
 	size_t chksum = 0;
 	if (seskey.size() == (ks + 3))
 	{
@@ -12236,7 +12236,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 		if (chksum != key_chksum)
 		{
 			gcry_free(buf);
-			return GPG_ERR_CHECKSUM; // error: checksum does not match
+			return gcry_error(GPG_ERR_CHECKSUM); // error: checksum mismatch
 		}
 	}
 	else if (seskey.size() == ks)
@@ -12248,7 +12248,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 	else
 	{
 		gcry_free(buf);
-		return GPG_ERR_INV_SESSION_KEY; // error: bad session key provided
+		return gcry_error(GPG_ERR_INV_SESSION_KEY); // error: bad session key
 	}
 
 	enum gcry_cipher_modes ciphermode;
@@ -12271,7 +12271,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 #endif
 			break;
 		default:
-			return GPG_ERR_INV_CIPHER_MODE; // error: bad AEAD algorithm
+			return gcry_error(GPG_ERR_INV_CIPHER_MODE); // error: bad algorithm
 	}
 	if (verbose > 1)
 	{
@@ -12311,7 +12311,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 	{
 		gcry_free(buf);
 		gcry_cipher_close(hd);
-		return GPG_ERR_INV_CIPHER_MODE; // error: length is out of specification
+		return gcry_error(GPG_ERR_INV_CIPHER_MODE); // error: length out of spec
 	}
 	if (verbose > 1)
 	{
@@ -12373,7 +12373,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 		{
 			gcry_free(buf);
 			gcry_cipher_close(hd);
-			return GPG_ERR_TOO_SHORT; // error: input too short
+			return gcry_error(GPG_ERR_TOO_SHORT); // error: input too short
 		}
 		size_t len = in.size() - taglen;
 		unsigned char inbuf[len], outbuf[len], tag[taglen];
@@ -12420,7 +12420,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 		{
 			gcry_free(buf);
 			gcry_cipher_close(hd);
-			return GPG_ERR_TOO_SHORT; // error: input too short
+			return gcry_error(GPG_ERR_TOO_SHORT); // error: input too short
 		}
 		uint64_t chunkdim = ((uint64_t)1 << (chunksize + 6));
 		uint64_t chunks = ((uint64_t)in.size()-1-taglen) / (chunkdim + taglen);
@@ -12518,7 +12518,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 			{
 				gcry_free(buf);
 				gcry_cipher_close(hd);
-				return GPG_ERR_TOO_SHORT; // error: input too short
+				return gcry_error(GPG_ERR_TOO_SHORT); // error: input too short
 			}
 			unsigned char inbuf[chunkdim], outbuf[chunkdim], tag[taglen];
 			for (uint64_t i = 0; i < chunkdim; i++)
@@ -12610,7 +12610,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 		{
 			gcry_free(buf);
 			gcry_cipher_close(hd);
-			return GPG_ERR_TOO_SHORT; // error: input too short
+			return gcry_error(GPG_ERR_TOO_SHORT); // error: input too short
 		}
 		size_t len = in.size() - (nbytes + taglen + taglen);
 		if (verbose > 2)
@@ -12741,7 +12741,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 		{
 			gcry_free(buf);
 			gcry_cipher_close(hd);
-			return GPG_ERR_TOO_SHORT; // error: input too short
+			return gcry_error(GPG_ERR_TOO_SHORT); // error: input too short
 		}
 		if (verbose > 2)
 			std::cerr << "INFO: SymmetricDecryptAEAD final tag = " << std::hex;
@@ -12788,7 +12788,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptElgamal
 	size_t bufsize = 2048, buflen = 0, erroff;
 	unsigned char *buf = (unsigned char*)gcry_malloc_secure(bufsize);
 	if (buf == NULL)
-		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+		return gcry_error(GPG_ERR_RESOURCE_LIMIT); // cannot alloc secure memory
 
 	// This value is then encoded as described in PKCS#1 block encoding
 	// EME-PKCS1-v1_5 in Section 7.2.1 of [RFC3447] to form the "m" value
@@ -12840,7 +12840,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptElgamal
 	if (buf == NULL)
 	{
 		gcry_sexp_release(decryption);
-		return GPG_ERR_VALUE_NOT_FOUND;
+		return gcry_error(GPG_ERR_VALUE_NOT_FOUND); // error: no data found
 	}
 	for (size_t i = 0; i < buflen; i++)
 		out.push_back(buf[i]);
@@ -12857,7 +12857,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptRSA
 	size_t bufsize = 2048, buflen = 0, erroff;
 	unsigned char *buf = (unsigned char*)gcry_malloc_secure(bufsize);
 	if (buf == NULL)
-		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+		return gcry_error(GPG_ERR_RESOURCE_LIMIT); // cannot alloc secure memory
 
 	// This value is then encoded as described in PKCS#1 block encoding
 	// EME-PKCS1-v1_5 in Section 7.2.1 of [RFC3447] to form the "m" value
@@ -12908,7 +12908,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptRSA
 	if (buf == NULL)
 	{
 		gcry_sexp_release(decryption);
-		return GPG_ERR_VALUE_NOT_FOUND;
+		return gcry_error(GPG_ERR_VALUE_NOT_FOUND); // error: no data found
 	}
 	for (size_t i = 0; i < buflen; i++)
 		out.push_back(buf[i]);
@@ -12927,7 +12927,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 	unsigned int curvebits = 0;
 	const char *curvename = gcry_pk_get_curve(key, 0, &curvebits);
 	if (curvename == NULL)
-		return GPG_ERR_BAD_DATA;
+		return gcry_error(GPG_ERR_BAD_DATA); // error: bad curve
 	gcry_mpi_t v;
 	v = gcry_mpi_snew(1024);
 	gcry_mpi_randomize(v, curvebits - 1, GCRY_STRONG_RANDOM);
@@ -12963,7 +12963,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 	if (buf == NULL)
 	{
 		gcry_mpi_release(S);
-		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+		return gcry_error(GPG_ERR_RESOURCE_LIMIT); // cannot alloc secure memory
 	}
 	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buf, bufsize, &buflen, S);
 	gcry_mpi_release(S);
@@ -12987,7 +12987,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 	else
 	{
 		gcry_free(buf);
-		return GPG_ERR_BAD_DATA;
+		return gcry_error(GPG_ERR_BAD_DATA); // error: bad EC-point format
 	}
 	ret = KDFCompute(hashalgo, skalgo, ZB, curve, rcpfpr, Z);
 	if (ret)
@@ -13002,26 +13002,26 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 	if (Z.size() < AlgorithmHashLength(hashalgo))
 	{
 		gcry_free(buf);
-		return GPG_ERR_BAD_DATA;
+		return gcry_error(GPG_ERR_BAD_DATA); // error: wrapped data too short
 	}
 	if (Z.size() < gcry_cipher_get_algo_keylen(skalgo))
 	{
 		gcry_free(buf);
-		return GPG_ERR_BAD_DATA;
+		return gcry_error(GPG_ERR_BAD_DATA); // error: wrapped data too short
 	}
 	if ((hashalgo != TMCG_OPENPGP_HASHALGO_SHA256) &&
 		(hashalgo != TMCG_OPENPGP_HASHALGO_SHA384) &&
 		(hashalgo != TMCG_OPENPGP_HASHALGO_SHA512))
 	{
 		gcry_free(buf);
-		return GPG_ERR_BAD_PUBKEY;
+		return gcry_error(GPG_ERR_BAD_PUBKEY); // error: algorithm out of spec
 	}
 	if ((skalgo != TMCG_OPENPGP_SKALGO_AES128) &&
 		(skalgo != TMCG_OPENPGP_SKALGO_AES192) &&
 		(skalgo != TMCG_OPENPGP_SKALGO_AES256))
 	{
 		gcry_free(buf);
-		return GPG_ERR_BAD_PUBKEY;
+		return gcry_error(GPG_ERR_BAD_PUBKEY); // error: algorithm out of spec
 	}
 	gcry_cipher_hd_t hd;
 	ret = gcry_cipher_open(&hd, skalgo, GCRY_CIPHER_MODE_AESWRAP,
@@ -13091,7 +13091,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 	if (buf == NULL)
 	{
 		gcry_mpi_release(S);
-		return GPG_ERR_RESOURCE_LIMIT; // cannot allocate secure memory
+		return gcry_error(GPG_ERR_RESOURCE_LIMIT); // cannot alloc secure memory
 	}
 	ret = gcry_mpi_print(GCRYMPI_FMT_USG, buf, bufsize, &buflen, S);
 	gcry_mpi_release(S);
@@ -13115,7 +13115,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 	else
 	{
 		gcry_free(buf);
-		return GPG_ERR_BAD_DATA;
+		return gcry_error(GPG_ERR_BAD_DATA); // error: bad EC-point format
 	}
 	ret = KDFCompute(hashalgo, skalgo, ZB, curve, rcpfpr, Z);
 	if (ret)
@@ -13130,26 +13130,26 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 	if (Z.size() < AlgorithmHashLength(hashalgo))
 	{
 		gcry_free(buf);
-		return GPG_ERR_BAD_DATA;
+		return gcry_error(GPG_ERR_BAD_DATA); // error: wrapped data too short
 	}
 	if (Z.size() < gcry_cipher_get_algo_keylen(skalgo))
 	{
 		gcry_free(buf);
-		return GPG_ERR_BAD_DATA;
+		return gcry_error(GPG_ERR_BAD_DATA); // error: wrapped data too short
 	}
 	if ((hashalgo != TMCG_OPENPGP_HASHALGO_SHA256) &&
 		(hashalgo != TMCG_OPENPGP_HASHALGO_SHA384) &&
 		(hashalgo != TMCG_OPENPGP_HASHALGO_SHA512))
 	{
 		gcry_free(buf);
-		return GPG_ERR_BAD_PUBKEY;
+		return gcry_error(GPG_ERR_BAD_PUBKEY); // error: algorithm out of spec
 	}
 	if ((skalgo != TMCG_OPENPGP_SKALGO_AES128) &&
 		(skalgo != TMCG_OPENPGP_SKALGO_AES192) &&
 		(skalgo != TMCG_OPENPGP_SKALGO_AES256))
 	{
 		gcry_free(buf);
-		return GPG_ERR_BAD_PUBKEY;
+		return gcry_error(GPG_ERR_BAD_PUBKEY); // error: algorithm out of spec
 	}
 	gcry_cipher_hd_t hd;
 	ret = gcry_cipher_open(&hd, skalgo, GCRY_CIPHER_MODE_AESWRAP,
@@ -13170,7 +13170,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 	{
 		gcry_free(buf);
 		gcry_cipher_close(hd);
-		return GPG_ERR_BAD_DATA;
+		return gcry_error(GPG_ERR_BAD_DATA); // error: bad wrapped data
 	}
 	ret = gcry_cipher_decrypt(hd, buf, bufsize, rkw, rkwlen);
 	gcry_cipher_close(hd);
@@ -13185,7 +13185,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricDecryptECDH
 	if ((symm_alg_keylen == 0) || ((rkwlen - 8) < symm_alg_keylen))
 	{
 		gcry_free(buf);
-		return GPG_ERR_BAD_DATA;
+		return gcry_error(GPG_ERR_BAD_DATA); // error: bad wrapped data
 	}
 	for (size_t i = 0; ((i <= symm_alg_keylen) && (i < bufsize)); i++)
 		out.push_back(buf[i]);
@@ -13217,12 +13217,12 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricSignDSA
 	qbits = gcry_mpi_get_nbits(q);
 	gcry_mpi_release(q);
 	if (((in.size() * 8) < qbits) || (qbits < 160))
-		return GPG_ERR_BAD_PUBKEY;
+		return gcry_error(GPG_ERR_BAD_PUBKEY); // error: q-length out of spec
 	trunclen = in.size();
 	while ((trunclen * 8) > qbits)
 		--trunclen;
 	if ((trunclen * 8) != qbits)
-		return GPG_ERR_BAD_PUBKEY;
+		return gcry_error(GPG_ERR_BAD_PUBKEY); // error: q-length out of spec
 	memset(buf, 0, sizeof(buf));
 	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buf)) && 
 	                    (i < trunclen)); i++, buflen++)
@@ -13326,12 +13326,12 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyDSA
 	qbits = gcry_mpi_get_nbits(q);
 	gcry_mpi_release(q);
 	if (((in.size() * 8) < qbits) || (qbits < 160))
-		return GPG_ERR_BAD_PUBKEY;
+		return gcry_error(GPG_ERR_BAD_PUBKEY); // error: q-length out of spec
 	trunclen = in.size();
 	while ((trunclen * 8) > qbits)
 		--trunclen;
 	if ((trunclen * 8) != qbits)
-		return GPG_ERR_BAD_PUBKEY;
+		return gcry_error(GPG_ERR_BAD_PUBKEY); // error: q-length out of spec
 	memset(buf, 0, sizeof(buf));
 	for (size_t i = 0; ((i < in.size()) && (i < sizeof(buf)) &&
 	                    (i < trunclen)); i++, buflen++)
