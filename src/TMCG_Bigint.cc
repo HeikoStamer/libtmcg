@@ -240,8 +240,12 @@ TMCG_Bigint& TMCG_Bigint::operator /=
 			throw std::invalid_argument("TMCG_Bigint::operation not allowed");
 		else
 		{
-			assert(mpz_divisible_p(bigint, that.bigint));
-			mpz_divexact(bigint, bigint, that.bigint);
+			if (mpz_cmp_ui(that.bigint, 0UL) == 0)
+				throw std::domain_error("TMCG_Bigint::division by zero");
+			if (mpz_divisible_p(bigint, that.bigint))
+				mpz_divexact(bigint, bigint, that.bigint);
+			else
+				mpz_tdiv_q(bigint, bigint, that.bigint);
 		}
 	}
 	return *this;
@@ -254,8 +258,12 @@ TMCG_Bigint& TMCG_Bigint::operator /=
 		throw std::invalid_argument("TMCG_Bigint::operation not allowed");
 	else
 	{
-		assert(mpz_divisible_ui_p(bigint, that));
-		mpz_divexact_ui(bigint, bigint, that);
+		if (that == 0UL)
+			throw std::domain_error("TMCG_Bigint::division by zero");
+		if (mpz_divisible_ui_p(bigint, that))
+			mpz_divexact_ui(bigint, bigint, that);
+		else
+			mpz_tdiv_q_ui(bigint, bigint, that);
 	}
 	return *this;
 }
@@ -282,7 +290,11 @@ TMCG_Bigint& TMCG_Bigint::operator %=
 		if (that.secret)
 			throw std::invalid_argument("TMCG_Bigint::operation not allowed");
 		else
+		{
+			if (mpz_cmp_ui(that.bigint, 0UL) == 0)
+				throw std::domain_error("TMCG_Bigint::division by zero");
 			mpz_mod(bigint, bigint, that.bigint);
+		}
 	}
 	return *this;
 }
@@ -290,6 +302,8 @@ TMCG_Bigint& TMCG_Bigint::operator %=
 TMCG_Bigint& TMCG_Bigint::operator %=
 	(const unsigned long int that)
 {
+	if (that == 0UL)
+		throw std::domain_error("TMCG_Bigint::division by zero");
 	if (secret)
 	{
 		gcry_mpi_t divisor = gcry_mpi_new(8);
@@ -638,7 +652,7 @@ void TMCG_Bigint::srandomb
 {
 	if (secret)
 	{
-		gcry_mpi_randomize(secret_bigint, bits, GCRY_STRONG_RANDOM); // FIXME: use Botan
+		gcry_mpi_randomize(secret_bigint, bits, GCRY_STRONG_RANDOM); // FIXME: add Botan
 		gcry_mpi_clear_highbit(secret_bigint, bits);
 	}
 	else
@@ -650,7 +664,7 @@ void TMCG_Bigint::ssrandomb
 {
 	if (secret)
 	{
-		gcry_mpi_randomize(secret_bigint, bits, GCRY_VERY_STRONG_RANDOM); // FIXME: use Botan
+		gcry_mpi_randomize(secret_bigint, bits, GCRY_VERY_STRONG_RANDOM); // FIXME: add Botan
 		gcry_mpi_clear_highbit(secret_bigint, bits);
 	}
 	else
