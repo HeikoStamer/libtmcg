@@ -181,8 +181,26 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	assert((sbaz >= sfoo) && (sfoo >= sbar) && !(sfoo >= sbaz));
 	std::cout << " ::operator <=" << std::endl;
 	assert((sfoo <= sbaz) && (sfoo <= sbar) && !(sbaz <= sfoo));
-
+	std::cout << " ::operator +=" << std::endl;
+	sfoo += sbar;
+	assert((sfoo == sbar));
+	sfoo += sbaz;
+	assert((sfoo > sbar) && (sfoo == sbaz));
+	std::cout << " ::operator += (unsigned long int)" << std::endl;
+	sfoo = 0UL;
+	sfoo += 7UL;
+	assert((sfoo != sbar) && (sfoo < sbaz));
 	// TODO: check more operators
+	std::cout << " ::operator - (negation)" << std::endl;
+	-sfoo;
+	assert((sfoo < sbar));
+	std::cout << " ::abs()" << std::endl;
+	sfoo.abs();
+	assert((sfoo > sbar));
+	std::cout << " ::probab_prime()" << std::endl;
+	assert(sfoo.probab_prime(500));
+	sfoo += 1UL;
+	assert(!sfoo.probab_prime(500));
 
 	// tmcg_mpz_*randomb, tmcg_mpz_*randomm
 	std::cout << "TMCG_Bigint()" << std::endl;

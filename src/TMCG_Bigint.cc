@@ -500,13 +500,23 @@ bool TMCG_Bigint::probab_prime
 		gcry_error_t ret = gcry_prime_check(secret_bigint, 0);
 		if (ret == 0)
 			return true;
-		else if (ret == GPG_ERR_NO_PRIME)
+		else if (gcry_err_code(ret) == GPG_ERR_NO_PRIME)
 			return false;
 		else
 			throw std::invalid_argument("TMCG_Bigint::gcry_prime_check failed");
 	}
 	else
-		return mpz_probab_prime_p(bigint, reps);
+	{
+		int ret = mpz_probab_prime_p(bigint, reps);
+		if (ret == 0)
+			return false; // definitely non-prime
+		else if (ret == 1)
+			return true; // probably prime
+		else if (ret == 2)
+			return true; // definitely prime
+		else
+			throw std::invalid_argument("TMCG_Bigint::mpz_probab_prime_p failed");
+	}
 }
 
 void TMCG_Bigint::mul2exp
