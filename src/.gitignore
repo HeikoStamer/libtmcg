@@ -1,0 +1,9 @@
+.libs
+.deps
+Makefile
+libTMCG-config
+gen_primes
+*.o
+*.lo
+*.in
+*.la
