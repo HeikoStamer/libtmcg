@@ -9,7 +9,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -649,7 +649,8 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					mpz_cmp(message[2], deliver_s[who]))
 				{
 					std::cerr << "RBC(" << j << "): sequence counter does" <<
-						" not match for " << who << std::endl;
+						" not match for " << who << " (" << message[2] <<
+						" vs " << deliver_s[who] << ")" << std::endl;
 				}
 				// buffer the acknowledged message for later delivery
 				RBC_Message vtmp;
@@ -746,8 +747,9 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			}
 			if (!mpz_cmp(message[0], ID) && mpz_cmp(message[2], deliver_s[who]))
 			{
-				std::cerr << "RBC(" << j << "): squence counter does not" <<
-					" match for " << who << std::endl;
+				std::cerr << "RBC(" << j << "): sequence counter does not" <<
+					" match for " << who << " (" << message[2] <<
+						" vs " << deliver_s[who] << ")" << std::endl;
 			}
 			// buffer the acknowledged message for later delivery
 			RBC_Message vtmp;
