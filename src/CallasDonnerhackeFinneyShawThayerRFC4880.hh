@@ -2,7 +2,7 @@
   CallasDonnerhackeFinneyShawThayerRFC4880.hh, OpenPGP Message Format
 
      J. Callas, L. Donnerhacke, H. Finney, D. Shaw, R. Thayer:
-     'OpenPGP Message Format',
+	 'OpenPGP Message Format',
      Network Working Group, Request for Comments: 4880,
      November 2007.
 
