@@ -2,7 +2,7 @@
   Data structure for the secrets of a stack. This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                     2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -126,10 +126,9 @@ template <typename CardSecretType> struct TMCG_StackSecret
 	size_t find_position
 		(const size_t index) const
 	{
-		return distance(stack.begin(),
-			std::find_if(stack.begin(), stack.end(),
-				std::bind2nd(eq_first_component(),
-					std::pair<size_t, CardSecretType>(index, CardSecretType()))));
+		return distance(stack.begin(), std::find_if(stack.begin(), stack.end(),
+			std::bind2nd(eq_first_component(),
+				std::pair<size_t, CardSecretType>(index, CardSecretType()))));
 	}
 	
 	/** This method searches for a permutation index in the stack secret.
@@ -160,11 +159,12 @@ template <typename CardSecretType> struct TMCG_StackSecret
 				throw false;
 			char *ec;
 			size_t size = std::strtoul(size_str.c_str(), &ec, 10);
-			if ((*ec != '\0') || (size <= 0) || (size > TMCG_MAX_CARDS) ||
-				!TMCG_ParseHelper::nx(s, '^'))
-			{
+			if (*ec != '\0')
 				throw false;
-			}
+			if ((size <= 0) || (size > TMCG_MAX_CARDS))
+				throw false;
+			if (!TMCG_ParseHelper::nx(s, '^'))
+				throw false;
 			
 			// cards on stack
 			for (size_t i = 0; i < size; i++)
@@ -176,16 +176,19 @@ template <typename CardSecretType> struct TMCG_StackSecret
 				if (!TMCG_ParseHelper::gs(s, '^', pi_str))
 					throw false;
 				lej.first = std::strtoul(pi_str.c_str(), &ec, 10);
-				if ((*ec != '\0') || (lej.first < 0) || (lej.first >= size) ||
-					!TMCG_ParseHelper::nx(s, '^'))
-				{
+				if (*ec != '\0')
 					throw false;
-				}
+				if (lej.first >= size)
+					throw false;
+				if (!TMCG_ParseHelper::nx(s, '^'))
+					throw false;
 				
 				// card secret
 				if (!TMCG_ParseHelper::gs(s, '^', cs_str))
 					throw false;
-				if (!lej.second.import(cs_str) || !TMCG_ParseHelper::nx(s, '^'))
+				if (!lej.second.import(cs_str))
+					throw false;
+				if (!TMCG_ParseHelper::nx(s, '^'))
 					throw false;
 				
 				// store pair
