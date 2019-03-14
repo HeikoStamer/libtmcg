@@ -13043,6 +13043,11 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 		buf[i] = in[i];
 	tmcg_openpgp_skalgo_t symm_alg_ID = (tmcg_openpgp_skalgo_t)buf[0];
 	size_t pkcs5_padding_off = AlgorithmKeyLength(symm_alg_ID) + 3;
+	if (pkcs5_padding_off > 40)
+	{
+		gcry_free(buf);
+		return gcry_error(GPG_ERR_BAD_DATA); // error: bad padding offset
+	}
 	size_t pkcs5_padding_len = 40 - pkcs5_padding_off;
 	for (size_t i = pkcs5_padding_off; i < 40; i++)
 	{
