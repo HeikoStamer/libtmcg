@@ -19,9 +19,9 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20181201.
+Revision 20190315.
 
-Copyright @copyright{} 2005--2007, 2009, 2015--2018 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
+Copyright @copyright{} 2005--2007, 2009, 2015--2019 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -493,7 +493,7 @@ Additionally, often the assumption is made that the computation proceeds in
 synchronized rounds and that the parties are connected by a complete network
 of private (i.e. untappable and authenticated) point-to-point channels.
 
-There is an importand distinction between @emph{fully synchronous} and
+There is an important distinction between @emph{fully synchronous} and
 @emph{partially synchronous} communication model with respect to coverage
 and the resulting adverserial power. However, a detailed discussion of such issues
 is beyond the scope of this manual. The reader is referred to the famous textbook
@@ -2688,7 +2688,7 @@ of the same instance.
 		by the session leader. However, this is not verifiable by other
 		parties and a malicious leader can choose @math{g_j := h^{\xi_j} \bmod p}
 		for some secret @math{\xi_j\in {\bf Z}_q} where @math{1 \le j \le n}.
-		Thus it is importand to call @code{SetupGenerators_publiccoin}
+		Thus it is important to call @code{SetupGenerators_publiccoin}
 		during game initialization before any shuffle verification is
 		performed.
 	@end deftypeop
