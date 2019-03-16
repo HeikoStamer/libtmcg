@@ -230,7 +230,7 @@ AC_ARG_WITH(botan,
  [])
 if test "x$with_botan" != x ; then
 	AC_MSG_CHECKING([for Botan])
-	if test "x$BOTAN_PREFIX" == xyes ; then
+	if test "x$BOTAN_PREFIX" = xyes ; then
 		BOTAN_PREFIX="/usr"
 	fi
 	AC_MSG_RESULT([in $BOTAN_PREFIX])
