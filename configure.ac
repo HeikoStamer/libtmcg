@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20190122])
+AC_REVISION([20190317])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.3.18], [HeikoStamer@gmx.net], [libTMCG],
@@ -230,7 +230,7 @@ AC_ARG_WITH(botan,
  [])
 if test "x$with_botan" != x ; then
 	AC_MSG_CHECKING([for Botan])
-	if test "x$BOTAN_PREFIX" == xyes ; then
+	if test "x$BOTAN_PREFIX" = xyes ; then
 		BOTAN_PREFIX="/usr"
 	fi
 	AC_MSG_RESULT([in $BOTAN_PREFIX])
