@@ -3,7 +3,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -58,15 +58,19 @@ aiounicast_select::aiounicast_select
 	// initialize scheduler
 	aio_schedule_current = 0, aio_schedule_buffer = 0;
 
-	// initialize buffers
+	// initialize file descriptors and buffers
 	buf_in_size = TMCG_MAX_VALUE_CHARS;
 	for (size_t i = 0; i < n_in; i++)
 	{
 		fd_in[i] = fd_in_in[i];
+		if (fd_in[i] >= FD_SETSIZE)
+			throw std::invalid_argument("aiounicast_select: fd_in >= FD_SETSIZE");
 		unsigned char *buf = new unsigned char[buf_in_size];
 		buf_in.push_back(buf), buf_ptr.push_back(0);
 		buf_flag.push_back(false);
 		fd_out[i] = fd_out_in[i];
+		if (fd_out[i] >= FD_SETSIZE)
+			throw std::invalid_argument("aiounicast_select: fd_out >= FD_SETSIZE");
 	}
 
 	// initialize ordered buffer for receiving mpz_t
