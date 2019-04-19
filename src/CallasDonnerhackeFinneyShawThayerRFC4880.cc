@@ -9258,7 +9258,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		firstlen = false;
 	}
 	tmcg_openpgp_octets_t hspd, uspd, mpis;
-	size_t mlen = 0;
+	size_t mlen = 0, pkt_offset = 0;
 	uint32_t hspdlen = 0, uspdlen = 0;
 	switch (tag)
 	{
@@ -9645,12 +9645,20 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (pkt.size() < 10)
 				return 0; // error: incorrect packet body
 			out.version = pkt[0];
-			if (out.version != 4)
-				return 0; // error: version not supported
 			out.keycreationtime = (pkt[1] << 24) +
 				(pkt[2] << 16) + (pkt[3] << 8) + pkt[4];
 			out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[5];
-			mpis.insert(mpis.end(), pkt.begin()+6, pkt.end());
+			if (out.version == 4)
+			{
+				pkt_offset = 6;
+			}
+			else if (out.version == 5)
+			{
+				pkt_offset = 10;
+			}
+			else
+				return 0; // error: version not supported
+			mpis.insert(mpis.end(), pkt.begin()+pkt_offset, pkt.end());
 			if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
 			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
@@ -9704,16 +9712,16 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
 			{
 				// Algorithm-Specific Fields for ECDH keys [RFC 6637]
-				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[6];
+				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[pkt_offset];
 				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
 					return 0; // error: values reserved for future extensions
-				if (pkt.size() < (7 + out.curveoidlen))
+				if (pkt.size() < (pkt_offset + 1 + out.curveoidlen))
 					return 0; // error: OID too short
 				for (size_t i = 0; i < out.curveoidlen; i++)
-					out.curveoid[i] = pkt[7+i];
+					out.curveoid[i] = pkt[pkt_offset+1+i];
 				mpis.clear();
 				mpis.insert(mpis.end(),
-					pkt.begin()+7+out.curveoidlen, pkt.end());
+					pkt.begin()+pkt_offset+1+out.curveoidlen, pkt.end());
 				mlen = PacketMPIDecode(mpis, out.ecpk);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
@@ -9733,16 +9741,16 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			{
 				// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
 				// Algorithm-Specific Fields for EdDSA keys [draft RFC 4880bis]
-				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[6];
+				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[pkt_offset];
 				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
 					return 0; // error: values reserved for future extensions
-				if (pkt.size() < (7 + out.curveoidlen))
+				if (pkt.size() < (pkt_offset + 1 + out.curveoidlen))
 					return 0; // error: OID too short
 				for (size_t i = 0; i < out.curveoidlen; i++)
-					out.curveoid[i] = pkt[7+i];
+					out.curveoid[i] = pkt[pkt_offset+1+i];
 				mpis.clear();
 				mpis.insert(mpis.end(),
-					pkt.begin()+7+out.curveoidlen, pkt.end());
+					pkt.begin()+pkt_offset+1+out.curveoidlen, pkt.end());
 				mlen = PacketMPIDecode(mpis, out.ecpk);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
@@ -10004,8 +10012,20 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				return 0; // error: no S2K convention
 			out.s2kconv = mpis[0];
 			mpis.erase(mpis.begin(), mpis.begin()+1);
+			if (out.version == 5)
+			{
+				if (out.s2kconv == 255)
+					return 0; // error: forbidden by spec (RFC4880bis)
+				mpis.erase(mpis.begin(), mpis.begin()+1); // skip octet count
+			}
 			if (out.s2kconv == 0)
 			{
+				if (out.version == 5)
+				{
+					if (mpis.size() < 4)
+						return 0; // error: no v5 octet count
+					mpis.erase(mpis.begin(), mpis.begin()+4); // skip octet count
+				}
 				tmcg_openpgp_secure_octets_t smpis;
 				for (size_t i = 0; i < mpis.size(); i++)
 					smpis.push_back(mpis[i]); // copy
@@ -10086,13 +10106,21 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					return 0; // error: checksum mismatch
 				mpis.erase(mpis.begin(), mpis.begin()+2);
 			}
-			else if ((out.s2kconv == 254) || (out.s2kconv == 255))
+			else if ((out.s2kconv == 253) || (out.s2kconv == 254) ||
+				(out.s2kconv == 255))
 			{
-				// encrypted + SHA-1 hash or checksum
+				// encrypted + AEAD or SHA-1 hash or checksum
 				if (mpis.size() < 1)
 					return 0; // error: no sym. algorithm
 				out.skalgo = (tmcg_openpgp_skalgo_t)mpis[0];
 				mpis.erase(mpis.begin(), mpis.begin()+1);
+				if (out.s2kconv == 253)
+				{
+					if (mpis.size() < 1)
+						return 0; // error: no AEAD algorithm
+					out.aeadalgo = (tmcg_openpgp_aeadalgo_t)mpis[0];
+					mpis.erase(mpis.begin(), mpis.begin()+1);
+				}
 				if (mpis.size() < 2)
 					return 0; // error: bad S2K specifier
 				out.s2k_type = (tmcg_openpgp_stringtokey_t)mpis[0];
@@ -10135,6 +10163,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					out.iv[i] = mpis[i];
 				mpis.erase(mpis.begin(), mpis.begin()+ivlen);
 				if (mpis.size() < 4)
+					return 0; // error: no v5 octet count
+				if (out.version == 5)
+					mpis.erase(mpis.begin(), mpis.begin()+4); // skip v5 octet count
+				if (mpis.size() < 4)
 					return 0; // error: bad encrypted data
 				if (out.encdatalen != 0)
 					return 0; // already seen within context
@@ -10157,12 +10189,20 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			if (pkt.size() < 10)
 				return 0; // error: incorrect packet body
 			out.version = pkt[0];
-			if (out.version != 4)
-				return 0; // error: version not supported
 			out.keycreationtime = (pkt[1] << 24) +
 				(pkt[2] << 16) + (pkt[3] << 8) + pkt[4];
 			out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[5];
-			mpis.insert(mpis.end(), pkt.begin()+6, pkt.end());
+			if (out.version == 4)
+			{
+				pkt_offset = 6;
+			}
+			else if (out.version == 5)
+			{
+				pkt_offset = 10;
+			}
+			else
+				return 0; // error: version not supported
+			mpis.insert(mpis.end(), pkt.begin()+pkt_offset, pkt.end());
 			if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
 			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
@@ -10216,16 +10256,16 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
 			{
 				// Algorithm-Specific Fields for ECDH keys [RFC 6637]
-				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[6];
+				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[pkt_offset];
 				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
 					return 0; // error: values reserved for future extensions
-				if (pkt.size() < (7 + out.curveoidlen))
+				if (pkt.size() < (pkt_offset + 1 + out.curveoidlen))
 					return 0; // error: OID too short
 				for (size_t i = 0; i < out.curveoidlen; i++)
-					out.curveoid[i] = pkt[7+i];
+					out.curveoid[i] = pkt[pkt_offset+1+i];
 				mpis.clear();
 				mpis.insert(mpis.end(),
-					pkt.begin()+7+out.curveoidlen, pkt.end());
+					pkt.begin()+pkt_offset+1+out.curveoidlen, pkt.end());
 				mlen = PacketMPIDecode(mpis, out.ecpk);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
@@ -10244,16 +10284,16 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			{
 				// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
 				// Algorithm-Specific Fields for EdDSA keys [draft RFC 4880bis]
-				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[6];
+				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[pkt_offset];
 				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
 					return 0; // error: values reserved for future extensions
-				if (pkt.size() < (7 + out.curveoidlen))
+				if (pkt.size() < (pkt_offset + 1 + out.curveoidlen))
 					return 0; // error: OID too short
 				for (size_t i = 0; i < out.curveoidlen; i++)
-					out.curveoid[i] = pkt[7+i];
+					out.curveoid[i] = pkt[pkt_offset+1+i];
 				mpis.clear();
 				mpis.insert(mpis.end(),
-					pkt.begin()+7+out.curveoidlen, pkt.end());
+					pkt.begin()+pkt_offset+1+out.curveoidlen, pkt.end());
 				mlen = PacketMPIDecode(mpis, out.ecpk);
 				if (!mlen || (mlen > mpis.size()))
 					return 0; // error: bad or zero mpi
@@ -14603,7 +14643,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
 	 const tmcg_openpgp_octets_t &current_packet,
 	 bool &primary, TMCG_OpenPGP_Prvkey* &prv)
 {
-	if (ctx.version != 4)
+// FIXME: pass ctx.version to constructor; v5: calculate different fingerprint
+	if ((ctx.version != 4) && (ctx.version != 5))
 	{
 		if (verbose)
 			std::cerr << "WARNING: secret-key packet version " <<
