@@ -5737,6 +5737,29 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 	delete [] hash;
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintComputeV5
+	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &out)
+{
+	tmcg_openpgp_byte_t *buffer = new tmcg_openpgp_byte_t[in.size() + 5];
+	tmcg_openpgp_byte_t *hash = new tmcg_openpgp_byte_t[32]; // SHA256 size
+
+	// A V5 fingerprint is the 256-bit SHA2-256 hash of the octet 0x9A,
+	// followed by the four-octet packet length, followed by the entire
+	// Public-Key packet starting with the version field.
+	buffer[0] = 0x9A;
+	buffer[1] = (in.size() >> 24) & 0xFF;
+	buffer[2] = (in.size() >> 16) & 0xFF;
+	buffer[3] = (in.size() >> 8) & 0xFF;
+	buffer[4] = in.size() & 0xFF;
+	for (size_t i = 0; i < in.size(); i++)
+		buffer[5+i] = in[i];
+	gcry_md_hash_buffer(GCRY_MD_SHA256, hash, buffer, in.size() + 5);
+	for (size_t i = 0; i < 32; i++)
+		out.push_back(hash[i]);
+	delete [] buffer;
+	delete [] hash;
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintConvertPlain
 	(const tmcg_openpgp_octets_t &in, std::string &out)
 {
@@ -6365,7 +6388,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
 	}
 	gcry_free(buffer);
 }
-
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIEncode
 	(const gcry_mpi_t in, tmcg_openpgp_octets_t &out)
