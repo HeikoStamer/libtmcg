@@ -849,7 +849,31 @@ int main
 		delete mallory;
 		delete ring;
 
-		// test V5 key
+		// test non-encrypted V5 key [RFC4880bis]
+		std::string emma_armored =
+"-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n\r\n"
+"lGEFXJH05BYAAAAtCSsGAQQB2kcPAQEHQFhZlVcVVtwf+21xNQPX+ecMJJBL0MPd\r\n"
+"fj75iux+my8QAAAAAAAiAQCHZ1SnSUmWqxEsoI6facIVZQu6mph3cBFzzTvcm5lA\r\n"
+"Ng5ctBhlbW1hLmdvbGRtYW5AZXhhbXBsZS5uZXSIlgUTFggASCIhBRk0e8mHJGQC\r\n"
+"X5nfPsLgAA7ZiEiS4fez6kyUAJFZVptUBQJckfTkAhsDBQsJCAcCAyICAQYVCgkI\r\n"
+"CwIEFgIDAQIeBwIXgAAA9cAA/jiR3yMsZMeEQ40u6uzEoXa6UXeV/S3wwJAXRJy9\r\n"
+"M8s0AP9vuL/7AyTfFXwwzSjDnYmzS0qAhbLDQ643N+MXGBJ2BZxmBVyR9OQSAAAA\r\n"
+"MgorBgEEAZdVAQUBAQdA+nysrzml2UCweAqtpDuncSPlvrcBWKU0yfU0YvYWWAoD\r\n"
+"AQgHAAAAAAAiAP9OdAPppjU1WwpqjIItkxr+VPQRT8Zm/Riw7U3F6v3OiBFHiHoF\r\n"
+"GBYIACwiIQUZNHvJhyRkAl+Z3z7C4AAO2YhIkuH3s+pMlACRWVabVAUCXJH05AIb\r\n"
+"DAAAOSQBAP4BOOIR/sGLNMOfeb5fPs/02QMieoiSjIBnijhob2U5AQC+RtOHCHx7\r\n"
+"TcIYl5/Uyoi+FOvPLcNw4hOv2nwUzSSVAw==\r\n"
+"=IiS2\r\n"
+"-----END PGP PRIVATE KEY BLOCK-----\r\n";
+		TMCG_OpenPGP_Prvkey *emma = NULL;
+		ring = new TMCG_OpenPGP_Keyring();
+		std::cout << "PrivateKeyBlockParse(emma_armored, 3, \"\", emma)" <<
+			std::endl;
+		parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
+			PrivateKeyBlockParse(emma_armored, 3, "", emma);
+		assert(parse_ok);
+		delete emma;
+		delete ring;
 	
 		return 0;
 	}
