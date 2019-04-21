@@ -1584,6 +1584,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void PacketScalarFourEncode
 			(const size_t									in,
 			 tmcg_openpgp_octets_t							&out);
+		static void PacketScalarEightEncode
+			(const uint64_t									in,
+			 tmcg_openpgp_octets_t							&out);
 		static void PacketTimeEncode
 			(const time_t									in,
 			 tmcg_openpgp_octets_t							&out);
@@ -2031,6 +2034,11 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_hashalgo_t					hashalgo,
 			 tmcg_openpgp_octets_t							&hash,
 			 tmcg_openpgp_octets_t							&left);
+		static bool StandaloneHashV5
+			(const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
 		static void CertificationHashV3
 			(const tmcg_openpgp_octets_t					&key,
 			 const std::string								&uid,
@@ -2039,6 +2047,14 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_octets_t							&hash,
 			 tmcg_openpgp_octets_t							&left);
 		static void CertificationHash
+			(const tmcg_openpgp_octets_t					&key,
+			 const std::string								&uid,
+			 const tmcg_openpgp_octets_t					&uat,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
+		static void CertificationHashV5
 			(const tmcg_openpgp_octets_t					&key,
 			 const std::string								&uid,
 			 const tmcg_openpgp_octets_t					&uat,
@@ -2058,6 +2074,12 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_hashalgo_t					hashalgo,
 			 tmcg_openpgp_octets_t							&hash,
 			 tmcg_openpgp_octets_t							&left);
+		static void KeyHashV5
+			(const tmcg_openpgp_octets_t					&key,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
 		static void KeyHashV3
 			(const tmcg_openpgp_octets_t					&primary,
 			 const tmcg_openpgp_octets_t					&subkey,
@@ -2066,6 +2088,13 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_octets_t							&hash,
 			 tmcg_openpgp_octets_t							&left);
 		static void KeyHash
+			(const tmcg_openpgp_octets_t					&primary,
+			 const tmcg_openpgp_octets_t					&subkey,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
+		static void KeyHashV5
 			(const tmcg_openpgp_octets_t					&primary,
 			 const tmcg_openpgp_octets_t					&subkey,
 			 const tmcg_openpgp_octets_t					&trailer,

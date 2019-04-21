@@ -560,6 +560,18 @@ bool TMCG_OpenPGP_Signature::Verify
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			StandaloneHash(trailer, hashalgo, hash, left);
 	}
+	else if (version == 5)
+	{
+		trailer.push_back(5);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			StandaloneHashV5(trailer, hashalgo, hash, left);
+	}
 	else
 	{
 		if (verbose)
@@ -613,6 +625,18 @@ bool TMCG_OpenPGP_Signature::Verify
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			KeyHash(hashing, trailer, hashalgo, hash, left);
 	}
+	else if (version == 5)
+	{
+		trailer.push_back(5);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			KeyHashV5(hashing, trailer, hashalgo, hash, left);
+	}
 	else
 	{
 		if (verbose)
@@ -658,6 +682,18 @@ bool TMCG_OpenPGP_Signature::Verify
 	else if (version == 4)
 	{
 		trailer.push_back(4);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			KeyHash(pub_hashing, sub_hashing, trailer, hashalgo, hash, left);
+	}
+	else if (version == 5)
+	{
+		trailer.push_back(5);
 		trailer.push_back(type);
 		trailer.push_back(pkalgo);
 		trailer.push_back(hashalgo);
@@ -724,6 +760,20 @@ bool TMCG_OpenPGP_Signature::Verify
 			CertificationHash(pub_hashing, userid, empty, trailer,
 			hashalgo, hash, left);	
 	}
+	else if (version == 5)
+	{
+		tmcg_openpgp_octets_t empty;
+		trailer.push_back(5);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			CertificationHashV5(pub_hashing, userid, empty, trailer,
+			hashalgo, hash, left);	
+	}
 	else
 	{
 		if (verbose)
@@ -767,6 +817,21 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			CertificationHash(pub_hashing, "", userattribute, trailer,
+			hashalgo, hash, left);
+		if (dummy)
+			trailer.clear();
+	}
+	else if (version == 5)
+	{
+		trailer.push_back(5);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			CertificationHashV5(pub_hashing, "", userattribute, trailer,
 			hashalgo, hash, left);
 		if (dummy)
 			trailer.clear();
@@ -6677,6 +6742,20 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketScalarFourEncode
 	out.push_back(in & 0xFF);
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketScalarEightEncode
+	(const uint64_t in, tmcg_openpgp_octets_t &out)
+{
+	// eight-octet scalar
+	out.push_back((in >> 56) & 0xFF);
+	out.push_back((in >> 48) & 0xFF);
+	out.push_back((in >> 40) & 0xFF);
+	out.push_back((in >> 32) & 0xFF);
+	out.push_back((in >> 24) & 0xFF);
+	out.push_back((in >> 16) & 0xFF);
+	out.push_back((in >> 8) & 0xFF);
+	out.push_back(in & 0xFF);
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode
 	(const time_t in, tmcg_openpgp_octets_t &out)
 {
@@ -11539,6 +11618,27 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::StandaloneHash
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::StandaloneHashV5
+	(const tmcg_openpgp_octets_t &trailer, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// *  the two octets 0x05 and 0xFF,
+	// *  a eight-octet big-endian number that is the length of the
+	//    hashed data from the Signature packet stopping right before the
+	//    0x05, 0xff octets.
+	hash_input.push_back(0x05);
+	hash_input.push_back(0xFF);
+	PacketScalarEightEncode(trailer.size(), hash_input);
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+	return true;
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV3
 	(const tmcg_openpgp_octets_t &key, const std::string &uid, 
 	 const tmcg_openpgp_octets_t &trailer,
@@ -11640,6 +11740,52 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 		left.push_back(hash[i]);
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV5
+	(const tmcg_openpgp_octets_t &key, const std::string &uid, 
+	 const tmcg_openpgp_octets_t &uat, const tmcg_openpgp_octets_t &trailer,
+	 const tmcg_openpgp_hashalgo_t hashalgo,
+	 tmcg_openpgp_octets_t &hash, tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+	size_t uidlen = uid.length();
+
+	hash_input.push_back(0x99);
+	hash_input.push_back((key.size() >> 8) & 0xFF);
+	hash_input.push_back(key.size() & 0xFF);
+	hash_input.insert(hash_input.end(), key.begin(), key.end());
+	if (uat.size() == 0)
+	{
+		hash_input.push_back(0xB4);
+		hash_input.push_back((uidlen >> 24) & 0xFF);
+		hash_input.push_back((uidlen >> 16) & 0xFF);
+		hash_input.push_back((uidlen >> 8) & 0xFF);
+		hash_input.push_back(uidlen & 0xFF);
+		for (size_t i = 0; i < uidlen; i++)
+			hash_input.push_back(uid[i]);
+	}
+	else
+	{
+		hash_input.push_back(0xD1);
+		hash_input.push_back((uat.size() >> 24) & 0xFF);
+		hash_input.push_back((uat.size() >> 16) & 0xFF);
+		hash_input.push_back((uat.size() >> 8) & 0xFF);
+		hash_input.push_back(uat.size() & 0xFF);
+		for (size_t i = 0; i < uat.size(); i++)
+			hash_input.push_back(uat[i]);
+	}
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// *  the two octets 0x05 and 0xFF,
+	// *  a eight-octet big-endian number that is the length of the
+	//    hashed data from the Signature packet stopping right before the
+	//    0x05, 0xff octets.
+	hash_input.push_back(0x05);
+	hash_input.push_back(0xFF);
+	PacketScalarEightEncode(trailer.size(), hash_input);
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV3
 	(const tmcg_openpgp_octets_t &key,
 	 const tmcg_openpgp_octets_t &trailer,
@@ -11716,6 +11862,31 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV5
+	(const tmcg_openpgp_octets_t &key,
+	 const tmcg_openpgp_octets_t &trailer,
+	 const tmcg_openpgp_hashalgo_t hashalgo, 
+	 tmcg_openpgp_octets_t &hash, tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+
+	hash_input.push_back(0x99);
+	hash_input.push_back((key.size() >> 8) & 0xFF);
+	hash_input.push_back(key.size() & 0xFF);
+	hash_input.insert(hash_input.end(), key.begin(), key.end());
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// *  the two octets 0x05 and 0xFF,
+	// *  a eight-octet big-endian number that is the length of the
+	//    hashed data from the Signature packet stopping right before the
+	//    0x05, 0xff octets.
+	hash_input.push_back(0x05);
+	hash_input.push_back(0xFF);
+	PacketScalarEightEncode(trailer.size(), hash_input);
 	HashCompute(hashalgo, hash_input, hash);
 	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
@@ -11805,6 +11976,36 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV5
+	(const tmcg_openpgp_octets_t &primary,
+	 const tmcg_openpgp_octets_t &subkey,
+	 const tmcg_openpgp_octets_t &trailer,
+	 const tmcg_openpgp_hashalgo_t hashalgo, 
+	 tmcg_openpgp_octets_t &hash, tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+
+	hash_input.push_back(0x99);
+	hash_input.push_back((primary.size() >> 8) & 0xFF);
+	hash_input.push_back(primary.size() & 0xFF);
+	hash_input.insert(hash_input.end(), primary.begin(), primary.end());
+	hash_input.push_back(0x99);
+	hash_input.push_back((subkey.size() >> 8) & 0xFF);
+	hash_input.push_back(subkey.size() & 0xFF);
+	hash_input.insert(hash_input.end(), subkey.begin(), subkey.end());
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// *  the two octets 0x05 and 0xFF,
+	// *  a eight-octet big-endian number that is the length of the
+	//    hashed data from the Signature packet stopping right before the
+	//    0x05, 0xff octets.
+	hash_input.push_back(0x05);
+	hash_input.push_back(0xFF);
+	PacketScalarEightEncode(trailer.size(), hash_input);
 	HashCompute(hashalgo, hash_input, hash);
 	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);

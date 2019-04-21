@@ -8,7 +8,8 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
-* [2019-04-21] RFC4880: added PacketScalarFourEncode()
+* [2019-04-21] RFC4880: added StandaloneHashV5(), CertificationHashV5()
+* [2019-04-21] RFC4880: added PacketScalar[Four,Eight]Encode(), KeyHashV5()
 * [2019-04-21] RFC4880: added PacketSubEncodeV5(), PacketPubEncodeV5()
 * [2019-04-21] RFC4880: changed TMCG_OpenPGP_PrivateSubkey, TMCG_OpenPGP_Prvkey
 * [2019-04-21] RFC4880: changed TMCG_OpenPGP_Subkey, TMCG_OpenPGP_Pubkey
