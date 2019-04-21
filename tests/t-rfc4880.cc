@@ -849,7 +849,7 @@ int main
 		delete mallory;
 		delete ring;
 
-		// test non-encrypted V5 key [RFC4880bis]
+		// test a non-encrypted V5 key provided by Werner Koch
 		std::string emma_armored =
 "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n\r\n"
 "lGEFXJH05BYAAAAtCSsGAQQB2kcPAQEHQFhZlVcVVtwf+21xNQPX+ecMJJBL0MPd\r\n"
@@ -872,6 +872,21 @@ int main
 		parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 			PrivateKeyBlockParse(emma_armored, 3, "", emma);
 		assert(parse_ok);
+		if (gcry_check_version("1.7.0"))
+		{
+			TMCG_OpenPGP_Pubkey *emmapub = emma->pub; // get the public key 
+			emma->RelinkPublicSubkeys(); // relink the contained subkeys
+			std::cout << "CheckSelfSignatures()" << std::endl;
+			parse_ok = emmapub->CheckSelfSignatures(ring, 3);
+			assert(parse_ok);
+			std::cout << "CheckSubkeys()" << std::endl;
+			parse_ok = emmapub->CheckSubkeys(ring, 3);
+			assert(parse_ok);
+			std::cout << "!primary->Weak()" << std::endl;
+			check_ok = emmapub->Weak(3);
+			assert(!check_ok);
+			emma->RelinkPrivateSubkeys(); // undo the relinking
+		}
 		delete emma;
 		delete ring;
 	
