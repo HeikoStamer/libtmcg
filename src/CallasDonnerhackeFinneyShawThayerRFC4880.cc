@@ -6160,12 +6160,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidComputeV5
 {
 	tmcg_openpgp_octets_t fpr;
 
-	// A Key ID is an eight-octet scalar that identifies a key.
-	// Implementations SHOULD NOT assume that Key IDs are unique.
-	// [...]
-	// The Key ID is the low-order 64 bits of the fingerprint.
+	// The Key ID is the high-order 64 bits of the fingerprint.
 	FingerprintComputeV5(in, fpr);
-	for (size_t i = 24; i < 32; i++)
+	for (size_t i = 0; i < 8; i++)
 		out.push_back(fpr[i]);
 }
 
