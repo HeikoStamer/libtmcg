@@ -739,6 +739,7 @@ class TMCG_OpenPGP_Subkey
 		gcry_mpi_t											dsa_y;
 		gcry_mpi_t											ec_pk;
 		tmcg_openpgp_octets_t								packet;
+		tmcg_openpgp_byte_t									version;
 		tmcg_openpgp_octets_t								sub_hashing;
 		tmcg_openpgp_octets_t								id;
 		tmcg_openpgp_octets_t								fingerprint;
@@ -842,6 +843,7 @@ class TMCG_OpenPGP_PrivateSubkey
 
 	public:
 		tmcg_openpgp_pkalgo_t								pkalgo;
+		tmcg_openpgp_byte_t									version;
 		TMCG_OpenPGP_Subkey*								pub;
 		gcry_sexp_t											private_key;
 		gcry_mpi_t											rsa_p;
@@ -965,6 +967,7 @@ class TMCG_OpenPGP_Pubkey
 		gcry_mpi_t											dsa_y;
 		gcry_mpi_t											ec_pk;
 		tmcg_openpgp_octets_t								packet;
+		tmcg_openpgp_byte_t									version;
 		tmcg_openpgp_octets_t								pub_hashing;
 		tmcg_openpgp_octets_t								id;
 		tmcg_openpgp_octets_t								fingerprint;
@@ -1052,6 +1055,7 @@ class TMCG_OpenPGP_Prvkey
 
 	public:
 		tmcg_openpgp_pkalgo_t								pkalgo;
+		tmcg_openpgp_byte_t									version;
 		TMCG_OpenPGP_Pubkey*								pub;
 		gcry_sexp_t											private_key;
 		std::vector<TMCG_OpenPGP_PrivateSubkey*>			private_subkeys;
@@ -1495,19 +1499,31 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void FingerprintCompute
 			(const tmcg_openpgp_octets_t					&in,
 			 std::string									&out);
+		static void FingerprintComputeV5
+			(const tmcg_openpgp_octets_t					&in,
+			 std::string									&out);
 		static void FingerprintCompute
 			(const std::string								&in,
 			 std::string									&out);
 		static void FingerprintComputePretty
 			(const tmcg_openpgp_octets_t					&in,
 			 std::string									&out);
+		static void FingerprintComputePrettyV5
+			(const tmcg_openpgp_octets_t					&in,
+			 std::string									&out);
 		static void KeyidCompute
+			(const tmcg_openpgp_octets_t					&in,
+			 tmcg_openpgp_octets_t							&out);
+		static void KeyidComputeV5
 			(const tmcg_openpgp_octets_t					&in,
 			 tmcg_openpgp_octets_t							&out);
 		static void KeyidConvert
 			(const tmcg_openpgp_octets_t					&in,
 			 std::string									&out);
 		static void KeyidCompute
+			(const tmcg_openpgp_octets_t					&in,
+			 std::string									&out);
+		static void KeyidComputeV5
 			(const tmcg_openpgp_octets_t					&in,
 			 std::string									&out);
 		static void HashCompute
@@ -1565,6 +1581,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_byte_t							lentype,
 			 uint32_t										&len,
 			 bool											&partlen);
+		static void PacketScalarFourEncode
+			(const size_t									in,
+			 tmcg_openpgp_octets_t							&out);
 		static void PacketTimeEncode
 			(const time_t									in,
 			 tmcg_openpgp_octets_t							&out);
@@ -1749,7 +1768,24 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t								g,
 			 const gcry_mpi_t								y,
 			 tmcg_openpgp_octets_t							&out);
+		static void PacketPubEncodeV5
+			(const time_t									keytime,
+			 const tmcg_openpgp_pkalgo_t					algo,
+			 const gcry_mpi_t								p,
+			 const gcry_mpi_t								q,
+			 const gcry_mpi_t								g,
+			 const gcry_mpi_t								y,
+			 tmcg_openpgp_octets_t							&out);
 		static void PacketPubEncode
+			(const time_t									keytime,
+			 const tmcg_openpgp_pkalgo_t					algo,
+			 const size_t									oidlen,
+			 const tmcg_openpgp_byte_t*						oid,
+			 const gcry_mpi_t								ecpk,
+			 const tmcg_openpgp_hashalgo_t					kdf_hashalgo,
+			 const tmcg_openpgp_skalgo_t					kdf_skalgo,
+			 tmcg_openpgp_octets_t							&out);
+		static void PacketPubEncodeV5
 			(const time_t									keytime,
 			 const tmcg_openpgp_pkalgo_t					algo,
 			 const size_t									oidlen,
@@ -1814,7 +1850,24 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const gcry_mpi_t								g,
 			 const gcry_mpi_t								y,
 			 tmcg_openpgp_octets_t							&out);
+		static void PacketSubEncodeV5
+			(const time_t									keytime,
+			 const tmcg_openpgp_pkalgo_t					algo,
+			 const gcry_mpi_t								p,
+			 const gcry_mpi_t								q,
+			 const gcry_mpi_t								g,
+			 const gcry_mpi_t								y,
+			 tmcg_openpgp_octets_t							&out);
 		static void PacketSubEncode
+			(const time_t									keytime,
+			 const tmcg_openpgp_pkalgo_t					algo,
+			 const size_t									oidlen,
+			 const tmcg_openpgp_byte_t*						oid,
+			 const gcry_mpi_t								ecpk,
+			 const tmcg_openpgp_hashalgo_t					kdf_hashalgo,
+			 const tmcg_openpgp_skalgo_t					kdf_skalgo,
+			 tmcg_openpgp_octets_t							&out);
+		static void PacketSubEncodeV5
 			(const time_t									keytime,
 			 const tmcg_openpgp_pkalgo_t					algo,
 			 const size_t									oidlen,

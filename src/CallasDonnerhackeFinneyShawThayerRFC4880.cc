@@ -1036,6 +1036,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
 {
 	// this is a dummy constructor used for simple relinking
+	version = 0;
 	rsa_n = gcry_mpi_new(8);
 	rsa_e = gcry_mpi_new(8);
 	elg_p = gcry_mpi_new(8);
@@ -1089,10 +1090,27 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketBodyExtract(packet, 0, sub_hashing);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		KeyidCompute(sub_hashing, id);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		FingerprintCompute(sub_hashing, fingerprint);
+	if (sub_hashing.size() > 0)
+		version = sub_hashing[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidCompute(sub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintCompute(sub_hashing, fingerprint);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidComputeV5(sub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintComputeV5(sub_hashing, fingerprint);
+			break;
+		default:
+			break;
+	}
 }
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
@@ -1134,10 +1152,27 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketBodyExtract(packet, 0, sub_hashing);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		KeyidCompute(sub_hashing, id);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		FingerprintCompute(sub_hashing, fingerprint);
+	if (sub_hashing.size() > 0)
+		version = sub_hashing[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidCompute(sub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintCompute(sub_hashing, fingerprint);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidComputeV5(sub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintComputeV5(sub_hashing, fingerprint);
+			break;
+		default:
+			break;
+	}
 }
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
@@ -1181,10 +1216,27 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketBodyExtract(packet, 0, sub_hashing);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		KeyidCompute(sub_hashing, id);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		FingerprintCompute(sub_hashing, fingerprint);
+	if (sub_hashing.size() > 0)
+		version = sub_hashing[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidCompute(sub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintCompute(sub_hashing, fingerprint);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidComputeV5(sub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintComputeV5(sub_hashing, fingerprint);
+			break;
+		default:
+			break;
+	}
 }
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
@@ -1251,10 +1303,27 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketBodyExtract(packet, 0, sub_hashing);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		KeyidCompute(sub_hashing, id);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		FingerprintCompute(sub_hashing, fingerprint);
+	if (sub_hashing.size() > 0)
+		version = sub_hashing[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidCompute(sub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintCompute(sub_hashing, fingerprint);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidComputeV5(sub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintComputeV5(sub_hashing, fingerprint);
+			break;
+		default:
+			break;
+	}
 }
 
 TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
@@ -1315,10 +1384,27 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketBodyExtract(packet, 0, sub_hashing);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		KeyidCompute(sub_hashing, id);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		FingerprintCompute(sub_hashing, fingerprint);
+	if (sub_hashing.size() > 0)
+		version = sub_hashing[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidCompute(sub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintCompute(sub_hashing, fingerprint);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidComputeV5(sub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintComputeV5(sub_hashing, fingerprint);
+			break;
+		default:
+			break;
+	}
 }
 
 bool TMCG_OpenPGP_Subkey::Good
@@ -2094,9 +2180,26 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		telg_i(0),
 		ec_curve("")
 {
-	tmcg_openpgp_octets_t sub;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
-		pkalgo_in, n, e, e, e, sub);
+	tmcg_openpgp_octets_t body, sub;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSubEncode(creationtime_in, pkalgo_in, n, e, e, e, sub);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSubEncodeV5(creationtime_in, pkalgo_in, n, e, e, e, sub);
+			break;
+		default:
+			break;
+	}
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
 		n, e, sub);
 	rsa_p = gcry_mpi_snew(2048);
@@ -2139,9 +2242,26 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		telg_i(0),
 		ec_curve("")
 {
-	tmcg_openpgp_octets_t sub;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
-		pkalgo_in, p, p, g, y, sub);
+	tmcg_openpgp_octets_t body, sub;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSubEncode(creationtime_in, pkalgo_in, p, p, g, y, sub);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSubEncodeV5(creationtime_in, pkalgo_in, p, p, g, y, sub);
+			break;
+		default:
+			break;
+	}
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
 		p, g, y, sub);
 	rsa_p = gcry_mpi_snew(8);
@@ -2181,9 +2301,26 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		telg_i(0),
 		ec_curve("")
 {
-	tmcg_openpgp_octets_t sub;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
-		pkalgo_in, p, q, g, y, sub);
+	tmcg_openpgp_octets_t body, sub;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSubEncode(creationtime_in, pkalgo_in, p, q, g, y, sub);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSubEncodeV5(creationtime_in, pkalgo_in, p, q, g, y, sub);
+			break;
+		default:
+			break;
+	}
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
 		p, q, g, y, sub);
 	rsa_p = gcry_mpi_snew(8);
@@ -2229,9 +2366,28 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		private_key(NULL),
 		ec_curve("")
 {
-	tmcg_openpgp_octets_t sub;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode(creationtime_in,
-		TMCG_OPENPGP_PKALGO_ELGAMAL, p, p, g, y, sub);
+	tmcg_openpgp_octets_t body, sub;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSubEncode(creationtime_in, TMCG_OPENPGP_PKALGO_ELGAMAL,
+				p, p, g, y, sub);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSubEncodeV5(creationtime_in, TMCG_OPENPGP_PKALGO_ELGAMAL,
+				p, p, g, y, sub);
+			break;
+		default:
+			break;
+	}
 	pub = new TMCG_OpenPGP_Subkey(TMCG_OPENPGP_PKALGO_ELGAMAL, creationtime_in,
 		expirationtime_in, p, g, y, sub);
 	rsa_p = gcry_mpi_snew(8);
@@ -2296,10 +2452,30 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		telg_t(0),
 		telg_i(0)
 {
-	tmcg_openpgp_octets_t sub;
+	tmcg_openpgp_octets_t body, sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketSubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
-		TMCG_OPENPGP_HASHALGO_UNKNOWN, TMCG_OPENPGP_SKALGO_PLAINTEXT, sub);
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
+				TMCG_OPENPGP_HASHALGO_UNKNOWN, TMCG_OPENPGP_SKALGO_PLAINTEXT,
+				sub);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSubEncodeV5(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
+				TMCG_OPENPGP_HASHALGO_UNKNOWN, TMCG_OPENPGP_SKALGO_PLAINTEXT,
+				sub);
+			break;
+		default:
+			break;
+	}
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
 		oidlen, oid, ecpk, sub);
 	rsa_p = gcry_mpi_snew(8);
@@ -2369,10 +2545,28 @@ TMCG_OpenPGP_PrivateSubkey::TMCG_OpenPGP_PrivateSubkey
 		telg_t(0),
 		telg_i(0)
 {
-	tmcg_openpgp_octets_t sub;
+	tmcg_openpgp_octets_t body, sub;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketSubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
-		kdf_hashalgo_in, kdf_skalgo_in, sub);
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
+				kdf_hashalgo_in, kdf_skalgo_in, sub);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSubEncodeV5(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
+				kdf_hashalgo_in, kdf_skalgo_in, sub);
+			break;
+		default:
+			break;
+	}
 	pub = new TMCG_OpenPGP_Subkey(pkalgo_in, creationtime_in, expirationtime_in,
 		oidlen, oid, ecpk, kdf_hashalgo_in, kdf_skalgo_in, sub);
 	rsa_p = gcry_mpi_snew(8);
@@ -2638,7 +2832,7 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		// decrypt session key
 		tmcg_openpgp_octets_t rcpfpr;
 		CallasDonnerhackeFinneyShawThayerRFC4880::
-			FingerprintCompute(pub->sub_hashing, rcpfpr);
+			FingerprintCompute(pub->sub_hashing, rcpfpr); // FIXME: V5 keys
 		dret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			AsymmetricDecryptECDH(esk->ecepk, private_key, esk->rkwlen,
 				esk->rkw, pub->kdf_hashalgo, pub->kdf_skalgo, ec_curve,
@@ -2726,10 +2920,27 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketBodyExtract(packet, 0, pub_hashing);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		KeyidCompute(pub_hashing, id);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		FingerprintCompute(pub_hashing, fingerprint);
+	if (pub_hashing.size() > 0)
+		version = pub_hashing[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidCompute(pub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintCompute(pub_hashing, fingerprint);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidComputeV5(pub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintComputeV5(pub_hashing, fingerprint);
+			break;
+		default:
+			break;
+	}
 }
 
 TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
@@ -2768,10 +2979,27 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketBodyExtract(packet, 0, pub_hashing);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		KeyidCompute(pub_hashing, id);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		FingerprintCompute(pub_hashing, fingerprint);
+	if (pub_hashing.size() > 0)
+		version = pub_hashing[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidCompute(pub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintCompute(pub_hashing, fingerprint);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidComputeV5(pub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintComputeV5(pub_hashing, fingerprint);
+			break;
+		default:
+			break;
+	}
 }
 
 TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
@@ -2834,10 +3062,27 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 	packet.insert(packet.end(), packet_in.begin(), packet_in.end());
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		PacketBodyExtract(packet, 0, pub_hashing);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		KeyidCompute(pub_hashing, id);
-	CallasDonnerhackeFinneyShawThayerRFC4880::
-		FingerprintCompute(pub_hashing, fingerprint);
+	if (pub_hashing.size() > 0)
+		version = pub_hashing[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidCompute(pub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintCompute(pub_hashing, fingerprint);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				KeyidComputeV5(pub_hashing, id);
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				FingerprintComputeV5(pub_hashing, fingerprint);
+			break;
+		default:
+			break;
+	}
 }
 
 bool TMCG_OpenPGP_Pubkey::Good
@@ -3741,9 +3986,26 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		tdss_t(0),
 		tdss_i(0)
 {
-	tmcg_openpgp_octets_t pkt;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in,
-		pkalgo_in, n, e, e, e, pkt);
+	tmcg_openpgp_octets_t pkt, body;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketPubEncode(creationtime_in, pkalgo_in, n, e, e, e, pkt);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketPubEncodeV5(creationtime_in, pkalgo_in, n, e, e, e, pkt);
+			break;
+		default:
+			break;
+	}
 	pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
 		n, e, pkt);
 	rsa_p = gcry_mpi_snew(2048);
@@ -3784,9 +4046,26 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		tdss_t(0),
 		tdss_i(0)
 {
-	tmcg_openpgp_octets_t pkt;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in,
-		pkalgo_in, p, q, g, y, pkt);
+	tmcg_openpgp_octets_t pkt, body;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketPubEncode(creationtime_in, pkalgo_in, p, q, g, y, pkt);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketPubEncodeV5(creationtime_in, pkalgo_in, p, q, g, y, pkt);
+			break;
+		default:
+			break;
+	}
 	pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
 		p, q, g, y, pkt);
 	rsa_p = gcry_mpi_snew(8);
@@ -3830,9 +4109,28 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		pkalgo(pkalgo_in),
 		private_key(NULL)
 {
-	tmcg_openpgp_octets_t pkt;
-	CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode(creationtime_in,
-		TMCG_OPENPGP_PKALGO_DSA, p, q, g, y, pkt);
+	tmcg_openpgp_octets_t pkt, body;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketPubEncode(creationtime_in, TMCG_OPENPGP_PKALGO_DSA,
+				p, q, g, y, pkt);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketPubEncodeV5(creationtime_in, TMCG_OPENPGP_PKALGO_DSA,
+				p, q, g, y, pkt);
+			break;
+		default:
+			break;
+	}
 	pub = new TMCG_OpenPGP_Pubkey(TMCG_OPENPGP_PKALGO_DSA, creationtime_in,
 		expirationtime_in, p, q, g, y, pkt);
 	rsa_p = gcry_mpi_snew(8);
@@ -3898,10 +4196,30 @@ TMCG_OpenPGP_Prvkey::TMCG_OpenPGP_Prvkey
 		tdss_t(0),
 		tdss_i(0)
 {
-	tmcg_openpgp_octets_t pkt;
+	tmcg_openpgp_octets_t pkt, body;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		PacketPubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
-		TMCG_OPENPGP_HASHALGO_UNKNOWN, TMCG_OPENPGP_SKALGO_PLAINTEXT, pkt);
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
+	switch (version)
+	{
+		case 4:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketPubEncode(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
+				TMCG_OPENPGP_HASHALGO_UNKNOWN, TMCG_OPENPGP_SKALGO_PLAINTEXT,
+				pkt);
+			break;
+		case 5:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketPubEncodeV5(creationtime_in, pkalgo_in, oidlen, oid, ecpk,
+				TMCG_OPENPGP_HASHALGO_UNKNOWN, TMCG_OPENPGP_SKALGO_PLAINTEXT,
+				pkt);
+			break;
+		default:
+			break;
+	}
 	pub = new TMCG_OpenPGP_Pubkey(pkalgo_in, creationtime_in, expirationtime_in,
 		oidlen, oid, ecpk, pkt);
 	rsa_p = gcry_mpi_snew(8);
@@ -4699,7 +5017,6 @@ void TMCG_OpenPGP_Keyring::Reduce
 		keys.erase(fpr_str);
 	}
 }
-
 
 TMCG_OpenPGP_Keyring::~TMCG_OpenPGP_Keyring
 	()
@@ -5790,6 +6107,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 	FingerprintConvertPlain(fpr, out);
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintComputeV5
+	(const tmcg_openpgp_octets_t &in, std::string &out)
+{
+	tmcg_openpgp_octets_t fpr;
+	FingerprintComputeV5(in, fpr);
+	FingerprintConvertPlain(fpr, out);
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
 	(const std::string &in, std::string &out)
 {
@@ -5808,6 +6133,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintComputePretty
 	FingerprintConvertPretty(fpr, out);
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintComputePrettyV5
+	(const tmcg_openpgp_octets_t &in, std::string &out)
+{
+	tmcg_openpgp_octets_t fpr;
+	FingerprintComputeV5(in, fpr);
+	FingerprintConvertPretty(fpr, out);
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &out)
 {
@@ -5819,6 +6152,20 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 	// The Key ID is the low-order 64 bits of the fingerprint.
 	FingerprintCompute(in, fpr);
 	for (size_t i = 12; i < 20; i++)
+		out.push_back(fpr[i]);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidComputeV5
+	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &out)
+{
+	tmcg_openpgp_octets_t fpr;
+
+	// A Key ID is an eight-octet scalar that identifies a key.
+	// Implementations SHOULD NOT assume that Key IDs are unique.
+	// [...]
+	// The Key ID is the low-order 64 bits of the fingerprint.
+	FingerprintComputeV5(in, fpr);
+	for (size_t i = 24; i < 32; i++)
 		out.push_back(fpr[i]);
 }
 
@@ -5838,6 +6185,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 {
 	tmcg_openpgp_octets_t kid;
 	KeyidCompute(in, kid);
+	KeyidConvert(kid, out);
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidComputeV5
+	(const tmcg_openpgp_octets_t &in, std::string &out)
+{
+	tmcg_openpgp_octets_t kid;
+	KeyidComputeV5(in, kid);
 	KeyidConvert(kid, out);
 }
 
@@ -6315,6 +6670,16 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthDecode
 	}
 	else
 		return 0; // error: unknown length type 
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketScalarFourEncode
+	(const size_t in, tmcg_openpgp_octets_t &out)
+{
+	// four-octet scalar
+	out.push_back((in >> 24) & 0xFF);
+	out.push_back((in >> 16) & 0xFF);
+	out.push_back((in >> 8) & 0xFF);
+	out.push_back(in & 0xFF);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketTimeEncode
@@ -7464,6 +7829,62 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	}
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncodeV5
+	(const time_t keytime, const tmcg_openpgp_pkalgo_t algo,
+	 const gcry_mpi_t p, const gcry_mpi_t q, const gcry_mpi_t g,
+	 const gcry_mpi_t y, tmcg_openpgp_octets_t &out)
+{
+	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
+	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
+	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
+	size_t ylen = (gcry_mpi_get_nbits(y) + 7) / 8;
+	size_t len = 1+4+1+4; // number of octets: version, keytime, algo, skiplen
+	switch (algo)
+	{
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY:
+		case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
+			len += 2+plen+2+qlen;
+			break;
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
+			len += 2+plen+2+glen+2+ylen;
+			break;
+		case TMCG_OPENPGP_PKALGO_DSA:
+			len += 2+plen+2+qlen+2+glen+2+ylen;
+			break;
+		default:
+			return;  // not supported
+	}
+	PacketTagEncode(6, out);
+	PacketLengthEncode(len, out);
+	out.push_back(5); // V5 format
+	PacketTimeEncode(keytime, out);
+	out.push_back(algo);
+	PacketScalarFourEncode(len-10, out); // four-octet scalar octet count
+	switch (algo)
+	{
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY:
+		case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
+			PacketMPIEncode(p, out); // MPI n
+			PacketMPIEncode(q, out); // MPI e
+			break;
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
+			PacketMPIEncode(p, out); // MPI p
+			PacketMPIEncode(g, out); // MPI g
+			PacketMPIEncode(y, out); // MPI y
+			break;
+		case TMCG_OPENPGP_PKALGO_DSA:
+			PacketMPIEncode(p, out); // MPI p
+			PacketMPIEncode(q, out); // MPI q
+			PacketMPIEncode(g, out); // MPI g
+			PacketMPIEncode(y, out); // MPI y
+			break;
+		default:
+			return; // not supported
+	}
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	(const time_t keytime, const tmcg_openpgp_pkalgo_t algo,
 	 const size_t oidlen, const tmcg_openpgp_byte_t* oid,
@@ -7521,6 +7942,56 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
 	out.push_back(4); // V4 format
 	PacketTimeEncode(keytime, out);
 	out.push_back(algo);
+	switch (algo)
+	{
+		case TMCG_OPENPGP_PKALGO_ECDSA:
+		case TMCG_OPENPGP_PKALGO_EDDSA:
+			out.push_back(oidlen);
+			for (size_t i = 0; i < oidlen; i++)
+				out.push_back(oid[i]);
+			PacketMPIEncode(ecpk, out);
+			break;
+		case TMCG_OPENPGP_PKALGO_ECDH:
+			out.push_back(oidlen);
+			for (size_t i = 0; i < oidlen; i++)
+				out.push_back(oid[i]);
+			PacketMPIEncode(ecpk, out);
+			out.push_back(0x03);
+			out.push_back(0x01);
+			out.push_back(kdf_hashalgo);
+			out.push_back(kdf_skalgo);
+			break;
+		default:
+			return; // not supported
+	}
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncodeV5
+	(const time_t keytime, const tmcg_openpgp_pkalgo_t algo,
+	 const size_t oidlen, const tmcg_openpgp_byte_t* oid,
+	 const gcry_mpi_t ecpk, const tmcg_openpgp_hashalgo_t kdf_hashalgo,
+	 const tmcg_openpgp_skalgo_t kdf_skalgo, tmcg_openpgp_octets_t &out)
+{
+	size_t ecpklen = (gcry_mpi_get_nbits(ecpk) + 7) / 8;
+	size_t len = 1+4+1+4; // number of octets: version, keytime, algo, skiplen
+	switch (algo)
+	{
+		case TMCG_OPENPGP_PKALGO_ECDSA:
+		case TMCG_OPENPGP_PKALGO_EDDSA:
+			len += 1+oidlen+2+ecpklen;
+			break;
+		case TMCG_OPENPGP_PKALGO_ECDH:
+			len += 1+oidlen+2+ecpklen+4;
+			break;
+		default:
+			return; // not supported
+	}
+	PacketTagEncode(6, out);
+	PacketLengthEncode(len, out);
+	out.push_back(5); // V5 format
+	PacketTimeEncode(keytime, out);
+	out.push_back(algo);
+	PacketScalarFourEncode(len-10, out); // four-octet scalar octet count
 	switch (algo)
 	{
 		case TMCG_OPENPGP_PKALGO_ECDSA:
@@ -8095,6 +8566,70 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 	}
 }
 
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncodeV5
+	(const time_t keytime, const tmcg_openpgp_pkalgo_t algo,
+	 const gcry_mpi_t p, const gcry_mpi_t q, const gcry_mpi_t g,
+	 const gcry_mpi_t y, tmcg_openpgp_octets_t &out)
+{
+	size_t plen = (gcry_mpi_get_nbits(p) + 7) / 8;
+	size_t qlen = (gcry_mpi_get_nbits(q) + 7) / 8;
+	size_t glen = (gcry_mpi_get_nbits(g) + 7) / 8;
+	size_t ylen = (gcry_mpi_get_nbits(y) + 7) / 8;
+	size_t len = 1+4+1+4; // number of octets: version, keytime, algo, skiplen
+	switch (algo)
+	{
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY:
+		case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
+			len += 2+plen+2+qlen;
+			break;
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
+			len += 2+plen+2+glen+2+ylen;
+			break;
+		case TMCG_OPENPGP_PKALGO_DSA:
+			len += 2+plen+2+qlen+2+glen+2+ylen;
+			break;
+		default:
+			return; // not supported
+	}
+
+	// A Public-Subkey packet (tag 14) has exactly the same format as a
+	// Public-Key packet, but denotes a subkey. One or more subkeys may be
+	// associated with a top-level key. By convention, the top-level key
+	// provides signature services, and the subkeys provide encryption
+	// services.
+	// [...]
+	//
+	PacketTagEncode(14, out);
+	PacketLengthEncode(len, out);
+	out.push_back(5); // V5 format
+	PacketTimeEncode(keytime, out);
+	out.push_back(algo);
+	PacketScalarFourEncode(len-10, out); // four-octet scalar octet count
+	switch (algo)
+	{
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY:
+		case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
+			PacketMPIEncode(p, out); // MPI n
+			PacketMPIEncode(q, out); // MPI e
+			break;
+		case TMCG_OPENPGP_PKALGO_ELGAMAL:
+			PacketMPIEncode(p, out); // MPI p
+			PacketMPIEncode(g, out); // MPI g
+			PacketMPIEncode(y, out); // MPI y
+			break;
+		case TMCG_OPENPGP_PKALGO_DSA:
+			PacketMPIEncode(p, out); // MPI p
+			PacketMPIEncode(q, out); // MPI q
+			PacketMPIEncode(g, out); // MPI g
+			PacketMPIEncode(y, out); // MPI y
+			break;
+		default:
+			return; // not supported
+	}
+}
+
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 	(const time_t keytime, const tmcg_openpgp_pkalgo_t algo,
 	 const size_t oidlen, const tmcg_openpgp_byte_t* oid,
@@ -8152,6 +8687,88 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncode
 	out.push_back(4); // V4 format
 	PacketTimeEncode(keytime, out);
 	out.push_back(algo);
+	switch (algo)
+	{
+		case TMCG_OPENPGP_PKALGO_ECDSA:
+		case TMCG_OPENPGP_PKALGO_EDDSA:
+			out.push_back(oidlen);
+			for (size_t i = 0; i < oidlen; i++)
+				out.push_back(oid[i]);
+			PacketMPIEncode(ecpk, out);
+			break;
+		case TMCG_OPENPGP_PKALGO_ECDH:
+			out.push_back(oidlen);
+			for (size_t i = 0; i < oidlen; i++)
+				out.push_back(oid[i]);
+			PacketMPIEncode(ecpk, out);
+			out.push_back(0x03);
+			out.push_back(0x01);
+			out.push_back(kdf_hashalgo);
+			out.push_back(kdf_skalgo);
+			break;
+		default:
+			return; // not supported
+	}
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSubEncodeV5
+	(const time_t keytime, const tmcg_openpgp_pkalgo_t algo,
+	 const size_t oidlen, const tmcg_openpgp_byte_t* oid,
+	 const gcry_mpi_t ecpk, const tmcg_openpgp_hashalgo_t kdf_hashalgo,
+	 const tmcg_openpgp_skalgo_t kdf_skalgo, tmcg_openpgp_octets_t &out)
+{
+	size_t ecpklen = (gcry_mpi_get_nbits(ecpk) + 7) / 8;
+	size_t len = 1+4+1+4; // number of octets: version, keytime, algo, skiplen
+	switch (algo)
+	{
+		case TMCG_OPENPGP_PKALGO_ECDSA:
+		case TMCG_OPENPGP_PKALGO_EDDSA:
+			len += 1+oidlen+2+ecpklen;
+			break;
+		case TMCG_OPENPGP_PKALGO_ECDH:
+			len += 1+oidlen+2+ecpklen+4;
+			break;
+		default:
+			return; // not supported
+	}
+
+	// The following algorithm-specific packets are added to Section 5.5.2
+	// of [RFC4880], "Public-Key Packet Formats", to support ECDH and ECDSA.
+	//
+	// This algorithm-specific portion is:
+	//
+	// Algorithm-Specific Fields for ECDSA keys:
+	//  o  a variable-length field containing a curve OID, formatted
+	//     as follows:
+	//      -  a one-octet size of the following field; values 0 and
+	//         0xFF are reserved for future extensions
+	//      -  octets representing a curve OID, defined in Section 11
+	//  o  MPI of an EC point representing a public key
+	//
+	// Algorithm-Specific Fields for ECDH keys:
+	//  o  a variable-length field containing a curve OID, formatted
+	//     as follows:
+	//      -  a one-octet size of the following field; values 0 and
+	//         0xFF are reserved for future extensions
+	//      -  the octets representing a curve OID, defined in Section 11
+	//      -  MPI of an EC point representing a public key
+	//  o  a variable-length field containing KDF parameters,
+	//     formatted as follows:
+	//      -  a one-octet size of the following fields; values 0 and
+	//         0xff are reserved for future extensions
+	//      -  a one-octet value 01, reserved for future extensions
+	//      -  a one-octet hash function ID used with a KDF
+	//      -  a one-octet algorithm ID for the symmetric algorithm
+	//         used to wrap the symmetric key used for the message
+	//         encryption; see Section 8 for details
+	// Observe that an ECDH public key is composed of the same sequence of
+	// fields that define an ECDSA key, plus the KDF parameters field.
+	PacketTagEncode(14, out);
+	PacketLengthEncode(len, out);
+	out.push_back(5); // V5 format
+	PacketTimeEncode(keytime, out);
+	out.push_back(algo);
+	PacketScalarFourEncode(len-10, out); // four-octet scalar octet count
 	switch (algo)
 	{
 		case TMCG_OPENPGP_PKALGO_ECDSA:
@@ -9223,7 +9840,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	// header in the packet MUST NOT be a Partial Body Length header.
 	// Partial Body Length headers may only be used for the non-final
 	// parts of the packet.
-	tmcg_openpgp_octets_t pkt; // only the packet body
+	tmcg_openpgp_octets_t pkt; // this is only the packet body
 	uint32_t len = 0;
 	bool partlen = true, firstlen = true;
 	while (partlen)
@@ -9346,7 +9963,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 					out.left[i] = pkt[17+i];
 				mpis.insert(mpis.end(), pkt.begin()+19, pkt.end());
 			}
-			else if (out.version == 4)
+			else if ((out.version == 4) || (out.version == 5))
 			{
 				if (pkt.size() < 12)
 					return 0; // error: packet too short
@@ -14643,7 +15260,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
 	 const tmcg_openpgp_octets_t &current_packet,
 	 bool &primary, TMCG_OpenPGP_Prvkey* &prv)
 {
-// FIXME: pass ctx.version to constructor; v5: calculate different fingerprint
 	if ((ctx.version != 4) && (ctx.version != 5))
 	{
 		if (verbose)
@@ -14759,7 +15375,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
 	if (!badkey && subkey)
 		prv->private_subkeys.push_back(sub);
 	sub = NULL, subkey = true, badkey = false;
-	if (ctx.version != 4)
+	if ((ctx.version != 4) && (ctx.version != 5))
 	{
 		if (verbose)
 			std::cerr << "WARNING: secret-subkey packet " <<
