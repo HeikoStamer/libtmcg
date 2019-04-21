@@ -1940,13 +1940,17 @@ bool TMCG_OpenPGP_Subkey::Check
 			else
 			{
 				if (verbose)
+				{
 					std::cerr << "WARNING: self-signature verification" <<
 						" failed" << std::endl;
+				}
 			}
 		}
 		else if (verbose)
+		{
 			std::cerr << "WARNING: unknown issuer of self-signature" <<
 				std::endl;
+		}
 	}
 	// check validity of subkey
 	if (!CheckValidity(verbose))
@@ -9562,13 +9566,13 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			out.issuerkeyversion = pkt[0];
 			switch (out.issuerkeyversion)
 			{
-				case 0x04:
+				case 4:
 					if (pkt.size() != 21)
 						return 0; // error: incorrect subpacket body
 					for (size_t i = 0; i < 20; i++)
 						out.issuerfingerprint[i] = pkt[1+i];
 					break;
-				case 0x05:
+				case 5:
 					if (pkt.size() != 33)
 						return 0; // error: incorrect subpacket body
 					for (size_t i = 0; i < 32; i++)
@@ -14261,13 +14265,20 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		issuer.push_back(ctx.issuer[i]);
 	switch (ctx.issuerkeyversion)
 	{
-		case 0x04: // V4 keys use SHA-1
+		case 4: // V4 keys use SHA-1
 			for (size_t i = 0; i < 20; i++)
 				issuerfpr.push_back(ctx.issuerfingerprint[i]);
 			break;
-		case 0x05: // V5 keys use SHA256
+		case 5: // V5 keys use SHA256
 			for (size_t i = 0; i < 32; i++)
 				issuerfpr.push_back(ctx.issuerfingerprint[i]);
+			if (OctetsCompareZero(issuer))
+			{
+				// those keys may not have issuer subpackets, so we must infer
+				issuer.clear();
+				for (size_t i = 0; i < 8; i++)
+					issuer.push_back(ctx.issuerfingerprint[i]);
+			}
 			break;
 	}
 	for (size_t i = 0; i < ctx.hspdlen; i++)
@@ -15567,6 +15578,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 		case 0x05: // V5 keys use SHA256
 			for (size_t i = 0; i < 32; i++)
 				issuerfpr.push_back(ctx.issuerfingerprint[i]);
+			if (OctetsCompareZero(issuer))
+			{
+				// those keys may not have issuer subpackets, so we must infer
+				issuer.clear();
+				for (size_t i = 0; i < 8; i++)
+					issuer.push_back(ctx.issuerfingerprint[i]);
+			}
 			break;
 	}
 	for (size_t i = 0; i < ctx.hspdlen; i++)
@@ -16148,6 +16166,13 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		case 0x05: // V5 keys use SHA256
 			for (size_t i = 0; i < 32; i++)
 				issuerfpr.push_back(ctx.issuerfingerprint[i]);
+			if (OctetsCompareZero(issuer))
+			{
+				// those keys may not have issuer subpackets, so we must infer
+				issuer.clear();
+				for (size_t i = 0; i < 8; i++)
+					issuer.push_back(ctx.issuerfingerprint[i]);
+			}
 			break;
 	}
 	for (size_t i = 0; i < ctx.hspdlen; i++)
