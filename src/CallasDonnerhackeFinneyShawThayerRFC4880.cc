@@ -511,8 +511,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: signature version " <<
-				"not supported" << std::endl;
+			std::cerr << "ERROR: signature version not supported" << std::endl;
 		return false;
 	}
 	if (verbose > 2)
@@ -564,8 +563,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: signature version " <<
-				"not supported" << std::endl;
+			std::cerr << "ERROR: signature version not supported" << std::endl;
 		return false;
 	}
 	if (verbose > 2)
@@ -618,8 +616,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: signature version " <<
-				"not supported" << std::endl;
+			std::cerr << "ERROR: signature version not supported" << std::endl;
 		return false;
 	}
 	if (verbose > 2)
@@ -673,8 +670,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: signature version " <<
-				"not supported" << std::endl;
+			std::cerr << "ERROR: signature version not supported" << std::endl;
 		return false;
 	}
 	if (verbose > 2)
@@ -731,8 +727,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: signature version " <<
-				"not supported" << std::endl;
+			std::cerr << "ERROR: signature version not supported" << std::endl;
 		return false;
 	}
 	if (verbose > 2)
@@ -779,8 +774,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: signature version" <<
-				" not supported" << std::endl;
+			std::cerr << "ERROR: signature version not supported" << std::endl;
 		return false;
 	}
 	if (verbose > 2)
