@@ -11780,7 +11780,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV5
 	//    0x05, 0xff octets.
 	hash_input.push_back(0x05);
 	hash_input.push_back(0xFF);
-	PacketScalarEightEncode(trailer.size()-2, hash_input);
+	PacketScalarEightEncode(trailer.size(), hash_input);
 	HashCompute(hashalgo, hash_input, hash);
 	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
