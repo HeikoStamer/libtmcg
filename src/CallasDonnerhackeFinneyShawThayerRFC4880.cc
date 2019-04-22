@@ -701,7 +701,7 @@ bool TMCG_OpenPGP_Signature::Verify
 		trailer.push_back(hspd.size() & 0xFF);
 		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
 		CallasDonnerhackeFinneyShawThayerRFC4880::
-			KeyHash(pub_hashing, sub_hashing, trailer, hashalgo, hash, left);
+			KeyHashV5(pub_hashing, sub_hashing, trailer, hashalgo, hash, left);
 	}
 	else
 	{
@@ -11780,7 +11780,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV5
 	//    0x05, 0xff octets.
 	hash_input.push_back(0x05);
 	hash_input.push_back(0xFF);
-	PacketScalarEightEncode(trailer.size(), hash_input);
+	PacketScalarEightEncode(trailer.size()-2, hash_input);
 	HashCompute(hashalgo, hash_input, hash);
 	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
