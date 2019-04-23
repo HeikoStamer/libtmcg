@@ -11749,11 +11749,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV5
 	tmcg_openpgp_octets_t hash_input;
 	size_t uidlen = uid.length();
 
-/* FIXME: wrong description in RFC 4880bis-06
-	hash_input.push_back(0x99);
-	hash_input.push_back((key.size() >> 8) & 0xFF);
-	hash_input.push_back(key.size() & 0xFF);
-*/
 	hash_input.push_back(0x9A);
 	hash_input.push_back((key.size() >> 24) & 0xFF);
 	hash_input.push_back((key.size() >> 16) & 0xFF);
@@ -11882,11 +11877,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV5
 {
 	tmcg_openpgp_octets_t hash_input;
 
-/* FIXME: wrong description in RFC 4880bis-06
-	hash_input.push_back(0x99);
-	hash_input.push_back((key.size() >> 8) & 0xFF);
-	hash_input.push_back(key.size() & 0xFF);
-*/
 	hash_input.push_back(0x9A);
 	hash_input.push_back((key.size() >> 24) & 0xFF);
 	hash_input.push_back((key.size() >> 16) & 0xFF);
@@ -12004,22 +11994,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHashV5
 {
 	tmcg_openpgp_octets_t hash_input;
 
-/* FIXME: wrong description in RFC 4880bis-06
-	hash_input.push_back(0x99);
-	hash_input.push_back((primary.size() >> 8) & 0xFF);
-	hash_input.push_back(primary.size() & 0xFF);
-*/
 	hash_input.push_back(0x9A);
 	hash_input.push_back((primary.size() >> 24) & 0xFF);
 	hash_input.push_back((primary.size() >> 16) & 0xFF);
 	hash_input.push_back((primary.size() >> 8) & 0xFF);
 	hash_input.push_back(primary.size() & 0xFF);
 	hash_input.insert(hash_input.end(), primary.begin(), primary.end());
-/* FIXME: wrong description in RFC 4880bis-06
-	hash_input.push_back(0x99);
-	hash_input.push_back((subkey.size() >> 8) & 0xFF);
-	hash_input.push_back(subkey.size() & 0xFF);
-*/
 	hash_input.push_back(0x9A);
 	hash_input.push_back((subkey.size() >> 24) & 0xFF);
 	hash_input.push_back((subkey.size() >> 16) & 0xFF);
