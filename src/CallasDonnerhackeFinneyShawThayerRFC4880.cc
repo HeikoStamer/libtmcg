@@ -236,7 +236,7 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 	 const int verbose) const
 {
 	time_t current = time(NULL);
-	time_t fmax = 60 * 60 * 25; // deviation time: 25 hours
+	time_t fmax = 60 * 60 * 25; // deviation threshold: 25 hours
 	time_t vmax = creationtime + expirationtime;
 	if (expirationtime && (current > vmax))
 	{
@@ -300,8 +300,8 @@ bool TMCG_OpenPGP_Signature::CheckIntegrity
 	else
 	{
 		if (verbose)
-			std::cerr << "ERROR: signature algorithm " <<
-				"not supported" << std::endl;
+			std::cerr << "ERROR: signature algorithm " << (int)pkalgo <<
+				" not supported" << std::endl;
 		return false;
 	}
 	if (vret)
@@ -340,7 +340,7 @@ bool TMCG_OpenPGP_Signature::VerifyData
 	if (!Good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature material" <<	std::endl;
+			std::cerr << "ERROR: bad signature material found" << std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -433,7 +433,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!Good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature material" <<	std::endl;
+			std::cerr << "ERROR: bad signature material found" << std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -533,7 +533,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!Good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature material" <<	std::endl;
+			std::cerr << "ERROR: bad signature material found" << std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -598,7 +598,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!Good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature material" <<	std::endl;
+			std::cerr << "ERROR: bad signature material found" << std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -664,7 +664,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!Good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature material" <<	std::endl;
+			std::cerr << "ERROR: bad signature material found" << std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -730,7 +730,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!Good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature material" <<	std::endl;
+			std::cerr << "ERROR: bad signature material found" << std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
@@ -802,7 +802,7 @@ bool TMCG_OpenPGP_Signature::Verify
 	if (!Good())
 	{
 		if (verbose)
-			std::cerr << "ERROR: bad signature material" <<	std::endl;
+			std::cerr << "ERROR: bad signature material found" << std::endl;
 		return false;
 	}
 	tmcg_openpgp_octets_t trailer, left, hash;
