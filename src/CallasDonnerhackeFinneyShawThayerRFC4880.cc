@@ -10078,7 +10078,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				memset(&untrusted, 0, sizeof(untrusted));
 				tag = SubpacketParse(uspd, verbose, untrusted, unotations);
 				if (tag == 0x00)
+				{
+					PacketContextRelease(untrusted);
 					return 0; // error: incorrect subpacket
+				}
 				PacketContextEvaluate(untrusted, out);
 				PacketContextRelease(untrusted);
 				if (pkt.size() < (10 + hspdlen + uspdlen))
