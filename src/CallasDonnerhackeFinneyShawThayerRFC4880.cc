@@ -9614,7 +9614,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			{
 				if (verbose)
 					std::cerr << "WARNING: more than one embedded signature" <<
-						" found" << std::endl;
+						" found; only the last one is recognized" << std::endl;
 				delete [] out.embeddedsignature;
 			}
 			out.embeddedsignaturelen = pkt.size();
@@ -9751,18 +9751,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextEvaluate
 	bool copy = true;
 	for (size_t i = 0; i < sizeof(out.issuer); i++)
 	{
-		if (out.issuer[i])
+		if (out.issuer[i] != 0)
 			copy = false;
 	}
 	for (size_t i = 0; (copy && (i < sizeof(out.issuer))); i++)
 		out.issuer[i] = in.issuer[i];
 	// copy Embedded Signature, if not already set
-	if (out.embeddedsignaturelen == 0)
+	size_t eslen = in.embeddedsignaturelen;
+	if ((out.embeddedsignaturelen == 0) && (eslen > 0))
 	{
-		out.embeddedsignaturelen = in.embeddedsignaturelen;
-		out.embeddedsignature =
-			new tmcg_openpgp_byte_t[out.embeddedsignaturelen];	
-		for (size_t i = 0; i < in.embeddedsignaturelen; i++)
+		out.embeddedsignaturelen = eslen;
+		out.embeddedsignature =	new tmcg_openpgp_byte_t[eslen];	
+		for (size_t i = 0; i < eslen; i++)
 			out.embeddedsignature[i] = in.embeddedsignature[i];
 	}
 	// copy Issuer Fingerprint, if not already set
