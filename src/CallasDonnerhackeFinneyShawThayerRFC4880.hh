@@ -2000,6 +2000,18 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_hashalgo_t					hashalgo,
 			 tmcg_openpgp_octets_t							&hash,
 			 tmcg_openpgp_octets_t							&left);
+		static bool BinaryDocumentHashV5
+			(const std::string								&filename,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
+		static bool BinaryDocumentHashV5
+			(const tmcg_openpgp_octets_t					&data,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
 		static bool TextDocumentHashV3
 			(const std::string								&filename,
 			 const tmcg_openpgp_octets_t					&trailer,
@@ -2019,6 +2031,18 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_octets_t							&hash,
 			 tmcg_openpgp_octets_t							&left);
 		static bool TextDocumentHash
+			(const tmcg_openpgp_octets_t					&data,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
+		static bool TextDocumentHashV5
+			(const std::string								&filename,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 tmcg_openpgp_octets_t							&hash,
+			 tmcg_openpgp_octets_t							&left);
+		static bool TextDocumentHashV5
 			(const tmcg_openpgp_octets_t					&data,
 			 const tmcg_openpgp_octets_t					&trailer,
 			 const tmcg_openpgp_hashalgo_t					hashalgo,

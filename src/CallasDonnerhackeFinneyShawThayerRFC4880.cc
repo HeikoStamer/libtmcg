@@ -411,6 +411,46 @@ bool TMCG_OpenPGP_Signature::VerifyData
 			return false;
 		}
 	}
+	else if (version == 5)
+	{
+		trailer.push_back(5);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		bool hret;
+		switch (type)
+		{
+			case TMCG_OPENPGP_SIGNATURE_BINARY_DOCUMENT:
+				// For detached signatures 6 zero bytes are hashed instead.
+				for (size_t i = 0; i < 6; i++)
+					trailer.push_back(0);
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					BinaryDocumentHashV5(data, trailer, hashalgo, hash, left);
+				break;
+			case TMCG_OPENPGP_SIGNATURE_CANONICAL_TEXT_DOCUMENT:
+				// For detached signatures 6 zero bytes are hashed instead.
+				for (size_t i = 0; i < 6; i++)
+					trailer.push_back(0);
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					TextDocumentHashV5(data, trailer, hashalgo, hash, left);
+				break;
+			default:
+				if (verbose)
+					std::cerr << "ERROR: signature type not supported " <<
+						std::endl;
+				return false;
+				break;
+		}
+		if (!hret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: cannot process input data" << std::endl;
+			return false;
+		}
+	}
 	else
 	{
 		if (verbose)
@@ -505,6 +545,46 @@ bool TMCG_OpenPGP_Signature::Verify
 				std::cerr << "ERROR: cannot process input " <<
 					"file \"" << filename << "\"" <<
 				std::endl;
+			return false;
+		}
+	}
+	else if (version == 5)
+	{
+		trailer.push_back(5);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		bool hret;
+		switch (type)
+		{
+			case TMCG_OPENPGP_SIGNATURE_BINARY_DOCUMENT:
+				// For detached signatures 6 zero bytes are hashed instead.
+				for (size_t i = 0; i < 6; i++)
+					trailer.push_back(0);
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					BinaryDocumentHashV5(filename, trailer, hashalgo, hash, left);
+				break;
+			case TMCG_OPENPGP_SIGNATURE_CANONICAL_TEXT_DOCUMENT:
+				// For detached signatures 6 zero bytes are hashed instead.
+				for (size_t i = 0; i < 6; i++)
+					trailer.push_back(0);
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					TextDocumentHashV5(filename, trailer, hashalgo, hash, left);
+				break;
+			default:
+				if (verbose)
+					std::cerr << "ERROR: signature type not supported " <<
+						std::endl;
+				return false;
+				break;
+		}
+		if (!hret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: cannot process input data" << std::endl;
 			return false;
 		}
 	}
@@ -11417,6 +11497,50 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 	return true;
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHashV5
+	(const std::string &filename, const tmcg_openpgp_octets_t &trailer, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// *  the two octets 0x05 and 0xFF,
+	// *  a eight-octet big-endian number that is the length of the
+	//    hashed data from the Signature packet stopping right before the
+	//    0x05, 0xff octets.
+	hash_input.push_back(0x05);
+	hash_input.push_back(0xFF);
+	PacketScalarEightEncode(trailer.size(), hash_input);
+	if (!HashComputeFile(hashalgo, filename, false, hash_input, hash))
+		return false;
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHashV5
+	(const tmcg_openpgp_octets_t &data, const tmcg_openpgp_octets_t &trailer, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+
+	hash_input.insert(hash_input.end(), data.begin(), data.end());
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// *  the two octets 0x05 and 0xFF,
+	// *  a eight-octet big-endian number that is the length of the
+	//    hashed data from the Signature packet stopping right before the
+	//    0x05, 0xff octets.
+	hash_input.push_back(0x05);
+	hash_input.push_back(0xFF);
+	PacketScalarEightEncode(trailer.size(), hash_input);
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+	return true;
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHashV3
 	(const std::string &filename, const tmcg_openpgp_octets_t &trailer, 
 	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
@@ -11555,6 +11679,57 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHash
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
+	HashCompute(hashalgo, hash_input, hash);
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHashV5
+	(const std::string &filename, const tmcg_openpgp_octets_t &trailer, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// *  the two octets 0x05 and 0xFF,
+	// *  a eight-octet big-endian number that is the length of the
+	//    hashed data from the Signature packet stopping right before the
+	//    0x05, 0xff octets.
+	hash_input.push_back(0x05);
+	hash_input.push_back(0xFF);
+	PacketScalarEightEncode(trailer.size(), hash_input);
+	if (!HashComputeFile(hashalgo, filename, true, hash_input, hash))
+		return false;
+	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
+		left.push_back(hash[i]);
+	return true;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHashV5
+	(const tmcg_openpgp_octets_t &data, const tmcg_openpgp_octets_t &trailer, 
+	 const tmcg_openpgp_hashalgo_t hashalgo, tmcg_openpgp_octets_t &hash,
+	 tmcg_openpgp_octets_t &left)
+{
+	tmcg_openpgp_octets_t hash_input;
+
+	tmcg_openpgp_byte_t last = '!';
+	for (size_t i = 0; i < data.size(); i++)
+	{
+		if ((data[i] == '\n') && (last != '\r'))
+			hash_input.push_back('\r');
+		hash_input.push_back(data[i]);
+		last = data[i];
+	}
+	hash_input.insert(hash_input.end(), trailer.begin(), trailer.end());
+	// *  the two octets 0x05 and 0xFF,
+	// *  a eight-octet big-endian number that is the length of the
+	//    hashed data from the Signature packet stopping right before the
+	//    0x05, 0xff octets.
+	hash_input.push_back(0x05);
+	hash_input.push_back(0xFF);
+	PacketScalarEightEncode(trailer.size(), hash_input);
 	HashCompute(hashalgo, hash_input, hash);
 	for (size_t i = 0; ((i < 2) && (i < hash.size())); i++)
 		left.push_back(hash[i]);
