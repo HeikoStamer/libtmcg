@@ -11125,12 +11125,12 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				return 0; // error: packet too short
 			for (size_t i = 0; i < out.datafilenamelen; i++)
 				out.datafilename[i] = pkt[2+i];
-			if (pkt.size() < (out.datafilenamelen + 7))
+			if (pkt.size() < (out.datafilenamelen + 6))
 				return 0; // error: packet too short
-			out.datatime = (pkt[3+out.datafilenamelen] << 24) +
-				(pkt[4+out.datafilenamelen] << 16) +
-				(pkt[5+out.datafilenamelen] << 8) +
-				pkt[6+out.datafilenamelen];
+			out.datatime = (pkt[2+out.datafilenamelen] << 24) +
+				(pkt[3+out.datafilenamelen] << 16) +
+				(pkt[4+out.datafilenamelen] << 8) +
+				pkt[5+out.datafilenamelen];
 			if (out.datalen != 0)
 				return 0; // error: already seen within context
 			tmcg_openpgp_mem_alloc += (pkt.size() - (out.datafilenamelen + 6));
