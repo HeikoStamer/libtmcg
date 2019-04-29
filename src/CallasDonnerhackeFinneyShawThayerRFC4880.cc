@@ -11132,7 +11132,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 				(pkt[4+out.datafilenamelen] << 8) +
 				pkt[5+out.datafilenamelen];
 			if (out.datalen != 0)
-				return 0; // error: already seen within context
+				return 0; // error: already seen within this context
 			tmcg_openpgp_mem_alloc += (pkt.size() - (out.datafilenamelen + 6));
 			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
 			{
