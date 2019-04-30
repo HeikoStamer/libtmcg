@@ -7531,6 +7531,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 		subpktlen += (6 + 21); // size of Issuer Fingerprint subpacket
 		subpktlen += 8; // size of Issuer subpacket
 	}
+	else if (issuer.size() == 32)
+	{
+		subpktlen += (1 + issuer.size()); // size of Issuer Fingerprint subpacket
+	}
 	else
 		subpktlen += issuer.size();
 	if (sigexptime != 0)
@@ -7564,6 +7568,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 				keyid.push_back(issuer[i]);
 			SubpacketEncode(16, false, keyid, out);
 		}
+		else if (issuer.size() == 32)
+		{
+			// The OpenPGP Key ID of the key issuing the signature. If the
+			// version of that key is greater than 4, this subpacket MUST NOT
+			// be included in the signature.
+		} 
 		else
 			SubpacketEncode(16, false, issuer, out);
 		// [optional] policy URI (variable length)
@@ -7575,13 +7585,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 			SubpacketEncode(26, false, subpkt_policy, out);
 		}
 		// [optional] issuer fingerprint
-		if (issuer.size() == 20)
+		if ((issuer.size() == 20) || (issuer.size() == 32))
 		{
-			tmcg_openpgp_octets_t issuerfpr;
-			issuerfpr.push_back(4); // key version number (V4)
-			issuerfpr.insert(issuerfpr.end(),
+			tmcg_openpgp_octets_t subpkt_issuerfpr;
+			if (issuer.size() == 20)
+				subpkt_issuerfpr.push_back(4); // key version number (V4)
+			else if (issuer.size() == 32)
+				subpkt_issuerfpr.push_back(5); // key version number (V5)
+			else
+				subpkt_issuerfpr.push_back(0); // this indicates an error
+			subpkt_issuerfpr.insert(subpkt_issuerfpr.end(),
 				issuer.begin(), issuer.end());			
-			SubpacketEncode(33, false, issuerfpr, out);
+			SubpacketEncode(33, false, subpkt_issuerfpr, out);
 		}
 }
 
