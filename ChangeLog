@@ -7,6 +7,8 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2019-04-30] RFC4880: changed PacketSigPrepareDetachedSignature() to catch
+               requirements of RFC4880bis-06 regarding the issuer subpacket
 * [2019-04-30] RFC4880: added PacketSigPrepareDetachedSignatureV5()
 * [2019-04-29] RFC4880: fixed wrong parsing of date within Literal Data Packet
 * [2019-04-29] RFC4880: added BinaryDocumentHashV5(), TextDocumentHashV5()
