@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-04-30] RFC4880: added PacketSigPrepareDetachedSignatureV5()
 * [2019-04-29] RFC4880: fixed wrong parsing of date within Literal Data Packet
 * [2019-04-29] RFC4880: added BinaryDocumentHashV5(), TextDocumentHashV5()
 * [2019-04-27] RFC4880: fixed memory leak in PacketDecode() found by fuzzying
