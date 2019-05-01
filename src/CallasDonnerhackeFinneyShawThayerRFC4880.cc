@@ -4756,14 +4756,14 @@ bool TMCG_OpenPGP_Keyring::Add
 {
 	std::string fpr_str;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		FingerprintCompute(key->pub_hashing, fpr_str);
+		FingerprintConvertPlain(key->fingerprint, fpr_str);
 	if (keys.count(fpr_str))
 		return false; // key is already there
 	keys[fpr_str] = key;
 	// register several key IDs of primary key and subkeys
 	std::string kid_str;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
-		KeyidCompute(key->pub_hashing, kid_str);
+		KeyidConvert(key->id, kid_str);
 	if (!keys_by_keyid.count(kid_str))
 	{
 		keys_by_keyid[kid_str] = key;
@@ -4781,9 +4781,9 @@ bool TMCG_OpenPGP_Keyring::Add
 	for (size_t i = 0; i < (key->subkeys).size(); i++)
 	{
 		CallasDonnerhackeFinneyShawThayerRFC4880::
-			FingerprintCompute(key->subkeys[i]->sub_hashing, fpr_str);
+			FingerprintConvertPlain(key->subkeys[i]->fingerprint, fpr_str);
 		CallasDonnerhackeFinneyShawThayerRFC4880::
-			KeyidCompute(key->subkeys[i]->sub_hashing, kid_str);
+			KeyidConvert(key->subkeys[i]->id, kid_str);
 		if (!keys_by_keyid.count(kid_str))
 		{
 			keys_by_keyid[kid_str] = key;
@@ -4863,7 +4863,7 @@ size_t TMCG_OpenPGP_Keyring::List
 			unsigned int curvebits = 0;
 			std::string pub_kid;
 			CallasDonnerhackeFinneyShawThayerRFC4880::
-				KeyidCompute(pub->pub_hashing, pub_kid);
+				KeyidConvert(pub->id, pub_kid);
 			selected++;
 			std::cout << "pub:";
 			if (pub->valid)
@@ -4963,7 +4963,7 @@ size_t TMCG_OpenPGP_Keyring::List
 			}
 			std::string pub_fpr;
 			CallasDonnerhackeFinneyShawThayerRFC4880::
-				FingerprintCompute(pub->pub_hashing, pub_fpr);
+				FingerprintConvertPlain(pub->fingerprint, pub_fpr);
 			std::cout << "fpr:::::::::" << pub_fpr << ":" << std::endl;
 			for (size_t i = 0; i < pub->userids.size(); i++)
 			{
@@ -4982,9 +4982,14 @@ size_t TMCG_OpenPGP_Keyring::List
 				else
 					std::cout << ":";
 				std::cout << ":";
+				tmcg_openpgp_octets_t uidtmp, uidfpr;
+				for (size_t i = 0; i < (uid->userid).length(); i++)
+					uidtmp.push_back((uid->userid)[i]);
+				CallasDonnerhackeFinneyShawThayerRFC4880::
+					FingerprintCompute(uidtmp, uidfpr); // FIXME: V5 keys?
 				std::string uid_fpr;
 				CallasDonnerhackeFinneyShawThayerRFC4880::
-					FingerprintCompute(uid->userid, uid_fpr);
+					FingerprintConvertPlain(uidfpr, uid_fpr);
 				std::cout << uid_fpr << ":";
 				std::cout << ":";
 				for (size_t j = 0; j < uid->userid.length(); j++)
@@ -5027,7 +5032,7 @@ size_t TMCG_OpenPGP_Keyring::List
 				pub->subkeys[i]->Check(pub, this, 0);
 				std::string sub_kid;
 				CallasDonnerhackeFinneyShawThayerRFC4880::
-					KeyidCompute(sub->sub_hashing, sub_kid);
+					KeyidConvert(sub->id, sub_kid);
 				std::cout << "sub:";
 				if (pub->subkeys[i]->valid)
 					std::cout << "f:";
@@ -5097,7 +5102,7 @@ size_t TMCG_OpenPGP_Keyring::List
 				std::cout << std::endl;
 				std::string sub_fpr;
 				CallasDonnerhackeFinneyShawThayerRFC4880::
-					FingerprintCompute(sub->sub_hashing, sub_fpr);
+					FingerprintConvertPlain(sub->fingerprint, sub_fpr);
 				std::cout << "fpr:::::::::" << sub_fpr << ":" << std::endl;
 			}
 		}
@@ -5140,7 +5145,7 @@ void TMCG_OpenPGP_Keyring::Reduce
 		std::string kid_str;
 		const TMCG_OpenPGP_Pubkey *key = keys[fpr_str];
 		CallasDonnerhackeFinneyShawThayerRFC4880::
-			KeyidCompute(key->pub_hashing, kid_str);
+			KeyidConvert(key->id, kid_str);
 		keys_by_keyid.erase(fpr_str);
 		keys_by_keyid.erase("0x"+fpr_str);
 		keys_by_keyid.erase(kid_str);
@@ -5148,9 +5153,9 @@ void TMCG_OpenPGP_Keyring::Reduce
 		for (size_t j = 0; j < (key->subkeys).size(); j++)
 		{
 			CallasDonnerhackeFinneyShawThayerRFC4880::
-				FingerprintCompute(key->subkeys[j]->sub_hashing, fpr_str);
+				FingerprintConvertPlain(key->subkeys[j]->fingerprint, fpr_str);
 			CallasDonnerhackeFinneyShawThayerRFC4880::
-				KeyidCompute(key->subkeys[j]->sub_hashing, kid_str);
+				KeyidConvert(key->subkeys[j]->id, kid_str);
 			keys_by_keyid.erase(fpr_str);
 			keys_by_keyid.erase("0x"+fpr_str);
 			keys_by_keyid.erase(kid_str);
@@ -6242,48 +6247,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintConvertPretty
 	delete [] hex_digest;
 }
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
-	(const tmcg_openpgp_octets_t &in, std::string &out)
-{
-	tmcg_openpgp_octets_t fpr;
-	FingerprintCompute(in, fpr);
-	FingerprintConvertPlain(fpr, out);
-}
-
-void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintComputeV5
-	(const tmcg_openpgp_octets_t &in, std::string &out)
-{
-	tmcg_openpgp_octets_t fpr;
-	FingerprintComputeV5(in, fpr);
-	FingerprintConvertPlain(fpr, out);
-}
-
-void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintCompute
-	(const std::string &in, std::string &out)
-{
-	tmcg_openpgp_octets_t input, fpr;
-	for (size_t i = 0; i < in.length(); i++)
-		input.push_back(in[i]);
-	FingerprintCompute(input, fpr);
-	FingerprintConvertPlain(fpr, out);
-}
-
-void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintComputePretty
-	(const tmcg_openpgp_octets_t &in, std::string &out)
-{
-	tmcg_openpgp_octets_t fpr;
-	FingerprintCompute(in, fpr);
-	FingerprintConvertPretty(fpr, out);
-}
-
-void CallasDonnerhackeFinneyShawThayerRFC4880::FingerprintComputePrettyV5
-	(const tmcg_openpgp_octets_t &in, std::string &out)
-{
-	tmcg_openpgp_octets_t fpr;
-	FingerprintComputeV5(in, fpr);
-	FingerprintConvertPretty(fpr, out);
-}
-
 void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
 	(const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &out)
 {
@@ -6318,22 +6281,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidConvert
 		snprintf(hex_digest + (2 * i), 3, "%02X", in[i]);
 	out = hex_digest;
 	delete [] hex_digest;
-}
-
-void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidCompute
-	(const tmcg_openpgp_octets_t &in, std::string &out)
-{
-	tmcg_openpgp_octets_t kid;
-	KeyidCompute(in, kid);
-	KeyidConvert(kid, out);
-}
-
-void CallasDonnerhackeFinneyShawThayerRFC4880::KeyidComputeV5
-	(const tmcg_openpgp_octets_t &in, std::string &out)
-{
-	tmcg_openpgp_octets_t kid;
-	KeyidComputeV5(in, kid);
-	KeyidConvert(kid, out);
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
