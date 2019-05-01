@@ -8,7 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-05-01] RFC4880: added support of v5 keys in parsing functions
-* [2019-04-30] RFC4880: changed PacketSigPrepareDetachedSignature() to catch
+* [2019-04-30] RFC4880: changed PacketSigPrepareDetachedSignature() to follow
                requirements of RFC4880bis-06 regarding the issuer subpacket
 * [2019-04-30] RFC4880: added PacketSigPrepareDetachedSignatureV5()
 * [2019-04-29] RFC4880: fixed wrong parsing of date within Literal Data Packet
