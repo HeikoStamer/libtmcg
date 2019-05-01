@@ -7164,7 +7164,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
-	(const tmcg_openpgp_octets_t &hspd,
+	(const tmcg_openpgp_octets_t &in,
 	 const tmcg_openpgp_octets_t &left,
 	 const gcry_mpi_t r, const gcry_mpi_t s, tmcg_openpgp_octets_t &out)
 {
@@ -7179,9 +7179,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
 	// format with subpackets that can specify more information about the
 	// signature.
 	PacketTagEncode(2, out);
-	PacketLengthEncode(hspd.size()+2+left.size()+2+rlen+2+slen, out);
-	// hashed area including subpackets
-	out.insert(out.end(), hspd.begin(), hspd.end());
+	PacketLengthEncode(in.size()+2+left.size()+2+rlen+2+slen, out);
+	// hashed area including first part of packet body and subpackets
+	out.insert(out.end(), in.begin(), in.end());
 	// unhashed subpacket area
 	out.push_back((0 >> 8) & 0xFF); // length of unhashed subpacket data
 	out.push_back(0 & 0xFF);
@@ -7192,7 +7192,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
-	(const tmcg_openpgp_octets_t &hspd,
+	(const tmcg_openpgp_octets_t &in,
 	 const tmcg_openpgp_octets_t &left,
 	 const gcry_mpi_t s, tmcg_openpgp_octets_t &out)
 {
@@ -7206,9 +7206,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
 	// format with subpackets that can specify more information about the
 	// signature.
 	PacketTagEncode(2, out);
-	PacketLengthEncode(hspd.size()+2+left.size()+2+slen, out);
-	// hashed area including subpackets
-	out.insert(out.end(), hspd.begin(), hspd.end());
+	PacketLengthEncode(in.size()+2+left.size()+2+slen, out);
+	// hashed area including first part of packet body and subpackets
+	out.insert(out.end(), in.begin(), in.end());
 	// unhashed subpacket area
 	out.push_back((0 >> 8) & 0xFF); // length of unhashed subpacket data
 	out.push_back(0 & 0xFF);
