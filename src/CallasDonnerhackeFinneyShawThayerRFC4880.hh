@@ -1496,21 +1496,6 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void FingerprintConvertPretty
 			(const tmcg_openpgp_octets_t					&in,
 			 std::string									&out);
-		static void FingerprintCompute
-			(const tmcg_openpgp_octets_t					&in,
-			 std::string									&out);
-		static void FingerprintComputeV5
-			(const tmcg_openpgp_octets_t					&in,
-			 std::string									&out);
-		static void FingerprintCompute
-			(const std::string								&in,
-			 std::string									&out);
-		static void FingerprintComputePretty
-			(const tmcg_openpgp_octets_t					&in,
-			 std::string									&out);
-		static void FingerprintComputePrettyV5
-			(const tmcg_openpgp_octets_t					&in,
-			 std::string									&out);
 		static void KeyidCompute
 			(const tmcg_openpgp_octets_t					&in,
 			 tmcg_openpgp_octets_t							&out);
@@ -1518,12 +1503,6 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_openpgp_octets_t					&in,
 			 tmcg_openpgp_octets_t							&out);
 		static void KeyidConvert
-			(const tmcg_openpgp_octets_t					&in,
-			 std::string									&out);
-		static void KeyidCompute
-			(const tmcg_openpgp_octets_t					&in,
-			 std::string									&out);
-		static void KeyidComputeV5
 			(const tmcg_openpgp_octets_t					&in,
 			 std::string									&out);
 		static void HashCompute

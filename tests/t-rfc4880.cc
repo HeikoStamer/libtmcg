@@ -558,13 +558,13 @@ int main
 		parse_ok = primary->CheckSubkeys(ring, 3);
 		assert(parse_ok);
 		std::string fpr, kid;
-		std::cout << "FingerprintCompute()" << std::endl;
+		std::cout << "FingerprintConvertPlain()" << std::endl;
 		CallasDonnerhackeFinneyShawThayerRFC4880::
-			FingerprintCompute(primary->pub_hashing, fpr);
+			FingerprintConvertPlain(primary->fingerprint, fpr);
 		std::cout << fpr << std::endl;
-		std::cout << "KeyidCompute()" << std::endl;
+		std::cout << "KeyidConvert()" << std::endl;
 		CallasDonnerhackeFinneyShawThayerRFC4880::
-			KeyidCompute(primary->pub_hashing, kid);
+			KeyidConvert(primary->id, kid);
 		std::cout << kid << std::endl;
 		std::cout << "!primary->Weak()" << std::endl;
 		bool check_ok = primary->Weak(3);
