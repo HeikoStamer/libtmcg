@@ -7164,7 +7164,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPkeskEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
-	(const tmcg_openpgp_octets_t &hashing,
+	(const tmcg_openpgp_octets_t &hspd,
 	 const tmcg_openpgp_octets_t &left,
 	 const gcry_mpi_t r, const gcry_mpi_t s, tmcg_openpgp_octets_t &out)
 {
@@ -7179,9 +7179,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
 	// format with subpackets that can specify more information about the
 	// signature.
 	PacketTagEncode(2, out);
-	PacketLengthEncode(hashing.size()+2+0+left.size()+2+rlen+2+slen, out);
+	PacketLengthEncode(hspd.size()+2+left.size()+2+rlen+2+slen, out);
 	// hashed area including subpackets
-	out.insert(out.end(), hashing.begin(), hashing.end());
+	out.insert(out.end(), hspd.begin(), hspd.end());
 	// unhashed subpacket area
 	out.push_back((0 >> 8) & 0xFF); // length of unhashed subpacket data
 	out.push_back(0 & 0xFF);
@@ -7192,7 +7192,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
-	(const tmcg_openpgp_octets_t &hashing,
+	(const tmcg_openpgp_octets_t &hspd,
 	 const tmcg_openpgp_octets_t &left,
 	 const gcry_mpi_t s, tmcg_openpgp_octets_t &out)
 {
@@ -7206,9 +7206,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigEncode
 	// format with subpackets that can specify more information about the
 	// signature.
 	PacketTagEncode(2, out);
-	PacketLengthEncode(hashing.size()+2+0+left.size()+2+slen, out);
+	PacketLengthEncode(hspd.size()+2+left.size()+2+slen, out);
 	// hashed area including subpackets
-	out.insert(out.end(), hashing.begin(), hashing.end());
+	out.insert(out.end(), hspd.begin(), hspd.end());
 	// unhashed subpacket area
 	out.push_back((0 >> 8) & 0xFF); // length of unhashed subpacket data
 	out.push_back(0 & 0xFF);
@@ -15211,7 +15211,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag6
 	 const tmcg_openpgp_octets_t &current_packet,
 	 bool &primary, TMCG_OpenPGP_Pubkey* &pub)
 {
-	if (ctx.version != 4)
+	if ((ctx.version != 4) && (ctx.version != 5))
 	{
 		if (verbose)
 			std::cerr << "WARNING: public-key packet version " <<
@@ -15324,7 +15324,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag14
 	if (!badkey && subkey)
 		pub->subkeys.push_back(sub);
 	sub = NULL, subkey = true, badkey = false;
-	if (ctx.version != 4)
+	if ((ctx.version != 4) && (ctx.version != 5))
 	{
 		if (verbose)
 			std::cerr << "WARNING: public-subkey packet version " <<

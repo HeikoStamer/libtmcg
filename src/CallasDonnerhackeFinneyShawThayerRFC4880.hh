@@ -1643,13 +1643,13 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_byte_t						rkw[256],
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSigEncode
-			(const tmcg_openpgp_octets_t					&hashing,
+			(const tmcg_openpgp_octets_t					&hspd,
 			 const tmcg_openpgp_octets_t					&left,
 			 const gcry_mpi_t								r,
 			 const gcry_mpi_t								s,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSigEncode
-			(const tmcg_openpgp_octets_t					&hashing,
+			(const tmcg_openpgp_octets_t					&hspd,
 			 const tmcg_openpgp_octets_t					&left,
 			 const gcry_mpi_t								s,
 			 tmcg_openpgp_octets_t							&out);
