@@ -465,6 +465,178 @@ bool TMCG_OpenPGP_Signature::VerifyData
 	return false;
 }
 
+bool TMCG_OpenPGP_Signature::VerifyData
+	(const gcry_sexp_t key,
+	 const tmcg_openpgp_octets_t &data,
+	 const tmcg_openpgp_byte_t data_format,
+	 const std::string &data_filename,
+	 const time_t data_timestamp,
+	 const int verbose) const
+{
+	if (!Good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: bad signature material found" << std::endl;
+		return false;
+	}
+	tmcg_openpgp_octets_t trailer, left, hash;
+	if (version == 3)
+	{
+		tmcg_openpgp_octets_t sigtime_octets;
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			PacketTimeEncode(creationtime, sigtime_octets);
+		trailer.push_back(type);
+		trailer.insert(trailer.end(),
+			sigtime_octets.begin(), sigtime_octets.end());
+		bool hret;
+		switch (type)
+		{
+			case TMCG_OPENPGP_SIGNATURE_BINARY_DOCUMENT:
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					BinaryDocumentHashV3(data, trailer, hashalgo, hash, left);
+				break;
+			case TMCG_OPENPGP_SIGNATURE_CANONICAL_TEXT_DOCUMENT:
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					TextDocumentHashV3(data, trailer, hashalgo, hash, left);
+				break;
+			default:
+				if (verbose)
+					std::cerr << "ERROR: signature type not supported " <<
+						std::endl;
+				return false;
+				break;
+		}
+		if (!hret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: cannot process input data" << std::endl;
+			return false;
+		}
+	}
+	else if (version == 4)
+	{
+		trailer.push_back(4);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		bool hret;
+		switch (type)
+		{
+			case TMCG_OPENPGP_SIGNATURE_BINARY_DOCUMENT:
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					BinaryDocumentHash(data, trailer, hashalgo, hash, left);
+				break;
+			case TMCG_OPENPGP_SIGNATURE_CANONICAL_TEXT_DOCUMENT:
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					TextDocumentHash(data, trailer, hashalgo, hash, left);
+				break;
+			default:
+				if (verbose)
+					std::cerr << "ERROR: signature type not supported " <<
+						std::endl;
+				return false;
+				break;
+		}
+		if (!hret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: cannot process input data" << std::endl;
+			return false;
+		}
+	}
+	else if (version == 5)
+	{
+		trailer.push_back(5);
+		trailer.push_back(type);
+		trailer.push_back(pkalgo);
+		trailer.push_back(hashalgo);
+		trailer.push_back((hspd.size() >> 8) & 0xFF);
+		trailer.push_back(hspd.size() & 0xFF);
+		trailer.insert(trailer.end(), hspd.begin(), hspd.end());
+		bool hret;
+		switch (type)
+		{
+			case TMCG_OPENPGP_SIGNATURE_BINARY_DOCUMENT:
+				// Only for document signatures (type 0x00 or 0x01) the
+				// following three data items are hashed here:
+				//   +  the one-octet content format,
+				trailer.push_back(data_format);
+				//   +  the file name as a string (one octet length, followed
+				//      by the file name),
+				if (data_filename.length() > 255)
+				{
+					if (verbose)
+						std::cerr << "ERROR: file name too long" << std::endl;
+					return false;
+				}
+				else
+				{
+					trailer.push_back(data_filename.length());
+					for (size_t i = 0; i < data_filename.length(); i++)
+						trailer.push_back(data_filename[i]);
+				}
+				//   +  a four-octet number that indicates a date,
+				CallasDonnerhackeFinneyShawThayerRFC4880::
+					PacketTimeEncode(data_timestamp, trailer);
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					BinaryDocumentHashV5(data, trailer, hashalgo, hash, left);
+				break;
+			case TMCG_OPENPGP_SIGNATURE_CANONICAL_TEXT_DOCUMENT:
+				// Only for document signatures (type 0x00 or 0x01) the
+				// following three data items are hashed here:
+				//   +  the one-octet content format,
+				trailer.push_back(data_format);
+				//   +  the file name as a string (one octet length, followed
+				//      by the file name),
+				if (data_filename.length() > 255)
+				{
+					if (verbose)
+						std::cerr << "ERROR: file name too long" << std::endl;
+					return false;
+				}
+				else
+				{
+					trailer.push_back(data_filename.length());
+					for (size_t i = 0; i < data_filename.length(); i++)
+						trailer.push_back(data_filename[i]);
+				}
+				//   +  a four-octet number that indicates a date,
+				CallasDonnerhackeFinneyShawThayerRFC4880::
+					PacketTimeEncode(data_timestamp, trailer);
+				hret = CallasDonnerhackeFinneyShawThayerRFC4880::
+					TextDocumentHashV5(data, trailer, hashalgo, hash, left);
+				break;
+			default:
+				if (verbose)
+					std::cerr << "ERROR: signature type not supported " <<
+						std::endl;
+				return false;
+				break;
+		}
+		if (!hret)
+		{
+			if (verbose)
+				std::cerr << "ERROR: cannot process input data" << std::endl;
+			return false;
+		}
+	}
+	else
+	{
+		if (verbose)
+			std::cerr << "ERROR: signature version not supported" << std::endl;
+		return false;
+	}
+	if (verbose > 2)
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
+			" " << (int)left[1] << std::dec << std::endl;
+	if (CheckIntegrity(key, hash, verbose))
+		return true;
+	return false;
+}
+
 bool TMCG_OpenPGP_Signature::Verify
 	(const gcry_sexp_t key,
 	 const std::string &filename,
