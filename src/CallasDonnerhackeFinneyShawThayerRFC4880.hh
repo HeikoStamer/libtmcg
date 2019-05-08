@@ -625,7 +625,14 @@ class TMCG_OpenPGP_Signature
 		bool VerifyData
 			(const gcry_sexp_t								key,
 			 const tmcg_openpgp_octets_t					&data,
-	 		 const int 										verbose) const;		
+	 		 const int 										verbose) const;
+		bool VerifyData
+			(const gcry_sexp_t								key,
+			 const tmcg_openpgp_octets_t					&data,
+			 const tmcg_openpgp_byte_t						data_format,
+			 const std::string								&data_filename,
+			 const time_t									data_timestamp,
+	 		 const int 										verbose) const;
 		bool Verify
 			(const gcry_sexp_t								key,
 			 const std::string								&filename,

@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-05-08] RFC4880: added another shape of VerfifyData() for v5 signatures
 * [2019-05-01] RFC4880: removed unnecessary interfaces for fingerprints/key IDs
 * [2019-05-01] RFC4880: added support of v5 keys to TMCG_OpenPGP_Keyring
 * [2019-05-01] RFC4880: added support of v5 keys in parsing functions
