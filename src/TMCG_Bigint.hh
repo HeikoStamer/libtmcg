@@ -33,12 +33,13 @@
 struct TMCG_Bigint
 {
 	const bool secret;
+	const bool exportable;
 	mpz_t bigint;
 	gcry_mpi_t secret_bigint;
 
 	// Constructors
 	TMCG_Bigint
-		(const bool secret_in = false);
+		(const bool secret_in = false, const bool exportable_in = false);
 	TMCG_Bigint
 		(const TMCG_Bigint& that);
 

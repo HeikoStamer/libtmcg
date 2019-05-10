@@ -35,8 +35,8 @@
 #include "mpz_spowm.hh"
 
 TMCG_Bigint::TMCG_Bigint
-	(const bool secret_in):
-		secret(secret_in)
+	(const bool secret_in, const bool exportable_in):
+		secret(secret_in), exportable(exportable_in)
 {
 	if (secret)
 		secret_bigint = gcry_mpi_snew(8);
@@ -46,7 +46,7 @@ TMCG_Bigint::TMCG_Bigint
 
 TMCG_Bigint::TMCG_Bigint
 	(const TMCG_Bigint& that):
-		secret(that.secret)
+		secret(that.secret), exportable(that.exportable)
 {
 	if (secret)
 	{
@@ -321,7 +321,7 @@ bool TMCG_Bigint::operator ==
 {
 	if (secret)
 	{
-		if (that.secret) // TODO: use constant-time compare strategy 
+		if (that.secret) // TODO: use constant-time compare strategy
 			return (gcry_mpi_cmp(secret_bigint, that.secret_bigint) == 0);
 		else
 			throw std::invalid_argument("TMCG_Bigint::comparison not allowed");
@@ -771,7 +771,21 @@ std::ostream& operator <<
 {
 	if (that.secret)
 	{
-		throw std::invalid_argument("TMCG_Bigint::output not allowed");
+		if (!that.exportable)
+			throw std::invalid_argument("TMCG_Bigint::output not allowed");
+		mpz_t tmp;
+		mpz_init(tmp);
+		if (tmcg_mpz_set_gcry_mpi(that.secret_bigint, tmp))
+		{
+			out << tmp;
+		}
+		else
+		{
+			mpz_clear(tmp);
+			out.setstate(std::ostream::iostate(std::ostream::failbit));
+			throw std::runtime_error("operator <<: tmcg_mpz_set_gcry_mpi failed");
+		}
+		mpz_clear(tmp);
 	}
 	else
 	{
