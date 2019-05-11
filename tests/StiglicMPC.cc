@@ -338,15 +338,16 @@ bool StiglicMPC::MPC_CyclicShift_Hoogh
 }
 
 void StiglicMPC::MPC_ComputeNEG
-	(MPC_Bit &result, const MPC_Bit bit)
+	(MPC_Bit &result, const MPC_Bit &bit)
 {
 	assert(bit.size() == 2);
 	
-	result.clear(), result.push(bit[1]), result.push(bit[0]);
+	result.clear();
+	result.push(bit[1]), result.push(bit[0]);
 }
 
 bool StiglicMPC::MPC_ComputeAND
-	(MPC_Bit &result, const MPC_Bit bitA, const MPC_Bit bitB,
+	(MPC_Bit &result, const MPC_Bit &bitA, const MPC_Bit &bitB,
 	 const bool use_vrhe)
 {
 	assert((bitA.size() == 2) && (bitB.size() == 2));
@@ -389,21 +390,22 @@ bool StiglicMPC::MPC_ComputeAND
 	};
 	
 	// step 5. -- choose result
+	result.clear();
 	if (cb[0] && cb[1])
 	{
-		result.clear(), result.push(las_vegas[5]), result.push(las_vegas[6]);
+		result.push(las_vegas[5]), result.push(las_vegas[6]);
 	}
 	else if (!cb[0] && cb[1] && cb[2])
 	{
-		result.clear(), result.push(las_vegas[6]), result.push(las_vegas[7]);
+		result.push(las_vegas[6]), result.push(las_vegas[7]);
 	}
 	else if (!cb[0] && !cb[1])
 	{
-		result.clear(), result.push(las_vegas[3]), result.push(las_vegas[4]);
+		result.push(las_vegas[3]), result.push(las_vegas[4]);
 	}
 	else if (cb[0] && !cb[1] && !cb[2])
 	{
-		result.clear(), result.push(las_vegas[4]), result.push(las_vegas[5]);
+		result.push(las_vegas[4]), result.push(las_vegas[5]);
 	}
 	else
 		return false;
@@ -416,7 +418,8 @@ bool StiglicMPC::MPC_ComputeOR
 {
 	MPC_Bit nA, nB, nAB;
 	
-	MPC_ComputeNEG(nA, bitA), MPC_ComputeNEG(nB, bitB);
+	MPC_ComputeNEG(nA, bitA);
+	MPC_ComputeNEG(nB, bitB);
 	if (!MPC_ComputeAND(nAB, nA, nB))
 		return false;
 	MPC_ComputeNEG(result, nAB);
@@ -429,7 +432,8 @@ bool StiglicMPC::MPC_ComputeXOR
 {
 	MPC_Bit nA, nB, nAB, AnB;
 	
-	MPC_ComputeNEG(nA, bitA), MPC_ComputeNEG(nB, bitB);
+	MPC_ComputeNEG(nA, bitA);
+	MPC_ComputeNEG(nB, bitB);
 	if (!MPC_ComputeAND(nAB, nA, bitB))
 		return false;
 	if (!MPC_ComputeAND(AnB, bitA, nB))
@@ -498,9 +502,12 @@ bool StiglicMPC::MPC_CopyBitCommitment
 	}
 	else
 	{
-		copy1.clear(), copy1.push(copyshop[0]), copy1.push(copyshop[1]);
-		copy2.clear(), copy2.push(copyshop[2]), copy2.push(copyshop[3]);
-		MPC_ComputeNEG(copy1, copy1), MPC_ComputeNEG(copy2, copy2);
+		TMCG_Stack<VTMF_Card> c1, c2;
+		c1.push(copyshop[0]), c1.push(copyshop[1]);
+		c2.push(copyshop[2]), c2.push(copyshop[3]);
+		copy1.clear(), copy2.clear();
+		MPC_ComputeNEG(copy1, c1);
+		MPC_ComputeNEG(copy2, c2);
 	}
 	
 	return true;

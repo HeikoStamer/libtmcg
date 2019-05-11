@@ -97,10 +97,10 @@ class StiglicMPC
 			(TMCG_Stack<VTMF_Card> &stack);
 		
 		void MPC_ComputeNEG
-			(MPC_Bit &result, const MPC_Bit bit);
+			(MPC_Bit &result, const MPC_Bit &bit);
 		
 		bool MPC_ComputeAND
-			(MPC_Bit &result, const MPC_Bit bitA, const MPC_Bit bitB,
+			(MPC_Bit &result, const MPC_Bit &bitA, const MPC_Bit &bitB,
 			 const bool use_vrhe = true);
 		
 		bool MPC_ComputeOR
