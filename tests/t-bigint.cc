@@ -203,7 +203,7 @@ gcry_mpi_t a = gcry_mpi_new(1), b = gcry_mpi_new(1);
 gcry_mpi_set_ui(a, 42UL), gcry_mpi_set_ui(b, 42UL); // a = +42, b = +42
 gcry_mpi_neg(a, a), gcry_mpi_neg(b, b); // a = -42, b = -42
 gcry_mpi_sub(a, a, b); // a = -0, b = -42
-gcry_mpi_set_ui(b, 0UL); // a = -0, b = +0
+gcry_mpi_set_ui(b, 0UL); // a = -0, b = +0 
 assert(gcry_mpi_cmp(a, b)); // SHOULD fail
 gcry_mpi_release(a), gcry_mpi_release(b);
 std::cerr << "sfoo = " << sfoo << " sbar = " << sbar << " sbaz = " << sbaz << std::endl;

@@ -18,11 +18,11 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20190317])
+AC_REVISION([20190511])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.4.0], [HeikoStamer@gmx.net], [libTMCG],
-	[http://www.nongnu.org/libtmcg/])
+	[https://www.nongnu.org/libtmcg/])
 
 # The next two paragraphs are copies of behaviour from libgcrypt.
 
