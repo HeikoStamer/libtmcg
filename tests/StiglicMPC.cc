@@ -258,7 +258,7 @@ bool StiglicMPC::MPC_OpenBitCommitment
 }
 
 bool StiglicMPC::MPC_CyclicShift
-	(TMCG_Stack<VTMF_Card> &result, TMCG_Stack<VTMF_Card> stack)
+	(TMCG_Stack<VTMF_Card> &stack)
 {
 	assert(stack.size() > 0);
 	
@@ -293,13 +293,12 @@ bool StiglicMPC::MPC_CyclicShift
 		}
 		stack = s1;
 	}
-	result = stack;
 	
 	return true;
 }
 
 bool StiglicMPC::MPC_CyclicShift_Hoogh
-	(TMCG_Stack<VTMF_Card> &result, TMCG_Stack<VTMF_Card> stack)
+	(TMCG_Stack<VTMF_Card> &stack)
 {
 	assert(stack.size() > 0);
 	
@@ -334,7 +333,6 @@ bool StiglicMPC::MPC_CyclicShift_Hoogh
 		}
 		stack = s1;
 	}
-	result = stack;
 	
 	return true;
 }
@@ -365,12 +363,12 @@ bool StiglicMPC::MPC_ComputeAND
 		// step 2. and 3. -- apply a cyclic shift
 		if (use_vrhe)
 		{
-			if (!MPC_CyclicShift_Hoogh(las_vegas, las_vegas))
+			if (!MPC_CyclicShift_Hoogh(las_vegas))
 				return false;
 		}
 		else
 		{
-			if (!MPC_CyclicShift(las_vegas, las_vegas))
+			if (!MPC_CyclicShift(las_vegas))
 				return false;
 		}
 		
@@ -457,16 +455,16 @@ bool StiglicMPC::MPC_CopyBitCommitment
 	// step 2a. -- apply a cyclic shift to the six rightmost cards
 	if (use_vrhe)
 	{
-		if (!MPC_CyclicShift_Hoogh(copyshop, copyshop))
+		if (!MPC_CyclicShift_Hoogh(copyshop))
 			return false;
 	}
 	else
 	{	
-		if (!MPC_CyclicShift(copyshop, copyshop))
+		if (!MPC_CyclicShift(copyshop))
 			return false;
 	}
 	
-	// step 2b. -- create the necessary configuration
+	// step 2b. -- create the required configuration of the cards
 	left.push(bit), left.push(copyshop[0]), left.push(copyshop[1]);
 	copyshop.stack.erase(copyshop.stack.begin(), copyshop.stack.begin() + 2);
 	assert(copyshop.size() == 4);
@@ -474,12 +472,12 @@ bool StiglicMPC::MPC_CopyBitCommitment
 	// step 3. -- apply a cyclic shift to the four topmost cards
 	if (use_vrhe)
 	{
-		if (!MPC_CyclicShift_Hoogh(left, left))
+		if (!MPC_CyclicShift_Hoogh(left))
 			return false;
 	}
 	else
 	{
-		if (!MPC_CyclicShift(left, left))
+		if (!MPC_CyclicShift(left))
 			return false;
 	}
 	
@@ -514,12 +512,12 @@ bool StiglicMPC::MPC_RandomBitCommitment
 	result.clear(), result.push(base);
 	if (use_vrhe)
 	{
-		if (!MPC_CyclicShift_Hoogh(result, result))
+		if (!MPC_CyclicShift_Hoogh(result))
 			return false;
 	}
 	else
 	{
-		if (!MPC_CyclicShift(result, result))
+		if (!MPC_CyclicShift(result))
 			return false;
 	}
 	return true;

@@ -91,10 +91,10 @@ class StiglicMPC
 			(const MPC_Bit &bit, bool &b);
 		
 		bool MPC_CyclicShift
-			(TMCG_Stack<VTMF_Card> &result, TMCG_Stack<VTMF_Card> stack);
+			(TMCG_Stack<VTMF_Card> &stack);
 
 		bool MPC_CyclicShift_Hoogh
-			(TMCG_Stack<VTMF_Card> &result, TMCG_Stack<VTMF_Card> stack);
+			(TMCG_Stack<VTMF_Card> &stack);
 		
 		void MPC_ComputeNEG
 			(MPC_Bit &result, const MPC_Bit bit);
