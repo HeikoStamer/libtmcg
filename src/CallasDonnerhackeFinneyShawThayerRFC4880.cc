@@ -2109,6 +2109,11 @@ bool TMCG_OpenPGP_Subkey::CheckExternalRevocation
 			if (sig->Verify(revkey->key, sub_hashing, verbose))
 				valid_revsig = true;
 		}
+		else
+		{
+			if (verbose)
+				std::cerr << "WARNING: revocation key not found" << std::endl;
+		}
 	}
 	return valid_revsig;
 }
