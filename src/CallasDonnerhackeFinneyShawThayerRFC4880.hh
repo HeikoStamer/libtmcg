@@ -1187,6 +1187,7 @@ class TMCG_OpenPGP_Keyring
 class TMCG_OpenPGP_PKESK
 {
 	public:
+		tmcg_openpgp_byte_t									version;
 		tmcg_openpgp_pkalgo_t								pkalgo;
 		tmcg_openpgp_octets_t								keyid;
 		gcry_mpi_t											me;

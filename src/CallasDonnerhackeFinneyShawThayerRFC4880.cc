@@ -5357,6 +5357,13 @@ TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
 	 const tmcg_openpgp_octets_t &packet_in):
 		pkalgo(pkalgo_in), rkwlen(0)
 {
+	tmcg_openpgp_octets_t body;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
 	keyid.insert(keyid.end(), keyid_in.begin(), keyid_in.end());
 	me = gcry_mpi_new(2048);
 	gk = gcry_mpi_new(8);
@@ -5376,6 +5383,13 @@ TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
 	 const tmcg_openpgp_octets_t &packet_in):
 		pkalgo(pkalgo_in), rkwlen(0)
 {
+	tmcg_openpgp_octets_t body;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
 	keyid.insert(keyid.end(), keyid_in.begin(), keyid_in.end());
 	me = gcry_mpi_new(8);
 	gk = gcry_mpi_new(2048);
@@ -5397,6 +5411,13 @@ TMCG_OpenPGP_PKESK::TMCG_OpenPGP_PKESK
 	 const tmcg_openpgp_octets_t &packet_in):
 		pkalgo(pkalgo_in), rkwlen(rkwlen_in)
 {
+	tmcg_openpgp_octets_t body;
+	CallasDonnerhackeFinneyShawThayerRFC4880::
+		PacketBodyExtract(packet_in, 0, body);
+	if (body.size() > 0)
+		version = body[0]; // extract version from packet body
+	else
+		version = 0;
 	keyid.insert(keyid.end(), keyid_in.begin(), keyid_in.end());
 	me = gcry_mpi_new(8);
 	gk = gcry_mpi_new(8);
