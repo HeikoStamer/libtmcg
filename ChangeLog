@@ -7,6 +7,8 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2019-05-20] RFC4880: fixed wrong iterated KDF computation in S2KCompute()
+* [2019-05-20] RFC4880: changed interface of HashCompute()
 * [2019-05-15] RFC4880: added public member version to TMCG_OpenPGP_PKESK
 * [2019-05-08] RFC4880: added another shape of VerfifyData() for v5 signatures
 * [2019-05-01] RFC4880: removed unnecessary interfaces for fingerprints/key IDs

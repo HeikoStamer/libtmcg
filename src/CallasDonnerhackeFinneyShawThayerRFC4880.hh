@@ -1519,16 +1519,19 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t HashCompute
 			(const tmcg_openpgp_hashalgo_t					algo,
+			 const size_t									nzp,
 			 const tmcg_openpgp_secure_octets_t				&in,
 			 tmcg_openpgp_secure_octets_t					&out);
 		static void HashCompute
 			(const tmcg_openpgp_hashalgo_t					algo,
-			 const size_t									cnt,
+			 const uint32_t									cnt,
+			 const size_t									nzp,
 			 const tmcg_openpgp_octets_t					&in,
 			 tmcg_openpgp_octets_t							&out);
 		static gcry_error_t HashCompute
 			(const tmcg_openpgp_hashalgo_t					algo,
-			 const size_t									cnt,
+			 const uint32_t									cnt,
+			 const size_t									nzp,
 			 const tmcg_openpgp_secure_octets_t				&in,
 			 tmcg_openpgp_secure_octets_t					&out);
 		static bool HashComputeFile
