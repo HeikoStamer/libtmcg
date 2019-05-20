@@ -6505,9 +6505,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
-	(const tmcg_openpgp_hashalgo_t algo,
-	 const tmcg_openpgp_secure_octets_t &in,
-	 tmcg_openpgp_secure_octets_t &out)
+	(const tmcg_openpgp_hashalgo_t algo, const size_t nzp,
+	 const tmcg_openpgp_secure_octets_t &in, tmcg_openpgp_secure_octets_t &out)
 {
 	int a = AlgorithmHashGCRY(algo);
 	size_t dlen = gcry_md_get_algo_dlen(a);
@@ -6517,6 +6516,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	ret = gcry_md_open(&hd, a, GCRY_MD_FLAG_SECURE);
 	if (ret)
 		return ret;
+	for (size_t i = 0; i < nzp; i++)
+		gcry_md_putc(hd, 0); // number of zeros to preload in KDF
 	for (size_t i = 0; i < in.size(); i++)
 		gcry_md_putc(hd, in[i]);
 	gcry_md_final(hd);
@@ -6533,8 +6534,9 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
-	(const tmcg_openpgp_hashalgo_t algo, const size_t cnt,
-	 const tmcg_openpgp_octets_t &in, tmcg_openpgp_octets_t &out)
+	(const tmcg_openpgp_hashalgo_t algo, const uint32_t cnt,
+	 const size_t nzp, const tmcg_openpgp_octets_t &in,
+	 tmcg_openpgp_octets_t &out)
 {
 	size_t c = in.size();
 	int a = AlgorithmHashGCRY(algo);
@@ -6548,6 +6550,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 		out.clear(); // indicates an error
 		return;
 	}
+	for (size_t i = 0; i < nzp; i++)
+		gcry_md_putc(hd, 0); // number of zeros to preload in KDF
 	for (size_t i = 0; i < in.size(); i++)
 		gcry_md_putc(hd, in[i]);
 	while (c < cnt)
@@ -6568,8 +6572,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 }
 
 gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
-	(const tmcg_openpgp_hashalgo_t algo, const size_t cnt,
-	 const tmcg_openpgp_secure_octets_t &in,
+	(const tmcg_openpgp_hashalgo_t algo, const uint32_t cnt,
+	 const size_t nzp, const tmcg_openpgp_secure_octets_t &in,
 	 tmcg_openpgp_secure_octets_t &out)
 {
 	size_t c = in.size();
@@ -6581,6 +6585,8 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::HashCompute
 	ret = gcry_md_open(&hd, a, GCRY_MD_FLAG_SECURE);
 	if (ret)
 		return ret;
+	for (size_t i = 0; i < nzp; i++)
+		gcry_md_putc(hd, 0); // number of zeros to preload in KDF
 	for (size_t i = 0; i < in.size(); i++)
 		gcry_md_putc(hd, in[i]);
 	while (c < cnt)
@@ -6685,7 +6691,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 	//     count = ((Int32)16 + (c & 15)) << ((c >> 4) + EXPBIAS);
 	// The above formula is in C, where "Int32" is a type for a 32-bit
 	// integer, and the variable "c" is the coded count, Octet 10.
-	size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6);
+	uint32_t hashcnt = ((uint32_t)16 + (octcnt & 15)) << ((octcnt >> 4) + 6);
 	size_t hashlen = AlgorithmHashLength(algo);
 
 	// Simple S2K hashes the passphrase to produce the session key. The
@@ -6728,37 +6734,22 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::S2KCompute
 	// will be hashed even though that is greater than the octet count.
 	// After the hashing is done, the data is unloaded from the hash
 	// context(s) as with the other S2K algorithms.
-	if (hashlen >= sklen)
-	{
-		tmcg_openpgp_secure_octets_t hash_in, hash_out;
-		hash_in.insert(hash_in.end(), salt.begin(), salt.end());
-		for (size_t i = 0; i < in.length(); i++)
-			hash_in.push_back(in[i]);
-		if (iterated)
-			HashCompute(algo, hashcnt, hash_in, hash_out);
-		else
-			HashCompute(algo, hash_in, hash_out);
-		for (size_t i = 0; (i < hash_out.size()) && (i < sklen); i++)
-			out.push_back(hash_out[i]);
-	}
-	else if (hashlen > 0)
+	if (hashlen > 0)
 	{
 		size_t instances = (sklen / hashlen) + 1;
 		size_t skcnt = 0;
 		for (size_t j = 0; j < instances; j++)
 		{
 			tmcg_openpgp_secure_octets_t hash_in, hash_out;
-			for (size_t i = 0; i < j; i++)
-				hash_in.push_back(0x00); // preload with zeros
 			hash_in.insert(hash_in.end(), salt.begin(), salt.end());
 			for (size_t i = 0; i < in.length(); i++)
 				hash_in.push_back(in[i]);
 			if (iterated)
-				HashCompute(algo, hashcnt, hash_in, hash_out);
+				HashCompute(algo, hashcnt, j, hash_in, hash_out);
 			else
-				HashCompute(algo, hash_in, hash_out);
-			for (size_t i = 0; (i < hash_out.size()) && 
-			     (skcnt < sklen); i++, skcnt++)
+				HashCompute(algo, j, hash_in, hash_out);
+			size_t hlen = hash_out.size();
+			for (size_t i = 0; (i < hlen) && (skcnt < sklen); i++, skcnt++)
 				out.push_back(hash_out[i]);
 		}
 	}
@@ -6816,7 +6807,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::KDFCompute
 	kdf_buffer.push_back(0x20);
 	for (size_t i = 0; i < rcpfpr.size(); i++)
 		kdf_buffer.push_back(rcpfpr[i]); // fingerprint of recipient's key
-	return HashCompute(hashalgo, kdf_buffer, MB);
+	return HashCompute(hashalgo, 0, kdf_buffer, MB);
 }
 
 // ===========================================================================
@@ -8529,7 +8520,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 			out.push_back(iv[i]); // IV
 		PacketMPIEncode(x, plain); // MPI x
 		gcry_error_t ret;
-		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
+		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, 0, plain, hash);
 		if (ret)
 			return;
 		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
@@ -8674,7 +8665,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 		PacketMPIEncode(x_i, plain); // MPI x_i
 		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
 		gcry_error_t ret;
-		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
+		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, 0, plain, hash);
 		if (ret)
 			return;
 		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
@@ -8833,7 +8824,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 		PacketMPIEncode(x_i, plain); // MPI x_i
 		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
 		gcry_error_t ret;
-		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
+		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, 0, plain, hash);
 		if (ret)
 			return;
 		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
@@ -9255,7 +9246,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncode
 			out.push_back(iv[i]); // IV
 		PacketMPIEncode(x, plain); // MPI x
 		gcry_error_t ret;
-		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
+		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, 0, plain, hash);
 		if (ret)
 			return;
 		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
@@ -9401,7 +9392,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSsbEncodeExperimental109
 		PacketMPIEncode(x_i, plain); // MPI x_i
 		PacketMPIEncode(xprime_i, plain); // MPI xprime_i
 		gcry_error_t ret;
-		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, plain, hash);
+		ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, 0, plain, hash);
 		if (ret)
 			return;
 		plain.insert(plain.end(), hash.begin(), hash.end()); // hash
@@ -15849,7 +15840,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Decrypt
 			tmcg_openpgp_secure_octets_t hash_input, hash;
 			for (size_t i = 0; i < (ctx.encdatalen - 20); i++)
 				hash_input.push_back(buf[i]);
-			ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, hash_input, hash);
+			ret = HashCompute(TMCG_OPENPGP_HASHALGO_SHA1, 0, hash_input, hash);
 			if (ret)
 			{
 				if (verbose)

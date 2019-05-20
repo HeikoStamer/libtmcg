@@ -138,32 +138,60 @@ int main
 
 		// testing S2K functions
 		tmcg_openpgp_byte_t octcnt = 1;
-		size_t hashcnt = (16 + (octcnt & 15)) << ((octcnt >> 4) + 6);
+		size_t hashcnt = ((uint32_t)16 + (octcnt & 15)) << ((octcnt >> 4) + 6);
 		size_t keylen = gcry_cipher_get_algo_keylen(TMCG_GCRY_ENC_ALGO);
 		tmcg_openpgp_secure_string_t keystr = "Test";
-		char salt[8];
-		char key[keylen];
-		gcry_error_t err;
-		gcry_create_nonce(salt, sizeof(salt));
-		std::cout << "gcry_kdf_derive(..., GCRY_KDF_ITERSALTED_S2K, " <<
-			"TMCG_GCRY_MD_ALGO, ..., " << hashcnt << ", ...)" << std::endl;
-		err = gcry_kdf_derive(keystr.c_str(), keystr.length(),
-			GCRY_KDF_ITERSALTED_S2K, TMCG_GCRY_MD_ALGO, salt, sizeof(salt),
-			hashcnt, sizeof(key), key);
-		assert(!err);
-		tmcg_openpgp_octets_t salt2;
-		tmcg_openpgp_secure_octets_t outs2;
-		outs.clear();
-		for (size_t i = 0; i < sizeof(key); i++)
-			outs.push_back(key[i]); // copy the result
-		for (size_t i = 0; i < sizeof(salt); i++)
-			salt2.push_back(salt[i]); // copy the salt
-		std::cout << "S2KCompute(...)" << std::endl;
-		CallasDonnerhackeFinneyShawThayerRFC4880::
-			S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, keylen, keystr, salt2, true,
-			octcnt, outs2);
-		assert(CallasDonnerhackeFinneyShawThayerRFC4880::
-			OctetsCompareConstantTime(outs, outs2));
+		for (size_t i = 0; i < 42; i++)
+		{
+			char key[keylen];
+			gcry_error_t err;
+			std::cout << "gcry_kdf_derive(..., GCRY_KDF_SIMPLE_S2K, " <<
+				"TMCG_GCRY_MD_ALGO, ..., " << hashcnt << ", ...)" << std::endl;
+			err = gcry_kdf_derive(keystr.c_str(), keystr.length(),
+				GCRY_KDF_SIMPLE_S2K, TMCG_GCRY_MD_ALGO, NULL, 0,
+				hashcnt, sizeof(key), key);
+			assert(!err);
+			outs.clear();
+			for (size_t i = 0; i < sizeof(key); i++)
+				outs.push_back(key[i]); // copy the result
+			std::cout << "S2KCompute(..., false, ...)" << std::endl;
+			tmcg_openpgp_octets_t salt2;
+			tmcg_openpgp_secure_octets_t outs2;
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, keylen, keystr, salt2,
+				false, octcnt, outs2);
+			assert(CallasDonnerhackeFinneyShawThayerRFC4880::
+				OctetsCompareConstantTime(outs, outs2));
+			keylen++; // increase length of the derived key during tests
+		}
+		keylen = gcry_cipher_get_algo_keylen(TMCG_GCRY_ENC_ALGO); // reset
+		for (size_t i = 0; i < 42; i++)
+		{
+			char salt[8];
+			char key[keylen];
+			gcry_error_t err;
+			gcry_create_nonce(salt, sizeof(salt));
+			std::cout << "gcry_kdf_derive(..., GCRY_KDF_ITERSALTED_S2K, " <<
+				"TMCG_GCRY_MD_ALGO, ..., " << hashcnt << ", ...)" << std::endl;
+			err = gcry_kdf_derive(keystr.c_str(), keystr.length(),
+				GCRY_KDF_ITERSALTED_S2K, TMCG_GCRY_MD_ALGO, salt, sizeof(salt),
+				hashcnt, sizeof(key), key);
+			assert(!err);
+			tmcg_openpgp_octets_t salt2;
+			tmcg_openpgp_secure_octets_t outs2;
+			outs.clear();
+			for (size_t i = 0; i < sizeof(key); i++)
+				outs.push_back(key[i]); // copy the result
+			for (size_t i = 0; i < sizeof(salt); i++)
+				salt2.push_back(salt[i]); // copy the salt
+			std::cout << "S2KCompute(..., true, ...)" << std::endl;
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				S2KCompute(TMCG_OPENPGP_HASHALGO_SHA256, keylen, keystr, salt2,
+				true, octcnt, outs2);
+			assert(CallasDonnerhackeFinneyShawThayerRFC4880::
+				OctetsCompareConstantTime(outs, outs2));
+			keylen++; // increase length of the derived key during tests
+		}
 
 		// create different asymmetric keys by using libgcrypt
 		size_t erroff = 0;
