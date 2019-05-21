@@ -5488,6 +5488,7 @@ TMCG_OpenPGP_SKESK::~TMCG_OpenPGP_SKESK
 
 TMCG_OpenPGP_Message::TMCG_OpenPGP_Message
 	():
+		version(0),
 		have_sed(false),
 		have_seipd(false),
 		have_aead(false),
@@ -5558,7 +5559,17 @@ bool TMCG_OpenPGP_Message::Decrypt
 	 tmcg_openpgp_octets_t &out) const
 {
 	if (verbose > 1)
+	{
 		std::cerr << "INFO: symmetric decryption of message ..." << std::endl;
+		std::cerr << "INFO: version = " << (int)version << " (";
+		if (have_aead)
+			std::cerr << "AEAD";
+		if (have_seipd)
+			std::cerr << "SEIPD";
+		if (hace_sed)
+			std::cerr << "SED";
+		std::cerr << ")" << std::endl;
+	}
 	if (encrypted_message.size() == 0)
 	{
 		if (verbose)
@@ -5599,7 +5610,7 @@ bool TMCG_OpenPGP_Message::Decrypt
 	{
 		tmcg_openpgp_octets_t ad; // additional data
 		ad.push_back(0xD4); // packet tag in new format
-		ad.push_back(0x01); // packet version number FIXME: read packet version from stored data
+		ad.push_back(version); // packet version number
 		ad.push_back(msg_skalgo); // cipher algorithm octet
 		ad.push_back(aeadalgo); // AEAD algorithm octet
 		ad.push_back(chunksize); // chunk size octet
@@ -5639,7 +5650,7 @@ bool TMCG_OpenPGP_Message::Decrypt
 			{
 				if (verbose)
 				{
-					std::cerr << "ERROR: decrypted result too short" <<
+					std::cerr << "ERROR: decrypted result is too short" <<
 						std::endl;
 				}
 				return false;
@@ -5672,8 +5683,8 @@ bool TMCG_OpenPGP_Message::Decrypt
 		else
 		{
 			if (verbose)
-				std::cerr << "WARNING: encrypted message was not integrity" <<
-					" protected" << std::endl;
+				std::cerr << "WARNING: encrypted message is not integrity" <<
+					" protected (security issue)" << std::endl;
 		}
 	}
 	return true;
@@ -16407,6 +16418,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag18
 	}
 	else
 	{
+		msg->version = ctx.version;
 		msg->have_seipd = true;
 		for (size_t i = 0; i < ctx.encdatalen; i++)
 			(msg->encrypted_message).push_back(ctx.encdata[i]);
@@ -16461,6 +16473,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag20
 	}
 	else
 	{
+		msg->version = ctx.version;
 		msg->have_aead = true;
 		msg->skalgo = ctx.skalgo;
 		msg->aeadalgo = ctx.aeadalgo;
