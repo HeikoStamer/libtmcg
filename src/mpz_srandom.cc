@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2002, 2004, 2005, 2007, 
-               2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -120,21 +120,26 @@ unsigned long int tmcg_mpz_wrandom_mod
 void tmcg_mpz_grandomb
 	(mpz_ptr r, const unsigned long int size, enum gcry_random_level level)
 {
-	unsigned char tmp[(size+7)/8];
-	gcry_randomize(tmp, (size+7)/8, level);
-	mpz_import(r, (size+7)/8, 1, 1, 1, 0, (const void*)tmp);
+	if (size > 0)
+	{
+		unsigned char tmp[(size+7)/8];
+		gcry_randomize(tmp, (size+7)/8, level);
+		mpz_import(r, (size+7)/8, 1, 1, 1, 0, (const void*)tmp);
 #ifdef BOTAN
-	std::unique_ptr<Botan::RandomNumberGenerator>
-		rng(new Botan::AutoSeeded_RNG);
-	rng->randomize((uint8_t*)tmp, (size+7)/8);
-	mpz_t rrr;
-	mpz_init(rrr);
-	mpz_import(rrr, (size+7)/8, 1, 1, 1, 0, (const void*)tmp);
-	mpz_add(r, r, rrr); // ADD number from other random source
-	mpz_clear(rrr);
+		std::unique_ptr<Botan::RandomNumberGenerator>
+			rng(new Botan::AutoSeeded_RNG);
+		rng->randomize((uint8_t*)tmp, (size+7)/8);
+		mpz_t rrr;
+		mpz_init(rrr);
+		mpz_import(rrr, (size+7)/8, 1, 1, 1, 0, (const void*)tmp);
+		mpz_add(r, r, rrr); // ADD number from other random source
+		mpz_clear(rrr);
 #endif
-	// r mod 2^size, i.e. shift right and bit mask
-	mpz_tdiv_r_2exp(r, r, size);
+		// r mod 2^size, i.e. shift right and bit mask
+		mpz_tdiv_r_2exp(r, r, size);
+	}
+	else
+		throw std::invalid_argument("tmcg_mpz_grandomb: size is zero");
 }
 
 void tmcg_mpz_ssrandomb

@@ -5974,8 +5974,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare
 	if (in.size() != in2.size())
 		return false;
 	for (size_t i = 0; i < in.size(); i++)
+	{
 		if (in[i] != in2[i])
 			return false;
+	}
 	return true;
 }
 
@@ -5994,8 +5996,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareZero
 	(const tmcg_openpgp_octets_t &in)
 {
 	for (size_t i = 0; i < in.size(); i++)
+	{
 		if (in[i] != 0x00)
 			return false;
+	}
 	return true;
 }
 
