@@ -1259,6 +1259,7 @@ class TMCG_OpenPGP_Message
 			 const int										verbose) const;
 
 	public:
+		tmcg_openpgp_byte_t									version;
 		bool												have_sed;
 		bool												have_seipd;
 		bool												have_aead;
