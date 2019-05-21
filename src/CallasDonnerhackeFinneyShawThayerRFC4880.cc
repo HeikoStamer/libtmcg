@@ -5566,7 +5566,7 @@ bool TMCG_OpenPGP_Message::Decrypt
 			std::cerr << "AEAD";
 		if (have_seipd)
 			std::cerr << "SEIPD";
-		if (hace_sed)
+		if (have_sed)
 			std::cerr << "SED";
 		std::cerr << ")" << std::endl;
 	}
