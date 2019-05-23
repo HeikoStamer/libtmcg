@@ -3150,13 +3150,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			}
 		}
 		// decrypt session key
-		tmcg_openpgp_octets_t rcpfpr;
-		CallasDonnerhackeFinneyShawThayerRFC4880::
-			FingerprintCompute(pub->sub_hashing, rcpfpr); // FIXME: V5 keys
 		dret = CallasDonnerhackeFinneyShawThayerRFC4880::
 			AsymmetricDecryptECDH(esk->ecepk, private_key, esk->rkwlen,
 				esk->rkw, pub->kdf_hashalgo, pub->kdf_skalgo, ec_curve,
-				rcpfpr, out);
+				pub->fingerprint, out);
 		if (dret)
 		{
 			if (verbose)
@@ -5163,8 +5160,8 @@ size_t TMCG_OpenPGP_Keyring::List
 				for (size_t i = 0; i < (uid->userid).length(); i++)
 					uidtmp.push_back((uid->userid)[i]);
 				CallasDonnerhackeFinneyShawThayerRFC4880::
-					FingerprintCompute(uidtmp, uidfpr); // FIXME: V5 keys?
-				std::string uid_fpr;
+					FingerprintCompute(uidtmp, uidfpr);
+				std::string uid_fpr; // "hash of the user ID contents"
 				CallasDonnerhackeFinneyShawThayerRFC4880::
 					FingerprintConvertPlain(uidfpr, uid_fpr);
 				std::cout << uid_fpr << ":";
@@ -6820,7 +6817,13 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::KDFCompute
 	kdf_buffer.push_back(0x20);
 	kdf_buffer.push_back(0x20);
 	kdf_buffer.push_back(0x20);
-	for (size_t i = 0; i < rcpfpr.size(); i++)
+	// 20 octets representing a recipient encryption subkey or a master
+	// key fingerprint, identifying the key material that is needed for
+	// the decryption.  For version 5 keys the 20 leftmost octets of the
+	// fingerprint are used.
+	if (rcpfpr.size() < 20)
+		return gcry_error(GPG_ERR_INV_ARG);
+	for (size_t i = 0; i < 20; i++)
 		kdf_buffer.push_back(rcpfpr[i]); // fingerprint of recipient's key
 	return HashCompute(hashalgo, 0, kdf_buffer, MB);
 }
