@@ -7,6 +7,9 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* [2019-05-23] RFC4880: changed TMCG_OpenPGP_PrivateSubkey::Decrypt() in order
+               to handle v5 keys correctly w.r.t. ECDH decryption
+* [2019-05-23] RFC4880: changed KDFCompute() according to RFC4880bis-06
 * [2019-05-22] RFC4880: stored packet version within TMCG_OpenPGP_Message
 * [2019-05-20] RFC4880: fixed wrong iterated KDF computation in S2KCompute()
 * [2019-05-20] RFC4880: changed interface of HashCompute()
