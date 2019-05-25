@@ -5302,7 +5302,7 @@ size_t TMCG_OpenPGP_Keyring::Check
 void TMCG_OpenPGP_Keyring::Reduce
 	()
 {
-	std::vector<std::string> rmv;
+	std::vector<std::string> rmv; // keys to remove
 	for (std::map<std::string, TMCG_OpenPGP_Pubkey*>::const_iterator
 	     it = keys.begin(); it != keys.end(); ++it)
 	{
@@ -5345,7 +5345,9 @@ TMCG_OpenPGP_Keyring::~TMCG_OpenPGP_Keyring
 {
 	for (std::map<std::string, TMCG_OpenPGP_Pubkey*>::const_iterator
 	     it = keys.begin(); it != keys.end(); ++it)
+	{
 		delete it->second;
+	}
 	keys.clear();
 	keys_by_keyid.clear();
 }
