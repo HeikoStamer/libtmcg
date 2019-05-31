@@ -8,6 +8,9 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is
 included in the sources of this package and additionally can be obtained from
 Internet <https://www.gnu.org/licenses>.
 
+1.3.18 This release is two-fold: first, it fixes some bugs (e.g. iterated S2K)
+       of the OpenPGP interface, and second, it adds functionality for handling
+       v5 keys and signatures (see RFC 4880bis-07).
 1.3.17 This is a maintenance release that fixes a major bug in the VSSHE module
        (Groth's shuffle protocol). The verification of the special component E_d
        with respect to membership in the underlying commitment group has been
