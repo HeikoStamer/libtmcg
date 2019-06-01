@@ -194,7 +194,7 @@ template <typename CardSecretType> struct TMCG_StackSecret
 				// store pair
 				stack.push_back(lej);
 			}
-			
+
 			// check whether the index component is a correct permutation
 			for (size_t i = 0; i < size; i++)
 			{
