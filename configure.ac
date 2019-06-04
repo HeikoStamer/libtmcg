@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20190511])
+AC_REVISION([20190604])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.4.0], [HeikoStamer@gmx.net], [libTMCG],
@@ -178,7 +178,7 @@ AC_PROG_MKDIR_P
 
 # Checks for libraries
 backup_LDFLAGS="$LDFLAGS"
-backup_CPPLAGS="$CPPFLAGS"
+backup_CPPFLAGS="$CPPFLAGS"
 AC_ARG_WITH(gmp, [AS_HELP_STRING([--with-gmp=<prefix>],
  [prefix of GMP installation path, e.g. /usr/local])],
  [GMP_PREFIX="$with_gmp" LDFLAGS="-L${with_gmp}/lib $backup_LDFLAGS"\
@@ -211,7 +211,7 @@ AM_PATH_LIBGCRYPT("1.6.0")
 if test "x$LIBGCRYPT_LIBS" = "x"; then
 	AC_MSG_ERROR([libgcrypt >= 1.6.0 is needed])
 fi
-backup_CPPLAGS="$CPPFLAGS"
+backup_CPPFLAGS="$CPPFLAGS"
 CPPFLAGS="$LIBGCRYPT_CFLAGS $backup_CPPFLAGS"
 AC_CHECK_HEADERS([gcrypt.h], , AC_MSG_ERROR([libgcrypt headers are missing]))
 CPPFLAGS="$backup_CPPFLAGS"

@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-06-04] configure.ac: fixed unwanted modification of variable CPPFLAGS
 * [2019-05-31] release 1.3.18 of LibTMCG
 * [2019-05-23] RFC4880: changed TMCG_OpenPGP_PrivateSubkey::Decrypt() in order
                to handle v5 keys correctly w.r.t. ECDH decryption
