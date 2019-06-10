@@ -20,15 +20,20 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 *******************************************************************************/
 
+#include <limits.h>
 #include <cstdio>
 #include <cassert>
 #include <iostream>
+#include <gmp.h>
 
 int main
 	()
 {
+	bool pp_flag = true;
 	unsigned long int b = 80000;
-	unsigned long int ps = 0, ls = 0;
+	unsigned long int ps = 0, ls = 0, pp = 1, pp_max = 0;
+	mpz_t pp_check;
+	mpz_init_set_ui(pp_check, 1UL);
 	std::cout << "unsigned long int primes[] = {" << std::endl;
 	for (unsigned long int i = 3; i < b; i++)
 	{
@@ -50,8 +55,20 @@ int main
 				std::cout << std::endl << "\t";
 				ls = 0;
 			}
+			if (pp_flag)
+			{
+				mpz_mul_ui(pp_check, pp_check, i);
+				if (mpz_cmp_ui(pp_check, ULONG_MAX) < 0)
+				{
+					pp *= i;
+					pp_max = i;
+				}
+				else
+					pp_flag = false;
+			}
 		}
 	}
+	mpz_clear(pp_check);
 	std::cout << "0" << std::endl << "}; // PRIMES_SIZE = " << ps << std::endl;
 	ls = 0;
 	std::cout << "unsigned long int primes_m1d2[] = {" << std::endl;
@@ -76,6 +93,8 @@ int main
 			}
 		}
 	}
-	std::cout << "0" << std::endl << "};" << std::endl;	
+	std::cout << "0" << std::endl << "};" << std::endl;
+	std::cout << "unsigned long int primes_product = " << pp << "; //" <<
+		" MAX_PRIME = " << pp_max << std::endl;
 	return 0;
 }

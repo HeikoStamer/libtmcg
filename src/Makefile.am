@@ -20,6 +20,11 @@ EXTRA_DIST = libTMCG-config.in libTMCG.m4 sha3.c
 
 bin_SCRIPTS = libTMCG-config
 
+noinst_PROGRAMS = gen_primes
+gen_primes_SOURCES = gen_primes.cc
+gen_primes_CXXFLAGS = @LIBGMP_CFLAGS@
+gen_primes_LDADD = @LIBGMP_LIBS@
+
 include_HEADERS = mpz_srandom.hh mpz_sqrtm.hh mpz_spowm.hh mpz_sprime.hh\
 	mpz_shash.hh parse_helper.hh mpz_helper.hh\
 	TMCG_Bigint.hh\
