@@ -46,6 +46,7 @@
 #define PRIMES 668
 #define MPRIMES 7836
 #define SIEVE_SIZE 16
+#define MAX_GCD_PRIME 15
 
 unsigned long int primes[] = {
 	3, 5, 7, 11, 13, 17, 19, 23, 
@@ -2013,6 +2014,8 @@ unsigned long int primes_m1d2[] = {
 	39989, 39993, 39998, 39999, 0
 };
 
+unsigned long int primes_product = 16294579238595022365UL; // MAX_GCD_PRIME = 15
+
 int notest
 	(mpz_ptr p, mpz_ptr q)
 {
@@ -2024,14 +2027,14 @@ int test7mod8
 	(mpz_ptr p, mpz_ptr q)
 {
 	assert((p == q) || (p != q)); // dummy to supress compiler warning
-	return mpz_congruent_ui_p(p, 7L, 8L);
+	return mpz_congruent_ui_p(p, 7UL, 8UL);
 }
 
 int test3mod4
 	(mpz_ptr p, mpz_ptr q)
 {
 	assert((p == q) || (p != q)); // dummy to supress compiler warning
-	return mpz_congruent_ui_p(p, 3L, 4L);
+	return mpz_congruent_ui_p(p, 3UL, 4UL);
 }
 
 /** Miller-Rabin witness test, basically algorithm 4.24 [HAC], for a
@@ -2050,8 +2053,8 @@ int tmcg_mpz_mr_witness
 	mpz_init(y), mpz_init(nm1), mpz_init(r);
 	
 	// 1. Write $\mathtt{n} - 1 = 2^s r$ such that $r$ is odd.
-	mpz_sub_ui(nm1, n, 1L);
-	unsigned long int s = mpz_scan1(nm1, 0L);
+	mpz_sub_ui(nm1, n, 1UL);
+	unsigned long int s = mpz_scan1(nm1, 0);
 	mpz_tdiv_q_2exp(r, nm1, s);
 	if (mpz_odd_p(r))
 	{
@@ -2060,13 +2063,13 @@ int tmcg_mpz_mr_witness
 		result = 0;
 		
 		// 2.3 If $y \neq 1$ and $y \neq \mathtt{n} - 1$ then do the following:
-		if ((mpz_cmp_ui(y, 1L) != 0) && (mpz_cmp(y, nm1) != 0))
+		if ((mpz_cmp_ui(y, 1UL) != 0) && (mpz_cmp(y, nm1) != 0))
 		{
 			for (unsigned long int j = 1; j < s; j++)
 			{
 				mpz_mul(y, y, y);
 				mpz_mod(y, y, n);
-				if (mpz_cmp_ui(y, 1L) == 0)
+				if (mpz_cmp_ui(y, 1UL) == 0)
 				{
 					result = 1;
 					break;
@@ -2088,7 +2091,7 @@ bool tmcg_mpz_mr_witness_fast
 	(mpz_srcptr n, mpz_srcptr base, mpz_ptr y, mpz_srcptr nm1, mpz_ptr r)
 {
 	// 1. Write $\mathtt{n} - 1 = 2^s r$ such that $r$ is odd.
-	unsigned long int s = mpz_scan1(nm1, 0L);
+	unsigned long int s = mpz_scan1(nm1, 0);
 	mpz_tdiv_q_2exp(r, nm1, s);
 	if (mpz_even_p(r))
 		return true;
@@ -2097,13 +2100,13 @@ bool tmcg_mpz_mr_witness_fast
 	mpz_powm(y, base, r, n);
 
 	// 2.3 If $y \neq 1$ and $y \neq \mathtt{n} - 1$ then do the following:
-	if ((mpz_cmp_ui(y, 1L) != 0) && (mpz_cmp(y, nm1) != 0))
+	if ((mpz_cmp_ui(y, 1UL) != 0) && (mpz_cmp(y, nm1) != 0))
 	{
 		for (unsigned long int j = 1; j < s; j++)
 		{
 			mpz_mul(y, y, y);
 			mpz_mod(y, y, n);
-			if (mpz_cmp_ui(y, 1L) == 0)
+			if (mpz_cmp_ui(y, 1UL) == 0)
 				return true;
 			if (mpz_cmp(y, nm1) == 0)
 				break;
@@ -2129,18 +2132,18 @@ void tmcg_mpz_sprime_test
 	mpz_t tmp, y, pm1, qm1, a;
 	
 	mpz_init(tmp), mpz_init(y), mpz_init(pm1), mpz_init(qm1);
-	mpz_init_set_ui(a, 2L);
+	mpz_init_set_ui(a, 2UL);
 	
 	/* Step 1. [CS00]: choose randomly an odd number $q$ of appropriate size */
 	do
 		tmcg_mpz_srandomb(q, qsize);
-	while (mpz_sizeinbase(q, 2L) < qsize);
+	while (mpz_sizeinbase(q, 2) < qsize);
 	if (mpz_even_p(q))
-		mpz_add_ui(q, q, 1L);
+		mpz_add_ui(q, q, 1UL);
 	
 	/* Compute $p = 2q + 1$. */
-	mpz_mul_2exp(pm1, q, 1L), mpz_add_ui(p, pm1, 1L);
-	mpz_sub_ui(qm1, q, 1L);
+	mpz_mul_2exp(pm1, q, 1UL), mpz_add_ui(p, pm1, 1UL);
+	mpz_sub_ui(qm1, q, 1UL);
 	
 	/* Initalize the sieves for testing divisability by small primes. */
 	for (size_t i = 0; i < SIEVE_SIZE; i++)
@@ -2157,10 +2160,10 @@ void tmcg_mpz_sprime_test
 	while (1)
 	{
 		/* Increase $q$ by 2 (incremental prime number generator). */
-		mpz_add_ui(q, q, 2L), mpz_add_ui(qm1, qm1, 2L);
+		mpz_add_ui(q, q, 2UL), mpz_add_ui(qm1, qm1, 2UL);
 		
 		/* Increase $p$ by 4 (actually compute $p = 2q + 1$). */
-		mpz_add_ui(p, p, 4L), mpz_add_ui(pm1, pm1, 4L);
+		mpz_add_ui(p, p, 4UL), mpz_add_ui(pm1, pm1, 4UL);
 		
 		/* Use the sieve optimization procedure of Note 4.51(ii) [HAC]. */
 		bool fail = false;
@@ -2193,8 +2196,8 @@ void tmcg_mpz_sprime_test
 			}
 			if (i >= SIEVE_SIZE)
 			{
-				if (mpz_congruent_ui_p(q, 0L, primes[i]) ||
-					mpz_congruent_ui_p(p, 0L, primes[i]))
+				if (mpz_congruent_ui_p(q, 0UL, primes[i]) ||
+					mpz_congruent_ui_p(p, 0UL, primes[i]))
 				{
 					fail = true;
 					break;
@@ -2211,7 +2214,7 @@ void tmcg_mpz_sprime_test
 		
 		/* Step 4. [CS00]: Test whether $2^q \equiv \pm 1 \pmod{p}$. */
 		mpz_powm(y, a, q, p);
-		if ((mpz_cmp_ui(y, 1L) != 0) && (mpz_cmp(y, pm1) != 0))
+		if ((mpz_cmp_ui(y, 1UL) != 0) && (mpz_cmp(y, pm1) != 0))
 			continue;
 		
 		/* Step 5. [CS00]: Apply the Miller-Rabin test to $q$ a defined number
@@ -2235,30 +2238,37 @@ void tmcg_mpz_sprime_test_naive
 	/* Choose randomly an odd number $q$ of appropriate size. */
 	do
 		tmcg_mpz_srandomb(q, qsize);
-	while (mpz_sizeinbase(q, 2L) < qsize);
+	while (mpz_sizeinbase(q, 2) < qsize);
 	if (mpz_even_p(q))
-		mpz_add_ui(q, q, 1L);
+		mpz_add_ui(q, q, 1UL);
 	
 	while (1)
 	{
 		/* Increase $q$ by 2 (incremental prime number generator). */
-		mpz_add_ui(q, q, 2L);
+		mpz_add_ui(q, q, 2UL);
+
+		/* Check whether $q$ is divisable by the first MAX_GCD_PRIME primes. */
+		if (mpz_gcd_ui(NULL, q, primes_product) != 1)
+			continue;
+
 		/* Compute $p = 2q + 1$. */
-		mpz_mul_2exp(p, q, 1L);
-		mpz_add_ui(p, p, 1L);
+		mpz_mul_2exp(p, q, 1UL);
+		mpz_add_ui(p, p, 1UL);
 		
 		/* Additional tests? */
 		if (!test(p, q))
 			continue;
-		
+
 		/* Check whether $q$ or $p$ are divisable by any primes up to $B$. */
+		if (mpz_gcd_ui(NULL, p, primes_product) != 1)
+			continue;
 		bool fail = false;
-		for (size_t i = 0; i < primes_size; i++)
+		for (size_t i = MAX_GCD_PRIME; i < primes_size; i++)
 		{
 			if (mpz_congruent_ui_p(q, primes_m1d2[i], primes[i]) ||
 				mpz_congruent_ui_p(p, primes_m1d2[i], primes[i]) ||
-				mpz_congruent_ui_p(q, 0L, primes[i]) ||
-				mpz_congruent_ui_p(p, 0L, primes[i]))
+				mpz_congruent_ui_p(q, 0UL, primes[i]) ||
+				mpz_congruent_ui_p(p, 0UL, primes[i]))
 			{
 				fail = true;
 				break;
@@ -2266,13 +2276,12 @@ void tmcg_mpz_sprime_test_naive
 		}
 		if (fail)
 			continue;
-		
+
+		/* Do more expensive checks. */
 		if (!mpz_probab_prime_p(p, 1))
 			continue;
-		
 		if (!mpz_probab_prime_p(q, mr_iterations))
 			continue;
-		
 		if (mpz_probab_prime_p(p, mr_iterations - 1))
 			break;
 	}
@@ -2292,26 +2301,32 @@ void tmcg_mpz_sprime_test_noninc
 		/* Choose randomly an odd number $q$ of appropriate size. */
 		do
 			tmcg_mpz_srandomb(q, qsize);
-		while (mpz_sizeinbase(q, 2L) < qsize);
+		while (mpz_sizeinbase(q, 2) < qsize);
 		if (mpz_even_p(q))
-			mpz_add_ui(q, q, 1L);
+			mpz_add_ui(q, q, 1UL);
+
+		/* Check whether $q$ is divisable by the first MAX_GCD_PRIME primes. */
+		if (mpz_gcd_ui(NULL, q, primes_product) != 1)
+			continue;
  
 		/* Compute $p = 2q + 1$. */
-		mpz_mul_2exp(p, q, 1L);
-		mpz_add_ui(p, p, 1L);
+		mpz_mul_2exp(p, q, 1UL);
+		mpz_add_ui(p, p, 1UL);
 		
 		/* Additional tests? */
 		if (!test(p, q))
 			continue;
 		
 		/* Check whether $q$ or $p$ are divisable by any primes up to $B$. */
+		if (mpz_gcd_ui(NULL, p, primes_product) != 1)
+			continue;
 		bool fail = false;
-		for (size_t i = 0; i < primes_size; i++)
+		for (size_t i = MAX_GCD_PRIME; i < primes_size; i++)
 		{
 			if (mpz_congruent_ui_p(q, primes_m1d2[i], primes[i]) ||
 				mpz_congruent_ui_p(p, primes_m1d2[i], primes[i]) ||
-				mpz_congruent_ui_p(q, 0L, primes[i]) ||
-				mpz_congruent_ui_p(p, 0L, primes[i]))
+				mpz_congruent_ui_p(q, 0UL, primes[i]) ||
+				mpz_congruent_ui_p(p, 0UL, primes[i]))
 			{
 				fail = true;
 				break;
@@ -2320,7 +2335,7 @@ void tmcg_mpz_sprime_test_noninc
 		if (fail)
 			continue;
 		
-		// Check that $p$ and $q$ are probable prime.
+		/* Do more expensive checks. */
 		if (!mpz_probab_prime_p(p, 1))
 			continue;
 		if (!mpz_probab_prime_p(q, mr_iterations))
@@ -2354,6 +2369,14 @@ void tmcg_mpz_sprime_naive
 	tmcg_mpz_sprime_test_naive(p, q, qsize, notest, mr_iterations, PRIMES);
 }
 
+void tmcg_mpz_smprime_naive
+	(mpz_ptr p, mpz_ptr q,
+	 const unsigned long int qsize, 
+	 const unsigned long int mr_iterations)
+{
+	tmcg_mpz_sprime_test_naive(p, q, qsize, notest, mr_iterations, MPRIMES);
+}
+
 void tmcg_mpz_sprime_noninc
 	(mpz_ptr p, mpz_ptr q,
 	 const unsigned long int qsize, 
@@ -2384,7 +2407,7 @@ void tmcg_mpz_sprime3mod4
 	/* This test is required, if we want to construct a Blum integer $n$,
 	   i.e. a number where both factors are primes congruent 3 modulo 4. */
 	mpz_init(q);
-	tmcg_mpz_sprime_test(p, q, psize - 1L, test3mod4, mr_iterations, PRIMES);
+	tmcg_mpz_sprime_test(p, q, psize - 1, test3mod4, mr_iterations, PRIMES);
 	mpz_clear(q);
 }
 
@@ -2403,7 +2426,7 @@ void tmcg_mpz_lprime
 	   we use weak random numbers here! */
 	do
 		tmcg_mpz_wrandomb(q, qsize);
-	while ((mpz_sizeinbase(q, 2L) < qsize) ||
+	while ((mpz_sizeinbase(q, 2) < qsize) ||
 		!mpz_probab_prime_p(q, mr_iterations));
 	
 	mpz_init(foo);
@@ -2412,15 +2435,15 @@ void tmcg_mpz_lprime
 		/* Choose randomly an even number $k$ and compute $p:= qk + 1$. */
 		do
 			tmcg_mpz_wrandomb(k, psize - qsize);
-		while (mpz_sizeinbase(k, 2L) < (psize - qsize));
+		while (mpz_sizeinbase(k, 2) < (psize - qsize));
 		if (mpz_odd_p(k))
-			mpz_add_ui(k, k, 1L);
+			mpz_add_ui(k, k, 1UL);
 		mpz_mul(p, q, k);
-		mpz_add_ui(p, p, 1L);
+		mpz_add_ui(p, p, 1UL);
 		/* Check wether $k$ and $q$ are coprime, i.e. $gcd(k, q) = 1$. */
 		mpz_gcd(foo, k, q);
 	}
-	while (mpz_cmp_ui(foo, 1L) || (mpz_sizeinbase(p, 2L) < psize) || 
+	while (mpz_cmp_ui(foo, 1UL) || (mpz_sizeinbase(p, 2) < psize) || 
 		!mpz_probab_prime_p(p, mr_iterations));
 	mpz_clear(foo);
 }
@@ -2443,19 +2466,19 @@ void tmcg_mpz_lprime_prefix
 		   we use weak random numbers here! */
 		do
 			tmcg_mpz_wrandomb(q, qsize);
-		while ((mpz_sizeinbase(q, 2L) < qsize) || 
+		while ((mpz_sizeinbase(q, 2) < qsize) || 
 			!mpz_probab_prime_p(q, mr_iterations));
 		/* Enhance given $k$ by multiples of TMCG_MPZ_IO_BASE. */
-		while (mpz_sizeinbase(k, 2L) < (psize - qsize))
+		while (mpz_sizeinbase(k, 2) < (psize - qsize))
 			mpz_mul_ui(k, k, TMCG_MPZ_IO_BASE);
 		if (mpz_odd_p(k))
-			mpz_add_ui(k, k, 1L);
+			mpz_add_ui(k, k, 1UL);
 		mpz_mul(p, q, k);
-		mpz_add_ui(p, p, 1L);
+		mpz_add_ui(p, p, 1UL);
 		/* Check wether $k$ and $q$ are coprime, i.e. $gcd(k, q) = 1$. */
 		mpz_gcd(foo, k, q);
 	}
-	while (mpz_cmp_ui(foo, 1L) || (mpz_sizeinbase(p, 2L) < psize) || 
+	while (mpz_cmp_ui(foo, 1UL) || (mpz_sizeinbase(p, 2) < psize) || 
 		!mpz_probab_prime_p(p, mr_iterations));
 	mpz_clear(foo);
 }
@@ -2468,13 +2491,13 @@ void tmcg_mpz_oprime
 	/* Choose randomly an odd number $p$ of appropriate size. */
 	do
 		tmcg_mpz_srandomb(p, psize);
-	while (mpz_sizeinbase(p, 2L) < psize);
+	while (mpz_sizeinbase(p, 2) < psize);
 	if (mpz_even_p(p))
-		mpz_add_ui(p, p, 1L);
+		mpz_add_ui(p, p, 1UL);
 	
 	/* Add two as long as $p$ is not probable prime. */
 	while (!mpz_probab_prime_p(p, mr_iterations))
-		mpz_add_ui(p, p, 2L);
+		mpz_add_ui(p, p, 2UL);
 }
 
 void tmcg_mpz_oprime_noninc
@@ -2487,9 +2510,9 @@ void tmcg_mpz_oprime_noninc
 		/* Choose randomly an odd number $p$ of appropriate size. */
 		do
 			tmcg_mpz_srandomb(p, psize);
-		while (mpz_sizeinbase(p, 2L) < psize);
+		while (mpz_sizeinbase(p, 2) < psize);
 		if (mpz_even_p(p))
-			mpz_add_ui(p, p, 1L);
+			mpz_add_ui(p, p, 1UL);
 		/* Check whether this number is probably prime. */
 	}
 	while (!mpz_probab_prime_p(p, mr_iterations));

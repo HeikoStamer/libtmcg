@@ -61,7 +61,7 @@ int main
 				if (mpz_cmp_ui(pp_check, ULONG_MAX) < 0)
 				{
 					pp *= i;
-					pp_max = i;
+					pp_max = ps;
 				}
 				else
 					pp_flag = false;
@@ -94,7 +94,7 @@ int main
 		}
 	}
 	std::cout << "0" << std::endl << "};" << std::endl;
-	std::cout << "unsigned long int primes_product = " << pp << "; //" <<
-		" MAX_PRIME = " << pp_max << std::endl;
+	std::cout << "unsigned long int primes_product = " << pp << "UL; //" <<
+		" MAX_GCD_PRIME = " << pp_max << std::endl;
 	return 0;
 }

@@ -48,6 +48,10 @@
 		(mpz_ptr p, mpz_ptr q,
 		 const unsigned long int qsize, 
 		 const unsigned long int mr_iterations);
+	void tmcg_mpz_smprime_naive
+		(mpz_ptr p, mpz_ptr q,
+		 const unsigned long int qsize, 
+		 const unsigned long int mr_iterations);
 	void tmcg_mpz_sprime_noninc
 		(mpz_ptr p, mpz_ptr q,
 		 const unsigned long int qsize, 
