@@ -64,9 +64,36 @@ int main
 			assert((CallasDonnerhackeFinneyShawThayerRFC4880::
 				OctetsCompare(in, out) == CallasDonnerhackeFinneyShawThayerRFC4880::
 				OctetsCompareConstantTime(outs, ins)));
-			std::cout << "~";
+			std::cout << "~" << std::flush;
 		}
 		while (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompareZero(in));
+		std::cout << std::endl;
+
+		// testing CRC24Compute()
+		size_t inlen = 2048;
+		size_t crclen = gcry_md_get_algo_dlen(GCRY_MD_CRC24_RFC2440);
+		std::cout << "CRC24Compute() ";
+		assert((crclen > 0));
+		for (size_t i = 0; i < 420; i++)
+		{
+			char crcin[inlen], crcout[crclen];
+			size_t len = 1 + (tmcg_mpz_wrandom_ui() % (inlen-1));
+			in.clear(), out.clear();
+			for (size_t j = 0; j < len; j++)
+				in.push_back(tmcg_mpz_wrandom_ui() % 256);
+			for (size_t j = 0; j < len; j++)
+				crcin[j] = in[j];
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				CRC24Compute(in, out);
+			gcry_md_hash_buffer(GCRY_MD_CRC24_RFC2440, crcout, crcin, len);
+			in.clear();
+			for (size_t j = 0; j < crclen; j++)
+				in.push_back(crcout[j]);
+			assert((CallasDonnerhackeFinneyShawThayerRFC4880::
+				OctetsCompare(in, out)));
+			if ((i % 10) == 0)
+				std::cout << "~" << std::flush;
+		}
 		std::cout << std::endl;
 
 		// testing Radix64Encode() and Radix64Decode()
