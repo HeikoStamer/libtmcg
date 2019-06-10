@@ -105,7 +105,7 @@ eV3obS6ZdAliyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3\
 soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 		assert(!mpz_cmp(foo, bar));
 		assert(mpz_probab_prime_p(foo, 500));
-/*
+
 		// print the diff and the LSB bias within mpz_srandomm
 		size_t barlen = mpz_sizeinbase(bar, 2UL);
 		size_t diffcnt[barlen];
@@ -359,7 +359,7 @@ soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 			tmcg_mpz_oprime_noninc(foo, 1024, TMCG_MR_ITERATIONS);
 			assert(mpz_probab_prime_p(foo, 64));
 		}
-*/
+
 		// tmcg_mpz_s[m]prime[_naive|noninc] benchmark
 		size_t prime_benchmark_runs = 25;
 		std::cout << "tmcg_mpz_sprime() benchmark" << std::endl;
@@ -386,7 +386,6 @@ soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 			tmcg_mpz_smprime_naive(foo, bar, 1024, TMCG_MR_ITERATIONS);
 		stop_clock();
 		std::cout << elapsed_time() << std::endl;
-return -2;
 		std::cout << "tmcg_mpz_sprime_noninc() benchmark" << std::endl;
 		start_clock();
 		for (size_t i = 0; i < prime_benchmark_runs; i++)
