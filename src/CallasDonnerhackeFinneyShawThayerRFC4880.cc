@@ -3784,7 +3784,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			std::cerr << "ERROR: bad key material" << std::endl;
 		return false;
 	}
-	// print statistics of primary key
+	// print statistics of this primary key
 	if (verbose > 1)
 	{
 		std::cerr << "INFO: key ID of primary key: " << std::hex;
@@ -3874,7 +3874,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				"signature found for subkey" << std::endl;
 		}
 	}
-	// check whether some self-signatures (0x1f) on primary key are valid
+	// check whether some self-signatures (0x1f) on this primary key are valid
 	bool one_valid_1f = false;
 	std::sort(selfsigs.begin(), selfsigs.end(), TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < selfsigs.size(); j++)
@@ -4083,7 +4083,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		}
 	}
 	// update validity state of this key and return the result
-	if (one_valid_uid)
+	if (one_valid_uid || one_valid_uat || one_valid_1f)
 	{
 		valid = true;
 		return true;
