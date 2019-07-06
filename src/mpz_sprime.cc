@@ -46,7 +46,6 @@
 #define PRIMES 668
 #define MPRIMES 7836
 #define SIEVE_SIZE 16
-#define MAX_GCD_PRIME 15
 
 unsigned long int primes[] = {
 	3, 5, 7, 11, 13, 17, 19, 23, 
@@ -2014,7 +2013,13 @@ unsigned long int primes_m1d2[] = {
 	39989, 39993, 39998, 39999, 0
 };
 
-unsigned long int primes_product = 16294579238595022365UL; // MAX_GCD_PRIME = 15
+#if SIZEOF_UNSIGNED_LONG_INT > 7
+	#define MAX_GCD_PRIME 15
+	unsigned long int primes_product = 16294579238595022365UL;
+#else
+	#define MAX_GCD_PRIME 8
+	unsigned long int primes_product = 111546435UL;
+#endif
 
 int notest
 	(mpz_ptr p, mpz_ptr q)
