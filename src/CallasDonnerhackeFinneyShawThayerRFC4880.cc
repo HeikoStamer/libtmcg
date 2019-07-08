@@ -6981,7 +6981,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthDecode
 		// a power of 2, from 1 to 1,073,741,824 (2 to the 30th
 		// power). It is recognized by its one octet value that is
 		// greater than or equal to 224, and less than 255.
-		len = (1 << (in[0] & 0x1F));
+		len = ((uint32_t)1 << (in[0] & 0x1F));
 		partlen = true;
 		return 1;
 	}
