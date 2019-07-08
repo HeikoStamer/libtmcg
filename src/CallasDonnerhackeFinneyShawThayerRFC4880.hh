@@ -1486,7 +1486,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 		static void ArmorEncode
 			(const tmcg_openpgp_armor_t						type,
 			 const tmcg_openpgp_octets_t					&in,
-			 std::string									&out);
+			 std::string									&out,
+			 const bool										version = false);
 		static tmcg_openpgp_armor_t ArmorDecode
 			(std::string									in,
 			 tmcg_openpgp_octets_t							&out);

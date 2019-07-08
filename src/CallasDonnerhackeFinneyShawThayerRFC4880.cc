@@ -6208,7 +6208,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Encode
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 	(const tmcg_openpgp_armor_t type, const tmcg_openpgp_octets_t &in,
-	 std::string &out)
+	 std::string &out, const bool version)
 {
 	// Concatenating the following data creates ASCII Armor:
 	//  - An Armor Header Line, appropriate for the type of data
@@ -6265,7 +6265,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 	// Currently defined Armor Header Keys are as follows:
 	//  - "Version", which states the OpenPGP implementation and version
 	//    used to encode the message.
-	out += "Version: LibTMCG " VERSION "\r\n";
+	if (version)
+		out += "Version: LibTMCG " VERSION "\r\n";
 
 	// Next, a blank (zero-length, or containing only whitespace) line
 	out += "\r\n";
