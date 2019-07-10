@@ -6921,7 +6921,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthEncode
 void CallasDonnerhackeFinneyShawThayerRFC4880::FixedLengthEncode
 	(const size_t len, tmcg_openpgp_octets_t &out)
 {
-	// four-octet length format with 0xFF prefix
+	// four-octet length format with 0xFF prefix TODO: can be removed soon
 	out.push_back(0xFF);
 	out.push_back((len >> 24) & 0xFF);
 	out.push_back((len >> 16) & 0xFF);
@@ -7210,7 +7210,7 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketMPIDecode
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketStringEncode
 	(const std::string &in, tmcg_openpgp_octets_t &out)
 {
-	FixedLengthEncode(in.length(), out);
+	PacketLengthEncode(in.length(), out);
 	for (size_t i = 0; i < in.length(); i++)
 		out.push_back(in[i]);
 }
@@ -7222,10 +7222,10 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketStringDecode
 	uint32_t len = 0;
 	bool partlen = false;
 
-	headlen = PacketLengthDecode(in, true, 0x00, len, partlen);
-	if (!headlen || partlen || (headlen == 42))
-		return 0; // error: wrong length
-	if (!len)
+	headlen = PacketLengthDecode(in, true, 0xFF, len, partlen);
+	if (partlen || (headlen == 0) || (headlen == 42))
+		return 0; // error: wrong type of length
+	if (len == 0)
 		return 0; // error: string of zero length
 	if (in.size() < (len + headlen))
 		return 0; // error: input too short 
@@ -7443,7 +7443,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketEncode
 	// The length includes the type octet but not this length. Its format
 	// is similar to the "new" format packet header lengths, but cannot
 	// have Partial Body Lengths.
-	FixedLengthEncode(in.size() + 1, out);
+	PacketLengthEncode(in.size() + 1, out);
 	if (critical)
 		out.push_back(type | 0x80);
 	else
@@ -7470,50 +7470,24 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 	 const tmcg_openpgp_octets_t &flags,
 	 const tmcg_openpgp_octets_t &issuer, tmcg_openpgp_octets_t &out)
 {
-	size_t subpkts = 8;
-	size_t subpktlen = (subpkts * 6) + 4 + 2 + 3 + 1 + 1 + flags.size() + 1;
-	if (issuer.size() == 20)
-	{
-		subpktlen += (6 + 21); // size of Issuer Fingerprint subpacket
-		subpktlen += 8; // size of Issuer subpacket
-	}
-	else
-		subpktlen += issuer.size();
-	if (keyexptime != 0)
-		subpktlen += (6 + 4);
-#if GCRYPT_VERSION_NUMBER < 0x010700
-	// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
-	subpktlen += (6 + 1);
-#if GCRYPT_VERSION_NUMBER < 0x010900
-	// FIXME: remove, if libgcrypt >= 1.9.0 required by configure.ac
-#else
-	subpktlen += 1;
-#endif
-#endif
-	out.push_back(4); // V4 format
-	out.push_back(type); // type (e.g. 0x10-0x13 for UID certification)
-	out.push_back(pkalgo); // public-key algorithm
-	out.push_back(hashalgo); // hash algorithm
-	// hashed subpacket area
-	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
-	out.push_back(subpktlen & 0xFF);
+	// prepare the included subpackets
+	tmcg_openpgp_octets_t subpackets;
 		// 1. signature creation time (length = 4)
 		tmcg_openpgp_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
-		SubpacketEncode(2, false, subpkt_sigtime, out);
+		SubpacketEncode(2, false, subpkt_sigtime, subpackets);
 		// [optional] key expiration time (length = 4)
 		if (keyexptime != 0)
 		{
 			tmcg_openpgp_octets_t subpkt_keyexptime;
 			PacketTimeEncode(keyexptime, subpkt_keyexptime);
-			SubpacketEncode(9, false, subpkt_keyexptime, out);
+			SubpacketEncode(9, false, subpkt_keyexptime, subpackets);
 		}
 		// 2. preferred symmetric algorithms (length = 2)
 		tmcg_openpgp_octets_t psa;
 		psa.push_back(TMCG_OPENPGP_SKALGO_AES256);
 		psa.push_back(TMCG_OPENPGP_SKALGO_TWOFISH);
-		SubpacketEncode(11, false, psa, out);
+		SubpacketEncode(11, false, psa, subpackets);
 		// 3. issuer (variable length)
 		if (issuer.size() == 20)
 		{
@@ -7521,26 +7495,26 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 			// extract low-order 64 bits of the fingerprint
 			for (size_t i = 12; i < 20; i++)
 				keyid.push_back(issuer[i]);
-			SubpacketEncode(16, false, keyid, out);
+			SubpacketEncode(16, false, keyid, subpackets);
 		}
 		else
-			SubpacketEncode(16, false, issuer, out);
+			SubpacketEncode(16, false, issuer, subpackets);
 		// 4. preferred hash algorithms  (length = 3)
 		tmcg_openpgp_octets_t pha;
 		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA512);
 		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA384);
 		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA256);
-		SubpacketEncode(21, false, pha, out);
+		SubpacketEncode(21, false, pha, subpackets);
 		// 5. preferred compression algorithms  (length = 1)
 		tmcg_openpgp_octets_t pca;
 		pca.push_back(0); // uncompressed
-		SubpacketEncode(22, false, pca, out);
+		SubpacketEncode(22, false, pca, subpackets);
 		// 6. key server preferences (length = 1)
 		tmcg_openpgp_octets_t ksp;
 		ksp.push_back(0x80); // no-modify
-		SubpacketEncode(23, false, ksp, out);
+		SubpacketEncode(23, false, ksp, subpackets);
 		// 7. key flags (variable length)
-		SubpacketEncode(27, false, flags, out);
+		SubpacketEncode(27, false, flags, subpackets);
 		// 8. features (length = 1)
 		tmcg_openpgp_octets_t features;
 		features.push_back(0x01); // Modification Detection (tags 18, 19)
@@ -7551,7 +7525,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		// Encrypted Session Key Packets (packet 3)
 		features[0] |= 0x02;
 #endif
-		SubpacketEncode(30, false, features, out);
+		SubpacketEncode(30, false, features, subpackets);
 		// [optional] issuer fingerprint
 		if (issuer.size() == 20)
 		{
@@ -7559,7 +7533,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 			issuerfpr.push_back(4); // key version number (V4)
 			issuerfpr.insert(issuerfpr.end(),
 				issuer.begin(), issuer.end());			
-			SubpacketEncode(33, false, issuerfpr, out);
+			SubpacketEncode(33, false, issuerfpr, subpackets);
 		}
 #if GCRYPT_VERSION_NUMBER < 0x010700
 		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
@@ -7572,8 +7546,17 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		paa.push_back(TMCG_OPENPGP_AEADALGO_EAX);
 #endif
 		paa.push_back(TMCG_OPENPGP_AEADALGO_OCB);
-		SubpacketEncode(34, false, paa, out);
+		SubpacketEncode(34, false, paa, subpackets);
 #endif
+	// create the signature packet
+	out.push_back(4); // V4 format
+	out.push_back(type); // type (e.g. 0x10-0x13 for UID certification)
+	out.push_back(pkalgo); // public-key algorithm
+	out.push_back(hashalgo); // hash algorithm
+		// hashed subpacket area
+		out.push_back((subpackets.size() >> 8) & 0xFF);
+		out.push_back(subpackets.size() & 0xFF);
+		out.insert(out.end(), subpackets.begin(), subpackets.end());
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
@@ -7593,43 +7576,17 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 	 const tmcg_openpgp_pkalgo_t pkalgo2, const tmcg_openpgp_octets_t &revoker,
 	 tmcg_openpgp_octets_t &out)
 {
-	size_t subpkts = 8;
-	size_t subpktlen = (subpkts * 6) + 4 + 2 + 3 + 1 + 1 + flags.size() + 1;
-	if (issuer.size() == 20)
-	{
-		subpktlen += (6 + 21); // size of Issuer Fingerprint subpacket
-		subpktlen += 8; // size of Issuer subpacket
-	}
-	else
-		subpktlen += issuer.size();
-	if (revoker.size())
-		subpktlen += (6 + 22); // size of Revocation Key subpacket
-#if GCRYPT_VERSION_NUMBER < 0x010700
-	// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
-	subpktlen += (6 + 1);
-#if GCRYPT_VERSION_NUMBER < 0x010900
-	// FIXME: remove, if libgcrypt >= 1.9.0 required by configure.ac
-#else
-	subpktlen += 1;
-#endif
-#endif
-	out.push_back(4); // V4 format
-	out.push_back(TMCG_OPENPGP_SIGNATURE_DIRECTLY_ON_A_KEY); // type
-	out.push_back(pkalgo); // public-key algorithm
-	out.push_back(hashalgo); // hash algorithm
-	// hashed subpacket area
-	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
-	out.push_back(subpktlen & 0xFF);
+	// prepare the included subpackets
+	tmcg_openpgp_octets_t subpackets;
 		// 1. signature creation time (length = 4)
 		tmcg_openpgp_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
-		SubpacketEncode(2, false, subpkt_sigtime, out);
+		SubpacketEncode(2, false, subpkt_sigtime, subpackets);
 		// 2. preferred symmetric algorithms (length = 2)
 		tmcg_openpgp_octets_t psa;
 		psa.push_back(TMCG_OPENPGP_SKALGO_AES256); // AES256
 		psa.push_back(TMCG_OPENPGP_SKALGO_TWOFISH); // Twofish
-		SubpacketEncode(11, false, psa, out);
+		SubpacketEncode(11, false, psa, subpackets);
 		// [optional] revocation key (length = 22)
 		if (revoker.size())
 		{
@@ -7639,7 +7596,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 			assert((revoker.size() == 20));
 			for (size_t i = 0; i < 20; i++)
 				rk.push_back(revoker[i]); // SHA-1 fingerprint
-			SubpacketEncode(12, true, rk, out); // critical bit set
+			SubpacketEncode(12, true, rk, subpackets); // critical bit set
 		}
 		// 3. issuer (variable length)
 		if (issuer.size() == 20)
@@ -7648,26 +7605,26 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 			// extract low-order 64 bits of the fingerprint
 			for (size_t i = 12; i < 20; i++)
 				keyid.push_back(issuer[i]);
-			SubpacketEncode(16, false, keyid, out);
+			SubpacketEncode(16, false, keyid, subpackets);
 		}
 		else
-			SubpacketEncode(16, false, issuer, out);
+			SubpacketEncode(16, false, issuer, subpackets);
 		// 4. preferred hash algorithms  (length = 3)
 		tmcg_openpgp_octets_t pha;
 		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA512); // SHA512
 		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA384); // SHA384
 		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // SHA256
-		SubpacketEncode(21, false, pha, out);
+		SubpacketEncode(21, false, pha, subpackets);
 		// 5. preferred compression algorithms  (length = 1)
 		tmcg_openpgp_octets_t pca;
 		pca.push_back(0); // uncompressed
-		SubpacketEncode(22, false, pca, out);
+		SubpacketEncode(22, false, pca, subpackets);
 		// 6. key server preferences (length = 1)
 		tmcg_openpgp_octets_t ksp;
 		ksp.push_back(0x80); // no-modify
-		SubpacketEncode(23, false, ksp, out);
+		SubpacketEncode(23, false, ksp, subpackets);
 		// 7. key flags (variable length)
-		SubpacketEncode(27, false, flags, out);
+		SubpacketEncode(27, false, flags, subpackets);
 		// 8. features (length = 1)
 		tmcg_openpgp_octets_t features;
 		features.push_back(0x01); // Modification Detection (tags 18, 19)
@@ -7678,7 +7635,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 		// Encrypted Session Key Packets (packet 3)
 		features[0] |= 0x02;
 #endif
-		SubpacketEncode(30, false, features, out);
+		SubpacketEncode(30, false, features, subpackets);
 		// [optional] issuer fingerprint
 		if (issuer.size() == 20)
 		{
@@ -7686,7 +7643,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 			issuerfpr.push_back(4); // key version number (V4)
 			issuerfpr.insert(issuerfpr.end(),
 				issuer.begin(), issuer.end());			
-			SubpacketEncode(33, false, issuerfpr, out);
+			SubpacketEncode(33, false, issuerfpr, subpackets);
 		}
 #if GCRYPT_VERSION_NUMBER < 0x010700
 		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
@@ -7699,8 +7656,17 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 		paa.push_back(TMCG_OPENPGP_AEADALGO_EAX);
 #endif
 		paa.push_back(TMCG_OPENPGP_AEADALGO_OCB);
-		SubpacketEncode(34, false, paa, out);
+		SubpacketEncode(34, false, paa, subpackets);
 #endif
+	// create the signature packet
+	out.push_back(4); // V4 format
+	out.push_back(TMCG_OPENPGP_SIGNATURE_DIRECTLY_ON_A_KEY); // type
+	out.push_back(pkalgo); // public-key algorithm
+	out.push_back(hashalgo); // hash algorithm
+		// hashed subpacket area
+		out.push_back((subpackets.size() >> 8) & 0xFF);
+		out.push_back(subpackets.size() & 0xFF);
+		out.insert(out.end(), subpackets.begin(), subpackets.end());
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
@@ -7733,40 +7699,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 	 const std::string &policy, const tmcg_openpgp_octets_t &issuer,
 	 tmcg_openpgp_octets_t &out)
 {
-	size_t subpkts = 2;
-	size_t subpktlen = (subpkts * 6) + 4;
-	if (issuer.size() == 20)
-	{
-		subpktlen += (6 + 21); // size of Issuer Fingerprint subpacket
-		subpktlen += 8; // size of Issuer subpacket
-	}
-	else if (issuer.size() == 32)
-	{
-		subpktlen += (1 + issuer.size()); // size of Issuer Fingerprint subpacket
-	}
-	else
-		subpktlen += issuer.size();
-	if (sigexptime != 0)
-		subpktlen += (6 + 4);
-	if (policy.length())
-		subpktlen += (6 + policy.length());
-	out.push_back(4); // V4 format
-	out.push_back(type); // type (e.g. 0x00 for signature on a binary document)
-	out.push_back(pkalgo); // public-key algorithm
-	out.push_back(hashalgo); // hash algorithm
-	// hashed subpacket area
-	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
-	out.push_back(subpktlen & 0xFF);
+	// prepare the included subpackets
+	tmcg_openpgp_octets_t subpackets;
 		// 1. signature creation time (length = 4)
 		tmcg_openpgp_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
-		SubpacketEncode(2, false, subpkt_sigtime, out);
+		SubpacketEncode(2, false, subpkt_sigtime, subpackets);
 		// [optional] signature expiration time (length = 4)
 		if (sigexptime != 0)
 		{
 			tmcg_openpgp_octets_t subpkt_sigexptime;
 			PacketTimeEncode(sigexptime, subpkt_sigexptime);
-			SubpacketEncode(3, false, subpkt_sigexptime, out);
+			SubpacketEncode(3, false, subpkt_sigexptime, subpackets);
 		}
 		// 2. issuer (variable length)
 		if (issuer.size() == 20)
@@ -7775,7 +7719,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 			// extract low-order 64 bits of the fingerprint
 			for (size_t i = 12; i < 20; i++)
 				keyid.push_back(issuer[i]);
-			SubpacketEncode(16, false, keyid, out);
+			SubpacketEncode(16, false, keyid, subpackets);
 		}
 		else if (issuer.size() == 32)
 		{
@@ -7784,14 +7728,14 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 			// be included in the signature.
 		} 
 		else
-			SubpacketEncode(16, false, issuer, out);
+			SubpacketEncode(16, false, issuer, subpackets);
 		// [optional] policy URI (variable length)
 		if (policy.length())
 		{
 			tmcg_openpgp_octets_t subpkt_policy;
 			for (size_t i = 0; i < policy.length(); i++)
 				subpkt_policy.push_back(policy[i]);
-			SubpacketEncode(26, false, subpkt_policy, out);
+			SubpacketEncode(26, false, subpkt_policy, subpackets);
 		}
 		// [optional] issuer fingerprint
 		if ((issuer.size() == 20) || (issuer.size() == 32))
@@ -7805,8 +7749,17 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 				subpkt_issuerfpr.push_back(0); // this indicates an error
 			subpkt_issuerfpr.insert(subpkt_issuerfpr.end(),
 				issuer.begin(), issuer.end());			
-			SubpacketEncode(33, false, subpkt_issuerfpr, out);
+			SubpacketEncode(33, false, subpkt_issuerfpr, subpackets);
 		}
+	// create the signature packet
+	out.push_back(4); // V4 format
+	out.push_back(type); // type (e.g. 0x00 for signature on a binary document)
+	out.push_back(pkalgo); // public-key algorithm
+	out.push_back(hashalgo); // hash algorithm
+		// hashed subpacket area
+		out.push_back((subpackets.size() >> 8) & 0xFF);
+		out.push_back(subpackets.size() & 0xFF);
+		out.insert(out.end(), subpackets.begin(), subpackets.end());
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignatureV5
@@ -7817,31 +7770,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 	 const std::string &policy, const tmcg_openpgp_octets_t &issuerfpr,
 	 tmcg_openpgp_octets_t &out)
 {
-	size_t subpkts = 2;
-	size_t subpktlen = (subpkts * 6) + 4;
-
-	subpktlen += (1 + issuerfpr.size()); // size of Issuer Fingerprint subpacket
-	if (sigexptime != 0)
-		subpktlen += (6 + 4);
-	if (policy.length())
-		subpktlen += (6 + policy.length());
-	out.push_back(5); // V5 format
-	out.push_back(type); // type (e.g. 0x00 for signature on a binary document)
-	out.push_back(pkalgo); // public-key algorithm
-	out.push_back(hashalgo); // hash algorithm
-	// hashed subpacket area
-	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
-	out.push_back(subpktlen & 0xFF);
+	// prepare the included subpackets
+	tmcg_openpgp_octets_t subpackets;
 		// 1. signature creation time (length = 4)
 		tmcg_openpgp_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
-		SubpacketEncode(2, false, subpkt_sigtime, out);
+		SubpacketEncode(2, false, subpkt_sigtime, subpackets);
 		// [optional] signature expiration time (length = 4)
 		if (sigexptime != 0)
 		{
 			tmcg_openpgp_octets_t subpkt_sigexptime;
 			PacketTimeEncode(sigexptime, subpkt_sigexptime);
-			SubpacketEncode(3, false, subpkt_sigexptime, out);
+			SubpacketEncode(3, false, subpkt_sigexptime, subpackets);
 		}
 		// [optional] policy URI (variable length)
 		if (policy.length())
@@ -7849,7 +7789,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 			tmcg_openpgp_octets_t subpkt_policy;
 			for (size_t i = 0; i < policy.length(); i++)
 				subpkt_policy.push_back(policy[i]);
-			SubpacketEncode(26, false, subpkt_policy, out);
+			SubpacketEncode(26, false, subpkt_policy, subpackets);
 		}
 		// 2. issuer fingerprint
 		tmcg_openpgp_octets_t subpkt_issuerfpr;
@@ -7861,7 +7801,16 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDetachedSignature
 			subpkt_issuerfpr.push_back(0); // this indicates an error
 		subpkt_issuerfpr.insert(subpkt_issuerfpr.end(),
 			issuerfpr.begin(), issuerfpr.end());			
-		SubpacketEncode(33, false, subpkt_issuerfpr, out);
+		SubpacketEncode(33, false, subpkt_issuerfpr, subpackets);
+	// create the signature packet
+	out.push_back(5); // V5 format
+	out.push_back(type); // type (e.g. 0x00 for signature on a binary document)
+	out.push_back(pkalgo); // public-key algorithm
+	out.push_back(hashalgo); // hash algorithm
+		// hashed subpacket area
+		out.push_back((subpackets.size() >> 8) & 0xFF);
+		out.push_back(subpackets.size() & 0xFF);
+		out.insert(out.end(), subpackets.begin(), subpackets.end());
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignature
@@ -7883,26 +7832,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignatu
 	 const std::string &reason, const tmcg_openpgp_octets_t &issuer, 
 	 tmcg_openpgp_octets_t &out)
 {
-	size_t subpkts = 3;
-	size_t subpktlen = (subpkts * 6) + 4 + 1 + reason.length();
-	if (issuer.size() == 20)
-	{
-		subpktlen += (6 + 21); // size of Issuer Fingerprint subpacket
-		subpktlen += 8; // size of Issuer subpacket
-	}
-	else
-		subpktlen += issuer.size();
-	out.push_back(4); // V4 format
-	out.push_back(type); // type (e.g. 0x20/0x28 for key/subkey revocation)
-	out.push_back(pkalgo); // public-key algorithm
-	out.push_back(hashalgo); // hash algorithm
-	// hashed subpacket area
-	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
-	out.push_back(subpktlen & 0xFF);
+	// prepare the included subpackets
+	tmcg_openpgp_octets_t subpackets;
 		// 1. signature creation time (length = 4)
 		tmcg_openpgp_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
-		SubpacketEncode(2, false, subpkt_sigtime, out);
+		SubpacketEncode(2, false, subpkt_sigtime, subpackets);
 		// 2. issuer (variable length)
 		if (issuer.size() == 20)
 		{
@@ -7910,16 +7845,16 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignatu
 			// extract low-order 64 bits of the fingerprint
 			for (size_t i = 12; i < 20; i++)
 				keyid.push_back(issuer[i]);
-			SubpacketEncode(16, false, keyid, out);
+			SubpacketEncode(16, false, keyid, subpackets);
 		}
 		else
-			SubpacketEncode(16, false, issuer, out);
+			SubpacketEncode(16, false, issuer, subpackets);
 		// 3. reason for revocation (length = 1 + variable length)
 		tmcg_openpgp_octets_t subpkt_reason;
 		subpkt_reason.push_back(revcode); // machine-readable code
 		for (size_t i = 0; i < reason.length(); i++)
 			subpkt_reason.push_back(reason[i]);
-		SubpacketEncode(29, false, subpkt_reason, out);
+		SubpacketEncode(29, false, subpkt_reason, subpackets);
 		// [optional] issuer fingerprint
 		if (issuer.size() == 20)
 		{
@@ -7927,8 +7862,17 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareRevocationSignatu
 			issuerfpr.push_back(4); // key version number (V4)
 			issuerfpr.insert(issuerfpr.end(),
 				issuer.begin(), issuer.end());			
-			SubpacketEncode(33, false, issuerfpr, out);
+			SubpacketEncode(33, false, issuerfpr, subpackets);
 		}
+	// create the signature packet
+	out.push_back(4); // V4 format
+	out.push_back(type); // type (e.g. 0x20/0x28 for key/subkey revocation)
+	out.push_back(pkalgo); // public-key algorithm
+	out.push_back(hashalgo); // hash algorithm
+		// hashed subpacket area
+		out.push_back((subpackets.size() >> 8) & 0xFF);
+		out.push_back(subpackets.size() & 0xFF);
+		out.insert(out.end(), subpackets.begin(), subpackets.end());
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSignature
@@ -7950,36 +7894,18 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSign
 	 const std::string &policy, const tmcg_openpgp_octets_t &issuer, 
 	 tmcg_openpgp_octets_t &out)
 {
-	size_t subpkts = 2;
-	size_t subpktlen = (subpkts * 6) + 4;
-	if (issuer.size() == 20)
-	{
-		subpktlen += (6 + 21); // size of Issuer Fingerprint subpacket
-		subpktlen += 8; // size of Issuer subpacket
-	}
-	else
-		subpktlen += issuer.size();
-	if (sigexptime != 0)
-		subpktlen += (6 + 4);
-	if (policy.length())
-		subpktlen += (6 + policy.length());
-	out.push_back(4); // V4 format
-	out.push_back(type); // type (e.g. 0x10 for user ID certification)
-	out.push_back(pkalgo); // public-key algorithm
-	out.push_back(hashalgo); // hash algorithm
-	// hashed subpacket area
-	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
-	out.push_back(subpktlen & 0xFF);
+	// prepare the included subpackets
+	tmcg_openpgp_octets_t subpackets;
 		// 1. signature creation time (length = 4)
 		tmcg_openpgp_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
-		SubpacketEncode(2, false, subpkt_sigtime, out);
+		SubpacketEncode(2, false, subpkt_sigtime, subpackets);
 		// [optional] signature expiration time (length = 4)
 		if (sigexptime != 0)
 		{
 			tmcg_openpgp_octets_t subpkt_sigexptime;
 			PacketTimeEncode(sigexptime, subpkt_sigexptime);
-			SubpacketEncode(3, false, subpkt_sigexptime, out);
+			SubpacketEncode(3, false, subpkt_sigexptime, subpackets);
 		}
 		// 2. issuer (variable length)
 		if (issuer.size() == 20)
@@ -7988,17 +7914,17 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSign
 			// extract low-order 64 bits of the fingerprint
 			for (size_t i = 12; i < 20; i++)
 				keyid.push_back(issuer[i]);
-			SubpacketEncode(16, false, keyid, out);
+			SubpacketEncode(16, false, keyid, subpackets);
 		}
 		else
-			SubpacketEncode(16, false, issuer, out);
+			SubpacketEncode(16, false, issuer, subpackets);
 		// [optional] policy URI (variable length)
 		if (policy.length())
 		{
 			tmcg_openpgp_octets_t subpkt_policy;
 			for (size_t i = 0; i < policy.length(); i++)
 				subpkt_policy.push_back(policy[i]);
-			SubpacketEncode(26, false, subpkt_policy, out);
+			SubpacketEncode(26, false, subpkt_policy, subpackets);
 		}
 		// [optional] issuer fingerprint
 		if (issuer.size() == 20)
@@ -8007,8 +7933,17 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareCertificationSign
 			issuerfpr.push_back(4); // key version number (V4)
 			issuerfpr.insert(issuerfpr.end(),
 				issuer.begin(), issuer.end());			
-			SubpacketEncode(33, false, issuerfpr, out);
+			SubpacketEncode(33, false, issuerfpr, subpackets);
 		}
+	// create the signature packet
+	out.push_back(4); // V4 format
+	out.push_back(type); // type (e.g. 0x10 for user ID certification)
+	out.push_back(pkalgo); // public-key algorithm
+	out.push_back(hashalgo); // hash algorithm
+		// hashed subpacket area
+		out.push_back((subpackets.size() >> 8) & 0xFF);
+		out.push_back(subpackets.size() & 0xFF);
+		out.insert(out.end(), subpackets.begin(), subpackets.end());
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignature
@@ -8022,35 +7957,16 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 	 const tmcg_openpgp_notations_t &notations,
 	 tmcg_openpgp_octets_t &out)
 {
-	size_t subpkts = 4;
-	size_t subpktlen = (subpkts * 6) + 4 + 1 + 2 + target_hash.size();
-	if (issuer.size() == 20)
-	{
-		subpktlen += (6 + 21); // size of Issuer Fingerprint subpacket
-		subpktlen += 8; // size of Issuer subpacket
-	}
-	else
-		subpktlen += issuer.size();
-	if (policy.length())
-		subpktlen += (6 + policy.length());
-	for (size_t i = 0; i < notations.size(); i++)
-		subpktlen += (6 + 8 + notations[i].first.size() +
-			notations[i].second.size());	
-	out.push_back(4); // V4 format
-	out.push_back(TMCG_OPENPGP_SIGNATURE_TIMESTAMP); // type
-	out.push_back(pkalgo); // public-key algorithm
-	out.push_back(hashalgo); // hash algorithm
-	// hashed subpacket area
-	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
-	out.push_back(subpktlen & 0xFF);
+	// prepare the included subpackets
+	tmcg_openpgp_octets_t subpackets;
 		// 1. signature creation time (length = 4)
 		tmcg_openpgp_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
-		SubpacketEncode(2, true, subpkt_sigtime, out);
+		SubpacketEncode(2, true, subpkt_sigtime, subpackets);
 		// 2. revocable (length = 1)
 		tmcg_openpgp_octets_t revocable;
 		revocable.push_back(0x00); // not revocable
-		SubpacketEncode(7, true, revocable, out); 
+		SubpacketEncode(7, true, revocable, subpackets); 
 		// 3. issuer (variable length)
 		if (issuer.size() == 20)
 		{
@@ -8058,10 +7974,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 			// extract low-order 64 bits of the fingerprint
 			for (size_t i = 12; i < 20; i++)
 				keyid.push_back(issuer[i]);
-			SubpacketEncode(16, true, keyid, out);
+			SubpacketEncode(16, true, keyid, subpackets);
 		}
 		else
-			SubpacketEncode(16, true, issuer, out);
+			SubpacketEncode(16, true, issuer, subpackets);
 		// [optional] notation data (variable length)
 		for (size_t i = 0; i < notations.size(); i++)
 		{
@@ -8078,7 +7994,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 				subpkt_notation.push_back(notations[i].first[j]);
 			for (size_t j = 0; j < notations[i].second.size(); j++)
 				subpkt_notation.push_back(notations[i].second[j]);
-			SubpacketEncode(20, false, subpkt_notation, out);
+			SubpacketEncode(20, false, subpkt_notation, subpackets);
 		}
 		// [optional] policy URI (variable length)
 		if (policy.length())
@@ -8086,7 +8002,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 			tmcg_openpgp_octets_t subpkt_policy;
 			for (size_t i = 0; i < policy.length(); i++)
 				subpkt_policy.push_back(policy[i]);
-			SubpacketEncode(26, false, subpkt_policy, out);
+			SubpacketEncode(26, false, subpkt_policy, subpackets);
 		}
 		// 4. signature target (variable length)
 		tmcg_openpgp_octets_t target;
@@ -8094,7 +8010,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 		target.push_back(target_hashalgo); // hash algorithm
 		target.insert(target.end(),
 			target_hash.begin(), target_hash.end()); // hash
-		SubpacketEncode(31, true, target, out);
+		SubpacketEncode(31, true, target, subpackets);
 		// [optional] issuer fingerprint
 		if (issuer.size() == 20)
 		{
@@ -8102,8 +8018,17 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 			issuerfpr.push_back(4); // key version number (V4)
 			issuerfpr.insert(issuerfpr.end(),
 				issuer.begin(), issuer.end());			
-			SubpacketEncode(33, false, issuerfpr, out);
+			SubpacketEncode(33, false, issuerfpr, subpackets);
 		}
+	// create the signature packet
+	out.push_back(4); // V4 format
+	out.push_back(TMCG_OPENPGP_SIGNATURE_TIMESTAMP); // type
+	out.push_back(pkalgo); // public-key algorithm
+	out.push_back(hashalgo); // hash algorithm
+		// hashed subpacket area
+		out.push_back((subpackets.size() >> 8) & 0xFF);
+		out.push_back(subpackets.size() & 0xFF);
+		out.insert(out.end(), subpackets.begin(), subpackets.end());
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignature
@@ -8115,35 +8040,16 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 	 const tmcg_openpgp_notations_t &notations,
 	 tmcg_openpgp_octets_t &out)
 {
-	size_t subpkts = 4;
-	size_t subpktlen = (subpkts * 6) + 4 + 1 + target_signature.size();
-	if (issuer.size() == 20)
-	{
-		subpktlen += (6 + 21); // size of Issuer Fingerprint subpacket
-		subpktlen += 8; // size of Issuer subpacket
-	}
-	else
-		subpktlen += issuer.size();
-	if (policy.length())
-		subpktlen += (6 + policy.length());
-	for (size_t i = 0; i < notations.size(); i++)
-		subpktlen += (6 + 8 + notations[i].first.size() +
-			notations[i].second.size());	
-	out.push_back(4); // V4 format
-	out.push_back(TMCG_OPENPGP_SIGNATURE_TIMESTAMP); // type
-	out.push_back(pkalgo); // public-key algorithm
-	out.push_back(hashalgo); // hash algorithm
-	// hashed subpacket area
-	out.push_back((subpktlen >> 8) & 0xFF); // length hashed subpacket data
-	out.push_back(subpktlen & 0xFF);
+	// prepare the included subpackets
+	tmcg_openpgp_octets_t subpackets;
 		// 1. signature creation time (length = 4)
 		tmcg_openpgp_octets_t subpkt_sigtime;
 		PacketTimeEncode(sigtime, subpkt_sigtime);
-		SubpacketEncode(2, true, subpkt_sigtime, out);
+		SubpacketEncode(2, true, subpkt_sigtime, subpackets);
 		// 2. revocable (length = 1)
 		tmcg_openpgp_octets_t revocable;
 		revocable.push_back(0x00); // not revocable
-		SubpacketEncode(7, true, revocable, out); 
+		SubpacketEncode(7, true, revocable, subpackets); 
 		// 3. issuer (variable length)
 		if (issuer.size() == 20)
 		{
@@ -8151,10 +8057,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 			// extract low-order 64 bits of the fingerprint
 			for (size_t i = 12; i < 20; i++)
 				keyid.push_back(issuer[i]);
-			SubpacketEncode(16, true, keyid, out);
+			SubpacketEncode(16, true, keyid, subpackets);
 		}
 		else
-			SubpacketEncode(16, true, issuer, out);
+			SubpacketEncode(16, true, issuer, subpackets);
 		// [optional] notation data (variable length)
 		for (size_t i = 0; i < notations.size(); i++)
 		{
@@ -8171,7 +8077,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 				subpkt_notation.push_back(notations[i].first[j]);
 			for (size_t j = 0; j < notations[i].second.size(); j++)
 				subpkt_notation.push_back(notations[i].second[j]);
-			SubpacketEncode(20, false, subpkt_notation, out);
+			SubpacketEncode(20, false, subpkt_notation, subpackets);
 		}
 		// [optional] policy URI (variable length)
 		if (policy.length())
@@ -8179,10 +8085,10 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 			tmcg_openpgp_octets_t subpkt_policy;
 			for (size_t i = 0; i < policy.length(); i++)
 				subpkt_policy.push_back(policy[i]);
-			SubpacketEncode(26, false, subpkt_policy, out);
+			SubpacketEncode(26, false, subpkt_policy, subpackets);
 		}
 		// 4. embedded signature (variable length)
-		SubpacketEncode(32, true, target_signature, out);
+		SubpacketEncode(32, true, target_signature, subpackets);
 		// [optional] issuer fingerprint
 		if (issuer.size() == 20)
 		{
@@ -8190,8 +8096,17 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareTimestampSignatur
 			issuerfpr.push_back(4); // key version number (V4)
 			issuerfpr.insert(issuerfpr.end(),
 				issuer.begin(), issuer.end());			
-			SubpacketEncode(33, false, issuerfpr, out);
+			SubpacketEncode(33, false, issuerfpr, subpackets);
 		}
+	// create the signature packet
+	out.push_back(4); // V4 format
+	out.push_back(TMCG_OPENPGP_SIGNATURE_TIMESTAMP); // type
+	out.push_back(pkalgo); // public-key algorithm
+	out.push_back(hashalgo); // hash algorithm
+		// hashed subpacket area
+		out.push_back((subpackets.size() >> 8) & 0xFF);
+		out.push_back(subpackets.size() & 0xFF);
+		out.insert(out.end(), subpackets.begin(), subpackets.end());
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::PacketPubEncode
@@ -8487,7 +8402,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncode
 	if (passphrase.length() == 0)
 		len += 1+2+xlen+2; // S2K usage is zero
 	else
-		len += 29+2+xlen+20; // S2K usage is 254
+		len += 29+2+xlen+20; // fixed S2K usage is 254
 
 	// The Secret-Key and Secret-Subkey packets contain all the data of the
 	// Public-Key and Public-Subkey packets, with additional algorithm-
@@ -8671,7 +8586,11 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 		len += 2+((gcry_mpi_get_nbits(qual[j]) + 7) / 8);
 	assert((qual.size() == capl.size()));
 	for (size_t j = 0; j < capl.size(); j++)
-		len += 5+capl[j].length();
+	{
+		tmcg_openpgp_octets_t length;
+		PacketLengthEncode(capl[j].length(), length);
+		len += length.size()+capl[j].length();
+	}
 	for (size_t j = 0; j < tmcg_get_gcry_mpi_ui(n); j++)
 	{
 		for (size_t k = 0; k <= tmcg_get_gcry_mpi_ui(t); k++)
@@ -8682,7 +8601,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental108
 	if (passphrase.length() == 0)
 		len += 1+2+x_ilen+2+xprime_ilen+2; // S2K usage is zero
 	else
-		len += 29+2+x_ilen+2+xprime_ilen+20; // S2K usage is 254
+		len += 29+2+x_ilen+2+xprime_ilen+20; // fixed S2K usage is 254
 	PacketTagEncode(5, out);
 	PacketLengthEncode(len, out);
 	out.push_back(4); // V4 format
@@ -8827,7 +8746,11 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSecEncodeExperimental107
 	assert((qual.size() <= capl.size()));
 	assert((x_rvss_qual.size() <= capl.size()));
 	for (size_t j = 0; j < capl.size(); j++)
-		len += 5+capl[j].length();
+	{
+		tmcg_openpgp_octets_t length;
+		PacketLengthEncode(capl[j].length(), length);
+		len += length.size()+capl[j].length();
+	}
 	for (size_t j = 0; j < tmcg_get_gcry_mpi_ui(n); j++)
 	{
 		for (size_t k = 0; k <= tmcg_get_gcry_mpi_ui(t); k++)
@@ -11740,7 +11663,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	FixedLengthEncode(trailer.size(), hash_input);
+	hash_input.push_back(0xFF);
+	PacketScalarFourEncode(trailer.size(), hash_input);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
@@ -11777,7 +11701,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::BinaryDocumentHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	FixedLengthEncode(trailer.size(), hash_input);
+	hash_input.push_back(0xFF);
+	PacketScalarFourEncode(trailer.size(), hash_input);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
@@ -11920,7 +11845,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	FixedLengthEncode(trailer.size(), hash_input);
+	hash_input.push_back(0xFF);
+	PacketScalarFourEncode(trailer.size(), hash_input);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
@@ -11965,7 +11891,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::TextDocumentHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	FixedLengthEncode(trailer.size(), hash_input);
+	hash_input.push_back(0xFF);
+	PacketScalarFourEncode(trailer.size(), hash_input);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
@@ -12076,7 +12003,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::StandaloneHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	FixedLengthEncode(trailer.size(), hash_input);
+	hash_input.push_back(0xFF);
+	PacketScalarFourEncode(trailer.size(), hash_input);
 	HashCompute(hashalgo, hash_input, hash);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
@@ -12199,7 +12127,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	FixedLengthEncode(trailer.size(), hash_input);
+	hash_input.push_back(0xFF);
+	PacketScalarFourEncode(trailer.size(), hash_input);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
@@ -12328,7 +12257,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	FixedLengthEncode(trailer.size(), hash_input);
+	hash_input.push_back(0xFF);
+	PacketScalarFourEncode(trailer.size(), hash_input);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.
@@ -12444,7 +12374,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::KeyHash
 	// Signature packet (note that this number does not include these final
 	// six octets).
 	hash_input.push_back(0x04);
-	FixedLengthEncode(trailer.size(), hash_input);
+	hash_input.push_back(0xFF);
+	PacketScalarFourEncode(trailer.size(), hash_input);
 	// After all this has been hashed in a single hash context, the
 	// resulting hash field is used in the signature algorithm and placed
 	// at the end of the Signature packet.

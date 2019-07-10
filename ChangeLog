@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-07-10] RFC4880: changed length encoding for strings and subpackets
 * [2019-07-08] RFC4880: changed ArmorEncode() to avoid armor header by default
    see https://mailarchive.ietf.org/arch/msg/openpgp/WynQyL-9vfVFLe2Jau3jxpT83g8
 * [2019-06-13] RFC4880: changed TMCG_OpenPGP_Pubkey::CheckSelfSignatures() in
