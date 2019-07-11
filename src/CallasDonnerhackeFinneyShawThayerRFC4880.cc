@@ -77,6 +77,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		erroff(0),
 		valid(false),
 		revoked(false),
+		expired(false),
 		revocable(revocable_in),
 		exportable(exportable_in),
 		pkalgo(pkalgo_in),
@@ -146,6 +147,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		erroff(0),
 		valid(false),
 		revoked(false),
+		expired(false),
 		revocable(revocable_in),
 		exportable(exportable_in),
 		pkalgo(pkalgo_in),
@@ -233,7 +235,7 @@ void TMCG_OpenPGP_Signature::PrintInfo
 
 bool TMCG_OpenPGP_Signature::CheckValidity
 	(const time_t keycreationtime,
-	 const int verbose) const
+	 const int verbose)
 {
 	time_t current = time(NULL);
 	time_t fmax = 60 * 60 * 25; // deviation threshold: 25 hours
@@ -242,6 +244,7 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 	{
 		if (verbose)
 			std::cerr << "WARNING: signature has been expired" << std::endl;
+		expired = true;
 		return false;
 	}
 	if (creationtime < keycreationtime)
@@ -265,7 +268,7 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 		if (verbose)
 			std::cerr << "WARNING: insecure hash algorithm " << 
 				(int)hashalgo << " used for signature" << std::endl;
-		// return false;
+		// return false; TODO: turn this warning into an error
 	}
 	return true;
 }
@@ -1338,6 +1341,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		erroff(0),
 		valid(false),
 		revoked(false),
+		expired(false),
 		pkalgo(TMCG_OPENPGP_PKALGO_RSA),
 		creationtime(0),
 		expirationtime(0),
@@ -1375,6 +1379,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		erroff(0),
 		valid(false),
 		revoked(false),
+		expired(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -1436,6 +1441,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		erroff(0),
 		valid(false),
 		revoked(false),
+		expired(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -1499,6 +1505,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		erroff(0),
 		valid(false),
 		revoked(false),
+		expired(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -1562,6 +1569,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		erroff(0),
 		valid(false),
 		revoked(false),
+		expired(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -1651,6 +1659,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		erroff(0),
 		valid(false),
 		revoked(false),
+		expired(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -2015,7 +2024,7 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 }
 
 bool TMCG_OpenPGP_Subkey::CheckValidity
-	(const int verbose) const
+	(const int verbose)
 {
 	time_t current = time(NULL);
 	time_t fmax = 60 * 60 * 25; // deviation time: 25 hours
@@ -2023,8 +2032,8 @@ bool TMCG_OpenPGP_Subkey::CheckValidity
 	if (expirationtime && (current > kmax))
 	{
 		if (verbose)
-			std::cerr << "WARNING: subkey has been expired" <<
-				std::endl;
+			std::cerr << "WARNING: subkey has been expired" << std::endl;
+		expired = true;
 		return false;
 	}
 	if (creationtime > (current + fmax))
@@ -2044,15 +2053,13 @@ bool TMCG_OpenPGP_Subkey::CheckValidityPeriod
 	if (expirationtime && (at > kmax))
 	{
 		if (verbose)
-			std::cerr << "WARNING: not in validity period of subkey" <<
-				std::endl;
+			std::cerr << "WARNING: out of validity (subkey)" << std::endl;
 		return false;
 	}
 	if (creationtime > at)
 	{
 		if (verbose)
-			std::cerr << "WARNING: not in validity period of subkey" <<
-				std::endl;
+			std::cerr << "WARNING: out of validity (subkey)" << std::endl;
 		return false;
 	}
 	return true;
@@ -3239,6 +3246,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		erroff(0),
 		valid(false),
 		revoked(false),
+		expired(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -3296,6 +3304,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		erroff(0),
 		valid(false),
 		revoked(false),
+		expired(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -3354,6 +3363,7 @@ TMCG_OpenPGP_Pubkey::TMCG_OpenPGP_Pubkey
 		erroff(0),
 		valid(false),
 		revoked(false),
+		expired(false),
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
@@ -3670,7 +3680,7 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 }
 
 bool TMCG_OpenPGP_Pubkey::CheckValidity
-	(const int verbose) const
+	(const int verbose)
 {
 	time_t current = time(NULL);
 	time_t fmax = 60 * 60 * 25; // deviation time: 25 hours
@@ -3678,8 +3688,8 @@ bool TMCG_OpenPGP_Pubkey::CheckValidity
 	if (expirationtime && (current > kmax))
 	{
 		if (verbose)
-			std::cerr << "WARNING: primary key has been " <<
-				"expired" << std::endl;
+			std::cerr << "WARNING: primary key has been expired" << std::endl;
+		expired = true;
 		return false;
 	}
 	if (creationtime > (current + fmax))
@@ -3699,15 +3709,13 @@ bool TMCG_OpenPGP_Pubkey::CheckValidityPeriod
 	if (expirationtime && (at > kmax))
 	{
 		if (verbose)
-			std::cerr << "WARNING: not in validity period of primary key" <<
-				std::endl;
+			std::cerr << "WARNING: out of validity (primary key)" << std::endl;
 		return false;
 	}
 	if (creationtime > at)
 	{
 		if (verbose)
-			std::cerr << "WARNING: not in validity period of primary key" <<
-				std::endl;
+			std::cerr << "WARNING: out of validity (primary key)" << std::endl;
 		return false;
 	}
 	return true;
@@ -5093,9 +5101,11 @@ size_t TMCG_OpenPGP_Keyring::List
 			selected++;
 			std::cout << "pub:";
 			if (pub->valid)
-				std::cout << "f:";
+				std::cout << "f:"; // TODO: calculate trust metric
 			else if (pub->revoked)
 				std::cout << "r:";
+			else if (pub->expired)
+				std::cout << "e:";
 			else
 				std::cout << "i:";
 			switch (pub->pkalgo)
@@ -5264,6 +5274,8 @@ size_t TMCG_OpenPGP_Keyring::List
 					std::cout << "f:";
 				else if (pub->subkeys[i]->revoked)
 					std::cout << "r:";
+				else if (pub->subkeys[i]->expired)
+					std::cout << "e:";
 				else
 					std::cout << "i:";
 				switch (sub->pkalgo)

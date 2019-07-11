@@ -538,6 +538,7 @@ class TMCG_OpenPGP_Signature
 	public:
 		bool												valid;
 		bool												revoked;
+		bool												expired;
 		bool												revocable;
 		bool												exportable;
 		tmcg_openpgp_pkalgo_t								pkalgo;
@@ -618,7 +619,7 @@ class TMCG_OpenPGP_Signature
 			() const;
 		bool CheckValidity
 			(const time_t									keycreationtime,
-			 const int										verbose) const;
+			 const int										verbose);
 		bool CheckIntegrity
 			(const gcry_sexp_t								key,
 			 const tmcg_openpgp_octets_t					&hash,
@@ -732,6 +733,7 @@ class TMCG_OpenPGP_Subkey
 	public:
 		bool												valid;
 		bool												revoked;
+		bool												expired;
 		tmcg_openpgp_pkalgo_t								pkalgo;
 		time_t												creationtime;
 		time_t												expirationtime;
@@ -825,7 +827,7 @@ class TMCG_OpenPGP_Subkey
 			(const TMCG_OpenPGP_Signature*					sig,
 			 const int										verbose);
 		bool CheckValidity
-			(const int										verbose) const;
+			(const int										verbose);
 		bool CheckValidityPeriod
 			(const time_t									at,
 			 const int										verbose) const;
@@ -963,6 +965,7 @@ class TMCG_OpenPGP_Pubkey
 	public:
 		bool												valid;
 		bool												revoked;
+		bool												expired;
 		tmcg_openpgp_pkalgo_t								pkalgo;
 		time_t												creationtime;
 		time_t												expirationtime;
@@ -1032,7 +1035,7 @@ class TMCG_OpenPGP_Pubkey
 			(const TMCG_OpenPGP_Signature*					sig,
 			 const int										verbose);
 		bool CheckValidity
-			(const int										verbose) const;
+			(const int										verbose);
 		bool CheckValidityPeriod
 			(const time_t									at,
 			 const int										verbose) const;
