@@ -10074,7 +10074,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextEvaluate
 }
 
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract
-	(const tmcg_openpgp_octets_t &in, const int verbose,
+	(const tmcg_openpgp_octets_t &in,
+	 const int verbose,
 	 tmcg_openpgp_octets_t &out)
 {
 	bool newformat;
@@ -10095,7 +10096,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract
 		return 0; // error: no first octet of packet header
 	tmcg_openpgp_byte_t tag = work[0];
 	tmcg_openpgp_byte_t lentype = 0x00;
-	work.erase(work.begin(), work.begin()+1); // remove first octet
+	work.erase(work.begin()); // remove first octet
 	if ((tag & 0x80) != 0x80)
 		return 0; // error: Bit 7 of first octet not set
 	if ((tag & 0x40) == 0x40)
@@ -10150,6 +10151,1274 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketBodyExtract
 	return tag;
 }
 
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag1
+	(const tmcg_openpgp_octets_t &pkt,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	tmcg_openpgp_octets_t mpis;
+	size_t mlen = 0;
+	if (pkt.size() < 16)
+		return 0; // error: incorrect packet body
+	out.version = pkt[0];
+	if (out.version != 3)
+		return 0; // error: version not supported
+	for (size_t i = 0; i < 8; i++)
+		out.keyid[i] = pkt[1+i];
+	out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[9];
+	mpis.insert(mpis.end(), pkt.begin()+10, pkt.end());
+	if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY))
+	{
+		// Algorithm-Specific Fields for RSA
+		if (mpis.size() <= 2)
+			return 0; // error: too few mpis
+		mlen = PacketMPIDecode(mpis, out.me);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+	}
+	else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
+	{
+		// Algorithm-Specific Fields for Elgamal
+		if (mpis.size() <= 2)
+			return 0; // error: too few mpis
+		mlen = PacketMPIDecode(mpis, out.gk);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		if (mpis.size() <= 2)
+			return 0; // error: too few mpis
+		mlen = PacketMPIDecode(mpis, out.myk);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+	}
+	else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
+	{
+		// Algorithm-Specific Fields for ECDH keys [RFC 6637]
+		if (mpis.size() <= 2)
+			return 0; // error: too few mpis
+		mlen = PacketMPIDecode(mpis, out.ecepk);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		// a one-octet size, followed by a symmetric key encoded
+		// using the method described in Section 8 [RFC 6637]
+		if (mpis.size() <= 2)
+			return 0; // error: result of key wrapping too short
+		out.rkwlen = mpis[0];
+		if ((out.rkwlen == 0) || (out.rkwlen == 255))
+			return 0; // error: bad result of key wrapping
+		if (mpis.size() < (out.rkwlen + 1))
+			return 0; // error: result of key wrapping too short
+		for (size_t i = 0; i < out.rkwlen; i++)
+			out.rkw[i] = mpis[1+i];
+	}
+	else
+		return 0xFE; // warning: unsupported algorithm
+	return 1;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag2
+	(const tmcg_openpgp_octets_t &pkt,
+	 const int verbose,
+	 tmcg_openpgp_packet_ctx_t &out,
+	 tmcg_openpgp_notations_t &notations)
+{
+	tmcg_openpgp_octets_t mpis;
+	size_t mlen = 0;
+	if (pkt.size() < 1)
+		return 0; // error: incorrect packet body
+	out.version = pkt[0];
+	if (out.version == 3)
+	{
+		if (pkt.size() < 22)
+			return 0; // error: packet too short
+		if (pkt[1] != 5)
+			return 0; // error: incorrect length
+		out.type = (tmcg_openpgp_signature_t)pkt[2];
+		out.sigcreationtime = (pkt[3] << 24) + (pkt[4] << 16) +
+			(pkt[5] << 8) + pkt[6];
+		for (size_t i = 0; i < 8; i++)
+			out.issuer[i] = pkt[7+i];
+		out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[15];
+		out.hashalgo = (tmcg_openpgp_hashalgo_t)pkt[16];
+		// left 16 bits of signed hash value
+		for (size_t i = 0; i < 2; i++)
+			out.left[i] = pkt[17+i];
+		mpis.insert(mpis.end(), pkt.begin()+19, pkt.end());
+	}
+	else if ((out.version == 4) || (out.version == 5))
+	{
+		if (pkt.size() < 12)
+			return 0; // error: packet too short
+		out.type = (tmcg_openpgp_signature_t)pkt[1];
+		out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[2];
+		out.hashalgo = (tmcg_openpgp_hashalgo_t)pkt[3];
+		uint32_t hspdlen = (pkt[4] << 8) + pkt[5];
+		if (pkt.size() < (6 + hspdlen))
+			return 0; // error: packet too short
+		tmcg_openpgp_octets_t hspd, uspd;
+		hspd.insert(hspd.end(), pkt.begin()+6, pkt.begin()+6+hspdlen);
+		out.hspdlen = hspdlen;
+		tmcg_openpgp_mem_alloc += out.hspdlen;
+		if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+		{
+			tmcg_openpgp_mem_alloc -= out.hspdlen;
+			return 0; // error: memory limit exceeded
+		}
+		out.hspd = new tmcg_openpgp_byte_t[out.hspdlen];
+		for (size_t i = 0; i < out.hspdlen; i++)
+			out.hspd[i] = pkt[6+i];
+		tmcg_openpgp_byte_t tag = SubpacketParse(hspd, verbose, out, notations);
+		if (tag == 0x00)
+			return 0; // error: incorrect subpacket
+		if (pkt.size() < (8 + hspdlen))
+			return 0; // error: packet too short
+		uint32_t uspdlen = (pkt[6+hspdlen] << 8) + pkt[7+hspdlen];
+		if (pkt.size() < (8 + hspdlen + uspdlen))
+			return 0; // error: packet too short
+		uspd.insert(uspd.end(),
+			pkt.begin()+8+hspdlen, pkt.begin()+8+hspdlen+uspdlen);
+		// If a subpacket is not hashed, then the information in it cannot be
+		// considered definitive because it is not part of the signature proper.
+		tmcg_openpgp_packet_ctx_t untrusted;
+		tmcg_openpgp_notations_t unotations;
+		memset(&untrusted, 0, sizeof(untrusted));
+		tag = SubpacketParse(uspd, verbose, untrusted, unotations);
+		if (tag == 0x00)
+		{
+			PacketContextRelease(untrusted);
+			return 0; // error: incorrect subpacket
+		}
+		PacketContextEvaluate(untrusted, out);
+		PacketContextRelease(untrusted);
+		if (pkt.size() < (10 + hspdlen + uspdlen))
+			return 0; // error: packet too short
+		// left 16 bits of signed hash value
+		for (size_t i = 0; i < 2; i++)
+			out.left[i] = pkt[8+hspdlen+uspdlen+i];
+		mpis.insert(mpis.end(), pkt.begin()+10+hspdlen+uspdlen, pkt.end());
+	}
+	else
+		return 0xFC; // warning: version not supported
+	if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	{
+		// Algorithm-Specific Fields for RSA
+		if (mpis.size() <= 2)
+			return 0; // error: too few mpis
+		mlen = PacketMPIDecode(mpis, out.md);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+	}
+	else if (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+	{
+		// Algorithm-Specific Fields for DSA
+		if (mpis.size() <= 2)
+			return 0; // error: too few mpis
+		mlen = PacketMPIDecode(mpis, out.r);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		if (mpis.size() <= 2)
+			return 0; // error: too few mpis
+		mlen = PacketMPIDecode(mpis, out.s);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+	}
+	else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+		(out.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
+	{
+		// Algorithm-Specific Fields for ECDSA/EdDSA
+		if (mpis.size() <= 2)
+			return 0; // error: too few mpis
+		mlen = PacketMPIDecode(mpis, out.r);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		if (mpis.size() <= 2)
+			return 0; // error: too few mpis
+		mlen = PacketMPIDecode(mpis, out.s);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+	}
+	else
+		return 0xFC; // warning: unsupported algorithm
+	return 2;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag3
+	(const tmcg_openpgp_octets_t &pkt,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	if (pkt.size() < 1)
+		return 0; // error: packet too short
+	out.version = pkt[0];
+	if (out.version == 4)
+	{
+		if (pkt.size() < 4)
+			return 0; // error: packet too short
+		out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
+		out.s2k_type = (tmcg_openpgp_stringtokey_t)pkt[2];
+		out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[3];
+		if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
+		{
+			// Simple S2K -- forbidden by RFC 4880 (only for completeness)
+			if (out.encdatalen != 0)
+				return 0; // error: already seen within context
+			tmcg_openpgp_mem_alloc += (pkt.size() - 4);
+			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+			{
+				tmcg_openpgp_mem_alloc -= (pkt.size() - 4);
+				return 0; // error: memory limit exceeded
+			}
+			out.encdatalen = pkt.size() - 4;
+			if (out.encdatalen == 0)
+				return 3; // no encrypted session key
+			out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+			for (size_t i = 0; i < out.encdatalen; i++)
+				out.encdata[i] = pkt[4+i];
+		}
+		else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SALTED)
+		{
+			// Salted S2K
+			if (pkt.size() < 12)
+				return 0; // error: no salt
+			for (size_t i = 0; i < 8; i++)
+				out.s2k_salt[i] = pkt[4+i];
+			if (out.encdatalen != 0)
+				return 0; // error: already seen within context
+			tmcg_openpgp_mem_alloc += (pkt.size() - 12);
+			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+			{
+				tmcg_openpgp_mem_alloc -= (pkt.size() - 12);
+				return 0; // error: memory limit exceeded
+			}
+			out.encdatalen = pkt.size() - 12;
+			if (out.encdatalen == 0)
+				return 3; // no encrypted session key
+			out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+			for (size_t i = 0; i < out.encdatalen; i++)
+				out.encdata[i] = pkt[12+i];
+		}
+		else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
+		{
+			// Iterated and Salted S2K
+			if (pkt.size() < 12)
+				return 0; // error: no salt
+			for (size_t i = 0; i < 8; i++)
+				out.s2k_salt[i] = pkt[4+i];
+			if (pkt.size() < 13)
+				return 0; // error: no count
+			out.s2k_count = pkt[12];
+			if (out.encdatalen != 0)
+				return 0; // error: already seen within context
+			tmcg_openpgp_mem_alloc += (pkt.size() - 13);
+			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+			{
+				tmcg_openpgp_mem_alloc -= (pkt.size() - 13);
+				return 0; // error: memory limit exceeded
+			}
+			out.encdatalen = pkt.size() - 13;
+			if (out.encdatalen == 0)
+				return 3; // no encrypted session key
+			out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+			for (size_t i = 0; i < out.encdatalen; i++)
+				out.encdata[i] = pkt[13+i];
+		}
+		else
+			return 0; // unknown S2K specifier
+	}
+	else if (out.version == 5)
+	{
+		// AEAD SKESK [draft RFC 4880bis]
+		if (pkt.size() < 5)
+			return 0; // error: packet too short
+		out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
+		out.aeadalgo = (tmcg_openpgp_aeadalgo_t)pkt[2];
+		out.s2k_type = (tmcg_openpgp_stringtokey_t)pkt[3];
+		out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[4];
+		if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
+		{
+			// Simple S2K -- forbidden by RFC 4880 (only for completeness)
+			size_t ivlen = AlgorithmIVLength(out.aeadalgo);
+			if (pkt.size() < (5 + ivlen))
+				return 0; // error: no IV
+			if (ivlen > sizeof(out.iv))
+				return 0; // error: IV too long
+			for (size_t i = 0; i < ivlen; i++)
+				out.iv[i] = pkt[5+i];
+			if (out.encdatalen != 0)
+				return 0; // error: already seen within context
+			tmcg_openpgp_mem_alloc += (pkt.size() - 5 - ivlen);
+			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+			{
+				tmcg_openpgp_mem_alloc -= (pkt.size() - 5 - ivlen);
+				return 0; // error: memory limit exceeded
+			}
+			out.encdatalen = pkt.size() - 5 - ivlen;
+			if (out.encdatalen == 0)
+				return 0; // error: no encrypted session key
+			out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+			for (size_t i = 0; i < out.encdatalen; i++)
+				out.encdata[i] = pkt[5+ivlen+i];
+		}
+		else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SALTED)
+		{
+			// Salted S2K
+			if (pkt.size() < 13)
+				return 0; // error: no salt
+			for (size_t i = 0; i < 8; i++)
+				out.s2k_salt[i] = pkt[5+i];
+			size_t ivlen = AlgorithmIVLength(out.aeadalgo);
+			if (pkt.size() < (13 + ivlen))
+				return 0; // error: no IV
+			if (ivlen > sizeof(out.iv))
+				return 0; // error: IV too long
+			for (size_t i = 0; i < ivlen; i++)
+				out.iv[i] = pkt[13+i];
+			if (out.encdatalen != 0)
+				return 0; // error: already seen within context
+			tmcg_openpgp_mem_alloc += (pkt.size() - 13 - ivlen);
+			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+			{
+				tmcg_openpgp_mem_alloc -= (pkt.size() - 13 - ivlen);
+				return 0; // error: memory limit exceeded
+			}
+			out.encdatalen = pkt.size() - 13 - ivlen;
+			if (out.encdatalen == 0)
+				return 0; // error: no encrypted session key
+			out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+			for (size_t i = 0; i < out.encdatalen; i++)
+				out.encdata[i] = pkt[13+ivlen+i];
+		}
+		else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
+		{
+			// Iterated and Salted S2K
+			if (pkt.size() < 13)
+				return 0; // error: no salt
+			for (size_t i = 0; i < 8; i++)
+				out.s2k_salt[i] = pkt[5+i];
+			if (pkt.size() < 14)
+				return 0; // error: no count
+			out.s2k_count = pkt[13];
+			size_t ivlen = AlgorithmIVLength(out.aeadalgo);
+			if (pkt.size() < (14 + ivlen))
+				return 0; // error: no IV
+			if (ivlen > sizeof(out.iv))
+				return 0; // error: IV too long
+			for (size_t i = 0; i < ivlen; i++)
+				out.iv[i] = pkt[14+i];
+			if (out.encdatalen != 0)
+				return 0; // error: already seen within context
+			tmcg_openpgp_mem_alloc += (pkt.size() - 14 - ivlen);
+			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+			{
+				tmcg_openpgp_mem_alloc -= (pkt.size() - 14 - ivlen);
+				return 0; // error: memory limit exceeded
+			}
+			out.encdatalen = pkt.size() - 14 - ivlen;
+			if (out.encdatalen == 0)
+				return 0; // error: no encrypted session key
+			out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+			for (size_t i = 0; i < out.encdatalen; i++)
+				out.encdata[i] = pkt[14+ivlen+i];
+		}
+		else
+			return 0; // unknown S2K specifier	
+	}
+	else
+		return 0; // error: version not supported
+	return 3;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag4
+	(const tmcg_openpgp_octets_t &pkt,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	if (pkt.size() != 13)
+		return 0; // error: incorrect packet body
+	out.version = pkt[0];
+	if (out.version != 3)
+		return 0; // error: version not supported
+	out.type = (tmcg_openpgp_signature_t)pkt[1];
+	out.hashalgo = (tmcg_openpgp_hashalgo_t)pkt[2];
+	out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[3];
+	for (size_t i = 0; i < 8; i++)
+		out.signingkeyid[i] = pkt[4+i];
+	out.nestedsignature = pkt[12];
+	return 4;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag57
+	(const tmcg_openpgp_octets_t &pkt,
+	 const tmcg_openpgp_byte_t tag,
+	 tmcg_openpgp_packet_ctx_t &out,
+	 std::vector<gcry_mpi_t> &qual,
+	 std::vector<gcry_mpi_t> &x_rvss_qual,
+	 std::vector<std::string> &capl,
+	 std::vector<gcry_mpi_t> &v_i,
+	 std::vector< std::vector<gcry_mpi_t> > &c_ik)
+{
+	tmcg_openpgp_octets_t mpis;
+	size_t mlen = 0, pkt_offset = 0;
+	if (pkt.size() < 10)
+		return 0; // error: incorrect packet body
+	out.version = pkt[0];
+	out.keycreationtime = (pkt[1] << 24) + (pkt[2] << 16) +
+		(pkt[3] << 8) + pkt[4];
+	out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[5];
+	if (out.version == 4)
+		pkt_offset = 6;
+	else if (out.version == 5)
+		pkt_offset = 10;
+	else
+		return 0; // error: version not supported
+	mpis.insert(mpis.end(), pkt.begin()+pkt_offset, pkt.end());
+	if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+	    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	{
+		// Algorithm-Specific Fields for RSA keys
+		mlen = PacketMPIDecode(mpis, out.n);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.e);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+	}
+	else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
+	{
+		// Algorithm-Specific Fields for Elgamal keys
+		mlen = PacketMPIDecode(mpis, out.p);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.g);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.y);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+	}
+	else if (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+	{
+		// Algorithm-Specific Fields for DSA keys
+		mlen = PacketMPIDecode(mpis, out.p);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.q);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.g);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.y);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+	}
+	else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
+	{
+		// Algorithm-Specific Fields for ECDH keys [RFC 6637]
+		out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[pkt_offset];
+		if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
+			return 0; // error: values reserved for future extensions
+		if (pkt.size() < (pkt_offset + 1 + out.curveoidlen))
+			return 0; // error: OID too short
+		for (size_t i = 0; i < out.curveoidlen; i++)
+			out.curveoid[i] = pkt[pkt_offset+1+i];
+		mpis.clear();
+		mpis.insert(mpis.end(),
+			pkt.begin()+pkt_offset+1+out.curveoidlen, pkt.end());
+		mlen = PacketMPIDecode(mpis, out.ecpk);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		if (mpis.size() < 4)
+			return 0; // error: bad KDF params size
+		if (mpis[0] != 0x03)
+			return 0; // error: bad KDF size
+		if (mpis[1] != 0x01)
+			return 0; // error: bad KDF extensions
+		out.kdf_hashalgo = (tmcg_openpgp_hashalgo_t)mpis[2];
+		out.kdf_skalgo = (tmcg_openpgp_skalgo_t)mpis[3];
+		mpis.erase(mpis.begin(), mpis.begin()+4);
+	}
+	else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+		(out.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
+	{
+		// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
+		// Algorithm-Specific Fields for EdDSA keys [draft RFC 4880bis]
+		out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[pkt_offset];
+		if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
+			return 0; // error: values reserved for future extensions
+		if (pkt.size() < (pkt_offset + 1 + out.curveoidlen))
+			return 0; // error: OID too short
+		for (size_t i = 0; i < out.curveoidlen; i++)
+			out.curveoid[i] = pkt[pkt_offset+1+i];
+		mpis.clear();
+		mpis.insert(mpis.end(),
+			pkt.begin()+pkt_offset+1+out.curveoidlen, pkt.end());
+		mlen = PacketMPIDecode(mpis, out.ecpk);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+	}
+	else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7)
+	{
+		// Algorithm-Specific Fields for new tDSS/DSA keys
+		mlen = PacketMPIDecode(mpis, out.p);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.q);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.g);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.h);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.y);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.n);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.t);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.i);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.qualsize);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		size_t qs = tmcg_get_gcry_mpi_ui(out.qualsize);
+		if (qs > 255)
+			return 0; // error: too many parties
+		qual.resize(qs);
+		for (size_t j = 0; j < qs; j++)
+		{
+			mlen = PacketMPIDecode(mpis, qual[j]);
+			if (!mlen || (mlen > mpis.size()))
+				return 0; // error: bad mpi
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
+		mlen = PacketMPIDecode(mpis, out.x_rvss_qualsize);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		size_t xqs = tmcg_get_gcry_mpi_ui(out.x_rvss_qualsize);
+		if (xqs > 255)
+			return 0; // error: too many parties
+		x_rvss_qual.resize(xqs);
+		for (size_t j = 0; j < xqs; j++)
+		{
+			mlen = PacketMPIDecode(mpis, x_rvss_qual[j]);
+			if (!mlen || (mlen > mpis.size()))
+				return 0; // error
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
+		size_t n = tmcg_get_gcry_mpi_ui(out.n);
+		size_t t = tmcg_get_gcry_mpi_ui(out.t);
+		if ((n > 255) || (t > 128) || (tmcg_get_gcry_mpi_ui(out.i) >= n))
+			return 0; // error: too many parties or bad threshold/index
+		capl.clear();
+		for (size_t j = 0; j < n; j++)
+		{
+			std::string peerid;
+			mlen = PacketStringDecode(mpis, peerid);
+			if (!mlen || (mlen > mpis.size()))
+				return 0; // error
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			capl.push_back(peerid);
+		}
+		c_ik.resize(n);
+		for (size_t j = 0; j < n; j++)
+		{
+			c_ik[j].resize(t + 1);
+			for (size_t k = 0; k <= t; k++)
+			{
+				mlen = PacketMPIDecode(mpis, c_ik[j][k]);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			}
+		}
+	}
+	else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL8)
+	{
+		// Algorithm-Specific Fields for old tDSS/DSA keys
+		mlen = PacketMPIDecode(mpis, out.p);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.q);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.g);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.h);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.y);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.n);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.t);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.i);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.qualsize);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		size_t qs = tmcg_get_gcry_mpi_ui(out.qualsize);
+		if (qs > 255)
+			return 0; // error: too many parties
+		qual.resize(qs);
+		for (size_t j = 0; j < qs; j++)
+		{
+			mlen = PacketMPIDecode(mpis, qual[j]);
+			if (!mlen || (mlen > mpis.size()))
+				return 0; // error
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
+		capl.clear();
+		for (size_t j = 0; j < qs; j++)
+		{
+			std::string peerid;
+			mlen = PacketStringDecode(mpis, peerid);
+			if (!mlen || (mlen > mpis.size()))
+				return 0; // error
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			capl.push_back(peerid);
+		}
+		size_t n = tmcg_get_gcry_mpi_ui(out.n);
+		size_t t = tmcg_get_gcry_mpi_ui(out.t);
+		if ((n > 255) || (t > 128))
+			return 0; // error: too many parties
+		c_ik.resize(n);
+		for (size_t j = 0; j < n; j++)
+		{
+			c_ik[j].resize(t + 1);
+			for (size_t k = 0; k <= t; k++)
+			{
+				mlen = PacketMPIDecode(mpis, c_ik[j][k]);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			}
+		}
+	}
+	else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9)
+	{
+		// Algorithm-Specific Fields for tElG keys
+		mlen = PacketMPIDecode(mpis, out.p);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.q);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.g);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.h);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.y);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.n);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.t);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.i);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.qualsize);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		size_t qs = tmcg_get_gcry_mpi_ui(out.qualsize);
+		if (qs > 255)
+			return 0; // error: too many parties
+		qual.resize(qs);
+		for (size_t j = 0; j < qs; j++)
+		{
+			mlen = PacketMPIDecode(mpis, qual[j]);
+			if (!mlen || (mlen > mpis.size()))
+				return 0; // error
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
+		size_t n = tmcg_get_gcry_mpi_ui(out.n);
+		size_t t = tmcg_get_gcry_mpi_ui(out.t);
+		if ((n > 255) || (t > 128))
+			return 0; // error: too many parties
+		v_i.resize(n);
+		for (size_t j = 0; j < n; j++)
+		{
+			mlen = PacketMPIDecode(mpis, v_i[j]);
+			if (!mlen || (mlen > mpis.size()))
+				return 0; // error
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
+		c_ik.resize(n);
+		for (size_t j = 0; j < n; j++)
+		{
+			c_ik[j].resize(t + 1);
+			for (size_t k = 0; k <= t; k++)
+			{
+				mlen = PacketMPIDecode(mpis, c_ik[j][k]);
+				if (!mlen || (mlen > mpis.size()))
+					return 0; // error
+				mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			}
+		}
+	}
+	else
+		return 0; // error: unsupported public-key algo
+	// secret fields
+	if (mpis.size() < 1)
+		return 0; // error: no S2K convention
+	out.s2kconv = mpis[0];
+	mpis.erase(mpis.begin(), mpis.begin()+1);
+	if (out.version == 5)
+	{
+		if (out.s2kconv == 255)
+			return 0; // error: forbidden by spec (RFC4880bis)
+		mpis.erase(mpis.begin(), mpis.begin()+1); // skip octet count
+	}
+	if (out.s2kconv == 0)
+	{
+		if (out.version == 5)
+		{
+			if (mpis.size() < 4)
+				return 0; // error: no v5 octet count
+			mpis.erase(mpis.begin(), mpis.begin()+4); // skip octet count
+		}
+		tmcg_openpgp_secure_octets_t smpis;
+		for (size_t i = 0; i < mpis.size(); i++)
+			smpis.push_back(mpis[i]); // copy
+		// not encrypted + checksum
+		size_t chksum = 0;
+		if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
+		    (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA))
+		{
+			// Algorithm-Specific Fields for Elgamal
+			// Algorithm-Specific Fields for DSA
+			mlen = PacketMPIDecode(smpis, out.x, chksum);
+			if (!mlen || (mlen > smpis.size()))
+				return 0; // error: bad mpi
+			smpis.erase(smpis.begin(), smpis.begin()+mlen);
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
+		else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+		         (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+		         (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+		{
+			// Algorithm-Specific Fields for RSA
+			mlen = PacketMPIDecode(smpis, out.d, chksum);
+			if (!mlen || (mlen > smpis.size()))
+				return 0; // error: bad mpi
+			smpis.erase(smpis.begin(), smpis.begin()+mlen);
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			mlen = PacketMPIDecode(smpis, out.p, chksum);
+			if (!mlen || (mlen > smpis.size()))
+				return 0; // error: bad mpi
+			smpis.erase(smpis.begin(), smpis.begin()+mlen);
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			mlen = PacketMPIDecode(smpis, out.q, chksum);
+			if (!mlen || (mlen > smpis.size()))
+				return 0; // error: bad mpi
+			smpis.erase(smpis.begin(), smpis.begin()+mlen);
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			mlen = PacketMPIDecode(smpis, out.u, chksum);
+			if (!mlen || (mlen > smpis.size()))
+				return 0; // error: bad mpi
+			smpis.erase(smpis.begin(), smpis.begin()+mlen);
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
+		else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
+			(out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+			(out.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
+		{
+			// Algorithm-Specific Fields for ECDH keys [RFC 6637]
+			// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
+			// Algorithm-Specific Fields for EdDSA [draft RFC 4880bis]
+			mlen = PacketMPIDecode(smpis, out.ecsk, chksum);
+			if (!mlen || (mlen > smpis.size()))
+				return 0; // error: bad mpi
+			smpis.erase(smpis.begin(), smpis.begin()+mlen);
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
+		else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7) ||
+		         (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL8) ||
+		         (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9))
+		{
+			// Algorithm-Specific Fields tDSS/DKG
+			mlen = PacketMPIDecode(smpis, out.x_i, chksum);
+			if (!mlen || (mlen > smpis.size()))
+				return 0; // error: bad mpi
+			smpis.erase(smpis.begin(), smpis.begin()+mlen);
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+			mlen = PacketMPIDecode(smpis, out.xprime_i, chksum);
+			if (!mlen || (mlen > smpis.size()))
+				return 0; // error: bad mpi
+			smpis.erase(smpis.begin(), smpis.begin()+mlen);
+			mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		}
+		else
+			return 0; // error: algo not supported
+		if (mpis.size() < 2)
+			return 0; // error: no checksum
+		size_t chksum2 = (mpis[0] << 8) + mpis[1];
+		if (chksum != chksum2)
+			return 0; // error: checksum mismatch
+		mpis.erase(mpis.begin(), mpis.begin()+2);
+	}
+	else if ((out.s2kconv == 253) || (out.s2kconv == 254) ||
+		(out.s2kconv == 255))
+	{
+		// encrypted + AEAD or SHA-1 hash or checksum
+		if (mpis.size() < 1)
+			return 0; // error: no sym. algorithm
+		out.skalgo = (tmcg_openpgp_skalgo_t)mpis[0];
+		mpis.erase(mpis.begin(), mpis.begin()+1);
+		if (out.s2kconv == 253)
+		{
+			if (mpis.size() < 1)
+				return 0; // error: no AEAD algorithm
+			out.aeadalgo = (tmcg_openpgp_aeadalgo_t)mpis[0];
+			mpis.erase(mpis.begin(), mpis.begin()+1);
+		}
+		if (mpis.size() < 2)
+			return 0; // error: bad S2K specifier
+		out.s2k_type = (tmcg_openpgp_stringtokey_t)mpis[0];
+		out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)mpis[1];
+		mpis.erase(mpis.begin(), mpis.begin()+2);
+		if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
+		{
+			// Simple S2K
+		}
+		else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SALTED)
+		{
+			// Salted S2K
+			if (mpis.size() < 8)
+				return 0; // error: no salt
+			for (size_t i = 0; i < 8; i++)
+				out.s2k_salt[i] = mpis[i];
+			mpis.erase(mpis.begin(), mpis.begin()+8);
+		}
+		else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
+		{
+			// Iterated and Salted S2K
+			if (mpis.size() < 8)
+				return 0; // error: no salt
+			for (size_t i = 0; i < 8; i++)
+				out.s2k_salt[i] = mpis[i];
+			mpis.erase(mpis.begin(), mpis.begin()+8);
+			if (mpis.size() < 1)
+				return 0; // error: no count
+			out.s2k_count = mpis[0];
+			mpis.erase(mpis.begin(), mpis.begin()+1);
+		}
+		else
+			return 0; // unknown S2K specifier
+		size_t ivlen = AlgorithmIVLength(out.skalgo);
+		if (mpis.size() < ivlen)
+			return 0; // error: no IV
+		if (ivlen > sizeof(out.iv))
+			return 0; // error: IV too long
+		for (size_t i = 0; i < ivlen; i++)
+			out.iv[i] = mpis[i];
+		mpis.erase(mpis.begin(), mpis.begin()+ivlen);
+		if (mpis.size() < 4)
+			return 0; // error: no v5 octet count
+		if (out.version == 5)
+			mpis.erase(mpis.begin(), mpis.begin()+4); // skip v5 octet count
+		if (mpis.size() < 4)
+			return 0; // error: bad encrypted data
+		if (out.encdatalen != 0)
+			return 0; // already seen within context
+		tmcg_openpgp_mem_alloc += mpis.size();
+		if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+		{
+			tmcg_openpgp_mem_alloc -= mpis.size();
+			return 0; // error: memory limit exceeded
+		}
+		out.encdatalen = mpis.size();
+		out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+		for (size_t i = 0; i < out.encdatalen; i++)
+			out.encdata[i] = mpis[i];
+	}
+	else
+		return 0; // S2K convention not supported
+	return tag;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag614
+	(const tmcg_openpgp_octets_t &pkt,
+	 const tmcg_openpgp_byte_t tag,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	tmcg_openpgp_octets_t mpis;
+	size_t mlen = 0, pkt_offset = 0;
+	if (pkt.size() < 10)
+		return 0; // error: incorrect packet body
+	out.version = pkt[0];
+	out.keycreationtime = (pkt[1] << 24) + (pkt[2] << 16) +
+		(pkt[3] << 8) + pkt[4];
+	out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[5];
+	if (out.version == 4)
+		pkt_offset = 6;
+	else if (out.version == 5)
+		pkt_offset = 10;
+	else
+		return 0; // error: version not supported
+	mpis.insert(mpis.end(), pkt.begin()+pkt_offset, pkt.end());
+	if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+	    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
+	    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	{
+		// Algorithm-Specific Fields for RSA keys
+		mlen = PacketMPIDecode(mpis, out.n);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.e);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+	}
+	else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
+	{
+		// Algorithm-Specific Fields for Elgamal keys
+		mlen = PacketMPIDecode(mpis, out.p);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.g);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.y);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+	}
+	else if (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+	{
+		// Algorithm-Specific Fields for DSA keys
+		mlen = PacketMPIDecode(mpis, out.p);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.q);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.g);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		mlen = PacketMPIDecode(mpis, out.y);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+	}
+	else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
+	{
+		// Algorithm-Specific Fields for ECDH keys [RFC 6637]
+		out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[pkt_offset];
+		if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
+			return 0; // error: values reserved for future extensions
+		if (pkt.size() < (pkt_offset + 1 + out.curveoidlen))
+			return 0; // error: OID too short
+		for (size_t i = 0; i < out.curveoidlen; i++)
+			out.curveoid[i] = pkt[pkt_offset+1+i];
+		mpis.clear();
+		mpis.insert(mpis.end(),
+			pkt.begin()+pkt_offset+1+out.curveoidlen, pkt.end());
+		mlen = PacketMPIDecode(mpis, out.ecpk);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+		mpis.erase(mpis.begin(), mpis.begin()+mlen);
+		if (mpis.size() != 4)
+			return 0; // error: bad KDF params size
+		if (mpis[0] != 0x03)
+			return 0; // error: bad KDF size
+		if (mpis[1] != 0x01)
+			return 0; // error: bad KDF extensions
+		out.kdf_hashalgo = (tmcg_openpgp_hashalgo_t)mpis[2];
+		out.kdf_skalgo = (tmcg_openpgp_skalgo_t)mpis[3];
+	}
+	else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+		(out.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
+	{
+		// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
+		// Algorithm-Specific Fields for EdDSA keys [draft RFC 4880bis]
+		out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[pkt_offset];
+		if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
+			return 0; // error: values reserved for future extensions
+		if (pkt.size() < (pkt_offset + 1 + out.curveoidlen))
+			return 0; // error: OID too short
+		for (size_t i = 0; i < out.curveoidlen; i++)
+			out.curveoid[i] = pkt[pkt_offset+1+i];
+		mpis.clear();
+		mpis.insert(mpis.end(),
+			pkt.begin()+pkt_offset+1+out.curveoidlen, pkt.end());
+		mlen = PacketMPIDecode(mpis, out.ecpk);
+		if (!mlen || (mlen > mpis.size()))
+			return 0; // error: bad or zero mpi
+	}
+	else
+		return 0xFD; // warning: unsupported algorithm
+	return tag;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag8
+	(const tmcg_openpgp_octets_t &pkt,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	if (pkt.size() < 2)
+		return 0; // error: incorrect packet body
+	out.compalgo = (tmcg_openpgp_compalgo_t)pkt[0];
+	if (out.compdatalen != 0)
+		return 0; // error: already seen within context
+	tmcg_openpgp_mem_alloc += (pkt.size() - 1);
+	if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+	{
+		tmcg_openpgp_mem_alloc -= (pkt.size() - 1);
+		return 0; // error: memory limit exceeded
+	}
+	out.compdatalen = pkt.size() - 1;
+	out.compdata = new tmcg_openpgp_byte_t[out.compdatalen];
+	for (size_t i = 0; i < out.compdatalen; i++)
+		out.compdata[i] = pkt[1+i];
+	return 8;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag9
+	(const tmcg_openpgp_octets_t &pkt,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	if (pkt.size() == 0)
+		return 0; // error: empty packet body
+	if (out.encdatalen != 0)
+		return 0; // error: already seen within context
+	tmcg_openpgp_mem_alloc += pkt.size();
+	if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+	{
+		tmcg_openpgp_mem_alloc -= pkt.size();
+		return 0; // error: memory limit exceeded
+	}
+	out.encdatalen = pkt.size();
+	out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+	for (size_t i = 0; i < out.encdatalen; i++)
+		out.encdata[i] = pkt[i];
+	return 9;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag10
+	(const tmcg_openpgp_octets_t &pkt,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	if (pkt.size() != 3)
+		return 0; // error: incorrect packet body
+	if ((pkt[0] != 0x50) || (pkt[1] != 0x47) || (pkt[3] != 0x50))
+		return 0; // error: bad marker
+	out.marker = true; 
+	return 10;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag11
+	(const tmcg_openpgp_octets_t &pkt,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	if (pkt.size() < 2)
+		return 0; // error: incorrect packet body
+	out.dataformat = pkt[0];
+	out.datafilenamelen = pkt[1];
+	if (pkt.size() < (out.datafilenamelen + 2))
+		return 0; // error: packet too short
+	for (size_t i = 0; i < out.datafilenamelen; i++)
+		out.datafilename[i] = pkt[2+i];
+	if (pkt.size() < (out.datafilenamelen + 6))
+		return 0; // error: packet too short
+	out.datatime = (pkt[2+out.datafilenamelen] << 24) +
+		(pkt[3+out.datafilenamelen] << 16) +
+		(pkt[4+out.datafilenamelen] << 8) +	pkt[5+out.datafilenamelen];
+	if (out.datalen != 0)
+		return 0; // error: already seen within this context
+	tmcg_openpgp_mem_alloc += (pkt.size() - (out.datafilenamelen + 6));
+	if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+	{
+		tmcg_openpgp_mem_alloc -= (pkt.size()-(out.datafilenamelen+6));
+		return 0; // error: memory limit exceeded
+	}
+	out.datalen = pkt.size() - (out.datafilenamelen + 6);
+	out.data = new tmcg_openpgp_byte_t[out.datalen];
+	for (size_t i = 0; i < out.datalen; i++)
+		out.data[i] = pkt[6+out.datafilenamelen+i];
+	return 11;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag13
+	(const tmcg_openpgp_octets_t &pkt,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	if (out.uiddatalen != 0)
+		return 0; // error: already seen within context
+	tmcg_openpgp_mem_alloc += pkt.size();
+	if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+	{
+		tmcg_openpgp_mem_alloc -= pkt.size();
+		return 0; // error: memory limit exceeded
+	}
+	out.uiddatalen = pkt.size();
+	if (pkt.size() > 0)
+	{
+		out.uiddata = new tmcg_openpgp_byte_t[out.uiddatalen];
+		for (size_t i = 0; i < out.uiddatalen; i++)
+			out.uiddata[i] = pkt[i];
+	}
+	return 13;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag17
+	(const tmcg_openpgp_octets_t &pkt,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	if (pkt.size() < 2)
+		return 0; // error: incorrect packet body
+	if (out.uatdatalen != 0)
+		return 0; // error: already seen within context
+	tmcg_openpgp_mem_alloc += pkt.size();
+	if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+	{
+		tmcg_openpgp_mem_alloc -= pkt.size();
+		return 0; // error: memory limit exceeded
+	}
+	out.uatdatalen = pkt.size();
+	out.uatdata = new tmcg_openpgp_byte_t[out.uatdatalen];
+	for (size_t i = 0; i < out.uatdatalen; i++)
+		out.uatdata[i] = pkt[i];
+	return 17;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag18
+	(const tmcg_openpgp_octets_t &pkt,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	if (pkt.size() < 2)
+		return 0; // error: incorrect packet body
+	out.version = pkt[0];
+	if (out.version != 1)
+		return 0; // error: version not supported
+	if (out.encdatalen != 0)
+		return 0; // error: already seen within context
+	tmcg_openpgp_mem_alloc += (pkt.size() - 1);
+	if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+	{
+		tmcg_openpgp_mem_alloc -= (pkt.size() - 1);
+		return 0; // error: memory limit exceeded
+	}
+	out.encdatalen = pkt.size() - 1;
+	out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+	for (size_t i = 0; i < out.encdatalen; i++)
+		out.encdata[i] = pkt[1+i];
+	return 18;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag19
+	(const tmcg_openpgp_octets_t &pkt,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	if (!out.newformat)
+		return 0; // error: wrong format of packet tag
+	if (pkt.size() != 20)
+		return 0; // error: incorrect packet body
+	for (size_t i = 0; i < pkt.size(); i++)
+		out.mdc_hash[i] = pkt[i];
+	return 19;
+}
+
+tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag20
+	(const tmcg_openpgp_octets_t &pkt,
+	 tmcg_openpgp_packet_ctx_t &out)
+{
+	if (pkt.size() < 4)
+		return 0; // error: packet too short
+	out.version = pkt[0];
+	out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
+	out.aeadalgo = (tmcg_openpgp_aeadalgo_t)pkt[2];
+	out.chunksize = pkt[3];
+	if (out.version == 1)
+	{
+		size_t ivlen = AlgorithmIVLength(out.aeadalgo);
+		if (pkt.size() < (4 + ivlen))
+			return 0; // error: no IV
+		if (ivlen > sizeof(out.iv))
+			return 0; // error: IV too long
+		for (size_t i = 0; i < ivlen; i++)
+			out.iv[i] = pkt[4+i];
+		if (out.encdatalen != 0)
+			return 0; // error: already seen within context
+		tmcg_openpgp_mem_alloc += (pkt.size() - 4 - ivlen);
+		if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
+		{
+			tmcg_openpgp_mem_alloc -= (pkt.size() - 4 - ivlen);
+			return 0; // error: memory limit exceeded
+		}
+		out.encdatalen = pkt.size() - 4 - ivlen;
+		if (out.encdatalen == 0)
+			return 0; // error: no encrypted session key
+		out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
+		for (size_t i = 0; i < out.encdatalen; i++)
+			out.encdata[i] = pkt[4+ivlen+i];
+	}
+	else
+		return 0; // error: version not supported
+	return 20;
+}
+
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	(tmcg_openpgp_octets_t &in, const int verbose,
 	 tmcg_openpgp_packet_ctx_t &out,
@@ -10185,7 +11454,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	tmcg_openpgp_byte_t tag = in[0];
 	tmcg_openpgp_byte_t lentype = 0x00;
 	current_packet.push_back(tag); // store packet header
-	in.erase(in.begin(), in.begin()+1); // remove first octet
+	in.erase(in.begin()); // remove first octet
 	if ((tag & 0x80) != 0x80)
 		return 0; // error: Bit 7 of first octet not set
 	if ((tag & 0x40) == 0x40)
@@ -10207,13 +11476,13 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	// header in the packet MUST NOT be a Partial Body Length header.
 	// Partial Body Length headers may only be used for the non-final
 	// parts of the packet.
-	tmcg_openpgp_octets_t pkt; // this is only the packet body
+	tmcg_openpgp_octets_t pkt; // this contains only the packet body
 	uint32_t len = 0;
 	bool partlen = true, firstlen = true;
 	while (partlen)
 	{
-		size_t headlen = PacketLengthDecode(in, out.newformat, lentype, len,
-			partlen);
+		size_t headlen = PacketLengthDecode(in, out.newformat,
+			lentype, len, partlen);
 		if (!headlen)
 			return 0; // error: invalid length header
 		if (headlen == 42)
@@ -10230,1232 +11499,76 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 		// types.
 		if (partlen && firstlen && (len < 512))
 			return 0; // error: first partial less than 512 octets
-		if (partlen && (tag != 8) && (tag != 9) && (tag != 11) && (tag != 18))
+		if (partlen && (tag != 8) && (tag != 9) && (tag != 11) &&
+			(tag != 18))
 		{
 			return 0; // error: no literal, compressed, ... allowed
 		}
 		current_packet.insert(current_packet.end(), // copy packet data
 			in.begin(), in.begin()+headlen+len);
-		pkt.insert(pkt.end(),
+		pkt.insert(pkt.end(), // copy packet body
 			in.begin()+headlen, in.begin()+headlen+len);
 		in.erase(in.begin(), in.begin()+headlen+len); // remove chunck
 		firstlen = false;
 	}
-	tmcg_openpgp_octets_t hspd, uspd, mpis;
-	size_t mlen = 0, pkt_offset = 0;
-	uint32_t hspdlen = 0, uspdlen = 0;
+	tmcg_openpgp_byte_t ret = 0;
 	switch (tag)
 	{
 		case 1: // Public-Key Encrypted Session Key Packet
-			if (pkt.size() < 16)
-				return 0; // error: incorrect packet body
-			out.version = pkt[0];
-			if (out.version != 3)
-				return 0; // error: version not supported
-			for (size_t i = 0; i < 8; i++)
-				out.keyid[i] = pkt[1+i];
-			out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[9];
-			mpis.insert(mpis.end(), pkt.begin()+10, pkt.end());
-			if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY))
-			{
-				// Algorithm-Specific Fields for RSA
-				if (mpis.size() <= 2)
-					return 0; // error: too few mpis
-				mlen = PacketMPIDecode(mpis, out.me);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
-			{
-				// Algorithm-Specific Fields for Elgamal
-				if (mpis.size() <= 2)
-					return 0; // error: too few mpis
-				mlen = PacketMPIDecode(mpis, out.gk);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				if (mpis.size() <= 2)
-					return 0; // error: too few mpis
-				mlen = PacketMPIDecode(mpis, out.myk);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
-			{
-				// Algorithm-Specific Fields for ECDH keys [RFC 6637]
-				if (mpis.size() <= 2)
-					return 0; // error: too few mpis
-				mlen = PacketMPIDecode(mpis, out.ecepk);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				// a one-octet size, followed by a symmetric key encoded
-				// using the method described in Section 8 [RFC 6637]
-				if (mpis.size() <= 2)
-					return 0; // error: result of key wrapping too short
-				out.rkwlen = mpis[0];
-				if ((out.rkwlen == 0) || (out.rkwlen == 255))
-					return 0; // error: bad result of key wrapping
-				if (mpis.size() < (out.rkwlen + 1))
-					return 0; // error: result of key wrapping too short
-				for (size_t i = 0; i < out.rkwlen; i++)
-					out.rkw[i] = mpis[1+i];
-				mpis.erase(mpis.begin(), mpis.begin()+out.rkwlen+1);
-			}
-			else
-				return 0xFE; // warning: unsupported algo
+			ret = PacketDecodeTag1(pkt, out);
 			break;
 		case 2: // Signature Packet
-			if (pkt.size() < 1)
-				return 0; // error: incorrect packet body
-			out.version = pkt[0];
-			if (out.version == 3)
-			{
-				if (pkt.size() < 22)
-					return 0; // error: packet too short
-				if (pkt[1] != 5)
-					return 0; // error: incorrect length
-				out.type = (tmcg_openpgp_signature_t)pkt[2];
-				out.sigcreationtime = (pkt[3] << 24) + (pkt[4] << 16) +
-					(pkt[5] << 8) + pkt[6];
-				for (size_t i = 0; i < 8; i++)
-					out.issuer[i] = pkt[7+i];
-				out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[15];
-				out.hashalgo = (tmcg_openpgp_hashalgo_t)pkt[16];
-				// left 16 bits of signed hash value
-				for (size_t i = 0; i < 2; i++)
-					out.left[i] = pkt[17+i];
-				mpis.insert(mpis.end(), pkt.begin()+19, pkt.end());
-			}
-			else if ((out.version == 4) || (out.version == 5))
-			{
-				if (pkt.size() < 12)
-					return 0; // error: packet too short
-				out.type = (tmcg_openpgp_signature_t)pkt[1];
-				out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[2];
-				out.hashalgo = (tmcg_openpgp_hashalgo_t)pkt[3];
-				hspdlen = (pkt[4] << 8) + pkt[5];
-				if (pkt.size() < (6 + hspdlen))
-					return 0; // error: packet too short
-				hspd.insert(hspd.end(),
-					pkt.begin()+6, pkt.begin()+6+hspdlen);
-				out.hspdlen = hspdlen;
-				tmcg_openpgp_mem_alloc += out.hspdlen;
-				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-				{
-					tmcg_openpgp_mem_alloc -= out.hspdlen;
-					return 0; // error: memory limit exceeded
-				}
-				out.hspd = new tmcg_openpgp_byte_t[out.hspdlen];
-				for (size_t i = 0; i < out.hspdlen; i++)
-					out.hspd[i] = pkt[6+i];
-				tag = SubpacketParse(hspd, verbose, out, notations);
-				if (tag == 0x00)
-					return 0; // error: incorrect subpacket
-				if (pkt.size() < (8 + hspdlen))
-					return 0; // error: packet too short
-				uspdlen = (pkt[6+hspdlen] << 8) + pkt[7+hspdlen];
-				if (pkt.size() < (8 + hspdlen + uspdlen))
-					return 0; // error: packet too short
-				uspd.insert(uspd.end(),
-					pkt.begin()+8+hspdlen, pkt.begin()+8+hspdlen+uspdlen);
-				// If a subpacket is not hashed, then the
-				// information in it cannot be considered
-				// definitive because it is not part of the
-				// signature proper.
-				tmcg_openpgp_packet_ctx_t untrusted;
-				tmcg_openpgp_notations_t unotations;
-				memset(&untrusted, 0, sizeof(untrusted));
-				tag = SubpacketParse(uspd, verbose, untrusted, unotations);
-				if (tag == 0x00)
-				{
-					PacketContextRelease(untrusted);
-					return 0; // error: incorrect subpacket
-				}
-				PacketContextEvaluate(untrusted, out);
-				PacketContextRelease(untrusted);
-				if (pkt.size() < (10 + hspdlen + uspdlen))
-					return 0; // error: packet too short
-				 // left 16 bits of signed hash value
-				for (size_t i = 0; i < 2; i++)
-					out.left[i] = pkt[8+hspdlen+uspdlen+i];
-				mpis.insert(mpis.end(),
-					pkt.begin()+10+hspdlen+uspdlen, pkt.end());
-			}
-			else
-				return 0xFC; // warning: version not supported
-			if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
-			{
-				// Algorithm-Specific Fields for RSA
-				if (mpis.size() <= 2)
-					return 0; // error: too few mpis
-				mlen = PacketMPIDecode(mpis, out.md);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
-			{
-				// Algorithm-Specific Fields for DSA
-				if (mpis.size() <= 2)
-					return 0; // error: too few mpis
-				mlen = PacketMPIDecode(mpis, out.r);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				if (mpis.size() <= 2)
-					return 0; // error: too few mpis
-				mlen = PacketMPIDecode(mpis, out.s);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
-				(out.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
-			{
-				// Algorithm-Specific Fields for ECDSA/EdDSA
-				if (mpis.size() <= 2)
-					return 0; // error: too few mpis
-				mlen = PacketMPIDecode(mpis, out.r);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				if (mpis.size() <= 2)
-					return 0; // error: too few mpis
-				mlen = PacketMPIDecode(mpis, out.s);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else
-				return 0xFC; // warning: unsupported algo
+			ret = PacketDecodeTag2(pkt, verbose, out, notations);
 			break;
 		case 3: // Symmetric-Key Encrypted Session Key Packet
-			if (pkt.size() < 1)
-				return 0; // error: packet too short
-			out.version = pkt[0];
-			if (out.version == 4)
-			{
-				if (pkt.size() < 4)
-					return 0; // error: packet too short
-				out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
-				out.s2k_type = (tmcg_openpgp_stringtokey_t)pkt[2];
-				out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[3];
-				if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
-				{
-					// Simple S2K -- forbidden by RFC 4880 (only for completeness)
-					if (out.encdatalen != 0)
-						return 0; // error: already seen within context
-					tmcg_openpgp_mem_alloc += (pkt.size() - 4);
-					if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-					{
-						tmcg_openpgp_mem_alloc -= (pkt.size() - 4);
-						return 0; // error: memory limit exceeded
-					}
-					out.encdatalen = pkt.size() - 4;
-					if (out.encdatalen == 0)
-						break; // no encrypted session key
-					out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-					for (size_t i = 0; i < out.encdatalen; i++)
-						out.encdata[i] = pkt[4+i];
-				}
-				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SALTED)
-				{
-					// Salted S2K
-					if (pkt.size() < 12)
-						return 0; // error: no salt
-					for (size_t i = 0; i < 8; i++)
-						out.s2k_salt[i] = pkt[4+i];
-					if (out.encdatalen != 0)
-						return 0; // error: already seen within context
-					tmcg_openpgp_mem_alloc += (pkt.size() - 12);
-					if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-					{
-						tmcg_openpgp_mem_alloc -= (pkt.size() - 12);
-						return 0; // error: memory limit exceeded
-					}
-					out.encdatalen = pkt.size() - 12;
-					if (out.encdatalen == 0)
-						break; // no encrypted session key
-					out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-					for (size_t i = 0; i < out.encdatalen; i++)
-						out.encdata[i] = pkt[12+i];
-				}
-				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
-				{
-					// Iterated and Salted S2K
-					if (pkt.size() < 12)
-						return 0; // error: no salt
-					for (size_t i = 0; i < 8; i++)
-						out.s2k_salt[i] = pkt[4+i];
-					if (pkt.size() < 13)
-						return 0; // error: no count
-					out.s2k_count = pkt[12];
-					if (out.encdatalen != 0)
-						return 0; // error: already seen within context
-					tmcg_openpgp_mem_alloc += (pkt.size() - 13);
-					if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-					{
-						tmcg_openpgp_mem_alloc -= (pkt.size() - 13);
-						return 0; // error: memory limit exceeded
-					}
-					out.encdatalen = pkt.size() - 13;
-					if (out.encdatalen == 0)
-						break; // no encrypted session key
-					out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-					for (size_t i = 0; i < out.encdatalen; i++)
-						out.encdata[i] = pkt[13+i];
-				}
-				else
-					return 0; // unknown S2K specifier
-			}
-			else if (out.version == 5)
-			{
-				// AEAD SKESK [draft RFC 4880bis]
-				if (pkt.size() < 5)
-					return 0; // error: packet too short
-				out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
-				out.aeadalgo = (tmcg_openpgp_aeadalgo_t)pkt[2];
-				out.s2k_type = (tmcg_openpgp_stringtokey_t)pkt[3];
-				out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)pkt[4];
-				if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
-				{
-					// Simple S2K -- forbidden by RFC 4880 (only for completeness)
-					size_t ivlen = AlgorithmIVLength(out.aeadalgo);
-					if (pkt.size() < (5 + ivlen))
-						return 0; // error: no IV
-					if (ivlen > sizeof(out.iv))
-						return 0; // error: IV too long
-					for (size_t i = 0; i < ivlen; i++)
-						out.iv[i] = pkt[5+i];
-					if (out.encdatalen != 0)
-						return 0; // error: already seen within context
-					tmcg_openpgp_mem_alloc += (pkt.size() - 5 - ivlen);
-					if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-					{
-						tmcg_openpgp_mem_alloc -= (pkt.size() - 5 - ivlen);
-						return 0; // error: memory limit exceeded
-					}
-					out.encdatalen = pkt.size() - 5 - ivlen;
-					if (out.encdatalen == 0)
-						return 0; // error: no encrypted session key
-					out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-					for (size_t i = 0; i < out.encdatalen; i++)
-						out.encdata[i] = pkt[5+ivlen+i];
-				}
-				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SALTED)
-				{
-					// Salted S2K
-					if (pkt.size() < 13)
-						return 0; // error: no salt
-					for (size_t i = 0; i < 8; i++)
-						out.s2k_salt[i] = pkt[5+i];
-					size_t ivlen = AlgorithmIVLength(out.aeadalgo);
-					if (pkt.size() < (13 + ivlen))
-						return 0; // error: no IV
-					if (ivlen > sizeof(out.iv))
-						return 0; // error: IV too long
-					for (size_t i = 0; i < ivlen; i++)
-						out.iv[i] = pkt[13+i];
-					if (out.encdatalen != 0)
-						return 0; // error: already seen within context
-					tmcg_openpgp_mem_alloc += (pkt.size() - 13 - ivlen);
-					if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-					{
-						tmcg_openpgp_mem_alloc -= (pkt.size() - 13 - ivlen);
-						return 0; // error: memory limit exceeded
-					}
-					out.encdatalen = pkt.size() - 13 - ivlen;
-					if (out.encdatalen == 0)
-						return 0; // error: no encrypted session key
-					out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-					for (size_t i = 0; i < out.encdatalen; i++)
-						out.encdata[i] = pkt[13+ivlen+i];
-				}
-				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
-				{
-					// Iterated and Salted S2K
-					if (pkt.size() < 13)
-						return 0; // error: no salt
-					for (size_t i = 0; i < 8; i++)
-						out.s2k_salt[i] = pkt[5+i];
-					if (pkt.size() < 14)
-						return 0; // error: no count
-					out.s2k_count = pkt[13];
-					size_t ivlen = AlgorithmIVLength(out.aeadalgo);
-					if (pkt.size() < (14 + ivlen))
-						return 0; // error: no IV
-					if (ivlen > sizeof(out.iv))
-						return 0; // error: IV too long
-					for (size_t i = 0; i < ivlen; i++)
-						out.iv[i] = pkt[14+i];
-					if (out.encdatalen != 0)
-						return 0; // error: already seen within context
-					tmcg_openpgp_mem_alloc += (pkt.size() - 14 - ivlen);
-					if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-					{
-						tmcg_openpgp_mem_alloc -= (pkt.size() - 14 - ivlen);
-						return 0; // error: memory limit exceeded
-					}
-					out.encdatalen = pkt.size() - 14 - ivlen;
-					if (out.encdatalen == 0)
-						return 0; // error: no encrypted session key
-					out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-					for (size_t i = 0; i < out.encdatalen; i++)
-						out.encdata[i] = pkt[14+ivlen+i];
-				}
-				else
-					return 0; // unknown S2K specifier	
-			}
-			else
-				return 0; // error: version not supported
+			ret = PacketDecodeTag3(pkt, out);
 			break;
 		case 4: // One-Pass Signature Packet
-			if (pkt.size() != 13)
-				return 0; // error: incorrect packet body
-			out.version = pkt[0];
-			if (out.version != 3)
-				return 0; // error: version not supported
-			out.type = (tmcg_openpgp_signature_t)pkt[1];
-			out.hashalgo = (tmcg_openpgp_hashalgo_t)pkt[2];
-			out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[3];
-			for (size_t i = 0; i < 8; i++)
-				out.signingkeyid[i] = pkt[4+i];
-			out.nestedsignature = pkt[12];
+			ret = PacketDecodeTag4(pkt, out);
 			break;
 		case 5: // Secret-Key Packet
 		case 7: // Secret-Subkey Packet
-			if (pkt.size() < 10)
-				return 0; // error: incorrect packet body
-			out.version = pkt[0];
-			out.keycreationtime = (pkt[1] << 24) +
-				(pkt[2] << 16) + (pkt[3] << 8) + pkt[4];
-			out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[5];
-			if (out.version == 4)
-			{
-				pkt_offset = 6;
-			}
-			else if (out.version == 5)
-			{
-				pkt_offset = 10;
-			}
-			else
-				return 0; // error: version not supported
-			mpis.insert(mpis.end(), pkt.begin()+pkt_offset, pkt.end());
-			if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
-			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
-			{
-				// Algorithm-Specific Fields for RSA keys
-				mlen = PacketMPIDecode(mpis, out.n);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.e);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
-			{
-				// Algorithm-Specific Fields for Elgamal keys
-				mlen = PacketMPIDecode(mpis, out.p);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.g);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.y);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
-			{
-				// Algorithm-Specific Fields for DSA keys
-				mlen = PacketMPIDecode(mpis, out.p);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.q);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.g);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.y);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
-			{
-				// Algorithm-Specific Fields for ECDH keys [RFC 6637]
-				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[pkt_offset];
-				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
-					return 0; // error: values reserved for future extensions
-				if (pkt.size() < (pkt_offset + 1 + out.curveoidlen))
-					return 0; // error: OID too short
-				for (size_t i = 0; i < out.curveoidlen; i++)
-					out.curveoid[i] = pkt[pkt_offset+1+i];
-				mpis.clear();
-				mpis.insert(mpis.end(),
-					pkt.begin()+pkt_offset+1+out.curveoidlen, pkt.end());
-				mlen = PacketMPIDecode(mpis, out.ecpk);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				if (mpis.size() < 4)
-					return 0; // error: bad KDF params size
-				if (mpis[0] != 0x03)
-					return 0; // error: bad KDF size
-				if (mpis[1] != 0x01)
-					return 0; // error: bad KDF extensions
-				out.kdf_hashalgo = (tmcg_openpgp_hashalgo_t)mpis[2];
-				out.kdf_skalgo = (tmcg_openpgp_skalgo_t)mpis[3];
-				mpis.erase(mpis.begin(), mpis.begin()+4);
-			}
-			else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
-				(out.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
-			{
-				// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
-				// Algorithm-Specific Fields for EdDSA keys [draft RFC 4880bis]
-				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[pkt_offset];
-				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
-					return 0; // error: values reserved for future extensions
-				if (pkt.size() < (pkt_offset + 1 + out.curveoidlen))
-					return 0; // error: OID too short
-				for (size_t i = 0; i < out.curveoidlen; i++)
-					out.curveoid[i] = pkt[pkt_offset+1+i];
-				mpis.clear();
-				mpis.insert(mpis.end(),
-					pkt.begin()+pkt_offset+1+out.curveoidlen, pkt.end());
-				mlen = PacketMPIDecode(mpis, out.ecpk);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7)
-			{
-				// Algorithm-Specific Fields for new tDSS/DSA keys
-				mlen = PacketMPIDecode(mpis, out.p);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.q);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.g);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.h);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.y);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.n);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.t);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.i);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.qualsize);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				size_t qs = tmcg_get_gcry_mpi_ui(out.qualsize);
-				if (qs > 255)
-					return 0; // error: too many parties
-				qual.resize(qs);
-				for (size_t j = 0; j < qs; j++)
-				{
-					mlen = PacketMPIDecode(mpis, qual[j]);
-					if (!mlen || (mlen > mpis.size()))
-						return 0; // error: bad mpi
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				}
-				mlen = PacketMPIDecode(mpis, out.x_rvss_qualsize);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				size_t xqs =
-					tmcg_get_gcry_mpi_ui(out.x_rvss_qualsize);
-				if (xqs > 255)
-					return 0; // error: too many parties
-				x_rvss_qual.resize(xqs);
-				for (size_t j = 0; j < xqs; j++)
-				{
-					mlen = PacketMPIDecode(mpis, x_rvss_qual[j]);
-					if (!mlen || (mlen > mpis.size()))
-						return 0; // error
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				}
-				size_t n = tmcg_get_gcry_mpi_ui(out.n);
-				size_t t = tmcg_get_gcry_mpi_ui(out.t);
-				if ((n > 255) || (t > 128) ||
-				    (tmcg_get_gcry_mpi_ui(out.i) >= n))
-				{
-					return 0; // error: too many parties, 
-					          //        bad threshold/index
-				}
-				capl.clear();
-				for (size_t j = 0; j < n; j++)
-				{
-					std::string peerid;
-					mlen = PacketStringDecode(mpis, peerid);
-					if (!mlen || (mlen > mpis.size()))
-						return 0; // error
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					capl.push_back(peerid);
-				}
-				c_ik.resize(n);
-				for (size_t j = 0; j < n; j++)
-				{
-					c_ik[j].resize(t + 1);
-					for (size_t k = 0; k <= t; k++)
-					{
-						mlen = PacketMPIDecode(mpis, c_ik[j][k]);
-						if (!mlen || (mlen > mpis.size()))
-							return 0; // error
-						mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					}
-				}
-			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL8)
-			{
-				// Algorithm-Specific Fields for old tDSS/DSA keys
-				mlen = PacketMPIDecode(mpis, out.p);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.q);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.g);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.h);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.y);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.n);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.t);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.i);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.qualsize);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				size_t qs = tmcg_get_gcry_mpi_ui(out.qualsize);
-				if (qs > 255)
-					return 0; // error: too many parties
-				qual.resize(qs);
-				for (size_t j = 0; j < qs; j++)
-				{
-					mlen = PacketMPIDecode(mpis, qual[j]);
-					if (!mlen || (mlen > mpis.size()))
-						return 0; // error
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				}
-				capl.clear();
-				for (size_t j = 0; j < qs; j++)
-				{
-					std::string peerid;
-					mlen = PacketStringDecode(mpis, peerid);
-					if (!mlen || (mlen > mpis.size()))
-						return 0; // error
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					capl.push_back(peerid);
-				}
-				size_t n = tmcg_get_gcry_mpi_ui(out.n);
-				size_t t = tmcg_get_gcry_mpi_ui(out.t);
-				if ((n > 255) || (t > 128))
-					return 0; // error: too many parties
-				c_ik.resize(n);
-				for (size_t j = 0; j < n; j++)
-				{
-					c_ik[j].resize(t + 1);
-					for (size_t k = 0; k <= t; k++)
-					{
-						mlen = PacketMPIDecode(mpis, c_ik[j][k]);
-						if (!mlen || (mlen > mpis.size()))
-							return 0; // error
-						mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					}
-				}
-			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9)
-			{
-				// Algorithm-Specific Fields for tElG keys
-				mlen = PacketMPIDecode(mpis, out.p);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.q);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.g);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.h);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.y);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.n);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.t);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.i);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.qualsize);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				size_t qs = tmcg_get_gcry_mpi_ui(out.qualsize);
-				if (qs > 255)
-					return 0; // error: too many parties
-				qual.resize(qs);
-				for (size_t j = 0; j < qs; j++)
-				{
-					mlen = PacketMPIDecode(mpis, qual[j]);
-					if (!mlen || (mlen > mpis.size()))
-						return 0; // error
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				}
-				size_t n = tmcg_get_gcry_mpi_ui(out.n);
-				size_t t = tmcg_get_gcry_mpi_ui(out.t);
-				if ((n > 255) || (t > 128))
-					return 0; // error: too many parties
-				v_i.resize(n);
-				for (size_t j = 0; j < n; j++)
-				{
-					mlen = PacketMPIDecode(mpis, v_i[j]);
-					if (!mlen || (mlen > mpis.size()))
-						return 0; // error
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				}
-				c_ik.resize(n);
-				for (size_t j = 0; j < n; j++)
-				{
-					c_ik[j].resize(t + 1);
-					for (size_t k = 0; k <= t; k++)
-					{
-						mlen = PacketMPIDecode(mpis, c_ik[j][k]);
-						if (!mlen || (mlen > mpis.size()))
-							return 0; // error
-						mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					}
-				}
-			}
-			else
-				return 0; // error: unsupported public-key algo
-			// secret fields
-			if (mpis.size() < 1)
-				return 0; // error: no S2K convention
-			out.s2kconv = mpis[0];
-			mpis.erase(mpis.begin(), mpis.begin()+1);
-			if (out.version == 5)
-			{
-				if (out.s2kconv == 255)
-					return 0; // error: forbidden by spec (RFC4880bis)
-				mpis.erase(mpis.begin(), mpis.begin()+1); // skip octet count
-			}
-			if (out.s2kconv == 0)
-			{
-				if (out.version == 5)
-				{
-					if (mpis.size() < 4)
-						return 0; // error: no v5 octet count
-					mpis.erase(mpis.begin(), mpis.begin()+4); // skip octet count
-				}
-				tmcg_openpgp_secure_octets_t smpis;
-				for (size_t i = 0; i < mpis.size(); i++)
-					smpis.push_back(mpis[i]); // copy
-				// not encrypted + checksum
-				size_t chksum = 0;
-				if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL) ||
-				    (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA))
-				{
-					// Algorithm-Specific Fields for Elgamal
-					// Algorithm-Specific Fields for DSA
-					mlen = PacketMPIDecode(smpis, out.x, chksum);
-					if (!mlen || (mlen > smpis.size()))
-						return 0; // error: bad mpi
-					smpis.erase(smpis.begin(), smpis.begin()+mlen);
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				}
-				else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-				         (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
-				         (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
-				{
-					// Algorithm-Specific Fields for RSA
-					mlen = PacketMPIDecode(smpis, out.d, chksum);
-					if (!mlen || (mlen > smpis.size()))
-						return 0; // error: bad mpi
-					smpis.erase(smpis.begin(), smpis.begin()+mlen);
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					mlen = PacketMPIDecode(smpis, out.p, chksum);
-					if (!mlen || (mlen > smpis.size()))
-						return 0; // error: bad mpi
-					smpis.erase(smpis.begin(), smpis.begin()+mlen);
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					mlen = PacketMPIDecode(smpis, out.q, chksum);
-					if (!mlen || (mlen > smpis.size()))
-						return 0; // error: bad mpi
-					smpis.erase(smpis.begin(), smpis.begin()+mlen);
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					mlen = PacketMPIDecode(smpis, out.u, chksum);
-					if (!mlen || (mlen > smpis.size()))
-						return 0; // error: bad mpi
-					smpis.erase(smpis.begin(), smpis.begin()+mlen);
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				}
-				else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH) ||
-					(out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
-					(out.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
-				{
-					// Algorithm-Specific Fields for ECDH keys [RFC 6637]
-					// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
-					// Algorithm-Specific Fields for EdDSA [draft RFC 4880bis]
-					mlen = PacketMPIDecode(smpis, out.ecsk, chksum);
-					if (!mlen || (mlen > smpis.size()))
-						return 0; // error: bad mpi
-					smpis.erase(smpis.begin(), smpis.begin()+mlen);
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				}
-				else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL7) ||
-				         (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL8) ||
-				         (out.pkalgo == TMCG_OPENPGP_PKALGO_EXPERIMENTAL9))
-				{
-					// Algorithm-Specific Fields tDSS/DKG
-					mlen = PacketMPIDecode(smpis, out.x_i, chksum);
-					if (!mlen || (mlen > smpis.size()))
-						return 0; // error: bad mpi
-					smpis.erase(smpis.begin(), smpis.begin()+mlen);
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-					mlen = PacketMPIDecode(smpis, out.xprime_i, chksum);
-					if (!mlen || (mlen > smpis.size()))
-						return 0; // error: bad mpi
-					smpis.erase(smpis.begin(), smpis.begin()+mlen);
-					mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				}
-				else
-					return 0; // error: algo not supported
-				if (mpis.size() < 2)
-					return 0; // error: no checksum
-				size_t chksum2 = (mpis[0] << 8) + mpis[1];
-				if (chksum != chksum2)
-					return 0; // error: checksum mismatch
-				mpis.erase(mpis.begin(), mpis.begin()+2);
-			}
-			else if ((out.s2kconv == 253) || (out.s2kconv == 254) ||
-				(out.s2kconv == 255))
-			{
-				// encrypted + AEAD or SHA-1 hash or checksum
-				if (mpis.size() < 1)
-					return 0; // error: no sym. algorithm
-				out.skalgo = (tmcg_openpgp_skalgo_t)mpis[0];
-				mpis.erase(mpis.begin(), mpis.begin()+1);
-				if (out.s2kconv == 253)
-				{
-					if (mpis.size() < 1)
-						return 0; // error: no AEAD algorithm
-					out.aeadalgo = (tmcg_openpgp_aeadalgo_t)mpis[0];
-					mpis.erase(mpis.begin(), mpis.begin()+1);
-				}
-				if (mpis.size() < 2)
-					return 0; // error: bad S2K specifier
-				out.s2k_type = (tmcg_openpgp_stringtokey_t)mpis[0];
-				out.s2k_hashalgo = (tmcg_openpgp_hashalgo_t)mpis[1];
-				mpis.erase(mpis.begin(), mpis.begin()+2);
-				if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SIMPLE)
-				{
-					// Simple S2K
-				}
-				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_SALTED)
-				{
-					// Salted S2K
-					if (mpis.size() < 8)
-						return 0; // error: no salt
-					for (size_t i = 0; i < 8; i++)
-						out.s2k_salt[i] = mpis[i];
-					mpis.erase(mpis.begin(), mpis.begin()+8);
-				}
-				else if (out.s2k_type == TMCG_OPENPGP_STRINGTOKEY_ITERATED)
-				{
-					// Iterated and Salted S2K
-					if (mpis.size() < 8)
-						return 0; // error: no salt
-					for (size_t i = 0; i < 8; i++)
-						out.s2k_salt[i] = mpis[i];
-					mpis.erase(mpis.begin(), mpis.begin()+8);
-					if (mpis.size() < 1)
-						return 0; // error: no count
-					out.s2k_count = mpis[0];
-					mpis.erase(mpis.begin(), mpis.begin()+1);
-				}
-				else
-					return 0; // unknown S2K specifier
-				size_t ivlen = AlgorithmIVLength(out.skalgo);
-				if (mpis.size() < ivlen)
-					return 0; // error: no IV
-				if (ivlen > sizeof(out.iv))
-					return 0; // error: IV too long
-				for (size_t i = 0; i < ivlen; i++)
-					out.iv[i] = mpis[i];
-				mpis.erase(mpis.begin(), mpis.begin()+ivlen);
-				if (mpis.size() < 4)
-					return 0; // error: no v5 octet count
-				if (out.version == 5)
-					mpis.erase(mpis.begin(), mpis.begin()+4); // skip v5 octet count
-				if (mpis.size() < 4)
-					return 0; // error: bad encrypted data
-				if (out.encdatalen != 0)
-					return 0; // already seen within context
-				tmcg_openpgp_mem_alloc += mpis.size();
-				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-				{
-					tmcg_openpgp_mem_alloc -= mpis.size();
-					return 0; // error: memory limit exceeded
-				}
-				out.encdatalen = mpis.size();
-				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-				for (size_t i = 0; i < out.encdatalen; i++)
-					out.encdata[i] = mpis[i];
-			}
-			else
-				return 0; // S2K convention not supported
+			ret = PacketDecodeTag57(pkt, tag, out,
+				qual, x_rvss_qual, capl, v_i, c_ik);
 			break;
 		case 6: // Public-Key Packet
 		case 14: // Public-Subkey Packet
-			if (pkt.size() < 10)
-				return 0; // error: incorrect packet body
-			out.version = pkt[0];
-			out.keycreationtime = (pkt[1] << 24) +
-				(pkt[2] << 16) + (pkt[3] << 8) + pkt[4];
-			out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[5];
-			if (out.version == 4)
-			{
-				pkt_offset = 6;
-			}
-			else if (out.version == 5)
-			{
-				pkt_offset = 10;
-			}
-			else
-				return 0; // error: version not supported
-			mpis.insert(mpis.end(), pkt.begin()+pkt_offset, pkt.end());
-			if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
-			    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
-			{
-				// Algorithm-Specific Fields for RSA keys
-				mlen = PacketMPIDecode(mpis, out.n);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.e);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ELGAMAL)
-			{
-				// Algorithm-Specific Fields for Elgamal keys
-				mlen = PacketMPIDecode(mpis, out.p);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.g);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.y);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
-			{
-				// Algorithm-Specific Fields for DSA keys
-				mlen = PacketMPIDecode(mpis, out.p);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.q);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.g);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				mlen = PacketMPIDecode(mpis, out.y);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else if (out.pkalgo == TMCG_OPENPGP_PKALGO_ECDH)
-			{
-				// Algorithm-Specific Fields for ECDH keys [RFC 6637]
-				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[pkt_offset];
-				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
-					return 0; // error: values reserved for future extensions
-				if (pkt.size() < (pkt_offset + 1 + out.curveoidlen))
-					return 0; // error: OID too short
-				for (size_t i = 0; i < out.curveoidlen; i++)
-					out.curveoid[i] = pkt[pkt_offset+1+i];
-				mpis.clear();
-				mpis.insert(mpis.end(),
-					pkt.begin()+pkt_offset+1+out.curveoidlen, pkt.end());
-				mlen = PacketMPIDecode(mpis, out.ecpk);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-				if (mpis.size() != 4)
-					return 0; // error: bad KDF params size
-				if (mpis[0] != 0x03)
-					return 0; // error: bad KDF size
-				if (mpis[1] != 0x01)
-					return 0; // error: bad KDF extensions
-				out.kdf_hashalgo = (tmcg_openpgp_hashalgo_t)mpis[2];
-				out.kdf_skalgo = (tmcg_openpgp_skalgo_t)mpis[3];
-			}
-			else if ((out.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
-				(out.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
-			{
-				// Algorithm-Specific Fields for ECDSA keys [RFC 6637]
-				// Algorithm-Specific Fields for EdDSA keys [draft RFC 4880bis]
-				out.curveoidlen = (tmcg_openpgp_pkalgo_t)pkt[pkt_offset];
-				if ((out.curveoidlen == 0) || (out.curveoidlen == 255))
-					return 0; // error: values reserved for future extensions
-				if (pkt.size() < (pkt_offset + 1 + out.curveoidlen))
-					return 0; // error: OID too short
-				for (size_t i = 0; i < out.curveoidlen; i++)
-					out.curveoid[i] = pkt[pkt_offset+1+i];
-				mpis.clear();
-				mpis.insert(mpis.end(),
-					pkt.begin()+pkt_offset+1+out.curveoidlen, pkt.end());
-				mlen = PacketMPIDecode(mpis, out.ecpk);
-				if (!mlen || (mlen > mpis.size()))
-					return 0; // error: bad or zero mpi
-				mpis.erase(mpis.begin(), mpis.begin()+mlen);
-			}
-			else
-				return 0xFD; // warning: unsupported algo
+			ret = PacketDecodeTag614(pkt, tag, out);
 			break;
 		case 8: // Compressed Data Packet
-			if (pkt.size() < 2)
-				return 0; // error: incorrect packet body
-			out.compalgo = (tmcg_openpgp_compalgo_t)pkt[0];
-			if (out.compdatalen != 0)
-				return 0; // error: already seen within context
-			tmcg_openpgp_mem_alloc += (pkt.size() - 1);
-			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-			{
-				tmcg_openpgp_mem_alloc -= (pkt.size() - 1);
-				return 0; // error: memory limit exceeded
-			}
-			out.compdatalen = pkt.size() - 1;
-			out.compdata = new tmcg_openpgp_byte_t[out.compdatalen];
-			for (size_t i = 0; i < out.compdatalen; i++)
-				out.compdata[i] = pkt[1+i];
+			ret = PacketDecodeTag8(pkt, out);
 			break;
 		case 9: // Symmetrically Encrypted Data Packet
-			if (pkt.size() == 0)
-				return 0; // error: empty packet body
-			if (out.encdatalen != 0)
-				return 0; // error: already seen within context
-			tmcg_openpgp_mem_alloc += pkt.size();
-			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-			{
-				tmcg_openpgp_mem_alloc -= pkt.size();
-				return 0; // error: memory limit exceeded
-			}
-			out.encdatalen = pkt.size();
-			out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-			for (size_t i = 0; i < out.encdatalen; i++)
-				out.encdata[i] = pkt[i];
+			ret = PacketDecodeTag9(pkt, out);
 			break;
 		case 10: // Marker Packet
-			if (pkt.size() != 3)
-				return 0; // error: incorrect packet body
-			if ((pkt[0] != 0x50) || (pkt[1] != 0x47) || 
-			    (pkt[3] != 0x50))
-				return 0; // error: bad marker 
+			ret = PacketDecodeTag10(pkt, out);
 			break;
 		case 11: // Literal Data Packet
-			if (pkt.size() < 2)
-				return 0; // error: incorrect packet body
-			out.dataformat = pkt[0];
-			out.datafilenamelen = pkt[1];
-			if (pkt.size() < (out.datafilenamelen + 2))
-				return 0; // error: packet too short
-			for (size_t i = 0; i < out.datafilenamelen; i++)
-				out.datafilename[i] = pkt[2+i];
-			if (pkt.size() < (out.datafilenamelen + 6))
-				return 0; // error: packet too short
-			out.datatime = (pkt[2+out.datafilenamelen] << 24) +
-				(pkt[3+out.datafilenamelen] << 16) +
-				(pkt[4+out.datafilenamelen] << 8) +
-				pkt[5+out.datafilenamelen];
-			if (out.datalen != 0)
-				return 0; // error: already seen within this context
-			tmcg_openpgp_mem_alloc += (pkt.size() - (out.datafilenamelen + 6));
-			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-			{
-				tmcg_openpgp_mem_alloc -= (pkt.size()-(out.datafilenamelen+6));
-				return 0; // error: memory limit exceeded
-			}
-			out.datalen = pkt.size() - (out.datafilenamelen + 6);
-			out.data = new tmcg_openpgp_byte_t[out.datalen];
-			for (size_t i = 0; i < out.datalen; i++)
-				out.data[i] = pkt[6+out.datafilenamelen+i];
+			ret = PacketDecodeTag11(pkt, out);
 			break;
 		case 12: // Trust Packet -- not supported, ignore silently
 			break;
 		case 13: // User ID Packet
-			if (out.uiddatalen != 0)
-				return 0; // error: already seen within context
-			tmcg_openpgp_mem_alloc += pkt.size();
-			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-			{
-				tmcg_openpgp_mem_alloc -= pkt.size();
-				return 0; // error: memory limit exceeded
-			}
-			out.uiddatalen = pkt.size();
-			if (pkt.size() > 0)
-			{
-				out.uiddata = new tmcg_openpgp_byte_t[out.uiddatalen];
-				for (size_t i = 0; i < out.uiddatalen; i++)
-					out.uiddata[i] = pkt[i];
-			}
+			ret = PacketDecodeTag13(pkt, out);
 			break;
 		case 17: // User Attribute Packet
-			if (pkt.size() < 2)
-				return 0; // error: incorrect packet body
-			if (out.uatdatalen != 0)
-				return 0; // error: already seen within context
-			tmcg_openpgp_mem_alloc += pkt.size();
-			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-			{
-				tmcg_openpgp_mem_alloc -= pkt.size();
-				return 0; // error: memory limit exceeded
-			}
-			out.uatdatalen = pkt.size();
-			out.uatdata = new tmcg_openpgp_byte_t[out.uatdatalen];
-			for (size_t i = 0; i < out.uatdatalen; i++)
-				out.uatdata[i] = pkt[i];
+			ret = PacketDecodeTag17(pkt, out);
 			break;
 		case 18: // Sym. Encrypted and Integrity Protected Data Packet
-			if (pkt.size() < 2)
-				return 0; // error: incorrect packet body
-			out.version = pkt[0];
-			if (out.version != 1)
-				return 0; // error: version not supported
-			if (out.encdatalen != 0)
-				return 0; // error: already seen within context
-			tmcg_openpgp_mem_alloc += (pkt.size() - 1);
-			if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-			{
-				tmcg_openpgp_mem_alloc -= (pkt.size() - 1);
-				return 0; // error: memory limit exceeded
-			}
-			out.encdatalen = pkt.size() - 1;
-			out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-			for (size_t i = 0; i < out.encdatalen; i++)
-				out.encdata[i] = pkt[1+i];
+			ret = PacketDecodeTag18(pkt, out);
 			break;
 		case 19: // Modification Detection Code Packet
-			if (!out.newformat)
-				return 0; // error: wrong format of packet tag
-			if (pkt.size() != 20)
-				return 0; // error: incorrect packet body
-			for (size_t i = 0; i < pkt.size(); i++)
-				out.mdc_hash[i] = pkt[i];
+			ret = PacketDecodeTag19(pkt, out);
 			break;
 		case 20: // AEAD Encrypted Data Packet [draft RFC 4880bis]
-			if (pkt.size() < 4)
-				return 0; // error: packet too short
-			out.version = pkt[0];
-			out.skalgo = (tmcg_openpgp_skalgo_t)pkt[1];
-			out.aeadalgo = (tmcg_openpgp_aeadalgo_t)pkt[2];
-			out.chunksize = pkt[3];
-			if (out.version == 1)
-			{
-				size_t ivlen = AlgorithmIVLength(out.aeadalgo);
-				if (pkt.size() < (4 + ivlen))
-					return 0; // error: no IV
-				if (ivlen > sizeof(out.iv))
-					return 0; // error: IV too long
-				for (size_t i = 0; i < ivlen; i++)
-					out.iv[i] = pkt[4+i];
-				if (out.encdatalen != 0)
-					return 0; // error: already seen within context
-				tmcg_openpgp_mem_alloc += (pkt.size() - 4 - ivlen);
-				if (tmcg_openpgp_mem_alloc > TMCG_OPENPGP_MAX_ALLOC)
-				{
-					tmcg_openpgp_mem_alloc -= (pkt.size() - 4 - ivlen);
-					return 0; // error: memory limit exceeded
-				}
-				out.encdatalen = pkt.size() - 4 - ivlen;
-				if (out.encdatalen == 0)
-					return 0; // error: no encrypted session key
-				out.encdata = new tmcg_openpgp_byte_t[out.encdatalen];
-				for (size_t i = 0; i < out.encdatalen; i++)
-					out.encdata[i] = pkt[4+ivlen+i];
-			}
-			else
-				return 0; // error: version not supported
+			ret = PacketDecodeTag20(pkt, out);
 			break;
 		default:
 			return 0xFE; // warning: unknown packet tag
 	}
+	if (ret != tag)
+		return ret;
 	return tag;
 }
 
@@ -15220,7 +15333,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			{
 				tmcg_openpgp_revkey_t revkey;
 				revkey.key_class = ctx.revocationkey_class;
-				revkey.key_pkalgo =	ctx.revocationkey_pkalgo;
+				revkey.key_pkalgo = ctx.revocationkey_pkalgo;
 				memcpy(revkey.key_fingerprint, 
 					ctx.revocationkey_fingerprint,
 					sizeof(revkey.key_fingerprint));

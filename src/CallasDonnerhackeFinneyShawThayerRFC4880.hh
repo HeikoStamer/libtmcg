@@ -518,6 +518,7 @@ typedef struct
 	tmcg_openpgp_byte_t*		uatdata; // allocated buffer with data
 	size_t						uatdatalen;
 	tmcg_openpgp_byte_t			chunksize;
+	bool						marker;
 } tmcg_openpgp_packet_ctx_t;
 
 typedef struct
@@ -1955,6 +1956,60 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_openpgp_octets_t					&in,
 			 const int										verbose,
 			 tmcg_openpgp_octets_t							&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag1
+			(const tmcg_openpgp_octets_t					&pkt,
+			 tmcg_openpgp_packet_ctx_t						&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag2
+			(const tmcg_openpgp_octets_t					&pkt,
+			 const int										verbose,
+			 tmcg_openpgp_packet_ctx_t						&out,
+			 tmcg_openpgp_notations_t						&notations);
+		static tmcg_openpgp_byte_t PacketDecodeTag3
+			(const tmcg_openpgp_octets_t					&pkt,
+			 tmcg_openpgp_packet_ctx_t						&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag4
+			(const tmcg_openpgp_octets_t					&pkt,
+			 tmcg_openpgp_packet_ctx_t						&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag57
+			(const tmcg_openpgp_octets_t					&pkt,
+			 const tmcg_openpgp_byte_t						tag,
+			 tmcg_openpgp_packet_ctx_t						&out,
+			 std::vector<gcry_mpi_t>						&qual,
+			 std::vector<gcry_mpi_t>						&x_rvss_qual,
+			 std::vector<std::string>						&capl,
+			 std::vector<gcry_mpi_t>						&v_i,
+			 std::vector< std::vector<gcry_mpi_t> >			&c_ik);
+		static tmcg_openpgp_byte_t PacketDecodeTag614
+			(const tmcg_openpgp_octets_t					&pkt,
+			 const tmcg_openpgp_byte_t						tag,
+			 tmcg_openpgp_packet_ctx_t						&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag8
+			(const tmcg_openpgp_octets_t					&pkt,
+			 tmcg_openpgp_packet_ctx_t						&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag9
+			(const tmcg_openpgp_octets_t					&pkt,
+			 tmcg_openpgp_packet_ctx_t						&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag10
+			(const tmcg_openpgp_octets_t					&pkt,
+			 tmcg_openpgp_packet_ctx_t						&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag11
+			(const tmcg_openpgp_octets_t					&pkt,
+			 tmcg_openpgp_packet_ctx_t						&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag13
+			(const tmcg_openpgp_octets_t					&pkt,
+			 tmcg_openpgp_packet_ctx_t						&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag17
+			(const tmcg_openpgp_octets_t					&pkt,
+			 tmcg_openpgp_packet_ctx_t						&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag18
+			(const tmcg_openpgp_octets_t					&pkt,
+			 tmcg_openpgp_packet_ctx_t						&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag19
+			(const tmcg_openpgp_octets_t					&pkt,
+			 tmcg_openpgp_packet_ctx_t						&out);
+		static tmcg_openpgp_byte_t PacketDecodeTag20
+			(const tmcg_openpgp_octets_t					&pkt,
+			 tmcg_openpgp_packet_ctx_t						&out);
 		static tmcg_openpgp_byte_t PacketDecode
 			(tmcg_openpgp_octets_t							&in,
 			 const int										verbose,
