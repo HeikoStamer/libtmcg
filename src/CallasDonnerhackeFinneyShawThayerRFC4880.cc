@@ -6918,17 +6918,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthEncode
 	}
 }
 
-void CallasDonnerhackeFinneyShawThayerRFC4880::FixedLengthEncode
-	(const size_t len, tmcg_openpgp_octets_t &out)
-{
-	// four-octet length format with 0xFF prefix TODO: can be removed soon
-	out.push_back(0xFF);
-	out.push_back((len >> 24) & 0xFF);
-	out.push_back((len >> 16) & 0xFF);
-	out.push_back((len >> 8) & 0xFF);
-	out.push_back(len & 0xFF);
-}
-
 size_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketLengthDecode
 	(const tmcg_openpgp_octets_t &in, const bool newformat,
 	 tmcg_openpgp_byte_t lentype, uint32_t &len, bool &partlen)
