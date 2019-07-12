@@ -370,7 +370,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		// second, anything buffered from previous calls/rounds?
 		size_t l = n;
 		for (size_t i = 0; i < n; i++)
-		{
+		{ // FIXME: random walk through [0..n-1] to avoid DoS
 			if (buf_msg[i].size() >= message.size())
 			{
 				for (size_t mm = 0; mm < message.size(); mm++)
@@ -394,7 +394,6 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		// compute hash of identifying tag $ID.j.s$
 		std::string tag;
 		TagMessage(tag, message);
-
 		// discard and report misformed messages
 		if ((mpz_cmp_ui(message[1], (n - 1)) > 0) ||
 			(mpz_cmp_ui(message[1], 0) < 0))
@@ -416,7 +415,6 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				std::endl;
 			continue;
 		}
-
 		// upon receiving message $(ID.j.s, r-send, m)$ from $P_l$
 		if (!mpz_cmp(message[3], r_send) && !send[l].count(tag))
 		{
@@ -465,6 +463,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		{
 			std::cerr << "RBC(" << j << "): received r-send for same tag" <<
 				" more than once from " << l << std::endl;
+			continue;
 		}
 		// upon receiving message $(ID.j.s, r-echo, d)$ from $P_l$
 		if (!mpz_cmp(message[3], r_echo) && !echo[l].count(tag))
@@ -532,6 +531,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		{
 			std::cerr << "RBC(" << j << "): received r-echo for same tag" <<
 				" more than once from " << l << std::endl;
+			continue;
 		}
 		// upon receiving message $(ID.j.s, r-ready, d)$ from $P_l$
 		if (!mpz_cmp(message[3], r_ready) && !ready[l].count(tag))
@@ -600,13 +600,15 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				mpz_init_set(tmp, message[4]); // $\bar{d} \gets d$
 				dbar.insert(std::pair<std::string, mpz_ptr>(tag, tmp));
 				if (mbar.count(tag) > 0)
+				{
 					tmcg_mpz_shash(foo, 1, mbar[tag]);
+				}
 				else
 				{
 					mpz_set_ui(foo, 0L);
 //std::cerr << "RBC: r-send not received yet for this tag by " << j << std::endl;
 				}
-				if (mpz_cmp(foo, message[4])) // $H(\bar{m}) \neq \bar{d}$
+				if (mpz_cmp(foo, dbar[tag])) // $H(\bar{m}) \neq \bar{d}$
 				{
 					// prepare message $(ID.j.s, r-request)$
 					RBC_ConstMessage message2;
@@ -648,7 +650,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				if (!mpz_cmp(message[0], ID) &&
 					mpz_cmp(message[2], deliver_s[who]))
 				{
-					std::cerr << "RBC(" << j << "): sequence counter does" <<
+					std::cerr << "RBC(" << j << "): WARNING - sequence counter does" <<
 						" not match for " << who << " (" << message[2] <<
 						" vs " << deliver_s[who] << ")" << std::endl;
 				}
@@ -662,7 +664,10 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			continue;
 		}
 		else if (!mpz_cmp(message[3], r_ready) && ready[l].count(tag))
+		{
 			std::cerr << "RBC(" << j << "): received r-ready for same tag more than once from " << l << std::endl;
+			continue;
+		}
 		// upon receiving message $(ID.j.s, r-request) from $P_l$ for the first time
 		if (!mpz_cmp(message[3], r_request) && !request[l].count(tag))
 		{
@@ -691,11 +696,12 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		{
 			std::cerr << "RBC(" << j << "): received r-request for same tag" <<
 				" more than once from " << l << std::endl;
+			continue;
 		}
 		// upon receiving message $(ID.j.s, r-answer, m) from $P_l$ for the first time
 		if (!mpz_cmp(message[3], r_answer) && !answer[l].count(tag))
 		{
-//std::cerr << "RBC: r-answer from " << l << std::endl;
+std::cerr << "RBC(" << j << "): r-answer from " << l << " with m = " << message[4] << std::endl;
 			answer[l].insert(std::pair<std::string, bool>(tag, true));
 			if (!dbar.count(tag))
 			{
@@ -715,7 +721,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				else if (mpz_cmp(mbar[tag], message[4]))
 				{
 					std::cerr << "RBC(" << j << "): bad r-answer from " <<
-						l << std::endl;
+						l << "(" << mbar[tag] << " vs. " << message[4] << ")" << std::endl;
 					continue;
 				}
 				mpz_set(mbar[tag], message[4]); // $\bar{m} \gets m$
@@ -730,7 +736,6 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			size_t who = mpz_get_ui(message[1]);
 			if (who >= n)
 				throw std::runtime_error("RBC::Deliver(): who >= n");
-
 			// check for matching tag and sequence counter before delivering
 			if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
 			{
@@ -761,6 +766,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		{
 			std::cerr << "RBC(" << j << "): received r-answer for same tag" <<
 				" more than once from " << l << std::endl;
+			continue;
 		}
 		// report on discarded messages
 		std::cerr << "RBC(" << j << "): WARNING - discard message of" <<
