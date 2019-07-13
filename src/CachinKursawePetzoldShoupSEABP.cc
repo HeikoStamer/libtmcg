@@ -503,8 +503,10 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				rit = (r_d[tag].insert(
 					std::pair<std::string, size_t>(d_string, 0))).first; // = 0
 			}
-//std::cerr << "RBC: [" << tag << "] r-echo-branch with r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
-			if (((*eit).second == (n - t)) && ((*rit).second <= t))
+			size_t r_d_tag = (*rit).second;
+			size_t e_d_tag = (*eit).second;
+//std::cerr << "RBC: [" << tag << "] r-echo with r_d = " << r_d_tag << " e_d = " << e_d_tag << std::endl;
+			if ((e_d_tag == (n - t)) && (r_d_tag <= t))
 			{
 //std::cerr << "RBC(" << j << "): [" << tag << "] send r-ready message" << std::endl;
 				// prepare message $(ID.j.s, r-ready, d)$
@@ -571,10 +573,11 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				eit = (e_d[tag].insert(
 					std::pair<std::string, size_t>(d_string, 0))).first; // = 0
 			}
-//std::cerr << "RBC: [" << tag << "] r-ready-branch with r_d = " << (*rit).second << " e_d = " << (*eit).second << std::endl;
-			if ((t > 0) && ((*rit).second == (t + 1)) && ((*eit).second < (n - t)))
+			size_t r_d_tag = (*rit).second;
+			size_t e_d_tag = (*eit).second;
+std::cerr << "RBC: [" << tag << "] r-ready with r_d = " << r_d_tag << " e_d = " << e_d_tag << std::endl;
+			if ((t > 0) && (r_d_tag == (t + 1)) && (e_d_tag < (n - t)))
 			{
-//std::cerr << "RBC(" << j << "): [" << tag << "] send r-ready message" << std::endl;
 				// prepare message $(ID.j.s, r-ready, d)$
 				RBC_ConstMessage message2;
 				message2.push_back(message[0]);
@@ -593,8 +596,8 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				}
 				message2.clear();
 			}
-			else if (((t > 0) && ((*rit).second == ((2 * t) + 1))) ||
-				((t == 0) && ((*rit).second == 1))) // NOTE: artificial case where $t = 0$, not considered by [CKPS01]
+			else if (((t > 0) && (r_d_tag == ((2 * t) + 1))) ||
+				((t == 0) && (r_d_tag == 1))) // NOTE: artificial case where $t = 0$, not considered by [CKPS01]
 			{
 				if (dbar.count(tag) == 0)
 				{
