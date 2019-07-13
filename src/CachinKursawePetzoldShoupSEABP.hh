@@ -9,7 +9,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -58,7 +58,8 @@ typedef std::list< RBC_Message >			RBC_VectorList;
    asynchronous [(n-1)/3]-resilient consensus protocol', Proc. 3rd ACM Symposium
    on Principles of Distributed Computing (PODC), pp. 154–162, 1984.
 
-   Note that Bracha's consensus algorithm is not implemented yet.*/
+   Note that neither Bracha's consensus algorithm nor any randomized consensus
+   algorithm of Cachin et al. are implemented yet. */
 class CachinKursawePetzoldShoupRBC
 {
 	private:

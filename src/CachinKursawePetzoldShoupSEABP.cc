@@ -597,7 +597,8 @@ std::cerr << "RBC: [" << tag << "] r-ready with r_d = " << r_d_tag << " e_d = " 
 				message2.clear();
 			}
 			else if (((t > 0) && (r_d_tag == ((2 * t) + 1))) ||
-				((t == 0) && (r_d_tag == 1))) // NOTE: artificial case where $t = 0$, not considered by [CKPS01]
+			// NOTE: artificial case where $t = 0$, not considered by [CKPS01]
+				((t == 0) && (r_d_tag == 1)))
 			{
 				if (dbar.count(tag) == 0)
 				{
