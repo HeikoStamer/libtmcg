@@ -703,7 +703,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		{
 std::cerr << "RBC(" << j << "): r-answer from " << l << " with m = " << message[4] << std::endl;
 			answer[l].insert(std::pair<std::string, bool>(tag, true));
-			if (!dbar.count(tag))
+			if (dbar.count(tag) == 0)
 			{
 				std::cerr << "RBC(" << j << "): no request for r-answer" <<
 					" from " << l << std::endl;
@@ -717,14 +717,15 @@ std::cerr << "RBC(" << j << "): r-answer from " << l << " with m = " << message[
 					mpz_ptr tmp = new mpz_t();
 					mpz_init(tmp);
 					mbar.insert(std::pair<std::string, mpz_ptr>(tag, tmp));
+					mpz_set(mbar[tag], message[4]); // $\bar{m} \gets m$
 				}
 				else if (mpz_cmp(mbar[tag], message[4]))
 				{
 					std::cerr << "RBC(" << j << "): bad r-answer from " <<
-						l << "(" << mbar[tag] << " vs. " << message[4] << ")" << std::endl;
+						l << " (" << mbar[tag] << " vs. " << message[4] <<
+						")" << std::endl;
 					continue;
 				}
-				mpz_set(mbar[tag], message[4]); // $\bar{m} \gets m$
 			}
 			else
 			{
@@ -993,23 +994,25 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		mpz_clear((*mit).second);
 		delete [] (*mit).second;
 	}
+	mbar.clear();
 	for (RBC_TagMpz::iterator mit = dbar.begin(); mit != dbar.end(); ++mit)
 	{
 		mpz_clear((*mit).second);
 		delete [] (*mit).second;
 	}
-	mbar.clear(), dbar.clear();
+	dbar.clear();
 	for (std::map<std::string, RBC_TagCount>::iterator mit = e_d.begin();
 		mit != e_d.end(); ++mit)
 	{
 		((*mit).second).clear();
 	}
+	e_d.clear();
 	for (std::map<std::string, RBC_TagCount>::iterator mit = r_d.begin();
 		mit != r_d.end(); ++mit)
 	{
 		((*mit).second).clear();
 	}	
-	e_d.clear(), r_d.clear();
+	r_d.clear();
 	for (size_t i = 0; i < n; i++)
 	{
 		for (RBC_BufferList::iterator lit = buf_mpz[i].begin();
