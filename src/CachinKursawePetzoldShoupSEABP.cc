@@ -596,17 +596,26 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			else if (((t > 0) && ((*rit).second == ((2 * t) + 1))) ||
 				((t == 0) && ((*rit).second == 1))) // NOTE: artificial case where $t = 0$, not considered by [CKPS01]
 			{
-				mpz_ptr tmp = new mpz_t();
-				mpz_init_set(tmp, message[4]); // $\bar{d} \gets d$
-				dbar.insert(std::pair<std::string, mpz_ptr>(tag, tmp));
-				if (mbar.count(tag) > 0)
+				if (dbar.count(tag) == 0)
 				{
-					tmcg_mpz_shash(foo, 1, mbar[tag]);
+					mpz_ptr tmp = new mpz_t();
+					mpz_init_set(tmp, message[4]); // $\bar{d} \gets d$
+					dbar.insert(std::pair<std::string, mpz_ptr>(tag, tmp));
 				}
-				else
+				else if (mpz_cmp(dbar[tag], message[4]))
+				{
+					std::cerr << "RBC(" << j << "): received bad r-ready" <<
+						" message from " << l << std::endl;
+					continue;
+				}
+				if (mbar.count(tag) == 0)
 				{
 					mpz_set_ui(foo, 0L);
 //std::cerr << "RBC: r-send not received yet for this tag by " << j << std::endl;
+				}
+				else
+				{
+					tmcg_mpz_shash(foo, 1, mbar[tag]);
 				}
 				if (mpz_cmp(foo, dbar[tag])) // $H(\bar{m}) \neq \bar{d}$
 				{
