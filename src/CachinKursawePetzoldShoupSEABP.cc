@@ -469,6 +469,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		if (!mpz_cmp(message[3], r_echo) && !echo[l].count(tag))
 		{
 //std::cerr << "RBC: r-echo from " << l << " with d = " << message[4] << std::endl;
+			echo[l].insert(std::pair<std::string, bool>(tag, true));
 			std::stringstream d_ss;
 			d_ss << message[4];
 			std::string d_string = d_ss.str();
@@ -478,7 +479,6 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					" from " << l << std::endl;
 				continue;
 			}
-			echo[l].insert(std::pair<std::string, bool>(tag, true));
 			if (e_d.find(tag) == e_d.end())
 			{
 				RBC_TagCount mmm;
@@ -539,6 +539,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		if (!mpz_cmp(message[3], r_ready) && !ready[l].count(tag))
 		{
 //std::cerr << "RBC: r-ready from " << l << " with d = " << message[4] << std::endl;
+			ready[l].insert(std::pair<std::string, bool>(tag, true));
 			std::stringstream d_ss;
 			d_ss << message[4];
 			std::string d_string = d_ss.str();
@@ -548,7 +549,6 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					" r-ready from " << l << std::endl;
 				continue;
 			}
-			ready[l].insert(std::pair<std::string, bool>(tag, true));
 			if (e_d.find(tag) == e_d.end())
 			{
 				RBC_TagCount mmm;
@@ -575,7 +575,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			}
 			size_t r_d_tag = (*rit).second;
 			size_t e_d_tag = (*eit).second;
-std::cerr << "RBC: [" << tag << "] r-ready with r_d = " << r_d_tag << " e_d = " << e_d_tag << std::endl;
+//std::cerr << "RBC(" << j << "): [" << tag << "] r-ready with r_d = " << r_d_tag << " e_d = " << e_d_tag << std::endl;
 			if ((t > 0) && (r_d_tag == (t + 1)) && (e_d_tag < (n - t)))
 			{
 				// prepare message $(ID.j.s, r-ready, d)$
@@ -596,9 +596,7 @@ std::cerr << "RBC: [" << tag << "] r-ready with r_d = " << r_d_tag << " e_d = " 
 				}
 				message2.clear();
 			}
-			else if (((t > 0) && (r_d_tag == ((2 * t) + 1))) ||
-			// NOTE: artificial case where $t = 0$, not considered by [CKPS01]
-				((t == 0) && (r_d_tag == 1)))
+			else if (r_d_tag == ((2 * t) + 1))
 			{
 				if (dbar.count(tag) == 0)
 				{
@@ -684,7 +682,7 @@ std::cerr << "RBC: [" << tag << "] r-ready with r_d = " << r_d_tag << " e_d = " 
 		// upon receiving message $(ID.j.s, r-request) from $P_l$ for the first time
 		if (!mpz_cmp(message[3], r_request) && !request[l].count(tag))
 		{
-//std::cerr << "RBC: r-request from " << l << std::endl;
+std::cerr << "RBC(" << j << "): [" << tag << "] r-request from " << l << " with m = " << message[4] << std::endl;
 			request[l].insert(std::pair<std::string, bool>(tag, true));
 			if (mbar.count(tag))
 			{
@@ -714,7 +712,7 @@ std::cerr << "RBC: [" << tag << "] r-ready with r_d = " << r_d_tag << " e_d = " 
 		// upon receiving message $(ID.j.s, r-answer, m) from $P_l$ for the first time
 		if (!mpz_cmp(message[3], r_answer) && !answer[l].count(tag))
 		{
-std::cerr << "RBC(" << j << "): r-answer from " << l << " with m = " << message[4] << std::endl;
+std::cerr << "RBC(" << j << "): [" << tag << "] r-answer from " << l << " with m = " << message[4] << std::endl;
 			answer[l].insert(std::pair<std::string, bool>(tag, true));
 			if (dbar.count(tag) == 0)
 			{
