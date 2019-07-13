@@ -421,7 +421,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			send[l].insert(std::pair<std::string, bool>(tag, true));
 			if (mpz_cmp_ui(message[1], l))
 			{
-				std::cerr << "RBC(" << j << "): received wrong r-send" <<
+				std::cerr << "RBC(" << j << "): received faked r-send" <<
 					" message of " << message[1] << " from " << l << std::endl;
 			}
 			else
@@ -538,7 +538,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		// upon receiving message $(ID.j.s, r-ready, d)$ from $P_l$
 		if (!mpz_cmp(message[3], r_ready) && !ready[l].count(tag))
 		{
-//std::cerr << "RBC: r-ready from " << l << " with d = " << message[4] << std::endl;
+//std::cerr << "RBC(" << j << "): [" << tag << "] r-ready from " << l << " with d = " << message[4] << std::endl;
 			ready[l].insert(std::pair<std::string, bool>(tag, true));
 			std::stringstream d_ss;
 			d_ss << message[4];
@@ -629,7 +629,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					message2.push_back(r_request);
 					message2.push_back(message[4]);
 					// send to some parties by unicast transmission (very short timeout)
-					size_t howmany = ((2 * t) + 1); // TODO: optionally to all
+					size_t howmany = ((2 * t) + 1); // TODO: optionally to all (more robust)
 					for (size_t i = 0; i < howmany; i++)
 					{
 						if (!aiou->Send(message2, i, aio_timeout_vs))
@@ -682,9 +682,9 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		// upon receiving message $(ID.j.s, r-request) from $P_l$ for the first time
 		if (!mpz_cmp(message[3], r_request) && !request[l].count(tag))
 		{
-std::cerr << "RBC(" << j << "): [" << tag << "] r-request from " << l << " with m = " << message[4] << std::endl;
+//std::cerr << "RBC(" << j << "): [" << tag << "] r-request from " << l << " with m = " << message[4] << std::endl;
 			request[l].insert(std::pair<std::string, bool>(tag, true));
-			if (mbar.count(tag))
+			if (mbar.count(tag) > 0)
 			{
 				// prepare message $(ID.j.s, r-answer, \bar{m})$
 				RBC_ConstMessage message2;
@@ -712,11 +712,11 @@ std::cerr << "RBC(" << j << "): [" << tag << "] r-request from " << l << " with 
 		// upon receiving message $(ID.j.s, r-answer, m) from $P_l$ for the first time
 		if (!mpz_cmp(message[3], r_answer) && !answer[l].count(tag))
 		{
-std::cerr << "RBC(" << j << "): [" << tag << "] r-answer from " << l << " with m = " << message[4] << std::endl;
+//std::cerr << "RBC(" << j << "): [" << tag << "] r-answer from " << l << " with m = " << message[4] << std::endl;
 			answer[l].insert(std::pair<std::string, bool>(tag, true));
 			if (dbar.count(tag) == 0)
 			{
-				std::cerr << "RBC(" << j << "): no request for r-answer" <<
+				std::cerr << "RBC(" << j << "): not ready for r-answer" <<
 					" from " << l << std::endl;
 				continue;
 			}
@@ -730,13 +730,8 @@ std::cerr << "RBC(" << j << "): [" << tag << "] r-answer from " << l << " with m
 					mbar.insert(std::pair<std::string, mpz_ptr>(tag, tmp));
 					mpz_set(mbar[tag], message[4]); // $\bar{m} \gets m$
 				}
-				else if (mpz_cmp(mbar[tag], message[4]))
-				{
-					std::cerr << "RBC(" << j << "): bad r-answer from " <<
-						l << " (" << mbar[tag] << " vs. " << message[4] <<
-						")" << std::endl;
-					continue;
-				}
+				else 
+					mpz_set(mbar[tag], message[4]);
 			}
 			else
 			{

@@ -359,7 +359,7 @@ int main
 	assert(((argc > 0) && (argv != NULL)));
 	assert(init_libTMCG());
 	assert(N_MIN <= N);
-/*
+
 	// test case #1: n = N_MIN, t = 0
 	std::cout << "test case #1" << std::endl;
 	init(N_MIN);
@@ -383,7 +383,7 @@ int main
 		start_instance(N, T, i, false, false);
 	if (!done(N))
 		return 1;
-*/
+
 	// test case #4: two corrupted parties
 	std::cout << "test case #4" << std::endl;
 	init(N);
