@@ -48,9 +48,11 @@ typedef std::map<std::string, bool>			RBC_TagCheck;
 typedef std::map<std::string, size_t>		RBC_TagCount;
 typedef std::map<std::string, mpz_ptr>		RBC_TagMpz;
 typedef std::list<mpz_ptr>					RBC_BufferList;
+typedef std::map<std::string, mpz_ptr>		RBC_BufferMap;
 typedef std::vector<mpz_ptr>				RBC_Message;
 typedef std::vector<mpz_srcptr>				RBC_ConstMessage;
-typedef std::list< RBC_Message >			RBC_VectorList;
+typedef std::list<RBC_Message>				RBC_VectorList;
+typedef std::map<std::string, RBC_Message>	RBC_VectorMap;
 
 /* The following class implements an optimized version of Bracha's protocol 
    described in [CKPS01]. Additionally, a FIFO-order deliver mechanism based on
@@ -69,6 +71,8 @@ class CachinKursawePetzoldShoupRBC
 		mpz_t									ID, whoami, s;
 		RBC_BufferList							last_IDs, last_s;
 		RBC_VectorList							last_deliver_s;
+		RBC_BufferMap							recover_s;
+		RBC_VectorMap							recover_deliver_s;
 		mpz_t									r_send, r_echo, r_ready;
 		mpz_t									r_request, r_answer;
 		std::vector<RBC_TagCheck>				send, echo, ready;
@@ -111,6 +115,8 @@ class CachinKursawePetzoldShoupRBC
 			 const time_t timeout_in = aiounicast::aio_timeout_extremely_long);
 		void setID
 			(const std::string &ID_in);
+		void recoverID
+			(const std::string &ID_in);
 		void unsetID
 			();
 		void Broadcast
@@ -126,6 +132,9 @@ class CachinKursawePetzoldShoupRBC
 			 const size_t i_in,
 			 size_t scheduler = aiounicast::aio_scheduler_default,
 			 time_t timeout = aiounicast::aio_timeout_default);
+		void QueueFrom
+			(mpz_srcptr m,
+			 const size_t i_in);
 		bool Sync
 			(time_t timeout = aiounicast::aio_timeout_default,
 			 const std::string tag = "");

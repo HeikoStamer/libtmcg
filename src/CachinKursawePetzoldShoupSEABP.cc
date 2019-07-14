@@ -141,17 +141,98 @@ void CachinKursawePetzoldShoupRBC::setID
 	tmcg_mpz_shash(ID, myID.str());
 
 	// reset sequence counter
-	mpz_set_ui(s, 0L);
+	mpz_set_ui(s, 0UL);
 
 	// reset deliver sequence counters
 	for (size_t i = 0; i < n; i++)
-		mpz_set_ui(deliver_s[i], 1L);
+		mpz_set_ui(deliver_s[i], 1UL);
+}
+
+void CachinKursawePetzoldShoupRBC::recoverID
+	(const std::string &ID_in)
+{
+	// save the last ID
+	mpz_ptr tmp1 = new mpz_t();
+	mpz_init_set(tmp1, ID);
+	last_IDs.push_back(tmp1);
+
+	// save the last sequence counter
+	mpz_ptr tmp2 = new mpz_t();
+	mpz_init_set(tmp2, s);
+	last_s.push_back(tmp2);
+
+	// save deliver sequence counters
+	last_deliver_s.resize(last_deliver_s.size() + 1);
+	for (size_t i = 0; i < n; i++)
+	{
+		mpz_ptr tmp3 = new mpz_t();
+		mpz_init_set(tmp3, deliver_s[i]);
+		(last_deliver_s.back()).push_back(tmp3);
+	}
+
+	// set new ID
+	std::stringstream myID;
+	myID << "CachinKursawePetzoldShoupRBC called from [" << ID_in << "]" <<
+		" with last ID = " << ID;
+	tmcg_mpz_shash(ID, myID.str());
+
+	// recover sequence counter, if available
+	std::stringstream str_ID;
+	str_ID << ID;
+	if (recover_s.count(str_ID.str()) > 0)
+		mpz_set(s, recover_s[str_ID.str()]);
+	else
+		mpz_set_ui(s, 0UL);
+
+	// recover deliver sequence counters, if available
+	for (size_t i = 0; i < n; i++)
+	{
+		if (recover_deliver_s.count(str_ID.str()) > 0)
+		{
+			if (recover_deliver_s[str_ID.str()].size() == n)
+				mpz_set(deliver_s[i], (recover_deliver_s[str_ID.str()])[i]);
+			else
+				mpz_set_ui(deliver_s[i], 1UL);
+		}
+		else
+			mpz_set_ui(deliver_s[i], 1UL);
+	}
 }
 
 void CachinKursawePetzoldShoupRBC::unsetID
 	()
 {
-	// set last ID
+	// save current sequence counter
+	std::stringstream str_ID;
+	str_ID << ID;
+	if (recover_s.count(str_ID.str()) == 0)
+	{
+		mpz_ptr tmp1 = new mpz_t();
+		mpz_init_set(tmp1, s);
+		recover_s[str_ID.str()] = tmp1;
+	}
+	else
+		mpz_set(recover_s[str_ID.str()], s);
+
+	// save current deliver sequence counters
+	if (recover_deliver_s.count(str_ID.str()) == 0)
+	{
+		recover_deliver_s[str_ID.str()].resize(n);
+		for (size_t i = 0; i < n; i++)
+		{
+			mpz_ptr tmp3 = new mpz_t();
+			mpz_init_set(tmp3, deliver_s[i]);
+			(recover_deliver_s[str_ID.str()])[i] = tmp3;
+		}
+	}
+	else
+	{
+		recover_deliver_s[str_ID.str()].resize(n);
+		for (size_t i = 0; i < n; i++)
+			mpz_set((recover_deliver_s[str_ID.str()])[i] , deliver_s[i]);
+	}
+
+	// set last ID, if available
 	if (!last_IDs.empty())
 	{
 		mpz_ptr tmp = last_IDs.back();
@@ -161,9 +242,9 @@ void CachinKursawePetzoldShoupRBC::unsetID
 		last_IDs.pop_back();
 	}
 	else
-		mpz_set_ui(ID, 0L);
+		mpz_set_ui(ID, 0UL);
 
-	// set last sequence counter
+	// set last sequence counter, if available
 	if (!last_s.empty())
 	{
 		mpz_ptr tmp = last_s.back();
@@ -173,9 +254,9 @@ void CachinKursawePetzoldShoupRBC::unsetID
 		last_s.pop_back();
 	}
 	else
-		mpz_set_ui(s, 0L);
+		mpz_set_ui(s, 0UL);
 
-	// set last deliver sequence counters
+	// set last deliver sequence counters, if available
 	if (!last_deliver_s.empty())
 	{
 		std::vector<mpz_ptr> vtmp = last_deliver_s.back();
@@ -190,7 +271,7 @@ void CachinKursawePetzoldShoupRBC::unsetID
 	else
 	{
 		for (size_t i = 0; i < n; i++)
-			mpz_set_ui(deliver_s[i], 1L);
+			mpz_set_ui(deliver_s[i], 1UL);
 	}
 }
 
@@ -263,7 +344,7 @@ void CachinKursawePetzoldShoupRBC::ReleaseMessage
 void CachinKursawePetzoldShoupRBC::Broadcast
 	(mpz_srcptr m, const bool simulate_faulty_behaviour)
 {
-	mpz_add_ui(s, s, 1L); // increase sequence counter
+	mpz_add_ui(s, s, 1UL); // increase sequence counter
 
 	// prepare message $(ID.j.s, r-send, m)$
 	RBC_ConstMessage message;
@@ -288,7 +369,7 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 			simulate_faulty_randomizer1)
 		{
 			mpz_add_ui(modified_message[4],
-				modified_message[4], 1L); // modify the message
+				modified_message[4], 1UL); // modify the message
 		}
 		if (simulate_faulty_behaviour && !simulate_faulty_randomizer &&
 			simulate_faulty_randomizer2)
@@ -356,7 +437,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				mpz_set(m, mbar[tag]);
 //std::cerr << "RBC: restores deliver from " << who << " m = " << m << std::endl;
 				// increase sequence counter
-				mpz_add_ui(deliver_s[who], deliver_s[who], 1L);
+				mpz_add_ui(deliver_s[who], deliver_s[who], 1UL);
 				i_out = who;
 				ReleaseMessage(*lit);
 				deliver_buf.erase(lit);
@@ -402,7 +483,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				std::endl;
 			continue;
 		}
-		if (mpz_cmp_ui(message[2], 1L) < 0)
+		if (mpz_cmp_ui(message[2], 1UL) < 0)
 		{
 			std::cerr << "RBC(" << j << "): wrong s in tag from " << l <<
 				std::endl;
@@ -612,7 +693,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				}
 				if (mbar.count(tag) == 0)
 				{
-					mpz_set_ui(foo, 0L);
+					mpz_set_ui(foo, 0UL);
 //std::cerr << "RBC: r-send not received yet for this tag by " << j << std::endl;
 				}
 				else
@@ -829,7 +910,7 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 		}
 		else
 		{
-			// store mpz in corresponding buffer
+			// store mpz at the end of corresponding buffer
 			size_t l;
 			mpz_ptr tmp = new mpz_t(), tmpID = new mpz_t();
 			mpz_init(tmp), mpz_init_set(tmpID, ID);
@@ -855,6 +936,23 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 			i_in << std::endl;
 	}
 	return false;
+}
+
+void CachinKursawePetzoldShoupRBC::QueueFrom
+	(mpz_srcptr m, const size_t i_in)
+{
+	// sanity check
+	if (i_in >= n)
+	{
+		std::cerr << "RBC(" << j << "): QueueFrom() with " << i_in <<
+			" >= " << n << std::endl;
+		return;
+	}
+	// store mpz at the end of corresponding buffer
+	mpz_ptr tmp = new mpz_t(), tmpID = new mpz_t();
+	mpz_init_set(tmp, m), mpz_init_set(tmpID, ID);
+	buf_mpz[i_in].push_back(tmp);
+	buf_id[i_in].push_back(tmpID);
 }
 
 bool CachinKursawePetzoldShoupRBC::Sync
@@ -989,6 +1087,23 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		}
 	}
 	last_deliver_s.clear();
+	for (RBC_BufferMap::iterator mit = recover_s.begin();
+		mit != recover_s.end(); ++mit)
+	{
+		mpz_clear(mit->second);
+		delete [] mit->second;
+	}
+	recover_s.clear();
+	for (RBC_VectorMap::iterator mit = recover_deliver_s.begin();
+		mit != recover_deliver_s.end(); ++mit)
+	{
+		for (size_t i = 0; i < (mit->second).size(); i++)
+		{
+			mpz_clear((mit->second)[i]);
+			delete [] (mit->second)[i];
+		}
+	}
+	recover_deliver_s.clear();
 	mpz_clear(r_send);
 	mpz_clear(r_echo);
 	mpz_clear(r_ready);
