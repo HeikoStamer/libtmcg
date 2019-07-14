@@ -871,8 +871,8 @@ bool CachinKursawePetzoldShoupRBC::Sync
 		tag << ")";
 	setID(myID.str());
 	// initialize
-	time_t max_timeout = timeout;
-	time_t slice_timeout = (timeout / sync_slices) + 1;
+	time_t max_timeout = timeout; // 60
+	time_t slice_timeout = (timeout / sync_slices) + 1; // 7
 	time_t entry_time = time(NULL);
 	long int last_diff = 42424242;
 	mpz_t mtv;
@@ -880,15 +880,17 @@ bool CachinKursawePetzoldShoupRBC::Sync
 	do
 	{
 		time_t slice_entry_time = time(NULL);
+		time_t rest = 0;
 		if (timeout > (slice_entry_time - entry_time))
 		{
-			mpz_set_ui(mtv, timeout - (slice_entry_time - entry_time));
+			rest = timeout - (slice_entry_time - entry_time); // 60 - (pos. Wert oder Null)
+			mpz_set_ui(mtv, rest);
 			Broadcast(mtv);
 		}
 		else
 			break;
 		std::map<size_t, time_t> tvs;
-		tvs[j] = timeout - (slice_entry_time - entry_time);
+		tvs[j] = rest;
 		do
 		{
 			size_t l;
@@ -897,10 +899,14 @@ bool CachinKursawePetzoldShoupRBC::Sync
 				time_t utv;
 				utv = (time_t)mpz_get_ui(mtv);
 				if (utv <= max_timeout)
+				{
 					tvs[l] = utv;
+				}
 				else
+				{
 					std::cerr << "RBC(" << j << "): bad sync timestamp " <<
 						utv << " received from " << l << std::endl;
+				}
 			}
 		}
 		while (time(NULL) < (slice_entry_time + slice_timeout));
@@ -913,8 +919,8 @@ bool CachinKursawePetzoldShoupRBC::Sync
 		std::sort(vtvs.begin(), vtvs.end());
 		if (vtvs.size() < (n - t))
 		{
-			std::cerr << "RBC(" << j << "): not enough sync timestamps" <<
-				" received" << std::endl;
+			std::cerr << "RBC(" << j << "): WARNING - not enough sync" <<
+				" timestamps received" << std::endl;
 		}
 		else
 		{
@@ -944,11 +950,13 @@ bool CachinKursawePetzoldShoupRBC::Sync
 	mpz_clear(mtv);
 	unsetID();
 	if (std::abs(last_diff) <= slice_timeout)
+	{
 		return true;
+	}
 	else
 	{
-		std::cerr << "RBC(" << j << "): synchroniziation failed with diff = " <<
-			last_diff << std::endl;
+		std::cerr << "RBC(" << j << "): synchroniziation failed with" <<
+			" diff = " << last_diff << std::endl;
 		return false;
 	}
 }
