@@ -969,8 +969,8 @@ bool CachinKursawePetzoldShoupRBC::Sync
 		tag << ")";
 	setID(myID.str());
 	// initialize
-	time_t max_timeout = timeout; // 60
-	time_t slice_timeout = (timeout / sync_slices) + 1; // 7
+	time_t max_timeout = timeout;
+	time_t slice_timeout = (timeout / sync_slices) + 1;
 	time_t entry_time = time(NULL);
 	long int last_diff = 42424242;
 	mpz_t mtv;
@@ -981,7 +981,7 @@ bool CachinKursawePetzoldShoupRBC::Sync
 		time_t rest = 0;
 		if (timeout > (slice_entry_time - entry_time))
 		{
-			rest = timeout - (slice_entry_time - entry_time); // 60 - (pos. Wert oder Null)
+			rest = timeout - (slice_entry_time - entry_time);
 			mpz_set_ui(mtv, rest);
 			Broadcast(mtv);
 		}
