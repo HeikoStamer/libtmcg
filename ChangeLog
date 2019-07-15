@@ -9,7 +9,7 @@ in the sources of this package and additionally can be obtained from Internet
 
 * [2019-] added data structure TMCG_Bigint
 * [2019-07-14] RBC: added recoverID() to recover an old state of the channel
-* [2019-07-14] RBC: added QueueFrom() to queue an already deliverd message
+* [2019-07-14] RBC: added QueueFrom() to queue an already delivered message
 * [2019-07-13] RBC: fixed a logical error w.r.t. so-called bad r-answer messages
 * [2019-07-11] RFC4880: added member 'expired' to TMCG_OpenPGP_Signature, 
                TMCG_OpenPGP_Subkey, and TMCG_OpenPGP_Pubkey

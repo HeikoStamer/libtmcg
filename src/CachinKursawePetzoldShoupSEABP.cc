@@ -948,11 +948,11 @@ void CachinKursawePetzoldShoupRBC::QueueFrom
 			" >= " << n << std::endl;
 		return;
 	}
-	// store mpz at the end of corresponding buffer
+	// store mpz at the front of corresponding buffer
 	mpz_ptr tmp = new mpz_t(), tmpID = new mpz_t();
 	mpz_init_set(tmp, m), mpz_init_set(tmpID, ID);
-	buf_mpz[i_in].push_back(tmp);
-	buf_id[i_in].push_back(tmpID);
+	buf_mpz[i_in].insert(buf_mpz[i_in].begin(), tmp);
+	buf_id[i_in].insert(buf_id[i_in].begin(), tmpID);
 }
 
 bool CachinKursawePetzoldShoupRBC::Sync
