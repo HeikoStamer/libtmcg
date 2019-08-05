@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-08-05] aiounicast_*: fixes missing MAC reset even if verification fails
 * [2019-07-14] RBC: added recoverID() to recover an old state of the channel
 * [2019-07-14] RBC: added QueueFrom() to queue an already delivered message
 * [2019-07-13] RBC: fixed a logical error w.r.t. so-called bad r-answer messages

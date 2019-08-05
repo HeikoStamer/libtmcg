@@ -699,6 +699,7 @@ bool aiounicast_select::Receive
 								" gcry_mac_verify() for " << j << " from " <<
 								i_out << " failed" << std::endl <<
 								gcry_strerror(err) << std::endl;
+							err = gcry_mac_reset(*mac_in[i_out]);
 							delete [] tmp, delete [] mac;
 							return false;
 						}
