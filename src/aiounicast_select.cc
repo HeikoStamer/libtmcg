@@ -629,7 +629,7 @@ bool aiounicast_select::Receive
 					return false;
 			}
 			// anything buffered from previous rounds and IV already read?
-			if (buf_flag[i_out] && iv_flag_in[i_out])
+			if (buf_flag[i_out])
 			{
 				// search for the first line delimiter
 				bool newline_found = false;
@@ -644,7 +644,7 @@ bool aiounicast_select::Receive
 						break;
 					}
 				}
-				// process the buffer: second, split data into message and tag
+				// process the buffer: split received data into message and tag
 				if (newline_found &&
 					((buf_ptr[i_out] - newline_ptr - 1) >= maclen))
 				{
