@@ -628,8 +628,8 @@ bool aiounicast_select::Receive
 					i_out = n;
 					return false;
 			}
-			// anything buffered from previous rounds?
-			if (buf_flag[i_out])
+			// anything buffered from previous rounds and IV already read?
+			if (buf_flag[i_out] && iv_flag_in[i_out])
 			{
 				// search for the first line delimiter
 				bool newline_found = false;
@@ -640,10 +640,11 @@ bool aiounicast_select::Receive
 					{
 						newline_ptr = ptr;
 						newline_found = true;
+//std::cerr << "DEBUG: newline_ptr for " << i_out << " is " << newline_ptr << std::endl;
 						break;
 					}
 				}
-				// process the buffer
+				// process the buffer: second, split data into message and tag
 				if (newline_found &&
 					((buf_ptr[i_out] - newline_ptr - 1) >= maclen))
 				{
@@ -761,6 +762,11 @@ bool aiounicast_select::Receive
 					{
 						std::cerr << "aiounicast_select: mpz_set_str() for" <<
 							" m from " << i_out << " failed" << std::endl;
+						std::cerr << "aiounicast_select: strnlen(tmp) = " <<
+							strnlen(tmp, tmplen) << std::endl << std::hex;
+						for (size_t i = 0; i < strnlen(tmp, tmplen); i++)
+							std::cerr << (int)tmp[i] << " ";
+						std::cerr << std::dec << std::endl;
 						delete [] tmp, delete [] mac;
 						return false;
 					}
@@ -772,7 +778,7 @@ bool aiounicast_select::Receive
 				// no delimiter found; invalidate buffer flag
 				buf_flag[i_out] = false;
 			}
-			// check whether input file descriptor exists
+			// check whether input file descriptor still exists
 			if (!fd_in.count(i_out))
 				continue;
 			size_t maxbuf = buf_in_size - buf_ptr[i_out];
