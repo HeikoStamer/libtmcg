@@ -177,8 +177,16 @@ aiounicast_select::aiounicast_select
 		gcry_cipher_hd_t *enc_in_hd = new gcry_cipher_hd_t();
 		gcry_cipher_hd_t *enc_out_hd = new gcry_cipher_hd_t();
 		enc_in.push_back(enc_in_hd), enc_out.push_back(enc_out_hd);
-		err = gcry_cipher_open(enc_in[i], TMCG_GCRY_ENC_ALGO,
-			GCRY_CIPHER_MODE_CFB, 0); 				
+		if (aio_is_chunked)
+		{
+			err = gcry_cipher_open(enc_in[i], TMCG_GCRY_ENC_ALGO,
+				GCRY_CIPHER_MODE_CTR, 0);
+		}
+		else
+		{
+			err = gcry_cipher_open(enc_in[i], TMCG_GCRY_ENC_ALGO,
+				GCRY_CIPHER_MODE_CFB, 0);
+		}
 		if (err)
 		{
 			aio_is_initialized = false;
@@ -224,19 +232,26 @@ aiounicast_select::aiounicast_select
 				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_select: libgcrypt failed");
 		}
-		gcry_create_nonce(iv, blklen); // unpredictable IV is sufficient
-		err = gcry_cipher_setiv(*enc_out[i], iv, sizeof(iv));
-		if (err)
+		if (aio_is_chunked)
 		{
-			aio_is_initialized = false;
-			std::cerr << "aiounicast_select: gcry_cipher_setiv() failed" <<
-				std::endl << gcry_strerror(err) << std::endl;
-			throw std::invalid_argument("aiounicast_select: libgcrypt failed");
+// TODO: gcry_cipher_setctr() should be called later, chunk += 1
 		}
-		iv_flag_out.push_back(false); // flag means: IV not yet sent
-		unsigned char *ivcopy = new unsigned char[blklen];
-		memcpy(ivcopy, iv, blklen);
-		iv_out.push_back(ivcopy); // store a copy of the used IV for Send()
+		else
+		{
+			gcry_create_nonce(iv, blklen); // unpredictable IV is sufficient
+			err = gcry_cipher_setiv(*enc_out[i], iv, sizeof(iv));
+			if (err)
+			{
+				aio_is_initialized = false;
+				std::cerr << "aiounicast_select: gcry_cipher_setiv() failed" <<
+					std::endl << gcry_strerror(err) << std::endl;
+				throw std::invalid_argument("aiounicast_select: libgcrypt failed");
+			}
+			iv_flag_out.push_back(false); // flag means: IV not yet sent
+			unsigned char *ivcopy = new unsigned char[blklen];
+			memcpy(ivcopy, iv, blklen);
+			iv_out.push_back(ivcopy); // store a copy of the used IV for Send()
+		}
 	}
 }
 
