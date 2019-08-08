@@ -3,7 +3,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -62,7 +62,8 @@ class aiounicast_select : public aiounicast
 			 const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
 			 const time_t aio_default_timeout_in = aio_timeout_very_long,
 			 const bool aio_is_authenticated_in = true,
-			 const bool aio_is_encrypted_in = true);
+			 const bool aio_is_encrypted_in = true,
+			 const bool aio_is_chunked_in = false);
 		bool Send
 			(mpz_srcptr m,
 			 const size_t i_in,

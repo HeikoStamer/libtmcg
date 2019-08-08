@@ -44,9 +44,10 @@ aiounicast_select::aiounicast_select
 	 const size_t aio_default_scheduler_in,
 	 const time_t aio_default_timeout_in,
 	 const bool aio_is_authenticated_in,
-	 const bool aio_is_encrypted_in):
+	 const bool aio_is_encrypted_in,
+	 const bool aio_is_chunked_in):
 		aiounicast(n_in, j_in, aio_default_scheduler_in, aio_default_timeout_in,
-			aio_is_authenticated_in, aio_is_encrypted_in)
+			aio_is_authenticated_in, aio_is_encrypted_in, aio_is_chunked_in)
 {
 	if (j_in >= n_in)
 		throw std::invalid_argument("aiounicast_select: j >= n");

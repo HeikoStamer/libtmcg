@@ -3,7 +3,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -40,8 +40,10 @@ class aiounicast
 		const time_t				aio_default_timeout;
 		const bool					aio_is_authenticated;
 		const bool					aio_is_encrypted;
+		const bool					aio_is_chunked;
 		bool						aio_is_initialized;
 		mpz_t						aio_hide_length;
+		mpz_t						aio_chunk;
 
 	public:
 		static const time_t			aio_timeout_none			= 0;
@@ -73,17 +75,20 @@ class aiounicast
 			 const size_t aio_default_scheduler_in = aio_scheduler_roundrobin,
 			 const time_t aio_default_timeout_in = aio_timeout_very_long,
 			 const bool aio_is_authenticated_in = true,
-			 const bool aio_is_encrypted_in = true):
+			 const bool aio_is_encrypted_in = true,
+			 const bool aio_is_chunked_in = false):
 				aio_default_scheduler(aio_default_scheduler_in),
 				aio_default_timeout(aio_default_timeout_in),
 				aio_is_authenticated(aio_is_authenticated_in),
 				aio_is_encrypted(aio_is_encrypted_in),
+				aio_is_chunked(aio_is_chunked_in),
 				aio_is_initialized(true),
 				n(n_in), j(j_in), numWrite(0), numRead(0), numEncrypted(0),
 				numDecrypted(0), numAuthenticated(0)
 		{
 			mpz_init_set_ui(aio_hide_length, 1L);
 			mpz_mul_2exp(aio_hide_length, aio_hide_length, TMCG_AIO_HIDE_SIZE);
+			mpz_init_set_ui(aio_chunk, 1L);
 		}
 
 		virtual bool Send
@@ -108,16 +113,23 @@ class aiounicast
 		void PrintStatistics
 			(std::ostream &ost)
 		{
-			ost << " numRead = " << numRead << " numWrite = " << numWrite <<
-				" numEncrypted = " << numEncrypted <<
-				" numDecrypted = " << numDecrypted <<
-				" numAuthenticated = " << numAuthenticated;
+			ost << " numRead = " << numRead << " numWrite = " << numWrite;
+			if (aio_is_authenticated)
+				ost << " numAuthenticated = " << numAuthenticated;
+			if (aio_is_encrypted)
+			{
+				ost << " numEncrypted = " << numEncrypted;
+				ost << " numDecrypted = " << numDecrypted;
+			}
+			if (aio_is_chunked)
+				ost << " chunk = " << aio_chunk;
 		}
 
 		virtual ~aiounicast
 			()
 		{
 			mpz_clear(aio_hide_length);
+			mpz_clear(aio_chunk);
 		}
 };
 
