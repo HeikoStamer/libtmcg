@@ -50,7 +50,7 @@ pid_t pid[N];
 
 void start_instance_nonblock
 	(const size_t whoami, const bool corrupted, const bool authenticated,
-	 const bool encrypted)
+	 const bool encrypted, const bool chunked)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("t-aio (fork)");
@@ -74,10 +74,11 @@ void start_instance_nonblock
 					uP_key.push_back(key.str());
 				}
 
-				// create asynchronous authenticated and encrypted unicast channels
+				// create asynchronous authenticated and encrypted channels
 				aiounicast_nonblock *aiou = new aiounicast_nonblock(N, whoami,
 					uP_in, uP_out, uP_key, aiounicast::aio_scheduler_roundrobin,
-					aiounicast::aio_timeout_short, authenticated, encrypted);
+					aiounicast::aio_timeout_short, authenticated, encrypted,
+					chunked);
 
 				// send a simple message
 				bool ret = false;
@@ -191,7 +192,7 @@ void start_instance_nonblock
 
 void start_instance_select
 	(const size_t whoami, const bool corrupted, const bool authenticated,
-	 const bool encrypted)
+	 const bool encrypted, const bool chunked)
 {
 	if ((pid[whoami] = fork()) < 0)
 		perror("t-aio (fork)");
@@ -215,10 +216,11 @@ void start_instance_select
 					uP_key.push_back(key.str());
 				}
 
-				// create asynchronous authenticated and encrypted unicast channels
+				// create asynchronous authenticated and encrypted channels
 				aiounicast_select *aiou = new aiounicast_select(N, whoami,
 					uP_in, uP_out, uP_key, aiounicast::aio_scheduler_roundrobin,
-					aiounicast::aio_timeout_short, authenticated, encrypted);
+					aiounicast::aio_timeout_short, authenticated, encrypted,
+					chunked);
 
 				// send a simple message
 				bool ret = false;
@@ -394,76 +396,82 @@ int main
 	assert(((argc > 0) && (argv != NULL)));
 	assert(init_libTMCG());
 	
-	// test case #1a: all correct, not authenticated, not encrypted
+	// test case #1a: all correct, not authenticated, not encrypted, not chunked
 	init_nonblock();
 	for (size_t i = 0; i < N; i++)
-		start_instance_nonblock(i, false, false, false);
+		start_instance_nonblock(i, false, false, false, false);
 	if (!done())
 		return 1;
-	// test case #1b: all correct, authenticated, not encrypted
+	// test case #1b: all correct, authenticated, not encrypted, not chunked
 	init_nonblock();
 	for (size_t i = 0; i < N; i++)
-		start_instance_nonblock(i, false, true, false);
+		start_instance_nonblock(i, false, true, false, false);
 	if (!done())
 		return 1;
-	// test case #1c: all correct, not authenticated, encrypted
+	// test case #1c: all correct, not authenticated, encrypted, not chunked
 	init_nonblock();
 	for (size_t i = 0; i < N; i++)
-		start_instance_nonblock(i, false, false, true);
+		start_instance_nonblock(i, false, false, true, false);
 	if (!done())
 		return 1;
-	// test case #1d: all correct, authenticated, encrypted
+	// test case #1d: all correct, authenticated, encrypted, not chunked
 	init_nonblock();
 	for (size_t i = 0; i < N; i++)
-		start_instance_nonblock(i, false, true, true);
+		start_instance_nonblock(i, false, true, true, false);
 	if (!done())
 		return 1;
 	
-	// test case #2: T corrupted parties, authenticated, encrypted
+	// test case #2: T corrupted parties, authenticated, encrypted, not chunked
 	init_nonblock();
 	for (size_t i = 0; i < N; i++)
 	{
 		if (i < T)
-			start_instance_nonblock(i, true, true, true); // corrupted
+			start_instance_nonblock(i, true, true, true, false); // corrupted
 		else
-			start_instance_nonblock(i, false, true, true);
+			start_instance_nonblock(i, false, true, true, false);
 	}
 	if (!done())
 		return 1;
 
-	// test case #3a: all correct, not authenticated, not encrypted
+	// test case #3a: all correct, not authenticated, not encrypted, not chunked
 	init_select();
 	for (size_t i = 0; i < N; i++)
-		start_instance_select(i, false, false, false);
+		start_instance_select(i, false, false, false, false);
 	if (!done())
 		return 1;
-	// test case #3b: all correct, authenticated, not encrypted
+	// test case #3b: all correct, authenticated, not encrypted, not chunked
 	init_select();
 	for (size_t i = 0; i < N; i++)
-		start_instance_select(i, false, true, false);
+		start_instance_select(i, false, true, false, false);
 	if (!done())
 		return 1;
-	// test case #3c: all correct, not authenticated, encrypted
+	// test case #3c: all correct, not authenticated, encrypted, not chunked
 	init_select();
 	for (size_t i = 0; i < N; i++)
-		start_instance_select(i, false, false, true);
+		start_instance_select(i, false, false, true, false);
 	if (!done())
 		return 1;
-	// test case #3d: all correct, authenticated, encrypted
+	// test case #3d: all correct, authenticated, encrypted, not chunked
 	init_select();
 	for (size_t i = 0; i < N; i++)
-		start_instance_select(i, false, true, true);
+		start_instance_select(i, false, true, true, false);
+	if (!done())
+		return 1;
+	// test case #3e: all correct, authenticated, encrypted, chunked
+	init_select();
+	for (size_t i = 0; i < N; i++)
+		start_instance_select(i, false, true, true, true);
 	if (!done())
 		return 1;
 
-	// test case #4: T corrupted parties, authenticated, encrypted
+	// test case #4: T corrupted parties, authenticated, encrypted, not chunked
 	init_select();
 	for (size_t i = 0; i < N; i++)
 	{
 		if (i < T)
-			start_instance_select(i, true, true, true); // corrupted
+			start_instance_select(i, true, true, true, false); // corrupted
 		else
-			start_instance_select(i, false, true, true);
+			start_instance_select(i, false, true, true, false);
 	}
 	if (!done())
 		return 1;

@@ -43,7 +43,6 @@ class aiounicast
 		const bool					aio_is_chunked;
 		bool						aio_is_initialized;
 		mpz_t						aio_hide_length;
-		mpz_t						aio_chunk;
 
 	public:
 		static const time_t			aio_timeout_none			= 0;
@@ -88,7 +87,6 @@ class aiounicast
 		{
 			mpz_init_set_ui(aio_hide_length, 1L);
 			mpz_mul_2exp(aio_hide_length, aio_hide_length, TMCG_AIO_HIDE_SIZE);
-			mpz_init_set_ui(aio_chunk, 1L);
 		}
 
 		virtual bool Send
@@ -122,14 +120,13 @@ class aiounicast
 				ost << " numDecrypted = " << numDecrypted;
 			}
 			if (aio_is_chunked)
-				ost << " chunk = " << aio_chunk;
+				ost << " chunked";
 		}
 
 		virtual ~aiounicast
 			()
 		{
 			mpz_clear(aio_hide_length);
-			mpz_clear(aio_chunk);
 		}
 };
 

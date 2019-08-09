@@ -19,7 +19,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20190315.
+Revision 20190809.
 
 Copyright @copyright{} 2005--2007, 2009, 2015--2019 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
@@ -777,7 +777,8 @@ the HMAC based scheme with hashing algorithm SHA-256.
 Defines the symmetric encryption algorithm (sometimes also called cipher) for private channels
 established by the class @code{aiounicast}. The default value is @code{GCRY_CIPHER_AES256}
 @footnote{This is also a constant defined by the GNU Crypto Library.}, i.e.
-the cipher AES256, which is used by LibTMCG in CFB (Cipher Feedback) mode.
+the cipher AES256, which is used by LibTMCG in CFB (Cipher Feedback) or in
+CTR (Counter) mode.
 @end defmac
 
 @defmac TMCG_KEYID_SIZE
@@ -2011,7 +2012,7 @@ must be included in addition to @code{libTMCG.hh}. The use of class
 	results in exorbitant CPU load. The class should be used only, if no
 	select system call is available or appropriate for the application.
 
-	@defop {Constructor} aiounicast_nonblock aiounicast_nonblock (@code{const size_t} n_in, @code{const size_t} j_in, @code{const std::vector<int>& } fd_in_in, @code{const std::vector<int>& } fd_out_in, @code{const std::vector<std::string>& } key_in, @code{const size_t} aio_default_scheduler_in @code{=aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aio_timeout_long}, @code{const bool} aio_is_authenticated_in @code{=true}, @code{const bool} aio_is_encrypted_in @code{=true})
+	@defop {Constructor} aiounicast_nonblock aiounicast_nonblock (@code{const size_t} n_in, @code{const size_t} j_in, @code{const std::vector<int>& } fd_in_in, @code{const std::vector<int>& } fd_out_in, @code{const std::vector<std::string>& } key_in, @code{const size_t} aio_default_scheduler_in @code{=aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aio_timeout_long}, @code{const bool} aio_is_authenticated_in @code{=true}, @code{const bool} aio_is_encrypted_in @code{=true}, @code{const bool} aio_is_chunked_in @code{=false})
 		The constructor initializes internal queues and data structures
 		for asynchronous point-to-point channels connecting @math{n}
 		parties (i.e. @var{n_in}).
@@ -2069,7 +2070,7 @@ must be included in addition to @code{libTMCG.hh}. The use of class
 	to achieve asynchronous I/O. This results in a reasonable CPU load in
 	comparison with @code{aiounicast_nonblock}.
 
-	@defop {Constructor} aiounicast_select aiounicast_select (@code{const size_t} n_in, @code{const size_t} j_in, @code{const std::vector<int>& } fd_in_in, @code{const std::vector<int>& } fd_out_in, @code{const std::vector<std::string>& } key_in, @code{const size_t} aio_default_scheduler_in @code{=aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aio_timeout_long}, @code{const bool} aio_is_authenticated_in @code{=true}, @code{const bool} aio_is_encrypted_in @code{=true})
+	@defop {Constructor} aiounicast_select aiounicast_select (@code{const size_t} n_in, @code{const size_t} j_in, @code{const std::vector<int>& } fd_in_in, @code{const std::vector<int>& } fd_out_in, @code{const std::vector<std::string>& } key_in, @code{const size_t} aio_default_scheduler_in @code{=aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aio_timeout_long}, @code{const bool} aio_is_authenticated_in @code{=true}, @code{const bool} aio_is_encrypted_in @code{=true}, @code{const bool} aio_is_chunked_in @code{=false})
 		The constructor initializes internal queues and data structures
 		for asynchronous point-to-point channels connecting @math{n}
 		parties (i.e. @var{n_in}).
@@ -2082,9 +2083,14 @@ must be included in addition to @code{libTMCG.hh}. The use of class
 		an iteration count of 25.000 and a different constant salt to derive the
 		authentication and the encryption key, respectively.} or pre-shared keys
 		is neccesary, if @var{aio_is_authenticated_in} or @var{aio_is_encrypted_in} is
-		set @code{true}, which is the default behaviour. The default values for
-		timeout (in seconds) and the receive scheduler can be modified carefully 
-		according to the desired usage scenario.
+		set @code{true}, which is the default behaviour. The robustness of I/O
+		stream can be improved, if @var{aio_is_chunked_in} is set to
+		@code{true}.@footnote{The symmetric cipher is operated in CTR mode and
+		the corresponding counter is shipped in each chunk such that the receiver
+		can decrypt out of order. Thus a few missing characters should not lead
+		to a fatal decryption failure.} The default values for timeout (in
+		seconds) and the receive scheduler can be modified carefully according
+		to the desired usage scenario.
 	@end defop
 
 	@deftypemethod aiounicast_select bool Send (@code{mpz_srcptr} m, @code{const size_t} i_in, @code{time_t} timeout @code{=aio_timeout_default})

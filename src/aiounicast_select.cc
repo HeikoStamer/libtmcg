@@ -177,6 +177,7 @@ aiounicast_select::aiounicast_select
 		gcry_cipher_hd_t *enc_in_hd = new gcry_cipher_hd_t();
 		gcry_cipher_hd_t *enc_out_hd = new gcry_cipher_hd_t();
 		enc_in.push_back(enc_in_hd), enc_out.push_back(enc_out_hd);
+		// setup input stream
 		if (aio_is_chunked)
 		{
 			err = gcry_cipher_open(enc_in[i], TMCG_GCRY_ENC_ALGO,
@@ -215,8 +216,22 @@ aiounicast_select::aiounicast_select
 			throw std::invalid_argument("aiounicast_select: libgcrypt failed");
 		}
 		iv_flag_in.push_back(false); // flag means: IV not yet received
-		err = gcry_cipher_open(enc_out[i], TMCG_GCRY_ENC_ALGO,
-			GCRY_CIPHER_MODE_CFB, 0); 				
+		if (aio_is_chunked)
+		{
+			unsigned char *ivcopy = new unsigned char[blklen];
+			iv_in.push_back(ivcopy); // allocate a buffer for IV
+		}
+		// setup output stream
+		if (aio_is_chunked)
+		{
+			err = gcry_cipher_open(enc_out[i], TMCG_GCRY_ENC_ALGO,
+				GCRY_CIPHER_MODE_CTR, 0);
+		}
+		else
+		{
+			err = gcry_cipher_open(enc_out[i], TMCG_GCRY_ENC_ALGO,
+				GCRY_CIPHER_MODE_CFB, 0);
+		}
 		if (err)
 		{
 			aio_is_initialized = false;
@@ -232,25 +247,25 @@ aiounicast_select::aiounicast_select
 				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_select: libgcrypt failed");
 		}
+		gcry_create_nonce(iv, blklen); // unpredictable IV is sufficient
+		if (!aio_is_chunked)
+			err = gcry_cipher_setiv(*enc_out[i], iv, sizeof(iv));
+		if (err)
+		{
+			aio_is_initialized = false;
+			std::cerr << "aiounicast_select: gcry_cipher_setiv() failed" <<
+				std::endl << gcry_strerror(err) << std::endl;
+			throw std::invalid_argument("aiounicast_select: libgcrypt failed");
+		}
+		iv_flag_out.push_back(false); // flag means: IV not yet sent
+		unsigned char *ivcopy = new unsigned char[blklen];
+		memcpy(ivcopy, iv, blklen);
+		iv_out.push_back(ivcopy); // store a copy of the used IV for Send()
 		if (aio_is_chunked)
 		{
-// TODO: gcry_cipher_setctr() should be called later, chunk += 1
-		}
-		else
-		{
-			gcry_create_nonce(iv, blklen); // unpredictable IV is sufficient
-			err = gcry_cipher_setiv(*enc_out[i], iv, sizeof(iv));
-			if (err)
-			{
-				aio_is_initialized = false;
-				std::cerr << "aiounicast_select: gcry_cipher_setiv() failed" <<
-					std::endl << gcry_strerror(err) << std::endl;
-				throw std::invalid_argument("aiounicast_select: libgcrypt failed");
-			}
-			iv_flag_out.push_back(false); // flag means: IV not yet sent
-			unsigned char *ivcopy = new unsigned char[blklen];
-			memcpy(ivcopy, iv, blklen);
-			iv_out.push_back(ivcopy); // store a copy of the used IV for Send()
+			mpz_ptr tmp = new mpz_t();
+			mpz_init_set_ui(tmp, 0UL);
+			chunk_out.push_back(tmp);
 		}
 	}
 }
@@ -275,16 +290,23 @@ bool aiounicast_select::Send
 	size_t size = mpz_sizeinbase(tmp, TMCG_MPZ_IO_BASE);
 	if ((size * 2) >= buf_in_size)
 	{
-		std::cerr << "aiounicast_select: big integer too large" << std::endl;
+		std::cerr << "aiounicast_select: input m too large" << std::endl;
+		mpz_clear(tmp);
 		return false;
 	}
 	size_t bufsize = size + 2;
+	if (blklen > 0)
+	{
+		size_t bufmod = (bufsize - 1) % blklen;
+		if (bufmod > 0)
+			bufsize += (blklen - bufmod);
+	}
 	char *buf = new char[bufsize];
 	memset(buf, 0, bufsize);
 	mpz_get_str(buf, TMCG_MPZ_IO_BASE, tmp);
 	mpz_clear(tmp);
 	// additionally, determine the real size of the corresponding string
-	// because mpz_sizeinbase() sometimes does not work correctly
+	// because mpz_sizeinbase() returns sometimes only an approximation
 	size_t realsize = strnlen(buf, bufsize);
 	if ((realsize > 0) && (realsize < bufsize))
 	{
@@ -306,14 +328,45 @@ bool aiounicast_select::Send
 	//       paradigm', Advances in Cryptology - ASIACRYPT 2000, LNCS 1976,
 	//       pp. 531--545, 2000.
 	gcry_error_t err;
-	// encrypt the content of write buffer (without delimiter) and send the
-	// IV to the receiver
+	// encrypt the content of write buffer and send the IV to the receiver
 	if (aio_is_encrypted)
 	{
+		if (aio_is_chunked)
+		{
+			mpz_add_ui(chunk_out[i_in], chunk_out[i_in], 1UL); // counter++
+			unsigned char ctr[blklen], chunk[blklen];
+			memcpy(ctr, iv_out[i_in], blklen);
+			memset(chunk, 0, blklen);
+			if (mpz_sizeinbase(chunk_out[i_in], 62) > blklen)
+			{
+				std::cerr << "aiounicast_select: counter exceeded" << std::endl;
+				delete [] buf;
+				return false;
+			}
+			mpz_export(chunk, NULL, 1, 1, 1, 0, chunk_out[i_in]);
+			for (size_t c = 0; c < blklen; c++)
+				ctr[c] ^= chunk[c]; 
+			err = gcry_cipher_setctr(*enc_out[i_in], ctr, blklen);
+			if (err)
+			{
+				std::cerr << "aiounicast_select: gcry_cipher_setctr() failed" <<
+					std::endl << gcry_strerror(err) << std::endl;
+				delete [] buf;
+				return false;
+			}
+		}
 		memmove(buf + 1, buf, realsize - 1);
 		buf[0] = '+'; // use plus-character as a non-zero prefix
-		err = gcry_cipher_encrypt(*enc_out[i_in], buf + 1, realsize - 1,
-			NULL, 0);
+		if (aio_is_chunked)
+		{
+			err = gcry_cipher_encrypt(*enc_out[i_in], buf + 1, bufsize - 1,
+				NULL, 0);
+		}
+		else
+		{
+			err = gcry_cipher_encrypt(*enc_out[i_in], buf + 1, realsize - 1,
+				NULL, 0);
+		}
 		if (err)
 		{
 			std::cerr << "aiounicast_select: gcry_cipher_encrypt() failed" <<
@@ -321,14 +374,22 @@ bool aiounicast_select::Send
 			delete [] buf;
 			return false;
 		}
-		numEncrypted += (realsize - 1);
+		if (aio_is_chunked)
+			numEncrypted += bufsize - 1;
+		else
+			numEncrypted += (realsize - 1);
 		// convert encrypted content to mpz and adjust write buffer accordingly
 		mpz_t encval;
-		mpz_init(encval);
-		mpz_import(encval, realsize, 1, 1, 1, 0, buf);
+		mpz_init_set_ui(encval, 0L);
+		if (aio_is_chunked)
+			mpz_import(encval, bufsize, 1, 1, 1, 0, buf);
+		else
+			mpz_import(encval, realsize, 1, 1, 1, 0, buf);
 		delete [] buf;
 		size = mpz_sizeinbase(encval, TMCG_MPZ_IO_BASE);
-		bufsize = size + 2;
+		bufsize = size + 2; // calculate new size of buffer
+		if (aio_is_chunked)
+			bufsize += mpz_sizeinbase(chunk_out[i_in], TMCG_MPZ_IO_BASE) + 2;
 		buf = new char[bufsize];
 		memset(buf, 0, bufsize); // clear write buffer
 		mpz_get_str(buf, TMCG_MPZ_IO_BASE, encval);
@@ -336,8 +397,20 @@ bool aiounicast_select::Send
 		realsize = strnlen(buf, bufsize);
 		if ((realsize > 0) && (realsize < bufsize))
 		{
-			buf[realsize] = '\n'; // set newline as delimiter
-			realsize++;
+			if (aio_is_chunked)
+			{
+				buf[realsize] = '|'; // use another delimiter
+				realsize++;
+				mpz_get_str(buf + realsize, TMCG_MPZ_IO_BASE, chunk_out[i_in]);
+				realsize += strnlen(buf + realsize, bufsize);
+				buf[realsize] = '\n'; // set newline as delimiter
+				realsize++;			
+			}
+			else
+			{
+				buf[realsize] = '\n'; // set newline as delimiter
+				realsize++;
+			}
 		}
 		else
 		{
@@ -420,7 +493,7 @@ bool aiounicast_select::Send
 				iv_flag_out[i_in] = true; // IV has been sent
 		}
 	}
-	// calculate the MAC over all data including the line delimiter
+	// calculate the MAC over all data including delimiters
 	if (aio_is_authenticated)
 	{
 		err = gcry_mac_write(*mac_out[i_in], buf, realsize);
@@ -732,6 +805,67 @@ bool aiounicast_select::Receive
 					// convert and decrypt the corresponding part of read buffer
 					if (aio_is_encrypted)
 					{
+						if (aio_is_chunked)
+						{
+							mpz_t chunkval;
+							mpz_init_set_ui(chunkval, 0UL);
+							for (size_t ptr = 0; ptr < tmplen; ptr++)
+							{
+								if (tmp[ptr] == '|')
+								{
+									if (mpz_set_str(chunkval, tmp + ptr + 1,
+										TMCG_MPZ_IO_BASE) < 0)
+									{
+										std::cerr << "aiounicast_select:" <<
+											" mpz_set_str() for chunkval" <<
+											" failed" << std::endl;
+										mpz_clear(chunkval);
+										delete [] tmp, delete [] mac;
+										return false;
+									}
+std::cerr << "DEBUG: chunkval = " << chunkval << std::endl;
+									unsigned char ctr[blklen], chunk[blklen];
+									memcpy(ctr, iv_in[i_out], blklen);
+									memset(chunk, 0, blklen);
+									if (mpz_sizeinbase(chunkval, 62) > blklen)
+									{
+										std::cerr << "aiounicast_select:" <<
+											" counter exceeded" << std::endl;
+										mpz_clear(chunkval);
+										delete [] tmp, delete [] mac;
+										return false;
+									}
+									mpz_export(chunk, NULL, 1, 1, 1, 0,
+										chunkval);
+									for (size_t c = 0; c < blklen; c++)
+										ctr[c] ^= chunk[c]; 
+									gcry_error_t err =
+										gcry_cipher_setctr(*enc_in[i_out], ctr,
+											blklen);
+									if (err)
+									{
+										std::cerr << "aiounicast_select: " <<
+											"gcry_cipher_setctr() failed" <<
+											std::endl << gcry_strerror(err) <<
+											std::endl;
+										mpz_clear(chunkval);
+										delete [] tmp, delete [] mac;
+										return false;
+									}
+									memset(tmp + ptr, 0, 1);
+									break;
+								}
+							}
+							if (mpz_cmp_ui(chunkval, 0UL) == 0)
+							{
+								std::cerr << "aiounicast_select:" <<
+									" no chunkval found" << std::endl;
+								mpz_clear(chunkval);
+								delete [] tmp, delete [] mac;
+								return false;
+							}
+							mpz_clear(chunkval);
+						}
 						mpz_t encval;
 						mpz_init(encval);
 						if (mpz_set_str(encval, tmp, TMCG_MPZ_IO_BASE) < 0)
@@ -850,15 +984,23 @@ bool aiounicast_select::Receive
 						// take first blklen bytes from sender as IV for cipher
 						if (!iv_flag_in[i_out] && (buf_ptr[i_out] >= blklen))
 						{
-							gcry_error_t err;							
-							err = gcry_cipher_setiv(*enc_in[i_out],
-								buf_in[i_out], blklen);
+							gcry_error_t err = 0;
+							if (aio_is_chunked)
+							{
+								memcpy(iv_in[i_out], buf_in[i_out], blklen);
+							}
+							else
+							{
+								err = gcry_cipher_setiv(*enc_in[i_out],
+									buf_in[i_out], blklen);
+							}
 							if (err)
 							{
 								aio_is_initialized = false;
 								std::cerr << "aiounicast_select:" <<
-									" gcry_cipher_setiv() failed" << std::endl <<
-									gcry_strerror(err) << std::endl;
+									" gcry_cipher_setiv() failed" <<
+									std::endl << gcry_strerror(err) <<
+									std::endl;
 							}
 							iv_flag_in[i_out] = true; // IV is set
 							num = buf_ptr[i_out] - blklen; // # of remaining bytes
@@ -976,6 +1118,7 @@ aiounicast_select::~aiounicast_select
 	fd_in.clear(), fd_out.clear();
 	for (size_t i = 0; i < n; i++)
 	{
+		// release buffers
 		delete [] buf_in[i];
 		while (buf_mpz[i].size())
 		{
@@ -990,18 +1133,26 @@ aiounicast_select::~aiounicast_select
 			gcry_mac_close(*mac_in[i]), gcry_mac_close(*mac_out[i]);
 			delete mac_in[i], delete mac_out[i];
 		}
-		// release ciphers
+		// release ciphers and IV buffers
 		if (aio_is_encrypted)
 		{
 			gcry_cipher_close(*enc_in[i]), gcry_cipher_close(*enc_out[i]);
 			delete enc_in[i], delete enc_out[i];
 			delete [] iv_out[i];
 		}
+		if (aio_is_chunked)
+			delete [] iv_in[i];
 	}
 	buf_in.clear(), buf_ptr.clear(), buf_flag.clear();
 	buf_mpz.clear();
-	iv_out.clear(), iv_flag_in.clear(), iv_flag_out.clear();
+	iv_in.clear(), iv_out.clear(), iv_flag_in.clear(), iv_flag_out.clear();
 	mac_in.clear(), mac_out.clear();
 	enc_in.clear(), enc_out.clear();
+	for (size_t i = 0; i < chunk_out.size(); i++)
+	{
+		mpz_clear(chunk_out[i]);
+		delete [] chunk_out[i];
+	}
+	chunk_out.clear();
 }
 
