@@ -1139,9 +1139,9 @@ aiounicast_select::~aiounicast_select
 			gcry_cipher_close(*enc_in[i]), gcry_cipher_close(*enc_out[i]);
 			delete enc_in[i], delete enc_out[i];
 			delete [] iv_out[i];
+			if (aio_is_chunked)
+				delete [] iv_in[i];
 		}
-		if (aio_is_chunked)
-			delete [] iv_in[i];
 	}
 	buf_in.clear(), buf_ptr.clear(), buf_flag.clear();
 	buf_mpz.clear();
