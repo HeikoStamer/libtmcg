@@ -220,6 +220,9 @@ aiounicast_select::aiounicast_select
 		{
 			unsigned char *ivcopy = new unsigned char[blklen];
 			iv_in.push_back(ivcopy); // allocate a buffer for IV
+			mpz_ptr tmp = new mpz_t();
+			mpz_init_set_ui(tmp, 0UL);
+			chunk_in.push_back(tmp); // chunk counter
 		}
 		// setup output stream
 		if (aio_is_chunked)
@@ -265,7 +268,7 @@ aiounicast_select::aiounicast_select
 		{
 			mpz_ptr tmp = new mpz_t();
 			mpz_init_set_ui(tmp, 0UL);
-			chunk_out.push_back(tmp);
+			chunk_out.push_back(tmp); // chunk counter
 		}
 	}
 }
@@ -823,7 +826,7 @@ bool aiounicast_select::Receive
 										delete [] tmp, delete [] mac;
 										return false;
 									}
-std::cerr << "DEBUG: chunkval = " << chunkval << std::endl;
+//std::cerr << "DEBUG: chunkval = " << chunkval << std::endl;
 									unsigned char ctr[blklen], chunk[blklen];
 									memcpy(ctr, iv_in[i_out], blklen);
 									memset(chunk, 0, blklen);
@@ -860,6 +863,17 @@ std::cerr << "DEBUG: chunkval = " << chunkval << std::endl;
 							{
 								std::cerr << "aiounicast_select:" <<
 									" no chunkval found" << std::endl;
+								mpz_clear(chunkval);
+								delete [] tmp, delete [] mac;
+								return false;
+							}
+							mpz_add_ui(chunk_in[i_out], chunk_in[i_out], 1UL);
+							if (mpz_cmp(chunk_in[i_out], chunkval) > 0)
+							{
+								std::cerr << "aiounicast_select:" <<
+									" internal counter > chunkval" <<
+									" (" << chunk_in[i_out] << " > " <<
+									chunkval << ")" << std::endl;
 								mpz_clear(chunkval);
 								delete [] tmp, delete [] mac;
 								return false;
@@ -1154,5 +1168,11 @@ aiounicast_select::~aiounicast_select
 		delete [] chunk_out[i];
 	}
 	chunk_out.clear();
+	for (size_t i = 0; i < chunk_in.size(); i++)
+	{
+		mpz_clear(chunk_in[i]);
+		delete [] chunk_in[i];
+	}
+	chunk_in.clear();
 }
 

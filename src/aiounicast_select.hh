@@ -51,7 +51,7 @@ class aiounicast_select : public aiounicast
 		size_t								maclen, keylen, blklen;
 		std::vector<gcry_mac_hd_t*>			mac_in, mac_out;
 		std::vector<gcry_cipher_hd_t*>		enc_in, enc_out;
-		std::vector<mpz_ptr>				chunk_out;
+		std::vector<mpz_ptr>				chunk_out, chunk_in;
 
 	public:
 		aiounicast_select
