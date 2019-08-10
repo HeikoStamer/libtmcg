@@ -142,6 +142,7 @@ aiounicast_select::aiounicast_select
 				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_select: libgcrypt failed");
 		}
+		bad_auth.push_back(false);
 	}
 
 	// initialize ciphers
@@ -784,6 +785,7 @@ bool aiounicast_select::Receive
 							return false;
 						}
 						numAuthenticated += 1;
+						bad_auth[i_out] = false;
 						err = gcry_mac_verify(*mac_in[i_out], mac, maclen);
 						if (err)
 						{
@@ -791,6 +793,7 @@ bool aiounicast_select::Receive
 								" gcry_mac_verify() for " << j << " from " <<
 								i_out << " failed" << std::endl <<
 								gcry_strerror(err) << std::endl;
+							bad_auth[i_out] = true;
 							err = gcry_mac_reset(*mac_in[i_out]);
 							delete [] tmp, delete [] mac;
 							return false;
@@ -1104,20 +1107,33 @@ bool aiounicast_select::Receive
 		if (scheduler == aio_scheduler_direct)
 			i = i_out;
 		mpz_ptr tmp = new mpz_t();
-		mpz_init(tmp);
+		mpz_init_set_ui(tmp, 0UL);
 		if (Receive(tmp, i, scheduler, 0))
 		{
 			buf_mpz[i].push_back(tmp);
 		}
 		else
 		{
-			mpz_clear(tmp);
-			delete [] tmp;
 			// error at Receive()?
 			if (i < n)
 			{
+				if (aio_is_authenticated && bad_auth[i])
+				{
+					// store dummy value (0UL) to preserve array structure of m
+					buf_mpz[i].push_back(tmp);
+				}
+				else
+				{
+					mpz_clear(tmp);
+					delete [] tmp;
+				}
 				i_out = i;
 				return false;
+			}
+			else
+			{
+				mpz_clear(tmp);
+				delete [] tmp;
 			}
 		}
 	}
@@ -1174,5 +1190,6 @@ aiounicast_select::~aiounicast_select
 		delete [] chunk_in[i];
 	}
 	chunk_in.clear();
+	bad_auth.clear();
 }
 

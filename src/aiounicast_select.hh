@@ -52,6 +52,7 @@ class aiounicast_select : public aiounicast
 		std::vector<gcry_mac_hd_t*>			mac_in, mac_out;
 		std::vector<gcry_cipher_hd_t*>		enc_in, enc_out;
 		std::vector<mpz_ptr>				chunk_out, chunk_in;
+		std::vector<bool>					bad_auth;
 
 	public:
 		aiounicast_select
