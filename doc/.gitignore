@@ -2,6 +2,7 @@ mdate-sh
 stamp-vti
 texinfo.tex
 Makefile
+libTMCG.t2p
 *.pdf
 *.info
 *.in
