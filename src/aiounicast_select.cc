@@ -891,7 +891,7 @@ bool aiounicast_select::Receive
 							{
 								std::cerr << "aiounicast_select:" <<
 									" internal counter < chunkval" <<
-									" (" << chunk_in[i_out] << " > " <<
+									" (" << chunk_in[i_out] << " < " <<
 									chunkval << ")" << std::endl;
 								mpz_set(chunk_in[i_out], chunkval);
 							}
