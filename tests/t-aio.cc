@@ -120,6 +120,7 @@ void start_instance_nonblock
 				}
 				// send array of K big random numbers
 				std::vector<mpz_ptr> mm;
+				std::vector<mpz_srcptr> cmm;
 				for (size_t k = 0; k < K; k++)
 				{
 					mpz_ptr tmp = new mpz_t();
@@ -128,11 +129,15 @@ void start_instance_nonblock
 				}
 				for (size_t i = 0; i < N; i++)
 				{
-					for (size_t k = 0; !corrupted && (k < K); k++)
+					for (size_t k = 0; k < K; k++)
 					{
-						tmcg_mpz_wrandomb(m, TMCG_DDH_SIZE);
-						mpz_mul_ui(m, m, (i + k + 1));
-						ret = aiou->Send(m, i);
+						tmcg_mpz_wrandomb(mm[k], TMCG_DDH_SIZE);
+						mpz_mul_ui(mm[k], mm[k], (i + k + 1));
+						cmm.push_back(mm[k]);
+					}
+					if (!corrupted)
+					{
+						ret = aiou->Send(cmm, i);
 						assert(ret);
 					}
 				}
@@ -163,7 +168,7 @@ void start_instance_nonblock
 					mpz_clear(mm[k]);
 					delete [] mm[k];
 				}
-				mm.clear();
+				mm.clear(), cmm.clear();
 
 				// release handles (unicast channel)
 				uP_in.clear(), uP_out.clear(), uP_key.clear();
@@ -262,6 +267,7 @@ void start_instance_select
 				}
 				// send array of K big random numbers
 				std::vector<mpz_ptr> mm;
+				std::vector<mpz_srcptr> cmm;
 				for (size_t k = 0; k < K; k++)
 				{
 					mpz_ptr tmp = new mpz_t();
@@ -270,11 +276,15 @@ void start_instance_select
 				}
 				for (size_t i = 0; i < N; i++)
 				{
-					for (size_t k = 0; !corrupted && (k < K); k++)
+					for (size_t k = 0; k < K; k++)
 					{
-						tmcg_mpz_wrandomb(m, TMCG_DDH_SIZE);
-						mpz_mul_ui(m, m, (i + k + 1));
-						ret = aiou->Send(m, i);
+						tmcg_mpz_wrandomb(mm[k], TMCG_DDH_SIZE);
+						mpz_mul_ui(mm[k], mm[k], (i + k + 1));
+						cmm.push_back(mm[k]);
+					}
+					if (!corrupted)
+					{
+						ret = aiou->Send(cmm, i);
 						assert(ret);
 					}
 				}
@@ -305,7 +315,7 @@ void start_instance_select
 					mpz_clear(mm[k]);
 					delete [] mm[k];
 				}
-				mm.clear();
+				mm.clear(), cmm.clear();
 
 				// release handles (unicast channel)
 				uP_in.clear(), uP_out.clear(), uP_key.clear();

@@ -682,6 +682,12 @@ bool aiounicast_select::Send
 		if (!Send(m[mm], i_in, timeout))
 			return false;
 	}
+	if (aio_is_chunked)
+	{
+		// send a delimiter for the array
+		if (!Send(aio_array_delimiter, i_in, timeout))
+			return false;
+	}
 	return true;
 }
 
@@ -881,6 +887,14 @@ bool aiounicast_select::Receive
 								delete [] tmp, delete [] mac;
 								return false;
 							}
+							else if (mpz_cmp(chunk_in[i_out], chunkval) < 0)
+							{
+								std::cerr << "aiounicast_select:" <<
+									" internal counter < chunkval" <<
+									" (" << chunk_in[i_out] << " > " <<
+									chunkval << ")" << std::endl;
+								mpz_set(chunk_in[i_out], chunkval);
+							}
 							mpz_clear(chunkval);
 						}
 						mpz_t encval;
@@ -1046,7 +1060,9 @@ bool aiounicast_select::Receive
 	}
 	while (time(NULL) < (entry_time + timeout));
 	if (scheduler != aio_scheduler_direct)
+	{
 		i_out = n; // timeout for some (unknown) parties
+	}
 	else
 	{
 		std::cerr << "aiounicast_select(" << j << "):" <<
@@ -1089,10 +1105,11 @@ bool aiounicast_select::Receive
 				i_out = n;
 				return false;
 		}
-		// return, if enough messages are received from i_out
-		if (buf_mpz[i_out].size() >= m.size())
+		// deliver, if enough single messages are received from i_out
+		if ((!aio_is_chunked && (buf_mpz[i_out].size() >= m.size())) ||
+			(aio_is_chunked && (buf_mpz[i_out].size() >= (m.size() + 1))))
 		{
-			// copy results and release buffer
+			// copy results and cleanup buffer
 			for (size_t mm = 0; mm < m.size(); mm++)
 			{
 				mpz_set(m[mm], buf_mpz[i_out].front());
@@ -1100,7 +1117,56 @@ bool aiounicast_select::Receive
 				delete [] buf_mpz[i_out].front();
 				buf_mpz[i_out].pop_front();
 			}
-			return true;
+			if (!aio_is_chunked)
+				return true;
+			if (mpz_cmp(aio_array_delimiter, buf_mpz[i_out].front()) == 0)
+			{
+				// remove array delimiter from buffer
+				mpz_clear(buf_mpz[i_out].front());
+				delete [] buf_mpz[i_out].front();
+				buf_mpz[i_out].pop_front();
+				return true;
+			}
+			else
+			{
+				std::cerr << "aiounicast_select(" << j << "): array from " <<
+					i_out << " out of order; discard some data" << std::endl;
+				// discard data until array delimiter is found
+				bool delimiter_found = false;
+				for (size_t mm = 1; mm <= m.size(); mm++)
+				{
+					size_t mi = m.size() - mm;
+					if (delimiter_found)
+					{
+						std::cerr << "aiounicast_select(" << j << "):" <<
+							" discard m[" << mi << "] = " << m[mi] << std::endl;
+					}
+					else if (mpz_cmp(aio_array_delimiter, m[mi]) == 0)
+					{
+						delimiter_found = true;
+					}
+					else
+					{
+						// reinsert element to buffer
+						mpz_ptr tmp = new mpz_t();
+						mpz_init_set(tmp, m[mi]);
+						buf_mpz[i_out].push_front(tmp);
+					}
+				}
+				if (!delimiter_found)
+				{
+					std::cerr << "aiounicast_select(" << j << "): no array" <<
+							" delimiter found; cleanup buffer" << std::endl;
+					// cleanup buffer
+					for (size_t mm = 0; mm < m.size(); mm++)
+					{
+						mpz_set(m[mm], buf_mpz[i_out].front());
+						mpz_clear(buf_mpz[i_out].front());
+						delete [] buf_mpz[i_out].front();
+						buf_mpz[i_out].pop_front();
+					}
+				}
+			}
 		}
 		// receive a message according to the given scheduler
 		size_t i = n;
@@ -1114,26 +1180,13 @@ bool aiounicast_select::Receive
 		}
 		else
 		{
-			// error at Receive()?
+			mpz_clear(tmp);
+			delete [] tmp;
+			// error or timeout at Receive()?
 			if (i < n)
 			{
-				if (aio_is_authenticated && bad_auth[i])
-				{
-					// store dummy value (0UL) to preserve array structure of m
-					buf_mpz[i].push_back(tmp);
-				}
-				else
-				{
-					mpz_clear(tmp);
-					delete [] tmp;
-				}
 				i_out = i;
 				return false;
-			}
-			else
-			{
-				mpz_clear(tmp);
-				delete [] tmp;
 			}
 		}
 	}

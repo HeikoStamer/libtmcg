@@ -43,6 +43,7 @@ class aiounicast
 		const bool					aio_is_chunked;
 		bool						aio_is_initialized;
 		mpz_t						aio_hide_length;
+		mpz_t						aio_array_delimiter;
 
 	public:
 		static const time_t			aio_timeout_none			= 0;
@@ -85,8 +86,9 @@ class aiounicast
 				n(n_in), j(j_in), numWrite(0), numRead(0), numEncrypted(0),
 				numDecrypted(0), numAuthenticated(0)
 		{
-			mpz_init_set_ui(aio_hide_length, 1L);
+			mpz_init_set_ui(aio_hide_length, 1UL);
 			mpz_mul_2exp(aio_hide_length, aio_hide_length, TMCG_AIO_HIDE_SIZE);
+			mpz_init_set_ui(aio_array_delimiter, 4242424242UL);
 		}
 
 		virtual bool Send
@@ -127,6 +129,7 @@ class aiounicast
 			()
 		{
 			mpz_clear(aio_hide_length);
+			mpz_clear(aio_array_delimiter);
 		}
 };
 
