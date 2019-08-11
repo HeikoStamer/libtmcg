@@ -566,8 +566,8 @@ class TMCG_OpenPGP_Signature
 		tmcg_openpgp_octets_t								keyprefs_pca;
 		tmcg_openpgp_octets_t								keyprefs_paa;
 		std::vector<tmcg_openpgp_revkey_t>					revkeys;
-		tmcg_openpgp_octets_t								embeddedsig;
-		tmcg_openpgp_octets_t								recipientfpr;
+		tmcg_openpgp_octets_t								embeddedsig; // TODO: should be a vector
+		tmcg_openpgp_octets_t								recipientfpr; // TODO: should be a vector
 
 		TMCG_OpenPGP_Signature
 			(const bool										revocable_in,
