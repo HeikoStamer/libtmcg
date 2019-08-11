@@ -1112,6 +1112,22 @@ bool TMCG_OpenPGP_Signature::Verify
 bool TMCG_OpenPGP_Signature::operator <
 	(const TMCG_OpenPGP_Signature &that) const
 {
+	if (creationtime == that.creationtime)
+	{
+		size_t len_compare = std::min(issuerfpr.size(), that.issuerfpr.size());
+		for (size_t i = 0; i < len_compare; i++)
+		{
+			if (issuerfpr[i] != that.issuerfpr[i])
+				return (issuerfpr[i] < that.issuerfpr[i]);
+		}
+		len_compare = std::min(packet.size(), that.packet.size());
+		for (size_t i = 0; i < len_compare; i++)
+		{
+			if (packet[i] != that.packet[i])
+				return (packet[i] < that.packet[i]);
+		}
+		return false;
+	}
 	return (creationtime < that.creationtime);
 }
 
