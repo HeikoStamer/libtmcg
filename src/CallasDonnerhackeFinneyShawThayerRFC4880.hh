@@ -464,6 +464,8 @@ typedef struct
 	size_t						embeddedsignaturelen;
 	tmcg_openpgp_byte_t			issuerkeyversion;
 	tmcg_openpgp_byte_t			issuerfingerprint[32]; // SHA-1 or SHA256
+	tmcg_openpgp_byte_t			recipientkeyversion;
+	tmcg_openpgp_byte_t			recipientfingerprint[32]; // SHA-1 or SHA256
 	tmcg_openpgp_byte_t			left[2];
 	gcry_mpi_t					md;
 	gcry_mpi_t					r;
@@ -565,6 +567,7 @@ class TMCG_OpenPGP_Signature
 		tmcg_openpgp_octets_t								keyprefs_paa;
 		std::vector<tmcg_openpgp_revkey_t>					revkeys;
 		tmcg_openpgp_octets_t								embeddedsig;
+		tmcg_openpgp_octets_t								recipientfpr;
 
 		TMCG_OpenPGP_Signature
 			(const bool										revocable_in,
@@ -588,7 +591,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_paa_in,
-			 const tmcg_openpgp_octets_t					&embeddedsig_in);
+			 const tmcg_openpgp_octets_t					&embeddedsig_in,
+			 const tmcg_openpgp_octets_t					&recipientfpr_in);
 		TMCG_OpenPGP_Signature
 			(const bool										revocable_in,
 			 const bool										exportable_in,
@@ -612,7 +616,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_paa_in,
-			 const tmcg_openpgp_octets_t					&embeddedsig_in);
+			 const tmcg_openpgp_octets_t					&embeddedsig_in,
+			 const tmcg_openpgp_octets_t					&recipientfpr_in);
 		bool Good
 			() const;
 		void PrintInfo
