@@ -106,6 +106,7 @@ class CachinKursawePetzoldShoupRBC
 	
 	public:
 		size_t									n, t, j;
+		std::map<std::string, std::string>		ID_log;
 
 		CachinKursawePetzoldShoupRBC
 			(const size_t n_in,

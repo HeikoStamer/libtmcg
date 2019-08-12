@@ -285,7 +285,13 @@ void start_instance
 		else
 			rbc->Sync();
 			
-		// release RBC			
+		// release RBC
+		for (std::map<std::string, std::string>::const_iterator
+			mi = ID_log.begin(); mi != ID_log.end(); ++mi)
+		{
+			std::cout << "P_" << whoami << ": ID_log[" << mi->first << "]" <<
+				" = " << mi->second << std::endl;
+		}
 		delete rbc;
 
 		// release handles and asynchronous broadcast channels
