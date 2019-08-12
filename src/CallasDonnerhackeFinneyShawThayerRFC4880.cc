@@ -17692,10 +17692,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				emsg = true;
 				break;
 			case 19: // Modification Detection Code
-				if (cmsg || !lmsg || emsg)
-					ret = false; // OpenPGP structure error detected
-				else
-					ret = MessageParse_Tag19(ctx, verbose, current_packet, msg);
+				ret = MessageParse_Tag19(ctx, verbose, current_packet, msg);
 				if (!smsg)
 					stop = true; // ensures well-formedness of OpenPGP message
 				break;
