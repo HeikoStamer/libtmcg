@@ -17597,38 +17597,37 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 		switch (ptag)
 		{
 			case 1: // Public-Key Encrypted Session Key
-				emsg = true;
-				if (cmsg || lmsg || smsg)
+				if (cmsg || lmsg)
 					ret = false; // OpenPGP structure error detected
 				else
 					ret = MessageParse_Tag1(ctx, verbose, current_packet, msg);
+				emsg = true;
 				break;
 			case 2: // Signature
-				smsg = true;
-				if (cmsg || lmsg || emsg)
+				if ((cmsg || lmsg || emsg) && !smsg)
 					ret = false; // OpenPGP structure error detected
 				else
 					ret = MessageParse_Tag2(ctx, verbose, current_packet, msg);
+				smsg = true;
 				break;
 			case 3: // Symmetric-Key Encrypted Session Key
-				emsg = true;
-				if (cmsg || lmsg || smsg)
+				if (cmsg || lmsg)
 					ret = false; // OpenPGP structure error detected
 				else
 					ret = MessageParse_Tag3(ctx, verbose, current_packet, msg);
+				emsg = true;
 				break;
 			case 4: // One-Pass Signature
-				smsg = true;
-				if (cmsg || lmsg || emsg)
+				if ((cmsg || lmsg || emsg) && !smsg)
 					ret = false; // OpenPGP structure error detected
 				if (verbose)
 				{
 					std::cerr << "WARNING: one-pass signature OpenPGP packet" <<
 						" found; not supported and ignored" << std::endl;
 				}
+				smsg = true;
 				break;
 			case 8: // Compressed Data
-				cmsg = true;
 				if (ctx.indetlen && msg->have_seipd &&
 					((msg->mdc).size() == 0) && (ctx.compdatalen > 22))
 				{
@@ -17645,21 +17644,22 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 						current_packet.pop_back();
 					}
 				}
-				if (lmsg || emsg || smsg)
+				if (cmsg || lmsg || emsg)
 					ret = false; // OpenPGP structure error detected
 				else
 					ret = MessageParse_Tag8(ctx, verbose, current_packet, msg);
-				stop = true; // ensures well-formedness of an OpenPGP message
+				cmsg = true;
 				break;
 			case 9: // Symmetrically Encrypted Data
-				if (cmsg || lmsg || smsg)
+				if (cmsg || lmsg)
 					ret = false; // OpenPGP structure error detected
 				else
 					ret = MessageParse_Tag9(ctx, verbose, current_packet, msg);
-				stop = true; // ensures well-formedness of an OpenPGP message
+				if (!smsg)
+					stop = true; // ensures well-formedness of OpenPGP message
+				emsg = true;
 				break;
 			case 11: // Literal Data
-				lmsg = true;
 				if (ctx.indetlen && msg->have_seipd &&
 					((msg->mdc).size() == 0) && (ctx.datalen > 22))
 				{
@@ -17676,31 +17676,37 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 						current_packet.pop_back();
 					}
 				}
-				if (cmsg || emsg || smsg)
+				if (cmsg || lmsg || emsg)
 					ret = false; // OpenPGP structure error detected
 				else
 					ret = MessageParse_Tag11(ctx, verbose, current_packet, msg);
+				lmsg = true;
 				break;
 			case 18: // Symmetrically Encrypted Integrity Protected Data
-				if (cmsg || lmsg || smsg)
+				if (cmsg || lmsg)
 					ret = false; // OpenPGP structure error detected
 				else
 					ret = MessageParse_Tag18(ctx, verbose, current_packet, msg);
-				stop = true; // ensures well-formedness of an OpenPGP message
+				if (!smsg)
+					stop = true; // ensures well-formedness of OpenPGP message
+				emsg = true;
 				break;
 			case 19: // Modification Detection Code
-				if (cmsg || emsg || smsg)
+				if (cmsg || !lmsg || emsg)
 					ret = false; // OpenPGP structure error detected
 				else
 					ret = MessageParse_Tag19(ctx, verbose, current_packet, msg);
-				stop = true; // ensures well-formedness of an OpenPGP message
+				if (!smsg)
+					stop = true; // ensures well-formedness of OpenPGP message
 				break;
 			case 20: // AEAD Encrypted Data [draft RFC 4880bis]
-				if (cmsg || lmsg || smsg)
+				if (cmsg || lmsg)
 					ret = false; // OpenPGP structure error detected
 				else
 					ret = MessageParse_Tag20(ctx, verbose, current_packet, msg);
-				stop = true; // ensures well-formedness of an OpenPGP message
+				if (!smsg)
+					stop = true; // ensures well-formedness of OpenPGP message
+				emsg = true;
 				break;
 			default:
 				if (verbose > 1)
