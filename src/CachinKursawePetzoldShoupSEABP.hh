@@ -85,6 +85,7 @@ class CachinKursawePetzoldShoupRBC
 		std::vector<mpz_ptr>					deliver_s;
 		aiounicast*								aiou;
 		static const size_t						sync_slices = 10;
+		size_t									fifo_skip;
 
 		void InitializeMessage
 			(RBC_Message &message);
@@ -112,7 +113,8 @@ class CachinKursawePetzoldShoupRBC
 			 const size_t j_in,
 			 aiounicast* aiou_in,
 			 const size_t scheduler_in = aiounicast::aio_scheduler_roundrobin,
-			 const time_t timeout_in = aiounicast::aio_timeout_extremely_long);
+			 const time_t timeout_in = aiounicast::aio_timeout_extremely_long,
+			 const size_t fifo_skip_in = 0);
 		void setID
 			(const std::string &ID_in);
 		void recoverID

@@ -46,8 +46,9 @@
 CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	(const size_t n_in, const size_t t_in, const size_t j_in,
 	aiounicast *aiou_in, const size_t scheduler_in,
-	const time_t timeout_in):
-		aio_timeout_vs(aiou_in->aio_timeout_very_short) // timeout for sending
+	const time_t timeout_in, const size_t fifo_skip_in):
+		aio_timeout_vs(aiou_in->aio_timeout_very_short), // timeout for sending
+		fifo_skip(fifo_skip_in)
 {
 	if (t_in > n_in)
 		throw std::invalid_argument("RBC: t > n");
@@ -422,6 +423,9 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 	do
 	{
 		// first, process the delivery buffer
+		mpz_t max_s[n], min_s[n];
+		for (size_t i = 0; i < n; i++)
+			mpz_init_set_ui(max_s[i], 0UL), mpz_init_set_ui(min_s[i], 0UL);
 		for (RBC_VectorList::iterator lit = deliver_buf.begin();
 			lit != deliver_buf.end(); ++lit)
 		{
@@ -433,9 +437,8 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			if (!mpz_cmp((*lit)[0], ID) && !mpz_cmp((*lit)[2], deliver_s[who]))
 			{
 				if (mbar.count(tag) == 0)
-					throw std::runtime_error("RBC::Deliver(): no mbar found");
+					throw std::runtime_error("RBC::Deliver(): mbar not found");
 				mpz_set(m, mbar[tag]);
-//std::cerr << "RBC: restores deliver from " << who << " m = " << m << std::endl;
 				// increase sequence counter
 				mpz_add_ui(deliver_s[who], deliver_s[who], 1UL);
 				i_out = who;
@@ -445,9 +448,28 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				mpz_clear(foo);
 				// release message
 				ReleaseMessage(message);
+				// release max_s and min_s
+				for (size_t i = 0; i < n; i++)
+					mpz_clear(max_s[i]), mpz_clear(min_s[i]);
 				return true;
 			}
+			// check for matching tag and greater sequence counter
+			if (!mpz_cmp((*lit)[0], ID) &&
+				(mpz_cmp((*lit)[2], deliver_s[who]) > 0))
+			{
+// TODO: set max_s to maximum and min_s to minimum
+			}
+			// check for matching tag and lower sequence counter
+			if (!mpz_cmp((*lit)[0], ID) &&
+				(mpz_cmp((*lit)[2], deliver_s[who]) > 0))
+			{
+// TODO: remove old message from buffer
+			}
 		}
+		// skip FIFO ordering, if (max_s - min_s) > fifo_skip for some party
+// TODO: set sequence counter to min_s
+		for (size_t i = 0; i < n; i++)
+			mpz_clear(max_s[i]), mpz_clear(min_s[i]);
 		// second, anything buffered from previous calls/rounds?
 		size_t l = n;
 		for (size_t i = 0; i < n; i++)
@@ -742,9 +764,10 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				if (!mpz_cmp(message[0], ID) &&
 					mpz_cmp(message[2], deliver_s[who]))
 				{
-					std::cerr << "RBC(" << j << "): WARNING - sequence counter does" <<
-						" not match for " << who << " (" << message[2] <<
-						" vs " << deliver_s[who] << ")" << std::endl;
+					std::cerr << "RBC(" << j << "): WARNING - sequence" <<
+						" counter does not match for " << who << " (" <<
+						message[2] << " vs " << deliver_s[who] << ")" <<
+						std::endl;
 				}
 				// buffer the acknowledged message for later delivery
 				RBC_Message vtmp;
@@ -757,7 +780,8 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		}
 		else if (!mpz_cmp(message[3], r_ready) && ready[l].count(tag))
 		{
-			std::cerr << "RBC(" << j << "): received r-ready for same tag more than once from " << l << std::endl;
+			std::cerr << "RBC(" << j << "): received r-ready for same tag" <<
+				" more than once from " << l << std::endl;
 			continue;
 		}
 		// upon receiving message $(ID.j.s, r-request) from $P_l$ for the first time
