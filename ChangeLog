@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-08-12] RFC4880: improved MessageParse() for detecting invalid structure
 * [2019-08-11] RFC4880: added Intended Recipient Fingerprint subpacket
                cf. https://gitlab.com/openpgp-wg/rfc4880bis/merge_requests/19
 * [2019-08-11] RFC4880: improved TMCG_OpenPGP_Signature::operator < according

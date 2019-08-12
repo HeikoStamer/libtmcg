@@ -17519,7 +17519,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 	tmcg_openpgp_octets_t pkts;
 	pkts.insert(pkts.end(), in.begin(), in.end());
 	// parse the message packet by packet
-	bool stop = false, kseq = false;
+	bool stop = false, cmsg = false, lmsg = false, emsg = false, smsg = false;
 	tmcg_openpgp_byte_t ptag = 0xFF;
 	size_t pnum = 0;
 	while (pkts.size() && !stop)
@@ -17531,83 +17531,113 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 		ptag = PacketDecode(pkts, verbose, ctx, current_packet, notations);
 		++pnum;
 		if (verbose > 2)
+		{
 			std::cerr << "INFO: PacketDecode() = " <<
 				(int)ptag << " version = " << (int)ctx.version << std::endl;
+		}
 		if (ptag == 0x00)
 		{
 			if (verbose)
+			{
 				std::cerr << "ERROR: decoding OpenPGP packets failed " <<
 					"at packet #" << pnum << std::endl;
+			}
 			PacketContextRelease(ctx);
 			return false;
 		}
 		else if (ptag == 0xFA)
 		{
 			if (verbose)
+			{
 				std::cerr << "WARNING: unrecognized critical OpenPGP " <<
 					"subpacket found at #" << pnum << std::endl;
+			}
 			PacketContextRelease(ctx);
 			continue; // ignore signature with critical subpacket
 		}
 		else if (ptag == 0xFB)
 		{
 			if (verbose)
+			{
 				std::cerr << "WARNING: unrecognized OpenPGP subpacket " <<
 					"found at #" << pnum << std::endl;
+			}
 			ptag = 0x02; // process signature
 		}
 		else if (ptag == 0xFC)
 		{
 			if (verbose)
+			{
 				std::cerr << "WARNING: unrecognized OpenPGP signature " <<
 					"packet found at #" << pnum << std::endl;
+			}
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
 		else if (ptag == 0xFD)
 		{
 			if (verbose)
+			{
 				std::cerr << "WARNING: unrecognized OpenPGP key packet " <<
 					"found at #" << pnum << std::endl;
+			}
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
 		else if (ptag == 0xFE)
 		{
 			if (verbose)
+			{
 				std::cerr << "WARNING: unrecognized OpenPGP packet " <<
 					"found at #" << pnum << std::endl;
+			}
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
 		switch (ptag)
 		{
 			case 1: // Public-Key Encrypted Session Key
-				ret = MessageParse_Tag1(ctx, verbose, current_packet, msg);
-				kseq = true;
+				emsg = true;
+				if (cmsg || lmsg || smsg)
+					ret = false; // OpenPGP structure error detected
+				else
+					ret = MessageParse_Tag1(ctx, verbose, current_packet, msg);
 				break;
 			case 2: // Signature
-				ret = MessageParse_Tag2(ctx, verbose, current_packet, msg);
-				if (kseq)
-					ret = false; // ESK sequence detected
+				smsg = true;
+				if (cmsg || lmsg || emsg)
+					ret = false; // OpenPGP structure error detected
+				else
+					ret = MessageParse_Tag2(ctx, verbose, current_packet, msg);
 				break;
 			case 3: // Symmetric-Key Encrypted Session Key
-				ret = MessageParse_Tag3(ctx, verbose, current_packet, msg);
-				kseq = true;
+				emsg = true;
+				if (cmsg || lmsg || smsg)
+					ret = false; // OpenPGP structure error detected
+				else
+					ret = MessageParse_Tag3(ctx, verbose, current_packet, msg);
 				break;
 			case 4: // One-Pass Signature
+				smsg = true;
+				if (cmsg || lmsg || emsg)
+					ret = false; // OpenPGP structure error detected
 				if (verbose)
+				{
 					std::cerr << "WARNING: one-pass signature OpenPGP packet" <<
 						" found; not supported and ignored" << std::endl;
+				}
 				break;
 			case 8: // Compressed Data
+				cmsg = true;
 				if (ctx.indetlen && msg->have_seipd &&
 					((msg->mdc).size() == 0) && (ctx.compdatalen > 22))
 				{
 					// handle MDC, if COMP packet has indeterminate length
 					if (verbose)
+					{
 						std::cerr << "WARNING: assume MDC at the end of COMP" <<
 							" packet (indeterminate length)" << std::endl;
+					}
 					ctx.compdatalen -= 22;
 					for (size_t i = 0; i < 22; i++)
 					{
@@ -17615,22 +17645,30 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 						current_packet.pop_back();
 					}
 				}
-				ret = MessageParse_Tag8(ctx, verbose, current_packet, msg);
-				if (kseq)
-					ret = false; // ESK sequence detected
+				if (lmsg || emsg || smsg)
+					ret = false; // OpenPGP structure error detected
+				else
+					ret = MessageParse_Tag8(ctx, verbose, current_packet, msg);
+				stop = true; // ensures well-formedness of an OpenPGP message
 				break;
 			case 9: // Symmetrically Encrypted Data
-				ret = MessageParse_Tag9(ctx, verbose, current_packet, msg);
+				if (cmsg || lmsg || smsg)
+					ret = false; // OpenPGP structure error detected
+				else
+					ret = MessageParse_Tag9(ctx, verbose, current_packet, msg);
 				stop = true; // ensures well-formedness of an OpenPGP message
 				break;
 			case 11: // Literal Data
+				lmsg = true;
 				if (ctx.indetlen && msg->have_seipd &&
 					((msg->mdc).size() == 0) && (ctx.datalen > 22))
 				{
 					// handle MDC, if LIT packet has indeterminate length
 					if (verbose)
+					{
 						std::cerr << "WARNING: assume MDC at the end of LIT" <<
 							" packet (indeterminate length)" << std::endl;
+					}
 					ctx.datalen -= 22;
 					for (size_t i = 0; i < 22; i++)
 					{
@@ -17638,28 +17676,38 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 						current_packet.pop_back();
 					}
 				}
-				ret = MessageParse_Tag11(ctx, verbose, current_packet, msg);
-				if (kseq)
-					ret = false; // ESK sequence detected
+				if (cmsg || emsg || smsg)
+					ret = false; // OpenPGP structure error detected
+				else
+					ret = MessageParse_Tag11(ctx, verbose, current_packet, msg);
 				break;
 			case 18: // Symmetrically Encrypted Integrity Protected Data
-				ret = MessageParse_Tag18(ctx, verbose, current_packet, msg);
+				if (cmsg || lmsg || smsg)
+					ret = false; // OpenPGP structure error detected
+				else
+					ret = MessageParse_Tag18(ctx, verbose, current_packet, msg);
 				stop = true; // ensures well-formedness of an OpenPGP message
 				break;
 			case 19: // Modification Detection Code
-				ret = MessageParse_Tag19(ctx, verbose, current_packet, msg);
+				if (cmsg || emsg || smsg)
+					ret = false; // OpenPGP structure error detected
+				else
+					ret = MessageParse_Tag19(ctx, verbose, current_packet, msg);
 				stop = true; // ensures well-formedness of an OpenPGP message
-				if (kseq)
-					ret = false; // ESK sequence detected
 				break;
 			case 20: // AEAD Encrypted Data [draft RFC 4880bis]
-				ret = MessageParse_Tag20(ctx, verbose, current_packet, msg);
+				if (cmsg || lmsg || smsg)
+					ret = false; // OpenPGP structure error detected
+				else
+					ret = MessageParse_Tag20(ctx, verbose, current_packet, msg);
 				stop = true; // ensures well-formedness of an OpenPGP message
 				break;
 			default:
 				if (verbose > 1)
+				{
 					std::cerr << "INFO: OpenPGP packet with tag " <<
 						(int)ptag << " ignored" << std::endl;
+				}
 				break;
 		}
 		// cleanup allocated buffers and mpi's
