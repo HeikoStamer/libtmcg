@@ -19,7 +19,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20190809.
+Revision 20190813.
 
 Copyright @copyright{} 2005--2007, 2009, 2015--2019 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
@@ -212,6 +212,12 @@ papers:
 	@emph{Secure and Efficient Asynchronous Broadcast Protocols.}@*
 	Advances in Cryptology -- Proceedings of CRYPTO' 01, Lecture Notes in Computer Science 2139, pp. 524--541, 2001.@*
 	@uref{http://shoup.net/papers/ckps.pdf}
+@end quotation
+@quotation [CGR06]
+	@sc{Christian Cachin}, @sc{Rachid Guerraoui}, and @sc{Luis Rodrigues}.
+	@emph{Reliable and Secure Distributed Programming.}@*
+	Springer, 2006.@*
+	@uref{https://www.distributedprogramming.net/}
 @end quotation
 
 @c **********************************************************
@@ -411,14 +417,14 @@ number of parties @math{t} who act faulty or even malicious (the so-called
 For example, in almost full asynchronous environments like the Internet
 resilience (sometimes called robustness) is achievable for @math{t < n/3} only,
 where @math{n} denotes the total number of parties engaged in the protocol.
-LibTMCG provides a well-known protocol for simple reliable broadcast due to
-Bracha (see @emph{An asynchronous [(n - 1)/3]-resilient consensus protocol},
+LibTMCG provides a well-known protocol for reliable broadcast due to Bracha
+(see @emph{An asynchronous [(n - 1)/3]-resilient consensus protocol},
 Proceedings of 3rd ACM Symposium on Principles of Distributed Computing, 1984)
 in a slightly optimized variant by Cachin, Kursawe, Petzold, and
 Shoup@tie{}[CKPS01]. This protocol does not solve the even more fundamental
 consensus problem, because it does not guarantee termination. Please note that
 the application programmer must decide, where the use of such a limited
-broadcast channel is neccesary and appropriate. However, without reliable
+broadcast channel is required and appropriate. However, without reliable
 broadcast you should take into account that not necessarily the player acting
 as prover is the source of evil, if a verification procedure fails. This level
 of uncertainty is the main reason for our still limited adversary model.
@@ -671,16 +677,16 @@ containing the version number of the library in a common format. It
 is strongly recommended to check, whether the installed version
 matches your requirements.
 
-@deftypefun const std::string version_libTMCG ()
+@deftypefun std::string version_libTMCG ()
 This function returns the version of the library in the
 format @emph{major.minor.revision}.
 @end deftypefun
 
 Last but not least, there is a function @code{identifier_libTMCG}
 which returns an identifier of LibTMCG including the version,
-copyright mark and license.
+a copyright mark, and the license.
 
-@deftypefun const std::string identifier_libTMCG ()
+@deftypefun std::string identifier_libTMCG ()
 This function returns an identifier of the library.
 @end deftypefun
 
@@ -2155,16 +2161,24 @@ title, respectively.
 This part of LibTMCG provides an implementation of @emph{reliable broadcast},
 which is actually based on an optimized variant of Bracha's double-echo
 broadcast protocol.
-It works without further authentication mechanisms (e.g. digital signatures) and thus
-guarantees the desired properties (i.e. validity, consistency, and
-totality@footnote{Totality ensures that all correct parties either deliver a message
-or don't. In the literature consistency and totality properties are often combined
-into a single condition called @emph{agreement}.}) of
-reliable broadcast only, if the number of faulty or even malicious players
-@math{t} is strictly less than one third of all parties @math{n}, i.e. @math{t < n/3}. 
+It works without sophisticated authentication mechanisms (e.g. digital
+signatures) and thus guarantees the desired properties (i.e. validity,
+consistency, and totality@footnote{Totality ensures that all correct parties
+either eventually deliver a message or don't. In the literature consistency and
+totality properties are often combined into a single condition called
+@emph{agreement}.}) of reliable broadcast only, if the number of faulty or even
+malicious players @math{t} is strictly less than one third of all parties
+@math{n}, i.e. @math{t < n/3}. 
 Please note that without further assumptions this condition is rather optimal
-for asynchronous communication and thus has crucial impact for liveness of the
-high-level protocols using it.
+for an asynchronous communication model and thus has crucial impact for liveness
+and termination of the high-level protocols using it.
+
+The basic algorithm has been extended by a rather simple mechanism (i.e. sequence
+counters for each party) to broadcast and deliver more than one message in
+FIFO-ordering. Hence a so-called @emph{broadcast channel} can be established.
+Such a channel is determined by a given unique ID and can be switched during
+execution of the high-level protocol. Moreover, to some extent the applied
+FIFO-ordering can be skipped, if the class is initialized in a special way.
 
 We describe only those classes, methods, and members that might be of interest
 for an application programmer.
@@ -2174,7 +2188,9 @@ for an application programmer.
 	This class implements the protocol RBC by Cachin, Kursawe, Petzold, and
 	Shoup@tie{}[CKPS01] for a reliable broadcast in the asynchronous
 	communication model, where @math{t < n/3} holds. Additionally, a
-	FIFO-ordered delivery mechanism based on sequence numbers has been implemented.
+	FIFO-ordered delivery mechanism based on sequence numbers has been
+	implemented according to Algorithm@tie{}3.19 in the mentioned
+	textbook@tie{}[CGR06].
 	
 	@deftypecv {Member} CachinKursawePetzoldShoupRBC {size_t} n
 		This is the total number of parties @math{n} involved in this protocol.
@@ -2188,10 +2204,19 @@ for an application programmer.
 		This is an uniqe index of the party running this instance.
 	@end deftypecv
 
+	@deftypecv {Member} CachinKursawePetzoldShoupRBC {std::map<std::string, std::string>} ID_log
+		This map records the channel operations done. It can be used to
+		trace the relationship between created broadcast channels. The first
+		component (i.e. the key) represents the hash value (ID) that is used
+		internally to distinguish those channels. The second componnent
+		(i.e. a value for some key) contains the input for computing the
+		above hash value (after the last @code{->}) and the applied operations
+		to this ID.
+	@end deftypecv
 
-	@defop {Constructor} CachinKursawePetzoldShoupRBC CachinKursawePetzoldShoupRBC (@code{const size_t} n_in, @code{const size_t} t_in, @code{const size_t} j_in, @code{aiounicast*} aiou_in, @code{const size_t} aio_default_scheduler_in @code{=aiounicast::aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aiounicast::aio_timeout_very_long})
+	@defop {Constructor} CachinKursawePetzoldShoupRBC CachinKursawePetzoldShoupRBC (@code{const size_t} n_in, @code{const size_t} t_in, @code{const size_t} j_in, @code{aiounicast*} aiou_in, @code{const size_t} aio_default_scheduler_in @code{=aiounicast::aio_scheduler_roundrobin}, @code{const time_t} aio_default_timeout_in @code{=aiounicast::aio_timeout_very_long}, @code{const size_t} fifo_skip_in @code{=0})
 		The constructor initializes an instance for a reliable
-		broadcast channel of @math{n} parties. This total number
+		broadcast channel of @math{n} parties. The total number
 		of parties is given in the first argument @var{n_in}. The 
 		number of possible faulty or even malicious parties @math{t}
 		(given in the second argument @var{t_in}) must not exceed
@@ -2206,32 +2231,44 @@ for an application programmer.
 		such that network attacks or errors can be detetcted.} used
 		for this broadcast channels. The default values	for timeout
 		(in seconds) and the deliver scheduler can be modified
-		carefully with respect to the usage scenario.
+		carefully with respect to the usage scenario. Last but not least, a
+		given difference of some sequence counter is skipped, if
+		@var{fifo_skip_in} is greater than zero.
 	@end defop
 
 	@deftypemethod CachinKursawePetzoldShoupRBC void setID (@code{const std::string&} ID_in)
-		Broadcast channels are parameterized by a @emph{tag} called ID, that uniquely identifies each channel.
-		This method sets the tag to @var{ID_in}, which should be equal for all parties on the same channel.
+		Broadcast channels are parameterized by an ID, that uniquely identifies
+		each channel. This method creates such a channel by computing a uniform
+		ID from the string @var{ID_in}. Thus this string should be equal for all
+		parties on the same channel. Moreover, the corresponding sequence
+		counters are initialized.  
+	@end deftypemethod
+
+	@deftypemethod CachinKursawePetzoldShoupRBC void recoverID (@code{const std::string&} ID_in)
+		This method switchs to an already existing channel characterized by
+		the string @var{ID_in}. It restores the corresponding sequence counters.
 	@end deftypemethod
 
 	@deftypemethod CachinKursawePetzoldShoupRBC void unsetID ()
-		This method unset the current channel tag and returns to the previous value. This is commonly used to
-		return from a channel of a subprotcol to the channel of the calling protocol.
+		This method resets the currently used ID and sequence counters, i.e., it
+		restores the previous values that have been saved by @code{setID} or
+		even @code{recoverID}. This is commonly used to return from a channel
+		of a subprotcol to the channel of the calling high-level protocol.
 	@end deftypemethod
 
 	@deftypemethod CachinKursawePetzoldShoupRBC void Broadcast (@code{mpz_srcptr} m, @code{const bool} simulate_faulty_behaviour @code{=false})
-		This method broadcasts the integer @var{m} to all parties. 
+		This method broadcasts the integer @var{m} to all parties.
 	@end deftypemethod
 
 	@deftypemethod CachinKursawePetzoldShoupRBC bool Deliver (@code{mpz_ptr} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aiounicast::aio_scheduler_default}, 	@code{time_t} timeout @code{=aiounicast::aio_timeout_default})
-		This method delivers a broadcasted integer @var{m} from any
-		party using deliver scheduler @var{scheduler}. The index of
-		the sender is returned in @var{i_out}. In presence of the
+		This method delivers a previously broadcasted integer @var{m} on the
+		current channel from any party using the scheduler @var{scheduler}. The
+		index of the sender is returned in @var{i_out}. In presence of the
 		fourth argument it waits for at most @var{timeout} seconds.
 		Otherwise, the default timeout given to the constructor is applied.
 
-		The method returns @code{false}, if delivering fails. Only
-		in some critical cases error messages are written to @code{std::cerr}.
+		The method returns @code{false}, if the delivery has been failed. Only
+		for critical cases some error messages are written to @code{std::cerr}.
 	@end deftypemethod
 
 	@deftypemethod CachinKursawePetzoldShoupRBC bool DeliverFrom (@code{mpz_ptr} m, @code{const size_t} i_in, @code{size_t} scheduler @code{=aiounicast::aio_scheduler_default}, @code{time_t} timeout @code{=aiounicast::aio_timeout_default})
@@ -2241,8 +2278,8 @@ for an application programmer.
 		at most for @var{timeout} seconds.
 		Otherwise, the default timeout given to the constructor is applied.
 
-		The method returns @code{false}, if delivering fails. Only
-		in some critical cases error messages are written to @code{std::cerr}.
+		The method returns @code{false}, if the delivery has been failed. Only
+		for critical cases some error messages are written to @code{std::cerr}.
 	@end deftypemethod
 
 	@deftypemethod CachinKursawePetzoldShoupRBC bool Sync (@code{time_t} timeout @code{=aiounicast::aio_timeout_default}, @code{const std::string} tag @code{=""})
@@ -2256,7 +2293,7 @@ for an application programmer.
 		a description of the synchronization point can be supplied as second
 		argument of this method.
 
-		The method returns @code{false}, if synchronization is failed. 
+		The method returns @code{false}, if synchronization has been failed. 
 	@end deftypemethod
 	
 	@defop {Destructor} CachinKursawePetzoldShoupRBC ~CachinKursawePetzoldShoupRBC ()

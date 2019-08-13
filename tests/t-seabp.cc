@@ -274,7 +274,99 @@ void start_instance
 		stop_clock();
 		mpz_clear(a);
 		std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
-			
+
+		// switch to special subprotocol
+		myID = "t-seabp::special_subprotocol";
+		rbc->setID(myID);
+
+		// round 3a -- broadcast there
+		mpz_init_set_ui(a, whoami);
+		rbc->Broadcast(a, corrupted);
+
+		// switch back to main protocol and save state for recovery
+		rbc->unsetID();
+
+		// round 3b -- broadcast there
+		rbc->Broadcast(a, corrupted);
+
+		// temporary switch to special subprotocol
+		rbc->recoverID(myID);
+
+		// round 3a -- deliver there
+		start_clock();
+		std::cout << "P_" << whoami << ": rbc.DeliverFrom() inside" <<
+			" special_subprotocol" << std::endl;
+		for (size_t i = 0; i < n; i++)
+		{
+			if (someone_corrupted)
+			{
+				if (rbc->DeliverFrom(a, i))
+				{
+					std::cout << "P_" << whoami << ": (round 3a)" <<
+						" a = " << a << " from " << i << std::endl;
+					if (i < (n - t))
+						assert(!mpz_cmp_ui(a, i));
+					else if (mpz_cmp_ui(a, i))
+					{
+						std::cout << "P_" << whoami << ": (round 3a)" <<
+							" got wrong value from " << i << std::endl;
+					}
+				}
+				else
+				{
+					std::cout << "P_" << whoami << ": (round 3a)" <<
+						" got nothing from " << i << std::endl;
+					assert(i >= (n - t));
+				}
+			}
+			else
+			{
+				assert(rbc->DeliverFrom(a, i));
+				assert(!mpz_cmp_ui(a, i));
+			}
+		}
+		stop_clock();
+		std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+
+		// switch back to main protocol
+		rbc->unsetID();
+
+		// round 3b -- deliver again
+		start_clock();
+		std::cout << "P_" << whoami << ": rbc.DeliverFrom()" << std::endl;
+		for (size_t i = 0; i < n; i++)
+		{
+			if (someone_corrupted)
+			{
+				if (rbc->DeliverFrom(a, i))
+				{
+					std::cout << "P_" << whoami << ": (round 3b)" <<
+						" a = " << a << " from " << i << std::endl;
+					if (i < (n - t))
+						assert(!mpz_cmp_ui(a, i));
+					else if (mpz_cmp_ui(a, i))
+					{
+						std::cout << "P_" << whoami << ": (round 3b)" <<
+							" got wrong value from " << i << std::endl;
+					}
+				}
+				else
+				{
+					std::cout << "P_" << whoami << ": (round 3b)" <<
+						" got nothing from " << i << std::endl;
+					assert(i >= (n - t));
+				}
+			}
+			else
+			{
+				assert(rbc->DeliverFrom(a, i));
+				assert(!mpz_cmp_ui(a, i));
+			}
+		}
+		stop_clock();
+		mpz_clear(a);
+		std::cout << "P_" << whoami << ": " << elapsed_time() << std::endl;
+
 		// at the end: test sync for waiting parties
 		std::cout << "P_" << whoami << ": sleeping " << whoami <<
 			" seconds ..." << std::endl;

@@ -206,10 +206,11 @@ void CachinKursawePetzoldShoupRBC::recoverID
 void CachinKursawePetzoldShoupRBC::unsetID
 	()
 {
-	// save current sequence counter
 	std::stringstream str_ID;
 	str_ID << ID;
 	ID_log[str_ID.str()] = "unsetID -> " + ID_log[str_ID.str()];
+
+	// save current sequence counter for recovery
 	if (recover_s.count(str_ID.str()) == 0)
 	{
 		mpz_ptr tmp1 = new mpz_t();
@@ -219,7 +220,7 @@ void CachinKursawePetzoldShoupRBC::unsetID
 	else
 		mpz_set(recover_s[str_ID.str()], s);
 
-	// save current deliver sequence counters
+	// save current deliver sequence counters for recovery
 	if (recover_deliver_s.count(str_ID.str()) == 0)
 	{
 		recover_deliver_s[str_ID.str()].resize(n);
@@ -370,11 +371,12 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 		size_t simulate_faulty_randomizer1 = tmcg_mpz_wrandom_ui() % 2;
 		size_t simulate_faulty_randomizer2 = tmcg_mpz_wrandom_ui() % 2;
 		size_t simulate_faulty_randomizer3 = tmcg_mpz_wrandom_ui() % 2;
+		size_t simulate_faulty_randomizer4 = tmcg_mpz_wrandom_ui() % 2;
 		if (simulate_faulty_behaviour && !simulate_faulty_randomizer &&
 			simulate_faulty_randomizer1)
 		{
-			mpz_add_ui(modified_message[4],
-				modified_message[4], 1UL); // modify the message
+			mpz_add_ui(modified_message[4], modified_message[4],
+				1UL); // modify the payload
 		}
 		if (simulate_faulty_behaviour && !simulate_faulty_randomizer &&
 			simulate_faulty_randomizer2)
@@ -382,14 +384,21 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 			mpz_add_ui(modified_message[1], modified_message[1],
 				tmcg_mpz_wrandom_ui() % n); // modify the sender
 		}
-		AssignMessage(message, modified_message); // assign the modified message
 		if (simulate_faulty_behaviour && !simulate_faulty_randomizer &&
 			simulate_faulty_randomizer3)
 		{
-			if (!aiou->Send(message, tmcg_mpz_wrandom_ui() % n, aio_timeout_vs))
+			mpz_add_ui(modified_message[2], modified_message[2],
+				tmcg_mpz_wrandom_ui() % 5); // modify the sequence counter
+		}
+		AssignMessage(message, modified_message); // assign the modified message
+		if (simulate_faulty_behaviour && !simulate_faulty_randomizer &&
+			simulate_faulty_randomizer4)
+		{
+			size_t r = tmcg_mpz_wrandom_ui() % n;
+			if (!aiou->Send(message, r, aio_timeout_vs))
 			{
 				std::cerr << "RBC(" << j << "): sending r-send failed for " <<
-					"random party" << std::endl;
+					"random party " << r << std::endl;
 			}
 		}
 		else
@@ -421,31 +430,39 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 	// initialize message $(ID.j.s, action, m)$
 	RBC_Message message;
 	InitializeMessage(message);
-	// process messages according to the RBC protocol described in [CKPS01]
-	// extended with a simple FIFO-order deliver mechanism
+	// process messages according to the RBC protocol [CKPS01]
+	// extended with a simple FIFO-order delivery mechanism
 	time_t entry_time = time(NULL);
 	do
 	{
-		// first, process the delivery buffer
+		// first, process the deliver buffer
+		std::list<RBC_VectorList::iterator> cleanup;
 		mpz_t max_s[n], min_s[n];
 		for (size_t i = 0; i < n; i++)
-			mpz_init_set_ui(max_s[i], 0UL), mpz_init_set_ui(min_s[i], 0UL);
+		{
+			mpz_init_set_ui(max_s[i], 0UL);
+			mpz_init_set_ui(min_s[i], 0UL);
+		}
 		for (RBC_VectorList::iterator lit = deliver_buf.begin();
 			lit != deliver_buf.end(); ++lit)
 		{
-			// compute hash of identifying tag $ID.j.s$
-			std::string tag;
-			TagMessage(tag, *lit);
+			if (mpz_cmp((*lit)[0], ID))
+				continue; // ID does not match
 			size_t who = mpz_get_ui((*lit)[1]);
-			// check for matching tag and sequence counter before delivering
-			if (!mpz_cmp((*lit)[0], ID) && !mpz_cmp((*lit)[2], deliver_s[who]))
+			// check for matching deliver sequence counter
+			if (!mpz_cmp((*lit)[2], deliver_s[who]))
 			{
+				// compute hash of identifying tag $ID.j.s$
+				std::string tag;
+				TagMessage(tag, *lit);
 				if (mbar.count(tag) == 0)
 					throw std::runtime_error("RBC::Deliver(): mbar not found");
-				mpz_set(m, mbar[tag]);
-				// increase sequence counter
+				// increase deliver sequence counter
 				mpz_add_ui(deliver_s[who], deliver_s[who], 1UL);
+				// get payload from mbar cache
+				mpz_set(m, mbar[tag]);
 				i_out = who;
+				// cleanup
 				ReleaseMessage(*lit);
 				deliver_buf.erase(lit);
 				// release foo
@@ -454,40 +471,86 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				ReleaseMessage(message);
 				// release max_s and min_s
 				for (size_t i = 0; i < n; i++)
-					mpz_clear(max_s[i]), mpz_clear(min_s[i]);
+				{
+					mpz_clear(max_s[i]);
+					mpz_clear(min_s[i]);
+				}
 				return true;
 			}
-			// check for matching tag and greater sequence counter
-			if (!mpz_cmp((*lit)[0], ID) &&
-				(mpz_cmp((*lit)[2], deliver_s[who]) > 0))
+			// check for greater deliver sequence counter
+			if (mpz_cmp((*lit)[2], deliver_s[who]) > 0)
 			{
-// TODO: set max_s to maximum and min_s to minimum
+				if (!mpz_cmp_ui(max_s[who], 0UL) ||
+					(mpz_cmp(max_s[who], (*lit)[2]) < 0))
+				{
+					mpz_set(max_s[who], (*lit)[2]);
+				}
+				if (!mpz_cmp_ui(min_s[who], 0UL) ||
+					(mpz_cmp(min_s[who], (*lit)[2]) > 0))
+				{
+					mpz_set(min_s[who], (*lit)[2]);
+				}
 			}
-			// check for matching tag and lower sequence counter
-			if (!mpz_cmp((*lit)[0], ID) &&
-				(mpz_cmp((*lit)[2], deliver_s[who]) > 0))
+			// check for lower deliver sequence counter
+			if (mpz_cmp((*lit)[2], deliver_s[who]) < 0)
 			{
-// TODO: remove old message from buffer
+				std::cerr << "RBC(" << j << "): remove message from " <<
+					who << " with s = " << (*lit)[2] << " (vs." <<
+					" deliver_s = " << deliver_s[who] << ")" << std::endl;
+				cleanup.push_back(lit);
 			}
 		}
-		// skip FIFO ordering, if (max_s - min_s) > fifo_skip for some party
-// TODO: set sequence counter to min_s
+		// skip FIFO ordering, if (max_s-min_s) > fifo_skip for some party
 		for (size_t i = 0; i < n; i++)
-			mpz_clear(max_s[i]), mpz_clear(min_s[i]);
+		{
+			mpz_sub(foo, max_s[i], min_s[i]);
+			if ((mpz_cmp_ui(foo, fifo_skip) > 0) && (fifo_skip > 0))
+			{
+				std::cerr << "RBC(" << j << "): adjust deliver sequence" <<
+					" counter from " << deliver_s[i] << " to " <<
+					min_s[i] << " for i = " << i << std::endl;
+				deliver_error[i] = true; // ERROR: delivery out of order
+				mpz_set(deliver_s[i], min_s[i]);
+			}
+		}
+		for (size_t i = 0; i < n; i++)
+		{
+			mpz_clear(max_s[i]);
+			mpz_clear(min_s[i]);
+		}
+		// remove old messages w.r.t. deliver sequence counter
+		while (cleanup.size() > 0)
+		{
+			RBC_VectorList::iterator lit = cleanup.front();
+			ReleaseMessage(*lit);
+			deliver_buf.erase(lit);
+			cleanup.pop_front();
+		}
 		// second, anything buffered from previous calls/rounds?
 		size_t l = n;
+		std::vector<size_t> pi;
 		for (size_t i = 0; i < n; i++)
-		{ // FIXME: random walk through [0..n-1] to avoid DoS
-			if (buf_msg[i].size() >= message.size())
+			pi.push_back(i);
+		for (size_t i = 0; i < (n - 1); i++)
+		{
+			// create a random permutation to avoid DoS scenarios
+			size_t tmp = pi[i];
+			size_t rnd = i + (size_t)tmcg_mpz_wrandom_mod(n - i);
+			pi[i] = pi[rnd];
+			pi[rnd] = tmp;
+		}
+		for (size_t i = 0; i < pi.size(); i++)
+		{
+			if (buf_msg[pi[i]].size() >= message.size())
 			{
 				for (size_t mm = 0; mm < message.size(); mm++)
 				{
-					mpz_set(message[mm], buf_msg[i].front());
-					mpz_clear(buf_msg[i].front());
-					delete [] buf_msg[i].front();
-					buf_msg[i].pop_front();
+					mpz_set(message[mm], buf_msg[pi[i]].front());
+					mpz_clear(buf_msg[pi[i]].front());
+					delete [] buf_msg[pi[i]].front();
+					buf_msg[pi[i]].pop_front();
 				}
-				l = i;
+				l = pi[i];
 				break;
 			}
 		}
@@ -740,8 +803,12 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					for (size_t i = 0; i < howmany; i++)
 					{
 						if (!aiou->Send(message2, i, aio_timeout_vs))
+						{
 							std::cerr << "RBC(" << j << "): sending" <<
 								" r-request failed for " << i << std::endl;
+							if (howmany < n)
+								howmany++; // increase request range
+						}
 					}
 					message2.clear();
 					continue; // waiting for r-answer is done in main loop
