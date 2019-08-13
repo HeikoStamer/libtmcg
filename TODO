@@ -7,13 +7,13 @@ no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
 in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
+* TMCG: reimplement the TimingAttackProtection for Schindelhauer's protocols
 * RFC4880: add FindByUserid() to TMCG_OpenPGP_Keyring
 
-* add abstraction layer for cryptographic primitives (i.e. libgcrypt calls) 
-* add a generic group abstraction layer, e.g. for future use of ECC groups
-* add a constant-time implementation for modular multiplication mpz_smulm()
+* add abstraction layer for cryptographic primitives (i.e. libgcrypt calls)
+* add generic group abstraction layer, e.g. for future use of ECC groups
+* add constant-time implementation for modular multiplication mpz_smulm() a.o.
 * add generic broadcast channel abstraction layer, e.g. AbstractBroadcastChannel
-* RBC: stabilize behaviour of deliver() by asynchronous IO of C++14/17 
 
 + provide interactive and distributed (multiparty DZKP) versions for
   bootstrapping non-interactive protocols of VTMF, i.e., key generation
@@ -23,7 +23,7 @@ in the sources of this package and additionally can be obtained from Internet
 + DZKP also called "Simultaneous Zero-Knowledge Proofs of Knowledge" [JL00]
 + DKG, ASTC: transform protocols into variants without aiou->Send() [BH92]
 + move to event-driven architecture and state-based protocol representation
-+ provide a byzantine consensus protocol for agreement on values
++ provide a multi-value byzantine consensus protocol for agreement purposes
 + implement asynchronous VSS [CKLS02] for DKG and other applications
 
 - deterministic DSA for ASTC/DSS: cf. RFC 6979; maybe it's impossible for TC
