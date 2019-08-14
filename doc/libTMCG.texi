@@ -19,9 +19,10 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20190813.
+Revision 20190814.
 
-Copyright @copyright{} 2005--2007, 2009, 2015--2019 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
+Copyright @copyright{} 2005--2007, 2009, 2015--2019
+Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -38,13 +39,11 @@ Free Documentation License''.
 @subtitle Version @value{VERSION}
 @subtitle @today{}
 @sp 9
-@c @center @titlefont{@math{@clubsuit@qquad@quad@spadesuit@qquad@quad@heartsuit@qquad@quad@diamondsuit}}
 @sp 2
 @center @titlefont{An Implementation of the}
 @vskip 10pt
 @center @titlefont{Toolbox for Mental Card Games}
 @sp 2
-@c @center @titlefont{@math{@diamondsuit@qquad@quad@heartsuit@qquad@quad@spadesuit@qquad@quad@clubsuit}}
 
 @author Heiko Stamer <@email{HeikoStamer@@gmx.net}>
 
@@ -2008,9 +2007,17 @@ respectively) and fixed at compile time of LibTMCG.
 		The total number of bytes that have been authenticated yet.
 	@end deftypecv
 @end deftp
-Note that the header files @code{aiounicast_nonblock.hh} or @code{aiounicast_select.hh}
-must be included in addition to @code{libTMCG.hh}. The use of class
+Note that the header files @code{aiounicast_nonblock.hh} resp.
+@code{aiounicast_select.hh} must be included in addition to @code{libTMCG.hh},
+if one or both interfaces are required. However, the sole use of the class
 @code{aiounicast_select} is strongly recommended.
+
+In order to use the provided interface in an asynchronous manner, the methods
+@code{Send()} resp. @code{Receive()} should be called inside a corresponding
+loop of the application. A reasonable timeout ensures non-blocking behaviour,
+where the return value of each method indicates whether an operation was
+successful or not.
+ 
 @deftp {Class} aiounicast_nonblock
 	This class works with non-blocking file descriptors, i.e., the pipes or
 	sockets have to be opened with the @code{O_NONBLOCK} flag. The methods use
@@ -2089,14 +2096,15 @@ must be included in addition to @code{libTMCG.hh}. The use of class
 		an iteration count of 25.000 and a different constant salt to derive the
 		authentication and the encryption key, respectively.} or pre-shared keys
 		is neccesary, if @var{aio_is_authenticated_in} or @var{aio_is_encrypted_in} is
-		set @code{true}, which is the default behaviour. The robustness of I/O
+		set @code{true}, which is the default behaviour. The robustness of the I/O
 		stream can be improved, if @var{aio_is_chunked_in} is set to
-		@code{true}.@footnote{The symmetric cipher is operated in CTR mode and
+		@code{true}.@footnote{Then the symmetric cipher is operated in CTR mode and
 		the corresponding counter is shipped in each chunk such that the receiver
-		can decrypt out of order. Thus a few missing characters should not lead
-		to a fatal decryption failure.} The default values for timeout (in
-		seconds) and the receive scheduler can be modified carefully according
-		to the desired usage scenario.
+		can decrypt each message out of order. Thus a few missing characters should
+		not lead to a fatal decryption failure in general. However, this opens a
+		large surface for replay attacks, because authentication is limited to single
+		messages.} The default values for timeout (in seconds) and the used receive
+		scheduler can be modified carefully according to the desired usage scenario.
 	@end defop
 
 	@deftypemethod aiounicast_select bool Send (@code{mpz_srcptr} m, @code{const size_t} i_in, @code{time_t} timeout @code{=aio_timeout_default})
@@ -2158,13 +2166,14 @@ title, respectively.
 
 @node CachinKursawePetzoldShoupRBC
 @subsubsection Secure and Efficient Asynchronous Broadcast Protocols
-This part of LibTMCG provides an implementation of @emph{reliable broadcast},
+This part of LibTMCG provides an implementation for @emph{reliable broadcast},
 which is actually based on an optimized variant of Bracha's double-echo
 broadcast protocol.
 It works without sophisticated authentication mechanisms (e.g. digital
 signatures) and thus guarantees the desired properties (i.e. validity,
 consistency, and totality@footnote{Totality ensures that all correct parties
-either eventually deliver a message or don't. In the literature consistency and
+either deliver a message or don't, provided that all associated messages of
+the broadcast protocol are delivered. In the literature consistency and
 totality properties are often combined into a single condition called
 @emph{agreement}.}) of reliable broadcast only, if the number of faulty or even
 malicious players @math{t} is strictly less than one third of all parties
@@ -2175,10 +2184,11 @@ and termination of the high-level protocols using it.
 
 The basic algorithm has been extended by a rather simple mechanism (i.e. sequence
 counters for each party) to broadcast and deliver more than one message in
-FIFO-ordering. Hence a so-called @emph{broadcast channel} can be established.
-Such a channel is determined by a given unique ID and can be switched during
-execution of the high-level protocol. Moreover, to some extent the applied
-FIFO-ordering can be skipped, if the class is initialized in a special way.
+FIFO-order. Hence a so-called @emph{broadcast channel} can be established.
+Such a channel is determined by a given unique ID@footnote{In some papers (e.g.
+[CKPS01]) this ID is called @emph{tag}.} that can be switched during execution
+of the high-level protocol. Moreover, to some extent the applied FIFO-order can
+be skipped, if the following class is initialized in a special way.
 
 We describe only those classes, methods, and members that might be of interest
 for an application programmer.
@@ -2188,9 +2198,9 @@ for an application programmer.
 	This class implements the protocol RBC by Cachin, Kursawe, Petzold, and
 	Shoup@tie{}[CKPS01] for a reliable broadcast in the asynchronous
 	communication model, where @math{t < n/3} holds. Additionally, a
-	FIFO-ordered delivery mechanism based on sequence numbers has been
-	implemented according to Algorithm@tie{}3.19 in the mentioned
-	textbook@tie{}[CGR06].
+	FIFO-order delivery mechanism based on sequence numbers has been
+	implemented according to Algorithm@tie{}3.12 and Algorithm@tie{}3.19
+	in the mentioned textbook@tie{}[CGR06].
 	
 	@deftypecv {Member} CachinKursawePetzoldShoupRBC {size_t} n
 		This is the total number of parties @math{n} involved in this protocol.
@@ -2225,15 +2235,15 @@ for an application programmer.
 		it is recommended to set @var{t_in} to the asynchronous maximum
 		@math{(n-1)/3}. The third argument @var{j_in} is an index of
 		the party running this instance. Finally, the constructor needs
-		as fourth argument @var{aiou_in} a reference to already established
-		point-to-point channels (@pxref{Communication Interfaces}), which
-		should exclusively@footnote{These channels should be authenticated
-		such that network attacks or errors can be detetcted.} used
-		for this broadcast channels. The default values	for timeout
-		(in seconds) and the deliver scheduler can be modified
-		carefully with respect to the usage scenario. Last but not least, a
-		given difference of some sequence counter is skipped, if
-		@var{fifo_skip_in} is greater than zero.
+		as fourth argument @var{aiou_in} a reference to already
+		established point-to-point channels (@pxref{Communication
+		Interfaces}), which should exclusively@footnote{These channels
+		should be authenticated such that network attacks or errors can
+		be detetcted.} used for this broadcast primitive. The default
+		values for timeout (in seconds) and the deliver scheduler can
+		be modified carefully with respect to the usage scenario.
+		Last but not least, a detected difference of any sequence
+		counter is skipped, if @var{fifo_skip_in} is greater than zero.
 	@end defop
 
 	@deftypemethod CachinKursawePetzoldShoupRBC void setID (@code{const std::string&} ID_in)
@@ -3793,12 +3803,13 @@ shuffle chain (e.g. using the strict total order @math{P_i < P_j}, if and only
 if @math{i < j}) such that each player shuffles the deck once.
 
 First the regular stack @code{s} is initialized with open cards from @code{deck}.
-Then each player shuffles the stack (@pxref{SchindelhauerTMCG}, i.e, @code{TMCG_MixStack}) using randomness
-(see @code{TMCG_CreateStackSecret}) and proves the correctness of this operation
-(see @code{TMCG_ProveStackEquality}). Consequently, every player should verify
-these proofs (see @code{TMCG_VerifyStackEquality}) and complain deviations immediately.
-Finally, the stack @code{s} contains the shuffled result. Consider the following
-code fragment for the player @math{P_j}.
+Then each player shuffles the stack (@pxref{SchindelhauerTMCG}, i.e,
+@code{TMCG_MixStack}) using randomness (see @code{TMCG_CreateStackSecret}) and
+proves the correctness of this operation (see @code{TMCG_ProveStackEquality}).
+Consequently, every player should verify these proofs (see
+@code{TMCG_VerifyStackEquality}) and complain deviations immediately. Finally,
+the stack @code{s} contains the shuffled result. Consider the following code
+fragment for the player @math{P_j}.
 
 @cartouche
 @example
@@ -3928,31 +3939,32 @@ We have implemented a robust and secure protocol for Distributed Key Generation
 (DKG) of public-key cryptosystems (see Rosario Gennaro, Stanislaw Jarecki,
 Hugo Krawczyk, and Tal Rabin: @emph{Secure Distributed Key Generation for
 Discrete-Log Based Cryptosystems}, Journal of Cryptology, Vol. 20 Nr. 1,
-Springer 2007). Moreover, LibTMCG also provides a robust and secure protocol for
-threshold DSA/DSS (see Ran Canetti, Rosario Gennaro, Stanislaw Jarecki,
+Springer 2007). Moreover, LibTMCG also provides a robust and secure protocol
+for threshold DSA/DSS (see Ran Canetti, Rosario Gennaro, Stanislaw Jarecki,
 Hugo Krawczyk, and Tal Rabin: @emph{Adaptive Security for Threshold
-Cryptosystems}, Advances in Cryptology -- Proceedings of CRYPTO '99, Lecture Notes
-in Computer Science 1666, Springer 1999). Robustness and security means that
-up to @math{t \le n/2} resp. @math{t \le n/3} parties can act maliciously and
-the protocols still produce some result (e.g. a valid DSA/DSS signature on a
-given hash value).
+Cryptosystems}, Advances in Cryptology -- Proceedings of CRYPTO '99, Lecture
+Notes in Computer Science 1666, Springer 1999). Robustness and security means
+here that up to @math{t \le n/2} resp. @math{t \le n/3} parties can act
+maliciously and the protocols still produce some result, for example a valid
+DSA/DSS signature on a common input (e.g. hash value).
 
-The current implementation is in @emph{experimental state} and should not be used
-in production environments. Motivation, cryptographical background and some usage
-scenarios have been presented recently at 26th Krypto-Tag (GI Working Group) and
-Datengarten/81 (CCCB). Please consult the @uref{http://www.nongnu.org/libtmcg/dg81_slides.pdf,,slides}
-for a first overview. The former DKG tools have been removed from this release. These
-programs are continued in a separate package called @emph{Distributed Privacy Guard} (DKGPG).
+The current implementation is in @emph{experimental state} and should not be
+used in production environments. Motivation, cryptographical background and
+some usage scenarios have been presented recently at 26th Krypto-Tag (GI
+Working Group) and Datengarten/81 (CCCB). Please consult the @uref{http://www.nongnu.org/libtmcg/dg81_slides.pdf,,slides}
+for a first overview. The former DKG tools have been removed from this release.
+These programs are continued in a separate package called @emph{Distributed
+Privacy Guard} (DKGPG).
 
-Please report any bugs to the maintainer of LibTMCG. Every help with development
-or testing of these DKG protocols and programs is very welcome!
+Please report any bugs to the maintainer of LibTMCG. Every help with
+development or testing of these DKG protocols and programs is very welcome!
 
 @section Oblivious Transfer Protocols
 We have implemented two basic variants for oblivous transfer (see Moni Naor
-and Benny Pinkas: @emph{Efficient Oblivious Transfer Protocols}, Proceedings of
-the Symposium on Discrete Algorithms (SODA), ACM/SIAM 2001) in the class
-@code{NaorPinkasEOTP}: a 1-out-of-2 transfer and a 1-out-of-N transfer.
-The chooser's security is based on the DDH assumption and the sender's security
+and Benny Pinkas: @emph{Efficient Oblivious Transfer Protocols}, Proceedings
+of the Symposium on Discrete Algorithms (SODA), ACM/SIAM 2001) in the class
+@code{NaorPinkasEOTP}: a 1-out-of-2 transfer and a 1-out-of-N transfer. The
+chooser's security is based on the DDH assumption and the sender's security
 is information-theoretic.
 
 @c **********************************************************
