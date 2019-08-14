@@ -2236,8 +2236,8 @@ for an application programmer.
 		@math{(n-1)/3}. The third argument @var{j_in} is an index of
 		the party running this instance. Finally, the constructor needs
 		as fourth argument @var{aiou_in} a reference to already
-		established point-to-point channels (@pxref{Communication
-		Interfaces}), which should exclusively@footnote{These channels
+		established point-to-point channels (@pxref{Communication Interfaces}),
+		which should exclusively@footnote{These channels
 		should be authenticated such that network attacks or errors can
 		be detetcted.} used for this broadcast primitive. The default
 		values for timeout (in seconds) and the deliver scheduler can
