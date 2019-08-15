@@ -1,3 +1,12 @@
+/******************************************************************************
+	Copyright (C) 2015  Andrey Jivsov, and Copyright (C) 2018  Heiko Stamer
+
+	Copying and distribution of this file, with or without modification,
+	are permitted in any medium without royalty provided the copyright
+	notice and this notice are preserved. This file is offered as-is,
+	without any warranty.
+*******************************************************************************/
+
 /* -------------------------------------------------------------------------
  * Works when compiled for either 32-bit or 64-bit targets, optimized for 
  * 64 bit.
