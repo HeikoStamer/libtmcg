@@ -19,7 +19,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20190814.
+Revision 20190816.
 
 Copyright @copyright{} 2005--2007, 2009, 2015--2019
 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
@@ -2033,14 +2033,15 @@ successful or not.
 		@var{j_in}. It is followed by a vector @var{fd_in_in} of exactly
 		@math{n} input file descriptors that are ready for reading
 		and writing, and by a vector @var{fd_out_in} of exactly @math{n}
-		output file descriptors. Finally, the vector @var{key_in} with exactly @math{n}
-		passphrases@footnote{The key derivation function PBKDF2 is applied with
-		an iteration count of 25.000 and a different constant salt to derive the
-		authentication and the encryption key, respectively.} or pre-shared keys
-		is neccesary, if @var{aio_is_authenticated_in} or @var{aio_is_encrypted_in} is
-		set @code{true}, which is the default behaviour. The default values for
-		timeout (in seconds) and the receive scheduler can be modified carefully
-		according to the desired usage scenario.
+		output file descriptors. Finally, the vector @var{key_in} with
+		exactly @math{n} pre-shared passphrases@footnote{The key derivation
+		function PBKDF2 is applied with an iteration count of 25.000 and a
+		different constant salt value to derive the authentication and the
+		encryption key, respectively.} is required, if
+		@var{aio_is_authenticated_in} or @var{aio_is_encrypted_in} is
+		@code{true}, which is the default behaviour for both. The default
+		values for timeout (in seconds) and the applied receive scheduler
+		can be modified carefully according to the desired usage scenario.
 	@end defop
 
 	@deftypemethod aiounicast_nonblock bool Send (@code{mpz_srcptr} m, @code{const size_t} i_in, @code{time_t} timeout @code{=aio_timeout_default})
@@ -2055,7 +2056,8 @@ successful or not.
 	@end deftypemethod
 
 	@deftypemethod aiounicast_nonblock bool Send (@code{const std::vector<mpz_srcptr>&} m, @code{const size_t} i_in, @code{time_t} timeout @code{=aio_timeout_default})
-		This method works as above, however, a vector @var{m} of integers is sent.
+		This method works as above, however, a vector @var{m} of integers
+		is sent.
 	@end deftypemethod
 
 	@deftypemethod aiounicast_nonblock bool Receive (@code{mpz_ptr} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aio_scheduler_default}, @code{time_t} timeout @code{=aio_timeout_default})
@@ -2070,7 +2072,8 @@ successful or not.
 	@end deftypemethod
 
 	@deftypemethod aiounicast_nonblock bool Receive (@code{std::vector<mpz_ptr>&} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aio_scheduler_default}, @code{time_t} timeout @code{=aio_timeout_default})
-		This method works as above, however, a vector @var{m} of integers is received.
+		This method works as above, however, a vector @var{m} of integers
+		is received.
 	@end deftypemethod
 
 	@defop {Destructor} aiounicast_nonblock ~aiounicast_nonblock ()
@@ -2091,20 +2094,23 @@ successful or not.
 		@var{j_in}. It is followed by a vector @var{fd_in_in} of exactly
 		@math{n} input file descriptors that are ready for reading
 		and writing, and by a vector @var{fd_out_in} of exactly @math{n}
-		output file descriptors. Finally, the vector @var{key_in} with exactly @math{n}
-		passphrases@footnote{The key derivation function PBKDF2 is applied with
-		an iteration count of 25.000 and a different constant salt to derive the
-		authentication and the encryption key, respectively.} or pre-shared keys
-		is neccesary, if @var{aio_is_authenticated_in} or @var{aio_is_encrypted_in} is
-		set @code{true}, which is the default behaviour. The robustness of the I/O
-		stream can be improved, if @var{aio_is_chunked_in} is set to
-		@code{true}.@footnote{Then the symmetric cipher is operated in CTR mode and
-		the corresponding counter is shipped in each chunk such that the receiver
-		can decrypt each message out of order. Thus a few missing characters should
-		not lead to a fatal decryption failure in general. However, this opens a
-		large surface for replay attacks, because authentication is limited to single
-		messages.} The default values for timeout (in seconds) and the used receive
-		scheduler can be modified carefully according to the desired usage scenario.
+		output file descriptors. Finally, the vector @var{key_in} with
+		exactly pre-shared @math{n} passphrases@footnote{The key derivation
+		function PBKDF2 is applied with an iteration count of 25.000 and a
+		different constant salt value to derive the authentication and the
+		encryption key, respectively.} is required, if
+		@var{aio_is_authenticated_in} or @var{aio_is_encrypted_in} is
+		@code{true}, which is the default behaviour for both. The
+		robustness of the I/O stream can be improved, if
+		@var{aio_is_chunked_in} is set to @code{true}.@footnote{Then the
+		symmetric cipher is operated in CTR mode and the corresponding
+		counter is shipped in each chunk such that the receiver can decrypt
+		each message out of order. Thus a few missing characters should not
+		lead to a fatal decryption failure in general. However, this opens
+		a quite large surface for replay attacks, because out authentication
+		is limited by design to single messages.} The default values for
+		timeout (in seconds) and the applied receive scheduler can be
+		modified carefully according to the desired usage scenario.
 	@end defop
 
 	@deftypemethod aiounicast_select bool Send (@code{mpz_srcptr} m, @code{const size_t} i_in, @code{time_t} timeout @code{=aio_timeout_default})
@@ -2119,7 +2125,8 @@ successful or not.
 	@end deftypemethod
 
 	@deftypemethod aiounicast_select bool Send (@code{const std::vector<mpz_srcptr>&} m, @code{const size_t} i_in, @code{time_t} timeout @code{=aio_timeout_default})
-		This method works as above, however, a vector @var{m} of integers is sent.
+		This method works as above, however, a vector @var{m} of integers
+		is sent.
 	@end deftypemethod
 
 	@deftypemethod aiounicast_select bool Receive (@code{mpz_ptr} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aio_scheduler_default}, @code{time_t} timeout @code{=aio_timeout_default})
@@ -2134,7 +2141,8 @@ successful or not.
 	@end deftypemethod
 
 	@deftypemethod aiounicast_select bool Receive (@code{std::vector<mpz_ptr>&} m, @code{size_t&} i_out, @code{size_t} scheduler @code{=aio_scheduler_default}, @code{time_t} timeout @code{=aio_timeout_default})
-		This method works as above, however, a vector @var{m} of integers is received.
+		This method works as above, however, a vector @var{m} of integers
+		is received.
 	@end deftypemethod
 
 	@defop {Destructor} aiounicast_select ~aiounicast_select ()
@@ -2151,9 +2159,9 @@ operations in secure card games, e.g., the creation of open cards, the masking
 of cards, the opening of masked cards, the verifiable secret shuffle of a stack,
 and more general tasks like distributed key generation procedures. Each class
 implements the some functionality of the corresponding research
-paper@tie{}[CKPS01, BS03, JL00, Gr05, HSSV09, Sc98]. The author names are a prefix
-of the class name and the following part is an abbreviation of (a part of) the
-title, respectively.
+paper@tie{}[CKPS01, BS03, JL00, Gr05, HSSV09, Sc98]. The author names are a
+prefix of the class name and the following part is an abbreviation of (a part
+of) the title, respectively.
 
 @menu
 * CachinKursawePetzoldShoupRBC::
@@ -2175,20 +2183,27 @@ consistency, and totality@footnote{Totality ensures that all correct parties
 either deliver a message or don't, provided that all associated messages of
 the broadcast protocol are delivered. In the literature consistency and
 totality properties are often combined into a single condition called
-@emph{agreement}.}) of reliable broadcast only, if the number of faulty or even
-malicious players @math{t} is strictly less than one third of all parties
-@math{n}, i.e. @math{t < n/3}. 
+@emph{agreement}.}) of reliable broadcast only, if the number of faulty or
+even malicious players @math{t} is strictly less than one third of all
+parties @math{n}, i.e. @math{t < n/3}. 
 Please note that without further assumptions this condition is rather optimal
-for an asynchronous communication model and thus has crucial impact for liveness
-and termination of the high-level protocols using it.
+for an asynchronous communication model and thus has crucial impact for
+liveness and termination of the high-level protocols using it.
 
-The basic algorithm has been extended by a rather simple mechanism (i.e. sequence
-counters for each party) to broadcast and deliver more than one message in
-FIFO-order. Hence a so-called @emph{broadcast channel} can be established.
-Such a channel is determined by a given unique ID@footnote{In some papers (e.g.
-[CKPS01]) this ID is called @emph{tag}.} that can be switched during execution
-of the high-level protocol. Moreover, to some extent the applied FIFO-order can
-be skipped, if the following class is initialized in a special way.
+The basic algorithm has been extended by a rather simple mechanism (i.e.
+maintaining sequence counters for each party) to broadcast and deliver more
+than one message in FIFO-order. Hence a so-called @emph{broadcast channel}
+can be established. Such a channel is determined by a given unique
+ID@footnote{In some papers (e.g. [CKPS01]) this ID is called @emph{tag}.}
+that can be switched during execution of the high-level protocol. Moreover,
+to some extent the applied FIFO-order can be skipped, if the class is
+initialized in a special way.
+
+Another extension is the included out-of-order handler (i.e. missing messages
+are retrieved from other parties) which is invoked, if violations of the
+FIFO-order are detected. Note that those retrieved messages are delivered,
+if and only if a @math{n - t} quorum is reached. The out-of-order handler
+is activated by default as long as the applied FIFO-order is not skipped.
 
 We describe only those classes, methods, and members that might be of interest
 for an application programmer.
