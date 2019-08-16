@@ -151,7 +151,7 @@ int main
 425302077447712589550957937778424442426617334727629299387668709205606050\
 270810842907692932019128194467627007", 10);
 	assert((foo == bar));
-	assert(foo.probab_prime(500));
+	assert(foo.probab_prime());
 	bar.set_str("n0p2ftq59aofqlrjexdmhww37nsdo5636jq09opxoq8amvlodjflhsspl\
 5jzlgnlg0brgm9w9sp68emaygiqx98q8sfvbnnqfr9hifq3bwoac8up5642bi6c4ohsg0lk9\
 623r7y6j0m4yj3304o731yt2xooyxw5npftk5yn9fj3m26mjjku1mbn3405h45cz8etbz", 36);
@@ -162,7 +162,7 @@ int main
 iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 	assert((foo == bar));
-	assert(foo.probab_prime(500));
+	assert(foo.probab_prime());
 
 	// test basic operators of TMCG_Bigint(true)
 	TMCG_Bigint sfoo(true, true), sbar(true, true), sbaz(true, true);
@@ -197,8 +197,8 @@ std::cerr << "sfoo = " << sfoo << " sbar = " << sbar << " sbaz = " << sbaz << st
 	std::cout << " ::operator -=" << std::endl;
 	sbaz = sfoo; // == -7
 	sfoo -= sbaz; // == -0
-	-sfoo; // == 0; TODO: submit bug report for libgcrypt's negative zero
-std::cerr << "libgcrypt BUG: negative zero" << std::endl;
+	-sfoo; // == 0;
+std::cerr << "libgcrypt BUG: negative zero -- remove if fixed" << std::endl;
 gcry_mpi_t a = gcry_mpi_new(1), b = gcry_mpi_new(1);
 gcry_mpi_set_ui(a, 42UL), gcry_mpi_set_ui(b, 42UL); // a = +42, b = +42
 gcry_mpi_neg(a, a), gcry_mpi_neg(b, b); // a = -42, b = -42
@@ -218,9 +218,20 @@ std::cerr << "sfoo = " << sfoo << " sbar = " << sbar << " sbaz = " << sbaz << st
 	sfoo.abs();
 	assert((sfoo > sbar));
 	std::cout << " ::probab_prime()" << std::endl;
-	assert(sfoo.probab_prime(500));
+	assert(sfoo.probab_prime());
 	sfoo += 1UL;
-	assert(!sfoo.probab_prime(500));
+	assert(!sfoo.probab_prime());
+	for (size_t i = 0; i < 25; i++)
+	{
+		sfoo.srandomb(1024);
+		if (gcry_prime_check(sfoo.secret_bigint, 64) == 0)
+			assert(sfoo.probab_prime());
+		else
+			assert(!sfoo.probab_prime());
+	}
+
+
+
 
 	// tmcg_mpz_*randomb, tmcg_mpz_*randomm
 	std::cout << "TMCG_Bigint()" << std::endl;

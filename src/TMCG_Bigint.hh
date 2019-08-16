@@ -109,7 +109,7 @@ struct TMCG_Bigint
 	void set_str
 		(const std::string& that, const size_t base);
 	bool probab_prime
-		(const size_t reps);
+		(const size_t reps = TMCG_MR_ITERATIONS);
 	void mul2exp
 		(const size_t exp);
 	void div2exp
