@@ -118,7 +118,10 @@ void start_instance
 				{
 					std::cout << "P_" << whoami << ": got nothing from " <<	
 						i << std::endl;
-					assert(i >= (n - t));
+					if (whoami < (n - t))
+					{
+						assert(i >= (n - t));
+					}
 				}
 			}
 			else
@@ -165,7 +168,10 @@ void start_instance
 				{
 					std::cout << "P_" << whoami << ": got nothing from " <<
 						i << " inside subprotocol" << std::endl;
-					assert(i >= (n - t));
+					if (whoami < (n - t))
+					{
+						assert(i >= (n - t));
+					}
 				}
 			}
 			else
@@ -201,7 +207,9 @@ void start_instance
 				}
 			}
 			else
+			{
 				assert(!rbc->DeliverFrom(a, i));
+			}
 		}
 
 		// switch back to subprotocol
@@ -233,7 +241,10 @@ void start_instance
 				{
 					std::cout << "P_" << whoami << ": got nothing from " <<
 						i << " inside subprotocol" << std::endl;
-					assert(i >= (n - t));
+					if (whoami < (n - t))
+					{
+						assert(i >= (n - t));
+					}
 				}
 			}
 			else
@@ -278,7 +289,10 @@ void start_instance
 				{
 					std::cout << "P_" << whoami << ": got nothing from " <<
 						i << std::endl;
-					assert(i >= (n - t));
+					if (whoami < (n - t))
+					{
+						assert(i >= (n - t));
+					}
 				}
 			}
 			else
@@ -334,7 +348,10 @@ void start_instance
 				{
 					std::cout << "P_" << whoami << ": (round 3a)" <<
 						" got nothing from " << i << std::endl;
-					assert(i >= (n - t));
+					if (whoami < (n - t))
+					{
+						assert(i >= (n - t));
+					}
 				}
 			}
 			else
@@ -374,7 +391,10 @@ void start_instance
 				{
 					std::cout << "P_" << whoami << ": (round 3b)" <<
 						" got nothing from " << i << std::endl;
-					assert(i >= (n - t));
+					if (whoami < (n - t))
+					{
+						assert(i >= (n - t));
+					}
 				}
 			}
 			else
