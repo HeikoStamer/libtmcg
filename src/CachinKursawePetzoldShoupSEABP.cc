@@ -1013,7 +1013,11 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		if (!mpz_cmp(message[3], l_retrieve))
 		{
 std::cerr << "RBC(" << j << "): [" << tag << "] l-retrieve from " << l << std::endl;
-			if (mbar.count(tag) > 0)
+			size_t who = mpz_get_ui(message[1]);
+			if (who >= n)
+				throw std::runtime_error("RBC::Deliver(): who >= n");
+			if ((mbar.count(tag) > 0) &&
+				(mpz_cmp(message[2], deliver_s[who]) <= 0))
 			{
 				// prepare message $(ID.j.s, l-deliver, \bar{m})$
 				RBC_ConstMessage message2;
@@ -1055,15 +1059,19 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 					retrieve_num++;
 			}
 			if (retrieve_num < (n - t))
+			{
+				if (retrieve[j].count(tag) > 0)
+					retrieve[j].erase(tag); // retry retrieving
 				continue; // skip, if not enough messages retrieved
+			}
 			for (size_t i = 0; i < n; i++)
 			{
 				size_t agree_num = 1;
-				if (!retrieve[i].count(tag))
+				if (!retrieve[i].count(tag) || (i == j))
 					continue; // skip wrong parties
 				for (size_t k = i + 1; k < n; k++)
 				{
-					if (!retrieve[k].count(tag))
+					if (!retrieve[k].count(tag) || (k == j))
 						continue; // skip wrong parties
 					if (!mpz_cmp((retrieve_buf[tag])[i], (retrieve_buf[tag])[k]))
 						agree_num++;
@@ -1081,6 +1089,9 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 							throw std::runtime_error("RBC::Deliver(): no mbar");
 						// get the payload from agreed value
 						mpz_set(m, (retrieve_buf[tag])[i]);
+						std::cerr << "RBC(" << j << "): out-of-order handler" <<
+							" successfully retrieved m = " << m << " for " <<
+							" party " << who << std::endl;
 						// increase sequence counter
 						mpz_add_ui(deliver_s[who], deliver_s[who], 1L);
 						i_out = who;
