@@ -105,10 +105,14 @@ void start_instance
 					std::cout << "P_" << whoami << ": a = " << a << " from " <<
 						i << std::endl;
 					if (i < (n - t))
+					{
 						assert(!mpz_cmp_ui(a, i));
+					}
 					else if (mpz_cmp_ui(a, i))
+					{
 						std::cout << "P_" << whoami << ": got wrong value" <<
 							" from " << i << std::endl;
+					}
 				}
 				else
 				{
@@ -148,10 +152,14 @@ void start_instance
 					std::cout << "P_" << whoami << ": a = " << a << " from " <<
 						i << " inside subprotocol" << std::endl;
 					if (i < (n - t))
+					{
 						assert(!mpz_cmp_ui(a, i));
+					}
 					else if (mpz_cmp_ui(a, i))
+					{
 						std::cout << "P_" << whoami << ": got wrong value" <<
 							" from " << i << std::endl;
+					}
 				}
 				else
 				{
@@ -212,10 +220,14 @@ void start_instance
 					std::cout << "P_" << whoami << ": a = " << a << " from " <<
 						i << " inside subprotocol" << std::endl;
 					if (i < (n - t))
+					{
 						assert(!mpz_cmp_ui(a, 42 * i));
+					}
 					else if (mpz_cmp_ui(a, 42 * i))
+					{
 						std::cout << "P_" << whoami << ": got wrong value" <<
 							" from " << i << std::endl;
+					}
 				}
 				else
 				{
@@ -253,10 +265,14 @@ void start_instance
 					std::cout << "P_" << whoami << ": a = " << a << " from " <<
 						i << std::endl;
 					if (i < (n - t))
+					{
 						assert(!mpz_cmp_ui(a, i));
+					}
 					else if (mpz_cmp_ui(a, i))
+					{
 						std::cout << "P_" << whoami << ": got wrong value" <<
 							" from " << i << std::endl;
+					}
 				}
 				else
 				{
@@ -305,7 +321,9 @@ void start_instance
 					std::cout << "P_" << whoami << ": (round 3a)" <<
 						" a = " << a << " from " << i << std::endl;
 					if (i < (n - t))
+					{
 						assert(!mpz_cmp_ui(a, i));
+					}
 					else if (mpz_cmp_ui(a, i))
 					{
 						std::cout << "P_" << whoami << ": (round 3a)" <<
@@ -343,7 +361,9 @@ void start_instance
 					std::cout << "P_" << whoami << ": (round 3b)" <<
 						" a = " << a << " from " << i << std::endl;
 					if (i < (n - t))
+					{
 						assert(!mpz_cmp_ui(a, i));
+					}
 					else if (mpz_cmp_ui(a, i))
 					{
 						std::cout << "P_" << whoami << ": (round 3b)" <<
