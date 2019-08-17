@@ -1017,7 +1017,7 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-retrieve from " << l << std::e
 			if (who >= n)
 				throw std::runtime_error("RBC::Deliver(): who >= n");
 			if ((mbar.count(tag) > 0) &&
-				(mpz_cmp(message[2], deliver_s[who]) <= 0))
+				(mpz_cmp(message[2], deliver_s[who]) < 0))
 			{
 				// prepare message $(ID.j.s, l-deliver, \bar{m})$
 				RBC_ConstMessage message2;
