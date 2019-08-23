@@ -739,7 +739,6 @@ bool aiounicast_select::Receive
 					{
 						newline_ptr = ptr;
 						newline_found = true;
-//std::cerr << "DEBUG: newline_ptr for " << i_out << " is " << newline_ptr << std::endl;
 						break;
 					}
 				}
@@ -835,7 +834,6 @@ bool aiounicast_select::Receive
 										delete [] tmp, delete [] mac;
 										return false;
 									}
-//std::cerr << "DEBUG: chunkval = " << chunkval << std::endl;
 									unsigned char ctr[blklen], chunk[blklen];
 									memcpy(ctr, iv_in[i_out], blklen);
 									memset(chunk, 0, blklen);
@@ -944,11 +942,13 @@ bool aiounicast_select::Receive
 					{
 						std::cerr << "aiounicast_select: mpz_set_str() for" <<
 							" m from " << i_out << " failed" << std::endl;
+/*
 						std::cerr << "aiounicast_select: strnlen(tmp) = " <<
 							strnlen(tmp, tmplen) << std::endl << std::hex;
 						for (size_t i = 0; i < strnlen(tmp, tmplen); i++)
 							std::cerr << (int)tmp[i] << " ";
 						std::cerr << std::dec << std::endl;
+*/
 						delete [] tmp, delete [] mac;
 						return false;
 					}
