@@ -497,9 +497,17 @@ bool aiounicast_select::Send
 				iv_flag_out[i_in] = true; // IV has been sent
 		}
 	}
-	// calculate the MAC over all data including delimiters
+	// reset and calculate the MAC over all data including delimiters
 	if (aio_is_authenticated)
 	{
+		err = gcry_mac_reset(*mac_out[i_in]);
+		if (err)
+		{
+			std::cerr << "aiounicast_select: gcry_mac_reset() failed" <<
+				std::endl << gcry_strerror(err) << std::endl;
+			delete [] buf;
+			return false;
+		}
 		err = gcry_mac_write(*mac_out[i_in], buf, realsize);
 		if (err)
 		{
@@ -578,7 +586,7 @@ bool aiounicast_select::Send
 	}
 	if (aio_is_authenticated)
 	{
-		// get current MAC buffer and reset MAC
+		// read MAC
 		size_t macbuflen = maclen;
 		unsigned char *macbuf = new unsigned char[macbuflen];
 		err = gcry_mac_read(*mac_out[i_in], macbuf, &macbuflen);
@@ -589,15 +597,7 @@ bool aiounicast_select::Send
 			delete [] macbuf;
 			return false;
 		}
-		err = gcry_mac_reset(*mac_out[i_in]);
-		if (err)
-		{
-			std::cerr << "aiounicast_select: gcry_mac_reset() failed" <<
-				std::endl << gcry_strerror(err) << std::endl;
-			delete [] macbuf;
-			return false;
-		}
-		// send content of MAC buffer (i.e. authentication tag)
+		// send MAC (i.e. authentication tag)
 		realnum = 0;
 		do
 		{
@@ -765,10 +765,19 @@ bool aiounicast_select::Receive
 					else
 						buf_flag[i_out] = false;
 					buf_ptr[i_out] = wnum;
-					// calculate, check, and reset MAC
+					// reset, calculate, and check the MAC
 					if (aio_is_authenticated)
 					{
 						gcry_error_t err;
+						err = gcry_mac_reset(*mac_in[i_out]);
+						if (err)
+						{
+							std::cerr << "aiounicast_select:" <<
+								" gcry_mac_reset() failed" << std::endl <<
+								gcry_strerror(err) << std::endl;
+							delete [] tmp, delete [] mac;
+							return false;
+						}
 						err = gcry_mac_write(*mac_in[i_out], tmp, newline_ptr);
 						if (err)
 						{
@@ -799,16 +808,6 @@ bool aiounicast_select::Receive
 								i_out << " failed" << std::endl <<
 								gcry_strerror(err) << std::endl;
 							bad_auth[i_out] = true;
-							err = gcry_mac_reset(*mac_in[i_out]);
-							delete [] tmp, delete [] mac;
-							return false;
-						}
-						err = gcry_mac_reset(*mac_in[i_out]);
-						if (err)
-						{
-							std::cerr << "aiounicast_select:" <<
-								" gcry_mac_reset() failed" << std::endl <<
-								gcry_strerror(err) << std::endl;
 							delete [] tmp, delete [] mac;
 							return false;
 						}
@@ -890,7 +889,8 @@ bool aiounicast_select::Receive
 								std::cerr << "aiounicast_select:" <<
 									" internal counter < chunkval" <<
 									" (" << chunk_in[i_out] << " < " <<
-									chunkval << ")" << std::endl;
+									chunkval << "); counter adjusted" <<
+									std::endl;
 								mpz_set(chunk_in[i_out], chunkval);
 							}
 							mpz_clear(chunkval);
