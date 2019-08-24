@@ -907,7 +907,7 @@ bool aiounicast_select::Receive
 						size_t realsize = 0;
 						memset(tmp, 0, tmplen); // clear tmp buffer
 						mpz_export(tmp, &realsize, 1, 1, 1, 0, encval);
-						if (realsize == 0)
+						if (realsize < 2)
 						{
 							std::cerr << "aiounicast_select: mpz_export()" <<
 								" failed for " << encval << std::endl;
