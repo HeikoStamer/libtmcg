@@ -952,7 +952,15 @@ bool aiounicast_select::Receive
 					}
 					delete [] tmp, delete [] mac;
 					if (aio_is_encrypted)
+					{
+						if (mpz_cmp(m, aio_hide_length) < 0)
+						{
+							std::cerr << "aiounicast_select: m < aio_hide" <<
+								"_length for m from " << i_out << std::endl;
+							return false;
+						}
 						mpz_sub(m, m, aio_hide_length);
+					}
 					return true;
 				}
 				// no delimiter found; invalidate buffer flag
