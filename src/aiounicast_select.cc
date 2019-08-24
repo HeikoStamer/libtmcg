@@ -942,13 +942,11 @@ bool aiounicast_select::Receive
 					{
 						std::cerr << "aiounicast_select: mpz_set_str() for" <<
 							" m from " << i_out << " failed" << std::endl;
-/*
 						std::cerr << "aiounicast_select: strnlen(tmp) = " <<
 							strnlen(tmp, tmplen) << std::endl << std::hex;
 						for (size_t i = 0; i < strnlen(tmp, tmplen); i++)
 							std::cerr << (int)tmp[i] << " ";
 						std::cerr << std::dec << std::endl;
-*/
 						delete [] tmp, delete [] mac;
 						return false;
 					}
