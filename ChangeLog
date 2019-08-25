@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-08-25] RFC4880: added SHA3 from RFC4880bis
 * [2019-08-25] RFC4880: added tmcg_openpgp_multiple_octets_t and changed members
                from TMCG_OpenPGP_Signature (i.e. embeddedsigs and recipientfprs)
 * [2019-08-15] RBC: added out-of-order handler to retrieve missing messages
@@ -24,7 +25,7 @@ in the sources of this package and additionally can be obtained from Internet
 * [2019-07-14] RBC: added recoverID() to recover an old state of the channel
 * [2019-07-14] RBC: added QueueFrom() to queue an already delivered message
 * [2019-07-13] RBC: fixed a logical error w.r.t. so-called bad r-answer messages
-* [2019-07-11] RFC4880: added member 'expired' to TMCG_OpenPGP_Signature, 
+* [2019-07-11] RFC4880: added member expired to TMCG_OpenPGP_Signature, 
                TMCG_OpenPGP_Subkey, and TMCG_OpenPGP_Pubkey
 * [2019-07-10] RFC4880: changed length encoding for strings and subpackets
 * [2019-07-08] RFC4880: changed ArmorEncode() to avoid armor header by default

@@ -6002,6 +6002,14 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashLength
 			return 64; // SHA512
 		case TMCG_OPENPGP_HASHALGO_SHA224:
 			return 28; // SHA224
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
+		case TMCG_OPENPGP_HASHALGO_SHA3_256:
+			return 32; // SHA3-256
+		case TMCG_OPENPGP_HASHALGO_SHA3_512:
+			return 64; // SHA3-512
+#endif
 		default:
 			return 0;
 	}
@@ -6026,6 +6034,14 @@ int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRY
 			return GCRY_MD_SHA512;
 		case TMCG_OPENPGP_HASHALGO_SHA224:
 			return GCRY_MD_SHA224;
+#if GCRYPT_VERSION_NUMBER < 0x010700
+		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
+#else
+		case TMCG_OPENPGP_HASHALGO_SHA3_256:
+			return GCRY_MD_SHA3_256;
+		case TMCG_OPENPGP_HASHALGO_SHA3_512:
+			return GCRY_MD_SHA3_512;
+#endif
 		default:
 			return 0;
 	}
@@ -6057,6 +6073,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRYName
 		case TMCG_OPENPGP_HASHALGO_SHA224:
 			out = "sha224";
 			break;
+		case TMCG_OPENPGP_HASHALGO_SHA3_256:
+			out = "sha3-256";
+			break;
+		case TMCG_OPENPGP_HASHALGO_SHA3_512:
+			out = "sha3-512";
+			break;
 		default:
 			out = "unknown";
 	}
@@ -6087,6 +6109,12 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashTextName
 			break;
 		case TMCG_OPENPGP_HASHALGO_SHA224:
 			out = "SHA224";
+			break;
+		case TMCG_OPENPGP_HASHALGO_SHA3_256:
+			out = "SHA3-256";
+			break;
+		case TMCG_OPENPGP_HASHALGO_SHA3_512:
+			out = "SHA3-512";
 			break;
 		default:
 			out = "unknown";
@@ -9955,7 +9983,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				out.signaturetarget_hash[i] = pkt[2+i];
 			break;
 		case 32: // Embedded Signature
-			if (out.embeddedsignaturelen != 0)
+			if (out.embeddedsignaturelen > 0)
 			{
 				if (verbose)
 				{
@@ -9983,7 +10011,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 				out.embeddedsignature[i] = pkt[i];
 			break;
 		case 33: // Issuer Fingerprint [draft RFC 4880bis]
-			if (out.issuerkeyversion != 0)
+			if (out.issuerkeyversion > 0)
 			{
 				if (verbose)
 				{
@@ -10022,15 +10050,6 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			break;
 		case 35: // Intended Recipient Fingerprint
 			// cf. https://gitlab.com/openpgp-wg/rfc4880bis/merge_requests/19
-			if (out.recipientkeyversion != 0)
-			{
-				if (verbose)
-				{
-					std::cerr << "WARNING: more than one recipient" <<
-						" fingerprint found; only the last one is" <<
-						" recognized" << std::endl;
-				}
-			}
 			if (pkt.size() < 2)
 				return 0; // error: too short subpacket body
 			out.recipientkeyversion = pkt[0];
@@ -10076,7 +10095,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 
 tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 	(tmcg_openpgp_octets_t &in, const int verbose,
-	 tmcg_openpgp_packet_ctx_t &out, tmcg_openpgp_notations_t &notations)
+	 tmcg_openpgp_packet_ctx_t &out,
+	 tmcg_openpgp_notations_t &notations,
+	 tmcg_openpgp_multiple_octets_t &embeddedsigs,
+	 tmcg_openpgp_multiple_octets_t &recipientfprs)
 {
 	tmcg_openpgp_byte_t tag = 0x02; // signature subpackets only
 	while (in.size())
@@ -10117,7 +10139,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 				std::cerr << "INFO: signature subpacket type = " <<
 					(int)sptype << " found" << std::endl;
 			}
-			if (out.notation_name_length != 0)
+			if ((sptype == 20) && (out.notation_name_length > 0))
 			{
 				tmcg_openpgp_notation_t notation;
 				for (size_t i = 0; i < out.notation_name_length; i++)
@@ -10127,6 +10149,36 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 				notations.push_back(notation);
 				if (verbose > 2)
 					std::cerr << "INFO: notation data found" << std::endl;
+			}
+			if ((sptype == 32) && (out.embeddedsignaturelen > 0))
+			{
+				tmcg_openpgp_octets_t sig;
+				for (size_t i = 0; i < out.embeddedsignaturelen; i++)
+					sig.push_back(out.embeddedsignature[i]);
+				embeddedsigs.push_back(sig);
+				if (verbose > 2)
+					std::cerr << "INFO: embedded signature found" << std::endl;
+			}
+			if ((sptype == 35) && (out.recipientkeyversion > 0))
+			{
+				tmcg_openpgp_octets_t fpr;
+				switch (out.recipientkeyversion)
+				{
+					case 4: // V4 keys use SHA-1
+						for (size_t i = 0; i < 20; i++)
+							fpr.push_back(out.recipientfingerprint[i]);
+						break;
+					case 5: // V5 keys use SHA256
+						for (size_t i = 0; i < 32; i++)
+							fpr.push_back(out.recipientfingerprint[i]);
+						break;
+				}
+				recipientfprs.push_back(fpr);
+				if (verbose > 2)
+				{
+					std::cerr << "INFO: recipient fingerprint v" <<
+						(int)out.recipientkeyversion << " found" << std::endl;
+				}
 			}
 		}
 	}
@@ -10141,7 +10193,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextEvaluate
 	for (size_t i = 0; i < sizeof(out.issuer); i++)
 	{
 		if (out.issuer[i] != 0)
-			copy = false;
+			copy = false; // don't copy, if anything present
 	}
 	for (size_t i = 0; (copy && (i < sizeof(out.issuer))); i++)
 		out.issuer[i] = in.issuer[i];
@@ -10159,7 +10211,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketContextEvaluate
 	for (size_t i = 0; i < sizeof(out.issuerfingerprint); i++)
 	{
 		if (out.issuerfingerprint[i])
-			copy = false;
+			copy = false; // don't copy, if anything present
 	}
 	if (copy)
 	{
@@ -10317,7 +10369,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag2
 	(const tmcg_openpgp_octets_t &pkt,
 	 const int verbose,
 	 tmcg_openpgp_packet_ctx_t &out,
-	 tmcg_openpgp_notations_t &notations)
+	 tmcg_openpgp_notations_t &notations,
+	 tmcg_openpgp_multiple_octets_t &embeddedsigs,
+	 tmcg_openpgp_multiple_octets_t &recipientfprs)
 {
 	tmcg_openpgp_octets_t mpis;
 	size_t mlen = 0;
@@ -10364,7 +10418,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag2
 		out.hspd = new tmcg_openpgp_byte_t[out.hspdlen];
 		for (size_t i = 0; i < out.hspdlen; i++)
 			out.hspd[i] = pkt[6+i];
-		tmcg_openpgp_byte_t tag = SubpacketParse(hspd, verbose, out, notations);
+		tmcg_openpgp_byte_t tag = 0x00;
+		tag = SubpacketParse(hspd, verbose, out, notations,
+			embeddedsigs, recipientfprs);
 		if (tag == 0x00)
 			return 0; // error: incorrect subpacket
 		if (pkt.size() < (8 + hspdlen))
@@ -10378,8 +10434,10 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag2
 		// considered definitive because it is not part of the signature proper.
 		tmcg_openpgp_packet_ctx_t untrusted;
 		tmcg_openpgp_notations_t unotations;
+		tmcg_openpgp_multiple_octets_t uembeddedsigs, urecipientfprs;
 		memset(&untrusted, 0, sizeof(untrusted));
-		tag = SubpacketParse(uspd, verbose, untrusted, unotations);
+		tag = SubpacketParse(uspd, verbose, untrusted, unotations,
+			uembeddedsigs, urecipientfprs);
 		if (tag == 0x00)
 		{
 			PacketContextRelease(untrusted);
@@ -11524,7 +11582,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	 std::vector<std::string> &capl,
 	 std::vector<gcry_mpi_t> &v_i,
 	 std::vector< std::vector<gcry_mpi_t> > &c_ik,
-	 tmcg_openpgp_notations_t &notations)
+	 tmcg_openpgp_notations_t &notations,
+	 tmcg_openpgp_multiple_octets_t &embeddedsigs,
+	 tmcg_openpgp_multiple_octets_t &recipientfprs)
 {
 	memset(&out, 0, sizeof(out)); // clear output context
 	// Exportable Certification: If this packet is not present, the
@@ -11614,7 +11674,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			ret = PacketDecodeTag1(pkt, out);
 			break;
 		case 2: // Signature Packet
-			ret = PacketDecodeTag2(pkt, verbose, out, notations);
+			ret = PacketDecodeTag2(pkt, verbose, out, notations, embeddedsigs,
+				recipientfprs);
 			break;
 		case 3: // Symmetric-Key Encrypted Session Key Packet
 			ret = PacketDecodeTag3(pkt, out);
@@ -11676,13 +11737,15 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	 std::vector<std::string> &capl,
 	 std::vector<gcry_mpi_t> &v_i,
 	 std::vector< std::vector<gcry_mpi_t> > &c_ik,
-	 tmcg_openpgp_notations_t &notations)
+	 tmcg_openpgp_notations_t &notations,
+	 tmcg_openpgp_multiple_octets_t &embeddedsigs,
+	 tmcg_openpgp_multiple_octets_t &recipientfprs)
 {
 	std::vector<gcry_mpi_t> x_rvss_qual; // dummy container
 	tmcg_openpgp_byte_t ret;
 
 	ret = PacketDecode(in, verbose, out, current_packet, qual,
-		x_rvss_qual, capl, v_i, c_ik, notations);
+		x_rvss_qual, capl, v_i, c_ik, notations, embeddedsigs, recipientfprs);
 	for (size_t i = 0; i < x_rvss_qual.size(); i++)
 		gcry_mpi_release(x_rvss_qual[i]); // release allocated mpi
 	x_rvss_qual.clear();
@@ -11693,7 +11756,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	(tmcg_openpgp_octets_t &in, const int verbose,
 	 tmcg_openpgp_packet_ctx_t &out,
 	 tmcg_openpgp_octets_t &current_packet,
-	 tmcg_openpgp_notations_t &notations)
+	 tmcg_openpgp_notations_t &notations,
+	 tmcg_openpgp_multiple_octets_t &embeddedsigs,
+	 tmcg_openpgp_multiple_octets_t &recipientfprs)
 {
 	std::vector<gcry_mpi_t> qual; // dummy container
 	std::vector<std::string> capl; // dummy container
@@ -11702,7 +11767,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 	tmcg_openpgp_byte_t ret;
 
 	ret = PacketDecode(in, verbose, out, current_packet,
-		qual, capl, v_i, c_ik, notations);
+		qual, capl, v_i, c_ik, notations, embeddedsigs, recipientfprs);
 	for (size_t i = 0; i < qual.size(); i++)
 		gcry_mpi_release(qual[i]); // release allocated mpi
 	qual.clear();
@@ -15013,6 +15078,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	 const bool primary, const bool subkey, const bool badkey,
 	 const bool uid_flag, const bool uat_flag,
 	 const tmcg_openpgp_octets_t &current_packet,
+	 const tmcg_openpgp_multiple_octets_t &embeddedsigs,
+	 const tmcg_openpgp_multiple_octets_t &recipientfprs,
 	 tmcg_openpgp_octets_t &embedded_pkt,
 	 TMCG_OpenPGP_Pubkey* &pub, TMCG_OpenPGP_Subkey* &sub,
 	 TMCG_OpenPGP_UserID* &uid, TMCG_OpenPGP_UserAttribute* &uat)
@@ -15072,7 +15139,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	TMCG_OpenPGP_Signature *sig = NULL;
 	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, flags, features;
 	tmcg_openpgp_octets_t psa, pha, pca, paa;
-	tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
 	switch (ctx.issuerkeyversion)
@@ -15107,27 +15173,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		pca.push_back(ctx.pca[i]);
 	for (size_t i = 0; i < ctx.paalen; i++)
 		paa.push_back(ctx.paa[i]);
-	if (ctx.embeddedsignaturelen > 0)
-	{
-		embeddedsigs.resize(1);
-		for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
-			embeddedsigs[0].push_back(ctx.embeddedsignature[i]);
-	}
-	if (ctx.recipientkeyversion > 0)
-	{
-		recipientfprs.resize(1);
-		switch (ctx.recipientkeyversion)
-		{
-			case 4: // V4 keys use SHA-1
-				for (size_t i = 0; i < 20; i++)
-					recipientfprs[0].push_back(ctx.recipientfingerprint[i]);
-				break;
-			case 5: // V5 keys use SHA256
-				for (size_t i = 0; i < 32; i++)
-					recipientfprs[0].push_back(ctx.recipientfingerprint[i]);
-				break;
-		}
-	}
 	if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 	    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
 	{
@@ -15248,7 +15293,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				// Embedded Signature subpacket in this binding signature that
 				// contains a 0x19 signature made by the signing subkey on the
 				// primary key and subkey.
-				if (ctx.embeddedsignaturelen != 0)
+				if (ctx.embeddedsignaturelen > 0)
 				{
 					PacketTagEncode(2, embedded_pkt);
 					PacketLengthEncode(ctx.embeddedsignaturelen, embedded_pkt);
@@ -16144,11 +16189,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag5
 			tmcg_openpgp_octets_t pcur, pkts;
 			tmcg_openpgp_packet_ctx_t pctx;
 			tmcg_openpgp_notations_t notations;
+			tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
 			tmcg_openpgp_byte_t ptag = 0xFF;
 			pkts.insert(pkts.end(),
 				current_packet.begin(), current_packet.end());
-			ptag = PacketDecode(pkts, verbose, pctx, pcur,
-				qual, x_rvss_qual, capl, v_i, c_ik, notations);
+			ptag = PacketDecode(pkts, verbose, pctx, pcur, qual, x_rvss_qual,
+				capl, v_i, c_ik, notations, embeddedsigs, recipientfprs);
 			if (ptag != 5)
 			{
 				if (verbose)
@@ -16264,11 +16310,12 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse_Tag7
 			tmcg_openpgp_octets_t pcur, pkts;
 			tmcg_openpgp_packet_ctx_t pctx;
 			tmcg_openpgp_notations_t notations;
+			tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
 			tmcg_openpgp_byte_t ptag = 0xFF;
 			pkts.insert(pkts.end(),
 				current_packet.begin(), current_packet.end());
-			ptag = PacketDecode(pkts, verbose, pctx, pcur,
-				qual, x_rvss_qual, capl, v_i, c_ik, notations);
+			ptag = PacketDecode(pkts, verbose, pctx, pcur, qual, x_rvss_qual,
+				capl, v_i, c_ik, notations, embeddedsigs, recipientfprs);
 			if (ptag != 7)
 			{
 				if (verbose)
@@ -16389,6 +16436,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag1
 bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 	(const tmcg_openpgp_packet_ctx_t &ctx, const int verbose,
 	 const tmcg_openpgp_octets_t &current_packet,
+	 const tmcg_openpgp_multiple_octets_t &embeddedsigs,
+	 const tmcg_openpgp_multiple_octets_t &recipientfprs,
 	 TMCG_OpenPGP_Message* &msg)
 {
 	if (verbose > 2)
@@ -16398,7 +16447,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 	}
 	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, flags, features;
 	tmcg_openpgp_octets_t psa, pha, pca, paa;
-	tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
 	switch (ctx.issuerkeyversion)
@@ -16433,27 +16481,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 		pca.push_back(ctx.pca[i]);
 	for (size_t i = 0; i < ctx.paalen; i++)
 		paa.push_back(ctx.paa[i]);
-	if (ctx.embeddedsignaturelen > 0)
-	{
-		embeddedsigs.resize(1);
-		for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
-			embeddedsigs[0].push_back(ctx.embeddedsignature[i]);
-	}
-	if (ctx.recipientkeyversion > 0)
-	{
-		recipientfprs.resize(1);
-		switch (ctx.recipientkeyversion)
-		{
-			case 4: // V4 keys use SHA-1
-				for (size_t i = 0; i < 20; i++)
-					recipientfprs[0].push_back(ctx.recipientfingerprint[i]);
-				break;
-			case 5: // V5 keys use SHA256
-				for (size_t i = 0; i < 32; i++)
-					recipientfprs[0].push_back(ctx.recipientfingerprint[i]);
-				break;
-		}
-	}
 	TMCG_OpenPGP_Signature *sig = NULL;
 	if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 	    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
@@ -16778,10 +16805,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		tmcg_openpgp_packet_ctx_t ctx;
 		tmcg_openpgp_octets_t current_packet;
 		tmcg_openpgp_notations_t notations;
+		tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
 		if (embedded_pkt.size())
 		{
 			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet,
-				notations);
+				notations, embeddedsigs, recipientfprs);
 			if (verbose > 2)
 				std::cerr << "INFO: [EMBEDDED] PacketDecode() = " <<
 					(int)ptag << " version = " << (int)ctx.version << std::endl;
@@ -16789,7 +16817,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		}
 		else
 		{
-			ptag = PacketDecode(pkts, verbose, ctx, current_packet, notations);
+			ptag = PacketDecode(pkts, verbose, ctx, current_packet, notations,
+				embeddedsigs, recipientfprs);
 			++pnum;
 			if (verbose > 2)
 				std::cerr << "INFO: PacketDecode() = " <<
@@ -16864,7 +16893,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			case 2: // Signature Packet
 				ret = PublicKeyBlockParse_Tag2(ctx, verbose, primary,
 					subkey, badkey, uid_flag, uat_flag,
-					current_packet, embedded_pkt, pub, sub, uid, uat);
+					current_packet, embeddedsigs, recipientfprs,
+					embedded_pkt, pub, sub, uid, uat);
 				break;
 			case 6: // Public-Key Packet
 				ret = PublicKeyBlockParse_Tag6(ctx, verbose,
@@ -16955,8 +16985,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	tmcg_openpgp_packet_ctx_t ctx;
 	tmcg_openpgp_octets_t current_packet;
 	tmcg_openpgp_notations_t notations;
+	tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
 	tmcg_openpgp_byte_t ptag = PacketDecode(pkts, verbose, ctx, current_packet,
-		notations);
+		notations, embeddedsigs, recipientfprs);
 	if (verbose > 2)
 		std::cerr << "INFO: PacketDecode() = " << (int)ptag << 
 			" version = " << (int)ctx.version << std::endl;
@@ -17008,7 +17039,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	}
 	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, flags, features;
 	tmcg_openpgp_octets_t psa, pha, pca, paa;
-	tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
 	switch (ctx.issuerkeyversion)
@@ -17043,27 +17073,6 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		pca.push_back(ctx.pca[i]);
 	for (size_t i = 0; i < ctx.paalen; i++)
 		paa.push_back(ctx.paa[i]);
-	if (ctx.embeddedsignaturelen > 0)
-	{
-		embeddedsigs.resize(1);
-		for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
-			embeddedsigs[0].push_back(ctx.embeddedsignature[i]);
-	}
-	if (ctx.recipientkeyversion > 0)
-	{
-		recipientfprs.resize(1);
-		switch (ctx.recipientkeyversion)
-		{
-			case 4: // V4 keys use SHA-1
-				for (size_t i = 0; i < 20; i++)
-					recipientfprs[0].push_back(ctx.recipientfingerprint[i]);
-				break;
-			case 5: // V5 keys use SHA256
-				for (size_t i = 0; i < 32; i++)
-					recipientfprs[0].push_back(ctx.recipientfingerprint[i]);
-				break;
-		}
-	}
 	switch (ptag)
 	{
 		case 2: // Signature Packet
@@ -17174,10 +17183,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 		tmcg_openpgp_packet_ctx_t ctx;
 		tmcg_openpgp_octets_t current_packet;
 		tmcg_openpgp_notations_t notations;
+		tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
 		if (embedded_pkt.size())
 		{
 			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet,
-				notations);
+				notations, embeddedsigs, recipientfprs);
 			if (verbose > 2)
 				std::cerr << "INFO: [EMBEDDED] PacketDecode() = " <<
 					(int)ptag << " version = " << (int)ctx.version << std::endl;
@@ -17185,7 +17195,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 		}
 		else
 		{
-			ptag = PacketDecode(pkts, verbose, ctx, current_packet, notations);
+			ptag = PacketDecode(pkts, verbose, ctx, current_packet, notations,
+				embeddedsigs, recipientfprs);
 			++pnum;
 			if ((ptag == 5) || (ptag == 6) || (ctx.tag == 5) || (ctx.tag == 6))
 				++knum;
@@ -17268,7 +17279,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 			case 2: // Signature Packet
 				ret = PublicKeyBlockParse_Tag2(ctx, verbose, primary,
 					subkey, badkey, uid_flag, uat_flag,
-					current_packet, embedded_pkt, pub, sub, uid, uat);
+					current_packet, embeddedsigs, recipientfprs,
+					embedded_pkt, pub, sub, uid, uat);
 				break;
 			case 6: // Public-Key Packet
 				PublicKeyringParse_Add(verbose, primary, subkey, badkey,
@@ -17371,10 +17383,11 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		tmcg_openpgp_packet_ctx_t ctx;
 		tmcg_openpgp_octets_t current_packet;
 		tmcg_openpgp_notations_t notations;
+		tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
 		if (embedded_pkt.size())
 		{
 			ptag = PacketDecode(embedded_pkt, verbose, ctx, current_packet,
-				notations);
+				notations, embeddedsigs, recipientfprs);
 			if (verbose > 2)
 				std::cerr << "INFO: [EMBEDDED] PacketDecode() = " <<
 					(int)ptag << " version = " << (int)ctx.version << std::endl;
@@ -17382,7 +17395,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		}
 		else
 		{
-			ptag = PacketDecode(pkts, verbose, ctx, current_packet, notations);
+			ptag = PacketDecode(pkts, verbose, ctx, current_packet, notations,
+				embeddedsigs, recipientfprs);
 			++pnum;
 			if (verbose > 2)
 				std::cerr << "INFO: PacketDecode() = " <<
@@ -17464,7 +17478,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		{
 			case 2: // Signature Packet
 				ret = PublicKeyBlockParse_Tag2(ctx, verbose, primary,
-					subkey, badkey, uid_flag, uat_flag,	current_packet,
+					subkey, badkey, uid_flag, uat_flag,
+					current_packet, embeddedsigs, recipientfprs,
 					embedded_pkt, prv->pub, sub->pub, uid, uat);
 				break;
 			case 5: // Secret-Key Packet
@@ -17579,7 +17594,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 		tmcg_openpgp_packet_ctx_t ctx;
 		tmcg_openpgp_octets_t current_packet;
 		tmcg_openpgp_notations_t notations;
-		ptag = PacketDecode(pkts, verbose, ctx, current_packet, notations);
+		tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
+		ptag = PacketDecode(pkts, verbose, ctx, current_packet, notations,
+			embeddedsigs, recipientfprs);
 		++pnum;
 		if (verbose > 2)
 		{
@@ -17658,7 +17675,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 				if ((cmsg || lmsg || emsg) && !smsg)
 					ret = false; // OpenPGP structure error detected
 				else
-					ret = MessageParse_Tag2(ctx, verbose, current_packet, msg);
+					ret = MessageParse_Tag2(ctx, verbose, current_packet,
+						embeddedsigs, recipientfprs, msg);
 				smsg = true;
 				break;
 			case 3: // Symmetric-Key Encrypted Session Key

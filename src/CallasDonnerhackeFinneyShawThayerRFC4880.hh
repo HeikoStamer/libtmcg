@@ -1331,6 +1331,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const bool										uid_flag,
 			 const bool										uat_flag,
 			 const tmcg_openpgp_octets_t					&current_packet,
+			 const tmcg_openpgp_multiple_octets_t			&embeddedsigs,
+			 const tmcg_openpgp_multiple_octets_t			&recipientfprs,
 			 tmcg_openpgp_octets_t							&embedded_pkt,
 			 TMCG_OpenPGP_Pubkey*							&pub,
 			 TMCG_OpenPGP_Subkey*							&sub,
@@ -1399,6 +1401,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_openpgp_packet_ctx_t				&ctx,
 			 const int										verbose,
 			 const tmcg_openpgp_octets_t					&current_packet,
+			 const tmcg_openpgp_multiple_octets_t			&embeddedsigs,
+			 const tmcg_openpgp_multiple_octets_t			&recipientfprs,
 			 TMCG_OpenPGP_Message*							&msg);
 		static bool MessageParse_Tag3
 			(const tmcg_openpgp_packet_ctx_t				&ctx,
@@ -1955,7 +1959,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(tmcg_openpgp_octets_t							&in,
 			 const int										verbose,
 			 tmcg_openpgp_packet_ctx_t						&out,
-			 tmcg_openpgp_notations_t						&notations);
+			 tmcg_openpgp_notations_t						&notations,
+			 tmcg_openpgp_multiple_octets_t					&embeddedsigs,
+			 tmcg_openpgp_multiple_octets_t					&recipientfprs);
 		static void PacketContextEvaluate
 			(const tmcg_openpgp_packet_ctx_t				&in,
 			 tmcg_openpgp_packet_ctx_t						&out);
@@ -1970,7 +1976,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const tmcg_openpgp_octets_t					&pkt,
 			 const int										verbose,
 			 tmcg_openpgp_packet_ctx_t						&out,
-			 tmcg_openpgp_notations_t						&notations);
+			 tmcg_openpgp_notations_t						&notations,
+			 tmcg_openpgp_multiple_octets_t					&embeddedsigs,
+			 tmcg_openpgp_multiple_octets_t					&recipientfprs);
 		static tmcg_openpgp_byte_t PacketDecodeTag3
 			(const tmcg_openpgp_octets_t					&pkt,
 			 tmcg_openpgp_packet_ctx_t						&out);
@@ -2027,7 +2035,9 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 std::vector<std::string>						&capl,
 			 std::vector<gcry_mpi_t>						&v_i,
 			 std::vector< std::vector<gcry_mpi_t> >			&c_ik,
-			 tmcg_openpgp_notations_t						&notations);
+			 tmcg_openpgp_notations_t						&notations,
+			 tmcg_openpgp_multiple_octets_t					&embeddedsigs,
+			 tmcg_openpgp_multiple_octets_t					&recipientfprs);
 		static tmcg_openpgp_byte_t PacketDecode
 			(tmcg_openpgp_octets_t							&in,
 			 const int										verbose,
@@ -2037,13 +2047,17 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 std::vector<std::string>						&capl,
 			 std::vector<gcry_mpi_t>						&v_i,
 			 std::vector< std::vector<gcry_mpi_t> >			&c_ik,
-			 tmcg_openpgp_notations_t						&notations);
+			 tmcg_openpgp_notations_t						&notations,
+			 tmcg_openpgp_multiple_octets_t					&embeddedsigs,
+			 tmcg_openpgp_multiple_octets_t					&recipientfprs);
 		static tmcg_openpgp_byte_t PacketDecode
 			(tmcg_openpgp_octets_t							&in,
 			 const int										verbose,
 			 tmcg_openpgp_packet_ctx_t						&out,
 			 tmcg_openpgp_octets_t							&current_packet,
-			 tmcg_openpgp_notations_t						&notations);
+			 tmcg_openpgp_notations_t						&notations,
+			 tmcg_openpgp_multiple_octets_t					&embeddedsigs,
+			 tmcg_openpgp_multiple_octets_t					&recipientfprs);
 		static void PacketContextRelease
 			(tmcg_openpgp_packet_ctx_t						&ctx);
 
