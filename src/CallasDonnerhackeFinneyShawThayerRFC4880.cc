@@ -72,8 +72,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &keyprefs_pha_in,
 	 const tmcg_openpgp_octets_t &keyprefs_pca_in,
 	 const tmcg_openpgp_octets_t &keyprefs_paa_in,
-	 const tmcg_openpgp_octets_t &embeddedsig_in,
-	 const tmcg_openpgp_octets_t &recipientfpr_in):
+	 const tmcg_openpgp_multiple_octets_t &embeddedsigs_in,
+	 const tmcg_openpgp_multiple_octets_t &recipientfprs_in):
 		ret(gcry_error(GPG_ERR_BAD_SIGNATURE)),
 		erroff(0),
 		valid(false),
@@ -116,10 +116,18 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		keyprefs_pca_in.begin(), keyprefs_pca_in.end());
 	keyprefs_paa.insert(keyprefs_paa.end(),
 		keyprefs_paa_in.begin(), keyprefs_paa_in.end());
-	embeddedsig.insert(embeddedsig.end(),
-		embeddedsig_in.begin(), embeddedsig_in.end());
-	recipientfpr.insert(recipientfpr.end(),
-		recipientfpr_in.begin(), recipientfpr_in.end());
+	embeddedsigs.resize(embeddedsigs_in.size());
+	for (size_t i = 0; i < embeddedsigs_in.size(); i++)
+	{
+		embeddedsigs[i].insert(embeddedsigs[i].end(),
+			embeddedsigs_in[i].begin(), embeddedsigs_in[i].end());
+	}
+	recipientfprs.resize(recipientfprs_in.size());
+	for (size_t i = 0; i < recipientfprs_in.size(); i++)
+	{
+		recipientfprs[i].insert(recipientfprs[i].end(),
+			recipientfprs_in[i].begin(), recipientfprs_in[i].end());
+	}
 }
 
 TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
@@ -145,8 +153,8 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	 const tmcg_openpgp_octets_t &keyprefs_pha_in,
 	 const tmcg_openpgp_octets_t &keyprefs_pca_in,
 	 const tmcg_openpgp_octets_t &keyprefs_paa_in,
-	 const tmcg_openpgp_octets_t &embeddedsig_in,
-	 const tmcg_openpgp_octets_t &recipientfpr_in):
+	 const tmcg_openpgp_multiple_octets_t &embeddedsigs_in,
+	 const tmcg_openpgp_multiple_octets_t &recipientfprs_in):
 		ret(gcry_error(GPG_ERR_BAD_SIGNATURE)),
 		erroff(0),
 		valid(false),
@@ -199,10 +207,18 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		keyprefs_pca_in.begin(), keyprefs_pca_in.end());
 	keyprefs_paa.insert(keyprefs_paa.end(),
 		keyprefs_paa_in.begin(), keyprefs_paa_in.end());
-	embeddedsig.insert(embeddedsig.end(),
-		embeddedsig_in.begin(), embeddedsig_in.end());
-	recipientfpr.insert(recipientfpr.end(),
-		recipientfpr_in.begin(), recipientfpr_in.end());
+	embeddedsigs.resize(embeddedsigs_in.size());
+	for (size_t i = 0; i < embeddedsigs_in.size(); i++)
+	{
+		embeddedsigs[i].insert(embeddedsigs[i].end(),
+			embeddedsigs_in[i].begin(), embeddedsigs_in[i].end());
+	}
+	recipientfprs.resize(recipientfprs_in.size());
+	for (size_t i = 0; i < recipientfprs_in.size(); i++)
+	{
+		recipientfprs[i].insert(recipientfprs[i].end(),
+			recipientfprs_in[i].begin(), recipientfprs_in[i].end());
+	}
 }
 
 bool TMCG_OpenPGP_Signature::Good
@@ -236,7 +252,9 @@ void TMCG_OpenPGP_Signature::PrintInfo
 		for (size_t i = 0; i < keyflags.size(); i++)
 			std::cerr << (int)keyflags[i] << " ";
 		std::cerr << std::dec << 
-		" revkeys.size() = " << revkeys.size() << std::endl;
+		" revkeys.size() = " << revkeys.size() <<
+		" embeddedsigs.size() = " << embeddedsigs.size() <<
+		" recipientfprs.size() = " << recipientfprs.size() << std::endl;
 }
 
 bool TMCG_OpenPGP_Signature::CheckValidity
@@ -278,7 +296,7 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 			std::cerr << "WARNING: insecure hash algorithm " << 
 				(int)hashalgo << " used for signature" << std::endl;
 		}
-		// TODO: turn this warning into an error, if old algorithms are gone
+		// FIXME: turn this warning into an error, if old algorithms are gone
 		// return false;
 	}
 	return true;
@@ -1161,6 +1179,12 @@ TMCG_OpenPGP_Signature::~TMCG_OpenPGP_Signature
 	keyprefs_pca.clear();
 	keyprefs_paa.clear();
 	revkeys.clear();
+	for (size_t i = 0; i < embeddedsigs.size(); i++)
+		embeddedsigs[i].clear();
+	embeddedsigs.clear();
+	for (size_t i = 0; i < recipientfprs.size(); i++)
+		recipientfprs[i].clear();
+	recipientfprs.clear();
 }
 
 bool TMCG_OpenPGP_Signature_Compare
@@ -10002,9 +10026,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			{
 				if (verbose)
 				{
-					std::cerr << "WARNING: more than one recipient fingerprint"
-						<<
-						" found; only the last one is recognized" << std::endl;
+					std::cerr << "WARNING: more than one recipient" <<
+						" fingerprint found; only the last one is" <<
+						" recognized" << std::endl;
 				}
 			}
 			if (pkt.size() < 2)
@@ -15046,8 +15070,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	// computed over the same data as the certificate that it revokes,
 	// and should have a later creation date than that certificate.
 	TMCG_OpenPGP_Signature *sig = NULL;
-	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, keyflags, recipientfpr;
-	tmcg_openpgp_octets_t features, psa, pha, pca, paa, embeddedsig;
+	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, flags, features;
+	tmcg_openpgp_octets_t psa, pha, pca, paa;
+	tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
 	switch (ctx.issuerkeyversion)
@@ -15071,7 +15096,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	for (size_t i = 0; i < ctx.hspdlen; i++)
 		hspd.push_back(ctx.hspd[i]);
 	for (size_t i = 0; i < ctx.keyflagslen; i++)
-		keyflags.push_back(ctx.keyflags[i]);
+		flags.push_back(ctx.keyflags[i]);
 	for (size_t i = 0; i < ctx.featureslen; i++)
 		features.push_back(ctx.features[i]);
 	for (size_t i = 0; i < ctx.psalen; i++)
@@ -15082,18 +15107,26 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		pca.push_back(ctx.pca[i]);
 	for (size_t i = 0; i < ctx.paalen; i++)
 		paa.push_back(ctx.paa[i]);
-	for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
-		embeddedsig.push_back(ctx.embeddedsignature[i]);
-	switch (ctx.recipientkeyversion)
+	if (ctx.embeddedsignaturelen > 0)
 	{
-		case 4: // V4 keys use SHA-1
-			for (size_t i = 0; i < 20; i++)
-				recipientfpr.push_back(ctx.recipientfingerprint[i]);
-			break;
-		case 5: // V5 keys use SHA256
-			for (size_t i = 0; i < 32; i++)
-				recipientfpr.push_back(ctx.recipientfingerprint[i]);
-			break;
+		embeddedsigs.resize(1);
+		for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
+			embeddedsigs[0].push_back(ctx.embeddedsignature[i]);
+	}
+	if (ctx.recipientkeyversion > 0)
+	{
+		recipientfprs.resize(1);
+		switch (ctx.recipientkeyversion)
+		{
+			case 4: // V4 keys use SHA-1
+				for (size_t i = 0; i < 20; i++)
+					recipientfprs[0].push_back(ctx.recipientfingerprint[i]);
+				break;
+			case 5: // V5 keys use SHA256
+				for (size_t i = 0; i < 32; i++)
+					recipientfprs[0].push_back(ctx.recipientfingerprint[i]);
+				break;
+		}
 	}
 	if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 	    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
@@ -15107,8 +15140,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.revocationcode, ctx.md,
-			current_packet, hspd, issuer, issuerfpr, keyflags, features,
-			psa, pha, pca, paa, embeddedsig, recipientfpr);
+			current_packet, hspd, issuer, issuerfpr, flags, features,
+			psa, pha, pca, paa, embeddedsigs, recipientfprs);
 	}
 	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA)
 	{
@@ -15123,8 +15156,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.revocationcode, ctx.r, ctx.s,
-			current_packet, hspd, issuer, issuerfpr, keyflags, features,
-			psa, pha, pca, paa, embeddedsig, recipientfpr);
+			current_packet, hspd, issuer, issuerfpr, flags, features,
+			psa, pha, pca, paa, embeddedsigs, recipientfprs);
 	}
 	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
 	{
@@ -15139,8 +15172,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.revocationcode, ctx.r, ctx.s,
-			current_packet, hspd, issuer, issuerfpr, keyflags, features,
-			psa, pha, pca, paa, embeddedsig, recipientfpr);
+			current_packet, hspd, issuer, issuerfpr, flags, features,
+			psa, pha, pca, paa, embeddedsigs, recipientfprs);
 	}
 	else if (ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
 	{
@@ -15155,8 +15188,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo, ctx.type,
 			ctx.version, ctx.sigcreationtime, ctx.sigexpirationtime,
 			ctx.keyexpirationtime, ctx.revocationcode, ctx.r, ctx.s,
-			current_packet, hspd, issuer, issuerfpr, keyflags, features,
-			psa, pha, pca, paa, embeddedsig, recipientfpr);
+			current_packet, hspd, issuer, issuerfpr, flags, features,
+			psa, pha, pca, paa, embeddedsigs, recipientfprs);
 	}
 	else
 	{
@@ -16363,8 +16396,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 		std::cerr << "INFO: packet length = " << current_packet.size() <<
 			std::endl;
 	}
-	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, keyflags, recipientfpr;
-	tmcg_openpgp_octets_t features, psa, pha, pca, paa, embeddedsig;
+	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, flags, features;
+	tmcg_openpgp_octets_t psa, pha, pca, paa;
+	tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
 	switch (ctx.issuerkeyversion)
@@ -16388,7 +16422,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 	for (size_t i = 0; i < ctx.hspdlen; i++)
 		hspd.push_back(ctx.hspd[i]);
 	for (size_t i = 0; i < ctx.keyflagslen; i++)
-		keyflags.push_back(ctx.keyflags[i]);
+		flags.push_back(ctx.keyflags[i]);
 	for (size_t i = 0; i < ctx.featureslen; i++)
 		features.push_back(ctx.features[i]);
 	for (size_t i = 0; i < ctx.psalen; i++)
@@ -16399,18 +16433,26 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 		pca.push_back(ctx.pca[i]);
 	for (size_t i = 0; i < ctx.paalen; i++)
 		paa.push_back(ctx.paa[i]);
-	for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
-		embeddedsig.push_back(ctx.embeddedsignature[i]);
-	switch (ctx.recipientkeyversion)
+	if (ctx.embeddedsignaturelen > 0)
 	{
-		case 4: // V4 keys use SHA-1
-			for (size_t i = 0; i < 20; i++)
-				recipientfpr.push_back(ctx.recipientfingerprint[i]);
-			break;
-		case 5: // V5 keys use SHA256
-			for (size_t i = 0; i < 32; i++)
-				recipientfpr.push_back(ctx.recipientfingerprint[i]);
-			break;
+		embeddedsigs.resize(1);
+		for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
+			embeddedsigs[0].push_back(ctx.embeddedsignature[i]);
+	}
+	if (ctx.recipientkeyversion > 0)
+	{
+		recipientfprs.resize(1);
+		switch (ctx.recipientkeyversion)
+		{
+			case 4: // V4 keys use SHA-1
+				for (size_t i = 0; i < 20; i++)
+					recipientfprs[0].push_back(ctx.recipientfingerprint[i]);
+				break;
+			case 5: // V5 keys use SHA256
+				for (size_t i = 0; i < 32; i++)
+					recipientfprs[0].push_back(ctx.recipientfingerprint[i]);
+				break;
+		}
 	}
 	TMCG_OpenPGP_Signature *sig = NULL;
 	if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
@@ -16425,8 +16467,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
 			ctx.type, ctx.version, ctx.sigcreationtime,
 			ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.md,
-			current_packet, hspd, issuer, issuerfpr, keyflags, features,
-			psa, pha, pca, paa, embeddedsig, recipientfpr);
+			current_packet, hspd, issuer, issuerfpr, flags, features,
+			psa, pha, pca, paa, embeddedsigs, recipientfprs);
 	}
 	else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
 		(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
@@ -16443,8 +16485,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse_Tag2
 			ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
 			ctx.type, ctx.version, ctx.sigcreationtime,
 			ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.r, ctx.s,
-			current_packet, hspd, issuer, issuerfpr, keyflags, features,
-			psa, pha, pca, paa, embeddedsig, recipientfpr);
+			current_packet, hspd, issuer, issuerfpr, flags, features,
+			psa, pha, pca, paa, embeddedsigs, recipientfprs);
 	}
 	else
 	{
@@ -16964,8 +17006,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		PacketContextRelease(ctx);
 		return false;
 	}
-	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, keyflags, recipientfpr;
-	tmcg_openpgp_octets_t features, psa, pha, pca, paa, embeddedsig;
+	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, flags, features;
+	tmcg_openpgp_octets_t psa, pha, pca, paa;
+	tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
 	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
 		issuer.push_back(ctx.issuer[i]);
 	switch (ctx.issuerkeyversion)
@@ -16989,7 +17032,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	for (size_t i = 0; i < ctx.hspdlen; i++)
 		hspd.push_back(ctx.hspd[i]);
 	for (size_t i = 0; i < ctx.keyflagslen; i++)
-		keyflags.push_back(ctx.keyflags[i]);
+		flags.push_back(ctx.keyflags[i]);
 	for (size_t i = 0; i < ctx.featureslen; i++)
 		features.push_back(ctx.features[i]);
 	for (size_t i = 0; i < ctx.psalen; i++)
@@ -17000,18 +17043,26 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		pca.push_back(ctx.pca[i]);
 	for (size_t i = 0; i < ctx.paalen; i++)
 		paa.push_back(ctx.paa[i]);
-	for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
-		embeddedsig.push_back(ctx.embeddedsignature[i]);
-	switch (ctx.recipientkeyversion)
+	if (ctx.embeddedsignaturelen > 0)
 	{
-		case 4: // V4 keys use SHA-1
-			for (size_t i = 0; i < 20; i++)
-				recipientfpr.push_back(ctx.recipientfingerprint[i]);
-			break;
-		case 5: // V5 keys use SHA256
-			for (size_t i = 0; i < 32; i++)
-				recipientfpr.push_back(ctx.recipientfingerprint[i]);
-			break;
+		embeddedsigs.resize(1);
+		for (size_t i = 0; i < ctx.embeddedsignaturelen; i++)
+			embeddedsigs[0].push_back(ctx.embeddedsignature[i]);
+	}
+	if (ctx.recipientkeyversion > 0)
+	{
+		recipientfprs.resize(1);
+		switch (ctx.recipientkeyversion)
+		{
+			case 4: // V4 keys use SHA-1
+				for (size_t i = 0; i < 20; i++)
+					recipientfprs[0].push_back(ctx.recipientfingerprint[i]);
+				break;
+			case 5: // V5 keys use SHA256
+				for (size_t i = 0; i < 32; i++)
+					recipientfprs[0].push_back(ctx.recipientfingerprint[i]);
+				break;
+		}
 	}
 	switch (ptag)
 	{
@@ -17028,8 +17079,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
 					ctx.type, ctx.version, ctx.sigcreationtime,
 					ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.md,
-					current_packet, hspd, issuer, issuerfpr, keyflags, features,
-					psa, pha, pca, paa, embeddedsig, recipientfpr);
+					current_packet, hspd, issuer, issuerfpr, flags, features,
+					psa, pha, pca, paa, embeddedsigs, recipientfprs);
 			}
 			else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
 				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
@@ -17046,8 +17097,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
 					ctx.type, ctx.version, ctx.sigcreationtime,
 					ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.r, ctx.s,
-					current_packet, hspd, issuer, issuerfpr, keyflags, features,
-					psa, pha, pca, paa, embeddedsig, recipientfpr);
+					current_packet, hspd, issuer, issuerfpr, flags, features,
+					psa, pha, pca, paa, embeddedsigs, recipientfprs);
 			}
 			else
 			{

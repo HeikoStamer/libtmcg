@@ -145,6 +145,8 @@ typedef std::basic_string<char, std::char_traits<char>, TMCG_SecureAlloc<char> >
 	tmcg_openpgp_secure_string_t;
 typedef std::basic_stringstream<char, std::char_traits<char>, TMCG_SecureAlloc<char> >
 	tmcg_openpgp_secure_stringstream_t;
+typedef std::vector<tmcg_openpgp_octets_t>
+	tmcg_openpgp_multiple_octets_t;
 
 enum tmcg_openpgp_signature_t
 {
@@ -566,8 +568,8 @@ class TMCG_OpenPGP_Signature
 		tmcg_openpgp_octets_t								keyprefs_pca;
 		tmcg_openpgp_octets_t								keyprefs_paa;
 		std::vector<tmcg_openpgp_revkey_t>					revkeys;
-		tmcg_openpgp_octets_t								embeddedsig; // TODO: should be a vector
-		tmcg_openpgp_octets_t								recipientfpr; // TODO: should be a vector
+		tmcg_openpgp_multiple_octets_t						embeddedsigs;
+		tmcg_openpgp_multiple_octets_t						recipientfprs;
 
 		TMCG_OpenPGP_Signature
 			(const bool										revocable_in,
@@ -591,8 +593,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_paa_in,
-			 const tmcg_openpgp_octets_t					&embeddedsig_in,
-			 const tmcg_openpgp_octets_t					&recipientfpr_in);
+			 const tmcg_openpgp_multiple_octets_t			&embeddedsigs_in,
+			 const tmcg_openpgp_multiple_octets_t			&recipientfprs_in);
 		TMCG_OpenPGP_Signature
 			(const bool										revocable_in,
 			 const bool										exportable_in,
@@ -616,8 +618,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
 			 const tmcg_openpgp_octets_t					&keyprefs_paa_in,
-			 const tmcg_openpgp_octets_t					&embeddedsig_in,
-			 const tmcg_openpgp_octets_t					&recipientfpr_in);
+			 const tmcg_openpgp_multiple_octets_t			&embeddedsigs_in,
+			 const tmcg_openpgp_multiple_octets_t			&recipientfprs_in);
 		bool Good
 			() const;
 		void PrintInfo
