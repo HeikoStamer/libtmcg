@@ -1091,15 +1091,16 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 					}
 					else 
 						mpz_set(mbar[tag], (retrieve_buf[tag])[i]);
+					std::cerr << "RBC(" << j << "): out-of-order handler" <<
+						" successfully retrieved m = " << mbar[tag] << " for" <<
+						" party " << who << " with s = " << message[2] <<
+						std::endl;
 					// check for matching tag and sequence counter before delivering
 					if (!mpz_cmp(message[0], ID) &&
 						!mpz_cmp(message[2], deliver_s[who]))
 					{
 						// get the payload from agreed value
-						mpz_set(m, (retrieve_buf[tag])[i]);
-						std::cerr << "RBC(" << j << "): out-of-order handler" <<
-							" successfully retrieved m = " << m << " for " <<
-							" party " << who << std::endl;
+						mpz_set(m, mbar[tag]);
 						// increase sequence counter
 						mpz_add_ui(deliver_s[who], deliver_s[who], 1L);
 						i_out = who;
