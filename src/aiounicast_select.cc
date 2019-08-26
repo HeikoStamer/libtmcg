@@ -33,6 +33,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <ctime>
+#include <sstream>
 #include "mpz_srandom.hh"
 
 aiounicast_select::aiounicast_select
@@ -65,13 +67,19 @@ aiounicast_select::aiounicast_select
 	{
 		fd_in[i] = fd_in_in[i];
 		if (fd_in[i] >= FD_SETSIZE)
+		{
+			aio_is_initialized = false;
 			throw std::invalid_argument("aiounicast_select: fd_in >= FD_SETSIZE");
+		}
 		unsigned char *buf = new unsigned char[buf_in_size];
 		buf_in.push_back(buf), buf_ptr.push_back(0);
 		buf_flag.push_back(false);
 		fd_out[i] = fd_out_in[i];
 		if (fd_out[i] >= FD_SETSIZE)
+		{
+			aio_is_initialized = false;
 			throw std::invalid_argument("aiounicast_select: fd_out >= FD_SETSIZE");
+		}
 	}
 
 	// initialize ordered buffer for receiving mpz_t
@@ -87,6 +95,12 @@ aiounicast_select::aiounicast_select
 			std::cerr << "aiounicast_select: gcry_mac_get_algo_maclen()" <<
 				" failed" << std::endl;
 			throw std::invalid_argument("aiounicast_select: bad MAC algo");
+		}
+		if (key_in.size() != n_in)
+		{
+			aio_is_initialized = false;
+			std::cerr << "aiounicast_select: key_in.size() != n_in" << std::endl;
+			throw std::invalid_argument("aiounicast_select: bad size of key_in");
 		}
 	}
 	else
@@ -163,6 +177,12 @@ aiounicast_select::aiounicast_select
 			std::cerr << "aiounicast_select: gcry_cipher_get_algo_blklen()" <<
 				" failed" << std::endl;
 			throw std::invalid_argument("aiounicast_select: libgcrypt failed");
+		}
+		if (key_in.size() != n_in)
+		{
+			aio_is_initialized = false;
+			std::cerr << "aiounicast_select: key_in.size() != n_in" << std::endl;
+			throw std::invalid_argument("aiounicast_select: bad size of key_in");
 		}
 	}
 	else
@@ -269,8 +289,36 @@ aiounicast_select::aiounicast_select
 		{
 			mpz_ptr tmp = new mpz_t();
 			mpz_init_set_ui(tmp, 0UL);
-			chunk_out.push_back(tmp); // chunk counter
+			chunk_out.push_back(tmp); // chunk counter						
 		}
+	}
+	for (size_t i = 0; aio_is_encrypted && aio_is_chunked && (i < n_in); i++)
+	{
+		// chunked mode: nonce for CTR mode is derived from key and
+		// some additional data (i.e. UTC year and month) by SHA2-384
+		std::stringstream ks;
+		time_t ct = time(NULL);
+		struct tm gmt;
+		if (gmtime_r(&ct, &gmt) != NULL)
+			ks << gmt.tm_year << "|" << gmt.tm_mon << "|";
+		ks << key_in[i];
+		unsigned char nonce[blklen];
+		unsigned char salt[blklen];
+		memset(nonce, 0, blklen);
+		memset(salt, 42, blklen);
+		std::string key = ks.str();
+		gcry_error_t err = gcry_kdf_derive(key.c_str(), key.length(),
+			GCRY_KDF_PBKDF2, GCRY_MD_SHA384, salt, blklen, 23000,
+			blklen, nonce);
+		if (err)
+		{
+			aio_is_initialized = false;
+			std::cerr << "aiounicast_select: gcry_kdf_derive() failed" <<
+				std::endl << gcry_strerror(err) << std::endl;
+			throw std::invalid_argument("aiounicast_select: libgcrypt failed");
+		}
+		memcpy(iv_out[i], nonce, blklen);
+		memcpy(iv_in[i], nonce, blklen);
 	}
 }
 
@@ -340,16 +388,16 @@ bool aiounicast_select::Send
 			mpz_add_ui(chunk_out[i_in], chunk_out[i_in], 1UL); // counter++
 			unsigned char ctr[blklen], chunk[blklen];
 			memcpy(ctr, iv_out[i_in], blklen);
-			memset(chunk, 0, blklen);
 			if (mpz_sizeinbase(chunk_out[i_in], 62) > blklen)
 			{
 				std::cerr << "aiounicast_select: counter exceeded" << std::endl;
 				delete [] buf;
 				return false;
 			}
+			memset(chunk, 0, blklen);
 			mpz_export(chunk, NULL, 1, 1, 1, 0, chunk_out[i_in]);
 			for (size_t c = 0; c < blklen; c++)
-				ctr[c] ^= chunk[c]; 
+				ctr[c] ^= chunk[c];
 			err = gcry_cipher_setctr(*enc_out[i_in], ctr, blklen);
 			if (err)
 			{
@@ -835,7 +883,6 @@ bool aiounicast_select::Receive
 									}
 									unsigned char ctr[blklen], chunk[blklen];
 									memcpy(ctr, iv_in[i_out], blklen);
-									memset(chunk, 0, blklen);
 									if (mpz_sizeinbase(chunkval, 62) > blklen)
 									{
 										std::cerr << "aiounicast_select:" <<
@@ -844,8 +891,8 @@ bool aiounicast_select::Receive
 										delete [] tmp, delete [] mac;
 										return false;
 									}
-									mpz_export(chunk, NULL, 1, 1, 1, 0,
-										chunkval);
+									memset(chunk, 0, blklen);
+									mpz_export(chunk, NULL, 1, 1, 1, 0, chunkval);
 									for (size_t c = 0; c < blklen; c++)
 										ctr[c] ^= chunk[c]; 
 									gcry_error_t err =
@@ -879,10 +926,9 @@ bool aiounicast_select::Receive
 								std::cerr << "aiounicast_select:" <<
 									" internal counter > chunkval" <<
 									" (" << chunk_in[i_out] << " > " <<
-									chunkval << ")" << std::endl;
-								mpz_clear(chunkval);
-								delete [] tmp, delete [] mac;
-								return false;
+									chunkval << "); counter adjusted" <<
+									std::endl;
+								mpz_set(chunk_in[i_out], chunkval);
 							}
 							else if (mpz_cmp(chunk_in[i_out], chunkval) < 0)
 							{
@@ -1022,11 +1068,7 @@ bool aiounicast_select::Receive
 						if (!iv_flag_in[i_out] && (buf_ptr[i_out] >= blklen))
 						{
 							gcry_error_t err = 0;
-							if (aio_is_chunked)
-							{
-								memcpy(iv_in[i_out], buf_in[i_out], blklen);
-							}
-							else
+							if (!aio_is_chunked)
 							{
 								err = gcry_cipher_setiv(*enc_in[i_out],
 									buf_in[i_out], blklen);
