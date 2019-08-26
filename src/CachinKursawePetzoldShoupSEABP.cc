@@ -877,7 +877,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					!mpz_cmp(message[2], deliver_s[who]))
 				{
 					if (mbar.count(tag) == 0)
-						throw std::runtime_error("RBC::Deliver(): no mbar");
+						throw std::runtime_error("RBC::Deliver(): no mbar (r-ready)");
 					mpz_set(m, mbar[tag]); // set the result to $\bar{m}$
 					// increase sequence counter
 					mpz_add_ui(deliver_s[who], deliver_s[who], 1L);
@@ -979,7 +979,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
 			{
 				if (mbar.count(tag) == 0)
-					throw std::runtime_error("RBC::Deliver(): no mbar found");
+					throw std::runtime_error("RBC::Deliver(): no mbar (r-answer)");
 				// get the playload from mbar cache
 				mpz_set(m, mbar[tag]);
 				// increase sequence counter
@@ -1040,6 +1040,7 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-retrieve from " << l << std::e
 		if (!mpz_cmp(message[3], l_deliver) && !retrieve[l].count(tag))
 		{
 std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::endl;
+// FIXME: check that tag was requested by this party
 			retrieve[l].insert(std::pair<std::string, bool>(tag, true));
 			if (retrieve_buf.count(tag) == 0)
 			{
@@ -1061,7 +1062,7 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 			if (retrieve_num < (n - t))
 			{
 				if (retrieve[j].count(tag) > 0)
-					retrieve[j].erase(tag); // retry retrieving
+					retrieve[j].erase(tag); // retry by sending l-retrieve
 				continue; // skip, if not enough messages retrieved
 			}
 			for (size_t i = 0; i < n; i++)
@@ -1086,7 +1087,7 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 						!mpz_cmp(message[2], deliver_s[who]))
 					{
 						if (mbar.count(tag) == 0)
-							throw std::runtime_error("RBC::Deliver(): no mbar");
+							throw std::runtime_error("RBC::Deliver(): no mbar (r-deliver)");
 						// get the payload from agreed value
 						mpz_set(m, (retrieve_buf[tag])[i]);
 						std::cerr << "RBC(" << j << "): out-of-order handler" <<
