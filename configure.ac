@@ -16,7 +16,7 @@
 #   along with LibTMCG; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# (Process this file with autoconf to produce a configure script.)
+# (Process this file with GNU autoconf to produce a configure script.)
 
 AC_REVISION([20190826])
 AC_PREREQ(2.61)
