@@ -18,7 +18,7 @@
 #
 # (Process this file with autoconf to produce a configure script.)
 
-AC_REVISION([20190706])
+AC_REVISION([20190826])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.4.0], [HeikoStamer@gmx.net], [libTMCG],
@@ -87,8 +87,8 @@ AC_DEFINE(TMCG_OPENPGP_RADIX64_MC, 64,
 	[Define the maximum number of characters in a single line of Radix-64\
  encoding])
 AC_DEFINE(TMCG_OPENPGP_MAX_ALLOC, 2147483645UL,
-	[Define the maximum number of memory to allocate for OPENPGP packet\
- context structures])
+	[Define the maximum number of memory to allocate for OpenPGP packet\
+ decoding structures])
 
 AC_DEFINE(TMCG_MR_ITERATIONS, 64,
 	[Define the number of iterations for the Miller-Rabin primality test.
@@ -97,7 +97,7 @@ AC_DEFINE(TMCG_MAX_ZNP_ITERATIONS, 80,
 	[Define the maximum number of iterations for the prover in cut-and-choose
 	style zero-knowledge protocols of Schindelhauer's toolbox. This limits the
 	soundness error probability to 2^{-TMCG_MAX_ZNP_ITERATIONS}, however, it
-	protects against some obvious denial-of-service attacks.])
+	also protects against some obvious denial-of-service attacks.])
 AC_DEFINE(TMCG_MAX_DKG_PLAYERS, 256,
 	[Define the maximum number of parties for DKG protocols.])
 AC_DEFINE(TMCG_GROTH_L_E, 80,
@@ -244,7 +244,7 @@ if test "x$with_botan" != x ; then
  call --with-botan with install prefix]))
 	BOTAN_LIBS="-lbotan-2 -L${BOTAN_PREFIX}/lib"
 	BOTAN_CFLAGS="-I${BOTAN_PREFIX}/include/botan-2"
-	AC_DEFINE(BOTAN, , [Define to enable optional Botan support])
+	AC_DEFINE(BOTAN, , [Define to enable optional Botan support for randomness])
 else
 	BOTAN_LIBS=""
 	BOTAN_CFLAGS=""
@@ -279,9 +279,9 @@ AC_CHECK_SIZEOF([unsigned long int])
 # Checks for library functions
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
-AC_CHECK_FUNCS([abs clock close ctime fcntl fprintf memcmp memcpy memmove\
- memset open perror read remove sscanf select sleep snprintf strrchr strtoul\
- time write], ,
+AC_CHECK_FUNCS([abs clock close ctime fcntl fprintf gmtime_r memcmp memcpy\
+ memmove memset open perror read remove sscanf select sleep snprintf strrchr\
+ strtoul time write], ,
 	AC_MSG_ERROR([some functions are missing]))
 
 # Checks for forking tests feature

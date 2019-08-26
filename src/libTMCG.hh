@@ -32,10 +32,10 @@
 
 	#ifndef TMCG_MAX_ZNP_ITERATIONS
 		/* Define the maximum number of iterations for the prover in
-		   cut-and-choose style zero-knowledge protocols of 
-		   Schindelhauer's toolbox. This limits the soundness error
-		   probability to 2^{-TMCG_MAX_ZNP_ITERATIONS}, however, it
-		   protects against some obvious denial-of-service attacks. */  
+		   cut-and-choose style zero-knowledge protocols of Schindelhauer's
+		   toolbox. This limits the soundness error probability to
+		   2^{-TMCG_MAX_ZNP_ITERATIONS}, however, it also protects against
+		   some obvious denial-of-service attacks. */  
 		#define TMCG_MAX_ZNP_ITERATIONS 80
 	#endif
 
@@ -225,8 +225,8 @@
 	#endif
 
 	#ifndef TMCG_OPENPGP_MAX_ALLOC
-		/* Define the maximum number of memory to allocate for OPENPGP packet
-		   context structures */
+		/* Define the maximum number of memory to allocate for OpenPGP packet
+		   decoding structures */
 		#define TMCG_OPENPGP_MAX_ALLOC 2147483645UL
 	#endif
 
