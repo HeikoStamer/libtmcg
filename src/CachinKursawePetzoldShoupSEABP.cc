@@ -1082,12 +1082,19 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 					size_t who = mpz_get_ui(message[1]);
 					if (who >= n)
 						throw std::runtime_error("RBC::Deliver(): who >= n");
+					if (mbar.count(tag) == 0)
+					{
+						mpz_ptr tmp = new mpz_t();
+						mpz_init(tmp);
+						mbar.insert(std::pair<std::string, mpz_ptr>(tag, tmp));
+						mpz_set(mbar[tag], (retrieve_buf[tag])[i]);
+					}
+					else 
+						mpz_set(mbar[tag], (retrieve_buf[tag])[i]);
 					// check for matching tag and sequence counter before delivering
 					if (!mpz_cmp(message[0], ID) &&
 						!mpz_cmp(message[2], deliver_s[who]))
 					{
-						if (mbar.count(tag) == 0)
-							throw std::runtime_error("RBC::Deliver(): no mbar (r-deliver)");
 						// get the payload from agreed value
 						mpz_set(m, (retrieve_buf[tag])[i]);
 						std::cerr << "RBC(" << j << "): out-of-order handler" <<
