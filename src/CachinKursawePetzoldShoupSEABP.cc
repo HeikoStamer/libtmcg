@@ -1040,7 +1040,12 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-retrieve from " << l << std::e
 		if (!mpz_cmp(message[3], l_deliver) && !retrieve[l].count(tag))
 		{
 std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::endl;
-// FIXME: check that tag was requested by this party
+			if (retrieve[j].count(tag) == 0)
+			{
+				std::cerr << "RBC(" << j << "): received l-deliver for" <<
+					" unwanted tag from " << l << std::endl;
+				continue;
+			}
 			retrieve[l].insert(std::pair<std::string, bool>(tag, true));
 			if (retrieve_buf.count(tag) == 0)
 			{
