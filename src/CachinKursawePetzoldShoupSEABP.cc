@@ -1080,8 +1080,10 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 			}
 			if (retrieve_num < (n - t))
 			{
+/* FIXME: conflicting use of retrieve[j].count(tag) to detect unwanted messages
 				if (retrieve[j].count(tag) > 0)
 					retrieve[j].erase(tag); // retry by sending l-retrieve
+*/
 				continue; // skip, if not enough messages retrieved
 			}
 			for (size_t i = 0; i < n; i++)
