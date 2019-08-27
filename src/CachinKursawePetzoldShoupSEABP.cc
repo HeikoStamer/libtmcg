@@ -449,20 +449,19 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 	InitializeMessage(message);
 	// process messages according to the RBC protocol [CKPS01]
 	// extended with a simple FIFO-order delivery mechanism
-	// and a corresponding out-of-order handler
+	// and a out-of-order handler for missing messages
 	time_t entry_time = time(NULL);
 	do
 	{
 		// first, process the deliver buffer
 		std::list<RBC_VectorList::iterator> cleanup;
-		RBC_VectorList::iterator retrieve_it;
+		std::map<size_t, RBC_VectorList::iterator> retrieve_it;
 		mpz_t max_s[n], min_s[n];
 		for (size_t i = 0; i < n; i++)
 		{
 			mpz_init_set_ui(max_s[i], 0UL);
 			mpz_init_set_ui(min_s[i], 0UL);
 		}
-		retrieve_it = deliver_buf.end();
 		for (RBC_VectorList::iterator lit = deliver_buf.begin();
 			lit != deliver_buf.end(); ++lit)
 		{
@@ -509,7 +508,16 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					(mpz_cmp(min_s[who], (*lit)[2]) > 0))
 				{
 					mpz_set(min_s[who], (*lit)[2]);
-					retrieve_it = lit; // take the minimal missing message
+					// retrieve always the minimal missing message
+					if (retrieve_it.count(who) == 0)
+					{
+						retrieve_it[who] = lit;
+					}
+					else
+					{
+						retrieve_it.erase(who);
+						retrieve_it[who] = lit;
+					}
 				}
 			}
 			// check for lower deliver sequence counter
@@ -534,39 +542,45 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				mpz_set(deliver_s[i], min_s[i]);
 			}
 		}
-		// out-of-order handler: send l-retrieve message to all other parties
-		if ((retrieve_it != deliver_buf.end()) && (fifo_skip == 0))
+		// out-of-order handler: send l-retrieve messages to all other parties
+		for (std::map<size_t, RBC_VectorList::iterator>::const_iterator ci =
+			retrieve_it.begin(); (ci != retrieve_it.end()) && (fifo_skip == 0);
+			++ci)
 		{
-			RBC_ConstMessage message2;
-			size_t who = mpz_get_ui((*retrieve_it)[1]);
-			message2.push_back((*retrieve_it)[0]);
-			message2.push_back((*retrieve_it)[1]);
-			message2.push_back(deliver_s[who]);
-			message2.push_back(l_retrieve);
-			message2.push_back(l_retrieve);
-			bool sent = false;
-			std::string tag;
-			TagMessage(tag, message2);
-			for (size_t i = 0; ((i < n) && !retrieve[j].count(tag)); i++)
+			size_t who = ci->first;
+			mpz_set(foo, deliver_s[who]);
+			while (mpz_cmp(foo, min_s[who]) < 0)
 			{
-				if (i == j)
-					continue; // skip myself
-				if (retrieve[i].count(tag) > 0)
-					continue; // skip, if already retrieved
-				if (!aiou->Send(message2, i, aio_timeout_vs))
+				RBC_ConstMessage message2;
+				message2.push_back((*(ci->second))[0]);
+				message2.push_back((*(ci->second))[1]);
+				message2.push_back(foo);
+				message2.push_back(l_retrieve);
+				message2.push_back(l_retrieve);
+				bool sent = false;
+				std::string tag;
+				TagMessage(tag, message2);
+				for (size_t i = 0; ((i < n) && !retrieve[j].count(tag)); i++)
 				{
-					std::cerr << "RBC(" << j << "): sending l-retrieve" <<
-						" failed for " << i << std::endl;
+					if (i == j)
+						continue; // skip myself
+					if (retrieve[i].count(tag) > 0)
+						continue; // skip, if already retrieved
+					if (!aiou->Send(message2, i, aio_timeout_vs))
+					{
+						std::cerr << "RBC(" << j << "): sending l-retrieve" <<
+							" failed for " << i << std::endl;
+					}
+					sent = true;
 				}
-				sent = true;
-			}
-			message2.clear();
-			if (sent)
-			{
-				retrieve[j].insert(std::pair<std::string, bool>(tag, true));
-				std::cerr << "RBC(" << j << "): l-retrieve sent for message" <<
-					" of party " << who << " (" << min_s[who] << " vs " <<
-					deliver_s[who] << ")" << std::endl;
+				if (sent)
+				{
+					retrieve[j].insert(std::pair<std::string, bool>(tag, true));
+					std::cerr << "RBC(" << j << "): l-retrieve sent for" <<
+						" message of party " << who << " with s = " << foo <<
+						" where min_s = " << min_s[who] << std::endl;
+				}
+				mpz_add_ui(foo, foo, 1UL);
 			}
 		}
 		for (size_t i = 0; i < n; i++)
