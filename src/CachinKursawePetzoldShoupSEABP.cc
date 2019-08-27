@@ -48,7 +48,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	aiounicast *aiou_in, const size_t scheduler_in,
 	const time_t timeout_in, const size_t fifo_skip_in):
 		aio_timeout_vs(aiou_in->aio_timeout_very_short), // timeout for sending
-		fifo_skip(fifo_skip_in)
+		fifo_skip(fifo_skip_in), fifo(true)
 {
 	if (t_in > n_in)
 		throw std::invalid_argument("RBC: t > n");
@@ -103,6 +103,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	request.resize(n);
 	answer.resize(n);
 	retrieve.resize(n);
+	deliver.resize(n);
 
 	// initialize message and deliver buffers
 	buf_mpz.resize(n);
@@ -118,7 +119,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 }
 
 void CachinKursawePetzoldShoupRBC::setID
-	(const std::string &ID_in)
+	(const std::string &ID_in, const bool fifo_in)
 {
 	// save the last ID
 	mpz_ptr tmp1 = new mpz_t();
@@ -139,13 +140,15 @@ void CachinKursawePetzoldShoupRBC::setID
 		(last_deliver_s.back()).push_back(tmp3);
 	}
 
-	// set new ID
-	std::stringstream myID, str_ID;
+	// set new ID and FIFO flag
+	std::stringstream myID, str_ID, mylog;
 	myID << "CachinKursawePetzoldShoupRBC called from [" << ID_in << "]" <<
 		" with last ID = " << ID;
 	tmcg_mpz_shash(ID, myID.str());
+	fifo = fifo_in;
 	str_ID << ID;
-	ID_log[str_ID.str()] = "setID() -> " + myID.str();
+	mylog << "setID(" << (fifo ? "true" : "false") << ") -> " << myID.str();
+	ID_log[str_ID.str()] = mylog.str();
 
 	// reset sequence counter
 	mpz_set_ui(s, 0UL);
@@ -156,7 +159,7 @@ void CachinKursawePetzoldShoupRBC::setID
 }
 
 void CachinKursawePetzoldShoupRBC::recoverID
-	(const std::string &ID_in)
+	(const std::string &ID_in, const bool fifo_in)
 {
 	// save the last ID
 	mpz_ptr tmp1 = new mpz_t();
@@ -177,13 +180,15 @@ void CachinKursawePetzoldShoupRBC::recoverID
 		(last_deliver_s.back()).push_back(tmp3);
 	}
 
-	// set new ID
-	std::stringstream myID, str_ID;
+	// set new ID and FIFO flag
+	std::stringstream myID, str_ID, mylog;
 	myID << "CachinKursawePetzoldShoupRBC called from [" << ID_in << "]" <<
 		" with last ID = " << ID;
 	tmcg_mpz_shash(ID, myID.str());
+	fifo = fifo_in;
 	str_ID << ID;
-	ID_log[str_ID.str()] = "recoverID -> " + myID.str();
+	mylog << "recoverID(" << (fifo ? "true" : "false") << ") -> " << myID.str();
+	ID_log[str_ID.str()] = mylog.str();
 
 	// recover sequence counter, if available
 	if (recover_s.count(str_ID.str()) > 0)
@@ -207,11 +212,14 @@ void CachinKursawePetzoldShoupRBC::recoverID
 }
 
 void CachinKursawePetzoldShoupRBC::unsetID
-	()
+	(const bool fifo_in)
 {
-	std::stringstream str_ID;
+	fifo = fifo_in;
+	std::stringstream str_ID, mylog;
 	str_ID << ID;
-	ID_log[str_ID.str()] = "unsetID -> " + ID_log[str_ID.str()];
+	mylog << "unsetID(" << (fifo ? "true" : "false") << ") -> " <<
+		ID_log[str_ID.str()];
+	ID_log[str_ID.str()] = mylog.str();
 
 	// save current sequence counter for recovery
 	if (recover_s.count(str_ID.str()) == 0)
@@ -367,7 +375,10 @@ void CachinKursawePetzoldShoupRBC::ReleaseMessage
 void CachinKursawePetzoldShoupRBC::Broadcast
 	(mpz_srcptr m, const bool simulate_faulty_behaviour)
 {
-	mpz_add_ui(s, s, 1UL); // increase sequence counter
+	if (fifo)
+		mpz_add_ui(s, s, 1UL); // increase sequence counter
+	else
+		tmcg_mpz_wrandomb(s, 256); // choose random 256-bit number
 
 	// prepare message $(ID.j.s, r-send, m)$
 	RBC_ConstMessage message;
@@ -469,7 +480,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				continue; // ID does not match; ignore for now
 			size_t who = mpz_get_ui((*lit)[1]);
 			// check for matching deliver sequence counter
-			if (!mpz_cmp((*lit)[2], deliver_s[who]))
+			if ((fifo && !mpz_cmp((*lit)[2], deliver_s[who])) || !fifo)
 			{
 				// compute hash of identifying tag $ID.j.s$
 				std::string tag;
@@ -497,7 +508,8 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				return true;
 			}
 			// check for greater deliver sequence counter
-			if (mpz_cmp((*lit)[2], deliver_s[who]) > 0)
+			bool gt_s = (mpz_cmp((*lit)[2], deliver_s[who]) > 0);
+			if (fifo && gt_s)
 			{
 				if (!mpz_cmp_ui(max_s[who], 0UL) ||
 					(mpz_cmp(max_s[who], (*lit)[2]) < 0))
@@ -521,16 +533,17 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				}
 			}
 			// check for lower deliver sequence counter
-			if (mpz_cmp((*lit)[2], deliver_s[who]) < 0)
+			bool lt_s = (mpz_cmp((*lit)[2], deliver_s[who]) < 0);
+			if (fifo && lt_s)
 			{
 				std::cerr << "RBC(" << j << "): remove obsolete message" <<
 					" from " << who << " with s = " << (*lit)[2] << " (vs" <<
-					" deliver_s = " <<	deliver_s[who] << ")" << std::endl;
+					" deliver_s = " << deliver_s[who] << ")" << std::endl;
 				cleanup.push_back(lit);
 			}
 		}
 		// skip FIFO ordering, if (max_s[i]-min_s[i]) > fifo_skip for some i
-		for (size_t i = 0; (i < n) && (fifo_skip > 0); i++)
+		for (size_t i = 0; (i < n) && fifo && (fifo_skip > 0); i++)
 		{
 			mpz_sub(foo, max_s[i], min_s[i]);
 			if ((mpz_cmp_ui(foo, fifo_skip) > 0))
@@ -543,13 +556,14 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			}
 		}
 		// out-of-order handler: send l-retrieve messages to all other parties
+		size_t cnt = 0, max = 40;
 		for (std::map<size_t, RBC_VectorList::iterator>::const_iterator ci =
-			retrieve_it.begin(); (ci != retrieve_it.end()) && (fifo_skip == 0);
-			++ci)
+			retrieve_it.begin(); (ci != retrieve_it.end()) && fifo &&
+			(fifo_skip == 0); ++ci)
 		{
 			size_t who = ci->first;
 			mpz_set(foo, deliver_s[who]);
-			while (mpz_cmp(foo, min_s[who]) < 0)
+			while ((mpz_cmp(foo, min_s[who]) < 0) && (cnt < max))
 			{
 				RBC_ConstMessage message2;
 				message2.push_back((*(ci->second))[0]);
@@ -557,28 +571,30 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				message2.push_back(foo);
 				message2.push_back(l_retrieve);
 				message2.push_back(l_retrieve);
-				bool sent = false;
 				std::string tag;
 				TagMessage(tag, message2);
-				for (size_t i = 0; ((i < n) && !retrieve[j].count(tag)); i++)
+				for (size_t i = 0; i < n; i++)
 				{
 					if (i == j)
 						continue; // skip myself
-					if (retrieve[i].count(tag) > 0)
+					if (deliver[i].count(tag) > 0)
 						continue; // skip, if already retrieved
+					if (retrieve[i].count(tag) > 0)
+						continue; // skip, if already sent
 					if (!aiou->Send(message2, i, aio_timeout_vs))
 					{
 						std::cerr << "RBC(" << j << "): sending l-retrieve" <<
 							" failed for " << i << std::endl;
 					}
-					sent = true;
-				}
-				if (sent)
-				{
-					retrieve[j].insert(std::pair<std::string, bool>(tag, true));
-					std::cerr << "RBC(" << j << "): l-retrieve sent for" <<
-						" message of party " << who << " with s = " << foo <<
-						" where min_s = " << min_s[who] << std::endl;
+					else
+					{
+						std::cerr << "RBC(" << j << "): l-retrieve sent" <<
+							" to " << i << " for message of party " <<
+							who << " with s = " << foo <<
+							" where min_s = " << min_s[who] << std::endl;
+						retrieve[i].insert(std::pair<std::string, bool>(tag, true));
+						cnt++;
+					}
 				}
 				mpz_add_ui(foo, foo, 1UL);
 			}
@@ -887,8 +903,9 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				if (who >= n)
 					throw std::runtime_error("RBC::Deliver(): who >= n");
 				// check for matching tag and sequence counter before delivering
-				if (!mpz_cmp(message[0], ID) &&
-					!mpz_cmp(message[2], deliver_s[who]))
+				bool matching_tag = (mpz_cmp(message[0], ID) == 0);
+				bool eq_s = (mpz_cmp(message[2], deliver_s[who]) == 0);
+				if (matching_tag && ((fifo && eq_s) || !fifo))
 				{
 					if (mbar.count(tag) == 0)
 						throw std::runtime_error("RBC::Deliver(): no mbar (r-ready)");
@@ -902,8 +919,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 					ReleaseMessage(message);
 					return true;
 				}
-				if (!mpz_cmp(message[0], ID) &&
-					mpz_cmp(message[2], deliver_s[who]))
+				if (matching_tag && fifo && !eq_s)
 				{
 					std::cerr << "RBC(" << j << "): WARNING - sequence" <<
 						" counter does not match for " << who << " (" <<
@@ -990,7 +1006,9 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 			if (who >= n)
 				throw std::runtime_error("RBC::Deliver(): who >= n");
 			// check for matching tag and sequence counter before delivering
-			if (!mpz_cmp(message[0], ID) && !mpz_cmp(message[2], deliver_s[who]))
+			bool matching_tag = (mpz_cmp(message[0], ID) == 0);
+			bool eq_s = (mpz_cmp(message[2], deliver_s[who]) == 0);
+			if (matching_tag && ((fifo && eq_s) || !fifo))
 			{
 				if (mbar.count(tag) == 0)
 					throw std::runtime_error("RBC::Deliver(): no mbar (r-answer)");
@@ -1005,7 +1023,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 				ReleaseMessage(message);
 				return true;
 			}
-			if (!mpz_cmp(message[0], ID) && mpz_cmp(message[2], deliver_s[who]))
+			if (matching_tag && fifo && !eq_s)
 			{
 				std::cerr << "RBC(" << j << "): WARNING - sequence counter" <<
 					" does not match for " << who << " (" << message[2] <<
@@ -1030,8 +1048,8 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-retrieve from " << l << std::e
 			size_t who = mpz_get_ui(message[1]);
 			if (who >= n)
 				throw std::runtime_error("RBC::Deliver(): who >= n");
-			if ((mbar.count(tag) > 0) &&
-				(mpz_cmp(message[2], deliver_s[who]) < 0))
+			bool gt_s = (mpz_cmp(message[2], deliver_s[who]) < 0);
+			if ((mbar.count(tag) > 0) && ((fifo && gt_s) || !fifo))
 			{
 				// prepare message $(ID.j.s, l-deliver, \bar{m})$
 				RBC_ConstMessage message2;
@@ -1051,16 +1069,16 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-retrieve from " << l << std::e
 			continue;
 		}
 		// upon receiving message $(ID.j.s, l-deliver, m)$ from $P_l$ for the first time
-		if (!mpz_cmp(message[3], l_deliver) && !retrieve[l].count(tag))
+		if (!mpz_cmp(message[3], l_deliver) && !deliver[l].count(tag))
 		{
 std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::endl;
-			if (retrieve[j].count(tag) == 0)
+			if (!retrieve[l].count(tag))
 			{
 				std::cerr << "RBC(" << j << "): received l-deliver for" <<
 					" unwanted tag from " << l << std::endl;
 				continue;
 			}
-			retrieve[l].insert(std::pair<std::string, bool>(tag, true));
+			deliver[l].insert(std::pair<std::string, bool>(tag, true));
 			if (retrieve_buf.count(tag) == 0)
 			{
 				retrieve_buf[tag].resize(n);
@@ -1072,30 +1090,38 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 				}
 			}
 			mpz_set((retrieve_buf[tag])[l], message[4]); // buffer content
-			size_t retrieve_num = 0;
+			size_t deliver_num = 0;
 			for (size_t i = 0; i < n; i++)
 			{
-				if (retrieve[i].count(tag))
-					retrieve_num++;
+				if (deliver[i].count(tag))
+					deliver_num++;
 			}
-			if (retrieve_num < (n - t))
+			if (deliver_num < (n - t))
 			{
-/* FIXME: conflicting use of retrieve[j].count(tag) to detect unwanted messages
-				if (retrieve[j].count(tag) > 0)
-					retrieve[j].erase(tag); // retry by sending l-retrieve
+				for (size_t i = 0; i < n; i++)
+				{
+					if (!deliver[i].count(tag))
+					{
+/* FIXME: other retry mechanism required due to unwanted check
+						// retry by sending l-retrieve again
+						if (retrieve[i].count(tag) > 0)
+							retrieve[i].erase(tag);
 */
+					} 
+				}
 				continue; // skip, if not enough messages retrieved
 			}
 			for (size_t i = 0; i < n; i++)
 			{
 				size_t agree_num = 1;
-				if (!retrieve[i].count(tag) || (i == j))
+				if (!deliver[i].count(tag) || (i == j))
 					continue; // skip wrong parties
+				mpz_ptr agree_val = (retrieve_buf[tag])[i];
 				for (size_t k = i + 1; k < n; k++)
 				{
-					if (!retrieve[k].count(tag) || (k == j))
+					if (!deliver[k].count(tag) || (k == j))
 						continue; // skip wrong parties
-					if (!mpz_cmp((retrieve_buf[tag])[i], (retrieve_buf[tag])[k]))
+					if (!mpz_cmp(agree_val, (retrieve_buf[tag])[k]))
 						agree_num++;
 				}
 				if (agree_num >= (n - t))
@@ -1116,9 +1142,10 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 						" successfully retrieved m = " << mbar[tag] << " for" <<
 						" party " << who << " with s = " << message[2] <<
 						std::endl;
-					// check for matching tag and sequence counter before delivering
-					if (!mpz_cmp(message[0], ID) &&
-						!mpz_cmp(message[2], deliver_s[who]))
+					// check for matching tag and sequence counter
+					bool matching_tag = (mpz_cmp(message[0], ID) == 0);
+					bool eq_s = (mpz_cmp(message[2], deliver_s[who]) == 0);
+					if (matching_tag && ((fifo && eq_s) || !fifo))
 					{
 						// get the payload from agreed value
 						mpz_set(m, mbar[tag]);
@@ -1131,8 +1158,7 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 						ReleaseMessage(message);
 						return true;
 					}
-					if (!mpz_cmp(message[0], ID) &&
-						mpz_cmp(message[2], deliver_s[who]))
+					if (matching_tag && fifo && !eq_s)
 					{
 						std::cerr << "RBC(" << j << "): WARNING - sequence" <<
 							" counter does not match for " << who << " (" <<
@@ -1148,7 +1174,7 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 			}
 			continue;
 		}
-		else if (!mpz_cmp(message[3], l_deliver) && retrieve[l].count(tag))
+		else if (!mpz_cmp(message[3], l_deliver) && deliver[l].count(tag))
 		{
 			std::cerr << "RBC(" << j << "): received l-deliver for same tag" <<
 				" more than once from " << l << std::endl;
@@ -1176,14 +1202,13 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 	{
 		std::cerr << "RBC(" << j << "): DeliverFrom() with " << i_in <<
 			" >= " << n << std::endl;
-		return false;
+		return false; // FIXME: throw exception
 	}
 	// set aio default values
 	if (scheduler == aiounicast::aio_scheduler_default)
 		scheduler = aio_default_scheduler;
 	if (timeout == aiounicast::aio_timeout_default)
 		timeout = aio_default_timeout;
-//std::cerr << "RBC(" << j << "): want mpz from " << i_in << std::endl;
 	time_t entry_time = time(NULL);
 	do
 	{
@@ -1201,7 +1226,6 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 					mpz_clear(*lit), mpz_clear(*litid);
 					delete [] *lit, delete [] *litid;
 					buf_mpz[i_in].erase(lit), buf_id[i_in].erase(litid);
-//std::cerr << "RBC(" << j << "): got buffered mpz from " << i_in << std::endl;
 					return true;
 				}
 			}
@@ -1214,11 +1238,8 @@ bool CachinKursawePetzoldShoupRBC::DeliverFrom
 			mpz_init(tmp), mpz_init_set(tmpID, ID);
 			if (Deliver(tmp, l, scheduler, 0))
 			{
-//std::cerr << "RBC(" << j << "): got mpz from " << l << std::endl;
 				buf_mpz[l].push_back(tmp);
 				buf_id[l].push_back(tmpID);
-//				if (l == i_in)
-//					continue;
 			}
 			else
 			{
@@ -1244,7 +1265,7 @@ void CachinKursawePetzoldShoupRBC::QueueFrom
 	{
 		std::cerr << "RBC(" << j << "): QueueFrom() with " << i_in <<
 			" >= " << n << std::endl;
-		return;
+		return; // FIXME: throw exception
 	}
 	// store mpz at the front of corresponding buffer
 	mpz_ptr tmp = new mpz_t(), tmpID = new mpz_t();
@@ -1261,10 +1282,10 @@ bool CachinKursawePetzoldShoupRBC::Sync
 		timeout = (t + 1) * aio_default_timeout;
 	else
 		timeout *= (t + 1);
-	// set common channel ID for synchronization
+	// set common channel ID for synchronization messages
 	std::stringstream myID;
-	myID << "CachinKursawePetzoldShoupRBC::Sync(" << timeout << ", " <<
-		tag << ")";
+	myID << "CachinKursawePetzoldShoupRBC::Sync(" <<
+		timeout << ", " << tag << ")";
 	setID(myID.str());
 	// initialize
 	time_t max_timeout = timeout;
@@ -1417,9 +1438,10 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 		request[i].clear();
 		answer[i].clear();
 		retrieve[i].clear();
+		deliver[i].clear();
 	}
 	send.clear(), echo.clear(), ready.clear(), request.clear(), answer.clear();
-	retrieve.clear();
+	retrieve.clear(), deliver.clear();
 	for (RBC_VectorMap::iterator mit = retrieve_buf.begin();
 		mit != retrieve_buf.end(); ++mit)
 	{

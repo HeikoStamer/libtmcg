@@ -79,7 +79,7 @@ class CachinKursawePetzoldShoupRBC
 		mpz_t                                l_retrieve, l_deliver;
 		std::vector<RBC_TagCheck>            send, echo, ready;
 		std::vector<RBC_TagCheck>            request, answer;
-		std::vector<RBC_TagCheck>            retrieve;
+		std::vector<RBC_TagCheck>            retrieve, deliver;
 		RBC_VectorMap                        retrieve_buf;
 		RBC_TagMpz                           mbar, dbar;
 		std::map<std::string, RBC_TagCount>  e_d, r_d;
@@ -90,6 +90,7 @@ class CachinKursawePetzoldShoupRBC
 		aiounicast*                          aiou;
 		static const size_t                  sync_slices = 10;
 		size_t                               fifo_skip;
+		bool                                 fifo;
 
 		void InitializeMessage
 			(RBC_Message &message);
@@ -124,11 +125,11 @@ class CachinKursawePetzoldShoupRBC
 			 const time_t timeout_in = aiounicast::aio_timeout_extremely_long,
 			 const size_t fifo_skip_in = 0);
 		void setID
-			(const std::string &ID_in);
+			(const std::string &ID_in, const bool fifo_in = true);
 		void recoverID
-			(const std::string &ID_in);
+			(const std::string &ID_in, const bool fifo_in = true);
 		void unsetID
-			();
+			(const bool fifo_in = true);
 		void Broadcast
 			(mpz_srcptr m,
 			 const bool simulate_faulty_behaviour = false);
