@@ -19,7 +19,7 @@
 @copying
 This is the reference manual of LibTMCG.
 
-Revision 20190816.
+Revision 20190828.
 
 Copyright @copyright{} 2005--2007, 2009, 2015--2019
 Heiko Stamer <@email{HeikoStamer@@gmx.net}>.
@@ -1929,9 +1929,9 @@ The base class @code{aiounicast} and the corresponding derived classes
 @code{aiounicast_nonblock} and @code{aiounicast_select} provide a simple
 communication interface for asynchronous point-to-point communication channels.
 They can be used to transfer data of type @code{mpz_t} (big integers, see
-@code{libgmp} for explanation of this data type) between up to @math{n} parties,
-that are connected by sockets, pipes or any other file descriptor based
-input/output mechanism.
+@code{libgmp} manual for explanation of this data type) between up to @math{n}
+parties, that are connected by sockets, pipes or any other file descriptor
+based input/output mechanism.
 
 Moreover, the channels can be authenticated by a message authentication code
 and encrypted by a symmetric cipher. The deployed algorithms are defined by
@@ -2095,7 +2095,7 @@ successful or not.
 		@math{n} input file descriptors that are ready for reading
 		and writing, and by a vector @var{fd_out_in} of exactly @math{n}
 		output file descriptors. Finally, the vector @var{key_in} with
-		exactly pre-shared @math{n} passphrases@footnote{The key derivation
+		exactly @math{n} pre-shared passphrases@footnote{The key derivation
 		function PBKDF2 is applied with an iteration count of 25.000 and a
 		different constant salt value to derive the authentication and the
 		encryption key, respectively.} is required, if
@@ -2104,13 +2104,14 @@ successful or not.
 		robustness of the I/O stream can be improved, if
 		@var{aio_is_chunked_in} is set to @code{true}.@footnote{Then the
 		symmetric cipher is operated in CTR mode and the corresponding
-		counter is shipped in each chunk such that the receiver can decrypt
-		each message out of order. Thus a few missing characters should not
-		lead to a fatal decryption failure in general. However, this opens
-		a quite large surface for replay attacks, because out authentication
-		is limited by design to single messages.} The default values for
-		timeout (in seconds) and the applied receive scheduler can be
-		modified carefully according to the desired usage scenario.
+		counter is shipped in each chunk of data (i.e. big integer of type
+		@code{mpz_t}) such that the receiver can decrypt messages out of order.
+		Thus some missing characters should not lead to a general decryption
+		failure of the point-to-point channel. However, this opens a quite
+		large surface for replay or insertion attacks, because the included
+		authentication is limited by design to single messages.}
+		The default values for timeout (in seconds) and the applied receive
+		scheduler can be modified carefully according to the desired use case.
 	@end defop
 
 	@deftypemethod aiounicast_select bool Send (@code{mpz_srcptr} m, @code{const size_t} i_in, @code{time_t} timeout @code{=aio_timeout_default})
@@ -2196,14 +2197,14 @@ than one message in FIFO-order. Hence a so-called @emph{broadcast channel}
 can be established. Such a channel is determined by a given unique
 ID@footnote{In some papers (e.g. [CKPS01]) this ID is called @emph{tag}.}
 that can be switched during execution of the high-level protocol. Moreover,
-to some extent the applied FIFO-order can be skipped, if the class is
-initialized in a special way.
+to some extent the applied FIFO-order can be skipped or completely disabled.
 
 Another extension is the included out-of-order handler (i.e. missing messages
 are retrieved from other parties) which is invoked, if violations of the
 FIFO-order are detected. Note that those retrieved messages are delivered,
 if and only if a @math{n - t} quorum is reached. The out-of-order handler
-is activated by default as long as the applied FIFO-order is not skipped.
+is activated by default as long as the applied FIFO-order is not skipped or
+disabled.
 
 We describe only those classes, methods, and members that might be of interest
 for an application programmer.
@@ -2258,27 +2259,35 @@ for an application programmer.
 		values for timeout (in seconds) and the deliver scheduler can
 		be modified carefully with respect to the usage scenario.
 		Last but not least, a detected difference of any sequence
-		counter is skipped, if @var{fifo_skip_in} is greater than zero.
+		counter (FIFO-order) is skipped, if @var{fifo_skip_in} is
+		greater than zero.
 	@end defop
 
-	@deftypemethod CachinKursawePetzoldShoupRBC void setID (@code{const std::string&} ID_in)
+	@deftypemethod CachinKursawePetzoldShoupRBC void setID (@code{const std::string&} ID_in, @code{const bool} fifo_in @code{=true})
 		Broadcast channels are parameterized by an ID, that uniquely identifies
 		each channel. This method creates such a channel by computing a uniform
 		ID from the string @var{ID_in}. Thus this string should be equal for all
 		parties on the same channel. Moreover, the corresponding sequence
-		counters are initialized.  
+		counters are initialized by @code{1}. If the optional variable
+		@var{fifo_in} is set to @code{false}, then the FIFO-order extension is
+		disabled completely for this moment. In that case the sequence number
+		of a message is choosen randomly as a 256-bit value.
 	@end deftypemethod
 
-	@deftypemethod CachinKursawePetzoldShoupRBC void recoverID (@code{const std::string&} ID_in)
+	@deftypemethod CachinKursawePetzoldShoupRBC void recoverID (@code{const std::string&} ID_in, @code{const bool} fifo_in @code{=true})
 		This method switchs to an already existing channel characterized by
 		the string @var{ID_in}. It restores the corresponding sequence counters.
+		If the optional variable @var{fifo_in} is set to @code{false}, then the
+		FIFO-order extension is disabled completely for this moment.
 	@end deftypemethod
 
-	@deftypemethod CachinKursawePetzoldShoupRBC void unsetID ()
+	@deftypemethod CachinKursawePetzoldShoupRBC void unsetID (@code{const bool} fifo_in @code{=true})
 		This method resets the currently used ID and sequence counters, i.e., it
 		restores the previous values that have been saved by @code{setID} or
 		even @code{recoverID}. This is commonly used to return from a channel
 		of a subprotcol to the channel of the calling high-level protocol.
+		If the optional variable @var{fifo_in} is set to @code{false}, then the
+		FIFO-order extension is disabled completely for this moment.
 	@end deftypemethod
 
 	@deftypemethod CachinKursawePetzoldShoupRBC void Broadcast (@code{mpz_srcptr} m, @code{const bool} simulate_faulty_behaviour @code{=false})
