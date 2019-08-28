@@ -490,11 +490,18 @@ bool TMCG_OpenPGP_Signature::VerifyData
 		return false;
 	}
 	if (verbose > 2)
+	{
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
-			" " << (int)left[1] << std::dec << std::endl;
-	if (CheckIntegrity(key, hash, verbose))
-		return true;
-	return false;
+			" " << (int)left[1] << std::endl << "INFO: hash = ";
+		for (size_t i = 0; i < hash.size(); i++)
+			std::cerr << (int)hash[i] << " ";
+		std::cerr << std::dec << std::endl;
+	}
+	if ((left[0] != hash[0]) || (left[1] != hash[1]))
+		return false;
+	if (!CheckIntegrity(key, hash, verbose))
+		return false;
+	return true;
 }
 
 bool TMCG_OpenPGP_Signature::VerifyData
@@ -662,11 +669,18 @@ bool TMCG_OpenPGP_Signature::VerifyData
 		return false;
 	}
 	if (verbose > 2)
+	{
 		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
-			" " << (int)left[1] << std::dec << std::endl;
-	if (CheckIntegrity(key, hash, verbose))
-		return true;
-	return false;
+			" " << (int)left[1] << std::endl << "INFO: hash = ";
+		for (size_t i = 0; i < hash.size(); i++)
+			std::cerr << (int)hash[i] << " ";
+		std::cerr << std::dec << std::endl;
+	}
+	if ((left[0] != hash[0]) || (left[1] != hash[1]))
+		return false;
+	if (!CheckIntegrity(key, hash, verbose))
+		return false;
+	return true;
 }
 
 bool TMCG_OpenPGP_Signature::Verify
@@ -799,15 +813,20 @@ bool TMCG_OpenPGP_Signature::Verify
 		return false;
 	}
 	if (verbose > 2)
-		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
-			" " << (int)left[1] << std::dec << std::endl;
-	if (CheckIntegrity(key, hash, verbose))
 	{
-		valid = true;
-		return true;
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
+			" " << (int)left[1] << std::endl << "INFO: hash = ";
+		for (size_t i = 0; i < hash.size(); i++)
+			std::cerr << (int)hash[i] << " ";
+		std::cerr << std::dec << std::endl;
 	}
 	valid = false;
-	return false;
+	if ((left[0] != hash[0]) || (left[1] != hash[1]))
+		return false;
+	if (!CheckIntegrity(key, hash, verbose))
+		return false;
+	valid = true;
+	return true;
 }
 
 bool TMCG_OpenPGP_Signature::Verify
@@ -863,15 +882,20 @@ bool TMCG_OpenPGP_Signature::Verify
 		return false;
 	}
 	if (verbose > 2)
-		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
-			" " << (int)left[1] << std::dec << std::endl;
-	if (CheckIntegrity(key, hash, verbose))
 	{
-		valid = true;
-		return true;
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
+			" " << (int)left[1] << std::endl << "INFO: hash = ";
+		for (size_t i = 0; i < hash.size(); i++)
+			std::cerr << (int)hash[i] << " ";
+		std::cerr << std::dec << std::endl;
 	}
 	valid = false;
-	return false;
+	if ((left[0] != hash[0]) || (left[1] != hash[1]))
+		return false;
+	if (!CheckIntegrity(key, hash, verbose))
+		return false;
+	valid = true;
+	return true;
 }
 
 bool TMCG_OpenPGP_Signature::Verify
@@ -928,15 +952,20 @@ bool TMCG_OpenPGP_Signature::Verify
 		return false;
 	}
 	if (verbose > 2)
-		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
-			" " << (int)left[1] << std::dec << std::endl;
-	if (CheckIntegrity(key, hash, verbose))
 	{
-		valid = true;
-		return true;
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
+			" " << (int)left[1] << std::endl << "INFO: hash = ";
+		for (size_t i = 0; i < hash.size(); i++)
+			std::cerr << (int)hash[i] << " ";
+		std::cerr << std::dec << std::endl;
 	}
 	valid = false;
-	return false;
+	if ((left[0] != hash[0]) || (left[1] != hash[1]))
+		return false;
+	if (!CheckIntegrity(key, hash, verbose))
+		return false;
+	valid = true;
+	return true;
 }
 
 bool TMCG_OpenPGP_Signature::Verify
@@ -994,15 +1023,20 @@ bool TMCG_OpenPGP_Signature::Verify
 		return false;
 	}
 	if (verbose > 2)
-		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
-			" " << (int)left[1] << std::dec << std::endl;
-	if (CheckIntegrity(key, hash, verbose))
 	{
-		valid = true;
-		return true;
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
+			" " << (int)left[1] << std::endl << "INFO: hash = ";
+		for (size_t i = 0; i < hash.size(); i++)
+			std::cerr << (int)hash[i] << " ";
+		std::cerr << std::dec << std::endl;
 	}
 	valid = false;
-	return false;
+	if ((left[0] != hash[0]) || (left[1] != hash[1]))
+		return false;
+	if (!CheckIntegrity(key, hash, verbose))
+		return false;
+	valid = true;
+	return true;
 }
 
 bool TMCG_OpenPGP_Signature::Verify
@@ -1065,15 +1099,20 @@ bool TMCG_OpenPGP_Signature::Verify
 		return false;
 	}
 	if (verbose > 2)
-		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
-			" " << (int)left[1] << std::dec << std::endl;
-	if (CheckIntegrity(key, hash, verbose))
 	{
-		valid = true;
-		return true;
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
+			" " << (int)left[1] << std::endl << "INFO: hash = ";
+		for (size_t i = 0; i < hash.size(); i++)
+			std::cerr << (int)hash[i] << " ";
+		std::cerr << std::dec << std::endl;
 	}
 	valid = false;
-	return false;
+	if ((left[0] != hash[0]) || (left[1] != hash[1]))
+		return false;
+	if (!CheckIntegrity(key, hash, verbose))
+		return false;
+	valid = true;
+	return true;
 }
 
 bool TMCG_OpenPGP_Signature::Verify
@@ -1127,15 +1166,20 @@ bool TMCG_OpenPGP_Signature::Verify
 		return false;
 	}
 	if (verbose > 2)
-		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
-			" " << (int)left[1] << std::dec << std::endl;
-	if (CheckIntegrity(key, hash, verbose))
 	{
-		valid = true;
-		return true;
+		std::cerr << "INFO: left = " << std::hex << (int)left[0] <<
+			" " << (int)left[1] << std::endl << "INFO: hash = ";
+		for (size_t i = 0; i < hash.size(); i++)
+			std::cerr << (int)hash[i] << " ";
+		std::cerr << std::dec << std::endl;
 	}
 	valid = false;
-	return false;
+	if ((left[0] != hash[0]) || (left[1] != hash[1]))
+		return false;
+	if (!CheckIntegrity(key, hash, verbose))
+		return false;
+	valid = true;
+	return true;
 }
 
 bool TMCG_OpenPGP_Signature::operator <

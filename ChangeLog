@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-08-28] RFC4880: added quick-check in TMCG_OpenPGP_Signature::Verify()
 * [2019-08-25] RFC4880: added SHA3 from RFC4880bis
 * [2019-08-25] RFC4880: added tmcg_openpgp_multiple_octets_t and changed members
                from TMCG_OpenPGP_Signature (i.e. embeddedsigs and recipientfprs)
