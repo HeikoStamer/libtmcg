@@ -95,6 +95,7 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 	mpz_init_set_ui(r_answer, 5UL);
 	mpz_init_set_ui(l_retrieve, 6UL);
 	mpz_init_set_ui(l_deliver, 7UL);
+	mpz_init_set_ui(l_fail, 8UL);
 
 	// initialize message counters
 	send.resize(n);
@@ -378,7 +379,7 @@ void CachinKursawePetzoldShoupRBC::Broadcast
 	if (fifo)
 		mpz_add_ui(s, s, 1UL); // increase sequence counter
 	else
-		tmcg_mpz_wrandomb(s, 256); // choose random 256-bit number
+		tmcg_mpz_wrandomb(s, 256); // choose random 256-bit value
 
 	// prepare message $(ID.j.s, r-send, m)$
 	RBC_ConstMessage message;
@@ -1058,10 +1059,27 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-retrieve from " << l << std::e
 				message2.push_back(message[2]);
 				message2.push_back(l_deliver);
 				message2.push_back(mbar[tag]);
-				// send r-deliver only to requesting party (very short timeout)
+				// send l-deliver only to requesting party (very short timeout)
 				if (!aiou->Send(message2, l, aio_timeout_vs))
 				{
 					std::cerr << "RBC(" << j << "): sending l-deliver failed" <<
+						" for " << l << std::endl;
+				}
+				message2.clear();
+			}
+			else
+			{
+				// prepare message $(ID.j.s, l-fail, l-fail)$
+				RBC_ConstMessage message2;
+				message2.push_back(message[0]);
+				message2.push_back(message[1]);
+				message2.push_back(message[2]);
+				message2.push_back(l_fail);
+				message2.push_back(l_fail);
+				// send l-fail only to requesting party (very short timeout)
+				if (!aiou->Send(message2, l, aio_timeout_vs))
+				{
+					std::cerr << "RBC(" << j << "): sending l-fail failed" <<
 						" for " << l << std::endl;
 				}
 				message2.clear();
@@ -1097,20 +1115,7 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 					deliver_num++;
 			}
 			if (deliver_num < (n - t))
-			{
-				for (size_t i = 0; i < n; i++)
-				{
-					if (!deliver[i].count(tag))
-					{
-/* FIXME: other retry mechanism required due to unwanted check
-						// retry by sending l-retrieve again
-						if (retrieve[i].count(tag) > 0)
-							retrieve[i].erase(tag);
-*/
-					} 
-				}
-				continue; // skip, if not enough messages retrieved
-			}
+				continue; // skip delivery, if not enough messages retrieved
 			for (size_t i = 0; i < n; i++)
 			{
 				size_t agree_num = 1;
@@ -1180,6 +1185,18 @@ std::cerr << "RBC(" << j << "): [" << tag << "] l-deliver from " << l << std::en
 				" more than once from " << l << std::endl;
 			continue;
 		}
+		// upon receiving message $(ID.j.s, l-fail, l-fail)$ from $P_l$
+		if (!mpz_cmp(message[3], l_fail))
+		{
+std::cerr << "RBC(" << j << "): [" << tag << "] l-fail from " << l << std::endl;
+			if (deliver[l].count(tag) > 0)
+				continue;
+			// retry by sending l-retrieve again
+			if (retrieve[l].count(tag) > 0)
+				retrieve[l].erase(tag);
+			continue;
+		}
+
 		// report on discarded messages
 		std::cerr << "RBC(" << j << "): WARNING - discard message of" <<
 			" action = " << message[3] << " from " << l << std::endl;
@@ -1430,6 +1447,7 @@ CachinKursawePetzoldShoupRBC::~CachinKursawePetzoldShoupRBC
 	mpz_clear(r_answer);
 	mpz_clear(l_retrieve);
 	mpz_clear(l_deliver);
+	mpz_clear(l_fail);
 	for (size_t i = 0; i < n; i++)
 	{
 		send[i].clear();

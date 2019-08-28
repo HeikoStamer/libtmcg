@@ -77,6 +77,7 @@ class CachinKursawePetzoldShoupRBC
 		mpz_t                                r_send, r_echo, r_ready;
 		mpz_t                                r_request, r_answer;
 		mpz_t                                l_retrieve, l_deliver;
+		mpz_t                                l_fail;
 		std::vector<RBC_TagCheck>            send, echo, ready;
 		std::vector<RBC_TagCheck>            request, answer;
 		std::vector<RBC_TagCheck>            retrieve, deliver;
