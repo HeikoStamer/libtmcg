@@ -41,16 +41,19 @@
 class aiounicast_nonblock : public aiounicast
 {
 	private:
-		size_t								aio_schedule_current;
-		size_t								aio_schedule_buffer;
-		size_t								buf_in_size;
-		std::vector<unsigned char*>			buf_in, iv_out;
-		std::vector<size_t>					buf_ptr;
-		std::vector<bool>					buf_flag, iv_flag_out, iv_flag_in;
-		std::vector< std::list<mpz_ptr> >	buf_mpz;
-		size_t								maclen, keylen, blklen;
-		std::vector<gcry_mac_hd_t*>			mac_in, mac_out;
-		std::vector<gcry_cipher_hd_t*>		enc_in, enc_out;
+		size_t                             aio_schedule_current;
+		size_t                             aio_schedule_buffer;
+		size_t                             buf_in_size;
+		std::vector<unsigned char*>        buf_in, iv_out;
+		std::vector<size_t>                buf_ptr;
+		std::vector<bool>                  buf_flag;
+		std::vector<bool>                  iv_flag_out, iv_flag_in;
+		std::vector< std::list<mpz_ptr> >  buf_mpz;
+		size_t                             maclen, keylen, blklen;
+		std::vector<gcry_mac_hd_t*>        mac_in, mac_out;
+		std::vector<mpz_ptr>               mac_sqn_in, mac_sqn_out;
+		std::vector<gcry_cipher_hd_t*>     enc_in, enc_out;
+		std::vector<bool>                  bad_auth;
 
 	public:
 		aiounicast_nonblock

@@ -156,7 +156,13 @@ aiounicast_select::aiounicast_select
 				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_select: libgcrypt failed");
 		}
-		bad_auth.push_back(false);
+		mpz_ptr tmp_in = new mpz_t();
+		mpz_init_set_ui(tmp_in, 0UL); // initial sequence number
+		mac_sqn_in.push_back(tmp_in);
+		mpz_ptr tmp_out = new mpz_t();
+		mpz_init_set_ui(tmp_out, 0UL); // initial sequence number
+		mac_sqn_out.push_back(tmp_out);
+		bad_auth.push_back(false); // bad authentication flag
 	}
 
 	// initialize ciphers
@@ -289,7 +295,7 @@ aiounicast_select::aiounicast_select
 		{
 			mpz_ptr tmp = new mpz_t();
 			mpz_init_set_ui(tmp, 0UL);
-			chunk_out.push_back(tmp); // chunk counter						
+			chunk_out.push_back(tmp); // chunk counter
 		}
 	}
 	for (size_t i = 0; aio_is_encrypted && aio_is_chunked && (i < n_in); i++)
@@ -564,6 +570,22 @@ bool aiounicast_select::Send
 			delete [] buf;
 			return false;
 		}
+		if (!aio_is_chunked)
+		{
+			mpz_add_ui(mac_sqn_out[i_in], mac_sqn_out[i_in], 1UL);
+			std::stringstream sqn; // include sequence number into MAC
+			sqn << mac_sqn_out[i_in];
+			err = gcry_mac_write(*mac_out[i_in],
+				(sqn.str()).c_str(), (sqn.str()).length());
+			if (err)
+			{
+				std::cerr << "aiounicast_select: gcry_mac_write()" <<
+					" failed" << std::endl << gcry_strerror(err) <<
+					std::endl;
+				delete [] buf;
+				return false;
+			}
+		}
 	}
 	// send content of write buffer to party i_in
 	time_t entry_time = time(NULL);
@@ -745,6 +767,7 @@ bool aiounicast_select::Receive
 	 size_t scheduler,
 	 time_t timeout)
 {
+	unsigned char mac[maclen + 1];
 	if (!aio_is_initialized)
 		return false;
 	if (scheduler == aio_scheduler_default)
@@ -790,17 +813,16 @@ bool aiounicast_select::Receive
 						break;
 					}
 				}
-				// process the buffer: split received data into message and tag
+				// process the buffer: split the received data into message
+				// and authentication tag
 				if (newline_found &&
 					((buf_ptr[i_out] - newline_ptr - 1) >= maclen))
 				{
-					// allocate at least one char
+					// allocate buffer with at least one char
 					size_t tmplen = newline_ptr + 1;
 					char *tmp = new char[tmplen];
-					// allocate at least one char, even if maclen == 0
-					unsigned char *mac = new unsigned char[maclen + 1];
 					memset(tmp, 0, tmplen);
-					memset(mac, 0, maclen);
+					memset(mac, 0, sizeof(mac));
 					if (newline_ptr > 0)
 						memcpy(tmp, buf_in[i_out], newline_ptr);
 					if (maclen > 0)
@@ -823,7 +845,7 @@ bool aiounicast_select::Receive
 							std::cerr << "aiounicast_select:" <<
 								" gcry_mac_reset() failed" << std::endl <<
 								gcry_strerror(err) << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						err = gcry_mac_write(*mac_in[i_out], tmp, newline_ptr);
@@ -832,7 +854,7 @@ bool aiounicast_select::Receive
 							std::cerr << "aiounicast_select:" <<
 								" gcry_mac_write() failed" << std::endl <<
 								gcry_strerror(err) << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						numAuthenticated += newline_ptr;
@@ -843,20 +865,37 @@ bool aiounicast_select::Receive
 							std::cerr << "aiounicast_select:" <<
 								" gcry_mac_write() failed" << std::endl <<
 								gcry_strerror(err) << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						numAuthenticated += 1;
+						if (!aio_is_chunked)
+						{
+							mpz_add_ui(mac_sqn_in[i_out], mac_sqn_in[i_out], 1UL);
+							std::stringstream sqn; // include sequence number
+							sqn << mac_sqn_in[i_out];
+							err = gcry_mac_write(*mac_in[i_out],
+								(sqn.str()).c_str(), (sqn.str()).length());
+							if (err)
+							{
+								std::cerr << "aiounicast_select:" <<
+									" gcry_mac_write() failed" <<
+									std::endl <<
+									gcry_strerror(err) << std::endl;
+								delete [] tmp;
+								return false;
+							}
+						}
 						bad_auth[i_out] = false;
 						err = gcry_mac_verify(*mac_in[i_out], mac, maclen);
 						if (err)
 						{
 							std::cerr << "aiounicast_select:" <<
-								" gcry_mac_verify() for " << j << " from " <<
-								i_out << " failed" << std::endl <<
+								" gcry_mac_verify() failed for " << j <<
+								" in stream from " << i_out << std::endl <<
 								gcry_strerror(err) << std::endl;
 							bad_auth[i_out] = true;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 					}
@@ -878,7 +917,7 @@ bool aiounicast_select::Receive
 											" mpz_set_str() for chunkval" <<
 											" failed" << std::endl;
 										mpz_clear(chunkval);
-										delete [] tmp, delete [] mac;
+										delete [] tmp;
 										return false;
 									}
 									unsigned char ctr[blklen], chunk[blklen];
@@ -888,7 +927,7 @@ bool aiounicast_select::Receive
 										std::cerr << "aiounicast_select:" <<
 											" counter exceeded" << std::endl;
 										mpz_clear(chunkval);
-										delete [] tmp, delete [] mac;
+										delete [] tmp;
 										return false;
 									}
 									memset(chunk, 0, blklen);
@@ -905,7 +944,7 @@ bool aiounicast_select::Receive
 											std::endl << gcry_strerror(err) <<
 											std::endl;
 										mpz_clear(chunkval);
-										delete [] tmp, delete [] mac;
+										delete [] tmp;
 										return false;
 									}
 									memset(tmp + ptr, 0, 1);
@@ -917,7 +956,7 @@ bool aiounicast_select::Receive
 								std::cerr << "aiounicast_select:" <<
 									" no chunkval found" << std::endl;
 								mpz_clear(chunkval);
-								delete [] tmp, delete [] mac;
+								delete [] tmp;
 								return false;
 							}
 							mpz_add_ui(chunk_in[i_out], chunk_in[i_out], 1UL);
@@ -947,7 +986,7 @@ bool aiounicast_select::Receive
 						{
 							std::cerr << "aiounicast_select: mpz_set_str()" <<
 								" for encval failed" << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						size_t realsize = 0;
@@ -957,7 +996,7 @@ bool aiounicast_select::Receive
 						{
 							std::cerr << "aiounicast_select: mpz_export()" <<
 								" failed for " << encval << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						mpz_clear(encval);
@@ -965,7 +1004,7 @@ bool aiounicast_select::Receive
 						{
 							std::cerr << "aiounicast_select: no prefix" <<
 								" found" << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						gcry_error_t err;
@@ -976,7 +1015,7 @@ bool aiounicast_select::Receive
 							std::cerr << "aiounicast_select:" <<
 								" gcry_cipher_decrypt() failed" << std::endl <<
 								gcry_strerror(err) << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						numDecrypted += (realsize - 1);
@@ -993,10 +1032,10 @@ bool aiounicast_select::Receive
 						for (size_t i = 0; i < strnlen(tmp, tmplen); i++)
 							std::cerr << (int)tmp[i] << " ";
 						std::cerr << std::dec << std::endl;
-						delete [] tmp, delete [] mac;
+						delete [] tmp;
 						return false;
 					}
-					delete [] tmp, delete [] mac;
+					delete [] tmp;
 					if (aio_is_encrypted)
 					{
 						if (mpz_cmp(m, aio_hide_length) < 0)
@@ -1278,6 +1317,18 @@ aiounicast_select::~aiounicast_select
 	buf_mpz.clear();
 	iv_in.clear(), iv_out.clear(), iv_flag_in.clear(), iv_flag_out.clear();
 	mac_in.clear(), mac_out.clear();
+	for (size_t i = 0; i < mac_sqn_in.size(); i++)
+	{
+		mpz_clear(mac_sqn_in[i]);
+		delete [] mac_sqn_in[i];
+	}
+	mac_sqn_in.clear();
+	for (size_t i = 0; i < mac_sqn_out.size(); i++)
+	{
+		mpz_clear(mac_sqn_out[i]);
+		delete [] mac_sqn_out[i];
+	}
+	mac_sqn_out.clear();
 	enc_in.clear(), enc_out.clear();
 	for (size_t i = 0; i < chunk_out.size(); i++)
 	{

@@ -36,38 +36,38 @@
 class aiounicast
 {
 	protected:
-		const size_t				aio_default_scheduler;
-		const time_t				aio_default_timeout;
-		const bool					aio_is_authenticated;
-		const bool					aio_is_encrypted;
-		const bool					aio_is_chunked;
-		bool						aio_is_initialized;
-		mpz_t						aio_hide_length;
-		mpz_t						aio_array_delimiter;
+		const size_t           aio_default_scheduler;
+		const time_t           aio_default_timeout;
+		const bool             aio_is_authenticated;
+		const bool             aio_is_encrypted;
+		const bool             aio_is_chunked;
+		bool                   aio_is_initialized;
+		mpz_t                  aio_hide_length;
+		mpz_t                  aio_array_delimiter;
 
 	public:
-		static const time_t			aio_timeout_none			= 0;
-		static const time_t			aio_timeout_extremely_short	= 1;
-		static const time_t			aio_timeout_very_short		= 5;
-		static const time_t			aio_timeout_short			= 15;
-		static const time_t			aio_timeout_middle			= 30;
-		static const time_t			aio_timeout_long			= 90;
-		static const time_t			aio_timeout_very_long		= 180;
-		static const time_t			aio_timeout_extremely_long	= 300;
-		static const time_t			aio_timeout_default			= 42424242;
-		static const size_t			aio_scheduler_none			= 0;
-		static const size_t			aio_scheduler_roundrobin	= 1;
-		static const size_t			aio_scheduler_random		= 2;
-		static const size_t			aio_scheduler_direct		= 3;
-		static const size_t			aio_scheduler_default		= 42424242;
+		static const time_t    aio_timeout_none            = 0;
+		static const time_t    aio_timeout_extremely_short = 1;
+		static const time_t    aio_timeout_very_short      = 5;
+		static const time_t    aio_timeout_short           = 15;
+		static const time_t    aio_timeout_middle          = 30;
+		static const time_t    aio_timeout_long            = 90;
+		static const time_t    aio_timeout_very_long       = 180;
+		static const time_t    aio_timeout_extremely_long  = 300;
+		static const time_t    aio_timeout_default         = 42424242;
+		static const size_t    aio_scheduler_none          = 0;
+		static const size_t    aio_scheduler_roundrobin    = 1;
+		static const size_t    aio_scheduler_random        = 2;
+		static const size_t    aio_scheduler_direct        = 3;
+		static const size_t    aio_scheduler_default       = 42424242;
 
-		const size_t				n;
-		const size_t				j;
+		const size_t           n;
+		const size_t           j;
 
-		std::map<size_t, int>		fd_in, fd_out;
-		size_t						numWrite, numRead;
-		size_t						numEncrypted, numDecrypted;
-		size_t						numAuthenticated;
+		std::map<size_t, int>  fd_in, fd_out;
+		size_t                 numWrite, numRead;
+		size_t                 numEncrypted, numDecrypted;
+		size_t                 numAuthenticated;
 
 		aiounicast
 			(const size_t n_in,

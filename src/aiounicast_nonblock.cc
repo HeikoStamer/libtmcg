@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <sstream>
 #include "mpz_srandom.hh"
 
 aiounicast_nonblock::aiounicast_nonblock
@@ -148,6 +149,13 @@ aiounicast_nonblock::aiounicast_nonblock
 				std::endl << gcry_strerror(err) << std::endl;
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
+		mpz_ptr tmp_in = new mpz_t();
+		mpz_init_set_ui(tmp_in, 0UL); // initial sequence number
+		mac_sqn_in.push_back(tmp_in);
+		mpz_ptr tmp_out = new mpz_t();
+		mpz_init_set_ui(tmp_out, 0UL); // initial sequence number
+		mac_sqn_out.push_back(tmp_out);
+		bad_auth.push_back(false); // bad authentication flag
 	}
 
 	// initialize ciphers
@@ -429,6 +437,21 @@ bool aiounicast_nonblock::Send
 	}
 	if (aio_is_authenticated)
 	{
+		if (!aio_is_chunked)
+		{
+			mpz_add_ui(mac_sqn_out[i_in], mac_sqn_out[i_in], 1UL);
+			std::stringstream sqn; // include sequence number into MAC
+			sqn << mac_sqn_out[i_in];
+			err = gcry_mac_write(*mac_out[i_in],
+				(sqn.str()).c_str(), (sqn.str()).length());
+			if (err)
+			{
+				std::cerr << "aiounicast_nonblock: gcry_mac_write()" <<
+					" failed" << std::endl << gcry_strerror(err) <<
+					std::endl;
+				return false;
+			}
+		}
 		// get current MAC buffer and reset MAC
 		size_t macbuflen = maclen;
 		unsigned char *macbuf = new unsigned char[macbuflen];
@@ -511,6 +534,7 @@ bool aiounicast_nonblock::Receive
 	 size_t scheduler,
 	 time_t timeout)
 {
+	unsigned char mac[maclen + 1];
 	if (!aio_is_initialized)
 		return false;
 	if (scheduler == aio_scheduler_default)
@@ -563,10 +587,8 @@ bool aiounicast_nonblock::Receive
 					// allocate at least one char
 					size_t tmplen = newline_ptr + 1;
 					char *tmp = new char[tmplen];
-					// allocate at least one char, even if maclen == 0
-					unsigned char *mac = new unsigned char[maclen + 1];
 					memset(tmp, 0, tmplen);
-					memset(mac, 0, maclen);
+					memset(mac, 0, sizeof(mac));
 					if (newline_ptr > 0)
 						memcpy(tmp, buf_in[i_out], newline_ptr);
 					if (maclen > 0)
@@ -583,13 +605,22 @@ bool aiounicast_nonblock::Receive
 					if (aio_is_authenticated)
 					{
 						gcry_error_t err;
+						err = gcry_mac_reset(*mac_in[i_out]);
+						if (err)
+						{
+							std::cerr << "aiounicast_nonblock:" <<
+								" gcry_mac_reset() failed" << std::endl <<
+								gcry_strerror(err) << std::endl;
+							delete [] tmp;
+							return false;
+						}
 						err = gcry_mac_write(*mac_in[i_out], tmp, newline_ptr);
 						if (err)
 						{
 							std::cerr << "aiounicast_nonblock:" <<
 								"gcry_mac_write() failed" << std::endl <<
 								gcry_strerror(err) << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						numAuthenticated += newline_ptr;
@@ -600,28 +631,37 @@ bool aiounicast_nonblock::Receive
 							std::cerr << "aiounicast_nonblock:" <<
 								" gcry_mac_write() failed" << std::endl <<
 								gcry_strerror(err) << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						numAuthenticated += 1;
+						if (!aio_is_chunked)
+						{
+							mpz_add_ui(mac_sqn_in[i_out], mac_sqn_in[i_out], 1UL);
+							std::stringstream sqn; // include sequence number
+							sqn << mac_sqn_in[i_out];
+							err = gcry_mac_write(*mac_in[i_out],
+								(sqn.str()).c_str(), (sqn.str()).length());
+							if (err)
+							{
+								std::cerr << "aiounicast_nonblock:" <<
+									" gcry_mac_write() failed" <<
+									std::endl <<
+									gcry_strerror(err) << std::endl;
+								delete [] tmp;
+								return false;
+							}
+						}
+						bad_auth[i_out] = false;
 						err = gcry_mac_verify(*mac_in[i_out], mac, maclen);
 						if (err)
 						{
 							std::cerr << "aiounicast_nonblock:" <<
-								" gcry_mac_verify() for " << j << " from " <<
-								i_out << " failed" << std::endl <<
+								" gcry_mac_verify() failed for " << j <<
+								" in stream from " << i_out << std::endl <<
 								gcry_strerror(err) << std::endl;
-							err = gcry_mac_reset(*mac_in[i_out]);
-							delete [] tmp, delete [] mac;
-							return false;
-						}
-						err = gcry_mac_reset(*mac_in[i_out]);
-						if (err)
-						{
-							std::cerr << "aiounicast_nonblock:" <<
-								" gcry_mac_reset() failed" << std::endl <<
-								gcry_strerror(err) << std::endl;
-							delete [] tmp, delete [] mac;
+							bad_auth[i_out] = true;
+							delete [] tmp;
 							return false;
 						}
 					}
@@ -634,7 +674,7 @@ bool aiounicast_nonblock::Receive
 						{
 							std::cerr << "aiounicast_nonblock: mpz_set_str()" <<
 								" for encval failed" << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						size_t realsize = 0;
@@ -644,7 +684,7 @@ bool aiounicast_nonblock::Receive
 						{
 							std::cerr << "aiounicast_nonblock: mpz_export()" <<
 								" failed for " << encval << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						mpz_clear(encval);
@@ -652,7 +692,7 @@ bool aiounicast_nonblock::Receive
 						{
 							std::cerr << "aiounicast_nonblock: no prefix" <<
 								" found" << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						gcry_error_t err;
@@ -663,7 +703,7 @@ bool aiounicast_nonblock::Receive
 							std::cerr << "aiounicast_nonblock:" <<
 								" gcry_cipher_decrypt() failed" << std::endl <<
 								gcry_strerror(err) << std::endl;
-							delete [] tmp, delete [] mac;
+							delete [] tmp;
 							return false;
 						}
 						numDecrypted += (realsize - 1);
@@ -675,10 +715,10 @@ bool aiounicast_nonblock::Receive
 					{
 						std::cerr << "aiounicast_nonblock: mpz_set_str() for" <<
 							" m from " << i_out << " failed" << std::endl;
-						delete [] tmp, delete [] mac;
+						delete [] tmp;
 						return false;
 					}
-					delete [] tmp, delete [] mac;
+					delete [] tmp;
 					if (aio_is_encrypted)
 					{
 						if (mpz_cmp(m, aio_hide_length) < 0)
@@ -879,6 +919,19 @@ aiounicast_nonblock::~aiounicast_nonblock
 	buf_mpz.clear();
 	iv_out.clear(), iv_flag_in.clear(), iv_flag_out.clear();
 	mac_in.clear(), mac_out.clear();
+	for (size_t i = 0; i < mac_sqn_in.size(); i++)
+	{
+		mpz_clear(mac_sqn_in[i]);
+		delete [] mac_sqn_in[i];
+	}
+	mac_sqn_in.clear();
+	for (size_t i = 0; i < mac_sqn_out.size(); i++)
+	{
+		mpz_clear(mac_sqn_out[i]);
+		delete [] mac_sqn_out[i];
+	}
+	mac_sqn_out.clear();
 	enc_in.clear(), enc_out.clear();
+	bad_auth.clear();
 }
 
