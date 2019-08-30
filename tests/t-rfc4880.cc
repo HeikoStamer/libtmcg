@@ -601,17 +601,30 @@ int main
 		bool parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 			PublicKeyBlockParse(armored_pubkeyblock, 3, primary);
 		assert(parse_ok);
-		tmcg_openpgp_octets_t expub;
+		tmcg_openpgp_octets_t expub, expub2, expub3, expub4, expub5;
 		std::cout << "Export()" << std::endl;
 		primary->Export(expub);
 		assert((CallasDonnerhackeFinneyShawThayerRFC4880::
 			OctetsCompare(all, expub)));
+		std::cout << "Export(TMCG_OPENPGP_EXPORT_KEYSONLY)" << std::endl;
+		primary->Export(expub2, TMCG_OPENPGP_EXPORT_KEYSONLY);
+		assert(expub2.size() < expub.size());
+		std::cout << "Export(TMCG_OPENPGP_EXPORT_MINIMAL)" << std::endl;
+		primary->Export(expub3, TMCG_OPENPGP_EXPORT_MINIMAL);
+		assert(expub3.size() == 0);
+		std::cout << "Export(TMCG_OPENPGP_EXPORT_REVCERT)" << std::endl;
+		primary->Export(expub4, TMCG_OPENPGP_EXPORT_REVCERT);
+		assert(expub4.size() <= expub.size());
 		std::cout << "CheckSelfSignatures()" << std::endl;
 		parse_ok = primary->CheckSelfSignatures(ring, 3);
 		assert(parse_ok);
 		std::cout << "CheckSubkeys()" << std::endl;
 		parse_ok = primary->CheckSubkeys(ring, 3);
 		assert(parse_ok);
+		std::cout << "Export(TMCG_OPENPGP_EXPORT_MINIMAL)" << std::endl;
+		primary->Export(expub5, TMCG_OPENPGP_EXPORT_MINIMAL);
+		assert((CallasDonnerhackeFinneyShawThayerRFC4880::
+			OctetsCompare(all, expub5)));
 		std::string fpr, kid;
 		std::cout << "FingerprintConvertPlain()" << std::endl;
 		CallasDonnerhackeFinneyShawThayerRFC4880::

@@ -4282,8 +4282,16 @@ void TMCG_OpenPGP_Pubkey::Reduce
 }
 
 void TMCG_OpenPGP_Pubkey::Export
-	(tmcg_openpgp_octets_t &out) const
+	(tmcg_openpgp_octets_t &out,
+	 tmcg_openpgp_export_flags_t flags) const
 {
+	bool keysonly = ((flags & TMCG_OPENPGP_EXPORT_KEYSONLY) == TMCG_OPENPGP_EXPORT_KEYSONLY);
+	bool minimal = ((flags & TMCG_OPENPGP_EXPORT_MINIMAL) == TMCG_OPENPGP_EXPORT_MINIMAL);
+	bool revcert = ((flags & TMCG_OPENPGP_EXPORT_REVCERT) == TMCG_OPENPGP_EXPORT_REVCERT);
+	if (minimal && !valid)
+		return; // skip invalid primary key
+	if (minimal && revoked)
+		return; // skip revoked primary key
 	out.insert(out.end(),
 		packet.begin(),
 		packet.end());
@@ -4307,6 +4315,12 @@ void TMCG_OpenPGP_Pubkey::Export
 	}
 	for (size_t j = 0; j < userids.size(); j++)
 	{
+		if (keysonly)
+			continue;
+		if (minimal && !userids[j]->valid)
+			continue; // skip invalid user ID
+		if (minimal && userids[j]->revoked)
+			continue; // skip revoked user ID
 		out.insert(out.end(),
 			(userids[j]->packet).begin(),
 			(userids[j]->packet).end());
@@ -4324,6 +4338,8 @@ void TMCG_OpenPGP_Pubkey::Export
 		}
 		for (size_t i = 0; i < (userids[j]->certsigs).size(); i++)
 		{
+			if (minimal || revcert)
+				continue;
 			if (userids[j]->certsigs[i]->exportable == false)
 				continue;
 			out.insert(out.end(),
@@ -4333,6 +4349,12 @@ void TMCG_OpenPGP_Pubkey::Export
 	}
 	for (size_t j = 0; j < userattributes.size(); j++)
 	{
+		if (keysonly)
+			continue;
+		if (minimal && !userattributes[j]->valid)
+			continue; // skip invalid user attribute
+		if (minimal && userattributes[j]->revoked)
+			continue; // skip revoked user attribute
 		out.insert(out.end(),
 			(userattributes[j]->packet).begin(),
 			(userattributes[j]->packet).end());
@@ -4350,6 +4372,8 @@ void TMCG_OpenPGP_Pubkey::Export
 		}
 		for (size_t i = 0; i < (userattributes[j]->certsigs).size(); i++)
 		{
+			if (minimal || revcert)
+				continue;
 			if (userattributes[j]->certsigs[i]->exportable == false)
 				continue;
 			out.insert(out.end(),
@@ -4359,6 +4383,10 @@ void TMCG_OpenPGP_Pubkey::Export
 	}
 	for (size_t j = 0; j < subkeys.size(); j++)
 	{
+		if (minimal && !subkeys[j]->valid)
+			continue; // skip invalid subkey
+		if (minimal && subkeys[j]->revoked)
+			continue; // skip revoked subkey
 		out.insert(out.end(),
 			(subkeys[j]->packet).begin(),
 			(subkeys[j]->packet).end());
@@ -6342,8 +6370,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CRC24Encode
 }
 
 void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
-	(const tmcg_openpgp_armor_t type, const tmcg_openpgp_octets_t &in,
-	 std::string &out, const bool version)
+	(const tmcg_openpgp_armor_t type, const std::string &comment,
+	 const tmcg_openpgp_octets_t &in, std::string &out, const bool version)
 {
 	// Concatenating the following data creates ASCII Armor:
 	//  - An Armor Header Line, appropriate for the type of data
@@ -6402,6 +6430,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 	//    used to encode the message.
 	if (version)
 		out += "Version: LibTMCG " VERSION "\r\n";
+	//  - "Comment", a user-defined comment. OpenPGP defines all text to
+	//    be in UTF-8. A comment may be any UTF-8 string. However, the
+	//    whole point of armoring is to provide seven-bit-clean data.
+	//    Consequently, if a comment has characters that are outside the
+	//    US-ASCII range of UTF, they may very well not survive transport.
+	if (comment.length() > 0)
+		out += "Comment: " + comment + "\r\n";
 
 	// Next, a blank (zero-length, or containing only whitespace) line
 	out += "\r\n";
@@ -6434,6 +6469,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
 		default:
 			break;
 	}
+}
+
+void CallasDonnerhackeFinneyShawThayerRFC4880::ArmorEncode
+	(const tmcg_openpgp_armor_t type, const tmcg_openpgp_octets_t &in,
+	 std::string &out)
+{
+	ArmorEncode(type, "", in, out, false);
 }
 
 tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode

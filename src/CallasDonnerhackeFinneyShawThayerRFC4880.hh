@@ -532,6 +532,12 @@ typedef struct
 	tmcg_openpgp_byte_t			key_fingerprint[32]; // SHA-1 or SHA256
 } tmcg_openpgp_revkey_t;
 
+typedef uint16_t tmcg_openpgp_export_flags_t;
+static const tmcg_openpgp_export_flags_t TMCG_OPENPGP_EXPORT_ALL      = 0x0000;
+static const tmcg_openpgp_export_flags_t TMCG_OPENPGP_EXPORT_KEYSONLY = 0x0001;
+static const tmcg_openpgp_export_flags_t TMCG_OPENPGP_EXPORT_MINIMAL  = 0x0002;
+static const tmcg_openpgp_export_flags_t TMCG_OPENPGP_EXPORT_REVCERT  = 0x0004;
+
 // definition of own classes
 class TMCG_OpenPGP_Signature
 {
@@ -1060,7 +1066,8 @@ class TMCG_OpenPGP_Pubkey
 		void Reduce
 			();
 		void Export
-			(tmcg_openpgp_octets_t							&out) const;
+			(tmcg_openpgp_octets_t							&out,
+			 tmcg_openpgp_export_flags_t						flags = TMCG_OPENPGP_EXPORT_ALL) const;
 		~TMCG_OpenPGP_Pubkey
 			();
 };
@@ -1500,9 +1507,14 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 std::string									&out);
 		static void ArmorEncode
 			(const tmcg_openpgp_armor_t						type,
+			 const std::string						&comment,
 			 const tmcg_openpgp_octets_t					&in,
 			 std::string									&out,
 			 const bool										version = false);
+		static void ArmorEncode
+			(const tmcg_openpgp_armor_t						type,
+			 const tmcg_openpgp_octets_t					&in,
+			 std::string									&out);
 		static tmcg_openpgp_armor_t ArmorDecode
 			(std::string									in,
 			 tmcg_openpgp_octets_t							&out);
