@@ -570,21 +570,17 @@ bool aiounicast_select::Send
 			delete [] buf;
 			return false;
 		}
-		if (!aio_is_chunked)
+		mpz_add_ui(mac_sqn_out[i_in], mac_sqn_out[i_in], 1UL);
+		std::stringstream sqn; // include sequence number into MAC
+		sqn << mac_sqn_out[i_in];
+		err = gcry_mac_write(*mac_out[i_in],
+			(sqn.str()).c_str(), (sqn.str()).length());
+		if (err)
 		{
-			mpz_add_ui(mac_sqn_out[i_in], mac_sqn_out[i_in], 1UL);
-			std::stringstream sqn; // include sequence number into MAC
-			sqn << mac_sqn_out[i_in];
-			err = gcry_mac_write(*mac_out[i_in],
-				(sqn.str()).c_str(), (sqn.str()).length());
-			if (err)
-			{
-				std::cerr << "aiounicast_select: gcry_mac_write()" <<
-					" failed" << std::endl << gcry_strerror(err) <<
-					std::endl;
-				delete [] buf;
-				return false;
-			}
+			std::cerr << "aiounicast_select: gcry_mac_write()" <<
+				" failed" << std::endl << gcry_strerror(err) << std::endl;
+			delete [] buf;
+			return false;
 		}
 	}
 	// send content of write buffer to party i_in
@@ -869,22 +865,18 @@ bool aiounicast_select::Receive
 							return false;
 						}
 						numAuthenticated += 1;
-						if (!aio_is_chunked)
+						mpz_add_ui(mac_sqn_in[i_out], mac_sqn_in[i_out], 1UL);
+						std::stringstream sqn; // include sequence number
+						sqn << mac_sqn_in[i_out];
+						err = gcry_mac_write(*mac_in[i_out],
+							(sqn.str()).c_str(), (sqn.str()).length());
+						if (err)
 						{
-							mpz_add_ui(mac_sqn_in[i_out], mac_sqn_in[i_out], 1UL);
-							std::stringstream sqn; // include sequence number
-							sqn << mac_sqn_in[i_out];
-							err = gcry_mac_write(*mac_in[i_out],
-								(sqn.str()).c_str(), (sqn.str()).length());
-							if (err)
-							{
-								std::cerr << "aiounicast_select:" <<
-									" gcry_mac_write() failed" <<
-									std::endl <<
-									gcry_strerror(err) << std::endl;
-								delete [] tmp;
-								return false;
-							}
+							std::cerr << "aiounicast_select:" <<
+								" gcry_mac_write() failed" << std::endl <<
+								gcry_strerror(err) << std::endl;
+							delete [] tmp;
+							return false;
 						}
 						bad_auth[i_out] = false;
 						err = gcry_mac_verify(*mac_in[i_out], mac, maclen);
@@ -1280,6 +1272,17 @@ bool aiounicast_select::Receive
 	while (time(NULL) < (entry_time + timeout));
 	i_out = n; // timeout for all parties
 	return false;			
+}
+
+void aiounicast_select::Reset
+	(const size_t i_in)
+{
+	// reset sequence numbers for authentication
+	if (aio_is_authenticated)
+	{
+		mpz_set_ui(mac_sqn_in[i_in], 0UL); // initial sequence number
+		mpz_set_ui(mac_sqn_out[i_in], 0UL); // initial sequence number
+	}
 }
 
 aiounicast_select::~aiounicast_select

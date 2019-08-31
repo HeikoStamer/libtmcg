@@ -109,6 +109,8 @@ class aiounicast
 			 size_t &i_out,
 			 const size_t scheduler = aio_scheduler_default,
 			 const time_t timeout = aio_timeout_default) = 0;
+		virtual void Reset
+			(const size_t i_in);
 
 		void PrintStatistics
 			(std::ostream &ost)

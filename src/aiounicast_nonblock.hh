@@ -85,6 +85,8 @@ class aiounicast_nonblock : public aiounicast
 			 size_t &i_out,
 			 size_t scheduler = aio_scheduler_default,
 			 time_t timeout = aio_timeout_default);
+		void Reset
+			(const size_t i_in);
 		~aiounicast_nonblock
 			();
 };

@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-08-31] aiounicast_*: added Reset() to provide e.g. authentication reset
 * [2019-08-30] RFC4880: added tmcg_openpgp_export_flags_t and changed method
                TMCG_OpenPGP_Pubkey::Export() to allow a restricted export
 * [2019-08-30] RFC4880: changed ArmorEncode() to provide armor annotations
