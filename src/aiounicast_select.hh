@@ -87,7 +87,7 @@ class aiounicast_select : public aiounicast
 			 size_t scheduler = aio_scheduler_default,
 			 time_t timeout = aio_timeout_default);
 		void Reset
-			(const size_t i_in);
+			(const size_t i_in, const bool input);
 		~aiounicast_select
 			();
 };

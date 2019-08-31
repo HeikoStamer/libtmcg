@@ -110,7 +110,7 @@ class aiounicast
 			 const size_t scheduler = aio_scheduler_default,
 			 const time_t timeout = aio_timeout_default) = 0;
 		virtual void Reset
-			(const size_t i_in) = 0;
+			(const size_t i_in, const bool input) = 0;
 
 		void PrintStatistics
 			(std::ostream &ost)

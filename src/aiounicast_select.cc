@@ -1275,13 +1275,15 @@ bool aiounicast_select::Receive
 }
 
 void aiounicast_select::Reset
-	(const size_t i_in)
+	(const size_t i_in, const bool input)
 {
 	// reset sequence numbers for authentication
 	if (aio_is_authenticated)
 	{
-		mpz_set_ui(mac_sqn_in[i_in], 0UL); // initial sequence number
-		mpz_set_ui(mac_sqn_out[i_in], 0UL); // initial sequence number
+		if (input)
+			mpz_set_ui(mac_sqn_in[i_in], 0UL); // initial sequence number
+		else
+			mpz_set_ui(mac_sqn_out[i_in], 0UL); // initial sequence number
 	}
 }
 
