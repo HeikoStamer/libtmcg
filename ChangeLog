@@ -8,6 +8,9 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-09-01] RFC4880: added member decryptionfpr in TMCG_OpenPGP_Message to
+               store the decryption context (fingerprint) for handling Intended
+               Recipient Fingerprint subpackets (cf. RFC4880bis)
 * [2019-08-31] aiounicast_*: added Reset() to provide e.g. authentication reset
 * [2019-08-30] RFC4880: added tmcg_openpgp_export_flags_t and changed method
                TMCG_OpenPGP_Pubkey::Export() to allow a restricted export

@@ -1299,6 +1299,7 @@ class TMCG_OpenPGP_Message
 		tmcg_openpgp_octets_t								literal_data;
 		tmcg_openpgp_octets_t								mdc;	
 		std::vector<const TMCG_OpenPGP_Signature*>			signatures;
+		tmcg_openpgp_octets_t								decryptionfpr;
 
 		TMCG_OpenPGP_Message
 			();
