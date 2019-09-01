@@ -150,10 +150,10 @@ aiounicast_nonblock::aiounicast_nonblock
 			throw std::invalid_argument("aiounicast_nonblock: libgcrypt failed");
 		}
 		mpz_ptr tmp_in = new mpz_t();
-		mpz_init_set_ui(tmp_in, 0UL); // initial sequence number
+		mpz_init_set_ui(tmp_in, 1UL); // initial sequence number
 		mac_sqn_in.push_back(tmp_in);
 		mpz_ptr tmp_out = new mpz_t();
-		mpz_init_set_ui(tmp_out, 0UL); // initial sequence number
+		mpz_init_set_ui(tmp_out, 1UL); // initial sequence number
 		mac_sqn_out.push_back(tmp_out);
 		bad_auth.push_back(false); // bad authentication flag
 	}
@@ -437,7 +437,6 @@ bool aiounicast_nonblock::Send
 	}
 	if (aio_is_authenticated)
 	{
-		mpz_add_ui(mac_sqn_out[i_in], mac_sqn_out[i_in], 1UL);
 		std::stringstream sqn; // include sequence number into MAC
 		sqn << mac_sqn_out[i_in];
 		err = gcry_mac_write(*mac_out[i_in],
@@ -503,6 +502,7 @@ bool aiounicast_nonblock::Send
 				" MAC send timeout for " << i_in << std::endl;
 			return false;
 		}
+		mpz_add_ui(mac_sqn_out[i_in], mac_sqn_out[i_in], 1UL);
 	}
 	return true;
 }
@@ -631,7 +631,6 @@ bool aiounicast_nonblock::Receive
 							return false;
 						}
 						numAuthenticated += 1;
-						mpz_add_ui(mac_sqn_in[i_out], mac_sqn_in[i_out], 1UL);
 						std::stringstream sqn; // include sequence number
 						sqn << mac_sqn_in[i_out];
 						err = gcry_mac_write(*mac_in[i_out],
@@ -656,6 +655,7 @@ bool aiounicast_nonblock::Receive
 							delete [] tmp;
 							return false;
 						}
+						mpz_add_ui(mac_sqn_in[i_out], mac_sqn_in[i_out], 1UL);
 					}
 					// convert and decrypt the corresponding part of read buffer
 					if (aio_is_encrypted)
@@ -886,9 +886,9 @@ void aiounicast_nonblock::Reset
 	if (aio_is_authenticated)
 	{
 		if (input)
-			mpz_set_ui(mac_sqn_in[i_in], 0UL); // initial sequence number
+			mpz_set_ui(mac_sqn_in[i_in], 1UL); // initial sequence number
 		else
-			mpz_set_ui(mac_sqn_out[i_in], 0UL); // initial sequence number
+			mpz_set_ui(mac_sqn_out[i_in], 1UL); // initial sequence number
 	}
 }
 

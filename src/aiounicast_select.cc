@@ -157,10 +157,10 @@ aiounicast_select::aiounicast_select
 			throw std::invalid_argument("aiounicast_select: libgcrypt failed");
 		}
 		mpz_ptr tmp_in = new mpz_t();
-		mpz_init_set_ui(tmp_in, 0UL); // initial sequence number
+		mpz_init_set_ui(tmp_in, 1UL); // initial sequence number
 		mac_sqn_in.push_back(tmp_in);
 		mpz_ptr tmp_out = new mpz_t();
-		mpz_init_set_ui(tmp_out, 0UL); // initial sequence number
+		mpz_init_set_ui(tmp_out, 1UL); // initial sequence number
 		mac_sqn_out.push_back(tmp_out);
 		bad_auth.push_back(false); // bad authentication flag
 	}
@@ -570,7 +570,6 @@ bool aiounicast_select::Send
 			delete [] buf;
 			return false;
 		}
-		mpz_add_ui(mac_sqn_out[i_in], mac_sqn_out[i_in], 1UL);
 		std::stringstream sqn; // include sequence number into MAC
 		sqn << mac_sqn_out[i_in];
 		err = gcry_mac_write(*mac_out[i_in],
@@ -582,6 +581,7 @@ bool aiounicast_select::Send
 			delete [] buf;
 			return false;
 		}
+		mpz_add_ui(mac_sqn_out[i_in], mac_sqn_out[i_in], 1UL);
 	}
 	// send content of write buffer to party i_in
 	time_t entry_time = time(NULL);
@@ -865,7 +865,6 @@ bool aiounicast_select::Receive
 							return false;
 						}
 						numAuthenticated += 1;
-						mpz_add_ui(mac_sqn_in[i_out], mac_sqn_in[i_out], 1UL);
 						std::stringstream sqn; // include sequence number
 						sqn << mac_sqn_in[i_out];
 						err = gcry_mac_write(*mac_in[i_out],
@@ -890,6 +889,7 @@ bool aiounicast_select::Receive
 							delete [] tmp;
 							return false;
 						}
+						mpz_add_ui(mac_sqn_in[i_out], mac_sqn_in[i_out], 1UL);
 					}
 					// convert and decrypt the corresponding part of read buffer
 					if (aio_is_encrypted)
@@ -1281,9 +1281,9 @@ void aiounicast_select::Reset
 	if (aio_is_authenticated)
 	{
 		if (input)
-			mpz_set_ui(mac_sqn_in[i_in], 0UL); // initial sequence number
+			mpz_set_ui(mac_sqn_in[i_in], 1UL); // initial sequence number
 		else
-			mpz_set_ui(mac_sqn_out[i_in], 0UL); // initial sequence number
+			mpz_set_ui(mac_sqn_out[i_in], 1UL); // initial sequence number
 	}
 }
 
