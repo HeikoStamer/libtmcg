@@ -157,6 +157,7 @@ enum tmcg_openpgp_signature_t
 	TMCG_OPENPGP_SIGNATURE_PERSONA_CERTIFICATION	= 0x11,
 	TMCG_OPENPGP_SIGNATURE_CASUAL_CERTIFICATION		= 0x12,
 	TMCG_OPENPGP_SIGNATURE_POSITIVE_CERTIFICATION	= 0x13,
+	TMCG_OPENPGP_SIGNATURE_ATTESTATION_KEY			= 0x16, // draft RFC 4880bis
 	TMCG_OPENPGP_SIGNATURE_SUBKEY_BINDING			= 0x18,
 	TMCG_OPENPGP_SIGNATURE_PRIMARY_KEY_BINDING		= 0x19,
 	TMCG_OPENPGP_SIGNATURE_DIRECTLY_ON_A_KEY		= 0x1F,
@@ -468,6 +469,8 @@ typedef struct
 	tmcg_openpgp_byte_t			issuerfingerprint[32]; // SHA-1 or SHA256
 	tmcg_openpgp_byte_t			recipientkeyversion;
 	tmcg_openpgp_byte_t			recipientfingerprint[32]; // SHA-1 or SHA256
+	tmcg_openpgp_byte_t*		attestedcertifications; // allocated buffer
+	size_t						attestedcertificationslen;
 	tmcg_openpgp_byte_t			left[2];
 	gcry_mpi_t					md;
 	gcry_mpi_t					r;
@@ -542,90 +545,93 @@ static const tmcg_openpgp_export_flags_t TMCG_OPENPGP_EXPORT_REVCERT  = 0x0004;
 class TMCG_OpenPGP_Signature
 {
 	private:
-		gcry_error_t										ret;
-		size_t												erroff;
+		gcry_error_t									ret;
+		size_t											erroff;
 
 	public:
-		bool												valid;
-		bool												revoked;
-		bool												expired;
-		bool												revocable;
-		bool												exportable;
-		tmcg_openpgp_pkalgo_t								pkalgo;
-		tmcg_openpgp_hashalgo_t								hashalgo;
-		tmcg_openpgp_signature_t							type;
-		tmcg_openpgp_byte_t									version;
-		time_t												creationtime;
-		time_t												expirationtime;
-		time_t												keyexpirationtime;
-		tmcg_openpgp_revcode_t								revcode;
-		gcry_sexp_t											signature;
-		gcry_mpi_t											rsa_md;
-		gcry_mpi_t											dsa_r;
-		gcry_mpi_t											dsa_s;
-		tmcg_openpgp_octets_t								packet;
-		tmcg_openpgp_octets_t								hspd;
-		tmcg_openpgp_octets_t								issuer;
-		tmcg_openpgp_octets_t								issuerfpr;
-		tmcg_openpgp_octets_t								keyflags;
-		tmcg_openpgp_octets_t								keyfeatures;
-		tmcg_openpgp_octets_t								keyprefs_psa;
-		tmcg_openpgp_octets_t								keyprefs_pha;
-		tmcg_openpgp_octets_t								keyprefs_pca;
-		tmcg_openpgp_octets_t								keyprefs_paa;
-		std::vector<tmcg_openpgp_revkey_t>					revkeys;
-		tmcg_openpgp_multiple_octets_t						embeddedsigs;
-		tmcg_openpgp_multiple_octets_t						recipientfprs;
+		bool											valid;
+		bool											revoked;
+		bool											expired;
+		bool											revocable;
+		bool											exportable;
+		tmcg_openpgp_pkalgo_t							pkalgo;
+		tmcg_openpgp_hashalgo_t							hashalgo;
+		tmcg_openpgp_signature_t						type;
+		tmcg_openpgp_byte_t								version;
+		time_t											creationtime;
+		time_t											expirationtime;
+		time_t											keyexpirationtime;
+		tmcg_openpgp_revcode_t							revcode;
+		gcry_sexp_t										signature;
+		gcry_mpi_t										rsa_md;
+		gcry_mpi_t										dsa_r;
+		gcry_mpi_t										dsa_s;
+		tmcg_openpgp_octets_t							packet;
+		tmcg_openpgp_octets_t							hspd;
+		tmcg_openpgp_octets_t							issuer;
+		tmcg_openpgp_octets_t							issuerfpr;
+		tmcg_openpgp_octets_t							keyflags;
+		tmcg_openpgp_octets_t							keyfeatures;
+		tmcg_openpgp_octets_t							keyprefs_psa;
+		tmcg_openpgp_octets_t							keyprefs_pha;
+		tmcg_openpgp_octets_t							keyprefs_pca;
+		tmcg_openpgp_octets_t							keyprefs_paa;
+		std::vector<tmcg_openpgp_revkey_t>				revkeys;
+		tmcg_openpgp_multiple_octets_t					embeddedsigs;
+		tmcg_openpgp_multiple_octets_t					recipientfprs;
+		tmcg_openpgp_multiple_octets_t					attestedcerts;
 
 		TMCG_OpenPGP_Signature
-			(const bool										revocable_in,
-			 const bool										exportable_in,
-			 const tmcg_openpgp_pkalgo_t					pkalgo_in,
-			 const tmcg_openpgp_hashalgo_t					hashalgo_in,
-			 const tmcg_openpgp_signature_t					type_in,
-			 const tmcg_openpgp_byte_t						version_in,
-			 const time_t									creationtime_in,
-			 const time_t									expirationtime_in,
-			 const time_t									keyexptime_in,
-			 const tmcg_openpgp_revcode_t					revcode_in,
-			 const gcry_mpi_t								md,
-			 const tmcg_openpgp_octets_t					&packet_in,
-			 const tmcg_openpgp_octets_t					&hspd_in,
-			 const tmcg_openpgp_octets_t					&issuer_in,
-			 const tmcg_openpgp_octets_t					&issuerfpr_in,
-			 const tmcg_openpgp_octets_t					&keyflags_in,
-			 const tmcg_openpgp_octets_t					&keyfeatures_in,
-			 const tmcg_openpgp_octets_t					&keyprefs_psa_in,
-			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
-			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
-			 const tmcg_openpgp_octets_t					&keyprefs_paa_in,
-			 const tmcg_openpgp_multiple_octets_t			&embeddedsigs_in,
-			 const tmcg_openpgp_multiple_octets_t			&recipientfprs_in);
+			(const bool									revocable_in,
+			 const bool									exportable_in,
+			 const tmcg_openpgp_pkalgo_t				pkalgo_in,
+			 const tmcg_openpgp_hashalgo_t				hashalgo_in,
+			 const tmcg_openpgp_signature_t				type_in,
+			 const tmcg_openpgp_byte_t					version_in,
+			 const time_t								creationtime_in,
+			 const time_t								expirationtime_in,
+			 const time_t								keyexptime_in,
+			 const tmcg_openpgp_revcode_t				revcode_in,
+			 const gcry_mpi_t							md,
+			 const tmcg_openpgp_octets_t				&packet_in,
+			 const tmcg_openpgp_octets_t				&hspd_in,
+			 const tmcg_openpgp_octets_t				&issuer_in,
+			 const tmcg_openpgp_octets_t				&issuerfpr_in,
+			 const tmcg_openpgp_octets_t				&keyflags_in,
+			 const tmcg_openpgp_octets_t				&keyfeatures_in,
+			 const tmcg_openpgp_octets_t				&keyprefs_psa_in,
+			 const tmcg_openpgp_octets_t				&keyprefs_pha_in,
+			 const tmcg_openpgp_octets_t				&keyprefs_pca_in,
+			 const tmcg_openpgp_octets_t				&keyprefs_paa_in,
+			 const tmcg_openpgp_multiple_octets_t		&embeddedsigs_in,
+			 const tmcg_openpgp_multiple_octets_t		&recipientfprs_in,
+			 const tmcg_openpgp_multiple_octets_t		&attestedcerts_in);
 		TMCG_OpenPGP_Signature
-			(const bool										revocable_in,
-			 const bool										exportable_in,
-			 const tmcg_openpgp_pkalgo_t					pkalgo_in,
-			 const tmcg_openpgp_hashalgo_t					hashalgo_in,
-			 const tmcg_openpgp_signature_t					type_in,
-			 const tmcg_openpgp_byte_t						version_in,
-			 const time_t									creationtime_in,
-			 const time_t									expirationtime_in,
-			 const time_t									keyexptime_in,
-			 const tmcg_openpgp_revcode_t					revcode_in,
-			 const gcry_mpi_t								r,
-			 const gcry_mpi_t								s,
-			 const tmcg_openpgp_octets_t					&packet_in,
-			 const tmcg_openpgp_octets_t					&hspd_in,
-			 const tmcg_openpgp_octets_t					&issuer_in,
-			 const tmcg_openpgp_octets_t					&issuerfpr_in,
-			 const tmcg_openpgp_octets_t					&keyflags_in,
-			 const tmcg_openpgp_octets_t					&keyfeatures_in,
-			 const tmcg_openpgp_octets_t					&keyprefs_psa_in,
-			 const tmcg_openpgp_octets_t					&keyprefs_pha_in,
-			 const tmcg_openpgp_octets_t					&keyprefs_pca_in,
-			 const tmcg_openpgp_octets_t					&keyprefs_paa_in,
-			 const tmcg_openpgp_multiple_octets_t			&embeddedsigs_in,
-			 const tmcg_openpgp_multiple_octets_t			&recipientfprs_in);
+			(const bool									revocable_in,
+			 const bool									exportable_in,
+			 const tmcg_openpgp_pkalgo_t				pkalgo_in,
+			 const tmcg_openpgp_hashalgo_t				hashalgo_in,
+			 const tmcg_openpgp_signature_t				type_in,
+			 const tmcg_openpgp_byte_t					version_in,
+			 const time_t								creationtime_in,
+			 const time_t								expirationtime_in,
+			 const time_t								keyexptime_in,
+			 const tmcg_openpgp_revcode_t				revcode_in,
+			 const gcry_mpi_t							r,
+			 const gcry_mpi_t							s,
+			 const tmcg_openpgp_octets_t				&packet_in,
+			 const tmcg_openpgp_octets_t				&hspd_in,
+			 const tmcg_openpgp_octets_t				&issuer_in,
+			 const tmcg_openpgp_octets_t				&issuerfpr_in,
+			 const tmcg_openpgp_octets_t				&keyflags_in,
+			 const tmcg_openpgp_octets_t				&keyfeatures_in,
+			 const tmcg_openpgp_octets_t				&keyprefs_psa_in,
+			 const tmcg_openpgp_octets_t				&keyprefs_pha_in,
+			 const tmcg_openpgp_octets_t				&keyprefs_pca_in,
+			 const tmcg_openpgp_octets_t				&keyprefs_paa_in,
+			 const tmcg_openpgp_multiple_octets_t		&embeddedsigs_in,
+			 const tmcg_openpgp_multiple_octets_t		&recipientfprs_in,
+			 const tmcg_openpgp_multiple_octets_t		&attestedcerts_in);
 		bool Good
 			() const;
 		void PrintInfo
@@ -703,6 +709,7 @@ class TMCG_OpenPGP_UserID
 		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				revsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				certsigs;
+		std::vector<TMCG_OpenPGP_Signature*>				attestsigs;
 
 		TMCG_OpenPGP_UserID
 			(const std::string								&userid_in,
@@ -724,6 +731,7 @@ class TMCG_OpenPGP_UserAttribute
 		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				revsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				certsigs;
+		std::vector<TMCG_OpenPGP_Signature*>				attestsigs;
 
 		TMCG_OpenPGP_UserAttribute
 			(const tmcg_openpgp_octets_t					&userattribute_in,
