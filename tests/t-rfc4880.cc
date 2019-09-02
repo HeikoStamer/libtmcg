@@ -984,9 +984,6 @@ int main
 			std::cout << "CheckSelfSignatures()" << std::endl;
 			parse_ok = testuser->CheckSelfSignatures(ring, 3);
 			assert(parse_ok);
-			std::cout << "CheckSubkeys()" << std::endl;
-			parse_ok = testuser->CheckSubkeys(ring, 3);
-			assert(parse_ok);
 			std::cout << "!testuser->Weak()" << std::endl;
 			check_ok = testuser->Weak(3);
 			assert(!check_ok);
