@@ -4037,6 +4037,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				userids[i]->revsigs.size() << std::endl;
 			std::cerr << "INFO: number of certsigs = " <<
 				userids[i]->certsigs.size() << std::endl;
+			std::cerr << "INFO: number of attestsigs = " <<
+				userids[i]->attestsigs.size() << std::endl;
 		}
 		if (userids[i]->Check(this, verbose))
 		{
@@ -4081,6 +4083,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				userattributes[i]->revsigs.size() << std::endl;
 			std::cerr << "INFO: number of certsigs = " <<
 				userattributes[i]->certsigs.size() << std::endl;
+			std::cerr << "INFO: number of attestsigs = " <<
+				userattributes[i]->attestsigs.size() << std::endl;
 		}
 		if (userattributes[i]->Check(this, verbose))
 		{
@@ -14695,6 +14699,11 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricEncryptECDH
 	for (size_t i = 0; ((i < Z.size()) && (i < bufsize)); i++)
 		buf[i] = Z[i];
 	// compute of C = AESKeyWrap(Z, m) as per [RFC 3394]
+	if (AlgorithmHashLength(hashalgo) == 0)
+	{
+		gcry_free(buf);
+		return gcry_error(GPG_ERR_BAD_PUBKEY); // error: unknown hash algorithm
+	}
 	if (Z.size() < AlgorithmHashLength(hashalgo))
 	{
 		gcry_free(buf);
@@ -15317,9 +15326,43 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	if (ctx.attestedcertificationslen > 0)
 	{
 		if (ctx.type != TMCG_OPENPGP_SIGNATURE_ATTESTATION_KEY)
-std::cerr << "BUG: not permitted by RFC" << std::endl;
-// TODO: fill attestedcerts with fingerprints of size ctx.hashalgo from ctx.attestedcertifications
-
+		{
+			if (verbose)
+			{
+				std::cerr << "ERROR: attested certifications found" <<
+					" on wrong signature type 0x" << std::hex <<
+					(int)ctx.type << std::dec << std::endl;
+			}
+			return false;
+		}
+		size_t hashlen = AlgorithmHashLength(ctx.hashalgo);
+		if (hashlen == 0)
+		{
+			if (verbose)
+			{
+				std::cerr << "ERROR: unknown hash algorithm " <<
+					(int)ctx.hashalgo << " found" << std::endl;
+			}
+			return false;
+		}
+		size_t num = ctx.attestedcertificationslen / hashlen;
+		if ((ctx.attestedcertificationslen % hashlen) != 0)
+		{
+			if (verbose)
+			{
+				std::cerr << "ERROR: wrong size of attested certifications" <<
+					" subpacket" << std::endl;
+			}
+			return false;
+		}
+		for (size_t i = 0; i < num; i++)
+		{
+			size_t ptr = i * hashlen;
+			tmcg_openpgp_octets_t certfpr;
+			for (size_t j = 0; j < hashlen; j++)
+				certfpr.push_back(ctx.attestedcertifications[ptr+j]);
+			attestedcerts.push_back(certfpr);
+		}
 	}
 	if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 	    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))

@@ -910,7 +910,7 @@ int main
 			std::cout << "CheckSubkeys()" << std::endl;
 			parse_ok = mallory->CheckSubkeys(ring, 3);
 			assert(parse_ok);
-			std::cout << "!primary->Weak()" << std::endl;
+			std::cout << "!mallory->Weak()" << std::endl;
 			check_ok = mallory->Weak(3);
 			assert(!check_ok);
 		}
@@ -950,12 +950,48 @@ int main
 			std::cout << "CheckSubkeys()" << std::endl;
 			parse_ok = emmapub->CheckSubkeys(ring, 3);
 			assert(parse_ok);
-			std::cout << "!primary->Weak()" << std::endl;
+			std::cout << "!emmapub->Weak()" << std::endl;
 			check_ok = emmapub->Weak(3);
 			assert(!check_ok);
 			emma->RelinkPrivateSubkeys(); // undo the relinking
 		}
 		delete emma;
+		delete ring;
+
+		// test externally generated public key with attested certifications
+		std::string testuser_armored =
+"-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n\r\n"
+"xjMEXWxT2xYJKwYBBAHaRw8BAQdAp1eGu89DccGocj1e+cL5aG+hqwhcuTRpoVI+\r\n"
+"0mFOAHLNHFRlc3QgVXNlciA8dGVzdEBleGFtcGxlLmNvbT7CbQQTFggAFQUCXWxT\r\n"
+"2wIbAQIVCAIXgAIZAQIeAQAKCRAerxxQdaBE7vIsAP4k9Wf6XlHE74WyAphlGbVG\r\n"
+"aH6DvphtC4+jjexFN3Co8QEAgXOnQehv+hpPzaxHsgeS9yL0dvwED8bKDSH/4rcX\r\n"
+"fgrCXgQQFggABgUCXWxT2wAKCRA5mgAEOvRoyIRcAQD68Z+I+FrudZGarrPB18UP\r\n"
+"+4Iv87ue+uTGbsrRmfucsAD+IagJPTySLTTrTNipVoVnqK1XfYY0o59HuxN5qUSg\r\n"
+"AAbCgAQWFggAKAUCXWxT2yElp2KKbH8kJNbFji8NVIliNpKWY0ohnW9arsODAu6E\r\n"
+"ELIACgkQHq8cUHWgRO7VEQD9GbLbq6y78dHnotrZ9qE6eSDXC1h1KIZJyUg/v6vM\r\n"
+"hkUBAPS+pUj2QUs+2xbt/1uotZ3BcKYS3Wjz3ukkpXmkfBAL\r\n"
+"=PUbv\r\n"
+"-----END PGP PUBLIC KEY BLOCK-----\r\n";
+		TMCG_OpenPGP_Pubkey *testuser = NULL;
+		ring = new TMCG_OpenPGP_Keyring();
+		std::cout << "PublicKeyBlockParse(testuser_armored, 3, testuser)" <<
+			std::endl;
+		parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
+			PublicKeyBlockParse(testuser_armored, 3, testuser);
+		assert(parse_ok);
+		if (gcry_check_version("1.7.0"))
+		{
+			std::cout << "CheckSelfSignatures()" << std::endl;
+			parse_ok = testuser->CheckSelfSignatures(ring, 3);
+			assert(parse_ok);
+			std::cout << "CheckSubkeys()" << std::endl;
+			parse_ok = testuser->CheckSubkeys(ring, 3);
+			assert(parse_ok);
+			std::cout << "!testuser->Weak()" << std::endl;
+			check_ok = testuser->Weak(3);
+			assert(!check_ok);
+		}
+		delete testuser;
 		delete ring;
 	
 		return 0;
