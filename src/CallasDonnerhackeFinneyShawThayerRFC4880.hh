@@ -157,7 +157,7 @@ enum tmcg_openpgp_signature_t
 	TMCG_OPENPGP_SIGNATURE_PERSONA_CERTIFICATION	= 0x11,
 	TMCG_OPENPGP_SIGNATURE_CASUAL_CERTIFICATION		= 0x12,
 	TMCG_OPENPGP_SIGNATURE_POSITIVE_CERTIFICATION	= 0x13,
-	TMCG_OPENPGP_SIGNATURE_ATTESTATION_KEY			= 0x16, // draft RFC 4880bis
+	TMCG_OPENPGP_SIGNATURE_ATTESTATION				= 0x16, // draft RFC 4880bis
 	TMCG_OPENPGP_SIGNATURE_SUBKEY_BINDING			= 0x18,
 	TMCG_OPENPGP_SIGNATURE_PRIMARY_KEY_BINDING		= 0x19,
 	TMCG_OPENPGP_SIGNATURE_DIRECTLY_ON_A_KEY		= 0x1F,
@@ -1803,6 +1803,15 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const std::string								&policy,
 			 const tmcg_openpgp_octets_t					&issuer,
 			 const tmcg_openpgp_octets_t					&target_signature,
+			 const tmcg_openpgp_notations_t					&notations,
+			 tmcg_openpgp_octets_t							&out);
+		static void PacketSigPrepareAttestationSignature
+			(const tmcg_openpgp_pkalgo_t					pkalgo,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 const time_t									sigtime,
+			 const std::string								&policy,
+			 const tmcg_openpgp_octets_t					&issuer,
+			 const tmcg_openpgp_octets_t					&attested_certs,
 			 const tmcg_openpgp_notations_t					&notations,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketPubEncode
