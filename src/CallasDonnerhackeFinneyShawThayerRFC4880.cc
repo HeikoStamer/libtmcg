@@ -12569,7 +12569,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	 tmcg_openpgp_octets_t &hash, tmcg_openpgp_octets_t &left)
 {
 	tmcg_openpgp_octets_t hash_input;
-	size_t uidlen = uid.length();
 
 	// When a signature is made over a key, the hash data starts with the
 	// octet 0x99, followed by a two-octet length of the key, and then body
@@ -12589,11 +12588,11 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHash
 	if (uat.size() == 0)
 	{
 		hash_input.push_back(0xB4);
-		hash_input.push_back((uidlen >> 24) & 0xFF);
-		hash_input.push_back((uidlen >> 16) & 0xFF);
-		hash_input.push_back((uidlen >> 8) & 0xFF);
-		hash_input.push_back(uidlen & 0xFF);
-		for (size_t i = 0; i < uidlen; i++)
+		hash_input.push_back((uid.length() >> 24) & 0xFF);
+		hash_input.push_back((uid.length() >> 16) & 0xFF);
+		hash_input.push_back((uid.length() >> 8) & 0xFF);
+		hash_input.push_back(uid.length() & 0xFF);
+		for (size_t i = 0; i < uid.length(); i++)
 			hash_input.push_back(uid[i]);
 	}
 	else
@@ -12636,7 +12635,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV5
 	 tmcg_openpgp_octets_t &hash, tmcg_openpgp_octets_t &left)
 {
 	tmcg_openpgp_octets_t hash_input;
-	size_t uidlen = uid.length();
 
 	hash_input.push_back(0x9A);
 	hash_input.push_back((key.size() >> 24) & 0xFF);
@@ -12647,11 +12645,11 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::CertificationHashV5
 	if (uat.size() == 0)
 	{
 		hash_input.push_back(0xB4);
-		hash_input.push_back((uidlen >> 24) & 0xFF);
-		hash_input.push_back((uidlen >> 16) & 0xFF);
-		hash_input.push_back((uidlen >> 8) & 0xFF);
-		hash_input.push_back(uidlen & 0xFF);
-		for (size_t i = 0; i < uidlen; i++)
+		hash_input.push_back((uid.length() >> 24) & 0xFF);
+		hash_input.push_back((uid.length() >> 16) & 0xFF);
+		hash_input.push_back((uid.length() >> 8) & 0xFF);
+		hash_input.push_back(uid.length() & 0xFF);
+		for (size_t i = 0; i < uid.length(); i++)
 			hash_input.push_back(uid[i]);
 	}
 	else
