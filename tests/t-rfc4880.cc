@@ -987,6 +987,17 @@ int main
 			std::cout << "!testuser->Weak()" << std::endl;
 			check_ok = testuser->Weak(3);
 			assert(!check_ok);
+			for (size_t i = 0; i < testuser->userids.size(); i++)
+			{
+				std::string uid = testuser->userids[i]->userid_sanitized;
+				std::cout << "userid = \"" << uid << "\" is ";
+				if (testuser->userids[i]->valid)
+					std::cout << "valid" << std::endl;
+				else
+					std::cout << "invalid" << std::endl;
+				std::cout << "AccumulateAttestations()" << std::endl;
+				assert(testuser->userids[i]->AccumulateAttestations(testuser, 3) > 0);
+			}
 		}
 		delete testuser;
 		delete ring;

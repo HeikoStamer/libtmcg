@@ -17,7 +17,7 @@ in the sources of this package and additionally can be obtained from Internet
                TMCG_OpenPGP_Pubkey::Export() to allow a restricted export
 * [2019-08-30] RFC4880: changed ArmorEncode() to provide armor annotations
 * [2019-08-29] aiounicast_*: added improved authentication by sequence numbers
-* [2019-08-28] RFC4880: added quick-check in TMCG_OpenPGP_Signature::Verify()
+* [2019-08-28] RFC4880: added quick-check in TMCG_OpenPGP_Signature
 * [2019-08-25] RFC4880: added SHA3 from RFC 4880bis in several methods
 * [2019-08-25] RFC4880: added tmcg_openpgp_multiple_octets_t and changed members
                from TMCG_OpenPGP_Signature (i.e. embeddedsigs and recipientfprs)

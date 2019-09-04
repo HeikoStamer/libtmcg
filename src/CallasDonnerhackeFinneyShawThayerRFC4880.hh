@@ -580,6 +580,7 @@ class TMCG_OpenPGP_Signature
 		tmcg_openpgp_multiple_octets_t					embeddedsigs;
 		tmcg_openpgp_multiple_octets_t					recipientfprs;
 		tmcg_openpgp_multiple_octets_t					attestedcerts;
+		tmcg_openpgp_octets_t							left;
 
 		TMCG_OpenPGP_Signature
 			(const bool									revocable_in,
@@ -605,7 +606,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t				&keyprefs_paa_in,
 			 const tmcg_openpgp_multiple_octets_t		&embeddedsigs_in,
 			 const tmcg_openpgp_multiple_octets_t		&recipientfprs_in,
-			 const tmcg_openpgp_multiple_octets_t		&attestedcerts_in);
+			 const tmcg_openpgp_multiple_octets_t		&attestedcerts_in,
+			 const tmcg_openpgp_octets_t				&left_in);
 		TMCG_OpenPGP_Signature
 			(const bool									revocable_in,
 			 const bool									exportable_in,
@@ -631,7 +633,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_octets_t				&keyprefs_paa_in,
 			 const tmcg_openpgp_multiple_octets_t		&embeddedsigs_in,
 			 const tmcg_openpgp_multiple_octets_t		&recipientfprs_in,
-			 const tmcg_openpgp_multiple_octets_t		&attestedcerts_in);
+			 const tmcg_openpgp_multiple_octets_t		&attestedcerts_in,
+			 const tmcg_openpgp_octets_t				&left_in);
 		bool Good
 			() const;
 		void PrintInfo
@@ -710,11 +713,15 @@ class TMCG_OpenPGP_UserID
 		std::vector<TMCG_OpenPGP_Signature*>				revsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				certsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				attestsigs;
+		tmcg_openpgp_multiple_octets_t						attestations;
 
 		TMCG_OpenPGP_UserID
 			(const std::string								&userid_in,
 			 const tmcg_openpgp_octets_t					&packet_in);
 		bool Check
+			(const TMCG_OpenPGP_Pubkey*						primary,
+			 const int										verbose);
+		size_t AccumulateAttestations
 			(const TMCG_OpenPGP_Pubkey*						primary,
 			 const int										verbose);
 		~TMCG_OpenPGP_UserID
