@@ -1082,7 +1082,7 @@ class TMCG_OpenPGP_Pubkey
 			();
 		void Export
 			(tmcg_openpgp_octets_t							&out,
-			 tmcg_openpgp_export_flags_t						flags = TMCG_OPENPGP_EXPORT_ALL) const;
+			 const tmcg_openpgp_export_flags_t					flags = TMCG_OPENPGP_EXPORT_ALL) const;
 		~TMCG_OpenPGP_Pubkey
 			();
 };
@@ -1185,7 +1185,8 @@ class TMCG_OpenPGP_Prvkey
 			(const std::vector<std::string>					&peers,
 			 const int										verbose);
 		void Export
-			(tmcg_openpgp_octets_t							&out) const;
+			(tmcg_openpgp_octets_t							&out,
+			 const tmcg_openpgp_export_flags_t					flags = TMCG_OPENPGP_EXPORT_ALL) const;
 		~TMCG_OpenPGP_Prvkey
 			();
 };
