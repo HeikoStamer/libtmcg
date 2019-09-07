@@ -15713,7 +15713,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		return false;
 	}
 	// evaluate the context of the signature
-	if (!primary)
+	if (!primary || (pub == NULL))
 	{
 		if (verbose)
 			std::cerr << "ERROR: no usable primary key found" << std::endl;
@@ -15730,7 +15730,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		delete sig;
 		return true; // continue loop through packets
 	}
-	if (subkey)
+	if (subkey && (sub != NULL))
 	{
 		if (OctetsCompare(pub->id, issuer))
 		{
@@ -15890,7 +15890,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	// non-self issuer found?
 	if (!OctetsCompare(pub->id, issuer))
 	{
-		if (uid_flag)
+		if (uid_flag && (uid != NULL))
 		{
 			if ((ctx.type == TMCG_OPENPGP_SIGNATURE_GENERIC_CERTIFICATION) ||
 				(ctx.type == TMCG_OPENPGP_SIGNATURE_PERSONA_CERTIFICATION) ||
@@ -15916,7 +15916,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				}
 			}
 		}
-		else if (uat_flag)
+		else if (uat_flag && (uat != NULL))
 		{
 			if ((ctx.type == TMCG_OPENPGP_SIGNATURE_GENERIC_CERTIFICATION) ||
 				(ctx.type == TMCG_OPENPGP_SIGNATURE_PERSONA_CERTIFICATION) ||
@@ -16019,7 +16019,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		}
 		return true; // continue loop through packets
 	}
-	else if (!uid_flag && uat_flag)
+	else if (!uid_flag && uat_flag && (uat != NULL))
 	{
 		if ((ctx.type == TMCG_OPENPGP_SIGNATURE_GENERIC_CERTIFICATION) ||
 			(ctx.type == TMCG_OPENPGP_SIGNATURE_PERSONA_CERTIFICATION) ||
@@ -16071,7 +16071,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 		}
 		return true; // continue loop through packets
 	}
-	else if (uid_flag && !uat_flag)
+	else if (uid_flag && !uat_flag && (uid != NULL))
 	{
 		if ((ctx.type == TMCG_OPENPGP_SIGNATURE_GENERIC_CERTIFICATION) ||
 			(ctx.type == TMCG_OPENPGP_SIGNATURE_PERSONA_CERTIFICATION) ||
@@ -18129,13 +18129,18 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		switch (ptag)
 		{
 			case 2: // Signature Packet
-				if ((prv == NULL) || (sub == NULL))
+				if (prv == NULL)
 					ret = false; // bad order of packets
 				else
+				{
+					TMCG_OpenPGP_Subkey *subpub = NULL;
+					if (sub != NULL)
+						subpub = sub->pub;
 					ret = PublicKeyBlockParse_Tag2(ctx, verbose, primary,
 						subkey, badkey, uid_flag, uat_flag,
 						current_packet, embeddedsigs, recipientfprs,
-						embedded_pkt, prv->pub, sub->pub, uid, uat);
+						embedded_pkt, prv->pub, subpub, uid, uat);
+				}
 				break;
 			case 5: // Secret-Key Packet
 				if (!PrivateKeyBlockParse_Decrypt(ctx, verbose, passphrase))
@@ -18163,15 +18168,19 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 				if (prv == NULL)
 					ret = false; // bad order of packets
 				else
+				{
 					ret = PublicKeyBlockParse_Tag13(ctx, verbose, primary,
 						current_packet, uid_flag, uat_flag, prv->pub, uid, uat);
+				}
 				break;
 			case 17: // User Attribute Packet
 				if (prv == NULL)
 					ret = false; // bad order of packets
 				else
+				{
 					ret = PublicKeyBlockParse_Tag17(ctx, verbose, primary,
 						current_packet, uid_flag, uat_flag, prv->pub, uid, uat);
+				}
 				break;
 			default:
 				if (verbose > 1)
