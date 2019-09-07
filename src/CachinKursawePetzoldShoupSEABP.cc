@@ -50,8 +50,6 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 		aio_timeout_vs(aiou_in->aio_timeout_very_short), // timeout for sending
 		fifo_skip(fifo_skip_in), fifo(true)
 {
-	if (n_in == 0)
-		throw std::invalid_argument("RBC: n == 0");
 	if (t_in > n_in)
 		throw std::invalid_argument("RBC: t > n");
 	if (j_in >= n_in)
@@ -470,7 +468,7 @@ bool CachinKursawePetzoldShoupRBC::Deliver
 		// first, process the deliver buffer
 		std::list<RBC_VectorList::iterator> cleanup;
 		std::map<size_t, RBC_VectorList::iterator> retrieve_it;
-		mpz_t max_s[n], min_s[n];
+		mpz_t max_s[n+1], min_s[n+1]; // +1 to make scan-build happy
 		for (size_t i = 0; i < n; i++)
 		{
 			mpz_init_set_ui(max_s[i], 0UL);
