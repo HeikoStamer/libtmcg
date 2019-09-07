@@ -50,6 +50,8 @@ CachinKursawePetzoldShoupRBC::CachinKursawePetzoldShoupRBC
 		aio_timeout_vs(aiou_in->aio_timeout_very_short), // timeout for sending
 		fifo_skip(fifo_skip_in), fifo(true)
 {
+	if (n_in == 0)
+		throw std::invalid_argument("RBC: n == 0");
 	if (t_in > n_in)
 		throw std::invalid_argument("RBC: t > n");
 	if (j_in >= n_in)

@@ -13837,7 +13837,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 		}
 		if (verbose > 2)
 			std::cerr << std::dec << std::endl;
-		nbytes += len;
 
 		// now create the final authentication tag
 		uint64_t totalbytes = (chunks * chunkdim) + len;
@@ -18044,8 +18043,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		if (ptag == 0x00)
 		{
 			if (verbose)
+			{
 				std::cerr << "ERROR: decoding OpenPGP packets failed " <<
 					"at packet #" << pnum << std::endl;
+			}
 			PacketContextRelease(ctx);
 			if (prv)
 				delete prv;
@@ -18060,23 +18061,29 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		else if (ptag == 0xFA)
 		{
 			if (verbose)
+			{
 				std::cerr << "WARNING: unrecognized critical OpenPGP " <<
 					"subpacket found at #" << pnum << std::endl;
+			}
 			PacketContextRelease(ctx);
 			continue; // ignore signature with critical subpacket
 		}
 		else if (ptag == 0xFB)
 		{
 			if (verbose)
+			{
 				std::cerr << "WARNING: unrecognized OpenPGP subpacket " <<
 					"found at #" << pnum << std::endl;
+			}
 			ptag = 0x02; // process signature
 		}
 		else if (ptag == 0xFC)
 		{
 			if (verbose)
+			{
 				std::cerr << "WARNING: unrecognized OpenPGP signature " <<
 					"packet found at #" << pnum << std::endl;
+			}
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
@@ -18085,8 +18092,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 			if (primary)
 			{
 				if (verbose)
+				{
 					std::cerr << "WARNING: unrecognized OpenPGP key packet" <<
 						" found at #" << pnum << std::endl;
+				}
 				if (!badkey && subkey)
 				{
 					prv->private_subkeys.push_back(sub);
@@ -18099,8 +18108,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 			else
 			{
 				if (verbose)
+				{
 					std::cerr << "ERROR: public-key algorithm " <<
 						(int)ctx.pkalgo << " not supported" << std::endl;
+				}
 				PacketContextRelease(ctx);
 				return false;
 			}
@@ -18108,18 +18119,23 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		else if (ptag == 0xFE)
 		{
 			if (verbose)
+			{
 				std::cerr << "WARNING: unrecognized OpenPGP packet" <<
 					" found at #" << pnum << std::endl;
+			}
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
 		switch (ptag)
 		{
 			case 2: // Signature Packet
-				ret = PublicKeyBlockParse_Tag2(ctx, verbose, primary,
-					subkey, badkey, uid_flag, uat_flag,
-					current_packet, embeddedsigs, recipientfprs,
-					embedded_pkt, prv->pub, sub->pub, uid, uat);
+				if ((prv == NULL) || (sub == NULL))
+					ret = false; // bad order of packets
+				else
+					ret = PublicKeyBlockParse_Tag2(ctx, verbose, primary,
+						subkey, badkey, uid_flag, uat_flag,
+						current_packet, embeddedsigs, recipientfprs,
+						embedded_pkt, prv->pub, sub->pub, uid, uat);
 				break;
 			case 5: // Secret-Key Packet
 				if (!PrivateKeyBlockParse_Decrypt(ctx, verbose, passphrase))
@@ -18144,17 +18160,25 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 				}
 				break;
 			case 13: // User ID Packet
-				ret = PublicKeyBlockParse_Tag13(ctx, verbose, primary,
-					current_packet, uid_flag, uat_flag, prv->pub, uid, uat);
+				if (prv == NULL)
+					ret = false; // bad order of packets
+				else
+					ret = PublicKeyBlockParse_Tag13(ctx, verbose, primary,
+						current_packet, uid_flag, uat_flag, prv->pub, uid, uat);
 				break;
 			case 17: // User Attribute Packet
-				ret = PublicKeyBlockParse_Tag17(ctx, verbose, primary,
-					current_packet, uid_flag, uat_flag, prv->pub, uid, uat);
+				if (prv == NULL)
+					ret = false; // bad order of packets
+				else
+					ret = PublicKeyBlockParse_Tag17(ctx, verbose, primary,
+						current_packet, uid_flag, uat_flag, prv->pub, uid, uat);
 				break;
 			default:
 				if (verbose > 1)
+				{
 					std::cerr << "INFO: OpenPGP packet with tag " <<
 						(int)ptag << " ignored" << std::endl;
+				}
 				break;
 		}
 		// cleanup allocated buffers and mpi's
