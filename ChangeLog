@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-09-07] RFC4880: changed prefered compression from UNCOMPRESSED to ZIP
 * [2019-09-02] RFC4880: added Attested Certifications stuff (cf. RFC 4880bis)
 * [2019-09-01] RFC4880: added member decryptionfpr in TMCG_OpenPGP_Message to
                store the decryption context (fingerprint) for handling Intended

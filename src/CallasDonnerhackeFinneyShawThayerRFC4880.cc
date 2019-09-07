@@ -7862,7 +7862,7 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		SubpacketEncode(21, false, pha, subpackets);
 		// 5. preferred compression algorithms  (length = 1)
 		tmcg_openpgp_octets_t pca;
-		pca.push_back(0); // uncompressed
+		pca.push_back(TMCG_OPENPGP_COMPALGO_ZIP);
 		SubpacketEncode(22, false, pca, subpackets);
 		// 6. key server preferences (length = 1)
 		tmcg_openpgp_octets_t ksp;
@@ -7939,8 +7939,8 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 		SubpacketEncode(2, false, subpkt_sigtime, subpackets);
 		// 2. preferred symmetric algorithms (length = 2)
 		tmcg_openpgp_octets_t psa;
-		psa.push_back(TMCG_OPENPGP_SKALGO_AES256); // AES256
-		psa.push_back(TMCG_OPENPGP_SKALGO_TWOFISH); // Twofish
+		psa.push_back(TMCG_OPENPGP_SKALGO_AES256);
+		psa.push_back(TMCG_OPENPGP_SKALGO_TWOFISH);
 		SubpacketEncode(11, false, psa, subpackets);
 		// [optional] revocation key (length = 22)
 		if (revoker.size())
@@ -7966,13 +7966,13 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 			SubpacketEncode(16, false, issuer, subpackets);
 		// 4. preferred hash algorithms  (length = 3)
 		tmcg_openpgp_octets_t pha;
-		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA512); // SHA512
-		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA384); // SHA384
-		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA256); // SHA256
+		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA512);
+		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA384);
+		pha.push_back(TMCG_OPENPGP_HASHALGO_SHA256);
 		SubpacketEncode(21, false, pha, subpackets);
 		// 5. preferred compression algorithms  (length = 1)
 		tmcg_openpgp_octets_t pca;
-		pca.push_back(0); // uncompressed
+		pca.push_back(TMCG_OPENPGP_COMPALGO_ZIP);
 		SubpacketEncode(22, false, pca, subpackets);
 		// 6. key server preferences (length = 1)
 		tmcg_openpgp_octets_t ksp;
