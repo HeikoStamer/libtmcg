@@ -959,47 +959,125 @@ int main
 		delete ring;
 
 		// test externally generated public key with attested certifications
-		std::string testuser_armored =
+		std::string davey_armored =
 "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n\r\n"
-"xjMEXWxT2xYJKwYBBAHaRw8BAQdAp1eGu89DccGocj1e+cL5aG+hqwhcuTRpoVI+\r\n"
-"0mFOAHLNHFRlc3QgVXNlciA8dGVzdEBleGFtcGxlLmNvbT7CbQQTFggAFQUCXWxT\r\n"
-"2wIbAQIVCAIXgAIZAQIeAQAKCRAerxxQdaBE7vIsAP4k9Wf6XlHE74WyAphlGbVG\r\n"
-"aH6DvphtC4+jjexFN3Co8QEAgXOnQehv+hpPzaxHsgeS9yL0dvwED8bKDSH/4rcX\r\n"
-"fgrCXgQQFggABgUCXWxT2wAKCRA5mgAEOvRoyIRcAQD68Z+I+FrudZGarrPB18UP\r\n"
-"+4Iv87ue+uTGbsrRmfucsAD+IagJPTySLTTrTNipVoVnqK1XfYY0o59HuxN5qUSg\r\n"
-"AAbCgAQWFggAKAUCXWxT2yElp2KKbH8kJNbFji8NVIliNpKWY0ohnW9arsODAu6E\r\n"
-"ELIACgkQHq8cUHWgRO7VEQD9GbLbq6y78dHnotrZ9qE6eSDXC1h1KIZJyUg/v6vM\r\n"
-"hkUBAPS+pUj2QUs+2xbt/1uotZ3BcKYS3Wjz3ukkpXmkfBAL\r\n"
-"=PUbv\r\n"
+"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\r\n"
+"=PUl0\r\n"
 "-----END PGP PUBLIC KEY BLOCK-----\r\n";
-		TMCG_OpenPGP_Pubkey *testuser = NULL;
+		TMCG_OpenPGP_Pubkey *davey = NULL;
 		ring = new TMCG_OpenPGP_Keyring();
-		std::cout << "PublicKeyBlockParse(testuser_armored, 3, testuser)" <<
+		std::cout << "PublicKeyBlockParse(davey_armored, 3, davey)" <<
 			std::endl;
 		parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
-			PublicKeyBlockParse(testuser_armored, 3, testuser);
+			PublicKeyBlockParse(davey_armored, 3, davey);
 		assert(parse_ok);
 		if (gcry_check_version("1.7.0"))
 		{
 			std::cout << "CheckSelfSignatures()" << std::endl;
-			parse_ok = testuser->CheckSelfSignatures(ring, 3);
+			parse_ok = davey->CheckSelfSignatures(ring, 3);
 			assert(parse_ok);
-			std::cout << "!testuser->Weak()" << std::endl;
-			check_ok = testuser->Weak(3);
+			std::cout << "!davey->Weak()" << std::endl;
+			check_ok = davey->Weak(3);
 			assert(!check_ok);
-			for (size_t i = 0; i < testuser->userids.size(); i++)
+			for (size_t i = 0; i < davey->userids.size(); i++)
 			{
-				std::string uid = testuser->userids[i]->userid_sanitized;
+				std::string uid = davey->userids[i]->userid_sanitized;
 				std::cout << "userid = \"" << uid << "\" is ";
-				if (testuser->userids[i]->valid)
+				if (davey->userids[i]->valid)
 					std::cout << "valid" << std::endl;
 				else
 					std::cout << "invalid" << std::endl;
 				std::cout << "AccumulateAttestations()" << std::endl;
-				assert(testuser->userids[i]->AccumulateAttestations(testuser, 3) > 0);
+				assert(davey->userids[i]->AccumulateAttestations(davey, 3) == 2);
+				std::cout << "CheckAttestations()" << std::endl;
+				assert(davey->userids[i]->CheckAttestations(davey, 3));
 			}
 		}
-		delete testuser;
+		delete davey;
 		delete ring;
 	
 		return 0;

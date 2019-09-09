@@ -81,6 +81,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		valid(false),
 		revoked(false),
 		expired(false),
+		attested(false),
 		revocable(revocable_in),
 		exportable(exportable_in),
 		pkalgo(pkalgo_in),
@@ -171,6 +172,7 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 		valid(false),
 		revoked(false),
 		expired(false),
+		attested(false),
 		revocable(revocable_in),
 		exportable(exportable_in),
 		pkalgo(pkalgo_in),
@@ -1350,8 +1352,10 @@ bool TMCG_OpenPGP_UserID::Check
 			revoked = true;
 		}
 		else if (verbose)
+		{
 			std::cerr << "WARNING: revocation signature" <<
 				"verification failed" << std::endl;
+		}
 	}
 	bool one_valid_selfsig = false;
 	std::sort(selfsigs.begin(), selfsigs.end(),
@@ -1372,8 +1376,10 @@ bool TMCG_OpenPGP_UserID::Check
 			one_valid_selfsig = true;
 		}
 		else if (verbose)
+		{
 			std::cerr << "WARNING: self-signature verification" <<
 				" failed" << std::endl;
+		}
 	}
 	// update validity state of this user ID and return the result
 	if (one_valid_selfsig)
@@ -1393,6 +1399,10 @@ size_t TMCG_OpenPGP_UserID::AccumulateAttestations
 	 const int verbose)
 {
 	time_t last_attestation = 0;
+	for (size_t i = 0; i < attestations.size(); i++)
+		attestations[i].clear();
+	attestations.clear();
+	attestations_hashalgo.clear();
 	std::sort(attestsigs.begin(), attestsigs.end(),
 		TMCG_OpenPGP_Signature_Compare);
 	for (size_t j = 0; j < attestsigs.size(); j++)
@@ -1418,12 +1428,12 @@ size_t TMCG_OpenPGP_UserID::AccumulateAttestations
 				for (size_t i = 0; i < attestations.size(); i++)
 					attestations[i].clear();
 				attestations.clear();
+				attestations_hashalgo.clear();
 			}
-			else
+			for (size_t i = 0; i < attestsigs[j]->attestedcerts.size(); i++)
 			{
-				attestations.insert(attestations.end(),
-					attestsigs[j]->attestedcerts.begin(),
-					attestsigs[j]->attestedcerts.end());
+				attestations.push_back(attestsigs[j]->attestedcerts[i]);
+				attestations_hashalgo.push_back(attestsigs[j]->hashalgo);
 			}
 		}
 		else if (verbose)
@@ -1433,6 +1443,82 @@ size_t TMCG_OpenPGP_UserID::AccumulateAttestations
 		}
 	}
 	return attestations.size();
+}
+
+bool TMCG_OpenPGP_UserID::CheckAttestations
+	(const TMCG_OpenPGP_Pubkey *primary,
+	 const int verbose)
+{
+	bool one_valid_attestation = false;
+	if (AccumulateAttestations(primary, verbose) > 0)
+	{
+		if (attestations.size() != attestations_hashalgo.size())
+			return false;
+		for (size_t i = 0; i < attestations_hashalgo.size(); i++)
+		{
+			tmcg_openpgp_hashalgo_t hashalgo = attestations_hashalgo[i];
+			for (size_t j = 0; j < certsigs.size(); j++)
+			{
+				if (certsigs[j]->attested)
+				{
+					one_valid_attestation = true;
+					continue; // skip already attested signatures
+				}
+				TMCG_OpenPGP_Signature *sig = certsigs[j];
+				tmcg_openpgp_octets_t sigpkt, hash_input, hash;
+				// The listed digests MUST be calculated over the third-party
+				// certification's Signature packet as described in the
+				// "Computing Signatures" section, but without a trailer: the
+				// hash data starts with the octet 0x88, followed by the
+				// four-octet length of the Signature, and then the body of
+				// the Signature packet. (Note that this is an old-style
+				// packet header for a Signature packet with the length-of-
+				// length field set to zero.) The unhashed subpacket data of
+				// the Signature packet being hashed is not included in the
+				// hash, and the unhashed subpacket data length value is set
+				// to zero.
+				sigpkt.push_back(sig->version);
+				sigpkt.push_back(sig->type);
+				sigpkt.push_back(sig->pkalgo);
+				sigpkt.push_back(sig->hashalgo);
+				sigpkt.push_back((sig->hspd.size() >> 8) & 0xFF);
+				sigpkt.push_back(sig->hspd.size() & 0xFF);
+				sigpkt.insert(sigpkt.end(),
+					sig->hspd.begin(), sig->hspd.end());
+				sigpkt.push_back(0x00);
+				sigpkt.push_back(0x00);
+				hash_input.push_back(0x88);
+				hash_input.push_back((sigpkt.size() >> 24) & 0xFF);
+				hash_input.push_back((sigpkt.size() >> 16) & 0xFF);
+				hash_input.push_back((sigpkt.size() >> 8) & 0xFF);
+				hash_input.push_back(sigpkt.size() & 0xFF);
+				hash_input.insert(hash_input.end(),
+					sigpkt.begin(), sigpkt.end());
+				CallasDonnerhackeFinneyShawThayerRFC4880::
+					HashCompute(hashalgo, hash_input, hash);
+				if (CallasDonnerhackeFinneyShawThayerRFC4880::
+					OctetsCompare(hash, attestations[i]))
+				{
+					certsigs[j]->attested = true;
+					one_valid_attestation = true;
+					if (verbose > 1)
+					{
+						std::cerr << "INFO: valid attestation" <<
+							" found at i = " << i << " and" <<
+							" j = " << j << std::endl; 
+					}
+				}
+			}
+		}
+	}
+	if (one_valid_attestation)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 TMCG_OpenPGP_UserID::~TMCG_OpenPGP_UserID
@@ -1448,9 +1534,13 @@ TMCG_OpenPGP_UserID::~TMCG_OpenPGP_UserID
 	for (size_t i = 0; i < certsigs.size(); i++)
 		delete certsigs[i];
 	certsigs.clear();
+	for (size_t i = 0; i < attestsigs.size(); i++)
+		delete attestsigs[i];
+	attestsigs.clear();
 	for (size_t i = 0; i < attestations.size(); i++)
 		attestations[i].clear();
 	attestations.clear();
+	attestations_hashalgo.clear();
 }
 
 // ===========================================================================
@@ -1494,8 +1584,10 @@ bool TMCG_OpenPGP_UserAttribute::Check
 			revoked = true;
 		}
 		else if (verbose)
+		{
 			std::cerr << "WARNING: revocation signature" <<
 				" verification failed" << std::endl;
+		}
 	}
 	bool one_valid_selfsig = false;
 	std::sort(selfsigs.begin(), selfsigs.end(),
@@ -1516,8 +1608,10 @@ bool TMCG_OpenPGP_UserAttribute::Check
 			one_valid_selfsig = true;
 		}
 		else if (verbose)
+		{
 			std::cerr << "WARNING: self-signature verification" <<
 				" failed" << std::endl;
+		}
 	}
 	// update validity state of this user attribute and return the result
 	if (one_valid_selfsig)
@@ -1546,6 +1640,9 @@ TMCG_OpenPGP_UserAttribute::~TMCG_OpenPGP_UserAttribute
 	for (size_t i = 0; i < certsigs.size(); i++)
 		delete certsigs[i];
 	certsigs.clear();
+	for (size_t i = 0; i < attestsigs.size(); i++)
+		delete attestsigs[i];
+	attestsigs.clear();
 }
 
 // ===========================================================================
@@ -1960,9 +2057,11 @@ bool TMCG_OpenPGP_Subkey::Weak
 		nbits = gcry_mpi_get_nbits(rsa_n);
 		ebits = gcry_mpi_get_nbits(rsa_e);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: RSA with |n| = " <<
 				nbits << " bits, |e| = " <<
 				ebits << " bits" << std::endl;
+		}
 		if ((nbits < 2048) || (ebits < 6))
 			return true; // weak key
 		wret = gcry_prime_check(rsa_e, 0);
@@ -1976,10 +2075,12 @@ bool TMCG_OpenPGP_Subkey::Weak
 		gbits = gcry_mpi_get_nbits(elg_g);
 		ybits = gcry_mpi_get_nbits(elg_y);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: ElGamal with |p| = " <<
 				pbits << " bits, |g| = " <<
 				gbits << " bits, |y| = " <<
 				ybits << " bits" << std::endl;
+		}
 		if ((pbits < 2048) || (gbits < 2) || (ybits < 2))
 			return true; // weak key
 		wret = gcry_prime_check(elg_p, 0);
@@ -1994,11 +2095,13 @@ bool TMCG_OpenPGP_Subkey::Weak
 		gbits = gcry_mpi_get_nbits(dsa_g);
 		ybits = gcry_mpi_get_nbits(dsa_y);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: DSA with |p| = " <<
 				pbits << " bits, |q| = " <<
 				qbits << " bits, |g| = " <<
 				gbits << " bits, |y| = " <<
 				ybits << " bits" <<	std::endl;
+		}
 		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2))
 			return true; // weak key
 		wret = gcry_prime_check(dsa_p, 0);
@@ -2051,8 +2154,10 @@ bool TMCG_OpenPGP_Subkey::Weak
 		if (curvename != NULL)
 		{
 			if (verbose > 1)
+			{
 				std::cerr << "INFO: ECDSA with curve \"" << curvename <<
 					"\" and " << curvebits << " bits" << std::endl;
+			}
 			if (curvebits < 256)
 				return true; // weak key
 		}
@@ -2070,8 +2175,10 @@ bool TMCG_OpenPGP_Subkey::Weak
 		if (curvename != NULL)
 		{
 			if (verbose > 1)
+			{
 				std::cerr << "INFO: EdDSA with curve \"" << curvename <<
 					"\" and " << curvebits << " bits" << std::endl;
+			}
 			if (curvebits < 256)
 				return true; // weak key
 		}
@@ -2132,8 +2239,10 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 {
 	expirationtime = sig->keyexpirationtime;
 	if (verbose > 1)
+	{
 		std::cerr << "INFO: subkey update expirationtime to " <<
 			expirationtime << std::endl;
+	}
 	if (verbose > 1)
 		std::cerr << "INFO: subkey update flags to " << std::hex;
 	flags.clear();			
@@ -2254,8 +2363,10 @@ bool TMCG_OpenPGP_Subkey::CheckValidity
 	if (creationtime > (current + fmax))
 	{
 		if (verbose)
+		{
 			std::cerr << "WARNING: subkey has been created " <<
 				"in far future" << std::endl;
+		}
 		return false;
 	}
 	return true;
@@ -2311,8 +2422,10 @@ bool TMCG_OpenPGP_Subkey::CheckExternalRevocation
 		CallasDonnerhackeFinneyShawThayerRFC4880::
 			FingerprintConvertPlain(fpr, fprstr);
 		if (verbose > 2)
+		{
 			std::cerr << "INFO: looking for external revocation" <<
 				" key with fingerprint " << fprstr << std::endl;
+		}
 		TMCG_OpenPGP_Pubkey *revkey = ring->Find(fprstr);
 		if (revkey != NULL)
 		{
@@ -2324,8 +2437,10 @@ bool TMCG_OpenPGP_Subkey::CheckExternalRevocation
 			if (!revkey->valid)
 			{
 				if (verbose)
+				{
 					std::cerr << "WARNING: revocation key is not valid" <<
 						std::endl;
+				}
 				continue;
 			}
 			if (sig->Verify(revkey->key, sub_hashing, verbose))
@@ -3195,8 +3310,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Weak
 		pbits = gcry_mpi_get_nbits(rsa_p);
 		qbits = gcry_mpi_get_nbits(rsa_q);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: RSA with |p| = " << pbits <<
 				" bits, |q| = " << qbits << " bits" << std::endl;
+		}
 		if ((pbits < 1024) || (qbits < 1024))
 			return true; // weak key
 		return pub->Weak(verbose);
@@ -3206,8 +3323,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Weak
 		unsigned int xbits = 0;
 		xbits = gcry_mpi_get_nbits(elg_x);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: ElGamal with |x| = " <<
 				xbits << " bits" << std::endl;
+		}
 		if (xbits < 245)
 			return true; // weak key
 		return pub->Weak(verbose);
@@ -3217,8 +3336,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Weak
 		unsigned int xbits = 0;
 		xbits = gcry_mpi_get_nbits(dsa_x);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: DSA with |x| = " <<
-				xbits << " bits" << std::endl; 
+				xbits << " bits" << std::endl;
+		}
 		if (xbits < 245)
 			return true; // weak key
 		return pub->Weak(verbose);
@@ -3230,10 +3351,12 @@ bool TMCG_OpenPGP_PrivateSubkey::Weak
 		xibits = gcry_mpi_get_nbits(telg_x_i);
 		xprimeibits = gcry_mpi_get_nbits(telg_xprime_i);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: tElG with |q| = " <<
 				qbits << " bits, |x_i| = " <<
 				xibits << " bits, |xprime_i| = " <<
-				xprimeibits << " bits" << std::endl; 
+				xprimeibits << " bits" << std::endl;
+		}
 		if ((qbits < 256) || (xibits < 245) || (xprimeibits < 245))
 			return true; // weak key
 		return pub->Weak(verbose);
@@ -3245,8 +3368,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Weak
 		unsigned int skbits = 0;
 		skbits = gcry_mpi_get_nbits(ec_sk);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: ECC with |x| = " <<
 				skbits << " bits" << std::endl;
+		}
 		if (skbits < 250)
 			return true; // weak key
 		return pub->Weak(verbose);
@@ -3271,15 +3396,19 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		((pub->AccumulateFlags() & 0x08) != 0x08))
 	{
 		if (verbose)
+		{
 			std::cerr << "ERROR: subkey is not capable of encryption" <<
 				std::endl;
+		}
 		return false;
 	}
 	if (esk->pkalgo != pub->pkalgo)
 	{
 		if (verbose)
+		{
 			std::cerr << "ERROR: PKESK pkalgo does not match public-key" <<
 				" algorithm of subkey" << std::endl;
+		}
 		return false;
 
 	}
@@ -3289,8 +3418,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		OctetsCompareZero(esk->keyid))
 	{
 		if (verbose)
+		{
 			std::cerr << "ERROR: PKESK keyid does not match subkey ID or" <<
 				" wildcard pattern" << std::endl;
+		}
 		return false;
 	}
 	if ((esk->pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
@@ -3301,8 +3432,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			(gcry_mpi_cmp(esk->me, pub->rsa_n) >= 0))
 		{
 			if (verbose)
+			{
 				std::cerr << "ERROR: 0 < m^e < n not satisfied" << 
 					std::endl;
+			}
 			return false;
 		}
 		gcry_error_t dret;
@@ -3311,8 +3444,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		if (dret)
 		{
 			if (verbose)
+			{
 				std::cerr << "ERROR: AsymmetricDecryptRSA() failed" <<
 					" with rc = " << gcry_err_code(dret) << std::endl;
+			}
 			return false;
 		}
 		return true;
@@ -3324,8 +3459,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			(gcry_mpi_cmp(esk->gk, pub->elg_p) >= 0))
 		{
 			if (verbose)
+			{
 				std::cerr << "ERROR: 0 < g^k < p not satisfied" << 
 					std::endl;
+			}
 			return false;
 		}
 		// check whether $0 < my^k < p$.
@@ -3333,8 +3470,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			(gcry_mpi_cmp(esk->myk, pub->elg_p) >= 0))
 		{
 			if (verbose)
+			{
 				std::cerr << "ERROR: 0 < my^k < p not satisfied" <<
 					std::endl;
+			}
 			return false;
 		}
 		gcry_error_t dret;
@@ -3343,8 +3482,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		if (dret)
 		{
 			if (verbose)
+			{
 				std::cerr << "ERROR: AsymmetricDecryptElgamal() failed" <<
 					" with rc = " << gcry_err_code(dret) << std::endl;
+			}
 			return false;
 		}
 		return true;
@@ -3361,16 +3502,20 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			if (dret)
 			{
 				if (verbose)
+				{
 					std::cerr << "ERROR: gcry_mpi_ec_new() failed" <<
 						" with rc = " << gcry_err_code(dret) << std::endl;
+				}
 				return false;
 			}
 			dret = gcry_mpi_ec_set_mpi("q", esk->ecepk, ec);
 			if (dret)
 			{
 				if (verbose)
+				{
 					std::cerr << "ERROR: gcry_mpi_ec_set_mpi() failed" <<
 						" with rc = " << gcry_err_code(dret) << std::endl;
+				}
 				gcry_ctx_release(ec);
 				return false;
 			}
@@ -3378,8 +3523,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			if (tmp == NULL)
 			{
 				if (verbose)
+				{
 					std::cerr << "ERROR: gcry_mpi_ec_curve_point() failed" <<
 						std::endl;
+				}
 				gcry_ctx_release(ec);
 				return false;
 			}
@@ -3389,8 +3536,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			if (!ok)
 			{
 				if (verbose)
+				{
 					std::cerr << "ERROR: gcry_mpi_ec_curve_point() failed" <<
 						std::endl;
+				}
 				return false;
 			}
 		}
@@ -3402,8 +3551,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		if (dret)
 		{
 			if (verbose)
+			{
 				std::cerr << "ERROR: AsymmetricDecryptECDH() failed" <<
 					" with rc = " << gcry_err_code(dret) << std::endl;
+			}
 			return false;
 		}
 		return true;
@@ -3411,8 +3562,10 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 	else
 	{
 		if (verbose)
+		{
 			std::cerr << "ERROR: public-key algorithm " << (int)esk->pkalgo <<
 				" not supported for decryption" << std::endl;
+		}
 		return false;
 	}
 }
@@ -3668,9 +3821,11 @@ bool TMCG_OpenPGP_Pubkey::Weak
 		nbits = gcry_mpi_get_nbits(rsa_n);
 		ebits = gcry_mpi_get_nbits(rsa_e);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: RSA with |n| = " <<
 				nbits << " bits, |e| = " <<
 				ebits << " bits" << std::endl;
+		}
 		if ((nbits < 2048) || (ebits < 6))
 			return true; // weak key
 		wret = gcry_prime_check(rsa_e, 0);
@@ -3685,11 +3840,13 @@ bool TMCG_OpenPGP_Pubkey::Weak
 		gbits = gcry_mpi_get_nbits(dsa_g);
 		ybits = gcry_mpi_get_nbits(dsa_y);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: DSA with |p| = " <<
 				pbits << " bits, |q| = " <<
 				qbits << " bits, |g| = " <<
 				gbits << " bits, |y| = " <<
 				ybits << " bits" <<	std::endl;
+		}
 		if ((pbits < 2048) || (qbits < 256) || (gbits < 2) || (ybits < 2))
 			return true; // weak key
 		wret = gcry_prime_check(dsa_p, 0);
@@ -3706,8 +3863,10 @@ bool TMCG_OpenPGP_Pubkey::Weak
 		if (curvename != NULL)
 		{
 			if (verbose > 1)
+			{
 				std::cerr << "INFO: ECDSA with curve \"" << curvename <<
 					"\" and " << curvebits << " bits" << std::endl;
+			}
 			if (curvebits < 256)
 				return true; // weak key
 		}
@@ -3725,8 +3884,10 @@ bool TMCG_OpenPGP_Pubkey::Weak
 		if (curvename != NULL)
 		{
 			if (verbose > 1)
+			{
 				std::cerr << "INFO: EdDSA with curve \"" << curvename <<
 					"\" and " << curvebits << " bits" << std::endl;
+			}
 			if (curvebits < 256)
 				return true; // weak key
 		}
@@ -3787,8 +3948,10 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 {
 	expirationtime = sig->keyexpirationtime;
 	if (verbose > 1)
+	{
 		std::cerr << "INFO: primary key update expirationtime to " <<
 			expirationtime << std::endl;
+	}
 	if (verbose > 1)
 		std::cerr << "INFO: primary key update flags to " << std::hex;
 	flags.clear();			
@@ -3910,8 +4073,10 @@ bool TMCG_OpenPGP_Pubkey::CheckValidity
 	if (creationtime > (current + fmax))
 	{
 		if (verbose)
+		{
 			std::cerr << "WARNING: primary key has been " <<
 				"created in far future" << std::endl;
+		}
 		return false;
 	}
 	return true;
@@ -4412,6 +4577,7 @@ void TMCG_OpenPGP_Pubkey::Export
 	bool keysonly = ((flags & TMCG_OPENPGP_EXPORT_KEYSONLY) == TMCG_OPENPGP_EXPORT_KEYSONLY);
 	bool minimal = ((flags & TMCG_OPENPGP_EXPORT_MINIMAL) == TMCG_OPENPGP_EXPORT_MINIMAL);
 	bool revcert = ((flags & TMCG_OPENPGP_EXPORT_REVCERT) == TMCG_OPENPGP_EXPORT_REVCERT);
+	bool attested = ((flags & TMCG_OPENPGP_EXPORT_ATTESTED) == TMCG_OPENPGP_EXPORT_ATTESTED);
 	if (minimal && !valid)
 		return; // skip invalid primary key
 	if (minimal && revoked)
@@ -4466,6 +4632,8 @@ void TMCG_OpenPGP_Pubkey::Export
 				continue;
 			if (userids[j]->certsigs[i]->exportable == false)
 				continue;
+			if (attested && !userids[j]->certsigs[i]->attested)
+				continue;
 			out.insert(out.end(),
 				(userids[j]->certsigs[i]->packet).begin(),
 				(userids[j]->certsigs[i]->packet).end());
@@ -4509,6 +4677,8 @@ void TMCG_OpenPGP_Pubkey::Export
 			if (minimal || revcert)
 				continue;
 			if (userattributes[j]->certsigs[i]->exportable == false)
+				continue;
+			if (attested && !userattributes[j]->certsigs[i]->attested)
 				continue;
 			out.insert(out.end(),
 				(userattributes[j]->certsigs[i]->packet).begin(),
@@ -4929,8 +5099,10 @@ bool TMCG_OpenPGP_Prvkey::Weak
 		pbits = gcry_mpi_get_nbits(rsa_p);
 		qbits = gcry_mpi_get_nbits(rsa_q);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: RSA with |p| = " << pbits <<
 				" bits, |q| = " << qbits << " bits" << std::endl;
+		}
 		if ((pbits < 1024) || (qbits < 1024))
 			return true; // weak key
 		return pub->Weak(verbose);
@@ -4940,8 +5112,10 @@ bool TMCG_OpenPGP_Prvkey::Weak
 		unsigned int xbits = 0;
 		xbits = gcry_mpi_get_nbits(dsa_x);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: DSA with |x| = " <<
-				xbits << " bits" << std::endl; 
+				xbits << " bits" << std::endl;
+		}
 		if (xbits < 245)
 			return true; // weak key
 		return pub->Weak(verbose);
@@ -4952,9 +5126,11 @@ bool TMCG_OpenPGP_Prvkey::Weak
 		xibits = gcry_mpi_get_nbits(tdss_x_i);
 		xprimeibits = gcry_mpi_get_nbits(tdss_xprime_i);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: tDSS/DSA with |x_i| = " <<
 				xibits << " bits, |xprime_i| = " <<
-				xprimeibits << " bits" << std::endl; 
+				xprimeibits << " bits" << std::endl;
+		}
 		if ((xibits < 245) || (xprimeibits < 245))
 			return true; // weak key
 		return pub->Weak(verbose);
@@ -4964,8 +5140,10 @@ bool TMCG_OpenPGP_Prvkey::Weak
 		unsigned int skbits = 0;
 		skbits = gcry_mpi_get_nbits(ec_sk);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: ECDSA with |x| = " <<
 				skbits << " bits" << std::endl;
+		}
 		if (skbits < 250)
 			return true; // weak key
 		return pub->Weak(verbose);
@@ -4975,8 +5153,10 @@ bool TMCG_OpenPGP_Prvkey::Weak
 		unsigned int skbits = 0;
 		skbits = gcry_mpi_get_nbits(ec_sk);
 		if (verbose > 1)
+		{
 			std::cerr << "INFO: EdDSA with |x| = " <<
 				skbits << " bits" << std::endl;
+		}
 		if (skbits < 250)
 			return true; // weak key
 		return pub->Weak(verbose);
@@ -5009,8 +5189,10 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 				(gcry_mpi_cmp(esk->me, pub->rsa_n) >= 0))
 			{
 				if (verbose)
+				{
 					std::cerr << "ERROR: 0 < m^e < n not satisfied" << 
 						std::endl;
+				}
 				return false;
 			}
 			gcry_error_t dret;
@@ -5019,8 +5201,10 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 			if (dret)
 			{
 				if (verbose)
+				{
 					std::cerr << "ERROR: AsymmetricDecryptRSA() failed" <<
 						" with rc = " << gcry_err_code(ret) << std::endl;
+				}
 				return false;
 			}
 			return true;
@@ -5028,16 +5212,20 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 		else
 		{
 			if (verbose)
+			{
 				std::cerr << "ERROR: public-key algorithm not supported" <<
 					" for decryption" << std::endl;
+			}
 			return false;
 		}
 	}
 	else
 	{
 		if (verbose)
+		{
 			std::cerr << "ERROR: PKESK keyid does not match key ID or" <<
 				" wildcard pattern" << std::endl;
+		}
 		return false;
 	}
 }
@@ -5084,8 +5272,10 @@ bool TMCG_OpenPGP_Prvkey::tDSS_CreateMapping
 				tdss_idx2dkg[i] = j;
 				tdss_dkg2idx[j] = i;
 				if (verbose > 1)
+				{
 					std::cerr << "INFO: mapping " << i << " -> " <<
-						"P_" << j << std::endl; 
+						"P_" << j << std::endl;
+				}
 				break;
 			}
 		}
@@ -5094,8 +5284,10 @@ bool TMCG_OpenPGP_Prvkey::tDSS_CreateMapping
 			tdss_idx2dkg.clear();
 			tdss_dkg2idx.clear();
 			if (verbose)
+			{
 				std::cerr << "ERROR: peer \"" << peers[i] << "\" not" <<
 					" found inside CAPL from tDSS/DSA key" << std::endl;
+			}
 			return false;
 		}
 	}
@@ -5109,6 +5301,7 @@ void TMCG_OpenPGP_Prvkey::Export
 	bool keysonly = ((flags & TMCG_OPENPGP_EXPORT_KEYSONLY) == TMCG_OPENPGP_EXPORT_KEYSONLY);
 	bool minimal = ((flags & TMCG_OPENPGP_EXPORT_MINIMAL) == TMCG_OPENPGP_EXPORT_MINIMAL);
 	bool revcert = ((flags & TMCG_OPENPGP_EXPORT_REVCERT) == TMCG_OPENPGP_EXPORT_REVCERT);
+	bool attested = ((flags & TMCG_OPENPGP_EXPORT_ATTESTED) == TMCG_OPENPGP_EXPORT_ATTESTED);
 	out.insert(out.end(),
 		packet.begin(),
 		packet.end());
@@ -5159,6 +5352,8 @@ void TMCG_OpenPGP_Prvkey::Export
 				continue;
 			if (pub->userids[j]->certsigs[i]->exportable == false)
 				continue;
+			if (attested && !pub->userids[j]->certsigs[i]->attested)
+				continue;
 			out.insert(out.end(),
 				(pub->userids[j]->certsigs[i]->packet).begin(),
 				(pub->userids[j]->certsigs[i]->packet).end());
@@ -5202,6 +5397,8 @@ void TMCG_OpenPGP_Prvkey::Export
 			if (minimal || revcert)
 				continue;
 			if (pub->userattributes[j]->certsigs[i]->exportable == false)
+				continue;
+			if (attested && !pub->userattributes[j]->certsigs[i]->attested)
 				continue;
 			out.insert(out.end(),
 				(pub->userattributes[j]->certsigs[i]->packet).begin(),
@@ -5922,8 +6119,10 @@ bool TMCG_OpenPGP_Message::CheckMDC
 	if (!CallasDonnerhackeFinneyShawThayerRFC4880::OctetsCompare(mdc, hash))
 	{
 		if (verbose)
+		{
 			std::cerr << "ERROR: MDC does not match (security issue)" <<
 				std::endl;
+		}
 		return false;
 	}
 	return true;
@@ -5977,8 +6176,10 @@ bool TMCG_OpenPGP_Message::Decrypt
 	else
 	{
 		if (verbose)
+		{
 			std::cerr << "ERROR: wrong length (" << key.size() <<
 				" bytes) of session key found" << std::endl;
+		}
 		return false;
 	}
 	if (have_aead)
@@ -6014,8 +6215,10 @@ bool TMCG_OpenPGP_Message::Decrypt
 		if (ret)
 		{
 			if (verbose)
+			{
 				std::cerr << "ERROR: SymmetricDecrypt() failed" <<
 					" with rc = " << gcry_err_code(ret) << std::endl;
+			}
 			return false;
 		}
 		// copy the decryption result for computing the MDC
@@ -6058,8 +6261,10 @@ bool TMCG_OpenPGP_Message::Decrypt
 		else
 		{
 			if (verbose)
+			{
 				std::cerr << "WARNING: encrypted message is not integrity" <<
 					" protected (security issue)" << std::endl;
+			}
 		}
 	}
 	return true;
