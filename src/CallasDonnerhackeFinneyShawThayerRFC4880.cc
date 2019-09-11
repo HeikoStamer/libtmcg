@@ -1626,6 +1626,133 @@ bool TMCG_OpenPGP_UserAttribute::Check
 	}
 }
 
+size_t TMCG_OpenPGP_UserAttribute::AccumulateAttestations
+	(const TMCG_OpenPGP_Pubkey *primary,
+	 const int verbose)
+{
+	time_t last_attestation = 0;
+	for (size_t i = 0; i < attestations.size(); i++)
+		attestations[i].clear();
+	attestations.clear();
+	attestations_hashalgo.clear();
+	std::sort(attestsigs.begin(), attestsigs.end(),
+		TMCG_OpenPGP_Signature_Compare);
+	for (size_t j = 0; j < attestsigs.size(); j++)
+	{
+		// print and check basic properties of the signature
+		if (verbose > 2)
+			attestsigs[j]->PrintInfo();
+		if (!attestsigs[j]->CheckValidity(primary->creationtime, verbose))
+			continue; // ignore an expired signature
+		// check the self-signature cryptographically
+		if (attestsigs[j]->Verify(primary->key, primary->pub_hashing,
+		                        userattribute, verbose))
+		{
+			// Only the most recent Attestation Key Signature is valid for
+			// any given <key,userid> pair. If more than one Certification
+			// Attestation Key Signature is present with the same Signature
+			// Creation Time, the set of attestations should be treated as
+			// the union of all "Attested Certifications" subpackets from
+			// all such signatures with the same timestamp.
+			if (last_attestation != attestsigs[j]->creationtime)
+			{
+				last_attestation = attestsigs[j]->creationtime;
+				for (size_t i = 0; i < attestations.size(); i++)
+					attestations[i].clear();
+				attestations.clear();
+				attestations_hashalgo.clear();
+			}
+			for (size_t i = 0; i < attestsigs[j]->attestedcerts.size(); i++)
+			{
+				attestations.push_back(attestsigs[j]->attestedcerts[i]);
+				attestations_hashalgo.push_back(attestsigs[j]->hashalgo);
+			}
+		}
+		else if (verbose)
+		{
+			std::cerr << "WARNING: attestation signature verification" <<
+				" failed" << std::endl;
+		}
+	}
+	return attestations.size();
+}
+
+bool TMCG_OpenPGP_UserAttribute::CheckAttestations
+	(const TMCG_OpenPGP_Pubkey *primary,
+	 const int verbose)
+{
+	bool one_valid_attestation = false;
+	if (AccumulateAttestations(primary, verbose) > 0)
+	{
+		if (attestations.size() != attestations_hashalgo.size())
+			return false;
+		for (size_t i = 0; i < attestations_hashalgo.size(); i++)
+		{
+			tmcg_openpgp_hashalgo_t hashalgo = attestations_hashalgo[i];
+			for (size_t j = 0; j < certsigs.size(); j++)
+			{
+				if (certsigs[j]->attested)
+				{
+					one_valid_attestation = true;
+					continue; // skip already attested signatures
+				}
+				TMCG_OpenPGP_Signature *sig = certsigs[j];
+				tmcg_openpgp_octets_t sigpkt, hash_input, hash;
+				// The listed digests MUST be calculated over the third-party
+				// certification's Signature packet as described in the
+				// "Computing Signatures" section, but without a trailer: the
+				// hash data starts with the octet 0x88, followed by the
+				// four-octet length of the Signature, and then the body of
+				// the Signature packet. (Note that this is an old-style
+				// packet header for a Signature packet with the length-of-
+				// length field set to zero.) The unhashed subpacket data of
+				// the Signature packet being hashed is not included in the
+				// hash, and the unhashed subpacket data length value is set
+				// to zero.
+				sigpkt.push_back(sig->version);
+				sigpkt.push_back(sig->type);
+				sigpkt.push_back(sig->pkalgo);
+				sigpkt.push_back(sig->hashalgo);
+				sigpkt.push_back((sig->hspd.size() >> 8) & 0xFF);
+				sigpkt.push_back(sig->hspd.size() & 0xFF);
+				sigpkt.insert(sigpkt.end(),
+					sig->hspd.begin(), sig->hspd.end());
+				sigpkt.push_back(0x00);
+				sigpkt.push_back(0x00);
+				hash_input.push_back(0x88);
+				hash_input.push_back((sigpkt.size() >> 24) & 0xFF);
+				hash_input.push_back((sigpkt.size() >> 16) & 0xFF);
+				hash_input.push_back((sigpkt.size() >> 8) & 0xFF);
+				hash_input.push_back(sigpkt.size() & 0xFF);
+				hash_input.insert(hash_input.end(),
+					sigpkt.begin(), sigpkt.end());
+				CallasDonnerhackeFinneyShawThayerRFC4880::
+					HashCompute(hashalgo, hash_input, hash);
+				if (CallasDonnerhackeFinneyShawThayerRFC4880::
+					OctetsCompare(hash, attestations[i]))
+				{
+					certsigs[j]->attested = true;
+					one_valid_attestation = true;
+					if (verbose > 1)
+					{
+						std::cerr << "INFO: valid attestation" <<
+							" found at i = " << i << " and" <<
+							" j = " << j << std::endl; 
+					}
+				}
+			}
+		}
+	}
+	if (one_valid_attestation)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 TMCG_OpenPGP_UserAttribute::~TMCG_OpenPGP_UserAttribute
 	()
 {
@@ -1643,6 +1770,10 @@ TMCG_OpenPGP_UserAttribute::~TMCG_OpenPGP_UserAttribute
 	for (size_t i = 0; i < attestsigs.size(); i++)
 		delete attestsigs[i];
 	attestsigs.clear();
+	for (size_t i = 0; i < attestations.size(); i++)
+		attestations[i].clear();
+	attestations.clear();
+	attestations_hashalgo.clear();
 }
 
 // ===========================================================================

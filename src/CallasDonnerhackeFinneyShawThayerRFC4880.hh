@@ -745,11 +745,20 @@ class TMCG_OpenPGP_UserAttribute
 		std::vector<TMCG_OpenPGP_Signature*>				revsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				certsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				attestsigs;
+		tmcg_openpgp_multiple_octets_t						attestations;
+		std::vector<tmcg_openpgp_hashalgo_t>					attestations_hashalgo;
+
 
 		TMCG_OpenPGP_UserAttribute
 			(const tmcg_openpgp_octets_t					&userattribute_in,
 			 const tmcg_openpgp_octets_t					&packet_in);
 		bool Check
+			(const TMCG_OpenPGP_Pubkey*						primary,
+			 const int										verbose);
+		size_t AccumulateAttestations
+			(const TMCG_OpenPGP_Pubkey*						primary,
+			 const int										verbose);
+		bool CheckAttestations
 			(const TMCG_OpenPGP_Pubkey*						primary,
 			 const int										verbose);
 		~TMCG_OpenPGP_UserAttribute
