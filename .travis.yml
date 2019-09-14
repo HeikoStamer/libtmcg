@@ -7,6 +7,7 @@
 # included in the sources of this package and additionally can be obtained from
 # the Internet <https://www.gnu.org/licenses>.
 #
+dist: bionic
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y libgcrypt20-dev
