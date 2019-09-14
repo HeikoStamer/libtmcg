@@ -6599,14 +6599,10 @@ size_t CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashLength
 			return 64; // SHA512
 		case TMCG_OPENPGP_HASHALGO_SHA224:
 			return 28; // SHA224
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 		case TMCG_OPENPGP_HASHALGO_SHA3_256:
 			return 32; // SHA3-256
 		case TMCG_OPENPGP_HASHALGO_SHA3_512:
 			return 64; // SHA3-512
-#endif
 		default:
 			return 0;
 	}
@@ -6631,14 +6627,10 @@ int CallasDonnerhackeFinneyShawThayerRFC4880::AlgorithmHashGCRY
 			return GCRY_MD_SHA512;
 		case TMCG_OPENPGP_HASHALGO_SHA224:
 			return GCRY_MD_SHA224;
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 		case TMCG_OPENPGP_HASHALGO_SHA3_256:
 			return GCRY_MD_SHA3_256;
 		case TMCG_OPENPGP_HASHALGO_SHA3_512:
 			return GCRY_MD_SHA3_512;
-#endif
 		default:
 			return 0;
 	}
@@ -8209,13 +8201,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 		// 8. features (length = 1)
 		tmcg_openpgp_octets_t features;
 		features.push_back(0x01); // Modification Detection (tags 18, 19)
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 		// AEAD Encrypted Data Packet (packet 20) and version 5 Symmetric-Key
 		// Encrypted Session Key Packets (packet 3)
 		features[0] |= 0x02;
-#endif
 		SubpacketEncode(30, false, features, subpackets);
 		// [optional] issuer fingerprint
 		if (issuer.size() == 20)
@@ -8226,9 +8214,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 				issuer.begin(), issuer.end());			
 			SubpacketEncode(33, false, issuerfpr, subpackets);
 		}
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 		// [optional] preferred AEAD algorithms  (variable length)
 		tmcg_openpgp_octets_t paa;
 #if GCRYPT_VERSION_NUMBER < 0x010900
@@ -8238,7 +8223,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 #endif
 		paa.push_back(TMCG_OPENPGP_AEADALGO_OCB);
 		SubpacketEncode(34, false, paa, subpackets);
-#endif
 	// create the signature packet
 	out.push_back(4); // V4 format
 	out.push_back(type); // type (e.g. 0x10-0x13 for UID certification)
@@ -8319,13 +8303,9 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 		// 8. features (length = 1)
 		tmcg_openpgp_octets_t features;
 		features.push_back(0x01); // Modification Detection (tags 18, 19)
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 		// AEAD Encrypted Data Packet (packet 20) and version 5 Symmetric-Key
 		// Encrypted Session Key Packets (packet 3)
 		features[0] |= 0x02;
-#endif
 		SubpacketEncode(30, false, features, subpackets);
 		// [optional] issuer fingerprint
 		if (issuer.size() == 20)
@@ -8336,9 +8316,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 				issuer.begin(), issuer.end());			
 			SubpacketEncode(33, false, issuerfpr, subpackets);
 		}
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 		// [optional] preferred AEAD algorithms  (variable length)
 		tmcg_openpgp_octets_t paa;
 #if GCRYPT_VERSION_NUMBER < 0x010900
@@ -8348,7 +8325,6 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 #endif
 		paa.push_back(TMCG_OPENPGP_AEADALGO_OCB);
 		SubpacketEncode(34, false, paa, subpackets);
-#endif
 	// create the signature packet
 	out.push_back(4); // V4 format
 	out.push_back(TMCG_OPENPGP_SIGNATURE_DIRECTLY_ON_A_KEY); // type
@@ -13717,12 +13693,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 #endif
 			break;
 		case TMCG_OPENPGP_AEADALGO_OCB:
-#if GCRYPT_VERSION_NUMBER < 0x010700
-			// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-			ciphermode = (enum gcry_cipher_modes)11;
-#else
 			ciphermode = GCRY_CIPHER_MODE_OCB;
-#endif
 			break;
 		default:
 			return gcry_error(GPG_ERR_INV_CIPHER_MODE); // error: bad algorithm
@@ -13749,10 +13720,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 		return ret;
 	}
 	size_t taglen = 0;
-#if GCRYPT_VERSION_NUMBER < 0x010700
-	// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-	taglen = 16;
-#else
 	ret = gcry_cipher_info(hd, GCRYCTL_GET_TAGLEN, NULL, &taglen);
 	if (ret)
 	{
@@ -13760,7 +13727,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 		gcry_cipher_close(hd);
 		return ret;
 	}
-#endif
 	if (taglen != 16)
 	{
 		gcry_free(buf);
@@ -13813,9 +13779,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 			gcry_cipher_close(hd);
 			return ret;
 		}
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 		ret = gcry_cipher_final(hd);
 		if (ret)
 		{
@@ -13823,7 +13786,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 			gcry_cipher_close(hd);
 			return ret;
 		}
-#endif
 		if (in.size() < 1)
 		{
 			gcry_free(buf);
@@ -13973,9 +13935,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 				gcry_cipher_close(hd);
 				return ret;
 			}
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 			ret = gcry_cipher_final(hd);
 			if (ret)
 			{
@@ -13983,7 +13942,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 				gcry_cipher_close(hd);
 				return ret;
 			}
-#endif
 			if (in.size() < (nbytes + chunkdim))
 			{
 				gcry_free(buf);
@@ -14093,9 +14051,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 			gcry_cipher_close(hd);
 			return ret;
 		}
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 		ret = gcry_cipher_final(hd);
 		if (ret)
 		{
@@ -14103,7 +14058,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 			gcry_cipher_close(hd);
 			return ret;
 		}
-#endif
 		if (in.size() <= nbytes)
 		{
 			gcry_free(buf);
@@ -14237,9 +14191,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 			gcry_cipher_close(hd);
 			return ret;
 		}
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 		ret = gcry_cipher_final(hd); // tell decrypt that it's the final call
 		if (ret)
 		{
@@ -14247,7 +14198,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 			gcry_cipher_close(hd);
 			return ret;
 		}
-#endif
 		ret = gcry_cipher_encrypt(hd, outbuf, 0, NULL, 0); // empty string
 		if (ret)
 		{
@@ -14554,12 +14504,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 #endif
 			break;
 		case TMCG_OPENPGP_AEADALGO_OCB:
-#if GCRYPT_VERSION_NUMBER < 0x010700
-			// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-			ciphermode = (enum gcry_cipher_modes)11;
-#else
 			ciphermode = GCRY_CIPHER_MODE_OCB;
-#endif
 			break;
 		default:
 			return gcry_error(GPG_ERR_INV_CIPHER_MODE); // error: bad algorithm
@@ -14586,10 +14531,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 		return ret;
 	}
 	size_t taglen = 0;
-#if GCRYPT_VERSION_NUMBER < 0x010700
-	// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-	taglen = 16;
-#else
 	ret = gcry_cipher_info(hd, GCRYCTL_GET_TAGLEN, NULL, &taglen);
 	if (ret)
 	{
@@ -14597,7 +14538,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 		gcry_cipher_close(hd);
 		return ret;
 	}
-#endif
 	if (taglen != 16)
 	{
 		gcry_free(buf);
@@ -14649,9 +14589,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 			gcry_cipher_close(hd);
 			return ret;
 		}
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 		ret = gcry_cipher_final(hd);
 		if (ret)
 		{
@@ -14659,7 +14596,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 			gcry_cipher_close(hd);
 			return ret;
 		}
-#endif
 		if (in.size() < (1 + taglen))
 		{
 			gcry_free(buf);
@@ -14794,9 +14730,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 				gcry_cipher_close(hd);
 				return ret;
 			}
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 			ret = gcry_cipher_final(hd);
 			if (ret)
 			{
@@ -14804,7 +14737,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 				gcry_cipher_close(hd);
 				return ret;
 			}
-#endif
 			if (in.size() < (nbytes + chunkdim + taglen))
 			{
 				gcry_free(buf);
@@ -14886,9 +14818,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 			gcry_cipher_close(hd);
 			return ret;
 		}
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 		ret = gcry_cipher_final(hd);
 		if (ret)
 		{
@@ -14896,7 +14825,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 			gcry_cipher_close(hd);
 			return ret;
 		}
-#endif
 		if (in.size() < (nbytes + taglen + taglen))
 		{
 			gcry_free(buf);
@@ -15017,9 +14945,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 			gcry_cipher_close(hd);
 			return ret;
 		}
-#if GCRYPT_VERSION_NUMBER < 0x010700
-		// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 		ret = gcry_cipher_final(hd); // tell decrypt that it's the final call
 		if (ret)
 		{
@@ -15027,7 +14952,6 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 			gcry_cipher_close(hd);
 			return ret;
 		}
-#endif
 		if (in.size() < (nbytes + taglen))
 		{
 			gcry_free(buf);

@@ -1,7 +1,8 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2004, 2005, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2004, 2005,
+               2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
      [BR95] Mihir Bellare, Phillip Rogaway: 'Random Oracles are Practical:
              A Paradigm for Designing Efficient Protocols',
@@ -29,43 +30,6 @@
 #endif
 #include "mpz_shash.hh"
 
-// emulate SHA-3 by public domain code from https://github.com/brainhub/SHA3IUF
-#include "sha3.c"
-void sha3
-	(unsigned char *output,
-	const unsigned char *input, const size_t size, int algo)
-{
-	sha3_context c;
-	const uint8_t *hash;
-
-	switch (algo)
-	{
-		case GCRY_MD_SHA256:
-			gcry_md_hash_buffer(algo, output, input, size);
-			break;
-		case 313: // SHA-3 256 bit output
-			sha3_Init256(&c);
-			sha3_Update(&c, input, size);
-			hash = sha3_Finalize(&c);
-			memcpy(output, hash, 32);
-			break;
-		case 314: // SHA-3 384 bit output
-			sha3_Init384(&c);
-			sha3_Update(&c, input, size);
-			hash = sha3_Finalize(&c);
-			memcpy(output, hash, 48);
-			break;
-		case 315: // SHA-3 512 bit output
-			sha3_Init512(&c);
-			sha3_Update(&c, input, size);
-			hash = sha3_Finalize(&c);
-			memcpy(output, hash, 64);
-			break;
-		default:
-			break;
-	}
-}
-
 /* hash function h() (assumption: collision-resistant cryptographic hash) */
 void tmcg_h
 	(unsigned char *output,
@@ -79,12 +43,11 @@ void tmcg_g
 	(unsigned char *output, const size_t osize,
 	const unsigned char *input, const size_t isize)
 {
-	bool emulate = false; // emulate GCRY_MD_SHA3_256 (gcry algo constant 313)
-	int second_algo = (TMCG_GCRY_MD_ALGO != 313) ? 313 : GCRY_MD_SHA256;
-	if (gcry_md_test_algo(second_algo)) // check for SHA3-256 in libgcrypt
-		emulate = true;
+	int second_algo = GCRY_MD_SHA3_256;
+	if (second_algo == TMCG_GCRY_MD_ALGO)
+		second_algo = GCRY_MD_SHA256;
 	size_t mdsize = gcry_md_get_algo_dlen(TMCG_GCRY_MD_ALGO);
-	size_t mdsize2 = emulate ? 32 : gcry_md_get_algo_dlen(second_algo);
+	size_t mdsize2 = gcry_md_get_algo_dlen(second_algo);
 	// hopefully, size of truncation does not match the border
 	// of chaining variables in the compression function of h
 	size_t usesize = (mdsize / 4) + 1;
@@ -106,19 +69,13 @@ void tmcg_g
 		
 		// using h(y) "in some nonstandard way" with "output truncated" [BR95]
 		tmcg_h(out + (i * (usesize + 2)), data, dsize);
-		if (emulate)
-			sha3(out2 + (i * (usesize2 + 2)), data, dsize, second_algo);
-		else
-			tmcg_h(out2 + (i * (usesize2 + 2)), data, dsize, second_algo);
+		tmcg_h(out2 + (i * (usesize2 + 2)), data, dsize, second_algo);
 		delete [] data;
 
 		// using h on parts of the whole result again with "output truncated"
 		size_t psize2 = ((i + 1) * (mdsize2 - 1));
 		tmcg_h(out + (i * usesize), out, ((i + 1) * (mdsize - 1)));
-		if (emulate)
-			sha3(out2 + (i * usesize2), out2, psize2, second_algo);
-		else
-			tmcg_h(out2 + (i * usesize2), out2, psize2, second_algo);
+		tmcg_h(out2 + (i * usesize2), out2, psize2, second_algo);
 	}
 	// final output is the XOR of both results
 	for (size_t i = 0; i < osize; i++)

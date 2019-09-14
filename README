@@ -135,11 +135,11 @@ Requirements
   You need the following programs, libraries and appropriate header files to
   build (GNU gcc/g++ >= 4.0.x or higher is recommended) LibTMCG successfully:
 
-  * GNU Multiple Precision Arithmetic Library (libgmp), version >= 4.2.0,
+  * GNU Multiple Precision Arithmetic Library (libgmp), version >= 6.1.2,
     https://gmplib.org/
-  * GNU Crypto Library (libgcrypt), version >= 1.6.0,
+  * GNU Crypto Library (libgcrypt), version >= 1.8.0,
     https://gnupg.org/download/index.html
-  * GNU Privacy Guard Error Code Library (libgpg-error), version >= 1.12,
+  * GNU Privacy Guard Error Code Library (libgpg-error), version >= 1.27,
     https://gnupg.org/download/index.html
   * GNU info program and utilities (texinfo), version >= 6.0
     https://www.gnu.org/software/texinfo/

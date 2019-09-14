@@ -18,7 +18,7 @@
 #
 # (Process this file with GNU autoconf to produce a configure script.)
 
-AC_REVISION([20190826])
+AC_REVISION([20190914])
 AC_PREREQ(2.61)
 
 AC_INIT([LibTMCG], [1.4.0], [HeikoStamer@gmx.net], [libTMCG],
@@ -59,9 +59,9 @@ LIBTMCG_CONFIG_CFLAGS=""
 
 # Define some security parameters and helping macros
 # (NOTE: Please update also libTMCG.hh, if changed!)
-AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.6.0",
+AC_DEFINE(TMCG_LIBGCRYPT_VERSION, "1.8.0",
 	[Define the necessary version number of the GNU gcrypt library])
-AC_DEFINE(TMCG_LIBGMP_VERSION, "4.2.0",
+AC_DEFINE(TMCG_LIBGMP_VERSION, "6.1.2",
 	[Define the necessary version number of the GNU gmp library])
 AC_DEFINE(TMCG_MAX_FPOWM_T, 2048,
 	[Define the maximum size of the exponent for fast exponentiation])
@@ -207,18 +207,18 @@ AC_SUBST(LIBGMP_CFLAGS)
 LDFLAGS="$backup_LDFLAGS"
 CPPFLAGS="$backup_CPPFLAGS"
 
-AM_PATH_LIBGCRYPT("1.6.0")
+AM_PATH_LIBGCRYPT("1.8.0")
 if test "x$LIBGCRYPT_LIBS" = "x"; then
-	AC_MSG_ERROR([libgcrypt >= 1.6.0 is needed])
+	AC_MSG_ERROR([libgcrypt >= 1.8.0 is required])
 fi
 backup_CPPFLAGS="$CPPFLAGS"
 CPPFLAGS="$LIBGCRYPT_CFLAGS $backup_CPPFLAGS"
 AC_CHECK_HEADERS([gcrypt.h], , AC_MSG_ERROR([libgcrypt headers are missing]))
 CPPFLAGS="$backup_CPPFLAGS"
 
-AM_PATH_GPG_ERROR("1.12")
+AM_PATH_GPG_ERROR("1.27")
 if test "x$GPG_ERROR_LIBS" = "x"; then
-	AC_MSG_ERROR([libgpg-error >= 1.12 is needed])
+	AC_MSG_ERROR([libgpg-error >= 1.27 is required])
 fi
 
 backup_LDFLAGS="$LDFLAGS"

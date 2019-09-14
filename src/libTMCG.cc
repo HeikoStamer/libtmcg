@@ -60,7 +60,7 @@ bool init_libTMCG
 	if (!gcry_check_version(TMCG_LIBGCRYPT_VERSION))
 	{
 		std::cerr << "init_libTMCG(): libgcrypt version >= " <<
-			TMCG_LIBGCRYPT_VERSION << " needed" << std::endl;
+			TMCG_LIBGCRYPT_VERSION << " required" << std::endl;
 		return false;
 	}
 	if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P))
@@ -170,7 +170,7 @@ bool init_libTMCG
 	if (strcmp(gmp_version, TMCG_LIBGMP_VERSION) < 0)
 	{
 		std::cerr << "init_libTMCG(): libgmp version >= " <<
-			TMCG_LIBGMP_VERSION << " needed" << std::endl;
+			TMCG_LIBGMP_VERSION << " required" << std::endl;
 		return false;
 	}
 	if (gmp_secmem)
