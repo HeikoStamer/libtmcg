@@ -325,9 +325,6 @@ int main
 		{
 			aeadin.push_back(0xAD);
 			enc.clear(), out.clear(), iv.clear();
-#if GCRYPT_VERSION_NUMBER < 0x010700
-			// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 			std::cout << "SymmetricEncryptAEAD(...)" << std::endl;
 			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
 				SymmetricEncryptAEAD(aeadin, seskey, TMCG_OPENPGP_SKALGO_AES256,
@@ -343,7 +340,6 @@ int main
 			{
 				assert(aeadin[i] == out[i]); // check the result
 			}
-#endif
 		}
 
 		// testing SymmetricEncryptAEAD(), SymmetricDecryptAEAD() with |ad| = 13
@@ -357,13 +353,10 @@ int main
 			ad.push_back(c); // chunk size octet
 			for (size_t i = 0; i < 8; i++)
 				ad.push_back(0x00); // initial eight-octet big-endian chunk index
-			for (size_t j = 0; j < 1024; j++)
+			for (size_t j = 0; j < 128; j++)
 			{
 				aeadin.push_back(0xAE);
 				enc.clear(), out.clear(), iv.clear();
-#if GCRYPT_VERSION_NUMBER < 0x010700
-			// FIXME: remove, if libgcrypt >= 1.7.0 required by configure.ac
-#else
 				std::cout << "SymmetricEncryptAEAD(...)" << std::endl;
 				ret = CallasDonnerhackeFinneyShawThayerRFC4880::
 					SymmetricEncryptAEAD(aeadin, seskey,
@@ -381,7 +374,6 @@ int main
 				{
 					assert(aeadin[i] == out[i]); // check the result
 				}
-#endif
 			}
 		}
 
