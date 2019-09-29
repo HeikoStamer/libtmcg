@@ -43,7 +43,7 @@
 void check
 	()
 {
-	std::cout << "Generate two keys and build keyring" << std::endl;
+	std::cout << "Generation of keys and corresponding keyring" << std::endl;
 	TMCG_SecretKey secA("Alice", "alice@nowhere.org", TMCG_QRA_SIZE);
 	TMCG_SecretKey secB("Bob", "bob@nowhere.org", TMCG_QRA_SIZE);
 	TMCG_PublicKey pubA(secA);
@@ -179,7 +179,7 @@ void check
 			for (size_t i = 0; i < sB.size(); i++)
 			{
 				size_t typeA = TMCG_MAX_CARDS;
-				TMCG_CardSecret cs;
+				TMCG_CardSecret cs(2, TMCG_MAX_TYPEBITS);
 				tmcg->TMCG_SelfCardSecret(sB[i], cs, secA, 0);
 				assert(tmcg->TMCG_VerifyCardSecret(sB[i], cs, pubB, 1,
 					*pipe_in, *pipe_out));
