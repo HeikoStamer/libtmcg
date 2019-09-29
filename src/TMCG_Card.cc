@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                     2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ TMCG_Card::TMCG_Card
 	(size_t k, size_t w)
 {
 	assert((k > 0) && (w > 0));
-	
+	assert(z.size() == 0);
 	for (size_t i = 0; i < k; i++)
 		z.push_back(std::vector<MP_INT>(w));
 	for (size_t i = 0; i < z.size(); i++)
@@ -102,22 +102,22 @@ void TMCG_Card::resize
 	(size_t k, size_t w)
 {
 	assert((k > 0) && (w > 0));
-	
-	// TODO: reallocation should be done more efficiently
-	for (size_t i = 0; i < z.size(); i++)
+	if ((z.size() != k) || (z[0].size() != w))
 	{
-		for (size_t j = 0; j < z[i].size(); j++)
-			mpz_clear(&z[i][j]);
-		z[i].clear();
-	}
-	z.clear();
-	
-	for (size_t i = 0; i < k; i++)
-		z.push_back(std::vector<MP_INT>(w));
-	for (size_t i = 0; i < z.size(); i++)
-	{
-		for (size_t j = 0; j < z[i].size(); j++)
-			mpz_init(&z[i][j]);
+		for (size_t i = 0; i < z.size(); i++)
+		{
+			for (size_t j = 0; j < z[i].size(); j++)
+				mpz_clear(&z[i][j]);
+			z[i].clear();
+		}
+		z.clear();
+		for (size_t i = 0; i < k; i++)
+			z.push_back(std::vector<MP_INT>(w));
+		for (size_t i = 0; i < z.size(); i++)
+		{
+			for (size_t j = 0; j < z[i].size(); j++)
+				mpz_init(&z[i][j]);
+		}
 	}
 }
 

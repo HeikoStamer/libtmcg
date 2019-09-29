@@ -2,7 +2,7 @@
   Data structure for a card. This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2007, 2010,
-                           2016, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+               2016, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -79,7 +79,8 @@ struct TMCG_Card
 		(const TMCG_Card& that) const;
 	
 	/** This function resizes the representation of the card. The current
-	    content will be released and a new @f$k\times w@f$-matrix is created.
+	    content will be released and a new @f$k\times w@f$-matrix is created,
+		if the corresponding sizes are different.
 	    @param k is the number of players.
 	    @param w is the number of bits used in the binary representation
 	           of the card type. */
