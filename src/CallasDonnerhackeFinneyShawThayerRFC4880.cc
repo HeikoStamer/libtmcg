@@ -190,14 +190,20 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 	gcry_mpi_set(dsa_r, r);
 	gcry_mpi_set(dsa_s, s);
 	if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+	{
 		ret = gcry_sexp_build(&signature, &erroff,
 			"(sig-val (dsa (r %M) (s %M)))", r, s);
+	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+	{
 		ret = gcry_sexp_build(&signature, &erroff,
 			"(sig-val (ecdsa (r %M) (s %M)))", r, s);
+	}
 	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+	{
 		ret = gcry_sexp_build(&signature, &erroff,
 			"(sig-val (eddsa (r %M) (s %M)))", r, s);
+	}
 	else
 		signature = NULL;
 	packet.insert(packet.end(),
@@ -239,6 +245,103 @@ TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
 			attestedcerts_in[i].begin(), attestedcerts_in[i].end());
 	}
 	left.insert(left.end(), left_in.begin(), left_in.end());
+}
+
+TMCG_OpenPGP_Signature::TMCG_OpenPGP_Signature
+	(const TMCG_OpenPGP_Signature &that):
+		ret(gcry_error(GPG_ERR_BAD_SIGNATURE)),
+		erroff(0)	
+{
+	valid = that.valid;
+	revoked = that.revoked;
+	expired = that.expired;
+	attested = that.attested;
+	revocable = that.revocable;
+	exportable = that.exportable;
+	pkalgo = that.pkalgo;
+	hashalgo = that.hashalgo;
+	type = that.type;
+	version = that.version;
+	creationtime = that.creationtime;
+	expirationtime = that.expirationtime;
+	keyexpirationtime = that.keyexpirationtime;
+	revcode = that.revcode;
+	if ((pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+		(pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+	{
+		ret = gcry_sexp_build(&signature, &erroff,
+			"(sig-val (rsa (s %M)))", that.rsa_md);
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_DSA)
+	{
+		ret = gcry_sexp_build(&signature, &erroff,
+			"(sig-val (dsa (r %M) (s %M)))", that.dsa_r, that.dsa_s);
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_ECDSA)
+	{
+		ret = gcry_sexp_build(&signature, &erroff,
+			"(sig-val (ecdsa (r %M) (s %M)))", that.dsa_r, that.dsa_s);
+	}
+	else if (pkalgo == TMCG_OPENPGP_PKALGO_EDDSA)
+	{
+		ret = gcry_sexp_build(&signature, &erroff,
+			"(sig-val (eddsa (r %M) (s %M)))", that.dsa_r, that.dsa_s);
+	}
+	else
+		signature = NULL;
+	rsa_md = gcry_mpi_new(8);
+	dsa_r = gcry_mpi_new(8);
+	dsa_s = gcry_mpi_new(8);
+	gcry_mpi_set(rsa_md, that.rsa_md);
+	gcry_mpi_set(dsa_r, that.dsa_r);
+	gcry_mpi_set(dsa_s, that.dsa_s);
+	packet.insert(packet.end(),
+		that.packet.begin(), that.packet.end());
+	hspd.insert(hspd.end(),
+		that.hspd.begin(), that.hspd.end());
+	issuer.insert(issuer.end(),
+		that.issuer.begin(), that.issuer.end());
+	issuerfpr.insert(issuerfpr.end(),
+		that.issuerfpr.begin(), that.issuerfpr.end());
+	keyflags.insert(keyflags.end(),
+		that.keyflags.begin(), that.keyflags.end());
+	keyfeatures.insert(keyfeatures.end(), 
+		that.keyfeatures.begin(), that.keyfeatures.end());
+	keyprefs_psa.insert(keyprefs_psa.end(),
+		that.keyprefs_psa.begin(), that.keyprefs_psa.end());
+	keyprefs_pha.insert(keyprefs_pha.end(),
+		that.keyprefs_pha.begin(), that.keyprefs_pha.end());
+	keyprefs_pca.insert(keyprefs_pca.end(),
+		that.keyprefs_pca.begin(), that.keyprefs_pca.end());
+	keyprefs_paa.insert(keyprefs_paa.end(),
+		that.keyprefs_paa.begin(), that.keyprefs_paa.end());
+	revkeys.resize(that.revkeys.size());
+	for (size_t i = 0; i < that.revkeys.size(); i++)
+	{
+		revkeys[i].key_class = that.revkeys[i].key_class;
+		revkeys[i].key_pkalgo = that.revkeys[i].key_pkalgo;
+		for (size_t j = 0; j < sizeof(that.revkeys[i].key_fingerprint); j++)
+			revkeys[i].key_fingerprint[j] = that.revkeys[i].key_fingerprint[j];
+	}
+	embeddedsigs.resize(that.embeddedsigs.size());
+	for (size_t i = 0; i < that.embeddedsigs.size(); i++)
+	{
+		embeddedsigs[i].insert(embeddedsigs[i].end(),
+			that.embeddedsigs[i].begin(), that.embeddedsigs[i].end());
+	}
+	recipientfprs.resize(that.recipientfprs.size());
+	for (size_t i = 0; i < that.recipientfprs.size(); i++)
+	{
+		recipientfprs[i].insert(recipientfprs[i].end(),
+			that.recipientfprs[i].begin(), that.recipientfprs[i].end());
+	}
+	attestedcerts.resize(that.attestedcerts.size());
+	for (size_t i = 0; i < that.attestedcerts.size(); i++)
+	{
+		attestedcerts[i].insert(attestedcerts[i].end(),
+			that.attestedcerts[i].begin(), that.attestedcerts[i].end());
+	}
+	left.insert(left.end(), that.left.begin(), that.left.end());
 }
 
 bool TMCG_OpenPGP_Signature::Good

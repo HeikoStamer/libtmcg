@@ -542,7 +542,7 @@ static const tmcg_openpgp_export_flags_t TMCG_OPENPGP_EXPORT_MINIMAL  = 0x0002;
 static const tmcg_openpgp_export_flags_t TMCG_OPENPGP_EXPORT_REVCERT  = 0x0004;
 static const tmcg_openpgp_export_flags_t TMCG_OPENPGP_EXPORT_ATTESTED = 0x0008;
 
-// definition of own classes
+// definition of provided classes (API)
 class TMCG_OpenPGP_Signature
 {
 	private:
@@ -637,6 +637,8 @@ class TMCG_OpenPGP_Signature
 			 const tmcg_openpgp_multiple_octets_t		&recipientfprs_in,
 			 const tmcg_openpgp_multiple_octets_t		&attestedcerts_in,
 			 const tmcg_openpgp_octets_t				&left_in);
+		TMCG_OpenPGP_Signature
+			(const TMCG_OpenPGP_Signature &that); // copy-constructor
 		bool Good
 			() const;
 		void PrintInfo
