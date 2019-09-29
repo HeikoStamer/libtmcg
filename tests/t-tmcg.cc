@@ -43,6 +43,7 @@
 void check
 	()
 {
+	std::cout << "Generate two keys and build keyring" << std::endl;
 	TMCG_SecretKey secA("Alice", "alice@nowhere.org", TMCG_QRA_SIZE);
 	TMCG_SecretKey secB("Bob", "bob@nowhere.org", TMCG_QRA_SIZE);
 	TMCG_PublicKey pubA(secA);
@@ -73,7 +74,7 @@ void check
 				TMCG_StackSecret<TMCG_CardSecret> ssB;
 				for (size_t i = 0; i < TMCG_MAX_CARDS; i++)
 				{
-					TMCG_Card c;
+					TMCG_Card c(2, TMCG_MAX_TYPEBITS);
 					tmcg->TMCG_CreateOpenCard(c, ring, i);
 					os.push(i, c);
 				}
@@ -127,14 +128,14 @@ void check
 			std::cout << "A: test basic stack operations" << std::endl;
 			for (size_t i = 0; i < TMCG_MAX_CARDS; i++)
 			{
-				TMCG_Card c;
+				TMCG_Card c(2, TMCG_MAX_TYPEBITS);
 				os.push(i, c);
 			}
 			assert(os.size() == TMCG_MAX_CARDS);
 			size_t j = (TMCG_MAX_CARDS - 1);
 			for (size_t i = 0; i < TMCG_MAX_CARDS; i++, j--)
 			{
-				TMCG_Card c;
+				TMCG_Card c(2, TMCG_MAX_TYPEBITS);
 				size_t idx = TMCG_MAX_CARDS;
 				bool notempty = os.pop(idx, c);
 				assert(notempty);
@@ -143,7 +144,7 @@ void check
 			assert(os.empty());
 			for (size_t i = 0; i < TMCG_MAX_CARDS; i++)
 			{
-				TMCG_Card c;
+				TMCG_Card c(2, TMCG_MAX_TYPEBITS);
 				os.push(i, c);
 			}
 			os.clear();
@@ -152,7 +153,7 @@ void check
 			std::cout << "A: CreateOpenCard()" << std::endl;
 			for (size_t i = 0; i < TMCG_MAX_CARDS; i++)
 			{
-				TMCG_Card c;
+				TMCG_Card c(2, TMCG_MAX_TYPEBITS);
 				tmcg->TMCG_CreateOpenCard(c, ring, i);
 				os.push(i, c);
 			}
