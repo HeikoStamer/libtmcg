@@ -49,8 +49,42 @@ void check
 	TMCG_PublicKey pubA(secA);
 	TMCG_PublicKey pubB(secB);
 	TMCG_PublicKeyRing ring(2);
-	ring.keys[0] = pubA, ring.keys[1] = pubB; 
-
+	ring.keys[0] = pubA, ring.keys[1] = pubB;
+	std::cout << "Test basic card operations" << std::endl;
+	TMCG_Card c1(1, 1), c2(2, 1), c3(1, 2), c4(2, 2);
+	assert(c1.z.size() == 1);
+	assert(c2.z.size() == 2);
+	assert(c3.z.size() == 1);
+	assert(c4.z.size() == 2);
+	assert(c1 != c2);
+	assert(c2 != c3);
+	assert(c3 != c4);
+	assert(c4 != c1);
+	c1 = c2;
+	assert(c1.z.size() == 2);
+	assert(c1 == c2);
+	c2 = c3;
+	assert(c2.z.size() == 1);
+	assert(c2 == c3);
+	c3 = c4;
+	assert(c3.z.size() == 2);
+	assert(c3 == c4);
+	c4 = c1;
+	assert(c4.z.size() == 2);
+	assert(c4 == c1);
+	TMCG_CardSecret cs1(1, 1), cs2(2, 1), cs3(1, 2), cs4(2, 2);
+	assert(cs1.r.size() == 1);
+	assert(cs2.r.size() == 2);
+	assert(cs3.r.size() == 1);
+	assert(cs4.r.size() == 2);
+	cs1 = cs2;
+	assert(cs1.r.size() == 2);
+	cs2 = cs3;
+	assert(cs2.r.size() == 1);
+	cs3 = cs4;
+	assert(cs3.r.size() == 2);
+	cs4 = cs1;
+	assert(cs4.r.size() == 2);
 	pid_t pid = 0;
 	int pipe1fd[2], pipe2fd[2];
 	if ((pipe(pipe1fd) < 0) || (pipe(pipe2fd) < 0))
@@ -66,7 +100,6 @@ void check
 				/* BEGIN child code: participant B */
 				ipipestream *pipe_in = new ipipestream(pipe1fd[0]);
 				opipestream *pipe_out = new opipestream(pipe2fd[1]);
-					
 				SchindelhauerTMCG *tmcg = 
 					new SchindelhauerTMCG(16, 2, TMCG_MAX_TYPEBITS);
 				TMCG_OpenStack<TMCG_Card> os;
@@ -101,7 +134,6 @@ void check
 						*pipe_in, *pipe_out);
 				}
 				delete tmcg;
-		
 				delete pipe_in, delete pipe_out;
 				exit(0);
 				/* END child code: participant B */
@@ -119,10 +151,9 @@ void check
 			/* participant A */
 			ipipestream *pipe_in = new ipipestream(pipe2fd[0]);
 			opipestream *pipe_out = new opipestream(pipe1fd[1]);
-			
-			std::cout << "Encryption and decryption of cards" << std::endl;
 			SchindelhauerTMCG *tmcg = 
 				new SchindelhauerTMCG(16, 2, TMCG_MAX_TYPEBITS);
+			std::cout << "Encryption and decryption of cards" << std::endl;
 			TMCG_OpenStack<TMCG_Card> os;
 			TMCG_Stack<TMCG_Card> sA, sAB, sB;
 			std::cout << "A: test basic stack operations" << std::endl;
@@ -191,8 +222,7 @@ void check
 				typesA.push_back(typeA);
 			}
 			std::cout << std::endl;
-			delete tmcg;
-						
+			delete tmcg;						
 			delete pipe_in, delete pipe_out;
 		}
 		if (waitpid(pid, NULL, 0) != pid)

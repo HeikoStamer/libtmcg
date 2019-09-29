@@ -43,6 +43,7 @@ TMCG_Card::TMCG_Card
 {
 	assert((k > 0) && (w > 0));
 	assert(z.size() == 0);
+
 	for (size_t i = 0; i < k; i++)
 		z.push_back(std::vector<MP_INT>(w));
 	for (size_t i = 0; i < z.size(); i++)
@@ -102,6 +103,7 @@ void TMCG_Card::resize
 	(size_t k, size_t w)
 {
 	assert((k > 0) && (w > 0));
+
 	size_t zs = z.size(), zs0 = z[0].size();
 	if ((zs != k) || (zs0 != w))
 	{
@@ -147,59 +149,47 @@ void TMCG_Card::resize
 bool TMCG_Card::import
 	(std::string s)
 {
-	try
+	// check magic
+	if (!TMCG_ParseHelper::cm(s, "crd", '|'))
+		return false;
+	// card description
+	std::string k_str, w_str;
+	if (!TMCG_ParseHelper::gs(s, '|', k_str))
+		return false;
+	char *ec;
+	size_t k = std::strtoul(k_str.c_str(), &ec, 10);
+	if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) ||
+		!TMCG_ParseHelper::nx(s, '|'))
 	{
-		// check magic
-		if (!TMCG_ParseHelper::cm(s, "crd", '|'))
-			throw false;
-		
-		// card description
-		std::string k_str, w_str;
-		if (!TMCG_ParseHelper::gs(s, '|', k_str))
-			throw false;
-		char *ec;
-		size_t k = std::strtoul(k_str.c_str(), &ec, 10);
-		if ((*ec != '\0') || (k < 1) || (k > TMCG_MAX_PLAYERS) ||
-			!TMCG_ParseHelper::nx(s, '|'))
+		return false;
+	}
+	if (!TMCG_ParseHelper::gs(s, '|', w_str))
+		return false;
+	size_t w = std::strtoul(w_str.c_str(), &ec, 10);
+	if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) ||
+		!TMCG_ParseHelper::nx(s, '|'))
+	{
+		return false;
+	}
+	// resize this object
+	resize(k, w);
+	// card data
+	for (size_t i = 0; i < z.size(); i++)
+	{
+		for (size_t j = 0; j < z[i].size(); j++)
 		{
-			throw false;
-		}
-		if (!TMCG_ParseHelper::gs(s, '|', w_str))
-			throw false;
-		size_t w = std::strtoul(w_str.c_str(), &ec, 10);
-		if ((*ec != '\0') || (w < 1) || (w > TMCG_MAX_TYPEBITS) ||
-			!TMCG_ParseHelper::nx(s, '|'))
-		{
-				throw false;
-		}
-		
-		// resize this object
-		resize(k, w);
-		
-		// card data
-		for (size_t i = 0; i < z.size(); i++)
-		{
-			for (size_t j = 0; j < z[i].size(); j++)
+			std::string mpz_str;
+			// z_ij
+			if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
+				return false;
+			if ((mpz_set_str(&z[i][j], mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
+				!TMCG_ParseHelper::nx(s, '|'))
 			{
-				std::string mpz_str;
-				// z_ij
-				if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
-					throw false;
-				if ((mpz_set_str(&z[i][j], mpz_str.c_str(),
-					TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
-				{
-					throw false;
-				}
+				return false;
 			}
 		}
-
-		// finish
-		throw true;
 	}
-	catch (bool return_value)
-	{
-		return return_value;
-	}
+	return true;
 }
 
 TMCG_Card::~TMCG_Card
