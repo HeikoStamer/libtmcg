@@ -2,7 +2,7 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2004, 2005, 2006, 2007, 
-                     2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+                     2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -46,8 +46,10 @@ TMCG_Card::TMCG_Card
 	for (size_t i = 0; i < k; i++)
 		z.push_back(std::vector<MP_INT>(w));
 	for (size_t i = 0; i < z.size(); i++)
+	{
 		for (size_t j = 0; j < z[i].size(); j++)
 			mpz_init(&z[i][j]);
+	}
 }
 
 TMCG_Card::TMCG_Card
@@ -56,8 +58,10 @@ TMCG_Card::TMCG_Card
 	for (size_t k = 0; k < that.z.size(); k++)
 		z.push_back(std::vector<MP_INT>(that.z[k].size()));
 	for (size_t k = 0; k < z.size(); k++)
+	{
 		for (size_t w = 0; w < z[k].size(); w++)
 			mpz_init_set(&z[k][w], &that.z[k][w]);
+	}
 }
 
 TMCG_Card& TMCG_Card::operator =
@@ -65,8 +69,10 @@ TMCG_Card& TMCG_Card::operator =
 {
 	resize(that.z.size(), that.z[0].size());
 	for (size_t k = 0; k < z.size(); k++)
+	{
 		for (size_t w = 0; w < z[k].size(); w++)
 			mpz_set(&z[k][w], &that.z[k][w]);
+	}
 	return *this;
 }
 
@@ -156,8 +162,8 @@ bool TMCG_Card::import
 				// z_ij
 				if (!TMCG_ParseHelper::gs(s, '|', mpz_str))
 					throw false;
-				if ((mpz_set_str(&z[i][j], mpz_str.c_str(), TMCG_MPZ_IO_BASE) < 0) ||
-					!TMCG_ParseHelper::nx(s, '|'))
+				if ((mpz_set_str(&z[i][j], mpz_str.c_str(),
+					TMCG_MPZ_IO_BASE) < 0) || !TMCG_ParseHelper::nx(s, '|'))
 				{
 					throw false;
 				}
