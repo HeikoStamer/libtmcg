@@ -646,17 +646,26 @@ int main
 		parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 			SignatureParse(armored_signature, 3, signature);
 		assert(parse_ok);
+		TMCG_OpenPGP_Signature signature2 = *signature;
 		assert(signature->Good());
+		assert(signature2.Good());
 		std::cout << "PrintInfo()" << std::endl;
 		signature->PrintInfo();
+		signature2.PrintInfo();
 		std::cout << "CheckValidity()" << std::endl;
 		parse_ok = signature->CheckValidity(creation, 3);
+		assert(parse_ok);
+		parse_ok = signature2.CheckValidity(creation, 3);
 		assert(parse_ok);
 		std::cout << "!CheckValidity()" << std::endl;
 		parse_ok = signature->CheckValidity(time(NULL), 3);
 		assert(!parse_ok);
+		parse_ok = signature2.CheckValidity(time(NULL), 3);
+		assert(!parse_ok);
 		std::cout << "Verify(..., \"" << filename << "\", ...)" << std::endl;
 		parse_ok = signature->Verify(dsakey, filename, 3);
+		assert(parse_ok);
+		parse_ok = signature2.Verify(dsakey, filename, 3);
 		assert(parse_ok);
 		delete signature;
 		remove(filename.c_str());
