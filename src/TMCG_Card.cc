@@ -35,7 +35,7 @@ TMCG_Card::TMCG_Card
 	()
 {
 	z.push_back(std::vector<MP_INT>(1));
-	mpz_init(&z[0][0]);
+	mpz_init_set_ui(&z[0][0], 0UL);
 }
 
 TMCG_Card::TMCG_Card
@@ -48,7 +48,7 @@ TMCG_Card::TMCG_Card
 	for (size_t i = 0; i < z.size(); i++)
 	{
 		for (size_t j = 0; j < z[i].size(); j++)
-			mpz_init(&z[i][j]);
+			mpz_init_set_ui(&z[i][j], 0UL);
 	}
 }
 
@@ -102,21 +102,44 @@ void TMCG_Card::resize
 	(size_t k, size_t w)
 {
 	assert((k > 0) && (w > 0));
-	if ((z.size() != k) || (z[0].size() != w))
+	size_t zs = z.size(), zs0 = z[0].size();
+	if ((zs != k) || (zs0 != w))
 	{
-		for (size_t i = 0; i < z.size(); i++)
+		if ((zs >= k) && (zs0 == w))
 		{
-			for (size_t j = 0; j < z[i].size(); j++)
-				mpz_clear(&z[i][j]);
-			z[i].clear();
+			for (size_t i = k; i < zs; i++)
+			{
+				for (size_t j = 0; j < z[i].size(); j++)
+					mpz_clear(&z[i][j]);
+				z[i].clear();
+			}
+			z.resize(k);
 		}
-		z.clear();
-		for (size_t i = 0; i < k; i++)
-			z.push_back(std::vector<MP_INT>(w));
-		for (size_t i = 0; i < z.size(); i++)
+		else if ((zs < k) && (zs0 == w))
 		{
-			for (size_t j = 0; j < z[i].size(); j++)
-				mpz_init(&z[i][j]);
+			for (size_t i = zs; i < k; i++)
+			{
+				z.push_back(std::vector<MP_INT>(w));
+				for (size_t j = 0; j < z[i].size(); j++)
+					mpz_init_set_ui(&z[i][j], 0UL);
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < zs; i++)
+			{
+				for (size_t j = 0; j < z[i].size(); j++)
+					mpz_clear(&z[i][j]);
+				z[i].clear();
+			}
+			z.clear();
+			for (size_t i = 0; i < k; i++)
+				z.push_back(std::vector<MP_INT>(w));
+			for (size_t i = 0; i < z.size(); i++)
+			{
+				for (size_t j = 0; j < z[i].size(); j++)
+					mpz_init_set_ui(&z[i][j], 0UL);
+			}
 		}
 	}
 }
@@ -150,7 +173,7 @@ bool TMCG_Card::import
 				throw false;
 		}
 		
-		// resize this
+		// resize this object
 		resize(k, w);
 		
 		// card data
@@ -186,7 +209,9 @@ TMCG_Card::~TMCG_Card
 	{
 		for (size_t w = 0; w < z[k].size(); w++)
 			mpz_clear(&z[k][w]);
+		z[k].clear();
 	}
+	z.clear();
 }
 
 std::ostream& operator <<

@@ -212,11 +212,16 @@ std::cerr << "sfoo = " << sfoo << " sbar = " << sbar << " sbaz = " << sbaz << st
 	sfoo -= 7UL;
 std::cerr << "sfoo = " << sfoo << " sbar = " << sbar << " sbaz = " << sbaz << std::endl;
 	assert((sfoo < sbar) && (sfoo == sbaz));
-
-	// TODO: check more operators
 	std::cout << " ::abs()" << std::endl;
 	sfoo.abs();
 	assert((sfoo > sbar));
+	sbar = sfoo;
+	std::cout << " ::mul2exp()" << std::endl;
+	sfoo.mul2exp(2UL);
+	assert(sfoo > sbar);
+	sfoo = 7UL;
+	std::cout << " ::get_ui()" << std::endl;
+	assert((sfoo.get_ui() == 7));
 	std::cout << " ::probab_prime()" << std::endl;
 	assert(sfoo.probab_prime());
 	sfoo += 1UL;
@@ -229,9 +234,6 @@ std::cerr << "sfoo = " << sfoo << " sbar = " << sbar << " sbaz = " << sbaz << st
 		else
 			assert(!sfoo.probab_prime());
 	}
-
-
-
 
 	// tmcg_mpz_*randomb, tmcg_mpz_*randomm
 	std::cout << "TMCG_Bigint()" << std::endl;

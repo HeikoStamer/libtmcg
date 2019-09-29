@@ -1120,7 +1120,7 @@ size_t SchindelhauerTMCG::TMCG_TypeOfCard
 		bool bit = false;
 		for (size_t k = 0; k < cs.r.size(); k++)
 		{
-			if (mpz_get_ui(&cs.b[k][w]) & 1L)
+			if (mpz_get_ui(&cs.b[k][w]) & 1UL)
 				bit = !bit;
 		}
 		if (bit)

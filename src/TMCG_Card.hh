@@ -45,7 +45,7 @@ struct TMCG_Card
 	    representation of the card type there is a column. The elements
 	    of the matrix are numbers from @f$\mathbb{Z}^{\circ}_{m_i}@f$
 	    where @f$m_i@f$ is the public modul of the @f$i@f$th player. */
-	std::vector< std::vector<MP_INT> >			z;
+	std::vector< std::vector<MP_INT> > z;
 	
 	/** This constructor initializes a card with a @f$1\times 1@f$-matrix.
 	    Later the function TMCG_Card::resize can be used to enlarge the
