@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2007, 2009, 2015--2018  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2005, 2007, 2009, 2015--2019  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -16,8 +16,9 @@
 #   along with LibTMCG; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-TESTS = t-bigint t-mpz t-rfc4880 t-aio t-vtmf t-vsshe t-vrhe t-eotp t-mpc t-key\
- t-poker t-poker-cutnchoose t-poker-rot t-votc t-poker-noninteractive\
+TESTS = t-bigint t-mpz t-rfc4880 t-aio t-key t-tmcg t-vtmf t-vsshe t-vrhe\
+ t-eotp t-mpc t-votc\
+ t-poker t-poker-cutnchoose t-poker-rot t-poker-noninteractive\
  t-poker-rot-noninteractive t-poker-aiou\
  t-seabp t-astc t-vss t-astc2 t-dkg
 
@@ -36,6 +37,7 @@ t_bigint_SOURCES = test_helper.c test_helper.h t-bigint.cc
 t_mpz_SOURCES = test_helper.c test_helper.h t-mpz.cc
 t_rfc4880_SOURCES = test_helper.c test_helper.h t-rfc4880.cc
 t_aio_SOURCES = test_helper.c test_helper.h t-aio.cc
+t_tmcg_SOURCES = pipestream.hh test_helper.c test_helper.h t-tmcg.cc
 t_vtmf_SOURCES = pipestream.hh test_helper.c test_helper.h t-vtmf.cc
 t_vsshe_SOURCES = pipestream.hh test_helper.c test_helper.h t-vsshe.cc
 t_vrhe_SOURCES = pipestream.hh test_helper.c test_helper.h t-vrhe.cc

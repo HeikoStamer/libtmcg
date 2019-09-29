@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-09-29] tests: added t-tmcg (basic checks for Schindelhauer's toolbox)
 * [2019-09-14] raised the requirement of libgcrypt version to >= 1.8.0, of
                libgpg-error version to >= 1.27, and of libgmp to >= 6.1.2 
 * [2019-09-07] RFC4880: changed prefered compression from UNCOMPRESSED to ZIP
