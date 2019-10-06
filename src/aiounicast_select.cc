@@ -880,7 +880,6 @@ bool aiounicast_select::Receive
 							delete [] tmp;
 							return false;
 						}
-						bad_auth[i_out] = false;
 						err = gcry_mac_verify(*mac_in[i_out], mac, maclen);
 						if (err)
 						{
@@ -892,6 +891,8 @@ bool aiounicast_select::Receive
 							delete [] tmp;
 							return false;
 						}
+						else
+							bad_auth[i_out] = false;
 						mpz_add_ui(mac_sqn_in[i_out], mac_sqn_in[i_out], 1UL);
 					}
 					// convert and decrypt the corresponding part of read buffer
