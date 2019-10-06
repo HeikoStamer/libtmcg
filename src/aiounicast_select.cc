@@ -99,7 +99,8 @@ aiounicast_select::aiounicast_select
 		if (key_in.size() != n_in)
 		{
 			aio_is_initialized = false;
-			std::cerr << "aiounicast_select: key_in.size() != n_in" << std::endl;
+			std::cerr << "aiounicast_select: key_in.size() != n_in" <<
+				std::endl;
 			throw std::invalid_argument("aiounicast_select: bad size of key_in");
 		}
 	}
@@ -187,7 +188,8 @@ aiounicast_select::aiounicast_select
 		if (key_in.size() != n_in)
 		{
 			aio_is_initialized = false;
-			std::cerr << "aiounicast_select: key_in.size() != n_in" << std::endl;
+			std::cerr << "aiounicast_select: key_in.size() != n_in" <<
+				std::endl;
 			throw std::invalid_argument("aiounicast_select: bad size of key_in");
 		}
 	}
@@ -924,7 +926,8 @@ bool aiounicast_select::Receive
 										return false;
 									}
 									memset(chunk, 0, blklen);
-									mpz_export(chunk, NULL, 1, 1, 1, 0, chunkval);
+									mpz_export(chunk, NULL, 1, 1, 1, 0,
+										chunkval);
 									for (size_t c = 0; c < blklen; c++)
 										ctr[c] ^= chunk[c]; 
 									gcry_error_t err =
