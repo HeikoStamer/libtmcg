@@ -615,7 +615,8 @@ bool aiounicast_select::Send
 		// write(2) -- ready for non-blocking write?
 		if (FD_ISSET(fd_out[i_in], &wfds))
 		{
-			ssize_t num = write(fd_out[i_in], buf + realnum, realsize - realnum);
+			ssize_t num = write(fd_out[i_in], buf + realnum,
+				realsize - realnum);
 			if (num < 0)
 			{
 				if ((errno == EAGAIN) || (errno == EWOULDBLOCK) ||
@@ -1113,7 +1114,7 @@ bool aiounicast_select::Receive
 									std::endl;
 							}
 							iv_flag_in[i_out] = true; // IV is set
-							num = buf_ptr[i_out] - blklen; // # of remaining bytes
+							num = buf_ptr[i_out] - blklen; // # remaining bytes
 							// remove IV from the read buffer
 							memmove(buf_in[i_out], buf_in[i_out] + blklen, num);
 							buf_ptr[i_out] = num;

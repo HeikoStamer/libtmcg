@@ -53,9 +53,10 @@ class aiounicast_nonblock : public aiounicast
 		std::vector<gcry_mac_hd_t*>        mac_in, mac_out;
 		std::vector<mpz_ptr>               mac_sqn_in, mac_sqn_out;
 		std::vector<gcry_cipher_hd_t*>     enc_in, enc_out;
-		std::vector<bool>                  bad_auth;
 
 	public:
+		std::vector<bool>                  bad_auth;
+
 		aiounicast_nonblock
 			(const size_t n_in,
 			 const size_t j_in,
