@@ -826,14 +826,6 @@ bool aiounicast_select::Receive
 						memcpy(tmp, buf_in[i_out], newline_ptr);
 					if (maclen > 0)
 						memcpy(mac, buf_in[i_out] + tmplen, maclen);
-					// adjust buffer (copy remaining characters)
-					unsigned char *wptr = buf_in[i_out] + tmplen + maclen;
-					size_t wnum = buf_ptr[i_out] - newline_ptr - 1 - maclen;
-					if (wnum > 0)
-						memmove(buf_in[i_out], wptr, wnum);
-					else
-						buf_flag[i_out] = false;
-					buf_ptr[i_out] = wnum;
 					// reset, calculate, and check the MAC
 					if (aio_is_authenticated)
 					{
@@ -895,6 +887,14 @@ bool aiounicast_select::Receive
 							bad_auth[i_out] = false;
 						mpz_add_ui(mac_sqn_in[i_out], mac_sqn_in[i_out], 1UL);
 					}
+					// adjust buffer (copy remaining characters)
+					unsigned char *wptr = buf_in[i_out] + tmplen + maclen;
+					size_t wnum = buf_ptr[i_out] - newline_ptr - 1 - maclen;
+					if (wnum > 0)
+						memmove(buf_in[i_out], wptr, wnum);
+					else
+						buf_flag[i_out] = false;
+					buf_ptr[i_out] = wnum;
 					// convert and decrypt the corresponding part of read buffer
 					if (aio_is_encrypted)
 					{
