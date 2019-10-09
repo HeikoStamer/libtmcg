@@ -877,8 +877,9 @@ bool aiounicast_select::Receive
 						{
 							std::cerr << "aiounicast_select:" <<
 								" gcry_mac_verify() failed for " << j <<
-								" in stream from " << i_out << std::endl <<
-								gcry_strerror(err) << std::endl;
+								" in stream from " << i_out <<
+								" (sqn=" << mac_sqn_in[i_out] << ")" <<
+								std::endl << gcry_strerror(err) << std::endl;
 							bad_auth[i_out] = true;
 							delete [] tmp;
 							return false;
