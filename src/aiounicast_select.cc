@@ -891,8 +891,11 @@ bool aiounicast_select::Receive
 								discard = true;
 						}
 						else
+						{
 							bad_auth[i_out] = false;
-						mpz_add_ui(mac_sqn_in[i_out], mac_sqn_in[i_out], 1UL);
+							mpz_add_ui(mac_sqn_in[i_out],
+								mac_sqn_in[i_out], 1UL);
+						}
 					}
 					// adjust buffer (copy remaining characters)
 					unsigned char *wptr = buf_in[i_out] + tmplen + maclen;
