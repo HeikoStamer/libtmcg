@@ -589,6 +589,7 @@ bool aiounicast_nonblock::Receive
 						memcpy(tmp, buf_in[i_out], newline_ptr);
 					if (maclen > 0)
 						memcpy(mac, buf_in[i_out] + tmplen, maclen);
+					bool discard = false;
 					// calculate, check, and reset MAC
 					if (aio_is_authenticated)
 					{
@@ -640,11 +641,17 @@ bool aiounicast_nonblock::Receive
 						{
 							std::cerr << "aiounicast_nonblock:" <<
 								" gcry_mac_verify() failed for " << j <<
-								" in stream from " << i_out << std::endl <<
-								gcry_strerror(err) << std::endl;
+								" in stream from " << i_out <<
+								" (sqn=" << mac_sqn_in[i_out] << ")" <<
+								std::endl << gcry_strerror(err) << std::endl;
 							bad_auth[i_out] = true;
-							delete [] tmp;
-							return false;
+							if (mpz_cmp_ui(mac_sqn_in[i_out], 1UL))
+							{
+								delete [] tmp;
+								return false;
+							}
+							else
+								discard = true;
 						}
 						else
 							bad_auth[i_out] = false;
@@ -658,6 +665,11 @@ bool aiounicast_nonblock::Receive
 					else
 						buf_flag[i_out] = false;
 					buf_ptr[i_out] = wnum;
+					if (discard)
+					{
+						delete [] tmp;
+						return false;
+					}
 					// convert and decrypt the corresponding part of read buffer
 					if (aio_is_encrypted)
 					{
@@ -887,11 +899,7 @@ void aiounicast_nonblock::Reset
 	if (aio_is_authenticated)
 	{
 		if (input)
-		{
 			mpz_set_ui(mac_sqn_in[i_in], 1UL); // initial sequence number
-			buf_ptr[i_in] = 0; // flush internal buffer
-			buf_flag[i_in] = false;
-		}
 		else
 			mpz_set_ui(mac_sqn_out[i_in], 1UL); // initial sequence number
 	}
