@@ -887,7 +887,11 @@ void aiounicast_nonblock::Reset
 	if (aio_is_authenticated)
 	{
 		if (input)
+		{
 			mpz_set_ui(mac_sqn_in[i_in], 1UL); // initial sequence number
+			buf_ptr[i_in] = 0; // flush internal buffer
+			buf_flag[i_in] = false;
+		}
 		else
 			mpz_set_ui(mac_sqn_out[i_in], 1UL); // initial sequence number
 	}
