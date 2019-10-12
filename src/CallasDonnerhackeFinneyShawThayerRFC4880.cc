@@ -390,30 +390,31 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 	 const int verbose)
 {
 	time_t current = time(NULL);
-	time_t fmax = 60 * 60 * 25; // deviation threshold: 25 hours
 	time_t vmax = creationtime + expirationtime;
 	if (expirationtime && (current > vmax))
 	{
 		if (verbose)
-		{
-			std::cerr << "WARNING: signature has been expired" <<
-				std::endl;
-		}
+			std::cerr << "ERROR: signature has been expired" << std::endl;
 		expired = true;
 		return false;
 	}
 	if (creationtime < keycreationtime)
 	{
 		if (verbose)
-			std::cerr << "WARNING: signature is " <<
+		{
+			std::cerr << "ERROR: signature is " <<
 				"older than corresponding key" << std::endl;
+		}
 		return false;
 	}
+	time_t fmax = 60 * 60 * 25; // deviation threshold: 25 hours
 	if (creationtime > (current + fmax))
 	{
 		if (verbose)
-			std::cerr << "WARNING: creation time of " <<
+		{
+			std::cerr << "ERROR: creation time of " <<
 				"signature is in far future" << std::endl;
+		}
 		return false;
 	}
 	if ((hashalgo != TMCG_OPENPGP_HASHALGO_SHA256) &&
@@ -424,11 +425,10 @@ bool TMCG_OpenPGP_Signature::CheckValidity
 	{
 		if (verbose)
 		{
-			std::cerr << "WARNING: insecure hash algorithm " << 
+			std::cerr << "ERROR: insecure hash algorithm " << 
 				(int)hashalgo << " used for signature" << std::endl;
 		}
-		// FIXME: turn this warning into an error, if old algorithms are gone
-		// return false;
+		return false;
 	}
 	return true;
 }
@@ -1439,7 +1439,7 @@ bool TMCG_OpenPGP_UserID::Check
 		if (verbose > 2)
 			revsigs[j]->PrintInfo();
 		if (!revsigs[j]->CheckValidity(primary->creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (revsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the revocation signature cryptographically
@@ -1469,7 +1469,7 @@ bool TMCG_OpenPGP_UserID::Check
 		if (verbose > 2)
 			selfsigs[j]->PrintInfo();
 		if (!selfsigs[j]->CheckValidity(primary->creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (selfsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the self-signature cryptographically
@@ -1514,7 +1514,7 @@ size_t TMCG_OpenPGP_UserID::AccumulateAttestations
 		if (verbose > 2)
 			attestsigs[j]->PrintInfo();
 		if (!attestsigs[j]->CheckValidity(primary->creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		// check the self-signature cryptographically
 		if (attestsigs[j]->Verify(primary->key, primary->pub_hashing,
 		                        userid, verbose))
@@ -1671,7 +1671,7 @@ bool TMCG_OpenPGP_UserAttribute::Check
 		if (verbose > 2)
 			revsigs[j]->PrintInfo();
 		if (!revsigs[j]->CheckValidity(primary->creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (revsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the revocation signature cryptographically
@@ -1701,7 +1701,7 @@ bool TMCG_OpenPGP_UserAttribute::Check
 		if (verbose > 2)
 			selfsigs[j]->PrintInfo();
 		if (!selfsigs[j]->CheckValidity(primary->creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (selfsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the self-signature cryptographically
@@ -1746,7 +1746,7 @@ size_t TMCG_OpenPGP_UserAttribute::AccumulateAttestations
 		if (verbose > 2)
 			attestsigs[j]->PrintInfo();
 		if (!attestsigs[j]->CheckValidity(primary->creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		// check the self-signature cryptographically
 		if (attestsigs[j]->Verify(primary->key, primary->pub_hashing,
 		                        userattribute, verbose))
@@ -2585,7 +2585,6 @@ bool TMCG_OpenPGP_Subkey::CheckValidity
 	(const int verbose)
 {
 	time_t current = time(NULL);
-	time_t fmax = 60 * 60 * 25; // deviation time: 25 hours
 	time_t kmax = creationtime + expirationtime;
 	if (expirationtime && (current > kmax))
 	{
@@ -2594,6 +2593,7 @@ bool TMCG_OpenPGP_Subkey::CheckValidity
 		expired = true;
 		return false;
 	}
+	time_t fmax = 60 * 60 * 25; // deviation time: 25 hours
 	if (creationtime > (current + fmax))
 	{
 		if (verbose)
@@ -2732,9 +2732,9 @@ bool TMCG_OpenPGP_Subkey::Check
 			certrevsigs[j]->PrintInfo();
 		if (!certrevsigs[j]->CheckValidity(primary->creationtime,
 		    verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (!certrevsigs[j]->CheckValidity(creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (certrevsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the revocation signature cryptographically
@@ -2804,9 +2804,9 @@ bool TMCG_OpenPGP_Subkey::Check
 			selfsigs[j]->PrintInfo();
 		if (!selfsigs[j]->CheckValidity(primary->creationtime,
 		    verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (!selfsigs[j]->CheckValidity(creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (selfsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the self-signature cryptographically
@@ -2865,9 +2865,9 @@ bool TMCG_OpenPGP_Subkey::Check
 		if (verbose > 2)
 			bindsigs[j]->PrintInfo();
 		if (!bindsigs[j]->CheckValidity(primary->creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (!bindsigs[j]->CheckValidity(creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (bindsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the binding signature cryptographically
@@ -2909,9 +2909,9 @@ bool TMCG_OpenPGP_Subkey::Check
 		if (verbose > 2)
 			keyrevsigs[j]->PrintInfo();
 		if (!keyrevsigs[j]->CheckValidity(primary->creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (!keyrevsigs[j]->CheckValidity(creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (keyrevsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the revocation signature cryptographically
@@ -2967,9 +2967,9 @@ bool TMCG_OpenPGP_Subkey::Check
 		if (verbose > 2)
 			pbindsigs[j]->PrintInfo();
 		if (!pbindsigs[j]->CheckValidity(primary->creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (!pbindsigs[j]->CheckValidity(creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (pbindsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the binding signature cryptographically
@@ -4295,7 +4295,6 @@ bool TMCG_OpenPGP_Pubkey::CheckValidity
 	(const int verbose)
 {
 	time_t current = time(NULL);
-	time_t fmax = 60 * 60 * 25; // deviation time: 25 hours
 	time_t kmax = creationtime + expirationtime;
 	if (expirationtime && (current > kmax))
 	{
@@ -4304,6 +4303,7 @@ bool TMCG_OpenPGP_Pubkey::CheckValidity
 		expired = true;
 		return false;
 	}
+	time_t fmax = 60 * 60 * 25; // deviation time: 25 hours
 	if (creationtime > (current + fmax))
 	{
 		if (verbose)
@@ -4439,7 +4439,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		if (verbose > 2)
 			certrevsigs[j]->PrintInfo();
 		if (!certrevsigs[j]->CheckValidity(creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (certrevsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the revocation signature cryptographically
@@ -4505,7 +4505,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		if (verbose > 2)
 			selfsigs[j]->PrintInfo();
 		if (!selfsigs[j]->CheckValidity(creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (selfsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the self-signature cryptographically
@@ -4657,7 +4657,7 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		if (verbose > 2)
 			keyrevsigs[j]->PrintInfo();
 		if (!keyrevsigs[j]->CheckValidity(creationtime, verbose))
-			continue; // ignore an expired signature
+			continue; // ignore an expired or insecure signature
 		if (keyrevsigs[j]->revoked)
 			continue; // ignore a revoked signature
 		// check the revocation signature cryptographically
