@@ -13554,7 +13554,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAES256
 			chksum += buf[i];
 		}
 		chksum %= 65536;
-		size_t key_chksum = (seskey[33] << 8) + seskey[34];
+		size_t key_chksum = (seskey[1+ks] << 8) + seskey[2+ks];
 		if (chksum != key_chksum)
 		{
 			gcry_free(buf);
@@ -13758,7 +13758,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 			chksum += buf[i];
 		}
 		chksum %= 65536;
-		size_t key_chksum = (seskey[33] << 8) + seskey[34];
+		size_t key_chksum = (seskey[1+ks] << 8) + seskey[2+ks];
 		if (chksum != key_chksum)
 		{
 			gcry_free(buf);
@@ -14374,7 +14374,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecrypt
 			chksum += buf[i];
 		}
 		chksum %= 65536;
-		size_t key_chksum = (seskey[33] << 8) + seskey[34];
+		size_t key_chksum = (seskey[1+ks] << 8) + seskey[2+ks];
 		if (chksum != key_chksum)
 		{
 			gcry_free(buf);
@@ -14576,7 +14576,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 			chksum += buf[i];
 		}
 		chksum %= 65536;
-		size_t key_chksum = (seskey[33] << 8) + seskey[34];
+		size_t key_chksum = (seskey[1+ks] << 8) + seskey[2+ks];
 		if (chksum != key_chksum)
 		{
 			gcry_free(buf);

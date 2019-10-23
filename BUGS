@@ -9,6 +9,8 @@ in the sources of this package and additionally can be obtained from Internet
 
 All: RFC4880-module: LibTMCG >= 1.4.0 is not compatible with previous versions
                      (e.g. changed length-encoding in signature subpackets)
+All: RFC4880-module: SymmetricDecrypt[AEAD]() fails with GPG_ERR_CHECKSUM, if a
+                     non-256-bit session key with appended checksum is supplied
 All: RFC4880-module: EdDSA is only supported by a recent libgcrypt (>= 1.7.0)
 OpenBSD: some test programs may fail due to restrictive rlimits (kern.maxfiles)
 All: t-seabp, t-dkg, t-astc2 may fail due to timeouts (missing synchronization)
