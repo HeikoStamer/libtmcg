@@ -746,6 +746,77 @@ int main
 		assert((ring->Check(0) == 2));
 		ring->Reduce();
 		assert((ring->Size() == 2));
+		std::string kid2, kid3, fpr2, fpr3;
+		tmcg_openpgp_octets_t fingerprint;		
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			KeyidConvert(keyid2, kid2);
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			FingerprintCompute(pub_hashing2, fingerprint);
+		CallasDonnerhackeFinneyShawThayerRFC4880::
+			FingerprintConvertPlain(fingerprint, fpr2);
+		kid3 = kid2, fpr3 = fpr2; // convert to lower-case
+		for (size_t i = 0; i < kid3.length(); i++)
+		{
+			switch (kid3[i])
+			{
+				case 'A':
+					kid3[i] = 'a';
+					break;
+				case 'B':
+					kid3[i] = 'b';
+					break;
+				case 'C':
+					kid3[i] = 'c';
+					break;
+				case 'D':
+					kid3[i] = 'd';
+					break;
+				case 'E':
+					kid3[i] = 'e';
+					break;
+				case 'F':
+					kid3[i] = 'f';
+					break;
+			}
+		}
+		for (size_t i = 0; i < fpr3.length(); i++)
+		{
+			switch (fpr3[i])
+			{
+				case 'A':
+					fpr3[i] = 'a';
+					break;
+				case 'B':
+					fpr3[i] = 'b';
+					break;
+				case 'C':
+					fpr3[i] = 'c';
+					break;
+				case 'D':
+					fpr3[i] = 'd';
+					break;
+				case 'E':
+					fpr3[i] = 'e';
+					break;
+				case 'F':
+					fpr3[i] = 'f';
+					break;
+			}
+		}
+		std::cout << "!Find(" << kid2 << ")" << std::endl;
+		assert((ring->Find(kid2) == NULL));
+		std::cout << "!Find(" << kid3 << ")" << std::endl;
+		assert((ring->Find(kid3) == NULL));
+		std::cout << "Find(" << fpr2 << ")" << std::endl;
+		assert((ring->Find(fpr2) != NULL));
+		std::cout << "Find(" << fpr3 << ")" << std::endl;
+		assert((ring->Find(fpr3) != NULL));
+		std::cout << "FindByKeyid(" << kid2 << ")" << std::endl;
+		assert((ring->FindByKeyid(kid2) != NULL));
+		std::cout << "FindByKeyid(" << kid3 << ")" << std::endl;
+		assert((ring->FindByKeyid(kid3) != NULL));
+		std::cout << "FindByKeyid(" << fpr2 << ")" << std::endl;		
+		assert((ring->FindByKeyid(fpr2) != NULL));
 		delete ring;
 		gcry_mpi_release(p);
 		gcry_mpi_release(q);

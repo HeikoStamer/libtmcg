@@ -707,6 +707,7 @@ class TMCG_OpenPGP_UserID
 			else
 				return c;
 		};
+
 	public:
 		bool												valid;
 		bool												revoked;
@@ -718,7 +719,7 @@ class TMCG_OpenPGP_UserID
 		std::vector<TMCG_OpenPGP_Signature*>				certsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				attestsigs;
 		tmcg_openpgp_multiple_octets_t						attestations;
-		std::vector<tmcg_openpgp_hashalgo_t>					attestations_hashalgo;
+		std::vector<tmcg_openpgp_hashalgo_t>				attestations_hashalgo;
 
 		TMCG_OpenPGP_UserID
 			(const std::string								&userid_in,
@@ -748,8 +749,7 @@ class TMCG_OpenPGP_UserAttribute
 		std::vector<TMCG_OpenPGP_Signature*>				certsigs;
 		std::vector<TMCG_OpenPGP_Signature*>				attestsigs;
 		tmcg_openpgp_multiple_octets_t						attestations;
-		std::vector<tmcg_openpgp_hashalgo_t>					attestations_hashalgo;
-
+		std::vector<tmcg_openpgp_hashalgo_t>				attestations_hashalgo;
 
 		TMCG_OpenPGP_UserAttribute
 			(const tmcg_openpgp_octets_t					&userattribute_in,
@@ -1099,7 +1099,7 @@ class TMCG_OpenPGP_Pubkey
 			();
 		void Export
 			(tmcg_openpgp_octets_t							&out,
-			 const tmcg_openpgp_export_flags_t					flags = TMCG_OPENPGP_EXPORT_ALL) const;
+			 const tmcg_openpgp_export_flags_t				flags = TMCG_OPENPGP_EXPORT_ALL) const;
 		~TMCG_OpenPGP_Pubkey
 			();
 };
@@ -1203,7 +1203,7 @@ class TMCG_OpenPGP_Prvkey
 			 const int										verbose);
 		void Export
 			(tmcg_openpgp_octets_t							&out,
-			 const tmcg_openpgp_export_flags_t					flags = TMCG_OPENPGP_EXPORT_ALL) const;
+			 const tmcg_openpgp_export_flags_t				flags = TMCG_OPENPGP_EXPORT_ALL) const;
 		~TMCG_OpenPGP_Prvkey
 			();
 };
@@ -1213,6 +1213,25 @@ class TMCG_OpenPGP_Keyring
 	private:
 		std::map<std::string, TMCG_OpenPGP_Pubkey*>			keys;
 		std::map<std::string, TMCG_OpenPGP_Pubkey*>			keys_by_keyid;
+
+		static char UpperCase
+			(const char c)
+		{
+			if (c == 'a')
+				return 'A';
+			else if (c == 'b')
+				return 'B';
+			else if (c == 'c')
+				return 'C';
+			else if (c == 'd')
+				return 'D';
+			else if (c == 'e')
+				return 'E';
+			else if (c == 'f')
+				return 'F';
+			else
+				return c;
+		};
 
 	public:
 		TMCG_OpenPGP_Keyring
@@ -1541,7 +1560,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 std::string									&out);
 		static void ArmorEncode
 			(const tmcg_openpgp_armor_t						type,
-			 const std::string						&comment,
+			 const std::string								&comment,
 			 const tmcg_openpgp_octets_t					&in,
 			 std::string									&out,
 			 const bool										version = false);

@@ -5782,10 +5782,16 @@ bool TMCG_OpenPGP_Keyring::Add
 TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::Find
 	(const std::string &fingerprint) const
 {
-	if (keys.count(fingerprint))
+	// convert lower-case letters to upper-case
+	std::string fpr;
+	fpr.resize(fingerprint.size());
+	std::transform(fingerprint.begin(), fingerprint.end(), fpr.begin(),
+		UpperCase);
+	// key lookup
+	if (keys.count(fpr))
 	{
 		std::map<std::string, TMCG_OpenPGP_Pubkey*>::const_iterator
-			it = keys.find(fingerprint);
+			it = keys.find(fpr);
 		return it->second;
 	}
 	else
@@ -5795,10 +5801,15 @@ TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::Find
 TMCG_OpenPGP_Pubkey* TMCG_OpenPGP_Keyring::FindByKeyid
 	(const std::string &keyid) const
 {
-	if (keys_by_keyid.count(keyid))
+	// convert lower-case letters to upper-case
+	std::string kid;
+	kid.resize(keyid.size());
+	std::transform(keyid.begin(), keyid.end(), kid.begin(), UpperCase);
+	// key lookup
+	if (keys_by_keyid.count(kid))
 	{
 		std::map<std::string, TMCG_OpenPGP_Pubkey*>::const_iterator
-			it = keys_by_keyid.find(keyid);
+			it = keys_by_keyid.find(kid);
 		return it->second;
 	}
 	else
