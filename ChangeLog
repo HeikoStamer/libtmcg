@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-10-31] RFC4880: fixed bug #57135 (EdDSA sig values with leading zeros)
 * [2019-10-24] RFC4880: fixed bug #57097 (make the key lookup case-insensitive)
 * [2019-10-23] RFC4880: fixed bug #57108 (bad checksum for non-256-bit keys)
 * [2019-10-12] RFC4880: turn warning into error for insecure hash algorithms on

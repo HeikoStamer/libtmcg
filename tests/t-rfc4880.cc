@@ -1151,6 +1151,80 @@ int main
 		}
 		delete davey;
 		delete ring;
+
+		// test EdDSA public key and a signature with leading zeros 
+		std::string alice_armored =
+"-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n"
+"Comment: Alice's OpenPGP certificate\r\n"
+"Comment: https://tools.ietf.org/html/draft-bre-openpgp-samples\r\n\r\n"
+"mDMEXEcE6RYJKwYBBAHaRw8BAQdArjWwk3FAqyiFbFBKT4TzXcVBqPTB3gmzlC/U\r\n"
+"b7O1u120JkFsaWNlIExvdmVsYWNlIDxhbGljZUBvcGVucGdwLmV4YW1wbGU+iJAE\r\n"
+"ExYIADgCGwMFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AWIQTrhbtfozp14V6UTmPy\r\n"
+"MVUMT0fjjgUCXaWfOgAKCRDyMVUMT0fjjukrAPoDnHBSogOmsHOsd9qGsiZpgRnO\r\n"
+"dypvbm+QtXZqth9rvwD9HcDC0tC+PHAsO7OTh1S1TC9RiJsvawAfCPaQZoed8gK4\r\n"
+"OARcRwTpEgorBgEEAZdVAQUBAQdAQv8GIa2rSTzgqbXCpDDYMiKRVitCsy203x3s\r\n"
+"E9+eviIDAQgHiHgEGBYIACAWIQTrhbtfozp14V6UTmPyMVUMT0fjjgUCXEcE6QIb\r\n"
+"DAAKCRDyMVUMT0fjjlnQAQDFHUs6TIcxrNTtEZFjUFm1M0PJ1Dng/cDW4xN80fsn\r\n"
+"0QEA22Kr7VkCjeAEC08VSTeV+QFsmz55/lntWkwYWhmvOgE=\r\n"
+"=iIGO\r\n"
+"-----END PGP PUBLIC KEY BLOCK-----\r\n";
+		std::string alice_sig =
+"-----BEGIN PGP SIGNATURE-----\r\n\r\n"
+"wnQEABYKACcFAl23GYsJEPIxVQxPR+OOFiEE64W7X6M6deFelE5j8jFVDE9H444A\r\n"
+"ANOWAPsHrQTUDtDyP3gr2KsdhX/iapwrO3HSLUD7X41YUasdygD4r6QGQxJXKfbR\r\n"
+"lpZFZ4otf72qcIzc82oZxaApG9L6Dg==\r\n"
+"=WUuG\r\n"
+"-----END PGP SIGNATURE-----\r\n";
+		TMCG_OpenPGP_Pubkey *alice = NULL;
+		ring = new TMCG_OpenPGP_Keyring();
+		std::cout << "PublicKeyBlockParse(alice_armored, 3, alice)" <<
+			std::endl;
+		parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
+			PublicKeyBlockParse(alice_armored, 3, alice);
+		assert(parse_ok);
+		if (gcry_check_version("1.7.0"))
+		{
+			std::cout << "CheckSelfSignatures()" << std::endl;
+			parse_ok = alice->CheckSelfSignatures(ring, 3);
+			assert(parse_ok);
+			std::cout << "!alice->Weak()" << std::endl;
+			check_ok = alice->Weak(3);
+			assert(!check_ok);
+			for (size_t i = 0; i < alice->userids.size(); i++)
+			{
+				std::string uid = alice->userids[i]->userid_sanitized;
+				std::cout << "userid = \"" << uid << "\" is ";
+				if (alice->userids[i]->valid)
+					std::cout << "valid" << std::endl;
+				else
+					std::cout << "invalid" << std::endl;
+			}
+			TMCG_OpenPGP_Signature *alice_signature = NULL;
+			std::cout << "SignatureParse()" << std::endl;
+			parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
+				SignatureParse(alice_sig, 3, alice_signature);
+			assert(parse_ok);
+			assert(alice_signature->Good());
+			std::cout << "PrintInfo()" << std::endl;
+			alice_signature->PrintInfo();
+			std::cout << "CheckValidity()" << std::endl;
+			parse_ok = alice_signature->CheckValidity(alice->creationtime, 3);
+			assert(parse_ok);
+			std::string alice_filename = "t-rfc4880.tmp";
+			std::ofstream ofs(alice_filename.c_str(), std::ofstream::out);
+			assert(ofs.good());
+			ofs << "huhu" << std::endl;
+			assert(ofs.good());
+			ofs.close();
+			std::cout << "Verify(..., \"" << alice_filename << "\", ...)" <<
+				std::endl;
+			parse_ok = alice_signature->Verify(alice->key, alice_filename, 3);
+			assert(parse_ok);
+			delete alice_signature;
+			remove(alice_filename.c_str());
+		}
+		delete alice;
+		delete ring;
 	
 		return 0;
 	}

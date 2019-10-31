@@ -15728,7 +15728,7 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyEdDSA
 	(const tmcg_openpgp_octets_t &in, const gcry_sexp_t key, 
 	 const gcry_mpi_t r, const gcry_mpi_t s)
 {
-	char buf[2048];
+	unsigned char buf[2048];
 	gcry_sexp_t sigdata, signature;
 	gcry_error_t ret;
 	size_t buflen = 0, erroff;
@@ -15739,8 +15739,61 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::AsymmetricVerifyEdDSA
 		"(data (flags eddsa) (hash-algo sha512) (value %b))", (int)buflen, buf);
 	if (ret)
 		return ret;
-	ret = gcry_sexp_build(&signature, &erroff,
-		"(sig-val (eddsa (r %M) (s %M)))", r, s);
+	size_t rlen = (gcry_mpi_get_nbits(r) + 7) / 8;
+	size_t slen = (gcry_mpi_get_nbits(s) + 7) / 8;
+	if ((rlen == 0) || (rlen > 32) || (slen == 0) || (slen > 32))
+		return gcry_error(GPG_ERR_BAD_MPI);
+	gcry_mpi_t rr = NULL, ss = NULL;
+	if (rlen < 32)
+	{
+		size_t rn = 0;
+		ret = gcry_mpi_print(GCRYMPI_FMT_USG, buf, sizeof(buf), &rn, r);
+		if (ret)
+			return ret;
+		if (rn >= 32)
+			return gcry_error(GPG_ERR_BAD_MPI);
+		size_t offset = 32 - rn;
+		memmove(buf + offset, buf, rn);
+		memset (buf, 0, offset);
+		rr = gcry_mpi_set_opaque_copy(NULL, buf, 256);
+	}
+	if (slen < 32)
+	{
+		size_t sn = 0;
+		ret = gcry_mpi_print(GCRYMPI_FMT_USG, buf, sizeof(buf), &sn, s);
+		if (ret)
+			return ret;
+		if (sn >= 32)
+			return gcry_error(GPG_ERR_BAD_MPI);
+		size_t offset = 32 - sn;
+		memmove(buf + offset, buf, sn);
+		memset (buf, 0, offset);
+		ss = gcry_mpi_set_opaque_copy(NULL, buf, 256);
+	}
+	if ((rr != NULL) && (ss != NULL))
+	{
+		ret = gcry_sexp_build(&signature, &erroff,
+			"(sig-val (eddsa (r %M) (s %M)))", rr, ss);
+		gcry_mpi_release(rr);
+		gcry_mpi_release(ss);
+	}
+	else if ((rr != NULL) && (ss == NULL))
+	{
+		ret = gcry_sexp_build(&signature, &erroff,
+			"(sig-val (eddsa (r %M) (s %M)))", rr, s);
+		gcry_mpi_release(rr);
+	}
+	else if ((rr == NULL) && (ss != NULL))
+	{
+		ret = gcry_sexp_build(&signature, &erroff,
+			"(sig-val (eddsa (r %M) (s %M)))", r, ss);
+		gcry_mpi_release(ss);
+	}
+	else
+	{
+		ret = gcry_sexp_build(&signature, &erroff,
+			"(sig-val (eddsa (r %M) (s %M)))", r, s);
+	}
 	if (ret)
 	{
 		gcry_sexp_release(sigdata);
