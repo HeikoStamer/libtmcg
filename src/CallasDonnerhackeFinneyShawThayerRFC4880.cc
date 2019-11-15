@@ -12228,7 +12228,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag10
 {
 	if (pkt.size() != 3)
 		return 0; // error: incorrect packet body
-	if ((pkt[0] != 0x50) || (pkt[1] != 0x47) || (pkt[3] != 0x50))
+	if ((pkt[0] != 0x50) || (pkt[1] != 0x47) || (pkt[2] != 0x50))
 		return 0; // error: bad marker
 	out.marker = true; 
 	return 10;
