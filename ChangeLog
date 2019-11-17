@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2019-11-17] RFC4880: guard against zero-allocation of tmcg_openpgp_byte_t
 * [2019-11-15] RFC4880: fixed check for bad marker in PacketDecodeTag10()
 * [2019-10-31] RFC4880: fixed bug #57135 (EdDSA sig values with leading zeros)
 * [2019-10-24] RFC4880: fixed bug #57097 (make the key lookup case-insensitive)
