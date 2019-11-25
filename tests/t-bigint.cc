@@ -442,6 +442,50 @@ std::cerr << "sfoo = " << sfoo << " sbar = " << sbar << " sbaz = " << sbaz << st
 	}
 #endif
 
+	// mpz_ssrandomm_cache_init, mpz_ssrandomm_cache, mpz_ssrandomm_cache_done
+	size_t cache_n = 5;
+	bar = 42UL;
+	std::cout << "TMCG_Bigint()" << std::endl;
+#ifdef TEST_SSRANDOM
+	std::cout << " ::ssrandomm_cache_init()" << std::endl;
+	foo.ssrandomm_cache_init(bar, cache_n);
+	std::cout << " ::ssrandomm_cache()" << std::endl;
+	for (size_t i = 0; i < cache_n; i++)
+	{
+		foo.ssrandomm_cache();
+		assert((foo < bar));
+		std::cout << "   " << foo << " (cached)" << std::endl;
+	}
+	assert((foo.ssrandomm_cache_avail == 0));
+	foo.ssrandomm_cache();
+	assert((foo < bar));
+	std::cout << "   " << foo << " (not cached)" << std::endl;
+	std::cout << " ::ssrandomm_cache_done()" << std::endl;
+	foo.ssrandomm_cache_done();
+	assert((foo.ssrandomm_cache_avail == 0));
+#endif
+	sbar = 42UL;
+	std::cout << "TMCG_Bigint(true)" << std::endl;
+#ifdef TEST_SSRANDOM
+	std::cout << " ::ssrandomm_cache_init()" << std::endl;
+	sfoo.ssrandomm_cache_init(bar, cache_n);
+	std::cout << " ::ssrandomm_cache()" << std::endl;
+	for (size_t i = 0; i < cache_n; i++)
+	{
+		sfoo.ssrandomm_cache();
+		assert((sfoo < sbar));
+		std::cout << "   " << sfoo << " (cached)" << std::endl;
+	}
+	assert((sfoo.ssrandomm_cache_avail == 0));
+	sfoo.ssrandomm_cache();
+	assert((sfoo < sbar));
+	std::cout << "   " << sfoo << " (not cached)" << std::endl;
+	std::cout << " ::ssrandomm_cache_done()" << std::endl;
+	sfoo.ssrandomm_cache_done();
+	assert((sfoo.ssrandomm_cache_avail == 0));
+#endif
+
+
 /*
 	mpz_t foo, bar, foo2, bar2, root, t1, t2;
 	mpz_t fpowm_table_1[TMCG_MAX_FPOWM_T], fpowm_table_2[TMCG_MAX_FPOWM_T];
@@ -450,29 +494,7 @@ std::cerr << "sfoo = " << sfoo << " sbar = " << sbar << " sbaz = " << sbaz << st
 	std::string s;
 	
 
-	// mpz_ssrandomm_cache_init, mpz_ssrandomm_cache, mpz_ssrandomm_cache_done
-	mpz_t cache[TMCG_MAX_SSRANDOMM_CACHE];
-	mpz_t cache_mod;
-	size_t cache_avail = 0, cache_n = 25;
-#ifdef TEST_SSRANDOM
-	std::cout << "tmcg_mpz_ssrandomm_cache_init()" << std::endl;
-	tmcg_mpz_ssrandomm_cache_init(cache, cache_mod, &cache_avail, cache_n, bar);
-	assert(cache_avail == cache_n);
-	std::cout << "tmcg_mpz_ssrandomm_cache()" << std::endl;
-	for (size_t i = 0; i < cache_n; i++)
-	{
-		tmcg_mpz_ssrandomm_cache(cache, cache_mod, &cache_avail, foo, bar);
-		assert(mpz_cmp(foo, bar) < 0);
-		std::cout << foo << " (cached)" << std::endl;
-	}
-	assert(!cache_avail);
-	tmcg_mpz_ssrandomm_cache(cache, cache_mod, &cache_avail, foo, bar);
-	assert(mpz_cmp(foo, bar) < 0);
-	std::cout << foo << " (not cached)" << std::endl;
-	std::cout << "tmcg_mpz_ssrandomm_cache_done()" << std::endl;
-	tmcg_mpz_ssrandomm_cache_done(cache, cache_mod, &cache_avail);
-	assert(!cache_avail);
-#endif
+
 	
 	// tmcg_mpz_sprime, tmcg_mpz_sprime2g, tmcg_mpz_sprime3mod4
 	std::cout << "tmcg_mpz_sprime(), tmcg_mpz_sprime2g()," <<

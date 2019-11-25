@@ -57,6 +57,13 @@ TMCG_Bigint::TMCG_Bigint
 		mpz_init_set(bigint, that.bigint);
 }
 
+TMCG_Bigint::TMCG_Bigint
+	(const mpz_t that):
+		secret(false), exportable(false)
+{
+	mpz_init_set(bigint, that);
+}
+
 TMCG_Bigint& TMCG_Bigint::operator =
 	(const TMCG_Bigint& that)
 {
@@ -705,7 +712,7 @@ void TMCG_Bigint::srandomm
 		{
 			do
 				gcry_mpi_randomize(secret_bigint, bits, GCRY_STRONG_RANDOM);
-			while (gcry_mpi_cmp(secret_bigint, mod.secret_bigint) >= 0);
+			while (gcry_mpi_cmp(secret_bigint, mod.secret_bigint) >= 0); // TODO: use constant-time compare strategy
 		}
 		else
 		{
@@ -736,7 +743,7 @@ void TMCG_Bigint::ssrandomm
 		{
 			do
 				gcry_mpi_randomize(secret_bigint, bits, GCRY_VERY_STRONG_RANDOM);
-			while (gcry_mpi_cmp(secret_bigint, mod.secret_bigint) >= 0);
+			while (gcry_mpi_cmp(secret_bigint, mod.secret_bigint) >= 0); // TODO: use constant-time compare strategy
 		}
 		else
 		{
@@ -755,6 +762,82 @@ void TMCG_Bigint::ssrandomm
 		else
 			tmcg_mpz_ssrandomm(bigint, mod.bigint); // FIXME: replace later
 	}
+}
+
+void TMCG_Bigint::ssrandomm_cache_init
+	(const TMCG_Bigint& mod, const size_t n)
+{
+	if (n == 0)
+		throw std::invalid_argument("TMCG_Bigint:: n is zero");
+	if (n > TMCG_MAX_SSRANDOMM_CACHE)
+		throw std::invalid_argument("TMCG_Bigint:: n is too large");
+	if (mod.secret)
+		throw std::invalid_argument("TMCG_Bigint::operation not supported");
+	else
+		mpz_init_set(ssrandomm_cache_mod, mod.bigint);
+	ssrandomm_cache_n = n;
+	for (size_t i = 0; i < ssrandomm_cache_n; i++)
+	{
+		if (secret)
+		{
+			ssrandomm_cache_secret_cache[i] = gcry_mpi_snew(8);
+			gcry_mpi_t m = gcry_mpi_new(mod.size(2));
+			tmcg_mpz_get_gcry_mpi(m, mod.bigint);
+			do
+			{
+				gcry_mpi_randomize(ssrandomm_cache_secret_cache[i], mod.size(2),
+					GCRY_VERY_STRONG_RANDOM);
+			}
+			while (gcry_mpi_cmp(ssrandomm_cache_secret_cache[i], m) >= 0);
+			gcry_mpi_release(m);
+		}
+		else
+		{
+			mpz_init(ssrandomm_cache_cache[i]);
+			tmcg_mpz_ssrandomm(ssrandomm_cache_cache[i], mod.bigint); // FIXME: replace later
+		}
+	}
+	ssrandomm_cache_avail = n;
+}
+
+void TMCG_Bigint::ssrandomm_cache
+	()
+{
+	if (ssrandomm_cache_avail > 0)
+	{
+		ssrandomm_cache_avail--; // next cached random value
+		if (secret)
+		{
+			gcry_mpi_set(secret_bigint,
+				ssrandomm_cache_secret_cache[ssrandomm_cache_avail]);
+		}
+		else
+			mpz_set(bigint, ssrandomm_cache_cache[ssrandomm_cache_avail]);
+	}
+	else
+	{
+		TMCG_Bigint m(ssrandomm_cache_mod);
+		ssrandomm(m);
+	}
+}
+
+void TMCG_Bigint::ssrandomm_cache_done
+	()
+{
+	mpz_clear(ssrandomm_cache_mod);
+	for (size_t i = 0; i < ssrandomm_cache_n; i++)
+	{
+		if (secret)
+		{
+			gcry_mpi_release(ssrandomm_cache_secret_cache[i]);
+		}
+		else
+		{
+			mpz_clear(ssrandomm_cache_cache[i]);
+		}
+	}
+	ssrandomm_cache_n = 0;
+	ssrandomm_cache_avail = 0;
 }
 
 TMCG_Bigint::~TMCG_Bigint

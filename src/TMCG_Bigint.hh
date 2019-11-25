@@ -36,12 +36,19 @@ struct TMCG_Bigint
 	const bool exportable;
 	mpz_t bigint;
 	gcry_mpi_t secret_bigint;
+	size_t ssrandomm_cache_n;
+	mpz_t ssrandomm_cache_cache[TMCG_MAX_SSRANDOMM_CACHE];
+	gcry_mpi_t ssrandomm_cache_secret_cache[TMCG_MAX_SSRANDOMM_CACHE];
+	mpz_t ssrandomm_cache_mod;
+	size_t ssrandomm_cache_avail;
 
 	// Constructors
 	TMCG_Bigint
 		(const bool secret_in = false, const bool exportable_in = false);
 	TMCG_Bigint
 		(const TMCG_Bigint& that);
+	TMCG_Bigint
+		(const mpz_t that);
 
 	// Arithmetic operators
 	TMCG_Bigint& operator =
@@ -141,6 +148,12 @@ struct TMCG_Bigint
 		(const TMCG_Bigint& mod);
 	void ssrandomm
 		(const TMCG_Bigint& mod);
+	void ssrandomm_cache_init
+		(const TMCG_Bigint& mod, const size_t n);
+	void ssrandomm_cache
+		();
+	void ssrandomm_cache_done
+		();
 
 	// Destructors
 	~TMCG_Bigint
