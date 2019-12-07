@@ -7115,31 +7115,34 @@ tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	tmcg_openpgp_armor_t type = TMCG_OPENPGP_ARMOR_UNKNOWN;
 	size_t spos = 0, epos = 0, rpos = 0, rlen = 4, cpos = 0, clen = 3;
 
-	spos = in.find("-----BEGIN PGP MESSAGE-----");
-	epos = in.find("-----END PGP MESSAGE-----");
-	if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
-		type = TMCG_OPENPGP_ARMOR_MESSAGE;
-	if (!type)
+	if (type == TMCG_OPENPGP_ARMOR_UNKNOWN)
+	{
+		spos = in.find("-----BEGIN PGP MESSAGE-----");
+		epos = in.find("-----END PGP MESSAGE-----");
+		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
+			type = TMCG_OPENPGP_ARMOR_MESSAGE;
+	}
+	if (type == TMCG_OPENPGP_ARMOR_UNKNOWN)
 	{
 		spos = in.find("-----BEGIN PGP SIGNATURE-----");
 		epos = in.find("-----END PGP SIGNATURE-----");
-	}		
-	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
-		type = TMCG_OPENPGP_ARMOR_SIGNATURE;
-	if (!type)
+		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
+			type = TMCG_OPENPGP_ARMOR_SIGNATURE;
+	}
+	if (type == TMCG_OPENPGP_ARMOR_UNKNOWN)
 	{
 		spos = in.find("-----BEGIN PGP PRIVATE KEY BLOCK-----");
 		epos = in.find("-----END PGP PRIVATE KEY BLOCK-----");
-	}		
-	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
-		type = TMCG_OPENPGP_ARMOR_PRIVATE_KEY_BLOCK;
-	if (!type)
+		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
+			type = TMCG_OPENPGP_ARMOR_PRIVATE_KEY_BLOCK;
+	}
+	if (type == TMCG_OPENPGP_ARMOR_UNKNOWN)
 	{
 		spos = in.find("-----BEGIN PGP PUBLIC KEY BLOCK-----");
 		epos = in.find("-----END PGP PUBLIC KEY BLOCK-----");
+		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
+			type = TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK;
 	}
-	if (!type && (spos != in.npos) && (epos != in.npos) && (epos > spos))
-		type = TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK;
 	in.erase(std::remove(in.begin(), in.end(), ' '), in.end());
 	in.erase(std::remove(in.begin(), in.end(), '\t'), in.end());
 	switch (type)
@@ -7181,7 +7184,10 @@ tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	    ((cpos + clen + 4) < epos))
 	{
 		if (in.find("-----", spos + 33) != epos)
+		{
+			std::cerr << "ERROR: nested armor in ArmorDecode()" << std::endl;
 			return TMCG_OPENPGP_ARMOR_UNKNOWN; // nested armor block
+		}
 		tmcg_openpgp_octets_t decoded_data;
 		std::string chksum = "";
 		std::string data = in.substr(rpos + rlen, cpos - rpos - rlen);
