@@ -1742,7 +1742,8 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const time_t									sigtime,
 			 const time_t									keyexptime,
 			 const tmcg_openpgp_octets_t					&flags,
-			 const tmcg_openpgp_octets_t					&issuer, 
+			 const tmcg_openpgp_octets_t					&issuer,
+			 const bool										rfc4880bis,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSigPrepareDesignatedRevoker
 			(const tmcg_openpgp_hashalgo_t					hashalgo, 
@@ -1760,6 +1761,7 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			 const tmcg_openpgp_octets_t					&issuer,
 			 const tmcg_openpgp_pkalgo_t					pkalgo2,
 			 const tmcg_openpgp_octets_t					&revoker,
+			 const bool										rfc4880bis,
 			 tmcg_openpgp_octets_t							&out);
 		static void PacketSigPrepareDetachedSignature
 			(const tmcg_openpgp_signature_t					type,
