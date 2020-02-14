@@ -86,11 +86,15 @@ void check
 	cs4 = cs1;
 	assert(cs4.r.size() == 2);
 	pid_t pid = 0;
-	int pipe1fd[2], pipe2fd[2];
+	int pipe1fd[2] = { 0, 0 }, pipe2fd[2] = { 0, 0 };
 	if ((pipe(pipe1fd) < 0) || (pipe(pipe2fd) < 0))
+	{
 		perror("t-tmcg (pipe)");
+	}
 	else if ((pid = fork()) < 0)
+	{
 		perror("t-tmcg (fork)");
+	}
 	else
 	{
 		if (pid == 0)
