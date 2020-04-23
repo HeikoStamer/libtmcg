@@ -421,10 +421,10 @@ void HooghSchoenmakersSkoricVillegasPUBROTZK::Prove_noninteractive
 		out << f[i] << std::endl;
 
 	// prover: third move
-		// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		tmcg_mpz_shash_4vec(lambda, alpha, c, f, beta, 4, p, q, g, h);
-		// reduce $\lambda$ modulo $q$
-		mpz_mod(lambda, lambda, q);
+	// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
+	tmcg_mpz_shash_4vec(lambda, alpha, c, f, beta, 4, p, q, g, h);
+	// reduce $\lambda$ modulo $q$
+	mpz_mod(lambda, lambda, q);
 
 	// compute $\lambda_r = \lambda - \sum_{j \neq r} \lambda_j$
 	mpz_set_ui(foo, 0L);
@@ -627,7 +627,8 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive_publiccoin
 		for (size_t i = 0; i < beta.size(); i++)
 		{
 			std::stringstream err;
-			if (!edcf->Flip_twoparty(1, beta[i], in, out, err)) // flip coins with prover to get $\beta_i$
+			// flip coins with prover to get $\beta_i$
+			if (!edcf->Flip_twoparty(1, beta[i], in, out, err))
 				throw false;
 			// reduce $\beta_i$'s modulo $q$
 			mpz_mod(beta[i], beta[i], q);
@@ -643,7 +644,8 @@ bool HooghSchoenmakersSkoricVillegasPUBROTZK::Verify_interactive_publiccoin
 		if (!in.good())
 			throw false;
 		std::stringstream err;
-		if (!edcf->Flip_twoparty(1, lambda, in, out, err)) // flip coins with prover to get $\lambda$
+		// flip coins with prover to get $\lambda$
+		if (!edcf->Flip_twoparty(1, lambda, in, out, err))
 			throw false;
 		// reduce $\lambda$ modulo $q$
 		mpz_mod(lambda, lambda, q);
@@ -1212,11 +1214,12 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive
 	pub_rot_zk->Prove_interactive(r, uk, alpha, hk, in, out);
 	
 	// release
-	mpz_clear(v), mpz_clear(lambda), mpz_clear(foo), mpz_clear(bar),
-		mpz_clear(lhs), mpz_clear(rhs);
-	mpz_clear(LHS.first), mpz_clear(LHS.second),
-		mpz_clear(RHS.first), mpz_clear(RHS.second);
-	delete [] LHS.first, delete [] LHS.second, delete [] RHS.first, delete [] RHS.second;
+	mpz_clear(v), mpz_clear(lambda), mpz_clear(foo), mpz_clear(bar);
+	mpz_clear(lhs), mpz_clear(rhs);
+	mpz_clear(LHS.first), mpz_clear(LHS.second);
+	mpz_clear(RHS.first), mpz_clear(RHS.second);
+	delete [] LHS.first, delete [] LHS.second;
+	delete [] RHS.first, delete [] RHS.second;
 	for (size_t i = 0; i < s.size(); i++)
 	{
 		mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
@@ -1285,7 +1288,8 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive_publiccoin
 	for (size_t i = 0; i < alpha.size(); i++)
 	{
 		std::stringstream err;
-		edcf->Flip_twoparty(0, alpha[i], in, out, err); // flip coins with verifier to get $\alpha_i$
+		// flip coins with verifier to get $\alpha_i$
+		edcf->Flip_twoparty(0, alpha[i], in, out, err);
 		// reduce $\alpha_i$ modulo $q$
 		mpz_mod(alpha[i], alpha[i], q);
 	}
@@ -1359,7 +1363,8 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive_publiccoin
 
 	// prover: third move (second move of EXP-ZK)
 	std::stringstream err;
-	edcf->Flip_twoparty(0, lambda, in, out, err); // flip coins with verifier to get $\lambda$
+	// flip coins with verifier to get $\lambda$
+	edcf->Flip_twoparty(0, lambda, in, out, err);
 	// reduce $\lambda$ modulo $q$
 	mpz_mod(lambda, lambda, q);
 
@@ -1395,11 +1400,12 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_interactive_publiccoin
 	pub_rot_zk->Prove_interactive_publiccoin(r, uk, alpha, hk, edcf, in, out);
 	
 	// release
-	mpz_clear(v), mpz_clear(lambda), mpz_clear(foo), mpz_clear(bar),
-		mpz_clear(lhs), mpz_clear(rhs);
-	mpz_clear(LHS.first), mpz_clear(LHS.second),
-		mpz_clear(RHS.first), mpz_clear(RHS.second);
-	delete [] LHS.first, delete [] LHS.second, delete [] RHS.first, delete [] RHS.second;
+	mpz_clear(v), mpz_clear(lambda), mpz_clear(foo), mpz_clear(bar);
+	mpz_clear(lhs), mpz_clear(rhs);
+	mpz_clear(LHS.first), mpz_clear(LHS.second);
+	mpz_clear(RHS.first), mpz_clear(RHS.second);
+	delete [] LHS.first, delete [] LHS.second;
+	delete [] RHS.first, delete [] RHS.second;
 	for (size_t i = 0; i < s.size(); i++)
 	{
 		mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
@@ -1581,11 +1587,12 @@ void HooghSchoenmakersSkoricVillegasVRHE::Prove_noninteractive
 	pub_rot_zk->Prove_noninteractive(r, uk, alpha, hk, out);
 	
 	// release
-	mpz_clear(v), mpz_clear(lambda), mpz_clear(foo), mpz_clear(bar),
-		mpz_clear(lhs), mpz_clear(rhs);
-	mpz_clear(LHS.first), mpz_clear(LHS.second),
-		mpz_clear(RHS.first), mpz_clear(RHS.second);
-	delete [] LHS.first, delete [] LHS.second, delete [] RHS.first, delete [] RHS.second;
+	mpz_clear(v), mpz_clear(lambda), mpz_clear(foo), mpz_clear(bar);
+	mpz_clear(lhs), mpz_clear(rhs);
+	mpz_clear(LHS.first), mpz_clear(LHS.second);
+	mpz_clear(RHS.first), mpz_clear(RHS.second);
+	delete [] LHS.first, delete [] LHS.second;
+	delete [] RHS.first, delete [] RHS.second;
 	for (size_t i = 0; i < s.size(); i++)
 	{
 		mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
@@ -1858,7 +1865,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 		for (size_t i = 0; i < alpha.size(); i++)
 		{
 			std::stringstream err;
-			if (!edcf->Flip_twoparty(1, alpha[i], in, out, err)) // flip coins with prover to get $\alpha_i$
+			// flip coins with prover to get $\alpha_i$
+			if (!edcf->Flip_twoparty(1, alpha[i], in, out, err))
 				throw false;
 			// reduce $\alpha_i$'s modulo $q$
 			mpz_mod(alpha[i], alpha[i], q);
@@ -1901,7 +1909,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_interactive_publiccoin
 
 		// verifier: third move (second move of EXP-ZK)
 		std::stringstream err;
-		if (!edcf->Flip_twoparty(1, lambda, in, out, err)) // flip coins with prover to get $\lambda$
+		// flip coins with prover to get $\lambda$
+		if (!edcf->Flip_twoparty(1, lambda, in, out, err))
 			throw false;
 		// reduce $\lambda$ modulo $q$
 		mpz_mod(lambda, lambda, q);
@@ -2120,7 +2129,8 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 
 		// verifier: third move (second move of EXP-ZK)
 		// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		tmcg_mpz_shash_4pairvec2vec(lambda, X, Y, Ak, Fk, hk, fk, 5, p, q, g, h, v);		
+		tmcg_mpz_shash_4pairvec2vec(lambda, X, Y, Ak, Fk, hk, fk,
+			5, p, q, g, h, v);		
 		// reduce $\lambda$ modulo $q$
 		mpz_mod(lambda, lambda, q);
 
@@ -2227,11 +2237,12 @@ bool HooghSchoenmakersSkoricVillegasVRHE::Verify_noninteractive
 	catch (bool return_value)
 	{
 		// release
-		mpz_clear(v), mpz_clear(lambda), mpz_clear(foo), mpz_clear(bar),
-			mpz_clear(lhs), mpz_clear(rhs);
-		mpz_clear(LHS.first), mpz_clear(LHS.second),
-			mpz_clear(RHS.first), mpz_clear(RHS.second);
-		delete [] LHS.first, delete [] LHS.second, delete [] RHS.first, delete [] RHS.second;
+		mpz_clear(v), mpz_clear(lambda), mpz_clear(foo), mpz_clear(bar);
+		mpz_clear(lhs), mpz_clear(rhs);
+		mpz_clear(LHS.first), mpz_clear(LHS.second);
+		mpz_clear(RHS.first), mpz_clear(RHS.second);
+		delete [] LHS.first, delete [] LHS.second;
+		delete [] RHS.first, delete [] RHS.second;
 		for (size_t i = 0; i < X.size(); i++)
 		{
 			mpz_clear(alpha[i]), mpz_clear(hk[i]), mpz_clear(fk[i]),
@@ -2259,3 +2270,4 @@ HooghSchoenmakersSkoricVillegasVRHE::~HooghSchoenmakersSkoricVillegasVRHE
 	tmcg_mpz_fpowm_done(fpowm_table_g), tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
+

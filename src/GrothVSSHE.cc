@@ -1,8 +1,8 @@
 /*******************************************************************************
   GrothVSSHE.cc, |V|erifiable |S|ecret |S|huffle of |H|omomorphic |E|ncryptions
 
-     [Gr05] Jens Groth: 'A Verifiable Secret Shuffle of Homomorphic Encryptions',
-     Cryptology ePrint Archive, Report 2005/246, 2005.
+    [Gr05] Jens Groth: 'A Verifiable Secret Shuffle of Homomorphic Encryptions',
+    Cryptology ePrint Archive, Report 2005/246, 2005.
 
    This file is part of LibTMCG.
 
@@ -281,7 +281,8 @@ void GrothSKC::Prove_interactive_publiccoin
 	
 	// prover: first move
 	std::stringstream err;
-	edcf->Flip_twoparty(0, x, in, out, err); // flip coins with verifier to get $x$
+	// flip coins with verifier to get $x$
+	edcf->Flip_twoparty(0, x, in, out, err);
 	// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
 	mpz_tdiv_r_2exp(x, x, l_e);
 	
@@ -353,7 +354,8 @@ void GrothSKC::Prove_interactive_publiccoin
 	out << c_d << std::endl << c_Delta << std::endl << c_a << std::endl;
 	
 	// prover: third move
-	edcf->Flip_twoparty(0, e, in, out, err); // flip coins with verifier to get $e$
+	// flip coins with verifier to get $e$
+	edcf->Flip_twoparty(0, e, in, out, err);
 	// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
 	mpz_tdiv_r_2exp(e, e, l_e);
 	
@@ -448,12 +450,12 @@ void GrothSKC::Prove_noninteractive
 	}
 	
 	// prover: first move
-		// get $x$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		tmcg_mpz_shash_2vec(x, com->g, m, 3, com->p, com->q, com->h);
-		// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
-		// note that we follow the advice of section 2.5 [Gr05] by increasing the
-		// value of $\ell_e$ for the non-interactive protocol version
-		mpz_tdiv_r_2exp(x, x, l_e_nizk);
+	// get $x$ from the 'random oracle', i.e. Fiat-Shamir heuristic
+	tmcg_mpz_shash_2vec(x, com->g, m, 3, com->p, com->q, com->h);
+	// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
+	// note that we follow the advice of section 2.5 [Gr05] by increasing the
+	// value of $\ell_e$ for the non-interactive protocol version
+	mpz_tdiv_r_2exp(x, x, l_e_nizk);
 	
 	// prover: second move
 	tmcg_mpz_srandomm(r_d, com->q); // $r_d \gets \mathbb{Z}_q$
@@ -523,12 +525,12 @@ void GrothSKC::Prove_noninteractive
 	out << c_d << std::endl << c_Delta << std::endl << c_a << std::endl;
 	
 	// prover: third move
-		// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-		tmcg_mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
-		// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
-		// note that we follow the advice of section 2.5 [Gr05] by increasing the
-		// value of $\ell_e$ for the non-interactive protocol version
-		mpz_tdiv_r_2exp(e, e, l_e_nizk);
+	// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
+	tmcg_mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
+	// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
+	// note that we follow the advice of section 2.5 [Gr05] by increasing the
+	// value of $\ell_e$ for the non-interactive protocol version
+	mpz_tdiv_r_2exp(e, e, l_e_nizk);
 
 	// prover: fourth move
 	// compute $f_i = e m_{\pi(i)} + d_i$
@@ -623,7 +625,8 @@ bool GrothSKC::Verify_interactive
 		out << x << std::endl; // send $x\in\{0,1\}^{\ell_e}$ to the prover
 		
 		// verifier: second move
-		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$ from prover
+		// get $c_d$, $c_{\Delta}$, and $c_a$ from prover
+		in >> c_d >> c_Delta >> c_a;
 		if (!in.good())
 			throw false;
 		
@@ -806,17 +809,20 @@ bool GrothSKC::Verify_interactive_publiccoin
 	{
 		// verifier: first move
 		std::stringstream err;
-		if (!edcf->Flip_twoparty(1, x, in, out, err)) // flip coins with prover to get $x$
+		// flip coins with prover to get $x$
+		if (!edcf->Flip_twoparty(1, x, in, out, err))
 			throw false;
 		// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
 		mpz_tdiv_r_2exp(x, x, l_e);
 		// verifier: second move
-		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$ from prover
+		// get $c_d$, $c_{\Delta}$, and $c_a$ from prover
+		in >> c_d >> c_Delta >> c_a;
 		if (!in.good())
 			throw false;
 		
 		// verifier: third move
-		if (!edcf->Flip_twoparty(1, e, in, out, err)) // flip coins with prover to get $e$
+		// flip coins with prover to get $e$
+		if (!edcf->Flip_twoparty(1, e, in, out, err))
 			throw false;
 		// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
 		mpz_tdiv_r_2exp(e, e, l_e);
@@ -990,25 +996,26 @@ bool GrothSKC::Verify_noninteractive
 	try
 	{
 		// verifier: first move
-			// get $x$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			tmcg_mpz_shash_2vec(x, com->g, m, 3, com->p, com->q, com->h);
-			// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
-			// note that we follow the advice of section 2.5 [Gr05] by increasing the
-			// value of $\ell_e$ for the non-interactive protocol version
-			mpz_tdiv_r_2exp(x, x, l_e_nizk);
+		// get $x$ from the 'random oracle', i.e. Fiat-Shamir heuristic
+		tmcg_mpz_shash_2vec(x, com->g, m, 3, com->p, com->q, com->h);
+		// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
+		// note that we follow the advice of section 2.5 [Gr05] by increasing
+		// the value of $\ell_e$ for the non-interactive protocol version
+		mpz_tdiv_r_2exp(x, x, l_e_nizk);
 		
 		// verifier: second move
-		in >> c_d >> c_Delta >> c_a; // get $c_d$, $c_{\Delta}$, and $c_a$ from prover
+		// get $c_d$, $c_{\Delta}$, and $c_a$ from prover
+		in >> c_d >> c_Delta >> c_a;
 		if (!in.good())
 			throw false;
 		
 		// verifier: third move
-			// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			tmcg_mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
-			// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
-			// note that we follow the advice of section 2.5 [Gr05] by increasing the
-			// value of $\ell_e$ for the non-interactive protocol version
-			mpz_tdiv_r_2exp(e, e, l_e_nizk);
+		// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
+		tmcg_mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
+		// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
+		// note that we follow the advice of section 2.5 [Gr05] by increasing
+		// the value of $\ell_e$ for the non-interactive protocol version
+		mpz_tdiv_r_2exp(e, e, l_e_nizk);
 	
 		// verifier: fourth move
 		for (size_t i = 0; i < f.size(); i++)
@@ -1391,7 +1398,8 @@ bool GrothSKC::Verify_interactive_publiccoin
 	{
 		// verifier: first move
 		std::stringstream err;
-		if (!edcf->Flip_twoparty(1, x, in, out, err)) // flip coins with prover to get $x$
+		// flip coins with prover to get $x$
+		if (!edcf->Flip_twoparty(1, x, in, out, err))
 			throw false;
 		// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
 		mpz_tdiv_r_2exp(x, x, l_e);
@@ -1402,7 +1410,8 @@ bool GrothSKC::Verify_interactive_publiccoin
 			throw false;
 		
 		// verifier: third move
-		if (!edcf->Flip_twoparty(1, e, in, out, err)) // flip coins with prover to get $e$
+		// flip coins with prover to get $e$
+		if (!edcf->Flip_twoparty(1, e, in, out, err))
 			throw false;
 		// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
 		mpz_tdiv_r_2exp(e, e, l_e);
@@ -1598,12 +1607,12 @@ bool GrothSKC::Verify_noninteractive
 	try
 	{
 		// verifier: first move
-			// get $x$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			tmcg_mpz_shash_2vec(x, com->g, m, 3, com->p, com->q, com->h);
-			// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
-			// note that we follow the advice of section 2.5 [Gr05] by increasing the
-			// value of $\ell_e$ for the non-interactive protocol version
-			mpz_tdiv_r_2exp(x, x, l_e_nizk);
+		// get $x$ from the 'random oracle', i.e. Fiat-Shamir heuristic
+		tmcg_mpz_shash_2vec(x, com->g, m, 3, com->p, com->q, com->h);
+		// reduce such that $x$ is from $\{0, 1\}^{\ell_e}$
+		// note that we follow the advice of section 2.5 [Gr05] by increasing
+		// the value of $\ell_e$ for the non-interactive protocol version
+		mpz_tdiv_r_2exp(x, x, l_e_nizk);
 		
 		// verifier: second move
 		in >> c_d >> c_Delta >> c_a;
@@ -1611,12 +1620,12 @@ bool GrothSKC::Verify_noninteractive
 			throw false;
 		
 		// verifier: third move
-			// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			tmcg_mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
-			// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
-			// note that we follow the advice of section 2.5 [Gr05] by increasing the
-			// value of $\ell_e$ for the non-interactive protocol version
-			mpz_tdiv_r_2exp(e, e, l_e_nizk);
+		// get $e$ from the 'random oracle', i.e. Fiat-Shamir heuristic
+		tmcg_mpz_shash_2vec(e, com->g, m, 4, x, c_d, c_Delta, c_a);
+		// reduce such that $e$ is from $\{0, 1\}^{\ell_e}$
+		// note that we follow the advice of section 2.5 [Gr05] by increasing
+		// the value of $\ell_e$ for the non-interactive protocol version
+		mpz_tdiv_r_2exp(e, e, l_e_nizk);
 	
 		// verifier: fourth move
 		for (size_t i = 0; i < f.size(); i++)
@@ -1705,15 +1714,15 @@ bool GrothSKC::Verify_noninteractive
 			mpz_powm(foo, c, e, com->p);
 			mpz_mul(foo, foo, c_d);
 			mpz_mod(foo, foo, com->p);
-				// compute $f''_i = f_i - f'_i e$
-				for (size_t i = 0; i < f.size(); i++)
-				{
-					mpz_mul(lej[i], f_prime[i], e);
-					mpz_mod(lej[i], lej[i], com->q);
-					mpz_neg(lej[i], lej[i]);
-					mpz_add(lej[i], lej[i], f[i]);
-					mpz_mod(lej[i], lej[i], com->q);
-				}
+			// compute $f''_i = f_i - f'_i e$
+			for (size_t i = 0; i < f.size(); i++)
+			{
+				mpz_mul(lej[i], f_prime[i], e);
+				mpz_mod(lej[i], lej[i], com->q);
+				mpz_neg(lej[i], lej[i]);
+				mpz_add(lej[i], lej[i], f[i]);
+				mpz_mod(lej[i], lej[i], com->q);
+			}
 			if (!com->Verify(foo, z, lej))
 				throw false;
 			// check whether $c_a^e c_{\Delta} = \mathrm{com}(f_{\Delta_1},
@@ -1902,9 +1911,10 @@ void GrothVSSHE::Prove_interactive
 	std::pair<mpz_ptr, mpz_ptr> E_d;
 	std::vector<mpz_ptr> d, f, m, t;
 	E_d.first = new mpz_t(), E_d.second = new mpz_t();
-	mpz_init(r), mpz_init(R_d), mpz_init(r_d), mpz_init(c), mpz_init(c_d),
-		mpz_init(Z), mpz_init(lambda), mpz_init(rho), mpz_init(foo),
-		mpz_init(bar), mpz_init(E_d.first), mpz_init(E_d.second);
+	mpz_init(r), mpz_init(R_d), mpz_init(r_d), mpz_init(c), mpz_init(c_d);
+	mpz_init(Z), mpz_init(lambda), mpz_init(rho);
+	mpz_init(foo), mpz_init(bar);
+	mpz_init(E_d.first), mpz_init(E_d.second);
 	for (size_t i = 0; i < e.size(); i++)
 	{
 		mpz_ptr tmp = new mpz_t(), tmp2 = new mpz_t(), tmp3 = new mpz_t(),
@@ -1983,15 +1993,15 @@ void GrothVSSHE::Prove_interactive
 	
 	// prover: fourth move
 	in >> lambda;
-		// reduce such that $\lambda$ is from $\{0, 1\}^{\ell_e}$
-		mpz_tdiv_r_2exp(lambda, lambda, l_e);
+	// reduce such that $\lambda$ is from $\{0, 1\}^{\ell_e}$
+	mpz_tdiv_r_2exp(lambda, lambda, l_e);
 	
 	// prover: fifth to seventh move (Shuffle of Known Content)
-		// $\rho := \lambda r + r_d \bmod q$
-		mpz_mul(rho, lambda, r);
-		mpz_mod(rho, rho, com->q);
-		mpz_add(rho, rho, r_d);
-		mpz_mod(rho, rho, com->q);
+	// $\rho := \lambda r + r_d \bmod q$
+	mpz_mul(rho, lambda, r);
+	mpz_mod(rho, rho, com->q);
+	mpz_add(rho, rho, r_d);
+	mpz_mod(rho, rho, com->q);
 /* This part is not necessary: see personal communication with Jens Groth or the journal version of the paper, because
    $c^{\lambda} c_d \mathrm{com}_{ck}(f_1,\ldots,f_n;0) = \mathrm{com}_{ck}(\lambda\pi(1)+t_i,\ldots,\lambda\pi(n)+t_{\pi(n)})$
 		// SKC commitment $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod p$
@@ -2003,21 +2013,21 @@ void GrothVSSHE::Prove_interactive
 		mpz_mul(foo, foo, bar);
 		mpz_mod(foo, foo, com->p);
 */
-		// SKC messages $m_i := i \lambda + t_i \bmod q$, for all $i = 1,\ldots, n$
-		for (size_t i = 0; i < m.size(); i++)
-		{
-			mpz_set_ui(m[i], i + 1L); // adjust shifted index
-			mpz_mul(m[i], m[i], lambda);
-			mpz_mod(m[i], m[i], com->q);
-			mpz_add(m[i], m[i], t[i]);
-			mpz_mod(m[i], m[i], com->q);
-		}
+	// SKC messages $m_i := i \lambda + t_i \bmod q$, for all $i = 1,\ldots, n$
+	for (size_t i = 0; i < m.size(); i++)
+	{
+		mpz_set_ui(m[i], i + 1L); // adjust shifted index
+		mpz_mul(m[i], m[i], lambda);
+		mpz_mod(m[i], m[i], com->q);
+		mpz_add(m[i], m[i], t[i]);
+		mpz_mod(m[i], m[i], com->q);
+	}
 	skc->Prove_interactive(pi, rho, m, in, out);
 	
 	// release
-	mpz_clear(r), mpz_clear(R_d), mpz_clear(r_d), mpz_clear(c), mpz_clear(c_d),
-		mpz_clear(Z), mpz_clear(lambda), mpz_clear(rho), mpz_clear(foo),
-		mpz_clear(bar);
+	mpz_clear(r), mpz_clear(R_d), mpz_clear(r_d), mpz_clear(c), mpz_clear(c_d);
+	mpz_clear(Z), mpz_clear(lambda), mpz_clear(rho);
+	mpz_clear(foo), mpz_clear(bar);
 	mpz_clear(E_d.first), mpz_clear(E_d.second);
 	delete [] E_d.first, delete [] E_d.second;
 	for (size_t i = 0; i < e.size(); i++)
@@ -2099,7 +2109,8 @@ void GrothVSSHE::Prove_interactive_publiccoin
 	std::stringstream err;
 	for (size_t i = 0; i < t.size(); i++)
 	{
-		edcf->Flip_twoparty(0, t[i], in, out, err); // flip coins with verifier to get $t_i$
+		// flip coins with verifier to get $t_i$
+		edcf->Flip_twoparty(0, t[i], in, out, err);
 		// reduce such that $t_i$'s are from $\{0, 1\}^{\ell_e}$
 		mpz_tdiv_r_2exp(t[i], t[i], l_e);
 	}
@@ -2127,16 +2138,17 @@ void GrothVSSHE::Prove_interactive_publiccoin
 	out << Z << std::endl;
 	
 	// prover: fourth move
-	edcf->Flip_twoparty(0, lambda, in, out, err); // flip coins with verifier to get $\lambda$
+	// flip coins with verifier to get $\lambda$
+	edcf->Flip_twoparty(0, lambda, in, out, err);
 	// reduce such that $\lambda$ is from $\{0, 1\}^{\ell_e}$
 	mpz_tdiv_r_2exp(lambda, lambda, l_e);
 	
 	// prover: fifth to seventh move (Shuffle of Known Content)
-		// $\rho := \lambda r + r_d \bmod q$
-		mpz_mul(rho, lambda, r);
-		mpz_mod(rho, rho, com->q);
-		mpz_add(rho, rho, r_d);
-		mpz_mod(rho, rho, com->q);
+	// $\rho := \lambda r + r_d \bmod q$
+	mpz_mul(rho, lambda, r);
+	mpz_mod(rho, rho, com->q);
+	mpz_add(rho, rho, r_d);
+	mpz_mod(rho, rho, com->q);
 /* This part is not necessary: see personal communication with Jens Groth or the journal version of the paper, because
    $c^{\lambda} c_d \mathrm{com}_{ck}(f_1,\ldots,f_n;0) = \mathrm{com}_{ck}(\lambda\pi(1)+t_i,\ldots,\lambda\pi(n)+t_{\pi(n)})$
 		// SKC commitment $c^{\lambda} c_d \mathrm{com}(f_1,\ldots,f_n;0) \bmod p$
@@ -2148,15 +2160,15 @@ void GrothVSSHE::Prove_interactive_publiccoin
 		mpz_mul(foo, foo, bar);
 		mpz_mod(foo, foo, com->p);
 */
-		// SKC messages $m_i := i \lambda + t_i \bmod q$, for all $i = 1,\ldots, n$
-		for (size_t i = 0; i < m.size(); i++)
-		{
-			mpz_set_ui(m[i], i + 1L); // adjust shifted index
-			mpz_mul(m[i], m[i], lambda);
-			mpz_mod(m[i], m[i], com->q);
-			mpz_add(m[i], m[i], t[i]);
-			mpz_mod(m[i], m[i], com->q);
-		}
+	// SKC messages $m_i := i \lambda + t_i \bmod q$, for all $i = 1,\ldots, n$
+	for (size_t i = 0; i < m.size(); i++)
+	{
+		mpz_set_ui(m[i], i + 1L); // adjust shifted index
+		mpz_mul(m[i], m[i], lambda);
+		mpz_mod(m[i], m[i], com->q);
+		mpz_add(m[i], m[i], t[i]);
+		mpz_mod(m[i], m[i], com->q);
+	}
 	skc->Prove_interactive_publiccoin(pi, rho, m, edcf, in, out);
 	
 	// release
@@ -2527,7 +2539,8 @@ bool GrothVSSHE::Verify_interactive_publiccoin
 		std::stringstream err;
 		for (size_t i = 0; i < t.size(); i++)
 		{
-			if (!edcf->Flip_twoparty(1, t[i], in, out, err)) // flip coins with prover to get $t_i$
+			// flip coins with prover to get $t_i$
+			if (!edcf->Flip_twoparty(1, t[i], in, out, err))
 				throw false;
 			// reduce such that $t_i$'s are from $\{0, 1\}^{\ell_e}$
 			mpz_tdiv_r_2exp(t[i], t[i], l_e);
@@ -2541,7 +2554,8 @@ bool GrothVSSHE::Verify_interactive_publiccoin
 			throw false;
 		
 		// verifier: fourth move
-		if (!edcf->Flip_twoparty(1, lambda, in, out, err)) // flip coins with prover to get $\lambda$
+		// flip coins with prover to get $\lambda$
+		if (!edcf->Flip_twoparty(1, lambda, in, out, err))
 			throw false;
 		// reduce such that $\lambda$ is from $\{0, 1\}^{\ell_e}$
 		mpz_tdiv_r_2exp(lambda, lambda, l_e);
@@ -2701,8 +2715,8 @@ bool GrothVSSHE::Verify_noninteractive
 			tmcg_mpz_shash_2pairvec(t[i], e, E, 14, p, q, g, h, com->p, com->q,
 				com->g[i], com->h, c, c_d, E_d.first, E_d.second, foo, bar);
 			// reduce such that $t_i$'s are from $\{0, 1\}^{\ell_e}$
-			// note that we follow the advice of section 2.5 [Gr05] by increasing the
-			// value of $\ell_e$ for the non-interactive protocol version
+			// note that we follow the advice of section 2.5 [Gr05] by increasing
+			// the value of $\ell_e$ for the non-interactive protocol version
 			mpz_tdiv_r_2exp(t[i], t[i], l_e_nizk);
 		}
 		
@@ -2714,12 +2728,12 @@ bool GrothVSSHE::Verify_noninteractive
 			throw false;
 		
 		// verifier: fourth move
-			// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
-			tmcg_mpz_shash_2pairvec2vec(lambda, e, E, t, f, 5, g, h, com->q, q, Z);
-			// reduce such that $\lambda$ is from $\{0, 1\}^{\ell_e}$
-			// note that we follow the advice of section 2.5 [Gr05] by increasing the
-			// value of $\ell_e$ for the non-interactive protocol version
-			mpz_tdiv_r_2exp(lambda, lambda, l_e_nizk);
+		// get $\lambda$ from the 'random oracle', i.e. Fiat-Shamir heuristic
+		tmcg_mpz_shash_2pairvec2vec(lambda, e, E, t, f, 5, g, h, com->q, q, Z);
+		// reduce such that $\lambda$ is from $\{0, 1\}^{\ell_e}$
+		// note that we follow the advice of section 2.5 [Gr05] by increasing
+		// the value of $\ell_e$ for the non-interactive protocol version
+		mpz_tdiv_r_2exp(lambda, lambda, l_e_nizk);
 		
 		// verifier: fifth to seventh move (Shuffle of Known Content)
 		// check whether $c, c_d \in\mathcal{C}_{ck}$
@@ -2843,3 +2857,4 @@ GrothVSSHE::~GrothVSSHE
 	tmcg_mpz_fpowm_done(fpowm_table_g), tmcg_mpz_fpowm_done(fpowm_table_h);
 	delete [] fpowm_table_g, delete [] fpowm_table_h;
 }
+
