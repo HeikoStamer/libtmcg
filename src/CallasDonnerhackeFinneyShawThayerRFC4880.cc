@@ -11257,6 +11257,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag2
 				embeddedsigs, recipientfprs);
 			if (tag == 0x00)
 				return 0; // error: incorrect subpacket
+			if (tag == 0xFA)
+				return 0xFA; // error: unrecognized critical subpacket
 		}
 		if (pkt.size() < (8 + hspdlen))
 			return 0; // error: packet too short

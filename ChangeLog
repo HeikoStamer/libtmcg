@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2020-05-02] RFC4880: fixed bug w.r.t. unrecognized critical subpackets
 * [2019-12-21] RFC4880: added boolean flag to control some RFC 4880bis features
 * [2019-11-17] RFC4880: guard against zero-allocation of tmcg_openpgp_byte_t
 * [2019-11-15] RFC4880: fixed check for bad marker in PacketDecodeTag10()
