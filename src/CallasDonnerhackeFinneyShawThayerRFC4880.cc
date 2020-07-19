@@ -6507,9 +6507,10 @@ bool TMCG_OpenPGP_Message::Decrypt
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: encrypted message is not integrity" <<
+				std::cerr << "ERROR: encrypted message is not integrity" <<
 					" protected (security issue)" << std::endl;
 			}
+			return false;
 		}
 	}
 	return true;
