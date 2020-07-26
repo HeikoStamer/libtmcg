@@ -192,12 +192,12 @@ iyTIVNwGjZ3pM73jsUA2RxCMfjHntG81euIBZgn8evIJRNvimC8aRh7ITAuU3soQSdQiIld2d\
 	assert((sfoo != sbar) && (sfoo < sbaz));
 	std::cout << " ::operator - (negation)" << std::endl;
 	-sfoo; // == -7
-std::cerr << "sfoo = " << sfoo << " sbar = " << sbar << " sbaz = " << sbaz << std::endl;
 	assert((sfoo < sbar));
 	std::cout << " ::operator -=" << std::endl;
 	sbaz = sfoo; // == -7
 	sfoo -= sbaz; // == -0
 	-sfoo; // == 0;
+#if GCRYPT_VERSION_NUMBER < 0x010806
 std::cerr << "libgcrypt BUG: negative zero -- remove if fixed" << std::endl;
 gcry_mpi_t a = gcry_mpi_new(1), b = gcry_mpi_new(1);
 gcry_mpi_set_ui(a, 42UL), gcry_mpi_set_ui(b, 42UL); // a = +42, b = +42
@@ -207,10 +207,10 @@ gcry_mpi_set_ui(b, 0UL); // a = -0, b = +0
 assert(gcry_mpi_cmp(a, b)); // SHOULD fail
 gcry_mpi_release(a), gcry_mpi_release(b);
 std::cerr << "sfoo = " << sfoo << " sbar = " << sbar << " sbaz = " << sbaz << std::endl;
+#endif
 	assert((sfoo == sbar) && (sfoo > sbaz));
 	std::cout << " ::operator -= (unsigned long int)" << std::endl;
 	sfoo -= 7UL;
-std::cerr << "sfoo = " << sfoo << " sbar = " << sbar << " sbaz = " << sbaz << std::endl;
 	assert((sfoo < sbar) && (sfoo == sbaz));
 	std::cout << " ::abs()" << std::endl;
 	sfoo.abs();
