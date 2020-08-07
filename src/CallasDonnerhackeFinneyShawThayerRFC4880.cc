@@ -10954,7 +10954,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 				tag = 0xFA;
 			else
 				tag = 0xFB;
-			if (verbose > 2)
+			if (verbose)
 			{
 				std::cerr << "WARNING: unrecognized ";
 				if (out.critical)
@@ -10977,7 +10977,16 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 				for (size_t i = 0; i < out.notation_value_length; i++)
 					notation.second.push_back(out.notation_value[i]);
 				notations.push_back(notation);
-				if (verbose > 2)
+				if (out.critical)
+				{
+					tag = 0xFA;
+					if (verbose)
+					{
+						std::cerr << "WARNING: unrecognized critical " <<
+							"notation data found" << std::endl;
+					}
+				}
+				else if (verbose > 2)
 					std::cerr << "INFO: notation data found" << std::endl;
 			}
 			if ((sptype == 32) && (out.embeddedsignaturelen > 0))
