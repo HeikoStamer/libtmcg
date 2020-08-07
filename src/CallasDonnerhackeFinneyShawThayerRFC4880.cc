@@ -7515,9 +7515,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::HashComputeFile
 		{
 			std::string line_str(line);
 			size_t line_len = line_str.length();
-			while ((line_len > 0) && ((line_str[line_len-1] == ' ') ||
-				(line_str[line_len-1] == '\t') ||
-				(line_str[line_len-1] == '\r')))
+			while ((line_len > 0) && (line_str[line_len-1] == '\r'))
 			{
 				line_len--;
 			}
