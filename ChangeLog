@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2020-08-08] RFC4880: collect embedded signatures from unhashed subpackets
 * [2020-08-07] RFC4880: fixed bug #58887 (excluded trailing blanks from hashing)
 * [2020-08-07] RFC4880: added feature request #58895 (unknown critical notation)
 * [2020-07-19] RFC4880: fixed bug #58777 (should not decrypt SED packets)

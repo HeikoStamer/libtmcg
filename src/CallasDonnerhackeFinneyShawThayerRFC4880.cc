@@ -11012,9 +11012,6 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketParse
 				embeddedsigs.push_back(sig);
 				if (verbose > 2)
 					std::cerr << "INFO: embedded signature found" << std::endl;
-				delete [] out.embeddedsignature;
-				tmcg_openpgp_mem_alloc -= out.embeddedsignaturelen;
-				out.embeddedsignaturelen = 0;
 			}
 			if ((sptype == 35) && (out.recipientkeyversion > 0))
 			{
@@ -11309,6 +11306,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag2
 			}
 			PacketContextEvaluate(untrusted, out);
 			PacketContextRelease(untrusted);
+			for (size_t i = 0; i < uembeddedsigs.size(); i++)
+				embeddedsigs.push_back(uembeddedsigs[i]);
 		}
 		if (pkt.size() < (10 + hspdlen + uspdlen))
 			return 0; // error: packet too short
@@ -16111,6 +16110,15 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				certfpr.push_back(ctx.attestedcertifications[ptr+j]);
 			attestedcerts.push_back(certfpr);
 		}
+	}
+	if (verbose > 2)
+	{
+		std::cerr << "INFO: embeddedsigs.size() = " << embeddedsigs.size() <<
+			std::endl;
+		std::cerr << "INFO: recipientfprs.size() = " << recipientfprs.size() <<
+			std::endl;
+		std::cerr << "INFO: attestedcerts.size() = " << attestedcerts.size() <<
+			std::endl;
 	}
 	if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 	    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
