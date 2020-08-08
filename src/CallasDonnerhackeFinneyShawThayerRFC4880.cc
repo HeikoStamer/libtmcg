@@ -2921,7 +2921,9 @@ bool TMCG_OpenPGP_Subkey::Check
 		{
 			if (keyrevsigs[j]->Verify(primary->key, primary->pub_hashing,
 			    sub_hashing, verbose))
+			{
 				valid_revsig = true;
+			}
 			else if (verbose)
 			{
 				std::cerr << "ERROR: signature verification failed" <<
@@ -3013,6 +3015,11 @@ bool TMCG_OpenPGP_Subkey::Check
 			}
 			else
 			{
+				if (verbose)
+				{
+					std::cerr << "WARNING: no valid binding signature " <<
+						"(backsig) found for this signing subkey" << std::endl;
+				}
 				valid = false;
 				return false;
 			}
@@ -3025,6 +3032,11 @@ bool TMCG_OpenPGP_Subkey::Check
 	}
 	else
 	{
+		if (verbose)
+		{
+			std::cerr << "WARNING: no valid binding signature found for " <<
+				"this subkey" << std::endl;
+		}
 		valid = false;
 		return false;
 	}
