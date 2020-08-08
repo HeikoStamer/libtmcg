@@ -1456,7 +1456,7 @@ bool TMCG_OpenPGP_UserID::Check
 		}
 		else if (verbose)
 		{
-			std::cerr << "WARNING: revocation signature" <<
+			std::cerr << "WARNING: revocation signature " <<
 				"verification failed" << std::endl;
 		}
 	}
@@ -1480,8 +1480,8 @@ bool TMCG_OpenPGP_UserID::Check
 		}
 		else if (verbose)
 		{
-			std::cerr << "WARNING: self-signature verification" <<
-				" failed" << std::endl;
+			std::cerr << "WARNING: self-signature verification " <<
+				"failed" << std::endl;
 		}
 	}
 	// update validity state of this user ID and return the result
@@ -1541,8 +1541,8 @@ size_t TMCG_OpenPGP_UserID::AccumulateAttestations
 		}
 		else if (verbose)
 		{
-			std::cerr << "WARNING: attestation signature verification" <<
-				" failed" << std::endl;
+			std::cerr << "WARNING: attestation signature verification " <<
+				"failed" << std::endl;
 		}
 	}
 	return attestations.size();
@@ -1606,9 +1606,9 @@ bool TMCG_OpenPGP_UserID::CheckAttestations
 					one_valid_attestation = true;
 					if (verbose > 1)
 					{
-						std::cerr << "INFO: valid attestation" <<
-							" found at i = " << i << " and" <<
-							" j = " << j << std::endl; 
+						std::cerr << "INFO: valid attestation " <<
+							"found at i = " << i << " and " <<
+							"j = " << j << std::endl; 
 					}
 				}
 			}
@@ -1688,8 +1688,8 @@ bool TMCG_OpenPGP_UserAttribute::Check
 		}
 		else if (verbose)
 		{
-			std::cerr << "WARNING: revocation signature" <<
-				" verification failed" << std::endl;
+			std::cerr << "WARNING: revocation signature " <<
+				"verification failed" << std::endl;
 		}
 	}
 	bool one_valid_selfsig = false;
@@ -1712,8 +1712,8 @@ bool TMCG_OpenPGP_UserAttribute::Check
 		}
 		else if (verbose)
 		{
-			std::cerr << "WARNING: self-signature verification" <<
-				" failed" << std::endl;
+			std::cerr << "WARNING: self-signature verification " <<
+				"failed" << std::endl;
 		}
 	}
 	// update validity state of this user attribute and return the result
@@ -1773,8 +1773,8 @@ size_t TMCG_OpenPGP_UserAttribute::AccumulateAttestations
 		}
 		else if (verbose)
 		{
-			std::cerr << "WARNING: attestation signature verification" <<
-				" failed" << std::endl;
+			std::cerr << "WARNING: attestation signature verification " <<
+				"failed" << std::endl;
 		}
 	}
 	return attestations.size();
@@ -1838,9 +1838,9 @@ bool TMCG_OpenPGP_UserAttribute::CheckAttestations
 					one_valid_attestation = true;
 					if (verbose > 1)
 					{
-						std::cerr << "INFO: valid attestation" <<
-							" found at i = " << i << " and" <<
-							" j = " << j << std::endl; 
+						std::cerr << "INFO: valid attestation " <<
+							"found at i = " << i << " and " <<
+							"j = " << j << std::endl; 
 					}
 				}
 			}
@@ -2657,8 +2657,8 @@ bool TMCG_OpenPGP_Subkey::CheckExternalRevocation
 			FingerprintConvertPlain(fpr, fprstr);
 		if (verbose > 2)
 		{
-			std::cerr << "INFO: looking for external revocation" <<
-				" key with fingerprint " << fprstr << std::endl;
+			std::cerr << "INFO: looking for external revocation " <<
+				"key with fingerprint " << fprstr << std::endl;
 		}
 		TMCG_OpenPGP_Pubkey *revkey = ring->Find(fprstr);
 		if (revkey != NULL)
@@ -2746,8 +2746,8 @@ bool TMCG_OpenPGP_Subkey::Check
 				valid_revsig = true;
 			else if (verbose)
 			{
-				std::cerr << "ERROR: signature verification" <<
-					" failed" << std::endl;
+				std::cerr << "ERROR: signature verification " <<
+					"failed" << std::endl;
 			}
 		}
 		else if (CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -2757,8 +2757,8 @@ bool TMCG_OpenPGP_Subkey::Check
 				valid_revsig = true;
 			else if (verbose)
 			{
-				std::cerr << "ERROR: signature verification" <<
-					" failed" << std::endl;
+				std::cerr << "ERROR: signature verification " <<
+					"failed" << std::endl;
 			}
 		}
 		else
@@ -2767,16 +2767,16 @@ bool TMCG_OpenPGP_Subkey::Check
 				verbose);
 			if (!valid_revsig && verbose)
 			{
-				std::cerr << "WARNING: cannot verify revocation signature of" <<
-					" an external key due to missing public key" << std::endl;
+				std::cerr << "WARNING: cannot verify revocation signature " <<
+					"of an external key due to missing public key" << std::endl;
 			}
 		}
 		if (valid_revsig)
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: valid certification revocation" <<
-					" signature found for subkey" << std::endl;
+				std::cerr << "WARNING: valid certification revocation " <<
+					"signature found for subkey" << std::endl;
 			}
 			// TODO: check certrevsig.creationtime > selfsig.creation time
 			// TODO: mark ONLY corresponding 0x1f sig from selfsigs as revoked
@@ -2822,8 +2822,8 @@ bool TMCG_OpenPGP_Subkey::Check
 			{
 				if (verbose)
 				{
-					std::cerr << "WARNING: self-signature verification" <<
-						" failed" << std::endl;
+					std::cerr << "WARNING: self-signature verification " <<
+						"failed" << std::endl;
 				}
 			}
 		}
@@ -2838,8 +2838,8 @@ bool TMCG_OpenPGP_Subkey::Check
 			{
 				if (verbose)
 				{
-					std::cerr << "WARNING: self-signature verification" <<
-						" failed" << std::endl;
+					std::cerr << "WARNING: self-signature verification " <<
+						"failed" << std::endl;
 				}
 			}
 		}
@@ -2934,16 +2934,16 @@ bool TMCG_OpenPGP_Subkey::Check
 				verbose);
 			if (!valid_revsig && verbose)
 			{
-				std::cerr << "WARNING: cannot verify revocation signature of" <<
-					" an external key due to missing public key" << std::endl;
+				std::cerr << "WARNING: cannot verify revocation signature " <<
+					"of an external key due to missing public key" << std::endl;
 			}
 		}
 		if (valid_revsig)
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: valid revocation signature found" <<
-					" for subkey" << std::endl;
+				std::cerr << "WARNING: valid revocation signature found " <<
+					"for subkey" << std::endl;
 			}
 			valid = false;
 			revoked = true;
@@ -2951,8 +2951,8 @@ bool TMCG_OpenPGP_Subkey::Check
 		}
 		else if (verbose)
 		{
-			std::cerr << "WARNING: invalid revocation signature found for" <<
-				" subkey" << std::endl;
+			std::cerr << "WARNING: invalid revocation signature found " <<
+				"for subkey" << std::endl;
 		}
 	}
 	// last but not least, check whether there is a valid subkey binding
@@ -3640,8 +3640,8 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 	{
 		if (verbose)
 		{
-			std::cerr << "ERROR: PKESK pkalgo does not match public-key" <<
-				" algorithm of subkey" << std::endl;
+			std::cerr << "ERROR: PKESK pkalgo does not match public-key " <<
+				"algorithm of subkey" << std::endl;
 		}
 		return false;
 
@@ -3653,8 +3653,8 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 	{
 		if (verbose)
 		{
-			std::cerr << "ERROR: PKESK keyid does not match subkey ID or" <<
-				" wildcard pattern" << std::endl;
+			std::cerr << "ERROR: PKESK keyid does not match subkey ID " <<
+				"or wildcard pattern" << std::endl;
 		}
 		return false;
 	}
@@ -3666,10 +3666,7 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			(gcry_mpi_cmp(esk->me, pub->rsa_n) >= 0))
 		{
 			if (verbose)
-			{
-				std::cerr << "ERROR: 0 < m^e < n not satisfied" << 
-					std::endl;
-			}
+				std::cerr << "ERROR: 0 < m^e < n not satisfied" << std::endl;
 			return false;
 		}
 		gcry_error_t dret;
@@ -3679,8 +3676,8 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: AsymmetricDecryptRSA() failed" <<
-					" with rc = " << gcry_err_code(dret) << std::endl;
+				std::cerr << "ERROR: AsymmetricDecryptRSA() failed " <<
+					"with rc = " << gcry_err_code(dret) << std::endl;
 			}
 			return false;
 		}
@@ -3693,10 +3690,7 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			(gcry_mpi_cmp(esk->gk, pub->elg_p) >= 0))
 		{
 			if (verbose)
-			{
-				std::cerr << "ERROR: 0 < g^k < p not satisfied" << 
-					std::endl;
-			}
+				std::cerr << "ERROR: 0 < g^k < p not satisfied" << std::endl;
 			return false;
 		}
 		// check whether $0 < my^k < p$.
@@ -3704,10 +3698,7 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			(gcry_mpi_cmp(esk->myk, pub->elg_p) >= 0))
 		{
 			if (verbose)
-			{
-				std::cerr << "ERROR: 0 < my^k < p not satisfied" <<
-					std::endl;
-			}
+				std::cerr << "ERROR: 0 < my^k < p not satisfied" << std::endl;
 			return false;
 		}
 		gcry_error_t dret;
@@ -3717,8 +3708,8 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: AsymmetricDecryptElgamal() failed" <<
-					" with rc = " << gcry_err_code(dret) << std::endl;
+				std::cerr << "ERROR: AsymmetricDecryptElgamal() failed " <<
+					"with rc = " << gcry_err_code(dret) << std::endl;
 			}
 			return false;
 		}
@@ -3737,8 +3728,8 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			{
 				if (verbose)
 				{
-					std::cerr << "ERROR: gcry_mpi_ec_new() failed" <<
-						" with rc = " << gcry_err_code(dret) << std::endl;
+					std::cerr << "ERROR: gcry_mpi_ec_new() failed " <<
+						"with rc = " << gcry_err_code(dret) << std::endl;
 				}
 				return false;
 			}
@@ -3747,8 +3738,8 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 			{
 				if (verbose)
 				{
-					std::cerr << "ERROR: gcry_mpi_ec_set_mpi() failed" <<
-						" with rc = " << gcry_err_code(dret) << std::endl;
+					std::cerr << "ERROR: gcry_mpi_ec_set_mpi() failed " <<
+						"with rc = " << gcry_err_code(dret) << std::endl;
 				}
 				gcry_ctx_release(ec);
 				return false;
@@ -3786,8 +3777,8 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: AsymmetricDecryptECDH() failed" <<
-					" with rc = " << gcry_err_code(dret) << std::endl;
+				std::cerr << "ERROR: AsymmetricDecryptECDH() failed " <<
+					"with rc = " << gcry_err_code(dret) << std::endl;
 			}
 			return false;
 		}
@@ -4369,8 +4360,8 @@ bool TMCG_OpenPGP_Pubkey::CheckExternalRevocation
 			FingerprintConvertPlain(fpr, fprstr);
 		if (verbose > 2)
 		{
-			std::cerr << "INFO: looking for external revocation" <<
-				" key with fingerprint " << fprstr << std::endl;
+			std::cerr << "INFO: looking for external revocation key " <<
+				"with fingerprint " << fprstr << std::endl;
 		}
 		TMCG_OpenPGP_Pubkey *revkey = ring->Find(fprstr);
 		if (revkey != NULL)
@@ -4451,8 +4442,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				v_revsig = true;
 			else if (verbose)
 			{
-				std::cerr << "WARNING: cryptographic verification of a" <<
-					" revocation signature failed" << std::endl;
+				std::cerr << "WARNING: cryptographic verification of a " <<
+					"revocation signature failed" << std::endl;
 			}
 		}
 		else if (external)
@@ -4460,8 +4451,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			v_revsig = CheckExternalRevocation(certrevsigs[j], ring, verbose);
 			if (!v_revsig && verbose)
 			{
-				std::cerr << "WARNING: cannot verify revocation signature of" <<
-					" an external key due to missing public key" << std::endl;
+				std::cerr << "WARNING: cannot verify revocation signature " <<
+					"of an external key due to missing public key" << std::endl;
 			}
 		}
 		else
@@ -4669,8 +4660,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 				v_revsig = true;
 			else if (verbose)
 			{
-				std::cerr << "WARNING: cryptographic verification of a" <<
-					" revocation signature failed" << std::endl;
+				std::cerr << "WARNING: cryptographic verification of a " <<
+					"revocation signature failed" << std::endl;
 			}
 		}
 		else if (external)
@@ -4678,8 +4669,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 			v_revsig = CheckExternalRevocation(keyrevsigs[j], ring, verbose);
 			if (!v_revsig && verbose)
 			{
-				std::cerr << "WARNING: cannot verify revocation signature of" <<
-					" an external key due to missing public key" << std::endl;
+				std::cerr << "WARNING: cannot verify revocation signature " <<
+					"of an external key due to missing public key" << std::endl;
 			}
 		}
 		else
@@ -4695,8 +4686,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: valid revocation signature found for" <<
-					" primary key" << std::endl;
+				std::cerr << "WARNING: valid revocation signature found " <<
+					"for primary key" << std::endl;
 			}
 			valid = false;
 			revoked = true;
@@ -4704,8 +4695,8 @@ bool TMCG_OpenPGP_Pubkey::CheckSelfSignatures
 		}
 		else if (verbose)
 		{
-			std::cerr << "WARNING: invalid revocation signature found for"
-				" primary key" << std::endl;
+			std::cerr << "WARNING: invalid revocation signature found "
+				"for primary key" << std::endl;
 		}
 	}
 	// update validity state of this key and return the result
@@ -4808,10 +4799,14 @@ void TMCG_OpenPGP_Pubkey::Export
 	(tmcg_openpgp_octets_t &out,
 	 const tmcg_openpgp_export_flags_t flags) const
 {
-	bool keysonly = ((flags & TMCG_OPENPGP_EXPORT_KEYSONLY) == TMCG_OPENPGP_EXPORT_KEYSONLY);
-	bool minimal = ((flags & TMCG_OPENPGP_EXPORT_MINIMAL) == TMCG_OPENPGP_EXPORT_MINIMAL);
-	bool revcert = ((flags & TMCG_OPENPGP_EXPORT_REVCERT) == TMCG_OPENPGP_EXPORT_REVCERT);
-	bool attested = ((flags & TMCG_OPENPGP_EXPORT_ATTESTED) == TMCG_OPENPGP_EXPORT_ATTESTED);
+	bool keysonly = ((flags & TMCG_OPENPGP_EXPORT_KEYSONLY)
+			== TMCG_OPENPGP_EXPORT_KEYSONLY);
+	bool minimal = ((flags & TMCG_OPENPGP_EXPORT_MINIMAL)
+			== TMCG_OPENPGP_EXPORT_MINIMAL);
+	bool revcert = ((flags & TMCG_OPENPGP_EXPORT_REVCERT)
+			== TMCG_OPENPGP_EXPORT_REVCERT);
+	bool attested = ((flags & TMCG_OPENPGP_EXPORT_ATTESTED)
+			== TMCG_OPENPGP_EXPORT_ATTESTED);
 	if (minimal && !valid)
 		return; // skip invalid primary key
 	if (minimal && revoked)
@@ -5424,7 +5419,7 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 			{
 				if (verbose)
 				{
-					std::cerr << "ERROR: 0 < m^e < n not satisfied" << 
+					std::cerr << "ERROR: 0 < m^e < n not satisfied" <<
 						std::endl;
 				}
 				return false;
@@ -5436,8 +5431,8 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 			{
 				if (verbose)
 				{
-					std::cerr << "ERROR: AsymmetricDecryptRSA() failed" <<
-						" with rc = " << gcry_err_code(ret) << std::endl;
+					std::cerr << "ERROR: AsymmetricDecryptRSA() failed " <<
+						"with rc = " << gcry_err_code(ret) << std::endl;
 				}
 				return false;
 			}
@@ -5457,8 +5452,8 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 	{
 		if (verbose)
 		{
-			std::cerr << "ERROR: PKESK keyid does not match key ID or" <<
-				" wildcard pattern" << std::endl;
+			std::cerr << "ERROR: PKESK keyid does not match key ID " <<
+				"or wildcard pattern" << std::endl;
 		}
 		return false;
 	}
@@ -5519,8 +5514,8 @@ bool TMCG_OpenPGP_Prvkey::tDSS_CreateMapping
 			tdss_dkg2idx.clear();
 			if (verbose)
 			{
-				std::cerr << "ERROR: peer \"" << peers[i] << "\" not" <<
-					" found inside CAPL from tDSS/DSA key" << std::endl;
+				std::cerr << "ERROR: peer \"" << peers[i] << "\" not " <<
+					"found inside CAPL from tDSS/DSA key" << std::endl;
 			}
 			return false;
 		}
@@ -5532,10 +5527,14 @@ void TMCG_OpenPGP_Prvkey::Export
 	(tmcg_openpgp_octets_t &out,
 	 const tmcg_openpgp_export_flags_t flags) const
 {
-	bool keysonly = ((flags & TMCG_OPENPGP_EXPORT_KEYSONLY) == TMCG_OPENPGP_EXPORT_KEYSONLY);
-	bool minimal = ((flags & TMCG_OPENPGP_EXPORT_MINIMAL) == TMCG_OPENPGP_EXPORT_MINIMAL);
-	bool revcert = ((flags & TMCG_OPENPGP_EXPORT_REVCERT) == TMCG_OPENPGP_EXPORT_REVCERT);
-	bool attested = ((flags & TMCG_OPENPGP_EXPORT_ATTESTED) == TMCG_OPENPGP_EXPORT_ATTESTED);
+	bool keysonly = ((flags & TMCG_OPENPGP_EXPORT_KEYSONLY)
+		== TMCG_OPENPGP_EXPORT_KEYSONLY);
+	bool minimal = ((flags & TMCG_OPENPGP_EXPORT_MINIMAL)
+		== TMCG_OPENPGP_EXPORT_MINIMAL);
+	bool revcert = ((flags & TMCG_OPENPGP_EXPORT_REVCERT)
+		== TMCG_OPENPGP_EXPORT_REVCERT);
+	bool attested = ((flags & TMCG_OPENPGP_EXPORT_ATTESTED)
+		== TMCG_OPENPGP_EXPORT_ATTESTED);
 	out.insert(out.end(),
 		packet.begin(),
 		packet.end());
@@ -5968,7 +5967,10 @@ size_t TMCG_OpenPGP_Keyring::List
 					std::cout << "i:";
 				std::cout << ":::";
 				if (uid->selfsigs.size())
-					std::cout << (long int)uid->selfsigs[0]->creationtime << ":";
+				{
+					std::cout << (long int)uid->selfsigs[0]->creationtime <<
+						":";
+				}
 				else
 					std::cout << ":";
 				std::cout << ":";
@@ -6010,7 +6012,10 @@ size_t TMCG_OpenPGP_Keyring::List
 					std::cout << "i:";
 				std::cout << ":::";
 				if (uat->selfsigs.size())
-					std::cout << (long int)uat->selfsigs[0]->creationtime << ":";
+				{
+					std::cout << (long int)uat->selfsigs[0]->creationtime <<
+						":";
+				}
 				else
 					std::cout << ":";
 				// TODO: implement other fields
@@ -6422,8 +6427,8 @@ bool TMCG_OpenPGP_Message::Decrypt
 	{
 		if (verbose)
 		{
-			std::cerr << "ERROR: wrong length (" << key.size() <<
-				" bytes) of session key found" << std::endl;
+			std::cerr << "ERROR: wrong length (" << key.size() << " bytes) " <<
+				"of session key found" << std::endl;
 		}
 		return false;
 	}
@@ -6444,9 +6449,9 @@ bool TMCG_OpenPGP_Message::Decrypt
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: SymmetricDecryptAEAD() failed" <<
-					" with rc = " << gcry_err_code(ret) << 
-					" str = " << gcry_strerror(ret) << std::endl;
+				std::cerr << "ERROR: SymmetricDecryptAEAD() failed " <<
+					"with rc = " << gcry_err_code(ret) << " " <<
+					"str = " << gcry_strerror(ret) << std::endl;
 			}
 			return false;
 		}
@@ -6461,8 +6466,8 @@ bool TMCG_OpenPGP_Message::Decrypt
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: SymmetricDecrypt() failed" <<
-					" with rc = " << gcry_err_code(ret) << std::endl;
+				std::cerr << "ERROR: SymmetricDecrypt() failed " <<
+					"with rc = " << gcry_err_code(ret) << std::endl;
 			}
 			return false;
 		}
@@ -6507,8 +6512,8 @@ bool TMCG_OpenPGP_Message::Decrypt
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: encrypted message is not integrity" <<
-					" protected (security issue)" << std::endl;
+				std::cerr << "ERROR: encrypted message is not integrity " <<
+					"protected (security issue)" << std::endl;
 			}
 			return false;
 		}
@@ -10775,8 +10780,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			{
 				if (verbose)
 				{
-					std::cerr << "WARNING: more than one embedded signature" <<
-						" found; only the last one is recognized" << std::endl;
+					std::cerr << "WARNING: more than one embedded signature " <<
+						"found; only the last one is recognized" << std::endl;
 				}
 				delete [] out.embeddedsignature;
 				tmcg_openpgp_mem_alloc -= out.embeddedsignaturelen;
@@ -10808,8 +10813,8 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			{
 				if (verbose)
 				{
-					std::cerr << "WARNING: more than one issuer fingerprint" <<
-						" found; only the last one is recognized" << std::endl;
+					std::cerr << "WARNING: more than one issuer fingerprint " <<
+						"found; only the last one is recognized" << std::endl;
 				}
 			}
 			if (pkt.size() < 2)
@@ -10871,9 +10876,9 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::SubpacketDecode
 			{
 				if (verbose)
 				{
-					std::cerr << "WARNING: more than one subpacket with" <<
-						" attested certifications found; only the last one" <<
-						" is recognized" << std::endl;
+					std::cerr << "WARNING: more than one subpacket with " <<
+						"attested certifications found; only the last one " <<
+						"is recognized" << std::endl;
 				}
 				delete [] out.attestedcertifications;
 				tmcg_openpgp_mem_alloc -= out.attestedcertificationslen;
@@ -16199,8 +16204,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 	{
 		if (verbose)
 		{
-			std::cerr << "WARNING: signature for unrecognized" <<
-				" subkey ignored" << std::endl;
+			std::cerr << "WARNING: signature for unrecognized " <<
+				"subkey ignored" << std::endl;
 		}
 		delete sig;
 		return true; // continue loop through packets
@@ -16266,8 +16271,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				sub->keyrevsigs.push_back(sig);
 				if (verbose)
 				{
-					std::cerr << "WARNING: key revocation signature on" <<
-						" subkey found" << std::endl;
+					std::cerr << "WARNING: key revocation signature on " <<
+						"subkey found" << std::endl;
 				}
 			}
 			else if (ctx.type == TMCG_OPENPGP_SIGNATURE_CERTIFICATION_REVOCATION)
@@ -16276,8 +16281,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				sub->certrevsigs.push_back(sig);
 				if (verbose)
 				{
-					std::cerr << "WARNING: certification revocation" <<
-						" signature on subkey found" << std::endl;
+					std::cerr << "WARNING: certification revocation " <<
+						"signature on subkey found" << std::endl;
 				}
 			}
 			else
@@ -16324,8 +16329,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 				sub->certrevsigs.push_back(sig);
 				if (verbose)
 				{
-					std::cerr << "WARNING: certification revocation" <<
-						" signature on subkey found" << std::endl;
+					std::cerr << "WARNING: certification revocation " <<
+						"signature on subkey found" << std::endl;
 				}
 			}
 			else
@@ -16346,8 +16351,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			sub->keyrevsigs.push_back(sig);
 			if (verbose)
 			{
-				std::cerr << "WARNING: sub-level key revocation signature" <<
-					" on subkey found " << std::endl;
+				std::cerr << "WARNING: sub-level key revocation signature " <<
+					"on subkey found " << std::endl;
 			}
 		}
 		else
@@ -16424,8 +16429,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			pub->keyrevsigs.push_back(sig);
 			if (verbose)
 			{
-				std::cerr << "WARNING: external key revocation signature" <<
-					" on primary key found" << std::endl;
+				std::cerr << "WARNING: external key revocation signature " <<
+					"on primary key found" << std::endl;
 			}
 		}
 		else
@@ -16468,8 +16473,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			pub->keyrevsigs.push_back(sig);
 			if (verbose)
 			{
-				std::cerr << "WARNING: key revocation signature on primary" <<
-					" key found" << std::endl;
+				std::cerr << "WARNING: key revocation signature on primary " <<
+					"key found" << std::endl;
 			}
 		}
 		else if (ctx.type == TMCG_OPENPGP_SIGNATURE_CERTIFICATION_REVOCATION)
@@ -16478,8 +16483,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			pub->certrevsigs.push_back(sig);
 			if (verbose)
 			{
-				std::cerr << "WARNING: certification revocation signature" <<
-					" on primary key" << std::endl;
+				std::cerr << "WARNING: certification revocation signature " <<
+					"on primary key" << std::endl;
 			}
 		}
 		else
@@ -16525,8 +16530,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			uat->revsigs.push_back(sig);
 			if (verbose)
 			{
-				std::cerr << "WARNING: certification revocation signature" <<
-					" on user attribute" << std::endl;
+				std::cerr << "WARNING: certification revocation signature " <<
+					"on user attribute" << std::endl;
 			}
 		}
 		else if (ctx.type == TMCG_OPENPGP_SIGNATURE_ATTESTATION)
@@ -16577,8 +16582,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag2
 			uid->revsigs.push_back(sig);
 			if (verbose)
 			{
-				std::cerr << "WARNING: certification revocation signature" <<
-					" on user ID" << std::endl;
+				std::cerr << "WARNING: certification revocation signature " <<
+					"on user ID" << std::endl;
 			}
 		}
 		else if (ctx.type == TMCG_OPENPGP_SIGNATURE_ATTESTATION)
@@ -16659,8 +16664,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag6
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: reading primary key" <<
-					" material failed" << std::endl;
+				std::cerr << "ERROR: reading primary key " <<
+					"material failed" << std::endl;
 			}
 			return false;
 		}
@@ -16812,8 +16817,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse_Tag14
 		}
 		if (verbose && OctetsCompare(sub->id, pub->id))
 		{
-			std::cerr << "WARNING: probably same key material" <<
-				" used for primary key and subkey" << std::endl;
+			std::cerr << "WARNING: probably same key material " <<
+				"used for primary key and subkey" << std::endl;
 		}
 	}
 	else
@@ -17853,7 +17858,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: decoding OpenPGP packets failed " <<
+				std::cerr << "WARNING: decoding packets failed " <<
 					"at packet #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
@@ -17863,8 +17868,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized critical OpenPGP" <<
-					" subpacket found at packet #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized critical " <<
+					"subpacket found at packet #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
 			continue; // ignore signature with critical subpacket
@@ -17873,8 +17878,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized OpenPGP" <<
-					" subpacket found at packet #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized " <<
+					"subpacket found at packet #" << pnum << std::endl;
 			}
 			ptag = 0x02; // try to process signature anyway
 		}
@@ -17882,8 +17887,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized OpenPGP" <<
-					" signature packet found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized " <<
+					"signature packet found at #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
 			continue; // ignore packet
@@ -17894,7 +17899,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			{
 				if (verbose)
 				{
-					std::cerr << "WARNING: unrecognized OpenPGP " <<
+					std::cerr << "WARNING: unrecognized " <<
 						"key packet found at #" << pnum << std::endl;
 				}
 				if (!badkey && subkey)
@@ -17921,7 +17926,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized OpenPGP " <<
+				std::cerr << "WARNING: unrecognized " <<
 					"packet found at #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
@@ -17954,7 +17959,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyBlockParse
 			default:
 				if (verbose > 1)
 				{
-					std::cerr << "INFO: OpenPGP packet with tag " <<
+					std::cerr << "INFO: packet with tag " <<
 						(int)ptag << " ignored" << std::endl;
 				}
 				break;
@@ -18038,46 +18043,53 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	if (ptag == 0x00)
 	{
 		if (verbose)
-			std::cerr << "ERROR: decoding OpenPGP packet failed" << std::endl;
+			std::cerr << "ERROR: decoding packet failed" << std::endl;
 		PacketContextRelease(ctx);
 		return false;
 	}
 	else if (ptag == 0xFA)
 	{
 		if (verbose)
-			std::cerr << "ERROR: unrecognized critical OpenPGP" <<
-				" signature subpacket found" << std::endl;
+		{
+			std::cerr << "ERROR: unrecognized critical " <<
+				"signature subpacket found" << std::endl;
+		}
 		PacketContextRelease(ctx);
 		return false;
 	}
 	else if (ptag == 0xFB)
 	{
 		if (verbose)
-			std::cerr << "WARNING: unrecognized OpenPGP" <<
-				" signature subpacket found" << std::endl;
+		{
+			std::cerr << "WARNING: unrecognized " <<
+				"signature subpacket found" << std::endl;
+		}
 		ptag = 0x02; // process signature anyway
 	}
 	else if (ptag == 0xFC)
 	{
 		if (verbose)
-			std::cerr << "ERROR: unrecognized OpenPGP" <<
-				" signature packet found " << std::endl;
+		{
+			std::cerr << "ERROR: unrecognized signature " <<
+				"packet found " << std::endl;
+		}
 		PacketContextRelease(ctx);
 		return false;
 	}
 	else if (ptag == 0xFD)
 	{
 		if (verbose)
-			std::cerr << "ERROR: unrecognized OpenPGP" <<
-				" key packet found" << std::endl;
+		{
+			std::cerr << "ERROR: unrecognized key " <<
+				"packet found" << std::endl;
+		}
 		PacketContextRelease(ctx);
 		return false;
 	}
 	else if (ptag == 0xFE)
 	{
 		if (verbose)
-			std::cerr << "ERROR: unrecognized OpenPGP" << 
-				" packet found" << std::endl;
+			std::cerr << "ERROR: unrecognized packet found" << std::endl;
 		PacketContextRelease(ctx);
 		return false;
 	}
@@ -18124,8 +18136,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: attested certifications found" <<
-					" on wrong signature type 0x" << std::hex <<
+				std::cerr << "ERROR: attested certifications found " <<
+					"on wrong signature type 0x" << std::hex <<
 					(int)ctx.type << std::dec << std::endl;
 			}
 			PacketContextRelease(ctx);
@@ -18147,8 +18159,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: wrong size of attested certifications" <<
-					" subpacket" << std::endl;
+				std::cerr << "ERROR: wrong size of attested " <<
+					"certifications subpacket" << std::endl;
 			}
 			PacketContextRelease(ctx);
 			return false;
@@ -18225,7 +18237,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		default:
 			if (verbose)
 			{
-				std::cerr << "ERROR: wrong OpenPGP packet with tag " << 
+				std::cerr << "ERROR: wrong packet with tag " << 
 					(int)ptag << std::endl;
 			}
 			PacketContextRelease(ctx);
@@ -18312,39 +18324,49 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 		if (ptag == 0x00)
 		{
 			if (verbose)
-				std::cerr << "WARNING: decoding OpenPGP packets failed " <<
-					"at key #" << knum << " and packet #" << pnum << std::endl;
+			{
+				std::cerr << "WARNING: decoding packets failed at " <<
+					"key #" << knum << " and packet #" << pnum << std::endl;
+			}
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
 		else if (ptag == 0xFA)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized critical subpacket " <<
-					"at key #" << knum << " and packet #" << pnum << std::endl;
+			{
+				std::cerr << "WARNING: unrecognized critical subpacket at " <<
+					"key #" << knum << " and packet #" << pnum << std::endl;
+			}
 			PacketContextRelease(ctx);
 			continue; // ignore signature with critical subpacket
 		}
 		else if (ptag == 0xFB)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized subpacket found " <<
-					"at key #" << knum << " and packet #" << pnum << std::endl;
+			{
+				std::cerr << "WARNING: unrecognized subpacket found at " <<
+					"key #" << knum << " and packet #" << pnum << std::endl;
+			}
 			ptag = 0x02; // process signature anyway
 		}
 		else if (ptag == 0xFC)
 		{
 			if (verbose)
+			{
 				std::cerr << "WARNING: unrecognized signature packet found " <<
 					"at key #" << knum << " and packet #" << pnum << std::endl;
+			}
 			PacketContextRelease(ctx);
 			continue; // ignore packet
 		}
 		else if (ptag == 0xFD)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized key packet found " <<
-					"at key #" << knum << " and packet #" << pnum << std::endl;
+			{
+				std::cerr << "WARNING: unrecognized key packet found at " <<
+					"key #" << knum << " and packet #" << pnum << std::endl;
+			}
 			if ((ctx.tag == 14) || (ctx.tag == 7))
 			{
 				if (primary && !badkey && subkey)
@@ -18366,8 +18388,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 		else if (ptag == 0xFE)
 		{
 			if (verbose)
-				std::cerr << "WARNING: unrecognized OpenPGP packet found " <<
-					"at key #" << knum << " and packet #" << pnum << std::endl;
+			{
+				std::cerr << "WARNING: unrecognized packet found at " <<
+					"key #" << knum << " and packet #" << pnum << std::endl;
+			}
 		}
 		// ignore all packets of an unrecognized key block
 		if (ignore && (ptag != 6))
@@ -18407,7 +18431,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 			default:
 				if (verbose > 1)
 				{
-					std::cerr << "INFO: OpenPGP packet with tag " <<
+					std::cerr << "INFO: packet with tag " <<
 						(int)ptag << " ignored" << std::endl;
 				}
 				break;
@@ -18460,8 +18484,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 	{
 		if (verbose)
 		{
-			std::cerr << "ERROR: wrong type of ASCII Armor found" <<
-				" (type = " << (int)type << ")" << std::endl;
+			std::cerr << "ERROR: wrong type of ASCII Armor found " <<
+				"(type = " << (int)type << ")" << std::endl;
 		}
 		return false;
 	}
@@ -18519,8 +18543,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: decoding OpenPGP packets failed " <<
-					"at packet #" << pnum << std::endl;
+				std::cerr << "ERROR: decoding packets failed at " <<
+					"packet #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
 			if (prv)
@@ -18537,8 +18561,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized critical OpenPGP " <<
-					"subpacket found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized critical subpacket " <<
+					"found at #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
 			continue; // ignore signature with critical subpacket
@@ -18547,7 +18571,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized OpenPGP subpacket " <<
+				std::cerr << "WARNING: unrecognized subpacket " <<
 					"found at #" << pnum << std::endl;
 			}
 			ptag = 0x02; // process signature
@@ -18556,8 +18580,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized OpenPGP signature " <<
-					"packet found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized signature packet " <<
+					"found at #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
 			continue; // ignore packet
@@ -18568,8 +18592,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 			{
 				if (verbose)
 				{
-					std::cerr << "WARNING: unrecognized OpenPGP key packet" <<
-						" found at #" << pnum << std::endl;
+					std::cerr << "WARNING: unrecognized key packet " <<
+						"found at #" << pnum << std::endl;
 				}
 				if (!badkey && subkey)
 				{
@@ -18595,8 +18619,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized OpenPGP packet" <<
-					" found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized packet " <<
+					"found at #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
 			continue; // ignore packet
@@ -18660,7 +18684,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 			default:
 				if (verbose > 1)
 				{
-					std::cerr << "INFO: OpenPGP packet with tag " <<
+					std::cerr << "INFO: packet with tag " <<
 						(int)ptag << " ignored" << std::endl;
 				}
 				break;
@@ -18715,8 +18739,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::PrivateKeyBlockParse
 	{
 		if (verbose)
 		{
-			std::cerr << "ERROR: wrong type of ASCII Armor found" <<
-				" (type = " << (int)type << ")" << std::endl;
+			std::cerr << "ERROR: wrong type of ASCII Armor found " <<
+				"(type = " << (int)type << ")" << std::endl;
 		}
 		return false;
 	}
@@ -18756,7 +18780,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: decoding OpenPGP packets failed " <<
+				std::cerr << "ERROR: decoding packets failed " <<
 					"at packet #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
@@ -18766,8 +18790,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized critical OpenPGP " <<
-					"subpacket found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized critical subpacket " <<
+					"found at #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
 			continue; // ignore signature with critical subpacket
@@ -18776,7 +18800,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized OpenPGP subpacket " <<
+				std::cerr << "WARNING: unrecognized subpacket " <<
 					"found at #" << pnum << std::endl;
 			}
 			ptag = 0x02; // process signature
@@ -18785,8 +18809,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized OpenPGP signature " <<
-					"packet found at #" << pnum << std::endl;
+				std::cerr << "WARNING: unrecognized signature packet " <<
+					"found at #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
 			continue; // ignore packet
@@ -18795,7 +18819,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized OpenPGP key packet " <<
+				std::cerr << "WARNING: unrecognized key packet " <<
 					"found at #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
@@ -18805,7 +18829,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 		{
 			if (verbose)
 			{
-				std::cerr << "WARNING: unrecognized OpenPGP packet " <<
+				std::cerr << "WARNING: unrecognized packet " <<
 					"found at #" << pnum << std::endl;
 			}
 			PacketContextRelease(ctx);
@@ -18840,8 +18864,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 					ret = false; // OpenPGP structure error detected
 				if (verbose)
 				{
-					std::cerr << "WARNING: one-pass signature OpenPGP packet" <<
-						" found; not supported and ignored" << std::endl;
+					std::cerr << "WARNING: one-pass signature packet " <<
+						"found; not supported and ignored" << std::endl;
 				}
 				smsg = true;
 				break;
@@ -18852,8 +18876,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 					// handle MDC, if COMP packet has indeterminate length
 					if (verbose)
 					{
-						std::cerr << "WARNING: assume MDC at the end of COMP" <<
-							" packet (indeterminate length)" << std::endl;
+						std::cerr << "WARNING: assume MDC at the end of " <<
+							"compressed packet (indeterminate length)" <<
+							std::endl;
 					}
 					ctx.compdatalen -= 22;
 					for (size_t i = 0; i < 22; i++)
@@ -18884,8 +18909,9 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 					// handle MDC, if LIT packet has indeterminate length
 					if (verbose)
 					{
-						std::cerr << "WARNING: assume MDC at the end of LIT" <<
-							" packet (indeterminate length)" << std::endl;
+						std::cerr << "WARNING: assume MDC at the end of " <<
+							"literal packet (indeterminate length)" <<
+							std::endl;
 					}
 					ctx.datalen -= 22;
 					for (size_t i = 0; i < 22; i++)
@@ -18929,8 +18955,8 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::MessageParse
 			default:
 				if (verbose > 1)
 				{
-					std::cerr << "INFO: OpenPGP packet with tag " <<
-						(int)ptag << " ignored" << std::endl;
+					std::cerr << "INFO: packet with tag " << (int)ptag <<
+						" ignored" << std::endl;
 				}
 				break;
 		}
