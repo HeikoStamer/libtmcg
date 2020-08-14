@@ -11163,7 +11163,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag1
 		return 0; // error: incorrect packet body
 	out.version = pkt[0];
 	if (out.version != 3)
-		return 0; // error: version not supported
+		return 0xFE; // warning: version not supported
 	for (size_t i = 0; i < 8; i++)
 		out.keyid[i] = pkt[1+i];
 	out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[9];
@@ -11545,7 +11545,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag3
 			return 0; // unknown S2K specifier	
 	}
 	else
-		return 0; // error: version not supported
+		return 0xFE; // warning: version not supported
 	return 3;
 }
 
@@ -11557,7 +11557,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag4
 		return 0; // error: incorrect packet body
 	out.version = pkt[0];
 	if (out.version != 3)
-		return 0; // error: version not supported
+		return 0xFE; // warning: version not supported
 	out.type = (tmcg_openpgp_signature_t)pkt[1];
 	out.hashalgo = (tmcg_openpgp_hashalgo_t)pkt[2];
 	out.pkalgo = (tmcg_openpgp_pkalgo_t)pkt[3];
@@ -11590,7 +11590,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag57
 	else if (out.version == 5)
 		pkt_offset = 10;
 	else
-		return 0; // error: version not supported
+		return 0xFE; // warning: version not supported
 	mpis.insert(mpis.end(), pkt.begin()+pkt_offset, pkt.end());
 	if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 	    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
@@ -12134,7 +12134,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag614
 	else if (out.version == 5)
 		pkt_offset = 10;
 	else
-		return 0; // error: version not supported
+		return 0xFE; // warning: version not supported
 	mpis.insert(mpis.end(), pkt.begin()+pkt_offset, pkt.end());
 	if ((out.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
 	    (out.pkalgo == TMCG_OPENPGP_PKALGO_RSA_ENCRYPT_ONLY) ||
@@ -12379,7 +12379,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag18
 		return 0; // error: incorrect packet body
 	out.version = pkt[0];
 	if (out.version != 1)
-		return 0; // error: version not supported
+		return 0xFE; // warning: version not supported
 	if (out.encdatalen != 0)
 		return 0; // error: already seen within context
 	tmcg_openpgp_mem_alloc += (pkt.size() - 1);
@@ -12445,7 +12445,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag20
 			out.encdata[i] = pkt[4+ivlen+i];
 	}
 	else
-		return 0; // error: version not supported
+		return 0xFE; // warning: version not supported
 	return 20;
 }
 
