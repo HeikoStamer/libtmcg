@@ -18058,8 +18058,10 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	tmcg_openpgp_byte_t ptag = PacketDecode(pkts, verbose, ctx, current_packet,
 		notations, embeddedsigs, recipientfprs);
 	if (verbose > 2)
+	{
 		std::cerr << "INFO: PacketDecode() = " << (int)ptag << 
 			" version = " << (int)ctx.version << std::endl;
+	}
 	if (ptag == 0x00)
 	{
 		if (verbose)
