@@ -5747,25 +5747,19 @@ bool TMCG_OpenPGP_Keyring::Add
 		FingerprintConvertPlain(key->fingerprint, fpr_str);
 	if (keys.count(fpr_str))
 		return false; // key is already there
-	keys[fpr_str] = key;
 	// register several key IDs of primary key and subkeys
 	std::string kid_str;
 	CallasDonnerhackeFinneyShawThayerRFC4880::
 		KeyidConvert(key->id, kid_str);
-	if (!keys_by_keyid.count(kid_str))
-	{
-		keys_by_keyid[kid_str] = key;
-		keys_by_keyid["0x"+kid_str] = key;
-	}
-	else
+	if (keys_by_keyid.count(kid_str))
 		return false; // dup key ID
-	if (!keys_by_keyid.count(fpr_str))
-	{
-		keys_by_keyid[fpr_str] = key;
-		keys_by_keyid["0x"+fpr_str] = key;
-	}
-	else
+	if (keys_by_keyid.count(fpr_str))
 		return false; // dup key ID (full fingerprint)
+	keys[fpr_str] = key;
+	keys_by_keyid[kid_str] = key;
+	keys_by_keyid["0x"+kid_str] = key;
+	keys_by_keyid[fpr_str] = key;
+	keys_by_keyid["0x"+fpr_str] = key;
 	for (size_t i = 0; i < (key->subkeys).size(); i++)
 	{
 		CallasDonnerhackeFinneyShawThayerRFC4880::
@@ -5777,15 +5771,11 @@ bool TMCG_OpenPGP_Keyring::Add
 			keys_by_keyid[kid_str] = key;
 			keys_by_keyid["0x"+kid_str] = key;
 		}
-		else
-			return false; // dup key ID
 		if (!keys_by_keyid.count(fpr_str))
 		{
 			keys_by_keyid[fpr_str] = key;
 			keys_by_keyid["0x"+fpr_str] = key;
 		}
-		else
-			return false; // dup key ID (full fingerprint)
 	}	
 	return true;
 }
