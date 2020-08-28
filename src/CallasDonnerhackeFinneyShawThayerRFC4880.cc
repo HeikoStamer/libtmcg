@@ -11434,7 +11434,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag3
 				out.encdata[i] = pkt[13+i];
 		}
 		else
-			return 0; // unknown S2K specifier
+			return 0xFE; // warning: unknown S2K specifier
 	}
 	else if (out.version == 5)
 	{
@@ -11532,7 +11532,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag3
 				out.encdata[i] = pkt[14+ivlen+i];
 		}
 		else
-			return 0; // unknown S2K specifier	
+			return 0xFE; // warning: unknown S2K specifier	
 	}
 	else
 		return 0xFE; // warning: version not supported
@@ -12071,7 +12071,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecodeTag57
 			mpis.erase(mpis.begin(), mpis.begin()+1);
 		}
 		else
-			return 0; // unknown S2K specifier
+			return 0xFE; // warning: unknown S2K specifier
 		size_t ivlen = AlgorithmIVLength(out.skalgo);
 		if (mpis.size() < ivlen)
 			return 0; // error: no IV
