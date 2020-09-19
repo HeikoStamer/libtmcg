@@ -18,7 +18,7 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018, 2019, 2020  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -694,6 +694,9 @@ class TMCG_OpenPGP_Signature
 			();
 };
 
+typedef std::vector<TMCG_OpenPGP_Signature*>
+	TMCG_OpenPGP_Signatures;
+
 class TMCG_OpenPGP_Pubkey; // forward declaration
 
 class TMCG_OpenPGP_UserID
@@ -714,10 +717,10 @@ class TMCG_OpenPGP_UserID
 		std::string											userid;
 		std::string											userid_sanitized;
 		tmcg_openpgp_octets_t								packet;
-		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
-		std::vector<TMCG_OpenPGP_Signature*>				revsigs;
-		std::vector<TMCG_OpenPGP_Signature*>				certsigs;
-		std::vector<TMCG_OpenPGP_Signature*>				attestsigs;
+		TMCG_OpenPGP_Signatures								selfsigs;
+		TMCG_OpenPGP_Signatures								revsigs;
+		TMCG_OpenPGP_Signatures								certsigs;
+		TMCG_OpenPGP_Signatures								attestsigs;
 		tmcg_openpgp_multiple_octets_t						attestations;
 		std::vector<tmcg_openpgp_hashalgo_t>				attestations_hashalgo;
 
@@ -744,10 +747,10 @@ class TMCG_OpenPGP_UserAttribute
 		bool												revoked;
 		tmcg_openpgp_octets_t								userattribute;
 		tmcg_openpgp_octets_t								packet;
-		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
-		std::vector<TMCG_OpenPGP_Signature*>				revsigs;
-		std::vector<TMCG_OpenPGP_Signature*>				certsigs;
-		std::vector<TMCG_OpenPGP_Signature*>				attestsigs;
+		TMCG_OpenPGP_Signatures								selfsigs;
+		TMCG_OpenPGP_Signatures								revsigs;
+		TMCG_OpenPGP_Signatures								certsigs;
+		TMCG_OpenPGP_Signatures								attestsigs;
 		tmcg_openpgp_multiple_octets_t						attestations;
 		std::vector<tmcg_openpgp_hashalgo_t>				attestations_hashalgo;
 
@@ -807,11 +810,11 @@ class TMCG_OpenPGP_Subkey
 		std::string											ec_curve;
 		tmcg_openpgp_hashalgo_t								kdf_hashalgo;
 		tmcg_openpgp_skalgo_t								kdf_skalgo;
-		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
-		std::vector<TMCG_OpenPGP_Signature*>				bindsigs;
-		std::vector<TMCG_OpenPGP_Signature*>				pbindsigs;
-		std::vector<TMCG_OpenPGP_Signature*>				keyrevsigs;
-		std::vector<TMCG_OpenPGP_Signature*>				certrevsigs;
+		TMCG_OpenPGP_Signatures								selfsigs;
+		TMCG_OpenPGP_Signatures								bindsigs;
+		TMCG_OpenPGP_Signatures								pbindsigs;
+		TMCG_OpenPGP_Signatures								keyrevsigs;
+		TMCG_OpenPGP_Signatures								certrevsigs;
 		std::vector<tmcg_openpgp_revkey_t>					revkeys;
 
 		TMCG_OpenPGP_Subkey
@@ -1034,9 +1037,9 @@ class TMCG_OpenPGP_Pubkey
 		tmcg_openpgp_octets_t								pca;
 		tmcg_openpgp_octets_t								paa;
 		std::string											ec_curve;
-		std::vector<TMCG_OpenPGP_Signature*>				selfsigs;
-		std::vector<TMCG_OpenPGP_Signature*>				keyrevsigs;
-		std::vector<TMCG_OpenPGP_Signature*>				certrevsigs;
+		TMCG_OpenPGP_Signatures								selfsigs;
+		TMCG_OpenPGP_Signatures								keyrevsigs;
+		TMCG_OpenPGP_Signatures								certrevsigs;
 		std::vector<TMCG_OpenPGP_UserID*>					userids;
 		std::vector<TMCG_OpenPGP_UserAttribute*>			userattributes;
 		std::vector<TMCG_OpenPGP_Subkey*>					subkeys;
