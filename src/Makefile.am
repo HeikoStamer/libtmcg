@@ -1,4 +1,4 @@
-# Copyright (C) 2005, 2009, 2016, 2017, 2018  Heiko Stamer <HeikoStamer@gmx.net>
+# Copyright (C) 2005, 2009, 2016, 2017, 2018, 2020  Heiko Stamer <HeikoStamer@gmx.net>
 #
 # This file is part of LibTMCG.
 #
@@ -16,7 +16,7 @@
 #   along with LibTMCG; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-EXTRA_DIST = libTMCG-config.in libTMCG.m4 sha3.c
+EXTRA_DIST = libTMCG-config.in libTMCG.m4
 
 bin_SCRIPTS = libTMCG-config
 
