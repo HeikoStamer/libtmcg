@@ -2424,6 +2424,14 @@ class CallasDonnerhackeFinneyShawThayerRFC4880
 			(const std::string								&in,
 			 const int										verbose,
 			 TMCG_OpenPGP_Signature*						&sig);
+		static bool SignaturesParse
+			(const tmcg_openpgp_octets_t					&in,
+			 const int										verbose,
+			 TMCG_OpenPGP_Signatures						&sigs);
+		static bool SignaturesParse
+			(const std::string								&in,
+			 const int										verbose,
+			 TMCG_OpenPGP_Signatures						&sigs);
 		static bool PublicKeyringParse
 			(const tmcg_openpgp_octets_t					&in,
 			 const int										verbose,

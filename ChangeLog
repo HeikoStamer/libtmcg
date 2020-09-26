@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2020-09-26] RFC4880: added member SignaturesParse()
 * [2020-09-19] RFC4880: added type definition TMCG_OpenPGP_Signatures
 * [2020-08-28] RFC4880: fixed bug #58937 (handle unknown S2K specifier)
 * [2020-08-19] RFC4880: fixed bug #58983 (std::bad_alloc on duplicated subkeys)

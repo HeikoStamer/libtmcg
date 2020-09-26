@@ -18280,6 +18280,228 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	return SignatureParse(pkts, verbose, sig);
 }
 
+bool CallasDonnerhackeFinneyShawThayerRFC4880::SignaturesParse
+	(const tmcg_openpgp_octets_t &in, const int verbose,
+	 TMCG_OpenPGP_Signatures &sigs)
+{
+	// copy the message for processing
+	tmcg_openpgp_octets_t pkts;
+	pkts.insert(pkts.end(), in.begin(), in.end());
+	size_t pnum = 0, ok = 0;
+	while (pkts.size())
+	{
+		// parse a single signature packet
+		tmcg_openpgp_packet_ctx_t ctx;
+		tmcg_openpgp_octets_t current_packet;
+		tmcg_openpgp_notations_t notations;
+		tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
+		tmcg_openpgp_multiple_octets_t attestedcerts;
+		tmcg_openpgp_byte_t ptag = PacketDecode(pkts, verbose, ctx,
+			current_packet, notations, embeddedsigs, recipientfprs);
+		++pnum;
+		if (verbose > 2)
+		{
+			std::cerr << "INFO: PacketDecode() = " << (int)ptag << 
+				" version = " << (int)ctx.version << std::endl;
+		}
+		if (ptag == 0x00)
+		{
+			if (verbose)
+			{
+				std::cerr << "WARNING: decoding packet #" << pnum <<
+					" failed; packet ignored" << std::endl;
+			}
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		else if (ptag == 0xFA)
+		{
+			if (verbose)
+			{
+				std::cerr << "WARNING: unrecognized critical " <<
+					"signature subpacket found; packet ignored" << std::endl;
+			}
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		else if (ptag == 0xFB)
+		{
+			if (verbose)
+			{
+				std::cerr << "WARNING: unrecognized " <<
+					"signature subpacket found; subpacket ignored" << std::endl;
+			}
+			ptag = 0x02; // process packet anyway
+		}
+		else if (ptag == 0xFC)
+		{
+			if (verbose)
+			{
+				std::cerr << "WARNING: unrecognized signature " <<
+					"packet found; packet ignored" << std::endl;
+			}
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		else if (ptag == 0xFD)
+		{
+			if (verbose)
+			{
+				std::cerr << "WARNING: unrecognized key " <<
+					"packet found; packet ignored" << std::endl;
+			}
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		else if (ptag == 0xFE)
+		{
+			if (verbose)
+			{
+				std::cerr << "WARNING: unrecognized packet found;" <<
+					" packet ignored" << std::endl;
+			}
+			PacketContextRelease(ctx);
+			continue; // ignore packet
+		}
+		if (ptag == 2)
+		{
+			TMCG_OpenPGP_Signature *sig = NULL;
+			tmcg_openpgp_octets_t issuer, issuerfpr, hspd, flags, features;
+			tmcg_openpgp_octets_t psa, pha, pca, paa, left;
+			for (size_t i = 0; i < sizeof(ctx.issuer); i++)
+				issuer.push_back(ctx.issuer[i]);
+			switch (ctx.issuerkeyversion)
+			{
+				case 4: // V4 keys use SHA-1
+					for (size_t i = 0; i < 20; i++)
+						issuerfpr.push_back(ctx.issuerfingerprint[i]);
+					break;
+				case 5: // V5 keys use SHA256
+					for (size_t i = 0; i < 32; i++)
+						issuerfpr.push_back(ctx.issuerfingerprint[i]);
+					if (OctetsCompareZero(issuer))
+					{
+						// those keys may not have issuer subpackets, so infer
+						issuer.clear();
+						for (size_t i = 0; i < 8; i++)
+							issuer.push_back(ctx.issuerfingerprint[i]);
+					}
+					break;
+			}
+			for (size_t i = 0; i < ctx.hspdlen; i++)
+				hspd.push_back(ctx.hspd[i]);
+			for (size_t i = 0; i < ctx.keyflagslen; i++)
+				flags.push_back(ctx.keyflags[i]);
+			for (size_t i = 0; i < ctx.featureslen; i++)
+				features.push_back(ctx.features[i]);
+			for (size_t i = 0; i < ctx.psalen; i++)
+				psa.push_back(ctx.psa[i]);
+			for (size_t i = 0; i < ctx.phalen; i++)
+				pha.push_back(ctx.pha[i]);
+			for (size_t i = 0; i < ctx.pcalen; i++)
+				pca.push_back(ctx.pca[i]);
+			for (size_t i = 0; i < ctx.paalen; i++)
+				paa.push_back(ctx.paa[i]);
+			left.push_back(ctx.left[0]), left.push_back(ctx.left[1]);
+			if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+			    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+			{
+				unsigned int mdbits = 0;
+				mdbits = gcry_mpi_get_nbits(ctx.md);
+				if (verbose > 2)
+					std::cerr << "INFO: mdbits = " << mdbits << std::endl;
+				// create a new signature object
+				sig = new TMCG_OpenPGP_Signature(ctx.revocable,
+					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
+					ctx.type, ctx.version, ctx.sigcreationtime,
+					ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.md,
+					current_packet, hspd, issuer, issuerfpr, flags, features,
+					psa, pha, pca, paa, embeddedsigs, recipientfprs,
+					attestedcerts, left);
+			}
+			else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
+				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
+			{
+				unsigned int rbits = 0, sbits = 0;
+				rbits = gcry_mpi_get_nbits(ctx.r);
+				sbits = gcry_mpi_get_nbits(ctx.s);
+				if (verbose > 2)
+				{
+					std::cerr << "INFO: rbits = " << rbits <<
+						" sbits = " << sbits << std::endl;
+				}
+				// create a new signature object
+				sig = new TMCG_OpenPGP_Signature(ctx.revocable,
+					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
+					ctx.type, ctx.version, ctx.sigcreationtime,
+					ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.r, ctx.s,
+					current_packet, hspd, issuer, issuerfpr, flags, features,
+					psa, pha, pca, paa, embeddedsigs, recipientfprs,
+					attestedcerts, left);
+			}
+			else
+			{
+				if (verbose)
+				{
+					std::cerr << "WARNING: public-key signature" <<
+						" algorithm " << (int)ctx.pkalgo << " not" <<
+						" supported; packet ignored" << std::endl;
+				}
+			}
+			if (sig != NULL)
+			{
+				if (!sig->Good())
+				{
+					if (verbose)
+					{
+						std::cerr << "WARNING: parsing signature material" <<
+							" of packet #" << pnum << " failed" << std::endl;
+					}
+					delete sig;
+				}
+				else
+				{
+					++ok;
+					sigs.push_back(sig);
+				}
+			}
+		}
+		else
+		{
+			if (verbose)
+			{
+				std::cerr << "WARNING: wrong packet with tag " << 
+					(int)ptag << "; packet ignored" << std::endl;
+			}
+		}
+		// cleanup allocated buffers and mpi's
+		PacketContextRelease(ctx);
+	}
+	if (ok)
+		return true;
+	return false;
+}
+
+bool CallasDonnerhackeFinneyShawThayerRFC4880::SignaturesParse
+	(const std::string &in, const int verbose,
+	 TMCG_OpenPGP_Signatures &sigs)
+{
+	// decode ASCII Armor
+	tmcg_openpgp_octets_t pkts;
+	tmcg_openpgp_armor_t type = ArmorDecode(in, pkts);
+	if (type != TMCG_OPENPGP_ARMOR_SIGNATURE)
+	{
+		if (verbose)
+		{
+			std::cerr << "ERROR: wrong type of ASCII Armor found" <<
+				" (type = " << (int)type << ")" << std::endl;
+		}
+		return false;
+	}
+	return SignaturesParse(pkts, verbose, sigs);
+}
+
 bool CallasDonnerhackeFinneyShawThayerRFC4880::PublicKeyringParse
 	(const tmcg_openpgp_octets_t &in, const int verbose,
 	 TMCG_OpenPGP_Keyring* &ring)
