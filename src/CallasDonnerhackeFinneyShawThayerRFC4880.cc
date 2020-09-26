@@ -18039,226 +18039,189 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	// copy the message for processing
 	tmcg_openpgp_octets_t pkts;
 	pkts.insert(pkts.end(), in.begin(), in.end());
-	// parse a single signature packet
-	tmcg_openpgp_packet_ctx_t ctx;
-	tmcg_openpgp_octets_t current_packet;
-	tmcg_openpgp_notations_t notations;
-	tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
-	tmcg_openpgp_multiple_octets_t attestedcerts;
-	tmcg_openpgp_byte_t ptag = PacketDecode(pkts, verbose, ctx, current_packet,
-		notations, embeddedsigs, recipientfprs);
-	if (verbose > 2)
+	while (pkts.size())
 	{
-		std::cerr << "INFO: PacketDecode() = " << (int)ptag << 
-			" version = " << (int)ctx.version << std::endl;
-	}
-	if (ptag == 0x00)
-	{
-		if (verbose)
-			std::cerr << "ERROR: decoding packet failed" << std::endl;
-		PacketContextRelease(ctx);
-		return false;
-	}
-	else if (ptag == 0xFA)
-	{
-		if (verbose)
+		// parse a single signature packet
+		tmcg_openpgp_packet_ctx_t ctx;
+		tmcg_openpgp_octets_t current_packet;
+		tmcg_openpgp_notations_t notations;
+		tmcg_openpgp_multiple_octets_t embeddedsigs, recipientfprs;
+		tmcg_openpgp_multiple_octets_t attestedcerts;
+		tmcg_openpgp_byte_t ptag = PacketDecode(pkts, verbose, ctx,
+			current_packet, notations, embeddedsigs, recipientfprs);
+		if (verbose > 2)
 		{
-			std::cerr << "ERROR: unrecognized critical " <<
-				"signature subpacket found" << std::endl;
+			std::cerr << "INFO: PacketDecode() = " << (int)ptag << 
+				" version = " << (int)ctx.version << std::endl;
 		}
-		PacketContextRelease(ctx);
-		return false;
-	}
-	else if (ptag == 0xFB)
-	{
-		if (verbose)
+		if (ptag == 0x00)
 		{
-			std::cerr << "WARNING: unrecognized " <<
-				"signature subpacket found" << std::endl;
+			if (verbose)
+				std::cerr << "ERROR: decoding packet failed" << std::endl;
+			PacketContextRelease(ctx);
+			return false;
 		}
-		ptag = 0x02; // process signature anyway
-	}
-	else if (ptag == 0xFC)
-	{
-		if (verbose)
-		{
-			std::cerr << "ERROR: unrecognized signature " <<
-				"packet found " << std::endl;
-		}
-		PacketContextRelease(ctx);
-		return false;
-	}
-	else if (ptag == 0xFD)
-	{
-		if (verbose)
-		{
-			std::cerr << "ERROR: unrecognized key " <<
-				"packet found" << std::endl;
-		}
-		PacketContextRelease(ctx);
-		return false;
-	}
-	else if (ptag == 0xFE)
-	{
-		if (verbose)
-			std::cerr << "ERROR: unrecognized packet found" << std::endl;
-		PacketContextRelease(ctx);
-		return false;
-	}
-	tmcg_openpgp_octets_t issuer, issuerfpr, hspd, flags, features;
-	tmcg_openpgp_octets_t psa, pha, pca, paa, left;
-	for (size_t i = 0; i < sizeof(ctx.issuer); i++)
-		issuer.push_back(ctx.issuer[i]);
-	switch (ctx.issuerkeyversion)
-	{
-		case 4: // V4 keys use SHA-1
-			for (size_t i = 0; i < 20; i++)
-				issuerfpr.push_back(ctx.issuerfingerprint[i]);
-			break;
-		case 5: // V5 keys use SHA256
-			for (size_t i = 0; i < 32; i++)
-				issuerfpr.push_back(ctx.issuerfingerprint[i]);
-			if (OctetsCompareZero(issuer))
-			{
-				// those keys may not have issuer subpackets, so we must infer
-				issuer.clear();
-				for (size_t i = 0; i < 8; i++)
-					issuer.push_back(ctx.issuerfingerprint[i]);
-			}
-			break;
-	}
-	for (size_t i = 0; i < ctx.hspdlen; i++)
-		hspd.push_back(ctx.hspd[i]);
-	for (size_t i = 0; i < ctx.keyflagslen; i++)
-		flags.push_back(ctx.keyflags[i]);
-	for (size_t i = 0; i < ctx.featureslen; i++)
-		features.push_back(ctx.features[i]);
-	for (size_t i = 0; i < ctx.psalen; i++)
-		psa.push_back(ctx.psa[i]);
-	for (size_t i = 0; i < ctx.phalen; i++)
-		pha.push_back(ctx.pha[i]);
-	for (size_t i = 0; i < ctx.pcalen; i++)
-		pca.push_back(ctx.pca[i]);
-	for (size_t i = 0; i < ctx.paalen; i++)
-		paa.push_back(ctx.paa[i]);
-	left.push_back(ctx.left[0]), left.push_back(ctx.left[1]);
-	if (ctx.attestedcertificationslen > 0)
-	{
-		if (ctx.type != TMCG_OPENPGP_SIGNATURE_ATTESTATION)
+		else if (ptag == 0xFA)
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: attested certifications found " <<
-					"on wrong signature type 0x" << std::hex <<
-					(int)ctx.type << std::dec << std::endl;
+				std::cerr << "ERROR: unrecognized critical " <<
+					"signature subpacket found" << std::endl;
 			}
 			PacketContextRelease(ctx);
 			return false;
 		}
-		size_t hashlen = AlgorithmHashLength(ctx.hashalgo);
-		if (hashlen == 0)
+		else if (ptag == 0xFB)
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: unknown hash algorithm " <<
-					(int)ctx.hashalgo << " found" << std::endl;
+				std::cerr << "WARNING: unrecognized " <<
+					"signature subpacket found" << std::endl;
+			}
+			ptag = 0x02; // process signature anyway
+		}
+		else if (ptag == 0xFC)
+		{
+			if (verbose)
+			{
+				std::cerr << "ERROR: unrecognized signature " <<
+					"packet found " << std::endl;
 			}
 			PacketContextRelease(ctx);
 			return false;
 		}
-		size_t num = ctx.attestedcertificationslen / hashlen;
-		if ((ctx.attestedcertificationslen % hashlen) != 0)
+		else if (ptag == 0xFD)
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: wrong size of attested " <<
-					"certifications subpacket" << std::endl;
+				std::cerr << "ERROR: unrecognized key " <<
+					"packet found" << std::endl;
 			}
 			PacketContextRelease(ctx);
 			return false;
 		}
-		for (size_t i = 0; i < num; i++)
+		else if (ptag == 0xFE)
 		{
-			size_t ptr = i * hashlen;
-			tmcg_openpgp_octets_t certfpr;
-			for (size_t j = 0; j < hashlen; j++)
-				certfpr.push_back(ctx.attestedcertifications[ptr+j]);
-			attestedcerts.push_back(certfpr);
+			if (verbose)
+				std::cerr << "ERROR: unrecognized packet found" << std::endl;
+			PacketContextRelease(ctx);
+			return false;
 		}
-	}
-	switch (ptag)
-	{
-		case 2: // Signature Packet
-			if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
-			    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
-			{
-				unsigned int mdbits = 0;
-				mdbits = gcry_mpi_get_nbits(ctx.md);
-				if (verbose > 2)
-					std::cerr << "INFO: mdbits = " << mdbits << std::endl;
-				// create a new signature object
-				sig = new TMCG_OpenPGP_Signature(ctx.revocable,
-					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
-					ctx.type, ctx.version, ctx.sigcreationtime,
-					ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.md,
-					current_packet, hspd, issuer, issuerfpr, flags, features,
-					psa, pha, pca, paa, embeddedsigs, recipientfprs,
-					attestedcerts, left);
-			}
-			else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
-				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
-				(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
-			{
-				unsigned int rbits = 0, sbits = 0;
-				rbits = gcry_mpi_get_nbits(ctx.r);
-				sbits = gcry_mpi_get_nbits(ctx.s);
-				if (verbose > 2)
-					std::cerr << "INFO: rbits = " << rbits <<
-						" sbits = " << sbits << std::endl;
-				// create a new signature object
-				sig = new TMCG_OpenPGP_Signature(ctx.revocable,
-					ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
-					ctx.type, ctx.version, ctx.sigcreationtime,
-					ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.r, ctx.s,
-					current_packet, hspd, issuer, issuerfpr, flags, features,
-					psa, pha, pca, paa, embeddedsigs, recipientfprs,
-					attestedcerts, left);
-			}
-			else
-			{
+		tmcg_openpgp_octets_t issuer, issuerfpr, hspd, flags, features;
+		tmcg_openpgp_octets_t psa, pha, pca, paa, left;
+		for (size_t i = 0; i < sizeof(ctx.issuer); i++)
+			issuer.push_back(ctx.issuer[i]);
+		switch (ctx.issuerkeyversion)
+		{
+			case 4: // V4 keys use SHA-1
+				for (size_t i = 0; i < 20; i++)
+					issuerfpr.push_back(ctx.issuerfingerprint[i]);
+				break;
+			case 5: // V5 keys use SHA256
+				for (size_t i = 0; i < 32; i++)
+					issuerfpr.push_back(ctx.issuerfingerprint[i]);
+				if (OctetsCompareZero(issuer))
+				{
+					// those keys may not have issuer subpackets, so infer
+					issuer.clear();
+					for (size_t i = 0; i < 8; i++)
+						issuer.push_back(ctx.issuerfingerprint[i]);
+				}
+				break;
+		}
+		for (size_t i = 0; i < ctx.hspdlen; i++)
+			hspd.push_back(ctx.hspd[i]);
+		for (size_t i = 0; i < ctx.keyflagslen; i++)
+			flags.push_back(ctx.keyflags[i]);
+		for (size_t i = 0; i < ctx.featureslen; i++)
+			features.push_back(ctx.features[i]);
+		for (size_t i = 0; i < ctx.psalen; i++)
+			psa.push_back(ctx.psa[i]);
+		for (size_t i = 0; i < ctx.phalen; i++)
+			pha.push_back(ctx.pha[i]);
+		for (size_t i = 0; i < ctx.pcalen; i++)
+			pca.push_back(ctx.pca[i]);
+		for (size_t i = 0; i < ctx.paalen; i++)
+			paa.push_back(ctx.paa[i]);
+		left.push_back(ctx.left[0]), left.push_back(ctx.left[1]);
+		switch (ptag)
+		{
+			case 2: // Signature Packet
+				if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA) ||
+				    (ctx.pkalgo == TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY))
+				{
+					unsigned int mdbits = 0;
+					mdbits = gcry_mpi_get_nbits(ctx.md);
+					if (verbose > 2)
+						std::cerr << "INFO: mdbits = " << mdbits << std::endl;
+					// create a new signature object
+					sig = new TMCG_OpenPGP_Signature(ctx.revocable,
+						ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
+						ctx.type, ctx.version, ctx.sigcreationtime,
+						ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.md,
+						current_packet, hspd, issuer, issuerfpr, flags, features,
+						psa, pha, pca, paa, embeddedsigs, recipientfprs,
+						attestedcerts, left);
+				}
+				else if ((ctx.pkalgo == TMCG_OPENPGP_PKALGO_DSA) ||
+					(ctx.pkalgo == TMCG_OPENPGP_PKALGO_ECDSA) ||
+					(ctx.pkalgo == TMCG_OPENPGP_PKALGO_EDDSA))
+				{
+					unsigned int rbits = 0, sbits = 0;
+					rbits = gcry_mpi_get_nbits(ctx.r);
+					sbits = gcry_mpi_get_nbits(ctx.s);
+					if (verbose > 2)
+					{
+						std::cerr << "INFO: rbits = " << rbits <<
+							" sbits = " << sbits << std::endl;
+					}
+					// create a new signature object
+					sig = new TMCG_OpenPGP_Signature(ctx.revocable,
+						ctx.exportablecertification, ctx.pkalgo, ctx.hashalgo,
+						ctx.type, ctx.version, ctx.sigcreationtime,
+						ctx.sigexpirationtime, 0, ctx.revocationcode, ctx.r, ctx.s,
+						current_packet, hspd, issuer, issuerfpr, flags, features,
+						psa, pha, pca, paa, embeddedsigs, recipientfprs,
+						attestedcerts, left);
+				}
+				else
+				{
+					if (verbose)
+					{
+						std::cerr << "ERROR: public-key signature algorithm " <<
+							(int)ctx.pkalgo << " not supported" << std::endl;
+					}
+					PacketContextRelease(ctx);
+					return false;
+				}
+				if (!sig->Good())
+				{
+					if (verbose)
+					{
+						std::cerr << "ERROR: parsing signature material" <<
+							" failed" << std::endl;
+					}
+					PacketContextRelease(ctx);
+					delete sig;
+					return false;
+				}
+				else
+				{
+					return true;
+				}
+				break;
+			default:
 				if (verbose)
 				{
-					std::cerr << "ERROR: public-key signature algorithm " <<
-						(int)ctx.pkalgo << " not supported" << std::endl;
+					std::cerr << "WARNING: wrong packet with tag " << 
+						(int)ptag << " ignored" << std::endl;
 				}
-				PacketContextRelease(ctx);
-				return false;
-			}
-			if (!sig->Good())
-			{
-				if (verbose)
-				{
-					std::cerr << "ERROR: parsing signature material failed" <<
-						std::endl;
-				}
-				PacketContextRelease(ctx);
-				delete sig;
-				return false;
-			}
-			break;
-		default:
-			if (verbose)
-			{
-				std::cerr << "ERROR: wrong packet with tag " << 
-					(int)ptag << std::endl;
-			}
-			PacketContextRelease(ctx);
-			return false;
-			break;
+				break;
+		}
+		// cleanup allocated buffers and mpi's
+		PacketContextRelease(ctx);
 	}
-	// cleanup allocated buffers and mpi's
-	PacketContextRelease(ctx);
-	return true;
+	return false;
 }
 
 bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
