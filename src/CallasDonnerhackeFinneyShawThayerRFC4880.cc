@@ -18039,6 +18039,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 	// copy the message for processing
 	tmcg_openpgp_octets_t pkts;
 	pkts.insert(pkts.end(), in.begin(), in.end());
+	size_t pnum = 0;
 	while (pkts.size())
 	{
 		// parse a single signature packet
@@ -18049,6 +18050,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		tmcg_openpgp_multiple_octets_t attestedcerts;
 		tmcg_openpgp_byte_t ptag = PacketDecode(pkts, verbose, ctx,
 			current_packet, notations, embeddedsigs, recipientfprs);
+		++pnum;
 		if (verbose > 2)
 		{
 			std::cerr << "INFO: PacketDecode() = " << (int)ptag << 
@@ -18057,26 +18059,29 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		if (ptag == 0x00)
 		{
 			if (verbose)
-				std::cerr << "ERROR: decoding packet failed" << std::endl;
+			{
+				std::cerr << "WARNING: decoding packet #" << pnum <<
+					" failed; packet ignored" << std::endl;
+			}
 			PacketContextRelease(ctx);
-			return false;
+			continue; // ignore packet
 		}
 		else if (ptag == 0xFA)
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: unrecognized critical " <<
-					"signature subpacket found" << std::endl;
+				std::cerr << "WARNING: unrecognized critical " <<
+					"signature subpacket found; packet ignored" << std::endl;
 			}
 			PacketContextRelease(ctx);
-			return false;
+			continue; // ignore packet
 		}
 		else if (ptag == 0xFB)
 		{
 			if (verbose)
 			{
 				std::cerr << "WARNING: unrecognized " <<
-					"signature subpacket found" << std::endl;
+					"signature subpacket found; subpacket ignored" << std::endl;
 			}
 			ptag = 0x02; // process signature anyway
 		}
@@ -18084,28 +18089,31 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: unrecognized signature " <<
-					"packet found " << std::endl;
+				std::cerr << "WARNING: unrecognized signature " <<
+					"packet found; packet ignored" << std::endl;
 			}
 			PacketContextRelease(ctx);
-			return false;
+			continue; // ignore packet
 		}
 		else if (ptag == 0xFD)
 		{
 			if (verbose)
 			{
-				std::cerr << "ERROR: unrecognized key " <<
-					"packet found" << std::endl;
+				std::cerr << "WARNING: unrecognized key " <<
+					"packet found; packet ignored" << std::endl;
 			}
 			PacketContextRelease(ctx);
-			return false;
+			continue; // ignore packet
 		}
 		else if (ptag == 0xFE)
 		{
 			if (verbose)
-				std::cerr << "ERROR: unrecognized packet found" << std::endl;
+			{
+				std::cerr << "WARNING: unrecognized packet found; " <<
+					"packet ignored" << std::endl;
+			}
 			PacketContextRelease(ctx);
-			return false;
+			continue; // ignore packet
 		}
 		tmcg_openpgp_octets_t issuer, issuerfpr, hspd, flags, features;
 		tmcg_openpgp_octets_t psa, pha, pca, paa, left;
@@ -18207,7 +18215,7 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignatureParse
 				}
 				else
 				{
-					return true;
+					return true; // first signature packet wins
 				}
 				break;
 			default:
