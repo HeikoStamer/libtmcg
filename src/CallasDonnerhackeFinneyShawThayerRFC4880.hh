@@ -1358,6 +1358,8 @@ class TMCG_OpenPGP_Message
 
 		TMCG_OpenPGP_Message
 			();
+		void PrintInfo
+			() const;
 		bool Decrypt
 			(const tmcg_openpgp_secure_octets_t				&key,
 			 const int										verbose,

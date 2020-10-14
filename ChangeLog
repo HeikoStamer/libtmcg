@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2020-10-14] RFC4880: added member TMCG_OpenPGP_Message::PrintInfo()
 * [2020-09-26] RFC4880: ignore bad packets in member SignatureParse() 
 * [2020-09-26] RFC4880: fixed bug #58981 (ignore marker packets)
 * [2020-09-26] RFC4880: added member SignaturesParse()

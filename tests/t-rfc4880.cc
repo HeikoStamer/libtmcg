@@ -1,7 +1,7 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018, 2019, 2020  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -907,6 +907,7 @@ int main
 		parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 			MessageParse(armored_message, 3, msg);
 		assert(parse_ok);
+		msg->PrintInfo();
 		seskey.clear();
 		for (size_t i = 0; i < (msg->PKESKs).size(); i++)
 		{
@@ -934,6 +935,7 @@ int main
 		parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
 			MessageParse(dec, 3, msg);
 		assert(parse_ok);
+		msg->PrintInfo();
 		assert(CallasDonnerhackeFinneyShawThayerRFC4880::
 			OctetsCompare(lit, msg->literal_message));
 		assert(CallasDonnerhackeFinneyShawThayerRFC4880::

@@ -6380,6 +6380,24 @@ bool TMCG_OpenPGP_Message::CheckMDC
 	return true;
 }
 
+void TMCG_OpenPGP_Message::PrintInfo
+	() const
+{
+	std::cerr << "INFO: msg version = " << (int)version <<
+		" have_sed = " << (int)have_sed <<
+		" have_seipd = " << (int)have_seipd <<
+		" have_aead = " << (int)have_aead <<
+		" format = 0x" << std::hex << (int)format << std::dec <<
+		" PKESKs.size() = " << PKESKs.size() <<
+		" SKESKs.size() = " << SKESKs.size() <<	
+		" signatures.size() = " << signatures.size() <<	
+		" encrypted_message.size() = " << encrypted_message.size() <<
+		" signed_message.size() = " << signed_message.size() <<
+		" compressed_message.size() = " << compressed_message.size() <<
+		" literal_message.size() = " << literal_message.size() <<
+		std::endl;	
+}
+
 bool TMCG_OpenPGP_Message::Decrypt
 	(const tmcg_openpgp_secure_octets_t &key, const int verbose,
 	 tmcg_openpgp_octets_t &out) const
