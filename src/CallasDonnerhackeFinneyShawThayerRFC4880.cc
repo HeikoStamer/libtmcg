@@ -2392,7 +2392,7 @@ bool TMCG_OpenPGP_Subkey::Weak
 				std::cerr << "INFO: ECDSA with curve \"" << curvename <<
 					"\" and " << curvebits << " bits" << std::endl;
 			}
-			if (curvebits < 256)
+			if (curvebits < 255)
 				return true; // weak key
 		}
 		else
@@ -2413,7 +2413,7 @@ bool TMCG_OpenPGP_Subkey::Weak
 				std::cerr << "INFO: EdDSA with curve \"" << curvename <<
 					"\" and " << curvebits << " bits" << std::endl;
 			}
-			if (curvebits < 256)
+			if (curvebits < 255)
 				return true; // weak key
 		}
 		else
@@ -4104,7 +4104,7 @@ bool TMCG_OpenPGP_Pubkey::Weak
 				std::cerr << "INFO: ECDSA with curve \"" << curvename <<
 					"\" and " << curvebits << " bits" << std::endl;
 			}
-			if (curvebits < 256)
+			if (curvebits < 255)
 				return true; // weak key
 		}
 		else
@@ -4125,7 +4125,7 @@ bool TMCG_OpenPGP_Pubkey::Weak
 				std::cerr << "INFO: EdDSA with curve \"" << curvename <<
 					"\" and " << curvebits << " bits" << std::endl;
 			}
-			if (curvebits < 256)
+			if (curvebits < 255)
 				return true; // weak key
 		}
 		else
