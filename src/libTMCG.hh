@@ -118,7 +118,7 @@
 	
 	#ifndef TMCG_LIBGCRYPT_VERSION
 		/* Define the necessary version number of the GNU gcrypt library */
-		#define TMCG_LIBGCRYPT_VERSION "1.9.0"
+		#define TMCG_LIBGCRYPT_VERSION "1.9.1"
 	#endif
 	
 	#ifndef TMCG_LIBGMP_VERSION
