@@ -7171,7 +7171,7 @@ tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 			type = TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK;
 	}
 	in.erase(std::remove(in.begin(), in.end(), ' '), in.end());
-	in.erase(std::remove(in.begin(), in.end(), '\t'), in.end());
+	in.erase(std::remove(in.begin(), in.end(), '\t'), in.end()); // FIXME: move up and include '\r'
 	switch (type)
 	{
 		case TMCG_OPENPGP_ARMOR_MESSAGE:
