@@ -1,7 +1,8 @@
 /*******************************************************************************
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017, 2018, 2019, 2020  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018, 2019, 2020,
+               2021  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -160,6 +161,38 @@ int main
 				}
 				size_t cpos = armor.find("\r\n=");
 				u += armor[cpos+3]; // append a single character
+			}
+		}
+		for (std::vector<tmcg_openpgp_armor_t>::iterator j = vat.begin();
+		     j != vat.end(); ++j)
+		{
+			std::string u = "Alexander von Humboldt";
+			std::string comment = "Sibirien ist die Fortsetzung der Hasenheide";
+			for (size_t k = 0; k < 256; k++)
+			{
+				std::string armor;
+				in.clear(), out.clear();
+				std::cout << "PackedUidEncode(\"" << u << "\", in)" << std::endl;
+				CallasDonnerhackeFinneyShawThayerRFC4880::
+					PacketUidEncode(u, in);
+				std::cout << "ArmorEncode(" << *j << ", in, armor)" << std::endl;
+				CallasDonnerhackeFinneyShawThayerRFC4880::
+					ArmorEncode(*j, comment, in, armor, true);
+				std::cout << armor << std::endl;
+				std::cout << "ArmorDecode(armor, out) = ";
+				at = CallasDonnerhackeFinneyShawThayerRFC4880::
+					ArmorDecode(armor, out);
+				std::cout << (int)at << std::endl;
+				assert(at == *j);
+				assert(in.size() == out.size());
+				for (size_t i = 0; i < in.size(); i++)
+				{
+					assert(in[i] == out[i]);
+				}
+				size_t cpos = armor.find("\r\n=");
+				u += armor[cpos+3]; // append a single character
+				comment += ".\r\nComment: "; // append a new comment line
+				comment += armor[cpos+3]; // with a single character
 			}
 		}
 
