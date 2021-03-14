@@ -18,11 +18,10 @@
 #
 # (Process this file with GNU autoconf to produce a configure script.)
 
-AC_REVISION([20210129])
-AC_PREREQ(2.61)
+AC_REVISION([20210314])
+AC_PREREQ([2.71])
 
-AC_INIT([LibTMCG], [1.4.0], [HeikoStamer@gmx.net], [libTMCG],
-	[https://www.nongnu.org/libtmcg/])
+AC_INIT([LibTMCG],[1.4.0],[HeikoStamer@gmx.net],[libTMCG],[https://www.nongnu.org/libtmcg/])
 
 # The next two paragraphs are copies of behaviour from libgcrypt.
 
@@ -256,8 +255,6 @@ CPPFLAGS="$backup_CPPFLAGS"
 
 # Checks for header files
 AC_HEADER_ASSERT
-AC_HEADER_STDC
-AC_HEADER_TIME
 AC_CHECK_HEADERS([algorithm assert.h cassert cstdarg cstdio cstdlib cstring\
  ctime cstddef errno.h exception fcntl.h fstream functional inttypes.h iomanip\
  iostream limits.h list map sstream stdexcept stdint.h stdio.h string string.h\

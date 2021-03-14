@@ -154,7 +154,7 @@ Requirements
   platforms with the given compilers, respectively:
 
   ++ GNU/Linux (Gentoo Linux)    x86_64    gcc 10.2.0 (details omitted)
-  ++ GNU/Linux (Gentoo Linux)    x86_64  clang 11.0.1 (details omitted)
+  ++ GNU/Linux (Gentoo Linux)    x86_64  clang 11.1.0 (details omitted)
   ++ GNU/Linux (Debian Linux)    x86_64    gcc  8.3.0 (details omitted)
   ++ GNU/Linux (Trisquel Linux)  x86_64    gcc  4.8.4 (details omitted)
   ++ OpenBSD 6.4                 amd64     gcc  4.2.1 (details omitted)
@@ -179,10 +179,10 @@ Bugs, Contribution, Source code
   The GNU C++ compiler from GCC and the GNU Make program is required.
   Additionally you will need the following free software packages:
   
-  * GNU Autoconf, version >= 2.61, https://www.gnu.org/software/autoconf/
+  * GNU Autoconf, version >= 2.71, https://www.gnu.org/software/autoconf/
   * GNU Automake, version >= 1.12, https://www.gnu.org/software/automake/
   * GNU Libtool, version >= 2.4.2, https://www.gnu.org/software/libtool/
-  * GNU Texinfo, version >= 5.0, https://www.gnu.org/software/texinfo/
+  * GNU Texinfo, version >= 6.0, https://www.gnu.org/software/texinfo/
 
 Copyright and License of this software
 --------------------------------------
