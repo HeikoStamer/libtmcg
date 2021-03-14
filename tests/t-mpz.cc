@@ -2,7 +2,8 @@
    This file is part of LibTMCG.
 
  Copyright (C) 2005, 2006, 2007, 
-               2015, 2016, 2017, 2018, 2019  Heiko Stamer <HeikoStamer@gmx.net>
+               2015, 2016, 2017, 2018, 2019,
+               2021  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -141,7 +142,7 @@ soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 		start_clock();
 		for (size_t j = 0; j < 10; j++)
 		{
-		    for (size_t i = 0; i < (1000000 * MOD_BIAS_WIDTH); i++)
+		    for (size_t i = 0; i < (100000 * MOD_BIAS_WIDTH); i++)
 			cnt[tmcg_mpz_wrandom_ui() % MOD_BIAS_WIDTH]++;
 		    for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
 			std::cout << cnt[i] << " ";
@@ -156,7 +157,7 @@ soQSdQiIld2d9zstmKjMMpHgpyIK1yyfCO0C85WpMqUIUc368kdlRH", TMCG_MPZ_IO_BASE);
 		start_clock();
 		for (size_t j = 0; j < 10; j++)
 		{
-		    for (size_t i = 0; i < (1000000 * MOD_BIAS_WIDTH); i++)
+		    for (size_t i = 0; i < (100000 * MOD_BIAS_WIDTH); i++)
 			cnt[tmcg_mpz_wrandom_mod(MOD_BIAS_WIDTH)]++;
 		    for (size_t i = 0; i < MOD_BIAS_WIDTH; i++)
 			std::cout << cnt[i] << " ";
