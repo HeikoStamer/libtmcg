@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2021-03-20] RFC4880: added member bindingtime for TMCG_OpenPGP_Subkey
 * [2021-03-20] RFC4880: make checksum in ArmorDecode() optional
 * [2021-03-20] RFC4880: fixed bug in PacketDecode() handling Trust packets
 * [2021-02-07] RFC4880: cleanup ArmorDecode() w.r.t. carriage returns

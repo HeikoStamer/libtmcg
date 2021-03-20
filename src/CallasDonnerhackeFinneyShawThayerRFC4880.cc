@@ -1892,6 +1892,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(TMCG_OPENPGP_PKALGO_RSA),
 		creationtime(0),
 		expirationtime(0),
+		bindingtime(0),
 		key(NULL),
 		ec_curve(""),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
@@ -1930,6 +1931,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		bindingtime(0),
 		key(NULL),
 		ec_curve(""),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
@@ -1992,6 +1994,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		bindingtime(0),
 		key(NULL),
 		ec_curve(""),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
@@ -2056,6 +2059,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		bindingtime(0),
 		key(NULL),
 		ec_curve(""),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
@@ -2120,6 +2124,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		bindingtime(0),
 		key(NULL),
 		kdf_hashalgo(TMCG_OPENPGP_HASHALGO_UNKNOWN),
 		kdf_skalgo(TMCG_OPENPGP_SKALGO_PLAINTEXT)
@@ -2210,6 +2215,7 @@ TMCG_OpenPGP_Subkey::TMCG_OpenPGP_Subkey
 		pkalgo(pkalgo_in),
 		creationtime(creationtime_in),
 		expirationtime(expirationtime_in),
+		bindingtime(0),
 		key(NULL),
 		kdf_hashalgo(kdf_hashalgo_in),
 		kdf_skalgo(kdf_skalgo_in)
@@ -2604,6 +2610,15 @@ bool TMCG_OpenPGP_Subkey::CheckValidity
 		}
 		return false;
 	}
+	if (bindingtime && (creationtime > bindingtime))
+	{
+		if (verbose)
+		{
+			std::cerr << "WARNING: binding signature has been created " <<
+				"before subkey" << std::endl;
+		}
+		return false;
+	}
 	return true;
 }
 
@@ -2724,6 +2739,12 @@ bool TMCG_OpenPGP_Subkey::Check
 			certrevsigs.size() << std::endl;
 		std::cerr << "INFO: number of revkeys = " <<
 			revkeys.size() << std::endl;
+	}
+	if (verbose > 2)
+	{
+		std::cerr << "INFO: creationtime = " << creationtime << std::endl;
+		std::cerr << "INFO: expirationtime = " << expirationtime << std::endl;
+		std::cerr << "INFO: bindingtime = " << bindingtime << std::endl;
 	}
 	// check whether there are valid revocation signatures for 0x1f sigs
 	for (size_t j = 0; j < certrevsigs.size(); j++)
@@ -2879,6 +2900,14 @@ bool TMCG_OpenPGP_Subkey::Check
 			{
 				one_valid_bind = true;
 				UpdateProperties(bindsigs[j], verbose);
+				// set binding time to first valid subkey binding signature
+				if (bindingtime == 0)
+					bindingtime = bindsigs[j]->creationtime;
+				if (verbose > 1)
+				{
+					std::cerr << "INFO: bindingtime = " << bindingtime <<
+						std::endl;				
+				}
 			}
 			else
 			{

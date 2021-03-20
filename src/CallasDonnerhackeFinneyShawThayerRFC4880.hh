@@ -18,7 +18,8 @@
 
    This file is part of LibTMCG.
 
- Copyright (C) 2016, 2017, 2018, 2019, 2020  Heiko Stamer <HeikoStamer@gmx.net>
+ Copyright (C) 2016, 2017, 2018, 2019, 2020,
+               2021  Heiko Stamer <HeikoStamer@gmx.net>
 
    LibTMCG is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -785,6 +786,7 @@ class TMCG_OpenPGP_Subkey
 		tmcg_openpgp_pkalgo_t							pkalgo;
 		time_t											creationtime;
 		time_t											expirationtime;
+		time_t											bindingtime;
 		gcry_sexp_t										key;
 		gcry_mpi_t										rsa_n;
 		gcry_mpi_t										rsa_e;
