@@ -12587,6 +12587,7 @@ tmcg_openpgp_byte_t CallasDonnerhackeFinneyShawThayerRFC4880::PacketDecode
 			ret = PacketDecodeTag11(pkt, out);
 			break;
 		case 12: // Trust Packet -- not supported, ignore silently
+			ret = 12;
 			break;
 		case 13: // User ID Packet
 			ret = PacketDecodeTag13(pkt, out);
