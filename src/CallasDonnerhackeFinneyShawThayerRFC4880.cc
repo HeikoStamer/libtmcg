@@ -7197,31 +7197,34 @@ tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 	rpos = in.find("\n\n", spos);
 	if (rpos == in.npos)
 	{
-		std::cerr << "ERROR: separator not found in ArmorDecode()" << std::endl;
+		std::cerr << "ERROR: armor separator not found" << std::endl;
 		return TMCG_OPENPGP_ARMOR_UNKNOWN; // separator (blank line) not found
 	}
 	cpos = in.find("\n=", spos); // TODO: use regex for reliable detection
 	if (cpos == in.npos)
 	{
-		std::cerr << "ERROR: checksum not found in ArmorDecode()" << std::endl;
-		return TMCG_OPENPGP_ARMOR_UNKNOWN; // checksum not found
+		std::cerr << "WARNING: no armor checksum found" << std::endl;
+		cpos = epos;
 	}
 	if (in.find("-----", spos + 33) != epos)
 	{
-		std::cerr << "ERROR: nested armor block in ArmorDecode()" << std::endl;
+		std::cerr << "ERROR: nested armor block found" << std::endl;
 		return TMCG_OPENPGP_ARMOR_UNKNOWN; // nested armor block found
 	}
-	if (((spos + 24) < rpos) && ((rpos + 2) < cpos) && ((cpos + 6) < epos))
+	if (((spos + 24) < rpos) && ((rpos + 2) < cpos))
 	{
 		std::string chksum = "";
 		std::string data = in.substr(rpos + 2, cpos - rpos - 2);
 		tmcg_openpgp_octets_t decoded_data;
 		Radix64Decode(data, decoded_data);
-		CRC24Encode(decoded_data, chksum);
-		if (chksum != in.substr(cpos + 1, 5))
+		if ((cpos + 6) < epos)
 		{
-			std::cerr << "ERROR: wrong checksum in ArmorDecode()" << std::endl;
-			return TMCG_OPENPGP_ARMOR_UNKNOWN; // checksum error
+			CRC24Encode(decoded_data, chksum);
+			if (chksum != in.substr(cpos + 1, 5))
+			{
+				std::cerr << "ERROR: wrong armor checksum" << std::endl;
+				return TMCG_OPENPGP_ARMOR_UNKNOWN; // checksum error
+			}
 		}
 		out.insert(out.end(), decoded_data.begin(), decoded_data.end());
 		return type;
