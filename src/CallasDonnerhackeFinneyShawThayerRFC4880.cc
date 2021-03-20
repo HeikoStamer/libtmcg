@@ -8365,7 +8365,11 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareSelfSignature
 	if (rfc4880bis)
 	{
 		tmcg_openpgp_octets_t paa;
+#if GCRYPT_VERSION_NUMBER < 0x010900
+		// FIXME: remove, if libgcrypt >= 1.9.0 required by configure.ac
+#else
 		paa.push_back(TMCG_OPENPGP_AEADALGO_EAX);
+#endif
 		paa.push_back(TMCG_OPENPGP_AEADALGO_OCB);
 		SubpacketEncode(34, false, paa, subpackets);
 	}
@@ -8469,7 +8473,11 @@ void CallasDonnerhackeFinneyShawThayerRFC4880::PacketSigPrepareDesignatedRevoker
 	if (rfc4880bis)
 	{
 		tmcg_openpgp_octets_t paa;
+#if GCRYPT_VERSION_NUMBER < 0x010900
+		// FIXME: remove, if libgcrypt >= 1.9.0 required by configure.ac
+#else		
 		paa.push_back(TMCG_OPENPGP_AEADALGO_EAX);
+#endif
 		paa.push_back(TMCG_OPENPGP_AEADALGO_OCB);
 		SubpacketEncode(34, false, paa, subpackets);
 	}
@@ -13861,7 +13869,12 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricEncryptAEAD
 	switch (aeadalgo)
 	{
 		case TMCG_OPENPGP_AEADALGO_EAX:
+#if GCRYPT_VERSION_NUMBER < 0x010900
+			// FIXME: remove, if libgcrypt >= 1.9.0 required by configure.ac
+			ciphermode = (enum gcry_cipher_modes)14;
+#else
 			ciphermode = GCRY_CIPHER_MODE_EAX;
+#endif
 			break;
 		case TMCG_OPENPGP_AEADALGO_OCB:
 			ciphermode = GCRY_CIPHER_MODE_OCB;
@@ -14667,7 +14680,12 @@ gcry_error_t CallasDonnerhackeFinneyShawThayerRFC4880::SymmetricDecryptAEAD
 	switch (aeadalgo)
 	{
 		case TMCG_OPENPGP_AEADALGO_EAX:
+#if GCRYPT_VERSION_NUMBER < 0x010900
+			// FIXME: remove, if libgcrypt >= 1.9.0 required by configure.ac
+			ciphermode = (enum gcry_cipher_modes)14;
+#else
 			ciphermode = GCRY_CIPHER_MODE_EAX;
+#endif
 			break;
 		case TMCG_OPENPGP_AEADALGO_OCB:
 			ciphermode = GCRY_CIPHER_MODE_OCB;

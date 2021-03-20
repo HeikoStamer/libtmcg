@@ -9,7 +9,6 @@ in the sources of this package and additionally can be obtained from Internet
 
 * [2019-] added data structure TMCG_Bigint
 * [2021-02-07] RFC4880: cleanup ArmorDecode() w.r.t. carriage returns
-* [2021-01-29] raised the requirement of libgcrypt version to >= 1.9.1
 * [2021-01-21] RFC4880: adjust weakness check E*DSA (change in libgcrypt 1.9.x)
 * [2020-10-15] RFC4880: added type definition TMCG_OpenPGP_Pubkeys
 * [2020-10-14] RFC4880: added member TMCG_OpenPGP_Message::PrintInfo()

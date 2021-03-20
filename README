@@ -137,7 +137,7 @@ Requirements
 
   * GNU Multiple Precision Arithmetic Library (libgmp), version >= 6.1.2,
     https://gmplib.org/
-  * GNU Crypto Library (libgcrypt), version >= 1.9.1,
+  * GNU Crypto Library (libgcrypt), version >= 1.8.0,
     https://gnupg.org/download/index.html
   * GNU Privacy Guard Error Code Library (libgpg-error), version >= 1.27,
     https://gnupg.org/download/index.html
