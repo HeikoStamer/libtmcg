@@ -18399,14 +18399,14 @@ bool CallasDonnerhackeFinneyShawThayerRFC4880::SignaturesParse
 				case 5: // V5 keys use SHA256
 					for (size_t i = 0; i < 32; i++)
 						issuerfpr.push_back(ctx.issuerfingerprint[i]);
-					if (OctetsCompareZero(issuer))
-					{
-						// those keys may not have issuer subpackets, so infer
-						issuer.clear();
-						for (size_t i = 0; i < 8; i++)
-							issuer.push_back(ctx.issuerfingerprint[i]);
-					}
 					break;
+			}
+			if (OctetsCompareZero(issuer) && (issuerfpr.size() >= 8))
+			{
+				// if there is no issuer subpacket, the infer from fingerprint
+				issuer.clear();
+				for (size_t i = 0; i < 8; i++)
+					issuer.push_back(ctx.issuerfingerprint[i]);
 			}
 			for (size_t i = 0; i < ctx.hspdlen; i++)
 				hspd.push_back(ctx.hspd[i]);
