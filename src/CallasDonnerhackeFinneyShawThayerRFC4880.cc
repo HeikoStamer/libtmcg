@@ -1591,6 +1591,31 @@ bool TMCG_OpenPGP_UserID::CheckAttestations
 					sig->hspd.begin(), sig->hspd.end());
 				sigpkt.push_back(0x00);
 				sigpkt.push_back(0x00);
+				sigpkt.insert(sigpkt.end(), sig->left.begin(), sig->left.end());
+				switch (sig->pkalgo)
+				{
+					case TMCG_OPENPGP_PKALGO_RSA:
+					case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
+						CallasDonnerhackeFinneyShawThayerRFC4880::
+							PacketMPIEncode(sig->rsa_md, sigpkt);
+						break;
+					case TMCG_OPENPGP_PKALGO_DSA:
+					case TMCG_OPENPGP_PKALGO_ECDSA:
+					case TMCG_OPENPGP_PKALGO_EDDSA:
+						CallasDonnerhackeFinneyShawThayerRFC4880::
+							PacketMPIEncode(sig->dsa_r, sigpkt);
+						CallasDonnerhackeFinneyShawThayerRFC4880::
+							PacketMPIEncode(sig->dsa_s, sigpkt);
+						break;
+					default:
+						if (verbose)
+						{
+							std::cerr << "INFO: bad public-key algorithm for" <<
+								" attesting user ID \"" << userid_sanitized <<
+								"\"" << std::endl;
+						}			
+						continue; // skip this signature
+				}
 				hash_input.push_back(0x88);
 				hash_input.push_back((sigpkt.size() >> 24) & 0xFF);
 				hash_input.push_back((sigpkt.size() >> 16) & 0xFF);
@@ -1823,6 +1848,30 @@ bool TMCG_OpenPGP_UserAttribute::CheckAttestations
 					sig->hspd.begin(), sig->hspd.end());
 				sigpkt.push_back(0x00);
 				sigpkt.push_back(0x00);
+				sigpkt.insert(sigpkt.end(), sig->left.begin(), sig->left.end());
+				switch (sig->pkalgo)
+				{
+					case TMCG_OPENPGP_PKALGO_RSA:
+					case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
+						CallasDonnerhackeFinneyShawThayerRFC4880::
+							PacketMPIEncode(sig->rsa_md, sigpkt);
+						break;
+					case TMCG_OPENPGP_PKALGO_DSA:
+					case TMCG_OPENPGP_PKALGO_ECDSA:
+					case TMCG_OPENPGP_PKALGO_EDDSA:
+						CallasDonnerhackeFinneyShawThayerRFC4880::
+							PacketMPIEncode(sig->dsa_r, sigpkt);
+						CallasDonnerhackeFinneyShawThayerRFC4880::
+							PacketMPIEncode(sig->dsa_s, sigpkt);
+						break;
+					default:
+						if (verbose)
+						{
+							std::cerr << "INFO: bad public-key algorithm for" <<
+								" attesting user attribute" << std::endl;
+						}			
+						continue; // skip this signature
+				}
 				hash_input.push_back(0x88);
 				hash_input.push_back((sigpkt.size() >> 24) & 0xFF);
 				hash_input.push_back((sigpkt.size() >> 16) & 0xFF);

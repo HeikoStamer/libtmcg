@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2021-03-21] RFC4880: fixed bug #60154 (hash calc first-party attestations)
 * [2021-03-20] RFC4880: infer missing issuer from issuer fingerprint
 * [2021-03-20] RFC4880: added member bindingtime for TMCG_OpenPGP_Subkey
 * [2021-03-20] RFC4880: make checksum in ArmorDecode() optional
