@@ -1061,6 +1061,35 @@ int main
 			check_ok = emmapub->Weak(3);
 			assert(!check_ok);
 			emma->RelinkPrivateSubkeys(); // undo the relinking
+			time_t sigtime = time(NULL); // current time, fixed algo SHA2-512
+			tmcg_openpgp_hashalgo_t hashalgo = TMCG_OPENPGP_HASHALGO_SHA512;
+			tmcg_openpgp_octets_t trailer, hash, left, sig;
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSigPrepareDetachedSignature(
+					TMCG_OPENPGP_SIGNATURE_BINARY_DOCUMENT, emmapub->pkalgo,
+					hashalgo, sigtime, 0, "", emmapub->fingerprint, trailer);
+			std::cout << "BinaryDocumentHash()" << std::endl;
+			check_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
+				BinaryDocumentHash(dec, trailer, hashalgo, hash, left);
+			assert(check_ok);
+			std::cout << "SignData()" << std::endl;
+			check_ok = emma->SignData(hash, hashalgo, trailer, left, 3, sig);
+			assert(check_ok);
+			TMCG_OpenPGP_Signature *emma_signature = NULL;
+			std::cout << "SignatureParse()" << std::endl;
+			parse_ok = CallasDonnerhackeFinneyShawThayerRFC4880::
+				SignatureParse(sig, 3, emma_signature);
+			assert(parse_ok);
+			assert(emma_signature->Good());
+			std::cout << "PrintInfo()" << std::endl;
+			emma_signature->PrintInfo();
+			std::cout << "CheckValidity()" << std::endl;
+			parse_ok = emma_signature->CheckValidity(emmapub->creationtime, 3);
+			assert(parse_ok);
+			std::cout << "VerifyData()" << std::endl;
+			parse_ok = emma_signature->VerifyData(emmapub->key, dec, 3);
+			assert(parse_ok);
+			delete emma_signature;
 		}
 		delete emma;
 		delete ring;

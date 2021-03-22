@@ -1002,6 +1002,13 @@ class TMCG_OpenPGP_PrivateSubkey
 			(const TMCG_OpenPGP_PKESK*						&esk,
 			 const int										verbose,
 			 tmcg_openpgp_secure_octets_t					&out) const;
+		bool SignData
+			(const tmcg_openpgp_octets_t					&hash,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_octets_t					&left,
+			 const int										verbose,
+			 tmcg_openpgp_octets_t							&out) const;
 		~TMCG_OpenPGP_PrivateSubkey
 			();
 };
@@ -1202,6 +1209,13 @@ class TMCG_OpenPGP_Prvkey
 			(const TMCG_OpenPGP_PKESK*						&esk,
 			 const int										verbose,
 			 tmcg_openpgp_secure_octets_t					&out) const;
+		bool SignData
+			(const tmcg_openpgp_octets_t					&hash,
+			 const tmcg_openpgp_hashalgo_t					hashalgo,
+			 const tmcg_openpgp_octets_t					&trailer,
+			 const tmcg_openpgp_octets_t					&left,
+			 const int										verbose,
+			 tmcg_openpgp_octets_t							&out) const;
 		void RelinkPublicSubkeys
 			();
 		void RelinkPrivateSubkeys

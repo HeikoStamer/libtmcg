@@ -3707,7 +3707,8 @@ bool TMCG_OpenPGP_PrivateSubkey::Weak
 }
 
 bool TMCG_OpenPGP_PrivateSubkey::Decrypt
-	(const TMCG_OpenPGP_PKESK* &esk, const int verbose,
+	(const TMCG_OpenPGP_PKESK* &esk,
+	 const int verbose,
 	 tmcg_openpgp_secure_octets_t &out) const
 {
 	if (!Good())
@@ -3722,7 +3723,7 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 	{
 		if (verbose)
 		{
-			std::cerr << "ERROR: subkey is not capable of encryption" <<
+			std::cerr << "ERROR: subkey is not capable of encrypting" <<
 				std::endl;
 		}
 		return false;
@@ -3884,6 +3885,97 @@ bool TMCG_OpenPGP_PrivateSubkey::Decrypt
 		}
 		return false;
 	}
+}
+
+bool TMCG_OpenPGP_PrivateSubkey::SignData
+	(const tmcg_openpgp_octets_t &hash,
+	 const tmcg_openpgp_hashalgo_t hashalgo,
+	 const tmcg_openpgp_octets_t &trailer,
+	 const tmcg_openpgp_octets_t &left,
+	 const int verbose,
+	 tmcg_openpgp_octets_t &out) const
+{
+	if (!Good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: bad key material" << std::endl;
+		return false;
+	}
+	if (pub->AccumulateFlags() && ((pub->AccumulateFlags() & 0x02) != 0x02))
+	{
+		if (verbose)
+		{
+			std::cerr << "ERROR: subkey is not capable of signing data" <<
+				std::endl;
+		}
+		return false;
+	}
+	gcry_error_t ret;
+	gcry_mpi_t r = gcry_mpi_new(2048);
+	gcry_mpi_t s = gcry_mpi_new(2048);
+	switch (pkalgo)
+	{
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				AsymmetricSignRSA(hash, private_key, hashalgo, s);
+			break;
+		case TMCG_OPENPGP_PKALGO_DSA:
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				AsymmetricSignDSA(hash, private_key, r, s);
+			break;
+		case TMCG_OPENPGP_PKALGO_ECDSA:
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				AsymmetricSignECDSA(hash, private_key, r, s);
+			break;
+		case TMCG_OPENPGP_PKALGO_EDDSA:
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				AsymmetricSignEdDSA(hash, private_key, r, s);
+			break;
+		default:
+			if (verbose)
+			{
+				std::cerr << "ERROR: public-key algorithm " <<
+					(int)pkalgo << " not supported" << std::endl;
+				gcry_mpi_release(r), gcry_mpi_release(s);
+			}
+			return false;
+	}
+	if (ret)
+	{
+		if (verbose)
+		{
+			std::cerr << "ERROR: signing of hash value failed " <<
+				"(rc = " << gcry_err_code(ret) << ", str = " <<
+				gcry_strerror(ret) << ")" << std::endl;
+		}
+		gcry_mpi_release(r), gcry_mpi_release(s);
+		return false;
+	}
+	switch (pkalgo)
+	{
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSigEncode(trailer, left, s, out);
+			break;
+		case TMCG_OPENPGP_PKALGO_DSA:
+		case TMCG_OPENPGP_PKALGO_ECDSA:
+		case TMCG_OPENPGP_PKALGO_EDDSA:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSigEncode(trailer, left, r, s, out);
+			break;
+		default:
+			if (verbose)
+			{
+				std::cerr << "ERROR: public-key algorithm " <<
+					(int)pkalgo << " not supported" << std::endl;
+			}
+			gcry_mpi_release(r), gcry_mpi_release(s);
+			return false;
+	}
+	gcry_mpi_release(r), gcry_mpi_release(s);
+	return true;	
 }
 
 TMCG_OpenPGP_PrivateSubkey::~TMCG_OpenPGP_PrivateSubkey
@@ -5487,7 +5579,8 @@ bool TMCG_OpenPGP_Prvkey::Weak
 }
 
 bool TMCG_OpenPGP_Prvkey::Decrypt
-	(const TMCG_OpenPGP_PKESK* &esk, const int verbose,
+	(const TMCG_OpenPGP_PKESK* &esk,
+	 const int verbose,
 	 tmcg_openpgp_secure_octets_t &out) const
 {
 	if (!Good())
@@ -5548,6 +5641,97 @@ bool TMCG_OpenPGP_Prvkey::Decrypt
 		}
 		return false;
 	}
+}
+
+bool TMCG_OpenPGP_Prvkey::SignData
+	(const tmcg_openpgp_octets_t &hash,
+	 const tmcg_openpgp_hashalgo_t hashalgo,
+	 const tmcg_openpgp_octets_t &trailer,
+	 const tmcg_openpgp_octets_t &left,
+	 const int verbose,
+	 tmcg_openpgp_octets_t &out) const
+{
+	if (!Good())
+	{
+		if (verbose)
+			std::cerr << "ERROR: bad key material" << std::endl;
+		return false;
+	}
+	if (pub->AccumulateFlags() && ((pub->AccumulateFlags() & 0x02) != 0x02))
+	{
+		if (verbose)
+		{
+			std::cerr << "ERROR: subkey is not capable of signing data" <<
+				std::endl;
+		}
+		return false;
+	}
+	gcry_error_t ret;
+	gcry_mpi_t r = gcry_mpi_new(2048);
+	gcry_mpi_t s = gcry_mpi_new(2048);
+	switch (pkalgo)
+	{
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				AsymmetricSignRSA(hash, private_key, hashalgo, s);
+			break;
+		case TMCG_OPENPGP_PKALGO_DSA:
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				AsymmetricSignDSA(hash, private_key, r, s);
+			break;
+		case TMCG_OPENPGP_PKALGO_ECDSA:
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				AsymmetricSignECDSA(hash, private_key, r, s);
+			break;
+		case TMCG_OPENPGP_PKALGO_EDDSA:
+			ret = CallasDonnerhackeFinneyShawThayerRFC4880::
+				AsymmetricSignEdDSA(hash, private_key, r, s);
+			break;
+		default:
+			if (verbose)
+			{
+				std::cerr << "ERROR: public-key algorithm " <<
+					(int)pkalgo << " not supported" << std::endl;
+				gcry_mpi_release(r), gcry_mpi_release(s);
+			}
+			return false;
+	}
+	if (ret)
+	{
+		if (verbose)
+		{
+			std::cerr << "ERROR: signing of hash value failed " <<
+				"(rc = " << gcry_err_code(ret) << ", str = " <<
+				gcry_strerror(ret) << ")" << std::endl;
+		}
+		gcry_mpi_release(r), gcry_mpi_release(s);
+		return false;
+	}
+	switch (pkalgo)
+	{
+		case TMCG_OPENPGP_PKALGO_RSA:
+		case TMCG_OPENPGP_PKALGO_RSA_SIGN_ONLY:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSigEncode(trailer, left, s, out);
+			break;
+		case TMCG_OPENPGP_PKALGO_DSA:
+		case TMCG_OPENPGP_PKALGO_ECDSA:
+		case TMCG_OPENPGP_PKALGO_EDDSA:
+			CallasDonnerhackeFinneyShawThayerRFC4880::
+				PacketSigEncode(trailer, left, r, s, out);
+			break;
+		default:
+			if (verbose)
+			{
+				std::cerr << "ERROR: public-key algorithm " <<
+					(int)pkalgo << " not supported" << std::endl;
+			}
+			gcry_mpi_release(r), gcry_mpi_release(s);
+			return false;
+	}
+	gcry_mpi_release(r), gcry_mpi_release(s);
+	return true;	
 }
 
 void TMCG_OpenPGP_Prvkey::RelinkPublicSubkeys
