@@ -7432,6 +7432,13 @@ tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
 			type = TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK;
 	}
+	if (type == TMCG_OPENPGP_ARMOR_UNKNOWN)
+	{
+		spos = in.find("-----BEGIN PGP ARMORED FILE-----");
+		epos = in.find("-----END PGP ARMORED FILE-----");
+		if ((spos != in.npos) && (epos != in.npos) && (epos > spos))
+			type = TMCG_OPENPGP_ARMOR_FILE;
+	}	
 	in.erase(std::remove(in.begin(), in.end(), ' '), in.end());
 	in.erase(std::remove(in.begin(), in.end(), '\t'), in.end());
 	in.erase(std::remove(in.begin(), in.end(), '\r'), in.end());
@@ -7452,6 +7459,10 @@ tmcg_openpgp_armor_t CallasDonnerhackeFinneyShawThayerRFC4880::ArmorDecode
 		case TMCG_OPENPGP_ARMOR_PUBLIC_KEY_BLOCK:
 			spos = in.find("-----BEGINPGPPUBLICKEYBLOCK-----");
 			epos = in.find("-----ENDPGPPUBLICKEYBLOCK-----");
+			break;
+		case TMCG_OPENPGP_ARMOR_FILE:
+			spos = in.find("-----BEGINPGPARMOREDFILE-----");
+			epos = in.find("-----ENDPGPARMOREDFILE-----");
 			break;
 		default:
 			return TMCG_OPENPGP_ARMOR_UNKNOWN; // header and trailer not found
