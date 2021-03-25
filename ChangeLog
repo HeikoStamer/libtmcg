@@ -8,6 +8,7 @@ in the sources of this package and additionally can be obtained from Internet
 <https://www.gnu.org/licenses>.
 
 * [2019-] added data structure TMCG_Bigint
+* [2021-03-25] RFC4880: changed UpdateProperties() w.r.t. missing subpackets
 * [2021-03-23] RFC4880: added TMCG_OPENPGP_ARMOR_FILE type in ArmorDecode()
 * [2021-03-22] RFC4880: added member TMCG_OpenPGP_PrivateSubkey::SignData()
 * [2021-03-22] RFC4880: added member TMCG_OpenPGP_Prvkey::SignData()

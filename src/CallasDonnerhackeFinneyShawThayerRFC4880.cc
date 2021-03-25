@@ -2527,79 +2527,100 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 	(const TMCG_OpenPGP_Signature *sig,
 	 const int verbose)
 {
-	expirationtime = sig->keyexpirationtime;
-	if (verbose > 1)
+	if (sig->keyexpirationtime > 0)
 	{
-		std::cerr << "INFO: subkey update expirationtime to " <<
-			expirationtime << std::endl;
-	}
-	if (verbose > 1)
-		std::cerr << "INFO: subkey update flags to " << std::hex;
-	flags.clear();			
-	for (size_t i = 0; i < sig->keyflags.size(); i++)
-	{
-		flags.push_back(sig->keyflags[i]);
+		expirationtime = sig->keyexpirationtime;
 		if (verbose > 1)
-			std::cerr << (int)sig->keyflags[i] << " ";
-	}
-	if (verbose > 1)
-		std::cerr << std::dec << std::endl;
-	if (verbose > 1)
-		std::cerr << "INFO: subkey update features to " << std::hex;
-	features.clear();
-	for (size_t i = 0; i < sig->keyfeatures.size(); i++)
-	{
-		features.push_back(sig->keyfeatures[i]);
+		{
+			std::cerr << "INFO: subkey update expirationtime to " <<
+				expirationtime << std::endl;
+		}
 		if (verbose > 1)
-			std::cerr << (int)sig->keyfeatures[i] << " ";
+			std::cerr << "INFO: subkey update flags to " << std::hex;
 	}
-	if (verbose > 1)
-		std::cerr << std::dec << std::endl;
-	if (verbose > 1)
-		std::cerr << "INFO: subkey update psa to ";
-	psa.clear();
-	for (size_t i = 0; i < sig->keyprefs_psa.size(); i++)
+	if (sig->keyflags.size() > 0)
 	{
-		psa.push_back(sig->keyprefs_psa[i]);
+		flags.clear();			
+		for (size_t i = 0; i < sig->keyflags.size(); i++)
+		{
+			flags.push_back(sig->keyflags[i]);
+			if (verbose > 1)
+				std::cerr << (int)sig->keyflags[i] << " ";
+		}
 		if (verbose > 1)
-			std::cerr << (int)sig->keyprefs_psa[i] << " ";
+			std::cerr << std::dec << std::endl;
 	}
-	if (verbose > 1)
-		std::cerr << std::endl;
-	if (verbose > 1)
-		std::cerr << "INFO: subkey update pha to ";
-	pha.clear();
-	for (size_t i = 0; i < sig->keyprefs_pha.size(); i++)
+	if (sig->keyfeatures.size() > 0)
 	{
-		pha.push_back(sig->keyprefs_pha[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keyprefs_pha[i] << " ";
+			std::cerr << "INFO: subkey update features to " << std::hex;
+		features.clear();
+		for (size_t i = 0; i < sig->keyfeatures.size(); i++)
+		{
+			features.push_back(sig->keyfeatures[i]);
+			if (verbose > 1)
+				std::cerr << (int)sig->keyfeatures[i] << " ";
+		}
+		if (verbose > 1)
+			std::cerr << std::dec << std::endl;
 	}
-	if (verbose > 1)
-		std::cerr << std::endl;
-	if (verbose > 1)
-		std::cerr << "INFO: subkey update pca to ";
-	pca.clear();
-	for (size_t i = 0; i < sig->keyprefs_pca.size(); i++)
+	if (sig->keyprefs_psa.size() > 0)
 	{
-		pca.push_back(sig->keyprefs_pca[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keyprefs_pca[i] << " ";
+			std::cerr << "INFO: subkey update psa to ";
+		psa.clear();
+		for (size_t i = 0; i < sig->keyprefs_psa.size(); i++)
+		{
+			psa.push_back(sig->keyprefs_psa[i]);
+			if (verbose > 1)
+				std::cerr << (int)sig->keyprefs_psa[i] << " ";
+		}
+		if (verbose > 1)
+			std::cerr << std::endl;
 	}
-	if (verbose > 1)
-		std::cerr << std::endl;
-	if (verbose > 1)
-		std::cerr << "INFO: subkey update paa to ";
-	paa.clear();
-	for (size_t i = 0; i < sig->keyprefs_paa.size(); i++)
+	if (sig->keyprefs_pha.size() > 0)
 	{
-		paa.push_back(sig->keyprefs_paa[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keyprefs_paa[i] << " ";
+			std::cerr << "INFO: subkey update pha to ";
+		pha.clear();
+		for (size_t i = 0; i < sig->keyprefs_pha.size(); i++)
+		{
+			pha.push_back(sig->keyprefs_pha[i]);
+			if (verbose > 1)
+				std::cerr << (int)sig->keyprefs_pha[i] << " ";
+		}
+		if (verbose > 1)
+			std::cerr << std::endl;
 	}
-	if (verbose > 1)
-		std::cerr << std::endl;
-	if (verbose > 1)
+	if (sig->keyprefs_pca.size() > 0)
+	{
+		if (verbose > 1)
+			std::cerr << "INFO: subkey update pca to ";
+		pca.clear();
+		for (size_t i = 0; i < sig->keyprefs_pca.size(); i++)
+		{
+			pca.push_back(sig->keyprefs_pca[i]);
+			if (verbose > 1)
+				std::cerr << (int)sig->keyprefs_pca[i] << " ";
+		}
+		if (verbose > 1)
+			std::cerr << std::endl;
+	}
+	if (sig->keyprefs_paa.size() > 0)
+	{
+		if (verbose > 1)
+			std::cerr << "INFO: subkey update paa to ";
+		paa.clear();
+		for (size_t i = 0; i < sig->keyprefs_paa.size(); i++)
+		{
+			paa.push_back(sig->keyprefs_paa[i]);
+			if (verbose > 1)
+				std::cerr << (int)sig->keyprefs_paa[i] << " ";
+		}
+		if (verbose > 1)
+			std::cerr << std::endl;
+	}
+	if ((verbose > 1) && (sig->revkeys.size() > 0))
 		std::cerr << "INFO: subkey update revkeys with added ";
 	for (size_t i = 0; i < sig->revkeys.size(); i++)
 	{
@@ -2633,7 +2654,7 @@ void TMCG_OpenPGP_Subkey::UpdateProperties
 			std::cerr << "[" << fpr_str << "]";
 		}
 	}
-	if (verbose > 1)
+	if ((verbose > 1) && (sig->revkeys.size() > 0))
 		std::cerr << std::endl;
 }
 
@@ -4354,80 +4375,101 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 	(const TMCG_OpenPGP_Signature *sig,
 	 const int verbose)
 {
-	expirationtime = sig->keyexpirationtime;
-	if (verbose > 1)
+	if (sig->keyexpirationtime > 0)
 	{
-		std::cerr << "INFO: primary key update expirationtime to " <<
-			expirationtime << std::endl;
-	}
-	if (verbose > 1)
-		std::cerr << "INFO: primary key update flags to " << std::hex;
-	flags.clear();			
-	for (size_t i = 0; i < sig->keyflags.size(); i++)
-	{
-		flags.push_back(sig->keyflags[i]);
+		expirationtime = sig->keyexpirationtime;
 		if (verbose > 1)
-			std::cerr << (int)sig->keyflags[i] << " ";
+		{
+			std::cerr << "INFO: primary key update expirationtime to " <<
+				expirationtime << std::endl;
+		}
 	}
-	if (verbose > 1)
-		std::cerr << std::dec << std::endl;
-	if (verbose > 1)
-		std::cerr << "INFO: primary key update features to " <<
-			std::hex;
-	features.clear();
-	for (size_t i = 0; i < sig->keyfeatures.size(); i++)
+	if (sig->keyflags.size() > 0)
 	{
-		features.push_back(sig->keyfeatures[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keyfeatures[i] << " ";
+			std::cerr << "INFO: primary key update flags to " << std::hex;
+		flags.clear();			
+		for (size_t i = 0; i < sig->keyflags.size(); i++)
+		{
+			flags.push_back(sig->keyflags[i]);
+			if (verbose > 1)
+				std::cerr << (int)sig->keyflags[i] << " ";
+		}
+		if (verbose > 1)
+			std::cerr << std::dec << std::endl;
 	}
-	if (verbose > 1)
-		std::cerr << std::dec << std::endl;
-	if (verbose > 1)
-		std::cerr << "INFO: primary key update psa to ";
-	psa.clear();
-	for (size_t i = 0; i < sig->keyprefs_psa.size(); i++)
+	if (sig->keyfeatures.size() > 0)
 	{
-		psa.push_back(sig->keyprefs_psa[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keyprefs_psa[i] << " ";
+			std::cerr << "INFO: primary key update features to " <<
+				std::hex;
+		features.clear();
+		for (size_t i = 0; i < sig->keyfeatures.size(); i++)
+		{
+			features.push_back(sig->keyfeatures[i]);
+			if (verbose > 1)
+				std::cerr << (int)sig->keyfeatures[i] << " ";
+		}
+		if (verbose > 1)
+			std::cerr << std::dec << std::endl;
 	}
-	if (verbose > 1)
-		std::cerr << std::endl;
-	if (verbose > 1)
-		std::cerr << "INFO: primary key update pha to ";
-	pha.clear();
-	for (size_t i = 0; i < sig->keyprefs_pha.size(); i++)
+	if (sig->keyprefs_psa.size() > 0)
 	{
-		pha.push_back(sig->keyprefs_pha[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keyprefs_pha[i] << " ";
+			std::cerr << "INFO: primary key update psa to ";
+		psa.clear();
+		for (size_t i = 0; i < sig->keyprefs_psa.size(); i++)
+		{
+			psa.push_back(sig->keyprefs_psa[i]);
+			if (verbose > 1)
+				std::cerr << (int)sig->keyprefs_psa[i] << " ";
+		}
+		if (verbose > 1)
+			std::cerr << std::endl;
 	}
-	if (verbose > 1)
-		std::cerr << std::endl;
-	if (verbose > 1)
-		std::cerr << "INFO: primary key update pca to ";
-	pca.clear();
-	for (size_t i = 0; i < sig->keyprefs_pca.size(); i++)
+	if (sig->keyprefs_pha.size() > 0)
 	{
-		pca.push_back(sig->keyprefs_pca[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keyprefs_pca[i] << " ";
+			std::cerr << "INFO: primary key update pha to ";
+		pha.clear();
+		for (size_t i = 0; i < sig->keyprefs_pha.size(); i++)
+		{
+			pha.push_back(sig->keyprefs_pha[i]);
+			if (verbose > 1)
+				std::cerr << (int)sig->keyprefs_pha[i] << " ";
+		}
+		if (verbose > 1)
+			std::cerr << std::endl;
 	}
-	if (verbose > 1)
-		std::cerr << std::endl;
-	if (verbose > 1)
-		std::cerr << "INFO: primary key update paa to ";
-	paa.clear();
-	for (size_t i = 0; i < sig->keyprefs_paa.size(); i++)
+	if (sig->keyprefs_pca.size() > 0)
 	{
-		paa.push_back(sig->keyprefs_paa[i]);
 		if (verbose > 1)
-			std::cerr << (int)sig->keyprefs_paa[i] << " ";
+			std::cerr << "INFO: primary key update pca to ";
+		pca.clear();
+		for (size_t i = 0; i < sig->keyprefs_pca.size(); i++)
+		{
+			pca.push_back(sig->keyprefs_pca[i]);
+			if (verbose > 1)
+				std::cerr << (int)sig->keyprefs_pca[i] << " ";
+		}
+		if (verbose > 1)
+			std::cerr << std::endl;
 	}
-	if (verbose > 1)
-		std::cerr << std::endl;
-	if (verbose > 1)
+	if (sig->keyprefs_paa.size() > 0)
+	{
+		if (verbose > 1)
+			std::cerr << "INFO: primary key update paa to ";
+		paa.clear();
+		for (size_t i = 0; i < sig->keyprefs_paa.size(); i++)
+		{
+			paa.push_back(sig->keyprefs_paa[i]);
+			if (verbose > 1)
+				std::cerr << (int)sig->keyprefs_paa[i] << " ";
+		}
+		if (verbose > 1)
+			std::cerr << std::endl;
+	}
+	if ((verbose > 1) && (sig->revkeys.size() > 0))
 		std::cerr << "INFO: primary key update revkeys with added ";
 	for (size_t i = 0; i < sig->revkeys.size(); i++)
 	{
@@ -4461,7 +4503,7 @@ void TMCG_OpenPGP_Pubkey::UpdateProperties
 			std::cerr << "[" << fpr_str << "]";
 		}
 	}
-	if (verbose > 1)
+	if ((verbose > 1) && (sig->revkeys.size() > 0))
 		std::cerr << std::endl;
 }
 
